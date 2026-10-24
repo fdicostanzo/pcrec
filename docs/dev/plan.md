@@ -255,8 +255,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
 - [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
   filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
-  status (2026-10-24): design lane datad; measured: \p{L} matcher 185 KB .o, \p{Greek} 15 KB, literal 4 KB; compiler tables 110 KB of 5.9 MB
-  next: datad's design note to Frank; no build before it
+  status (2026-10-24): design docs/design/data_plan.md delivered; Frank's rulings D179 (fair effort, simple formats read in place, small form on request, sharing when needed)
+  next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time.
 

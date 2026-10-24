@@ -9934,6 +9934,12 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Retained verdicts:** each run's logs are kept at `build/full_suite/<date>_<sha>/` (gitignored) with a one-line `summary.txt`; the manager copies it into the ledger's Runs table. Mechanics: `scripts/fullsuite_job.sh` (a box-queue job; runs at a frozen commit in its own detached worktree so merges cannot enter mid-run).
 - **Revisit when:** a red battery is found that a trigger should have caught earlier.
 
+## D179 — data plan rulings: smaller by a fair effort, simple formats read in place (Frank, 2026-10-24)
+
+- **Decision:** Frank on docs/design/data_plan.md's four questions, verbatim where short: (1) the small form for big Unicode classes is used on request (the size setting) now; "eventually test measurement and dial choices are considered" (the default and any tuning dial are decided from a measurement, not now); (2) size target: "ever heard the term 'college try'? We should try and be smaller but don't go down some rabbit hole of compression"; (3) pcrec's own tables: "simple. Ideally usable in compressed format even if slower": delta-varint ranges, read IN PLACE by the compiler (no decompress-to-full-table step, no compression library); (4) sharing across matchers: "decide when needed".
+- **Consequences:** problem A gets one lane (delta-varint + string-blob names, read in place, generated artifacts byte-identical) after [UPROP-MORE] lands; problem B's first step is the speed measurement of the small form for wide classes, then the size-setting route. No zlib, no per-property bitmaps, no sharing mechanism until a large shared table exists.
+- **Revisit when:** the compact-form measurement is in (question 1's default), or a shared table arrives (question 4).
+
 ## D178 — more Unicode properties: official data vendored, Block and Age included, no invented categories (Frank, 2026-10-24)
 
 - **Decision:** [UPROP-MORE] builds as designed in docs/design/uprop_more.md. Frank, on its four questions: (1) "yessss" to vendoring five more official Unicode 16.0.0 files (PropList, DerivedCoreProperties, emoji-data, DerivedBidiClass, PropertyAliases) beside the existing ones; (2) Block and Age "ship them if they are same basic setup and it's easy" (they are: ranged UCD files, Blocks.txt and DerivedAge.txt, behind --features as pcrec extensions beyond PCRE2); (3) ship the large properties at their present size; (4) "my concern was creating some new utf category that wasn't defined. If we conform to a standard then that's ok."
