@@ -492,3 +492,11 @@ The classifier was /tmp/claude-1001/substr1fix/ucddiff.py (scratch).
   `generate.py --check`: clean.
 - OWED (618/619): test-codegen, test-registry, the full gate; mech rows S1533/S1534 re-run in 619 (S1533 should still
   DETECT via u4 and the whole-map cells; not run here).
+
+## substmech (triage of the 619 mech red)
+
+- **S1365**: the plant compiled; the `tu` cell caught it only through the artifacts' compile error (`PAIR_MAXNUM` undeclared), which the CHK-1 gate rightly read as ANOMALY. Fix: a guard cell in run_subst_tests.sh that compiles and runs `pair.h` + `pair_sub.h` in one TU and checks `PCREC_SUBST_GEN_pair_H` is defined; the later one-TU cell no longer prints compiler text when the guard cell already failed. Row S1365 now reads DETECTED (3 fail / 8913 pass).
+- **nocompile_selftest rc=1**: the gate was fine; two expectations were wrong. The matrix exits 0 on an anomaly (only an UNEXPECTED row exits 1), and Sy2's pattern wanted a tab row that exists only on stderr (stdout carries the space-padded table). Now it checks the trailer's `anomalies: 1` and the table rows.
+- **S1352** UNDETECTED stays EXPECTED (equivalent mutant).
+- Proof: queue job 619 re-run on aab54ee01: 59 rows, unexpected 0, undetected 1 (S1352), anomalies 0; self-test 4 ok, rc=0. NOT run: a gate-disabled self-test (it would turn Sy1 into DETECTED, failing checks 2 and 3 by construction; a ~10 min run was not spent on it).
+- test-subst gains one ok (guard cell); no pinned count was found to move, and 618 had already run green before the edit.
