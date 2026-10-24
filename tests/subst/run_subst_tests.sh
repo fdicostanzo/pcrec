@@ -237,6 +237,18 @@ for h in "$WORK/hs.h" "$WORK/hs.c"; do
     if LC_ALL=C grep -q '[^[:print:][:space:]]' "$h"; then bad "$(basename "$h") is not ASCII"; else ok; fi
 done
 grep -q '^#define HS_NVREFS 1$' "$WORK/hs.h" && ok || bad "hs.h carries no HS_NVREFS 1"
+# a case region over every item kind, both encodings: ASCII, and clean under
+# -Wshadow too (its locals and voids follow what its items read)
+i=0
+for t in '\Ux' '\U$1' '\U${1:+a:b}' '\U$0' '\U${!v}' '\U$_' '\U$`' "\\U\$'" '\U${0:+a:b}' 'a\u$1\E${!v}' '\L${n}' '${1:+\Ua:b}'; do
+    i=$((i + 1))
+    for e in byte utf8; do
+        if "$TIMEOUT_BIN" 60 "$PCREC" -e $e --features subst-extended -p cr$i -o "$WORK/cr$i$e.c" --subst "$t" 2> "$WORK/cr.err" &&
+           "$CC" $GENCFLAGS -Wshadow -c -I "$WORK" -o "$WORK/cr.o" "$WORK/cr$i$e.c" 2> "$WORK/cr.err"; then ok
+        else bad "case region '$t' ($e): $(head -2 "$WORK/cr.err")"; fi
+        if LC_ALL=C grep -q '[^[:print:][:space:]]' "$WORK/cr$i$e.c"; then bad "case region '$t' ($e) is not ASCII"; else ok; fi
+    done
+done
 # an rx and a subst artifact of ONE prefix, and two subst artifacts of
 # different prefixes, in one translation unit, the numbered-reference
 # assert of §3¶3 included; two whose prefixes differ only in case are the

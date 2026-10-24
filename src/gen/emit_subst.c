@@ -826,19 +826,22 @@ static const struct {
 
 /* The artifact's state tables from `case_rules`: next[event][state] and,
  * for a character, mode[state] (0 itself, 1 upper, 2 lower), with state =
- * region * 3 + one-shot. */
-static void case_state_tables(unsigned char next[SUBST_NEVENTS][9], unsigned char mode[9])
+ * region * 3 + one-shot. False when an event finds no row (each event's
+ * last row must be unconditional): the caller fails the artifact loudly. */
+static bool case_state_tables(unsigned char next[SUBST_NEVENTS][9], unsigned char mode[9])
 {
     for (int ev = 0; ev < SUBST_NEVENTS; ev++)
         for (int st = 0; st < 9; st++) {
             const int region = st / 3, one = st % 3;
             const int ecase = ev == SUBST_EV_UPPER || ev == SUBST_EV_ONE_UPPER ? 1 : 2;
             size_t r = 0;
-            while (!(case_rules[r].events & (1u << ev))
-                   || (case_rules[r].when == CW_REGION && !region)
-                   || (case_rules[r].when == CW_NO_REGION && region)
-                   || (case_rules[r].when == CW_ONESHOT && !one))
-                r++;                      /* the last row of each event is unconditional */
+            while (r < sizeof case_rules / sizeof case_rules[0]
+                   && (!(case_rules[r].events & (1u << ev))
+                       || (case_rules[r].when == CW_REGION && !region)
+                       || (case_rules[r].when == CW_NO_REGION && region)
+                       || (case_rules[r].when == CW_ONESHOT && !one)))
+                r++;
+            if (r == sizeof case_rules / sizeof case_rules[0]) return false;
             const int nr = case_rules[r].region == CB_KEEP ? region
                          : case_rules[r].region == CB_NONE ? 0 : ecase;
             const int no = case_rules[r].oneshot == CB_KEEP ? one
@@ -848,6 +851,7 @@ static void case_state_tables(unsigned char next[SUBST_NEVENTS][9], unsigned cha
                 mode[st] = (unsigned char)(case_rules[r].chr == CC_ONESHOT ? one
                                          : case_rules[r].chr == CC_REGION ? region : 0);
         }
+    return true;
 }
 
 /* The case region's machinery: the state tables, the case step (ASCII and
@@ -856,10 +860,13 @@ static void case_state_tables(unsigned char next[SUBST_NEVENTS][9], unsigned cha
 static void emit_case_kit(StrBuf *c, const char *p, bool utf)
 {
     unsigned char next[SUBST_NEVENTS][9], mode[9];
-    case_state_tables(next, mode);
+    if (!case_state_tables(next, mode)) {      /* a pcrec defect: the artifact must not build */
+        pcrec_sb_puts(c, "\n#error \"pcrec internal error: the subst case table has an event with no row\"\n");
+        return;
+    }
     pcrec_sb_printf(c, "\n/* The case state (region * 3 + one-shot; 0 none, 1 upper, 2 lower) after\n"
                        " * \\U \\L \\u \\l \\E and a character, and a character's case in each\n"
-                       " * state: docs/spec/subst_api.md §2¶13's table. */\n"
+                       " * state: docs/spec/subst_api.md section 2 para 13's table. */\n"
                        "static const unsigned char %s_case_next[%d][9] = {\n", p, SUBST_NEVENTS);
     for (int ev = 0; ev < SUBST_NEVENTS; ev++) {
         pcrec_sb_puts(c, "    {");
@@ -871,7 +878,7 @@ static void emit_case_kit(StrBuf *c, const char *p, bool utf)
     pcrec_sb_puts(c, " };\n");
     if (!utf)
         pcrec_sb_printf(c,
-            "\n/* The case step under byte: ASCII letters only (§2¶14). */\n"
+            "\n/* The case step under byte: ASCII letters only (subst_api.md section 2 para 14). */\n"
             "static size_t %s_case_bytes(unsigned char *dst, const unsigned char *b, size_t n,\n"
             "                            int first, int rest)\n"
             "{\n"
@@ -978,22 +985,56 @@ static void emit_region_items(StrBuf *c, const char *p, const SubstTmpl *t, size
     }
 }
 
+/* What the case region's items read (emit_region_items, item by item), so
+ * `<prefix>_region` declares only the locals it uses and voids only the
+ * parameters it does not. */
+enum { RU_S = 1, RU_C = 2, RU_REF = 4, RU_COND = 8, RU_CTX = 16 };
+static unsigned region_uses(const SubstTmpl *t)
+{
+    unsigned u = 0;
+    for (size_t i = t->region; i < t->nitems; i++) {
+        const SubstItem *it = &t->items[i];
+        switch (it->kind) {
+        case SUBST_GROUP:
+        case SUBST_NAME:
+            u |= RU_S | RU_C | (it->kind == SUBST_NAME || it->num ? RU_REF : 0);
+            break;
+        case SUBST_SUBJECT: u |= RU_S; break;
+        case SUBST_VAR:     u |= RU_CTX; break;
+        case SUBST_BEFORE:
+        case SUBST_AFTER:   u |= RU_S | RU_C; break;
+        case SUBST_COND:    if (it->num) u |= RU_C | RU_COND; break;
+        default:            break;
+        }
+    }
+    return u;
+}
+
 /* `<prefix>_region`: the case region of one match (§4¶8), its bytes
  * written at dst (NULL: counted only) and their count in *len. The case
  * state starts at none for every match. */
 static void emit_region(StrBuf *c, const char *p, const SubstTmpl *t)
 {
+    const unsigned u = region_uses(t);
     pcrec_sb_printf(c,
-        "\n/* Match c's case region (docs/spec/subst_api.md §4¶8): its bytes, case\n"
-        " * forcing applied, written at dst (NULL: counted only) and counted in *len. */\n"
+        "\n/* Match c's case region (docs/spec/subst_api.md section 4 para 8): its bytes,\n"
+        " * case forcing applied, written at dst (NULL: counted only) and counted in *len. */\n"
         "static int %s_region(const rx_ctx *ctx, const pcrec_subst_map *map, ptrdiff_t (*c)[2],\n"
         "                     size_t nc, unsigned flags, unsigned char *dst, size_t *len)\n"
-        "{\n"
-        "    const unsigned char *s = ctx->subject ? ctx->subject : pcrec_subst_empty;\n"
-        "    pcrec_subst_piece g = { pcrec_subst_empty, 0 };\n"
-        "    size_t w = 0;\n"
-        "    int st = 0, rc = 0, sl = 0;\n"
-        "    (void)map; (void)c; (void)nc; (void)flags; (void)s; (void)g; (void)rc; (void)sl;\n", p);
+        "{\n", p);
+    if (u & RU_S)
+        pcrec_sb_puts(c, "    const unsigned char *s = ctx->subject ? ctx->subject : pcrec_subst_empty;\n");
+    if (u & RU_REF)
+        pcrec_sb_puts(c, "    pcrec_subst_piece g = { pcrec_subst_empty, 0 };\n"
+                         "    int rc;\n");
+    if (u & RU_COND)
+        pcrec_sb_puts(c, "    int sl;\n");
+    pcrec_sb_puts(c, "    size_t w = 0;\n"
+                     "    int st = 0;\n");
+    if (!(u & (RU_REF | RU_COND))) pcrec_sb_puts(c, "    (void)map; (void)nc;\n");
+    if (!(u & RU_C))               pcrec_sb_puts(c, "    (void)c;\n");
+    if (!(u & RU_REF))             pcrec_sb_puts(c, "    (void)flags;\n");
+    if (!(u & (RU_S | RU_CTX)))    pcrec_sb_puts(c, "    (void)ctx;\n");
     emit_region_items(c, p, t, t->region, t->nitems, 0);
     pcrec_sb_puts(c, "    *len = w;\n    return 0;\n}\n");
 }
@@ -1050,8 +1091,8 @@ static void emit_subst_render_head(StrBuf *c, const char *p, const SubstTmpl *t,
     pcrec_sb_puts(c, ")\n        return PCREC_SUBST_MISMATCH;\n");
     if (t->nvrefs)
         pcrec_sb_printf(c, "    if (flags & PCREC_SUBST_STRICT)\n"
-                           "        for (int j = 0; j < %d; j++)\n"
-                           "            if (!ctx->vars[j].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);
+                           "        for (int v = 0; v < %d; v++)\n"
+                           "            if (!ctx->vars[v].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);
     pcrec_sb_puts(c, "    if (o->n > o->cap || (P && k > (o->cap - o->n) / P)) {\n"
                      "        o->need = (P && k > (SIZE_MAX - o->n) / P) ? SIZE_MAX : o->n + k * P;\n"
                      "        return PCREC_SUBST_NOSPACE;\n"
