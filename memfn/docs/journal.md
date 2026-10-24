@@ -2896,3 +2896,18 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - 588 gaining an 11-row BASE two-stream term;
   - the look-ahead doubling from 128 (instruction-chosen; time unmeasured).
   Job 621-kit-s3-heavy is queued behind main's 619. Then 588 in a window main clears with Frank.
+
+## 2026-10-24 — session close (Frank's /close)
+
+S3 is fixed on lane/memfn-s3fix @ e5362a59c. Job 621 is running in the queue; its verdict is read on wake. Rulings recorded today:
+- the EMIT-4 wart is kept as the pricing test;
+- the renames;
+- the per-call bar allowance;
+- the pricing witnesses, including dense hex;
+- no SIMD-first.
+
+Lessons:
+- A boxlock chain starves the queue, and a busy lane does not read messages (now a boxlock mechanism on main).
+- A coordinator's spawned critics lose their replies; files carry the results.
+
+wake.md is rewritten.
