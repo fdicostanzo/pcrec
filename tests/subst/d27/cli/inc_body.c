@@ -30,10 +30,12 @@ int main(void)
         k++;
     }
     if (it.rc < 0 || w == 0) return 5;
-    /* RX_FOREACH comes with any subst header (§1¶3) */
-    size_t n = 0;
+    /* substland2: RX_FOREACH is dropped (D175); the record's batch entry,
+     * reachable from any subst header (§1¶3, §6¶5a), counts the same matches */
+    size_t n = 0, got;
     it = RX_ITER_INIT(s, sizeof s);
-    RX_FOREACH(rx, &it, m) n++;
-    if (n != k) { printf("foreach %zu vs %zu\n", n, k); return 4; }
+    ptrdiff_t buf[8 * 8][2];
+    do n += got = rx->next_n(&it, buf, 8); while (got == 8);
+    if (it.rc < 0 || n != k) { printf("next_n %zu vs %zu\n", n, k); return 4; }
     return 0;
 }

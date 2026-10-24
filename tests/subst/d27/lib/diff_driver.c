@@ -19,7 +19,8 @@
  * rx_subst_replace_all; a numeric limit through §6¶2's per-match recipe,
  * counting the loop (§6¶3); `nogap` (no RX_SUBST_GAPS, §6¶6) through the
  * same recipe without the tail; a pattern with more capture pairs than
- * RX_FOREACH_PAIRS (replace-all's limit, §10¶7: d_big's 300-group rows) also
+ * RX_SUBST_BATCH_PAIRS (replace-all's limit, §10¶7: d_big's 300-group rows;
+ * substland2: the bound renamed when RX_FOREACH was dropped, D175) also
  * takes the recipe for limit `all`.  The `all` path is cross-checked against
  * §6¶4's batch recipe through rx_subst_flatten (§10¶10).  Named templates
  * get a map from pcrec_subst_map_names (no RX_SUBST_MAP_ABSENT).
@@ -170,9 +171,9 @@ static int recipe(struct env *e, rx_iter *it, const rx_ctx *ctx, size_t limit, i
 static int exec(struct env *e, rx_iter *it, const rx_ctx *ctx, size_t limit, int gaps,
                 unsigned char *out, size_t cap, size_t *len, size_t *k)
 {
-    /* §10¶7: replace-all needs one match's pairs inside RX_FOREACH_PAIRS (a
+    /* §10¶7: replace-all needs one match's pairs inside RX_SUBST_BATCH_PAIRS (a
      * wider pattern is MISMATCH there); such a case takes §6¶2's recipe */
-    if (!gaps || limit != SIZE_MAX || e->ncap > RX_FOREACH_PAIRS) return recipe(e, it, ctx, limit, gaps, out, cap, len, k);
+    if (!gaps || limit != SIZE_MAX || e->ncap > RX_SUBST_BATCH_PAIRS) return recipe(e, it, ctx, limit, gaps, out, cap, len, k);
     rx_subst_out o = { .pc = e->pc, .cap = e->pccap };
     int r = rx_subst_replace_all(e->t->rx->next_n, it, e->t->sub, ctx, e->mp,
                                  e->t->strict ? RX_SUBST_STRICT : 0, &o, out, cap, len);

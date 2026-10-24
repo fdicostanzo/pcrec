@@ -41,7 +41,7 @@ A cell is one TAB-separated line (`#` lines are comments):
             be carried by at least one PASSING cell (K35)
 
 Per cell the generic arms hold too (subst_drv.c's header names each): with
-LIMIT all, §6¶4's batch recipe, §6¶5's RX_FOREACH recipe, replace-all into
+LIMIT all, §6¶4's batch recipe, §6¶5's generic recipe, replace-all into
 a buffer that fits (the count), sized only, at exact capacity, one byte
 short (NOSPACE with the full length), and over a 0xA5-dirty iterator answer
 what §6¶2's per-match recipe answers; replace-all refuses an ENDED iterator;
@@ -75,19 +75,19 @@ CODES = {
     'STEPS': -2,
 }
 PCRE2_NOMEMORY = -48
-RX_FOREACH_PAIRS = 256      # match_api.md §3.8.2's default
+RX_SUBST_BATCH_PAIRS = 256  # subst_api.md §10¶6a's default
 REACH_NEED = {}
 REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
               'nogroupceiling', 'batch64', 'illformed', 'badspancorner', 'nul',
               'vars', 'abi', 'giveup', 'subject', 'before', 'after', 'amp', 'start',
               'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',
               'blen', 'negnum', 'flatsat', 'absent', 'lim', 'short', 'exact', 'size',
-              'count', 'batch', 'foreach', 'dirty', 'stale', 'nomap', 'hand', 'room',
+              'count', 'batch', 'generic', 'dirty', 'stale', 'nomap', 'hand', 'room',
               'mis', 'nog', 'pairs', 'nmchk']
 REACH_NEED['subst-extended'] = [
     'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539',
     'scr', 'bound', 'illcase', 'cond', 'esc', 'casetable', 'nest',
-    'size', 'count', 'batch', 'foreach', 'dirty', 'room', 'mis', 'unk', 'nogap']
+    'size', 'count', 'batch', 'generic', 'dirty', 'room', 'mis', 'unk', 'nogap']
 
 
 def decode(t):
@@ -301,13 +301,13 @@ def main():
                 same = '0,%d,%s' % (L, hx)
                 check(main_ == ['0', str(L), n, hx], '%s: main %s, want 0,%d,%s,%r' % (cid, g['main'], L, n, want))
                 arms = [('nomap', 'nomap', '%s,0,-' % mm if composed else same), ('hand', 'hand', same)]
-                if all_ and int(g['nc']) > RX_FOREACH_PAIRS:
-                    # more pairs per match than the stack array: RX_FOREACH and
-                    # replace-all refuse (match_api.md §3.8.2¶5, subst_api.md §10¶7)
-                    arms += [('batch', 'batch', same), ('fe', 'pairs', '%d,0,-' % CODES['ITER']),
+                if all_ and int(g['nc']) > RX_SUBST_BATCH_PAIRS:
+                    # more pairs per match than replace-all's stack batch: it
+                    # refuses (subst_api.md §10¶7); the recipes have no bound
+                    arms += [('batch', 'batch', same), ('gen', 'generic', same),
                              ('ra', 'pairs', '%s,0,-' % mm), ('size', 'pairs', '%s,0' % mm)]
                 elif all_:
-                    arms += [('batch', 'batch', same), ('fe', 'foreach', same),
+                    arms += [('batch', 'batch', same), ('gen', 'generic', same),
                              ('ra', 'count', '%s,%d,%s' % (n, L, hx)), ('size', 'size', '%s,%d' % (n, L)),
                              ('exact', 'exact', '%s,%d' % (n, L)), ('dirty', 'dirty', '%s,%d,%s' % (n, L, hx))]
                     if L:
@@ -320,7 +320,7 @@ def main():
             else:
                 code = str(CODES[rest])
                 check(main_[0] == code, '%s: main %s, want %s' % (cid, g['main'], code))
-                for a in (['batch', 'fe', 'ra', 'size', 'dirty'] if all_ else []) + ['nomap', 'hand']:
+                for a in (['batch', 'gen', 'ra', 'size', 'dirty'] if all_ else []) + ['nomap', 'hand']:
                     if a in g:
                         check(g[a].split(',')[0] == code, '%s: %s %s, want %s' % (cid, a, g[a], code))
             if all_ and check(g.get('stale') == str(CODES['ITER']),

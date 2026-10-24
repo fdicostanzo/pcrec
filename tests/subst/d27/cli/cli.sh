@@ -150,12 +150,49 @@ printf '#define PCREC_RX_ABI_H 83\n#include "s1.h"\nint main(void){return 0;}\n'
 if gcc $SAN -c -o /dev/null "$O/abi_old.c" 2> "$O/abi_old.err"; then bad abi.mismatch.error "compiled"; else grep -q '#error' "$O/abi_old.err" && grep -q 'abi' "$O/abi_old.err" && ok abi.mismatch.error || bad abi.mismatch.error "$(head -c 300 "$O/abi_old.err")"; fi
 printf '#include "rx.h"\n#undef PCREC_RX_ABI_H\n#define PCREC_RX_ABI_H 85\n#include "s1.h"\nint main(void){return 0;}\n' > "$O/abi_new.c"
 if gcc $SAN -c -o /dev/null "$O/abi_new.c" 2> "$O/abi_new.err"; then bad abi.mismatch.newer "compiled"; else ok abi.mismatch.newer; fi
-# substb2: PCREC_SUBST_PAIRS (R3's per-TU glue buffer) is retired. RX_FOREACH_PAIRS is the one buffer macro left (§10¶6a); a
-# larger value than the default must still compile and run the same program
-for pairs in 256 1024 100000; do
-  id="foreachpairs.$pairs"
-  { echo "#define RX_FOREACH_PAIRS $pairs"; echo '#include "rx.h"'; echo '#include "s1.h"'; cat "$D/inc_body.c"; } > "$O/$id.c"
-  gcc $SAN -DHAVE_RX=1 -o "$O/$id" "$O/$id.c" "$O"/rx.o "$O"/ra.o "$O"/s1.o "$O"/s2.o 2> "$O/$id.err" && "$O/$id" > "$O/$id.out" 2>&1 \
+# substland2: RX_FOREACH_PAIRS was dropped with RX_FOREACH (D175), so the three foreachpairs.* cases became batchpairs.*.
+# RX_SUBST_BATCH_PAIRS, the support unit's one overridable bound (§10¶6a), set by the defining TU: replace-all answers what the
+# per-match loop answers (rx is (a)(b)?, 3 pairs a match); a bound below one match's pairs is MISMATCH (§10¶7)
+$T "$P" --emit-support -o "$O/support_bp.h" 2>/dev/null
+cat > "$O/batch_body.c" <<'EOF'
+#include "rx.h"
+#include "s1.h"
+#define PCREC_SUPPORT_IMPLEMENTATION
+#include "support_bp.h"
+#include <stdio.h>
+int main(void)
+{
+    static unsigned char s[3000], out[6000];
+    for (int i = 0; i < 3000; i++) s[i] = "abxya"[i % 5];
+    rx_iter it = RX_ITER_INIT(s, sizeof s);
+    rx_var vres[1];
+    rx_ctx ctx;
+    ptrdiff_t caps[RX_NCAPS][2];
+    rx_subst_piece pc[64 * S1_PIECES];
+    rx_subst_out o = { .pc = pc, .cap = 64 * S1_PIECES };
+    size_t k = 0, w = 0, len;
+    int bad, rc = rx_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
+    if (rc < 0) { printf("setup %d\n", rc); return 2; }
+    while (rx_next(&it, caps)) {
+        o.n = 0; o.sn = 0;
+        if ((rc = s1_render(&ctx, NULL, caps, 1, RX_SUBST_GAPS, &o)) < 0) { printf("rc %d\n", rc); return 3; }
+        for (size_t i = 0; i < o.n; i++) w += pc[i].len;
+        k++;
+    }
+    if (it.rc < 0) return 5;
+    w += sizeof s - o.prev;                                   /* the tail */
+    it = RX_ITER_INIT(s, sizeof s);
+    rx_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
+    rc = rx_subst_replace_all(rx_next_n, &it, &s1_subst_info, &ctx, NULL, 0, &o, out, sizeof out, &len);
+    if (RX_SUBST_BATCH_PAIRS < RX_NCAPS) return rc != PCREC_SUBST_MISMATCH ? (printf("rc %d, want MISMATCH\n", rc), 6) : 0;
+    if (rc < 0 || (size_t)rc != k || len != w) { printf("rc %d len %zu vs %zu %zu\n", rc, len, k, w); return 4; }
+    return 0;
+}
+EOF
+for pairs in 2 3 1024; do
+  id="batchpairs.$pairs"
+  { echo "#define RX_SUBST_BATCH_PAIRS $pairs"; cat "$O/batch_body.c"; } > "$O/$id.c"
+  gcc $SAN -o "$O/$id" "$O/$id.c" "$O"/rx.o "$O"/s1.o 2> "$O/$id.err" && "$O/$id" > "$O/$id.out" 2>&1 \
     && ok "$id" || bad "$id" "$(head -c 400 "$O/$id.err") $(cat "$O/$id.out" 2>/dev/null)"
 done
 # §6¶2's per-match recipe (prefix rx, subst dmy), the stream replaced by a buffer

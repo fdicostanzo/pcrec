@@ -1,7 +1,7 @@
 /* examples/subst/main.c — compiled substitution end to end: the setup
  * wrapper (docs/spec/subst_api.md §6¶9), sizing (§6¶9a), a by-name map
  * (§3¶13), and the per-match (§6¶2), limited (§6¶3), batch (§6¶4) and
- * RX_FOREACH (§6¶5) recipes. Every line it prints is checked by
+ * generic (§6¶5) recipes. Every line it prints is checked by
  * tests/examples/run_examples_tests.sh against expected.txt. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,18 +111,19 @@ static int batch(const unsigned char *s, size_t n, unsigned char **buf, size_t *
     return 0;
 }
 
-/* §6¶5 and §6¶6: RX_FOREACH, replacements only (no RX_SUBST_GAPS), one
- * line per match. */
-static int each(const unsigned char *s, size_t n)
+/* §6¶5 and §6¶6: a loop over the record's next, replacements only (no
+ * RX_SUBST_GAPS), one line per match. */
+static int each(const struct rx_info *rx, const unsigned char *s, size_t n)
 {
     rx_iter it = RX_ITER_INIT(s, n);
     rx_var vres[NUM_NVREFS];
     rx_ctx ctx;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, &date_info, &num_subst_info, NULL, vres, 0, &bad);
+    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, &num_subst_info, NULL, vres, 0, &bad);
     if (rc < 0) return rc;
+    ptrdiff_t m[rx->ncaps][2];
     rx_subst_piece pc[NUM_PIECES];
     rx_subst_out o = { .pc = pc, .cap = NUM_PIECES };
-    RX_FOREACH(&date_info, &it, m) {
+    while (rx->next(&it, m)) {
         o.n = 0; o.sn = 0;
         if ((rc = num_render(&ctx, NULL, m, 1, 0, &o)) < 0) break;
         fputs("each: ", stdout);
@@ -176,5 +177,5 @@ int main(void)
     rc = batch(s, n, &buf, &w);
     printf("batch: %d %.*s\n", rc, (int)w, (const char *)buf);
     free(buf);
-    return each(s, n) < 0;
+    return each(&date_info, s, n) < 0;
 }

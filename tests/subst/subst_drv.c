@@ -29,7 +29,8 @@
  *          match count, output
  *   batch  §6¶4's batch recipe at K = 3 (<rx>_next_n, the batch flattened
  *          into a buffer grown by `append`): rc, length, output
- *   fe     §6¶5's RX_FOREACH recipe: rc, length, output
+ *   gen    §6¶5's generic recipe (a loop over rx_info.next, the element at
+ *          k = 1): rc, length, output
  *   ra     rx_subst_replace_all into a buffer that fits: rc, *len, output
  *   size   replace-all with out == NULL, cap == 0: rc, *len
  *   exact  replace-all at cap == its length: rc, *len
@@ -257,8 +258,8 @@ static int rec_batch(const Cell *c, const rx_subst_map *map, rx_iter *it,
     return rc;
 }
 
-/* §6¶5's RX_FOREACH recipe. */
-static int rec_foreach(const Cell *c, const rx_subst_map *map, rx_iter *it,
+/* §6¶5's generic recipe: a loop over rx_info.next. */
+static int rec_generic(const Cell *c, const rx_subst_map *map, rx_iter *it,
                        unsigned char *out, size_t *len)
 {
     rx_var vres[64];
@@ -266,9 +267,10 @@ static int rec_foreach(const Cell *c, const rx_subst_map *map, rx_iter *it,
     int bad, rc = rx_subst_ctx_init(&ctx, it, c->rx, c->sb, map, vres, c->strict, &bad);
     rx_subst_piece *pc = malloc((size_t)c->sb->npieces * sizeof *pc);
     rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces, SCR };
+    ptrdiff_t (*m)[2] = malloc((size_t)c->rx->ncaps * sizeof *m);
     *len = 0;
-    if (rc < 0) { free(pc); return rc; }
-    RX_FOREACH(c->rx, it, m) {
+    if (rc < 0) { free(m); free(pc); return rc; }
+    while (c->rx->next(it, m)) {
         o.n = 0; o.sn = 0;
         if ((rc = c->sb->render(&ctx, map, m, 1, c->strict | RX_SUBST_GAPS, &o)) < 0) break;
         if (put(out, len, pc, o.n) < 0) { rc = -1000; break; }
@@ -278,6 +280,7 @@ static int rec_foreach(const Cell *c, const rx_subst_map *map, rx_iter *it,
         rx_subst_piece tail = { ctx.subject + o.prev, ctx.len - o.prev };
         if (put(out, len, &tail, 1) < 0) rc = -1000;
     }
+    free(m);
     free(pc);
     return rc;
 }
@@ -476,8 +479,8 @@ int main(void)
             rc = rec_batch(&c, &map, &it, out2, &len);
             arm("batch", rc, len, out2);
             iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
-            rc = rec_foreach(&c, &map, &it, out2, &len);
-            arm("fe", rc, len, out2);
+            rc = rec_generic(&c, &map, &it, out2, &len);
+            arm("gen", rc, len, out2);
             rc = rec_ra(&c, &map, 0, out2, OUTMAX, &len);
             arm("ra", rc, len, out2);
             int rarc = rc;

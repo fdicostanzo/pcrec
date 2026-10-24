@@ -203,7 +203,7 @@ int main(void)
         i2 = RX_ITER_INIT(s, 4);
         rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o0, ob, 16, &L);
         CHECK("glue.cap.below.P", rc == PCREC_SUBST_MISMATCH, "rc %d (o->cap below P: k == 0)", rc);
-        /* the batch is the least of 64, o->cap / P, RX_FOREACH_PAIRS / ncap: one piece-set at a time still works */
+        /* the batch is the least of 64, o->cap / P, RX_SUBST_BATCH_PAIRS / ncap (substland2: the bound renamed, D175): one piece-set at a time still works */
         rx_subst_out o1p = { .pc = pc, .cap = S2_PIECES };
         i2 = RX_ITER_INIT((const unsigned char *)"zabaz", 5);
         rx_subst_ctx_init(&ctx, &i2, ra, &s2_subst_info, NULL, vres, 0, &bad);

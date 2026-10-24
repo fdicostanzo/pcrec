@@ -18,7 +18,8 @@ that substitutes with them. The contract is `docs/spec/subst_api.md`.
   (`PCREC_SUBST_MISSING_REF`), and `pcrec_subst_map_names` builds the map;
 - the recipes the support unit does not write for you: per match to a
   stream (§6¶2), stopping after one match (§6¶3), in batches into a growing
-  buffer (§6¶4), and `RX_FOREACH` with replacements only (§6¶5, §6¶6).
+  buffer (§6¶4), and a loop over the record's `next` with replacements
+  only (§6¶5, §6¶6).
 
 `expected.txt` is its output; `tests/examples/run_examples_tests.sh` builds a
 scratch copy with `-Werror` and compares.

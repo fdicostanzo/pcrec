@@ -24,7 +24,7 @@ byte-identical and keep the libpcre2 / writer answers. Each change is marked
   through `rx_subst_replace_all` (cross-checked against §6¶4's batch recipe
   through `rx_subst_flatten`, §10¶10); a numeric limit through §6¶2's per-match
   recipe, counting the loop (§6¶3); `nogap` through the element without
-  `RX_SUBST_GAPS`; a pattern wider than `RX_FOREACH_PAIRS` (d_big's 300-group
+  `RX_SUBST_GAPS`; a pattern wider than `RX_SUBST_BATCH_PAIRS` (d_big's 300-group
   rows) takes the per-match recipe for `all` too (§10¶7). The `unset` column
   is the run-time `RX_SUBST_STRICT` flag (one subst artifact per template
   now). Named templates get a map from `pcrec_subst_map_names` (no
@@ -62,7 +62,8 @@ replace-all's NOSPACE with `*len` `SIZE_MAX`, and the pieces' own overflow is
 and the `--unset=error` stamp cases (`stamp.unset.empty`, `stamp.unset.error`;
 unset is a flag of the call); `shape.scoped` (the helper reads the caller
 scope only); the `pairs.*` cases (`PCREC_SUBST_PAIRS` is retired; three
-`foreachpairs.*` cases replace them); `glue.limit*` through `pcrec_subst`
+`foreachpairs.*` cases replaced them, and substland2 made those three
+`batchpairs.*` when D175 dropped `RX_FOREACH_PAIRS`); `glue.limit*` through `pcrec_subst`
 (the recipe carries them). `codes.values` drops `PCREC_SUBST_RENDER` (-13 is
 reserved). Re-derived from §3¶2, not from the old text: `needs` order (named
 first, group 0 included) is the reference list's first-appearance order

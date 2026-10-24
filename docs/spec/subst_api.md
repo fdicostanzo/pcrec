@@ -71,8 +71,9 @@ case share their uppercase stamp names (match_api.md §6.3), so the prefixes in
 one translation unit must still differ after uppercasing. A subst header
 enforces that: it opens its stamps with `#ifdef <PREFIX>_PIECES` and an
 `#error` naming the collision. One `#include
-"dmy.h"` is enough to drive the element from any iterator, and `RX_FOREACH`
-comes with it.
+"dmy.h"` is enough to drive the element from any iterator: the shared block
+it carries declares `rx_iter` and the `rx_info` record whose `next` and
+`next_n` a generic loop calls (§6¶5).
 
 <a id="s1-p4"></a>[1¶4] **One build.** A subst artifact, the rx artifacts it is used with
 and the support unit come from the same pcrec build, which means the same
@@ -465,9 +466,9 @@ typedef int rx_substfn(const rx_ctx *ctx, const rx_subst_map *map,
                        rx_subst_out *o);
 ```
 
-<a id="s4-p1a"></a>[4¶1a] `caps` is spelled exactly as `<prefix>_next`, `<prefix>_next_n` and
-`RX_FOREACH`'s body variable spell it, so the array an iterator wrote passes
-straight through with no cast. The element only reads it.
+<a id="s4-p1a"></a>[4¶1a] `caps` is spelled exactly as `<prefix>_next` and `<prefix>_next_n` (and so
+`rx_info.next` and `rx_info.next_n`) spell it, so the array an iterator wrote
+passes straight through with no cast. The element only reads it.
 
 <a id="s4-p2"></a>[4¶2] It renders `k` consecutive matches of one find-all. `caps` holds
 `k * ctx->ncap` pairs, with match `i` at `caps + i * ctx->ncap`, as
@@ -748,11 +749,15 @@ return 0;
 matches of a failing batch (§4¶21) flattens `pc[0, o.n)` before it returns,
 and still writes no tail.
 
-<a id="s6-p5"></a>[6¶5] **With `RX_FOREACH`**, one match per body. The loop's own end
-state is the iterator's, read after the loop as in §6¶2:
+<a id="s6-p5"></a>[6¶5] **Over any artifact's record**, one match per call: a caller
+that holds only an `rx_info` (match_api.md §3.8.2) loops over its `next`, with
+the capture array sized by its `ncaps`. It is §6¶2's loop with the entry read
+from the record, and its end state is the iterator's, read after the loop as
+in §6¶2:
 
 ```c
-RX_FOREACH(&rx_info, &it, m) {
+ptrdiff_t m[rx->ncaps][2];                        /* a VLA: the caller has no NCAPS */
+while (rx->next(&it, m)) {
     o.n = 0; o.sn = 0;
     if ((rc = dmy_render(&ctx, map, m, 1, flags | RX_SUBST_GAPS, &o)) < 0) break;
     consume(pc, o.n);
@@ -763,7 +768,7 @@ if (it.rc < 0) return it.rc;                      /* meaningful: the loop ran to
 ```
 
 <a id="s6-p5a"></a>[6¶5a] `it.rc` is read only when the body did not `break` (match_api.md
-§3.8.2¶4).
+§3.8.2¶4). A batch over the record is §6¶4's loop with `rx->next_n`.
 
 <a id="s6-p6"></a>[6¶6] **Replacements only** (a templated `grep -o`): leave out
 `RX_SUBST_GAPS`. Each match then gets `DMY_PIECES - 1` pieces, and there is no
@@ -1009,9 +1014,12 @@ type exists. `it` is a FRESH or BOUND iterator, and it carries the subject.
 `npieces`. `ctx` and `map` come from the context setup (§7¶3). `o` is the
 caller's workspace: `pc` and `cap` (the piece array), and `scratch` and `scap`
 when `t->uses` has `RX_SUBST_USES_SCRATCH`. The function allocates nothing.
-Its only storage besides `o` is one stack array of `RX_FOREACH_PAIRS` capture
-pairs (match_api.md §3.8.2), so a batch is `k` matches, the least of
-`RX_FOREACH_PAIRS / ctx->ncap`, `o->cap / P` and 64. `P` is `t->npieces`.
+Its only storage besides `o` is one stack array of `RX_SUBST_BATCH_PAIRS`
+capture pairs, so a batch is `k` matches, the least of
+`RX_SUBST_BATCH_PAIRS / ctx->ncap`, `o->cap / P` and 64. `P` is `t->npieces`.
+`RX_SUBST_BATCH_PAIRS` is 256 unless the translation unit that defines the
+support unit (§10¶2) defines it first; it is that unit's only
+caller-overridable bound.
 
 <a id="s10-p7"></a>[10¶7] **Result.** It returns the NUMBER OF MATCHES substituted,
 `>= 0` (`INT_MAX` when there are more), when the whole result, every
@@ -1026,7 +1034,7 @@ function always renders gaps (`RX_SUBST_GAPS`), and another bit is
 `PCREC_ERR_ITER`. `PCREC_SUBST_MISMATCH` is also a `ctx->subject` or `ctx->len` that is not the
 iterator's, a NULL argument, a `t->render` or `next_n` that is NULL, a record
 with `RX_SUBST_USES_SCRATCH` and no `o->scratch`, and `k == 0` (a pattern with
-more than `RX_FOREACH_PAIRS` pairs per match, or an `o->cap` below `P`). The
+more than `RX_SUBST_BATCH_PAIRS` pairs per match, or an `o->cap` below `P`). The
 caller sets `o->pc`, `cap`, `scratch` and `scap`; the function sets
 `n`, `sn`, `prev`, `need` and `sneed` itself (the last two to 0 at the start)
 and ignores their incoming values.
