@@ -3,7 +3,7 @@
 #
 # Plant: pcrec_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1).
 # Witness (RETIRED, see SAB_EXPECT note): the `varunset` cell's dirty arm (`${!v}-$1`, no variables, every rx_iter field 0xA5): a wild pointer read.
-# Reach (K35): token S1352 (cell varunset); tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
+# Reach (K35): none -- an equivalent mutant guards nothing, so its token left REACH_NEED (review 2026-10-24 r1, CHK-8).
 SAB_ID="S1352-ctx-init-reads-fresh-vars"
 SAB_FILE="src/gen/emit_subst.c"
 SAB_SUITES="subst"

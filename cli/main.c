@@ -1006,11 +1006,50 @@ static int cli_operand(CliState *st, const char *a)
     return 0;
 }
 
+/* [M4-SUBST] THE OPTIONS EACH COMPILE-LESS MODE ADMITS (subst_api.md §5¶1,
+ * §10¶2): `--subst`/`--subst-file` and `--emit-support` refuse every other
+ * option by its PRESENCE, whatever value it spells (`--engine=auto` is
+ * refused like `--engine=vm`). A row ending in `=` admits that spelling's
+ * `=VALUE` form. Read once per option token by `cli_parse`. */
+static const struct { const char *tok; bool subst, support; } MODE_ADMITS[] = {
+    { "-o",             true,  true  },
+    { "--emit-support", false, true  },
+    { "--subst",        true,  false },
+    { "--subst-file",   true,  false },
+    { "-p",             true,  false },
+    { "-e",             true,  false },
+    { "--encoding=",    true,  false },
+    { "--features",     true,  false },
+    { "--features=",    true,  false },
+};
+
+/* The first option token on the command line each compile-less mode does
+ * not admit (MODE_ADMITS), or NULL. */
+typedef struct { const char *subst, *support; } CliUnadmitted;
+
+/* Records option token `a` in `*u` where a mode does not admit it. */
+static void mode_admits_note(const char *a, CliUnadmitted *u)
+{
+    bool subst = false, support = false;
+    for (size_t r = 0; r < sizeof MODE_ADMITS / sizeof MODE_ADMITS[0]; r++) {
+        const char *t = MODE_ADMITS[r].tok;
+        const size_t l = strlen(t);
+        if (t[l - 1] == '=' ? !strncmp(a, t, l) : !strcmp(a, t)) {
+            subst = MODE_ADMITS[r].subst;
+            support = MODE_ADMITS[r].support;
+            break;
+        }
+    }
+    if (!subst && !u->subst) u->subst = a;
+    if (!support && !u->support) u->support = a;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
- * same values and the same refusals. */
-static int cli_parse(int argc, char **argv, CliState *st, const char *where)
+ * same values and the same refusals. `u` (NULL for a config block, which
+ * no compile-less mode reads) collects the options the modes do not admit. */
+static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
 {
     pcrec_options opt = st->opt;
     int no_more_opts = 0;
@@ -1037,6 +1076,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (cli_operand(st, a) != 0) return 1;
             continue;
         }
+        if (u && a[0] == '-' && a[1] && strcmp(a, "--") != 0) mode_admits_note(a, u);
         if (!strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
@@ -1584,7 +1624,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * guard reads tokens, and a wrapped name reads as a bare limit. */
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
-        int rc = cli_parse(n, v, &ts, where);
+        int rc = cli_parse(n, v, &ts, where, NULL);
         /* [MEMFN] RQ-1 `--memfn=` carries a POINTER into the split tokens,
          * which die just below: a value the raw line set (it differs from
          * the CLI's own) is kept for the process's life first. */
@@ -2081,8 +2121,10 @@ static char *read_whole_file(const char *path, size_t *len)
 /* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst_api.md §5): `--subst
  * TEMPLATE` or `--subst-file FILE` with `-o`, writing the `.c` and its `.h`
  * (`-o -`: one self-contained `.c` on stdout). Exclusive with `--pattern`,
- * a file operand and every query. Returns 0, or 1 on any refusal. */
-static int cli_subst(const CliState *st)
+ * a file operand and every query. `unadmitted` is the first option token
+ * MODE_ADMITS does not admit for it, or NULL. Returns 0, or 1 on any
+ * refusal. */
+static int cli_subst(const CliState *st, const char *unadmitted)
 {
     if (st->pattern || st->nfiles || cli_modes_active(st) || st->emit_support) {
         cli_err("--subst/--subst-file compiles a template, so it takes no "
@@ -2093,20 +2135,13 @@ static int cli_subst(const CliState *st)
         cli_err("--subst/--subst-file needs -o");
         return 1;
     }
-    /* Every rx option is REFUSED rather than ignored (§5¶1): any
-     * `pcrec_options` field but the prefix and the encoding (the template is
-     * read in `-e`'s encoding), and the CLI's own rx-only flags. Compared
-     * against a default record, so an option added later is refused too.
-     * `--features` names the template's own modules: `subst-extended`
+    /* Every rx option is REFUSED rather than ignored (§5¶1), by its
+     * presence, so a default value and an option added later are refused
+     * too. `--features` names the template's own modules: `subst-extended`
      * (§2¶7) is the one there is. */
-    pcrec_options d;
-    pcrec_default_options(&d);
-    d.prefix = st->opt.prefix;
-    d.encoding = st->opt.encoding;
-    if (memcmp(&d, &st->opt, sizeof d) != 0 || st->pattern_esc ||
-        st->flavour || st->target || st->nlibdirs) {
+    if (unadmitted) {
         cli_err("--subst/--subst-file takes only -p, -e, -o and --features subst-extended: "
-                "an option for a pattern compile was given");
+                "'%s' is an option for a pattern compile", unadmitted);
         return 1;
     }
     if (st->features && strcmp(st->features, "subst-extended") != 0) {
@@ -2159,20 +2194,16 @@ static int cli_subst(const CliState *st)
 
 /* [M4-SUBST] THE SUPPORT-UNIT MODE (docs/spec/subst_api.md §10¶2, cli.md
  * §1.20): `--emit-support` writes the support unit to stdout, or to `-o
- * FILE`. It takes NOTHING else: the whole CliState but `outpath` and the flag
- * itself must equal a fresh one's, so an option added later is refused too.
- * Returns 0, or 1 on a refusal or a write error. */
-static int cli_emit_support(const CliState *st)
+ * FILE`. It takes NOTHING else: `unadmitted`, the first option token
+ * MODE_ADMITS does not admit for it, must be NULL (any value, any option
+ * added later), and there is no file operand. Returns 0, or 1 on a refusal
+ * or a write error. */
+static int cli_emit_support(const CliState *st, const char *unadmitted)
 {
-    CliState rest, fresh;
-    memcpy(&rest, st, sizeof rest);            /* padding included: main zeroed st */
-    memset(&fresh, 0, sizeof fresh);
-    pcrec_default_options(&fresh.opt);
-    rest.outpath = NULL;
-    rest.emit_support = 0;
-    if (memcmp(&rest, &fresh, sizeof rest) != 0) {
+    if (unadmitted || st->nfiles) {
         cli_err("--emit-support takes no pattern, template, query or other option "
-                "(only -o FILE)");
+                "(only -o FILE)%s%s%s", unadmitted ? ": '" : "", unadmitted ? unadmitted : "",
+                unadmitted ? "' was given" : "");
         return 1;
     }
     char *text = pcrec_emit_support();
@@ -2204,9 +2235,10 @@ static int cli_emit_support(const CliState *st)
 int main(int argc, char **argv)
 {
     CliState st;
+    CliUnadmitted unadmitted = { NULL, NULL };
     memset(&st, 0, sizeof st);
     pcrec_default_options(&st.opt);
-    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) {
+    if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0) {
         free(st.libdirs);
         free(st.files);
         return 1;
@@ -2216,13 +2248,13 @@ int main(int argc, char **argv)
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
     if (st.subst || st.subst_file) {
-        const int rc = cli_subst(&st);
+        const int rc = cli_subst(&st, unadmitted.subst);
         free(st.libdirs);
         free(st.files);
         return rc;
     }
     if (st.emit_support) {
-        const int rc = cli_emit_support(&st);
+        const int rc = cli_emit_support(&st, unadmitted.support);
         free(st.libdirs);
         free(st.files);
         return rc;

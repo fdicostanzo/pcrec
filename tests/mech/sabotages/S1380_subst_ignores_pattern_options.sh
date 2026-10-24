@@ -4,7 +4,8 @@
 # (Re-anchored by lane substext: `--features` left this test for its own,
 # `--features subst-extended` being the one module --subst takes.)
 # Plant: --subst ignores a pattern-compile option.
-# Witness: run_subst_tests.sh's option loop (`-i`, `--engine=vm`, ... each refused with --subst).
+# Witness: cli_option_census.py (every option --help and --list-axes document,
+# each refused with --subst by its presence; review CHK-7 re-aimed the row).
 # Reach (K35): tests/subst/run_subst_tests.py fails a run where a REACH_NEED
 # token is carried by no passing cell.
 SAB_ID="S1380-subst-ignores-pattern-options"
@@ -14,5 +15,5 @@ SAB_DESC='--subst ignores a pattern-compile option'
 SAB_DOC_FIGURE='Owed: lane substfix queued this row (docs/dev/lanes/substfix_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1380.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (memcmp(&d, &st->opt, sizeof d) != 0 || st->pattern_esc ||'
-SAB_AFTER='    if (0 || st->pattern_esc ||   /* SABOTAGE S1380 */'
+SAB_BEFORE='    if (unadmitted) {'
+SAB_AFTER='    if (0) {   /* SABOTAGE S1380 */'

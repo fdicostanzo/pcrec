@@ -48,7 +48,7 @@ caseless	-i	(A)	<$1>	blank	all	aA	-	out:<a><A>:2	same	-	-
 ncaps30	-	rep:29:(a)	<$29$1>	blank	all	rep:60:a	-	out:<aa><aa>aa:2	same	-	-
 ncaps300	-	rep:300:(a)	<$300>	blank	all	rep:601:a	-	out:<a><a>a:2	same	-	nogroupceiling
 var	-	(a)	${!v}-$1	blank	all	a	v=X	out:X-a:1	na	-	vars
-varunset	-	(a)	${!v}-$1	blank	all	aa	-	out:-a-a:2	na	-	S1352
+varunset	-	(a)	${!v}-$1	blank	all	aa	-	out:-a-a:2	na	-	-
 varnull	-	(a)	${!v}-$1	blank	all	a	v	out:-a:1	na	-	-
 varfirst	-	(a)	${!v}-$1	blank	all	a	v=1,v=2	out:1-a:1	na	-	-
 varerr	-	(a)	${!v}-$1	strict	all	a	-	rc:UNSET_VAR	na	-	-

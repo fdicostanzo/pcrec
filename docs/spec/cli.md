@@ -319,12 +319,12 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-19"></a>
 ### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
 
-<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them; `--features` is accepted only as `--features subst-extended`, the template module of `subst_api.md` §2¶7. A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them by its presence, a default value included (`--engine=auto`); `--features` is accepted only as `--features subst-extended`, the template module of `subst_api.md` §2¶7. A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
 
 <a id="s1-20"></a>
 ### 1.20 `--emit-support`: the subst support unit
 
-<a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
+<a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any by its presence, a default value included. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

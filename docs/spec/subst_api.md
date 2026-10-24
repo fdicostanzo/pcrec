@@ -659,6 +659,8 @@ file operand or a query. `-e` is the template's encoding (§2¶5, default
 naming anything else is refused with `--subst`. Every other
 option is a pattern compile's and is REFUSED with `--subst`, never ignored:
 `-i`, `--no-captures`, `--engine=`, `--emit-main`, `--trace` and the rest.
+The refusal is by PRESENCE: an option spelled with its default value
+(`--engine=auto`, `--tune=0`) is refused like any other.
 Unset handling is a flag of the call (§4¶23), not an option. `-p` follows
 `pcrec_compile`'s prefix rules (`docs/spec/cli.md`). The template compiler has
 no library entry (`lib/pcrec.h` names none) and is reached only through the
@@ -967,7 +969,7 @@ unit.
 
 <a id="s10-p2"></a>[10¶2] **`pcrec --emit-support [-o FILE]`** writes it: one file, to
 stdout by default or to FILE. It needs no other argument, and it refuses any
-pattern, template, query or other option. The file holds the rx shared block
+pattern, template, query or other option, by its presence (§5¶1). The file holds the rx shared block
 and the subst types block under their guards, the support functions'
 declarations, and their definitions under `#ifdef
 PCREC_SUPPORT_IMPLEMENTATION`. A program includes it wherever it likes, and

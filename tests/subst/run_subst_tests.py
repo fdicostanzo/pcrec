@@ -77,7 +77,7 @@ CODES = {
 PCRE2_NOMEMORY = -48
 PCREC_SUBST_BATCH_PAIRS = 256  # subst_api.md §10¶6a's default
 REACH_NEED = {}
-REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
+REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1354', 'S1355',
               'nogroupceiling', 'batch64', 'illformed', 'badspancorner', 'nul',
               'vars', 'abi', 'giveup', 'subject', 'before', 'after', 'amp', 'start',
               'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',

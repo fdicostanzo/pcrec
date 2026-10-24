@@ -174,11 +174,16 @@ done
 for pfx in rx_shape pcrec_supports pcrecx pcrec_x rx_subst rx_group; do     # no family
     if "$TIMEOUT_BIN" 60 "$PCREC" -p $pfx -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix $pfx (no family) was refused"; fi
 done
-# every pattern-compile option is refused with --subst, never ignored (§5¶1)
-for fl in -i --no-captures --engine=vm --emit-main --trace "--features all" --ucp --max-nfa-states=99999999; do
-    if "$TIMEOUT_BIN" 60 "$PCREC" $fl -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "--subst accepted $fl"; else ok; fi
-done
-if "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "--subst refused -e utf8"; fi
+# every documented option is refused with --subst and with --emit-support by
+# its PRESENCE, a default value included (§5¶1, §10¶2); the population is
+# --help's and --list-axes' own (cli_option_census.py)
+python3 -I "$SCRIPT_DIR/cli_option_census.py" "$PCREC" "$WORK/census" > "$WORK/census.log" 2>&1
+crc=$?
+grep -v '^checks ' "$WORK/census.log"
+p="$(sed -n 's/^checks passed: //p' "$WORK/census.log")"
+f="$(sed -n 's/^checks failed: //p' "$WORK/census.log")"
+pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
+[ "$crc" = 0 ] || [ "${f:-1}" != 0 ] || bad "cli_option_census.py exited $crc"
 if "$TIMEOUT_BIN" 60 "$PCREC" -p 'a__b' -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then
     bad "a reserved prefix (a__b) compiled a subst"
 else ok; fi
