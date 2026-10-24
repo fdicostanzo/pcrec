@@ -2855,3 +2855,18 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Main reserved the kit's sabotage-id range **S1540-S1559** (S1540 = the new PAIR plant); main's lanes stay below S1540.
 - The critic skill was renamed pcrec-critic: one opus coordinator per round, results as files, framework notes in docs/dev/meta/coordinator_framework.md.
 - 2026-10-23 evening: the iterators LANDED on main (b8c66a739) and took **abi 84**, so S3 renumbers to **85** at its landing (merge main into the S3 branch, then the grep ritual). Frank's full-suite battery (D177) runs from the box queue until about 08:00 2026-10-24: no timing until then (588 waits for main's word), and heavy correctness queues behind it.
+
+## 2026-10-23 (close, at Frank's /close) — S3 built with PAIR; checks trailing; stop-ranking ruled
+
+- **S3 state:** lane/memfn-s3pair @ 36422a84e (S3 commit bc675b020, abi 84 provisional → must become **85**: the iterators took 84 on main).
+  - The C1 fix and the PAIR widening are in, plus the r2 review fixes.
+  - Answers are clean: diff_r2 7,200 cases, 0 bad. Codegen 16/16, wreply 112/0, G2 10,042/0, plants 18/18.
+- **Trailing checks** (606 at the C1 tip and the s3pair census; NO answer change):
+  - the census twin rule (165 + 19 rows);
+  - test-cpset-structure's stale `(?i)HeLLo` EMITTED_BYTES pin;
+  - test-encoding-checks: cover_pick's reader, the K50 list, and 4 byte/utf8 identity pairs to prove.
+  - Lane s3pins went idle with partial edits, committed as UNVERIFIED WIP 36422a84e: the census rule and cover_pick only. The pin, K50 and identity proof are NOT done, and no section was rerun. Stopped at close.
+- **Reviews:** 2026-10-23-r1 (blinded, 4 critics) and r2 (the code-critic skill's first use). The skill is now pcrec-critic (one coordinator).
+- **Stop-ranking:** Q1-Q6 and truncation ruled (D176, [MEASURE-SET], [MEMFN-UNBOUNDED-SPANS]/[MEMFN-PAIRSTOP]/[MEMFN-PAIRSIMD]).
+- **Box:** Frank's full-suite battery holds it until ~08:00 2026-10-24; no timing until main says.
+- **Kit sabotage range:** S1540-S1559.
