@@ -1132,6 +1132,20 @@ declare -A GIVEUP1_ALLOWANCE=(
 # exhausts the frame budget. Group E4's mechanism (§2.29 necessary-byte
 # pre-check on recursion; nomatch -> give-up (frames)).
     ["-fno-req-byte|tests/possessify/composition_d27.rxt:8336"]="tuning.md §2.29 (Group E4's mechanism): the necessary-byte pre-check proves nomatch with one memchr, -fno-req-byte reopens the recursion walk — default nomatch, axis gives up (frames)"
+#
+# GROUP I — tests/recursion/inlookaround_self.rxt:108,117,118,124,125 (langfix
+# corpus, 2026-10-22; [AXES-GIVEUP-KEYS], full-suite triage 20261023_5596c3207):
+# the ACCEPTED recursion-loop give-ups. DEFAULT answers nomatch; the denied
+# prefilter lets the matcher reach the recursion-loop give-up (trc=3 frames).
+# :108 under `-fno-req-byte` and `-fno-req-run`; :117,118,124,125 under
+# `-fno-start-set` (the product arm `--engine=vm -fno-start-set` inherits it).
+# Not a miscompile: mismatches=0 on every axis.
+    ["-fno-req-byte|tests/recursion/inlookaround_self.rxt:108"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-req-byte leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
+    ["-fno-req-run|tests/recursion/inlookaround_self.rxt:108"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-req-run leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
+    ["-fno-start-set|tests/recursion/inlookaround_self.rxt:117"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
+    ["-fno-start-set|tests/recursion/inlookaround_self.rxt:118"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
+    ["-fno-start-set|tests/recursion/inlookaround_self.rxt:124"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
+    ["-fno-start-set|tests/recursion/inlookaround_self.rxt:125"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
 )
 
 # ============================================================================

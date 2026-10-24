@@ -27,11 +27,16 @@
 # rows included) and dfa_form_derive's precondition-(8) read-back — the
 # latter reads the same field, so it cannot, which is recorded here rather
 # than discovered.
+# FLIPPED 2026-10-24 (lane fsfix, full-suite 20261023_5596c3207 triage): the
+# "SHIPS UNDETECTED" account above is the 2026-09-25 record. The matrix now
+# reads this row DETECTED (scanedge:3fail/13pass, tri-mech), so a later
+# change made the plant reachable; the row is expected DETECTED and the
+# header above is history, not the current outcome.
 SAB_ID="S284-run-rows-reseeds-false"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="scanedge harness"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
-SAB_EXPECT=UNDETECTED
+SAB_EXPECT=DETECTED
 SAB_DESC="the run-pinned rows declare reseeds = false though their emitters reseed a seeded machine, so scanedge.c's precondition (8) stops refusing a chain head that is a seed target on those machines — unreachable on every run-row machine the corpus, the bench and 21 constructed witnesses produce"
 SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build): a scratch build with this plant moves 0 artifacts over 151 corpus + 94 bench run-row artifact-configs (2 seeded, both wild-secrets-github-pat) and 21 constructed seeded witnesses (docs/dev/optloop/s1/rowj_reach_output.txt); single-row mech: UNDETECTED (EXPECTED) -- reach:ok(1/1), scanedge:0fail/14pass, corpus:0fail/55pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S284."
 # [MECH-REACH] the site IS exercised: a seeded run-row machine with a scan edge.
