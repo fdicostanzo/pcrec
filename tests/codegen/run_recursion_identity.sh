@@ -1276,7 +1276,11 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # the manager re-pins to the merge (the self-pin convention).
 # lane nomacro (2026-10-23): RX_FOREACH dropped (D175) from the unlanded 84 event; the (B) pin moves to the lane's src commit, the manager re-pins to the merge.
 # lane iterland (2026-10-22): the stack lands as one 83 -> 84 event; re-pinned to its merge 934f8bed1.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-4f39644d8}"   # lane iterfix2 (2026-10-23): the r2 review's fixes, the 84 event amended, src identical to this commit (was 24d2888f5, lane nomacro, RX_FOREACH dropped; before it 934f8bed1, the lane/iterland stack pre-nomacro; before it 881eac3cf, the I4 lane self-pin; before it 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
+# [MEMFN] D172 S3 SELF-PIN (lane s3pair, 2026-10-24), abi 84 -> 85: the cover
+# LOCATE row routed by default (the kit's window family); every other artifact
+# moves only the abi digits. `450dca216` is the lane's last src commit; the
+# manager re-pins to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-450dca216}"   # lane s3pair (2026-10-24), D172 S3 abi 85 (was 4f39644d8, lane iterfix2 (2026-10-23): the r2 review's fixes, the 84 event amended, src identical to this commit (was 24d2888f5, lane nomacro, RX_FOREACH dropped; before it 934f8bed1, the lane/iterland stack pre-nomacro; before it 881eac3cf, the I4 lane self-pin; before it 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82))
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
