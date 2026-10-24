@@ -23,10 +23,10 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `84` on every artifact today (lane s3 bumped it from
-  83, 2026-10-22: [MEMFN] D172 S3, docs/design/memfn/window_site.md rev 3.2
-  §5.2, §6; kit_proof.md §7's B1 row; PROVISIONAL: 84-87 are allocated to
-  other branches, so whichever lands later renumbers with the same grep).**
+- **`rx_info.abi` is `85` on every artifact today (lane s3 bumped it, 2026-10-22,
+  as 83 -> 84 PROVISIONAL; renumbered 84 -> 85 by lane s3pair, 2026-10-24, when
+  main's iterators had taken 84: [MEMFN] D172 S3, docs/design/memfn/window_site.md
+  rev 3.3 §5.2, §6; kit_proof.md §7's B1 row).**
   The `cover` LOCATE row is ROUTED by default: a pattern whose every match
   is one fixed-width window the memfn kit's REPORT site proves exactly
   (`cover_conj[]`, C1-C14) is searched by the kit's window family (its new
@@ -39,9 +39,9 @@ the bump's own commit.**
   the abi digits. The OFF arm `--memfn=no-wf-find,no-wf-hors` is the
   parent's text but for those digits. The mover census is in
   docs/dev/lanes/s3_report.md.
-- **`rx_info.abi` is `84` on every artifact today (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
+- **`rx_info.abi` was `84` (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
   from lane i1build [FINDALL-NEXT] I1 (first numbered 83 on its own branch), lane i2build I4 (84), lane iteropt and lane
-  iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wants 84 provisionally; whichever lands first keeps it).**
+  iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wanted 84 provisionally; the iterators landed first and kept it, S3 took 85, above).**
   The pieces, in landing order:
   - **`rx_info.abi` I1 part (lane i1build, written as 83 on its branch; it bumped it
     from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
