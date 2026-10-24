@@ -156,4 +156,6 @@ script's test coverage changes meaningfully.
   writes nothing. Pure python, no pcrec.
 
 - **fullsuite_job.sh.test** — `--simulate` ([MONITOR-QUEUE]): the five scenarios through the real job + battery.sh, PATH shims proving no make/gcc ran, simulate-only logdirs, ledger and worktree list untouched, plus a plant (simulate branch disabled -> the shim sees `make`).
-- **queuewatch.test** — scripts/queuewatch against the REAL boxqueue in a scratch queue (scratch box lock, wrapper jobs that only `exec fullsuite_job.sh --simulate`): every scenario's events exactly once and in order across relaunches, the conditions, the bound, the lock; three plants (state not written, live events swallowed, sleep not clamped).
+- **queuewatch.test** — scripts/queuewatch against the REAL boxqueue in a scratch queue (scratch box lock, wrapper jobs that only `exec fullsuite_job.sh --simulate`): every scenario's events exactly once and in order across relaunches, the conditions, the bound, the lock; three plants (state not written, live events swallowed, sleep not clamped). It runs with the CI source off.
+- **queuewatch_ci.test** — queuewatch's CI events against a shim `gh` on PATH (no network): baseline, red, cancelled superseded/deferred/newest, two events in order without re-asking gh, CI-UNAVAILABLE once and re-armed, gh missing, `--no-ci`; four plants.
+- **monitor_preflight.test** — scripts/monitor_preflight with shims: clean pass, gh missing (and `--no-ci`), unauthenticated, no repo run, no git identity; one plant.
