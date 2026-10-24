@@ -123,7 +123,7 @@ hist() { # hist QDIR: fill the history by hand; echoes nothing
     echo "== job jobH END rc=0 outcome=green verdict=GREEN wall=5s" >> "$q/queue.log"
     for i in 5 6; do echo "== job jobH START owner=h cap=60 expect=none 2026-10-0${i}T00:00:00-04:00" >> "$q/queue.log"; done
     for i in 1 2 3; do echo "== job jobR START owner=r cap=60 expect=none 2026-10-1${i}T00:00:00-04:00" >> "$q/queue.log"; done
-    echo "== logdir $ld" > "$q/running/jobR/job.log"
+    echo "== logdir $ld" > "$q/running/jobR/job.log"; echo "pid=1" > "$q/running/jobR/started"
     echo "== stage a rc=0 END" > "$ld/trailer.log"
 }
 once() { # once QDIR STATE: relaunch until CAP; print every event line except RUNNER-DEAD (no runner in a hand-built dir)
@@ -146,6 +146,26 @@ r=$(hist_case "$QW" ok)
 [ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] \
     && ok "first launch on a restarted-job history (jobH: 6 STARTs, 1 END; jobR: 3 STARTs, running): no historic event; the running run's START, stage ENDs and JOB-DONE once each" || bad "restart history: $r"
 
+# a job that is ready but finds the box lock held logs START + `stays pending` every runner pass (live 2026-10-24: 615-flagfix-test,
+# a new JOB-START per pass woke the monitor every ~65 s). Real runner, scratch queue, a scratch lock held for several passes:
+# the job's one real run is the only JOB-START, then its STAGE-ENDs and JOB-DONE once each.
+waitcase() { # waitcase WATCHER TAG: echoes the sequence seen, normalised, | separated
+    local tag=$2 w hp l n
+    env_for "$tag"; w=$(wrapper "$tag" green); QW=$1; mkdir -p "$Q"
+    setsid bash "$here/boxlock" run --label hold -- sleep 7 > /dev/null 2>&1 9>&- & hp=$!
+    sleep 1
+    bash "$here/boxqueue" add --name "100-test-sim$tag" "$w" > "$T/add.$tag" 2>&1 || { echo "ADD FAILED"; return 1; }
+    collect "$T/ev.$tag"
+    n=$(grep -c "waiting on .*stays pending" "$Q/queue.log")
+    bash "$here/safekill" "$hp" > /dev/null 2>&1
+    echo "waits=$n"; norm "$T/ev.$tag" | tr '\n' '|'
+}
+r=$(waitcase "$QW" wait)
+exp_pass wait > "$T/exp.wait"
+case $r in "waits=0"*|"ADD FAILED"*) bad "wait case did not exercise a held lock: $r" ;;
+    *) [ "${r#*$'\n'}" = "$(tr '\n' '|' < "$T/exp.wait")" ] && ok "a job that waits behind a held box lock for several passes (${r%%$'\n'*}) then runs: exactly one JOB-START, then its STAGE-ENDs and JOB-DONE once" || bad "wait case: $r" ;;
+esac
+
 # a watcher SIGKILLed while waiting leaves the state usable: the lock dies with it, the next launch is clean
 env_for green
 bash "$QW" --state "$ST" --every 5 --confirm 1 --max-sec 20 > /dev/null 2>&1 & kp=$!
@@ -167,7 +187,7 @@ quiet_case() { # quiet_case WATCHER TAG KIND(busy|idle): echoes the QUIET lines 
     local q=$T/qq$2 st=$T/stq$2 ld=$T/qq$2/logs/R1 jp l i out=""
     mkdir -p "$q/running/jobQ" "$q/pending" "$q/done" "$q/failed" "$ld"; : > "$q/queue.log"
     echo "== job jobQ START owner=q cap=60 expect=none 2026-10-24T00:00:00-04:00" >> "$q/queue.log"
-    echo "== logdir $ld" > "$q/running/jobQ/job.log"; echo "== stage a rc=0 END" > "$ld/trailer.log"
+    echo "== logdir $ld" > "$q/running/jobQ/job.log"; echo "pid=1" > "$q/running/jobQ/started"; echo "== stage a rc=0 END" > "$ld/trailer.log"
     if [ "$3" = busy ]; then
         setsid bash -c 'while :; do bash -c "i=0; while [ \$i -lt 3000 ]; do i=\$((i+1)); done"; sleep 0.5; done' > /dev/null 2>&1 9>&- & jp=$!
     else setsid sleep 60 > /dev/null 2>&1 9>&- & jp=$!; fi
@@ -199,7 +219,8 @@ PY
 }
 P1=$(plant nostate 'mark() { printf '"'"'%s\n'"'"' "$1" >> "$state"; }' 'mark() { :; }') || bad "plant nostate did not land"
 P2=$(plant swallow '[ "$closed" = 1 ] && mark "$id"; done <<<"$all"' 'mark "$id"; done <<<"$all"') || bad "plant swallow did not land"
-P4=$(plant oldseed 'closed=1; [ "${isopen[$ln]:-0}" = 1 ] && [ -d "$Q/running/$name" ] && closed=0' 'closed=0; [ "$ln" -le "$(grep -n "END" "$Q/queue.log" | tail -1 | cut -d: -f1)" ] && [ "${isreal[$ln]:-0}" = 1 ] && closed=1') || bad "plant oldseed did not land"
+P4=$(plant oldseed '[ -e "$Q/running/$name/started" ] || continue; closed=0' 'closed=1')
+P6=$(plant oldrule '[ "${isreal[$ln]:-0}" = 1 ] || continue' ':') || bad "plant oldrule did not land" || bad "plant oldseed did not land"
 P3=$(plant noclamp 's=$every; [ "$left" -lt "$s" ] && s=$left' 's=$every') || bad "plant noclamp did not land"
 if [ -n "$P1" ] && [ -n "$P2" ]; then
     ( QW=$P1 BUDGET=25 KILLONE=0 scenario pn burst ) &
@@ -212,6 +233,10 @@ fi
 if [ -n "$P4" ]; then
     r=$(hist_case "$P4" oldseed)
     [ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] && bad "PLANT old-seeding (only the first START per ended job marked) not caught" || ok "PLANT old-seeding: stale historic JOB-STARTs leak after the first launch, so the restart-history case catches it"
+fi
+if [ -n "$P6" ]; then
+    r=$(waitcase "$P6" oldrule)
+    [ "${r#*$'\n'}" = "$(tr '\n' '|' < "$T/exp.wait")" ] && bad "PLANT old rule (every START reported) not caught" || ok "PLANT old rule: each held-lock pass reports another JOB-START, so the wait case catches it"
 fi
 P5=$(plant livecpu 'cpu[$1] = $13 + $14 + $15 + $16}' 'cpu[$1] = $13 + $14}') || bad "plant livecpu did not land"
 if [ -n "$P5" ]; then
