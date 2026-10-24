@@ -23,10 +23,20 @@ judgment, BOTH WAYS, per arm:
                       not move, or a non-cover mover, is UNEXPECTED)
   c-vm, ir            nothing may move (cover is a DFA-route row)
   facts               THE TWIN RULE (job 606): the listing carries one row set per encoding E
-                      (`--emit-facts=byte,utf8`), mirroring that encoding's artifact, so E's rows
-                      may move iff the task's E-twin .c (its own options with `-e E`) moved; the
-                      other lines, rc and stderr may not. A twin that moved with rows that did
-                      not is counted, not red
+                      (`--emit-facts=byte,utf8`), each mirroring that encoding's artifact: its
+                      `RX_*` rows are the artifact's `#define RX_*` stamps one for one, and its
+                      `used` cells say which facts the passes that built it asked. So E's rows
+                      move iff the task's E-TWIN .c (its own options, then `-p rx --features all
+                      -e E`; the last `-e` wins) moved its STAMPS (rc, or a `#define RX_` line),
+                      judged BOTH WAYS per encoding: rows that moved with unmoved twin stamps are
+                      UNEXPECTED, and so are twin stamps that moved with rows that did not. A
+                      twin whose .c moved only in its text (stamps unchanged; code review r2's
+                      `pair text` mover) predicts no row move and is counted (`text-only`). The
+                      non-row lines, rc and stderr may not move. A listing REFUSED on both sides
+                      (one encoding refuses the pattern, so it has no rows) has nothing to
+                      mirror: counted (`refused`), not judged; its rc/stderr still may not move.
+                      The control is a different artifact (the .c), compiled separately; the
+                      tally line counts the judged population (tasks x 2 encodings)
   c-simd, c-norun     as c-default, at the SIMD layer and under -fno-run-prefilter: the cover
                       stamp is read from NEW's artifact on THAT arm
   off, off-simd,      nothing may move (the OFF arm renders the parent's text, at each of the
@@ -109,23 +119,41 @@ def facts_split(b):
     return d
 
 
-def facts_judge(base, new, opts, ob, on, norm_new=lambda x: x):
-    """(declared, unmoved_twin) of one task's facts listing, ob/on = BASE's and NEW's bytes.
-    THE TWIN RULE: a facts row of encoding E mirrors the E-twin artifact (the task's own
-    options with `-e E`), so a row set may move iff that twin .c moved (it became cover, or
-    now takes PAIR); the non-row lines may not move. unmoved_twin counts the reverse (a twin
-    moved, its rows did not): counted, not red -- a .c move need not show in the facts."""
+def stamps(out):
+    """The `#define RX_*` stamp lines of a .c artifact (what a facts listing's `RX_*` rows
+    mirror)."""
+    return [ln for ln in out.split(b"\n") if ln.startswith(b"#define RX_")]
+
+
+def facts_judge(base, new, opts, pat, b, n, norm_new=lambda x: x):
+    """(problems, twins, text_only) of one task's facts listing, b/n = BASE's and NEW's run()
+    triples: THE TWIN RULE (the docstring above), BOTH WAYS per encoding. twins = the
+    encodings whose twin stamps moved, or None for a listing refused on both sides (not
+    judged); text_only = the encodings whose twin .c moved with its stamps unchanged;
+    problems = one string per broken expectation (empty = as declared)."""
+    (rb, ob, eb), (rn, on, en) = b, n
+    problems = [] if rb == rn and eb == norm_new(en) else ["rc or stderr moved"]
+    if rb and rn:
+        return problems, None, []
     sb, sn = facts_split(ob), facts_split(norm_new(on))
+    twins, text_only = [], []
     if sb[""] != sn[""]:
-        return False, 0
-    declared, unmoved = True, 0
+        problems.append("non-row lines moved: " + first_diff(b"\n".join(sb[""]), b"\n".join(sn[""])))
     for e in FACTS_ENCS:
-        tw = [run([x] + list(opts) + ["-p", "rx", "--features", "all", "-e", e, "-o", "-"]) for x in (base, new)]
-        twin = tw[0][0] != tw[1][0] or tw[0][1] != norm_new(tw[1][1])
+        tw = [run([x] + list(opts) + ["-p", "rx", "--features", "all", "-e", e, "-o", "-", "--pattern", pat])
+              for x in (base, new)]
+        twin = tw[0][0] != tw[1][0] or stamps(tw[0][1]) != stamps(norm_new(tw[1][1]))
         rows = sb[e] != sn[e]
-        declared &= twin or not rows
-        unmoved += twin and not rows
-    return declared, unmoved
+        if twin:
+            twins.append(e)
+        elif tw[0][1] != norm_new(tw[1][1]):
+            text_only.append(e)
+        if rows and not twin:
+            problems.append("%s rows moved, the %s twin's stamps did not: %s"
+                            % (e, e, first_diff(b"\n".join(sb[e]), b"\n".join(sn[e]))))
+        elif twin and not rows:
+            problems.append("the %s twin's stamps moved, the %s rows did not" % (e, e))
+    return problems, twins, text_only
 
 
 FLAG_ARGV = {"i": "-i", "u": "--ucp"}
@@ -181,12 +209,11 @@ def one(task):
         if eb != norm(en):
             what.append("stderr " + first_diff(eb, norm(en)))
         cover = stamped and rn == 0 and COVER in on
-        u8 = False
+        problems, twins, text_only = [], [], []
         if arm == "facts":
-            # declared: the twin rule (facts_judge); rc and stderr unchanged
-            cover, u8 = facts_judge(base, new, opts, ob, on, norm)
-            cover = cover and rb == rn and eb == norm(en)
-        res.append((arm, "; ".join(what), cover, HORS in on, u8))
+            # declared: the twin rule (facts_judge), both ways; rc and stderr unchanged
+            problems, twins, text_only = facts_judge(base, new, opts, pat, (rb, ob, eb), (rn, on, en), norm)
+        res.append((arm, "; ".join(what), cover, HORS in on, problems, twins, text_only))
     return pat, tuple(opts), res
 
 
@@ -205,7 +232,7 @@ def main():
     if a.limit:
         tasks = tasks[:a.limit]
     pats = tasks
-    tally = {arm: {"cover": 0, "moved": 0, "hors": 0, "u8": 0} for arm, _, _, _ in ARMS}
+    tally = {arm: {"cover": 0, "moved": 0, "hors": 0, "twin": 0, "text": 0, "judged": 0, "refused": 0} for arm, _, _, _ in ARMS}
     optn = {"tasks": 0, "cover": 0}
     unexpected, rows = [], []
     for f, line in refused:
@@ -216,16 +243,24 @@ def main():
             ep = emit_sweep.encode_escape(pat) + (" [" + " ".join(opts) + "]" if opts else "")
             if opts:
                 optn["tasks"] += 1
-                optn["cover"] += any(arm == "c-default" and cover for arm, _, cover, _, _ in res)
-            for arm, what, cover, hors, u8 in res:
+                optn["cover"] += any(arm == "c-default" and cover for arm, _, cover, _, _, _, _ in res)
+            for arm, what, cover, hors, problems, twins, text_only in res:
                 t = tally[arm]
                 t["cover"] += cover
-                t["u8"] += u8
                 t["hors"] += hors and cover
                 if what:
                     t["moved"] += 1
-                    rows.append((arm, "COVER" if cover else "other", ep, what))
-                if cover and not what and arm != "facts":
+                    rows.append((arm, "TWIN" if arm == "facts" and twins else
+                                 "COVER" if cover else "other", ep, what))
+                if arm == "facts":
+                    if twins is None:
+                        t["refused"] += 1
+                    else:
+                        t["judged"] += len(FACTS_ENCS)
+                        t["twin"] += len(twins)
+                        t["text"] += len(text_only)
+                    unexpected += [(arm, "twin", ep, p) for p in problems]
+                elif cover and not what:
                     unexpected.append((arm, "COVER", ep, "a cover artifact did NOT move"))
                 elif what and not cover:
                     unexpected.append((arm, "other", ep, what))
@@ -244,12 +279,14 @@ def main():
         print("  %-9s cover %5d (D-hors %4d)  movers %5d  declared: %s" % (
             arm, t["cover"], t["hors"], t["moved"],
             "movers == cover artifacts" if stamped else
-            "movers within twin-moved encodings (twin moved, rows not: %d)" % t["u8"] if arm == "facts"
+            "the twin rule, both ways: %d encodings judged, %d twin stamps moved, %d text-only, "
+            "%d listings refused" % (t["judged"], t["twin"], t["text"], t["refused"])
+            if arm == "facts"
             else "no mover"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)
     print("== s3 census COMPLETE: patterns=%d compiles=%d movers=%d unexpected=%d"
-          % (len(pats), 2 * len(pats) * len(ARMS), len(rows), len(unexpected)))
+          % (len(pats), 2 * len(pats) * (len(ARMS) + len(FACTS_ENCS)), len(rows), len(unexpected)))
     return 0 if not unexpected else 1
 
 

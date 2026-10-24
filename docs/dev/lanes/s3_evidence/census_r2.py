@@ -15,8 +15,11 @@ judgment, BOTH WAYS, per arm:
                       new, a stop R7w walked, or the shared renderer's text), a PAIR artifact on
                       BASE alone is UNEXPECTED (PAIR only widened), and nothing else may move
   c-vm, ir            nothing may move
-  facts               the twin rule (census.py, job 606): encoding E's rows may move iff the
-                      task's E-twin .c (its options with `-e E`) moved
+  facts               the twin rule (census.py, job 606; one implementation, census.facts_judge):
+                      encoding E's rows move iff the task's E-twin .c (its options, then `-e E`)
+                      moved its stamps, BOTH WAYS per encoding (a text-only twin move, `pair
+                      text`, predicts none); non-row lines, rc and stderr may not move; a listing
+                      refused on both sides is counted, not judged
   off, off-simd       nothing may move (both denies on both sides)
 Counted per arm: PAIR artifacts, movers, and of the movers those whose BASE walked the stop
 (`new`) versus those whose BASE already rendered B-pair (`text`).
@@ -62,9 +65,10 @@ def one(task):
         if eb != en:
             what.append("stderr " + census.first_diff(eb, en))
         pn, pb = judged and PAIR.search(on) is not None, judged and PAIR.search(ob) is not None
-        if arm == "facts":      # declared: the twin rule (census.facts_judge)
-            pn = census.facts_judge(base, new, opts, ob, on)[0] and rb == rn and eb == en
-        res.append((arm, "; ".join(what), pn, pb))
+        problems, twins, text_only = [], [], []
+        if arm == "facts":      # declared: the twin rule (census.facts_judge), both ways
+            problems, twins, text_only = census.facts_judge(base, new, opts, pat, (rb, ob, eb), (rn, on, en))
+        res.append((arm, "; ".join(what), pn, pb, problems, twins, text_only))
     return pat, tuple(opts), res
 
 
@@ -82,24 +86,33 @@ def main():
     nrows, tasks, refused = census.corpus_tasks(emit_sweep, a.new, a.tree)
     if a.limit:
         tasks = tasks[:a.limit]
-    tally = {arm: {"pair": 0, "moved": 0, "new": 0, "text": 0} for arm, _, _ in ARMS}
+    tally = {arm: {"pair": 0, "moved": 0, "new": 0, "text": 0, "twin": 0, "ttext": 0, "judged": 0, "refused": 0} for arm, _, _ in ARMS}
     unexpected, rows = [], []
     for f, line in refused:
         unexpected.append(("-", "refused", "%s:%s" % (f, line), "a block option this census does not pass"))
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as ex:
         for pat, opts, res in ex.map(one, [(a.base, a.new, p, o) for p, o in tasks], chunksize=8):
             ep = emit_sweep.encode_escape(pat) + (" [" + " ".join(opts) + "]" if opts else "")
-            for arm, what, pn, pb in res:
+            for arm, what, pn, pb, problems, twins, text_only in res:
                 t = tally[arm]
                 t["pair"] += pn
                 if what:
                     t["moved"] += 1
                     t["new"] += pn and not pb
                     t["text"] += pn and pb
-                    rows.append((arm, "PAIR" if pn else "other", ep, what))
-                if pb and not pn and arm != "facts":
+                    rows.append((arm, "TWIN" if arm == "facts" and twins else
+                                 "PAIR" if pn else "other", ep, what))
+                if arm == "facts":
+                    if twins is None:
+                        t["refused"] += 1
+                    else:
+                        t["judged"] += len(census.FACTS_ENCS)
+                        t["twin"] += len(twins)
+                        t["ttext"] += len(text_only)
+                    unexpected += [(arm, "twin", ep, p) for p in problems]
+                elif pb and not pn:
                     unexpected.append((arm, "PAIR-lost", ep, "B-pair on BASE, not on NEW"))
-                elif pn and not what and arm != "facts":
+                elif pn and not what:
                     unexpected.append((arm, "PAIR", ep, "a B-pair artifact did NOT move"))
                 elif what and not pn:
                     unexpected.append((arm, "other", ep, what))
@@ -114,11 +127,13 @@ def main():
         print("  %-9s pair %5d  movers %5d (walk->pair %5d, pair text %5d)  declared: %s" % (
             arm, t["pair"], t["moved"], t["new"], t["text"],
             "movers == B-pair artifacts" if judged else
-            "movers within twin-moved encodings" if arm == "facts" else "no mover"))
+            "the twin rule, both ways: %d encodings judged, %d twin stamps moved, %d text-only, "
+            "%d listings refused" % (t["judged"], t["twin"], t["ttext"], t["refused"])
+            if arm == "facts" else "no mover"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)
     print("== r2 census COMPLETE: patterns=%d compiles=%d movers=%d unexpected=%d"
-          % (len(tasks), 2 * len(tasks) * len(ARMS), len(rows), len(unexpected)))
+          % (len(tasks), 2 * len(tasks) * (len(ARMS) + len(census.FACTS_ENCS)), len(rows), len(unexpected)))
     return 0 if not unexpected else 1
 
 
