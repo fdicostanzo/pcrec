@@ -1,0 +1,12 @@
+r2 census: corpus rows 5966, distinct (pattern, options) tasks 4967
+  c-default pair    68  movers    68 (walk->pair    67, pair text     1)  declared: movers == B-pair artifacts
+  c-utf8    pair    55  movers    55 (walk->pair    54, pair text     1)  declared: movers == B-pair artifacts
+  c-simd    pair    68  movers    68 (walk->pair    67, pair text     1)  declared: movers == B-pair artifacts
+  c-norun   pair    68  movers    68 (walk->pair    67, pair text     1)  declared: movers == B-pair artifacts
+  c-vm      pair     0  movers     0 (walk->pair     0, pair text     0)  declared: no mover
+  ir        pair     0  movers     0 (walk->pair     0, pair text     0)  declared: no mover
+  facts     pair     0  movers    85 (walk->pair     0, pair text     0)  declared: the twin rule, both ways: 8948 encodings judged, 139 twin stamps moved, 2 text-only, 493 listings refused
+  off       pair     0  movers     0 (walk->pair     0, pair text     0)  declared: no mover
+  off-simd  pair     0  movers     0 (walk->pair     0, pair text     0)  declared: no mover
+== r2 census COMPLETE: patterns=4967 compiles=109274 movers=344 unexpected=0
+rc=0

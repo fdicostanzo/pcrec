@@ -1,0 +1,14 @@
+census: corpus rows 5966, distinct (pattern, options) tasks 4967
+  options: 881 tasks under their block's options (flags i/u, encoding), 199 of them cover at c-default; 0 rows refused
+  c-default cover   729 (D-hors    7)  movers   729  declared: movers == cover artifacts
+  c-utf8    cover   636 (D-hors    2)  movers   636  declared: movers == cover artifacts
+  c-vm      cover     0 (D-hors    0)  movers     0  declared: no mover
+  ir        cover     0 (D-hors    0)  movers     0  declared: no mover
+  facts     cover     0 (D-hors    0)  movers   858  declared: the twin rule, both ways: 8948 encodings judged, 1465 twin stamps moved, 0 text-only, 493 listings refused
+  off       cover     0 (D-hors    0)  movers     0  declared: no mover
+  c-simd    cover   729 (D-hors    7)  movers   729  declared: movers == cover artifacts
+  c-norun   cover   729 (D-hors    7)  movers   729  declared: movers == cover artifacts
+  off-simd  cover     0 (D-hors    0)  movers     0  declared: no mover
+  off-norun cover     0 (D-hors    0)  movers     0  declared: no mover
+== s3 census COMPLETE: patterns=4967 compiles=119208 movers=3681 unexpected=0
+rc=0
