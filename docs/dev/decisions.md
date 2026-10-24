@@ -1584,6 +1584,8 @@ the differentials, re-pin what moved, record it), never ambient drift a test
 should silently track. Until such an event, a claim measured on 10.46
 remains the project's expected verdict even where a newer PCRE2 differs.
 
+- **Addendum (Frank, 2026-10-24): compatible with PCRE2 unless PCRE2 has a bug.** Frank, verbatim: "we are compatible with pcre2 unless it is a bug. This is weaker matching (not 'the same as pcre2' because we're going beyond) as well as acknowledging pcre2 isn't perfect." PCRE2 stays the source of truth for syntax and semantics, but where PCRE2 disagrees with the standard it claims to implement (first case: Bidi_Mirrored, 428 vs Unicode's 554 code points, D178 addendum, U22) pcrec follows the standard, records the difference in docs/dev/upstream_issues.md, and admits exactly those cases in the differential. The claim pcrec makes is "compatible with PCRE2", never "the same as PCRE2": pcrec also goes beyond it (extensions, D178). A difference is a PCRE2 bug only with evidence against the standard's own data or text; a PCRE2 choice the standard leaves open is not a bug and pcrec follows PCRE2.
+
 ## D27 — some tests are written from the GOAL, by someone denied the code
 
 **Decision.** At least some of pcrec's tests are written by an author who has
