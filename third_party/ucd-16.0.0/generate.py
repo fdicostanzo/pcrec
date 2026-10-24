@@ -9,8 +9,11 @@ tomorrow brings its own `generate.py`; nothing here is renamed, and no rule in
 the Makefile mentions Unicode.
 
 WHAT IT READS   `UnicodeData.txt`, `CaseFolding.txt`, `Scripts.txt`,
-                `ScriptExtensions.txt` and `PropertyValueAliases.txt`, beside
-                this file, at the pinned version.
+                `ScriptExtensions.txt`, `PropertyValueAliases.txt` and, for
+                [UPROP-MORE], `PropertyAliases.txt`, `PropList.txt`,
+                `DerivedCoreProperties.txt`, `emoji-data.txt`,
+                `DerivedBidiClass.txt`, `Blocks.txt` and `DerivedAge.txt`,
+                beside this file, at the pinned version.
 WHAT IT WRITES  four GENERATED files, never hand-edited
                 (`src/parse/cls_bits.inc`'s precedent):
 
@@ -148,6 +151,13 @@ FOLD_SOURCE = os.path.join(HERE, "CaseFolding.txt")
 SCRIPT_SOURCE = os.path.join(HERE, "Scripts.txt")
 SCRIPTEXT_SOURCE = os.path.join(HERE, "ScriptExtensions.txt")
 ALIAS_SOURCE = os.path.join(HERE, "PropertyValueAliases.txt")
+PROPLIST_SOURCE = os.path.join(HERE, "PropList.txt")
+DERIVEDCORE_SOURCE = os.path.join(HERE, "DerivedCoreProperties.txt")
+EMOJI_SOURCE = os.path.join(HERE, "emoji-data.txt")
+BIDICLASS_SOURCE = os.path.join(HERE, "DerivedBidiClass.txt")
+PROPALIAS_SOURCE = os.path.join(HERE, "PropertyAliases.txt")
+BLOCKS_SOURCE = os.path.join(HERE, "Blocks.txt")
+AGE_SOURCE = os.path.join(HERE, "DerivedAge.txt")
 OUT = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
 FOLD_OUT = os.path.join(REPO, "src", "core", "fold_tables.inc")
 FOLD_TEXT_OUT = os.path.join(REPO, "src", "enc", "utf8_fold_pairs.inc")
@@ -299,6 +309,12 @@ def check_invariant(name, ivs):
 NS_BARE = 1
 NS_SC = 2
 NS_SCX = 4
+# [UPROP-MORE]: `bc=`/`Bidi_Class=`, and the two pcrec extensions beyond
+# PCRE2 (`blk=`/`Block=`, `Age=`).
+NS_BC = 8
+NS_BLK = 16
+NS_AGE = 32
+ALL_NS = (NS_BARE, NS_SC, NS_SCX, NS_BC, NS_BLK, NS_AGE)
 
 # `Hrkt` / `Katakana_Or_Hiragana` — the one `sc` value in
 # `PropertyValueAliases.txt` that no libpcre2 this project can reach accepts
@@ -435,6 +451,278 @@ def build_scripts(rows, sets, aliases, scripts, scriptext):
             rows.append((name, NS_SC, skey, skey))
 
 
+# ---------------------------------------------------------------------------
+# (5) [UPROP-MORE] the BINARY properties, Bidi_Class, Block and Age
+# ---------------------------------------------------------------------------
+#
+# ONE MECHANISM, per docs/design/uprop_more.md §3: a property is a named
+# interval list read from an official RANGED file (`cp[..cp] ; Name # note`),
+# the shape `Scripts.txt` already has.  Every set below comes from a vendored
+# Unicode 16.0.0 file and from nothing else (D178's data rule); the names a
+# row answers to come from `PropertyAliases.txt` / `PropertyValueAliases.txt`.
+#
+# THE PROMISE IS A COUNTED LIST, not "whatever the files hold".  The binary
+# properties pcrec ships are exactly those libpcre2 10.46 accepts (measured
+# by probing every `Binary Properties` row of `PropertyAliases.txt`); the
+# UCD has eighteen more that PCRE2 refuses (error 147: `Hyphen`,
+# `Other_Alphabetic`, `Expands_On_NFC`, ...), and shipping them would be a
+# name PC-3 reads as pcrec accepting what PCRE2 rejects.  So the list is
+# written out, and `build_ranged` FAILS if a promised name has no source line
+# (K35: a population nobody counts).
+#
+# `ASCII` has no UCD row (it is PCRE2's, U+0000-007F) and is computed;
+# `Bidi_Mirrored` is field 9 of `UnicodeData.txt`, not a ranged file.
+
+BINARY_PROMISED = [
+    "ASCII_Hex_Digit", "Alphabetic", "Bidi_Control", "Bidi_Mirrored", "Cased",
+    "Case_Ignorable", "Changes_When_Casefolded", "Changes_When_Casemapped",
+    "Changes_When_Lowercased", "Changes_When_Titlecased",
+    "Changes_When_Uppercased", "Dash", "Deprecated",
+    "Default_Ignorable_Code_Point", "Diacritic", "Emoji_Modifier_Base",
+    "Emoji_Component", "Emoji_Modifier", "Emoji", "Emoji_Presentation",
+    "Extender", "Extended_Pictographic", "Grapheme_Base", "Grapheme_Extend",
+    "Grapheme_Link", "Hex_Digit", "ID_Compat_Math_Continue",
+    "ID_Compat_Math_Start", "ID_Continue", "Ideographic", "ID_Start",
+    "IDS_Binary_Operator", "IDS_Trinary_Operator", "IDS_Unary_Operator",
+    "Join_Control", "Logical_Order_Exception", "Lowercase", "Math",
+    "Modifier_Combining_Mark", "Noncharacter_Code_Point", "Pattern_Syntax",
+    "Pattern_White_Space", "Prepended_Concatenation_Mark", "Quotation_Mark",
+    "Radical", "Regional_Indicator", "Soft_Dotted", "Sentence_Terminal",
+    "Terminal_Punctuation", "Unified_Ideograph", "Uppercase",
+    "Variation_Selector", "White_Space", "XID_Continue", "XID_Start",
+]
+
+# PCRE2 spells the `Bidi_Class` VALUES by their short names only (measured
+# on 10.46: `bc=Arabic_Letter` is error 147).  The promise is the 23 short
+# names `PropertyValueAliases.txt` lists for `bc`.
+BC_UNKNOWN_SOURCE = "@missing"
+
+
+def read_ranged(path):
+    """{value or property name: [(lo, hi), ...]} from a ranged UCD file.
+
+    Built through `union`, so the result is canonical whatever order the
+    file's sections come in."""
+    raw = {}
+    for lo, hi, value in ucd_ranges(path):
+        raw.setdefault(value, []).append((lo, hi))
+    if not raw:
+        raise SystemExit("%s: no ranges — wrong file?" % path)
+    return {k: union(v) for k, v in raw.items()}
+
+
+def read_bidi_mirrored(path):
+    """Bidi_Mirrored: the code points with `Y` in field 9 of `UnicodeData.txt`
+    (the First>/Last> ranges are all `N`)."""
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            fields = line.rstrip("\n").split(";")
+            if len(fields) > 9 and fields[9] == "Y":
+                cp = int(fields[0], 16)
+                add(out, cp, cp)
+    if not out:
+        raise SystemExit("%s: no Bidi_Mirrored=Y — wrong field?" % path)
+    return out
+
+
+def read_defaults(path):
+    """The `# @missing: lo..hi; Value` lines, in file order."""
+    out = []
+    pat = re.compile(r"^# @missing: ([0-9A-F]+)\.\.([0-9A-F]+); (\S+)\s*$")
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            m = pat.match(line)
+            if m:
+                out.append((int(m.group(1), 16), int(m.group(2), 16), m.group(3)))
+    return out
+
+
+def read_bidi_class(path, bc_rows):
+    """{short bc name: intervals} for EVERY code point.
+
+    `DerivedBidiClass.txt` lists assigned code points and the unassigned
+    `BN` ones; every other unassigned code point takes the value of the LAST
+    `@missing` line covering it (the file's own rule: a later line is the
+    narrower one).  Long value names in the `@missing` lines are mapped to
+    the short names through `PropertyValueAliases.txt`'s `bc` rows."""
+    long_to_short = {long_name: spellings[0] for long_name, spellings in bc_rows}
+    listed = read_ranged(path)
+    value = bytearray(MAXCP + 1)           # 0 = not listed
+    names = sorted(listed)
+    index = {n: i + 1 for i, n in enumerate(names)}
+    for n, ivs in listed.items():
+        for lo, hi in ivs:
+            value[lo:hi + 1] = bytes([index[n]]) * (hi - lo + 1)
+    for lo, hi, long_name in read_defaults(path):
+        short = long_to_short.get(long_name)
+        if short is None:
+            raise SystemExit("%s: @missing names %r, not a `bc` value in %s"
+                             % (path, long_name, ALIAS_SOURCE))
+        if short not in index:
+            names.append(short)
+            index[short] = len(names)
+        for cp in range(lo, hi + 1):
+            if value[cp] == 0:
+                value[cp] = index[short]
+    out = {n: [] for n in names}
+    run_lo, run_v = 0, value[0]
+    for cp in range(1, MAXCP + 2):
+        v = value[cp] if cp <= MAXCP else -1
+        if v != run_v:
+            if run_v == 0:
+                raise SystemExit("%s: code point %04X has no Bidi_Class (no "
+                                 "listing and no @missing line)" % (path, run_lo))
+            out[names[run_v - 1]].append((run_lo, cp - 1))
+            run_lo, run_v = cp, v
+    return out
+
+
+def read_alias_rows(path, prop):
+    """[(long name, [every spelling]), ...] for one `prop` in a value-alias
+    file (`PropertyValueAliases.txt`: `prop ; short ; long ; extras...`)."""
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.split("#", 1)[0].strip()
+            fields = [p.strip() for p in line.split(";")]
+            if not line or fields[0] != prop:
+                continue
+            if len(fields) < 3:
+                raise SystemExit("%s: malformed %s row: %r" % (path, prop, line))
+            out.append((fields[2], fields[1:]))
+    if not out:
+        raise SystemExit("%s: no `%s` rows — wrong file?" % (path, prop))
+    return out
+
+
+def read_binary_aliases(path):
+    """{long name: [every spelling]} from the `Binary Properties` section of
+    `PropertyAliases.txt` (`short ; long ; extras...`)."""
+    out, in_section = {}, False
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("# ") and line.rstrip().endswith("Properties"):
+                in_section = line.strip() == "# Binary Properties"
+                continue
+            line = line.split("#", 1)[0].strip()
+            if not in_section or not line:
+                continue
+            fields = [p.strip() for p in line.split(";")]
+            if len(fields) < 2:
+                raise SystemExit("%s: malformed binary row: %r" % (path, line))
+            out[fields[1]] = fields
+    if not out:
+        raise SystemExit("%s: no Binary Properties section — wrong file?" % path)
+    return out
+
+
+def append_names(rows, spellings, ns, key):
+    """One row per distinct NORMALISED spelling (the short and long forms
+    coincide for many, and `normalise` collapses more)."""
+    seen = set()
+    for spelling in spellings:
+        name = normalise(spelling)
+        if name in seen:
+            continue
+        seen.add(name)
+        rows.append((name, ns, key, key))
+
+
+def build_ranged(rows, sets, cats_path):
+    """Append the binary properties, Bidi_Class, Block and Age rows.
+
+    EVERY promised name must have a source: a missing one is a hard error
+    here, not a silently shorter table."""
+    # --- binary properties -------------------------------------------------
+    binary_alias = read_binary_aliases(PROPALIAS_SOURCE)
+    source = {}
+    for path in (PROPLIST_SOURCE, DERIVEDCORE_SOURCE, EMOJI_SOURCE):
+        for name, ivs in read_ranged(path).items():
+            if name in source:
+                raise SystemExit("%s: property %r is also in another file"
+                                 % (path, name))
+            source[name] = ivs
+    source["Bidi_Mirrored"] = read_bidi_mirrored(cats_path)
+    for long_name in BINARY_PROMISED:
+        if long_name not in source:
+            raise SystemExit("[UPROP-MORE] promised binary property %r has no "
+                             "source line in %s, %s, %s or %s"
+                             % (long_name, PROPLIST_SOURCE, DERIVEDCORE_SOURCE,
+                                EMOJI_SOURCE, SOURCE))
+        if long_name not in binary_alias:
+            raise SystemExit("[UPROP-MORE] promised binary property %r is not "
+                             "in %s" % (long_name, PROPALIAS_SOURCE))
+        ivs = source[long_name]
+        check_invariant(long_name, ivs)
+        key = "bin:" + long_name
+        sets[key] = ivs
+        append_names(rows, binary_alias[long_name], NS_BARE, key)
+    # `ASCII`: PCRE2's own, no UCD row (measured accepted on 10.46).
+    sets["bin:ASCII"] = [(0, 0x7F)]
+    rows.append((normalise("ASCII"), NS_BARE, "bin:ASCII", "bin:ASCII"))
+
+    # --- Bidi_Class --------------------------------------------------------
+    bc_rows = read_alias_rows(ALIAS_SOURCE, "bc")
+    bidi = read_bidi_class(BIDICLASS_SOURCE, bc_rows)
+    for long_name, spellings in bc_rows:
+        short = spellings[0]
+        if short not in bidi:
+            raise SystemExit("[UPROP-MORE] promised Bidi_Class %r has no "
+                             "source line in %s" % (short, BIDICLASS_SOURCE))
+    if sorted(bidi) != sorted(s[0] for _n, s in bc_rows):
+        raise SystemExit("%s names a Bidi_Class value %s does not declare"
+                         % (BIDICLASS_SOURCE, ALIAS_SOURCE))
+    if union(*bidi.values()) != [(0, MAXCP)]:
+        raise SystemExit("Bidi_Class does not partition the code space")
+    for _long, spellings in bc_rows:
+        short = spellings[0]
+        check_invariant("bc=" + short, bidi[short])
+        sets["bc:" + short] = bidi[short]
+        # SHORT NAMES ONLY: libpcre2 10.46 refuses `bc=Arabic_Letter`.
+        append_names(rows, [short], NS_BC, "bc:" + short)
+
+    # --- Block (pcrec extension beyond PCRE2) -------------------------------
+    blocks = {normalise(n): ivs for n, ivs in read_ranged(BLOCKS_SOURCE).items()}
+    blk_rows = read_alias_rows(ALIAS_SOURCE, "blk")
+    promised = {normalise(n) for n, _s in blk_rows if n != "No_Block"}
+    if promised != set(blocks):
+        raise SystemExit("[UPROP-MORE] Blocks.txt and %s disagree on the "
+                         "block list: only in Blocks.txt %r; only promised %r"
+                         % (ALIAS_SOURCE, sorted(set(blocks) - promised),
+                            sorted(promised - set(blocks))))
+    for long_name, spellings in blk_rows:
+        if long_name == "No_Block":
+            ivs = complement(union(*blocks.values()))
+        else:
+            ivs = blocks[normalise(long_name)]
+        check_invariant("blk=" + long_name, ivs)
+        sets["blk:" + long_name] = ivs
+        append_names(rows, spellings, NS_BLK, "blk:" + long_name)
+
+    # --- Age (pcrec extension beyond PCRE2) ----------------------------------
+    # `DerivedAge.txt` lists the code points assigned in each version,
+    # EXACTLY that version (the UCD's Age is the version of FIRST assignment);
+    # `Unassigned` (`NA`) is what the file does not list.
+    ages = read_ranged(AGE_SOURCE)
+    age_rows = read_alias_rows(ALIAS_SOURCE, "age")
+    declared = {s[0] for _n, s in age_rows if s[0] != "NA"}
+    if declared != set(ages):
+        raise SystemExit("[UPROP-MORE] DerivedAge.txt and %s disagree on the "
+                         "age list: only in the file %r; only promised %r"
+                         % (ALIAS_SOURCE, sorted(set(ages) - declared),
+                            sorted(declared - set(ages))))
+    for long_name, spellings in age_rows:
+        if spellings[0] == "NA":
+            ivs = complement(union(*ages.values()))
+        else:
+            ivs = ages[spellings[0]]
+        check_invariant("age=" + long_name, ivs)
+        sets["age:" + long_name] = ivs
+        append_names(rows, spellings, NS_AGE, "age:" + long_name)
+
+
+
 def build(cats, aliases=None, scripts=None, scriptext=None):
     """Returns (rows, sets).
 
@@ -547,6 +835,7 @@ def build(cats, aliases=None, scripts=None, scriptext=None):
 
     if aliases is not None:
         build_scripts(rows, sets, aliases, scripts, scriptext)
+        build_ranged(rows, sets, SOURCE)
 
     rows.sort(key=lambda e: (e[0], e[1]))
     # ONE ROW PER (name, namespace).  A collision would make the lookup's
@@ -555,7 +844,7 @@ def build(cats, aliases=None, scripts=None, scriptext=None):
     # name that happened to equal a category name would arrive.
     keys = {}
     for name, ns, _k, _ck in rows:
-        for bit in (NS_BARE, NS_SC, NS_SCX):
+        for bit in ALL_NS:
             if ns & bit and (name, bit) in keys:
                 raise SystemExit("two rows answer for (%r, namespace %d)"
                                  % (name, bit))
@@ -618,8 +907,10 @@ BANNER = """\
 /* uprops_tables.inc — GENERATED, DO NOT EDIT.
  *
  * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
- * vendored `UnicodeData.txt`, `Scripts.txt`, `ScriptExtensions.txt` and
- * `PropertyValueAliases.txt` at Unicode {version}.  Regenerate with
+ * vendored `UnicodeData.txt`, `Scripts.txt`, `ScriptExtensions.txt`,
+ * `PropertyValueAliases.txt`, `PropertyAliases.txt`, `PropList.txt`,
+ * `DerivedCoreProperties.txt`, `emoji-data.txt`, `DerivedBidiClass.txt`,
+ * `Blocks.txt` and `DerivedAge.txt` at Unicode {version}.  Regenerate with
  *
  *     python3 third_party/ucd-16.0.0/generate.py
  *
@@ -660,11 +951,17 @@ BANNER = """\
  * plus the non-ASCII uppercase letters — neither `Lu` nor `L&`, and wrong on
  * every non-ASCII cased letter.
  *
- * WHAT IS NOT HERE, deliberately: the BOOLEAN properties (`Alphabetic`,
- * `Math`, ...) and `Bidi_Class`, both declined by `utf8_design.md` §3.4 for
- * want of a measured demand; and BLOCKS (`InGreek`, `blk=`), which libpcre2
- * refuses too.  The case-fold closure ([M5.0] stage 4) lives in
- * `src/core/fold_tables.inc`, from the same directory's `CaseFolding.txt`.
+ * [UPROP-MORE] adds the BINARY properties (bare namespace, the 55 long names
+ * and their short aliases libpcre2 10.46 accepts), `Bidi_Class` (`bc=`, the 23
+ * short value names only, as PCRE2), and two pcrec EXTENSIONS beyond PCRE2:
+ * `Block` (`blk=`) and `Age`.  Every set is the vendored Unicode file's own
+ * definition; none is invented.
+ *
+ * WHAT IS NOT HERE, deliberately: the UCD's other binary properties libpcre2
+ * refuses (`Hyphen`, `Other_*`, `Expands_On_*`, ...), long `Bidi_Class` value
+ * names, and every other property axis PCRE2 refuses.  The case-fold closure
+ * ([M5.0] stage 4) lives in `src/core/fold_tables.inc`, from the same
+ * directory's `CaseFolding.txt`.
  *
  * SUMMARY: {nprops} rows over {nsets} distinct sets ({nsub} rows with a
  * distinct caseless set), {nivs} intervals, {nbytes} bytes of table.
@@ -703,6 +1000,9 @@ def emit(built):
     out.append("#define PCREC_UPROP_NS_BARE %du\n" % NS_BARE)
     out.append("#define PCREC_UPROP_NS_SC   %du\n" % NS_SC)
     out.append("#define PCREC_UPROP_NS_SCX  %du\n" % NS_SCX)
+    out.append("#define PCREC_UPROP_NS_BC   %du  /* Bidi_Class, short names */\n" % NS_BC)
+    out.append("#define PCREC_UPROP_NS_BLK  %du  /* pcrec extension: Block */\n" % NS_BLK)
+    out.append("#define PCREC_UPROP_NS_AGE  %du  /* pcrec extension: Age */\n" % NS_AGE)
     out.append("\nstatic const PcrecCpRange pcrec_uprop_iv[] = {\n")
     for i in range(0, len(pool), 4):
         chunk = pool[i:i + 4]
