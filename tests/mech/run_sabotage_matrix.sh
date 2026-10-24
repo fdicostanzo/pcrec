@@ -642,7 +642,7 @@ set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/timeout_bin.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; only reach_only_selftest.sh sets it.
+# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; set only by the self-tests (reach_only_selftest.sh, nocompile_selftest.sh).
 SAB_DIR="${MECH_SAB_DIR:-$SCRIPT_DIR/sabotages}"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
