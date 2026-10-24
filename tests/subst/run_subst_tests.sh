@@ -198,7 +198,7 @@ done
 # every documented option is refused with --subst and with --emit-support by
 # its PRESENCE, a default value included (§5¶1, §10¶2); the population is
 # --help's and --list-axes' own (cli_option_census.py)
-python3 -I "$SCRIPT_DIR/cli_option_census.py" "$PCREC" "$WORK/census" > "$WORK/census.log" 2>&1
+"$TIMEOUT_BIN" 900 python3 -I "$SCRIPT_DIR/cli_option_census.py" "$PCREC" "$WORK/census" > "$WORK/census.log" 2>&1
 crc=$?
 grep -v '^checks ' "$WORK/census.log"
 p="$(sed -n 's/^checks passed: //p' "$WORK/census.log")"

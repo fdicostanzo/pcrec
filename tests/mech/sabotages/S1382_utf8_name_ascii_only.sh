@@ -12,5 +12,7 @@ SAB_DESC='a utf8 template'\''s name takes no character >= 0x80'
 SAB_DOC_FIGURE='Owed: lane substfix queued this row (docs/dev/lanes/substfix_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1382.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return st_in_prop("L", cp) || (!first && st_in_prop("ND", cp)) ? len : 0;'
-SAB_AFTER='    return 0 && (st_in_prop("L", cp) || (!first && st_in_prop("ND", cp))) ? len : 0;   /* SABOTAGE S1382 */'
+# Re-anchored by lane substr1fix (HOUSE-1): the utf8 branch of st_name_char
+# now reads the shared rule, pcrec_group_name_cp.
+SAB_BEFORE='    return r > 0 ? len : 0;'
+SAB_AFTER='    return 0 && r > 0 ? len : 0;   /* SABOTAGE S1382 */'

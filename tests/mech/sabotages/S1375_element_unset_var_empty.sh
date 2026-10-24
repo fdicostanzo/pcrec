@@ -11,5 +11,5 @@ SAB_DESC='the element renders an unset `${!name}` empty under PCREC_SUBST_STRICT
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1375.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"            if (!ctx->vars[j].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);'
-SAB_AFTER='"            if (0 && !ctx->vars[j].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);   /* SABOTAGE S1375 */'
+SAB_BEFORE='"            if (!ctx->vars[v].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);'
+SAB_AFTER='"            if (0 && !ctx->vars[v].p) return PCREC_ERR_UNSET_VAR;\n", t->nvrefs);   /* SABOTAGE S1375 */'

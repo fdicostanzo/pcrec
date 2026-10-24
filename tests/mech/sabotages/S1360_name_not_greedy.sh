@@ -11,5 +11,5 @@ SAB_DESC='a bare $name reads one byte, so `$gx` is $g then a literal x'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1360.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    while ((len = st_name_char(s, n, j, utf, false)) > 0) j += (size_t)len;'
-SAB_AFTER='    while (0 && (len = st_name_char(s, n, j, utf, false)) > 0) j += (size_t)len;   /* SABOTAGE S1360 */'
+SAB_BEFORE='    while ((len = st_name_char(s, n, j, utf, false, broken)) > 0) j += (size_t)len;'
+SAB_AFTER='    while (0 && (len = st_name_char(s, n, j, utf, false, broken)) > 0) j += (size_t)len;   /* SABOTAGE S1360 */'

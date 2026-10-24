@@ -988,23 +988,32 @@ static void emit_region_items(StrBuf *c, const char *p, const SubstTmpl *t, size
 /* What the case region's items read (emit_region_items, item by item), so
  * `<prefix>_region` declares only the locals it uses and voids only the
  * parameters it does not. */
-enum { RU_S = 1, RU_C = 2, RU_REF = 4, RU_COND = 8, RU_CTX = 16 };
-static unsigned region_uses(const SubstTmpl *t)
+typedef struct {
+    bool s;       /* the subject pointer */
+    bool c;       /* the capture array */
+    bool ref;     /* a group read through <prefix>_subst_group: map, nc, flags, g, rc */
+    bool cond;    /* a conditional's slot test: map, nc, sl */
+    bool ctx;     /* ctx itself (a variable) */
+} RegionUses;
+
+static RegionUses region_uses(const SubstTmpl *t)
 {
-    unsigned u = 0;
+    RegionUses u = { false, false, false, false, false };
     for (size_t i = t->region; i < t->nitems; i++) {
         const SubstItem *it = &t->items[i];
         switch (it->kind) {
         case SUBST_GROUP:
         case SUBST_NAME:
-            u |= RU_S | RU_C | (it->kind == SUBST_NAME || it->num ? RU_REF : 0);
+            u.s = u.c = true;
+            if (it->kind == SUBST_NAME || it->num) u.ref = true;
             break;
-        case SUBST_SUBJECT: u |= RU_S; break;
-        case SUBST_VAR:     u |= RU_CTX; break;
+        case SUBST_SUBJECT: u.s = true; break;
+        case SUBST_VAR:     u.ctx = true; break;
         case SUBST_BEFORE:
-        case SUBST_AFTER:   u |= RU_S | RU_C; break;
-        case SUBST_COND:    if (it->num) u |= RU_C | RU_COND; break;
-        default:            break;
+        case SUBST_AFTER:   u.s = u.c = true; break;
+        case SUBST_COND:    if (it->num) u.c = u.cond = true; break;
+        case SUBST_LIT:
+        case SUBST_CASE:    break;
         }
     }
     return u;
@@ -1015,26 +1024,26 @@ static unsigned region_uses(const SubstTmpl *t)
  * state starts at none for every match. */
 static void emit_region(StrBuf *c, const char *p, const SubstTmpl *t)
 {
-    const unsigned u = region_uses(t);
+    const RegionUses u = region_uses(t);
     pcrec_sb_printf(c,
         "\n/* Match c's case region (docs/spec/subst_api.md section 4 para 8): its bytes,\n"
         " * case forcing applied, written at dst (NULL: counted only) and counted in *len. */\n"
         "static int %s_region(const rx_ctx *ctx, const pcrec_subst_map *map, ptrdiff_t (*c)[2],\n"
         "                     size_t nc, unsigned flags, unsigned char *dst, size_t *len)\n"
         "{\n", p);
-    if (u & RU_S)
+    if (u.s)
         pcrec_sb_puts(c, "    const unsigned char *s = ctx->subject ? ctx->subject : pcrec_subst_empty;\n");
-    if (u & RU_REF)
+    if (u.ref)
         pcrec_sb_puts(c, "    pcrec_subst_piece g = { pcrec_subst_empty, 0 };\n"
                          "    int rc;\n");
-    if (u & RU_COND)
+    if (u.cond)
         pcrec_sb_puts(c, "    int sl;\n");
     pcrec_sb_puts(c, "    size_t w = 0;\n"
                      "    int st = 0;\n");
-    if (!(u & (RU_REF | RU_COND))) pcrec_sb_puts(c, "    (void)map; (void)nc;\n");
-    if (!(u & RU_C))               pcrec_sb_puts(c, "    (void)c;\n");
-    if (!(u & RU_REF))             pcrec_sb_puts(c, "    (void)flags;\n");
-    if (!(u & (RU_S | RU_CTX)))    pcrec_sb_puts(c, "    (void)ctx;\n");
+    if (!u.ref && !u.cond) pcrec_sb_puts(c, "    (void)map; (void)nc;\n");
+    if (!u.c)              pcrec_sb_puts(c, "    (void)c;\n");
+    if (!u.ref)            pcrec_sb_puts(c, "    (void)flags;\n");
+    if (!u.s && !u.ctx)    pcrec_sb_puts(c, "    (void)ctx;\n");
     emit_region_items(c, p, t, t->region, t->nitems, 0);
     pcrec_sb_puts(c, "    *len = w;\n    return 0;\n}\n");
 }
