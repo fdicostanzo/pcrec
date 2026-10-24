@@ -150,9 +150,11 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   compiles (a census, a sweep, a probe battery) is heavy — run it as
   `scripts/boxlock run --label NAME -- CMD` or as a `heavy` chainrun stage.
   `PCREC_BOXLOCK=0` opts out, only with the manager's say-so.
-  A lane's chain of `boxlock run` steps YIELDS to the box queue: before each
-  step, `scripts/boxqueue status`; while any job is pending, wait (2026-10-24:
-  a kit lane's back-to-back lock steps held two queued make tests for 30 min).
+  A lane's chain of `boxlock run` steps YIELDS to the box queue, and THE LOCK
+  ENFORCES IT: a non-queue `boxlock run` waits (one `YIELDING to queue job`
+  line) while any queue job is pending and ready (2026-10-24: a kit lane's
+  back-to-back lock steps held two queued make tests for 30 min). Nothing to
+  remember; `PCREC_BOXLOCK_JUMP=1` overrides, audited, manager's say-so only.
 - If your task WRITES CODE (anything under `src/`, `cli/`, `lib/`): read
   docs/dev/guide/README.md and the files it names for your area (coding.md
   at least) before your first code edit — house disciplines, the

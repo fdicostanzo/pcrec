@@ -26,8 +26,12 @@ plant() {
     echo "$d/boxlock"
 }
 holder() { # holder SECONDS LABEL: hold the lock in the background, wait until it is held
-    "$TO" 60 bash "$BL" run --label "$2" -- sleep "$1" & kids+=($!)
-    for _ in $(seq 50); do bash "$BL" status >/dev/null; [ $? = 1 ] && return 0; sleep 0.1; done; return 1
+    # The hold time starts when the command RUNS (it drops a marker first), so a
+    # holder that is slow to start under load still holds for SECONDS; the wait
+    # is on that marker, not on a count of status polls.
+    local m=$T/held.$2.$RANDOM; rm -f "$m"
+    "$TO" 120 bash "$BL" run --label "$2" -- sh -c ': > "$1"; sleep "$2"' sh "$m" "$1" & kids+=($!)
+    for _ in $(seq 300); do [ -e "$m" ] && return 0; sleep 0.1; done; return 1
 }
 
 # 1. free
@@ -89,6 +93,44 @@ PCREC_BOXLOCK_HELD=bogus "$TO" 10 bash "$BL" run --no-wait -- true 2>/dev/null; 
 out=$(PCREC_BOXLOCK=0 "$TO" 10 bash "$BL" run --no-wait -- echo RAN 2>&1); rc=$?
 [ "$rc" = 0 ] && printf '%s' "$out" | grep -q 'UNLOCKED' && printf '%s' "$out" | grep -q RAN && ok "PCREC_BOXLOCK=0 runs unlocked, and says so" || bad "opt-out: rc=$rc $out"
 "$TO" 10 bash "$BL" bogus 2>/dev/null; [ $? = 64 ] && ok "usage error exits 64" || bad "usage exit"
+
+# 7. YIELD to the box queue (sacrificial queue dir; a "runner" is a flock holder on .runner.lock)
+Q=$T/.boxqueue; mkdir -p "$Q/pending" "$Q/.state"
+export PCREC_BOXQUEUE_DIR=$Q
+"$TO" 120 flock "$Q/.runner.lock" sleep 100 & RUNNER=$!; kids+=($RUNNER); sleep 0.3
+for _ in $(seq 100); do "$TO" 10 bash "$BL" status >/dev/null && break; sleep 0.2; done   # section 6's holder ends first
+out=$("$TO" 10 bash "$BL" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && [ "$out" = RAN ] && ok "yield: no pending job -> acquires" || bad "yield/no pending: rc=$rc $out"
+: > "$Q/pending/100-main-maketest"; echo "not-ready: waiting on dep" > "$Q/.state/main-maketest.answer"
+out=$("$TO" 10 bash "$BL" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && [ "$out" = RAN ] && ok "yield: a not-ready pending job does not block" || bad "yield/not-ready: rc=$rc $out"
+echo "ready (starting)" > "$Q/.state/main-maketest.answer"
+out=$("$TO" 10 bash "$BL" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
+[ "$rc" = 75 ] && printf '%s' "$out" | grep -q "REFUSED 'lane'.*yielding to queue job 100-main-maketest" && ! printf '%s' "$out" | grep -q RAN \
+    && ok "yield: ready pending job + --no-wait -> exit 75 naming the job" || bad "yield/ready: rc=$rc $out"
+PCREC_BOXLOCK_WAIT=0 "$TO" 10 bash "$BL" run --label lane -- true 2>/dev/null; rc=$?
+[ "$rc" = 75 ] && ok "yield: PCREC_BOXLOCK_WAIT=0 refuses too" || bad "yield/WAIT=0: rc=$rc"
+out=$("$TO" 10 bash "$BL" run --label queue:100-main-maketest -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && [ "$out" = RAN ] && ok "yield: the runner's own queue: label is exempt" || bad "yield/runner: rc=$rc $out"
+out=$(PCREC_BOXLOCK_JUMP=1 "$TO" 10 bash "$BL" run --label jumper -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q RAN && grep -q 'label=jumper .*jumped=100-main-maketest' "$T/.box.lock.audit" \
+    && ok "yield: JUMP=1 acquires and writes one audit line" || bad "yield/JUMP: rc=$rc $out"
+[ "$(wc -l < "$T/.box.lock.audit")" = 1 ] && ok "yield: exactly one audit line" || bad "audit lines"
+# a waiting lane takes its turn once no ready job is pending
+( sleep 2; rm -f "$Q/pending/100-main-maketest" ) & kids+=($!)
+out=$("$TO" 30 bash "$BL" run --label patient -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q "'patient' YIELDING to queue job 100-main-maketest" && printf '%s' "$out" | grep -q RAN \
+    && ok "yield: waits (one YIELDING line), then runs when the job leaves pending/" || bad "yield/turn: rc=$rc $out"
+# PLANT: yield disabled -> the ready case goes red
+if P=$(plant noyield 'while [ -n "$rp" ]; do' 'while false; do'); then
+    out=$("$TO" 10 bash "$P" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
+    [ "$rc" = 0 ] && ok "PLANT noyield: the ready-pending case acquires, so the yield test would go red (rc=$rc)" || bad "PLANT noyield not caught"
+fi
+# no live runner: a ready-looking pending job does not block
+kill "$RUNNER" 2>/dev/null; wait "$RUNNER" 2>/dev/null; sleep 0.3
+: > "$Q/pending/100-main-maketest"
+out=$("$TO" 10 bash "$BL" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && [ "$out" = RAN ] && ok "yield: no live runner -> a pending job does not block" || bad "yield/no runner: rc=$rc $out"
 
 echo "boxlock.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
