@@ -3549,11 +3549,6 @@ tests/utf8/axis12_scripts.rxt:201	-i --features unicode-props --encoding=utf8	5c
 tests/utf8/axis12_scripts.rxt:214	--features unicode-props --encoding=byte	5c707b477265656b7d
 tests/utf8/axis12_scripts.rxt:224	--features unicode-props --encoding=byte	5c707b73633d477265656b7d
 tests/utf8/axis12_scripts.rxt:27	--features unicode-props --encoding=utf8	5c707b477265656b7d
-tests/utf8/axis12_scripts.rxt:296	--features unicode-props --encoding=utf8	5c507b556e6b6e6f776e7d
-tests/utf8/axis12_scripts.rxt:304	--features unicode-props --encoding=utf8	5c707b556e6b6e6f776e7d
-tests/utf8/axis12_scripts.rxt:312	--features unicode-props --encoding=utf8	5c707b73633d556e6b6e6f776e7d
-tests/utf8/axis12_scripts.rxt:320	--features unicode-props --encoding=utf8	5c707b7363783d556e6b6e6f776e7d
-tests/utf8/axis12_scripts.rxt:328	--features unicode-props --encoding=utf8	5c707b5a7a7a7a7d
 tests/utf8/axis12_scripts.rxt:41	--features unicode-props --encoding=utf8	5c707b73633d477265656b7d
 tests/utf8/axis12_scripts.rxt:55	--features unicode-props --encoding=utf8	5c707b7363783d477265656b7d
 tests/utf8/axis12_scripts.rxt:67	--features unicode-props --encoding=utf8	5c707b5363726970743a477265656b7d
@@ -3874,3 +3869,108 @@ tests/findall/global.rxt:1273	--features all	615c4b7c62
 tests/findall/global.rxt:1610	--features all	286129
 tests/findall/global.rxt:1619	--features all	2861292862293f2863293f
 tests/findall/global.rxt:1628	--features all	2861292862293f2863293f2864293f2865293f2866293f2867293f2868293f2869293f286a293f
+tests/utf8/axis12_scripts.rxt:289	--features unicode-props --encoding=utf8	5c507b556e6b6e6f776e7d
+tests/utf8/axis12_scripts.rxt:297	--features unicode-props --encoding=utf8	5c707b556e6b6e6f776e7d
+tests/utf8/axis12_scripts.rxt:305	--features unicode-props --encoding=utf8	5c707b73633d556e6b6e6f776e7d
+tests/utf8/axis12_scripts.rxt:313	--features unicode-props --encoding=utf8	5c707b7363783d556e6b6e6f776e7d
+tests/utf8/axis12_scripts.rxt:321	--features unicode-props --encoding=utf8	5c707b5a7a7a7a7d
+tests/utf8/uprop_blk_age.rxt:104	-i --features unicode-props --encoding=utf8	5c707b626c6b3d42617369635f4c6174696e7d
+tests/utf8/uprop_blk_age.rxt:114	--features unicode-props --encoding=utf8	5c707b426c6f636b3d437972696c6c69637d2b
+tests/utf8/uprop_blk_age.rxt:122	--features unicode-props --encoding=utf8	5c707b4167653d312e317d
+tests/utf8/uprop_blk_age.rxt:131	--features unicode-props --encoding=utf8	5c707b4167653d322e317d
+tests/utf8/uprop_blk_age.rxt:139	--features unicode-props --encoding=utf8	5c707b4167653d362e317d
+tests/utf8/uprop_blk_age.rxt:147	--features unicode-props --encoding=utf8	5c707b4167653a5631305f307d
+tests/utf8/uprop_blk_age.rxt:155	--features unicode-props --encoding=utf8	5c707b4167653d31362e307d
+tests/utf8/uprop_blk_age.rxt:164	--features unicode-props --encoding=utf8	5c707b4167653d4e417d
+tests/utf8/uprop_blk_age.rxt:173	--features unicode-props --encoding=utf8	5c707b6167653d556e61737369676e65647d
+tests/utf8/uprop_blk_age.rxt:181	--features unicode-props --encoding=utf8	5c507b4167653d312e317d
+tests/utf8/uprop_blk_age.rxt:189	--features unicode-props --encoding=utf8	5b5c707b4167653d322e317d5c707b4167653d362e317d5d
+tests/utf8/uprop_blk_age.rxt:19	--features unicode-props --encoding=utf8	5c707b426c6f636b3d477265656b7d
+tests/utf8/uprop_blk_age.rxt:198	-i --features unicode-props --encoding=utf8	5c707b4167653d312e317d
+tests/utf8/uprop_blk_age.rxt:208	--features unicode-props	5c707b626c6b3d4c6174696e5f315f5375707d
+tests/utf8/uprop_blk_age.rxt:215	--features unicode-props	5c707b626c6b3d42617369635f4c6174696e7d
+tests/utf8/uprop_blk_age.rxt:222	--features unicode-props	5c707b626c6b3d477265656b7d
+tests/utf8/uprop_blk_age.rxt:28	--features unicode-props --encoding=utf8	5c707b626c6b3a477265656b5f616e642d436f707469637d
+tests/utf8/uprop_blk_age.rxt:36	--features unicode-props --encoding=utf8	5c707b426c6f636b3d477265656b5f416e645f436f707469637d
+tests/utf8/uprop_blk_age.rxt:44	--features unicode-props --encoding=utf8	5c707b626c6b3d41534349497d
+tests/utf8/uprop_blk_age.rxt:54	--features unicode-props --encoding=utf8	5c507b626c6b3d41534349497d
+tests/utf8/uprop_blk_age.rxt:62	--features unicode-props --encoding=utf8	5c707b5e426c6f636b3d4261736963204c6174696e7d
+tests/utf8/uprop_blk_age.rxt:70	--features unicode-props --encoding=utf8	5b5c707b626c6b3d477265656b7d785d
+tests/utf8/uprop_blk_age.rxt:79	--features unicode-props --encoding=utf8	5c707b626c6b3d43757272656e63795f53796d626f6c737d
+tests/utf8/uprop_blk_age.rxt:88	--features unicode-props --encoding=utf8	5c707b626c6b3d456d6f7469636f6e737d
+tests/utf8/uprop_blk_age.rxt:96	--features unicode-props --encoding=utf8	5c707b626c6b3d4e427d
+tests/utf8/uprop_more.rxt:106	--features unicode-props --encoding=utf8	5c707b5e456d6f6a697d
+tests/utf8/uprop_more.rxt:115	--features unicode-props --encoding=utf8	5c507b5e456d6f6a697d
+tests/utf8/uprop_more.rxt:124	--features unicode-props --encoding=utf8	5b5c707b456d6f6a697d785d
+tests/utf8/uprop_more.rxt:134	--features unicode-props --encoding=utf8	5b5e5c707b456d6f6a697d5d
+tests/utf8/uprop_more.rxt:144	--features unicode-props --encoding=utf8	5c707b456d6f6a697d2b
+tests/utf8/uprop_more.rxt:152	--features unicode-props --encoding=utf8	5c707b416c70686162657469637d
+tests/utf8/uprop_more.rxt:16	--features unicode-props --encoding=utf8	5c707b456d6f6a697d
+tests/utf8/uprop_more.rxt:166	--features unicode-props --encoding=utf8	5c707b20614c704861207d
+tests/utf8/uprop_more.rxt:174	--features unicode-props --encoding=utf8	5c707b44656661756c742d49676e6f7261626c655f436f646520506f696e747d
+tests/utf8/uprop_more.rxt:182	--features unicode-props --encoding=utf8	5c707b4c6f776572636173657d
+tests/utf8/uprop_more.rxt:193	--features unicode-props --encoding=utf8	5c707b5570706572636173657d
+tests/utf8/uprop_more.rxt:203	-i --features unicode-props --encoding=utf8	5c707b4c6f776572636173657d
+tests/utf8/uprop_more.rxt:213	-i --features unicode-props --encoding=utf8	5c707b5570706572636173657d
+tests/utf8/uprop_more.rxt:222	-i --features unicode-props --encoding=utf8	5c707b416c70686162657469637d
+tests/utf8/uprop_more.rxt:232	-i --features unicode-props --encoding=utf8	5c707b456d6f6a697d
+tests/utf8/uprop_more.rxt:242	--features unicode-props --encoding=utf8	5c707b43617365647d
+tests/utf8/uprop_more.rxt:253	--features unicode-props --encoding=utf8	5c707b43497d
+tests/utf8/uprop_more.rxt:263	--features unicode-props --encoding=utf8	5c707b435743467d
+tests/utf8/uprop_more.rxt:273	--features unicode-props --encoding=utf8	5c707b4368616e6765735f5768656e5f5469746c6563617365647d
+tests/utf8/uprop_more.rxt:282	--features unicode-props --encoding=utf8	5c707b44656661756c745f49676e6f7261626c655f436f64655f506f696e747d
+tests/utf8/uprop_more.rxt:29	--features unicode-props --encoding=utf8	5c707b456d6f6a695f50726573656e746174696f6e7d
+tests/utf8/uprop_more.rxt:294	--features unicode-props --encoding=utf8	5c707b44497d
+tests/utf8/uprop_more.rxt:302	--features unicode-props --encoding=utf8	5c707b426964695f436f6e74726f6c7d
+tests/utf8/uprop_more.rxt:313	--features unicode-props --encoding=utf8	5c707b426964695f437d
+tests/utf8/uprop_more.rxt:322	--features unicode-props --encoding=utf8	5c707b426964695f4d6972726f7265647d
+tests/utf8/uprop_more.rxt:333	--features unicode-props --encoding=utf8	5c707b4a6f696e5f437d
+tests/utf8/uprop_more.rxt:342	--features unicode-props --encoding=utf8	5c707b56537d
+tests/utf8/uprop_more.rxt:351	--features unicode-props --encoding=utf8	5c707b4e436861727d
+tests/utf8/uprop_more.rxt:361	--features unicode-props --encoding=utf8	5c707b73706163657d
+tests/utf8/uprop_more.rxt:373	--features unicode-props --encoding=utf8	5c707b5061745f57537d
+tests/utf8/uprop_more.rxt:383	--features unicode-props --encoding=utf8	5c707b41534349497d
+tests/utf8/uprop_more.rxt:394	--features unicode-props --encoding=utf8	5c707b4865785f44696769747d
+tests/utf8/uprop_more.rxt:40	--features unicode-props --encoding=utf8	5c707b457874656e6465645f506963746f677261706869637d
+tests/utf8/uprop_more.rxt:405	--features unicode-props --encoding=utf8	5c707b414865787d
+tests/utf8/uprop_more.rxt:415	--features unicode-props --encoding=utf8	5c707b49445f53746172747d
+tests/utf8/uprop_more.rxt:425	--features unicode-props --encoding=utf8	5c707b584944437d
+tests/utf8/uprop_more.rxt:435	--features unicode-props --encoding=utf8	5c707b4d6174687d
+tests/utf8/uprop_more.rxt:445	--features unicode-props --encoding=utf8	5c707b446173687d
+tests/utf8/uprop_more.rxt:455	--features unicode-props --encoding=utf8	5c707b514d61726b7d
+tests/utf8/uprop_more.rxt:465	--features unicode-props --encoding=utf8	5c707b4964656f677261706869637d
+tests/utf8/uprop_more.rxt:475	--features unicode-props --encoding=utf8	5c707b554964656f7d
+tests/utf8/uprop_more.rxt:484	--features unicode-props --encoding=utf8	5c707b4d434d7d
+tests/utf8/uprop_more.rxt:492	--features unicode-props --encoding=utf8	5c707b49445f436f6d7061745f4d6174685f53746172747d
+tests/utf8/uprop_more.rxt:500	--features unicode-props --encoding=utf8	5c707b47725f4578747d
+tests/utf8/uprop_more.rxt:509	--features unicode-props --encoding=utf8	5c707b47725f426173657d
+tests/utf8/uprop_more.rxt:51	--features unicode-props --encoding=utf8	5c707b457874506963747d
+tests/utf8/uprop_more.rxt:518	--features unicode-props --encoding=utf8	5c707b53447d
+tests/utf8/uprop_more.rxt:527	--features unicode-props --encoding=utf8	5c707b5465726d7d
+tests/utf8/uprop_more.rxt:537	--features unicode-props --encoding=utf8	5c707b535465726d7d
+tests/utf8/uprop_more.rxt:547	--features unicode-props --encoding=utf8	5c707b62633d527d
+tests/utf8/uprop_more.rxt:557	--features unicode-props --encoding=utf8	5c707b62633a414c7d
+tests/utf8/uprop_more.rxt:566	--features unicode-props --encoding=utf8	5c707b4269646920436c617373203d204c7d
+tests/utf8/uprop_more.rxt:575	--features unicode-props --encoding=utf8	5c707b62696469636c617373203d20656e7d
+tests/utf8/uprop_more.rxt:584	--features unicode-props --encoding=utf8	5c707b62633d414e7d
+tests/utf8/uprop_more.rxt:59	--features unicode-props --encoding=utf8	5c707b456d6f6a695f4d6f6469666965727d
+tests/utf8/uprop_more.rxt:592	--features unicode-props --encoding=utf8	5c707b62633d4e534d7d
+tests/utf8/uprop_more.rxt:600	--features unicode-props --encoding=utf8	5c707b62633d424e7d
+tests/utf8/uprop_more.rxt:610	--features unicode-props --encoding=utf8	5c707b62633d427d
+tests/utf8/uprop_more.rxt:620	--features unicode-props --encoding=utf8	5c707b62633d57537d
+tests/utf8/uprop_more.rxt:630	--features unicode-props --encoding=utf8	5c707b62633d4f4e7d
+tests/utf8/uprop_more.rxt:647	--features unicode-props --encoding=utf8	5c707b62633d414c7d
+tests/utf8/uprop_more.rxt:655	--features unicode-props --encoding=utf8	5c707b62633d4653497d
+tests/utf8/uprop_more.rxt:663	--features unicode-props --encoding=utf8	5c507b62633d4c7d
+tests/utf8/uprop_more.rxt:672	--features unicode-props --encoding=utf8	5b5c707b62633d527d5c707b62633d414c7d5d
+tests/utf8/uprop_more.rxt:68	--features unicode-props --encoding=utf8	5c707b45426173657d
+tests/utf8/uprop_more.rxt:737	--features unicode-props	5c707b416c70686162657469637d
+tests/utf8/uprop_more.rxt:747	--features unicode-props	5c707b4c6f776572636173657d
+tests/utf8/uprop_more.rxt:756	--features unicode-props	5c707b456d6f6a697d
+tests/utf8/uprop_more.rxt:766	--features unicode-props	5c707b62633d4c7d
+tests/utf8/uprop_more.rxt:77	--features unicode-props --encoding=utf8	5c707b45436f6d707d
+tests/utf8/uprop_more.rxt:775	--features unicode-props	5c707b62633d527d
+tests/utf8/uprop_more.rxt:782	--features unicode-props	5c707b41534349497d
+tests/utf8/uprop_more.rxt:87	--features unicode-props --encoding=utf8	5c707b52497d
+tests/utf8/uprop_more.rxt:96	--features unicode-props --encoding=utf8	5c507b456d6f6a697d
+# upropb2 (2026-10-24, [UPROP-MORE]): +104 -5 rows (lane upropb; the vmhat_checks.py mover rule on lane/upropb). +99 are blocks of two NEW corpus files (tests/utf8/uprop_more.rxt 74, tests/utf8/uprop_blk_age.rxt 25), correct forced-VM movers never pinned; the 5 axis12_scripts.rxt rows (:296,304,312,320,328 -> :289,297,305,313,321; patterns unchanged) are a renumbering: the lane deleted that file's 7-line \p{blk=Greek} refusal block (Block is now supported); no existing pattern's compile moved.
