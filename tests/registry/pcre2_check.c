@@ -3152,6 +3152,40 @@ static void check_gated_option_space(const char *set)
     }
 }
 
+/* Binary properties Unicode ADDED after 14.0.0 (an older oracle genuinely
+ * refuses them, like a newer script): ID_Compat_Math_* in 15.1,
+ * Modifier_Combining_Mark in 16.0.  Names are the table's normalised keys.
+ * Every OTHER name is old enough that a refusal is a bug, not drift. */
+static bool uprop_added_since(const char *norm)
+{
+    static const char *const NEW[] = { "IDCOMPATMATHCONTINUE",
+        "IDCOMPATMATHSTART", "MCM", "MODIFIERCOMBININGMARK" };
+    for (size_t i = 0; i < sizeof NEW / sizeof NEW[0]; i++)
+        if (strcmp(norm, NEW[i]) == 0) return true;
+    return false;
+}
+
+/* One cell of the [UPROP-MORE] converse: pcrec must accept exactly what
+ * libpcre2 accepts, at the open gate.  A name libpcre2 accepts and pcrec
+ * refuses is a MISSING property (goal 1); the reverse is T1, which
+ * `gate_cell` has already counted. */
+static void converse_cell(const char *pat, long *accept, long *refuse, long *missing)
+{
+    char err[256];
+    int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
+    int pc = pcrec_try(pat, err, sizeof err);
+    if (p2 == 0) {
+        (*accept)++;
+        if (pc != 0) {
+            if ((*missing)++ < 8)
+                bad("GATED [uprops converse]: '%s' — libpcre2 ACCEPTS it and "
+                    "pcrec refuses it: %s", pat, err);
+        }
+    } else {
+        (*refuse)++;
+    }
+}
+
 /* ---- [M5.0 stage 3]: THE SAME NAME SPACE, GATE OPEN --------------------
  *
  * WHY THE SWEEP ABOVE IS NO LONGER ENOUGH, and it is worth stating because
@@ -3174,23 +3208,18 @@ static void check_gated_option_space(const char *set)
  * faithful to, so a matcher pcrec emits for it matches a language nobody
  * defined.
  *
- * T2 IS DELIBERATELY NOT ASSERTED, and the reason is sharper here than in the
- * section below. Stage 3 ships a SUBSET of the names libpcre2 has, on purpose
- * (`utf8_design.md` §3.4 stages scripts to stage 5 and declines the boolean
- * and `Bidi_Class` families outright), so "pcrec must not refuse what
- * libpcre2 accepts" would fire on every one of those deliberate decisions.
- * What IS asserted about that direction is weaker and true: a name libpcre2
- * accepts and pcrec does not ship must be refused with the UNBUILT wording —
- * never with the "not a one-letter Unicode property code pcrec recognises"
- * text, which is a claim about the NAME rather than about the module and would
- * be a lie about `\p{Greek}`.
+ * T2 IS ASSERTED NOW, over a committed population ([UPROP-MORE]). Stage 3
+ * shipped a SUBSET of the names libpcre2 has, on purpose, so "pcrec must not
+ * refuse what libpcre2 accepts" could not be asked; the binary properties and
+ * Bidi_Class ship now, and the converse clause (2) below asks it of every
+ * spelling in the vendored `PropertyAliases.txt` binary section and the `bc`
+ * values, both directions, with libpcre2 the arbiter of each cell.
  *
  * THE POPULATION IS THE ORACLE'S, NOT PCREC'S TABLE. The names swept are the
- * closed-gate sweep's own generated space plus a hand-written list of REAL
- * PCRE2 property families this stage does not ship — read from `man
- * pcre2pattern`, never from `src/parse/uprops_tables.inc`, because a
- * population derived from the table under test could not contain a name the
- * table forgot. Both floors below are what stop the arm going vacuous if the
+ * closed-gate sweep's own generated space plus the converse list of clause
+ * (2), read from the vendored UCD alias files and never from
+ * `src/parse/uprops_tables.inc`, because a population derived from the table
+ * under test could not contain a name the table forgot. Both floors below are what stop the arm going vacuous if the
  * gate silently fails to open. */
 static void check_gated_uprops_space(const char *set)
 {
@@ -3215,26 +3244,76 @@ static void check_gated_uprops_space(const char *set)
     printf("  gated[%s]: focused enabled set installed (feature mask 0x%x)\n",
            set, pcrec_enabled_mask());
 
-    /* REAL PCRE2 property families this module does not ship, read from `man
-     * pcre2pattern` rather than from pcrec's own table. Each must be REFUSED,
-     * and refused by the module rather than by the name.
-     *
-     * [M5.0] STAGE 5 REMOVED THE FIVE SCRIPT NAMES AND THE THREE SCRIPT AXES
-     * FROM THIS LIST — they ship now, and the sweep below is what replaced
-     * them: every name pcrec's own table holds, asked of the live oracle.
-     * What is left is the two families `utf8_design.md` §3.4 declines
-     * outright, which is still more than the vacuity floor's two. */
-    static const char *const UNSHIPPED[] = {
-        "Alphabetic", "Uppercase", "White_Space", "Math",    /* booleans (declined) */
-        "Bidi_Class=L", "bc=R",                              /* Bidi_Class (declined) */
+    /* [UPROP-MORE] THE CONVERSE POPULATION, a committed, counted list read from
+     * the vendored `PropertyAliases.txt` (every spelling of every row of its
+     * "Binary Properties" section -- 73 rows, the 55 libpcre2 10.46 accepts
+     * and the 18 it refuses) plus PCRE2's own `ASCII` and `Any`, and from
+     * `PropertyValueAliases.txt` every spelling of the 23 `bc` values (the
+     * short names libpcre2 accepts, the long ones it refuses).  It replaces
+     * the stage-3 list of REAL-BUT-UNSHIPPED families: the binary properties
+     * and Bidi_Class ship now, and with them that population is EMPTY, so
+     * the clause that asked "refused as the module's gap" has nothing left to
+     * ask.  What replaces it asks the sharper question in both directions on
+     * a population the oracle arbitrates: pcrec REFUSES NO NAME libpcre2
+     * ACCEPTS (goal 1) and ACCEPTS NO NAME libpcre2 REFUSES (T1).  The
+     * population is the vendored file's, not pcrec's table, so a name the
+     * generator forgot is a name this list still contains. */
+    static const char *const CONVERSE_BIN[] = {
+    "AHex", "ASCII_Hex_Digit", "Alpha", "Alphabetic", "Bidi_C",
+    "Bidi_Control", "Bidi_M", "Bidi_Mirrored", "Cased", "CE",
+    "Composition_Exclusion", "CI", "Case_Ignorable", "Comp_Ex",
+    "Full_Composition_Exclusion", "CWCF", "Changes_When_Casefolded", "CWCM",
+    "Changes_When_Casemapped", "CWKCF", "Changes_When_NFKC_Casefolded",
+    "CWL", "Changes_When_Lowercased", "CWT", "Changes_When_Titlecased",
+    "CWU", "Changes_When_Uppercased", "Dash", "Dep", "Deprecated", "DI",
+    "Default_Ignorable_Code_Point", "Dia", "Diacritic", "EBase",
+    "Emoji_Modifier_Base", "EComp", "Emoji_Component", "EMod",
+    "Emoji_Modifier", "Emoji", "EPres", "Emoji_Presentation", "Ext",
+    "Extender", "ExtPict", "Extended_Pictographic", "Gr_Base",
+    "Grapheme_Base", "Gr_Ext", "Grapheme_Extend", "Gr_Link",
+    "Grapheme_Link", "Hex", "Hex_Digit", "Hyphen",
+    "ID_Compat_Math_Continue", "ID_Compat_Math_Start", "IDC", "ID_Continue",
+    "Ideo", "Ideographic", "IDS", "ID_Start", "IDSB", "IDS_Binary_Operator",
+    "IDST", "IDS_Trinary_Operator", "IDSU", "IDS_Unary_Operator", "Join_C",
+    "Join_Control", "kEH_NoMirror", "kEH_NoRotate", "LOE",
+    "Logical_Order_Exception", "Lower", "Lowercase", "Math", "MCM",
+    "Modifier_Combining_Mark", "NChar", "Noncharacter_Code_Point", "OAlpha",
+    "Other_Alphabetic", "ODI", "Other_Default_Ignorable_Code_Point",
+    "OGr_Ext", "Other_Grapheme_Extend", "OIDC", "Other_ID_Continue", "OIDS",
+    "Other_ID_Start", "OLower", "Other_Lowercase", "OMath", "Other_Math",
+    "OUpper", "Other_Uppercase", "Pat_Syn", "Pattern_Syntax", "Pat_WS",
+    "Pattern_White_Space", "PCM", "Prepended_Concatenation_Mark", "QMark",
+    "Quotation_Mark", "Radical", "RI", "Regional_Indicator", "SD",
+    "Soft_Dotted", "STerm", "Sentence_Terminal", "Term",
+    "Terminal_Punctuation", "UIdeo", "Unified_Ideograph", "Upper",
+    "Uppercase", "VS", "Variation_Selector", "WSpace", "White_Space",
+    "space", "XIDC", "XID_Continue", "XIDS", "XID_Start", "XO_NFC",
+    "Expands_On_NFC", "XO_NFD", "Expands_On_NFD", "XO_NFKC",
+    "Expands_On_NFKC", "XO_NFKD", "Expands_On_NFKD", "ASCII", "Any",
     };
-    /* Bodies libpcre2 refuses outright — the T1 population. */
+    static const char *const CONVERSE_BC[] = {
+    "AL", "Arabic_Letter", "AN", "Arabic_Number", "B",
+    "Paragraph_Separator", "BN", "Boundary_Neutral", "CS",
+    "Common_Separator", "EN", "European_Number", "ES", "European_Separator",
+    "ET", "European_Terminator", "FSI", "First_Strong_Isolate", "L",
+    "Left_To_Right", "LRE", "Left_To_Right_Embedding", "LRI",
+    "Left_To_Right_Isolate", "LRO", "Left_To_Right_Override", "NSM",
+    "Nonspacing_Mark", "ON", "Other_Neutral", "PDF",
+    "Pop_Directional_Format", "PDI", "Pop_Directional_Isolate", "R",
+    "Right_To_Left", "RLE", "Right_To_Left_Embedding", "RLI",
+    "Right_To_Left_Isolate", "RLO", "Right_To_Left_Override", "S",
+    "Segment_Separator", "WS", "White_Space",
+    };
+    /* Bodies libpcre2 refuses outright -- the T1 population.  `Block=`/`blk=`
+     * are NOT here: they are pcrec EXTENSIONS beyond PCRE2 (D178), checked
+     * on their own below; `InGreek`/`IsGreek` stay refused. */
     static const char *const UNKNOWN[] = {
-        "Foo", "Q", "Bogus", "InGreek", "Block=Greek", "blk=Greek", "IsGreek",
+        "Foo", "Q", "Bogus", "InGreek", "IsGreek", "Assigned", "gc=Lu",
+        "ea=W", "Alphabetic=Y", "bc=Arabic_Letter",
     };
     static const char *const SELS = "pP";
 
-    long shipped = 0, unshipped_refused = 0, misworded = 0;
+    long shipped = 0, conv_accept = 0, conv_refuse = 0, conv_missing = 0;
 
     for (const char *s = SELS; *s; s++) {
         /* (1) THE T1 CLAUSE over every body the closed-gate sweep generates
@@ -3254,30 +3333,23 @@ static void check_gated_uprops_space(const char *set)
             if (pcrec_try(pat, err, sizeof err) == 0) shipped++;
         }
 
-        /* (2) THE UNSHIPPED-NAME WORDING. libpcre2 has these; pcrec does not
-         *     ship them yet, so it must refuse — and must do so as its own
-         *     module's gap, never as an unknown name. */
-        for (size_t i = 0; i < sizeof UNSHIPPED / sizeof UNSHIPPED[0]; i++) {
+        /* (2) THE CONVERSE, over the committed population above: bare binary
+         *     property spellings, and every Bidi_Class value under the three
+         *     property-name spellings PCRE2 reads (`bc`, `bidiclass`, with
+         *     either separator).  libpcre2 is the arbiter of each cell. */
+        for (size_t i = 0; i < sizeof CONVERSE_BIN / sizeof CONVERSE_BIN[0]; i++) {
             char pat[96];
-            snprintf(pat, sizeof pat, "\\%c{%s}", *s, UNSHIPPED[i]);
-            int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
-            if (p2 != 0)
-                continue;   /* this libpcre2 does not have it either — nothing owed */
-            if (pcrec_try(pat, err, sizeof err) == 0) {
-                bad("GATED [uprops unshipped]: '%s' — pcrec COMPILES a property "
-                    "stage 3 does not ship. Either the table gained it without "
-                    "this list being updated, or it is matching the wrong set.",
-                    pat);
-                continue;
-            }
-            unshipped_refused++;
-            if (strstr(err, "not a one-letter Unicode property code")) {
-                bad("GATED [uprops unshipped]: '%s' — libpcre2 HAS this property "
-                    "and pcrec refused it as a name it does not recognise: "
-                    "\"%s\". That claim is about the NAME and it is false; a "
-                    "real property this stage has not built is the module's own "
-                    "gap and must say so.", pat, err);
-                misworded++;
+            snprintf(pat, sizeof pat, "\\%c{%s}", *s, CONVERSE_BIN[i]);
+            gate_cell(&t, "uprops converse", pat);
+            converse_cell(pat, &conv_accept, &conv_refuse, &conv_missing);
+        }
+        for (size_t i = 0; i < sizeof CONVERSE_BC / sizeof CONVERSE_BC[0]; i++) {
+            static const char *const PFX[] = { "bc=", "bidiclass:", "Bidi Class = " };
+            for (size_t k = 0; k < sizeof PFX / sizeof PFX[0]; k++) {
+                char pat[128];
+                snprintf(pat, sizeof pat, "\\%c{%s%s}", *s, PFX[k], CONVERSE_BC[i]);
+                gate_cell(&t, "uprops converse", pat);
+                converse_cell(pat, &conv_accept, &conv_refuse, &conv_missing);
             }
         }
     }
@@ -3309,11 +3381,13 @@ static void check_gated_uprops_space(const char *set)
     snprintf(pin_uni, sizeof pin_uni, "%s", pcrec_uprops_unicode_version());
     bool same_unicode = strcmp(oracle_uni, pin_uni) == 0;
     long shipped_names = 0, name_drift = 0, name_under = 0;
+    long ext_names = 0, ext_clash = 0;
     for (size_t i = 0; i < pcrec_uprops_row_count(); i++) {
         unsigned ns = 0;
         const char *nm = pcrec_uprops_row_name(i, &ns);
         static const struct { unsigned bit; const char *prefix; } NSPFX[] = {
-            { 1u, "" }, { 2u, "sc=" }, { 4u, "scx=" },
+            { 1u, "" }, { 2u, "sc=" }, { 4u, "scx=" }, { 8u, "bc=" },
+            { 16u, "blk=" }, { 32u, "age=" },
         };
         for (size_t k = 0; k < sizeof NSPFX / sizeof NSPFX[0]; k++) {
             if (!(ns & NSPFX[k].bit)) continue;
@@ -3322,6 +3396,25 @@ static void check_gated_uprops_space(const char *set)
             int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
             char err2[256];
             int pc = pcrec_try(pat, err2, sizeof err2);
+            if (NSPFX[k].bit & (16u | 32u)) {
+                /* THE EXTENSIONS BEYOND PCRE2 (D178): Block and Age.  pcrec
+                 * must ACCEPT them and libpcre2 must REFUSE them -- if a
+                 * libpcre2 ever accepts one, D26 makes PCRE2 the truth for
+                 * what it means and this row needs re-measuring, so this is
+                 * a red, not a note. */
+                ext_names++;
+                if (pc != 0) {
+                    if (name_under++ < 6)
+                        bad("GATED [uprops extension]: '%s' is in pcrec's own "
+                            "table and pcrec REFUSES it: %s", pat, err2);
+                } else if (p2 == 0) {
+                    if (ext_clash++ < 6)
+                        bad("GATED [uprops extension]: '%s' is a pcrec "
+                            "EXTENSION but this libpcre2 ACCEPTS it -- D26: "
+                            "PCRE2 is the truth, re-measure and re-rule", pat);
+                }
+                continue;
+            }
             shipped_names++;
             if (pc != 0) {
                 if (name_under++ < 6)
@@ -3340,7 +3433,7 @@ static void check_gated_uprops_space(const char *set)
                         pat, p2, pin_uni);
                 continue;
             }
-            if (!(ns & (2u | 4u))) {
+            if (!(ns & (2u | 4u)) && !uprop_added_since(nm)) {
                 if (name_drift++ < 6)
                     bad("GATED [uprops shipped]: '%s' — pcrec ships this name "
                         "and libpcre2 rejects it (error %d). It is a general "
@@ -3389,42 +3482,47 @@ static void check_gated_uprops_space(const char *set)
             shipped_names);
 
     printf("  gated[%s]: %ld probes, libpcre2 accepted %ld / rejected %ld, "
-           "pcrec accepted %ld; %ld real-but-unshipped names refused; "
-           "%ld shipped names asked of the oracle\n",
+           "pcrec accepted %ld; converse population %ld accepted + %ld refused "
+           "by libpcre2; %ld shipped names asked of the oracle (%ld of them "
+           "pcrec extensions)\n",
            set, t.probes, t.p2_accept, t.p2_reject, t.pc_accept,
-           unshipped_refused, shipped_names);
+           conv_accept, conv_refuse, shipped_names, ext_names);
 
     if (t.t1 == 0)
         ok("gated[unicode-props] T1: pcrec accepted no property name libpcre2 rejects");
     if (t.t3 == 0)
         ok("gated[unicode-props] T3: every refusal emitted no C source");
-    if (misworded == 0 && unshipped_refused > 0)
-        ok("gated[unicode-props]: every real-but-unshipped property is refused as "
-           "the MODULE's gap, never as an unknown name");
+    if (conv_missing == 0)
+        ok("gated[unicode-props] T2: pcrec refused no property name libpcre2 accepts "
+           "(every binary-property spelling and Bidi_Class form in the committed list)");
+    if (ext_names > 0 && ext_clash == 0)
+        ok("gated[unicode-props]: the Block and Age extensions compile in pcrec and "
+           "are refused by libpcre2");
 
-    /* THE TWO VACUITY FLOORS. Without the first, a gate that failed to open
+    /* THE VACUITY FLOORS. Without the first, a gate that failed to open
      * would make every cell refuse and every clause pass; without the second,
-     * an UNSHIPPED list gone stale (every entry silently shipped, or this
-     * libpcre2 having none of them) would make the wording clause vacuous.
-     * The numbers are FLOORS, not pins: they are properties of the shipped
-     * design (7 one-letter general categories, at least one real unshipped
-     * family per selector), so a table that grows does not have to edit them. */
+     * a converse list that lost its accepted half (or its refused half) would
+     * make T2 (or T1) vacuous.  FLOORS, not pins: properties of the shipped
+     * design, so a list that grows does not have to edit them. */
     if (shipped < 14)
         bad("gated[unicode-props] is NOT LIVE: only %ld of the 52 braced single "
             "letters compiled, and the seven general-category codes across both "
-            "selectors are 14 — the gate did not open, or the producer is gone",
+            "selectors are 14 -- the gate did not open, or the producer is gone",
             shipped);
     else
         ok("gated[unicode-props] liveness: the producer really compiles property "
            "names with the gate open");
-    if (unshipped_refused < 2)
-        bad("gated[unicode-props] is NOT LIVE: only %ld real-but-unshipped "
-            "property names were found, so the wording clause certified nothing "
-            "— this libpcre2 has none of the listed families, or they all ship "
-            "now and the list is stale", unshipped_refused);
+    if (conv_accept < 200 || conv_refuse < 100)
+        bad("gated[unicode-props] converse is NOT LIVE: libpcre2 accepted only "
+            "%ld and refused %ld of the committed list (floors 200 and 100) -- "
+            "the list is stale or the oracle is not the one it was measured "
+            "against", conv_accept, conv_refuse);
     else
-        ok("gated[unicode-props] liveness: real-but-unshipped names exist to "
-           "check the wording against");
+        ok("gated[unicode-props] liveness: the converse list has both accepted and "
+           "refused names to check");
+    if (ext_names < 300)
+        bad("gated[unicode-props] extension arm is NOT LIVE: only %ld Block/Age "
+            "rows were offered (the vendored files give 339 + 28)", ext_names);
 
     if (pc2_set_spec("none", err, sizeof err) != 0)
         bad("gated[%s]: could not restore the empty enabled set: %s", set, err);

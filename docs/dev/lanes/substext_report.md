@@ -80,7 +80,7 @@ a go"). Design of record: `docs/design/replace_design.md` through §R4c and
   - 2 are the STRICT-unset class (pcre2 gives -55; §9 row 5).
 - **Kept out of the differential:** 4 cells.
   - 3 ill-formed-UTF-8 case cells. libpcre2 crashes on these (§9 row 19,
-    upstream U22).
+    upstream U23).
   - 1 encoding-bind refusal.
 - **Whole-map cells:** 4 of the 79 cover every code point the oracle
   store's case map lists (2,851 code points), all agreeing with pcre2.

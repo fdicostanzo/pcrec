@@ -17,6 +17,7 @@ is everything those corpora structurally cannot express.
 - **uprops_sweep.c** — the pcrec side, compiled once per property against that property's own emitted artifact.
 - **size_ladder_prefilter_drop.rxt** — [PF-DROP] (D135): the witness `(\p{Xwd})` under `-e utf8`, a VM hybrid refused at default axes before the size-cap ladder gained its ...
 - **uprops_compare.py** — the comparator, and the ONE place the Unicode-version drift policy is written down.
+- **uprops_ucdref.py** — [UPROP-MORE]: independent references for what libpcre2 cannot arbitrate. `names`/`ext` re-read `Blocks.txt` and `DerivedAge.txt` themselves and compare every Block/Age sweep exactly, plus structure (Age is a function and `age=NA` completes it; blocks plus `blk=NB` tile the space); `pyuni` cross-checks `Bidi_Mirrored` and `Bidi_Class` against python `unicodedata` 16.0.0 on assigned code points (SKIPS loudly on another python). Run as §6 of the script.
 - **uprops_names.py** — [M5.0] stage 5: §2's PROMISE SIDE, re-derived from the vendored UCD and compared against the shipped table's rows in BOTH directions.
 
 ## What is NOT here

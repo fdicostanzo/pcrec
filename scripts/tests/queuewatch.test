@@ -113,6 +113,59 @@ env_for green; rm -f "$ST" "$ST".*
 l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 2>&1)
 case $l in *"CAP "*) ok "a fresh state on a queue with only ended jobs reports nothing (history seeded, exit 6)" ;; *) bad "history replayed: $l" ;; esac
 
+# the first launch on a RESTARTED-job history: jobs put back to pending log a START each time (many STARTs, one END), and
+# the running job has abandoned attempts before its live run. Hand-built queue dir, no runner and no `boxqueue add`.
+# First launch: no historic event; the running job's run still yields its START, stage ENDs and JOB-DONE once each.
+hist() { # hist QDIR: fill the history by hand; echoes nothing
+    local q=$1 i ld=$1/logs/R1; mkdir -p "$q/done/20261001T000000-jobH" "$q/running/jobR" "$q/pending" "$q/failed" "$ld"
+    : > "$q/queue.log"
+    for i in 1 2 3 4; do echo "== job jobH START owner=h cap=60 expect=none 2026-10-0${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    echo "== job jobH END rc=0 outcome=green verdict=GREEN wall=5s" >> "$q/queue.log"
+    for i in 5 6; do echo "== job jobH START owner=h cap=60 expect=none 2026-10-0${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    for i in 1 2 3; do echo "== job jobR START owner=r cap=60 expect=none 2026-10-1${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    echo "== logdir $ld" > "$q/running/jobR/job.log"; echo "pid=1" > "$q/running/jobR/started"
+    echo "== stage a rc=0 END" > "$ld/trailer.log"
+}
+once() { # once QDIR STATE: relaunch until CAP; print every event line except RUNNER-DEAD (no runner in a hand-built dir)
+    local l
+    while l=$("$TO" 30 bash "${QW}" --queue "$1" --state "$2" --no-ci --every 1 --confirm 1 --max-sec 2 --disk-pct 101 2>&1); do
+        case $l in *RUNNER-DEAD*) ;; *CAP*) break ;; *) echo "$l" ;; esac
+    done
+}
+hist_case() { # hist_case WATCHER TAG: the three phases; echoes the events seen per phase, | separated
+    local q=$T/qh$2 st=$T/sth$2 ld=$T/qh$2/logs/R1 a b c
+    hist "$q"; QW=$1
+    a=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ owner=.*//; s/ rc=0 logdir=.*/ rc=0/' | tr '\n' '|')
+    echo "== stage b rc=0 END" >> "$ld/trailer.log"
+    b=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ rc=0 logdir=.*/ rc=0/' | tr '\n' '|')
+    echo "== job jobR END rc=0 outcome=green verdict=GREEN wall=9s" >> "$q/queue.log"; mv "$q/running/jobR" "$q/done/20261013T000000-jobR"
+    c=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ logdir=.*//; s/ wall=[0-9]*s//' | tr '\n' '|')
+    echo "$a#$b#$c"
+}
+r=$(hist_case "$QW" ok)
+[ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] \
+    && ok "first launch on a restarted-job history (jobH: 6 STARTs, 1 END; jobR: 3 STARTs, running): no historic event; the running run's START, stage ENDs and JOB-DONE once each" || bad "restart history: $r"
+
+# a job that is ready but finds the box lock held logs START + `stays pending` every runner pass (live 2026-10-24: 615-flagfix-test,
+# a new JOB-START per pass woke the monitor every ~65 s). Real runner, scratch queue, a scratch lock held for several passes:
+# the job's one real run is the only JOB-START, then its STAGE-ENDs and JOB-DONE once each.
+waitcase() { # waitcase WATCHER TAG: echoes the sequence seen, normalised, | separated
+    local tag=$2 w hp l n
+    env_for "$tag"; w=$(wrapper "$tag" green); QW=$1; mkdir -p "$Q"
+    setsid bash "$here/boxlock" run --label hold -- sleep 7 > /dev/null 2>&1 9>&- & hp=$!
+    sleep 1
+    bash "$here/boxqueue" add --name "100-test-sim$tag" "$w" > "$T/add.$tag" 2>&1 || { echo "ADD FAILED"; return 1; }
+    collect "$T/ev.$tag"
+    n=$(grep -c "waiting on .*stays pending" "$Q/queue.log")
+    bash "$here/safekill" "$hp" > /dev/null 2>&1
+    echo "waits=$n"; norm "$T/ev.$tag" | tr '\n' '|'
+}
+r=$(waitcase "$QW" wait)
+exp_pass wait > "$T/exp.wait"
+case $r in "waits=0"*|"ADD FAILED"*) bad "wait case did not exercise a held lock: $r" ;;
+    *) [ "${r#*$'\n'}" = "$(tr '\n' '|' < "$T/exp.wait")" ] && ok "a job that waits behind a held box lock for several passes (${r%%$'\n'*}) then runs: exactly one JOB-START, then its STAGE-ENDs and JOB-DONE once" || bad "wait case: $r" ;;
+esac
+
 # a watcher SIGKILLed while waiting leaves the state usable: the lock dies with it, the next launch is clean
 env_for green
 bash "$QW" --state "$ST" --every 5 --confirm 1 --max-sec 20 > /dev/null 2>&1 & kp=$!
@@ -126,6 +179,88 @@ bound; rc=$?
 [ "$rc" = 6 ] && [ "$el" -le 5 ] && ok "--max-sec holds inside the sleep: --every 10 --max-sec 3 returned CAP in ${el}s" || bad "bound: rc=$rc el=$el"
 ( "$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 6 --disk-pct 101 > /dev/null 2>&1 & ); sleep 1
 "$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 2 --disk-pct 101 > /dev/null 2>&1; [ $? = 75 ] && ok "a second watcher on one state file is refused (75)" || bad "double watcher accepted"
+
+# QUIET counts reaped children's CPU (live 2026-10-24: a busy mech whose work ran in short-lived forks read as quiet).
+# Hand-built queue dir, no runner. A job with a silent log whose only activity is a loop forking short CPU-burning
+# children must NOT go QUIET; one that sleeps silently must go QUIET (once).
+quiet_case() { # quiet_case WATCHER TAG KIND(busy|idle): echoes the QUIET lines seen over ~9 s with --quiet-sec 4
+    local q=$T/qq$2 st=$T/stq$2 ld=$T/qq$2/logs/R1 jp l i out=""
+    mkdir -p "$q/running/jobQ" "$q/pending" "$q/done" "$q/failed" "$ld"; : > "$q/queue.log"
+    echo "== job jobQ START owner=q cap=60 expect=none 2026-10-24T00:00:00-04:00" >> "$q/queue.log"
+    echo "== logdir $ld" > "$q/running/jobQ/job.log"; echo "pid=1" > "$q/running/jobQ/started"; echo "== stage a rc=0 END" > "$ld/trailer.log"
+    if [ "$3" = busy ]; then
+        setsid bash -c 'while :; do bash -c "i=0; while [ \$i -lt 3000 ]; do i=\$((i+1)); done"; sleep 0.5; done' > /dev/null 2>&1 9>&- & jp=$!
+    else setsid sleep 60 > /dev/null 2>&1 9>&- & jp=$!; fi
+    echo "$jp" > "$ld/battery.pid"
+    "$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 > /dev/null 2>&1   # first launch seeds
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        l=$("$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --quiet-sec 4 --disk-pct 101 2>&1)
+        case $l in *QUIET*) out="$out${l%% no log*}|" ;; esac
+    done
+    bash "$here/safekill" "$jp" > /dev/null 2>&1
+    echo "$out"
+}
+r=$(quiet_case "$QW" ok busy)
+[ -z "$r" ] && ok "a silent-log job whose work is short-lived forked children is NOT quiet (reaped-children CPU counts)" || bad "busy fork-loop read as quiet: $r"
+r=$(quiet_case "$QW" idle idle)
+[ "$r" = "queuewatch: QUIET jobQ|" ] && ok "a silent job sleeping with no children goes QUIET exactly once" || bad "idle job: '$r'"
+
+# Three live false alarms (2026-10-24), hand-built queue dirs, no runner (RUNNER-DEAD lines are ignored).
+# fa_run WATCHER Q STATE N [opts]: N one-second launches; echoes every event line (minus its ':: ...' tail) except RUNNER-DEAD, | separated
+fa_run() {
+    local w=$1 q=$2 st=$3 n=$4 i l out=""; shift 4
+    "$TO" 30 bash "$w" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 > /dev/null 2>&1   # first launch seeds
+    for i in $(seq "$n"); do
+        l=$("$TO" 30 bash "$w" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 "$@" 2>&1)
+        case $l in *RUNNER-DEAD*|*CAP*) ;; *) out="$out${l%% :: *}|" ;; esac
+    done
+    echo "$out"
+}
+fa_job() { # fa_job QDIR NAME: a started job in running/ with no battery logdir (a perfrun-shaped job), job.log static
+    mkdir -p "$1/running/$2" "$1/pending" "$1/done" "$1/failed"; : > "$1/queue.log"
+    echo "== job $2 START owner=q cap=60 expect=none 2026-10-24T00:00:00-04:00" >> "$1/queue.log"
+    echo "no logdir here" > "$1/running/$2/job.log"; echo "pid=1" > "$1/running/$2/started"
+}
+# 1. QUIET reads ANY file of the job dir (perfrun: job.log static, job.log.make grows) and the job's own pid tree
+logcase() { # logcase WATCHER TAG KIND(grow|static|cpu)
+    local q=$T/qf$2 st=$T/stf$2 wp="" jp="" r
+    fa_job "$q" jobL; : > "$q/running/jobL/job.log.make"
+    case $3 in
+        grow) ( for _ in $(seq 14); do echo line >> "$q/running/jobL/job.log.make"; sleep 1; done ) 9>&- > /dev/null 2>&1 & wp=$! ;;
+        cpu) setsid bash -c 'bash -c "while :; do :; done" & wait' > /dev/null 2>&1 9>&- & jp=$!    # perfrun/make shape: an idle parent, a live busy child
+             echo "$jp 1" > "$q/running/jobL/pid" ;;
+        poll) setsid bash -c 'while :; do bash -c "i=0; while [ \$i -lt 3000 ]; do i=\$((i+1)); done"; sleep 0.5; done' > /dev/null 2>&1 9>&- & jp=$!   # a wrapper's own poll loop
+              echo "$jp 1" > "$q/running/jobL/pid" ;;
+    esac
+    r=$(fa_run "$1" "$q" "$st" 10 --quiet-sec 4)
+    [ -n "$wp" ] && wait "$wp" 2>/dev/null; [ -n "$jp" ] && bash "$here/safekill" "$jp" > /dev/null 2>&1
+    echo "$r"
+}
+r=$(logcase "$QW" grow grow); [ -z "$r" ] && ok "QUIET: a job whose job.log is static but job.log.make grows is not quiet" || bad "growing job.log.make read as quiet: $r"
+r=$(logcase "$QW" cpu cpu); [ -z "$r" ] && ok "QUIET: a silent job whose pid-file process tree burns CPU (no battery.pid) is not quiet" || bad "busy pid tree read as quiet: $r"
+r=$(logcase "$QW" stat static)
+case $r in "queuewatch: QUIET jobL no log growth or CPU for "?"s|") ok "QUIET: the same job with nothing growing still goes QUIET, once (control)" ;; *) bad "static control: $r" ;; esac
+r=$(logcase "$QW" poll poll)
+case $r in "queuewatch: QUIET jobL no log growth or CPU for "?"s|") ok "QUIET: a job whose only CPU is its pid-file ROOT's own short-lived poll children (a wrapper's wait loop) still goes QUIET" ;; *) bad "wrapper poll loop hid a quiet job: $r" ;; esac
+# 2. QUIET only for a job that has STARTED: running/NAME without `started` is the runner waiting for the box lock
+q=$T/qfnostart; fa_job "$q" jobW; rm -f "$q/running/jobW/started"
+r=$(fa_run "$QW" "$q" "$T/stfnostart" 8 --quiet-sec 3)
+[ -z "$r" ] && ok "QUIET: a job dir without 'started' (runner waiting on the box lock, job still pending) is never QUIET" || bad "unstarted job read as quiet: $r"
+# 3. PENDING-STUCK ages from READY, not from the queueing (a dependency wait is not box idleness)
+stuck_case() { # stuck_case WATCHER TAG READY-AGO-SEC: queued 20000 s ago, not-ready until READY-AGO s ago, nothing running
+    local q=$T/qs$2 now ts_add ts_nr ts_rd
+    now=$(date +%s); mkdir -p "$q/pending" "$q/running" "$q/done" "$q/failed" "$q/.state"
+    ts_add=$(date -d "@$((now - 20000))" -Iseconds); ts_nr=$(date -d "@$((now - 19000))" -Iseconds); ts_rd=$(date -d "@$(( now - $3 ))" -Iseconds)
+    { echo "== add 700-dep cap=60 patience=none expect=none $ts_add"
+      echo "== pass 1 START $ts_nr pending=1 box=free"; echo "  pass 1 700-dep not-ready: waiting on x (pending) (since $ts_nr) (1ms)"
+      echo "== pass 2 START $ts_rd pending=1 box=free"; echo "  pass 2 700-dep ready (starting) (1ms)"
+      echo "  job 700-dep waiting on pid=1 label=h; stays pending"; } > "$q/queue.log"
+    : > "$q/pending/700-dep"; touch -d "@$((now - 20000))" "$q/pending/700-dep"; echo "waiting on pid=1 label=h" > "$q/.state/dep.answer"
+    fa_run "$1" "$q" "$T/sts$2" 2 --stuck-sec 600
+}
+r=$(stuck_case "$QW" young 60); [ -z "$r" ] && ok "PENDING-STUCK: queued 20000 s ago but ready for 60 s (waited on a dependency) is not stuck" || bad "young-ready read as stuck: $r"
+r=$(stuck_case "$QW" old 1500)
+case $r in "queuewatch: PENDING-STUCK 700-dep pending for 15"??"s, nothing running (queued 200"??"s ago, ready for 15"??"s)|") ok "PENDING-STUCK: ready for 1500 s is stuck once, the line gives the ready age and the queued age" ;; *) bad "old-ready: $r" ;; esac
 
 # PLANTS: a scratch copy of the watcher with one bug each; the matching case must go red
 plant() { # plant NAME FROM TO: echo the path of the patched copy
@@ -141,6 +276,8 @@ PY
 }
 P1=$(plant nostate 'mark() { printf '"'"'%s\n'"'"' "$1" >> "$state"; }' 'mark() { :; }') || bad "plant nostate did not land"
 P2=$(plant swallow '[ "$closed" = 1 ] && mark "$id"; done <<<"$all"' 'mark "$id"; done <<<"$all"') || bad "plant swallow did not land"
+P4=$(plant oldseed '[ -e "$Q/running/$name/started" ] || continue; closed=0' 'closed=1')
+P6=$(plant oldrule '[ "${isreal[$ln]:-0}" = 1 ] || continue' ':') || bad "plant oldrule did not land" || bad "plant oldseed did not land"
 P3=$(plant noclamp 's=$every; [ "$left" -lt "$s" ] && s=$left' 's=$every') || bad "plant noclamp did not land"
 if [ -n "$P1" ] && [ -n "$P2" ]; then
     ( QW=$P1 BUDGET=25 KILLONE=0 scenario pn burst ) &
@@ -150,9 +287,28 @@ if [ -n "$P1" ] && [ -n "$P2" ]; then
     norm "$T/ev.pn" | diff -q "$T/exp.pn" - > /dev/null 2>&1 && bad "PLANT state-not-written not caught" || ok "PLANT state-not-written: the sequence is wrong ($(grep -c 'JOB-START' "$T/ev.pn") JOB-STARTs), so the exactly-once case catches it"
     norm "$T/ev.ps" | diff -q "$T/exp.ps" - > /dev/null 2>&1 && bad "PLANT first-launch-swallows-live-events not caught" || ok "PLANT first-launch-swallows-live-events: START/early ENDs of the running job are lost, so the case catches it"
 fi
+if [ -n "$P4" ]; then
+    r=$(hist_case "$P4" oldseed)
+    [ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] && bad "PLANT old-seeding (only the first START per ended job marked) not caught" || ok "PLANT old-seeding: stale historic JOB-STARTs leak after the first launch, so the restart-history case catches it"
+fi
+if [ -n "$P6" ]; then
+    r=$(waitcase "$P6" oldrule)
+    [ "${r#*$'\n'}" = "$(tr '\n' '|' < "$T/exp.wait")" ] && bad "PLANT old rule (every START reported) not caught" || ok "PLANT old rule: each held-lock pass reports another JOB-START, so the wait case catches it"
+fi
+P5=$(plant livecpu 'cpu[$1] = $13 + $14 + $15 + $16}' 'cpu[$1] = $13 + $14}') || bad "plant livecpu did not land"
+if [ -n "$P5" ]; then
+    r=$(quiet_case "$P5" livecpu busy)
+    [ -z "$r" ] && bad "PLANT live-CPU-only sum (the old bug) not caught" || ok "PLANT live-CPU-only sum: the fork-loop job reads QUIET, so the busy case catches it"
+fi
 if [ -n "$P3" ]; then
     bound "$P3"; rc=$?
     [ "$el" -ge 9 ] && ok "PLANT sleep-not-clamped: CAP only after ${el}s (> a 3 s bound), so the bound case catches it" || bad "PLANT noclamp not caught: rc=$rc el=$el"
 fi
+P7=$(plant nostarted 'name=${d##*/}; [ -e "$d/started" ] || continue' 'name=${d##*/}') || bad "plant nostarted did not land"
+P8=$(plant joblogonly 'for f in "$d"/*; do case' 'for f in "$d"/job.log; do case') || bad "plant joblogonly did not land"
+P9=$(plant queuedage '[ -n "$rdy" ] && since=$rdy ;; esac' ': ;; esac') || bad "plant queuedage did not land"
+[ -n "$P7" ] && { r=$(fa_run "$P7" "$T/qfnostart" "$T/stfp7" 8 --quiet-sec 3); [ -n "$r" ] && ok "PLANT started-not-required: the lock-waiting job reads QUIET, so the unstarted case catches it" || bad "PLANT nostarted not caught"; }
+[ -n "$P8" ] && { r=$(logcase "$P8" p8 grow); [ -n "$r" ] && ok "PLANT job.log-only growth: the perfrun-shaped job reads QUIET, so the job.log.make case catches it" || bad "PLANT joblogonly not caught"; }
+[ -n "$P9" ] && { r=$(stuck_case "$P9" p9 60); [ -n "$r" ] && ok "PLANT age-from-queueing: the dependency-waiter reads stuck, so the ready-age case catches it" || bad "PLANT queuedage not caught"; }
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

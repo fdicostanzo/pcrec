@@ -241,6 +241,24 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: Frank starts the standing /pcrec-monitor session; its first live use is the owed test-axes re-run
   refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
   Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
+- [FLAG-SPELL] STATE:started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
+  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
+  status (2026-10-24): landed 187608482 (flagfix): p_cat drops an empty with no reg stamp, (?i)abc == (?i:abc); jobs 615 test, 617 mech green
+  next: main's first full make test after the landings (owed, manager queues); then the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly; follow-up (not built): req.c run reset on an empty mid-CAT
+  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
+  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
+- [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
+  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
+  status (2026-10-24): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; design uprop_more.md, D178
+  next: main's first full make test after the landings (owed); a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
+  refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
+  Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
+- [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
+  filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
+  status (2026-10-24): design docs/design/data_plan.md delivered; Frank's rulings D179 (fair effort, simple formats read in place, small form on request, sharing when needed)
+  next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
+  refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
+  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 
 
 ## Candidates ([OPTLOOP])
@@ -599,6 +617,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [SUBST-SPEED] STATE:not-started — SUBST'S UTF-8 CASE FORCING AND REPLACE-ALL OVERHEAD
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code (EMIT-1, EMIT-2, EMIT-3)
+  status (2026-10-24): measured: utf8 \U path +15.7% instructions vs pcre2+JIT (two passes, no ASCII fast path, bsearch per letter); replace-all 3.2x a hand loop's per-match overhead (still 22% under pcre2+JIT)
+  next: unscheduled; an optimization-effort candidate after subst lands
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; replace_design.md §R4.11; [M4-SUBST]
+- [SUBST-CLEANUP] STATE:not-started — SUBST HOUSE ITEMS, LIMITS AND CHECK GAPS FROM THE FIRST CODE ROUND
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code
+  status (2026-10-24): HOUSE-2/4/5/6/9/10/11, HOUSE-8 rest, TPL-4 (template length limit row), IFACE-4 (>256 groups in replace-all), CHK-2, CHK-5, CHK-6's two mech rows, CHK-8 token sharing; none changes an answer
+  next: unscheduled; one sonnet lane after subst lands; grep sabotage anchors before moving lines
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; [M4-SUBST]
 - [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
   filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
   status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).
@@ -669,18 +697,44 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
   The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
-- [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
-  filed: 2026-10-23 Frank
-  status (2026-10-24): go (Frank); first a research lane (utfwant) on what Unicode users want that plain regex cannot easily do; it may reshape this row
-  next: read utfwant's survey with Frank; then after open items, a design note (coordinator design round)
-  refs: lane/utfwant docs/dev/utf_wants_2026-10-24.md; docs/dev/compat_fold_facts/ (research, 2026-10-23); third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
-  A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
-- [FLAG-SPELL] STATE:not-started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
-  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
-  status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
-  next: unscheduled; candidate for the next optimization cycle; general form = drop empty nodes from concatenations (also (?:)abc), not a flag special case
-  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
-  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
+- [SEQ-FOLD] STATE:not-started — FOLDED TEXT MATCHES: one fold table for full case, accent and look-alike folding
+  filed: 2026-10-24 Frank ("The general mechanism sounds good"), from lane utfwant's survey
+  status (2026-10-24): go (Frank); starts after every open item and its follow-ups complete; children are rows of ONE fold mechanism, full case folding first (demand), look-alike last (no outside demand found)
+  next: a design note (coordinator design round): the 1:n fold table, then each child as its rows
+  refs: docs/dev/utf_wants_2026-10-24.md (wants 4, 5; the NFKC finding); docs/dev/compat_fold_facts/; third_party/ucd-16.0.0 (CaseFolding.txt F entries); memory general-mechanisms; D26 D174
+  General form (Frank 2026-10-24; widened the same day after Frank asked about n:1 and n:m): BOTH sides pass through the same per-code-point fold (code point -> sequence, generated from UCD) and the folded sequences are compared, so 1:n, n:1 and n:m (ﬃ vs ﬀi, ệ vs ẹ + ̂) are one case. The pattern side folds at compile time; the subject folds as it is read. Full case folding, canonical equivalence and compatibility folding are three data sets for it, not three features. Design questions: match ends inside one character's fold image (s against half of ß: refuse, as ICU does?), mapping offsets and captures back to the subject, combining-mark reordering for canonical equivalence (a bounded buffer; Unicode's stream-safe limit is 30 marks), classes and ranges, \b and lookbehind length, emitted size.
+  - [CASE-COMPAT] STATE:not-started — a PCRE2-compatible case mapping as a selectable data set
+    filed: 2026-10-24 Frank (D180: "follow Unicode for now then have a pcre2 compatibility version later")
+    status (2026-10-24): substitution's case table is Unicode's simple mappings (D180); PCRE2 10.46 differs on 150 code points (lane substr1fix's breakdown in docs/dev/lanes/substland_report.md)
+    next: the [SEQ-FOLD] design note names how a mapping data set is selected; no demand yet
+    refs: D180; docs/dev/reviews/2026-10-24-r1-subst-code.md (EMIT-5)
+  - [FULL-CASEFOLD] STATE:not-started — (?i) uses full case folding: ß matches ss, ligatures match their letters
+    filed: 2026-10-24 manager (utfwant want 4; Unicode TS #18 requires it; ICU and Python regex ship it)
+    status (2026-10-24): first child of [SEQ-FOLD]; pcrec is simple-fold only today; 104 F entries in the vendored CaseFolding.txt
+    next: the [SEQ-FOLD] design note
+    refs: docs/dev/utf_wants_2026-10-24.md; third_party/ucd-16.0.0
+  - [CANON-EQUIV] STATE:not-started — composed and decomposed accents match each other (é = e + combining acute)
+    filed: 2026-10-24 manager (utfwant want 5; recurring questions; Java CANON_EQ ships it)
+    status (2026-10-24): second child of [SEQ-FOLD]; the general case is hard, a literal's alternatives are a table lookup
+    next: after [FULL-CASEFOLD]
+    refs: docs/dev/utf_wants_2026-10-24.md
+  - [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
+    filed: 2026-10-23 Frank
+    status (2026-10-24): third child of [SEQ-FOLD] (Frank 2026-10-24); a pcrec novelty: no engine offers it and no request was found (utfwant)
+    next: after [CANON-EQUIV]
+    refs: docs/dev/compat_fold_facts/; docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); [IFACE-PUSH]; SR-10
+    A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
+- [GRAPHEME] STATE:not-started — \X and grapheme boundaries match what a reader sees as one character
+  filed: 2026-10-24 manager (utfwant want 1; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
+  Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2. DATA RULE (Frank 2026-10-24): the data comes from an official Unicode source only (UCD auxiliary/GraphemeBreakProperty.txt, emoji-data.txt), vendored in third_party/ at a named Unicode version, with Unicode's own GraphemeBreakTest.txt as the oracle; pcrec may build functionality but claims a Unicode standard only where that official test passes, and never defines its own variant under the standard's name.
+- [CLASS-SETOPS] STATE:not-started — character-class set operations: subtraction, intersection, nesting
+  filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED; the only plain workaround is lookaheads
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md
 - [EMIT-BIDI] STATE:not-started — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
   filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
   status (2026-10-24): found, not fixed: (?x)a<U+200E>b and (?x)a<U+200F>b (tests/modifiers/xmode_utf8.rxt:32,38) emit their pattern bytes raw into a C comment; gcc warns -Wbidi-chars and the axes harness drops both cases under -fcomments (LOST 2)

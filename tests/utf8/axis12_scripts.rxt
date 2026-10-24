@@ -267,13 +267,6 @@ encoding utf8
 features unicode-props
 perr
 
-# blocks - refused by libpcre2 too
-# pcre2-only
-pattern \p{blk=Greek}
-encoding utf8
-features unicode-props
-perr
-
 # a second separator
 # pcre2-only
 pattern \p{sc=scx=Greek}

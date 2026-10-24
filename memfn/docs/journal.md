@@ -2870,3 +2870,44 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - **Stop-ranking:** Q1-Q6 and truncation ruled (D176, [MEASURE-SET], [MEMFN-UNBOUNDED-SPANS]/[MEMFN-PAIRSTOP]/[MEMFN-PAIRSIMD]).
 - **Box:** Frank's full-suite battery holds it until ~08:00 2026-10-24; no timing until main says.
 - **Kit sabotage range:** S1540-S1559.
+
+## 2026-10-24 — wake; S3 trailing checks done; merge + abi 85 lane
+
+- Main: the battery is done, the box is free, and abi 85 is S3's ([EMIT-BIDI] takes 86 after). The 588 window is to be asked for after the heavy is green and the critic round is ruled.
+- Lane s3pins2 (opus) delivered lane/memfn-s3pair @ 585b630e8 (report Part 9). It found that the census twin rule's WIP compiled its twins with no --pattern, so no twin ever moved, and rebuilt the rule: it is judged both ways on the twin's stamps, with witnesses 6/6, and both censuses have 0 unexpected. The cpset `(?i)HeLLo` pin was re-recorded (21700 -> 22441, with its cause). The encoding checks are green alone. The K50 entry for `(?i)\bcat\b` was NOT added: once the reader was fixed, it no longer diverges (accepted). The three `\b` identity pairs are existing K50 members, byte-identical on main.
+- Lane s3merge (opus): merge main into s3pair, renumber the abi 84 -> 85 by the grep ritual, run the light suites, restage the heavy as 620 against the merged main, and queue it.
+
+## 2026-10-24 — critic round memfn-s3-final; Frank's rulings
+
+- Critic round (coordinator plus 5 critics plus a verifier; draft /tmp/claude-1001/crit-memfn-s3-final/review.md, to be committed as docs/dev/reviews/2026-10-24-r3-memfn-s3-final-code.md). No answer findings in ~5M differential cases. Speed:
+  - EMIT-1: PAIR find-all goes quadratic when one byte is absent. FIX-NOW, my call: bound the streams.
+  - EMIT-4: set stops of 3+ bytes walk where BASE ran memchr, 13-18x on real text.
+- Frank ruled on EMIT-4: "no. Leave the wart. Its fix is the test for pricing." No stopgap and no decline. EMIT-4 stays as the named witness that D176's priced choice must fix, and it is recorded as an accepted exception to Goal 2.
+- Frank ruled on the names: "rename". The `wf-find`/`wf-hors` denies get behaviour names before landing (D174). The stamp value "cover" goes to [IFACE-PUSH].
+- Rev 3.3 acceptance: explained to Frank, ruling pending.
+- Job 620: the axes_memfn step is red (25 of 351 checks); triage follows the job.
+- Frank on the bar (2026-10-24): "I agree". No per-pattern passes. Goal 2 becomes: no slower than DEF beyond the relative floor OR a measured per-call layout allowance, in ns per call, set by the 588 run from layout variants of the DEF arm. The foobar and file-ext-order caps are deleted; their deltas are 0.09-0.41 ns per call, half a cycle to two cycles. The hex8-dense loss (1.543x, a proportional +0.8 ns/B) and the set-stop walk are listed as known gaps for D176. Frank: "See if pricing fixes these. Add hex case to the pricing tests."
+  - Desk reading with price.py (stop study §5.1, fc6735cdf): pricing fixes `[<>&]x`, `[xqz]ab` and `[jqz]uery` (memchr on the single rare byte).
+  - It does NOT fix `[.,;]\d`, `[QXZ]{2}` or dense hex as modelled. Those need the old DFA scan as a priced method row, a measured verify, and the subject's own byte-rate bundle; the shipped prior cannot see a dense-hex subject.
+- Job 620 (S3 at cc4f54eb2, merged with main, abi 85): RED on axes_memfn only. make test, mech, reach, plants, census (unexpected 0 over 120,192 compiles), codegen and diff_r2 are green. Triage tri620 (/tmp/claude-1001/tri620/triage.md) found NO answer difference. The 25 failures are stale reach floors and witnesses in tests/axes/memfn_arm.py: cover takes patterns off the pre-check route, so the deny arms differ on fewer patterns (fd-pres-g1, fd-pres-pick, precheck-assign-byte, pres-set-lead, vrun-pad@simd utf8). wf-find/wf-hors floors are still owed; they are pinned from axes_measure.log. "steps ran=14 of 16" is a job-script expect regex ([a-z_]+ misses diff_r2), not a skipped step. All of this goes to a follow-up lane after s3fix delivers (no addenda to a running lane).
+- s3fix starved the box queue three times (back-to-back boxlock steps; it never read my messages) and was stopped with its work committed. Main is making boxlock defer to pending queue jobs. s3fix2 (no box access) finished on lane/memfn-s3fix @ e5362a59c (s3_report Part 11). Every FIX-NOW id and R-a..R-d is DONE except CHECK-5's PAIR floors, still PLACEHOLDER (they need the N2 census). Also in that tip:
+  - the 620 triage re-pins, with three witnesses replaced by variable-width siblings;
+  - census/bytediff declaring the non-cover two-stream movers from the artifact text;
+  - 588 gaining an 11-row BASE two-stream term;
+  - the look-ahead doubling from 128 (instruction-chosen; time unmeasured).
+  Job 621-kit-s3-heavy is queued behind main's 619. Then 588 in a window main clears with Frank.
+
+## 2026-10-24 — session close (Frank's /close)
+
+S3 is fixed on lane/memfn-s3fix @ e5362a59c. Job 621 is running in the queue; its verdict is read on wake. Rulings recorded today:
+- the EMIT-4 wart is kept as the pricing test;
+- the renames;
+- the per-call bar allowance;
+- the pricing witnesses, including dense hex;
+- no SIMD-first.
+
+Lessons:
+- A boxlock chain starves the queue, and a busy lane does not read messages (now a boxlock mechanism on main).
+- A coordinator's spawned critics lose their replies; files carry the results.
+
+wake.md is rewritten.

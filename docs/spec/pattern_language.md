@@ -544,7 +544,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\p{X}` | with property `X` | any | yes |
 | `\P{X}`, `\p{^X}` | without property `X` (`\P{^X}` is `\p{X}`) | any | yes |
 
-<a id="s7-9-p1"></a>[7.9¶1] The accepted names (general categories, `L&`/`Lc`, `Any`, `Xan Xps Xsp Xuc Xwd`, scripts in three namespaces), their case and separator rules, the clamping under `byte` and the refused names are `cli.md` §1.17.1. Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}` (`cli.md` §1.8¶5). A property escape is valid inside a class. A malformed escape (`\p` with no name) is refused. The tables are Unicode 16.0.0.
+<a id="s7-9-p1"></a>[7.9¶1] The accepted names (general categories, `L&`/`Lc`, `Any`, `Xan Xps Xsp Xuc Xwd`, scripts in three namespaces, the binary properties, `Bidi_Class`, and the Block and Age extensions beyond PCRE2), their case and separator rules, the clamping under `byte` and the refused names are `cli.md` §1.17.1. Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}` (`cli.md` §1.8¶5). A property escape is valid inside a class. A malformed escape (`\p` with no name) is refused. The tables are Unicode 16.0.0.
 
 <a id="s7-10"></a>
 ### 7.10 Module `vars`
@@ -601,7 +601,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s9-p1"></a>[9¶1] The compliance page (`docs/pcre2_compliance.md`) is the construct-by-construct delta; this section lists every difference this document states, at the option mapping of §1.2.
 
-1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4), including a group of alternatives of different lengths (`(?<=(?:a|bc))x`), which libpcre2 accepts as a variable-length lookbehind; `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
+1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4), including a group of alternatives of different lengths (`(?<=(?:a|bc))x`), which libpcre2 accepts as a variable-length lookbehind; `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
 2. <a id="s9-p3"></a>[9¶3] Give-ups. A VM artifact may answer `PCREC_ERR_STEPS`, `PCREC_ERR_FRAMES` or `PCREC_ERR_WORK` where libpcre2 answers (§4.6), including the left recursions where libpcre2 concludes no match (`limits.md` §6).
 3. <a id="s9-p4"></a>[9¶4] A recursion with no way to complete. `(?R)` alone, on any subject, is no match under pcrec; libpcre2 returns its recursion-loop error.
    - <a id="s9-p4a"></a>[9¶4a] More generally, where libpcre2's recursion-loop check fires (`PCRE2_ERROR_RECURSELOOP`) because a call can re-enter its own group without consuming, pcrec's matcher runs the search instead and answers a match, no match or a give-up (§4.6): `(?:a|(?R))+` on `a` → `[0, 1)`, on `aa` → `[0, 2)`, on `b` `PCREC_ERR_FRAMES`; `((?1)?a)` on `a` → `[0, 1)`.

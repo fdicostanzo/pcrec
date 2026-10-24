@@ -16,7 +16,7 @@
   rule (§6), no-overlap (§7¶1a), §9 rows 16/19/20, the support unit's content
   id and static mode (§10).
 - `docs/dev/reviews/2026-10-22-r2-subst-r4-panel.md`: the panel record.
-- `docs/dev/upstream_issues.md`: U22 (libpcre2 10.46 case-forcing segfault
+- `docs/dev/upstream_issues.md`: U23 (libpcre2 10.46 case-forcing segfault
   and read-past over ill-formed UTF-8). U21 is taken by lane corefix.
 
 **Probes (libpcre2-8 10.46, ctypes, read-only, scripts on stdin).** The

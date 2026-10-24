@@ -911,6 +911,9 @@ fi
 #       `\w+(?<=\W)` `\w{1,3}(?=a)\W` `a{1,3}?(?=\w)\W`.
 # Every one is U2's context-node shape or the `a\bb` shape above, behind a
 # quantifier -- new SPELLINGS of known members, not a new mechanism.
+# [UPROP-MORE] (lane upropb): the last 37 entries are patterns from tests/utf8/uprop_more.rxt
+# and uprop_blk_age.rxt whose property set is EMPTY in the byte universe (Latin-1), so the
+# byte compile is a proven-no-match artifact. Bucket 104 -> 141, re-measured from this check output.
 EMPTY_MANIFEST='\B\b
 \b\B
 \d\b\w
@@ -977,7 +980,44 @@ z(?<=a)
 \s{2}\B\w
 \w+(?<=\W)
 \w{1,3}(?=a)\W
-a{1,3}?(?=\w)\W'
+a{1,3}?(?=\w)\W
+[\p{Age=2.1}\p{Age=6.1}]
+[\p{bc=R}\p{bc=AL}]
+\P{Age=1.1}
+\p{Age:V10_0}
+\p{Age=16.0}
+\p{Age=2.1}
+\p{Age=6.1}
+\p{Age=NA}
+\p{Bidi_Control}
+\p{Bidi_C}
+\p{Block=Cyrillic}+
+\p{Block=Greek_And_Coptic}
+\p{Block=Greek}
+\p{EBase}
+\p{Emoji_Modifier}
+\p{Emoji_Presentation}
+\p{Gr_Ext}
+\p{ID_Compat_Math_Start}
+\p{Ideographic}
+\p{Join_C}
+\p{MCM}
+\p{NChar}
+\p{RI}
+\p{UIdeo}
+\p{VS}
+\p{age=Unassigned}
+\p{bc:AL}
+\p{bc=AL}
+\p{bc=AN}
+\p{bc=FSI}
+\p{bc=NSM}
+\p{bc=R}
+\p{blk:Greek_and-Coptic}
+\p{blk=Currency_Symbols}
+\p{blk=Emoticons}
+\p{blk=Greek}
+\p{blk=NB}'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then

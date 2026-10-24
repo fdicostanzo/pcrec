@@ -15,7 +15,7 @@ generic arms as the core cells; see `tests/subst/CLAUDE.md`.
   the escapes, and four whole-map cells over every code point the oracle
   store's case map lists (`oracle_store/libpcre2-10.46-utf/case-map.tsv`),
   written as raw UTF-8. The ill-formed-UTF-8 case cells are pcrec's own
-  (P2 `na`: libpcre2 crashes on them, §9 row 19, upstream U22).
+  (P2 `na`: libpcre2 crashes on them, §9 row 19, upstream U23).
 - `gen_cells.py` — how `cells.tsv` was written, from the repo root:
   `python3 -I tests/subst-extended/gen_cells.py
   oracle_store/libpcre2-10.46-utf/case-map.tsv > tests/subst-extended/cells.tsv`

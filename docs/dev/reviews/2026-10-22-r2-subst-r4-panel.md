@@ -29,7 +29,7 @@ widens to every group-count-dependent escape (open question 4).
   tokens over `\U \L \u \l \E a B $1`: 0 mismatches.
 - C1-2: the two SIGSEGVs reproduced (exit 139, each in its own process) and
   the read-past (`"abc\xc3"` → `\xc3\x80`); the no-case control renders
-  correctly. Filed as `docs/dev/upstream_issues.md` U22 (U21 is taken by lane
+  correctly. Filed as `docs/dev/upstream_issues.md` U23 (U21 is taken by lane
   corefix).
 - C1-3: single digits probed on 0, 1, 3 and 9 groups: `\1`-`\9` are ALWAYS
   group references (a missing group is −49, as `$n`), never octal, so their
@@ -48,7 +48,7 @@ widens to every group-count-dependent escape (open question 4).
 | id | sev | finding (condensed) | disposition | where |
 |---|---|---|---|---|
 | C1-1 | HIGH | the case rule is wrong: `\Ua\ubc` is `ABc` (draft: ABC), `\L\uabc` is `Abc` (not "acts as `\U`"), `\u\U\Lab` is `ab`. A 4-rule machine fits 24,255 cells: `\U`/`\L` drop a pending one-shot only when a region is set; `\u`/`\l` set the one-shot and CLEAR the region; `\E` clears both; a character takes the one-shot first, else the region | ADOPT: a DECLARED STATE TABLE (first-match per event) with its witnesses as oracle rows | draft §2¶13; note §R4.13, §R4.10 tests |
-| C1-2 | HIGH | case forcing over ill-formed UTF-8 has no oracle: libpcre2 segfaults (`\U$_` on `b` over `"ab\xffc"`, `\U$'` over `"abc\xc3\xa0\xff"`) and reads past `$_` on `"abc\xc3"` | ADOPT: ill-formed bytes copied unchanged, 1:1 in sizing; cells out of the differential; upstream row | draft §2¶14a, §9 row 19; `upstream_issues.md` U22 |
+| C1-2 | HIGH | case forcing over ill-formed UTF-8 has no oracle: libpcre2 segfaults (`\U$_` on `b` over `"ab\xffc"`, `\U$'` over `"abc\xc3\xa0\xff"`) and reads past `$_` on `"abc\xc3"` | ADOPT: ill-formed bytes copied unchanged, 1:1 in sizing; cells out of the differential; upstream row | draft §2¶14a, §9 row 19; `upstream_issues.md` U23 |
 | C1-3 | HIGH | `\ddd` accepted while group-count-dependent escapes are refused, but `\101` is one (group 101 or `A`); also `\77`, `\81`, `\400` | ADOPT: refuse every `\[1-9]\d+`; single `\1`-`\9` probed NOT group-count dependent, so kept; accept `\0dd`, `\o{}`; the contradicting rows fixed | draft §2¶10, §2¶12, §9 row 16; note §R4.9 Q4, §R4.13 |
 | C1-4 | MED | the scratch bound undercounts: forced CONSTANTS grow (`\Uß` 3 bytes against 2; `\L` U+023A → U+2C65) | ADOPT the runtime form: 1.5× every byte entering the region, rounded up. The compile-time stamp was rejected: a constant's forced form depends on run-time case state, so it is a worst case anyway, and it costs a stamp, an abi reader and a record field to save half of a few bytes | draft §4¶22; note §R4.13 |
 | C1-5 | MED | the template's encoding is compared only by helper (C): `\U$1` under the default `-e byte` with a utf8 rx renders `STRAßE` silently (PCRE2 `STRAẞE`) | ADOPT (with C2-4): the setup and the check take the rx's record and compare encodings | draft §2¶5, §3¶8-¶10, §7¶3; note §R4.4 |

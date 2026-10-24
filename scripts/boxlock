@@ -12,6 +12,19 @@
 #       the wait (PCREC_BOXLOCK_WAIT=S is the same), --no-wait refuses at once.
 #       Not acquired => exit 75 with a `boxlock: REFUSED ...` line naming the
 #       holder.
+#       YIELDS to the box queue: a run whose label does not start `queue:`
+#       (the queue runner's own) first WAITS, before it even queues for the
+#       flock, while any box-queue job is pending AND READY (its last
+#       `--ready` answer: ready/starting/waiting-on-the-lock; a not-ready job
+#       does not block; no live runner = nothing blocks), printing ONE line
+#       `YIELDING to queue job NAME`. A waiting step takes its turn the moment
+#       no ready job is pending. --wait/--no-wait/PCREC_BOXLOCK_WAIT bound the
+#       yield too (exit 75 `REFUSED ... yielding to`). PCREC_BOXLOCK_JUMP=1
+#       goes ahead anyway and appends one audit line (epoch, time, pid, label,
+#       cwd, jumped jobs) to <lock dir>/.box.lock.audit. A rule a lane must
+#       remember failed (2026-10-24: three back-to-back steps held two queued
+#       make tests 30 min each); the lock enforces it now. The queue dir is
+#       PCREC_BOXQUEUE_DIR or <lock dir>/.boxqueue.
 #   scripts/boxlock status   one line, exit 0 free / 1 HELD / 3 HELD-ORPHAN
 #   scripts/boxlock held     exit 0 when the caller need not take the lock:
 #       it runs inside the holder's own tree (a valid PCREC_BOXLOCK_HELD), or
@@ -69,18 +82,28 @@ owner_line() { [ -s "$1" ] && head -1 "$1"; }
 owner_alive() { local p s; p=$(field pid "$1") || return 1; s=$(field start "$1") || return 1; [ "$(pid_start "$p")" = "$s" ]; }
 # is_held FILE: some process holds the flock (probe on a fresh fd)
 is_held() { ( exec 7>>"$1" && ! flock -n 7 ) 2>/dev/null; }
-holders() { # live pids with the lock file open
-    local f p out=""
-    for f in /proc/[0-9]*/fd/*; do
-        [ "$(readlink "$f" 2>/dev/null)" = "$1" ] || continue
-        p=${f#/proc/}; p=${p%%/*}; case " $out " in *" $p "*) ;; *) out="$out $p" ;; esac
-    done
-    printf '%s\n' "${out# }"
+holders() { # live pids with the lock file open (one find, not a readlink fork per fd: 12 s on a busy box)
+    find /proc -maxdepth 3 -path '/proc/[0-9]*/fd/*' -lname "$1" -printf '%h\n' 2>/dev/null |
+        sed 's|^/proc/||; s|/fd$||' | sort -un | tr '\n' ' ' | sed 's/ $//'
+    echo
 }
 age() { local s; s=$(field epoch "$1") || { echo "?"; return; }; echo "$(( ($(date +%s) - s) / 60 ))m"; }
 describe() { # describe LINE -> human holder text
     printf 'pid=%s label=%s since=%s (%s) cwd=%s' "$(field pid "$1")" "$(field label "$1")" \
         "$(field since "$1")" "$(age "$1")" "$(field cwd "$1")"
+}
+
+# ready_pending QDIR: names of pending queue jobs whose last answer says ready (a live runner only)
+ready_pending() {
+    local q=$1 n a
+    [ -d "$q/pending" ] && [ -e "$q/.runner.lock" ] || return 0
+    ( exec 7>>"$q/.runner.lock" && ! flock -n 7 ) 2>/dev/null || return 0     # no live runner: nothing will start the job
+    for n in "$q"/pending/*; do
+        [ -f "$n" ] || continue; n=${n##*/}
+        [[ $n =~ ^[0-9]+-[A-Za-z0-9_]+-[A-Za-z0-9_.-]+$ ]] || continue
+        a=$(head -1 "$q/.state/${n#*-}.answer" 2>/dev/null) || continue
+        case "$a" in ready*|"waiting on"*) printf '%s\n' "$n" ;; esac
+    done
 }
 
 status() {
@@ -117,9 +140,33 @@ run() {
     local f; f=$(lock_path) || { echo "boxlock: no git tree and no PCREC_BOXLOCK_FILE, running '$label' unlocked" >&2; exec "$@"; }
     mkdir -p "$(dirname "$f")"
     held && exec "$@"     # nested inside the holder's own tree
-    exec 9>>"$f"
-    local t0 first=1 next now line chunk
+    local t0 next now line chunk rp q="${PCREC_BOXQUEUE_DIR:-$(dirname "$f")/.boxqueue}"
     t0=$(date +%s); next=$t0
+    case "$label" in queue:*) ;;     # the queue runner's own acquisition is exempt
+    *)  rp=$(ready_pending "$q" | tr '\n' ' '); rp=${rp% }
+        if [ "${PCREC_BOXLOCK_JUMP:-0}" = 1 ]; then
+            [ -z "$rp" ] || { printf 'epoch=%s at=%s pid=%s label=%s cwd=%s jumped=%s\n' "$t0" "$(date -Iseconds)" "$$" "$label" \
+                "$(pwd | tr ' ' '_')" "${rp// /,}" >> "$(dirname "$f")/.box.lock.audit"
+                echo "boxlock: '$label' JUMPS the queue (PCREC_BOXLOCK_JUMP=1), ahead of: $rp (audited)" >&2; }
+        else
+            while [ -n "$rp" ]; do
+                now=$(date +%s)
+                if [ -n "$wait" ] && [ $((now - t0)) -ge "$wait" ]; then
+                    echo "boxlock: REFUSED '$label': yielding to queue job $rp (ready, pending; waited $((now - t0))s; PCREC_BOXLOCK_JUMP=1 to go ahead, audited)" >&2
+                    exit 75
+                fi
+                if [ "$now" -ge "$next" ]; then
+                    echo "boxlock: '$label' YIELDING to queue job $rp $(date -Iseconds)" >&2
+                    next=$((now + 300))
+                fi
+                sleep 1
+                rp=$(ready_pending "$q" | tr '\n' ' '); rp=${rp% }
+            done
+        fi ;;
+    esac
+    exec 9>>"$f"
+    local first=1
+    next=$(date +%s)
     [ "$wait" = 0 ] && first=0     # --no-wait: one immediate try
     if ! flock -w "$first" 9; then  # -w 1, not -n: a `status` probe holds the lock for a moment
         while :; do

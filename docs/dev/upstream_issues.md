@@ -977,7 +977,25 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   `gen_empty_iteration.py`) carry `# pcre2-only`: 12 of its 22 patterns, on
   both routes.
 
-## U22 — libpcre2 10.46: `pcre2_substitute` case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF` segfaults or reads past the substring (subst R4 panel r2, C1-2, 2026-10-22)
+## U22 — libpcre2 10.46: `\p{Bidi_Mirrored}` omits 126 code points the Unicode data marks mirrored ([UPROP-MORE], lane upropb, 2026-10-24)
+
+- **Status**: suspected-bug (candidate upstream report to the PCRE2 project;
+  the cause below is a reading, not a measurement).
+- **Repro** (libpcre2-8 10.46, Unicode 16.0.0, `PCRE2_UTF`): sweep every code
+  point against `\p{Bidi_Mirrored}`: 428 members. `UnicodeData.txt` field 9 =
+  `Y` holds 554, and python 3.14.4 `unicodedata.mirrored` (Unicode 16.0.0)
+  agrees with the file. libpcre2's set is a strict subset; the 126 it lacks
+  (U+2140, U+2201..2204, U+222B..2233, U+2A0A..2A1C, U+1D6DB, ...) are math
+  symbols that are `Bidi_Mirrored=Y` but have no mirror-glyph pair.
+- **Probable cause**: the property built from `BidiMirroring.txt` (pairs
+  only) instead of `Bidi_Mirrored` itself.
+- **Impact on pcrec**: pcrec ships the UCD's own definition (D178's data
+  rule). `tests/uprops/uprops_compare.py` `UPSTREAM_SUPERSET` admits exactly
+  those 126 code points, pcrec-has/oracle-lacks, in the membership
+  differential and nothing else; `docs/pcre2_compliance.md` records the
+  divergence on the `\p{Bidi_Mirrored}` row.
+
+## U23 — libpcre2 10.46: `pcre2_substitute` case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF` segfaults or reads past the substring (subst R4 panel r2, C1-2, 2026-10-22)
 
 - **Status**: suspected-bug (candidate upstream report to the PCRE2 project)
 - **Found**: 2026-10-22 by the subst R4 panel's critic C1 (ctypes probes);
@@ -1002,7 +1020,7 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   OUT of the libpcre2 differential driver, because they crash the reference
   process.
 
-## U23 — libpcre2 10.46: `\U` in `pcre2_substitute` gives a result that is not an upper-case letter, for 60 code points (lane substcase, D180, 2026-10-24)
+## U24 — libpcre2 10.46: `\U` in `pcre2_substitute` gives a result that is not an upper-case letter, for 60 code points (lane substcase, D180, 2026-10-24)
 
 - **Status**: suspected-bug (candidate upstream report to the PCRE2 project)
 - **Found**: 2026-10-24 by the subst code review (r1, EMIT-5), listed over

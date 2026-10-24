@@ -25,6 +25,7 @@ human's list, exactly as it was at [M5.0] stage 3.
 Usage: uprops_names.py <ucd-dir> <inc-path> <category-name> ...
 Exit 0 and print a summary, or exit 1 naming every disagreement.
 """
+import os
 import re
 import sys
 
@@ -40,6 +41,7 @@ DECLINED = {"Katakana_Or_Hiragana"}
 # The namespaces, from the generated table's own #defines — read rather than
 # restated, since a renumbering there must not silently pass here.
 NS_BARE, NS_SC, NS_SCX = 1, 2, 4
+NS_BC, NS_BLK, NS_AGE = 8, 16, 32   # [UPROP-MORE]
 
 # Scripts with at least one code point at or below U+00FF, in EITHER the bare
 # (Script | Script_Extensions) or the `sc=` (Script) namespace — the only ones
@@ -91,9 +93,57 @@ def main():
     for c in categories:
         want.add((normalise(c), NS_BARE))
 
+    # ---- [UPROP-MORE]: the binary properties, Bidi_Class, Block, Age ------
+    # The binary LONG names and the 23 bc short names are the caller's
+    # hand-written promise (env); their other spellings come from the vendored
+    # PropertyAliases.txt, Block/Age from PropertyValueAliases.txt.
+    binary = os.environ.get("UPROPS_BINARY", "").split()
+    bc_short = os.environ.get("UPROPS_BC", "").split()
+    if not binary or not bc_short:
+        sys.stderr.write("uprops_names: UPROPS_BINARY / UPROPS_BC not set\n")
+        return 1
+    rows, in_section = {}, False
+    with open(ucd + "/PropertyAliases.txt", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("# ") and line.rstrip().endswith("Properties"):
+                in_section = line.strip() == "# Binary Properties"
+                continue
+            line = line.split("#", 1)[0].strip()
+            if in_section and line:
+                fields = [p.strip() for p in line.split(";")]
+                rows[fields[1]] = fields
+    for long_name in binary:
+        if long_name == "ASCII":
+            want.add(("ASCII", NS_BARE))
+            continue
+        if long_name not in rows:
+            sys.stderr.write("uprops_names: promised binary property %r is "
+                             "not in PropertyAliases.txt\n" % long_name)
+            return 1
+        for sp in rows[long_name]:
+            want.add((normalise(sp), NS_BARE))
+    pva = {"bc": [], "blk": [], "age": []}
+    with open(ucd + "/PropertyValueAliases.txt", encoding="utf-8") as f:
+        for line in f:
+            line = line.split("#", 1)[0].strip()
+            fields = [p.strip() for p in line.split(";")]
+            if fields[0] in pva and len(fields) >= 3:
+                pva[fields[0]].append(fields[1:])
+    if sorted(r[0] for r in pva["bc"]) != sorted(bc_short):
+        sys.stderr.write("uprops_names: the promised Bidi_Class short names "
+                         "are not PropertyValueAliases.txt's bc values\n")
+        return 1
+    for v in bc_short:
+        want.add((normalise(v), NS_BC))     # SHORT names only, as PCRE2
+    for ns, key in ((NS_BLK, "blk"), (NS_AGE, "age")):
+        for spellings in pva[key]:
+            for sp in spellings:
+                want.add((normalise(sp), ns))
+
     # ---- the table, as shipped -------------------------------------------
     text = open(inc, encoding="utf-8").read()
-    for label, expect in (("BARE", NS_BARE), ("SC", NS_SC), ("SCX", NS_SCX)):
+    for label, expect in (("BARE", NS_BARE), ("SC", NS_SC), ("SCX", NS_SCX),
+                          ("BC", NS_BC), ("BLK", NS_BLK), ("AGE", NS_AGE)):
         m = re.search(r"#define PCREC_UPROP_NS_%s\s+(\d+)u" % label, text)
         if not m or int(m.group(1)) != expect:
             sys.stderr.write("uprops_names: PCREC_UPROP_NS_%s is not %d — this "
@@ -139,10 +189,14 @@ def main():
     if fails:
         return 1
     print("  ok: the shipped table is exactly %d rows — %d category names in "
-          "the bare namespace, and %d script values in %d spellings across "
-          "the bare/sc/scx namespaces (%s declined, measured)"
+          "the bare namespace, %d script values across the bare/sc/scx "
+          "namespaces (%s declined, measured), %d binary properties and %d "
+          "Bidi_Class values, and the Block and Age extensions"
           % (len(have), len(categories), len(script_values),
-             len(want) - len(categories), ", ".join(sorted(DECLINED))))
+             ", ".join(sorted(DECLINED)), len(binary), len(bc_short)))
+    print("  ok: no binary property the UCD has and libpcre2 10.46 refuses "
+          "(Hyphen, Other_*, Expands_On_*, ...) is in the table, and no "
+          "Bidi_Class long name is")
     print("  ok: exactly %d scripts have a code point at or below U+00FF (%d "
           "of them only through Script_Extensions), so every other script's "
           "`byte` set is empty by the encoding clamp"

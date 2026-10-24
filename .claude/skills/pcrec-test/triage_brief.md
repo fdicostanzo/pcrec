@@ -18,6 +18,6 @@ for each failing check, classify with evidence:
   smallest repro: pattern, subject, command, observed vs expected);
 - INFRA: the harness, box or environment (disk, timeout, a missing tool);
 - UNKNOWN: what would decide it.
-Write /tmp/claude-1001/<your name>/triage.md (one table: stage, check, class,
+Write /tmp/claude-1001/triage-<NAME>/triage.md, NAME being the job name in your prompt (one table: stage, check, class,
 evidence, suggested owner), then your final reply (<= 10 lines) naming that file path; it reaches the manager directly (the monitor may not see it, which is fine: the FILE is the delivery),
 then END.

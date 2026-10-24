@@ -397,6 +397,12 @@
 #     composite's, the answers against `-fno-rev-end` and libpcre2, and E-VR
 #     0 on exact hybrids. SKIPPED (not scored) without libpcre2. Registered
 #     before S758.
+#   casespell — added 2026-10-24 ([FLAG-SPELL], lane flagfix); runs
+#     tests/codegen/run_case_spelling_identity.sh: spellings of one caseless
+#     pattern (letter case, and since [FLAG-SPELL] the bare `(?i)abc` against
+#     the scoped `(?i:ABC)`) emit the same matcher. Its own arm because every
+#     spelling is answer-identical by construction, so no answer-keyed arm
+#     can see a spelling reach the emitted code. Registered before S1560.
 #   startlanding — added 2026-10-10 ([START-LANDING] SL2, lane slbuild); runs
 #     tests/codegen/run_start_landing.sh: the two RECOVER rows' witnesses, the
 #     corpus sweep with floors, the stamp against the text, the answers
@@ -3218,6 +3224,16 @@ run_one() {
                     f="$(grep -m1 '^checks failed:' "$work/revtwin.log" | grep -oE '[0-9]+')"
                     score_arm "$work/revtwin.log" "$f" "revtwin:${f:-ERR}fail/${p:-?}pass"
                 fi
+                ;;
+            casespell)
+                # [FLAG-SPELL] tests/codegen/run_case_spelling_identity.sh —
+                # see the vocabulary entry above. Its summary line is
+                # `== case-spelling identity: P passed, F failed (...)`.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_case_spelling_identity.sh" > "$work/casespell.log" 2>&1
+                p="$(grep -m1 '^== case-spelling identity:' "$work/casespell.log" | sed -n 's/.*: \([0-9]*\) passed.*/\1/p')"
+                f="$(grep -m1 '^== case-spelling identity:' "$work/casespell.log" | sed -n 's/.* \([0-9]*\) failed.*/\1/p')"
+                score_arm "$work/casespell.log" "$f" "casespell:${f:-ERR}fail/${p:-?}pass"
                 ;;
             startlanding)
                 # [START-LANDING] tests/codegen/run_start_landing.sh — see the

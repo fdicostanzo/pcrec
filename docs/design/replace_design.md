@@ -632,7 +632,7 @@ match_api.md §3.8¶9a (it names `rx_subst_ctx_init`) and §4's reservation of
   zero-match subject; every draft §6 recipe under a forced give-up, a
   forced `BADSPAN` and a forced NOSPACE (no tail written, code returned);
   `\Uß` and `\LȺ` sized by the bound; pcrec-only ill-formed-UTF-8 case
-  cells (draft §2¶14a), never sent to libpcre2 (it crashes, U22).
+  cells (draft §2¶14a), never sent to libpcre2 (it crashes, U23).
   [R4b] `rx_subst_replace_all` (draft §10¶6-¶10): a forced give-up, a forced
   `BADSPAN`, a forced `UNSET` and a forced NOSPACE of the output buffer and
   of the scratch (the code returned, `*len` as §10¶8-¶9 say, no tail, no
@@ -827,7 +827,7 @@ ctypes and the D27 corpus's `ref_pcre2.py`: 97 cells, answers only. The draft
 | `\u` applies to the next character produced, even through a condition | `\u${2:-x}` → `X` |
 | `\E` ends `\Q` first, and then case forcing | `\U\Qa$\E$1` → `A$B` |
 | UTF mapping is single code point and may change length | `ß` → `ẞ` (2 → 3 bytes); U+01C6 → U+01C4 under `\U` and `\u`; `ı` unchanged under `\U`; U+212A and U+0130 unchanged under `\L`; a CONSTANT grows too (`\Uß`, `\U\x{df}` → `ẞ`; `\LȺ` → `ⱥ`, 2 → 3) [R4a, C1-4] |
-| ill-formed UTF-8 under case forcing | libpcre2 10.46 SEGFAULTS (`\U$_`, pattern `b`, UTF + MATCH_INVALID_UTF, `"ab\xffc"`) or reads past the substring (`"abc\xc3"` → `\xc3\x80`); pcrec copies ill-formed bytes unchanged (draft §2¶14a, §9 row 19; `upstream_issues.md` U22) [R4a, C1-2] |
+| ill-formed UTF-8 under case forcing | libpcre2 10.46 SEGFAULTS (`\U$_`, pattern `b`, UTF + MATCH_INVALID_UTF, `"ab\xffc"`) or reads past the substring (`"abc\xc3"` → `\xc3\x80`); pcrec copies ill-formed bytes unchanged (draft §2¶14a, §9 row 19; `upstream_issues.md` U23) [R4a, C1-2] |
 | byte mode changes ASCII only | `\U` on bytes 0xE0 0xC0 leaves them |
 | `$*MARK` renders empty with no mark | pcrec keeps refusing it (no artifact reports a mark), draft §9 row 17 |
 | `${!v}` is −35 | pcrec's own form (draft §9 row 18) |
@@ -1006,7 +1006,7 @@ by the manager; one was narrowed by the evidence (C1-3's single digits).
 | id | what changed | where |
 |---|---|---|
 | C1-1 | case forcing is a declared 4-rule state table; R4's "until `\E` or the other one" and "`\L\u$1` acts as `\U`" were wrong; witnesses are oracle rows | draft §2¶13; §R4.13; §R4.10 tests |
-| C1-2 | ill-formed bytes under case forcing are copied unchanged, 1:1 in sizing; kept out of the differential; libpcre2 segfault filed | draft §2¶14a, §9 row 19; `upstream_issues.md` U22 |
+| C1-2 | ill-formed bytes under case forcing are copied unchanged, 1:1 in sizing; kept out of the differential; libpcre2 segfault filed | draft §2¶14a, §9 row 19; `upstream_issues.md` U23 |
 | C1-3 | every `\[1-9]\d+` refused; `\1`-`\9` alone stay (probed: never group-count dependent); `\0dd` and `\o{}` accepted | draft §2¶10, §2¶12, §9 row 16; §R4.9 Q4; §R4.13 |
 | C1-4 | the scratch bound is 1.5× every byte entering the region; the stamp alternative is argued against | draft §4¶22; §R4.13 |
 | C1-5, C2-4 | the setup and the check take the rx's record; encodings compared; no map on a composed rx refused | draft §2¶5, §3¶3, §3¶8-¶12, §7¶3-¶4; §R4.4 |
