@@ -5,6 +5,9 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+PART 9 (2026-10-24): the four trailing checks job 606 left red are fixed and green alone (census
+twin rule, cpset HeLLo pin, the cover_pick reader); the K50 addition was not needed (Part 9).
+
 STATE AT HANDOFF (part 8, code review r2's fixes + the PAIR widening, lane s3pair; supersedes every
 earlier sha): THE S3 COMMIT is now **bc675b020** (b5b85aeac + this round's code and spec, by plumbing,
 parent f7bc3cf05; the 13 commits after it replayed unchanged), on branch `lane/memfn-s3pair`
@@ -64,6 +67,128 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 9. Trailing checks after job 606 (lane s3 trailing checks, 2026-10-24)
+
+Job 606 (the C1 tip ae83da9d4, worktrees/s3) and the s3pair chain `build/chainrun/20261023-133141-s3pair-checks/`
+went red on four CHECKS that had not kept up with the intended byte moves. No answer changed in this part;
+nothing under `src/`, `cli/`, `lib/` or `memfn/src/` was touched; abi stays 84 (provisional). The previous
+lane's WIP 36422a84e (UNVERIFIED) was reviewed. Its cover_pick reader is kept as written. Its census twin rule
+had a fatal bug and was rewritten (9.1). Every section below was re-run ALONE under `scripts/boxlock run`, on
+this branch's build/pcrec (built from the tip; `make -j16` was a no-op).
+
+## 9.1 Census twin rule (`census.py`, `census_r2.py`)
+
+- **The WIP's bug.** `facts_judge` compiled the E-twin .c without `--pattern`. Both sides then fail
+  identically, so no twin ever "moved" and every facts mover would have stayed red. It also judged only one
+  way: "twin moved, rows did not" was counted, not red.
+- **The rule as built** (`census.facts_judge`, one implementation; census_r2 calls it). The listing has one
+  row set per encoding E. Its `RX_*` rows are the E artifact's `#define RX_*` stamps, one for one (35 = 35 on
+  `abc`), and its `used` cells say which facts the passes that built that artifact asked. So:
+  - E's rows move iff the E-TWIN's STAMPS moved, i.e. its rc or a `#define RX_` line. The E-TWIN is the
+    task's own options, then `-p rx --features all -e E`; the last `-e` wins (checked).
+  - This is judged BOTH WAYS per encoding. Rows that moved with unmoved twin stamps are UNEXPECTED. So are
+    twin stamps that moved with rows that did not.
+  - Non-row lines, rc and stderr may not move.
+  - Two populations are counted, not judged. A twin whose .c moved in its text only predicts no row move:
+    `text-only`, which is r2's `pair text` mover `(?i)\bcat\b`. A listing REFUSED on both sides (one encoding
+    refuses the pattern, so it has no rows): `refused`.
+- **Why the stamps and not the whole .c.** The first both-ways run on the whole .c read 2 reds in census_r2,
+  both `(?i)\bcat\b`. Its twin .c moved only in the B-pair text (BASE already rendered B-pair), and a facts
+  listing does not mirror body text. Before the refused-listing rule, census.py also read 65 reds, every one
+  a listing refused on both sides (rc 1: `\x{3b1}` under byte, UCP `\w` under utf8). There were no rows to
+  move.
+- **Control vs source** (learnings §3). The control is a different artifact (the .c), compiled separately.
+  Its STAMP rows share an emitter with the listing's `RX_*` rows. So the rule catches a listing that moves
+  apart from its artifact, but it is not a second witness that a stamp's value is right: the stamped .c arms
+  (cover / B-pair judged from NEW's own text) carry that. Population counted: 4,967 tasks = 4,474 judged
+  (8,948 encodings) + 493 refused.
+- **Witnesses** (`s3_evidence/twin_witness.py`, log `twin_witness.log`): 6/6 read as planted. The genuine
+  and unmoved controls are clean. rows-moved/twin-not, twin-moved/rows-not and a moved header line are red.
+  The refused row is counted.
+- **Results** (logs `s3_evidence/census_s3t.log`, `census_r2_s3t.log`):
+  - `census.py` (BASE main c3ea619c3, rebuilt under `build/s3/heavy587/ref`, job 606's invocation):
+    `== s3 census COMPLETE: patterns=4967 compiles=119208 movers=3681 unexpected=0`. Facts: 1,465 twin
+    stamps moved, 0 text-only, 493 refused. **All 165 of job 606's unexpected rows** (byte `end_window
+    used yes->no` and siblings on utf8-block tasks) are now facts TWIN rows; 0 are left over. Each one's byte
+    twin became cover (example `(*UCP)(?-a)\d [-e utf8]`: byte twin `RX_DFA_SCAN` unanchored -> cover, its
+    byte rows `end_window`/`width` `used` yes -> no plus the SCAN/PREFILTER/START stamp rows; utf8 twin
+    unmoved, utf8 rows unmoved).
+  - `census_r2.py` (BASE build/s3pair/base = the C1 tip; the chain's invocation):
+    `== r2 census COMPLETE: patterns=4967 compiles=109274 movers=344 unexpected=0`. Facts: 139 twin stamps
+    moved, 2 text-only (`(?i)\bcat\b` byte+utf8), 493 refused. **All 19 of the chain's unexpected rows**
+    (byte `RX_MEMFN_LIBC` none -> memchr, `(?i)k [-e utf8]` etc.) are facts TWIN rows: their byte twin moved
+    to B-pair.
+
+## 9.2 test-cpset-structure CHECK 3: `(?i)HeLLo` EMITTED_BYTES 21,700 -> 22,441
+
+- **Cause.** The S3 commit was rebuilt with C1/r2 folded in (bc675b020; the 21,700 was measured on the
+  superseded d3886a656 / a962449c4, and 99f310c49 recorded it). That change gave the window text G2's caseless
+  two-byte stream. The cover window find is no longer the in-place class-scan loop over `L`/`l`. It is now a
+  call to an `rx_mf1_ofsskip` helper. The helper's `__body` holds two `memchr` streams (76/108), the nearer
+  hit, the `-= 3` back-off and the same two masked `rx_w4` compares. `RX_MEMFN_LIBC` reads "memchr" (it was
+  "none").
+- **Verified** by diffing against d3886a656's compiler at `-o -` (`s3_evidence/hello_d3886a656_vs_tip.diff`,
+  34 lines): the 30 added helper lines, the one scan_position line and that stamp, nothing else. 99f310c49's
+  own tree, rebuilt, also reads 22,441, so the pin was stale when it was committed.
+- The note is in run_cpset_structure.sh's re-record history, beside the S3 entry.
+- Section alone: `checks passed: 29 / failed: 0` (plus 17/0 and 59/0 for the chained parts), rc 0,
+  **0 `*** [...test-...]` lines** (`s3_evidence/cpset_structure_s3t.log`).
+
+## 9.3 test-encoding-checks
+
+- **(a) The cover_pick reader (WIP, kept as written).** `COVER_PAIR_RE` recognizes the B-pair leapfrog
+  inside the window statement and reads its K and its two bytes. Each side's pick is then held to its own
+  `RX_REQ_RUN` stamp (the member and its case cube, at K).
+  - Control. The pre-WIP script (457bd231a's, run on this build) reproduces job 606's three reds exactly
+    (`s3_evidence/encoding_checks_prewip_s3t.log`): "byte cover find carries 0 search clause(s), not 1",
+    the K50 list mismatch on `(?i)\bcat\b`, and "4 of 237 strict-identity pairs differ".
+  - The current script: `checks passed: 11 / failed: 0`, rc 0, 0 red lines, EXCISED cover_pick 16 -> 18
+    (`encoding_checks_s3t.log`).
+  - Witnesses (`s3_evidence/cover_pick_witness.py`, read from the file the suite runs, log
+    `cover_pick_witness.log`): 6/6. The real byte (C/c at +0) and utf8 (T/t at +2) picks equal their
+    stamps. Moving the stamp offset, moving a byte, or splitting K reads red. After normalization the window
+    statements are identical.
+- **(b) The K50 undeclared-form list does NOT gain `(?i)\bcat\b`: STOPPED on the brief's premise, not done.**
+  With the reader fixed, `(?i)\bcat\b` no longer diverges (it is one of the 18 comment-only strict pairs).
+  The list is EXACT over the reached subset, so adding it would itself turn the section red ("a missing
+  reached one is a claim that has expired"). Its cause is a stamped pick, so it is no undeclared form. The
+  manager may rule otherwise.
+- **(c) The 4 of 237 pairs, hunk by hunk** (`s3_evidence/identity_s3t.sh`, log `identity_s3t.log`, the
+  pre-WIP FINDING lines in `dd12ai_prewip_findings.txt`):
+  - **`\b` (twice) and `\B`.** The byte/utf8 diff is BYTE-IDENTICAL on main c3ea619c3 and on this build:
+    170 lines, 21 hunks, led by the utf8 `rx_forward_row`/`view_*` helpers. These are pre-existing
+    `#UNDECLARED` K50 members (the manifest's accept-placement FINDING), not S3 moves, and they do not differ
+    in the window text. Strictly read, the brief's "differ ONLY in the window text" does not hold for these
+    three. They are not S3's: S3 moved nothing in them. I did not STOP for that, and I re-pinned nothing.
+  - **`(?i)\bcat\b`.** 10 hunks. Nine are named encoding-owned regions:
+    - the STARTPOS_GUARD/UTF_CHECK stamps;
+    - RX_REQ_RUN `434154@0` vs `@2` (the declared pick);
+    - the startpos guard, twice;
+    - next_pos;
+    - valid_upto;
+    - RX_FINDINGS, twice;
+    - `.encoding`.
+
+    The tenth is the WINDOW TEXT, the scan_position line. Split at `;`, it differs in exactly the pick: the
+    byte side has the bound `c >= n`, streams `memchr(s + c, 67|99, n - c)` and no back-off. The utf8 side
+    has `c + 2 >= n`, `memchr(s + c + 2, 84|116, n - (c + 2))` and `c -= 2`. The verify half is
+    token-identical. After excision the check's own diff is that line plus the startpos-guard excision
+    marker (a comment).
+
+## 9.4 Verdicts (each alone, under the box lock)
+
+| section | invocation | verdict |
+|---|---|---|
+| census | `python3 -I s3_evidence/census.py --base build/s3/heavy587/ref/build/pcrec --new build/pcrec --tree . --out build/s3/heavy587/census.tsv --jobs 16` | GREEN, unexpected=0 |
+| census_r2 | the chain's stage (`--base build/s3pair/base/build/pcrec`) | GREEN, unexpected=0 |
+| test-cpset-structure | `make test-cpset-structure` | GREEN, 0 red lines |
+| test-encoding-checks | `make test-encoding-checks` (ENC_MAX_BLOCKS default 250; DD12a is compile-only, full) | GREEN, 0 red lines |
+
+OWED: none of these four. The heavy job (587's script) is the manager's at merge. The abi 85 renumber is the
+manager's.
 
 ---
 

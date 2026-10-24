@@ -1,0 +1,9 @@
+STRICTPAT \b
+STRICTPAT \B
+STRICTPAT \b
+STRICTPAT (?i)\bcat\b
+FINDING pat=[\b] (STRICT bucket -- an encoding conditional reached the hot path; first non-data differing line: static inline unsigned rx_forward_row(rx_forward_state s) { return s / N; }): TEXT DIFFE
+FINDING pat=[\B] (STRICT bucket -- an encoding conditional reached the hot path; first non-data differing line: static inline unsigned rx_forward_row(rx_forward_state s) { return s / N; }): TEXT DIFFE
+FINDING pat=[\b] (STRICT bucket -- an encoding conditional reached the hot path; first non-data differing line: static inline unsigned rx_forward_row(rx_forward_state s) { return s / N; }): TEXT DIFFE
+FINDING pat=[(?i)\bcat\b]: encoding-keyed selection incoherent with its stamp: byte cover find carries 0 search clause(s), not 1; utf8 cover find carries 0 search clause(s), not 1
+FINDING pat=[(?i)\bcat\b] (STRICT bucket -- an encoding conditional reached the hot path; first non-data differing line: scan_position = ({ const unsigned char *rx_mfN_s = (const unsigned char *)(subj

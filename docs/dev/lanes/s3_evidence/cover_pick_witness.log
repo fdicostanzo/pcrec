@@ -1,0 +1,7 @@
+real byte    want True  got True  picks [(0, {99, 67})] stamps (0, {99, 67})
+real utf8    want True  got True  picks [(2, {116, 84})] stamps (2, {116, 84})
+stamp-moved  want False got False picks [(2, {116, 84})] stamps (0, {99, 67})
+byte-moved   want False got False picks [(2, {116, 85})] stamps (2, {116, 84})
+k-split      want False got False picks [(-1, {116, 84})] stamps (2, {116, 84})
+normalized   window statements identical after cover_pick: True
+== cover_pick witness COMPLETE: rows=6 ok=6
