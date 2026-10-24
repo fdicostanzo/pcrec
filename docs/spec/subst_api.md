@@ -161,7 +161,7 @@ bytes in every encoding. The check (§3¶8), and so the context setup (§7¶3) a
 by-name helper (§3¶13), refuses an rx of another encoding than the record's
 when the record's is not -1. So `\U$1` compiled under `-e byte` and used
 with a `-e utf8` rx is refused before any output, rather than rendering
-`straße` as `STRAßE` where PCRE2 renders `STRAẞE`.
+`Ⱥ` (U+023A) unchanged under `\L` where the utf8 rx lowers it to `ⱥ`.
 
 <a id="s2-p6"></a>[2¶6] **References are not resolved at compile.** A template names
 groups by number or name. Which caps slot each one reads is decided per call
@@ -281,14 +281,19 @@ moves by this table, read first-match per event (libpcre2 10.46's rule):
 | `\U\Qa$\E$1` on `(b)` | `abc` | `aA$Bc` (`\E` ends the `\Q` first) |
 
 <a id="s2-p14"></a>[2¶14] **The case mapping.** Under `-e utf8`, a character maps to the
-single code point libpcre2 10.46 maps it to. That mapping may change the byte
-length: `ß` (2 bytes) upper-cases to `ẞ` (U+1E9E, 3 bytes), and U+01C6
-upper-cases to U+01C4 under both `\U` and `\u`. Some characters keep their
-case: `ı` under `\U`, and U+212A and U+0130 under `\L`. No mapping crosses
-between ASCII and non-ASCII, so a 1-byte character never changes length; a
-2-byte character may grow to 3 (`ß` → `ẞ`, U+023A → U+2C65 under `\L`), and
+code point Unicode 16.0.0's simple case mapping gives it
+(`UnicodeData.txt` field 12, Simple_Uppercase_Mapping, for `\U` and `\u`;
+field 13, Simple_Lowercase_Mapping, for `\L` and `\l`; D180). A character
+with no simple mapping keeps its case: `ß` under `\U` (its upper-case form
+`SS` is a full mapping, and `ẞ` U+1E9E is not its simple one). The mapping
+may change the byte length: U+01C6 upper-cases to U+01C4 under both `\U`
+and `\u`, and U+023A lower-cases to U+2C65 (2 bytes to 3). A mapping may
+cross between ASCII and non-ASCII: `ı` (U+0131) and `ſ` (U+017F) upper-case
+to `I` and `S`, and U+0130 and U+212A lower-case to `i` and `k`, so a
+character may also shrink. No character grows by more than one byte, and
 no character grows by more than half its bytes. Under every other encoding,
-only ASCII letters change.
+only ASCII letters change. Where libpcre2 10.46 differs (150 mappings) is
+§9 row 21.
 
 <a id="s2-p14a"></a>[2¶14a] **Ill-formed UTF-8 under case forcing.** The iterator walks
 ill-formed subjects (§9 row 11), so a case region can copy ill-formed bytes.
@@ -602,7 +607,7 @@ never writes scratch, and `scratch` may be NULL. For one that has it, the
 element first works out the batch's exact scratch bytes, refuses the call if
 they do not fit (§4¶10), and only then writes. Under `-e utf8`, a case
 region never needs more than one and a half times EVERY byte that enters it,
-its constant bytes included (`\Uß` writes 3 bytes for 2; §2¶14), rounded
+its constant bytes included (`\LȺ` writes 3 bytes for 2; §2¶14), rounded
 up; ill-formed bytes count one each (§2¶14a). Under other encodings, it needs
 exactly the bytes that enter it. A caller that sizes scratch by that bound
 never sees a scratch NOSPACE.
@@ -951,6 +956,7 @@ joined by the recipes of §6¶1, to libpcre2's. The differences:
 | 18 | `${!name}` is −35 | the caller's variable (§2¶3) |
 | 19 | case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF`: libpcre2 10.46 SEGFAULTS (`\U$_` on pattern `b` over `"ab\xffc"`; `\U$'` over `"abc\xc3\xa0\xff"`) or reads past the substring (`\U$_` over `"abc\xc3"` writes `\xc3\x80`) | ill-formed bytes are copied unchanged and counted one each (§2¶14a); `docs/dev/upstream_issues.md` U22 |
 | 20 | `UNKNOWN_UNSET` without `UNSET_EMPTY`: a reference to an unknown group is −55 (`[$9]`) | an `PCREC_SUBST_NOGROUP` entry renders empty, `PCREC_SUBST_STRICT` included (§3¶6) |
+| 21 | the case map (§2¶14) is libpcre2's own, which differs from Unicode's simple case mappings at 150 code points, in four groups: (1) 60 `\U` results that are not an upper-case letter (`\U` of `ǅ` U+01C5 gives lower-case `ǆ` U+01C6; of `µ` U+00B5 gives `μ` U+03BC; of U+03B9 gives the combining mark U+0345), `docs/dev/upstream_issues.md` U23; (2) `ß` upper-cases to `ẞ` U+1E9E, which Unicode has no simple mapping for (a PCRE2 design choice); (3) four mappings between ASCII and non-ASCII it refuses (`\U` of `ı` U+0131 and `ſ` U+017F, `\L` of U+0130 and U+212A; a design choice); (4) 85 non-letters its general-category gate skips (U+0345 under `\U`, the Roman numerals U+2160-217F and the circled letters U+24B6-24E9 in both directions; a design choice) | Unicode 16.0.0's simple case mappings for every code point (D180), so `\U` of `ǅ` is `Ǆ`, of `ß` is `ß`, of `ı` is `I`, of `ⅰ` is `Ⅰ`. The 150 are pinned, with their count, by `tests/oracle/case_map_check.py` and `tests/oracle/case_map_pcre2_diff.tsv`; the cells over them state pcrec's answer and are pcrec-only (P2 `na`). A PCRE2-compatible mapping is a later data set ([CASE-COMPAT]) |
 
 <a id="s10"></a>
 ## 10. The support unit

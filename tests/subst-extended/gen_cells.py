@@ -96,7 +96,7 @@ same('c12', rb'(a)|(b)', rb'<${2:+\U$2:\l$1}>', b'xAaBby', 'cond')
 same('c13', rb'(\w)', rb'\U$1\E-$1', rb'ab', '-', strict=True)
 same('cdense', rb'a', rb'\U[$0]', b'xa' * 300)
 # ---- utf8 case: the mapping, §2¶14 ----
-fixed('u1', rb'(.+)', U(r'\U$1'), U('straße'), 'out:' + enc(U('STRAßE')) + ':1', 'na', '-', 'S1533,S1534', utf=True)
+fixed('u1', rb'(.+)', U(r'\U$1'), U('straße'), 'out:' + enc(U('STRAßE')) + ':1', 'na', '-', 'S1534', utf=True)
 # every code point libpcre2 maps (the oracle store's own case-map rows, never
 # pcrec's table) and every code point the UCD maps (UnicodeData.txt fields 12/13)
 import os
@@ -145,7 +145,7 @@ for cid, pat, tpl, reach in WHOLE:
           'na', '-', reach if cid in ('bup', 'blow') else '-', utf=True)
 same('u2', rb'b', U(r'\u\x{e9}'), b'abc', 'esc', utf=True)
 fixed('u3', rb'b', U(r'\Uß\Eß'), b'abc', 'out:a' + enc(U('ßß')) + 'c:1', 'na', '-', '-', utf=True)
-fixed('u4', rb'(.+)', U(r'\L$1'), U('ȺẞK') + b'I' + U('İ'), 'out:' + enc(U('ⱥßkii')) + ':1', 'na', '-', '-', utf=True)
+fixed('u4', rb'(.+)', U(r'\L$1'), U('ȺẞK') + b'I' + U('İ'), 'out:' + enc(U('ⱥßkii')) + ':1', 'na', '-', 'S1533', utf=True)
 same('u5', rb'(.+)', U(r'\u$1|\l$1'), U('ǆǄ'), '-', utf=True)
 fixed('u6', rb'(.+)', U(r'\U$1'), U('ıǅ'), 'out:' + enc(U('IǄ')) + ':1', 'na', '-', '-', utf=True)
 same('u7', rb'(\S+)', U(r'\u\L$1'), U('éCOLE ÉCOLE'), '-', utf=True)

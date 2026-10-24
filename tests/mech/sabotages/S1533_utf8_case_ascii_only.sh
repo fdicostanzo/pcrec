@@ -2,7 +2,7 @@
 # §2¶7-¶14a, §4¶7-¶8, §4¶14, §4¶22).
 #
 # Plant: the support unit UTF-8 case step maps ASCII only.
-# Witness: the `u1` cell (`\U$1` on `straße` renders `STRAẞE`) and the whole-map cells `bup`/`blow`/`bone`/`btwo`: non-ASCII letters stay unmapped.
+# Witness: the `u4` cell (`\L$1` on `Ⱥ` renders `ⱥ`) and the whole-map cells `bup`/`blow`/`bone`/`btwo`: non-ASCII letters stay unmapped.
 # Reach (K35): token S1533; tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
 SAB_ID="S1533-utf8-case-ascii-only"
 SAB_FILE="src/gen/emit_subst.c"

@@ -1001,3 +1001,88 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   subst_api_r4_draft.md` §2¶14a and §9 row 19), and these cells are kept
   OUT of the libpcre2 differential driver, because they crash the reference
   process.
+
+## U23 — libpcre2 10.46: `\U` in `pcre2_substitute` gives a result that is not an upper-case letter, for 60 code points (lane substcase, D180, 2026-10-24)
+
+- **Status**: suspected-bug (candidate upstream report to the PCRE2 project)
+- **Found**: 2026-10-24 by the subst code review (r1, EMIT-5), listed over
+  every scalar value by lane substr1fix; compared with Unicode 16.0.0's
+  Simple_Uppercase_Mapping by `tests/oracle/case_map_check.py`.
+- **Repro** (`PCRE2_UTF`; `pcre2_substitute` with `SUBSTITUTE_EXTENDED`;
+  pattern `.`, replacement `\U$0`): the subject character on the left
+  comes back as the code point on the right, with that code point's
+  general category (the requested case is upper):
+  - U+00B5 -> U+03BC (Ll)
+  - U+01C5 -> U+01C6 (Ll)
+  - U+01C8 -> U+01C9 (Ll)
+  - U+01CB -> U+01CC (Ll)
+  - U+01F2 -> U+01F3 (Ll)
+  - U+0390 -> U+1FD3 (Ll) [UCD: no simple mapping]
+  - U+03B0 -> U+1FE3 (Ll) [UCD: no simple mapping]
+  - U+03B9 -> U+0345 (Mn)
+  - U+03BC -> U+00B5 (Ll)
+  - U+03C2 -> U+03C3 (Ll)
+  - U+03D0 -> U+03B2 (Ll)
+  - U+03D1 -> U+03B8 (Ll)
+  - U+03D5 -> U+03C6 (Ll)
+  - U+03D6 -> U+03C0 (Ll)
+  - U+03F0 -> U+03BA (Ll)
+  - U+03F1 -> U+03C1 (Ll)
+  - U+03F5 -> U+03B5 (Ll)
+  - U+1C80 -> U+0432 (Ll)
+  - U+1C81 -> U+0434 (Ll)
+  - U+1C82 -> U+043E (Ll)
+  - U+1C83 -> U+0441 (Ll)
+  - U+1C84 -> U+0442 (Ll)
+  - U+1C85 -> U+0442 (Ll)
+  - U+1C86 -> U+044A (Ll)
+  - U+1C87 -> U+0463 (Ll)
+  - U+1C88 -> U+A64B (Ll)
+  - U+1E9B -> U+1E61 (Ll)
+  - U+1F88 -> U+1F80 (Ll) [UCD: no simple mapping]
+  - U+1F89 -> U+1F81 (Ll) [UCD: no simple mapping]
+  - U+1F8A -> U+1F82 (Ll) [UCD: no simple mapping]
+  - U+1F8B -> U+1F83 (Ll) [UCD: no simple mapping]
+  - U+1F8C -> U+1F84 (Ll) [UCD: no simple mapping]
+  - U+1F8D -> U+1F85 (Ll) [UCD: no simple mapping]
+  - U+1F8E -> U+1F86 (Ll) [UCD: no simple mapping]
+  - U+1F8F -> U+1F87 (Ll) [UCD: no simple mapping]
+  - U+1F98 -> U+1F90 (Ll) [UCD: no simple mapping]
+  - U+1F99 -> U+1F91 (Ll) [UCD: no simple mapping]
+  - U+1F9A -> U+1F92 (Ll) [UCD: no simple mapping]
+  - U+1F9B -> U+1F93 (Ll) [UCD: no simple mapping]
+  - U+1F9C -> U+1F94 (Ll) [UCD: no simple mapping]
+  - U+1F9D -> U+1F95 (Ll) [UCD: no simple mapping]
+  - U+1F9E -> U+1F96 (Ll) [UCD: no simple mapping]
+  - U+1F9F -> U+1F97 (Ll) [UCD: no simple mapping]
+  - U+1FA8 -> U+1FA0 (Ll) [UCD: no simple mapping]
+  - U+1FA9 -> U+1FA1 (Ll) [UCD: no simple mapping]
+  - U+1FAA -> U+1FA2 (Ll) [UCD: no simple mapping]
+  - U+1FAB -> U+1FA3 (Ll) [UCD: no simple mapping]
+  - U+1FAC -> U+1FA4 (Ll) [UCD: no simple mapping]
+  - U+1FAD -> U+1FA5 (Ll) [UCD: no simple mapping]
+  - U+1FAE -> U+1FA6 (Ll) [UCD: no simple mapping]
+  - U+1FAF -> U+1FA7 (Ll) [UCD: no simple mapping]
+  - U+1FBC -> U+1FB3 (Ll) [UCD: no simple mapping]
+  - U+1FBE -> U+03B9 (Ll)
+  - U+1FCC -> U+1FC3 (Ll) [UCD: no simple mapping]
+  - U+1FD3 -> U+0390 (Ll) [UCD: no simple mapping]
+  - U+1FE3 -> U+03B0 (Ll) [UCD: no simple mapping]
+  - U+1FFC -> U+1FF3 (Ll) [UCD: no simple mapping]
+  - U+A64B -> U+1C88 (Ll)
+  - U+FB05 -> U+FB06 (Ll) [UCD: no simple mapping]
+  - U+FB06 -> U+FB05 (Ll) [UCD: no simple mapping]
+- **Cause**: not read from the PCRE2 source. The measured rule over all
+  1,112,064 scalar values is that `\U` moves a code point to its fold class's
+  other member, whichever case that member is: it fits every one of the 60.
+  Unicode's own mapping gives U+01C4 for U+01C5, U+039C for U+00B5 and
+  U+03BC, U+0399 for U+03B9, and no simple mapping for the titlecase letters
+  U+1F88-1FFC.
+- **Not part of this entry**: the other 90 differences (ß -> U+1E9E, four
+  ASCII/non-ASCII refusals, the 85 non-letters its category gate skips, and the
+  rest) are PCRE2 design choices, recorded in `docs/spec/subst_api.md` §9
+  row 21.
+- **Impact on pcrec**: the case map follows Unicode for all 150 (D180); the
+  cells over them are pcrec-only (`tests/subst-extended/cells.tsv`); the pinned
+  list is `tests/oracle/case_map_pcre2_diff.tsv`. A PCRE2-compatible mapping is
+  a later data set ([CASE-COMPAT]).

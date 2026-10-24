@@ -1601,9 +1601,10 @@ test-clskit: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-clskit.ran"; fi
 	bash tests/clskit/run_clskit_tests.sh
 
-# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to
-# libpcre2 10.46's own pcre2_substitute answers for EVERY scalar value, from the
-# committed oracle store (the `case-map` kind); no libpcre2 needed at run time.
+# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to the
+# UCD's simple case mappings for EVERY scalar value, and to libpcre2 10.46's
+# pcre2_substitute answers (the committed oracle store, `case-map` kind) except
+# the 150 pinned points (D180); no libpcre2 needed at run time.
 test-casemap:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-casemap.ran"; fi
 	python3 -I tests/oracle/case_map_check.py
