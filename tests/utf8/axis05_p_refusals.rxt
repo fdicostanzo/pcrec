@@ -1,11 +1,19 @@
 # [M5.0] D27 axis 5 -- \p refusals (extract Sec 3.1's 30-measured-error-147
-# survey + the 4 block spellings). 34 blocks, ONE case each (a refusal has one
-# case -- extract's own note) = 34 cases. These are PERMANENT refusals: once
+# survey + the 4 block spellings). Authored as 34 blocks, ONE case each (a
+# refusal has one case -- extract's own note); [UPROP-MORE] retired five (below), 29 now. These are PERMANENT refusals: once
 # 'unicode-props' lands, PCRE2 itself still refuses every one of these bodies
 # (error 147, "unknown property name") -- so today's `perr` (currently for the
 # module-gate reason) IS this block's enduring correct shape; only the
 # diagnostic WORDING changes, which D26 rules out of scope. Confirmed live,
 # this cell's libpcre2 10.37 2021-05-26, against BOTH options=0 and PCRE2_UTF.
+#
+# [UPROP-MORE] (lane upropb, 2026-10-24) RETIRED FIVE BLOCKS, each for a stated
+# reason. `Emoji_Modifier`, `Grapheme_Base` and `Grapheme_Extend` are binary
+# properties libpcre2 10.46 ACCEPTS (the 10.37 survey above predates them) and
+# pcrec ships them now: their witnesses are tests/utf8/uprop_more.rxt.
+# `Block=Greek` and `blk=Greek` are pcrec EXTENSIONS beyond PCRE2 (D178): PCRE2
+# still refuses them, pcrec accepts them under module unicode-props; their
+# witnesses are tests/utf8/uprop_blk_age.rxt. `InGreek`/`IsGreek` stay refused.
 
 # axis5 block p-refusal-A | pattern: \p{A} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
 pattern \p{A}
@@ -111,32 +119,12 @@ perr
 pattern \p{Punct}
 perr
 
-# axis5 block p-refusal-Emoji_Modifier | pattern: \p{Emoji_Modifier} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
-pattern \p{Emoji_Modifier}
-perr
-
-# axis5 block p-refusal-Grapheme_Base | pattern: \p{Grapheme_Base} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
-pattern \p{Grapheme_Base}
-perr
-
-# axis5 block p-refusal-Grapheme_Extend | pattern: \p{Grapheme_Extend} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
-pattern \p{Grapheme_Extend}
-perr
-
 # axis5 block p-refusal-Word_Break | pattern: \p{Word_Break} | PCRE2 error 147 (confirmed live, both options=0 and PCRE2_UTF) -- a PERMANENT refusal
 pattern \p{Word_Break}
 perr
 
 # axis5 block block-spelling-InGreek | pattern: \p{InGreek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
 pattern \p{InGreek}
-perr
-
-# axis5 block block-spelling-Block=Greek | pattern: \p{Block=Greek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
-pattern \p{Block=Greek}
-perr
-
-# axis5 block block-spelling-blk=Greek | pattern: \p{blk=Greek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table
-pattern \p{blk=Greek}
 perr
 
 # axis5 block block-spelling-IsGreek | pattern: \p{IsGreek} | 10.46 refuses too (error 147) -- REFUSES PERMANENTLY per the construct table

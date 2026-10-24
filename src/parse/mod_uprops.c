@@ -119,9 +119,9 @@
  * `sc=`/`scx=`-shaped body IS looked up now, because the table covers those
  * two axes exhaustively (every `sc` value in the vendored
  * `PropertyValueAliases.txt`, in every spelling, minus the one all three
- * libpcre2 versions refuse). Every OTHER prefix — `bc=`, `blk=`, a name with
- * no axis at all — still promises the module without any lookup, for the same
- * reason as before.
+ * libpcre2 versions refuse). [UPROP-MORE] widened it again to `bc=`/`blk=`/
+ * `age=` and to the binary properties; every OTHER prefix still promises the
+ * module without any lookup, for the same reason as before.
  *
  * STAGE 3 SPLIT EACH OF THOSE REFUSALS BY GATE STATE, and the reason is the
  * same one ext.c's UNBUILT epilogue was built for: at an OPEN gate,
@@ -190,11 +190,11 @@ static const PcrecCpRange *uprops_lookup(const char *name, size_t len,
  * `body`/`len` is the whole normalised accumulator and `sep` the offset of
  * its FIRST `=` or `:`.  Answers the namespace the prefix names, or 0 for a
  * prefix pcrec's table does not cover — which is NOT the same as an unknown
- * name and must not be reported as one: `\p{bc=L}` is a real PCRE2 property
- * axis this module declines (utf8_design.md §3.4), `\p{blk=Greek}` is one
- * PCRE2 refuses too, and `\p{Foo=Bar}` is nothing at all.  Nothing here can
- * tell those apart, which is exactly why they share the module's own
- * UNBUILT-tier answer below.
+ * name and must not be reported as one: `\p{gc=L}` is a real UCD axis PCRE2
+ * refuses, and `\p{Foo=Bar}` is nothing at all.  Nothing here can tell those
+ * apart, which is exactly why they share the module's own UNBUILT-tier
+ * answer below.  ([UPROP-MORE]: `bc=` is a covered axis now, and `blk=` and
+ * `age=` are pcrec extensions beyond PCRE2.)
  *
  * BOTH SEPARATORS, and they are interchangeable: MEASURED on 10.42, 10.46 and
  * 10.48, `\p{sc=Greek}`, `\p{sc:Greek}`, `\p{Script=Greek}` and
@@ -208,6 +208,14 @@ static unsigned uprops_namespace(const char *body, size_t sep)
         { "SCRIPT",            PCREC_UPROP_NS_SC  },
         { "SCX",               PCREC_UPROP_NS_SCX },
         { "SCRIPTEXTENSIONS",  PCREC_UPROP_NS_SCX },
+        { "BC",                PCREC_UPROP_NS_BC  },
+        { "BIDICLASS",         PCREC_UPROP_NS_BC  },
+        /* [UPROP-MORE] pcrec EXTENSIONS beyond PCRE2 (D178): libpcre2
+         * refuses both prefixes (error 147), so no valid PCRE2 pattern
+         * changes meaning. They ride module `unicode-props`' gate. */
+        { "BLK",               PCREC_UPROP_NS_BLK },
+        { "BLOCK",             PCREC_UPROP_NS_BLK },
+        { "AGE",               PCREC_UPROP_NS_AGE },
     };
     for (size_t i = 0; i < sizeof PREFIXES / sizeof PREFIXES[0]; i++)
         if (strlen(PREFIXES[i].prefix) == sep
@@ -483,9 +491,9 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      *     one-letter codes. Manager ruling 3, phase-2 authorization, intact.
      *
      * (3) OTHERWISE THE MISS IS UNCLASSIFIABLE BY PCREC and must not be
-     *     dressed up as either. `\p{Alphabetic}` is a REAL PCRE2 property
-     *     this module does not ship (§3.4 declines the booleans outright);
-     *     `\p{bc=L}` is a whole axis the table does not cover; `\p{Foo}` is
+     *     dressed up as either. `\p{Hyphen}` is a REAL UCD property
+     *     PCRE2 refuses and this module does not ship;
+     *     `\p{gc=L}` is a whole axis the table does not cover; `\p{Foo}` is
      *     genuinely unknown — and nothing here can tell them apart, so all
      *     three get the same answer, which names the MODULE and never the
      *     name. ([M5.0] stage 5 moved `\p{Greek}` and `\p{Script=Greek}` out
@@ -516,7 +524,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
     /* THE PREFIX SPLIT ([M5.0] stage 5). Before it, any `=` meant "an axis
      * pcrec's table does not cover" and the lookup was skipped outright.
      * Now the two axes it DOES cover are read here, and everything else
-     * reaches the same refusal it always did — including `\p{bc=L}`, whose
+     * reaches the same refusal it always did — including `\p{gc=L}`, whose
      * namespace is 0. */
     unsigned ns = PCREC_UPROP_NS_BARE;
     const char *key = name;

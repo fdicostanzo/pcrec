@@ -178,6 +178,49 @@ PCRE2_SEMANTIC_DRIFT = {
 }
 
 
+# ---------------------------------------------------------------------------
+# THE THIRD EXCEPTION TIER: libpcre2 DEVIATES FROM THE UNICODE DATA, and the
+# deviation is a recorded upstream issue ([UPROP-MORE], U22).
+#
+# `Bidi_Mirrored` in libpcre2 10.46 holds 428 code points; the vendored
+# `UnicodeData.txt` (field 9 = `Y`) holds 554, and python's `unicodedata`
+# 16.0.0 agrees with the file.  libpcre2's set is a strict SUBSET: it lacks the
+# 126 mathematical symbols below, which are `Bidi_Mirrored=Y` but have no
+# mirror-glyph PAIR (consistent with libpcre2 building the property from
+# `BidiMirroring.txt`, which lists pairs only -- a reading, not a measurement).
+# pcrec ships the UCD's own definition (D178's data rule: a property is what
+# the Unicode data file says it is).
+#
+# AS NARROW AS THE OTHER TIERS: the exception admits EXACTLY these 126 code
+# points, present in pcrec and absent in the oracle, and nothing else; any
+# other difference on this property still fails naming its addresses.  It
+# applies at the pin too (the exact tier), because it is not drift.
+UPSTREAM_SUPERSET = {
+    "Bidi_Mirrored": ([
+        (0x2140, 0x2140), (0x2201, 0x2204), (0x2211, 0x2211), (0x2216, 0x2216),
+        (0x221A, 0x221D), (0x2226, 0x2226), (0x222B, 0x2233), (0x2239, 0x2239),
+        (0x223B, 0x223B), (0x223E, 0x2242), (0x2244, 0x2244), (0x2246, 0x224B),
+        (0x225F, 0x2260), (0x2262, 0x2262), (0x226D, 0x226D), (0x228C, 0x228C),
+        (0x22A7, 0x22A7), (0x22AA, 0x22AA), (0x22AC, 0x22AF), (0x22BE, 0x22BF),
+        (0x22F5, 0x22F5), (0x22F8, 0x22F9), (0x22FF, 0x22FF), (0x2320, 0x2321),
+        (0x27C0, 0x27C0), (0x27CC, 0x27CC), (0x27D3, 0x27D4), (0x299C, 0x299F),
+        (0x29A2, 0x29A2), (0x29A6, 0x29A7), (0x29C2, 0x29C3), (0x29C9, 0x29C9),
+        (0x29CE, 0x29CE), (0x29DC, 0x29DC), (0x29E1, 0x29E1), (0x29E3, 0x29E5),
+        (0x29F4, 0x29F4), (0x29F6, 0x29F7), (0x2A0A, 0x2A1C), (0x2A1E, 0x2A21),
+        (0x2A24, 0x2A24), (0x2A26, 0x2A26), (0x2A29, 0x2A29), (0x2A3E, 0x2A3E),
+        (0x2A57, 0x2A58), (0x2A6A, 0x2A6D), (0x2A6F, 0x2A70), (0x2A73, 0x2A74),
+        (0x2AA3, 0x2AA3), (0x2ADC, 0x2ADC), (0x2AE2, 0x2AE2), (0x2AE6, 0x2AE6),
+        (0x2AF3, 0x2AF3), (0x2AFB, 0x2AFB), (0x2AFD, 0x2AFD),
+        (0x1D6DB, 0x1D6DB), (0x1D715, 0x1D715), (0x1D74F, 0x1D74F),
+        (0x1D789, 0x1D789), (0x1D7C3, 0x1D7C3)],
+        "libpcre2 10.46 omits 126 Bidi_Mirrored=Y math symbols without a "
+        "mirror pair -- upstream_issues.md U22"),
+}
+for _n, (_ivs, _why) in list(UPSTREAM_SUPERSET.items()):
+    UPSTREAM_SUPERSET[_n] = (set(c for lo, hi in _ivs
+                                 for c in range(lo, hi + 1)), _why)
+
+
 def load(path):
     out = {}
     with open(path, "r", encoding="utf-8") as f:
@@ -284,6 +327,7 @@ def main():
     # there are.
 
     fails, drifted, checked, newer_names = [], 0, 0, 0
+    upstream = 0
     for name, (kind, val) in sorted(mine.items()):
         if kind == "ERR":
             fails.append("%s: pcrec side reported ERR %d" % (name, val))
@@ -329,6 +373,10 @@ def main():
         diff = val ^ oval
         if not diff:
             continue
+        if name in UPSTREAM_SUPERSET and not (oval - val) \
+                and (val - oval) == UPSTREAM_SUPERSET[name][0]:
+            upstream += len(diff)
+            continue
         if exact:
             fails.append("%s: %d code points differ, first %s"
                          % (name, len(diff),
@@ -358,8 +406,7 @@ def main():
 
     for name in sorted(set(theirs) - set(mine)):
         if theirs[name][0] != "ERR":
-            print("  note: libpcre2 has \\p{%s} and pcrec does not ship it "
-                  "(declined by design §3.4 — the booleans and Bidi_Class)"
+            print("  note: libpcre2 has \\p{%s} and pcrec does not ship it"
                   % name)
 
     print("  [LIVE] compared %d properties; %d code points attributed to "
@@ -367,6 +414,10 @@ def main():
                        ("; %d property NAMES this oracle does not have, each "
                         "wholly inside its own unassigned space" % newer_names)
                        if newer_names else ""))
+    if upstream:
+        print("  [LIVE] %d code points attributed to recorded upstream "
+              "deviations (UPSTREAM_SUPERSET: %s)"
+              % (upstream, ", ".join(sorted(UPSTREAM_SUPERSET))))
 
     # [ORWIRE] the committed-store comparison, oracle_interface.md §9 Step 1's
     # migration wiring -- a SECOND, INDEPENDENT check beside the live-oracle

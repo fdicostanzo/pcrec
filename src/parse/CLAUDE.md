@@ -54,7 +54,7 @@ Parser structure (PARSE-1):
 - cls_bits.inc — GENERATED positive byte-set tables (do not edit)
 - mod_modifiers.c — module `modifiers`: option-run grammar and semantic port (`pcrec_modport_optrun`)
 - mod_uprops.c — module `unicode-props` scanner + producer; uprops_tables.inc GENERATED from third_party/ucd-16.0.0
-- uprops_tables.inc — GENERATED category/script tables (do not edit)
+- uprops_tables.inc — GENERATED property tables: categories, scripts, binary properties, Bidi_Class, Block, Age (do not edit)
 - mod_ucp.c — module `ucp`: `(*UTF)`/`(*UCP)`, option run, UCP sets
 - mod_named_groups.c — module `named-groups` declaring port
 - mod_assertions.c — module `assertions` (`\A \Z \z \b \B \G \K`)

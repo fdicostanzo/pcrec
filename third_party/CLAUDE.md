@@ -29,7 +29,9 @@ the row.
 - `ucd-16.0.0/` — the Unicode Character Database, pinned at 16.0.0. Holds
   `PROVENANCE.md` (source URL, version, checksums, licence, and **what derives
   from it**), `LICENSE.txt`, `generate.py` and the vendored `.txt` files
-  unmodified — six of them since [M5.0] stage 5 added `Scripts.txt`,
+  unmodified — thirteen since [UPROP-MORE] added seven (`PropList.txt`,
+  `DerivedCoreProperties.txt`, `emoji-data.txt`, `DerivedBidiClass.txt`,
+  `PropertyAliases.txt`, `Blocks.txt`, `DerivedAge.txt`); six since [M5.0] stage 5 added `Scripts.txt`,
   `ScriptExtensions.txt` and `PropertyValueAliases.txt`. Derives
   `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc`,
   `src/enc/utf8_fold_pairs.inc` and `src/core/case_tables.inc` ([SUBST-CASE]).

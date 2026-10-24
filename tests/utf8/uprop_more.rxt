@@ -1,0 +1,787 @@
+# tests/utf8/uprop_more.rxt -- [UPROP-MORE] (lane upropb): `\p{...}` takes the
+# binary Unicode properties and Bidi_Class, exactly the names and spellings
+# libpcre2 10.46 accepts for them (they were refused as "not implemented yet").
+# The data is the vendored Unicode 16.0.0 files (third_party/ucd-16.0.0/).
+#
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 at PCRE2_UTF (tests/lib/
+# p2gen.py over p2probe; spec: uprop_more.gen.py beside this file), except the
+# byte-encoding blocks, which libpcre2 answers at options=0. The whole-space
+# differential over every property is tests/uprops/run_uprops_tests.sh; these
+# are the witnesses. Every block is `# pcre2-only` (python `re` has no \p{}).
+# The Bidi_Mirrored cells avoid the 126 code points libpcre2 omits
+# (docs/dev/upstream_issues.md U22).
+
+# THE EMOJI DIGIT GOTCHA: `Emoji` is a property of 0-9, # and * as well (emoji-data lists them as keycap bases).
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+m "5" 0 1
+m "#" 0 1
+m "*" 0 1
+m "\xf0\x9f\x98\x80" 0 4
+n "a"
+n "\xc3\xa9"
+m "\xc2\xa9" 0 2
+
+# `Emoji_Presentation`: what is an emoji by default; digits are not.
+# pcre2-only
+pattern \p{Emoji_Presentation}
+features unicode-props
+encoding utf8
+n "5"
+m "\xf0\x9f\x98\x80" 0 4
+m "\xe2\x8c\x9a" 0 3
+n "a"
+n "\xc2\xa9"
+
+# `Extended_Pictographic` (emoji-data), the property grapheme clustering uses.
+# pcre2-only
+pattern \p{Extended_Pictographic}
+features unicode-props
+encoding utf8
+n "5"
+m "\xf0\x9f\x98\x80" 0 4
+m "\xc2\xa9" 0 2
+n "a"
+m "\xe2\x84\xa2" 0 3
+
+# The short alias is the same property.
+# pcre2-only
+pattern \p{ExtPict}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x98\x80" 0 4
+n "5"
+
+# `Emoji_Modifier` (the five skin-tone modifiers) and `Emoji_Modifier_Base`.
+# pcre2-only
+pattern \p{Emoji_Modifier}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x8f\xbb" 0 4
+m "\xf0\x9f\x8f\xbf" 0 4
+n "\xf0\x9f\x98\x80"
+
+# `Emoji_Modifier_Base`.
+# pcre2-only
+pattern \p{EBase}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x91\x8d" 0 4
+n "\xf0\x9f\x98\x80"
+n "a"
+
+# `Emoji_Component`.
+# pcre2-only
+pattern \p{EComp}
+features unicode-props
+encoding utf8
+m "5" 0 1
+m "#" 0 1
+m "\xe2\x80\x8d" 0 3
+n "a"
+
+# `Regional_Indicator`.
+# pcre2-only
+pattern \p{RI}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x87\xba" 0 4
+m "\xf0\x9f\x87\xb8" 0 4
+n "U"
+
+# Negation, three spellings of the same set: `\P`.
+# pcre2-only
+pattern \P{Emoji}
+features unicode-props
+encoding utf8
+n "5"
+m "a" 0 1
+n "\xf0\x9f\x98\x80"
+m "\xc3\xa9" 0 2
+
+# ... `\p{^}`.
+# pcre2-only
+pattern \p{^Emoji}
+features unicode-props
+encoding utf8
+n "5"
+m "a" 0 1
+n "\xf0\x9f\x98\x80"
+
+# ... and `\P{^}` double-negates.
+# pcre2-only
+pattern \P{^Emoji}
+features unicode-props
+encoding utf8
+m "5" 0 1
+n "a"
+m "\xf0\x9f\x98\x80" 0 4
+
+# Inside a class.
+# pcre2-only
+pattern [\p{Emoji}x]
+features unicode-props
+encoding utf8
+m "5" 0 1
+m "x" 0 1
+n "y"
+m "\xf0\x9f\x98\x80" 0 4
+
+# A negated class holding a binary property.
+# pcre2-only
+pattern [^\p{Emoji}]
+features unicode-props
+encoding utf8
+n "5"
+m "a" 0 1
+n "\xf0\x9f\x98\x80"
+m "\xc3\xa9" 0 2
+
+# Quantified.
+# pcre2-only
+pattern \p{Emoji}+
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x98\x80\xf0\x9f\x98\x805" 0 9
+n "a"
+
+# `Alphabetic` (derived: letters, letter numbers, Other_Alphabetic marks).
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+encoding utf8
+m "a" 0 1
+m "\xc3\xa9" 0 2
+n "5"
+n "_"
+m "\xc2\xaa" 0 2
+m "\xe2\x85\xa7" 0 3
+m "\xcd\x85" 0 2
+n " "
+
+# `Alpha` is `Alphabetic`; names are case/space/underscore/hyphen loose.
+# pcre2-only
+pattern \p{ aLpHa }
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "5"
+
+# Loose: underscores and hyphens in a long name.
+# pcre2-only
+pattern \p{Default-Ignorable_Code Point}
+features unicode-props
+encoding utf8
+m "\xc2\xad" 0 2
+n "a"
+
+# `Lowercase` is NOT `Ll` (it adds Other_Lowercase).
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "A"
+m "\xc2\xaa" 0 2
+m "\xe2\x85\xb0" 0 3
+n "5"
+
+# `Uppercase`.
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding utf8
+m "A" 0 1
+n "a"
+m "\xe2\x85\xa0" 0 3
+m "\xe2\x92\xb6" 0 3
+
+# Under -i only Lu/Ll/Lt become L&; `Lowercase` is unchanged.
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding utf8
+flags i
+m "a" 0 1
+n "A"
+m "\xc2\xaa" 0 2
+
+# ... `Uppercase` likewise.
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding utf8
+flags i
+n "a"
+m "A" 0 1
+
+# ... `Alphabetic` and `Emoji` likewise.
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "5"
+
+# ... `Emoji`.
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+flags i
+m "5" 0 1
+n "a"
+m "\xf0\x9f\x98\x80" 0 4
+
+# `Cased`.
+# pcre2-only
+pattern \p{Cased}
+features unicode-props
+encoding utf8
+m "a" 0 1
+m "A" 0 1
+m "\xc7\x85" 0 2
+n "5"
+m "\xc2\xaa" 0 2
+
+# `Case_Ignorable`.
+# pcre2-only
+pattern \p{CI}
+features unicode-props
+encoding utf8
+m "'" 0 1
+m "." 0 1
+m "\xcc\x81" 0 2
+n "a"
+
+# `Changes_When_Casefolded`.
+# pcre2-only
+pattern \p{CWCF}
+features unicode-props
+encoding utf8
+m "A" 0 1
+n "a"
+m "\xc3\x9f" 0 2
+n "5"
+
+# `Changes_When_Titlecased`.
+# pcre2-only
+pattern \p{Changes_When_Titlecased}
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "A"
+m "\xc7\x86" 0 2
+
+# `Default_Ignorable_Code_Point`: soft hyphen, ZWSP, variation selectors, Hangul fillers.
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+features unicode-props
+encoding utf8
+m "\xc2\xad" 0 2
+m "\xe2\x80\x8b" 0 3
+m "\xef\xb8\x8f" 0 3
+m "\xe3\x85\xa4" 0 3
+n "a"
+n " "
+
+# `DI`, the short alias.
+# pcre2-only
+pattern \p{DI}
+features unicode-props
+encoding utf8
+m "\xc2\xad" 0 2
+n "a"
+
+# `Bidi_Control` (Trojan-Source detection): the explicit directional marks.
+# pcre2-only
+pattern \p{Bidi_Control}
+features unicode-props
+encoding utf8
+m "\xe2\x80\xae" 0 3
+m "\xe2\x81\xa6" 0 3
+m "\xe2\x80\x8f" 0 3
+n "a"
+n "\xe2\x80\x8b"
+
+# `Bidi_C`.
+# pcre2-only
+pattern \p{Bidi_C}
+features unicode-props
+encoding utf8
+m "\xe2\x80\xaa" 0 3
+m "\xe2\x80\xae" 0 3
+n "a"
+
+# `Bidi_Mirrored` (cells outside the 126 libpcre2 omits, U22).
+# pcre2-only
+pattern \p{Bidi_Mirrored}
+features unicode-props
+encoding utf8
+m "(" 0 1
+m ")" 0 1
+m "<" 0 1
+n "a"
+n "5"
+
+# `Join_Control` (ZWNJ, ZWJ).
+# pcre2-only
+pattern \p{Join_C}
+features unicode-props
+encoding utf8
+m "\xe2\x80\x8c" 0 3
+m "\xe2\x80\x8d" 0 3
+n "a"
+
+# `Variation_Selector`.
+# pcre2-only
+pattern \p{VS}
+features unicode-props
+encoding utf8
+m "\xef\xb8\x8f" 0 3
+m "\xf3\xa0\x84\x80" 0 4
+n "a"
+
+# `Noncharacter_Code_Point`.
+# pcre2-only
+pattern \p{NChar}
+features unicode-props
+encoding utf8
+m "\xef\xbf\xbf" 0 3
+m "\xef\xb7\x90" 0 3
+m "\xf4\x8f\xbf\xbf" 0 4
+n "a"
+
+# `White_Space` and its alias `space`.
+# pcre2-only
+pattern \p{space}
+features unicode-props
+encoding utf8
+m " " 0 1
+m "\x09" 0 1
+m "\xc2\xa0" 0 2
+n "\xe2\x80\x8b"
+n "a"
+m "\xe2\x80\xa8" 0 3
+
+# `Pattern_White_Space`.
+# pcre2-only
+pattern \p{Pat_WS}
+features unicode-props
+encoding utf8
+m " " 0 1
+m "\xe2\x80\x8e" 0 3
+n "\xc2\xa0"
+n "a"
+
+# `ASCII` (PCRE2's own, U+0000-007F).
+# pcre2-only
+pattern \p{ASCII}
+features unicode-props
+encoding utf8
+m "a" 0 1
+m "\x00" 0 1
+m "\x7f" 0 1
+n "\xc2\x80"
+n "\xc3\xa9"
+
+# `Hex_Digit` includes the fullwidth forms; `ASCII_Hex_Digit` does not.
+# pcre2-only
+pattern \p{Hex_Digit}
+features unicode-props
+encoding utf8
+m "f" 0 1
+m "F" 0 1
+m "\xef\xbc\xa6" 0 3
+n "g"
+m "5" 0 1
+
+# `ASCII_Hex_Digit`.
+# pcre2-only
+pattern \p{AHex}
+features unicode-props
+encoding utf8
+m "f" 0 1
+n "\xef\xbc\xa6"
+n "g"
+m "5" 0 1
+
+# `ID_Start` / `XID_Continue`.
+# pcre2-only
+pattern \p{ID_Start}
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "5"
+n "_"
+m "\xe2\x85\xa0" 0 3
+
+# `XID_Continue`.
+# pcre2-only
+pattern \p{XIDC}
+features unicode-props
+encoding utf8
+m "a" 0 1
+m "5" 0 1
+m "_" 0 1
+n "-"
+
+# `Math`.
+# pcre2-only
+pattern \p{Math}
+features unicode-props
+encoding utf8
+m "+" 0 1
+m "<" 0 1
+n "a"
+m "\xe2\x88\x91" 0 3
+
+# `Dash` / `Quotation_Mark`.
+# pcre2-only
+pattern \p{Dash}
+features unicode-props
+encoding utf8
+m "-" 0 1
+m "\xe2\x80\x94" 0 3
+n "_"
+n "a"
+
+# `Quotation_Mark`.
+# pcre2-only
+pattern \p{QMark}
+features unicode-props
+encoding utf8
+m "\x22" 0 1
+m "'" 0 1
+m "\xe2\x80\x9c" 0 3
+n "a"
+
+# `Ideographic` / `Unified_Ideograph`.
+# pcre2-only
+pattern \p{Ideographic}
+features unicode-props
+encoding utf8
+m "\xe4\xb8\xad" 0 3
+m "\xe3\x80\x87" 0 3
+n "a"
+n "\xe3\x81\x82"
+
+# `Unified_Ideograph`.
+# pcre2-only
+pattern \p{UIdeo}
+features unicode-props
+encoding utf8
+m "\xe4\xb8\xad" 0 3
+n "\xe3\x80\x87"
+n "a"
+
+# `Modifier_Combining_Mark` (new in 16.0).
+# pcre2-only
+pattern \p{MCM}
+features unicode-props
+encoding utf8
+m "\xd9\x94" 0 2
+n "a"
+
+# `ID_Compat_Math_Start` (new in 15.1).
+# pcre2-only
+pattern \p{ID_Compat_Math_Start}
+features unicode-props
+encoding utf8
+m "\xe2\x88\x82" 0 3
+n "a"
+
+# `Grapheme_Extend`, `Grapheme_Base`.
+# pcre2-only
+pattern \p{Gr_Ext}
+features unicode-props
+encoding utf8
+m "\xcc\x81" 0 2
+m "\xe2\x80\x8c" 0 3
+n "a"
+
+# `Grapheme_Base`.
+# pcre2-only
+pattern \p{Gr_Base}
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "\xcc\x81"
+n "\xe2\x80\x8b"
+
+# `Soft_Dotted`, `Terminal_Punctuation`, `Sentence_Terminal`.
+# pcre2-only
+pattern \p{SD}
+features unicode-props
+encoding utf8
+m "i" 0 1
+m "j" 0 1
+n "a"
+
+# `Terminal_Punctuation`.
+# pcre2-only
+pattern \p{Term}
+features unicode-props
+encoding utf8
+m "." 0 1
+m "," 0 1
+n "a"
+m "\xe3\x80\x82" 0 3
+
+# `Sentence_Terminal`.
+# pcre2-only
+pattern \p{STerm}
+features unicode-props
+encoding utf8
+m "." 0 1
+m "!" 0 1
+n ","
+n "a"
+
+# `Bidi_Class` by short name, `=` separator.
+# pcre2-only
+pattern \p{bc=R}
+features unicode-props
+encoding utf8
+m "\xd7\x90" 0 2
+n "a"
+n "\xd8\xa7"
+n "5"
+
+# `:` is the same separator.
+# pcre2-only
+pattern \p{bc:AL}
+features unicode-props
+encoding utf8
+m "\xd8\xa7" 0 2
+n "\xd7\x90"
+n "a"
+
+# The long property name, loose.
+# pcre2-only
+pattern \p{Bidi Class = L}
+features unicode-props
+encoding utf8
+m "a" 0 1
+n "\xd7\x90"
+n "5"
+
+# `BidiClass=EN` lower-case value, spaces.
+# pcre2-only
+pattern \p{bidiclass = en}
+features unicode-props
+encoding utf8
+m "5" 0 1
+n "a"
+n "\xd9\xa3"
+
+# `AN` (Arabic-Indic digits).
+# pcre2-only
+pattern \p{bc=AN}
+features unicode-props
+encoding utf8
+m "\xd9\xa3" 0 2
+n "5"
+
+# `NSM`.
+# pcre2-only
+pattern \p{bc=NSM}
+features unicode-props
+encoding utf8
+m "\xcc\x81" 0 2
+n "a"
+
+# `BN` includes unassigned noncharacters and default-ignorables.
+# pcre2-only
+pattern \p{bc=BN}
+features unicode-props
+encoding utf8
+m "\xc2\xad" 0 2
+m "\xef\xb7\x90" 0 3
+m "\xe2\x80\x8b" 0 3
+n "a"
+
+# `B` and `S` and `WS`.
+# pcre2-only
+pattern \p{bc=B}
+features unicode-props
+encoding utf8
+m "\x0a" 0 1
+m "\xe2\x80\xa9" 0 3
+n " "
+n "a"
+
+# `WS`.
+# pcre2-only
+pattern \p{bc=WS}
+features unicode-props
+encoding utf8
+m " " 0 1
+m "\xe3\x80\x80" 0 3
+n "\x09"
+n "a"
+
+# `ON` (other neutral).
+# pcre2-only
+pattern \p{bc=ON}
+features unicode-props
+encoding utf8
+m "!" 0 1
+m "(" 0 1
+n "a"
+
+# Unassigned code points take the block default (U+05FF is in the Hebrew block: R; U+0870 is Arabic: AL). `bc=R`.
+# pcre2-only
+pattern \p{bc=R}
+features unicode-props
+encoding utf8
+m "\xd7\xbf" 0 2
+n "\xe0\xa1\xb0"
+
+# ... `bc=AL`.
+# pcre2-only
+pattern \p{bc=AL}
+features unicode-props
+encoding utf8
+n "\xd7\xbf"
+m "\xe0\xa1\xb0" 0 3
+
+# `FSI`/`LRI` isolates.
+# pcre2-only
+pattern \p{bc=FSI}
+features unicode-props
+encoding utf8
+m "\xe2\x81\xa8" 0 3
+n "\xe2\x81\xa6"
+
+# Negation and class.
+# pcre2-only
+pattern \P{bc=L}
+features unicode-props
+encoding utf8
+n "a"
+m "\xd7\x90" 0 2
+m "5" 0 1
+
+# A class mixing two Bidi_Class values.
+# pcre2-only
+pattern [\p{bc=R}\p{bc=AL}]
+features unicode-props
+encoding utf8
+m "\xd7\x90" 0 2
+m "\xd8\xa7" 0 2
+n "a"
+
+# PCRE2 takes Bidi_Class SHORT names only: the long value name is refused.
+# pcre2-only
+pattern \p{bc=Arabic_Letter}
+features unicode-props
+encoding utf8
+perr
+
+# A binary property takes no `=Y`.
+# pcre2-only
+pattern \p{Alphabetic=Y}
+features unicode-props
+encoding utf8
+perr
+
+# The UCD binary properties libpcre2 refuses stay refused: `Hyphen`.
+# pcre2-only
+pattern \p{Hyphen}
+features unicode-props
+encoding utf8
+perr
+
+# ... `Other_Alphabetic`.
+# pcre2-only
+pattern \p{Other_Alphabetic}
+features unicode-props
+encoding utf8
+perr
+
+# ... `Expands_On_NFC`.
+# pcre2-only
+pattern \p{XO_NFC}
+features unicode-props
+encoding utf8
+perr
+
+# ... `Assigned`.
+# pcre2-only
+pattern \p{Assigned}
+features unicode-props
+encoding utf8
+perr
+
+# ... other UCD axes: `gc=`.
+# pcre2-only
+pattern \p{gc=Lu}
+features unicode-props
+encoding utf8
+perr
+
+# ... `East_Asian_Width`.
+# pcre2-only
+pattern \p{ea=W}
+features unicode-props
+encoding utf8
+perr
+
+# Under `byte` the property is clamped to the Latin-1 universe: `Alphabetic`.
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+m "a" 0 1
+m "\xe9" 0 1
+n "5"
+m "\xaa" 0 1
+n "\xd7"
+
+# ... `Lowercase`.
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+m "a" 0 1
+n "A"
+m "\xaa" 0 1
+m "\xb5" 0 1
+
+# ... `Emoji` (the digits, #, *, (c), (r) are in Latin-1).
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+m "5" 0 1
+m "#" 0 1
+m "\xa9" 0 1
+m "\xae" 0 1
+n "a"
+
+# ... `bc=L` is most of Latin-1.
+# pcre2-only
+pattern \p{bc=L}
+features unicode-props
+m "a" 0 1
+n "5"
+m "\xaa" 0 1
+n "\xd7"
+
+# ... `bc=R` is empty in Latin-1: the class matches nothing.
+# pcre2-only
+pattern \p{bc=R}
+features unicode-props
+n "a"
+n "\xe9"
+
+# ... `ASCII`.
+# pcre2-only
+pattern \p{ASCII}
+features unicode-props
+m "a" 0 1
+m "\x7f" 0 1
+n "\x80"
+
