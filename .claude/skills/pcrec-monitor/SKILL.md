@@ -77,6 +77,8 @@ OWNER `main` -> `$MANAGER`; OWNER `kit` -> `pcrecdev3`; any other OWNER -> `$MAN
 PROBLEM also copy `$MANAGER` when the owner is not `main`. One SendMessage per row firing,
 first line self-contained, prefix `MON <NAME>:`.
 
+EXPECT MISMATCH (manager, 2026-10-24, after 610-substland-test): a JOB-DONE with `verdict=GREEN` and `rc=0` but `reason=POPULATION-...` (or any expect/witness reason) is NOT a death: the work passed and the job's declared count is stale. Message the owner `EXPECT <the line>: work green, the job's expect is stale` and launch no triage; a job waiting on it (`boxqueue after`) stays blocked until the owner rules.
+
 TRIAGE SCOPE (manager, 2026-10-24, after 620-kit-s3-heavy): rows 4 and 7 launch a triage ONLY for a full-suite job (its logdir holds trailer.log, i.e. scripts/fullsuite_job.sh). Any other job (a lane's make test, a kit job, a chain) is triaged by its OWNER: send the message only, with the job dir, and say "owner triages". The kit triaged 620 itself while the monitor's triage (battery-shaped brief on a non-battery job) ended with no file.
 
 | # | the line | do | message |
