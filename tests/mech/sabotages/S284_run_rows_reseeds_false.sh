@@ -27,6 +27,11 @@
 # rows included) and dfa_form_derive's precondition-(8) read-back — the
 # latter reads the same field, so it cannot, which is recorded here rather
 # than discovered.
+# FLIPPED 2026-10-24 (lane fsfix, full-suite 20261023_5596c3207 triage): the
+# "SHIPS UNDETECTED" account above is the 2026-09-25 record. The matrix now
+# reads this row DETECTED (scanedge:3fail/13pass, tri-mech), so a later
+# change made the plant reachable; the row is expected DETECTED and the
+# header above is history, not the current outcome.
 SAB_ID="S284-run-rows-reseeds-false"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="scanedge harness"
