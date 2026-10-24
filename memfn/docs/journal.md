@@ -2886,3 +2886,6 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Frank ruled on the names: "rename". The `wf-find`/`wf-hors` denies get behaviour names before landing (D174). The stamp value "cover" goes to [IFACE-PUSH].
 - Rev 3.3 acceptance: explained to Frank, ruling pending.
 - Job 620: the axes_memfn step is red (25 of 351 checks); triage follows the job.
+- Frank on the bar (2026-10-24): "I agree". No per-pattern passes. Goal 2 becomes: no slower than DEF beyond the relative floor OR a measured per-call layout allowance, in ns per call, set by the 588 run from layout variants of the DEF arm. The foobar and file-ext-order caps are deleted; their deltas are 0.09-0.41 ns per call, half a cycle to two cycles. The hex8-dense loss (1.543x, a proportional +0.8 ns/B) and the set-stop walk are listed as known gaps for D176. Frank: "See if pricing fixes these. Add hex case to the pricing tests."
+  - Desk reading with price.py (stop study §5.1, fc6735cdf): pricing fixes `[<>&]x`, `[xqz]ab` and `[jqz]uery` (memchr on the single rare byte).
+  - It does NOT fix `[.,;]\d`, `[QXZ]{2}` or dense hex as modelled. Those need the old DFA scan as a priced method row, a measured verify, and the subject's own byte-rate bundle; the shipped prior cannot see a dense-hex subject.
