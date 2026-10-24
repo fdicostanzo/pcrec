@@ -3030,3 +3030,12 @@ the compiler, and is never adopted silently. Proposed for main to file
 - notice: 2026-10-23 — **Frank: "Widen two pair s3 now"**, superseding the Q6 FILE disposition for the scalar row. S3 itself creates the need: code review r2's R2-1 (2026-10-23-r2-memfn-s3-c1-code.md) shows non-case-pair two-member stops and case pairs outside a run stretch getting a scalar walk.
   - PAIR's row contract widens INSIDE S3 to any two-byte set at any window position, plus case pairs outside a run stretch. It is a row-contract edit, not a new mechanism, measured by 588.
   - The arbitrary-pair SIMD kernel stays FILED ([MEMFN-PAIRSIMD]).
+
+### notice 2026-10-24 — Frank's rulings on the S3 final critic round (for decisions.md)
+
+- **EMIT-4 (set-stop walk):** "no. Leave the wart. Its fix is the test for pricing." When Table A's rarest stop is a 3+-member set, S3 keeps the byte walk, even where the old build ran memchr on a single byte (13-18x on real text for `[<>&]x`, `[xqz]ab`). There is no stopgap and no decline. These patterns become D176's acceptance witness: the priced choice over position x method must fix them. window_site rev 3.3 names them as an accepted exception to Goal 2.
+- **Names:** "rename". The deny rows `--memfn=no-wf-find` and `no-wf-hors` take behaviour names before S3 lands (D174; nothing has shipped). The stamp value `RX_DFA_SCAN "cover"` waits for [IFACE-PUSH].
+
+### notice 2026-10-24 — Frank: the S3 bar has no per-pattern caps (for decisions.md, with D176)
+
+"If we can't guarantee 'no slower' then adjust to what we can… it's more an absolute ns problem than a percentage." window_site rev 3.3 Goal 2 becomes: a cell fails only when it is slower than DEF beyond BOTH the relative floor AND a per-call layout allowance in ns. The allowance is MEASURED by job 588 from layout variants of the DEF arm. The named caps (foobar match/real 1.052, file-ext-order's three, hex8's) are deleted. Known gaps are listed for D176 to close: the set-stop walk and dense-hex SKIP. They are D176's acceptance witnesses (stop_ranking_study §5.1, lane/memfn-stopstudy fc6735cdf). By the desk model, pricing alone fixes three of the five set-stop witnesses. The others, and dense hex, also need the old scan as a priced method row, a measured verify cost, and the subject's own byte-rate bundle.
