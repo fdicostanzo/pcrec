@@ -133,6 +133,8 @@ SCRATCH queue of four simulated jobs (green, red:axes, quiet:san, die:alloc) and
 5. Stop: after the JOB-DONE of STOP_AT (or exit 75/2), reply in one line and END. State and action log stay for the next
    monitor: a fresh one with the same STATE and ACTIONLOG must neither repeat nor miss an event.
 
+Known limit: QUIET/DISK-HIGH are live conditions, not replayed events; a monitor gap longer than the whole episode (restart check: use `setup --quiet 120`) can miss one, START/STAGE-END/JOB-DONE can not.
+
 Compare: `scripts/monitor_rehearsal compare DIR` (expected vs actual rows/events, no real triage or ledger action, ledger
 checksum unchanged), `status DIR` (queue + log tail), `teardown DIR` (kills the scratch runner, removes DIR).
 
