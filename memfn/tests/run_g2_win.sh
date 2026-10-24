@@ -75,7 +75,12 @@ FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27
 # libc 598 -> 701: B-pair calls memchr), a JUDGED TRADE, not a lowered bar: the
 # walk's floor follows its population to PAIR (pinned 103, the 114 measured
 # less ~10%); with the two-byte sites pair measures 352 (floor 316).
-EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48"
+# The S3 final review (lane s3fix, 2026-10-24): 100 BELOW-WINDOW sites appended from their own
+# stream (G2W_H2_SITES; the 2500 before them unchanged): `hwin`, every site whose stop window lies
+# wholly below the candidate (D-hors's scope, the generator's own census; measured 163), and the
+# two-stream sites' LONG SUBJECTS (`long pair`, measured 406), each floor the measure less ~10%.
+EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48 hwin:146"
+FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
@@ -299,6 +304,7 @@ for cf in $CELL_FLOORS; do floor "cell ${cf%%:*}" "$(val cells "${cf%%:*}")" "${
 for ff in $FORM_FLOORS; do floor "form ${ff%%:*}" "$(val forms "${ff%%:*}")" "${ff#*:}"; done
 efv() { grep -h '^g2_win_gen: e-find' "$WORK/plain.gen.log" | grep -oE "$1 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
 for ef in $EFIND_FLOORS; do floor "e-find ${ef%%:*}" "$(efv "${ef%%:*}")" "${ef#*:}"; done
+floor "long pair" "$(val long pair)" "$FLOOR_LONG_PAIR"
 
 echo "checks passed: $tp"
 echo "checks failed: $tf"

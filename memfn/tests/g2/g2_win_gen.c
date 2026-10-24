@@ -844,6 +844,9 @@ int main(int argc, char **argv)
         static const uint8_t kinds[] = { MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                                          MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT, MF_SK_REPORT };
         s.site_kind = fam == FAM_MLINE ? MF_SK_DFA_ATTEMPT : kinds[rnd(fam == FAM_REPORT ? 6 : 5)];
+        /* the below-window sites are never REPORT: E-find finds no set stop below the
+           candidate, so one would be refused (their population is Table D's scope) */
+        if (h2_below && s.site_kind == MF_SK_REPORT) s.site_kind = MF_SK_DFA_SCAN;
         s.span_hi = MF_SPAN_UNBOUNDED;
         s.policy = MF_P_PORTABLE_ONLY;
         s.pred.fn_ref = 1;
