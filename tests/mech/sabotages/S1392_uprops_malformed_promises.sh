@@ -9,4 +9,4 @@ SAB_DOC_FIGURE="PREDICTED: 2 reject_gated rows ('\\p{L', '\\p!' under unicode-pr
 SAB_COUNT=1
 SAB_BEFORE="        if (want == WANT_RESULT)                                             \\
             REFUSE((pos), \"\\\\%c: malformed property escape\", sel);         \\"
-SAB_AFTER='        (void)want;  /* SABOTAGE S1392 */                                \\'
+SAB_AFTER='        (void)want;  /* SABOTAGE S1392 */                                 \'
