@@ -59,15 +59,20 @@ typedef enum {
     PCREC_ENTRY_NEXT_POS, PCREC_ENTRY_VALID_UPTO, PCREC_ENTRY_VAR_VALID,
     PCREC_ENTRY_INFO, PCREC_ENTRY_MAIN,
     PCREC_ENTRY_NEXT,                      /* [FINDALL-NEXT] the find-all iterator */
+    PCREC_ENTRY_NEXT_N,                    /* ... and its batch form */
     PCREC_ENTRY_PUBLIC_N,                  /* rows below are internal */
     PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
     PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
     PCREC_ENTRY_PREFILTER,
     PCREC_ENTRY_COMP_A, PCREC_ENTRY_COMP_B,
-    /* [FINDALL-NEXT] a DFA artifact's search BODY, `<p>__find`: what
-     * `<p>_search` runs after its caller-position prologue and what
-     * `<p>_next` runs at every step with none (findall_iter.md §2.1). */
+    /* [FINDALL-NEXT] the search BODY, `<p>__find`: what the search entry
+     * (DFA `<p>_search`, VM `<p>_search_run`) runs after its caller-position
+     * prologue and what `<p>_next` runs at every step with none
+     * (findall_iter.md §2.1), where that prologue writes anything. */
     PCREC_ENTRY_FIND,
+    /* [FINDALL-NEXT] the iterator's retry `<p>__retry`: one anchored attempt
+     * after an empty match, under NOTEMPTY_ATSTART (findall_iter.md §3.3). */
+    PCREC_ENTRY_RETRY,
     PCREC_ENTRY_N
 } PcrecEntry;
 
@@ -3000,29 +3005,13 @@ struct PcrecMeasInherit {
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
 
-/* ---- [OPT-K] the offset-k SELECTION (src/opt/prefix_k.c) ----
+/* ---- [OPT-K] the offset-k skip ----
  *
- * The walk it selects from is the `kset_walk` fact (`KsetWalk`,
- * src/facts/facts.h; derived in src/facts/kset.c, [PATFACTS] step 3.4). */
-
-typedef struct {
-    const KsetWalk *walk;             /* the fact the selection read */
-    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on walk->k[j].set */
-    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
-     * keeps exactly the offset-0 filter it had before this row. */
-    int      nsel;
-    int      sel[PCREC_OFSK_MAX_SET]; /* indices into walk->k[], ASCENDING by offset */
-    int      scan;                    /* index into sel[]: the memchr offset */
-    int      maxk;                    /* walk->k[sel[nsel-1]].k */
-    unsigned rate_ppm;                /* predicted candidate rate, selected */
-    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
-} PrefixKSets;
-
-/* `k0` is the offset-0 byte set the DFA derivation already owns
- * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
- * it. See docs/design/offset_k_skip.md §3. Asked only on the `ENG_UNANCH`
- * branch, after the E3 seal: the walk is an E3 fact. */
-void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o);
+ * The walk it reads is the `kset_walk` fact (`KsetWalk`, src/facts/facts.h;
+ * derived in src/facts/kset.c). WHICH offsets it tests is the memfn kit's
+ * window family's (D172 S2 commit 6: memfn/src/window.c's A-model/C-model,
+ * prefix_k's selection transcribed; window_site.md §3.2), read off its
+ * phase-1 reply; pcrec states the walk and nothing chosen. */
 
 /* D164 B3 THE `rev-end` WALK's FORM: the rows of `revend_forms[]`
  * (src/gen/emit_dfa.c; docs/design/endmark.md §R.1), in table order.
@@ -3114,9 +3103,9 @@ typedef struct {
      * NOTEMPTY start root (`Dfa.notempty`). Built on a DFA artifact whose
      * reported span can be empty (`pcrec_fact_reports_empty`), where it is the
      * iterator's only correct retry, so it is MANDATORY: an overflow is the
-     * DFA engine's like any machine's. `retry_ok` says it was built. */
+     * DFA engine's like any machine's. Built where THE RETRY TABLE's winner
+     * needs it (`PCREC_ITER_NEEDS_NEDFA`). */
     Dfa    nedfa;
-    bool   retry_ok;
     /* [ENG-ABS] Did that machine BUILD, on an artifact whose `_match` this
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
@@ -3309,6 +3298,9 @@ typedef struct {
      * its `entry_rows[]` row (PcrecEntryComb + 1; 0 where the entry has no
      * row on the shape). Read only through `pcrec_entry_comb`. */
     unsigned char entry_comb[PCREC_ENTRY_N];
+    /* [FINDALL-NEXT] the entries whose row on this shape is a search BODY
+     * (EF_BODY), as PCREC_ENTRY_BIT; read through `pcrec_entry_is_body`. */
+    unsigned entry_body;
     /* [COMPOUND] the compound this attempt emits in place of the plain
      * artifact's engine and entries (compound.md §A.3, §A.5), or NULL: the
      * walk's record, owned here (`job_cleanup` frees it with its texts). */
@@ -6844,6 +6836,11 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 /* [UTF-VALID] Is the subject check emitted in this artifact (the flag, on an
  * encoding with ill-formed byte strings)? src/gen/emit_dfa.c. */
 bool pcrec_utf_check_on(Ctx *cx);
+/* [FINDALL-NEXT] Does the caller-position prologue above write anything on
+ * this artifact (a search's, unanchored)? Where it does not, a search entry
+ * has nothing the find-all iterator skips, so it stays one function and the
+ * iterator calls it (findall_iter.md §2.2). src/gen/emit_dfa.c. */
+bool pcrec_startpos_prologue_on(Ctx *cx);
 /* [K73] What a site does when offset 0 is not a character start: a search
  * SEEKs the next start, an anchored match-here entry answers NOMATCH, an
  * attempt loop SKIPs the attempt. See `pcrec_emit_start_zero`. */
@@ -7574,6 +7571,13 @@ typedef struct {
                          * `never`), so the search relocates to it */
     bool comp_floor_any; /* compound: the first operand is asked on every
                          * call (`\G`), not only at offset 0 */
+    bool retry;         /* the iterator retries an empty match (THE RETRY
+                         * TABLE's winner is not `none`) */
+    bool find;          /* the search entry (DFA: `_search`; VM: `_search_run`)
+                         * is its caller-position prologue over the body
+                         * `<p>__find`, which `<p>_next` runs without it: where
+                         * `next` is emitted and the prologue writes anything
+                         * ([FINDALL-NEXT]); else the iterator calls the entry */
 } PcrecEntryShape;
 
 typedef enum {
@@ -7611,6 +7615,14 @@ PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
 const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e);
 /* True iff `e` is emitted at all (not OMITTED). */
 bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
+/* True iff the entry request names `e` (exported or kept): answerable
+ * before the shape is stated, and `pcrec_entry_emitted` for an entry no row
+ * calls (`next`), which only the request can make live. */
+bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e);
+/* True iff `e`'s row on this shape is a search BODY (entries.c's form
+ * column): a scaffold head, no caller-position prologue of its own, copied
+ * into its callers. */
+bool pcrec_entry_is_body(const Ctx *cx, PcrecEntry e);
 /* [COMPOUND] E0c: the combinator of `e`'s `entry_rows[]` row on the stated
  * shape. Asked of an entry with no row there, or before the shape is
  * stated, it fails as an internal error. */
@@ -8195,6 +8207,18 @@ typedef struct {
     const char *frames_code;   /* OWN_TIERED: the give-up code that escalates */
 } PcrecFwd;
 
+/* src/gen/emit_comb.c -- `forward`'s binding texts for a caller that is not
+ * one of the six entries (the find-all iterator's step): the CALLER binding
+ * of descriptor `d` to the local `run` at `indent`, and the OWN/OWN_TIERED wrapper
+ * `name(params)` that binds its own storage and hands it to
+ * `callee(runargs)` (`deepargs` on the deep tier's re-run). */
+void pcrec_emit_caller_bind(StrBuf *c, const char *indent, const char *p, const char *d);
+void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
+                            const char *storage, const char *ret, const char *name,
+                            const char *callee, const char *params,
+                            const char *runargs, const char *deepargs,
+                            const char *frames_code);
+
 /* `finish-at`: which body answers `_match`/`_match_caps` -- axis G's forms
  * (the FINISH row's action) and the compound's. */
 typedef enum {
@@ -8255,9 +8279,26 @@ void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c);
  * `iterate`'s one emitter (the bind, the step, `<prefix>_next`). */
 void pcrec_emit_iter_abi_types(StrBuf *sb);
 void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix);
-void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage);
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, bool batch);
+/* Does the entry request name the find-all iterator (`next` or `next_n`)? */
+bool pcrec_iter_requested(const Ctx *cx);
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
                         const PcrecIterText *t);
+/* [FINDALL-NEXT] src/gen/emit_iter.c -- THE RETRY TABLE: how the find-all
+ * iterator retries an empty match at its position (PCRE2's NOTEMPTY_ATSTART
+ * retry), one declared row per way, first match. A row's `needs` names what
+ * the artifact must carry for it: the driver builds the notempty machine
+ * (`Job.nedfa`) where the winner needs it, the VM emitter writes the
+ * guarded matcher copy, and `<PREFIX>_ITER_RETRY` prints the winner's
+ * `tok`. */
+enum { PCREC_ITER_NEEDS_NEDFA = 1u << 0, PCREC_ITER_NEEDS_GUARDED = 1u << 1 };
+typedef struct {
+    const char *name;                   /* the row */
+    const char *tok;                    /* the stamp's value: what a caller sees */
+    bool      (*applies)(Ctx *cx);
+    unsigned    needs;                  /* PCREC_ITER_NEEDS_* */
+} PcrecIterRetryRow;
+const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx);
 
 /* src/gen/stamp_kinds.c -- THE STAMP CATALOGUE (compound.md §A.7): every
  * stamp an emitter writes, PATTERN-level (true of the pattern and the caller

@@ -113,7 +113,13 @@ else
 fi
 
 trailer() { grep -E "$done_ere" "$log" 2>/dev/null | tail -1; }
-nends() { grep -c '^== stage [^ ]* END' "$log" 2>/dev/null; }
+# Two stage-END shapes: chainrun `== stage N END rc=R ...`, battery.sh `== stage N rc=R END ...`.
+END_ERE='^== stage [^ ]+ (rc=[0-9]+ )?END'
+nends() { grep -cE "$END_ERE" "$log" 2>/dev/null; }
+end_fields() { # end_fields LINE: `stage=N rc=R` from either shape
+    printf '%s\n' "$1" | sed -E 's/^== stage ([^ ]+) (rc=[0-9]+ )?END( rc=([0-9]+))?.*/\1 \2\4/' |
+        awk '{ rc = $2; sub(/^rc=/, "", rc); printf "stage=%s rc=%s", $1, rc }'
+}
 lastline() { tail -1 "$log" 2>/dev/null | cut -c1-200; }
 signature() {
     local f
@@ -142,8 +148,8 @@ while :; do
         echo "watchrun: $kind $tname :: $t :: $(vsum)"; exit 0
     fi
     if [ "$on" = stage ] && [ "$(nends)" -gt "$base_ends" ]; then
-        e=$(grep '^== stage [^ ]* END' "$log" | sed -n "$((base_ends + 1))p")
-        echo "watchrun: STAGE-END $tname :: $e"; exit 0
+        e=$(grep -E "$END_ERE" "$log" | sed -n "$((base_ends + 1))p")
+        echo "watchrun: STAGE-END $tname $(end_fields "$e") :: $e"; exit 0
     fi
     if [ -n "$pid" ] && ! alive "$pid" "$pstart"; then
         t=$(trailer)     # it may have written the trailer and exited between the reads

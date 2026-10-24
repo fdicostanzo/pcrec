@@ -114,7 +114,7 @@ share its main.
    coupling, §22 the build order, §23 open questions).
 6. On demand: decisions D144 (acceptance), D145 (licences), D146, D147
    (+ addenda 1-9), D76/D94 (abi ritual), D80 (spec);
-   `docs/dev/coding_guide.md` before C; `docs/dev/learnings.md` §3
+   `docs/dev/guide/README.md` (and the files it names) before C; `docs/dev/learnings.md` §3
    before a check; `memfn/survey.md`, `memfn/twins.md`,
    `memfn/linux_results.md`, `memfn/isa_*.md` (under
    `docs/design/memfn/`) for prior measurements.

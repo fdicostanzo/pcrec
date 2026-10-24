@@ -3740,20 +3740,41 @@ tests/compound/split.rxt:9374	--features all	283f3a5e293f6162
 tests/compound/split.rxt:9898	--features all	285e617c622963
 tests/assertions/multiline.rxt:3816	--features assertions,modifiers	283f6d29285c6e5e29
 tests/assertions/multiline.rxt:3833	--features assertions,modifiers	283f6d2928615c6e5e29
-# i1tri2 (2026-10-21, [FINDALL-NEXT] I1): +13 rows, every one a tests/findall/global.rxt block (I1's new corpus file, never pinned here); the vmhat_checks.py mover rule on lane/i1build; no existing row moved.
-tests/findall/global.rxt:30	--features all	783f79
-tests/findall/global.rxt:174	--features all	6128627c2963
-tests/findall/global.rxt:339	--features all	5b302d395d2b
-tests/findall/global.rxt:378	--features all	617b322c7d
-tests/findall/global.rxt:417	--features all	283f3a61627c6129
-tests/findall/global.rxt:477	--features all	2e
-tests/findall/global.rxt:516	--features all	616224
-tests/findall/global.rxt:615	--features all	78
-tests/findall/global.rxt:654	--features all	61
-tests/findall/global.rxt:736	--features all	61625c4b
-tests/findall/global.rxt:758	--features all	615c4b62
-tests/findall/global.rxt:900	--features all	28617c292a3f62
-tests/findall/global.rxt:1271	--features all	615c4b7c62
+# corefix/cfcount (2026-10-22, K128): +34 rows, every one a tests/captures/empty_iteration.rxt block (the new corpus file's VM-hat movers); computed by vmhat_checks.py's own mover predicate restricted to that file (the suite's red listed exactly 34 extra, 0 missing); no other row moved.
+tests/captures/empty_iteration.rxt:10	--features all	283f3a28297c61292b3f62
+tests/captures/empty_iteration.rxt:37	--features all --engine=vm	283f3a28297c61292b3f62
+tests/captures/empty_iteration.rxt:65	--features all	28283f3a28297c61292b3f2962
+tests/captures/empty_iteration.rxt:87	--features all --engine=vm	28283f3a28297c61292b3f2962
+tests/captures/empty_iteration.rxt:110	--features all	283f3a283f3a28297c61292b3f62292b
+tests/captures/empty_iteration.rxt:138	--features all --engine=vm	283f3a283f3a28297c61292b3f62292b
+tests/captures/empty_iteration.rxt:167	--features all	283f3a617c28297c62292b3f63
+tests/captures/empty_iteration.rxt:194	--features all --engine=vm	283f3a617c28297c62292b3f63
+tests/captures/empty_iteration.rxt:222	--features all	283f3a28297c61627c61292b3f62
+tests/captures/empty_iteration.rxt:246	--features all --engine=vm	283f3a28297c61627c61292b3f62
+tests/captures/empty_iteration.rxt:270	--features all	283f3a28297c61297b322c7d3f62
+tests/captures/empty_iteration.rxt:298	--features all --engine=vm	283f3a28297c61297b322c7d3f62
+tests/captures/empty_iteration.rxt:328	--features all	283f3a617c28297c62297b322c7d3f63
+tests/captures/empty_iteration.rxt:363	--features all --engine=vm	283f3a617c28297c62297b322c7d3f63
+tests/captures/empty_iteration.rxt:399	--features all	283f3a617c28297c62297b382c7d3f63
+tests/captures/empty_iteration.rxt:461	--features all --engine=vm	283f3a617c28297c62297b382c7d3f63
+tests/captures/empty_iteration.rxt:524	--features all	283f3a617c28297c62297b31362c7d3f63
+tests/captures/empty_iteration.rxt:601	--features all --engine=vm	283f3a617c28297c62297b31362c7d3f63
+tests/captures/empty_iteration.rxt:679	--features all	283f3a617c28297c62297b31372c7d3f63
+tests/captures/empty_iteration.rxt:760	--features all --engine=vm	283f3a617c28297c62297b31372c7d3f63
+tests/captures/empty_iteration.rxt:841	--features all	283f3a617c28297c62297b392c7d63
+tests/captures/empty_iteration.rxt:887	--features all --engine=vm	283f3a617c28297c62297b392c7d63
+tests/captures/empty_iteration.rxt:1011	--features all	283f3a283f3d286129297c61292b3f62
+tests/captures/empty_iteration.rxt:1028	--features all --engine=vm	283f3a283f3d286129297c61292b3f62
+tests/captures/empty_iteration.rxt:1045	--features all	283f3a28297c61292b62
+tests/captures/empty_iteration.rxt:1064	--features all --engine=vm	283f3a28297c61292b62
+tests/captures/empty_iteration.rxt:1171	--features all	283f3a28297c61292a3f62
+tests/captures/empty_iteration.rxt:1187	--features all --engine=vm	283f3a28297c61292a3f62
+tests/captures/empty_iteration.rxt:1204	--features all	283f3a28297c61297b312c337d3f62
+tests/captures/empty_iteration.rxt:1220	--features all --engine=vm	283f3a28297c61297b312c337d3f62
+tests/captures/empty_iteration.rxt:1237	--features all	283f3a28297c61292b2b62
+tests/captures/empty_iteration.rxt:1256	--features all --engine=vm	283f3a28297c61292b2b62
+tests/captures/empty_iteration.rxt:1276	--features all	283f3e283f3a28297c61292b3f2962
+tests/captures/empty_iteration.rxt:1288	--features all --engine=vm	283f3e283f3a28297c61292b3f2962
 tests/atomic_groups/possessive_ungreedy.rxt:101	--features atomic-groups,classes,modifiers --engine=vm	61283f55295c737b2c327d2b
 tests/atomic_groups/possessive_ungreedy.rxt:109	--features atomic-groups,classes,modifiers	283f5529612a2b61
 tests/atomic_groups/possessive_ungreedy.rxt:115	--features atomic-groups,classes,modifiers --engine=vm	283f5529612a2b61
@@ -3835,3 +3856,21 @@ tests/utf8/octal_wide.rxt:51	--features backrefs --encoding=utf8	2861295c343030
 tests/utf8/octal_wide.rxt:59	--features backrefs --encoding=utf8	5c3430302b
 tests/utf8/octal_wide.rxt:66	-i --features backrefs,modifiers --encoding=utf8	5c343030
 tests/utf8/octal_wide.rxt:74	--features backrefs --encoding=utf8	5c31303030
+# i1tri2 (2026-10-21, [FINDALL-NEXT] I1): +13 rows, every one a tests/findall/global.rxt block (I1's new corpus file, never pinned here); the vmhat_checks.py mover rule on lane/i1build; no existing row moved.
+tests/findall/global.rxt:30	--features all	783f79
+tests/findall/global.rxt:174	--features all	6128627c2963
+tests/findall/global.rxt:339	--features all	5b302d395d2b
+tests/findall/global.rxt:378	--features all	617b322c7d
+tests/findall/global.rxt:417	--features all	283f3a61627c6129
+tests/findall/global.rxt:477	--features all	2e
+tests/findall/global.rxt:516	--features all	616224
+tests/findall/global.rxt:615	--features all	78
+tests/findall/global.rxt:654	--features all	61
+tests/findall/global.rxt:738	--features all	61625c4b
+tests/findall/global.rxt:760	--features all	615c4b62
+tests/findall/global.rxt:902	--features all	28617c292a3f62
+tests/findall/global.rxt:1273	--features all	615c4b7c62
+# iterjoin (2026-10-23): tests/findall/global.rxt regenerated by the CHK-8 generator (+5 blocks, libpcre2 counts): four rows renumbered (736->738, 758->760, 900->902, 1271->1273; same patterns), +3 rows, the new (a), (a)(b)?(c)? and (a)(b)?..(j)? blocks (1610, 1619, 1628); the vmhat_checks.py mover rule.
+tests/findall/global.rxt:1610	--features all	286129
+tests/findall/global.rxt:1619	--features all	2861292862293f2863293f
+tests/findall/global.rxt:1628	--features all	2861292862293f2863293f2864293f2865293f2866293f2867293f2868293f2869293f286a293f

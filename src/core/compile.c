@@ -407,18 +407,17 @@ static void build_anchored_dfa(Ctx *cx)
  * any lowered set is swapped in), rooted at `nfa.anch_start`, with the
  * notempty start root. MANDATORY and built BEFORE the optional anchored
  * machine (`build_anchored_dfa`'s rule 1: an optional machine built first
- * could push this one over the subset budget). Nothing to build on an
- * artifact whose reported span is never empty: the retry never fires. */
+ * could push this one over the subset budget). Built where the retry table's
+ * winner needs it (`pcrec_iter_retry_of`): not where no `<prefix>_next` is
+ * exported or no empty span is ever reported. */
 static void build_notempty_dfa(Ctx *cx)
 {
-    if (cx->job->fit.chosen != ENGM_DFA || pcrec_is_part(cx) ||
-        !pcrec_fact_reports_empty(cx)) return;
+    if (!(pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA)) return;
     cx->job->nedfa.notempty = true;
     pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->nedfa, true, false,
                         PCREC_MAX_DFA_STATES_TABLE, cx->job->nfa.anch_start, false);
     pcrec_scanedge_dfa(cx, &cx->job->nedfa,
                        pcrec_dfa_scan_state_written(cx, &cx->job->nedfa), true);
-    cx->job->retry_ok = true;
 }
 
 /* D164 B3 ONE OPTIONAL MACHINE of the `tagged` form, built from `nfa` and

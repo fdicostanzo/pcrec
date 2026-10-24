@@ -7,15 +7,23 @@
 #   2. the ASan cells (IC6): the retry shapes (a DFA notempty root, a VM
 #      accept guard, \K, a compound shell) and a -futf-check utf8 group,
 #      artifact and driver built with AddressSanitizer + UBSan, every region
-#      the iterator reads or writes heap-backed by the driver; built with
-#      -DRX_FOREACH_PAIRS=8 for the I4 cells (findall_iter_i2.md §5.1).
-#   3. (I4) run_one_body.sh: <p>__one's body is I1's <p>_next body, as text.
+#      the iterator reads or writes heap-backed by the driver.
+#   3. (I4) run_one_body.sh: <p>__one's body is the pinned text (iteropt2).
 # The `mg` corpus (global.rxt) rides test-corpus like every other .rxt file.
 # env: as run_iter_diff.sh; ASAN=0 skips part 2 (a build without libasan).
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
-bash "$SCRIPT_DIR/run_iter_diff.sh" "$SCRIPT_DIR/cells.tsv" || fail=1
+# exit 77 = no libpcre2 oracle: the whole section SKIPS, loudly, with its own
+# trailer (PC-3's shape), never a PASS with one check
+bash "$SCRIPT_DIR/run_iter_diff.sh" "$SCRIPT_DIR/cells.tsv"
+rc=$?
+if [ "$rc" -eq 77 ]; then
+    echo "SKIP: test-findall (no libpcre2 oracle; the iterator differential, the ASan cells and the one-body check did not run)"
+    echo "checks passed: 0"; echo "checks failed: 0"; echo "checks skipped: 1"
+    exit 0
+fi
+[ "$rc" -eq 0 ] || fail=1
 bash "$SCRIPT_DIR/run_one_body.sh" || fail=1
 
 if [ "${ASAN:-1}" = "1" ]; then
@@ -29,13 +37,11 @@ if [ "${ASAN:-1}" = "1" ]; then
         "$SCRIPT_DIR/cells.tsv" > "$WORK/asan.tsv"
     if ! printf 'int main(void){return 0;}\n' | "${CC:-cc}" -fsanitize=address -x c - -o "$WORK/probe" 2>/dev/null; then
         echo "SKIP: findall: the compiler cannot build -fsanitize=address; the ASan cells did not run" >&2
+        asan_skipped=1
     else
-        # [FINDALL-NEXT] I4: RX_FOREACH_PAIRS=8 makes the macro's buffer 8
-        # pairs, so the 3-group cell's kmax is 2 (an uncapped fill overruns
-        # the object: S1317) and the 10-group cell is refused.
-        GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -DRX_FOREACH_PAIRS=8" \
+        GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
         ARMS="auto vm" MIN_GROUPS=10 MIN_RETRY=10 ASAN_OPTIONS=detect_leaks=1 \
-        REACH_NEED="n3m4 split f2 fstopend kmaxcap frefused" \
+        REACH_NEED="n3m4 split g2" \
             bash "$SCRIPT_DIR/run_iter_diff.sh" "$WORK/asan.tsv" || fail=1
     fi
 fi
@@ -43,6 +49,11 @@ if [ "$fail" -ne 0 ]; then
     echo "FAIL: test-findall" >&2
     echo "checks passed: 0"; echo "checks failed: 1"
     exit 1
+fi
+if [ "${asan_skipped:-0}" = 1 ]; then
+    echo "PASS (ASan half SKIPPED): test-findall"
+    echo "checks passed: 1"; echo "checks failed: 0"; echo "checks skipped: 1"
+    exit 0
 fi
 echo "PASS: test-findall"
 echo "checks passed: 1"; echo "checks failed: 0"

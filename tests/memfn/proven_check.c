@@ -69,7 +69,6 @@ static mf_site find_site(void)
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
     s.empty = MF_EMPTY_MISS;
-    s.consumer = MF_C_ENGINE;
     s.policy = MF_P_PORTABLE_ONLY;
     s.body = MF_BODY_ONESHOT;
     s.pred.need = MF_REQUIRED;
@@ -244,10 +243,7 @@ static void family_c(void)
     }
 
     /* the real selection: mf_ask over an offset-skip site (ofsskip's row) */
-    s.pred.window_stated = 1;       /* a forward FIND states its window (R17-a) */
-    s.pred.move_back = 0;
-    s.pred.span_class = MF_SPAN_BOUNDED;        /* and span 0 (MF_SITE_ABI 18) */
-    s.pred.prefix_stated = MF_PREFIX_STATED;
+    s.pred.span_class = MF_SPAN_BOUNDED;        /* span 0 (MF_SITE_ABI 18) */
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name, .miss = MF_MISS_N };

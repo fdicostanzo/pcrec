@@ -10,5 +10,5 @@ SAB_DESC='the -futf-check prologue calls the EXPORTED <prefix>_valid_upto rather
 SAB_DOC_FIGURE='Owed: the lane queued this row (docs/dev/lanes/i1build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1304.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_enc_twin_mark(c);   /* the static twin, [FINDALL-NEXT] */'
-SAB_AFTER='    /* SABOTAGE S1304 */'
+SAB_BEFORE='    pcrec_enc_twin_name(c, cx->opt->prefix, "valid_upto");   /* the static twin, [FINDALL-NEXT] */'
+SAB_AFTER='    pcrec_sb_printf(c, "%s_valid_upto", cx->opt->prefix);   /* SABOTAGE S1304 */'

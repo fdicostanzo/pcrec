@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # tests/memfn/run_proof.sh — [MEMFN] R-26 (lane r26z1, MF_SITE_ABI 18): the
-# kit's per-offset proof, prefix facts, context spans, absent rule, read
-# floor and REPORT kind (tests/memfn/proof_check.c's header). Part `proof`
+# kit's per-offset proof, span 0's and a context stop's class, the REPORT
+# kind and the window site's renderer-interface refusal (D172 S2 commit 6,
+# MF_SITE_ABI 20; tests/memfn/proof_check.c's header). Part `proof`
 # of `make test-memfn-finder` (run_finder.sh); runnable alone.
 #
 #   1. proof_check against the kit (LIB, default build/libpcrec.a): families
@@ -15,9 +16,12 @@
 #      kit rendered.
 #
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
-#                  defect (the six kit-side rows of R-26, S1221-S1226, and
-#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; the table
-#                  below): the run must go red. Writes only the work
+#                  defect (R-26's kit-side rows S1221, S1224, S1225 (S1222,
+#                  S1223 and S1226 retired with `absent`, D172 S2 commit 6),
+#                  S1419 (a window site's renderer-interface field accepted), and
+#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; S1408,
+#                  D172 S2's witness that proof_run's read-limit layouts
+#                  catch an over-read; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
@@ -35,16 +39,13 @@ plant_spec() {
     case "$1" in
     S1221) # a form claiming an untested offset (the class proves one past each run)
         echo 'compose.c@@long d = (long)t->offset + j;@@long d = (long)t->offset + j + (t->kind == MF_T_RUN);' ;;
-    S1222) # an absent-SATISFIES candidate dropped (SATISFIES rendered as FAILS)
-        echo 'generic.c@@if (p->span_class != MF_SPAN_CONTEXT || p->absent != MF_ABSENT_SATISFIES)@@if (1)' ;;
-    S1223) # an absent-FAILS candidate yielded (every context item rendered SATISFIES)
-        echo 'generic.c@@if (p->span_class != MF_SPAN_CONTEXT || p->absent != MF_ABSENT_SATISFIES)@@if (p->span_class != MF_SPAN_CONTEXT)' ;;
     S1224) # a proof bit set only by a SIMD layer (C-PROOF)
         echo 'compose.c@@    /* proven0 and proven_prev are COPIES@@    if (!(s->policy \& MF_P_PORTABLE_ONLY)) out->proven[0 - MF_PROOF_LO][0] \&= 0xFE;\n    /* proven0 and proven_prev are COPIES' ;;
     S1225) # an over-filter on an OPTIONAL position (an OPTIONAL SET term tests one member fewer)
         echo 'generic.c@@            if (tm->kind == MF_T_SET) {\n                if (member_test(rc, b, tm, id, bx)) {@@            if (tm->kind == MF_T_SET) {\n                mf_term nt = *tm;\n                for (int q = 0; tm->need == MF_OPTIONAL \&\& q < 256; q++)\n                    if (nt.set[q >> 3] >> (q \& 7) \& 1) { nt.set[q >> 3] \&= (uint8_t)~(1u << (q \& 7)); break; }\n                if (member_test(rc, b, \&nt, id, bx)) {' ;;
-    S1226) # an UNSTATED field accepted (`absent` UNSTATED read as FAILS)
-        echo 'compose.c@@    if (p->absent == MF_ABSENT_UNSTATED)\n        return@@    if (0)\n        return' ;;
+    S1419) # a window site's renderer-interface field accepted (`plan_hint` stated beside
+        # its window facts: D172 S2 commit 6, the kit manager's R1)
+        echo 'window.c@@    if (p->plan_hint \&\& p->plan_hint != MF_NO_PRED)\n@@    if (0)\n' ;;
     # R-26.6 (lane r26zk): the REPORT row and the preview. S1251-S1256 are
     # mech rows (ids reserved by main); ZK6/ZK7 are plants with no id yet.
     S1256) # the REPORT row applies without its exactness fact
@@ -63,10 +64,19 @@ plant_spec() {
         echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 0;' ;;
     S1254) # a `--memfn=` spelling reaches the preview (an options.def row)
         echo 'options.def@@MF_OPT("vrun-w32", MF_OPT_DENY,@@MF_OPT("preview", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR, "plant")\nMF_OPT("vrun-w32", MF_OPT_DENY,' ;;
+    S1408) # an over-read past n (D172 S2 review S2's witness for proof_run's read-limit layouts):
+        # a term's read bound one byte loose, so the generic row reads s[n]
+        echo 'generic.c@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s", rc->N);@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s + 1", rc->N);' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1221 S1222 S1223 S1224 S1225 S1226 S1251 S1252 S1253 S1254 S1255 S1256 ZK6 ZK7"
+# S1255 and S1256 are not in the list: since D172 S2 commit 6 retired `absent`,
+# no old-field REPORT site exists on which the chosen form proves other than
+# exactly its REQUIRED sets (every REPORT term is REQUIRED and every row tests
+# those), so the REPORT row's exactness fact and its comparison range are
+# unobservable (declared EQUIVALENT in their mech rows) until S3 retires the
+# row (window_site.md §4). `--plant S1255` still runs one.
+PLANTS="S1221 S1224 S1225 S1419 S1251 S1252 S1253 S1254 ZK6 ZK7 S1408"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

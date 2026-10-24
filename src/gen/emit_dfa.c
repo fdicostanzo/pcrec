@@ -445,9 +445,9 @@ static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
  * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
  *
  * It holds no `Dfa` and no `DfaForm`, so a consumer without a DFA fills one
- * from its own facts and has it described for the same kit renderer
- * (`ofs_pred_of`; the offset-skip function, memfn/src/ofsskip.c): the run
- * pre-check does (`req_run_tests`, §7.2 step 6), on every route, and
+ * from its own facts and states it to the same kit renderer (as a window
+ * part, `req_part_window`; the offset-skip function, memfn/src/ofsskip.c): the
+ * run pre-check does (`req_run_tests`, §7.2 step 6), on every route, and
  * `[OPT-VMSEED]` is the next (§1.5). The `PrefixK`
  * pointers point into the caller's `UnanchStart`, which outlives every use
  * (the reason `DfaForm` held the selection by pointer before this). */
@@ -837,9 +837,9 @@ static void emit_utf_check(Ctx *cx, StrBuf *c, const char *indent,
         "%s * end. The same call gives the caller the offset. */\n",
         indent, indent, indent, indent);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c, "%sif (%s_", indent, cx->opt->prefix);
-    pcrec_enc_twin_mark(c);   /* the static twin, [FINDALL-NEXT] */
-    pcrec_sb_printf(c, "valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
+    pcrec_sb_printf(c, "%sif (", indent);
+    pcrec_enc_twin_name(c, cx->opt->prefix, "valid_upto");   /* the static twin, [FINDALL-NEXT] */
+    pcrec_sb_printf(c, "(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
                     subjvar, lenvar, posvar, lenvar);
 }
 
@@ -925,6 +925,17 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                    "aligned_from", subjvar, lenvar);
     pcrec_sb_printf(c, "%s    return -1;\n%s}\n", indent, indent);
     emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
+}
+
+bool pcrec_startpos_prologue_on(Ctx *cx)
+{
+    /* the axis writes a guard where the encoding restricts a start and the
+     * guard is not off (align writes one whatever `-fno-startpos-guard`
+     * says), and the subject check where it is on */
+    const bool restricts = pcrec_enc_by_id(cx->opt->encoding)->start_guard != NULL;
+    return pcrec_utf_check_on(cx) ||
+           (restricts && (pcrec_opt_has(cx->opt, PCREC_FORCE_STARTPOS_ALIGN) ||
+                          !pcrec_opt_has(cx->opt, PCREC_NO_STARTPOS_GUARD)));
 }
 
 /* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
@@ -1119,6 +1130,39 @@ static void ofs_test_run(OfsTest *t, const unsigned char *run,
     t->noffsets  = n;
 }
 
+/* D172 S2 commit 6 THE RUN MEMBER's ONE RESOLVER (window_site.md rev 3.2
+ * §3.4's `@idx` row; R-29's ruling on `ReqRun.idx`'s readers): the window
+ * position the run `r`'s scan member sits at, as the memfn kit's window
+ * family's reply names it for the run WINDOW's statement, the one every run
+ * pre-check part states (`req_part_window`: one span, each position its byte
+ * or cube, core all, verify YES; the reply's member is the least-mass
+ * position, ties to the higher, R whole). Every reader of the member calls
+ * this, with no branch of its own: the part's scan (`req_run_tests`), the
+ * `<PREFIX>_REQ_RUN` `@idx` and `<PREFIX>_REQ_BYTE` stamps, the [OPT-REQPOS]
+ * note, `req_set_leads_own` and the pick shadow. The truncation window, cut
+ * before any statement exists, keeps pcrec's index (`r->idx`, a limit of the
+ * statement), and the reply must agree with it (one rule over one statement,
+ * §3.4): a disagreement is loud. No window (`len < 2`): no member to ask. */
+static int req_run_member(Ctx *cx, const ReqRun *r)
+{
+    if (r->len < 2) return r->idx;
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, 0, r->len, MF_VERIFY_YES);
+    for (int j = 0; j < r->len; j++) pcrec_memfn_wpos_cube(sp, j, r->bytes[j], r->mask[j]);
+    mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
+    pcrec_memfn_window_stated(cx, s, a, 1, MF_WFLOOR_SUBJECT);
+    mf_wreply w;
+    if (mf_wdecide(pcrec_memfn_art(cx), s, &w) || !w.run_stated)
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit names no member for the run "
+                       "window's statement (src/gen/emit_dfa.c, req_run_member)");
+    if (w.run_member != r->idx)
+        pcrec_ctx_fail(cx, 0, "internal error: the window family's run member %d is not the "
+                       "run window's own index %d (src/gen/emit_dfa.c, req_run_member)",
+                       (int)w.run_member, r->idx);
+    return (int)w.run_member;
+}
+
 /* The run pre-check's tests, the ONE derivation the pre-check site's builder
  * (`req_site_define`) reads for its run predicates, each defined as a block
  * and called from one site, so a block cannot be written without its call
@@ -1143,10 +1187,11 @@ static int req_run_tests(Ctx *cx, OfsTest t[2], bool whole)
      * exact compare of T, deleting every match not in upper case on the one
      * route where this is the only proof (litscan_s4.md §2.3.4, S4). */
     if (r->len < 2) return 0;
-    ofs_test_run(&t[0], r->bytes, r->mask, r->len, r->idx);
+    int m = req_run_member(cx, r);
+    ofs_test_run(&t[0], r->bytes, r->mask, r->len, m);
     r = pcrec_fact_req_whole_run(cx);   /* the same struct's core half */
     if (!whole || r->whole_len <= r->len) return 1;
-    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx);
+    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + m);
     return 2;
 }
 
@@ -1157,115 +1202,24 @@ static const char *req_run_fn_name(Ctx *cx, int i)
     return dfa_fragf(cx, i ? "%s_reqrun_whole" : "%s_reqrun", cx->opt->prefix);
 }
 
-/* [MEMFN] R4c Describes candidate test `t` as ONE predicate of a kit site
- * (integration.md §15.1): its terms in `t`'s own ascending order, a NULL
- * walk term being the run; the scan a byte term of its own, at its offset,
- * unless it is a byte of the run; `plan_hint`/`plan_pos` naming what pcrec's
- * block scans (§14.9). The run is REQUIRED; a model-selected offset is
- * OPTIONAL, there for speed only (§14.5). A multi-byte offset is reached
- * through its `<p>_ofs_k<k>` table, `table_ref` k + 1. `fn_ref` names the
- * function the predicate is defined as.
- *
- * The two fields the description does not carry, the loop guard `maxk` and
- * the scan byte, the kit re-derives from the terms, so they are checked here
- * against `t`'s own: a disagreement is drift between the derivation
- * (`ofs_test_of`, `ofs_test_run`) and the description, and loud. So are the
- * block's two unreachable shapes, a scan that is not one byte and a verify
- * chain with no term. */
-#ifdef PCREC_CAND_TRACE
-/* [START-TABLE] C1 the selection-trace record of one offset-k predicate's
- * NEED classification (kit boundary B20): per term, `r` a run or `s` a
- * set/byte, `R`/`O` its need, `*` on the term the plan scans. */
-static void ofs_pred_trace(const mf_pred *p)
-{
-    char sig[3 * MF_MAX_TERM + 1];
-    int n = 0;
-    for (int i = 0; i < p->nterm; i++) {
-        sig[n++] = p->term[i].kind == MF_T_RUN ? 'r' : 's';
-        sig[n++] = p->term[i].need == MF_REQUIRED ? 'R' : 'O';
-        if (i == p->plan_hint) sig[n++] = '*';
-    }
-    sig[n] = 0;
-    PCREC_CAND_TRACE_REC("PRESENCE", "-", sig, "ofs-need");
-}
-#endif
-
-_Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
-               "an offset-skip block's terms (PCREC_OFSK_MAX_SET verify offsets "
-               "plus its scan) must fit one memfn predicate (C14)");
-_Static_assert(MF_RANK_MAX >= PCREC_MAX_REQ_RUN_SCAN,
-               "a predicate's position ranking holds every position of the "
-               "longest run term pcrec hands the kit, so it is never truncated");
-
-/* States the ranking of `t`'s run term on `p` ([MEMFN] RQ-2, D157): every
- * position of the term, ordered by the compile's prior rate, with each
- * position's rate (`pcrec_find_run_rank`). */
-static void ofs_pred_rank(Ctx *cx, const OfsTest *t, mf_pred *p)
-{
-    int pos[PCREC_MAX_REQ_RUN_SCAN];
-    uint32_t mass[PCREC_MAX_REQ_RUN_SCAN];
-    pcrec_find_run_rank(pcrec_find_byte_rate(cx), t->run_bytes, t->run_mask,
-                        t->run_len, pos, mass);
-    for (int i = 0; i < t->run_len; i++) {
-        p->rank_pos[i] = (uint16_t)pos[i];
-        p->rank_ppm[i] = mass[i];
-    }
-    p->rank_n = (uint8_t)t->run_len;
-}
-
-static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
-{
-    int sp = t->scan_k, reach = 0;
-    bool in_run = t->run_len > 0 && sp >= t->run_o && sp < t->run_o + t->run_len;
-    if (!in_run && t->scan_byte < 0)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip whose scan "
-                               "offset is not a single byte value");
-    if (!in_run && t->nterm == 0)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip with an empty "
-                               "verify chain");
-    p->need = MF_REQUIRED;
-    p->fn_ref = fn_ref;
-    bool placed = in_run;
-    for (int i = 0; i < t->nterm; i++) {
-        const PrefixK *k = t->term[i].k;
-        if (!placed && sp < (k ? k->k : t->run_o)) {
-            p->plan_hint = p->nterm;
-            pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
-            placed = true;
-        }
-        if (!k) {
-            if (in_run) {
-                p->plan_hint = p->nterm;
-                p->plan_pos = (uint16_t)(sp - t->run_o);
-                ofs_pred_rank(cx, t, p);
-            }
-            pcrec_memfn_term_run(&p->term[p->nterm++], t->run_o, t->run_bytes,
-                                 t->run_mask, t->run_len, MF_REQUIRED);
-        } else {
-            pcrec_memfn_term_set(&p->term[p->nterm++], k->k, k->set,
-                                 k->count > 1 ? (uint32_t)k->k + 1 : 0, MF_OPTIONAL);
-        }
-    }
-    if (!placed) {
-        p->plan_hint = p->nterm;
-        pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
-    }
-    for (int i = 0; i < p->nterm; i++) {
-        const mf_term *m = &p->term[i];
-        int last = m->offset + (m->kind == MF_T_RUN ? (int)m->run_len : 1) - 1;
-        if (last > reach) reach = last;
-    }
-#ifdef PCREC_CAND_TRACE
-    ofs_pred_trace(p);
-#endif
-    if (reach != t->maxk || (in_run && t->run_bytes[sp - t->run_o] != t->scan_byte))
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip's memfn "
-                       "description disagrees with its test (maxk %d, the "
-                       "terms reach %d; scan byte %d at offset %d)",
-                       t->maxk, reach, t->scan_byte, sp);
-}
-
 static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c);
+
+/* D172 THE PRE-CHECK's FUNC PART `p`'s WINDOW STATEMENT, per part (the kit
+ * manager's wsc3 ruling 3; window_site.md rev 3.2 §1.2's pre-check row),
+ * beside its old fields: one alternative with no entry fact, one span, the
+ * run test `t` scans for at the candidate (each position its byte, or the
+ * cube its mask leaves), core all, verify YES (the part is REQUIRED: the
+ * block returns only where the whole run begins); the floor SUBJECT. Never
+ * its scan member (the reply's). */
+static void req_part_window(Ctx *cx, const OfsTest *t, mf_pred *p)
+{
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, 0, t->run_len, MF_VERIFY_YES);
+    for (int j = 0; j < t->run_len; j++)
+        pcrec_memfn_wpos_cube(sp, j, t->run_bytes[j], t->run_mask ? t->run_mask[j] : 0xFF);
+    pcrec_memfn_part_window_stated(cx, p, a, 1, MF_WFLOOR_SUBJECT);
+}
 
 /* Describes the WHOLE pre-check to the memfn kit as one site and defines it
  * here, at file scope above the search entry whose pre-check uses it: the
@@ -1334,7 +1288,8 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
 
 /* [OPT-REQPOS] / [K66] pcrec's NOTE on run pre-check test `i` (0 the
  * window, 1 the whole run): the fact the test's call rests on, the run's
- * bytes escaped for the comment, `masked` where the test carries a mask.
+ * bytes escaped for the comment, with its mask where the run's own array
+ * (the window's for test 0, the whole run's for test 1) carries one.
  *
  * [K66] WHY A WHOLE RUN. The window is cut from the run by the byte-rate
  * (`pcrec_find_run_window_start`), so with only the window compared, a
@@ -1344,11 +1299,12 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
  * on "e" + 36 `a`s + "~#~#~#~#"); the second call compares the whole run, so
  * the proof rests on the run, which is the pattern's.
  * `req_set_rest_members`' header says why that route and only that one. */
-static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
-                         bool masked)
+static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
-    int prev = 0, k;
+    int prev = 0, k, m = req_run_member(cx, r);
+    bool masked = i == 0 ? run_mask_or_null(r->mask, r->len) != NULL
+                         : run_mask_or_null(r->whole_mask, r->whole_len) != NULL;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (i == 0 && masked) {
         /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
@@ -1363,7 +1319,7 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
             " (a byte matches where\n"
             "%s * byte & mask equals it), so a window without them holds no match\n"
             "%s * at all; the scan is on position %d of the run. */\n",
-            indent, indent, r->idx);
+            indent, indent, m);
     } else if (i == 0) {
         pcrec_sb_printf(c,
             "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
@@ -1372,7 +1328,7 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
         pcrec_sb_printf(c,
             "\", so a window without them holds no match at all;\n"
             "%s * the scan is on byte %d at offset %d of the run. */\n",
-            indent, (int)r->bytes[r->idx], r->idx);
+            indent, (int)r->bytes[m], m);
     } else if (masked) {
         pcrec_sb_printf(c,
             "%s/* [K66] every match contains the whole %d-position run \"", indent,
@@ -1521,8 +1477,7 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
     const PcrecMfU *pu = u;
     const mf_pred *p = &pu->site->preds[part];
     StrBuf *sb = pcrec_memfn_sink_sb(pu->cx, c);
-    if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1,
-                                  p->term[0].mask != NULL);
+    if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1);
     else if (!part)  req_note_byte(sb, pu->indent, mf_term_byte(&p->term[0]));
     else             req_note_rest(sb, pu->indent);
 }
@@ -1727,15 +1682,17 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
     }
-    for (int i = 0; i < nrun; i++) {
+    for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
         if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
-        ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
+        p[np++].fn_ref = (uint32_t)i + 1;
     }
     for (int i = 0; i < nrest; i++) {
         p[np].need = MF_REQUIRED;
         pcrec_memfn_term_byte(&p[np].term[0], 0, rest[i], MF_REQUIRED);
         p[np++].nterm = 1;
     }
+    for (int k = 0; k < np; k++)        /* D172: each FUNC part's own window */
+        if (p[k].fn_ref) req_part_window(cx, &t[p[k].fn_ref - 1], &p[k]);
     s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
     s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
     s->npred = (uint16_t)np;
@@ -1923,6 +1880,15 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
     pcrec_sb_printf(c, "%sreturn 1;\n", ind);
 }
 
+/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
+ * that it must stay one function? The DFA attempt route's direct-threaded
+ * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
+ * other body do not. */
+static bool find_body_shared(Ctx *cx)
+{
+    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
  * argued above) and the caller-startpos boundary guard. NOTHING HERE MAY WRITE
@@ -1937,16 +1903,14 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
  * storage class ("" for the exported entry, "static " for the prefilter or a
  * part), and [ENTRY-TABLE] E1's part-layout mark, written after the storage
  * class where `ent` is a part a control lays out (src/gen/part_layout.c). */
-static bool find_body_shared(Ctx *cx);
-
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              PcrecEntry ent)
 {
     /* [FINDALL-NEXT] the body's head is the iterator's scaffold (the entry's
      * own head, below the body, is the one a length decision reads). `find`
      * is no part-layout subject in I1, so no mark is written inside it. */
-    const bool scaf = ent == PCREC_ENTRY_FIND;
-    if (scaf) pcrec_sb_scaffold_open(c);
+    const bool body = pcrec_entry_is_body(cx, ent);
+    if (body) pcrec_sb_scaffold_open(c);
     /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
      * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
      * not see it at all rather than see it and warn. The `__has_attribute`
@@ -1972,14 +1936,14 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * static table (the DFA attempt route's direct threading), which gcc
      * refuses to duplicate and which stays one shared function. The layout
      * is fixed: the part table's class `find` has no subject yet. */
-    if (ent == PCREC_ENTRY_FIND) {
+    if (body) {
         const bool shared = find_body_shared(cx);
         pcrec_sb_puts(c, pcrec_attr_text(shared ? PCREC_ATTR_NOINLINE : PCREC_ATTR_INLINE));
         /* An always_inline body is OWNED (A1's shape): a part it calls is
          * called from its callers, `_search` and `_next` (part_layout.c's
          * `callers`). */
         if (!shared)
-            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_FIND);
+            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(ent);
     }
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
@@ -1992,7 +1956,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                   * because the alternative is a second definition of "which
                   * entries take the pair" living in one engine's emitter. */
                  pcrec_vars_param_text(cx));
-    if (scaf) pcrec_sb_scaffold_close(c);
+    if (body) pcrec_sb_scaffold_close(c);
     /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
      * fill below uses, and for the same reason: this emitter has TWO customers
      * and only one of them is a caller-facing entry. The other is the VM
@@ -2005,18 +1969,9 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
      * through the body they call, and the three `_in` entries through their
      * un-suffixed siblings. */
-    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND)
+    if (cand_finish_of(cx) != CAND_ROUTE_VM && !body)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);
-}
-
-/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
- * that it must stay one function? The DFA attempt route's direct-threaded
- * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
- * other body do not. */
-static bool find_body_shared(Ctx *cx)
-{
-    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
 }
 
 /* [FINDALL-NEXT] `<p>_search` over its body (findall_iter.md §2.1): the
@@ -2383,7 +2338,7 @@ static void emit_rx_abi_types(StrBuf *sb)
          * a variable NAMED rx_info coexist with no conflict, verified
          * directly against gcc. */
         /* [FINDALL-NEXT] the find-all iterator's entry type, every
-         * artifact's `<prefix>_next` whatever its prefix (i1build ruling 2):
+         * artifact's `<prefix>_next` whatever its prefix:
          * declared on the struct TAG, so it precedes `rx_iter`'s body below
          * and `rx_info.next` can carry it. */
         );
@@ -2631,7 +2586,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    /* <PREFIX>_MEASURES: the measurement set a reader consulted,\n"
         "       id@rev:digest; \"\" when none consulted */\n"
         "    const char           *measures;\n"
-        /* [FINDALL-NEXT] appended (i1build ruling 2): a caller holding only
+        /* [FINDALL-NEXT] appended: a caller holding only
          * the record iterates without the header. */
         );
     pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
@@ -3490,10 +3445,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * how a holder of the record reaches it). */
     pcrec_sb_scaffold_open(c);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
-        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = %s_next_n,\n",
-                        cx->opt->prefix, cx->opt->prefix);
+        pcrec_sb_printf(c, "    .next = %s_next,\n", cx->opt->prefix);
     else
-        pcrec_sb_puts(c, "    .next = NULL,\n    .next_n = NULL,\n");
+        pcrec_sb_puts(c, "    .next = NULL,\n");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT_N))
+        pcrec_sb_printf(c, "    .next_n = %s_next_n,\n", cx->opt->prefix);
+    else
+        pcrec_sb_puts(c, "    .next_n = NULL,\n");
     pcrec_sb_scaffold_close(c);
     pcrec_sb_puts(c,   "};\n");
 }
@@ -3585,19 +3543,21 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
     ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
-    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, pcrec_entry_storage(cx, PCREC_ENTRY_NEXT)));
+    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, false));
+    ENTRY_DECL(PCREC_ENTRY_NEXT_N,        pcrec_emit_next_decl(sb, p, true));
 #undef ENTRY_DECL
 }
 
-/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the entries in
- * one half (`inline_half`, enc.h's `inline_def`): every entry this artifact
+/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the `inline_def`
+ * entries (enc.h; an out-of-line entry states no site data, which
+ * `pcrec_enc_emit_twins` refuses): every entry this artifact
  * carries whose backend states site data (PcrecEncSite) has its loop
  * described to the kit (N7, pcrec_memfn_span_site) and rendered through the
  * attempt's art; the backend's text carries the token PCREC_ENC_SITE where
  * the loop goes, and the seam substitutes the rendered string for it. The
  * backend keeps the rest of its text. Returns the arena array, `*ns` long. */
 static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
-                                              bool inline_half, size_t *ns)
+                                              size_t *ns)
 {
     unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
     size_t nt = 0;
@@ -3606,7 +3566,7 @@ static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
     PcrecEncSiteText *st = pcrec_arena_alloc(&cx->arena, nt * sizeof *st);
     for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
         const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
-        if (!(m & t->id) || t->inline_def != inline_half || !es) continue;
+        if (!(m & t->id) || !t->inline_def || !es) continue;
         StrBuf loop = { 0 };
         loop.cx = cx;
         mf_hooks h;
@@ -3629,11 +3589,9 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
     /* [EMIT-ENTRIES] each out-of-line entry at its linkage: omitted ones are
-     * not written, kept ones are `static`. */
-    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns,
+     * not written, kept ones are their twin alone. */
+    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                         pcrec_entry_enc_omit(cx), pcrec_entry_enc_static(cx));
 }
 
@@ -3646,7 +3604,7 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
     size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, true, &ns);
+    const PcrecEncSiteText *st = residual_sites(cx, enc, &ns);
     pcrec_enc_emit_inline_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                                st, ns);
     /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
@@ -4291,13 +4249,26 @@ static bool dfa_needs_gseed(const Dfa *d)
     return false;
 }
 
+/* Does this machine's start depend on the left context at all: mechanism 4's
+ * seeding, or a boundary start `s0` that is not the interior one (a `^` or
+ * `\A` at the start, which the seeded form honours by starting in `s0` at
+ * `search_from == 0` alone)? The search routes' machines never have the
+ * second (ENG_UNANCH implies no start-of-subject node,
+ * `start_pinned_assert_routing`); the find-all iterator's retry machine, run
+ * at any position, does. The one derivation the seed form and the seed
+ * table's dead-cell readers share. */
+static bool dfa_start_from_context(const Dfa *d)
+{
+    return dfa_needs_seed(d) || d->s0 != d->s1u[UPC_PLAIN];
+}
+
 /* Does this machine's emitted seed table hold a dead cell? The loop mirrors
  * `emit_seed_table`'s own, so the two cannot disagree about which cells are
  * emitted; a machine with no seed table has none. Read by `dfa_premul`'s seed
  * precondition and by `dfa_entry_can_be_dead` — one fact, both readers. */
 static bool dfa_seed_has_dead(const Dfa *d)
 {
-    if (!dfa_needs_seed(d)) return false;
+    if (!dfa_start_from_context(d)) return false;
     for (int cl = 0; cl < d->ncls; cl++)
         if (d->s1u[upc_of_class(d, cl)] < 0) return true;
     return false;
@@ -4637,13 +4608,23 @@ typedef struct {
     bool empty;          /* nothing can match: the whole body is one `return 0` */
     DfaPfKind kind;      /* the prefilter the forward scan carries */
     CandSet   cand;      /* D63's candidate set; meaningful when kind != NONE */
-    /* [OPT-K] THE OFFSET-k SKIP'S SELECTION, derived from the same call and
-     * read by the same two readers. `ofsk.nsel == 0` — the answer for every
-     * pattern before this row and for most patterns after it — means the
-     * forward scan carries exactly the offset-0 filter `kind` names above.
-     * docs/design/offset_k_skip.md. */
-    PrefixKSets ofsk;
+    /* [OPT-K] THE K-SET WALK (the `kset_walk` fact) the window statement
+     * states, asked where `kind` is not NONE; NULL elsewhere. Which offsets
+     * the skip tests is the reply's (`wr`), never pcrec's choice (D172 S2
+     * commit 6). docs/design/offset_k_skip.md. */
+    const KsetWalk *walk;
+    /* D172 S2 commit 4 THE WINDOW FAMILY's PHASE-1 REPLY (window_site.md rev
+     * 3.2 §0, §2.4) for this machine's DFA prefilter statement, asked wherever
+     * `kind` is not NONE (`wr_stated`; `window_reply_ask`). The NEXT rows'
+     * key clauses read it (`next_keys[]`), and so does every reader of the
+     * offset rows' candidate test (`ofs_test_of`); `wr_entry` is the
+     * chosen alternative's ENTRY fact, read off the statement it answers. */
+    bool      wr_stated;
+    uint8_t   wr_entry;
+    mf_wreply wr;
 } UnanchStart;
+
+static void window_reply_ask(Ctx *cx, UnanchStart *us);
 
 /* THE UNANCHORED ENGINE'S WHOLE START ANALYSIS, taken once into `*o`: the
  * position-view flags (`eol`, `endv`, `viewsel`, and the D11 `views` bound),
@@ -4784,12 +4765,19 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * all. A k-set selected without them would be a second, weaker version of
      * an argument this function already makes — the fork D63's header
      * forbids. */
-    if (o->kind != DFA_PF_NONE)
-        pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
-    PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "nsel=%d", o->ofsk.nsel);
-#ifdef OPTK_DEBUG
-    { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
-#endif
+    /* D172 S2 commit 6 (window_site.md §3.4 [rev3 bB5]): the BUILDER that
+       states frequencies to the family asks the byte-rate, for exactly the
+       population prefix_k's selection asked it (every offset-0 prefilter),
+       so `_FINDINGS`' consulted line and the UNDERIVABLE/BROKEN diagnostics
+       do not move; then the walk, and the family's decision over the
+       statement */
+    if (o->kind != DFA_PF_NONE) {
+        (void)pcrec_find_byte_rate(cx);
+        o->walk = pcrec_fact_kset_walk(cx);
+        window_reply_ask(cx, o);
+    }
+    PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "path=%s",
+                          o->wr_stated ? o->wr.path : "-");
 }
 
 /* ---- [DD-13c] IS THIS ARTIFACT'S SEARCH BODY THE EMPTY ENGINE? -----------
@@ -5055,7 +5043,7 @@ static int dfa_uniform_folds(Ctx *cx)
     /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
      * path, but its tables are the artifact's and fold like any machine's
      * (`pcrec_emit_dfa_retry`), so they count where it is emitted. */
-    if (cx->job->retry_ok && pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+    if (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA)
         n += uniform_folds_of(cx, &cx->job->nedfa);
     return n;
 }
@@ -5810,6 +5798,7 @@ struct MemfnFind {
     const mf_site *site;
     uint32_t       handle;
     bool           reads_table;
+    int            holdback;   /* the D11 bound the builder stated (`PcrecFind.holdback`) */
 };
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
@@ -5831,6 +5820,10 @@ struct DfaForm {
     const DfaView *view;
     const DfaSeed *seed;
     const DfaAcc  *acc;
+    /* D172 S2 commit 2 the start analysis this form was derived from: the
+     * forward search machine's PF site and offset-skip block state their
+     * window facts from it (`pf_window_of`) */
+    const UnanchStart *us;
     /* [K82] the expression the walk STARTS at, which its seed reads the byte
      * before: `search_from`, or `handoff_position` where the run pre-check's
      * candidate became the forward search's scan start
@@ -6387,7 +6380,7 @@ static const DfaView dfa_views[] = {
 
 /* AXIS D's first candidate: does this machine need mechanism 4's start
  * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
-static bool seed_applies(const CandSel *s) { return dfa_needs_seed(s->d); }
+static bool seed_applies(const CandSel *s) { return dfa_start_from_context(s->d); }
 
 /* The start state's cell, the dead cell when `s0` is dead. [UCP] U2: a
  * REVERSE machine's `s0` ("no character to the right") is dead for a pattern
@@ -6674,12 +6667,35 @@ static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_START_SET]   = "start_set",
 };
 
+/* D172 S2 commit 2 THE WINDOW STATEMENT's TABLE OFFERS (R-29: per position,
+ * a membership table pcrec already emits for that set): one id space the PF
+ * site's and the offset-skip block's `table_name` hooks both resolve, apart
+ * from either site's term ids, so the two builders state one statement.
+ * WIN_OFFER_FIND + a PcrecFindTable names `<p>_<tag>`, WIN_OFFER_OFS + k the
+ * offset-k verify table `<p>_ofs_k<k>` (`ofsk_tbl_name`). */
+enum { WIN_OFFER_FIND = 0x100, WIN_OFFER_OFS = 0x200 };
+static const char *ofsk_tbl_name(Ctx *cx, const char *p, int k);
+
+/* A window offer's table name for prefix `p`, or NULL where `ref` is no
+ * window offer (a term's own id). */
+static const char *win_offer_name(Ctx *cx, const char *p, uint32_t ref)
+{
+    if (ref >= WIN_OFFER_OFS && ref < WIN_OFFER_OFS + PCREC_PREFIX_K_MAX)
+        return ofsk_tbl_name(cx, p, (int)(ref - WIN_OFFER_OFS));
+    if (ref > WIN_OFFER_FIND && ref < WIN_OFFER_FIND + PCREC_FIND_NTABLE)
+        return dfa_fragf(cx, "%s_%s", p, find_table_tag[ref - WIN_OFFER_FIND]);
+    return NULL;
+}
+
 /* The kit's table-name hook: `<p>_<tag>` for the site's table_ref, which is
- * the PcrecFindTable value (rule 7: the table is pcrec's, named by pcrec). */
+ * the PcrecFindTable value (rule 7: the table is pcrec's, named by pcrec),
+ * or a window offer's table (`win_offer_name`). */
 static const char *find_table_name(void *u, uint32_t ref)
 {
     const PcrecMfU *pu = u;
     const PcrecFind *f = pu->own;
+    const char *w = win_offer_name(pu->cx, f->p, ref);
+    if (w) return w;
     if (ref == 0 || ref >= PCREC_FIND_NTABLE)
         pcrec_ctx_fail(pu->cx, 0, "internal error: the PF site's table_ref %u "
                        "names no table (src/gen/emit_dfa.c, find_table_name)",
@@ -6696,9 +6712,134 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
     return ((const PcrecFind *)((const PcrecMfU *)u)->own)->stem;
 }
 
-/* The site for FIND `f`: its window is its candidate (W0-W2, R17-a), and a
- * FIND that names a storage stem (`f->stem`, the set sites) offers its
- * declaration point (W4) and states the stem's hook id (W5). */
+/* D172 S2 commit 2 THE DFA PREFILTER's WINDOW STATEMENT (window_site.md rev
+ * 3.2 §1.2's PF row, R-29's fact table), stated by the forward search
+ * machine's PF site and by its offset-skip block alike, from `us`. Fills
+ * `*out` with its alternatives and returns how many (1 or 2):
+ *   PARKED  {0: P}, verify YES, `offer` its table: P the set the parked scan
+ *           takes as its candidates, `us->cand` (k0, the start state's
+ *           escape set) or, on the DFA hat, its start set T (the start_set
+ *           fact, the bytes a match can begin with: startset.md §2 F, the
+ *           hat re-seeds the landing state from the byte before it); plus
+ *           the run R where §1.1's pin fact holds: R's position at offset 0,
+ *           the one-byte filter, k0 = F0 = {that byte};
+ *   RESEED  where `-fno-offset-skip` is not given and prefix_k's own gate
+ *           holds (k0 with 1-255 members, the walk stated): {0: F0} verify
+ *           YES, then EVERY walked offset k >= 1 as its own one-position
+ *           span, verify NO, core [0], in walk-index (ascending) order, its
+ *           `<p>_ofs_k<k>` offered where it has two or more members; then R.
+ * `bounded` (the machine's D11 bound, `us->views`: no candidate at n - 1)
+ * adds a core `{1: any}` to each offset-0 span, on every site that states
+ * it (wsc3 D-5). R is the run window's WALK-PROVEN stretch, verify NO,
+ * core all: the PINNED STRETCH (`run_pin`: `bytes[at .. at+len)` at offset
+ * `o`, the walk's own singletons, kset.c `pcrec_run_pin`), widened over each
+ * adjacent window position `i` whose offset `o - at + i` the walk proves (its
+ * k-set within the position's cube: `walk_proves`), each stated as its byte
+ * or cube. Every position is then a necessary condition of a match at its
+ * offset (the walk stops before any match can end); a window position the
+ * walk does not prove there is not stated (the kit manager's wsc3 ruling 4).
+ * Never its member (the reply's). Not stated
+ * under `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`. The facts are
+ * read without a pass (`_stated`) where no pass of this compile asked them,
+ * and only where the builder already asked the walk (`us->walk`), so
+ * neither the facts' `used` record nor the byte-rate's consulted population
+ * moves. No rank, pick or plan is computed here (D157). */
+/* Does the walk prove window position (`byte`, `mask`) at offset `d`: every
+ * byte its k-set holds there lies in the position's cube? False past the
+ * walk (no offset there says anything). */
+static bool walk_proves(const KsetWalk *wk, int d, unsigned byte, unsigned mask)
+{
+    if (d < 0 || d >= wk->nwalk) return false;
+    for (int x = 0; x < 256; x++)
+        if (wk->k[d].set[x] && (x & mask) != (byte & mask)) return false;
+    return true;
+}
+
+static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
+                        uint32_t offer, bool bounded, mf_walt **out)
+{
+    const KsetWalk *wk = us->walk;
+    bool reseed = wk && wk->nwalk >= 1 && us->cand.count >= 1 && us->cand.count < 256 &&
+                  !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP);
+    const ReqRun *r = NULL;
+    RunPin pin = { false, 0, 0, 0, 0 };
+    if (wk && us->kind != DFA_PF_NONE && !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&
+        !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {
+        r = pcrec_fact_req_run_stated(cx);
+        if (r->len >= 2) pin = *pcrec_fact_run_pin_stated(cx);
+        if (!pin.pinned) r = NULL;
+    }
+    for (int i = 0; r && i < pin.len; i++)
+        if (pin.o + i >= wk->nwalk || wk->k[pin.o + i].count != 1 ||
+            wk->k[pin.o + i].byte != r->bytes[pin.at + i])
+            pcrec_ctx_fail(cx, 0, "internal error: the run pin's stretch is not the walk's "
+                           "singletons at offset %d (src/gen/emit_dfa.c, pf_window_of)",
+                           pin.o + i);
+    int w = pin.o - pin.at, lo = pin.at, hi = pin.at + pin.len;   /* R: window [lo, hi) */
+    while (r && lo > 0 && walk_proves(wk, w + lo - 1, r->bytes[lo - 1], r->mask[lo - 1])) lo--;
+    while (r && hi < r->len && walk_proves(wk, w + hi, r->bytes[hi], r->mask[hi])) hi++;
+    int z0 = -w;        /* the window position at offset 0 */
+    bool parked_r = r && z0 >= lo && z0 < hi && r->mask[z0] == 0xFF &&
+                    us->kind == DFA_PF_ONE_BYTE && us->cand.count == 1 &&
+                    us->cand.byte == r->bytes[z0] && wk->k[0].count == 1 &&
+                    wk->k[0].byte == r->bytes[z0];
+    int n = reseed ? 2 : 1, z = bounded ? 2 : 1;
+    mf_walt *a = pcrec_memfn_walts(cx, n);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
+    pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
+    pcrec_memfn_wpos_table(&sp[0], 0, parked, offer);
+    if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+    mf_wspan *rsp[2] = { parked_r ? &sp[1] : NULL, NULL };
+    if (reseed) {
+        int nw = wk->nwalk - 1;
+        sp = pcrec_memfn_walt_spans(cx, &a[1], MF_ENTRY_RESEED, 1 + nw + (r != NULL));
+        pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
+        pcrec_memfn_wpos_table(&sp[0], 0, wk->k[0].set,
+                               wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
+        if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+        for (int j = 1; j < wk->nwalk; j++) {
+            const PrefixK *k = &wk->k[j];
+            pcrec_memfn_wspan(&sp[j], k->k, 1, MF_VERIFY_NO);
+            pcrec_memfn_wpos_table(&sp[j], 0, k->set,
+                                   k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
+        }
+        if (r) rsp[1] = &sp[1 + nw];
+    }
+    for (int i = 0; i < 2; i++) {
+        if (!rsp[i]) continue;
+        pcrec_memfn_wspan(rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
+        for (int j = lo; j < hi; j++)
+            pcrec_memfn_wpos_cube(rsp[i], j - lo, r->bytes[j], r->mask[j]);
+    }
+    *out = a;
+    return n;
+}
+
+/* D172 S2 FIND `f`'s window statement on site `s` (window_site.md §1.2; its
+ * only statement since commit 6): the DFA prefilter's alternatives where its
+ * builder supplied them (`f->walts`), else the term's own one alternative
+ * with no entry fact: the VM hat's seek `{0: S}` (its table offered), and
+ * MLINE's predecessor stop `{-1: \n}`, whose floor is the expression
+ * `f->floor` (reads in [0, F) are its attempt loop's edge). A D11 bound
+ * (`holdback`) is a core `{1: any}`. */
+static void find_window(const PcrecFind *f, mf_site *s)
+{
+    Ctx *cx = f->cx;
+    if (f->walts) {
+        pcrec_memfn_window_stated(cx, s, f->walts, f->nwalt, MF_WFLOOR_SUBJECT);
+        return;
+    }
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, f->offset, f->holdback ? 2 : 1, MF_VERIFY_YES);
+    if (f->table != PCREC_FIND_NO_TABLE)
+        pcrec_memfn_wpos_table(sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
+    else
+        pcrec_memfn_wpos_cube(sp, 0, (unsigned)f->byte, 0xFFu);
+    if (f->holdback) pcrec_memfn_wpos_any(sp, 1);
+    pcrec_memfn_window_stated(cx, s, a, 1, f->floor ? MF_WFLOOR_EXPR : MF_WFLOOR_SUBJECT);
+}
+
 static mf_site *find_site(const PcrecFind *f)
 {
     Ctx *cx = f->cx;
@@ -6729,23 +6870,12 @@ static mf_site *find_site(const PcrecFind *f)
     s->op = MF_OP_FIND;
     s->handoff = MF_H_ASSIGN;
     s->empty = back ? MF_EMPTY_AT_N : f->holdback ? MF_EMPTY_NOP : MF_EMPTY_MISS;
-    s->end_back = (uint8_t)(f->holdback ? 1 : 0);
     s->on_miss_leaves = !f->holdback;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
     s->site_kind = f->kind;
-    s->pred.nterm = 1;
-    s->pred.need = MF_REQUIRED;
-    if (table)
-        pcrec_memfn_term_set(&s->pred.term[0], f->offset, f->set, (uint32_t)f->table,
-                             MF_REQUIRED);
-    else
-        pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
-    pcrec_memfn_window_is_candidate(&s->pred);
-    if (back) pcrec_memfn_context_stop(s);      /* R-26.2: MLINE's stop */
-    else      pcrec_memfn_span0_stated(cx, &s->pred);
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
+    find_window(f, s);
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
     return s;
 }
@@ -6793,7 +6923,7 @@ static struct MemfnFind find_define(StrBuf *file, const PcrecFind *f)
     mf_hooks h;
     PcrecMfU u;
     mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
-    struct MemfnFind d = { find_site(f), 0, false };
+    struct MemfnFind d = { find_site(f), 0, false, f->holdback };
     find_hooks(f, d.site, NULL, &h, &u);
     d.handle = pcrec_memfn_define(f->cx, f->site, d.site, &h, file);
     pcrec_memfn_defined(f->cx, d.handle, r);
@@ -6813,13 +6943,14 @@ static void find_locals(StrBuf *c, const char *ind, const PcrecFind *f,
 }
 
 /* Writes one use of defined FIND `d` at indent `ind`; `f` must describe the
- * site `d` defined (its `end_back` is checked here, loudly). */
+ * site `d` defined (its D11 bound is checked against the one the define
+ * stated, `d->holdback`, loudly). */
 static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
                      const struct MemfnFind *d)
 {
     mf_hooks h;
     PcrecMfU u;
-    if (d->site->end_back != (f->holdback ? 1 : 0))
+    if (d->holdback != f->holdback)
         pcrec_ctx_fail(f->cx, 0, "internal error: a FIND used with a D11 bound "
                        "its define did not state (src/gen/emit_dfa.c, find_use)");
     find_hooks(f, d->site, ind, &h, &u);
@@ -6837,7 +6968,7 @@ static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
 static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
                       const uint8_t table[256])
 {
-    const uint8_t *set = d->site->pred.term[0].set;
+    const uint8_t *set = d->site->alts[0].spans[0].set[0];
     for (int b = 0; b < 256; b++)
         if (((set[b >> 3] >> (b & 7)) & 1) != (table[b] != 0))
             pcrec_ctx_fail(cx, 0, "internal error: N4 door: the FIND's set and "
@@ -6940,11 +7071,15 @@ static const char *pf_moved_reseed_of(Ctx *cx, const char *p, const DfaDir *dir)
  * forward scan); unbounded, a miss leaves the whole search (`return 0;`),
  * bounded it clamps to n-1, and the DFA hat re-seeds where the skip moved
  * (PR-2). The form (one memchr, a walk) is the kit's, from the facts. */
-static PcrecFind pf_site_of(Ctx *cx, const CandRow *pf, const uint8_t *set, bool views)
+static PcrecFind pf_site_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
+                            const uint8_t *set, bool views)
 {
     bool hat = pf->u.pf.scan_set != NULL;
-    return (PcrecFind){ .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
-                        .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
+    PcrecFindTable tbl = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN;
+    mf_walt *walts;
+    int nwalt = pf_window_of(cx, us, set, WIN_OFFER_FIND + (uint32_t)tbl, views, &walts);
+    return (PcrecFind){ .walts = walts, .nwalt = nwalt, .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
+                        .table = tbl,
                         .set = set, .pos = "scan_position", .subject = "subject",
                         .len = "subject_length", .holdback = views ? 1 : 0,
                         .on_miss = views ? NULL : "return 0;",
@@ -6968,7 +7103,7 @@ static PcrecFind pf_find_of(const DfaForm *f, int holdback)
         pcrec_ctx_fail(f->cx, 0, "internal error: a prefilter FIND off the forward "
                        "search machine, or with a D11 bound its form's `views` does "
                        "not hold (src/gen/emit_dfa.c, pf_find_of)");
-    return pf_site_of(f->cx, f->pf, f->cand.set, f->views);
+    return pf_site_of(f->cx, f->us, f->pf, f->cand.set, f->views);
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -7076,10 +7211,10 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * docs/design/offset_k_skip.md is the note. In one paragraph: the four forms
  * above filter a candidate start on the byte AT it; these two filter it on a
  * SET of (offset, byte-set) tests that every match must satisfy, of which the
- * offset-0 test is one member. The selection lives in src/opt/prefix_k.c and
- * is carried in `UnanchStart.ofsk`; `nsel == 0` — the answer for every pattern
- * before [OPT-K] and for most patterns after it — is what makes the four forms
- * above still the ones selected, byte for byte.
+ * offset-0 test is one member. The selection is the memfn kit's window family
+ * (D172 S2 commit 6), read off its phase-1 reply (`UnanchStart.wr`); a reply
+ * choosing PARKED without C-pin — the answer for most patterns — is what makes
+ * the four forms above still the ones selected, byte for byte.
  *
  * THESE TWO SIT AT THE HEAD OF THE LIST, so a pattern with a k-set takes them
  * and one without falls through to exactly what it had. `-fno-offset-skip`
@@ -7087,16 +7222,59 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * byte-identical to the pre-row compiler's output and is therefore a valid
  * control rather than a fourth variant (D82). */
 
+/* D172 S2 THE NEXT KEYS (window_site.md rev 3.2 §2.4): the clause of each
+ * offset row's predicate that reads WHICH candidate test was chosen, as a
+ * declared map over the window family's phase-1 reply (`UnanchStart.wr`),
+ * each row held to the field values it lists (`WR_ANY`: the row does not
+ * read that field). The rows below the offset rows read no key: first-match
+ * order reaches them exactly where the reply chose PARKED without C-pin
+ * (RE-SEED clear), and a RE-SEED bit that reaches a row which does not
+ * re-seed is refused loudly (`dfa_form_derive`). Under
+ * `PCREC_NO_OFFSET_SKIP`/`PCREC_NO_RUN_PREFILTER` pcrec states no R
+ * (`pf_window_of`), so no reply carries C-pin there (§2.4, V2). */
+typedef enum { NK_RUN_PINNED, NK_OFFSET_SET, NK_N } NextKey;
+enum { WR_ANY = 0xFF };
+static const struct {
+    const char *rows;                   /* the rows whose predicate reads the key */
+    uint8_t entry, reseed, pinned;      /* the reply's chosen ENTRY, its RE-SEED
+                                           bit, C-pin (`mf_wreply.pinned`) */
+    const char *basis;
+} next_keys[NK_N] = {
+    [NK_RUN_PINNED] = { "run-pinned[-bounded]", WR_ANY, 1, 1,
+                        "the reply's plan carries C-pin and its RE-SEED bit is set "
+                        "(§2.4, §3.5): RESEED + C-pin, or PARKED + C-pin" },
+    [NK_OFFSET_SET] = { "offset-set[-bounded]", MF_ENTRY_RESEED, 1, WR_ANY,
+                        "the reply chose the RESEED alternative, RE-SEED set "
+                        "(§2.4); its C-pin plans took the run-pinned rows above" },
+};
+
+/* Does the reply's field value `v` meet a key's declared value `want`? */
+static bool wr_field_is(unsigned want, unsigned v)
+{
+    return want == WR_ANY || want == v;
+}
+
+/* Does key `k` hold for selection `s`: the reply's declared fields (no reply,
+ * no offset prefilter: `kind` is NONE). */
+static bool next_key_holds(const CandSel *s, NextKey k)
+{
+    const UnanchStart *u = s->us;
+    return u->wr_stated && wr_field_is(next_keys[k].entry, u->wr_entry) &&
+           wr_field_is(next_keys[k].reseed, u->wr.reseed) &&
+           wr_field_is(next_keys[k].pinned, u->wr.pinned);
+}
+
 /* The clause all the offset-set candidates share: this is the forward scan,
- * an offset-0 prefilter was already approved, and the k-set pass selected at
- * least one offset. The selection RIDES the offset-0 verdict and is never
+ * an offset-0 prefilter was already approved, and the offset-set key holds
+ * (the reply chose RESEED).
+ * The selection RIDES the offset-0 verdict and is never
  * asked independently of it — everything it inherits was proved by
  * `unanch_start`, and a k-set selected without that would be a second, weaker
  * version of an argument already made. */
 static bool pf_ofs_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
-    return s->forward && u->kind != DFA_PF_NONE && u->ofsk.nsel > 0;
+    return s->forward && u->kind != DFA_PF_NONE && next_key_holds(s, NK_OFFSET_SET);
 }
 /* The bounded offset-set form: that, plus the D11 bound. */
 static bool pf_ofs_bounded_applies(const CandSel *s)
@@ -7109,15 +7287,12 @@ static bool pf_ofs_applies(const CandSel *s)
  * clause by clause; the bounded twin adds `views`, as the offset-set pair's
  * does. (0) the offset-set rows' own common clause: the forward scan, riding
  * the offset-0 verdict `unanch_start` proved. (1) a necessary run exists.
- * (2) the walk pins it at `o`. (3) IDENTITY: the scan is the same byte at the
- * same offset it is today — the model's scan offset is the run's scan member
- * (`s = o + idx`), or with no model selection the offset-0 `memchr` byte is
- * that member at offset 0. (4) the row ADDS something: the model's own
- * selection does not already test the whole run (class A keeps `offset-set`).
- * It reads analysis output only — never which row a later entry would pick,
- * and never the pre-check's admission. */
+ * (2) the walk pins it at `o`. (3)-(4), the stop IS R's member and the plan
+ * does not already test all of R (class A keeps `offset-set`), are the window
+ * family's C-pin since D172 S2 (window_site.md §2.3), read off its reply
+ * (`NK_RUN_PINNED`). It reads analysis output only — never which row a later
+ * entry would pick, and never the pre-check's admission. */
 static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us);
-static void ofs_test_model(const UnanchStart *us, OfsTest *t);
 
 /* The run PIN as this file's readers may see it: the `run_pin` fact where
  * `unanch_start` approved an offset-0 prefilter, and "not pinned" everywhere
@@ -7132,32 +7307,19 @@ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
     return *pcrec_fact_run_pin(cx);
 }
 
+/* Clauses (0)-(2) are facts of the machine and the run, asked as ever (so the
+ * facts' `used` record does not move; the reply can carry C-pin only where
+ * they hold, since R is stated only then); clauses (3)-(4), which candidate
+ * test was chosen, are the reply's (`NK_RUN_PINNED`). */
 static bool pf_run_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
     const ReqRun *r = pcrec_fact_req_run(s->cx);
-    const PrefixKSets *o = &u->ofsk;
     if (!s->forward || u->kind == DFA_PF_NONE) return false;
     if (r->len < 2) return false;
     RunPin pin = us_run_pin(s->cx, u);
     if (!pin.pinned) return false;
-    /* [OPT-LITSCAN] S4 C3: the scan is the PIN's — its exact stretch's
-     * picked position, `bytes[pin.at + pin.idx]` at offset `pin.o +
-     * pin.idx`. On an exact run that is the run's own `idx` at `pin.o +
-     * idx`, as before. */
-    int sp = pin.o + pin.idx;
-    if (o->nsel > 0) {
-        if (o->walk->k[o->sel[o->scan]].k != sp) return false;
-    } else if (!(sp == 0 && u->kind == DFA_PF_ONE_BYTE &&
-                 u->cand.byte == r->bytes[pin.at + pin.idx])) {
-        return false;
-    }
-    if (o->nsel > 0) {
-        OfsTest t;
-        ofs_test_model(u, &t);
-        if (ofs_test_verifies_run(s->cx, &t, u)) return false;
-    }
-    return true;
+    return next_key_holds(s, NK_RUN_PINNED);
 }
 /* The bounded run-pinned form: that, plus the D11 bound. */
 static bool pf_run_bounded_applies(const CandSel *s)
@@ -7166,72 +7328,61 @@ static bool pf_run_bounded_applies(const CandSel *s)
 static bool pf_run_applies(const CandSel *s)
 { return pf_run_applies_common(s); }
 
-/* Fills `*t` with the MODEL's own candidate test, `us`'s k-set selection
- * re-expressed (it needs `nsel > 0`): the scan is the selected offset `scan`
- * names, the terms are every other selected offset in ascending order, and
- * the guard is the selection's own `maxk`. It is what an offset-set row
- * emits, and what the run rows' predicate asks "does it already test the
- * run?" of. */
-static void ofs_test_model(const UnanchStart *us, OfsTest *t)
-{
-    const PrefixKSets *o = &us->ofsk;
-    memset(t, 0, sizeof *t);
-    const PrefixK *sc = &o->walk->k[o->sel[o->scan]];
-    t->scan_k    = sc->k;
-    t->scan_byte = sc->count == 1 ? sc->byte : -1;
-    for (int i = 0; i < o->nsel; i++)
-        if (i != o->scan) t->term[t->nterm++].k = &o->walk->k[o->sel[i]];
-    t->maxk     = o->maxk;
-    t->noffsets = o->nsel;
-}
 
-/* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
- * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block. */
-static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
-                        OfsTest *t)
+
+
+/* D172 S2 commit 6 THE CANDIDATE TEST FROM THE REPLY (window_site.md rev 3.2
+ * §3.4): the test row `pf` emits, read off the window family's phase-1 reply
+ * `us->wr` and nothing pcrec chose: the scan is the reply's STOP (its one
+ * byte, `stop_set`), the terms are the reply's PLAN in its ascending order,
+ * a pinned stretch (C-pin, `pinned`) ONE run term at `run_lo` whose bytes are
+ * R's as stated (the window's from R's placement, `pin.o - pin.at`), every
+ * other offset its walk term. The guard is the largest offset tested, and
+ * the offsets tested are the plan's with the stop's. False, with `*t`
+ * zeroed, for a row that emits no `<p>_ofsskip` block; a reply that cannot
+ * be the row's (no stop, a run row without C-pin, an offset off the walk) is
+ * pcrec's defect, and loud. */
+static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf, OfsTest *t)
 {
-    const PrefixKSets *o = &us->ofsk;
-    const ReqRun *r = pcrec_fact_req_run(cx);
+    const mf_wreply *w = &us->wr;
+    const KsetWalk *wk = us->walk;
     memset(t, 0, sizeof *t);
     if (pf->u.pf.emit_block == NULL) return false;
-    if (!pf->u.pf.run_term) { ofs_test_model(us, t); return true; }
-
-    /* THE RUN ROWS. The scan is the run's own scan member at its pinned
-     * offset; the terms are every model-selected offset OUTSIDE the run,
-     * plus the run itself as ONE term at `run_o`, all ascending. The run term
-     * includes the scan byte, as the pre-check's compare does, so the compare
-     * is the same constant-length `memcmp`. */
-    /* [OPT-LITSCAN] S4 C3: the run term is the PINNED STRETCH (`bytes +
-     * pin.at`, `pin.len` positions, at `pin.o`), always exact, so this never
-     * sets `run_mask`; on an exact run the stretch is the whole window. */
-    RunPin pin = us_run_pin(cx, us);
-    int ro = pin.o, rl = pin.len, sp = ro + pin.idx;
-    t->scan_k    = sp;
-    t->scan_byte = r->bytes[pin.at + pin.idx];
-    t->run_o     = ro;
-    t->run_len   = rl;
-    t->run_bytes = r->bytes + pin.at;
-    /* The predicate's clauses 2 and 3 read back from the emitter's side. Each
-     * can fail only if the predicate and this derivation have drifted, which
-     * this file prefers loud (`DfaForm.cx`'s own comment). */
-    if (!pin.pinned)
-        pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
-                               "an unpinned run");
-    if (o->nsel > 0 ? o->walk->k[o->sel[o->scan]].k != sp
-                    : (sp != 0 || o->walk->k[0].count != 1 || o->walk->k[0].byte != t->scan_byte ||
-                       us->cand.byte != t->scan_byte))
-        pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
-                               "scan is not the run's scan member at offset %d", sp);
-    bool placed = false;
-    for (int i = 0; i < o->nsel; i++) {
-        const PrefixK *k = &o->walk->k[o->sel[i]];
-        if (k->k >= ro && k->k < ro + rl) continue;
-        if (!placed && k->k > ro) { t->term[t->nterm++].k = NULL; placed = true; }
-        t->term[t->nterm++].k = k;
+    if (!us->wr_stated || !w->has_stop || !wk || w->stop < 0 || w->stop >= wk->nwalk ||
+        (pf->u.pf.run_term && !w->pinned))
+        pcrec_ctx_fail(cx, 0, "internal error: offset row `%s` reached with no reply it can "
+                       "read (path %s; src/gen/emit_dfa.c, ofs_test_of)", pf->tok,
+                       us->wr_stated ? w->path : "unasked");
+    int nb = 0, b = -1;
+    for (int x = 0; x < 256; x++)
+        if (w->stop_set[x >> 3] >> (x & 7) & 1) { nb++; b = x; }
+    t->scan_k = w->stop;
+    t->scan_byte = nb == 1 ? b : -1;
+    if (pf->u.pf.run_term) {
+        const ReqRun *r = pcrec_fact_req_run(cx);
+        RunPin pin = us_run_pin(cx, us);
+        t->run_o = w->run_lo;
+        t->run_len = w->run_len;
+        t->run_bytes = r->bytes + (w->run_lo - (pin.o - pin.at));
     }
-    if (!placed) t->term[t->nterm++].k = NULL;
-    t->noffsets = t->nterm - 1 + rl;
-    t->maxk     = o->maxk > ro + rl - 1 ? o->maxk : ro + rl - 1;
+    int maxk = w->stop, n = 1;
+    bool placed = false;
+    for (unsigned i = 0; i < w->nplan; i++) {
+        int o = w->plan[i];
+        if (o > maxk) maxk = o;
+        if (o != w->stop) n++;
+        if (t->run_len && o >= t->run_o && o < t->run_o + t->run_len) {
+            if (!placed) { t->term[t->nterm++].k = NULL; placed = true; }
+            continue;
+        }
+        if (o == w->stop) continue;
+        if (o < 0 || o >= wk->nwalk || wk->k[o].k != o || t->nterm >= PCREC_OFSK_MAX_SET)
+            pcrec_ctx_fail(cx, 0, "internal error: the reply's plan tests offset %d, which "
+                           "the walk does not state (src/gen/emit_dfa.c, ofs_test_of)", o);
+        t->term[t->nterm++].k = &wk->k[o];
+    }
+    t->maxk = maxk;
+    t->noffsets = n;
     return true;
 }
 
@@ -7361,13 +7512,51 @@ static const char *ofs_site_fn_name(void *u, uint32_t fn_ref)
     return dfa_fragf(pu->cx, "%s_ofsskip", f->p);
 }
 
-/* [MEMFN] R4c `table_name`: a multi-byte offset's verify table, `table_ref`
- * its offset + 1 (`ofs_pred_of`). */
+/* [MEMFN] R4c `table_name`: the table a window offer names (`win_offer_name`:
+ * a multi-byte offset's verify table, or the PF site's candidate table); the
+ * site states no other id since D172 S2 commit 6. */
 static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 {
     const PcrecMfU *pu = u;
     const DfaForm *f = pu->own;
-    return ofsk_tbl_name(pu->cx, f->p, (int)table_ref - 1);
+    const char *w = win_offer_name(pu->cx, f->p, table_ref);
+    if (!w)
+        pcrec_ctx_fail(pu->cx, 0, "internal error: the offset-skip site's table_ref %u "
+                       "names no window offer (src/gen/emit_dfa.c, ofs_site_table_name)",
+                       (unsigned)table_ref);
+    return w;
+}
+
+/* D172 S2 commit 2 the DFA prefilter's window statement as the offset-skip
+ * block states it, into `*walts` (returns how many): the PF site's, the D11
+ * bound included where the machine has one (the caller's text clamps to it:
+ * wsc3 D-5); the offset rows sit above the DFA hat, so the parked set is k0.
+ * The ONE derivation the block's define and the phase-1 ask both read. */
+static int ofs_window_of(Ctx *cx, const UnanchStart *us, mf_walt **walts)
+{
+    return pf_window_of(cx, us, us->cand.set, WIN_OFFER_FIND + PCREC_FIND_CAN_BEGIN,
+                        us->views, walts);
+}
+
+/* D172 S2 commit 4 THE PHASE-1 ASK (window_site.md rev 3.2 §0, §2.4): the
+ * window family's decision over `us`'s DFA prefilter statement
+ * (`ofs_window_of`), into `us->wr`, with the chosen alternative's ENTRY. The
+ * decision reads no frame fact, so one ask serves every NEXT row and every
+ * selection of this machine. Asked wherever the art previews the family
+ * (the default); a refusal is pcrec's defect (the statement is the one
+ * the block defines). */
+static void window_reply_ask(Ctx *cx, UnanchStart *us)
+{
+    mf_walt *walts;
+    int n = ofs_window_of(cx, us, &walts);
+    mf_site *s = pcrec_memfn_site(cx, DELEG_OFS);
+    pcrec_memfn_window_stated(cx, s, walts, n, MF_WFLOOR_SUBJECT);
+    if (mf_wdecide(pcrec_memfn_art(cx), s, &us->wr))
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the window family's "
+                       "phase-1 ask on the DFA prefilter (src/gen/emit_dfa.c, "
+                       "window_reply_ask)");
+    us->wr_entry = walts[us->wr.alt].entry;
+    us->wr_stated = true;
 }
 
 /* [MEMFN] R4c Describes the block `f->ofs` as the kit's offset-skip site
@@ -7383,10 +7572,12 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->handoff = MF_H_RETURN;
     s->empty = MF_EMPTY_MISS;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
-    ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
-    pcrec_memfn_window_is_candidate(&s->pred);
-    pcrec_memfn_span0_stated(f->cx, &s->pred);  /* R-26.1, Z2 */
+    s->pred.fn_ref = 1;                 /* the function's name hook (K-1) */
+    {   /* D172 S2: the DFA prefilter's window statement, its only one */
+        mf_walt *walts;
+        int n = ofs_window_of(f->cx, f->us, &walts);
+        pcrec_memfn_window_stated(f->cx, s, walts, n, MF_WFLOOR_SUBJECT);
+    }
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
@@ -8090,7 +8281,7 @@ static PcrecFind cand_pf_site(Ctx *cx, const UnanchStart *us, const CandRow *pf)
 {
     CandSet *sc = pcrec_arena_alloc(&cx->arena, sizeof *sc);
     pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
-    return pf_site_of(cx, pf, sc->set, us->views);
+    return pf_site_of(cx, us, pf, sc->set, us->views);
 }
 
 /* THE MLINE SITE: ENG_ATTEMPT's predecessor-byte FIND (DELEG_SITES row MLINE,
@@ -8448,7 +8639,6 @@ static mf_site *req_pres_site(Ctx *cx, const mf_pres_proof *proof)
     s->handoff = MF_H_ON_MISS;
     s->empty = MF_EMPTY_MISS;
     s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
-    s->consumer = MF_C_ENGINE;
     s->site_kind = site_kind_of(cx, SKS_PRE);
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
     s->pspans = req_pres_spans(cx, &s->npspan);
@@ -8958,7 +9148,7 @@ static const DfaDir dfa_dir_reverse = {
  *     WHERE THE SCAN BEGINS, which is sound for a search and wrong for a
  *     match-here, where the start is the caller's. Nothing here has to say so:
  *     `anch_start` hands this machine's form an `UnanchStart` whose `kind` is
- *     `DFA_PF_NONE` and whose `ofsk.nsel` is 0, and every axis-B candidate
+ *     `DFA_PF_NONE` and which carries no reply, and every axis-B candidate
  *     requires one of those to be non-trivial, so axis B's total fallback is
  *     what the ordinary walk selects. The flag here is about the STAY skips,
  *     which are a different mechanism and DO apply (§3.7).
@@ -10476,8 +10666,9 @@ static bool req_set_leads_own(Ctx *cx)
     int q;
     if (r->len < 2) return false;
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
-    cand[0] = r->bytes[r->idx];
-    care[0] = r->mask[r->idx];
+    int m = req_run_member(cx, r);
+    cand[0] = r->bytes[m];
+    care[0] = r->mask[m];
     cand[1] = (unsigned char)q;
     care[1] = 0xFF;
     return pcrec_find_pick(pcrec_find_byte_rate(cx), cand, care, 2, 0) == 1;
@@ -10654,7 +10845,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         /* the run: scan position and window */
         if (run->whole_len >= 2) {
             const ReqRun *w = pcrec_fact_req_run_stated(cx);
-            int n = run->whole_len, ps = w->at + w->idx, ks = k.run_scan;
+            int n = run->whole_len, ps = w->at + req_run_member(cx, w), ks = k.run_scan;
             if (pick_plant("scan")) ks = (ks + 1) % n;
             pick_rec("scan", ps, ks, 1, ps != n - 1, kind);
             int lo_s = ps - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = ps;
@@ -12254,9 +12445,16 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
         f->pf  = cand_select(CAND_SLOT_NEXT, &s, flags);
         PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->tok, "form-fwd");
         CAND_HIT(CAND_SLOT_NEXT, &s, f->pf, "form-fwd");
+        /* D172 S2 commit 4 (window_site.md §3.5): a reply whose plan needs the
+           matcher re-seeded at each candidate must reach a re-seeding row */
+        if (us->wr_stated && us->wr.reseed && !f->pf->u.pf.reseeds)
+            pcrec_ctx_fail(cx, 0, "internal error: the window family's reply sets RE-SEED "
+                           "(path %s) and NEXT took `%s`, which does not re-seed "
+                           "(src/gen/emit_dfa.c, dfa_form_derive)", us->wr.path, f->pf->tok);
     } else
         f->pf  = cand_fallback(CAND_SLOT_NEXT, s.route);
     f->views   = us->views;
+    f->us      = us;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
     if (f->pf->u.pf.scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);
@@ -12759,7 +12957,8 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
      * sabotage S07's anchor keeps its text), before the scan loop and its
      * `seedhead` jump, dominating every use in this body. */
     if (fwd->pf_find.handle) {
-        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back);
+        /* its D11 bound: the one its define stated */
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.holdback);
         find_locals(c, "    ", &fd, &fwd->pf_find);
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -13613,11 +13812,11 @@ static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
  * caller's `ctx->pos` — so the value it is derived from is built here rather
  * than borrowed:
  *
- *   - `kind` is `DFA_PF_NONE`, `cand` is empty and `ofsk.nsel` is 0,
+ *   - `kind` is `DFA_PF_NONE`, `cand` is empty and no reply is asked,
  *     UNCONDITIONALLY. That is the whole of why axis B selects its total
  *     fallback for this machine, with no branch anywhere and no `applies`
  *     clause that knows this machine exists: every real prefilter candidate
- *     requires `kind != DFA_PF_NONE` or `ofsk.nsel > 0`. A candidate-start
+ *     requires `kind != DFA_PF_NONE`. A candidate-start
  *     skip CHOOSES WHERE THE SCAN BEGINS, which is sound for a search and
  *     wrong for a match-here.
  *   - the view flags are recomputed from THIS machine alone, where the search
@@ -13635,12 +13834,40 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
     *o = *us;
     o->kind = DFA_PF_NONE;
     memset(&o->cand, 0, sizeof o->cand);
-    memset(&o->ofsk, 0, sizeof o->ofsk);
+    o->walk = NULL;
     o->eol     = dfa_has_eolvar(ad);
     o->endv    = dfa_has_endvar(ad);
     o->viewsel = o->eol || o->endv;
     o->views   = o->viewsel || ad->clsctx;
     o->empty   = false;   /* the caller's candidate already excluded it */
+}
+
+/* The anchored scan's head: machine `f`'s tables and the scan's two locals,
+ * the scan starting at `search_from`. */
+static void emit_anchored_scan_head(StrBuf *c, const DfaForm *f)
+{
+    emit_machine_tables(c, f);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
+               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
+               "    // scan, so the longest match wins; no reverse pass,\n"
+               "    // because the start is the caller's.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+}
+
+/* THE ANCHORED BODY, one for both of its callers: an untagged machine `f`
+ * run forward from `search_from` to its last accept, returning -1 from the
+ * enclosing function where none was recorded. `<prefix>_match`'s
+ * `unwrapped` form runs it over the anchored machine; the find-all
+ * iterator's retry over the notempty machine (`pcrec_emit_dfa_retry`). Each
+ * caller writes its own prologue before it and its answer after it. */
+static void emit_anchored_scan(StrBuf *c, const DfaForm *f)
+{
+    emit_anchored_scan_head(c, f);
+    emit_scan_loop(c, f);
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n");
 }
 
 /* THE MATCH-HERE BODY. `<prefix>_match` stops being a wrapper around
@@ -13705,22 +13932,13 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
                               "subject_length", true);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_NOMATCH);
-    emit_machine_tables(c, f);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
-               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
-               "    // scan, so the longest match wins; no reverse pass,\n"
-               "    // because the start is the caller's.\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
     if (!f->d->tagged) {
-        emit_scan_loop(c, f);
-        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-                   "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+        emit_anchored_scan(c, f);
+        pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
                    "}\n");
         return;
     }
+    emit_anchored_scan_head(c, f);
     /* D164 B3 the LOWERED anchored machine (one lowering per artifact,
      * endmark.md §R.2.1): its accept carries the distance back to the marked
      * end (`DfaForm.accv`), and the length is to that end. */
@@ -13756,43 +13974,36 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g)
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
 }
 
-/* [FINDALL-NEXT] THE RETRY MACHINE's DIRECTION (findall_iter.md §3.3): the
- * anchored direction's strings under the machine name `retry`, so its
- * accessor block cannot collide with the anchored machine's in one file. */
-static const DfaDir dfa_dir_retry = {
-    { "retry", 0, cand_always },
-    "Retry", "RETRY", "retry_state", "retry_view_state",
-    "scan_position", "last_accept_position",
-    "    ", "        ", false, false,
-    "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
-    "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
-    "     * anchored machine whose start state never accepts and keeps every\n"
-    "     * thread below the empty match, so its last accept is the preferred\n"
-    "     * NON-EMPTY match beginning there.\n"
-    "     *\n",
-    "a non-empty match beginning at search_from may end",
-    "    if (search_from > subject_length) return -1;\n", "return -1;",
-    NULL, NULL,
-    "scan_position >= subject_length",
-    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
-    dir_fwd_skip, dir_fwd_bound_accept,
-    "scan_position < subject_length", "scan_position - 1",
-};
-
 /* [FINDALL-NEXT] `<p>__retry`, the DFA iterator's retry R (findall_iter.md
- * §3.3): the notempty machine (`Job.nedfa`) run forward from `search_from`
- * exactly as the anchored match-here body runs, writing the match into
- * `capture_spans` (the dead groups unset, `_search`'s rule) and returning its
- * length, or -1. Its tables are a machine's and count like one; no
- * candidate-start prefilter, for the match-here's reason (`anch_start`). */
+ * §3.3): the anchored body (`emit_anchored_scan`) over the notempty machine
+ * (`Job.nedfa`) from `search_from`, writing the match into `capture_spans`
+ * (the dead groups unset, `_search`'s rule) and returning its length, or -1.
+ * Its direction is the anchored one under the machine name `retry`, so its
+ * accessor block cannot collide with the anchored machine's in one file; its
+ * start state is the left context's (`seed_applies`), so a `^` or `\A` holds
+ * at `search_from == 0` alone. Its tables are a machine's and count like one;
+ * no candidate-start prefilter, for the match-here's reason (`anch_start`). */
 void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
 {
-    UnanchStart base, aus;
+    DfaDir dir = dfa_dir_anchored;
+    dir.c.name = "retry";
+    dir.title = "Retry";
+    dir.label = "RETRY";
+    dir.statev = "retry_state";
+    dir.viewv = "retry_view_state";
+    dir.tbl_hdr =
+        "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
+        "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
+        "     * anchored machine whose start state never accepts and keeps every\n"
+        "     * thread below the empty match, so its last accept is the preferred\n"
+        "     * NON-EMPTY match beginning there.\n"
+        "     *\n";
+    dir.acc_meaning = "a non-empty match beginning at search_from may end";
+    const UnanchStart none = { .kind = DFA_PF_NONE };
+    UnanchStart aus;
     DfaForm f;
-    memset(&base, 0, sizeof base);
-    base.kind = DFA_PF_NONE;
-    anch_start(&cx->job->nedfa, &base, &aus);
-    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dfa_dir_retry, &f);
+    anch_start(&cx->job->nedfa, &none, &aus);
+    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dir, &f);
     if (f.d->tagged)
         pcrec_ctx_fail(cx, 0, "internal error: the iterator's retry machine is "
                        "tagged (it is built from the plain forward NFA)");
@@ -13802,12 +14013,8 @@ void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
         "static ptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
         "                          size_t search_from, ptrdiff_t (*capture_spans)[2])\n"
         "{\n", cx->opt->prefix);
-    emit_machine_tables(c, &f);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
-    emit_scan_loop(c, &f);
-    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-               "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
+    emit_anchored_scan(c, &f);
+    pcrec_sb_puts(c, "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
                "    capture_spans[0][1] = (ptrdiff_t)last_accept_position;\n");
     emit_dead_group_fill(cx, c, "    ");
     pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
@@ -14001,7 +14208,7 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
      * layout's P2 reads this as the body's `copyable` fact. [FINDALL-NEXT]
      * Not a `<p>__find` body: that one is `noinline` (`find_body_shared`)
      * and the subject is its `_search` wrapper, which copies. */
-    if (d->n > 0 && ent != PCREC_ENTRY_FIND) cx->job->pl.uncopyable = true;
+    if (d->n > 0 && !pcrec_entry_is_body(cx, ent)) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
@@ -14848,16 +15055,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          ? "guarded" : "permissive");
     }
     /* [FINDALL-NEXT] `<PREFIX>_ITER_RETRY` (findall_iter.md §6.3): how the
-     * iterator retries an empty match at its position. "none" where it
-     * never reports an empty span (or exports no iterator), "dfa-root"
-     * where the retry is the notempty-rooted machine (compile.c's
-     * `retry_ok`, the flag the retry's emitter reads), "vm-guard" where it
-     * is the VM accept label's guard. */
+     * iterator retries an empty match at its position, the retry table's
+     * winner (`pcrec_iter_retry_of`, src/gen/emit_iter.c). */
     pcrec_sb_scaffold_open(c);
-    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY",
-                 !pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) ||
-                 !pcrec_fact_reports_empty(cx) ? "none"
-                 : cx->job->retry_ok ? "dfa-root" : "vm-guard");
+    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY", pcrec_iter_retry_of(cx)->tok);
     pcrec_sb_scaffold_close(c);
     /* [UTF-VALID] `<PREFIX>_UTF_CHECK` — THE SUBJECT CHECK'S CONTRACT, the
      * startpos-guard stamp's family (a) sibling: unconditional, on every
@@ -14953,7 +15154,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * [PATFACTS] the value is the `req_byte` fact's ONE renderer
          * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
         pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE",
-                           pcrec_fact_stamp(cx, PF_REQ_BYTE));
+                           pcrec_fact_stamp_req_byte(cx, req_run_member(
+                               cx, pcrec_fact_req_run_stated(cx))));
     }
     /* [OPT-REQPOS] tier 2b `<PREFIX>_REQ_RUN` — THE NECESSARY LITERAL RUN,
      * beside `<PREFIX>_REQ_BYTE` and in the same family-(a) shape for the same
@@ -14979,7 +15181,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * analysis found, and `<PREFIX>_REQ_WHY` names whether it was emitted.
      * [PATFACTS] the value is the `req_run` fact's ONE renderer
      * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
-    pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", pcrec_fact_stamp(cx, PF_REQ_RUN));
+    pcrec_sb_stamp_str(c, g->upper, "REQ_RUN",
+                       pcrec_fact_stamp_req_run(cx, req_run_member(
+                           cx, pcrec_fact_req_run_stated(cx))));
     /* [OPT-PRECHECK-ADMIT] `<PREFIX>_REQ_WHY` — WHY THIS ARTIFACT DOES OR DOES
      * NOT CARRY A WHOLE-WINDOW PRE-CHECK. A §6.3 family-(a) SELECTION FACT for
      * its two siblings' reason, in the same place: unconditional, on every
@@ -15509,6 +15713,8 @@ void pcrec_emit_dfa(Ctx *cx)
             .compound = shell != NULL,
             .comp_b = shell && shell->text[1],
             .comp_floor_any = shell && shell->floor_any,
+            .retry = pcrec_iter_retry_of(cx)->needs != 0,
+            .find = pcrec_iter_requested(cx) && pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }
@@ -15576,7 +15782,10 @@ in_entries:
     /* [FINDALL-NEXT] the find-all iterator: the retry machine where the
      * artifact can report an empty span, then `iterate`'s entry. */
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT)) {
-        const PcrecIterText it = { .vm = false, .retry = cx->job->retry_ok };
+        const PcrecIterText it = {
+            .vm = false,
+            .retry = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA) != 0,
+        };
         const PcrecEntryText t = { .iter = &it };
         if (it.retry) pcrec_emit_dfa_retry(cx, c);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_NEXT, &t);

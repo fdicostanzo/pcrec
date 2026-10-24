@@ -23,40 +23,88 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `84` on every artifact today (lane i2build bumped it
-  from 83, 2026-10-21: [FINDALL-NEXT] I4, docs/design/findall_iter_i2.md
-  rev 2, D171).** Every artifact gains `<prefix>_next_n(rx_iter *, caps, k)`,
-  up to `k` matches per call, declared in the header beside `<prefix>_next`
-  with the NEXT entry's linkage; the shared ABI block carries `rx_nextnfn`
-  and the caller-side loop `RX_FOREACH(info, it, m)` with its state
-  `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull` and the
-  caller-overridable `RX_FOREACH_PAIRS` (256); `struct rx_info` appends
-  `next_n` after `next`. I1's `<prefix>_next` body is now the static
-  `always_inline` `<prefix>__one`, which both `<prefix>_next` and
-  `<prefix>_next_n`'s loop inline. All of it is scaffold. `rx_iter` does not
-  change (`PCREC_ITER_LAYOUT` stays 3). No answer of an existing entry moves
-  (match_api.md §3.8.1, §3.8.2, §6¶14c).
-- **`rx_info.abi` was `83` (lane i1build bumped it
-  from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
-  as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all
-  iterator `<prefix>_next(rx_iter *, caps)`: the shared ABI block carries
-  `rx_iter` (a fixed type, the same for every prefix), `rx_nextfn`, the
-  `PCREC_ITER_*` constants, `rx_iter_init`/`RX_ITER_INIT` and the setters
-  `rx_iter_at`/`rx_iter_vars`, and `PCREC_ERR_ITER` (-10); `struct rx_info`
-  appends `next` after `measures`; the header declares `<prefix>_next` and
-  the typed setter `<prefix>_iter_buffers`; the shared prologue stamps
-  `<PREFIX>_ITER_RETRY`. `<prefix>_search`'s body moved into a static
-  `<prefix>__find` (a DFA body; the VM's search loop is `<prefix>__find`
-  behind `<prefix>_search_run`'s range test and guard), and every exported
-  residual entry became a forwarder to a static twin `<prefix>__<name>`, which
-  every internal call now names. On an artifact whose reported span can be
-  empty (the `reports_empty` fact) the iterator carries its NOTEMPTY_ATSTART
-  retry: a notempty-rooted anchored machine (`<prefix>__retry`, DFA) or a
-  guard at the VM accept label. The iterator's text is scaffold (excluded
-  from every length decision, `StrBuf.scaf_*`); the retry machine is a
-  machine and counts (`<PREFIX>_DFA_UNIFORM_FOLDS` includes its folded
-  tables, match_api.md §6.3.4¶9). No answer of an existing entry moves. Batch filling
-  and `<prefix>_next_n` are I2's (match_api.md §3.8).
+- **`rx_info.abi` is `84` on every artifact today (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
+  from lane i1build [FINDALL-NEXT] I1 (first numbered 83 on its own branch), lane i2build I4 (84), lane iteropt and lane
+  iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wants 84 provisionally; whichever lands first keeps it).**
+  The pieces, in landing order:
+  - **`rx_info.abi` I1 part (lane i1build, written as 83 on its branch; it bumped it
+    from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
+    as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all
+    iterator `<prefix>_next(rx_iter *, caps)`: the shared ABI block carries
+    `rx_iter` (a fixed type, the same for every prefix), `rx_nextfn`, the
+    `PCREC_ITER_*` constants, `rx_iter_init`/`RX_ITER_INIT` and the setters
+    `rx_iter_at`/`rx_iter_vars`, and `PCREC_ERR_ITER` (-10); `struct rx_info`
+    appends `next` after `measures`; the header declares `<prefix>_next` and
+    the typed setter `<prefix>_iter_buffers`; the shared prologue stamps
+    `<PREFIX>_ITER_RETRY`. `<prefix>_search`'s body moved into a static
+    `<prefix>__find` (a DFA body; the VM's search loop is `<prefix>__find`
+    behind `<prefix>_search_run`'s range test and guard), and every exported
+    residual entry became a forwarder to a static twin `<prefix>__<name>`, which
+    every internal call now names. On an artifact whose reported span can be
+    empty (the `reports_empty` fact) the iterator carries its NOTEMPTY_ATSTART
+    retry: a notempty-rooted anchored machine (`<prefix>__retry`, DFA) or a
+    guard at the VM accept label. The iterator's text is scaffold (excluded
+    from every length decision, `StrBuf.scaf_*`); the retry machine is a
+    machine and counts (`<PREFIX>_DFA_UNIFORM_FOLDS` includes its folded
+    tables, match_api.md §6.3.4¶9). No answer of an existing entry moves. Batch filling
+    and `<prefix>_next_n` are I2's (match_api.md §3.8).
+  - **`rx_info.abi` I4 part (lane i2build bumped it
+    from 83, 2026-10-21: [FINDALL-NEXT] I4, docs/design/findall_iter_i2.md
+    rev 2, D171).** Every artifact gains `<prefix>_next_n(rx_iter *, caps, k)`,
+    up to `k` matches per call, declared in the header beside `<prefix>_next`
+    with the NEXT entry's linkage; the shared ABI block carries `rx_nextnfn`
+    (the caller-side `RX_FOREACH` macro family this part first carried was
+    DROPPED before landing, D175, 2026-10-23: a caller loops over
+    `info->next` or `info->next_n`); `struct rx_info` appends
+    `next_n` after `next`. I1's `<prefix>_next` body is now the static
+    `always_inline` `<prefix>__one`, which both `<prefix>_next` and
+    `<prefix>_next_n`'s loop inline. All of it is scaffold. `rx_iter` does not
+    change (`PCREC_ITER_LAYOUT` stays 3). No answer of an existing entry moves
+    (match_api.md §3.8.1, §3.8.2, §6¶14c). Folded into the same event by lane
+    iteropt (2026-10-22, before the landing): `rx_iter_init` writes every field
+    (the setters' neutral values, `rc` 1, `flags` 0), so `<prefix>__enter` no
+    longer stores them a second time and is `static inline`; a NULL
+    `capture_spans` goes to the new `noinline` `<prefix>__one_local`, the one
+    function that owns the NCAPS-pair stack buffer, so `<prefix>_next` and
+    `<prefix>_next_n` declare no local array (match_api.md §3.8¶5). Still
+    scaffold; no answer moves. Folded in by lane iteropt2 (2026-10-22, before
+    the landing): `<prefix>__step` and `<prefix>__one` take a cursor (the
+    subject, `lo` and, with the retry, `flags`, by pointer) instead of reading
+    and writing `rx_iter`; the bind moves out of `<prefix>__one` into the new
+    `always_inline` `<prefix>__one_call` (`<prefix>_next`'s body, whose cursor
+    is the iterator's own fields) and `<prefix>_next_n`, which holds the cursor
+    in locals across its loop and returns before the bind when `k == 0`.
+    Still scaffold; no answer moves. Folded in by lane iterfix2 (2026-10-23,
+    the code review's fixes, before the landing): the search splits into
+    `<prefix>__find` only where the search entry's caller-position prologue
+    writes anything (a UTF check, or an encoding's start guard that is on);
+    elsewhere `<prefix>_search`/`<prefix>_search_run` keep their abi-83 text
+    and the iterator calls them. The DFA retry honours `^`/`\A` at a retry
+    position past 0 (an answer fix of the iterator only). The VM retry is a
+    guarded copy of the matcher, `<prefix>__match_notempty`, so the existing
+    matcher and entries carry no guard. `<prefix>__one_local` calls
+    `<prefix>_next` rather than holding a third step. `<prefix>_next_n` has
+    its own entry and linkage (`rx_info.next_n`). `<PREFIX>_ITER_RETRY`'s
+    values are `"none"`, `"retry"`, `"retry-budgeted"` (were `"none"`,
+    `"dfa-root"`, `"vm-guard"`; match_api.md §6.3.13). The iterator's text
+    carries no comments. No answer of an existing entry moves.
+- **`rx_info.abi` was `83` (lane corefix bumped it
+  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; the number was first taken as 87, renumbered to 83 at landing; 84-87 are
+  allocated to other branches, and whichever lands later renumbers).** Two
+  defect fixes in the VM emitter. K128: an unbounded repeat `X{m,}` (m >= 1)
+  with a nullable body now records where its last mandatory iteration began
+  in the star's guard slot (one `slot_values[...] = scan_position` write
+  with its trail entry, on the frames rung's last copy or the counter rung's
+  last trip/residue copy) and the star tests it at entry (one `if` line and
+  a label); the counter rung's pre-pass now counts that guard, so slot
+  bases after it move by one on those patterns. K129: every VM entry's
+  `<prefix>_vars_resolve` call moved above the proof-based exits (the
+  search body's end window, necessary byte, root width, prefilter and
+  start-set seek; the anchored bodies' K73 offset-0 rule). Bounded,
+  `rmin == 0`, non-nullable, possessive and var-free patterns emit the same
+  text as at 82 apart from the number. Answers move only where they were
+  wrong (match_api.md §5.1¶3a; vars.md §5). The mover census is in
+  docs/dev/lanes/corefix_report.md.
 - **`rx_info.abi` was `82` (lane m0build bumped it
   from 81, 2026-10-21: [MEASURE-SET] M0, docs/design/measure_sets.md rev 3
   §3.5-§3.6, D166 and addenda; and the K112 rider).** Every artifact gains

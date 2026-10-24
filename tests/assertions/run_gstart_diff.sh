@@ -387,7 +387,7 @@ fi
 # =========================================================================
 # §1b  THE FIND-ALL ITERATOR ([FINDALL-NEXT] I4, findall_iter_i2.md §5.2)
 # =========================================================================
-# The same artifacts through `fa_next` and RX_FOREACH: tests/findall/
+# The same artifacts through `fa_next` and the generic loops: tests/findall/
 # iter_drv.c is the iterator's one differential driver, and its G arm is
 # libpcre2's global loop with pcre2demo's NOTEMPTY_ATSTART|ANCHORED retry
 # after an empty match, i.e. PCRE2's own iteration, where \G asserts at each
@@ -425,7 +425,7 @@ for pat in "${FA_PATS[@]}"; do
     done < <("$d/it" "$pat" byte "$retry" < "$WORKDIR/iter_subj.txt" 2>&1)
 done
 if [ "$it_bad" -eq 0 ] && [ "$it_cells" -ge $(( ${#FA_PATS[@]} * NSUBJ )) ]; then
-    ok "§1b iterator: $it_cells subject runs over ${#FA_PATS[@]} patterns: fa_next, fa_next_n and RX_FOREACH answer libpcre2's global iteration (pcre2demo's retry), \\G contiguous at each search's start"
+    ok "§1b iterator: $it_cells subject runs over ${#FA_PATS[@]} patterns: fa_next, fa_next_n and the generic info loops answer libpcre2's global iteration (pcre2demo's retry), \\G contiguous at each search's start"
 else
     bad "§1b iterator: $it_bad of $it_cells subject runs differ from libpcre2's global iteration (want >= $(( ${#FA_PATS[@]} * NSUBJ )) runs):"
     grep '^ITER' "$WORKDIR/fadiffs.txt" | head -10 >&2

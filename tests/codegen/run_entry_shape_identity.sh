@@ -88,7 +88,7 @@ fail=0
 # [FINDALL-NEXT] I4 (findall_iter_i2.md §5.2): the ITERATOR ARM. Every rung's
 # artifact is also linked with tests/findall/iter_drv.c, the iterator's one
 # differential driver, over the witness's subjects: its arms hold
-# RX_FOREACH, <prefix>_next_n and the alternation of the two to the same
+# the generic info loops, <prefix>_next_n and the alternation of the two to the same
 # artifact's <prefix>_next (the delivery layer), and <prefix>_next to
 # libpcre2's global loop (an oracle that shares no source with pcrec). Rung
 # identity is not this arm's expectation: the iterator's answers are PCRE2's

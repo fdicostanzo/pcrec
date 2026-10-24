@@ -53,15 +53,29 @@
 # R4c; [MECH-SAN-ARM]'s trigger (a second sanitizer-only row) loses this row.
 SAB_ID="S287-ofstest-maxk-not-widened"
 SAB_FILE="src/gen/emit_dfa.c"
-SAB_SUITES="harness"
+SAB_SUITES="offsetskip"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_EXPECT=DETECTED
 SAB_DESC="ofs_test_of leaves OfsTest.maxk at the walk's own o->maxk without widening it to cover the run's own last byte (ro + rl - 1), so the run-pinned candidate guard (cand + maxk >= n) under-covers the run compare and a subject ending just short of a full run causes a heap-buffer-overflow READ in emit_exact_compare's memcmp -- '[ab]/user' on a subject ending 'a/us' is the reach witness, confirmed by a direct ASan reproduction (see header) since no suite arm in this matrix links generated code against a sanitizer runtime"
+# [wsc6, 2026-10-22] DETECTOR MOVED (D172 S2 commit 6): ofs_pred_of, whose
+# maxk consistency check refused the plant at compile time, retired with the
+# offset-skip site's old-field description (R1: the site states its window
+# facts only). OfsTest.maxk now bounds only the readers listing the TESTED
+# offsets, the `<PREFIX>_DFA_PREFILTER_OFFSETS` stamp first: the plant drops
+# the pinned run's offsets past the walk's own from it, and
+# tests/codegen/run_offset_skip.sh's run-pinned witnesses (§2) read the stamp
+# against literals. Arm `offsetskip`; the harness corpus no longer sees it.
 SAB_DOC_FIGURE="MEASURED 2026-10-06 (lane r4clx, single-row mech): DETECTED -- ubuntubudu at 91f5b607 reach:ok(1/1),corpus:51fail/4pass; the Mac figure is in docs/dev/lanes/r4clx_report.md. The plant is refused at compile time by ofs_pred_of's maxk consistency check (R4c). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S287."
 # [MECH-REACH] the router's run row emits a maxk that already covers the run
 # (o->maxk vs ro+rl-1) on the clean tree; confirms the widened form is live.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-PINNED-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='    t->maxk     = o->maxk > ro + rl - 1 ? o->maxk : ro + rl - 1;'
-SAB_AFTER='    t->maxk     = o->maxk;   /* SABOTAGE S287: not widened for the run */'
+# RE-AIMED (D172 S2 commit 6, lane wsc5): ofs_test_of reads the window
+# family's reply since the planner's selection retired; the guard is the
+# largest offset tested, and the plant keeps it from widening over the pinned
+# stretch, the same under-cover of the run compare.
+SAB_BEFORE='        if (o > maxk) maxk = o;
+        if (o != w->stop) n++;'
+SAB_AFTER='        if (o > maxk && !(t->run_len && o >= t->run_o)) maxk = o;   /* SABOTAGE S287: not widened for the run */
+        if (o != w->stop) n++;'

@@ -1,5 +1,23 @@
 # [FINDALL-NEXT] I4 — `<prefix>_next_n` and the generic `RX_FOREACH` (DESIGN NOTE, revision 2)
 
+> **SUPERSEDED IN PART (D175, Frank 2026-10-23): `RX_FOREACH` was DROPPED before landing.** `_next` and `_next_n` stay; generic callers loop over `info->next` / `info->next_n` (match_api.md §3.8.2). Every `RX_FOREACH` passage below is the design as proposed, kept as the record.
+
+## Goals
+
+*Added in the revision of 2026-10-23 (lane `iterchk`, from the r2 code critic round's contract lens, `docs/dev/reviews/2026-10-23-r2-iter-code/contract.md`; rule: `docs/dev/guide/architecture.md` "A design states its goals"). They are the goals the delivered design implies (D165 add. 2 Q1, D171, D175 and the parity gates), stated after the fact; the sections below were written without them.*
+
+1. **ANSWERS.** For every caller of find-all, `_next` and `_next_n` report exactly libpcre2's global-loop spans (`pcre2demo.c`: the `NOTEMPTY_ATSTART | ANCHORED` retry, then one character on) on every well-formed subject, every engine and encoding. Check: the differential against libpcre2 over `tests/findall/cells.tsv` (and `global.rxt`'s libpcre2-derived counts), 0 DIFF. Ill-formed subjects: the two named differences of `match_api.md` §3.8¶2a only.
+2. **NO SLOWER THAN THE HAND LOOP.** For the caller replacing §3.1.3's loop: a find-all over `_next` costs no more than the hand `_search` loop on dense subjects (c1, c3, c4), within the A/A floor; a fixed setup of up to about 2 ns is accepted on degenerate cells (D171).
+3. **BATCH GAIN.** For dense cheap matches, `_next_n` is faster than `_next` (F/I < 1 − floor on c3 R2) and loses nowhere gated (c1, c4, c6), and an early stop costs no unseen searches.
+4. **GENERIC REACH.** A header-less caller (a catalog, `dlsym`) iterates through `rx_info.next` / `next_n` alone, at no more than about 0.5% over a direct call (D175 measured 0.3-0.4%).
+5. **MISUSE IS CHEAP TO DETECT where it is cheap.** A never-initialized or zeroed struct, or a late setter, is refused (`PCREC_ERR_ITER`); the end is sticky; there is no per-call owner check (D165 add. 3).
+
+**Priority:** 1 > 2 > 3 > 4 > 5. Where two conflict the higher wins; D175 dropped `RX_FOREACH` because genericity cost speed (goals 2 and 3 over goal 4).
+
+**Non-goals:** internal batching or a callback entry (withdrawn, §1.2); the newline-convention CRLF stepping ([DD-11]); libpcre2's restart on ill-formed subjects (K75); owner checks across artifacts; a stable `rx_info` layout separate from `abi` (U-I2-7).
+
+---
+
 **Revision 2** (lane `i2rev`, 2026-10-21, on `lane/i2design`) applies every disposition of
 the light D6 panel r1 (`docs/dev/reviews/2026-10-21-r1-findall-i2.md`: critics `i2crit-chk`,
 `i2crit-sem`, `i2crit-fam`; 21 findings, 16 ACCEPT, 1 NOTE, 4 UNLOCK, plus one

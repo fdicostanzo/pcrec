@@ -773,10 +773,21 @@ elif [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied 
     # line, +691 raw bytes (the RX_FOREACH block is in the .h). Scaffold: the
     # rescue note and its code bytes (15,143) are unchanged. MEASURED (this
     # tree's build, `-o` basename o.c) against the I1 compiler (e0139d8c6).
-    if [ "$sz" -eq 766307 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 766307 bytes (765616 before [FINDALL-NEXT] I4's next_n; 762954 before [FINDALL-NEXT] I1's iterator scaffold; 762911 before [MEASURE-SET] M0's RX_MEASURES stamp and rx_info.measures; 762884 before [COMPOUND] B4's RX_COMPOUND stamp; 762832 before [MEMFN] RQ-3's SIMD_GUARDED_BYTES stamp; 762691 before [MEMFN] R4e'.0b's routing; was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator; 762551 before [OPT-LITSCAN] S4 C1's RUN_WORDS stamp; 762574 before [K82] (B)'s REQ_HANDOFF stamp; 762604 before [START-SET] stage 2's VM_START_SCAN stamp; 762636 before [MEMFN] R4a′'s two kit stamps) — the cap still works, this witness no longer reaches it"
+    # RE-PINNED 766307 -> 766980, 2026-10-22 (lane itertri, on lane iteropt2's
+    # iterator text, no abi bump): +673 raw bytes, all in the iterator entry
+    # (rx__enter hoists its field setup, rx__step/rx__one take s/n/&lo, rx__one_call,
+    # rx__one_local, the cursor locals in rx_next_n). MEASURED (this tree's
+    # build, `-o` basename o.c) and VERIFIED BY DIFFING against the i2build
+    # compiler (bed4bef84): 13 hunks, every one inside rx__enter..rx_next_n.
+    # RE-PINNED 766980 -> 766184, 2026-10-23 (lane iterfix2, the r2 review's
+    # fixes, abi 84 amended): -796 raw bytes, the iterator's own text (its
+    # emitted comments dropped, `__one_local` calls `_next`, `_next_n` its own
+    # entry); the byte artifact's `_search` is BASE's text again. MEASURED
+    # from this check's own output.
+    if [ "$sz" -eq 766184 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 766184 bytes (766980 before the iterfix2 review fixes; 766307 before [FINDALL-NEXT] iteropt2's cursor entry; 765616 before [FINDALL-NEXT] I4's next_n; 762954 before [FINDALL-NEXT] I1's iterator scaffold; 762911 before [MEASURE-SET] M0's RX_MEASURES stamp and rx_info.measures; 762884 before [COMPOUND] B4's RX_COMPOUND stamp; 762832 before [MEMFN] RQ-3's SIMD_GUARDED_BYTES stamp; 762691 before [MEMFN] R4e'.0b's routing; was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator; 762551 before [OPT-LITSCAN] S4 C1's RUN_WORDS stamp; 762574 before [K82] (B)'s REQ_HANDOFF stamp; 762604 before [START-SET] stage 2's VM_START_SCAN stamp; 762636 before [MEMFN] R4a′'s two kit stamps) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 766307 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 766184 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

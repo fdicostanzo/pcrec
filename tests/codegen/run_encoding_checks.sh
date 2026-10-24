@@ -469,6 +469,19 @@ TWIN_PREAMBLE = ('static', '#endif', '__attribute__((noclone))',
 BIND_DEF_RE = re.compile(r'^static int rx__bind_checks\(')
 BIND_CALL_RE = re.compile(r'^\s*int r = rx__bind_checks\(')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
+# [iterpin, 2026-10-23] iterfix2's EMIT-1 ("no split without a prologue"): the
+# search body lives in `rx_search` / `rx_search_run` on a byte artifact (no
+# prologue, no split) and in `rx__find` on a utf8 one, whose `rx_search` /
+# `rx_search_run` is then a thin WRAPPER (K50 start guard + `return
+# rx__find(...)`). The wrapper is the encoding-owned prologue (the same K50
+# guard text the regions above excise, here with its function shell), so it is
+# excised and COUNTED under `search_split`; the body's own definition head is
+# renamed to one canonical name on both sides so the hot loop beneath it is
+# compared TEXT FOR TEXT. Nothing inside a body is excused: only the function
+# shell, the bounds line the split moves into the wrapper, and the call name.
+SEARCH_HEAD_RE = re.compile(r'^(?:static\s+)?(?:inline\s+)?(?:__attribute__\(\(\w+\)\)\s+)*int\s+(?:rx_search|rx_search_run|rx__find)\(')
+SEARCH_CALL_RE = re.compile(r'^(\s*r = )(?:rx_search|rx_search_run|rx__find)\(')
+SEARCH_BOUNDS_RE = re.compile(r'^    if \(search_from > subject_length\) return 0;$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
 # `attempt_max` instead of `subject_length` (emit_vm.c's `attempt_position >=
@@ -1017,7 +1030,7 @@ def excise(text, label, drop_run=False):
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
               'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-              'bind_checks': 0}
+              'bind_checks': 0, 'search_split': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1083,6 +1096,40 @@ def excise(text, label, drop_run=False):
             counts['bind_checks'] += 1
             i += 4
             continue
+        if SEARCH_BOUNDS_RE.match(line.rstrip('\n')):
+            out.append("/* [iterpin] search bounds line excised for comparison */\n")
+            counts['search_split'] += 1
+            i += 1
+            continue
+        ms_ = SEARCH_CALL_RE.match(line)
+        if ms_:
+            out.append(ms_.group(1) + "rx__BODY(" + line[ms_.end():])
+            i += 1
+            continue
+        if SEARCH_HEAD_RE.match(line):
+            hj = i
+            while hj < n and ';' not in lines[hj] and lines[hj].strip() != '{':
+                hj += 1
+            if hj < n and lines[hj].strip() == '{':
+                depth, fe = 1, hj + 1
+                while fe < n and depth > 0:
+                    depth += lines[fe].count('{') - lines[fe].count('}')
+                    fe += 1
+                if depth != 0:
+                    print("EXTRACT-FAIL %s: unbalanced braces in the search entry" % label)
+                    sys.exit(2)
+                if 'return rx__find(' in ''.join(lines[hj:fe]):
+                    while out and out[-1].strip() in TWIN_PREAMBLE:
+                        out.pop()
+                    out.append("/* [iterpin] search prologue wrapper excised for comparison */\n")
+                    counts['search_split'] += 1
+                    i = fe
+                    if i < n and not lines[i].strip():
+                        i += 1
+                    continue
+                out.append("int rx__BODY(" + line[SEARCH_HEAD_RE.match(line).end():])
+                i += 1
+                continue
         m = SIG_RE.match(line)
         if m:
             name = m.group(2)
@@ -1362,7 +1409,7 @@ def main():
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
            'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-           'bind_checks': 0}
+           'bind_checks': 0, 'search_split': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1620,7 +1667,7 @@ def main():
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
               'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong',
-              'forwarder', 'bind_checks'):
+              'forwarder', 'bind_checks', 'search_split'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
@@ -1675,7 +1722,7 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"

@@ -15,7 +15,7 @@ SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --vm-entry-shape=4 --part-residual=shared --emit-facts --pattern "(a)b" | tr "\t" " "'
-SAB_REACH_EXPECT='byte search_run owned 2 R2 - P1 owned owner 0'
+SAB_REACH_EXPECT='byte search_run owned 4 R3 - P1 owned owner 0'
 SAB_BEFORE='static int subject_class(PcrecEntry e)
 {
 '

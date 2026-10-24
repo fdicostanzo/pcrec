@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# monitor_preflight self-test ([MONITOR-QUEUE], lane monci): scripts/monitor_preflight against SHIMS on PATH.
+# No network and no real queue: the queue is a scratch dir (PCREC_BOXQUEUE_DIR, sacrificial PCREC_BOXLOCK_FILE) and
+# `gh` is a shim script (clean / unauthenticated / no repo run) or absent (a PATH of symlinks to the other tools).
+# Cases: a clean pass (every line PASS, rc 0, the DONE line); gh missing (FAIL gh-installed, rc 1; --no-ci turns
+# the same box into SKIP lines and rc 0); gh unauthenticated (FAIL gh-auth naming `gh auth login`, rc 1); gh logged in
+# but no run for the repo (FAIL gh-runs); no git identity (FAIL committable). A PLANT (the gh-auth check removed in a
+# scratch copy) must make the unauthenticated case pass wrongly, so the case catches it. Nothing is committed.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/monitor_preflight.test.XXXXXX")
+trap 'rm -rf "$T" "$here"/.preflight_plant.$$' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_BOXQUEUE_DIR=$T/q PCREC_BOXLOCK_FILE=$T/box.lock
+mkdir -p "$T/q" "$T/bin" "$T/nogh"
+# the gh shim: mode file picks the behaviour
+cat > "$T/bin/gh" <<SH
+#!/usr/bin/env bash
+case "\$1 \$2" in
+  "--version "*) echo "gh version 0.0.0 (shim)" ;;
+  "auth status") if [ "\$(cat "$T/mode" 2>/dev/null)" = unauth ]; then echo "You are not logged into any GitHub hosts. To log in, run: gh auth login" >&2; exit 1; fi
+                 echo "github.com"; echo "  ok: Logged in to github.com account shim" ;;
+  "run list")    if [ "\$(cat "$T/mode" 2>/dev/null)" = norun ]; then echo "[]"; else echo '[{"databaseId":1,"status":"completed","conclusion":"success"}]'; fi ;;
+  *) echo "shim gh: unexpected \$*" >&2; exit 9 ;;
+esac
+SH
+chmod +x "$T/bin/gh"
+for t in bash git cat sed python3 head tail cut grep flock ls df awk stat tr sleep mkdir dirname mv sort timeout gnutimeout env rm mktemp wc date printf cd; do
+    p=$(command -v "$t" 2>/dev/null) && [ -x "$p" ] && ln -sf "$p" "$T/nogh/$t"
+done
+pf() { # pf SCRIPT [args]: run with the shim gh first on PATH; output + rc in $out/$rc
+    local s=$1; shift; out=$(PATH="$T/bin:$PATH" "$TO" 120 bash "$s" "$@" 2>&1); rc=$?; }
+pf_nogh() { local s=$1; shift; out=$(PATH="$T/nogh" "$TO" 120 "$T/nogh/bash" "$s" "$@" 2>&1); rc=$?; }
+has() { printf '%s\n' "$out" | grep -q -- "$1"; }
+P=$here/monitor_preflight
+
+rm -f "$T/mode"; pf "$P"
+if [ "$rc" = 0 ] && ! has '^FAIL' && has '^PASS gh-auth' && has '^PASS queuewatch' && has '^monitor_preflight: DONE rc=0$' && [ "$(printf '%s\n' "$out" | grep -c '^PASS')" -ge 14 ]; then
+    ok "clean pass: every line PASS (>= 14), final DONE rc=0, rc 0"
+else bad "clean pass: rc=$rc $out"; fi
+
+pf_nogh "$P"
+if [ "$rc" = 1 ] && has '^FAIL gh-installed: gh is not installed' && has '^monitor_preflight: DONE rc=1$' && has '^PASS git'; then
+    ok "gh missing: FAIL gh-installed (says --no-ci), DONE rc=1, other tools still PASS"
+else bad "gh missing: rc=$rc $out"; fi
+pf_nogh "$P" --no-ci
+if [ "$rc" = 0 ] && has '^SKIP gh-auth' && ! has '^FAIL' && has '^monitor_preflight: DONE rc=0$'; then
+    ok "gh missing with --no-ci: SKIP lines, no FAIL, rc 0"
+else bad "gh missing --no-ci: rc=$rc $out"; fi
+
+echo unauth > "$T/mode"; pf "$P"
+if [ "$rc" = 1 ] && has '^FAIL gh-auth: gh is not logged in: run  gh auth login' && has '^PASS gh-installed' && has '^monitor_preflight: DONE rc=1$'; then
+    ok "gh unauthenticated: FAIL gh-auth naming gh auth login, gh-installed PASS, DONE rc=1"
+else bad "gh unauth: rc=$rc $out"; fi
+
+echo norun > "$T/mode"; pf "$P"
+if [ "$rc" = 1 ] && has '^FAIL gh-runs: gh run list returned no run'; then ok "gh logged in but no run for the repo: FAIL gh-runs, rc 1"
+else bad "gh norun: rc=$rc $out"; fi
+
+# no git identity: an empty HOME config and a repo-local override to empty strings via env
+rm -f "$T/mode"
+out=$(PATH="$T/bin:$PATH" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0= GIT_CONFIG_KEY_1=user.email GIT_CONFIG_VALUE_1= "$TO" 120 bash "$P" 2>&1); rc=$?
+if [ "$rc" = 1 ] && has '^FAIL committable: git identity'; then ok "no git identity: FAIL committable, rc 1"
+else bad "no identity: rc=$rc $(printf '%s\n' "$out" | grep committable)"; fi
+
+# PLANT: the gh-auth check always passes; the unauthenticated case must then NOT fail (so the case above catches the bug)
+mkdir -p "$here/.preflight_plant.$$"
+python3 -I - "$P" "$here/.preflight_plant.$$/monitor_preflight" <<'PY' || bad "plant did not land"
+import sys
+s = open(sys.argv[1]).read()
+a = "    chk gh-auth '"
+assert s.count(a) == 1
+s = s.replace(a, "    chk gh-auth 'true; exit 0; ")
+open(sys.argv[2], "w").write(s)
+PY
+echo unauth > "$T/mode"; pf "$here/.preflight_plant.$$/monitor_preflight"
+if has '^FAIL gh-auth'; then bad "PLANT gh-auth-check-removed not caught"; else ok "PLANT gh-auth-check-removed: unauthenticated gh no longer FAILs gh-auth, so the unauth case above would go red"; fi
+echo "monitor_preflight.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

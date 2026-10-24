@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# monitor_preflight — the tools test a /pcrec-monitor session runs FIRST ([MONITOR-QUEUE], lane monci, 2026-10-24).
+# Checks everything the monitor needs and prints one `PASS name: detail` or `FAIL name: why` line per tool, then
+# ONE final `monitor_preflight: DONE rc=N` line (rc 0 = no FAIL, 1 = at least one FAIL, 64 = usage). It changes
+# nothing: no commit, no queue job, no write to the live queuewatch state (queuewatch is exercised against a
+# scratch EMPTY queue and a scratch state, removed afterwards).
+#
+#   scripts/monitor_preflight [--root DIR] [--box "ssh user@host"] [--no-ci]
+#   --root DIR   the MAIN tree of the box that owns the queue (default: this script's repo)
+#   --box CMD    run every check there instead (the skill's BOX variable); the same words, prefixed with CMD
+#   --no-ci      skip the gh checks (a box without gh): printed as SKIP, and not a failure
+#
+# THE CHECKS: bash, git, flock, python3 (queuewatch's CI parser), the GNU timeout binary (tests/lib/timeout_bin.sh),
+# df; the queue directory readable and the runner state readable (scripts/boxqueue path / status); the ledger
+# file writable (docs/dev/full_suite_ledger.md) and the repo committable (git identity set, no stale index.lock);
+# gh installed, `gh auth status` ok, the origin remote is github.com/fdicostanzo/pcrec and `gh run list --limit 1`
+# returns a run; queuewatch itself runs (a --max-sec 1 launch exits 6 CAP with no event).
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ROOT=$(cd "$here/.." && pwd) BOX="" noci=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --root) ROOT=$2; shift 2 ;; --box) BOX=$2; shift 2 ;; --no-ci) noci=1; shift ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        *) echo "monitor_preflight: unknown argument $1" >&2; echo "monitor_preflight: DONE rc=64"; exit 64 ;;
+    esac
+done
+nfail=0
+# chk NAME SCRIPT: run SCRIPT (bash, ROOT set as $R) here or through $BOX; PASS with its first output line, else FAIL with it
+chk() {
+    local name=$1 out rc
+    out=$(printf 'R=%q\n%s\n' "$ROOT" "$2" | $BOX bash -s 2>&1 | head -3 | tr '\n' ' '; exit "${PIPESTATUS[1]}"); rc=$?
+    out=${out%% }; out=${out:0:200}
+    if [ "$rc" = 0 ]; then echo "PASS $name: ${out:-ok}"; else echo "FAIL $name: ${out:-rc=$rc}"; nfail=$((nfail + 1)); fi
+}
+skip() { echo "SKIP $1: $2"; }
+
+chk bash     'bash --version | head -1'
+chk git      'git --version'
+chk flock    'command -v flock'
+chk timeout  '. "$R/tests/lib/timeout_bin.sh" 2>/dev/null; "$TIMEOUT_BIN" --version | head -1 | grep "GNU coreutils" >/dev/null && echo "$TIMEOUT_BIN"'
+chk df       'df -P "$R" | tail -1'
+chk queue-dir 'Q=$(bash "$R/scripts/boxqueue" path) && [ -d "$Q" ] && [ -r "$Q" ] && echo "$Q" || { echo "no readable queue directory ($Q)"; exit 1; }'
+chk runner-state 'out=$(bash "$R/scripts/boxqueue" status 2>&1) || { echo "boxqueue status failed: ${out%%$'"'"'\n'"'"'*}"; exit 1; }; printf "%s\n" "$out" | sed -n 1p'
+chk ledger-writable 'f=$R/docs/dev/full_suite_ledger.md; if [ -e "$f" ]; then [ -w "$f" ] || { echo "$f not writable"; exit 1; }; else [ -w "$(dirname "$f")" ] || { echo "$(dirname "$f") not writable"; exit 1; }; fi; echo "$f"'
+chk committable 'n=$(git -C "$R" config user.name) && e=$(git -C "$R" config user.email) && [ -n "$n" ] && [ -n "$e" ] || { echo "git identity (user.name/user.email) not set"; exit 1; }
+g=$(git -C "$R" rev-parse --git-dir) || { echo "$R is not a git repo"; exit 1; }; case $g in /*) ;; *) g=$R/$g ;; esac
+[ ! -e "$g/index.lock" ] || { echo "stale $g/index.lock"; exit 1; }; echo "$n <$e>, HEAD $(git -C "$R" rev-parse --short HEAD)"'
+if [ "$noci" = 1 ]; then
+    for t in python3 gh-installed gh-auth gh-repo gh-runs; do skip "$t" "--no-ci: CI is not watched"; done
+else
+    chk python3 'python3 -I -c "import json; print(\"python3 ok\")"'
+    chk gh-installed 'command -v gh >/dev/null || { echo "gh is not installed (install GitHub CLI, or run with --no-ci)"; exit 1; }; gh --version | head -1'
+    chk gh-auth 'command -v gh >/dev/null || { echo "gh is not installed"; exit 1; }; out=$(gh auth status 2>&1) || { echo "gh is not logged in: run  gh auth login   (${out%%$'"'"'\n'"'"'*})"; exit 1; }; printf "%s\n" "$out" | sed -n 2p'
+    chk gh-repo 'u=$(git -C "$R" remote get-url origin 2>&1) && case $u in *fdicostanzo/pcrec*) echo "$u" ;; *) echo "origin is $u, not github.com/fdicostanzo/pcrec"; exit 1 ;; esac'
+    chk gh-runs 'command -v gh >/dev/null || { echo "gh is not installed"; exit 1; }; cd "$R" || exit 1; out=$(gh run list --branch main --limit 1 --json databaseId,status,conclusion 2>&1) || { echo "gh run list failed: ${out%%$'"'"'\n'"'"'*}"; exit 1; }
+case $out in *databaseId*) echo "$out" ;; *) echo "gh run list returned no run for this repo: $out"; exit 1 ;; esac'
+fi
+chk queuewatch 'S=$(mktemp -d) || exit 1; trap "rm -rf $S" EXIT; mkdir -p "$S/q/pending" "$S/q/running" "$S/q/done" "$S/q/failed"
+out=$(bash "$R/scripts/queuewatch" --queue "$S/q" --state "$S/state" --every 1 --max-sec 1 --disk-pct 101 --no-ci 2>&1); rc=$?
+[ "$rc" = 6 ] && case $out in *CAP*) echo "exits 6 CAP, no event (scratch queue and state)" ;; *) echo "rc 6 without a CAP line: $out"; exit 1 ;; esac || { echo "rc=$rc: $out"; exit 1; }'
+
+echo "monitor_preflight: DONE rc=$([ "$nfail" = 0 ] && echo 0 || echo 1)"
+[ "$nfail" = 0 ]

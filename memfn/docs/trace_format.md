@@ -90,6 +90,29 @@ the chosen one), and one `END`.
 - `moved_from` (trace builds, define/run only): the row the gate moved the
   selection off. Absent when nothing moved.
 
+THE WINDOW FAMILY (D172 S2 commit 1, `memfn/src/window.c`; an art previewing
+`"window-family"` only) writes the same three records for its own walks:
+`table=wfA` (Table A, one selection per alternative), `table=wfM` (the MARGIN,
+the choice over alternatives) and `table=wfE` (Table E, the frame), each at
+`phase=define`, `site=` the handle the define will take; a query (`mf_ask`,
+`mf_wdecide`, and the family's own quiet ask of today's rows) writes none.
+Its rows are not in the reach registry's printed tables (the family's floors
+are G2's, `memfn/tests/run_g2_win.sh`). Each window site a define renders
+also writes its PATH ID (window_site.md §2.7):
+
+    MFTRACE WPATH art=A site=H path=P arm=R fd=F
+
+- `path`: the decision's path (`parked`, `reseed`, `mass`, `floor`, `empty`,
+  each `+pin` where C-pin fired; mf_wreply.path);
+- `arm`: the row that renders it (`wf-floor`, the family's floor, or the
+  form id of today's row the plan was translated for);
+- `fd`: the finder row whose routed pick decided its find, `-` for none.
+
+THE TRACE SHADOW (D172 S2 commit 3, `MFTRACE WSHADOW`) RETIRED at S2 commit 6
+with the old path it compared against (window.c `wf_shadow`, `memfn/tests/
+wshadow.py`); its last readings are docs/dev/lanes/wsc3_report.md §2 and
+wsc4_report.md §4.3.
+
 `grep 'MFTRACE END' | grep 'would_decline=1'` is the would-decline census:
 selections the gate changed, plus refused uses. `chosen=-` lines are the
 define/run refusals; `chosen=none` lines are not (an optional slot that

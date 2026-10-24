@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 19  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 20  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -150,7 +150,29 @@
                            LOCKDOWN under the walk ruling): mf_finder_row
                            loses its routed and locked columns (every
                            FIND and PRES row decides; the listing's layout
-                           moved). No MF_VOCAB move; no pcrec byte moved. */
+                           moved). No MF_VOCAB move; no pcrec byte moved. 20
+                           (D172 S2 commit 6, lane wsc5; window_site.md rev
+                           3.2 §5.1): a site stating alternatives is the
+                           window family's on EVERY art (its old fields are
+                           no longer a route to a row), mf_wdecide answers on
+                           any art, the preview step "window-family" is
+                           retired, and the finder row D2 leaves the
+                           listing (mf_finder_rows' indices after it move).
+                           THE OLD FIELDS RETIRE (lane wsc6, the kit
+                           manager's R1): mf_pred.window_stated/move_back/
+                           overshoot (W0-W2, MF_MOVE_UNBOUNDED,
+                           MF_OVER_UNBOUNDED), prefix_stated/exact_len/
+                           consumable_len (mf_prefix), absent/consumable
+                           (mf_absent, mf_consumable), mf_site.consumer
+                           (mf_consumer), read_floor (mf_read_floor) and
+                           ctx/nctx (MF_MAX_CTX) are DELETED with their
+                           site_check rules and gate fields; plan_hint,
+                           plan_pos, rank_*, end_back, span_class
+                           BOUNDED/CONTEXT and need stay as THE RENDERER
+                           INTERFACE (the translation's and G2's), and a
+                           window site stating any of them is REFUSED. A
+                           LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
+                           pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -185,37 +207,25 @@
 /* The positions span 0 may state facts for (R-26.5, kit_proof.md §4.2): a
  * SHAPE BOUND, DERIVED from MF_MAX_TERM (span 0 is one predicate, at most
  * MF_MAX_TERM terms, so at most that many SENT positions can begin a
- * prefix). pcrec asserts PCREC_MAX_REQ_RUN_SCAN <= it where it states span
- * 0's prefix facts. exact_len and consumable_len never exceed it. */
+ * prefix). A window span states at most this many positions
+ * (MF_WSPAN_POS). */
 #define MF_MAX_SPAN_POS MF_MAX_TERM
-/* The widest CONTEXT reach after span 0's end, in bytes (R-26.5): a context
- * term after span 0 sits in [k, k + MF_MAX_AHEAD). CHOSEN at 1 (D77): stage
- * 1's after-context is one byte wide (kit_proof.md §3.2's `C_k`). TRIGGER: a
- * declined site, counted at pcrec's Z2 or later, whose after-context is
- * wider than one byte. */
+/* The proof range's reach past span 0's positions, in bytes (R-26.5): one
+ * position after them (kit_proof.md §3.2's `C_k`, the after-context a cover
+ * states as a window span since D172 S2). CHOSEN at 1 (D77); the context
+ * spans (`mf_site.ctx`) that once sat in it retired at D172 S2 commit 6.
+ * TRIGGER: a stated span position past MF_MAX_FWD that a consumer needs
+ * proven. */
 #define MF_MAX_AHEAD 1
-/* Context ITEMS one site states (mf_site.nctx; R-26.5, kit_proof.md §4.1
- * [r4 B1]): a SHAPE BOUND, DERIVED from stage 1's one source, the machine
- * reading, which states at most ONE item before span 0 (`C_{-1}`) and ONE
- * after (`C_k`). TRIGGER: UL-8, the facts-layer producer becoming THE
- * context source (ctx_span.md P1b), which states items one by one. Each
- * item's terms lie in [-MF_MAX_BACK, 0) or [k, k + MF_MAX_AHEAD), at most
- * MF_MAX_BACK + MF_MAX_AHEAD <= MF_MAX_TERM terms, so no item is capped. */
-#define MF_MAX_CTX 2
 /* The per-offset proof's range (mf_class.proven[], R-26.4): offsets from
  * the candidate in [MF_PROOF_LO, MF_MAX_FWD), DERIVED from the read bounds:
- * the most negative term offset, and span 0's positions plus the context
- * reach after it. */
+ * the most negative term offset, and span 0's positions plus the reach
+ * after it. */
 #define MF_PROOF_LO (-MF_MAX_BACK)
 #define MF_MAX_FWD  (MF_MAX_SPAN_POS + MF_MAX_AHEAD)
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
 #define MF_NO_PRED        0xFFu       /* ret_pred / plan_hint: none            */
-/* The window fields' reserved "no bound" values (W1/W2, MF_SITE_ABI 11):
- * RESERVED for R-18; no row serves either today, so a site stating one is
- * refused, naming the field. */
-#define MF_MOVE_UNBOUNDED INT32_MAX   /* mf_pred.move_back: no bound           */
-#define MF_OVER_UNBOUNDED UINT32_MAX  /* mf_pred.overshoot: no bound           */
 
 /* ---- the operation vocabulary (§8.2, §14.0, §14.3) ----------------------- */
 
@@ -246,18 +256,11 @@ typedef enum {
                                nothing here is designed for it.)
                                THE WINDOW (W3, MF_SITE_ABI 11, setfind.md
                                §2.2): a STMT / ASSIGN FIND's result is the
-                               WINDOW's beginning, never below lo. With
-                               back = pred.move_back - d_min (d_min the
-                               least term offset, a constant of the site)
-                               and c the first candidate the range admits:
-                               back == 0, c; back > 0, c - lo >= back ?
-                               c - back : lo (never formed below lo, never
-                               wrapped); move_back MF_MOVE_UNBOUNDED, lo.
-                               back < 0 is refused (R-18 defines it). A
-                               miss is unchanged. Every row today serves
-                               back == 0 only (the window IS the candidate),
-                               so the result is c, as before. Not extended
-                               to ALL_PRESENT's ret_pred reply            */
+                               WINDOW's beginning, never below lo; the
+                               window IS the candidate (the move-back facts
+                               W0-W2 retired at MF_SITE_ABI 20), so the
+                               result is c. Not extended to ALL_PRESENT's
+                               ret_pred reply                             */
     MF_OP_SKIP,             /* first cand in [lo,hi) whose byte is NOT in the
                                one SET term, which sits at offset 0 (RULED
                                Q-G2-9: any other offset is refused). RULED
@@ -370,12 +373,6 @@ typedef enum { MF_T_SET, MF_T_RUN, MF_T_REF } mf_term_kind;
  * Nonzero only on a MISMATCH site, else refused. */
 typedef enum { MF_FOLD_NONE, MF_FOLD_ASCII, MF_FOLD_UCP } mf_fold;
 
-/* §8.2 `consumer`. UNSTATED (0) is not a consumer and is REFUSED (MF_SITE_ABI
- * 18, R-26 Z1 review F-4): every site states what consumes its answer, so a
- * REPORT site that leaves `consumer` unwritten is not read as RESULT. A REPORT
- * site (MF_SK_REPORT, R-26.3) states MF_C_RESULT, refused otherwise. */
-typedef enum { MF_C_UNSTATED = 0, MF_C_RESULT, MF_C_ENGINE } mf_consumer;
-
 /* The CALL MODE of the entry body a site sits in (R-19, MF_SITE_ABI 12;
  * r17b_prime.md §2.4, §4.2): a FACT, the knowledge key M. UNSTATED (0) is
  * not a mode and is REFUSED (R-23, MF_SITE_ABI 14): every site states its
@@ -399,13 +396,14 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  *   DFA_ATTEMPT  ENG_ATTEMPT's attempt loop: MLINE's predecessor seek and
  *                the attempt entry's presence pre-check
  * Stated by every PF/MLINE/PRE builder; any value outside the enum is
- * refused. `consumer` (MF_C_ENGINE everywhere) stays beside it until
- * window_contract's S3 retires it (C-11). */
+ * refused. (`consumer`, which stood beside it, retired at D172 S2 commit 6,
+ * MF_SITE_ABI 20: the kind alone says what consumes the candidates.) */
 /*   REPORT       (MF_SITE_ABI 18, R-26.3; kit_proof.md §2.5) the candidate IS
- *                the answer, with no engine behind it: the site states
- *                `consumer` MF_C_RESULT, a BOUNDED span 0, and every span-0
- *                and context term and predicate REQUIRED (each refused
- *                otherwise). NONE is not a legal reply: a row that cannot
+ *                the answer, with no engine behind it: an old-field site of
+ *                this kind states a BOUNDED span 0 and every span-0 term and
+ *                the predicate REQUIRED (each refused otherwise); a window
+ *                site of this kind (Z2's cover) states every span verify
+ *                YES. NONE is not a legal reply: a row that cannot
  *                serve every REQUIRED term does not apply (K96). The finder
  *                gate admits it wherever a REPORT row exists. The REPORT row
  *                (R-26.6) is UNROUTED until its routing step: a REPORT site
@@ -477,60 +475,115 @@ typedef struct {
  * §4.1, window_contract C-1/C-2): a FACT about what the predicate is.
  *   UNSTATED  0: no class. Every predicate but the ones below states it:
  *             a reverse or non-FIND site's `pred`, every `preds[]` entry
- *   BOUNDED   SPAN 0, the window span (MF_SITE_ABI 18, R-26.1: the
- *             reservation lifted): a FORWARD FIND's `pred` states BOUNDED
- *             or CONTEXT, and 0 is refused there (a builder that forgot is
- *             refused, never read as either); it carries span 0's prefix
- *             facts (prefix_stated, exact_len, consumable_len)
- *   CONTEXT   a context predicate (MF_SITE_ABI 18, R-26.2: the reservation
- *             lifted): a forward FIND's `pred` whose every term reads below
- *             the candidate (a CONTEXT STOP, MLINE's `{\n}` before the
- *             origin, D161 add. 7: the site has no span 0), and every entry
- *             of `mf_site.ctx` (which must). It states `absent` and
- *             `consumable`, UNSTATED refused
+ *   BOUNDED   SPAN 0 (MF_SITE_ABI 18, R-26.1): a FORWARD FIND's `pred`
+ *             states BOUNDED or CONTEXT, and 0 is refused there (a builder
+ *             that forgot is refused, never read as either)
+ *   CONTEXT   a CONTEXT STOP (MF_SITE_ABI 18, R-26.2): a forward FIND's
+ *             `pred` whose every term reads below the candidate (MLINE's
+ *             `{\n}` before the origin, D161 add. 7: the site has no span
+ *             0); a read outside the subject fails its term
  *   PRESENCE  a PRESENCE span (C-1): bounded BELOW only, by `omin` from the
- *             match start, with no `omax`; it states `window_stated` 0. Only
- *             an entry of `mf_site.pspans` states it, and every such entry
- *             must (refused otherwise, naming `span_class`) */
+ *             match start, with no `omax`. Only an entry of `mf_site.pspans`
+ *             states it, and every such entry must (refused otherwise,
+ *             naming `span_class`)
+ * BOUNDED and CONTEXT are the RENDERER INTERFACE's (D172 S2 commit 6, the
+ * kit manager's R1): written by the window family's translation and by G2,
+ * never by a host on a window site (refused there, mf_site's window facts);
+ * PRESENCE is a host fact. */
 typedef enum { MF_SPAN_UNSTATED = 0, MF_SPAN_BOUNDED, MF_SPAN_CONTEXT,
                MF_SPAN_PRESENCE } mf_span_class;
 /* `member_order` of a one-byte PRESENCE span whose pattern position pcrec
  * does not know (mf_pred.member_order). */
 #define MF_ORDER_UNKNOWN 0xFFFFu
 
-/* SPAN 0'S PREFIX FACTS (MF_SITE_ABI 18, R-26.1; kit_proof.md §4.1): whether
- * a BOUNDED span 0 states them. UNSTATED 0 is REFUSED on a forward FIND's
- * BOUNDED `pred`; on every other predicate (a CONTEXT stop, a `ctx` entry, a
- * `pspans` or `preds[]` entry) the fact is no field and must be 0 (refused
- * otherwise), and so must exact_len and consumable_len. */
-typedef enum { MF_PREFIX_UNSTATED = 0, MF_PREFIX_STATED } mf_prefix;
-/* A CONTEXT predicate's verdict where a position it reads lies OUTSIDE the
- * subject (MF_SITE_ABI 18, R-26.2; kit_proof.md §3.4): at c = 0 there is no
- * byte at -1, at c + k = n none at k. SATISFIES: the item HOLDS there, so a
- * candidate whose other spans hold is yielded (COMPLETENESS); FAILS: it does
- * not hold, so the candidate is not yielded (BINDING). UNSTATED 0 is refused
- * on a CONTEXT predicate and must be 0 on every other one. A position INSIDE
- * the subject is decided by its bytes, never by this fact. */
-typedef enum { MF_ABSENT_UNSTATED = 0, MF_ABSENT_SATISFIES, MF_ABSENT_FAILS } mf_absent;
-/* A CONTEXT predicate's consumer fact (R-26.2): YES, a consumer of a proof
- * of this item will not re-test it; NO, it will. UNSTATED 0 is refused on a
- * CONTEXT predicate and must be 0 on every other one (span 0 states the same
- * fact as one number, consumable_len). */
-typedef enum { MF_CONSUMABLE_UNSTATED = 0, MF_CONSUMABLE_YES, MF_CONSUMABLE_NO } mf_consumable;
-/* THE READ FLOOR (mf_site.read_floor, MF_SITE_ABI 18, R-26.2; kit_proof.md
- * §3.5): WHICH floor every read of the site lies at or above, never a number.
- *   UNSTATED  0: REFUSED on a site carrying a CONTEXT term below the origin
- *             (a context stop, a `ctx` entry before span 0); a wildcard
- *             elsewhere
- *   SUBJECT   reads may go down to offset 0 of the subject (the real byte
- *             before `search_from` included, which PCRE2 reads); below 0 a
- *             CONTEXT predicate's `absent` decides
- *   LO        reads stay >= lo. REFUSED together with any term at a negative
- *             offset: such a term names a byte that exists and may not be
- *             read, so it has no verdict (`[r3rc m5]`; kit_proof.md names the
- *             CONTEXT term, and a span-0 term below the origin is the same
- *             case) */
-typedef enum { MF_FLOOR_UNSTATED = 0, MF_FLOOR_SUBJECT, MF_FLOOR_LO } mf_read_floor;
+/* ---- THE WINDOW SITE (D172; docs/design/memfn/window_site.md rev 3.2) ------
+ *
+ * STATED FACTS, appended to mf_site LAST at S2's commit 1 (no MF_SITE_ABI
+ * number moves before commit 6, where the old fields retire), and read ONLY
+ * by the window family on EVERY art since S2's commit 6 (through commit 5 an
+ * art previewed it, mf_preview(art, "window-family")). A malformed statement
+ * is refused, naming it.
+ *
+ * A SPAN is a run of consecutive positions start .. start + len - 1 relative
+ * to the candidate c, one byte set per position (all 256: any byte; empty is
+ * legal). THE CORE RULE (window_site.md §1.2): at candidate c a span holds iff
+ * for every position d, c + d inside [0, n) means s[c + d] lies in the set,
+ * and c + d outside it means d lies outside the span's CORE (the contiguous
+ * positions that must lie inside the subject; it may be empty). VERIFY: YES,
+ * every candidate the kit yields satisfies the span; NO, a true filter the
+ * kit may use or skip (every match satisfies it). A TABLE OFFER names, per
+ * position, a membership table pcrec already emits for that position's set
+ * (its id, rendered through the `table_name` hook); 0 is no offer.
+ *
+ * An ALTERNATIVE is one list of spans, a sound candidate definition alone,
+ * with its ENTRY fact: PARKED (the candidates are where the parked machine
+ * leaves its start state), RESEED (candidates from the walk, the machine
+ * re-seeded at each), or NONE (no entry fact: the candidate is the window's
+ * own). A site states one or two, UNORDERED; the kit chooses (phase 1,
+ * mf_wdecide) and renders the choice (phase 2, mf_define).
+ *
+ * THE FLOOR: SUBJECT (reads lie in [0, n); below 0 the core rule decides) or
+ * EXPR, the `floor` hook's text F (F <= lo): a candidate needing a read in
+ * [0, F) is NOT COVERED, never yielded, and pcrec's EDGE attempt owns it.
+ * Per non-core position the guard is three-way: off the subject passes,
+ * inside [0, F) is the edge's, else membership.
+ *
+ * Every fact has an UNSTATED zero, refused where it is read (an empty core is
+ * a value: `core` STATED with `core_len` 0). The FRAME (form, op, handoff,
+ * empty, use, body, decl_point, site_kind, the hooks, span_lo/span_hi, the
+ * FUNC name `pred.fn_ref`) is today's fields, read by phase 2 only.
+ *
+ * A WINDOW SITE STATES NOTHING ELSE (D172 S2 commit 6; the kit manager's R1).
+ * Its `pred` carries no term (`nterm` 0), no `need`, no `plan_hint` (0 or
+ * MF_NO_PRED), no `plan_pos`, no ranking (`rank_n` 0) and no `span_class`;
+ * the site no `end_back`. Those are THE RENDERER INTERFACE: the old-field
+ * shape the window family's translation writes for the row that renders its
+ * plan (window.c `translate`), and the shape G2 drives the rows with
+ * directly, never a host statement. A window site (or a pre-check FUNC
+ * part) stating any of them is REFUSED, naming it. */
+typedef enum { MF_VERIFY_UNSTATED = 0, MF_VERIFY_YES, MF_VERIFY_NO } mf_verify;
+typedef enum { MF_CORE_UNSTATED = 0, MF_CORE_STATED } mf_core;
+typedef enum { MF_ENTRY_UNSTATED = 0, MF_ENTRY_NONE, MF_ENTRY_PARKED,
+               MF_ENTRY_RESEED } mf_entry;
+typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wfloor;
+
+/* Positions one span states: a SHAPE BOUND, DERIVED as MF_MAX_SPAN_POS is
+ * (the longest piece pcrec states is a run its analysis truncates to
+ * PCREC_MAX_REQ_RUN_SCAN, 32 positions). */
+#define MF_WSPAN_POS MF_MAX_SPAN_POS
+/* Spans one alternative states: a SHAPE BOUND, DERIVED from pcrec's widest
+ * statement, the reseed alternative: one span per walked offset (at most
+ * PCREC_PREFIX_K_MAX, 24, offset 0's F0 included) plus the run R, inside
+ * MF_MAX_TERM. pcrec asserts its own bound <= this where it states spans. */
+#define MF_WMAX_SPAN MF_MAX_TERM
+/* Alternatives one site states (window_site.md §0: an unordered set of 1 or
+ * 2). A SHAPE BOUND, not a tuning constant. */
+#define MF_WMAX_ALT 2
+/* The offsets a span position may lie at: [-MF_MAX_BACK, MF_WREACH). A SHAPE
+ * BOUND, CHOSEN at 64 (D77): twice the longest piece (MF_WSPAN_POS) past the
+ * longest walk; TRIGGER: a pcrec statement past it, refused naming `start`.
+ * Positions outside the proof range [MF_PROOF_LO, MF_MAX_FWD) are tested,
+ * never proven (window_site.md §1.1). */
+#define MF_WREACH 64
+
+typedef struct {
+    int32_t  start;                     /* offset of position 0 from c        */
+    uint8_t  len;                       /* 1..MF_WSPAN_POS                    */
+    uint8_t  verify;                    /* mf_verify                          */
+    uint8_t  core;                      /* mf_core                            */
+    uint8_t  core_lo, core_len;         /* the core: positions [core_lo,
+                                           core_lo + core_len) of the span;
+                                           core_len 0 is the empty core       */
+    uint8_t  set[MF_WSPAN_POS][32];     /* position j's set, mf_term.set's
+                                           layout                             */
+    uint32_t table_ref[MF_WSPAN_POS];   /* position j's table offer, 0: none  */
+} mf_wspan;
+
+typedef struct {
+    uint8_t         entry;              /* mf_entry                           */
+    uint8_t         nspan;              /* 1..MF_WMAX_SPAN                    */
+    const mf_wspan *spans;
+} mf_walt;
 
 typedef struct {                    /* one position term, relative to cand    */
     mf_term_kind   kind;
@@ -557,8 +610,13 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
     mf_term  term[MF_MAX_TERM];
     mf_need  need;                  /* a whole predicate may be OPTIONAL
                                        (set-leads' lead on a DFA-scan route)  */
-    uint8_t  plan_hint;             /* the term pcrec's model scans; MF_NO_PRED
-                                       = none. Permanent until M5 (§14.9)     */
+    /* plan_hint, plan_pos and the ranking below are THE RENDERER INTERFACE
+       (D172 S2 commit 6, the kit manager's R1): the window family's
+       translation (window.c) and G2 write them, never a host on a window
+       site (refused there); a host's old-field site (SKIP, ADVANCE, VERIFY,
+       MISMATCH, a pre-check's own preds) states plan_hint MF_NO_PRED */
+    uint8_t  plan_hint;             /* the term the plan scans; MF_NO_PRED
+                                       = none                                 */
     uint16_t plan_pos;              /* the position INSIDE a RUN term it scans */
     uint32_t fn_ref;                /* FUNC: pcrec's name hook id (0 = none).
                                        A FUNC site's OWN name is always its
@@ -573,41 +631,19 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
                                        reserves that namespace, and the stem
                                        is opaque (written through `puts` /
                                        `vprintf` only, never inspected)     */
-    /* THE POSITION RANKING (RQ-2, D157, MF_SITE_ABI 9; appended LAST): a
-     * FACT pcrec states about the RUN term plan_hint names. rank_n positions
+    /* THE POSITION RANKING (RQ-2, D157, MF_SITE_ABI 9; appended LAST; the
+     * renderer interface since MF_SITE_ABI 20): the ranking of the RUN term
+     * plan_hint names, written by the translation. rank_n positions
      * of that term (offsets within it), ordered by pcrec's prior rate,
      * lowest first, ties to the higher offset; rank_ppm[i] is rank_pos[i]'s
      * rate, in ppm summed over the position's members (both members of a
-     * masked position), under this compile's byte-rate or, where the compile
-     * has none, the uniform rate. rank_n 0 = no facts: a predicate whose
+     * masked position), under the art's byte-rate or, where it has none,
+     * the uniform rate. rank_n 0 = no ranking: a predicate whose
      * plan_hint names no RUN term. Entries past rank_n are unspecified and
      * never read. */
     uint8_t  rank_n;                /* 0..MF_RANK_MAX                         */
     uint16_t rank_pos[MF_RANK_MAX];
     uint32_t rank_ppm[MF_RANK_MAX];
-    /* THE WINDOW (W0-W2, MF_SITE_ABI 11, setfind.md §2.1-§2.2; appended
-     * LAST): the predicate is ONE SPAN, positions d_min..d_max (d_min the
-     * least term offset), and these state where the WINDOW the site answers
-     * begins relative to it. FACTS pcrec states on every FORWARD FIND, and
-     * only there (D161's degenerate case; R-18 widens them).
-     *   window_stated  1: move_back and overshoot are STATED. 0 is the
-     *                  zero-fill and means UNSTATED, never "move-back 0": a
-     *                  forward FIND stating 0 is REFUSED, and so is 1 on any
-     *                  other site (a non-FIND, a reverse site, a preds[]
-     *                  entry), where no window is defined.
-     *   move_back      bytes from the span's beginning (c + d_min) back to
-     *                  the window's beginning, SIGNED: negative, the window
-     *                  begins after the span's beginning (MLINE's term at
-     *                  -1 states -1). MF_MOVE_UNBOUNDED is reserved. The
-     *                  window IS the candidate exactly at move_back ==
-     *                  d_min; back = move_back - d_min < 0 is refused.
-     *   overshoot      how far the window's beginning may lie before the
-     *                  match's; MF_OVER_UNBOUNDED reserved. omin =
-     *                  move_back - overshoot is derived, no field.
-     * Under window_stated 0 both must be 0 (refused otherwise). */
-    uint8_t  window_stated;
-    int32_t  move_back;
-    uint32_t overshoot;
     /* THE PRESENCE CLASS (MF_SITE_ABI 16, R17-b' B3a; r17b_prime.md §4.1;
      * appended LAST): FACTS pcrec states on every `mf_site.pspans` entry and
      * nowhere else (each must be 0 on `pred` and `preds[]`, refused
@@ -632,33 +668,19 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
     uint8_t  span_class;
     int32_t  omin;
     uint16_t member_order;
-    /* SPAN 0'S PREFIX FACTS (MF_SITE_ABI 18, R-26.1; kit_proof.md §4.1;
-     * appended LAST): stated on a forward FIND's BOUNDED `pred` and nowhere
-     * else (all three 0 elsewhere, refused otherwise).
-     *   prefix_stated   mf_prefix; UNSTATED refused on span 0.
-     *   exact_len       read only when STATED: 0..MF_MAX_SPAN_POS. The
-     *                   largest L such that span-0 positions [0, L) are all
-     *                   SENT (each a term's position: refused otherwise) and
-     *                   the cross product of the SENT sets over [0, d] equals
-     *                   the sub-problem's length-(d+1) prefixes for every
-     *                   d < L, for the artifact's encoding. An under-
-     *                   statement is sound; pcrec states 0 at Z1.
-     *   consumable_len  read only when STATED: 0..exact_len (more refused):
-     *                   "if you prove [0, N), my consumer will not re-test
-     *                   those positions". 0 at Z1.
-     * No row reads any of them before R-26.6 (they are facts for a choice,
-     * never an obligation on a form): every row serves every value. */
-    uint8_t  prefix_stated;
-    uint8_t  exact_len;
-    uint8_t  consumable_len;
-    /* A CONTEXT PREDICATE'S FACTS (MF_SITE_ABI 18, R-26.2; appended LAST):
-     * mf_absent and mf_consumable, stated on a CONTEXT predicate (a context
-     * stop's `pred`, every `ctx` entry), UNSTATED refused there; 0 on every
-     * other predicate, refused otherwise. A form honours `absent` (the gate's
-     * field `absent`: a row that renders only FAILS declines SATISFIES); no
-     * form reads `consumable` */
-    uint8_t  absent;
-    uint8_t  consumable;
+    /* A PART'S WINDOW STATEMENT (D172, window_site.md rev 3.2 §1.2's
+     * pre-check row; the kit manager's wsc3 ruling 3: window facts PER PART;
+     * appended LAST, no MF_SITE_ABI number move before commit 6): on a
+     * `preds[]` entry that is a FUNC part (`fn_ref` nonzero) of an
+     * ALL_PRESENT site, the part's own alternatives and floor, read exactly
+     * as THE WINDOW SITE's `mf_site.nalt`/`alts`/`wfloor` are, the part
+     * being one FIND candidate definition (its frame the offset-skip
+     * function's: FUNC/RETURN, miss `n`). 0/NULL/0 on every other predicate
+     * (refused there: a site states its own on `mf_site`). Read by the
+     * window family on every art (S2 commit 6) */
+    uint8_t         nalt;
+    const mf_walt  *alts;
+    uint8_t         wfloor;
 } mf_pred;
 
 typedef struct {
@@ -668,7 +690,10 @@ typedef struct {
     mf_handoff      handoff;
     uint8_t         reverse;
     mf_empty        empty;
-    uint8_t         end_back;       /* hi = n - end_back, 0 or 1 (§14.4)       */
+    uint8_t         end_back;       /* hi = n - end_back, 0 or 1 (§14.4). The
+                                       renderer interface on a FIND (D172 S2
+                                       commit 6): the translation's, never a
+                                       window site's (refused there)          */
     mf_pred         pred;           /* FIND / SKIP / VERIFY. On ALL_PRESENT /
                                        DENSE only `pred.fn_ref` is read, and
                                        only on a FUNC site (its name, K-1)   */
@@ -696,7 +721,6 @@ typedef struct {
     /* pcrec's proven facts */
     uint64_t        span_lo, span_hi;          /* proven bytes; MF_SPAN_UNBOUNDED */
     uint32_t        cand_ppm_lo, cand_ppm_hi;  /* the whole predicate's hint     */
-    uint8_t         consumer;       /* mf_consumer: named, never priced        */
     /* policy */
     uint32_t        policy;         /* MF_P_*                                  */
     uint64_t        denies;         /* MF_D_* in-emitter denies (§14.10)       */
@@ -786,29 +810,18 @@ typedef struct {
        refused UNSTATED there; zero (unstated) on every other site, refused
        otherwise */
     mf_pres_proof   pres_proof;
-    /* THE READ FLOOR (MF_SITE_ABI 18, R-26.2; kit_proof.md §3.5; appended
-       LAST): mf_read_floor above. MLINE states SUBJECT (its reads below the
-       origin are today's); a site with no CONTEXT term below the origin may
-       leave it UNSTATED */
-    uint8_t         read_floor;
-    /* THE CONTEXT SPANS (MF_SITE_ABI 18, R-26.2; kit_proof.md §4.1 [r3
-       con-B1, r3rc m4, r4 B1]; appended LAST): ctx[0..nctx) are CONTEXT
-       predicates around span 0, ONE PER CONTEXT ITEM (an item's terms at
-       every offset it constrains, its own `absent`), EXACT items only
-       (an equivalence: R-26 carries no exactness fact, R-26.7 is filed).
-       nctx 0 / ctx NULL: no context span (every pcrec site at Z1). Each
-       entry states span_class CONTEXT, `absent`, `consumable` and its
-       `need`, carries no window, plan or presence fact, and only SET and
-       RUN terms whose every position lies in [-MF_MAX_BACK, 0) or
-       [k, k + MF_MAX_AHEAD), k span 0's end (the largest term offset plus
-       its width). At most MF_MAX_CTX entries; a site with no BOUNDED span
-       0 reaching past the candidate (k >= 1) refuses any. The site's
-       candidates are those where span 0 AND every entry hold (each under
-       its `absent`); the conjunction of the items is the kit's binding.
-       Only the generic row tests entries before R-26.6: every other row
-       declines a site stating any (the gate's field `ctx`) */
-    const mf_pred  *ctx;
-    uint8_t         nctx;
+    /* THE WINDOW SITE'S FACTS (D172, window_site.md rev 3.2 §1; S2 commit 1,
+       appended LAST, no MF_SITE_ABI number move until commit 6): the
+       alternatives alts[0..nalt), each its spans and ENTRY, and the floor
+       (mf_wfloor; EXPR's F is the `floor` hook's text). nalt 0 / alts NULL:
+       not a window site. Read by the window family on every art (S2 commit
+       6: the family is the route of every site stating them). wfloor
+       UNSTATED is refused where a span
+       position lies below the candidate (window_site.md §0), and is a
+       wildcard elsewhere: no read there can fall below lo, so below F */
+    uint8_t         nalt;
+    const mf_walt  *alts;
+    uint8_t         wfloor;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -1098,8 +1111,8 @@ typedef struct {
        FIND whose term reads one byte below the candidate proves it, when
        the text tests that term (R-25); every other site proves nothing
        here. Since MF_CLASS_V 5 a COPY of proven[-1 - MF_PROOF_LO] (a tested
-       term at -1 of any predicate the site's candidates satisfy: span 0, a
-       context stop, a `ctx` entry before span 0) */
+       term at -1 of the predicate the site's candidates satisfy: span 0 or
+       a context stop) */
     uint8_t  proven_prev[32];
     /* (MF_CLASS_V 4) THE DECIDING ROWS of pres[i], read by the host's
        records (b3brev U5: never inferred from a link's shape): pres_row[i]
@@ -1112,12 +1125,12 @@ typedef struct {
     /* (MF_CLASS_V 5, R-26.4; kit_proof.md §4.2) THE PER-OFFSET PROOF:
        proven[d - MF_PROOF_LO] is a bitset (mf_term.set's layout) such that
        at EVERY candidate the site yields, the byte at offset d from the
-       candidate lies in it, OR offset d lies outside the subject and the
-       CONTEXT predicate covering d states absent SATISFIES. All ones =
-       nothing proven. It states only what the committed text TESTS at every
+       candidate lies in it (a window site's plan: off the subject only
+       outside a span's core, window_site.md §1.2). All ones = nothing
+       proven. It states only what the committed text TESTS at every
        candidate (R-25): the intersection over the TESTED terms of span 0
-       (or a context stop's `pred`) and of every `ctx` entry, per position
-       (a SET term's set; a RUN term's position j under its mask).
+       (or a context stop's `pred`), per position (a SET term's set; a RUN
+       term's position j under its mask).
        Byte-wise, proven[d] is a SUBSET of the set of any REQUIRED term at
        d (binding makes that true); position-wise, the proven positions are
        a SUPERSET of the REQUIRED ones. Equal under -fno-memfn-simd,
@@ -1127,7 +1140,8 @@ typedef struct {
        proven[0] and proven[-1] by the kit, so they are equal by
        construction; the trace build checks every d (Q-R17P-25: exists 0
        proves nothing at any offset). A MEMBERSHIP fact: pcrec reads it as a
-       language proof only for d < exact_len. */
+       language proof only inside the span it knows exact (its own cover
+       decision's k). */
     uint8_t  proven[MF_MAX_FWD - MF_PROOF_LO][32];
 } mf_class;
 
@@ -1385,6 +1399,64 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * or for a step the kit does not name. It is no `--memfn=` option (no
  * options.def row), so mf_opts_check refuses every spelling of it. */
 int      mf_preview(mf_art *, const char *step);
+/* (D172) The step "window-family" previewed THE WINDOW FAMILY through S2
+ * commit 5; since commit 6 the family is every art's and the step is no
+ * longer one the kit names (refused). */
+
+/* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
+ *
+ * THE DECISION, no text: pcrec asks with the spans, the alternatives and the
+ * frequencies (the analysis object's byte-rate on mf_art_begin), never a
+ * frame fact; the kit answers what its text will do. pcrec's NEXT rows and
+ * the stamps read this reply (window_site.md §3.4's reply-to-stamp table).
+ *   alt         the chosen alternative's index in site.alts
+ *   reseed      THE RE-SEED BIT (§3.5): 1 iff the plan needs the matcher
+ *               re-seeded at each candidate (a RESEED choice, or a PARKED one
+ *               whose plan reads the run R: C-pin)
+ *   has_stop    1: the text FINDS the stop and tests the plan around it; 0:
+ *               the floor row (no core position, or an empty meet inside a
+ *               core), whose byte loop tests every plan position
+ *   stop        the stop's offset d* from the candidate; stop_set its set
+ *   plan[]      the offsets the text TESTS at each candidate besides the
+ *               stop's find, ascending (C-asc): the stop's own offset only
+ *               where its set is not the find's (C-stop) or a pinned stretch
+ *               keeps it; under C-pin every offset of the pinned stretch.
+ *               plan_term[i]: the compare position i belongs to (C-run,
+ *               C-pin): equal values are ONE compare, in plan order
+ *   pinned      1 iff C-pin fired: the run R is compared whole
+ *   run_stated  1 iff the chosen alternative states R (its span of two or
+ *               more positions, each one member or a cube); then run_member
+ *               is R's MEMBER and [run_lo, run_lo + run_len) its stretch: on
+ *               a verify-NO R the least-mass EXACT position (ties to the
+ *               higher offset) and the exact run around it; on a verify-YES
+ *               R the least-mass position of all of R (PICK's cube mass) and
+ *               R whole. The reply is the ONE owner of both
+ *   path        the decision's path id: "parked", "reseed", "mass", "floor",
+ *               "empty", each with "+pin" where C-pin fired
+ * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */
+#define MF_WPLAN_MAX (MF_WREACH + MF_MAX_BACK)
+typedef struct {
+    uint8_t  alt;
+    uint8_t  reseed;
+    uint8_t  has_stop;
+    int32_t  stop;
+    uint8_t  stop_set[32];
+    uint8_t  nplan;
+    int32_t  plan[MF_WPLAN_MAX];
+    uint8_t  plan_term[MF_WPLAN_MAX];
+    uint8_t  pinned;
+    uint8_t  run_stated;
+    int32_t  run_member;
+    int32_t  run_lo;
+    uint8_t  run_len;
+    char     path[16];
+} mf_wreply;
+/* THE PHASE-1 ASK: the family's decision for window site `site` on `art`,
+ * any art (S2 commit 6). PURE, as mf_ask is: no text, no handle, no art
+ * state, no error set. Returns 0, or -1 where the site is not one the family
+ * describes (the define would refuse it). */
+#define mf_wdecide MF_NS(wdecide)
+int      mf_wdecide(const mf_art *, const mf_site *site, mf_wreply *out);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte

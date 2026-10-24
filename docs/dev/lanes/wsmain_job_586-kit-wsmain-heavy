@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# 586-kit-wsmain-heavy: lane wsmain (lane/memfn-wsmain = lane/memfn-ws 573207f76, the
+# validated D172 S2 landing + R-29, with main bf33d2dab merged in: R-28, the
+# langfix/K-fixes, corefix abi 83). Validation of the merge so main can land it:
+#   1. make -j16; make strict
+#   2. emit_sweep against main bf33d2dab x5 (plain, --arms start, -fno-run-prefilter,
+#      -fmemfn-simd, --engine=vm), the same flags and declared moves as 584-kit-wsc8-heavy
+#      (facts span_facts:used:yes>no; dumps --list-limits:PCREC_OFSK_MAX_SET); the facts
+#      population differs from wsc8's 3356 (main added corpus) and is only recorded
+#   3. make test-codegen
+#   4. full make test via scripts/perfrun (verdict: make's *** [..test-X] Error lines)
+#   5. make test-memfn-link (R-28's frame bar; also inside make test)
+# Correctness run: no quiet gate; held while i2build-parity, 710-findbench-parity or
+# 580-findbench-parity-quiet is pending or running.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/wsmain
+BASE=bf33d2dab
+OUT=$TREE/build/wsmain/heavy
+STREAMS=c-default,c-vm,emit-ir,composition,dumps,facts,emit-ir-auto,stderr
+case "${1:-}" in
+    --dry-run)
+        [ -e "$TREE/.git" ] || { echo "no tree $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "BASE $BASE unknown" >&2; exit 1; }
+        git -C "$TREE" diff --quiet HEAD || { echo "worktree dirty" >&2; exit 1; }
+        python3 "$TREE/scripts/emit_sweep.py" --help >/dev/null 2>&1 || { echo "emit_sweep --help fails" >&2; exit 1; }
+        [ -x "$TREE/scripts/perfrun" ] || { echo "no scripts/perfrun" >&2; exit 1; }
+        make -C "$TREE" -n test-memfn-link >/dev/null 2>&1 || { echo "no test-memfn-link target" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict; emit_sweep (declared facts+dumps deltas) vs $BASE x5 (plain, --arms start, -fno-run-prefilter, -fmemfn-simd, --engine=vm); make test-codegen; perfrun make test; make test-memfn-link"
+        echo "boxqueue: cap 10800"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect sweeps=5 lines=^emit_sweep: DONE rc=0\$"
+        exit 0 ;;
+    --ready)
+        for j in i2build-parity 710-findbench-parity 580-findbench-parity-quiet; do
+            case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state "$j" 2>/dev/null)" in pending*|running*) echo "held: $j"; exit 75;; esac
+        done
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+TIP=$(git rev-parse HEAD)
+echo "== wsmain heavy tip $TIP vs $BASE"
+mkdir -p "$OUT"
+bad=0
+step() {
+    local name=$1; shift
+    echo "== wsmain step $name: $*"
+    "$@" > "$OUT/$name.log" 2>&1
+    local rc=$?
+    grep -E 'strict:|movers=|DONE rc=|\*\*\* \[|checks (passed|failed)|plants:|R-28|UNEXPECTED|ANOMALY' "$OUT/$name.log" | tail -40
+    echo "== wsmain step $name rc=$rc"
+    [ "$rc" -eq 0 ] || bad=$((bad + 1))
+}
+step build make -j16
+step strict make strict
+step sweep_plain python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --streams "$STREAMS" --out "$OUT/sw_plain"
+step sweep_arms python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --arms start --out "$OUT/sw_arms"
+step sweep_norun python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=-fno-run-prefilter --out "$OUT/sw_norun"
+step sweep_simd python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=-fmemfn-simd --out "$OUT/sw_simd"
+step sweep_vm python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=--engine=vm --no-differ-floor --out "$OUT/sw_vm"
+step codegen make test-codegen
+step test scripts/perfrun --label wsmain -- "$OUT/test.make.log"
+grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' "$OUT/test.make.log" | sed 's/^/test-red: /'
+step memfn_link make test-memfn-link
+echo "== wsmain heavy: $bad step(s) failed"
+[ "$bad" -eq 0 ]

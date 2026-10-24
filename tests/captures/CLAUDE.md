@@ -25,6 +25,17 @@ expectations" section.
   optional middle group, a three-way alternation/repetition mix, and one
   `ms` case pairing startpos with group attachment.
 
+- `empty_iteration.rxt` — K128 (lane corefix, 2026-10-22): the empty-iteration
+  rule at an unbounded repeat's LAST MANDATORY iteration. 22 patterns x 2
+  routes (default, `engine vm`), every expectation libpcre2 10.46's (span and
+  every group, every start position); the 12 patterns python `re` answers
+  differently carry `# pcre2-only` (U21). WRITTEN by `gen_empty_iteration.py`
+  — edit the case list there and re-run it, never the `.rxt` by hand.
+- `gen_empty_iteration.py` — the generator above (libpcre2 through
+  `docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`, python `re` only
+  to decide the `# pcre2-only` mark); `--check-pcrec BUILD/pcrec` runs the
+  written file through the harness.
+
 ## Conventions
 
 Same `.rxt` conventions as the rest of `tests/` (see `../CLAUDE.md` and

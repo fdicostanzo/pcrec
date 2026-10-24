@@ -958,7 +958,24 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   `pcre2api(3)` says `ANCHORED` limits matching "to matching at the first
   matching position".
 
----
+## U21 — python `re`: an unbounded repeat may iterate after an EMPTY last mandatory iteration (K128, lane corefix, 2026-10-22)
+
+- **Status**: divergence-by-design (python's own iteration model; PCRE2 is the
+  reference, D26). Not a report candidate.
+- **Repro** (python 3.14.4 and libpcre2-8 10.46, Linux dev box):
+  `(?:()|a)+?b` over `"ab"`: libpcre2 `[0,2)`, group 1 UNSET; python `[0,2)`,
+  group 1 `(0,0)`. `(?:a|()|b){2,}?c` over `"abc"`: libpcre2 group 1 UNSET,
+  python `(1,1)`. Spans agree; the group values differ.
+- **The difference**: PCRE2 compiles `X{m,}` (m >= 1) as m-1 plain copies and
+  one repeating bracket, so its "an iteration that matched empty does not
+  repeat" rule covers iteration m too. python lets iteration m be empty and
+  still runs iteration m+1, and a group the empty iteration set survives it.
+  pcrec had python's model until K128 (match_api.md §5.1¶3a now states
+  PCRE2's).
+- **Impact on pcrec**: the corpus cells that show it
+  (`tests/captures/empty_iteration.rxt`, generated from libpcre2 by
+  `gen_empty_iteration.py`) carry `# pcre2-only`: 12 of its 22 patterns, on
+  both routes.
 
 ## U22 — libpcre2 10.46: `pcre2_substitute` case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF` segfaults or reads past the substring (subst R4 panel r2, C1-2, 2026-10-22)
 

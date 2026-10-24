@@ -459,6 +459,24 @@ tests/utf8/wclass_illformed.rxt:868	--features all --encoding=utf8 --engine=vm	7
 tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
 tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
 tests/compound/split.rxt:12059	--features all	5e787c61283f52293f62
+# corefix/cfcount (2026-10-22, K128): +17 rows, every one a tests/captures/empty_iteration.rxt block (the new corpus file's VM-hat movers); computed by vmhat_checks.py's own mover predicate restricted to that file (the suite's red listed exactly 17 extra, 0 missing); no other row moved.
+tests/captures/empty_iteration.rxt:37	--features all --engine=vm	283f3a28297c61292b3f62
+tests/captures/empty_iteration.rxt:87	--features all --engine=vm	28283f3a28297c61292b3f2962
+tests/captures/empty_iteration.rxt:138	--features all --engine=vm	283f3a283f3a28297c61292b3f62292b
+tests/captures/empty_iteration.rxt:194	--features all --engine=vm	283f3a617c28297c62292b3f63
+tests/captures/empty_iteration.rxt:246	--features all --engine=vm	283f3a28297c61627c61292b3f62
+tests/captures/empty_iteration.rxt:298	--features all --engine=vm	283f3a28297c61297b322c7d3f62
+tests/captures/empty_iteration.rxt:363	--features all --engine=vm	283f3a617c28297c62297b322c7d3f63
+tests/captures/empty_iteration.rxt:461	--features all --engine=vm	283f3a617c28297c62297b382c7d3f63
+tests/captures/empty_iteration.rxt:601	--features all --engine=vm	283f3a617c28297c62297b31362c7d3f63
+tests/captures/empty_iteration.rxt:760	--features all --engine=vm	283f3a617c28297c62297b31372c7d3f63
+tests/captures/empty_iteration.rxt:887	--features all --engine=vm	283f3a617c28297c62297b392c7d63
+tests/captures/empty_iteration.rxt:1028	--features all --engine=vm	283f3a283f3d286129297c61292b3f62
+tests/captures/empty_iteration.rxt:1064	--features all --engine=vm	283f3a28297c61292b62
+tests/captures/empty_iteration.rxt:1187	--features all --engine=vm	283f3a28297c61292a3f62
+tests/captures/empty_iteration.rxt:1220	--features all --engine=vm	283f3a28297c61297b312c337d3f62
+tests/captures/empty_iteration.rxt:1256	--features all --engine=vm	283f3a28297c61292b2b62
+tests/captures/empty_iteration.rxt:1288	--features all --engine=vm	283f3e283f3a28297c61292b3f2962
 tests/atomic_groups/possessive_ungreedy.rxt:101	--features atomic-groups,classes,modifiers --engine=vm	61283f55295c737b2c327d2b
 tests/atomic_groups/possessive_ungreedy.rxt:115	--features atomic-groups,classes,modifiers --engine=vm	283f5529612a2b61
 tests/atomic_groups/possessive_ungreedy.rxt:147	--features atomic-groups,classes,modifiers --engine=vm	283f553a5c732a2b2962

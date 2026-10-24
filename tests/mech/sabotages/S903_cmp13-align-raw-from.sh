@@ -6,7 +6,19 @@ SAB_FILE='src/gen/emit_compound.c'
 SAB_SUITES='compound'
 SAB_DESC='under -fstartpos-guard=align the controller hands F the caller'\''s RAW start position, not the aligned one, so a floor match at the aligned position is missed'
 SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): compound arm 8 FAIL lines (B1'\''s utf8 align arm with -futf-check: a floor match at the aligned position is lost; G2'\''s align arm). The matrix figure is owed at the slot.'
-SAB_EXPECT=DETECTED
+# RE-DECIDED 2026-10-24 (lane fsfix, full-suite 20261023_5596c3207 triage): an
+# EQUIVALENT MUTANT now. The matrix read compound:0fail where cpb4 hand-measured
+# 8. Cause, measured on a scratch build with this plant: the plant's own site 2
+# declares raw_from at the head of the CONTROLLER (ca__find), but since the
+# entry/search-head change (iterfix2 f298d084e, 93c5e33c6) the start-position
+# alignment is emitted in the ENTRY (ca_search: `do search_from++ while ...`)
+# BEFORE it calls ca__find, so raw_from == search_from there and the one
+# changed line (site 1) emits `raw_from` for an identical value. Emitted C
+# differs only by the dead declaration and that argument. The CMP-13 property
+# (F is handed the aligned start) now holds structurally: the alignment has one
+# emitter, ahead of the controller. A raw-start plant would need the entry to
+# pass its pre-alignment value into the controller, which no emitter does.
+SAB_EXPECT=UNDETECTED
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_printf(c, "        int r = %s(subject, subject_length, search_from, capture_spans);\n", a);'
 SAB_AFTER='    pcrec_sb_printf(c, "        int r = %s(subject, subject_length, raw_from, capture_spans);\n", a);   /* SABOTAGE S903 */'

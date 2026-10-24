@@ -404,15 +404,6 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               const unsigned char *mask, int n);
 
-/* Every position of a run (the same arguments; `mask` NULL where every
- * position is exact) ordered by cube mass, lowest first, into `pos[0..n)`,
- * each position's mass in `mass[0..n)` (NULL: not wanted). Stable over the
- * order `[n-1, ..., 0]`, so ties go to the rightmost and `pos[0]` equals
- * `pcrec_find_run_scan_index`'s answer. [MEMFN] RQ-2 (D157). */
-void pcrec_find_run_rank(const uint32_t *rate, const unsigned char *bytes,
-                         const unsigned char *mask, int n, int *pos,
-                         uint32_t *mass);
-
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` positions is truncated to.
  * MASS over each window of that many positions containing `idx`, a window's
  * mass being that of its MEMBERS (T for an exact position, T and T | ~K for
@@ -422,8 +413,9 @@ int pcrec_find_run_window_start(const uint32_t *rate,
                                 const unsigned char *bytes,
                                 const unsigned char *mask, int n, int idx);
 
-/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
- * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
+/* MASS over `set` (`set[b]` nonzero for a member), in ppm, capped at
+ * 1,000,000: a per-set cost input (the DFA candidate rate,
+ * `pcrec_dfa_cand_ppm`; the offset-k selection's until D172 S2 commit 6). */
 unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256]);
 
 /* ---- [KNOW-SRC] THE LOOKUP TRACE (measure_sets.md rev 3 §9.3) -------------

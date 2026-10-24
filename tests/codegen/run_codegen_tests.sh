@@ -65,12 +65,11 @@ body() { # body <file> <entry-name> <out-file>
     # patterns compiling to the same engine) began reporting a difference that
     # is not in the engine at all. The extractor was always wrong; nothing
     # pattern-dependent had ever landed between the two lines before.
-    # [FINDALL-NEXT] I1 moved every engine body out of `<prefix>_search`
-    # into `<prefix>__find` (`static inline __attribute__((always_inline))`,
-    # or `static __attribute__((noinline))` on the DFA attempt route), which
-    # `_search` and `_next` both call; the head therefore admits the
-    # storage/attribute words before `int`, and the engine callers below ask
-    # for `rx__find`.
+    # [FINDALL-NEXT] a search entry splits into `<prefix>__find` only where
+    # its caller-position prologue writes anything (a UTF check, an encoding
+    # start guard); this file's witnesses are byte artifacts, so their engine
+    # body is `<prefix>_search`'s own. The head admits a body's storage and
+    # attribute words before `int` all the same.
     awk -v fn="$2" '
         $0 ~ "^(static )?(inline )?(__attribute__\\(\\([a-z_]+\\)\\) )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }
         inside                { print }
@@ -84,8 +83,8 @@ gen() { # gen <name> <pattern> [extra pcrec args...] -> <name>.c plus <name>.bod
     shift 2
     pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name.c" --pattern "$pat" >/dev/null 2>&1 \
         || { bad "$name: pcrec failed to compile pattern '$pat'"; return 1; }
-    body "$WORKDIR/$name.c" rx__find "$WORKDIR/$name.body" \
-        || { bad "$name: could not extract the rx__find engine body from the generated C"; return 1; }
+    body "$WORKDIR/$name.c" rx_search "$WORKDIR/$name.body" \
+        || { bad "$name: could not extract the rx_search engine body from the generated C"; return 1; }
 }
 
 # ---- skip states (src/gen/emit_dfa.c pick_skip_states) -------------------
@@ -326,8 +325,8 @@ gensc() { # gensc <name> <pattern> [extra pcrec args...] -> <name>.body
     pcrec_run "$PCREC" -p rx "$@" -o - --pattern "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
     [ -s "$WORKDIR/$name.sc" ] \
         || { bad "$name: pcrec produced no self-contained output for '$pat'"; return 1; }
-    body "$WORKDIR/$name.sc" rx__find "$WORKDIR/$name.body" \
-        || { bad "$name: could not extract the rx__find engine body"; return 1; }
+    body "$WORKDIR/$name.sc" rx_search "$WORKDIR/$name.body" \
+        || { bad "$name: could not extract the rx_search engine body"; return 1; }
 }
 
 if gensc foldi 'aBc' -i && gensc foldx '[aA][bB][cC]'; then
@@ -374,8 +373,7 @@ if gen casehot 'Hello|World' -i; then
     else
         ok "OS-1: -i output contains no run-time case conversion at all"
     fi
-    # [FINDALL-NEXT] the entry's definition head, read from the artifact:
-    # the .body is now `rx__find`'s, behind the forwarder.
+    # the entry's definition head, read from the artifact
     if grep -q '^int rx_search(const unsigned char \*subject, size_t subject_length, size_t search_from, ptrdiff_t (\*capture_spans)\[2\])$' "$WORKDIR/casehot.c"; then
         ok "OS-1: -i leaves the entry-point signature unchanged (a singleton dimension is not in the signature)"
     else
@@ -426,7 +424,7 @@ if ! command -v "$CC" >/dev/null 2>&1; then
     bad "multi-engine: no C compiler ($CC) — this block cannot be skipped silently"
 elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
   && pcrec_run "$PCREC" -p rx -o - --pattern '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
-  && body "$WORKDIR/engb.c" rx__find "$WORKDIR/engb.body"; then
+  && body "$WORKDIR/engb.c" rx_search "$WORKDIR/engb.body"; then
     # rename engine B's entry point; every other symbol in the body is
     # function-local and deliberately left untouched
     {
@@ -442,12 +440,7 @@ elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev
         # here: no emitted identifier ENDS in `rx_search`, and `rx_search_in`
         # / `rx_search_run` are excluded by the `_`. VERIFIED byte-identical
         # to GNU `\b` semantics on this exact body before landing.
-        # [FINDALL-NEXT] I1: the body is `rx__find`'s, renamed and made an
-        # extern definition so it is the declared `rx_search_b`. Both heads
-        # occur: '^a|b' takes the DFA attempt route's `static noinline` one.
-        sed -e 's/^static inline __attribute__((always_inline)) int /int /' \
-            -e 's/^static __attribute__((noinline)) int /int /' \
-            -e 's/rx__find\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
+        sed 's/rx_search\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
     } >> "$WORKDIR/multi.c"
 
     if [ "$(grep -c '^#define PCREC_RX_ABI_H [0-9][0-9]*$' "$WORKDIR/multi.c")" -eq 1 ]; then
@@ -498,7 +491,7 @@ elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev
 
     # the control for every engine-scoped grep above
     if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.c"; then
-        if body "$WORKDIR/multi.c" rx__find "$WORKDIR/multi.a.body" \
+        if body "$WORKDIR/multi.c" rx_search "$WORKDIR/multi.a.body" \
         && body "$WORKDIR/multi.c" rx_search_b "$WORKDIR/multi.b.body"; then
             if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.a.body"; then
                 ok "OS-0b: scoped grep finds the skip table in the engine that has one"
@@ -569,12 +562,13 @@ if [ -f "$WORKDIR/dprx.h" ] && [ -f "$WORKDIR/dpqq.h" ]; then
         sed -e "s/^#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_abi\$/#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_old/" \
             -e "s/^#define PCREC_RX_ABI_H $k80_abi\$/#define PCREC_RX_ABI_H $k80_old/" \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/older.h"
-        # the pre-54 block: an EMPTY guard and no prelude (a later use of the
-        # macro as a VALUE -- rx_foreach_begin's abi test -- reads 0, since an
-        # empty expansion there is not C)
-        awk '/^#if defined\(PCREC_RX_ABI_H\)/ { skip = 3 } skip > 0 { skip--; next }
+        # the pre-54 block: an EMPTY guard and no prelude. The block's own C
+        # (not its directives) may read the guard's value (RX_FOREACH's abi
+        # check did, [FINDALL-NEXT] I2, before it was dropped, D175); the awk
+        # keeps such reads on the real abi rather than the empty guard.
+        awk -v abi="$k80_abi" '/^#if defined\(PCREC_RX_ABI_H\)/ { skip = 3 } skip > 0 { skip--; next }
              /^#define PCREC_RX_ABI_H [0-9]+$/ { print "#define PCREC_RX_ABI_H"; next }
-             !/^#/ { gsub(/PCREC_RX_ABI_H/, "0") } { print }' \
+             !/^#/ { gsub(/PCREC_RX_ABI_H/, abi) } { print }' \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/legacy.h"
         k80_rewrote=1
         grep -q "^#define PCREC_RX_ABI_H $k80_old\$" "$WORKDIR/k80/older.h" || k80_rewrote=0
@@ -956,7 +950,7 @@ elif pcrec_run "$PCREC" -p rx --no-captures -o - --pattern '(alpha|beta|gamma|de
     # itself: only a failed `body` extraction sets 999, and the grep's own
     # exit status is discarded (`|| true`) so k24_left is always exactly
     # one integer.
-    if body "$WORKDIR/k24_stripped.c" rx__find "$WORKDIR/k24_ctl.body" >/dev/null 2>&1; then
+    if body "$WORKDIR/k24_stripped.c" rx_search "$WORKDIR/k24_ctl.body" >/dev/null 2>&1; then
         k24_left=$(grep -cE 'rx_(forward|reverse)_(step|is_dead|accepts|accepts_class|row|view_live|view_take)\(' \
                         "$WORKDIR/k24_ctl.body" || true)
     else
@@ -1302,8 +1296,10 @@ calls_in_bodies() {
     awk -v want="$2" -v skipfn="${3:-$2}" '
         BEGIN { twin = want; sub(/_/, "__", twin); tskip = skipfn; sub(/_/, "__", tskip) }
         # the CALLERS (allowlisted below): main, and the iterator`s step,
-        # whose advance is the find-all caller protocol main also runs
-        function caller(f) { return f == "main" || f == "rx__step" }
+        # whose advance is the find-all caller protocol main also runs; and
+        # the retry`s guarded copy of the matcher, `rx__match_notempty`,
+        # which repeats the matcher`s sites by construction
+        function caller(f) { return f == "main" || f == "rx__step" || f == "rx__match_notempty" }
         # ---- token-level comment/literal stripping, state carried across
         # records (a /* ... */ region spans lines) ----
         function strip(s,   out, i, n, c2, c1, d) {
@@ -3701,11 +3697,14 @@ fi
 # while the stamp still reads "adaptive"), S372 (the two calibration rows
 # swapped) and S441 (row `anchored` deleted) are this block's sabotage rows.
 rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
-rs_body() {   # the search loop's body, and nothing past its closing brace
-    # [FINDALL-NEXT] I1: the loop `<prefix>_search_run` carried is
-    # `<prefix>__find`, which `_search_run` (range test + guard) and the
-    # iterator's step both call.
-    awk '/^static .*int rx__find\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+rs_body() {   # the search loop's body, and nothing past its closing brace: `rx__find`
+    # where `_search_run` has a caller-position prologue to split off (the
+    # utf8 witnesses), else `rx_search_run` itself
+    if grep -q '^static .*int rx__find(' "$1"; then
+        awk '/^static .*int rx__find\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+    else
+        awk '/^static .*int rx_search_run\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+    fi
 }
 rs_calls() { rs_body "$1" | grep -c 'rx_prefilter(subject'; }
 rs_ok=1

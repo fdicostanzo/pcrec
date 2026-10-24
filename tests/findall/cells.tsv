@@ -1377,9 +1377,8 @@ utf8	-fstartpos-guard=align	(a)|.?	a\x80a
 utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9\x80a
 # [FINDALL-NEXT] I4 (findall_iter_i2.md §5.1, §5.4): a give-up mid-batch after
 # >= 1 entry (S1311's witness, libpcre2 answers the rest), subjects with >= 63
-# matches (the seventh RX_FOREACH fill asks 64: Fcount's floor), and the
-# 3- and 10-group patterns the ASan cells build with -DRX_FOREACH_PAIRS=8
-# (kmax 2 for S1317; a refusal past the buffer).
+# matches, and the 3- and 10-group patterns the ASan cells run with
+# heap-exact buffers.
 byte	--step-budget=100 -fno-prefilter	(a+)+b	ab aab aaaaaaaaaaaac ab
 byte	--step-budget=100 -fno-prefilter	(a+)+b	ab aaaaaaaac ab ab
 byte	--step-budget=100 -fno-prefilter	(a+)+b	aaaaaaaaaaaac ab

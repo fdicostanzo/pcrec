@@ -18,17 +18,22 @@
 # arms (iter_drv.c's header); every token named in REACH_NEED must be reached
 # on at least one cell (K35: a sabotage row whose witness never meets its
 # condition is UNREACHED, findall_iter_i2.md §5.4), and the counts print.
-# A give-up is documented under -futf-check (an ill-formed subject) and under
-# --step-budget (the cells that end the iteration mid-batch, S1311's witness).
+# A give-up is documented per SUBJECT: under -futf-check only on a subject
+# iter_drv.c marks W=ill (ill-formed UTF-8), and under --step-budget only in
+# the (a+)+b groups (the cells that end the iteration mid-batch, S1311's
+# witness). A give-up on a well-formed subject of a -futf-check group fails.
+# SKIP is bounded: more than MAX_SKIP cells fails (default 0: MEASURED, the
+# suite's own SKIP count on 2026-10-23 is 0 of 3,873 cells, so any SKIP is a
+# cell that stopped reaching the oracle); a missing oracle exits 77 (the
+# runner reports a skipped section, never a pass).
 #
 # usage: run_iter_diff.sh [CELLS.tsv ...]   (default: cells.tsv beside this)
 #   cells: ENC<TAB>FLAGS<TAB>PATTERN<TAB>SUBJECT, the pattern as written, the
 #   subject in the .rxt subject-escape vocabulary (\t \n \r \\ \xNN); '#'
 #   lines are comments.
 # env: PCREC, CC, GENCFLAGS, PROCS (default 8), MIN_RETRY (default 25),
-#   MIN_GROUPS (default 20), ARMS (default "auto vm dfa"), KEEP=1,
-#   REACH_NEED (default: every I4 token but kmaxcap/frefused, which only an
-#   -DRX_FOREACH_PAIRS=8 build reaches)
+#   MIN_GROUPS (default 20), MAX_SKIP (default 0: cells libpcre2 refused),
+#   ARMS (default "auto vm dfa"), KEEP=1, REACH_NEED (default: every token)
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,7 +46,8 @@ PROCS="${PROCS:-8}"
 MIN_RETRY="${MIN_RETRY:-25}"
 MIN_GROUPS="${MIN_GROUPS:-20}"
 ARMS="${ARMS:-auto vm dfa}"
-REACH_NEED="${REACH_NEED:-n3m4 split gumid done63 vmcaps2 f1 f2 fstopend n0fresh n0bound n0ended fcount2 fcount63 fabi}"
+MAX_SKIP="${MAX_SKIP:-0}"
+REACH_NEED="${REACH_NEED:-n3m4 split gumid done63 vmcaps2 g1 g2 gn5 n0fresh n0bound n0ended vmretry dfaretry kretry stray bpoison}"
 KEEP="${KEEP:-0}"
 export WATCHDOG_SECTION="${WATCHDOG_SECTION:-findall}"
 # the oracle's flags, once (tests/lib/resolve_pcre2.sh: pkg-config, else a
@@ -74,10 +80,10 @@ if [ "${1:-}" = "--group" ]; then
         retry=0
         grep -q '_ITER_RETRY "none"' "$a/rx.c" || retry=1
         # the stamp against the text that does the retry (match_api.md
-        # §6.3.13): the VM accept guard, else a retry machine, else neither
+        # §6.3.13): the VM's guarded matcher, else a retry machine, else neither
         st="$(grep -o '_ITER_RETRY "[a-z-]*"' "$a/rx.c" | head -1 | cut -d'"' -f2)"
-        if grep -q 'run->notempty && scan_position' "$a/rx.c"; then want=vm-guard
-        elif grep -q '^static.*rx__retry(' "$a/rx.c"; then want=dfa-root
+        if grep -q 'rx__match_notempty(' "$a/rx.c"; then want=retry-budgeted
+        elif grep -q '^static.*rx__retry(' "$a/rx.c"; then want=retry
         else want=none; fi
         [ "$st" = "$want" ] || echo "STAMPBAD	$arm	$pat: ITER_RETRY is '$st', the text says '$want'"
         echo "STAMP	$arm	$st"
@@ -106,7 +112,7 @@ fi
 command -v "$CC" >/dev/null || { echo "FAIL: findall: no C compiler '$CC'" >&2; exit 1; }
 if [ "$PCRE2_AVAILABLE" != "1" ]; then
     echo "SKIP: findall: libpcre2-8 not resolvable (tests/lib/resolve_pcre2.sh); the iterator differential has no oracle" >&2
-    exit 0
+    exit 77
 fi
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-findall.XXXXXX")"
@@ -141,17 +147,22 @@ ngu="$(grep -c '^GIVEUP' "$WORKDIR/all.out")"
 nskip="$(grep -c '^SKIP' "$WORKDIR/all.out")"
 nill="$(grep -c "^ILLFORMED" "$WORKDIR/all.out")"
 nretry="$(grep -c '^RETRYCELL' "$WORKDIR/all.out")"
-nroot="$(grep -c '^STAMP	.*	dfa-root$' "$WORKDIR/all.out")"
-nguard="$(grep -c '^STAMP	.*	vm-guard$' "$WORKDIR/all.out")"
+nroot="$(grep -c '^STAMP	.*	retry$' "$WORKDIR/all.out")"
+nguard="$(grep -c '^STAMP	.*	retry-budgeted$' "$WORKDIR/all.out")"
 fail=0
 # both retry forms reached, or the stamp check reads one side of nothing
 [ "$nroot" -ge 1 ] && [ "$nguard" -ge 1 ] ||
-    { echo "FAIL: findall: $nroot dfa-root and $nguard vm-guard artifacts: a retry form is not reached" >&2; fail=1; }
+    { echo "FAIL: findall: $nroot retry and $nguard retry-budgeted artifacts: a retry form is not reached" >&2; fail=1; }
 while IFS= read -r l; do echo "FAIL: findall: $l" >&2; fail=1; done \
     < <(grep -E '^(DIFF|REFUSED|CCFAIL|RUNFAIL|STAMPBAD)' "$WORKDIR/all.out" | head -40)
-# a give-up is the documented difference only under -futf-check
+# a give-up is the documented difference per subject: an ill-formed one under
+# -futf-check (W=ill), or a cell of the (a+)+b step-budget groups
 while IFS= read -r l; do echo "FAIL: findall: undocumented give-up: $l" >&2; fail=1; done \
-    < <(grep '^GIVEUP' "$WORKDIR/all.out" | awk -F'\t' '$4 !~ /-futf-check|--step-budget/' | head -20)
+    < <(grep '^GIVEUP' "$WORKDIR/all.out" | awk -F'\t' '
+        ($4 ~ /-futf-check/ && $0 ~ /\tW=ill$/) { next }
+        ($4 ~ /--step-budget/ && $5 == "(a+)+b") { next }
+        { print }' | head -20)
+[ "$nskip" -le "$MAX_SKIP" ] || { echo "FAIL: findall: $nskip cells skipped (libpcre2 refused the pattern or subject), ceiling $MAX_SKIP" >&2; fail=1; }
 [ "$ngroups" -ge "$MIN_GROUPS" ] || { echo "FAIL: findall: $ngroups compiled groups, floor $MIN_GROUPS" >&2; fail=1; }
 [ "$nretry" -ge "$MIN_RETRY" ] || { echo "FAIL: findall: $nretry retry cells, floor $MIN_RETRY: the retry is not being exercised" >&2; fail=1; }
 echo "findall: groups=$ngroups ok=$nok giveup=$ngu skip=$nskip illformed=$nill retry-cells=$nretry dfa-root=$nroot vm-guard=$nguard"

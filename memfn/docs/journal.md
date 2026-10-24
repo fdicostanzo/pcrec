@@ -2626,3 +2626,247 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - end_back becomes a core position.
 - Frank on the failure shift: "not sure you determine when to use it". Job 581 tests a static predictor (predicted survival length from the default byte-rate) against measured wins.
 - **Frank, 2026-10-21: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands."** This is the BUILD GO for D172's unified window site, conditional on rev 2 passing its panel and main's agreement. hex8 is the kit's judgement call, and REPORT routing (B1) proceeds regardless of hex8.
+
+## 2026-10-22 — D172 build started; main's ownership conditions
+
+- Critics: rev 3.1 re-verification GO. Main agreed rev 3.1 plus seven notes, folded into rev 3.2 (b5603b3c0). Main filed R-29 (d44ddaaf3), Appendix A verbatim, with a ruling on the ReqRun.idx readers: one pcrec resolver function, and commit 6's sweep covers those stamps. Frank's conditional go now holds.
+- Named S3 losses, stated plainly to Frank and in R-29: hex8 throughput/dense 1.53x, hex8 search_short/dense 1.14x, file-ext search_short/none 1.03x, file-ext match/real 1.04x and match/none 1.07x.
+- Commit 1 (the kit family under `mf_preview("window-family")`) is building in lane wsc1.
+- R-28 (stack frames) is building in lane r28 under Frank's standing "keep busy" word, relayed by main. Its ids are S1430-S1439.
+- **Main's conditions for (A), where kit lanes write the pcrec-side commits 2, 4 and the pcrec half of 6. Every pcrec-side brief must carry them:**
+  1. pcrec-path edits (src/, cli/, lib/, docs/spec) go in commits that touch ONLY pcrec paths, separate from kit-path commits;
+  2. read docs/dev/coding_guide.md before editing src/;
+  3. what pcrec states is EXACTLY R-29's fact table. A builder that computes anything unlisted, or shapes a fact for a kit method, is a D157 breach and main bounces it;
+  4. main runs its own read-only review of the pcrec-side commits before the landing.
+  Abi and stamp events go through main's D94 reader-grep ritual at landing.
+
+## 2026-10-22 — D172 S2 commit 1 built (lane wsc1)
+
+- The window family is in `memfn/src/window.c`, reachable only under `mf_preview(art, "window-family")`. Facts appended to `mf_site` with no `MF_SITE_ABI` number move (commit 6 numbers it); fields.def's window fields classify only in the family's walks.
+- Phase 1 `mf_wdecide` (pure); phase 2 through Table E: E-func/E-stmt hand the plan, translated into today's row's site, to the composer's walk (so their text is today's rows'), E-generic is the family's floor (one hoisted core bound, the three-way edge guard).
+- `plan_cost.def` carries prefix_k's integers with provenance, box and basis; C_VERIFY and MAX_SET are UNMEASURED DEFAULT. D-hors is not built (S3).
+- G2's window family (`memfn/tests/run_g2_win.sh`) green; plants WSC1-P1..P8 all red (ids pending in S1400-S1429). proof_run gained read-limit layouts (review S2), witness WSC1-R1.
+- Finding F-1 for the next design revision: C-meet must not merge a PARKED alternative's R into its verify-YES positions unless the plan re-seeds. The rest (F-2..F-18) are in `docs/dev/lanes/wsc1_report.md` §5.
+- Heavy run `575-kit-wsc1-heavy` (emit_sweep plain vs 7050f8652, make test) queued.
+
+## 2026-10-22 — D172 S2 rulings on commit 1, commits 2 and 3 (lane wsc2)
+
+- Plant ids assigned: S1400-S1407 (wsc1's WSC1-P1..P8), S1408 (proof_run's over-read witness), S1409 (F-8). The F-8 ruling is built: R is identified by its shape and must be unique per alternative; `wf_check` refuses a second R-shaped span loudly.
+- Commit 2 (pcrec path): pcrec states R-29's facts beside the old fields at PF (both alternatives), the offset-skip block, MLINE (both callers), the VM hat and Z2's cover. The pre-check's FUNC parts are NOT stated: the kit refuses window facts on a site with no pred terms, and two parts are two candidate definitions. Asked; leaning: a per-part statement at commit 4.
+- Commit 3 (kit path): the trace shadow `wf_shadow` (MF_TRACE, lever `MF_WSHADOW`) and `memfn/tests/wshadow.py`. Full corpus reading, 7087 sites: reseed 0, pin 0, stop 35, plan/group 558, arm/text 45. The two classes are the bounded PF's `{1: any}` D11 position entering the family's plan (523 sites; 45 render pf_walk for pf_memchr), and an empty VM-hat start set read as A-empty (35 sites, text equal). `576-kit-wsc2-heavy` is owed (docs/dev/lanes/wsc2_report.md).
+
+## 2026-10-22 — D172 S2 commit 3: the shadow to zero (lane wsc3)
+
+- The kit manager's rulings applied. Ruling 1, C-bound: a full-set position is never a plan test, only the hoisted bound (plant S1410). Ruling 2: wshadow.py's declared equivalence table, row `never-yields` (empty VM-hat start set vs A-empty, text still compared). Ruling 3: window facts PER PART (`mf_pred.nalt`/`alts`/`wfloor`), decided per part, both parts stated by pcrec (69 two-part pre-check sites in the corpus). Ruling 4: pcrec states R as the walk-proven stretch only (counterexample `xy.*xy(?i:z)`; witness S1411 as a wshadow run). D-2: the DFA hat states T. D-5: the offset-skip block states its D11 bound.
+- Family rules generalized, keyed on facts: F0 is the first verify-YES span at 0; C-pin's clause 4 counts tests through the other spans; R's member and stretch keyed on R's verify (NO: exact run, as before; YES: cube-mass member, R whole). These move preview-only REPORT plans (literal span 0 pinned whole): S3's form question.
+- Full shadow: 0 on every column over 8157 sites (1070 parts) and G2. Finding: known.o lacked its memfn.h dependency (stale incremental object declined `cover`); fixed in the pcrec-path commit.
+- Heavy job `578-kit-wsc3-heavy` (emit_sweep ×4 vs 3cd809da1, make test) queued and owed (docs/dev/lanes/wsc3_report.md).
+
+## 2026-10-22 — D172 S2 commit 4: the two-phase ask under the lever (lane wsc4)
+
+- The lever is the harness option `--harness=window-reply` (build/pcrec-harness only): the art previews `"window-family"` at setup (phase 2: the family renders every site stating window facts), and pcrec asks phase 1 (`mf_wdecide`) over the DFA prefilter's statement. The offset rows' pick clauses read the reply through emit_dfa.c's declared map `next_keys[]`: run-pinned = C-pin and RE-SEED, offset-set = the RESEED alternative; RE-SEED reaching a non-re-seeding row is refused. Default path unchanged; the default flips at commit 5.
+- No kit change: the reply already carried alt, reseed, pinned, member/stretch and path.
+- Witness `tests/memfn/run_wreply.sh`: lever ON vs OFF identity (65 cases), reach through a perturbed statement (RESEED unstated; R under `-fno-run-prefilter`), plants S1412-S1414 red; `--sweep` is emit_sweep over the corpus with the lever binary, commit 5's rerun. Heavy job `579-kit-wsc4-heavy` owed (docs/dev/lanes/wsc4_report.md).
+
+## 2026-10-22 — D172 S2 commits 5 and 6: the flip, then the old path deleted (lane wsc5)
+
+- Commit 5: pcrec previews the window family on every art and NEXT reads the phase-1 reply by default; the old path behind the inverse harness lever `window-legacy` (and a kit-proof art). emit_sweep vs 3cd809da1: 0 movers on plain, `--arms start`, `-fno-run-prefilter`, `-fmemfn-simd`, `--engine=vm`. Derived mech set: REACH_ONLY 173 rows, 0 unreached; full 30 rows, 27 DETECTED + 3 EXPECTED. S281/S289 retired; successors S1415/S1416 (C-pin's clause 4 and identity in `c_pin`), DETECTED.
+- Commit 6 (kit): the family is every art's (window_route; the old path and the trace shadow `wf_shadow`/`wshadow.py` deleted; `mf_wdecide` on any art); the `"window-family"` preview step retired; finder row D2 retired with FF_RUN/SF_RUN_TERM (16 rows); `MF_SITE_ABI` 19 -> 20 (meaning only; no layout, MF_VOCAB or MF_CLASS_V move).
+- Commit 6 (pcrec): NEXT and the offset rows' candidate test read the reply only; `src/opt/prefix_k.c` deleted (its model is window.c's A-model/C-model); the run member's one resolver `req_run_member`; S187/S188 retired for S1417 (MARGIN never adopts) and S1418 (F0 stated as k0).
+- NOT done, rulings asked: R1 (which old fields leave `mf_site`: the translation and G2 still use plan_hint/rank_*/end_back/span_class/need), R2 (R's placement once the pin's selection retires), R3 (RPT/kit_report_exact: window_site.md §4 keeps them with R-26.6 until S3; Appendix A retires them at S2).
+- Heavy job `580-kit-wsc5-heavy` owed (docs/dev/lanes/wsc5_report.md §7).
+
+
+## 2026-10-22 — D172 S2 commit 6 completed: R1-R3 (lane wsc6)
+
+- R1: pcrec's window sites and FUNC parts state R-29's facts only (6-p3); the kit deleted W0-W2, the prefix facts, `absent`/`consumable`, `ctx`/`nctx` (and the generic row's context test), `read_floor` and `consumer` with their rules and gate fields (6-k4, 6-k5). `plan_hint`, `plan_pos`, `rank_*`, `end_back`, `span_class` BOUNDED/CONTEXT and `need` stay as the RENDERER INTERFACE (the translation's and G2's); `wf_check` refuses a window site or part stating any (`wf_old_fields`, plant S1419). `MF_SITE_ABI` 20's text records the layout move; no MF_VOCAB or MF_CLASS_V move. FILED: the interface as a kit-internal struct (trigger: the next G2 site-builder regeneration, or a renderer change).
+- R2: the FALLBACK. The general form retires the `run_pin` fact's selection, a facts-stream mover on every listing; filed with its kit rule (per-offset R-meet, mass, ties HIGHER) and trigger (a mover census, main's acceptance).
+- R3: RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` and R-26.6 stay until S3 (window_site.md notes). After R1 no old-field REPORT site exists that RPT cannot prove exactly: S1255/S1256 declared equivalent.
+- Checks moved: G2's `consumer` variant removed (its draw kept); proof_check/proof_run lose the retired facts; arm pins lose the W0-W2 cases (floor 89); test-memfn-rank asserts pcrec states no ranking. Light checks green after 6-p4 (6-p3 missed one `end_back` reader, the set FIND's storage point). Heavy job `582-kit-wsc6-heavy` owed (docs/dev/lanes/wsc6_report.md §7).
+
+
+## 2026-10-22 — D172 S2 commit 6, final fixes (lane wsc7)
+
+- Trace shadow: `pcrec_fact_span_stated` (non-pass) for C8 unless the harness routes the cover; the 6-p4 positional D11-bound read replaced by the define's own holdback; F-3 reworded. S293 retired for S1421; S1138 re-aimed (solo DETECTED both). Declared facts delta (span_facts used yes->no, facts_listing.md section 4.1 paragraph 2; main approved) and the one --list-limits row are checked both ways by emit_sweep. Light checks green. Heavy job `583-kit-wsc7-heavy` owed (docs/dev/lanes/wsc7_report.md section 5).
+
+## 2026-10-22 (morning) — D172 S2 commits 4-6 built; heavy 582 running
+
+- Commit 4 (wsc4, the two-phase ask under a lever): heavy 579 was RED on test-compound's G7 lever fence only, a test-layout fence. The cause: run_wreply.sh spelled `--harness=window-reply` outside the allowlist. It was fixed forward in 6-t1, and commits 4-5 are marked "red on G7 only" for bisect.
+- Commits 5-6 (wsc5, then wsc6):
+  - the family is the default;
+  - pcrec's planner (prefix_k.c) is deleted;
+  - NEXT and the stamps read the reply;
+  - one req_run_member resolver;
+  - the old fields are deleted or refused (R1); the renderer interface stays kit-only, and moving it to a kit-internal struct is FILED;
+  - R2 is the FALLBACK: the pin placement stays a stated fact, because the general form moves the `--emit-facts` stream on every artifact. The general form is FILED;
+  - R3: RPT stays until S3;
+  - MF_SITE_ABI is now 20.
+- Process lesson, re-learned: rulings sent by SendMessage to a BUSY lane were never read (wsc5, twice). Use the worktree rulings file. The memory `pcrec-rulings-file-in-worktree` is updated.
+- **Review note for main's landing review (FILED follow-up, not built):** 6-p4 (77927192f) reads the D11 bound back from pcrec's own statement BY POSITION: `alts[0].spans[0].len == 2` at emit_dfa.c:12812. It is correct today (byte-identical on the witnesses) but fragile against D172's unordered rule. Fix: pass pcrec's own holdback fact to pf_find_of instead. It is a small pcrec-path commit, validated by light checks plus an emit_sweep.
+- Also for main: F-3. PCREC_OFSK_MAX_SET's `--list-limits` description still names the deleted prefix_k.c. Rewording it moves the dumps stream, so it needs main's approval.
+
+## 2026-10-22 (close, on Frank's /close) — D172 S2 built and fixed; final heavy and probe timing queued
+
+- D172 S2's six commits are built across lanes wsc1-wsc6, and the final fixes are in wsc7 (lane/memfn-wsc7 @ 170c5fac6):
+  - the trace build now uses the non-pass `pcrec_fact_span_stated`;
+  - the bound comes from pcrec's own holdback fact;
+  - F-3's limits wording is changed;
+  - S293 → S1421; S1138 is re-aimed;
+  - emit_sweep gains `--facts-declared-moves` and `--dumps-declared-rows`.
+- Main APPROVED two declared listing deltas: span_facts `used` yes→no on about 3,356 patterns (facts_listing §4.1¶2), and the PCREC_OFSK_MAX_SET `--list-limits` row.
+- Heavy job 582 at wsc6 was RED: the facts-stream `used` flip, the trace shadow, and two stale plants. NO miscompile; all artifact streams read 0 movers. The re-run is **583-kit-wsc7-heavy, QUEUED**.
+- R-28: delivered (lane/memfn-r28 @ 4e49ed417). The painted stack for `a` went from 61,616 to 25,552 B. Main merges it after dd10.
+- Variant tag-floor bisect (job 577): the counts are identical from 9950aa672 through ce5aa67a8. The re-pin is main's.
+- Frank's hex8 ideas, a boundary pair (left context + S_0) and a core probe, plus random and utf8 classes: **job 584-kit-r27c-probe is QUEUED** (lane/memfn-r27c @ 8269bd171). Its differential stage is green.
+
+## 2026-10-22 (afternoon) — D172 S2: 583 red on one arm, fixed forward in wsc8
+
+- Job 583 (wsc7 @ 170c5fac6) was RED on sweep_arms only. The `-fcomments` arm moved 39-43 patterns per stream. Everything else was green: four sweeps, the other 45 arms, facts DECLARED MOVES 3,356, mech 155 rows with 0 unexpected, reach, wreply, and make test (that run was load-contaminated).
+- Cause (triage lane tri583, then the manager's own probe): wsc5 32f9b1781 made a FUNC part carry only `fn_ref` and its window. `req_site_note` still took `masked` from `p->term[0].mask`, which is now always NULL. So a masked run (e.g. `((?i:abc))`) printed the exact-bytes [OPT-REQPOS] note, and [K66] was likewise affected. Comment text only; no essential byte moved.
+- Fix: lane wsc8 @ 5fed19321. `req_note_run` reads masked off the req_run fact (window mask for test 0, whole-run mask for test 1).
+  - 48 of 48 compiles are identical to the ref binary with -fcomments (13 patterns, byte/utf8, auto/vm, two of them masked [K66]).
+  - 20 of 20 are identical to wsc7 without it.
+  - strict is clean.
+- Re-validation 585-kit-wsc8-heavy (build, strict, five sweeps, test-codegen; job script at 349f424d5) is to be queued AFTER main's 710-findbench-parity has run, at main's request.
+  - mech, reach, wreply and make test are carried from 583: the change is non-essential comment text only.
+
+## 2026-10-22 (late afternoon) — r27c reading (job 584, scalar layer)
+
+- Job 584 is GREEN: rows=3450, launches=5, differential 92 builds with 0 mismatches. The RESULT is in r27c_report.md §7 (lane r27cread) @ 8ac6fb066. The table, populations and raw rows are committed in r27c_evidence @ aa388977b.
+- PB/PBC do NOT close hex8 throughput/dense: 1.06/1.04 against COV, 1.39/1.36 against DEF. They win against COV on hex8 search_short only. They close cat throughput/dense.
+- PC loses on year4 (1.03-2.9 against PRO) and on hex8. It pays on cat and on foobar search_short.
+- Least-mass pick: 37/60. Mass prices hits, not loop cost, and all ten year4 rows are wrong.
+- The English prior is off by 20-100x on generated utf8.
+- HRS is the overall hex8 winner and catastrophic on the literal cells (up to 80x).
+- No arm passes R-27.1 everywhere. The reading goes to Frank: PB is not the hex8 answer; the selector needs a per-byte cost term beside mass.
+
+## 2026-10-22 (evening) — R-29 delivered
+
+- Job 585 (wsc8) was GREEN. Main had moved 97 commits (R-28 + langfix), with six conflicts, compose.c among them.
+- Lane wsmain merged main in at 1d83e8430. The merged tree failed R-28's 4 KB frame bar on D172's new window.c. Lane wsframe moved wf_dec to the heap and wf_legacy to the arena (aba15302e): 76/76 outputs identical, G2 window 6032/0.
+- Job 586 at a2d4d9738 vs main bf33d2dab is GREEN on every step, including make test (uncontaminated) and memfn-link. wreply is 0 failed.
+- lane/memfn-ws was fast-forwarded. done: R-29 is posted at 25ec6f665 and main is told.
+- Lesson: a lane that ENDS before a GO arrives misses it. A GO for a stopped lane goes to a fresh lane, and the old lane must be TaskStopped first so it cannot wake and race the new one in the same worktree.
+- Next: S3 (B1) after main merges. Frank's call is owed on the r27c reading (HRS for wide sets, plus a cost term in the selector).
+
+## 2026-10-22 (night) — S3 rulings
+
+- Lane s3 STOPPED at a design gap (s3_report.md @ 6f100c00f, nits commit f7bc3cf05). No row renders the routed REPORT form: legacy_ok declines context cover sites, and no row does find-then-verify.
+- Kit ruling Q1: a new Table E row `E-find` (the family's find-then-verify renderer), NOT keyed on REPORT. The table order is E-func, E-stmt (legacy), E-find, E-generic, so the movers are exactly REPORT plus D-hors. Its deny makes mf_ask refuse, so OFF = DEF.
+- Q3: two deny rows (window_site §5.2); memfn floor 12→14.
+- Main's ruling Q2: in the same abi commit go the .list re-index, RX_DFA_SCAN "cover", C17 → delegated, and the §6.1 readers found by grep. Flag bit 57 is NO (main files it under [IFACE-PUSH]).
+- Main's conditions: the spec hunks travel in the same commit; the --list-axes delta is a declared manifest; the movers are a predicted manifest named by id; OFF is byte-identical to main; abi 84 is PROVISIONAL (the I1+I2 iterators may take it).
+- Build lane s3b (opus) is briefed. The window_site rev 3.3 fold of E-find is OWED after the build.
+
+## 2026-10-23 (early) — S3 built; D6 review; fixes folded
+
+- Lane s3b built S3 as ONE commit, e1e95a584 (E-find, D-hors, wf-find/wf-hors, abi 83→84 provisional, retirements, C17 delegated). The light tier is green, and 828 of 2263 DFA artifacts now read cover.
+- Critic 1 (over-read, opus): NO bug. About 330 compiles under ASan+UBSan matched python re at every start. It found a latent uint8 sh[] wrap (assert it) and a no-op D-hors when max shift is 1 (decline it). It also proposed three unlocks (wider window, priced probe, non-REPORT sites) for ideas.md.
+- Critic 2 (contract): one abi reader was missed (match_api.md §1¶7, the guard sample still compares against 83). Other findings:
+  - 587 lacked SIMD-on and norun byte checks;
+  - no timing covers movers beyond 581's cells;
+  - the re-aimed sections had no default witness;
+  - the floors had ~10% slack.
+- Lane s3fix (opus) folds all of it into the ONE S3 commit. 588 gains a stratified mover sample, read as findings and not part of the §6 bar.
+- 587 waits for s3fix plus main's 598.
+
+## 2026-10-23 — Frank's ruling: D-hors decline withdrawn, measure E[sh]
+
+- Frank asked about the cost/benefit of review fix C ("D-hors declines when no shift exceeds 1"). He said the metric should be defined and measured.
+- The manager agreed that C was a byte move on an argument, with no measurement (D77). The defined metric is E[sh] = Σ rate[b]·sh[b], the expected shift under the byte-rate prior, read as the wf-hors alpha (D-hors vs D-one) at both layers. "max sh = 1" is only the degenerate case E[sh] = 1.
+- Ruling (Frank: "Agree"):
+  - C is OUT of the S3 commit; B's asserts stay.
+  - 588 gains a D-hors admission reading stratified by E[sh]. These are findings, outside the §6 bar.
+  - The admission rule (one declared row priced on E[sh], with HORS_MIN) is decided from that reading.
+- Lane s3hors is doing it. The K27 both-arms fixture (F-5) also ships as a test-only commit.
+
+## 2026-10-23 — Frank: public names must not expose internal modules
+
+- Frank: "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." The flag is unbuilt; main files it under [IFACE-PUSH]. A responses notice is posted with suggestions (PCREC_NO_DIRECT_REPORT / PCREC_NO_WINDOW_REPORT).
+- Asked Frank whether the same lens covers the `--memfn=no-*` deny spellings and the spec's "memfn kit" wording.
+- Frank's follow-up: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." It is a naming guide for NEW caller-facing names and spec prose; existing --memfn= names stay. Applied to S3's new spec prose at delivery.
+
+## 2026-10-23 — S3 fix C withdrawn, 587 queued
+
+- s3hors: the S3 commit is d3886a656 (window.c = e1e95a584 + B's asserts). It also delivered the K27 both-arms fixture (ee0d4488d) and 588's E[sh] reading, 12 sites with E[sh] 1.000..6.009 (86b9afa69). The light tier is green.
+- F-8, the manager's own mistake: my hand edit of run_codegen_tests.sh wrote back only the head of the file (1,751 of 3,836 lines). The lane rebuilt it.
+  - Lesson: a scripted edit must assert that the line count moved only by the intended delta before writing. I did that for the next two edits.
+- D174 applied: the match_api cover prose is worded by behaviour (92432b552).
+- 587's dry-run (the 108-row mech validation, ~90 s) exceeded boxqueue's 30 s bound, so it now runs as the job's first step (ba6ebf720). 587 is QUEUED. 588's slot is to be asked of main after 587 is green.
+
+## 2026-10-23 (night) — job 600's reds fixed; 604 queued
+
+- Job 600 (S3 heavy) was RED in 5 of 13 steps, with NO answer change. Triage tri600 found moved witnesses, floors and manifests (S3 routes fixed-width patterns to cover), plus 32 mech rows that no longer reached.
+- My R1 ("cover stamps the wrong DFA_TABLE") was WRONG. A cover artifact carries the anchored machine (rx_match, "unwrapped"), so the stamp is true; the gap was run_premul_table.sh's missing cover marker. I withdrew R1 on the lane's evidence.
+- Lane s3red: the S3 commit is now 7e1caad08 (+ a no-byte spec clarification §6.3.4¶8/¶9). Follow-up 34ee758a1:
+  - 32 SAB_REACH rows re-aimed to no-wf-find;
+  - 10 sections green when rerun;
+  - DIFFER_PINS at their measured values, with armcause.py showing every leaver is cover;
+  - a census class for utf8 cover facts.
+- Findings on main (since S2, measured at c3ea619c3): S284's claim expired (now DETECTED), and S283's plant moves nothing (UNDETECTED). Sent to main.
+- 604-kit-s3-heavy is queued after main's iterland 602/603. The iterators will likely take abi 84, so S3 renumbers to 85 at landing.
+
+## 2026-10-23 (morning) — S3 timing 605: bar passes, mover sample shows a regression
+
+- 604 (S3 heavy) is GREEN. 605 (S3 timing) is GREEN as a run; BAR FAIL on one cell only, foobar match/real 1.032.
+  - That cell is a layout effect: rx_match is instruction-identical and only moved (rx_search shrank).
+  - All 5 caps are inside.
+  - Scalar: 41 faster, 26 within, 5 slower; best wins 0.17 and 0.24.
+- The mover sample (24 rows, outside the bar) is SLOWER on 40 of 122 cells: WALK/one 39 of 46, up to 29x on `(?i)x/1234`, 7.4x on `(?i)foobar`.
+  - Cause, from a manager probe: E-find's B knows only memchr (one byte) or a byte walk. A two-member caseless stop {B,b} walks byte by byte, where DEF hands off with two memchr streams.
+  - 581's bar cells had no caseless literal, so the bar missed it.
+- E[sh]: D-hors is slower at E ≈ 1 (1.7-2.7x) and faster from about 1.2 (down to 0.24). max(sh) does not predict it. E[sh] is supported; the cut-off is not fixed.
+- Leaning put to Frank:
+  - S3 does not land as is;
+  - E-find's B takes the kit's full FIND form set (the two-stream find included);
+  - the stratified sample becomes part of the gate;
+  - foobar match/real becomes a named layout cap;
+  - E[sh] admission waits.
+- Awaiting his go. Report: s3_report.md Part 6 (3f81ed7c3, a017fe98a).
+
+## 2026-10-23 (afternoon) — first blinded CODE critic round on S3; C1 build briefed
+
+- At Frank's request, four read-only critics reviewed 7e1caad08 + 34ee758a1, BLINDED to the 605 finding: cc-design (opus), cc-perf (opus, emitted vs replaced), cc-quality (sonnet) and cc-tests (sonnet).
+- The find-form gap was caught by cc-perf (loops and asm, plus the SIMD loss hidden by the 39→33 floor re-pin) and by cc-design (§2.2's PAIR row unreachable), and partly by cc-tests. cc-quality missed it.
+- The review is docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md (C1-C17, with lessons for the skill), and main has it. Main started docs/dev/guide/ (lane "guide") at Frank's ask: coding, architecture, style, critics, plus addenda/kit.md (mine).
+- Lane s3c1 (opus) is briefed: E-find asks Table B the design's question and renders its pick (PAIR/SIMD included). It also covers Table D as a kit_table and C9/C11/C13/C14/C15/C2. The window_site rev 3.3 draft is included.
+  - C5/C6/C8/C12/C16 are out of scope.
+  - The sample joins the bar, and foobar match/real gets a layout cap of 1.052.
+
+## 2026-10-23 (evening) — stop-ranking study ruled, Q1-Q6
+
+- Study: lane/memfn-stopstudy 0567def22, docs/design/memfn/stop_ranking_study.md. It found 7 of 20 surveyed choosers answer one question, "which stop, found how".
+- Frank's rulings (full text in responses.md):
+  - **Q1 yes:** one priced choice in Table A over position × method, with Table B quoting prices. Costs live in ONE visible table (the measurement set, via --list-measurements, relative to the walk, raw readings as provenance, stamped per artifact). An option changes a cost only through a visible key or row.
+  - **Q2 yes:** D-hors becomes a priced method; HORS_MIN is deleted.
+  - **Q3 yes:** this box is measured now (memchr, pair, probe, verify cards → zen4-grid1 rev 2, night, after the census). The canned self-contained script, closest-match library, other-machine targeting and generic envelope go into [MEASURE-SET], updated by main at 2ed772381.
+  - **Standing rule:** a new method adds its measurement card.
+  - **Q4 REVISED to:** one decider for presence and stop; the window's span array also carries UNBOUNDED-offset spans (presence-only); the fold is a general rule.
+  - **Q5:** higher-resolution fixed-point integers, not depending on compiler options; within-noise prices are ties.
+  - **Q6:** filed (the pair row for any two bytes).
+- OWED: a study rev 2 folding the rulings (the Q4 revision especially), then the step-0 census after C1 merges.
+
+## 2026-10-23 (late) — PAIR widened in S3; kit sabotage range
+
+- Frank: "Widen two pair s3 now". Lane s3r2fix delivered lane/memfn-s3pair @ 457bd231a (S3 commit bc675b020):
+  - PAIR serves any two-byte window stop at or past the candidate, plus the r2 review fixes.
+  - Light tier green; 40/40 movers as predicted; OFF identical.
+  - Its ASan differential, census and axes measure are queued behind 606.
+- Main reserved the kit's sabotage-id range **S1540-S1559** (S1540 = the new PAIR plant); main's lanes stay below S1540.
+- The critic skill was renamed pcrec-critic: one opus coordinator per round, results as files, framework notes in docs/dev/meta/coordinator_framework.md.
+- 2026-10-23 evening: the iterators LANDED on main (b8c66a739) and took **abi 84**, so S3 renumbers to **85** at its landing (merge main into the S3 branch, then the grep ritual). Frank's full-suite battery (D177) runs from the box queue until about 08:00 2026-10-24: no timing until then (588 waits for main's word), and heavy correctness queues behind it.
+
+## 2026-10-23 (close, at Frank's /close) — S3 built with PAIR; checks trailing; stop-ranking ruled
+
+- **S3 state:** lane/memfn-s3pair @ 36422a84e (S3 commit bc675b020, abi 84 provisional → must become **85**: the iterators took 84 on main).
+  - The C1 fix and the PAIR widening are in, plus the r2 review fixes.
+  - Answers are clean: diff_r2 7,200 cases, 0 bad. Codegen 16/16, wreply 112/0, G2 10,042/0, plants 18/18.
+- **Trailing checks** (606 at the C1 tip and the s3pair census; NO answer change):
+  - the census twin rule (165 + 19 rows);
+  - test-cpset-structure's stale `(?i)HeLLo` EMITTED_BYTES pin;
+  - test-encoding-checks: cover_pick's reader, the K50 list, and 4 byte/utf8 identity pairs to prove.
+  - Lane s3pins went idle with partial edits, committed as UNVERIFIED WIP 36422a84e: the census rule and cover_pick only. The pin, K50 and identity proof are NOT done, and no section was rerun. Stopped at close.
+- **Reviews:** 2026-10-23-r1 (blinded, 4 critics) and r2 (the code-critic skill's first use). The skill is now pcrec-critic (one coordinator).
+- **Stop-ranking:** Q1-Q6 and truncation ruled (D176, [MEASURE-SET], [MEMFN-UNBOUNDED-SPANS]/[MEMFN-PAIRSTOP]/[MEMFN-PAIRSIMD]).
+- **Box:** Frank's full-suite battery holds it until ~08:00 2026-10-24; no timing until main says.
+- **Kit sabotage range:** S1540-S1559.

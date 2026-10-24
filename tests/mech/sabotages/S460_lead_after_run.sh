@@ -23,13 +23,13 @@ SAB_BEFORE='    if (gate >= 0) {
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
     }
-    for (int i = 0; i < nrun; i++) {
+    for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
         if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
-        ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
+        p[np++].fn_ref = (uint32_t)i + 1;
     }'
 SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after */
         if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
-        ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
+        p[np++].fn_ref = (uint32_t)i + 1;
     }
     if (gate >= 0) {
         if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
@@ -40,3 +40,7 @@ SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after *
 # RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): the gate block gained
 # the byte landmark's `ret_pred` line (inert where a run ships, `nrun > 0`);
 # both texts carry it unchanged. Intent unchanged: the lead after the run.
+# RE-AIMED 2026-10-22 (D172 S2 commit 6, lane wsc6): a FUNC part states its
+# name and window facts only (`p[np++].fn_ref`, R1: pcrec's ofs_pred_of
+# retired); the order of the parts in the description is unchanged, and the
+# plant still puts the lead after the run. Intent unchanged.

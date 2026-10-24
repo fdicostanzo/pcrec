@@ -1,7 +1,7 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 19 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 20 (20: D172 S2 commit 6, lanes wsc5 and wsc6: a site stating alternatives is the window family's on every art, `mf_wdecide` on any art, the `"window-family"` preview step retired, finder row D2 out of the listing; THE OLD FIELDS RETIRE (wsc6, the kit manager's R1): W0-W2 (`window_stated`/`move_back`/`overshoot`, `MF_MOVE_UNBOUNDED`/`MF_OVER_UNBOUNDED`), the prefix facts (`prefix_stated`/`exact_len`/`consumable_len`, `mf_prefix`), `absent`/`consumable` (`mf_absent`, `mf_consumable`), `mf_site.consumer` (`mf_consumer`), `read_floor` (`mf_read_floor`) and `ctx`/`nctx` (`MF_MAX_CTX`) DELETED with their site_check rules and gate fields, a layout move; `plan_hint`, `plan_pos`, `rank_*`, `end_back`, `span_class` BOUNDED/CONTEXT and `need` STAY as THE RENDERER INTERFACE, written only by the family's translation (window.c `translate`) and by G2, never by a host: a window site (or a pre-check FUNC part) stating any of them is REFUSED; no MF_VOCAB or MF_CLASS_V move; 3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
   `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a);
   6: M4 prep, R-7: a reads-below FIND's range bounded by its reads
   (Q-R7-1, at `MF_OP_FIND`), `MF_EMPTY_AT_N` (Q-R7-2) and `on_miss`'s
@@ -40,6 +40,8 @@
   `member` hook is OPAQUE there (pasted parenthesized), and the comment names
   R4h's frozen target render (tests/memfn/pins/r4h_target/, lane advtarget)
   and, since M6 prep, the strided render (tests/memfn/pins/m6_target/).
+
+D172 S2 commit 1 (lane wsc1) appended, with NO `MF_SITE_ABI` number move (the number moves at commit 6, when the old fields retire): THE WINDOW SITE's facts `mf_wspan` (start, len, verify `mf_verify`, core `mf_core` + core_lo/core_len, per-position sets and table offers), `mf_walt` (entry `mf_entry`, spans), `mf_site.nalt`/`alts`/`wfloor` (`mf_wfloor`), the bounds `MF_WSPAN_POS`, `MF_WMAX_SPAN`, `MF_WMAX_ALT`, `MF_WREACH`, `MF_WPLAN_MAX`, the phase-1 reply `mf_wreply` and its entry `mf_wdecide`, and the preview step `"window-family"`; all read only on an art previewing it until S2 commit 6 (lane wsc5), which made the family every art's, deleted the old path and retired the step. Lane wsc3 (commit 3's rulings) appended `mf_pred.nalt`/`alts`/`wfloor`: a pre-check FUNC part's OWN window facts (window facts per part), refused on any other predicate; `mf_wreply`'s member and stretch are keyed on R's verify (NO: the exact run around the least-mass exact position; YES: the least-mass position by cube mass, R whole).
 
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a

@@ -14,5 +14,5 @@ SAB_DESC='the STEP no longer stops past the end, so after an empty match at n a 
 SAB_DOC_FIGURE='Owed: lane i2build queued this row (docs/dev/lanes/i2build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1321.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        "    if (lo > n) { *at = lo; return 0; }   /* an empty match at n ended it */\n", p, runp, runt);'
-SAB_AFTER='        "    /* SABOTAGE S1321 */\n", p, runp, runt);'
+SAB_BEFORE='        "    if (lo > n) { *at = lo; return 0; }\n",'
+SAB_AFTER='        "    /* SABOTAGE S1321 */\n",'

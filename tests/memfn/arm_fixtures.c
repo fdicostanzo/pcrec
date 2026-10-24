@@ -55,19 +55,14 @@
 
 #include "memfn.h"
 
-/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
- * and today's window IS its candidate: window_stated 1, move_back the least
- * term offset (d_min), overshoot 0, as pcrec's builders state it. Applied at
- * the kit call, so every fixture keeps its description; a site with no
- * terms, or that states a window itself, is passed unchanged. The window
- * cases (seq_case) call the kit on the site as written. */
 /* MF_SITE_ABI 18 (R-26.1/R-26.2): a forward FIND's predicate STATES its class
- * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_stated,
- * pcrec_memfn_context_stop): a context stop (every term below the candidate)
- * is CONTEXT, absent FAILS, consumable NO, with the site's read_floor
- * SUBJECT; every other one is span 0, BOUNDED with its prefix facts stated
- * as today's truth (exact_len 0). A site that states a class itself is
- * passed unchanged. */
+ * (the renderer interface since MF_SITE_ABI 20, as the window family's
+ * translation writes it): a context stop (every term below the candidate) is
+ * CONTEXT; every other one is span 0, BOUNDED. Applied at the kit call, so
+ * every fixture keeps its description; a site with no terms, or that states
+ * a class itself, is passed unchanged. (The window facts W0-W2 and R-26's
+ * prefix and context facts this once stated left the site at D172 S2
+ * commit 6.) */
 static void fx_span0(mf_site *w)
 {
     if (w->op != MF_OP_FIND || w->reverse || !w->pred.nterm || w->pred.span_class) return;
@@ -76,29 +71,13 @@ static void fx_span0(mf_site *w)
         const mf_term *t = &w->pred.term[i];
         if (t->offset + (t->kind == MF_T_RUN ? (int32_t)t->run_len : 1) > 0) below = 0;
     }
-    if (below) {
-        w->pred.span_class = MF_SPAN_CONTEXT;
-        w->pred.absent = MF_ABSENT_FAILS;
-        w->pred.consumable = MF_CONSUMABLE_NO;
-        if (!w->read_floor) w->read_floor = MF_FLOOR_SUBJECT;
-    } else {
-        w->pred.span_class = MF_SPAN_BOUNDED;
-        w->pred.prefix_stated = MF_PREFIX_STATED;
-    }
+    w->pred.span_class = below ? MF_SPAN_CONTEXT : MF_SPAN_BOUNDED;
 }
 
 static mf_site fx_win(const mf_site *s)
 {
     mf_site w = *s;
     fx_span0(&w);
-    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
-        int32_t d = w.pred.term[0].offset;
-        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
-            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
-        w.pred.window_stated = 1;
-        w.pred.move_back = d;
-        w.pred.overshoot = 0;
-    }
     return w;
 }
 #define FXW(s) (&(struct { mf_site v; }){ fx_win(s) }.v)
@@ -251,7 +230,6 @@ static mf_site base_site(void)
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
     s.empty = MF_EMPTY_MISS;
-    s.consumer = MF_C_ENGINE;
     s.policy = MF_P_PORTABLE_ONLY;
     s.pred.need = MF_REQUIRED;  /* MF_SITE_ABI 13: stated (0 is refused where read) */
     s.body = MF_BODY_ONESHOT;   /* MF_SITE_ABI 14: stated (0 is refused where read) */
@@ -914,14 +892,13 @@ static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
 
 /* The R17-a cases: the PF walk site as pcrec's set rows define it (a table
  * FIND offering its declaration point, W4, with a stem, W5), through the
- * protocol define -> locals -> use(s) -> end, then each refusal; and the
- * window rules over FIND, SKIP and reverse sites. */
+ * protocol define -> locals -> use(s) -> end, then each refusal. (The window
+ * rules W0-W2 left with their fields at D172 S2 commit 6.) */
 static void seq_cases(void)
 {
     mf_site w = pf_site(0, 1);
     t_set(&w.pred.term[0], 0, "xyz", 1);
     w.pred.term[0].need = MF_REQUIRED;
-    w.pred.window_stated = 1;
     w.decl_point = 1;
     w.pred.fn_ref = 1;
     Fx f = { &w, "rx_search_pf", "    " };
@@ -946,34 +923,6 @@ static void seq_cases(void)
     mf_site d2 = w;
     d2.decl_point = 2;
     seq_case("decl-point-2", &d2, &h, &h, &h, "LUE");
-    mf_site w0 = nd;
-    w0.pred.window_stated = 0;
-    seq_case("window-unstated", &w0, &h, &h, &h, "UE");               /* S849 */
-    mf_site wb = nd;
-    wb.pred.move_back = -1;
-    seq_case("window-back-negative", &wb, &h, &h, &h, "UE");
-    mf_site wp = nd;
-    wp.pred.move_back = 1;
-    seq_case("window-back-positive", &wp, &h, &h, &h, "UE");
-    mf_site wu = nd;
-    wu.pred.move_back = MF_MOVE_UNBOUNDED;
-    seq_case("window-back-unbounded", &wu, &h, &h, &h, "UE");
-    mf_site wo = nd;
-    wo.pred.overshoot = 1;
-    seq_case("window-overshoot", &wo, &h, &h, &h, "UE");
-    mf_site w2 = nd;
-    w2.pred.window_stated = 2;
-    seq_case("window-stated-2", &w2, &h, &h, &h, "UE");
-    mf_site wr = nd;
-    wr.reverse = 1;
-    seq_case("window-reverse", &wr, &h, &h, &h, "UE");
-    mf_site ws = adv_site(0, MF_SPAN_UNBOUNDED);
-    ws.pred.window_stated = 1;
-    mf_hooks vh = adv_hooks((AdvH){ "pos < n", "subject[pos]", "pos++;", NULL, 0 }, &f);
-    seq_case("window-on-skip", &ws, &vh, &vh, &vh, "UE");
-    mf_site wz = adv_site(0, MF_SPAN_UNBOUNDED);
-    wz.pred.move_back = 3;
-    seq_case("window-unstated-move-back", &wz, &vh, &vh, &vh, "UE");
 }
 
 /* The define and use hooks render_h passes, with `miss`, `floor` and `s`
@@ -1465,7 +1414,7 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         s->site_kind = MF_SK_DFA_ATTEMPT;
     }
     /* R-26.6: a REPORT site, two REQUIRED one-byte terms ("xy" at 0), as
-       R-26.3 states one (consumer RESULT, span 0 BOUNDED via fx_win) */
+       R-26.3 states one (span 0 BOUNDED via fx_win) */
     else if (!strcmp(name, "report2")) {
         *s = pf_site(0, 0);
         t_byte(&s->pred.term[0], 0, 'x');
@@ -1477,7 +1426,6 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         s->on_miss_leaves = 1;
         s->body = MF_BODY_ONESHOT;
         s->site_kind = MF_SK_REPORT;
-        s->consumer = MF_C_RESULT;
     }
     else if (!strcmp(name, "run3")) {
         *s = pf_site(0, 0);

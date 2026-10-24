@@ -72,11 +72,11 @@ static bool nstate_same(const NState *a, const NState *b)
 /* True iff entry `e` was built from exactly these inputs (see THE KEY). */
 static bool entry_matches(const DfaMemoEnt *e, const Ctx *cx, const Nfa *nfa,
                           bool prune, bool reverse, int maxstates, int root,
-                          bool optional, bool d_notempty)
+                          bool optional, bool notempty)
 {
     if (e->nn != nfa->n || e->root != root || e->maxstates != maxstates ||
         e->prune != prune || e->reverse != reverse || e->optional != optional ||
-        e->notempty != d_notempty ||
+        e->notempty != notempty ||
         e->encoding != cx->opt->encoding || e->engine != cx->opt->engine ||
         e->max_subset_elems != cx->opt->max_subset_elems ||
         e->max_auto_dfa_elems != cx->opt->max_auto_dfa_elems ||

@@ -6,14 +6,13 @@
 # predicate of every PRE/OFS site pcrec hands the kit prints one `RANK` line
 # on stderr, with the ranking it carries) and runs rank_check.py over the
 # corpus's distinct patterns plus named witnesses at three arms (byte,
-# `-e utf8`, `--engine=vm`): a RUN-scanning predicate's ranking must list
-# every position of the run as a brute force orders and rates them (each
-# position's cube mass under the compile's byte-rate, ascending, ties to the
-# higher offset), any other predicate must carry rank_n 0, and on the PRE
-# site the scanned position must be rank_pos[0]. K35 floors literal in the
-# checker.
-# What it does NOT see: a predicate built outside pcrec_memfn_define; any
-# reader of the ranking (none exists yet).
+# `-e utf8`, `--engine=vm`): since D172 S2 commit 6 (lane wsc6, the kit
+# manager's R1) every predicate must carry rank_n 0 and name no RUN term,
+# because the ranking is the kit's renderer interface (the window family's
+# translation writes it) and pcrec states none; N4's door rides the same
+# probe. K35 floors literal in the checker.
+# What it does NOT see: a predicate built outside pcrec_memfn_define; the
+# kit's own ranking (the translation's), which G2 drives.
 #
 # Usage: bash tests/memfn/run_rank.sh [TREE] [--every N]
 # Env:   CC (the probe build's compiler), RANK_PROBE_BIN (skip the build).

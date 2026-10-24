@@ -9,6 +9,12 @@ PANEL OUTCOME / "REVISION n" / "§R" block before any section.
 
 ## Standing questions every design note answers (Frank, 2026-10-05)
 
+**Every design note opens with GOALS** (Frank, 2026-10-23): 3-5 goals, each
+with who benefits and a measurable form (comparison + margin), a priority
+order for conflicts, and non-goals. Rule and example:
+`docs/dev/guide/architecture.md`. Not retroactive: a note gains the section
+at its next revision.
+
 A design that introduces a MEASURED quantity, a CHECK or a DATA file answers
 each of these in its own short section. First say whether the question is
 RELEVANT; if not, say why in one line.
@@ -106,3 +112,4 @@ Modules (design notes with `*_measurements/` siblings)
 - `APPROACH.md`, `docs/dev/decisions.md` (D-ids cited per note), `docs/dev/plan.md` rows, `docs/dev/reviews/` (panel files), `docs/dev/lanes/` (lane reports), `docs/spec/` (the contract, D80), `docs/dev/learnings.md` §3, `memfn/CLAUDE.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__design.md
+- `findall_iter_i2.md` (+ r1 panel) — [FINDALL-NEXT] I4 `_next_n` and `RX_FOREACH` design; entry text in NOTES.md.

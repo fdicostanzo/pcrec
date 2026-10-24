@@ -156,9 +156,11 @@ norm() { sed -e 's/arm_b_textual/ARM/g; s/arm_b_emitter/ARM/g; s/arm_a/ARM/g' \
 # [FINDALL-NEXT] I1: the iterator's STEP (`<prefix>__step`, `__step_own`) is
 # always_inline at every rung -- the entry shape dials the search entry
 # chain, not `<prefix>_next` -- so its heads keep the attribute here; and so
-# does I4's one body `<prefix>__one`, for the same reason.
+# does I4's one body `<prefix>__one` (and lane iteropt2's `<prefix>__one_call`),
+# for the same reason.
 sed -e '/^static inline __attribute__((always_inline)) int rx__step/b' \
     -e '/^static inline __attribute__((always_inline)) int rx__one(/b' \
+    -e '/^static inline __attribute__((always_inline)) int rx__one_call(/b' \
     -e 's/inline __attribute__((always_inline)) //' "$A" > "$Bsed"
 [ -f "${A%.c}.h" ] && cp "${A%.c}.h" "${Bsed%.c}.h"
 if ! diff -q <(norm "$Bsed") <(norm "$Bemit") >/dev/null; then

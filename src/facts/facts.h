@@ -504,6 +504,11 @@ const ReqRun  *pcrec_fact_req_whole_run_stated(Ctx *cx);
  * trace build's `used` column is the default build's. */
 const ReqRun  *pcrec_fact_req_run_stated(Ctx *cx);
 int            pcrec_fact_req_byte_stated(Ctx *cx);
+/* The same non-pass read of `run_pin`, for the window statement's run R
+ * (D172 S2 commit 2, src/gen/emit_dfa.c `pf_window_of`): R's offsets are
+ * stated beside the old fields and read by no pass before commit 4, so
+ * `used` stays today's. Its reader owes the kind gate, as the pass read's. */
+const RunPin  *pcrec_fact_run_pin_stated(Ctx *cx);
 /* E2 derived: the window's `maxoff` where a run shipped, -1 where none
  * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
 long long      pcrec_fact_req_run_maxoff(Ctx *cx);
@@ -520,6 +525,11 @@ const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
 const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
+/* The same non-pass read of `span`, for the trace build's cover shadow
+ * (`locate_cover_applies` -> `pcrec_cover` -> C8): a check, not a pass, so
+ * the trace build's `used` column is the default build's. The harness-routed
+ * cover decision keeps the pass ask (`cc_exact`). */
+const MkLang   *pcrec_fact_span_stated(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *
@@ -545,6 +555,14 @@ void pcrec_facts_force_failed(Ctx *cx);
  * one call. `pcrec_fact_render` reads the memo only and asks nothing: it is
  * the listing's, which must never change what the passes asked. */
 const char *pcrec_fact_stamp(Ctx *cx, PfFactId f);
+/* D172 S2 commit 6 (window_site.md §3.4): the `req_run` and `req_byte`
+ * stamps' text with the run's MEMBER `member` (a window position), the one
+ * the memfn kit's window family's reply names, asked as `pcrec_fact_stamp`
+ * asks: `req_run`'s `@idx`, and `req_byte`'s run byte where that position is
+ * exact (else the set's pick, the fact's own). The listing keeps the fact's
+ * own index, the run window's statement (`req_run.idx`). */
+const char *pcrec_fact_stamp_req_run(Ctx *cx, int member);
+const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member);
 const char *pcrec_fact_render(Ctx *cx, PfFactId f);
 
 #endif /* PCREC_FACTS_H */

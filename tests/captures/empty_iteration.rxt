@@ -1,0 +1,1298 @@
+# tests/captures/empty_iteration.rxt -- K128: the empty-iteration rule at an
+# unbounded repeat's LAST MANDATORY iteration (docs/dev/known_issues.md K128).
+# Written by gen_empty_iteration.py, whose header says what each row guards;
+# every expectation is libpcre2's, span and groups, at every start position.
+# A block python3 `re` disagrees with anywhere is `# pcre2-only` (U21). Each
+# block is written on the default route and under `engine vm`.
+
+# pcre2-only
+# iterd27 F4: iteration 1 = () is empty, so no iteration 2; the retreat into iteration 1 takes `a` and group 1 is never set
+pattern (?:()|a)+?b
+features all
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "bab" 0 1
+g 1 0 0
+ms 1 "bab" 1 3
+g 1 -1 -1
+ms 2 "bab" 2 3
+g 1 2 2
+ns 3 "bab"
+
+# pcre2-only
+# iterd27 F4: iteration 1 = () is empty, so no iteration 2; the retreat into iteration 1 takes `a` and group 1 is never set [engine vm]
+pattern (?:()|a)+?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "bab" 0 1
+g 1 0 0
+ms 1 "bab" 1 3
+g 1 -1 -1
+ms 2 "bab" 2 3
+g 1 2 2
+ns 3 "bab"
+
+# pcre2-only
+# the same loop inside a capture: group 1 is the loop, group 2 unset
+pattern ((?:()|a)+?)b
+features all
+ms 0 "ab" 0 2
+g 1 0 1
+g 2 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+g 2 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 2
+g 2 -1 -1
+ms 1 "aab" 1 3
+g 1 1 2
+g 2 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+g 2 2 2
+ns 3 "aab"
+
+# pcre2-only
+# the same loop inside a capture: group 1 is the loop, group 2 unset [engine vm]
+pattern ((?:()|a)+?)b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 0 1
+g 2 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+g 2 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 2
+g 2 -1 -1
+ms 1 "aab" 1 3
+g 1 1 2
+g 2 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+g 2 2 2
+ns 3 "aab"
+
+# pcre2-only
+# nested: each outer iteration's inner loop restarts the rule
+pattern (?:(?:()|a)+?b)+
+features all
+ms 0 "abab" 0 4
+g 1 -1 -1
+ms 1 "abab" 1 4
+g 1 1 1
+ms 2 "abab" 2 4
+g 1 -1 -1
+ms 3 "abab" 3 4
+g 1 3 3
+ns 4 "abab"
+ms 0 "abb" 0 3
+g 1 2 2
+ms 1 "abb" 1 3
+g 1 2 2
+ms 2 "abb" 2 3
+g 1 2 2
+ns 3 "abb"
+ms 0 "bab" 0 3
+g 1 0 0
+ms 1 "bab" 1 3
+g 1 -1 -1
+ms 2 "bab" 2 3
+g 1 2 2
+ns 3 "bab"
+
+# pcre2-only
+# nested: each outer iteration's inner loop restarts the rule [engine vm]
+pattern (?:(?:()|a)+?b)+
+features all
+engine vm
+ms 0 "abab" 0 4
+g 1 -1 -1
+ms 1 "abab" 1 4
+g 1 1 1
+ms 2 "abab" 2 4
+g 1 -1 -1
+ms 3 "abab" 3 4
+g 1 3 3
+ns 4 "abab"
+ms 0 "abb" 0 3
+g 1 2 2
+ms 1 "abb" 1 3
+g 1 2 2
+ms 2 "abb" 2 3
+g 1 2 2
+ns 3 "abb"
+ms 0 "bab" 0 3
+g 1 0 0
+ms 1 "bab" 1 3
+g 1 -1 -1
+ms 2 "bab" 2 3
+g 1 2 2
+ns 3 "bab"
+
+# pcre2-only
+# the empty branch second: reached only when `a` fails
+pattern (?:a|()|b)+?c
+features all
+ms 0 "abc" 0 3
+g 1 -1 -1
+ms 1 "abc" 1 3
+g 1 -1 -1
+ms 2 "abc" 2 3
+g 1 2 2
+ns 3 "abc"
+ms 0 "bc" 0 2
+g 1 -1 -1
+ms 1 "bc" 1 2
+g 1 1 1
+ns 2 "bc"
+ms 0 "c" 0 1
+g 1 0 0
+ns 1 "c"
+ms 0 "bbc" 0 3
+g 1 -1 -1
+ms 1 "bbc" 1 3
+g 1 -1 -1
+ms 2 "bbc" 2 3
+g 1 2 2
+ns 3 "bbc"
+
+# pcre2-only
+# the empty branch second: reached only when `a` fails [engine vm]
+pattern (?:a|()|b)+?c
+features all
+engine vm
+ms 0 "abc" 0 3
+g 1 -1 -1
+ms 1 "abc" 1 3
+g 1 -1 -1
+ms 2 "abc" 2 3
+g 1 2 2
+ns 3 "abc"
+ms 0 "bc" 0 2
+g 1 -1 -1
+ms 1 "bc" 1 2
+g 1 1 1
+ns 2 "bc"
+ms 0 "c" 0 1
+g 1 0 0
+ns 1 "c"
+ms 0 "bbc" 0 3
+g 1 -1 -1
+ms 1 "bbc" 1 3
+g 1 -1 -1
+ms 2 "bbc" 2 3
+g 1 2 2
+ns 3 "bbc"
+
+# pcre2-only
+# three branches, two of them consuming
+pattern (?:()|ab|a)+?b
+features all
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "abb" 0 3
+g 1 -1 -1
+ms 1 "abb" 1 2
+g 1 1 1
+ms 2 "abb" 2 3
+g 1 2 2
+ns 3 "abb"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# pcre2-only
+# three branches, two of them consuming [engine vm]
+pattern (?:()|ab|a)+?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "abb" 0 3
+g 1 -1 -1
+ms 1 "abb" 1 2
+g 1 1 1
+ms 2 "abb" 2 3
+g 1 2 2
+ns 3 "abb"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# {2,}: copy 1 is a plain copy, NOT under the rule; copy 2 is the loop's first
+pattern (?:()|a){2,}?b
+features all
+ms 0 "ab" 0 2
+g 1 0 0
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 0
+ms 1 "aab" 1 3
+g 1 1 1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "aaab" 0 4
+g 1 0 0
+ms 1 "aaab" 1 4
+g 1 1 1
+ms 2 "aaab" 2 4
+g 1 2 2
+ms 3 "aaab" 3 4
+g 1 3 3
+ns 4 "aaab"
+
+# {2,}: copy 1 is a plain copy, NOT under the rule; copy 2 is the loop's first [engine vm]
+pattern (?:()|a){2,}?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 0 0
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 0
+ms 1 "aab" 1 3
+g 1 1 1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "aaab" 0 4
+g 1 0 0
+ms 1 "aaab" 1 4
+g 1 1 1
+ms 2 "aaab" 2 4
+g 1 2 2
+ms 3 "aaab" 3 4
+g 1 3 3
+ns 4 "aaab"
+
+# pcre2-only
+# {2,} where copy 1 consumes and copy 2, iteration m, is the empty one
+pattern (?:a|()|b){2,}?c
+features all
+ms 0 "abc" 0 3
+g 1 -1 -1
+ms 1 "abc" 1 3
+g 1 1 1
+ms 2 "abc" 2 3
+g 1 2 2
+ns 3 "abc"
+ms 0 "aabc" 0 4
+g 1 -1 -1
+ms 1 "aabc" 1 4
+g 1 -1 -1
+ms 2 "aabc" 2 4
+g 1 2 2
+ms 3 "aabc" 3 4
+g 1 3 3
+ns 4 "aabc"
+ms 0 "bc" 0 2
+g 1 0 0
+ms 1 "bc" 1 2
+g 1 1 1
+ns 2 "bc"
+ms 0 "abbc" 0 4
+g 1 -1 -1
+ms 1 "abbc" 1 4
+g 1 1 1
+ms 2 "abbc" 2 4
+g 1 2 2
+ms 3 "abbc" 3 4
+g 1 3 3
+ns 4 "abbc"
+
+# pcre2-only
+# {2,} where copy 1 consumes and copy 2, iteration m, is the empty one [engine vm]
+pattern (?:a|()|b){2,}?c
+features all
+engine vm
+ms 0 "abc" 0 3
+g 1 -1 -1
+ms 1 "abc" 1 3
+g 1 1 1
+ms 2 "abc" 2 3
+g 1 2 2
+ns 3 "abc"
+ms 0 "aabc" 0 4
+g 1 -1 -1
+ms 1 "aabc" 1 4
+g 1 -1 -1
+ms 2 "aabc" 2 4
+g 1 2 2
+ms 3 "aabc" 3 4
+g 1 3 3
+ns 4 "aabc"
+ms 0 "bc" 0 2
+g 1 0 0
+ms 1 "bc" 1 2
+g 1 1 1
+ns 2 "bc"
+ms 0 "abbc" 0 4
+g 1 -1 -1
+ms 1 "abbc" 1 4
+g 1 1 1
+ms 2 "abbc" 2 4
+g 1 2 2
+ms 3 "abbc" 3 4
+g 1 3 3
+ns 4 "abbc"
+
+# pcre2-only
+# the counter rung, no residue at K = 8: the last trip's last copy is iteration m
+pattern (?:a|()|b){8,}?c
+features all
+ms 0 "aaaaaaabc" 0 9
+g 1 -1 -1
+ms 1 "aaaaaaabc" 1 9
+g 1 7 7
+ms 2 "aaaaaaabc" 2 9
+g 1 7 7
+ms 3 "aaaaaaabc" 3 9
+g 1 7 7
+ms 4 "aaaaaaabc" 4 9
+g 1 7 7
+ms 5 "aaaaaaabc" 5 9
+g 1 7 7
+ms 6 "aaaaaaabc" 6 9
+g 1 7 7
+ms 7 "aaaaaaabc" 7 9
+g 1 7 7
+ms 8 "aaaaaaabc" 8 9
+g 1 8 8
+ns 9 "aaaaaaabc"
+ms 0 "aaaaaaaabc" 0 10
+g 1 -1 -1
+ms 1 "aaaaaaaabc" 1 10
+g 1 -1 -1
+ms 2 "aaaaaaaabc" 2 10
+g 1 8 8
+ms 3 "aaaaaaaabc" 3 10
+g 1 8 8
+ms 4 "aaaaaaaabc" 4 10
+g 1 8 8
+ms 5 "aaaaaaaabc" 5 10
+g 1 8 8
+ms 6 "aaaaaaaabc" 6 10
+g 1 8 8
+ms 7 "aaaaaaaabc" 7 10
+g 1 8 8
+ms 8 "aaaaaaaabc" 8 10
+g 1 8 8
+ms 9 "aaaaaaaabc" 9 10
+g 1 9 9
+ns 10 "aaaaaaaabc"
+ms 0 "aaaaaaac" 0 8
+g 1 7 7
+ms 1 "aaaaaaac" 1 8
+g 1 7 7
+ms 2 "aaaaaaac" 2 8
+g 1 7 7
+ms 3 "aaaaaaac" 3 8
+g 1 7 7
+ms 4 "aaaaaaac" 4 8
+g 1 7 7
+ms 5 "aaaaaaac" 5 8
+g 1 7 7
+ms 6 "aaaaaaac" 6 8
+g 1 7 7
+ms 7 "aaaaaaac" 7 8
+g 1 7 7
+ns 8 "aaaaaaac"
+
+# pcre2-only
+# the counter rung, no residue at K = 8: the last trip's last copy is iteration m [engine vm]
+pattern (?:a|()|b){8,}?c
+features all
+engine vm
+ms 0 "aaaaaaabc" 0 9
+g 1 -1 -1
+ms 1 "aaaaaaabc" 1 9
+g 1 7 7
+ms 2 "aaaaaaabc" 2 9
+g 1 7 7
+ms 3 "aaaaaaabc" 3 9
+g 1 7 7
+ms 4 "aaaaaaabc" 4 9
+g 1 7 7
+ms 5 "aaaaaaabc" 5 9
+g 1 7 7
+ms 6 "aaaaaaabc" 6 9
+g 1 7 7
+ms 7 "aaaaaaabc" 7 9
+g 1 7 7
+ms 8 "aaaaaaabc" 8 9
+g 1 8 8
+ns 9 "aaaaaaabc"
+ms 0 "aaaaaaaabc" 0 10
+g 1 -1 -1
+ms 1 "aaaaaaaabc" 1 10
+g 1 -1 -1
+ms 2 "aaaaaaaabc" 2 10
+g 1 8 8
+ms 3 "aaaaaaaabc" 3 10
+g 1 8 8
+ms 4 "aaaaaaaabc" 4 10
+g 1 8 8
+ms 5 "aaaaaaaabc" 5 10
+g 1 8 8
+ms 6 "aaaaaaaabc" 6 10
+g 1 8 8
+ms 7 "aaaaaaaabc" 7 10
+g 1 8 8
+ms 8 "aaaaaaaabc" 8 10
+g 1 8 8
+ms 9 "aaaaaaaabc" 9 10
+g 1 9 9
+ns 10 "aaaaaaaabc"
+ms 0 "aaaaaaac" 0 8
+g 1 7 7
+ms 1 "aaaaaaac" 1 8
+g 1 7 7
+ms 2 "aaaaaaac" 2 8
+g 1 7 7
+ms 3 "aaaaaaac" 3 8
+g 1 7 7
+ms 4 "aaaaaaac" 4 8
+g 1 7 7
+ms 5 "aaaaaaac" 5 8
+g 1 7 7
+ms 6 "aaaaaaac" 6 8
+g 1 7 7
+ms 7 "aaaaaaac" 7 8
+g 1 7 7
+ns 8 "aaaaaaac"
+
+# pcre2-only
+# the counter rung, two trips, no residue
+pattern (?:a|()|b){16,}?c
+features all
+ms 0 "aaaaaaaaaaaaaaabc" 0 17
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaabc" 1 17
+g 1 15 15
+ms 2 "aaaaaaaaaaaaaaabc" 2 17
+g 1 15 15
+ms 3 "aaaaaaaaaaaaaaabc" 3 17
+g 1 15 15
+ms 4 "aaaaaaaaaaaaaaabc" 4 17
+g 1 15 15
+ms 5 "aaaaaaaaaaaaaaabc" 5 17
+g 1 15 15
+ms 6 "aaaaaaaaaaaaaaabc" 6 17
+g 1 15 15
+ms 7 "aaaaaaaaaaaaaaabc" 7 17
+g 1 15 15
+ms 8 "aaaaaaaaaaaaaaabc" 8 17
+g 1 15 15
+ms 9 "aaaaaaaaaaaaaaabc" 9 17
+g 1 15 15
+ms 10 "aaaaaaaaaaaaaaabc" 10 17
+g 1 15 15
+ms 11 "aaaaaaaaaaaaaaabc" 11 17
+g 1 15 15
+ms 12 "aaaaaaaaaaaaaaabc" 12 17
+g 1 15 15
+ms 13 "aaaaaaaaaaaaaaabc" 13 17
+g 1 15 15
+ms 14 "aaaaaaaaaaaaaaabc" 14 17
+g 1 15 15
+ms 15 "aaaaaaaaaaaaaaabc" 15 17
+g 1 15 15
+ms 16 "aaaaaaaaaaaaaaabc" 16 17
+g 1 16 16
+ns 17 "aaaaaaaaaaaaaaabc"
+ms 0 "aaaaaaaaaaaaaaaabc" 0 18
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaabc" 1 18
+g 1 -1 -1
+ms 2 "aaaaaaaaaaaaaaaabc" 2 18
+g 1 16 16
+ms 3 "aaaaaaaaaaaaaaaabc" 3 18
+g 1 16 16
+ms 4 "aaaaaaaaaaaaaaaabc" 4 18
+g 1 16 16
+ms 5 "aaaaaaaaaaaaaaaabc" 5 18
+g 1 16 16
+ms 6 "aaaaaaaaaaaaaaaabc" 6 18
+g 1 16 16
+ms 7 "aaaaaaaaaaaaaaaabc" 7 18
+g 1 16 16
+ms 8 "aaaaaaaaaaaaaaaabc" 8 18
+g 1 16 16
+ms 9 "aaaaaaaaaaaaaaaabc" 9 18
+g 1 16 16
+ms 10 "aaaaaaaaaaaaaaaabc" 10 18
+g 1 16 16
+ms 11 "aaaaaaaaaaaaaaaabc" 11 18
+g 1 16 16
+ms 12 "aaaaaaaaaaaaaaaabc" 12 18
+g 1 16 16
+ms 13 "aaaaaaaaaaaaaaaabc" 13 18
+g 1 16 16
+ms 14 "aaaaaaaaaaaaaaaabc" 14 18
+g 1 16 16
+ms 15 "aaaaaaaaaaaaaaaabc" 15 18
+g 1 16 16
+ms 16 "aaaaaaaaaaaaaaaabc" 16 18
+g 1 16 16
+ms 17 "aaaaaaaaaaaaaaaabc" 17 18
+g 1 17 17
+ns 18 "aaaaaaaaaaaaaaaabc"
+
+# pcre2-only
+# the counter rung, two trips, no residue [engine vm]
+pattern (?:a|()|b){16,}?c
+features all
+engine vm
+ms 0 "aaaaaaaaaaaaaaabc" 0 17
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaabc" 1 17
+g 1 15 15
+ms 2 "aaaaaaaaaaaaaaabc" 2 17
+g 1 15 15
+ms 3 "aaaaaaaaaaaaaaabc" 3 17
+g 1 15 15
+ms 4 "aaaaaaaaaaaaaaabc" 4 17
+g 1 15 15
+ms 5 "aaaaaaaaaaaaaaabc" 5 17
+g 1 15 15
+ms 6 "aaaaaaaaaaaaaaabc" 6 17
+g 1 15 15
+ms 7 "aaaaaaaaaaaaaaabc" 7 17
+g 1 15 15
+ms 8 "aaaaaaaaaaaaaaabc" 8 17
+g 1 15 15
+ms 9 "aaaaaaaaaaaaaaabc" 9 17
+g 1 15 15
+ms 10 "aaaaaaaaaaaaaaabc" 10 17
+g 1 15 15
+ms 11 "aaaaaaaaaaaaaaabc" 11 17
+g 1 15 15
+ms 12 "aaaaaaaaaaaaaaabc" 12 17
+g 1 15 15
+ms 13 "aaaaaaaaaaaaaaabc" 13 17
+g 1 15 15
+ms 14 "aaaaaaaaaaaaaaabc" 14 17
+g 1 15 15
+ms 15 "aaaaaaaaaaaaaaabc" 15 17
+g 1 15 15
+ms 16 "aaaaaaaaaaaaaaabc" 16 17
+g 1 16 16
+ns 17 "aaaaaaaaaaaaaaabc"
+ms 0 "aaaaaaaaaaaaaaaabc" 0 18
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaabc" 1 18
+g 1 -1 -1
+ms 2 "aaaaaaaaaaaaaaaabc" 2 18
+g 1 16 16
+ms 3 "aaaaaaaaaaaaaaaabc" 3 18
+g 1 16 16
+ms 4 "aaaaaaaaaaaaaaaabc" 4 18
+g 1 16 16
+ms 5 "aaaaaaaaaaaaaaaabc" 5 18
+g 1 16 16
+ms 6 "aaaaaaaaaaaaaaaabc" 6 18
+g 1 16 16
+ms 7 "aaaaaaaaaaaaaaaabc" 7 18
+g 1 16 16
+ms 8 "aaaaaaaaaaaaaaaabc" 8 18
+g 1 16 16
+ms 9 "aaaaaaaaaaaaaaaabc" 9 18
+g 1 16 16
+ms 10 "aaaaaaaaaaaaaaaabc" 10 18
+g 1 16 16
+ms 11 "aaaaaaaaaaaaaaaabc" 11 18
+g 1 16 16
+ms 12 "aaaaaaaaaaaaaaaabc" 12 18
+g 1 16 16
+ms 13 "aaaaaaaaaaaaaaaabc" 13 18
+g 1 16 16
+ms 14 "aaaaaaaaaaaaaaaabc" 14 18
+g 1 16 16
+ms 15 "aaaaaaaaaaaaaaaabc" 15 18
+g 1 16 16
+ms 16 "aaaaaaaaaaaaaaaabc" 16 18
+g 1 16 16
+ms 17 "aaaaaaaaaaaaaaaabc" 17 18
+g 1 17 17
+ns 18 "aaaaaaaaaaaaaaaabc"
+
+# pcre2-only
+# the counter rung with a residue: the residue's last copy is iteration m
+pattern (?:a|()|b){17,}?c
+features all
+ms 0 "aaaaaaaaaaaaaaaabc" 0 18
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaabc" 1 18
+g 1 16 16
+ms 2 "aaaaaaaaaaaaaaaabc" 2 18
+g 1 16 16
+ms 3 "aaaaaaaaaaaaaaaabc" 3 18
+g 1 16 16
+ms 4 "aaaaaaaaaaaaaaaabc" 4 18
+g 1 16 16
+ms 5 "aaaaaaaaaaaaaaaabc" 5 18
+g 1 16 16
+ms 6 "aaaaaaaaaaaaaaaabc" 6 18
+g 1 16 16
+ms 7 "aaaaaaaaaaaaaaaabc" 7 18
+g 1 16 16
+ms 8 "aaaaaaaaaaaaaaaabc" 8 18
+g 1 16 16
+ms 9 "aaaaaaaaaaaaaaaabc" 9 18
+g 1 16 16
+ms 10 "aaaaaaaaaaaaaaaabc" 10 18
+g 1 16 16
+ms 11 "aaaaaaaaaaaaaaaabc" 11 18
+g 1 16 16
+ms 12 "aaaaaaaaaaaaaaaabc" 12 18
+g 1 16 16
+ms 13 "aaaaaaaaaaaaaaaabc" 13 18
+g 1 16 16
+ms 14 "aaaaaaaaaaaaaaaabc" 14 18
+g 1 16 16
+ms 15 "aaaaaaaaaaaaaaaabc" 15 18
+g 1 16 16
+ms 16 "aaaaaaaaaaaaaaaabc" 16 18
+g 1 16 16
+ms 17 "aaaaaaaaaaaaaaaabc" 17 18
+g 1 17 17
+ns 18 "aaaaaaaaaaaaaaaabc"
+ms 0 "aaaaaaaaaaaaaaaaabc" 0 19
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaaabc" 1 19
+g 1 -1 -1
+ms 2 "aaaaaaaaaaaaaaaaabc" 2 19
+g 1 17 17
+ms 3 "aaaaaaaaaaaaaaaaabc" 3 19
+g 1 17 17
+ms 4 "aaaaaaaaaaaaaaaaabc" 4 19
+g 1 17 17
+ms 5 "aaaaaaaaaaaaaaaaabc" 5 19
+g 1 17 17
+ms 6 "aaaaaaaaaaaaaaaaabc" 6 19
+g 1 17 17
+ms 7 "aaaaaaaaaaaaaaaaabc" 7 19
+g 1 17 17
+ms 8 "aaaaaaaaaaaaaaaaabc" 8 19
+g 1 17 17
+ms 9 "aaaaaaaaaaaaaaaaabc" 9 19
+g 1 17 17
+ms 10 "aaaaaaaaaaaaaaaaabc" 10 19
+g 1 17 17
+ms 11 "aaaaaaaaaaaaaaaaabc" 11 19
+g 1 17 17
+ms 12 "aaaaaaaaaaaaaaaaabc" 12 19
+g 1 17 17
+ms 13 "aaaaaaaaaaaaaaaaabc" 13 19
+g 1 17 17
+ms 14 "aaaaaaaaaaaaaaaaabc" 14 19
+g 1 17 17
+ms 15 "aaaaaaaaaaaaaaaaabc" 15 19
+g 1 17 17
+ms 16 "aaaaaaaaaaaaaaaaabc" 16 19
+g 1 17 17
+ms 17 "aaaaaaaaaaaaaaaaabc" 17 19
+g 1 17 17
+ms 18 "aaaaaaaaaaaaaaaaabc" 18 19
+g 1 18 18
+ns 19 "aaaaaaaaaaaaaaaaabc"
+
+# pcre2-only
+# the counter rung with a residue: the residue's last copy is iteration m [engine vm]
+pattern (?:a|()|b){17,}?c
+features all
+engine vm
+ms 0 "aaaaaaaaaaaaaaaabc" 0 18
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaabc" 1 18
+g 1 16 16
+ms 2 "aaaaaaaaaaaaaaaabc" 2 18
+g 1 16 16
+ms 3 "aaaaaaaaaaaaaaaabc" 3 18
+g 1 16 16
+ms 4 "aaaaaaaaaaaaaaaabc" 4 18
+g 1 16 16
+ms 5 "aaaaaaaaaaaaaaaabc" 5 18
+g 1 16 16
+ms 6 "aaaaaaaaaaaaaaaabc" 6 18
+g 1 16 16
+ms 7 "aaaaaaaaaaaaaaaabc" 7 18
+g 1 16 16
+ms 8 "aaaaaaaaaaaaaaaabc" 8 18
+g 1 16 16
+ms 9 "aaaaaaaaaaaaaaaabc" 9 18
+g 1 16 16
+ms 10 "aaaaaaaaaaaaaaaabc" 10 18
+g 1 16 16
+ms 11 "aaaaaaaaaaaaaaaabc" 11 18
+g 1 16 16
+ms 12 "aaaaaaaaaaaaaaaabc" 12 18
+g 1 16 16
+ms 13 "aaaaaaaaaaaaaaaabc" 13 18
+g 1 16 16
+ms 14 "aaaaaaaaaaaaaaaabc" 14 18
+g 1 16 16
+ms 15 "aaaaaaaaaaaaaaaabc" 15 18
+g 1 16 16
+ms 16 "aaaaaaaaaaaaaaaabc" 16 18
+g 1 16 16
+ms 17 "aaaaaaaaaaaaaaaabc" 17 18
+g 1 17 17
+ns 18 "aaaaaaaaaaaaaaaabc"
+ms 0 "aaaaaaaaaaaaaaaaabc" 0 19
+g 1 -1 -1
+ms 1 "aaaaaaaaaaaaaaaaabc" 1 19
+g 1 -1 -1
+ms 2 "aaaaaaaaaaaaaaaaabc" 2 19
+g 1 17 17
+ms 3 "aaaaaaaaaaaaaaaaabc" 3 19
+g 1 17 17
+ms 4 "aaaaaaaaaaaaaaaaabc" 4 19
+g 1 17 17
+ms 5 "aaaaaaaaaaaaaaaaabc" 5 19
+g 1 17 17
+ms 6 "aaaaaaaaaaaaaaaaabc" 6 19
+g 1 17 17
+ms 7 "aaaaaaaaaaaaaaaaabc" 7 19
+g 1 17 17
+ms 8 "aaaaaaaaaaaaaaaaabc" 8 19
+g 1 17 17
+ms 9 "aaaaaaaaaaaaaaaaabc" 9 19
+g 1 17 17
+ms 10 "aaaaaaaaaaaaaaaaabc" 10 19
+g 1 17 17
+ms 11 "aaaaaaaaaaaaaaaaabc" 11 19
+g 1 17 17
+ms 12 "aaaaaaaaaaaaaaaaabc" 12 19
+g 1 17 17
+ms 13 "aaaaaaaaaaaaaaaaabc" 13 19
+g 1 17 17
+ms 14 "aaaaaaaaaaaaaaaaabc" 14 19
+g 1 17 17
+ms 15 "aaaaaaaaaaaaaaaaabc" 15 19
+g 1 17 17
+ms 16 "aaaaaaaaaaaaaaaaabc" 16 19
+g 1 17 17
+ms 17 "aaaaaaaaaaaaaaaaabc" 17 19
+g 1 17 17
+ms 18 "aaaaaaaaaaaaaaaaabc" 18 19
+g 1 18 18
+ns 19 "aaaaaaaaaaaaaaaaabc"
+
+# the counter rung, greedy (control)
+pattern (?:a|()|b){9,}c
+features all
+ms 0 "aaaaaaaabc" 0 10
+g 1 9 9
+ms 1 "aaaaaaaabc" 1 10
+g 1 9 9
+ms 2 "aaaaaaaabc" 2 10
+g 1 9 9
+ms 3 "aaaaaaaabc" 3 10
+g 1 9 9
+ms 4 "aaaaaaaabc" 4 10
+g 1 9 9
+ms 5 "aaaaaaaabc" 5 10
+g 1 9 9
+ms 6 "aaaaaaaabc" 6 10
+g 1 9 9
+ms 7 "aaaaaaaabc" 7 10
+g 1 9 9
+ms 8 "aaaaaaaabc" 8 10
+g 1 9 9
+ms 9 "aaaaaaaabc" 9 10
+g 1 9 9
+ns 10 "aaaaaaaabc"
+ms 0 "aaaaaaaaac" 0 10
+g 1 9 9
+ms 1 "aaaaaaaaac" 1 10
+g 1 9 9
+ms 2 "aaaaaaaaac" 2 10
+g 1 9 9
+ms 3 "aaaaaaaaac" 3 10
+g 1 9 9
+ms 4 "aaaaaaaaac" 4 10
+g 1 9 9
+ms 5 "aaaaaaaaac" 5 10
+g 1 9 9
+ms 6 "aaaaaaaaac" 6 10
+g 1 9 9
+ms 7 "aaaaaaaaac" 7 10
+g 1 9 9
+ms 8 "aaaaaaaaac" 8 10
+g 1 9 9
+ms 9 "aaaaaaaaac" 9 10
+g 1 9 9
+ns 10 "aaaaaaaaac"
+
+# the counter rung, greedy (control) [engine vm]
+pattern (?:a|()|b){9,}c
+features all
+engine vm
+ms 0 "aaaaaaaabc" 0 10
+g 1 9 9
+ms 1 "aaaaaaaabc" 1 10
+g 1 9 9
+ms 2 "aaaaaaaabc" 2 10
+g 1 9 9
+ms 3 "aaaaaaaabc" 3 10
+g 1 9 9
+ms 4 "aaaaaaaabc" 4 10
+g 1 9 9
+ms 5 "aaaaaaaabc" 5 10
+g 1 9 9
+ms 6 "aaaaaaaabc" 6 10
+g 1 9 9
+ms 7 "aaaaaaaabc" 7 10
+g 1 9 9
+ms 8 "aaaaaaaabc" 8 10
+g 1 9 9
+ms 9 "aaaaaaaabc" 9 10
+g 1 9 9
+ns 10 "aaaaaaaabc"
+ms 0 "aaaaaaaaac" 0 10
+g 1 9 9
+ms 1 "aaaaaaaaac" 1 10
+g 1 9 9
+ms 2 "aaaaaaaaac" 2 10
+g 1 9 9
+ms 3 "aaaaaaaaac" 3 10
+g 1 9 9
+ms 4 "aaaaaaaaac" 4 10
+g 1 9 9
+ms 5 "aaaaaaaaac" 5 10
+g 1 9 9
+ms 6 "aaaaaaaaac" 6 10
+g 1 9 9
+ms 7 "aaaaaaaaac" 7 10
+g 1 9 9
+ms 8 "aaaaaaaaac" 8 10
+g 1 9 9
+ms 9 "aaaaaaaaac" 9 10
+g 1 9 9
+ns 10 "aaaaaaaaac"
+
+# pcre2-only
+# a zero-width continuation
+pattern (?:()|a)+?$
+features all
+ms 0 "aa" 0 2
+g 1 -1 -1
+ms 1 "aa" 1 2
+g 1 -1 -1
+ms 2 "aa" 2 2
+g 1 2 2
+ms 0 "a" 0 1
+g 1 -1 -1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "" 0 0
+g 1 0 0
+
+# pcre2-only
+# a zero-width continuation [engine vm]
+pattern (?:()|a)+?$
+features all
+engine vm
+ms 0 "aa" 0 2
+g 1 -1 -1
+ms 1 "aa" 1 2
+g 1 -1 -1
+ms 2 "aa" 2 2
+g 1 2 2
+ms 0 "a" 0 1
+g 1 -1 -1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "" 0 0
+g 1 0 0
+
+# pcre2-only
+# a backreference reads the group: unset fails, set-empty matches empty
+pattern (?:()|a)+?\1b
+features all
+ms 0 "ab" 0 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 2 2
+ms 1 "aab" 1 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+
+# pcre2-only
+# a backreference reads the group: unset fails, set-empty matches empty [engine vm]
+pattern (?:()|a)+?\1b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 2 2
+ms 1 "aab" 1 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+
+# pcre2-only
+# the empty branch is a lookahead that captures
+pattern (?:(?=(a))|a)+?b
+features all
+ms 0 "ab" 0 2
+g 1 -1 -1
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ns 2 "aab"
+ns 3 "aab"
+ns 0 "b"
+ns 1 "b"
+
+# pcre2-only
+# the empty branch is a lookahead that captures [engine vm]
+pattern (?:(?=(a))|a)+?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 -1 -1
+ns 1 "ab"
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ns 2 "aab"
+ns 3 "aab"
+ns 0 "b"
+ns 1 "b"
+
+# greedy: the answer never depended on the rule (control)
+pattern (?:()|a)+b
+features all
+ms 0 "ab" 0 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 2 2
+ms 1 "aab" 1 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+
+# greedy: the answer never depended on the rule (control) [engine vm]
+pattern (?:()|a)+b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 2 2
+ms 1 "aab" 1 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+
+# greedy, a capture-bearing nullable body (control)
+pattern (a?)+
+features all
+ms 0 "" 0 0
+g 1 0 0
+ms 0 "a" 0 1
+g 1 1 1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "b" 0 0
+g 1 0 0
+ms 1 "b" 1 1
+g 1 1 1
+ms 0 "aa" 0 2
+g 1 2 2
+ms 1 "aa" 1 2
+g 1 2 2
+ms 2 "aa" 2 2
+g 1 2 2
+
+# greedy, a capture-bearing nullable body (control) [engine vm]
+pattern (a?)+
+features all
+engine vm
+ms 0 "" 0 0
+g 1 0 0
+ms 0 "a" 0 1
+g 1 1 1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "b" 0 0
+g 1 0 0
+ms 1 "b" 1 1
+g 1 1 1
+ms 0 "aa" 0 2
+g 1 2 2
+ms 1 "aa" 1 2
+g 1 2 2
+ms 2 "aa" 2 2
+g 1 2 2
+
+# the design note's own witness: the empty iteration's writes STAND (control)
+pattern (|a)+
+features all
+ms 0 "a" 0 0
+g 1 0 0
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "" 0 0
+g 1 0 0
+
+# the design note's own witness: the empty iteration's writes STAND (control) [engine vm]
+pattern (|a)+
+features all
+engine vm
+ms 0 "a" 0 0
+g 1 0 0
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "" 0 0
+g 1 0 0
+
+# `*`: no mandatory copy, the loop's own guard (control)
+pattern (a*)*
+features all
+ms 0 "a" 0 1
+g 1 1 1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "b" 0 0
+g 1 0 0
+ms 1 "b" 1 1
+g 1 1 1
+
+# `*`: no mandatory copy, the loop's own guard (control) [engine vm]
+pattern (a*)*
+features all
+engine vm
+ms 0 "a" 0 1
+g 1 1 1
+ms 1 "a" 1 1
+g 1 1 1
+ms 0 "b" 0 0
+g 1 0 0
+ms 1 "b" 1 1
+g 1 1 1
+
+# `*?`: no mandatory copy (control)
+pattern (?:()|a)*?b
+features all
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 -1 -1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 -1 -1
+ns 3 "aab"
+
+# `*?`: no mandatory copy (control) [engine vm]
+pattern (?:()|a)*?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 -1 -1
+ms 1 "ab" 1 2
+g 1 -1 -1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 -1 -1
+ms 1 "aab" 1 3
+g 1 -1 -1
+ms 2 "aab" 2 3
+g 1 -1 -1
+ns 3 "aab"
+
+# bounded: PCRE2 replicates, no rule at all (control)
+pattern (?:()|a){1,3}?b
+features all
+ms 0 "ab" 0 2
+g 1 0 0
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 0
+ms 1 "aab" 1 3
+g 1 1 1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# bounded: PCRE2 replicates, no rule at all (control) [engine vm]
+pattern (?:()|a){1,3}?b
+features all
+engine vm
+ms 0 "ab" 0 2
+g 1 0 0
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "aab" 0 3
+g 1 0 0
+ms 1 "aab" 1 3
+g 1 1 1
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# possessive: the first empty iteration ends the loop for good (control)
+pattern (?:()|a)++b
+features all
+ms 0 "ab" 1 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "aab" 2 3
+g 1 2 2
+ms 1 "aab" 2 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# possessive: the first empty iteration ends the loop for good (control) [engine vm]
+pattern (?:()|a)++b
+features all
+engine vm
+ms 0 "ab" 1 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+ms 0 "aab" 2 3
+g 1 2 2
+ms 1 "aab" 2 3
+g 1 2 2
+ms 2 "aab" 2 3
+g 1 2 2
+ns 3 "aab"
+
+# atomic around the lazy loop (control)
+pattern (?>(?:()|a)+?)b
+features all
+ms 0 "ab" 1 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"
+
+# atomic around the lazy loop (control) [engine vm]
+pattern (?>(?:()|a)+?)b
+features all
+engine vm
+ms 0 "ab" 1 2
+g 1 1 1
+ms 1 "ab" 1 2
+g 1 1 1
+ns 2 "ab"
+ms 0 "b" 0 1
+g 1 0 0
+ns 1 "b"

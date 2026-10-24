@@ -1,66 +1,85 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-18 ~22:15, paused for the night)
+# memfn wake — kit session hand-off (rewritten 2026-10-23 at Frank's /close)
 
-This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follow its §1, the wake order. This file is rewritten at every pause and holds the current state. History lives in `journal.md`.
+This file is the kit session's orientation. Run `/pcrec-memfn-manager` and follow its §1 wake order. The file is rewritten at every pause and holds the current state; history lives in `journal.md`.
 
 ## 1. Who you are and where you work
 
-- You are the pcrec-memory-functions kit manager (`pcrecdev3`). Main is `pcrecdev1`; run ListAgents to find it.
-- `requests.md` is main's to write, and only main writes it. `responses.md` is yours to write, and only you write it.
+- You are the pcrec-memory-functions kit manager (`pcrecdev3`). Main is `pcrecdev1`; find it with ListAgents.
+- `requests.md` is main's and only main writes it. `responses.md` is yours and only you write it.
 - **Box:** the Linux dev box, repo `/home/pcrec/projects/pcrec`. Use `gnutimeout`. Commit with `-c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
-- **Merges go through main.** Send main the branch, sha, target and validation.
-- **Kit branches:** one per delivered unit, cut from a main that contains the request.
-  - `lane/memfn-r25` (worktree `worktrees/memfn-r25`) is the latest and carries this file. It is NOT merged.
-  - `lane/memfn-pinfix` (worktree `worktrees/memfn-pinfix`) was delivered to main for merging.
-- **Never `cd`**, not even inside one compound command. Use `git -C`, `make -C`, `env -C` and absolute paths.
-- **Worktree removal:** only `scripts/wtprune`, naming the kit's own trees (`--apply NAME..`); dirty or nested targets via `--apply --force NAME..`. Never `rm -rf`.
+- **Never `cd`** and **never `git stash`**. Remove worktrees only with `scripts/wtprune`.
+- **Guide:** `docs/dev/guide/` (README, coding, architecture, style, critics, addenda/kit.md is yours to grow). Lane briefs and critics read it.
+- **Critic rounds:** the `pcrec-critic` skill (design | code | both; one opus coordinator; results travel as files). Append framework notes to `docs/dev/meta/coordinator_framework.md`.
+- **Kit sabotage-id range:** S1540-S1559 (S1540 is used).
+- **Before stopping a lane:** check that its detached runs survive or have ended (TaskStop can kill them).
+- **A lane that ENDS before a message reaches it misses it.** Send a GO for a stopped lane to a fresh lane, after TaskStopping the old one.
 
 ## 2. Read, in this order
 
 1. `memfn/CLAUDE.md`.
-2. `requests.md` on main (newest R-25) and `responses.md` on lane/memfn-r25.
-3. The tail of `journal.md`.
-4. `docs/dev/lanes/r25_report.md` and `docs/dev/lanes/pinfix_report.md`.
-5. For B4: `docs/design/memfn/r17b_prime.md` rev 3 §3.1, plus the grid2read findings (M9/M15).
+2. `responses.md` on the kit branch. Its 2026-10-23 notices carry every ruling of the day.
+3. The journal tail (the 2026-10-23 entries).
+4. `docs/dev/lanes/s3_report.md`, Parts 7-8 then Part 9 if present, on branch `lane/memfn-s3pair` (worktree `worktrees/s3pair`).
+5. The reviews `docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md` and `-r2-memfn-s3-c1-code.md`.
+6. `docs/design/memfn/stop_ranking_study.md` rev 2 (branch `lane/memfn-stopstudy`).
 
-## 3. Rules in force
+## 3. Current state
 
-- **Box calendar (Frank):** the bench's re-baseline runs from 2026-10-19 01:00 TO COMPLETION (~16:00 Mon).
-  - Until main announces the bench's closing sentinel, the kit runs NOTHING CPU-bound. Docs and thinking are fine.
-  - After that: dev by day, bench at night.
-- **Timing runs** are cleared through main, and main clears them with Frank. Correctness heavy suites need one heavy slot from main.
-- **Mech in a heavy chain:** ONE `PROCS=4 run_sabotage_matrix.sh <ids>` invocation, [TT-MECHPAR]. Score by the per-row column: accept only `DETECTED` or `(EXPECTED`.
-- **After ANY `src/`/`memfn/src` edit, run all of these:**
-  - `python3 -I scripts/m6read_check_sab_anchors.py`;
-  - `bash tests/codegen/run_codegen_tests.sh`;
-  - test-core.
-- **A delivery's make test and its mech rows run at the SAME tip.**
-- **A red suite stage gets a TRIAGE lane** before you read its log.
+- **Kit branch:** `lane/memfn-s3` in `worktrees/memfn`, containing main up to f5a8de54c plus the journal, responses and reviews. Main merges it whenever (docs only).
+- **Main:** the iterators landed and took **abi 84** (b8c66a739). D176 holds the stop-ranking rulings.
 
-## 4. Current state
+### D172 S3 (REPORT routed by default): BUILT, not landed
 
-Rewritten 2026-10-21 ~21:40 at Frank's /close.
-- **Versions:** pcrec abi 82, `MF_SITE_ABI` 19, `MF_VOCAB` 4, `MF_CLASS_V` 5.
-- **R-26's kit part:** DONE and merged (Z1, Zk).
-- **The set-FIND form question is CLOSED.** Read `docs/design/memfn/walk_vs_v1_record.md` before proposing any non-walk default. Frank's ruling: the WALK when the subject is unknown; D169's addendum is filed. [MEMFN-SKIPSWITCH] is in Boonies.
-- **B4:** RE-SCOPE OWED. Its V1 movers disappear under the walk ruling. Expected shape: route the existing rows, with no default byte move; the measured-regime path stays. Send main the new shape. The minimal-E8 work stays on lane/memfn-e8min (D170).
-- **R-27 (REPORT speed on sparse text):** DESIGN ONLY at `lane/memfn-r27` @ b4875f947, report `docs/dev/lanes/r27_report.md`. Design: D161 window search, extensions E1/E2/E4 to existing rows, plants R27-a..f, questions Q1-Q3 in §0.
-  - **No build go.** Frank: "lets see what the design returns. after you wake, run the critic pass on it."
-  - **Timing job `580-kit-r27-cover` is QUEUED** behind main's i1build jobs, with a quiet gate.
-    - Completion line: `== r27 COMPLETE rows=1800 launches=5`.
-    - Table: `worktrees/memfn-r27/build/r27/job/r27_table.md`.
-    - Job log: `worktrees/.boxqueue/{done,failed}/<TS>-580-kit-r27-cover/job.log`.
-    - Paste the table into r27_report.md §5.
-- **Unmerged kit branches for main:** lane/memfn-r27 (record, ruling notices, the R-27 design), lane/memfn-e8min, lane/memfn-flat, lane/memfn-adatwin (measurement records). Ask main to merge them as records.
-- **Nothing running** except job 580 waiting in the queue. No lanes, crons or watchers.
-- **Prunable once merged and quiet:** r26z1, r26zk, b4prep, memfn-r26, setdig, e8min, flat, adatwin.
+- **Branch:** `lane/memfn-s3pair` @ 36422a84e. The S3 commit is bc675b020 (one byte-moving commit, abi 84 PROVISIONAL). It must become **85** at landing: merge main into the branch first, then the D76/D94 grep ritual.
+- **It contains:**
+  - E-find asks Table B honestly (C1);
+  - PAIR widened to any two-byte window stop (Frank: "widen two pair s3 now");
+  - Table D a kit_table;
+  - D174 wording;
+  - the test-axes memfn arm fixed (14 = 14);
+  - the window_site rev 3.3 DRAFT (ranked goals). Rev 3.2 stays the design of record until accepted.
+- **Answers:** clean. diff_r2 is 7,200 cases with 0 bad; G2 10,042/0; plants 18/18 red; codegen 16/16; wreply 112/0.
+- **TRAILING CHECKS, to fix before the next heavy run** (no answer change):
+  1. **The census twin rule** (census.py and census_r2.py): a facts row for encoding E moves iff that task's E-twin artifact moved, judged both ways. Job 606 had 165 rows (byte `end_window used yes→no` on utf8 block-option tasks) and census_r2 had 19 (byte `RX_MEMFN_LIBC none→memchr` for `(?i)k` etc.). It is PARTLY written in the UNVERIFIED WIP 36422a84e.
+  2. test-cpset-structure CHECK 3: re-record `(?i)HeLLo` EMITTED_BYTES in tests/codegen/manifests/m5_stage1_stamps.tsv (r49 instructions). NOT done.
+  3. test-encoding-checks:
+     - cover_pick's reader for the window find text: WIP;
+     - the K50 undeclared-form list gains `(?i)\bcat\b`: NOT done;
+     - PROVE the 4 of 237 byte/utf8 identity pairs differ only in the window text: NOT done; STOP if not.
+  - Brief a FRESH lane from this list. Each section is rerun under boxlock, one at a time.
+- **Then:**
+  1. Replace `lane/memfn-s3w` with s3pair (s3w is superseded).
+  2. The heavy job: `s3_job_587-kit-s3-heavy` in the s3pair tree, queued as a new number above main's.
+  3. A `pcrec-critic both` round on the final S3.
+  4. 588 timing, with the stratified sample IN the bar and foobar match/real capped at 1.052, in a slot main grants.
+  5. done: R-29's S3 to main.
+- **Known S3 limits, filed or judged:**
+  - caseless words next to `\b` lose vrun with SIMD on (a SIMD-thread finding);
+  - same-set windows re-read 1.1-2.5 bytes/byte on dense input (R2-2, measure in 588);
+  - `(?<=[Qq])ab` declines cover (a missed win; fixed by D176 Q1);
+  - a 2+-member stop below the candidate has no row.
 
-**OWED (carried):**
-- The five PRES rows' g2 floors are PLACEHOLDER.
-- D2 is `pending-site:R-18`.
-- candoracle's reach gap is on main's list.
+### Stop ranking (D176): RULED, not built
 
-## 5. Next actions on wake
+- Q1: one priced choice in Table A over position × method. Costs live in ONE visible table (the measurement set via --list-measurements, relative to the walk, raw readings as provenance, stamped per artifact). An option changes a cost only via a visible key or row.
+- Q2: D-hors becomes a priced method; HORS_MIN is deleted.
+- Q3: measure this box now (memchr, pair and Horspool-probe cards plus verify, as zen4-grid1 rev 2, in a night window, after the step-0 census, after S3 lands). The library/script goes into [MEASURE-SET].
+- Q4: one decider for presence and stop; spans with an UNBOUNDED offset are sent for presence.
+- Q5: fixed-point integers.
+- Q6: PAIR widening, now done inside S3; the SIMD kernel stays filed.
+- Truncation: state the whole literal unless a stated reason.
+- Standing rule: a new method adds its measurement card.
 
-1. **Critic pass on R-27's design (Frank's instruction).** Run 2-4 read-only critics on r27_report.md: soundness of the skip/verify/proof equality, the E1/E2/E4 row extensions vs the general mechanism, the measurement regime, and an unlocks lens. Consolidate into `docs/dev/reviews/<date>-r1-memfn-r27.md`, then bring Frank the findings plus a build-go question. Fold in job 580's table if it has run.
-2. Send main B4's re-scoped shape.
-3. Heavy runs go through `scripts/boxqueue` (kit band 500-699) with a quiet gate and `idle-ok`. Run emit_sweep WITHOUT `python3 -I`.
+### Other
+
+- [FLAG-SPELL] (main's): `(?i)abc` and `(?i:abc)` produce different VM programs.
+- The r27c hex8 reading was delivered. Frank's call on an HRS design pass was superseded by S3's D-hors and D176.
+
+**Nothing is running.** No lanes, no watchers, no crons. Frank's battery holds the box until ~08:00 2026-10-24; no timing until main says.
+
+## 4. Next actions on wake
+
+1. Read §2. Ask main whether the battery is done and the box is free.
+2. Brief a fresh lane for the trailing checks (§3 list) on s3pair, starting from WIP 36422a84e.
+3. Merge main into s3pair, renumber the abi to 85, then the heavy, then the critic round, then 588.
+4. Prune when merged and quiet: wsc1-8, wsmain, wsframe, r28, r28m, r27b, r27c, uwin*, b4p, crit-memfn-s3-c1, s3 (after s3pair replaces it), stopstudy (after main merges the study).

@@ -21,8 +21,22 @@ SAB_REACH_EXPECT="REACH-OFFSET-SKIP-DENIES-RUN-ROWS"
 # line after the deny mask (stc2's S283 collision guard), so the anchor spans
 # the break. Intent re-verified: the plant still drops PCREC_NO_OFFSET_SKIP
 # from both run rows' deny and nothing else (count 2).
+# RE-AIMED 2026-10-24 (lane fsfix, full-suite 20261023_5596c3207 triage): the
+# deny mask's NO_OFFSET_SKIP bit became a REDUNDANT second reader when D172 S2
+# (wsc3-wsc6) made pf_window_of state no window under -fno-offset-skip, so the
+# run pin is gone before the mask is consulted: the one-site plant is an
+# EQUIVALENT mutant (measured: /user|/users -fno-offset-skip -fno-req-handoff
+# stays memchr under it; prechecks 0fail). The property -- the bit denies the
+# run rows -- needs BOTH readers dropped: site 1 the mask (as before), site 2
+# pf_window_of's own NO_OFFSET_SKIP clause. Measured with both: run-pinned.
 SAB_COUNT=2
 SAB_BEFORE='PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER,
              pf_run'
 SAB_AFTER='PCREC_NO_RUN_PREFILTER /* SABOTAGE S283 */,
              pf_run'
+SAB_FILE2="src/gen/emit_dfa.c"
+SAB_COUNT2=1
+SAB_BEFORE2='    if (wk && us->kind != DFA_PF_NONE && !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&
+        !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {'
+SAB_AFTER2='    if (wk && us->kind != DFA_PF_NONE &&   /* SABOTAGE S283 (site 2) */
+        !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {'

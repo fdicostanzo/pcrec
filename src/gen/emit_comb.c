@@ -76,6 +76,17 @@ static const char *fwd_name(const GenNames *g, PcrecEntry e)
          : e == PCREC_ENTRY_MATCH  ? g->matchfn : g->matchcapsfn;
 }
 
+/* The CALLER binding's one text at `indent`: the run state `run` bound to
+ * the regions of the descriptor `d`, frames-then-trail (the order sabotage
+ * row S180 swaps). `fwd_in` and the find-all iterator's caller-storage step
+ * write it. */
+void pcrec_emit_caller_bind(StrBuf *c, const char *indent, const char *p, const char *d)
+{
+    pcrec_sb_printf(c,
+        "%s%s_run_state_bind(&run, %s->frames, %s->nframes,\n"
+        "%s                        %s->trail,  %s->ntrail);\n", indent, p, d, d, indent, d, d);
+}
+
 /* Writes an `_in` entry, `forward`'s two bindings that take the caller's
  * descriptor: INERT (the DFA: the descriptor is unused, spec §10.4) and
  * CALLER (the VM: a NULL descriptor IS the un-suffixed call, spec §10.3,
@@ -102,12 +113,11 @@ static void fwd_in(Ctx *cx, StrBuf *c, const GenNames *g, const FwdSig *s,
     }
     pcrec_sb_printf(c,
         "    %s_run_state run;\n"
-        "    if (!buffers) return %s(%s%s);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
+        "    if (!buffers) return %s(%s%s);\n", p, name, s->args, va);
+    pcrec_emit_caller_bind(c, "    ", p, "buffers");
+    pcrec_sb_printf(c,
         "    return %s_run(%s, &run%s);\n"
-        "}\n\n",
-        p, name, s->args, va, p, name, s->args, va);
+        "}\n\n", name, s->args, va);
 }
 
 /* Writes one of the VM's three un-suffixed entries (`<prefix>_search`/`_match`/`_match_caps`), the forward that binds the storage itself: `forward`'s OWN bindings.
@@ -155,7 +165,7 @@ static void fwd_in(Ctx *cx, StrBuf *c, const GenNames *g, const FwdSig *s,
  * spelled where it belongs. */
 static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool fwd,
                     const char *storage, const char *in_storage,
-                    const char *ret, const char *name,
+                    const char *ret, const char *name, const char *callee,
                     const char *params, const char *storage_tail,
                     const char *runargs, const char *deepargs,
                     const char *frames_code, const char *fwdargs)
@@ -217,10 +227,10 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
             "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
             "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s_run(%s);\n"
+            "    return %s(%s);\n"
             "}\n\n",
             pcrec_attr_text(PCREC_ATTR_NOINLINE), ret, name, params, p, p, p,
-            up, up, name, runargs);
+            up, up, callee, runargs);
         pcrec_sb_printf(c,
             "%s%s %s(%s)\n"
             "{\n"
@@ -229,9 +239,9 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "    %s result;\n"
             "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
             "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    result = %s_run(%s);\n",
+            "    result = %s(%s);\n",
             storage, ret, name, params, p, p, ret, p, up, up,
-            name, runargs);
+            callee, runargs);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
@@ -257,11 +267,25 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "    %s_run_buffers storage;%s\n"
             "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
             "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s_run(%s);\n"
+            "    return %s(%s);\n"
             "}\n\n",
             storage, ret, name, params, p, p, storage_tail, p, up,
-            up, name, runargs);
+            up, callee, runargs);
     }
+}
+
+/* [FINDALL-NEXT] `forward`'s OWN and OWN_TIERED bindings for a function that
+ * is not one of the six entries: the find-all iterator's own-storage step
+ * (src/gen/emit_iter.c). The same text as the entries', so the tier
+ * escalation is spelled once. */
+void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
+                            const char *storage, const char *ret, const char *name,
+                            const char *callee, const char *params,
+                            const char *runargs, const char *deepargs,
+                            const char *frames_code)
+{
+    fwd_own(c, cx->opt->prefix, g->upper, tiered, false, storage, "", ret, name,
+            callee, params, "", runargs, deepargs, frames_code, "");
 }
 
 /* `forward`'s ONE emitter: entry `e` (one of the six) under binding `f`.
@@ -284,6 +308,7 @@ static void comb_forward(Ctx *cx, StrBuf *c, const GenNames *g, PcrecEntry e,
         fwd_own(c, cx->opt->prefix, g->upper, f->bind == PCREC_FWD_OWN_TIERED,
                 f->bind == PCREC_FWD_EMPTY, pcrec_entry_storage(cx, s->entry),
                 pcrec_entry_storage(cx, s->in), s->ret, fwd_name(g, s->entry),
+                pcrec_sb_fragf(&cx->arena, "%s_run", fwd_name(g, s->entry)),
                 pcrec_sb_fragf(&cx->arena, "%s%s", s->params,
                                s->vars ? pcrec_vars_param_text(cx) : ""),
                 s->tail, pcrec_sb_fragf(&cx->arena, "%s, &run%s", s->args, va),
@@ -533,10 +558,10 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
     case PCREC_COMB_LOCATE_FINISH:
         if (!t->body) break;
         /* `locate-then-finish`'s ONE emitter: the DFA search body under the
-         * entry's name and linkage. [FINDALL-NEXT] The search entry's body is
-         * `<p>__find` (its FIND row), and `<p>_search` is its prologue over
-         * that body. */
-        if (e == PCREC_ENTRY_SEARCH) {
+         * entry's name and linkage. [FINDALL-NEXT] Where the iterator runs
+         * the body too (the FIND row is live), the search entry's body is
+         * `<p>__find`, and `<p>_search` is its prologue over that body. */
+        if (e == PCREC_ENTRY_SEARCH && pcrec_entry_emitted(cx, PCREC_ENTRY_FIND)) {
             pcrec_emit_dfa_engine(cx, find_name(cx), PCREC_ENTRY_FIND);
             pcrec_emit_search_wrapper(cx, c, g->searchfn);
             return true;
@@ -545,6 +570,11 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
         return true;
     case PCREC_COMB_FIRST_NONZERO:
         if (!t->shell || e != PCREC_ENTRY_SEARCH) break;
+        if (!pcrec_entry_emitted(cx, PCREC_ENTRY_FIND)) {
+            pcrec_emit_compound_search(cx, c, t->shell, g->searchfn, PCREC_ENTRY_SEARCH,
+                                       g->upper);
+            return true;
+        }
         pcrec_emit_compound_search(cx, c, t->shell, find_name(cx), PCREC_ENTRY_FIND,
                                    g->upper);
         pcrec_emit_search_wrapper(cx, c, g->searchfn);

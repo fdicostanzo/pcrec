@@ -14,9 +14,9 @@ SAB_AFTER='#define SPLIT_GUARDS_OFF_SET   0   /* SABOTAGE S902 */
 #define SPLIT_GUARDS_OFF_CLEAR 0'
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
-SAB_BEFORE2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND)
+SAB_BEFORE2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && !body)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);'
-SAB_AFTER2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND && !cx->job->comp_shell)   /* SABOTAGE S902 */
+SAB_AFTER2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && !body && !cx->job->comp_shell)   /* SABOTAGE S902 */
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);'

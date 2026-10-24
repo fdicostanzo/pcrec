@@ -689,6 +689,8 @@ mg "c1a22" 1
 mc "c1a22" 1
 mg "a\nb\n" 1
 mc "a\nb\n" 1
+mg "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 100
+mc "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 100
 
 pattern b*?
 features all
@@ -1604,3 +1606,36 @@ mg "aaab" 2
 mg "bab" 3
 mg "c1a22" 6
 mg "a\nb\n" 5
+
+pattern (a)
+features all
+mg "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 80
+mc "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 80
+
+pattern x*
+features all
+mg "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" 71
+
+pattern (a)(b)?(c)?
+features all
+mg "aaaaaaaa" 8
+mc "aaaaaaaa" 8
+mg "abcabcabcab" 4
+mc "abcabcabcab" 4
+mg "" 0
+mc "" 0
+
+pattern (a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?
+features all
+mg "aaaa" 4
+mc "aaaa" 4
+mg "abcdefghij a" 2
+mc "abcdefghij a" 2
+
+# pcre2-only
+pattern \G
+features all
+mg "" 1
+mg "a" 2
+mg "ab" 3
+mg "abc" 4

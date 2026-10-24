@@ -18,7 +18,7 @@
   - [§3.7](#s3-7) Compounds
   - [§3.8](#s3-8) `<prefix>_next` — the find-all iterator
     - [§3.8.1](#s3-8-1) `<prefix>_next_n` — several matches per call
-    - [§3.8.2](#s3-8-2) `RX_FOREACH` — every match through any artifact's record
+    - [§3.8.2](#s3-8-2) Looping over any artifact's record
 - [§4](#s4) Give-up and refusal codes
 - [§5](#s5) Captures and groups
   - [§5.1](#s5-1) What a written slot holds
@@ -153,8 +153,7 @@ scoped by neither of the above. In declaration order the types are
 `rx_var`, `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_renderfn`,
 `rx_group_entry`, `rx_nextfn`, `rx_nextnfn`, `struct rx_info`, `rx_iter` (with
 its initializer `rx_iter_init` / `RX_ITER_INIT` and the setters `rx_iter_at`
-and `rx_iter_vars`, §3.8) and `rx_foreach` (with `rx_foreach_begin`,
-`rx_foreach_pull`, `RX_FOREACH` and `RX_FOREACH_PAIRS`, §3.8.2). They are spelled `rx_*` regardless of
+and `rx_iter_vars`, §3.8). They are spelled `rx_*` regardless of
 the prefix, so that two differently-prefixed matchers compose in one
 translation unit (one matcher links directly as another's callout, with no
 adapter). They live inside their own `PCREC_RX_ABI_H` guard, separate from
@@ -168,9 +167,7 @@ on every artifact, a DFA-only one included: the give-up and refusal codes
 constants `PCREC_ENGINE_DFA` / `PCREC_ENGINE_VM` (§6), the nine stamp
 bit constants `PCREC_VM_RUNG_*` / `PCREC_VM_STRAT_*` / `PCREC_VM_PRUNE_*`
 (§6.3), and the iterator's `PCREC_ITER_*` constants (§3.8). No per-prefix spelling of any of them exists.
-`RX_FOREACH_PAIRS` is the block's one caller-overridable default: it is
-defined under `#ifndef`, so a translation unit may define it before the first
-pcrec header (§3.8.2). What stays per-prefix
+What stays per-prefix
 is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 (including the three masks), and the budget, capacity and sizing macros.
 
@@ -345,7 +342,7 @@ typedef struct rx_iter {
 } rx_iter;
 
 static inline rx_iter rx_iter_init(const unsigned char *s, size_t n)
-{ rx_iter it; it.hdr = PCREC_ITER_FRESH; it.s = s; it.n = n; return it; }
+{ rx_iter it = { PCREC_ITER_FRESH, 1, 0, s, n, 0, (const rx_var *)0, 0, (const void *)0 }; return it; }
 #define RX_ITER_INIT(s_, n_) rx_iter_init((s_), (n_))
 
 #define PCREC_ITER_SET_(it_, stores_, bit_) \
@@ -358,67 +355,6 @@ static inline void rx_iter_at(rx_iter *it, size_t pos)
 /* The caller's variables, by name, for every search of this find-all. */
 static inline void rx_iter_vars(rx_iter *it, const rx_var *v, size_t nv)
 { PCREC_ITER_SET_(it, (it->vars = v, it->nvars = nv), PCREC_ITER_OPT_VARS); }
-
-/* RX_FOREACH(info, it, m) { ... }: every match of a FRESH or BOUND
- * iterator through any artifact's record (info->next_n), m pointing at
- * info->ncaps pairs. The matches are fetched in batches into a stack
- * buffer of RX_FOREACH_PAIRS pairs (batch sizes unspecified, at most 64
- * entries), so the iterator is finished when the loop exits, however it
- * exits; it.rc is meaningful only after a loop that ran to its end. A
- * record of another abi, with no next_n, or with more groups than the
- * buffer holds ends the iterator with PCREC_ERR_ITER and no body run.
- * Needs C99; m must be an identifier. */
-#ifndef RX_FOREACH_PAIRS
-#define RX_FOREACH_PAIRS 256    /* the macro's buffer, in pairs: 64 entries at NCAPS <= 4 */
-#endif
-typedef struct rx_foreach {
-    rx_nextnfn fn;
-    rx_iter   *it;
-    ptrdiff_t (*cur)[2];        /* the match being delivered */
-    size_t     ncaps, k, kmax, head, count;
-    int        brk;             /* 1 while the body runs; left 1 by a break */
-    ptrdiff_t  buf[RX_FOREACH_PAIRS][2];   /* last, so an over-run leaves the object */
-} rx_foreach;
-
-static inline rx_foreach *rx_foreach_begin(rx_foreach *f, const struct rx_info *info,
-                                           rx_iter *it)
-{
-    size_t nc = 0;
-    f->it = it; f->head = f->count = 0; f->brk = 0;
-    if (info->abi == PCREC_RX_ABI_H && info->next_n && info->ncaps > 0)
-        nc = (size_t)info->ncaps;
-    f->fn = nc ? info->next_n : (rx_nextnfn)0;
-    f->ncaps = nc;
-    f->kmax = nc ? RX_FOREACH_PAIRS / nc : 0;
-    if (f->kmax > 64) f->kmax = 64;
-    f->k = f->kmax ? 1 : 0;
-    if (f->k == 0 && it->hdr != PCREC_ITER_ENDED) {   /* refused */
-        it->rc = PCREC_ERR_ITER;
-        it->hdr = PCREC_ITER_ENDED;
-    }
-    return f;
-}
-
-static inline int rx_foreach_pull(rx_foreach *f)
-{
-    if (f->head == f->count) {
-        size_t k = f->k;
-        if (k == 0) return 0;                       /* ended, or refused at begin */
-        f->count = f->fn(f->it, f->buf, k);
-        f->head = 0;
-        if (f->count < k) f->k = 0;                 /* it ended inside this fill */
-        else if (k < f->kmax) f->k = 2 * k < f->kmax ? 2 * k : f->kmax;
-        if (f->count == 0) return 0;
-    }
-    f->cur = f->buf + f->head++ * f->ncaps;
-    return 1;
-}
-
-#define RX_FOREACH(info_, it_, m_)                                                       \
-    for (rx_foreach rx_fe_##m_, *rx_fp_##m_ = rx_foreach_begin(&rx_fe_##m_, (info_), (it_)); \
-         !rx_fp_##m_->brk && rx_foreach_pull(rx_fp_##m_); )                              \
-        for (ptrdiff_t (*m_)[2] = (rx_fp_##m_->brk = 1, rx_fp_##m_->cur);                \
-             rx_fp_##m_->brk; rx_fp_##m_->brk = 0)
 ```
 
 <a id="s2-p2"></a>[2¶2] The block ends with a comment describing `<prefix>_next_pos` and then
@@ -644,8 +580,8 @@ is §9.
 <a id="s3-1-3-p1"></a>[3.1.3¶1] `<prefix>_search` is one-shot: it finds the first match at or after
 `startpos`. The find-all iterator `<prefix>_next` (§3.8) reports every match
 as PCRE2's global iteration does, validating the subject once rather than
-per search, and `RX_FOREACH` (§3.8.2) is the recommended way to loop over it;
-a caller who wants the one-shot entry's own iteration instead
+per search, a caller that serves any artifact loops over its record's `next`
+or `next_n` (§3.8.2); a caller who wants the one-shot entry's own iteration instead
 writes this loop:
 
 ```c
@@ -677,6 +613,16 @@ while (p <= n) {
   matches, as libpcre2 with `PCRE2_MATCH_INVALID_UTF` through the same loop
   does). `end - 1` cannot underflow (a non-empty match has `end >= 1`), and
   `end - 1 < n` keeps `<prefix>_next_pos` in its boundary-skipping domain.
+- <a id="s3-1-3-p4a"></a>[3.1.3¶4a] **Where the aligned restart differs from libpcre2's own loop.**
+  libpcre2's global iteration restarts a search AT `end`, stray continuation
+  byte or not, where the loop here (and `<prefix>_next`, §3.8¶2) restarts at
+  `<prefix>_next_pos(s, n, end - 1)`, past the stray bytes. Only a pattern that
+  reads the restart position can tell: on the subject `61 80 61` under
+  `-e utf8`, `\G.` reports `(0,1) (2,3)` here and `(0,1)` alone in libpcre2's
+  loop, and `.*?` reports `(0,0) (0,1) (2,2) (2,3) (3,3)` against libpcre2's
+  `(0,0) (0,1) (3,3)`. So "PCRE2's global iteration" (§3.1.3¶10, §3.8¶2) holds
+  exactly on a well-formed subject, and on an ill-formed one up to this
+  restart rule. (docs/dev/known_issues.md K75 records the rule.)
 - <a id="s3-1-3-p5"></a>[3.1.3¶5] **Termination.** `p` moves strictly forward every iteration
   (`<prefix>_next_pos` returns a position strictly greater than its
   argument), and `p > n` ends the loop.
@@ -684,9 +630,10 @@ while (p <= n) {
   — `0`, an aligned match end, a `<prefix>_next_pos` advance — is a boundary,
   on a well-formed subject or an ill-formed one, so a caller who writes it as
   shown never sees `PCREC_ERR_STARTPOS` from it. A continuation byte is never
-  a match START (§9.5), so stepping over one cannot lose a match. (The
-  empty-match family at an ill-formed subject END is `docs/dev/
-  known_issues.md` K74.)
+  a match START (§9.5), so stepping over one loses no match that begins at a
+  character boundary. libpcre2 does report an EMPTY match at a stray
+  continuation byte, which pcrec never does (§9.5¶2). (The empty-match family
+  at an ill-formed subject END is `docs/dev/known_issues.md` K74, §9.5¶3.)
 - <a id="s3-1-3-p7"></a>[3.1.3¶7] **Do not inline `+ 1` in place of `<prefix>_next_pos`.** The loop as written
   is final for every encoding: compiled against a `-e utf8` artifact it
   advances by characters with no source change.
@@ -735,6 +682,12 @@ both identical to libpcre2 driven through the same loop
 (`tests/assertions/run_kreset_diff.sh` §5). PCRE2's own global iteration,
 and `<prefix>_next`, report `ab\K` over `"ababab"` three times, `2,2 4,4
 6,6`.
+
+<a id="s3-1-3-p11a"></a>[3.1.3¶11a] **On an ill-formed subject "contiguous" is the loop's, not libpcre2's.**
+After a non-empty match that ends before a stray continuation byte the next
+search starts past the stray bytes (¶4a), where `\G` holds, so the loop and
+`<prefix>_next` can report a match that is not adjacent to the previous one:
+`\G.` over `61 80 61` under `-e utf8` gives `(0,1) (2,3)`.
 
 <a id="s3-1-1"></a>
 #### 3.1.1 `<prefix>_next_pos` — the encoding residual
@@ -1072,13 +1025,14 @@ starts at `<prefix>_next_pos(s, n, q)`. An empty match at `n` ends the
 iteration. `\G` asserts at each search's start, as it does in PCRE2's loop.
 The reported span is the one `<prefix>_search` reports, `\K` included.
 
-<a id="s3-8-p2a"></a>[3.8¶2a] **On an ill-formed UTF-8 subject** the iteration is the loop of ¶2 over
-§9's per-position answers, which `_search` called in that loop also gives.
-libpcre2's own global iteration (under `PCRE2_MATCH_INVALID_UTF`) can differ
-there: its anchored retry after an empty match reports a match past an
-ill-formed byte rather than at the anchor, §9.3¶3's class, so it skips
-positions the loop of ¶2 visits. `x*` on `"a\xffb"` under `-e utf8` gives
-four empty matches, at 0, 1, 2 and 3; libpcre2's loop gives three, none at 1.
+<a id="s3-8-p2a"></a>[3.8¶2a] **Where it is not PCRE2's.** On a well-formed subject the matches are
+PCRE2's exactly. On an ill-formed one two rules differ from libpcre2's loop:
+the restart after a non-empty match that ends before a stray continuation byte
+(§3.1.3¶4a), and the anchored retry, which does not cross an ill-formed
+sequence (§9.3¶4). PCRE2 and `pcre2test` also step over a CRLF pair as one
+unit after a failed retry under a CRLF, ANY or ANYCRLF newline convention;
+pcrec has no newline convention yet (plan row `[DD-11]`), so the advance is
+`<prefix>_next_pos` and nothing here promises more.
 
 <a id="s3-8-p3"></a>[3.8¶3] **Each search has its own budget.** The anchored retry at `q` and the search
 after it are two searches; each runs with the step, work and frame budgets a
@@ -1099,8 +1053,14 @@ through `RX_ITER_INIT` and the setters, and only while it is FRESH:
 <a id="s3-8-p5"></a>[3.8¶5] A setter on an ENDED iterator changes nothing. A setter on a BOUND iterator
 makes the next call return `0` with `it.rc == PCREC_ERR_ITER`, ending it; so
 does a first call on a struct whose `hdr` is none of the three states (a
-zeroed or never-initialized struct). Every field `RX_ITER_INIT` does not
-write may hold any value before the first call.
+zeroed or never-initialized struct). `RX_ITER_INIT` writes every field: the
+setters' defaults in the table above, `rc` 1 and `flags` 0, so the first call
+binds a FRESH iterator without writing them again.
+
+<a id="s3-8-p5a"></a>[3.8¶5a] **`it.hdr` carries the state and four option bits.** Bits `0x10`, `0x20`
+and `0x40` are owned by the setters of ¶4; bit `0x80` is reserved. A reserved
+bit is ignored: a FRESH header with it set is FRESH. A caller sets none of the
+four itself.
 
 <a id="s3-8-p6"></a>[3.8¶6] **The start position is checked once.** The first call runs
 `<prefix>_search`'s caller-position prologue on the start position: the
@@ -1109,6 +1069,15 @@ subject check over `[start − LB, n)` (§9.4), with `<prefix>_search`'s codes i
 its order. A refusal ends the iteration with that code before any search.
 Every later search starts at a position the iteration computed, a character
 boundary inside the checked range, and runs neither check.
+
+<a id="s3-8-p6a"></a>[3.8¶6a] **The variable check is the first search's.** After those two checks, in
+that order, the first search resolves the bound variables before it attempts
+any match (`docs/spec/vars.md`); an unset or ill-formed value at a bare
+`${name}` ends the iteration with `PCREC_ERR_UNSET_VAR`, `it.lo` the start
+position, whatever the subject holds, except that a start past `n` ends the
+iteration with rc `0` before any check, as `<prefix>_search` does. A later
+search resolves the same array, which ¶8 forbids changing, so it can refuse
+no differently.
 
 <a id="s3-8-p7"></a>[3.8¶7] **Once ended, it stays ended.** Every call after one that returned `0`
 returns `0`, runs no search and leaves `it.rc` as it was.
@@ -1123,7 +1092,10 @@ and none is detected.
 <a id="s3-8-p9"></a>[3.8¶9] **`it.lo`** is defined only after `<prefix>_next` has returned `0` with
 `it.rc < 0`: it is then the start of the search that ended the iteration
 (on a `PCREC_ERR_UTF` refusal, the position `<prefix>_valid_upto` is asked
-from). Every other field's value is unspecified to the caller.
+from). The exception is `PCREC_ERR_ITER` (¶5): no search ran, `it.lo` is not
+written, and it holds what it held before the call (for a BOUND iterator
+whose setter was refused, the position its next search would have started
+at). Every other field's value is unspecified to the caller.
 
 <a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s` and `n` hold their bound
 values in every state. `vars` and `nvars` hold theirs once the iterator is
@@ -1178,62 +1150,48 @@ is not refused. A `0` from `k == 0` says nothing about the iterator.
 `rx_info.next` is (§6).
 
 <a id="s3-8-2"></a>
-#### 3.8.2 `RX_FOREACH` — every match through any artifact's record
+#### 3.8.2 Looping over any artifact's record
+
+<a id="s3-8-2-p1"></a>[3.8.2¶1] A caller that serves any artifact (a catalog, a loader over `dlsym`)
+holds only its `rx_info` (§6¶14b-c) and loops over `info->next` (one match per
+call, `rx_nextfn`) or `info->next_n` (a batch per call, `rx_nextnfn`). Neither
+needs the artifact's own header, only the shared ABI block of the same `abi`
+(§1¶5). `info->ncaps` is the stride of a batch, in pairs; `info->next_n` is
+NULL exactly where `info->next` is.
+
+<a id="s3-8-2-p2"></a>[3.8.2¶2] **One match per call:**
 
 ```c
 rx_iter it = RX_ITER_INIT(s, n);          /* setters as usual, while FRESH */
-int stopped = 0;
-RX_FOREACH(&rx_info, &it, m) {            /* any artifact's rx_info */
-    report(m[0][0], m[0][1]);             /* m: ptrdiff_t (*)[2], info->ncaps pairs */
-    if (enough) { stopped = 1; break; }
-}
-if (!stopped && it.rc < 0) ...            /* the code that ended it (§4) */
+ptrdiff_t caps[info->ncaps][2];           /* a VLA: the caller has no NCAPS */
+while (info->next(&it, caps))
+    report(caps[0][0], caps[0][1]);
+if (it.rc < 0) ...                        /* the code that ended it (§4) */
 ```
 
-<a id="s3-8-2-p1"></a>[3.8.2¶1] `RX_FOREACH(info, it, m)` runs its body once per match of the iterator
-`it`, a FRESH or BOUND `rx_iter *`, through the record `info`, a `const
-struct rx_info *`. In the body `m` is a `ptrdiff_t (*)[2]` pointing at the
-match's `info->ncaps` pairs, as `<prefix>_search` writes `caps`. The macro and
-its state (`rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) are in the
-shared ABI block (§1¶5): a translation unit that includes any pcrec header of
-the same `abi` can iterate any artifact whose `rx_info` it holds, without that
-artifact's own header.
+<a id="s3-8-2-p3"></a>[3.8.2¶3] **A batch per call** (`buf` holds `k * info->ncaps` pairs; a return below `k`
+means the iterator has ended, §3.8.1¶3):
 
-<a id="s3-8-2-p2"></a>[3.8.2¶2] **Control flow is a plain loop's.** `break` ends the loop, `continue`
-goes to the next match, and `return` or `goto` leave it. Each argument is
-evaluated once. The loop's variables are declared in `for` initializers, so
-it needs C99 or later. `m` must be a plain identifier: it also names the
-macro's state, so nested `RX_FOREACH` loops with distinct `m` compile. The
-inner initializer uses the comma operator, so clang's `-Wcomma` warns at each
-use.
+```c
+rx_iter it = RX_ITER_INIT(s, n);
+size_t r, w = (size_t)info->ncaps;
+ptrdiff_t buf[8 * w][2];                  /* 8 * info->ncaps pairs */
+do {
+    r = info->next_n(&it, buf, 8);
+    for (size_t i = 0; i < r; i++)
+        report(buf[i * w][0], buf[i * w][1]);
+} while (r == 8);
+if (it.rc < 0) ...
+```
 
-<a id="s3-8-2-p3"></a>[3.8.2¶3] **Batches.** The macro fetches matches through `info->next_n` into a
-buffer of `RX_FOREACH_PAIRS` pairs (default 256) in its own automatic
-storage, one `rx_foreach` object (4,168 bytes on LP64 at the default). It
-never allocates. The batch sizes are UNSPECIFIED beyond at most 64 entries
-and at most `RX_FOREACH_PAIRS` pairs per call. `RX_FOREACH_PAIRS` may be
-defined before the first pcrec header; translation units with different
-values work together, because the buffer never crosses a call except as a
-pair pointer.
-
-<a id="s3-8-2-p4"></a>[3.8.2¶4] **An iterator handed to `RX_FOREACH` is finished when the loop exits,
-however it exits.** After an early exit the macro may already have fetched
-matches the body never saw, and the iterator is positioned after the last one
-fetched; it may even be ENDED. So `it.rc` is meaningful only after a loop that
-ran to its end, and calling `<prefix>_next`, `<prefix>_next_n` or
-`RX_FOREACH` on that iterator after an early exit is UNDEFINED. A caller who
-wants to stop and resume uses `<prefix>_next`. The body does not advance the
-iterator itself: matches it takes with `<prefix>_next` or `<prefix>_next_n`
-are skipped by the macro's next fetch.
-
-<a id="s3-8-2-p5"></a>[3.8.2¶5] **When the macro refuses.** The loop runs no body and ends the iterator
-with `it.rc == PCREC_ERR_ITER` when the record's `abi` is not the including
-header's `PCREC_RX_ABI_H`, when `info->next_n` is NULL, or when
-`info->ncaps` exceeds `RX_FOREACH_PAIRS`. `it.lo` is not set by a refusal (the
-iterator never searched). An iterator that is already ENDED is not touched:
-its `rc` stays, and no body runs. The `abi` compare is all-or-nothing and is
-made once per loop: a record of any other `abi` is refused even where the two
-layouts happen to agree.
+<a id="s3-8-2-p4"></a>[3.8.2¶4] **Either loop may stop early and resume.** Both entries leave the
+iterator exactly after the last match they delivered, so a caller may leave
+the loop at any point and continue with either entry; `it.rc` is meaningful
+once an entry has returned `0` (or fewer than `k`). The two deliver the same
+matches (§3.8.1). Use `next` for one match per call, for a caller that stops
+early or works on small subjects: `next_n` with `k = 1` costs more per match
+than `next`, and `next_n` pays from `k ≥ 4`, where its batch spends fewer
+calls on cheap dense matches.
 
 ---
 
@@ -1257,7 +1215,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_STARTPOS` | −7 | below the floor | refused: the caller's `startpos` / `ctx->pos` is not a character boundary |
 | `PCREC_ERR_UNSET_VAR` | −8 | below the floor | refused: an unset or ill-formed variable value (`docs/spec/vars.md`) |
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
-| `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5), or a record `RX_FOREACH` cannot use (§3.8.2¶5); `<prefix>_next`, `<prefix>_next_n` and `RX_FOREACH` leave it, in `it.rc` |
+| `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5); `<prefix>_next` and `<prefix>_next_n` leave it, in `it.rc` |
 | `PCREC_SUBST_NOSPACE` … `PCREC_SUBST_MISSING_REF` | −11 … −16 | below the floor | reserved for the subst artifact (`docs/spec/subst_api.md` §8), whose block defines them; no match entry returns one, and no other code takes these values |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
@@ -1319,10 +1277,7 @@ under a different encoding or engine. None renumbers the give-up partition.
   was handed an `rx_iter` whose header is not a state it wrote (never
   initialized, zeroed) or that a setter wrote after the first call
   (§3.8¶5). It is delivered in `it.rc`, with `<prefix>_next` returning `0`;
-  `<prefix>_next_n` leaves it the same way (§3.8.1), and so does `RX_FOREACH`
-  (§3.8.2), which also leaves it for three causes of its own: the record's
-  `abi` is not the including header's, the record has no `next_n`, or its
-  `ncaps` exceeds `RX_FOREACH_PAIRS` (§3.8.2¶5; `it.lo` is not set by these).
+  `<prefix>_next_n` leaves it the same way (§3.8.1).
   No other entry returns it.
 
 <a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
@@ -1399,8 +1354,9 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
 <a id="s5-1"></a>
 ### 5.1 What a written slot holds
 
-<a id="s5-1-p1"></a>[5.1¶1] Two rules govern which value a group inside a repeated construct holds,
-measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
+<a id="s5-1-p1"></a>[5.1¶1] Three rules govern which value a group inside a repeated construct holds.
+The first two are three-way unanimous (python `re`, libpcre2 and pcrec
+agree); the third is libpcre2's, and python `re` differs from it:
 
 1. <a id="s5-1-p2"></a>[5.1¶2] **Cross-iteration retention.** A group inside a quantifier whose
    subexpression did not run in the FINAL iteration keeps its value from the
@@ -1408,6 +1364,16 @@ measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
    2 as `[0,1)`. Unset means "never participated in the whole match".
 2. <a id="s5-1-p3"></a>[5.1¶3] **An empty final iteration still overwrites.** `(a*)*` and `(a?)*` over
    `"aaa"` both report group 1 as `[3,3)`.
+3. <a id="s5-1-p3a"></a>[5.1¶3a] **An iteration that matched empty ends an unbounded repeat,
+   and the repeat's last MANDATORY iteration is one of them.** After an
+   iteration of `X*`, `X+` or `X{m,}` that consumed nothing, no further
+   iteration runs: the continuation follows, and a failure there backtracks
+   into that iteration. For `m >= 1` this includes iteration `m`; iterations
+   `1..m-1`, and every copy of a bounded `X{m,n}`, are not covered.
+   `(?:()|a)+?b` over `"ab"` matches `[0,2)` with group 1 UNSET: iteration 1
+   takes `()`, which is empty, so no second iteration may follow it, and the
+   match is found by backtracking into iteration 1 and taking `a`. python
+   `re` reports group 1 as `[0,0)` there.
 
 <a id="s5-1-p4"></a>[5.1¶4] After a successful match a slot holds the group's last-executed span or is
 genuinely unset; a caller never reasons about which iteration produced it.
@@ -1740,8 +1706,8 @@ so a caller holding only an artifact's `rx_info` (a catalog, a loader over
 `dlsym`) iterates with `info->next(&it, caps)` and needs no header.
 
 <a id="s6-p14c"></a>[6¶14c] **`next_n`** is the same iterator's several-per-call entry (§3.8.1),
-of the one type `rx_nextnfn`, and `NULL` exactly where `next` is. It is what
-`RX_FOREACH` calls (§3.8.2).
+of the one type `rx_nextnfn`, and `NULL` exactly where `next` is. Generic loops
+over it are §3.8.2's.
 
 <a id="s6-p15"></a>[6¶15] **`frame_capacity`'s sentinel differs from the same-named option's.** On the
 INPUT side `pcrec_options.frame_capacity == 0` means "let the compiler size
@@ -1880,7 +1846,7 @@ selection point must be observable".
   value. A stamp whose value can legitimately be `0` and also needs a
   "declined" answer is a STRING with a `"none"` member, not a number with a
   sentinel.
-- <a id="s6-3-1-p5a"></a>[6.3.1¶5a] **A start-table stamp names a selection the artifact RUNS.** The stamps that report a search-start choice (`<PREFIX>_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_VM_START_SCAN`, `_DFA_START`) carry that choice where the artifact's search path makes it, and the choice's ABSENCE value where it does not: `"none"` for the end window, the handoff and the prefilters, `"attempt-start"` for `_DFA_START`. `<PREFIX>_DFA_SCAN` names the path; the others never describe a pass the artifact does not run.
+- <a id="s6-3-1-p5a"></a>[6.3.1¶5a] **A start-table stamp names a selection the artifact RUNS.** The stamps that report a search-start choice (`<PREFIX>_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_VM_START_SCAN`, `_DFA_START`) carry that choice where the artifact's search path makes it, and the choice's ABSENCE value where it does not: `"none"` for the end window, the handoff and the prefilters, `"attempt-start"` for `_DFA_START`. `<PREFIX>_DFA_SCAN` names the path; the others never describe a pass the artifact does not run. Since D172 (S2), `_DFA_PREFILTER`'s offset values (`"offset-set"`, `"run-pinned"` and their `-bounded` forms), `_DFA_PREFILTER_OFFSETS`, and `_REQ_RUN`'s `@idx` with the `_REQ_BYTE` it implies are written from the memfn kit's window-family decision over the facts pcrec states (`docs/design/memfn/window_site.md` §3.4), never from a pcrec-side recomputation; their values are unchanged by the move.
 - <a id="s6-3-1-p6"></a>[6.3.1¶6] **`#if` on a stamp compiles only within its scope.** `#if`ing on
   `RX_ENGINE` is safe on every artifact; `#if`ing on a (b) macro such as
   `RX_VM_RUNGS` or a budget macro does not compile against a DFA artifact.
@@ -2147,7 +2113,7 @@ call site's `subject[pos++]` is still evaluated). Two tables per machine are
 foldable, `<m>_next_state` and `<m>_is_accepting`, over the same machines
 `_DFA_TABLE` and `_DFA_SCAN_EDGE` compose (so none of the three can name a
 machine the artifact does not contain), plus the find-all iterator's retry machine where the
-artifact carries it (`<PREFIX>_ITER_RETRY` `"dfa-root"`, §6.3.13), so the value runs `0..8`;
+artifact carries it (a DFA artifact whose `<PREFIX>_ITER_RETRY` is `"retry"`, §6.3.13), so the value runs `0..8`;
 `0` on `"attempt"` and `"empty"` apart from that retry machine. It is family (b) in nature — what the emitted machine turned out to
 contain — and is owed because a fold is visible only as a table's ABSENCE.
 `tests/codegen/run_dfa_uniform_fold.sh` reads it. The artifact is smaller and
@@ -2906,14 +2872,20 @@ plain artifact: the forms an artifact built under `-fmemfn-simd` differs by.
 
 <a id="s6-3-13-p1"></a>[6.3.13¶1] **`<PREFIX>_ITER_RETRY`** — how `<prefix>_next` (§3.8) finds the
 non-empty match after an empty one at the same position, on every artifact
-of both engines: `"none"` (the artifact never reports an empty span, the
-`reports_empty` fact, or does not define `<prefix>_next`), `"dfa-root"` (an
-anchored machine whose start states admit no empty match) or `"vm-guard"`
-(the VM's accept rejects an empty match at the attempt's start). It is
-pattern-level and emitted beside `<PREFIX>_UTF_CHECK`.
+of both engines. Each value says what the caller sees:
+
+| value | the caller sees |
+|---|---|
+| `"none"` | no retry: the artifact never reports an empty span (the `reports_empty` fact), or defines neither `<prefix>_next` nor `<prefix>_next_n` |
+| `"retry"` | an empty match is retried once at its position (one anchored, non-empty attempt, PCRE2's NOTEMPTY_ATSTART); the retry is linear in the subject and counts against no match budget |
+| `"retry-budgeted"` | the same retry, run under the artifact's match budget: a retry that exhausts it ends the iterator with that budget's give-up code, as a search would |
+
+<a id="s6-3-13-p2"></a>[6.3.13¶2] The value is the first row of the artifact's retry table that applies
+(`src/gen/emit_iter.c`, THE RETRY TABLE). It is pattern-level and emitted
+beside `<PREFIX>_UTF_CHECK`.
 
 ```c
-#define RX_ITER_RETRY "dfa-root"
+#define RX_ITER_RETRY "retry"
 ```
 
 ---
@@ -3358,6 +3330,17 @@ byte (`0xFF`, a truncated `0xE3`) is a valid start and is attempted.
   start other than `ctx->pos`, a second stated divergence on which both entry
   shapes agree.
 
+- <a id="s9-3-p4"></a>[9.3¶4] **The iterator's anchored retry does not cross an ill-formed sequence.**
+  After an empty match at `q`, `<prefix>_next` retries a non-empty match
+  anchored at `q` (§3.8¶2). libpcre2's `PCRE2_ANCHORED | PCRE2_NOTEMPTY_ATSTART`
+  retry under `PCRE2_MATCH_INVALID_UTF` can advance over an ill-formed
+  sequence and report a match that starts after `q`; pcrec's retry reports a
+  match starting at `q` or none, and the iteration then steps on. `\G|.` over
+  `f5 61` under `-e utf8` gives `(0,0) (1,1) (1,2) (2,2)` here (the retry at 0
+  fails: an ill-formed lead is attempted, ¶1, and `.` cannot match it) and
+  `(0,0) (1,2) (2,2)` in libpcre2's loop; `c0 80 61` and `ed a0 80 61` behave
+  alike.
+
 <a id="s9-4"></a>
 ### 9.4 `-futf-check`: refusing an ill-formed subject
 
@@ -3421,6 +3404,18 @@ unconditionally and under every setting of the guard: an unanchored search's
 candidate match starts, a failed attempt's retry, and a search's first attempt
 at offset 0 (§9.3). A reported match span never begins inside a character, on
 any subject. The guard axis governs only where a CALLER may point an entry.
+
+- <a id="s9-5-p2"></a>[9.5¶2] **No empty match at a stray continuation byte.** libpcre2 under
+  `PCRE2_MATCH_INVALID_UTF` treats the offset of a stray continuation byte as
+  the end of a valid segment and can report an empty match there; pcrec never
+  starts a match at a continuation byte (¶1). `(?<=.)` over `61 80 61` under
+  `-e utf8` reports `(3,3)` against libpcre2's `(1,1) (3,3)`, and over
+  `c3 a9 80 c3` reports nothing against libpcre2's `(2,2)`. The loop (§3.1.3)
+  and `<prefix>_next` inherit this from `<prefix>_search`.
+- <a id="s9-5-p3"></a>[9.5¶3] **An ill-formed subject END** is a related divergence of the empty-match
+  family (`$`, `\z`, `\Z`, `(?m)$`, `\B`, `(?<!.)`), recorded as
+  `docs/dev/known_issues.md` K74 (which names `$` and `\B`): over `e3 81` pcrec reports `(2,2)` for `$`
+  where libpcre2 reports nothing.
 
 ---
 

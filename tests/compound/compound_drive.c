@@ -75,7 +75,7 @@
 static const char *const entry_suffix[PCREC_ENTRY_PUBLIC_N] = {
     "search", "search_in", "match", "match_in", "match_caps",
     "match_caps_in", "next_pos", "valid_upto", "var_valid", "info", "main",
-    "next",
+    "next", "next_n",
 };
 
 /* The requests B0 drives: the reduced public set, and the part-shaped

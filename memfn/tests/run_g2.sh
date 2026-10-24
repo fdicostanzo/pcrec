@@ -949,6 +949,24 @@ else
 fi
 grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 
+# --- 4w. G2's WINDOW family (D172 S2 commit 1): its own runner -------------
+# memfn/tests/run_g2_win.sh: GENERATED window sites (spans, cores, verify
+# facts, negative starts, one or two alternatives, floors) rendered by the
+# kit's window family (every art's since D172 S2 commit 6), the phase-1 reply
+# held to a reference decision written from window_site.md, every answer to
+# the facts in guard-page and sentinel-padded layouts, its own floors and W1.
+# It links the PLAIN library: the family's walks are not rows of section 4b's
+# registry (their path ids are its own floors).
+echo "== window: G2's window family (run_g2_win.sh)"
+if TMPDIR="$work" LIB="$plainlib" "$TO" 3000 bash "$here/run_g2_win.sh" > "$work/win.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: window family ($(grep '^checks passed' "$work/win.log"))"
+else
+    grep -E '^FAIL' "$work/win.log" | head -20
+    note_fail 1 "window family (run_g2_win.sh): $(grep '^checks failed' "$work/win.log")"
+fi
+grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
+
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
 # Sources: the `MFTRACE REACH table=T row=R chosen=N asked=A` lines of every G2
 # process that SELECTS rows (the generator, once per W2 mutation; K1 calls

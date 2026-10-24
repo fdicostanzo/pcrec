@@ -9874,6 +9874,7 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 **Noted for I2 (not decided here).** The public `next_n` (k = 64) arm measured 0.58x of today's loop on prose through the PLT (c3-4k R2) and 0.94x on c1. It also measured 26x on c7, where it filled 64 matches for a caller who wanted 3. B64's internal cache kept one exported call per match and lost, so the gain comes from removing calls, not from caching. Frank's idea of a caller-side macro over a local buffer is that shape; see the journal for 2026-10-21.
 
 **Gloss (lane i2build, 2026-10-21).** "Noted for I2" above means the stage `findall_iter.md` revision 3 numbers I4 (`docs/design/findall_iter_i2.md` rev 2, fam-3): I2 stays the kit's `st` stage. The decision text is unchanged.
+
 ## D172 — ONE unified window site replaces the REPORT-specific path (Frank, 2026-10-21, given to the kit; filed by main)
 
 - **Decision:** pcrec states FACTS, not a layout ("don't overspecify representation"): spans, each with a start offset (negative allowed), a set per position, a required core, and a per-span verify-exactly flag, plus the subject facts. An off-subject position outside the core passes; inside the core it fails (absence only at the edges). Find-window and REPORT are the SAME request (REPORT = verify everything; the kit fast-finds a stop, then verifies). The stop choice moves to the kit as tables (M5, whose first row reproduces prefix_k: zero movers). Fixed lookbehinds and post-span lookaheads longer than 1 come with it, sourced from main's D168 producer; the UL-8 cap lift dissolves. Retiring, staged at zero movers: `ctx[]` and its caps, the REPORT kind, RPT's separate check, `plan_hint` (after the reproduction).
@@ -9889,3 +9890,52 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Effect:** supersedes [M4-SUBST]'s "pattern AND replacement template compiled together into one emitted C function". Lane subst (worktrees/subst, off lane/i2build) revises the design (phase A, design only), then a D6 panel and Frank's discussion before any build.
 - **Revisit when:** the revision shows modularity has a measured cost.
 
+
+## D174 — caller-facing names describe behaviour, never architecture (2026-10-22)
+
+- **Decision:** Frank, relayed by the kit session: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." A caller-facing name (a flag, an `rx_info` field or value, a CLI option, a stamp, spec prose a caller reads) names the BEHAVIOUR a caller sees or turns off, never an internal module or mechanism ("kit", "memfn", "proof", family letters, lane or row ids).
+- **Scope:** not retroactive. The existing `--memfn=` namespace and the spellings already shipped stay. It binds new names and new spec sentences from 2026-10-22; the [IFACE-PUSH] review may apply it to old ones.
+- **First applications:** the [IFACE-PUSH] candidate flag bit 57 is filed by behaviour (working name `PCREC_NO_WINDOW_REPORT`, not `PCREC_NO_KIT_PROOF`); the kit's S3 "cover" spec prose (its new match_api and tuning paragraphs) is reworded by behaviour before delivery; S3's two deny rows stay under `--memfn=`.
+- **Revisit when:** [IFACE-PUSH] opens (decide whether to rename the legacy spellings there).
+
+
+## D176 — stop-ranking study rulings: one priced stop choice, one decider for presence and stop (Frank, 2026-10-23)
+
+- **Decision:** Frank's rulings Q1-Q6 on the kit's stop-ranking study (lane/memfn-stopstudy 0567def22, stop_ranking_study.md §10), given to the kit and filed by main.
+  - **Q1 ("I agree"):** "which stop, found how" is ONE priced choice in the kit's Table A over (alternative x stop position x find method); Table B quotes each method's price for a set at an offset. Costs are VISIBLE in ONE table, the measurement set, shown through the existing `--list-measurements` (no new listing); each artifact stamps the set and revision it priced with. A cost changes under an option only through a visible key column or a different row, never a hidden adjustment (the SIMD layer changes which methods are available, not their cost; the target box or ISA selects the set; encoding is a fact about rates). A check asserts every cost an artifact used is a declared row of its stamped set. Costs are RELATIVE to the scalar walk's per-byte cost on the same box, raw readings kept as provenance, at a resolution fine enough that near-ties are decided by rates, not rounding.
+  - **Q2 ("Yes. It sounds simpler as well"):** the Horspool skip becomes one METHOD in Table A's priced choice, priced (probe + rate x verify) / E[sh]. HORS_MIN and the separate admission rule are DELETED.
+  - **Q3 ("Yes but make it a formal thing and build it as a library of values"):** the kit measures this box (zen4) far enough to fill Q1's cost table (memchr, two-stream pair and Horspool-probe cards plus verify per hit) as a new revision of the box's set, in a night window cleared with Frank, gated on the step-0 census. The library (a canned self-contained pcrec measuring script, closest-match selection over declared fallback rows, targeting another machine, the generic envelope) is [MEASURE-SET], already filed; `plan_cost.def` rows migrate into the sets.
+  - **Q4 ("Yes let's go with these ideas"):** presence and stop stay two QUESTIONS with different prices but ONE decider, the kit's window family, from ONE statement. The window's span array also carries spans whose offset is UNBOUNDED (required bytes with no known distance, e.g. `b` in `a.*b`): a bounded-offset span is a stop candidate, an unbounded one is presence-only, the use read off the range. pcrec states req_set and req_whole_run as such spans. One general fold: when the chosen stop's first find, scanned from the subject start, covers the presence byte, the presence pass is dropped. An MF_SITE_ABI event.
+  - **Q5 ("Use the higher precision integers ... The solution should [not] depend on compiler options"):** prices are higher-resolution fixed-point integers, deterministic on every host and compiler; rates are never collapsed (`\d\dxyz`: 997 vs 498 ppm no longer tie); prices within the measurement-noise band tie, decided by the existing declared tie rows.
+  - **Q6 ("Yes file it. Nice generalization"):** the two-stream find's row contract widens from a one-bit case pair inside a literal stretch to ANY two-byte set at ANY window position (a Table B row-contract edit, not a new mechanism). Filed, not built.
+  - **Standing rule (Frank):** "going forwards, update measurement scripts when new methods appear." Any new find/scan/skip/verify method adds its measurement card in the same change; until a box is re-measured the row reads UNMEASURED visibly.
+- **Effect:** agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements. Rows: [MEMFN-UNBOUNDED-SPANS] (Q4, pcrec side), [MEMFN-PAIRSTOP] (Q6), [MEMFN-PAIRSIMD] (Q6 kernel); [MEASURE-SET] carries Q1/Q3. The standing rule is in docs/dev/guide/addenda/kit.md.
+- **Revisit when:** step 0's census or the method cards show the single priced choice mispicking where the separate rules did not.
+
+
+## D177 — the full suite runs on a declared schedule, verdicts retained (Frank, 2026-10-23)
+
+- **Decision:** Frank's schedule, verbatim: "Full Suite schedule: 1. run it tonight. 2. run it before any major version shift. 3. schedule it after any major code refactor 4. schedule it after 2-3 major changes. 5. schedule after 4-6 minor changes. Schedule means next window, not right away. Try and combine." The full suite is `scripts/battery.sh` (test, strict, axes, san, alloc, lint, mech, recidentity). Cause: the gate census (gate_census_2026-10-23.md, [GATE-RUNS]) found every check outside `make test` depending on a hand-launched battery that kept no verdict (full mech last ran about 10-08; recursion-identity went red unseen).
+- **Triggers, first match decides WHEN** (the table is the rule; a run covers all of them):
+
+  | row | trigger | when |
+  |---|---|---|
+  | 1 | tonight (the one-off, 2026-10-23) | now: the first window, after the iterator landing |
+  | 2 | a major version shift | before: the run reads green first |
+  | 3 | a major code refactor lands | next window |
+  | 4 | 2-3 major changes landed since the last green run | next window |
+  | 5 | 4-6 minor changes landed since the last green run | next window |
+
+- **Major vs minor** (the manager classifies at each landing, in docs/dev/full_suite_ledger.md): major = a new capability, an abi event, a refactor of a shared mechanism, a new engine path; minor = a fix, a re-pin, a check-only change. A landing that touches no code, check, script or data store (docs, design notes, studies) is listed as `none` and does not count.
+- **Combine:** one run covers every pending trigger. A queued run is not duplicated by a later trigger. The counters reset when a run reads green (every stage's verdict from make's `*** [...] Error` lines or the stage rc, not "sections ran"); a red run resets nothing.
+- **Window:** a bench/box night window cleared with Frank (the box is shared). "Schedule" never means start now. The run takes the box lock and is not a timing run, so it needs no quiet gate, only a free lock and no running queue job.
+- **Retained verdicts:** each run's logs are kept at `build/full_suite/<date>_<sha>/` (gitignored) with a one-line `summary.txt`; the manager copies it into the ledger's Runs table. Mechanics: `scripts/fullsuite_job.sh` (a box-queue job; runs at a frozen commit in its own detached worktree so merges cannot enter mid-run).
+- **Revisit when:** a red battery is found that a trigger should have caught earlier.
+
+## D175 — RX_FOREACH dropped; `_next` is the default find-all, `_next_n` the batch form (Frank, 2026-10-23)
+
+`<prefix>_next` and `<prefix>_next_n` (and `rx_info.next` / `rx_info.next_n`) stay. The `RX_FOREACH` macro family (`RX_FOREACH`, `RX_FOREACH_PAIRS`, `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) is dropped before landing, with the abi 83 -> 84 event amended (still 84; the branch had not landed).
+
+Evidence (find-all timing, job 599): RX_FOREACH was 4-11% slower than `_next` on cheap dense matches and 32-78% slower on tiny subjects and early stops; it won only on costly matches, where `_next_n` wins as much. A plain loop over `rx_info.next` costs 0.3-0.4% over a direct `_next`, and `rx_info.next_n` gives generic code the batching.
+
+Generic-loop rule: a caller that serves any artifact loops over `info->next` (one match per call) or `info->next_n` (a batch); the spec shows both (match_api.md §3.8.2). No macro stands between the caller and the entry. Supersedes the RX_FOREACH parts of `docs/design/findall_iter_i2.md` (D171).

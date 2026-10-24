@@ -133,11 +133,21 @@ typedef struct fd_facts {
  * or, in the run compare's walk, the RUN term; in the finder walk also its
  * own facts (`fd`, NULL in every other walk, where its fields read
  * unstated). */
+/* The window family's walk facts (window.c, D172 S2 commit 1): the window
+ * site and the alternative the walk weighs (Table A, per alternative) or
+ * chose (Table E). The fields.def window fields read them and nothing else,
+ * so they are UNSTATED in every other walk. */
+typedef struct wf_facts {
+    const mf_site *site;
+    const mf_walt *alt;
+} wf_facts;
+
 typedef struct {
     const mf_site  *s;
     const mf_hooks *h;
     const mf_term  *t;
     const fd_facts *fd;
+    const wf_facts *wf;     /* the window family's walks only, else NULL      */
 } gate_in;
 
 /* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
@@ -176,11 +186,12 @@ static inline const char *kit_miss(const mf_hooks *h)
     return h->miss == MF_MISS_N ? h->n : h->miss;
 }
 
-/* ---- the window (W0-W3, MF_SITE_ABI 11; setfind.md §2.2) ---------------- */
+/* ---- the forward FIND ---------------------------------------------------- */
 
-/* 1 iff site `s` is one the window fields describe: a FORWARD FIND. Its
- * pred states window_stated 1; every other site and every preds[] entry
- * states 0 (site_check). */
+/* 1 iff site `s` is a FORWARD FIND: the one op whose `pred` is span 0 or a
+ * context stop (span_class BOUNDED or CONTEXT, kit_proof_check). The window
+ * fields W0-W2 that once described its window retired at D172 S2 commit 6
+ * (a window site states its spans; MF_SITE_ABI 20). */
 static inline int kit_window_site(const mf_site *s)
 {
     return s->op == MF_OP_FIND && !s->reverse;
@@ -196,39 +207,19 @@ static inline int32_t kit_d_min(const mf_pred *p)
     return d;
 }
 
-/* Every row born before the window fields reads none of them and keeps no
- * storage: it serves the window AS THE CANDIDATE (W0 YES, W1 == d_min, W2
- * ZERO) and any declaration point (W4), which is exactly today's sites
- * (setfind.md §11.1 "Kit side"). A row that reads a window, or keeps
- * storage, states its own. R17-b' B1 (MF_SITE_ABI 12) adds the two facts
- * R-19 states on every site: no row born before B1 reads the call mode or
- * the START hook, so each renders the same for any value of either. */
+/* Every row born before the window fields keeps no storage: it serves any
+ * declaration point (W4). R17-b' B1 (MF_SITE_ABI 12) adds the two facts R-19
+ * states on every site: no row born before B1 reads the call mode or the
+ * START hook, so each renders the same for any value of either. A row that
+ * keeps storage, or reads either, states its own. (W0-W2 and R-26's prefix
+ * facts, context spans, `absent`/`consumable` and `read_floor` left the
+ * field table at D172 S2 commit 6, MF_SITE_ABI 20.) */
 #define MF_SERVES_WINDOW_ONLY \
-    [FLD_window_stated]   = CM(YES), \
-    [FLD_move_back]       = CM(D_MIN), \
-    [FLD_overshoot]       = CM(ZERO), \
     [FLD_decl_point]      = MF_ANY, \
     [FLD_body]            = MF_ANY, \
     [FLD_start]           = MF_ANY,
-/* R-26 (MF_SITE_ABI 18): no row born before it reads span 0's prefix facts,
- * a context predicate's `consumable` or the site's `read_floor` (facts for a
- * choice, never an obligation on a form), so each serves every value; none
- * tests a `ctx` entry, and each renders a context stop's `absent` FAILS (a
- * read outside the subject fails its term), so each serves only NONE and NO
- * there. The generic row states its own (it tests both). */
-#define MF_SERVES_PROOF_ANY \
-    [FLD_prefix_stated]   = MF_ANY, \
-    [FLD_exact_len]       = MF_ANY, \
-    [FLD_consumable_len]  = MF_ANY, \
-    [FLD_consumable]      = MF_ANY, \
-    [FLD_read_floor]      = MF_ANY,
-#define MF_SERVES_PROOF_TODAY \
-    MF_SERVES_PROOF_ANY \
-    [FLD_ctx]             = CM(NONE), \
-    [FLD_absent]          = CM(NO),
 #define MF_SERVES_WINDOW_TODAY \
-    MF_SERVES_WINDOW_ONLY \
-    MF_SERVES_PROOF_TODAY
+    MF_SERVES_WINDOW_ONLY
 
 /* ---- the per-artifact state ---------------------------------------------- */
 
@@ -260,6 +251,12 @@ typedef struct {
        -1 when the art does not count) */
     const char       *fd_row;
     int               reach_k;
+    /* D172 S2 commit 1: a window site the family rendered on a preview art
+       (window.c). `wplan` is the plan its FLOOR row renders (NULL where the
+       family's text is a legacy row's, `site` then holding the plan
+       translated into that row's site); `wpath` the decision's path id */
+    const struct wf_plan *wplan;
+    const char       *wpath;
 } site_rec;
 
 struct mf_art {
@@ -316,6 +313,25 @@ const char *kit_presence_check(const mf_site *s);
  * by the public port and by the routed PRES slot (finder.c fd_pres). */
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
                     const uint8_t *start_set, mf_pres_picks *out);
+
+/* THE BYTE-RATE and its masses (presence.c), one definition the PRES ports
+ * and the window family read: the analysis object's `byte-rate` table (ppm
+ * per byte, uint32_t[256]) or NULL where it carries none (no object, the
+ * kind absent, PRIOR_NONE). kit_set_mass is pcrec_find_set_ppm's arithmetic
+ * (capped at 1e6; NONE: the uniform mass of the cardinality); kit_set_sum
+ * the uncapped sum, PICK's cube mass (pcrec_find_pick, run_rank). */
+#define kit_byte_rate MF_NS(kit_byte_rate)
+#define kit_set_mass  MF_NS(kit_set_mass)
+#define kit_set_sum   MF_NS(kit_set_sum)
+const uint32_t *kit_byte_rate(const mf_art *art);
+uint32_t kit_set_mass(const uint32_t *rate, const uint8_t set[32]);
+uint32_t kit_set_sum(const uint32_t *rate, const uint8_t set[32]);
+
+/* The kit's own membership test of `byte` (an unsigned char expression)
+ * against `set` (generic.c): the set's maximal byte ranges, OR-ed; "0" for
+ * the empty set, "1" for the full one. 1 iff the text reads `byte`. */
+#define kit_set_test MF_NS(kit_set_test)
+int kit_set_test(kb *b, const uint8_t set[32], const char *byte);
 
 #define kit_fail MF_NS(kit_fail)
 /* Records the first internal error on the artifact; always returns -1. */
@@ -503,7 +519,7 @@ const char *fd_preview_step(const char *step);
 /* 1 iff the form the composer's walk chooses for REPORT site `s` under the
  * gate's phases `gphases` proves, at every offset in [MF_PROOF_LO,
  * MF_MAX_FWD), EXACTLY the intersection of the REQUIRED terms' sets there
- * (span 0's and every `ctx` entry's; all ones where none reads): the REPORT
+ * (span 0's; all ones where none reads): the REPORT
  * row's applicability (R-26.3, K96), never a check of it (compose.c). */
 #define kit_report_exact MF_NS(kit_report_exact)
 int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
@@ -714,6 +730,68 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). */
 int run_cmp_sat(const mf_term *t);
+
+/* ---- THE WINDOW FAMILY (window.c; D172 S2 commit 1) ----------------------
+ *
+ * window_site.md rev 3.2 §2: Tables A (the stop, its alternative half) with
+ * the MARGIN row, C (the verify plan), D (the resume), E (the frame) and the
+ * TIE table, over a window site's facts: since S2 commit 6 the route of
+ * every site stating alternatives, on every art. */
+struct wf_plan;
+
+#define wf_check        MF_NS(wf_check)
+#define wf_prepare      MF_NS(wf_prepare)
+#define wf_floor_class  MF_NS(wf_floor_class)
+#define wf_floor_arm    MF_NS(wf_floor_arm)
+#define wf_plan_reads_table MF_NS(wf_plan_reads_table)
+
+/* NULL iff site `s`'s window facts (alts, spans, entries, wfloor) are
+ * statements the family describes; on a site stating none, NULL. `frame`
+ * 1: also the frame rules the family reads (the preview's own route). */
+const char *wf_check(const mf_site *s, int frame);
+/* PHASE 2's selection for window site `s` (wf_check'd) under the define
+ * hooks `def` (the frame's), the gate reading `gphases`, traced unless
+ * `quiet`: the decision (phase 1), then Table E. On the
+ * family's FLOOR row, *plan is the plan it renders and *legacy NULL; on a
+ * row reproducing today's text, *legacy is the plan translated into that
+ * row's site (selected by the composer's walk as ever) and *plan NULL. Both
+ * live in the art's arena. *path is the decision's path id. 0, or -1 with
+ * *why. */
+int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
+               unsigned gphases, int quiet, const mf_site **legacy,
+               const struct wf_plan **plan, const char **path, const char **why);
+/* THE PARTS (the kit manager's wsc3 ruling 3: window facts PER PART). 1 iff
+ * some `preds[]` entry of `s` states window facts. */
+#define wf_has_parts     MF_NS(wf_has_parts)
+#define wf_part_site     MF_NS(wf_part_site)
+#define wf_parts_check   MF_NS(wf_parts_check)
+#define wf_parts_prepare MF_NS(wf_parts_prepare)
+int wf_has_parts(const mf_site *s);
+/* Fills `*out` with FUNC part `i` of pre-check site `s` as the FIND site the
+ * family decides: the offset-skip function's frame (FUNC/RETURN, miss `n`),
+ * the part's predicate, and its window facts as the site's. */
+void wf_part_site(const mf_site *s, unsigned i, mf_site *out);
+/* NULL iff every part's window statement is one the family describes in that
+ * frame (wf_check) and only FUNC parts of an ALL_PRESENT site state one. */
+const char *wf_parts_check(const mf_site *s);
+/* On a preview art: *out is a copy of `s` (the art's arena) whose stating
+ * parts carry the family's plan translated into today's part shape (E-func's
+ * legacy row); refused where a part's plan has no legacy translation. 0, or
+ * -1 with *why. */
+int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, int quiet,
+                     const mf_site **out, const char **why);
+/* (compose.c) 1 iff the composer's walk chooses a row for site `s`, asked
+ * quietly: the window family's E-func/E-stmt predicate over its translation. */
+#define kit_legacy_serves MF_NS(kit_legacy_serves)
+int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                      unsigned gphases);
+/* The class of the floor row's text for `plan` (R-25: the positions it
+ * TESTS, the stop's find included), and whether that text reads a table of
+ * pcrec's (mf_defined's `reads_table`). */
+void wf_floor_class(const struct wf_plan *plan, mf_class *out);
+int  wf_plan_reads_table(const struct wf_plan *plan);
+/* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
+extern const arm wf_floor_arm;
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 
