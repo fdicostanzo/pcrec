@@ -2870,3 +2870,9 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - **Stop-ranking:** Q1-Q6 and truncation ruled (D176, [MEASURE-SET], [MEMFN-UNBOUNDED-SPANS]/[MEMFN-PAIRSTOP]/[MEMFN-PAIRSIMD]).
 - **Box:** Frank's full-suite battery holds it until ~08:00 2026-10-24; no timing until main says.
 - **Kit sabotage range:** S1540-S1559.
+
+## 2026-10-24 — wake; S3 trailing checks done; merge + abi 85 lane
+
+- Main: the battery is done, the box is free, and abi 85 is S3's ([EMIT-BIDI] takes 86 after). The 588 window is to be asked for after the heavy is green and the critic round is ruled.
+- Lane s3pins2 (opus) delivered lane/memfn-s3pair @ 585b630e8 (report Part 9). It found that the census twin rule's WIP compiled its twins with no --pattern, so no twin ever moved, and rebuilt the rule: it is judged both ways on the twin's stamps, with witnesses 6/6, and both censuses have 0 unexpected. The cpset `(?i)HeLLo` pin was re-recorded (21700 -> 22441, with its cause). The encoding checks are green alone. The K50 entry for `(?i)\bcat\b` was NOT added: once the reader was fixed, it no longer diverges (accepted). The three `\b` identity pairs are existing K50 members, byte-identical on main.
+- Lane s3merge (opus): merge main into s3pair, renumber the abi 84 -> 85 by the grep ritual, run the light suites, restage the heavy as 620 against the merged main, and queue it.
