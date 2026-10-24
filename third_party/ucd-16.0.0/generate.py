@@ -544,16 +544,18 @@ def read_bidi_class(path, bc_rows):
     `DerivedBidiClass.txt` lists assigned code points and the unassigned
     `BN` ones; every other unassigned code point takes the value of the LAST
     `@missing` line covering it (the file's own rule: a later line is the
-    narrower one).  Long value names in the `@missing` lines are mapped to
+    narrower one, so it OVERRIDES an earlier default but never a data line).  Long value names in the `@missing` lines are mapped to
     the short names through `PropertyValueAliases.txt`'s `bc` rows."""
     long_to_short = {long_name: spellings[0] for long_name, spellings in bc_rows}
     listed = read_ranged(path)
-    value = bytearray(MAXCP + 1)           # 0 = not listed
+    value = bytearray(MAXCP + 1)           # 0 = no value yet
+    explicit = bytearray(MAXCP + 1)        # 1 = a data line gave it
     names = sorted(listed)
     index = {n: i + 1 for i, n in enumerate(names)}
     for n, ivs in listed.items():
         for lo, hi in ivs:
             value[lo:hi + 1] = bytes([index[n]]) * (hi - lo + 1)
+            explicit[lo:hi + 1] = b"\x01" * (hi - lo + 1)
     for lo, hi, long_name in read_defaults(path):
         short = long_to_short.get(long_name)
         if short is None:
@@ -563,7 +565,7 @@ def read_bidi_class(path, bc_rows):
             names.append(short)
             index[short] = len(names)
         for cp in range(lo, hi + 1):
-            if value[cp] == 0:
+            if not explicit[cp]:       # a LATER @missing line is narrower
                 value[cp] = index[short]
     out = {n: [] for n in names}
     run_lo, run_v = 0, value[0]
