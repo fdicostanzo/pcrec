@@ -174,7 +174,7 @@ for ng in [63, 64, 65, 127, 128, 129, 255, 256, 300]:
     add(Bg, '', pat, '[$%d$1]' % ng, 'a' * ng + 'b' + 'a' * ng * 2)
 add(Bg, '', '(?:(a)|b)' * 130, '[$130]', 'b' * 130 + 'a' * 130)
 
-# ---- nogap: the element without RX_SUBST_GAPS vs PCRE2_SUBSTITUTE_REPLACEMENT_ONLY (§4¶3)
+# ---- nogap: the element without PCREC_SUBST_GAPS vs PCRE2_SUBSTITUTE_REPLACEMENT_ONLY (§4¶3)
 NG = 'nogap'
 for pat, subj in [('a', 'banana'), ('x*', 'ab'), (r'(a)(n)?', 'banana'), ('', ''), ('q', 'abc'), (r'\w+', 'hi there you')]:
     for lim in [1, 2, 'all']:

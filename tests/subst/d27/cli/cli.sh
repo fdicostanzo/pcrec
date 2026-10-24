@@ -2,7 +2,7 @@
 # substd27 CLI + header-composition cases (subst_api.md §1, §5, §6, §10).
 # usage: cli/cli.sh [PCREC]     prints PASS/FAIL per case and a total
 # substb2: the R4 interface -- `--unset=` is gone (an unknown option: unset is
-# the run-time RX_SUBST_STRICT, §4¶23), the support unit is `--emit-support`
+# the run-time PCREC_SUBST_STRICT, §4¶23), the support unit is `--emit-support`
 # (§10), the drivers are the §6 recipes (the setup, the per-match loop, the
 # flatten), and the R3 stamps (`_SUBST_UNSET`, `_NSEGS`) and `PCREC_SUBST_PAIRS`
 # are retired with the promises behind them.
@@ -90,7 +90,7 @@ grep -q 'DMY_NSEGS\|SUBST_UNSET "' "$O/dmy.h" "$O/dmy.c" && bad stamp.r3.retired
 $T "$P" -p dme -o "$O/dme.c" --subst '${!v}$1' 2>/dev/null
 grep -q '^#define DME_SUBST_MODULES "subst,subst-pcrec"' "$O/dme.c" && ok stamp.modules.pcrec || bad stamp.modules.pcrec "$(grep MODULES "$O/dme.c")"
 # the declared order inside the .h: shared block, subst block, declarations
-a=$(grep -n 'define PCREC_RX_ABI_H' "$O/dmy.h" | head -1 | cut -d: -f1); b=$(grep -n 'define PCREC_SUBST_H' "$O/dmy.h" | cut -d: -f1); c=$(grep -n 'extern const struct rx_subst_info dmy_subst_info' "$O/dmy.h" | cut -d: -f1)
+a=$(grep -n 'define PCREC_RX_ABI_H' "$O/dmy.h" | head -1 | cut -d: -f1); b=$(grep -n 'define PCREC_SUBST_H' "$O/dmy.h" | cut -d: -f1); c=$(grep -n 'extern const struct pcrec_subst_info dmy_subst_info' "$O/dmy.h" | cut -d: -f1)
 [ -n "$a" ] && [ -n "$b" ] && [ -n "$c" ] && [ "$a" -lt "$b" ] && [ "$b" -lt "$c" ] && ok header.order || bad header.order "$a $b $c"
 # --subst-file is byte for byte: NUL, CR, quotes, newline, high bytes
 printf 'a"\x27\r\n\x00\xff$1\\' > "$O/raw.tpl"
@@ -119,12 +119,12 @@ cat > "$O/sc_main.c" <<'EOF'
 int main(void) {
     rx_iter it = RX_ITER_INIT((const unsigned char *)"xab", 3);
     rx_var vres[1]; rx_ctx ctx; int bad;
-    if (rx_subst_ctx_init(&ctx, &it, &sr_info, &sc_subst_info, NULL, vres, 0, &bad) < 0) return 2;
-    ptrdiff_t caps[SR_NCAPS][2]; rx_subst_piece pc[SC_PIECES]; rx_subst_out o = { .pc = pc, .cap = SC_PIECES };
+    if (pcrec_subst_ctx_init(&ctx, &it, &sr_info, &sc_subst_info, NULL, vres, 0, &bad) < 0) return 2;
+    ptrdiff_t caps[SR_NCAPS][2]; pcrec_subst_piece pc[SC_PIECES]; pcrec_subst_out o = { .pc = pc, .cap = SC_PIECES };
     unsigned char out[64]; size_t w = 0;
     while (sr_next(&it, caps)) {
         o.n = 0;
-        if (sc_render(&ctx, NULL, caps, 1, RX_SUBST_GAPS, &o) < 0) return 3;
+        if (sc_render(&ctx, NULL, caps, 1, PCREC_SUBST_GAPS, &o) < 0) return 3;
         for (size_t i = 0; i < o.n; i++) { memcpy(out + w, pc[i].p, pc[i].len); w += pc[i].len; }
     }
     memcpy(out + w, ctx.subject + o.prev, ctx.len - o.prev); w += ctx.len - o.prev;
@@ -151,7 +151,7 @@ if gcc $SAN -c -o /dev/null "$O/abi_old.c" 2> "$O/abi_old.err"; then bad abi.mis
 printf '#include "rx.h"\n#undef PCREC_RX_ABI_H\n#define PCREC_RX_ABI_H 85\n#include "s1.h"\nint main(void){return 0;}\n' > "$O/abi_new.c"
 if gcc $SAN -c -o /dev/null "$O/abi_new.c" 2> "$O/abi_new.err"; then bad abi.mismatch.newer "compiled"; else ok abi.mismatch.newer; fi
 # substland2: RX_FOREACH_PAIRS was dropped with RX_FOREACH (D175), so the three foreachpairs.* cases became batchpairs.*.
-# RX_SUBST_BATCH_PAIRS, the support unit's one overridable bound (§10¶6a), set by the defining TU: replace-all answers what the
+# PCREC_SUBST_BATCH_PAIRS, the support unit's one overridable bound (§10¶6a), set by the defining TU: replace-all answers what the
 # per-match loop answers (rx is (a)(b)?, 3 pairs a match); a bound below one match's pairs is MISMATCH (§10¶7)
 $T "$P" --emit-support -o "$O/support_bp.h" 2>/dev/null
 cat > "$O/batch_body.c" <<'EOF'
@@ -168,30 +168,30 @@ int main(void)
     rx_var vres[1];
     rx_ctx ctx;
     ptrdiff_t caps[RX_NCAPS][2];
-    rx_subst_piece pc[64 * S1_PIECES];
-    rx_subst_out o = { .pc = pc, .cap = 64 * S1_PIECES };
+    pcrec_subst_piece pc[64 * S1_PIECES];
+    pcrec_subst_out o = { .pc = pc, .cap = 64 * S1_PIECES };
     size_t k = 0, w = 0, len;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
     if (rc < 0) { printf("setup %d\n", rc); return 2; }
     while (rx_next(&it, caps)) {
         o.n = 0; o.sn = 0;
-        if ((rc = s1_render(&ctx, NULL, caps, 1, RX_SUBST_GAPS, &o)) < 0) { printf("rc %d\n", rc); return 3; }
+        if ((rc = s1_render(&ctx, NULL, caps, 1, PCREC_SUBST_GAPS, &o)) < 0) { printf("rc %d\n", rc); return 3; }
         for (size_t i = 0; i < o.n; i++) w += pc[i].len;
         k++;
     }
     if (it.rc < 0) return 5;
     w += sizeof s - o.prev;                                   /* the tail */
     it = RX_ITER_INIT(s, sizeof s);
-    rx_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
-    rc = rx_subst_replace_all(rx_next_n, &it, &s1_subst_info, &ctx, NULL, 0, &o, out, sizeof out, &len);
-    if (RX_SUBST_BATCH_PAIRS < RX_NCAPS) return rc != PCREC_SUBST_MISMATCH ? (printf("rc %d, want MISMATCH\n", rc), 6) : 0;
+    pcrec_subst_ctx_init(&ctx, &it, &rx_info, &s1_subst_info, NULL, vres, 0, &bad);
+    rc = pcrec_subst_replace_all(rx_next_n, &it, &s1_subst_info, &ctx, NULL, 0, &o, out, sizeof out, &len);
+    if (PCREC_SUBST_BATCH_PAIRS < RX_NCAPS) return rc != PCREC_SUBST_MISMATCH ? (printf("rc %d, want MISMATCH\n", rc), 6) : 0;
     if (rc < 0 || (size_t)rc != k || len != w) { printf("rc %d len %zu vs %zu %zu\n", rc, len, k, w); return 4; }
     return 0;
 }
 EOF
 for pairs in 2 3 1024; do
   id="batchpairs.$pairs"
-  { echo "#define RX_SUBST_BATCH_PAIRS $pairs"; cat "$O/batch_body.c"; } > "$O/$id.c"
+  { echo "#define PCREC_SUBST_BATCH_PAIRS $pairs"; cat "$O/batch_body.c"; } > "$O/$id.c"
   gcc $SAN -o "$O/$id" "$O/$id.c" "$O"/rx.o "$O"/s1.o 2> "$O/$id.err" && "$O/$id" > "$O/$id.out" 2>&1 \
     && ok "$id" || bad "$id" "$(head -c 400 "$O/$id.err") $(cat "$O/$id.out" 2>/dev/null)"
 done
@@ -205,18 +205,18 @@ int main(void) {
     const unsigned char *s = (const unsigned char *)"zabza"; size_t n = 5;
     unsigned char out[64]; size_t w = 0;
     rx_iter it = RX_ITER_INIT(s, n);
-    const rx_subst_map *map = NULL;
+    const pcrec_subst_map *map = NULL;
     unsigned flags = 0;
     rx_var vres[DMY_NVREFS];
     rx_ctx ctx;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, &rx_info, &dmy_subst_info, map, vres, flags, &bad);
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, &rx_info, &dmy_subst_info, map, vres, flags, &bad);
     if (rc < 0) return 3;
     ptrdiff_t caps[RX_NCAPS][2];
-    rx_subst_piece pc[DMY_PIECES];
-    rx_subst_out o = { .pc = pc, .cap = DMY_PIECES };
+    pcrec_subst_piece pc[DMY_PIECES];
+    pcrec_subst_out o = { .pc = pc, .cap = DMY_PIECES };
     while (rx_next(&it, caps)) {
         o.n = 0; o.sn = 0;
-        rc = dmy_render(&ctx, map, caps, 1, flags | RX_SUBST_GAPS, &o);
+        rc = dmy_render(&ctx, map, caps, 1, flags | PCREC_SUBST_GAPS, &o);
         if (rc < 0) return 4;
         for (size_t i = 0; i < o.n; i++) { memcpy(out + w, pc[i].p, pc[i].len); w += pc[i].len; }
     }
@@ -234,19 +234,19 @@ cat > "$O/doc_all.c" <<'EOF'
 #define PCREC_SUPPORT_IMPLEMENTATION
 #include "support.h"
 #include <stdlib.h>
-static int sub_all(const struct rx_info *rx, const struct rx_subst_info *t,
-                   const rx_subst_map *map, unsigned flags,
+static int sub_all(const struct rx_info *rx, const struct pcrec_subst_info *t,
+                   const pcrec_subst_map *map, unsigned flags,
                    const unsigned char *s, size_t n,
                    unsigned char *out, size_t cap, size_t *len)
 {
     rx_iter it = RX_ITER_INIT(s, n);
     rx_var vres[t->nvrefs > 0 ? t->nvrefs : 1];
-    rx_subst_piece pc[64 * (size_t)t->npieces];
-    rx_subst_out o = { .pc = pc, .cap = 64 * (size_t)t->npieces };
+    pcrec_subst_piece pc[64 * (size_t)t->npieces];
+    pcrec_subst_out o = { .pc = pc, .cap = 64 * (size_t)t->npieces };
     rx_ctx ctx;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, &bad);
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, &bad);
     if (rc < 0) return rc;
-    return rx_subst_replace_all(rx->next_n, &it, t, &ctx, map, flags, &o, out, cap, len);
+    return pcrec_subst_replace_all(rx->next_n, &it, t, &ctx, map, flags, &o, out, cap, len);
 }
 int main(void) {
     const unsigned char *s = (const unsigned char *)"zabza"; size_t n = 5;
@@ -273,12 +273,12 @@ expect_rc support.refuses.subst nz $T "$P" --emit-support --subst '$1' -o "$O/x.
 expect_rc support.refuses.prefix nz $T "$P" --emit-support -p x -o "$O/x.h"
 grep -q 'defined(PCREC_SUPPORT_IMPLEMENTATION)' "$O/support.h" && ok support.guarded.impl || bad support.guarded.impl "definitions not under PCREC_SUPPORT_IMPLEMENTATION"
 # a program with no implementation in any TU does not link (the names carry the abi, §10¶3); with it in one TU it does (doc_all above)
-printf '#include "rx.h"\n#include "dmy.h"\n#include "support.h"\nint main(void){ unsigned char o[1]; rx_subst_piece p = { o, 0 }; return (int)rx_subst_flatten(&p, 1, o, 1); }\n' > "$O/nolink.c"
-gcc $SAN -o "$O/nolink" "$O/nolink.c" "$O/rx.o" "$O/dmy.o" 2> "$O/nolink.err" && bad support.needs.impl "linked without the implementation" || { grep -q "rx_subst_flatten_v" "$O/nolink.err" && ok support.needs.impl || bad support.needs.impl "$(head -c 300 "$O/nolink.err")"; }
-printf '#define PCREC_SUPPORT_STATIC\n#include "support.h"\n#include "rx.h"\n#include "dmy.h"\nint main(void){ unsigned char o[4]; rx_subst_piece p = { (const unsigned char *)"ab", 2 }; return !(rx_subst_flatten(&p, 1, o, 4) == 2 && !memcmp(o, "ab", 2)); }\n' > "$O/static.c"
+printf '#include "rx.h"\n#include "dmy.h"\n#include "support.h"\nint main(void){ unsigned char o[1]; pcrec_subst_piece p = { o, 0 }; return (int)pcrec_subst_flatten(&p, 1, o, 1); }\n' > "$O/nolink.c"
+gcc $SAN -o "$O/nolink" "$O/nolink.c" "$O/rx.o" "$O/dmy.o" 2> "$O/nolink.err" && bad support.needs.impl "linked without the implementation" || { grep -q "pcrec_subst_flatten_v" "$O/nolink.err" && ok support.needs.impl || bad support.needs.impl "$(head -c 300 "$O/nolink.err")"; }
+printf '#define PCREC_SUPPORT_STATIC\n#include "support.h"\n#include "rx.h"\n#include "dmy.h"\nint main(void){ unsigned char o[4]; pcrec_subst_piece p = { (const unsigned char *)"ab", 2 }; return !(pcrec_subst_flatten(&p, 1, o, 4) == 2 && !memcmp(o, "ab", 2)); }\n' > "$O/static.c"
 gcc $SAN -o "$O/static" "$O/static.c" "$O/rx.o" "$O/dmy.o" 2> "$O/static.err" && "$O/static" && ok support.static || bad support.static "$(head -c 400 "$O/static.err")"
 # §1¶1's sample declarations: the element signature in the .h matches the typedef
-printf '#include "dmy.h"\nrx_substfn *f = dmy_render;\nint main(void){return f == 0;}\n' > "$O/sig.c"
+printf '#include "dmy.h"\npcrec_subst_fn *f = dmy_render;\nint main(void){return f == 0;}\n' > "$O/sig.c"
 gcc $SAN -Werror -o "$O/sig" "$O/sig.c" "$O/dmy.o" 2> "$O/sig.err" && ok element.signature || bad element.signature "$(head -c 300 "$O/sig.err")"
 # strict compile of every emitted header/source under -Wall -Wextra -pedantic (C99 per §6¶6)
 for std in c99 gnu99 c11 c17; do

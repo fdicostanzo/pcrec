@@ -1,24 +1,24 @@
-/* §3: the record's shape, the check (pcrec_subst_check, rx_subst_ctx_init) and
+/* §3: the record's shape, the check (pcrec_subst_check, pcrec_subst_ctx_init) and
  * the by-name helper (pcrec_subst_map_names).  substb2: was the R3 bind. */
 #include "t.h"
 
-static int ctx_chk(const struct rx_info *rx, const struct rx_subst_info *t, const rx_subst_map *map,
+static int ctx_chk(const struct rx_info *rx, const struct pcrec_subst_info *t, const pcrec_subst_map *map,
                    unsigned flags, int *bad)
 {
     rx_iter it = RX_ITER_INIT((const unsigned char *)"a", 1);
     rx_var vres[4];
     rx_ctx ctx;
-    return rx_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, bad);
+    return pcrec_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, bad);
 }
 
 int main(void)
 {
     int bad, rc;
-    rx_subst_map m;
+    pcrec_subst_map m;
     size_t na;
 
     /* §3¶2 the REFERENCE LIST: every group but 0, once, first-appearance order */
-    const struct rx_subst_info *S = &sall_subst_info;   /* $n$2$0${n}$1$n${m}$0$2 */
+    const struct pcrec_subst_info *S = &sall_subst_info;   /* $n$2$0${n}$1$n${m}$0$2 */
     CHECK("shape.nrefs", S->nrefs == 4, "nrefs %d (want n,2,1,m)", S->nrefs);
     if (S->nrefs == 4) {
         CHECK("shape.order", S->refs[0].name && !strcmp(S->refs[0].name, "n") && !S->refs[1].name
@@ -57,7 +57,7 @@ int main(void)
     bad = 99;
     rc = pcrec_subst_check(&s1_subst_info, NULL, &ra_info, 0, &bad);
     CHECK("check.nomap.ok", rc == 0 && bad == -1, "rc %d bad %d", rc, bad);
-    rc = pcrec_subst_check(&s1_subst_info, NULL, &ra_info, RX_SUBST_GAPS | RX_SUBST_STRICT, &bad);
+    rc = pcrec_subst_check(&s1_subst_info, NULL, &ra_info, PCREC_SUBST_GAPS | PCREC_SUBST_STRICT, &bad);
     CHECK("check.flags.ok", rc == 0, "rc %d", rc);
     rc = pcrec_subst_check(&s1_subst_info, NULL, &ra_info, 0x4, &bad);
     CHECK("check.flag.unknown", rc == PCREC_SUBST_MISMATCH && bad == -1, "rc %d bad %d", rc, bad);
@@ -77,7 +77,7 @@ int main(void)
     rc = pcrec_subst_check(&s0_subst_info, NULL, &rnc_info, 0, &bad);
     CHECK("check.nocaps.zero", rc == 0, "rc %d", rc);
     /* MISMATCH: records and rx fields that do not belong (§3¶10) */
-    struct rx_subst_info sx = s1_subst_info; sx.abi = PCREC_RX_ABI_H + 1;
+    struct pcrec_subst_info sx = s1_subst_info; sx.abi = PCREC_RX_ABI_H + 1;
     rc = pcrec_subst_check(&sx, NULL, &ra_info, 0, &bad);
     CHECK("check.subabi", rc == PCREC_SUBST_MISMATCH && bad == -1, "rc %d bad %d", rc, bad);
     sx.abi = PCREC_RX_ABI_H - 1;
@@ -150,9 +150,9 @@ int main(void)
     rxx = rn_info; rxx.groups = ge; rxx.nnames = 1; rxx.nentries = 1;
     rc = pcrec_subst_map_names(&snm_subst_info, &rxx, 0, SLOTS, 64, RUNS, 8, &m, &bad, &na);
     CHECK("names.missing.second", rc == PCREC_SUBST_MISSING_REF && bad == 1, "rc %d bad %d", rc, bad);
-    /* RX_SUBST_MAP_ABSENT: the absent reference becomes NOGROUP, counted, the first one named */
-    rc = pcrec_subst_map_names(&snm_subst_info, &rxx, RX_SUBST_MAP_ABSENT, SLOTS, 64, RUNS, 8, &m, &bad, &na);
-    CHECK("names.absent", rc == 0 && na == 1 && bad == 1 && m.slot[RUNS[1].first] == RX_SUBST_NOGROUP,
+    /* PCREC_SUBST_MAP_ABSENT: the absent reference becomes NOGROUP, counted, the first one named */
+    rc = pcrec_subst_map_names(&snm_subst_info, &rxx, PCREC_SUBST_MAP_ABSENT, SLOTS, 64, RUNS, 8, &m, &bad, &na);
+    CHECK("names.absent", rc == 0 && na == 1 && bad == 1 && m.slot[RUNS[1].first] == PCREC_SUBST_NOGROUP,
           "rc %d na %zu bad %d", rc, na, bad);
     /* a forged named row with slot >= ncaps or -1 */
     ge[0] = (rx_group_entry){ "n", 1, 5, NULL };
@@ -180,39 +180,39 @@ int main(void)
 
     /* a map by hand (§3¶7), and the check on its shapes (§3¶10, §3¶11) */
     static const int hs[] = { 2, 1 };               /* snm refs: n, m, 1: three of them */
-    rx_subst_map hm = { hs, 2, NULL, 0 };
+    pcrec_subst_map hm = { hs, 2, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.nslot.short", rc == PCREC_SUBST_MISMATCH && bad == -1, "rc %d bad %d", rc, bad);
-    static const int hs3[] = { 2, RX_SUBST_NOGROUP, 1 };
-    hm = (rx_subst_map){ hs3, 3, NULL, 0 };
+    static const int hs3[] = { 2, PCREC_SUBST_NOGROUP, 1 };
+    hm = (pcrec_subst_map){ hs3, 3, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.nogroup.ok", rc == 0, "rc %d", rc);
     static const int hbad[] = { 2, 4, 1 };          /* slot 4 >= ncaps 4: MISSING_REF at reference 1 */
-    hm = (rx_subst_map){ hbad, 3, NULL, 0 };
+    hm = (pcrec_subst_map){ hbad, 3, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.slot.past", rc == PCREC_SUBST_MISSING_REF && bad == 1, "rc %d bad %d", rc, bad);
     static const int hneg[] = { 2, -2, 1 };
-    hm = (rx_subst_map){ hneg, 3, NULL, 0 };
+    hm = (pcrec_subst_map){ hneg, 3, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.slot.neg", rc == PCREC_SUBST_MISSING_REF && bad == 1, "rc %d bad %d", rc, bad);
     static const int hz[] = { 0, 0, 0 };            /* slot 0 and one slot under three references are allowed (§3¶5) */
-    hm = (rx_subst_map){ hz, 3, NULL, 0 };
+    hm = (pcrec_subst_map){ hz, 3, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.slot0.shared", rc == 0, "rc %d", rc);
-    static const rx_subst_run hr[] = { { 0, 1 }, { 1, 2 }, { 0, 0 } };
-    hm = (rx_subst_map){ hs3, 3, hr, 3 };
+    static const pcrec_subst_run hr[] = { { 0, 1 }, { 1, 2 }, { 0, 0 } };
+    hm = (pcrec_subst_map){ hs3, 3, hr, 3 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.run.count0", rc == PCREC_SUBST_MISSING_REF && bad == 2, "rc %d bad %d", rc, bad);
-    static const rx_subst_run hr2[] = { { 0, 1 }, { 2, 2 }, { 0, 1 } };
-    hm = (rx_subst_map){ hs3, 3, hr2, 3 };
+    static const pcrec_subst_run hr2[] = { { 0, 1 }, { 2, 2 }, { 0, 1 } };
+    hm = (pcrec_subst_map){ hs3, 3, hr2, 3 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.run.past", rc == PCREC_SUBST_MISSING_REF && bad == 1, "rc %d bad %d", rc, bad);
-    hm = (rx_subst_map){ hs3, 3, hr2, 2 };
+    hm = (pcrec_subst_map){ hs3, 3, hr2, 2 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rn_info, 0, &bad);
     CHECK("map.nrun.short", rc == PCREC_SUBST_MISMATCH, "rc %d", rc);
     /* a composed rx takes a map (§3¶3) */
     rxx = rn_info; rxx.ncaps = rxx.ngroups + 2;
-    hm = (rx_subst_map){ hs3, 3, NULL, 0 };
+    hm = (pcrec_subst_map){ hs3, 3, NULL, 0 };
     rc = pcrec_subst_check(&snm_subst_info, &hm, &rxx, 0, &bad);
     CHECK("map.composed.ok", rc == 0, "rc %d", rc);
 
@@ -222,7 +222,7 @@ int main(void)
     rx_var vres[4];
     rx_iter it = RX_ITER_INIT((const unsigned char *)"zzz", 3);
     bad = 99;
-    rc = rx_subst_ctx_init(&ctx, &it, &ra_info, &sn_subst_info, NULL, vres, 0, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &ra_info, &sn_subst_info, NULL, vres, 0, &bad);
     CHECK("ctxinit.refuses", rc == PCREC_SUBST_MISSING_REF && bad == 0 && ctx.len == 0x7777777777777777ULL,
           "rc %d bad %d: MISSING_REF on a subject with no match, ctx untouched", rc, bad);
     rc = ctx_chk(&ra_info, &s1_subst_info, NULL, 0, &bad);
@@ -235,8 +235,8 @@ int main(void)
 
     /* an rx map used for two rx, one subst, interleaved: the record and the map are const (§7¶5) */
     char o1[64], o2[64];
-    rx_subst_map ma, mb;
-    int sl1[4], sl2[4]; rx_subst_run ru1[1], ru2[1];
+    pcrec_subst_map ma, mb;
+    int sl1[4], sl2[4]; pcrec_subst_run ru1[1], ru2[1];
     rc = pcrec_subst_map_names(&s1_subst_info, &ra_info, 0, sl1, 4, ru1, 1, &ma, &bad, &na);
     rc |= pcrec_subst_map_names(&s1_subst_info, &rb_info, 0, sl2, 4, ru2, 1, &mb, &bad, &na);
     int r1 = rall(&ra_info, &s1_subst_info, &ma, 0, "xyab", 4, 64, o1, &L);

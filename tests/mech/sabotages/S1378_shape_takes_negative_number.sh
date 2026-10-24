@@ -1,7 +1,7 @@
 # S1378 -- [M4-SUBST] (lane substb2 re-anchored it on the R4 interface;
 # docs/design/replace_design.md §R4, docs/spec/subst_api.md).
 #
-# Plant: the by-name helper takes a numbered reference below 1 (-1 then reads as RX_SUBST_NOGROUP).
+# Plant: the by-name helper takes a numbered reference below 1 (-1 then reads as PCREC_SUBST_NOGROUP).
 # Witness: the driver's unit line: a reference numbered -1 must be MISSING_REF.
 # Reach (K35): token negnum (the unit line); tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
 SAB_ID="S1378-shape-takes-negative-number"

@@ -24,7 +24,7 @@ A cell is one TAB-separated line (`#` lines are comments):
             leading `utf8:` compiles it with `-e utf8` (subst_api.md §2¶5),
             then `ext:` with `--features subst-extended` (§2¶7; the oracle
             gets PCRE2_SUBSTITUTE_EXTENDED)
-  STRICT    blank | strict (RX_SUBST_STRICT at run time, §4¶23)
+  STRICT    blank | strict (PCREC_SUBST_STRICT at run time, §4¶23)
   LIMIT     a count, or `all`; `@START` after it starts the iterator (and
             the oracle) at START
   SUBJECT   in the escape vocabulary above; `rep:N:TEXT` repeats
@@ -54,9 +54,9 @@ short and an rx with no slot; a map of NOGROUP entries under STRICT renders
 every reference as unset; for `${!name}` templates the element refuses a ctx
 with no variables or one too few, and under STRICT an unset one is
 PCREC_ERR_UNSET_VAR; where pcre2 answers the same, the element without
-RX_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does, and
+PCREC_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does, and
 pcre2 at outlength == the length is NOMEMORY asking for length + 1 (its
-NUL, §9 row 6). A template with a case region (RX_SUBST_USES_SCRATCH) also
+NUL, §9 row 6). A template with a case region (PCREC_SUBST_USES_SCRATCH) also
 renders its first match into scratch of exactly the `sneed` a scratch-less
 call reported (§4¶14), and one byte less is NOSPACE again; a cell carrying
 the `bound` token holds that `sneed` to §4¶22's 1.5 x bound over its subject.
@@ -75,7 +75,7 @@ CODES = {
     'STEPS': -2,
 }
 PCRE2_NOMEMORY = -48
-RX_SUBST_BATCH_PAIRS = 256  # subst_api.md §10¶6a's default
+PCREC_SUBST_BATCH_PAIRS = 256  # subst_api.md §10¶6a's default
 REACH_NEED = {}
 REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
               'nogroupceiling', 'batch64', 'illformed', 'badspancorner', 'nul',
@@ -85,7 +85,7 @@ REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 
               'count', 'batch', 'generic', 'stale', 'nomap', 'hand', 'room',
               'mis', 'nog', 'pairs', 'nmchk']
 REACH_NEED['subst-extended'] = [
-    'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539',
+    'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539', 'S1580',
     'scr', 'bound', 'illcase', 'cond', 'esc', 'casetable', 'nest',
     'size', 'count', 'batch', 'generic', 'room', 'mis', 'unk', 'nogap', 'encesc']
 
@@ -120,8 +120,8 @@ def raw(t):
 
 # The `unit` line's answer (subst_drv.c's unit()): flatten's total saturates
 # at SIZE_MAX and a short buffer is left untouched, its total still 4
-# (§10¶4); the helper refuses a numbered reference -1 as MISSING_REF (it would read as RX_SUBST_NOGROUP)
-# (§3¶13); under RX_SUBST_MAP_ABSENT a name and a number the rx lacks are
+# (§10¶4); the helper refuses a numbered reference -1 as MISSING_REF (it would read as PCREC_SUBST_NOGROUP)
+# (§3¶13); under PCREC_SUBST_MAP_ABSENT a name and a number the rx lacks are
 # both NOGROUP, counted 2, *bad_ref the first (§3¶15).
 UNIT_WANT = 'unit\tflat=1,1,4\tneg=-16\tabsent=0,2,0,-1'
 
@@ -212,7 +212,7 @@ def main():
     with open(os.path.join(work, 'subst_tab.h'), 'w') as f:
         f.write('#include "s0.h"\n'
                 'extern const struct rx_info *const subst_rx[];\n'
-                'extern const struct rx_subst_info *const subst_sb[];\n')
+                'extern const struct pcrec_subst_info *const subst_sb[];\n')
     with open(os.path.join(work, 'tab.c'), 'w') as f:
         n = max(len(rxs), len(sbs))
         for i in range(n):
@@ -221,7 +221,7 @@ def main():
                 f.write('#include "%s"\n' % h)
         f.write('const struct rx_info *const subst_rx[] = {\n%s};\n'
                 % ''.join('    &r%d_info,\n' % i for i in range(len(rxs))))
-        f.write('const struct rx_subst_info *const subst_sb[] = {\n%s};\n'
+        f.write('const struct pcrec_subst_info *const subst_sb[] = {\n%s};\n'
                 % ''.join('    &s%d_subst_info,\n' % i for i in range(len(sbs))))
     drv = os.path.join(work, 'drv')
     p2 = (['-DSUBST_PCRE2'] + os.environ.get('PCRE2_CFLAGS', '').split()) if have_p2 else []
@@ -301,7 +301,7 @@ def main():
                 same = '0,%d,%s' % (L, hx)
                 check(main_ == ['0', str(L), n, hx], '%s: main %s, want 0,%d,%s,%r' % (cid, g['main'], L, n, want))
                 arms = [('nomap', 'nomap', '%s,0,-' % mm if composed else same), ('hand', 'hand', same)]
-                if all_ and int(g['nc']) > RX_SUBST_BATCH_PAIRS:
+                if all_ and int(g['nc']) > PCREC_SUBST_BATCH_PAIRS:
                     # more pairs per match than replace-all's stack batch: it
                     # refuses (subst_api.md §10¶7); the recipes have no bound
                     arms += [('batch', 'batch', same), ('gen', 'generic', same),
@@ -345,7 +345,7 @@ def main():
                 reached.add('bmis')
             if kind == 'out' and main_[2] != '0' and re.search(r'\$\{?[1-9A-Za-z]', c[3]) \
                     and '${!' not in c[3] and not ext:
-                # an intended NOGROUP renders empty, RX_SUBST_STRICT included (§3¶6, §9 row 20)
+                # an intended NOGROUP renders empty, PCREC_SUBST_STRICT included (§3¶6, §9 row 20)
                 if check(g.get('nog', '').split(',')[0] == '0' and int(g['nog'].split(',')[1]) < L,
                          '%s: a NOGROUP map under STRICT gave %s, want 0 and shorter than %d' % (cid, g.get('nog'), L)):
                     reached.add('nog')

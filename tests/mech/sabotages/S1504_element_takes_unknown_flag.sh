@@ -11,5 +11,5 @@ SAB_DESC='the element takes an unknown flag bit'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1504.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_puts(c, "    if ((flags & ~(RX_SUBST_GAPS | RX_SUBST_STRICT))");'
+SAB_BEFORE='    pcrec_sb_puts(c, "    if ((flags & ~(PCREC_SUBST_GAPS | PCREC_SUBST_STRICT))");'
 SAB_AFTER='    pcrec_sb_puts(c, "    if ((flags & 0)");   /* SABOTAGE S1504 */'

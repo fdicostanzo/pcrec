@@ -7,7 +7,7 @@
  *   id BIND rc bad
  *   id RUN  rc0 len0 k0 | rc1 len1 k1 | hexout | notes
  *
- * BIND: the setup refused (pcrec_subst_map_names or rx_subst_ctx_init:
+ * BIND: the setup refused (pcrec_subst_map_names or pcrec_subst_ctx_init:
  *   MISMATCH / MISSING_REF with bad_ref), before any match (§3¶8, §7¶4).
  * rc0/len0/k0: the sizing call (out NULL, cap 0); rc1/len1/k1: the
  * exact-capacity call into a malloc of exactly len0 bytes (so ASan sees any
@@ -16,14 +16,14 @@
  * its non-negative result, §10¶7).
  *
  * How a call is driven (§6): limit `all` with gaps through
- * rx_subst_replace_all; a numeric limit through §6¶2's per-match recipe,
- * counting the loop (§6¶3); `nogap` (no RX_SUBST_GAPS, §6¶6) through the
+ * pcrec_subst_replace_all; a numeric limit through §6¶2's per-match recipe,
+ * counting the loop (§6¶3); `nogap` (no PCREC_SUBST_GAPS, §6¶6) through the
  * same recipe without the tail; a pattern with more capture pairs than
- * RX_SUBST_BATCH_PAIRS (replace-all's limit, §10¶7: d_big's 300-group rows;
+ * PCREC_SUBST_BATCH_PAIRS (replace-all's limit, §10¶7: d_big's 300-group rows;
  * substland2: the bound renamed when RX_FOREACH was dropped, D175) also
  * takes the recipe for limit `all`.  The `all` path is cross-checked against
- * §6¶4's batch recipe through rx_subst_flatten (§10¶10).  Named templates
- * get a map from pcrec_subst_map_names (no RX_SUBST_MAP_ABSENT).
+ * §6¶4's batch recipe through pcrec_subst_flatten (§10¶10).  Named templates
+ * get a map from pcrec_subst_map_names (no PCREC_SUBST_MAP_ABSENT).
  *
  * notes: comma list of contract checks that FAILED (empty = all held):
  *   short   cap = len0-1 must give NOSPACE, *len len0              (§10¶8)
@@ -47,7 +47,7 @@
 struct tcase {
     const char *id;
     const struct rx_info *rx;
-    const struct rx_subst_info *sub;
+    const struct pcrec_subst_info *sub;
     const char *s;
     size_t n;
     int snull;
@@ -70,12 +70,12 @@ static void hex(const unsigned char *p, size_t n)
 struct env {
     const struct tcase *t;
     const unsigned char *s;
-    rx_subst_map map;
-    const rx_subst_map *mp;
+    pcrec_subst_map map;
+    const pcrec_subst_map *mp;
     int *slot;
-    rx_subst_run *run;
+    pcrec_subst_run *run;
     rx_var *vres;
-    rx_subst_piece *pc;
+    pcrec_subst_piece *pc;
     size_t pccap;
     ptrdiff_t (*caps)[2];
     size_t ncap;
@@ -88,7 +88,7 @@ static void env_free(struct env *e)
     free(e->slot); free(e->run); free(e->vres); free(e->pc); free(e->caps);
 }
 
-static int has_names(const struct rx_subst_info *t)
+static int has_names(const struct pcrec_subst_info *t)
 {
     for (int i = 0; i < t->nrefs; i++) if (t->refs[i].name) return 1;
     return 0;
@@ -96,8 +96,8 @@ static int has_names(const struct rx_subst_info *t)
 
 static int ctx_for(struct env *e, rx_iter *it, rx_ctx *ctx, int *bad)
 {
-    unsigned flags = e->t->strict ? RX_SUBST_STRICT : 0;
-    return rx_subst_ctx_init(ctx, it, e->t->rx, e->t->sub, e->mp, e->vres, flags, bad);
+    unsigned flags = e->t->strict ? PCREC_SUBST_STRICT : 0;
+    return pcrec_subst_ctx_init(ctx, it, e->t->rx, e->t->sub, e->mp, e->vres, flags, bad);
 }
 
 /* 0, or the setup's refusal (MISMATCH / MISSING_REF); other codes (a
@@ -141,13 +141,13 @@ static void put(struct sink *k, const unsigned char *p, size_t len)
 }
 
 /* §6¶2: per match, counting the loop (§6¶3); gaps and the tail only with
- * RX_SUBST_GAPS (§6¶6).  Errors return the code and no tail (§6¶1). */
+ * PCREC_SUBST_GAPS (§6¶6).  Errors return the code and no tail (§6¶1). */
 static int recipe(struct env *e, rx_iter *it, const rx_ctx *ctx, size_t limit, int gaps,
                   unsigned char *out, size_t cap, size_t *len, size_t *kk)
 {
     const struct tcase *t = e->t;
-    unsigned flags = (t->strict ? RX_SUBST_STRICT : 0) | (gaps ? RX_SUBST_GAPS : 0);
-    rx_subst_out o = { .pc = e->pc, .cap = e->pccap };
+    unsigned flags = (t->strict ? PCREC_SUBST_STRICT : 0) | (gaps ? PCREC_SUBST_GAPS : 0);
+    pcrec_subst_out o = { .pc = e->pc, .cap = e->pccap };
     struct sink sk = { out, cap, 0, 1 };
     size_t k = 0;
     int rc, ended = 0;
@@ -171,12 +171,12 @@ static int recipe(struct env *e, rx_iter *it, const rx_ctx *ctx, size_t limit, i
 static int exec(struct env *e, rx_iter *it, const rx_ctx *ctx, size_t limit, int gaps,
                 unsigned char *out, size_t cap, size_t *len, size_t *k)
 {
-    /* §10¶7: replace-all needs one match's pairs inside RX_SUBST_BATCH_PAIRS (a
+    /* §10¶7: replace-all needs one match's pairs inside PCREC_SUBST_BATCH_PAIRS (a
      * wider pattern is MISMATCH there); such a case takes §6¶2's recipe */
-    if (!gaps || limit != SIZE_MAX || e->ncap > RX_SUBST_BATCH_PAIRS) return recipe(e, it, ctx, limit, gaps, out, cap, len, k);
-    rx_subst_out o = { .pc = e->pc, .cap = e->pccap };
-    int r = rx_subst_replace_all(e->t->rx->next_n, it, e->t->sub, ctx, e->mp,
-                                 e->t->strict ? RX_SUBST_STRICT : 0, &o, out, cap, len);
+    if (!gaps || limit != SIZE_MAX || e->ncap > PCREC_SUBST_BATCH_PAIRS) return recipe(e, it, ctx, limit, gaps, out, cap, len, k);
+    pcrec_subst_out o = { .pc = e->pc, .cap = e->pccap };
+    int r = pcrec_subst_replace_all(e->t->rx->next_n, it, e->t->sub, ctx, e->mp,
+                                 e->t->strict ? PCREC_SUBST_STRICT : 0, &o, out, cap, len);
     if (r >= 0) { *k = (size_t)r; return 0; }
     return r;
 }
@@ -193,7 +193,7 @@ static int call(struct env *e, size_t limit, int gaps, unsigned char *out, size_
     return exec(e, &it, &ctx, limit, gaps, out, cap, len, k);
 }
 
-/* §6¶4: batches through rx_next_n and rx_subst_flatten into one growing
+/* §6¶4: batches through rx_next_n and pcrec_subst_flatten into one growing
  * buffer; returns 0 or the code, *buf malloc'd */
 static int batch(struct env *e, unsigned char **buf, size_t *w, size_t *kk)
 {
@@ -202,8 +202,8 @@ static int batch(struct env *e, unsigned char **buf, size_t *w, size_t *kk)
     rx_ctx ctx;
     int bad, rc = ctx_for(e, &it, &ctx, &bad);
     if (rc < 0) return rc;
-    rx_subst_out o = { .pc = e->pc, .cap = e->pccap };
-    unsigned flags = (t->strict ? RX_SUBST_STRICT : 0) | RX_SUBST_GAPS;
+    pcrec_subst_out o = { .pc = e->pc, .cap = e->pccap };
+    unsigned flags = (t->strict ? PCREC_SUBST_STRICT : 0) | PCREC_SUBST_GAPS;
     size_t cap = 16, got, k = 0;
     *buf = malloc(cap); *w = 0;
     do {
@@ -211,12 +211,12 @@ static int batch(struct env *e, unsigned char **buf, size_t *w, size_t *kk)
         o.n = 0; o.sn = 0;
         rc = t->sub->render(&ctx, e->mp, e->caps, got, flags, &o);
         if (rc < 0) return rc;
-        size_t need = rx_subst_flatten(e->pc, o.n, *buf + *w, cap - *w);
+        size_t need = pcrec_subst_flatten(e->pc, o.n, *buf + *w, cap - *w);
         if (need == SIZE_MAX || need > SIZE_MAX - *w) return -1000;
         if (need > cap - *w) {
             while (cap < *w + need) cap *= 2;
             *buf = realloc(*buf, cap);
-            rx_subst_flatten(e->pc, o.n, *buf + *w, cap - *w);
+            pcrec_subst_flatten(e->pc, o.n, *buf + *w, cap - *w);
         }
         *w += need; k += got;
     } while (got == K);

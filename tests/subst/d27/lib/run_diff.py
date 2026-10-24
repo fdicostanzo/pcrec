@@ -6,10 +6,10 @@ usage: run_diff.py CASES.tsv [CASES.tsv...] [--work DIR] [--pcrec BIN]
 CASES.tsv columns (tab-separated, '#' comments; fields use lib/esc.py's
 escapes):  id  family  flags  pattern  template  unset  limit  subject  [mode]
   flags   extra pcrec compile flags (always plus --features all), e.g. -e utf8
-  unset   empty | error   (substb2: error = the run-time flag RX_SUBST_STRICT)
+  unset   empty | error   (substb2: error = the run-time flag PCREC_SUBST_STRICT)
   limit   all | N
   subject the subject bytes, or <NULL> for a NULL pointer (length 0)
-  mode    diff (default) | nogap (element without RX_SUBST_GAPS vs
+  mode    diff (default) | nogap (element without PCREC_SUBST_GAPS vs
           PCRE2_SUBSTITUTE_REPLACEMENT_ONLY) | expect:BYTES (pcrec-only
           expectation, no libpcre2 comparison) | known:N (a documented §9
           difference row N: printed, not a failure)
@@ -19,7 +19,7 @@ header (subst_api.md §1¶3) and the support unit (`pcrec --emit-support`,
 §10), linked under -fsanitize=address,undefined.
 
 substb2: driven through the R4 interface (the driver's header says how); the
-`unset` column is the run-time RX_SUBST_STRICT flag of the case (no `--unset=`
+`unset` column is the run-time PCREC_SUBST_STRICT flag of the case (no `--unset=`
 at template compile, so one subst artifact serves both), never a compile
 argument.
 """

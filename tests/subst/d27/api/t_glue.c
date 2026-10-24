@@ -1,4 +1,4 @@
-/* §6, §10: the glue is retired into rx_subst_replace_all (§10¶6-¶10) and the
+/* §6, §10: the glue is retired into pcrec_subst_replace_all (§10¶6-¶10) and the
  * recipes (§6¶2-¶3): the returns, *len on every path, limits, sizing, NULLs.
  * substb2: was pcrec_subst with limit, *outlen and *nsubst. */
 #include "t.h"
@@ -96,22 +96,22 @@ int main(void)
     rc = rlim(&rx1_info, &s2_subst_info, NULL, 0, "x aaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb", 36, SIZE_MAX, 128, out, &L, &K);
     CHECK("glue.giveup.recipe", rc <= -2 && rc >= PCREC_ERR_FLOOR, "rc %d", rc);
 
-    /* RX_SUBST_STRICT: UNSET, *len untouched, even when out is too small (§10¶9) */
+    /* PCREC_SUBST_STRICT: UNSET, *len untouched, even when out is too small (§10¶9) */
     L = UNTOUCHED;
-    rc = rall(ra, &se1_subst_info, NULL, RX_SUBST_STRICT, "abaa", 4, 64, out, &L);
+    rc = rall(ra, &se1_subst_info, NULL, PCREC_SUBST_STRICT, "abaa", 4, 64, out, &L);
     CHECK("glue.unset", rc == PCREC_SUBST_UNSET && L == 0, "rc %d L %zu (rall zeroes L first)", rc, L);
     L = UNTOUCHED;
     {
         unsigned char *ob = malloc(64);
-        rc = sub_all(ra, &se1_subst_info, NULL, RX_SUBST_STRICT, (const unsigned char *)"abaa", 4, ob, 64, &L);
+        rc = sub_all(ra, &se1_subst_info, NULL, PCREC_SUBST_STRICT, (const unsigned char *)"abaa", 4, ob, 64, &L);
         CHECK("glue.unset.untouched", rc == PCREC_SUBST_UNSET && L == UNTOUCHED, "rc %d L %zu", rc, L);
         free(ob);
     }
-    rc = rall(ra, &se1_subst_info, NULL, RX_SUBST_STRICT, "abaa", 4, 0, out, &L);
+    rc = rall(ra, &se1_subst_info, NULL, PCREC_SUBST_STRICT, "abaa", 4, 0, out, &L);
     CHECK("glue.unset.beats.nospace", rc == PCREC_SUBST_UNSET, "rc %d", rc);
     rc = rall(ra, &se1_subst_info, NULL, 0, "abaa", 4, 64, out, &L);
     CHECK("glue.unset.default.blank", rc == 3 && !strcmp(out, "[a|b][a|][a|]"), "rc %d out %s (§4¶23: blank by default)", rc, out);
-    rc = rlim(ra, &se1_subst_info, NULL, RX_SUBST_STRICT, "abaa", 4, 1, 64, out, &L, &K);
+    rc = rlim(ra, &se1_subst_info, NULL, PCREC_SUBST_STRICT, "abaa", 4, 1, 64, out, &L, &K);
     out[rc == 0 ? L : 0] = 0;
     CHECK("glue.unset.notreached", rc == 0 && !strcmp(out, "[a|b]aa"), "rc %d out %s", rc, out);
 
@@ -177,37 +177,37 @@ int main(void)
         const unsigned char *s = (const unsigned char *)"xaby";
         rx_iter i2 = RX_ITER_INIT(s, 4);
         rx_var vres[1];
-        rx_subst_piece pc[64 * S2_PIECES];
-        rx_subst_out o = { .pc = pc, .cap = 64 * S2_PIECES };
+        pcrec_subst_piece pc[64 * S2_PIECES];
+        pcrec_subst_out o = { .pc = pc, .cap = 64 * S2_PIECES };
         rx_ctx ctx;
         int bad;
         unsigned char ob[16];
-        rx_subst_ctx_init(&ctx, &i2, ra, &s2_subst_info, NULL, vres, 0, &bad);
+        pcrec_subst_ctx_init(&ctx, &i2, ra, &s2_subst_info, NULL, vres, 0, &bad);
         L = UNTOUCHED;
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, RX_SUBST_GAPS, &o, ob, 16, &L);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, PCREC_SUBST_GAPS, &o, ob, 16, &L);
         CHECK("glue.flags.gaps", rc == PCREC_SUBST_MISMATCH && L == UNTOUCHED, "rc %d (flags takes STRICT only)", rc);
         i2 = RX_ITER_INIT(s, 4);
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0x4, &o, ob, 16, &L);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0x4, &o, ob, 16, &L);
         CHECK("glue.flags.unknown", rc == PCREC_SUBST_MISMATCH, "rc %d", rc);
         rx_ctx c2 = ctx; c2.len = 3;
         i2 = RX_ITER_INIT(s, 4);
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &c2, NULL, 0, &o, ob, 16, &L);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &c2, NULL, 0, &o, ob, 16, &L);
         CHECK("glue.ctx.len.mismatch", rc == PCREC_SUBST_MISMATCH, "rc %d (ctx->len is not the iterator's)", rc);
         i2 = RX_ITER_INIT(s, 4);
-        rc = rx_subst_replace_all(NULL, &i2, &s2_subst_info, &ctx, NULL, 0, &o, ob, 16, &L);
+        rc = pcrec_subst_replace_all(NULL, &i2, &s2_subst_info, &ctx, NULL, 0, &o, ob, 16, &L);
         CHECK("glue.no.next_n", rc == PCREC_SUBST_MISMATCH, "rc %d (next_n NULL)", rc);
         i2 = RX_ITER_INIT(s, 4);
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, NULL, NULL, 0, &o, ob, 16, &L);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, NULL, NULL, 0, &o, ob, 16, &L);
         CHECK("glue.no.ctx", rc == PCREC_SUBST_MISMATCH, "rc %d (a NULL argument)", rc);
-        rx_subst_out o0 = { .pc = pc, .cap = S2_PIECES - 1 };
+        pcrec_subst_out o0 = { .pc = pc, .cap = S2_PIECES - 1 };
         i2 = RX_ITER_INIT(s, 4);
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o0, ob, 16, &L);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o0, ob, 16, &L);
         CHECK("glue.cap.below.P", rc == PCREC_SUBST_MISMATCH, "rc %d (o->cap below P: k == 0)", rc);
-        /* the batch is the least of 64, o->cap / P, RX_SUBST_BATCH_PAIRS / ncap (substland2: the bound renamed, D175): one piece-set at a time still works */
-        rx_subst_out o1p = { .pc = pc, .cap = S2_PIECES };
+        /* the batch is the least of 64, o->cap / P, PCREC_SUBST_BATCH_PAIRS / ncap (substland2: the bound renamed, D175): one piece-set at a time still works */
+        pcrec_subst_out o1p = { .pc = pc, .cap = S2_PIECES };
         i2 = RX_ITER_INIT((const unsigned char *)"zabaz", 5);
-        rx_subst_ctx_init(&ctx, &i2, ra, &s2_subst_info, NULL, vres, 0, &bad);
-        rc = rx_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o1p, ob, 16, &L);
+        pcrec_subst_ctx_init(&ctx, &i2, ra, &s2_subst_info, NULL, vres, 0, &bad);
+        rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o1p, ob, 16, &L);
         CHECK("glue.batch.of.one", rc == 2 && L == 9 && !memcmp(ob, "z<ab><a>z", 9), "rc %d L %zu", rc, L);
     }
 
@@ -216,6 +216,6 @@ int main(void)
     CHECK("codes.values", PCREC_SUBST_NOSPACE == -11 && PCREC_SUBST_BADSPAN == -12
           && PCREC_SUBST_UNSET == -14 && PCREC_SUBST_MISMATCH == -15 && PCREC_SUBST_MISSING_REF == -16
           && PCREC_ERR_UNSET_VAR == -8 && PCREC_SUBST_NOSPACE < PCREC_ERR_ITER
-          && RX_SUBST_GAPS == 1u && RX_SUBST_STRICT == 2u, "code and flag values");
+          && PCREC_SUBST_GAPS == 1u && PCREC_SUBST_STRICT == 2u, "code and flag values");
     DONE();
 }

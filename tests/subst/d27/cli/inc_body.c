@@ -7,7 +7,7 @@
 #else
 #define RXI (&ra_info)
 #endif
-extern const struct rx_subst_info s1_subst_info;
+extern const struct pcrec_subst_info s1_subst_info;
 int main(void)
 {
     const struct rx_info *rx = RXI;
@@ -16,15 +16,15 @@ int main(void)
     rx_iter it = RX_ITER_INIT(s, sizeof s);
     rx_var vres[1];
     rx_ctx ctx;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, &s1_subst_info, NULL, vres, 0, &bad);
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, rx, &s1_subst_info, NULL, vres, 0, &bad);
     if (rc < 0) { printf("setup %d\n", rc); return 2; }
     ptrdiff_t caps[8][2];
-    rx_subst_piece pc[8];
-    rx_subst_out o = { .pc = pc, .cap = 8 };
+    pcrec_subst_piece pc[8];
+    pcrec_subst_out o = { .pc = pc, .cap = 8 };
     size_t k = 0, w = 0;
     while (rx->next(&it, caps)) {
         o.n = 0;
-        rc = s1_subst_info.render(&ctx, NULL, caps, 1, RX_SUBST_GAPS, &o);
+        rc = s1_subst_info.render(&ctx, NULL, caps, 1, PCREC_SUBST_GAPS, &o);
         if (rc < 0) { printf("rc %d\n", rc); return 3; }
         for (size_t i = 0; i < o.n; i++) w += pc[i].len;
         k++;

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "core/internal.h"
 #include "enc/enc.h"
@@ -169,21 +170,27 @@ static bool ns_harness(const char *p)
     return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
 }
 
-/* row 4: the subst types block's and the support unit's prefix-free names
- * (docs/spec/subst_api.md §1¶2) share a TU with any rx artifact, so a prefix
- * that opens one of their families spells one of them (`-p rx_group`'s
- * `rx_group_run`). */
-static const char *const ns_subst_families[] = {
-    "rx_subst", "rx_group", "pcrec_subst", "pcrec_support",
-};
-static bool ns_subst_block(const char *p)
+/* row 4: the subst types block's and the support unit's names
+ * (docs/spec/subst_api.md §1¶2: `pcrec_subst_*`, and the macros
+ * `PCREC_SUBST_*` and `PCREC_SUPPORT_*`) share a TU with any artifact. A
+ * prefix that opens one of their families, in either case, could spell one;
+ * so could one whose subst artifact's own names do (`<prefix>_subst_*`):
+ * `-p pcrec`'s record would be `pcrec_subst_info`, the record type's tag. */
+static const char *const ns_subst_families[] = { "pcrec_subst", "pcrec_support" };
+static bool ns_subst_opens(const char *p)
 {
     for (size_t i = 0; i < sizeof ns_subst_families / sizeof ns_subst_families[0]; i++) {
         size_t l = strlen(ns_subst_families[i]);
-        if (!strncmp(p, ns_subst_families[i], l) && (p[l] == '\0' || p[l] == '_'))
+        if (!strncasecmp(p, ns_subst_families[i], l) && (p[l] == '\0' || p[l] == '_'))
             return true;
     }
     return false;
+}
+static bool ns_subst_block(const char *p)
+{
+    char stem[PCREC_MAX_PREFIX_LEN + sizeof "_subst"];   /* p is a valid prefix by now */
+    snprintf(stem, sizeof stem, "%s_subst", p);
+    return ns_subst_opens(p) || ns_subst_opens(stem);
 }
 
 static const NsReserve ns_reserved[] = {
@@ -192,7 +199,7 @@ static const NsReserve ns_reserved[] = {
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
     { "subst-block", ns_subst_block,
-      "opens a family the subst block names (rx_subst, rx_group, pcrec_subst, pcrec_support)" },
+      "is pcrec or opens a family the subst block reserves (pcrec_subst, pcrec_support)" },
 };
 
 /* The reservation row `p` falls under, or NULL. */
@@ -2536,12 +2543,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * validated the caller's prefix and renders the placeholder this
          * compile keeps (`PcrecEmitIn.unrendered`). */
         if (!(emit_in && emit_in->unrendered)) {
-            if (!valid_prefix(user_prefix))
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
-                         PCREC_MAX_PREFIX_LEN);
-            const NsReserve *ns = ns_reserved_by(user_prefix);
-            if (ns)
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix: it %s", ns->why);
+            char why[256];
+            if (!pcrec_prefix_acceptable(user_prefix, why, sizeof why))
+                pcrec_ctx_fail(&cx, 0, "%s", why);
         }
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
          * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone

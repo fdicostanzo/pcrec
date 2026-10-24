@@ -3,23 +3,23 @@
  * substb2: was the glue and a per-match custom glue (R3 §7¶5). */
 #include "t.h"
 
-/* §6¶4's loop over rx_next_n and rx_subst_flatten, into a caller buffer of cap bytes; k is the batch size */
-static int batch(const struct rx_info *rx, const struct rx_subst_info *sub,
+/* §6¶4's loop over rx_next_n and pcrec_subst_flatten, into a caller buffer of cap bytes; k is the batch size */
+static int batch(const struct rx_info *rx, const struct pcrec_subst_info *sub,
                  const char *s, size_t n, size_t kbatch, unsigned char *out, size_t cap, size_t *w)
 {
     rx_iter it = RX_ITER_INIT((const unsigned char *)s, n);
     rx_ctx ctx; rx_var vres[4];
     ptrdiff_t caps[64 * 8][2];
-    rx_subst_piece pc[64 * 8];
-    rx_subst_out o = { .pc = pc, .cap = 64 * 8 };
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, sub, NULL, vres, 0, &bad);
+    pcrec_subst_piece pc[64 * 8];
+    pcrec_subst_out o = { .pc = pc, .cap = 64 * 8 };
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, rx, sub, NULL, vres, 0, &bad);
     size_t got, tot = 0;
     if (rc < 0) return rc;
     do {
         got = rx->next_n(&it, caps, kbatch);
         o.n = 0; o.sn = 0;
-        if ((rc = sub->render(&ctx, NULL, caps, got, RX_SUBST_GAPS, &o)) < 0) return rc;
-        size_t need = rx_subst_flatten(pc, o.n, out + tot, cap - tot);
+        if ((rc = sub->render(&ctx, NULL, caps, got, PCREC_SUBST_GAPS, &o)) < 0) return rc;
+        size_t need = pcrec_subst_flatten(pc, o.n, out + tot, cap - tot);
         if (need > cap - tot) return PCREC_SUBST_NOSPACE;
         tot += need;
     } while (got == kbatch);

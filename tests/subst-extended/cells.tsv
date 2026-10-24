@@ -87,11 +87,11 @@ e7	-e utf8	b	utf8:ext:[\x{100}\N{U+e9}\o{400}\x{0000000041}\N{U+0041}]	blank	all
 e8	-	b	ext:[\xe9\o{351}]	blank	all	abc	-	out:a[\xe9\xe9]c:1	same	-	esc
 e9	-e utf8	b	utf8:ext:[\xe9\o{351}\é]	blank	all	abc	-	out:a[\xc3\xa9\xc3\xa9\xc3\xa9]c:1	same	-	esc
 e10	-	b	ext:[\c>\c \c~\c\]	blank	all	abc	-	out:a[~`>\x1c]c:1	same	-	esc
-x1	-	(b)	utf8:ext:<\xe9>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
-x2	-	(b)	utf8:ext:<\x{e9}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
-x3	-	(b)	utf8:ext:<\x{100}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
-x4	-	(b)	utf8:ext:<\N{U+41}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
-x5	-	(b)	utf8:ext:<\o{351}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
+x1	-	(b)	utf8:ext:<\xe9>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc,S1580
+x2	-	(b)	utf8:ext:<\x{e9}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc,S1580
+x3	-	(b)	utf8:ext:<\x{100}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc,S1580
+x4	-	(b)	utf8:ext:<\N{U+41}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc,S1580
+x5	-	(b)	utf8:ext:<\o{351}>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc,S1580
 x6	-e utf8	(b)	ext:<\xe9>	blank	all	ab	-	check:MISMATCH:-1	na	-	encesc
 x7	-	(b)	utf8:ext:<\x41\o{102}\cC>	blank	all	ab	-	out:a<AB\x03>:1	same	-	encesc
 x8	-e utf8	(b)	ext:<\x41\o{102}\cC>	blank	all	ab	-	out:a<AB\x03>:1	same	-	encesc

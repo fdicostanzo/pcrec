@@ -11,5 +11,5 @@ SAB_DESC='the support unit UTF-8 case step maps ASCII only'
 SAB_DOC_FIGURE='Owed: lane substext queued this row (docs/dev/lanes/substext_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1533.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"            if (m) cp = rx_subst_case_cp_(cp, m);\n"'
-SAB_AFTER='"            if (m && cp < 0x80) cp = rx_subst_case_cp_(cp, m);   /* SABOTAGE S1533 */\n"'
+SAB_BEFORE='"            if (m) cp = pcrec_subst_case_cp_(cp, m);\n"'
+SAB_AFTER='"            if (m && cp < 0x80) cp = pcrec_subst_case_cp_(cp, m);   /* SABOTAGE S1533 */\n"'

@@ -21,6 +21,6 @@ generic arms as the core cells; see `tests/subst/CLAUDE.md`.
   oracle_store/libpcre2-10.46-utf/case-map.tsv > tests/subst-extended/cells.tsv`
   (libpcre2-8 by ctypes). A developer tool; nothing runs it.
 
-Sabotage rows S1530-S1537 and S1539 reach through these cells (REACH
+Sabotage rows S1530-S1537, S1539 and S1580 reach through these cells (REACH
 tokens); S1536 through the section's refusal rows. Maintenance: update this
 file when files are added or removed.

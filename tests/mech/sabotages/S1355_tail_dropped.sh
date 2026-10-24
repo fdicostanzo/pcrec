@@ -11,5 +11,5 @@ SAB_DESC='replace-all drops the tail after the last match'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1355.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"        rx_subst_append_(&tail, 1, out, cap, &w, &fits);\n"'
+SAB_BEFORE='"        pcrec_subst_append_(&tail, 1, out, cap, &w, &fits);\n"'
 SAB_AFTER='"        (void)tail;   /* SABOTAGE S1355 */\n"'

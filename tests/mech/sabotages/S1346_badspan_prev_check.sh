@@ -11,5 +11,5 @@ SAB_DESC='the element'\''s start < previous-end span check is removed, so an ove
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1346.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"            || ((flags & RX_SUBST_GAPS) && (size_t)c[0][0] < prev)) {\n"'
+SAB_BEFORE='"            || ((flags & PCREC_SUBST_GAPS) && (size_t)c[0][0] < prev)) {\n"'
 SAB_AFTER='"            || 0) {   /* SABOTAGE S1346 */\n"'

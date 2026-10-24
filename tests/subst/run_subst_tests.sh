@@ -167,11 +167,11 @@ for t in "$(printf '[${\xc3\xa9}]')" "$(printf '[$\xc3\xa9x1]')"; do
 done
 # the subst-block and support-unit names reserve their families (cli.md
 # §1.6¶2 row 4), on both compile paths
-for pfx in rx_subst rx_subst_x rx_group pcrec_subst pcrec_support pcrec_support_id; do
+for pfx in pcrec PCREC pcrec_subst Pcrec_Subst_x pcrec_support pcrec_subst_support_id; do
     if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "prefix $pfx compiled a subst"; else ok; fi
     if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --pattern 'a' > /dev/null 2>&1; then bad "prefix $pfx compiled an rx"; else ok; fi
 done
-for pfx in rx_shape pcrec_supports; do     # no family (rx_shape's went with R3's bind)
+for pfx in rx_shape pcrec_supports pcrecx pcrec_x rx_subst rx_group; do     # no family
     if "$TIMEOUT_BIN" 60 "$PCREC" -p $pfx -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix $pfx (no family) was refused"; fi
 done
 # every pattern-compile option is refused with --subst, never ignored (§5¶1)
@@ -185,7 +185,7 @@ else ok; fi
 if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst 'x' --pattern 'a' > /dev/null 2>&1; then
     bad "--subst with --pattern was accepted"
 else ok; fi
-# unset handling is a flag of the call (RX_SUBST_STRICT), not an option:
+# unset handling is a flag of the call (PCREC_SUBST_STRICT), not an option:
 # --unset= is unknown on every path (cli.md §1.19¶1)
 for u in error empty; do
     for mode in "--pattern a" "--subst x"; do
@@ -225,7 +225,7 @@ if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p pair -o "$WORK/tu/pair.c" --patt
         '_Static_assert(PAIR_MAXNUM < PAIR_NCAPS, "a numbered reference past the pattern");' \
         'int main(void) { rx_ctx ctx; rx_var vres[PAIR_NVREFS]; int bad;' \
         '    rx_iter it = RX_ITER_INIT((const unsigned char *)"a", 1);' \
-        '    return rx_subst_ctx_init(&ctx, &it, &pair_info, &pair_subst_info, NULL, vres, 0, &bad)' \
+        '    return pcrec_subst_ctx_init(&ctx, &it, &pair_info, &pair_subst_info, NULL, vres, 0, &bad)' \
         '        || sq_subst_info.render == sr_subst_info.render; }' > "$WORK/tu/main.c"
     if "$CC" $GENCFLAGS -I "$WORK/tu" -o "$WORK/tu/main" "$WORK/tu/main.c" "$WORK/tu/pair.c" \
            "$WORK/tu/pair_sub.c" "$WORK/tu/sq.c" "$WORK/tu/sr.c" 2> "$WORK/tu/err" && "$WORK/tu/main"; then ok
@@ -245,7 +245,7 @@ if "$TIMEOUT_BIN" 60 "$PCREC" --emit-support > "$WORK/sup/a.h" &&
     if cmp -s "$WORK/sup/a.h" "$WORK/sup/b.h" && cmp -s "$WORK/sup/a.h" "$WORK/sup/c.h"; then ok
     else bad "--emit-support wrote different bytes on stdout, -o FILE and -o -"; fi
     if LC_ALL=C grep -q '[^[:print:][:space:]]' "$WORK/sup/a.h"; then bad "the support unit is not ASCII"; else ok; fi
-    grep -q 'pcrec_support_id = 0x[0-9a-f]\{16\}ull;' "$WORK/sup/a.h" && ok || bad "the support unit defines no 64-bit content id"
+    grep -q 'pcrec_subst_support_id = 0x[0-9a-f]\{16\}ull;' "$WORK/sup/a.h" && ok || bad "the support unit defines no 64-bit content id"
 else bad "--emit-support failed"; fi
 for extra in "-p x" "--pattern a" "--subst x" "-e utf8" "--features all" "-i" "--emit-main"; do
     if "$TIMEOUT_BIN" 60 "$PCREC" --emit-support $extra -o "$WORK/sup/r.h" > /dev/null 2>&1; then
@@ -254,10 +254,10 @@ for extra in "-p x" "--pattern a" "--subst x" "-e utf8" "--features all" "-i" "-
 done
 printf '%s\n' '#define PCREC_SUPPORT_IMPLEMENTATION' '#include "a.h"' > "$WORK/sup/impl.c"
 printf '%s\n' '#include "a.h"' '#include "pair_sub.h"' \
-    'int main(void) { rx_subst_piece p[2] = { { (const unsigned char *)"ab", 2 }, { (const unsigned char *)"c", 1 } };' \
-    '    unsigned char b[4]; return rx_subst_flatten(p, 2, b, sizeof b) != 3 || memcmp(b, "abc", 3); }' > "$WORK/sup/use.c"
+    'int main(void) { pcrec_subst_piece p[2] = { { (const unsigned char *)"ab", 2 }, { (const unsigned char *)"c", 1 } };' \
+    '    unsigned char b[4]; return pcrec_subst_flatten(p, 2, b, sizeof b) != 3 || memcmp(b, "abc", 3); }' > "$WORK/sup/use.c"
 printf '%s\n' '#define PCREC_SUPPORT_STATIC' '#include "a.h"' \
-    'int main(void) { return rx_subst_flatten((const rx_subst_piece *)0, 0, (unsigned char *)0, 0) != 0; }' > "$WORK/sup/st.c"
+    'int main(void) { return pcrec_subst_flatten((const pcrec_subst_piece *)0, 0, (unsigned char *)0, 0) != 0; }' > "$WORK/sup/st.c"
 if "$CC" $GENCFLAGS -I "$WORK/sup" -I "$WORK/tu" -o "$WORK/sup/use" "$WORK/sup/use.c" "$WORK/sup/impl.c" \
        "$WORK/tu/pair_sub.c" 2> "$WORK/sup/err" && "$WORK/sup/use"; then ok
 else bad "the support unit as an implementation TU + a user TU: $(head -3 "$WORK/sup/err")"; fi

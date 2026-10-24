@@ -1,10 +1,10 @@
 /* §2¶3, §4¶23, §7¶4: ${!name} variables through rx_iter_vars and the context
- * setup.  substb2: unset handling is the run-time RX_SUBST_STRICT flag, and
- * the setup (rx_subst_ctx_init) is where a strict unset variable is refused. */
+ * setup.  substb2: unset handling is the run-time PCREC_SUBST_STRICT flag, and
+ * the setup (pcrec_subst_ctx_init) is where a strict unset variable is refused. */
 #include "t.h"
 
 /* one find-all with variables: replace-all for `all`, the recipe for a limit */
-static int run(const struct rx_subst_info *t, unsigned flags, const char *s, const rx_var *v, size_t nv,
+static int run(const struct pcrec_subst_info *t, unsigned flags, const char *s, const rx_var *v, size_t nv,
                int setvars, size_t limit, size_t cap, char *out, size_t *L)
 {
     unsigned char *o = malloc(cap ? cap : 1);
@@ -22,9 +22,9 @@ static int run(const struct rx_subst_info *t, unsigned flags, const char *s, con
 
 int main(void)
 {
-    const struct rx_subst_info *sv = &sv_subst_info;    /* a -> [${!v}|${!w}|${!v}] */
-    const struct rx_subst_info *se = &sve_subst_info;   /* a -> [${!v}|${!w}] */
-    const unsigned ST = RX_SUBST_STRICT;
+    const struct pcrec_subst_info *sv = &sv_subst_info;    /* a -> [${!v}|${!w}|${!v}] */
+    const struct pcrec_subst_info *se = &sve_subst_info;   /* a -> [${!v}|${!w}] */
+    const unsigned ST = PCREC_SUBST_STRICT;
     char out[256];
     size_t L;
     int rc;
@@ -75,7 +75,7 @@ int main(void)
         printf("INFO var.huge.len.recipe rc=%d L=%zu (the caller's own sink: the wrap is the recipe's to handle)\n", rc, L);
     }
 
-    /* RX_SUBST_STRICT: ERR_UNSET_VAR at the setup, before any output (§4¶23, §7¶4) */
+    /* PCREC_SUBST_STRICT: ERR_UNSET_VAR at the setup, before any output (§4¶23, §7¶4) */
     rc = run(se, ST, "xay", vs, 2, 1, SIZE_MAX, 64, out, &L);
     CHECK("var.err.set", rc == 1 && L == 10, "rc %d L %zu", rc, L);
     rc = run(se, ST, "xay", v1, 1, 1, SIZE_MAX, 64, out, &L);
@@ -94,31 +94,31 @@ int main(void)
     rc = run(se, 0, "xay", v1, 1, 1, SIZE_MAX, 64, out, &L);
     CHECK("var.err.default.blank", rc == 1 && !strcmp(out, "x[VV|]y"), "rc %d out %s (without the flag: blank)", rc, out);
 
-    /* rx_subst_ctx_init directly (§7¶4) */
+    /* pcrec_subst_ctx_init directly (§7¶4) */
     rx_ctx ctx; rx_var vres[2];
     int bad;
     rx_iter it = RX_ITER_INIT((const unsigned char *)"abc", 3);
     rx_iter_vars(&it, vs, 2);
-    rc = rx_subst_ctx_init(&ctx, &it, &rv_info, sv, NULL, vres, 0, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &rv_info, sv, NULL, vres, 0, &bad);
     CHECK("ctxinit.fields", rc == 0 && ctx.len == 3 && ctx.ncap == (size_t)rv_info.ncaps && ctx.user == NULL
           && ctx.vars == vres && ctx.nvars == 2 && vres[0].p == V && vres[1].len == 3
           && !strcmp(vres[0].name, "v") && !strcmp(vres[1].name, "w"), "rc %d", rc);
-    rc = rx_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, ST, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, ST, &bad);
     CHECK("ctxinit.strict.set", rc == 0, "rc %d", rc);
     it = RX_ITER_INIT((const unsigned char *)"abc", 3);
     rx_iter_vars(&it, v1, 1);
-    rc = rx_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, ST, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, ST, &bad);
     CHECK("ctxinit.strict.unset", rc == PCREC_ERR_UNSET_VAR, "rc %d", rc);
-    rc = rx_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, 0, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &rv_info, se, NULL, vres, 0, &bad);
     CHECK("ctxinit.default.unset", rc == 0 && vres[1].p == NULL && vres[1].len == 0, "rc %d", rc);
     it = RX_ITER_INIT((const unsigned char *)"abc", 3);
-    rc = rx_subst_ctx_init(&ctx, &it, &ra_info, &s1_subst_info, NULL, vres, 0, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &ra_info, &s1_subst_info, NULL, vres, 0, &bad);
     CHECK("ctxinit.novars", rc == 0 && ctx.nvars == 0 && ctx.vars == NULL, "rc %d nvars %zu vars %p", rc, ctx.nvars, (const void *)ctx.vars);
     /* an iterator that is BOUND keeps its variables */
     it = RX_ITER_INIT((const unsigned char *)"aa", 2);
     rx_iter_vars(&it, vs, 2);
     rv_next(&it, NULL);
-    rc = rx_subst_ctx_init(&ctx, &it, &rv_info, sv, NULL, vres, 0, &bad);
+    rc = pcrec_subst_ctx_init(&ctx, &it, &rv_info, sv, NULL, vres, 0, &bad);
     CHECK("ctxinit.bound", rc == 0 && vres[0].p == V, "rc %d", rc);
     DONE();
 }

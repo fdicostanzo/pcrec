@@ -6,7 +6,7 @@
 # environment ($OUT is required).
 # substb2: the R4 interface -- the support unit is emitted once ($O/support.h,
 # each driver defines PCREC_SUPPORT_IMPLEMENTATION in t.h), and unset handling
-# is the run-time RX_SUBST_STRICT flag, so no artifact is compiled with
+# is the run-time PCREC_SUBST_STRICT flag, so no artifact is compiled with
 # --unset=.
 set -u
 D=$(cd "$(dirname "$0")" && pwd)

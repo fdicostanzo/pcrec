@@ -10,9 +10,9 @@
 #define PCREC_SUPPORT_IMPLEMENTATION
 #include "support.h"
 
-static rx_subst_map M;
+static pcrec_subst_map M;
 static int SLOT[8];
-static rx_subst_run RUN[1];
+static pcrec_subst_run RUN[1];
 static char SUBJ[20000];
 static unsigned char REF[40000];
 static size_t REFLEN;
@@ -21,12 +21,12 @@ static int one(unsigned char *o, size_t cap, size_t *len)
 {
     rx_iter it = RX_ITER_INIT((const unsigned char *)SUBJ, sizeof SUBJ);
     rx_var vres[1];
-    rx_subst_piece pc[64 * S1_PIECES];
-    rx_subst_out po = { .pc = pc, .cap = 64 * S1_PIECES };
+    pcrec_subst_piece pc[64 * S1_PIECES];
+    pcrec_subst_out po = { .pc = pc, .cap = 64 * S1_PIECES };
     rx_ctx ctx;
-    int bad, rc = rx_subst_ctx_init(&ctx, &it, &ra_info, &s1_subst_info, &M, vres, 0, &bad);
+    int bad, rc = pcrec_subst_ctx_init(&ctx, &it, &ra_info, &s1_subst_info, &M, vres, 0, &bad);
     if (rc < 0) return rc;
-    return rx_subst_replace_all(ra_info.next_n, &it, &s1_subst_info, &ctx, &M, 0, &po, o, cap, len);
+    return pcrec_subst_replace_all(ra_info.next_n, &it, &s1_subst_info, &ctx, &M, 0, &po, o, cap, len);
 }
 
 static void *worker(void *arg)

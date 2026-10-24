@@ -13,25 +13,25 @@ returns a UTF-8 error (§9 row 13); the fixed findings' rows retagged `diff`
 corrected text. The cases themselves are the writer's.
 
 **substb2 (2026-10-22): re-driven through the R4 interface** (`pcrec_subst_check`
-/ `rx_subst_ctx_init`, a map, the element's pieces, the support unit's
-`rx_subst_replace_all` / `rx_subst_flatten` / `pcrec_subst_map_names`) after
+/ `pcrec_subst_ctx_init`, a map, the element's pieces, the support unit's
+`pcrec_subst_replace_all` / `pcrec_subst_flatten` / `pcrec_subst_map_names`) after
 lane subst replaced R3's bind, byte-cursor element, glue and `--unset=`. Only
 HOW the corpus is driven changed: the eleven `corpus/d_*.tsv` families are
 byte-identical and keep the libpcre2 / writer answers. Each change is marked
 `substb2` in its file. What moved, per directory:
 
 - `lib/` — every case runs through the spec's recipes: limit `all` with gaps
-  through `rx_subst_replace_all` (cross-checked against §6¶4's batch recipe
-  through `rx_subst_flatten`, §10¶10); a numeric limit through §6¶2's per-match
+  through `pcrec_subst_replace_all` (cross-checked against §6¶4's batch recipe
+  through `pcrec_subst_flatten`, §10¶10); a numeric limit through §6¶2's per-match
   recipe, counting the loop (§6¶3); `nogap` through the element without
-  `RX_SUBST_GAPS`; a pattern wider than `RX_SUBST_BATCH_PAIRS` (d_big's 300-group
+  `PCREC_SUBST_GAPS`; a pattern wider than `PCREC_SUBST_BATCH_PAIRS` (d_big's 300-group
   rows) takes the per-match recipe for `all` too (§10¶7). The `unset` column
-  is the run-time `RX_SUBST_STRICT` flag (one subst artifact per template
+  is the run-time `PCREC_SUBST_STRICT` flag (one subst artifact per template
   now). Named templates get a map from `pcrec_subst_map_names` (no
-  `RX_SUBST_MAP_ABSENT`); a refusal at the setup prints `BIND` as before.
+  `PCREC_SUBST_MAP_ABSENT`); a refusal at the setup prints `BIND` as before.
 - `api/` — the eight drivers keep their names (`run_d27.sh` reads them) and
   run the R4 interface: `t_bind` the record shape, the check, the by-name
-  helper and hand-filled maps; `t_shape` `rx_group_run` and the run/slot layout
+  helper and hand-filled maps; `t_shape` `pcrec_subst_group_run` and the run/slot layout
   of the helper; `t_element` the pieces; `t_glue` replace-all and the recipes;
   `t_vars`, `t_iter`, `t_utf`, `t_threads` adapted. `build.sh` emits the
   support unit and compiles no artifact with `--unset=`.

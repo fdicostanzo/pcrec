@@ -159,7 +159,7 @@ same('e10', rb'b', rb'[\c>\c \c~\c\]', b'abc', 'esc')
 # ---- an escape's value binds the template to its encoding (§2¶5, review TPL-1) ----
 for cid, tpl in (('x1', rb'<\xe9>'), ('x2', rb'<\x{e9}>'), ('x3', rb'<\x{100}>'),
                  ('x4', rb'<\N{U+41}>'), ('x5', rb'<\o{351}>')):
-    fixed(cid, rb'(b)', tpl, b'ab', 'check:MISMATCH:-1', 'na', '-', 'encesc', pre='utf8:ext:')
+    fixed(cid, rb'(b)', tpl, b'ab', 'check:MISMATCH:-1', 'na', '-', 'encesc,S1580', pre='utf8:ext:')
 fixed('x6', rb'(b)', rb'<\xe9>', b'ab', 'check:MISMATCH:-1', 'na', '-', 'encesc', flags='-e utf8', pre='ext:')
 fixed('x7', rb'(b)', rb'<\x41\o{102}\cC>', b'ab', None, 'same', '-', 'encesc', pre='utf8:ext:')
 fixed('x8', rb'(b)', rb'<\x41\o{102}\cC>', b'ab', None, 'same', '-', 'encesc', flags='-e utf8', pre='ext:')

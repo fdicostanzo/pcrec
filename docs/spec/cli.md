@@ -185,7 +185,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
 | 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
-| 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `rx_subst_*`, `rx_group_*`, `pcrec_subst*`, `pcrec_support*` | `rx_subst`, `rx_group`, `pcrec_subst` or `pcrec_support`, alone or followed by `_` |
+| 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `pcrec_subst_*`, `PCREC_SUBST_*`, `PCREC_SUPPORT_*` | `pcrec_subst` or `pcrec_support`, alone or followed by `_`, in any case; and `pcrec` in any case, whose subst artifact's `<prefix>_subst_*` names would fall in the family |
 
 <a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 

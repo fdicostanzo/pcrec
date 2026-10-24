@@ -1,13 +1,13 @@
 # S1352 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
 # docs/spec/subst_api.md).
 #
-# Plant: rx_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1).
+# Plant: pcrec_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1).
 # Witness (RETIRED, see SAB_EXPECT note): the `varunset` cell's dirty arm (`${!v}-$1`, no variables, every rx_iter field 0xA5): a wild pointer read.
 # Reach (K35): token S1352 (cell varunset); tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
 SAB_ID="S1352-ctx-init-reads-fresh-vars"
 SAB_FILE="src/gen/emit_subst.c"
 SAB_SUITES="subst"
-SAB_DESC='rx_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1)'
+SAB_DESC='pcrec_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1)'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1352.'
 # RE-DECIDED 2026-10-24 (lane s1352; mech job 611 read subst:0fail/7567pass): an
 # EQUIVALENT MUTANT now. Its only witness was the subst suite's dirty arm
