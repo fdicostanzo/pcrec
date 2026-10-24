@@ -32,6 +32,9 @@ short brief, reads nothing else, and lets scripts do the waiting.
    says whom it messages). If it is up, launch nothing. If not, launch the per-run FALLBACK
    (section 3): `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md: haiku, 1-hour
    cache), background, name `mon-<mode>-<short>`, the brief below with the job key filled in.
+   (The standing session starts with its own tools test, `scripts/monitor_preflight`, and a
+   `MON up` message to the manager; it also watches CI on main, `CI-RED`/`CI-CANCELLED`
+   lines, which the per-run fallback ignores.)
    Either way, rehearse a new queue/monitor change first with simulate mode
    (`scripts/fullsuite_job.sh --simulate red:axes --dry-run` is the safe check; the whole
    path is `scripts/tests/queuewatch.test`).

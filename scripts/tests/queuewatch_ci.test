@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# queuewatch CI-source self-test ([MONITOR-QUEUE], lane monci): scripts/queuewatch's `gh run list` events against a
+# FAKE `gh` on PATH (a shim that prints a scripted JSON answer or fails like an unauthenticated gh). No network and
+# no GitHub call: the shim is first on PATH and the "gh missing" case runs with a PATH that has no gh at all.
+# The queue is a bare scratch directory (no jobs), so only the CI events and DISK-HIGH can occur.
+# Cases: first answer is baseline (history not reported); a new failure; cancelled-then-green (no event); cancelled
+# with a later run still in progress (deferred, then only the later result); cancelled-newest (event); two events in
+# one answer surface in order across relaunches while gh is NOT re-asked (--ci-every 9999); unauthenticated and missing
+# gh (CI-UNAVAILABLE once, re-armed after recovery, and the queue conditions still arrive). Every event exactly once.
+# PLANTS (a scratch copy of the watcher with one bug each) must turn the matching case red: state not written, the
+# baseline skipped, the cancelled rule without its "newest" test, the unavailable episode never re-armed.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/queuewatch_ci.test.XXXXXX")
+trap 'rm -rf "$T" "$here"/.queuewatch_plant_*."$$"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+unset QUEUEWATCH_NO_CI CI_EVERY
+
+# jr ID STATUS CONCLUSION: one run object (createdAt = minute ID, sha = ID repeated, subject "subject ID")
+jr() { printf '{"databaseId":%s,"headSha":"%s%s%s%s%s%s%s%s%saaaaaaaaaa","status":"%s","conclusion":"%s","createdAt":"2026-10-24T10:%02d:00Z","displayTitle":"subject %s"}' \
+    "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$1" "$2" "$3" "$1" "$1"; }
+answer() { local d=$1 o="" r; shift; for r in "$@"; do o="${o:+$o,}$r"; done; printf '[%s]' "$o" > "$d/answer.json"; rm -f "$d/mode"; }
+
+# setup TAG: a scratch world (queue dir, state, bin with a shim gh, and a gh-less bin for the missing case)
+setup() {
+    local d=$T/$1 t p; mkdir -p "$d/bin" "$d/nogh" "$d/q/pending" "$d/q/running" "$d/q/done" "$d/q/failed"
+    cat > "$d/bin/gh" <<SH
+#!/usr/bin/env bash
+case "\$1 \$2" in "run list") ;; *) echo "shim gh: unexpected \$*" >&2; exit 9 ;; esac
+echo x >> "$d/gh.calls"
+if [ "\$(cat "$d/mode" 2>/dev/null)" = unauth ]; then echo "To get started with GitHub CLI, please run:  gh auth login" >&2; exit 4; fi
+cat "$d/answer.json"
+SH
+    chmod +x "$d/bin/gh"
+    for t in bash date cat sed python3 head cut grep flock ls df awk stat tr sleep mkdir dirname mv sort timeout gnutimeout env rm tail wc; do
+        p=$(command -v "$t" 2>/dev/null) && ln -sf "$p" "$d/nogh/$t"
+    done
+}
+# watch TAG QW [opts]: one launch; output is the event line or the CAP line
+watch() { local d=$T/$1 qw=$2; shift 2
+    PATH="$d/bin:$PATH" "$TO" 60 bash "$qw" --queue "$d/q" --state "$d/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 "$@" 2>&1; }
+head1() { sed 's/^queuewatch: //; s/ .*//'; }   # first word of the line: CAP, CI-RED, ...
+
+# cases QW TAG: the whole scenario list; echoes the names of failed cases (nothing = all green)
+cases() {
+    local qw=$1 g=$2 d=$T/$2 l l2 r
+    setup "$g"
+    check() { [ "$2" = "$3" ] || echo "$1(got:'$2' want:'$3')"; }   # check NAME GOT WANT
+    answer "$d" "$(jr 5 completed success)" "$(jr 4 completed failure)"
+    check baseline "$(watch "$g" "$qw" | head1)" CAP
+    answer "$d" "$(jr 6 completed failure)" "$(jr 5 completed success)" "$(jr 4 completed failure)"
+    check red "$(watch "$g" "$qw")" "queuewatch: CI-RED 666666666 6 subject 6"
+    check red-once "$(watch "$g" "$qw" | head1)" CAP
+    # cancelled, then a later green: not an event
+    answer "$d" "$(jr 8 completed success)" "$(jr 7 completed cancelled)" "$(jr 6 completed failure)" "$(jr 5 completed success)"
+    check cancel-superseded "$(watch "$g" "$qw" | head1)" CAP
+    # cancelled is the newest completed run but a later run is still going: deferred; it then fails: only that red
+    answer "$d" "$(jr 10 in_progress "")" "$(jr 9 completed cancelled)" "$(jr 8 completed success)"
+    check cancel-deferred "$(watch "$g" "$qw" | head1)" CAP
+    answer "$d" "$(jr 10 completed failure)" "$(jr 9 completed cancelled)" "$(jr 8 completed success)"
+    check red-after-deferred "$(watch "$g" "$qw")" "queuewatch: CI-RED 101010101 10 subject 10"
+    check deferred-never "$(watch "$g" "$qw" | head1)" CAP
+    # cancelled is the newest completed run: an event
+    answer "$d" "$(jr 12 completed cancelled)" "$(jr 11 completed success)" "$(jr 10 completed failure)"
+    check cancelled-newest "$(watch "$g" "$qw")" "queuewatch: CI-CANCELLED 121212121 12 subject 12"
+    check cancelled-once "$(watch "$g" "$qw" | head1)" CAP
+    # two events in one answer, gh asked ONCE (--ci-every 9999): both surface, in order, across relaunches
+    : > "$d/gh.calls"; rm -f "$d/state.ci.last"
+    answer "$d" "$(jr 15 completed cancelled)" "$(jr 14 completed success)" "$(jr 13 completed failure)"
+    l=$(watch "$g" "$qw" --ci-every 9999); l2=$(watch "$g" "$qw" --ci-every 9999)
+    check two-in-order "$l|$l2" "queuewatch: CI-RED 131313131 13 subject 13|queuewatch: CI-CANCELLED 151515151 15 subject 15"
+    check cap-between "$(watch "$g" "$qw" --ci-every 9999 | head1)|$(wc -l < "$d/gh.calls")" "CAP|1"
+    # unauthenticated: one CI-UNAVAILABLE across launches, and a queue condition (DISK-HIGH) still arrives first
+    echo unauth > "$d/mode"
+    l=$(watch "$g" "$qw" --disk-pct 0 | head1); l2=$(watch "$g" "$qw" --disk-pct 0)
+    check unavail-and-queue "$l|$l2" "DISK-HIGH|queuewatch: CI-UNAVAILABLE To get started with GitHub CLI, please run:  gh auth login"
+    check unavail-once "$(watch "$g" "$qw" | head1)" CAP
+    # recovery re-arms: gh works again (no new events), then fails again: reported again
+    answer "$d" "$(jr 15 completed cancelled)" "$(jr 14 completed success)" "$(jr 13 completed failure)"
+    check recovered-silent "$(watch "$g" "$qw" | head1)" CAP
+    echo unauth > "$d/mode"
+    check unavail-rearmed "$(watch "$g" "$qw" | sed 's/ please.*//')" "queuewatch: CI-UNAVAILABLE To get started with GitHub CLI,"
+    # gh not installed: reported (a new episode, new reason); --no-ci silences the source
+    rm -f "$d/mode"; answer "$d" "$(jr 15 completed cancelled)"
+    check recovered2 "$(watch "$g" "$qw" | head1)" CAP
+    r=$(PATH="$d/nogh" "$TO" 60 "$d/nogh/bash" "$qw" --queue "$d/q" --state "$d/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&1)
+    check gh-missing "$r" "queuewatch: CI-UNAVAILABLE gh not installed"
+    r=$(PATH="$d/nogh" "$TO" 60 "$d/nogh/bash" "$qw" --queue "$d/q" --state "$d/state2" --every 1 --max-sec 1 --disk-pct 101 --no-ci 2>&1)
+    check no-ci-flag "$(printf '%s' "$r" | head1)" CAP
+    # a first launch whose gh was down: the baseline is the first SUCCESSFUL answer (history, not news)
+    rm -f "$d/state"*; echo unauth > "$d/mode"; watch "$g" "$qw" > /dev/null
+    answer "$d" "$(jr 15 completed cancelled)" "$(jr 14 completed success)" "$(jr 13 completed failure)"
+    check baseline-after-down "$(watch "$g" "$qw" | head1)" CAP
+}
+
+res=$(cases "$here/queuewatch" real)
+[ -z "$res" ] && ok "CI events: baseline, red, cancelled superseded/deferred/newest, two-in-order, unavailable (once, re-armed, gh missing), --no-ci, baseline after a down first launch" || bad "CI cases: $res"
+
+plant() { # plant NAME FROM TO: echo the path of the patched copy (inside scripts/, so its siblings stay reachable)
+    local d=$here/.queuewatch_plant_$1.$$; mkdir -p "$d"
+    python3 -I - "$here/queuewatch" "$d/queuewatch" "$2" "$3" <<'PY' || return 1
+import sys
+src, dst, a, b = sys.argv[1:5]
+s = open(src).read()
+assert s.count(a) == 1, "anchor " + a
+open(dst, "w").write(s.replace(a, b))
+PY
+    echo "$d/queuewatch"
+}
+P1=$(plant nostate 'mark() { printf '"'"'%s\n'"'"' "$1" >> "$state"; }' 'mark() { :; }') || bad "plant nostate did not land"
+P2=$(plant nobase 'if ! seen '"'"'ci|baseline'"'"'; then' 'if false; then') || bad "plant nobase did not land"
+P3=$(plant nonewest 'r is newest and all(' 'True and all(') || bad "plant nonewest did not land"
+P4=$(plant norearm "forget 'C|ci-unavail'" ":") || bad "plant norearm did not land"
+plants="P1:state-not-written:red P2:baseline-skipped:baseline P3:cancelled-without-newest-test:cancel-superseded P4:unavailable-never-re-armed:unavail-rearmed"
+for pn in $plants; do v=${pn%%:*}; qw=${!v:-}; [ -n "$qw" ] && ( cases "$qw" "pl$v" > "$T/res.$v" ) & done
+wait
+for pn in $plants; do
+    v=${pn%%:*}; rest=${pn#*:}; name=${rest%%:*}; want=${rest#*:}
+    grep -q "^$want(" "$T/res.$v" 2>/dev/null && ok "PLANT $name: case '$want' turns red" || bad "PLANT $name not caught (red cases: $(cut -c1-60 "$T/res.$v" 2>/dev/null | tr '\n' ' '))"
+done
+echo "queuewatch_ci.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

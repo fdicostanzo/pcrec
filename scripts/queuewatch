@@ -9,7 +9,7 @@
 # file; the model only acts on the lines this script prints.
 #
 #   scripts/queuewatch [--queue DIR] [--state FILE] [--every S] [--max-sec S] [--quiet-sec S]
-#                      [--stuck-sec S] [--disk-pct P] [--confirm S]
+#                      [--stuck-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
 #   --queue DIR     the queue (default: `boxqueue path`, honouring PCREC_BOXQUEUE_DIR)
 #   --state FILE    the reported-events file (default DIR/.queuewatch/state); one watcher per state
 #                   (flock: a second is refused, exit 75)
@@ -19,6 +19,8 @@
 #   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
 #   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
+#   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
+#                   launches (env CI_EVERY); --no-ci (env QUEUEWATCH_NO_CI=1) turns the CI source off
 #
 # THE LINES (exit 0 after each; prefix `queuewatch: `), in the order they are raised:
 #   JOB-START NAME owner=O <date>
@@ -30,6 +32,12 @@
 #   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
 #   PENDING-STUCK NAME pending for Ns, nothing running :: <the runner's last answer>
 #   DISK-HIGH <fs> at P% (>= T%)
+#   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
+#   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
+#                                          is still running or queued (a push cancels the running job; a
+#                                          cancel superseded by a later run is not an event). Green: silent.
+#   CI-UNAVAILABLE <reason>                gh missing / not logged in / network / unreadable answer; once,
+#                                          re-armed when gh works again; never stops the queue events
 # Other exits: 6 CAP (nothing new in --max-sec: relaunch), 2 queue missing, 64 usage, 75 state in use.
 #
 # STATE: every reported event's ID is appended to the state file BEFORE the line is printed, and an
@@ -41,14 +49,19 @@
 # ID names the episode (QUIET: the last-change epoch; RUNNER-DEAD: the runner.pid it died with;
 # DISK-HIGH and RUNNER-DEAD are forgotten when the condition clears), so a new episode reports again.
 # QUIET's last-change record per job sits beside the state file (state.sig.NAME).
+# CI: the same state file. The FIRST successful gh answer (even on a later launch, if gh was down at the
+# first) is the baseline: the runs it already shows are history and are marked, never reported. The last
+# answer's events sit in state.ci.out (replayed until reported, so two events from one answer both
+# surface despite --ci-every) and the last ask time in state.ci.last.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-every=15 maxs=3000 quiet=1800 stuck=1800 diskp=95 confirm=5 Q="" state=""
+every=15 maxs=3000 quiet=1800 stuck=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
 while [ $# -gt 0 ]; do
     case "$1" in
         --queue) Q=$2; shift 2 ;; --state) state=$2; shift 2 ;; --every) every=$2; shift 2 ;;
         --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;;
         --disk-pct) diskp=$2; shift 2 ;; --confirm) confirm=$2; shift 2 ;;
+        --ci-every) ci_every=$2; shift 2 ;; --no-ci) noci=1; shift ;;
         -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
         *) echo "queuewatch: unknown argument $1" >&2; exit 64 ;;
     esac
@@ -60,6 +73,7 @@ mkdir -p "$(dirname "$state")" || exit 2
 exec 9>>"$state.lock"
 flock -n 9 || { echo "queuewatch: another watcher holds $state" >&2; exit 75; }
 t_start=$(date +%s)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null; TO=${TIMEOUT_BIN:-timeout}
 
 pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
 tree_cpu() { # utime+stime ticks of PID and its descendants; empty if unreadable
@@ -166,9 +180,49 @@ conditions() {
     else forget 'C|disk'; fi
 }
 
+# ci: print `ID<TAB>0<TAB>LINE` for the CI events of the last gh answer (oldest first), asking gh when due.
+CI_PY='
+import sys, json
+runs = sorted(json.load(sys.stdin), key=lambda r: r["createdAt"], reverse=True)
+done = [r for r in runs if r["status"] == "completed"]
+newest = done[0] if done else None
+ev = []
+for r in done:
+    c = r["conclusion"]
+    if c in ("failure", "timed_out", "startup_failure"): kind = "red"
+    elif c == "cancelled" and r is newest and all(x["status"] == "completed" for x in runs if x["createdAt"] > r["createdAt"]): kind = "cancelled"
+    else: continue
+    ev.append("ci|%s|%s\t0\tCI-%s %s %s %s" % (kind, r["databaseId"], kind.upper(), r["headSha"][:9], r["databaseId"], " ".join(str(r["displayTitle"]).split())))
+print("\n".join(reversed(ev)))
+'
+ci() {
+    [ "$noci" = 1 ] && return 0
+    local now last out rc ev id rest reason
+    now=$(date +%s); last=$(cat "$state.ci.last" 2>/dev/null || echo 0)
+    if [ $((now - last)) -ge "$ci_every" ]; then
+        echo "$now" > "$state.ci.last"
+        if ! command -v gh >/dev/null 2>&1; then rc=127 out="gh not installed"
+        else out=$(cd "$here/.." && "$TO" 60 gh run list --branch main --limit 20 --json databaseId,headSha,status,conclusion,createdAt,displayTitle 2>&1 9>&-); rc=$?; fi
+        if [ "$rc" = 0 ]; then ev=$(printf '%s' "$out" | python3 -I -c "$CI_PY" 2>/dev/null) || { rc=65; out="unreadable gh output"; }; fi
+        if [ "$rc" != 0 ]; then
+            reason=$(printf '%s' "$out" | head -1 | cut -c1-160); [ "$rc" = 124 ] && reason="gh timed out"
+            printf 'C|ci-unavail\t0\tCI-UNAVAILABLE %s\n' "${reason:-gh failed rc=$rc}" > "$state.ci.out"
+        else
+            forget 'C|ci-unavail'
+            if ! seen 'ci|baseline'; then    # the first answer is history
+                while IFS=$'\t' read -r id rest; do [ -n "$id" ] && mark "$id"; done <<<"$ev"
+                mark 'ci|baseline'; ev=""
+            fi
+            printf '%s\n' "$ev" | sed '/^$/d' > "$state.ci.out"
+        fi
+    fi
+    cat "$state.ci.out" 2>/dev/null
+    return 0
+}
+
 pick() { # pick: the first event not yet reported, as ID<TAB>LINE (nothing if none)
     local id closed line all
-    all=$(lifecycle; conditions)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
+    all=$(lifecycle; conditions; ci)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
     while IFS=$'\t' read -r id closed line; do
         [ -n "$id" ] || continue
         seen "$id" && continue
