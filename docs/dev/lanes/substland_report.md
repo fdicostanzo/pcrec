@@ -500,3 +500,27 @@ The classifier was /tmp/claude-1001/substr1fix/ucddiff.py (scratch).
 - **S1352** UNDETECTED stays EXPECTED (equivalent mutant).
 - Proof: queue job 619 re-run on aab54ee01: 59 rows, unexpected 0, undetected 1 (S1352), anomalies 0; self-test 4 ok, rc=0. NOT run: a gate-disabled self-test (it would turn Sy1 into DETECTED, failing checks 2 and 3 by construction; a ~10 min run was not spent on it).
 - test-subst gains one ok (guard cell); no pinned count was found to move, and 618 had already run green before the edit.
+
+## substland2 (catch-up merge of main, 2026-10-24)
+
+Merged main (b691d6582) into lane/substland as afe04abae; nothing landed, nothing pushed.
+
+- **Conflicts**: one, `docs/dev/upstream_issues.md` (main's U22 = Bidi_Mirrored vs this branch's U22/U23). Resolved:
+  main's U22 first, then this branch's entries renumbered ill-formed UTF-8 U22 -> **U23**, case map U23 -> **U24**.
+  References fixed by grep in replace_design.md, spec/subst_api.md, tests/subst-extended/CLAUDE.md, the substext and
+  substr4b reports and the r2 subst panel review. The older text in this report (substcase note, line "U22/U23")
+  predates the renumber and is left as history. main's own U22 references (decisions, plan, cli.md, compliance,
+  uprops files) untouched. No conflict in src/, cli/, lib/.
+- **Pins**: no pin file conflicted. The two pin-like files main changed (tests/rxtsource/run_rxtsource_tests.sh,
+  tests/startset/manifests/manifest_s2_vm_forced.tsv) were not touched by this branch (branch delta empty), so
+  the merged pins equal main's; additive trivially. Nothing re-pinned.
+- **Build**: make -j16 clean; make strict clean.
+- **Sections (run directly, not make test)**: test-subst 8916 checks 0 failed; test-subst-d27 23/0; casemap 24/0;
+  spec-history 11/0; registry 79/0; rxtsource green (297 files / 6174 blocks / 74395 lines); prechecks 395/0;
+  case-spelling identity rc=0; test-codegen rc=0 (no `*** [test-` lines).
+- **rx byte identity** (scratch /tmp/claude-1001/substr1fix/ident.sh; base = git archive of main b691d6582, tip =
+  merged branch): 112 compiles (36 patterns x 2 feature sets, 6 flag variants, 34 diagnostic probes), **0 differing
+  files**, abi 84 in both.
+- **Self-test control**: scratch git-initialised copy with the compile gate disabled (`if false && ...` at
+  run_sabotage_matrix.sh line 1225): nocompile_selftest went **RED** (rc=1; Sy1 reads DETECTED instead of ANOMALY,
+  anomalies: 0). A first attempt was red for the wrong reason (scratch copy not a git repo) and was discarded.
