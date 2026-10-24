@@ -1036,6 +1036,13 @@ fi
 # commit d3886a656 at `-o -`: those 30 added helper lines, the one
 # scan_position line and that stamp, nothing else (s3_report.md Part 9). The
 # other eleven rows did not move.
+# RE-RECORDED 2026-10-24 at lane s3pair's merge of main 0d3765c87 (S3 over
+# the iterators, abi 84 -> 85, same-width digits): the same four `cover` rows,
+# RX_DFA_PREFILTER "none" as above, and each EMITTED_BYTES falls from main's
+# value by EXACTLY its pre-merge S3 delta (28,498 -> 26,094, -2,404;
+# 29,329 -> 26,417, -2,912; 32,294 -> 27,840, -4,454; 32,694 -> 29,591,
+# -3,103): the iterator's scaffold and S3's cover text add independently.
+# The other eight rows read main's values unchanged.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

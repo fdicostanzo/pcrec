@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""docs/dev/lanes/s3_evidence/census.py -- lane s3's MOVER CENSUS for D172 S3 (abi 83 -> 84,
+"""docs/dev/lanes/s3_evidence/census.py -- lane s3's MOVER CENSUS for D172 S3 (abi 84 -> 85 since lane s3pair's merge of main 0d3765c87; was 83 -> 84,
 PROVISIONAL), job 587's stand-in for emit_sweep's five streams (emit_sweep has no abi
 normalization; corefix's census.py is the precedent): which corpus artifacts move, and does
 anything move OUTSIDE the declared population?
 
     python3 -I census.py --base BIN --new BIN --tree DIR --out FILE [--jobs N] [--limit N]
 
-BASE is main c3ea619c3's pcrec, NEW the S3 commit's. Over every distinct corpus pattern
+BASE is main's pcrec (0d3765c87 from job 620; c3ea619c3 before), NEW the S3 commit's. Over every distinct corpus pattern
 (scripts/emit_sweep.py's own enumeration), ten arms are compiled by both: the .c at the default
 engine, under -e utf8 and at --engine=vm, the VM listing (--emit-ir), the facts listing, the
 OFF ARM (NEW under --memfn=no-wf-find,no-wf-hors against BASE's default .c), and (the S3 review's
 item D) the .c at the SIMD layer (-fmemfn-simd) and under norun (-fno-run-prefilter), each with
 its own OFF arm (the same flag on both sides, NEW also under both denies). NEW's output has the
-abi digits mapped back (84 -> 83) in the places they occur; nothing else is normalized; rc and
+abi digits mapped back (85 -> 84) in the places they occur; nothing else is normalized; rc and
 stderr are compared too.
 
 THE DECLARED POPULATION is read from NEW's OWN ARTIFACT on that arm, a pcrec-side stamp, never
@@ -58,8 +58,8 @@ import os
 import subprocess
 import sys
 
-ABI = [(b"(abi 84)", b"(abi 83)"), (b"(PCREC_RX_ABI_H + 0) != 84", b"(PCREC_RX_ABI_H + 0) != 83"),
-       (b"#define PCREC_RX_ABI_H 84", b"#define PCREC_RX_ABI_H 83"), (b"    .abi = 84,", b"    .abi = 83,")]
+ABI = [(b"(abi 85)", b"(abi 84)"), (b"(PCREC_RX_ABI_H + 0) != 85", b"(PCREC_RX_ABI_H + 0) != 84"),
+       (b"#define PCREC_RX_ABI_H 85", b"#define PCREC_RX_ABI_H 84"), (b"    .abi = 85,", b"    .abi = 84,")]
 COVER = b'#define RX_DFA_SCAN "cover"'
 HORS = b"_sh[256]"
 OFF = "--memfn=no-wf-find,no-wf-hors"
