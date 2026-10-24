@@ -80,8 +80,10 @@ trailer, a monitor that read too much).
 - 2026-10-23, full run: watchrun checks `--max-sec` only at poll boundaries (`--every`,
   60 s), so 570 + 60 overran the monitor's `timeout 590` and every call ended 124 with no
   line. Keep max-sec + every under the outer timeout (480 now).
-- 2026-10-23, full run: the monitor MISSED a red stage (axes rc=2). watchrun baselines the
-  END lines already in the log at each relaunch, so an END that lands between two capped
-  calls is never reported. For multi-hour runs the monitor greps the trailer's END lines
+- 2026-10-23, full run: the monitor MISSED a red stage (axes rc=2). Root cause (found
+  2026-10-24): battery.sh writes `== stage axes rc=2 END`, chainrun writes `== stage N END rc=`;
+  watchrun's stage-END pattern `^== stage [^ ]* END` matches only chainrun's shape, so
+  `--on stage` NEVER fires on a battery trailer. (The relaunch baseline is a second, smaller
+  gap: an END landing between two capped calls is folded into the next baseline.) For multi-hour runs the monitor greps the trailer's END lines
   itself and keeps its own SEEN list (mon-full2's brief); watchrun stays right for a single
   wait. TODO: rewrite section 3 + monitor_rules.md rows 1/5/6 to the trailer-grep loop.
