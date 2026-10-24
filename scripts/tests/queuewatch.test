@@ -27,6 +27,7 @@ bad() { echo "FAIL: $*"; fail=$((fail+1)); }
 unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT BATTERY_SIMULATE
 export BOXQUEUE_EVERY=1 BOXQUEUE_READY_BOUND=5 BOXQUEUE_LOCK_WAIT=1 BOXQUEUE_MONITOR=0.5 SIM_STEP=1 SIM_QUIET=9
 QW=${QW:-$here/queuewatch}
+export QUEUEWATCH_NO_CI=1    # the CI source has its own test (queuewatch_ci.test); here no gh is ever asked
 
 # env_for TAG: the scratch environment of one scenario (queue, lock, simulate dir, state)
 env_for() { Q=$T/q$1; export PCREC_BOXQUEUE_DIR=$Q PCREC_BOXLOCK_FILE=$T/box.$1 FULLSUITE_SIM_DIR=$T/sim$1; ST=$T/state.$1; }
