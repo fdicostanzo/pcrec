@@ -19,4 +19,4 @@
 -	(x+)abcd	HYB_PF	5	4	OPTIONAL	0
 --engine=vm	(a+)+zq	VM_ATTEMPT	3	2	REQUIRED	0
 -	(?m)^abc	DFA_ATTEMPT	3	3	OPTIONAL	0
---memfn=no-wf-find	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4
+--memfn=no-window-search	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4

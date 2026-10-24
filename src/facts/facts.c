@@ -613,12 +613,6 @@ const WidthIv *pcrec_fact_width(Ctx *cx)
     return &cx->job->pf.width;
 }
 
-const MkLang *pcrec_fact_span(Ctx *cx)
-{
-    pf_ask(cx, PF_SPAN, true);
-    return &cx->job->pf.span;
-}
-
 const MkLang *pcrec_fact_span_stated(Ctx *cx)
 {
     pf_ask(cx, PF_SPAN, false);

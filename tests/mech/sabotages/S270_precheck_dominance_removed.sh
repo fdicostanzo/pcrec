@@ -27,8 +27,8 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the detector: section 5.1 repo
 # prefilter on 91, and emits NO second pass.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\[" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && ! grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-DOMINANCE-DECLINES-DUPLICATE-PASS'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\[" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && ! grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-DOMINANCE-DECLINES-DUPLICATE-PASS'
 SAB_REACH_EXPECT="REACH-DOMINANCE-DECLINES-DUPLICATE-PASS"
 # [OPT-LITSCAN] S1 re-anchor (lane s1build, 2026-09-25): the function now
 # takes the candidate scan S1 derives (`CandScan`: byte, memchr form, whether

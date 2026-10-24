@@ -11,7 +11,7 @@ THE MOVER LIST is census.py's own rule on its own enumeration: every distinct co
 
 THE STRATA, read from NEW's own text (the E-find statement, the line declaring `rx_mf<N>_s`):
   B   LIBC (`memchr(` in the statement) or WALK (an in-place walk). D-hors replaces B, so a D-hors
-      artifact's form is read from its `--memfn=no-wf-hors` compile, where B is rendered
+      artifact's form is read from its `--memfn=no-window-skip` compile, where B is rendered
   D   hors (the file-scope `_sh[256]` table) or one
   C   run (a run compare: `rx_w<W>(` or `memcmp(` in the statement) or norun
   engine  default only: `--engine=vm` never reads cover (C1: cover is a DFA-route row), so the vm
@@ -56,7 +56,7 @@ def classify(task):
         return pat, None
     st = statement(text)
     hors = b"_sh[256]" in text
-    bst = statement(compile_c(bin_, pat, "--memfn=no-wf-hors")) if hors else st
+    bst = statement(compile_c(bin_, pat, "--memfn=no-window-skip")) if hors else st
     form = "LIBC" if b"memchr(" in bst else "WALK"
     run = b"rx_w" in st or b"memcmp(" in st
     return pat, (form, "hors" if hors else "one", "run" if run else "norun")

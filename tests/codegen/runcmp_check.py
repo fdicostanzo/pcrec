@@ -56,14 +56,14 @@ def bad(msg):
 
 
 # D172 S3: every witness here is compiled under the `cover` row's deny,
-# `--memfn=no-wf-find` (registry.md §6¶8a): a fixed-width witness is a `cover`
+# `--memfn=no-window-search` (registry.md §6¶8a): a fixed-width witness is a `cover`
 # artifact by default, whose search is the memfn kit's window site, not the
 # offset-skip block this check reads; the deny renders the default build
 # before S3, the artifact this check was written against. The DEFAULT_PATH
 # witnesses are the exception: compiled without the deny, they must read
 # `RX_DFA_SCAN "cover"`, and the same checks hold of the run compare the
 # kit's window site writes there (its C-run, through the same row table).
-COVER_DENY = "--memfn=no-wf-find"
+COVER_DENY = "--memfn=no-window-search"
 DEFAULT_PATH = {"cover7"}
 
 

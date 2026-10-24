@@ -448,7 +448,7 @@ ARM_BASES = {"byte": (), "utf8": ("-e", "utf8")}
 # on the start-family arms. MEASURED at the S3 tree (ba6ebf720, one binary, the
 # job's own sweep), and the cause measured per pattern by
 # docs/dev/lanes/s3_evidence/armcause.py: on every re-pinned cell each pattern
-# that left (differs under the cover row's deny --memfn=no-wf-find, not by
+# that left (differs under the cover row's deny --memfn=no-window-search, not by
 # default) is a default-cover artifact, and none joined (DIFFER and STAMP
 # both). Floors are pinned AT the measured value; a manifest that became cover
 # is re-chosen from the arm's non-cover movers (the original's form where one

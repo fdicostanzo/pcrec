@@ -9,7 +9,7 @@ anything move OUTSIDE the declared population?
 BASE is main's pcrec (0d3765c87 from job 620; c3ea619c3 before), NEW the S3 commit's. Over every distinct corpus pattern
 (scripts/emit_sweep.py's own enumeration), ten arms are compiled by both: the .c at the default
 engine, under -e utf8 and at --engine=vm, the VM listing (--emit-ir), the facts listing, the
-OFF ARM (NEW under --memfn=no-wf-find,no-wf-hors against BASE's default .c), and (the S3 review's
+OFF ARM (NEW under --memfn=no-window-search,no-window-skip against BASE's default .c), and (the S3 review's
 item D) the .c at the SIMD layer (-fmemfn-simd) and under norun (-fno-run-prefilter), each with
 its own OFF arm (the same flag on both sides, NEW also under both denies). NEW's output has the
 abi digits mapped back (85 -> 84) in the places they occur; nothing else is normalized; rc and
@@ -62,7 +62,7 @@ ABI = [(b"(abi 85)", b"(abi 84)"), (b"(PCREC_RX_ABI_H + 0) != 85", b"(PCREC_RX_A
        (b"#define PCREC_RX_ABI_H 85", b"#define PCREC_RX_ABI_H 84"), (b"    .abi = 85,", b"    .abi = 84,")]
 COVER = b'#define RX_DFA_SCAN "cover"'
 HORS = b"_sh[256]"
-OFF = "--memfn=no-wf-find,no-wf-hors"
+OFF = "--memfn=no-window-search,no-window-skip"
 
 # (arm, base argv, new argv, judged by the artifact's own stamp?)
 ARMS = [

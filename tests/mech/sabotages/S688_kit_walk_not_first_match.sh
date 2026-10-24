@@ -20,8 +20,8 @@ SAB_DESC="kit_walk asks each table's rows last-first, so every selection lands o
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0_report.md §4. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S688."
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o - --pattern "(?i)select"'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o - --pattern "(?i)select"'
 SAB_REACH_EXPECT='    size_t ha = 0, hb = 0;'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

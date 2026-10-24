@@ -289,7 +289,7 @@ vacuous_mutant() {
 # assertion cannot change that machine's language the two builds agree. The
 # corpus's two (`-*?(?:\b|\B)\W`, `\W+?(?:\b){0,2}`) carry assertions the
 # vacuous wrappers above do not spell. PROVED, never assumed: the same pattern
-# under the cover row's deny (`--memfn=no-wf-find`, the unanchored scan the
+# under the cover row's deny (`--memfn=no-window-search`, the unanchored scan the
 # artifact had before S3) MUST differ between the builds; one whose deny arm
 # also agrees stays UNEXPLAINED, so the bucket cannot absorb a dead knob.
 ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0; ctl_same_vac=0; ctl_same_cover=0
@@ -309,9 +309,9 @@ while IFS= read -r pat; do
         ctl_same_vac=$((ctl_same_vac + 1))
         echo "  vacuous-assertion control (mutant $mut differs): $pat" >&2
     elif printf '%s' "$a" | grep -q '^#define RX_DFA_SCAN "cover"$' \
-            && [ "$(gen_a "$pat" --memfn=no-wf-find)" != "$(gen_b "$pat" --memfn=no-wf-find)" ]; then
+            && [ "$(gen_a "$pat" --memfn=no-window-search)" != "$(gen_b "$pat" --memfn=no-window-search)" ]; then
         ctl_same_cover=$((ctl_same_cover + 1))
-        echo "  cover control (its --memfn=no-wf-find arm differs): $pat" >&2
+        echo "  cover control (its --memfn=no-window-search arm differs): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -319,7 +319,7 @@ while IFS= read -r pat; do
 done < "$WORKDIR/bpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_vac carry only vacuous assertions, each proved by a live-assertion mutant that DOES differ; $ctl_same_cover are cover artifacts whose --memfn=no-wf-find arm DOES differ) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_vac carry only vacuous assertions, each proved by a live-assertion mutant that DOES differ; $ctl_same_cover are cover artifacts whose --memfn=no-window-search arm DOES differ) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
 else
     bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_same_vac vacuous-assertion ones agree (expected, mutant-proved), $ctl_same_cover cover ones agree (expected, deny-proved), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi

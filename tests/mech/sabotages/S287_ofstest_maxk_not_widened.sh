@@ -70,8 +70,8 @@ SAB_DOC_FIGURE="MEASURED 2026-10-06 (lane r4clx, single-row mech): DETECTED -- u
 # (o->maxk vs ro+rl-1) on the clean tree; confirms the widened form is live.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-PINNED-EMITTED"
 SAB_COUNT=1
 # RE-AIMED (D172 S2 commit 6, lane wsc5): ofs_test_of reads the window

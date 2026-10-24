@@ -224,13 +224,15 @@ static void census(const g2w_dec *d, const unsigned char *s, long n, long F, lon
     neg_reads += neg;
 }
 
-/* One subject: every lo, the floors the site's floor allows, every layout. */
-static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
-                        const uint8_t sentinel[2])
+/* One subject: every lo up to `lomax` (every lo where lomax < 0), the
+ * floors the site's floor allows, every layout (the sentinel pads only up to
+ * their 64 bytes). */
+static void run_subject_to(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
+                           const uint8_t sentinel[2], long lomax)
 {
     const g2w_site *x = &g2w_sites[si];
     static unsigned char pad[16 + 64 + 16];
-    for (long lo = 0; lo <= n + 1; lo++) {
+    for (long lo = 0; lo <= (lomax < 0 ? n + 1 : lomax); lo++) {
         long Fs[3] = { 0, 0, 0 };
         int nf = 1;
         if (x->wfloor == G2W_F_EXPR) {
@@ -258,7 +260,7 @@ static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj
             judge(si, d, subj, n, lo, F, &o, "L");
             if (site_failed) return;
             /* S: sentinel pads, [0, F) a sentinel too */
-            for (int sv = 0; sv < 2; sv++) {
+            for (int sv = 0; sv < 2 && n <= 64; sv++) {
                 memset(pad, sentinel[sv], sizeof pad);
                 memcpy(pad + 16 + F, subj + F, (size_t)(n - F));
                 o = call(si, pad + 16, (size_t)n, (size_t)lo, (size_t)F);
@@ -267,6 +269,36 @@ static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj
             }
         }
     }
+}
+
+static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
+                        const uint8_t sentinel[2])
+{
+    run_subject_to(si, d, subj, n, sentinel, -1);
+}
+
+/* THE LONG SUBJECTS of a two-stream (PAIR) site: each stream searches in
+ * bounded look-aheads (the kit's ofs_pair_text: 64 bytes, doubling), so
+ * the alphabet's bytes are planted as a 12-byte cluster across each of the
+ * first two look-aheads' ends (64 and 192 bytes from `lo` + the stop's
+ * offset), the rest the byte no set holds; lo 0..2. */
+enum { LONG_N = 216 };
+static unsigned long long rngl = 0x10A6A11ull;   /* the long subjects' own stream */
+static void run_long(unsigned si, const g2w_dec *d, const uint8_t *alpha, int na,
+                     const uint8_t sentinel[2])
+{
+    unsigned long long *rng = &rngl;
+    static const int at[] = { 52, 56, 60, 64, 180, 184, 188, 192 };
+    unsigned char subj[LONG_N];
+    for (int round = 0; round < 2 && !site_failed; round++)
+        for (unsigned k = 0; k < sizeof at / sizeof at[0] && !site_failed; k++) {
+            memset(subj, alpha[na - 1], sizeof subj);
+            for (int i = 0; i < 12; i++) {
+                *rng ^= *rng << 13; *rng ^= *rng >> 7; *rng ^= *rng << 17;
+                subj[at[k] + i] = alpha[*rng % (unsigned long long)na];
+            }
+            run_subject_to(si, d, subj, LONG_N, sentinel, 2);
+        }
 }
 
 int main(int argc, char **argv)
@@ -286,7 +318,7 @@ int main(int argc, char **argv)
 
     unsigned long long rng = 0x2545F4914F6CDD1Dull;
     long npaths[8] = { 0 }, pinned = 0, reseeded = 0, margin_ties = 0, mass_ties = 0, model_ties = 0;
-    long margin_rs = 0, margin_pk = 0;
+    long margin_rs = 0, margin_pk = 0, nlong = 0;
     static const char *const pathn[] = { "empty", "parked", "reseed", "mass", "floor" };
     char forms[32][24];
     long formn[32];
@@ -360,6 +392,7 @@ int main(int argc, char **argv)
             }
             run_subject(si, &d, subj, len, sentinel);
         }
+        if (x->pair) { run_long(si, &d, alpha, na, sentinel); nlong++; }
         if (!site_failed) passed++;
     }
     printf("G2W sites %u calls %ld hits %ld\n", g2w_nsites, calls, hits);
@@ -369,6 +402,7 @@ int main(int argc, char **argv)
     printf("G2W margin reseed=%ld parked=%ld\n", margin_rs, margin_pk);
     printf("G2W cells edge_rejects=%ld core_off=%ld noncore_off=%ld neg_reads=%ld nop_empty=%ld\n",
            edge_rejects, core_off, noncore_off, neg_reads, nop_empty);
+    printf("G2W long pair=%ld\n", nlong);
     printf("G2W forms");
     for (int f = 0; f < nforms; f++) printf(" %s=%ld", forms[f], formn[f]);
     printf("\n");

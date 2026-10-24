@@ -35,8 +35,8 @@ the bump's own commit.**
   run, so its search body, stamps (`<PREFIX>_DFA_SCAN "cover"`,
   `<PREFIX>_MEMFN_LIBC`) and `rx_info.scan` move; `--list-axes` lists
   `cover` at `locate` 2 and re-indexes `unanchored` 2 -> 3, and the memfn
-  section gains `wf-find` and `wf-hors`. Every other artifact moves only
-  the abi digits. The OFF arm `--memfn=no-wf-find,no-wf-hors` is the
+  section gains `window-search` and `window-skip`. Every other artifact moves only
+  the abi digits. The OFF arm `--memfn=no-window-search,no-window-skip` is the
   parent's text but for those digits. The mover census is in
   docs/dev/lanes/s3_report.md.
 - **`rx_info.abi` was `84` (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,

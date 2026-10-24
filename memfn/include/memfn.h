@@ -405,7 +405,7 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  *                it by its E-find row (find, then verify every tested
  *                position), and only there: an old-field site of this kind
  *                (terms in `pred`) is REFUSED at selection, and so is a
- *                window site E-find does not render (its deny `wf-find`; a
+ *                window site E-find does not render (its deny `window-search`; a
  *                frame other than STMT/ASSIGN; no stop), since the floor
  *                serves no REPORT site. On a site it renders, the class's
  *                proven[d] is the set the text tests at d (R-25), which on a

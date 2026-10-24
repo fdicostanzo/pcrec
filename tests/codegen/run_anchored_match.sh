@@ -236,7 +236,7 @@ pf_scan "bitmap arm"    '[fgh]oo[0-9]+bar'
 # D172 S3 (job 600): the date shape is a fixed-width window, a `cover`
 # artifact by default whose search carries no prefilter; the offset-set arm is
 # the unanchored scan's, so its witness takes the cover row's deny.
-pf_scan "offset-k arm"  '\d{4}-\d{2}-\d{2}' --memfn=no-wf-find
+pf_scan "offset-k arm"  '\d{4}-\d{2}-\d{2}' --memfn=no-window-search
 pf_scan "start-set arm" '\b(?:true|false|null)\b'
 [ "$fail" -eq 0 ] && ok "§2 the anchored body carries none of the four candidate-start mechanisms, on artifacts whose search carries each of them"
 
@@ -549,7 +549,7 @@ K53_CAP_LO=15000
 # `a[bc]d[ef]g[hi]j[kl]m` are fixed-width windows, `cover` artifacts by
 # default with neither scan machine, so they too fit WITH the anchored
 # machine; the cover row's deny joins the mask for the same reason.
-K53_DENY='-fno-start-width -fno-start-landing --memfn=no-wf-find'
+K53_DENY='-fno-start-width -fno-start-landing --memfn=no-window-search'
 k53_build_ref() {   # $1 = cap, $2 = output path
     $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         -DPCREC_MAX_EMIT_BYTES="$1" \

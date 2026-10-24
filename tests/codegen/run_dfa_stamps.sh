@@ -445,23 +445,23 @@ witness() {
 # fall on the near side of a cost model.
 # D172 S3: a one-byte pattern is a k = 1 `cover` (the kit's window site
 # finds it) by default, so the offset-0 forms' witnesses compile under the
-# cover row's deny, `--memfn=no-wf-find`, which is the default build before
+# cover row's deny, `--memfn=no-window-search`, which is the default build before
 # S3 (registry.md §6¶8a); `a` itself is the cover witness.
 witness cover      none               'a'
-witness unanchored memchr             'a' --memfn=no-wf-find
-witness unanchored byte-class         '[af]' --memfn=no-wf-find
+witness unanchored memchr             'a' --memfn=no-window-search
+witness unanchored byte-class         '[af]' --memfn=no-window-search
 # [OPT-REVEND] L2 the two `-bounded` rows read a WORD-CONTEXT accept: an
 # end-pinned `a$`/`[af]$` now walks back from the end (`rev-end`, below) and
 # carries no forward scan to bound.
-witness unanchored memchr-bounded     'a\b' --memfn=no-wf-find
-witness unanchored byte-class-bounded '[af]\b' --memfn=no-wf-find
+witness unanchored memchr-bounded     'a\b' --memfn=no-window-search
+witness unanchored byte-class-bounded '[af]\b' --memfn=no-window-search
 witness rev-end    none               'a$'
 witness rev-end    none               '[af]+\z'
 witness unanchored none               '.*'
 # [START-SET] stage 3, THE DFA HAT's two forms: a seeded machine whose start set
 # is a proper subset of the escape set (\b's E is the 63 word bytes).
 witness unanchored first-class-bounded  '\b(?:ab|cd)\b'
-witness unanchored first-memchr-bounded '\B(?<!a)d' --memfn=no-wf-find
+witness unanchored first-memchr-bounded '\B(?<!a)d' --memfn=no-window-search
 # [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark at K = 3.
 witness unanchored handoff            '(?:\d{1,3}\.){3}\d{1,3}'
 witness attempt    memchr             '(?m)^ERROR'
@@ -483,13 +483,13 @@ witness empty      none               '^\B\b'
 # `\d{4}-\d{2}-\d{2}` is `iso-ts`'s prefix: no view, no word context, so the
 # skip keeps its early-out. `\b[0-9a-f]{8}-[0-9a-f]{4}` is `uuid`'s: the `\b`
 # puts a word context on the machine, so it takes the D11 clamp.
-witness unanchored offset-set         '\d{4}-\d{2}-\d{2}' --memfn=no-wf-find
-witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}' --memfn=no-wf-find
+witness unanchored offset-set         '\d{4}-\d{2}-\d{2}' --memfn=no-window-search
+witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}' --memfn=no-window-search
 # [OPT-LITSCAN] S1 THE TWO RUN-PINNED FORMS: router (class B, a scan at
 # offset 0 with no model selection) and `foo\b` (the bounded twin under the
 # trailing word context).
-witness unanchored run-pinned         '/user|/users' --memfn=no-wf-find
-witness unanchored run-pinned-bounded 'foo\b' --memfn=no-wf-find
+witness unanchored run-pinned         '/user|/users' --memfn=no-window-search
+witness unanchored run-pinned-bounded 'foo\b' --memfn=no-window-search
 
 # ---------------------------------------------------------------------------
 # THE VM SIDE, AS AN IFF — [DD-13c], r37 finding #6.

@@ -329,9 +329,9 @@ def corpus_checks():
 # (pattern, options, expected RX_DFA_PREFILTER, why) -- written from F's conjuncts.
 # D172 S3 (job 600): `\B(?<!a)d` and `\bab\b` are fixed-width windows, `cover`
 # artifacts by default (no scan, so no prefilter: "none"); their rows carry the
-# cover row's deny `--memfn=no-wf-find`, which renders the build before S3.
+# cover row's deny `--memfn=no-window-search`, which renders the build before S3.
 FA = ["--features", "all"]
-NOCOVER = ["--memfn=no-wf-find"]
+NOCOVER = ["--memfn=no-window-search"]
 WITNESSES = [
     (b"\\b(?:true|false|null)\\b", FA, "first-class-bounded", "E = the 63 word bytes, S = {t, f, n}"),
     (b"\\B(?<!a)d", FA + NOCOVER, "first-memchr-bounded", "S = {d}: the one-byte twin"),

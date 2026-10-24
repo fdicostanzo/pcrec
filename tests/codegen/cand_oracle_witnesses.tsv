@@ -14,7 +14,7 @@
 #
 # D172 S3: a fixed-width witness is a `cover` artifact by default, so a line
 # naming another LOCATE/RECOVER row on one carries the cover row's deny
-# `--memfn=no-wf-find` (the default build before S3); `cover` itself is
+# `--memfn=no-window-search` (the default build before S3); `cover` itself is
 # witnessed by the shipped build since S3 (below).
 #
 # ROW	FLAGS	PATTERN
@@ -23,7 +23,7 @@ empty	-	^\B\b
 rev-end	-	abc$
 rev-end	-	\s+$
 rev-end	-e utf8	\s+?$
-composite	--memfn=no-wf-find	a
+composite	--memfn=no-window-search	a
 composite	-	^a
 window	-	(abc)$
 window-none	-	a(b|c)+d
@@ -35,16 +35,16 @@ emitted	-fno-req-set-lead	x{2,5}((?i:cat))
 emitted	-	a(b|c)+d
 ceiling	-	^((?1)a)$
 width-none	-	a(b|c)+d
-handoff	--memfn=no-wf-find	\d\dxyz
-scan-from-startpos	-fno-req-handoff --memfn=no-wf-find	\d\dxyz
-run-pinned-bounded	--memfn=no-wf-find	foo\b
-run-pinned	--memfn=no-wf-find	ABCDE
+handoff	--memfn=no-window-search	\d\dxyz
+scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
+run-pinned-bounded	--memfn=no-window-search	foo\b
+run-pinned	--memfn=no-window-search	ABCDE
 # [OPT-REVEND] stage 2 put `a\Kb\z`'s inlined hybrid on rev-end (lane revtri):
 # `\b` keeps the bounded view at default, the deny keeps the old witness.
 offset-set-bounded	-	a\Kb\b
 offset-set-bounded	-fno-rev-end	a\Kb\z
-offset-set	--memfn=no-wf-find	\d\dxyz
-offset-set	-fno-run-prefilter --memfn=no-wf-find	ABCDE
+offset-set	--memfn=no-window-search	\d\dxyz
+offset-set	-fno-run-prefilter --memfn=no-window-search	ABCDE
 # [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark (dotted4's '.',
 # K = 3) and a run landmark (sfx-shaped `ing`), and the deny's landing row.
 handoff-reentry	-	(?:\d{1,3}\.){3}\d{1,3}
@@ -63,8 +63,8 @@ first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
 memchr	-	a(b|c)+d
-byte-class-bounded	-e utf8 --memfn=no-wf-find	[ab]\b
-byte-class	--memfn=no-wf-find	\d
+byte-class-bounded	-e utf8 --memfn=no-window-search	[ab]\b
+byte-class	--memfn=no-window-search	\d
 pred-memchr	-	(?m)^ERROR
 next-none	-	a(b|c)+d
 next-none	--engine=vm -fno-start-set	I
@@ -83,16 +83,16 @@ all	-fno-vm-anchor-bound	^(a)(b|c)
 pinned	-	a?+
 reverse-pass	-fno-start-pinned	a?+
 reverse-pass	-	a(b|c)+d
-end-minus-width	--memfn=no-wf-find	abcd
+end-minus-width	--memfn=no-window-search	abcd
 landing	-	\w+
-landing	-fno-start-width --memfn=no-wf-find	[a-z]
+landing	-fno-start-width --memfn=no-window-search	[a-z]
 # [CAND-PATH-READS] the three rows of the cycle 9dec5e6f closed, on one compile:
 # FIRST `handoff` reads the path, which selects RECOVER `landing`, which reads
 # NEXT `handoff-reentry` under the handoff deny (axtri_report.md §2). Unplanted
 # it compiles clean; with RECOVER's deny dropped (S844) the default build
 # SIGSEGVs here and the trace build aborts `table-read-cycle`.
 landing	-e utf8 -fno-offset-skip	€+
-reverse-pass	-fno-start-width -fno-start-landing --memfn=no-wf-find	abcd
+reverse-pass	-fno-start-width -fno-start-landing --memfn=no-window-search	abcd
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a

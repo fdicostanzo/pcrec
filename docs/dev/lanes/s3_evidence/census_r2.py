@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import census  # noqa: E402  (corpus_tasks, run, first_diff: one implementation)
 
 PAIR = re.compile(rb"_mf\d+_ha < ")
-OFF = "--memfn=no-wf-find,no-wf-hors"
+OFF = "--memfn=no-window-search,no-window-skip"
 C = ["-p", "rx", "--features", "all"]
 ARMS = [   # (arm, argv both sides, judged by the PAIR text?)
     ("c-default", C + ["-o", "-"], True),

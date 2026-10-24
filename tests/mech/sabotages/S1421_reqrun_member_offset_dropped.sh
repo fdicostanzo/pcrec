@@ -26,8 +26,8 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S14
 # emits its rx_reqrun block with the `- 1` candidate arithmetic.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "a=b" && grep -qF "cand = (size_t)((const unsigned char *)q - subject) - 1;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-REQRUN-MEMBER-SUBTRACTED'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "a=b" && grep -qF "cand = (size_t)((const unsigned char *)q - subject) - 1;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-REQRUN-MEMBER-SUBTRACTED'
 SAB_REACH_EXPECT="REACH-REQRUN-MEMBER-SUBTRACTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

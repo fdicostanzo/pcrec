@@ -4843,7 +4843,7 @@ static bool locate_rev_end_applies(const CandSel *s)
  * `cover_conj[]` walked in order (src/gen/known.c, one decision per attempt),
  * true where every row holds. Routed by default since D172 S3 (B1): C13 asks
  * the memfn kit, whose window family renders the REPORT site by its E-find
- * row; the kit's deny `--memfn=no-wf-find` declines C13 and with it the row
+ * row; the kit's deny `--memfn=no-window-search` declines C13 and with it the row
  * (the OFF arm: `composite`, the default before S3). */
 static bool locate_cover_applies(const CandSel *s)
 {
@@ -9990,7 +9990,7 @@ static const CandRow cand_rows[] = {
      * `rev-end`, before `composite`; CAND_ROUTE_DFA only (C1 asks the
      * finisher's). Its walk answers presence itself (`whole`) and asks
      * RECOVER nothing. Routed by default and listed since D172 S3 (B1); its
-     * deny is the memfn kit's `wf-find` (C13), so the row carries no pcrec
+     * deny is the memfn kit's `window-search` (C13), so the row carries no pcrec
      * flag (a pcrec FACT deny `-fno-kit-proof` is filed under [IFACE-PUSH]).
      * The kit ask C13 makes is of the REPORT description alone, which no
      * slot's selection describes (§2.2), so it is no edge of the read graph. */
@@ -9998,7 +9998,7 @@ static const CandRow cand_rows[] = {
       .routes = CR_DFA, .tok = "cover", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "locate", 2, "cover" } },
-      .desc = "every match is one fixed-width window whose bytes, and the one byte before and after it, decide a match exactly: the window search's first hit IS the leftmost match, reported [c, c + k) with no automaton run; turned off by --memfn=no-wf-find",
+      .desc = "every match is one fixed-width window whose bytes, and the one byte before and after it, decide a match exactly: the window search's first hit IS the leftmost match, reported [c, c + k) with no automaton run; turned off by --memfn=no-window-search",
       .needs = { [CAND_ROUTE_DFA] = { 0, 0, CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_cover },
                     .scan = { [CAND_ROUTE_DFA] = "cover" },

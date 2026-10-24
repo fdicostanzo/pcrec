@@ -14,7 +14,7 @@
 # carries C-pin and no run row applies, whatever its mask says. The plant
 # therefore moves no artifact. MEASURED by a scratch build of this exact plant
 # on c3ea619c3 (before S3) AND on the S3 tree: `/user|/users` under
-# `-fno-offset-skip -fno-req-handoff` (plus --memfn=no-wf-find on S3) stays
+# `-fno-offset-skip -fno-req-handoff` (plus --memfn=no-window-search on S3) stays
 # "memchr", byte-identical to the clean build; single-row mech on the S3 tree:
 # prechecks 0fail/395pass. The bit stays (defence in depth for a future NEXT
 # that reads no reply); the row records that the reply now guards it.
@@ -28,8 +28,8 @@ SAB_DOC_FIGURE="MEASURED 2026-10-23 (lane s3fix600, single-row mech on the S3 tr
 # probe adds `-fno-req-handoff` (the re-entry outranks memchr otherwise).
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compiles take the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -fno-offset-skip -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && "$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/p.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/p.c" && echo REACH-OFFSET-SKIP-DENIES-RUN-ROWS'
+# compiles take the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -fno-offset-skip -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && "$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/p.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/p.c" && echo REACH-OFFSET-SKIP-DENIES-RUN-ROWS'
 SAB_REACH_EXPECT="REACH-OFFSET-SKIP-DENIES-RUN-ROWS"
 # RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5):
 # `dfa_pfs[]` is deleted into `cand_rows[]`, whose two run rows break the

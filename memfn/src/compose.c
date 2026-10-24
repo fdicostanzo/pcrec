@@ -938,7 +938,7 @@ static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *
     if ((*why = wf_parts_check(site))) return -1;
     if (wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
         return -1;
-    if (!site->nalt && !site->alts && !site->wfloor) return 0;
+    if (!WF_STATES(site)) return 0;
     if ((*why = wf_check(site, 1))) return -1;
     const mf_site *leg;
     if (wf_prepare(art, site, def, gphases, quiet, &leg, plan, &pid, why)) return -1;

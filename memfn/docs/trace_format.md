@@ -107,7 +107,7 @@ also writes its PATH ID (window_site.md §2.7):
 - `path`: the decision's path (`parked`, `reseed`, `mass`, `floor`, `empty`,
   each `+pin` where C-pin fired; mf_wreply.path), then `+hors` where E-find
   resumes by D-hors (Table D; phase 2, so never in mf_wreply.path);
-- `arm`: the row that renders it (`wf-floor`, the family's floor, `wf-find`,
+- `arm`: the row that renders it (`wf-floor`, the family's floor, `window-search`,
   E-find, or the form id of today's row the plan was translated for);
 - `fd`: the finder row whose pick decided its find (a routed row, or the FIND
   slot's row deciding E-find's stop), `-` for none.

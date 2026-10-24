@@ -22,8 +22,8 @@
  * except a REPORT site E-find cannot render (D172 S3: a frame other than
  * STMT/ASSIGN, or no stop by G2's own decision), which MUST be refused and
  * is then rendered as a DFA_SCAN site. The CONTROLS: a plain art decides and
- * renders; E-find renders a REPORT site and its deny `no-wf-find` refuses
- * it (and sends any other site to the floor); D-hors's deny `no-wf-hors`
+ * renders; E-find renders a REPORT site and its deny `no-window-search` refuses
+ * it (and sends any other site to the floor); D-hors's deny `no-window-skip`
  * removes its skip table.
  *
  *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400;
@@ -146,7 +146,7 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
 static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
-                          rng5 = 0x2B1A1250ull;
+                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
 /* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
@@ -166,6 +166,13 @@ static const uint8_t CUBES[][2] = { { 'A', 'a' }, { '0', '1' }, { 0xC4, 0xE4 } }
  * B-pair renders it. The bytes are the driver's subject alphabet's, so a
  * dropped stream deletes matches. */
 static int r2_two;
+/* THE BELOW-WINDOW SITES (the S3 final review's CHECK-2, after the two-byte
+ * ones, from a stream of their own): a dense REPORT window with a dense
+ * two-position verify-YES core item just before it, sparser than the window,
+ * so the stop (the least mass) lies in a window wholly below the candidate:
+ * the population of D-hors's `whi >= 0` scope (no D-hors there; the census
+ * below holds it). */
+static int h2_below;
 static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
 #define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
@@ -387,6 +394,28 @@ static void gen_facts(int fam, gfacts *x)
                 a->span[0].table[j] = 0;
             }
         }
+        if (h2_below) {     /* five distinct alphabet bytes a position */
+            x->dense = 1;
+            x->assign = 1;
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                for (unsigned q = rnd(NALPHA), m = 0; m < 5; m++)
+                    set_add(a->span[0].set[j], ALPHA[(q + m) % NALPHA]);
+                a->span[0].table[j] = 0;
+            }
+            gspan *it = &a->span[a->nspan++];   /* three distinct a position */
+            memset(it, 0, sizeof *it);
+            it->start = -2;
+            it->len = 2;
+            it->verify = G2W_YES;
+            it->core_lo = 0;
+            it->core_len = 2;
+            for (int j = 0; j < 2; j++)
+                for (unsigned q = rnd(NALPHA), m = 0; m < 3; m++)
+                    set_add(it->set[j], ALPHA[(q + m) % NALPHA]);
+            x->wfloor = rnd(3) == 0 ? G2W_F_EXPR : G2W_F_SUBJECT;
+            break;
+        }
         if (s3_dense) {     /* D172 S3: a DENSE window (every position three to
                                five draws of the alphabet, under the tie-heavy
                                rate: D-hors's population, window_site.md §2.5) */
@@ -550,6 +579,7 @@ static long fails, refused_ok, rendered, asked_ok, two_run_refused;
    E-find cannot render, each refused */
 static long ef_n, ef_libc, ef_walk, ef_hors, ef_run, ef_below, ef_report, report_refused;
 static long ef_pair, ef_fn;     /* Table B's PAIR: in the loop (B-pair), the function (B-fn) */
+static long ef_hwin;            /* the stop's verify-YES core window wholly below the candidate */
 
 static void fail(int id, const char *what, const char *detail)
 {
@@ -641,11 +671,11 @@ static void s3_controls(long *ok)
     const char *fid = "";
     buf t = { 0 };
     int rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, NULL, 4, 4, "a", 0, &fid, &t);
-    if (rc || strcmp(fid, "wf-find")) fail(-1, "control", "E-find does not render a REPORT site");
+    if (rc || strcmp(fid, "window-search")) fail(-1, "control", "E-find does not render a REPORT site");
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
-    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-wf-find", 4, 4, "a", 0, &fid, &t);
-    if (rc != -1) fail(-1, "control", "no-wf-find: a REPORT site rendered (or ask and define disagree)");
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-window-search", 4, 4, "a", 0, &fid, &t);
+    if (rc != -1) fail(-1, "control", "no-window-search: a REPORT site rendered (or ask and define disagree)");
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
     rc = ctl_render(MF_SK_REPORT, MF_FORM_FUNC, MF_H_RETURN, NULL, 4, 4, "a", 0, &fid, &t);
@@ -653,19 +683,19 @@ static void s3_controls(long *ok)
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
     rc = ctl_render(MF_SK_DFA_SCAN, MF_FORM_STMT, MF_H_ASSIGN, NULL, 3, 2, "ab0", 1, &fid, &t);
-    if (rc || strcmp(fid, "wf-find")) fail(-1, "control", "E-find does not render a DFA_SCAN site no legacy row serves");
+    if (rc || strcmp(fid, "window-search")) fail(-1, "control", "E-find does not render a DFA_SCAN site no legacy row serves");
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
-    rc = ctl_render(MF_SK_DFA_SCAN, MF_FORM_STMT, MF_H_ASSIGN, "no-wf-find", 3, 2, "ab0", 1, &fid, &t);
-    if (rc || strcmp(fid, "wf-floor")) fail(-1, "control", "no-wf-find: a DFA_SCAN site not on the floor");
+    rc = ctl_render(MF_SK_DFA_SCAN, MF_FORM_STMT, MF_H_ASSIGN, "no-window-search", 3, 2, "ab0", 1, &fid, &t);
+    if (rc || strcmp(fid, "wf-floor")) fail(-1, "control", "no-window-search: a DFA_SCAN site not on the floor");
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
     rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, NULL, 3, 3, "ab0", 1, &fid, &t);
     if (rc || !t.p || !strstr(t.p, "_sh[")) fail(-1, "control", "a dense window renders no D-hors table");
     else (*ok)++;
     free(t.p); t = (buf){ 0 };
-    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-wf-hors", 3, 3, "ab0", 1, &fid, &t);
-    if (rc || !t.p || strstr(t.p, "_sh[")) fail(-1, "control", "no-wf-hors: the D-hors table stays");
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-window-skip", 3, 3, "ab0", 1, &fid, &t);
+    if (rc || !t.p || strstr(t.p, "_sh[")) fail(-1, "control", "no-window-skip: the D-hors table stays");
     else (*ok)++;
     free(t.p);
 }
@@ -688,6 +718,8 @@ int main(int argc, char **argv)
     int n4 = c1n ? atoi(c1n) : 300;
     const char *r2n = getenv("G2W_R2_SITES");
     int n5 = r2n ? atoi(r2n) : 300;
+    const char *h2n = getenv("G2W_H2_SITES");
+    int n6 = h2n ? atoi(h2n) : 100;
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -725,7 +757,7 @@ int main(int argc, char **argv)
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3 + n4 + n5; id++) {
+    for (int id = 0; id < nsites + n3 + n4 + n5 + n6; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
@@ -740,7 +772,12 @@ int main(int argc, char **argv)
             c1_caseless = 0;
             r2_two = 1;
         }
-        int fam = s3_dense || c1_caseless || r2_two ? FAM_REPORT
+        if (id == nsites + n3 + n4 + n5) {  /* the below-window sites: theirs */
+            rngp = &rng6;
+            r2_two = 0;
+            h2_below = 1;
+        }
+        int fam = s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
                 : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
@@ -952,7 +989,7 @@ int main(int argc, char **argv)
         mf_class asked;
         mf_result def;
         rendered++;
-        if (!strcmp(res.form_id, "wf-find")) {
+        if (!strcmp(res.form_id, "window-search")) {
             const char *t = body.p ? body.p : "";
             const char *ft = file.p ? file.p : "";
             ef_n++;
@@ -965,7 +1002,30 @@ int main(int argc, char **argv)
             ef_report += s.site_kind == MF_SK_REPORT;
             ef_pair += strstr(t, "_ha < ") != NULL;
             ef_fn += strstr(ft, "_ofsskip__body(") != NULL;
+            /* B-fn renders the FIND slot's pick, PAIR: the function's BODY is
+               fn-pair's two streams (window.c b_fn_holds) */
+            if (strstr(ft, "_ofsskip__body(") && !strstr(ft, "ha < pos"))
+                fail(id, "B-fn", "the offset-skip function renders one stream under PAIR");
+            /* D-hors's scope (window_site.md §2.5): its window, the stop's
+               verify-YES core span, reaches the candidate (whi >= 0); G2's
+               own reading of the facts, not the kit's */
+            int hi = 0, found = 0;
+            const galt *ca = &gf.alt[ref.alt];
+            for (int i = 0; ref.has_stop && i < ca->nspan && !found; i++) {
+                const gspan *g = &ca->span[i];
+                int lo0 = g->start + g->core_lo;
+                if (g->verify != G2W_YES || g->core_len < 2) continue;
+                if (ref.stop < lo0 || ref.stop >= lo0 + g->core_len) continue;
+                found = 1;
+                hi = lo0 + g->core_len - 1;
+            }
+            if (found && hi < 0) {
+                ef_hwin++;
+                if (strstr(ft, "_sh[256]"))
+                    fail(id, "D-hors scope", "a skip table over a window wholly below the candidate");
+            }
         }
+        x.pair = strstr(body.p ? body.p : "", "_ha < ") || strstr(file.p ? file.p : "", "ha < pos");
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
            mf_emit's also reads the use hooks, so it may choose otherwise) */
@@ -1083,9 +1143,9 @@ int main(int argc, char **argv)
         bputs(&data, "}, {");
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", r.plan_term[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\" },\n",
+        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\", %d },\n",
                 r.pinned, r.run_stated, r.run_member, r.run_lo, r.run_len, r.path, id,
-                res.form_id, res.row);
+                res.form_id, res.row, x.pair);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);
         free(file.p);
@@ -1099,15 +1159,15 @@ int main(int argc, char **argv)
     fprintf(f, "const g2w_fn g2w_fns[] = {\n%s};\n", table.p ? table.p : "");
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
-    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d); "
-           "families:", rendered, nsites + n3 + n4 + n5, n3, n4, n5);
+    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
+           "below-window %d); families:", rendered, nsites + n3 + n4 + n5 + n6, n3, n4, n5, n6);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
            frames[3], refused_ok, asked_ok, two_run_refused);
     printf("g2_win_gen: e-find %ld: libc %ld walk %ld hors %ld run %ld below %ld report %ld "
-           "pair %ld fn %ld; report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run,
-           ef_below, ef_report, ef_pair, ef_fn, report_refused);
+           "pair %ld fn %ld hwin %ld; report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run,
+           ef_below, ef_report, ef_pair, ef_fn, ef_hwin, report_refused);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

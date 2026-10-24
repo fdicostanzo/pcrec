@@ -526,11 +526,10 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
-const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
-/* The same non-pass read of `span`, for the trace build's cover shadow
- * (`locate_cover_applies` -> `pcrec_cover` -> C8): a check, not a pass, so
- * the trace build's `used` column is the default build's. The harness-routed
- * cover decision keeps the pass ask (`cc_exact`). */
+/* E3 [KIT-VERIFY] U1 Z2: `span`, read WITHOUT a `used` record, its one
+ * reader being the cover decision (`locate_cover_applies` -> `pcrec_cover`),
+ * a check, not a pass: `used` stays the passes' record (facts_listing.md
+ * §4.1¶2). */
 const MkLang   *pcrec_fact_span_stated(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------

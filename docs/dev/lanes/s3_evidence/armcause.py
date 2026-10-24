@@ -5,7 +5,7 @@
 
 For each emit_sweep DIFFER_PINS arm job 600 read short (ARMS below), over every distinct corpus
 pattern (emit_sweep's own enumeration), compiles BASE and BASE+FLAG on the c-default stream twice:
-at the default build and under the cover row's deny `--memfn=no-wf-find` (the build before S3 but
+at the default build and under the cover row's deny `--memfn=no-window-search` (the build before S3 but
 for the abi digits). Per arm it prints the DIFFER and start-STAMP counts on both builds, the
 LEAVERS (differ under the deny, not by default) and how many of them are default-cover patterns
 (BASE's default artifact stamps RX_DFA_SCAN "cover"), the JOINERS (the reverse), and the shortest
@@ -25,7 +25,7 @@ ARMS = [("byte", "-fno-offset-skip"), ("byte", "-fno-run-prefilter"), ("byte", "
         ("byte", "--memfn=no-pres-set-lead"), ("utf8", "--memfn=no-pres-set-lead"),
         ("byte", "--memfn=no-fd-pres-g1"), ("utf8", "--memfn=no-fd-pres-g1"),
         ("byte", "--memfn=no-fd-pres-pick"), ("utf8", "--memfn=no-fd-pres-pick")]
-DENY = "--memfn=no-wf-find"
+DENY = "--memfn=no-window-search"
 
 
 def merged(flags, deny):

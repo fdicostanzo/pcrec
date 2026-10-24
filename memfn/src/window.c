@@ -1353,9 +1353,9 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
 /* ---- TABLE E: the frame (window_site.md §2.6) ------------------------------ */
 
 /* E-find's id: its Table E row's deny, its arm's name, its refusals. */
-#define WF_FIND_ID "wf-find"
+#define WF_FIND_ID "window-search"
 /* D-hors's id: its Table D row's deny. */
-#define WF_HORS_ID "wf-hors"
+#define WF_HORS_ID "window-skip"
 
 /* E-find's setup (wf_find_decide), computed ONCE per selection before Table
  * E walks, read by its predicate and its prepare: Tables D and B over the
@@ -1411,7 +1411,7 @@ static int e_find_holds(const void *x)
 /* E-generic, the floor, serves every frame and plan but a REPORT site's:
  * there the floor's byte loop is COV, R-27's 10x loss to the default build
  * on literal cells, so a REPORT site E-find does not render (its deny
- * `wf-find`, a frame E-find does not serve) is REFUSED, and the host keeps
+ * `window-search`, a frame E-find does not serve) is REFUSED, and the host keeps
  * its default (pcrec's C13 declines `cover`; window_site.md §5.2's deny row,
  * the kit manager's R2 ruling). */
 static int e_generic_holds(const void *x)
@@ -1666,9 +1666,12 @@ typedef struct {
 /* B-fn: the pick is PAIR and the plan IS the offset-skip function's
  * predicate (legacy_ok with no range end beyond the terms; one RUN term
  * holding the stop's cube, ofs_fn_serves: the function's BODY walk takes
- * it). Then fn-pair renders it, the SIMD rows over fn-pair with it (D155:
- * a SIMD-on artifact adds only guarded rungs over the SIMD-off text, so
- * PAIR's SIMD-off text is the function's at every layer). */
+ * it), AND that walk takes fn-pair: the FIND slot's pick and the BODY
+ * slot's agree, so B-fn never renders another method under PAIR's name
+ * (where they would not, B-pair renders the pick). Then fn-pair renders
+ * it, the SIMD rows over fn-pair with it (D155: a SIMD-on artifact adds
+ * only guarded rungs over the SIMD-off text, so PAIR's SIMD-off text is the
+ * function's at every layer). */
 static int b_fn_holds(const void *x)
 {
     const wf_bx *b = x;
@@ -1676,10 +1679,10 @@ static int b_fn_holds(const void *x)
     if (b->pick != FF_PAIR || !legacy_ok(b->d, b->w, &eb) || eb) return 0;
     translate(b->d, b->w, 0, b->fn);
     const mf_pred *p = &b->fn->site.pred;
-    int k, lo, hi;
+    int k, lo, hi, two;
     if (p->plan_hint == MF_NO_PRED) return 0;
     ofs_fn_scan(p, &k, &lo, &hi);
-    return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p);
+    return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p, &two) && two;
 }
 static int b_pair_holds(const void *x)   { return ((const wf_bx *)x)->pick == FF_PAIR; }
 static int b_memchr_holds(const void *x)
@@ -1872,7 +1875,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
 /* 1 iff part predicate `p` states window facts. */
 static int part_states(const mf_pred *p)
 {
-    return p->nalt || p->alts || p->wfloor;
+    return WF_STATES(p);
 }
 
 /* 1 iff a pre-check part of `s` states window facts (kit.h). */
@@ -2000,8 +2003,9 @@ typedef struct {
     const char           *S, *N, *LO, *FL, *C, *F, *MISS;
     const char           *Q, *B, *SH;   /* E-find's: the memchr's result, the
                                            probed byte, the shift table      */
-    const char           *HA, *HB, *FR; /* B-pair's two pending hits and its
-                                           first-search flag                 */
+    const char           *HA, *HB, *WA, *WB, *E; /* B-pair's two frontiers,
+                                           their look-ahead widths and a
+                                           look-ahead's end (kit.h ofs_pair) */
     const char           *FN;           /* B-fn's offset-skip function       */
     unsigned              used;     /* PARAM_* the text reads                  */
 } wf_rc;
@@ -2032,7 +2036,9 @@ static void wf_rc_init(wf_rc *rc, mf_art *art, uint32_t handle, const mf_hooks *
     rc->SH = wf_nm(art, handle, "_sh");
     rc->HA = wf_nm(art, handle, "_ha");
     rc->HB = wf_nm(art, handle, "_hb");
-    rc->FR = wf_nm(art, handle, "_fr");
+    rc->WA = wf_nm(art, handle, "_wa");
+    rc->WB = wf_nm(art, handle, "_wb");
+    rc->E = wf_nm(art, handle, "_e");
     rc->FN = wf_nm(art, handle, "_ofsskip");
 }
 
@@ -2134,18 +2140,19 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
     return 0;
 }
 
-/* THE CANDIDATE TEST at C into `t`: the bound's lower half, then every plan
+/* THE CANDIDATE TEST at C into `t`: the bound's lower half (where `lower`;
+ * E-find raises C past it once, before its loop: wf_raise), then every plan
  * position but the lone index `skip` (-1: none) in ascending offset, a C-run
  * stretch (E-find's `grp`) as ONE run compare at its first position. A run
  * compare is the sink's (runcmp.c writes C-string literals), so where one is
  * met the text so far goes to `o` first and `t` starts again; the floor
  * forms none (its `grp` is -1 throughout) and passes no sink. */
-static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int skip)
+static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int skip, int lower)
 {
     const struct wf_plan *w = rc->w;
     mf_art *art = rc->art;
     kb_puts(t, "(");
-    int first = !wf_lower(rc, t);
+    int first = !(lower && wf_lower(rc, t));
     for (unsigned i = 0; i < w->n; i++) {
         if ((int)i == skip) continue;
         if (w->grp[i] >= 0 && i && w->grp[i - 1] == w->grp[i]) continue;
@@ -2174,7 +2181,7 @@ static int wf_test(wf_rc *rc, kb *t, kb *cond)
 {
     rc->used |= PARAM_N | PARAM_LO;
     wf_bound(rc, cond);
-    return wf_test_to(rc, t, NULL, -1);
+    return wf_test_to(rc, t, NULL, -1, 1);
 }
 
 /* The statement expression's head: `({ ` and the hooks as locals, the
@@ -2369,9 +2376,14 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  * floor's STMT frame (wf_frame; E-find's contract is STMT/ASSIGN), its
  * search one statement expression:
  *
- *   ({ S, N, LO[, FL]; size_t C = LO; int F = 0;[ B's state;]
+ *   ({ S, N, LO[, FL]; size_t C = LO; int F = 0;[ B's state;][ RAISE;]
  *      for (;;) { B; if (!(BOUND)) break; if (TEST) { F = 1; break; } C++; }
  *      F ? C : miss; })
+ *
+ *   RAISE  where a core offset is < 0: C raised to the bound's lower half
+ *          (`|clo|`, or F + |clo| under an expression floor), ONCE: every
+ *          resume only moves C forward, so the TEST drops the lower half
+ *          and a stop below the candidate reads at or past max(F, 0).
  *
  *   B      the FIND of the stop d*: Table B's pick, by its renderer row
  *          (wf_brows). B-memchr (LIBC, D1; LIBC_BACK, D1c): one `memchr`
@@ -2379,14 +2391,14 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  *          B-walk (WALK, R7w or D1w): C advanced while the byte at C + d*
  *          lies inside the subject and outside the stop's set (C-table or
  *          C-own). B-pair (PAIR): fn-pair's two `memchr` streams, one per
- *          member of the stop's cube, each kept as its pending hit (`ha`,
- *          `hb`) and searched again only once C + d* passes it (`fr` makes
- *          the first round search both); C becomes the nearer hit less d*,
- *          a miss on both leaving the loop. A stop below the candidate
- *          (d* < 0, a FAILS before-side; never PAIR's) first raises C to
- *          |d*| (F + |d*| under an expression floor), so no read lies below
- *          max(c + d*, F, 0). Each way C becomes the first candidate at or
- *          past C whose stop byte holds.
+ *          byte of the stop's two-member set, each kept as its frontier
+ *          (`ha`, `hb`, raised to C + d* once it passes them) and searched
+ *          in bounded look-aheads, the lower frontier first (kit.h's
+ *          ofs_pair); C becomes the nearer hit less d*, a miss on both
+ *          leaving the loop. A stop below the candidate
+ *          (d* < 0, a FAILS before-side; never PAIR's) is a core offset, so
+ *          RAISE placed C + d* at or past max(F, 0). Each way C becomes the
+ *          first candidate at or past C whose stop byte holds.
  *   BOUND  the floor's hoisted core bound, upper half (`C + chi < N`, or
  *          `C <= N` where no core offset is >= 0); the stop is a core
  *          position, so a find past the subject fails it too.
@@ -2411,16 +2423,6 @@ static int plan_ix(const struct wf_plan *w, int32_t o)
 {
     for (unsigned i = 0; i < w->n; i++) if (w->off[i] == o) return (int)i;
     return -1;
-}
-
-/* B's raise for a stop below the candidate (the header's). */
-static void wf_b_raise(const wf_rc *rc, kb *b, int32_t d)
-{
-    if (d >= 0) return;
-    if (rc->w->wfloor == MF_WFLOOR_EXPR)
-        kb_printf(b, "if (%s < %s + %d) %s = %s + %d; ", rc->C, rc->FL, -d, rc->C, rc->FL, -d);
-    else
-        kb_printf(b, "if (%s < %d) %s = %d; ", rc->C, -d, rc->C, -d);
 }
 
 /* The declaration `const void *Q = P < N ? memchr(S + P, byte, N - P) : 0;`,
@@ -2467,11 +2469,7 @@ static int wf_b_pair(wf_rc *rc, kb *b, const char *p, int32_t d)
     const struct wf_plan *w = rc->w;
     int m[2];
     two(w->set[w->stop_ix], m);
-    kb len;
-    kb_init(&len, rc->art->a);
-    kb_printf(&len, d ? "%s - (%s)" : "%s - %s", rc->N, p);
-    if (len.oom || !len.p) return kit_fail(rc->art, WF_FIND_ID ": out of memory");
-    const ofs_pair t = { rc->S, rc->N, rc->HA, rc->HB, rc->FR, rc->Q, rc->C, p, len.p, p,
+    const ofs_pair t = { rc->S, rc->N, rc->HA, rc->HB, rc->WA, rc->WB, rc->E, rc->Q, rc->C, p,
                          "break", "", "", " " };
     kb_printf(b, "if (%s >= %s) break; ", p, rc->N);
     ofs_pair_text(b, &t, m, d);
@@ -2487,7 +2485,7 @@ static int (*const wf_b_text[])(wf_rc *rc, kb *b, const char *p, int32_t d) = {
 _Static_assert(sizeof wf_b_text / sizeof wf_b_text[0] == WF_NBROWS,
                "every Table B renderer row has its text (B-fn's is the function)");
 
-/* B: the stop's FIND by its renderer row, after the raise. */
+/* B: the stop's FIND by its renderer row. */
 static int wf_find_b(wf_rc *rc, kb *b)
 {
     const struct wf_plan *w = rc->w;
@@ -2495,19 +2493,32 @@ static int wf_find_b(wf_rc *rc, kb *b)
     kb at;
     kb_init(&at, rc->art->a);
     wf_at(&at, rc->C, d);
-    wf_b_raise(rc, b, d);
     return wf_b_text[w->bren](rc, b, at.p ? at.p : rc->C, d);
 }
 
-/* 1 iff E-find's text reads F (an expression floor's `floor` hook): the
- * bound's lower half, a non-core position below the candidate (its edge
- * guard) or B's raise of a stop below it. The stop and the probe are core,
- * so no position the TEST skips reads F. */
+/* RAISE (the header's): C to the bound's lower half, before the loop, where
+ * a core offset is < 0. */
+static void wf_raise(wf_rc *rc, kb *b)
+{
+    const struct wf_plan *w = rc->w;
+    if (!w->ncore || w->clo >= 0) return;
+    if (w->wfloor == MF_WFLOOR_EXPR) {
+        kb_printf(b, "if (%s < %s + %d) %s = %s + %d; ", rc->C, rc->FL, -w->clo, rc->C, rc->FL,
+                  -w->clo);
+        rc->used |= PARAM_FL;
+    } else {
+        kb_printf(b, "if (%s < %d) %s = %d; ", rc->C, -w->clo, rc->C, -w->clo);
+    }
+}
+
+/* 1 iff E-find's text reads F (an expression floor's `floor` hook): RAISE
+ * (a core offset below the candidate, the stop's included) or a non-core
+ * position below it (its edge guard). The stop and the probe are core, so
+ * no position the TEST skips reads F. */
 static int wf_find_reads_fl(const struct wf_plan *w)
 {
     if (w->wfloor != MF_WFLOOR_EXPR) return 0;
-    if ((w->ncore && w->clo < 0) || (wf_drows[w->drow].finds && w->off[w->stop_ix] < 0))
-        return 1;
+    if (w->ncore && w->clo < 0) return 1;
     for (unsigned i = 0; i < w->n; i++)
         if (!w->core[i] && w->off[i] < 0) return 1;
     return 0;
@@ -2539,8 +2550,7 @@ static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
 {
     const struct wf_plan *w = rc->w;
     int ih = plan_ix(w, w->hl);
-    (void)bound;
-    kb_printf(b, "if (%s + %d >= %s) break; ", rc->C, w->chi, rc->N);
+    kb_printf(b, "if (!(%s)) break; ", bound);
     kb_printf(b, "unsigned char %s = %s[", rc->B, rc->S);
     wf_at(b, rc->C, w->hl);
     kb_puts(b, "]; ");
@@ -2616,13 +2626,17 @@ static int wf_find_expr(wf_rc *rc, mf_sink *o, int want_value)
     if (bound.oom || !bound.p) return kit_fail(art, WF_FIND_ID ": out of memory");
     wf_open(rc, &b, 1, wf_find_reads_fl(w));
     wf_cand(rc, &b);
-    if (w->bren == B_PAIR)
-        kb_printf(&b, "size_t %s = 0, %s = 0; int %s = 1; ", rc->HA, rc->HB, rc->FR);
+    if (w->bren == B_PAIR) {
+        const ofs_pair t = { .ha = rc->HA, .hb = rc->HB, .wa = rc->WA, .wb = rc->WB };
+        ofs_pair_decl(&b, &t);
+        kb_puts(&b, " ");
+    }
+    wf_raise(rc, &b);
     kb_puts(&b, "for (;;) { ");
     int skip;
     if (wf_d_text[w->drow].head(rc, &b, bound.p, &skip)) return -1;
     kb_puts(&b, "if ");
-    if (wf_test_to(rc, &b, o, skip) || wf_put(art, o, &b)) return -1;
+    if (wf_test_to(rc, &b, o, skip, 0) || wf_put(art, o, &b)) return -1;
     kb_init(&b, art->a);
     kb_printf(&b, " { %s = 1; break; } ", rc->F);
     wf_d_text[w->drow].next(rc, &b);

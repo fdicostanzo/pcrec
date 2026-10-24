@@ -13,11 +13,11 @@
 #                                   then read_588.py's table
 #
 # THE ARMS (one compiler, $PCREC, the S3 build; every arm `--features all -p rx`):
-#   DEF   --memfn=no-wf-find,no-wf-hors   the OFF arm: byte-identical to main c3ea619c3 but for the
+#   DEF   --memfn=no-window-search,no-window-skip   the OFF arm: byte-identical to main c3ea619c3 but for the
 #                                         abi digits (bytediff.sh) -- §6's DEF, and G1's deny arm
 #   RTE   (default)                       the routed form (E-find; D-hors where it fires)
 #   RT2   (default, a second compile + link)   the A/A pair of RTE (the floor's AA)
-#   NOH   --memfn=no-wf-hors              G1's deny arm of D-hors; built everywhere, TIMED only where
+#   NOH   --memfn=no-window-skip              G1's deny arm of D-hors; built everywhere, TIMED only where
 #                                         its text differs from RTE's (hex8-bounded, §6)
 #   DEFs RTEs NOHs   the same with -fmemfn-simd (the SIMD-on layer, REPORTED, never the bar)
 #
@@ -47,7 +47,7 @@
 # decline; FINDINGS, NEVER part of the bar, no default changes): esh_588.tsv (pick_esh_588.py's
 # committed pick: ~12 D-hors sites stratified by E[sh], the expected shift per probe under the
 # default byte-rate prior, esh_588.py). The same machinery as the mover sample (use_set), with arms
-# NOH (--memfn=no-wf-hors: D-one) and RTE (default: D-hors) at the scalar layer and NOHs/RTEs at the
+# NOH (--memfn=no-window-skip: D-one) and RTE (default: D-hors) at the scalar layer and NOHs/RTEs at the
 # SIMD layer; premise: both read cover, RTE carries `_sh[256]` and NOH does not. Stages esh-build,
 # esh-gate; items after the sample's in each launch; results s3t_esh.tsv; read_588.py prints them
 # under "D-hors admission (E[sh])".
@@ -73,12 +73,12 @@ cells() { if [ -n "${SMOKE_CELLS:-}" ] && [ "${ALLCELLS:-0}" != 1 ]; then echo $
 pat_of() { grep -v '^#' "$M/cells.tsv" | awk -F'\t' -v c="$1" '$1 == c { print $2 }'; }
 flags_of() {
     case $1 in
-        DEF)  echo "--memfn=no-wf-find,no-wf-hors" ;;
+        DEF)  echo "--memfn=no-window-search,no-window-skip" ;;
         RTE|RT2) echo "" ;;
-        NOH)  echo "--memfn=no-wf-hors" ;;
-        DEFs) echo "-fmemfn-simd --memfn=no-wf-find,no-wf-hors" ;;
+        NOH)  echo "--memfn=no-window-skip" ;;
+        DEFs) echo "-fmemfn-simd --memfn=no-window-search,no-window-skip" ;;
         RTEs) echo "-fmemfn-simd" ;;
-        NOHs) echo "-fmemfn-simd --memfn=no-wf-hors" ;;
+        NOHs) echo "-fmemfn-simd --memfn=no-window-skip" ;;
     esac
 }
 # the arms TIMED for a cell: every arm but a NOH/NOHs whose text is its routed twin's
@@ -133,7 +133,7 @@ stage_build() {
 
 # TWO SIDE SETS ride the cells' launches, both FINDINGS (never the bar), one machinery: `use_set`
 # selects one. sample: the mover sample (DEF vs routed). esh: the D-hors admission sites (D-one, the
-# `no-wf-hors` deny NOH, vs D-hors, routed RTE).
+# `no-window-skip` deny NOH, vs D-hors, routed RTE).
 use_set() {
     SET=$1
     case $1 in

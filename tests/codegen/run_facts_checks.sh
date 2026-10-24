@@ -423,11 +423,11 @@ fi
 # compiled under `-fno-req-handoff` to stay on that domain. Since D172 S3 the
 # fixed-width `abc` and `/abcd[xy]/user` are `cover` artifacts by default (no
 # forward scan), so they are compiled under the cover row's deny,
-# `--memfn=no-wf-find` (registry.md §6¶8a), to stay on the unanchored route.
+# `--memfn=no-window-search` (registry.md §6¶8a), to stay on the unanchored route.
 printf '%s\n' \
-    'E3W	--memfn=no-wf-find	abc	unanchored	97,98,99	0' \
-    'E3W	--memfn=no-wf-find	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
-    'E3W	-fno-req-run --memfn=no-wf-find	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
+    'E3W	--memfn=no-window-search	abc	unanchored	97,98,99	0' \
+    'E3W	--memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
+    'E3W	-fno-req-run --memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
     'E3W	-fno-req-handoff	\zabc	unanchored	97,98,99	0' \
     'E3W	-	^abc	attempt	-	-' \

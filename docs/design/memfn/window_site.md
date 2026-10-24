@@ -28,7 +28,7 @@ Ranked; when two conflict, the higher wins. Each is checkable as stated.
 1. **Answers exact** (every caller). A window site's text yields exactly the candidates its facts
    define, the leftmost first: G2's window family (`memfn/tests/run_g2_win.sh`) green against its
    reference over the generated space, every plant red; zero corpus answer changes against the OFF arm
-   (`--memfn=no-wf-find,no-wf-hors`, byte-identical to the default build before the window search).
+   (`--memfn=no-window-search,no-window-skip`, byte-identical to the default build before the window search).
 2. **Not slower than DEF beyond the floor** (users of the default build). On the SCALAR layer every §6
    cell, and every stratum of the mover sample, reads routed/DEF <= 1 + its floor (this run's A/A),
    the named caps excepted, each cap a measured ratio plus its floor.
@@ -303,7 +303,7 @@ A-model never read R, so the RESEED alternative's choice is unchanged under `PCR
 ### 2.5 Table D — the resume `[rev3 dD3, 581]`
 
 A `kit_table` on `kit_walk` `[rev3.3 C7]` (window.c `wf_dtable`), asked on E-find's text only: a contract
-per row (D-hors's window is a stated core), the deny `wf-hors`, trace and reach counters, a `holds` column
+per row (D-hors's window is a stated core), the deny `window-skip`, trace and reach counters, a `holds` column
 (D-hors: the rule below, exactly as S3 built it; no new admission predicate, the E[sh] reading decides that
 later); the path id gains `+hors` where it fires. Each row CARRIES ITS ACTIONS `[rev3.3 R2-7]`: whether
 its text runs B's find, its plan's preparation (D-hors's probe and shift table), and its text (the loop
@@ -330,14 +330,14 @@ but HRS serves hex8 and SHF's wins elsewhere are marginal.
 |---|---|---|
 | E-func | FUNC/RETURN, miss `n`, no expression floor | today's `static inline size_t` (D155 seam) |
 | E-stmt | STMT/ASSIGN or ON_MISS | today's PF block (guard, post-test, `moved` hook, `decl_point`) |
-| E-find `[rev3.3 C4]` | STMT/ASSIGN (its contract), the plan has a stop short of every byte, and Table D resumes it by D-hors or Table B decides its find and one of B's renderers renders it; deny `wf-find` | the family's own find-then-verify text: B (§2.2's renderers), C (C-yes under the hoisted bound and the three-way guard; C-run through runcmp), D (§2.5) |
+| E-find `[rev3.3 C4]` | STMT/ASSIGN (its contract), the plan has a stop short of every byte, and Table D resumes it by D-hors or Table B decides its find and one of B's renderers renders it; deny `window-search` | the family's own find-then-verify text: B (§2.2's renderers), C (C-yes under the hoisted bound and the three-way guard; C-run through runcmp), D (§2.5) |
 | E-generic | anything else but a REPORT site | the floor row |
 
 The legacy rows (E-func, E-stmt) come first, so every site today's rows serve keeps today's bytes; they
 never translate a REPORT site (the composer refuses REPORT stated in terms). E-find comes before the floor,
 so the movers are the sites the legacy rows decline that E-find renders: REPORT, and D-hors inside E-find.
 E-generic declines REPORT (the floor's byte loop is COV, R-27's 10x loss), so a REPORT site E-find does not
-render is REFUSED and pcrec keeps its default (`no-wf-find` is the OFF arm, the default build before S3).
+render is REFUSED and pcrec keeps its default (`no-window-search` is the OFF arm, the default build before S3).
 E-find and the floor share the statement frame, the statement expression's head and tail and the candidate
 test `[rev3.3 C9]`.
 

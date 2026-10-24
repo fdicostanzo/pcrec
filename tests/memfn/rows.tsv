@@ -87,7 +87,7 @@
 # D172 S3: the fixed-width witnesses of pf_memchr_bounded and pf_walk_bounded
 # are `cover` artifacts by default (the memfn kit's window site, no
 # prefilter), so witness and control both carry the cover row's deny
-# `--memfn=no-wf-find`, the default build before S3. Since the S3 code review
+# `--memfn=no-window-search`, the default build before S3. Since the S3 code review
 # (C1, C2) fn-pair's and vrun-w16/w32's witness `(?i)cat` is on the DEFAULT
 # path again: the cover's window search stops at a cube, decided PAIR, and
 # renders the offset-skip function `<prefix>_mf<h>_ofsskip` (fn-pair's body,
@@ -99,9 +99,9 @@ arms	precheck_assign	pcrec	pattern	-	(ab)c?userpass	 = rx_reqrun(	-fno-req-hando
 arms	precheck_assign_byte	pcrec	pattern	-	(?:\d{1,3}\.){3}\d{1,3}	_q = subject_length > search_from ? memchr(	--memfn=no-precheck-assign-byte	=
 arms	runcmp	pcrec	pattern	--engine=vm	abc[0-9]+xyz	rx_w2(subject + scan_position)	--engine=vm -fno-lit-run	=
 arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - scan_position);	-	=
-arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-wf-find	(?!x)abc	subject_length - 1 - scan_position)	--memfn=no-wf-find	=
+arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-window-search	(?!x)abc	subject_length - 1 - scan_position)	--memfn=no-window-search	=
 arms	pf_walk	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	while (scan_position < subject_length && !	-fno-offset-skip	abc[0-9]+xyz
-arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-wf-find	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	--memfn=no-wf-find	=
+arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-window-search	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	--memfn=no-window-search	=
 arms	pf_memchr_back	pcrec	pattern	-	(?m)^abc	 - subject) + 1;	-	abc[0-9]+xyz
 arms	mismatch_inplace	pcrec	pattern	-	(?i)(ab)\1	unsigned char x, y;	-	(ab)\1
 arms	generic	pcrec	pattern	-	a[^x]*	subject_length) && (	-	abc
@@ -109,7 +109,7 @@ runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
 runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=
 runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
 runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
-fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold --memfn=no-wf-find	=
+fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold --memfn=no-window-search	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
@@ -122,7 +122,7 @@ fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
-fd	PAIR	pcrec	pattern	-	(?i)foobar	 row=PAIR arm=E-find	--memfn=no-wf-find	=
+fd	PAIR	pcrec	pattern	-	(?i)foobar	 row=PAIR arm=E-find	--memfn=no-window-search	=
 fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=

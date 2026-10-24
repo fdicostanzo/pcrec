@@ -1755,13 +1755,13 @@ fi
 # which is the arm that held the defect. Since D172 S3 `abc` is a `cover`
 # artifact by default (E-find's guarded LIBC find), so the fixture runs TWICE:
 # on the default build, where the contract reaches cover, and under
-# --memfn=no-wf-find, the pre-S3 artifact, so the old pf_memchr prefilter arm
+# --memfn=no-window-search, the pre-S3 artifact, so the old pf_memchr prefilter arm
 # keeps its K27 witness (s3_report.md F-5).
-for k27arm in default no-wf-find; do
+for k27arm in default no-window-search; do
 k27flags=""; k27tag="K27"; k27f="k27null"
-if [ "$k27arm" = no-wf-find ]; then k27flags="--memfn=no-wf-find"; k27tag="K27 no-wf-find"; k27f="k27nulld"; fi
+if [ "$k27arm" = no-window-search ]; then k27flags="--memfn=no-window-search"; k27tag="K27 no-window-search"; k27f="k27nulld"; fi
 if pcrec_run "$PCREC" -p k27 --no-captures $k27flags -o - --pattern 'abc' > "$WORKDIR/$k27f.c" 2>/dev/null; then
-    if [ "$k27arm" = no-wf-find ] && grep -q '_DFA_SCAN "cover"' "$WORKDIR/$k27f.c"; then
+    if [ "$k27arm" = no-window-search ] && grep -q '_DFA_SCAN "cover"' "$WORKDIR/$k27f.c"; then
         bad "[$k27tag]: the deny arm still renders cover -- this check has lost the pre-S3 pf_memchr arm it exists to cover"
     elif ! grep -q 'memchr' "$WORKDIR/$k27f.c"; then
         bad "[$k27tag]: the fixture artifact carries no memchr prefilter at all — this check has lost the arm it exists to cover"
@@ -1806,7 +1806,7 @@ for k27p in 'k27p:(?i)select' 'k27w:(x?)(?i:abcdefghijkl)\1'; do
     k27up="$(printf '%s' "$k27pre" | tr '[:lower:]' '[:upper:]')"
     # D172 S3: `(?i)select` is a fixed-width `cover` by default; its pair arm
     # is the default build's before S3, the cover row's deny (registry.md §6¶8a)
-    if ! pcrec_run "$PCREC" --features all --memfn=no-wf-find -p "$k27pre" -o - --pattern "$k27pat" > "$WORKDIR/$k27pre.c" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all --memfn=no-window-search -p "$k27pre" -o - --pattern "$k27pat" > "$WORKDIR/$k27pre.c" 2>/dev/null; then
         bad "[K27 pair arm]: pcrec failed to compile '$k27pat'"
         continue
     fi

@@ -22,8 +22,8 @@ SAB_DESC="the window family's C-pin drops its IDENTITY clause (the stop is R's m
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1416."
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\Bfoo\\B" && grep -q "^#define RX_DFA_PREFILTER \"offset-set-bounded\"" "$REACH_TMP/o.c" && echo REACH-C2-STAYS-OFFSET-SET'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\Bfoo\\B" && grep -q "^#define RX_DFA_PREFILTER \"offset-set-bounded\"" "$REACH_TMP/o.c" && echo REACH-C2-STAYS-OFFSET-SET'
 SAB_REACH_EXPECT="REACH-C2-STAYS-OFFSET-SET"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

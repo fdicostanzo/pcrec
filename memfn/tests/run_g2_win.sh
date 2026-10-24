@@ -44,7 +44,7 @@ trap 'rm -rf "$WORK"' EXIT
 # 2026-10-22) appended 400 DENSE REPORT sites from their own stream (the 1500
 # before them unchanged) and moved the S2 sites E-find renders off the floor:
 # wf-floor's floor fell with them (792 -> 486 measured; pinned AT 486, the
-# seeded space's deterministic count, at the S3 review), wf-find's is new.
+# seeded space's deterministic count, at the S3 review), window-search's is new.
 # Code review r1 (lane s3, 2026-10-23) appended 300 CASELESS REPORT sites from
 # a stream of their own (G2W_C1_SITES; the 1900 before them unchanged): the
 # population of Table B's PAIR in E-find, both renderers. Code review r2 (lane
@@ -63,7 +63,7 @@ FLOOR_PINNED=34                 # (39)
 FLOOR_RESEED_BIT=230            # (257)
 TIE_FLOORS="mass:230 model:55"
 CELL_FLOORS="edge_rejects:22000 core_off:1600000 noncore_off:490000 neg_reads:920000 nop_empty:130000"
-FORM_FLOORS="wf-find:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27 pf_walk:15"
+FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27 pf_walk:15"
 # D172 S3: E-find's reach by its text's parts (the generator's census of the
 # kit's own text, a population count, never a verdict): B's LIBC and WALK
 # forms, D-hors, a C-run compare, a stop below the candidate, REPORT sites;
@@ -80,7 +80,8 @@ EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
 # Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8; S1540
-# (code review r2, lane s3pair) is the next free main ledger id, no range being named.
+# (code review r2, lane s3pair) and S1541-S1543 (the S3 final review, lane s3fix) are
+# the kit's S1540-S1559.
 plant_spec() {
     case "$1" in
     S1400) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
@@ -104,14 +105,15 @@ plant_spec() {
         echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
         echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
-    S1422) # D172 S3: E-find denied but rendering (`--memfn=no-wf-find` ignored): the
+    S1422) # D172 S3: E-find denied but rendering (`--memfn=no-window-search` ignored): the
         # control's REPORT site renders where it must be refused (window_site.md §5.2)
         # (re-anchored at code review r1 C17: E-find's id is spelled once, WF_FIND_ID)
         echo 'window.c@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  WF_FIND_ID },@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  NULL },' ;;
     S1423) # D172 S3: D-hors's bound one short (job 581's own plant: `c + K > n` read
         # as `c + K - 1 > n`): the probe and the verify read s[n] (re-aimed at code review
-        # r2 R2-7: the bound moved, verbatim but for its indent and `b`, into d_hors_head)
-        echo 'window.c@@    kb_printf(b, "if (%s + %d >= %s) break; ", rc->C, w->chi, rc->N);@@    kb_printf(b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
+        # r2 R2-7: the bound moved, verbatim but for its indent and `b`, into d_hors_head;
+        # re-aimed at the S3 final review's HOUSE-7: d_hors_head writes the shared bound)
+        echo 'window.c@@    int ih = plan_ix(w, w->hl);\n    kb_printf(b, "if (!(%s)) break; ", bound);@@    int ih = plan_ix(w, w->hl);\n    kb_printf(b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
     # code review r1 C13 (S1424 was the S3 review's fix C plant, withdrawn with it: not reused)
     S1425) # code review r1 C13: D-hors's shift VALUE one too far (sh[b] + 1): a candidate
         # the window's last byte admits is skipped
@@ -134,14 +136,27 @@ plant_spec() {
         echo 'ofsskip.c@@    const int m[2] = { a, b };@@    const int m[2] = { a, a };' ;;
     S1540) # code review r2 R2-6: THE SHARED two-stream renderer (ofs_pair_text) searches its
         # first byte in both streams: B-pair and fn-pair (B-fn, native) both lose a byte
-        echo 'ofsskip.c@@t->q, t->subject, t->at, m[i], t->len@@t->q, t->subject, t->at, m[0], t->len' ;;
+        # (re-aimed at the S3 final review's EMIT-1: the renderer's members, at its entry)
+        echo 'ofsskip.c@@void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)\n{@@void ofs_pair_text(kb *o, const ofs_pair *t, const int m2[2], int k)\n{\n    const int m[2] = { m2[0], m2[0] };' ;;
+    S1541) # the S3 final review's EMIT-1: a stream's bounded look-ahead that comes up empty
+        # sets its frontier one PAST its end, so a byte sitting exactly there is skipped
+        # (the long subjects' clusters straddle the first two look-aheads' ends)
+        echo 'ofsskip.c@@"else { %s = %s; %s += %s; }%s"@@"else { %s = %s + 1; %s += %s; }%s"' ;;
+    S1542) # the S3 final review's CHECK-2: D-hors's `whi >= 0` scope dropped, so D-hors
+        # renders a window wholly below the candidate (the below-window sites; the
+        # generator's D-hors scope census goes red)
+        echo 'window.c@@    if (!dx->hw || dx->whi - dx->wlo < 1 || dx->whi < 0) return 0;@@    if (!dx->hw || dx->whi - dx->wlo < 1) return 0;' ;;
+    S1543) # the S3 final review's EMIT-3: E-find's RAISE dropped (no expression floor):
+        # with the test's lower half hoisted into it, a core position below the
+        # candidate is read below the subject (layout L's guard page)
+        echo 'window.c@@    } else {\n        kb_printf(b, "if (%s < %d) %s = %d; ", rc->C, -w->clo, rc->C, -w->clo);\n    }@@    } else {\n    }' ;;
     S1410) # a full-set position tested: C-yes takes a verify-YES position whose meet is every byte
         # (the kit manager's wsc3 ruling 1: such a position is the bound alone)
         echo 'window.c@@        if (m->p[k].present \&\& m->p[k].yes \&\& !full(m->p[k].yset))@@        if (m->p[k].present \&\& m->p[k].yes)' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

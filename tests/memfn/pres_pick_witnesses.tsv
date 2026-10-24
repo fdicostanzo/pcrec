@@ -18,24 +18,24 @@
 #
 # D172 S3: a fixed-width witness is a `cover` artifact by default (no pre-check,
 # so no pick is made), so those lines carry the cover row's deny
-# `--memfn=no-wf-find`, the default build before S3.
+# `--memfn=no-window-search`, the default build before S3.
 #
 # pick	nontrivial	pcrec	flags	pattern
-set	1	97	-e utf8 --memfn=no-wf-find	ba
+set	1	97	-e utf8 --memfn=no-window-search	ba
 set	1	-	-	zq.*the
-scan	1	3	-e utf8 --memfn=no-wf-find	abcd
-scan	1	-	--memfn=no-wf-find	(?i)hello world
-window	1	2	-e utf8 --memfn=no-wf-find	abcdefghij(?i:mnopqr)
-window	1	-	--memfn=no-wf-find	abcdefghijklmnop
-window	1	0	-e utf8 --memfn=no-wf-find	(?i:x)abcdefg(?i:y)
+scan	1	3	-e utf8 --memfn=no-window-search	abcd
+scan	1	-	--memfn=no-window-search	(?i)hello world
+window	1	2	-e utf8 --memfn=no-window-search	abcdefghij(?i:mnopqr)
+window	1	-	--memfn=no-window-search	abcdefghijklmnop
+window	1	0	-e utf8 --memfn=no-window-search	(?i:x)abcdefg(?i:y)
 leads	1	1	-	zq.*the
 leads	1	0	-e utf8	x.*abc
 dominated	1	1	-	x+y
-dominated	1	1	--memfn=no-wf-find	abc
+dominated	1	1	--memfn=no-window-search	abc
 dominated	1	0	-	foo.*bar
 set	1	-	--engine=vm	(a+)+zq
 dominated	0	0	--engine=vm	(a+)+zq
-landmark	1	1	--memfn=no-wf-find	(?i)hello world
+landmark	1	1	--memfn=no-window-search	(?i)hello world
 landmark	1	0	-	.{0,100}e
 set	1	-	-	a.{0,300}eeee
 # R17-b' B3b (lane b3b): the ROUTED decision against pcrec's own (`r*`
@@ -51,7 +51,7 @@ rdom	1	0	-	foo.*bar
 rlead	1	1	-	zq.*the
 rlead	1	0	-e utf8	x.*abc
 rhead	1	-	-	a.{1,5}z
-rwin	1	0	-e utf8 --memfn=no-wf-find	(?i:x)abcdefg(?i:y)
+rwin	1	0	-e utf8 --memfn=no-window-search	(?i:x)abcdefg(?i:y)
 rwhole	1	1	-	(x?)([a-z]+)+eeeeeeee~#~#~#~#\1
 rwhole	1	0	-	x.*abcdefghijk
 rrest	1	-	-	(x?)([a-z]+)+Z.@\1

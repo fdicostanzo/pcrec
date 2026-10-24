@@ -68,7 +68,7 @@ LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 NAMED = [
     # `(?i)cat` is a fixed-width `cover` artifact by default (D172 S3); since code
     # review r1 C1 its window search's SIMD FUNC is fn-pair's again, on the DEFAULT
-    # path (S3 had moved the witness under `--memfn=no-wf-find`)
+    # path (S3 had moved the witness under `--memfn=no-window-search`)
     ('mod-i (DFA, ASSIGN)', '(?i)cat', []),
     ('union-select (DFA)', '(?i)union.*?select.*?from', []),
     ('union-select (no-DFA, ON_MISS)', '(?i)union.*?select.*?from', ['--engine=vm']),

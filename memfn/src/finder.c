@@ -305,7 +305,7 @@ static const fd_row fd_rows[] = {
        stretch). Its facts are disjoint from D1, D1c and D1w's (two members,
        not one), so its place among them decides nothing; above R7w, which
        it narrows. No deny: within E-find it moves bytes under E-find's own
-       (`wf-find`), and fn-pair has none */
+       (`window-search`), and fn-pair has none */
     { "PAIR", FD_FIND, KN_P, SF_SPAN0 | SF_TWO_MEMBER | SF_WINDOW_STOP, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_PAIR, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "S3",

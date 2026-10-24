@@ -13,7 +13,7 @@
 #   refbuild        main 0d3765c87 (was c3ea619c3) built from `git archive` under $OUT/ref (the reference compiler)
 #   census          s3_evidence/census.py: every distinct corpus (pattern, its block's options:
 #                   flags i/u, encoding; code review r1 C11) x {c-default, c-utf8, c-vm,
-#                   --emit-ir, --emit-facts, the OFF arm --memfn=no-wf-find,no-wf-hors, and (the
+#                   --emit-ir, --emit-facts, the OFF arm --memfn=no-window-search,no-window-skip, and (the
 #                   S3 review's item D) c-simd (-fmemfn-simd) and c-norun (-fno-run-prefilter) with
 #                   their own OFF arms off-simd/off-norun} against the reference, abi digits mapped
 #                   back; the movers DECLARED from the S3 artifact's own RX_DFA_SCAN "cover" stamp
@@ -46,10 +46,10 @@
 #   evidence_r2     bytediff_r2.sh (predicted_r2.tsv, default and OFF arms) against the C1 tip
 #   diff_r2         s3_evidence/diff_r2.py: the widened PAIR's answers against Python `re`, both
 #                   layers, ASan+UBSan (>= 1,000 witness cases, its own floor)
-#   axes_measure    tests/axes/memfn_arm.py --measure over wf-find/wf-hors at both layers: the
+#   axes_measure    tests/axes/memfn_arm.py --measure over window-search/window-skip at both layers: the
 #                   per-cell counts MEMFN_CLASS's floors for those rows are pinned from (OWED)
 #   axes_memfn      tests/axes' memfn arm alone (AXES=--memfn MEMFN_REACH_ONLY=1): every kit row,
-#                   wf-find and wf-hors now in MEMFN_CLASS (R2-4)
+#                   window-search and window-skip now in MEMFN_CLASS (R2-4)
 # and the plant S1540 (the shared renderer) and the mech row S1026 (the axes memfn arm's own).
 # Correctness run: no quiet gate, no hold.
 set -u
@@ -107,7 +107,7 @@ refbuild() {
 evidence() {
     local r=0
     bash "$E/bytediff.sh" "$OUT/ref/build/pcrec" build/pcrec "$OUT/bd_def" || r=1
-    bash "$E/bytediff.sh" "$OUT/ref/build/pcrec" build/pcrec "$OUT/bd_off" --memfn=no-wf-find,no-wf-hors || r=1
+    bash "$E/bytediff.sh" "$OUT/ref/build/pcrec" build/pcrec "$OUT/bd_off" --memfn=no-window-search,no-window-skip || r=1
     bash "$E/list_axes_delta.sh" "$OUT/ref/build/pcrec" build/pcrec || r=1
     return $r
 }
@@ -135,8 +135,8 @@ step evidence evidence
 step diff_r2 python3 -I "$E/diff_r2.py" --pcrec build/pcrec --out "$OUT/diff_r2"
 step codegen make test-codegen
 step axes_measure python3 -I tests/axes/memfn_arm.py --pcrec build/pcrec --root "$TREE" --jobs 16 --measure \
-    --cell 'wf-find|default|--memfn=no-wf-find' --cell 'wf-find|simd|-fmemfn-simd --memfn=no-wf-find' \
-    --cell 'wf-hors|default|--memfn=no-wf-hors' --cell 'wf-hors|simd|-fmemfn-simd --memfn=no-wf-hors'
+    --cell 'window-search|default|--memfn=no-window-search' --cell 'window-search|simd|-fmemfn-simd --memfn=no-window-search' \
+    --cell 'window-skip|default|--memfn=no-window-skip' --cell 'window-skip|simd|-fmemfn-simd --memfn=no-window-skip'
 step axes_memfn env AXES=--memfn MEMFN_REACH_ONLY=1 bash tests/axes/run_axes.sh
 step test scripts/perfrun --label s3 -- "$OUT/test.make.log"
 grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' "$OUT/test.make.log" | sed 's/^/test-red: /'

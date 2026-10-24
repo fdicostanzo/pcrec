@@ -85,7 +85,7 @@ PCREC=${PCREC:-build/pcrec}
 # §6¶8a): this census's witnesses and population are the scan machines' edges,
 # and a fixed-width pattern is a `cover` artifact by default, running no
 # machine; the deny renders the default build before S3.
-COVER_DENY=--memfn=no-wf-find
+COVER_DENY=--memfn=no-window-search
 # [K37] pcrec_run: every compiler invocation below runs under a bound. The
 # check that enforces this is tests/codegen/run_codegen_tests.sh's K37 leg,
 # and it caught this file's three unbounded calls on the first battery run.

@@ -678,32 +678,41 @@ int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf
                      const mf_pred *p, const char *fn, mf_sink *o);
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
- * asked quietly. */
+ * asked quietly; *two 1 iff the BODY row it takes is fn-pair (the two
+ * streams). */
 #define ofs_fn_serves MF_NS(ofs_fn_serves)
 int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
-                  const mf_pred *p);
+                  const mf_pred *p, int *two);
 /* Writes its call, `<fn>(<s>, <n>, <lo>[, tables])`, the definition's
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
                 const char *fn, mf_sink *o);
-/* THE PAIR LEAPFROG, one renderer for its two customers (code review r2
- * R2-6): fn-pair's body (ofsskip.c) and the window family's B-pair
- * (window.c). The caller's names and layout: */
+/* THE PAIR LEAPFROG, one renderer for its two customers: fn-pair's body
+ * (ofsskip.c) and the window family's B-pair (window.c). The caller's names
+ * and layout: */
 typedef struct {
     const char *subject, *n;    /* the subject and its length                 */
-    const char *ha, *hb, *fresh, *q, *cand;  /* the pending hits, the first-
-                                   round flag, memchr's result, the candidate */
-    const char *at, *len;       /* the search's start (`pos + k`), its length */
-    const char *lim;            /* the re-search bound: a hit below it is
-                                   stale (`at`, so the hit that produced a
-                                   failed candidate is searched past)         */
+    const char *ha, *hb;        /* each stream's frontier: no byte of that
+                                   stream lies in [at, h); a hit where s[h]
+                                   is the stream's byte                       */
+    const char *wa, *wb;        /* each stream's next look-ahead width        */
+    const char *e, *q, *cand;   /* a look-ahead's end, memchr's result, the
+                                   candidate                                  */
+    const char *at;             /* the search's start (`pos + k`): a frontier
+                                   below it is raised to it                   */
     const char *miss;           /* the statement where neither stream hits    */
     const char *ind, *in2, *nl; /* a statement's indent, a block's added
                                    indent, the line end                       */
 } ofs_pair;
+/* Writes into `o` the streams' declaration, `size_t ha = 0, hb = 0, wa = W,
+ * wb = W;` (no indent, no line end): one per call of the search, so every
+ * call starts with the first look-ahead width. */
+#define ofs_pair_decl MF_NS(ofs_pair_decl)
+void ofs_pair_decl(kb *o, const ofs_pair *t);
 /* Writes into `o` the two streams (bytes m[0], m[1] at offset `k` from the
- * candidate), each searched again only once `lim` passes its hit (`fresh`:
- * the first round searches both), then the nearer hit less `k` as the
+ * candidate): the stream whose frontier is lower is searched next, over a
+ * bounded look-ahead that doubles each time it comes up empty, until the
+ * lower frontier is a hit (or both reach `n`); then that hit less `k` as the
  * candidate, `miss` where neither hit. The caller guards `at` < `n`. */
 #define ofs_pair_text MF_NS(ofs_pair_text)
 void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k);
@@ -779,6 +788,11 @@ struct wf_plan;
 #define wf_find_arm     MF_NS(wf_find_arm)
 #define wf_plan_reads_table MF_NS(wf_plan_reads_table)
 #define wf_plan_brow    MF_NS(wf_plan_brow)
+
+/* 1 iff `x` (an mf_site, or an mf_pred: a pre-check part) states window
+ * facts: alternatives, or a window floor (which wf_check refuses without
+ * them). THE one spelling of "a window site". */
+#define WF_STATES(x) ((x)->nalt || (x)->alts || (x)->wfloor)
 
 /* NULL iff site `s`'s window facts (alts, spans, entries, wfloor) are
  * statements the family describes; on a site stating none, NULL. `frame`

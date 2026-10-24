@@ -85,7 +85,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # 600's census: the default arm's movers are exactly the cover artifacts), so
 # the deny re-aims the witnesses that became cover and moves nothing else.
 # No caller passes a --memfn= of its own (the CLI's last --memfn= wins).
-COVER_DENY=--memfn=no-wf-find
+COVER_DENY=--memfn=no-window-search
 # emit <outfile> <pattern> [extra args...]   (0 = compiled, non-0 = refused)
 emit() {
     local out="$1" pat="$2"; shift 2

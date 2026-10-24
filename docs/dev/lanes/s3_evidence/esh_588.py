@@ -11,7 +11,7 @@ For the pattern's DEFAULT artifact (`-p rx --features all`), from pcrec's own te
   E[sh]     sum over bytes b of rate[b] * sh[b] / 1e6: the expected skip per probe when the probed
             byte is drawn from the prior (1.000 exactly where every shift is 1)
   max(sh)   the table's largest shift
-  stop      the stop set D-one finds: the `--memfn=no-wf-hors` artifact's E-find walk condition
+  stop      the stop set D-one finds: the `--memfn=no-window-skip` artifact's E-find walk condition
             (`while (c < n && !(COND)) c++`) for the same rx_mf<N>, evaluated by gcc over all 256
             bytes inside a copy of that artifact (so any table it reads is in scope); or the byte
             of a `memchr(` find
@@ -105,7 +105,7 @@ def site(bin_, pat, rate):
         if len(sh) != 256:
             return {"hors": 0, "why": "a malformed _sh table"}
         esh = sum(rate[b] * sh[b] for b in range(256)) / 1e6
-        c1 = compile_c(bin_, pat, d, "noh", "--memfn=no-wf-hors")
+        c1 = compile_c(bin_, pat, d, "noh", "--memfn=no-window-skip")
         st = stop_set(c1, n, d) if c1 else None
         if st is None:
             return {"hors": 1, "esh": esh, "maxsh": max(sh), "mass": None, "why": "stop set not read"}

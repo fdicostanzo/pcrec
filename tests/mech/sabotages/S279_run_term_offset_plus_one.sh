@@ -24,8 +24,8 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 # [MECH-REACH] the router takes a run row and emits the P4 run term at cand.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the verify
 # chain lost its `DfaForm` (litscan_s1.md §1.3's narrowing), so `f->cx` reads

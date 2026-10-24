@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.2 §6): the
 # 650 harness's 8 cells x 3 regimes x 3 classes, the S3 compiler's routed artifacts against its own
-# OFF arm (DEF: --memfn=no-wf-find,no-wf-hors, byte-identical to main c3ea619c3 but for the abi
+# OFF arm (DEF: --memfn=no-window-search,no-window-skip, byte-identical to main c3ea619c3 but for the abi
 # digits), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
 # T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
 # s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, PASS/FAIL vs §6's bar,
-# the five named caps and job 605's layout cap foobar match/real 1.052, the G1 alpha of wf-find and
-# wf-hors at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
+# the five named caps and job 605's layout cap foobar match/real 1.052, the G1 alpha of window-search and
+# window-skip at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
 # SAMPLE, the 24 other cover movers of s3_evidence/sample_588.tsv (pick_588.py's committed, seeded,
 # stratified pick), DEF vs routed at both layers, same core and calibration, printed under "Mover
 # sample (part of the bar)": every cell and row PASS/FAIL, and `== s3t BAR` FAILS where a stratum's
@@ -15,7 +15,7 @@
 # classes x the distinct arm texts, 5 launches), ~5 min, plus ~1.5 min of subjects/build/gate;
 # about 14 min in all against ~7 before. Beside both (Frank's ruling 2026-10-23, FINDINGS only, never
 # in the bar): the D-HORS ADMISSION SITES, s3_evidence/esh_588.tsv (pick_esh_588.py: 12 D-hors sites
-# stratified by E[sh], esh_588.py), D-hors (RTE) vs D-one (NOH, --memfn=no-wf-hors) at both layers,
+# stratified by E[sh], esh_588.py), D-hors (RTE) vs D-one (NOH, --memfn=no-window-skip) at both layers,
 # printed under "D-hors admission (E[sh])": 560 items (12 sites, 28 class subjects as generated, 2
 # regimes, 2 distinct arm texts: a cover artifact's SIMD text is its scalar text; 5 launches), ~1.7
 # min, plus ~0.5 min of subjects/build/gate: about 16-17 min in all (cap 3600 s unchanged).

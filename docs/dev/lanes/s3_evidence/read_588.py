@@ -13,8 +13,8 @@
 #   (a SIMD-on loss is a finding for the SIMD thread, §6).
 # THE A/A: med(RT2)/med(RTE), this run's own noise beside 581's floor.
 # G1 ALPHA of each deny row at both layers (memfn/CLAUDE.md: pcrec's timing vs its own deny):
-#   wf-find  med(RTE)/med(DEF)    (its deny IS the DEF arm), and RTEs/DEFs
-#   wf-hors  med(RTE)/med(NOH)    where NOH was timed (its text differs: D-hors fires), and
+#   window-search  med(RTE)/med(DEF)    (its deny IS the DEF arm), and RTEs/DEFs
+#   window-skip  med(RTE)/med(NOH)    where NOH was timed (its text differs: D-hors fires), and
 #            RTEs/NOHs; elsewhere "same text".
 # THE MOVER SAMPLE (the S3 review's item E; PART OF THE BAR since the S3 code review r1, main
 #   agreed, C10): s3t_sample.tsv, printed under "Mover sample (part of the bar)": per (row,
@@ -29,7 +29,7 @@
 # THE D-HORS ADMISSION READING (Frank's ruling 2026-10-23; FINDINGS, NEVER the bar, no default
 #   moves): s3t_esh.tsv over esh_588.tsv's sites, printed under "D-hors admission (E[sh])": per
 #   site E[sh], max(sh) and the stop mass (esh_588.py, committed in the site file), and per
-#   (regime, class) the wf-hors G1 alpha med(RTE)/med(NOH) (D-hors over D-one; < 1: D-hors is
+#   (regime, class) the window-skip G1 alpha med(RTE)/med(NOH) (D-hors over D-one; < 1: D-hors is
 #   faster) at the scalar layer and med(RTEs)/med(NOHs) at the SIMD layer, with the same floor as
 #   the mover sample; then each site's alphas summarized and SORTED BY E[sh], so a cut-off (if
 #   any) is visible.
@@ -98,8 +98,8 @@ print()
 print("## Table: the bar (SCALAR) and the SIMD-on reading")
 print()
 print("| cell | regime | class | DEF ns/pass | RTE/DEF | floor(581) | cap | verdict | RT2/RTE (A/A) "
-      "| RTEs/DEFs (SIMD-on) | SIMD-on reading | G1 wf-find (RTE/DEF) | G1 wf-find SIMD (RTEs/DEFs) "
-      "| G1 wf-hors (RTE/NOH) | G1 wf-hors SIMD (RTEs/NOHs) |")
+      "| RTEs/DEFs (SIMD-on) | SIMD-on reading | G1 window-search (RTE/DEF) | G1 window-search SIMD (RTEs/DEFs) "
+      "| G1 window-skip (RTE/NOH) | G1 window-skip SIMD (RTEs/NOHs) |")
 print("|" + "---|" * 15)
 fails, sfails, missing = [], [], []
 n = 0
@@ -142,8 +142,8 @@ for (c, g, cl), cap in CAPS.items():
 print()
 print("## G1 alpha summary (pcrec's timing vs its own deny; < 1: the row is faster)")
 print()
-for a, b, name in (("RTE", "DEF", "wf-find, scalar"), ("RTEs", "DEFs", "wf-find, SIMD-on"),
-                   ("RTE", "NOH", "wf-hors, scalar"), ("RTEs", "NOHs", "wf-hors, SIMD-on")):
+for a, b, name in (("RTE", "DEF", "window-search, scalar"), ("RTEs", "DEFs", "window-search, SIMD-on"),
+                   ("RTE", "NOH", "window-skip, scalar"), ("RTEs", "NOHs", "window-skip, SIMD-on")):
     rs = [ratio(c, g, cl, a, b) for c in cells for g in REG for cl in CLS]
     rs = [x for x in rs if x is not None]
     if rs:
@@ -290,8 +290,8 @@ if os.path.exists(efile):
     print("## D-hors admission (E[sh]) (not the §6 bar)")
     print()
     print("D-hors sites (esh_588.tsv, pick_esh_588.py's pick stratified by E[sh], the expected shift per "
-          "probe under the default byte-rate prior), D-hors (RTE) vs D-one (NOH, `--memfn=no-wf-hors`) at "
-          "both layers; alpha = wf-hors's G1 ratio (< 1: D-hors faster); floor = this run's A/A in the "
+          "probe under the default byte-rate prior), D-hors (RTE) vs D-one (NOH, `--memfn=no-window-skip`) at "
+          "both layers; alpha = window-skip's G1 ratio (< 1: D-hors faster); floor = this run's A/A in the "
           "regime; where a site's SIMD-layer text equals its scalar text (a cover artifact carries no SIMD "
           "form) the arm was built and timed once and the SIMD alpha IS the scalar one; FINDINGS for the "
           "manager and Frank, never the bar, no default moves.")

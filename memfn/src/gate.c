@@ -473,7 +473,7 @@ static int cl_fn_ref(const gate_in *in)
 static int cl_table_ref(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
-    if (in->s->nalt || in->s->alts) return -1;
+    if (WF_STATES(in->s)) return -1;
     if (pred_tabled(&in->s->pred)) return CL_REF;
     for (unsigned i = 0; in->s->preds && i < in->s->npred; i++)
         if (pred_tabled(&in->s->preds[i])) return CL_REF;

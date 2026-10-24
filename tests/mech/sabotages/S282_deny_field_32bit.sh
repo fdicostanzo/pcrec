@@ -18,8 +18,8 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 # and its detector row (§5.10) add `-fno-req-handoff` to read today's memchr.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
-# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -fno-run-prefilter -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-RUN-PREFILTER-DENY'
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -fno-run-prefilter -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-RUN-PREFILTER-DENY'
 SAB_REACH_EXPECT="REACH-RUN-PREFILTER-DENY"
 SAB_COUNT=1
 SAB_BEFORE='    uint64_t    deny;         /* a set bit in cx->opt->flags REMOVES this entry */'

@@ -99,21 +99,21 @@ has_guard()   { grep -q '_decode(subject, subject_length, landing_position' "$1"
 # D172 S3 (job 600): `abcd` and `[a-z]` are fixed-width windows, `cover`
 # artifacts by default (RX_DFA_START "attempt-start", no RECOVER row asked;
 # run_dfa_stamps.sh holds that witness), so their rows carry the cover row's
-# deny `--memfn=no-wf-find`, which renders the build before S3.
+# deny `--memfn=no-window-search`, which renders the build before S3.
 W1="$WORKDIR/w1"
 printf '%s\n' \
-    'byte	abcd	--memfn=no-wf-find	end-minus-width' \
-    'byte	abcd	--memfn=no-wf-find -fno-start-width	reverse-pass' \
-    'byte	abcd	--memfn=no-wf-find -fno-start-landing	end-minus-width' \
+    'byte	abcd	--memfn=no-window-search	end-minus-width' \
+    'byte	abcd	--memfn=no-window-search -fno-start-width	reverse-pass' \
+    'byte	abcd	--memfn=no-window-search -fno-start-landing	end-minus-width' \
     'byte	\w+	-	landing' \
     'byte	\w+	-fno-start-width	landing' \
     'byte	\w+	-fno-start-landing	reverse-pass' \
     'utf8	.	-	landing' \
     'utf8	.	-fno-start-landing	reverse-pass' \
     'utf8	\w+	-	landing' \
-    'byte	[a-z]	--memfn=no-wf-find	end-minus-width' \
-    'byte	[a-z]	--memfn=no-wf-find -fno-start-width	landing' \
-    'byte	[a-z]	--memfn=no-wf-find -fno-start-width -fno-start-landing	reverse-pass' \
+    'byte	[a-z]	--memfn=no-window-search	end-minus-width' \
+    'byte	[a-z]	--memfn=no-window-search -fno-start-width	landing' \
+    'byte	[a-z]	--memfn=no-window-search -fno-start-width -fno-start-landing	reverse-pass' \
     'byte	(?s).	-	end-minus-width' \
     'byte	(?s).	-fno-start-width	reverse-pass' \
     'byte	a\bb	-	attempt-start' \

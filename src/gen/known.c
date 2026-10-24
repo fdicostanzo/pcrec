@@ -255,9 +255,8 @@ static bool cc_width(CoverSt *st)
  * exact [r3rc m2]; the slice stating less is an under-statement, sound. */
 static bool cc_exact(CoverSt *st)
 {
-    /* read as the statement it is checked against (`used` stays the passes'
-       record, facts_listing.md §4.1¶2): the same read on every build since
-       D172 S3 routed `cover` by default */
+    /* read as the statement it is checked against, with no `used` record
+       (facts_listing.md §4.1¶2) */
     const MkLang *l = st->cv->lang = pcrec_fact_span_stated(st->cx);
     int k = st->w.k;
     if (!st->w.exact) { st->detail = "machine-inexact"; return false; }
@@ -365,7 +364,7 @@ static bool cc_proven(CoverSt *st)
  * `why`. The ids are stable and C2 keeps its number by being absent:
  * `origin-start` is RETIRED [r3rc M-A]. B1's pcrec FACT deny
  * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
- * `--memfn=no-wf-find` declines C13 (`refused`), D172 S3. */
+ * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. */
 typedef struct {
     const char *cid;            /* C1..C14                                   */
     const char *id;             /* the `why`                                 */
