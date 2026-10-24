@@ -256,6 +256,6 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 
 | date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-10-23 | 5596c3207 | TODO | TODO | RED | TODO | TODO | TODO | RED | TODO | build/full_suite/20261023_5596c3207/ | TODO |
+| 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
 
-TODO: copy the run's `summary.txt` (build/full_suite/20261023_5596c3207/summary.txt, absent when this was written) into the row above. RED run: counters do not reset. Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
+RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
