@@ -45,8 +45,15 @@ GROUPS_=(
   "wordb#byte utf8#(?i)\\bfoo\\b#(?i)\\bFOO\\b#(?i)\\bFoO\\b"
   "utf8-letter#utf8#(?i)éa#(?i)ÉA#(?i)éA"
   "alternation#byte utf8#(?i)cat|dog#(?i)CAT|DOG#(?i)Cat|dOg"
-  "flag-spelling#byte utf8#(?i:abc)#(?i:ABC)#(?i:aBc)"
+  "flag-spelling#byte utf8#(?i)abc#(?i:ABC)#(?i:aBc)"
+  "flag-mid#byte utf8#a(?i)bc#a(?i:BC)#a(?i:bC)"
 )
+# The flag groups pair a BARE option run (`(?i)abc`, `a(?i)bc`) with the SCOPED
+# form (`(?i:ABC)`, `a(?i:BC)`); the mid-pattern one is the DFA's witness (a
+# stray empty there hid the required run, RX_REQ_RUN "none" vs "614243@1/...").
+# A bare run parses to an empty node, and identity here holds only because a
+# concatenation drops an empty that carries nothing ([FLAG-SPELL], src/parse/
+# parse.c p_cat; sabotage S1560 restores the empty and turns both groups red).
 CONTROLS=(
   "ctl-letters#byte#(?i)hello#(?i)hellp"
   "ctl-case-sensitive#byte#hello#HELLO"
@@ -164,7 +171,7 @@ for g in "${GROUPS_[@]}"; do
         done
     done
     [ "$gacc" -gt 0 ] && ok "[$label] at least one cell was compared (not all refused)" ||
-        bad "[$label] every cell was refused -- the group compared nothing"
+        bad "[$label] no cell compared identical (each was refused or differed) -- the group proved nothing"
 done
 
 # Positive controls: the comparison must be able to fail.
