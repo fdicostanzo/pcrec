@@ -241,6 +241,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: Frank starts the standing /pcrec-monitor session; its first live use is the owed test-axes re-run
   refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
   Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
+- [FLAG-SPELL] STATE:started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
+  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
+  status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
+  next: lane flagfix (2026-10-24, Frank's go on the three-effort plan): general form = drop empty nodes from concatenations (also (?:)abc), not a flag special case
+  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
+  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
+- [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
+  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; earlier refused as no measured demand, the survey is the first outside evidence (an open Go request, the \p{Emoji} digit gotcha); cheap for an AOT compiler
+  next: design note by lane upropd (2026-10-24, Frank's go on the three-effort plan); no build before Frank reads it; check [UCD-RECORD] first
+  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
 
 
 ## Candidates ([OPTLOOP])
@@ -697,22 +708,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
   Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2. DATA RULE (Frank 2026-10-24): the data comes from an official Unicode source only (UCD auxiliary/GraphemeBreakProperty.txt, emoji-data.txt), vendored in third_party/ at a named Unicode version, with Unicode's own GraphemeBreakTest.txt as the oracle; pcrec may build functionality but claims a Unicode standard only where that official test passes, and never defines its own variant under the standard's name.
-- [UPROP-MORE] STATE:not-started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
-  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
-  status (2026-10-24): filed, unscheduled; earlier refused as no measured demand, the survey is the first outside evidence (an open Go request, the \p{Emoji} digit gotcha); cheap for an AOT compiler
-  next: starts on Frank's word; check [UCD-RECORD] first (one shared per-code-point table)
-  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
 - [CLASS-SETOPS] STATE:not-started — character-class set operations: subtraction, intersection, nesting
   filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
   status (2026-10-24): filed, unscheduled; TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED; the only plain workaround is lookaheads
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md
-- [FLAG-SPELL] STATE:not-started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
-  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
-  status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
-  next: unscheduled; candidate for the next optimization cycle; general form = drop empty nodes from concatenations (also (?:)abc), not a flag special case
-  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
-  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
 - [EMIT-BIDI] STATE:not-started — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
   filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
   status (2026-10-24): found, not fixed: (?x)a<U+200E>b and (?x)a<U+200F>b (tests/modifiers/xmode_utf8.rxt:32,38) emit their pattern bytes raw into a C comment; gcc warns -Wbidi-chars and the axes harness drops both cases under -fcomments (LOST 2)
