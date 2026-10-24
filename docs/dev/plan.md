@@ -258,7 +258,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-24): design docs/design/data_plan.md delivered; Frank's rulings D179 (fair effort, simple formats read in place, small form on request, sharing when needed)
   next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
-  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time.
+  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 
 
 ## Candidates ([OPTLOOP])
@@ -617,6 +617,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [SUBST-SPEED] STATE:not-started — SUBST'S UTF-8 CASE FORCING AND REPLACE-ALL OVERHEAD
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code (EMIT-1, EMIT-2, EMIT-3)
+  status (2026-10-24): measured: utf8 \U path +15.7% instructions vs pcre2+JIT (two passes, no ASCII fast path, bsearch per letter); replace-all 3.2x a hand loop's per-match overhead (still 22% under pcre2+JIT)
+  next: unscheduled; an optimization-effort candidate after subst lands
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; replace_design.md §R4.11; [M4-SUBST]
+- [SUBST-CLEANUP] STATE:not-started — SUBST HOUSE ITEMS, LIMITS AND CHECK GAPS FROM THE FIRST CODE ROUND
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code
+  status (2026-10-24): HOUSE-2/4/5/6/9/10/11, HOUSE-8 rest, TPL-4 (template length limit row), IFACE-4 (>256 groups in replace-all), CHK-2, CHK-5, CHK-6's two mech rows, CHK-8 token sharing; none changes an answer
+  next: unscheduled; one sonnet lane after subst lands; grep sabotage anchors before moving lines
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; [M4-SUBST]
 - [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
   filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
   status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).

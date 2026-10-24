@@ -113,7 +113,7 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 §; a finding against a ruled D-row cites it and argues, or drops; the file
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
-Launch all critics in one message, background. No addenda to a running
+Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
 critic; a missed input goes to a fresh critic.
 
 ## 6. Monitor, verify, draft (coordinator)
@@ -134,7 +134,7 @@ critic; a missed input goes to a fresh critic.
    PROBED-AND-HELD; by-id completeness; lessons for the guide. Consolidate
    overlapping findings (name every lens that found it). Copy critic texts and
    `verify.md` beside it in `review/`.
-4. Remove the review worktree (`scripts/wtprune --apply --force crit-<topic>`)
+4. Remove the review worktree (`scripts/wtprune --apply --force --quiet-min 1 crit-<topic>`: the default 120-minute quiet gate keeps a freshly built tree)
    and stop the verifier.
 
 ## 7. Meta-monitor the round (coordinator)
