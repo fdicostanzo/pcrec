@@ -54,7 +54,7 @@ scenario() {
     collect "$T/ev.$tag" "$@"
 }
 # norm: dates and walls out of the lines so the sequence can be compared whole
-norm() { sed -E 's/ owner=[^ ]+ [0-9T:+-]+$/ owner=O/; s/ wall=[0-9]+s//; s/ reason=[^ ]+//; s/^queuewatch: //; s/^(QUIET [^ ]+) no log growth.*/\1/' "$1"; }
+norm() { sed -E 's/ owner=[^ ]+ [0-9T:+-]+$/ owner=O/; s/ wall=[0-9]+s//; s/ logdir=[^ ]+//; s/ reason=[^ ]+//; s/^queuewatch: //; s/^(QUIET [^ ]+) no log growth.*/\1/' "$1"; }
 stages="test strict axes san alloc lint mech recidentity"
 expect() { # expect TAG [stage=rc ...] -- tail lines...: the full expected sequence
     local tag=$1 s r st; shift; echo "JOB-START 100-test-sim$tag owner=O"

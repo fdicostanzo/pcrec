@@ -22,10 +22,10 @@
 #
 # THE LINES (exit 0 after each; prefix `queuewatch: `), in the order they are raised:
 #   JOB-START NAME owner=O <date>
-#   STAGE-END NAME STAGE rc=N          each trailer `== stage S rc=N END` (battery) or
+#   STAGE-END NAME STAGE rc=N logdir=D each trailer `== stage S rc=N END` (battery) or
 #                                      `== stage S END rc=N` (chainrun), found via the job's
 #                                      `== logdir DIR` line (scripts/fullsuite_job.sh prints it)
-#   JOB-DONE NAME outcome=O rc=R verdict=V wall=Ws [reds=S(rc=N)..] [reason=..]
+#   JOB-DONE NAME outcome=O rc=R verdict=V wall=Ws [reds=S(rc=N)..] [logdir=D]
 #   QUIET NAME no log growth or CPU for Ns :: last: <trailer line>
 #   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
 #   PENDING-STUCK NAME pending for Ns, nothing running :: <the runner's last answer>
@@ -102,18 +102,18 @@ lifecycle() {
                 ld=""; [ -n "$dir" ] && ld=$(logdir_of "$dir")
                 if [ -n "$ld" ] && [ -f "$ld/trailer.log" ]; then
                     while read -r st rc; do
-                        printf 'E|%s|%s|%s\t%s\tSTAGE-END %s %s rc=%s\n' "$ld" "$st" "$rc" "$closed" "$name" "$st" "$rc"
+                        printf 'E|%s|%s|%s\t%s\tSTAGE-END %s %s rc=%s logdir=%s\n' "$ld" "$st" "$rc" "$closed" "$name" "$st" "$rc" "$ld"
                     done < <(stage_ends "$ld/trailer.log")
                 fi
                 ;;
             "== job "*" END "*)
                 name=${line#== job }; name=${name%% *}
                 dir=$(job_dirs "$name" | sed -n "${nth[$name]:-1}p")
-                reds=""
+                reds="" ld=""
                 if [ -n "$dir" ]; then ld=$(logdir_of "$dir"); [ -n "$ld" ] && reds=$(stage_ends "$ld/trailer.log" | awk '$2 != 0 { printf " %s(rc=%s)", $1, $2 }'); fi
                 printf 'D|%s\t1\tJOB-DONE %s outcome=%s rc=%s verdict=%s wall=%s%s\n' "$line" "$name" \
                     "$(sed -n 's/.* outcome=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/^== job [^ ]* END rc=\([^ ]*\).*/\1/p' <<<"$line")" \
-                    "$(sed -n 's/.* verdict=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/.* wall=\([^ ]*\).*/\1/p' <<<"$line")" "${reds:+ reds=${reds# }}"
+                    "$(sed -n 's/.* verdict=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/.* wall=\([^ ]*\).*/\1/p' <<<"$line")" "${reds:+ reds=${reds# }}${ld:+ logdir=$ld}"
                 ;;
             "  job "*" ENDED WITHOUT RUNNING "*)
                 name=${line#  job }; name=${name%% *}
