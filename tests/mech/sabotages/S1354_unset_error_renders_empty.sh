@@ -12,4 +12,6 @@ SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_repor
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='"    if (sl == -2) return (flags & PCREC_SUBST_STRICT) ? PCREC_SUBST_UNSET : 0;\n"'
-SAB_AFTER='"    if (sl == -2) return 0;   /* SABOTAGE S1354 */\n"'
+# Warning-clean (review 2026-10-24 r1, CHK-1): the plant still reads `flags`,
+# so the emitted code compiles under -Werror and a CELL must catch it.
+SAB_AFTER='"    if (sl == -2) return (flags & PCREC_SUBST_STRICT) ? 0 : 0;   /* SABOTAGE S1354 */\n"'

@@ -1190,6 +1190,16 @@ _sab_bt_selftest
 #
 # Called inside run_one's subshell, so the flag/array writes land on that
 # row's own copies exactly as the inline spellings did.
+#
+# A COMPILE FAILURE IS NOT A CATCH (review 2026-10-24 r1 subst, CHK-1). The
+# sabotaged compiler itself built (BUILD-FAILED is scored before any arm), so
+# a C compiler error in an arm's log is code the arm COMPILED -- an emitted
+# artifact or a driver -- failing under the arm's -Werror: S1354 and S1374
+# scored DETECTED at "driver build" without one cell running. A failing arm
+# whose log carries one (`NOCOMPILE_ERE`, gcc's and clang's `file:L:C: error:`)
+# marks the row `any_nocompile`, which the verdict block renders as ANOMALY
+# ahead of DETECTED: the plant must compile before its witness can count.
+NOCOMPILE_ERE='[A-Za-z0-9_./-]+\.(c|h|inc):[0-9]+:[0-9]+: (fatal )?error: '
 score_arm() {
     local log="$1" fc="$2" cell="$3" name="${3%%:*}"
     if [ ! -s "$log" ]; then
@@ -1206,6 +1216,10 @@ score_arm() {
     fi
     suite_bits+=("$cell")
     [ "$fc" -gt 0 ] && any_fail=1
+    if [ "$fc" -gt 0 ] && grep -qE "$NOCOMPILE_ERE" "$log"; then
+        any_nocompile=1
+        nocompile_arms+=("$name:$(grep -m1 -oE "$NOCOMPILE_ERE.{0,60}" "$log")")
+    fi
     any_ran=1
 }
 
@@ -1695,6 +1709,8 @@ run_one() {
         # verdict moves.
         any_unmeasured=0
         unmeasured_arms=()  # ...and WHICH, so the verdict can name them
+        any_nocompile=0     # an arm's log shows compiled code failing (CHK-1)
+        nocompile_arms=()
 
         for suite in $SAB_SUITES; do
             case "$suite" in
@@ -3485,7 +3501,9 @@ run_one() {
         # visibly in its verdict, because "caught by nothing" means something
         # different when one of the nets was not in the water.
         verdict="DETECTED"
-        if [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
+        if [ "$any_nocompile" -eq 1 ]; then
+            verdict="ANOMALY (the plant does not compile: $(IFS=' '; echo "${nocompile_arms[*]}") -- a compile failure is not a catch; make the plant warning-clean)"
+        elif [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
             verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
             verdict="ANOMALY (every assigned check binary failed to build)"

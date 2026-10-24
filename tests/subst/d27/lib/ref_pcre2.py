@@ -11,8 +11,12 @@ the rest of the input is copied and the call returns the count so far).
 gaps=False maps to PCRE2_SUBSTITUTE_REPLACEMENT_ONLY.
 """
 import ctypes as C
+import os
 
-L = C.CDLL('libpcre2-8.so.0')
+# D98: the library tests/lib/resolve_pcre2.sh resolved (run_d27.sh sources it
+# and it exports PCREC_PCRE2_PATH), so this binding and the C drivers read one
+# copy; the bare SONAME only where the resolver had no libdir to name.
+L = C.CDLL(os.environ.get('PCREC_PCRE2_PATH') or 'libpcre2-8.so.0')
 UTF, UCP, CASELESS, MIU, DUPNAMES = 0x80000, 0x20000, 0x8, 0x04000000, 0x40
 S_GLOBAL, S_UNSET_EMPTY, S_OVF, S_REPONLY = 0x100, 0x400, 0x1000, 0x20000
 SZ = C.c_size_t

@@ -13,4 +13,6 @@ SAB_DOC_FIGURE='Owed: lane substfix queued this row (docs/dev/lanes/substfix_rep
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        pcrec_sb_printf(c, "\n        || !ctx->vars || ctx->nvars < %d", t->nvrefs);'
-SAB_AFTER='        pcrec_sb_printf(c, "\n        || !ctx->vars || ctx->nvars < %d - 1", t->nvrefs);   /* SABOTAGE S1374 */'
+# Warning-clean (review 2026-10-24 r1, CHK-1): `nvars + 1 < N`, not `nvars <
+# N - 1`, which is a vacuous unsigned compare (-Wtype-limits) at N = 1.
+SAB_AFTER='        pcrec_sb_printf(c, "\n        || !ctx->vars || ctx->nvars + 1 < %d", t->nvrefs);   /* SABOTAGE S1374 */'
