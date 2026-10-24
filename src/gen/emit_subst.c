@@ -1121,18 +1121,6 @@ static void emit_subst_render_region(StrBuf *c, const char *p, const SubstTmpl *
         "    return rc;\n}\n", p, p);
 }
 
-/* The encoding a template binds under (§2¶5): its own, when a byte of it is
- * non-ASCII (it was read in that encoding: names, the UTF check, escapes
- * above 0x7F) or it forces case (the mapping is the encoding's); -1, any,
- * otherwise, as an all-ASCII template reads the same in each. */
-static int subst_bind_encoding(const char *tmpl, size_t len, const SubstTmpl *t, int encoding)
-{
-    if (t->region < t->nitems) return encoding;
-    for (size_t i = 0; i < len; i++)
-        if ((unsigned char)tmpl[i] >= 0x80) return encoding;
-    return -1;
-}
-
 /* The record. A template with a case region writes scratch; under utf8 its
  * element calls the support unit's case step, so the record carries that
  * unit's content id and points at the unit's own (§3¶8 compares them). */
@@ -1156,7 +1144,7 @@ static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char 
     if (t->nvrefs) pcrec_sb_printf(c, "    .vrefs = %s_subst_vrefs,\n", p);
     else pcrec_sb_puts(c, "    .vrefs = NULL,\n");
     pcrec_sb_printf(c, "    .encoding = %d,\n    .uses = %s,\n",
-                    subst_bind_encoding(tmpl, len, t, o->encoding), region ? "RX_SUBST_USES_SCRATCH" : "0");
+                    t->enc_bound ? o->encoding : -1, region ? "RX_SUBST_USES_SCRATCH" : "0");
     if (unit)
         pcrec_sb_printf(c, "    .support_id = 0x%016llxull,\n    .support = &pcrec_support_id,\n", id);
     else

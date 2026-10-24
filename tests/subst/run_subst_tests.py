@@ -87,7 +87,7 @@ REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 
 REACH_NEED['subst-extended'] = [
     'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539',
     'scr', 'bound', 'illcase', 'cond', 'esc', 'casetable', 'nest',
-    'size', 'count', 'batch', 'generic', 'room', 'mis', 'unk', 'nogap']
+    'size', 'count', 'batch', 'generic', 'room', 'mis', 'unk', 'nogap', 'encesc']
 
 
 def decode(t):

@@ -156,6 +156,13 @@ same('e7', rb'b', U(r'[\x{100}\N{U+e9}\o{400}\x{0000000041}\N{U+0041}]'), b'abc'
 same('e8', rb'b', rb'[\xe9\o{351}]', b'abc', 'esc')
 same('e9', rb'b', U(r'[\xe9\o{351}\é]'), b'abc', 'esc', utf=True)
 same('e10', rb'b', rb'[\c>\c \c~\c\]', b'abc', 'esc')
+# ---- an escape's value binds the template to its encoding (§2¶5, review TPL-1) ----
+for cid, tpl in (('x1', rb'<\xe9>'), ('x2', rb'<\x{e9}>'), ('x3', rb'<\x{100}>'),
+                 ('x4', rb'<\N{U+41}>'), ('x5', rb'<\o{351}>')):
+    fixed(cid, rb'(b)', tpl, b'ab', 'check:MISMATCH:-1', 'na', '-', 'encesc', pre='utf8:ext:')
+fixed('x6', rb'(b)', rb'<\xe9>', b'ab', 'check:MISMATCH:-1', 'na', '-', 'encesc', flags='-e utf8', pre='ext:')
+fixed('x7', rb'(b)', rb'<\x41\o{102}\cC>', b'ab', None, 'same', '-', 'encesc', pre='utf8:ext:')
+fixed('x8', rb'(b)', rb'<\x41\o{102}\cC>', b'ab', None, 'same', '-', 'encesc', flags='-e utf8', pre='ext:')
 
 out = ['# tests/subst-extended/cells.tsv -- module subst-extended\'s cells (subst_api.md',
        '# §2¶7-¶14a, §4¶7-¶8, §4¶14, §4¶22), in tests/subst/run_subst_tests.py\'s columns:',

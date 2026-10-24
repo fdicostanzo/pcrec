@@ -239,10 +239,12 @@ static void st_lit_char(StParse *ps, unsigned v)
     st_lit(ps->t, c, (size_t)len);
 }
 
-/* Append a case-forcing event item. */
+/* Append a case-forcing event item; the case map is the encoding's, so it
+ * binds the template to its encoding (§2¶5). */
 static void st_case(StParse *ps, SubstCaseEvent ev, size_t at)
 {
     SubstTmpl *t = ps->t;
+    t->enc_bound = true;
     t->items[t->nitems++] = (SubstItem){ SUBST_CASE, at, 2, 0, (int)ev, 0, 0, 0, 0 };
 }
 
@@ -265,12 +267,14 @@ static long st_braced(const StParse *ps, size_t *j, int base, bool spaces)
 }
 
 /* A code point an escape names, as a literal character: refused above the
- * encoding's universe (0xFF under byte) and, under utf8, a surrogate. */
+ * encoding's universe (0xFF under byte) and, under utf8, a surrogate. One
+ * above 0x7F binds the template to its encoding (§2¶5): its bytes differ. */
 static int st_code_point(StParse *ps, size_t at, long v)
 {
     if (v < 0 || v > (ps->utf ? 0x10FFFF : 0xFF) || (ps->utf && v >= 0xD800 && v <= 0xDFFF))
         return st_fail(ps->err, at, "character code point in the escape is out of range "
                                     "for the template's encoding");
+    if (v > 0x7F) ps->t->enc_bound = true;
     st_lit_char(ps, (unsigned)v);
     return 0;
 }
@@ -334,6 +338,7 @@ static int st_escape(StParse *ps, bool in_text)
     case 'N':                                   /* `\N{U+h..}`, utf8 only */
         if (!ps->utf || j + 2 >= n || s[j] != '{' || s[j + 1] != 'U' || s[j + 2] != '+')
             return st_fail(ps->err, at, "\\N must be \\N{U+hex} under -e utf8");
+        ps->t->enc_bound = true;                /* refused under byte, whatever it names */
         j += 2;
         if ((v = st_braced(ps, &j, 16, false)) < 0)
             return st_fail(ps->err, at, "\\N{U+ must be followed by hex digits and }");
@@ -591,6 +596,8 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, bool exte
         size_t bad = st_utf8_bad(s, n);
         if (bad < n) return st_fail(err, bad, "ill-formed UTF-8 in the template");
     }
+    for (size_t i = 0; i < n && !t->enc_bound; i++)   /* read in its encoding (§2¶5) */
+        t->enc_bound = (unsigned char)s[i] >= 0x80;
     /* Every bound below is the template's own length: an item, a reference
      * and a name each consume at least one byte, but for the one synthesized
      * item of each `${n:-text}` (which spends six); no escape writes more

@@ -7862,6 +7862,9 @@ typedef struct {
     int          maxnum;       /* the highest group number, or 0 */
     bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
     bool         uses_ext;     /* a module `subst-extended` form appears */
+    bool         enc_bound;    /* its meaning depends on its encoding (§2¶5): a
+                                * non-ASCII byte, an escape naming a code point
+                                * above 0x7F or `\N{U+..}`, or case forcing */
     size_t       lit_floor;    /* parser-private: no literal joins an item below it */
 } SubstTmpl;
 

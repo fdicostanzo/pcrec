@@ -144,9 +144,12 @@ not part of the contract.
 PCRE2 reads a replacement in its pattern's encoding: the name characters
 (§2¶2), the case mapping (§2¶14) and, under `utf8`, the
 well-formedness check and the escapes above U+00FF. The record carries that
-encoding when the template has a byte above 0x7F or a case-forcing form, and
--1 otherwise (an all-ASCII template without case forcing reads the same in
-every encoding). The check (§3¶8), and so the context setup (§7¶3) and the
+encoding when the template's bytes or meaning depend on it: a byte above 0x7F
+in its text, an escape (§2¶10) naming a code point above 0x7F (`\xe9` is one
+byte under `byte` and two under `utf8`), a `\N{U+..}` escape (refused under
+`byte` whatever it names), or a case-forcing form. Otherwise it carries -1: a
+template whose text is ASCII and whose escapes name only ASCII renders the same
+bytes in every encoding. The check (§3¶8), and so the context setup (§7¶3) and the
 by-name helper (§3¶13), refuses an rx of another encoding than the record's
 when the record's is not -1. So `\U$1` compiled under `-e byte` and used
 with a `-e utf8` rx is refused before any output, rather than rendering
