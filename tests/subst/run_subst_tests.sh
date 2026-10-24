@@ -265,8 +265,16 @@ if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p pair -o "$WORK/tu/pair.c" --patt
         '    rx_iter it = RX_ITER_INIT((const unsigned char *)"a", 1);' \
         '    return pcrec_subst_ctx_init(&ctx, &it, &pair_info, &pair_subst_info, NULL, vres, 0, &bad)' \
         '        || sq_subst_info.render == sr_subst_info.render; }' > "$WORK/tu/main.c"
+    # the guard probe compiles whatever the guards are, so a colliding guard
+    # (the subst header dropped behind the rx header's) is caught by this
+    # cell and not by the next one's compile error
+    printf '%s\n' '#include "pair.h"' '#include "pair_sub.h"' \
+        'int main(void) {' '#ifdef PCREC_SUBST_GEN_pair_H' '    return 0;' '#else' '    return 1;' '#endif' '}' > "$WORK/tu/guard.c"
+    if "$CC" -I "$WORK/tu" -o "$WORK/tu/guard" "$WORK/tu/guard.c" 2> "$WORK/tu/guard.err" && "$WORK/tu/guard"; then ok
+    else bad "pair.h + pair_sub.h in one TU: the subst header was dropped (its guard is not its own)"; guard_bad=1; fi
     if "$CC" $GENCFLAGS -I "$WORK/tu" -o "$WORK/tu/main" "$WORK/tu/main.c" "$WORK/tu/pair.c" \
            "$WORK/tu/pair_sub.c" "$WORK/tu/sq.c" "$WORK/tu/sr.c" 2> "$WORK/tu/err" && "$WORK/tu/main"; then ok
+    elif [ "${guard_bad:-0}" = 1 ]; then bad "rx+subst of one prefix, or sq+sr, in one TU (see the guard cell)"
     else bad "rx+subst of one prefix, or sq+sr, in one TU: $(head -3 "$WORK/tu/err")"; fi
     printf '%s\n' '#include "sq.h"' '#include "sQ.h"' > "$WORK/tu/case.c"
     if "$CC" $GENCFLAGS -fsyntax-only -I "$WORK/tu" "$WORK/tu/case.c" 2> "$WORK/tu/case.err"; then

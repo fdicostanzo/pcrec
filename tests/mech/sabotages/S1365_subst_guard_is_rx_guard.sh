@@ -2,7 +2,7 @@
 # F9-F10; docs/spec/subst_api.md).
 #
 # Plant: the subst header's guard is the rx header's PCREC_GEN_<UPPER>_H.
-# Witness: an rx and a subst header of one prefix in one TU (run_subst_tests.sh, the `tu` check): the second header is dropped and `pair_subst_info` is undeclared.
+# Witness: an rx and a subst header of one prefix in one TU (run_subst_tests.sh, the `tu` guard cell, which compiles and runs): the second header is dropped behind the first's guard, so PCREC_SUBST_GEN_pair_H is undefined.
 # Reach (K35): tests/subst/run_subst_tests.py fails a run where a REACH_NEED
 # token is carried by no passing cell.
 SAB_ID="S1365-subst-guard-is-rx-guard"

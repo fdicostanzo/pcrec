@@ -4,7 +4,8 @@
 # in a temp definitions dir (MECH_SAB_DIR), so no plant lives in the ledger,
 # both on S1354's site: Sy1 the ORIGINAL plant (`return 0;`, which leaves
 # `flags` unused and fails the emitted code's -Werror compile) must read
-# ANOMALY (the plant does not compile) and fail the run; Sy2 the warning-clean
+# ANOMALY (the plant does not compile) and be the run's one anomaly
+# (the matrix exits 0 on an anomaly; only an unexpected row exits 1); Sy2 the warning-clean
 # plant must read DETECTED by its cells. One matrix run of the subst arm
 # (clean tree + two sabotaged trees, ~10 min); the runner takes the box lock.
 set -u
@@ -28,9 +29,9 @@ bad=0
 chk() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; bad=1; fi; }
 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy1 Sy2 > "$T/out" 2>"$T/err"
 rc=$?
-chk "a non-compiling plant fails the run (rc=$rc)" '[ "$rc" = 1 ]'
+chk "the run counts exactly the one anomaly (rc=$rc)" 'grep -qE "anomalies: 1," "$T/out"'
 chk "Sy1 reads ANOMALY (the plant does not compile)" 'grep -qE "^Sy1-selftest.*ANOMALY \(the plant does not compile" "$T/out"'
-chk "Sy1 never reads DETECTED" '! grep -qE "^Sy1-selftest.*	DETECTED" "$T/out"'
-chk "Sy2 reads DETECTED" 'grep -qE "^Sy2-selftest.*	DETECTED$" "$T/out"'
+chk "Sy1 never reads DETECTED" '! grep -qE "^Sy1-selftest.* DETECTED *$" "$T/out"'
+chk "Sy2 reads DETECTED" 'grep -qE "^Sy2-selftest.* DETECTED *$" "$T/out"'
 [ "$bad" = 0 ] && echo "nocompile_selftest: DONE rc=0" || { echo "nocompile_selftest: DONE rc=1"; cat "$T/out" "$T/err" | tail -30; }
 exit "$bad"
