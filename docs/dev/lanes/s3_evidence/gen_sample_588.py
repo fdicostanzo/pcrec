@@ -4,7 +4,8 @@
 # harness's file formats (docs/design/kit_proof/measure/gen_subjects.py, whose filler, record cutter
 # and expected-answer loops it imports, so both share one implementation of the answers).
 #
-# usage: python3 -I gen_sample_588.py SAMPLE.TSV OUTDIR
+# usage: python3 -I gen_sample_588.py SAMPLE.TSV OUTDIR [CLASSES]
+#   CLASSES: a comma list (default real,none,random; the two-stream sample's is real,dense,mixed)
 #
 # For each sample row (id, pattern) and class, deterministically (random.Random seeded from the id
 # and class; no clock):
@@ -17,6 +18,12 @@
 #   none    the same prose, no plant; SKIPPED where the prose itself matches (the class would not
 #           be a no-match class)
 #   random  uniform bytes over printable ASCII and '\n' (always generatable; its matches counted)
+#   dense   as real, the plant at 1/8 (candidates and matches dense)
+#   mixed   as real, then each word's first letter upper-cased at 1/8 (the prose's words are all
+#           lower case, so `real` holds no upper-case byte: a caseless two-stream find's upper
+#           stream is ABSENT there, the S3 final review's EMIT-1 case; `mixed` makes both streams
+#           live, as a real text does); a plant the case change breaks is not counted, and a
+#           class with no surviving match is skipped
 # The expected answers are python `re` on bytes alone (no pcrec source).
 import importlib.util
 import os
@@ -33,6 +40,7 @@ gs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gs)
 
 CLASSES = ("real", "none", "random")
+PLANT_P = {"real": 1 / 200, "dense": 1 / 8, "mixed": 1 / 200}
 ALPHA = [c for c in range(0x20, 0x7F)] + [0x0A]
 CATS = {
     C.CATEGORY_DIGIT: lambda c: 48 <= c <= 57,
@@ -123,22 +131,34 @@ def compiles(pat):
         return None
 
 
-def subjects(sid, pat, outdir):
+def capitalize(rng, buf, p):
+    """`buf` with each word's first letter (a letter after a space or a line end, or first)
+    upper-cased at rate `p`."""
+    out = bytearray(buf)
+    for i, c in enumerate(out):
+        if 97 <= c <= 122 and (i == 0 or out[i - 1] in b" \n") and rng.random() < p:
+            out[i] = c - 32
+    return bytes(out)
+
+
+def subjects(sid, pat, outdir, classes=CLASSES):
     """Writes the classes' subjects for one sample row; returns its classes.tsv rows."""
     rx = compiles(pat)
     rows = []
-    for cls in CLASSES:
+    for cls in classes:
         rng = random.Random("s3-588/%s/%s" % (sid, cls))
         if rx is None:
             rows.append((sid, cls, "skip python re cannot read the pattern"))
             continue
-        if cls == "real":
+        if cls in PLANT_P:
             pool = [match_of(pat, rx, rng) for _ in range(40)]
             pool = [p for p in pool if p]
             if not pool:
                 rows.append((sid, cls, "skip no generated match"))
                 continue
-            buf = gs.prose(rng, gs.RAW_BYTES, None, 0, lambda r: r.choice(pool).decode("latin-1"), 1 / 200)
+            buf = gs.prose(rng, gs.RAW_BYTES, None, 0, lambda r: r.choice(pool).decode("latin-1"), PLANT_P[cls])
+            if cls == "mixed":
+                buf = capitalize(rng, buf, 1 / 8)
         elif cls == "none":
             buf = gs.prose(rng, gs.RAW_BYTES, None, 0, None, 0)
         else:
@@ -147,7 +167,7 @@ def subjects(sid, pat, outdir):
         if cls == "none" and nm:
             rows.append((sid, cls, "skip the prose itself matches (%d)" % nm))
             continue
-        if cls == "real" and not nm:
+        if cls in PLANT_P and not nm:
             rows.append((sid, cls, "skip no planted match survived"))
             continue
         srec = gs.make_records(rng, rx, buf, cls, True)
@@ -177,16 +197,17 @@ def read_sample(path):
 
 def main():
     sample, outdir = sys.argv[1], sys.argv[2]
+    classes = tuple(sys.argv[3].split(",")) if len(sys.argv) > 3 else CLASSES
     os.makedirs(outdir, exist_ok=True)
     rows = []
     for sid, _stratum, pat in read_sample(sample):
-        rows += subjects(sid, pat, outdir)
+        rows += subjects(sid, pat, outdir, classes)
     with open(os.path.join(outdir, "classes.tsv"), "w") as f:
         for r in rows:
             f.write("\t".join(r) + "\n")
     ok = sum(1 for r in rows if r[2].startswith("ok"))
     print("gen_sample_588: %d patterns, %d of %d class subjects generated"
-          % (len(rows) // len(CLASSES), ok, len(rows)))
+          % (len(rows) // len(classes), ok, len(rows)))
 
 
 if __name__ == "__main__":

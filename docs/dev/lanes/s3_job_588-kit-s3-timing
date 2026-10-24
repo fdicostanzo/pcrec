@@ -23,14 +23,21 @@
 # printed under "D-hors admission (E[sh])": 560 items (12 sites, 28 class subjects as generated, 2
 # regimes, 2 distinct arm texts: a cover artifact's SIMD text is its scalar text; 5 launches), ~1.7
 # min, plus ~0.5 min of subjects/build/gate: about 19-20 min in all (cap 3600 s unchanged).
+# THE TWO-STREAM SAMPLE (the manager's ruling R-b, PART OF THE BAR; measure_588.sh's header):
+# pair_588.tsv's 11 rows (REQRUN, COVER-BFN, COVER-PAIR) x 2 regimes x 3 classes (real, dense,
+# mixed), RTE vs BASE, BASE compiled by MAIN'S compiler at the merge base 0d3765c87, the one job
+# 621's refbuild step builds ($BASE_PCREC below; 621 also copies its tip build into build/s3/bin,
+# so this job times exactly the build 621 checked): 132 items over 5 launches, ~0.5 min, plus
+# ~0.5 min of subjects/build/gate. Queue this job AFTER 621 is done (its dry run needs both
+# compilers; --ready holds it while 621 is pending or running).
 # Queue it with:  scripts/boxqueue add --name 588-kit-s3-timing FILE
 # Everything it writes is under $OUT (the s3fix worktree's build/s3/job588, gitignored; re-staged
 # there by lane s3fix, the S3 final review's fixes: PCREC is that tree's build, copied into
 # build/s3/bin before the job is queued).
 #   --dry-run  measure_588.sh smoke on ONE cell, hex8-bounded (build + premises + differential + gate),
-#              on the mover sample's first row and on the E[sh] site esh02 (subjects + build +
-#              premises + gate): NO clock
-#   --ready    HELD while main's timing job i2build-parity is pending/running; then r27c's quiet
+#              on the mover sample's first row, the E[sh] site esh02 and the two-stream row pr05
+#              (subjects + build + premises + gate): NO clock
+#   --ready    HELD while main's timing job i2build-parity or job 621 is pending/running; then r27c's quiet
 #              gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no box-lock holder
 #   (work)     exec measure_588.sh run
 set -u
@@ -41,21 +48,26 @@ MAIN=/home/pcrec/projects/pcrec
 export TMPDIR=$W/build/tmp
 export MEASURE_CPU=7 MEASURE_SIBLING=15
 export PCREC=$W/build/s3/bin/pcrec
+export BASE_PCREC=$W/build/s3/heavy621/ref/build/pcrec
 L=5 T=20000000 N=9
 case "${1:-}" in
     --dry-run)
         mkdir -p "$TMPDIR" "$OUT" || exit 1
         [ -x "$PCREC" ] || { echo "$PCREC missing (the S3 commit's build/pcrec, copied into build/s3/bin)" >&2; exit 1; }
+        [ -x "$BASE_PCREC" ] && [ "$(cat "$W/build/s3/heavy621/ref/REV" 2>/dev/null)" = 0d3765c87 ] ||
+            { echo "$BASE_PCREC missing or not 0d3765c87's (job 621's refbuild): queue this after 621" >&2; exit 1; }
         python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/read_588.py" || exit 1
         DRY=$W/build/s3/dry588
-        SMOKE_CELLS="hex8-bounded" SMOKE_SAMPLE="smp01" SMOKE_ESH="esh02" bash "$E/measure_588.sh" smoke "$DRY" > "$DRY.out" 2>&1 ||
+        SMOKE_CELLS="hex8-bounded" SMOKE_SAMPLE="smp01" SMOKE_ESH="esh02" SMOKE_PAIR="pr05" bash "$E/measure_588.sh" smoke "$DRY" > "$DRY.out" 2>&1 ||
             { tail -8 "$DRY.out" >&2; exit 1; }
         grep -q '^sample-gate: [1-9][0-9]* arm cells read; 1 sample rows live$' "$DRY.out" ||
             { grep -E '^(SAMPLE|sample-)' "$DRY.out" | tail -5 >&2; echo "the mover sample's smoke row did not survive" >&2; exit 1; }
         grep -q '^esh-gate: [1-9][0-9]* arm cells read; 1 esh rows live$' "$DRY.out" ||
             { grep -E '^(ESH|esh-)' "$DRY.out" | tail -5 >&2; echo "the E[sh] reading's smoke row did not survive" >&2; exit 1; }
+        grep -q '^pair-gate: [1-9][0-9]* arm cells read; 1 pair rows live$' "$DRY.out" ||
+            { grep -E '^(PAIR|pair-)' "$DRY.out" | tail -5 >&2; echo "the two-stream sample's smoke row did not survive" >&2; exit 1; }
         tail -3 "$DRY.out" | sed 's/^/dry: /'
-        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs) and DEF's layout variants DV1 DV2 DV3"
+        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs) and DEF's layout variants DV1 DV2 DV3; the two-stream sample BASE vs RTE"
         echo "boxqueue: cap 3600"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"
@@ -63,6 +75,7 @@ case "${1:-}" in
         exit 0 ;;
     --ready)
         case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state kit-s3-heavy 2>/dev/null)" in pending*|running*) echo "held: job 621 first"; exit 75;; esac
         mkdir -p "$OUT" || exit 1
         st=$OUT/ready.state
         now=$(date +%s)

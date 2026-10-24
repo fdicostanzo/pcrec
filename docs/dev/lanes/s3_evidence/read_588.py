@@ -36,6 +36,12 @@
 #   NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR is the bar's sample term (scalar layer; the SIMD
 #   layer reported). A row of sample.tsv with no timed cell (dropped by a premise, a compile or the
 #   answer gate) FAILS the bar too: a dropped row is never a pass.
+# THE TWO-STREAM SAMPLE (the manager's ruling R-b on the S3 final review's EMIT-1 fix; PART OF THE
+#   BAR): s3t_pair.tsv over pair_588.tsv, printed under "Two-stream sample (part of the bar)": per
+#   (row, regime, class) R = med(RTE)/med(BASE), BASE = main's default build at the merge base (the
+#   unbounded streams), classes real / dense / mixed; floor and allowance as the mover sample's;
+#   every cell PASS/FAIL, every STRATUM (REQRUN, COVER-BFN, COVER-PAIR) PASS iff its geometric-mean
+#   R is <= 1 + its largest floor or every cell of it passes; a row with no timed cell FAILS.
 # THE D-HORS ADMISSION READING (Frank's ruling 2026-10-23; FINDINGS, NEVER the bar, no default
 #   moves): s3t_esh.tsv over esh_588.tsv's sites, printed under "D-hors admission (E[sh])": per
 #   site E[sh], max(sh) and the stop mass (esh_588.py, committed in the site file), and per
@@ -320,6 +326,85 @@ if os.path.exists(sfile):
     print("- sample cells FAIL (beyond floor), scalar: %s" % ("; ".join(slow) if slow else "none"))
     print("- sample SLOWER beyond floor, SIMD layer: %s" % ("; ".join(ssl) if ssl else "none"))
     print()
+pfile = out + "/s3t_pair.tsv"
+pair_fails = []
+if not os.path.exists(pfile):
+    pair_fails.append("no s3t_pair.tsv (the two-stream sample is part of the bar)")
+else:
+    pd = defaultdict(list)
+    for r in csv.DictReader(open(pfile), delimiter="\t"):
+        pd[(r["cell"], r["regime"], r["class"], r["arm"])].append(float(r["ns"]))
+    pmeta = {}
+    if os.path.exists(out + "/pair.tsv"):
+        for ln in open(out + "/pair.tsv", encoding="utf-8"):
+            if ln.strip() and not ln.startswith("#"):
+                f = ln.rstrip("\n").split("\t")
+                pmeta[f[0]] = (f[1], f[2])
+    paa = {}
+    for g in REG:
+        v = [abs(x - 1) for x in (ratio(c, g, cl, "RT2", "RTE") for c in cells for cl in CLS) if x]
+        paa[g] = max(v) if v else None
+
+    def pmed(sid, g, cl, a):
+        v = pd.get((sid, g, cl, a))
+        return statistics.median(v) if v else None
+
+    PCLS = ("real", "dense", "mixed")
+    print("## Two-stream sample (part of the bar)")
+    print()
+    print("Artifacts carrying the two-stream find (pair_588.tsv), RTE (this build: the bounded look-ahead) "
+          "vs BASE (main's default build at the merge base: the unbounded streams), scalar layer; floor = "
+          "this run's A/A in the regime, allowance = the per-call layout allowance. PART OF THE BAR: every "
+          "stratum's geometric-mean RTE/BASE within 1 + its floor (or every cell of it passing), every "
+          "pair.tsv row timed.")
+    print()
+    print("| row | stratum | pattern | regime | class | BASE ns/pass | RTE/BASE | floor | delta ns/call | verdict |")
+    print("|" + "---|" * 10)
+    pstrat = defaultdict(list)
+    prow = defaultdict(list)
+    psids = sorted({k[0] for k in pd})
+    for sid in psids:
+        st, pat = pmeta.get(sid, ("?", "?"))
+        for g in REG:
+            for cl in PCLS:
+                x, y = pmed(sid, g, cl, "RTE"), pmed(sid, g, cl, "BASE")
+                if not x or not y:
+                    continue
+                R, fl = x / y, paa.get(g)
+                k = calls_of("%s/psubj/%s.%s.%s.expect" % (out, sid, cl, g), g)
+                dl = (x - y) / k if k else None
+                aok = dl is not None and dl <= allow.get(g, (0.0,))[0]
+                rd = "-" if fl is None else ("PASS" if R <= 1 + fl else "PASS (allowance)" if aok else "FAIL")
+                if fl is not None:
+                    pstrat[st].append((R, fl, rd != "FAIL"))
+                if rd in ("FAIL", "-"):
+                    prow[sid].append("%s/%s %.3f" % (g, cl, R))
+                print("| %s | %s | `%s` | %s | %s | %.0f | %.3f | %s | %s | %s |" % (
+                    sid, st, pat.replace("|", "\\|"), g, cl, y, R, fmt(fl), fmt(dl), rd))
+    print()
+    for sid in sorted(set(pmeta) | set(psids)):
+        st, pat = pmeta.get(sid, ("?", "?"))
+        if sid not in psids:
+            print("- %s %s `%s`: FAIL (no timed cell: dropped by a premise, a compile or the gate)" % (sid, st, pat))
+            pair_fails.append("%s dropped" % sid)
+        else:
+            print("- %s %s `%s`: %s" % (sid, st, pat, "PASS" if not prow.get(sid) else
+                                        "FAIL (" + "; ".join(prow[sid]) + ")"))
+    print()
+    print("| stratum | cells | RTE/BASE gmean [min, max] | floor | verdict |")
+    print("|" + "---|" * 5)
+    for st in sorted(pstrat):
+        v = [r for r, _, _ in pstrat[st]]
+        fl = max(f_ for _, f_, _ in pstrat[st])
+        gmv = statistics.geometric_mean(v)
+        ok = gmv <= 1 + fl or all(p for _, _, p in pstrat[st])
+        if not ok:
+            pair_fails.append("stratum %s %.3f > %.3f" % (st, gmv, 1 + fl))
+        print("| %s | %d | %.3f [%.3f, %.3f] | %.3f | %s |" % (
+            st, len(v), gmv, min(v), max(v), fl, "PASS" if ok else "FAIL"))
+    if not pstrat and not pair_fails:
+        pair_fails.append("no two-stream cell timed")
+    print()
 efile = out + "/s3t_esh.tsv"
 if os.path.exists(efile):
     ed = defaultdict(list)
@@ -408,8 +493,9 @@ if missing:
 print("SIMD-on reading (reported, not the bar): %s" % (
     "every cell within its scalar limit" if not sfails else "SLOWER: " + "; ".join(sfails)))
 print("Known gap (D176 witness, reported, not the bar): %s" % ("; ".join(gaps) if gaps else "none read"))
-print("== s3t BAR %s: %d cells read on the scalar layer (allowance ns/call: %s)%s; sample %s" % (
-    "PASS" if not fails and not missing and not sample_fails else "FAIL", n,
+print("== s3t BAR %s: %d cells read on the scalar layer (allowance ns/call: %s)%s; sample %s; two-stream %s" % (
+    "PASS" if not fails and not missing and not sample_fails and not pair_fails else "FAIL", n,
     ", ".join("%s %.3f" % (g, allow[g][0]) for g in REG),
     "" if not fails else "; FAILING: " + "; ".join(fails),
-    "PASS" if not sample_fails else "FAIL: " + "; ".join(sample_fails)))
+    "PASS" if not sample_fails else "FAIL: " + "; ".join(sample_fails),
+    "PASS" if not pair_fails else "FAIL: " + "; ".join(pair_fails)))

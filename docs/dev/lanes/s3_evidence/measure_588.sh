@@ -12,7 +12,7 @@
 #   measure_588.sh run OUT [L T N]  smoke over ALL cells, then L launches (rotated order, pinned),
 #                                   then read_588.py's table
 #
-# THE ARMS (one compiler, $PCREC, the S3 build; every arm `--features all -p rx`):
+# THE ARMS (one compiler, $PCREC, the S3 build, but for BASE; every arm `--features all -p rx`):
 #   DEF   --memfn=no-window-search,no-window-skip   the OFF arm: byte-identical to main c3ea619c3 but for the
 #                                         abi digits and the two-stream find's bounded look-ahead
 #                                         (bytediff.sh) -- §6's DEF, and G1's deny arm
@@ -26,6 +26,20 @@
 #                 (gcc -O2's defaults are 16): THE PER-CALL LAYOUT ALLOWANCE (Goal 2) is their
 #                 largest |delta| from DEF per call, read by read_588.py; timed, gated, not
 #                 differentially re-run (DEF's text is)
+#   BASE  (default) compiled by $BASE_PCREC, MAIN'S compiler at the merge base 0d3765c87 (job
+#         621's refbuild): the two-stream sample's reference (below) only
+#
+# THE TWO-STREAM SAMPLE (the manager's ruling R-b on the S3 final review's EMIT-1 fix; PART OF THE
+# BAR): pair_588.tsv (hand-picked per stratum: REQRUN, the run pre-check's fn-pair body, not cover;
+# COVER-BFN and COVER-PAIR, cover through B-fn's helper and B-pair's inline streams), arms BASE
+# (main's default build: the unbounded streams) and RTE (this build: the bounded look-ahead), the
+# scalar layer, classes real / dense / mixed (gen_sample_588.py: prose with no upper case, so a
+# caseless pair's upper stream is absent; plants at 1/8; words capitalized at 1/8), the same
+# machinery as the mover sample (use_set pair; stages pair-build, pair-gate; items after the E[sh]
+# sites' in each launch; s3t_pair.tsv). Premise: RTE carries the bounded declaration
+# (`size_t ha = 0, hb = 0, wa = `, any prefix) and reads cover iff its stratum is COVER-*; a
+# REQRUN row's BASE carries the unbounded one (`size_t ha = 0, hb = 0;`) as often. With no
+# $BASE_PCREC every row is dropped (and read_588.py fails the bar).
 #
 # STAGES of `run` (each prints "== s3t STAGE"; a red stage aborts, rc 3):
 #   1 build   subjects (gen_subjects.py), every arm compiled; PREMISES: RTE reads RX_DFA_SCAN
@@ -72,6 +86,8 @@ ALLARMS="DEF RTE RT2 NOH DEFs RTEs NOHs DV1 DV2 DV3"
 VARIANTS="DV1 DV2 DV3"
 SAMPLE=$here/sample_588.tsv
 ESH=$here/esh_588.tsv
+PAIR=$here/pair_588.tsv
+BASE_PCREC=${BASE_PCREC:-}
 SREGIMES="throughput search_short"
 SCLASSES="real none random"
 say() { printf '%s\n' "$*"; }
@@ -81,7 +97,7 @@ pat_of() { grep -v '^#' "$M/cells.tsv" | awk -F'\t' -v c="$1" '$1 == c { print $
 flags_of() {
     case $1 in
         DEF|DV1|DV2|DV3) echo "--memfn=no-window-search,no-window-skip" ;;
-        RTE|RT2) echo "" ;;
+        RTE|RT2|BASE) echo "" ;;
         NOH)  echo "--memfn=no-window-skip" ;;
         DEFs) echo "-fmemfn-simd --memfn=no-window-search,no-window-skip" ;;
         RTEs) echo "-fmemfn-simd" ;;
@@ -159,9 +175,11 @@ use_set() {
     SET=$1
     case $1 in
         sample) SET_FILE=$SAMPLE SET_SMOKE=${SMOKE_SAMPLE:-} SET_TAG=SAMPLE SET_SUBJ=ssubj SET_ARTS=sarts
-                SET_ARMS="DEF RTE DEFs RTEs" ;;
+                SET_ARMS="DEF RTE DEFs RTEs" SET_CLASSES=$SCLASSES ;;
         esh)    SET_FILE=$ESH SET_SMOKE=${SMOKE_ESH:-} SET_TAG=ESH SET_SUBJ=esubj SET_ARTS=earts
-                SET_ARMS="NOH RTE NOHs RTEs" ;;
+                SET_ARMS="NOH RTE NOHs RTEs" SET_CLASSES=$SCLASSES ;;
+        pair)   SET_FILE=$PAIR SET_SMOKE=${SMOKE_PAIR:-} SET_TAG=PAIR SET_SUBJ=psubj SET_ARTS=parts
+                SET_ARMS="BASE RTE" SET_CLASSES="real dense mixed" ;;
     esac
 }
 # the set's ids (SET_SMOKE restricts them outside `run`) and their patterns
@@ -176,10 +194,19 @@ for l in open(sys.argv[1]):
 # the surviving rows (a dropped row has no arms file)
 live_sids() { for s in $(sids); do [ -s "$OUT/$SET_ARTS/$s/arms" ] && echo "$s"; done; }
 # a row's PREMISE: sample, RTE reads cover and DEF does not; esh, both read cover, RTE carries
-# D-hors's `_sh[256]` table and NOH (D-one) does not
+# D-hors's `_sh[256]` table and NOH (D-one) does not; pair, the header's two-stream premise
+npair() { command grep -cE 'size_t ([A-Za-z0-9_]*)ha = 0, \1hb = 0, \1wa = ' "$1"; }
+opair() { command grep -cE 'size_t ([A-Za-z0-9_]*)ha = 0, \1hb = 0;' "$1"; }
 set_premise() {
-    local a=$OUT/$SET_ARTS/$1
+    local a=$OUT/$SET_ARTS/$1 st
     case $SET in
+        pair)
+            st=$(grep -v '^#' "$SET_FILE" | awk -F'\t' -v s="$1" '$1 == s { print $2 }')
+            [ "$(npair "$a/RTE/a.c")" -gt 0 ] || return 1
+            case $st in
+                COVER-*) [ "$(stamp_of "$a/RTE/a.c")" = cover ] ;;
+                *) [ "$(stamp_of "$a/RTE/a.c")" != cover ] && [ "$(npair "$a/RTE/a.c")" = "$(opair "$a/BASE/a.c")" ] ;;
+            esac ;;
         sample) [ "$(stamp_of "$a/RTE/a.c")" = cover ] && [ "$(stamp_of "$a/DEF/a.c")" != cover ] ;;
         esh)    [ "$(stamp_of "$a/RTE/a.c")" = cover ] && [ "$(stamp_of "$a/NOH/a.c")" = cover ] &&
                     command grep -q '_sh\[256\]' "$a/RTE/a.c" && ! command grep -q '_sh\[256\]' "$a/NOH/a.c" ;;
@@ -191,19 +218,23 @@ stage_set_build() {
     rm -rf "$OUT/$SET_SUBJ" "$OUT/$SET_ARTS"
     mkdir -p "$OUT/$SET_SUBJ" "$OUT/$SET_ARTS" || return 1
     [ -f "$SET_FILE" ] || { say "$SET_TAG MISSING: $SET_FILE"; return 0; }
+    case " $SET_ARMS " in *" BASE "*) [ -x "$BASE_PCREC" ] ||
+        { say "$SET_TAG MISSING: no base compiler (BASE_PCREC=$BASE_PCREC): every row dropped"; return 0; } ;; esac
     if [ -n "$SET_SMOKE" ] && [ "${ALLCELLS:-0}" != 1 ]; then
         { grep '^#' "$SET_FILE"; for s in $SET_SMOKE; do grep "^$s	" "$SET_FILE"; done; } > "$OUT/$SET.tsv"
     else cp "$SET_FILE" "$OUT/$SET.tsv"; fi
-    python3 -I "$here/gen_sample_588.py" "$OUT/$SET.tsv" "$OUT/$SET_SUBJ" || { say "$SET_TAG SUBJECTS FAILED"; return 0; }
-    local sid arm d pat twin arms nok=0
+    python3 -I "$here/gen_sample_588.py" "$OUT/$SET.tsv" "$OUT/$SET_SUBJ" "$(echo $SET_CLASSES | tr ' ' ,)" ||
+        { say "$SET_TAG SUBJECTS FAILED"; return 0; }
+    local sid arm d pat twin arms nok=0 pc
     for sid in $(sids); do
         pat=$(spat_of "$sid")
         arms=""
         for arm in $SET_ARMS; do
             d=$OUT/$SET_ARTS/$sid/$arm
             mkdir -p "$d"
+            pc=$PCREC; [ "$arm" = BASE ] && pc=$BASE_PCREC
             # shellcheck disable=SC2046
-            "$PCREC" --features all -p rx $(flags_of "$arm") -o "$d/a.c" --pattern "$pat" > "$d/compile.log" 2>&1 ||
+            "$pc" --features all -p rx $(flags_of "$arm") -o "$d/a.c" --pattern "$pat" > "$d/compile.log" 2>&1 ||
                 { say "$SET_TAG COMPILE FAILED: $sid $arm (dropped)"; arms=""; break; }
             twin=${arm%s}
             if [ "$twin" != "$arm" ] && cmp -s "$d/a.c" "$OUT/$SET_ARTS/$sid/$twin/a.c"; then continue; fi
@@ -226,7 +257,7 @@ stage_set_gate() {
     for sid in $(live_sids); do
         bad=0
         for arm in $(cat "$OUT/$SET_ARTS/$sid/arms"); do
-            for cls in $SCLASSES; do
+            for cls in $SET_CLASSES; do
                 [ -f "$OUT/$SET_SUBJ/$sid.$cls.raw" ] || continue
                 for reg in $SREGIMES; do
                     case $reg in throughput) f=raw;; search_short) f=srec;; esac
@@ -300,6 +331,7 @@ timeloop() {
     printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_results.tsv"
     printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_sample.tsv"
     printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_esh.tsv"
+    printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_pair.tsv"
     SK=0
     for l in $(seq 1 "$L"); do
         say "launch $l/$L start $(date +%T) load1=$(cut -d' ' -f1 /proc/loadavg) cpu$CPU=$(cpu_busy "$CPU" 1)% sibling cpu$SIB=$(cpu_busy "$SIB" 1)%"
@@ -324,9 +356,11 @@ timeloop() {
         done
         use_set sample; timeloop_set "$l" "$T" "$N" "$OUT/s3t_sample.tsv"
         use_set esh; timeloop_set "$l" "$T" "$N" "$OUT/s3t_esh.tsv"
+        use_set pair; timeloop_set "$l" "$T" "$N" "$OUT/s3t_pair.tsv"
     done
     say "time: $(( $(wc -l < "$OUT/s3t_sample.tsv") - 1 )) sample items over $L launches"
     say "time: $(( $(wc -l < "$OUT/s3t_esh.tsv") - 1 )) esh items over $L launches"
+    say "time: $(( $(wc -l < "$OUT/s3t_pair.tsv") - 1 )) pair items over $L launches"
     say "time: $nitems timed arm cells over $L launches"
 }
 
@@ -337,7 +371,7 @@ timeloop_set() {
         arms=$(cat "$OUT/$SET_ARTS/$sid/arms"); m=$(echo $arms | wc -w)
         for reg in $SREGIMES; do
             case $reg in throughput) f=raw;; search_short) f=srec;; esac
-            for cls in $SCLASSES; do
+            for cls in $SET_CLASSES; do
                 [ -f "$OUT/$SET_SUBJ/$sid.$cls.$f" ] || continue
                 rot=$(( (SK + l) % m )); SK=$((SK + 1))
                 set -- $arms $arms
@@ -354,8 +388,8 @@ timeloop_set() {
     done
 }
 
-# both side sets' build and answer gate (each drops its own failing rows, never stops the job)
-sets() { local x; for x in sample esh; do use_set $x; stage_set_build && stage_set_gate || return $?; done; }
+# the side sets' build and answer gate (each drops its own failing rows, never stops the job)
+sets() { local x; for x in sample esh pair; do use_set $x; stage_set_build && stage_set_gate || return $?; done; }
 
 cmd=${1:-}; OUT=${2:-}
 [ -n "$OUT" ] || { sed -n '2,30p' "$0"; exit 64; }
