@@ -298,4 +298,10 @@ shaped like the iterland 602/603 jobs.
   620-kit-s3-heavy) and was killed by safekill.
 
 ## Queued jobs (OWED)
-See the end of this section for keys, logs and completion lines (filled when queued).
+- `substland-test` (610, cap 3600): `make test` on lane/substland at 182eb5e8c via
+  perfrun. Completion line owed: `sections ran: 77/77` in its job.log.make, no
+  `*** [... test-` lines. Log: worktrees/.boxqueue/*/*-610-substland-test/.
+- `substland-mech` (611, cap 7200, ready after substland-test): 53 rows = the
+  subst-suite rows S1346-S1539 (incl. S1500) + S334 S336 S1195. Completion line
+  owed: `== mech run COMPLETE: 53 rows`; S1352 expected to be the question (see FLAG).
+- Job scripts were in /tmp/claude-1001/substland3/ (scratch, not committed).
