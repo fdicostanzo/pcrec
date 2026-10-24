@@ -9932,6 +9932,13 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Retained verdicts:** each run's logs are kept at `build/full_suite/<date>_<sha>/` (gitignored) with a one-line `summary.txt`; the manager copies it into the ledger's Runs table. Mechanics: `scripts/fullsuite_job.sh` (a box-queue job; runs at a frozen commit in its own detached worktree so merges cannot enter mid-run).
 - **Revisit when:** a red battery is found that a trigger should have caught earlier.
 
+## D178 — more Unicode properties: official data vendored, Block and Age included, no invented categories (Frank, 2026-10-24)
+
+- **Decision:** [UPROP-MORE] builds as designed in docs/design/uprop_more.md. Frank, on its four questions: (1) "yessss" to vendoring five more official Unicode 16.0.0 files (PropList, DerivedCoreProperties, emoji-data, DerivedBidiClass, PropertyAliases) beside the existing ones; (2) Block and Age "ship them if they are same basic setup and it's easy" (they are: ranged UCD files, Blocks.txt and DerivedAge.txt, behind --features as pcrec extensions beyond PCRE2); (3) ship the large properties at their present size; (4) "my concern was creating some new utf category that wasn't defined. If we conform to a standard then that's ok."
+- **Rule (with the data rule of 2026-10-24):** every property pcrec accepts is one DEFINED by Unicode's data files at the vendored version; pcrec never defines a category of its own under a Unicode name. Wording: "properties as defined by the Unicode 16.0.0 data files"; a conformance level is claimed only where an official test proves it.
+- **Size:** Frank raised binary size for (1) and (3). Measured 2026-10-24: the compiler carries the property tables (today's mod_uprops.o is 110 KB of a 5.9 MB build/pcrec); a generated matcher carries ONLY the properties its pattern uses (\p{L} under utf8: 586 KB of C, 185 KB of .o text; \p{Greek}: 15 KB; a plain literal: 4 KB). The general answer (load only what is needed, share what several matchers need) is filed as [DATA-PLAN].
+- **Revisit when:** [DATA-PLAN] lands a shared or compact form for large classes.
+
 ## D175 — RX_FOREACH dropped; `_next` is the default find-all, `_next_n` the batch form (Frank, 2026-10-23)
 
 `<prefix>_next` and `<prefix>_next_n` (and `rx_info.next` / `rx_info.next_n`) stay. The `RX_FOREACH` macro family (`RX_FOREACH`, `RX_FOREACH_PAIRS`, `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) is dropped before landing, with the abi 83 -> 84 event amended (still 84; the branch had not landed).

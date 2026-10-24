@@ -249,9 +249,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
 - [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
   filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
-  status (2026-10-24): filed, unscheduled; earlier refused as no measured demand, the survey is the first outside evidence (an open Go request, the \p{Emoji} digit gotcha); cheap for an AOT compiler
-  next: design note by lane upropd (2026-10-24, Frank's go on the three-effort plan); no build before Frank reads it; check [UCD-RECORD] first
-  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
+  status (2026-10-24): design docs/design/uprop_more.md; Frank's rulings D178 (vendor 5 UCD files; Block+Age as extensions; ship large ones; Unicode-defined only); build lane upropb
+  next: land upropb; a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
+  refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
+  Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
+- [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
+  filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
+  status (2026-10-24): design lane datad; measured: \p{L} matcher 185 KB .o, \p{Greek} 15 KB, literal 4 KB; compiler tables 110 KB of 5.9 MB
+  next: datad's design note to Frank; no build before it
+  refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
+  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time.
 
 
 ## Candidates ([OPTLOOP])
