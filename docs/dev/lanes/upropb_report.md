@@ -62,3 +62,5 @@ Headers name 16.0.0 except `emoji-data.txt` (header `# emoji-data.txt`, dated 20
 ## STATE AT HANDOFF
 
 Everything committed on `lane/upropb`; rulings applied through R1. Light chain (rxtsource, codegen, registry, uprops) was green after the pins above except the two re-pinned suites, which were re-run green separately; the codegen suite's other groups ran in the first chain without other reds. OWED: job `616-upropb-test` (make test through perfrun, 77 sections), queued last.
+
+QUEUED (last act): `616-upropb-test` via `scripts/boxqueue add` (cap 3600, expect sections=77, witness `sections ran: 77/77`). Verdict: `scripts/boxqueue state upropb-test`, log in `worktrees/.boxqueue/*/616-upropb-test/job.log.make`; a red is read with its `.perfrun` note.
