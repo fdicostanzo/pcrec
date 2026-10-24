@@ -237,7 +237,7 @@ section: unicode-properties
 M5.
 This annotation is keyed to `\p{L}` and covers the survey's general-
 category row (`\p{L}` `\p{Lu}` …). Three of the four rows beneath it in the
-same table (`\p{Xan}` etc., binary properties, `Bidi_Class`) carry no
+same table (`\p{Xan}` etc.) carry no
 distinct content of their own — each reads only "same" in the source
 prose, pointing back to this one. See the [DOC-DRV] migration manifest:
 those rows are disposition dropped-trivial, not silently omitted.

@@ -484,9 +484,10 @@ earliest.
 | `\p{L}` `\p{Lu}` … (general categories) | `OK-GATED` | a code-point interval set, lowered per encoding |
 | `\p{L&}` `\p{Lc}` `\p{Any}` | `OK-GATED` | as above |
 | `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `OK-GATED` | as above |
-| `\p{<binary property>}` | `REJECTED` | — |
+| `\p{<binary property>}` (55 properties: `Alphabetic`, `Emoji`, `Default_Ignorable_Code_Point`, `White_Space`, … and `ASCII`) | `OK-GATED` | a code-point interval set, lowered per encoding; `Bidi_Mirrored` is the UCD's own 554 code points where libpcre2 10.46 has 428 (`upstream_issues.md` U22) |
 | `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `OK-GATED` | a code-point interval set, lowered per encoding; the bare and `scx` spellings are `Script \| Script_Extensions`, `sc` is `Script` alone |
-| `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — |
+| `\p{Bidi_Class:..}` `\p{BC:..}` `\p{bc=..}` | `OK-GATED` | the 23 short value names only, as PCRE2 (the long ones are refused by both) |
+| `\p{Block=..}` `\p{blk:..}` `\p{Age=..}` | `OK-GATED` | a pcrec EXTENSION beyond PCRE2 (D178): libpcre2 refuses both prefixes; a code-point interval set from `Blocks.txt` / `DerivedAge.txt`; `Age=V` is exactly the version of first assignment |
 | `\p{Assigned}` | `REJECTED` | — |
 
 **[M5.0] stage 5 (2026-09-09) built the SCRIPT row**, and it is not the
@@ -528,12 +529,23 @@ literal-alternation `altwide` witnesses. The sixteen `known_fail` blocks this
 parked are restored to their authored positions in `axis04_p_categories.rxt`
 and `axis12_scripts.rxt`.
 
-The remaining `REJECTED` rows are deliberate, not blocked: the binary-property
-and `Bidi_Class` families are declined by design (`utf8_design.md` §3.4, no
-measured demand),
-and `\p{Assigned}` is refused by every libpcre2 this project can reach
-(measured error 147 on 10.42, 10.46 and 10.48) although the design's own §3.1
-survey lists it as accepted — `\P{Cn}` is the same set on all three.
+**[UPROP-MORE] (2026-10-24, lane upropb) built the binary-property and
+`Bidi_Class` rows**, which stage 3 had declined for want of measured demand,
+plus the two extensions D178 ruled in. Measured against libpcre2 10.46 over
+the whole code-point space: 77 of 78 new names agree EXACTLY (55 binary
+properties incl. `ASCII`, 23 `bc=` values); the one exception is
+`Bidi_Mirrored` (upstream_issues.md U22). The data is the vendored Unicode
+16.0.0 files named in `third_party/ucd-16.0.0/PROVENANCE.md` and the claim is
+only "properties as defined by the Unicode 16.0.0 data files" -- no
+conformance level (D178). The UCD binary properties libpcre2 refuses
+(`Hyphen`, `Other_*`, `Expands_On_*`, ...) stay refused. `Bidi_Class` takes
+SHORT value names only, as PCRE2. `Block` and `Age` are beyond PCRE2 and
+ride the same module gate.
+
+The remaining `REJECTED` row is deliberate, not blocked: `\p{Assigned}` is
+refused by every libpcre2 this project can reach (measured error 147 on
+10.42, 10.46 and 10.48) although the design's own §3.1 survey lists it as
+accepted — `\P{Cn}` is the same set on all three.
 
 All of these lower to byte-range sets over UTF-8, which APPROACH §4/§10 already
 commits to.
@@ -567,7 +579,7 @@ behavior, not oracle agreement, until then.
 M5.
 This annotation is keyed to `\p{L}` and covers the survey's general-
 category row (`\p{L}` `\p{Lu}` …). Three of the four rows beneath it in the
-same table (`\p{Xan}` etc., binary properties, `Bidi_Class`) carry no
+same table (`\p{Xan}` etc.) carry no
 distinct content of their own — each reads only "same" in the source
 prose, pointing back to this one. See the [DOC-DRV] migration manifest:
 those rows are disposition dropped-trivial, not silently omitted.

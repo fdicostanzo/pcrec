@@ -299,7 +299,11 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # already do. MEASURED on this box: 210 passing, 0 failing.
     # [UCP] U0 210 -> 213, MEASURED on this box: `check_rows` reaches module
     # `ucp`'s three `(*` name rows, one PASS each, the generic way.
-    if [ "$pc3n" -ne 213 ]; then
+    # [UPROP-MORE] 213 -> 214, MEASURED: the gated unicode-props arm's passes
+    # went from 6 to 7 -- the "real-but-unshipped" wording clause and its
+    # floor are replaced by the T2 converse, the Block/Age extension clause
+    # and the converse list's liveness floor.
+    if [ "$pc3n" -ne 214 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -308,14 +312,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 213." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 214." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (213 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (214 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 213 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 214 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -380,7 +384,9 @@ uprops differential: pcrec matched libpcre2|MOD-0.6 slice 4: the \p/\P shape-spa
 gated[modifiers] recognition (OPTRUN-B3)|R20/OPTRUN-B3 (MOD-0.8c slice 2): every other differential in this file runs at the DEFAULT (empty) enabled set, so all 48.7M probes of the (? doorway measure recognition and never acceptance. SPEC-1 was a gate-open-only miscompile — a(?i)* accepted, libpcre2 err 109, matcher really matching — and no closed-gate sweep could see it. Reverting the fix in a scratch build fires this check 672 times while registry_check and cli stay green (2026-08-12). The set is FOCUSED per docs/testing.md's differential gate principle -- one module per pass; a second producing module at this doorway gets its own call and its own needle here
 gated[modifiers] liveness: pcrec ACCEPTED|the gated pass's own vacuity guard: if pcrec accepts nothing with the gate open, the producers never ran and T1 cannot fail, so the pass reads as coverage while measuring the closed-gate space twice — OPTRUN-B3's defect reproduced by the check written to close it
 gated[unicode-props] T1|[M5.0 stage 3]: the SECOND focused gated pass, and the needle exists because the CLOSED-gate uprops differential above still reads GREEN and stopped certifying what its name claims the day a producer landed (its own per-cell wall asserts "\p/\P has no producer this phase"). This arm is what asks the acceptance question: pcrec must never emit a matcher for a property name libpcre2 rejects
-gated[unicode-props]: every real-but-unshipped property|[M5.0 stage 3]: stage 3 ships a SUBSET of the names libpcre2 has, deliberately, so T2 cannot be asserted here — this is the half of that direction that CAN be: a real property this stage has not built (Greek, Alphabetic, Script=Greek) must be refused as the MODULE's gap and never as a name pcrec does not recognise, which would be a false claim about the NAME. It is K14's shape, one module over
+gated[unicode-props] T2: pcrec refused no property name|[UPROP-MORE] (lane upropb): the converse of T1, asked now that the binary properties and Bidi_Class ship. It REPLACES the stage-3 needle "every real-but-unshipped property is refused as the module's gap": with those families shipped that population is empty, and a needle for a clause that has nothing to check would be the dead-branch-as-coverage shape. The population is the vendored PropertyAliases.txt binary section plus every bc spelling, three property-name forms and both selectors, with libpcre2 the arbiter of each cell
+gated[unicode-props]: the Block and Age extensions|[UPROP-MORE] (D178): Block and Age are pcrec EXTENSIONS beyond PCRE2, so the arm asserts both halves: pcrec compiles every Block/Age row and this libpcre2 REFUSES it. If a libpcre2 ever adds Block, D26 makes PCRE2 the truth and the row must be re-measured, so that is a red here, not a note
+gated[unicode-props] liveness: the converse list|[UPROP-MORE]: the converse clause's own vacuity floors (accepted and refused halves of the committed list, both non-empty) - a list that lost either half would make T2 or T1 vacuous
 gated[unicode-props] liveness: the producer really compiles|[M5.0 stage 3]: the gated pass's own vacuity guard, and the sharper of its two — a gate that failed to open makes every cell refuse and every clause above pass. The floor is the seven general-category codes across both selectors
 gated[modifiers] quantifier cross: both spelling lists full|SPEC-1's own family, and the reason it is generated rather than listed: check11 owns this module and missed the defect because its structural table is 21 hand-written spellings with not one quantified form. The floor is what stops the family going quiet — check14 measured a refuse-everything pcrec collapsing it to zero cells with no disagreement reported
 MANIFEST

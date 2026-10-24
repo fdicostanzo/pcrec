@@ -1,0 +1,272 @@
+# tests/utf8/uprop_blk_age.rxt -- [UPROP-MORE] (lane upropb, D178): `\p{Block=..}`
+# / `\p{blk=..}` and `\p{Age=..}`, two pcrec EXTENSIONS beyond PCRE2.
+#
+# libpcre2 10.46 refuses both prefixes (error 147), so there is NO libpcre2
+# oracle for these blocks and no python one either (`# pcre2-only` here only
+# skips python's verifier; it does not claim PCRE2 agrees). Every expectation
+# was read from the vendored Unicode 16.0.0 data file itself
+# (third_party/ucd-16.0.0/Blocks.txt, DerivedAge.txt) by an independent reader
+# (tests/uprops/uprops_ucdref.py); the whole-space check of every block and
+# every age value is tests/uprops/run_uprops_tests.sh section 6.
+#
+# `Age=V` is the version a code point was FIRST assigned in (DerivedAge.txt's
+# own definition: exactly V, not "V or earlier"); `Age=NA` is Unassigned.
+# A block name is loose (case, spaces, underscores, hyphens): `Greek` is the
+# short alias of `Greek and Coptic`. They ride module `unicode-props`.
+
+# `Block=Greek` is "Greek and Coptic" (short alias); alpha is in it, Latin a and Greek Extended are not.
+# pcre2-only
+pattern \p{Block=Greek}
+features unicode-props
+encoding utf8
+m "\xce\xb1" 0 2
+n "a"
+n "\xe1\xbc\x80"
+
+# The long name, `blk=` spelling, `:` separator, loose.
+# pcre2-only
+pattern \p{blk:Greek_and-Coptic}
+features unicode-props
+encoding utf8
+m "\xce\xb1" 0 2
+n "a"
+
+# An UNASSIGNED code point is still in its block (U+0378 is in Greek and Coptic).
+# pcre2-only
+pattern \p{Block=Greek_And_Coptic}
+features unicode-props
+encoding utf8
+m "\xcd\xb8" 0 2
+n "a"
+
+# `blk=ASCII` is Basic Latin.
+# pcre2-only
+pattern \p{blk=ASCII}
+features unicode-props
+encoding utf8
+m "a" 0 1
+m "\x7f" 0 1
+n "\xc2\x80"
+n "\xc3\xa9"
+
+# Negated.
+# pcre2-only
+pattern \P{blk=ASCII}
+features unicode-props
+encoding utf8
+n "a"
+m "\xc3\xa9" 0 2
+
+# `\p{^}` negation.
+# pcre2-only
+pattern \p{^Block=Basic Latin}
+features unicode-props
+encoding utf8
+n "a"
+m "\xc3\xa9" 0 2
+
+# Inside a class, beside a literal.
+# pcre2-only
+pattern [\p{blk=Greek}x]
+features unicode-props
+encoding utf8
+m "\xce\xb1" 0 2
+m "x" 0 1
+n "y"
+
+# `Currency Symbols` holds the euro sign.
+# pcre2-only
+pattern \p{blk=Currency_Symbols}
+features unicode-props
+encoding utf8
+m "\xe2\x82\xac" 0 3
+m "\xe2\x82\xa0" 0 3
+n "$"
+
+# `Emoticons`, supplementary plane.
+# pcre2-only
+pattern \p{blk=Emoticons}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x98\x80" 0 4
+n "\xf0\x9f\x9a\x80"
+
+# `No_Block` (`NB`): code points no block holds (U+E0080 is in no block).
+# pcre2-only
+pattern \p{blk=NB}
+features unicode-props
+encoding utf8
+m "\xf3\xa0\x82\x80" 0 4
+n "a"
+
+# Block is caseless-invariant under -i (no case closure).
+# pcre2-only
+pattern \p{blk=Basic_Latin}
+features unicode-props
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xc3\xa9"
+
+# Quantified.
+# pcre2-only
+pattern \p{Block=Cyrillic}+
+features unicode-props
+encoding utf8
+m "\xd0\xb0\xd0\xb1" 0 4
+n "a"
+
+# `Age=1.1`: first assigned in Unicode 1.1.
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+encoding utf8
+m "A" 0 1
+m "\xce\xb1" 0 2
+n "\xe2\x82\xac"
+
+# `Age=2.1`: the euro sign arrived in 2.1.
+# pcre2-only
+pattern \p{Age=2.1}
+features unicode-props
+encoding utf8
+m "\xe2\x82\xac" 0 3
+n "A"
+
+# `Age=6.1`: Emoticons.
+# pcre2-only
+pattern \p{Age=6.1}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\x98\x80" 0 4
+n "\xf0\x9f\xa7\xa0"
+
+# `Age=10.0` and its V10_0 spelling.
+# pcre2-only
+pattern \p{Age:V10_0}
+features unicode-props
+encoding utf8
+m "\xf0\x9f\xa7\xa0" 0 4
+n "\xf0\x9f\x98\x80"
+
+# `Age=16.0`: Cyrillic Extended-C U+1C89 was assigned in 16.0.
+# pcre2-only
+pattern \p{Age=16.0}
+features unicode-props
+encoding utf8
+m "\xe1\xb2\x89" 0 3
+m "\xf0\x9e\x97\x90" 0 4
+n "A"
+
+# `Age=NA` is Unassigned: U+0378 never had a character; A did.
+# pcre2-only
+pattern \p{Age=NA}
+features unicode-props
+encoding utf8
+m "\xcd\xb8" 0 2
+m "\xf3\xa0\x82\x80" 0 4
+n "A"
+
+# The long spelling `Unassigned`.
+# pcre2-only
+pattern \p{age=Unassigned}
+features unicode-props
+encoding utf8
+m "\xcd\xb8" 0 2
+n "A"
+
+# Negated.
+# pcre2-only
+pattern \P{Age=1.1}
+features unicode-props
+encoding utf8
+n "A"
+m "\xe2\x82\xac" 0 3
+
+# In a class.
+# pcre2-only
+pattern [\p{Age=2.1}\p{Age=6.1}]
+features unicode-props
+encoding utf8
+m "\xe2\x82\xac" 0 3
+m "\xf0\x9f\x98\x80" 0 4
+n "A"
+
+# Age is caseless-invariant under -i.
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+encoding utf8
+flags i
+m "a" 0 1
+m "A" 0 1
+n "\xe2\x82\xac"
+
+# Under `byte` a block is clamped to Latin-1: Latin-1 Supplement.
+# pcre2-only
+pattern \p{blk=Latin_1_Sup}
+features unicode-props
+m "\xe9" 0 1
+n "a"
+
+# ... Basic Latin.
+# pcre2-only
+pattern \p{blk=Basic_Latin}
+features unicode-props
+m "a" 0 1
+n "\xe9"
+
+# ... a block with no Latin-1 member is the empty set.
+# pcre2-only
+pattern \p{blk=Greek}
+features unicode-props
+n "a"
+n "\xe9"
+
+# ... `Age=1.1` under byte.
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+m "a" 0 1
+m "\xe9" 0 1
+
+# An unknown block name is refused.
+# pcre2-only
+pattern \p{blk=Nosuch}
+features unicode-props
+encoding utf8
+perr
+
+# An unknown age is refused (7.0 is a version, but "7" is not a value).
+# pcre2-only
+pattern \p{Age=7}
+features unicode-props
+encoding utf8
+perr
+
+# The Java-style `In` prefix stays refused: it collides with the bare-name namespace.
+# pcre2-only
+pattern \p{InGreek}
+features unicode-props
+encoding utf8
+perr
+
+# `Is` stays refused.
+# pcre2-only
+pattern \p{IsGreek}
+features unicode-props
+encoding utf8
+perr
+
+# A second separator.
+# pcre2-only
+pattern \p{blk=Age=1.1}
+features unicode-props
+encoding utf8
+perr
+
+# The extension rides module unicode-props: with the module not enabled (byte encoding, no --features) it is refused.
+# pcre2-only
+pattern \p{Block=Greek}
+perr

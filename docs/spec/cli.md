@@ -292,17 +292,23 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-17-1"></a>
 #### 1.17.1 Module `unicode-props`
 
-<a id="s1-17-1-p1"></a>[1.17.1¶1] `\p{…}`/`\P{…}` accepts the Unicode general categories (the one-letter codes, the two-letter ones, `L&`/`Lc`, `Any`) and PCRE2's `Xan Xps Xsp Xuc Xwd`, and the `Script` values the pinned UCD declares except `Katakana_Or_Hiragana` (which no reachable libpcre2 accepts). A script answers to its long name, its four-letter code and any deprecated alias the UCD lists, in three namespaces:
+<a id="s1-17-1-p1"></a>[1.17.1¶1] `\p{…}`/`\P{…}` accepts the Unicode general categories (the one-letter codes, the two-letter ones, `L&`/`Lc`, `Any`), PCRE2's `Xan Xps Xsp Xuc Xwd`, the `Script` values the pinned UCD declares except `Katakana_Or_Hiragana` (which no reachable libpcre2 accepts), the 55 binary properties libpcre2 accepts (`\p{Alphabetic}`, `\p{Emoji}`, `\p{White_Space}`, `\p{Default_Ignorable_Code_Point}`, …, each under its long name and every short alias `PropertyAliases.txt` lists, plus `ASCII`), and `Bidi_Class`. Properties are as defined by the Unicode 16.0.0 data files (`third_party/ucd-16.0.0/PROVENANCE.md`); pcrec makes no Unicode regular-expression conformance-level claim. A script answers to its long name, its four-letter code and any deprecated alias the UCD lists, in three namespaces:
 
 | spelling | denotes |
 |---|---|
 | `\p{Greek}` | `Script` union `Script_Extensions` |
 | `\p{sc=Greek}`, `\p{Script=Greek}` | `Script` alone |
 | `\p{scx=Greek}`, `\p{Script_Extensions=Greek}` | the same set as the bare spelling |
+| `\p{Alphabetic}`, `\p{Alpha}` | the binary property, long or short name; no `=Y` form (libpcre2 refuses it) |
+| `\p{bc=R}`, `\p{Bidi_Class:R}`, `\p{bidiclass=R}` | `Bidi_Class` is `R`; the 23 SHORT value names only, as libpcre2 (`bc=Right_To_Left` is refused) |
 
 <a id="s1-17-1-p2"></a>[1.17.1¶2] The bare spelling is not the `Script` property; that is PCRE2's behaviour (U+0342 has `Script=Inherited` and `Script_Extensions={Greek}`, so `\p{Greek}` matches it and `\p{sc=Greek}` does not). Either separator works (`sc=Greek`, `sc:Greek`), and the prefix and value are case-insensitive and loosely matched. There is no `gc=` namespace, because libpcre2 has none.
 
-<a id="s1-17-1-p3"></a>[1.17.1¶3] Every name works at both encodings, negated as `\P{X}` or `\p{^X}` (the two compose), and inside a class. Under `--encoding=byte` a property is clamped to the Latin-1 universe, so most scripts are the empty set and a pattern whose class is empty compiles to a matcher that never matches. The boolean properties (`\p{Alphabetic}`), `Bidi_Class` (`\p{bc=L}`) and names no libpcre2 has (`\p{Foo}`, block spellings such as `\p{InGreek}`) are refused. The property tables are pinned at Unicode 16.0.0.
+<a id="s1-17-1-p3"></a>[1.17.1¶3] Every name works at both encodings, negated as `\P{X}` or `\p{^X}` (the two compose), and inside a class. Under `--encoding=byte` a property is clamped to the Latin-1 universe, so most scripts are the empty set and a pattern whose class is empty compiles to a matcher that never matches. Under `-i` only `Lu`, `Ll` and `Lt` change (to `L&`); every other property, the binary ones and `Bidi_Class` included, is unchanged, as in libpcre2. Names no libpcre2 has (`\p{Foo}`, `\p{InGreek}`, `\p{IsGreek}`), the UCD properties libpcre2 refuses (`\p{Hyphen}`, `\p{Other_Alphabetic}`, `\p{Assigned}`, `\p{gc=Lu}`) and the long `Bidi_Class` value names are refused. The property tables are pinned at Unicode 16.0.0.
+
+<a id="s1-17-1-p4"></a>[1.17.1¶4] `Bidi_Mirrored` is the set `UnicodeData.txt` marks mirrored (554 code points); libpcre2 10.46 omits 126 of them (`upstream_issues.md` U22), so this one property answers differently from libpcre2 on exactly those code points.
+
+<a id="s1-17-1-p5"></a>[1.17.1¶5] EXTENSIONS BEYOND PCRE2. `\p{Block=Greek}` (also `blk=`, `Block:`) matches the code points of a Unicode block named in `Blocks.txt`, by its long name or any short alias `PropertyValueAliases.txt` lists (`Greek` is `Greek and Coptic`; `NB` is `No_Block`, the code points no block holds), and `\p{Age=6.1}` (also `age:`) matches the code points whose Age is exactly that version (`DerivedAge.txt`'s definition, not "that version or earlier"; `Age=NA` is `Unassigned`, and `V6_1` spells `6.1`). libpcre2 refuses both prefixes (error 147), so a pattern using them is not portable to PCRE2, and no valid PCRE2 pattern changes meaning. They are rows of the same table as the other properties and ride module `unicode-props`'s gate, `-e utf8` included. `\p{InGreek}` and `\p{IsGreek}` are not accepted. Block and Age have no independent libpcre2 differential; their sets are the data files' own, checked against them and for structure (tests/uprops).
 
 <a id="s1-18"></a>
 ### 1.18 The `-f`/`-fno-` family and the other flags that share its spelling
