@@ -99,6 +99,7 @@ Engines, bounded repeat, budgets
 Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
+- `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.
 - `definitions_table.md` — [DD-11]; `dd13_format/` — [DD-13] file format; `findings/` — [FINDINGS] (D83); `patfacts/` — [PATFACTS] (D120); `oracle_interface.md` — oracle interface/answer store.
