@@ -1744,6 +1744,9 @@ def main():
         cur_encoding = ''
         file_failures = []
         file_info = []
+        # [BUCKET-GAP] this file's own starting totals, for the accounting
+        # guard below the loop.
+        pass0, info0 = total_pass, total_info
 
         for lineno, kind, data in entries:
             if kind == 'pattern':
@@ -2145,6 +2148,23 @@ def main():
                         else:
                             total_pass += 1
                             continue
+            total_fail += 1
+
+        # [BUCKET-GAP] EVERY CASE LINE LANDS IN EXACTLY ONE BUCKET, on any
+        # python. A line that raised no failure and reached no counter
+        # (PASS, INFO, a named skip) is a hole the C3 reconciliation can
+        # only report as a bare total ("74004, census 74005"); naming the
+        # FILE and the counts here makes it a loud failure with a place to
+        # look. Skipped on a file that already has failures: those lines
+        # are the failures' own bucket.
+        case_kinds = ('m', 'n', 'ms', 'ns', 'mc', 'mg', 'perr', 'g', 'gp',
+                      'gu', 'under')
+        expected_cases = sum(1 for _, k, _ in entries if k in case_kinds)
+        bucketed = (total_pass - pass0) + (total_info - info0) + skipped
+        if not file_failures and bucketed != expected_cases:
+            file_failures.append((0, f"BUCKET GAP: {expected_cases} case line(s) parsed but {bucketed} landed in a bucket "
+                                     f"(pass {total_pass - pass0}, info {total_info - info0}, skipped {skipped}); "
+                                     f"a case line reached no counter on this python"))
             total_fail += 1
 
         per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, len(file_failures), len(file_info))

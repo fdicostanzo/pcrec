@@ -84,6 +84,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      # python `re` is the base-tier oracle (tests/harness/verify_rxt.py) and
+      # what it accepts moves between releases (`\z` is python 3.14+), which
+      # moves the C3 populations in tests/rxtsource. The runner image's
+      # system python is whatever the image ships (3.12 at the time of run
+      # 40035626306); pin it to the dev box's and ubuntubudu's 3.14 so CI's
+      # oracle IS the reference oracle.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
       # pkg-config itself ships on ubuntu-latest images already; named
       # explicitly here so a future, leaner runner image doesn't silently
       # fall back to resolve_pcre2.sh's slower header-probe leg. Nothing
