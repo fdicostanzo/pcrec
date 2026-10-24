@@ -77,6 +77,10 @@ OWNER `main` -> `$MANAGER`; OWNER `kit` -> `pcrecdev3`; any other OWNER -> `$MAN
 PROBLEM also copy `$MANAGER` when the owner is not `main`. One SendMessage per row firing,
 first line self-contained, prefix `MON <NAME>:`.
 
+EXPECT MISMATCH (manager, 2026-10-24, after 610-substland-test): a JOB-DONE with `verdict=GREEN` and `rc=0` but `reason=POPULATION-...` (or any expect/witness reason) is NOT a death: the work passed and the job's declared count is stale. Message the owner `EXPECT <the line>: work green, the job's expect is stale` and launch no triage; a job waiting on it (`boxqueue after`) stays blocked until the owner rules.
+
+DIED vs RED (manager, 2026-10-24, after 611): only a full-suite job writes `reds=`; any other job's red JOB-DONE is plain `RED <the line>; owner triages`, never "run died".
+
 TRIAGE SCOPE (manager, 2026-10-24, after 620-kit-s3-heavy): rows 4 and 7 launch a triage ONLY for a full-suite job (its logdir holds trailer.log, i.e. scripts/fullsuite_job.sh). Any other job (a lane's make test, a kit job, a chain) is triaged by its OWNER: send the message only, with the job dir, and say "owner triages". The kit triaged 620 itself while the monitor's triage (battery-shaped brief on a non-battery job) ended with no file.
 
 | # | the line | do | message |
@@ -84,10 +88,10 @@ TRIAGE SCOPE (manager, 2026-10-24, after 620-kit-s3-heavy): rows 4 and 7 launch 
 | 1 | `CAP ... relaunch` (exit 6) | relaunch | none |
 | 2 | `JOB-START` | nothing | none |
 | 3 | `STAGE-END .. rc=0` | nothing | none |
-| 4 | `STAGE-END S rc=N` (N != 0), the FIRST red of this NAME | launch ONE read-only triage agent: `Agent`, `model: sonnet`, background, NO name, prompt `TRIAGE <NAME>: read $ROOT/.claude/skills/pcrec-test/triage_brief.md and follow it. LOGDIR=<the line's logdir=>; stage=S.` | `stage S RED (rc=N), triage launched` |
+| 4 | `STAGE-END S rc=N` (N != 0), the FIRST red of this NAME | launch ONE read-only triage agent: `Agent`, `model: sonnet`, background, NO name, prompt `TRIAGE <NAME>: read $ROOT/.claude/skills/pcrec-test/triage_brief.md and follow it. LOGDIR=<the line's logdir=>; stage=S.` The triage writes /tmp/claude-1001/triage-<NAME>/triage.md (that FILE is the delivery; its final reply may not reach you: never report "no report", give the path) | `stage S RED (rc=N), triage launched` |
 | 5 | `STAGE-END S rc=N` (N != 0), a later red | append `S` to `<logdir>/red_stages.txt` (the triage reads it) | none |
 | 6 | `JOB-DONE .. outcome=green` and no `reds=` | if `<logdir>/SIMULATED` exists or logdir contains `full_suite_sim`: nothing else. Else if `<logdir>/summary.txt` exists: append its one line under `## Runs` in $LEDGER and `git -C $ROOT commit -m "ledger: full suite green" -- docs/dev/full_suite_ledger.md` (named path only) | `GREEN <summary line or the JOB-DONE line>` |
-| 7 | `JOB-DONE` anything else (a red stage, outcome != green, a battery that died) | same ledger step as 6 with the line marked RED (never for a SIMULATED run). If the line has NO `reds=` (the run died or failed outside a stage): launch the row-4 triage now with stage=`died` (TEST MODE: log "would launch triage"); a death is always a problem (manager ruling 2026-10-24) | with `reds=`: `RED <the JOB-DONE line>; triage already launched`. Without: `PROBLEM run died: <the JOB-DONE line>; triage launched` |
+| 7 | `JOB-DONE` anything else (a red stage, outcome != green, a battery that died) | same ledger step as 6 with the line marked RED (never for a SIMULATED run). If the job is a FULL-SUITE job (logdir holds trailer.log) and the line has NO `reds=` (the run died or failed outside a stage): launch the row-4 triage now with stage=`died` (TEST MODE: log "would launch triage"); a death is always a problem (manager ruling 2026-10-24) | with `reds=`: `RED <the JOB-DONE line>; triage already launched`. Without: `PROBLEM run died: <the JOB-DONE line>; triage launched` |
 | 8 | `RUNNER-DEAD` | `bash $ROOT/scripts/boxqueue start`, ONCE per run; a second RUNNER-DEAD for the same NAME: no second start | first: none. Second: `PROBLEM runner dead again after one restart` |
 | 9 | `QUIET` | nothing (never kill, cancel or retry) | `PROBLEM <the line>` |
 | 10 | `PENDING-STUCK`, `DISK-HIGH` | nothing | `PROBLEM <the line>` |

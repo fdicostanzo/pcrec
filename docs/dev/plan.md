@@ -255,10 +255,10 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
 - [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
   filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
-  status (2026-10-24): design lane datad; measured: \p{L} matcher 185 KB .o, \p{Greek} 15 KB, literal 4 KB; compiler tables 110 KB of 5.9 MB
-  next: datad's design note to Frank; no build before it
+  status (2026-10-24): design docs/design/data_plan.md delivered; Frank's rulings D179 (fair effort, simple formats read in place, small form on request, sharing when needed)
+  next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
-  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time.
+  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 
 
 ## Candidates ([OPTLOOP])
@@ -617,6 +617,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [SUBST-SPEED] STATE:not-started — SUBST'S UTF-8 CASE FORCING AND REPLACE-ALL OVERHEAD
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code (EMIT-1, EMIT-2, EMIT-3)
+  status (2026-10-24): measured: utf8 \U path +15.7% instructions vs pcre2+JIT (two passes, no ASCII fast path, bsearch per letter); replace-all 3.2x a hand loop's per-match overhead (still 22% under pcre2+JIT)
+  next: unscheduled; an optimization-effort candidate after subst lands
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; replace_design.md §R4.11; [M4-SUBST]
+- [SUBST-CLEANUP] STATE:not-started — SUBST HOUSE ITEMS, LIMITS AND CHECK GAPS FROM THE FIRST CODE ROUND
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code
+  status (2026-10-24): HOUSE-2/4/5/6/9/10/11, HOUSE-8 rest, TPL-4 (template length limit row), IFACE-4 (>256 groups in replace-all), CHK-2, CHK-5, CHK-6's two mech rows, CHK-8 token sharing; none changes an answer
+  next: unscheduled; one sonnet lane after subst lands; grep sabotage anchors before moving lines
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; [M4-SUBST]
 - [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
   filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
   status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).
@@ -693,6 +703,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: a design note (coordinator design round): the 1:n fold table, then each child as its rows
   refs: docs/dev/utf_wants_2026-10-24.md (wants 4, 5; the NFKC finding); docs/dev/compat_fold_facts/; third_party/ucd-16.0.0 (CaseFolding.txt F entries); memory general-mechanisms; D26 D174
   General form (Frank 2026-10-24; widened the same day after Frank asked about n:1 and n:m): BOTH sides pass through the same per-code-point fold (code point -> sequence, generated from UCD) and the folded sequences are compared, so 1:n, n:1 and n:m (ﬃ vs ﬀi, ệ vs ẹ + ̂) are one case. The pattern side folds at compile time; the subject folds as it is read. Full case folding, canonical equivalence and compatibility folding are three data sets for it, not three features. Design questions: match ends inside one character's fold image (s against half of ß: refuse, as ICU does?), mapping offsets and captures back to the subject, combining-mark reordering for canonical equivalence (a bounded buffer; Unicode's stream-safe limit is 30 marks), classes and ranges, \b and lookbehind length, emitted size.
+  - [CASE-COMPAT] STATE:not-started — a PCRE2-compatible case mapping as a selectable data set
+    filed: 2026-10-24 Frank (D180: "follow Unicode for now then have a pcre2 compatibility version later")
+    status (2026-10-24): substitution's case table is Unicode's simple mappings (D180); PCRE2 10.46 differs on 150 code points (lane substr1fix's breakdown in docs/dev/lanes/substland_report.md)
+    next: the [SEQ-FOLD] design note names how a mapping data set is selected; no demand yet
+    refs: D180; docs/dev/reviews/2026-10-24-r1-subst-code.md (EMIT-5)
   - [FULL-CASEFOLD] STATE:not-started — (?i) uses full case folding: ß matches ss, ligatures match their letters
     filed: 2026-10-24 manager (utfwant want 4; Unicode TS #18 requires it; ICU and Python regex ship it)
     status (2026-10-24): first child of [SEQ-FOLD]; pcrec is simple-fold only today; 104 F entries in the vendored CaseFolding.txt
