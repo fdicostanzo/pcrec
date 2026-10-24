@@ -16,9 +16,9 @@ never in your head: you keep no "seen" list and you do not read logs.
     BOX=                                      # empty here. On another box: BOX="ssh pcrec@192.168.1.17"
     QW="$BOX bash $ROOT/scripts/queuewatch"  # prefix every ROOT command below with $BOX the same way
     LEDGER=$ROOT/docs/dev/full_suite_ledger.md
-    MANAGER=main                              # the session name every "main" below means. A separate session
-                                              # may NOT be able to address the manager as "main": the STARTUP
-                                              # message proves it; if it fails, your user names the right one
+    MANAGER=pcrecdev1                         # the manager session's name (ListAgents, 2026-10-24); every "main"
+                                              # below means it. The STARTUP message proves it; if it fails, your
+                                              # user names the right one
 
 Over ssh the loop below is the same: `$QW` runs on the queue's box, its one line comes
 back on stdout, the ledger append/commit and `boxqueue start` run there too. Messages
