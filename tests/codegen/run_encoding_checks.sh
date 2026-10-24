@@ -1008,6 +1008,18 @@ COVER_MEMCHR_RE = re.compile(
     r'\{ const void \*(rx_mf\d+)_q = \1_c(?: \+ (\d+))? < \1_n \? memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
     r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\) : 0; if \(!\1_q\) break; '
     r'\1_c = \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\)(?: - (\d+))?; \}')
+# The PAIR leapfrog (kit ofsskip.c's ofs_pair_text through window.c's wf_b_pair): the
+# search position's bound check, then each of the two bytes' stream (`if (fr || h < P)
+# { const void *q = memchr(s + P, B, LEN); h = q ? ... : n; }`), `fr = 0`, the nearer hit,
+# its bound check and the `c -= K` back-off. P is `c` or `c + K`; the pick's K and the two
+# bytes are read from that text, as the memchr form's.
+COVER_PAIR_STREAM = (
+    r'if \(\1_fr \|\| \1_%s < \1_c(?: \+ (\d+))?\) \{ const void \*\1_q = memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
+    r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\); \1_%s = \1_q \? \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\) : \1_n; \} ')
+COVER_PAIR_RE = re.compile(
+    r'if \((rx_mf\d+)_c(?: \+ (\d+))? >= \1_n\) break; ' + COVER_PAIR_STREAM % ('ha', 'ha') +
+    COVER_PAIR_STREAM % ('hb', 'hb') +
+    r'\1_fr = 0; \1_c = \1_ha < \1_hb \? \1_ha : \1_hb; if \(\1_c >= \1_n\) break; (?:\1_c -= (\d+); )?')
 COVER_CLASS_RE = re.compile(
     r'while \((rx_mf\d+)_c(?: \+ (\d+))? < \1_n && !\(\(((?:\1_s\[\1_c(?: \+ \d+)?\] == \d+(?: \|\| )?)+)\)\)\) \1_c\+\+;')
 
@@ -1021,6 +1033,11 @@ def cover_pick(text):
         picks.append((ks.pop() if len(ks) == 1 else (-1 if ks else 0), {int(m.group(4))}))
         return '{ /* cover pick K,B normalized */ }'
 
+    def m_pair(m):
+        ks = {int(m.group(i)) for i in (2, 3, 4, 6, 7, 8, 10, 11) if m.group(i)}
+        picks.append((ks.pop() if len(ks) == 1 else (-1 if ks else 0), {int(m.group(5)), int(m.group(9))}))
+        return '{ /* cover pick K,B normalized */ }'
+
     def m_class(m):
         k = int(m.group(2) or 0)
         picks.append((k, {int(b) for b in re.findall(r'== (\d+)', m.group(3))}))
@@ -1029,7 +1046,7 @@ def cover_pick(text):
     out = []
     for line in text.splitlines(keepends=True):
         if line.startswith('    scan_position = ({ const unsigned char *rx_mf'):
-            line = COVER_CLASS_RE.sub(m_class, COVER_MEMCHR_RE.sub(m_memchr, line))
+            line = COVER_CLASS_RE.sub(m_class, COVER_MEMCHR_RE.sub(m_memchr, COVER_PAIR_RE.sub(m_pair, line)))
         out.append(line)
     return ''.join(out), picks
 

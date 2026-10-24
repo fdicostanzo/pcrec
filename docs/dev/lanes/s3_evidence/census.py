@@ -22,14 +22,11 @@ judgment, BOTH WAYS, per arm:
   c-default, c-utf8   a COVER artifact MUST move, and nothing else may (a cover artifact that did
                       not move, or a non-cover mover, is UNEXPECTED)
   c-vm, ir            nothing may move (cover is a DFA-route row)
-  facts               only a pattern whose DEFAULT .c is COVER may move, with its rc and stderr
-                      unchanged: the listing mirrors the artifact's stamps (its RX_DFA_* rows) and
-                      records which facts a pass asked (`used`, facts_listing.md §4.1: passes the
-                      composite ran asked them, the cover walk runs none); a cover pattern whose
-                      listing did not move is counted, not red. ALSO (job 600's three rows,
-                      `\\p{Zl}` `\\p{Zp}` `\\p{sc=Thaana}`: byte `empty`, utf8 `cover`) a pattern whose
-                      -e utf8 .c is COVER may move its `utf8` rows and nothing else
-                      (`utf8-cover` in the tally line)
+  facts               THE TWIN RULE (job 606): the listing carries one row set per encoding E
+                      (`--emit-facts=byte,utf8`), mirroring that encoding's artifact, so E's rows
+                      may move iff the task's E-twin .c (its own options with `-e E`) moved; the
+                      other lines, rc and stderr may not. A twin that moved with rows that did
+                      not is counted, not red
   c-simd, c-norun     as c-default, at the SIMD layer and under -fno-run-prefilter: the cover
                       stamp is read from NEW's artifact on THAT arm
   off, off-simd,      nothing may move (the OFF arm renders the parent's text, at each of the
@@ -99,10 +96,36 @@ def first_diff(a, b):
     return ""
 
 
-def utf8_rows_only(a, b):
-    la, lb = a.split(b"\n"), b.split(b"\n")
-    return len(la) == len(lb) and all(x == y or (x.startswith(b"utf8\t") and y.startswith(b"utf8\t"))
-                                      for x, y in zip(la, lb))
+FACTS_ENCS = ("byte", "utf8")
+
+
+def facts_split(b):
+    """A facts listing as {encoding: its rows, "": every other line}: a row is `byte<TAB>...`
+    or `utf8<TAB>...` (facts_listing.md); the rest (headers, anything else) must never move."""
+    d = {"": [], "byte": [], "utf8": []}
+    for ln in b.split(b"\n"):
+        e = ln.split(b"\t", 1)[0].decode("ascii", "replace")
+        d[e if e in FACTS_ENCS else ""].append(ln)
+    return d
+
+
+def facts_judge(base, new, opts, ob, on, norm_new=lambda x: x):
+    """(declared, unmoved_twin) of one task's facts listing, ob/on = BASE's and NEW's bytes.
+    THE TWIN RULE: a facts row of encoding E mirrors the E-twin artifact (the task's own
+    options with `-e E`), so a row set may move iff that twin .c moved (it became cover, or
+    now takes PAIR); the non-row lines may not move. unmoved_twin counts the reverse (a twin
+    moved, its rows did not): counted, not red -- a .c move need not show in the facts."""
+    sb, sn = facts_split(ob), facts_split(norm_new(on))
+    if sb[""] != sn[""]:
+        return False, 0
+    declared, unmoved = True, 0
+    for e in FACTS_ENCS:
+        tw = [run([x] + list(opts) + ["-p", "rx", "--features", "all", "-e", e, "-o", "-"]) for x in (base, new)]
+        twin = tw[0][0] != tw[1][0] or tw[0][1] != norm_new(tw[1][1])
+        rows = sb[e] != sn[e]
+        declared &= twin or not rows
+        unmoved += twin and not rows
+    return declared, unmoved
 
 
 FLAG_ARGV = {"i": "-i", "u": "--ucp"}
@@ -147,7 +170,6 @@ def one(task):
     base, new, pat, opts = task
     opts = list(opts)
     res = []
-    dcover = ucover = 0
     for arm, fb, fn, stamped in ARMS:
         rb, ob, eb = run([base] + opts + fb + ["--pattern", pat])
         rn, on, en = run([new] + opts + (fn or fb) + ["--pattern", pat])
@@ -159,16 +181,12 @@ def one(task):
         if eb != norm(en):
             what.append("stderr " + first_diff(eb, norm(en)))
         cover = stamped and rn == 0 and COVER in on
-        if arm == "c-default":
-            dcover = cover
-        if arm == "c-utf8":
-            ucover = cover
+        u8 = False
         if arm == "facts":
-            # declared: a default-cover pattern's listing, its `used` cells only; or a
-            # utf8-only-cover pattern's listing, its `utf8` rows only
-            cover = (dcover or (ucover and utf8_rows_only(ob, norm(on)))) and rb == rn and eb == norm(en)
-            ucover = cover and not dcover
-        res.append((arm, "; ".join(what), cover, HORS in on, arm == "facts" and ucover))
+            # declared: the twin rule (facts_judge); rc and stderr unchanged
+            cover, u8 = facts_judge(base, new, opts, ob, on, norm)
+            cover = cover and rb == rn and eb == norm(en)
+        res.append((arm, "; ".join(what), cover, HORS in on, u8))
     return pat, tuple(opts), res
 
 
@@ -226,7 +244,7 @@ def main():
         print("  %-9s cover %5d (D-hors %4d)  movers %5d  declared: %s" % (
             arm, t["cover"], t["hors"], t["moved"],
             "movers == cover artifacts" if stamped else
-            "movers within default-cover patterns, utf8-cover %d" % t["u8"] if arm == "facts"
+            "movers within twin-moved encodings (twin moved, rows not: %d)" % t["u8"] if arm == "facts"
             else "no mover"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)

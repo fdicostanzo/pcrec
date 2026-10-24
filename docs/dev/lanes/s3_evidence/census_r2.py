@@ -15,7 +15,8 @@ judgment, BOTH WAYS, per arm:
                       new, a stop R7w walked, or the shared renderer's text), a PAIR artifact on
                       BASE alone is UNEXPECTED (PAIR only widened), and nothing else may move
   c-vm, ir            nothing may move
-  facts               only a pattern whose c-default or c-utf8 artifact is a mover may move
+  facts               the twin rule (census.py, job 606): encoding E's rows may move iff the
+                      task's E-twin .c (its options with `-e E`) moved
   off, off-simd       nothing may move (both denies on both sides)
 Counted per arm: PAIR artifacts, movers, and of the movers those whose BASE walked the stop
 (`new`) versus those whose BASE already rendered B-pair (`text`).
@@ -49,7 +50,7 @@ ARMS = [   # (arm, argv both sides, judged by the PAIR text?)
 def one(task):
     base, new, pat, opts = task
     opts = list(opts)
-    res, cmoved = [], False
+    res = []
     for arm, argv, judged in ARMS:
         rb, ob, eb = census.run([base] + opts + argv + ["--pattern", pat])
         rn, on, en = census.run([new] + opts + argv + ["--pattern", pat])
@@ -61,10 +62,8 @@ def one(task):
         if eb != en:
             what.append("stderr " + census.first_diff(eb, en))
         pn, pb = judged and PAIR.search(on) is not None, judged and PAIR.search(ob) is not None
-        if arm in ("c-default", "c-utf8") and what:
-            cmoved = True
-        if arm == "facts":
-            pn = cmoved          # declared: a pattern whose .c moved
+        if arm == "facts":      # declared: the twin rule (census.facts_judge)
+            pn = census.facts_judge(base, new, opts, ob, on)[0] and rb == rn and eb == en
         res.append((arm, "; ".join(what), pn, pb))
     return pat, tuple(opts), res
 
@@ -115,7 +114,7 @@ def main():
         print("  %-9s pair %5d  movers %5d (walk->pair %5d, pair text %5d)  declared: %s" % (
             arm, t["pair"], t["moved"], t["new"], t["text"],
             "movers == B-pair artifacts" if judged else
-            "movers within .c movers" if arm == "facts" else "no mover"))
+            "movers within twin-moved encodings" if arm == "facts" else "no mover"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)
     print("== r2 census COMPLETE: patterns=%d compiles=%d movers=%d unexpected=%d"
