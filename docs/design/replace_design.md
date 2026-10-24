@@ -38,6 +38,29 @@ lane brief's rulings and the later entries R5-R8 of
 §R4.13 are `subst_measurements/r4_*`, run against libpcre2 10.46 on the Linux
 dev box.
 
+**Status at build (review 2026-10-24 r1 subst, IFACE-8/IFACE-9; lane
+substr1fix).** BUILT on lane/substland. The contract is
+`docs/spec/subst_api.md`; `subst_api_r4_draft.md` is retired to a pointer.
+Every `draft §N¶K` below reads as the spec's same number, and where this
+revision's text and the spec disagree, the spec is what ships. Names: every
+shared name moved to the `pcrec_subst_*` family at build (`rx_subst_piece`
+is `pcrec_subst_piece`, `rx_subst_replace_all` is `pcrec_subst_replace_all`,
+`struct rx_subst_info` is `struct pcrec_subst_info`, `RX_SUBST_*` is
+`PCREC_SUBST_*`; spec §1¶2); the `rx_subst_*` spellings below are the
+design-time names. Sentences the build overtook are marked `[superseded]`.
+
+**The goals, ranked** (IFACE-8: the order the rulings applied them in; a
+later goal yields to an earlier one where they conflict).
+
+| rank | goal | ruling | where it yielded |
+|---|---|---|---|
+| 1 | the template is compiled INDEPENDENTLY of the regex; numbers join through an optional map | R4.0 item 1 | -- |
+| 2 | NO ALLOCATION: pieces, bytes only for case forcing, into caller scratch sized first | R4.0 item 5 | goal 4: replace-all's batch is a fixed stack array, so an rx with more than `PCREC_SUBST_BATCH_PAIRS` (256) capture pairs is refused rather than served (IFACE-4's open half, plan [SUBST-CLEANUP]) |
+| 3 | ANSWERS equal `pcre2_substitute`'s, every difference a spec §9 row | D26 | never yielded: goals 1-2 cost coverage (a refusal), never a different answer |
+| 4 | one-call convenience: replace-all, the setup wrapper | R11, R13 (G1, F0) | amended R4.0 item 4: replace-all is generic over `rx_nextnfn`, not a regex-specific fused form |
+| 5 | a support unit only when needed; a plain template is one `.c` | R7, R8, R13 (G6) | -- |
+| 6 | shared names cannot collide with an artifact's | review r1 IFACE-5/6 | -- |
+
 **Premise test (the brief's).** Today the binding is MANDATORY. The element
 and the glue both take an `rx_subst_binding`, and only `pcrec_subst_bind` can
 make one BOUND. The element returns `PCREC_SUBST_MISMATCH` for any binding
@@ -81,8 +104,11 @@ From the lane brief:
 3. **Missing-group handling is optional**: a run-time choice between blank
    and an error (its default was open; R6 below rules it).
 4. **NO fused "substitute with this regex" one-call form.** The user can write
-   it, and there is no substitution-specific optimization work.
+   it, and there is no substitution-specific optimization work. `[amended by
+   R11/R13: one replace-all function, generic over rx_nextnfn, and a tested
+   setup wrapper recipe; the goal table above, rank 4]`
 5. **The render RETURNS AN ARRAY OF PIECES `{const char *ptr, size_t len}`.**
+   `[amended by R9: the pointer is const unsigned char *]`
    - There is no string handling in pcrec, and the array fits other languages'
      string types. NO MALLOC.
    - Pieces point into the template's constant data, the subject, or the
@@ -146,6 +172,11 @@ unit), the header guards (§R3.11), and the answer differences of §R3.10 rows
 9 and 11.
 
 ### R4.2 The interface on one page
+
+`[superseded at build: the check and the setup are static inline; replace-all
+(R11, §R4.16) is in the support unit; every name is the pcrec_subst_* family
+(see the status note at the head of this revision). The spec's §1-§10 are the
+interface.]`
 
 ```c
 /* in every subst header (the types block) */
@@ -1026,12 +1057,14 @@ workspace is the caller's: `o` carries the piece array and, for a case-forcing
 template, the scratch (the case region's size depends on the match, so no
 fixed stack buffer could bound it). The function's own storage is one stack
 array of `RX_FOREACH_PAIRS` capture pairs, the figure `RX_FOREACH` already
-uses. (2) The return is an `int` code, not a size, because the error codes
+uses. `[superseded: D175 dropped RX_FOREACH; the bound is the support unit's
+own PCREC_SUBST_BATCH_PAIRS, 256, spec §10]` (2) The return is an `int` code, not a size, because the error codes
 are negative `int`s: the size needed arrives in `*len` with
 `PCREC_SUBST_NOSPACE`, and a scratch shortfall is told apart by
 `o->sneed > o->scap`.
 
-**Behaviour.** It writes the full result and returns 0 with `*len`; on too
+**Behaviour.** `[superseded by G1, §R4.17: it returns the number of matches
+substituted, spec §10¶10]` It writes the full result and returns 0 with `*len`; on too
 small a buffer it keeps matching, sums, and returns NOSPACE with the total
 (no match searched twice); every other negative code is returned as is, with
 no tail, by the §6¶1 error rule. The batch recipe is its reference, and the
@@ -1069,7 +1102,8 @@ recipes, `--emit-support`, and the HOOKS the extended forms need (the
 scratch fields of `rx_subst_out`, `sneed`, the scratch NOSPACE rule, `uses`
 and `support`/`support_id` in the record). Module `subst-extended`
 (§R4.13), the case table and G6's inline step come with the extended-forms
-build; until then the module is refused at compile as today.
+build; until then the module is refused at compile as today. `[superseded:
+module subst-extended is built, lane substext, spec §2¶7]`
 
 ---
 
