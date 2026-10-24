@@ -45,7 +45,7 @@ a(b|c)+d	EMITTED_BYTES	32843
 (?i)HeLLo	RX_ENGINE_SEL	"selected"
 (?i)HeLLo	RX_DFA_TABLE	"premultiplied"
 (?i)HeLLo	RX_DFA_PREFILTER	"none"
-(?i)HeLLo	EMITTED_BYTES	21700
+(?i)HeLLo	EMITTED_BYTES	22441
 cat|dog|cow|calf|camel	RX_ENGINE	"dfa"
 cat|dog|cow|calf|camel	RX_ENGINE_SEL	"selected"
 cat|dog|cow|calf|camel	RX_DFA_TABLE	"premultiplied"

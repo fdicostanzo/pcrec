@@ -984,6 +984,18 @@ fi
 # 22,179 -> 19,267; 25,144 -> 20,690; 25,544 -> 21,700). RX_DFA_TABLE stays
 # "premultiplied": it names the anchored `_match` machine those artifacts
 # still carry. The other eight rows did not move.
+# RE-RECORDED 2026-10-24 (lane s3 trailing checks, job 606's red; abi 84
+# PROVISIONAL, no digit moves): `(?i)HeLLo` 21,700 -> 22,441 (+741), the S3
+# window text alone. The S3 commit was rebuilt with the code reviews' C1/r2
+# fixes folded in (G2's caseless two-byte stream, R2-6's one two-stream
+# renderer), so its cover window find for the caseless run is no longer the
+# in-place class-scan loop over `L`/`l` but a call to an `rx_mf1_ofsskip`
+# helper (`__body`: the two `memchr` streams for 76/108, the nearer hit, the
+# `-= 3` back-off, the same two masked `rx_w4` compares), and RX_MEMFN_LIBC
+# reads "memchr" (was "none"). VERIFIED BY DIFFING against the superseded S3
+# commit d3886a656 at `-o -`: those 30 added helper lines, the one
+# scan_position line and that stamp, nothing else (s3_report.md Part 9). The
+# other eleven rows did not move.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
