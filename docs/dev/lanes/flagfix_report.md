@@ -181,3 +181,43 @@ empty).
   unreachable from parsed patterns but still reachable from built seals;
   `(?:|)` and `A_REP` over an empty are other empty-equivalent shapes the drop
   does not touch (the brief's general form is the concatenation element).
+
+## flagfix2 (sonnet, 2026-10-24): the owed checks
+
+### 1. The 3 `^(?i)${v}$` mover cells, with a variable context
+
+Ref = b260c1f46 build (`/tmp/claude-1001/flagfix/ref/build/pcrec`), new = the
+branch build. Cells = the sweep's three (default/byte, `--engine=vm`/byte,
+default/utf8), `--features all`. Each artifact got a driver calling
+`rx_search(s, n, 0, caps, &v, 1)` with `rx_var{"v", ...}` per subject line.
+43,624 (variable state, subject) pairs per cell: 14 variable states (unset,
+empty, `abc`, `ABC`, `k`, Kelvin sign, sharp s, `a-1_z`, `A-1_Z`, e-acute
+both cases, `\xff`, `a\nb`, `ss`) x all strings to length 3 on 10 letters,
+2,000 seeded random strings over a 21-symbol alphabet incl. multibyte, and
+the value itself / upper / lower / prefixed / suffixed.
+Result, per cell: rc and every capture span byte-identical (`cmp` on the full
+output) in default/byte, vm/byte and default/utf8. Emitted text differs in each
+(they are movers). Outputs are not degenerate: 45 / 45 / 66 matches (rc 1,
+`0,2`), 3,116 / 3,116 / 6,232 unset-variable refusals (rc -8), rest no match.
+No difference, so no STOP. Scratch: `/tmp/claude-1001/flagfix2/` (gen.py, drv.c).
+Not run: a positive control for this driver (the earlier sweep's control
+covered the comparison method, not this variable driver).
+
+### 2. Mech rows
+
+Queued `617-flagfix-mech` (`boxqueue add --name`, shaped like
+`603-iterland-mech`): `bash tests/mech/run_sabotage_matrix.sh S1560 S338`,
+`--ready` = `boxqueue after flagfix-test` (615), cap 3600, expect rows=2,
+witness `== mech run COMPLETE: 2 rows`. Only S1560 uses the `casespell` arm
+(the arm has no other rows); S338 is arm `ctxnode`. Dry-run green. No new
+sabotage id used.
+
+## STATE AT HANDOFF (flagfix2)
+
+- Rulings file: R1 (only entry) already applied by flagfix; nothing new.
+- Item 1 DONE, no answer differences. Item 2 queued, behind 615.
+- OWED: job `617-flagfix-mech` (runs after 615 green). Log
+  `worktrees/.boxqueue/<done|failed>/*-617-flagfix-mech/job.log`; expected
+  DETECTED for S1560 (casespell) and S338 (ctxnode); `scripts/boxqueue state
+  flagfix-mech`. The matrix measures committed HEAD only (this commit).
+- OWED (unchanged): 615-flagfix-test.
