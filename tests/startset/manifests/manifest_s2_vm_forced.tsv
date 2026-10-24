@@ -3874,3 +3874,14 @@ tests/findall/global.rxt:1273	--features all	615c4b7c62
 tests/findall/global.rxt:1610	--features all	286129
 tests/findall/global.rxt:1619	--features all	2861292862293f2863293f
 tests/findall/global.rxt:1628	--features all	2861292862293f2863293f2864293f2865293f2866293f2867293f2868293f2869293f286a293f
+# flagfix (2026-10-24, [FLAG-SPELL]): +10 rows, every one a new tests/modifiers/empty_drop.rxt block (the R1 boundary cells), correct forced-VM movers named by [vm-movers]; computed per block on lane/flagfix (VM_START_SCAN first-class under --engine=vm), no existing row moved.
+tests/modifiers/empty_drop.rxt:18	--features modifiers	283f69296162632b
+tests/modifiers/empty_drop.rxt:26	--features modifiers	283f693a616263292b
+tests/modifiers/empty_drop.rxt:34	--features modifiers	61283f3a292b62
+tests/modifiers/empty_drop.rxt:42	--features modifiers	61283f3a292a62
+tests/modifiers/empty_drop.rxt:49	--features modifiers	61283f3a297b337d62
+tests/modifiers/empty_drop.rxt:55	--features modifiers	61283f3a2962
+tests/modifiers/empty_drop.rxt:62	--features modifiers	61283f69296263
+tests/modifiers/empty_drop.rxt:69	--features modifiers	616263283f6929
+tests/modifiers/empty_drop.rxt:88	--features modifiers	2861283f69292962
+tests/modifiers/empty_drop.rxt:110	--features modifiers	28787c283f69292979
