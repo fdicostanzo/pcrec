@@ -75,7 +75,7 @@ while IFS=$'\t' read -r pat want extra; do
 done <<'WITNESSES'
 (ab)c?userpass	3	-
 (x)?userz	1	-
-(?i)(cat)s?dog	0	size_t ha = 0, hb = 0;
+(?i)(cat)s?dog	4	size_t ha = 0, hb = 0;
 WITNESSES
 
 echo "witnesses reached: $reached (floor $HANDOFF_REACH_FLOOR)"

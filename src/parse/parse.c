@@ -2136,11 +2136,27 @@ static bool cat_ends(Ctx *cx)
     return c < 0 || c == '|' || c == ')';
 }
 
+/* True for an A_EMPTY that carries nothing: no registry stamp (D67), so
+ * deleting it from a concatenation deletes no engine fact and no offset. */
+static bool empty_carries_nothing(const Ast *a)
+{
+    return a->k == A_EMPTY && !a->reg;
+}
+
 /* Parses a top-level concatenation branch: skips leading whitespace/comments,
  * then chains p_rep results left-to-right into an A_CAT spine until cat_ends
  * (a top-level `|`, `)`, or end -- quote-aware, since a real quoted byte never
  * ends a cat regardless of its own value). An empty branch (`()`,`(?:|a)`)
- * returns A_EMPTY. */
+ * returns A_EMPTY.
+ *
+ * [FLAG-SPELL] An element that is an empty carrying nothing is DROPPED from
+ * the spine, so a parsed concatenation never holds one: `(?i)abc` builds the
+ * tree `(?i:abc)` builds, and `a(?:)b` the tree `ab` builds. One rule for
+ * every producer of such an empty (a bare option run, `(*UTF)`, an empty
+ * group, a group whose body is one), applied after p_rep, so a quantifier
+ * has already been checked against the element (`a(?i)*` stays error 109).
+ * A branch made only of such empties keeps its first one. Captures, calls,
+ * verbs and assertions are other kinds and are never dropped. */
 static Ast *p_cat(Ctx *cx)
 {
     xskip(cx);   /* leading ws/comments in this branch ((?x) ^ a, ( a )) */
@@ -2148,6 +2164,8 @@ static Ast *p_cat(Ctx *cx)
     Ast *a = p_rep(cx);
     while (!cat_ends(cx)) {
         Ast *b = p_rep(cx);
+        if (empty_carries_nothing(b)) continue;
+        if (empty_carries_nothing(a)) { a = b; continue; }
         Ast *cat = node(cx, A_CAT);
         cat->l = a;
         cat->r = b;
