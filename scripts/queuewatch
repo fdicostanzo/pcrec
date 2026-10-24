@@ -15,8 +15,10 @@
 #                   (flock: a second is refused, exit 75)
 #   --every S 15    poll;  --max-sec S 3000  stop and exit 6 (CAP) before a caller's timeout —
 #                   the sleep itself is cut to the time left, so the bound holds to the second
-#   --quiet-sec 1800  no log growth AND no CPU in the job's process tree, a QUIET episode
-#   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK
+#   --quiet-sec 1800  no growth of ANY file in a STARTED job's dir (not only job.log: perfrun jobs write job.log.make) and the
+#                   battery's logdir, AND no CPU in the process trees of the job's pid file / battery.pid: a QUIET episode
+#   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK; counted from when the job became READY
+#                   (the runner's first non-not-ready answer in queue.log), not from when it was queued
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
 #   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
 #   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
@@ -30,7 +32,7 @@
 #   JOB-DONE NAME outcome=O rc=R verdict=V wall=Ws [reds=S(rc=N)..] [logdir=D]
 #   QUIET NAME no log growth or CPU for Ns :: last: <trailer line>
 #   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
-#   PENDING-STUCK NAME pending for Ns, nothing running :: <the runner's last answer>
+#   PENDING-STUCK NAME pending for Ns, nothing running [(queued Qs ago, ready for Ns)] :: <the runner's last answer>
 #   DISK-HIGH <fs> at P% (>= T%)
 #   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
@@ -58,7 +60,7 @@
 # surface despite --ci-every) and the last ask time in state.ci.last.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-every=15 maxs=3000 quiet=1800 stuck=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
+cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
 while [ $# -gt 0 ]; do
     case "$1" in
         --queue) Q=$2; shift 2 ;; --state) state=$2; shift 2 ;; --every) every=$2; shift 2 ;;
@@ -79,12 +81,12 @@ t_start=$(date +%s)
 . "$here/../tests/lib/timeout_bin.sh" 2>/dev/null; TO=${TIMEOUT_BIN:-timeout}
 
 pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
-tree_cpu() { # utime+stime+cutime+cstime ticks of PID and its descendants (cutime/cstime = reaped children: short-lived forks leave no live CPU); empty if unreadable
+tree_cpu() { # tree_cpu PID [1 = leave PID's own CPU out: its polling loop, not the job's work]. utime+stime+cutime+cstime ticks of PID and its descendants (cutime/cstime = reaped children: short-lived forks leave no live CPU); empty if unreadable
     [ -n "${1:-}" ] && [ -r /proc/self/stat ] || return 0
     local f s
     for f in /proc/[0-9]*/stat; do s=$(<"$f") 2>/dev/null || continue; printf '%s %s\n' "${f//[!0-9]/}" "${s##*) }"; done 2>/dev/null |
-        awk -v root="$1" '{pp[$1] = $3; cpu[$1] = $13 + $14 + $15 + $16} END {
-            for (p in pp) { q = p; for (i = 0; i < 64 && q != "" && q != 0; i++) { if (q == root) { t += cpu[p]; break } q = pp[q] } }
+        awk -v root="$1" -v skip="${2:-0}" '{pp[$1] = $3; cpu[$1] = $13 + $14 + $15 + $16} END {
+            for (p in pp) { q = p; for (i = 0; i < 64 && q != "" && q != 0; i++) { if (q == root) { if (!skip || p != root) t += cpu[p]; break } q = pp[q] } }
             print t + 0 }'
 }
 runner_live() { [ -f "$Q/.runner.lock" ] && ( exec 7>>"$Q/.runner.lock" && ! flock -n 7 ) 2>/dev/null; }
@@ -165,9 +167,23 @@ lifecycle() {
     done < <(grep -nE '^(== job [^ ]+ (START|END) |  job [^ ]+ ENDED WITHOUT RUNNING )' "$Q/queue.log")
 }
 
+# ready_since NAME: epoch of the pass in which the runner first answered NAME other than not-ready, counted from the last
+# not-ready answer or `== add` (ready or waiting on the box lock = the job's own wait, not a dependency's). Pass times come
+# from the `== pass N START <ts>` headers; nothing printed when queue.log has no such answer.
+ready_since() {
+    local ts
+    ts=$(awk -v job="$1" '
+        /^== pass [0-9]+ START / { pt = $5; next }
+        $1 == "==" && $2 == "add" && $3 == job { r = ""; next }
+        $1 == "pass" && $3 == job { a = $4
+            if (a == "not-ready:" || a == "READY-HUNG:") r = ""; else if (r == "" && a != "requeue") r = pt }
+        END { print r }' "$Q/queue.log" 2>/dev/null)
+    [ -n "$ts" ] && date -d "$ts" +%s 2>/dev/null
+}
+
 # conditions: print `ID<TAB>0<TAB>LINE` for each current condition episode; forget the episodes that cleared.
 conditions() {
-    local now rp npend nrun n d name ld tr sig prev pe since k ans age pct fs
+    local now rp npend nrun n d name ld tr sig prev pe since k ans age pct fs jp jt jt0 jn0
     now=$(date +%s)
     npend=$(ls -p "$Q/pending" 2>/dev/null | grep -vc /); nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
     # RUNNER-DEAD
@@ -179,27 +195,44 @@ conditions() {
             printf 'C|runner-dead|%s\t0\tRUNNER-DEAD runner not live with %s pending / %s running job(s) :: %s\n' "$rp" "$npend" "$nrun" "$rp"
         fi
     else forget 'C|runner-dead|'; fi
-    # QUIET, per running job
+    # QUIET, per running job. A job dir without `started` is the runner WAITING for the box lock (the job is still pending:
+    # boxqueue puts running/NAME up, takes the lock, and removes it again if the lock is held), not a run.
     for d in "$Q"/running/*/; do
-        [ -d "$d" ] || continue; d=${d%/}; name=${d##*/}; ld=$(logdir_of "$d"); tr=$ld/trailer.log
-        sig=$( { stat -c %s "$d/job.log" 2>/dev/null
-                 if [ -n "$ld" ]; then stat -c %s "$tr" "$ld"/*.log 2>/dev/null; while read -r p; do tree_cpu "$p"; done < <(cat "$ld/battery.pid" 2>/dev/null); fi; } | tr '\n' ' ')
+        [ -d "$d" ] || continue; d=${d%/}; name=${d##*/}; [ -e "$d/started" ] || continue
+        ld=$(logdir_of "$d"); tr=$ld/trailer.log
+        # growth = ANY file in the job dir (job.log, but also perfrun's job.log.make, or whatever log the job's `expect` names;
+        # not the runner's own idle/idle.seen marks) + the battery's logdir; CPU = the battery's process tree (exact change,
+        # as before) and, for jobs with no battery.pid (perfrun), the job's own pid-file tree as a RATE (5% of a core, boxqueue's own idle threshold, UNMEASURED here; env QUEUEWATCH_CPU_PCT): a wrapper's wait
+        # loop (grep + sleep forks) also adds CPU, so only >= $cpupct ticks per second of the interval since the last look
+        # counts as work. `started` is in the signature: a new run is a new episode.
+        sig=$( { for f in "$d"/*; do case ${f##*/} in idle|idle.seen) ;; *) stat -c '%n %s %Y' "$f" 2>/dev/null ;; esac; done
+                cat "$d/started" 2>/dev/null
+                if [ -n "$ld" ]; then stat -c %s "$tr" "$ld"/*.log 2>/dev/null; while read -r p; do tree_cpu "$p"; done < <(cat "$ld/battery.pid" 2>/dev/null); fi; } | tr '\n' ' ')
+        jp=$(cut -d' ' -f1 "$d/pid" 2>/dev/null); jt=0; [ -n "$jp" ] && jt=$(tree_cpu "$jp"); jt=${jt:-0}
         pe=$state.sig.$name
-        if [ -f "$pe" ] && [ "$(sed -n 1p "$pe")" = "$sig" ]; then since=$(sed -n 2p "$pe")
-        else since=$now; printf '%s\n%s\n' "$sig" "$now" > "$pe"; fi
+        if [ -f "$pe" ] && [ "$(sed -n 1p "$pe")" = "$sig" ]; then
+            since=$(sed -n 2p "$pe"); jt0=$(sed -n 3p "$pe"); jn0=$(sed -n 4p "$pe")
+            if [ -n "$jt0" ] && [ -n "$jn0" ] && [ $((jt - jt0)) -ge $((cpupct * (now - jn0))) ] && [ "$now" -gt "$jn0" ]; then since=$now; fi
+        else since=$now; fi
+        printf '%s\n%s\n%s\n%s\n' "$sig" "$since" "$jt" "$now" > "$pe"
         if [ $((now - since)) -ge "$quiet" ]; then
             printf 'C|quiet|%s|%s\t0\tQUIET %s no log growth or CPU for %ss :: last: %s\n' "$name" "$since" "$name" "$((now - since))" \
-                "$(tail -1 "$tr" 2>/dev/null | cut -c1-160)"
+                "$(tail -1 "${tr}" 2>/dev/null | cut -c1-160)"
         fi
     done
     # PENDING-STUCK: nothing running, the oldest pending job has waited past --stuck-sec
     if [ "$nrun" = 0 ] && [ "$npend" -gt 0 ]; then
         n=$(ls -p "$Q/pending" | grep -v / | LC_ALL=C sort | head -1); k=${n#*-}
-        since=$(cat "$Q/.state/$k.since" 2>/dev/null || stat -c %Y "$Q/pending/$n")
+        ans=$(cat "$Q/.state/$k.answer" 2>/dev/null || echo 'no answer recorded')
+        queued=$(cat "$Q/.state/$k.since" 2>/dev/null || stat -c %Y "$Q/pending/$n")
+        # A job that WAITED on a dependency was queued long before it was ready; its wait is not the box's idleness.
+        # Age counts from the runner's first ready/waiting-on answer (ready_since), when queue.log has one.
+        since=$queued; rdy=""
+        case $ans in not-ready:*|READY-HUNG*|"no answer recorded") ;; *) rdy=$(ready_since "$n"); [ -n "$rdy" ] && since=$rdy ;; esac
         age=$((now - since))
         if [ "$age" -ge "$stuck" ]; then
-            ans=$(cat "$Q/.state/$k.answer" 2>/dev/null || echo 'no answer recorded')
-            printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running :: %s\n' "$n" "$since" "$n" "$age" "${ans%%$'\n'*}"
+            printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
+                "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
         fi
     fi
     # DISK-HIGH
