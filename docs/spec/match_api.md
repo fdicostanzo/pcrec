@@ -544,8 +544,9 @@ forward scan to find where the match ends and a backwards scan over a second
 machine to find where it began. The other three emit neither the backwards
 scan nor its machine: where the forward machine accepts before reading a
 byte (`a*`, `.*`, `[a-z]{0,4096}` and their family), the start is `startpos`
-(`"pinned"`); where every match has the same byte width `W` (`abcd`,
-`[a-z]`), the start is the end minus `W` (`"end-minus-width"`); where one
+(`"pinned"`); where every match has the same byte width `W` (`ab|cd`,
+`(?<=ab)cd`; `abcd` under `--memfn=no-window-search`), the start is the end
+minus `W` (`"end-minus-width"`); where one
 character from the start decides whether a match can go on (`\w+`, and under
 `-e utf8` `.` and `\p{L}+`), the start is where the forward scan's
 candidate-start skip last landed (`"landing"`). Every form writes absolute
@@ -2033,7 +2034,7 @@ apart. Mirrored by `rx_info.scan`.
 |---|---|
 | `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
-| `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly (`docs/design/kit_proof.md` §1.1's `cover_conj`): the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. Default since D172 S3 (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
+| `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
 | `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings): the search body is one `return 0` with no table, loop or skip, on either engine |
 
@@ -2044,7 +2045,7 @@ are the whole set:
 <!-- value-set: RX_DFA_PREFILTER -->
 | value | mechanism |
 |---|---|
-| `"none"` | no candidate-start filter: the start state accepts (`start_acc` — no skip is sound; the largest cause, e.g. `a*`, `.*`, `\bx*`), every position is a candidate, or the artifact provably matches nothing |
+| `"none"` | no candidate-start filter: the start state accepts (`start_acc` — no skip is sound; the largest cause, e.g. `a*`, `.*`, `\bx*`), every position is a candidate, or the artifact provably matches nothing; or the scan is `"cover"` (¶2), whose window search is itself the candidate mechanism and the whole search, so no filter runs in front of it (and `_DFA_PREFILTER_OFFSETS` is `"none"`) |
 | `"memchr"` | one candidate byte value at offset 0; a search for that one byte replaces the steps. The value names pcrec's row, not the search's form: the kit renders the search (`registry.md` §6¶8a, `fd-d1`) |
 | `"byte-class"` | several at offset 0; a 256-entry `<prefix>_can_begin_match` bitmap walk |
 | `"memchr-bounded"` | the `memchr` row's one-byte search under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and without the early `return 0` |
@@ -2346,7 +2347,9 @@ common byte and `-fno-req-byte` all report it.
 
 <a id="s6-3-7-p7"></a>[6.3.7¶7] The run's bytes as lowercase hex (a run is arbitrary bytes inside a
 `#define`'s string body), `@`, and the index within them of the member the
-emitted `memchr` scans for; `"none"` at a length below 2
+emitted `memchr` scans for (on a `<PREFIX>_DFA_SCAN "cover"` artifact, which
+runs no pre-check, the member the analysis picks: the window search chooses
+its own position); `"none"` at a length below 2
 (`<PREFIX>_REQ_BYTE`'s case). `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`
 wherever position `idx` is an exact byte, which makes the two checkable
 against each other. A run whose positions are not all exact bytes carries `/`
@@ -2367,7 +2370,7 @@ not; a closed token set (`tuning.md` §2.29).
 | `"emitted"` | the artifact emits a pre-check on the byte or run its siblings name — possibly led by a rarer necessary-set byte's one-byte check (`tuning.md` §2.40), possibly handing off (`<PREFIX>_REQ_HANDOFF`) |
 | `"none"` | nothing is necessary: no byte and no run (none found, or `-fno-req-byte`) |
 | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it only adds work |
-| `"dominated"` | declined: the artifact's own candidate-start `memchr` (or run-pinned test) already scans a byte at least as rare, or its locator decides presence itself (`<PREFIX>_DFA_SCAN "rev-end"` or `"empty"`) |
+| `"dominated"` | declined: the artifact's own candidate-start `memchr` (or run-pinned test) already scans a byte at least as rare, or its locator decides presence itself (`<PREFIX>_DFA_SCAN "rev-end"`, `"cover"` or `"empty"`): a `"cover"` window search finds the match or proves there is none, whatever form its jump takes (`memchr`, two streams, a byte walk, a skip table) |
 
 <a id="s6-3-7-p9"></a>[6.3.7¶9] `"none"` holds if and only if `<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` are
 both `"none"`. Any other value asserts that a byte or run was derived, and only

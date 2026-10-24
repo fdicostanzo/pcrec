@@ -1193,7 +1193,7 @@ char *pcrec_axes_tsv(void)
      * no RECOVER. A predicate row (no lever: the path, not a flag, decides). */
     axis_row(&sb, "search-start", 3, pcrec_cand_absence(CAND_SLOT_RECOVER), "predicate",
              "RX_DFA_START", pcrec_cand_absence(CAND_SLOT_RECOVER), "", "", "", "", "",
-             "the search's path asks no RECOVER (an ENG_ATTEMPT loop, whose attempt began at the start it reports, or the empty engine): the generated stamp rule's absence value");
+             "the search's path asks no RECOVER (an ENG_ATTEMPT loop, whose attempt began at the start it reports; the cover window search, whose candidate is the match start; or the empty engine): the generated stamp rule's absence value");
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);

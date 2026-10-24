@@ -1,6 +1,7 @@
 # kit_proof — [KIT-VERIFY] U1: REPORT WITHOUT AN ENGINE, with D161 addendum 16's context spans
 
-Status: DESIGN NOTE, **revision 2.2** (lane `x0fix`, 2026-10-21, main `63a7c3315`,
+Status: DESIGN NOTE, **revision 2.3** (lane `s3fix`, 2026-10-24: §R2.3 records what the
+build, D172 S3, superseded; read it first), over revision 2.2 (lane `x0fix`, 2026-10-21, main `63a7c3315`,
 abi 81). Revision 2.2 fixes the two reading defects step X0 found (R1, R2), recounts §1.2
 from the fixed table (K35), files U20 and re-runs X0; its changed text is marked
 `[x0fix <id>]`. Read §R2.2 first. Revision 2.1 below is otherwise the design of record.
@@ -49,6 +50,19 @@ Inputs: D161 addenda 4-16 (16 is the ruling), D157, D158; reviews r2
 corrected in `memfn/docs/requests.md`).
 
 ---
+
+## §R2.3. What the build (D172 S3, B1's event) superseded
+
+Revision 2.3 (lane `s3fix`, 2026-10-24; the S3 final code review's SLOT-5) records what
+the build did instead of this note's B1 plan; the text below is otherwise unchanged, and
+each superseded sentence carries `[s3]`.
+
+| this note planned (B1) | what S3 built | consequence |
+|---|---|---|
+| the deny `-fno-kit-proof`, a FACT deny (bit 57) that empties `MkKnown` (§0, §1.1 `fact-denied`, §2.2, fam-M6) | NOT BUILT. The `cover` row's off switch is the kit's `--memfn=no-window-search` (the window search's E-find row, `registry.md` §6¶8a), which declines C13; a pcrec FACT deny is filed under [IFACE-PUSH], named by behaviour (D174) | the `cover` row has no pcrec-side identity of its own: its only off switch also moves every other window site E-find renders, and C13's `refused` detail cannot tell a deny from a kit decline (the stop the kit cannot render) |
+| `--list-axes` gains `cover` and `kit-proof` (§3.6) | `cover` is listed (`locate` 2, `unanchored` re-numbered 3); `kit-proof` is not (no deny to list) | `registry.md` §6¶3a lists `cover` as a row that reads the kit and carries no pcrec deny |
+| `--emit-facts` gains the `MkKnown` member row (§3.6) | NOT BUILT: the `span_facts` slice is the only new row | none for answers; the admission's facts read `span_facts` without a `used` record (`facts_listing.md` §4.1¶2) |
+| the kit's REPORT row RPT, held for its preview step `R-26.6`, routed by the harness lever (con-B2, §7) | RPT and the preview RETIRED: a REPORT site is a window site, rendered by the window family's E-find row (`window_site.md` §4); the lever `--harness=kit-proof` changes no byte (its retirement filed under [KIT-VERIFY]) | X5's byte-identity gate is the `--memfn=no-window-search` arm against the build before the window search was the default |
 
 ## §R2.2. What revision 2.2 changed (X0 finding → section)
 
@@ -189,7 +203,7 @@ for the new fields (named here, the kit's to write at Z1).
 | the fact producer | split `[r3 fam-M2]`: `span_facts`' first slice gives `S_d`, `exact_len` and the hull, computed by EXTENDING the k-set walk (`pcrec_kset_walk`, `src/facts/kset.c`; priority-free) rather than by a new `src/facts/spans.c` `[r4 Q-r4-3]`. A reading of A gives the end at `k` and the context sets (§5.2) |
 | facts pcrec states (R-26) | on a BOUNDED span 0: `prefix_stated`, `exact_len` (over the SENT sets `[r3 fam-B1]`), `consumable_len`. In the new carrier `mf_site.ctx[]` `[r3 con-B1]`: CONTEXT spans with `absent` and `consumable`. On the site: `site_kind` `MF_SK_REPORT` with every position REQUIRED `[r3 con-M3]`, and `read_floor` `[r3 con-M4]`. Every enum has an UNSTATED zero, refused where read (§4) |
 | what the kit returns (R-26) | `mf_class.proven[d]` per origin offset; `proven0`/`proven_prev` COPIED from it (§4.2) |
-| the deny | `-fno-kit-proof`, a FACT deny that empties `MkKnown` (one flag bit, 57; 6 left) `[r3 fam-M6, con-bits]` |
+| the deny | `-fno-kit-proof`, a FACT deny that empties `MkKnown` (one flag bit, 57; 6 left) `[r3 fam-M6, con-bits]`; `[s3]` NOT BUILT: `--memfn=no-window-search` declines C13 (§R2.3) |
 | captures | OUT of U1: [CAPS-KNOWN] (§8.3, §8.4 Q1, RULED) |
 | events | Z0 R-25 → Z1 R-26's layout at zero movers → Zk the kit's REPORT row UNROUTED → X0 the libpcre2 oracle on the reading → Z2 pcrec's producer, row and emitter, routed only by the harness lever → `measure` → **B1** (after R17-b′ B4), the one byte-moving event (§7) |
 
@@ -422,6 +436,8 @@ listing the members and their slots (§6.2).
   detector), so the declaration is a deliverable, not a comment `[r3 fam-m3]`. The site's
   description depends on the language facts only, never on FIRST's or NEXT's selection,
   so no edge points forward and `table-read-cycle` holds (`r17b_prime.md` §4.5 rule 5).
+- `[s3]` Superseded: the deny below was not built; the kit's `--memfn=no-window-search`
+  declines C13 (§R2.3).
 - **The deny is a FACT deny** `[r3 fam-M6]`: `.c.deny` is 0, and the listing carries
   `fact_deny = PCREC_NO_KIT_PROOF` (`emit_dfa.c:11325`'s merge,
   `CandList.fact_deny`'s shape, which `vm-anchor-bound` and `end-window` use). Under the
@@ -663,7 +679,8 @@ REPORT site states SUBJECT (§2.5). MLINE states SUBJECT today, so the rule move
 - **VM:** nothing reads the fact in stage 1.
 - **Listings:** `--emit-ir` is unchanged. `--emit-facts` gains the `span_facts` slice
   (Z2) and the `MkKnown` member row (B1), each with a `facts_listing.md` hunk.
-  `--list-axes` gains `cover` and `kit-proof` at B1.
+  `--list-axes` gains `cover` and `kit-proof` at B1. `[s3]` Built: `cover` only, and no
+  `MkKnown` row (§R2.3).
 - **One-way safety.** A context span used as a FILTER is an equivalence, so it drops no
   match. Used as a PROOF, it is consumed only through `cover_conj[]`. An item that cannot
   be read exactly declines the row, and a decline is today's path. An OVER-stated set is

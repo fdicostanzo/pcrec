@@ -802,9 +802,9 @@ const char *wf_check(const mf_site *s, int frame);
  * hooks `def` (the frame's), the gate reading `gphases`, traced unless
  * `quiet`: the decision (phase 1), then Table E. On the family's own rows
  * (E-find, the FLOOR), *plan is the plan its row renders (wf_plan_row) and
- * *legacy NULL; on a
- * row reproducing today's text, *legacy is the plan translated into that
- * row's site (selected by the composer's walk as ever) and *plan NULL. Both
+ * *legacy NULL; on a row reproducing today's text, *legacy is the plan
+ * translated into that row's site (selected by the composer's walk as ever)
+ * and *plan NULL. Both
  * live in the art's arena. *path is the decision's path id. 0, or -1 with
  * *why. */
 int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # docs/dev/lanes/s3_evidence/measure_588.sh — job 588 (lane s3, D172 S3's acceptance,
-# docs/design/memfn/window_site.md rev 3.2 §6): the 650 harness's 8 cells x 3 regimes x 3 classes
+# docs/design/memfn/window_site.md rev 3.3 §6 and Goal 2): the 650 harness's 8 cells x 3 regimes x 3 classes
 # (docs/design/kit_proof/measure/: cells.tsv, gen_subjects.py, cdrv.c; job 581's calibration),
 # timing the S3 compiler's DEFAULT (routed) artifacts against its own OFF arm, at the SCALAR layer
 # (the bar) and with -fmemfn-simd (reported), BEHIND a no-clock differential stage.
@@ -20,6 +20,11 @@
 #   NOH   --memfn=no-window-skip              G1's deny arm of D-hors; built everywhere, TIMED only where
 #                                         its text differs from RTE's (hex8-bounded, §6)
 #   DEFs RTEs NOHs   the same with -fmemfn-simd (the SIMD-on layer, REPORTED, never the bar)
+#   DV1 DV2 DV3   DEF's own text (cmp-checked) compiled with other LAYOUTS, artifact and driver both:
+#                 -falign-functions=32, -falign-functions=64, -falign-functions=64 -falign-loops=32
+#                 (gcc -O2's defaults are 16): THE PER-CALL LAYOUT ALLOWANCE (Goal 2) is their
+#                 largest |delta| from DEF per call, read by read_588.py; timed, gated, not
+#                 differentially re-run (DEF's text is)
 #
 # STAGES of `run` (each prints "== s3t STAGE"; a red stage aborts, rc 3):
 #   1 build   subjects (gen_subjects.py), every arm compiled; PREMISES: RTE reads RX_DFA_SCAN
@@ -62,7 +67,8 @@ SIB=${MEASURE_SIBLING:-15}
 CC=${CC:-gcc}
 REGIMES="throughput search_short match"
 CLASSES="real none dense"
-ALLARMS="DEF RTE RT2 NOH DEFs RTEs NOHs"
+ALLARMS="DEF RTE RT2 NOH DEFs RTEs NOHs DV1 DV2 DV3"
+VARIANTS="DV1 DV2 DV3"
 SAMPLE=$here/sample_588.tsv
 ESH=$here/esh_588.tsv
 SREGIMES="throughput search_short"
@@ -73,12 +79,20 @@ cells() { if [ -n "${SMOKE_CELLS:-}" ] && [ "${ALLCELLS:-0}" != 1 ]; then echo $
 pat_of() { grep -v '^#' "$M/cells.tsv" | awk -F'\t' -v c="$1" '$1 == c { print $2 }'; }
 flags_of() {
     case $1 in
-        DEF)  echo "--memfn=no-window-search,no-window-skip" ;;
+        DEF|DV1|DV2|DV3) echo "--memfn=no-window-search,no-window-skip" ;;
         RTE|RT2) echo "" ;;
         NOH)  echo "--memfn=no-window-skip" ;;
         DEFs) echo "-fmemfn-simd --memfn=no-window-search,no-window-skip" ;;
         RTEs) echo "-fmemfn-simd" ;;
         NOHs) echo "-fmemfn-simd --memfn=no-window-skip" ;;
+    esac
+}
+# an arm's LAYOUT flags (gcc's, artifact and driver): DEF's text in another layout
+cflags_of() {
+    case $1 in
+        DV1) echo "-falign-functions=32" ;;
+        DV2) echo "-falign-functions=64" ;;
+        DV3) echo "-falign-functions=64 -falign-loops=32" ;;
     esac
 }
 # the arms TIMED for a cell: every arm but a NOH/NOHs whose text is its routed twin's
@@ -108,8 +122,10 @@ stage_build() {
             # shellcheck disable=SC2046
             "$PCREC" --features all -p rx $(flags_of "$arm") -o "$d/a.c" --pattern "$pat" > "$d/compile.log" 2>&1 ||
                 { say "build: $arm compile of $cell failed"; cat "$d/compile.log"; return 1; }
-            $CC -O2 -c -o "$d/a.o" "$d/a.c" || return 1
-            $CC -O2 -DHDR="\"a.h\"" -I"$d" -c -o "$d/d.o" "$M/cdrv.c" || return 1
+            # shellcheck disable=SC2046
+            $CC -O2 $(cflags_of "$arm") -c -o "$d/a.o" "$d/a.c" || return 1
+            # shellcheck disable=SC2046
+            $CC -O2 $(cflags_of "$arm") -DHDR="\"a.h\"" -I"$d" -c -o "$d/d.o" "$M/cdrv.c" || return 1
             $CC -O2 -o "$d/bin" "$d/d.o" "$d/a.o" || return 1
         done
         # PREMISES (rc 3 on any): the routed arms read cover, the OFF arms do not; RT2 is RTE's text
@@ -120,10 +136,14 @@ stage_build() {
             [ "$(stamp_of "$OUT/arts/$cell/$arm/a.c")" = cover ] && { say "build: PREMISE FAILED: $cell $arm reads cover"; bad=1; }
         done
         cmp -s "$OUT/arts/$cell/RTE/a.c" "$OUT/arts/$cell/RT2/a.c" || { say "build: PREMISE FAILED: $cell RTE and RT2 texts differ"; bad=1; }
+        for arm in $VARIANTS; do
+            cmp -s "$OUT/arts/$cell/DEF/a.c" "$OUT/arts/$cell/$arm/a.c" || { say "build: PREMISE FAILED: $cell $arm is not DEF's text"; bad=1; }
+        done
         local arms="DEF RTE RT2"
         cmp -s "$OUT/arts/$cell/NOH/a.c" "$OUT/arts/$cell/RTE/a.c" || { arms="$arms NOH"; nhors=$((nhors + 1)); }
         arms="$arms DEFs RTEs"
         cmp -s "$OUT/arts/$cell/NOHs/a.c" "$OUT/arts/$cell/RTEs/a.c" || arms="$arms NOHs"
+        arms="$arms $VARIANTS"
         echo "$arms" > "$OUT/arts/$cell/arms"
         say "build: $cell: timed arms $arms"
     done
@@ -231,6 +251,7 @@ stage_diff() {
     for cell in $(cells); do
         tile=$(cat "$OUT/diff/$cell.tile")
         for arm in $ALLARMS; do
+            case " $VARIANTS " in *" $arm "*) continue ;; esac   # DEF's text, re-run as DEF
             d=$OUT/arts/$cell/$arm
             dd=$OUT/diffbin/$cell/$arm
             mkdir -p "$dd"
@@ -248,7 +269,7 @@ stage_diff() {
                 fi
             fi
         done
-        say "diff: $cell: $ALLARMS | $(cat "$OUT/diffbin/$cell/RTE/plain.out")"
+        say "diff: $cell: $ALLARMS (the layout variants as DEF) | $(cat "$OUT/diffbin/$cell/RTE/plain.out")"
     done
     [ "$bad" = 0 ] || { say "== s3t DIFFERENTIAL RED: $bad of $n arm builds disagree with python re"; return 3; }
     say "== s3t differential GREEN: $n arm builds equal to python re ($(cells | wc -l) cells, asan=$asan)"
@@ -354,7 +375,7 @@ case $cmd in
         say "final load1=$(cut -d' ' -f1 /proc/loadavg)"
         say "== s3t STAGE table"
         {
-            echo "# job 588 (lane s3): D172 S3's acceptance, window_site.md rev 3.2 §6"
+            echo "# job 588 (lane s3): D172 S3's acceptance, window_site.md rev 3.3 §6 and Goal 2"
             echo
             echo "- the bar: the SCALAR layer (\`-fno-memfn-simd\`, the default); the SIMD-on layer (\`-fmemfn-simd\`) REPORTED, each cell against SIMD-on DEF; the official SIMD verdict stays pcrec-bench's (D144 addendum 4)"
             echo "- one compiler (the S3 build, pcrec $(sha256sum "$PCREC" | cut -c1-12)); arms by flags (measure_588.sh header); gcc -O2, no -march, one pinned core (cpu $CPU, sibling $SIB), $($CC --version | head -1)"

@@ -5,15 +5,13 @@
  *   pick, its exchange sort, the materiality test), relicensed 0BSD by its
  *   author (D145 addendum 1) (memfn/PROVENANCE.md).
  *
- * memfn/src/window.c — THE WINDOW FAMILY (D172, S2 commit 1;
- * docs/design/memfn/window_site.md rev 3.2 §2, §3).
+ * memfn/src/window.c — THE WINDOW FAMILY (D172;
+ * docs/design/memfn/window_site.md rev 3.3 §2, §3).
  *
  * WHAT IT IS. One row family over a WINDOW SITE's facts (memfn.h "THE WINDOW
  * SITE": spans with start, sets, core and verify; one or two alternatives,
- * each with its ENTRY; table offers; the floor; the frame). Since S2 commit 6
- * it is the route of EVERY site stating alternatives, on every art (through
- * commit 5 an art had to preview "window-family"; the old path, the site's
- * own old fields, is deleted).
+ * each with its ENTRY; table offers; the floor; the frame): the route of
+ * EVERY site stating them (WF_STATES), on every art.
  *
  *   phase 1 (DECISION, no text; mf_wdecide)
  *     A  the STOP per alternative (rows A-empty A-parked A-model A-mass
@@ -2674,7 +2672,7 @@ static int wf_find_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink 
 
 /* The family rows' applicability: every site the family selected them for
  * (Table E chose; their contracts are the gate's). */
-static int wf_floor_applies(const mf_site *s, const mf_hooks *def)
+static int wf_family_applies(const mf_site *s, const mf_hooks *def)
 {
     (void)s;
     (void)def;
@@ -2709,8 +2707,9 @@ int wf_plan_reads_table(const struct wf_plan *w)
     return w->reads_table;
 }
 
-/* E-find's Table B renderer row for the plan, NULL where no B row renders
- * (the floor, or D-hors's probe, which finds no stop). */
+/* The FIND slot's row that decided E-find's stop (kit.h; Table B's renderer
+ * row is wf_brows[w->bren]), NULL where none did (the floor, or D-hors's
+ * probe, which finds no stop). */
 const char *wf_plan_brow(const struct wf_plan *w)
 {
     return w->row == &wf_find_arm && w->bren < WF_NBROWS ? w->brow : NULL;
@@ -2744,7 +2743,7 @@ static const gate_contract wf_floor_ct = { "wfE", "E-generic", NU(wf_floor_uses)
 const arm wf_floor_arm = {
     "wf-floor",
     0,
-    wf_floor_applies,
+    wf_family_applies,
     wf_floor_define,
     wf_floor_use,
     &wf_floor_ct,
@@ -2774,7 +2773,7 @@ static const gate_contract wf_find_ct = { "wfE", "E-find", NU(wf_find_uses), {
 const arm wf_find_arm = {
     WF_FIND_ID,
     0,
-    wf_floor_applies,
+    wf_family_applies,
     wf_find_define,
     wf_find_use,
     &wf_find_ct,

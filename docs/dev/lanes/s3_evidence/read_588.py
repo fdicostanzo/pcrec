@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 # docs/dev/lanes/s3_evidence/read_588.py — job 588 (lane s3): s3t_results.tsv -> D172 S3's
-# acceptance reading (docs/design/memfn/window_site.md rev 3.2 §6).
+# acceptance reading (docs/design/memfn/window_site.md rev 3.3 §6 and Goal 2).
 #
 # usage: python3 -I read_588.py OUT HEADER_FILE R581_TABLE
 #
-# THE BAR (§6, the SCALAR layer): per (cell, regime, class), R = med(RTE)/med(DEF); the cell PASSES
-#   when R <= 1 + floor, where floor is job 581's floor(PRO) for that cell (R581_TABLE's Table A,
-#   column "floor(PRO) rel": a committed artifact, not this run); the FIVE NAMED cells instead pass
-#   when R <= their cap (581's ratio plus its floor, §6's table). Any other result FAILS; one
-#   failing cell fails the bar. Every regime and class is read, `match` included.
-# REPORTED, NOT THE BAR: the SIMD-on layer, Rs = med(RTEs)/med(DEFs), with the same floor and caps
-#   (a SIMD-on loss is a finding for the SIMD thread, §6).
+# THE BAR (Goal 2, §6, the SCALAR layer): per (cell, regime, class), R = med(RTE)/med(DEF); the
+#   cell PASSES when R <= 1 + floor, where floor is job 581's floor(PRO) for that cell
+#   (R581_TABLE's Table A, column "floor(PRO) rel": a committed artifact, not this run), OR when
+#   its per-call delta (med(RTE) - med(DEF)) / calls is within THE PER-CALL LAYOUT ALLOWANCE of its
+#   regime (below). NO CAPS: no cell has a limit of its own. The dense-hex KNOWN GAP (window_site.md
+#   Goals, a D176 witness: hex8-bounded throughput/dense and search_short/dense) is printed with
+#   its reading, KNOWN-GAP, and does not fail the bar. Any other result FAILS; one failing cell
+#   fails the bar. Every regime and class is read, `match` included.
+# THE PER-CALL LAYOUT ALLOWANCE (Goal 2), measured in THIS run: the DEF arm's text compiled again
+#   with other layouts (measure_588.sh's DV1..DV3: function and loop alignment variants, the same C),
+#   timed beside it; per regime, A = the largest |med(DVk) - med(DEF)| / calls over every variant,
+#   cell and class, in ns per call (calls per pass: one per record in search_short and match, the
+#   find-all's rx_search calls, hits + 1, in throughput; read off the subjects' .expect). Printed
+#   with the variant and cell that set it; a regime with no variant timed has no allowance (0).
+# REPORTED, NOT THE BAR: the SIMD-on layer, Rs = med(RTEs)/med(DEFs), with the same floor and
+#   allowance (a SIMD-on loss is a finding for the SIMD thread, §6).
 # THE A/A: med(RT2)/med(RTE), this run's own noise beside 581's floor.
 # G1 ALPHA of each deny row at both layers (memfn/CLAUDE.md: pcrec's timing vs its own deny):
 #   window-search  med(RTE)/med(DEF)    (its deny IS the DEF arm), and RTEs/DEFs
@@ -21,8 +30,9 @@
 #   regime, class) R = med(RTE)/med(DEF) and Rs = med(RTEs)/med(DEFs), where an arm built once for
 #   both layers (same text) is read for both; its floor is THIS run's A/A in that regime (the
 #   largest |med(RT2)/med(RTE) - 1| over §6's cells and classes). Every cell prints PASS (R <= 1 +
-#   floor) or FAIL, every row PASS iff all its cells pass, and every STRATUM (the committed pick's,
-#   sample_588.tsv) PASS iff its cells' geometric-mean R is <= 1 + the largest floor of its regimes:
+#   floor, or its per-call delta within the regime's allowance) or FAIL, every row PASS iff all its
+#   cells pass, and every STRATUM (the committed pick's, sample_588.tsv) PASS iff its cells'
+#   geometric-mean R is <= 1 + the largest floor of its regimes, or every cell of it passes:
 #   NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR is the bar's sample term (scalar layer; the SIMD
 #   layer reported). A row of sample.tsv with no timed cell (dropped by a premise, a compile or the
 #   answer gate) FAILS the bar too: a dropped row is never a pass.
@@ -42,17 +52,13 @@ from collections import defaultdict
 out, header, t581 = sys.argv[1], open(sys.argv[2]).read().rstrip("\n"), sys.argv[3]
 REG = ("throughput", "search_short", "match")
 CLS = ("real", "none", "dense")
-# §6's five named cells: (cell, regime, class) -> cap (581's ratio + its floor)
-CAPS = {
-    ("hex8-bounded", "throughput", "dense"): 1.551,
-    ("hex8-bounded", "search_short", "dense"): 1.159,
-    ("file-ext-order", "search_short", "none"): 1.053,
-    ("file-ext-order", "match", "real"): 1.059,
-    ("file-ext-order", "match", "none"): 1.085,
-    # job 605's one failing cell, a LAYOUT effect (s3_report.md §6.2: rx_match byte-identical, its
-    # placement moved); the manager's cap, 2026-10-23: 605's ratio 1.032 plus its 581 floor 0.020
-    ("foobar", "match", "real"): 1.052,
+# the dense-hex KNOWN GAP (window_site.md rev 3.3 Goals; a D176 witness, Frank 2026-10-24): read
+# and printed, never a pass and never a FAIL of the bar
+KNOWN_GAP = {
+    ("hex8-bounded", "throughput", "dense"),
+    ("hex8-bounded", "search_short", "dense"),
 }
+VARIANTS = ("DV1", "DV2", "DV3")   # measure_588.sh's DEF layout variants
 
 # job 581's floor(PRO) per cell, from its committed Table A
 floor581 = {}
@@ -93,15 +99,60 @@ def fmt(v):
     return "" if v is None else "%.3f" % v
 
 
+def calls_of(path, g):
+    """Calls per pass from a subject's .expect ("ops N hits H hash X"), None if unreadable."""
+    try:
+        f = open(path).read().split()
+        return int(f[1]) if g != "throughput" else int(f[3]) + 1
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def calls(c, g, cl):
+    return calls_of("%s/subj/%s.%s.%s.expect" % (out, c, cl, g), g)
+
+
+# THE PER-CALL LAYOUT ALLOWANCE per regime: (ns per call, variant, cell, class)
+allow = {}
+for g in REG:
+    best = (0.0, None, None, None)
+    for c in cells:
+        for cl in CLS:
+            k, x = calls(c, g, cl), med(c, g, cl, "DEF")
+            if not k or x is None:
+                continue
+            for v in VARIANTS:
+                y = med(c, g, cl, v)
+                if y is not None and abs(y - x) / k > best[0]:
+                    best = (abs(y - x) / k, v, c, cl)
+    allow[g] = best
+
+
+def per_call_ok(c, g, cl, a, b, k=None):
+    """(delta ns per call of a over b, within the regime's allowance)."""
+    k = k if k is not None else calls(c, g, cl)
+    x, y = med(c, g, cl, a), med(c, g, cl, b)
+    if not k or x is None or y is None:
+        return None, False
+    dl = (x - y) / k
+    return dl, dl <= allow[g][0]
+
+
 print(header)
+print()
+print("## The per-call layout allowance (Goal 2: the DEF arm's own layout variants, this run)")
+print()
+for g in REG:
+    a, v, c, cl = allow[g]
+    print("- %s: %.3f ns per call%s" % (g, a, "" if v is None else " (%s on %s/%s)" % (v, c, cl)))
 print()
 print("## Table: the bar (SCALAR) and the SIMD-on reading")
 print()
-print("| cell | regime | class | DEF ns/pass | RTE/DEF | floor(581) | cap | verdict | RT2/RTE (A/A) "
+print("| cell | regime | class | DEF ns/pass | calls | RTE/DEF | floor(581) | delta ns/call | verdict | RT2/RTE (A/A) "
       "| RTEs/DEFs (SIMD-on) | SIMD-on reading | G1 window-search (RTE/DEF) | G1 window-search SIMD (RTEs/DEFs) "
       "| G1 window-skip (RTE/NOH) | G1 window-skip SIMD (RTEs/NOHs) |")
-print("|" + "---|" * 15)
-fails, sfails, missing = [], [], []
+print("|" + "---|" * 16)
+fails, sfails, missing, gaps = [], [], [], []
 n = 0
 for c in cells:
     for g in REG:
@@ -115,30 +166,34 @@ for c in cells:
             if fl is None:
                 missing.append((c, g, cl, "no 581 floor"))
                 fl = 0.02
-            cap = CAPS.get((c, g, cl))
-            limit = cap if cap is not None else 1 + fl
-            ok = R <= limit
-            if not ok:
-                fails.append("%s %s/%s %.3f > %.3f" % (c, g, cl, R, limit))
+            dl, aok = per_call_ok(c, g, cl, "RTE", "DEF")
+            ok = R <= 1 + fl or aok
+            gap = (c, g, cl) in KNOWN_GAP
+            if gap:
+                gaps.append("%s %s/%s %.3f" % (c, g, cl, R))
+            elif not ok:
+                fails.append("%s %s/%s %.3f > %.3f, %s ns/call > %.3f" % (
+                    c, g, cl, R, 1 + fl, fmt(dl), allow[g][0]))
             Rs = ratio(c, g, cl, "RTEs", "DEFs")
-            sok = Rs is not None and Rs <= limit
-            if Rs is not None and not sok:
-                sfails.append("%s %s/%s %.3f > %.3f" % (c, g, cl, Rs, limit))
+            dls, saok = per_call_ok(c, g, cl, "RTEs", "DEFs")
+            sok = Rs is not None and (Rs <= 1 + fl or saok)
+            if Rs is not None and not sok and not gap:
+                sfails.append("%s %s/%s %.3f > %.3f" % (c, g, cl, Rs, 1 + fl))
             hors = ratio(c, g, cl, "RTE", "NOH")
             hors_s = ratio(c, g, cl, "RTEs", "NOHs")
-            print("| %s | %s | %s | %.0f | %s | %.3f | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
-                c, g, cl, med(c, g, cl, "DEF"), fmt(R), fl, fmt(cap), "PASS" if ok else "FAIL",
+            verdict = "KNOWN-GAP" if gap else ("PASS" if R <= 1 + fl else "PASS (allowance)" if ok else "FAIL")
+            print("| %s | %s | %s | %.0f | %s | %s | %.3f | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
+                c, g, cl, med(c, g, cl, "DEF"), calls(c, g, cl), fmt(R), fl, fmt(dl), verdict,
                 fmt(ratio(c, g, cl, "RT2", "RTE")), fmt(Rs),
                 "-" if Rs is None else ("within" if sok else "SLOWER"), fmt(R), fmt(Rs),
                 fmt(hors) if hors is not None else "same text",
                 fmt(hors_s) if hors_s is not None else "same text"))
 print()
-print("## The five named cells (§6), each capped at 581's ratio plus its floor")
+print("## The dense-hex Known gap (D176 witness; reported, not the bar)")
 print()
-for (c, g, cl), cap in CAPS.items():
-    R = ratio(c, g, cl, "RTE", "DEF")
-    print("- %s %s/%s: RTE/DEF %s, cap %.3f: %s" % (c, g, cl, fmt(R), cap,
-          "-" if R is None else ("within" if R <= cap else "OVER THE CAP")))
+for c, g, cl in sorted(KNOWN_GAP):
+    print("- %s %s/%s: RTE/DEF %s, RTEs/DEFs %s" % (c, g, cl, fmt(ratio(c, g, cl, "RTE", "DEF")),
+                                                   fmt(ratio(c, g, cl, "RTEs", "DEFs"))))
 print()
 print("## G1 alpha summary (pcrec's timing vs its own deny; < 1: the row is faster)")
 print()
@@ -179,6 +234,14 @@ if os.path.exists(sfile):
         x, y = smed(sid, g, cl, a), smed(sid, g, cl, b)
         return x / y if x and y else None
 
+    def sdelta(sid, g, cl, a, b):
+        """(delta ns per call of a over b, within the regime's allowance)."""
+        k = calls_of("%s/ssubj/%s.%s.%s.expect" % (out, sid, cl, g), g)
+        x, y = smed(sid, g, cl, a), smed(sid, g, cl, b)
+        if not k or x is None or y is None:
+            return None, False
+        return (x - y) / k, (x - y) / k <= allow.get(g, (0.0,))[0]
+
     print("## Mover sample (part of the bar)")
     print()
     print("Other cover movers (sample_588.tsv, pick_588.py's stratified pick), each DEF vs routed at both "
@@ -186,9 +249,9 @@ if os.path.exists(sfile):
           "geometric-mean RTE/DEF within 1 + its floor, every sample.tsv row timed; cells and rows "
           "print PASS/FAIL; the SIMD layer is reported.")
     print()
-    print("| row | stratum | pattern | regime | class | DEF ns/pass | RTE/DEF | floor | verdict "
+    print("| row | stratum | pattern | regime | class | DEF ns/pass | RTE/DEF | floor | delta ns/call | verdict "
           "| RTEs/DEFs (SIMD) | SIMD reading |")
-    print("|" + "---|" * 11)
+    print("|" + "---|" * 12)
     slow, ssl, nrow = [], [], 0
     rowfail = defaultdict(list)
     strat = defaultdict(list)        # stratum -> [(R, floor)]
@@ -204,20 +267,22 @@ if os.path.exists(sfile):
                 nrow += 1
                 fl = aa.get(g)
                 Rs = sratio(sid, g, cl, "RTEs", "DEFs")
-                rd = "-" if fl is None else ("FAIL" if R > 1 + fl else "PASS")
-                sr = "-" if fl is None or Rs is None else ("SLOWER" if Rs > 1 + fl else "within")
+                dl, aok = sdelta(sid, g, cl, "RTE", "DEF")
+                _, saok = sdelta(sid, g, cl, "RTEs", "DEFs")
+                rd = "-" if fl is None else ("PASS" if R <= 1 + fl else "PASS (allowance)" if aok else "FAIL")
+                sr = "-" if fl is None or Rs is None else ("within" if Rs <= 1 + fl or saok else "SLOWER")
                 if fl is not None:
-                    strat[st].append((R, fl))
+                    strat[st].append((R, fl, rd != "FAIL"))
                     if Rs is not None:
                         strat_s[st].append((Rs, fl))
-                if rd != "PASS":
+                if rd == "FAIL" or rd == "-":
                     slow.append("%s %s/%s %.3f" % (sid, g, cl, R))
                     rowfail[sid].append("%s/%s %.3f" % (g, cl, R))
                 if sr == "SLOWER":
                     ssl.append("%s %s/%s %.3f" % (sid, g, cl, Rs))
-                print("| %s | %s | `%s` | %s | %s | %.0f | %s | %s | %s | %s | %s |" % (
+                print("| %s | %s | `%s` | %s | %s | %.0f | %s | %s | %s | %s | %s | %s |" % (
                     sid, st, pat.replace("|", "\\|"), g, cl, smed(sid, g, cl, "DEF"), fmt(R), fmt(fl),
-                    rd, fmt(Rs), sr))
+                    fmt(dl), rd, fmt(Rs), sr))
     print()
     print("### Sample rows (PASS iff every cell passes)")
     print()
@@ -231,15 +296,15 @@ if os.path.exists(sfile):
             print("- %s %s `%s`: %s" % (sid, st, pat, "PASS" if not rowfail.get(sid) else
                                         "FAIL (" + "; ".join(rowfail[sid]) + ")"))
     print()
-    print("### Sample strata: the bar's term (no stratum slower than DEF beyond its floor)")
+    print("### Sample strata: the bar's term (no stratum slower than DEF beyond its floor or the allowance)")
     print()
     print("| stratum | cells | RTE/DEF gmean [min, max] | floor | verdict | RTEs/DEFs gmean (SIMD, reported) |")
     print("|" + "---|" * 6)
     for st in sorted(strat):
-        v = [r for r, _ in strat[st]]
-        fl = max(f for _, f in strat[st])
+        v = [r for r, _, _ in strat[st]]
+        fl = max(f for _, f, _ in strat[st])
         gmv = statistics.geometric_mean(v)
-        ok = gmv <= 1 + fl
+        ok = gmv <= 1 + fl or all(p for _, _, p in strat[st])
         if not ok:
             sample_fails.append("stratum %s %.3f > %.3f" % (st, gmv, 1 + fl))
         vs = [r for r, _ in strat_s.get(st, [])]
@@ -342,7 +407,9 @@ if missing:
     print("MISSING: %s" % "; ".join(" ".join(m) for m in missing))
 print("SIMD-on reading (reported, not the bar): %s" % (
     "every cell within its scalar limit" if not sfails else "SLOWER: " + "; ".join(sfails)))
-print("== s3t BAR %s: %d cells read on the scalar layer%s; sample %s" % (
+print("Known gap (D176 witness, reported, not the bar): %s" % ("; ".join(gaps) if gaps else "none read"))
+print("== s3t BAR %s: %d cells read on the scalar layer (allowance ns/call: %s)%s; sample %s" % (
     "PASS" if not fails and not missing and not sample_fails else "FAIL", n,
+    ", ".join("%s %.3f" % (g, allow[g][0]) for g in REG),
     "" if not fails else "; FAILING: " + "; ".join(fails),
     "PASS" if not sample_fails else "FAIL: " + "; ".join(sample_fails)))

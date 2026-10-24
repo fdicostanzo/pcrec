@@ -1214,8 +1214,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             st->harness.measures = harness_measures_load(a + 19);
         /* [MEMFN] R17-b' B2 (R-MS6): the kit's arm-entry counter */
         else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
-        /* [KIT-VERIFY] U1 Z2: once the `cover` route and the kit's R-26.6
-           preview; inert since D172 S3 (the default routes `cover`) */
+        /* [KIT-VERIFY] U1 Z2: changes no byte (the default routes `cover`);
+           read by the KITPROOF trace record; retirement filed under
+           [KIT-VERIFY] */
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {

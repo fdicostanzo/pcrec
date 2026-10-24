@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
-# 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.2 §6): the
+# 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.3 §6, Goal 2): the
 # 650 harness's 8 cells x 3 regimes x 3 classes, the S3 compiler's routed artifacts against its own
 # OFF arm (DEF: --memfn=no-window-search,no-window-skip, byte-identical to main c3ea619c3 but for the abi
 # digits), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
 # T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
-# s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, PASS/FAIL vs §6's bar,
-# the five named caps and job 605's layout cap foobar match/real 1.052, the G1 alpha of window-search and
-# window-skip at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
+# s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, the per-call delta, PASS/FAIL vs
+# Goal 2: within the floor OR within THE PER-CALL LAYOUT ALLOWANCE, measured in this run from the DEF
+# arm's own layout variants DV1-DV3 (function/loop alignment; the largest |delta| ns per call per
+# regime); NO CAPS; the dense-hex Known gap (hex8-bounded */dense, a D176 witness) printed KNOWN-GAP,
+# not the bar; the G1 alpha of window-search and window-skip at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
 # SAMPLE, the 24 other cover movers of s3_evidence/sample_588.tsv (pick_588.py's committed, seeded,
 # stratified pick), DEF vs routed at both layers, same core and calibration, printed under "Mover
 # sample (part of the bar)": every cell and row PASS/FAIL, and `== s3t BAR` FAILS where a stratum's
-# geometric-mean RTE/DEF exceeds 1 + its floor (this run's A/A) or a row was dropped. ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~1,900 items, ~6 min,
+# geometric-mean RTE/DEF exceeds 1 + its floor (this run's A/A) with a cell outside the allowance, or a
+# row was dropped. ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~2,980 items
+# with the three layout variants (~1,900 before them), ~9 min,
 # plus ~1 min of build/differential/gate; the sample ~1,700 items (24 rows x 2 regimes x <= 3
 # classes x the distinct arm texts, 5 launches), ~5 min, plus ~1.5 min of subjects/build/gate;
-# about 14 min in all against ~7 before. Beside both (Frank's ruling 2026-10-23, FINDINGS only, never
+# about 17 min in all. Beside both (Frank's ruling 2026-10-23, FINDINGS only, never
 # in the bar): the D-HORS ADMISSION SITES, s3_evidence/esh_588.tsv (pick_esh_588.py: 12 D-hors sites
 # stratified by E[sh], esh_588.py), D-hors (RTE) vs D-one (NOH, --memfn=no-window-skip) at both layers,
 # printed under "D-hors admission (E[sh])": 560 items (12 sites, 28 class subjects as generated, 2
 # regimes, 2 distinct arm texts: a cover artifact's SIMD text is its scalar text; 5 launches), ~1.7
-# min, plus ~0.5 min of subjects/build/gate: about 16-17 min in all (cap 3600 s unchanged).
+# min, plus ~0.5 min of subjects/build/gate: about 19-20 min in all (cap 3600 s unchanged).
 # Queue it with:  scripts/boxqueue add --name 588-kit-s3-timing FILE
-# Everything it writes is under $OUT (the s3pair worktree's build/s3/job588, gitignored; re-staged
-# there by lane s3pair, code review r2: the PAIR widening's tree, PCREC its build).
+# Everything it writes is under $OUT (the s3fix worktree's build/s3/job588, gitignored; re-staged
+# there by lane s3fix, the S3 final review's fixes: PCREC is that tree's build, copied into
+# build/s3/bin before the job is queued).
 #   --dry-run  measure_588.sh smoke on ONE cell, hex8-bounded (build + premises + differential + gate),
 #              on the mover sample's first row and on the E[sh] site esh02 (subjects + build +
 #              premises + gate): NO clock
@@ -29,7 +34,7 @@
 #              gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no box-lock holder
 #   (work)     exec measure_588.sh run
 set -u
-W=/home/pcrec/projects/pcrec/worktrees/s3pair
+W=/home/pcrec/projects/pcrec/worktrees/s3fix
 E=$W/docs/dev/lanes/s3_evidence
 OUT=$W/build/s3/job588
 MAIN=/home/pcrec/projects/pcrec
@@ -50,7 +55,7 @@ case "${1:-}" in
         grep -q '^esh-gate: [1-9][0-9]* arm cells read; 1 esh rows live$' "$DRY.out" ||
             { grep -E '^(ESH|esh-)' "$DRY.out" | tail -5 >&2; echo "the E[sh] reading's smoke row did not survive" >&2; exit 1; }
         tail -3 "$DRY.out" | sed 's/^/dry: /'
-        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs)"
+        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs) and DEF's layout variants DV1 DV2 DV3"
         echo "boxqueue: cap 3600"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"

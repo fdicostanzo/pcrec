@@ -30,8 +30,8 @@
  * (R0, R5 and R7 are WITHDRAWN, D2 RETIRED (D172 S2 commit 6) and RPT, the
  * REPORT row, RETIRED (D172 S3: a REPORT site is the window family's, its
  * E-find row; window_site.md §4), ids reserved; PAIR, the two-stream find of
- * a window site's cube stop, joined at the S3 code review (C1) and is asked
- * through `fd_find` alone; F0, F1, F2 are designed and
+ * a window site's two-byte stop, is asked through `fd_find` alone; F0, F1,
+ * F2 are designed and
  * BUILT at B5, after lockdown, as formal row additions). Slot PRES: P0 P2 P3
  * P4 P9 (P1 at B5). Each row's `basis` is mandatory; the self-check (`mf_finder_rows`'
  * readers, tests/memfn/run_finder.sh) holds the rules of §1.2.
@@ -69,8 +69,7 @@ enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
 
 /* Slot FIND's forms are kit.h's `fd_form` (the window family renders them
  * too). One name per fd_form, in its order (D2's RUN and RPT's PROOF left
- * the enum with their rows; the listing printed A3 as "RUN" from D2's
- * retirement to D172 S3) */
+ * the enum with their rows: memfn/docs/finder_history.md). */
 static const char *const ff_name[] = {
     "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "A3", "PAIR",
 };
@@ -106,8 +105,7 @@ enum {
     SF_SET_RARER    = 1u << 10, /* the set's pick strictly rarer than the run's
                                    scan member (B3a)                          */
     SF_REQUIRED     = 1u << 11, /* the span's need is REQUIRED (slot PRES)     */
-    /* 1u << 12 was SF_PROOF_EXACT, RPT's alone: retired with it (D172 S3) */
-    /* 1u << 13 was SF_STRETCH_CUBE, PAIR's scope before code review r2 R2-1 */
+    /* bits 12, 13: retired, never reused (memfn/docs/finder_history.md) */
     SF_TWO_MEMBER   = 1u << 14, /* the stop is two bytes, any two              */
     SF_WINDOW_STOP  = 1u << 15, /* the stop is a window site's (fd_find): the
                                    window family renders the pick             */
@@ -298,8 +296,7 @@ static const fd_row fd_rows[] = {
       "one member anywhere else (the VM hat's seek, Q-R5; fd-d1's OFF arm): the table walk "
       "over the one-member table",
       "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0 },
-    /* PAIR (D172 S3, code review r1 C1; widened by code review r2 R2-1,
-       Frank 2026-10-23; window_site.md §2.2): a window site's stop of any
+    /* PAIR (window_site.md §2.2; Frank 2026-10-23): a window site's stop of any
        two bytes at or past the candidate, found by two memchr streams, which
        need exactly two bytes and nothing else (no one-bit cube, no run
        stretch). Its facts are disjoint from D1, D1c and D1w's (two members,
@@ -311,7 +308,7 @@ static const fd_row fd_rows[] = {
       FF_PAIR, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "S3",
       "a window site's stop of two bytes, any two, at or past the candidate: two memchr "
       "streams, the nearer hit; no PAIR cost constant (window_site.md §2.2 [rev3 bB2])",
-      "a measured cell where the walk beats two memchr streams on a cube stop", &ct_pair, 0 },
+      "a measured cell where the walk beats two memchr streams on a two-byte stop", &ct_pair, 0 },
     /* THE DEFAULT for every set FIND, MEASURED (Frank's walk ruling, D169
        addendum: E8's real-text verdict, docs/design/memfn/walk_vs_v1_record.md
        §5). WITHDRAWN rows, ids reserved and never reused: R7 (V1 on covers of
@@ -409,8 +406,9 @@ static int kind_cl(uint8_t k)
     case MF_SK_HYB_PF:      return CL_HYB_PF;
     case MF_SK_VM_ATTEMPT:  return CL_VM_ATTEMPT;
     case MF_SK_DFA_ATTEMPT: return CL_DFA_ATTEMPT;
-    /* the consumer kind whose candidate is the answer (R-26.3): every FIND
-       row's kinds hold it since D172 S3 (KD_ALL) */
+    /* the consumer kind whose candidate is the answer (R-26.3): held by the
+       rows that decide a window site's stop (KD_STOP: D1, D1c, D1w, PAIR,
+       R7w), never by KD_ALL */
     case MF_SK_REPORT:      return CL_REPORT;
     }
     return CL_OTHER;
@@ -855,8 +853,7 @@ static int fd_scope(const mf_site *s)
  * the memchr rows (bounded by end_back), LIBC_BACK the memchr below the
  * candidate, WALK the walks. D2's RUN pick retired with D2 (D172 S2 commit
  * 6): a RUN span 0 takes the composer's walk with no routed row, the same
- * text; RPT's PROOF pick (the composer's own walk, `fd_nested_walk`) retired
- * with RPT (D172 S3). A routed row whose pick has no arm here is a kit build
+ * text. A routed row whose pick has no arm here is a kit build
  * error, refused loudly by the caller (no B2 or B3b row has one).
  *
  * `quiet`: the query's walk (mf_ask) records nothing and counts no reach; a

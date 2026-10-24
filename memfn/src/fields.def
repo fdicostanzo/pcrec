@@ -156,7 +156,7 @@ MF_CLASS(L_W32,       "the finder walk's layer variant: the 32-byte SIMD layer")
 MF_CLASS(N_REQUIRED,  "the decided span's need: MF_REQUIRED")
 MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
 /* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
-   first 64 (kit.h's kit_set); RPT, the row that read it, retired at D172 S3 */
+   first 64 (kit.h's kit_set) */
 MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
 /* D172 S2 commit 1 (window_site.md rev 3.2 §1): the window family's facts,
    read in the family's own walks only (window.c; gate_in.wf), never on a

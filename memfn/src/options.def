@@ -86,14 +86,14 @@ MF_OPT("pres-set-lead", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the finder table's PRES row P4 (set-leads, ported; pcrec's -fno-req-set-lead until "
        "B3b): a set member strictly rarer than the run's scan member is tested first; denied, "
        "the run pre-check alone")
-/* D172 S3 (window_site.md rev 3.2 §5.2's deny row; the kit manager's R2
- * ruling): the window family's two byte-moving rows, each its change's alpha
- * OFF arm. `window-search` denies Table E's E-find row: the family declines a
- * REPORT site (the floor serves none), mf_ask refuses it, and pcrec's
- * `cover` declines (C13), so the OFF arm is the default build before S3
- * exactly, not the floor; any other site E-find renders falls to the floor.
- * Its find is Table B's pick: since code review r2 R2-1, PAIR for any two
- * bytes. `window-skip` denies Table D's D-hors row: the site resumes by D-one. */
+/* D172 S3 (window_site.md §5.2's deny rows): the window family's two
+ * byte-moving rows, each its change's alpha OFF arm. `window-search` denies
+ * Table E's E-find row: the family declines a REPORT site (the floor serves
+ * none), mf_ask refuses it, and pcrec's `cover` declines, so the OFF arm is
+ * the build before the window search was the default, exactly, not the
+ * floor; any other site E-find renders falls to the floor. Its find is Table
+ * B's pick (PAIR for any two bytes). `window-skip` denies Table D's D-hors
+ * row: the site resumes by D-one. */
 MF_OPT("window-search", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the window search: jump to the next byte of one window position's bytes (memchr for "
        "one byte, two memchr streams for any two, a byte walk for more; SIMD under "

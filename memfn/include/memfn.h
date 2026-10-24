@@ -494,13 +494,10 @@ typedef enum { MF_SPAN_UNSTATED = 0, MF_SPAN_BOUNDED, MF_SPAN_CONTEXT,
  * does not know (mf_pred.member_order). */
 #define MF_ORDER_UNKNOWN 0xFFFFu
 
-/* ---- THE WINDOW SITE (D172; docs/design/memfn/window_site.md rev 3.2) ------
+/* ---- THE WINDOW SITE (D172; docs/design/memfn/window_site.md rev 3.3) ------
  *
- * STATED FACTS, appended to mf_site LAST at S2's commit 1 (no MF_SITE_ABI
- * number moves before commit 6, where the old fields retire), and read ONLY
- * by the window family on EVERY art since S2's commit 6 (through commit 5 an
- * art previewed it, mf_preview(art, "window-family")). A malformed statement
- * is refused, naming it.
+ * STATED FACTS, appended to mf_site LAST, and read ONLY by the window family,
+ * on every art. A malformed statement is refused, naming it.
  *
  * A SPAN is a run of consecutive positions start .. start + len - 1 relative
  * to the candidate c, one byte set per position (all 256: any byte; empty is
@@ -1388,12 +1385,6 @@ int      mf_stamps(const mf_art *, mf_sink *);
  * mf_reach was never called on. */
 int      mf_reach(mf_art *, const char *stem);
 int      mf_reach_table(const mf_art *, mf_sink *file_scope);
-/* (R-26.6, RETIRED at D172 S3) `mf_preview`, the test-harness routing
- * preview, previewed THE WINDOW FAMILY ("window-family") through S2 commit 5
- * and the REPORT row ("R-26.6") through S2; the family is every art's since
- * commit 6 and REPORT renders by its E-find row since S3, so the entry is
- * gone (window_site.md §4). */
-
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *
  * THE DECISION, no text: pcrec asks with the spans, the alternatives and the

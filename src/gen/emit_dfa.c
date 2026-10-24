@@ -4839,12 +4839,12 @@ static bool locate_rev_end_applies(const CandSel *s)
     return pcrec_fact_end_pin(s->cx) != PCREC_EPIN_NONE;               /* R1 */
 }
 
-/* [KIT-VERIFY] U1 `cover`'s predicate (kit_proof.md §1.1, §2.2, §7's B1 row):
+/* [KIT-VERIFY] U1 `cover`'s predicate (kit_proof.md §1.1, §2.2, §7):
  * `cover_conj[]` walked in order (src/gen/known.c, one decision per attempt),
- * true where every row holds. Routed by default since D172 S3 (B1): C13 asks
- * the memfn kit, whose window family renders the REPORT site by its E-find
- * row; the kit's deny `--memfn=no-window-search` declines C13 and with it the row
- * (the OFF arm: `composite`, the default before S3). */
+ * true where every row holds; routed by default. C13 asks the memfn kit,
+ * whose window family renders the REPORT site by its E-find row; the kit's
+ * deny `--memfn=no-window-search` declines C13 and with it the row (the OFF
+ * arm: `composite`). */
 static bool locate_cover_applies(const CandSel *s)
 {
     return pcrec_cover(s->cx)->why == NULL;
@@ -7537,9 +7537,8 @@ static int ofs_window_of(Ctx *cx, const UnanchStart *us, mf_walt **walts)
  * window family's decision over `us`'s DFA prefilter statement
  * (`ofs_window_of`), into `us->wr`, with the chosen alternative's ENTRY. The
  * decision reads no frame fact, so one ask serves every NEXT row and every
- * selection of this machine. Asked wherever the art previews the family
- * (the default); a refusal is pcrec's defect (the statement is the one
- * the block defines). */
+ * selection of this machine. Asked on every art; a refusal is pcrec's
+ * defect (the statement is the one the block defines). */
 static void window_reply_ask(Ctx *cx, UnanchStart *us)
 {
     mf_walt *walts;
@@ -9989,9 +9988,9 @@ static const CandRow cand_rows[] = {
      * No machine runs. Admitted by cover_conj[] (§1.1), read in order. After
      * `rev-end`, before `composite`; CAND_ROUTE_DFA only (C1 asks the
      * finisher's). Its walk answers presence itself (`whole`) and asks
-     * RECOVER nothing. Routed by default and listed since D172 S3 (B1); its
-     * deny is the memfn kit's `window-search` (C13), so the row carries no pcrec
-     * flag (a pcrec FACT deny `-fno-kit-proof` is filed under [IFACE-PUSH]).
+     * RECOVER nothing. Routed by default and listed; its deny is the memfn
+     * kit's `window-search` (C13), so the row carries no pcrec flag (a pcrec
+     * FACT deny is filed under [IFACE-PUSH]).
      * The kit ask C13 makes is of the REPORT description alone, which no
      * slot's selection describes (§2.2), so it is no edge of the read graph. */
     { .c = { "cover", 0, locate_cover_applies }, .slot = CAND_SLOT_LOCATE,
@@ -10044,7 +10043,7 @@ static const CandRow cand_rows[] = {
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
-      .desc = "the body's LOCATE row answers presence itself (rev-end, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
+      .desc = "the body's LOCATE row answers presence itself (rev-end, the cover window search, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
       .u.admit = { REQ_ADMIT_DOMINATED } },
     { .c = { "set-leads", 0, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",

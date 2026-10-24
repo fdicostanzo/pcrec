@@ -1,4 +1,4 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.3 DRAFT)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.3)
 
 Rev 3: lane uwin3, 2026-10-22 (rev 2 + the kit branch). DESIGN ONLY: no source or test edit, no make,
 no timing. Applies the panel `docs/dev/reviews/2026-10-22-r1-memfn-window-site-rev2.md` and job 581's
@@ -9,15 +9,19 @@ Rev 3.1 (uwin3, 2026-10-22): the verification critic's V1-V7 text fixes, each re
 Rev 3.2 (2026-10-22): main's agreement notes 1-7 (S3 bar names every slower cell, match included; both layers
 reported; R-on-PARKED as a soundness fact + the RE-SEED bit; the reply owns the run pin; tie obligations; one
 tie table + one reply-to-stamp table; sabotage ids); marks `[rev3.2 n<k>]`.
-**Rev 3.3 (DRAFT for the manager; lane s3, 2026-10-23):** records S3 as built and the S3 code review
+**Rev 3.3 (lane s3, 2026-10-23; ACCEPTED 2026-10-24, below):** records S3 as built and the S3 code review
 r1's C1 build (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, findings C1, C3, C4, C7, C9, C10):
 E-find, the Table E row the design did not have (§2.6); Table B asked the design's question and its
 pick rendered, PAIR and the SIMD rows reachable (§2.2); Table D a kit_table (§2.5); the bar's mover
-sample and foobar's layout cap (§6). Marks `[rev3.3 C<k>]`. Code review r2 (lane s3pair, 2026-10-23,
+sample (§6). Marks `[rev3.3 C<k>]`. Code review r2 (lane s3pair, 2026-10-23,
 `docs/dev/reviews/2026-10-23-r2-memfn-s3-c1-code.md`) adds the ranked GOALS (below), PAIR's widened
 contract (§2.2, Frank 2026-10-23: "Widen two pair s3 now"), the one two-stream renderer (§2.2) and
-D-hors's last-offset condition and row-carried actions (§2.5); marks `[rev3.3 R2-<k>]`. NOT YET
-ACCEPTED: rev 3.2 is the design of record until the manager accepts this revision.
+D-hors's last-offset condition and row-carried actions (§2.5); marks `[rev3.3 R2-<k>]`. **ACCEPTED
+2026-10-24** by the kit manager with Frank's rulings (the S3 final code review,
+`docs/dev/reviews/2026-10-24-r1-memfn-s3-final-code.md` "Rulings"; lane s3fix's edits, marks
+`[rev3.3 F]`): Goal 2 reworded (no named caps: the relative floor or a measured per-call layout
+allowance), the known gaps listed (D176 witnesses), no exceptions to the goals' ranking. Rev 3.3 is the
+design of record.
 
 ---
 
@@ -29,9 +33,13 @@ Ranked; when two conflict, the higher wins. Each is checkable as stated.
    define, the leftmost first: G2's window family (`memfn/tests/run_g2_win.sh`) green against its
    reference over the generated space, every plant red; zero corpus answer changes against the OFF arm
    (`--memfn=no-window-search,no-window-skip`, byte-identical to the default build before the window search).
-2. **Not slower than DEF beyond the floor** (users of the default build). On the SCALAR layer every §6
-   cell, and every stratum of the mover sample, reads routed/DEF <= 1 + its floor (this run's A/A),
-   the named caps excepted, each cap a measured ratio plus its floor.
+2. **Not slower than DEF beyond the relative floor or a measured per-call layout allowance** (users of
+   the default build) `[rev3.3 F]`. On the SCALAR layer every §6 cell, and every stratum of the mover
+   sample, reads routed/DEF <= 1 + its floor (this run's A/A), OR routed's time per call exceeds DEF's
+   by no more than the PER-CALL LAYOUT ALLOWANCE: a time in ns per call, measured in the same run (job
+   588) as the largest |delta| per call between layout variants of the DEF arm itself (§6). No
+   per-pattern caps and no per-pattern passes. The populations the bar's sample does not hold are the
+   Known gaps below; they are not exceptions to this goal but its open witnesses.
 3. **Simple: one table per slot** (the next editor). Each slot is one declared table (Table B IS the
    finder's FIND slot; no private copy of it), each method one renderer (one two-stream text for every
    PAIR site), and a table's rows carry their own actions (no `if` on which row held outside the walk).
@@ -43,6 +51,18 @@ Ranked; when two conflict, the higher wins. Each is checkable as stated.
 the SIMD thread (§6); an arbitrary-pair SIMD kernel (`[MEMFN-PAIRSIMD]`); pricing the stop by its find
 method (D176's priced choice over position x method, `[MEMFN-PAIRSTOP]`): today Table A ranks by mass
 alone and Table B finds whatever A chose.
+
+**Known gaps (D176 witnesses)** `[rev3.3 F]`. Goal 2 losses this revision does not fix, each an
+acceptance cell of D176's priced stop x method choice (`docs/design/memfn/stop_ranking_study.md` §5.1,
+lane/memfn-stopstudy `fc6735cdf`), and none a cap:
+- **the 3+-member set-stop walk**: A-mass picks a rarer position of three or more bytes over a one-byte
+  position, and B walks it byte by byte where DEF ran `memchr` on the one byte. Witnesses `[<>&]x`,
+  `[xqz]ab`, `[jqz]uery`, `[.,;]\d`, `[QXZ]{2}` (find-all over a real text: `[<>&]x` 0.62 -> 11.3
+  instructions per byte, `[xqz]ab` 0.91 -> 12.3). Frank 2026-10-24: "Leave the wart. Its fix is the test
+  for pricing."
+- **dense-hex SKIP**: D-hors on an all-hex subject, where no stop is rare (hex8-bounded throughput/dense
+  1.53x, search_short/dense 1.14x DEF, job 581), for D-hors's 2-6x wins on real and no-hit text. Frank
+  2026-10-24: "Add hex case to the pricing tests".
 
 ---
 
@@ -566,34 +586,30 @@ of where hex lands"), as main agreed it:
   0.404, 1.18 only vs COV). **Routed form:** D-hors fires on hex8 alone (284,434 ppm; next 74,760): HRS
   there, PRO elsewhere.
 
-**EVERY cell where the routed form is slower than DEF beyond its floor**, all regimes (`match`
-included), from the 581 table; each is capped at its measured ratio plus its floor:
+**Every cell where the routed form is slower than DEF beyond its floor** is judged by Goal 2 alone
+`[rev3.3 F]`: within the relative floor, or within the per-call layout allowance (below); there are no
+named caps. Of 581's slower cells, the two hex8 dense cells (HRS 1.531 and 1.139 against DEF) are the
+dense-hex Known gap (D176 witness, Goals); the three `file-ext-order` cells (1.033 search_short/none,
+1.039 match/real, 1.065 match/none, under 0.020 floors) and job 605's foobar match/real (1.032, a
+LAYOUT move: `rx_match` is byte-identical between the arms and its placement moved, s3_report.md §6.2)
+are read against the allowance in job 588, a cell outside both a FAIL.
 
-| cell | routed form | 581 ratio / DEF | floor | cap | reason |
-|---|---|---|---|---|---|
-| hex8-bounded throughput/dense | HRS | 1.531 | 0.020 | 1.551 | an all-hex subject has no rare stop; every form loses (PRO 1.412, SHF 1.378, COV 1.322); HRS routes hex8 for its 2-6x wins (throughput real 0.458, none 0.490; search_short real 0.523, none 0.173) |
-| hex8-bounded search_short/dense | HRS | 1.139 | 0.020 | 1.159 | the same subject; PRO 1.132, COV 1.184 |
-| file-ext-order search_short/none | PRO | 1.033 | 0.020 | 1.053 | literal `.` stop on a no-hit short subject; one bounded effort (PRF, the FUNC twin) read worse at 1.094; accepted (one-pass rule) |
-| file-ext-order match/real | PRO | 1.039 | 0.020 | 1.059 | `match` regime (T9), reproduced from 580 (1.043); cause not diagnosed; accepted under the same one-pass rule |
-| file-ext-order match/none | PRO | 1.065 | 0.020 | 1.085 | the same (580: 1.057) |
-
-Cells reading S inside their floor (foobar throughput/none PRO 1.011, hex8 match/real HRS 1.011) are not
-named; the bar holds them at the floor like every other cell.
-
-**Users WILL see about 1.53x slower on all-hex dense bulk input**, because D-hors routes hex8 to HRS. This
-is accepted for the 2-6x wins on real and no-hit text (Frank: "we need this regardless of where hex
-lands"; the kit's judgement call), and it is stated in the S2 request (Appendix A).
+**Users WILL see about 1.53x slower on all-hex dense bulk input**, because D-hors routes hex8 to HRS: the
+dense-hex Known gap, kept for the 2-6x wins on real and no-hit text (Frank: "we need this regardless of
+where hex lands"), stated in the S2 request (Appendix A).
 
 S3's go: zero answer changes; on the scalar layer every `real`/`none`/`dense` cell of every regime
-(throughput, search_short, match) not slower than DEF beyond its floor(PRO), the five named cells within
-their caps; G1 green on D-hors's non-REPORT movers; the SIMD-on reading reported.
+(throughput, search_short, match) not slower than DEF beyond its floor(PRO) or the per-call layout
+allowance (Goal 2), the dense-hex Known gap reported; G1 green on D-hors's non-REPORT movers; the SIMD-on reading reported.
 
-**Rev 3.3 additions to the bar `[rev3.3 C10]`** (main agreed, 2026-10-23):
-- **foobar match/real**, a LAYOUT cap at 1.052 (job 605's 1.032 plus its floor 0.020): `rx_match` is
-  byte-identical between the arms and its placement moved (s3_report.md §6.2);
+**Rev 3.3 additions to the bar `[rev3.3 C10, F]`** (main agreed, 2026-10-23; the caps deleted 2026-10-24):
+- **the per-call layout allowance** (Goal 2): job 588 times LAYOUT VARIANTS of the DEF arm (the same C
+  compiled with other function alignments, `-falign-functions=16/32/64`), each cell's per-call time
+  against DEF's own; the allowance is the largest |delta| in ns per call over every variant and cell of
+  the run, printed with its variant and cell, never a hand-set number;
 - **the mover sample is part of the bar**: job 588's 24 stratified cover movers (`sample_588.tsv`), DEF
   vs routed at the scalar layer, NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR (its cells' geometric-mean
-  ratio within 1 + this run's A/A), every sample row and cell printed PASS/FAIL, a dropped row a FAIL;
+  ratio within 1 + this run's A/A, or its per-call delta within the allowance), every sample row and cell printed PASS/FAIL, a dropped row a FAIL;
   the SIMD layer reported. This rewords main's R-27.1
 bar ("`dense` not slower than COV"); main AGREED (rev 3.2). In family terms, 581's PRO = A-mass + B + C-yes
 + D-one + E-stmt and HRS = PRO with D-hors.
