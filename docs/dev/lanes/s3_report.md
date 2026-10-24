@@ -5,6 +5,11 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+PART 11 (2026-10-24, lane s3fix): the S3 final review's FIX-NOW items and the manager's R-a..R-d
+done (EMIT-1's bounded look-ahead, EMIT-3, the rename to window-search/window-skip, the spec hunks,
+rev 3.3 accepted, the R-d mover declarations, job 588's two-stream sample); job 620's stale axes
+pins re-pinned with cause; job 621 queued, its verdict OWED (Part 11).
+
 PART 10 (2026-10-24, lane s3pair): main 0d3765c87 merged, S3 renumbered to abi 85, light suites
 green, job 620 (from 587, reference main) queued (Part 10).
 
@@ -70,6 +75,277 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 11. Final review fixes (lane s3fix, 2026-10-24)
+
+Brief: the kit manager's fix lane for the S3 final code review
+(`docs/dev/reviews/2026-10-24-r1-memfn-s3-final-code.md`; its "Rulings" section overrides the proposed
+dispositions) and the manager's mid-run rulings R-a..R-d. Worktree `worktrees/s3fix`, branch
+`lane/memfn-s3fix`, cut from `lane/memfn-s3pair` @ `cc4f54eb2`. Every byte move stays inside abi 85
+(not landed): re-pins only, no new bump. Two agents: the first fix lane (commits `e7b54ae53` to
+`0e53c8dfa`, stopped before its report; its draft is the base of §11.1-§11.5) and fix round 2 (this
+part's remaining items, under a BOX RULE: no suite or sweep run outside one queued job, only single
+compiles of a handful of patterns).
+
+STATE AT HANDOFF: tip = the commit that adds this part (job 621 prints the sha it runs on). No
+rulings file. Job 621 QUEUED (owner kit), its verdict OWED (§11.8).
+
+Commits: `e7b54ae53` (EMIT-1, EMIT-3/HOUSE-7, the rename, HOUSE-1/6, SLOT-8, G2), `83b5578a7`
+(spec hunks, kit_proof.md rev 2.3, window_site.md rev 3.3 ACCEPTED, job 588's layout variants),
+`966d247f4` (CHECK-1, readers, re-aims, CHECK-5's witness), `209d8f5eb` (G2 below-window sites, the
+OFF-arm sentences, the abi 85 changelog), `d0d81e4e8` (the pair loop ends by construction, readers
+and witnesses re-aimed, pins), `0e53c8dfa` (final pins); round 2: `c8a0f8961` (job 620's memfn_arm
+re-pins, tri620.md), `55ebe5184` (R-d), `e5bed220d` (R-b), the job 621 commit, this report.
+
+## 11.1 Inventory (each FIX-NOW id and each mid-run ruling)
+
+| id | status | commit | evidence |
+|---|---|---|---|
+| EMIT-1 | DONE | e7b54ae53, 966d247f4, d0d81e4e8 | §11.2; G2 long subjects, plant S1541 red |
+| EMIT-3 + HOUSE-7 | DONE | e7b54ae53 | §11.3; S1543 red, S1423 re-aimed red |
+| the rename (CONTRACT-7 / SLOT-9 names) | DONE: `window-search`, `window-skip` | e7b54ae53; list_axes_delta.tsv in the job 621 commit | §11.4 |
+| CONTRACT-1 | DONE: §6.3.4¶3's `"none"` row has a `"cover"` clause | 83b5578a7 | spec |
+| CONTRACT-2 | DONE: match_api §6.3.7¶7 (`@idx` on cover), ¶8 (`"dominated"`), tuning §2.29¶5 and ¶10's table, the `dominated` row's `--list-axes` text | 83b5578a7 | spec, emit_dfa.c `.desc` |
+| CONTRACT-3 | DONE: tuning §2.47¶2 (witnesses `ab\|cd`, `(?<=ab)cd`, `(?!a)`; `abcd`/`a\|b`/`[a-z]` named under `--memfn=no-window-search`), match_api §3.1¶21. The old ¶2 held a raw BACKSPACE byte (0x08) where `\b` was meant; the new sentence drops it | 83b5578a7 | each witness compiled and read `"end-minus-width"` |
+| CONTRACT-4 | DONE: tuning §3's `_DFA_SCAN` row lists `"cover"` | 83b5578a7 | spec |
+| CONTRACT-5 | DONE: tuning §2.46¶4 (`cat\z -fno-rev-end` reads `"cover"`) | 83b5578a7 | compiled: `cat\z`, `[ab]c\z` cover, `cat$` unanchored |
+| CONTRACT-6 | DONE: the `attempt-start` and `dominated` texts name cover; registry §6¶3a names `cover` as the second row that reads the kit with no pcrec deny | 83b5578a7 | list_axes_delta.sh against main: 9 rows exactly as declared (the two texts are a - and a + each) |
+| CONTRACT-7 prose | DONE: no S3, C8, `cover_conj` or kit source file in the caller-facing hunks | 83b5578a7 | grep |
+| SLOT-5 | DONE: kit_proof.md rev 2.3, §R2.3 (what S3 built instead of B1's plan; `cover` has no pcrec-side identity; C13's `refused` cannot tell a deny from a decline), `[s3]` marks on the superseded sentences | 83b5578a7 | |
+| SLOT-6 / HOUSE-8 / HOUSE-9 | DONE (comments only): memfn/src/CLAUDE.md, finder.c (PAIR is no "cube stop"; the retired-bit tombstones; `kind_cl`'s KD_ALL comment; RPT history), memfn.h (the `mf_preview` tombstone deleted), fields.def, options.def, window.c's header, `wf_plan_brow`'s header, `wf_floor_applies` renamed `wf_family_applies`, kit.h's `wf_prepare` header, emit_dfa.c, internal.h + cli/main.c (HOUSE-2: the lever "changes no byte", retirement filed under [KIT-VERIFY], no lane-report pointer), the design index line. PAIR's refutation text moved to memfn/docs/finder_history.md | e7b54ae53, 83b5578a7 | |
+| CHECK-1 | DONE: `cover_pick` reads B-fn's helper body (the frontier raise, hit tests, memchrs, `cand -= K`) and the one-line B-pair text | 966d247f4 | test-encoding-checks green (round 2 of the first lane) |
+| CHECK-2 | DONE: a 100-site BELOW-WINDOW G2 stream (`G2W_H2_SITES`), the generator's own D-hors scope census (`hwin`: every site whose stop window lies wholly below the candidate; none may carry a skip table), plant S1542 | e7b54ae53, 966d247f4, 209d8f5eb | G2 `hwin` 163 (floor 146); S1542 red |
+| CHECK-5 | PARTLY: the PAIR witness is `x[Q%]y` (two unrelated bytes, rows.tsv); row_floors.tsv's `fd PAIR` cells stay PLACEHOLDER (the pcrec floor needs the slot N2 census, the g2 floor G2's `--rows` tier) | 966d247f4 | test-memfn-rows green; floors OWED (§11.8) |
+| HOUSE-1 | DONE: `pcrec_fact_span` deleted | e7b54ae53 | build |
+| HOUSE-6 | DONE: `WF_STATES(x)` in kit.h, the one spelling (gate.c, compose.c, window.c). gate.c's missing `wfloor` was not a defect: `wf_check` refuses a `wfloor`-only site before any row renders it | e7b54ae53 | |
+| SLOT-8 | DONE: `b_fn_holds` requires the BODY walk to take fn-pair (`ofs_fn_serves`' `*two`), so the FIND pick and the BODY pick agree by a stated condition; G2 holds every B-fn body to the two streams. No plant: dropping the condition alone is equivalent by construction (S454 stays the pre-check's detector) | e7b54ae53 | G2 |
+| window_site.md rev 3.3 | DONE, ACCEPTED 2026-10-24: Goal 2 reworded (relative floor OR the measured per-call layout allowance), every named cap deleted, "Known gaps (D176 witnesses)" (the 3+-member set-stop walk; dense-hex SKIP) | 83b5578a7 | |
+| job 588's bar | DONE: the DEF arm's layout variants DV1-DV3 and the allowance (83b5578a7); R-b's two-stream sample (e5bed220d, §11.6) | 83b5578a7, e5bed220d | synthetic smokes of read_588.py, both ways |
+| R-a (no new deny; OFF-arm identity sentence) | DONE: no deny; tuning §2.43¶3d, registry `window-search`, window_site.md Goal 1 and job 588's DEF note all say "but for the abi digits and the two-stream find's bounded look-ahead" | 209d8f5eb | grep |
+| R-b (the bound's cost visible) | DONE: §11.6 | e5bed220d | pair-build/pair-gate smoke on 3 rows: 36 arm cells equal to python `re` |
+| R-c (bounded effort on the dense cost) | DONE: the look-ahead GROWS GEOMETRICALLY from a first chunk (it doubles each time it comes up empty); the first chunk, 128 bytes, is chosen by instruction count and its TIME is labelled an UNMEASURED DEFAULT at its site (ofsskip.c `PAIR_LOOKAHEAD`) | e7b54ae53, 966d247f4 | §11.2 |
+| R-d (declared non-cover movers) | DONE: census.py's PAIR class and bytediff.sh's MOVES-pair, from the artifact's own two-stream text, judged both ways; CHECK-4's OFF-arm wording follows R-a's sentence | 55ebe5184 | §11.5 |
+| job 620's triage | DONE: tri620.md committed; memfn_arm.py re-pinned with cause (§11.5); the step ERE fixed in 621 | c8a0f8961 | witnesses checked by single compiles |
+
+## 11.2 EMIT-1: bounded look-aheads in the one two-stream renderer
+
+THE DEFECT. `ofs_pair_text` searched both streams to `n` on every call. The stream whose byte is
+absent or far cost O(n - from) per call and a find-all O(n x matches), on every PAIR cover artifact
+and (BASE too) on the caseless fn-pair arm.
+
+THE DESIGN (kit.h `ofs_pair`, ofsskip.c `ofs_pair_text` + `ofs_pair_decl`). Each stream keeps a
+FRONTIER: no byte of that stream lies in [at, h), and h is a hit where s[h] is the stream's byte.
+Per candidate, both frontiers are first raised to `at` (= pos + k; a stale hit lies below it). Then
+the LOWER frontier is searched next, by one `memchr` over [h, min(n, h + w)). An empty look-ahead
+sets h to its end and doubles w; a hit that stays the lower frontier breaks out at once. The loop
+ends when the lower frontier is a hit (the leftmost byte of either stream at or past `at`), or when
+both reach `n`. Why linear: a stream is searched only while its frontier is the lower one, so in a
+call it reads at most its last look-ahead past the answer, and w doubles only on EMPTY look-aheads,
+which lie below the answer. Per call the cost is O(distance to the answer + w0), so a find-all is
+O(n + calls x w0). A near byte costs one `memchr`, as before. There is no `fresh` flag: a zero
+frontier is below every `at`. The widths are locals, reset per call.
+
+TERMINATION BY CONSTRUCTION (d0d81e4e8). G2's W2 mutation 2 (the first ` >= ` flipped to ` > `)
+first landed on the lower-frontier test `ha >= n`, and the mutant spun at `ha == n`: the run hung 26
+minutes. The final text computes the look-ahead's end first and breaks on an EMPTY look-ahead
+(`if (e == ha || subject[ha] == B) break;`). Every pass now breaks or moves a frontier forward,
+whatever one comparison says.
+
+INSTRUCTION COUNTS. Method: find-all by repeated `rx_search` from the previous match end,
+`perf stat -e instructions:u`, `taskset -c 7`, min of 3, gcc 15.2 -O2. Subjects: the review's
+repros at 4 MiB (the unit repeated) and the 1.8 MB dev_journal.md (and a lower-cased copy). Data:
+`build/scr/m/{all,w,final}.log` in this worktree (not committed). Instructions per byte:
+
+| pattern / subject | BASE (OFF arm) | before (cc4f54eb2) | w=32 | w=64 | w=128 | w=256 | w=512 | TIP (final text, w=128) |
+|---|---|---|---|---|---|---|---|---|
+| `(?i)xq`, "xq"+60 sp, 4 MiB | 15.24 | 3182.09 | 11.84 | 10.91 | 11.04 | 11.41 | 11.95 | 11.12 |
+| `x[Q%]y`, "x%y"+60 sp, 4 MiB | 10.51 | 3131.72 | 11.81 | 10.94 | 11.07 | 11.43 | 11.97 | 11.23 |
+| `(?i)hello`, "hello"+60 sp, 4 MiB | 3038.36 | 3036.31 | 12.25 | 11.36 | 11.48 | 11.83 | 12.35 | 11.63 |
+| `(?i)xq`, 1 MiB | 15.33 | 803.85 | 11.93 | 11.00 | 11.13 | 11.50 | 12.04 | 11.21 |
+| `(?i)the`, journal lower-cased (no `T`) | 968.01 | 966.98 | 3.85 | 3.58 | 3.35 | 3.41 | 3.72 | 3.46 |
+| `(?i)the`, journal | 5.19 | 4.16 | 3.85 | 3.57 | 3.35 | 3.39 | 3.63 | 3.46 |
+| `(?i)hello`, journal | 1.85 | 1.85 | 2.21 | 2.14 | 2.14 | 2.14 | 2.14 | 2.23 |
+| `(?i)xq`, journal | 6.17 | 0.33 | 0.34 | 0.34 | 0.34 | 0.34 | 0.34 | 0.34 |
+| `x[Q%]y`, journal | 0.52 | 0.29 | 0.30 | 0.30 | 0.30 | 0.30 | 0.30 | 0.30 |
+| `[st][hr]`, journal | 9.25 | 5.33 | 6.60 | 6.28 | 6.10 | 6.06 | 6.07 | 6.42 |
+| `[et][ao]`, journal | 9.56 | 5.65 | 6.86 | 6.52 | 6.40 | 6.38 | 6.39 | 6.82 |
+| `(?<=x)foo`, "xfox" x 262144 (EMIT-3) | 17.88 | 31.14 | 27.14 | | | | | 27.14 |
+
+The width columns w=64..512 are the renderer with the break-on-lower-hit, before the termination
+change, with the emitted width edited in the artifact. The w=32 column is an earlier cut without
+that break. TIP is the committed text (pcrec.final, 14:35). Every quadratic row is linear: the
+1 MiB and 4 MiB `(?i)xq` rows read the same per byte. 128 is within 1.3% of the best width on every
+row and the best on the dense real-text rows, which is why it is the first chunk.
+
+THE COST, and R-c. On the dense real-text pairs the tip reads 18-21% more instructions than the
+unbounded form (`[st][hr]` 5.33 -> 6.42, still 0.69x BASE; `[et][ao]` 5.65 -> 6.82, 0.71x BASE).
+`(?i)hello` on the journal reads 1.85 -> 2.23, 1.21x BASE. That is about 12 more instructions per
+candidate: the raise, the lower-frontier selection and the hit test. The termination change cost
+about 0.3 instructions/byte on the dense rows over the width-table renderer. R-c's "grow
+geometrically from a first chunk" is the design (w doubles on every empty look-ahead), so a far byte
+pays O(log distance) calls. These are instructions only. Instructions under-count `memchr`'s call
+cost, so the time is job 588's to read (§11.6 makes the cost a bar term). SIMD-on: the vrun rungs
+scan one masked stream and do not use this text (unchanged).
+
+THE BYTES OUTSIDE COVER (R-a). The renderer is shared, as ruled, so every native fn-pair body (the
+run pre-check's `rx_reqrun__body`, e.g. `(?i)hello.*world`, `(?i)select`'s OFF arm) moves too. No
+new deny. The OFF arm is the pre-S3 build but for the abi digits AND this look-ahead (tuning
+§2.43¶3d, registry `window-search`, window_site.md Goal 1, job 588's DEF note).
+
+THE CHECKS. G2's window driver gains LONG SUBJECTS for every two-stream site (408 bytes, a 12-byte
+alphabet cluster across the first two look-aheads' ends): census `long pair`. Plant S1541 (an empty
+look-ahead's frontier one past its end) must go red; S1540 is re-aimed at the renderer's entry.
+pcrec-side readers were re-taught: reqcube_check.py, the encoding checks' pair-arm normalization and
+marker, rows.tsv's fn-pair signature, S450 (the raise to `pos`) and S455 (two searches hoisted above
+the guard). tuning §2.39¶2's emitted example was regenerated.
+
+## 11.3 EMIT-3 + HOUSE-7
+
+RAISE (window.c `wf_raise`). Where a core offset is below the candidate, E-find raises C to the
+bound's lower half ONCE, before its loop. Every resume moves C forward, so E-find's TEST drops the
+lower-half conjunct (the floor keeps it), and B's per-iteration raise is deleted. `(?<=x)foo` over
+"xfox" x 262144 (find-all) went from 31.14 to 27.14 instr/B (-13%). Plant S1543 (the raise dropped)
+must go red. D-hors's head writes the shared bound (`if (!(C + chi < N)) break;`, HOUSE-7), and
+S1423 is re-aimed at it.
+
+## 11.4 The rename (D174)
+
+`wf-find` became `window-search` and `wf-hors` became `window-skip`. Each row's own `--list-axes`
+text starts "the window search" or "the window search's skip", so the names are the caller's words.
+The kit's form id is the same string (WF_FIND_ID), so G2's census keys moved with it. The stamp
+value `"cover"` stays (filed for [IFACE-PUSH]). Neither name reaches an artifact, so there is no abi
+event. Readers renamed (82 files, by grep): options.def, window.c, finder.c, plan_cost.def,
+memfn.h, the kit's CLAUDE.md files and trace_format.md, emit_dfa.c, known.c, src/gen/CLAUDE.md,
+docs/spec (match_api, registry, tuning), window_site.md, the abi changelog's unlanded 85 entry,
+tests/axes/memfn_arm.py (MEMFN_CLASS), tests/cli, tests/codegen (14 scripts +
+cand_oracle_witnesses.tsv), tests/memfn (rows.tsv, c10/pres witnesses, run_wreply.sh,
+simd_floor_check.py), tests/startset (dfahat_checks.py, manifest_s3_dfa.tsv), 39 mech sabotage
+rows' REACH/flags, memfn/tests (run_g2_win.sh, g2_win_gen.c), scripts/emit_sweep.py, jobs 588 and
+620, and the s3_evidence scripts they run. Round 2 added the one reader the first lane missed:
+list_axes_delta.tsv, the declared `--list-axes` delta (`+ memfn window-search`,
+`+ memfn window-skip`, and CONTRACT-6's two descriptions as a - and a + each; checked against main:
+9 rows, exactly as declared). Left as records: reviews, journals, docs/dev/history/claude_md,
+s3_report.md Parts 1-10, job 587, the evidence result tables. A grep of the readers (scripts,
+tests, memfn, src, cli, docs/spec, s3_evidence) finds no `wf-find`/`wf-hors` but memfn_arm.py's
+cited measurement.
+
+## 11.5 Re-pins and declarations (inside abi 85, with cause)
+
+- tests/memfn/pins/arms.tsv: `ofsskip ofs-pair def` 2413 -> 2781 B and `precheck
+  pre-masked-whole-rest def` 3160 -> 3528 B (+368 each, the two-stream body); digests re-pinned.
+- tests/codegen/manifests/m5_stage1_stamps.tsv: `(?i)HeLLo EMITTED_BYTES` 29,591 -> 29,960 (+369,
+  its B-fn helper's body).
+- tests/codegen/run_recursion_identity.sh: (B) self-pinned to `d0d81e4e8`, the lane's last src
+  commit; the manager re-pins it to the merge.
+- tests/memfn/rows.tsv, run_handoff_reach.sh, S686/S688's REACH: the fn-pair declaration witness
+  `size_t ha = 0, hb = 0, wa`.
+- run_g2_win.sh: floors `hwin:146`, `long pair` 365 (new populations, measured less ~10%).
+- tests/axes/memfn_arm.py (round 2, from job 620's axes_memfn log on cc4f54eb2, 4796 patterns;
+  tri620.md). CAUSE: `cover` takes the fixed-width windows off the pre-check route, so fewer patterns
+  differ under each PRES/assign deny on the default engine. The corpus grew 4624 -> 4796, so this is
+  not corpus noise. The floors: fd-pres-g1 1271/1105 -> 949/878; fd-pres-pick 187/262 -> 168/232;
+  precheck-assign-byte 176/244 -> 155/219; pres-set-lead c-default 16/8 -> 14/7 (c-vm unchanged);
+  vrun-pad utf8/c-default 14 -> 13. Witnesses that became cover artifacts (the deny is inert on them)
+  were replaced by variable-width siblings that are still pre-checked, each checked by single
+  compiles at the tip at both sides: `ab` -> `abc+d` (byte and utf8), `é{2}cat` -> `é{2,}cat`
+  (byte), `a{3}(?i:cat)` -> `a{3,}(?i:cat)` (utf8). The window-search/window-skip floors were OWED
+  and are now pinned from job 620's axes_measure log: window-search byte 805, utf8 613; window-skip
+  byte 7, utf8 2; c-vm 0. The utf8 count corrects the static classification's "byte only": the utf8
+  witness is `\w\B\w`, which differs under the deny at both layers by single compile. Job 621
+  re-measures all seven rows (axes_measure) before axes_memfn checks them.
+- R-d DECLARATIONS (55ebe5184). census.py has a PAIR class. A non-cover artifact is PAIR iff NEW's
+  own text carries the bounded declaration (`size_t ha = 0, hb = 0, wa = `, any prefix). It must
+  move, carry as many bounded declarations as BASE carries unbounded ones (`size_t ha = 0, hb = 0;`),
+  and keep every `#define RX_` stamp. A non-PAIR artifact whose BASE has the unbounded form is
+  UNEXPECTED. It is judged on every .c arm and every OFF arm (an OFF arm's movers must be exactly its
+  PAIR artifacts); `ir` still expects none; facts counts PAIR twins `text-only`. Smoke:
+  `(?i)hello.*world`'s ten arms read PAIR + moved on every .c arm, nothing on `ir`, facts text-only on
+  both encodings. bytediff.sh reads MOVES-pair the same way. predicted_movers.tsv gains an `off`
+  column, declared from NEW's own text before any diff: rows 23, 25, 26 and 28 carry a two-stream
+  find at both arms, row 27 only in its cover B-pair, and row 23 (VM, not cover) is MOVES-pair on
+  its default arm too. Smoke on 5 rows, both arms: 0 disagree.
+- docs/dev/history/abi_changelog.md: the unlanded 85 entry records the byte moves; no new abi.
+
+## 11.6 R-b: the two-stream sample in job 588's bar
+
+`docs/dev/lanes/s3_evidence/pair_588.tsv` holds 11 rows, hand-picked per stratum from the review's
+and this part's repros. Each stratum was read off the tip's artifact:
+- REQRUN, the run pre-check's fn-pair body, not cover: `(?i)hello.*world`, `(?i)hello\w*`,
+  `\w+(?i:select)`, `(?i)(hello|help)`.
+- COVER-BFN, cover through B-fn's helper: `(?i)hello`, `(?i)the`, `(?i)select`, `(?i)xq`.
+- COVER-PAIR, B-pair's inline streams: `x[Q%]y`, `[st][hr]`, `[et][ao]`.
+
+The arms are BASE (main's default build at the merge base 0d3765c87, the compiler job 621's refbuild
+builds and stamps `REV`) and RTE (the tip's default build, which 621 copies into build/s3/bin).
+- Classes (gen_sample_588.py, new): `real` (prose with plants at 1/200; the prose has no upper case,
+  so a caseless pair's upper stream is ABSENT, EMIT-1's case), `dense` (plants at 1/8) and `mixed`
+  (word-initial capitals at 1/8: both streams live, as in a real text). All 33 subjects generate.
+- Regimes: throughput and search_short.
+- Premise: RTE carries the bounded declaration and reads cover iff COVER-*, and a REQRUN row's BASE
+  carries as many unbounded ones.
+- Reading: read_588.py "Two-stream sample (part of the bar)". Per cell RTE/BASE against this run's
+  A/A floor OR the per-call layout allowance. A stratum PASSES iff its geometric mean is within
+  1 + floor or every cell passes. A dropped row, a missing file or a missing base compiler FAILS the
+  bar, and `== s3t BAR` names it.
+- Validation without the box: the pair-build/pair-gate stages on pr01/pr05/pr09 (built with job
+  620's identical ref compiler) gave 36 arm cells equal to python `re`. A synthetic s3t_pair.tsv
+  (RTE x1.0 / x1.3 / x0.9) read PASS / FAIL (stratum COVER-BFN 1.300 > 1.131) / PASS, and BAR FAIL
+  named it.
+- Job 588 now needs both compilers. Its dry run refuses until 621 has built them (`REV` ==
+  0d3765c87), and `--ready` holds while key `kit-s3-heavy` is pending or running. It adds 132 items,
+  ~1 min.
+
+## 11.7 Validation
+
+FIRST LANE (light single sections under `scripts/boxlock run`, before the box rule; verdicts by
+`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`). On the d0d81e4e8 build:
+- green: `make strict`, test-codegen, test-encoding-checks, test-cpset-structure, test-memfn-g2,
+  test-memfn-reach, test-memfn-rows, test-memfn-finder, test-kitproof, test-registry;
+- test-memfn-arms red on the two pins, which were re-pinned in 0e53c8dfa (and then 374 checks, 0
+  failed, `build/scr/sec3_arms.log`);
+- test-rxtsource unfinished (the run was terminated when the lane stopped).
+
+ROUND 2: no suite run (the box rule). Single-compile checks are in §11.5 and §11.6.
+`list_axes_delta.sh` against main: 9 rows, exactly as declared. Job 621's dry run: rc 0.
+
+## 11.8 Job 621 and what is OWED
+
+Job 621 (`docs/dev/lanes/s3_job_621-kit-s3-heavy`, queued as `621-kit-s3-heavy`, owner kit) runs on
+this tree's tip against main 0d3765c87. Each step prints `== s3 step NAME rc=N`, and the population
+is 21 steps (`^== s3 step [a-z_0-9]+ rc=0$`). The steps, in order:
+1. mechval (142 ids);
+2. build;
+3. strict;
+4. refbuild (+ REV + build/s3/bin);
+5. census (R-d's PAIR class, both ways, ten arms);
+6. sweep_start;
+7. evidence (bytediff default and OFF with the `off` column; the list-axes delta);
+8. diff_r2;
+9. test-codegen;
+10. test-registry;
+11. test-rxtsource;
+12. test-encoding-checks;
+13. test-cpset-structure;
+14. the test-memfn-* sections and test-kitproof;
+15. the G2 window family and its plants (S1400-S1410, S1422, S1423, S1425-S1429, S1540-S1543);
+16. axes_measure (the seven rows);
+17. axes_memfn (the re-pins);
+18. `make test` through perfrun;
+19. the proof and wreply plants;
+20. mech over 142 rows (job 620's 126 plus the 16 rows this lane re-aimed);
+21. reach-only over the whole matrix.
+
+OWED:
+- Job 621's verdict, read by a fresh agent from `build/s3/heavy621/` and the queue's job.log. On a
+  red axes_memfn, re-pin from its own axes_measure log.
+- Job 588, the timing bar, queued only after 621 is green. G1's alpha at both layers is that run's.
+- CHECK-5's floors: fd PAIR's pcrec floor (the slot N2 census) and its g2 floor (G2 `--rows`).
+- The PLAN items as ruled: CHECK-3 (test-axes floors for the two classes; the memfn arm's floors
+  are now pinned), EMIT-2, SLOT-2/3, HOUSE-3/4/5/10-14, CHECK-4/6. The [KIT-VERIFY] row's line for
+  the lever's retirement goes in main's plan.md, not edited here.
+- run_recursion_identity.sh's (B) pin, to the merge (the manager's).
 
 ---
 
