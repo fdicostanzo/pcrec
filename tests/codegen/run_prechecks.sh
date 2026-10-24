@@ -939,7 +939,7 @@ while IFS='%' read -r pat _sep why; do
 done <<'ROWS'
 a{2,4}b%%nothing is joined across a repeat's iterations, so no aa
 (?:xabcy|wabcv)q%%an alternation contributes only its common affixes, so abc is not claimed (x/w and y/v differ in more than one bit, so not even their cube hull is a position: S4 C3)
-a(?i)bc%%d%%the inline option breaks contiguity with the a, and two caseless letters are 14 bits, under the 16-bit floor (S4 C3)
+a(?i)b%%a followed by one caseless letter is 15 bits, under the 16-bit floor (S4 C3); a(?i)bc is no longer a decline: the option run is dropped from the concatenation, so it reads as a(?i:bc), a live run ([FLAG-SPELL])
 (?:ab)*c%%a min-0 repeat breaks contiguity in the one direction that would delete a match
 a[0-9]b[0-9]=%%a multi-member class breaks contiguity around it
 ROWS
