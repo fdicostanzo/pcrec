@@ -11,7 +11,7 @@ entries (verbatim): NOTES.md here.
 - Kill only with `scripts/safekill PID`; never `pkill -f`/`pgrep -f`.
 - Bound a run with `scripts/watchdog -s WALL -m MEM -c CPU -S label -- cmd` (a bare `-m` number is BYTES); not inside per-case loops; keep `tests/lib/gen_timeout.sh` in sync with its flags/log format.
 - Remove worktrees only with `scripts/wtprune` (dry run, then `--apply`); never raw `git worktree remove`/`rm -rf`.
-- Heavy runs: `boxlock`, `boxqueue`, `chainrun`, `watchrun`, `verdict` (artifacts, never process greps); do not hand-write chain.sh/waiters/watchers.
+- Heavy runs: `boxlock` (a non-`queue:` run YIELDS to ready pending queue jobs; `PCREC_BOXLOCK_JUMP=1` overrides, audited in worktrees/.box.lock.audit), `boxqueue`, `chainrun`, `watchrun`, `verdict` (artifacts, never process greps); do not hand-write chain.sh/waiters/watchers.
 - A tool that ends a run prints ONE `TOOL: DONE rc=N` line on every ending; new long-running tools must follow it.
 - `mk_d27_cell.sh` needs an explicit allowlist per invocation.
 - Hooks are opt-in via `make hooks`; no CI auto-install (D2).
