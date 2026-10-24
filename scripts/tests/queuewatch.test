@@ -160,6 +160,31 @@ bound; rc=$?
 ( "$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 6 --disk-pct 101 > /dev/null 2>&1 & ); sleep 1
 "$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 2 --disk-pct 101 > /dev/null 2>&1; [ $? = 75 ] && ok "a second watcher on one state file is refused (75)" || bad "double watcher accepted"
 
+# QUIET counts reaped children's CPU (live 2026-10-24: a busy mech whose work ran in short-lived forks read as quiet).
+# Hand-built queue dir, no runner. A job with a silent log whose only activity is a loop forking short CPU-burning
+# children must NOT go QUIET; one that sleeps silently must go QUIET (once).
+quiet_case() { # quiet_case WATCHER TAG KIND(busy|idle): echoes the QUIET lines seen over ~9 s with --quiet-sec 4
+    local q=$T/qq$2 st=$T/stq$2 ld=$T/qq$2/logs/R1 jp l i out=""
+    mkdir -p "$q/running/jobQ" "$q/pending" "$q/done" "$q/failed" "$ld"; : > "$q/queue.log"
+    echo "== job jobQ START owner=q cap=60 expect=none 2026-10-24T00:00:00-04:00" >> "$q/queue.log"
+    echo "== logdir $ld" > "$q/running/jobQ/job.log"; echo "== stage a rc=0 END" > "$ld/trailer.log"
+    if [ "$3" = busy ]; then
+        setsid bash -c 'while :; do bash -c "i=0; while [ \$i -lt 3000 ]; do i=\$((i+1)); done"; sleep 0.5; done' > /dev/null 2>&1 9>&- & jp=$!
+    else setsid sleep 60 > /dev/null 2>&1 9>&- & jp=$!; fi
+    echo "$jp" > "$ld/battery.pid"
+    "$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 > /dev/null 2>&1   # first launch seeds
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        l=$("$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --quiet-sec 4 --disk-pct 101 2>&1)
+        case $l in *QUIET*) out="$out${l%% no log*}|" ;; esac
+    done
+    bash "$here/safekill" "$jp" > /dev/null 2>&1
+    echo "$out"
+}
+r=$(quiet_case "$QW" ok busy)
+[ -z "$r" ] && ok "a silent-log job whose work is short-lived forked children is NOT quiet (reaped-children CPU counts)" || bad "busy fork-loop read as quiet: $r"
+r=$(quiet_case "$QW" idle idle)
+[ "$r" = "queuewatch: QUIET jobQ|" ] && ok "a silent job sleeping with no children goes QUIET exactly once" || bad "idle job: '$r'"
+
 # PLANTS: a scratch copy of the watcher with one bug each; the matching case must go red
 plant() { # plant NAME FROM TO: echo the path of the patched copy
     local d=$T/plant_$1; mkdir -p "$d"
@@ -187,6 +212,11 @@ fi
 if [ -n "$P4" ]; then
     r=$(hist_case "$P4" oldseed)
     [ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] && bad "PLANT old-seeding (only the first START per ended job marked) not caught" || ok "PLANT old-seeding: stale historic JOB-STARTs leak after the first launch, so the restart-history case catches it"
+fi
+P5=$(plant livecpu 'cpu[$1] = $13 + $14 + $15 + $16}' 'cpu[$1] = $13 + $14}') || bad "plant livecpu did not land"
+if [ -n "$P5" ]; then
+    r=$(quiet_case "$P5" livecpu busy)
+    [ -z "$r" ] && bad "PLANT live-CPU-only sum (the old bug) not caught" || ok "PLANT live-CPU-only sum: the fork-loop job reads QUIET, so the busy case catches it"
 fi
 if [ -n "$P3" ]; then
     bound "$P3"; rc=$?
