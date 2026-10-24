@@ -2876,3 +2876,13 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Main: the battery is done, the box is free, and abi 85 is S3's ([EMIT-BIDI] takes 86 after). The 588 window is to be asked for after the heavy is green and the critic round is ruled.
 - Lane s3pins2 (opus) delivered lane/memfn-s3pair @ 585b630e8 (report Part 9). It found that the census twin rule's WIP compiled its twins with no --pattern, so no twin ever moved, and rebuilt the rule: it is judged both ways on the twin's stamps, with witnesses 6/6, and both censuses have 0 unexpected. The cpset `(?i)HeLLo` pin was re-recorded (21700 -> 22441, with its cause). The encoding checks are green alone. The K50 entry for `(?i)\bcat\b` was NOT added: once the reader was fixed, it no longer diverges (accepted). The three `\b` identity pairs are existing K50 members, byte-identical on main.
 - Lane s3merge (opus): merge main into s3pair, renumber the abi 84 -> 85 by the grep ritual, run the light suites, restage the heavy as 620 against the merged main, and queue it.
+
+## 2026-10-24 — critic round memfn-s3-final; Frank's rulings
+
+- Critic round (coordinator plus 5 critics plus a verifier; draft /tmp/claude-1001/crit-memfn-s3-final/review.md, to be committed as docs/dev/reviews/2026-10-24-r3-memfn-s3-final-code.md). No answer findings in ~5M differential cases. Speed:
+  - EMIT-1: PAIR find-all goes quadratic when one byte is absent. FIX-NOW, my call: bound the streams.
+  - EMIT-4: set stops of 3+ bytes walk where BASE ran memchr, 13-18x on real text.
+- Frank ruled on EMIT-4: "no. Leave the wart. Its fix is the test for pricing." No stopgap and no decline. EMIT-4 stays as the named witness that D176's priced choice must fix, and it is recorded as an accepted exception to Goal 2.
+- Frank ruled on the names: "rename". The `wf-find`/`wf-hors` denies get behaviour names before landing (D174). The stamp value "cover" goes to [IFACE-PUSH].
+- Rev 3.3 acceptance: explained to Frank, ruling pending.
+- Job 620: the axes_memfn step is red (25 of 351 checks); triage follows the job.
