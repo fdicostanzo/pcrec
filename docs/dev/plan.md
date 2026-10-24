@@ -237,8 +237,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   The census: every check outside `make test` depends on a hand-launched scripts/battery.sh, which keeps no verdict on this box (battery verdicts survive only as journal prose), and pins inside those checks are re-pinned with nothing exercising them between launches. Seven checks have no runner: ksweep, memfn-g2-full, lbsweep, specimen, tiered-entry, uprops-utf8, spec. test-recursion-identity is the third gate to go silently red (D136 recorded the second).
 - [MONITOR-QUEUE] STATE:started — THE RUN MONITOR MISSED EVENTS; ONE QUEUE WATCHER FOR A STANDING HAIKU SESSION
   filed: 2026-10-24 manager, from the first full-suite run (both monitors missed events)
-  status (2026-10-24): Frank's go 2026-10-24; lane monwatch: watchrun stage-END format fix, a simulate mode for the full-suite job (fake stages, real code paths), a queue-wide watcher script tested against it, a /pcrec-monitor session skill
-  next: land monwatch; first live use on the owed test-axes re-run
+  status (2026-10-24): landed (lane monwatch): watchrun reads both END shapes; fullsuite_job.sh --simulate; scripts/queuewatch (persistent state, one event per launch; every simulated scenario exactly once across relaunches); skill .claude/skills/pcrec-monitor
+  next: Frank starts the standing /pcrec-monitor session; its first live use is the owed test-axes re-run
   refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
   Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
 

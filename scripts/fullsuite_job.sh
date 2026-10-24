@@ -18,7 +18,7 @@
 # runs this SAME script with only each stage's payload faked (scripts/battery.sh BATTERY_SIMULATE; scenarios
 # in its header): the setsid detach, battery.pid, trailer, DONE line, summary.txt and this job's own wait loop
 # and `== battery_v5 DONE` line are the real code. Differences, all deliberate and all asserted by
-# scripts/tests/fullsuite_sim.test: it runs the battery.sh NEXT TO THIS SCRIPT (not main's), never freezes or
+# scripts/tests/fullsuite_job.sh.test: it runs the battery.sh NEXT TO THIS SCRIPT (not main's), never freezes or
 # creates a worktree (so there is nothing to prune), writes only under build/full_suite_sim/ (or
 # $FULLSUITE_SIM_DIR) in that tree, polls every 1 s (FULLSUITE_POLL), --ready is always 0 (it must not wait
 # behind or block a real suite) and no box lock is taken. It never touches docs/dev/full_suite_ledger.md
