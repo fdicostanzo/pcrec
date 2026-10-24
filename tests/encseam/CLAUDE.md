@@ -32,7 +32,10 @@ engine, and the two engines reach a span through completely different code.
   which is [M5-SEAM]'s whole claim (and, since [K75], the NON-EMPTY arm too:
 `fa_next_pos(s, n, end - 1)`, a no-op under this suite's byte encoding).
 Prefix fixed at `fa` (a driver cannot
-  be generic over a C identifier prefix).
+  be generic over a C identifier prefix). `findall_driver iter SUBJ`
+  ([FINDALL-NEXT] I4) runs a plain `fa_info.next_n` loop instead; the runner holds
+  it to `re.finditer` on every case, so the lossy class is exact under it,
+  and counts the lossy runs that agree (floor: every lossy case, both arms).
 - **findall_cases.txt** — TAB-separated CLASS / PATTERN / SUBJECT. The
   twelve agreeing pairs and three lossy ones are R29's set, re-measured
   here rather than cited; ten more were added at [M5-SEAM], including two

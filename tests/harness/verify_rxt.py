@@ -977,12 +977,15 @@ def parse_rxt(path):
             # column that settles it is the `esc` column W23.4 adds.
             results.append((lineno, 'pattern_src', raw))
             pcre2_only_next = False
-        elif line.startswith('mc '):
+        elif line.startswith('mc ') or line.startswith('mg '):
             # `mc "<subject>" <n>` / `mc @file:"…" <n>` — the FIND-ALL COUNT
             # (format_design §2.21). The rule is match_api.md §3.1's shipped
             # protocol; this leg VERIFIES it by running that protocol loop
             # in python, and NEVER `re.finditer`, which differs on an
             # empty-preferring pattern (`a*?` over "aaa": 7 against 4).
+            # [FINDALL-NEXT] `mg`, the GLOBAL count (rxt_format.md §1.7.1),
+            # has this line's shape and its own kind.
+            ckind = line[:2]
             rest = line[len('mc '):].lstrip()
             if rest.startswith('@file:'):
                 subj, tail = _parse_file_subject(path, lineno, rest, subject_ids)
@@ -991,8 +994,8 @@ def parse_rxt(path):
             tail = tail.strip()
             if not tail.isdigit():
                 _fail(path, lineno, 'value-shape',
-                      f"bad mc line tail {tail!r} (want a match count)")
-            results.append((lineno, 'mc', (subj, int(tail))))
+                      f"bad {ckind} line tail {tail!r} (want a match count)")
+            results.append((lineno, ckind, (subj, int(tail))))
         elif (line.startswith('m @file:') or line.startswith('n @file:')
               or line.startswith('ms ') and '@file:' in line
               or line.startswith('ns ') and '@file:' in line):
@@ -1037,9 +1040,9 @@ def parse_rxt(path):
                 _fail(path, lineno, 'value-shape',
                       f"'under' wants a convention name (got {conv!r})")
             wkind = wrapped.split(None, 1)[0] if wrapped.split() else ''
-            if wkind not in ('m', 'n', 'ms', 'ns', 'mc'):
+            if wkind not in ('m', 'n', 'ms', 'ns', 'mc', 'mg'):
                 _fail(path, lineno, 'value-shape',
-                      "'under <convention>' wraps an m/n/ms/ns/mc case line "
+                      "'under <convention>' wraps an m/n/ms/ns/mc/mg case line "
                       f"(got {wrapped!r})")
             results.append((lineno, 'under', conv))
         elif line.startswith('tag '):
@@ -1284,13 +1287,14 @@ def dump_file(path, entries):
         elif kind == 'budget':
             blk['steps' if data[0] == 'steps' else 'frames'] = str(data[1])
         elif kind == 'perr':       blk['perr'] = '1'
-        elif kind in ('m', 'ms', 'n', 'ns', 'gu', 'mc'):
+        elif kind in ('m', 'ms', 'n', 'ns', 'gu', 'mc', 'mg'):
             # leg B stores `ms`/`ns` under `m`/`n` with an explicit
             # startpos, which is not a loss: the format DEFINES m/n as
             # ms/ns with P fixed at 0 (docs/spec/rxt_format.md), so the
             # two spellings of one case must dump identically.
             if kind == 'm':    cases.append([lineno, 'm', 0, ''])
             elif kind == 'mc': cases.append([lineno, 'mc', 0, ''])
+            elif kind == 'mg': cases.append([lineno, 'mg', 0, ''])
             elif kind == 'n':  cases.append([lineno, 'n', 0, ''])
             elif kind == 'ms': cases.append([lineno, 'm', data[0], ''])
             elif kind == 'ns': cases.append([lineno, 'n', data[0], ''])
@@ -1740,6 +1744,9 @@ def main():
         cur_encoding = ''
         file_failures = []
         file_info = []
+        # [BUCKET-GAP] this file's own starting totals, for the accounting
+        # guard below the loop.
+        pass0, info0 = total_pass, total_info
 
         for lineno, kind, data in entries:
             if kind == 'pattern':
@@ -1904,6 +1911,26 @@ def main():
                     total_pass += 1
                 else:
                     file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected {want} find-all match(es) but the §3.1 protocol reports {got}"))
+                continue
+
+            if kind == 'mg':
+                # [FINDALL-NEXT] `mg` — THE GLOBAL COUNT (rxt_format.md
+                # §1.7.1): `re.finditer` IS PCRE2's global iteration (the
+                # NOTEMPTY retry above). It advances one CODE POINT of the
+                # byte-per-char subject, so a utf8 subject with a byte above
+                # 0x7F has no python answer here and is skipped, counted.
+                mc_count += 1
+                subj, want = data
+                if compiled is None or (cur_encoding == 'utf8' and
+                                        any(ord(ch) > 0x7F for ch in subj)):
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
+                got = sum(1 for _ in compiled.finditer(subj))
+                if got == want:
+                    total_pass += 1
+                else:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected {want} global match(es) but re.finditer reports {got}"))
                 continue
 
             if kind == 'perr':
@@ -2121,6 +2148,23 @@ def main():
                         else:
                             total_pass += 1
                             continue
+            total_fail += 1
+
+        # [BUCKET-GAP] EVERY CASE LINE LANDS IN EXACTLY ONE BUCKET, on any
+        # python. A line that raised no failure and reached no counter
+        # (PASS, INFO, a named skip) is a hole the C3 reconciliation can
+        # only report as a bare total ("74004, census 74005"); naming the
+        # FILE and the counts here makes it a loud failure with a place to
+        # look. Skipped on a file that already has failures: those lines
+        # are the failures' own bucket.
+        case_kinds = ('m', 'n', 'ms', 'ns', 'mc', 'mg', 'perr', 'g', 'gp',
+                      'gu', 'under')
+        expected_cases = sum(1 for _, k, _ in entries if k in case_kinds)
+        bucketed = (total_pass - pass0) + (total_info - info0) + skipped
+        if not file_failures and bucketed != expected_cases:
+            file_failures.append((0, f"BUCKET GAP: {expected_cases} case line(s) parsed but {bucketed} landed in a bucket "
+                                     f"(pass {total_pass - pass0}, info {total_info - info0}, skipped {skipped}); "
+                                     f"a case line reached no counter on this python"))
             total_fail += 1
 
         per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, len(file_failures), len(file_info))

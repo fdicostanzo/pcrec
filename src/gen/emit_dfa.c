@@ -837,8 +837,10 @@ static void emit_utf_check(Ctx *cx, StrBuf *c, const char *indent,
         "%s * end. The same call gives the caller the offset. */\n",
         indent, indent, indent, indent);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c, "%sif (%s_valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
-                    indent, cx->opt->prefix, subjvar, lenvar, posvar, lenvar);
+    pcrec_sb_printf(c, "%sif (", indent);
+    pcrec_enc_twin_name(c, cx->opt->prefix, "valid_upto");   /* the static twin, [FINDALL-NEXT] */
+    pcrec_sb_printf(c, "(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
+                    subjvar, lenvar, posvar, lenvar);
 }
 
 /* The CALLER-STARTPOS ENTRY PROLOGUE written straight into the artifact, at
@@ -923,6 +925,17 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                    "aligned_from", subjvar, lenvar);
     pcrec_sb_printf(c, "%s    return -1;\n%s}\n", indent, indent);
     emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
+}
+
+bool pcrec_startpos_prologue_on(Ctx *cx)
+{
+    /* the axis writes a guard where the encoding restricts a start and the
+     * guard is not off (align writes one whatever `-fno-startpos-guard`
+     * says), and the subject check where it is on */
+    const bool restricts = pcrec_enc_by_id(cx->opt->encoding)->start_guard != NULL;
+    return pcrec_utf_check_on(cx) ||
+           (restricts && (pcrec_opt_has(cx->opt, PCREC_FORCE_STARTPOS_ALIGN) ||
+                          !pcrec_opt_has(cx->opt, PCREC_NO_STARTPOS_GUARD)));
 }
 
 /* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
@@ -1867,6 +1880,15 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
     pcrec_sb_printf(c, "%sreturn 1;\n", ind);
 }
 
+/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
+ * that it must stay one function? The DFA attempt route's direct-threaded
+ * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
+ * other body do not. */
+static bool find_body_shared(Ctx *cx)
+{
+    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
  * argued above) and the caller-startpos boundary guard. NOTHING HERE MAY WRITE
@@ -1884,6 +1906,11 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              PcrecEntry ent)
 {
+    /* [FINDALL-NEXT] the body's head is the iterator's scaffold (the entry's
+     * own head, below the body, is the one a length decision reads). `find`
+     * is no part-layout subject in I1, so no mark is written inside it. */
+    const bool body = pcrec_entry_is_body(cx, ent);
+    if (body) pcrec_sb_scaffold_open(c);
     /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
      * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
      * not see it at all rather than see it and warn. The `__has_attribute`
@@ -1903,6 +1930,21 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
     pcrec_sb_cmt_close(c);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_puts(c, pcrec_entry_storage(cx, ent));
+    /* [FINDALL-NEXT] `<p>__find`, the search body without its caller-position
+     * prologue (findall_iter.md §2.2): its `0` layout is one copy in each of
+     * its two callers, except on a body that keeps label addresses in a
+     * static table (the DFA attempt route's direct threading), which gcc
+     * refuses to duplicate and which stays one shared function. The layout
+     * is fixed: the part table's class `find` has no subject yet. */
+    if (body) {
+        const bool shared = find_body_shared(cx);
+        pcrec_sb_puts(c, pcrec_attr_text(shared ? PCREC_ATTR_NOINLINE : PCREC_ATTR_INLINE));
+        /* An always_inline body is OWNED (A1's shape): a part it calls is
+         * called from its callers, `_search` and `_next` (part_layout.c's
+         * `callers`). */
+        if (!shared)
+            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(ent);
+    }
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s)\n{\n",
@@ -1914,6 +1956,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                   * because the alternative is a second definition of "which
                   * entries take the pair" living in one engine's emitter. */
                  pcrec_vars_param_text(cx));
+    if (body) pcrec_sb_scaffold_close(c);
     /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
      * fill below uses, and for the same reason: this emitter has TWO customers
      * and only one of them is a caller-facing entry. The other is the VM
@@ -1926,9 +1969,24 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
      * through the body they call, and the three `_in` entries through their
      * un-suffixed siblings. */
-    if (cand_finish_of(cx) != CAND_ROUTE_VM)
+    if (cand_finish_of(cx) != CAND_ROUTE_VM && !body)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);
+}
+
+/* [FINDALL-NEXT] `<p>_search` over its body (findall_iter.md §2.1): the
+ * entry's attributes and caller-position prologue, then the body,
+ * `<p>__find`, which `<p>_next` runs at every step with no prologue at all.
+ * With the body always_inline the entry compiles to today's one function.
+ * Scaffold (§6.4): no length decision reads the new lines; the head is the
+ * entry's own, as it always was. */
+void pcrec_emit_search_wrapper(Ctx *cx, StrBuf *c, const char *fn)
+{
+    emit_search_head(cx, c, fn, PCREC_ENTRY_SEARCH);
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_printf(c, "    return %s__find(subject, subject_length, search_from, capture_spans%s);\n"
+                       "}\n", cx->opt->prefix, pcrec_vars_arg_text(cx));
+    pcrec_sb_scaffold_close(c);
 }
 
 /* [COMPOUND] The search head for a caller outside this file: a compound's
@@ -2230,6 +2288,18 @@ static void emit_rx_abi_types(StrBuf *sb)
          * rule, for a caller's `switch` written today. */
         "#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: "
         "NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */\n"
+        /* [FINDALL-NEXT] the find-all iterator's refusal: a header that is
+         * neither FRESH, BOUND nor ENDED (an uninitialized iterator, a setter
+         * on a BOUND one). Below the floor, the same rule as the three
+         * above; every artifact defines it, and rx_iter.rc carries it. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "#define PCREC_ERR_ITER (-10)  /* [FINDALL-NEXT] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- the iterator was refused */\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
@@ -2267,6 +2337,20 @@ static void emit_rx_abi_types(StrBuf *sb)
          * variable names, function names) — so a struct TAGGED rx_info and
          * a variable NAMED rx_info coexist with no conflict, verified
          * directly against gcc. */
+        /* [FINDALL-NEXT] the find-all iterator's entry type, every
+         * artifact's `<prefix>_next` whatever its prefix:
+         * declared on the struct TAG, so it precedes `rx_iter`'s body below
+         * and `rx_info.next` can carry it. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "struct rx_iter;\n"
+        "typedef int (*rx_nextfn)(struct rx_iter *it, ptrdiff_t (*caps)[2]);\n"
+        "typedef size_t (*rx_nextnfn)(struct rx_iter *it, ptrdiff_t (*caps)[2], size_t k);\n"
+        "\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "struct rx_info {\n"
         "    unsigned      abi;             /* layout version */\n"
         "    uint64_t      flags;           /* PCREC_* option bits, as compiled */\n"
@@ -2502,6 +2586,18 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    /* <PREFIX>_MEASURES: the measurement set a reader consulted,\n"
         "       id@rev:digest; \"\" when none consulted */\n"
         "    const char           *measures;\n"
+        /* [FINDALL-NEXT] appended: a caller holding only
+         * the record iterates without the header. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "    /* <prefix>_next, the find-all iterator; NULL where not exported */\n"
+        "    rx_nextfn             next;\n"
+        "    /* <prefix>_next_n, up to k matches per call; NULL exactly where next is */\n"
+        "    rx_nextnfn            next_n;\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -2544,6 +2640,11 @@ static void emit_rx_abi_types(StrBuf *sb)
          * different encodings into one TU share this block, and only the
          * first copy survives the guard. What is per-encoding is the
          * residual's BODY, which is not here. */
+        );
+    /* [FINDALL-NEXT] the iterator's type and setters, inside the block's
+     * ESSENTIAL region and its scaffold bracket (findall_iter.md §1.1). */
+    pcrec_emit_iter_abi_types(sb);
+    pcrec_sb_puts(sb,
         "/* Every generated artifact also exports one RESIDUAL entry per\n"
         " * encoding (pcrec DD-12/D58), <prefix>-scoped and therefore declared\n"
         " * outside this shared block:\n"
@@ -3339,6 +3440,19 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     else
         pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
     pcrec_emit_ks_mark(c, PCREC_KS_MARK_INIT);
+    /* [FINDALL-NEXT] the artifact's own iterator, where it exports one (a
+     * request that keeps `next` static still points at it: the record is
+     * how a holder of the record reaches it). */
+    pcrec_sb_scaffold_open(c);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        pcrec_sb_printf(c, "    .next = %s_next,\n", cx->opt->prefix);
+    else
+        pcrec_sb_puts(c, "    .next = NULL,\n");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT_N))
+        pcrec_sb_printf(c, "    .next_n = %s_next_n,\n", cx->opt->prefix);
+    else
+        pcrec_sb_puts(c, "    .next_n = NULL,\n");
+    pcrec_sb_scaffold_close(c);
     pcrec_sb_puts(c,   "};\n");
 }
 
@@ -3429,18 +3543,21 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
     ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
+    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, false));
+    ENTRY_DECL(PCREC_ENTRY_NEXT_N,        pcrec_emit_next_decl(sb, p, true));
 #undef ENTRY_DECL
 }
 
-/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the entries in
- * one half (`inline_half`, enc.h's `inline_def`): every entry this artifact
+/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the `inline_def`
+ * entries (enc.h; an out-of-line entry states no site data, which
+ * `pcrec_enc_emit_twins` refuses): every entry this artifact
  * carries whose backend states site data (PcrecEncSite) has its loop
  * described to the kit (N7, pcrec_memfn_span_site) and rendered through the
  * attempt's art; the backend's text carries the token PCREC_ENC_SITE where
  * the loop goes, and the seam substitutes the rendered string for it. The
  * backend keeps the rest of its text. Returns the arena array, `*ns` long. */
 static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
-                                              bool inline_half, size_t *ns)
+                                              size_t *ns)
 {
     unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
     size_t nt = 0;
@@ -3449,7 +3566,7 @@ static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
     PcrecEncSiteText *st = pcrec_arena_alloc(&cx->arena, nt * sizeof *st);
     for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
         const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
-        if (!(m & t->id) || t->inline_def != inline_half || !es) continue;
+        if (!(m & t->id) || !t->inline_def || !es) continue;
         StrBuf loop = { 0 };
         loop.cx = cx;
         mf_hooks h;
@@ -3472,19 +3589,9 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
-     * characters `<prefix>_valid_upto` steps back before it validates
-     * (PCRE2's `max_lookbehind`, `Ctx.lb_max`). Emitted on every artifact
-     * whatever the encoding — a backend whose body does not step back leaves
-     * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
-     * only, beside the definitions that read it. */
-    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
-                    cx->lb_max);
-    size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
     /* [EMIT-ENTRIES] each out-of-line entry at its linkage: omitted ones are
-     * not written, kept ones are `static`. */
-    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns,
+     * not written, kept ones are their twin alone. */
+    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                         pcrec_entry_enc_omit(cx), pcrec_entry_enc_static(cx));
 }
 
@@ -3497,9 +3604,24 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
     size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, true, &ns);
+    const PcrecEncSiteText *st = residual_sites(cx, enc, &ns);
     pcrec_enc_emit_inline_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                                st, ns);
+    /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
+     * characters `<prefix>_valid_upto` steps back before it validates
+     * (PCRE2's `max_lookbehind`, `Ctx.lb_max`). Emitted on every artifact
+     * whatever the encoding — a backend whose body does not step back leaves
+     * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
+     * only, ahead of the twin that reads it ([FINDALL-NEXT] F-1). */
+    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
+                    cx->lb_max);
+    /* [FINDALL-NEXT] F-1 the out-of-line entries' static twins, every one
+     * this artifact defines (`noclone`: compound_entries.md §6 F-3 found gcc
+     * splitting `_valid_upto` into a `.part` clone, K24's shape), ahead of
+     * every body that calls one. */
+    pcrec_enc_emit_twins(sb, enc, cx->job->enc_mask, cx->opt->prefix,
+                         pcrec_attr_text(PCREC_ATTR_NOCLONE),
+                         pcrec_entry_enc_omit(cx));
 }
 
 /* Writes the artifact's whole `.h` into `cx->job->hsb`: the provenance and
@@ -3533,6 +3655,8 @@ static void emit_header(Ctx *cx, const GenNames *g, int ncaps,
     emit_ncaps_macros(h, upper, ncaps);
     emit_vars_macros(h, cx, upper);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        pcrec_emit_iter_buffers_setter(h, cx->opt->prefix);
     pcrec_sb_putc(h, '\n');
     /* [DD-14.FB] The three `_in` entries join the header UNCONDITIONALLY,
      * beside the siblings they mirror -- spec §10.4's "the three `_in`
@@ -4125,13 +4249,26 @@ static bool dfa_needs_gseed(const Dfa *d)
     return false;
 }
 
+/* Does this machine's start depend on the left context at all: mechanism 4's
+ * seeding, or a boundary start `s0` that is not the interior one (a `^` or
+ * `\A` at the start, which the seeded form honours by starting in `s0` at
+ * `search_from == 0` alone)? The search routes' machines never have the
+ * second (ENG_UNANCH implies no start-of-subject node,
+ * `start_pinned_assert_routing`); the find-all iterator's retry machine, run
+ * at any position, does. The one derivation the seed form and the seed
+ * table's dead-cell readers share. */
+static bool dfa_start_from_context(const Dfa *d)
+{
+    return dfa_needs_seed(d) || d->s0 != d->s1u[UPC_PLAIN];
+}
+
 /* Does this machine's emitted seed table hold a dead cell? The loop mirrors
  * `emit_seed_table`'s own, so the two cannot disagree about which cells are
  * emitted; a machine with no seed table has none. Read by `dfa_premul`'s seed
  * precondition and by `dfa_entry_can_be_dead` — one fact, both readers. */
 static bool dfa_seed_has_dead(const Dfa *d)
 {
-    if (!dfa_needs_seed(d)) return false;
+    if (!dfa_start_from_context(d)) return false;
     for (int cl = 0; cl < d->ncls; cl++)
         if (d->s1u[upc_of_class(d, cl)] < 0) return true;
     return false;
@@ -4856,7 +4993,8 @@ static const char *dfa_scan_edge_name(Ctx *cx)
  * three masks in §6.3 are masks because a rung or a strategy is chosen PER
  * QUANTIFIER and a scalar would LIE on a mixed artifact, where this is a
  * whole-artifact total with no axis to mix. Two tables per machine are
- * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6.
+ * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6,
+ * or 0..8 with the find-all iterator's retry machine.
  *
  * WHY IT IS OWED RATHER THAN SYMMETRY. The fold makes a table ABSENT, and
  * this project has gone back and REMOVED a check that read a fact off a
@@ -4897,6 +5035,11 @@ static int dfa_uniform_folds(Ctx *cx)
     const Dfa *mach[3];
     int n = 0, nm = dfa_member_machines(cx, mach);
     for (int k = 0; k < nm; k++) n += uniform_folds_of(cx, mach[k]);
+    /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
+     * path, but its tables are the artifact's and fold like any machine's
+     * (`pcrec_emit_dfa_retry`), so they count where it is emitted. */
+    if (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA)
+        n += uniform_folds_of(cx, &cx->job->nedfa);
     return n;
 }
 
@@ -6232,7 +6375,7 @@ static const DfaView dfa_views[] = {
 
 /* AXIS D's first candidate: does this machine need mechanism 4's start
  * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
-static bool seed_applies(const CandSel *s) { return dfa_needs_seed(s->d); }
+static bool seed_applies(const CandSel *s) { return dfa_start_from_context(s->d); }
 
 /* The start state's cell, the dead cell when `s0` is dead. [UCP] U2: a
  * REVERSE machine's `s0` ("no character to the right") is dead for a pattern
@@ -13697,6 +13840,34 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
     o->empty   = false;   /* the caller's candidate already excluded it */
 }
 
+/* The anchored scan's head: machine `f`'s tables and the scan's two locals,
+ * the scan starting at `search_from`. */
+static void emit_anchored_scan_head(StrBuf *c, const DfaForm *f)
+{
+    emit_machine_tables(c, f);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
+               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
+               "    // scan, so the longest match wins; no reverse pass,\n"
+               "    // because the start is the caller's.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+}
+
+/* THE ANCHORED BODY, one for both of its callers: an untagged machine `f`
+ * run forward from `search_from` to its last accept, returning -1 from the
+ * enclosing function where none was recorded. `<prefix>_match`'s
+ * `unwrapped` form runs it over the anchored machine; the find-all
+ * iterator's retry over the notempty machine (`pcrec_emit_dfa_retry`). Each
+ * caller writes its own prologue before it and its answer after it. */
+static void emit_anchored_scan(StrBuf *c, const DfaForm *f)
+{
+    emit_anchored_scan_head(c, f);
+    emit_scan_loop(c, f);
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n");
+}
+
 /* THE MATCH-HERE BODY. `<prefix>_match` stops being a wrapper around
  * `<prefix>_search` and becomes a scan of its own — the artifact's THIRD
  * machine, run forward from `ctx->pos`, with no reverse pass and no
@@ -13759,22 +13930,13 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
                               "subject_length", true);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_NOMATCH);
-    emit_machine_tables(c, f);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
-               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
-               "    // scan, so the longest match wins; no reverse pass,\n"
-               "    // because the start is the caller's.\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
     if (!f->d->tagged) {
-        emit_scan_loop(c, f);
-        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-                   "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+        emit_anchored_scan(c, f);
+        pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
                    "}\n");
         return;
     }
+    emit_anchored_scan_head(c, f);
     /* D164 B3 the LOWERED anchored machine (one lowering per artifact,
      * endmark.md §R.2.1): its accept carries the distance back to the marked
      * end (`DfaForm.accv`), and the length is to that end. */
@@ -13808,6 +13970,53 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g)
     anch.repr->emit_token(c, &anch);
     emit_scan_defs(c, &anch);
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
+}
+
+/* [FINDALL-NEXT] `<p>__retry`, the DFA iterator's retry R (findall_iter.md
+ * §3.3): the anchored body (`emit_anchored_scan`) over the notempty machine
+ * (`Job.nedfa`) from `search_from`, writing the match into `capture_spans`
+ * (the dead groups unset, `_search`'s rule) and returning its length, or -1.
+ * Its direction is the anchored one under the machine name `retry`, so its
+ * accessor block cannot collide with the anchored machine's in one file; its
+ * start state is the left context's (`seed_applies`), so a `^` or `\A` holds
+ * at `search_from == 0` alone. Its tables are a machine's and count like one;
+ * no candidate-start prefilter, for the match-here's reason (`anch_start`). */
+void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
+{
+    DfaDir dir = dfa_dir_anchored;
+    dir.c.name = "retry";
+    dir.title = "Retry";
+    dir.label = "RETRY";
+    dir.statev = "retry_state";
+    dir.viewv = "retry_view_state";
+    dir.tbl_hdr =
+        "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
+        "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
+        "     * anchored machine whose start state never accepts and keeps every\n"
+        "     * thread below the empty match, so its last accept is the preferred\n"
+        "     * NON-EMPTY match beginning there.\n"
+        "     *\n";
+    dir.acc_meaning = "a non-empty match beginning at search_from may end";
+    const UnanchStart none = { .kind = DFA_PF_NONE };
+    UnanchStart aus;
+    DfaForm f;
+    anch_start(&cx->job->nedfa, &none, &aus);
+    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dir, &f);
+    if (f.d->tagged)
+        pcrec_ctx_fail(cx, 0, "internal error: the iterator's retry machine is "
+                       "tagged (it is built from the plain forward NFA)");
+    f.repr->emit_token(c, &f);
+    emit_scan_defs(c, &f);
+    pcrec_sb_printf(c,
+        "static ptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
+        "                          size_t search_from, ptrdiff_t (*capture_spans)[2])\n"
+        "{\n", cx->opt->prefix);
+    emit_anchored_scan(c, &f);
+    pcrec_sb_puts(c, "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
+               "    capture_spans[0][1] = (ptrdiff_t)last_accept_position;\n");
+    emit_dead_group_fill(cx, c, "    ");
+    pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+               "}\n\n");
 }
 
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
@@ -13994,8 +14203,10 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_sb_cmt_close(c);
     /* [ENTRY-TABLE] E1: a body that keeps label addresses in a static table
      * can never be copied into a caller (gcc's own refusal, H1), so the part
-     * layout's P2 reads this as the body's `copyable` fact. */
-    if (d->n > 0) cx->job->pl.uncopyable = true;
+     * layout's P2 reads this as the body's `copyable` fact. [FINDALL-NEXT]
+     * Not a `<p>__find` body: that one is `noinline` (`find_body_shared`)
+     * and the subject is its `_search` wrapper, which copies. */
+    if (d->n > 0 && !pcrec_entry_is_body(cx, ent)) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
@@ -14817,6 +15028,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                                                   "p", "s", "n")
                          ? "guarded" : "permissive");
     }
+    /* [FINDALL-NEXT] `<PREFIX>_ITER_RETRY` (findall_iter.md §6.3): how the
+     * iterator retries an empty match at its position, the retry table's
+     * winner (`pcrec_iter_retry_of`, src/gen/emit_iter.c). */
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY", pcrec_iter_retry_of(cx)->tok);
+    pcrec_sb_scaffold_close(c);
     /* [UTF-VALID] `<PREFIX>_UTF_CHECK` — THE SUBJECT CHECK'S CONTRACT, the
      * startpos-guard stamp's family (a) sibling: unconditional, on every
      * artifact of both engines, a closed token. "inert" where the encoding
@@ -15017,6 +15234,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_vars_macros(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
+        if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+            pcrec_emit_iter_buffers_setter(c, cx->opt->prefix);
         pcrec_sb_putc(c, '\n');
         emit_entry_decls(cx, c, g, true, true);
         pcrec_sb_putc(c, '\n');
@@ -15468,6 +15687,8 @@ void pcrec_emit_dfa(Ctx *cx)
             .compound = shell != NULL,
             .comp_b = shell && shell->text[1],
             .comp_floor_any = shell && shell->floor_any,
+            .retry = pcrec_iter_retry_of(cx)->needs != 0,
+            .find = pcrec_iter_requested(cx) && pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }
@@ -15492,6 +15713,8 @@ void pcrec_emit_dfa(Ctx *cx)
          * first part's one attempt as the `finish-at` pair */
         const PcrecFinish part = { PCREC_FIN_PART, shell };
         const PcrecEntryText t = { .fin = &part, .shell = shell };
+        /* [FINDALL-NEXT] F-1 the residual twins the controller calls */
+        pcrec_emit_residual_inline(cx, c);
         pcrec_emit_compound_parts(cx, shell);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_SEARCH, &t);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH, &t);
@@ -15530,6 +15753,17 @@ void pcrec_emit_dfa(Ctx *cx)
 in_entries:
     emit_in_entry_defs(cx, c, &g);
     pcrec_sb_puts(c, "\n");
+    /* [FINDALL-NEXT] the find-all iterator: the retry machine where the
+     * artifact can report an empty span, then `iterate`'s entry. */
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT)) {
+        const PcrecIterText it = {
+            .vm = false,
+            .retry = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA) != 0,
+        };
+        const PcrecEntryText t = { .iter = &it };
+        if (it.retry) pcrec_emit_dfa_retry(cx, c);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_NEXT, &t);
+    }
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_INFO)) {

@@ -22,7 +22,10 @@
 # overflow already never refuses). The two MANDATORY machines (forward +
 # reverse, the ones this budget actually gates) were bisected directly
 # against a reference compiler: a budget of 3,500 trips, 4,000 does not —
-# so a budget of 2,000 trips reliably and 5,000 does not.
+# so a budget of 2,000 trips reliably. [FINDALL-NEXT] I1 added a THIRD
+# mandatory machine on this witness (it is nullable, so it reports empty
+# spans): the iterator's notempty retry machine. Re-bisected on the I1
+# build: 5,999 trips, 6,000 does not, so the raise below is 8,000.
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -60,7 +63,7 @@ srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_MAX_AUTO_DFA_ELEMS=2000 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the auto-route work budget at 2,000 (the two mandatory machines' own spend crosses 3,500-4,000)"
+    ok "reference compiler built with the auto-route work budget at 2,000 (the mandatory machines' own spend crosses 5,999-6,000)"
 else
     bad "could not build the lowered-budget reference compiler: $(head -3 "$WORK/ref.err")"
     echo "SKIP: remaining N1 budget checks (no reference compiler)"
@@ -112,9 +115,9 @@ else
 fi
 
 # --- 4. THE RAISE FLAG ROUND TRIP: raising past the spend cancels the fallback
-if pcrec_run "$REF" -p rx --max-auto-dfa-elems=5000 -o "$WORK/raised.c" --pattern "$WITNESS" 2>"$WORK/raised.err"; then
+if pcrec_run "$REF" -p rx --max-auto-dfa-elems=8000 -o "$WORK/raised.c" --pattern "$WITNESS" 2>"$WORK/raised.err"; then
     got="$(stamp ENGINE "$WORK/raised.c" | tr -d '"')"
-    [ "$got" = "dfa" ] && ok "--max-auto-dfa-elems=5000 (above the two mandatory machines' own spend): DFA stays the engine, no fallback" \
+    [ "$got" = "dfa" ] && ok "--max-auto-dfa-elems=8000 (above the mandatory machines' own spend): DFA stays the engine, no fallback" \
                        || bad "raised budget: expected RX_ENGINE \"dfa\", got \"$got\""
     if grep -q 'auto-dfa-elems' "$WORK/raised.err"; then
         bad "raised budget: unexpected fallback note even though the raise covers the witness's spend"

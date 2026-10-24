@@ -43,6 +43,26 @@ CPU=${PARITY_CPU:-7}
 TO=${TIMEOUT_BIN:-timeout}
 CC=${CC:-gcc}
 ARMS="L_old L_new A L_tw I N64 I_shared B64 I_fill"
+# THE POST-BUILD HALF ([FINDALL-NEXT] I1, lane i1build): PARITY_POST=1 times the BUILT
+# iterator. L_old is §3.1.3's loop over the PARENT compiler's artifact (PCREC_OLD, the I0
+# commit's build); L_new and A the same loop over the I1 artifact; I that artifact's own
+# <prefix>_next. No twin is built, so no G1 and no batch/next_n arms.
+POST=${PARITY_POST:-0}
+# [FINDALL-NEXT] I4 (lane i2build; findall_iter_i2.md §4): PARITY_I4=1 (implies PARITY_POST=1)
+# times `<prefix>_next_n` and RX_FOREACH. PCREC_OLD is the I1 compiler. Arms: I_i1 and I_i1b,
+# the I1 artifact's <prefix>_next from two separate compiles (the A/A pair of "_next
+# unharmed"); I, this compiler's <prefix>_next; F and Fb, RX_FOREACH over this artifact's
+# rx_info from two separate compiles (the A/A pair of every F/I ratio); I_info, rx_info.next
+# per match; N4, N64, <prefix>_next_n at a fixed k. Cell c8 is the sparse early break. The
+# answer reference is I_i1 (G3 holds it to python re).
+I4=${PARITY_I4:-0}
+[ "$I4" = 1 ] && POST=1
+if [ "$POST" = 1 ]; then
+    ARMS="L_old L_new A I"
+    [ "$I4" = 1 ] && ARMS="I_i1 I_i1b I F Fb I_info N4 N64"
+    PCREC_OLD=${PCREC_OLD:?PARITY_POST=1 needs PCREC_OLD, the parent build}
+fi
+REF=L_old; [ "$I4" = 1 ] && REF=I_i1
 REGIMES="R1 R2"
 # the prose source (rwcorpus's manifest pin) and the two derived slices: bytes
 # [64 KiB, 64 KiB + 1 MiB) of Moby-Dick (past the Gutenberg header), and that slice's first 4 KiB
@@ -54,10 +74,19 @@ PROSE4K_SHA=a5bb46fd928ff878adfa4fb6d4e5d23fb2fc525d1a8ced5c337080e954feb508
 say() { printf '%s\n' "$*"; }
 die() { say "parity: $*" >&2; exit 2; }
 
-arm_def() { case $1 in L_old|L_new|A|L_tw) echo ARM_LOOP;; I|I_shared|I_fill) echo ARM_ITER;;
-                       B64) echo ARM_BATCH;; N64) echo ARM_NEXTN;; esac; }
-arm_obj() { case $1 in L_old) echo plain_old;; L_new) echo plain_new;; A) echo plain_aa;;
+arm_def() { case $1 in L_old|L_new|A|L_tw) echo ARM_LOOP;; I|I_shared|I_fill|I_i1|I_i1b) echo ARM_ITER;;
+                       B64) echo ARM_BATCH;; N64) echo ARM_NEXTN;; N4) echo ARM_NEXTN;;
+                       F|Fb) echo ARM_FOREACH;; I_info) echo ARM_INFO;; esac; }
+arm_obj() { if [ "$I4" = 1 ]; then
+               case $1 in I_i1) echo plain_old;; I_i1b) echo plain_old2;; Fb) echo plain_aa;; *) echo plain_new;; esac
+               return; fi
+           if [ "$POST" = 1 ] && [ "$1" = I ]; then echo plain_new; return; fi
+           case $1 in L_old) echo plain_old;; L_new) echo plain_new;; A) echo plain_aa;;
                        L_tw|I|N64) echo twin_off;; I_shared) echo twin_shared;; B64|I_fill) echo twin_fill;; esac; }
+# the arms whose R2 binary calls the artifact through a function pointer read from its
+# rx_info, so no PLT call is expected of them (G4)
+ptr_arm() { case $1 in F|Fb|I_info) return 0;; esac; return 1; }
+arm_flags() { case $1 in N4) echo -DNEXTN_K=4;; esac; }
 
 # id  pattern-key  subject  stop        (§5.3's cells; a cell with several N is several subcells)
 cells() {
@@ -75,6 +104,7 @@ c5	pw	s_x	0
 c6	pd	b4k	0
 c7	pa	a4k	3
 EOF
+[ "$I4" = 1 ] && printf 'c8\tpa\tsparse1m\t1\n'
 }
 # key  pcrec flags  pattern
 pats() {
@@ -118,6 +148,8 @@ build() {
     head -c 1048576 /dev/zero | tr '\0' a > "$S/a1m"
     head -c 4096 /dev/zero | tr '\0' b > "$S/b4k"
     printf a > "$S/s_a"; printf b > "$S/s_b"; : > "$S/s_e"; printf x > "$S/s_x"
+    # c8 (I4): one `a` at byte 16 of a 1 MiB subject of `b`
+    { head -c 16 /dev/zero | tr '\0' b; printf a; head -c $((1048576 - 17)) /dev/zero | tr '\0' b; } > "$S/sparse1m"
     tail -c +65537 "$CORPUS/$PROSE_SRC" | head -c 1048576 > "$S/prose1m"
     head -c 4096 "$S/prose1m" > "$S/prose4k"
     [ "$(sha256sum < "$S/prose1m" | cut -c1-64)" = "$PROSE1M_SHA" ] || die "prose1m slice sha moved"
@@ -130,33 +162,52 @@ build() {
         local A=$O/art/$pk; mkdir -p "$A"
         # shellcheck disable=SC2086
         (cd "$A" && "$PCREC" -p "$pk" $flags -o "$pk.c" --pattern "$pat") || die "pcrec refused $pat"
+        if [ "$POST" = 1 ]; then
+            # the artifact declares rx_iter itself: tdrv.c's include is empty
+            : > "$A/iter_abi.h"
+            mkdir -p "$A/old"
+            # shellcheck disable=SC2086
+            (cd "$A/old" && "$PCREC_OLD" -p "$pk" $flags -o "$pk.c" --pattern "$pat") || die "the parent pcrec refused $pat"
+        else
         cp "$here/iter_abi.h" "$A/"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_off.c" || die "mktwin off $pk"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_shared.c" --shared || die "mktwin shared $pk"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_fill.c" --fill || die "mktwin fill $pk"
+        fi
         local PU; PU=$(echo "$pk" | tr a-z A-Z)
         # shellcheck disable=SC2086
         local null; null=$("$PCREC" $flags --emit-facts --pattern "$pat" | awk -F'\t' '$1=="byte" && $2=="nullable"{print $7}')
         { printf '%s\t%s\t%s\tnullable=%s\t' "$pk" "${flags:--}" "$pat" "$null"
           grep -hE "^#define ${PU}_(ENGINE|DFA_SCAN|DFA_START|DFA_PREFILTER|NCAPS) " "$A/$pk.c" "$A/$pk.h" | sort -u | awk '{printf "%s=%s ", $2, $3}'
-          grep -o 'body linkage: [^;]*' "$A/twin_off.c" | head -1; } >> "$O/stamps.txt"
+          if [ "$POST" = 1 ]; then
+              if grep -q "^static __attribute__((noinline)) int ${pk}__find(" "$A/$pk.c"; then
+                  echo "body linkage: static noinline (static label table)"
+              else echo "body linkage: inline"; fi
+          else grep -o 'body linkage: [^;]*' "$A/twin_off.c" | head -1; fi; } >> "$O/stamps.txt"
         [ "$null" = no ] || die "pattern $pat is nullable: the plain twin does not apply (retry machinery)"
         # the compiles of one pattern run concurrently, then its links (the dry run's 30 s bound)
         local o pids=() arm
-        for o in plain_old plain_new plain_aa twin_off twin_shared twin_fill; do
-            local src=$A/$o.c; case $o in plain_*) src=$A/$pk.c;; esac
-            $CC -O2 -c -o "$O/obj/$pk.$o.o" -I"$A" "$src" & pids+=($!)
-            $CC -O2 -fPIC -shared -o "$O/obj/lib${pk}_$o.so" -I"$A" "$src" & pids+=($!)
+        local objs="plain_old plain_new plain_aa twin_off twin_shared twin_fill"
+        [ "$POST" = 1 ] && objs="plain_old plain_new plain_aa"
+        [ "$I4" = 1 ] && objs="plain_old plain_old2 plain_new plain_aa"
+        for o in $objs; do
+            local src=$A/$o.c inc=$A; case $o in plain_*) src=$A/$pk.c;; esac
+            [ "$POST" = 1 ] && case $o in plain_old|plain_old2) src=$A/old/$pk.c; inc=$A/old;; esac
+            $CC -O2 -c -o "$O/obj/$pk.$o.o" -I"$inc" "$src" & pids+=($!)
+            $CC -O2 -fPIC -shared -o "$O/obj/lib${pk}_$o.so" -I"$inc" "$src" & pids+=($!)
         done
         waitall "compile $pk" "${pids[@]}" || exit 2
         pids=()
         mkdir -p "$O/bin/R1/$pk" "$O/bin/R2/$pk"
         for arm in $ARMS; do
             o=$(arm_obj "$arm")
-            $CC -O2 -Wall -Wextra -o "$O/bin/R1/$pk/$arm" -D"$(arm_def "$arm")" -DPFX="$pk" -DPFXU="$PU" \
-                -DHDR="\"$pk.h\"" -I"$A" "$here/tdrv.c" "$O/obj/$pk.$o.o" & pids+=($!)
-            $CC -O2 -Wall -Wextra -o "$O/bin/R2/$pk/$arm" -D"$(arm_def "$arm")" -DPFX="$pk" -DPFXU="$PU" \
-                -DHDR="\"$pk.h\"" -I"$A" "$here/tdrv.c" -L"$O/obj" -l"${pk}_$o" -Wl,-rpath,"$O/obj" & pids+=($!)
+            local inc=$A; [ "$POST" = 1 ] && case $arm in L_old|I_i1|I_i1b) inc="$A/old -I$A";; esac
+            # shellcheck disable=SC2086
+            $CC -O2 -Wall -Wextra -o "$O/bin/R1/$pk/$arm" -D"$(arm_def "$arm")" $(arm_flags "$arm") -DPFX="$pk" -DPFXU="$PU" \
+                -DHDR="\"$pk.h\"" -I$inc "$here/tdrv.c" "$O/obj/$pk.$o.o" & pids+=($!)
+            # shellcheck disable=SC2086
+            $CC -O2 -Wall -Wextra -o "$O/bin/R2/$pk/$arm" -D"$(arm_def "$arm")" $(arm_flags "$arm") -DPFX="$pk" -DPFXU="$PU" \
+                -DHDR="\"$pk.h\"" -I$inc "$here/tdrv.c" -L"$O/obj" -l"${pk}_$o" -Wl,-rpath,"$O/obj" & pids+=($!)
         done
         waitall "link $pk" "${pids[@]}" || exit 2
     done < <(pats)
@@ -170,7 +221,7 @@ build() {
 gate() {
     local O=$1 quick=${2:-} bad=0
     export TMPDIR=$O/tmp; mkdir -p "$TMPDIR"
-    if [ "$quick" != quick ]; then
+    if [ "$quick" != quick ] && [ "$POST" != 1 ]; then
         local m e
         for m in off shared fill; do
             e=""; [ $m = shared ] && e="TWIN_SHARED=1"; [ $m = fill ] && e="TWIN_FILL=1"
@@ -187,21 +238,25 @@ gate() {
     while IFS=$'\t' read -r cid pk subj stop; do
         exp=$(awk -F'\t' -v c="$cid" '$1==c{print $2}' "$O/expect.tsv")
         for r in $REGIMES; do
-            ref=$("$O/bin/$r/$pk/L_old" check "$O/subj/$subj" "$stop")
-            [ "$ref" = "$exp" ] || { say "   G3 $cid $r: L_old '$ref' != python re '$exp'"; bad=1; }
+            ref=$("$O/bin/$r/$pk/$REF" check "$O/subj/$subj" "$stop")
+            [ "$ref" = "$exp" ] || { say "   G3 $cid $r: $REF '$ref' != python re '$exp'"; bad=1; }
             for arm in $ARMS; do
                 got=$("$O/bin/$r/$pk/$arm" check "$O/subj/$subj" "$stop")
                 printf '%s\t%s\t%s\t%s\n' "$cid" "$r" "$arm" "$got" >> "$O/check.tsv"
-                [ "$got" = "$ref" ] || { say "   G2 $cid $r $arm: '$got' != L_old '$ref'"; bad=1; }
+                [ "$got" = "$ref" ] || { say "   G2 $cid $r $arm: '$got' != $REF '$ref'"; bad=1; }
             done
         done
     done < "$O/cells.tsv"
-    say "   G2/G3 $(wc -l < "$O/check.tsv") binary answers checked against L_old and python re"
+    say "   G2/G3 $(wc -l < "$O/check.tsv") binary answers checked against $REF and python re"
     local plt=0 noplt=0 b
-    for b in "$O"/bin/R2/*/*; do objdump -d "$b" | grep -qE 'call.*<(pa|pw|pc|pd)_(search|next|next_n)@plt>' && plt=$((plt + 1)); done
+    for b in "$O"/bin/R2/*/*; do
+        if ptr_arm "$(basename "$b")"; then
+            objdump -d "$b" | grep -qE 'call.*<(pa|pw|pc|pd)_[a-z_]+@plt>' || plt=$((plt + 1))
+        else objdump -d "$b" | grep -qE 'call.*<(pa|pw|pc|pd)_(search|next|next_n)@plt>' && plt=$((plt + 1)); fi
+    done
     for b in "$O"/bin/R1/*/*; do objdump -d "$b" | grep -qE 'call.*<(pa|pw|pc|pd)_[a-z_]+@plt>' || noplt=$((noplt + 1)); done
     local nb; nb=$(ls "$O"/bin/R2/*/* | wc -l)
-    if [ "$plt" = "$nb" ] && [ "$noplt" = "$nb" ]; then say "   G4 R2: $plt/$nb call the artifact through the PLT; R1: $noplt/$nb do not"
+    if [ "$plt" = "$nb" ] && [ "$noplt" = "$nb" ]; then say "   G4 R2: $plt/$nb call the artifact through the PLT (the rx_info arms through its pointer, no PLT call); R1: $noplt/$nb do not"
     else say "   G4 PLT structure: R2 $plt/$nb via PLT, R1 $noplt/$nb direct"; bad=1; fi
     if [ $bad = 0 ]; then say "== parity ANSWER GATE: PASSED"; return 0; fi
     say "== parity ANSWER GATE: FAILED (no timing)"; return 3

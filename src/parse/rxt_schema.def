@@ -245,6 +245,9 @@ PCREC_RXT_SCHEMA(BLOCK, "var-unset",  TOKEN,     0, NONE,       REPEAT,      "",
 /* W23's block lines — rows only at W23.1, arms at W23.3. */
 PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "closed per-key",       FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)
+/* [FINDALL-NEXT] `mg`, the GLOBAL count (rxt_format.md §1.7.1): `mc`'s shape,
+ * counted by libpcre2's global iteration and checked through `<prefix>_next`. */
+PCREC_RXT_SCHEMA(BLOCK, "mg",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)
 /* `under`'s two declared rules, and the `closed` one is why `qualified-line`
  * is a VALUE SHAPE rather than a free line: a qualified line's first
  * component IS its qualifier, so `closed convention` selects the same set a

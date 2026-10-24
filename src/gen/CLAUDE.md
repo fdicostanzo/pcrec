@@ -53,3 +53,4 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__gen.md
 
 See also NOTES.md in this directory (history, lessons, rationale, moved detail).
+- **emit_iter.c** — [FINDALL-NEXT] I1+I4: `<prefix>_next`, `_next_n`, residual twins, scaffold bracket; sections in NOTES.md.

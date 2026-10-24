@@ -1035,6 +1035,21 @@ step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml). The
 paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
 "one job" or "a 90-minute `make test` step", read the matrix.
 
+**CI's python is pinned to 3.14 (2026-10-23, lane `cipy`).** Run 40035626306
+(main defbbdefa) went red in `test-rxtsource`'s C3 on the runner image's
+system python 3.12: python `re` accepts `\z` only from 3.14, so
+`tests/findall/global.rxt`'s `\z|a*` block and the other `\z` patterns moved
+from PASS to no-python-expression (PASS -37, no-python +37, simulated here by
+making `re.compile` refuse `\z`), and one further PASS line landed in NO bucket
+(C3 reconciled to 74004 against the census's 74005; not reproduced by the
+simulation, so its cause on 3.12 is unknown). ci.yml now runs
+`actions/setup-python@v5` with `python-version: '3.14'` before the build, so
+the C3 oracle is the dev box's and ubuntubudu's python. `verify_rxt.py` also
+counts, per file, the case lines it parsed against those that reached a bucket
+(PASS, INFO, a named skip, a failure) and fails loudly naming the file on a gap
+(`BUCKET GAP`), so the next such hole is a located failure and not a bare
+total.
+
 `.github/workflows/ci.yml` runs on every `pull_request` (including from
 forks — the repo is public, the workflow touches no secrets) and every push
 to `main`: full-history checkout, build the pinned libpcre2 10.46 from

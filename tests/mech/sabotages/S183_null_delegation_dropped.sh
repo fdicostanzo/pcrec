@@ -48,16 +48,6 @@ SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 12pass/4fail -- every fram
 # The plant stays `<prefix>_search_in`-only: the NULL-descriptor line is
 # dropped where the entry is the search and kept for the match pair.
 SAB_COUNT=1
-SAB_BEFORE='        "    if (!buffers) return %s(%s%s);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(%s, &run%s);\n"
-        "}\n\n",
-        p, name, s->args, va, p, name, s->args, va);'
-SAB_AFTER='        "%s"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(%s, &run%s);\n"
-        "}\n\n",
-        p, s->entry == PCREC_ENTRY_SEARCH ? "" : pcrec_sb_fragf(&cx->arena, "    if (!buffers) return %s(%s%s);\n", name, s->args, va),
-        p, name, s->args, va);   /* SABOTAGE S183 */'
+SAB_BEFORE='        "    if (!buffers) return %s(%s%s);\n", p, name, s->args, va);'
+SAB_AFTER='        "%s", p, s->entry == PCREC_ENTRY_SEARCH ? ""
+            : pcrec_sb_fragf(&cx->arena, "    if (!buffers) return %s(%s%s);\n", name, s->args, va));   /* SABOTAGE S183 */'

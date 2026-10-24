@@ -2748,3 +2748,125 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - lane/memfn-ws was fast-forwarded. done: R-29 is posted at 25ec6f665 and main is told.
 - Lesson: a lane that ENDS before a GO arrives misses it. A GO for a stopped lane goes to a fresh lane, and the old lane must be TaskStopped first so it cannot wake and race the new one in the same worktree.
 - Next: S3 (B1) after main merges. Frank's call is owed on the r27c reading (HRS for wide sets, plus a cost term in the selector).
+
+## 2026-10-22 (night) — S3 rulings
+
+- Lane s3 STOPPED at a design gap (s3_report.md @ 6f100c00f, nits commit f7bc3cf05). No row renders the routed REPORT form: legacy_ok declines context cover sites, and no row does find-then-verify.
+- Kit ruling Q1: a new Table E row `E-find` (the family's find-then-verify renderer), NOT keyed on REPORT. The table order is E-func, E-stmt (legacy), E-find, E-generic, so the movers are exactly REPORT plus D-hors. Its deny makes mf_ask refuse, so OFF = DEF.
+- Q3: two deny rows (window_site §5.2); memfn floor 12→14.
+- Main's ruling Q2: in the same abi commit go the .list re-index, RX_DFA_SCAN "cover", C17 → delegated, and the §6.1 readers found by grep. Flag bit 57 is NO (main files it under [IFACE-PUSH]).
+- Main's conditions: the spec hunks travel in the same commit; the --list-axes delta is a declared manifest; the movers are a predicted manifest named by id; OFF is byte-identical to main; abi 84 is PROVISIONAL (the I1+I2 iterators may take it).
+- Build lane s3b (opus) is briefed. The window_site rev 3.3 fold of E-find is OWED after the build.
+
+## 2026-10-23 (early) — S3 built; D6 review; fixes folded
+
+- Lane s3b built S3 as ONE commit, e1e95a584 (E-find, D-hors, wf-find/wf-hors, abi 83→84 provisional, retirements, C17 delegated). The light tier is green, and 828 of 2263 DFA artifacts now read cover.
+- Critic 1 (over-read, opus): NO bug. About 330 compiles under ASan+UBSan matched python re at every start. It found a latent uint8 sh[] wrap (assert it) and a no-op D-hors when max shift is 1 (decline it). It also proposed three unlocks (wider window, priced probe, non-REPORT sites) for ideas.md.
+- Critic 2 (contract): one abi reader was missed (match_api.md §1¶7, the guard sample still compares against 83). Other findings:
+  - 587 lacked SIMD-on and norun byte checks;
+  - no timing covers movers beyond 581's cells;
+  - the re-aimed sections had no default witness;
+  - the floors had ~10% slack.
+- Lane s3fix (opus) folds all of it into the ONE S3 commit. 588 gains a stratified mover sample, read as findings and not part of the §6 bar.
+- 587 waits for s3fix plus main's 598.
+
+## 2026-10-23 — Frank's ruling: D-hors decline withdrawn, measure E[sh]
+
+- Frank asked about the cost/benefit of review fix C ("D-hors declines when no shift exceeds 1"). He said the metric should be defined and measured.
+- The manager agreed that C was a byte move on an argument, with no measurement (D77). The defined metric is E[sh] = Σ rate[b]·sh[b], the expected shift under the byte-rate prior, read as the wf-hors alpha (D-hors vs D-one) at both layers. "max sh = 1" is only the degenerate case E[sh] = 1.
+- Ruling (Frank: "Agree"):
+  - C is OUT of the S3 commit; B's asserts stay.
+  - 588 gains a D-hors admission reading stratified by E[sh]. These are findings, outside the §6 bar.
+  - The admission rule (one declared row priced on E[sh], with HORS_MIN) is decided from that reading.
+- Lane s3hors is doing it. The K27 both-arms fixture (F-5) also ships as a test-only commit.
+
+## 2026-10-23 — Frank: public names must not expose internal modules
+
+- Frank: "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." The flag is unbuilt; main files it under [IFACE-PUSH]. A responses notice is posted with suggestions (PCREC_NO_DIRECT_REPORT / PCREC_NO_WINDOW_REPORT).
+- Asked Frank whether the same lens covers the `--memfn=no-*` deny spellings and the spec's "memfn kit" wording.
+- Frank's follow-up: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." It is a naming guide for NEW caller-facing names and spec prose; existing --memfn= names stay. Applied to S3's new spec prose at delivery.
+
+## 2026-10-23 — S3 fix C withdrawn, 587 queued
+
+- s3hors: the S3 commit is d3886a656 (window.c = e1e95a584 + B's asserts). It also delivered the K27 both-arms fixture (ee0d4488d) and 588's E[sh] reading, 12 sites with E[sh] 1.000..6.009 (86b9afa69). The light tier is green.
+- F-8, the manager's own mistake: my hand edit of run_codegen_tests.sh wrote back only the head of the file (1,751 of 3,836 lines). The lane rebuilt it.
+  - Lesson: a scripted edit must assert that the line count moved only by the intended delta before writing. I did that for the next two edits.
+- D174 applied: the match_api cover prose is worded by behaviour (92432b552).
+- 587's dry-run (the 108-row mech validation, ~90 s) exceeded boxqueue's 30 s bound, so it now runs as the job's first step (ba6ebf720). 587 is QUEUED. 588's slot is to be asked of main after 587 is green.
+
+## 2026-10-23 (night) — job 600's reds fixed; 604 queued
+
+- Job 600 (S3 heavy) was RED in 5 of 13 steps, with NO answer change. Triage tri600 found moved witnesses, floors and manifests (S3 routes fixed-width patterns to cover), plus 32 mech rows that no longer reached.
+- My R1 ("cover stamps the wrong DFA_TABLE") was WRONG. A cover artifact carries the anchored machine (rx_match, "unwrapped"), so the stamp is true; the gap was run_premul_table.sh's missing cover marker. I withdrew R1 on the lane's evidence.
+- Lane s3red: the S3 commit is now 7e1caad08 (+ a no-byte spec clarification §6.3.4¶8/¶9). Follow-up 34ee758a1:
+  - 32 SAB_REACH rows re-aimed to no-wf-find;
+  - 10 sections green when rerun;
+  - DIFFER_PINS at their measured values, with armcause.py showing every leaver is cover;
+  - a census class for utf8 cover facts.
+- Findings on main (since S2, measured at c3ea619c3): S284's claim expired (now DETECTED), and S283's plant moves nothing (UNDETECTED). Sent to main.
+- 604-kit-s3-heavy is queued after main's iterland 602/603. The iterators will likely take abi 84, so S3 renumbers to 85 at landing.
+
+## 2026-10-23 (morning) — S3 timing 605: bar passes, mover sample shows a regression
+
+- 604 (S3 heavy) is GREEN. 605 (S3 timing) is GREEN as a run; BAR FAIL on one cell only, foobar match/real 1.032.
+  - That cell is a layout effect: rx_match is instruction-identical and only moved (rx_search shrank).
+  - All 5 caps are inside.
+  - Scalar: 41 faster, 26 within, 5 slower; best wins 0.17 and 0.24.
+- The mover sample (24 rows, outside the bar) is SLOWER on 40 of 122 cells: WALK/one 39 of 46, up to 29x on `(?i)x/1234`, 7.4x on `(?i)foobar`.
+  - Cause, from a manager probe: E-find's B knows only memchr (one byte) or a byte walk. A two-member caseless stop {B,b} walks byte by byte, where DEF hands off with two memchr streams.
+  - 581's bar cells had no caseless literal, so the bar missed it.
+- E[sh]: D-hors is slower at E ≈ 1 (1.7-2.7x) and faster from about 1.2 (down to 0.24). max(sh) does not predict it. E[sh] is supported; the cut-off is not fixed.
+- Leaning put to Frank:
+  - S3 does not land as is;
+  - E-find's B takes the kit's full FIND form set (the two-stream find included);
+  - the stratified sample becomes part of the gate;
+  - foobar match/real becomes a named layout cap;
+  - E[sh] admission waits.
+- Awaiting his go. Report: s3_report.md Part 6 (3f81ed7c3, a017fe98a).
+
+## 2026-10-23 (afternoon) — first blinded CODE critic round on S3; C1 build briefed
+
+- At Frank's request, four read-only critics reviewed 7e1caad08 + 34ee758a1, BLINDED to the 605 finding: cc-design (opus), cc-perf (opus, emitted vs replaced), cc-quality (sonnet) and cc-tests (sonnet).
+- The find-form gap was caught by cc-perf (loops and asm, plus the SIMD loss hidden by the 39→33 floor re-pin) and by cc-design (§2.2's PAIR row unreachable), and partly by cc-tests. cc-quality missed it.
+- The review is docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md (C1-C17, with lessons for the skill), and main has it. Main started docs/dev/guide/ (lane "guide") at Frank's ask: coding, architecture, style, critics, plus addenda/kit.md (mine).
+- Lane s3c1 (opus) is briefed: E-find asks Table B the design's question and renders its pick (PAIR/SIMD included). It also covers Table D as a kit_table and C9/C11/C13/C14/C15/C2. The window_site rev 3.3 draft is included.
+  - C5/C6/C8/C12/C16 are out of scope.
+  - The sample joins the bar, and foobar match/real gets a layout cap of 1.052.
+
+## 2026-10-23 (evening) — stop-ranking study ruled, Q1-Q6
+
+- Study: lane/memfn-stopstudy 0567def22, docs/design/memfn/stop_ranking_study.md. It found 7 of 20 surveyed choosers answer one question, "which stop, found how".
+- Frank's rulings (full text in responses.md):
+  - **Q1 yes:** one priced choice in Table A over position × method, with Table B quoting prices. Costs live in ONE visible table (the measurement set, via --list-measurements, relative to the walk, raw readings as provenance, stamped per artifact). An option changes a cost only through a visible key or row.
+  - **Q2 yes:** D-hors becomes a priced method; HORS_MIN is deleted.
+  - **Q3 yes:** this box is measured now (memchr, pair, probe, verify cards → zen4-grid1 rev 2, night, after the census). The canned self-contained script, closest-match library, other-machine targeting and generic envelope go into [MEASURE-SET], updated by main at 2ed772381.
+  - **Standing rule:** a new method adds its measurement card.
+  - **Q4 REVISED to:** one decider for presence and stop; the window's span array also carries UNBOUNDED-offset spans (presence-only); the fold is a general rule.
+  - **Q5:** higher-resolution fixed-point integers, not depending on compiler options; within-noise prices are ties.
+  - **Q6:** filed (the pair row for any two bytes).
+- OWED: a study rev 2 folding the rulings (the Q4 revision especially), then the step-0 census after C1 merges.
+
+## 2026-10-23 (late) — PAIR widened in S3; kit sabotage range
+
+- Frank: "Widen two pair s3 now". Lane s3r2fix delivered lane/memfn-s3pair @ 457bd231a (S3 commit bc675b020):
+  - PAIR serves any two-byte window stop at or past the candidate, plus the r2 review fixes.
+  - Light tier green; 40/40 movers as predicted; OFF identical.
+  - Its ASan differential, census and axes measure are queued behind 606.
+- Main reserved the kit's sabotage-id range **S1540-S1559** (S1540 = the new PAIR plant); main's lanes stay below S1540.
+- The critic skill was renamed pcrec-critic: one opus coordinator per round, results as files, framework notes in docs/dev/meta/coordinator_framework.md.
+- 2026-10-23 evening: the iterators LANDED on main (b8c66a739) and took **abi 84**, so S3 renumbers to **85** at its landing (merge main into the S3 branch, then the grep ritual). Frank's full-suite battery (D177) runs from the box queue until about 08:00 2026-10-24: no timing until then (588 waits for main's word), and heavy correctness queues behind it.
+
+## 2026-10-23 (close, at Frank's /close) — S3 built with PAIR; checks trailing; stop-ranking ruled
+
+- **S3 state:** lane/memfn-s3pair @ 36422a84e (S3 commit bc675b020, abi 84 provisional → must become **85**: the iterators took 84 on main).
+  - The C1 fix and the PAIR widening are in, plus the r2 review fixes.
+  - Answers are clean: diff_r2 7,200 cases, 0 bad. Codegen 16/16, wreply 112/0, G2 10,042/0, plants 18/18.
+- **Trailing checks** (606 at the C1 tip and the s3pair census; NO answer change):
+  - the census twin rule (165 + 19 rows);
+  - test-cpset-structure's stale `(?i)HeLLo` EMITTED_BYTES pin;
+  - test-encoding-checks: cover_pick's reader, the K50 list, and 4 byte/utf8 identity pairs to prove.
+  - Lane s3pins went idle with partial edits, committed as UNVERIFIED WIP 36422a84e: the census rule and cover_pick only. The pin, K50 and identity proof are NOT done, and no section was rerun. Stopped at close.
+- **Reviews:** 2026-10-23-r1 (blinded, 4 critics) and r2 (the code-critic skill's first use). The skill is now pcrec-critic (one coordinator).
+- **Stop-ranking:** Q1-Q6 and truncation ruled (D176, [MEASURE-SET], [MEMFN-UNBOUNDED-SPANS]/[MEMFN-PAIRSTOP]/[MEMFN-PAIRSIMD]).
+- **Box:** Frank's full-suite battery holds it until ~08:00 2026-10-24; no timing until main says.
+- **Kit sabotage range:** S1540-S1559.

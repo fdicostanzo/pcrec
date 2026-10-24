@@ -15,7 +15,7 @@ SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --vm-entry-shape=4 --part-residual=shared --emit-facts --pattern "(a)b" | tr "\t" " "'
-SAB_REACH_EXPECT='byte prefilter prefilter 2 R2 yes P8 residual-shared shared 0
+SAB_REACH_EXPECT='byte prefilter prefilter 4 R2 yes P8 residual-shared shared 0
 byte search_run owned'
 SAB_BEFORE='            if (!(set & pl->owned_inline & PCREC_ENTRY_BIT(f)) ||'
 SAB_AFTER='            if (1 || !(set & pl->owned_inline & PCREC_ENTRY_BIT(f)) ||   /* SABOTAGE S1114 */'

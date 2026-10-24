@@ -97,14 +97,19 @@ FLOORS = {
                             # 3 at D172 S3, the fixed-width caseless runs became `cover`; 6 again at
                             # code review r1 C1, their window search's stop PAIR with its SIMD rows;
                             # pinned AT the measure)
+    'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
 
 
 def strip_blocks(text):
     """The artifact with every witness block (guard line through its
-    `#endif`) and the stamp line removed; also the block count and the
-    bytes of the first block."""
+    `#endif`) and the stamp line removed; also the block count, the bytes of
+    the first block, and how many of those blocks sit inside the scaffold copy
+    `<prefix>__match_notempty` ([FINDALL-NEXT]: the anchored matcher's text
+    written again under the scaffold bracket, so its inner block is SCAFFOLD
+    bytes, not the CPU-guarded bytes the stamp counts -- iterfix2 f298d084e)."""
     out, n, first, cur, inside = [], 0, None, [], False
+    ncopy, in_copy = 0, False
     for ln in text.split(b'\n'):
         if inside:
             cur.append(ln)
@@ -113,13 +118,20 @@ def strip_blocks(text):
                 if first is None:
                     first = len(b'\n'.join(cur)) + 1
             continue
+        if not in_copy and b'__match_notempty(' in ln and not ln.endswith(b';') \
+                and not ln.startswith((b' ', b'#', b'/')):
+            in_copy = True
+        elif in_copy and ln == b'}':
+            in_copy = False
         if ln == GUARD:
             inside, n, cur = True, n + 1, [ln]
+            if in_copy:
+                ncopy += 1
             continue
         if STAMP.match(ln) or ANY_STAMP.match(ln):
             continue
         out.append(ln)
-    return b'\n'.join(out), n, first
+    return b'\n'.join(out), n, first, ncopy
 
 
 def compile_one(binary, pattern, argv_arm, timeout):
@@ -228,13 +240,23 @@ def main():
             return rec
         vw = int(sw[0][1], 16) - v   # the witness blocks' share: a real SIMD
                                       # row's bytes (the `simd` arm) are both builds'
-        wstrip, nblk, _ = strip_blocks(wout)
-        pstrip, pblk, _ = strip_blocks(pout)
+        wstrip, nblk, _, ncopy = strip_blocks(wout)
+        pstrip, pblk, _, _ = strip_blocks(pout)
         if pblk:
             rec['issues'].append('plain artifact carries %d witness blocks' % pblk)
         if nblk == 0:
             rec['issues'].append('witness artifact carries no block')
         rec['counts'].append('two-blocks' if nblk >= 2 else 'dfa')
+        # The stamp counts the blocks OUTSIDE the scaffold copy; the copy's
+        # inner block is scaffold bytes (read by no decision, and the
+        # NEUTRALITY comparison below still strips it). A copy that holds more
+        # than one block, or one that is not accounted for, breaks the multiple.
+        if ncopy:
+            rec['counts'].append('scaffold-copy')
+        nblk -= ncopy
+        if nblk <= 0:
+            rec['issues'].append('every witness block sits in the scaffold copy: nothing the stamp counts')
+            return rec
         rec['vw'], rec['nblk'] = vw, nblk
         if vw > nblk * bounds['rq3-witness']:
             rec['issues'].append('witness stamp %d exceeds %d blocks x bound %d'

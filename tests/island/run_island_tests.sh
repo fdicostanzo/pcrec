@@ -252,7 +252,8 @@ fi
 # region must DIFFER from its own -fno-alt-island region, and a declined one's
 # must be byte-identical.
 # ---------------------------------------------------------------------------
-region() { sed -n '/^    goto rx_L0;$/,/^rx_accept:/p' "$1"; }
+# the first region only: the iterator's guarded matcher copy follows (iterfix2)
+region() { sed -n '/^    goto rx_L0;$/,/^rx_accept:/{p;/^rx_accept:/q}' "$1"; }
 
 for pat in 'cat|dog|cow' 'cat|cats|dog|dogs' 'foo|bar' 'thin|think|thinker|thinking'; do
     gen reg_on  "$pat"

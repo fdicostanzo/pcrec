@@ -1042,7 +1042,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | `PCREC_PART_FIND` (2) | `find` | the iterator's parts: none exist, the iterator is not built |
 | `PCREC_PART_WRAP` (3) | `wrap` | static twins of wrapper bodies and residual leaves: none exist |
 
-<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing. A value for `compound` is accepted and today changes no part: the one compound row built (split) has a part whose body holds a label table (P2) and a part with one caller (P3), so every compound part stops at a constraint row and the stamp reads `compound=V/held`.
+<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing. A value for `compound` lays out a compound's parts like any class value: in the one compound row built (split) each part copies (a part's label table, where it has one, is in its own `noinline` body, not in the `<prefix>__<role>_search` subject) and has more than one caller (`<prefix>_search` and `<prefix>_next` among them), so `compound:inline` on split stamps `compound=inline`.
 
 <a id="s2-51-p2"></a>[2.51¶2] The values, shared with §2.53:
 

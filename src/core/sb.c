@@ -20,7 +20,7 @@ static void sb_grow(StrBuf *sb, size_t need)
     /* [MEMFN] RQ-3: read through the decision view, and a byte appended
      * inside a SIMD bracket is guarded, so it never counts toward the bound
      * (the cap it stands in for excludes it, D155 item 9). */
-    if (sb->abort_over && !sb->simd_open &&
+    if (sb->abort_over && !sb->simd_open && !sb->scaf_open &&
         pcrec_sb_len_decide(sb) + need > sb->abort_over && sb->cx)
         pcrec_ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
     if (sb->len + need + 1 <= sb->cap) return;
@@ -233,16 +233,65 @@ void pcrec_sb_simd_close(StrBuf *sb)
     sb->simd_size.tables += z.tables;
 }
 
+/* [FINDALL-NEXT] Opens a SCAFFOLD region (StrBuf.scaf_guarded): the SIMD
+ * bracket's rules, and never inside one. */
+void pcrec_sb_scaffold_open(StrBuf *sb)
+{
+    if (sb->scaf_open || sb->simd_open)
+        sb_simd_fail(sb, "a scaffold bracket opened inside a bracket");
+    if (sb->len && sb->p[sb->len - 1] != '\n')
+        sb_simd_fail(sb, "a scaffold bracket opened mid-line");
+    sb->scaf_open = true;
+    sb->scaf_at = sb->len;
+    sb->scaf_at_uncut = pcrec_sb_len_uncut(sb);
+}
+
+/* Closes the open scaffold region: its uncut bytes into `scaf_guarded`, its
+ * written text's breakdown into `scaf_size`. */
+void pcrec_sb_scaffold_close(StrBuf *sb)
+{
+    if (!sb->scaf_open) sb_simd_fail(sb, "a scaffold close with no open bracket");
+    if (sb->len > sb->scaf_at && sb->p[sb->len - 1] != '\n')
+        sb_simd_fail(sb, "a scaffold bracket closed mid-line");
+    bool open_at_end = false;
+    PcrecEmitSize z = pcrec_emit_size_measure(sb->p ? sb->p + sb->scaf_at : "",
+                                              sb->len - sb->scaf_at, &open_at_end);
+    if (open_at_end) sb_simd_fail(sb, "a scaffold bracket closed inside a comment or a table");
+    sb->scaf_open = false;
+    sb->scaf_guarded += pcrec_sb_len_uncut(sb) - sb->scaf_at_uncut;
+    sb->scaf_size.total  += z.total;
+    sb->scaf_size.prose  += z.prose;
+    sb->scaf_size.tables += z.tables;
+}
+
+/* [FINDALL-NEXT] Appends ONE CODE BYTE of scaffold mid-line (the second `_`
+ * of a residual twin's name, pcrec_enc_twin_mark): a byte of a code line,
+ * never a newline and never inside a bracket, counted as scaffold code. */
+void pcrec_sb_scaffold_putc(StrBuf *sb, char ch)
+{
+    if (sb->scaf_open || sb->simd_open || ch == '\n')
+        sb_simd_fail(sb, "a scaffold byte inside a bracket or as a newline");
+    size_t at = pcrec_sb_len_uncut(sb);
+    pcrec_sb_putc(sb, ch);
+    size_t n = pcrec_sb_len_uncut(sb) - at;
+    sb->scaf_guarded    += n;
+    sb->scaf_size.total += n;
+}
+
 /* Appends `src`'s text to `dst` and carries its guarded record with it.
  * `cmt_dropped` is deliberately NOT carried: no reader of the destination's
  * uncut length existed for a spliced scratch buffer's dropped comments
  * before RQ-3, and carrying it would move the ladder's scratch abort. */
 void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
 {
-    if (dst->simd_open || src->simd_open)
+    if (dst->simd_open || src->simd_open || dst->scaf_open || src->scaf_open)
         sb_simd_fail(dst, "a splice with a bracket open");
     pcrec_sb_puts(dst, src->p ? src->p : "");
     dst->layout_bytes     += src->layout_bytes;
+    dst->scaf_guarded     += src->scaf_guarded;
+    dst->scaf_size.total  += src->scaf_size.total;
+    dst->scaf_size.prose  += src->scaf_size.prose;
+    dst->scaf_size.tables += src->scaf_size.tables;
     dst->simd_guarded     += src->simd_guarded;
     dst->simd_size.total  += src->simd_size.total;
     dst->simd_size.prose  += src->simd_size.prose;
@@ -253,8 +302,10 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
  * bracket's included (see StrBuf.simd_guarded). */
 size_t pcrec_sb_len_decide(const StrBuf *sb)
 {
-    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded - sb->layout_bytes;
+    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded - sb->layout_bytes
+             - sb->scaf_guarded;
     if (sb->simd_open) n -= pcrec_sb_len_uncut(sb) - sb->simd_at_uncut;
+    if (sb->scaf_open) n -= pcrec_sb_len_uncut(sb) - sb->scaf_at_uncut;
     return n;
 }
 
@@ -268,6 +319,9 @@ PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb)
     z.total  -= sb->layout_bytes;    /* [ENTRY-TABLE] E1: the marks' code bytes */
     z.prose  -= sb->simd_size.prose;
     z.tables -= sb->simd_size.tables;
+    z.total  -= sb->scaf_size.total;   /* [FINDALL-NEXT] the iterator's scaffold */
+    z.prose  -= sb->scaf_size.prose;
+    z.tables -= sb->scaf_size.tables;
     return z;
 }
 

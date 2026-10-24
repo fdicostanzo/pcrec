@@ -1269,7 +1269,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<PREFIX>_MEASURES ""` stamp and `.measures = ""`; the VM's `^` role text
 # changes (K112). `9e4b87e90` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-813f43ec8}"   # the [MEASURE-SET] M0 merge (2026-10-21), abi 82 (was 9e4b87e90, the lane self-pin; before it d06b530f7, abi 81)
+# [FINDALL-NEXT] I4 SELF-PIN (lane i2build, 2026-10-21), abi 83 -> 84: every
+# artifact gains rx_nextnfn, the RX_FOREACH block and rx_info.next_n in the
+# shared block, `.next_n =`, <prefix>__one with <prefix>_next/_next_n over it,
+# and the STEP's past-the-end line. `881eac3cf` is the lane's last src commit;
+# the manager re-pins to the merge (the self-pin convention).
+# lane nomacro (2026-10-23): RX_FOREACH dropped (D175) from the unlanded 84 event; the (B) pin moves to the lane's src commit, the manager re-pins to the merge.
+# lane iterland (2026-10-22): the stack lands as one 83 -> 84 event; re-pinned to its merge 934f8bed1.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-4f39644d8}"   # lane iterfix2 (2026-10-23): the r2 review's fixes, the 84 event amended, src identical to this commit (was 24d2888f5, lane nomacro, RX_FOREACH dropped; before it 934f8bed1, the lane/iterland stack pre-nomacro; before it 881eac3cf, the I4 lane self-pin; before it 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1467,7 +1474,10 @@ gen_deny() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 $3 -o - --pat
 # dead-capture elision's four patterns still show up as differing here: on the
 # pre-module reference they were VM-selected and HAVE a region, and today they
 # are DFA-selected and do not.
-prog_region_raw() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+# The FIRST region only: a VM artifact whose iterator retries an empty match
+# carries the matcher's guarded copy `<p>__match_notempty` after it, a second
+# `goto rx_L0;` .. `rx_accept:` (iterfix2, review 2026-10-23-r2 EMIT-1).
+prog_region_raw() { awk '/^    goto rx_L0;$/{on=1} on{print} on&&/^rx_accept:/{exit}'; }
 # [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
 # every deny-axis build alike, passes the seventh exception's canonicalizer
 # (adv_layout_canon, below) so it composes with every excuse bucket.

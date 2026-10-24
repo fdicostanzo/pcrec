@@ -20,7 +20,7 @@ entries (verbatim): NOTES.md here.
 
 ## Files
 
-- Process control: `safekill`, `watchdog`, `wtprune`, `mk_d27_cell.sh`; run-control family `boxlock`, `chainrun`, `watchrun`, `verdict`, `boxqueue`, `perfrun` (+ `perfrun.shapes`, `cpusample.sh`, `sectiontimes`), `battery.sh`.
+- Process control: `safekill`, `watchdog`, `wtprune`, `mk_d27_cell.sh`; run-control family `boxlock`, `chainrun`, `watchrun`, `verdict`, `boxqueue`, `perfrun` (+ `perfrun.shapes`, `cpusample.sh`, `sectiontimes`), `battery.sh`; `fullsuite_job.sh` (battery.sh as a box-queue job at a frozen commit, retained verdict in build/full_suite/, D177; its --dry-run is the only safe check: `boxqueue add` ARMS A RUNNER that runs it).
 - Checkers: `plan_lint.sh`/`.py`, `check_claudemd_size.sh`, `spec_toc.py`, `measure.sh`.
 - Instruments: `emit_sweep.py`, `trace_diff.py`, `cls_identity.py`, `compile_time_census.py`, `alt_census.py`, `size_diff`.
 - Generators: `embed_text.sh`, `ksgen.c`.

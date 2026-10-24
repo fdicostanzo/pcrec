@@ -452,8 +452,36 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # [LOSS-REVIEW] candidate 1 (abi 76): the span compares and the back-step are
 # `static inline` definitions ahead of the VM body now, hence the
 # `static inline ptrdiff_t` head; their regions are excised as before.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(_?)(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+# [FINDALL-NEXT] I1's residual TWINS: an out-of-line entry's body is the
+# static `rx__<name>` (counted under the entry's key, with the guarded
+# attribute and `static` lines above it), and the exported `rx_<name>` is a
+# one-line forwarder, encoding-free text present where the entry is, counted
+# under `forwarder`.
+TWINNED = ('next_pos', 'valid_upto', 'var_valid')
+TWIN_PREAMBLE = ('static', '#endif', '__attribute__((noclone))',
+                 '#if __has_attribute(noclone)', '# define __has_attribute(x) 0',
+                 '#ifndef __has_attribute')
+# [FINDALL-NEXT] the iterator's bind check `rx__bind_checks` IS the K50
+# caller-position prologue run once per iterator, so it exists exactly where
+# that prologue has text (the backend's start guard): its definition and its
+# one call block in `rx__enter` are excised and counted together.
+BIND_DEF_RE = re.compile(r'^static int rx__bind_checks\(')
+BIND_CALL_RE = re.compile(r'^\s*int r = rx__bind_checks\(')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
+# [iterpin, 2026-10-23] iterfix2's EMIT-1 ("no split without a prologue"): the
+# search body lives in `rx_search` / `rx_search_run` on a byte artifact (no
+# prologue, no split) and in `rx__find` on a utf8 one, whose `rx_search` /
+# `rx_search_run` is then a thin WRAPPER (K50 start guard + `return
+# rx__find(...)`). The wrapper is the encoding-owned prologue (the same K50
+# guard text the regions above excise, here with its function shell), so it is
+# excised and COUNTED under `search_split`; the body's own definition head is
+# renamed to one canonical name on both sides so the hot loop beneath it is
+# compared TEXT FOR TEXT. Nothing inside a body is excused: only the function
+# shell, the bounds line the split moves into the wrapper, and the call name.
+SEARCH_HEAD_RE = re.compile(r'^(?:static\s+)?(?:inline\s+)?(?:__attribute__\(\(\w+\)\)\s+)*int\s+(?:rx_search|rx_search_run|rx__find)\(')
+SEARCH_CALL_RE = re.compile(r'^(\s*r = )(?:rx_search|rx_search_run|rx__find)\(')
+SEARCH_BOUNDS_RE = re.compile(r'^    if \(search_from > subject_length\) return 0;$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
 # `attempt_max` instead of `subject_length` (emit_vm.c's `attempt_position >=
@@ -499,7 +527,9 @@ UTFCHK_STAMP_RE = re.compile(r'^(#define RX_UTF_CHECK ")(?:inert|off|whole)(")$'
 # one per action — for the enctriage reason above: its marker comment is
 # NONESSENTIAL and absent from a default artifact. Under `-fcomments` the
 # marker opens a region that ends at that same statement.
-K73_ZERO_RE = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos) == 0 && '
+# [FINDALL-NEXT] `ctx.pos`: the VM iterator's retry `rx__retry` writes the
+# rule over its own local `rx_ctx`.
+K73_ZERO_RE = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos|ctx\.pos) == 0 && '
                          r'!\(.*\)\) (do \1\+\+; while \(!\(.*\)\);|return -1;|continue;)$')
 K73_ZERO_OPEN = '[K73] Offset 0 is a match start only if it is a character'
 
@@ -556,7 +586,7 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # an encoding test). The definition was excised from the start; the two-line
 # call was not, so this file's own `^${v}$` witness has diverged in the strict
 # bucket since the day it was added.
-VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
+VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx__?var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
 VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
 # [R4e'.0b] the run pre-check FUNCTION is two definitions since the routing
 # (D155 item 6): the loop under `rx_reqrun__body`, then the one-call selector
@@ -1074,7 +1104,8 @@ def excise(text, label, drop_run=False):
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-              'handoff_overlong': 0, 'reentry_block': 0, 'cover_pick': 0}
+              'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
+              'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1123,9 +1154,65 @@ def excise(text, label, drop_run=False):
             in_reqrun = True
         elif in_reqrun and line.rstrip('\n') == '}':
             in_reqrun = False
+        if BIND_DEF_RE.match(line):
+            j = i
+            while j < n and lines[j].rstrip('\n') != '}':
+                j += 1
+            if j + 1 < n and not lines[j + 1].strip():
+                j += 1
+            out.append("/* [FINDALL-NEXT] bind check excised for comparison */\n")
+            counts['bind_checks'] += 1
+            i = j + 1
+            continue
+        if (line.rstrip('\n') == '    {' and i + 3 < n
+                and BIND_CALL_RE.match(lines[i + 1])
+                and lines[i + 3].rstrip('\n') == '    }'):
+            out.append("/* [FINDALL-NEXT] bind check call excised for comparison */\n")
+            counts['bind_checks'] += 1
+            i += 4
+            continue
+        if SEARCH_BOUNDS_RE.match(line.rstrip('\n')):
+            out.append("/* [iterpin] search bounds line excised for comparison */\n")
+            counts['search_split'] += 1
+            i += 1
+            continue
+        ms_ = SEARCH_CALL_RE.match(line)
+        if ms_:
+            out.append(ms_.group(1) + "rx__BODY(" + line[ms_.end():])
+            i += 1
+            continue
+        if SEARCH_HEAD_RE.match(line):
+            hj = i
+            while hj < n and ';' not in lines[hj] and lines[hj].strip() != '{':
+                hj += 1
+            if hj < n and lines[hj].strip() == '{':
+                depth, fe = 1, hj + 1
+                while fe < n and depth > 0:
+                    depth += lines[fe].count('{') - lines[fe].count('}')
+                    fe += 1
+                if depth != 0:
+                    print("EXTRACT-FAIL %s: unbalanced braces in the search entry" % label)
+                    sys.exit(2)
+                if 'return rx__find(' in ''.join(lines[hj:fe]):
+                    while out and out[-1].strip() in TWIN_PREAMBLE:
+                        out.pop()
+                    out.append("/* [iterpin] search prologue wrapper excised for comparison */\n")
+                    counts['search_split'] += 1
+                    i = fe
+                    if i < n and not lines[i].strip():
+                        i += 1
+                    continue
+                out.append("int rx__BODY(" + line[SEARCH_HEAD_RE.match(line).end():])
+                i += 1
+                continue
         m = SIG_RE.match(line)
         if m:
-            name = m.group(1)
+            name = m.group(2)
+            if name in TWINNED and not m.group(1):
+                name = 'forwarder'
+            elif name in TWINNED:
+                while out and out[-1].strip() in TWIN_PREAMBLE:
+                    out.pop()
             # [VAR lane, 2026-09-23] `span_ci_`, not `bref_ci_`. The seam's
             # compare pair was renamed when it was generalised to serve a
             # backreference AND a `${name}` variable, and its three private
@@ -1396,7 +1483,8 @@ def main():
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-           'handoff_overlong': 0, 'reentry_block': 0, 'cover_pick': 0}
+           'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
+           'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1673,7 +1761,8 @@ def main():
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
-              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong', 'cover_pick'):
+              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong',
+              'forwarder', 'bind_checks', 'search_split', 'cover_pick'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
@@ -1728,7 +1817,7 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp cover_pick; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split cover_pick; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"

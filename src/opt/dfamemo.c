@@ -50,6 +50,7 @@ struct DfaMemoEnt {
     int         nn;
     int         root, maxstates;
     bool        prune, reverse, optional;
+    bool        notempty;        /* the caller's Dfa.notempty input */
     int         encoding, engine;
     uint64_t    max_subset_elems, max_auto_dfa_elems;
     long long   subset_before;
@@ -71,10 +72,11 @@ static bool nstate_same(const NState *a, const NState *b)
 /* True iff entry `e` was built from exactly these inputs (see THE KEY). */
 static bool entry_matches(const DfaMemoEnt *e, const Ctx *cx, const Nfa *nfa,
                           bool prune, bool reverse, int maxstates, int root,
-                          bool optional)
+                          bool optional, bool notempty)
 {
     if (e->nn != nfa->n || e->root != root || e->maxstates != maxstates ||
         e->prune != prune || e->reverse != reverse || e->optional != optional ||
+        e->notempty != notempty ||
         e->encoding != cx->opt->encoding || e->engine != cx->opt->engine ||
         e->max_subset_elems != cx->opt->max_subset_elems ||
         e->max_auto_dfa_elems != cx->opt->max_auto_dfa_elems ||
@@ -126,7 +128,8 @@ void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
 {
     DfaMemo *m = cx->dfa_memo;
     for (const DfaMemoEnt *e = m ? m->head : NULL; e; e = e->next) {
-        if (!entry_matches(e, cx, nfa, prune, reverse, maxstates, root, optional))
+        if (!entry_matches(e, cx, nfa, prune, reverse, maxstates, root, optional,
+                           d->notempty))
             continue;
         DState *st = malloc((size_t)(e->d.n ? e->d.n : 1) * sizeof(DState));
         if (!st) pcrec_ctx_nomem(cx);
@@ -152,6 +155,7 @@ void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     e->prune = prune;
     e->reverse = reverse;
     e->optional = optional;
+    e->notempty = d->notempty;
     e->encoding = cx->opt->encoding;
     e->engine = cx->opt->engine;
     e->max_subset_elems = cx->opt->max_subset_elems;

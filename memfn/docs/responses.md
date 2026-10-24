@@ -2970,3 +2970,63 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F-4 (pf_walk's K96 gap) is FILED;
     - memfn/CLAUDE.md's peak line says define_sel is 3,408 B; it is 3,456 B after main's merge, a doc-only fix in the next kit commit.
   - **Next:** S3 = B1 (REPORT routed by default; a pcrec abi event plus its deny row) is briefed only after you merge this.
+
+- ack: 2026-10-22 — **D172 S3 (REPORT routed by default plus D-hors; R-27's B1, R-29's sequencing), taken after main merged R-29 (c4164f15b).** Branch `lane/memfn-s3` from main c3ea619c3. An opus lane `s3` is building it.
+  - **What lands:** ONE byte-moving commit with pcrec's abi event (83→84, readers found by grep), its deny row, the window_site §4 S3 retirements (RPT and companions, mf_preview R-26.6), plus main's four review nits (three as a separate doc/comment commit before it; req_run_member's hard-fail decided explicitly in the S3 commit).
+  - **Validation (staged by the lane, queued by the kit):** 587 is the correctness job (sweeps with declared movers, make test, mech, memfn-link). 588 is §6's acceptance timing: scalar layer is the bar, SIMD-on is reported.
+  - The timing slot is agreed with main before 588 is queued.
+
+- notice: 2026-10-23 — **Frank's ruling, given to the kit, for main to file (proposed D172 addendum text):** "S3's D-hors admission is not narrowed on argument. The review's 'decline when every shift is 1' is withdrawn from S3. D-hors's admission metric is defined as E[sh] = Σ rate[b]·sh[b] (the expected shift per probe under the default byte-rate prior), read as the wf-hors G1 alpha (D-hors vs D-one) at both layers over sites stratified by E[sh] (job 588, findings outside the §6 bar). Any admission rule (one declared row priced on E[sh], beside or replacing the provisional HORS_MIN) follows that reading." Frank: "Agree" (2026-10-23).
+
+- notice: 2026-10-23 — **Frank's ruling, given to the kit, for main's [IFACE-PUSH] filing of the B1 off-flag:** "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." A public flag names the BEHAVIOUR a caller turns off (the proven fixed-width window reported with no engine run, RX_DFA_SCAN "cover"), never pcrec's internal modules ("kit", "memfn", "proof"). The kit's suggestions, for main to choose at filing: `PCREC_NO_DIRECT_REPORT` or `PCREC_NO_WINDOW_REPORT`. The same lens likely applies to the caller-visible deny spellings (`--memfn=no-wf-find`, `no-wf-hors`) and to the spec's "memfn kit" wording in match_api §6.3.4. That question goes to Frank.
+
+- notice: 2026-10-23 — **Frank's ruling, for main to file (a naming guide for caller-facing names):** "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards."
+  - **Proposed decision text:** caller-facing names (public flags, `rx_info` fields and values, CLI options, stamps, spec prose a caller reads) describe BEHAVIOUR. They never use internal architecture names ("kit", "memfn", "proof", window-family letters).
+  - **Not retroactive:** the existing `--memfn=` option namespace and its rows stay as they are, with no disruption. The guide binds every NEW name and new spec sentence from 2026-10-23.
+  - **Kit application:** S3's new spec prose for `"cover"` and its tuning row will be worded by behaviour before delivery. S3's two new deny rows stay in the existing `--memfn=` namespace (no disruption).
+
+- notice: 2026-10-23 — **Frank's rulings on the stop-ranking study (lane/memfn-stopstudy 0567def22, stop_ranking_study.md §10), Q1:** "I agree."
+  - **The ruling:** "which stop, found how" becomes ONE priced choice in the kit's Table A, over (alternative × stop position × find method). Table B quotes each method's price for a set at an offset.
+  - **Conditions (Frank):**
+    1. Cost facts are VISIBLE in a table, never magic numbers. There is ONE cost table: the measurement set (plan_cost.def's rows move into it or are listed with it), shown through the existing `--list-measurements`, not a new listing. Each artifact stamps the cost set and revision it priced with.
+    2. A cost that changes under an option does so through a visible key column or a different row, never a hidden adjustment:
+       - the SIMD layer changes which methods are available, not their cost;
+       - the target box or ISA selects the set;
+       - encoding is a fact about rates (the prior), not costs.
+       A check asserts that every cost an artifact used is a declared row of its stamped set.
+    3. Units: costs are recorded RELATIVE to the scalar walk's per-byte cost on the same box (as measures.md already designs). The raw absolute readings (ns, box, clock, compiler, commit) are kept as provenance and listed beside them. The resolution must be fine enough that near-ties are decided by rates, not rounding.
+  - Agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements.
+- notice: 2026-10-23 — **Stop-ranking Q2 (Frank: "Yes. It sounds simpler as well"):** the Horspool skip (D-hors) becomes one METHOD in Table A's priced choice, priced (probe + rate × verify) / E[sh]. HORS_MIN and the separate admission rule are DELETED. It builds with Q1's first step, after the probe cost is measured. The simplification counts as a benefit.
+- notice: 2026-10-23 — **Stop-ranking Q3 (Frank: "Yes but make it a formal thing and build it as a library of values … then update the item you found. Get measurements far enough to do the table for this box, but everything else can stay in the item"):**
+  - **NOW (kit):** measure this box (zen4, the dev box) far enough to fill Q1's cost table: the memchr, two-stream pair and Horspool-probe method cards plus verify per hit, beside the walk rows. They are written as a new revision of the box's set in measure_store/ (after M0 merges), in a night window cleared with Frank. This is gated on the step-0 census (after C1 merges).
+  - **INTO [MEASURE-SET] (main's item; not scheduled now):**
+    - a canned, self-contained pcrec script (no bench or lane-harness dependency) that measures any machine into a set;
+    - closest-match selection over the library (declared fallback rows: microarch → ISA level → arch family → generic, visible in --list-measurements, stamped per artifact);
+    - targeting another machine (--measures/config, built);
+    - the generic "best guess current hardware" envelope (M2).
+    - The kit contributes its method cards to that script; plan_cost.def's rows migrate into the sets.
+- notice: 2026-10-23 — **Frank's standing rule:** "going forwards, update measurement scripts when new methods appear." Any new find/scan/skip/verify method adds its card to the measurement script in the same change. Until a box is re-measured its row reads UNMEASURED visibly. This is for main's guide (critics.md / addenda/kit.md); the kit will add it to addenda/kit.md at the next main sync.
+- notice: 2026-10-23 — **Stop-ranking Q4 (Frank: "Yes let's go with these ideas"), REVISING the study's "keep separate":**
+  - Presence (reject by absence) and the stop (where candidates are) stay two QUESTIONS with different prices, but ONE decider: the kit's window family, at the window site's decision phase, from ONE statement.
+  - **The statement:** the window's array of spans (each with its backtrack to 0 and its overshoot; the first span is 0,0) also carries spans whose offset is UNBOUNDED. These are required bytes with no known distance (e.g. `b` in `a.*b`), sent with "no offset".
+    - A span with a bounded offset range is a stop candidate.
+    - An unbounded one is presence-only.
+    - The use reads off the range, a fact; no pattern-shape rules.
+  - **pcrec's change:** pcrec states the required set and run it already knows (req_set, req_whole_run) as such spans, and may state positions beyond the verify slice as cheap candidate spans (this eases the truncation question).
+  - **The fold is one general rule:** when the chosen stop's first find, scanned from the subject start, covers the presence byte, the presence pass is dropped. The cover path already behaves this way.
+  - **Cost:** an MF_SITE_ABI event. It may retire the separate pre-check site's statement later (its own step and measurement).
+  - **OPEN for the design revision:** whether today's span already carries a backtrack range (so only its upper bound opens) or a fixed offset (generalize it to a range).
+- notice: 2026-10-23 — **Stop-ranking Q5 (Frank: "Use the higher precision integers … The solution should [not] depend on compiler options"):**
+  - Prices are higher-resolution FIXED-POINT INTEGERS, so the pick is deterministic by construction on every host and compiler, with no float evaluation rules.
+  - The resolution must be fine enough that the prior's rates are never collapsed (`\d\dxyz`: 997 vs 498 ppm no longer tie).
+  - Prices within the measurement-noise band count as a tie, decided by the existing declared tie rows.
+  - Built in the study's step 4 with the other pricing folds; a byte move with a mover census.
+- notice: 2026-10-23 — **Stop-ranking Q6 (Frank: "Yes file it. Nice generalization"):** the two-stream find's row contract widens from "a one-bit case pair inside a literal stretch" to ANY two-byte set at ANY window position, as a Table B row-contract edit, not a new mechanism. It is FILED, not built.
+  - **Trigger:** step 0's census shows a real population of two-byte non-case-pair stops, AND the pair method card is measured on the box.
+  - **The arbitrary-pair SIMD kernel** (two compares + OR, versus the one-bit fold) is a separate filed SIMD-layer row that must beat scalar.
+- notice: 2026-10-23 — **Stop-ranking truncation sub-question (study rev 2 §2.4), Frank: "Yes unless it has reason not to":** pcrec states the positions beyond the verify slice of a long literal as cheap candidate spans, so the priced stop choice can pick its stop from the whole literal.
+  - **Default is YES.** pcrec omits them only for a stated reason (e.g. a statement-size limit), and that reason is visible: named in the statement/listing, never a silent drop.
+  - It rides the [MEMFN-UNBOUNDED-SPANS] statement change (the same MF_SITE_ABI event).
+- notice: 2026-10-23 — **Frank: "Widen two pair s3 now"**, superseding the Q6 FILE disposition for the scalar row. S3 itself creates the need: code review r2's R2-1 (2026-10-23-r2-memfn-s3-c1-code.md) shows non-case-pair two-member stops and case pairs outside a run stretch getting a scalar walk.
+  - PAIR's row contract widens INSIDE S3 to any two-byte set at any window position, plus case pairs outside a run stretch. It is a row-contract edit, not a new mechanism, measured by 588.
+  - The arbitrary-pair SIMD kernel stays FILED ([MEMFN-PAIRSIMD]).

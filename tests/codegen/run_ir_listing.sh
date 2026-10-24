@@ -247,7 +247,32 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     fi
 
     # ---- PROGRAM: the label set, both directions, no duplicates ----------
-    grep -oE '^rx_L[0-9]+:' "$d/gen.c" | tr -d ':' | LC_ALL=C sort > "$d/c.labels"
+    # [iterpin, 2026-10-23] iterfix2 writes the anchored matcher's text a second
+    # time as the scaffold function `<prefix>__match_notempty` (the find-all
+    # iterator's retry matcher), a SEPARATE C function, so every label and every
+    # RX_PUSH in the program legitimately appears once per function. The listing
+    # describes ONE program: split the artifact into the program text and the
+    # copy, read the program from the former, and hold the copy to its own
+    # shape (no duplicate inside it, every label and push also in the program).
+    # A copy that is absent is the common case; a copy that is present but
+    # unreadable fails below, never silently empties the comparison.
+    awk -v prog="$d/gen.prog.c" -v copy="$d/gen.copy.c" '
+        BEGIN { incopy = 0; printf "" > prog; printf "" > copy }
+        !incopy && /^[A-Za-z].*__match_notempty\(/ && !/;[ \t]*$/ { incopy = 1 }
+        { if (incopy) print > copy; else print > prog }
+        incopy && /^}$/ { incopy = 0 }
+    ' "$d/gen.c"
+    grep -oE '^rx_L[0-9]+:' "$d/gen.prog.c" | tr -d ':' | LC_ALL=C sort > "$d/c.labels"
+    if [ -s "$d/gen.copy.c" ]; then
+        grep -oE '^rx_L[0-9]+:' "$d/gen.copy.c" | tr -d ':' | LC_ALL=C sort > "$d/copy.labels"
+        if [ ! -s "$d/copy.labels" ]; then
+            bad "ir-listing[$pat]: the scaffold copy (__match_notempty) carries no labels — the split read an empty copy, or the copy is not the matcher's text"
+        elif [ "$(uniq -d < "$d/copy.labels" | wc -l | tr -d ' ')" != "0" ]; then
+            bad "ir-listing[$pat]: the scaffold copy defines a label more than once (an emitter bug, caught here)"
+        elif [ -n "$(LC_ALL=C comm -13 "$d/c.labels" "$d/copy.labels")" ]; then
+            bad "ir-listing[$pat]: the scaffold copy has labels the program lacks: $(LC_ALL=C comm -13 "$d/c.labels" "$d/copy.labels" | tr '\n' ' ')"
+        fi
+    fi
     if ! ir_labels "$d/ir" > "$d/ir.labels"; then
         bad "ir-listing[$pat]: could not read the listing's program/label column (section or column renamed?)"
         continue
@@ -271,7 +296,7 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     fi
 
     # ---- CHOICE POINTS: count and resume target --------------------------
-    grep -oE 'RX_PUSH\(&&rx_L[0-9]+' "$d/gen.c" | grep -oE 'rx_L[0-9]+' \
+    grep -oE 'RX_PUSH\(&&rx_L[0-9]+' "$d/gen.prog.c" | grep -oE 'rx_L[0-9]+' \
         | LC_ALL=C sort > "$d/c.push"
     if ! ir_resume="$(table_field "$d/ir" choicepoints resume)"; then
         bad "ir-listing[$pat]: could not read the listing's choicepoints/resume column"

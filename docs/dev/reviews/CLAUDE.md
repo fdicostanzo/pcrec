@@ -29,11 +29,12 @@ non-obvious code in src/ and odd-looking test cases trace to a finding here.
 - `YYYY-MM-DD-rN-<topic>.md` — one review per checkpoint, R1 (2026-08-09
   m1) through the 2026-10-21 panels r1-memfn-r27 (the R-27 window-search design) and
   r2-memfn-window-site (D172's unified window site,
-  rev 1) and 2026-10-22-r1-memfn-window-site-rev2 (rev 2), and the 2026-10-18 panels (r1-e1, r2-kitverify-proof,
+  rev 1) and 2026-10-22-r1-memfn-window-site-rev2 (rev 2), 2026-10-23-r1-memfn-s3-code (the first blinded CODE critic round, on D172 S3), 2026-10-23-r2-memfn-s3-c1-code (its C1 build, the pcrec-code-critic skill's first use), and the 2026-10-18 panels (r1-e1, r2-kitverify-proof,
   r3-kit-proof-u1, r4-ctx-span); the dated index of what each covers is in
   the history file. Where a review has critic texts they sit in a sibling
   directory of the same name (e.g. `2026-10-05-r4-startset/`,
   `2026-10-07-r1-memfn-rowcon/`, `2026-10-08-r9-memfn-simd/`).
+- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
 - `2026-09-17-code-review.md`, `2026-09-20-code-org.md`,
   `2026-09-20-frank-tour.md`, `2026-09-20-r61-fable-personal-review.md`,
   `2026-09-20-readability-experiments.md` (+ `2026-09-20-readability-data/`)
@@ -50,3 +51,4 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 `docs/dev/decisions.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
+- `2026-10-21-r1-findall-i2.md` — light D6 panel on findall_iter_i2.md rev 1.

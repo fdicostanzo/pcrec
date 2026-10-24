@@ -29,6 +29,8 @@ bool     pcrec_pattern_nullable(const Ast *root);    /* src/facts/widths.c */
  * an empty path missing an absolute start or end anchor (src/facts/widths.c). */
 unsigned pcrec_pattern_empty_masks(const Ast *root);
 bool     pcrec_empty_masks_admit(unsigned set);
+/* [FINDALL-NEXT] I0 the minimum reported width is 0 (src/facts/widths.c). */
+bool     pcrec_pattern_reports_empty(const Ast *root);
 
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
  * `PCREC_SANCH_*` and the renderer `pcrec_start_anchor_name` stay with the

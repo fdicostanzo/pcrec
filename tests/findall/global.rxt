@@ -1,0 +1,1641 @@
+# tests/findall/global.rxt -- [FINDALL-NEXT] the `mg` corpus (rxt_format.md
+# section 1.7.1): libpcre2 10.46's GLOBAL count per subject, checked through
+# <prefix>_next. Written by tests/findall/gen_global.py from libpcre2's
+# answers; `# pcre2-only` is computed (python re.finditer cannot compile
+# the pattern or disagrees). `mc` lines sit where the pattern cannot
+# report an empty span, so the two counts must agree. Regenerate:
+#   python3 -I tests/findall/gen_global.py build/pcrec cc tests/findall/global.rxt
+
+pattern a*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 3
+mg "ba" 3
+mg "aab" 3
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 3
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern x?y
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 0
+mc "aab" 0
+mg "abab" 0
+mc "abab" 0
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 2
+mc "xyy" 2
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 0
+mc "aaab" 0
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern a|
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern a|b*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 4
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern a?
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern b*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 4
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern (a|)
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern a(b|)c
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 0
+mc "aab" 0
+mg "abab" 0
+mc "abab" 0
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 0
+mc "aaab" 0
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern (ab)*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 2
+mg "ba" 3
+mg "aab" 3
+mg "abab" 2
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 4
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 4
+mg "bab" 3
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern a{0,2}
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 3
+mg "ba" 3
+mg "aab" 3
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 4
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern [a-c]*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 2
+mg "ba" 2
+mg "aab" 2
+mg "abab" 2
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 2
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 2
+mg "bab" 2
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern |a
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 4
+mg "ba" 4
+mg "aab" 6
+mg "abab" 7
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 7
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 8
+mg "b" 2
+mg "aaab" 8
+mg "bab" 5
+mg "c1a22" 7
+mg "a\nb\n" 6
+
+pattern a*?
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 4
+mg "ba" 4
+mg "aab" 6
+mg "abab" 7
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 7
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 8
+mg "b" 2
+mg "aaab" 8
+mg "bab" 5
+mg "c1a22" 7
+mg "a\nb\n" 6
+
+pattern a??
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 4
+mg "ba" 4
+mg "aab" 6
+mg "abab" 7
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 7
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 8
+mg "b" 2
+mg "aaab" 8
+mg "bab" 5
+mg "c1a22" 7
+mg "a\nb\n" 6
+
+pattern [0-9]+
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 0
+mc "aab" 0
+mg "abab" 0
+mc "abab" 0
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 0
+mc "aaab" 0
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 2
+mc "c1a22" 2
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern a{2,}
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 1
+mc "aa" 1
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 1
+mc "aab" 1
+mg "abab" 0
+mc "abab" 0
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern (?:ab|a)
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 2
+mc "aa" 2
+mg "ab" 1
+mc "ab" 1
+mg "ba" 1
+mc "ba" 1
+mg "aab" 2
+mc "aab" 2
+mg "abab" 2
+mc "abab" 2
+mg "xax" 1
+mc "xax" 1
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 2
+mc "abba" 2
+mg "a b" 1
+mc "a b" 1
+mg ",a,,b," 1
+mc ",a,,b," 1
+mg "ab ab" 2
+mc "ab ab" 2
+mg "b" 0
+mc "b" 0
+mg "aaab" 3
+mc "aaab" 3
+mg "bab" 1
+mc "bab" 1
+mg "c1a22" 1
+mc "c1a22" 1
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+
+pattern (a*)*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 3
+mg "ba" 3
+mg "aab" 3
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 3
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern .
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 2
+mc "aa" 2
+mg "ab" 2
+mc "ab" 2
+mg "ba" 2
+mc "ba" 2
+mg "aab" 3
+mc "aab" 3
+mg "abab" 4
+mc "abab" 4
+mg "xax" 3
+mc "xax" 3
+mg "xyy" 3
+mc "xyy" 3
+mg "abba" 4
+mc "abba" 4
+mg "a b" 3
+mc "a b" 3
+mg ",a,,b," 6
+mc ",a,,b," 6
+mg "ab ab" 5
+mc "ab ab" 5
+mg "b" 1
+mc "b" 1
+mg "aaab" 4
+mc "aaab" 4
+mg "bab" 3
+mc "bab" 3
+mg "c1a22" 5
+mc "c1a22" 5
+mg "a\nb\n" 2
+mc "a\nb\n" 2
+
+pattern ab$
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 1
+mc "ab" 1
+mg "ba" 0
+mc "ba" 0
+mg "aab" 1
+mc "aab" 1
+mg "abab" 1
+mc "abab" 1
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 1
+mc "ab ab" 1
+mg "b" 0
+mc "b" 0
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 1
+mc "bab" 1
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern ^a
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 1
+mc "aa" 1
+mg "ab" 1
+mc "ab" 1
+mg "ba" 0
+mc "ba" 0
+mg "aab" 1
+mc "aab" 1
+mg "abab" 1
+mc "abab" 1
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 1
+mc "abba" 1
+mg "a b" 1
+mc "a b" 1
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 1
+mc "ab ab" 1
+mg "b" 0
+mc "b" 0
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+
+pattern c*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern x
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 0
+mc "aab" 0
+mg "abab" 0
+mc "abab" 0
+mg "xax" 2
+mc "xax" 2
+mg "xyy" 1
+mc "xyy" 1
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 0
+mc "aaab" 0
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern a
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 2
+mc "aa" 2
+mg "ab" 1
+mc "ab" 1
+mg "ba" 1
+mc "ba" 1
+mg "aab" 2
+mc "aab" 2
+mg "abab" 2
+mc "abab" 2
+mg "xax" 1
+mc "xax" 1
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 2
+mc "abba" 2
+mg "a b" 1
+mc "a b" 1
+mg ",a,,b," 1
+mc ",a,,b," 1
+mg "ab ab" 2
+mc "ab ab" 2
+mg "b" 0
+mc "b" 0
+mg "aaab" 3
+mc "aaab" 3
+mg "bab" 1
+mc "bab" 1
+mg "c1a22" 1
+mc "c1a22" 1
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+mg "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 100
+mc "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 100
+
+pattern b*?
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 4
+mg "ba" 4
+mg "aab" 5
+mg "abab" 7
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 7
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 8
+mg "b" 3
+mg "aaab" 6
+mg "bab" 6
+mg "c1a22" 6
+mg "a\nb\n" 6
+
+pattern x*|y
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 6
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+# pcre2-only
+pattern ab\K
+features all
+mg "" 0
+mg "a" 0
+mg "aa" 0
+mg "ab" 1
+mg "ba" 0
+mg "aab" 1
+mg "abab" 2
+mg "xax" 0
+mg "xyy" 0
+mg "abba" 1
+mg "a b" 0
+mg ",a,,b," 0
+mg "ab ab" 2
+mg "b" 0
+mg "aaab" 1
+mg "bab" 1
+mg "c1a22" 0
+mg "a\nb\n" 0
+
+# pcre2-only
+pattern a\Kb
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 1
+mc "ab" 1
+mg "ba" 0
+mc "ba" 0
+mg "aab" 1
+mc "aab" 1
+mg "abab" 2
+mc "abab" 2
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 1
+mc "abba" 1
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 2
+mc "ab ab" 2
+mg "b" 0
+mc "b" 0
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 1
+mc "bab" 1
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 0
+mc "a\nb\n" 0
+
+pattern (?=a)
+features all
+mg "" 0
+mg "a" 1
+mg "aa" 2
+mg "ab" 1
+mg "ba" 1
+mg "aab" 2
+mg "abab" 2
+mg "xax" 1
+mg "xyy" 0
+mg "abba" 2
+mg "a b" 1
+mg ",a,,b," 1
+mg "ab ab" 2
+mg "b" 0
+mg "aaab" 3
+mg "bab" 1
+mg "c1a22" 1
+mg "a\nb\n" 1
+
+# pcre2-only
+pattern \G\w+
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 1
+mc "aa" 1
+mg "ab" 1
+mc "ab" 1
+mg "ba" 1
+mc "ba" 1
+mg "aab" 1
+mc "aab" 1
+mg "abab" 1
+mc "abab" 1
+mg "xax" 1
+mc "xax" 1
+mg "xyy" 1
+mc "xyy" 1
+mg "abba" 1
+mc "abba" 1
+mg "a b" 1
+mc "a b" 1
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 1
+mc "ab ab" 1
+mg "b" 1
+mc "b" 1
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 1
+mc "bab" 1
+mg "c1a22" 1
+mc "c1a22" 1
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+
+pattern (?<=a)|b
+features all
+mg "" 0
+mg "a" 1
+mg "aa" 2
+mg "ab" 2
+mg "ba" 2
+mg "aab" 3
+mg "abab" 4
+mg "xax" 1
+mg "xyy" 0
+mg "abba" 4
+mg "a b" 2
+mg ",a,,b," 2
+mg "ab ab" 4
+mg "b" 1
+mg "aaab" 4
+mg "bab" 3
+mg "c1a22" 1
+mg "a\nb\n" 2
+
+pattern a*?|b
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 5
+mg "ba" 5
+mg "aab" 7
+mg "abab" 9
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 9
+mg "a b" 6
+mg ",a,,b," 9
+mg "ab ab" 10
+mg "b" 3
+mg "aaab" 9
+mg "bab" 7
+mg "c1a22" 7
+mg "a\nb\n" 7
+
+pattern (a|)*?b
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 1
+mc "ab" 1
+mg "ba" 1
+mc "ba" 1
+mg "aab" 1
+mc "aab" 1
+mg "abab" 2
+mc "abab" 2
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 2
+mc "abba" 2
+mg "a b" 1
+mc "a b" 1
+mg ",a,,b," 1
+mc ",a,,b," 1
+mg "ab ab" 2
+mc "ab ab" 2
+mg "b" 1
+mc "b" 1
+mg "aaab" 1
+mc "aaab" 1
+mg "bab" 2
+mc "bab" 2
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+
+pattern \b
+features all
+mg "" 0
+mg "a" 2
+mg "aa" 2
+mg "ab" 2
+mg "ba" 2
+mg "aab" 2
+mg "abab" 2
+mg "xax" 2
+mg "xyy" 2
+mg "abba" 2
+mg "a b" 4
+mg ",a,,b," 4
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 2
+mg "bab" 2
+mg "c1a22" 2
+mg "a\nb\n" 4
+
+pattern \B
+features all
+mg "" 1
+mg "a" 0
+mg "aa" 1
+mg "ab" 1
+mg "ba" 1
+mg "aab" 2
+mg "abab" 3
+mg "xax" 2
+mg "xyy" 2
+mg "abba" 3
+mg "a b" 0
+mg ",a,,b," 3
+mg "ab ab" 2
+mg "b" 0
+mg "aaab" 3
+mg "bab" 2
+mg "c1a22" 4
+mg "a\nb\n" 1
+
+pattern (?:)
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern |
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern a??b?
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 3
+mg "ba" 4
+mg "aab" 5
+mg "abab" 5
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 6
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 7
+mg "bab" 4
+mg "c1a22" 7
+mg "a\nb\n" 6
+
+pattern (?:a|)*?
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 4
+mg "ba" 4
+mg "aab" 6
+mg "abab" 7
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 7
+mg "a b" 5
+mg ",a,,b," 8
+mg "ab ab" 8
+mg "b" 2
+mg "aaab" 8
+mg "bab" 5
+mg "c1a22" 7
+mg "a\nb\n" 6
+
+# pcre2-only
+pattern \Ga|
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern $|a
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 2
+mg "ba" 2
+mg "aab" 3
+mg "abab" 3
+mg "xax" 2
+mg "xyy" 1
+mg "abba" 3
+mg "a b" 2
+mg ",a,,b," 2
+mg "ab ab" 3
+mg "b" 1
+mg "aaab" 4
+mg "bab" 2
+mg "c1a22" 2
+mg "a\nb\n" 3
+
+pattern (?=b)|b
+features all
+mg "" 0
+mg "a" 0
+mg "aa" 0
+mg "ab" 2
+mg "ba" 2
+mg "aab" 2
+mg "abab" 4
+mg "xax" 0
+mg "xyy" 0
+mg "abba" 4
+mg "a b" 2
+mg ",a,,b," 2
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 2
+mg "bab" 4
+mg "c1a22" 0
+mg "a\nb\n" 2
+
+pattern (?:^|,)([^,]*)
+features all
+mg "" 1
+mg "a" 1
+mg "aa" 1
+mg "ab" 1
+mg "ba" 1
+mg "aab" 1
+mg "abab" 1
+mg "xax" 1
+mg "xyy" 1
+mg "abba" 1
+mg "a b" 1
+mg ",a,,b," 5
+mg "ab ab" 1
+mg "b" 1
+mg "aaab" 1
+mg "bab" 1
+mg "c1a22" 1
+mg "a\nb\n" 1
+
+pattern ^\s*|\s*$
+features all
+mg "" 1
+mc "" 1
+mg "a" 2
+mc "a" 2
+mg "aa" 2
+mc "aa" 2
+mg "ab" 2
+mc "ab" 2
+mg "ba" 2
+mc "ba" 2
+mg "aab" 2
+mc "aab" 2
+mg "abab" 2
+mc "abab" 2
+mg "xax" 2
+mc "xax" 2
+mg "xyy" 2
+mc "xyy" 2
+mg "abba" 2
+mc "abba" 2
+mg "a b" 2
+mc "a b" 2
+mg ",a,,b," 2
+mc ",a,,b," 2
+mg "ab ab" 2
+mc "ab ab" 2
+mg "b" 2
+mc "b" 2
+mg "aaab" 2
+mc "aaab" 2
+mg "bab" 2
+mc "bab" 2
+mg "c1a22" 2
+mc "c1a22" 2
+mg "a\nb\n" 3
+mc "a\nb\n" 3
+
+pattern ^\s+|\s+$
+features all
+mg "" 0
+mc "" 0
+mg "a" 0
+mc "a" 0
+mg "aa" 0
+mc "aa" 0
+mg "ab" 0
+mc "ab" 0
+mg "ba" 0
+mc "ba" 0
+mg "aab" 0
+mc "aab" 0
+mg "abab" 0
+mc "abab" 0
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 0
+mc "abba" 0
+mg "a b" 0
+mc "a b" 0
+mg ",a,,b," 0
+mc ",a,,b," 0
+mg "ab ab" 0
+mc "ab ab" 0
+mg "b" 0
+mc "b" 0
+mg "aaab" 0
+mc "aaab" 0
+mg "bab" 0
+mc "bab" 0
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 1
+mc "a\nb\n" 1
+
+pattern x*|.
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 5
+mg "ba" 5
+mg "aab" 7
+mg "abab" 9
+mg "xax" 5
+mg "xyy" 6
+mg "abba" 9
+mg "a b" 7
+mg ",a,,b," 13
+mg "ab ab" 11
+mg "b" 3
+mg "aaab" 9
+mg "bab" 7
+mg "c1a22" 11
+mg "a\nb\n" 7
+
+pattern (a)|b*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 4
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+# pcre2-only
+pattern a\K|b
+features all
+mg "" 0
+mg "a" 1
+mg "aa" 2
+mg "ab" 2
+mg "ba" 2
+mg "aab" 3
+mg "abab" 4
+mg "xax" 1
+mg "xyy" 0
+mg "abba" 4
+mg "a b" 2
+mg ",a,,b," 2
+mg "ab ab" 4
+mg "b" 1
+mg "aaab" 4
+mg "bab" 3
+mg "c1a22" 1
+mg "a\nb\n" 2
+
+# pcre2-only
+pattern (?:a\K)?
+features all
+mg "" 1
+mg "a" 1
+mg "aa" 2
+mg "ab" 2
+mg "ba" 2
+mg "aab" 3
+mg "abab" 3
+mg "xax" 3
+mg "xyy" 4
+mg "abba" 3
+mg "a b" 3
+mg ",a,,b," 6
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 4
+mg "bab" 3
+mg "c1a22" 5
+mg "a\nb\n" 4
+
+pattern a??|b
+features all
+mg "" 1
+mg "a" 3
+mg "aa" 5
+mg "ab" 5
+mg "ba" 5
+mg "aab" 7
+mg "abab" 9
+mg "xax" 5
+mg "xyy" 4
+mg "abba" 9
+mg "a b" 6
+mg ",a,,b," 9
+mg "ab ab" 10
+mg "b" 3
+mg "aaab" 9
+mg "bab" 7
+mg "c1a22" 7
+mg "a\nb\n" 7
+
+pattern (?<=a)
+features all
+mg "" 0
+mg "a" 1
+mg "aa" 2
+mg "ab" 1
+mg "ba" 1
+mg "aab" 2
+mg "abab" 2
+mg "xax" 1
+mg "xyy" 0
+mg "abba" 2
+mg "a b" 1
+mg ",a,,b," 1
+mg "ab ab" 2
+mg "b" 0
+mg "aaab" 3
+mg "bab" 1
+mg "c1a22" 1
+mg "a\nb\n" 1
+
+pattern (?!a)
+features all
+mg "" 1
+mg "a" 1
+mg "aa" 1
+mg "ab" 2
+mg "ba" 2
+mg "aab" 2
+mg "abab" 3
+mg "xax" 3
+mg "xyy" 4
+mg "abba" 3
+mg "a b" 3
+mg ",a,,b," 6
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 2
+mg "bab" 3
+mg "c1a22" 5
+mg "a\nb\n" 4
+
+pattern \b|a
+features all
+mg "" 0
+mg "a" 3
+mg "aa" 4
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 4
+mg "xax" 3
+mg "xyy" 2
+mg "abba" 4
+mg "a b" 5
+mg ",a,,b," 5
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 3
+mg "c1a22" 3
+mg "a\nb\n" 5
+
+# pcre2-only
+pattern (?m)^|a
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 2
+mg "ba" 2
+mg "aab" 3
+mg "abab" 3
+mg "xax" 2
+mg "xyy" 1
+mg "abba" 3
+mg "a b" 2
+mg ",a,,b," 2
+mg "ab ab" 3
+mg "b" 1
+mg "aaab" 4
+mg "bab" 2
+mg "c1a22" 2
+mg "a\nb\n" 3
+
+pattern \z|a*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 3
+mg "ba" 3
+mg "aab" 3
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 3
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+# pcre2-only
+pattern a*\Z
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 2
+mg "ab" 1
+mg "ba" 2
+mg "aab" 1
+mg "abab" 1
+mg "xax" 1
+mg "xyy" 1
+mg "abba" 2
+mg "a b" 1
+mg ",a,,b," 1
+mg "ab ab" 1
+mg "b" 1
+mg "aaab" 1
+mg "bab" 1
+mg "c1a22" 1
+mg "a\nb\n" 2
+
+pattern (a|b)*?c|
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+# pcre2-only
+pattern \Ga|b
+features all
+mg "" 0
+mc "" 0
+mg "a" 1
+mc "a" 1
+mg "aa" 2
+mc "aa" 2
+mg "ab" 2
+mc "ab" 2
+mg "ba" 2
+mc "ba" 2
+mg "aab" 3
+mc "aab" 3
+mg "abab" 4
+mc "abab" 4
+mg "xax" 0
+mc "xax" 0
+mg "xyy" 0
+mc "xyy" 0
+mg "abba" 4
+mc "abba" 4
+mg "a b" 2
+mc "a b" 2
+mg ",a,,b," 1
+mc ",a,,b," 1
+mg "ab ab" 3
+mc "ab ab" 3
+mg "b" 1
+mc "b" 1
+mg "aaab" 4
+mc "aaab" 4
+mg "bab" 3
+mc "bab" 3
+mg "c1a22" 0
+mc "c1a22" 0
+mg "a\nb\n" 2
+mc "a\nb\n" 2
+
+pattern (?=ab)|a
+features all
+mg "" 0
+mg "a" 1
+mg "aa" 2
+mg "ab" 2
+mg "ba" 1
+mg "aab" 3
+mg "abab" 4
+mg "xax" 1
+mg "xyy" 0
+mg "abba" 3
+mg "a b" 1
+mg ",a,,b," 1
+mg "ab ab" 4
+mg "b" 0
+mg "aaab" 4
+mg "bab" 2
+mg "c1a22" 1
+mg "a\nb\n" 1
+
+pattern (?:)+a?
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern \d*
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 3
+mg "ba" 3
+mg "aab" 4
+mg "abab" 5
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 5
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 6
+mg "b" 2
+mg "aaab" 5
+mg "bab" 4
+mg "c1a22" 5
+mg "a\nb\n" 5
+
+pattern [ab]*?b|
+features all
+mg "" 1
+mg "a" 2
+mg "aa" 3
+mg "ab" 2
+mg "ba" 3
+mg "aab" 2
+mg "abab" 3
+mg "xax" 4
+mg "xyy" 4
+mg "abba" 4
+mg "a b" 4
+mg ",a,,b," 7
+mg "ab ab" 4
+mg "b" 2
+mg "aaab" 2
+mg "bab" 3
+mg "c1a22" 6
+mg "a\nb\n" 5
+
+pattern (a)
+features all
+mg "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 80
+mc "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 80
+
+pattern x*
+features all
+mg "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" 71
+
+pattern (a)(b)?(c)?
+features all
+mg "aaaaaaaa" 8
+mc "aaaaaaaa" 8
+mg "abcabcabcab" 4
+mc "abcabcabcab" 4
+mg "" 0
+mc "" 0
+
+pattern (a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?
+features all
+mg "aaaa" 4
+mc "aaaa" 4
+mg "abcdefghij a" 2
+mc "abcdefghij a" 2
+
+# pcre2-only
+pattern \G
+features all
+mg "" 1
+mg "a" 2
+mg "ab" 3
+mg "abc" 4

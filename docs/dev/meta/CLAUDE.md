@@ -6,6 +6,7 @@ where a single Opus session lost track. This directory keeps the LEARNINGS
 that transfer to other projects — what helps, what measures it, what to try
 next — separate from pcrec's own process docs (which say what to do here).
 
+- `coordinator_framework.md` — the coordinator pattern (one agent runs a fan-out, verifies, meta-monitors, drafts for a ruling): dated observations per use.
 - `ai_dev_learnings.md` — the living record: findings with their evidence,
   instruments that worked, ideas for future tests. Append; date entries;
   cite the pcrec artifact that measured each claim.

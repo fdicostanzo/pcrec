@@ -26,3 +26,4 @@ lane that chose to keep them, plus lane-owned evidence files.
 Full text and the complete directory list (verbatim): NOTES.md here.
 
 History (not auto-injected): docs/dev/history/claude_md/docs__dev__lanes.md
+- `i1build`/`i1tri*`/`s1300`/`i2design`/`i2build`/`iteropt`/`iteropt2`/`itertri`/`iterdoc`/`iterland` `_report.md` — [FINDALL-NEXT] iterator lanes (I0-I4); one-liners in NOTES.md.

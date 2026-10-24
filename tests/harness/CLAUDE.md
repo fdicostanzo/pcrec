@@ -18,3 +18,4 @@ The full previous text of this file (per-file design history, wave and lane note
 run.sh accepts file/directory arguments or scans tests/ recursively. Each .rxt pattern block is compiled to C, linked with driver.c (which includes the generated code), and executed for each m/n line. Output is one line per case; see `docs/spec/rxt_format.md` for the exact protocol.
 
 Maintenance: update this file when files are added/removed or their roles change.
+- **`mg`** ([FINDALL-NEXT] I0): the global-count line in all three legs, driver mode `global`; detail in NOTES.md.

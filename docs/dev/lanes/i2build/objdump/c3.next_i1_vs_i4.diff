@@ -1,0 +1,188 @@
+9d8
+< mov    (%rdi),%edx
+11,19c10,18
+< mov    %fs:0x28,%r12
+< mov    %r12,0x18(%rsp)
+< mov    %rdi,%r12
+< mov    %rsp,%r13
+< cmovne %rsi,%r13
+< cmp    $0x49540302,%edx
+< jne    <rx_next+0x200>
+< mov    0x20(%r12),%rax
+< mov    0x18(%r12),%rdi
+---
+> mov    %fs:0x28,%rbp
+> mov    %rbp,0x18(%rsp)
+> mov    %rdi,%rbp
+> mov    %rsp,%r12
+> cmovne %rsi,%r12
+> cmpl   $0x49540302,(%rdi)
+> jne    <rx_next+0x1e0>
+> mov    0x18(%rbp),%rdi
+> mov    0x20(%rbp),%rax
+21,22c20,21
+< jb     <rx_next+0x1e0>
+< mov    0x10(%r12),%rsi
+---
+> jb     <rx_next+0x1c0>
+> mov    0x10(%rbp),%rsi
+27,36c26,35
+< lea    0x0(%rip),%rbp        # <rx_next+0x69>
+< 			65: R_X86_64_PC32	.rodata+0x45c
+< lea    0x0(%rip),%r11        # <rx_next+0x70>
+< 			6c: R_X86_64_PC32	.rodata+0x35c
+< lea    0x0(%rip),%r10        # <rx_next+0x77>
+< 			73: R_X86_64_PC32	.rodata+0x33c
+< lea    0x0(%rip),%rbx        # <rx_next+0x7e>
+< 			7a: R_X86_64_PC32	.rodata+0x55c
+< lea    0x0(%rip),%r9        # <rx_next+0x85>
+< 			81: R_X86_64_PC32	.rodata+0x23c
+---
+> lea    0x0(%rip),%r13        # <rx_next+0x64>
+> 			RELOC: R_X86_64_PC32	.rodata+0x45c
+> lea    0x0(%rip),%r11        # <rx_next+0x6b>
+> 			RELOC: R_X86_64_PC32	.rodata+0x35c
+> lea    0x0(%rip),%r10        # <rx_next+0x72>
+> 			RELOC: R_X86_64_PC32	.rodata+0x33c
+> lea    0x0(%rip),%rbx        # <rx_next+0x79>
+> 			RELOC: R_X86_64_PC32	.rodata+0x55c
+> lea    0x0(%rip),%r9        # <rx_next+0x80>
+> 			RELOC: R_X86_64_PC32	.rodata+0x23c
+40c39
+< jne    <rx_next+0x9b>
+---
+> jne    <rx_next+0x96>
+42c41
+< je     <rx_next+0x1a0>
+---
+> je     <rx_next+0x198>
+52c51
+< jbe    <rx_next+0xf8>
+---
+> jbe    <rx_next+0xf0>
+63c62
+< jne    <rx_next+0x108>
+---
+> jne    <rx_next+0x100>
+65,66c64,65
+< jmp    <rx_next+0xa4>
+< nopl   0x0(%rax)
+---
+> jmp    <rx_next+0x9f>
+> nop
+69c68
+< jmp    <rx_next+0x85>
+---
+> jmp    <rx_next+0x80>
+74,75c73,75
+< jmp    <rx_next+0x1f0>
+< cs nopw 0x0(%rax,%rax,1)
+---
+> jmp    <rx_next+0x1d0>
+> nopl   0x0(%rax)
+> data16 cs nopw 0x0(%rax,%rax,1)
+78c78
+< jae    <rx_next+0x1f0>
+---
+> jae    <rx_next+0x1d0>
+85c85
+< jb     <rx_next+0xef>
+---
+> jb     <rx_next+0xea>
+88c88
+< je     <rx_next+0x1e0>
+---
+> je     <rx_next+0x1c0>
+91c91
+< mov    %r8,0x8(%r13)
+---
+> mov    %r8,0x8(%r12)
+93c93
+< mov    %r14,0x0(%r13)
+---
+> mov    %r14,(%r12)
+95c95
+< mov    %r8,0x20(%r12)
+---
+> mov    %r8,0x20(%rbp)
+98c98
+< jne    <rx_next+0x280>
+---
+> jne    <rx_next+0x1f7>
+109,113c109,111
+< jb     <rx_next+0x1c9>
+< jmp    <rx_next+0x1e0>
+< nopl   (%rax)
+< data16 cs nopw 0x0(%rax,%rax,1)
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> jb     <rx_next+0x1a9>
+> jmp    <rx_next+0x1c0>
+> nop
+116,118d113
+< je     <rx_next+0x1e0>
+< movzbl (%rsi,%rax,1),%edx
+< cmpb   $0x0,0x0(%rbp,%rdx,1)
+119a115,117
+> movzbl (%rsi,%rax,1),%edx
+> cmpb   $0x0,0x0(%r13,%rdx,1)
+> je     <rx_next+0x1a0>
+121,123c119,121
+< jmp    <rx_next+0x9b>
+< nopl   0x0(%rax)
+< movq   $0x49540303,(%r12)
+---
+> jmp    <rx_next+0x96>
+> nopl   (%rax)
+> movq   $0x49540303,0x0(%rbp)
+125c123
+< jmp    <rx_next+0x177>
+---
+> jmp    <rx_next+0x173>
+129,130c127,128
+< jne    <rx_next+0x15a>
+< jmp    <rx_next+0x1e0>
+---
+> jne    <rx_next+0x156>
+> jmp    <rx_next+0x1c0>
+132,156c130,133
+< cmp    $0x49540303,%edx
+< je     <rx_next+0x1e8>
+< mov    %edx,%eax
+< and    $0xf,%al
+< cmp    $0x49540301,%eax
+< jne    <rx_next+0x25e>
+< test   $0x10,%dl
+< je     <rx_next+0x273>
+< mov    0x20(%r12),%rax
+< test   $0x20,%dl
+< jne    <rx_next+0x234>
+< movq   $0x0,0x28(%r12)
+< movq   $0x0,0x30(%r12)
+< and    $0x40,%edx
+< jne    <rx_next+0x242>
+< movq   $0x0,0x38(%r12)
+< movabs $0x149540302,%rbx
+< movl   $0x0,0x8(%r12)
+< mov    %rbx,(%r12)
+< jmp    <rx_next+0x40>
+< movabs $0xfffffff649540303,%rax
+< mov    %rax,(%r12)
+< xor    %eax,%eax
+< jmp    <rx_next+0x177>
+< movq   $0x0,0x20(%r12)
+---
+> mov    %rbp,%rdi
+> call   <rx__enter>
+> test   %eax,%eax
+> jne    <rx_next+0x39>
+158,161c135,138
+< jmp    <rx_next+0x21d>
+< call   <rx_next+0x285>
+< 			281: R_X86_64_PLT32	__stack_chk_fail-0x4
+< data16 cs nopw 0x0(%rax,%rax,1)
+---
+> jmp    <rx_next+0x173>
+> call   <rx_next+0x1fc>
+> 			RELOC: R_X86_64_PLT32	__stack_chk_fail-0x4
+> nopl   0x0(%rax)

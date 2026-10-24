@@ -54,9 +54,8 @@
 # 81, the parent's number; same detector, same arm.
 # RE-AIMED 2026-10-22 (lane corefix, K128/K129, abi 82 -> 83): AFTER is 82,
 # the parent's number; same detector, same arm.
-# RE-AIMED 2026-10-22 (lane s3, D172 S3, abi 83 -> 84, PROVISIONAL: renumbered
-# at landing if another branch takes 84): AFTER is 83, the parent's number;
-# same detector, same arm.
+# RE-AIMED 2026-10-22 (lane iterland, [FINDALL-NEXT] I1+I4 as one event, abi
+# 83 -> 84): AFTER is 83, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"

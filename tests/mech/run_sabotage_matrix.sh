@@ -403,6 +403,15 @@
 #     against the triple-deny build, and the hostile-utf8 10 s cell. Its own
 #     arm because both rows are answer-identical by construction. Registered
 #     before S782.
+#   findall — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
+#     tests/findall/run_findall_tests.sh: <prefix>_next against libpcre2's
+#     global iteration over tests/findall/cells.tsv on three engine arms, the
+#     iterator's state-machine arms, the <PREFIX>_ITER_RETRY stamp against the
+#     text, and the ASan cells. Registered before S1297.
+#   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
+#     tests/codegen/run_residual_twins.sh: every residual call reaches its
+#     static twin in a -fPIC object (no PLT relocation). Registered before
+#     S1297.
 #   memfnmanifest — added 2026-10-05 ([MEMFN] R4a, lane memfnmanifest); runs
 #     tests/memfn/run_site_manifest.sh, C17: the checked site manifest
 #     (integration.md §R4.3.4) against what src/gen/ and src/enc/ spell. Its
@@ -3206,6 +3215,28 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/startlanding.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/startlanding.log" | grep -oE '[0-9]+')"
                 score_arm "$work/startlanding.log" "$f" "startlanding:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            findall)
+                # [FINDALL-NEXT] tests/findall/run_findall_tests.sh — see the
+                # vocabulary entry above. SKIPS (not scored) without libpcre2.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" TMPDIR="$work" \
+                    bash "$tree/tests/findall/run_findall_tests.sh" > "$work/findall.log" 2>&1
+                if grep -q '^SKIP: findall' "$work/findall.log"; then
+                    any_skip=1
+                else
+                    p="$(grep '^checks passed:' "$work/findall.log" | tail -1 | grep -oE '[0-9]+')"
+                    f="$(grep '^checks failed:' "$work/findall.log" | tail -1 | grep -oE '[0-9]+')"
+                    score_arm "$work/findall.log" "$f" "findall:${f:-ERR}fail/${p:-?}pass"
+                fi
+                ;;
+            twins)
+                # [FINDALL-NEXT] tests/codegen/run_residual_twins.sh — see the
+                # vocabulary entry above.
+                PCREC="$pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_residual_twins.sh" > "$work/twins.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/twins.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/twins.log" | grep -oE '[0-9]+')"
+                score_arm "$work/twins.log" "$f" "twins:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnmanifest)
                 # [MEMFN] C17 tests/memfn/run_site_manifest.sh — see the

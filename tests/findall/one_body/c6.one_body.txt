@@ -1,0 +1,10 @@
+{
+    size_t at;
+    int r;
+    r = rx__step(s, n, lop, c, &at);
+    if (r == 1) return 1;
+    *lop = at;
+    it->rc = r;
+    it->hdr = PCREC_ITER_ENDED;
+    return 0;
+}
