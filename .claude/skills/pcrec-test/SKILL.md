@@ -44,7 +44,7 @@ short brief, reads nothing else, and lets scripts do the waiting.
     code, merge, cancel, kill or run make or any suite.
     TRAILER=<path> SUMMARY=<path> LEDGER=docs/dev/full_suite_ledger.md
     LOOP until done:
-      timeout 590 bash /home/pcrec/projects/pcrec/scripts/watchrun --on stage --log <TRAILER> --max-sec 570
+      timeout 590 bash /home/pcrec/projects/pcrec/scripts/watchrun --on stage --log <TRAILER> --max-sec 480
     Read only its one output line (and, on a stage END, that stage's rc).
     Do not read stage logs; do not explain.
 
@@ -77,3 +77,6 @@ trailer, a monitor that read too much).
   launched, green reported). A teammate monitor cannot spawn NAMED agents (launch triage
   unnamed); the triage's final reply reached the manager, not the monitor, so the triage
   FILE is the delivery and the monitor must not wait for a reply.
+- 2026-10-23, full run: watchrun checks `--max-sec` only at poll boundaries (`--every`,
+  60 s), so 570 + 60 overran the monitor's `timeout 590` and every call ended 124 with no
+  line. Keep max-sec + every under the outer timeout (480 now).
