@@ -147,7 +147,7 @@ checksum unchanged), `status DIR` (queue + log tail), `teardown DIR` (kills the 
    variable lines (BOXQUEUE/STATE/ACTIONLOG, QWOPTS, STOP_AT), copied as printed.
 3. You should see: the preflight PASS lines, a `MON up` message, then `MON TEST ...` messages arriving at the manager
    (green once; red: `stage axes RED ... would launch triage` and `RED ...`; quiet: `PROBLEM QUIET ...` then `GREEN`; die:
-   `RED ...`), and the monitor ending with a one-line reply after the `130-test-simdie` JOB-DONE.
+   `PROBLEM run died ...`), and the monitor ending with a one-line reply after the `130-test-simdie` JOB-DONE.
 4. `scripts/monitor_rehearsal compare /tmp/monrehearsal` must print PASS x3; then `... teardown /tmp/monrehearsal`.
    For the restart check use STOP_AT=110-test-simred, `/clear` the session, restart it with the same variables
    (STOP_AT=130-test-simdie) and compare: the log must show no repeat and no miss.
