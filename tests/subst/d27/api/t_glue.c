@@ -201,8 +201,10 @@ int main(void)
         CHECK("glue.no.ctx", rc == PCREC_SUBST_MISMATCH, "rc %d (a NULL argument)", rc);
         pcrec_subst_out o0 = { .pc = pc, .cap = S2_PIECES - 1 };
         i2 = RX_ITER_INIT(s, 4);
+        L = 777;
         rc = pcrec_subst_replace_all(ra->next_n, &i2, &s2_subst_info, &ctx, NULL, 0, &o0, ob, 16, &L);
-        CHECK("glue.cap.below.P", rc == PCREC_SUBST_MISMATCH, "rc %d (o->cap below P: k == 0)", rc);
+        CHECK("glue.cap.below.P", rc == PCREC_SUBST_NOSPACE && o0.need == S2_PIECES && L == 777,
+              "rc %d need %zu L %zu (o->cap below P: NOSPACE, need = P, *len untouched; review IFACE-4)", rc, o0.need, L);
         /* the batch is the least of 64, o->cap / P, PCREC_SUBST_BATCH_PAIRS / ncap (substland2: the bound renamed, D175): one piece-set at a time still works */
         pcrec_subst_out o1p = { .pc = pc, .cap = S2_PIECES };
         i2 = RX_ITER_INIT((const unsigned char *)"zabaz", 5);

@@ -135,7 +135,10 @@ given.
 UNSET.
 
 <a id="s2-p4"></a>[2¶4] **Refused at compile**, each with a template offset
-(`pcrec_error.input` is `PCREC_ERR_INPUT_TEMPLATE`): `$` at the end; `$`
+(`pcrec_error.input` is `PCREC_ERR_INPUT_TEMPLATE`), a byte offset inside the
+refused construct: its first byte, or the byte at which it was found
+malformed (libpcre2 reports the latter throughout; which of the two a
+refusal gives is not part of the contract): `$` at the end; `$`
 before a byte that starts no reference; an unterminated or malformed `${...}`;
 a group number above 65535 (`PCREC_MAX_TEMPLATE_GROUP`) or a group name longer
 than 128 bytes; `$*MARK` and `${*MARK}` (no pcrec artifact reports a mark
@@ -289,8 +292,11 @@ only ASCII letters change.
 
 <a id="s2-p14a"></a>[2¶14a] **Ill-formed UTF-8 under case forcing.** The iterator walks
 ill-formed subjects (§9 row 11), so a case region can copy ill-formed bytes.
-Each byte that does not begin a well-formed character is copied unchanged,
-and counts one byte in the sizing pass (§4¶22). It is one character to the
+Each byte that does not begin a well-formed character WITHIN THE SOURCE IT
+COMES FROM (a literal run, a group, a variable, a part of the subject) is
+copied unchanged and counts one byte in the sizing pass (§4¶22), so two
+ill-formed fragments from different sources never join into one character
+that the region maps. It is one character to the
 case state of §2¶13: it consumes a pending one-shot. The well-formed
 characters around it map as usual. libpcre2 10.46 has no usable answer here (§9 row
 19), so these cells are pcrec's own and stay out of the differential.
@@ -544,8 +550,10 @@ slot it reads. It returns:
   record with `PCREC_SUBST_USES_SCRATCH` and `scratch == NULL`, for a map whose
   arrays are shorter than the reference list (§3¶10's length test), and for a
   slot read during the run walk that is neither `PCREC_SUBST_NOGROUP` nor in
-  `[0, ctx->ncap)` (at that match, with §4¶21's commit rule). The last two
-  can only fire on a map the check never saw: a context filled by hand
+  `[0, ctx->ncap)` (at that match, with §4¶21's commit rule), and, with no
+  map, for a numbered reference `k >= ctx->ncap` or any named reference (the
+  no-map refusals of §3¶11, at that match likewise). The last three can only
+  fire on a map or context the check never saw: a context filled by hand
   without the check, or a map changed after it;
 - <a id="s4-p12"></a>[4¶12] — retired.
 - <a id="s4-p13"></a>[4¶13] `PCREC_ERR_UNSET_VAR` under `PCREC_SUBST_STRICT` for an unset variable
@@ -811,7 +819,7 @@ pcrec_subst_piece pc[64 * DMY_PIECES];
 pcrec_subst_out o = { .pc = pc, .cap = 64 * DMY_PIECES };   /* plus scratch, if it forces case */
 rc = pcrec_subst_replace_all(rx_info.next_n, &it, &dmy_subst_info, &ctx, map, flags,
                           &o, buf, cap, &len);
-if (rc == PCREC_SUBST_NOSPACE && o.sneed <= o.scap)
+if (rc == PCREC_SUBST_NOSPACE && o.need == 0 && o.sneed <= o.scap)
     /* buf was too small: len bytes suffice; grow buf and call again on a FRESH iterator */;
 /* rc >= 0: the number of matches substituted; 0 means buf holds the subject unchanged */
 ```
@@ -902,12 +910,16 @@ return 0, and `pcrec_subst_replace_all` returns its match count (§10¶7).
 
 | code | value | returned by | meaning |
 |---|---|---|---|
-| `PCREC_SUBST_NOSPACE` | −11 | element, replace-all | `pc` or `scratch` is too small for the call; `need`/`sneed` say what suffices (§4¶10). From `pcrec_subst_replace_all` also: `out` is too small, and `*len` says what suffices (§10¶8) |
-| `PCREC_SUBST_BADSPAN` | −12 | element | a span the splice cannot express (§4¶16) |
-| `PCREC_SUBST_UNSET` | −14 | element | under `PCREC_SUBST_STRICT`: a referenced group is unset |
+| `PCREC_SUBST_NOSPACE` | −11 | element, replace-all | `pc` or `scratch` is too small for the call; `need`/`sneed` say what suffices (§4¶10, §10¶7). From `pcrec_subst_replace_all` also: `out` is too small, and `*len` says what suffices (§10¶8) |
+| `PCREC_SUBST_BADSPAN` | −12 | element, replace-all | a span the splice cannot express (§4¶16) |
+| `PCREC_SUBST_UNSET` | −14 | element, replace-all | under `PCREC_SUBST_STRICT`: a referenced group is unset |
 | `PCREC_SUBST_MISMATCH` | −15 | check, context setup, helper, element, replace-all | a record, rx, map, flag, option or context that does not belong to the call |
 | `PCREC_SUBST_MISSING_REF` | −16 | check, context setup, helper | reference `*bad_ref` does not resolve (§3¶8, §3¶13) |
-| `PCREC_ERR_UNSET_VAR` | −8 | element, context helper | under `PCREC_SUBST_STRICT`: a `${!name}` is unset |
+| `PCREC_ERR_UNSET_VAR` | −8 | element, context setup, replace-all | under `PCREC_SUBST_STRICT`: a `${!name}` is unset |
+| `PCREC_ERR_ITER` | −10 | replace-all | an iterator neither FRESH nor BOUND (§10¶7; match_api.md §4) |
+
+<a id="s8-p2"></a>[8¶2] Replace-all also returns, as they are, the element's codes and the
+iterator's give-up (`it->rc`), by §6¶1's error rule (§10¶9).
 
 <a id="s9"></a>
 ## 9. Differences from `pcre2_substitute`
@@ -1032,7 +1044,11 @@ caller-overridable bound.
 <a id="s10-p7"></a>[10¶7] **Result.** It returns the NUMBER OF MATCHES substituted,
 `>= 0` (`INT_MAX` when there are more), when the whole result, every
 replacement and every gap and the tail, is in `out[0, *len)`; `*len` is its
-length. 0 means no match: `out` holds the subject unchanged. A call that
+length. 0 means no match: `out` holds the subject unchanged. On a BOUND
+iterator that has already returned matches, the output still starts at
+offset 0: the subject up to its next match is copied as one gap, the matches
+it already returned unreplaced, and the count is of this call's matches
+only, so 0 then means no FURTHER match. A call that
 returns a negative code leaves `out` unspecified and counts none of it as
 output. `out == NULL` with `cap == 0` only SIZES, as the flatten does
 (§10¶5): the same count, `*len` the total, nothing written. `out == NULL`
@@ -1041,11 +1057,14 @@ function always renders gaps (`PCREC_SUBST_GAPS`), and another bit is
 `PCREC_SUBST_MISMATCH`. An iterator neither FRESH nor BOUND is
 `PCREC_ERR_ITER`. `PCREC_SUBST_MISMATCH` is also a `ctx->subject` or `ctx->len` that is not the
 iterator's, a NULL argument, a `t->render` or `next_n` that is NULL, a record
-with `PCREC_SUBST_USES_SCRATCH` and no `o->scratch`, and `k == 0` (a pattern with
-more than `PCREC_SUBST_BATCH_PAIRS` pairs per match, or an `o->cap` below `P`). The
-caller sets `o->pc`, `cap`, `scratch` and `scap`; the function sets
-`n`, `sn`, `prev`, `need` and `sneed` itself (the last two to 0 at the start)
-and ignores their incoming values.
+with `PCREC_SUBST_USES_SCRATCH` and no `o->scratch`, and a pattern with more
+than `PCREC_SUBST_BATCH_PAIRS` pairs per match. An `o->cap` below `P` (not one
+match's pieces) is `PCREC_SUBST_NOSPACE` with `o->need = P` and `*len`
+untouched, before any match is searched: the same code and field the element
+answers for the same shortfall (§4¶14). The caller sets `o->pc`, `cap`,
+`scratch` and `scap`; the function sets `n`, `sn`, `prev`, `need` and `sneed`
+itself (the last two to 0 at the start, unless it reports `need`) and ignores
+their incoming values.
 
 <a id="s10-p8"></a>[10¶8] **Too small a buffer.** When the result does not fit in `cap`, it
 keeps matching, sums the lengths without writing past `cap`, and returns
@@ -1056,7 +1075,8 @@ iterator. A scratch that is too small for one match returns
 `PCREC_SUBST_NOSPACE` with `o->sneed > o->scap` and `*len` untouched, so the
 caller tells the two apart as §6¶7 does (a scratch sized by §4¶22's bound
 never sees it). The function retries the batch with `k = 1` before it reports
-that.
+that. So a NOSPACE from it names its cause by the record: `o->need > 0`, the
+piece array; `o->sneed > o->scap`, the scratch; otherwise `out`, with `*len`.
 
 <a id="s10-p9"></a>[10¶9] **Errors** follow §6¶1's rule exactly. A negative return from
 the element, the iterator or the check (a give-up, `PCREC_SUBST_BADSPAN`,
@@ -1066,6 +1086,7 @@ a failed find-all, and `out` is not to be read as a result. The function reads
 `it->rc` after the loop, as the recipes do.
 
 <a id="s10-p10"></a>[10¶10] **Equivalence.** For every input on which §6¶4's recipe returns
-0, `pcrec_subst_replace_all` returns 0 with the same bytes and the same `*len`;
+0, `pcrec_subst_replace_all` returns the match count (§10¶7) with the same
+bytes and the same `*len`;
 on a failure both return the same code. `tests/subst/` runs the two side by
 side over the whole corpus.

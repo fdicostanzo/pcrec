@@ -82,7 +82,7 @@ REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 
               'vars', 'abi', 'giveup', 'subject', 'before', 'after', 'amp', 'start',
               'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',
               'blen', 'negnum', 'flatsat', 'absent', 'lim', 'short', 'exact', 'size',
-              'count', 'batch', 'generic', 'stale', 'nomap', 'hand', 'room',
+              'count', 'batch', 'generic', 'stale', 'nomap', 'hand', 'room', 'pshort',
               'mis', 'nog', 'pairs', 'nmchk']
 REACH_NEED['subst-extended'] = [
     'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539', 'S1580',
@@ -326,10 +326,19 @@ def main():
             if all_ and check(g.get('stale') == str(CODES['ITER']),
                               '%s: replace-all over an ENDED iterator gave %s, want PCREC_ERR_ITER' % (cid, g.get('stale'))):
                 reached.add('stale')
+            # the element asked for 2 matches under GAPS (P = npieces) into one
+            # entry short: NOSPACE, need = 2 * P, n and prev untouched
             rm = g.get('room', '').split(',')
-            if check(len(rm) == 3 and rm[0] == ns and rm[2] == '1',
-                     '%s: the element one piece short gave %s, want NOSPACE untouched' % (cid, g.get('room'))):
+            if check(len(rm) == 4 and rm[0] == ns and rm[2] == '1' and rm[1] == str(2 * int(rm[3])),
+                     '%s: the element one piece short gave %s, want NOSPACE,2*P,untouched,P' % (cid, g.get('room'))):
                 reached.add('room')
+            # replace-all below one match's P: NOSPACE with need = P, *len
+            # untouched (subst_api.md §10¶8); MISMATCH first past the batch
+            want_ps = ('%s,0,1' % mm if int(g['nc']) > PCREC_SUBST_BATCH_PAIRS
+                       else '%s,%s,1' % (ns, rm[3] if len(rm) == 4 else '?'))
+            if check(g.get('pshort') == want_ps,
+                     '%s: replace-all below one match\'s pieces gave %s, want %s' % (cid, g.get('pshort'), want_ps)):
+                reached.add('pshort')
             if 'mis' in g and check(g['mis'] == '%d,%s' % (CODES['MISSING_REF'], mm),
                                     '%s: a map slot at ncaps: check,element %s, want MISSING_REF,MISMATCH' % (cid, g['mis'])):
                 reached.add('mis')

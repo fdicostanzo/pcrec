@@ -42,7 +42,9 @@
  *          stopped, and a reference iterator's after exactly LIMIT
  *          <rx>_next calls
  *   room   the element with a piece array one entry short: rc, need, and
- *          whether n and prev stayed put
+ *          whether n and prev stayed put, then the record's npieces
+ *   pshort replace-all with a piece array below one match's npieces: rc,
+ *          need, and whether *len stayed put
  *   mis    a hand map naming slot ncaps: the check's code, then the
  *          element's over it without the check
  *   unk    the element with flag 0x4, replace-all with PCREC_SUBST_GAPS: codes
@@ -530,7 +532,17 @@ int main(void)
             caps[0][0] = 0; caps[0][1] = 0;
             caps[rx->ncaps][0] = 0; caps[rx->ncaps][1] = 0;
             rc = sb->render(&ctx, &map, caps, 2, PCREC_SUBST_GAPS, &o);
-            printf("\troom=%d,%zu,%d", rc, o.need, o.n == 0 && o.prev == 0);
+            printf("\troom=%d,%zu,%d,%d", rc, o.need, o.n == 0 && o.prev == 0, sb->npieces);
+            {
+                size_t l0 = 12345;
+                pcrec_subst_out os = { .pc = pc, .cap = (size_t)sb->npieces - 1, SCR };
+                rx_iter it2;
+                rx_ctx ctx2;
+                iter_fresh(&it2, c.s, c.n, c.v, c.nv);
+                (void)pcrec_subst_ctx_init(&ctx2, &it2, rx, sb, &map, vres, 0, &bad);
+                rc = pcrec_subst_replace_all(rx->next_n, &it2, sb, &ctx2, &map, 0, &os, out2, OUTMAX, &l0);
+                printf("\tpshort=%d,%zu,%d", rc, os.need, l0 == 12345);
+            }
             if (sb->nrefs > 0) {
                 int ms[512];
                 pcrec_subst_map mm = { ms, (size_t)sb->nrefs, NULL, 0 };
