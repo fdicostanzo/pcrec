@@ -14,7 +14,8 @@
 #
 # THE ARMS (one compiler, $PCREC, the S3 build; every arm `--features all -p rx`):
 #   DEF   --memfn=no-window-search,no-window-skip   the OFF arm: byte-identical to main c3ea619c3 but for the
-#                                         abi digits (bytediff.sh) -- §6's DEF, and G1's deny arm
+#                                         abi digits and the two-stream find's bounded look-ahead
+#                                         (bytediff.sh) -- §6's DEF, and G1's deny arm
 #   RTE   (default)                       the routed form (E-find; D-hors where it fires)
 #   RT2   (default, a second compile + link)   the A/A pair of RTE (the floor's AA)
 #   NOH   --memfn=no-window-skip              G1's deny arm of D-hors; built everywhere, TIMED only where

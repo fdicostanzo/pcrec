@@ -2,7 +2,7 @@
 # 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.3 §6, Goal 2): the
 # 650 harness's 8 cells x 3 regimes x 3 classes, the S3 compiler's routed artifacts against its own
 # OFF arm (DEF: --memfn=no-window-search,no-window-skip, byte-identical to main c3ea619c3 but for the abi
-# digits), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
+# digits and the two-stream find's bounded look-ahead, the S3 final review's EMIT-1 fix), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
 # T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
 # s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, the per-call delta, PASS/FAIL vs
 # Goal 2: within the floor OR within THE PER-CALL LAYOUT ALLOWANCE, measured in this run from the DEF

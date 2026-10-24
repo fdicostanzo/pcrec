@@ -32,7 +32,9 @@ Ranked; when two conflict, the higher wins. Each is checkable as stated.
 1. **Answers exact** (every caller). A window site's text yields exactly the candidates its facts
    define, the leftmost first: G2's window family (`memfn/tests/run_g2_win.sh`) green against its
    reference over the generated space, every plant red; zero corpus answer changes against the OFF arm
-   (`--memfn=no-window-search,no-window-skip`, byte-identical to the default build before the window search).
+   (`--memfn=no-window-search,no-window-skip`, byte-identical to the default build before the window search
+   but for the abi digits and, since the S3 final review's EMIT-1 fix `[rev3.3 F]`, every two-stream
+   find's bounded look-ahead, kit.h's ofs_pair).
 2. **Not slower than DEF beyond the relative floor or a measured per-call layout allowance** (users of
    the default build) `[rev3.3 F]`. On the SCALAR layer every §6 cell, and every stratum of the mover
    sample, reads routed/DEF <= 1 + its floor (this run's A/A), OR routed's time per call exceeds DEF's

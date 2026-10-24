@@ -141,7 +141,7 @@ plant_spec() {
     S1541) # the S3 final review's EMIT-1: a stream's bounded look-ahead that comes up empty
         # sets its frontier one PAST its end, so a byte sitting exactly there is skipped
         # (the long subjects' clusters straddle the first two look-aheads' ends)
-        echo 'ofsskip.c@@"else { %s = %s; %s += %s; }%s"@@"else { %s = %s + 1; %s += %s; }%s"' ;;
+        echo 'ofsskip.c@@} else { %s = %s; %s += %s; }%s"@@} else { %s = %s + 1; %s += %s; }%s"' ;;
     S1542) # the S3 final review's CHECK-2: D-hors's `whi >= 0` scope dropped, so D-hors
         # renders a window wholly below the candidate (the below-window sites; the
         # generator's D-hors scope census goes red)

@@ -596,12 +596,16 @@ REQRUN0_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos), 
 REQRUNK_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos) \+ \d+, (\d+), n - pos - \d+\);$')
 REQRUN0_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\));$')
 REQRUNK_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\)) - \d+;$')
-PAIR_GUARD_RE = re.compile(r'^(\s*if \(fresh \|\| h[ab] < pos)(?: \+ \d+)?\) \{$')
+# the pair arm's two streams (kit ofsskip.c ofs_pair_text): a frontier's raise to `pos + K`, and
+# each stream's byte in its hit test and its bounded memchr
+PAIR_GUARD_RE = re.compile(r'^(\s*if \(h[ab] < pos)(?: \+ \d+)?\) (h[ab] = pos)(?: \+ \d+)?;$')
+PAIR_TEST_RE = re.compile(r'^(\s*if \((?:h[ab] >= n \|\| )?subject\[h[ab]\] == )\d+(\) break;)$')
+PAIR_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ h[ab]), \d+, (e - h[ab]\);)$')
 PAIR_BACKOFF_RE = re.compile(r'^\s*cand -= \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
 REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
-REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ pos(?: \+ \d+)?, (\d+),')
+REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),')
 REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(.*?^}$', re.M | re.S)
 REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 #
@@ -1038,18 +1042,22 @@ COVER_MEMCHR_RE = re.compile(
     r'\{ const void \*(rx_mf\d+)_q = \1_c(?: \+ (\d+))? < \1_n \? memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
     r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\) : 0; if \(!\1_q\) break; '
     r'\1_c = \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\)(?: - (\d+))?; \}')
-# The PAIR leapfrog (kit ofsskip.c's ofs_pair_text through window.c's wf_b_pair): the
-# search position's bound check, then each of the two bytes' stream (`if (fr || h < P)
-# { const void *q = memchr(s + P, B, LEN); h = q ? ... : n; }`), `fr = 0`, the nearer hit,
-# its bound check and the `c -= K` back-off. P is `c` or `c + K`; the pick's K and the two
-# bytes are read from that text, as the memchr form's.
-COVER_PAIR_STREAM = (
-    r'if \(\1_fr \|\| \1_%s < \1_c(?: \+ (\d+))?\) \{ const void \*\1_q = memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
-    r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\); \1_%s = \1_q \? \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\) : \1_n; \} ')
+# The PAIR leapfrog (kit ofsskip.c's ofs_pair_text through window.c's wf_b_pair), one line:
+# the search position's bound check (`if (c [+ K] >= n) break;`), the two frontiers' raise to
+# `c [+ K]`, the streams' bounded look-aheads (each byte in its hit test `s[h] == B` and its
+# `memchr(s + h, B, e - h)`), the nearer hit, its bound check and the `c -= K` back-off. The
+# segment is matched from its bound check to its back-off; the pick's K (every `c + K`, and
+# the back-off) and the two bytes (the hit tests', which must equal the memchrs') are read
+# from it, as the memchr form's.
 COVER_PAIR_RE = re.compile(
-    r'if \((rx_mf\d+)_c(?: \+ (\d+))? >= \1_n\) break; ' + COVER_PAIR_STREAM % ('ha', 'ha') +
-    COVER_PAIR_STREAM % ('hb', 'hb') +
-    r'\1_fr = 0; \1_c = \1_ha < \1_hb \? \1_ha : \1_hb; if \(\1_c >= \1_n\) break; (?:\1_c -= (\d+); )?')
+    r'if \((rx_mf\d+)_c(?: \+ (\d+))? >= \1_n\) break; if \(\1_ha < .*?'
+    r'\1_c = \1_ha < \1_hb \? \1_ha : \1_hb; if \(\1_c >= \1_n\) break; (?:\1_c -= (\d+); )?')
+# B-fn: the find is the offset-skip function's call, `<pfx>_ofsskip(...)`, and its pick lives in
+# the file-scope helper `<pfx>_ofsskip__body` (fn-pair's body, the same leapfrog in lines over
+# `subject`/`pos`): the frontiers' raise `if (h < pos [+ K]) h = pos [+ K];`, the hit tests
+# and memchrs carrying the two bytes, and `cand -= K;` (absent at K = 0).
+COVER_FN_CALL_RE = re.compile(r'(rx_mf\d+)_c = \1_ofsskip\(')
+COVER_FN_RAISE_RE = re.compile(r'^(\s*if \(h[ab] < pos)(?: \+ (\d+))?\) (h[ab] = pos)(?: \+ \d+)?;$')
 COVER_CLASS_RE = re.compile(
     r'while \((rx_mf\d+)_c(?: \+ (\d+))? < \1_n && !\(\(((?:\1_s\[\1_c(?: \+ \d+)?\] == \d+(?: \|\| )?)+)\)\)\) \1_c\+\+;')
 
@@ -1064,8 +1072,14 @@ def cover_pick(text):
         return '{ /* cover pick K,B normalized */ }'
 
     def m_pair(m):
-        ks = {int(m.group(i)) for i in (2, 3, 4, 6, 7, 8, 10, 11) if m.group(i)}
-        picks.append((ks.pop() if len(ks) == 1 else (-1 if ks else 0), {int(m.group(5)), int(m.group(9))}))
+        seg, px = m.group(0), re.escape(m.group(1))
+        ks = {int(x) for x in re.findall(px + r'_c \+ (\d+)', seg)}
+        if m.group(3):
+            ks.add(int(m.group(3)))
+        tests = {int(x) for x in re.findall(px + r'_s\[' + px + r'_h[ab]\] == (\d+)', seg)}
+        scans = {int(x) for x in re.findall(r'memchr\(' + px + r'_s \+ ' + px + r'_h[ab], (\d+),', seg)}
+        k = ks.pop() if len(ks) == 1 else (-1 if ks else 0)
+        picks.append((k if tests == scans else -1, tests | scans))
         return '{ /* cover pick K,B normalized */ }'
 
     def m_class(m):
@@ -1074,9 +1088,44 @@ def cover_pick(text):
         return 'while (/* cover pick K,B normalized */) c++;'
 
     out = []
+    fns = set()
     for line in text.splitlines(keepends=True):
         if line.startswith('    scan_position = ({ const unsigned char *rx_mf'):
             line = COVER_CLASS_RE.sub(m_class, COVER_MEMCHR_RE.sub(m_memchr, COVER_PAIR_RE.sub(m_pair, line)))
+            fns |= {m.group(1) for m in COVER_FN_CALL_RE.finditer(line)}
+        out.append(line)
+    # B-fn: each called function's helper body, its pick read and normalized line by line
+    lines, out, body, k, tests, scans = out, [], None, set(), set(), set()
+    for line in lines:
+        ln = line.rstrip('\n')
+        if body is None:
+            m = re.match(r'^static inline size_t (rx_mf\d+)_ofsskip__body\(', ln)
+            if m and m.group(1) in fns:
+                body, k, tests, scans = m.group(1), set(), set(), set()
+            out.append(line)
+            continue
+        if ln == '}':
+            picks.append((k.pop() if len(k) == 1 else -1, tests | scans) if tests == scans and tests
+                         else (-1, tests | scans))
+            body = None
+            out.append(line)
+            continue
+        mr = COVER_FN_RAISE_RE.match(ln)
+        mt = PAIR_TEST_RE.match(ln)
+        mm = PAIR_MEMCHR_RE.match(ln)
+        mb = PAIR_BACKOFF_RE.match(ln)
+        if mr:
+            k.add(int(mr.group(2) or 0))
+            line = "%s + K) %s + K; /* cover pick K normalized */\n" % (mr.group(1), mr.group(3))
+        elif mt:
+            tests.add(int(re.search(r'== (\d+)\)', ln).group(1)))
+            line = "%sB%s\n" % (mt.group(1), mt.group(2))
+        elif mm:
+            scans.add(int(re.search(r', (\d+), e - ', ln).group(1)))
+            line = "%s, B, %s\n" % (mm.group(1), mm.group(2))
+        elif mb:
+            k.add(int(re.search(r'(\d+)', ln).group(1)))
+            continue    # absent at K = 0, so dropped, not normalized
         out.append(line)
     return ''.join(out), picks
 
@@ -1370,7 +1419,14 @@ def excise(text, label, drop_run=False):
             # carry the same offset K as the two memchr lines above
             mf = PAIR_GUARD_RE.match(ln)
             if mf:
-                out.append("%s + K) {\n" % mf.group(1))
+                out.append("%s + K) %s + K;\n" % (mf.group(1), mf.group(2)))
+                i += 1
+                continue
+            mf = PAIR_TEST_RE.match(ln) or PAIR_MEMCHR_RE.match(ln)
+            if mf:
+                out.append("%sB%s\n" % (mf.group(1), mf.group(2)) if mf.re is PAIR_TEST_RE
+                           else "%s, B, %s\n" % (mf.group(1), mf.group(2)))
+                counts['req_pick'] += 1
                 i += 1
                 continue
             if PAIR_BACKOFF_RE.match(ln):     # absent at K = 0, so dropped, not normalized
@@ -1617,7 +1673,7 @@ def main():
                                        % (side, rbyte, m.group(1)))
                 if pair is not None:
                     bodies = REQRUN_FN_BODY_RE.findall(text)
-                    if bodies and not any('int fresh = 1;' in b for b in bodies):
+                    if bodies and not any('size_t ha = 0, hb = 0, wa = ' in b for b in bodies):
                         bad_sel.append("%s REQ_RUN \"%s\" stamps a cube scan position but no rx_reqrun body carries the pair arm"
                                        % (side, m.group(1)))
                     if any(b not in pair for b in scanned):

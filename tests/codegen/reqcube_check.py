@@ -22,8 +22,9 @@ never from the emitted C it checks:
      position; every constant is a string literal (never a byte-order
      statement).
   2. THE DISPATCH: a block whose scan position is a pair carries exactly two
-     `memchr` calls, on A = T[k*] and B = A | ~K[k*], each re-searched iff its
-     hit is `< pos + k*`; a block whose scan position is exact carries one, on
+     `memchr` calls, on A = T[k*] and B = A | ~K[k*], each stream's frontier
+     raised to `pos + k*` (a hit below it is stale); a block whose scan
+     position is exact carries one, on
      T[k*] (S453's shape is one memchr on an all-letter run).
   3. NO SEARCH OUTSIDE THE LOOP: every `memchr(` of a run block sits after the
      block's `while (pos + ` line (S454's detector).
@@ -164,17 +165,19 @@ def check_block(label, blk, t, k, scan_k):
         bad(f"{label}: a memchr( sits ABOVE the block's `while (pos + ` guard -- a search outside the loop (S454)")
     else:
         ok(f"{label}: all {len(ml)} memchr( calls sit inside the guarded loop")
-    consts = [int(x) for x in re.findall(r"memchr\(subject \+ pos(?: \+ \d+)?, (\d+),", blk)]
+    # one memchr per stream: from `pos [+ k]` (one stream), or from the stream's frontier
+    # `ha`/`hb` in its bounded look-ahead (the pair arm, kit ofsskip.c ofs_pair_text)
+    consts = [int(x) for x in re.findall(r"memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),", blk)]
     a = t[scan_k]
     if k[scan_k] != 0xFF:
         b = a | (~k[scan_k] & 0xFF)
         kk = "pos + %d" % scan_k if scan_k else "pos"
         if sorted(consts) != sorted([a, b]):
             bad(f"{label}: the pair position {scan_k} is scanned on {consts}, expected both members {a} and {b} (S453 scans T alone)")
-        elif ("fresh || ha < %s)" % kk) not in blk or ("fresh || hb < %s)" % kk) not in blk:
-            bad(f"{label}: a stream's re-search condition is not `< {kk}` (S449's `< pos` hangs)")
+        elif ("if (ha < %s) ha = %s;" % (kk, kk)) not in blk or ("if (hb < %s) hb = %s;" % (kk, kk)) not in blk:
+            bad(f"{label}: a stream's frontier is not raised to `{kk}` (S449/S450's `pos` hangs)")
         else:
-            ok(f"{label}: the pair position {scan_k} is two streams ({a}, {b}), each re-searched iff `< {kk}`")
+            ok(f"{label}: the pair position {scan_k} is two streams ({a}, {b}), each frontier raised to `{kk}`")
     else:
         if consts != [a]:
             bad(f"{label}: the exact scan position {scan_k} is scanned on {consts}, expected one memchr of {a}")

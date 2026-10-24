@@ -278,17 +278,17 @@ static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj
 }
 
 /* THE LONG SUBJECTS of a two-stream (PAIR) site: each stream searches in
- * bounded look-aheads (the kit's ofs_pair_text: 64 bytes, doubling), so
+ * bounded look-aheads (the kit's ofs_pair_text: 128 bytes, doubling), so
  * the alphabet's bytes are planted as a 12-byte cluster across each of the
- * first two look-aheads' ends (64 and 192 bytes from `lo` + the stop's
+ * first two look-aheads' ends (128 and 384 bytes from `lo` + the stop's
  * offset), the rest the byte no set holds; lo 0..2. */
-enum { LONG_N = 216 };
+enum { LONG_N = 408 };
 static unsigned long long rngl = 0x10A6A11ull;   /* the long subjects' own stream */
 static void run_long(unsigned si, const g2w_dec *d, const uint8_t *alpha, int na,
                      const uint8_t sentinel[2])
 {
     unsigned long long *rng = &rngl;
-    static const int at[] = { 52, 56, 60, 64, 180, 184, 188, 192 };
+    static const int at[] = { 116, 120, 124, 128, 372, 376, 380, 384 };
     unsigned char subj[LONG_N];
     for (int round = 0; round < 2 && !site_failed; round++)
         for (unsigned k = 0; k < sizeof at / sizeof at[0] && !site_failed; k++) {

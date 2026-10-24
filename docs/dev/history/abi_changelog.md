@@ -38,7 +38,12 @@ the bump's own commit.**
   section gains `window-search` and `window-skip`. Every other artifact moves only
   the abi digits. The OFF arm `--memfn=no-window-search,no-window-skip` is the
   parent's text but for those digits. The mover census is in
-  docs/dev/lanes/s3_report.md.
+  docs/dev/lanes/s3_report.md. Amended inside 85 by the S3 final code review's
+  fixes (lane s3fix, 2026-10-24, not yet landed, so no new number): the
+  two-stream (PAIR) find searches each stream in bounded, doubling
+  look-aheads (find-all linear; the native offset-skip and pre-check pair arms
+  share the text), E-find raises the candidate past a below-candidate core
+  once before its loop, and D-hors writes the shared loop bound.
 - **`rx_info.abi` was `84` (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
   from lane i1build [FINDALL-NEXT] I1 (first numbered 83 on its own branch), lane i2build I4 (84), lane iteropt and lane
   iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wanted 84 provisionally; the iterators landed first and kept it, S3 took 85, above).**

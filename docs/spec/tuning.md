@@ -871,24 +871,29 @@ rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("us
 
 <a id="s2-39-p1"></a>[2.39¶1] **Denies** the two-member CUBE positions of §2.28's necessary run, axis `req-run-fold`. A class whose byte set is one cube of at most `PCREC_MAX_REQ_RUN_POS_SET` members is a run position (§2.28): a caseless letter (D23 folds it to a two-member class), `[jk]`, and an alternation's one-bit hull (`frank|fred` to `fr[ae]`). Without it a caseless word contributes nothing to the necessary run, and `(?i)union.*?select.*?from` has no whole-window pre-check. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only. Design: `docs/design/litscan_s4.md` §2.3.
 
-<a id="s2-39-p2"></a>[2.39¶2] **What the pre-check emits on a masked run.** The run compare's `words` row (§2.38) verifies it masked. Where the scan member is an exact byte the block is the one-`memchr` loop; where it is a pair, the block scans both members, two pending hits leapfrogged inside the block's one guarded loop (`while (pos + maxk < n)`, so no search is made on a window shorter than the run and `memchr(NULL, c, 0)` cannot occur, K27):
+<a id="s2-39-p2"></a>[2.39¶2] **What the pre-check emits on a masked run.** The run compare's `words` row (§2.38) verifies it masked. Where the scan member is an exact byte the block is the one-`memchr` loop; where it is a pair, the block scans both members, two streams leapfrogged inside the block's one guarded loop (`while (pos + maxk < n)`, so no search is made on a window shorter than the run and `memchr(NULL, c, 0)` cannot occur, K27). Each stream keeps a frontier below which its byte does not occur; the lower frontier is searched next, over a bounded look-ahead that doubles each time it comes up empty, so a member that is absent or far costs a call about twice the distance to its answer rather than the rest of the subject, and a find-all stays linear:
 
 ```c
 static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
 {
-    size_t ha = 0, hb = 0;
-    int fresh = 1;
+    size_t ha = 0, hb = 0, wa = 128, wb = 128;
     while (pos + 5 < n) {
         size_t cand;
-        if (fresh || ha < pos + 4) {
-            const void *q = memchr(subject + pos + 4, 67, n - pos - 4);
-            ha = q ? (size_t)((const unsigned char *)q - subject) : n;
+        if (ha < pos + 4) ha = pos + 4;
+        if (hb < pos + 4) hb = pos + 4;
+        for (;;) {
+            if (ha <= hb) {
+                if (ha >= n || subject[ha] == 67) break;
+                size_t e = n - ha > wa ? ha + wa : n;
+                const void *q = memchr(subject + ha, 67, e - ha);
+                if (q) { ha = (size_t)((const unsigned char *)q - subject); if (ha <= hb) break; } else { ha = e; wa += wa; }
+            } else {
+                if (subject[hb] == 99) break;
+                size_t e = n - hb > wb ? hb + wb : n;
+                const void *q = memchr(subject + hb, 99, e - hb);
+                if (q) { hb = (size_t)((const unsigned char *)q - subject); if (hb < ha) break; } else { hb = e; wb += wb; }
+            }
         }
-        if (fresh || hb < pos + 4) {
-            const void *q = memchr(subject + pos + 4, 99, n - pos - 4);
-            hb = q ? (size_t)((const unsigned char *)q - subject) : n;
-        }
-        fresh = 0;
         cand = ha < hb ? ha : hb;
         if (cand >= n) return n;
         cand -= 4;
@@ -966,7 +971,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 - <a id="s2-43-p3b"></a>[2.43¶3b] **Its per-form switches** are the kit's `--memfn=` rows: `--memfn=no-vrun-w32` denies the 32-byte row (the 16-byte one is then the top arm) and `--memfn=no-vrun-w16` the 16-byte row (the 32-byte arm then falls straight to `<fn>__body`). By default the 32-byte row's candidate mask also tests a second filter position (the kit chooses it from the rarity ranking pcrec states, D157) and the 16-byte row's, standalone or as the 32-byte row's fall-through, tests the scanned position alone; `--memfn=no-vrun-kb` keeps both rows and drops the second position, so every block's candidate mask tests the scanned position alone. `--memfn=no-vrun-trim` keeps both rows and their filter but verifies each candidate over the whole run; by default the verify skips the run positions the candidate mask already tested, and a run the mask covers whole (a two-byte run with its second position read) has no verify at all. `--memfn=no-vrun-pad` keeps that verify everywhere; by default, in the main block loop, a run of 3 or 5 to 7 bytes is verified as one wider masked word (4 or 8 bytes) whose bytes past the run are masked off, the loop stopping that many bytes earlier so the read stays inside the subject (the final block keeps the run compare). Given at the default `-fno-memfn-simd`, a SIMD row's deny is accepted and does nothing.
 - <a id="s2-43-p3c"></a>[2.43¶3c] **The kit's scalar rows' switches** are `--memfn=` rows too, of layer `scalar` (`registry.md` §6¶8a), and they are live at BOTH settings of this axis: a scalar row is the SIMD-off layer's own form, so its deny moves the artifact whether or not `-fmemfn-simd` is given. The one today is `--memfn=no-precheck-assign-byte`: where the pre-check keeps the position of its first byte for the handoff, the kit finds it with one `memchr` behind the empty test, and the deny leaves the site to the kit's generic row (a byte-at-a-time loop), the same answer. pcrec's site of that shape is `[REQ-HANDOFF-L1]`'s byte landmark (the handoff's entry and its re-entry), where the deny reproduces the generic loop; on a run-landmark pre-check (a different row) the deny is accepted and moves no artifact.
 
-- <a id="s2-43-p3d"></a>[2.43¶3d] **The window search's denies** (D172; `registry.md` §6¶8a): `--memfn=no-window-search` turns the window search off, so the `cover` LOCATE row declines and every `<PREFIX>_DFA_SCAN "cover"` artifact becomes the `"unanchored"` one (`match_api.md` §6.3.4¶2); `--memfn=no-window-skip` keeps the window search but drops its skip for a common byte set, the search then jumping to its chosen bytes and resuming one byte on. Both are live at both settings of this axis and both answer-identical; the two together render each artifact as the build before the window search was the default did, but for its `abi` digits.
+- <a id="s2-43-p3d"></a>[2.43¶3d] **The window search's denies** (D172; `registry.md` §6¶8a): `--memfn=no-window-search` turns the window search off, so the `cover` LOCATE row declines and every `<PREFIX>_DFA_SCAN "cover"` artifact becomes the `"unanchored"` one (`match_api.md` §6.3.4¶2); `--memfn=no-window-skip` keeps the window search but drops its skip for a common byte set, the search then jumping to its chosen bytes and resuming one byte on. Both are live at both settings of this axis and both answer-identical; the two together render each artifact as the build before the window search was the default did, but for its `abi` digits and the two-stream find's bounded look-ahead (§2.39¶2: every two-stream pre-check and offset-skip function).
 
 <a id="s2-43-p4"></a>[2.43¶4] `-fno-memfn-simd` renders the default artifact byte for byte, and `-fmemfn-simd` renders it byte for byte wherever no kit row renders a SIMD form (`<PREFIX>_MEMFN_FORMS` reads `"none"`). `make test-memfn-stamps` checks both, compiling sampled artifacts under each flag against the default; `make test-memfn-simdfloor` holds every On artifact to the SIMD-off text plus guarded insertions. The kit's per-form switches are its own `--memfn=` namespace (`registry.md` §6, `cli.md` §1.16), not this axis. ANSWER-IDENTICAL. Both bits are masked out of `rx_info.flags`. **The stamp** is `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `"none"` iff the artifact is identical to its SIMD-off compile. SIMD-guarded bytes are excluded from the size caps and from `<PREFIX>_VM_PROGRAM_BYTES` (`limits.md` §8.3).
 

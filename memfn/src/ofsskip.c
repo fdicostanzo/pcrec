@@ -254,11 +254,12 @@ typedef struct fn_row {
  * the distance from the call's start to its answer, plus the first width.
  * One `memchr` per look-ahead, so a near byte costs one call, as before.
  *
- * PAIR_LOOKAHEAD, the first width in bytes: chosen by instruction counts
- * (docs/dev/lanes/s3_report.md Part 11; 32/64/256 measured, find-all over
- * the review's repros and a real text); its time is UNMEASURED DEFAULT
- * (instructions under-count memchr's call cost). */
-enum { PAIR_LOOKAHEAD = 64 };
+ * PAIR_LOOKAHEAD, the first width in bytes: MEASURED by instruction count
+ * only (docs/dev/lanes/s3_report.md Part 11: 32, 64, 128, 256 and 512, a
+ * find-all over the review's adversarial repros and a real text, Linux dev
+ * box, gcc 15.2 -O2): 128 is within 1% of the best on every row; its TIME
+ * is an UNMEASURED DEFAULT (instructions under-count memchr's call cost). */
+enum { PAIR_LOOKAHEAD = 128 };
 
 /* The streams' declaration, each width at PAIR_LOOKAHEAD (kit.h). */
 void ofs_pair_decl(kb *o, const ofs_pair *t)
@@ -277,20 +278,21 @@ void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)
         kb_printf(o, "%sif (%s < %s) %s = %s;%s", I, hit[i], t->at, hit[i], t->at, L);
     kb_printf(o, "%sfor (;;) {%s", I, L);
     for (unsigned i = 0; i < 2; i++) {
-        const char *h = hit[i], *w = wid[i];
+        const char *h = hit[i], *w = wid[i], *g = hit[1 - i];
         if (i == 0) kb_printf(o, "%s%sif (%s <= %s) {%s", I, J, t->ha, t->hb, L);
         else        kb_printf(o, "%s%s} else {%s", I, J, L);
         /* the lower frontier is below `n` unless both are (stream a only) */
-        kb_printf(o, "%s%s%sif (%s%s%s%s[%s] == %d) break;%s", I, J, J,
+        kb_printf(o, "%s%s%sif (%s%s%s%s%s[%s] == %d) break;%s", I, J, J,
                   i ? "" : h, i ? "" : " >= ", i ? "" : t->n, i ? "" : " || ",
                   t->subject, h, m[i], L);
         kb_printf(o, "%s%s%ssize_t %s = %s - %s > %s ? %s + %s : %s;%s", I, J, J,
                   t->e, t->n, h, w, h, w, t->n, L);
         kb_printf(o, "%s%s%sconst void *%s = memchr(%s + %s, %d, %s - %s);%s", I, J, J,
                   t->q, t->subject, h, m[i], t->e, h, L);
-        kb_printf(o, "%s%s%sif (%s) %s = (size_t)((const unsigned char *)%s - %s); "
-                     "else { %s = %s; %s += %s; }%s", I, J, J,
-                  t->q, h, t->q, t->subject, h, t->e, w, w, L);
+        /* a hit that is still the lower frontier is the answer at once */
+        kb_printf(o, "%s%s%sif (%s) { %s = (size_t)((const unsigned char *)%s - %s); "
+                     "if (%s %s %s) break; } else { %s = %s; %s += %s; }%s", I, J, J,
+                  t->q, h, t->q, t->subject, h, i ? "<" : "<=", g, h, t->e, w, w, L);
     }
     kb_printf(o, "%s%s}%s%s}%s", I, J, L, I, L);
     kb_printf(o, "%s%s = %s < %s ? %s : %s;%s", I, t->cand, t->ha, t->hb, t->ha, t->hb, L);

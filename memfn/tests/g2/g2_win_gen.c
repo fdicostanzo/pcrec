@@ -394,9 +394,11 @@ static void gen_facts(int fam, gfacts *x)
                 a->span[0].table[j] = 0;
             }
         }
-        if (h2_below) {     /* five distinct alphabet bytes a position */
+        if (h2_below) {     /* five distinct alphabet bytes a position; not REPORT
+                               (E-find cannot find a set stop below the
+                               candidate, so a REPORT site there is refused):
+                               E-find's frames reach Table D, the rest the floor */
             x->dense = 1;
-            x->assign = 1;
             for (int j = 0; j < k; j++) {
                 memset(a->span[0].set[j], 0, 32);
                 for (unsigned q = rnd(NALPHA), m = 0; m < 5; m++)
@@ -1006,9 +1008,13 @@ int main(int argc, char **argv)
                fn-pair's two streams (window.c b_fn_holds) */
             if (strstr(ft, "_ofsskip__body(") && !strstr(ft, "ha < pos"))
                 fail(id, "B-fn", "the offset-skip function renders one stream under PAIR");
-            /* D-hors's scope (window_site.md §2.5): its window, the stop's
-               verify-YES core span, reaches the candidate (whi >= 0); G2's
-               own reading of the facts, not the kit's */
+        }
+        /* D-hors's scope (window_site.md §2.5): its window, the stop's
+           verify-YES core span of two positions or more, reaches the candidate
+           (whi >= 0). G2's own reading of the facts, not the kit's: every site
+           whose window lies wholly below is counted, and none may render a skip
+           table */
+        {
             int hi = 0, found = 0;
             const galt *ca = &gf.alt[ref.alt];
             for (int i = 0; ref.has_stop && i < ca->nspan && !found; i++) {
@@ -1021,7 +1027,7 @@ int main(int argc, char **argv)
             }
             if (found && hi < 0) {
                 ef_hwin++;
-                if (strstr(ft, "_sh[256]"))
+                if (file.p && strstr(file.p, "_sh[256]"))
                     fail(id, "D-hors scope", "a skip table over a window wholly below the candidate");
             }
         }

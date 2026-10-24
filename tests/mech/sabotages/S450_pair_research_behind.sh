@@ -14,14 +14,17 @@ SAB_ID="S450-pair-research-behind"
 SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
-SAB_DESC="the pair arm's re-search bound is '< pos' instead of '< pos + k*', so after a failed verify the stream keeps the hit that produced the candidate and the block loops on it forever"
+SAB_DESC="the pair arm's frontier raise is to 'pos' instead of 'pos + k*', so after a failed verify the stream keeps the hit that produced the candidate as its frontier and the block loops on it forever"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/c3build_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S450."
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
 SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)select" && grep -q "^#define RX_REQ_RUN \"53454c454354@4/dfdfdfdfdfdf\"" "$REACH_TMP/o.c" && grep -q "ha < pos + 4" "$REACH_TMP/o.c" && echo REACH-PAIR-ARM'
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
+# RE-AIMED 2026-10-24 (lane s3fix, the S3 final review's EMIT-1): the two streams keep
+# FRONTIERS in bounded look-aheads (ofs_pair_text); a stale hit is the frontier below the raise
+# to `at` (pos + k*), so the same defect is the raise to `pos`, planted in pair_body's `at`.
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    const char *lim = at.p;   /* the re-search bound: a hit below pos + k is stale */'
-SAB_AFTER='    const char *lim = "pos";   /* SABOTAGE S450: the re-search bound falls behind the hit */'
+SAB_BEFORE='    const ofs_pair t = { "subject", "n", "ha", "hb", "wa", "wb", "e", "q", "cand", at.p,'
+SAB_AFTER='    const ofs_pair t = { "subject", "n", "ha", "hb", "wa", "wb", "e", "q", "cand", "pos", /* SABOTAGE S450 */'
