@@ -462,6 +462,51 @@ for enc in ${ENC:-byte utf8}; do
     ci_same "$enc" '\p{Lowercase}'  '\p{Lowercase}'  "caseless \\p{Lowercase} is unchanged"
     ci_same "$enc" '\p{bc=L}'       '\p{bc=L}'       "caseless \\p{bc=L} is unchanged"
 done
+echo "== §7 the generator's coverage check is live ([UPROP-MORE]) =="
+# The generator FAILS when a promised property name has no source line (K35: a
+# population nobody counts).  A check that has never been seen failing is a
+# claim, so each cell below damages a COPY of the vendored data and demands the
+# generator's refusal by name.  The control (an undamaged copy) must pass
+# `--check`, which proves the copy is a faithful stand-in and the failures
+# below are the damage's.
+sab="$WORKDIR/sab"
+mkdir -p "$sab/third_party" "$sab/src/parse" "$sab/src/core" "$sab/src/enc"
+cp -R "$ROOT_DIR/third_party/ucd-16.0.0" "$sab/third_party/ucd-16.0.0"
+for f in src/parse/uprops_tables.inc src/core/fold_tables.inc src/core/case_tables.inc src/enc/utf8_fold_pairs.inc; do
+    cp "$ROOT_DIR/$f" "$sab/$f"
+done
+gen_sab() { python3 "$sab/third_party/ucd-16.0.0/generate.py" --check 2>&1; }
+restore() { cp "$ROOT_DIR/third_party/ucd-16.0.0/$1" "$sab/third_party/ucd-16.0.0/$1"; }
+if gen_sab >/dev/null; then ok "control: an undamaged copy of the data passes the generator's --check"
+else bad "control: an undamaged copy of the data FAILS --check, so the cells below prove nothing"; fi
+sab_cell() {    # sab_cell <file> <sed-delete-ERE> <expected message ERE> <label>
+    sed -E "/$2/d" "$ROOT_DIR/third_party/ucd-16.0.0/$1" > "$sab/third_party/ucd-16.0.0/$1"
+    out=$(gen_sab); rc=$?
+    if [ "$rc" != "0" ] && printf '%s' "$out" | grep -Eq "$3"; then ok "sabotage: $4"
+    else bad "sabotage: $4 -- rc=$rc, output: $(printf '%s' "$out" | tail -2 | tr '\n' ' ' | head -c 200)"; fi
+    restore "$1"
+}
+sab_cell PropList.txt '; Variation_Selector( |$)' "promised binary property 'Variation_Selector' has no source" \
+    "a binary property with no line in PropList.txt is refused by name"
+sab_cell emoji-data.txt '; Extended_Pictographic( |#|$)' "promised binary property 'Extended_Pictographic' has no source" \
+    "a binary property with no line in emoji-data.txt is refused by name"
+sab_cell DerivedCoreProperties.txt '; Default_Ignorable_Code_Point( |#|$)' "promised binary property 'Default_Ignorable_Code_Point' has no source" \
+    "a binary property with no line in DerivedCoreProperties.txt is refused by name"
+sab_cell DerivedBidiClass.txt '; FSI( |#|$)' "promised Bidi_Class 'FSI' has no source" \
+    "a Bidi_Class value with no line in DerivedBidiClass.txt is refused by name"
+sab_cell Blocks.txt '; Greek and Coptic' "disagree on the block list" \
+    "a block missing from Blocks.txt is refused"
+sab_cell DerivedAge.txt '; 16\.0( |#|$)' "disagree on the age list" \
+    "an age with no line in DerivedAge.txt is refused"
+# A planted WRONG ALIAS: the generator still runs, but the table it writes
+# differs from the committed one, so --check names it STALE.
+sed -E 's/^Alpha( *);/Alfa\1;/' "$ROOT_DIR/third_party/ucd-16.0.0/PropertyAliases.txt" \
+    > "$sab/third_party/ucd-16.0.0/PropertyAliases.txt"
+out=$(gen_sab); rc=$?
+if [ "$rc" != "0" ] && printf '%s' "$out" | grep -q "STALE"; then
+    ok "sabotage: a planted wrong alias (Alpha -> Alfa) makes the committed table STALE"
+else bad "sabotage: a planted wrong alias was not detected -- rc=$rc"; fi
+restore PropertyAliases.txt
 echo
 echo "uprops: $pass passed, $fail failed"
 [ "$fail" = "0" ] || exit 1
