@@ -5488,6 +5488,13 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
 size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
 
+/* The group-name CHARACTER rule both name grammars read (the scan above and
+ * the subst template's, src/parse/subst_template.c): 1 if code point `cp`
+ * is a name character (`first`: in the leading position), 0 if not, -1 when
+ * the unicode-props table it reads is missing. Ctx-free, so the template
+ * parser (no Ctx) reads the same rule. */
+int pcrec_group_name_cp(unsigned cp, bool first);
+
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
  * ports and the end-of-parse resolution pass. Design:
  * docs/design/backrefs_design.md, panel-approved at R32.

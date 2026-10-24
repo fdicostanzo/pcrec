@@ -10,7 +10,7 @@ maps, the check, the support unit, replace-all; lane substb2).
   compiler's refusals (exit 1 with a template offset), the reserved-prefix and
   mode refusals, the header contract (`#error` beside another abi's rx block,
   `-o -` self-contained, ASCII output, an rx and a subst header of one prefix
-  and `sq`/`sQ` subst headers in one TU), the utf8 template checks, the
+  and `sq`/`sQ` subst headers in one TU), the utf8 template checks, one group-name grammar on both sides, the
   subst-block prefix reservation, the option census (below), `--unset=` unknown on every path, the case-only-prefix
   `#error`; the support unit (`--emit-support` alone, refusals, identical
   bytes, ASCII, the implementation and STATIC builds); then the cells AGAIN
@@ -57,5 +57,5 @@ Without libpcre2 the oracle arms are skipped (`SKIP: subst oracle`); every
 other arm runs. Sabotage rows: S1346-S1382 (re-anchored on R4 by substb2;
 S1349, the glue's LIMIT cap, and S1364, the glue's VLA batch, were RETIRED
 with the glue), S1500-S1504, S1530-S1539 (module subst-extended and the
-composed-rx witness, lane substext), and S1580-S1582 (review r1 fixes). Maintenance: update this file when files
+composed-rx witness, lane substext), and S1580-S1583 (review r1 fixes). Maintenance: update this file when files
 are added/removed.

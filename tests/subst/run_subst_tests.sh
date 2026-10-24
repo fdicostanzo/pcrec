@@ -165,6 +165,27 @@ for t in "$(printf '[${\xc3\xa9}]')" "$(printf '[$\xc3\xa9x1]')"; do
         bad "byte template '$t' compiled (a byte >= 0x80 names nothing under byte)"
     else ok; fi
 done
+# ONE group-name grammar (pcrec_group_name_cp): under utf8 a name the pattern
+# side declares is a name the template can reference, and one it refuses the
+# template refuses too; each row's answer is libpcre2 10.46's for (?<NAME>x)
+# (U+0663 is Nd, never first; U+2170 is Nl, never a name)
+while IFS='	' read -r nm want; do
+    nm="$(printf "$nm")"
+    "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 --features named-groups -p r -o "$WORK/r.c" --pattern "(?<$nm>x)" > /dev/null 2>&1
+    a=$?
+    "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -p s -o "$WORK/r.c" --subst "\${$nm}" > /dev/null 2>&1
+    b=$?
+    if [ "$a" = "$want" ] && [ "$b" = "$want" ]; then ok
+    else bad "group name '$nm': pattern side rc $a, template side rc $b, want $want on both"; fi
+done <<'NAMES'
+\xc3\xa9	0
+a\xd9\xa3	0
+\xd9\xa3	1
+_	0
+a_1	0
+1a	1
+\xe2\x85\xb0	1
+NAMES
 # the subst-block and support-unit names reserve their families (cli.md
 # §1.6¶2 row 4), on both compile paths
 for pfx in pcrec PCREC pcrec_subst Pcrec_Subst_x pcrec_support pcrec_subst_support_id; do

@@ -18,13 +18,10 @@
  * is the subject then `1`; `${_}` IS the group named `_`).
  *
  * A GROUP NAME follows the pattern side's name grammar (PCRE2 reads one
- * grammar for both): an ASCII letter or `_` first, then letters, digits or
- * `_`; under utf8 a \p{L} first and \p{L} \p{Nd} after (K116's measured
- * rule); 1..PCREC_MAX_GROUP_NAME bytes. lane/langfix carries the pattern
- * side's copy of that rule as `pcrec_group_name_scan(Ctx *, ...)`, which
- * needs a `Ctx` this path does not have: `st_name_char` below is the same
- * rule over the same tables and UNIFIES WITH IT AT MERGE (one Ctx-free scan,
- * two readers). A bare `$name` cannot start with `_`, which is `$_`.
+ * grammar for both): `pcrec_group_name_cp` (mod_named_groups.c), the one
+ * character rule both sides read, over this template's encoding (above ASCII
+ * only under utf8); 1..PCREC_MAX_GROUP_NAME bytes. A bare `$name` cannot
+ * start with `_`, which is `$_`.
  *
  * `${!name}` and every `${...}` that is not a plain group name are parsed by
  * `src/core/varexp.c`, the grammar both `${...}` consumers share (§1.3 of
@@ -77,45 +74,33 @@ static int st_fail(pcrec_error *err, size_t at, const char *msg)
 static bool st_digit(int c) { return c >= '0' && c <= '9'; }
 static bool st_alpha(int c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
 
-/* Is `cp` in the bare Unicode property `prop` (its normalised name)? A
- * binary search of the table `\p{..}` reads. */
-static bool st_in_prop(const char *prop, unsigned cp)
-{
-    int n = 0;
-    const PcrecCpRange *iv = pcrec_uprops_span(prop, &n);
-    int lo = 0, hi = iv ? n - 1 : -1;
-    while (lo <= hi) {
-        int mid = lo + (hi - lo) / 2;
-        if (cp < iv[mid].lo) hi = mid - 1;
-        else if (cp > iv[mid].hi) lo = mid + 1;
-        else return true;
-    }
-    return false;
-}
-
 /* The byte length of the group-name character at s[i] (`first`: in the
- * leading position), 0 when there is none. A byte >= 0x80 is a name character only under utf8 (the template is
- * already known well-formed there). */
-static int st_name_char(const char *s, size_t n, size_t i, bool utf, bool first)
+ * leading position), 0 when there is none. A byte >= 0x80 is a name
+ * character only under utf8 (the template is already known well-formed
+ * there). A missing property table sets `*broken`, which refuses the whole
+ * template (pcrec_subst_parse). */
+static int st_name_char(const char *s, size_t n, size_t i, bool utf, bool first, bool *broken)
 {
     if (i >= n) return 0;
     unsigned char b = (unsigned char)s[i];
-    if (b < 0x80) return st_alpha(b) || b == '_' || (!first && st_digit(b));
+    if (b < 0x80) return pcrec_group_name_cp(b, first);
     if (!utf) return 0;
     unsigned cp;
     int len;
     if (pcrec_utf8_decode((const unsigned char *)s, n, i, &cp, &len) != PCREC_UTF8_OK)
         return 0;
-    return st_in_prop("L", cp) || (!first && st_in_prop("ND", cp)) ? len : 0;
+    int r = pcrec_group_name_cp(cp, first);
+    if (r < 0) *broken = true;
+    return r > 0 ? len : 0;
 }
 
 /* The length of the group name starting at s[i] (its first character already
  * known to be one), greedy. */
-static size_t st_name_len(const char *s, size_t n, size_t i, bool utf, int first_len)
+static size_t st_name_len(const char *s, size_t n, size_t i, bool utf, int first_len, bool *broken)
 {
     size_t j = i + (size_t)first_len;
     int len;
-    while ((len = st_name_char(s, n, j, utf, false)) > 0) j += (size_t)len;
+    while ((len = st_name_char(s, n, j, utf, false, broken)) > 0) j += (size_t)len;
     return j - i;
 }
 
@@ -217,6 +202,7 @@ typedef struct {
     const char  *s;
     size_t       n, i;
     bool         utf, ext, cased;
+    bool         broken;            /* a group-name property table is missing */
     SubstTmpl   *t;
     pcrec_error *err;
 } StParse;
@@ -504,9 +490,9 @@ static int st_seq(StParse *ps, int depth, StStop stop)
         } else if (st_digit(c)) {                   /* `$12`: greedy digits */
             i++;
             if ((num = st_number(s, n, &i)) < 0) return st_too_big(err, at);
-        } else if ((first = st_name_char(s, n, i + 1, utf, true)) > 0) {
+        } else if ((first = st_name_char(s, n, i + 1, utf, true, &ps->broken)) > 0) {
             name = s + i + 1;                       /* `$name`: greedy */
-            nlen = st_name_len(s, n, i + 1, utf, first);
+            nlen = st_name_len(s, n, i + 1, utf, first, &ps->broken);
             i += 1 + nlen;
         } else if (c == '{' && i + 2 < n && st_digit((unsigned char)s[i + 2])) {
             i += 2;                                 /* `${12}` */
@@ -526,8 +512,8 @@ static int st_seq(StParse *ps, int depth, StStop stop)
             i++;
         } else if (c == '{' && i + 2 < n && s[i + 2] == '*') {
             return st_fail(err, at, "${*MARK} is not supported: no pcrec artifact reports a mark name");
-        } else if (c == '{' && (first = st_name_char(s, n, i + 2, utf, true)) > 0
-                   && i + 2 + (nlen = st_name_len(s, n, i + 2, utf, first)) < n
+        } else if (c == '{' && (first = st_name_char(s, n, i + 2, utf, true, &ps->broken)) > 0
+                   && i + 2 + (nlen = st_name_len(s, n, i + 2, utf, first, &ps->broken)) < n
                    && (s[i + 2 + nlen] == '}' || (ps->ext && s[i + 2 + nlen] == ':'))) {
             name = s + i + 2;                       /* `${name}` */
             i += 3 + nlen;
@@ -606,8 +592,11 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, bool exte
     t->lit = pcrec_arena_alloc(a, n + 1);
     t->refs = pcrec_arena_alloc(a, (n + 1) * sizeof *t->refs);
     t->vrefs = pcrec_arena_alloc(a, (n + 1) * sizeof *t->vrefs);
-    StParse ps = { a, s, n, 0, utf, extended, false, t, err };
+    StParse ps = { a, s, n, 0, utf, extended, false, false, t, err };
     if (st_seq(&ps, 0, ST_TOP) < 0) return -1;
+    if (ps.broken)
+        return st_fail(err, 0, "internal error: the group-name rule names a property "
+                       "unicode-props does not ship");
 
     /* The CASE REGION (§4¶8) starts at the top-level item holding the first
      * case event (before one, `\E` makes none); everything before it is
