@@ -24,7 +24,7 @@ SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0 2026-10-09 (one mech row, solo): see 
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
 SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o - --pattern "(?i)select"'
-SAB_REACH_EXPECT='    size_t ha = 0, hb = 0;'
+SAB_REACH_EXPECT='    size_t ha = 0, hb = 0, wa'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam

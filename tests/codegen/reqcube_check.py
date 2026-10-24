@@ -267,7 +267,11 @@ for tag, pat, flags in WIT:
             check_block(f"{lbl} rx_reqrun", b0, run[0], run[1], run[2])
         b1 = block(text, "rx_reqrun_whole")
         if b1 is not None and whole:
-            at = int(re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b1).group(1) or 0)
+            # the scan offset: one stream's `memchr(subject + pos [+ k]`, or the pair arm's
+            # frontier raise `if (ha < pos [+ k])`
+            m = re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b1) or \
+                re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b1)
+            at = int(m.group(1) or 0) if m else -1
             check_block(f"{lbl} rx_reqrun_whole", b1, whole[0], whole[1], at)
         if tag == "k66" and (b1 is None or "&" not in b1):
             bad(f"{lbl}: the K66 site's whole-run block is missing or compares unmasked (S448)")

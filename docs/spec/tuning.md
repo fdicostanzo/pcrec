@@ -883,13 +883,13 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
         if (hb < pos + 4) hb = pos + 4;
         for (;;) {
             if (ha <= hb) {
-                if (ha >= n || subject[ha] == 67) break;
                 size_t e = n - ha > wa ? ha + wa : n;
+                if (e == ha || subject[ha] == 67) break;
                 const void *q = memchr(subject + ha, 67, e - ha);
                 if (q) { ha = (size_t)((const unsigned char *)q - subject); if (ha <= hb) break; } else { ha = e; wa += wa; }
             } else {
-                if (subject[hb] == 99) break;
                 size_t e = n - hb > wb ? hb + wb : n;
+                if (subject[hb] == 99) break;
                 const void *q = memchr(subject + hb, 99, e - hb);
                 if (q) { hb = (size_t)((const unsigned char *)q - subject); if (hb < ha) break; } else { hb = e; wb += wb; }
             }

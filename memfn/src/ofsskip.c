@@ -281,12 +281,15 @@ void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)
         const char *h = hit[i], *w = wid[i], *g = hit[1 - i];
         if (i == 0) kb_printf(o, "%s%sif (%s <= %s) {%s", I, J, t->ha, t->hb, L);
         else        kb_printf(o, "%s%s} else {%s", I, J, L);
-        /* the lower frontier is below `n` unless both are (stream a only) */
-        kb_printf(o, "%s%s%sif (%s%s%s%s%s[%s] == %d) break;%s", I, J, J,
-                  i ? "" : h, i ? "" : " >= ", i ? "" : t->n, i ? "" : " || ",
-                  t->subject, h, m[i], L);
         kb_printf(o, "%s%s%ssize_t %s = %s - %s > %s ? %s + %s : %s;%s", I, J, J,
                   t->e, t->n, h, w, h, w, t->n, L);
+        /* the lower frontier is below `n` unless both are (stream a only):
+           then its look-ahead is empty. Every pass breaks or moves a frontier
+           forward (a hit that stays the lower breaks), so the loop ends by
+           construction, whatever one comparison says */
+        kb_printf(o, "%s%s%sif (%s%s%s%s%s[%s] == %d) break;%s", I, J, J,
+                  i ? "" : t->e, i ? "" : " == ", i ? "" : h, i ? "" : " || ",
+                  t->subject, h, m[i], L);
         kb_printf(o, "%s%s%sconst void *%s = memchr(%s + %s, %d, %s - %s);%s", I, J, J,
                   t->q, t->subject, h, m[i], t->e, h, L);
         /* a hit that is still the lower frontier is the answer at once */

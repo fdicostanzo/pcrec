@@ -599,7 +599,7 @@ REQRUNK_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\
 # the pair arm's two streams (kit ofsskip.c ofs_pair_text): a frontier's raise to `pos + K`, and
 # each stream's byte in its hit test and its bounded memchr
 PAIR_GUARD_RE = re.compile(r'^(\s*if \(h[ab] < pos)(?: \+ \d+)?\) (h[ab] = pos)(?: \+ \d+)?;$')
-PAIR_TEST_RE = re.compile(r'^(\s*if \((?:h[ab] >= n \|\| )?subject\[h[ab]\] == )\d+(\) break;)$')
+PAIR_TEST_RE = re.compile(r'^(\s*if \((?:e == h[ab] \|\| )?subject\[h[ab]\] == )\d+(\) break;)$')
 PAIR_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ h[ab]), \d+, (e - h[ab]\);)$')
 PAIR_BACKOFF_RE = re.compile(r'^\s*cand -= \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')

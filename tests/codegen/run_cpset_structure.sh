@@ -1043,6 +1043,10 @@ fi
 # 29,329 -> 26,417, -2,912; 32,294 -> 27,840, -4,454; 32,694 -> 29,591,
 # -3,103): the iterator's scaffold and S3's cover text add independently.
 # The other eight rows read main's values unchanged.
+# RE-RECORDED 2026-10-24, lane s3fix (the S3 final review's EMIT-1, inside abi
+# 85), ONE ROW: `(?i)HeLLo` 29,591 -> 29,960 (+369), its B-fn helper's
+# two-stream body now searching each stream in bounded look-aheads (kit.h
+# ofs_pair); the other eleven rows unchanged. A ruled move, not a regression.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
