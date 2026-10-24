@@ -316,3 +316,136 @@ shaped like the iterland 602/603 jobs.
 - S1303 left unchanged: the findall suite's dirty arm (tests/findall/iter_drv.c) still exists; only the subst suite's was retired.
 - Mech: S1352 alone under boxlock: UNDETECTED (EXPECTED), unexpected 0.
 - STATE AT HANDOFF: committed on lane/substland; rulings file read, no entries applied. docs/dev/artifact_size_log.tsv dirty (not mine, not committed).
+
+# substr1fix (opus, 2026-10-24): the subst code review's FIX-NOW items
+
+The review is docs/dev/reviews/2026-10-24-r1-subst-code.md on main (with its Rulings section). The lane's commits
+are 5997fa4bf..HEAD on lane/substland.
+
+## STATE AT HANDOFF
+
+- The rulings file was empty (0 bytes) at every checkpoint, so no ruling entry was applied. The brief's rulings and
+  the review's Rulings section are what was applied.
+- **Done:** TPL-1, IFACE-1/2/3/4(cap < P)/5/6/7/8/9, TPL-2/3, CHK-1, CHK-4, CHK-6 (need), CHK-7, CHK-8 (token),
+  HOUSE-1, HOUSE-3, HOUSE-7 with EMIT-6, and HOUSE-8.
+- **OWED: EMIT-5** (the manager: a fresh lane once Frank rules). The analysis is below.
+- **OWED: the rx byte-identity re-run** (BASE main vs tip, the review's 72 compiles, the 6 flag variants and the
+  diagnostic probes). It did not run here: it is a sweep of more than 50 compiles plus a base build, so it is heavy,
+  and the queue was busy. The script was in /tmp/claude-1001/substr1fix/ident.sh (scratch).
+  - What the rx side changed:
+    - the pattern-side group-name predicate (HOUSE-1, no emitted text; the named_groups, backrefs, recursion and
+      utf8 corpora are 6311/0);
+    - compile_driver's prefix check (HOUSE-3, diagnostic only);
+    - prefix reservation row 4 (IFACE-5/6, spec'd);
+    - CLI refusals by presence (CHK-7, subst/support modes only).
+  - No change to rx emission code. abi stays 84; no `PCREC_ARTIFACT_ABI` reader was touched.
+- **Gates (this tree, 4b90e546f):**
+  - make strict: clean.
+  - test-subst: 8337 passed, 0 failed.
+  - test-spec-history: 11/0.
+  - test-examples: PASS.
+  - test-casemap: 19/0.
+  - test-registry: 79/0, after the fix.
+  - test-rxtsource: 0 failed, 294 files.
+  - test-subst-d27: 23/0.
+  - test-codegen: was red on K37 (the census line) and SABANCHOR (4 rows); both are fixed in 4b90e546f, the anchor
+    checker reads "all anchors resolve", and codegen was not re-run alone (618 covers it).
+
+## Per finding: what changed, and its proof
+
+- **TPL-1** (5997fa4bf): the encoding binding comes from what a template DENOTES. `enc_bound` is set by any of these:
+  - a non-ASCII byte;
+  - an escape above 0x7F;
+  - `\N{U+..}`;
+  - case forcing.
+
+  The record emits `enc_bound ? encoding : -1`, and §2¶5 is amended. Cells x1-x8 (libpcre2 10.46 via gen_cells.py)
+  cover it, and x1-x6 fail with the fix disabled. Row S1580.
+- **IFACE-5/6, HOUSE-3** (bdb72f8e2): every name in the types block and the support unit is now in the `pcrec_subst_*`
+  / `PCREC_SUBST_*` family. §1¶2 states the rule.
+  - cli.md §1.6¶2 row 4 reserves `pcrec_subst`, `pcrec_support` and `pcrec`, on both compile paths.
+  - Proof: run_subst_tests.sh refuses 6 prefixes and accepts 6.
+  - Anchors were grepped first, and rows re-aimed: S1346 S1350 S1355 S1357 S1533; S1539 went to the parser.
+  - compile_driver calls `pcrec_prefix_acceptable`, so there is one check and one message.
+- **IFACE-4 + CHK-6 + DOC** (2cbfc9e4e):
+  - replace-all with cap < P returns NOSPACE with need = P and leaves `*len` untouched. Proof: a `pshort` arm on every
+    cell; sabotage (need 0) fails 646 checks; row S1581.
+  - The room arm reads need = 2P.
+  - Spec: §10¶7/¶8, §8¶1 (with a new ¶2), §4¶11, §10¶10 (count), §2¶14a, §2¶4, §6¶8.
+- **CHK-7** (82e7a6fff): there is one presence table, MODE_ADMITS (cli/main.c). `--engine=auto`, `--tune=0` and
+  `--size-cap=degrade` are now refused, and the diagnostic names the token. Spec §5¶1, §10¶2; cli.md §1.19¶1, §1.20¶1.
+  - tests/subst/cli_option_census.py derives the population from `--help` and `--list-axes`: 97 options, 244 checks.
+    Each spelling has a positive control, and an option the census cannot spell fails the run.
+  - Sabotage: S1380 (re-aimed) fails 72 checks; the new row S1582 fails 86.
+- **CHK-8** (82e7a6fff): the token S1352 is gone from REACH_NEED and from the varunset cell.
+- **CHK-1** (7047b69e4, 2e28676ce): S1354 and S1374 now have warning-clean plants, caught by cells (unseterr fails 22
+  checks, var fails 8) with no compile error.
+  - The matrix scores a failing arm whose log shows `file:L:C: error:` (NOCOMPILE_ERE) as ANOMALY, never DETECTED.
+  - tests/mech/nocompile_selftest.sh proves the gate (the original plant reads ANOMALY, the clean plant DETECTED). It
+    runs in 619.
+  - The gate is matrix-wide. Rows elsewhere that are DETECTED only by a compile failure will now read ANOMALY in a full
+    run. That is the ruling's intent, but the count is unmeasured.
+- **CHK-4** (7047b69e4): ref_pcre2.py loads `PCREC_PCRE2_PATH` from resolve_pcre2.sh. Proof: a bogus path fails the
+  import loudly.
+- **HOUSE-1** (bb3204cdc): `pcrec_group_name_cp` is the one Ctx-free name-character rule, read by both sides. A missing
+  property table fails loudly on both sides; the template side used to be silent.
+  - A one-grammar loop of 7 names checks both sides against libpcre2 10.46's answers. S1583 fails it.
+  - S1389 is re-anchored on the shared line.
+- **HOUSE-7 + EMIT-6 + HOUSE-8** (576fadc3f, 4b90e546f):
+  - The emitted comments are ASCII.
+  - `<prefix>_region` declares only what its items read (`region_uses`); the blanket voids and the dead `sl` are
+    gone.
+  - The strict-vars loop variable is renamed j -> v, because it shadowed under -Wshadow.
+  - A 12-template x 2-encoding sweep checks ASCII and -Werror -Wshadow; it fails 28 checks on the old emitter.
+  - The case-table scan is bounded, and a missing row emits `#error` into the artifact (proved by a conditional last
+    row) rather than calling abort() inside the library.
+- **IFACE-8/9** (63098a8e8): replace_design.md §R4 changes:
+  - a build-status note;
+  - a ranked goal table, each yield named;
+  - R4.0 items 4 and 5 marked amended;
+  - §R4.2, §R4.16 and §R4.17 marked superseded.
+
+  subst_api_r4_draft.md is retired to a pointer.
+- Validation fixes (4b90e546f): the struct (the registry's numeric-constant census), the census under `$TIMEOUT_BIN`
+  (K37), and S1360/S1375/S1382/S1389 re-anchored. All 997 anchors resolve.
+
+## Re-pins (old -> new, from each check's own output)
+
+- test-subst: 7567 -> 8337 passed, 0 failed.
+- The 619 mech job runs 53 -> 59 rows: 4 new rows (S1580-S1583) plus S1388/S1389. That is 611's 53 rows plus those
+  six.
+- The option census is new: 97 options, 244 checks.
+
+## EMIT-5 (OWED): UCD 16.0.0 simple mappings vs the current libpcre2-identical table
+
+150 code points differ:
+- **60 bug-shaped.** \U gives a non-uppercase result or a mark:
+  - the review's five: U+03B9, U+03BC, U+00B5, U+01C5, U+03D0;
+  - 01C8, 01CB, 01F2;
+  - Greek 03C2 03D1 03D5 03D6 03F0 03F1 03F5;
+  - 0390, 03B0, 1FD3, 1FE3;
+  - 1C80-1C88, 1E9B;
+  - 1F88-1FFC titlecase, 1FBE;
+  - A64B, FB05, FB06.
+- **1** is ß -> 1E9E, which has no UCD simple mapping.
+- **4** are non-ASCII -> ASCII refusals: 0131, 017F, 0130, 212A.
+- **The rest** come from the category gate: 0345, Roman numerals 2160-217F (16 per direction), and circled letters
+  24B6-24E9 (26 per direction).
+
+The choices sent to the manager were (a) full UCD, 150 points, which I recommend, or (b) only the 60 bug-shaped points.
+The work, once ruled:
+- third_party/ucd-16.0.0/generate.py section 5, then `make gen-tables`;
+- case_map_check.py becomes a UCD check plus a pinned difference list;
+- restate §2¶14 and add a §9 row;
+- a docs/dev/upstream_issues.md entry;
+- the subst-extended `same` cells over those points become pcrec-only.
+
+The classifier was /tmp/claude-1001/substr1fix/ucddiff.py (scratch).
+
+## Queued jobs (OWED)
+
+- `618-substland-test` (cap 3600): make test via perfrun. Owed: `sections ran: 79/79` in job.log.make, and no
+  `*** [... test-` lines.
+- `619-substland-mech` (cap 7200): 59 rows, then nocompile_selftest.sh. Owed: `== mech run COMPLETE: 59 rows` and
+  `nocompile_selftest: DONE rc=0`. S1352 is expected to read UNDETECTED (EXPECTED).
+- The job scripts are in /tmp/claude-1001/substr1fix/jobs/ (scratch).
