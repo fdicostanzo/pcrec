@@ -5,6 +5,9 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+PART 10 (2026-10-24, lane s3pair): main 0d3765c87 merged, S3 renumbered to abi 85, light suites
+green, job 620 (from 587, reference main) queued (Part 10).
+
 PART 9 (2026-10-24): the four trailing checks job 606 left red are fixed and green alone (census
 twin rule, cpset HeLLo pin, the cover_pick reader); the K50 addition was not needed (Part 9).
 
@@ -67,6 +70,62 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 10. Merge main + abi 85 (lane s3pair, 2026-10-24)
+
+Main 0d3765c87 (167+ commits since c3ea619c3, the iterators I1+I4 at abi 84 among them) merged into
+lane/memfn-s3pair as ad8842546. S3's emitted change is now abi **85** on top of main's 84
+(450dca216); the (B) self-pin is d4c94b834; the cpset re-record, census map and job 620 are 8e4d5dafe.
+
+**Conflicts (10 files, 15 hunks), resolved on meaning.**
+
+| file | resolution |
+|---|---|
+| docs/dev/history/abi_changelog.md | main's 84 (iterators) entry and its corefix 83 wording kept; S3's entry above it (renumbered to 85 in the bump commit; main's entry now past tense, "S3 took 85") |
+| docs/dev/history/claude_md/docs__dev__lanes.md | both index lines |
+| docs/spec/match_api.md §6.3.4 (`DFA_UNIFORM_FOLDS`) | both facts: the iterator's retry machine (`0..8`) and `"cover"`'s at most `2`, apart from that retry machine |
+| tests/codegen/manifests/m5_stage1_stamps.tsv | main's values in the merge, then RE-MEASURED (below) |
+| tests/codegen/run_codegen_tests.sh | main's bump ledger; S3's step appended as 84->85 in the bump commit |
+| tests/codegen/run_cpset_structure.sh | both RE-RECORDED histories (main's, then S3's), plus the merge's re-record note |
+| tests/codegen/run_encoding_checks.sh (4) | union of the count keys: main's `forwarder`/`bind_checks`/`search_split` + S3's `cover_pick` |
+| S284 | S3's measured DETECTED record (desc + figure) plus fsfix's flip note |
+| S693 | main's re-aim, then re-aimed 85/84 in the bump commit |
+| tests/memfn/simd_guarded_check.py | S3's `simd-form` 6 + main's `scaffold-copy` 200 floors |
+
+**abi readers found by grep** (`git grep` for the number's spellings over src lib cli memfn tests
+docs/spec Makefile, then the S3 commit's own `+…84` lines): 13 sites in 7 files. `src/gen/emit_dfa.c`
+`PCREC_ARTIFACT_ABI`; match_api.md §1¶7's guard sample (3 spellings: `!= 85`, `(abi 85)`,
+`PCREC_RX_ABI_H 85`), §6¶1's `abi` row, §6¶17's sentence; `ABI_EXPECT` + its bump-ledger message;
+S693 `SAB_BEFORE`/`SAB_AFTER` + comment; abi_changelog (S3 entry, main's entry tense);
+`run_recursion_identity.sh` FILEPIN self-pinned to 450dca216 (the manager re-pins to the landing
+merge); `s3_evidence/census.py`'s ABI map (85 -> 84, the job's reference is main at 84).
+bytediff.sh masks `8[0-9]` and needed no change. Historical mentions (NOTES, journals, design
+docs, other lanes' reports) are records and were not edited.
+
+**Re-measured pin.** m5_stage1_stamps.tsv: the four `cover` rows read RX_DFA_PREFILTER "none" and
+EMITTED_BYTES main's value minus EXACTLY the pre-merge S3 delta (`a` 28,498 -> 26,094, -2,404;
+`abc` 29,329 -> 26,417, -2,912; `\bword\b` 32,294 -> 27,840, -4,454; `(?i)HeLLo` 32,694 -> 29,591,
+-3,103); the other eight rows are main's. `simd-form` now reads 7 against its floor 6 (not raised:
+a floor, and the extra member is not S3's to explain here).
+
+**Suites** (each alone under `scripts/boxlock run`, `make -k`, verdict read with
+`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`; logs `worktrees/s3pair/build/s3pair_suites/`):
+`make -j16` and `make strict` clean. test-cpset-structure RED on the first pass (the manifest
+drift above, merge-caused), GREEN on the re-run after the re-record (29+17+59 passed, 0 failed).
+test-encoding-checks, test-registry, test-rxtsource, test-codegen, and the kit's sections
+test-memfn-{manifest,arch,forms,reach,link,stamps,guarded,simdfloor,rank,arms,deleg,rows,finder,g2}:
+all GREEN (no red line). No answer moved anywhere.
+
+**Job 620** (`docs/dev/lanes/s3_job_620-kit-s3-heavy`, from 587): reference = main 0d3765c87, the
+subject = this branch's HEAD at run time (dry-run refuses a tip that does not contain 0d3765c87 or
+is not at abi 85). The r2 stages against the C1 tip ae83da9d4 (c1ref, census_r2, evidence_r2) are
+DROPPED: that tip predates the iterators, so every artifact would differ from it by the iterator's
+text; the census and the byte-diff against main cover S3's whole delta. 16 steps (was 19), the
+same 126 mech rows. Pre-checks against a main build (`build/s3pair_ref`): bytediff 29 rows 0
+disagree on both arms (the predicted set needed no refresh: the iterators moved no member);
+list-axes delta 5 rows as declared; a census smoke `--limit 40` (960 compiles) `unexpected=0`.
 
 ---
 
