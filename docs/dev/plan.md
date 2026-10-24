@@ -243,14 +243,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
 - [FLAG-SPELL] STATE:started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
   filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
-  status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
-  next: lane flagfix (2026-10-24, Frank's go on the three-effort plan): general form = drop empty nodes from concatenations (also (?:)abc), not a flag special case
+  status (2026-10-24): landed 187608482 (flagfix): p_cat drops an empty with no reg stamp, (?i)abc == (?i:abc); jobs 615 test, 617 mech green
+  next: main's first full make test after the landings (owed, manager queues); then the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly; follow-up (not built): req.c run reset on an empty mid-CAT
   refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
   Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
 - [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
   filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
-  status (2026-10-24): design docs/design/uprop_more.md; Frank's rulings D178 (vendor 5 UCD files; Block+Age as extensions; ship large ones; Unicode-defined only); build lane upropb
-  next: land upropb; a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
+  status (2026-10-24): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; design uprop_more.md, D178
+  next: main's first full make test after the landings (owed); a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
   refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
   Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
 - [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
