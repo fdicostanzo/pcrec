@@ -265,3 +265,37 @@ None (the stop). After the ruling: 610-substland-test (make test via
 perfrun) and 611-substland-mech (S1500 + the subst arm, plus the
 definitions.c rows S334 S336 S1195, S1381, S1538 the previous lane listed),
 shaped like the iterland 602/603 jobs.
+
+# substland3 (sonnet, 2026-10-24): dirty arm retired, ¶9a restated, jobs queued
+
+## STATE AT HANDOFF
+
+- Rulings file: empty (0 bytes) at every checkpoint, so no entry to quote;
+  the brief's ruling of 2026-10-24 is what was applied.
+- Premise test held: test-subst on the tip showed the 4 dirty-arm failures
+  (substland2's log); no new cause.
+- **Done:** the driver's `dirty` arm, its reach token (REACH_NEED `subst` and
+  `subst-extended`), run_subst_tests.py's expectations and docstring, and
+  tests/subst/CLAUDE.md line are gone; `iter_fresh`/`rec_ra` lost their
+  `dirty` parameter, with a one-line note naming match_api §3.8¶5 and
+  6eef1c312. No `src/` change. match_api §3.8¶9a restated: `s`, `n`, `vars`,
+  `nvars` hold valid values in every state (`RX_ITER_INIT` writes them, ¶5;
+  `rx_iter_vars` sets the last two while FRESH). Main has no ¶9a; the
+  overlap with main is ¶5 (its wording is cited, not restated). Grep of
+  subst_api.md / match_api.md for "normalizes" / "may hold any value":
+  nothing else left.
+- **Gates:** test-subst GREEN, 7567 passed / 0 failed (fewer than the
+  scratch run's 7841 because the dirty arm's checks are gone, not only
+  disabled); make strict clean; test-spec-history 11/0; test-subst-d27 23/0 (cli pass=89);
+  
+- **FLAG for the manager (not fixed):** two sabotage rows still name the
+  dirty arm as their witness. S1352 (`tests/mech/sabotages/S1352_*.sh`, plant:
+  ctx_init reads `it->vars` on a FRESH iterator) was detected only by that
+  arm; with `RX_ITER_INIT` writing NULL/0 the plant may now be an equivalent
+  mutant (UNDETECTED in 611). S1303 (findall suite, not subst) also cites it
+  in a comment. I did not edit either; 611 includes S1352 and will say.
+  My own attempt to run S1352 alone waited on the box lock (held by
+  620-kit-s3-heavy) and was killed by safekill.
+
+## Queued jobs (OWED)
+See the end of this section for keys, logs and completion lines (filled when queued).

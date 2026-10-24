@@ -1097,13 +1097,11 @@ written, and it holds what it held before the call (for a BOUND iterator
 whose setter was refused, the position its next search would have started
 at). Every other field's value is unspecified to the caller.
 
-<a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s` and `n` hold their bound
-values in every state. `vars` and `nvars` hold theirs once the iterator is
-BOUND (the first call normalizes them) and, while it is FRESH, only if
-`rx_iter_vars` was called (`PCREC_ITER_OPT_VARS` set in `hdr`). The shared
+<a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s`, `n`, `vars` and `nvars` hold valid
+values in every state: `RX_ITER_INIT` writes all of them (¶5), and
+`rx_iter_vars` sets the last two while the iterator is FRESH. The shared
 block that reads them, the subst types block's context setup
-(`docs/spec/subst_api.md` §7¶3), reads exactly these fields under exactly
-these conditions; a caller still reads none of them, and uses `rx_subst_ctx_init`
+(`docs/spec/subst_api.md` §7¶3), reads exactly these fields; a caller still reads none of them, and uses `rx_subst_ctx_init`
 where it needs a context.
 
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an

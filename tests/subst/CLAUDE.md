@@ -29,7 +29,7 @@ maps, the check, the support unit, replace-all; lane substb2).
 - `subst_drv.c` — the driver (its header lists every arm): per cell the
   check over the by-name helper's map (and against an abi + 1 record, and
   with no map), the spec's per-match, batch and generic (rx_info.next) recipes,
-  replace-all (fits, size-only, exact, one short, dirty iterator, ENDED
+  replace-all (fits, size-only, exact, one short, ENDED
   iterator), no map and a hand map, the element's refusals (room, a slot
   past ncap, an unknown flag, an end past len, variables), a NOGROUP map
   under STRICT, the element without GAPS, and `pcre2_substitute` (GLOBAL or

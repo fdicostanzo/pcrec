@@ -35,8 +35,6 @@
  *   size   replace-all with out == NULL, cap == 0: rc, *len
  *   exact  replace-all at cap == its length: rc, *len
  *   short  replace-all at cap == its length - 1 (when >= 1): rc, *len
- *   dirty  every rx_iter field RX_ITER_INIT does not write holds 0xA5, then
- *          replace-all: rc, *len, output
  *   nomap  (no named reference, rx not composed) the per-match recipe with
  *          map NULL: rc, length, output; or the setup's code
  *   hand   (no named reference) a hand-filled map with runs: the same
@@ -145,16 +143,13 @@ static rx_var *parse_vars(char *s, size_t *nv)
 
 static size_t g_start;   /* the cell's @START, 0 without one */
 
-/* A FRESH iterator over s[0, n), every field RX_ITER_INIT leaves alone set
- * to 0xA5 when `dirty`, with the variables and the cell's start applied. */
-static void iter_fresh(rx_iter *it, const unsigned char *s, size_t n, int dirty,
+/* A FRESH iterator over s[0, n), with the variables and the cell's start
+ * applied. (No dirty-iterator arm: RX_ITER_INIT writes every field, match_api
+ * §3.8¶5, main 6eef1c312, so no field is left for a caller to leave unset.) */
+static void iter_fresh(rx_iter *it, const unsigned char *s, size_t n,
                        const rx_var *v, size_t nv)
 {
-    if (dirty) {
-        memset(it, 0xA5, sizeof *it);
-        it->hdr = PCREC_ITER_FRESH; it->s = s; it->n = n;
-    } else
-        *it = RX_ITER_INIT(s, n);
+    *it = RX_ITER_INIT(s, n);
     if (v) rx_iter_vars(it, v, nv);
     if (g_start) rx_iter_at(it, g_start);
 }
@@ -285,9 +280,9 @@ static int rec_generic(const Cell *c, const rx_subst_map *map, rx_iter *it,
     return rc;
 }
 
-/* rx_subst_replace_all over a fresh iterator (dirty or not): the setup,
+/* rx_subst_replace_all over a fresh iterator : the setup,
  * then the call into out[0, cap). */
-static int rec_ra(const Cell *c, const rx_subst_map *map, int dirty,
+static int rec_ra(const Cell *c, const rx_subst_map *map,
                   unsigned char *out, size_t cap, size_t *len)
 {
     rx_var vres[64];
@@ -296,7 +291,7 @@ static int rec_ra(const Cell *c, const rx_subst_map *map, int dirty,
     int bad, rc;
     rx_subst_piece *pc = malloc((size_t)(64 * c->sb->npieces) * sizeof *pc);
     rx_subst_out o = { .pc = pc, .cap = (size_t)(64 * c->sb->npieces), SCR };
-    iter_fresh(&it, c->s, c->n, dirty, c->v, c->nv);
+    iter_fresh(&it, c->s, c->n, c->v, c->nv);
     *len = 0;
     rc = rx_subst_ctx_init(&ctx, &it, c->rx, c->sb, map, vres, c->strict, &bad);
     if (rc == 0)
@@ -443,7 +438,7 @@ int main(void)
         rx_iter it;
         int crc = pcrec_subst_map_names(sb, rx, 0, slot, 1024, run, 512, &map, &bad, &na);
         if (crc == 0) {
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             crc = rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, c.strict, &bad);
         }
         printf("%s\tnc=%d\tcheck=%d,%d", f[0], rx->ncaps, crc, bad);
@@ -461,7 +456,7 @@ int main(void)
         int mainrc = crc;
         if (crc != 0) goto oracle_arm;
 
-        iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+        iter_fresh(&it, c.s, c.n, c.v, c.nv);
         int rc = rec_next(&c, &map, c.strict | RX_SUBST_GAPS, limit, &it, out, &len, &k);
         mainlen = len;
         mainrc = rc;
@@ -470,40 +465,38 @@ int main(void)
         if (!all) {
             rx_iter ref;
             ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
-            iter_fresh(&ref, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&ref, c.s, c.n, c.v, c.nv);
             for (size_t j = 0; j < limit && rx->next(&ref, caps); j++) {}
             free(caps);
             printf("\tlim=%zu:%x,%zu:%x", it.lo, (unsigned)it.hdr, ref.lo, (unsigned)ref.hdr);
         } else {
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             rc = rec_batch(&c, &map, &it, out2, &len);
             arm("batch", rc, len, out2);
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             rc = rec_generic(&c, &map, &it, out2, &len);
             arm("gen", rc, len, out2);
-            rc = rec_ra(&c, &map, 0, out2, OUTMAX, &len);
+            rc = rec_ra(&c, &map, out2, OUTMAX, &len);
             arm("ra", rc, len, out2);
             int rarc = rc;
             size_t ralen = len;
-            rc = rec_ra(&c, &map, 0, NULL, 0, &len);
+            rc = rec_ra(&c, &map, NULL, 0, &len);
             printf("\tsize=%d,%zu", rc, len);
             if (rarc >= 0) {
                 unsigned char *ex = malloc(ralen + 1);   /* exact: ASan sees an overrun */
-                rc = rec_ra(&c, &map, 0, ralen ? ex : NULL, ralen, &len);
+                rc = rec_ra(&c, &map, ralen ? ex : NULL, ralen, &len);
                 printf("\texact=%d,%zu", rc, len);
                 if (ralen) {
-                    rc = rec_ra(&c, &map, 0, ex, ralen - 1, &len);
+                    rc = rec_ra(&c, &map, ex, ralen - 1, &len);
                     printf("\tshort=%d,%zu", rc, len);
                 }
                 free(ex);
             }
-            rc = rec_ra(&c, &map, 1, out2, OUTMAX, &len);
-            arm("dirty", rc, len, out2);
             {   /* stale: replace-all over an ENDED iterator */
                 rx_subst_piece pc1[64];
                 rx_subst_out o = { .pc = pc1, .cap = 64, SCR };
                 ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
-                iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+                iter_fresh(&it, c.s, c.n, c.v, c.nv);
                 (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
                 while (rx->next(&it, caps)) {}
                 printf("\tstale=%d", (int)sb->npieces <= 64
@@ -512,7 +505,7 @@ int main(void)
             }
         }
         if (!has_names(sb)) {
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             rc = rec_next(&c, NULL, c.strict | RX_SUBST_GAPS, limit, &it, out2, &len, &k);
             arm("nomap", rc, len, out2);
             int hs[512];
@@ -523,7 +516,7 @@ int main(void)
                 hr[r].count = 1;
             }
             rx_subst_map hm = { hs, (size_t)sb->nrefs, hr, (size_t)sb->nrefs };
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             rc = rec_next(&c, &hm, c.strict | RX_SUBST_GAPS, limit, &it, out2, &len, &k);
             arm("hand", rc, len, out2);
         }
@@ -531,7 +524,7 @@ int main(void)
             rx_subst_piece *pc = malloc((size_t)(2 * sb->npieces + 1) * sizeof *pc);
             ptrdiff_t (*caps)[2] = malloc((size_t)(2 * rx->ncaps) * sizeof *caps);
             rx_subst_out o = { .pc = pc, .cap = 2 * (size_t)sb->npieces - 1, .n = 0, .prev = 0, SCR };
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
             for (int j = 0; j < 2 * rx->ncaps; j++) caps[j][0] = caps[j][1] = -1;
             caps[0][0] = 0; caps[0][1] = 0;
@@ -579,7 +572,7 @@ int main(void)
             int ns[512];
             for (int r = 0; r < sb->nrefs && r < 512; r++) ns[r] = RX_SUBST_NOGROUP;
             rx_subst_map nm = { ns, (size_t)sb->nrefs, NULL, 0 };
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             rc = rec_next(&c, &nm, RX_SUBST_STRICT | RX_SUBST_GAPS, limit, &it, out2, &len, &k);
             arm("nog", rc, len, out2);
         }
@@ -587,14 +580,14 @@ int main(void)
             printf("\tvmis=%d,%d", element_vars(&c, &map, 1), element_vars(&c, &map, 2));
             if (c.strict) printf("\tvuerr=%d", element_vars(&c, &map, 3));
         }
-        iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+        iter_fresh(&it, c.s, c.n, c.v, c.nv);
         rc = rec_next(&c, &map, c.strict, limit, &it, out2, &len, &k);
         arm("nogap", rc, len, out2);
         if (sb->uses & RX_SUBST_USES_SCRATCH) {   /* scr: scratch of exactly sneed (§4¶14) */
             rx_subst_piece *pc = malloc((size_t)sb->npieces * sizeof *pc);
             ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
             rx_subst_out o = { .pc = pc, .cap = (size_t)sb->npieces, .scratch = scr, .scap = 0 };
-            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            iter_fresh(&it, c.s, c.n, c.v, c.nv);
             (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
             if (rx->next(&it, caps)) {
                 int r0 = sb->render(&ctx, &map, caps, 1, RX_SUBST_GAPS, &o);
