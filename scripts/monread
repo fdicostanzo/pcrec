@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# monread -- reader of the queuemon journal ([MON-SCRIPT]).
+#   scripts/monread OWNER [--wait] [--peek]
+# Prints OWNER's lines (field 3 of worktrees/.mgr/monitor.log) after its cursor, DIR/monitor.cursor.OWNER (a line
+# count), and advances the cursor; --peek does not advance; --wait blocks until at least one new line for OWNER
+# (run it as a background Bash wait: it exits -> one notification). Liveness: if a job is pending/running and
+# queuemon's pid is dead or the log has been silent past cap + margin, prints `<time> PROBLEM main monitor
+# dead/stale ...` (also ends --wait). Env: QUEUEMON_DIR, QUEUEMON_Q (the queue dir), QUEUEMON_CAP (3000),
+# QUEUEMON_MARGIN (300), MONREAD_EVERY (poll s, 5).
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+main=$(dirname "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
+D=${QUEUEMON_DIR:-$main/worktrees/.mgr}
+LOG=$D/monitor.log
+owner=${1:-}; [ -n "$owner" ] || { sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 64; }
+shift; wait_=0 peek=0
+for a in "$@"; do case $a in --wait) wait_=1 ;; --peek) peek=1 ;; *) echo "monread: unknown $a" >&2; exit 64 ;; esac; done
+cur=$D/monitor.cursor.$owner
+
+stale() { # prints the PROBLEM line when the monitor is needed and not alive
+    local q act=0 pid age lim=$(( ${QUEUEMON_CAP:-3000} + ${QUEUEMON_MARGIN:-300} )) why=""
+    q=${QUEUEMON_Q:-$(bash "$here/boxqueue" path 2>/dev/null)}
+    [ -d "$q" ] && { [ -n "$(ls -p "$q/pending" 2>/dev/null | grep -v /)" ] || [ -n "$(ls -A "$q/running" 2>/dev/null)" ]; } && act=1
+    [ $act = 1 ] || return 1
+    pid=$(sed -n 's/^pid=//p' "$D/queuemon.pid" 2>/dev/null)
+    if [ -z "$pid" ] || [ ! -d "/proc/$pid" ]; then why="queuemon pid ${pid:-none} is not running"
+    else
+        age=$(( $(date +%s) - $(stat -c %Y "$LOG" 2>/dev/null || echo 0) ))
+        [ "$age" -gt "$lim" ] && why="monitor.log silent ${age}s (> cap+margin ${lim}s)"
+    fi
+    [ -n "$why" ] || return 1
+    printf '%s PROBLEM main monitor dead/stale: %s while a job is queued/running (scripts/queuemon start)\n' "$(date -Iseconds)" "$why"
+}
+while :; do
+    c=$(cat "$cur" 2>/dev/null || echo 0)
+    t=$(wc -l < "$LOG" 2>/dev/null || echo 0)
+    new=$(awk -v c="$c" -v t="$t" -v o="$owner" 'NR > c && NR <= t && $3 == o' "$LOG" 2>/dev/null)
+    s=$(stale); [ -n "$new" ] && printf '%s\n' "$new"
+    [ -n "$s" ] && printf '%s\n' "$s"
+    if [ "$peek" = 0 ]; then mkdir -p "$D"; printf '%s\n' "$t" > "$cur"; fi
+    { [ -n "$new" ] || [ -n "$s" ] || [ "$wait_" = 0 ]; } && exit 0
+    sleep "${MONREAD_EVERY:-5}"
+done
