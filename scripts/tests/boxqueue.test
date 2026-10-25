@@ -511,5 +511,139 @@ if P=$(plant reexec-midjob "$OLDG" "${OLDG/idle-ok)/idle-okold)}" '    [ -z "$(l
     stoprunner
 else bad "plant reexec-midjob did not land"; fi
 
+# 25. [BENCH-RESERVE] bench windows: an inbox of <name>.window files becomes placeholder jobs that hold the box lock
+# while a FAKE bench runner (a background shell here) writes its own log. A scratch inbox + log root, a scratch
+# queue; nothing of the real bench is touched. Placeholder = scripts/boxqueue_window (fixed), params parsed only.
+export BOXQUEUE_WINDOW_SETTLE=0 BOXQUEUE_WINDOW_POLL=0.2
+NOW_RE='[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:+-]+'
+benchq() { newq; export BOXQUEUE_INBOXES=$T/inboxes.cfg; rm -rf "$T/bench"; mkdir -p "$T/bench/inbox"; printf '# test\n%s %s\n' "$T/bench/inbox" "$T/bench" > "$T/inboxes.cfg"; }
+# mkwin NAME [k=v | -k | +RAWLINE]...: a default-good window; k=v replaces/adds, -k deletes, +LINE appends verbatim
+mkwin() {
+    local nm=$1 f=$T/bench/inbox/$1.window a k raw=()
+    shift
+    declare -A kv=([prio]=750 [name]=$nm [cap]=30 [patience]=60 [log]=$T/bench/$nm.log [start_s]=10 [done_ere]='^BENCH_WINDOW_COMPLETE rc='
+        [expect]=0 [witness]='BENCH_WINDOW_COMPLETE rc=0' [fail_ere]='^BENCH_WINDOW_FAIL')
+    for a in "$@"; do case $a in -*) unset "kv[${a#-}]" ;; +*) raw+=("${a#+}") ;; *=*) kv[${a%%=*}]=${a#*=} ;; esac; done
+    : > "$f"; for k in "${!kv[@]}"; do printf '%s=%s\n' "$k" "${kv[$k]}" >> "$f"; done
+    for a in ${raw[@]+"${raw[@]}"}; do printf '%s\n' "$a" >> "$f"; done
+}
+rstate() { cat "$Q/reservations/$1.state" 2>/dev/null; }
+# fakebench JOBNAME LOGNAME TEXT [DELAY]: once RUNNING, note whether the box lock is held, then (after DELAY) append TEXT
+fakebench() {
+    ( local n=$1 lg=$T/bench/$2.log txt=$3 dl=${4:-0.5} i
+      for i in $(seq 300); do grep -q '^RUNNING' "$Q/reservations/$n.state" 2>/dev/null && break; sleep 0.05; done
+      bash "$BL" status > /dev/null 2>&1; echo "held=$?" >> "$T/lock.$n"
+      sleep "$dl"; [ -n "$txt" ] && printf '%b' "$txt" >> "$lg"; true ) &
+    kids+=($!)
+}
+# sampler JOBNAME: every distinct first word of the state file, in order, to $T/hist.JOBNAME (until DONE)
+sampler() {
+    ( local n=$1 last="" w i; : > "$T/hist.$n"
+      for i in $(seq 600); do w=$(cut -d' ' -f1 "$Q/reservations/$n.state" 2>/dev/null)
+          [ -n "$w" ] && [ "$w" != "$last" ] && { echo "$w" >> "$T/hist.$n"; last=$w; }
+          [ "$w" = DONE ] && break; sleep 0.05; done ) &
+    kids+=($!)
+}
+COMPLETE='BENCH_WINDOW_COMPLETE rc=0\n'
+# 25a. green: state RUNNING then DONE green, lock held at the RUNNING sample, job green, queue.log carries owner=bench
+benchq; rm -f "$T"/lock.* "$T"/hist.*
+mkwin g1; sampler 750-bench-g1; fakebench 750-bench-g1 g1 "$COMPLETE"; run1
+S=$(rstate 750-bench-g1)
+[[ $S =~ ^DONE\ green\ $NOW_RE\ WINDOW-COMPLETE\ n=0$ ]] && [ "$(st bench-g1)" = green ] && [ "$(cat "$T/lock.750-bench-g1")" = held=1 ] \
+    && [ "$(grep -E 'RUNNING|DONE' "$T/hist.750-bench-g1" | tr '\n' ' ')" = 'RUNNING DONE ' ] \
+    && has '^== bench window g1 IMPORTED as 750-bench-g1 ' && has '^== job 750-bench-g1 START owner=bench ' && has '^== job 750-bench-g1 END rc=0 outcome=green ' \
+    && bash "$BL" status > /dev/null 2>&1 && ok "bench window: imported, RUNNING (lock held), DONE green; the job is green; START/END logged with owner=bench; lock free after" \
+    || bad "25a green: state='$S' job=$(st bench-g1) lock=$(cat "$T/lock.750-bench-g1" 2>/dev/null) hist=$(tr '\n' ' ' < "$T/hist.750-bench-g1") :: $(ql | tail -5)"
+[[ $(ls -A "$Q/reservations") == 750-bench-g1.state ]] && ok "reservations/ holds only the state file (tmp files are gone)" || bad "reservations: $(ls -a "$Q/reservations")"
+# 25b. red POPULATION (N != expect)
+benchq; rm -f "$T"/lock.*
+mkwin r1; fakebench 750-bench-r1 r1 'BENCH_WINDOW_COMPLETE rc=3\n'; run1
+S=$(rstate 750-bench-r1); [[ $S =~ ^DONE\ red\ $NOW_RE\ POPULATION\ n=3\ expect=0$ ]] && [ "$(st bench-r1)" = failed ] \
+    && ok "bench window: done line N=3 != expect=0 -> DONE red POPULATION, job failed" || bad "25b red: '$S' $(st bench-r1)"
+# 25c. fail_ere line ends the window early (BENCH-FAIL), before any done line
+benchq; rm -f "$T"/lock.*
+mkwin f1 cap=20; fakebench 750-bench-f1 f1 'progress\nBENCH_WINDOW_FAIL oops\n'; run1
+S=$(rstate 750-bench-f1); [[ $S =~ ^DONE\ failed\ $NOW_RE\ BENCH-FAIL$ ]] && [ "$(st bench-f1)" = failed ] \
+    && ok "bench window: a fail_ere line -> DONE failed BENCH-FAIL" || bad "25c fail: '$S'"
+# 25d. no log within start_s
+benchq; mkwin n1 start_s=1; run1
+S=$(rstate 750-bench-n1); [[ $S =~ ^DONE\ failed\ $NOW_RE\ NO-START ]] && ok "bench window: no log within start_s -> DONE failed NO-START" || bad "25d no-start: '$S'"
+# 25e. cap: the log exists but never completes; boxqueue's cap TERM is written as CAP-FIRED and the lock is released
+benchq; rm -f "$T"/lock.*
+mkwin c1 cap=3 start_s=50; fakebench 750-bench-c1 c1 'started\n'; run1
+S=$(rstate 750-bench-c1); [[ $S =~ ^DONE\ failed\ $NOW_RE\ CAP-FIRED\ \(3s\)$ ]] && bash "$BL" status > /dev/null 2>&1 && has 'job 750-bench-c1 END rc=124 outcome=failed reason=CAP-FIRED' \
+    && ok "bench window: cap -> DONE failed CAP-FIRED, job rc=124 CAP-FIRED, lock released" || bad "25e cap: '$S' :: $(ql | tail -3)"
+# 25f. a log that already exists when the window begins is stale: refused, never read
+benchq; mkwin s1; echo 'BENCH_WINDOW_COMPLETE rc=0' > "$T/bench/s1.log"; run1
+S=$(rstate 750-bench-s1); [[ $S =~ ^DONE\ failed\ $NOW_RE\ STALE-LOG ]] && ok "bench window: a pre-existing log -> DONE failed STALE-LOG" || bad "25f stale: '$S'"
+# 25g. cancel while queued (the .cancel is there before the pass asks): DONE cancelled, never RUNNING
+benchq; mkwin x1; : > "$T/bench/inbox/x1.cancel"; run1
+S=$(rstate 750-bench-x1); [[ $S =~ ^DONE\ cancelled\ $NOW_RE ]] && [ "$(st bench-x1)" = cancelled ] && ! has 'job 750-bench-x1 START' \
+    && ok "bench window: .cancel while queued -> DONE cancelled, job cancelled, never started" || bad "25g cancel-queued: '$S' $(st bench-x1)"
+# 25h. cancel while RUNNING: DONE cancelled, lock released
+benchq; rm -f "$T"/lock.*
+mkwin x2; ( for i in $(seq 300); do grep -q '^RUNNING' "$Q/reservations/750-bench-x2.state" 2>/dev/null && break; sleep 0.05; done; sleep 0.5; : > "$T/bench/inbox/x2.cancel" ) & kids+=($!)
+run1; S=$(rstate 750-bench-x2)
+[[ $S =~ ^DONE\ cancelled\ $NOW_RE ]] && bash "$BL" status > /dev/null 2>&1 && ok "bench window: .cancel while RUNNING -> DONE cancelled, lock released" || bad "25h cancel-running: '$S'"
+# 25i. lock held <=> RUNNING: another holder has the lock, so the imported window stays QUEUED (never RUNNING)
+benchq; mkwin q1
+bash "$BL" run --label other-holder -- sleep 6 > /dev/null 2>&1 & kids+=($!); sleep 0.5
+run1; S=$(rstate 750-bench-q1)
+[[ $S =~ ^QUEUED\ $NOW_RE$ ]] && [ "$(st bench-q1)" = pending ] && ok "bench window: lock busy elsewhere -> state QUEUED (not RUNNING), job pending" || bad "25i queued: '$S' $(st bench-q1)"
+sleep 6
+# 25j. once per name: the same name with new content is refused, the first window's state is untouched; a deleted .window is a withdrawal
+benchq; mkwin o1; fakebench 750-bench-o1 o1 "$COMPLETE"; run1
+S1=$(rstate 750-bench-o1); mkwin o1 cap=31; run1; S2=$(rstate 750-bench-o1)
+[ "$S1" = "$S2" ] && has 'bench window o1 REFUSED: the name was already imported' && [ "$(ls "$Q/done" | grep -c -- '-bench-o1$')" = 1 ] \
+    && ok "bench window: a re-used name is refused with a log line; state and job untouched" || bad "25j once: '$S1' / '$S2' :: $(ql | tail -3)"
+benchq; mkwin w1; rm "$T/bench/inbox/w1.window"; run1
+[ -z "$(ls -A "$Q/reservations" 2>/dev/null)" ] && [ -z "$(ls "$Q/pending")" ] && ok "bench window: a .window deleted before import is a withdrawal (nothing queued)" || bad "25j withdraw"
+# 25k. every reject reason (state DONE failed REJECTED when name+prio are usable; a log line always)
+benchq; rm -f "$T"/pwn*
+mkwin ru +bogus=1;                                  mkwin rm -cap;                           mkwin rn cap=ten
+mkwin rp1 prio=650;                                 mkwin rp2 prio=900;                      mkwin rc0 cap=0
+mkwin rs0 start_s=0;                                mkwin ri0 idle_ok=0;                     mkwin rnm 'name=a$b'
+mkwin rdd name=rdd--x;                              mkwin rmm name=other;                    mkwin rlr log=rel.log
+mkwin rlo log=/etc/passwd;                          mkwin rlt "log=$T/bench/../x.log";       mkwin rls "log=$T/bench/a b.log"
+mkwin rcr $'+x=1\r';                                mkwin rtb $'+x=1\t';                     mkwin rnl "+; touch $T/pwn_nl"
+mkwin rdup +cap=40;                                 mkwin rere1 'done_ere=(';                mkwin rere2 'done_ere=^DONE$'
+mkwin rwit 'witness=BENCH_WINDOW_COMPLETE rc=5';    mkwin rinj "done_ere=^X\$(touch $T/pwn_inj)"
+printf 'prio=750\n%05000d\n' 0 > "$T/bench/inbox/rbig.window"
+ln -s /etc/passwd "$T/bench/inbox/rsym.window"
+run1
+chk=0
+for row in 'ru|unknown key' 'rm|missing required key' 'rn|cap is not an integer' 'rp1|prio 650 outside' 'rp2|prio 900 outside' 'rc0|cap must be at least 1' \
+    'rs0|start_s must be at least 1' 'ri0|idle_ok must be at least 1' 'rnm|name is not' 'rdd|name contains' 'rmm|differs from the file name' 'rlr|log is not an absolute' \
+    'rlo|log is not an absolute' 'rlt|log is not an absolute' 'rls|log is not an absolute' 'rcr|control character' 'rtb|control character' 'rnl|not key=value' \
+    'rdup|duplicate key' 'rere1|done_ere is not a valid ERE' 'rere2|add refused' 'rwit|add refused' 'rinj|add refused' 'rbig|larger than 4096' 'rsym|symlink'; do
+    nm=${row%%|*}; re=${row#*|}
+    has "bench window $nm REJECTED: .*$re" || { bad "25k reject $nm: no log line matching '$re' :: $(ql | grep "window $nm " | head -2)"; chk=1; }
+done
+[ $chk = 0 ] && ok "every reject reason logged (25 windows: unknown/missing key, non-integer, prio range, zero cap/start_s/idle_ok, name chars/--/mismatch, log shape/root/.., CR/TAB, extra line, duplicate, bad ERE, ERE ending in \$, witness count, oversize, symlink)"
+[ -z "$(ls "$Q/pending")" ] && [ ! -e "$T/pwn_nl" ] && [ ! -e "$T/pwn_inj" ] && ok "rejects queue nothing and run nothing" || bad "25k: pending=$(ls "$Q/pending") pwn=$(ls "$T" | grep pwn)"
+[[ $(rstate 750-bench-ru) =~ ^DONE\ failed\ $NOW_RE\ REJECTED:\ unknown\ key ]] && [ ! -e "$Q/reservations/650-bench-rp1.state" ] \
+    && ok "a reject with a usable name+prio is told to the bench (DONE failed REJECTED: reason); an unusable prio gets no state file" || bad "25k state: '$(rstate 750-bench-ru)'"
+# 25l. a MALICIOUS but valid window runs nothing: shell metacharacters live only in data fields (fail_ere, witness text)
+benchq; rm -f "$T"/pwn*
+MALF="^FAIL\$(touch $T/pwn1) \`touch $T/pwn2\`;touch $T/pwn3|touch $T/pwn4"
+mkwin m1 "fail_ere=$MALF" "witness=BENCH_WINDOW_COMPLETE rc=0 \$(touch $T/pwn5) \`touch $T/pwn6\` ;touch $T/pwn7"
+fakebench 750-bench-m1 m1 "BENCH_WINDOW_COMPLETE rc=0 \$(touch $T/pwn8) \`touch $T/pwn9\`\\n"; run1
+S=$(rstate 750-bench-m1); [[ $S =~ ^DONE\ green ]] && [ -z "$(ls "$T" | grep '^pwn')" ] \
+    && ok "malicious metacharacters in ERE/witness values: window runs green as pure data, nothing executed" || bad "25l malicious: '$S' $(ls "$T" | grep '^pwn' | tr '\n' ' ')"
+# 25m. half-written files wait (settle); a malformed config line is ignored with a log line
+benchq; BOXQUEUE_WINDOW_SETTLE=60 run1; [ -z "$(ls -A "$Q/reservations" 2>/dev/null)" ] && ok "settle: a window younger than BOXQUEUE_WINDOW_SETTLE is not read yet" || bad "25m settle"
+printf 'relative/path /x\n%s %s\n' "$T/bench/inbox" "$T/bench" > "$T/inboxes.cfg"; mkwin k1; run1
+has 'bench config .*ignored line' && has 'bench window k1 IMPORTED' && ok "a malformed config line is ignored with a log line; the good line still imports" || bad "25m config :: $(ql | tail -4)"
+# 25n. a scratch queue without BOXQUEUE_INBOXES imports nothing; a runner with a declared inbox does not IDLE-EXIT on an empty queue
+benchq; mkwin z1; unset BOXQUEUE_INBOXES; run1
+[ ! -e "$Q/reservations/750-bench-z1.state" ] && ok "a scratch queue without BOXQUEUE_INBOXES imports nothing" || bad "25n scratch imported"
+benchq; setsid bash "$BQ" run --every 1 > /dev/null 2>&1 & kids+=($!); sleep 3
+[ -n "$(rpid)" ] && [ -d "/proc/$(rpid)" ] && ok "runner with a declared inbox stays alive on an empty queue (no IDLE-EXIT)" || bad "25n idle-exit"
+mkwin lv1; fakebench 750-bench-lv1 lv1 "$COMPLETE"; waitfor 'job 750-bench-lv1 END rc=0 outcome=green' 100 \
+    && ok "a window dropped while the runner idles is imported and run by it" || bad "25n live :: $(ql | tail -4)"
+stoprunner
+# 25o. -h documents it
+bash "$BQ" -h | grep -q 'BENCH WINDOWS' && ok "boxqueue -h documents bench windows" || bad "-h lacks BENCH WINDOWS"
+
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
