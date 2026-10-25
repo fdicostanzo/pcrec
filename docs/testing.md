@@ -873,7 +873,7 @@ read `gh run list --commit <sha>` on the next wake (manager skill step 0b).
 Separately, `.claude/settings.json` registers
 `scripts/hooks/no_cd_worktree.sh` as a PreToolUse(Bash) hook that blocks a `cd`
 into `worktrees/` and `cd X && ..` chaining (exact scope in scripts/CLAUDE.md);
-both are self-checked by `scripts/tests/hooks.test` (`make testscripts`).
+both are self-checked by `scripts/tests/hooks.test` (`make testscripts`). `no_commit_all.sh` (PreToolUse Bash) blocks `git commit -a`/`--all`; `lane_writes_in_worktree.sh` (Write|Edit|NotebookEdit) refuses a subagent write into the main tree; both have fixture tests `scripts/hooks/test_*.sh`.
 The sanitizer and lint targets (`make san`/`ubsan`/`asan`/`lint`/`alloc`) and
 `make test-recursion-identity` take the box lock like `test-axes` (the target
 re-invokes itself as `<target>-locked` under `scripts/boxlock run`); CI never

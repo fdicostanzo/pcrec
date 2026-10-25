@@ -24,7 +24,7 @@ entries (verbatim): NOTES.md here.
 - Checkers: `plan_lint.sh`/`.py`, `check_claudemd_size.sh`, `spec_toc.py`, `measure.sh`.
 - Instruments: `emit_sweep.py`, `trace_diff.py`, `cls_identity.py`, `compile_time_census.py`, `alt_census.py`, `size_diff`.
 - Generators: `embed_text.sh`, `ksgen.c`.
-- `hooks/` — pre-commit, pre-push(-light), `no_cd_worktree.sh`, `no_stale_claudemd.sh`, `post_compact.sh`.
+- `hooks/` — pre-commit, pre-push(-light), `no_cd_worktree.sh`, `no_commit_all.sh` (blocks `git commit -a`), `lane_writes_in_worktree.sh` (a subagent writes only under worktrees/; escape file worktrees/.mgr/main_write_ok), `no_stale_claudemd.sh`, `post_compact.sh`; fixture tests `hooks/test_*.sh`.
 - `tests/` — self-tests (own CLAUDE.md).
 
 ## Pointers
