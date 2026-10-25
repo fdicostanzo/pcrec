@@ -623,12 +623,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: one sonnet lane runs the staged test after 624 and before the bench window; no full-suite use before it
   refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
   Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
-- [EXPECT-PREFLIGHT] STATE:not-started — BOXQUEUE ADD WARNS WHEN A JOB'S DECLARED COUNT DIFFERS FROM ITS LAST GREEN COUNT
+- [EXPECT-PREFLIGHT] STATE:not-started — A JOB'S DRY RUN MEASURES ITS SIZE; ESTIMATE, CAP AND EXPECT DERIVE FROM IT
   filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
   status (2026-10-25): history warning BUILT on lane/expectpre (boxqueue.test 92/92), NOT merged: replay caught 0 of the 5 stale-expect jobs (4 first-of-shape, 1 grew after a matching declaration)
-  trigger: the dry run MEASURES the population before queueing (catches first runs and growth), when: Frank 2026-10-25 "i want it eventually but lets see some more nights of successfull box runs with your new monitor script"
+  trigger: LOW PRIORITY: slip it into the next lane that updates boxqueue or the job scripts (Frank 2026-10-25 "low priority but slip it in with the next update of those scripts")
   refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
-  Charter: at add/retry, compare each `expect NAME=N` to the same job shape's last green population; a mismatch prints a warning naming both numbers (not a refusal; counts legitimately grow).
+  Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.
 - [BENCH-RESERVE] STATE:not-started — THE BENCH RESERVES THE BOX THROUGH A DATA FILE; A PCREC PLACEHOLDER JOB HOLDS THE LOCK
   filed: 2026-10-25 Frank ("i like the separation ... the plan sounds good"; I-161, BD2: no writes into each other's repos)
   status (2026-10-25): BUILD GO; lane benchres started; bench side (b146wrap) building against the same contract
