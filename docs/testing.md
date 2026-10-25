@@ -885,6 +885,23 @@ on <holder>" while someone outside the queue holds it); a lane enqueues jobs
 (or a chainrun stages file with `boxqueue batch`) instead of arming its own
 waiter. Contract in the script's header, summary in scripts/CLAUDE.md.
 
+BENCH WINDOWS ([BENCH-RESERVE], 2026-10-25): the bench's timing windows are
+ordered by the same queue without either side running the other's code. The
+bench drops `<name>.window` (key=value) in a declared inbox
+(`scripts/boxqueue.inboxes`); the runner PARSES it (never sourced) into a
+fixed placeholder job `PRIO-bench-NAME` (`scripts/boxqueue_window`) that holds
+the box lock until the bench's log reports the window over, and publishes
+`worktrees/.boxqueue/reservations/PRIO-bench-NAME.state` (QUEUED / RUNNING /
+DONE green|red|failed|cancelled; lock held iff RUNNING; a refused window reads
+`DONE failed <iso> IMPORT-REJECT <reason>`). The log may pre-exist: its size at
+RUNNING is an offset, only appended bytes are scanned, and "started" means the
+log GREW within `start_s` (else NO-START). Import and `.cancel` are also acted
+on WHILE a job runs (the job-wait watcher calls the sync every
+`BOXQUEUE_BENCH_EVERY` s, 15, <= 60). `patience` is declared only. A runner
+with a declared inbox never IDLE-EXITs. Contract, keys, reject reasons and ends: the
+`BENCH WINDOWS` block of `boxqueue -h`; self-check: boxqueue.test case 25
+(scratch queue and inbox, a fake bench runner, nine planted bugs S1610-S1618).
+
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 
 ### Plan lint (`make test-plan-lint`)
