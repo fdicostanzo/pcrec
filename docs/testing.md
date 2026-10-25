@@ -892,10 +892,15 @@ bench drops `<name>.window` (key=value) in a declared inbox
 fixed placeholder job `PRIO-bench-NAME` (`scripts/boxqueue_window`) that holds
 the box lock until the bench's log reports the window over, and publishes
 `worktrees/.boxqueue/reservations/PRIO-bench-NAME.state` (QUEUED / RUNNING /
-DONE green|red|failed|cancelled; lock held iff RUNNING). A runner with a
-declared inbox never IDLE-EXITs. Contract, keys, reject reasons and ends: the
+DONE green|red|failed|cancelled; lock held iff RUNNING; a refused window reads
+`DONE failed <iso> IMPORT-REJECT <reason>`). The log may pre-exist: its size at
+RUNNING is an offset, only appended bytes are scanned, and "started" means the
+log GREW within `start_s` (else NO-START). Import and `.cancel` are also acted
+on WHILE a job runs (the job-wait watcher calls the sync every
+`BOXQUEUE_BENCH_EVERY` s, 15, <= 60). `patience` is declared only. A runner
+with a declared inbox never IDLE-EXITs. Contract, keys, reject reasons and ends: the
 `BENCH WINDOWS` block of `boxqueue -h`; self-check: boxqueue.test case 25
-(scratch queue and inbox, a fake bench runner, five planted bugs S1610-S1614).
+(scratch queue and inbox, a fake bench runner, nine planted bugs S1610-S1618).
 
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 

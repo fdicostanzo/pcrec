@@ -121,20 +121,23 @@
 # BENCH WINDOWS ([BENCH-RESERVE], lane benchres, 2026-10-25): the bench reserves the box through a DATA FILE, never
 # by running our code or us running its. Each inbox in scripts/boxqueue.inboxes (`ABS_INBOX ABS_LOG_ROOT` per line;
 # a scratch queue reads none unless BOXQUEUE_INBOXES names a config) is scanned by the runner (every pass pace; a
-# runner with a declared inbox does NOT IDLE-EXIT) for <name>.window. Key=value, one per line, PARSED (never
+# runner with a declared inbox does NOT IDLE-EXIT; ALSO every BOXQUEUE_BENCH_EVERY s (15, <= 60) WHILE a job runs, and
+# at `status`/`plan`, so a new .window is QUEUED and a .cancel honoured within that cadence even during a 3 h job) for <name>.window. Key=value, one per line, PARSED (never
 # sourced or eval'd); an unknown or duplicate key, a missing required key, a non-integer number, prio outside
 # 700-899, name not [A-Za-z0-9._-]+ (also no `--`, and equal to the file's name), a log not an absolute path
 # (letters digits _ . / -) under ABS_LOG_ROOT without `..`, a bad ERE, a file over 4096 bytes, a control character or
-# a symlink REJECTS it (queue.log line; state DONE failed REJECTED: reason when name+prio are usable). Keys:
+# a symlink REJECTS it (queue.log line; state `DONE failed <iso> IMPORT-REJECT <reason>` when name+prio are usable). Keys:
 #   prio=7NN name=W cap=S patience=S [idle_ok=S] log=ABS start_s=S done_ere=ERE expect=N witness=LINE fail_ere=ERE
 # It becomes the job PRIO-bench-W (owner bench), the FIXED placeholder scripts/boxqueue_window: cap/patience/idle-ok
-# are the job's own declarations, `expect window=N log=LOG last=done_ere` + `witness` its population. Once per name
+# are the job's own declarations, `expect window=N last=done_ere` + `witness` its population (read from the job's own log: the placeholder echoes
+# the last done_ere line of the bytes the bench log gained since RUNNING). patience and start_s are REQUIRED; patience is
+# DECLARED ONLY (shown in plan, never auto-withdraws a window). Once per name
 # (a re-used name is refused with a log line); a file younger than BOXQUEUE_WINDOW_SETTLE s (2) is not read yet.
 # STATUS the bench polls, ONE line, atomic: QUEUE/reservations/PRIO-bench-W.state =
 #   QUEUED <iso> | RUNNING <iso> <pid> | DONE <green|red|failed|cancelled> <iso> <reason>
 # Lock held <=> RUNNING. Ends: done_ere's integer == expect -> green; != expect -> red POPULATION; a fail_ere line
-# -> failed BENCH-FAIL; no log within start_s of RUNNING -> failed NO-START (a log that exists at RUNNING ->
-# failed STALE-LOG); cap -> failed CAP-FIRED; <inbox>/W.cancel -> cancelled (queued or running).
+# -> failed BENCH-FAIL; the log does not GROW (any appended byte) within start_s of RUNNING -> failed NO-START (a log that
+# exists at RUNNING is fine: its size is recorded then and only later bytes are scanned); cap -> failed CAP-FIRED; <inbox>/W.cancel -> cancelled (queued or running).
 # ENVIRONMENT of every call: BQ_MODE BQ_JOB BQ_KEY BQ_OWNER BQ_QUEUE BOXQUEUE
 # (this script, for `"$BOXQUEUE" after KEY`); the work also gets BQ_RUNDIR
 # and BQ_LOG. Use absolute paths: cwd is never your tree.
@@ -613,7 +616,10 @@ pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a 
 # the box lock while the bench runs its own window (neither side runs the other's code; pcrec never writes in
 # the bench's tree). The INBOX list is a DECLARED config (scripts/boxqueue.inboxes: `ABS_INBOX ABS_LOG_ROOT`
 # per line); a scratch queue (PCREC_BOXQUEUE_DIR) imports nothing unless BOXQUEUE_INBOXES names a config.
-# The runner imports and reconciles at the top of every loop (never while a job runs, the runner is in it).
+# The runner imports and reconciles at the top of every loop AND while a job runs: the runner is then blocked in
+# cmd__start's wait, whose existing POPULATION-OVER watcher subshell (the one that already wakes every MONITOR s)
+# also calls bench_sync every BOXQUEUE_BENCH_EVERY s (15, must stay <= 60). `status` and `plan` call it too.
+# bench_sync is serialised by a non-blocking flock (QUEUE/.bench/.sync.lock): a second caller skips, never waits.
 # Status the bench polls: QUEUE/reservations/PRIO-bench-NAME.state, one line, rewritten atomically.
 bench_inboxes() { # "INBOX LOGROOT" per declared inbox
     local cfg=${BOXQUEUE_INBOXES:-} a b rest l
@@ -672,7 +678,7 @@ bench_reject() {
     qlog "  bench window $name REJECTED: $why"
     if [[ $pr =~ ^[0-9]{3}$ ]] && [ "$pr" -ge 700 ] && [ "$pr" -le 899 ] && [[ $name =~ ^[A-Za-z0-9._-]+$ ]] && [[ $name != *--* ]] \
         && ! grep -qxF -- "$name" "$Q/.bench/imported" 2>/dev/null; then
-        res_write "$pr-bench-$name" "DONE failed $(now) REJECTED: $why"
+        res_write "$pr-bench-$name" "DONE failed $(now) IMPORT-REJECT $why"
     fi
 }
 # bench_one INBOX LOGROOT FILE: each distinct file content is judged once (a mark file per path+sha)
@@ -726,13 +732,33 @@ bench_reconcile() {
         qlog "  bench reservation $jn reconciled from its result: DONE $o ${why:-ended $oc}"
     done
 }
+# bench_cancel_queued: a .cancel for a window still QUEUED (pending) is honoured here, so it also works while another
+# job runs (the pass's --ready answer 77 does the same, but only between jobs); reconcile then writes DONE cancelled
+bench_cancel_queued() {
+    local n k c
+    for n in $(pending_jobs); do
+        [[ $n == *-bench-* ]] || continue
+        k=$(key_of "$n"); [ -f "$Q/.bench/$k.params" ] || continue
+        c=$(sed -n 's/^cancel=//p' "$Q/.bench/$k.params" | head -1)
+        [ -n "$c" ] && [ -e "$c" ] || continue
+        end_pending "$n" done "cancelled by the bench ($c)"
+    done
+}
 bench_sync() {
     local ib root f
+    [ -n "$(bench_inboxes)" ] || return 0
     mkq; mkdir -p "$Q/reservations" "$Q/.bench"
+    exec 9>>"$Q/.bench/.sync.lock"; flock -n 9 || { exec 9>&-; return 0; }
+    bench_sync_locked
+    exec 9>&-
+}
+bench_sync_locked() {
+    local ib root f
     while read -r ib root; do
         [ -d "$ib" ] || continue
         for f in "$ib"/*.window; do bench_one "$ib" "$root" "$f"; done
     done < <(bench_inboxes)
+    bench_cancel_queued
     bench_reconcile
 }
 
@@ -919,7 +945,7 @@ cmd_cancel() {
     echo "boxqueue: cancelled $n"
 }
 cmd_status() {
-    mkq
+    mkq; bench_sync > /dev/null 2>&1
     if runner_live; then echo "runner: live $(cat "$Q/runner.pid" 2>/dev/null)"; else echo "runner: none"; fi
     echo "box: $(bash "$BL" status 2>&1 | head -1)"
     local d; for d in "$Q"/running/*/; do [ -d "$d" ] || continue; echo "running: ${d%/} $(cat "$d/pid" 2>/dev/null)"; [ -f "${d}idle" ] && echo "  $(sed 's/^/IDLE-SUSPECT: /' "${d}idle")"; done
@@ -932,7 +958,7 @@ cmd_status() {
     done
 }
 cmd_plan() {
-    mkq
+    mkq; bench_sync > /dev/null 2>&1
     local n s o rc dl rl i=0 bad=0 total=0 capn="" e
     printf '%-4s %-40s %-8s %-10s %s\n' "#" JOB DRY-RUN CAP "READY / EXPECT"
     for n in $(pending_jobs); do
@@ -968,10 +994,11 @@ cmd__start() {
     printf '%s %s\n' "$jpid" "$(pid_start "$jpid")" > "$rd/pid"
     (   # POPULATION-OVER watch: a `lines=` count past its declaration kills the job now, not at cap.
         # It drops the inherited lock fd first, or its last `sleep` outlives the job holding the box lock.
-        local e k nn lg m re c f xl
+        local e k nn lg m re c f xl bt=$SECONDS be=${BOXQUEUE_BENCH_EVERY:-15}
         for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
         while kill -0 "$jpid" 2>/dev/null; do
             sleep "$MONITOR"
+            if [ $((SECONDS - bt)) -ge "$be" ]; then bt=$SECONDS; bench_sync > /dev/null 2>&1; fi   # BENCH-MIDJOB: import + .cancel while a job runs
             for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
                 IFS=$'\t' read -r k nn lg m re <<<"$e"; [ "$m" = lines ] || continue
                 xl=$(exp_log "$rd" "$lg")

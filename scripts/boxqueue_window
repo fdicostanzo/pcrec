@@ -9,11 +9,12 @@
 #   QUEUED <iso> | RUNNING <iso> <pid> | DONE <green|red|failed|cancelled> <iso> <reason>
 # RUNNING is written first thing in the work (the lock is ours then), DONE last before the work exits (the lock
 # is released after). boxqueue's own machinery carries the rest: cap = the declared wall cap (timeout's TERM is
-# trapped here and written as CAP-FIRED), patience/idle-ok are declarations, and the done line's count is a
-# declared `expect window=N log=BENCHLOG last=DONE_ERE` population.
+# trapped here and written as CAP-FIRED), patience/idle-ok are declarations only (no auto-withdraw), and the done line's count is a
+# declared `expect window=N last=DONE_ERE` population, read from THIS job's log: the placeholder echoes the last
+# done_ere line found in the appended bytes, so the bench's own log (stale lines, red lines) never decides the verdict.
 # Ends: done_ere last match with integer == expect -> DONE green; != expect (or no integer) -> DONE red POPULATION;
-# a fail_ere line -> DONE failed BENCH-FAIL; no log within start_s of RUNNING -> DONE failed NO-START; a log that
-# already exists at RUNNING -> DONE failed STALE-LOG; cap -> DONE failed CAP-FIRED; <NAME>.cancel in the inbox ->
+# a fail_ere line -> DONE failed BENCH-FAIL; the log does not GROW within start_s of RUNNING -> DONE failed NO-START (a log that
+# already exists at RUNNING is fine: its size is the offset and only appended bytes are scanned); cap -> DONE failed CAP-FIRED; <NAME>.cancel in the inbox ->
 # DONE cancelled. BOXQUEUE_WINDOW_POLL (2 s) is the poll pace.
 set -u
 Q=${BQ_QUEUE:-}; K=${BQ_KEY:-}
@@ -38,7 +39,7 @@ case "${1:-}" in
         load || exit 1
         echo "boxqueue: cap $W_cap"; echo "boxqueue: patience $W_patience"
         if [ -n "$W_idle_ok" ]; then echo "boxqueue: idle-ok $W_idle_ok"; fi
-        printf 'boxqueue: expect window=%s log=%s last=%s\n' "$W_expect" "$W_log" "$W_done_ere"
+        printf 'boxqueue: expect window=%s last=%s\n' "$W_expect" "$W_done_ere"
         printf 'boxqueue: witness window=%s\n' "$W_witness"
         echo "would hold the box lock for bench window $W_name until $W_log reports it (start within ${W_start_s}s)"
         exit 0 ;;
@@ -54,7 +55,7 @@ iso() { date -Iseconds; }
 wstate() { local t=$SD/.tmp.$$.$RANDOM; mkdir -p "$SD"; printf '%s\n' "$1" > "$t" && mv -f "$t" "$SF"; }
 t0=$(date +%s)
 fin() { # fin OUTCOME REASON RC: DONE is written before the work exits, i.e. before the lock is released
-    wstate "DONE $1 $(iso) $2"; echo "bench window $W_name: DONE $1 $2"; exit "$3"
+    wstate "DONE $1 $(iso) $2"; echo "bench window $W_name: DONE $1"; exit "$3"
 }
 on_term() {
     local el=$(( $(date +%s) - t0 ))
@@ -64,18 +65,30 @@ on_term() {
 trap on_term TERM INT HUP
 wstate "RUNNING $(iso) $$"
 echo "bench window $W_name: RUNNING pid $$, waiting on $W_log"
-if [ -e "$W_log" ]; then fin failed "STALE-LOG ($W_log existed when the window began)" 1; fi
+# R1/R2: a log that already exists is ALLOWED. Its byte size at RUNNING is the offset; only bytes appended after it
+# are ever scanned (a stale done line never matches), and "the window started" means the log GREW past the offset.
+off=0; [ -f "$W_log" ] && off=$(stat -c %s "$W_log" 2>/dev/null || echo 0)
+TAIL=$Q/.bench/$K.tail
+grown=0
 while :; do
     if [ -e "$W_cancel" ]; then fin cancelled "CANCELLED by the bench" 77; fi
-    if [ -f "$W_log" ]; then
-        if [ "$(bash "$BOXQUEUE" _pop lines "$W_fail_ere" "$W_log")" -gt 0 ] 2>/dev/null; then fin failed "BENCH-FAIL" 1; fi
-        if [ "$(bash "$BOXQUEUE" _pop lines "$W_done_ere" "$W_log")" -gt 0 ] 2>/dev/null; then
-            n=$(bash "$BOXQUEUE" _pop last "$W_done_ere" "$W_log")
+    sz=0; [ -f "$W_log" ] && sz=$(stat -c %s "$W_log" 2>/dev/null || echo 0)
+    [ "$sz" -lt "$off" ] && off=0    # the log was truncated or replaced: everything in it is new
+    if [ "$sz" -gt "$off" ]; then
+        grown=1
+        tail -c +$((off + 1)) "$W_log" > "$TAIL" 2>/dev/null
+        if [ "$(bash "$BOXQUEUE" _pop lines "$W_fail_ere" "$TAIL")" -gt 0 ] 2>/dev/null; then fin failed "BENCH-FAIL" 1; fi
+        if [ "$(bash "$BOXQUEUE" _pop lines "$W_done_ere" "$TAIL")" -gt 0 ] 2>/dev/null; then
+            n=$(bash "$BOXQUEUE" _pop last "$W_done_ere" "$TAIL")
+            # the queue reads the population from THIS job's log, never the bench's (a stale line or a red line
+            # already in the bench log must not decide the verdict): echo the last done line, appended bytes only
+            RE=$W_done_ere awk 'match($0, ENVIRON["RE"]) { l = $0 } END { print l }' "$TAIL"
             if [ "$n" = "$W_expect" ]; then fin green "WINDOW-COMPLETE n=$n" 0; fi
             fin red "POPULATION n=$n expect=$W_expect" 1
         fi
-    elif [ $(( $(date +%s) - t0 )) -gt "$W_start_s" ]; then
-        fin failed "NO-START (no $W_log within ${W_start_s}s of RUNNING)" 1
+    fi
+    if [ $grown = 0 ] && [ $(( $(date +%s) - t0 )) -gt "$W_start_s" ]; then
+        fin failed "NO-START (${W_log} did not grow within ${W_start_s}s of RUNNING)" 1
     fi
     sleep "$POLL" & wait $!
 done
