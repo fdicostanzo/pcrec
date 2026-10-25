@@ -605,6 +605,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [HOOK-GUARDS] STATE:not-started — hooks enforce two remembered rules: no `git commit -a`, a lane writes only in its worktree
+  filed: 2026-10-25 Frank ("yes add it")
+  status (2026-10-25): filed; lane not yet briefed (session reset first)
+  next: one sonnet lane (session 126 first act): (a) PreToolUse(Bash) block of git commit -a/-am/--all; (c) learn whether hook input names the subagent, then a Write/Edit guard or a reported no-go
+  refs: scripts/hooks/no_cd_worktree.sh; memory pcrec-no-commit-a-during-landing; bench slips 2026-10-25 (commit -a in a live lane worktree; a lane's CLAUDE.md edits in the main tree)
+  A rule a session must remember fails (the lockyield lesson, 2026-10-24). Both bench slips of 2026-10-25 passed the cd hook: commit -a via git -C, and a lane's Write to an absolute main-tree path. (b) the bench adopting the cd hook is the bench's own call, suggested in its inbox.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.

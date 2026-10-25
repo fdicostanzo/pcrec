@@ -27280,3 +27280,11 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - **Bench:** I-158 (bench commit 62936f06): pin 9ae59f5d4; O-106's question answered (conditional substitution supported under subst-extended, spec §2¶8-9). Box handed to the bench for the night (Frank).
 - **Ruled (Frank):** the pcrec-monitor gets tried "naturally": the next long run (test-axes, moved to tomorrow day) is watched by a monitor agent alone; no staged failure, the red path is tested by the first real red.
 - **OWED:** CI read on 47fddf283; prune subst-era worktrees (subst, substext, substcase, substuc, substland) and the other delivered ones when the box is not timing; test-axes re-run with the monitor trial; full suite (D177 triggers fired); runtime-selection discussion with Frank; [DATA-PLAN] A, D27 for [UPROP-MORE], [RECID-A], [EMIT-BIDI].
+
+## 2026-10-25 (session 125 cont., manager) — re-pin ruled, box day plan, [HOOK-GUARDS] filed; session reset
+
+- CI green on 47fddf283 and 11b1b899d. Bench: I-159 (whole roster re-pins to 9ae59f5d4, the general pin I-154 promised; abi 77-84 listed); bench merged it (O-107: 1,339/1,468 identical, 36 explained movers, 0 refusal movers; subst equal to PCRE2 on all 8 cases).
+- Frank: today runs both ours and the bench's. Bench window part (1) OPEN 11:22 (~4.4 h); then main's test-axes sweep (~3 h; why: the last full suite's axes stage was red, fsfix never re-validated, and a red there should cost 3 day hours, not a 10 h night); then bench part (2) (362 MB subst cells, waits on its spread-rule fix).
+- Monitor trial: Frank starts a standalone session named pcrec-monitor (method a), not a subagent; the axes job is the natural trial; the manager does not watch it.
+- [HOOK-GUARDS] filed (Frank "yes add it") after the bench's two slips that the cd hook could not catch; I-160 suggests the bench register hooks (it has no .claude/settings.json).
+- Session names after the restart: pcrec-main (manager), pcrec-bench, pcrec-monitor.
