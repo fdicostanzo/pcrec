@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-25 415eade4d none — merge lane/benchres: [BENCH-RESERVE] bench reservations (scripts only)
 - 2026-10-25 4dd8af50b none — merge lane/suiteresume: [SUITE-RESUME] owner-commanded resume of a red full suite (scripts only)
 - 2026-10-25 82abd6b87 none — merge lane/queuemon: [MON-SCRIPT] script-only box-queue monitor (scripts + hook only)
 - 2026-10-25 7592e1397 none — merge lane/hookguards: [HOOK-GUARDS] no_commit_all + lane_writes_in_worktree hooks (scripts/hooks + settings only)

@@ -631,7 +631,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.
 - [BENCH-RESERVE] STATE:not-started — THE BENCH RESERVES THE BOX THROUGH A DATA FILE; A PCREC PLACEHOLDER JOB HOLDS THE LOCK
   filed: 2026-10-25 Frank ("i like the separation ... the plan sounds good"; I-161, BD2: no writes into each other's repos)
-  status (2026-10-25): BUILT on lane/benchres: import + fixed placeholder + 5 plants (boxqueue.test 25), NOT merged; owner enables with one `boxqueue start`; questions in benchres_report.md
+  status (2026-10-25): LANDED 415eade4d (boxqueue.test 120/120, scratch only); the bench side (boxq_window) is built; first real use = the bench's overnight windows
   next: build + scratch-queue tests; first real use = the bench's tier-2 window
   refs: pcrec-bench docs/dev/inbox_from_pcrec.md I-161; the contract message of 2026-10-25 (copied into the lane's report); scripts/boxqueue
   Charter: boxqueue imports <bench inbox>/*.window (key=value, parsed never sourced) into pcrec-authored placeholder jobs 7NN-bench-<name>; the placeholder holds the lock, publishes worktrees/.boxqueue/reservations/<job>.state, ends on done_ere/fail_ere/start_s/cap/.cancel. Neither side runs the other's code.
