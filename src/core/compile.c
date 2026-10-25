@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "core/internal.h"
 #include "enc/enc.h"
@@ -169,11 +170,36 @@ static bool ns_harness(const char *p)
     return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
 }
 
+/* row 4: the subst types block's and the support unit's names
+ * (docs/spec/subst_api.md §1¶2: `pcrec_subst_*`, and the macros
+ * `PCREC_SUBST_*` and `PCREC_SUPPORT_*`) share a TU with any artifact. A
+ * prefix that opens one of their families, in either case, could spell one;
+ * so could one whose subst artifact's own names do (`<prefix>_subst_*`):
+ * `-p pcrec`'s record would be `pcrec_subst_info`, the record type's tag. */
+static const char *const ns_subst_families[] = { "pcrec_subst", "pcrec_support" };
+static bool ns_subst_opens(const char *p)
+{
+    for (size_t i = 0; i < sizeof ns_subst_families / sizeof ns_subst_families[0]; i++) {
+        size_t l = strlen(ns_subst_families[i]);
+        if (!strncasecmp(p, ns_subst_families[i], l) && (p[l] == '\0' || p[l] == '_'))
+            return true;
+    }
+    return false;
+}
+static bool ns_subst_block(const char *p)
+{
+    char stem[PCREC_MAX_PREFIX_LEN + sizeof "_subst"];   /* p is a valid prefix by now */
+    snprintf(stem, sizeof stem, "%s_subst", p);
+    return ns_subst_opens(p) || ns_subst_opens(stem);
+}
+
 static const NsReserve ns_reserved[] = {
     { "parts", ns_parts,
       "contains `__`, which is reserved for a compound's parts (<prefix>__<role>)" },
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
+    { "subst-block", ns_subst_block,
+      "is pcrec or opens a family the subst block reserves (pcrec_subst, pcrec_support)" },
 };
 
 /* The reservation row `p` falls under, or NULL. */
@@ -182,6 +208,45 @@ static const NsReserve *ns_reserved_by(const char *p)
     for (size_t i = 0; i < sizeof ns_reserved / sizeof ns_reserved[0]; i++)
         if (ns_reserved[i].refuses(p)) return &ns_reserved[i];
     return NULL;
+}
+
+/* [M4-SUBST] True iff `p` is a prefix pcrec_compile accepts; else false
+ * with `why` filled. The subst compiler's -p check, so a template and a
+ * regex share one prefix rule (valid_prefix + the reservation table). */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
+{
+    if (!valid_prefix(p)) {
+        snprintf(why, whysz, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+                 PCREC_MAX_PREFIX_LEN);
+        return false;
+    }
+    const NsReserve *ns = ns_reserved_by(p);
+    if (ns) {
+        snprintf(why, whysz, "invalid symbol prefix: it %s", ns->why);
+        return false;
+    }
+    return true;
+}
+
+/* [M4-SUBST] Compiles a substitution template into a subst artifact: the
+ * prefix check `pcrec_compile` applies, the template parse, the emitter.
+ * Not a pattern compile, so it does not run `compile_driver` and has no
+ * `Ctx` (docs/spec/subst_api.md §5). */
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err)
+{
+    Arena a = { NULL, NULL };
+    SubstTmpl t;
+    out->c_src = out->h_src = NULL;
+    if (!pcrec_prefix_acceptable(o->prefix, err->msg, sizeof err->msg)) {
+        err->pos = 0;
+        err->input = PCREC_ERR_INPUT_TEMPLATE;
+        return -1;
+    }
+    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, o->extended, &t, err);
+    if (rc == 0) pcrec_emit_subst(tmpl, len, &t, o, out);
+    pcrec_arena_free(&a);
+    return rc;
 }
 
 /* Frees every heap array and StrBuf a Job may have allocated
@@ -2478,12 +2543,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * validated the caller's prefix and renders the placeholder this
          * compile keeps (`PcrecEmitIn.unrendered`). */
         if (!(emit_in && emit_in->unrendered)) {
-            if (!valid_prefix(user_prefix))
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
-                         PCREC_MAX_PREFIX_LEN);
-            const NsReserve *ns = ns_reserved_by(user_prefix);
-            if (ns)
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix: it %s", ns->why);
+            char why[256];
+            if (!pcrec_prefix_acceptable(user_prefix, why, sizeof why))
+                pcrec_ctx_fail(&cx, 0, "%s", why);
         }
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
          * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone

@@ -653,6 +653,26 @@ bool pcrec_enc_set_bytes(const PcrecEnc *e, const PcrecCpRange *iv, int n,
  * it, so the bytes a rate is derived for are the bytes a pattern lowers to. */
 int pcrec_utf8_encode(unsigned cp, unsigned char b[4]);
 
+/* Why `pcrec_utf8_decode` refused a sequence, or OK. An ordinal enum. */
+typedef enum {
+    PCREC_UTF8_OK,
+    PCREC_UTF8_BAD_LEAD,      /* a byte that cannot start a character */
+    PCREC_UTF8_TRUNCATED,     /* *len announced, fewer continuation bytes */
+    PCREC_UTF8_OVERLONG,      /* *cp spelled in more bytes than it needs */
+    PCREC_UTF8_SURROGATE,     /* *cp in U+D800..U+DFFF */
+    PCREC_UTF8_TOO_BIG        /* *cp above U+10FFFF */
+} PcrecUtf8Status;
+
+/* Decodes the UTF-8 character at s[at] (at < n): its scalar value in *cp and
+ * its length in *len, or why it is ill-formed (*len is then the length the
+ * lead byte announces, 1 for a bad lead; *cp the decoded value for OVERLONG,
+ * SURROGATE and TOO_BIG). The ONE compile-time UTF-8 decoder: the pattern's
+ * literal reader (src/opt/lower_enc.c) and the substitution template's
+ * (src/parse/subst_template.c) both read it, so a pattern and a template
+ * agree on what well-formed means. */
+PcrecUtf8Status pcrec_utf8_decode(const unsigned char *s, size_t n, size_t at,
+                                  unsigned *cp, int *len);
+
 /* The backends themselves, one file each. */
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */
 extern const PcrecEnc pcrec_enc_backend_utf8;   /* enc_utf8.c, [M5.0] stage 2 */

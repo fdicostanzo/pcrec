@@ -1,0 +1,217 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+empty-000	empty		a*	[$0]	empty	all		diff
+empty-001	empty		a*	[$0]	empty	all	a	diff
+empty-002	empty		a*	[$0]	empty	all	bab	diff
+empty-003	empty		a*	[$0]	empty	all	aab\nab\n	diff
+empty-004	empty		a*	[$0]	empty	all	baaab	diff
+empty-005	empty		a*	[$0]	empty	1	bab	diff
+empty-006	empty		a*	[$0]	empty	2	bab	diff
+empty-007	empty		a*	[$0]	empty	3	bab	diff
+empty-008	empty		x*	[$0]	empty	all		diff
+empty-009	empty		x*	[$0]	empty	all	a	diff
+empty-010	empty		x*	[$0]	empty	all	bab	diff
+empty-011	empty		x*	[$0]	empty	all	aab\nab\n	diff
+empty-012	empty		x*	[$0]	empty	all	baaab	diff
+empty-013	empty		x*	[$0]	empty	1	bab	diff
+empty-014	empty		x*	[$0]	empty	2	bab	diff
+empty-015	empty		x*	[$0]	empty	3	bab	diff
+empty-016	empty			[$0]	empty	all		diff
+empty-017	empty			[$0]	empty	all	a	diff
+empty-018	empty			[$0]	empty	all	bab	diff
+empty-019	empty			[$0]	empty	all	aab\nab\n	diff
+empty-020	empty			[$0]	empty	all	baaab	diff
+empty-021	empty			[$0]	empty	1	bab	diff
+empty-022	empty			[$0]	empty	2	bab	diff
+empty-023	empty			[$0]	empty	3	bab	diff
+empty-024	empty		\\b	[$0]	empty	all		diff
+empty-025	empty		\\b	[$0]	empty	all	a	diff
+empty-026	empty		\\b	[$0]	empty	all	bab	diff
+empty-027	empty		\\b	[$0]	empty	all	aab\nab\n	diff
+empty-028	empty		\\b	[$0]	empty	all	baaab	diff
+empty-029	empty		\\b	[$0]	empty	1	bab	diff
+empty-030	empty		\\b	[$0]	empty	2	bab	diff
+empty-031	empty		\\b	[$0]	empty	3	bab	diff
+empty-032	empty		^	[$0]	empty	all		diff
+empty-033	empty		^	[$0]	empty	all	a	diff
+empty-034	empty		^	[$0]	empty	all	bab	diff
+empty-035	empty		^	[$0]	empty	all	aab\nab\n	diff
+empty-036	empty		^	[$0]	empty	all	baaab	diff
+empty-037	empty		^	[$0]	empty	1	bab	diff
+empty-038	empty		^	[$0]	empty	2	bab	diff
+empty-039	empty		^	[$0]	empty	3	bab	diff
+empty-040	empty		$	[$0]	empty	all		diff
+empty-041	empty		$	[$0]	empty	all	a	diff
+empty-042	empty		$	[$0]	empty	all	bab	diff
+empty-043	empty		$	[$0]	empty	all	aab\nab\n	diff
+empty-044	empty		$	[$0]	empty	all	baaab	diff
+empty-045	empty		$	[$0]	empty	1	bab	diff
+empty-046	empty		$	[$0]	empty	2	bab	diff
+empty-047	empty		$	[$0]	empty	3	bab	diff
+empty-048	empty		(?=a)	[$0]	empty	all		diff
+empty-049	empty		(?=a)	[$0]	empty	all	a	diff
+empty-050	empty		(?=a)	[$0]	empty	all	bab	diff
+empty-051	empty		(?=a)	[$0]	empty	all	aab\nab\n	diff
+empty-052	empty		(?=a)	[$0]	empty	all	baaab	diff
+empty-053	empty		(?=a)	[$0]	empty	1	bab	diff
+empty-054	empty		(?=a)	[$0]	empty	2	bab	diff
+empty-055	empty		(?=a)	[$0]	empty	3	bab	diff
+empty-056	empty		a|	[$0]	empty	all		diff
+empty-057	empty		a|	[$0]	empty	all	a	diff
+empty-058	empty		a|	[$0]	empty	all	bab	diff
+empty-059	empty		a|	[$0]	empty	all	aab\nab\n	diff
+empty-060	empty		a|	[$0]	empty	all	baaab	diff
+empty-061	empty		a|	[$0]	empty	1	bab	diff
+empty-062	empty		a|	[$0]	empty	2	bab	diff
+empty-063	empty		a|	[$0]	empty	3	bab	diff
+empty-064	empty		|a	[$0]	empty	all		diff
+empty-065	empty		|a	[$0]	empty	all	a	diff
+empty-066	empty		|a	[$0]	empty	all	bab	diff
+empty-067	empty		|a	[$0]	empty	all	aab\nab\n	diff
+empty-068	empty		|a	[$0]	empty	all	baaab	diff
+empty-069	empty		|a	[$0]	empty	1	bab	diff
+empty-070	empty		|a	[$0]	empty	2	bab	diff
+empty-071	empty		|a	[$0]	empty	3	bab	diff
+empty-072	empty		a??	[$0]	empty	all		diff
+empty-073	empty		a??	[$0]	empty	all	a	diff
+empty-074	empty		a??	[$0]	empty	all	bab	diff
+empty-075	empty		a??	[$0]	empty	all	aab\nab\n	diff
+empty-076	empty		a??	[$0]	empty	all	baaab	diff
+empty-077	empty		a??	[$0]	empty	1	bab	diff
+empty-078	empty		a??	[$0]	empty	2	bab	diff
+empty-079	empty		a??	[$0]	empty	3	bab	diff
+empty-080	empty		(?:)	[$0]	empty	all		diff
+empty-081	empty		(?:)	[$0]	empty	all	a	diff
+empty-082	empty		(?:)	[$0]	empty	all	bab	diff
+empty-083	empty		(?:)	[$0]	empty	all	aab\nab\n	diff
+empty-084	empty		(?:)	[$0]	empty	all	baaab	diff
+empty-085	empty		(?:)	[$0]	empty	1	bab	diff
+empty-086	empty		(?:)	[$0]	empty	2	bab	diff
+empty-087	empty		(?:)	[$0]	empty	3	bab	diff
+empty-088	empty		\\B	[$0]	empty	all		diff
+empty-089	empty		\\B	[$0]	empty	all	a	diff
+empty-090	empty		\\B	[$0]	empty	all	bab	diff
+empty-091	empty		\\B	[$0]	empty	all	aab\nab\n	diff
+empty-092	empty		\\B	[$0]	empty	all	baaab	diff
+empty-093	empty		\\B	[$0]	empty	1	bab	diff
+empty-094	empty		\\B	[$0]	empty	2	bab	diff
+empty-095	empty		\\B	[$0]	empty	3	bab	diff
+empty-096	empty		a*?	[$0]	empty	all		diff
+empty-097	empty		a*?	[$0]	empty	all	a	diff
+empty-098	empty		a*?	[$0]	empty	all	bab	diff
+empty-099	empty		a*?	[$0]	empty	all	aab\nab\n	diff
+empty-100	empty		a*?	[$0]	empty	all	baaab	diff
+empty-101	empty		a*?	[$0]	empty	1	bab	diff
+empty-102	empty		a*?	[$0]	empty	2	bab	diff
+empty-103	empty		a*?	[$0]	empty	3	bab	diff
+empty-104	empty		(?m)^	[$0]	empty	all		diff
+empty-105	empty		(?m)^	[$0]	empty	all	a	diff
+empty-106	empty		(?m)^	[$0]	empty	all	bab	diff
+empty-107	empty		(?m)^	[$0]	empty	all	aab\nab\n	diff
+empty-108	empty		(?m)^	[$0]	empty	all	baaab	diff
+empty-109	empty		(?m)^	[$0]	empty	1	bab	diff
+empty-110	empty		(?m)^	[$0]	empty	2	bab	diff
+empty-111	empty		(?m)^	[$0]	empty	3	bab	diff
+empty-112	empty		(?m)$	[$0]	empty	all		diff
+empty-113	empty		(?m)$	[$0]	empty	all	a	diff
+empty-114	empty		(?m)$	[$0]	empty	all	bab	diff
+empty-115	empty		(?m)$	[$0]	empty	all	aab\nab\n	diff
+empty-116	empty		(?m)$	[$0]	empty	all	baaab	diff
+empty-117	empty		(?m)$	[$0]	empty	1	bab	diff
+empty-118	empty		(?m)$	[$0]	empty	2	bab	diff
+empty-119	empty		(?m)$	[$0]	empty	3	bab	diff
+empty-120	empty		\\z	[$0]	empty	all		diff
+empty-121	empty		\\z	[$0]	empty	all	a	diff
+empty-122	empty		\\z	[$0]	empty	all	bab	diff
+empty-123	empty		\\z	[$0]	empty	all	aab\nab\n	diff
+empty-124	empty		\\z	[$0]	empty	all	baaab	diff
+empty-125	empty		\\z	[$0]	empty	1	bab	diff
+empty-126	empty		\\z	[$0]	empty	2	bab	diff
+empty-127	empty		\\z	[$0]	empty	3	bab	diff
+empty-128	empty		\\Z	[$0]	empty	all		diff
+empty-129	empty		\\Z	[$0]	empty	all	a	diff
+empty-130	empty		\\Z	[$0]	empty	all	bab	diff
+empty-131	empty		\\Z	[$0]	empty	all	aab\nab\n	diff
+empty-132	empty		\\Z	[$0]	empty	all	baaab	diff
+empty-133	empty		\\Z	[$0]	empty	1	bab	diff
+empty-134	empty		\\Z	[$0]	empty	2	bab	diff
+empty-135	empty		\\Z	[$0]	empty	3	bab	diff
+empty-136	empty		.*	[$0]	empty	all		diff
+empty-137	empty		.*	[$0]	empty	all	a	diff
+empty-138	empty		.*	[$0]	empty	all	bab	diff
+empty-139	empty		.*	[$0]	empty	all	aab\nab\n	diff
+empty-140	empty		.*	[$0]	empty	all	baaab	diff
+empty-141	empty		.*	[$0]	empty	1	bab	diff
+empty-142	empty		.*	[$0]	empty	2	bab	diff
+empty-143	empty		.*	[$0]	empty	3	bab	diff
+empty-144	empty		a*|b	[$0]	empty	all		diff
+empty-145	empty		a*|b	[$0]	empty	all	a	diff
+empty-146	empty		a*|b	[$0]	empty	all	bab	diff
+empty-147	empty		a*|b	[$0]	empty	all	aab\nab\n	diff
+empty-148	empty		a*|b	[$0]	empty	all	baaab	diff
+empty-149	empty		a*|b	[$0]	empty	1	bab	diff
+empty-150	empty		a*|b	[$0]	empty	2	bab	diff
+empty-151	empty		a*|b	[$0]	empty	3	bab	diff
+empty-152	empty		(?=a)|a	[$0]	empty	all		diff
+empty-153	empty		(?=a)|a	[$0]	empty	all	a	diff
+empty-154	empty		(?=a)|a	[$0]	empty	all	bab	diff
+empty-155	empty		(?=a)|a	[$0]	empty	all	aab\nab\n	diff
+empty-156	empty		(?=a)|a	[$0]	empty	all	baaab	diff
+empty-157	empty		(?=a)|a	[$0]	empty	1	bab	diff
+empty-158	empty		(?=a)|a	[$0]	empty	2	bab	diff
+empty-159	empty		(?=a)|a	[$0]	empty	3	bab	diff
+empty-160	empty		b*|a	[$0]	empty	all		diff
+empty-161	empty		b*|a	[$0]	empty	all	a	diff
+empty-162	empty		b*|a	[$0]	empty	all	bab	diff
+empty-163	empty		b*|a	[$0]	empty	all	aab\nab\n	diff
+empty-164	empty		b*|a	[$0]	empty	all	baaab	diff
+empty-165	empty		b*|a	[$0]	empty	1	bab	diff
+empty-166	empty		b*|a	[$0]	empty	2	bab	diff
+empty-167	empty		b*|a	[$0]	empty	3	bab	diff
+empty-168	empty		(?<=a)	[$0]	empty	all		diff
+empty-169	empty		(?<=a)	[$0]	empty	all	a	diff
+empty-170	empty		(?<=a)	[$0]	empty	all	bab	diff
+empty-171	empty		(?<=a)	[$0]	empty	all	aab\nab\n	diff
+empty-172	empty		(?<=a)	[$0]	empty	all	baaab	diff
+empty-173	empty		(?<=a)	[$0]	empty	1	bab	diff
+empty-174	empty		(?<=a)	[$0]	empty	2	bab	diff
+empty-175	empty		(?<=a)	[$0]	empty	3	bab	diff
+empty-176	empty		(?!a)	[$0]	empty	all		diff
+empty-177	empty		(?!a)	[$0]	empty	all	a	diff
+empty-178	empty		(?!a)	[$0]	empty	all	bab	diff
+empty-179	empty		(?!a)	[$0]	empty	all	aab\nab\n	diff
+empty-180	empty		(?!a)	[$0]	empty	all	baaab	diff
+empty-181	empty		(?!a)	[$0]	empty	1	bab	diff
+empty-182	empty		(?!a)	[$0]	empty	2	bab	diff
+empty-183	empty		(?!a)	[$0]	empty	3	bab	diff
+empty-184	empty		\\G	[$0]	empty	all		diff
+empty-185	empty		\\G	[$0]	empty	all	a	diff
+empty-186	empty		\\G	[$0]	empty	all	bab	diff
+empty-187	empty		\\G	[$0]	empty	all	aab\nab\n	diff
+empty-188	empty		\\G	[$0]	empty	all	baaab	diff
+empty-189	empty		\\G	[$0]	empty	1	bab	diff
+empty-190	empty		\\G	[$0]	empty	2	bab	diff
+empty-191	empty		\\G	[$0]	empty	3	bab	diff
+empty-192	empty		\\Ga	[$0]	empty	all		diff
+empty-193	empty		\\Ga	[$0]	empty	all	a	diff
+empty-194	empty		\\Ga	[$0]	empty	all	bab	diff
+empty-195	empty		\\Ga	[$0]	empty	all	aab\nab\n	diff
+empty-196	empty		\\Ga	[$0]	empty	all	baaab	diff
+empty-197	empty		\\Ga	[$0]	empty	1	bab	diff
+empty-198	empty		\\Ga	[$0]	empty	2	bab	diff
+empty-199	empty		\\Ga	[$0]	empty	3	bab	diff
+empty-200	empty		(?:a|)*	[$0]	empty	all		diff
+empty-201	empty		(?:a|)*	[$0]	empty	all	a	diff
+empty-202	empty		(?:a|)*	[$0]	empty	all	bab	diff
+empty-203	empty		(?:a|)*	[$0]	empty	all	aab\nab\n	diff
+empty-204	empty		(?:a|)*	[$0]	empty	all	baaab	diff
+empty-205	empty		(?:a|)*	[$0]	empty	1	bab	diff
+empty-206	empty		(?:a|)*	[$0]	empty	2	bab	diff
+empty-207	empty		(?:a|)*	[$0]	empty	3	bab	diff
+empty-208	empty		a{0,2}	[$0]	empty	all		diff
+empty-209	empty		a{0,2}	[$0]	empty	all	a	diff
+empty-210	empty		a{0,2}	[$0]	empty	all	bab	diff
+empty-211	empty		a{0,2}	[$0]	empty	all	aab\nab\n	diff
+empty-212	empty		a{0,2}	[$0]	empty	all	baaab	diff
+empty-213	empty		a{0,2}	[$0]	empty	1	bab	diff
+empty-214	empty		a{0,2}	[$0]	empty	2	bab	diff
+empty-215	empty		a{0,2}	[$0]	empty	3	bab	diff

@@ -29,9 +29,9 @@ WHAT IT WRITES  four GENERATED files, never hand-edited
                                      artifact.
   `src/core/case_tables.inc`          [SUBST-CASE] the one-to-one case MAP
                                      (upper, lower) compiled substitution's
-                                     `\\U \\L \\u \\l` forcing reads; derived
-                                     from the fold classes above plus
-                                     `UnicodeData.txt`'s general category.
+                                     `\\U \\L \\u \\l` forcing reads:
+                                     `UnicodeData.txt` fields 12 and 13
+                                     (D180).
 
     python3 third_party/ucd-16.0.0/generate.py        # writes them
     python3 third_party/ucd-16.0.0/generate.py --check # exits 1 if stale
@@ -1181,64 +1181,46 @@ def emit_fold_artifact_text(f):
     return "".join(out)
 
 # ---------------------------------------------------------------------------
-# (5) [SUBST-CASE] the simple one-to-one case MAP, PCRE2's rule
+# (5) [SUBST-CASE] the simple one-to-one case MAP, Unicode's own
 # ---------------------------------------------------------------------------
 #
 # Compiled substitution forces case (`\\U \\L \\u \\l`) through ONE simple
-# one-to-one map, and the map PCRE2 10.46 applies is NOT Unicode's
-# `toupper`/`tolower` (no `SpecialCasing`, no `UnicodeData` mapping fields).
-# MEASURED 2026-10-22 over every scalar value (pcre2_substitute `\\U$0` and
-# `\\L$0` in UTF mode; the stored answers are `oracle_store/libpcre2-10.46/
-# case-map.tsv`): the whole behaviour is this rule over the SIMPLE FOLD
-# CLASSES of section (4) and the general category, with no per-entry
-# exception.  `partner(c)`:
+# one-to-one map, and D180 (Frank, 2026-10-24) rules that map is UNICODE's:
+# `UnicodeData.txt` field 12 (Simple_Uppercase_Mapping) for `\\U`/`\\u`
+# and field 13 (Simple_Lowercase_Mapping) for `\\L`/`\\l`, for EVERY code
+# point.  No `SpecialCasing`, no general-category gate, no fold-class rule.
 #
-#   * a class member that is not its class's fold TARGET maps to the target
-#     (`K` -> `k`, U+1E9E -> `ß`, U+00B5 -> U+03BC);
-#   * the TARGET maps to the smallest other member of its class (`k` -> `K`,
-#     `σ` -> `Σ`, U+03BC -> U+00B5, U+03B9 -> U+0345, U+A64B -> U+1C88);
-#   * a NON-ASCII code point never maps to an ASCII one (U+212A KELVIN and
-#     U+017F LONG S stay as they are; U+0131 and U+0130 are in no class at all,
-#     the `T` fold lines).
+# libpcre2 10.46 differs at 150 code points (60 results not in the requested
+# case, ß -> U+1E9E, four non-ASCII <-> ASCII mappings it refuses, and the
+# non-letters its category gate skips); `tests/oracle/case_map_check.py` pins
+# exactly that list against `oracle_store/libpcre2-10.46-utf/case-map.tsv`,
+# and `docs/spec/subst_api.md` section 9 states the difference.  A
+# PCRE2-compatible mapping is a later data set ([CASE-COMPAT]).
 #
-# and the CATEGORY gates which direction applies the partner: upper forcing
-# moves `Ll` and `Lt`, lower forcing moves `Lu` and `Lt`; every other
-# category (the Roman numerals, U+0345 `Mn`) is left alone in both.  Zero
-# disagreements with libpcre2 over all 1,112,064 scalar values.
-#
-# Lengths can GROW: `ß` -> U+1E9E (2 -> 3 bytes), U+023A -> U+2C65 (2 -> 3),
-# which is why the generator also states the worst UTF-8 byte growth per
-# direction for the sizing pass.
+# Lengths can GROW: U+023A -> U+2C65 (2 -> 3 bytes), which is why the
+# generator also states the worst UTF-8 byte growth per direction for the
+# sizing pass.
 
 def utf8_len(cp):
     return 1 if cp < 0x80 else 2 if cp < 0x800 else 3 if cp < 0x10000 else 4
 
 
-def category_of(cats):
-    """{cp: general category} for every code point `cats` lists."""
-    out = {}
-    for name, ivs in cats.items():
-        for lo, hi in ivs:
-            for cp in range(lo, hi + 1):
-                out[cp] = name
-    return out
-
-
-def case_maps(fold, orbits, cats):
-    """(upper, lower): sorted {cp: target} dicts, identity entries omitted."""
-    cat = category_of(cats)
-    orbit = {cp: o for o in orbits for cp in o}
+def read_simple_case(path):
+    """(upper, lower): {cp: target} from fields 12 and 13, identity omitted."""
     upper, lower = {}, {}
-    for cp, o in orbit.items():
-        target = fold.get(cp, cp)
-        partner = target if target != cp else min(m for m in o if m != cp)
-        if cp >= 0x80 and partner < 0x80:
-            continue
-        k = cat.get(cp)
-        if k in ("Ll", "Lt"):
-            upper[cp] = partner
-        if k in ("Lu", "Lt"):
-            lower[cp] = partner
+    with open(path, "r", encoding="utf-8") as f:
+        for lineno, line in enumerate(f, 1):
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            fields = line.split(";")
+            if len(fields) != 15:
+                raise SystemExit("%s:%d: %d fields, want 15"
+                                 % (path, lineno, len(fields)))
+            cp = int(fields[0], 16)
+            for table, text in ((upper, fields[12]), (lower, fields[13])):
+                if text and int(text, 16) != cp:
+                    table[cp] = int(text, 16)
     return upper, lower
 
 
@@ -1246,16 +1228,16 @@ CASE_BANNER = """\
 /* case_tables.inc -- GENERATED, DO NOT EDIT.
  *
  * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
- * vendored `CaseFolding.txt` and `UnicodeData.txt` at Unicode {version}.
+ * vendored `UnicodeData.txt` at Unicode {version}.
  * Regenerate with `make gen-tables`; `make test` re-checks staleness
  * (`--check`).  Provenance and licence: `third_party/ucd-16.0.0/PROVENANCE.md`.
  *
- * WHAT IT IS: the simple ONE-TO-ONE case map PCRE2's substitution case
- * forcing applies (`\\U \\L \\u \\l`), as two arrays sorted by `cp`.  A code
- * point NOT listed maps to itself.  The rule that produces it, and the
- * libpcre2 10.46 measurement that fixes it, are in the generator's section
- * (5); `tests/oracle/case_map_check.py` holds every entry, and every ABSENCE,
- * to `oracle_store/libpcre2-10.46/case-map.tsv`.
+ * WHAT IT IS: Unicode's simple ONE-TO-ONE case map (UnicodeData.txt fields
+ * 12 and 13, D180) that substitution case forcing applies
+ * (`\\U \\L \\u \\l`), as two arrays sorted by `cp`.  A code point NOT
+ * listed maps to itself.  `tests/oracle/case_map_check.py` holds every entry,
+ * and every ABSENCE, to the UCD, and to libpcre2 10.46's answers
+ * (`oracle_store/libpcre2-10.46-utf/case-map.tsv`) except a pinned list.
  *
  * TO INCLUDE: `#include "case_tables.inc"` (src/core/).  Self-contained; it
  * defines `PcrecCaseMap`, `pcrec_case_upper_map[]`, `pcrec_case_lower_map[]`,
@@ -1298,14 +1280,14 @@ def main():
     cats = read_unicodedata(SOURCE)
     fold = read_casefolding(FOLD_SOURCE)
     orbits = fold_orbits(fold)
-    upper, lower = case_maps(fold, orbits, cats)
+    upper, lower = read_simple_case(SOURCE)
     aliases = read_value_aliases(ALIAS_SOURCE)
     scripts = read_scripts(SCRIPT_SOURCE)
     products = [
         (OUT, SOURCE, emit(build(cats, aliases, scripts, SCRIPTEXT_SOURCE))),
         (FOLD_OUT, FOLD_SOURCE, emit_fold_tables(orbits)),
         (FOLD_TEXT_OUT, FOLD_SOURCE, emit_fold_artifact_text(fold)),
-        (CASE_OUT, FOLD_SOURCE, emit_case_tables(upper, lower)),
+        (CASE_OUT, SOURCE, emit_case_tables(upper, lower)),
     ]
     if check:
         stale = 0

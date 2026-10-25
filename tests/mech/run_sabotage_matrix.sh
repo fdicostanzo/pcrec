@@ -414,6 +414,11 @@
 #     global iteration over tests/findall/cells.tsv on three engine arms, the
 #     iterator's state-machine arms, the <PREFIX>_ITER_RETRY stamp against the
 #     text, and the ASan cells. Registered before S1297.
+#   subst — added 2026-10-22 ([M4-SUBST] phase B, lane substb2); runs
+#     tests/subst/run_subst_tests.sh: the subst artifact's cells against
+#     pcre2_substitute and their generic arms, the template refusals and the
+#     header contract. SKIPS its oracle arms (not the section) without
+#     libpcre2. Registered before S1346.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -643,7 +648,7 @@ set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/timeout_bin.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; only reach_only_selftest.sh sets it.
+# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; set only by the self-tests (reach_only_selftest.sh, nocompile_selftest.sh).
 SAB_DIR="${MECH_SAB_DIR:-$SCRIPT_DIR/sabotages}"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
@@ -1191,6 +1196,16 @@ _sab_bt_selftest
 #
 # Called inside run_one's subshell, so the flag/array writes land on that
 # row's own copies exactly as the inline spellings did.
+#
+# A COMPILE FAILURE IS NOT A CATCH (review 2026-10-24 r1 subst, CHK-1). The
+# sabotaged compiler itself built (BUILD-FAILED is scored before any arm), so
+# a C compiler error in an arm's log is code the arm COMPILED -- an emitted
+# artifact or a driver -- failing under the arm's -Werror: S1354 and S1374
+# scored DETECTED at "driver build" without one cell running. A failing arm
+# whose log carries one (`NOCOMPILE_ERE`, gcc's and clang's `file:L:C: error:`)
+# marks the row `any_nocompile`, which the verdict block renders as ANOMALY
+# ahead of DETECTED: the plant must compile before its witness can count.
+NOCOMPILE_ERE='[A-Za-z0-9_./-]+\.(c|h|inc):[0-9]+:[0-9]+: (fatal )?error: '
 score_arm() {
     local log="$1" fc="$2" cell="$3" name="${3%%:*}"
     if [ ! -s "$log" ]; then
@@ -1207,6 +1222,10 @@ score_arm() {
     fi
     suite_bits+=("$cell")
     [ "$fc" -gt 0 ] && any_fail=1
+    if [ "$fc" -gt 0 ] && grep -qE "$NOCOMPILE_ERE" "$log"; then
+        any_nocompile=1
+        nocompile_arms+=("$name:$(grep -m1 -oE "$NOCOMPILE_ERE.{0,60}" "$log")")
+    fi
     any_ran=1
 }
 
@@ -1696,6 +1715,8 @@ run_one() {
         # verdict moves.
         any_unmeasured=0
         unmeasured_arms=()  # ...and WHICH, so the verdict can name them
+        any_nocompile=0     # an arm's log shows compiled code failing (CHK-1)
+        nocompile_arms=()
 
         for suite in $SAB_SUITES; do
             case "$suite" in
@@ -3236,6 +3257,15 @@ run_one() {
                     score_arm "$work/findall.log" "$f" "findall:${f:-ERR}fail/${p:-?}pass"
                 fi
                 ;;
+            subst)
+                # [M4-SUBST] tests/subst/run_subst_tests.sh — see the
+                # vocabulary entry above. Its last two lines are the totals.
+                PCREC="$pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/subst/run_subst_tests.sh" > "$work/subst.log" 2>&1
+                p="$(grep '^checks passed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                f="$(grep '^checks failed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                score_arm "$work/subst.log" "$f" "subst:${f:-ERR}fail/${p:-?}pass"
+                ;;
             twins)
                 # [FINDALL-NEXT] tests/codegen/run_residual_twins.sh — see the
                 # vocabulary entry above.
@@ -3487,7 +3517,9 @@ run_one() {
         # visibly in its verdict, because "caught by nothing" means something
         # different when one of the nets was not in the water.
         verdict="DETECTED"
-        if [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
+        if [ "$any_nocompile" -eq 1 ]; then
+            verdict="ANOMALY (the plant does not compile: $(IFS=' '; echo "${nocompile_arms[*]}") -- a compile failure is not a catch; make the plant warning-clean)"
+        elif [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
             verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
             verdict="ANOMALY (every assigned check binary failed to build)"

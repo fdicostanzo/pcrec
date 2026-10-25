@@ -1,0 +1,105 @@
+# r4 probes: libpcre2-8 10.46 2025-08-27 via ctypes, pcre2_substitute GLOBAL|OVERFLOW_LENGTH|EXTENDED (0x200); 2026-10-22, lane/subst 61f3ce045
+## r4_probe_ext.py
+b'(a)?b'               b'[${1:-D}]'                       b'b ab'      -> b'[D] [a]' n=2
+b'(a?)b'               b'[${1:-D}]'                       b'b ab'      -> b'[] [a]' n=2
+b'(a)?b'               b'[${1:+S:N}]'                     b'b ab'      -> b'[N] [S]' n=2
+b'(a?)b'               b'[${1:+S:N}]'                     b'b ab'      -> b'[S] [S]' n=2
+b'(a)?b'               b'[${1:+S}]'                       b'b ab'      -> b'[] [S]' n=2
+b'(?<n>a)?b'           b'[${n:-D}|${n:+S:N}]'             b'b ab'      -> b'[D|N] [a|S]' n=2
+b'(a)?b'               b'[${1-D}]'                        b'b ab'      -> ERR -58 (expected closing curly bracket in replacement string) at 4
+b'(a)?b'               b'[${1+S:N}]'                      b'b ab'      -> ERR -58 (expected closing curly bracket in replacement string) at 4
+b'(a)?b'               b'[${1:=D}]'                       b'b ab'      -> ERR -59 (bad substitution in replacement string) at 5
+b'(a)?b'               b'[${1:?D}]'                       b'b ab'      -> ERR -59 (bad substitution in replacement string) at 5
+b'(a)?(c)?b'           b'[${1:-$2}]'                      b'b cb ab'   -> ERR -55 (requested value is not set) at 8
+b'(a)?(c)?b'           b'[${1:-${2:-z}}]'                 b'b cb ab'   -> b'[z] [c] [a]' n=3
+b'(a)?(c)?b'           b'[${1:+<$1>:${2:+<$2>:none}}]'    b'b cb ab'   -> b'[none] [<c>] [<a>]' n=3
+b'(a)?b'               b'[${1:-x$$y}]'                    b'b'         -> b'[x$y]' n=1
+b'(a)?b'               b'[${1:-a\\:b\\}c}]'               b'b'         -> b'[a:b}c]' n=1
+b'(a)?b'               b'[${1:+x\\:y:z}]'                 b'b ab'      -> b'[z] [x:y]' n=2
+b'(a)?b'               b'[${1:-a:b}]'                     b'b'         -> b'[a:b]' n=1
+b'(a)?b'               b'[${1:+a}b:c}]'                   b'b ab'      -> b'[b:c}] [ab:c}]' n=2
+b'(a)?b'               b'[${9:-D}]'                       b'b'         -> ERR -49 (unknown substring) at 8
+b'(a)?b'               b'[${9:+S:N}]'                     b'b'         -> ERR -49 (unknown substring) at 10
+b'(a)?b'               b'[${z:-D}]'                       b'b'         -> ERR -49 (unknown substring) at 8
+b'(a)?b'               b'[$1]'                            b'b'         -> ERR -55 (requested value is not set) at 3
+b'b'                   b'<\\n\\t\\x41\\x{42}\\101\\\\\\$>' b'abc'       -> b'a<\n\tABA\\$>c' n=1
+b'b'                   b'<\\a\\e\\f\\r\\0>'               b'abc'       -> b'a<\x07\x1b\x0c\r\x00>c' n=1
+b'b'                   b'<\\q>'                           b'abc'       -> ERR -57 (bad escape sequence in replacement string) at 2
+b'b'                   b'<\\Qa$1\\E>'                     b'abc'       -> b'a<a$1>c' n=1
+b'b'                   b'<\\o{101}\\cA\\N{U+41}>'         b'abc'       -> ERR -57 (bad escape sequence in replacement string) at 13
+b'b'                   b'<\\1>'                           b'abc'       -> ERR -49 (unknown substring) at 3
+b'(b)'                 b'<\\1|\\g1|\\g{1}>'               b'abc'       -> ERR -57 (bad escape sequence in replacement string) at 6
+b'(\\w+) (\\w+)'       b'\\U$1\\E $2'                     b'hello world' -> b'HELLO world' n=1
+b'(\\w+) (\\w+)'       b'\\u$1 \\l$2'                     b'hello WORLD' -> b'Hello wORLD' n=1
+b'(\\w+) (\\w+)'       b'\\U$1 x \\L$2 Y\\E z'            b'hello WORLD' -> b'HELLO X world y z' n=1
+b'(\\w+) (\\w+)'       b'\\u\\L$1 \\l\\U$2'               b'hELLO world' -> b'Hello wORLD' n=1
+b'(\\w+) (\\w+)'       b'\\L\\u$1 \\U\\l$2'               b'hELLO world' -> b'HELLO world' n=1
+b'(\\w+)'              b'\\Uab${1:-x}cd'                  b'hello'     -> b'ABHELLOCD' n=1
+b'(\\w+)?!'            b'\\U${1:-def}'                    b'!'         -> b'DEF' n=1
+b'(\\w+)?!'            b'\\U${1:+y$1:no}'                 b'hi!'       -> b'YHI' n=1
+b'(\\w+)'              b'\\u'                             b'hello'     -> b'' n=1
+b'(\\w+)'              b'\\u\\u$1'                        b'hello'     -> b'Hello' n=1
+b'(\\w*)'              b'\\u$1'                           b'1abc'      -> b'1abc' n=2
+b'(\\w+)'              b'\\E$1'                           b'hello'     -> b'hello' n=1
+b'(\\w+)'              b'\\uxyz$1'                        b'hello'     -> b'Xyzhello' n=1
+b'(\\w+)'              b'\\U$$'                           b'hello'     -> b'$' n=1
+--- UNSET_EMPTY
+b'(a)?b'               b'[$1]'                            b'b'         -> b'[]' n=1
+b'(a)?b'               b'[${1:-D}]'                       b'b'         -> b'[D]' n=1
+b'(a)?b'               b'[${9}]'                          b'b'         -> ERR -49 (unknown substring) at 5
+--- UTF case
+b'(\\w+)'              b'\\U$1'                           b'stra\xc3\x9fe \xc4\xb1x' -> b'STRA\xc3\x9fE \xc4\xb1X' n=3
+b'(.+)'                b'\\U$1'                           b'stra\xc3\x9fe \xc4\xb1x \xc7\x86' -> b'STRA\xe1\xba\x9eE \xc4\xb1X \xc7\x84' n=1
+b'(.+)'                b'\\L$1'                           b'\xe2\x84\xaa\xc4\xb0' -> b'\xe2\x84\xaa\xc4\xb0' n=1
+b'(.+)'                b'\\u$1'                           b'\xc7\x86x' -> b'\xc7\x84x' n=1
+## r4_probe_ext2.py
+b'(b)(c)?'   b'<\\1>'                       b'abc'     -> b'a<b>' n=1
+b'(b)(c)?'   b'<\\2|${2}>'                  b'abd'     -> ERR -55 (requested value is not set) at 3
+b'(b)'       b'<\\o{101}>'                  b'abc'     -> b'a<A>c' n=1
+b'(b)'       b'<\\cA>'                      b'abc'     -> b'a<\x01>c' n=1
+b'(b)'       b'<\\N{U+41}>'                 b'abc'     -> ERR -57 (bad escape sequence in replacement string) at 3
+b'(b)'       b'<\\N{U+41}>'                 b'abc'   U -> b'a<A>c' n=1
+b'(b)'       b'<\\x{100}>'                  b'abc'     -> ERR -57 (bad escape sequence in replacement string) at 7
+b'(b)'       b'<\\x{100}>'                  b'abc'   U -> b'a<\xc4\x80>c' n=1
+b'(b)'       b'<\\E>'                       b'abc'     -> b'a<>c' n=1
+b'(b)'       b'<x\\'                        b'abc'     -> ERR -57 (bad escape sequence in replacement string) at 3
+b'(b)'       b'<\\Qab'                      b'abc'     -> b'a<abc' n=1
+b'(b)'       b'<\\u\\Q$1\\E>'               b'abc'     -> b'a<$1>c' n=1
+b'(b)'       b'\\U\\Qa$\\E$1'               b'abc'     -> b'aA$Bc' n=1
+b'(b)'       b'<$*MARK>'                    b'abc'     -> b'a<>c' n=1
+b'(b)(c)?'   b'\\u${2:-x}'                  b'abd'     -> b'aXd' n=1
+b'(b)(c)?'   b'\\u${2}x'                    b'abd'     -> ERR -55 (requested value is not set) at 6
+b'(b)(c)?'   b'\\u$2$1'                     b'abd'     -> ERR -55 (requested value is not set) at 4
+b'(b)(c)?'   b'\\U${2:+$2:\\Ezz}y'          b'abd'     -> b'azzyd' n=1
+b'(b)'       b'\\Uab\\Lcd\\Eef'             b'abc'     -> b'aABcdefc' n=1
+b'(b)'       b'\\L\\uAB'                    b'abc'     -> b'aABc' n=1
+b'(b)'       b'\\U\\lab'                    b'abc'     -> b'aabc' n=1
+b'(b)'       b'\\u\\Lab'                    b'abc'     -> b'aAbc' n=1
+b'(b)'       b'\\l\\UAB'                    b'abc'     -> b'aaBc' n=1
+b'(b)'       b'\\u\\lab'                    b'abc'     -> b'aabc' n=1
+b'(b)'       b'${1:-\\Ux}y'                 b'abc'     -> b'abyc' n=1
+b'(b)(c)?'   b'${2:-\\Ux}y'                 b'abd'     -> b'aXYd' n=1
+b'(b)(c)?'   b'${2:-\\ux}y'                 b'abd'     -> b'aXyd' n=1
+b'(b)'       b'${1:+\\U$1:x}y$1'            b'abc'     -> b'aBYBc' n=1
+b'(?<n>b)'   b'${n:+$n:}'                   b'abc'     -> b'abc' n=1
+b'(b)'       b'${1:+}'                      b'abc'     -> b'ac' n=1
+b'(b)'       b'${1:-}'                      b'abc'     -> b'abc' n=1
+b'(b)'       b'${01:-x}'                    b'abc'     -> b'abc' n=1
+b'(b)'       b'${1 :-x}'                    b'abc'     -> ERR -58 (expected closing curly bracket in replacement string) at 3
+b'(b)'       b'$1:-x'                       b'abc'     -> b'ab:-xc' n=1
+b'(b)'       b'${!v}'                       b'abc'     -> ERR -35 (invalid replacement string) at 2
+b'(b)'       b'\\$1'                        b'abc'     -> b'a$1c' n=1
+b'(b)'       b'${1:+a\\nb:c}'               b'abc'     -> b'aa\nbc' n=1
+## r4_probe_ext3.py
+b'(b)'         b'<\\8>'     -> ERR -49 (unknown substring) at 3
+b'(b)'         b'<\\10>'    -> b'a<\x08>c' n=1
+b'(b)'         b'<\\12>'    -> b'a<\n>c' n=1
+b'(b)'         b'<\\18>'    -> b'a<\x018>c' n=1
+b'(b)'         b'<\\01>'    -> b'a<\x01>c' n=1
+b'(b)(x)?(x)?(x)' b'<\\10>'    -> ERR -55 (requested value is not set) at 4
+b'(b)(x)?(x)?(x)' b'<\\12>'    -> ERR -55 (requested value is not set) at 4
+b'(b)(x)?(x)?(x)' b'<\\1x>'    -> b'a<bx>c' n=1
+b'(b)'         b'\\U$1\xc3\x9f' -> b'aB\xc3\x9fc' n=1
+b'(b)'         b'<\\x41\\x4>' -> b'a<A\x04>c' n=1
+latin1 byte b'\\U$1' b'\xe0\xc0Z' n=1
+latin1 byte b'\\L$1' b'\xe0\xc0z' n=1

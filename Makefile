@@ -391,7 +391,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
-      test-kitproof test-casemap test-findall test-ci-shards
+      test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1534,6 +1534,20 @@ test-findall: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findall.ran"; fi
 	bash tests/findall/run_findall_tests.sh
 
+# [M4-SUBST] the subst artifact (compiled substitution, D173): its cells
+# against pcre2_substitute, the generic arms, the template refusals and the
+# header contract (tests/subst/).
+test-subst: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-subst.ran"; fi
+	bash tests/subst/run_subst_tests.sh
+
+# [M4-SUBST] the D27 blinded corpus (tests/subst/d27/, lane substd27, adopted
+# by lane substfix): eleven differential families against libpcre2 under
+# ASan+UBSan, the API drivers, the CLI/header suite; scored by run_d27.sh.
+test-subst-d27: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-subst-d27.ran"; fi
+	bash tests/subst/run_d27.sh
+
 # D164 B3 (docs/design/endmark.md §R.6): the `rev-end` walk's form table, its
 # answers under three arms, the probe census, the gates and the declines.
 test-endmark: all
@@ -1587,9 +1601,10 @@ test-clskit: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-clskit.ran"; fi
 	bash tests/clskit/run_clskit_tests.sh
 
-# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to
-# libpcre2 10.46's own pcre2_substitute answers for EVERY scalar value, from the
-# committed oracle store (the `case-map` kind); no libpcre2 needed at run time.
+# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to the
+# UCD's simple case mappings for EVERY scalar value, and to libpcre2 10.46's
+# pcre2_substitute answers (the committed oracle store, `case-map` kind) except
+# the 150 pinned points (D180); no libpcre2 needed at run time.
 test-casemap:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-casemap.ran"; fi
 	python3 -I tests/oracle/case_map_check.py
@@ -2156,7 +2171,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

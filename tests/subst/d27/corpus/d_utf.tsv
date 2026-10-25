@@ -1,0 +1,129 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+utf-000	utf	-e utf8	x*	[$0]	empty	all	a\xc3\xa9b	diff
+utf-001	utf	-e utf8	x*	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-002	utf	-e utf8	x*	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-003	utf	-e utf8	x*	[$0]	empty	all	a\xffb	known:11
+utf-004	utf	-e utf8	x*	[$0]	empty	all	\xc3	diff
+utf-005	utf	-e utf8	x*	[$0]	empty	all	\xe6\x97	diff
+utf-006	utf	-e utf8	x*	[$0]	empty	all	\xc0\x80	diff
+utf-007	utf	-e utf8	x*	[$0]	empty	all	\xed\xa0\x80	diff
+utf-008	utf	-e utf8	x*	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-009	utf	-e utf8	x*	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	known:11
+utf-010	utf	-e utf8	.	[$0]	empty	all	a\xc3\xa9b	diff
+utf-011	utf	-e utf8	.	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-012	utf	-e utf8	.	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-013	utf	-e utf8	.	[$0]	empty	all	a\xffb	diff
+utf-014	utf	-e utf8	.	[$0]	empty	all	\xc3	diff
+utf-015	utf	-e utf8	.	[$0]	empty	all	\xe6\x97	diff
+utf-016	utf	-e utf8	.	[$0]	empty	all	\xc0\x80	diff
+utf-017	utf	-e utf8	.	[$0]	empty	all	\xed\xa0\x80	diff
+utf-018	utf	-e utf8	.	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-019	utf	-e utf8	.	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-020	utf	-e utf8	\\w+	[$0]	empty	all	a\xc3\xa9b	diff
+utf-021	utf	-e utf8	\\w+	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-022	utf	-e utf8	\\w+	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-023	utf	-e utf8	\\w+	[$0]	empty	all	a\xffb	diff
+utf-024	utf	-e utf8	\\w+	[$0]	empty	all	\xc3	diff
+utf-025	utf	-e utf8	\\w+	[$0]	empty	all	\xe6\x97	diff
+utf-026	utf	-e utf8	\\w+	[$0]	empty	all	\xc0\x80	diff
+utf-027	utf	-e utf8	\\w+	[$0]	empty	all	\xed\xa0\x80	diff
+utf-028	utf	-e utf8	\\w+	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-029	utf	-e utf8	\\w+	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-030	utf	-e utf8	(.)	[$0]	empty	all	a\xc3\xa9b	diff
+utf-031	utf	-e utf8	(.)	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-032	utf	-e utf8	(.)	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-033	utf	-e utf8	(.)	[$0]	empty	all	a\xffb	diff
+utf-034	utf	-e utf8	(.)	[$0]	empty	all	\xc3	diff
+utf-035	utf	-e utf8	(.)	[$0]	empty	all	\xe6\x97	diff
+utf-036	utf	-e utf8	(.)	[$0]	empty	all	\xc0\x80	diff
+utf-037	utf	-e utf8	(.)	[$0]	empty	all	\xed\xa0\x80	diff
+utf-038	utf	-e utf8	(.)	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-039	utf	-e utf8	(.)	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-040	utf	-e utf8	\xc3\xa9	[$0]	empty	all	a\xc3\xa9b	diff
+utf-041	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-042	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-043	utf	-e utf8	\xc3\xa9	[$0]	empty	all	a\xffb	diff
+utf-044	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xc3	diff
+utf-045	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xe6\x97	diff
+utf-046	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xc0\x80	diff
+utf-047	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xed\xa0\x80	diff
+utf-048	utf	-e utf8	\xc3\xa9	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-049	utf	-e utf8	\xc3\xa9	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-050	utf	-e utf8	[^a]	[$0]	empty	all	a\xc3\xa9b	diff
+utf-051	utf	-e utf8	[^a]	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-052	utf	-e utf8	[^a]	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-053	utf	-e utf8	[^a]	[$0]	empty	all	a\xffb	diff
+utf-054	utf	-e utf8	[^a]	[$0]	empty	all	\xc3	diff
+utf-055	utf	-e utf8	[^a]	[$0]	empty	all	\xe6\x97	diff
+utf-056	utf	-e utf8	[^a]	[$0]	empty	all	\xc0\x80	diff
+utf-057	utf	-e utf8	[^a]	[$0]	empty	all	\xed\xa0\x80	diff
+utf-058	utf	-e utf8	[^a]	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-059	utf	-e utf8	[^a]	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-060	utf	-e utf8		[$0]	empty	all	a\xc3\xa9b	diff
+utf-061	utf	-e utf8		[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-062	utf	-e utf8		[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-063	utf	-e utf8		[$0]	empty	all	a\xffb	known:11
+utf-064	utf	-e utf8		[$0]	empty	all	\xc3	diff
+utf-065	utf	-e utf8		[$0]	empty	all	\xe6\x97	diff
+utf-066	utf	-e utf8		[$0]	empty	all	\xc0\x80	diff
+utf-067	utf	-e utf8		[$0]	empty	all	\xed\xa0\x80	diff
+utf-068	utf	-e utf8		[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-069	utf	-e utf8		[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	known:11
+utf-070	utf	-e utf8	(?=.)	[$0]	empty	all	a\xc3\xa9b	diff
+utf-071	utf	-e utf8	(?=.)	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-072	utf	-e utf8	(?=.)	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-073	utf	-e utf8	(?=.)	[$0]	empty	all	a\xffb	diff
+utf-074	utf	-e utf8	(?=.)	[$0]	empty	all	\xc3	diff
+utf-075	utf	-e utf8	(?=.)	[$0]	empty	all	\xe6\x97	diff
+utf-076	utf	-e utf8	(?=.)	[$0]	empty	all	\xc0\x80	diff
+utf-077	utf	-e utf8	(?=.)	[$0]	empty	all	\xed\xa0\x80	diff
+utf-078	utf	-e utf8	(?=.)	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-079	utf	-e utf8	(?=.)	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	known:11
+utf-080	utf	-e utf8	\\b	[$0]	empty	all	a\xc3\xa9b	diff
+utf-081	utf	-e utf8	\\b	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-082	utf	-e utf8	\\b	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-083	utf	-e utf8	\\b	[$0]	empty	all	a\xffb	known:11
+utf-084	utf	-e utf8	\\b	[$0]	empty	all	\xc3	diff
+utf-085	utf	-e utf8	\\b	[$0]	empty	all	\xe6\x97	diff
+utf-086	utf	-e utf8	\\b	[$0]	empty	all	\xc0\x80	diff
+utf-087	utf	-e utf8	\\b	[$0]	empty	all	\xed\xa0\x80	diff
+utf-088	utf	-e utf8	\\b	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-089	utf	-e utf8	\\b	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-090	utf	-e utf8	\\p{L}+	[$0]	empty	all	a\xc3\xa9b	diff
+utf-091	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-092	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-093	utf	-e utf8	\\p{L}+	[$0]	empty	all	a\xffb	diff
+utf-094	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xc3	diff
+utf-095	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xe6\x97	diff
+utf-096	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xc0\x80	diff
+utf-097	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xed\xa0\x80	diff
+utf-098	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-099	utf	-e utf8	\\p{L}+	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-100	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	a\xc3\xa9b	diff
+utf-101	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-102	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-103	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	a\xffb	diff
+utf-104	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xc3	diff
+utf-105	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xe6\x97	diff
+utf-106	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xc0\x80	diff
+utf-107	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xed\xa0\x80	diff
+utf-108	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-109	utf	-e utf8	(*UCP)\\d+	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-110	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	a\xc3\xa9b	diff
+utf-111	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
+utf-112	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
+utf-113	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	a\xffb	diff
+utf-114	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xc3	diff
+utf-115	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xe6\x97	diff
+utf-116	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xc0\x80	diff
+utf-117	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xed\xa0\x80	diff
+utf-118	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xf4\x90\x80\x80	diff
+utf-119	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
+utf-120	utf	-e utf8 -i	\xc3\xa9	[$0]	empty	all	\xc3\x89\xc3\xa9E	diff
+utf-121	utf	-e utf8	(\xc3\xa9)	\xc3\xa8$1\xc3\xa8	empty	all	a\xc3\xa9b	diff
+utf-122	utf	-e utf8	a	[\xff]	empty	all	aa	diff
+utf-123	utf	-e utf8	a	[\xc3]	empty	all	aa	diff
+utf-124	utf		a	[\xff]	empty	all	aa	diff
+utf-125	utf	-e utf8	x*	[$0]	empty	1	a\xffb	diff
+utf-126	utf	-e utf8	x*	[$0]	empty	2	a\xffb	known:11
+utf-127	utf	-e utf8	x*	[$0]	empty	all	a\xffb	expect:[]a[]\xff[]b[]

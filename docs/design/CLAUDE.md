@@ -104,6 +104,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.
 - `definitions_table.md` — [DD-11]; `dd13_format/` — [DD-13] file format; `findings/` — [FINDINGS] (D83); `patfacts/` — [PATFACTS] (D120); `oracle_interface.md` — oracle interface/answer store.
 - `variables_common.md`, `variables_pattern.md`, `replace_design.md`, `variables_roadmap.md` — [VAR] design set (paneled r1, revised; pattern half landed 2026-09-23).
+- `subst_api_r4_draft.md` — [M4-SUBST] the DRAFT `docs/spec/subst_api.md` was generated from for `replace_design.md` §R4 (lane substb2); RETIRED to a pointer (review 2026-10-24 r1, IFACE-9): the spec is the contract. `subst_measurements/` — the §R2 glue probe and the §R4.13 `subst-extended` probes against libpcre2.
 - `design_registry_selectors.md` — SR-9 selectors (superseded by R6); `registry_built_status_memo.md` — registry built-status memo.
 - `m6read_samples/` — [M6-READ] approved sample commented artifacts (style of record).
 - `plan_row_bodies/` — verbatim long-form text of plan.md rows moved out by [PLAN-LINT] step 2; the plan.md row is the status of record.

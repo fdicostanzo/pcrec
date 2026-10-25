@@ -69,7 +69,6 @@
  * rows' `engines` mask moved from VM_ONLY to ANY_ENGINE instead of this
  * file adding a second, redundant forcer. */
 
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -90,23 +89,36 @@ static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
 }
 
 /* Is `cp` in the bare-namespace Unicode property `prop` (normalised name)?
- * A binary search of the same generated interval table `\p{..}` reads. */
-static bool ng_in_prop(Ctx *cx, const char *prop, unsigned cp)
+ * A binary search of the same generated interval table `\p{..}` reads; -1
+ * when unicode-props does not ship the table. */
+static int ng_in_prop(const char *prop, unsigned cp)
 {
     int n = 0;
     const PcrecCpRange *iv = pcrec_uprops_span(prop, &n);
-    if (!iv)
-        pcrec_ctx_fail(cx, cx->pos, "internal error: the group-name rule "
-                       "names property '%s', which unicode-props does not "
-                       "ship", prop);
+    if (!iv) return -1;
     int lo = 0, hi = n - 1;
     while (lo <= hi) {
         int mid = lo + (hi - lo) / 2;
         if (cp < iv[mid].lo) hi = mid - 1;
         else if (cp > iv[mid].hi) lo = mid + 1;
-        else return true;
+        else return 1;
     }
-    return false;
+    return 0;
+}
+
+/* THE GROUP-NAME CHARACTER, ONE RULE for the pattern side and the subst
+ * template (subst_template.c): an ASCII letter or `_` first, then letters,
+ * digits or `_`; above ASCII (an encoding wider than a byte, the caller's
+ * decision) \p{L} first and \p{L} \p{Nd} after (K116's measured rule).
+ * 1 if `cp` is one, 0 if not, -1 when a property table is missing (each
+ * reader fails loudly on it). */
+int pcrec_group_name_cp(unsigned cp, bool first)
+{
+    if (cp < 0x80)
+        return ((cp | 0x20) >= 'a' && (cp | 0x20) <= 'z') || cp == '_'
+               || (!first && cp >= '0' && cp <= '9');
+    int r = ng_in_prop("L", cp);
+    return r != 0 || first ? r : ng_in_prop("ND", cp);
 }
 
 /* The byte length of the name character at p[i] (`first`: in the leading
@@ -118,14 +130,16 @@ static int ng_name_char(Ctx *cx, const char *p, size_t n, size_t i, bool first)
 {
     if (i >= n) return 0;
     unsigned char b = (unsigned char)p[i];
-    if (b < 0x80)
-        return (first ? isalpha(b) : isalnum(b)) || b == '_' ? 1 : 0;
+    if (b < 0x80) return pcrec_group_name_cp(b, first);
     if (pcrec_enc_by_id(cx->opt->encoding)->max_cp <= 0xFFu) return 0;
     int len;
     unsigned cp = pcrec_pat_char(cx, (size_t)(p - cx->pat) + i, &len);
     if (i + (size_t)len > n) return 0;
-    return ng_in_prop(cx, "L", cp) || (!first && ng_in_prop(cx, "ND", cp))
-               ? len : 0;
+    int r = pcrec_group_name_cp(cp, first);
+    if (r < 0)
+        pcrec_ctx_fail(cx, cx->pos, "internal error: the group-name rule "
+                       "names a property unicode-props does not ship");
+    return r ? len : 0;
 }
 
 /* [M6.5.2] THE NAME GRAMMAR AS ONE FUNCTION, four readers.

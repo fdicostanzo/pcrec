@@ -1,0 +1,34 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+byte-000	byte		\\x00	[$0]	empty	all	a\0b\0	diff
+byte-001	byte		\\x00	<\0$1\0>	empty	all	a\0b\0	diff
+byte-002	byte		\\x00		empty	all	a\0b\0	diff
+byte-003	byte		[\\x80-\\xff]+	[$0]	empty	all	a\x80\xffb\xfe	diff
+byte-004	byte		[\\x80-\\xff]+	<\0$1\0>	empty	all	a\x80\xffb\xfe	diff
+byte-005	byte		[\\x80-\\xff]+		empty	all	a\x80\xffb\xfe	diff
+byte-006	byte		.	[$0]	empty	all	\0\n\xff	diff
+byte-007	byte		.	<\0$1\0>	empty	all	\0\n\xff	diff
+byte-008	byte		.		empty	all	\0\n\xff	diff
+byte-009	byte		(?s).	[$0]	empty	all	\0\n\xff	diff
+byte-010	byte		(?s).	<\0$1\0>	empty	all	\0\n\xff	diff
+byte-011	byte		(?s).		empty	all	\0\n\xff	diff
+byte-012	byte		\\xff*	[$0]	empty	all	\xff\xffa\xff	diff
+byte-013	byte		\\xff*	<\0$1\0>	empty	all	\xff\xffa\xff	diff
+byte-014	byte		\\xff*		empty	all	\xff\xffa\xff	diff
+byte-015	byte		(\\x00+)	[$0]	empty	all	\0\0a	diff
+byte-016	byte		(\\x00+)	<\0$1\0>	empty	all	\0\0a	diff
+byte-017	byte		(\\x00+)		empty	all	\0\0a	diff
+byte-018	byte		\\n	[$0]	empty	all	a\nb\r\n	diff
+byte-019	byte		\\n	<\0$1\0>	empty	all	a\nb\r\n	diff
+byte-020	byte		\\n		empty	all	a\nb\r\n	diff
+byte-021	byte		(?m)^	[$0]	empty	all	a\nb\r\nc	diff
+byte-022	byte		(?m)^	<\0$1\0>	empty	all	a\nb\r\nc	diff
+byte-023	byte		(?m)^		empty	all	a\nb\r\nc	diff
+byte-024	byte		$	[$0]	empty	all	a\n	diff
+byte-025	byte		$	<\0$1\0>	empty	all	a\n	diff
+byte-026	byte		$		empty	all	a\n	diff
+byte-027	byte		\\R	[$0]	empty	all	a\r\nb\rc\n	diff
+byte-028	byte		\\R	<\0$1\0>	empty	all	a\r\nb\rc\n	diff
+byte-029	byte		\\R		empty	all	a\r\nb\rc\n	diff
+byte-030	byte	-i	(ab)	[$1]	empty	all	xAbaBAB	diff
+byte-031	byte	-i	\\xe9	[$0]	empty	all	\xe9\xc9	diff
+byte-032	byte	-i --ucp	\\xe9	[$0]	empty	all	\xe9\xc9	diff

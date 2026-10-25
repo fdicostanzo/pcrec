@@ -373,7 +373,10 @@ is per-prefix and is declared outside the block.
   var-bearing artifact's `<prefix>_match` an `rx_matchfn`.
 - <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.** Every
   emitted call site sets `ncap = 0` and nothing advances it, so no caller can
-  observe a watermark; it is reserved for a future mid-match view.
+  observe a watermark; it is reserved for a future mid-match view. The
+  "ncaps on completion" reading has one producer, the subst element
+  (`docs/spec/subst_api.md` §4): its `ctx.ncap` is the `ncaps` of a COMPLETED
+  match, every pair written.
 - <a id="s2-p7"></a>[2¶7] **`rx_renderfn` carries a sizing protocol**: called with `out == NULL` and
   `outcap == 0` it writes nothing and returns the length it would produce.
   The typedef is in every artifact's block; a FUNCTION of this type is
@@ -1094,6 +1097,13 @@ written, and it holds what it held before the call (for a BOUND iterator
 whose setter was refused, the position its next search would have started
 at). Every other field's value is unspecified to the caller.
 
+<a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s`, `n`, `vars` and `nvars` hold valid
+values in every state: `RX_ITER_INIT` writes all of them (¶5), and
+`rx_iter_vars` sets the last two while the iterator is FRESH. The shared
+block that reads them, the subst types block's context setup
+(`docs/spec/subst_api.md` §7¶3), reads exactly these fields; a caller still reads none of them, and uses `pcrec_subst_ctx_init`
+where it needs a context.
+
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an
 independent iterator at the same point, and either may be advanced. Each
 holds the bindings above.
@@ -1204,6 +1214,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_UNSET_VAR` | −8 | below the floor | refused: an unset or ill-formed variable value (`docs/spec/vars.md`) |
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
 | `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5); `<prefix>_next` and `<prefix>_next_n` leave it, in `it.rc` |
+| `PCREC_SUBST_NOSPACE` … `PCREC_SUBST_MISSING_REF` | −11 … −16 | below the floor | reserved for the subst artifact (`docs/spec/subst_api.md` §8), whose block defines them; no match entry returns one, and no other code takes these values |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
 resource. A DFA artifact has no counter and never returns one, though it

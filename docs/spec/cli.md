@@ -27,6 +27,8 @@
   - [§1.17](#s1-17) `--features LIST`: the module gate
     - [§1.17.1](#s1-17-1) Module `unicode-props`
   - [§1.18](#s1-18) The `-f`/`-fno-` family and the other flags that share its spelling
+  - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+  - [§1.20](#s1-20) `--emit-support`: the subst support unit
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -183,6 +185,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
 | 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
+| 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `pcrec_subst_*`, `PCREC_SUBST_*`, `PCREC_SUPPORT_*` | `pcrec_subst` or `pcrec_support`, alone or followed by `_`, in any case; and `pcrec` in any case, whose subst artifact's `<prefix>_subst_*` names would fall in the family |
 
 <a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 
@@ -318,6 +321,16 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-18-p2"></a>[1.18¶2] `-futf-check` and `-fstartpos-guard=align` share the spelling and are contract axes (`tuning.md` §2.36 and §2.23): they select which answer a call gives. `-futf-check` makes every entry refuse an ill-formed subject with `PCREC_ERR_UTF` (-9), PCRE2_UTF's contract; `-fstartpos-guard=align` moves a mid-character `startpos` forward to the next character start instead of refusing it (`match_api.md` §9.2). Both are off by default and inert under `-e byte`. `-futf-check=extent` is reserved and refused by name (exit 1); `-fstartpos-guard=align` together with `-fno-startpos-guard` is refused as contradictory.
 
 <a id="s1-18-p3"></a>[1.18¶3] `-fcomments` and `-fno-comments` control the emitted artifact's human commentary and nothing else (`tuning.md` §2.24). The default is `-fno-comments`: an artifact carries only its essential comments, the generated-by line naming pcrec and the `abi` and echoing the pattern, and the shared type block's doc-comments. `-fcomments` restores the rest. Deny wins over force. The object file, the comment-excluded source size, every emitted `#define` and the size-cap verdicts are identical under either setting. A `config` block or a file-operand target may set either spelling, and an explicit command-line flag wins (§1.1.4).
+
+<a id="s1-19"></a>
+### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them by its presence, a default value included (`--engine=auto`); `--features` is accepted only as `--features subst-extended`, the template module of `subst_api.md` §2¶7. A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
+
+<a id="s1-20"></a>
+### 1.20 `--emit-support`: the subst support unit
+
+<a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any by its presence, a default value included. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

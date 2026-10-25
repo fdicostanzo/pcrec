@@ -4982,6 +4982,11 @@ Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx);      /* \cX */
 Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx);     /* \xHH, \x{HHHH} */
 Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx);   /* \o{OOO}, \NNN, \0 */
 Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx); /* \N{U+HHHH} */
+/* The values behind them, Ctx-free, shared with the substitution-template
+ * parser (src/parse/definitions.c): a digit run's value in base 8 or 16 (-1
+ * when empty or not digits, saturated at 0x7FFFFFFF), and `\cX`'s byte. */
+long pcrec_esc_digits_value(const char *s, size_t len, int base);
+int  pcrec_esc_ctrl_value(int x);
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
@@ -5482,6 +5487,13 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
  * one construct later. */
 size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
+
+/* The group-name CHARACTER rule both name grammars read (the scan above and
+ * the subst template's, src/parse/subst_template.c): 1 if code point `cp`
+ * is a name character (`first`: in the leading position), 0 if not, -1 when
+ * the unicode-props table it reads is missing. Ctx-free, so the template
+ * parser (no Ctx) reads the same rule. */
+int pcrec_group_name_cp(unsigned cp, bool first);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
  * ports and the end-of-parse resolution pass. Design:
@@ -7798,6 +7810,106 @@ const char *pcrec_revend_form_name(RevendForm f);
 const char *pcrec_mark_prio_name(Ctx *cx);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
+/* [M4-SUBST] src/gen/emit_dfa.c's shared block, abi digit and comment
+ * escaper, for the subst emitter (replace_design.md §R3.8). */
+void pcrec_emit_rx_abi_block(StrBuf *sb);
+int  pcrec_artifact_abi(void);
+void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
+
+/* [M4-SUBST] A PARSED SUBSTITUTION TEMPLATE (src/parse/subst_template.c,
+ * docs/spec/subst_api.md §2-§3): a flat item list in template order, one item
+ * per PIECE, and the REFERENCE LIST, every group the template references
+ * other than group 0, each once, in first-appearance order. Arena-owned. */
+typedef enum {
+    SUBST_LIT,     /* lit[off, off + len): a run of literal bytes, `$$` decoded */
+    SUBST_GROUP,   /* `$k` / `${k}` / `$&`: group `num`, reference `ref` (-1 for group 0) */
+    SUBST_NAME,    /* `$name` / `${name}`: reference `ref` */
+    SUBST_VAR,     /* `${!name}`: vrefs[ref], the caller's variable */
+    SUBST_SUBJECT, /* `$_`: the whole subject */
+    SUBST_BEFORE,  /* `` $` ``: the subject before the match */
+    SUBST_AFTER,   /* `$'`: the subject after the match */
+    SUBST_COND,    /* `${n:-text}` / `${n:+set:unset}` (module subst-extended): group
+                    * `num`, reference `ref`; its SET branch is the next `nset` items,
+                    * its UNSET branch the `nunset` after them (nested items included) */
+    SUBST_CASE     /* `\U \L \u \l \E` (module subst-extended): `num` is the event,
+                    * a SubstCaseEvent; no piece of its own */
+} SubstItemKind;
+
+/* A case-forcing event, in the order of subst_api.md §2¶13's table rows. */
+typedef enum { SUBST_EV_UPPER, SUBST_EV_LOWER, SUBST_EV_ONE_UPPER, SUBST_EV_ONE_LOWER,
+               SUBST_EV_END, SUBST_EV_CHAR, SUBST_NEVENTS } SubstCaseEvent;
+
+typedef struct {
+    SubstItemKind kind;
+    size_t        off, len;   /* SUBST_LIT: its bytes in SubstTmpl.lit */
+    int           ref;
+    int           num;
+    size_t        nset, nunset;   /* SUBST_COND: the items of each branch */
+    size_t        pset, punset;   /* SUBST_COND: the pieces of each branch (§4¶7) */
+} SubstItem;
+
+/* One row of the reference list (subst_api.md §3¶2): a name with number -1,
+ * or a number >= 1 with name NULL. */
+typedef struct {
+    const char *name;
+    int         number;
+} SubstRef;
+
+typedef struct {
+    SubstItem   *items;        /* template order; a SUBST_COND's branches follow it */
+    size_t       nitems;
+    size_t       npieces;      /* pieces per match, the gap included (§4¶5) */
+    size_t       region;       /* the top-level item the CASE REGION starts at, or nitems */
+    char        *lit;          /* every literal item's bytes */
+    size_t       nlit;
+    SubstRef    *refs;         /* the reference list, first-appearance order */
+    int          nrefs;
+    const char **vrefs;        /* `${!name}` names, first-reference order */
+    int          nvrefs;
+    int          maxnum;       /* the highest group number, or 0 */
+    bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
+    bool         uses_ext;     /* a module `subst-extended` form appears */
+    bool         enc_bound;    /* its meaning depends on its encoding (§2¶5): a
+                                * non-ASCII byte, an escape naming a code point
+                                * above 0x7F or `\N{U+..}`, or case forcing */
+    size_t       lit_floor;    /* parser-private: no literal joins an item below it */
+} SubstTmpl;
+
+/* Parses `s[0, n)`, read in `encoding` (PCREC_ENC_*), into `t`; `extended`
+ * selects module `subst-extended` (§2¶7). Returns 0, or -1 with `err` filled
+ * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). */
+int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, bool extended,
+                      SubstTmpl *t, pcrec_error *err);
+
+/* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
+ * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
+ * `header_name` is the `.h` the `.c` includes, or NULL for one
+ * self-contained `.c`; `encoding` is the template's (`-e`, PCREC_ENC_*). */
+typedef struct {
+    const char *prefix;
+    const char *header_name;
+    int         encoding;
+    bool        extended;      /* module subst-extended (`--features subst-extended`) */
+} PcrecSubstOptions;
+
+/* Emits the subst artifact for `t` (src/gen/emit_subst.c): `out->c_src`, and
+ * `out->h_src` when a header is named, both malloc'd. */
+void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
+                      const PcrecSubstOptions *o, pcrec_output *out);
+
+/* [M4-SUBST] THE SUPPORT UNIT (src/gen/emit_subst.c, docs/spec/subst_api.md
+ * §10): its whole text, malloc'd; it depends on the pcrec build alone. */
+char *pcrec_emit_support(void);
+
+/* THE SUBSTITUTION-TEMPLATE COMPILER (src/core/compile.c): parse, then
+ * emit. Returns 0, or -1 with `err` filled. The only caller is the CLI until
+ * [IFACE-PUSH] gives the template a library entry; there is no `Ctx` on this
+ * path, so out of memory aborts (an `Arena`/`StrBuf` with no `.cx`). */
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err);
+/* True iff `p` is a prefix `pcrec_compile` accepts (a C identifier within
+ * PCREC_MAX_PREFIX_LEN, no reserved family); else false with `why` filled. */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
  * SIZING SURFACE, as five facts the emitter that knows the run state's layout

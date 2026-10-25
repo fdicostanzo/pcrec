@@ -1,0 +1,15 @@
+# run.sh transcript: lane subst, 2026-10-21, tree lane/subst @ c3bfee73a (abi 84), gcc 15.2.0, libpcre2-8 10.46, Linux dev box (7700X)
+6.1a   a*                 [$0]       bab        pcrec=4:"[]b[a][]b[]" pcre2=4:"[]b[a][]b[]" size=11 OK
+6.1b   a*                 [$0]       aab        pcrec=3:"[aa][]b[]" pcre2=3:"[aa][]b[]" size=9 OK
+retry  |a                 [$0]       aaa        pcrec=7:"[][a][][a][][a][]" pcre2=7:"[][a][][a][][a][]" size=17 OK
+retry  x*|y               [$0]       xyy        pcrec=6:"[x][][y][][y][]" pcre2=6:"[x][][y][][y][]" size=15 OK
+K      ab\K               [$0]       ababab     pcrec=3:"ab[]ab[]ab[]" pcre2=3:"ab[]ab[]ab[]" size=12 OK
+unset  (a)|(b)            [$1|$2]    xaby       pcrec=2:"x[a|][|b]y" pcre2=2:"x[a|][|b]y" size=10 OK
+grp    (a+)b              <$1>       xaabzaab   pcrec=2:"x<aa>z<aa>" pcre2=2:"x<aa>z<aa>" size=10 OK
+lbcap  (?<=(a))b          <$1>       abab       pcrec=2:"a<a>a<a>" pcre2=2:"a<a>a<a>" size=8 OK
+1:N    (a)|(b)            [$0]       xaby       pcrec=2:"x[a][b]y" pcre2=2:"x[a][b]y" size=8 OK
+M:N    (?<y>\d+)-(?<m>\d+) ${y}.${m}  on 2026-10 and 2027-11. pcrec=2:"on 2026.10 and 2027.11." pcre2=2:"on 2026.10 and 2027.11." size=23 OK
+M:N    (?<m>\d+)/(?<y>\d+) ${y}.${m}  on 10/2026 and 11/2027. pcrec=2:"on 2026.10 and 2027.11." pcre2=2:"on 2026.10 and 2027.11." size=23 OK
+shape  a*                 [$1|$2]    BIND-REFUSED (oracle rc=-49)
+nospace cap=5 rc=-1 required=11 OK
+fails=0

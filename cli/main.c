@@ -250,12 +250,22 @@ static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
           "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
+          "       pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst 'TEMPLATE'\n"
+          "       pcrec --emit-support [-o FILE]\n"
           "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
           "                 below); each is compiled exactly as the other\n"
           "                 form compiles a literal --pattern. A prefix\n"
           "                 collision across files is refused, naming both\n"
           "  --pattern 'X'  compile the literal pattern X instead of a file.\n"
           "                 Exactly one; does not combine with a FILE operand\n"
+          "  --subst 'T'    compile the SUBSTITUTION TEMPLATE T ($n ${n}\n"
+          "                 $name ${name} $$, and ${!var}) into a subst\n"
+          "                 artifact: a render element any rx whose groups\n"
+          "                 fit binds to at run time (docs/spec/subst_api.md)\n"
+          "  --subst-file F the template is FILE's bytes, verbatim\n"
+          "  --emit-support the subst SUPPORT UNIT (flatten, replace-all, the\n"
+          "                 by-name map helper) to stdout or -o FILE; takes\n"
+          "                 no other option (docs/spec/subst_api.md 10)\n"
           "  -o FILE        output C file; a matching header FILE with .h is\n"
           "                 also written. '-o -' prints self-contained C to\n"
           "                 stdout with no header file. '-o DIR' writes\n"
@@ -526,6 +536,12 @@ typedef struct {
     /* [REL-1.10] the literal PATTERN, set ONLY by `--pattern` (D118): the
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
+    /* [M4-SUBST] a SUBST compile (docs/spec/subst_api.md §5): the template text
+     * (`--subst`) or its file (`--subst-file`); and `--emit-support`, the
+     * support unit (§10), a mode that takes no other option. */
+    const char *subst;
+    const char *subst_file;
+    int         emit_support;
     int         list_syntax;
     int         list_definitions;
     int         list_verbs;
@@ -990,11 +1006,50 @@ static int cli_operand(CliState *st, const char *a)
     return 0;
 }
 
+/* [M4-SUBST] THE OPTIONS EACH COMPILE-LESS MODE ADMITS (subst_api.md §5¶1,
+ * §10¶2): `--subst`/`--subst-file` and `--emit-support` refuse every other
+ * option by its PRESENCE, whatever value it spells (`--engine=auto` is
+ * refused like `--engine=vm`). A row ending in `=` admits that spelling's
+ * `=VALUE` form. Read once per option token by `cli_parse`. */
+static const struct { const char *tok; bool subst, support; } MODE_ADMITS[] = {
+    { "-o",             true,  true  },
+    { "--emit-support", false, true  },
+    { "--subst",        true,  false },
+    { "--subst-file",   true,  false },
+    { "-p",             true,  false },
+    { "-e",             true,  false },
+    { "--encoding=",    true,  false },
+    { "--features",     true,  false },
+    { "--features=",    true,  false },
+};
+
+/* The first option token on the command line each compile-less mode does
+ * not admit (MODE_ADMITS), or NULL. */
+typedef struct { const char *subst, *support; } CliUnadmitted;
+
+/* Records option token `a` in `*u` where a mode does not admit it. */
+static void mode_admits_note(const char *a, CliUnadmitted *u)
+{
+    bool subst = false, support = false;
+    for (size_t r = 0; r < sizeof MODE_ADMITS / sizeof MODE_ADMITS[0]; r++) {
+        const char *t = MODE_ADMITS[r].tok;
+        const size_t l = strlen(t);
+        if (t[l - 1] == '=' ? !strncmp(a, t, l) : !strcmp(a, t)) {
+            subst = MODE_ADMITS[r].subst;
+            support = MODE_ADMITS[r].support;
+            break;
+        }
+    }
+    if (!subst && !u->subst) u->subst = a;
+    if (!support && !u->support) u->support = a;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
- * same values and the same refusals. */
-static int cli_parse(int argc, char **argv, CliState *st, const char *where)
+ * same values and the same refusals. `u` (NULL for a config block, which
+ * no compile-less mode reads) collects the options the modes do not admit. */
+static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
 {
     pcrec_options opt = st->opt;
     int no_more_opts = 0;
@@ -1021,6 +1076,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (cli_operand(st, a) != 0) return 1;
             continue;
         }
+        if (u && a[0] == '-' && a[1] && strcmp(a, "--") != 0) mode_admits_note(a, u);
         if (!strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
@@ -1078,6 +1134,20 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->pattern = argv[++i];
         }
+        /* [M4-SUBST] a template, not a pattern: its own compile mode. */
+        else if (!strcmp(a, "--subst") || !strcmp(a, "--subst-file")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (st->subst || st->subst_file) {
+                cli_err("exactly one --subst or --subst-file expected");
+                return 1;
+            }
+            if (a[7] == '-') st->subst_file = argv[++i];
+            else st->subst = argv[++i];
+        }
+        else if (!strcmp(a, "--emit-support")) st->emit_support = 1;
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -1554,7 +1624,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * guard reads tokens, and a wrapped name reads as a bare limit. */
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
-        int rc = cli_parse(n, v, &ts, where);
+        int rc = cli_parse(n, v, &ts, where, NULL);
         /* [MEMFN] RQ-1 `--memfn=` carries a POINTER into the split tokens,
          * which die just below: a value the raw line set (it differs from
          * the CLI's own) is kept for the process's life first. */
@@ -2025,6 +2095,131 @@ static int compile_sources(const CliState *cli)
 
 static int cli_dispatch(CliState st);
 
+/* Reads FILE whole into a malloc'd buffer, its length in *len. NULL (with a
+ * diagnostic) on failure. */
+static char *read_whole_file(const char *path, size_t *len)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) { perror(path); return NULL; }
+    size_t cap = 4096, n = 0;
+    char *buf = malloc(cap);
+    while (buf) {
+        n += fread(buf + n, 1, cap - n, f);
+        if (n < cap) break;
+        char *nb = realloc(buf, cap * 2);
+        if (!nb) { free(buf); buf = NULL; break; }
+        buf = nb;
+        cap *= 2;
+    }
+    if (!buf) perror("malloc");
+    else if (ferror(f)) { perror(path); free(buf); buf = NULL; }
+    fclose(f);
+    *len = n;
+    return buf;
+}
+
+/* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst_api.md §5): `--subst
+ * TEMPLATE` or `--subst-file FILE` with `-o`, writing the `.c` and its `.h`
+ * (`-o -`: one self-contained `.c` on stdout). Exclusive with `--pattern`,
+ * a file operand and every query. `unadmitted` is the first option token
+ * MODE_ADMITS does not admit for it, or NULL. Returns 0, or 1 on any
+ * refusal. */
+static int cli_subst(const CliState *st, const char *unadmitted)
+{
+    if (st->pattern || st->nfiles || cli_modes_active(st) || st->emit_support) {
+        cli_err("--subst/--subst-file compiles a template, so it takes no "
+                "--pattern, file operand, query or --emit-support");
+        return 1;
+    }
+    if (!st->outpath) {
+        cli_err("--subst/--subst-file needs -o");
+        return 1;
+    }
+    /* Every rx option is REFUSED rather than ignored (§5¶1), by its
+     * presence, so a default value and an option added later are refused
+     * too. `--features` names the template's own modules: `subst-extended`
+     * (§2¶7) is the one there is. */
+    if (unadmitted) {
+        cli_err("--subst/--subst-file takes only -p, -e, -o and --features subst-extended: "
+                "'%s' is an option for a pattern compile", unadmitted);
+        return 1;
+    }
+    if (st->features && strcmp(st->features, "subst-extended") != 0) {
+        cli_err("--features with --subst/--subst-file takes only the template module "
+                "'subst-extended', not '%s'", st->features);
+        return 1;
+    }
+    size_t len = 0;
+    char *owned = NULL;
+    const char *tmpl = st->subst;
+    if (st->subst_file) {
+        if (!(owned = read_whole_file(st->subst_file, &len))) return 1;
+        tmpl = owned;
+    } else
+        len = strlen(tmpl);
+
+    int to_stdout = !strcmp(st->outpath, "-");
+    char *hpath = NULL;
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->opt.encoding, st->features != NULL };
+    if (!to_stdout) {
+        size_t ol = strlen(st->outpath);
+        if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }
+        strcpy(hpath, st->outpath);
+        if (ol > 2 && !strcmp(hpath + ol - 2, ".c")) strcpy(hpath + ol - 2, ".h");
+        else strcat(hpath, ".h");
+        so.header_name = base_name(hpath);
+    }
+    pcrec_output out;
+    pcrec_error err;
+    int rc = 0;
+    if (pcrec_subst_compile(tmpl, len, &so, &out, &err) != 0) {
+        cli_err("%s (template offset %zu)", err.msg, err.pos);
+        rc = 1;
+    } else {
+        if (to_stdout) {
+            fputs(out.c_src, stdout);
+            if (fflush(stdout) != 0 || ferror(stdout)) {
+                cli_err("write error on stdout");
+                rc = 1;
+            }
+        } else if (write_file(st->outpath, out.c_src) != 0 ||
+                   write_file(hpath, out.h_src) != 0)
+            rc = 1;
+        pcrec_output_free(&out);
+    }
+    free(hpath);
+    free(owned);
+    return rc;
+}
+
+/* [M4-SUBST] THE SUPPORT-UNIT MODE (docs/spec/subst_api.md §10¶2, cli.md
+ * §1.20): `--emit-support` writes the support unit to stdout, or to `-o
+ * FILE`. It takes NOTHING else: `unadmitted`, the first option token
+ * MODE_ADMITS does not admit for it, must be NULL (any value, any option
+ * added later), and there is no file operand. Returns 0, or 1 on a refusal
+ * or a write error. */
+static int cli_emit_support(const CliState *st, const char *unadmitted)
+{
+    if (unadmitted || st->nfiles) {
+        cli_err("--emit-support takes no pattern, template, query or other option "
+                "(only -o FILE)%s%s%s", unadmitted ? ": '" : "", unadmitted ? unadmitted : "",
+                unadmitted ? "' was given" : "");
+        return 1;
+    }
+    char *text = pcrec_emit_support();
+    int rc = 0;
+    if (!st->outpath || !strcmp(st->outpath, "-")) {
+        fputs(text, stdout);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            cli_err("write error on stdout");
+            rc = 1;
+        }
+    } else if (write_file(st->outpath, text) != 0)
+        rc = 1;
+    free(text);
+    return rc;
+}
+
 /* Parses the command line via `cli_parse`, refuses the conflicts every mode
  * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
  * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
@@ -2040,9 +2235,10 @@ static int cli_dispatch(CliState st);
 int main(int argc, char **argv)
 {
     CliState st;
+    CliUnadmitted unadmitted = { NULL, NULL };
     memset(&st, 0, sizeof st);
     pcrec_default_options(&st.opt);
-    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) {
+    if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0) {
         free(st.libdirs);
         free(st.files);
         return 1;
@@ -2051,6 +2247,18 @@ int main(int argc, char **argv)
      * exits 0, one line, stdout. */
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
+    if (st.subst || st.subst_file) {
+        const int rc = cli_subst(&st, unadmitted.subst);
+        free(st.libdirs);
+        free(st.files);
+        return rc;
+    }
+    if (st.emit_support) {
+        const int rc = cli_emit_support(&st, unadmitted.support);
+        free(st.libdirs);
+        free(st.files);
+        return rc;
+    }
 
     /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE
      * OPERAND ALONE, and this is refused HERE — above every query — for two

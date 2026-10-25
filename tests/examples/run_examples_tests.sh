@@ -124,6 +124,26 @@ $run_out"
     fi
 fi
 
+# ---------------------------------------------------------------------
+# (4) examples/subst: compiled substitution as build steps (the rx, two
+# templates, the support unit), built from a scratch copy with -Werror, and
+# its program's output compared with the example's own expected.txt.
+cp -R "$ROOT_DIR/examples/subst" "$WORKDIR/subst"
+SUB="$WORKDIR/subst"
+if ! ( cd "$SUB" && "$TIMEOUT_BIN" 120 make PCREC="$PCREC" CC="$CC" \
+           CFLAGS="-O2 -std=gnu11 -Wall -Wextra -Werror" ) >"$WORKDIR/subst.log" 2>&1; then
+    fail "examples/subst: 'make' did not build:
+$(cat "$WORKDIR/subst.log")"
+elif ! "$SUB/example" > "$WORKDIR/subst.out" 2>&1; then
+    fail "examples/subst: ./example exited non-zero:
+$(cat "$WORKDIR/subst.out")"
+elif cmp -s "$WORKDIR/subst.out" "$SUB/expected.txt"; then
+    pass "examples/subst builds with -Werror and prints expected.txt"
+else
+    fail "examples/subst: output differs from expected.txt:
+$(diff "$SUB/expected.txt" "$WORKDIR/subst.out")"
+fi
+
 echo
 echo "examples: $checks_passed passed, $checks_failed failed"
 [ "$checks_failed" -eq 0 ]

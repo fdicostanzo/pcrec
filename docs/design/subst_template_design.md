@@ -17,6 +17,18 @@
 > surface, and `rx_subst`'s return space gains `RX_ERR_*` codes plus the
 > A-9 compile-time-error obligation (D44.7).
 
+> ## REVISION NOTE (2026-10-21) — the COUPLING below is superseded
+>
+> Frank's 2026-10-21 direction (to be filed as D173) makes compiled
+> substitution an INDEPENDENT ELEMENT bound to any rx of the right shape,
+> over the find-all iterator. `replace_design.md` §R2 is the revision and
+> carries a row-by-row staleness table (§R2.1). In short: the template
+> LANGUAGE (§3, §7, and every D38 ruling about it) STANDS. The single
+> pattern+template function (§1's charter quote, §5.2, §5.3, §5.5) is
+> SUPERSEDED. Compile-time resolution (§4) MOVES to bind, with the same
+> promise. The emitted loop (§6) is CLOSED by the iterator. Q10 (duplicate
+> names) is now DUE. Passages are marked in place.
+
 **Status: PROPOSED, §9 now fully RULED (D38, 2026-08-14).** `docs/dev/decisions.md`
 D38 rules all fourteen of §9's questions (and §10's summary asks) —
 outcomes appended in place below, marked **RULED (D38, 2026-08-14)**.
@@ -541,6 +553,13 @@ tiering costs nothing at run time and can never grow a dispatch.
 
 ## 4. Compile-time resolution and the error surface
 
+> **MOVED by `replace_design.md` §R2.2 (2026-10-21).** References resolve
+> ONCE at bind, through the rx's `rx_info`, before any substitution; an
+> optional build-time check (`--shape-from`) runs the same resolver earlier.
+> The promise of §4.1 (PCRE2's "unknown substring" class cannot happen at
+> substitute time) holds. §4.2's diagnostics become the bind's and the
+> build-time check's.
+
 **[RATIFIED]** *`$n`/`${name}` references are resolved and BOUNDS-CHECKED AT
 COMPILE TIME against the pattern's own group count — a template naming a
 group that does not exist is a compile error, where PCRE2 discovers it at
@@ -609,6 +628,11 @@ generated code has no unset handling at all, which is not implementable.
 ---
 
 ## 5. The emitted artifact shape
+
+> **SUPERSEDED by `replace_design.md` §R2.4 and §R2.7 (2026-10-21)** for
+> §5.2 (`rx_subst`), §5.3 (first/global as an axis) and §5.5 (several
+> templates in the rx's file). §5.1's style constraints and §5.4's buffer
+> contract STAND.
 
 **[RATIFIED]** *pattern AND replacement template compiled together into one
 emitted C function (match + splice), first/global modes, caller-buffer
@@ -759,6 +783,12 @@ entry) and is noted so the design does not accidentally preclude it.
 ---
 
 ## 6. Global-mode semantics
+
+> **CLOSED by the find-all iterator (`replace_design.md` §R2.1 row 5,
+> 2026-10-21).** `match_api.md` §3.8¶2 is PCRE2's global iteration. §6.1's
+> cells, re-run through the iterator plus the glue, agree with
+> `pcre2_substitute` byte for byte (§R2.3). §6.2's items are the iterator's
+> (`\G`, UTF stepping, `^`), except newline conventions, which stay [DD-11]'s.
 
 The emitted loop. **[PC-5]** already classifies `PCRE2_NOTEMPTY` /
 `NOTEMPTY_ATSTART` as `EMITTED-LOOP` — *"these exist because PCRE2 callers

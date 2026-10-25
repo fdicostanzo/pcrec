@@ -134,6 +134,9 @@ contents block).
   `10. Construct index`: `tests/registry/syntax_index_check.py` (in
   `make test-registry`) reads that table and the heading numbers, so keep
   both shapes. A new registry row needs its §10 line in the same change.
+- `subst_api.md` -- the subst artifact (compiled substitution, [M4-SUBST]): the
+  template language, the needed shape and bind, the element, the glue, codes,
+  the differences from `pcre2_substitute`; numbered from birth.
 - `vars.md` -- module `vars` ([VAR]) caller-observable contract (`${name}`,
   `rx_var`, `PCREC_ERR_UNSET_VAR`); not yet in the numbered-facts form
   described above.
