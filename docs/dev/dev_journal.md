@@ -27271,3 +27271,12 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - **Kit:** paused at Frank's /close; 621-kit-s3-heavy RED (test-prechecks; the kit's next session triages); kit docs branch lane/memfn-s3 merged (b691d6582).
 - **Lessons:** (1) generated CPU load is a heavy step (lockyield2's 32 spinners pushed 618 past its cap; BOILERPLATE 45f366315); (2) a lane in a foreground lock wait is unreachable, so requeue its run yourself; (3) a lane that says it committed may only have staged (qwstart): check the branch.
 - **OWED:** subst landing (after substland2's report: one make test of the merged branch, then merge); test-axes re-run (~3 h); the full suite; [RECID-A]; [EMIT-BIDI] (abi 86 after the kit's 85); [DATA-PLAN] A lane; D27 author + review for [UPROP-MORE]; monitor triage-path test.
+
+## 2026-10-24 (session 125, manager) — [M4-SUBST] landed; box to the bench
+
+- Woke 23:04 inside Frank's timing window; he released the box at ~23:05.
+- **Job 623** (make test of lane/substland at cee1db522, main merged in): GREEN 79/79, 1355 s. The substland2 report's "case-spelling identity 0" was the exit code (pass).
+- **Landed** lane/substland --no-ff as **9ae59f5d4**; the merged tree equals the tested branch except the journal; make strict clean. plan.md [M4-SUBST] status + D177 ledger (session 124's flagfix, upropb, qwstart, lockyield, qwquiet2 were missing; added with subst: major 27, minor 84) in 47fddf283, pushed.
+- **Bench:** I-158 (bench commit 62936f06): pin 9ae59f5d4; O-106's question answered (conditional substitution supported under subst-extended, spec §2¶8-9). Box handed to the bench for the night (Frank).
+- **Ruled (Frank):** the pcrec-monitor gets tried "naturally": the next long run (test-axes, moved to tomorrow day) is watched by a monitor agent alone; no staged failure, the red path is tested by the first real red.
+- **OWED:** CI read on 47fddf283; prune subst-era worktrees (subst, substext, substcase, substuc, substland) and the other delivered ones when the box is not timing; test-axes re-run with the monitor trial; full suite (D177 triggers fired); runtime-selection discussion with Frank; [DATA-PLAN] A, D27 for [UPROP-MORE], [RECID-A], [EMIT-BIDI].
