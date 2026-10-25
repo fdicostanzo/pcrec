@@ -625,8 +625,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
 - [EXPECT-PREFLIGHT] STATE:not-started — BOXQUEUE ADD WARNS WHEN A JOB'S DECLARED COUNT DIFFERS FROM ITS LAST GREEN COUNT
   filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
-  status (2026-10-25): BUILD GO; lane expectpre started
-  next: build + boxqueue.test rows
+  status (2026-10-25): history warning BUILT on lane/expectpre (boxqueue.test 92/92), NOT merged: replay caught 0 of the 5 stale-expect jobs (4 first-of-shape, 1 grew after a matching declaration)
+  trigger: the dry run MEASURES the population before queueing (catches first runs and growth), when: Frank 2026-10-25 "i want it eventually but lets see some more nights of successfull box runs with your new monitor script"
   refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
   Charter: at add/retry, compare each `expect NAME=N` to the same job shape's last green population; a mismatch prints a warning naming both numbers (not a refusal; counts legitimately grow).
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
