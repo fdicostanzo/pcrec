@@ -5337,3 +5337,19 @@ two declines under reference builds. Mech arm `endmark` (rows S881-S890 and the
 re-aimed L2 rows). Lane instruments, not sections: `b3diff.py` (the built
 compiler against libpcre2, every arm, every subject to length 5) and
 `mover_census.py` (movers must be exactly the rev-end population, by id).
+
+## Resuming a red full suite ([SUITE-RESUME])
+
+A red full run (`scripts/fullsuite_job.sh`, D177) can be RESUMED on the owner's explicit command, never
+automatically (Frank 2026-10-25: "auto-restart can go bad"): `scripts/fullsuite_resume [--dry-run] RUNDIR`
+queues `fullsuite_job.sh --resume RUNDIR`. Only the stages whose `== stage S rc=0 END` record is absent (red or
+never ran) run again, via `BATTERY_STAGES`, in the run's own frozen worktree at the same commit; the stages are
+independent `make` invocations (battery.sh keeps no cross-stage state), so a green stage is never re-run. The
+resumed run has its own logdir `build/full_suite/<tag>_r<N>` with the same artifacts as a full run
+(`== logdir`, trailer.log, summary.txt, `== battery_v5 DONE stages=`, so queuewatch/queuemon treat it as one)
+plus `resume_of.txt`; its summary shows carried stages as `green(@<origin tag>)` and ends `resume-of=<parent>`.
+Refusals (exit 65, also at `--dry-run`/`boxqueue add`): missing trailer/summary/frozen record, the battery
+still running, the worktree's HEAD differs from the run's commit or is dirty (the suite's own rewrite of
+`docs/dev/artifact_size_log.tsv` is tolerated: measured, `make test` touches it), a summary that names a stage
+green with no green record, nothing left to run, simulated/real mismatch. Tests: `scripts/tests/fullsuite_resume.test`
+(offline, simulated). Staged real test: docs/dev/lanes/suiteresume_report.md.

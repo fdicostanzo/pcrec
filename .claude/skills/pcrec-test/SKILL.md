@@ -73,6 +73,14 @@ the monitor SKILL's table only when a run has shown its shape (section 5).
 - RED: the monitor has already launched the triage lane (it starts at the
   FIRST red stage, while later stages still run). Read its report, rule,
   send fixes to lanes. Never read the stage logs yourself.
+- RESUME a RED full run (stage-level, [SUITE-RESUME]; only on the OWNER'S command, never automatic): when the
+  reds look like a flake or the box (not a code fault: the resume runs the SAME commit, so a real fault just
+  reds again, and a fix on main is NOT in it; for a fix queue a fresh full run), `scripts/fullsuite_resume
+  --dry-run build/full_suite/<tag>` shows what would re-run (red + never-ran stages; green ones never) and
+  refuses (exit 65) if the frozen worktree moved/is dirty, the run lacks its records, or nothing is red;
+  without `--dry-run` it queues `301-main-fullsuite-resume`. Its logdir is `<tag>_r<N>`; its summary line
+  names `resume-of=` and each carried stage's origin; `DONE stages=8` means the COMBINED verdict is green, so
+  copy that summary line to the ledger like any run. Prune BOTH when done (they share the worktree).
 - A PROBLEM message: decide (the monitor never cancels or kills).
 - TaskStop the monitor once its final message is in; delete the alarm.
 
