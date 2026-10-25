@@ -631,7 +631,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: at add/retry, compare each `expect NAME=N` to the same job shape's last green population; a mismatch prints a warning naming both numbers (not a refusal; counts legitimately grow).
 - [BENCH-RESERVE] STATE:not-started — THE BENCH RESERVES THE BOX THROUGH A DATA FILE; A PCREC PLACEHOLDER JOB HOLDS THE LOCK
   filed: 2026-10-25 Frank ("i like the separation ... the plan sounds good"; I-161, BD2: no writes into each other's repos)
-  status (2026-10-25): BUILD GO; lane benchres started; bench side (b146wrap) building against the same contract
+  status (2026-10-25): BUILT on lane/benchres: import + fixed placeholder + 5 plants (boxqueue.test 25), NOT merged; owner enables with one `boxqueue start`; questions in benchres_report.md
   next: build + scratch-queue tests; first real use = the bench's tier-2 window
   refs: pcrec-bench docs/dev/inbox_from_pcrec.md I-161; the contract message of 2026-10-25 (copied into the lane's report); scripts/boxqueue
   Charter: boxqueue imports <bench inbox>/*.window (key=value, parsed never sourced) into pcrec-authored placeholder jobs 7NN-bench-<name>; the placeholder holds the lock, publishes worktrees/.boxqueue/reservations/<job>.state, ends on done_ere/fail_ere/start_s/cap/.cancel. Neither side runs the other's code.

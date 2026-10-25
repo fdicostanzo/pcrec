@@ -505,7 +505,9 @@ if P=$(plant oldgrammar "$OLDG" "${OLDG/idle-ok)/idle-okold)}"); then
     stoprunner
 else bad "plant oldgrammar did not land (orphan)"; fi
 if P=$(plant reexec-midjob "$OLDG" "${OLDG/idle-ok)/idle-okold)}" '    [ -z "$(ls -A "$Q/running" 2>/dev/null)" ] || return 0
-' '' 'if recover; then pn=$((pn + 1)); pass $pn && continue; fi' 'reexec_if_changed "$pn"; if recover; then pn=$((pn + 1)); pass $pn && continue; fi'); then
+' '' '        if recover; then
+            if [ -n' 'reexec_if_changed "$pn"; if recover; then
+            if [ -n'); then
     orphan_case "$P"
     [ "$reex_mid" = 1 ] && ok "PLANT reexec-midjob (no running-job guard, check hoisted above recover): the runner re-execs while a job runs, the case goes red" || bad "PLANT reexec-midjob not caught: mid=$reex_mid"
     stoprunner
@@ -644,6 +646,44 @@ mkwin lv1; fakebench 750-bench-lv1 lv1 "$COMPLETE"; waitfor 'job 750-bench-lv1 E
 stoprunner
 # 25o. -h documents it
 bash "$BQ" -h | grep -q 'BENCH WINDOWS' && ok "boxqueue -h documents bench windows" || bad "-h lacks BENCH WINDOWS"
+# 25p. PLANTS (S1610-S1614): each bug planted back into a scratch copy of the tooling, its scenario run against the copy,
+# and the real assertion must go red. plantf NAME FILE FROM TO: scratch scripts/ with boxqueue_window too; echoes the boxqueue path
+plantf() {
+    local nm=$1 file=$2 d=$T/plant_$1; mkdir -p "$d/scripts" "$d/tests/lib"
+    cp "$here/boxqueue" "$here/boxqueue_window" "$here/boxlock" "$here/verdict" "$here/chainrun" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
+    python3 -c 'import sys
+p = sys.argv[1]; s = open(p).read()
+assert s.count(sys.argv[2]) == 1, "anchor"
+open(p, "w").write(s.replace(sys.argv[2], sys.argv[3]))' "$d/scripts/$file" "$3" "$4" 2>/dev/null || return 1
+    echo "$d/scripts/boxqueue"
+}
+# S1610: any done line counts as green (the N == expect comparison dropped)
+if P=$(plantf s1610 boxqueue_window 'if [ "$n" = "$W_expect" ]; then fin green' 'if [ -n "$n" ]; then fin green'); then
+    benchq; BQX=$P; mkwin r1; fakebench 750-bench-r1 r1 'BENCH_WINDOW_COMPLETE rc=3\n'; run1; BQX=""; S=$(rstate 750-bench-r1)
+    [[ $S =~ ^DONE\ red ]] && bad "PLANT S1610 not caught: '$S'" || ok "PLANT S1610 (N == expect dropped): a population-red window reads green, the 25b case goes red"
+else bad "plant S1610 did not land"; fi
+# S1611: the prio range check removed
+if P=$(plantf s1611 boxqueue '{ [ "${WV[prio]}" -ge 700 ] && [ "${WV[prio]}" -le 899 ]; } ||' 'true ||'); then
+    benchq; BQX=$P; mkwin p1 prio=650 start_s=1; run1; BQX=""
+    has 'bench window p1 IMPORTED' && ok "PLANT S1611 (prio range dropped): prio 650 is imported, the 25k case goes red" || bad "PLANT S1611 not caught"
+else bad "plant S1611 did not land"; fi
+# S1612: a queued window's .cancel not honoured by --ready (the in-run check is a second line; the START line shows the miss)
+if P=$(plantf s1612 boxqueue_window '[ -e "$W_cancel" ] && { echo "cancelled by the bench ($W_cancel)"; exit 77; }' ':'); then
+    benchq; BQX=$P; mkwin x1 start_s=1; : > "$T/bench/inbox/x1.cancel"; run1; BQX=""
+    has 'job 750-bench-x1 START' && ok "PLANT S1612 (--ready ignores .cancel): the queued window starts, the 25g case goes red" || bad "PLANT S1612 not caught"
+else bad "plant S1612 did not land"; fi
+# S1613: once-per-name check removed
+if P=$(plantf s1613 boxqueue 'if grep -qxF -- "$name" "$Q/.bench/imported" 2>/dev/null; then
+        qlog' 'if false; then
+        qlog'); then
+    benchq; BQX=$P; mkwin o1 start_s=1; run1; mkwin o1 start_s=2; run1; BQX=""
+    [ "$(ql | grep -c '^== bench window o1 IMPORTED')" = 2 ] && ok "PLANT S1613 (once-per-name dropped): a re-used name is imported twice, the 25j case goes red" || bad "PLANT S1613 not caught"
+else bad "plant S1613 did not land"; fi
+# S1614: the fail_ere check dropped (the window sits until its cap)
+if P=$(plantf s1614 boxqueue_window 'then fin failed "BENCH-FAIL" 1; fi' 'then :; fi'); then
+    benchq; BQX=$P; mkwin f1 cap=3; fakebench 750-bench-f1 f1 'progress\nBENCH_WINDOW_FAIL oops\n'; run1; BQX=""; S=$(rstate 750-bench-f1)
+    [[ $S =~ BENCH-FAIL ]] && bad "PLANT S1614 not caught" || ok "PLANT S1614 (fail_ere ignored): the window runs to its cap, the 25c case goes red"
+else bad "plant S1614 did not land"; fi
 
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
