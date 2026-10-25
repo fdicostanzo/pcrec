@@ -12214,21 +12214,6 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
  * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_storage`, and before
  * `vm_emit_entries`, whose six entries all delegate into what is written
  * here. */
-/* Emits a WORD's bytes as a C string-literal initializer's contents, escaped
- * so every byte survives. `\xNN` uniformly for anything that is not a plain
- * printable ASCII character, because a value's bytes are DATA and a
- * half-escaped one is a miscompile a reader cannot see. */
-static void vm_var_word_bytes(StrBuf *b, const unsigned char *p, size_t n)
-{
-    for (size_t i = 0; i < n; i++) {
-        unsigned char ch = p[i];
-        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\' && ch != '?')
-            pcrec_sb_printf(b, "%c", (char)ch);
-        else
-            pcrec_sb_printf(b, "\\x%02x\"\"", (unsigned)ch);
-    }
-}
-
 /* Emit the assignment that gives expansion slot `slot` its resolved span,
  * given `raw_p`/`raw_len` already filled for every NAME.
  *
@@ -12293,7 +12278,7 @@ static void vm_var_emit_eval(Vm *v, StrBuf *c, int slot, const VarExp *x,
         lit.cx = v->cx;
         size_t total = 0;
         for (size_t i = 0; i < x->nword; i++) {
-            vm_var_word_bytes(&lit, x->word[i].lit, x->word[i].litlen);
+            pcrec_sb_ctext(&lit, x->word[i].lit, x->word[i].litlen, PCREC_CTEXT_STRING);
             total += x->word[i].litlen;
         }
         wp = pcrec_sb_fragf(&v->cx->arena, "(const unsigned char *)\"%s\"",
@@ -12444,8 +12429,11 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
                      "internal error: a ${...} selector has no resolved name "
                      "slot");
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_printf(c, "    /* %s */\n",
-                        pcrec_varexp_render(&cx->arena, x));
+        /* The render carries the pattern's own ${...} word bytes. */
+        const char *vr = pcrec_varexp_render(&cx->arena, x);
+        pcrec_sb_puts(c, "    /* ");
+        pcrec_sb_ctext(c, (const unsigned char *)vr, strlen(vr), PCREC_CTEXT_COMMENT);
+        pcrec_sb_puts(c, " */\n");
         pcrec_sb_cmt_close(c);
         vm_var_emit_eval(v, c, (int)i, x, nameidx);
     }

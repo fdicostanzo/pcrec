@@ -524,30 +524,50 @@ void pcrec_sb_text (StrBuf *sb, const char *s);              /* NUL-terminated *
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
 void pcrec_sb_field(StrBuf *sb, const char *s);
 
-/* A THIRD VOCABULARY, and it protects something the two above do not: the
- * body of an EMITTED C STRING LITERAL ([OPT-REQPOS] tier 2b, the first
- * emitter to write pattern-derived bytes outside a comment). `n` bytes of
- * `b` are appended as the INSIDE of a `"..."`, with the quotes left to the
- * caller.
+/* A THIRD VOCABULARY, and it protects something the two above do not: USER-
+ * DERIVED BYTES WRITTEN INTO EMITTED C TEXT -- the pattern, a substitution
+ * template, a name, a literal run. `n` bytes of `s` are appended in the
+ * frame `ctx` names, and this is the ONE function that does it ([EMIT-BIDI]:
+ * four near-copies existed, and the one that drifted put a raw U+200F into a
+ * comment). It is not `pcrec_sb_text` with another case: the reader is the
+ * artifact's own C compiler, not a TSV consumer, so the escape set is the
+ * one the C standard fixes and not one this project chooses.
  *
- * WHY IT IS NOT `pcrec_sb_text` WITH ANOTHER CASE. The frame it protects is a
- * C TOKEN read by the artifact's own compiler, not a line in a TSV, so the
- * escape set is the one the C standard fixes and not one this project
- * chooses: `"` and `\` must be escaped or the token ends early, and `?` is
- * escaped so no byte pair this function writes can begin a trigraph.
+ * The shared core: printable ASCII passes through, everything else goes out
+ * BY NUMBER -- so the emitted text is pure ASCII in every frame, which is
+ * what keeps `-Wbidi-chars` (and any reader's terminal) quiet. What differs
+ * per frame is a small declared table in sb.c (the rows, then the numeric
+ * spelling), read first-match.
  *
- * OCTAL, NOT `\xNN`, AND THAT IS THE LOAD-BEARING CHOICE. A hex escape in C
- * consumes as many hex digits as follow it, so `\x0a` immediately before a
- * literal `b` is ONE character escape with the value 0xab — a silent
- * corruption of the next byte, in an emitted literal whose whole job is to
- * be compared against a subject. An octal escape takes AT MOST three digits
- * (C11 6.4.4.4), so a fixed three-digit `\NNN` is self-terminating against
- * any following byte, digit or not.
+ *   PCREC_CTEXT_COMMENT        inside a block comment. A star-slash or
+ *                              slash-star pair is split (a close would end
+ *                              the comment; an open trips -Wcomment under
+ *                              -Werror), judged against the PREVIOUS source
+ *                              byte so each byte is consumed exactly once.
+ *                              Numbers are `\xNN`.
+ *   PCREC_CTEXT_COMMENT_QUOTED the same, for an example shown inside double
+ *                              quotes in a comment: `"` and `\` are also
+ *                              numbered so the quoted text reads unambiguously
+ *                              (a readability choice layered on, not a
+ *                              safety one).
+ *   PCREC_CTEXT_STRING         the BODY of a `"..."` literal (quotes are the
+ *                              caller's). `"` `\` and `?` are backslash-
+ *                              escaped (`?` always, so no pair this function
+ *                              writes can begin a trigraph). Numbers are
+ *                              fixed three-digit OCTAL: a hex escape swallows
+ *                              every hex digit that follows (`\x0a` before a
+ *                              literal `b` is ONE character, 0xab), an octal
+ *                              escape takes at most three digits (C11
+ *                              6.4.4.4) and so cannot glue.
  *
- * NOTHING HERE IS ABOUT READABILITY. A printable byte prints as itself so a
- * human reading the artifact sees the run; everything else goes out by
- * number, and the artifact's compiler is the only reader that must agree. */
-void pcrec_sb_cstr(StrBuf *sb, const unsigned char *b, size_t n);
+ * Newline, tab and CR are `\n` `\t` `\r` in all three. A NULL `s` writes
+ * nothing. */
+typedef enum {
+    PCREC_CTEXT_COMMENT,
+    PCREC_CTEXT_COMMENT_QUOTED,
+    PCREC_CTEXT_STRING
+} PcrecCtext;
+void pcrec_sb_ctext(StrBuf *sb, const unsigned char *s, size_t n, PcrecCtext ctx);
 
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
@@ -641,7 +661,7 @@ const char *pcrec_sb_upper(Arena *a, const char *s);
  * byte-identical to what it was before the placeholder existed. The lead
  * byte \x01 never reaches emitted text any other way — every pattern- or
  * caller-derived byte outside printable ASCII is escaped at its emission
- * site (`emit_comment_safe_byte`, `emit_c_string_literal`, the class and
+ * site (`pcrec_sb_ctext`, the class and
  * word renderers) — and the second byte is a LETTER so that `toupper`
  * maps the lower spelling onto the upper one: `\x01q` -> `\x01Q`, with no
  * special case in `pcrec_sb_upper` or any other case transform.
