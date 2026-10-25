@@ -629,6 +629,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the dry run MEASURES the population before queueing (catches first runs and growth), when: Frank 2026-10-25 "i want it eventually but lets see some more nights of successfull box runs with your new monitor script"
   refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
   Charter: at add/retry, compare each `expect NAME=N` to the same job shape's last green population; a mismatch prints a warning naming both numbers (not a refusal; counts legitimately grow).
+- [BENCH-RESERVE] STATE:not-started — THE BENCH RESERVES THE BOX THROUGH A DATA FILE; A PCREC PLACEHOLDER JOB HOLDS THE LOCK
+  filed: 2026-10-25 Frank ("i like the separation ... the plan sounds good"; I-161, BD2: no writes into each other's repos)
+  status (2026-10-25): BUILD GO; lane benchres started; bench side (b146wrap) building against the same contract
+  next: build + scratch-queue tests; first real use = the bench's tier-2 window
+  refs: pcrec-bench docs/dev/inbox_from_pcrec.md I-161; the contract message of 2026-10-25 (copied into the lane's report); scripts/boxqueue
+  Charter: boxqueue imports <bench inbox>/*.window (key=value, parsed never sourced) into pcrec-authored placeholder jobs 7NN-bench-<name>; the placeholder holds the lock, publishes worktrees/.boxqueue/reservations/<job>.state, ends on done_ere/fail_ere/start_s/cap/.cancel. Neither side runs the other's code.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
