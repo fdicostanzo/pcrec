@@ -767,8 +767,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/utf_wants_2026-10-24.md
 - [EMIT-BIDI] STATE:not-started — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
   filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
-  status (2026-10-24): found, not fixed: (?x)a<U+200E>b and (?x)a<U+200F>b (tests/modifiers/xmode_utf8.rxt:32,38) emit their pattern bytes raw into a C comment; gcc warns -Wbidi-chars and the axes harness drops both cases under -fcomments (LOST 2)
-  next: a lane: escape non-printing and bidi code points in every echo of the pattern into emitted text (an abi event, D76/D94); confirm why the harness drops a warned case rather than failing it
+  status (2026-10-25): cause CONFIRMED (job 624 triage): the harness's -Werror GENCFLAGS turn the -Wbidi-chars warning into a compile failure, so both cases are LOST, never refused; 0 answer mismatches. Until this lands, -fcomments is the one KNOWN red axis (fsfix validated otherwise)
+  next: a lane: escape non-printing and bidi code points in every echo of the pattern into emitted text (abi 86 after the kit's 85, D76/D94); then re-validate AXES=-fcomments (~4 min) and run the form census as its own job
   refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
   A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
