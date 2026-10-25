@@ -30,6 +30,7 @@ FULL=$(git -C "$TREE" rev-parse HEAD)
 mk_parent() {
     local d=$FULLSUITE_SIM_DIR/$1 s rc sum="2026-10-25 ${FULL:0:9}"; shift; local spec=$1; shift
     d=${d}; mkdir -p "$d"; : > "$d/trailer.log"
+    [ -z "${STAGELINE:-}" ] || echo "== stages: $STAGELINE" > "$d/trailer.log"
     [ "${1:-}" = real ] || echo "== SIMULATED parent" > "$d/SIMULATED"
     echo "== full suite ${d##*/} frozen at $FULL tree $TREE" > "$d/frozen.txt"
     for s in $STAGES; do
@@ -67,6 +68,13 @@ resume red:mech "$P2" r2; L2=$(ldof r2)
 # 3. a resume of a resume keeps origins and re-runs only what is still red
 resume green "$L2" r3; L3=$(ldof r3)
 [ "$(rcof r3)" = 0 ] && [ "$(stages_of "$L3")" = "mech" ] && grep -q "recidentity=green(@${L2##*/})" "$L3/summary.txt" && grep -q "test=green(@p2)" "$L3/summary.txt" && grep -q "^carried test $P2\$" "$L3/resume_of.txt" && grep -q 'DONE stages=8 rc=0' "$T/out.r3" && ok "chained resume: only mech re-ran; carried stages keep their ORIGIN run (p2 / the first resume)" || bad "chain: [$(stages_of "$L3")] $(cat "$L3/summary.txt")"
+
+# 3b. a REDUCED parent (the staged real test's shape) resumes within its own stage set; the set survives a chain
+P3=$(STAGELINE="strict alloc lint" mk_parent p3 "strict=0 alloc=- lint=-")
+out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P3" --dry-run); resume green "$P3" r4; L4=$(ldof r4)
+[ "$(rcof r4)" = 0 ] && [ "$(stages_of "$L4")" = "alloc lint" ] && grep -q 'DONE stages=3 rc=0' "$T/out.r4" && echo "$out" | grep -q '^boxqueue: expect stages=3 ' && grep -q '^stageset strict alloc lint$' "$L4/resume_of.txt" && ok "reduced parent: only alloc lint re-ran, expect/DONE count its own 3 stages, the stage set is recorded for a chain" || bad "reduced: [$(stages_of "$L4")] $(tail -1 "$T/out.r4")"
+P3b=$(STAGELINE="strict alloc nosuch" mk_parent p3b "strict=0 alloc=-")
+out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P3b" --dry-run 2>&1); [ $? = 65 ] && echo "$out" | grep -q "unknown stage" && ok "refused: a parent whose stage line names an unknown stage" || bad "unknown stage: $out"
 
 # 4. dry-run declarations
 out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P1" --dry-run); echo "$out" | grep -q 'stages \[axes mech recidentity alloc lint\]\|stages \[axes alloc lint mech recidentity\]' && echo "$out" | grep -q '^boxqueue: expect stages=8' && ok "--dry-run names the stages to run and the same expect/witness as a full run" || bad "dry-run: $out"

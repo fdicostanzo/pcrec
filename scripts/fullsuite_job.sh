@@ -79,6 +79,14 @@ resume_plan() {
         [ -z "$SIM" ] || refuse "the tree $PTREE is gone (simulated resume needs it)"
         git -C "$MAIN" cat-file -e "$PFULL^{commit}" 2>/dev/null || refuse "the tree $PTREE is gone and commit $PFULL is unknown to git"
     fi
+    # the stage SET is the parent's own (a reduced parent, e.g. the staged real test's BATTERY_STAGES="strict alloc
+    # lint", resumes within its set; a resume records its set in resume_of.txt so a chain keeps it)
+    line=$(sed -n 's/^stageset //p' "$PD/resume_of.txt" 2>/dev/null | head -1)
+    [ -n "$line" ] || line=$(sed -n 's/^== stages: //p' "$PD/trailer.log" | head -1)
+    if [ -n "$line" ]; then
+        for s in $line; do case " $STAGES " in *" $s "*) ;; *) refuse "$PD names an unknown stage '$s'" ;; esac; done
+        STAGES=$line
+    fi
     GREENS=""
     for s in $STAGES; do
         if stage_green "$PD" "$s"; then GREENS="$GREENS$s $PD
@@ -103,6 +111,7 @@ resume_plan() {
 }
 est_stage() { case $1 in test) echo 1100 ;; strict|lint) echo 60 ;; axes) echo 10400 ;; san) echo 3000 ;; alloc) echo 100 ;; mech) echo 28800 ;; recidentity) echo 2800 ;; esac; }
 [ -z "$RESUME" ] || resume_plan
+NST=$(echo $STAGES | wc -w | tr -d " ")
 # an argument nobody here knows must never fall through to the REAL run (2026-10-25: an old copy of this script
 # ignored `--resume` and started a full suite on the live box)
 case "${1:-}" in ""|--dry-run|--ready) ;; *) echo "fullsuite_job: unknown argument '$1'" >&2; exit 64 ;; esac
@@ -117,8 +126,8 @@ case "${1:-}" in
             echo "boxqueue: cap $cap"
             echo "boxqueue: patience none"
             echo "boxqueue: idle-ok 1800"
-            echo "boxqueue: expect stages=8 last=^== battery_v5 DONE stages="
-            echo "boxqueue: witness stages=== battery_v5 DONE stages=8"
+            echo "boxqueue: expect stages=$NST last=^== battery_v5 DONE stages="
+            echo "boxqueue: witness stages=== battery_v5 DONE stages=$NST"
             exit 0
         fi
         if [ -n "$SIM" ]; then
@@ -187,7 +196,7 @@ else
 fi
 if [ -n "$RESUME" ]; then
     echo "== full suite $tag resume of $PD frozen at $PFULL tree $PTREE" > "$LOGDIR/frozen.txt"
-    { echo "resume-of $PD"; echo "commit $PFULL"; echo "rerun $TODO"; printf '%s' "$GREENS" | while read -r s o; do echo "carried $s $o"; done; } > "$LOGDIR/resume_of.txt"
+    { echo "resume-of $PD"; echo "commit $PFULL"; echo "stageset $STAGES"; echo "rerun $TODO"; printf '%s' "$GREENS" | while read -r s o; do echo "carried $s $o"; done; } > "$LOGDIR/resume_of.txt"
     export BATTERY_STAGES="$TODO"
 fi
 echo "== logdir $LOGDIR"    # the box-queue watcher (scripts/queuewatch) finds the trailer from this line
@@ -220,4 +229,4 @@ done_rc=$(sed -n 's/^== BATTERY DONE rc=\([0-9]*\).*/\1/p' "$tr" | tail -1)
 printf '%s log=%s%s duration=%ss\n' "$line" "${LOGDIR#$MAIN/}" "${RESUME:+ resume-of=${PD#$MAIN/}}" "$dur" > "$LOGDIR/summary.txt"
 cat "$LOGDIR/summary.txt"
 echo "== battery_v5 DONE stages=$n rc=${done_rc:-none}"
-[ "$n" = 8 ] && [ "${done_rc:-1}" = 0 ]
+[ "$n" = "$NST" ] && [ "${done_rc:-1}" = 0 ]

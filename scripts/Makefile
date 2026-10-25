@@ -49,6 +49,8 @@ tests/boxqueue.testreport: boxlock verdict chainrun safekill
 
 # fullsuite_job.sh.test drives the real battery.sh under --simulate.
 tests/fullsuite_job.sh.testreport: battery.sh
+# fullsuite_resume.test drives fullsuite_job.sh --resume (simulated) and the fullsuite_resume helper.
+tests/fullsuite_resume.test.testreport: battery.sh fullsuite_job.sh fullsuite_resume
 
 .DELETE_ON_ERROR:
 

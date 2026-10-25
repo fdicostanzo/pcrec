@@ -155,6 +155,7 @@ script's test coverage changes meaningfully.
   untouched) and one with no numbered headings, each reported; `--check`
   writes nothing. Pure python, no pcrec.
 
+- **fullsuite_resume.test** — [SUITE-RESUME]: simulated `--resume` over fabricated parents (red+unrun re-run, green never, combined verdict, chained resume, queuemon-compatible logdir), every refusal (exit 65), the unknown-argument guard, the `fullsuite_resume` helper against a STUB boxqueue (never the real `add`), plant S1600.
 - **fullsuite_job.sh.test** — `--simulate` ([MONITOR-QUEUE]): the five scenarios through the real job + battery.sh, PATH shims proving no make/gcc ran, simulate-only logdirs, ledger and worktree list untouched, plus a plant (simulate branch disabled -> the shim sees `make`).
 - **queuewatch.test** — scripts/queuewatch against the REAL boxqueue in a scratch queue (scratch box lock, wrapper jobs that only `exec fullsuite_job.sh --simulate`): every scenario's events exactly once and in order across relaunches, the conditions, the bound, the lock; three plants (state not written, live events swallowed, sleep not clamped). It runs with the CI source off.
 - **queuewatch_ci.test** — queuewatch's CI events against a shim `gh` on PATH (no network): baseline, red, cancelled superseded/deferred/newest, two events in order without re-asking gh, CI-UNAVAILABLE once and re-armed, gh missing, `--no-ci`; four plants.
