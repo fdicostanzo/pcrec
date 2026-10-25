@@ -21,8 +21,15 @@ case "${1:-}" in
         echo "boxqueue: witness sections=sections ran: 79/79"
         exit 0 ;;
     --ready)
+        # After the bench's overnight tier-2 reservation ends (any DONE), or
+        # 2026-10-26 10:00 local if it never shows up (Frank released 20-24).
+        st=/home/pcrec/projects/pcrec/worktrees/.boxqueue/reservations/720-bench-b142-tier2.state
+        if [ -f "$st" ]; then
+            case "$(head -c 4 "$st")" in DONE) exit 0 ;; esac
+            echo "after the bench's 720-bench-b142-tier2 ($(head -c 40 "$st"))"; exit 75
+        fi
         now=$(date +%s); at=$(date -d '2026-10-26 10:00' +%s) || exit 1
-        [ "$now" -ge "$at" ] || { echo "not before 2026-10-26 10:00 local (the box is the bench's overnight)"; exit 75; }
+        [ "$now" -ge "$at" ] || { echo "after 720-bench-b142-tier2 (not yet dropped), else 2026-10-26 10:00"; exit 75; }
         exit 0 ;;
 esac
 rc=0
