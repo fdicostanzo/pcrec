@@ -23,7 +23,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `84` on every artifact today (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
+- **`rx_info.abi` is `86` on every artifact today ([EMIT-BIDI], lane emitbidi, 2026-10-25; 84 -> 86; 85 is RESERVED by the memfn kit's S3 branch, not yet on main, so the number is provisional until landing order is known).** One C-text escaper (`pcrec_sb_ctext`, `src/core/sb.c`) replaces four near-copies, and every echo of user-derived text in emitted C goes through it. Emitted bytes that move: the `-fcomments` orientation block's pattern echo (it copied bytes >= 0x80 and tabs raw, which put a raw U+200F in a C comment and tripped `-Wbidi-chars` under `-Werror`; now `\xNN`, `\t`, `\n`, `\r`), the provenance line and the state legend's/required-run comments (newline, tab and CR as `\n` `\t` `\r` instead of `\x0a` `\x09` `\x0d`), the kit's run-compare string constants (newline, tab and CR as `\n` `\t` `\r` instead of `\012` `\011` `\015`), the `${...}` expansion comments in a VM artifact (now escaped; they were raw), and a VM default word's string literal (octal instead of hex-plus-`""` for non-printables). Only artifacts whose pattern holds such bytes move beyond the abi digits.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `84` on every artifact today (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
   from lane i1build [FINDALL-NEXT] I1 (first numbered 83 on its own branch), lane i2build I4 (84), lane iteropt and lane
   iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wants 84 provisionally; whichever lands first keeps it).**
   The pieces, in landing order:

@@ -629,6 +629,8 @@ test-examples: all
 # and it is the only check in the tree that compares a `-fno-comments`
 # artifact against anything -- which is the population every existing
 # byte-identity gate is blind to by construction.
+# [EMIT-BIDI] run_ctext_ascii.sh joins on the same footing: four small compiles
+# of one pattern holding bidi controls and every C-text hazard (a second or two).
 # [PATFACTS] run_facts_checks.sh joins at step 3.0 (design §4.2.3): an
 # include scan and an `nm` join over the built objects, well under a second --
 # the pattern-facts record's structural check, born with the record.
@@ -653,6 +655,7 @@ test-codegen: all
 	    'bash tests/codegen/run_n1_budget.sh' \
 	    'bash tests/codegen/run_comment_escape.sh' \
 	    'bash tests/codegen/run_comments_axis.sh' \
+	    'bash tests/codegen/run_ctext_ascii.sh' \
 	    'bash tests/codegen/run_cls_fold_agreement.sh' \
 	    'bash tests/codegen/run_facts_checks.sh' \
 	    'bash tests/codegen/run_cand_rows.sh' \
