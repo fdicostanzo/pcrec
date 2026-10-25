@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-25 82abd6b87 none — merge lane/queuemon: [MON-SCRIPT] script-only box-queue monitor (scripts + hook only)
 - 2026-10-25 7592e1397 none — merge lane/hookguards: [HOOK-GUARDS] no_commit_all + lane_writes_in_worktree hooks (scripts/hooks + settings only)
 - 2026-10-24 9ae59f5d4 major — merge lane/substland: [M4-SUBST] compiled substitution (job 623 make test green 79/79)
 - 2026-10-24 731228fb2 major — merge lane/upropb: [UPROP-MORE] B, 55 binary properties, bc=, Block/Age
