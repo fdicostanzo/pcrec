@@ -17,7 +17,7 @@ never in your head: you keep no "seen" list and you do not read logs.
     QW="$BOX bash $ROOT/scripts/queuewatch"  # prefix every ROOT command below with $BOX the same way
     QWOPTS=                                   # empty outside TEST MODE (section "TEST MODE")
     LEDGER=$ROOT/docs/dev/full_suite_ledger.md
-    MANAGER=pcrec_main                        # the manager session's name (ListAgents, 2026-10-25); every "main"
+    MANAGER=pcrec-main                        # the manager session's name (Frank 2026-10-25; this session ran as pcrec_main once); every "main"
                                               # below means it. The STARTUP message proves it; if it fails, your
                                               # user names the right one
 
@@ -33,7 +33,7 @@ One skill, two ways to run it (Frank, 2026-10-24: "I want both methods supported
 | | (a) SESSION | (b) SUBAGENT |
 |---|---|---|
 | started by | Frank: `/pcrec-monitor` in a separate haiku session | the manager or a lane: `Agent`, `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md, haiku, 1-hour cache) |
-| MANAGER | `pcrec_main` (cross-session SendMessage by name) | `main`: SendMessage `to: "main"` reaches the session that launched you. Your parent's cross-session NAME would be a message to yourself |
+| MANAGER | `pcrec-main` (cross-session SendMessage by name) | `main`: SendMessage `to: "main"` reaches the session that launched you. Your parent's cross-session NAME would be a message to yourself |
 | how the loop waits | step 1a: `$QW --max-sec 3000` in the BACKGROUND; the harness wakes you when it exits | step 1b: a FOREGROUND call (below). A subagent that ends its turn is finished and its background shell dies with it (measured 2026-10-24, lane montest: a `sleep 60` started with run_in_background was killed at the subagent's end, nothing woke it), so you must never end your turn while watching |
 | between runs | Frank `/clear`s you | you end (reply "run done") when your brief's STOP condition is met; the launcher starts a fresh one for the next run |
 
@@ -149,7 +149,7 @@ checksum unchanged), `status DIR` (queue + log tail), `teardown DIR` (kills the 
 1. In any shell on the box (not the live queue; this touches only DIR): `scripts/monitor_rehearsal setup /tmp/monrehearsal`
    (use a scratch dir you may delete). It prints the variables and detaches a feeder that queues the four jobs once the
    monitor's first queuewatch launch appears (~4 min of simulated stages in all).
-2. In the separate haiku session type: `/pcrec-monitor TEST_MODE=1 MANAGER=pcrec_main ` plus the three printed
+2. In the separate haiku session type: `/pcrec-monitor TEST_MODE=1 MANAGER=pcrec-main ` plus the three printed
    variable lines (BOXQUEUE/STATE/ACTIONLOG, QWOPTS, STOP_AT), copied as printed.
 3. You should see: the preflight PASS lines, a `MON up` message, then `MON TEST ...` messages arriving at the manager
    (green once; red: `stage axes RED ... would launch triage` and `RED ...`; quiet: `PROBLEM QUIET ...` then `GREEN`; die:
