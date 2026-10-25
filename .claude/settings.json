@@ -42,6 +42,24 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/post_compact.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/monitor_unread.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/monitor_unread.sh"
+          }
+        ]
       }
     ]
   }

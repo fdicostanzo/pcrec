@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# queuemon.test -- runs scripts/test_queuemon.sh (queuemon, monread, hooks/monitor_unread.sh; offline, scratch dirs only).
+exec bash "$(cd "$(dirname "$0")/.." && pwd)/test_queuemon.sh"

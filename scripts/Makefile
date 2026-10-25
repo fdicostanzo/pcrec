@@ -51,3 +51,5 @@ tests/boxqueue.testreport: boxlock verdict chainrun safekill
 tests/fullsuite_job.sh.testreport: battery.sh
 
 .DELETE_ON_ERROR:
+
+tests/queuemon.testreport: monread hooks/monitor_unread.sh test_queuemon.sh

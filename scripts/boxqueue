@@ -621,10 +621,14 @@ cmd_run() {
 }
 
 runner_live() { ( exec 7>>"$Q/.runner.lock" && ! flock -n 7 ) 2>/dev/null; }
+# [MON-SCRIPT] guarded: the LIVE queue only (a PCREC_BOXQUEUE_DIR scratch queue, i.e. every self-test, never starts one);
+# QUEUEMON_AUTOSTART=0 opts out; queuemon start is idempotent and never fails the caller
+ensure_monitor() { [ -z "${PCREC_BOXQUEUE_DIR:-}" ] && [ "${QUEUEMON_AUTOSTART:-1}" != 0 ] && [ -f "$here/queuemon" ] && bash "$here/queuemon" start >/dev/null 2>&1; return 0; }
 cmd_start() {
     local args=()
     while [ $# -gt 0 ]; do case "$1" in --every) args+=(--every "$2"); shift 2 ;; *) die "start: unknown option $1" ;; esac; done
     mkq
+    ensure_monitor
     if runner_live; then echo "boxqueue: runner live: $(cat "$Q/runner.pid" 2>/dev/null)"; return 0; fi
     rm -f "$Q/runner.pid"
     (   # CLOSE-INHERITED-FDS: an `add` from inside a boxlock holder (a chain stage) must not hand the
