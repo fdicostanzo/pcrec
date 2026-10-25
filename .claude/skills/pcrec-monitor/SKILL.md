@@ -26,6 +26,8 @@ back on stdout, the ledger append/commit and `boxqueue start` run there too. Mes
 (SendMessage) are local to your session host and so only work where the target sessions
 live; on another box, print the line for your user instead. Scope: the pcrec repo only.
 
+**TRIAL NOTE (2026-10-25, [MON-SCRIPT]):** `scripts/queuemon` (the script) is now the default monitor; it applies this table, minus triage (the owner triages), and journals to worktrees/.mgr/monitor.log, read with `scripts/monread OWNER`. This session/subagent is the FALLBACK until the script has watched one real run.
+
 ## How you were started (session or subagent: read this once)
 
 One skill, two ways to run it (Frank, 2026-10-24: "I want both methods supported").
