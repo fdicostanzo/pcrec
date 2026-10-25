@@ -617,6 +617,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: merge on the manager's verdict; the haiku session stays until the script has watched one real run
   refs: .claude/skills/pcrec-monitor/SKILL.md (its first-match table); scripts/queuewatch; rule 2 (red -> the owner launches triage)
   Charter: scripts/queuemon runs queuewatch's loop detached (single instance by queuewatch's state lock; boxqueue add starts it) and applies the monitor's first-match table as a shell case, appending ONE dated line per event to worktrees/.mgr/monitor.log (the journal; a "message" is a line after a reader's cursor file). The haiku session's purpose was the unexpected: every queuewatch line matching no row is written as `UNEXPECTED <line>` and treated as a PROBLEM, so the model that reads it is the owner's. Readers: the manager's background wait on its next unread line (one notification); a SessionStart + UserPromptSubmit hook injecting unread lines into the main session; owner.md's unread count. Triage leaves the monitor (the owner launches it, rule 2). Liveness: an "up" line per loop cap; a stale log or dead PID while the queue holds a job is a PROBLEM the reader reports. Replaces: the haiku session, its /clear between runs, the two-method table and session-name addressing.
+- [SUITE-RESUME] STATE:not-started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
+  filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
+  status (2026-10-25): BUILD GO; lane suiteresume started
+  next: build, offline test, then one staged real test on a cheap chain before any full-suite use
+  refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
+  Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
+- [EXPECT-PREFLIGHT] STATE:not-started — BOXQUEUE ADD WARNS WHEN A JOB'S DECLARED COUNT DIFFERS FROM ITS LAST GREEN COUNT
+  filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
+  status (2026-10-25): BUILD GO; lane expectpre started
+  next: build + boxqueue.test rows
+  refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
+  Charter: at add/retry, compare each `expect NAME=N` to the same job shape's last green population; a mismatch prints a warning naming both numbers (not a refusal; counts legitimately grow).
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
