@@ -78,6 +78,7 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   rulings come there, not by message.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - NEVER `git stash` (push or pop): the stash is ONE list shared by every worktree of the repo, so a pop takes another session's entry (langfix2 popped the K113 landing's stash, 2026-10-22). Park work in a WIP commit on your branch instead.
+- A HOOK refuses a subagent's Write/Edit to a main-tree path outside worktrees/ (scripts/hooks/lane_writes_in_worktree.sh, [HOOK-GUARDS]); another refuses `git commit -a`/`--all`. Blocked: write in your worktree, commit named paths. A lane the manager chartered to write the main tree (a landing lane) is admitted by `worktrees/.mgr/main_write_ok` (manager-written); never create that file yourself.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log. NOR a
   Monitor/notification on a COMPLETION you then go idle waiting for: an

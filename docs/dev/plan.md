@@ -607,10 +607,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Backlog
 - [HOOK-GUARDS] STATE:not-started — hooks enforce two remembered rules: no `git commit -a`, a lane writes only in its worktree
   filed: 2026-10-25 Frank ("yes add it")
-  status (2026-10-25): filed; lane not yet briefed (session reset first)
-  next: one sonnet lane (session 126 first act): (a) PreToolUse(Bash) block of git commit -a/-am/--all; (c) learn whether hook input names the subagent, then a Write/Edit guard or a reported no-go
+  status (2026-10-25): LANDED 7592e1397: both hooks registered, fixture tests ok, live probe BLOCKED a subagent main-tree Write. Escape: worktrees/.mgr/main_write_ok (`*`) while a landing lane runs. Gap: Bash-side writes, `bash -c "..."`.
+  next: none; the row closes at the next plan audit (Backlog rows stay not-started by plan_lint).
   refs: scripts/hooks/no_cd_worktree.sh; memory pcrec-no-commit-a-during-landing; bench slips 2026-10-25 (commit -a in a live lane worktree; a lane's CLAUDE.md edits in the main tree)
   A rule a session must remember fails (the lockyield lesson, 2026-10-24). Both bench slips of 2026-10-25 passed the cd hook: commit -a via git -C, and a lane's Write to an absolute main-tree path. (b) the bench adopting the cd hook is the bench's own call, suggested in its inbox.
+- [MON-SCRIPT] STATE:not-started — THE BOX-QUEUE MONITOR AS A SCRIPT: AN APPEND-ONLY EVENT LOG, NO MODEL SESSION
+  filed: 2026-10-25 Frank ("your idea is fine ... we could try just a script")
+  status (2026-10-25): filed; build go not yet given
+  next: one sonnet lane after Frank's go; the haiku pcrec-monitor session stays until the script has watched one real run
+  refs: .claude/skills/pcrec-monitor/SKILL.md (its first-match table); scripts/queuewatch; rule 2 (red -> the owner launches triage)
+  Charter: scripts/queuemon runs queuewatch's loop detached (single instance by queuewatch's state lock; boxqueue add starts it) and applies the monitor's first-match table as a shell case, appending ONE dated line per event to worktrees/.mgr/monitor.log (the journal; a "message" is a line after a reader's cursor file). The haiku session's purpose was the unexpected: every queuewatch line matching no row is written as `UNEXPECTED <line>` and treated as a PROBLEM, so the model that reads it is the owner's. Readers: the manager's background wait on its next unread line (one notification); a SessionStart + UserPromptSubmit hook injecting unread lines into the main session; owner.md's unread count. Triage leaves the monitor (the owner launches it, rule 2). Liveness: an "up" line per loop cap; a stale log or dead PID while the queue holds a job is a PROBLEM the reader reports. Replaces: the haiku session, its /clear between runs, the two-method table and session-name addressing.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
