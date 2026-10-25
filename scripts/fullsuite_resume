@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# fullsuite_resume — queue a RESUME of a red full-suite run ([SUITE-RESUME]; the semantics and refusals are in
+# scripts/fullsuite_job.sh's header). OWNER-COMMANDED ONLY: nothing automatic calls this.
+#
+#   scripts/fullsuite_resume [--dry-run] [--name P-OWNER-REST] RUNDIR
+#
+# A queued job takes no arguments (boxqueue enqueues a COPY of one executable), so this writes a one-line job
+# that calls the fullsuite_job.sh next to this script --resume RUNDIR (absolute path, mode arguments passed through),
+# then `boxqueue add`s it; add dry-runs the job first, so every refusal happens HERE, before anything queues.
+# --dry-run prints the job's own dry run and queues nothing. Default name 301-main-fullsuite-resume.
+# BOXQUEUE overrides the boxqueue script (the self-test points it at a scratch queue).
+set -u
+MAIN=/home/pcrec/projects/pcrec
+BQ=${BOXQUEUE:-$MAIN/scripts/boxqueue}
+JOB=${FULLSUITE_JOB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fullsuite_job.sh}
+name=301-main-fullsuite-resume dry=0
+while [ $# -gt 1 ]; do
+    case $1 in
+        --dry-run) dry=1; shift ;;
+        --name) name=${2:?}; shift 2 ;;
+        *) echo "fullsuite_resume: unknown option $1" >&2; exit 64 ;;
+    esac
+done
+[ "${1:-}" = --dry-run ] && { dry=1; shift; }
+run=${1:?usage: fullsuite_resume [--dry-run] [--name P-OWNER-REST] RUNDIR}
+run=$(cd "$run" 2>/dev/null && pwd) || { echo "fullsuite_resume: no such run dir $1" >&2; exit 65; }
+# an old fullsuite_job.sh ignores --resume and would start a REAL full suite (it did, 2026-10-25): check first
+command grep -q 'SUITE-RESUME' "$JOB" 2>/dev/null || { echo "fullsuite_resume: $JOB does not support --resume (merge [SUITE-RESUME] first)" >&2; exit 64; }
+bash "$JOB" --resume "$run" --dry-run || exit $?
+[ "$dry" = 0 ] || exit 0
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/fsresume.XXXXXX") || exit 1
+trap 'rm -rf "$scratch"' EXIT
+f=$scratch/resume-${run##*/}
+printf '#!/usr/bin/env bash\nexec bash %q --resume %q "$@"\n' "$JOB" "$run" > "$f"
+chmod +x "$f"
+bash "$BQ" add --name "$name" "$f"
