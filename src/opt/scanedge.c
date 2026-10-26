@@ -13,16 +13,27 @@
  *
  * ================== WHAT IS COLLAPSED, EXACTLY ==================
  *
- * Call a state `s` SCAN-SHAPED with respect to a class `C` and a target `E`
- * when
+ * Call a state `s` SCAN-SHAPED with respect to a class SET `C` and a target
+ * `E` when
  *
- *     tr[s][C] != E   and   tr[s][c] == E for every class c != C
+ *     tr[s][c] == T != E for every class c in C,  and
+ *     tr[s][c] == E      for every class c not in C (and there is one)
  *
- * i.e. one class advances and EVERY OTHER BYTE leaves by the same door. A
- * SCAN CHAIN is a maximal run u_0 .. u_{m-1} of states that are all
- * scan-shaped for the SAME (C, E), all carry the SAME accept bit A, and are
- * linked by that class: tr[u_i][C] == u_{i+1}. Its FALL-THROUGH is
- * F = tr[u_{m-1}][C], the state m class-C bytes from the head.
+ * i.e. every byte of the set advances to the SAME state and EVERY OTHER BYTE
+ * leaves by the same door. A SCAN CHAIN is a maximal run u_0 .. u_{m-1} of
+ * states that are all scan-shaped for the SAME (C, E), all carry the SAME
+ * accept bit A, and are linked by the set: tr[u_i][c] == u_{i+1} for c in C.
+ * Its FALL-THROUGH is F = tr[u_{m-1}][C], the state m set bytes from the head.
+ *
+ * ONE CLASS IS THE SET OF SIZE ONE, and before [SCANEDGE-SET] it was the only
+ * size: `[a-z]{0,6}`'s run is one class because nothing else in the pattern
+ * distinguishes its letters. But byte classes are GLOBAL to the machine, so a
+ * byte the pattern treats specially ELSEWHERE splits a run that does not care
+ * about it — `\S+@\S+` puts `@` in its own class inside `\S`, and D164's `$`
+ * lowering puts `\n` in its own class inside `\s+$`'s run — and the state
+ * that is doing nothing but counting then advances on two classes to one
+ * successor. The rule above does not ask how the classes came to be split
+ * (docs/dev/lanes/trimreg_report.md §3 is the measured case).
  *
  * `[a-z]{0,6}` IS the simplest instance and not a special case of one: seven
  * states, six of them scan-shaped for (C = "a-z", E = dead) with A = 1, the
@@ -210,7 +221,7 @@
 #define SCAN_MAX_EDGES PCREC_MAX_SCAN_EDGES
 
 typedef struct {
-    int head, cls, span, next;   /* `span` -1 == unbounded */
+    int head, cls, span, next;   /* `cls` = the set's lowest class; `span` -1 == unbounded */
     int nmembers;                /* head included; == span for a bounded chain */
 } Chain;
 
@@ -265,19 +276,32 @@ static bool member_ok(const Dfa *d, const DState *st, bool end_view_ok)
     return !(st->up[UPC_PLAIN].accept && !d->st[st->endvar].up[UPC_PLAIN].accept);
 }
 
-/* Precondition (1) for ONE class: is `s` scan-shaped for (cls, *exit)? */
+/* Precondition (1), keyed by the set's LOWEST class: is `s` scan-shaped for
+ * (C, *exit), where C is every class going where `cls` goes and `cls` is the
+ * smallest of them? The key makes each set of each state found exactly once. */
 static bool shaped(const Dfa *d, int s, int cls, int *exit)
 {
     const int *tr = d->st[s].tr;
     int e = -2, seen = 0;
     for (int c = 0; c < d->ncls; c++) {
-        if (c == cls) continue;
+        if (tr[c] == tr[cls]) {
+            if (c < cls) return false;               /* not the set's key */
+            continue;
+        }
         if (!seen) { e = tr[c]; seen = 1; }
         else if (tr[c] != e) return false;          /* the exit is not uniform */
     }
-    if (!seen) return false;         /* a one-class machine has no "every other" */
-    if (tr[cls] == e) return false;  /* nothing advances */
+    if (!seen) return false;         /* nothing outside the set: no "every other" */
     *exit = e;
+    return true;
+}
+
+/* True iff `s` and `t`, both shaped for one key and one exit, advance on the
+ * same class set (two sets can share a lowest class). */
+static bool same_set(const Dfa *d, const int *exitv, int s, int t)
+{
+    for (int c = 0; c < d->ncls; c++)
+        if ((d->st[s].tr[c] != exitv[s]) != (d->st[t].tr[c] != exitv[t])) return false;
     return true;
 }
 
@@ -295,13 +319,13 @@ static int acc_of(const Dfa *d, int s)
 static int end_acc_of(const Dfa *d, int s)
 { return s < 0 ? 0 : acc_of(d, d->st[s].endvar >= 0 ? d->st[s].endvar : s); }
 
-/* True iff member-eligible `t` can follow `s` in one chain: the same exit,
- * and the same accept bit both where the scan passes and at its `pos == n`
- * exit. */
+/* True iff member-eligible `t` can follow `s` in one chain: the same class
+ * set, the same exit, and the same accept bit both where the scan passes and
+ * at its `pos == n` exit. */
 static bool same_shape(const Dfa *d, const bool *ok, const int *exitv, int s, int t)
 {
     return ok[t] && exitv[t] == exitv[s] && acc_of(d, t) == acc_of(d, s)
-        && end_acc_of(d, t) == end_acc_of(d, s);
+        && end_acc_of(d, t) == end_acc_of(d, s) && same_set(d, exitv, s, t);
 }
 
 /* Every in-edge in the machine, counted once per source, so "this state is
@@ -341,12 +365,13 @@ static void in_degrees(const Dfa *d, int *indeg, bool *viewtgt, bool *seedtgt)
 
 /* ---- the walk ----------------------------------------------------------- */
 
-/* Collect every maximal chain over ONE class. Fixing the class first is what
- * keeps this linear: for `ncls >= 3` a state has AT MOST ONE candidate class
- * (removing any other index leaves both the odd target and the common one in
- * the "rest", so the exit is not uniform), and for `ncls == 2` both classes
- * are candidates and both are tried — which is not an edge case but the
- * common machine, `[a-z]{0,n}`'s own alphabet being exactly two classes. */
+/* Collect every maximal chain over ONE class set, named by its lowest class
+ * `cls`. Fixing the key first is what keeps this linear: a scan-shaped state
+ * has exactly TWO distinct targets, so it has at most two candidate sets (the
+ * classes going to either target, the other target being the exit) and is
+ * `ok` under at most two keys — `[a-z]{0,n}`'s own two-class alphabet being
+ * the common machine where both are tried, and the chain rules below
+ * deciding which, if either, is a run. */
 static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
                    const bool *viewtgt, const bool *seedtgt,
                    bool prefilter_reseeds, bool end_view_ok, bool trim_view_head,
@@ -523,7 +548,8 @@ static int chain_cmp(const void *a, const void *b)
      * state number so the choice is deterministic across builds. */
     if ((x->span < 0) != (y->span < 0)) return x->span < 0 ? -1 : 1;
     if (x->nmembers != y->nmembers) return y->nmembers - x->nmembers;
-    return x->head - y->head;
+    if (x->head != y->head) return x->head - y->head;
+    return x->cls - y->cls;   /* one state's two sets: the order they were found */
 }
 
 /* Finds every maximal SCAN CHAIN in `d` — a run of states sharing one
@@ -663,23 +689,28 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds, bool end_is_exi
             if (cur < 0 || cur >= n) break;
         }
         taken[nedges] = i;
-        d->st[ch->head].scan_span   = ch->span;
-        d->st[ch->head].scan_cls    = ch->cls;
-        d->st[ch->head].scan_next   = ch->next;
+        DState *hd = &d->st[ch->head];
+        int adv = hd->tr[ch->cls];
+        for (int c = 0; c < d->ncls; c++)
+            if (hd->tr[c] == adv) hd->scan_set[c >> 3] |= (uint8_t)(1u << (c & 7));
+        hd->scan_span   = ch->span;
+        hd->scan_next   = ch->next;
         /* PERIOD 1 IS THE ONLY PERIOD THIS PASS BUILDS (manager ruling R3;
          * `DState.scan_period`'s own comment carries the reasoning). It is
          * written explicitly rather than left at the constructor's zero so
          * the emitter's assertion has something true to check, and so the
          * day a period-k criterion lands the two sites disagree loudly
          * instead of silently. */
-        d->st[ch->head].scan_period = 1;
-        /* THE HEAD'S CLASS EDGE IS THE SCAN EDGE NOW. The table cell is set
-         * dead because the emitted step can never read it (the file header's
-         * argument), and dead is the one value every existing reader of this
-         * table already handles correctly — `cand_from_escapes` in particular
-         * still counts this class as a candidate start, which it must, since
-         * a match really can begin on one of its bytes. */
-        if (ch->span > 0) d->st[ch->head].tr[ch->cls] = -1;
+        hd->scan_period = 1;
+        /* THE HEAD'S SET EDGES ARE THE SCAN EDGE NOW. The table cells are set
+         * dead because the emitted step can never read them (the file
+         * header's argument), and dead is the one value every existing reader
+         * of this table already handles correctly — `cand_from_escapes` in
+         * particular still counts these classes as candidate starts, which it
+         * must, since a match really can begin on one of their bytes. */
+        if (ch->span > 0)
+            for (int c = 0; c < d->ncls; c++)
+                if (pcrec_scan_has(hd, c)) hd->tr[c] = -1;
         nedges++;
     }
 

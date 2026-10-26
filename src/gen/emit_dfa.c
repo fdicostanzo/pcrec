@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 86
+#define PCREC_ARTIFACT_ABI 87
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -5119,6 +5119,35 @@ static void emit_class_legend(StrBuf *c, const Dfa *d)
  * the start; past this many bytes the string stops orienting anyone. */
 #define LEGEND_MAX_EXAMPLE 40
 
+/* The lowest class in state `st`'s scan set: the class an example input
+ * repeats to cross the edge. */
+static int scan_set_low(const Dfa *d, const DState *st)
+{
+    for (int c = 0; c < d->ncls; c++) if (pcrec_scan_has(st, c)) return c;
+    return -1;
+}
+
+/* The scan set's classes as comment text: "class 3", or "classes 1, 2". */
+static const char *scan_set_text(Ctx *cx, const Dfa *d, const DState *st)
+{
+    StrBuf b = { 0 };
+    b.cx = cx;
+    int k = 0;
+    for (int c = 0; c < d->ncls; c++)
+        if (pcrec_scan_has(st, c)) pcrec_sb_printf(&b, "%s%d", k++ ? ", " : "", c);
+    const char *text = pcrec_sb_fragf(&cx->arena, "class%s %s", k > 1 ? "es" : "",
+                                      b.p ? b.p : "");
+    pcrec_sb_free(&b);
+    return text;
+}
+
+/* Fills `set[b]` with 1 for every byte in one of state `st`'s scan classes:
+ * the run's byte set, union(S), which every emitted form of the edge tests. */
+static void scan_byte_set(const Dfa *d, const DState *st, uint8_t set[256])
+{
+    for (int b = 0; b < 256; b++) set[b] = (uint8_t)pcrec_scan_has(st, d->clsmap[b]);
+}
+
 /* Emits the human-readable comment above the byte-class table, showing an
  * EXAMPLE input reaching the deepest state (a BFS from `d->s0`, backtracked
  * through `from`/`via`). Purely cosmetic: nothing downstream reads what this
@@ -5184,7 +5213,7 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
         int span = d->st[s].scan_span, nx = d->st[s].scan_next;
         if (span > 0 && nx >= 0 && nx < d->n && dist[nx] < 0) {
             dist[nx] = dist[s] + span;
-            if (!brief) { from[nx] = s; via[nx] = d->st[s].scan_cls; }
+            if (!brief) { from[nx] = s; via[nx] = scan_set_low(d, &d->st[s]); }
             queue[tail++] = nx;
         }
     }
@@ -5260,11 +5289,12 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
          * reader who took the table at its word would conclude the machine
          * stops there. This line is the table's own footnote. */
         if (d->st[i].scan_span < 0)
-            pcrec_sb_printf(c, "\n     *       scan edge: any run of class %d stays here",
-                      d->st[i].scan_cls);
+            pcrec_sb_printf(c, "\n     *       scan edge: any run of %s stays here",
+                      scan_set_text(cx, d, &d->st[i]));
         else if (d->st[i].scan_span > 0)
-            pcrec_sb_printf(c, "\n     *       scan edge: %d of class %d -> state %d",
-                      d->st[i].scan_span, d->st[i].scan_cls, d->st[i].scan_next);
+            pcrec_sb_printf(c, "\n     *       scan edge: %d of %s -> state %d",
+                      d->st[i].scan_span, scan_set_text(cx, d, &d->st[i]),
+                      d->st[i].scan_next);
         pcrec_sb_puts(c, "\n");
     }
 }
@@ -12026,11 +12056,13 @@ static const DfaEdge dfa_edges[] = {
 static void scan_choice(Ctx *cx, const Dfa *d, int head, ClsChoice *out)
 {
     PcrecCpRange *iv = pcrec_arena_alloc(&cx->arena, 128 * sizeof *iv);
-    int n = 0, cls = d->st[head].scan_cls;
+    uint8_t set[256];
+    int n = 0;
+    scan_byte_set(d, &d->st[head], set);
     for (unsigned b = 0; b < 256; ) {
-        if (d->clsmap[b] != cls) { b++; continue; }
+        if (!set[b]) { b++; continue; }
         iv[n].lo = b;
-        while (b < 256 && d->clsmap[b] == cls) b++;
+        while (b < 256 && set[b]) b++;
         iv[n++].hi = b - 1;
     }
     ClsSelectIn in = { cx->opt->tune, pcrec_clskit_deny_of(cx->opt->flags),
@@ -12115,8 +12147,7 @@ static void emit_scan_defs(StrBuf *c, const DfaForm *f)
 static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
 {
     uint8_t set[256];
-    int cls = f->d->st[head].scan_cls;
-    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    scan_byte_set(f->d, &f->d->st[head], set);
     emit_u8_table(c, f->p, dfa_fragf(f->cx, "%s_scan%d", f->dir->c.name, head),
                   set, 256);
 }
@@ -12150,8 +12181,7 @@ static const char *scan_test(const DfaForm *f, int head)
 static PcrecAdvance edge_advance(const DfaForm *f, int head, const char *test, int span)
 {
     uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
-    int cls = f->d->st[head].scan_cls;
-    for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    scan_byte_set(f->d, &f->d->st[head], set);
     const char **member = pcrec_arena_alloc(&f->cx->arena, sizeof *member);
     member[0] = test;
     return (PcrecAdvance){
@@ -12198,16 +12228,16 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
      * what the loop replaces, and why the table cell above says "dead". */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (span < 0)
-        pcrec_sb_printf(c, "%s// [OPT-5] SCAN EDGE: every state a run of class %d\n"
+        pcrec_sb_printf(c, "%s// [OPT-5] SCAN EDGE: every state a run of %s\n"
                      "%s// would pass IS this state, so count them here rather\n"
                      "%s// than stepping the table once per byte.\n",
-                  ind, st->scan_cls, ind, ind);
+                  ind, scan_set_text(f->cx, f->d, st), ind, ind);
     else
         pcrec_sb_printf(c, "%s// [OPT-5] SCAN EDGE: the states between here and state\n"
-                     "%s// %d differ only in how many class-%d bytes have been\n"
+                     "%s// %d differ only in how many %s bytes have been\n"
                      "%s// counted, so they are ONE loop carrying only the cursor.\n"
                      "%s// The class's cell above reads \"dead\" because of this.\n",
-                  ind, ind, nx, st->scan_cls, ind, ind);
+                  ind, ind, nx, scan_set_text(f->cx, f->d, st), ind, ind);
     pcrec_sb_cmt_close(c);
     /* THE FIRST ITERATION IS PEELED INTO THE GUARD, and it is a MEASURED
      * change rather than a stylistic one. This block sits on the loop's
@@ -13093,7 +13123,7 @@ static bool revend_nl_last(const Dfa *d, int byte)
         if (d->st[st].tr[cls] >= 0) return true;
         /* D164 B3 a scan-edge head's own class cell reads dead (scanedge.c);
          * a head on the tail byte's class steps over it. */
-        if (d->st[st].scan_span != 0 && d->st[st].scan_cls == cls) return true;
+        if (pcrec_scan_has(&d->st[st], cls)) return true;
         if (d->st[st].eolvar >= 0 && n < 8) stack[n++] = d->st[st].eolvar;
         if (d->st[st].endvar >= 0 && n < 8) stack[n++] = d->st[st].endvar;
     }

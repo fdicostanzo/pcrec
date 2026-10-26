@@ -1340,7 +1340,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
      * new state's storage is whatever the allocator last held — and every
      * field below is assigned, which is why that has never mattered. It
      * stopped being true the moment a field arrived that a state may
-     * legitimately NOT have: `scan_span`/`scan_cls`/`scan_next` are written
+     * legitimately NOT have: `scan_span`/`scan_set`/`scan_next` are written
      * only by src/opt/scanedge.c, on the few states that carry a scan edge,
      * and garbage in `scan_span` reads as "this state has one" everywhere
      * else. MEASURED as a SEGFAULT in the pass's own remap on
