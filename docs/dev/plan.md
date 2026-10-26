@@ -31,6 +31,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
+- [LANECHECK] STATE:started — AN AGENT CHECKS ITS DELIVERABLE AGAINST THE BRIEF; ONLY A PASS WRITES .done
+  filed: 2026-10-26 Frank (idea: "a script in their dir area which will say if they are done or give prose issues") + manager (marker + watcher)
+  status (2026-10-26): lane lanecheck (wildcard/admin slot) building v1: DELIVER block in the brief; scripts/lanecheck prints DONE or prose issues; pass writes the marker; a plain watcher any parent runs reports missing/stopped markers; miss log
+  next: v1 lands, then BOILERPLATE + BRIEF_TEMPLATE make "run lanecheck, end only on DONE" standard; critic skill adopts it for critics
+  refs: memory pcrec-subagent-cache-warmth (DO-THEN-FINISH, monitoring ladder); docs/dev/lanes/BOILERPLATE.md; docs/dev/lanes/BRIEF_TEMPLATE.md
+  General agent-lifecycle tool, NOT part of the box queue/monitor. Form checks only (sections, non-empty, cites, commit, owed jobs); review still judges content. Minimal harness (Frank 2026-10-21).
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
