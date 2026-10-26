@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 87
+#define PCREC_ARTIFACT_ABI 88
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -2081,7 +2081,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         " * semantic; PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71\n"
         " * item 1) is its first producer -- the artifact's own\n"
         " * inconsistency check firing, never a resource give-up -- and a\n"
-        " * generated call site that invokes an rx_matchfn traps on one.\n"
+        " * generated call site that invokes an rx_matchfn propagates one.\n"
         " * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */\n"
         "typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);\n"
         "\n"
@@ -2115,12 +2115,12 @@ static void emit_rx_abi_types(StrBuf *sb)
          * emitter walked, src/gen/emit_vm.c's lookbehind negative-arm
          * end-check), never a resource give-up. F2's obligation
          * (docs/design/design_callout_abi.md) is exactly this: a composed
-         * call site invoking an rx_matchfn must enforce
-         * `if (ret < PCREC_ERR_FLOOR) __builtin_trap();`, and trapping on
-         * PCREC_ERR_INTERNAL IS the design, not a gap. A TOP-LEVEL search
-         * entry is not such a call site, so it still PROPAGATES the code
-         * to its own caller rather than trapping -- see the search entry's
-         * collapse in emit_vm.c. */
+         * call site invoking an rx_matchfn once enforced
+         * `if (ret < PCREC_ERR_FLOOR) __builtin_trap();`; D163 addendum 6
+         * Q3 superseded that for INTERNAL: a call site PROPAGATES it, as a
+         * TOP-LEVEL search entry always has (docs/spec/match_api.md section
+         * 4 paragraph 10 row 4; see the search entry's collapse in
+         * emit_vm.c). */
         "#define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: "
         "NOT a give-up, D71 item 1 */\n"
         /* [K50] THE SECOND BELOW-THE-FLOOR PRODUCER, and it is the abort
