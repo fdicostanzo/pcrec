@@ -126,7 +126,7 @@ that live here because an error in them is silent (wrong answers, no warning).
   ([PATFACTS] 3.5, one owner), `pcrec_sat_add`/`pcrec_sat_mul` ([PATFACTS] 3.6).
   `PCREC_W_UNBOUNDED == PCREC_MINW_MAX` so unbounded absorbs. Tests tests/mrl/
   (D27-blinded corpus; `maxw_check.c`, `cwmax_check.c`), tests/core/sat_arith_check.c.
-- scanedge.c — [OPT-5] DFA SCAN EDGE: after `pcrec_minimize_dfa`, DELETES scan-shaped state chains; eight preconditions, each a decline; gate `-fno-scan-edge` (docs/spec/tuning.md §2.18). Full entry in NOTES.md.
+- scanedge.c — [OPT-5] DFA SCAN EDGE: after `pcrec_minimize_dfa`, DELETES scan-shaped state chains (a run over a byte-class SET, one class = size one, [SCANEDGE-SET]); eight preconditions, each a decline; gate `-fno-scan-edge` (docs/spec/tuning.md §2.18). Full entry in NOTES.md.
 - dfamemo.c — [OPT-RETRY-REUSE] MACHINE MEMO: `pcrec_build_min_dfa` (build +
   minimize), every DFA build site in compile.c goes through it; memoized across retry
   attempts by content key; only clean builds stored; compile_driver's local.
