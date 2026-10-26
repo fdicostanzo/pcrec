@@ -38,8 +38,8 @@
 #                                      file its last `chain pid/pgid N, output P` line names, and the CPU of N's tree, count)
 #   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
 #   PENDING-STUCK NAME pending for Ns, nothing running [(queued Qs ago, ready for Ns)] :: <the runner's last answer>
-#                                      not for a job whose last answer is `not-ready: ...` (a declared wait: time gate, dependency) until it
-#                                      has outlived its declared `patience` (boxqueue's QUEUE/.state/KEY.reported); patience none never
+#                                      not for a job with a DECLARED time gate (`boxqueue: not-before T`) while now < T; its age counts from T.
+#                                      Every other not-ready answer (a failed `after KEY`, a broken --ready) ages as usual.
 #   DISK-HIGH <fs> at P% (>= T%)
 #   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
@@ -263,10 +263,14 @@ conditions() {
         since=$queued; rdy=""
         case $ans in not-ready:*|READY-HUNG*|"no answer recorded") ;; *) rdy=$(ready_since "$n"); [ -n "$rdy" ] && since=$rdy ;; esac
         age=$((now - since))
-        # A job whose --ready answers `not-ready: ...` is WAITING BY ITS OWN DECLARATION (a time gate `not before ...`, `waiting on KEY`):
-        # that wait is governed by the job's declared `patience`, which boxqueue marks with QUEUE/.state/KEY.reported once exceeded
-        # (patience none = never). Only then is it stuck. A ready job the box does not start, or one with no answer, ages as before.
-        waits=0; case $ans in not-ready:*|READY-HUNG*) [ -e "$Q/.state/$k.reported" ] || waits=1 ;; esac
+        # A job with a DECLARED TIME GATE (`boxqueue: not-before T` in its dry run, kept in QUEUE/.state/KEY.decl) is waiting by
+        # declaration only while now < T; its age counts from T. Every other not-ready answer (`after KEY` whose KEY failed, a
+        # broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
+        waits=0; nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
+        if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null); then
+            [ "$now" -lt "$nbe" ] && waits=1
+            [ "$since" -lt "$nbe" ] && { since=$nbe; age=$((now - since)); }
+        fi
         if [ "$waits" = 0 ] && [ "$age" -ge "$stuck" ]; then
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"

@@ -802,5 +802,33 @@ if P=$(plantf s1629 boxqueue '    [ -n "$D_SIZE" ] && [ "$D_CAP" != none ] || re
     grep -q 'cap scaled' <<<"$out" && bad "PLANT S1629 not caught" || ok "PLANT S1629 (cap never scaled): the grown job keeps its stale 30 s, the 26 case goes red"
 else bad "plant S1629 did not land"; fi
 
+# 28. [qscripts2] a DECLARED time gate: `boxqueue: not-before YYYY-MM-DDTHH:MM[:SS]` in the dry run. boxqueue itself holds the job
+# (--ready is not even asked before the time), plan/status say "not before ...", a malformed value is refused at add.
+nbjob() { mkjob "$1" "$(D 30 none none | sed 's/ exit 0$//') echo \"boxqueue: not-before \$(cat $2)\"; exit 0" "echo asked >> $2.asked; exit 0" 'exit 0'; }
+newq; rm -f "$T/nbf.asked"; date -d '+6 seconds' +%Y-%m-%dT%H:%M:%S > "$T/nbf"; nbjob "$T/j/nb" "$T/nbf"
+bq add --name 100-main-nb --no-start "$T/j/nb" > /dev/null; run1
+[ -f "$Q/pending/100-main-nb" ] && [ ! -e "$T/nbf.asked" ] && has "^  pass 1 100-main-nb not-ready: not before $(cat "$T/nbf") " \
+    && ok "a job whose dry run declares not-before in the future stays pending with 'not-ready: not before T' and its --ready is NOT asked" || bad "time gate before its time: $(ql | tail -3) asked=$(cat "$T/nbf.asked" 2>/dev/null)"
+bq status 2>&1 | grep -q "pending: 100-main-nb :: not-ready: not before $(cat "$T/nbf")" && bq --dry-run 2>&1 | grep -q "not-ready: not before $(cat "$T/nbf")" \
+    && ok "status and plan both show 'not before T'" || bad "status/plan lack the gate"
+for _ in $(seq 20); do [ "$(date +%s)" -ge "$(date -d "$(cat "$T/nbf")" +%s)" ] && break; sleep 0.5; done
+run1; [ "$(st main-nb)" = green ] && [ -e "$T/nbf.asked" ] && ok "after the declared time --ready is asked and the job runs green" || bad "time gate after its time: $(st main-nb)"
+for v in 'tomorrow' '2026-13-40T00:00' '2026-10-27 00:05' '2026-10-27T25:00' '2026-10-27T00:05+02:00'; do
+    newq; echo "$v" > "$T/nbf.bad"; nbjob "$T/j/nbb" "$T/nbf.bad"
+    out=$(bq add --name 100-main-nbb --no-start "$T/j/nbb" 2>&1); rc=$?
+    [ "$rc" = 65 ] && grep -q 'not-before wants' <<<"$out" && [ ! -e "$Q/pending/100-main-nbb" ] && ok "malformed not-before '$v' is refused at add (65)" || bad "not-before '$v' accepted or wrong refusal: rc=$rc $out"
+done
+bash "$BQ" -h | grep -q 'not-before' && ok "boxqueue -h documents not-before" || bad "-h lacks not-before"
+# the old hand-written --ready time gate (no declaration) keeps working unchanged
+newq; echo 'not before the go file' > /dev/null; mkjob "$T/j/old" "$(D 30 none none)" '[ -e '"$T"'/go ] && exit 0; echo "not before go"; exit 75' 'exit 0'
+rm -f "$T/go"; bq add --name 100-main-old --no-start "$T/j/old" > /dev/null; run1
+[ -f "$Q/pending/100-main-old" ] && : > "$T/go" && run1 && [ "$(st main-old)" = green ] && ok "back-compat: a hand-written --ready time gate still holds then releases the job" || bad "old-style gate: $(st main-old)"
+# S1632: the gate is not enforced by the pass (--ready asked regardless): the pre-time case goes red
+if P=$(plantf s1632 boxqueue 'if [ -n "$D_NBF" ] && [ "$(date +%s)" -lt "$D_NBF" ]; then   # DECLARED' 'if false; then   # DECLARED'); then
+    newq; rm -f "$T/nbf.asked"; date -d '+60 seconds' +%Y-%m-%dT%H:%M:%S > "$T/nbf"; bq add --name 100-main-nb --no-start "$T/j/nb" > /dev/null
+    BQX=$P run1
+    [ ! -e "$T/nbf.asked" ] && [ ! -e "$Q/done/"*main-nb* ] 2>/dev/null && bad "PLANT S1632 not caught" || ok "PLANT S1632 (gate not enforced): --ready is asked before the time (the job starts), the 28 case goes red"
+else bad "plant S1632 did not land"; fi
+
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

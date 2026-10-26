@@ -312,21 +312,24 @@ case $r in "queuewatch: QUIET 750-bench-w1 no log growth or CPU for "?"s|") ok "
 r=$(resv_case "$QW" nolog nolog)
 case $r in "queuewatch: QUIET 750-bench-w1 no log growth or CPU for "?"s|") ok "QUIET: a reservation whose bench log is unreadable falls back to the placeholder's own signals (QUIET once, no error)" ;; *) bad "unreadable bench log: $r" ;; esac
 
-# [qscripts R1] a job held by its OWN declared wait (`not-ready: not before ...`, `not-ready: waiting on KEY`) is not stuck; it is, once it has
-# outlived its declared patience (boxqueue marks QUEUE/.state/KEY.reported). The miss: 600-main-fullsuite-20261027 (a time gate, patience none).
-gate_case() { # gate_case WATCHER TAG REPORTED(0|1) ANSWER: queued 20000 s ago, last answer ANSWER, nothing running
+# [qscripts2] only a DECLARED time gate (`boxqueue: not-before T` in the job's dry run, kept in .state/KEY.decl) is waiting by declaration, and only
+# while now < T (its age then counts from T). Every other not-ready answer ages as usual. The miss: 600-main-fullsuite-20261027 (a time gate).
+gate_case() { # gate_case WATCHER TAG NBF-OFFSET-SEC|none ANSWER: queued 20000 s ago, last answer ANSWER, nothing running
     local q=$T/qg2$2 now; now=$(date +%s); mkdir -p "$q/pending" "$q/running" "$q/done" "$q/failed" "$q/.state"
     { echo "== add 600-main-gate cap=60 patience=none expect=none $(date -d "@$((now - 20000))" -Iseconds)"
       echo "== pass 1 START $(date -d "@$((now - 19000))" -Iseconds) pending=1 box=free"; echo "  pass 1 600-main-gate $4 (1ms)"; } > "$q/queue.log"
     : > "$q/pending/600-main-gate"; touch -d "@$((now - 20000))" "$q/pending/600-main-gate"; echo "$4" > "$q/.state/main-gate.answer"
-    [ "$3" = 1 ] && : > "$q/.state/main-gate.reported"
+    { echo "boxqueue: cap 60"; echo "boxqueue: patience none"; [ "$3" != none ] && echo "boxqueue: not-before $(date -d "@$((now + $3))" +%Y-%m-%dT%H:%M:%S)"; } > "$q/.state/main-gate.decl"
     fa_run "$1" "$q" "$T/stg2$2" 2 --stuck-sec 600
 }
-r=$(gate_case "$QW" gate 0 "not-ready: not before 2026-10-27 00:05 (since 2026-10-26T00:00:00-04:00)"); [ -z "$r" ] && ok "PENDING-STUCK: a time-gated job (not-ready: not before ..., patience none) 20000 s in the queue is waiting by declaration, not stuck" || bad "time gate read as stuck: $r"
-r=$(gate_case "$QW" dep 0 "not-ready: waiting on main-build (pending) (since x)"); [ -z "$r" ] && ok "PENDING-STUCK: a dependency wait (not-ready: waiting on KEY) is not stuck either" || bad "dependency wait read as stuck: $r"
-r=$(gate_case "$QW" rep 1 "not-ready: not before 2026-10-27 00:05 (since x)")
-case $r in "queuewatch: PENDING-STUCK 600-main-gate pending for 20"???"s, nothing running|") ok "PENDING-STUCK: the same wait past its DECLARED patience (the .reported mark) is stuck, once" ;; *) bad "past-patience wait: $r" ;; esac
-r=$(gate_case "$QW" rdy 0 "waiting on pid=1 label=h"); case $r in "queuewatch: PENDING-STUCK 600-main-gate "*) ok "PENDING-STUCK: a READY job the box does not start (lock held) is still stuck (control)" ;; *) bad "ready-but-held control: $r" ;; esac
+r=$(gate_case "$QW" gate 3000 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -z "$r" ] && ok "PENDING-STUCK: a job with a DECLARED not-before still in the future, 20000 s in the queue, is waiting by declaration: silent" || bad "declared time gate read as stuck: $r"
+r=$(gate_case "$QW" soon -100 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -z "$r" ] && ok "PENDING-STUCK: 100 s past its not-before (under --stuck-sec 600) the age counts from the gate time: still silent" || bad "age not counted from not-before: $r"
+r=$(gate_case "$QW" late -1000 "not-ready: waiting on main-build (pending) (since x)")
+case $r in "queuewatch: PENDING-STUCK 600-main-gate pending for 1"???"s, nothing running|") ok "PENDING-STUCK: still pending 1000 s AFTER its declared not-before: stuck, once, aged from the gate time (not the 20000 s queueing)" ;; *) bad "past-gate wait: $r" ;; esac
+r=$(gate_case "$QW" dep none "not-ready: waiting on main-build (failed) (since x)")
+case $r in "queuewatch: PENDING-STUCK 600-main-gate pending for 20"???"s, nothing running|") ok "PENDING-STUCK: an \`after KEY\` job whose KEY failed (answers not-ready forever, no declared gate) DOES alarm" ;; *) bad "failed-dependency wait went silent: $r" ;; esac
+r=$(gate_case "$QW" brk none "not-ready: --ready exploded"); case $r in "queuewatch: PENDING-STUCK 600-main-gate "*) ok "PENDING-STUCK: a broken --ready (not-ready with no declared gate) alarms" ;; *) bad "broken --ready went silent: $r" ;; esac
+r=$(gate_case "$QW" rdy none "waiting on pid=1 label=h"); case $r in "queuewatch: PENDING-STUCK 600-main-gate "*) ok "PENDING-STUCK: a READY job the box does not start (lock held) is still stuck (control)" ;; *) bad "ready-but-held control: $r" ;; esac
 
 # PLANTS: a scratch copy of the watcher with one bug each; the matching case must go red
 plant() { # plant NAME FROM TO: echo the path of the patched copy
@@ -386,8 +389,14 @@ P11=$(plant resvblind 'if [ -n "$bpid" ] && [ -d "/proc/$bpid" ]; then bt=$(tree
 [ -n "$P11" ] && { r=$(resv_case "$P11" p11 cpu); [ -n "$r" ] && ok "PLANT S1626 (the chain's CPU not sampled): the busy bench reads QUIET, the 5-cpu case goes red" || bad "PLANT S1626 not caught"; }
 P12=$(plant resvnogrow '[ -n "$blog" ] && stat -c '"'"'%n %s %Y'"'"' "$blog" ${bout:+"$bout"} 2>/dev/null' ':') || bad "plant S1627 did not land"
 [ -n "$P12" ] && { r=$(resv_case "$P12" p12 grow); [ -n "$r" ] && ok "PLANT S1627 (bench log/output growth not read): the growing bench reads QUIET, the 5-grow case goes red" || bad "PLANT S1627 not caught"; }
-# (R1; no S id was issued for it) the declared-wait rule dropped: the time-gated job reads PENDING-STUCK again
-P13=$(plant declaredwait 'waits=0; case $ans in not-ready:*|READY-HUNG*) [ -e "$Q/.state/$k.reported" ] || waits=1 ;; esac' 'waits=0') || bad "plant declaredwait did not land"
-[ -n "$P13" ] && { r=$(gate_case "$P13" p13 0 "not-ready: not before 2026-10-27 00:05 (since x)"); [ -n "$r" ] && ok "PLANT declared-wait rule dropped: the time-gated job reads stuck, the R1 case goes red" || bad "PLANT declaredwait not caught"; }
+# S1630: the declared time gate is not honoured (waits never set): the future-gated job reads PENDING-STUCK
+P13=$(plant gatedrop '[ "$now" -lt "$nbe" ] && waits=1' ':') || bad "plant S1630 did not land"
+[ -n "$P13" ] && { r=$(gate_case "$P13" p13 3000 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -n "$r" ] && ok "PLANT S1630 (declared gate ignored): the future-gated job reads stuck, the gate case goes red" || bad "PLANT S1630 not caught"; }
+# S1631: the REJECTED qscripts form (every not-ready answer is a wait): the failed-dependency job goes silent again
+P14=$(plant anywait 'waits=0; nb=$(' 'waits=0; case $ans in not-ready:*|READY-HUNG*) waits=1 ;; esac; nb=$(') || bad "plant S1631 did not land"
+[ -n "$P14" ] && { r=$(gate_case "$P14" p14 none "not-ready: waiting on main-build (failed) (since x)"); [ -z "$r" ] && ok "PLANT S1631 (any not-ready exempt): the failed-dependency job goes silent, the after-KEY-failed case goes red" || bad "PLANT S1631 not caught"; }
+# (unnumbered: age counted from the queueing, not the gate time)
+P15=$(plant gateage '[ "$since" -lt "$nbe" ] && { since=$nbe; age=$((now - since)); }' ':') || bad "plant gateage did not land"
+[ -n "$P15" ] && { r=$(gate_case "$P15" p15 -100 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -n "$r" ] && ok "PLANT gate-age-from-queueing: a job 100 s past its gate reads stuck, the age case goes red" || bad "PLANT gateage not caught"; }
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
