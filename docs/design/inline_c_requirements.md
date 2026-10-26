@@ -1069,6 +1069,8 @@ proposed) but requires:
 
 - **Q2 (2026-10-26): AGREED, one call site.** Inline code is a second way to supply the function at [M4-CALLOUTS]'s call site (one emitter, one fire contract, one test population); each embedded language only has to produce a callable function (C directly, others through generated glue). Consequence: the callout call site is the first build step of the pattern side.
 
+- **Q3 (2026-10-26): BOTH SPELLINGS, one node.** Frank: "Why can't we do both? We have duplicate spellings elsewhere." (a) the PCRE2-valid string callout with a language tag and a user-chosen delimiter (e.g. ``(?C`c: ... `)``), and (b) a pcrec/Perl-style `(?{ ... })` (PCRE2 rejects it today: "unrecognized character after (? or (?-"; Perl reads it as embedded code). Both parse to the SAME callout-site node, like the existing duplicate spellings (`(?<n>)`/`(?P<n>)`/`(?'n')`). The design note decides (b)'s end rule (balanced braces with the language's strings/comments skipped, C first) and how (b) carries a language tag.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
