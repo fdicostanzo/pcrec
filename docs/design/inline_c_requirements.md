@@ -1071,6 +1071,8 @@ proposed) but requires:
 
 - **Q3 (2026-10-26): BOTH SPELLINGS, one node.** Frank: "Why can't we do both? We have duplicate spellings elsewhere." (a) the PCRE2-valid string callout with a language tag and a user-chosen delimiter (e.g. ``(?C`c: ... `)``), and (b) a pcrec/Perl-style `(?{ ... })` (PCRE2 rejects it today: "unrecognized character after (? or (?-"; Perl reads it as embedded code). Both parse to the SAME callout-site node, like the existing duplicate spellings (`(?<n>)`/`(?P<n>)`/`(?'n')`). The design note decides (b)'s end rule (balanced braces with the language's strings/comments skipped, C first) and how (b) carries a language tag.
 
+- **Q4 (2026-10-26): AGREED.** `verify` first (DFA finds the match, the segment runs on it; on a veto the region re-runs on the VM with the segment inline: always PCRE2-equivalent); `post` only when a measured pattern needs it. The mode is set PER SEGMENT, not per pattern.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
