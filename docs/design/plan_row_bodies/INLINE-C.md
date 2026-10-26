@@ -11,3 +11,13 @@ Moved 2026-10-26 by the manager when the row passed the plan-lint size rule; the
 - 2026-10-26 (manager, on stage 1a handback): the A_VAR misread in pcrec_bref_mark is a real bug; its removal is accepted even if it moves bytes on vars-with-captures patterns (then: known_issues entry + abi ritual at landing); any other mover stops the landing. 1a validation = job 520-ic1a-test (queues behind 501; not-ready after 21:00). Merge order: scanset (abi 87) first, then 1a, with 1a re-checked on top.
 - 2026-10-26 (manager): stage 1a MERGED (job 520-main-ic1a-test3 green: corpus sweep 6,185 reached, 0 movers; mech 14 rows clean; make test 79/79). Weakness noted: the bench-pattern sweep reached only 38 of 403 (365 refused by both sides), so its zero-mover evidence is thin; the corpus sweep carries the proof.
 - 2026-10-26 (manager, on stage 1b handback 1dd510468): Q1 `callout N ATTRS` is a BLOCK line (the declaration sits with its site; syntax is the manager's call). Q2 the richer refusal reason (construct + offset) is FILED for stage 2, when embedded code makes it user-visible (D26 tier: wording, not reality). Validation jobs 540/541/542 queued; a D6 code round runs before landing; landing after the full suite (abi 89 provisional, renumber at landing).
+
+### Ruling 2026-10-26 (Frank): `once` stays a rule the user can check by reading the pattern
+
+Frank: "Truthfully both of those options are not easily predictable. It's hard to program around 'maybe it will work'."
+The manager had floated two ways to accept more `once` sites: sealing choice points that possessification proves dead, and treating a capture-free non-atomic lookaround as atomic. Both are DECLINED. A user cannot predict them by reading the pattern.
+The firing class stays a syntactic rule on the pattern as written, with no optimizer proofs. A `once` site is accepted when nothing before it can be backtracked into: every quantifier is fixed-count or possessive; every alternation, and every subroutine call, is inside `(?>...)`; every lookaround is an ordinary (atomic) one. A non-atomic lookaround `(?*...)`/`(*napla:...)` counts as backtrackable.
+The guidance is the deliverable:
+1. The refusal names the construct, its offset and the fix. A choice inside a non-atomic lookaround names THE LOOKAROUND, with the fix `(?=...)` or `(?>(?*...))`.
+2. The spec gets a short table of what counts as backtrackable before a site, with the fix for each.
+3. `--list-callouts` prints the same reason.
