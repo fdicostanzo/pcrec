@@ -348,13 +348,31 @@ static void pr_bytes(FILE *f, const Dfa *d, int c)
     fprintf(f, "(%d)", cnt);
 }
 
+/* Chain-member model (a hypothesis-level stand-in for scanedge.c's eight
+ * preconditions: it checks precondition (1) shape and the chain-link/loop
+ * condition of (5); view-ok (precondition 2/3) is reported separately).
+ * A state is SET-SHAPED when its transitions take exactly two distinct values
+ * and the ADVANCE side (the value that is a live state) is chosen; it is
+ * ONE-SHAPED when that advance side is a single class (today's rule).
+ * A state is a chain MEMBER when it self-loops on the advance side, or its
+ * advance target is shaped with the same (class set, exit), or some shaped
+ * state with the same (class set, exit) advances into it. */
+typedef struct { bool ok, one; int adv, exit; unsigned long long sig; int ncl; } Shape;
+
+static unsigned long long sig_of(const Dfa *d, const int *tr, int target)
+{
+    unsigned long long h = 1469598103934665603ULL;
+    for (int c = 0; c < d->ncls; c++)
+        if (tr[c] == target) { h ^= (unsigned long long)(c + 1); h *= 1099511628211ULL; }
+    return h;
+}
+
 void probe_dfa(const Ctx *cx, const Dfa *d, const char *name, int line)
 {
     (void)cx;
     FILE *f = po();
-    int one_self = 0, one_other = 0, gain_self = 0, gain_other = 0;
-    int one_self_v = 0, gain_self_v = 0, gain_other_v = 0, one_other_v = 0;
-    int shown = 0;
+    Shape *sh = calloc((size_t)d->n + 1, sizeof *sh);
+    if (!sh) return;
     for (int s = 0; s < d->n; s++) {
         const int *tr = d->st[s].tr;
         int v[2] = { -2, -2 }, cnt[2] = { 0, 0 }, nd = 0;
@@ -365,38 +383,77 @@ void probe_dfa(const Ctx *cx, const Dfa *d, const char *name, int line)
             cnt[k]++;
         }
         if (nd != 2) continue;
-        bool vok = pcrec_state_view_invariant(d, &d->st[s]);
         bool live0 = v[0] >= 0, live1 = v[1] >= 0;
-        if (!live0 && !live1) continue;                 /* no advance target at all */
-        bool self = v[0] == s || v[1] == s;
-        bool one = (cnt[0] == 1 && live0) || (cnt[1] == 1 && live1);
-        if (one) {
-            if (self) { one_self++; one_self_v += vok; } else { one_other++; one_other_v += vok; }
-            continue;
+        if (!live0 && !live1) continue;
+        /* the one-class rule's side wins when it exists, so one => set */
+        int adv;
+        bool one = false;
+        if (cnt[0] == 1 && live0 && !(cnt[1] == 1 && live1 && v[1] == s)) { adv = 0; one = true; }
+        else if (cnt[1] == 1 && live1) { adv = 1; one = true; }
+        else if (v[0] == s) adv = 0;
+        else if (v[1] == s) adv = 1;
+        else if (!live0) adv = 1;
+        else if (!live1) adv = 0;
+        else adv = cnt[0] >= cnt[1] ? 0 : 1;
+        sh[s].ok = true; sh[s].one = one; sh[s].adv = v[adv]; sh[s].exit = v[1 - adv];
+        sh[s].ncl = cnt[adv]; sh[s].sig = sig_of(d, tr, v[adv]);
+    }
+    /* has-predecessor over the same (sig, exit) */
+    bool *haspred = calloc((size_t)d->n + 1, sizeof *haspred);
+    if (!haspred) { free(sh); return; }
+    for (int s = 0; s < d->n; s++) {
+        if (!sh[s].ok) continue;
+        int t = sh[s].adv;
+        if (t >= 0 && t < d->n && t != s && sh[t].ok && sh[t].sig == sh[s].sig && sh[t].exit == sh[s].exit)
+            haspred[t] = true;
+    }
+    int mem_one = 0, mem_set = 0, mem_one_v = 0, mem_set_v = 0;
+    int gain_self = 0, gain_chain = 0, gain_self_v = 0, gain_chain_v = 0;
+    int shown = 0;
+    for (int s = 0; s < d->n; s++) {
+        if (!sh[s].ok) continue;
+        int t = sh[s].adv;
+        bool loop = t == s;
+        bool link = !loop && t >= 0 && t < d->n && sh[t].ok && sh[t].sig == sh[s].sig && sh[t].exit == sh[s].exit;
+        bool member = loop || link || haspred[s];
+        if (!member) continue;
+        bool vok = pcrec_state_view_invariant(d, &d->st[s]);
+        /* one-class membership: every link in the chain must itself be one-shaped */
+        bool omember = sh[s].one && (loop || (link && sh[t].one) || (haspred[s]));
+        if (omember && !loop && !(link && sh[t].one)) {
+            /* member only through a predecessor: need that predecessor one-shaped */
+            bool pone = false;
+            for (int p = 0; p < d->n; p++)
+                if (sh[p].ok && sh[p].one && sh[p].adv == s && sh[p].sig == sh[s].sig && sh[p].exit == sh[s].exit) { pone = true; break; }
+            omember = pone;
         }
-        if (self) { gain_self++; gain_self_v += vok; } else { gain_other++; gain_other_v += vok; }
+        mem_set++; mem_set_v += vok;
+        if (omember) { mem_one++; mem_one_v += vok; continue; }
+        if (loop) { gain_self++; gain_self_v += vok; } else { gain_chain++; gain_chain_v += vok; }
         if (shown++ < 4) {
-            int adv = (v[0] == s) ? 0 : (v[1] == s) ? 1 : !live0 ? 1 : !live1 ? 0 : (cnt[0] >= cnt[1] ? 0 : 1);
-            fprintf(f, "GAIN\t%s\tstate=%d\tself=%d\tvok=%d\tnS=%d\tS=", name, s, self, vok, cnt[adv]);
+            const int *tr = d->st[s].tr;
+            fprintf(f, "GAIN\t%s\tstate=%d\tself=%d\tvok=%d\tnS=%d\tS=", name, s, loop, vok, sh[s].ncl);
             int first = -1, second = -1;
             for (int c = 0; c < d->ncls; c++)
-                if (tr[c] == v[adv]) {
+                if (tr[c] == sh[s].adv) {
                     if (first < 0) first = c; else if (second < 0) second = c;
-                    if (cnt[adv] <= 4) { pr_bytes(f, d, c); fputc(' ', f); }
+                    if (sh[s].ncl <= 4) { pr_bytes(f, d, c); fputc(' ', f); }
                 }
-            if (cnt[adv] > 4) fputs("(many classes)", f);
-            fprintf(f, "\texit=%d\tsplit:", v[1 - adv]);
+            if (sh[s].ncl > 4) fputs("(many classes)", f);
+            fprintf(f, "\texit=%d\tsplit:", sh[s].exit);
             int ns = 0;
-            for (int t = 0; t < d->n && ns < 3; t++)
-                if (d->st[t].tr[first] != d->st[t].tr[second]) {
-                    fprintf(f, " s%d[%d|%d]", t, d->st[t].tr[first], d->st[t].tr[second]); ns++;
+            for (int u = 0; u < d->n && ns < 3 && second >= 0; u++)
+                if (d->st[u].tr[first] != d->st[u].tr[second]) {
+                    fprintf(f, " s%d[%d|%d]", u, d->st[u].tr[first], d->st[u].tr[second]); ns++;
                 }
-            if (!ns) fprintf(f, " none-in-tr(ctx-atom %d|%d, clsctx=%d, tagged=%d)", d->catom[d->rep[first]], d->catom[d->rep[second]], d->clsctx, d->tagged);
+            if (!ns && second >= 0)
+                fprintf(f, " none-in-tr(ctx-atom %d|%d, clsctx=%d, tagged=%d)", d->catom[d->rep[first]], d->catom[d->rep[second]], d->clsctx, d->tagged);
             fputc('\n', f);
         }
     }
-    fprintf(f, "DFA\t%s\tline=%d\tn=%d\tncls=%d\tone_self=%d\tone_self_vok=%d\tone_other=%d\tone_other_vok=%d"
-               "\tgain_self=%d\tgain_self_vok=%d\tgain_other=%d\tgain_other_vok=%d\n",
-            name, line, d->n, d->ncls, one_self, one_self_v, one_other, one_other_v,
-            gain_self, gain_self_v, gain_other, gain_other_v);
+    fprintf(f, "DFA\t%s\tline=%d\tn=%d\tncls=%d\tmem_one=%d\tmem_one_vok=%d\tmem_set=%d\tmem_set_vok=%d"
+               "\tgain_self=%d\tgain_self_vok=%d\tgain_chain=%d\tgain_chain_vok=%d\n",
+            name, line, d->n, d->ncls, mem_one, mem_one_v, mem_set, mem_set_v,
+            gain_self, gain_self_v, gain_chain, gain_chain_v);
+    free(haspred); free(sh);
 }
