@@ -1,0 +1,220 @@
+set	pattern	large_auto_ns	large_vm_ns	large_ratio	large_nsubj	large_vm_wins	large_auto_wins	short_ratio	engine	engine_sel	ncaps	dfa_scan	dfa_prefilter	vm_prefilter	req_byte	req_run	req_why	end_window	width	nullable	start_anchor	end_pin	kitproof
+litrun	alt-foo-tails	334462	345762	0.967	27	0	0	0.894	dfa	selected	1	unanchored	run-pinned		102	666f6f@0	dominated	none	[4,6]	no	unanchored	none	end-at-k
+litrun	ctrl-abc-dollar	118	136	0.866	27	0	5	0.985	dfa	selected	1	rev-end	none		98	616263@1	dominated	none	[3,3]	no	unanchored	eol	-
+litrun	floor	1559428	1158103	1.347	27	6	4	1.022	dfa	selected	1	unanchored	memchr		35	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+litrun	lit-l10	453686	243367	1.864	27	7	0	1.118	dfa	selected	1	unanchored	run-pinned		106	636465666768696a@7	dominated	none	[10,10]	no	unanchored	none	cover/k=10
+litrun	lit-l16	420487	202743	2.074	27	6	0	1.382	dfa	selected	1	unanchored	run-pinned		106	666768696a6b6c6d@4	dominated	none	[16,16]	no	unanchored	none	cover/k=16
+litrun	lit-l2	1730114	1314219	1.316	27	9	4	0.941	dfa	selected	1	unanchored	offset-set		98	6162@1	dominated	none	[2,2]	no	unanchored	none	cover/k=2
+litrun	lit-l3	1821603	1224085	1.488	27	11	0	1.049	dfa	selected	1	unanchored	run-pinned		98	616263@1	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+litrun	lit-l31	275895	74241	3.716	27	3	0	1.915	dfa	selected	1	unanchored	offset-set		122	78797a4142434445@2	emitted	none	[31,31]	no	unanchored	none	exact/producer-short
+litrun	lit-l4	1611015	1192107	1.351	27	9	0	1.046	dfa	selected	1	unanchored	run-pinned		98	61626364@1	dominated	none	[4,4]	no	unanchored	none	cover/k=4
+litrun	lit-l40	175109	44701	3.917	27	3	0	1.785	dfa	selected	1	unanchored	offset-set		74	464748494a4b4c4d@4	emitted	none	[40,40]	no	unanchored	none	fixed-width
+litrun	lit-l7	1610848	1111548	1.449	27	9	0	1.219	dfa	selected	1	unanchored	run-pinned		98	61626364656667@1	dominated	none	[7,7]	no	unanchored	none	cover/k=7
+litrun	lit-l8	1420112	1050878	1.351	27	9	0	1.229	dfa	selected	1	unanchored	run-pinned		98	6162636465666768@1	dominated	none	[8,8]	no	unanchored	none	cover/k=8
+litrun	wild-secrets-aws-access-key-id	229751	117787	1.951	27	2	2	1.546	vm	selected	2	unanchored	first-memchr-bounded	hybrid	65	none	dominated	none	[20,20]	no	unanchored	none	finisher-dfa
+litrun	wild-secrets-github-pat	10727	10702	1.002	27	0	0	2.080	vm	selected	2	unanchored	offset-set-bounded	hybrid	95	6875625f7061745f@7	emitted	none	[93,93]	no	unanchored	none	finisher-dfa
+bounded	cls-atleast-4096	40596	19893	2.041	5	3	0	0.061	dfa	selected	1	unanchored	byte-class		none	none	none	none	[4096,inf)	no	unanchored	none	anchored-A
+bounded	cls-lazy-16384	282964	426050	0.664	5	0	5	0.696	dfa	selected	1	unanchored	none		none	none	none	none	[0,16384]	yes	unanchored	none	fixed-width
+bounded	cls-upto-1024	106112	94758	1.120	5	3	0	0.966	dfa	selected	1	unanchored	none		none	none	none	none	[0,1024]	yes	unanchored	none	fixed-width
+bounded	cls-upto-128	106459	95743	1.112	5	3	0	0.950	dfa	selected	1	unanchored	none		none	none	none	none	[0,128]	yes	unanchored	none	fixed-width
+bounded	cls-upto-16	102776	114345	0.899	5	0	0	0.865	dfa	selected	1	unanchored	none		none	none	none	none	[0,16]	yes	unanchored	none	fixed-width
+bounded	cls-upto-16384	102009	94312	1.082	5	1	0	0.968	dfa	selected	1	unanchored	none		none	none	none	none	[0,16384]	yes	unanchored	none	anchored-A
+bounded	cls-upto-2048	105877	94475	1.121	5	3	0	0.966	dfa	selected	1	unanchored	none		none	none	none	none	[0,2048]	yes	unanchored	none	fixed-width
+bounded	cls-upto-256	107366	96288	1.115	5	3	0	0.954	dfa	selected	1	unanchored	none		none	none	none	none	[0,256]	yes	unanchored	none	fixed-width
+bounded	cls-upto-32	96336	100316	0.960	5	0	0	0.881	dfa	selected	1	unanchored	none		none	none	none	none	[0,32]	yes	unanchored	none	fixed-width
+bounded	cls-upto-32768	94271	94285	1.000	5	0	0	0.997	vm	declined-nullable	1			none	none	none	none	none		yes	unanchored	none	-
+bounded	cls-upto-4	130362	150648	0.865	5	0	0	0.894	dfa	selected	1	unanchored	none		none	none	none	none	[0,4]	yes	unanchored	none	fixed-width
+bounded	cls-upto-4096	104975	94316	1.113	5	2	0	0.966	dfa	selected	1	unanchored	none		none	none	none	none	[0,4096]	yes	unanchored	none	anchored-A
+bounded	cls-upto-512	106473	95390	1.116	5	3	0	0.967	dfa	selected	1	unanchored	none		none	none	none	none	[0,512]	yes	unanchored	none	fixed-width
+bounded	cls-upto-64	93039	97279	0.956	5	0	0	0.910	dfa	selected	1	unanchored	none		none	none	none	none	[0,64]	yes	unanchored	none	fixed-width
+bounded	cls-upto-8	110138	120075	0.917	5	0	0	0.869	dfa	selected	1	unanchored	none		none	none	none	none	[0,8]	yes	unanchored	none	fixed-width
+bounded	cls-upto-8192	104904	94291	1.113	5	2	0	0.967	dfa	selected	1	unanchored	none		none	none	none	none	[0,8192]	yes	unanchored	none	anchored-A
+bounded	csv5	588	591	0.995	5	0	0	0.025	dfa	selected	1	unanchored	memchr		44	none	dominated	none	[4,164]	no	unanchored	none	end-at-k
+bounded	ctx-greedy-256	98900	45996	2.150	5	3	0	1.421	vm	collapsed-prefilter	1	unanchored	first-class-bounded	hybrid	97	none	emitted	none	[8,inf)	no	unanchored	none	finisher-dfa
+bounded	ctx-lazy-1024	102364	44541	2.298	5	3	0	1.370	vm	collapsed-prefilter	1	unanchored	first-class-bounded	hybrid	97	none	emitted	none	[8,inf)	no	unanchored	none	finisher-dfa
+bounded	ctx-lazy-256	102605	44650	2.298	5	3	0	1.372	vm	collapsed-prefilter	1	unanchored	first-class-bounded	hybrid	97	none	emitted	none	[8,inf)	no	unanchored	none	finisher-dfa
+bounded	ctx-lazy-64	102642	43402	2.365	5	3	0	1.574	vm	collapsed-prefilter	1	unanchored	first-class-bounded	hybrid	97	none	emitted	none	[8,inf)	no	unanchored	none	finisher-dfa
+bounded	dig-exact-16	25738	26787	0.961	5	0	0	0.676	dfa	selected	1	unanchored	byte-class		none	none	none	none	[16,16]	no	unanchored	none	cover/k=16
+bounded	dig-exact-2	51320	49230	1.042	5	0	0	1.010	dfa	selected	1	unanchored	byte-class		none	none	none	none	[2,2]	no	unanchored	none	cover/k=2
+bounded	dig-exact-32	23730	25493	0.931	5	0	0	0.465	dfa	selected	1	unanchored	byte-class		none	none	none	none	[32,32]	no	unanchored	none	fixed-width
+bounded	dig-exact-8	29082	29919	0.972	5	0	0	0.731	dfa	selected	1	unanchored	byte-class		none	none	none	none	[8,8]	no	unanchored	none	cover/k=8
+bounded	dig-upto-16	28887	26734	1.081	5	0	0	0.995	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,16]	no	unanchored	none	end-at-k
+bounded	dig-upto-2	68371	49152	1.391	5	2	0	1.030	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,2]	no	unanchored	none	end-at-k
+bounded	dig-upto-32	26354	25630	1.028	5	0	0	0.999	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,32]	no	unanchored	none	end-at-k
+bounded	dig-upto-4	42463	35544	1.195	5	2	0	1.007	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,4]	no	unanchored	none	end-at-k
+bounded	dig-upto-8	32625	29956	1.089	5	0	0	1.002	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,8]	no	unanchored	none	end-at-k
+bounded	dotted4	586	590	0.992	5	0	0	0.195	dfa	selected	1	unanchored	handoff		46	none	emitted	none	[7,15]	no	unanchored	none	exact/machine-inexact
+bounded	floor	589	585	1.006	5	0	0	1.018	dfa	selected	1	unanchored	memchr		58	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+bounded	grp-upto-1024	106104	94811	1.119	5	3	0	0.966	dfa	selected	1	unanchored	none		none	none	none	none	[0,1024]	yes	unanchored	none	fixed-width
+bounded	hex32	50290	100216	0.502	5	0	1	0.419	dfa	selected	1	unanchored	byte-class		none	none	none	none	[32,32]	no	unanchored	none	fixed-width
+bounded	line-80	40422	41068	0.984	5	0	0	0.220	dfa	selected	1	unanchored	byte-class		none	none	none	none	[80,inf)	no	unanchored	none	fixed-width
+bounded	nest2-4	28912	35260	0.820	5	0	2	0.714	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,16]	no	unanchored	none	end-at-k
+bounded	nest2-64	23864	30234	0.789	5	0	2	0.723	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,4096]	no	unanchored	none	anchored-A
+bounded	nest2-letters-6	44707	62881	0.711	5	0	3	0.736	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,36]	no	unanchored	none	end-at-k
+bounded	nest3-16	23858	27584	0.865	5	0	2	0.568	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,4096]	no	unanchored	none	anchored-A
+bounded	nest3-3	26859	35106	0.765	5	0	2	0.630	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,27]	no	unanchored	none	end-at-k
+bounded	pw-8-64	87052	62665	1.389	5	5	0	1.462	dfa	selected	1	unanchored	byte-class		none	none	none	none	[8,64]	no	unanchored	none	end-at-k
+bounded	year4	37684	35550	1.060	5	0	0	0.880	dfa	selected	1	unanchored	byte-class		none	none	none	none	[4,4]	no	unanchored	none	cover/k=4
+syntax	alt-nested	1029572	1006756	1.023	3	0	0	1.055	dfa	selected	1	unanchored	byte-class		none	none	none	none	[3,3]	no	unanchored	none	exact/machine-inexact
+syntax	alt-two	961445	951077	1.011	3	0	0	1.067	dfa	selected	1	unanchored	byte-class		none	none	none	none	[3,3]	no	unanchored	none	exact/machine-inexact
+syntax	anc-a-uc	10	8	1.214	3	0	0	1.326	dfa	selected	1	attempt	none		109	6974656d@3	one-attempt	none		no	anchored	none	-
+syntax	anc-caret	10	8	1.217	3	0	0	1.323	dfa	selected	1	attempt	none		109	6974656d@3	one-attempt	none		no	anchored	none	-
+syntax	anc-dollar	13	12	1.047	3	0	0	1.099	dfa	selected	1	rev-end	none		100	646f6e65@0	dominated	none	[4,4]	no	unanchored	eol	-
+syntax	anc-g-uc	10	8	1.227	3	0	0	1.240	dfa	selected	1	attempt	none		109	6974656d@3	one-attempt	none		no	gstart	none	-
+syntax	anc-m-caret	127099	501168	0.254	3	0	3	0.848	dfa	selected	1	attempt	memchr		109	6974656d@3	emitted	none		no	unanchored	none	-
+syntax	anc-m-dollar	235678	585204	0.403	3	0	3	1.058	dfa	selected	1	unanchored	offset-set-bounded		100	646f6e65@0	emitted	none	[4,4]	no	unanchored	none	cover/k=4
+syntax	anc-z-lc	10	12	0.844	3	0	1	0.873	dfa	selected	1	rev-end	none		100	646f6e65@0	dominated	none	[4,4]	no	unanchored	z	-
+syntax	anc-z-uc	13	12	1.051	3	0	0	1.113	dfa	selected	1	rev-end	none		100	646f6e65@0	dominated	none	[4,4]	no	unanchored	eol	-
+syntax	asr-k-uc	35174	350973	0.100	3	0	3	1.642	vm	selected	1	unanchored	run-pinned	hybrid	61	6b65793d@3	dominated	none	[5,inf)	no	unanchored	none	finisher-dfa
+syntax	asr-nwb	467071	647917	0.721	3	0	2	1.162	dfa	selected	1	unanchored	offset-set-bounded		99	636174@0	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	asr-wb	472163	711153	0.664	3	0	2	1.066	dfa	selected	1	unanchored	offset-set-bounded		99	636174@0	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	bak-1	5436480	5458968	0.996	3	0	0	0.998	vm	selected	2			none	32	none	emitted	none		no	unanchored	none	-
+syntax	bak-2	5602202	5587993	1.003	3	0	0	1.000	vm	selected	3			none	none	none	none	none		no	unanchored	none	-
+syntax	bak-g-rel	5445586	5451680	0.999	3	0	0	1.000	vm	selected	2			none	32	none	emitted	none		no	unanchored	none	-
+syntax	bak-k-named	419838	416111	1.009	3	0	0	0.997	vm	selected	2			none	60	3c2f@0	emitted	none		no	unanchored	none	-
+syntax	bak-py	5438651	5451722	0.998	3	0	0	1.000	vm	selected	2			none	32	none	emitted	none		no	unanchored	none	-
+syntax	cls-d	496631	474861	1.046	3	0	0	1.016	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	cls-dot	355816	646640	0.550	3	0	3	0.863	dfa	selected	1	unanchored	memchr		99	none	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-fold-pair	328645	878237	0.374	3	0	3	1.006	dfa	selected	1	unanchored	handoff		99	634174@0/ffdfff	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-h	62238	348295	0.179	3	0	3	1.072	dfa	selected	1	unanchored	memchr		118	76616c7565@0	emitted	none	[9,inf)	no	unanchored	none	exact/machine-inexact
+syntax	cls-i-class	694201	666140	1.042	3	0	0	0.990	dfa	selected	1	unanchored	byte-class		none	none	none	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-mixed-case	357015	646683	0.552	3	0	3	0.870	dfa	selected	1	unanchored	memchr		99	none	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-n-uc	270311	759867	0.356	3	0	3	0.975	dfa	selected	1	unanchored	offset-set		105	6974@0	emitted	none	[4,4]	no	unanchored	none	cover/k=4
+syntax	cls-negset	354420	642861	0.551	3	0	3	0.767	dfa	selected	1	unanchored	memchr		99	none	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-pair-ctl	328480	891596	0.368	3	0	3	1.037	dfa	selected	1	unanchored	handoff		99	636174@0/fffdff	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	cls-posix	2221031	2242221	0.991	3	0	0	0.952	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	cls-range	105402	416438	0.253	3	0	3	0.946	dfa	selected	1	unanchored	offset-set		120	3078@1	dominated	none	[3,inf)	no	unanchored	none	end-at-k
+syntax	cls-s-lc	352724	573815	0.615	3	0	3	0.940	dfa	selected	1	unanchored	memchr		115	736174@0	emitted	none	[7,inf)	no	unanchored	none	exact/machine-inexact
+syntax	cls-s-uc	1480887	10404774	0.142	3	0	3	0.324	dfa	selected	1	unanchored	byte-class		64	none	emitted	none	[3,inf)	no	unanchored	none	end-at-k
+syntax	cls-v	164777	542603	0.304	3	0	3	1.045	dfa	selected	1	unanchored	offset-set		100	646f6e65@0	emitted	none	[9,inf)	no	unanchored	none	exact/machine-inexact
+syntax	cls-w	2306545	2323391	0.993	3	0	0	0.949	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	esc-cr	9456	9492	0.996	3	0	0	0.934	dfa	selected	1	unanchored	run-pinned		13	74656d0d0a646f6e@3	dominated	none	[10,10]	no	unanchored	none	cover/k=10
+syntax	esc-hex	322549	839499	0.384	3	0	3	1.037	dfa	selected	1	unanchored	run-pinned		99	636174@0	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	esc-hex-braced	15173	495329	0.031	3	0	3	0.963	dfa	selected	1	unanchored	run-pinned		233	636166e9@3	dominated	none	[4,4]	no	unanchored	none	cover/k=4
+syntax	esc-nl	110787	403630	0.274	3	0	2	0.953	dfa	selected	1	unanchored	run-pinned		10	6974656d0a646f6e@4	dominated	none	[9,9]	no	unanchored	none	cover/k=9
+syntax	esc-octal-0	148758	888837	0.167	3	0	3	1.027	dfa	selected	1	unanchored	run-pinned		109	6974656d20646f6e@3	dominated	none	[9,9]	no	unanchored	none	cover/k=9
+syntax	esc-quote	55367	398691	0.139	3	0	3	0.957	dfa	selected	1	unanchored	offset-set		120	66287829@2	emitted	none	[4,4]	no	unanchored	none	cover/k=4
+syntax	esc-tab	23545	350853	0.067	3	0	3	0.986	dfa	selected	1	unanchored	run-pinned		9	6b65790976616c75@3	dominated	none	[9,9]	no	unanchored	none	cover/k=9
+syntax	floor	9545	9512	1.004	3	0	0	0.960	dfa	selected	1	unanchored	memchr		35	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+syntax	grp-atomic-alt	534921	1118968	0.478	3	0	3	0.686	vm	selected	1	unanchored	memchr	hybrid	99	none	emitted	none	[2,3]	no	unanchored	none	finisher-dfa
+syntax	grp-atomic-rep	458154	909096	0.504	3	0	3	1.066	dfa	selected	1	unanchored	memchr		98	none	emitted	none	[2,inf)	no	unanchored	none	end-at-k
+syntax	grp-cap	331799	834100	0.398	3	0	3	1.363	vm	selected	2	unanchored	run-pinned	hybrid	99	636174@0	dominated	none	[3,3]	no	unanchored	none	finisher-dfa
+syntax	grp-named	332445	836360	0.397	3	0	3	1.361	vm	selected	2	unanchored	run-pinned	hybrid	99	636174@0	dominated	none	[3,3]	no	unanchored	none	finisher-dfa
+syntax	grp-named-quote	332514	835143	0.398	3	0	3	1.361	vm	selected	2	unanchored	run-pinned	hybrid	99	636174@0	dominated	none	[3,3]	no	unanchored	none	finisher-dfa
+syntax	grp-noncap	60526	947903	0.064	3	0	3	0.749	dfa	selected	1	unanchored	offset-set		98	6162@1	dominated	none	[2,inf)	no	unanchored	none	end-at-k
+syntax	lit-cat	321072	835504	0.384	3	0	3	1.037	dfa	selected	1	unanchored	run-pinned		99	636174@0	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	lka-neg	224033	763793	0.293	3	0	3	1.143	vm	selected	1	unanchored	run-pinned	hybrid	109	6974656d@3	dominated	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	lka-nonatomic	205675	692468	0.297	3	0	3	1.275	vm	selected	1	unanchored	run-pinned	hybrid	109	6974656d@3	dominated	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	lka-pos	203946	526526	0.387	3	0	3	1.427	vm	selected	1	unanchored	run-pinned	hybrid	109	6974656d@3	dominated	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	lka-verb	204550	519837	0.393	3	0	3	1.408	vm	selected	1	unanchored	run-pinned	hybrid	109	6974656d@3	dominated	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	lkb-neg	332890	1091267	0.305	3	0	3	1.118	vm	selected	1	unanchored	offset-set	hybrid	100	646f6e65@0	emitted	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	lkb-pos	262333	575920	0.456	3	0	3	1.279	vm	selected	1	unanchored	offset-set	hybrid	100	646f6e65@0	emitted	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	mod-a	2312464	2319668	0.997	3	0	0	0.951	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	mod-i	506056	1084349	0.467	3	0	3	0.970	dfa	selected	1	unanchored	handoff		none	434154@0/dfdfdf	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	mod-j-uc	10294959	10337099	0.996	3	0	0	1.000	vm	selected	3			none	32	none	emitted	none		no	unanchored	none	-
+syntax	mod-n	321810	866049	0.372	3	0	3	1.073	dfa	selected	1	unanchored	run-pinned		99	636174@0	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	mod-r	506288	1083365	0.467	3	0	3	0.970	dfa	selected	1	unanchored	handoff		none	434154@0/dfdfdf	emitted	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	mod-reset	494456	682936	0.724	3	0	2	0.903	dfa	selected	1	unanchored	run-pinned		97	436174@0/dfffff	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	mod-s	160308	520111	0.308	3	0	3	0.948	dfa	selected	1	unanchored	offset-set		100	646f6e65@0	emitted	none	[9,9]	no	unanchored	none	cover/k=9
+syntax	mod-u-uc	47043	359294	0.131	3	0	3	0.810	dfa	selected	1	unanchored	memchr		34	none	dominated	none	[3,inf)	no	unanchored	none	end-at-k
+syntax	mod-unset	494122	683008	0.723	3	0	2	0.902	dfa	selected	1	unanchored	run-pinned		97	436174@0/dfffff	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	mod-x	322888	836212	0.386	3	0	3	1.038	dfa	selected	1	unanchored	run-pinned		99	636174@0	dominated	none	[3,3]	no	unanchored	none	cover/k=3
+syntax	qnt-lazy	45840	364643	0.126	3	0	3	0.784	dfa	selected	1	unanchored	memchr		34	none	dominated	none	[2,inf)	no	unanchored	none	end-at-k
+syntax	qnt-plus	457701	903580	0.507	3	0	3	1.057	dfa	selected	1	unanchored	memchr		98	none	emitted	none	[2,inf)	no	unanchored	none	end-at-k
+syntax	qnt-plus-ctl	397934	1202337	0.331	3	0	3	0.855	dfa	selected	1	unanchored	offset-set		98	6162@1	emitted	none	[3,inf)	no	unanchored	none	end-at-k
+syntax	qnt-poss-brace	77331	863375	0.090	3	0	3	0.714	dfa	selected	1	unanchored	handoff		98	none	emitted	none	[2,3]	no	unanchored	none	end-at-k
+syntax	qnt-poss-plus	396185	878663	0.451	3	0	3	1.053	vm	selected	1	unanchored	offset-set	hybrid	98	6162@1	emitted	none	[3,inf)	no	unanchored	none	finisher-dfa
+syntax	qnt-poss-quest	916531	756306	1.212	3	1	0	1.918	vm	selected	1	unanchored	memchr	hybrid	97	none	dominated	none	[1,2]	no	unanchored	none	finisher-dfa
+syntax	qnt-poss-star	97169	1025045	0.095	3	0	3	0.869	dfa	selected	1	unanchored	memchr		98	none	dominated	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	qnt-quest	298533	764246	0.391	3	0	3	0.998	dfa	selected	1	unanchored	offset-set		99	636f6c6f@0	emitted	none	[5,6]	no	unanchored	none	end-at-k
+syntax	qnt-star	418292	698207	0.599	3	0	3	0.892	dfa	selected	1	unanchored	memchr		99	none	dominated	none	[2,inf)	no	unanchored	none	end-at-k
+syntax	rec-1	0	0		0	0	0	1.002	vm	selected	2			none	41	none	emitted	none		no	unanchored	none	-
+syntax	rec-back	437895	550427	0.796	3	0	0	1.120	vm	selected	2	unanchored	byte-class	hybrid	none	none	none	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	rec-define	37414	4717161	0.008	3	0	3	0.536	dfa	selected	2	unanchored	offset-set		58	none	dominated	none	[5,5]	no	unanchored	none	cover/k=5
+syntax	rec-fwd	440974	4669932	0.094	3	0	3	0.140	vm	selected	2	unanchored	byte-class	hybrid	none	none	none	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	rec-g-angle	436772	550055	0.794	3	0	0	1.100	vm	selected	2	unanchored	byte-class	hybrid	none	none	none	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	rec-name	0	0		0	0	0	0.983	vm	selected	2			none	41	none	emitted	none		no	unanchored	none	-
+syntax	rec-py	434761	550037	0.790	3	0	0	1.090	vm	selected	2	unanchored	byte-class	hybrid	none	none	none	none	[4,4]	no	unanchored	none	finisher-dfa
+syntax	rec-r-uc	0	0		0	0	0	0.980	vm	selected	1			none	41	none	emitted	none		no	unanchored	none	-
+syntax	unp-p-lc	2210997	2229058	0.992	3	0	0	0.951	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+syntax	unp-p-uc	2227218	2055542	1.084	3	0	0	1.005	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+loglines	bignum	2921913	4012627	0.728	12	0	11	0.640	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[10,19]	no	unanchored	none	end-at-k
+loglines	floor	1339276	2201100	0.608	12	0	10	0.959	dfa	selected	1	unanchored	memchr		58	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+loglines	hex32-id	4029987	5205265	0.774	12	0	9	0.632	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[32,32]	no	unanchored	none	fixed-width
+loglines	http-5xx	108120	371003	0.291	12	0	4	0.920	dfa	selected	1	unanchored	memchr-bounded		80	5454502f312e3022@2/fffffffffffffeff	emitted	none	[20,inf)	no	unanchored	none	exact/machine-inexact
+loglines	ipv4	617001	17055640	0.036	12	0	12	0.043	dfa	selected	1	unanchored	handoff		46	none	emitted	none	[7,15]	no	unanchored	none	exact/machine-inexact
+loglines	ipv6	1179918	33296920	0.035	12	0	12	0.030	dfa	selected	1	unanchored	handoff		58	none	emitted	none	[3,40]	no	unanchored	none	end-at-k
+loglines	iso-ts	326592	5205314	0.063	12	0	12	0.078	dfa	selected	1	unanchored	offset-set		45	none	dominated	none	[19,32]	no	unanchored	none	end-at-k
+loglines	kv-quoted	92888	3004076	0.031	12	0	4	0.280	dfa	selected	1	unanchored	handoff		34	3d22@1	emitted	none	[4,inf)	no	unanchored	none	anchored-A
+loglines	level-context	1181556	1099868	1.074	12	0	0	1.072	vm	collapsed-prefilter	1	unanchored	first-class-bounded	hybrid	101	none	emitted	none	[10,inf)	no	unanchored	none	finisher-dfa
+loglines	stack-frame	608716	1169144	0.521	12	0	4	0.935	dfa	selected	1	unanchored	offset-set-bounded		97	617420@0	emitted	none	[18,inf)	no	unanchored	none	exact/machine-inexact
+loglines	uuid	318630	7172783	0.044	12	0	12	0.051	dfa	selected	1	unanchored	offset-set-bounded		45	none	dominated	none	[36,36]	no	unanchored	none	fixed-width
+capability	balanced-parens-rec	589509	562142	1.049	11	0	0	0.985	vm	selected	1			none	41	none	emitted	none		no	unanchored	none	-
+capability	base10num-near-miss	31	58	0.547	11	0	11	0.633	dfa	selected	1	attempt	none		none	none	none	none		no	anchored	eol	-
+capability	bracket-array-define	129	129	1.001	11	0	0	1.023	vm	selected	2			none	none	none	none	none		no	anchored	eol	-
+capability	codegrammar-flat	347539	874364	0.397	11	0	3	1.349	vm	selected	2	unanchored	memchr	hybrid	34	none	dominated	none	[4,inf)	no	unanchored	none	finisher-dfa
+capability	codegrammar-xflag	345051	875174	0.394	11	0	3	1.356	vm	selected	2	unanchored	memchr	hybrid	34	none	dominated	none	[4,inf)	no	unanchored	none	finisher-dfa
+capability	currency-lookbehind-fixed	34082	2796707	0.012	11	0	11	0.381	dfa	selected	1	unanchored	memchr-bounded		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+capability	date-nested-plus	61	84	0.726	11	0	11	0.638	vm	selected	3	attempt	none	hybrid	none	none	none	none		no	anchored	eol	-
+capability	doubled-word	12474766	12379630	1.008	11	0	0	0.949	vm	selected	2			none	none	none	none	none		no	unanchored	none	-
+capability	dup-param-detect	33694	33126	1.017	11	0	0	0.978	vm	selected	2			none	38	none	emitted	none		no	unanchored	none	-
+capability	email-local-nodup	44464	275481	0.161	11	0	11	0.194	vm	selected	1	attempt	none	hybrid	none	none	none	none		no	anchored	none	-
+capability	email-nested-plus	73	32499	0.002	9	0	9	1.640	vm	selected	2	attempt	none	hybrid	64	none	one-attempt	none		no	anchored	none	-
+capability	evil-alt-nested	46283	16181	2.860	10	1	9	0.000	vm	selected	3	attempt	none	hybrid	none	none	none	none		yes	anchored	eol	-
+capability	file-ext-order	336118	279907	1.201	11	0	0	0.808	dfa	selected	1	unanchored	run-pinned		46	2e746172@0	dominated	none	[4,7]	no	unanchored	none	cover/k=4
+capability	float-literal-bound	2044213	2366144	0.864	11	0	1	0.933	dfa	selected	1	unanchored	first-class-bounded		46	none	emitted	none	[3,inf)	no	unanchored	none	anchored-A
+capability	floor-byte	33689	33163	1.016	11	0	0	1.019	dfa	selected	1	unanchored	memchr		126	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+capability	hex8-bounded	8195783	9450292	0.867	11	2	1	0.817	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[8,8]	no	unanchored	none	cover/k=8
+capability	high-byte-run	884684	886548	0.998	11	0	0	1.005	dfa	selected	1	unanchored	byte-class		none	none	none	none	[2,4]	no	unanchored	none	end-at-k
+capability	ipv4-near-miss	27	61	0.448	11	0	11	0.520	dfa	selected	1	attempt	none		46	none	one-attempt	16		no	anchored	eol	-
+capability	keyword-prefix-order	1172941	3199588	0.367	11	0	9	0.792	dfa	selected	1	unanchored	offset-set		110	696e@1	dominated	none	[2,10]	no	unanchored	none	cover/k=2
+capability	letters-bounded-tail-z	397	215663	0.002	11	0	10	0.181	dfa	selected	1	rev-end	none		none	none	none	none	[0,1024]	yes	unanchored	z	-
+capability	logparse-atomic	68	56	1.210	11	2	0	1.293	vm	selected	2	attempt	none	hybrid	58	3a20@0	one-attempt	none		no	anchored	eol	-
+capability	logparse-atomic-removed	67	52	1.284	11	7	0	1.365	vm	selected	2	attempt	none	hybrid	58	3a20@0	one-attempt	none		no	anchored	eol	-
+capability	mojibake-curly-quote	33093	33071	1.001	11	0	0	1.011	dfa	selected	1	unanchored	memchr		148	none	dominated	none	[2,inf)	no	unanchored	none	end-at-k
+capability	nested-comment-rec	33626	33074	1.017	11	0	0	0.967	vm	selected	2			none	42	2a2f@0	emitted	none		no	unanchored	none	-
+capability	numeric-id-nested-plus	57	62	0.930	11	0	0	0.000	vm	selected	2	attempt	none	hybrid	none	none	none	none		no	anchored	eol	-
+capability	phone-list-nested-plus	59	80	0.738	11	0	10	0.000	vm	selected	2	attempt	none	hybrid	none	none	none	none		no	anchored	eol	-
+capability	phone-palindrome-6	4185164	4152821	1.008	11	0	0	0.984	vm	selected	4			none	none	none	none	none		no	unanchored	none	-
+capability	pwd-strength-chain	312637	284335	1.100	11	0	8	1.066	vm	selected	1	attempt	none	hybrid	none	none	none	none		no	anchored	eol	-
+capability	quoted-delim-match	1118673	1108452	1.009	11	0	0	0.990	vm	selected	2			none	none	none	none	none		no	unanchored	none	-
+capability	router-prefix-order	195672	603835	0.324	11	0	3	0.727	dfa	selected	1	unanchored	run-pinned		47	2f75736572@0	dominated	none	[5,6]	no	unanchored	none	cover/k=5
+capability	tag-depth3-bound	33603	33093	1.015	11	0	0	0.953	vm	selected	4			none	60	3c2f@0	emitted	none		no	unanchored	none	-
+capability	tag-pair-match	33166	33168	1.000	11	0	0	0.911	vm	selected	2			none	60	3c2f@0	emitted	none		no	unanchored	none	-
+capability	tail-digits-eol	47	2772244	0.000	11	0	11	0.280	dfa	selected	1	rev-end	none		none	none	none	none	[1,inf)	no	unanchored	eol	-
+capability	tail-dotstar-txt	49	298920441	0.000	11	0	11	0.643	dfa	selected	1	rev-end	none		120	2e747874@2	dominated	none	[4,inf)	no	unanchored	eol	-
+capability	tail-ext-lower-txt	42	7854124	0.000	11	0	11	0.687	dfa	selected	1	rev-end	none		120	2e747874@2	dominated	none	[5,inf)	no	unanchored	eol	-
+capability	tail-space-eol	72940	55461533	0.001	11	1	10	0.297	dfa	selected	1	rev-end	none		none	none	none	none	[1,inf)	no	unanchored	eol	-
+capability	tail-word-eoz	11991	63459718	0.000	11	0	11	0.214	dfa	selected	1	rev-end	none		none	none	none	none	[1,inf)	no	unanchored	z	-
+capability	trim-nested-star	48238	24584	1.962	10	1	9	0.000	vm	selected	2	attempt	none	hybrid	none	none	none	none		yes	anchored	eol	-
+capability	utf8-lead-no-cont	900872	885002	1.018	11	0	0	1.036	dfa	selected	1	unanchored	byte-class-bounded		none	none	none	none	[1,1]	no	unanchored	none	cover/k=1
+capability	uuid-near-miss	29	50	0.569	11	0	11	0.697	dfa	selected	1	attempt	none		45	none	one-attempt	37		no	anchored	eol	-
+capability	wild-codegrammar-json-array-begin	94302	418085	0.226	11	0	3	0.960	dfa	selected	1	unanchored	memchr		91	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+capability	wild-codegrammar-json-constant	4575392	3842527	1.191	11	3	0	1.306	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[4,5]	no	unanchored	none	exact/machine-inexact
+capability	wild-codegrammar-json-number-extended	2714339	3135217	0.866	11	0	3	0.847	dfa	selected	1	unanchored	byte-class		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+capability	wild-codegrammar-json-object-begin	34025	33157	1.026	11	0	0	0.976	dfa	selected	1	unanchored	memchr		123	none	dominated	none	[1,1]	no	unanchored	none	cover/k=1
+capability	wild-codegrammar-json-stringcontent-escape	34271	33062	1.037	11	0	0	0.748	dfa	selected	1	unanchored	memchr		92	none	dominated	none	[2,6]	no	unanchored	none	end-at-k
+capability	wild-datetime-moment-iso8601	86746	23548	3.684	11	2	9	1.135	vm	selected	5	attempt	none	hybrid	45	none	one-attempt	none		no	anchored	eol	-
+capability	wild-logparse-base10num-grok	4833458	3712311	1.302	11	4	0	1.334	vm	selected	1	unanchored	byte-class-bounded	hybrid	none	none	none	none	[1,inf)	no	unanchored	none	finisher-dfa
+capability	wild-logparse-base10num-noatomic	3504619	3696054	0.948	11	0	0	0.900	dfa	selected	1	unanchored	byte-class-bounded		none	none	none	none	[1,inf)	no	unanchored	none	end-at-k
+capability	wild-logparse-quotedstring-grok	1093890	1011033	1.082	11	0	0	1.261	vm	selected	1	unanchored	first-class-bounded	hybrid	none	none	none	none	[2,inf)	no	unanchored	none	finisher-dfa
+capability	wild-logparse-quotedstring-noatomic	1007199	993971	1.013	11	0	0	0.018	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[2,inf)	no	unanchored	none	end-at-k
+capability	wild-logparse-syslogbase-expanded	2107996	4249395	0.496	11	0	4	1.089	vm	size-cap-retry	83	unanchored	first-class-bounded	hybrid	58	none	emitted	none	[16,inf)	no	unanchored	none	finisher-dfa
+capability	wild-logparse-winpath-grok	34126	33138	1.030	11	0	0	0.939	vm	selected	1	unanchored	byte-class	hybrid	92	none	emitted	none	[2,inf)	no	unanchored	none	finisher-dfa
+capability	wild-secrets-aws-access-key-id	55687	942492	0.059	11	0	6	0.999	vm	selected	2	unanchored	first-memchr-bounded	hybrid	65	none	dominated	none	[20,20]	no	unanchored	none	finisher-dfa
+capability	wild-secrets-github-pat	62488	62780	0.995	11	0	0	1.359	vm	selected	2	unanchored	offset-set-bounded	hybrid	95	6875625f7061745f@7	emitted	none	[93,93]	no	unanchored	none	finisher-dfa
+capability	wild-secrets-slack-webhook-url	176484	175291	1.007	11	0	0	1.401	vm	selected	2	unanchored	offset-set	hybrid	47	5256494345532f54@6/dfdfdfdfdfdfffdf	emitted	none	[77,81]	no	unanchored	none	finisher-dfa
+capability	wild-secrets-username-password-pair	33787	33462	1.010	11	0	0	1.132	vm	selected	3	unanchored	byte-class	hybrid	61	55534552@0/dfdfdfdf	emitted	none	[22,inf)	no	unanchored	none	finisher-dfa
+capability	wild-semdiv-altorder-foo-foobar-rustregex	472927	380740	1.242	11	3	2	0.718	dfa	selected	1	unanchored	run-pinned		102	666f6f@0	dominated	none	[3,6]	no	unanchored	none	cover/k=3
+capability	wild-semdiv-dollar-trailing-newline-pcre2	34	46	0.740	11	0	11	0.766	dfa	selected	1	rev-end	none		98	616263@1	dominated	none	[3,3]	no	unanchored	eol	-
+capability	wild-semdiv-empty-alt-repeat-pcre2	8473985	10535082	0.804	11	1	5	0.050	vm	selected	2	unanchored	byte-class	hybrid	none	none	none	none	[1,inf)	no	unanchored	none	finisher-dfa
+capability	wild-validator-email-owasp	29431	33084	0.890	11	2	9	1.244	dfa	selected	1	attempt	none		64	none	one-attempt	none		no	anchored	eol	-
+capability	wild-validator-ipv4-owasp	63	63	0.997	11	0	0	0.917	vm	selected	5	attempt	none	hybrid	46	none	one-attempt	16		no	anchored	eol	-
+capability	wild-validator-us-zip-owasp	53	62	0.863	11	0	0	0.959	vm	selected	2	attempt	none	hybrid	none	none	none	11		no	anchored	eol	-
+capability	wild-validator-uuid-grok	49331	2645581	0.019	11	0	4	0.676	dfa	selected	1	unanchored	offset-set		45	none	dominated	none	[36,36]	no	unanchored	none	fixed-width
+capability	wild-waf-crs-942140-dbnames	6770507	11996093	0.564	11	0	7	0.621	dfa	selected	1	unanchored	first-class-bounded		none	none	none	none	[4,inf)	no	unanchored	none	exact/machine-inexact
+capability	wild-waf-crs-942160-sleep-benchmark	717506	915384	0.784	11	0	2	0.741	dfa	selected	1	unanchored	byte-class		41	none	emitted	none	[7,inf)	no	unanchored	none	exact/machine-inexact
+capability	wild-waf-crs-942270-union-select	870410	885678	0.983	11	0	0	0.759	dfa	selected	1	unanchored	byte-class		none	53454c454354@4/dfdfdfdfdfdf	emitted	none	[15,inf)	no	unanchored	none	end-at-k
+capability	wild-waf-crs-942360-concat-sqli	14725828	121927452	0.121	10	0	10	0.130	dfa	selected	1	attempt	none		none	none	none	none		no	unanchored	none	entry-const/seeds
+capability	wild-waf-crs-942500-comment-obfuscation	34252	33084	1.035	11	0	0	0.700	dfa	selected	1	unanchored	offset-set		42	2a2f@0	emitted	none	[5,inf)	no	unanchored	none	exact/machine-inexact
+capability	winpath-near-miss	38	33244	0.001	11	0	11	0.594	dfa	selected	1	attempt	none		92	3a5c@1	one-attempt	none		no	anchored	eol	-
