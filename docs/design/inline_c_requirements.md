@@ -1077,6 +1077,8 @@ proposed) but requires:
 
 - **Q6 (2026-10-26): pcrec's NATIVE convention** (not the recommended PCRE2 one). Frank: "How about it returns pcrec default so we can use regex artifacts as callouts. Then, use a pcre2 compatibility macro or similar for outside fns. Honestly, I doubt this would ever come up." So an embedded segment returns what a pcrec matcher returns (length consumed, or -1 for no match), which lets a compiled regex artifact BE a callout (composition); PCRE2-convention functions plug in through a provided compatibility macro/wrapper. Abort: none in v1 (D38 stands); the design note reserves a code for it if a need is ever measured.
 
+- **Q7 (2026-10-26): AGREED.** Generated names only (`RX_CAP_S(n)`, `RX_CAP_LEN(n)`, named-group constants), emitted around the user's code; no `$1` text substitution inside code; each embedded language's glue supplies its own form of the same names.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
