@@ -6,10 +6,22 @@ TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
 IDS="S1646 S1647 S1648 S1649 S1650 S1651 S1652 S1653 S1654 S1655 S1656 S1657 S1658 S1659 S1660 S1661 S1662 S1663 S1664 S1665 S1666 S1667 S1668 S1669 S1670 S1671 S1672 S1673 S1674 S1675 S1676 S475 S496 S693 S1071 S108 S499 S500 S908"
 case "${1:-}" in
     --dry-run)
-        out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
-            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
-        n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
-        [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
+        # Two halves validated in parallel: 39 rows in one pass take ~32 s,
+        # past boxqueue's 30 s dry-run cap.
+        set -- $IDS
+        A="${*:1:20}" B="${*:21}"
+        tmp=$(mktemp -d -p "$TREE/build") || exit 1
+        (cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $A > "$tmp/a" 2>&1; echo $? > "$tmp/a.rc") &
+        (cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $B > "$tmp/b" 2>&1; echo $? > "$tmp/b.rc") &
+        wait
+        n=0
+        for h in a b; do
+            [ "$(cat "$tmp/$h.rc")" = 0 ] || { tail -3 "$tmp/$h" >&2; rm -rf "$tmp"; exit 1; }
+            k=$(sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p' "$tmp/$h")
+            [ -n "$k" ] || { echo "no field-validation line" >&2; rm -rf "$tmp"; exit 1; }
+            n=$((n + k))
+        done
+        rm -rf "$tmp"
         echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
         echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
         echo "boxqueue: not-before 2026-10-27T12:00"
