@@ -52,5 +52,5 @@ axes are owed (below). `make test-spec` (D27 spec checks) cannot link here
 ## STATE AT HANDOFF
 Branch lane/ic1b. Rulings file ic1bguide_rulings.md: no entries at the last
 re-read. Committed. Owed (queued, not-before 2026-10-27T12:00, base = merge-base
-9e0500443): 550-ic1bguide-test, 551-ic1bguide-mech (adds S1664-S1666),
-552-ic1bguide-axes. Job files: docs/dev/lanes/ic1bguide_{test,mech,axes}_job.
+9e0500443): ic1bguide-test (550), ic1bguide-mech (551) (adds S1664-S1666),
+ic1bguide-axes (552). Job files: docs/dev/lanes/ic1bguide_{test,mech,axes}_job.
