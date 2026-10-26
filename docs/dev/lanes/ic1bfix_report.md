@@ -117,11 +117,11 @@ merge-base with main (`9e0500443`) against the lane built at abi 88.
 
 | job | file | expects |
 |---|---|---|
-| JOBKEY_TEST | `docs/dev/lanes/ic1bfix_job` | `strict: DONE rc=0`, `movers: DONE cells=N unexpected=0`, `sections ran: 80/80` |
-| JOBKEY_MECH | `docs/dev/lanes/ic1bfix_mech_job` | `== mech run COMPLETE: 26 rows (... unreached: 2 ...)` (S475/S496 declared UNREACHED); rows S1646-S1663, S475, S496, S693, S1071, S108, S499, S500, S908 |
-| JOBKEY_AXES | `docs/dev/lanes/ic1bfix_axes_job` | `axes: DONE rc=0`, `checks failed: 0`, `census: DONE rc=0` |
+| `550-ic1bfix-test` | `docs/dev/lanes/ic1bfix_job` | `strict: DONE rc=0`, `movers: DONE cells=N unexpected=0`, `sections ran: 80/80` |
+| `551-ic1bfix-mech` | `docs/dev/lanes/ic1bfix_mech_job` | `== mech run COMPLETE: 26 rows (... unreached: 2 ...)` (S475/S496 declared UNREACHED); rows S1646-S1663, S475, S496, S693, S1071, S108, S499, S500, S908 |
+| `552-ic1bfix-axes` | `docs/dev/lanes/ic1bfix_axes_job` | `axes: DONE rc=0`, `checks failed: 0`, `census: DONE rc=0` |
 
-Completion lines: not yet (the jobs run after noon 2026-10-27).
+Completion lines: none yet. All three are pending in the box queue, reading "not-ready: not before 2026-10-27T12:00", behind 600-main-fullsuite-20261027.
 
 ## STATE AT HANDOFF
 
