@@ -63,6 +63,7 @@ after the iterator landing.
 - 2026-10-08 399eb53fb major — Merge lane/decfbB5: [DEC-FALLBACK] B5, the token derivations read the tables (no movers; light + heavy green, 
 - 2026-10-08 ceff04211 major — Merge lane/decfbB4: [DEC-FALLBACK] B4, T2 replaces the prefilter admission (no movers; light + heavy green, me
 
+- 2026-10-26 456dbc09e major — [SCANEDGE-SET] scan edges over a byte-class set (abi 87; lane scanset + scansetfix)
 ### minor
 
 - 2026-10-24 f50d6372e minor — merge lane/qwquiet2: queuewatch QUIET/PENDING-STUCK
