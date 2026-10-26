@@ -6360,3 +6360,10 @@ status (2026-10-24): LANDED on main 9ae59f5d4 (core, interface, extended forms; 
 ### [M4-SUBST] — superseded 2026-10-26, verbatim
 
 next: the runtime-selection discussion with Frank (owner.md); bench subst mini-bench pins 9ae59f5d4 (I-158); filed follow-ups [SUBST-SPEED] [SUBST-CLEANUP] [CASE-COMPAT]
+- [EXPECT-PREFLIGHT] STATE:completed — A JOB'S DRY RUN MEASURES ITS SIZE; ESTIMATE, CAP AND EXPECT DERIVE FROM IT
+  completed: 2026-10-26 lanes qscripts + qscripts2 (merged): dry-run `size NAME=N` scales the cap from the last 5 green runs (x1.25, never below the declared cap); fullsuite_job.sh declares corpus_patterns; plus CANCELLED class, reservation liveness, declared `not-before`
+  filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
+  status (2026-10-25): history warning BUILT on lane/expectpre (boxqueue.test 92/92), NOT merged: replay caught 0 of the 5 stale-expect jobs (4 first-of-shape, 1 grew after a matching declaration)
+  trigger: LOW PRIORITY: slip it into the next lane that updates boxqueue or the job scripts (Frank 2026-10-25 "low priority but slip it in with the next update of those scripts")
+  refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
+  Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.

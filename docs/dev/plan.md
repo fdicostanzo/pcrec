@@ -587,12 +587,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-26): filed; nothing built. A stray A_EMPTY mid-CAT (`a(?:)bc`) hides the required run `abc` from the fact pass (src/facts/req.c, not traced): prefilter handoff instead of memchr, per docs/dev/flag_spell_findings_2026-10-23.md.
   next: Frank's word; then trace req.c's A_EMPTY handling in a CAT and make the run continue across it (or drop the empty earlier, the general form).
   refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
-- [EXPECT-PREFLIGHT] STATE:not-started — A JOB'S DRY RUN MEASURES ITS SIZE; ESTIMATE, CAP AND EXPECT DERIVE FROM IT
-  filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
-  status (2026-10-25): history warning BUILT on lane/expectpre (boxqueue.test 92/92), NOT merged: replay caught 0 of the 5 stale-expect jobs (4 first-of-shape, 1 grew after a matching declaration)
-  trigger: LOW PRIORITY: slip it into the next lane that updates boxqueue or the job scripts (Frank 2026-10-25 "low priority but slip it in with the next update of those scripts")
-  refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
-  Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
