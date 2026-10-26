@@ -15,3 +15,9 @@ Rulings file: none appended (last entry applied: none).
 ## STATE AT HANDOFF
 Commits on `lane/scanset` (see git log). Targeted re-runs of the five failing sections green. OWED: full re-validation job
 (`scanset_job` re-queued as the lane's last act; key/log recorded below).
+
+Re-validation queued 2026-10-26 13:05: key `501-scansetfix-test` (same job script, `docs/dev/lanes/scanset_job`; cap 14400 s,
+last run took 2092 s; the full suite 600-main-fullsuite is not-before 2026-10-27 00:05). Run dir: `scripts/boxqueue state 501-scansetfix-test`
+(logs `job.log`, `.strict`, `.codegen`, `.axes`, `.mech`, `.make`). Completion lines wanted: `strict: whole tree compiles clean`,
+`run_group: 19/19 scripts passed`, `run_axes.sh: all axes answer-identical`, `== mech run COMPLETE: 1 rows (unexpected: 0 ...`,
+`sections ran: 79/79`. A residual red there is NOT covered by this triage.
