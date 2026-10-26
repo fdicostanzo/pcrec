@@ -6223,3 +6223,9 @@ Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on 
   next: a lane adds the five keys to GIVEUP1_ALLOWANCE (tests/axes/run_axes.sh:678 and the -fno-start-set entry near :2120) with the reason, then re-runs test-axes
   refs: tests/axes/run_axes.sh; tests/recursion/inlookaround_self.rxt; docs/testing.md "Answer-identity sweep"
   The cases are ACCEPTED give-ups in the corpus; only the axis allowance list was not extended when they landed.
+
+- [EMIT-BIDI] STATE:completed — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
+  filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
+  completed (2026-10-26): merged 7234c2e86 (lanes emitbidi, emitbidifix, emitbidi2; landing lane emitbidiland); `pcrec_sb_ctext` (src/core/sb.c) is the one C-text escaper, emitted text is ASCII-only, abi 86 (85 stays reserved for the kit's S3, which renumbers when it lands); guard `tests/codegen/run_ctext_ascii.sh` (incl. emitter-literal scan) + mech S1620-S1622; follow-up: a kit request to make memfn/src's section-sign literals ASCII (none reach an artifact today); reports docs/dev/lanes/emitbidi_report.md, emitbidifix_report.md, emitbidi2_report.md
+  refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
+  A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.

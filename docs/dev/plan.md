@@ -259,12 +259,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
-- [EMIT-BIDI] STATE:started — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
-  filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
-  status (2026-10-25): cause CONFIRMED (job 624 triage): the harness's -Werror GENCFLAGS turn the -Wbidi-chars warning into a compile failure, so both cases are LOST, never refused; 0 answer mismatches. Until this lands, -fcomments is the one KNOWN red axis (fsfix validated otherwise)
-  next: lane emitbidi (Frank go 2026-10-25): one C-text escaper in sb.c, comment|string context flag, per-context declared table; all four escapers move onto it; abi 86 (85 = kit S3). Validation job gated to 2026-10-26 10:00
-  refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
-  A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.
 
 
 ## Candidates ([OPTLOOP])
