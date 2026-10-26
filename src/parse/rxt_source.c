@@ -3790,6 +3790,40 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
             block->description = text;
             continue;
         }
+        if (tok_is(tok, "callout")) {
+            /* [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
+             * attributes (docs/spec/rxt_format.md §1.1). The SHAPE is
+             * checked here (N 0-255, a lower-case comma list); which
+             * attributes exist, and whether N names a site, are the
+             * compile's (src/opt/callout.c), which sees the pattern. */
+            const char *v = value_trimmed(&p, tok);
+            const char *q = v;
+            int n = 0, ok = *q >= '0' && *q <= '9';
+            while (ok && *q >= '0' && *q <= '9')
+                if ((n = n * 10 + (*q++ - '0')) > 255) ok = 0;
+            if (ok && *q && *q != ' ' && *q != '\t') ok = 0;
+            for (; ok && *q; q++)
+                if (!((*q >= 'a' && *q <= 'z') || *q == ',' || *q == ' ' ||
+                      *q == '\t'))
+                    ok = 0;
+            if (!ok) {
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'callout' wants a "
+                         "callout number 0-255 and its attributes, e.g. "
+                         "'callout 1 consume,once' (got '%s')", v);
+                goto fail;
+            }
+            if (!block->callouts) {
+                block->callouts = v;
+            } else {
+                size_t a = strlen(block->callouts), b = strlen(v);
+                char *j = pcrec_arena_alloc(&src->arena, a + 1 + b + 1);
+                memcpy(j, block->callouts, a);
+                j[a] = '\n';
+                memcpy(j + a + 1, v, b + 1);
+                block->callouts = j;
+            }
+            continue;
+        }
         if (parse_setting(&p, block, line, tok, 1) != 0) goto fail;
     }
 
@@ -4458,6 +4492,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             t->tune = lone->tune;
             t->budget_steps = lone->budget_steps;
             t->budget_frames = lone->budget_frames;
+            t->callouts = lone->callouts;
             t->pcrec_raw = NULL;
             t->defs = defs;
             *out = t;
@@ -4544,6 +4579,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->line = tr->line;
         t->block_line = blk->line;
         t->pcrec_raw = s.pcrec_raw;
+        t->callouts = blk->callouts;
         t->defs = defs;
         t->analysis = s.analysis;
         t->analysis_line = s.analysis_line;

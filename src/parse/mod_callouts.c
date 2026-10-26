@@ -98,18 +98,35 @@ const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
     return NULL;
 }
 
+/* Does this tree contain a callout site? The kind mask's `PF_KIND_CALLOUT`
+ * (src/facts/kinds.c), asked at the root by the prefilter admission's
+ * `callout` row (src/opt/select_engine.c). */
+static void co_has_visit(void *ud, const Ast *a)
+{
+    if (a->k == A_CALLOUT) *(bool *)ud = true;
+}
+
+bool pcrec_has_callout(const Ast *root)
+{
+    bool found = false;
+    if (root) pcrec_ast_visit(root, co_has_visit, &found);
+    return found;
+}
+
 ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from)
 {
     const char *p = cx->pat;
     PcrecCoScan sc;
     /* The recogniser that elected this row ran the same scan on the same
-     * text, so a false here is a registry/doorway defect, not a pattern
-     * error. */
-    if (from > cx->patlen ||
+     * text, with ONE exception: a pattern that ENDS at `(?C` offers the
+     * doorway no text, and a recogniser asked with no text answers the
+     * tail-less question (yes) as every row's does. That text is malformed
+     * by the same rule as the malformed row's, and refused in its words. */
+    if (from >= cx->patlen ||
         !pcrec_callout_extent_scan(p + from, cx->patlen - from, &sc))
-        REFUSE(at, "internal error: the (?C port was reached on a text its "
-               "row's recogniser does not answer for");
+        REFUSE(at, "malformed callout: (?C must be followed by ')', a number "
+               "0-255 and ')', or a delimited string and ')'");
 
     Ast *a = pcrec_ast_node(cx, A_CALLOUT);
     a->not_repeatable = true;

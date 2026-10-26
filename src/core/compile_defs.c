@@ -41,9 +41,9 @@
  * same one pipeline this file's own header explains keeping out of the plain
  * driver. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err)
+                       const RxtDefs *defs, const PcrecEmitIn *in,
+                       pcrec_output *out, pcrec_error *err)
 {
     return pcrec_compile_driver(pattern, opt, out, err, NULL, defs,
-                                pcrec_rxt_compose, NULL, NULL, NULL);
+                                pcrec_rxt_compose, NULL, NULL, in);
 }

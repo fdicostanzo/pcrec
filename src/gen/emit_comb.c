@@ -168,7 +168,8 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
                     const char *ret, const char *name, const char *callee,
                     const char *params, const char *storage_tail,
                     const char *runargs, const char *deepargs,
-                    const char *frames_code, const char *fwdargs)
+                    const char *frames_code, const char *fwdargs,
+                    bool callouts)
 {
     if (fwd) {
         /* [CC-DIFF] STEP 2, the FORWARD rungs (`vm_entry_shape` SHARED and
@@ -253,12 +254,16 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "     * give-up, FRAMES included. Every other outcome is already\n"
             "     * that answer and returns here. */\n");
         pcrec_sb_cmt_close(c);
+        /* [INLINE-C] 1b (inline_c.md §1.6 D8) a FRAMES that a callout's
+         * callee returned is the callee's own capacity, already escalated by
+         * its own entry: the replay cannot help, so it propagates here. */
         pcrec_sb_printf(c,
-            "    if (result != %s) return result;\n"
+            "    if (result != %s%s) return result;\n"
             "    %s_TIER_NOTE();\n"
             "    return %s_deep(%s);\n"
             "}\n\n",
-            frames_code, up, name, deepargs);
+            frames_code, callouts ? " || run.callee_gave_up" : "", up, name,
+            deepargs);
     } else {
         pcrec_sb_printf(c,
             "%s%s %s(%s)\n"
@@ -285,7 +290,8 @@ void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
                             const char *frames_code)
 {
     fwd_own(c, cx->opt->prefix, g->upper, tiered, false, storage, "", ret, name,
-            callee, params, "", runargs, deepargs, frames_code, "");
+            callee, params, "", runargs, deepargs, frames_code, "",
+            cx->ncallouts > 0);
 }
 
 /* `forward`'s ONE emitter: entry `e` (one of the six) under binding `f`.
@@ -312,7 +318,7 @@ static void comb_forward(Ctx *cx, StrBuf *c, const GenNames *g, PcrecEntry e,
                 pcrec_sb_fragf(&cx->arena, "%s%s", s->params,
                                s->vars ? pcrec_vars_param_text(cx) : ""),
                 s->tail, pcrec_sb_fragf(&cx->arena, "%s, &run%s", s->args, va),
-                args, f->frames_code, args);
+                args, f->frames_code, args, cx->ncallouts > 0);
         return;
     }
     pcrec_ctx_fail(cx, 0, "internal error: forward binding %d asked of entry %s",

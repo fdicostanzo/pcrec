@@ -444,6 +444,9 @@ static void usage(FILE *f)
           "                    parse only; print the number of capturing\n"
           "                    groups. A pattern pcrec refuses is refused\n"
           "                    here too, with the same diagnostic\n"
+          "  --callout N:ATTRS declare numbered callout N's attributes for\n"
+          "                    --pattern (consume, once; repeatable); a .rxt\n"
+          "                    block says 'callout N ATTRS'\n"
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
           "                    module column, a frozen named set ('std1'),\n"
@@ -596,6 +599,12 @@ typedef struct {
      * FILE` did. Zero or more -- `compile_sources` is the sole reader. */
     const char **files;
     size_t      nfiles, filecap;
+    /* [INLINE-C] 1b `--callout N:attrs` (repeatable): the numbered
+     * callouts' declarations for a `--pattern` compile. In the tail, so a
+     * `config` block's `pcrec` line cannot set one: a declaration belongs
+     * to one pattern, which is why the `.rxt` spelling is a BLOCK line. */
+    PcrecCalloutDecl *callouts;
+    int         ncallouts;
 #ifdef PCREC_HARNESS
     /* [COMPOUND] the harness lever (docs/design/compound.md §A.11): only
      * `build/pcrec-harness` has the field or the option; in the tail, so a
@@ -1049,6 +1058,40 @@ static void mode_admits_note(const char *a, CliUnadmitted *u)
  * block — and changes nothing else: both callers get the same grammar, the
  * same values and the same refusals. `u` (NULL for a config block, which
  * no compile-less mode reads) collects the options the modes do not admit. */
+/* [INLINE-C] 1b one numbered callout's declaration, `N<sep>attrs`: N a
+ * decimal 0-255, then `sep` (`:` on the command line, whitespace in a
+ * `.rxt` `callout` line) and the comma-separated attribute list, which may
+ * be empty. The list's GRAMMAR (which attributes exist) is the compiler's
+ * (`pcrec_callout_attrs`); this reads the shape. 0, or 1 with a diagnostic. */
+static int cli_callout_decl(const char *v, char sep, PcrecCalloutDecl *d)
+{
+    int n = 0;
+    const char *q = v;
+    if (*q < '0' || *q > '9') goto bad;
+    while (*q >= '0' && *q <= '9') {
+        n = n * 10 + (*q++ - '0');
+        if (n > 255) goto bad;
+    }
+    if (sep == ':') {
+        if (*q != ':') goto bad;
+        q++;
+    } else {
+        if (*q && *q != ' ' && *q != '\t') goto bad;
+        while (*q == ' ' || *q == '\t') q++;
+    }
+    for (const char *r = q; *r; r++)
+        if (!((*r >= 'a' && *r <= 'z') || *r == ','))
+            goto bad;
+    d->num = n;
+    d->attrs = q;
+    return 0;
+bad:
+    cli_err("a callout declaration is N%sATTRS (N a number 0-255, ATTRS a "
+            "comma-separated list such as consume,once; got '%s')",
+            sep == ':' ? ":" : " ", v);
+    return 1;
+}
+
 static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
 {
     pcrec_options opt = st->opt;
@@ -1468,6 +1511,19 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
                 return 1;
             }
             st->features = argv[++i];
+        }
+        else if (!strcmp(a, "--callout")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            PcrecCalloutDecl *v = realloc(st->callouts, (size_t)(st->ncallouts + 1)
+                                                        * sizeof *v);
+            if (!v) { perror("realloc"); return 1; }
+            st->callouts = v;
+            if (cli_callout_decl(argv[++i], ':', &v[st->ncallouts]) != 0)
+                return 1;
+            st->ncallouts++;
         }
         /* `--features=LIST`, the `=value` spelling `--engine=`/`--encoding=`
          * also take; a later spelling wins either way. */
@@ -2059,7 +2115,34 @@ static int compile_sources(const CliState *cli)
          * file's definition closure. `t->defs` is never NULL (an empty set
          * for a file with no named block), so there is one call here and no
          * branch on whether this source composes. */
-        if (pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs, &out, &cerr) != 0) {
+        /* [INLINE-C] 1b the block's `callout N ATTRS` lines, read by the
+         * same shape reader as `--callout` into the compile's declarations
+         * (src/opt/callout.c applies them). One line per row of `decl`. */
+        PcrecCalloutDecl decl[256];
+        int ndecl = 0;
+        char *cbuf = ot->t->callouts ? strdup(ot->t->callouts) : NULL;
+        if (ot->t->callouts && !cbuf) { perror("strdup"); free(cpath); free(hpath); rc = 1; break; }
+        for (char *ln = cbuf; ln && *ln; ) {
+            char *nl = strchr(ln, '\n');
+            if (nl) *nl = 0;
+            if (ndecl == 256 || cli_callout_decl(ln, ' ', &decl[ndecl]) != 0) {
+                if (ndecl == 256)
+                    cli_err("%s:%zu: target '%s': more than 256 callout lines",
+                            ot->owner, ot->t->block_line, ot->t->prefix);
+                ndecl = -1;
+                break;
+            }
+            ndecl++;
+            ln = nl ? nl + 1 : NULL;
+        }
+        if (ndecl < 0) { free(cbuf); free(cpath); free(hpath); rc = 1; break; }
+        const PcrecEmitIn tin = { .bound = PCREC_PB_UNSTATED,
+                                  .callout_decls = decl,
+                                  .ncallout_decls = ndecl };
+        int crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
+                                     ndecl ? &tin : NULL, &out, &cerr);
+        free(cbuf);
+        if (crc != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
              * offset is still printed, because it is the only thing that
@@ -2612,7 +2695,10 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            char *text = pcrec_emit_ir(pattern, &opt, &err);
+            const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED,
+                                     .callout_decls = st.callouts,
+                                     .ncallout_decls = st.ncallouts };
+            char *text = pcrec_emit_ir(pattern, &opt, &in, &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
@@ -2958,6 +3044,15 @@ static int cli_dispatch(CliState st)
         /* the query conflict, and the --pattern-combining conflict, were
          * both refused above before any query could return or any file was
          * read; what is left is this mode's own one requirement. */
+        if (st.ncallouts) {
+            /* [INLINE-C] 1b a declaration belongs to ONE pattern: a file's
+             * blocks declare their own (`callout N ATTRS`). */
+            cli_err("--callout applies to --pattern; a .rxt block declares "
+                    "its own numbered callouts with 'callout N ATTRS'");
+            free(st.libdirs);
+            free(st.files);
+            return 1;
+        }
         if (!outpath) {
             cli_err("compiling from a file needs -o: a FILE for "
                             "one target total, an existing DIRECTORY for "
@@ -2998,9 +3093,19 @@ static int cli_dispatch(CliState st)
     pcrec_output out;
     pcrec_error err;
 #ifdef PCREC_HARNESS
-    if (pcrec_harness_compile(pattern, &opt, &st.harness, &out, &err) != 0) {
+    const PcrecHarnessOptions *hopt = &st.harness;
 #else
-    if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
+    const PcrecHarnessOptions *hopt = NULL;
+#endif
+    /* [INLINE-C] 1b declarations ride the driver's emission input; with none
+     * the compile is the plain entry's, unchanged. */
+    if (st.ncallouts
+            ? pcrec_compile_callouts(pattern, &opt, hopt, st.callouts,
+                                     st.ncallouts, &out, &err) != 0
+#ifdef PCREC_HARNESS
+            : pcrec_harness_compile(pattern, &opt, hopt, &out, &err) != 0) {
+#else
+            : pcrec_compile(pattern, &opt, &out, &err) != 0) {
 #endif
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);

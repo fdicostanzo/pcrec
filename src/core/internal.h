@@ -4080,6 +4080,10 @@ struct Ctx {
      * textual order, and a pattern with none skips every callout pass and
      * emits nothing callout-shaped (the identity gate's zero movers). */
     int                  ncallouts;
+    /* [INLINE-C] 1b the sites by number, `[1..ncallouts]`, written by
+     * `pcrec_callout_sites`: the stamps' binding list and the listing's
+     * `callouts` section read them. */
+    const Ast          **callout_nodes;
     Job                 *job;
 };
 
@@ -5478,6 +5482,7 @@ void pcrec_vars_resolve(Ctx *cx, Ast *root);
 /* Does this tree contain an `A_VAR`? The third whole-tree predicate in
  * `prefilter_decision`'s hand-written set (`has_bref`/`has_call`'s shape). */
 bool pcrec_has_var(const Ast *root);
+bool pcrec_has_callout(const Ast *root);   /* [INLINE-C] 1b, mod_callouts.c */
 
 /* [VAR] The trailing `vars, nvars` pair as PARAMETER text or as ARGUMENT
  * text, or `""` on an artifact that mentions no variable — one derivation
@@ -6541,6 +6546,10 @@ typedef struct {
      * group the definition declares is the COMPOSER's question, asked where
      * the sub-parse's `named_groups` is in hand. */
     const char *exports;
+    /* [INLINE-C] 1b a pattern block's `callout N ATTRS` lines, each value
+     * AS WRITTEN, newline-joined in source order (REPEAT, `tags`' shape);
+     * NULL with none. A BLOCK fact only: no config composes it. */
+    const char *callouts;
     /* [DD-13b.W23.4] THREE APPENDED PATTERN-ROW COLUMNS (format_design
      * §2.24). `tags` ACCUMULATES every `tag` line's items, comma-joined in
      * source order — `tag`'s own cardinality is REPEAT, so a block may
@@ -6866,6 +6875,9 @@ typedef struct {
      * of the config that supplied it, on `analysis`' rule exactly. */
     const char *measures;
     size_t      measures_line;
+    /* [INLINE-C] 1b the block's `callout` lines (RxtRow.callouts), read by
+     * the CLI into the compile's numbered-callout declarations. */
+    const char *callouts;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -8209,8 +8221,8 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g);
  * tier reaches a linked program only through `cli/main.c`'s own call to this
  * entry. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err);
+                       const RxtDefs *defs, const PcrecEmitIn *in,
+                       pcrec_output *out, pcrec_error *err);
 
 /* ---- [COMPOUND] derivations (src/opt/derive.c) ---------------------------
  *
@@ -8621,7 +8633,13 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
  * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
  * and the test suite are its only consumers. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err);
+                    const PcrecEmitIn *in, pcrec_error *err);
+/* [INLINE-C] 1b src/core/compile.c: the CLI's `--pattern` compile with
+ * numbered callout declarations (`--callout`). */
+int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
+                           const PcrecHarnessOptions *hopt,
+                           const PcrecCalloutDecl *decls, int ndecls,
+                           pcrec_output *out, pcrec_error *err);
 
 /* src/dump/facts_dump.c — [PATFACTS] `--emit-facts`: the pattern-facts
  * record as a `docs/spec/table_contract.md` listing

@@ -121,6 +121,7 @@ static void co_site(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
     Ctx *cx = w->cx;
     size_t at = a->u.callout.at;
     a->u.callout.site = w->next++;
+    cx->callout_nodes[a->u.callout.site] = a;
     if (behind)
         pcrec_ctx_fail(cx, at, "a callout inside a lookbehind is not "
                        "supported");
@@ -298,9 +299,30 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
                            "which the pattern does not use", d->num);
     }
 
+    cx->callout_nodes = pcrec_arena_alloc(&cx->arena,
+        (size_t)(cx->ncallouts + 1) * sizeof *cx->callout_nodes);
+    memset(cx->callout_nodes, 0,
+           (size_t)(cx->ncallouts + 1) * sizeof *cx->callout_nodes);
     CoWalk w = { cx, NULL, false, 1 };
     w.called = pcrec_arena_alloc(&cx->arena, cx->ncap + 1);
     memset(w.called, 0, cx->ncap + 1);
     co_targets(&w, root);
     co_walk(&w, root, false, false, true, false, false);
+    if (w.next != cx->ncallouts + 1)
+        pcrec_ctx_fail(cx, 0, "internal error: the parse built %d callout "
+                       "sites and the numbering walk reached %d",
+                       cx->ncallouts, w.next - 1);
+    /* §1.4 D19: an unbound binding is a link error by design, and the
+     * standalone driver `--emit-main` writes could not link one. Every
+     * site is a binding at stage 1b (embedded code is stage 2's). */
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN)) {
+        const Ast *a = cx->callout_nodes[1];
+        if (a->u.callout.bind == CO_NAME)
+            pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot define "
+                           "the binding rx_callout_%s; link your own",
+                           a->u.callout.name);
+        pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot define the "
+                       "binding rx_callout_%d; link your own",
+                       a->u.callout.num);
+    }
 }

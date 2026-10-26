@@ -63,6 +63,15 @@
   - [§10.7](#s10-7) The freestanding and embedded profile
   - [§10.8](#s10-8) What the `_in` entries do not change
   - [§10.9](#s10-9) The tiered default of the un-suffixed entries
+- [§11](#s11) Callouts
+  - [§11.1](#s11-1) Where a site may stand
+  - [§11.2](#s11-2) Bindings
+  - [§11.3](#s11-3) What the callee sees
+  - [§11.4](#s11-4) Returns and width classes
+  - [§11.5](#s11-5) A callee's give-up and the tiered default
+  - [§11.6](#s11-6) The fire contract and the budget
+  - [§11.7](#s11-7) Attributes
+  - [§11.8](#s11-8) Firing classes
 <!-- spec-toc:end -->
 
 <a id="s0-p1"></a>[0¶1] This document states what pcrec's library (`lib/pcrec.h`) and every
@@ -170,6 +179,26 @@ bit constants `PCREC_VM_RUNG_*` / `PCREC_VM_STRAT_*` / `PCREC_VM_PRUNE_*`
 What stays per-prefix
 is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 (including the three masks), and the budget, capacity and sizing macros.
+
+<a id="s1-p6a"></a>[1¶6a] **The callout-artifact fixed-literal family** is the one CONDITIONAL
+family: it is emitted only on an artifact with a callout site (§11), inside
+its own guard, so two callout artifacts in one translation unit define it
+once:
+
+```c
+#ifndef PCREC_RX_CALLOUT_H
+#define PCREC_RX_CALLOUT_H
+#define RX_PASS 0      /* a callout passes: continue, consuming nothing */
+#define RX_FAIL (-1)   /* a callout fails this path: backtrack */
+#endif
+```
+
+<a id="s1-p6b"></a>[1¶6b] `RX_PASS` and `RX_FAIL` are the return names of a callout check (§11.4); a
+hand-written binding may use them too. A consumed length is just the number.
+An artifact with no callout site emits none of it. Beside the family, the
+same artifact declares one `extern const rx_callout_ref rx_callout_<name>;`
+(or `rx_callout_<n>;`) per binding its sites name (§11.2): fixed-literal and
+unprefixed, so two artifacts naming one binding share one definition.
 
 <a id="s1-p7"></a>[1¶7] **The guard's value is the `abi`, and a mixed-`abi` translation unit is
 refused.** The block opens
@@ -371,9 +400,10 @@ is per-prefix and is declared outside the block.
 - <a id="s2-p5"></a>[2¶5] **`rx_ctx.vars` / `nvars`** carry the caller's variable values for
   module `vars`, by name (`docs/spec/vars.md`); they are what keeps a
   var-bearing artifact's `<prefix>_match` an `rx_matchfn`.
-- <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.** Every
-  emitted call site sets `ncap = 0` and nothing advances it, so no caller can
-  observe a watermark; it is reserved for a future mid-match view. The
+- <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has one producer, a
+  callout site** (§11.3): it sets `ncap` to the pattern's group count plus
+  one at every site, the widest watermark, and a group not yet written reads
+  `{-1, -1}`. Every other emitted call site sets `ncap = 0`. The
   "ncaps on completion" reading has one producer, the subst element
   (`docs/spec/subst_api.md` §4): its `ctx.ncap` is the `ncaps` of a COMPLETED
   match, every pair written.
@@ -1204,7 +1234,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 
 | code | value | class | meaning |
 |---|---|---|---|
-| `PCREC_ERR_STEPS` | −2 | give-up | the step budget (backtrack resumptions) ran out |
+| `PCREC_ERR_STEPS` | −2 | give-up | the step budget (backtrack resumptions and callout fires, §11.6) ran out |
 | `PCREC_ERR_FRAMES` | −3 | give-up | a backtracking capacity ran out (below) |
 | `PCREC_ERR_WORK` | −4 | give-up | the work budget (forward work the fail label never sees) ran out |
 | `PCREC_ERR_RECURSE` | −5 | give-up | reserved; no emitter returns it |
@@ -1215,6 +1245,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
 | `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5); `<prefix>_next` and `<prefix>_next_n` leave it, in `it.rc` |
 | `PCREC_SUBST_NOSPACE` … `PCREC_SUBST_MISSING_REF` | −11 … −16 | below the floor | reserved for the subst artifact (`docs/spec/subst_api.md` §8), whose block defines them; no match entry returns one, and no other code takes these values |
+| `PCREC_ERR_ABORT` | −17 | below the floor | reserved for a callout that ends the whole match; no artifact defines or returns it yet, and no other code takes this value |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
 resource. A DFA artifact has no counter and never returns one, though it
@@ -1231,8 +1262,9 @@ reported: measured on `^(a(?1)?b)$`, the artifact gives up with the trail full
 and two thirds of its resume stack unused (`docs/design/
 frame_buffer_design.md` §4). The same code, with the same meaning, covers a
 caller-supplied buffer (§10.3), and there too it does not say whose buffer it
-was. From an un-suffixed entry it always means the stamped default ran out,
-never the fast tier (§10.9).
+was. From an un-suffixed entry it always means this call's stamped default
+ran out, or a callout's callee gave it up (§11.5), never the fast tier
+(§10.9).
 
 <a id="s4-p4"></a>[4¶4] **One call to an un-suffixed entry may spend up to twice the step budget and
 twice the work budget.** The tiered default (§10.9) re-runs a match on the
@@ -1240,7 +1272,11 @@ full default storage after a `PCREC_ERR_FRAMES` give-up on its fast tier, with
 both budgets refilled. A returned `PCREC_ERR_STEPS` still means one attempt
 exhausted a full budget. The `_in` entries have no tier and are bounded by one
 budget; a caller needing a hard bound on one call's work uses `_in` or
-`-fno-tiered-entry` (`tuning.md` §2.12).
+`-fno-tiered-entry` (`tuning.md` §2.12). **Temporarily**, a callout whose
+binding is itself a pcrec artifact runs each fire on that artifact's own
+fresh budget, so one outer call's work is bounded by the outer budget times
+one plus the callee's budget (each fire costs the outer one step, §11.6);
+this multiplier goes away when a callee can charge its caller's meter.
 
 <a id="s4-p5"></a>[4¶5] **Below the floor: not give-ups.** Values strictly below `PCREC_ERR_FLOOR` are
 reserved for abort and refusal semantics. Every artifact defines all five
@@ -1280,11 +1316,14 @@ under a different encoding or engine. None renumbers the give-up partition.
 
 <a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
 Q11; D163 addenda 5 and 6). A generated call site that invokes another
-matcher (a compound's controller calling a part, §3.7; when module `callouts`
-builds, a callout site) handles the callee's return through a first-match
-table over code classes, emitting a row only for the classes the CALLEE CAN
-RETURN, read off the callee (its engine, its startpos guard, its subject
-check):
+matcher (a compound's controller calling a part, §3.7; a callout site, §11)
+handles the callee's return through a first-match table over code classes,
+emitting a row only for the classes the CALLEE CAN RETURN, read off the
+callee (its engine, its startpos guard, its subject check, its width class).
+The table reads the callee's CONVENTION: a compound's part returns `> 0` for
+a match and `0` for none; an `rx_matchfn` (a callout's binding) returns a
+length `>= 0` or `-1`. At an extern binding nothing is known of the callee,
+so every row is live. The rows, in the emitted order:
 
 | # | the callee's code | action |
 |---|---|---|
@@ -1296,12 +1335,19 @@ check):
 | 6 | `PCREC_ERR_STARTPOS` | `__builtin_trap()`: the caller generated the position (§9.5) |
 | 7 | `PCREC_ERR_UNSET_VAR` | propagate unchanged: the caller's data |
 | 8 | any other code below 0 | `__builtin_trap()`: the reserved space (D38 item 4) |
+| 9 | a length `> 0` from a CHECK (a callout without `consume`, §11.4) | `__builtin_trap()`: the check broke its declared width |
+| 10 | a length that leaves the subject, or (under a multi-byte encoding) ends off a character boundary | `__builtin_trap()`: the callee broke `rx_matchfn`'s contract |
 
 <a id="s4-p10a"></a>[4¶10a] The rule binds call sites that call INTO another matcher, not an exported
 entry's own `return`. The compound's controller is the first producer: its
 parts are DFA parts compiled with no startpos guard and no subject check, so
 each part call carries rows 1, 2 and 8 and the trap is unreachable by
 construction.
+
+<a id="s4-p10b"></a>[4¶10b] Rows 9 and 10 apply to an `rx_matchfn` callee's lengths only, so they
+are tested after the negative rows; row 1's success edge is the
+fall-through. A give-up that came from a callout's callee propagates without
+escalating the caller's tiered default (§11.5).
 
 <a id="s4-p11"></a>[4¶11] **Where the numbers live.** This section states what each value means. The
 numeric defaults and overrides of the step and work budgets and the frame and
@@ -1343,6 +1389,10 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
 - <a id="s5-p7"></a>[5¶7] **`ctx->caps` handed to a callout mid-match is valid for that one call
   only**; the engine rewrites the storage afterwards (trail-based undo). A
   callout that keeps the pointer and reads it later has a bug of its own.
+  What it shows is §11.3's: every group of the pattern, each its last
+  CLOSED value or unset, and pair 0 `{attempt start, -1}`. A callout
+  artifact keeps every group under `--no-captures` for that view, and still
+  delivers none (`<PREFIX>_NCAPS 1`).
 - <a id="s5-p8"></a>[5¶8] **A completed match's `caps` are stable until the next match call reusing
   the same buffer**; the matcher never overwrites a buffer mid-splice.
 - <a id="s5-p9"></a>[5¶9] **`caps[k]` is group `k`** for the primary pattern's own groups on a
@@ -1813,8 +1863,10 @@ selection point must be observable".
 #### 6.3.1 Scoping rules
 
 - <a id="s6-3-1-p1"></a>[6.3.1¶1] **Where they live.** The contract constants of the shared block (§2) and
-  `<PREFIX>_NCAPS`, the sizing macros of §10.4 and, on a var-bearing artifact,
-  `<PREFIX>_NVARS` are in the `.h` (measured: 29 `#define`s in the `.h` of both
+  `<PREFIX>_NCAPS`, the sizing macros of §10.4, on a var-bearing artifact
+  `<PREFIX>_NVARS`, and on a callout-bearing artifact §1¶6a's family, the
+  binding declarations, `<PREFIX>_CALLOUTS` and `<PREFIX>_CALLOUT_BINDINGS`
+  are in the `.h` (measured: 29 `#define`s in the `.h` of both
   a VM and a DFA build of `'a(b|c)+d'`, identical except `RX_NCAPS`'s value
   and the sizing values). Every other stamp is emitted into the `.c` only, so
   reading one needs a self-contained artifact (`header_name == NULL`) or code
@@ -1937,6 +1989,8 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_NCAPS` | all (`.h`) | integer | `ncaps` | §5 |
 | `<PREFIX>_RESUME_FRAMES`, `_TRAIL_FRAMES`, `_RESUME_FRAME_SIZE`, `_TRAIL_FRAME_SIZE`, `_BUFFER_ALIGN` | all (`.h`) | integer | the sizing fields | §10.4 |
 | `<PREFIX>_NVARS`, `<PREFIX>_VAR_<NAME>` | var-bearing (`.h`) | integer | `nvars` | `docs/spec/vars.md` |
+| `<PREFIX>_CALLOUTS` | callout-bearing (`.h`) | integer: the number of callout sites | — | §11.2 |
+| `<PREFIX>_CALLOUT_BINDINGS` | callout-bearing (`.h`) | string: the binding symbols the artifact needs, sorted, distinct, comma-separated (`"rx_callout_1,rx_callout_octet"`) | — | §11.2 |
 
 <a id="s6-3-3"></a>
 #### 6.3.3 Engine selection
@@ -2861,7 +2915,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |
@@ -3679,8 +3733,9 @@ trigger) and the replay reports `PCREC_ERR_STEPS`.
 <a id="s10-9-p4"></a>[10.9¶4] **What a caller may rely on:**
 
 - <a id="s10-9-p5"></a>[10.9¶5] Every promise of §3, §4 and §5 stands unchanged.
-- <a id="s10-9-p6"></a>[10.9¶6] `PCREC_ERR_FRAMES` from an un-suffixed entry means the STAMPED DEFAULT ran
-  out, never the fast tier.
+- <a id="s10-9-p6"></a>[10.9¶6] `PCREC_ERR_FRAMES` from an un-suffixed entry means this call's STAMPED
+  DEFAULT ran out, or a callout's callee gave it up (§11.5), never the fast
+  tier.
 - <a id="s10-9-p7"></a>[10.9¶7] The depth an artifact can reach is unchanged (D73 keeps the stamped
   2048/3072); only the cost of not reaching it moved.
 - <a id="s10-9-p8"></a>[10.9¶8] The `_in` entries have no tier: the caller owns the storage, so there is
@@ -3715,3 +3770,156 @@ on the fast tier, and it loses on some patterns:
 deep tier (§5.3, K33), supplies its own storage through the `_in` entries and
 never meets the tier; `-fno-tiered-entry` is the answer for a workload measured
 to sit above the boundary.
+
+---
+
+<a id="s11"></a>
+## 11. Callouts
+
+<a id="s11-p1"></a>[11¶1] A CALLOUT is a point in a pattern where the matcher calls the user's code
+(module `callouts`; the spellings are `pattern_language.md`'s: `(?C)`,
+`(?Cn)` and `(?C"name")` with PCRE2's eight string delimiters). The callee is
+an `rx_matchfn` (§2); it receives a read-only view of the match so far and
+its return decides the path. A pattern with a callout site compiles to the VM
+engine.
+
+<a id="s11-1"></a>
+### 11.1 Where a site may stand
+
+<a id="s11-1-p1"></a>[11.1¶1] A site may stand in the main sequence, in alternations, in capture and
+non-capture groups, in quantified groups, in atomic groups and in
+lookaheads. These are refused by name, never miscompiled: a site inside a
+lookbehind; a site inside a group that a subroutine call or recursion
+reaches (`(?1)`, `(?R)`, `(?&name)`, a `(?(DEFINE)` group, a `lib`
+definition). A callout itself is not quantifiable (`(?C1)?` is refused, as in
+PCRE2); `(?:(?C1))*` is a group and is.
+
+<a id="s11-2"></a>
+### 11.2 Bindings
+
+<a id="s11-2-p1"></a>[11.2¶1] The callee of a site is its BINDING, first match:
+
+| # | spelling | the callee | its `user` |
+|---|---|---|---|
+| 1 | `(?C"name")` | `rx_callout_<name>.fn` | `rx_callout_<name>.user` |
+| 2 | `(?C)`, `(?Cn)` (`n` 0-255; `(?C)` is `0`) | `rx_callout_<n>.fn`, `<n>` the decimal number | `rx_callout_<n>.user` |
+
+<a id="s11-2-p2"></a>[11.2¶2] The artifact DECLARES each binding, `extern const rx_callout_ref
+rx_callout_<name>;` (§1¶6a), and the user DEFINES it. **An unbound binding is
+a link error, by design**: PCRE2 runs a pattern whose callout has no function
+by ignoring the callout; pcrec does not. `--emit-main` therefore refuses a
+pattern with a binding site, naming it ("--emit-main cannot define the
+binding rx_callout_octet; link your own"). A binding name is a C identifier
+with no `__`; `-p rx_callout` and `-p rx_callout_...` are refused
+(`cli.md` §1.6's namespace table, row 2).
+
+<a id="s11-2-p3"></a>[11.2¶3] The stamps `<PREFIX>_CALLOUTS` (the site count) and
+`<PREFIX>_CALLOUT_BINDINGS` (the binding symbols the artifact needs) are in
+the header of every callout artifact (§6.3).
+
+<a id="s11-3"></a>
+### 11.3 What the callee sees
+
+<a id="s11-3-p1"></a>[11.3¶1] The callee receives `const rx_ctx *`; its return value is its only effect
+on the match. The view is built fresh at every fire:
+
+- <a id="s11-3-p2"></a>[11.3¶2] `subject`, `len`: the call's subject. `pos`: the position the engine
+  has reached at the site.
+- <a id="s11-3-p3"></a>[11.3¶3] `ncap`: the PATTERN's group count plus one, at every site, whatever
+  `--no-captures` says; `caps[k]` is group `k`, its last CLOSED value or
+  `{-1, -1}` (a group is visible after it closes; a repeated group keeps its
+  previous iteration's value until it closes again, §5.1).
+- <a id="s11-3-p4"></a>[11.3¶4] `caps[0]` is `{attempt start, -1}`: the position the current anchored
+  attempt began at, not a `\K`-moved start.
+- <a id="s11-3-p5"></a>[11.3¶5] `user`: the binding's. `vars`, `nvars`: what the entry received (NULL
+  and 0 when the pattern takes none).
+
+<a id="s11-3-p6"></a>[11.3¶6] The view is valid for the call only (§5¶7).
+
+<a id="s11-4"></a>
+### 11.4 Returns and width classes
+
+<a id="s11-4-p1"></a>[11.4¶1] A site is a CHECK unless it says `consume` (§11.7). A check returns
+`RX_PASS` (0: continue at `pos`) or `RX_FAIL` (-1: backtrack, exactly as a
+failed atom). A `consume` site may also return a length `k > 0`: the engine
+continues at `pos + k`, and the consumed bytes belong to every group that
+encloses the site. The callee is ATOMIC: on backtracking past the site the
+engine never asks it for a shorter length; it reaches earlier choice points,
+and a path that reaches the site again calls it again.
+
+<a id="s11-4-p2"></a>[11.4¶2] Every other return is §4¶10's table: a give-up, `PCREC_ERR_INTERNAL`,
+`PCREC_ERR_UTF` and `PCREC_ERR_UNSET_VAR` propagate unchanged out of the
+entry; `PCREC_ERR_STARTPOS` and any other code below 0 trap; a positive
+return from a check traps; a length that leaves the subject or ends off a
+character boundary (`-e utf8`) traps.
+
+<a id="s11-5"></a>
+### 11.5 A callee's give-up and the tiered default
+
+<a id="s11-5-p1"></a>[11.5¶1] A give-up a callee returns propagates unchanged, and it does NOT escalate
+the caller's tiered default (§10.9): the callee's own un-suffixed entry has
+already escalated, and a replay of the outer match could not help.
+
+<a id="s11-6"></a>
+### 11.6 The fire contract and the budget
+
+<a id="s11-6-p1"></a>[11.6¶1] A callout may fire on paths the engine later abandons, zero or several
+times per final match, at engine-chosen positions and in an engine-chosen
+order: **fire count and order are unspecified**, beyond the firing class of
+§11.8. A callee whose return depends only on what `rx_ctx` carries for that
+call (a PURE callee) gets a defined answer: the pattern's BACKTRACKING-ORDER
+answer, start positions in order, at each start the paths in priority order,
+every fire on every tried path honoured. Side effects see an unspecified
+sequence.
+
+<a id="s11-6-p2"></a>[11.6¶2] **Compatibility with PCRE2.** pcrec is compatible with PCRE2 on a callout
+pattern whose PCRE2 answer does not depend on PCRE2's optimizations. Where
+it does, PCRE2's answer moves with its flags and pcrec's does not: on
+`(\d+)(?C1)` over `1234` with a check that vetoes position 4, PCRE2 answers
+`[1,4)` by default and `[0,3)` with `PCRE2_NO_AUTO_POSSESS |
+PCRE2_NO_START_OPTIMIZE`; pcrec answers `[0,3)`. A leading `(?s).*` is
+auto-anchored by PCRE2 unless `PCRE2_NO_DOTSTAR_ANCHOR` is set.
+
+<a id="s11-6-p3"></a>[11.6¶3] **Each fire is one step** against the call's step budget, so a site that
+fires too often gives up `PCREC_ERR_STEPS` like any backtracking blow-up.
+Nothing in `rx_ctx` exposes the budget. The callee's own work is not
+metered, except that a pcrec artifact bound as a callee runs on its own
+budget (§4¶4).
+
+<a id="s11-7"></a>
+### 11.7 Attributes
+
+<a id="s11-7-p1"></a>[11.7¶1] A named site's string is `name(,attr)*`. A numbered site's attributes
+come from its declaration: the `.rxt` `callout <n> <attrs>` line
+(`rxt_format.md` §1.1) or `--callout N:attrs` (`cli.md`). The attributes:
+
+| attribute | meaning |
+|---|---|
+| `consume` | the callee may return a length `> 0` (§11.4) |
+| `once` | the author's promise that the site is class 1 or 2 (§11.8); a site of class 3 is refused, naming why |
+| `verify` | refused by name: not built yet |
+
+<a id="s11-7-p2"></a>[11.7¶2] An unknown, repeated or empty attribute is refused. A declaration that
+names a number no site uses, or a number declared twice, is refused.
+
+<a id="s11-8"></a>
+### 11.8 Firing classes
+
+<a id="s11-8-p1"></a>[11.8¶1] The compiler derives one structural fact per site from the pattern as
+written, never from a subject: how many times it can fire within one
+ATTEMPT (one anchored try at one start position, within one engine run).
+First match:
+
+| # | class | rule | what the code may rely on |
+|---|---|---|---|
+| 1 | `once-per-match` | no enclosing repeat of maximum 2 or more, no live choice point before the site, and the site is the pattern's tail | at most one fire per attempt, and a passing fire IS the match |
+| 2 | `once-per-start` | no such repeat and no live choice point before the site | at most one fire per attempt |
+| 3 | `repeated` | otherwise | may fire more than once per attempt |
+
+<a id="s11-8-p2"></a>[11.8¶2] A choice point is an alternation, a quantifier whose minimum and maximum
+differ, or a subroutine call; one inside an atomic group, a possessive
+quantifier or a lookaround that completes before the site is SEALED and not
+live. The class is reported in `--emit-ir`'s `callouts` section
+(`ir_listing.md`). Different start positions are different attempts, and
+the tiered default's escalation (§10.9) re-runs the whole call, so every
+site fires again in the second run; neither is bounded by the class.

@@ -278,7 +278,8 @@ enum {
     PF_KIND_ATOMIC          = 1u << 3,   /* pcrec_has_atomic */
     PF_KIND_LOOK            = 1u << 4,   /* pcrec_has_lookaround */
     PF_KIND_LIVE_CAPTURE    = 1u << 5,   /* pcrec_has_live_capture */
-    PF_KIND_COLLAPSIBLE_REP = 1u << 6    /* pcrec_has_collapsible_rep */
+    PF_KIND_COLLAPSIBLE_REP = 1u << 6,   /* pcrec_has_collapsible_rep */
+    PF_KIND_CALLOUT         = 1u << 7    /* pcrec_has_callout ([INLINE-C] 1b) */
 };
 
 /* ---- the record --------------------------------------------------------- */

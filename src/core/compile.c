@@ -153,8 +153,10 @@ static bool valid_prefix(const char *p)
  * and the user prefixes each refuses -- a prefix that could spell a reserved
  * name inside one translation unit. A new reservation is a row, never a
  * second refusal. `docs/spec/cli.md` lists the rows beside `-p`'s grammar.
- * Row 2 (`callout-bindings`, `rx_callout_<name>`) is added by
- * [M4-CALLOUTS] step 2 with its first producer. */
+ * Row 2 (`callout-bindings`, `rx_callout_<name>`) arrived with its first
+ * producer ([INLINE-C] stage 1b, docs/design/inline_c.md §1.4). The binding
+ * NAME's own rule (no `__`) is the parser's, at the `(?C"name")` port
+ * (src/parse/mod_callouts.c): it is a pattern fact, not a prefix one. */
 typedef struct {
     const char *name;
     bool (*refuses)(const char *prefix);
@@ -164,6 +166,16 @@ typedef struct {
 /* row 1: a compound's parts are `<prefix>__<role>`, so a user prefix with
  * `__` can collide with a part beside a compound in one TU. */
 static bool ns_parts(const char *p) { return strstr(p, "__") != NULL; }
+/* row 2: a callout artifact declares `extern const rx_callout_ref
+ * rx_callout_<name>`, unprefixed; a prefix `rx_callout` or `rx_callout_...`
+ * names its own entries inside that family (`-p rx_callout` emits
+ * `rx_callout_search`, which `(?C"search")` binds). */
+static bool ns_callout(const char *p)
+{
+    static const char fam[] = "rx_callout";
+    const size_t l = sizeof fam - 1;
+    return !strncmp(p, fam, l) && (p[l] == '\0' || p[l] == '_');
+}
 /* row 3: the harness lever's reserved prefix (compound.md §A.11). */
 static bool ns_harness(const char *p)
 {
@@ -196,6 +208,8 @@ static bool ns_subst_block(const char *p)
 static const NsReserve ns_reserved[] = {
     { "parts", ns_parts,
       "contains `__`, which is reserved for a compound's parts (<prefix>__<role>)" },
+    { "callout-bindings", ns_callout,
+      "is rx_callout or begins with rx_callout_, the family a callout's binding (rx_callout_<name>) is declared in" },
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
     { "subst-block", ns_subst_block,
@@ -3498,6 +3512,24 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
                           hopt ? &in : NULL);
 }
 
+/* [INLINE-C] 1b the CLI's compile of a `--pattern` that carries numbered
+ * callout declarations (`--callout N:attrs`): `pcrec_compile` (or the
+ * harness lever's, when `hopt` is non-NULL) with the declarations on the
+ * driver's emission input. There is no library member for them in v1
+ * (docs/design/inline_c.md §2.2; [IFACE-PUSH]); a library caller spells
+ * attributes in a named callout's string. */
+int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
+                           const PcrecHarnessOptions *hopt,
+                           const PcrecCalloutDecl *decls, int ndecls,
+                           pcrec_output *out, pcrec_error *err)
+{
+    const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .harness = hopt,
+                             .callout_decls = decls,
+                             .ncallout_decls = ndecls };
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
+                          &in);
+}
+
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
  * that `pcrec_compile_defs` now lives in its own translation unit
  * (`src/core/compile_defs.c`) so that THIS file names no `rxt_*` symbol.
@@ -3526,7 +3558,7 @@ int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
  * engine_m4.md S10's constraint one level up from the emitter itself. It is a
  * debug tool; the wasted emission is the price of the guarantee. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err)
+                    const PcrecEmitIn *in, pcrec_error *err)
 {
     pcrec_options defo;
     pcrec_output out;
@@ -3538,7 +3570,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     defo.header_name = NULL;
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-                             NULL, NULL, NULL, NULL) != 0) {
+                             NULL, NULL, NULL, in) != 0) {
         free(text);
         return NULL;
     }

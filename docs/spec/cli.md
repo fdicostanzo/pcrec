@@ -183,7 +183,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | row | reserved family | refused `PREFIX` |
 |---|---|---|
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
-| 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
+| 2 `callout-bindings` | `rx_callout_<name>` and `rx_callout_<n>`, a callout's binding (`match_api.md` §11) | `rx_callout`, alone or followed by `_` (`-p rx_callout` would emit `rx_callout_search`, which `(?C"search")` binds). The binding NAME has its own rule, the parser's: a `(?C"name")` whose name contains `__` is refused (`pattern_language.md`) |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
 | 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `pcrec_subst_*`, `PCREC_SUBST_*`, `PCREC_SUPPORT_*` | `pcrec_subst` or `pcrec_support`, alone or followed by `_`, in any case; and `pcrec` in any case, whose subst artifact's `<prefix>_subst_*` names would fall in the family |
 

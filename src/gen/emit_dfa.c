@@ -2617,6 +2617,59 @@ static void emit_vars_macros(StrBuf *sb, Ctx *cx, const char *upper)
                         "%u", i);
 }
 
+/* [INLINE-C] 1b Writes a callout artifact's caller-facing surface, or
+ * nothing at all on an artifact with no site (inline_c.md §8.1: every byte
+ * of it is conditional, so the identity gate sees zero movers):
+ *
+ *   - the CALLOUT-ARTIFACT FIXED-LITERAL FAMILY (match_api.md §1), its own
+ *     guard so two callout artifacts in one translation unit define it once:
+ *     the return names `RX_PASS` and `RX_FAIL`, defined for a hand-written
+ *     binding as much as for the artifact;
+ *   - the stamps `<PREFIX>_CALLOUTS` (the site count) and
+ *     `<PREFIX>_CALLOUT_BINDINGS` (the binding symbols, sorted, distinct,
+ *     comma-separated);
+ *   - one `extern const rx_callout_ref` per binding (§1.4 rows 2-3): the
+ *     artifact declares, the user defines, an unbound one is a link error.
+ *
+ * Called from `emit_ncaps_macros`' two sites, beside the variable surface,
+ * for that surface's reason: a caller reads these in the header. */
+static int co_sym_cmp(const void *x, const void *y)
+{
+    return strcmp(*(const char *const *)x, *(const char *const *)y);
+}
+
+static void emit_callout_surface(StrBuf *sb, Ctx *cx, const char *upper)
+{
+    if (cx->ncallouts == 0) return;
+    const char **sym = pcrec_arena_alloc(&cx->arena,
+                                         (size_t)cx->ncallouts * sizeof *sym);
+    int n = 0;
+    for (int i = 1; i <= cx->ncallouts; i++) {
+        const Ast *a = cx->callout_nodes[i];
+        sym[n++] = a->u.callout.bind == CO_NAME
+            ? pcrec_sb_fragf(&cx->arena, "rx_callout_%s", a->u.callout.name)
+            : pcrec_sb_fragf(&cx->arena, "rx_callout_%d", a->u.callout.num);
+    }
+    qsort(sym, (size_t)n, sizeof *sym, co_sym_cmp);
+    int nd = 0;
+    for (int i = 0; i < n; i++)
+        if (nd == 0 || strcmp(sym[nd - 1], sym[i]) != 0) sym[nd++] = sym[i];
+
+    pcrec_sb_puts(sb,
+        "#ifndef PCREC_RX_CALLOUT_H\n"
+        "#define PCREC_RX_CALLOUT_H\n"
+        "#define RX_PASS 0      /* a callout passes: continue, consuming nothing */\n"
+        "#define RX_FAIL (-1)   /* a callout fails this path: backtrack */\n"
+        "#endif\n");
+    pcrec_sb_stampf(sb, upper, "CALLOUTS", "%d", cx->ncallouts);
+    const char *list = sym[0];
+    for (int i = 1; i < nd; i++)
+        list = pcrec_sb_fragf(&cx->arena, "%s,%s", list, sym[i]);
+    pcrec_sb_stamp_str(sb, upper, "CALLOUT_BINDINGS", list);
+    for (int i = 0; i < nd; i++)
+        pcrec_sb_printf(sb, "extern const rx_callout_ref %s;\n", sym[i]);
+}
+
 /* Writes the caller-buffer sizing surface: the five per-prefix capacity/alignment macros and the `<prefix>_buffers` descriptor type.
  *
  * [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
@@ -3550,6 +3603,7 @@ static void emit_header(Ctx *cx, const GenNames *g, int ncaps,
     pcrec_sb_putc(h, '\n');
     emit_ncaps_macros(h, upper, ncaps);
     emit_vars_macros(h, cx, upper);
+    emit_callout_surface(h, cx, upper);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
         pcrec_emit_iter_buffers_setter(h, cx->opt->prefix);
@@ -7868,11 +7922,16 @@ static void vm_start_assert_starts(Ctx *cx, const StartSet *ss)
  *     `nullable` fact; review r4 sound-F9) and fewer than 256 members — a
  *     nullable pattern can match at a position whose byte is in no set, and
  *     a full set skips nothing (S491).
- *   - NO VERB AND NO CALLOUT: a `(*COMMIT)` in a skipped attempt could end
- *     the whole search. STRUCTURALLY ABSENT today, as for `req_handoff_
- *     applies` (g): the AST has no node kind for either, so there is nothing
- *     to read; the kind that adds one must decline here. Sabotage S496 ships
- *     UNREACHED.
+ *   - NO VERB: a `(*COMMIT)` in a skipped attempt could end the whole
+ *     search. STRUCTURALLY ABSENT today, as for `req_handoff_applies` (g):
+ *     the AST has no node kind for one, so there is nothing to read; the
+ *     kind that adds one must decline here. Sabotage S496 ships UNREACHED.
+ *     A CALLOUT IS NOT A CONJUNCT ([INLINE-C] stage 1b retired that half,
+ *     docs/design/inline_c.md §1.8 D4): a skipped attempt is one the erased
+ *     SUPERSET language cannot match (the kind row's `text_width` erases a
+ *     check to the empty string and a consumer to any bytes), a pattern with
+ *     vetoes matches a subset of that, and fires on attempts the engine skips
+ *     are unspecified (the fire contract, match_api.md's callouts section).
  *   - ENCODING: `vm_start_assert_starts`, AFTER the two conjuncts above.
  * The deny (`-fno-start-set`) is the row's `c.deny`, a filter on the list.
  * (D149) `|S| < 256` as the ONLY narrowness gate is an UNMEASURED DEFAULT: no
@@ -8627,12 +8686,18 @@ static const char *req_why_name(ReqAdmit a)
  *     AND the prefilter's span end is the match ceiling
  *     (`pcrec_vm_prefilter_window`): the prefilter's `\G` reads its third
  *     argument, and `window_end` is set from its first answer (Claim 2', Q9).
- *   - (g) NO VERB AND NO CALLOUT: a `(*COMMIT)` in a failed attempt below the
- *     scan start can end the whole search. STRUCTURALLY ABSENT today — the
- *     AST has no node kind for either (`(*COMMIT)` and `(?C)` are refused
- *     before a tree exists), so there is nothing to read; the kind that adds
- *     one must add a `PF_KIND_*` bit (src/facts/kinds.c's exhaustive switch
- *     is its alarm) and decline here. Sabotage row S475 ships UNREACHED.
+ *   - (g) NO VERB: a `(*COMMIT)` in a failed attempt below the scan start
+ *     can end the whole search. STRUCTURALLY ABSENT today — the AST has no
+ *     node kind for one (`(*COMMIT)` is refused before a tree exists), so
+ *     there is nothing to read; the kind that adds one must add a `PF_KIND_*`
+ *     bit (src/facts/kinds.c) and decline here. Sabotage row S475 ships
+ *     UNREACHED. The CALLOUT half is retired ([INLINE-C] stage 1b,
+ *     docs/design/inline_c.md §1.8 D4), with `PF_KIND_CALLOUT` built and
+ *     deliberately not read here: an attempt below the scan start is one the
+ *     erased SUPERSET language cannot match (a check erases to the empty
+ *     string, a consumer to any bytes), a pattern with vetoes matches a
+ *     subset of that, and fires on attempts the engine skips are
+ *     unspecified (the fire contract).
  *
  * (c) (the pinned form) and (d) (`\G` on the unanchored body) are NOT
  * conjuncts: both are unreachable, and `req_handoff_assert_body` makes them
@@ -15136,6 +15201,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         }
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_vars_macros(c, cx, g->upper);
+        emit_callout_surface(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
         if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
             pcrec_emit_iter_buffers_setter(c, cx->opt->prefix);
