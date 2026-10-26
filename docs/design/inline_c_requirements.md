@@ -1063,6 +1063,10 @@ proposed) but requires:
    in the README?** Recommendation: not until the survey is re-run with the
    web (section 6); then "believe" wording.
 
+### Frank's answers (recorded as given)
+
+- **Q1 (2026-10-26): PATTERN SIDE FIRST** (not the recommended template-first split). Frank: "Pattern first. The pcrec syntax might also be to support high level languages embedded so it might be different from what we're doing." Consequence for the design: the embedding spelling is a pcrec syntax decision, not necessarily PCRE2's `(?C{...})` callout string, and it must leave room for a LANGUAGE TAG (C first; other embedded languages later). Q3 (the brace rule) is reopened under that frame.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
