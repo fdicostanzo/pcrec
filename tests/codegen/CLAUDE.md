@@ -52,7 +52,7 @@ or it has no regression net at all.
 - `run_encoding_identity.sh`, `run_cpset_structure.sh` — section "[M5.0] stage 1's PAIR: `run_encoding_identity.sh` (RETIRED 2026-09-05) + `run_cpset_structure.sh`" (history file)
 - `run_tune_dial.sh` — section "`run_tune_dial.sh` — [OPT-DIAL]'s MECHANISM-STATE CROSS-CHECK (2026-09-17)" (history file)
 - `run_recursion_identity.sh` — section "[DD-14] waves D+E — `run_recursion_identity.sh`, opt-in as `make test-recursion-identity`" (history file)
-- `run_scan_edge_census.sh` — section "`run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)" (history file)
+- `run_scan_edge_census.sh` — section "`run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)" (history file); since [SCANEDGE-SET] also section (7) (every edge's run-test bytes vs the head's transition row, via **scan_set_check.py**, a coprocess on the corpus sweep) and section (8) (set witnesses per machine, the one-class control's text pin, two negative controls).
 - `run_encoding_checks.sh` — section "[M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`" (history file)
 - `run_comment_escape.sh` — section "`run_comment_escape.sh` — pcrec-bench O-31 finding F1's regression net (2026-09-17)" (history file)
 - `run_ctext_ascii.sh` — [EMIT-BIDI]: a pattern of bidi controls and every C-text hazard, default and `-fcomments`, auto and forced VM: pure-ASCII artifact, clean under `-Wbidi-chars`, `.pattern` round-trips.

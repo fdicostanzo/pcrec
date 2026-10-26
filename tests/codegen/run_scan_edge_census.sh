@@ -88,6 +88,12 @@ PCREC=${PCREC:-build/pcrec}
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 fail=0; pass=0; checked=0
 FLOOR=11
+# [SCANEDGE-SET] section (7)'s non-vacuity floors: HALF of what the landing
+# tree measured (1,371 unbounded edges checked, 243 counting more than one
+# class, 2026-10-26), so a corpus edit does not read as a regression while a
+# sweep that stopped reaching the edges, or a set rule that lost its sets
+# (the one-class rule measures 0 multi-class edges), still does.
+SET_FLOOR_U=685; SET_FLOOR_M=121
 
 say()  { printf '%s\n' "$*"; }
 ok()   { pass=$((pass+1)); }
@@ -264,10 +270,26 @@ else
         | LC_ALL=C sort -u > "$TMP/pats"
 fi
 p1=0; p2=0; p2e=0; p3=0; npat=0
+# (7) [SCANEDGE-SET] rides this sweep's compile: every edge-bearing artifact
+# goes to tests/codegen/scan_set_check.py (one interpreter, a coprocess),
+# which holds each edge's run-test byte set to the machine's own transition
+# row read off the same artifact. Its header says what each half proves.
+coproc SETCHK { python3 tests/codegen/scan_set_check.py --serve; }
+su=0; sb=0; ss=0; sm=0; sart=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     npat=$((npat+1))
     pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/p.c" --pattern "$pat" >/dev/null 2>&1 || continue
+    if grep -q '\[OPT-5\] SCAN EDGE' "$TMP/p.c"; then
+        printf '%s\n' "$TMP/p.c" >&"${SETCHK[1]}"
+        IFS=' ' read -r v a b c d e <&"${SETCHK[0]}"
+        if [ "$v" = ok ]; then
+            sart=$((sart+1)); su=$((su+a)); sb=$((sb+b)); ss=$((ss+c)); sm=$((sm+d))
+            [ "$c" = 0 ] || say "FINDING [SCANEDGE-SET]   $c edge(s) not evaluated ($e): '$pat'"
+        else
+            bad "[SCANEDGE-SET] '$pat': $a $b $c $d $e"
+        fi
+    fi
     grep -qE 'RX_DFA_PREFILTER "(offset-set|run-pinned)' "$TMP/p.c" || continue
     p1=$((p1+1))
     grep -q 'rx_forward_seed_state' "$TMP/p.c" || continue
@@ -287,6 +309,14 @@ say "FINDING [K35]   P1 forward prefilter reseeds ............. $p1"
 say "FINDING [K35]   P2   ... and the machine has a seed ...... $p2   <- where (8) is live"
 say "FINDING [K35]   P2e    ... and it carries a scan edge .... $p2e"
 say "FINDING [K35]   P3       ... on a seedable head ........... $p3   <- must be 0"
+say "FINDING [SCANEDGE-SET] edge-bearing artifacts $sart: edges checked unbounded $su, bounded $sb, skipped $ss (a form not evaluable); $sm count more than one class"
+# A set rule whose multi-class edges vanished, or a checker that stopped
+# reading edges, would pass every comparison above on air (K35).
+if [ -z "${POP_PATTERNS:-}" ] && { [ "$su" -lt "$SET_FLOOR_U" ] || [ "$sm" -lt "$SET_FLOOR_M" ]; }; then
+    bad "[SCANEDGE-SET] only $su unbounded / $sm multi-class edges checked (floors $SET_FLOOR_U / $SET_FLOOR_M) -- the sweep is not reaching the edges"
+else
+    ok
+fi
 [ "$p3" -eq 0 ] && ok
 if [ "$p2" -eq 0 ]; then
     say "FINDING [K35] precondition (8) is UNREACHABLE on this corpus -- no machine"
@@ -340,6 +370,78 @@ for row in "${VEDGE[@]}"; do
         ok
     done
 done
+
+# (8) [SCANEDGE-SET] THE SET RULE'S WITNESSES, per machine. Each row is
+# `pattern;;flags;;machine=edges/multi ...` (`;;`, because `|` is pattern text): every machine that carries an edge,
+# how many, and how many of those count a SET of more than one class (the
+# edge comment names `classes a, b`), sorted by machine name; an empty list is
+# "no edge on any machine". Measured on the landing tree; before it every
+# multi-class count was absent (the one-class rule found none of these runs).
+#   `\S+@\S+`       the after-`x@y` run: `@` is its own class inside `\S`.
+#   `\s+$`          the trimreg case: the reverse walk's run states and the
+#                   `$`-lowered machine's; under -fno-rev-end the plain
+#                   reverse machine keeps its one-class edge and the forward
+#                   machine none (its run states carry an EOL view, (3)).
+#   `0x[0-9a-fA-F]+` the literal `0` splits the hex digits.
+#   `[a-z]+\.txt$`  reverse: `t`, `x` split `[a-z]`.
+#   `[a-z]+$`       the ONE-CLASS CONTROL: one edge, one class, and its
+#                   pcrec-side text pinned below (it must not move).
+#   `(?:[a-z]|[0-9]X){0,8}`, `(?:a|bc)*` the NEGATIVE controls: two live
+#                   classes going to DIFFERENT successors (`(?:a|bc)*`'s start
+#                   state: `a` stays, `b` leaves, the rest die), so no state
+#                   is scan-shaped. Non-capturing, so the artifact IS a DFA.
+SETW=(
+  '\S+@\S+;;;;anchored=1/1 forward=1/1 reverse=1/1'
+  '\s+$;;;;anchored=1/1 reverse=2/2'
+  '\s+$;;-fno-rev-end;;reverse=1/0'
+  '0x[0-9a-fA-F]+;;;;anchored=1/1 forward=1/1'
+  '[a-z]+\.txt$;;;;reverse=1/1'
+  '[a-z]+$;;;;reverse=1/0'
+  '(?:[a-z]|[0-9]X){0,8};;;;'
+  '(?:a|bc)*;;;;'
+)
+set_edges_on() {   # $1 artifact -> "machine=edges/multi ..." sorted
+    awk '
+        /\[OPT-5\] SCAN EDGE/ { pend = 1; ms = ($0 ~ /classes [0-9]/); next }
+        pend && /if \([a-z_]+_state ==/ {
+            m = $0; sub(/^[ \t]*if \(/, "", m); sub(/_state ==.*/, "", m)
+            n[m]++; if (ms) mm[m]++; pend = 0 }
+        END { for (k in n) printf "%s=%d/%d\n", k, n[k], mm[k] + 0 }
+    ' "$1" | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'
+}
+for row in "${SETW[@]}"; do
+    pat=${row%%;;*}; rest=${row#*;;}; flg=${rest%%;;*}; want=${rest#*;;}
+    if ! grep -RFqx -- "pattern $pat" tests/ 2>/dev/null; then
+        bad "STALE [SCANEDGE-SET] ROW: '$pat' is no longer a 'pattern' line under tests/"
+        continue
+    fi
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments $flg -o "$TMP/w.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+        bad "'$pat' $flg failed to compile: $(head -1 "$TMP/err")"
+        continue
+    fi
+    got=$(set_edges_on "$TMP/w.c")
+    if [ "$got" != "$want" ]; then
+        bad "[SCANEDGE-SET] '$pat' ${flg:-default}: edges '$got', expected '$want'"
+        continue
+    fi
+    ok
+done
+# The one-class control's pcrec-side edge text (the comment and the guard;
+# the run loop inside is the kit's), byte for byte as the one-class rule
+# emitted it before [SCANEDGE-SET].
+SETCTL='// [OPT-5] SCAN EDGE: every state a run of class 1
+// would pass IS this state, so count them here rather
+// than stepping the table once per byte.
+if (reverse_state == 4 && rewind_position > search_from && (unsigned)(subject[rewind_position - 1] - 97) <= 25u) {'
+if pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/w.c" --pattern '[a-z]+$' >/dev/null 2>&1; then
+    got=$(awk '/\[OPT-5\] SCAN EDGE/ { p = 1 } p { sub(/^[ \t]+/, ""); print; if (++k == 4) exit }' "$TMP/w.c")
+    if [ "$got" = "$SETCTL" ]; then ok
+    else bad "[SCANEDGE-SET] the one-class control '[a-z]+\$' moved its edge text: $(printf '%s' "$got" | tr '\n' '|')"
+    fi
+else
+    bad "the one-class control '[a-z]+\$' failed to compile"
+fi
 
 # (5) NON-VACUITY.
 if [ "$checked" -lt "$FLOOR" ]; then
