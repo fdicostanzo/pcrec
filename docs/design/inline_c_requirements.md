@@ -1079,6 +1079,8 @@ proposed) but requires:
 
 - **Q7 (2026-10-26): AGREED.** Generated names only (`RX_CAP_S(n)`, `RX_CAP_LEN(n)`, named-group constants), emitted around the user's code; no `$1` text substitution inside code; each embedded language's glue supplies its own form of the same names.
 
+- **Q8 (2026-10-26): no press work.** Frank: "Don't worry about the press. Just get the feature done. We'll rewrite the README on the next version bump." No README claim or survey re-run now.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
