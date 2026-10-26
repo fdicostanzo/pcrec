@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# ic1badvice: [INLINE-C] stage 1b sabotage rows on worktrees/ic1b with the once advice (lane ic1badvice): S1646-S1669 (design S-IC1..S-IC27 subset plus the guide and as-written rows; S1665/S1666 re-aimed onto the advice table), S1670-S1676 (the advice: verdict, witness, survey sites, lazy row, false witness, lookaround proof x2), S475/S496 (re-scoped to verbs, declared UNREACHED), S693 (the abi row, re-aimed 88 -> 89), and the five rows ic1bwritten re-anchored (S1071 S108 S499 S500 S908).
+# Re-created by lane ic1badvice (scripts/boxqueue add --name 561-ic1badvice-mech docs/dev/lanes/ic1badvice_mech_job). Declared not-before 2026-10-27T12:00.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+IDS="S1646 S1647 S1648 S1649 S1650 S1651 S1652 S1653 S1654 S1655 S1656 S1657 S1658 S1659 S1660 S1661 S1662 S1663 S1664 S1665 S1666 S1667 S1668 S1669 S1670 S1671 S1672 S1673 S1674 S1675 S1676 S475 S496 S693 S1071 S108 S499 S500 S908"
+case "${1:-}" in
+    --dry-run)
+        out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
+            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
+        n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+        [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
+        echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
+        echo "boxqueue: not-before 2026-10-27T12:00"
+        echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
+        echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (unexpected: 0, undetected: 0, unreached: 2, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+exec bash tests/mech/run_sabotage_matrix.sh $IDS
