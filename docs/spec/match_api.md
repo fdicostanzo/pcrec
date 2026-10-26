@@ -1783,8 +1783,10 @@ provenance line and in the `-fcomments` orientation block, a substitution
 template, a literal run — is written as ASCII only: a byte outside printable
 ASCII is spelled by number (`\xNN` in a comment, a fixed three-digit octal
 `\NNN` in a string literal), `\n` `\t` `\r` by name, and a comment-closing or
-comment-opening pair is split, so the artifact is pure ASCII and compiles
-clean under `-Wall -Wextra -Werror -Wbidi-chars` for any pattern.
+comment-opening pair is split. The emitters' own text (comment prose
+included) is ASCII too, so every byte of the artifact, `.c` and `.h`, is
+ASCII under every option, and it compiles clean under `-Wall -Wextra -Werror
+-Wbidi-chars` for any pattern.
 
 <a id="s6-1"></a>
 ### 6.1 `rx_info` is link-time data
