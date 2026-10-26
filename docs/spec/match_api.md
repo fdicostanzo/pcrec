@@ -3934,7 +3934,8 @@ differ, or a subroutine call; one inside an atomic group, a possessive
 quantifier or an ATOMIC lookaround that completes before the site is SEALED
 and not live. A non-atomic lookaround (`(?*...)`, `(?<*...)`) keeps its
 choice points live after it completes, so `(?*a+)(?C"x,once")a+c` is
-refused. The class is reported in `--emit-ir`'s `callouts` section
+refused, and so is `(?*a|b)(?C"x,once")c`: the rule reads the lookaround
+as written, however small its body. The class is reported in `--emit-ir`'s `callouts` section
 (`ir_listing.md`). Different start positions are different attempts; the
 tiered default's escalation (§10.9) re-runs the whole call, so every site
 fires again in the second run; and the iterator's empty-match retry (§3.8)
