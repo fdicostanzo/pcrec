@@ -206,7 +206,7 @@ fi
 # covered without editing pcrec's list or this one.
 if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -o "$WORK/abi.c" --pattern 'a(?C7)'; then
     nabi=0
-    for sym in $(grep -ohE '\brx_callout_[A-Za-z0-9_]+' "$WORK/abi.c" "$WORK/abi.h" | sort -u); do
+    for sym in $(grep -ohE '\brx_callout_[A-Za-z0-9_]+' "$WORK/abi.c" "$WORK/abi.h" | LC_ALL=C sort -u); do
         [ "$sym" = rx_callout_7 ] && continue
         nabi=$((nabi + 1))
         p="a(?C\"${sym#rx_callout_}\")"
@@ -286,6 +286,24 @@ if printf '%s\n' "$out" | grep -qP '\treq_set_maxoff\t.*\t97:0,98:unbounded\t'; 
 else
     bad "--emit-facts --callout 1:consume: want req_set_maxoff 97:0,98:unbounded, got: $(printf '%s\n' "$out" | grep req_set_maxoff)"
 fi
+# harness.manifest (rxt_format.md §6¶3-4): a bad line FAILS the file's
+# cases even when no driver needs the link; a good one runs them.
+mkdir -p "$WORK/mf"
+printf 'pattern ab\nm "ab" 0 2\n' > "$WORK/mf/t.rxt"
+printf 'int mf_x;\n' > "$WORK/mf/x.c"
+for m in 'link ../x.c' 'link x.c extra' 'link' 'bogus x.c' 'link x.c'; do
+    printf '%s\n' "$m" > "$WORK/mf/harness.manifest"
+    out="$(PCREC="$PCREC" "$TIMEOUT_BIN" 300 bash "$ROOT_DIR/tests/harness/run.sh" "$WORK/mf/" 2>&1)"
+    rc=$?
+    if [ "$m" = 'link x.c' ]; then
+        if [ $rc -eq 0 ]; then ok "harness.manifest 'link x.c' links and the file passes"
+        else bad "harness.manifest 'link x.c': want a pass, got exit $rc"; fi
+    elif [ $rc -ne 0 ] && printf '%s' "$out" | grep -q 'HARNESS FAILURE: harness.manifest'; then
+        ok "harness.manifest '$m' fails the file's cases"
+    else
+        bad "harness.manifest '$m': want a harness failure, got exit $rc"
+    fi
+done
 out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --emit-main -o "$WORK/r.c" --pattern 'a(?C1)' 2>&1)"
 if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'cannot define the binding rx_callout_1'; then
     ok "--emit-main refuses a callout pattern"
