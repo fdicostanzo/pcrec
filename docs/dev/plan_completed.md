@@ -6229,3 +6229,89 @@ Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on 
   completed (2026-10-26): merged 7234c2e86 (lanes emitbidi, emitbidifix, emitbidi2; landing lane emitbidiland); `pcrec_sb_ctext` (src/core/sb.c) is the one C-text escaper, emitted text is ASCII-only, abi 86 (85 stays reserved for the kit's S3, which renumbers when it lands); guard `tests/codegen/run_ctext_ascii.sh` (incl. emitter-literal scan) + mech S1620-S1622; follow-up: a kit request to make memfn/src's section-sign literals ASCII (none reach an artifact today); reports docs/dev/lanes/emitbidi_report.md, emitbidifix_report.md, emitbidi2_report.md
   refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
   A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.
+
+## Completed 2026-10-26 (lane closeout26: Active-row close-out; rows verbatim, a `completed` line added)
+
+- [BOXQUEUE] STATE:completed — ONE BOX-WIDE JOB QUEUE: jobs as scripts, exit codes say what next
+  filed: 2026-10-20 Frank
+  completed (2026-10-26): charter delivered. Merge b42c0e8f1 (2026-10-21, lane boxqueue: scripts/boxqueue, `TOOL: DONE rc=N` convention); the queue has run the box since (worktrees/.boxqueue/done and failed, e.g. jobs 622, 623, 800-main-emitbidi-landtest3, 600-main-fullsuite-20261027 pending); the kit's jobs (kit-s3-heavy) and the bench's overnight windows (710-bench-b142-part2, 720-bench-b142-tier2, via [BENCH-RESERVE] 415eade4d) run through it. Hardening landed as [WATCH-IDLE], [MONITOR-QUEUE], [MON-SCRIPT]; open: [BOXQUEUE-GATEFAIR].
+  status (2026-10-21): MERGED b42c0e8f1 (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template; bench told (I-155), kit told.
+  next: the first real queued jobs (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
+  refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/boxqueue; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md; docs/dev/lanes/boxqueue_report.md
+  A queue directory (pending/running/done/failed); each job an executable script, ordered by name prefix, owner in the name. One runner holds scripts/boxlock per job; the job's exit code decides: 0 done, 75 not ready, 76 requeue, 77 cancelled, else failed. Readiness lives at the top of each script before any side effect; snapshot at start; bounded not-ready answers; every pass logged. Shared by main, the kit and the bench; chainrun stage files become job batches.
+
+- [MONITOR-QUEUE] STATE:completed — THE RUN MONITOR MISSED EVENTS; ONE QUEUE WATCHER FOR A STANDING HAIKU SESSION
+  filed: 2026-10-24 manager, from the first full-suite run (both monitors missed events)
+  completed (2026-10-26): charter delivered. Lanes monwatch 88d274fe3 (watchrun reads both END shapes; queuewatch), montest 4062ef31b, monci d5f77228e, qwseed/qwquiet/qwstart/qwquiet2 (merges 07eb6c66c, 0fb34c66f, b11b69add, f50d6372e); first live use was job 624-main-axes (2026-10-25): both monitors reported the red correctly (journal 2026-10-25 session 126); then [MON-SCRIPT] 82abd6b87 made the monitor a script.
+  status (2026-10-24): landed (lane monwatch): watchrun reads both END shapes; fullsuite_job.sh --simulate; scripts/queuewatch (persistent state, one event per launch; every simulated scenario exactly once across relaunches); skill .claude/skills/pcrec-monitor
+  next: Frank starts the standing /pcrec-monitor session; its first live use is the owed test-axes re-run
+  refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
+  Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
+
+- [FLAG-SPELL] STATE:completed — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
+  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
+  completed (2026-10-26): merged 187608482 (lane flagfix; p_cat drops an empty with no reg stamp, so (?i)abc compiles as (?i:abc)); jobs 615 test, 617 mech green, main make test after both landings = job 622 GREEN 77/77 (2026-10-24), later 623 and 800-main-emitbidi-landtest3 green; the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly (tests/codegen/run_case_spelling_identity.sh). Not built, no row: the req.c run reset on an empty mid-CAT.
+  status (2026-10-24): landed 187608482 (flagfix): p_cat drops an empty with no reg stamp, (?i)abc == (?i:abc); jobs 615 test, 617 mech green
+  next: main's first full make test after the landings (owed, manager queues); then the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly; follow-up (not built): req.c run reset on an empty mid-CAT
+  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
+  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
+
+- [KNOW-SRC] STATE:completed — ONE KNOWLEDGE-SOURCE MODULE: shared loader, stamp and data-mover census
+  filed: 2026-10-14 Frank (endorsing panel r1's sibling-family finding msc2-9 and unlock U1)
+  completed (2026-10-26): K0-K3 merged (K2+K3 168a399c7, lane ksrc23: ksgen, canonical/decoded views, analyze --dump-doc, test-knowledge R1-R3/R5, the emit_sweep `--data` census tool); the measures kind added by [MEASURE-SET] M0 (813f43ec8); the remaining kinds ([TABLE-JUDGE] picks, the [REGIME-EVAL] parameter table) ride their own rows. Report docs/dev/lanes/ksrc23_report.md.
+  status (2026-10-17): K0-K3 DONE (K2+K3 merged s115: ksgen, canonical/decoded views, analyze --dump-doc, test-knowledge R1-R3/R5; 0 movers, make test 72/72, mech 41 DETECTED + S1029 expected UNREACHED); next: [MEASURE-SET] M0 adds the measures kind
+  next: land lane/int3; then K2 (ksgen analysis, gen-findings) + K3 (canonical/decoded views, spec hunks) in a fresh lane; ahead of [MEASURE-SET]
+  refs: docs/dev/reviews/2026-10-14-r1-measure-sets.md (msc2-9, msc1 U1/U2); docs/design/measure_sets.md; decisions D162 D166; [MEASURE-SET] [TABLE-JUDGE] [LIST-TABLES]
+  One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
+  ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
+  KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
+
+## Status lines superseded 2026-10-26 (lane closeout26: Active rows whose next step had happened; verbatim)
+
+### [GATE-RUNS] — superseded 2026-10-26, verbatim
+
+status (2026-10-23): schedule ruled (D177); queueable job scripts/fullsuite_job.sh and docs/dev/full_suite_ledger.md built; no run yet, triggers far past
+
+### [GATE-RUNS] — superseded 2026-10-26, verbatim
+
+next: first run tonight after the iterator landing, queued by the manager for the window; copy its summary.txt into the ledger
+
+### [UPROP-MORE] — superseded 2026-10-26, verbatim
+
+status (2026-10-24): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; design uprop_more.md, D178
+
+### [UPROP-MORE] — superseded 2026-10-26, verbatim
+
+next: main's first full make test after the landings (owed); a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
+
+### [FINDALL-NEXT] — superseded 2026-10-26, verbatim
+
+next: I1's validation, then merge; I4 (`_next_n`; RX_FOREACH dropped D175, abi 84, findall_iter_i2.md rev 2) BUILT on lane/i2build, validation + I4-time queued (i2build_report.md); rev 3's stage numbers kept: I2 the kit's `st`, I3 `pair-hits`, I4 next_n; internal batch withdrawn
+
+### [DD-11.5] — superseded 2026-10-26, verbatim
+
+status (2026-10-21): part 2 done (P2e, abi 81); part 1: kit Z1+Zk merged; X0 passed on kit_proof rev 2.2; main Z2 BUILT on lane/z2build (the span_facts slice, the harness-routed `cover` row, zero default movers by the light probes), its heavy checks queued (boxqueue 540-543-z2build)
+
+### [DD-11.5] — superseded 2026-10-26, verbatim
+
+next: merge Z2 on its queued verdicts (docs/dev/lanes/z2build_report.md), then the timing look and B1 after the kit's B4 (kit_proof.md §7)
+
+### [ENTRY-TABLE] — superseded 2026-10-26, verbatim
+
+next: merge lane/e1 on its owed make test, mech solo rows and test-axes arm; then E1′ cells, each by its own ruled diff with a size and a time measurement
+
+### [COMPOUND] — superseded 2026-10-26, verbatim
+
+status (2026-10-12): session 110 close: B0-B2 MERGED 2a54c3e71 (zero movers); compound.md rev 2.2 (callout alignment, D163 add. 4-6); B4 (driver) BUILT on lane/cpb4 8fbc80081 (abi 76->77; 97 admitted by id, 0 bench; G1-G7 green…
+
+### [TT-JTUNE] — superseded 2026-10-26, verbatim
+
+status (2026-10-08): FILED+STARTED 2026-10-08, lane ttune2, admin column; Frank: "our test suites sometimes go serial but we have 16 procs ... it's also possible that we oversaturate the procs ... can we just have it use the natural testing process? we run these all the time, just have it interject then"
+
+### [M4-SUBST] — superseded 2026-10-26, verbatim
+
+status (2026-10-24): LANDED on main 9ae59f5d4 (core, interface, extended forms; review r1 fixes; D180; job 623 green 79/79)
+
+### [M4-SUBST] — superseded 2026-10-26, verbatim
+
+next: the runtime-selection discussion with Frank (owner.md); bench subst mini-bench pins 9ae59f5d4 (I-158); filed follow-ups [SUBST-SPEED] [SUBST-CLEANUP] [CASE-COMPAT]
