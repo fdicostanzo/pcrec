@@ -262,6 +262,72 @@ r=$(stuck_case "$QW" young 60); [ -z "$r" ] && ok "PENDING-STUCK: queued 20000 s
 r=$(stuck_case "$QW" old 1500)
 case $r in "queuewatch: PENDING-STUCK 700-dep pending for 15"??"s, nothing running (queued 200"??"s ago, ready for 15"??"s)|") ok "PENDING-STUCK: ready for 1500 s is stuck once, the line gives the ready age and the queued age" ;; *) bad "old-ready: $r" ;; esac
 
+# [qscripts 2026-10-26] 4. a DELIBERATE cancel is its own event class: CANCELLED (never JOB-DONE, never RED). The miss: a manager's
+# `boxqueue cancel` of a pending job read as `RED ... outcome=cancelled (never ran)`; a running job stopped by the owner read as rc=143.
+# Hand-built queue.log lines (the shapes boxqueue writes), seeded empty, then the two ends appended.
+cancel_case() { # cancel_case WATCHER TAG: the lines seen after the seed, | separated
+    local q=$T/qc$2 st=$T/stc$2 l out="" i
+    mkdir -p "$q/pending" "$q/running" "$q/done/20261026T000000-100-test-cx" "$q/failed"; : > "$q/queue.log"
+    "$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 > /dev/null 2>&1
+    { echo "== job 100-test-cx START owner=test cap=60 expect=none 2026-10-26T00:00:00-04:00"
+      echo "== job 100-test-cx END rc=143 outcome=cancelled reason=CANCELLED-BY-OWNER (rc=143, cancelled by owner command) wall=5s verdict=GREEN 2026-10-26T00:00:05-04:00 :: $q/done/20261026T000000-100-test-cx"
+      echo "  job 200-test-cn ENDED WITHOUT RUNNING outcome=cancelled :: cancelled by hand :: $q/done/x"
+      echo "  job 300-test-fn ENDED WITHOUT RUNNING outcome=failed :: DRY-RUN-FAILED rc=1 at START: x :: $q/failed/x"; } >> "$q/queue.log"
+    for i in 1 2 3 4 5 6; do
+        l=$("$TO" 30 bash "$1" --queue "$q" --state "$st" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 2>&1)
+        case $l in *RUNNER-DEAD*|*CAP*) ;; *) out="$out${l%% :: *}|" ;; esac
+    done
+    echo "$out"
+}
+r=$(cancel_case "$QW" ok)
+[ "$r" = "queuewatch: JOB-START 100-test-cx owner=test 2026-10-26T00:00:00-04:00|queuewatch: CANCELLED 100-test-cx rc=143 wall=5s by-owner|queuewatch: CANCELLED 200-test-cn (never ran)|queuewatch: JOB-DONE 300-test-fn outcome=failed (never ran)|" ] \
+    && ok "CANCELLED: an owner-stopped running job (by-owner) and a cancelled pending job are CANCELLED lines, never JOB-DONE; a failed never-ran job stays JOB-DONE" || bad "cancel class: $r"
+
+# [qscripts] 5. a BENCH RESERVATION's placeholder idles by design (the bench's work is its own process tree), so QUIET reads the bench's own
+# files, parsed: params log=, its last `chain pid/pgid N, output P` line, N's tree CPU, and the growth of both files.
+resv_case() { # resv_case WATCHER TAG KIND(cpu|grow|static|nolog): QUIET lines over ~12 s with --quiet-sec 4
+    local q=$T/qr$2 st=$T/str$2 bl=$T/qr$2/bench.log bo=$T/qr$2/bench.chain jp="" wp="" r
+    mkdir -p "$q/running/750-bench-w1" "$q/pending" "$q/done" "$q/failed" "$q/.bench"; : > "$q/queue.log"
+    echo "== job 750-bench-w1 START owner=bench cap=60 expect=window=0 2026-10-26T00:00:00-04:00" >> "$q/queue.log"
+    echo "bench window w1: RUNNING pid 1, waiting on $bl" > "$q/running/750-bench-w1/job.log"; echo "pid=1" > "$q/running/750-bench-w1/started"
+    printf 'prio=750\nname=w1\nlog=%s\n' "$bl" > "$q/.bench/bench-w1.params"; : > "$bo"
+    case $3 in
+        cpu) setsid bash -c 'bash -c "while :; do :; done" & wait' > /dev/null 2>&1 9>&- & jp=$!
+             echo "2026-10-26T00:00:00-04:00 chain pid/pgid $jp, output $bo" > "$bl" ;;
+        grow) setsid sleep 60 > /dev/null 2>&1 9>&- & jp=$!
+              echo "2026-10-26T00:00:00-04:00 chain pid/pgid $jp, output $bo" > "$bl"
+              ( for _ in $(seq 14); do echo tick >> "$bo"; sleep 1; done ) 9>&- > /dev/null 2>&1 & wp=$! ;;
+        static) setsid sleep 60 > /dev/null 2>&1 9>&- & jp=$!
+                echo "2026-10-26T00:00:00-04:00 chain pid/pgid $jp, output $bo" > "$bl" ;;
+        nolog) : ;;
+    esac
+    r=$(fa_run "$1" "$q" "$st" 10 --quiet-sec 4)
+    [ -n "$wp" ] && wait "$wp" 2>/dev/null; [ -n "$jp" ] && bash "$here/safekill" "$jp" > /dev/null 2>&1
+    echo "$r"
+}
+r=$(resv_case "$QW" cpu cpu); [ -z "$r" ] && ok "QUIET: a bench reservation whose placeholder idles but whose chain pid/pgid (read from the bench log) burns CPU is not quiet" || bad "busy bench chain read as quiet: $r"
+r=$(resv_case "$QW" grow grow); [ -z "$r" ] && ok "QUIET: a reservation whose bench chain output file grows is not quiet" || bad "growing bench output read as quiet: $r"
+r=$(resv_case "$QW" stat static)
+case $r in "queuewatch: QUIET 750-bench-w1 no log growth or CPU for "?"s|") ok "QUIET: a reservation whose bench log, chain output and chain CPU are all still goes QUIET, once (control)" ;; *) bad "reservation static control: $r" ;; esac
+r=$(resv_case "$QW" nolog nolog)
+case $r in "queuewatch: QUIET 750-bench-w1 no log growth or CPU for "?"s|") ok "QUIET: a reservation whose bench log is unreadable falls back to the placeholder's own signals (QUIET once, no error)" ;; *) bad "unreadable bench log: $r" ;; esac
+
+# [qscripts R1] a job held by its OWN declared wait (`not-ready: not before ...`, `not-ready: waiting on KEY`) is not stuck; it is, once it has
+# outlived its declared patience (boxqueue marks QUEUE/.state/KEY.reported). The miss: 600-main-fullsuite-20261027 (a time gate, patience none).
+gate_case() { # gate_case WATCHER TAG REPORTED(0|1) ANSWER: queued 20000 s ago, last answer ANSWER, nothing running
+    local q=$T/qg2$2 now; now=$(date +%s); mkdir -p "$q/pending" "$q/running" "$q/done" "$q/failed" "$q/.state"
+    { echo "== add 600-main-gate cap=60 patience=none expect=none $(date -d "@$((now - 20000))" -Iseconds)"
+      echo "== pass 1 START $(date -d "@$((now - 19000))" -Iseconds) pending=1 box=free"; echo "  pass 1 600-main-gate $4 (1ms)"; } > "$q/queue.log"
+    : > "$q/pending/600-main-gate"; touch -d "@$((now - 20000))" "$q/pending/600-main-gate"; echo "$4" > "$q/.state/main-gate.answer"
+    [ "$3" = 1 ] && : > "$q/.state/main-gate.reported"
+    fa_run "$1" "$q" "$T/stg2$2" 2 --stuck-sec 600
+}
+r=$(gate_case "$QW" gate 0 "not-ready: not before 2026-10-27 00:05 (since 2026-10-26T00:00:00-04:00)"); [ -z "$r" ] && ok "PENDING-STUCK: a time-gated job (not-ready: not before ..., patience none) 20000 s in the queue is waiting by declaration, not stuck" || bad "time gate read as stuck: $r"
+r=$(gate_case "$QW" dep 0 "not-ready: waiting on main-build (pending) (since x)"); [ -z "$r" ] && ok "PENDING-STUCK: a dependency wait (not-ready: waiting on KEY) is not stuck either" || bad "dependency wait read as stuck: $r"
+r=$(gate_case "$QW" rep 1 "not-ready: not before 2026-10-27 00:05 (since x)")
+case $r in "queuewatch: PENDING-STUCK 600-main-gate pending for 20"???"s, nothing running|") ok "PENDING-STUCK: the same wait past its DECLARED patience (the .reported mark) is stuck, once" ;; *) bad "past-patience wait: $r" ;; esac
+r=$(gate_case "$QW" rdy 0 "waiting on pid=1 label=h"); case $r in "queuewatch: PENDING-STUCK 600-main-gate "*) ok "PENDING-STUCK: a READY job the box does not start (lock held) is still stuck (control)" ;; *) bad "ready-but-held control: $r" ;; esac
+
 # PLANTS: a scratch copy of the watcher with one bug each; the matching case must go red
 plant() { # plant NAME FROM TO: echo the path of the patched copy
     local d=$T/plant_$1; mkdir -p "$d"
@@ -310,5 +376,18 @@ P9=$(plant queuedage '[ -n "$rdy" ] && since=$rdy ;; esac' ': ;; esac') || bad "
 [ -n "$P7" ] && { r=$(fa_run "$P7" "$T/qfnostart" "$T/stfp7" 8 --quiet-sec 3); [ -n "$r" ] && ok "PLANT started-not-required: the lock-waiting job reads QUIET, so the unstarted case catches it" || bad "PLANT nostarted not caught"; }
 [ -n "$P8" ] && { r=$(logcase "$P8" p8 grow); [ -n "$r" ] && ok "PLANT job.log-only growth: the perfrun-shaped job reads QUIET, so the job.log.make case catches it" || bad "PLANT joblogonly not caught"; }
 [ -n "$P9" ] && { r=$(stuck_case "$P9" p9 60); [ -n "$r" ] && ok "PLANT age-from-queueing: the dependency-waiter reads stuck, so the ready-age case catches it" || bad "PLANT queuedage not caught"; }
+# S1625: queuewatch has no CANCELLED class (outcome=cancelled falls to JOB-DONE again): the cancel case goes red
+P10=$(plant nocancelclass 'if [[ $line == *" outcome=cancelled "* ]]; then
+                    [ -n "$dir" ]' 'if false; then
+                    [ -n "$dir" ]') || bad "plant S1625 did not land"
+[ -n "$P10" ] && { r=$(cancel_case "$P10" p10); case $r in *"CANCELLED 100-test-cx"*) bad "PLANT S1625 not caught: $r" ;; *) ok "PLANT S1625 (no CANCELLED class for a run that ended cancelled): it reads as JOB-DONE again, the cancel case goes red" ;; esac; }
+# S1626: the reservation's own signals dropped (the placeholder alone is read, the old behaviour): a busy bench chain reads QUIET
+P11=$(plant resvblind 'if [ -n "$bpid" ] && [ -d "/proc/$bpid" ]; then bt=$(tree_cpu "$bpid"); jt=$((jt + ${bt:-0})); fi' ':') || bad "plant S1626 did not land"
+[ -n "$P11" ] && { r=$(resv_case "$P11" p11 cpu); [ -n "$r" ] && ok "PLANT S1626 (the chain's CPU not sampled): the busy bench reads QUIET, the 5-cpu case goes red" || bad "PLANT S1626 not caught"; }
+P12=$(plant resvnogrow '[ -n "$blog" ] && stat -c '"'"'%n %s %Y'"'"' "$blog" ${bout:+"$bout"} 2>/dev/null' ':') || bad "plant S1627 did not land"
+[ -n "$P12" ] && { r=$(resv_case "$P12" p12 grow); [ -n "$r" ] && ok "PLANT S1627 (bench log/output growth not read): the growing bench reads QUIET, the 5-grow case goes red" || bad "PLANT S1627 not caught"; }
+# (R1; no S id was issued for it) the declared-wait rule dropped: the time-gated job reads PENDING-STUCK again
+P13=$(plant declaredwait 'waits=0; case $ans in not-ready:*|READY-HUNG*) [ -e "$Q/.state/$k.reported" ] || waits=1 ;; esac' 'waits=0') || bad "plant declaredwait did not land"
+[ -n "$P13" ] && { r=$(gate_case "$P13" p13 0 "not-ready: not before 2026-10-27 00:05 (since x)"); [ -n "$r" ] && ok "PLANT declared-wait rule dropped: the time-gated job reads stuck, the R1 case goes red" || bad "PLANT declaredwait not caught"; }
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

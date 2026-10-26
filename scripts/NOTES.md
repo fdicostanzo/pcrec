@@ -141,3 +141,8 @@ docs/testing.md ("Tiered testing", "Emitter byte-neutrality sweep", "S3 triple-s
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/scripts.md
 
 See also NOTES.md in this directory (history, lessons, rationale, moved detail).
+
+## qscripts (2026-10-26)
+`boxqueue: size NAME=N` (a dry run's measured population; cap scales past its hand constant from the same KEY's green runs' seconds-per-unit, never lowered,
+[EXPECT-PREFLIGHT]); `boxqueue cancel KEY` of a RUNNING job = marker + safekill, ends outcome=cancelled, queuewatch says CANCELLED (never RED); queuewatch QUIET on a
+bench reservation reads the bench's own log and chain pid (parsed, BD2). Report: docs/dev/lanes/qscripts_report.md.
