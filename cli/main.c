@@ -1058,37 +1058,20 @@ static void mode_admits_note(const char *a, CliUnadmitted *u)
  * block — and changes nothing else: both callers get the same grammar, the
  * same values and the same refusals. `u` (NULL for a config block, which
  * no compile-less mode reads) collects the options the modes do not admit. */
-/* [INLINE-C] 1b one numbered callout's declaration, `N<sep>attrs`: N a
- * decimal 0-255, then `sep` (`:` on the command line, whitespace in a
- * `.rxt` `callout` line) and the comma-separated attribute list, which may
- * be empty. The list's GRAMMAR (which attributes exist) is the compiler's
- * (`pcrec_callout_attrs`); this reads the shape. 0, or 1 with a diagnostic. */
+/* [INLINE-C] 1b one numbered callout's declaration, `N<sep>ATTRS`, read by
+ * the library's one shape reader (`pcrec_callout_decl_read`, which the `.rxt`
+ * `callout` line's reader also calls); which attributes exist is the
+ * compile's question. The echo of the value is escaped (`pcrec_sb_text`):
+ * no control byte reaches the terminal. 0, or 1 with a diagnostic. */
 static int cli_callout_decl(const char *v, char sep, PcrecCalloutDecl *d)
 {
-    int n = 0;
-    const char *q = v;
-    if (*q < '0' || *q > '9') goto bad;
-    while (*q >= '0' && *q <= '9') {
-        n = n * 10 + (*q++ - '0');
-        if (n > 255) goto bad;
-    }
-    if (sep == ':') {
-        if (*q != ':') goto bad;
-        q++;
-    } else {
-        if (*q && *q != ' ' && *q != '\t') goto bad;
-        while (*q == ' ' || *q == '\t') q++;
-    }
-    for (const char *r = q; *r; r++)
-        if (!((*r >= 'a' && *r <= 'z') || *r == ','))
-            goto bad;
-    d->num = n;
-    d->attrs = q;
-    return 0;
-bad:
+    if (pcrec_callout_decl_read(v, sep, d)) return 0;
+    StrBuf b = { 0 };
+    pcrec_sb_text(&b, v);
     cli_err("a callout declaration is N%sATTRS (N a number 0-255, ATTRS a "
             "comma-separated list such as consume,once; got '%s')",
-            sep == ':' ? ":" : " ", v);
+            sep == ':' ? ":" : " ", b.p ? b.p : "");
+    pcrec_sb_free(&b);
     return 1;
 }
 
@@ -2759,7 +2742,11 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            char *text = pcrec_emit_facts(pattern, &opt, encs, nenc, &err);
+            const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED,
+                                     .callout_decls = st.callouts,
+                                     .ncallout_decls = st.ncallouts };
+            char *text = pcrec_emit_facts(pattern, &opt, &in, encs, nenc,
+                                          &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
@@ -2787,6 +2774,14 @@ static int cli_dispatch(CliState st)
         }
         if (!pattern) {
             cli_err("--count-groups needs a pattern");
+            return 1;
+        }
+        /* [INLINE-C] 1b the group count reads no attribute, so a numbered
+         * callout's declaration has nothing to apply to here: refused rather
+         * than silently dropped (cli.md §1.21). */
+        if (st.ncallouts) {
+            cli_err("--callout applies to a compile, --emit-ir and "
+                    "--emit-facts; --count-groups reads no callout attribute");
             return 1;
         }
         pcrec_error err;

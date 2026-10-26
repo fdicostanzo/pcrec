@@ -698,6 +698,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `(?*a)` | `lookaround` | §7.4 |
 | `(?#...)` | `comments` | §8.1 |
 | `(?C1)` | `callouts` | §7.11 |
+| `(?Cx)` |  | §7.11 |
 | `(?\|...)` | `branch-reset` | §8.1 |
 | `(?(1)a\|b)` | `conditionals` | §8.1 |
 | `(?(DEFINE)(?<w>a))` | `recursion` | §7.7 |

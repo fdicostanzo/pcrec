@@ -348,6 +348,8 @@ fi
 # hand from the patterns; the answers are libpcre2 10.46's
 # (tests/recursion/k69.rxt). Sabotage S318 (every call nullable) and S319
 # (no call nullable) each turn one side red.
+# [INLINE-C] 1b: `a(?C1)b` witnesses the `callout` bit (a check site:
+# zero-width, so neither nullable nor empty-admitting through it).
 # [UCP] U2: the byte lookaround row was `a?(?=b)`; a one-character body is
 # T3's context node now (no `lookaround` kind — the prefilter reads it
 # exactly), so the witness is two characters wide to stay a lookaround.
@@ -364,6 +366,7 @@ printf '%s\n' \
     'E1W	utf8	(?>\x{3b1}|\x{3b1}b)c	atomic	no	no' \
     'E1W	utf8	(?=\x{3b1})a*	lookaround	yes	yes' \
     'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no	no' \
+    'E1W	byte	a(?C1)b	callout	no	no' \
     'E1W	byte	(a|(?1))	linked_call,live_capture	no	no' \
     'E1W	byte	(a)?(?1)	live_capture	no	no' \
     'E1W	byte	(?:(a)|)(?1)	live_capture	no	no' \
@@ -395,7 +398,10 @@ while IFS=$'\t' read -r _ enc pat wkinds wnull wadmit; do
     [ "$gn" = "$wnull" ]  || ebad="$ebad $enc '$pat': nullable [$gn], by hand [$wnull];"
     [ "$ga" = "$wadmit" ] || ebad="$ebad $enc '$pat': empty_admits [$ga], by hand [$wadmit];"
 done < "$WORKDIR/e1w"
-nbits="$(grep -cE '^[[:space:]]*PF_KIND_[A-Z_]+[[:space:]]*=' "$HDR")"
+# The bits are the rows of facts.h's `PF_KIND_ROWS` X-list (one `X(NAME,
+# "name")` row per bit since lane ic1bfix, 2026-10-26; the enum is generated
+# from it), so the population is counted off those rows.
+nbits="$(grep -cE '^[[:space:]]*X\([A-Z_]+,[[:space:]]*"' "$HDR")"
 ncov="$(grep -v '^none$' "$WORKDIR/e1kinds" | LC_ALL=C sort -u | wc -l | tr -d ' ')"
 echo "REACH: $nwit E1 witness(es), $nlow under utf8 with a class the lowering rewrites; $ncov of $nbits PF_KIND_* bit(s) witnessed"
 if [ "$nwit" -eq 0 ] || [ "$nlow" -eq 0 ] || [ "$nbits" -eq 0 ]; then

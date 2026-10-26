@@ -3792,24 +3792,24 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
         }
         if (tok_is(tok, "callout")) {
             /* [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
-             * attributes (docs/spec/rxt_format.md §1.1). The SHAPE is
-             * checked here (N 0-255, a lower-case comma list); which
-             * attributes exist, and whether N names a site, are the
-             * compile's (src/opt/callout.c), which sees the pattern. */
+             * attributes (docs/spec/rxt_format.md §1.5¶13a). The SHAPE is
+             * checked here by the one shape reader `--callout` also uses
+             * (`pcrec_callout_decl_read`: N 0-255, whitespace, a non-empty
+             * lower-case comma list), so a line this reader accepts is one
+             * the CLI accepts; which attributes exist, and whether N names a
+             * site, are the compile's (src/opt/callout.c), which sees the
+             * pattern. The echo is escaped: no control byte reaches the
+             * terminal. */
             const char *v = value_trimmed(&p, tok);
-            const char *q = v;
-            int n = 0, ok = *q >= '0' && *q <= '9';
-            while (ok && *q >= '0' && *q <= '9')
-                if ((n = n * 10 + (*q++ - '0')) > 255) ok = 0;
-            if (ok && *q && *q != ' ' && *q != '\t') ok = 0;
-            for (; ok && *q; q++)
-                if (!((*q >= 'a' && *q <= 'z') || *q == ',' || *q == ' ' ||
-                      *q == '\t'))
-                    ok = 0;
-            if (!ok) {
+            PcrecCalloutDecl d;
+            if (!pcrec_callout_decl_read(v, ' ', &d)) {
+                StrBuf eb = { 0 };
+                pcrec_sb_text(&eb, v);
                 rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'callout' wants a "
                          "callout number 0-255 and its attributes, e.g. "
-                         "'callout 1 consume,once' (got '%s')", v);
+                         "'callout 1 consume,once' (got '%s')",
+                         eb.p ? eb.p : "");
+                pcrec_sb_free(&eb);
                 goto fail;
             }
             if (!block->callouts) {

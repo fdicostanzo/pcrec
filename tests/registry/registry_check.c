@@ -345,7 +345,17 @@ static void check_wellformed(void)
                     bool same_tail = (!rows[j].tail && !r->tail) ||
                                      (rows[j].tail && r->tail &&
                                       strcmp(rows[j].tail, r->tail) == 0);
-                    if (same_tail)
+                    /* [INLINE-C] 1b TWO ROWS ONE RECOGNISER APART: a pair
+                     * that shares (sel, tail) is still told apart when a
+                     * recogniser of its own answers the text (the module
+                     * `callouts` row and its malformed complement on `(?C`:
+                     * well-formed shape vs everything else). Such a pair is
+                     * not a declaration defect; whether its recognisers ever
+                     * tie is the no-ambiguity sweep's question below, which
+                     * asks every (kind x selector x text) the engine's own
+                     * way, the no-text question included. */
+                    bool told_apart = rows[j].recognise || r->recognise;
+                    if (same_tail && !told_apart)
                         bad("%s: rows %zu and %zu both claim byte '%c' with tail %s%s%s "
                             "— indistinguishable, so lookup answers whichever comes first",
                             kn, j, i, r->sel,
@@ -625,8 +635,10 @@ static void check_wellformed(void)
      * than RS_BASE (registry.c's own header comment on the row). */
     /* 139 -> 142 ([UCP] U0, 2026-09-28): module `ucp`'s three `(*` name
      * rows, `(*UCP)`, `(*UTF)` and `(*UTF8)`. */
-    if (total != 142) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 142. If you added or "
+    /* 142 -> 143 ([INLINE-C] stage 1b, 2026-10-26): the malformed `(?Cx)`
+     * row, REJECTED in every module state beside module `callouts`' row. */
+    if (total != 143) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 143. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1913,12 +1925,14 @@ static void check_class_ports(void)
      * scalar class ports (the literal letter `g`) were already counted. */
     /* [UCP] U0: ATOM PORTS 92 -> 94, module `ucp`'s `(*UTF)`/`(*UTF8)` name
      * rows sharing `pcrec_ucpport_utf`; U1: 94 -> 95, `(*UCP)`'s own port. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 95)
+    /* [INLINE-C] stage 1b: ATOM PORTS 95 -> 96, module `callouts`' `(?C`
+     * row gains its producer `pcrec_coport_callout`. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 96)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (95: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (96: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
@@ -1929,7 +1943,8 @@ static void check_class_ports(void)
             "TWENTY-FOUR recursion rows over THREE ports since [DD-14] wave "
             "B+C, the two \\g< / \\g' rows sharing `pcrec_brport_g` since "
             "[DD-14] wave D, and the `(?(DEFINE)` row's own port since "
-            "[DD-14] wave F). A deliberate move edits this check IN THE SAME "
+            "[DD-14] wave F, and module `callouts`' `(?C` row since [INLINE-C] "
+            "stage 1b). A deliberate move edits this check IN THE SAME "
             "CHANGE; a silent one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
         ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 92 atom "
@@ -2314,6 +2329,12 @@ static void check_engine_capability(void)
          * `select_engine.c` puts in `why` — which for the relative family
          * means the witness and the name are the same string (`(a)(?-1)`), and
          * for `(?N)` means the witness must supply N groups. */
+        /* [INLINE-C] stage 1b MODULE `callouts`' ROW. A callout calls user
+         * code at its site with a view of the path's groups and position,
+         * which no DFA state can carry or make a call from; capture-free,
+         * so nothing but the row's stamp forces the VM, and the refusal
+         * must name the row's own `syntax`. */
+        { RK_GROUP, 'C', NULL, "callouts",  "a(?C1)b",      "(?C1)" },
         { RK_GROUP, 'R', NULL, "recursion", "a(?R)?b",      "(?R)" },
         { RK_GROUP, '0', NULL, "recursion", "a(?0)?b",      "(?0)" },
         { RK_GROUP, '1', NULL, "recursion", "(a)(?1)",      "(?1)" },
@@ -2530,10 +2551,14 @@ static void check_engine_capability(void)
      * since its producer is that same direct `p_atom` test rather than a
      * doorway dispatch — so it cannot be `wired` and this loop must not
      * demand a witness for it, same reasoning as the nine index rows above. */
-    if (qualifying != 76 || wired != 62 || built_wired != 62)
+    /* [INLINE-C] stage 1b: `wired`/`built_wired` 62 -> 63, `qualifying`
+     * UNMOVED at 76 -- module `callouts`' `(?C` row was already RS_MODULE and
+     * VM_ONLY (planned since [M4-CALLOUTS] step 1); it gains its producer and
+     * builds. Its witness is in the table above. */
+    if (qualifying != 76 || wired != 63 || built_wired != 63)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 76, 62 "
-            "and 62 -- the VM_ONLY population, its producer set or its built "
+            "have a wired producer and %d of THOSE are BUILT, expected 76, 63 "
+            "and 63 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
         bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
@@ -3098,9 +3123,12 @@ static void check_built_status_defects(void)
      * asks EVERY encoding now, so `(*UTF)`/`(*UTF8)`, which compile under
      * `-e utf8`, read `built`. No other row moves (measured: the
      * --list-syntax diff is those two rows and the header line). */
-    else if (checked != 142 || built != 114 || unbuilt != 12 || na != 16)
+    /* 142 = 114 + 12 + 16 -> 143 = 115 + 11 + 17 ([INLINE-C] stage 1b):
+     * module `callouts`' `(?C1)` row is built (unbuilt -> built), and the new
+     * REJECTED malformed `(?Cx)` row is n/a. */
+    else if (checked != 143 || built != 115 || unbuilt != 11 || na != 17)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 142 = 114 + 12 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 143 = 115 + 11 + 17. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3316,9 +3344,11 @@ static void check_families(void)
      * above it). `multi`/`members_in_multi` are untouched. */
     /* 101/12/50 -> 103/13/52 ([UCP] U0): `(*UCP)` is a family of one and
      * `(*UTF)`+`(*UTF8)` a family of two, both self-primary verb names. */
-    if (families != 103 || multi != 13 || members_in_multi != 52)
+    /* 103 -> 104 ([INLINE-C] stage 1b): the malformed `(?Cx)` row is a
+     * family of one (family == NULL). */
+    if (families != 104 || multi != 13 || members_in_multi != 52)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 103 / 13 / 52. The index "
+            "member, %d members in those -- expected 104 / 13 / 52. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {

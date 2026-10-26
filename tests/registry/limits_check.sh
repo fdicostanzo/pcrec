@@ -379,7 +379,12 @@ done <<< "$anchored"
 #     `CandRecover.act` carries (SEARCH_FROM / END_MINUS_W / LANDING /
 #     REVERSE), CAND_FIN_REPORT's shape on the RECOVER slot: its `= 1`
 #     reserves 0 for a zero-initialised payload. A tag ordinal), and
-#     CAND_ASKF_EXISTS / _PROVEN0 / _LIBC_FREE / _INCLUDES / _PROVEN_PREV (src/gen/emit_dfa.c,
+#     CO_NAME / CO_CLASS_ONCE_PER_MATCH (src/core/internal.h, [INLINE-C]
+#     1b — the first member of a callout site's binding row tag and of its
+#     firing class; the same `= 1` reserving 0 for a zero-initialised node,
+#     so a site the parse or the sites pass never wrote matches no row. Tag
+#     ordinals, recorded by lane ic1bfix: lane ic1b left them undispositioned),
+#     and CAND_ASKF_EXISTS / _PROVEN0 / _LIBC_FREE / _INCLUDES / _PROVEN_PREV (src/gen/emit_dfa.c,
 #     [MEMFN] R17-b' B1, lane fdb1 — the bits of `CandNode.kfields`, which
 #     class fields a slot's kit ask may read: a bit set, 1/2/4/8 forced by
 #     being one bit each; nothing is measured against them).
@@ -581,6 +586,8 @@ CAND_ASKF_LIBC_FREE
 CAND_ASKF_INCLUDES
 CAND_ASKF_PROVEN_PREV
 CRA_SEARCH_FROM
+CO_NAME
+CO_CLASS_ONCE_PER_MATCH
 PCREC_PART_NEED_SEARCH
 PCREC_PART_NEED_MATCH_CAPS
 PCREC_PART_NEED_NEXT_POS

@@ -270,16 +270,33 @@ typedef struct {
 
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
- * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
+ * (src/facts/kinds.c). A bit exists only where a pass asks it at the root.
+ * ONE ROW PER BIT, in bit order: the bit's name and its `kinds` member name.
+ * The enum below and the renderer's name table (src/facts/facts.c) are both
+ * generated from these rows, so a bit cannot be added without its name (a
+ * name table pinned by a static assert to the then-last member let the
+ * `callout` bit through unnamed: review 2026-10-26 r2 SLOT-3). */
+#define PF_KIND_ROWS(X)                                                      \
+    X(BREF,            "bref")             /* pcrec_has_bref */              \
+    X(LINKED_CALL,     "linked_call")      /* pcrec_has_linked_call */       \
+    X(VAR,             "var")              /* pcrec_has_var */               \
+    X(ATOMIC,          "atomic")           /* pcrec_has_atomic */            \
+    X(LOOK,            "lookaround")       /* pcrec_has_lookaround */        \
+    X(LIVE_CAPTURE,    "live_capture")     /* pcrec_has_live_capture */      \
+    X(COLLAPSIBLE_REP, "collapsible_rep")  /* pcrec_has_collapsible_rep */   \
+    X(CALLOUT,         "callout")          /* pcrec_has_callout */
+
+/* The bit positions, in row order (an ordinal enum). */
 enum {
-    PF_KIND_BREF            = 1u << 0,   /* pcrec_has_bref */
-    PF_KIND_LINKED_CALL     = 1u << 1,   /* pcrec_has_linked_call */
-    PF_KIND_VAR             = 1u << 2,   /* pcrec_has_var */
-    PF_KIND_ATOMIC          = 1u << 3,   /* pcrec_has_atomic */
-    PF_KIND_LOOK            = 1u << 4,   /* pcrec_has_lookaround */
-    PF_KIND_LIVE_CAPTURE    = 1u << 5,   /* pcrec_has_live_capture */
-    PF_KIND_COLLAPSIBLE_REP = 1u << 6,   /* pcrec_has_collapsible_rep */
-    PF_KIND_CALLOUT         = 1u << 7    /* pcrec_has_callout ([INLINE-C] 1b) */
+#define PF_KIND_POS_(n, s) PF_KIND_POS_##n,
+    PF_KIND_ROWS(PF_KIND_POS_)
+#undef PF_KIND_POS_
+    PF_KIND_NBITS
+};
+enum {
+#define PF_KIND_BIT_(n, s) PF_KIND_##n = 1u << PF_KIND_POS_##n,
+    PF_KIND_ROWS(PF_KIND_BIT_)
+#undef PF_KIND_BIT_
 };
 
 /* ---- the record --------------------------------------------------------- */

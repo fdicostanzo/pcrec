@@ -1298,7 +1298,9 @@ case11() {
     # (`(?10)`, `(?01)`, `(?00)`, `(?+2)(a)(b)`, `(a)x10(?-10)`), which the
     # `(?` prefix rule finds exactly as it finds every other row in the
     # bucket. They are SHOWN and never ELECTED — see the exempt split below.
-    assert_eq "case11: ...and the row set is unchanged by the retagging" "50" \
+    # 50 -> 51 at [INLINE-C] stage 1b: the malformed `(?Cx)` row, found by
+    # the same prefix rule.
+    assert_eq "case11: ...and the row set is unchanged by the retagging" "51" \
         "$(explain_field "$out" "@header" "rows")"
     out="$(pcrec_run "$PCREC" --explain '[[:alpha]')"
     assert_field "case11: an unclosed delimiter pair DECLINES" "$out" \

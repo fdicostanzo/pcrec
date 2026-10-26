@@ -8677,9 +8677,13 @@ int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
  * (`docs/spec/facts_listing.md`). One ordinary compile per encoding in
  * `encs[0..nenc)` (the caller's own `-e` when `nenc` is 0), rows
  * concatenated under each section. malloc'd, caller frees; NULL with `err`
- * filled when a compile refuses. Internal, like `pcrec_emit_ir`. */
+ * filled when a compile refuses. `in` (NULL: none) carries what the CLI's
+ * compile would pass, today the numbered callouts' declarations, so the
+ * listing describes the pattern the compile builds. Internal, like
+ * `pcrec_emit_ir`. */
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
-                       const int *encs, int nenc, pcrec_error *err);
+                       const PcrecEmitIn *in, const int *encs, int nenc,
+                       pcrec_error *err);
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/

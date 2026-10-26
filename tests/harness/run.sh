@@ -1659,6 +1659,14 @@ manifest_objs() {
         case "$kw" in
             ''|'#'*) continue ;;
             link)
+                # rxt_format.md §6¶3-4: FILE is a name BESIDE the manifest
+                # (no `/`, so neither `../` nor a subdirectory, and two
+                # sources cannot share one object name), and the line has
+                # nothing after it.
+                if [ -z "$arg" ] || [ -n "$rest" ] || [[ "$arg" == */* ]]; then
+                    GEN_CC_LOG="$mf: 'link' wants one file name beside the manifest (got 'link $arg $rest')"
+                    return 1
+                fi
                 src="$mdir/$arg"
                 obj="$outd/manifest_$(basename "$arg" .c).o"
                 if [ ! -f "$obj" ]; then
@@ -2787,11 +2795,14 @@ for file in "${files[@]}"; do
             else
                 cur_features="$feat_list"
             fi
-        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]*([a-z,]*)[[:space:]]*$ ]]; then
+        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]+([a-z]+(,[a-z]+)*)[[:space:]]*$ ]]; then
             # [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
             # attributes, passed to pcrec as `--callout N:ATTRS`. The value's
             # GRAMMAR is pcrec's (a bad attribute is its refusal); this arm
-            # reads the shape only, like `features`.
+            # reads the shape only, like `features`, and it is the SAME shape
+            # pcrec's own reader accepts (`pcrec_callout_decl_read`: N,
+            # whitespace, a non-empty lower-case comma list), so the two
+            # readers of the line agree on what is a `callout` line.
             co_decl="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'callout' line before any pattern block"

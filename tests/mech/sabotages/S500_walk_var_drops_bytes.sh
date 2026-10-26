@@ -7,6 +7,8 @@
 # [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
 # per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
 # new text and the plant is unchanged in meaning: the variable now shares the row-read arm (ss_row); the plant splits it out
+# RE-ANCHORED 2026-10-26 (lane ic1bfix, [INLINE-C] stage 1b): the arm gained
+# `case A_CALLOUT:`, which keeps the row read in the plant; same intent.
 SAB_ID='S500-walk-var-drops-bytes'
 SAB_FILE='src/facts/startset.c'
 SAB_SUITES='vars'
@@ -18,10 +20,12 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
              * every kind above the backreference, ANY for the two. */
             return ss_row(a, acc);'
 SAB_AFTER='        case A_BREF:
+        case A_CALLOUT:
             return ss_row(a, acc);
         case A_VAR: {   /* SABOTAGE S500: the arm drops its bytes */
             StartSet z = ss_empty();
