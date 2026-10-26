@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ic1b: [INLINE-C] stage 1b sabotage rows on worktrees/ic1b: S1646-S1659 (design S-IC1..S-IC27 subset), S475/S496 (re-scoped to verbs, declared UNREACHED) and S693 (the abi row, re-aimed at 89).
+# Queued by the lane (scripts/boxqueue add --name 541-ic1b-mech docs/dev/lanes/ic1b_mech_job). Not ready from 2026-10-26 21:30 (cap 2 h; nothing past 23:30).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+IDS="S1646 S1647 S1648 S1649 S1650 S1651 S1652 S1653 S1654 S1655 S1656 S1657 S1658 S1659 S475 S496 S693"
+case "${1:-}" in
+    --dry-run)
+        out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
+            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
+        n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+        [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
+        echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
+        echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (unexpected: 0, undetected: 0, unreached: 2, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        exit 0 ;;
+    --ready)
+        now=$(date +%s); stop=$(date -d '2026-10-26 21:30' +%s) || exit 1
+        [ "$now" -lt "$stop" ] || { echo "past 2026-10-26 21:30: would overrun 23:30; manager re-times this job"; exit 75; }
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+exec bash tests/mech/run_sabotage_matrix.sh $IDS
