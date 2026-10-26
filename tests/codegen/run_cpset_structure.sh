@@ -1014,6 +1014,11 @@ fi
 # no emitted comments, `__one_local` calls `_next`, `_next_n` its own entry;
 # none of the twelve splits its search any more (byte artifacts, no prologue).
 # Versus BASE 02f357b39 (before the iterator): +7,150 (DFA) .. +8,389.
+# RE-RECORDED 2026-10-26 at [INLINE-C] stage 0 (lane ic0fix, abi 87 -> 88):
+# all twelve EMITTED_BYTES rows +2, the same on every artifact: the shared
+# block's one comment line "traps on" -> "propagates" (+2 bytes); the abi digits
+# keep their width; the other stamps read identically. The first run of the
+# stage-0 validation (job 530-ic0-test) was RED here only.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

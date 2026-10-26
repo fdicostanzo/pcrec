@@ -175,11 +175,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 87
-#error "pcrec: this artifact (abi 87) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 88
+#error "pcrec: this artifact (abi 88) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 87
+#define PCREC_RX_ABI_H 88
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -239,7 +239,7 @@ typedef struct rx_ctx {
  * semantic; PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71
  * item 1) is its first producer -- the artifact's own
  * inconsistency check firing, never a resource give-up -- and a
- * generated call site that invokes an rx_matchfn traps on one.
+ * generated call site that invokes an rx_matchfn propagates one.
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 
@@ -1581,7 +1581,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `87` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `88` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1739,7 +1739,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `87` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `88` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
