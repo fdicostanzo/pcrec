@@ -3975,6 +3975,7 @@ tests/utf8/uprop_more.rxt:87	--features unicode-props --encoding=utf8	5c707b5249
 tests/utf8/uprop_more.rxt:96	--features unicode-props --encoding=utf8	5c507b456d6f6a697d
 # upropb2 (2026-10-24, [UPROP-MORE]): +104 -5 rows (lane upropb; the vmhat_checks.py mover rule on lane/upropb). +99 are blocks of two NEW corpus files (tests/utf8/uprop_more.rxt 74, tests/utf8/uprop_blk_age.rxt 25), correct forced-VM movers never pinned; the 5 axis12_scripts.rxt rows (:296,304,312,320,328 -> :289,297,305,313,321; patterns unchanged) are a renumbering: the lane deleted that file's 7-line \p{blk=Greek} refusal block (Block is now supported); no existing pattern's compile moved.
 # flagfix (2026-10-24, [FLAG-SPELL]): +10 rows, every one a new tests/modifiers/empty_drop.rxt block (the R1 boundary cells), correct forced-VM movers named by [vm-movers]; computed per block on lane/flagfix (VM_START_SCAN first-class under --engine=vm), no existing row moved.
+# scanset (2026-10-26, [SCANEDGE-SET]): +8 rows, every one a new tests/classes/scan_set.rxt block (the scan-edge-over-a-class-SET answer net), correct forced-VM movers never pinned; computed from the lane build's own RX_VM_START_SCAN stamp (not none) under --engine=vm, the [vm-movers] predicate; no existing row moved. Bench rows NOT refreshed.
 tests/modifiers/empty_drop.rxt:18	--features modifiers	283f69296162632b
 tests/modifiers/empty_drop.rxt:26	--features modifiers	283f693a616263292b
 tests/modifiers/empty_drop.rxt:34	--features modifiers	61283f3a292b62
@@ -3985,3 +3986,11 @@ tests/modifiers/empty_drop.rxt:62	--features modifiers	61283f69296263
 tests/modifiers/empty_drop.rxt:69	--features modifiers	616263283f6929
 tests/modifiers/empty_drop.rxt:88	--features modifiers	2861283f69292962
 tests/modifiers/empty_drop.rxt:110	--features modifiers	28787c283f69292979
+tests/classes/scan_set.rxt:17		5c532b405c532b
+tests/classes/scan_set.rxt:29		30785b302d39612d66412d465d2b
+tests/classes/scan_set.rxt:38		5b612d7a5d2b5c2e74787424
+tests/classes/scan_set.rxt:49		5c732b24
+tests/classes/scan_set.rxt:59		5b5c6e205d2b24
+tests/classes/scan_set.rxt:76		5b612d7a5d2b24
+tests/classes/scan_set.rxt:90		283f3a2d3f5b61625d7b322c347d7c316229
+tests/classes/scan_set.rxt:99		283f3a2d7b322c347d615b61625d7c626229

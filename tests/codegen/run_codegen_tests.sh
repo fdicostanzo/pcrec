@@ -90,7 +90,10 @@ gen() { # gen <name> <pattern> [extra pcrec args...] -> <name>.c plus <name>.bod
 # ---- skip states (src/gen/emit_dfa.c pick_skip_states) -------------------
 # '.*=.*' has states that self-loop on nearly every byte; the emitter must
 # produce a skip table for them. Disabling pick_skip_states removes these.
-if gen skip '.*=.*'; then
+# [SCANEDGE-SET] a scan edge now takes the set-shaped stay states this fixture
+# is about ('.*' is classes 0 and 2), so the fixture denies the edge pass and
+# keeps testing pick_skip_states; the edge form has its own census.
+if gen skip '.*=.*' -fno-scan-edge; then
     if grep -qE 'rx_(forward|reverse)_stay[0-9]+\[256\]' "$WORKDIR/skip.body"; then
         ok "skip states: '.*=.*' emits a self-loop skip table"
     else
@@ -422,7 +425,7 @@ GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 if ! command -v "$CC" >/dev/null 2>&1; then
     bad "multi-engine: no C compiler ($CC) — this block cannot be skipped silently"
-elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
+elif pcrec_run "$PCREC" -p rx -fno-scan-edge -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
   && pcrec_run "$PCREC" -p rx -o - --pattern '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
   && body "$WORKDIR/engb.c" rx_search "$WORKDIR/engb.body"; then
     # rename engine B's entry point; every other symbol in the body is
@@ -1855,7 +1858,7 @@ done
 # required to be 1, so a future fixture that quietly loses the property fails
 # loudly instead of passing vacuously.
 WB_PAT='.*\b.*'
-if gen wordb "$WB_PAT" --features all; then
+if gen wordb "$WB_PAT" --features all -fno-scan-edge; then
     wbb="$WORKDIR/wordb.body"
 
     # --- rule 1 (§3.6.2): NEVER index an accept table at `pos == n` ---------
