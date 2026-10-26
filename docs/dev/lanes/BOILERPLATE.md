@@ -300,11 +300,9 @@ whole queue's plan before a night is committed to it.
 If your brief has a DELIVER block (`docs/dev/lanes/<name>_deliver.txt`), run
 `scripts/lanecheck` from your worktree before the handback; it prints numbered
 prose issues (a missing section, an uncited finding, an uncommitted report)
-or `lanecheck: DONE rc=0`, and only that pass writes your `.done` marker. Fix,
-commit, rerun; end only on DONE rc=0. If you must stop early, put `STATE:
-stopped` in the report (a committed one) and run lanecheck: rc=2 is the
-honest stop, not a pass. The manager's `scripts/lanewatch` flags a missing,
-stale or hand-written marker.
+or `lanecheck: DONE rc=0`. Fix, commit, rerun; end only on DONE rc=0. If you
+must stop early, put `STATE: stopped` in the report (a committed one) and run
+lanecheck: rc=2 is the honest stop, not a pass.
 
 ## Delivery bar
 Branch lane/<lane>, committed, report committed, targeted validation run

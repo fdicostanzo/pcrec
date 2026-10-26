@@ -320,7 +320,7 @@ def main(argv):
     mk = os.path.join(mdir, name + ".done")
     with open(mk, "w") as f:
         f.write(body + "seal=%s\n" % seal)
-    print("all checks pass; wrote %s" % mk)
+    print("all checks pass")
     done(0)
 
 
