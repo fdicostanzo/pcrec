@@ -582,6 +582,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: Frank's build go; then a lane: scan-shape over a class set S (all of S -> one successor, the rest -> one exit), the single class as S of size 1; abi bump + identity re-pin; bench cell t-trim-match-60k as the witness
   refs: docs/dev/lanes/trimreg_report.md; src/opt/scanedge.c; src/gen/emit_dfa.c edge_advance/scan_test; [OPT-REVEND]; D164
   Population: trailing-whitespace trims (`\s+$`, `[\n ]+$`); `\s*$` was already ~68 us at the old pin and gains too. Bench: the only regress among 137 cross-pin cells (+ its nocaps twin). The general form deletes the one-class special case.
+- [REWRITE-ADJ] STATE:not-started — TREE REWRITES FROM A RUN AND ITS NEIGHBOUR: ONE DECLARED TABLE, A HOME FOR THE FAMILY
+  filed: 2026-10-26 Frank + manager (from the `\s+$` discussion); a tracking row: related findings add a dated note here
+  status (2026-10-26): filed to gather information; nothing designed or built. Today's rewrites are separate passes (altcls.c, atomic.c, possessify.c) with no shared mechanism.
+  trigger: enough members/notes to judge a first-match rewrite table worth building (D-table style: run facts x follower facts x node options -> action, each fired row named in --explain, PCRE2 differential on/off)
+  refs: D168 add. 1 (text-substitution route retired; options live on the node, D62); possessify.c; altcls.c; [SCANEDGE-SET]; docs/dev/lanes/trimreg_report.md
+  Members known (2026-10-26): (1) ABSORB-OPTIONAL: `X+Y?` / `X+Y*` with Y a subset of X -> `X+` (greedy/possessive only; no capture boundary between; e.g. `\s+\n?`). (2) ABSORB-EOL: `X+$` non-multiline -> `X+\z` when the configured newline is inside X (`\s+$`; lazy excluded: `\s+?$` on "a \n" differs; CRLF/ANY newline need the whole sequence covered). (3) Frank's earlier conditional anchor-rewrite table (option-dependent `$` etc.): mostly covered by A_CTX (D168), remainder belongs here. Possible future member: possessify (the disjoint-follower case; panel-repaired rule, leave in place until the table proves itself).
+  Notes: (add dated notes as related issues surface)
 - [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
   filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
   status (2026-10-26): filed; nothing built. A stray A_EMPTY mid-CAT (`a(?:)bc`) hides the required run `abc` from the fact pass (src/facts/req.c, not traced): prefilter handoff instead of memchr, per docs/dev/flag_spell_findings_2026-10-23.md.
