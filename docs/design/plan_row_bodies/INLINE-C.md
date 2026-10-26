@@ -21,3 +21,4 @@ The guidance is the deliverable:
 1. The refusal names the construct, its offset and the fix. A choice inside a non-atomic lookaround names THE LOOKAROUND, with the fix `(?=...)` or `(?>(?*...))`.
 2. The spec gets a short table of what counts as backtrackable before a site, with the fix for each.
 3. `--list-callouts` prints the same reason.
+- Manager ruling 2026-10-26, applying Frank's reading-rule ruling: `(?*a|b)(?C"x,once")c` was ACCEPTED, but `(?:a|b)(?C"x,once")c` is refused. A parse-time rewrite (pcre_look_t3) turns a one-character lookaround body into a context node before the callout pass sees it. That breaks the reading rule, so the case must be REFUSED like its written form. The as-written fact travels on the rewritten node; there is no special case in the walk. Every rewrite that runs before the callout pass gets surveyed for the same hole.
