@@ -73,6 +73,20 @@ static StartSet ss_all(void)
     return s;
 }
 
+/* The start set of node `a` followed by `acc`, for a kind whose ROW answers
+ * for its text: ZERO consumes nothing, so the first byte comes from `acc`;
+ * ANY is every byte, nullable. An OWN kind has its own arm; it would get
+ * every byte, which is always sound. */
+static StartSet ss_row(const Ast *a, StartSet acc)
+{
+    switch (pcrec_ast_row(a).text) {
+    case KTEXT_ZERO: return acc;
+    case KTEXT_ANY:  return ss_all();
+    case KTEXT_OWN:  break;
+    }
+    return ss_all();
+}
+
 /* The start set of `a` followed by `acc` (what lies to its right). */
 static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
 {
@@ -125,11 +139,14 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
-            return acc;
         /* Not looked into: every byte, nullable (§3.2). */
         case A_BREF:
-        case A_CALL:
         case A_VAR:
+            /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
+             * every kind above the backreference, ANY for the two. */
+            return ss_row(a, acc);
+        /* A call's text is its callee's (row OWN), not looked into either. */
+        case A_CALL:
             return ss_all();
         }
     }

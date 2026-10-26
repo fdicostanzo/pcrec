@@ -2186,6 +2186,68 @@ enum {
     NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
 };
 
+/* ---- [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW (src/core/kindrow.def;
+ *      docs/design/inline_c.md §1.8) ----
+ *
+ * One row of kind-level facts per `AKind`, read by the pass families that
+ * used to decide them arm by arm: the text/width readers read `text`, the
+ * path-pruning readers `path`, the marked set `reads`, the prefilter
+ * lowering `erase`. The column meanings are kindrow.def's header. A reader
+ * whose answer depends on the node or its context keeps its code and reads
+ * the row for the kind-level part; the arm inventory of which readers read
+ * which column is docs/dev/lanes/ic1a_report.md. */
+typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
+typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
+typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET } KindReads;
+typedef struct {
+    KindText  text;
+    KindPath  path;
+    KindReads reads;
+    unsigned  erase;   /* the NFA_ERASED_* bit its lowering records; 0 exact */
+} KindRow;
+
+/* THE ROWS ARE IN AKind ORDER: each row's position is asserted, so the table
+ * reads like the enum and a misplaced row names itself. */
+enum {
+#define KIND_ROW(kind, text, path, reads, erase) KIND_ROW_AT_##kind,
+#include "core/kindrow.def"
+#undef KIND_ROW
+    KIND_ROW_COUNT
+};
+#define KIND_ROW(kind, text, path, reads, erase)                              \
+    _Static_assert((int)(kind) == (int)KIND_ROW_AT_##kind, "core/kindrow.def: " \
+                   "the row for " #kind " is not at its AKind position");
+#include "core/kindrow.def"
+#undef KIND_ROW
+
+/* The row of kind `k`. The switch is built from kindrow.def with -Wswitch
+ * raised to an ERROR here, so a kind without a row fails to compile in every
+ * translation unit (and a duplicated row is a duplicate case label): the
+ * table is complete by construction, and together with the position
+ * assertions above its row count is the kind count. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wswitch"
+static inline KindRow pcrec_kind_row(AKind k)
+{
+    switch (k) {
+#define KIND_ROW(kind, text, path, reads, erase)                              \
+    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads, (erase) };
+#include "core/kindrow.def"
+#undef KIND_ROW
+    }
+    /* unreachable for a valid kind; the row every reader treats as unknown */
+    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0 };
+}
+#pragma GCC diagnostic pop
+
+/* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
+ * by a node field (inline_c.md §1.8's A_CALLOUT by width class) has one place
+ * that picks; today every kind has one row. */
+static inline KindRow pcrec_ast_row(const Ast *a)
+{
+    return pcrec_kind_row(a->k);
+}
+
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
  *      src/opt/prefix_k.c) ---- */
 

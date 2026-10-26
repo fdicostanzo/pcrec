@@ -189,7 +189,8 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUI
 # joined at [DD-11.5] P2a WITH the file: core/internal.h includes it (the
 # A_CTX truth table), so every translation unit reads it.
 FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
-              src/core/findings.h src/core/ksrc.h src/core/ctxfn.def
+              src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
+              src/core/kindrow.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
