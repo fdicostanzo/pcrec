@@ -2664,6 +2664,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (hooks[h]) root = hooks[h](&cx, root);
         }
 
+        /* [INLINE-C] 1b THE CALLOUT SITES PASS (src/opt/callout.c): on the
+         * tree as written and composed, before any optimization pass reads
+         * a site's row — the numbered declarations set a site's width class
+         * — and before any pass could change the structure its firing class
+         * is read from (inline_c.md §1.10). A no-op with no site. */
+        pcrec_callout_sites(&cx, root);
+
         root = pcrec_altcls(&cx, root);
 
         /* [M6.4.2] THE FREE DISCHARGE: delete every `A_ATOMIC` whose cut

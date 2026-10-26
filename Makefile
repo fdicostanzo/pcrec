@@ -219,6 +219,10 @@ $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
+# [INLINE-C] 1b the call-site code table's header, read by both of its
+# producers (the compound's controller and the VM's callout site).
+$(BUILD_DIR)/obj/gen/callsite_rows.o $(BUILD_DIR)/obj/gen/emit_compound.o \
+$(BUILD_DIR)/obj/gen/emit_vm.o: src/gen/callsite_rows.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's

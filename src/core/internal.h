@@ -187,6 +187,17 @@ typedef struct {
  * under it (the lever fence). Not part of the caller contract. */
 #define PCREC_HARNESS_PREFIX "pcrec_harness_"
 
+/* [INLINE-C] 1b ONE NUMBERED CALLOUT'S DECLARATION (inline_c.md §2.2): a
+ * numbered callout has no string to carry its attributes, so they arrive
+ * from a `.rxt` block's `callout <n> <attr>...` line or the CLI's
+ * `--callout N:attr,...`. `attrs` is the comma-separated list, read by the
+ * one attribute grammar (`pcrec_callout_attrs`). No library member carries
+ * it in v1 ([IFACE-PUSH]). */
+typedef struct {
+    int         num;      /* 0..255 */
+    const char *attrs;    /* "consume,once"; "" declares none */
+} PcrecCalloutDecl;
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -228,6 +239,10 @@ typedef struct {
      * stated shape, `edge_rank[from][to]` = the edge's PcrecEdgeRank + 1, and
      * 0 where the shape has no such edge (NULL: not wanted). */
     unsigned char (*edge_rank)[PCREC_ENTRY_N];
+    /* [INLINE-C] 1b the numbered callouts' declarations (NULL/0: none), read
+     * by `pcrec_callout_sites` (src/opt/callout.c). */
+    const PcrecCalloutDecl *callout_decls;
+    int                     ncallout_decls;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -4060,6 +4075,11 @@ struct Ctx {
     /* [COMPOUND] the arrival label of an emitted-size refusal of an
      * ASSEMBLED compound: `fit_rungs[]`' `drop-compound` row reads it. */
     bool                 comp_assembled;
+    /* [INLINE-C] 1b the number of callout sites (A_CALLOUT nodes) the parse
+     * built: the port counts, `pcrec_callout_sites` numbers them 1..n in
+     * textual order, and a pattern with none skips every callout pass and
+     * emits nothing callout-shaped (the identity gate's zero movers). */
+    int                  ncallouts;
     Job                 *job;
 };
 
@@ -5554,6 +5574,26 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
  * mask and the `why` text still have exactly one home. */
 ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);
+
+/* src/parse/mod_callouts.c — module `callouts` ([INLINE-C] stage 1b,
+ * [M4-CALLOUTS] step 2). The `(?C` port: reads a well-formed numbered or
+ * named callout (`pcrec_callout_extent_scan`), its binding name and
+ * attributes, and returns an A_CALLOUT node stamped with the row. Where a
+ * site may stand, its firing class and the `once` check are the
+ * post-parse pass's (`pcrec_callout_sites`, src/opt/callout.c). The two
+ * recognisers are the module row's (well-formed) and the malformed row's
+ * (its exact complement), so a malformed `(?C` is refused as malformed in
+ * every module state (inline_c.md §2.4, D17). */
+ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+/* The attribute grammar's one home (§2.2): applies the `sep`-separated
+ * list `s`/`n` to callout node `a`; NULL, or the refusal text (unknown,
+ * repeated, empty, or `verify`, refused by name until stage 4). */
+const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
+                                char sep);
+bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail);
+bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
+                                       const char *tail);
 /* The RK_QUANTSUFFIX row for a quantifier spelled by its own selector byte
  * (`*`, `+`, `?` or `{`), for parse.c's desugaring to stamp from. NULL is a
  * registry defect and the caller says so rather than shipping an unstamped
@@ -6211,6 +6251,19 @@ bool   pcrec_class_delim_extent_scan(const char *pat, size_t patlen, int c2,
 bool   pcrec_brace_quant_shape(const char *at, size_t avail);
 size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
                                    size_t nstart);
+/* [INLINE-C] 1b the `(?C` shape: true iff `at` (the byte after the `C`)
+ * holds one of PCRE2's well-formed callout spellings through its `)`; on
+ * true `*out` (may be NULL) carries the parts, offsets relative to `at`.
+ * The two `(?C` rows' recognisers and module `callouts`' port share it. */
+typedef struct {
+    bool   string;    /* a delimited string; false: a number */
+    int    num;       /* the number, 0..255 (`(?C)` is 0) */
+    size_t str;       /* the string's first byte (after the opening delimiter) */
+    size_t rawlen;    /* its length as written (doubled delimiters doubled) */
+    char   close;     /* the closing delimiter */
+    size_t end;       /* just past the closing `)` */
+} PcrecCoScan;
+bool   pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out);
 
 /* src/parse/enabled.c — the enabled feature set (slice 9): one home,
  * process-wide, written once by the CLI's --features before any compile.
@@ -7436,6 +7489,19 @@ bool  pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
  * that survive are the body's own and keep their own stamps, and no new node
  * is born to inherit the discharged one's. */
 Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root);      /* src/opt/atomic.c */
+
+/* [INLINE-C] 1b THE CALLOUT SITES PASS (src/opt/callout.c), run on the tree
+ * as written — after the composer and the derivation hooks, before
+ * `pcrec_altcls` and every optimization pass — and a no-op when the parse
+ * built no site (`cx->ncallouts == 0`). It applies the numbered callouts'
+ * declarations (`PcrecEmitIn.callout_decls`; a declaration naming no site
+ * is refused), numbers the sites in textual order, refuses the positions
+ * inline_c.md §1.9 does not support, derives each site's FIRING CLASS
+ * (§1.10) and refuses a `once` site of class `repeated`. */
+void pcrec_callout_sites(Ctx *cx, Ast *root);
+/* The listing token of a CalloutClass (`once-per-match`, `once-per-start`,
+ * `repeated`). */
+const char *pcrec_callout_class_name(int fclass);
 
 /* Does this tree carry an A_ATOMIC — i.e. a cut that survived the discharge?
  *
