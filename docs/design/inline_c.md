@@ -288,6 +288,12 @@ callout clause per pass, and the control is `make test-axes` over a corpus
 whose vetoes steer backtracking (D1, D2 and P8-P10 shapes): an optimization
 that prunes a path a site could see differs from its own deny flag.
 
+The same width fact binds every whole-window start fact a VM artifact uses
+(a required byte or run, the root minimum width, an end window): a `W_ANY`
+site between `a` and `b` means `ab` is NOT a required run, because the callee
+may consume bytes between them. Stage 1's tests carry a consuming binding
+between two literals for exactly this reason.
+
 The prefilter (the hybrid's capture-erased scan) needs the same fact in
 language form: a `W_PRED` site erases to the empty string and a `W_ANY` site
 to "any bytes, any length". This corrects engine_m4.md's recommendation (c)
@@ -662,7 +668,7 @@ NULL = none), NOT a `flags` bit: the option word's free bits are what
 ### 5.3 The pin
 
 ```
-include "frag/ipv4.rxt" sha256=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+include "frag/ipv4.rxt" sha256=<64 lowercase hex digits>
 lib "lib/net.rxt" sha256=<64 lowercase hex digits>
 ```
 
@@ -719,9 +725,9 @@ pcrec-bench's loaders, the oracle store, fuzzers, `--analysis` of exemplar
 files, and every `make test` section except the callouts section compile
 without `--allow-code`. The callouts section's runner passes `--allow-code=c`
 where a reader sees it, and a check places a code segment in another section's
-corpus and asserts the refusal (it has a way to fail: remove the opt-in check
-and it goes green-for-the-wrong-reason no longer, because the refusal is the
-expectation).
+corpus and asserts the refusal. Its way to fail: with the opt-in check removed
+(sabotage S-IC9, section 9), the segment compiles and the expected refusal is
+missing.
 
 ### 5.8 What a pin does not cover
 
@@ -799,3 +805,256 @@ match", at the next free code below `PCREC_ERR_FLOOR` when it lands, and is
 not emitted until a measured need. Landing it splits the return table's row 8
 (abort jumps to the search's no-match epilogue) and makes the macro's negative
 branch return it.
+
+## 8. abi and spec impact
+
+### 8.1 What moves
+
+Everything this design emits appears ONLY in an artifact with a callout site:
+the call sites and their return-table rows, the segment functions and their
+macros, the `code-header` includes, the slot-0 store, the enclosing-group
+marks (the marked set is unchanged for a pattern with no callout, 1.3), the
+`RX_CALLOUT_PCRE2` macro, and three stamps on callout artifacts only:
+`<PREFIX>_CALLOUTS` (the site count), `<PREFIX>_CODE` (the languages present,
+stage 2) and `<PREFIX>_CALLOUT_VERIFY` (stage 4). No pattern that compiles
+today contains a site (every `(?C` is refused and `(?{` is a parse error), so
+the identity gate's expectation for every stage is ZERO movers in the existing
+corpus. That is checked, not assumed: each stage runs the gate before its abi
+step.
+
+- `rx_ctx`: unchanged (slot 0 carries the attempt start, 1.3).
+- `rx_info`: no new member in v1. A member would move every artifact's
+  initializer; the stamps carry the facts, and a run-time mirror, if wanted,
+  belongs to [IFACE-PUSH].
+- `pcrec_options`: one new member (5.1), no `flags` bit.
+- The return table: two rows (1.6), emitted only at callout sites.
+
+**abi events.** Stages 1, 2, 4 and 5 add emitted contract text (stamps, the
+table rows, the macro family, the wrapper), so each is an abi event under
+D76/D94: the number is "the next number at landing" (never a literal in this
+note), its readers are found BY GREP for the then-current number (the `.abi`
+stamp, test expectations, every spec sentence, the identity gate's (B) pin,
+and the readers that never cite the number: registry, codegen, rxtsource,
+per the D94 addendum), and the bump moves the `PCREC_RX_ABI_H` line of every
+artifact (that line is the re-pin). Stage 5 may ride stage 1's bump if the two
+land together. Stage 3 changes no emitted byte (pins and the listing are
+compiler-side) and is not an abi event.
+
+### 8.2 Spec hunks (D80), by stage
+
+| stage | spec files and sections |
+|---|---|
+| 1 | `match_api.md` §4¶10 (the callout site as the table's second producer, rows 9-10), §5 (the site view: `ncap`, publish-at-close for enclosing groups, slot 0), a new section for callouts (binding rows, fire contract and reference semantics, width classes, positions), §6.3 stamp inventory (`_CALLOUTS`); `cli.md` (module `callouts`); `docs/pcre2_compliance.md` (the `(?C` row, via the compliance-refresh skill) |
+| 2 | `match_api.md` (segment function, macro set, `_CODE`), the library options (§8.2's `pcrec_options` table); `rxt_format.md` §1.1 (`code-header` row) and §1.13 (schema rows); `cli.md` (`--allow-code`, `--code-header`, the `pcrec`-line refusal); compliance (the `(?{` row: pcrec extension, Perl difference) |
+| 3 | `rxt_format.md` §1.1 (`sha256=` on `include` and `lib`), §1.13; `cli.md` (`--list-callouts`, the trust rules of section 5) |
+| 4 | `tuning.md` (axis `callout-verify`), `match_api.md` §6.3 (`_CALLOUT_VERIFY`) and the callouts section (verify) |
+| 5 | `match_api.md` (the wrapper macro and the porting table) |
+
+`docs/guide/` gains a use-case page at stage 2 (pointing at the spec), with
+the anchored-validator example first (requirements W1) and one worked
+example of the three escaping layers (`.rxt`, PCRE2 delimiter, C;
+requirement R-S6).
+
+### 8.3 Standing questions
+
+Answered at the top of this note.
+
+## 9. Staged build plan
+
+Each stage is independently landable: its own module surface, tests,
+sabotage rows, spec hunks and abi step. Sabotage ids are placeholders
+(`S-IC*`); the build lane takes real ids from its brief's range and checks
+each witness reaches its site (`REACH_ONLY=1`, [MECH-REACH]).
+
+### 9.1 The stages
+
+**Stage 1 — the call site, extern-bound (module `callouts`; [M4-CALLOUTS]
+step 2).** `(?C)`, `(?Cn)`, `(?C"name")` with every PCRE2 delimiter;
+`A_CALLOUT`; `VE_CALLOUT`'s producer; binding rows 2-3; the site view (1.3)
+including the marked-set union; the return table rows 9-10; the optimizer
+rule (1.8) with a `pf_admits` row declining the prefilter for callout
+patterns; the position table (1.9); the namespace row; `<PREFIX>_CALLOUTS`.
+Tests (`tests/callouts/`, stubs linked through `ext harness`): a libpcre2
+differential over predicates written once (9.2), including D1/D2/P8-P10
+shapes; an enclosing-group case (`(a(?C"see1")b)+`); a repeated-group
+retention case; give-up propagation (a binding returning `PCREC_ERR_STEPS`);
+an over-long return and a mid-character return (expect a trap); an artifact
+bound as a callout (section 6); a binding that consumes two bytes between
+two literals (`a(?C"two")b` on `axyb`, against the required-run and
+minimum-width facts, 1.8); DT-4.1 through a counting binding;
+`make test-axes` over the corpus. Sabotage: S-IC1 the site treats `-1` as a
+pass; S-IC2 the enclosing group is left unmarked; S-IC3 possessification
+ignores a site; S-IC4 a give-up is collapsed to `-1`; S-IC5 the slot-0 store
+is dropped; S-IC6 row 10's check is removed; S-IC6b the required-run
+analysis reads a `W_ANY` site as empty.
+
+**Stage 2 — embedded C (module `code-c`) with the local-only gate.** Both
+code spellings; the tag grammar; the `(?{` C scanner; the generated function,
+macro set and `#line` (section 3); `code-header` (head and CLI);
+`--allow-code`; the `pcrec_options` member; ALL reached code refused
+(pins arrive in stage 3, so stage 2 is safe alone); `<PREFIX>_CODE`. Tests:
+the scanner table (2.3; one row per rule, each refusal included); UC-1a
+(DT-1.1-1.6); UC-3 (DT-3.1-3.4); DT-4.1 inline; the refusal-by-default test
+per entry point (CLI FILE, `--pattern`, library, harness, every compiling
+`--list-*`); the T2 check (5.7); a `W_PRED` segment returning 1 and a
+segment falling off its end (expect a trap); the macro/stamp disjointness
+check (3.2); `features code-c` and a `pcrec`-line `--allow-code` refused.
+Measurement card: per-fire cost (standing question 1). Sabotage: S-IC7 the
+scanner does not skip string literals; S-IC8 an unknown attribute is
+accepted; S-IC9 the opt-in check is removed; S-IC10 `#line` is dropped;
+S-IC11 the `W_PRED` trap is removed.
+
+**Stage 3 — pinned includes and the reviewer's view.** `sha256=` on
+`include` and `lib`; SHA-256; provenance chains; the rules of 5.4 and 5.5;
+lib `code-header` lines under the same rule; `--list-callouts`. Tests: NIST
+vectors and `sha256sum` agreement; pinned/unpinned/mismatched for `include`
+and for `lib`; a three-file chain with an unpinned middle link (refused,
+naming it); a pinned file with no code still verified; patterns from an
+unpinned file still compile; `--list-callouts` rows. Sabotage: S-IC12 the pin
+compare is skipped; S-IC13 only the last link is checked; S-IC14 the local
+exemption reaches included files.
+
+**Stage 4 — `verify`.** The `verify` attribute; the prefilter language rule
+(1.8: `W_PRED` erases to empty, `W_ANY` to any bytes) replacing stage 1's
+blanket decline; the eligibility table (4.3) and its axis
+`-fno-callout-verify`/force flag; the `scan-end` attempt row;
+`<PREFIX>_CALLOUT_VERIFY`. Tests: UC-1b answers equal UC-1a's on DT-1.1-1.5;
+a D2-shaped `verify` pattern whose first candidate is vetoed (the VM
+fallback must find the second); a downgrade per row 2-6 with its stamp;
+under `-e utf8`, a veto followed by a resume after a multi-byte character;
+`make test-axes` (the deny flag is the control, 4.4). Measurement card
+(memory "new method needs measurement card"): veto-free vs veto-heavy
+throughput against the inline artifact and against the callout-free
+artifact plus a direct call (goal 3b). Sabotage: S-IC15 a veto answers "no
+match at s" without the VM; S-IC16 row 5 is skipped (`scan-end` on a
+capture-delivering artifact); S-IC17 the resume steps one byte instead of
+one character.
+
+**Stage 5 — the PCRE2-convention wrapper.** `RX_CALLOUT_PCRE2` and the porting
+table. Tests: the same predicate native and through the macro, equal answers;
+a negative return traps. Sabotage: S-IC18 a positive return maps to `0`.
+
+**Stage 6 — later phases, not designed here.** The template side (`${{ }}`,
+`${( )}`: requirements R-T1-R-T10, its two hard problems being the group
+declaration R-T3 and once-per-match against the sizing pass R-T5; it reuses
+section 3's function/macro/`#line` machinery and section 5's gate); `post`
+mode (on a measured need); non-tail `verify` (with [CAP-SPAN]/
+[MATCH-EVENTS]); the `user=SYM` attribute (3.5); lifting rows 1-4 of 1.9;
+`--check-c`; other languages.
+
+Order: 1, 2, 3 are a chain (each needs the previous); 4 needs 2; 5 needs only
+1 and can land beside 2.
+
+### 9.2 The differential, so the control does not share pcrec's source
+
+For each case the test author writes a pattern in pcrec's spelling and a
+predicate BODY in the macro vocabulary of 3.2. The pcrec side compiles both
+as usual. The libpcre2 side: a test-owned rewriter turns every `(?{c:...})`
+or `(?{...})` into ``(?C`c:...`)`` (backticks in the body doubled), and the
+driver registers one `pcre2_set_callout` function that dispatches on
+`callout_string_offset` to a per-segment function whose body is the SAME text
+compiled under an ADAPTER header the test author writes from PCRE2's
+documented block (`RX_POS` is `cb->current_position`, `RX_CAP_S(n)` reads
+`offset_vector` under `capture_top`, `RX_START` is `start_match`, and the
+native returns map `0 -> 0`, `-1 -> 1`). Flags: `PCRE2_NO_AUTO_POSSESS |
+PCRE2_NO_START_OPTIMIZE` (1.7). The shared item is the predicate text, which
+is the test's INPUT; the engine, the view construction and the macro
+definitions on each side are independent, so a disagreement in, for example,
+which groups a site may read shows up as a red case rather than agreeing with
+itself. Named bindings use the same scheme with a stub function compiled into
+both drivers.
+
+### 9.3 The 20 draft usage tests, mapped
+
+The drafts used PCRE2's return convention; under Q6 each segment is
+rewritten to `RX_PASS`/`RX_FAIL` and the requirements' illustrative
+`(?C{...})` becomes `(?{...})` or a tagged string (untagged it is a binding
+name, 2.2). Each expectation is re-oracled under 1.7's flags before it
+becomes a test.
+
+| draft | stage | form |
+|---|---|---|
+| DT-1.1 - DT-1.5 | 2 (UC-1a) and 4 (UC-1b, answer-equal to UC-1a) | `.rxt` blocks |
+| DT-1.6 | 2 | `.rxt` block; the requirements' P10 answer was taken under PCRE2's default flags, so it is RE-ORACLED under 1.7's |
+| DT-3.1, DT-3.2 | 2 | `.rxt` blocks with `code-header` and an `ext harness` stub |
+| DT-3.3 | 2 | build check: the missing header's gcc diagnostic names the `.rxt` and its line |
+| DT-3.4 | 2 | codegen check: the `.h` contains no user `#include` |
+| DT-4.1 | 1 (named counting binding) and 2 (inline) | asserts the match and `n >= 1`, never a fire count |
+| DT-2.1 - DT-2.7, DT-4.2, DT-4.3 | 6 (template side) | not in this plan |
+
+Population: 11 of the 20 drafts land in stages 1-4 (6 + 4 + 1); 9 belong to
+the template phase (7 + 2). Each stage's own new cases are counted in its
+report, not here.
+
+## 10. Open questions that are Frank's
+
+Two, both semantics. Spellings, names and staging are the manager's.
+
+1. **Which PCRE2 answer is ours when PCRE2's own optimizations change it?**
+   A callout that vetoes on a capture can get a different answer from libpcre2
+   depending on whether PCRE2 auto-possessifies (requirements probe P7:
+   `(\d+)` followed by a "number <= 255" check on `1234` answers `234` by
+   default and `123` with the optimizations off). pcrec needs one answer.
+   Leaning: the optimizations-off answer, because it is the one a reader can
+   predict from the pattern (paths tried in order, every veto applied), and
+   it is what our VM computes once the optimizer treats a callout as something
+   that reads captures (1.8). We would call this "compatible with PCRE2 with
+   auto-possessification and start optimization off". The cost is that a user
+   comparing against stock PCRE2 defaults can see a difference on patterns
+   like P7's; the guide names the case.
+2. **Should embedded code be a yes/no check by default?** Your answer to Q6
+   makes code return "length consumed or -1". Most embedded code will be a
+   check (an octet is <= 255) that consumes nothing, and a C programmer will
+   naturally write `return 1;` meaning "yes", which under the native
+   convention silently swallows one byte and changes the match. Leaning: an
+   embedded segment is a CHECK unless its tag says `consume`: it may return
+   only pass (0) or fail (-1), and anything else stops the program (a trap)
+   the first time it runs, so the mistake cannot ship silently. A segment
+   that should consume (calling another compiled regex inline) writes
+   `c,consume:`; bindings by name stay full-range. The same "stop the
+   program" rule covers a segment that falls off its end or returns a length
+   past the end of the subject. The alternative is full range everywhere and
+   relying on the guide.
+
+## 10a. Conflicts found (STOP RULE) and how this note reads them
+
+1. **The return convention.** NO conflict between Q6 and D38: D38's native
+   convention IS Q6's. The requirements' R-P5/W4 recommendation (PCRE2's
+   convention inline) is superseded by Q6; its W4 danger is what section 10
+   question 2 answers.
+2. **[M4-CALLOUTS]'s step-2 text vs D38.** The plan row still describes
+   `extern int rx_callout_n(const rx_callout_block *)` with PCRE2's 0/positive/
+   negative block contract as the native ABI. Readings: (a) the text predates
+   D38 and is stale; D38's `rx_callout_ref`/`rx_matchfn` governs and the
+   PCRE2 block lives in the compat layer (D38 §4); (b) the row stands and
+   contradicts D38 and Q6. Recommended: (a); the row's body should cite D38 and
+   this note when the plan is next edited.
+3. **engine_m4.md's prefilter recommendation (c) vs D38's consuming
+   callouts.** (c) says to apply the prefilter to callout patterns uniformly,
+   which erases a site to the empty string; that was sound for zero-width
+   predicates and is unsound for a consumer (the scan would reject a match the
+   consumer makes). Readings: (a) uniform erasure (unsound since D38);
+   (b) erasure by width class (1.8). Recommended: (b).
+4. **Q4 ("the DFA finds the match") vs D36/F7 ("a pattern containing a
+   callout compiles to the VM engine only").** Readings: (a) the artifact
+   stays a VM artifact whose inlined DFA scan finds the match and whose
+   attempt loop runs the segment before (and on a veto, instead of skipping)
+   the VM (4.2): F7 holds literally, no new artifact class, `rx_info.engine`
+   is `"vm"` for every callout artifact; (b) a DFA artifact carrying a VM
+   fallback: a new artifact class and an amendment to F7. Recommended: (a);
+   the answers and the speed on the pass path are the same.
+5. **D38's per-binding `user` vs anonymous segments.** Not a conflict, a gap:
+   a segment has no binding, so its `user` is NULL in v1 (3.5); the
+   `user=SYM` attribute is the D38-shaped way to fill it later.
+6. **Requirements R-P3 (a match-start field in `rx_ctx`).** Resolved without
+   touching the frozen struct: slot 0 carries the attempt start at a site
+   (1.3).
+7. **Requirements R-P2/R-S4 ("the segment IS PCRE2's `(?C{...})`").**
+   Superseded by Q1/Q3: `{` remains a valid delimiter, but code needs its
+   tag (`(?C{c: ...})`); an untagged `(?C{x=1;})`, as the requirements'
+   examples wrote it, is a binding-name string and is refused as not an
+   identifier.
+
+One observation for the build lane, not a conflict: the registry has a single
+flavour bit (`FLAV_PCRE2`), and the pcrec-only `${name}` row carries it; the
+`(?{` row follows that precedent rather than adding a flavour.
