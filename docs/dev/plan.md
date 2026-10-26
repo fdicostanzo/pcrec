@@ -228,12 +228,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
   status (2026-10-26): requirements merged; all 8 questions answered (doc section 8): pattern side first, one call site, both spellings, verify per segment, CLI + sha-pinned includes, native return, generated names, no press. Frank: "Just get the feature done."
-  next: D6 critic panel on docs/design/inline_c.md rev 0; Frank's two section-10 questions; then stage 1 (the call site, extern-bound)
+  next: stage 1a (per-kind attribute row, zero movers) lane; stage 0 (INTERNAL comment abi event) after scanset lands; Frank's two rev-1 questions (section 10)
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
   note (2026-10-26, manager rulings on inline_c.md section 10a): (1) no conflict, D38 is already native; (2) [M4-CALLOUTS] step 2 body is stale vs D38: amend it (D38 wins); (3) the prefilter is erased per site by its width class (engine_m4 "uniform" is unsound for consuming callouts); (4) verify is a VM hybrid, so D36/F7 "callout patterns are VM-only" holds literally. Next: D6 panel on inline_c.md rev 0.
   note (2026-10-26, Frank on inline_c.md section 10, to apply at rev 1 after the panel): (1) do NOT match PCRE2 callout behaviour under its optimizations; treat it as undocumented (fire count/order unspecified; the "reference flags" re-check of DT-1.6 is dropped). (2) yes: embedded code is a yes/no check by default, `consume` opts in.
   note (2026-10-26, Frank, cont.): (3) context stays read-only (`const rx_ctx *`, return value is the only effect). (4) budget: code cannot read/spend it in v1; each callout fire counts as a step against the match budget. (5) named/numbered (non-embedded) callouts ALSO default to a check with a `consume` opt-in (one attribute grammar: `(?C"name,consume")`; numbered `(?Cn)` declares it in the .rxt) -- replaces rev 0's bindings-are-W_ANY. (6) predictability: --list-callouts reports each site's FIRING CLASS (once per match/tail; at most once per start; may fire repeatedly), derived from structure incl. atomic groups; an optional `once` attribute is a compiler-checked promise (refused with the reason if the site can fire more than once per match attempt).
+  note (2026-10-26, manager rulings on rev 1 choices): D4 RETIRE the callout half of the conjuncts; SHA-256 home `shared/sha256.{c,h}` (with its CLAUDE.md); possessify's context record stays under [POSS-CTX-TABLE]; FR1 reading: pcrec's answer is backtracking order, and the ORACLE is libpcre2 with its optimizations OFF (NO_AUTO_POSSESS|NO_START_OPTIMIZE|NO_DOTSTAR_ANCHOR), no separate test-owned backtracker (harness minimal); spellings as rev 1. Overlaps: [DD-11.5] and E1-prime have no lane in flight, so 1a/1b do not wait (1a rows today's A_CTX; a later landing adds its row). Filed: [CALLOUT-PARSE].
+
 - [SUITE-RESUME] STATE:started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
   filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
   status (2026-10-25): LANDED 4dd8af50b (offline test 33/33); staged real test OWED (report recipe: reduced battery killed after strict, then resume; ~4 min); resume reruns the SAME code (flakes, not fixes)
@@ -588,6 +590,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [CALLOUT-PARSE] STATE:not-started — MALFORMED `(?C` IS REPORTED AS "REQUIRES MODULE 'callouts'"
+  filed: 2026-10-26 manager, from review 2026-10-26-r1-inline-c-design D17
+  status (2026-10-26): filed; `(?C256)`, `(?Cx)`, `(?C1x)` answer "requires module 'callouts'" (a reality-tier misstatement, D26); a small parser fix, independent of [INLINE-C]
+  next: a small lane when convenient
+  refs: docs/design/inline_c.md section 9.4; D26
 - [REWRITE-ADJ] STATE:not-started — TREE REWRITES FROM A RUN AND ITS NEIGHBOUR: ONE DECLARED TABLE, A HOME FOR THE FAMILY
   filed: 2026-10-26 Frank + manager (from the `\s+$` discussion); a tracking row: related findings add a dated note here
   status (2026-10-26): filed to gather information; nothing designed or built. Today's rewrites are separate passes (altcls.c, atomic.c, possessify.c) with no shared mechanism.

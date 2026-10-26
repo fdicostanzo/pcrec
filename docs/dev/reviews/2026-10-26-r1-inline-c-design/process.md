@@ -5,7 +5,7 @@
   returns the WIP commit c7522390e because the later commits did not touch the blob).
 - Blinding leak (coordinator): while locating the [INLINE-C] plan row to deny it, a
   `sed -n 228,232p` plus a grep hit printed the denied 2026-10-26 manager-rulings note
-  (plan.md:234). Content: agrees with the note's own 10a recommendations. Not passed to
+  (plan.md (line cited at freeze)). Content: agrees with the note's own 10a recommendations. Not passed to
   any brief. Lesson: the launcher should give the denied range as a line range or the
   coordinator should grep only for the tag line number, never print neighbours.
 - Profile: new mechanisms/tables (binding rows, return-table rows, verify eligibility,
