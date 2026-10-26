@@ -31,6 +31,7 @@
  * the pattern, so a CAT or ALT spine is flattened into an array first, and
  * recursion is bounded by group nesting, which the parser bounds. */
 
+#include <stdio.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -42,6 +43,7 @@ typedef struct {
     int            next;     /* the next site number */
     Ast          **sites;    /* [ncallouts]: every site, in visit order */
     int            nsites;
+    Ast           *root;     /* the tree as written: the advice's verdict */
 } CoWalk;
 
 /* Flattens the `k`-spine rooted at `a` (left-deep: `k(k(x, y), z)`) into
@@ -139,35 +141,481 @@ static const char *co_at(Ctx *cx, const Ast *c)
     return known ? pcrec_sb_fragf(&cx->arena, " at offset %zu", at) : "";
 }
 
-/* The `once` refusal's naming of the live choice point `c` before a site,
- * and the fix for that construct: arena text. */
-static const char *co_culprit(Ctx *cx, const Ast *c)
+/* ---- THE `once` ADVICE: a declared table, one row per culprit kind -------
+ *
+ * Frank's ruling (INLINE-C.md, "go with 3"): the refusal names the live
+ * construct and its fix, and says whether the fix CHANGES WHAT THE PATTERN
+ * MATCHES. Which sites are refused stays the reading rule above; only the
+ * message reads the proofs below, and only when a message is wanted (a `once`
+ * refusal, or the `--emit-ir` note), so an accepted compile never runs them.
+ *
+ * First match on the node's kind and, for the two kinds that have one, its
+ * sub-kind (`u.rep.greedy == false`: lazy; `u.look.behind`). A row with no
+ * verdict texts offers no seal: a lazy quantifier's possessive form is
+ * greedy and its atomic form keeps only its shortest run, so its advice is to
+ * drop `once` or rewrite. `clause` takes the inner construct's name and
+ * offset on the lookaround rows (the choice that keeps it live); `changes`
+ * takes the witness. */
+typedef struct {
+    AKind       k;
+    signed char sub;        /* -1 any; else lazy (A_REP) / behind (A_LOOK) */
+    const char *name;
+    const char *clause;
+    const char *fix;
+    const char *same;       /* PROVEN SAME */
+    const char *changes;    /* PROVEN CHANGES: %s is the witness clause */
+    const char *unproven;   /* neither proof applies */
+} CoCulpritRow;
+
+/* The verdict texts every sealing row shares today (the refusal must fit
+ * `pcrec_error.msg`, so they are short; `co_culprit` drops the witness when
+ * the whole message would not fit). */
+#define CO_SAME     "that does not change what it matches"
+#define CO_CHANGES  "that loses a match%s; drop `once` to keep it: the " \
+                    "site then fires on each retry"
+#define CO_UNPROVEN "that may change what it matches"
+
+static const CoCulpritRow co_culprit_rows[] = {
+    { A_REP, 1, "the lazy quantifier", "can be backtracked into",
+      "drop `once` (the site then fires on each retry) or rewrite: X++ is "
+      "greedy and (?>X+?) keeps only its shortest run",
+      NULL, NULL, NULL },
+    { A_REP, -1, "the quantifier", "can be backtracked into",
+      "make it possessive (X++) or use (?>...)",
+      CO_SAME, CO_CHANGES, CO_UNPROVEN },
+    { A_ALT, -1, "the alternation", "can be backtracked into",
+      "wrap it in (?>...)",
+      CO_SAME, CO_CHANGES, CO_UNPROVEN },
+    { A_CALL, -1, "the subroutine call", "can be backtracked into",
+      "wrap it in (?>...)",
+      CO_SAME, CO_CHANGES, CO_UNPROVEN },
+    { A_LOOK, 0, "the non-atomic lookaround",
+      "keeps %s%s live after it completes",
+      "use (?=...) or wrap it: (?>(?*...))",
+      CO_SAME, CO_CHANGES, CO_UNPROVEN },
+    { A_LOOK, 1, "the non-atomic lookaround",
+      "keeps %s%s live after it completes",
+      "use (?<=...) or wrap it: (?>(?<*...))",
+      CO_SAME, CO_CHANGES, CO_UNPROVEN },
+};
+
+/* The table row naming culprit `c`: the first whose kind and sub-kind match.
+ * Every kind co_choice returns has a row, so NULL is an internal error. */
+static const CoCulpritRow *co_culprit_row(Ctx *cx, const Ast *c)
 {
+    const int sub = c->k == A_REP  ? !c->u.rep.greedy
+                  : c->k == A_LOOK ? c->u.look.behind : 0;
+    for (size_t i = 0; i < sizeof co_culprit_rows / sizeof *co_culprit_rows; i++) {
+        const CoCulpritRow *r = &co_culprit_rows[i];
+        if (r->k == c->k && (r->sub < 0 || r->sub == sub)) return r;
+    }
+    pcrec_ctx_fail(cx, 0, "internal error: no once-advice row for a culprit "
+                   "of kind %d", (int)c->k);
+    return NULL;
+}
+
+/* ---- THE VERDICT: would sealing the culprit, (?>X) at its place, change
+ * any match? One question for every kind, answered three ways.
+ *
+ * PROVEN SAME is the free discharge's own proof, asked about a HYPOTHETICAL
+ * cut: the culprit is wrapped in place, possessify's survey
+ * (`pcrec_poss_survey`, the discharge's verdict source, src/opt/atomic.c) is
+ * asked whether that cut deletes nothing, and the node is put back. A
+ * quantifier is sealed as itself (`(?>X{m,n})` is `X{m,n}+`); anything else
+ * as `(?>(?:X){1})`, which matches what `(?>X)` matches, so the survey's
+ * exact-count arm answers it: a body with a unique iteration has one way to
+ * match from a given start and the cut has nothing to delete. Constructs the
+ * survey cannot model (a call, a lookaround) decline there, as they do for
+ * the discharge.
+ *
+ * PROVEN CHANGES needs a WITNESS, built and checked below: a subject on which
+ * an attempt at offset 0 matches as written and fails sealed. Otherwise the
+ * verdict is UNPROVEN; it never guesses. Both at once is an internal error:
+ * the two are independent computations of one fact. */
+typedef enum { CO_SEAL_SAME, CO_SEAL_CHANGES, CO_SEAL_UNPROVEN } CoSeal;
+
+typedef struct { const Ast *grp; bool hit; } CoSealHit;
+
+/* The survey callback: notes that the hypothetical cut was proved a no-op. */
+static void co_seal_hit(void *ud, Ast *grp)
+{
+    CoSealHit *h = ud;
+    if (grp == h->grp) h->hit = true;
+}
+
+/* True iff the free discharge's proof says sealing `c` deletes no match,
+ * every check site passing (a site in the follow is opaque to the survey, as
+ * `\b` is, and the question is about the pattern, not the callee). Rewrites
+ * `c` and the check sites in place for the survey and restores them before
+ * returning, so the tree the later passes read is the one written. */
+static bool co_seal_same(CoWalk *w, Ast *c)
+{
+    Ctx *cx = w->cx;
+    Ast *site = pcrec_arena_alloc(&cx->arena,
+                                  (size_t)w->nsites * sizeof *site);
+    for (int i = 0; i < w->nsites; i++) {
+        site[i] = *w->sites[i];
+        if (!site[i].u.callout.consume) {
+            memset(w->sites[i], 0, sizeof *w->sites[i]);
+            w->sites[i]->k = A_EMPTY;
+        }
+    }
+    const Ast saved = *c;
+    Ast *x = pcrec_arena_alloc(&cx->arena, sizeof *x);
+    *x = saved;
+    Ast *body = x;
+    if (saved.k != A_REP) {
+        body = pcrec_arena_alloc(&cx->arena, sizeof *body);
+        body->k = A_REP;
+        body->l = x;
+        body->u.rep.rmin = body->u.rep.rmax = 1;
+        body->u.rep.greedy = true;
+    }
+    memset(c, 0, sizeof *c);
+    c->k = A_ATOMIC;
+    c->l = body;
+    CoSealHit h = { c, false };
+    pcrec_poss_survey(cx, w->root, co_seal_hit, &h);
+    *c = saved;
+    for (int i = 0; i < w->nsites; i++) *w->sites[i] = site[i];
+    return h.hit;
+}
+
+/* ---- THE WITNESS ---------------------------------------------------------
+ *
+ * Built only where the whole pattern is ONE LINE of single characters: the
+ * root, read through groups, atomic groups and never-run groups, is a
+ * sequence P X R where P and R are classes (zero-width check sites passing,
+ * `^`/`\A` first, `\z` last) and X is the culprit. X's ways to match, in the
+ * order the engine tries them, must be class sequences too: an alternation's
+ * branches, or a greedy quantifier's iteration counts from the most down
+ * (a call stands for its group's body). Then nothing but X can be retried,
+ * so an attempt is decided by which of X's ways is taken:
+ *
+ *   as written, ANY way of X followed by R succeeds;
+ *   sealed, only the FIRST way that matches is tried.
+ *
+ * The subject is p W r: one character from each class of P, of a later way
+ * W, and of R, each picked to also fit the earlier way it competes with, so
+ * that way matches first. As written the attempt at 0 matches by
+ * construction; the sealed attempt is then evaluated, and the subject is a
+ * witness only when it fails. Anything outside that shape declines. */
+typedef struct { const PcrecCpRange *iv; int n; } CoChar;
+
+typedef struct {
+    CoChar    *v;
+    int        n, cap;
+    const Ast *culprit;   /* the node the line stops at (NULL: none expected) */
+    int        at;        /* index in v where the culprit stands, -1: not met */
+    bool       pin_end;   /* a `\z` closed the line */
+} CoLine;
+
+/* Appends one character class to the line, growing it from the arena. */
+static void co_line_push(Ctx *cx, CoLine *L, const Ast *cls)
+{
+    if (L->n == L->cap) {
+        int ncap = L->cap ? L->cap * 2 : 16;
+        CoChar *nv = pcrec_arena_alloc(&cx->arena, (size_t)ncap * sizeof *nv);
+        if (L->n) memcpy(nv, L->v, (size_t)L->n * sizeof *nv);
+        L->v = nv;
+        L->cap = ncap;
+    }
+    L->v[L->n].iv = cls->u.cls.iv;
+    L->v[L->n].n = cls->u.cls.n;
+    L->n++;
+}
+
+/* Marks the culprit's place on the line: false for any other choice. */
+static bool co_line_mark(CoLine *L, const Ast *a, bool inner)
+{
+    if (a != L->culprit || inner || L->at >= 0 || L->pin_end) return false;
+    L->at = L->n;
+    return true;
+}
+
+/* Reads `a` onto the line: false when it is not a line of characters
+ * (`inner`: a way of the culprit, where no anchor and no culprit stand). */
+static bool co_line(Ctx *cx, CoLine *L, const Ast *a, bool inner)
+{
+    switch (a->k) {
+    case A_CLASS:
+        if (a->u.cls.n == 0 || L->pin_end) return false;
+        co_line_push(cx, L, a);
+        return true;
+    case A_EMPTY:
+        return true;
+    case A_CALLOUT:
+        return !a->u.callout.consume;
+    case A_CAT: {
+        int n;
+        Ast **v = co_items(cx, (Ast *)a, A_CAT, &n);
+        for (int i = 0; i < n; i++)
+            if (!co_line(cx, L, v[i], inner)) return false;
+        return true;
+    }
+    case A_CAP: case A_ATOMIC:
+        return co_line(cx, L, a->l, inner);
+    case A_CTX:
+        if (inner) return false;
+        if (pcrec_ctx_class(a) == CTX_PIN_START) return L->n == 0 && L->at < 0;
+        if (pcrec_ctx_class(a) != CTX_PIN_END) return false;
+        L->pin_end = true;
+        return true;
+    case A_REP:
+        return co_inert(a) || co_line_mark(L, a, inner);
+    case A_ALT: case A_CALL: case A_LOOK:
+        return co_line_mark(L, a, inner);
+    case A_EOL: case A_GSTART: case A_KRESET: case A_BREF: case A_VAR:
+    case A_WCLASS:
+        return false;
+    }
+    return false;
+}
+
+/* The culprit's ways to match, in the order the engine tries them: either
+ * `nway` branches, or (rep) the body `body` repeated from the most down to
+ * `rmin` times, at most `rmax` (-1: unbounded). */
+typedef struct {
+    CoLine *way;
+    int     nway;
+    bool    rep;
+    CoLine  body;
+    int     rmin, rmax;
+} CoWays;
+
+/* The group numbered `no`, when exactly one A_CAP carries it. */
+typedef struct { int no; const Ast *g; int n; } CoFind;
+
+/* pcrec_ast_visit callback: collects the A_CAP nodes numbered `no`. */
+static void co_find_cap(void *ud, const Ast *a)
+{
+    CoFind *f = ud;
+    if (a->k == A_CAP && a->u.cap.no == f->no) { f->g = a; f->n++; }
+}
+
+/* Fills `w` with culprit `c`'s ways: false when they are not class lines. */
+static bool co_ways(Ctx *cx, Ast *root, const Ast *c, CoWays *w)
+{
+    memset(w, 0, sizeof *w);
+    if (c->k == A_CALL) {
+        /* A call matches what its group's body matches; a body that is itself
+         * a call, or a group the pattern holds twice, declines. */
+        CoFind f = { c->u.call.target, NULL, 0 };
+        if (f.no <= 0) return false;
+        pcrec_ast_visit(root, co_find_cap, &f);
+        if (f.n != 1) return false;
+        c = f.g->l;
+        while (c->k == A_CAP) c = c->l;
+    }
+    if (c->k == A_ALT) {
+        Ast **v = co_items(cx, (Ast *)c, A_ALT, &w->nway);
+        w->way = pcrec_arena_alloc(&cx->arena, (size_t)w->nway * sizeof *w->way);
+        for (int i = 0; i < w->nway; i++) {
+            w->way[i].at = -1;
+            if (!co_line(cx, &w->way[i], v[i], true)) return false;
+        }
+        return true;
+    }
+    if (c->k == A_REP && c->u.rep.greedy && c->u.rep.rmin != c->u.rep.rmax) {
+        w->rep = true;
+        w->body.at = -1;
+        w->rmin = c->u.rep.rmin;
+        w->rmax = c->u.rep.rmax;
+        return co_line(cx, &w->body, c->l, true) && w->body.n > 0;
+    }
+    return false;
+}
+
+/* The smallest code point in a, also in b (NULL: any) and in [lo, hi]. */
+static bool co_char_min(const CoChar *a, const CoChar *b, unsigned lo,
+                        unsigned hi, unsigned *out)
+{
+    bool found = false;
+    for (int i = 0; i < a->n; i++) {
+        unsigned alo = a->iv[i].lo > lo ? a->iv[i].lo : lo;
+        unsigned ahi = a->iv[i].hi < hi ? a->iv[i].hi : hi;
+        if (alo > ahi) continue;
+        if (!b) {
+            if (!found || alo < *out) *out = alo;
+            found = true;
+            continue;
+        }
+        for (int j = 0; j < b->n; j++) {
+            unsigned x = b->iv[j].lo > alo ? b->iv[j].lo : alo;
+            unsigned y = b->iv[j].hi < ahi ? b->iv[j].hi : ahi;
+            if (x <= y && (!found || x < *out)) { *out = x; found = true; }
+        }
+    }
+    return found;
+}
+
+/* A member of `w`, preferring one also in `s` (NULL: no preference), and a
+ * printable one: the witness is printed in the refusal. */
+static unsigned co_pick(const CoChar *w, const CoChar *s)
+{
+    unsigned c = 0;
+    if (s && co_char_min(w, s, 0x21, 0x7e, &c)) return c;
+    if (s && co_char_min(w, s, 0, ~0u, &c))     return c;
+    if (co_char_min(w, NULL, 0x21, 0x7e, &c))   return c;
+    co_char_min(w, NULL, 0, ~0u, &c);
+    return c;
+}
+
+/* True iff code point `c` is in the class. */
+static bool co_char_has(const CoChar *a, unsigned c)
+{
+    for (int i = 0; i < a->n; i++)
+        if (c >= a->iv[i].lo && c <= a->iv[i].hi) return true;
+    return false;
+}
+
+/* True iff line `L` matches t[off..off+L->n). */
+static bool co_line_at(const CoLine *L, const unsigned *t, int nt, int off)
+{
+    if (off + L->n > nt) return false;
+    for (int i = 0; i < L->n; i++)
+        if (!co_char_has(&L->v[i], t[off + i])) return false;
+    return true;
+}
+
+/* The length the SEALED culprit takes at t[0..], or -1 when no way matches. */
+static int co_seal_len(const CoWays *w, const unsigned *t, int nt)
+{
+    if (w->rep) {
+        int c = 0;
+        while ((w->rmax < 0 || c < w->rmax) &&
+               co_line_at(&w->body, t, nt, c * w->body.n))
+            c++;
+        return c >= w->rmin ? c * w->body.n : -1;
+    }
+    for (int i = 0; i < w->nway; i++)
+        if (co_line_at(&w->way[i], t, nt, 0)) return w->way[i].n;
+    return -1;
+}
+
+/* Tries one subject: the way `W` (n characters, W[q] the class at q) then R,
+ * each character preferring `S` (the way it competes with; S[q] for q < ns).
+ * Returns the witness text when the sealed attempt fails, else NULL. */
+static const char *co_try(Ctx *cx, const CoLine *L, const CoWays *w,
+                          const CoChar *const *W, int n,
+                          const CoChar *const *S, int ns)
+{
+    const int np = L->at, k = L->n - L->at, nt = n + k;
+    unsigned *t = pcrec_arena_alloc(&cx->arena,
+                                    (size_t)(np + nt + 1) * sizeof *t);
+    for (int q = 0; q < np; q++) t[q] = co_pick(&L->v[q], NULL);
+    unsigned *u = t + np;
+    for (int q = 0; q < nt; q++) {
+        const CoChar *wq = q < n ? W[q] : &L->v[np + q - n];
+        u[q] = co_pick(wq, q < ns ? S[q] : NULL);
+    }
+    const int sl = co_seal_len(w, u, nt);
+    if (sl >= 0) {
+        CoLine R = { L->v + np, k, k, NULL, -1, L->pin_end };
+        if (co_line_at(&R, u, nt, sl) && (!L->pin_end || sl + k == nt))
+            return NULL;   /* the sealed attempt matches too */
+    }
+    /* Rendered for the refusal: printable ASCII as is, the rest escaped. */
+    char *out = pcrec_arena_alloc(&cx->arena, (size_t)(np + nt) * 12 + 1);
+    size_t o = 0;
+    for (int q = 0; q < np + nt; q++) {
+        unsigned c = t[q];
+        if (c >= 0x20 && c <= 0x7e && c != '"' && c != '\\') out[o++] = (char)c;
+        else o += (size_t)sprintf(out + o, "\\x{%x}", c);
+    }
+    out[o] = '\0';
+    return pcrec_sb_fragf(&cx->arena, " (offset 0 of \"%s\")", out);
+}
+
+/* A witness subject for sealing culprit `c` in `root`, or NULL. */
+static const char *co_seal_witness(Ctx *cx, Ast *root, const Ast *c)
+{
+    CoLine L = { NULL, 0, 0, c, -1, false };
+    CoWays w;
+    if (!co_line(cx, &L, root, false) || L.at < 0 || !co_ways(cx, root, c, &w))
+        return NULL;
+    if (w.rep) {
+        /* The fewest iterations as written; the seal is offered more by
+         * picking R's characters to fit further iterations. */
+        const int bl = w.body.n, n = w.rmin * bl, ns = n + (L.n - L.at) + bl;
+        const CoChar **W = pcrec_arena_alloc(&cx->arena, (size_t)(n + 1) * sizeof *W);
+        const CoChar **S = pcrec_arena_alloc(&cx->arena, (size_t)ns * sizeof *S);
+        for (int q = 0; q < n; q++)  W[q] = &w.body.v[q % bl];
+        for (int q = 0; q < ns; q++) S[q] = &w.body.v[q % bl];
+        return co_try(cx, &L, &w, W, n, S, ns);
+    }
+    /* A later branch as written, against each earlier one it competes with. */
+    for (int j = 1; j < w.nway; j++) {
+        const CoChar **W = pcrec_arena_alloc(&cx->arena,
+                                             (size_t)(w.way[j].n + 1) * sizeof *W);
+        for (int q = 0; q < w.way[j].n; q++) W[q] = &w.way[j].v[q];
+        for (int i = 0; i < j; i++) {
+            const CoChar **S = pcrec_arena_alloc(&cx->arena,
+                                                 (size_t)(w.way[i].n + 1) * sizeof *S);
+            for (int q = 0; q < w.way[i].n; q++) S[q] = &w.way[i].v[q];
+            const char *why = co_try(cx, &L, &w, W, w.way[j].n, S, w.way[i].n);
+            if (why) return why;
+        }
+    }
+    return NULL;
+}
+
+/* The verdict on sealing culprit `c` (see the banner above); *why is the
+ * witness for PROVEN CHANGES. */
+static CoSeal co_seal_verdict(CoWalk *w, const Ast *c, const char **why)
+{
+    Ctx *cx = w->cx;
+    const bool same = co_seal_same(w, (Ast *)c);
+    *why = co_seal_witness(cx, w->root, c);
+    if (same && *why)
+        pcrec_ctx_fail(cx, 0, "internal error: sealing the construct%s is "
+                       "both proved a no-op and witnessed to change a match "
+                       "(%s)", co_at(cx, c), *why);
+    return same ? CO_SEAL_SAME : *why ? CO_SEAL_CHANGES : CO_SEAL_UNPROVEN;
+}
+
+/* The `once` refusal's naming of the live choice point `c` before a site,
+ * its fix, and (`verdict`: a message is wanted) whether the fix changes what
+ * the pattern matches: arena text, from the row co_culprit_row picks. A
+ * witness that would push the text past `room` bytes is left out (the
+ * verdict stays); the refusal prefixes this text, and `pcrec_error.msg` is
+ * fixed-size. */
+static const char *co_culprit(CoWalk *w, const Ast *c, bool verdict,
+                              size_t room)
+{
+    Ctx *cx = w->cx;
+    const CoCulpritRow *r = co_culprit_row(cx, c);
+    const char *clause = r->clause;
     if (c->k == A_LOOK) {
         /* The choice that makes it live is the first one inside its body. */
         const Ast *in = co_choice(cx, c->l);
         while (in && in->k == A_LOOK) in = co_choice(cx, in->l);
-        const bool bh = c->u.look.behind;
-        return pcrec_sb_fragf(&cx->arena,
-            "the non-atomic lookaround%s keeps %s%s live after it completes; "
-            "use %s (atomic), or wrap it: (?>%s...))",
-            co_at(cx, c),
-            in && in->k == A_REP ? "the quantifier"
-            : in && in->k == A_ALT ? "the alternation"
-            :                        "the subroutine call",
-            in ? co_at(cx, in) : "",
-            bh ? "(?<=...) / (?<!...)" : "(?=...) / (?!...)",
-            bh ? "(?<*" : "(?*");
+        clause = pcrec_sb_fragf(&cx->arena, r->clause,
+                                in ? co_culprit_row(cx, in)->name
+                                   : "a choice point",
+                                in ? co_at(cx, in) : "");
     }
-    const char *what = c->k == A_REP ? "the quantifier"
-                     : c->k == A_ALT ? "the alternation"
-                     :                 "the subroutine call";
-    const char *fix = c->k == A_REP
-        ? "make it possessive (X*+, X++, X?+, X{n,m}+) or wrap it in (?>...)"
-        : "wrap it in (?>...)";
-    return pcrec_sb_fragf(&cx->arena, "%s%s can be backtracked into; %s",
-                          what, co_at(cx, c), fix);
+    const char *text = pcrec_sb_fragf(&cx->arena, "%s%s %s; %s", r->name,
+                                      co_at(cx, c), clause, r->fix);
+    if (!verdict || !r->same) return text;
+    const char *why;
+    switch (co_seal_verdict(w, c, &why)) {
+    case CO_SEAL_SAME:
+        return pcrec_sb_fragf(&cx->arena, "%s; %s", text, r->same);
+    case CO_SEAL_CHANGES: {
+        const char *t = pcrec_sb_fragf(&cx->arena, "%s; %s", text,
+                            pcrec_sb_fragf(&cx->arena, r->changes, why));
+        return strlen(t) <= room ? t : pcrec_sb_fragf(&cx->arena, "%s; %s",
+                            text, pcrec_sb_fragf(&cx->arena, r->changes, ""));
+    }
+    case CO_SEAL_UNPROVEN:
+        return pcrec_sb_fragf(&cx->arena, "%s; %s", text, r->unproven);
+    }
+    return text;
 }
+
+/* The `once` refusal's head; its reason follows. */
+#define CO_ONCE_HEAD "callout at offset %zu is marked once but can fire again: "
 
 const char *pcrec_callout_class_name(int fclass)
 {
@@ -206,7 +654,12 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
             "whose quantifier%s has a maximum of 2 or more", co_at(cx, rep));
     } else if (live) {
         c = CO_CLASS_REPEATED;
-        a->u.callout.why = co_culprit(cx, live);   /* same text as the refusal */
+        /* Same text as the refusal; the verdict only when a message is
+         * wanted: the refusal itself, or the `--emit-ir` note. */
+        const size_t head = strlen(pcrec_sb_fragf(&cx->arena, CO_ONCE_HEAD, at));
+        const size_t msg = sizeof ((pcrec_error *)0)->msg - 1;
+        a->u.callout.why = co_culprit(w, live, a->u.callout.once || cx->want_ir,
+                                      msg > head ? msg - head : 0);
     } else if (tail) {
         c = CO_CLASS_ONCE_PER_MATCH;
         a->u.callout.why = "no repeat and no live choice point before it; "
@@ -219,10 +672,8 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
     a->u.callout.tail = tail;
     if (a->u.callout.once && c == CO_CLASS_REPEATED)
         pcrec_ctx_fail(cx, at, rep
-            ? "callout at offset %zu is marked once but can fire again: %s; "
-              "a site in such a repeat cannot be marked once"
-            : "callout at offset %zu is marked once but can fire again: %s",
-            at, a->u.callout.why);
+            ? CO_ONCE_HEAD "%s; a site in such a repeat cannot be marked once"
+            : CO_ONCE_HEAD "%s", at, a->u.callout.why);
 }
 
 static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
@@ -313,7 +764,7 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
                            in->callout_decls[0].num);
         return;
     }
-    CoWalk w = { cx, NULL, false, 1, NULL, 0 };
+    CoWalk w = { cx, NULL, false, 1, NULL, 0, root };
     w.called = pcrec_arena_alloc(&cx->arena, cx->ncap + 1);
     memset(w.called, 0, cx->ncap + 1);
     w.sites = pcrec_arena_alloc(&cx->arena,
