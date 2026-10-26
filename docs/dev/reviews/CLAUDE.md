@@ -53,3 +53,4 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
 - `2026-10-21-r1-findall-i2.md` — light D6 panel on findall_iter_i2.md rev 1.
 - `2026-10-24-r1-subst-code.md` (+ dir) — compiled substitution (lane/substland), coordinator round: 5 lenses, 38 findings, rulings inline.
+- `2026-10-26-r1-inline-c-design.md` (+ dir) — [INLINE-C] pattern-side design note rev 0, coordinator round: 5 lenses (premise, simulate, slot, contract+trust, cost), 37 items, rulings inline.
