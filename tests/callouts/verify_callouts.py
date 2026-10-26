@@ -19,8 +19,10 @@ THE NAME IS THE MECHANISM: verify_rxt.py's `declares_own_oracle` sees a
 `own-oracle` skip. Python `re` has no callout.
 
 Usage: verify_callouts.py <file.rxt>...
-Exit 0 green, 1 on any disagreement or an empty sweep, 3 when libpcre2 is
-unavailable.
+Exit 0 green, 1 on any disagreement, an empty sweep, an `m`/`n` line it
+cannot read, or a co_oracle.c that does not build against a libpcre2 that
+is present; 3 only when libpcre2 itself is absent (PC-3's shape:
+`build_oracle`).
 """
 import os
 import re
@@ -59,6 +61,34 @@ def consumers():
     return rows
 
 
+PROBE = (b"#define PCRE2_CODE_UNIT_WIDTH 8\n#include <pcre2.h>\n"
+         b"int main(void) { return pcre2_config(PCRE2_CONFIG_UNICODE, 0) < 0; }\n")
+
+
+def build_oracle(cc, out):
+    """Build co_oracle.c into `out`: (0, ""), or (3, why) when libpcre2 is
+    ABSENT (a one-line probe that only includes and links it does not
+    build), or (1, why) when libpcre2 is present and co_oracle.c is what
+    fails. An absent library is a loud SKIP; a broken oracle is a FAIL,
+    never a skip that silently drops the arms it feeds (gen_diff.py shares
+    this)."""
+    d = os.path.dirname(out)
+    probe = os.path.join(d, "pcre2_probe.c")
+    with open(probe, "wb") as f:
+        f.write(PROBE)
+    r = subprocess.run([cc, "-o", probe[:-2], probe, "-lpcre2-8"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return 3, "libpcre2 unavailable: " + r.stderr.strip()[:300]
+    r = subprocess.run([cc, "-O1", "-I", HERE, "-o", out,
+                        os.path.join(HERE, "co_oracle.c"), "-lpcre2-8"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return 1, "co_oracle.c did not build (libpcre2 is present): " + \
+            r.stderr.strip()[:600]
+    return 0, ""
+
+
 def main():
     if len(sys.argv) < 2:
         sys.stderr.write("usage: verify_callouts.py <file.rxt>...\n")
@@ -66,14 +96,14 @@ def main():
     cons = consumers()
     with tempfile.TemporaryDirectory() as td:
         oracle = os.path.join(td, "co_oracle")
-        r = subprocess.run([os.environ.get("CC", "gcc"), "-O1", "-I", HERE, "-o",
-                            oracle, os.path.join(HERE, "co_oracle.c"), "-lpcre2-8"],
-                           capture_output=True, text=True)
-        if r.returncode != 0:
-            sys.stderr.write("verify_callouts: libpcre2 unavailable: %s\n"
-                             % r.stderr.strip()[:300])
-            return 3
+        rc, why = build_oracle(os.environ.get("CC", "gcc"), oracle)
+        if rc:
+            sys.stderr.write("verify_callouts: %s\n" % why)
+            if rc == 1:
+                print("FAIL: verify_callouts: %s" % why)
+            return rc
         cells = []          # (path, lineno, pattern, subject, kind, span, gl)
+        unread = []         # `m`/`n` lines the cell reader did not parse
         for path in sys.argv[1:]:
             pattern, last = None, None
             for lineno, raw in enumerate(open(path, encoding="latin-1"), 1):
@@ -83,6 +113,7 @@ def main():
                 elif line.startswith(("m ", "n ")) and pattern is not None:
                     m = re.match(r'([mn])\s+"(.*?)"(?:\s+(\d+)\s+(\d+))?\s*$', line)
                     if not m:
+                        unread.append("%s:%d" % (path, lineno))
                         continue
                     span = (int(m.group(3)), int(m.group(4))) if m.group(3) else None
                     last = [path, lineno, pattern, unesc(m.group(2)), m.group(1), span, []]
@@ -129,9 +160,16 @@ def main():
                   % (path, lineno, pat, subj, kind, span, a))
             bad += 1
     print("verify_callouts: %d cells agree (%d group lines), %d disagree" % (agree, groups, bad))
-    # An empty sweep reads like a clean one (K35): the floor is the shape
-    # count of shapes.rxt's opening sections, far below the corpus.
-    if agree < 20:
+    # A line the reader skipped is a cell nobody checked (K35): counted and
+    # failed, never dropped.
+    if unread:
+        print("FAIL: %d m/n line(s) the cell reader could not parse: %s"
+              % (len(unread), ", ".join(unread[:10])))
+        return 1
+    # An empty sweep reads like a clean one (K35). Floor 45 against the 49
+    # cells measured at lane ic1bfix (2026-10-26): a few cells may move, a
+    # reader that stops reaching a section may not.
+    if agree < 45:
         print("FAIL: only %d cells checked — the extraction stopped reaching the corpus" % agree)
         return 1
     return 1 if bad else 0

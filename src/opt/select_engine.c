@@ -713,9 +713,8 @@ static const PfAdmit pf_admits[] = {
      * its three siblings. */
     { "callout",            pfa_callout,            PFV_OFF,     "no-callout",
       ESEL_PASS,
-      "callout site -- a callout pattern's prefilter is not admitted yet"
-      " (a later stage of [INLINE-C] admits it under the inexact-erasure"
-      " rule); no flag changes this, and -fprefilter refuses",
+      "callout site -- a callout pattern has no prefilter yet; no flag"
+      " changes this, and -fprefilter refuses",
       .axlist = FB_NO_LIST },
     /* [OPT-4.2] THE RUNGLESS DECLINE, worded DIFFERENTLY from row 5's, not
      * merely generalized, because there is no rung here to say was
@@ -1012,7 +1011,7 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
     if (force_on && has_callout && !(has_bref || has_call || has_var))
         pcrec_ctx_fail(cx, why_pos,
                  "-fprefilter cannot be honoured for a pattern containing a "
-                 "callout: a callout pattern's prefilter is not admitted yet "
+                 "callout: a callout pattern has no prefilter yet "
                  "(drop -fprefilter)");
     if (force_on && (has_bref || has_call || has_var))
         pcrec_ctx_fail(cx, why_pos,

@@ -17,11 +17,13 @@ stubs' fire log. Fire COUNTS are never compared (§11.6¶1).
 
 THE POPULATION IS COUNTED, NOT ASSUMED (learnings.md §3): a pattern pcrec or
 libpcre2 refuses is skipped with its reason tallied, and the run fails when
-fewer than --floor patterns were compiled AND compared.
+fewer than --floor patterns were compiled AND compared, or fewer than
+--floor/2 artifacts carry a once-class site whose bound the fire log checks.
 
 Usage: gen_diff.py --pcrec BIN --work DIR [--n N] [--seed S] [--floor F]
-Exit 0 green, 1 on any disagreement or a missed floor, 3 when libpcre2 is
-unavailable (the caller reports the skip).
+Exit 0 green, 1 on any disagreement, a missed floor or a co_oracle.c that
+does not build against a present libpcre2, 3 only when libpcre2 itself is
+absent (the caller reports the skip; verify_callouts.build_oracle).
 """
 import argparse
 import os
@@ -30,6 +32,8 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from verify_callouts import build_oracle  # noqa: E402  (absent vs broken)
 
 def read_rows():
     """behaviors.h's row table, the ONE list of behaviours: (name, is_consumer,
@@ -145,13 +149,12 @@ def main():
     os.makedirs(a.work, exist_ok=True)
 
     oracle = os.path.join(a.work, "co_oracle")
-    rc = subprocess.run([a.cc, "-O1", "-I", HERE, "-o", oracle,
-                         os.path.join(HERE, "co_oracle.c"), "-lpcre2-8"],
-                        capture_output=True, text=True)
-    if rc.returncode != 0:
-        sys.stderr.write("gen_diff: libpcre2 unavailable (co_oracle did not build): %s\n"
-                         % rc.stderr.strip()[:300])
-        return 3
+    rc, why = build_oracle(a.cc, oracle)
+    if rc:
+        sys.stderr.write("gen_diff: %s\n" % why)
+        if rc == 1:
+            print("FAIL: gen_diff: %s" % why)
+        return rc
 
     rng = random.Random(a.seed)
     g = Gen(rng)
@@ -299,16 +302,27 @@ def main():
             if bad <= 40:
                 print("FAIL: %s %r on %r: pcrec '%s' libpcre2 '%s'" % (px, pat, s, mine_ans, o))
     ncase = sum(len(x[4]) for x in arts)
+    nbound = sum(1 for x in arts if x[3])
     print("gen_diff: %d patterns generated (%d tries), %d compiled, %d compared, "
           "%d cases, %d disagreements, %d class-bound violations, %d oracle errors, "
           "%d artifacts with a checked firing-class bound"
           % (len(arts) + sum(skips.values()), tries, len(arts), len(compared),
-             ncase, bad, viol, oracle_err, sum(1 for x in arts if x[3])))
+             ncase, bad, viol, oracle_err, nbound))
+    print("gen_diff: %d of %d compiled artifacts (%.0f%%) carry a once-class "
+          "site the fire log checks" % (nbound, len(arts),
+                                         100.0 * nbound / max(1, len(arts))))
     for why, n in sorted(skips.items(), key=lambda x: -x[1]):
         print("gen_diff: skipped %d: %s" % (n, why))
     if len(compared) < a.floor:
         print("FAIL: gen_diff: %d patterns compared, below the floor of %d"
               % (len(compared), a.floor))
+        return 1
+    # The firing-class bound is checked only on artifacts that carry a
+    # once-class site (K35): its population has its own floor, half the
+    # compared floor (measured 890 of 1,200 at lane ic1bfix, 2026-10-26).
+    if nbound < a.floor // 2:
+        print("FAIL: gen_diff: %d artifacts carry a checked firing-class "
+              "bound, below the floor of %d" % (nbound, a.floor // 2))
         return 1
     return 1 if bad or viol else 0
 

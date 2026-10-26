@@ -338,7 +338,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-21"></a>
 ### 1.21 `--callout N:ATTRS`: a numbered callout's attributes
 
-<a id="s1-21-p1"></a>[1.21¶1] Declares the attributes of numbered callout `N` (0-255) in the `--pattern` being compiled, which a numbered callout `(?CN)` has no string to carry (`match_api.md` §11.7). `ATTRS` is a comma-separated list of the attribute names (`consume`, `once`): `--callout 1:consume,once`. Repeatable, one per number. A declaration naming a number the pattern does not use, an unknown attribute, and a malformed value are refused. It does not combine with a file operand, where a block's `callout N ATTRS` line says the same thing (`rxt_format.md` §1.5¶13a).
+<a id="s1-21-p1"></a>[1.21¶1] Declares the attributes of numbered callout `N` (0-255) in the `--pattern` being compiled, which a numbered callout `(?CN)` has no string to carry (`match_api.md` §11.7). `ATTRS` is a comma-separated list of the attribute names (`consume`, `once`): `--callout 1:consume,once`. Repeatable, one per number. A number declared twice, a declaration naming a number the pattern does not use, an unknown or repeated attribute, an empty `ATTRS` (`--callout 1:`), and a malformed value are refused; the value is echoed with its control bytes escaped. It applies to a compile, `--emit-ir` and `--emit-facts`; `--count-groups` reads no attribute and refuses it. It does not combine with a file operand, where a block's `callout N ATTRS` line says the same thing (`rxt_format.md` §1.5¶13a).
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

@@ -16,7 +16,10 @@
 #   (5) the firing-class table (inline_c.md §1.10's examples) as `--emit-ir`
 #       expectations, and `once` accepted on classes 1-2, refused on 3;
 #   (6) the refusals: the malformed forms with the module on and off, a `__`
-#       binding name, `--emit-main`.
+#       binding name, a binding symbol the shared ABI block already declares
+#       (read off an emitted artifact, not off pcrec's own list), empty and
+#       malformed attribute lists and declarations (escaped echoes),
+#       `--emit-main`, and `--callout` with `--count-groups`/`--emit-facts`.
 # Arms 2 and 3 SKIP LOUDLY when libpcre2 is absent (PC-3's shape).
 #
 # Env: PCREC, CC, GENCFLAGS (the harness's own); CALLOUT_GEN_N (arm 3's
@@ -117,7 +120,10 @@ if [ "$built" = 1 ]; then
         for t in overlong midchar pred1; do
             "$TIMEOUT_BIN" 30 "$D/checks" trap "$t" > "$D/trap.out" 2>&1
             rc=$?
-            if [ "$rc" -gt 128 ] && [ "$rc" -ne 124 ]; then
+            # The trap is `__builtin_trap()`: SIGILL (132) on x86, SIGTRAP
+            # (133) on arm64. Any other signal, SIGSEGV's 139 above all, is
+            # a crash, not the trap.
+            if [ "$rc" -eq 132 ] || [ "$rc" -eq 133 ]; then
                 ok "trap '$t': the call site trapped (exit $rc)"
             else
                 bad "trap '$t': expected a trap, got exit $rc: $(cat "$D/trap.out")"
@@ -145,8 +151,10 @@ while IFS=$'\t' read -r pat cls tl; do
     out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/once.c" --pattern "$once" 2>&1)"
     rc=$?
     if [ "$cls" = repeated ]; then
-        if [ $rc -ne 0 ] && printf '%s' "$out" | grep -q 'is marked once but can fire again'; then
-            ok "once refused on $once"
+        # The refusal names its cause: the construct and its offset.
+        if [ $rc -ne 0 ] && printf '%s' "$out" | grep -q 'is marked once but can fire again' &&
+           printf '%s' "$out" | grep -qE '(quantifier|alternation|subroutine call)( at offset [0-9]+)?'; then
+            ok "once refused on $once, naming the cause"
         else
             bad "once on $once: want a refusal naming the cause, got exit $rc: $out"
         fi
@@ -167,13 +175,17 @@ a(?C1)b	once-per-start	-
 (?:(?C1)(a))+	repeated	-
 (?:a(?C1)){2}	repeated	-
 (?=\d+(?C1))	repeated	-
+(?*a+)(?C1)a+c	repeated	-
+(?=a+)(?C1)b	once-per-start	-
+(?(DEFINE)(?<d>a|b))x(?C1)	once-per-match	tail
+(?:a|b){0}x(?C1)	once-per-match	tail
 EOF
 
 # ---- arm 6: refusals --------------------------------------------------------
 echo
 echo "== [INLINE-C] refusals =="
 for f in callouts none; do
-    for p in 'a(?Cx)' 'a(?C256)' 'a(?C1x)' 'a(?C!x!)'; do
+    for p in 'a(?Cx)' 'a(?C256)' 'a(?C1x)' 'a(?C!x!)' 'a(?C'; do
         out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$f" -o "$WORK/r.c" --pattern "$p" 2>&1)"
         if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'malformed callout'; then
             ok "$p is refused as malformed with --features $f"
@@ -187,6 +199,92 @@ if [ $? -ne 0 ] && printf '%s' "$out" | grep -q "contains '__'"; then
     ok "a binding name containing '__' is refused"
 else
     bad "a '__' binding name: want a refusal, got: $out"
+fi
+# A BINDING SYMBOL THE SHARED ABI BLOCK ALREADY DECLARES. The names are read
+# off an emitted artifact (every `rx_callout_*` identifier it spells that is
+# not this pattern's own binding), so a name the block gains later is
+# covered without editing pcrec's list or this one.
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -o "$WORK/abi.c" --pattern 'a(?C7)'; then
+    nabi=0
+    for sym in $(grep -ohE '\brx_callout_[A-Za-z0-9_]+' "$WORK/abi.c" "$WORK/abi.h" | sort -u); do
+        [ "$sym" = rx_callout_7 ] && continue
+        nabi=$((nabi + 1))
+        p="a(?C\"${sym#rx_callout_}\")"
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/r.c" --pattern "$p" 2>&1)"
+        if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'already declares'; then
+            ok "$p is refused: $sym is the shared ABI block's own name"
+        else
+            bad "$p: $sym is declared by the artifact's shared block, want a refusal, got: $out"
+        fi
+    done
+    if [ "$nabi" -lt 1 ]; then
+        bad "no fixed rx_callout_* name found in an emitted artifact: the ABI-name check read nothing"
+    fi
+else
+    bad "the ABI-name probe artifact did not compile"
+fi
+# Attribute lists: an empty item, and an escaped echo of an unknown one.
+for p in 'a(?C"x,")' 'a(?C"x,,once")'; do
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/r.c" --pattern "$p" 2>&1)"
+    if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'empty callout attribute'; then
+        ok "$p: an empty attribute is refused"
+    else
+        bad "$p: want 'empty callout attribute', got: $out"
+    fi
+done
+out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/r.c" --pattern "$(printf 'a(?C"x,o\033")')" 2>&1)"
+if [ $? -ne 0 ] && printf '%s' "$out" | grep -qF 'o\x1b' && ! printf '%s' "$out" | grep -q $'\033'; then
+    ok "an unknown attribute's echo escapes its control byte"
+else
+    bad "an unknown attribute with ESC: want an escaped echo, got: $(printf '%s' "$out" | od -c | head -3)"
+fi
+# --callout's value shape: the one shape reader, an escaped echo.
+for v in '1:' '13once' '1:Once' '1:once,' "$(printf '1:\033')"; do
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/r.c" --callout "$v" --pattern 'a(?C1)' 2>&1)"
+    if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'a callout declaration is N:ATTRS' &&
+       ! printf '%s' "$out" | grep -q $'\033'; then
+        ok "--callout '$(printf '%q' "$v")' is refused by its shape"
+    else
+        bad "--callout '$(printf '%q' "$v")': want a shape refusal, got: $out"
+    fi
+done
+# The `.rxt` `callout` line: the same shape reader, its own [value-shape]
+# diagnostic, an escaped echo; and the one well-formed line compiles.
+for v in '13once' '13 consume once' '13' "$(printf '13 o\033')" '13 consume'; do
+    printf 'pattern a(?C13)b\nfeatures all\ncallout %s\nm "ab" 0 2\n' "$v" > "$WORK/co.rxt"
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" -o "$WORK/co.c" "$WORK/co.rxt" 2>&1)"
+    rc=$?
+    if [ "$v" = '13 consume' ]; then
+        if [ $rc -eq 0 ]; then ok "the .rxt line 'callout 13 consume' compiles"
+        else bad "the .rxt line 'callout 13 consume': want a compile, got: $out"; fi
+    elif [ $rc -ne 0 ] && printf '%s' "$out" | grep -q '\[value-shape\]' &&
+         ! printf '%s' "$out" | grep -q $'\033'; then
+        ok "the .rxt line 'callout $(printf '%q' "$v")' is refused by its shape"
+    else
+        bad "the .rxt line 'callout $(printf '%q' "$v")': want [value-shape], got: $out"
+    fi
+done
+# --count-groups reads no attribute and refuses --callout; --emit-facts
+# applies it, so a declaration naming no site is refused there too.
+out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --count-groups --callout 1:once --pattern 'a(?C1)' 2>&1)"
+if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'count-groups reads no callout attribute'; then
+    ok "--count-groups refuses --callout"
+else
+    bad "--count-groups with --callout: want a refusal, got: $out"
+fi
+out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --emit-facts --callout 2:once --pattern 'a(?C1)' 2>&1)"
+if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'does not use'; then
+    ok "--emit-facts applies --callout (a declaration naming no site is refused)"
+else
+    bad "--emit-facts with an unused --callout: want a refusal, got: $out"
+fi
+# ...and the listing describes the declared site: a `consume` site is not
+# zero-width, so `b`'s furthest offset is unbounded (review r2 CON-8).
+out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --emit-facts --callout 1:consume --pattern 'a(?C1)b' 2>&1)"
+if printf '%s\n' "$out" | grep -qP '\treq_set_maxoff\t.*\t97:0,98:unbounded\t'; then
+    ok "--emit-facts reads a declared consume site's width"
+else
+    bad "--emit-facts --callout 1:consume: want req_set_maxoff 97:0,98:unbounded, got: $(printf '%s\n' "$out" | grep req_set_maxoff)"
 fi
 out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --emit-main -o "$WORK/r.c" --pattern 'a(?C1)' 2>&1)"
 if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'cannot define the binding rx_callout_1'; then

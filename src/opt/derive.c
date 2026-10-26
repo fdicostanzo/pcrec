@@ -72,12 +72,14 @@ static void qf_walk(QFacts *f, const Ast *a, bool lb)
                 if (a->u.bref.refs[i] >= 0 && a->u.bref.refs[i] <= f->ncap)
                     f->kept[a->u.bref.refs[i]] = true;
             return;
-        /* [INLINE-C] 1b a callout site reads every group (a pattern carrying
-         * one is declined by admission A3 before a derivation runs; kept
-         * whole here so the walk never under-states a reader). */
+        /* [INLINE-C] 1b a callout site never reaches a derivation: admission
+         * A3 declines a pattern carrying one first. A hand-coded reader here
+         * would be a second spelling of the kind row's `reads` column, so the
+         * arm is a loud internal error rather than a guess at it. */
         case A_CALLOUT:
-            for (int g = 0; g <= f->ncap; g++) f->kept[g] = true;
-            return;
+            pcrec_ctx_fail(f->cx, 0, "internal error: a callout site reached "
+                           "the quantifier derivation, which admission A3 "
+                           "must decline");
         case A_CALL: {
             /* `(?R)` reaches the root, which is never deleted: the root is
              * Q itself. The callee's BODY is visited at its own lexical

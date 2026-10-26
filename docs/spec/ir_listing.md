@@ -87,6 +87,7 @@
 | `no-backreference` | a backreference; no flag changes it |
 | `no-linked-call` | a LINKED subroutine call; `-fprefilter` refuses |
 | `no-variable` | a `${...}` variable; no flag changes it and `-fprefilter` refuses |
+| `no-callout` | a callout site (`(?C...)`, `pattern_language.md` §7.11); no flag changes it and `-fprefilter` refuses |
 | `no-nullable-exact` | the pattern's own exact language admits an empty match not confined by a non-multiline start AND end anchor (the `empty_admits` fact, `facts_listing.md` §4.1.2) |
 | `no-nullable-collapsed` | a size or state-cap rung offered the collapsed filter and it was declined because the collapsed language admits an empty match |
 | `no-dfa-overflow` | the auto-selected prefilter's DFA build hit a cap; the `note` carries the cap text |

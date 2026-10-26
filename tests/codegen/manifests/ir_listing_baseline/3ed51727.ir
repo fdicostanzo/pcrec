@@ -16,7 +16,7 @@
 #fact	value	note
 pattern	(a+)(?C"q")b(?C7)	
 engine	vm	forced by: capture group at pattern offset 0
-prefilter	no-callout	callout site -- a callout pattern's prefilter is not admitted yet (a later stage of [INLINE-C] admits it under the inexact-erasure rule); no flag changes this, and -fprefilter refuses
+prefilter	no-callout	callout site -- a callout pattern has no prefilter yet; no flag changes this, and -fprefilter refuses
 rungs	cursor	comma-joined; the rungs section below says which quantifier took which
 strategies	backtracking	comma-joined; the strategies section below says which quantifier took which
 possessify	0/1	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)

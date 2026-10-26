@@ -2272,7 +2272,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 142 rows from one declarative table (D24), rendered as 103 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 143 rows from one declarative table (D24), rendered as 104 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2343,7 +2343,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) — also spelled `(*napla:a)`, `(*non_atomic_positive_lookahead:a)` |
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
-| after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
+| after `(?` | `(?C1)` | `REJECTED` | `built` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C"name") -- the engine calls rx_callout_<n> or rx_callout_<name> (extern, user-defined) at the site; VM-only |
+| after `(?` | `(?Cx)` | `AGREES-REJECT` | — | never | — | — | a malformed (?C: a bad string delimiter, a number above 255, or no closing parenthesis |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
 | after `(?` | `(?(DEFINE)(?<w>a))` | `REJECTED` | `built` | planned | `recursion` | dfa|vm | define-only group: the body never runs where it is written and exists to be called -- the same thing (?:BODY){0} means |

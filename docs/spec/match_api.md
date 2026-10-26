@@ -3811,11 +3811,19 @@ by ignoring the callout; pcrec does not. `--emit-main` therefore refuses a
 pattern with a binding site, naming it ("--emit-main cannot define the
 binding rx_callout_octet; link your own"). A binding name is a C identifier
 with no `__`; `-p rx_callout` and `-p rx_callout_...` are refused
-(`cli.md` §1.6's namespace table, row 2).
+(`cli.md` §1.6's namespace table, row 2). A binding symbol that the
+artifact's shared ABI block already declares (`rx_callout_ref`, the type
+every binding has, is the one the `rx_callout_` spelling reaches) is
+refused, naming the binding: the generated declarations and pcrec's own
+identifiers never share a name.
 
-<a id="s11-2-p3"></a>[11.2¶3] The stamps `<PREFIX>_CALLOUTS` (the site count) and
-`<PREFIX>_CALLOUT_BINDINGS` (the binding symbols the artifact needs) are in
-the header of every callout artifact (§6.3).
+<a id="s11-2-p3"></a>[11.2¶3] The stamps `<PREFIX>_CALLOUTS` (the number of sites the pattern
+names) and `<PREFIX>_CALLOUT_BINDINGS` (the binding symbols those sites
+name) are in the header of every callout artifact (§6.3). Both count what
+the pattern NAMES, so a site no match can reach (inside `{0}` or an
+uncalled `(?(DEFINE)...)` group) is counted, and its binding declared
+`extern`, though it never fires; `--emit-ir`'s `callout-sites` counts the
+sites the program can reach.
 
 <a id="s11-3"></a>
 ### 11.3 What the callee sees
@@ -3894,16 +3902,18 @@ budget (§4¶4).
 
 <a id="s11-7-p1"></a>[11.7¶1] A named site's string is `name(,attr)*`. A numbered site's attributes
 come from its declaration: the `.rxt` `callout <n> <attrs>` line
-(`rxt_format.md` §1.1) or `--callout N:attrs` (`cli.md`). The attributes:
+(`rxt_format.md` §1.5¶13a) or `--callout N:attrs` (`cli.md` §1.21). The attributes:
 
 | attribute | meaning |
 |---|---|
 | `consume` | the callee may return a length `> 0` (§11.4) |
-| `once` | the author's promise that the site is class 1 or 2 (§11.8); a site of class 3 is refused, naming why |
+| `once` | the author's promise that the site is class 1 or 2 (§11.8); a site of class 3 is refused, naming the repeat, alternation, quantifier or subroutine call that makes it so, and its pattern offset |
 | `verify` | refused by name: not built yet |
 
-<a id="s11-7-p2"></a>[11.7¶2] An unknown, repeated or empty attribute is refused. A declaration that
-names a number no site uses, or a number declared twice, is refused.
+<a id="s11-7-p2"></a>[11.7¶2] An unknown or repeated attribute, and an empty item of the list
+(`(?C"x,")`, `(?C"x,,once")`), are refused; a declaration's attribute list
+is never empty. A declaration that names a number no site uses, or a number
+declared twice, is refused.
 
 <a id="s11-8"></a>
 ### 11.8 Firing classes
@@ -3921,8 +3931,13 @@ First match:
 
 <a id="s11-8-p2"></a>[11.8¶2] A choice point is an alternation, a quantifier whose minimum and maximum
 differ, or a subroutine call; one inside an atomic group, a possessive
-quantifier or a lookaround that completes before the site is SEALED and not
-live. The class is reported in `--emit-ir`'s `callouts` section
-(`ir_listing.md`). Different start positions are different attempts, and
-the tiered default's escalation (§10.9) re-runs the whole call, so every
-site fires again in the second run; neither is bounded by the class.
+quantifier or an ATOMIC lookaround that completes before the site is SEALED
+and not live. A non-atomic lookaround (`(?*...)`, `(?<*...)`) keeps its
+choice points live after it completes, so `(?*a+)(?C"x,once")a+c` is
+refused. The class is reported in `--emit-ir`'s `callouts` section
+(`ir_listing.md`). Different start positions are different attempts; the
+tiered default's escalation (§10.9) re-runs the whole call, so every site
+fires again in the second run; and the iterator's empty-match retry (§3.8)
+is a second, anchored attempt at the same start, so a site can fire once in
+each. None of these is bounded by the class, and class 1's "a passing fire
+IS the match" holds per attempt.

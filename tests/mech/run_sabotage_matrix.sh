@@ -601,6 +601,15 @@
 #     Its own arm because it reads spec TEXT, which no other suite reads for
 #     this property. Row: S748. Verdict: the script's
 #     `checks passed:`/`checks failed:` summary.
+#   callouts — added 2026-10-26 ([INLINE-C] stage 1b, lane ic1b); runs
+#     tests/callouts/run_callouts_tests.sh (`make test-callouts`) from the
+#     SABOTAGED tree with its generated population cut to 300 (floor 250):
+#     the corpus, its libpcre2 oracle, the generated differential with the
+#     firing-class bound, the driver checks, the class table and the
+#     refusals. Its own arm because module `callouts`' callees are linked
+#     only by this directory's manifest and its checks.c, which no other
+#     suite builds. Rows: S1646-S1655, S1657-S1659. Verdict: the
+#     script's `checks passed:`/`checks failed:` trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a

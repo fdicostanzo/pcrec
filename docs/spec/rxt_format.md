@@ -562,8 +562,10 @@ off.
 - <a id="s1-5-p13a"></a>[1.5¶13a] `callout <n> <attrs>` — block-scoped, repeatable, one line per
   number: the attributes of numbered callout `<n>` (0-255) in the block's
   pattern, which a numbered callout has no string to carry
-  (`match_api.md` §11.7). `<attrs>` is a comma-separated list
-  (`callout 1 consume,once`). The line's shape is checked where it is read;
+  (`match_api.md` §11.7). `<attrs>` is a non-empty comma-separated list
+  of lower-case names (`callout 1 consume,once`), separated from `<n>` by
+  whitespace. The line's shape is checked where it is read, by the same
+  reader `--callout` uses;
   which attributes exist, and whether `<n>` names a site of the pattern, are
   pcrec's compile errors, the same ones `--callout N:ATTRS` gives (`cli.md`),
   because the harness passes each line as `--callout <n>:<attrs>`. A

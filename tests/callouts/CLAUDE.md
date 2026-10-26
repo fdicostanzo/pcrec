@@ -26,16 +26,19 @@ contract is `docs/spec/match_api.md` §11; the design is
   NO_DOTSTAR_ANCHOR`); `--default` asks at default flags.
 - `verify_callouts.py` — this directory's own oracle (its NAME makes
   verify_rxt.py skip the directory): every `m`/`n`/`g` cell against
-  co_oracle.
+  co_oracle (floor 45 of 49; an unparsed line fails). Its `build_oracle`
+  (shared with gen_diff.py) tells an ABSENT libpcre2 (exit 3, skip) from a
+  co_oracle.c that does not build (FAIL).
 - `gen_diff.py` — the generated differential (floor 1,000 compiled and
   compared patterns; seeded) plus the firing-class bound per artifact,
-  read off its own `--emit-ir` listing; populations counted and printed.
+  read off its own `--emit-ir` listing (its own floor, half the compared
+  floor); populations counted and printed.
 - `checks.c` — driver checks no `.rxt` cell can say: the view (A2, A4, A5,
   an enclosing group), give-up propagation and the tier, the step charge,
   DT-4.1, an artifact as a consuming callee, three traps.
 - `run_callouts_tests.sh` — the six arms (corpus, oracle, differential,
-  driver checks, class table + `once`, refusals); libpcre2 arms skip loudly
-  when it is absent. `CALLOUT_GEN_N`/`CALLOUT_GEN_FLOOR` size arm 3.
+  driver checks, class table + `once`, refusals and declaration shapes);
+  libpcre2 arms skip loudly when it is absent; traps must exit 132/133. `CALLOUT_GEN_N`/`CALLOUT_GEN_FLOOR` size arm 3.
 
 ## Rules
 

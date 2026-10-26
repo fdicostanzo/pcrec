@@ -2795,23 +2795,6 @@ for file in "${files[@]}"; do
             else
                 cur_features="$feat_list"
             fi
-        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]+([a-z]+(,[a-z]+)*)[[:space:]]*$ ]]; then
-            # [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
-            # attributes, passed to pcrec as `--callout N:ATTRS`. The value's
-            # GRAMMAR is pcrec's (a bad attribute is its refusal); this arm
-            # reads the shape only, like `features`, and it is the SAME shape
-            # pcrec's own reader accepts (`pcrec_callout_decl_read`: N,
-            # whitespace, a non-empty lower-case comma list), so the two
-            # readers of the line agree on what is a `callout` line.
-            co_decl="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
-            if [ "$have_block" != "1" ]; then
-                record_fail_class unknown-token-in-scope "$file" "$lineno" "'callout' line before any pattern block"
-            else
-                cur_callouts+=("$co_decl")
-            fi
-        elif [[ "$line" =~ ^callout([[:space:]]|$) ]]; then
-            record_fail_class value-shape "$file" "$lineno" \
-                "'callout' wants a callout number and its attributes, e.g. 'callout 1 consume,once'"
         elif [[ "$line" =~ ^engine[[:space:]]+vm[[:space:]]*$ ]]; then
             # [DD-14 wave A commit 3] the minimal ROUTE §10.3 asks for: a
             # block-scoped directive letting a case reach --engine=vm, the
@@ -3433,6 +3416,27 @@ for file in "${files[@]}"; do
         elif [[ "$line" =~ ^ext([[:space:]]|$) ]]; then
             record_fail_class value-shape "$file" "$lineno" \
                 "'ext' wants a consumer name — a letter or '_' then letters, digits, '_', '-' or '.'"
+        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]+([a-z]+(,[a-z]+)*)[[:space:]]*$ ]]; then
+            # [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
+            # attributes, passed to pcrec as `--callout N:ATTRS`. The value's
+            # GRAMMAR is pcrec's (a bad attribute is its refusal); this arm
+            # reads the shape only, like `features`, and it is the SAME shape
+            # pcrec's own reader accepts (`pcrec_callout_decl_read`: N,
+            # whitespace, a non-empty lower-case comma list), so the two
+            # readers of the line agree on what is a `callout` line.
+            # APPENDED after the pinned region, W1.1's rule above (lane
+            # ic1bfix moved both arms out of the region, where they had been
+            # inserted): a `callout` line hit the catch-all before, so no
+            # existing line changes arm.
+            co_decl="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'callout' line before any pattern block"
+            else
+                cur_callouts+=("$co_decl")
+            fi
+        elif [[ "$line" =~ ^callout([[:space:]]|$) ]]; then
+            record_fail_class value-shape "$file" "$lineno" \
+                "'callout' wants a callout number and its attributes, e.g. 'callout 1 consume,once'"
         else
             # unparseable non-blank/non-comment lines are hard errors: a
             # corrupted corpus must not silently degrade to zero coverage

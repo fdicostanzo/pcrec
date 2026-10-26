@@ -534,10 +534,9 @@ static void check_rows(void)
                         }
                     }
                     if (!fbad) {
-                        snprintf(label2, sizeof label2, "%s (a family row: its "
-                                 "syntax and every member are rejected by "
-                                 "libpcre2 within the declared errors, and by "
-                                 "pcrec in the row's words)", label);
+                        snprintf(label2, sizeof label2, "%.200s (family "
+                                 "row: all members rejected by both, within "
+                                 "its codes)", label);
                         ok(label2);
                     }
                     break;

@@ -107,16 +107,19 @@ regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
 # [ART-POSS-ARMS] 229 -> 231 (lane possbuild, 2026-10-07): §3.3's two
 # tripwires, `(*ACCEPT)` (soundness) and `(?|` (re-verify), each assert their
 # row still reads `unbuilt` (check_poss_arms_tripwires).
-if [ "$regn" -ne 231 ]; then
+# [INLINE-C] 1b 231 -> 232 (lane ic1bfix, 2026-10-26), MEASURED off a run's
+# PASS lines: the malformed `(?Cx)` row adds one "group (?Cx): diagnostic
+# matches the row" line, the generic way.
+if [ "$regn" -ne 232 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 231." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 232." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (231 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (232 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 231 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 232 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -303,7 +306,10 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # went from 6 to 7 -- the "real-but-unshipped" wording clause and its
     # floor are replaced by the T2 converse, the Block/Age extension clause
     # and the converse list's liveness floor.
-    if [ "$pc3n" -ne 214 ]; then
+    # [INLINE-C] 1b 214 -> 216 (lane ic1bfix, 2026-10-26), MEASURED:
+    # `check_rows` passes the malformed `(?Cx)` row through its by-code
+    # FAMILY path, and the family path's population assertion adds one.
+    if [ "$pc3n" -ne 216 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -312,14 +318,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 214." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 216." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (214 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (216 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 214 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 216 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
