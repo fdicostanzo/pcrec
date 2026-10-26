@@ -115,6 +115,11 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 §; a finding against a ruled D-row cites it and argues, or drops; the file
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
+Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
+findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --deliver FILE NAME`
+prints DONE; the coordinator runs `scripts/lanewatch --dir /tmp/claude-1001/crit-<topic> NAME...`
+instead of waiting for replies (nested replies are often lost).
+
 Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
 critic; a missed input goes to a fresh critic.
 
