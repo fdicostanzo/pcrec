@@ -9,5 +9,5 @@ SAB_DESC='the lookaround refusal drops its fix wording'
 SAB_REACH='"$PCREC" -p rx --features all -o /dev/null --pattern '\''(?*a+)(?C"x,once")a+c'\'' 2>&1 | grep -qF '\''or wrap it: (?>(?*...))'\'' && echo REACH-GUIDE-FIX-NAMED'
 SAB_REACH_EXPECT='REACH-GUIDE-FIX-NAMED'
 SAB_COUNT=1
-SAB_BEFORE='"use %s (atomic), or wrap it: (?>%s...))",'
-SAB_AFTER='"use %s (atomic), or wrap it: (?>%s...)", /* [SABOTAGE S1666] */'
+SAB_BEFORE='      "use (?=...) or wrap it: (?>(?*...))",'
+SAB_AFTER='      "use (?=...) or wrap it: (?>(?*...)", /* [SABOTAGE S1666] */'

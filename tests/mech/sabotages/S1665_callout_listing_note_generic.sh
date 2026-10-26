@@ -9,5 +9,5 @@ SAB_DESC='the listing note for a live-choice site reverts to a generic sentence,
 SAB_REACH='"$PCREC" -p rx --features all --emit-ir --pattern '\''(?*a+)(?C1)a+c'\'' | grep -qF '\''keeps the quantifier at offset 4'\'' && echo REACH-GUIDE-NOTE-SAME'
 SAB_REACH_EXPECT='REACH-GUIDE-NOTE-SAME'
 SAB_COUNT=1
-SAB_BEFORE='        a->u.callout.why = co_culprit(cx, live);   /* same text as the refusal */'
+SAB_BEFORE='        a->u.callout.why = co_culprit(w, live, wanted, room);   /* same text as the refusal */'
 SAB_AFTER='        a->u.callout.why = "a choice point before the site can be resumed"; /* [SABOTAGE S1665] */'

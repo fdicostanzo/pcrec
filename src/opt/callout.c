@@ -694,12 +694,14 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
             "whose quantifier%s has a maximum of 2 or more", co_at(cx, rep));
     } else if (live) {
         c = CO_CLASS_REPEATED;
-        /* Same text as the refusal; the verdict only when a message is
-         * wanted: the refusal itself, or the `--emit-ir` note. */
+        /* The verdict only when a message is wanted: the refusal itself, or
+         * the `--emit-ir` note; `room` is what the refusal's head leaves of
+         * `pcrec_error.msg`. */
+        const bool wanted = a->u.callout.once || cx->want_ir;
         const size_t head = strlen(pcrec_sb_fragf(&cx->arena, CO_ONCE_HEAD, at));
         const size_t msg = sizeof ((pcrec_error *)0)->msg - 1;
-        a->u.callout.why = co_culprit(w, live, a->u.callout.once || cx->want_ir,
-                                      msg > head ? msg - head : 0);
+        const size_t room = msg > head ? msg - head : 0;
+        a->u.callout.why = co_culprit(w, live, wanted, room);   /* same text as the refusal */
     } else if (tail) {
         c = CO_CLASS_ONCE_PER_MATCH;
         a->u.callout.why = "no repeat and no live choice point before it; "
