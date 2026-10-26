@@ -63,6 +63,7 @@ after the iterator landing.
 - 2026-10-08 399eb53fb major — Merge lane/decfbB5: [DEC-FALLBACK] B5, the token derivations read the tables (no movers; light + heavy green, 
 - 2026-10-08 ceff04211 major — Merge lane/decfbB4: [DEC-FALLBACK] B4, T2 replaces the prefilter admission (no movers; light + heavy green, me
 
+- 2026-10-26 93ef76746 major — [INLINE-C] stage 1a: the per-kind attribute row kindrow.def read by 8 pass sites (refactor of a shared mechanism; 0 movers over 6,185 corpus artifacts; removes an A_VAR union misread in pcrec_bref_mark)
 - 2026-10-26 456dbc09e major — [SCANEDGE-SET] scan edges over a byte-class set (abi 87; lane scanset + scansetfix)
 ### minor
 
