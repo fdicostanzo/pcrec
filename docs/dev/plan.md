@@ -31,6 +31,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
+- [SCANEDGE-SET] STATE:started — A SCAN EDGE ADVANCES ON A CLASS SET, NOT ONE CLASS (`\s+$` x6.1 regression)
+  filed: 2026-10-26 manager, from lane trimreg (docs/dev/lanes/trimreg_report.md)
+  status (2026-10-26): diagnosed, not built. First bad commit 4ea6fb19c (B3 lower_eol, D164) splits `\n` into its own class; the run state then advances on two classes, shaped() (src/opt/scanedge.c ~269) accepts one, so the walk falls to the per-byte table loop (0.19 -> 1.19 ns/B)
+  next: lane scanset building (Frank go 2026-10-26: "It's more about the dfa states than the pattern. Go ahead."); merge before the 2026-10-27 full suite if green
+  refs: docs/dev/lanes/trimreg_report.md; src/opt/scanedge.c; src/gen/emit_dfa.c edge_advance/scan_test; [OPT-REVEND]; D164
+  Population: trailing-whitespace trims (`\s+$`, `[\n ]+$`); `\s*$` was already ~68 us at the old pin and gains too. Bench: the only regress among 137 cross-pin cells (+ its nocaps twin). The general form deletes the one-class special case.
+  note (2026-10-26, lane rwsurvey): reach measured with a class-SET copy of scanedge.c (upper bound, machines built): corpus 269 of 5,735 patterns (4.7%) gain an edge, 140 of them their FIRST fwd/rev edge; bench 11 of 351 (5 outside-written). All gains are unbounded self-loops. Splits come from bytes special elsewhere (`\S+@\S+`, `0x[0-9a-fA-F]+`, reverse `[a-z]+\.txt$`), the `$` lowering, multiline `$`, `\K`. Not a trim-only fix.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -578,13 +585,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
-- [SCANEDGE-SET] STATE:not-started — A SCAN EDGE ADVANCES ON A CLASS SET, NOT ONE CLASS (`\s+$` x6.1 regression)
-  filed: 2026-10-26 manager, from lane trimreg (docs/dev/lanes/trimreg_report.md)
-  status (2026-10-26): diagnosed, not built. First bad commit 4ea6fb19c (B3 lower_eol, D164) splits `\n` into its own class; the run state then advances on two classes, shaped() (src/opt/scanedge.c ~269) accepts one, so the walk falls to the per-byte table loop (0.19 -> 1.19 ns/B)
-  next: Frank's build go; then a lane: scan-shape over a class set S (all of S -> one successor, the rest -> one exit), the single class as S of size 1; abi bump + identity re-pin; bench cell t-trim-match-60k as the witness
-  refs: docs/dev/lanes/trimreg_report.md; src/opt/scanedge.c; src/gen/emit_dfa.c edge_advance/scan_test; [OPT-REVEND]; D164
-  Population: trailing-whitespace trims (`\s+$`, `[\n ]+$`); `\s*$` was already ~68 us at the old pin and gains too. Bench: the only regress among 137 cross-pin cells (+ its nocaps twin). The general form deletes the one-class special case.
-  note (2026-10-26, lane rwsurvey): reach measured with a class-SET copy of scanedge.c (upper bound, machines built): corpus 269 of 5,735 patterns (4.7%) gain an edge, 140 of them their FIRST fwd/rev edge; bench 11 of 351 (5 outside-written). All gains are unbounded self-loops. Splits come from bytes special elsewhere (`\S+@\S+`, `0x[0-9a-fA-F]+`, reverse `[a-z]+\.txt$`), the `$` lowering, multiline `$`, `\K`. Not a trim-only fix.
 - [REWRITE-ADJ] STATE:not-started — TREE REWRITES FROM A RUN AND ITS NEIGHBOUR: ONE DECLARED TABLE, A HOME FOR THE FAMILY
   filed: 2026-10-26 Frank + manager (from the `\s+$` discussion); a tracking row: related findings add a dated note here
   status (2026-10-26): filed to gather information; nothing designed or built. Today's rewrites are separate passes (altcls.c, atomic.c, possessify.c) with no shared mechanism.
