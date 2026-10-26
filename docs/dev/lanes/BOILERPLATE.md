@@ -233,6 +233,7 @@ with no side effects; the plain call is the work, run under the box lock:
             [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
             echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
             echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+            echo "boxqueue: size rows=$n"    # optional ([EXPECT-PREFLIGHT]): the cap scales past 5400 from earlier green runs' s/row
             echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
             echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (a sample of the line)"
             exit 0 ;;
@@ -241,6 +242,9 @@ with no side effects; the plain call is the work, run under the box lock:
     esac
     cd "$TREE" || exit 1
     exec bash tests/mech/run_sabotage_matrix.sh $IDS
+
+A TIME GATE is a declaration, not a --ready wrapper: `echo "boxqueue: not-before 2026-10-27T00:05"` in the dry run (local ISO-8601, strict; boxqueue
+holds the job until then without asking --ready and PENDING-STUCK stays quiet only until that time).
 
 THE EXPECT DECLARATION has exactly these forms ([WATCH-IDLE]; `add` REFUSES
 anything else and prints them): `expect none reason=WHY` (nothing counted; WHY

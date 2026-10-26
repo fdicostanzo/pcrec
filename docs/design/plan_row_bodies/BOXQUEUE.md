@@ -29,7 +29,7 @@ loaded the box during the kit's heavy slot and contaminated its make test.
   | 0 | done, green | `done/` |
   | 75 | not ready yet (EX_TEMPFAIL, boxlock's code) | stays in `pending/`, asked next pass |
   | 76 | requeue me | to the end of `pending/` |
-  | 77 | never (obsolete/cancelled) | `done/`, marked cancelled |
+  | 77 | never (obsolete/cancelled) | `done/`, marked cancelled (queuewatch: `CANCELLED`, informational, never RED; same for `boxqueue cancel` of a pending or RUNNING job, 2026-10-26) |
   | other | failed | `failed/` with its log + verdict |
 
 - Readiness (dependencies, time windows, quiet gates) lives at the TOP of each
@@ -55,6 +55,24 @@ build reads the design: the job is called in three MODES (`--dry-run`,
 check without its work; so 75 belongs to `--ready`, and a 75 from the work is
 the planted "side effects, then 75" bug (failed, never re-run). Requirement
 -> how met: docs/dev/lanes/boxqueue_report.md.
+
+## Built (lane qscripts, 2026-10-26)
+
+Three corrections to the queue and its watcher. (1) `boxqueue: size NAME=N` ([EXPECT-PREFLIGHT]): a dry run declares a population
+it measures cheaply; a done run records `size=NAME=N` in its result; `add`/`plan`/START derive the effective cap = max(declared,
+worst seconds-per-unit of the last 5 green runs of the KEY x N x 125%), written to running/NAME/cap. An `expect` that IS the
+population is printed by the dry run from the same measurement (it is re-run at START). No size = the old behaviour.
+(2) a deliberate stop is its own class: `boxqueue cancel KEY` on a RUNNING job writes running/NAME/cancelled then safekills the
+job's group (and the battery.pid its logdir names); the end is `outcome=cancelled reason=CANCELLED-BY-OWNER`; queuewatch prints
+`CANCELLED NAME ...` for every outcome=cancelled end, queuemon journals it INFO. (3) QUIET on a bench reservation samples the
+bench's own files (params log=, last `chain pid/pgid N, output P` line), not the idle placeholder. Report: docs/dev/lanes/qscripts_report.md.
+
+## Built (lane qscripts2, 2026-10-26)
+
+A time gate is declared, not hand-coded: `boxqueue: not-before YYYY-MM-DDTHH:MM[:SS]` (local time, strict grammar, refused at `add`). boxqueue holds
+the job until then without asking `--ready` (`not-ready: not before T`, shown by plan/status). queuewatch's PENDING-STUCK skips a job only while
+now < its declared not-before and ages it from T afterwards; every other not-ready answer ages as before (the earlier any-not-ready exemption was
+rejected). Old hand-written --ready gates keep working; new time gates use not-before. Report: docs/dev/lanes/qscripts2_report.md.
 
 ## Requirements observed from the 2026-10-20 ctxp2d chain (append as found)
 

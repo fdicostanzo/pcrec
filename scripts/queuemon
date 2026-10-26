@@ -9,7 +9,8 @@
 # Readers keep a cursor per owner (scripts/monread); the main session's hook (scripts/hooks/monitor_unread.sh) shows
 # unread `main` lines. Differences from the haiku session, all by ruling: triage is NEVER launched (rows 4/7 log
 # `owner triages`); the only action is row 8's single `boxqueue start` per run (never kill/cancel/retry) and the
-# ledger append + named-path commit of rows 6/7. A JOB-DONE with outcome=cancelled is INFO (cancelled by hand is no red).
+# ledger append + named-path commit of rows 6/7. A CANCELLED line (queuewatch's own class for outcome=cancelled,
+# pending or RUNNING-stopped-by-`boxqueue cancel`) is INFO: a deliberate stop is no red (the old JOB-DONE..outcome=cancelled branches stay as a fallback).
 #
 #   scripts/queuemon start     detach a loop unless one runs (idempotent; boxqueue add/start call this on the LIVE queue)
 #   scripts/queuemon run       the loop, foreground (single instance: flock on DIR/queuemon.lock, else exit 75)
@@ -73,6 +74,7 @@ handle() { # handle LINE (queuewatch's line, `queuewatch: ` stripped): the first
                     emit INFO mon "$l (later red; recorded in red_stages.txt)"
                 fi
             fi ;;
+        CANCELLED\ *) fields "$l"; sed -i "/^$NAME\$/d" "$D/queuemon.rd" 2>/dev/null; emit INFO mon "$l" ;;               # a deliberate stop: INFO, never RED
         JOB-DONE\ *)
             fields "$l"; ld=$(kv logdir "$l"); sed -i "/^$NAME\$/d" "$D/queuemon.rd" 2>/dev/null
             sum=""; [ -n "$ld" ] && [ -f "$ld/summary.txt" ] && ! simulated "$ld" && sum=$ld/summary.txt

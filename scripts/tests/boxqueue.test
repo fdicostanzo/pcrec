@@ -737,5 +737,98 @@ if P=$(plantf s1618 boxqueue '    bench_cancel_queued
     [[ $mc_state =~ ^DONE\ cancelled ]] && bad "PLANT S1618 not caught: '$mc_state'" || ok "PLANT S1618 (queued cancel not acted on): the mid-job .cancel is ignored, the 25q case goes red"
 else bad "plant S1618 did not land"; fi
 
+# 26. [EXPECT-PREFLIGHT] a dry run MEASURES its size; the cap scales past its stale constant as the population grows. The miss: jobs
+# declared a fixed cap/expect that went stale as the corpus grew (624's axes run: 13,412 s against a 10,381 s record).
+# sizejob SIZE-FILE: dry run declares `size units=$(cat SIZE-FILE)` beside a hand cap of 30; the work takes ~2 s.
+export BOXQUEUE_IDLE_WINDOW=3000
+sizejob() { mkjob "$1" "$(D 30 none none | sed 's/ exit 0$//') echo \"boxqueue: size units=\$(cat $2)\"; exit 0" 'exit 0' 'sleep 2'; }
+newq; echo 10 > "$T/size"; sizejob "$T/j/sz" "$T/size"
+out=$(bq add --name 100-main-sz --no-start "$T/j/sz" 2>&1); run1
+r=$(res main-sz | head -1)
+[ "$(st main-sz)" = green ] && [[ $r =~ \ size=units=10\  || $r =~ \ size=units=10$ ]] && ! grep -q 'cap scaled' <<<"$out" \
+    && ok "a size declared with no history: cap untouched (declared 30), the done run records size=units=10" || bad "size first run: $r / $out"
+echo 100000 > "$T/size"; out=$(bq add --name 100-main-sz --no-start "$T/j/sz" 2>&1)
+grep -qE 'boxqueue: cap scaled 30 -> [0-9]{4,} s: size units=100000 x worst [0-9.]+ s/unit of the last 1 green run' <<<"$out" && has '^== add 100-main-sz cap=[0-9]{4,} .* size=units=100000 \(cap scaled 30 ->' \
+    && ok "the same job grown 10 -> 100000 units: add scales the cap past the declared 30 from the recorded seconds-per-unit and says why" || bad "scaled add: $out"
+bq --dry-run 2>&1 | grep -q 'cap scaled 30 ->' && ok "plan shows the scaled cap and its reason" || bad "plan lacks the scaled cap"
+cp "$Q/pending/100-main-sz" "$T/j/sz.pend"
+echo 10 > "$T/size"; bq cancel main-sz > /dev/null; out=$(bq add --name 100-main-sz --no-start "$T/j/sz" 2>&1)
+! grep -q 'cap scaled' <<<"$out" && ok "NEGATIVE: a SMALLER size derives a cap below the declared one: the declared cap stands (never lowered)" || bad "lowered cap: $out"
+bq cancel main-sz > /dev/null
+echo 100000 > "$T/size"; bq add --name 100-main-sz --no-start "$T/j/sz" > /dev/null; run1
+has '^== job 100-main-sz START owner=main cap=[0-9]{4,} .*\(cap scaled 30 ->' && [ "$(st main-sz)" = green ] \
+    && ok "START logs the effective cap and the run is judged green under it (running/NAME/cap is what _start and finish_job read)" || bad "scaled start: $(ql | grep 'START' | tail -1)"
+# a job with no size declaration behaves exactly as before; a bad size is refused
+newq; bq add --name 100-main-ns --no-start "$T/j/a" > /dev/null; run1; r=$(res main-ns | head -1)
+[ "$(st main-ns)" = green ] && ! grep -q size= <<<"$r" && ok "NEGATIVE: a job without a size declaration: no size= in its result, no scaling (the old behaviour)" || bad "no-size job: $r"
+mkjob "$T/j/sz0" "$(D 30 none none | sed 's/ exit 0$//') echo 'boxqueue: size units=0'; exit 0" 'exit 0' 'exit 0'
+mkjob "$T/j/sz2" "$(D 30 none none | sed 's/ exit 0$//') echo 'boxqueue: size a=1'; echo 'boxqueue: size b=2'; exit 0" 'exit 0' 'exit 0'
+bq add --name 100-main-sz0 --no-start "$T/j/sz0" 2>&1 | grep -q 'size wants NAME=N' && bq add --name 100-main-sz2 --no-start "$T/j/sz2" 2>&1 | grep -q 'more than one size' \
+    && ok "size grammar: size NAME=0 and two sizes are refused at enqueue" || bad "size grammar not enforced"
+bash "$BQ" -h | grep -q 'EXPECT-PREFLIGHT' && ok "boxqueue -h documents the size declaration" || bad "-h lacks size"
+
+# 27. [qscripts] `boxqueue cancel KEY` of a RUNNING job: marker, then safekill of its group; the end is outcome=cancelled (not failed)
+newq
+mkjob "$T/j/long" "$(D 600 none none)" 'exit 0' 'sleep 600 & wait'
+bq add --name 100-main-long --no-start "$T/j/long" > /dev/null
+( BQX="" run1 ) & rp=$!
+for _ in $(seq 60); do [ -e "$Q/running/100-main-long/started" ] && [ -s "$Q/running/100-main-long/pid" ] && break; sleep 0.2; done
+out=$(bq cancel main-long 2>&1); wait $rp
+r=$(res main-long | head -1)
+[ "$(st main-long)" = cancelled ] && [[ $r =~ ^outcome=cancelled\ .*reason=CANCELLED-BY-OWNER ]] && has '^== job 100-main-long END .* outcome=cancelled reason=CANCELLED-BY-OWNER' \
+    && grep -q 'cancelling running 100-main-long' <<<"$out" && [ -z "$(ls "$Q/running")" ] \
+    && ok "cancel of a RUNNING job: marker + safekill, ended outcome=cancelled reason=CANCELLED-BY-OWNER (done/, not failed/), running/ empty" || bad "running cancel: $r / $out / $(ql | tail -3)"
+bq cancel main-long 2>&1 | grep -q 'is not pending' && ok "cancel of a job that is neither pending nor running is still refused (65)" || bad "cancel of an ended job accepted"
+# a non-cancelled kill stays a failure (the marker, not the signal, makes it a cancel)
+newq
+mkjob "$T/j/killed" "$(D 600 none none)" 'exit 0' 'kill -TERM $$'
+bq add --name 100-main-killed --no-start "$T/j/killed" > /dev/null; run1
+[ "$(st main-killed)" = failed ] && ok "NEGATIVE: a job that dies of SIGTERM with no cancel marker is still failed" || bad "unmarked TERM: $(st main-killed)"
+# S1628: the marker is ignored at the end (outcome from rc alone): the cancelled job reads failed
+if P=$(plantf s1628 boxqueue '    elif [ -e "$rd/cancelled" ] && [ "$rc" != 0 ]; then oc=cancelled reason="CANCELLED-BY-OWNER (rc=$rc, $(cat "$rd/cancelled"))"
+' '    '); then
+    newq; bq add --name 100-main-long --no-start "$T/j/long" > /dev/null
+    ( BQX=$P run1 ) & rp=$!
+    for _ in $(seq 60); do [ -e "$Q/running/100-main-long/started" ] && [ -s "$Q/running/100-main-long/pid" ] && break; sleep 0.2; done
+    bq cancel main-long > /dev/null 2>&1; wait $rp
+    [ "$(st main-long)" = cancelled ] && bad "PLANT S1628 not caught" || ok "PLANT S1628 (cancel marker ignored): the owner-stopped job ends failed, the 27 case goes red"
+else bad "plant S1628 did not land"; fi
+# S1629: the cap is never scaled (scale_cap does nothing): the grown job keeps its stale constant
+if P=$(plantf s1629 boxqueue '    [ -n "$D_SIZE" ] && [ "$D_CAP" != none ] || return 0
+    sn=' '    return 0
+    sn='); then
+    newq; echo 10 > "$T/size"; bq add --name 100-main-sz --no-start "$T/j/sz" > /dev/null; run1
+    echo 100000 > "$T/size"; out=$(BQX=$P bq add --name 100-main-sz --no-start "$T/j/sz" 2>&1)
+    grep -q 'cap scaled' <<<"$out" && bad "PLANT S1629 not caught" || ok "PLANT S1629 (cap never scaled): the grown job keeps its stale 30 s, the 26 case goes red"
+else bad "plant S1629 did not land"; fi
+
+# 28. [qscripts2] a DECLARED time gate: `boxqueue: not-before YYYY-MM-DDTHH:MM[:SS]` in the dry run. boxqueue itself holds the job
+# (--ready is not even asked before the time), plan/status say "not before ...", a malformed value is refused at add.
+nbjob() { mkjob "$1" "$(D 30 none none | sed 's/ exit 0$//') echo \"boxqueue: not-before \$(cat $2)\"; exit 0" "echo asked >> $2.asked; exit 0" 'exit 0'; }
+newq; rm -f "$T/nbf.asked"; date -d '+6 seconds' +%Y-%m-%dT%H:%M:%S > "$T/nbf"; nbjob "$T/j/nb" "$T/nbf"
+bq add --name 100-main-nb --no-start "$T/j/nb" > /dev/null; run1
+[ -f "$Q/pending/100-main-nb" ] && [ ! -e "$T/nbf.asked" ] && has "^  pass 1 100-main-nb not-ready: not before $(cat "$T/nbf") " \
+    && ok "a job whose dry run declares not-before in the future stays pending with 'not-ready: not before T' and its --ready is NOT asked" || bad "time gate before its time: $(ql | tail -3) asked=$(cat "$T/nbf.asked" 2>/dev/null)"
+bq status 2>&1 | grep -q "pending: 100-main-nb :: not-ready: not before $(cat "$T/nbf")" && bq --dry-run 2>&1 | grep -q "not-ready: not before $(cat "$T/nbf")" \
+    && ok "status and plan both show 'not before T'" || bad "status/plan lack the gate"
+for _ in $(seq 20); do [ "$(date +%s)" -ge "$(date -d "$(cat "$T/nbf")" +%s)" ] && break; sleep 0.5; done
+run1; [ "$(st main-nb)" = green ] && [ -e "$T/nbf.asked" ] && ok "after the declared time --ready is asked and the job runs green" || bad "time gate after its time: $(st main-nb)"
+for v in 'tomorrow' '2026-13-40T00:00' '2026-10-27 00:05' '2026-10-27T25:00' '2026-10-27T00:05+02:00'; do
+    newq; echo "$v" > "$T/nbf.bad"; nbjob "$T/j/nbb" "$T/nbf.bad"
+    out=$(bq add --name 100-main-nbb --no-start "$T/j/nbb" 2>&1); rc=$?
+    [ "$rc" = 65 ] && grep -q 'not-before wants' <<<"$out" && [ ! -e "$Q/pending/100-main-nbb" ] && ok "malformed not-before '$v' is refused at add (65)" || bad "not-before '$v' accepted or wrong refusal: rc=$rc $out"
+done
+bash "$BQ" -h | grep -q 'not-before' && ok "boxqueue -h documents not-before" || bad "-h lacks not-before"
+# the old hand-written --ready time gate (no declaration) keeps working unchanged
+newq; echo 'not before the go file' > /dev/null; mkjob "$T/j/old" "$(D 30 none none)" '[ -e '"$T"'/go ] && exit 0; echo "not before go"; exit 75' 'exit 0'
+rm -f "$T/go"; bq add --name 100-main-old --no-start "$T/j/old" > /dev/null; run1
+[ -f "$Q/pending/100-main-old" ] && : > "$T/go" && run1 && [ "$(st main-old)" = green ] && ok "back-compat: a hand-written --ready time gate still holds then releases the job" || bad "old-style gate: $(st main-old)"
+# S1632: the gate is not enforced by the pass (--ready asked regardless): the pre-time case goes red
+if P=$(plantf s1632 boxqueue 'if [ -n "$D_NBF" ] && [ "$(date +%s)" -lt "$D_NBF" ]; then   # DECLARED' 'if false; then   # DECLARED'); then
+    newq; rm -f "$T/nbf.asked"; date -d '+60 seconds' +%Y-%m-%dT%H:%M:%S > "$T/nbf"; bq add --name 100-main-nb --no-start "$T/j/nb" > /dev/null
+    BQX=$P run1
+    [ ! -e "$T/nbf.asked" ] && [ ! -e "$Q/done/"*main-nb* ] 2>/dev/null && bad "PLANT S1632 not caught" || ok "PLANT S1632 (gate not enforced): --ready is asked before the time (the job starts), the 28 case goes red"
+else bad "plant S1632 did not land"; fi
+
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

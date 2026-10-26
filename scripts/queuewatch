@@ -30,9 +30,16 @@
 #                                      `== stage S END rc=N` (chainrun), found via the job's
 #                                      `== logdir DIR` line (scripts/fullsuite_job.sh prints it)
 #   JOB-DONE NAME outcome=O rc=R verdict=V wall=Ws [reds=S(rc=N)..] [logdir=D]
-#   QUIET NAME no log growth or CPU for Ns :: last: <trailer line>
+#   CANCELLED NAME rc=R wall=Ws [by-owner] [logdir=D] | CANCELLED NAME (never ran) :: <why>   the job ended
+#                                      outcome=cancelled: `boxqueue cancel` of a pending or RUNNING job, a work exit 77, a bench
+#                                      .cancel. INFORMATIONAL (a deliberate stop is not a red); never JOB-DONE, never RED.
+#   QUIET NAME no log growth or CPU for Ns :: last: <trailer line>   (a bench RESERVATION NNN-bench-W: the placeholder
+#                                      idles by design, so growth of the bench's own log (params log=) and of the `output`
+#                                      file its last `chain pid/pgid N, output P` line names, and the CPU of N's tree, count)
 #   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
 #   PENDING-STUCK NAME pending for Ns, nothing running [(queued Qs ago, ready for Ns)] :: <the runner's last answer>
+#                                      not for a job with a DECLARED time gate (`boxqueue: not-before T`) while now < T; its age counts from T.
+#                                      Every other not-ready answer (a failed `after KEY`, a broken --ready) ages as usual.
 #   DISK-HIGH <fs> at P% (>= T%)
 #   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
@@ -154,6 +161,12 @@ lifecycle() {
                 name=${line#== job }; name=${name%% *}
                 k=$(( ${nend[$name]:-0} + 1 )); nend[$name]=$k; dir=$(job_dirs "$name" | sed -n "${k}p")
                 reds="" ld=""
+                if [[ $line == *" outcome=cancelled "* ]]; then
+                    [ -n "$dir" ] && ld=$(logdir_of "$dir")
+                    printf 'D|%s\t1\tCANCELLED %s rc=%s wall=%s%s%s\n' "$line" "$name" "$(sed -n 's/^== job [^ ]* END rc=\([^ ]*\).*/\1/p' <<<"$line")" \
+                        "$(sed -n 's/.* wall=\([^ ]*\).*/\1/p' <<<"$line")" "$([[ $line == *CANCELLED-BY-OWNER* ]] && echo ' by-owner')" "${ld:+ logdir=$ld}"
+                    continue
+                fi
                 if [ -n "$dir" ]; then ld=$(logdir_of "$dir"); [ -n "$ld" ] && reds=$(stage_ends "$ld/trailer.log" | awk '$2 != 0 { printf " %s(rc=%s)", $1, $2 }'); fi
                 printf 'D|%s\t1\tJOB-DONE %s outcome=%s rc=%s verdict=%s wall=%s%s\n' "$line" "$name" \
                     "$(sed -n 's/.* outcome=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/^== job [^ ]* END rc=\([^ ]*\).*/\1/p' <<<"$line")" \
@@ -161,6 +174,10 @@ lifecycle() {
                 ;;
             "  job "*" ENDED WITHOUT RUNNING "*)
                 name=${line#  job }; name=${name%% *}
+                if [[ $line == *" outcome=cancelled "* ]]; then
+                    st=${line#* :: }; st=${st%% :: *}
+                    printf 'D|%s\t1\tCANCELLED %s (never ran) :: %s\n' "$line" "$name" "$st"; continue
+                fi
                 printf 'D|%s\t1\tJOB-DONE %s %s (never ran)\n' "$line" "$name" "$(sed -n 's/.*\(outcome=[^ ]*\).*/\1/p' <<<"$line")"
                 ;;
         esac
@@ -183,7 +200,7 @@ ready_since() {
 
 # conditions: print `ID<TAB>0<TAB>LINE` for each current condition episode; forget the episodes that cleared.
 conditions() {
-    local now rp npend nrun n d name ld tr sig prev pe since k ans age pct fs jp jt jt0 jn0
+    local now rp npend nrun n d name ld tr sig prev pe since k ans age pct fs jp jt jt0 jn0 blog bpid bout bt l
     now=$(date +%s)
     npend=$(ls -p "$Q/pending" 2>/dev/null | grep -vc /); nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
     # RUNNER-DEAD
@@ -200,6 +217,20 @@ conditions() {
     for d in "$Q"/running/*/; do
         [ -d "$d" ] || continue; d=${d%/}; name=${d##*/}; [ -e "$d/started" ] || continue
         ld=$(logdir_of "$d"); tr=$ld/trailer.log
+        # A BENCH RESERVATION (NNN-bench-W, scripts/boxqueue_window) idles by design: the bench's work runs in its own process
+        # tree. So its liveness is read from the bench's own files, PARSED never sourced (BD2): the params file's log= (QUEUE/
+        # .bench/KEY.params, written by boxqueue's importer), that log's last `chain pid/pgid N, output PATH` line (the CPU of
+        # N's tree, and the output file's growth), and the log's own growth. Anything unreadable adds nothing: only the old signals.
+        blog="" bpid="" bout=""
+        if [[ $name == *-bench-* ]] && [ -f "$Q/.bench/${name#*-}.params" ]; then
+            blog=$(sed -n 's/^log=//p' "$Q/.bench/${name#*-}.params" | head -1)
+            if [ -r "$blog" ]; then
+                l=$(grep -a 'chain pid/pgid [0-9]' "$blog" | tail -1)
+                bpid=$(sed -n 's/.*chain pid\/pgid \([0-9][0-9]*\).*/\1/p' <<<"$l")
+                bout=$(sed -n 's/.*chain pid\/pgid [0-9]*, output \([A-Za-z0-9_.\/-]*\).*/\1/p' <<<"$l")
+            else blog=""; fi
+            [ -n "$blog" ] && [ -z "$ld" ] && tr=$blog    # the message's `last:` line is the bench's own
+        fi
         # growth = ANY file in the job dir (job.log, but also perfrun's job.log.make, or whatever log the job's `expect` names;
         # not the runner's own idle/idle.seen marks) + the battery's logdir; CPU = the battery's process tree (exact change,
         # as before) and, for jobs with no battery.pid (perfrun), the job's own pid-file tree as a RATE (5% of a core, boxqueue's own idle threshold, UNMEASURED here; env QUEUEWATCH_CPU_PCT): a wrapper's wait
@@ -207,8 +238,10 @@ conditions() {
         # counts as work. `started` is in the signature: a new run is a new episode.
         sig=$( { for f in "$d"/*; do case ${f##*/} in idle|idle.seen) ;; *) stat -c '%n %s %Y' "$f" 2>/dev/null ;; esac; done
                 cat "$d/started" 2>/dev/null
+                [ -n "$blog" ] && stat -c '%n %s %Y' "$blog" ${bout:+"$bout"} 2>/dev/null
                 if [ -n "$ld" ]; then stat -c %s "$tr" "$ld"/*.log 2>/dev/null; while read -r p; do tree_cpu "$p"; done < <(cat "$ld/battery.pid" 2>/dev/null); fi; } | tr '\n' ' ')
         jp=$(cut -d' ' -f1 "$d/pid" 2>/dev/null); jt=0; [ -n "$jp" ] && jt=$(tree_cpu "$jp"); jt=${jt:-0}
+        if [ -n "$bpid" ] && [ -d "/proc/$bpid" ]; then bt=$(tree_cpu "$bpid"); jt=$((jt + ${bt:-0})); fi
         pe=$state.sig.$name
         if [ -f "$pe" ] && [ "$(sed -n 1p "$pe")" = "$sig" ]; then
             since=$(sed -n 2p "$pe"); jt0=$(sed -n 3p "$pe"); jn0=$(sed -n 4p "$pe")
@@ -230,6 +263,11 @@ conditions() {
         since=$queued; rdy=""
         case $ans in not-ready:*|READY-HUNG*|"no answer recorded") ;; *) rdy=$(ready_since "$n"); [ -n "$rdy" ] && since=$rdy ;; esac
         age=$((now - since))
+        # A job with a DECLARED TIME GATE (`boxqueue: not-before T` in its dry run, kept in QUEUE/.state/KEY.decl) is waiting by
+        # declaration until T, so its age counts from T (negative before it: never stuck). Every other not-ready answer (`after KEY`
+        # whose KEY failed, a broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
+        nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
+        if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi
         if [ "$age" -ge "$stuck" ]; then
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"

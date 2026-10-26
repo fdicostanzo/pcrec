@@ -148,6 +148,9 @@ case "${1:-}" in
         # axes ~10400 s batched, san ~3000 s, alloc ~100 s, lint+strict ~60 s, recidentity ~2800 s, full mech
         # UNMEASURED at the current matrix size (an 8 h cap was used earlier, 28800 s). Sum ~46000 s; cap 57600 (16 h).
         echo "boxqueue: cap 57600"
+        # [EXPECT-PREFLIGHT]: the dry run measures the corpus (`pattern` lines of every .rxt under tests/, ~6 ms); once a green run of
+        # this job is on record, boxqueue scales the cap past 57600 from its seconds-per-pattern as the corpus grows
+        echo "boxqueue: size corpus_patterns=$(command grep -rha --include='*.rxt' '^pattern ' "$MAIN/tests" | wc -l | tr -d ' ')"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok 1800"
         echo "boxqueue: expect stages=8 last=^== battery_v5 DONE stages="

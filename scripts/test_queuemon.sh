@@ -39,6 +39,8 @@ cat > "$FAKE_SCRIPT" <<EOS
 0|JOB-DONE 303-main-died outcome=failed rc=1 verdict=RED wall=9s logdir=$L3
 0|JOB-DONE 304-lane-exp outcome=failed rc=0 verdict=GREEN wall=9s
 0|JOB-DONE 305-main-c outcome=cancelled (never ran)
+0|CANCELLED 306-main-cx rc=143 wall=5s by-owner
+0|CANCELLED 307-kit-cn (never ran) :: cancelled by hand
 0|RUNNER-DEAD runner not live with 1 pending / 0 running job(s) :: x
 0|RUNNER-DEAD runner not live with 1 pending / 0 running job(s) :: y
 0|QUIET 310-kit-q no log growth or CPU for 1800s :: last: x
@@ -70,6 +72,8 @@ has ' RED main \[kit\] JOB-DONE 302-kit-x'; chk "kit RED also addressed to main"
 has ' PROBLEM main run died: JOB-DONE 303-main-died'; chk "row 7 death of a full-suite job is PROBLEM" $?
 has ' PROBLEM main EXPECT JOB-DONE 304-lane-exp.*expect is stale'; chk "EXPECT mismatch, other owner routed to main" $?
 has ' INFO mon JOB-DONE 305-main-c'; chk "cancelled is INFO" $?
+has ' INFO mon CANCELLED 306-main-cx rc=143' && has ' INFO mon CANCELLED 307-kit-cn \(never ran\)'; chk "CANCELLED (running stopped by owner; pending cancelled) is INFO, never RED/PROBLEM, whoever owns it" $?
+! grep -E ' (RED|PROBLEM) .*(306-main-cx|307-kit-cn)' "$LOG" >/dev/null; chk "CANCELLED raises no RED/PROBLEM line" $?
 [ "$(cat "$T/bq.calls" 2>/dev/null)" = start ]; chk "row 8 one boxqueue start only" $?
 has ' PROBLEM main runner dead again after one restart'; chk "row 8 second RUNNER-DEAD PROBLEM" $?
 has ' PROBLEM kit QUIET 310-kit-q' && has ' PROBLEM main \[kit\] QUIET 310-kit-q'; chk "row 9 QUIET to kit and main" $?
@@ -77,7 +81,7 @@ has ' PROBLEM main PENDING-STUCK 311-main-p'; chk "row 10 PENDING-STUCK" $?
 has ' PROBLEM main DISK-HIGH'; chk "row 10 DISK-HIGH" $?
 has ' CI main CI-RED abc123' && has ' CI main CI-CANCELLED' && has ' CI main CI-UNAVAILABLE gh missing'; chk "rows 11-13 CI lines" $?
 has ' PROBLEM main UNEXPECTED WHAT-IS-THIS 1 2 3'; chk "UNEXPECTED line is a PROBLEM" $?
-[ "$(grep -c ' UP mon ' "$LOG")" = 21 ]; chk "an UP line at every launch/relaunch (21)" $?
+[ "$(grep -c ' UP mon ' "$LOG")" = 23 ]; chk "an UP line at every launch/relaunch (23)" $?
 awk 'NF < 4 || $2 !~ /^(GREEN|RED|PROBLEM|CI|INFO|UP)$/ { exit 1 }' "$LOG"; chk "every line is ISO CLASS OWNER text" $?
 [ ! -e "$T/mgr/queuemon.pid" ]; chk "pid file removed at exit" $?
 # single instance
