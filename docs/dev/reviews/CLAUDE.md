@@ -54,3 +54,4 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-10-21-r1-findall-i2.md` — light D6 panel on findall_iter_i2.md rev 1.
 - `2026-10-24-r1-subst-code.md` (+ dir) — compiled substitution (lane/substland), coordinator round: 5 lenses, 38 findings, rulings inline.
 - `2026-10-26-r1-inline-c-design.md` (+ dir) — [INLINE-C] pattern-side design note rev 0, coordinator round: 5 lenses (premise, simulate, slot, contract+trust, cost), 37 items, rulings inline.
+- `2026-10-26-r2-ic1b-code.md` (+ dir) — [INLINE-C] stage 1b code (lane/ic1b 1dd510468), coordinator round: answer-level ADV-1/CON-2/CON-3/CON-8, rulings inline.
