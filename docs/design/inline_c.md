@@ -410,3 +410,392 @@ The construct's REALITY and OWNER are exact; wording is not:
 
 Module `code-c` implies the call-site machinery of `callouts`; a pattern with
 embedded code alone needs no `features callouts`.
+
+## 3. The generated function
+
+### 3.1 Name, signature, placement
+
+Each `CO_CODE` node becomes
+
+```c
+static ptrdiff_t <prefix>__code<seg>(const rx_ctx *ctx);
+```
+
+an `rx_matchfn`, `static` in the artifact's `.c`, `<seg>` the segment index
+(1.1). The prototype is emitted before the VM function; the DEFINITIONS are
+emitted LAST in the `.c`, each preceded by a one-line comment naming its
+source and a `#line` directive. Putting them last means no `#line` has to be
+restored afterwards, so the artifact's bytes do not depend on the output file
+name; gcc inlines a later-defined `static` function at `-O2` as readily as an
+earlier one. The first line of the user's text is padded with spaces to its
+source column, so gcc's column numbers are right on that line.
+
+```c
+/* code segment 1: ipv4.rxt line 4, column 18 */
+#define RX_SUBJ ...            /* the macro set of 3.2 */
+static ptrdiff_t ipv4__code1(const rx_ctx *ctx)
+{
+#line 4 "ipv4.rxt"
+                  return RX_CAP_LEN(1) <= 3 && octet_le255(RX_CAP_P(1), RX_CAP_LEN(1)) ? RX_PASS : RX_FAIL;
+__builtin_trap(); }
+#undef RX_SUBJ ...
+```
+
+The text is the DECODED segment (PCRE2's doubled delimiters undone; under a
+`pattern-esc` line the `.rxt` escapes already applied, `rxt_format.md`
+§1.5¶3). It is a function BODY: statements ending in `return`. Falling off
+its end traps (the line after the text): no silent default value. A
+declaration the user needs and has no header for can be written inside the
+body (a block-scope function declaration is standard C), so no `cdecl` line
+is needed in v1.
+
+### 3.2 The macro set (Q7: generated names only)
+
+Defined immediately before each definition, `#undef`ed immediately after, so
+nothing leaks between segments or into the rest of the file:
+
+| macro | value |
+|---|---|
+| `RX_SUBJ`, `RX_LEN`, `RX_POS` | `ctx->subject`, `ctx->len`, `ctx->pos` |
+| `RX_START` | the attempt start, `ctx->caps[0][0]` (1.3) |
+| `RX_CAP_SET(n)` | `(size_t)(n) < ctx->ncap && ctx->caps[n][1] >= 0` |
+| `RX_CAP_S(n)`, `RX_CAP_E(n)` | the group's start / end, or `-1` when not `RX_CAP_SET(n)` |
+| `RX_CAP_LEN(n)` | end minus start, or `-1` |
+| `RX_CAP_P(n)` | `RX_SUBJ + start`, or `NULL` |
+| `RX_G_<name>` | one per named group of the pattern: its number (a name containing `.`, a delivered group, gets none in v1) |
+| `RX_USER` | `ctx->user` (NULL for a code segment in v1, 3.5) |
+| `RX_PASS`, `RX_FAIL` | `0`, `-1` |
+
+Every accessor is the guarded form (requirement W5): an unset or not-yet-known
+group reads `-1`/`NULL`, never an out-of-range pointer. The user can still
+read `ctx` directly; the macros are convenience, not a wall.
+
+**One collision to keep closed.** For the default prefix `rx`, the artifact's
+own stamps are `RX_*` too (`RX_NCAPS`, `RX_ENGINE`, ...). The macro set and
+the stamp inventory must stay disjoint; a codegen check computes the
+intersection from the emitted text of a `rx`-prefixed callout artifact (the
+stamp list is read off the artifact, not from a list in the check) and fails
+on any common name. The spec reserves the family for user headers too.
+
+### 3.3 The user's headers: `code-header`
+
+```
+code-header c "octet.h"          # head line (file-level), repeatable
+code-header c <stdint.h>
+```
+
+CLI equivalent `--code-header c:octet.h` / `--code-header 'c:<stdint.h>'`.
+The language word is there so a later language declares its own imports the
+same way. Rules (requirements R-S2, UC-3):
+
+- Emitted in the generated `.c` ONLY, after pcrec's own includes, in the
+  order written, duplicates (same exact text) emitted once; never in the
+  `.h`, so a program that only calls the matcher never needs the user's
+  headers (DT-3.4).
+- Emitted AS WRITTEN; pcrec never opens, resolves or reads the named file
+  (the C compiler resolves it with the user's `-I`). Generation stays
+  hermetic and the trust surface does not grow.
+- Which heads contribute: the entry file's, and the head of every `lib` file
+  that contributes a segment to the target. An `include`d fragment has no head
+  of its own beyond `include` lines (`rxt_format.md` §1.1). A `code-header`
+  line is code (a header can contain anything), so a lib's lines fall under
+  the same pin rule as its segments (section 5).
+- A `code-header` line in a target with no code segment is emitted anyway
+  only under `--allow-code`; without it, the line is refused like a segment.
+
+The user's build adds their sources and `-I` as for any C program; pcrec
+writes no build rule (R-S3). `-o -` still prints the `#include` lines: the
+output is self-contained of pcrec, not of the user's headers.
+
+### 3.4 Diagnostics land on the user's line
+
+The `#line` directive names the source as the user wrote it: the FILE operand
+as given on the command line; an `include`/`lib` target as written in its
+line, joined to its parent's as-written directory (never `realpath`, never an
+absolute path the user did not write, so the artifact is reproducible across
+checkouts); `--pattern` text as `"<command line>"`. The line is the source
+line of the segment's first byte, counting the newlines a `pattern-esc` value
+carries. gcc's error then reads `ipv4.rxt:4:31: error: ...` (DT-3.3).
+pcrec's own refusals name the pattern offset and the segment's start (2.3).
+
+### 3.5 User state (requirement R-P7)
+
+`ctx->user` is NULL for a code segment in v1. State lives where C programs
+keep it: the user's own globals or `_Thread_local` objects declared in their
+header, or the caller's per-call variables (`ctx->vars`, which reach a callout
+because the site passes them on, 1.2). A per-segment `user=SYM` attribute that
+makes the site's `user` the address constant `(void *)&SYM` is the D38
+per-binding shape without D38's rejected per-call parameter; it is filed as a
+later row, on a need.
+
+### 3.6 Tests that need the user's C linked: `ext harness`
+
+The `.rxt` harness links user sources from a file-level `ext harness` block,
+the existing consumer-namespaced production (`rxt_format.md` §1.12), so the
+format gains no line kind:
+
+```
+ext harness
+  link c "geoip_stub.c"
+```
+
+The harness is the consumer; pcrec only carries the block. `examples/`
+gains one buildable example under D118's Makefile shape, whose rule carries
+`--allow-code=c` visibly.
+
+## 4. `verify` mode (Q4)
+
+### 4.1 What it is
+
+A `verify` segment asks: find the match with the DFA, run the segment on it,
+and only on a veto run the VM, with the segment inline, from that match's
+start. The user declares it per segment (Q4) because it is a bet on the data:
+it wins when vetoes are rare and loses when they are common (standing
+question 1).
+
+### 4.2 Realization: a VM hybrid with one more attempt row
+
+D36/F7 rule that a pattern with a callout compiles to the VM; `verify` keeps
+that literally (section 10a, conflict 4). The artifact is a VM HYBRID whose
+inlined scan is the capture-erased DFA of the pattern with each site erased
+by its width class (1.8). The hybrid's attempt loop gains one row,
+`scan-end`: on a scan answer `[s, e)`,
+
+1. build the site view a VM would build at the tail (`pos = e`, `ncap = 1`,
+   `caps[0] = {s, PCREC_UNSET}`, the entry's `vars`, `user` NULL), and call
+   the tail segments in order, each from the previous one's end;
+2. all pass: the answer is `[s, e + k1 + ... + kn)`; done;
+3. a veto: run the VM's anchored body at `s`, segments inline; its answer at
+   `s` is the answer; if it has none, resume the scan at the next character
+   start after `s`;
+4. a give-up or refusal code from a segment: the return table (1.6).
+
+### 4.3 Eligibility: a declared first-match table
+
+| # | row | predicate | action |
+|---|---|---|---|
+| 1 | `denied` | `-fno-callout-verify` (the axis deny flag) | inline |
+| 2 | `not-all-verify` | some callout in the pattern is not a `verify` code segment | inline: the `verify` segments run at their positions, which is the reference semantics |
+| 3 | `not-tail` | a `verify` segment is not in the pattern's TAIL: the trailing run of `A_CALLOUT` nodes in the top-level concatenation | inline (non-tail needs a snapshot, 4.5) |
+| 4 | `no-scan` | the hybrid scan was not built (admission declined it, or the size-cap ladder dropped it) | inline |
+| 5 | `captures` | the artifact delivers groups (`<PREFIX>_NCAPS > 1`) | hybrid without `scan-end`: the VM walks `[s, ...)` for the captures and the tail fires once per candidate inside that walk, so the VM pays nothing a `scan-end` could save until [CAP-SPAN] can place captures without it |
+| 6 | `end-unproven` | the scan does not prove the match END for the erased pattern: `<PREFIX>_VM_RESEED` is not `"exact"` (an erased lookaround, atomic group or `\K`, or a count-collapsed superset; `match_api.md` §6.3.5¶5, [PF-KNOW]) | hybrid without `scan-end` |
+| 7 | `scan-end` | otherwise | 4.2 |
+
+Rows 2-6 are DOWNGRADES and never change an answer, so they are not
+refusals. They are observable: the stamp `<PREFIX>_CALLOUT_VERIFY` carries
+the name of the row that fired, `--list-callouts` prints it per segment, and
+`pcrec --list-axes` lists the axis. The table is a sibling of the prefilter
+admission table (`pf_admits`) and of the compound's admission: it READS their
+facts (row 4 reads the admission's verdict, row 6 reads the end proof [PF-KNOW]
+records) rather than computing its own.
+
+### 4.4 Why `scan-end` gives the reference answer
+
+Let the pattern be `R T`, where `T` is the tail run of `verify` segments and
+`R` has no callout (rows 2 and 3). Assume the segments are pure (1.7).
+
+1. **Earlier starts.** The scan's `s` is the leftmost start at which `R`
+   matches. At any earlier start no path of `R` completes, so no path reaches
+   `T`, nothing fires, and the reference has no match there.
+2. **The first fire at `s`.** The reference explores `R`'s paths at `s` in
+   priority order; the first to reach `T` is `R`'s first-priority match, which
+   ends at `e` because the scan proves the end of `R`'s leftmost-first answer
+   (row 6). With no capture slots beyond 0 (row 5), the reference's view at
+   that fire is exactly the one step 1 of 4.2 builds. Pure segments return the
+   same values.
+3. **All pass.** The reference accepts on that path with `[s, e + Σk)`; so
+   does `scan-end`.
+4. **A veto.** The reference continues with `R`'s next path at `s`.
+   `scan-end` runs the VM anchored at `s`, which IS the reference engine at
+   `s`: it repeats the first fire (same veto, by purity) and then continues
+   identically. Same answer at `s`, including "none".
+5. **No match at `s`.** Both continue at later starts; by item 1 the scan's
+   next answer is the next start at which `R` matches.
+6. **Budgets.** `scan-end` skips the VM's walk on a pass, so it can ANSWER
+   where the reference VM gives up on a budget, never the reverse — the
+   latitude `match_api.md` §6.3.5¶8 already states for adaptive reseeding.
+
+Fire counts differ (on a veto the first candidate fires twice); they are
+unspecified in every mode (1.7). The control is `make test-axes`: the axis's
+deny flag runs the same corpus inline, so a `scan-end` that changes an answer
+is red.
+
+### 4.5 What `verify` cannot do yet, and what would trigger it
+
+- A NON-TAIL segment needs the site's `(pos, caps)` on the winning path,
+  recorded during the scan or recovered after it: [CAP-SPAN]'s or
+  [MATCH-EVENTS]'s mechanism. Trigger: a measured pattern whose segment
+  cannot be moved to the tail.
+- A capture-reading segment gains from `scan-end` only when [CAP-SPAN] places
+  captures without the VM walk. Trigger: the same.
+- `post` (reject and resume, requirements M1) changes answers wherever the
+  pattern has several candidates at a start; it is admissible only where the
+  compound's unique-end admission (D163 addendum 7) proves one candidate. Q4:
+  only on a measured need.
+
+## 5. The trust gate (Q5)
+
+### 5.1 The opt-in
+
+`--allow-code=LANGS` (a comma list; `c` in v1) on the COMMAND LINE enables
+module `code-<lang>` for that invocation. Nothing else enables it:
+
+- a `features` line naming `code-c` is refused by name ("enabled by
+  --allow-code, not by a file");
+- a `config`'s `pcrec` line carrying `--allow-code` is refused at parse, as
+  `--analysis` and `--measures` already are (`rxt_format.md` §1.1¶2);
+- no environment variable, no auto-detection.
+
+The library takes it as a `pcrec_options` member (a language list, default
+NULL = none), NOT a `flags` bit: the option word's free bits are what
+[IFACE-PUSH]'s hard trigger watches.
+
+### 5.2 Local and reached
+
+- **LOCAL**: a FILE operand named on the command line, `--pattern` text, and
+  the pattern string a library caller passes in. Local code needs only the
+  opt-in ("perhaps local rxt is exempt", Q5).
+- **REACHED**: every file read through an `include` or `lib` line, at any
+  depth, including a `lib` found through `--lib-path`/`-I`.
+
+### 5.3 The pin
+
+```
+include "frag/ipv4.rxt" sha256=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+lib "lib/net.rxt" sha256=<64 lowercase hex digits>
+```
+
+An optional `sha256=` value on both rows: SHA-256 of the file's bytes
+exactly as read, no normalisation, so `sha256sum FILE` prints it. Any other
+value shape is refused by value shape; `--list-schema` shows the key on both
+rows.
+
+### 5.4 Rules, per segment and per `code-header` line (first match)
+
+| # | the code's source | action |
+|---|---|---|
+| 1 | `--allow-code` does not name its language | refused (2.4) |
+| 2 | local | allowed |
+| 3 | reached, and some line on the chain from a local file to it carries no pin | refused: "embedded code at lib/net.rxt:12 refused: the lib line at main.rxt:3 carries no sha256= pin" (the first unpinned line named) |
+| 4 | reached, every line on the chain pinned (and verified, 5.5) | allowed |
+
+Transitivity follows Q5's leaning (each line pins its own target) and is
+also what makes the pins sufficient: a pinned file's bytes include its own
+`sha256=` lines, so a pin at the top fixes the content of everything below it
+exactly when every link below is pinned. An unpinned middle link could be
+edited to point at different code, which is why row 3 names the first
+unpinned line anywhere on the chain, not only the last.
+
+A reached file with patterns and no code needs no pin (Q5: "an include
+without a hash may still supply patterns").
+
+### 5.5 Pin verification
+
+A pin, when present, is verified when the file is read for a build,
+regardless of `--allow-code` and whether the file holds code: it is a
+statement about the file, and a stale one is the signal Q5 asks for. A
+mismatch refuses the target: "lib/net.rxt hashes to <h>, but the lib line at
+main.rxt:3 pins <p>; re-inspect the file and update the pin".
+`--list-source` stays a pure function of the file's bytes: it reports the pin
+as written and verifies nothing.
+
+SHA-256 is a small in-tree FIPS 180-4 implementation under `src/core/` (no
+new dependency); its control is the NIST test vectors plus `sha256sum` over
+the corpus's pinned fragments.
+
+### 5.6 The reviewer's view
+
+`pcrec --list-callouts FILE` prints one row per site: target, source
+`file:line:col`, spelling, binding row (1.4), language and attributes, width,
+mode and the 4.3 row that fired, the provenance chain with each line's pin,
+and the DECODED code. It compiles no C. In the artifact, every segment
+carries its one-line source comment (3.1), and the stamp `<PREFIX>_CODE`
+names the languages present.
+
+### 5.7 Tool paths never pass the opt-in (requirement T2)
+
+pcrec-bench's loaders, the oracle store, fuzzers, `--analysis` of exemplar
+files, and every `make test` section except the callouts section compile
+without `--allow-code`. The callouts section's runner passes `--allow-code=c`
+where a reader sees it, and a check places a code segment in another section's
+corpus and asserts the refusal (it has a way to fail: remove the opt-in check
+and it goes green-for-the-wrong-reason no longer, because the refusal is the
+expectation).
+
+### 5.8 What a pin does not cover
+
+Pins cover pattern-file bytes. They do not cover a header a `code-header`
+line names or a source the user links: pcrec never opens those, and the
+user's compiler finds them through the user's own build. The spec says so in
+one sentence.
+
+## 6. A pcrec artifact as a callout
+
+Q6's purpose: a compiled regex can BE a callout. The entry is
+`<prefix>_match`, exported by every artifact unconditionally (D38 item 2): an
+`rx_matchfn`, anchored at `ctx->pos`, returning the CONSUMED length
+(`match_api.md` §3.1¶19, which keeps `\K` from breaking the advance) or `-1`
+or a code; it ignores `ncap`/`caps` and reads `ctx->vars`, so the outer
+call's variables reach the inner pattern. Binding it is one line in the
+user's C:
+
+```c
+const rx_callout_ref rx_callout_octet = { octet_match, NULL };
+```
+
+and the outer pattern says `(?C"octet")` (binding row 2, `W_ANY`). The same
+thing from inline code: `(?{c,consume: return octet_match(ctx); })` — the
+segment hands its own `ctx` through.
+
+What it means, stated in the spec: the inner match is ATOMIC and OPAQUE (D38
+§2, F5: its captures do not reach the outer pattern); wrapping the site in a
+group captures what it consumed; an inner give-up propagates through the
+return table; two artifacts of different abi in one translation unit fail to
+compile (the existing `PCREC_RX_ABI_H` guard). The source-level alternative
+inside one `.rxt` is a definition call `(?&name)`, which is transparent to
+backtracking; the guide shows both and the difference. A DFA artifact whose
+`_match` is the `"search-filter"` form (`match_api.md` §3.2¶6) may skim the
+subject on a failing probe; the stamp says which form it is.
+
+## 7. The PCRE2-convention wrapper (Q6)
+
+For a function written to PCRE2's contract (0 continue, positive fail this
+path, negative abort), over pcrec's `rx_ctx`:
+
+```c
+#define RX_CALLOUT_PCRE2(name, fn, user_)                                     \
+    static ptrdiff_t rx_callout_pcre2__##name(const rx_ctx *ctx_)            \
+    {                                                                        \
+        int r_ = (fn)(ctx_);                                                 \
+        if (r_ == 0) return 0;                                               \
+        if (r_ > 0)  return -1;                                              \
+        __builtin_trap();     /* abort: reserved, no v1 meaning (Q6, D38) */ \
+    }                                                                        \
+    const rx_callout_ref rx_callout_##name = { rx_callout_pcre2__##name, (user_) }
+```
+
+`fn` has type `int fn(const rx_ctx *)`. The macro is emitted in the `.h` of
+every artifact with a callout site, under an `#ifndef RX_CALLOUT_PCRE2`
+guard; its helper names sit inside the `rx_callout_` family the namespace
+table reserves. Porting a body written against `pcre2_callout_block`:
+
+| PCRE2 block field | pcrec |
+|---|---|
+| `subject`, `subject_length`, `current_position` | `ctx->subject`, `ctx->len`, `ctx->pos` |
+| `start_match` | `ctx->caps[0][0]` at a site (1.3) |
+| `offset_vector[2k]`, `[2k+1]` | `ctx->caps[k][0]`, `[1]` |
+| `capture_top` | none; `ctx->ncap` is the site's constant upper bound, and an unset pair reads `-1` |
+| `callout_number`, `callout_string` | none: the binding IS the callout's identity (`match_api.md` §5.2¶7) |
+| `mark`, `callout_flags`, `pattern_position`, `next_item_length` | none in v1 |
+
+A function that takes a real `pcre2_callout_block *` is V-A's compat layer
+(generation-time block assembly, D38 §4), not this macro; the artifact never
+includes `pcre2.h`.
+
+**Abort.** Per Q6 and D38 there is no abort in v1. The name
+`PCREC_ERR_ABORT` is RESERVED for "the callee ends the whole search with no
+match", at the next free code below `PCREC_ERR_FLOOR` when it lands, and is
+not emitted until a measured need. Landing it splits the return table's row 8
+(abort jumps to the search's no-match epilogue) and makes the macro's negative
+branch return it.
