@@ -579,6 +579,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [KINDROW-ROSTERS] STATE:not-started — EVALUATE: DO ROW-FIRST SWITCHES REMOVE THE ZERO/ANY KIND ROSTERS FROM THE CONVERTED SITES?
+  filed: 2026-10-26 Frank + manager (after [INLINE-C] stage 1a's kindrow.def; Frank: "evaluate it as part of that item - don't presume to do it")
+  status (2026-10-26): filed; an EVALUATION first, no build presumed. 1a converted 8 sites to read the row, but the kind switches remain (67 switches, 711 case labels before and after) because each still lists every kind.
+  next: after 1a lands: an evaluation lane counts the labels a row-first shape would delete per site, names what is lost (a new zero-width kind no longer forces a decision at each site; the row becomes the one forcing point), and recommends do / don't per site; Frank decides
+  refs: src/core/kindrow.def; docs/dev/lanes/ic1a_report.md section 3; [INLINE-C]; memory: simplification is a benefit
 - [CALLOUT-PARSE] STATE:not-started — MALFORMED `(?C` IS REPORTED AS "REQUIRES MODULE 'callouts'"
   filed: 2026-10-26 manager, from review 2026-10-26-r1-inline-c-design D17
   status (2026-10-26): filed; `(?C256)`, `(?Cx)`, `(?C1x)` answer "requires module 'callouts'" (a reality-tier misstatement, D26); a small parser fix, independent of [INLINE-C]
