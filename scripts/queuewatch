@@ -264,14 +264,11 @@ conditions() {
         case $ans in not-ready:*|READY-HUNG*|"no answer recorded") ;; *) rdy=$(ready_since "$n"); [ -n "$rdy" ] && since=$rdy ;; esac
         age=$((now - since))
         # A job with a DECLARED TIME GATE (`boxqueue: not-before T` in its dry run, kept in QUEUE/.state/KEY.decl) is waiting by
-        # declaration only while now < T; its age counts from T. Every other not-ready answer (`after KEY` whose KEY failed, a
-        # broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
-        waits=0; nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
-        if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null); then
-            [ "$now" -lt "$nbe" ] && waits=1
-            [ "$since" -lt "$nbe" ] && { since=$nbe; age=$((now - since)); }
-        fi
-        if [ "$waits" = 0 ] && [ "$age" -ge "$stuck" ]; then
+        # declaration until T, so its age counts from T (negative before it: never stuck). Every other not-ready answer (`after KEY`
+        # whose KEY failed, a broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
+        nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
+        if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi
+        if [ "$age" -ge "$stuck" ]; then
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
         fi

@@ -389,14 +389,11 @@ P11=$(plant resvblind 'if [ -n "$bpid" ] && [ -d "/proc/$bpid" ]; then bt=$(tree
 [ -n "$P11" ] && { r=$(resv_case "$P11" p11 cpu); [ -n "$r" ] && ok "PLANT S1626 (the chain's CPU not sampled): the busy bench reads QUIET, the 5-cpu case goes red" || bad "PLANT S1626 not caught"; }
 P12=$(plant resvnogrow '[ -n "$blog" ] && stat -c '"'"'%n %s %Y'"'"' "$blog" ${bout:+"$bout"} 2>/dev/null' ':') || bad "plant S1627 did not land"
 [ -n "$P12" ] && { r=$(resv_case "$P12" p12 grow); [ -n "$r" ] && ok "PLANT S1627 (bench log/output growth not read): the growing bench reads QUIET, the 5-grow case goes red" || bad "PLANT S1627 not caught"; }
-# S1630: the declared time gate is not honoured (waits never set): the future-gated job reads PENDING-STUCK
-P13=$(plant gatedrop '[ "$now" -lt "$nbe" ] && waits=1' ':') || bad "plant S1630 did not land"
+# S1630: the declared time gate is not honoured (age counted from the queueing): the future-gated job reads PENDING-STUCK
+P13=$(plant gatedrop 'if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi' ':') || bad "plant S1630 did not land"
 [ -n "$P13" ] && { r=$(gate_case "$P13" p13 3000 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -n "$r" ] && ok "PLANT S1630 (declared gate ignored): the future-gated job reads stuck, the gate case goes red" || bad "PLANT S1630 not caught"; }
 # S1631: the REJECTED qscripts form (every not-ready answer is a wait): the failed-dependency job goes silent again
-P14=$(plant anywait 'waits=0; nb=$(' 'waits=0; case $ans in not-ready:*|READY-HUNG*) waits=1 ;; esac; nb=$(') || bad "plant S1631 did not land"
+P14=$(plant anywait '        if [ "$age" -ge "$stuck" ]; then' '        case $ans in not-ready:*|READY-HUNG*) age=0 ;; esac; if [ "$age" -ge "$stuck" ]; then') || bad "plant S1631 did not land"
 [ -n "$P14" ] && { r=$(gate_case "$P14" p14 none "not-ready: waiting on main-build (failed) (since x)"); [ -z "$r" ] && ok "PLANT S1631 (any not-ready exempt): the failed-dependency job goes silent, the after-KEY-failed case goes red" || bad "PLANT S1631 not caught"; }
-# (unnumbered: age counted from the queueing, not the gate time)
-P15=$(plant gateage '[ "$since" -lt "$nbe" ] && { since=$nbe; age=$((now - since)); }' ':') || bad "plant gateage did not land"
-[ -n "$P15" ] && { r=$(gate_case "$P15" p15 -100 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -n "$r" ] && ok "PLANT gate-age-from-queueing: a job 100 s past its gate reads stuck, the age case goes red" || bad "PLANT gateage not caught"; }
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

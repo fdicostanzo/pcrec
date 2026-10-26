@@ -67,6 +67,13 @@ job's group (and the battery.pid its logdir names); the end is `outcome=cancelle
 `CANCELLED NAME ...` for every outcome=cancelled end, queuemon journals it INFO. (3) QUIET on a bench reservation samples the
 bench's own files (params log=, last `chain pid/pgid N, output P` line), not the idle placeholder. Report: docs/dev/lanes/qscripts_report.md.
 
+## Built (lane qscripts2, 2026-10-26)
+
+A time gate is declared, not hand-coded: `boxqueue: not-before YYYY-MM-DDTHH:MM[:SS]` (local time, strict grammar, refused at `add`). boxqueue holds
+the job until then without asking `--ready` (`not-ready: not before T`, shown by plan/status). queuewatch's PENDING-STUCK skips a job only while
+now < its declared not-before and ages it from T afterwards; every other not-ready answer ages as before (the earlier any-not-ready exemption was
+rejected). Old hand-written --ready gates keep working; new time gates use not-before. Report: docs/dev/lanes/qscripts2_report.md.
+
 ## Requirements observed from the 2026-10-20 ctxp2d chain (append as found)
 
 - The armed stage list omitted one owed check (recursion identity); with a

@@ -146,3 +146,6 @@ See also NOTES.md in this directory (history, lessons, rationale, moved detail).
 `boxqueue: size NAME=N` (a dry run's measured population; cap scales past its hand constant from the same KEY's green runs' seconds-per-unit, never lowered,
 [EXPECT-PREFLIGHT]); `boxqueue cancel KEY` of a RUNNING job = marker + safekill, ends outcome=cancelled, queuewatch says CANCELLED (never RED); queuewatch QUIET on a
 bench reservation reads the bench's own log and chain pid (parsed, BD2). Report: docs/dev/lanes/qscripts_report.md.
+
+## qscripts2 (2026-10-26)
+A TIME GATE is `boxqueue: not-before YYYY-MM-DDTHH:MM[:SS]` (local, strict, refused at `add` if malformed) in the dry run: the pass answers `not-ready: not before T` without asking `--ready`; `plan`/`status` show it. queuewatch's PENDING-STUCK skips a job ONLY while now < its declared not-before (age then counts from T); every other not-ready (a failed `after KEY`, a broken --ready) ages as before (qscripts' any-not-ready exemption was rejected: it silenced exactly the miss the alarm is for). Hand-written --ready time gates still work (they age like any not-ready); new ones use not-before. Report: docs/dev/lanes/qscripts2_report.md.

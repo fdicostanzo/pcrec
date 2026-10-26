@@ -243,6 +243,9 @@ with no side effects; the plain call is the work, run under the box lock:
     cd "$TREE" || exit 1
     exec bash tests/mech/run_sabotage_matrix.sh $IDS
 
+A TIME GATE is a declaration, not a --ready wrapper: `echo "boxqueue: not-before 2026-10-27T00:05"` in the dry run (local ISO-8601, strict; boxqueue
+holds the job until then without asking --ready and PENDING-STUCK stays quiet only until that time).
+
 THE EXPECT DECLARATION has exactly these forms ([WATCH-IDLE]; `add` REFUSES
 anything else and prints them): `expect none reason=WHY` (nothing counted; WHY
 says what catches the tool crashing, e.g. "exec'd, so the tool's rc is the
