@@ -224,9 +224,21 @@ static const CoCulpritRow *co_culprit_row(Ctx *cx, const Ast *c)
  * quantifier is sealed as itself (`(?>X{m,n})` is `X{m,n}+`); anything else
  * as `(?>(?:X){1})`, which matches what `(?>X)` matches, so the survey's
  * exact-count arm answers it: a body with a unique iteration has one way to
- * match from a given start and the cut has nothing to delete. Constructs the
- * survey cannot model (a call, a lookaround) decline there, as they do for
- * the discharge.
+ * match from a given start and the cut has nothing to delete. A call
+ * declines there, as it does for the discharge.
+ *
+ * A NON-ATOMIC LOOKAROUND has its own proof (manager ruling R1, ic1badvice):
+ * it consumes nothing, so a retry into it reaches the continuation at the
+ * SAME position, and the continuation already failed from there. The retry
+ * is invisible exactly when nothing else it leaves behind differs, which is
+ * when its body holds (`co_look_retry_inert`):
+ *   - no live capture (`pcrec_has_live_capture`): a retry can set another
+ *     span, and a backreference or the caller reads it;
+ *   - no `\K`: a retry can move the reported start;
+ *   - no callout site: its fires are the caller's to count;
+ *   - no call: the callee is outside the body, and can hold any of these;
+ *   - no backtracking verb: none has a producer, and a new node kind is a
+ *     compile error in that predicate's switch.
  *
  * PROVEN CHANGES needs a WITNESS, built and checked below: a subject on which
  * an attempt at offset 0 matches as written and fails sealed. Otherwise the
@@ -235,6 +247,32 @@ static const CoCulpritRow *co_culprit_row(Ctx *cx, const Ast *c)
 typedef enum { CO_SEAL_SAME, CO_SEAL_CHANGES, CO_SEAL_UNPROVEN } CoSeal;
 
 typedef struct { const Ast *grp; bool hit; } CoSealHit;
+
+/* True iff a retry into a lookaround body `a` can leave nothing behind but
+ * captures: no `\K`, no callout site, no call (see the banner above). No
+ * `default:` arm, so a new node kind (a backtracking verb) must be decided
+ * here. */
+static bool co_look_retry_inert(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
+        case A_BREF: case A_VAR:
+            return true;
+        case A_KRESET: case A_CALLOUT: case A_CALL:
+        case A_WCLASS:   /* below the encoding lowering: never met here */
+            return false;
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT:
+            PCREC_SPINE_EACH(e, a, a->k)
+                if (!co_look_retry_inert(e)) return false;
+            return true;
+        }
+        return false;
+    }
+}
 
 /* The survey callback: notes that the hypothetical cut was proved a no-op. */
 static void co_seal_hit(void *ud, Ast *grp)
@@ -250,6 +288,8 @@ static void co_seal_hit(void *ud, Ast *grp)
  * returning, so the tree the later passes read is the one written. */
 static bool co_seal_same(CoWalk *w, Ast *c)
 {
+    if (c->k == A_LOOK)
+        return co_look_retry_inert(c->l) && !pcrec_has_live_capture(c->l);
     Ctx *cx = w->cx;
     Ast *site = pcrec_arena_alloc(&cx->arena,
                                   (size_t)w->nsites * sizeof *site);

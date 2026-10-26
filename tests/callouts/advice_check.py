@@ -26,7 +26,13 @@ optimizations off), which shares no code with pcrec's analysis. Per row:
      search from offset 0 matches AT 0; with the fix it does not.
 
 `@` in a row is the site: `(?C"x,once")` for pcrec, `(?C"x")` for the
-listing, nothing for libpcre2.
+listing, nothing for libpcre2; `%` is another check site (`(?C"y")`, its
+fires not counted), nothing for libpcre2.
+
+The checks read the verdict the refusal PRINTS, not only the row's: a
+refusal that says PROVEN SAME must have every listed fix match exactly what
+the pattern as written matches, and one that prints a witness must have it
+hold for every listed fix, whatever the row expected.
 
 Usage: advice_check.py --pcrec PCREC --work DIR [--cc CC]
 Exit 0 green, 1 on any failure (or an empty population), 3 only when
@@ -85,24 +91,35 @@ ROWS = [
      [(DEF + "(?>(?&w))@ab", "differs")]),
     (DEF + "(?&w)@b", "the subroutine call", "unproven", "ab",
      [(DEF + "(?>(?&w))@b", "same")]),
-    # the non-atomic lookaround: no proof models it, so always UNPROVEN
+    # the non-atomic lookaround: PROVEN SAME when a retry into it leaves
+    # nothing behind (no live capture, no \K, no callout site, no call);
+    # otherwise UNPROVEN (no witness is built for a lookaround). One row per
+    # condition that can be written (`\K` inside a lookaround is refused at
+    # parse; no backtracking verb has a producer).
+    ("(?*a+)@a+c", "the non-atomic lookaround", "same", "ac",
+     [("(?=a+)@a+c", "same"), ("(?>(?*a+))@a+c", "same")]),
+    ("(?<*a|b)@c", "the non-atomic lookaround", "same", "abc",
+     [("(?<=a|b)@c", "same"), ("(?>(?<*a|b))@c", "same")]),
+    ("(?*(?:(x)){0}a+)@a+c", "the non-atomic lookaround", "same", "acx",
+     [("(?=(?:(x)){0}a+)@a+c", "same")]),
     ("(?*(a+))@\\1ab", "the non-atomic lookaround", "unproven", "ab",
      [("(?=(a+))@\\1ab", "differs"), ("(?>(?*(a+)))@\\1ab", "differs")]),
-    ("(?*a+)@a+c", "the non-atomic lookaround", "unproven", "ac",
-     [("(?=a+)@a+c", "same"), ("(?>(?*a+))@a+c", "same")]),
-    ("(?<*a|b)@c", "the non-atomic lookaround", "unproven", "abc",
-     [("(?<=a|b)@c", "same"), ("(?>(?<*a|b))@c", "same")]),
+    ("(?*a+%)@a+c", "the non-atomic lookaround", "unproven", "ac",
+     [("(?=a+%)@a+c", "same")]),
+    (DEF + "(?*(?&w))@a+c", "the non-atomic lookaround", "unproven", "ac",
+     [(DEF + "(?=(?&w))@a+c", "same")]),
 ]
 
 # Every (construct, verdict) the rows must reach: each verdict for each row
 # kind that can reach it. A call is never PROVEN SAME and a lookaround is
-# only UNPROVEN (neither proof models them; match_api.md §11.8¶3).
+# never PROVEN CHANGES (no witness is built for one; match_api.md §11.8¶3).
 REACH = {
     ("the quantifier", "same"), ("the quantifier", "changes"),
     ("the quantifier", "unproven"), ("the lazy quantifier", "noseal"),
     ("the alternation", "same"), ("the alternation", "changes"),
     ("the alternation", "unproven"), ("the subroutine call", "changes"),
     ("the subroutine call", "unproven"),
+    ("the non-atomic lookaround", "same"),
     ("the non-atomic lookaround", "unproven"),
 }
 
@@ -110,6 +127,8 @@ WITNESS = re.compile(r'\(offset 0 of "((?:[^"\\]|\\x\{[0-9a-f]+\})*)"\)')
 
 
 def site(p, how):
+    """`@` is the `once` site, `%` another (uncounted) check site."""
+    p = p.replace("%", "" if how == "none" else '(?C"y")')
     return p.replace("@", {"once": '(?C"x,once")', "plain": '(?C"x")',
                            "none": ""}[how])
 
@@ -187,6 +206,7 @@ def main():
             bad("%s: want a refusal naming %s, got rc %d: %s" % (pat, what, r.returncode, msg))
             continue
         named = [v for v, t in VERDICT.items() if t in msg]
+        said = named[0] if len(named) == 1 else None
         want = [] if verdict == "noseal" else [verdict]
         if named != want:
             bad("%s: want verdict %s, the refusal says %s: %s" % (pat, want or "none", named or "none", msg))
@@ -198,7 +218,8 @@ def main():
         for line in ir.stdout.splitlines():
             if line.startswith("#section"):
                 sec = line == "#section callouts"
-            elif sec and not line.startswith("#"):
+            elif sec and not line.startswith("#") and \
+                    line.split("\t")[2] == "rx_callout_x":
                 note = line.split("\t")[6]
                 break
         if note and note in msg:
@@ -206,7 +227,7 @@ def main():
         else:
             bad("%s: the listing note %r is not inside the refusal %r" % (pat, note, msg))
         wit = None
-        if verdict == "changes":
+        if said == "changes":
             m = WITNESS.search(msg)
             if not m:
                 bad("%s: PROVEN CHANGES with no witness subject: %s" % (pat, msg))
@@ -253,6 +274,9 @@ def main():
                 bad("%s: the fix %s pinned %s, libpcre2 reads %s%s" % (
                     pat, fix, rel, "differs" if diff else "same",
                     "" if not diff else ": %r from %d: %s vs %s" % diff[0]))
+            if said == "same" and diff:
+                bad("%s: the refusal proves %s does not change the matches; libpcre2: %r from %d: %s vs %s" % (
+                    (pat, fix) + diff[0]))
             # 4. the witness is real
             if wit is not None:
                 w0 = [x[2] for x in base if x[0] == wit and x[1] == 0][0]

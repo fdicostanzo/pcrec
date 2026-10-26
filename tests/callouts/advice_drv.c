@@ -2,7 +2,8 @@
  * check (advice_check.py; docs/spec/match_api.md §11.8¶3).
  *
  * Linked with one artifact compiled `-p rx` whose sites bind
- * `rx_callout_x`, a check that always passes. Reads one subject per stdin
+ * `rx_callout_x` (the counted site) and `rx_callout_y`, checks that always
+ * pass. Reads one subject per stdin
  * line (hex) and prints, per subject, the most fires any one ATTEMPT made
  * (`rx_match` anchored at every start, 0 through the subject's length):
  *     fires <max>
@@ -21,7 +22,15 @@ static ptrdiff_t co_pass(const rx_ctx *c)
     return 0;
 }
 
+/* Another check site, passing; its fires are not the `once` site's. */
+static ptrdiff_t co_other(const rx_ctx *c)
+{
+    (void)c;
+    return 0;
+}
+
 const rx_callout_ref rx_callout_x = { co_pass, NULL };
+const rx_callout_ref rx_callout_y = { co_other, NULL };
 
 int main(void)
 {
