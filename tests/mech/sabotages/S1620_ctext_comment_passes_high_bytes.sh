@@ -10,7 +10,7 @@
 SAB_ID="S1620-ctext-comment-passes-high-bytes"
 SAB_FILE="src/core/sb.c"
 SAB_SUITES="codegen"
-SAB_DESC="pcrec_sb_ctext's comment frame prints a byte >= 0x80 raw, so a pattern holding U+200E/U+200F puts a raw bidi control into the provenance line and the orientation block; tests/codegen/run_ctext_ascii.sh must go RED on its no-raw-bidi-byte and -Wbidi-chars arms"
+SAB_DESC="pcrec_sb_ctext's comment frame prints a byte >= 0x80 raw, so a pattern holding U+200E/U+200F puts a raw bidi control into the provenance line and the orientation block; tests/codegen/run_ctext_ascii.sh must go RED on its pure-ASCII and -Wbidi-chars arms"
 SAB_DOC_FIGURE="PREDICTED: run_ctext_ascii.sh RED on the ascii + compile arms of every label (OWED: run_sabotage_matrix.sh S1620 in the day slot, lane emitbidi's job)."
 SAB_COUNT=1
 SAB_BEFORE='        else if (c >= 32 && c < 127) pcrec_sb_putc(sb, (char)c);'

@@ -265,7 +265,7 @@ static bool cc_exact(CoverSt *st)
 #ifdef PCREC_CAND_TRACE
             pcrec_ctx_fail(st->cx, 0, "internal error: [KIT-VERIFY] C8: the span slice "
                            "and the anchored machine state two sets at offset %d of "
-                           "one language (kit_proof.md §1.1, exact/producers-disagree)",
+                           "one language (kit_proof.md section 1.1, exact/producers-disagree)",
                            dd);
 #endif
             st->detail = "producers-disagree";

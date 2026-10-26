@@ -2657,7 +2657,7 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
     pcrec_sb_putc(sb, '\n');
     pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(sb,
-        "/* [DD-14.FB] The caller-provided working storage (spec \302\24710).\n"
+        "/* [DD-14.FB] The caller-provided working storage (spec section 10).\n"
         " *\n"
         " *   %s_RESUME_FRAMES / _TRAIL_FRAMES   the capacities this artifact\n"
         " *       uses when it supplies the storage itself -- a DEFAULT, not a\n"
@@ -7127,10 +7127,10 @@ static const struct {
 } next_keys[NK_N] = {
     [NK_RUN_PINNED] = { "run-pinned[-bounded]", WR_ANY, 1, 1,
                         "the reply's plan carries C-pin and its RE-SEED bit is set "
-                        "(§2.4, §3.5): RESEED + C-pin, or PARKED + C-pin" },
+                        "(section 2.4, section 3.5): RESEED + C-pin, or PARKED + C-pin" },
     [NK_OFFSET_SET] = { "offset-set[-bounded]", MF_ENTRY_RESEED, 1, WR_ANY,
                         "the reply chose the RESEED alternative, RE-SEED set "
-                        "(§2.4); its C-pin plans took the run-pinned rows above" },
+                        "(section 2.4); its C-pin plans took the run-pinned rows above" },
 };
 
 /* Does the reply's field value `v` meet a key's declared value `want`? */
@@ -7736,11 +7736,11 @@ static bool pf_dfa_start_set(const CandSel *s, CandSet *t)
     if (nt == 0 || !proper) return false;
     if (!u->views)
         pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-                       "D11 bound reached the DFA hat (startset.md §6.4.3 item 3)");
+                       "D11 bound reached the DFA hat (startset.md section 6.4.3 item 3)");
     if (!dfa_reseed_exact(s->d, tv))
         pcrec_ctx_fail(s->cx, 0, "internal error: a byte outside the DFA hat's "
                        "start set does not take every start state to its own "
-                       "seed (startset.md §6.4.3 item 2)");
+                       "seed (startset.md section 6.4.3 item 2)");
     cand_derive(t, tv, 0);
     return true;
 }
@@ -8017,7 +8017,7 @@ void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
                        "one-byte start-set form, which stage 2 does not build");
     if (pcrec_artifact_has_dfa_scan(cx))
         pcrec_ctx_fail(cx, 0, "internal error: a VM-hat artifact reads as "
-                       "having a DFA scan (startset.md §4.3)");
+                       "having a DFA scan (startset.md section 4.3)");
     pf->u.pf.emit_vm(c, &s, p, ind, entry);
 }
 
@@ -9279,7 +9279,7 @@ static void start_landing_assert_unseeded(Ctx *cx, const Dfa *fd)
     if (seeded)
         pcrec_ctx_fail(cx, 0, "internal error: the RECOVER row `landing` reached a "
                        "SEEDED machine; the one-character fact (no assertion at the "
-                       "start edge) implies an unseeded one (start_landing.md §2.6 L3)");
+                       "start edge) implies an unseeded one (start_landing.md section 2.6 L3)");
 }
 
 /* THE PREDICATE. `CandSel.d` IS the forward machine and is read as such — this
@@ -9426,7 +9426,7 @@ bool pcrec_dfa_landing_guard(Ctx *cx)
     if (pcrec_opt_has(cx->opt, PCREC_FORCE_UTF_CHECK)) return false;
     if (!pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding), PCREC_ENCE_DECODE))
         pcrec_ctx_fail(cx, 0, "internal error: the landing guard is owed under an "
-                       "encoding with no DECODE entry (start_landing.md §2.5.1)");
+                       "encoding with no DECODE entry (start_landing.md section 2.5.1)");
     return true;
 }
 
@@ -9915,7 +9915,7 @@ static const CandRow cand_rows[] = {
     { .c = { "window-none", 0, cand_always }, .slot = CAND_SLOT_WINDOW,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "end-window", 2, "none" } },
-      .desc = "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag" },
+      .desc = "always (fallback) -- the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag" },
 
     /* PRESENCE (`req_admits[]` until C4; `req_admit` asks it) */
     { .c = { "presence-none", 0, req_none_applies }, .slot = CAND_SLOT_PRESENCE,
@@ -10085,7 +10085,7 @@ static const CandRow cand_rows[] = {
     { .c = { "next-none", 0, cand_always }, .slot = CAND_SLOT_NEXT,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 13, "none" } },
-      .desc = "always (fallback) — also the reverse machine, and every case where the start state itself accepts (no skip is sound there)",
+      .desc = "always (fallback) -- also the reverse machine, and every case where the start state itself accepts (no skip is sound there)",
       .u.pf = { .scan = PF_SCAN_NONE } },
 
     /* RETRY (`pcrec_reseed_rows[]` until C5; asked only behind a prefilter,
@@ -10112,7 +10112,7 @@ static const CandRow cand_rows[] = {
       .contract = CG_FIXED,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 1, "exact" } },
       .desc = "the prefilter answers for the pattern's own language (no cut, no "
-              "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
+              "lookaround, no count collapse -- Vm.mrl_win), so nothing is gained: "
               "today's retry, the clamp recompute where an MRL clamp exists, else a step",
       .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "clamped", 0, cand_rs_clamped_applies }, .slot = CAND_SLOT_RETRY,
@@ -10127,7 +10127,7 @@ static const CandRow cand_rows[] = {
       .routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,
       .contract = CG_FIXED,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 3, "anchored" } },
-      .desc = "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
+      .desc = "every match begins at one position (`^`, `\\A`, `\\G` -- the start_anchor "
               "fact), so the attempt loop stops after its first attempt and no "
               "retry runs: today's retry, whose text is never reached",
       .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
@@ -10181,7 +10181,7 @@ static const CandRow cand_rows[] = {
     { .c = { "all", 0, cand_always }, .slot = CAND_SLOT_BOUND,
       .routes = CR_ATTEMPT | CR_VM, .tok = "all", .map = CM_NONE, .hands = CT_UPPER,
       .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 3, "unanchored" } },
-      .desc = "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has",
+      .desc = "always (fallback) -- nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has",
       .u.bound = { .one = CAND_ONE_NONE, .start_max = "subject_length" } },
 
     /* RECOVER (`dfa_search_starts[]` until C3). `-fno-start-pinned` is a
@@ -10270,7 +10270,7 @@ static const CandRow cand_rows[] = {
       .routes = CAND_ALL_ROUTES, .tok = "search-filter", .map = CM_NONE,
       .hands = CT_LOWER | CT_START | CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 2, "search-filter" } },
-      .desc = "always (fallback) — ENG_ATTEMPT, an anchored machine over a cap, or the deny flag",
+      .desc = "always (fallback) -- ENG_ATTEMPT, an anchored machine over a cap, or the deny flag",
       .needs = { [CAND_ROUTE_DFA]     = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_ATTEMPT] = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_VM]      = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
@@ -11664,7 +11664,7 @@ static const char *cand_stamp_absent(Ctx *cx, int slot, int rt)
     if (!cand_absent[slot])
         pcrec_ctx_fail(cx, 0, "internal error: the stamp of slot %s is read on a "
                        "path that does not ask it, and the slot has no absence "
-                       "value (locate_finish.md §5.1)", cand_nodes[slot].name);
+                       "value (locate_finish.md section 5.1)", cand_nodes[slot].name);
     return cand_absent[slot];
 }
 
@@ -12836,7 +12836,7 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
     if (cand_finish_of(cx) != CAND_ROUTE_VM &&
         cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
         pcrec_ctx_fail(cx, 0, "internal error: the composite's SPAN is finished by "
-                       "a row that is not `report` (locate_finish.md §2.3)");
+                       "a row that is not `report` (locate_finish.md section 2.3)");
     /* [MEMFN] R17-a the set FIND's storage point (setfind.md §7.1): here, in
      * the forward scan's one caller, above the scan's comment and `scan_position` (so
      * sabotage S07's anchor keeps its text), before the scan loop and its
@@ -13287,7 +13287,7 @@ void pcrec_cand_finish_vm(Ctx *cx, bool mrl_win)
     if ((r[0]->u.finish.act == CAND_FIN_VERIFY) != (mrl_win && pcrec_artifact_has_dfa_scan(cx)) ||
         r[1]->u.finish.act != CAND_FIN_NOMATCH || r[2]->u.finish.act != CAND_FIN_VERIFY)
         pcrec_ctx_fail(cx, 0, "internal error: the VM entry's FINISH rows disagree with "
-                       "the window it arms (locate_finish.md §2.3)");
+                       "the window it arms (locate_finish.md section 2.3)");
 }
 
 /* [OPT-REVEND] L2 the boundary projection of a hand FINISH is asked with on
@@ -13532,7 +13532,7 @@ static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent)
     const char *diff = pcrec_cover_proof_diff(cx, cv, &r->cls);
     if (*diff)
         pcrec_ctx_fail(cx, 0, "internal error: [KIT-VERIFY] the memfn kit's class for "
-                       "the cover site is not the stated sets (%s; kit_proof.md §2.5)",
+                       "the cover site is not the stated sets (%s; kit_proof.md section 2.5)",
                        diff);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", "entry", "entry-gate");
     emit_search_head(cx, c, fn, ent);
@@ -13569,7 +13569,7 @@ static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
      * start-pinned composite there would be revend.md X3's premise broken. */
     if (dfa_search_start_at(cx, CAND_HAND_WINDOW)->u.recover.act != CRA_REVERSE)
         pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk selected a RECOVER "
-                       "row that does not walk back (revend.md X3, start_landing.md §4.3)");
+                       "row that does not walk back (revend.md X3, start_landing.md section 4.3)");
     if (relocate && dfa_search_start_at(cx, CAND_HAND_EXISTS)->u.recover.act == CRA_SEARCH_FROM)
         pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's relocate reached a "
                        "start-pinned composite (revend.md X3)");

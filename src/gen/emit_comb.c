@@ -361,8 +361,8 @@ static void emit_match_def(StrBuf *c, const char *storage, const char *matchfn,
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
-        " * Unreachable on this engine — a DFA artifact has no counter to\n"
-        " * exhaust — but written uniformly on purpose: the contract of\n"
+        " * Unreachable on this engine -- a DFA artifact has no counter to\n"
+        " * exhaust -- but written uniformly on purpose: the contract of\n"
         " * rx_matchfn is one contract, and a wrapper that discards codes it\n"
         " * merely happens never to see is the shape that goes wrong when a\n"
         " * later engine shares this emitter. */\n");
