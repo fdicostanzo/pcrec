@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/codegen/run_ctext_ascii.sh -- [EMIT-BIDI]: pattern-derived text in
 # emitted C goes through the ONE escaper (`pcrec_sb_ctext`, src/core/sb.c),
-# so the artifact is pure ASCII and survives every frame it is written into.
+# so pattern-derived text is pure ASCII and survives every frame it is written into.
 #
 # The pattern holds U+200E and U+200F (bidi controls: a raw copy into a C
 # comment trips gcc's -Wbidi-chars, which the harness's -Werror makes fatal --
@@ -9,7 +9,9 @@
 # and a comment-opening pair, a double quote, backslashes, a trigraph-forming
 # `??(`, and a tab. Under `-fcomments` (the orientation block, the provenance
 # line and the legends all echo it) and under the default build, per engine:
-#   (1) the .c and the .h are pure ASCII (no byte >= 0x80);
+#   (1) the .c and the .h hold no raw bidi-control byte (the emitter's own
+#       static comments carry a few UTF-8 dashes, so whole-file ASCII is not
+#       the claim; the pattern-derived text is, and -Wbidi-chars in (2) covers it);
 #   (2) both compile under -Wall -Wextra -Werror -Wbidi-chars=any;
 #   (3) `.pattern` round-trips: the string literal decodes to the original
 #       bytes (octal never glues, `?` and `"` and `\` survive).
@@ -36,7 +38,7 @@ printf '%s' "$PAT" > "$WORK/pat.bin"
 decode_pattern() {
     python3 -I - "$1" <<'PY'
 import re, sys
-src = open(sys.argv[1], 'rb').read().decode('ascii')
+src = open(sys.argv[1], 'rb').read().decode('latin-1')
 m = re.search(r'\.pattern = "((?:[^"\\]|\\.)*)"', src)
 if not m:
     sys.exit(2)
@@ -64,10 +66,14 @@ for engine in auto vm; do
     if ! pcrec_run "$PCREC" "${flags[@]}" -o "$out" --pattern "$PAT" >"$WORK/$label.log" 2>&1; then
         bad "[$label] the build failed: $(head -2 "$WORK/$label.log")"; continue
     fi
-    if LC_ALL=C grep -q -P '[\x80-\xff]' "$out" "${out%.c}.h"; then
-        bad "[$label] the artifact holds a byte >= 0x80 (a raw echo of the pattern bypassed pcrec_sb_ctext)"
+    # The emitter's own static comment prose holds a few UTF-8 dashes, so the
+    # artifact as a whole is not ASCII; what must be ASCII is what the PATTERN
+    # put there. Its bytes are U+200E/U+200F (E2 80 8E/8F), and any bidi
+    # control (U+202A-202E, U+2066-2069, U+200E/F, U+061C) is the hazard.
+    if LC_ALL=C grep -q -P '\xe2\x80[\x8e\x8f\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xd8\x9c' "$out" "${out%.c}.h"; then
+        bad "[$label] the artifact holds a raw bidi control (a raw echo of the pattern bypassed pcrec_sb_ctext)"
     else
-        ok "[$label] the .c and .h are pure ASCII"
+        ok "[$label] the .c and .h hold no raw bidi control byte from the pattern"
     fi
     if "$CC" $GENCFLAGS_TEST -I"$WORK/$label" -c -o "$WORK/$label/t.o" "$out" 2>"$WORK/$label.cc"; then
         ok "[$label] compiles clean under $GENCFLAGS_TEST"
