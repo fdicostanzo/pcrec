@@ -1196,7 +1196,27 @@ typedef enum {
      * the head of an `A_CAT` spine used to unroll INTO the spine (`éabc`
      * flattens to five byte elements, and `pcrec_lit_run` reads a five-byte
      * run), and a wrapper that stopped that would move artifacts. */
-    A_WCLASS
+    A_WCLASS,
+    /* [INLINE-C] stage 1b A CALLOUT SITE (docs/design/inline_c.md §1;
+     * module `callouts`, [M4-CALLOUTS] step 2): the engine calls an
+     * `rx_matchfn` here, with a read-only view of the subject, the position
+     * and every group, and routes its return through the call-site return
+     * table (`src/gen/callsite_rows.h`). Every `(?C` spelling parses to this
+     * one kind; the payload is `u.callout` below.
+     *
+     * WHAT IT IS TO EVERY PASS is its attribute row, picked PER NODE by its
+     * width class (`pcrec_ast_row`): a CHECK (the default) adds no text and
+     * a `consume` site any text, and both are OPAQUE to a path reader, so no
+     * pass may prune a path a site could see (the P7 witness: `(\d+)`
+     * possessified before a check moves its answer). It READS every group:
+     * a site's view holds the pattern's whole capture array, so every group
+     * joins the one marked set (publish-at-close, the `--no-captures` keep
+     * set).
+     *
+     * VM-ONLY, by its registry row's stamp; the hybrid's prefilter declines
+     * a callout pattern outright at stage 1b (`pf_admits`). `l`/`r` are
+     * unused. */
+    A_CALLOUT
 } AKind;
 
 /* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
@@ -1220,6 +1240,24 @@ typedef enum {
      * that can express recursion. Wave B+C. */
     CALL_LINKAGE
 } CallLink;
+
+/* [INLINE-C] stage 1b WHO A CALLOUT SITE CALLS: the binding rows of
+ * docs/design/inline_c.md §1.4, first match. Row 1 (`code`, an embedded
+ * segment) arrives with module `code-c` at stage 2. */
+typedef enum {
+    CO_NAME = 1,   /* `(?C"name")`: rx_callout_<name> */
+    CO_NUM         /* `(?C)`, `(?Cn)`: rx_callout_<n> */
+} CalloutBind;
+
+/* [INLINE-C] stage 1b a site's FIRING CLASS (inline_c.md §1.10): how many
+ * times it can fire within one attempt, derived from structure alone. The
+ * ordinal is the table's row order and the listing token is
+ * `pcrec_callout_class_name`. */
+typedef enum {
+    CO_CLASS_ONCE_PER_MATCH = 1,   /* <= 1 fire per attempt, a pass IS the match */
+    CO_CLASS_ONCE_PER_START,       /* <= 1 fire per attempt */
+    CO_CLASS_REPEATED              /* may fire more than once per attempt */
+} CalloutClass;
 
 /* [M5.0 stage 1] ONE CODE-POINT INTERVAL, inclusive at both ends
  * (docs/design/utf8_design.md §2.2). The `A_CLASS` payload is a sorted,
@@ -1960,6 +1998,39 @@ struct Ast {
             bool        cwmax_known;
             bool        nonnullable;
         } call;
+
+        /* [INLINE-C] stage 1b A_CALLOUT (docs/design/inline_c.md §1.1).
+         *
+         * `bind` picks the callee from the binding rows (§1.4): a NAMED
+         * binding is `rx_callout_<name>`, a NUMBERED one `rx_callout_<num>`;
+         * either way an `extern const rx_callout_ref` the artifact declares
+         * and the user defines. `name` (arena, NUL-terminated, a C
+         * identifier with no `__`) is read for `CO_NAME` only, `num`
+         * (0..255) for `CO_NUM` only.
+         *
+         * `consume` is the WIDTH CLASS: false is `W_PRED` (a check: the
+         * callee returns 0 or -1, and a positive return traps), true is
+         * `W_ANY` (any length, the `consume` attribute). `once` is the
+         * user's compiler-checked promise of §1.10 (firing class 1 or 2).
+         *
+         * `site` is the 1-based textual order among the pattern's sites, and
+         * `at` the site's pattern offset (the listing's and the `once`
+         * diagnostic's). `fclass`/`tail`/`why` are the FIRING CLASS (§1.10),
+         * derived once on the parsed tree by `pcrec_callout_classify`
+         * (src/opt/callout.c) before any optimization pass: `fclass` is a
+         * CalloutClass, `why` the arena reason text the listing prints. */
+        struct {
+            CalloutBind bind;
+            const char *name;
+            int         num;
+            bool        consume;
+            bool        once;
+            int         site;
+            size_t      at;
+            int         fclass;
+            bool        tail;
+            const char *why;
+        } callout;
     } u;
 };
 
@@ -2183,7 +2254,11 @@ typedef struct {
 enum {
     NFA_ERASED_LOOK   = 1u << 0,   /* a lookaround lowered to epsilon */
     NFA_ERASED_ATOMIC = 1u << 1,   /* an atomic group lowered transparently */
-    NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    NFA_ERASED_COUNT  = 1u << 2,   /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    /* [INLINE-C] 1b a callout site lowered by its width class (a check to
+     * epsilon, a `consume` site to any bytes): a relaxation, since a vetoing
+     * site removes paths the machine keeps (inline_c.md §1.8) */
+    NFA_ERASED_CALLOUT = 1u << 3
 };
 
 /* ---- [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW (src/core/kindrow.def;
@@ -2198,7 +2273,7 @@ enum {
  * which column is docs/dev/lanes/ic1a_report.md. */
 typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
 typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
-typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET } KindReads;
+typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET, KREADS_ALL } KindReads;
 typedef struct {
     KindText  text;
     KindPath  path;
@@ -2241,11 +2316,15 @@ static inline KindRow pcrec_kind_row(AKind k)
 #pragma GCC diagnostic pop
 
 /* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
- * by a node field (inline_c.md §1.8's A_CALLOUT by width class) has one place
- * that picks; today every kind has one row. */
+ * by a node field has one place that picks: A_CALLOUT's width class
+ * (inline_c.md §1.8), where a `consume` site's TEXT is ANY (the callee may
+ * consume bytes between its neighbours) and a check's is its kind row's ZERO.
+ * Every other kind has one row. */
 static inline KindRow pcrec_ast_row(const Ast *a)
 {
-    return pcrec_kind_row(a->k);
+    KindRow r = pcrec_kind_row(a->k);
+    if (a->k == A_CALLOUT && a->u.callout.consume) r.text = KTEXT_ANY;
+    return r;
 }
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
@@ -5330,6 +5409,9 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
          * WORD is a VarExp, not an Ast, so there is nothing here to descend
          * into either. */
         case A_VAR:
+        /* [INLINE-C] 1b a callout site is a leaf: its callee is outside the
+         * pattern, and `l`/`r` are unused. */
+        case A_CALLOUT:
         /* THE BACK EDGE STOPS HERE — see this function's header. */
         case A_CALL:
             return;

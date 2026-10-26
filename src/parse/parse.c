@@ -222,6 +222,7 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * property every member of the list above lacks. `${v}*` is an ordinary
      * quantified atom. */
     case A_VAR:
+    case A_CALLOUT:
     /* [M6.4.2] NOT a bare anchor, and it is `A_CAP`'s answer for `A_CAP`'s
      * reason: this predicate is about a BARE assertion standing alone as a
      * group's whole body, and an atomic group is a BRACKETING construct with a

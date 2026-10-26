@@ -233,6 +233,8 @@ bool pcrec_ast_is_core(AKind k)
                       * and `\z` (the two pins; definitions_table.md §2: "\A
                       * is core") */
     case A_CALL:     /* DD-14 call, the path-fact family */
+    case A_CALLOUT:  /* [INLINE-C] 1b a callout site: a call out of the
+                      * pattern, which no other construct can stand for */
         return true;
     case A_EOL:      /* $/\Z's shipped alias — replaced away under full
                       * reduction (definitions_table.md §2) */
@@ -442,7 +444,7 @@ static bool eol_tail_plain(const Ast *a)
         }
         return false;   /* unreachable: -Wswitch makes a new class a build error */
     case A_EOL: case A_LOOK: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         return false;
     }
     return false;

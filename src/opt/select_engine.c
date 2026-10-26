@@ -268,6 +268,7 @@ static void earliest_dfa_excluding(const Ast *a, const Ast **best)
          * PREFILTER decline is a different mechanism and is NOT free — see
          * `has_var` in `prefilter_decision` below. */
         case A_VAR:
+        case A_CALLOUT:
             return;
         /* [M6.6.2] DESCENDS, and there is NO new predicate anywhere for this
          * module (design §5.1). SR-8 does the whole job through `Ast.reg`: the

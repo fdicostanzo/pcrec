@@ -177,6 +177,7 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
          * linked call's body is `callgraph.c`'s cycle problem. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_CALL:
             return EW_NONE;
         }
@@ -325,6 +326,7 @@ static void em_tails(const Ast *a, EmWalk *w)
         case A_LOOK:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_CALL:
             return;
         }

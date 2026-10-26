@@ -68,6 +68,7 @@ bool pcrec_has_atomic(const Ast *a)
          * unused — so it can neither BE a cut nor CONTAIN one. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         /* [M6.6.2] DESCENDS INTO THE BODY. A cut inside a lookaround body is
          * still a cut in the tree — `(?=(?>a|ab))b` carries one — and this
@@ -158,6 +159,7 @@ bool pcrec_has_lookaround(const Ast *a)
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC:
         case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no lookaround */
@@ -232,6 +234,7 @@ bool pcrec_has_collapsible_rep(const Ast *a)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         case A_CAP: case A_ATOMIC:
         case A_WCLASS:   /* [CLS-TREE] S3: its byte child holds no repeat */
@@ -301,6 +304,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
          * has already answered for the node itself. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         /* [M6.6.2] DESCENDS, generically: this walk is not about lookaround at
          * all, it asks whether ANY row's producer built anything anywhere in
@@ -440,6 +444,7 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
      * has no body for a cut to hide in. */
     case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return a;
     /* [M6.6.2] DESCENDS INTO THE BODY, and the A_LOOK node itself is never
      * touched. Two halves, and they are different decisions:
@@ -589,6 +594,7 @@ bool pcrec_has_bref(const Ast *a)
          * and would have declined either way — which is exactly why it had
          * to be found by reading the message rather than by a red test. */
         case A_VAR:
+        case A_CALLOUT:
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
             return false;
@@ -637,8 +643,11 @@ bool pcrec_has_bref(const Ast *a)
 
 /* [INLINE-C] 1a: marks the groups node `a` reads, by its kind ROW's READS
  * column, which also names the payload field that lists them: none, a
- * backreference's candidate set (`u.bref.refs`), or a call's target. A
- * number out of `mark`'s range is ignored (see `pcrec_bref_mark`). */
+ * backreference's candidate set (`u.bref.refs`), a call's target, or (1b)
+ * every group, a callout site's view (inline_c.md §1.3: the site's `caps`
+ * is the whole capture array, so every group is published at close and kept
+ * under `--no-captures`). A number out of `mark`'s range is ignored (see
+ * `pcrec_bref_mark`). */
 static void bref_mark_reads(const Ast *a, bool *mark, int nmark)
 {
     switch (pcrec_ast_row(a).reads) {
@@ -651,6 +660,9 @@ static void bref_mark_reads(const Ast *a, bool *mark, int nmark)
     case KREADS_TARGET:
         if (a->u.call.target > 0 && a->u.call.target < nmark)
             mark[a->u.call.target] = true;
+        return;
+    case KREADS_ALL:
+        for (int g = 1; g < nmark; g++) mark[g] = true;
         return;
     }
 }
@@ -679,6 +691,7 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
          * one of them. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
             bref_mark_reads(a, mark, nmark);
@@ -843,6 +856,7 @@ bool pcrec_has_live_capture(const Ast *a)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         /* CAPTURE-TRANSPARENT (§3.1), and no descent — see the header — EXCEPT
          * WHEN THE SITE DELIVERS.
@@ -956,6 +970,7 @@ bool pcrec_has_linked_call(const Ast *a)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
@@ -993,6 +1008,7 @@ bool pcrec_has_call(const Ast *a)
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:

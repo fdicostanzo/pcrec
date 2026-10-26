@@ -1905,7 +1905,7 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
      * than a silent decline. `A_CAP` is unreachable (`bare` above). */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_CAP: case A_ATOMIC:
-    case A_LOOK: case A_BREF: case A_VAR: case A_CALL:
+    case A_LOOK: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* A_ALT (choice), A_EMPTY (zero length), A_EOL/A_CTX (zero-width
          * assertions, which would make "scan ahead by stride" wrong).
          *
@@ -1984,7 +1984,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
      * enumeration; the answer is unchanged. */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
          * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
          * IS the decline, and this runs only on a body `vm_det_seq` already
@@ -2128,6 +2128,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
         case A_BREF:
         /* [VAR] carries no capture NUMBER either, and is unreachable here for `A_BREF`'s own reason: `rd_shape` declines a body holding one. */
         case A_VAR:
+        case A_CALLOUT:
         /* [DD-14] DECLINES, joining `A_BREF` and `A_ATOMIC`: it carries no
          * capture NUMBER of its own, and it is UNREACHABLE for their reason —
          * `rd_shape` (src/opt/revdet.c) declines every body holding a call.
@@ -2961,6 +2962,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * compare's byte-by-byte work is charged against the WORK budget at the
      * emission site, which is per-SUBJECT work this analysis does not size. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_BREF: {
         Cost c = { 0, 0, 0, 0, false, false };
         return c;
@@ -3245,6 +3247,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * entry wrapper's own stack table before the match loop begins — which
      * is this feature's whole distinction from a backreference. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
@@ -4085,7 +4088,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
      * finite set of literal words this enumeration writes. */
     case A_REP: case A_CAP: case A_ATOMIC: case A_LOOK:
     case A_EOL: case A_CTX: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         return false;
     }
     return false;
@@ -5575,7 +5578,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
      * enumeration, still falling to the hard error below. */
     case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
          * §11's `default:`-carrying sites. SOUND AND LOUD: this falls to a
          * hard compile error rather than a silent accept, which is the right
@@ -7515,6 +7518,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP:
             on_cap(v, a->u.cap.no, u);
@@ -7600,6 +7604,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CALL:
             on_call(v, a, u);

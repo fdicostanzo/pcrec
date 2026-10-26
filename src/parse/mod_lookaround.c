@@ -192,6 +192,7 @@ static bool la_has_kreset(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         /* [DD-14] ANSWERS `false`, AND THE ARM CARRIES AN OBLIGATION FOR THE
          * WAVE THAT BUILDS THE PRODUCER. Read it before touching this line.

@@ -72,6 +72,12 @@ static void qf_walk(QFacts *f, const Ast *a, bool lb)
                 if (a->u.bref.refs[i] >= 0 && a->u.bref.refs[i] <= f->ncap)
                     f->kept[a->u.bref.refs[i]] = true;
             return;
+        /* [INLINE-C] 1b a callout site reads every group (a pattern carrying
+         * one is declined by admission A3 before a derivation runs; kept
+         * whole here so the walk never under-states a reader). */
+        case A_CALLOUT:
+            for (int g = 0; g <= f->ncap; g++) f->kept[g] = true;
+            return;
         case A_CALL: {
             /* `(?R)` reaches the root, which is never deleted: the root is
              * Q itself. The callee's BODY is visited at its own lexical
@@ -240,6 +246,7 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
         return (QRes){ a, is_never_leaf(a), false };
     case A_EMPTY: case A_EOL: case A_KRESET:
     case A_BREF: case A_VAR: case A_WCLASS:
+    case A_CALLOUT:
     /* Calls are left as they are (§B.1): a callee is rewritten at its own
      * lexical position, and the call reaches the rewritten group. */
     case A_CALL:
@@ -306,6 +313,7 @@ static void qp_walk(QProps *p, const Ast *a, bool lb)
             return;
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+        case A_CALLOUT:
             return;
         case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
             return;

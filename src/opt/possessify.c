@@ -337,6 +337,7 @@ static void cap_index(PossCap *F, const Ast *a, bool fill)
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         /* a call's body is the AST's back edge; its A_CAP is visited at its
          * own lexical position */
         case A_CALL:
@@ -439,6 +440,7 @@ static First text_first(Fq *q, const Ast *a)
     case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_LOOK:
     case A_CLASS: case A_BREF: case A_CALL: case A_VAR:
+    case A_CALLOUT:
         /* [INLINE-C] 1a: the kind ROW's TEXT column answers: a ZERO kind adds
          * no character to a text (exact); every other kind defers. */
         return pcrec_ast_row(a).text == KTEXT_ZERO ? fst_empty(true)
@@ -571,6 +573,7 @@ static First first_of(Fq *q, const Ast *a)
         return fst_row(a);
     }
     case A_VAR:
+    case A_CALLOUT:
         return fst_row(a);
     /* [M6.6.2] A LOOKAROUND WIDENS TO EVERY BYTE AND IS NULLABLE — the same
      * maximally conservative answer `A_BREF` gets, reached differently.
@@ -970,6 +973,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * only the possessification of a quantifier whose body holds a reference. */
     case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return gk_row(g, a);
     /* [M6.6.2] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for a reason
      * one step subtler, and the subtlety is why it is written out.
@@ -1382,6 +1386,7 @@ static PSum ps_node(Pss *P, const Ast *a)
     case A_CLASS: case A_EMPTY: case A_EOL:
     case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
+    case A_CALLOUT:
         break;
     }
     First f = first_of(&P->fq, a);
@@ -1559,6 +1564,7 @@ static First item_first(Pss *P, const Ast *a, bool a0)
     case A_CLASS: case A_EMPTY: case A_EOL:
     case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
+    case A_CALLOUT:
         break;
     }
     return first_of(&P->fq, a);
@@ -1806,6 +1812,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * analysis is `first_of`'s answer above (every byte, nullable). */
     case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return;
 
     /* [M6.6.2] THIS WALK DOES NOT ENTER A LOOKAROUND BODY AT ALL, so no
