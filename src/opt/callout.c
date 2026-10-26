@@ -76,7 +76,8 @@ static bool co_inert(const Ast *a)
  * choices live after it completes (a later failure re-enters it), so it
  * answers with its body's. A group that never runs holds none, and neither
  * do a backreference, an anchor and a callout site (its callee is atomic,
- * D38 §2). The node returned is the one the `once` refusal names. */
+ * D38 §2). The node returned is the one the `once` refusal names: for a
+ * non-atomic lookaround, the lookaround itself. */
 static const Ast *co_choice(Ctx *cx, Ast *a)
 {
     if (co_inert(a)) return NULL;
@@ -101,7 +102,9 @@ static const Ast *co_choice(Ctx *cx, Ast *a)
     case A_WCLASS:
         return co_choice(cx, a->l);
     case A_LOOK:
-        return a->u.look.atomic ? NULL : co_choice(cx, a->l);
+        /* The lookaround itself is the live construct (the refusal names
+         * it, then the choice inside): re-entering it resumes that choice. */
+        return !a->u.look.atomic && co_choice(cx, a->l) ? a : NULL;
     case A_ATOMIC:
     case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
@@ -121,7 +124,8 @@ static const char *co_at(Ctx *cx, const Ast *c)
     case A_REP:  at = c->u.rep.at; known = c->u.rep.at_known; break;
     case A_ALT:  at = c->u.alt.at; known = c->u.alt.at_known; break;
     case A_CALL: at = c->reg_at;   known = c->reg != NULL;    break;
-    case A_CAT: case A_CAP: case A_ATOMIC: case A_LOOK: case A_WCLASS:
+    case A_LOOK: at = c->u.look.at; known = true; break;
+    case A_CAT: case A_CAP: case A_ATOMIC: case A_WCLASS:
     case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
         break;   /* never a culprit: co_choice and co_walk name none */
@@ -133,6 +137,22 @@ static const char *co_at(Ctx *cx, const Ast *c)
  * and the fix for that construct: arena text. */
 static const char *co_culprit(Ctx *cx, const Ast *c)
 {
+    if (c->k == A_LOOK) {
+        /* The choice that makes it live is the first one inside its body. */
+        const Ast *in = co_choice(cx, c->l);
+        while (in && in->k == A_LOOK) in = co_choice(cx, in->l);
+        const bool bh = c->u.look.behind;
+        return pcrec_sb_fragf(&cx->arena,
+            "the non-atomic lookaround%s keeps %s%s live after it completes; "
+            "use %s (atomic), or wrap it: (?>%s...))",
+            co_at(cx, c),
+            in && in->k == A_REP ? "the quantifier"
+            : in && in->k == A_ALT ? "the alternation"
+            :                        "the subroutine call",
+            in ? co_at(cx, in) : "",
+            bh ? "(?<=...) / (?<!...)" : "(?=...) / (?!...)",
+            bh ? "(?<*" : "(?*");
+    }
     const char *what = c->k == A_REP ? "the quantifier"
                      : c->k == A_ALT ? "the alternation"
                      :                 "the subroutine call";
@@ -176,11 +196,11 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
     CalloutClass c;
     if (rep) {
         c = CO_CLASS_REPEATED;
-        a->u.callout.why = "inside a repeat whose maximum is 2 or more";
+        a->u.callout.why = pcrec_sb_fragf(&cx->arena, "inside the repeat "
+            "whose quantifier%s has a maximum of 2 or more", co_at(cx, rep));
     } else if (live) {
         c = CO_CLASS_REPEATED;
-        a->u.callout.why = "a choice point before the site can be resumed "
-                           "and reach it again";
+        a->u.callout.why = co_culprit(cx, live);   /* same text as the refusal */
     } else if (tail) {
         c = CO_CLASS_ONCE_PER_MATCH;
         a->u.callout.why = "no repeat and no live choice point before it; "
@@ -193,11 +213,10 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
     a->u.callout.tail = tail;
     if (a->u.callout.once && c == CO_CLASS_REPEATED)
         pcrec_ctx_fail(cx, at, rep
-            ? "callout at offset %zu is marked once but can fire again: it is "
-              "inside the repeat whose quantifier%s has a maximum of 2 or "
-              "more; a site in such a repeat cannot be marked once"
+            ? "callout at offset %zu is marked once but can fire again: %s; "
+              "a site in such a repeat cannot be marked once"
             : "callout at offset %zu is marked once but can fire again: %s",
-            at, rep ? co_at(cx, rep) : co_culprit(cx, live));
+            at, a->u.callout.why);
 }
 
 static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,

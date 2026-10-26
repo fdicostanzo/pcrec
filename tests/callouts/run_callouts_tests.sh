@@ -181,6 +181,43 @@ a(?C1)b	once-per-start	-
 (?:a|b){0}x(?C1)	once-per-match	tail
 EOF
 
+# Every `once` refusal keeps three things: the construct, its offset, the fix
+# ([INLINE-C] 1b guide; match_api.md §11.8¶3). One row per culprit kind, and
+# the listing's `note` is the same text. pattern TAB construct ERE TAB fix ERE
+while IFS=$'\t' read -r pat what fix; do
+    [ -z "$pat" ] && continue
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/once.c" --pattern "$pat" 2>&1)"
+    rc=$?
+    if [ $rc -ne 0 ] && printf '%s' "$out" | grep -qE "$what at offset [0-9]+" &&
+       printf '%s' "$out" | grep -qF "$fix"; then
+        ok "once refusal on $pat names its construct, offset and fix"
+    else
+        bad "once refusal on $pat: want '$what at offset N' and '$fix', got exit $rc: $out"
+    fi
+    note="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --emit-ir --pattern "${pat/,once/}" 2>&1 |
+            awk -F'\t' '/^#section/{s=($0=="#section callouts")} s && !/^#/{print $7; exit}')"
+    if printf '%s' "$out" | grep -qF "$note" && [ -n "$note" ]; then
+        ok "the listing's note for ${pat/,once/} is the refusal's reason"
+    else
+        bad "the listing's note '$note' is not inside the refusal '$out'"
+    fi
+done <<'EOF'
+a+(?C"x,once")c	the quantifier	possessive
+a+?(?C"x,once")c	the quantifier	possessive
+(?:a|b)(?C"x,once")c	the alternation	(?>...)
+(a)(?1)(?C"x,once")c	the subroutine call	(?>...)
+(?*a+)(?C"x,once")a+c	the non-atomic lookaround at offset 0 keeps the quantifier	use (?=...) / (?!...) (atomic), or wrap it: (?>(?*...))
+(?*(?*a+))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the quantifier	wrap it: (?>(?*...))
+EOF
+# The fixes the refusals name are accepted.
+for p in '(?>(?*a+))(?C"x,once")a+c' '(?=a+)(?C"x,once")a+c' 'a++(?C"x,once")c' '(?>a|b)(?C"x,once")c'; do
+    if "$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/once.c" --pattern "$p" >/dev/null 2>&1; then
+        ok "the named fix is accepted: $p"
+    else
+        bad "the named fix is refused: $p"
+    fi
+done
+
 # ---- arm 6: refusals --------------------------------------------------------
 echo
 echo "== [INLINE-C] refusals =="

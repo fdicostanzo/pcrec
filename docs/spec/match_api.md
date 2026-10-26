@@ -3941,3 +3941,15 @@ fires again in the second run; and the iterator's empty-match retry (§3.8)
 is a second, anchored attempt at the same start, so a site can fire once in
 each. None of these is bounded by the class, and class 1's "a passing fire
 IS the match" holds per attempt.
+
+<a id="s11-8-p3"></a>[11.8¶3] THE `once` RULE, AS A TABLE. The rule is read from the pattern AS WRITTEN: it is syntactic, it never depends on an optimization flag or on what the optimizer would prove, and a user can check it by reading the pattern. A site marked `once` is refused when any of the constructs in the first table stands before it (at the same level, or inside a non-atomic lookaround that completes before it), or inside a repeat of maximum 2 or more. Every refusal names the construct, its pattern offset and the fix; `--emit-ir`'s `callouts` `note` column (`ir_listing.md` §3.7) carries the same text for a `repeated` site.
+
+| before a `once` site, backtrackable | fix |
+|---|---|
+| a variable quantifier, greedy or lazy (`X*`, `X+`, `X?`, `X{n,m}`, `X*?`) | make it possessive (`X*+`, `X++`, `X?+`, `X{n,m}+`) or wrap it in `(?>...)` |
+| an alternation (`(?:a\|b)`) | wrap it in `(?>...)` |
+| a subroutine call (`(?1)`, `(?R)`, `\g<n>`) | wrap it in `(?>...)` |
+| a non-atomic lookaround (`(?*...)`, `(?<*...)`) holding any of the above | use `(?=...)` / `(?!...)` (`(?<=...)` / `(?<!...)`), which are atomic, or wrap it: `(?>(?*...))` |
+| a site inside a repeat of maximum 2 or more | none: the site cannot be marked `once` |
+
+<a id="s11-8-p4"></a>[11.8¶4] Not backtrackable, so never a cause: literals, classes, anchors, fixed-count quantifiers (`X{3}`), possessive quantifiers, atomic groups, ordinary (atomic) lookarounds, backreferences, and groups that never run (`(?(DEFINE)...)`, `{0}`).

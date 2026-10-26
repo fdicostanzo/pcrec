@@ -9,5 +9,5 @@ SAB_DESC='every lookaround is treated as sealing its choice points, the non-atom
 SAB_REACH='"$PCREC" -p rx --features all --emit-ir --pattern '\''(?*a+)(?C1)a+c'\'' | grep -qP '\''\trepeated\t'\'' && echo REACH-CALLOUT-NONATOMIC-LOOK'
 SAB_REACH_EXPECT='REACH-CALLOUT-NONATOMIC-LOOK'
 SAB_COUNT=1
-SAB_BEFORE='        return a->u.look.atomic ? NULL : co_choice(cx, a->l);'
+SAB_BEFORE='        return !a->u.look.atomic && co_choice(cx, a->l) ? a : NULL;'
 SAB_AFTER='        return NULL; /* [SABOTAGE S1660] */'
