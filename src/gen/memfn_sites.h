@@ -58,7 +58,7 @@ mf_art *pcrec_memfn_art(Ctx *cx);
  * `cmt_close` writes the closer and a newline and leaves the region. The
  * opener and closer are column-0 block-comment delimiters with one space
  * inside each, the shape of every kit comment (§15.1; M1b's helper
- * comment). `cstr` is pcrec_sb_cstr (a string literal's body, the run
+ * comment). `cstr` is pcrec_sb_ctext, string frame (a string literal's body, the run
  * compare's constants); `legend_byte` is the DFA emitter's
  * (`pcrec_emit_legend_byte`); `comment_byte`, `stamp` and `stamp_int` are
  * not offered here (the stamps' sink is memfn_stamps.c's); `simd_open` and

@@ -512,24 +512,58 @@ void pcrec_sb_field(StrBuf *sb, const char *s)
     }
 }
 
-/* Appends `n` bytes of `b` as the BODY of an emitted C string literal (the
- * quotes are the caller's). The contract, the escape set and why the numeric
- * escape is OCTAL rather than hex are stated once at the declaration in
- * core/internal.h. */
-void pcrec_sb_cstr(StrBuf *sb, const unsigned char *b, size_t n)
+/* The declared per-frame table behind pcrec_sb_ctext (contract and the
+ * reasoning for each row: the declaration in core/internal.h). Rows are read
+ * FIRST-MATCH: `ctxs` is the set of frames a row applies to, `prev` the
+ * previous SOURCE byte it requires (-1: any), `byte` the byte it rewrites.
+ * Anything no row names, and that is not printable ASCII, takes `ctext_num`'s
+ * frame spelling. */
+#define CTX_BIT(c) (1u << (c))
+#define CTX_CMT (CTX_BIT(PCREC_CTEXT_COMMENT) | CTX_BIT(PCREC_CTEXT_COMMENT_QUOTED))
+#define CTX_ALL (CTX_CMT | CTX_BIT(PCREC_CTEXT_STRING))
+static const struct {
+    unsigned ctxs;
+    int prev;
+    unsigned char byte;
+    const char *text;
+} ctext_rows[] = {
+    /* the two comment hazard pairs, judged against the byte just consumed */
+    { CTX_CMT,                              '*', '/',  "\\x2f" },
+    { CTX_CMT,                              '/', '*',  "\\x2a" },
+    { CTX_BIT(PCREC_CTEXT_COMMENT_QUOTED),  -1,  '"',  "\\x22" },
+    { CTX_BIT(PCREC_CTEXT_COMMENT_QUOTED),  -1,  '\\', "\\x5c" },
+    { CTX_BIT(PCREC_CTEXT_STRING),          -1,  '"',  "\\\"" },
+    { CTX_BIT(PCREC_CTEXT_STRING),          -1,  '\\', "\\\\" },
+    { CTX_BIT(PCREC_CTEXT_STRING),          -1,  '?',  "\\?"  },
+    { CTX_ALL,                              -1,  '\n', "\\n"  },
+    { CTX_ALL,                              -1,  '\t', "\\t"  },
+    { CTX_ALL,                              -1,  '\r', "\\r"  },
+};
+/* The numeric spelling per frame, indexed by PcrecCtext. */
+static const char *const ctext_num[] = {
+    [PCREC_CTEXT_COMMENT]        = "\\x%02x",
+    [PCREC_CTEXT_COMMENT_QUOTED] = "\\x%02x",
+    [PCREC_CTEXT_STRING]         = "\\%03o",
+};
+
+void pcrec_sb_ctext(StrBuf *sb, const unsigned char *s, size_t n, PcrecCtext ctx)
 {
-    if (!b) return;
+    if (!s) return;
+    int prev = -1;
     for (size_t i = 0; i < n; i++) {
-        unsigned char c = b[i];
-        switch (c) {
-        case '"':  pcrec_sb_puts(sb, "\\\""); break;
-        case '\\': pcrec_sb_puts(sb, "\\\\"); break;
-        case '?':  pcrec_sb_puts(sb, "\\?");  break;
-        default:
-            if (c >= 32 && c < 127) pcrec_sb_putc(sb, (char)c);
-            else                    pcrec_sb_printf(sb, "\\%03o", (unsigned)c);
-            break;
+        unsigned char c = s[i];
+        const char *text = NULL;
+        for (size_t r = 0; r < sizeof ctext_rows / sizeof ctext_rows[0]; r++) {
+            if ((ctext_rows[r].ctxs & CTX_BIT(ctx)) && ctext_rows[r].byte == c &&
+                (ctext_rows[r].prev < 0 || ctext_rows[r].prev == prev)) {
+                text = ctext_rows[r].text;
+                break;
+            }
         }
+        if (text)                    pcrec_sb_puts(sb, text);
+        else if (c >= 32 && c < 127) pcrec_sb_putc(sb, (char)c);
+        else                         pcrec_sb_printf(sb, ctext_num[ctx], (unsigned)c);
+        prev = c;
     }
 }
 

@@ -4833,7 +4833,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     if (poss && !a->u.rep.greedy && !a->u.rep.possessive)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the cursor rung's possessive scan was given "
-                 "a LAZY body with no §2.2 verdict behind it. The scan is "
+                 "a LAZY body with no section 2.2 verdict behind it. The scan is "
                  "unconditionally maximal, which that verdict is what "
                  "licenses (see the preference-collapse note below)");
     /* [ENG-BREP] a cursor loop NESTED in a revdet loop's forward scan writes no
@@ -5273,7 +5273,7 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
     if (!pref_ok)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified bounded rung was given a "
-                 "LAZY body with no §2.2 verdict behind it. Its shape ignores "
+                 "LAZY body with no section 2.2 verdict behind it. Its shape ignores "
                  "preference, which that verdict is what licenses");
     int cur = entry;
 
@@ -5350,12 +5350,12 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
                  "NULLABLE body. It emits no empty-iteration guard, and that "
-                 "is licensed by §2.2 refusing such bodies -- not by anything "
+                 "is licensed by section 2.2 refusing such bodies -- not by anything "
                  "this rung does");
     if (!pref_ok)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
-                 "LAZY body with no §2.2 verdict behind it; its shape ignores "
+                 "LAZY body with no section 2.2 verdict behind it; its shape ignores "
                  "preference, which that verdict is what licenses");
 
     vm_lbl(v, entry, "possessified unbounded repeat: one frame for the whole "
@@ -5888,7 +5888,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         pcrec_sb_puts(b, "    }\n");
     }
     vm_ev(v, VE_NOTE, 0, 0, "a group the walk never witnessed keeps its previous"
-                            " value -- which is §3.4's ZERO-ITERATION clause at"
+                            " value -- which is section 3.4's ZERO-ITERATION clause at"
                             " the boundary where the loop never ran");
     vm_goto(v, next);
 
@@ -6222,7 +6222,7 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     if (!a->u.rep.greedy && !a->u.rep.possessive)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the counter rung's possessive optional phase "
-                 "was given a LAZY body with no §2.2 verdict behind it; its "
+                 "was given a LAZY body with no section 2.2 verdict behind it; its "
                  "shape ignores preference, which that verdict is what "
                  "licenses");
     vm_lbl(v, entry, "counter: possessive optional phase begins");
@@ -7280,11 +7280,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
      * diagnostic. Sabotage row S-LB1 deletes the pass and lands here. */
     if (m < 1 || a->u.look.widths == NULL)
         pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
-                           "no width table — the parse hook did not run, or "
+                           "no width table -- the parse hook did not run, or "
                            "its deferred width re-check did not");
     if (pslot < 0)
         pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
-                           "no position slot — the end-check has nothing to "
+                           "no position slot -- the end-check has nothing to "
                            "compare against");
 
     /* THE SEAM, CONSULTED BEFORE THE CALL IS EMITTED, exactly as the `A_BREF`
@@ -7825,7 +7825,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
          * at the cause. */
         if (!v->rgn_emit[i] && v->spl_nw && n != v->spl_nw[i])
             pcrec_ctx_fail(cx, 0, "internal error: the spliced callee for group "
-                            "%d reserved %d save slots and needs %d — the "
+                            "%d reserved %d save slots and needs %d -- the "
                             "pre-pass and the W build disagree about its "
                             "transitive group set",
                      pcrec_callgraph_target(v->cg, i), v->spl_nw[i], n);
@@ -8501,7 +8501,7 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
                              a->u.ctx.iv, a->u.ctx.n, bits))
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion's set "
                        "is not byte-expressible under this encoding "
-                       "(ucp_design.md §2.3); it needs [UCP] U4");
+                       "(ucp_design.md section 2.3); it needs [UCP] U4");
     int si = vm_cls(v, bits);
     vm_ctx_row(v, entry, a->u.ctx.fn, si, next);
 }
@@ -11716,7 +11716,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* One entry of the resume stack: \"if you get stuck, come back to\n"
-            " * HERE\". PRIVATE TO THIS FILE — the layout differs between\n"
+            " * HERE\". PRIVATE TO THIS FILE -- the layout differs between\n"
             " * artifacts (a call-bearing one carries two more members), which is\n"
             " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
@@ -12214,21 +12214,6 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
  * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_storage`, and before
  * `vm_emit_entries`, whose six entries all delegate into what is written
  * here. */
-/* Emits a WORD's bytes as a C string-literal initializer's contents, escaped
- * so every byte survives. `\xNN` uniformly for anything that is not a plain
- * printable ASCII character, because a value's bytes are DATA and a
- * half-escaped one is a miscompile a reader cannot see. */
-static void vm_var_word_bytes(StrBuf *b, const unsigned char *p, size_t n)
-{
-    for (size_t i = 0; i < n; i++) {
-        unsigned char ch = p[i];
-        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\' && ch != '?')
-            pcrec_sb_printf(b, "%c", (char)ch);
-        else
-            pcrec_sb_printf(b, "\\x%02x\"\"", (unsigned)ch);
-    }
-}
-
 /* Emit the assignment that gives expansion slot `slot` its resolved span,
  * given `raw_p`/`raw_len` already filled for every NAME.
  *
@@ -12293,7 +12278,7 @@ static void vm_var_emit_eval(Vm *v, StrBuf *c, int slot, const VarExp *x,
         lit.cx = v->cx;
         size_t total = 0;
         for (size_t i = 0; i < x->nword; i++) {
-            vm_var_word_bytes(&lit, x->word[i].lit, x->word[i].litlen);
+            pcrec_sb_ctext(&lit, x->word[i].lit, x->word[i].litlen, PCREC_CTEXT_STRING);
             total += x->word[i].litlen;
         }
         wp = pcrec_sb_fragf(&v->cx->arena, "(const unsigned char *)\"%s\"",
@@ -12444,8 +12429,11 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
                      "internal error: a ${...} selector has no resolved name "
                      "slot");
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_printf(c, "    /* %s */\n",
-                        pcrec_varexp_render(&cx->arena, x));
+        /* The render carries the pattern's own ${...} word bytes. */
+        const char *vr = pcrec_varexp_render(&cx->arena, x);
+        pcrec_sb_puts(c, "    /* ");
+        pcrec_sb_ctext(c, (const unsigned char *)vr, strlen(vr), PCREC_CTEXT_COMMENT);
+        pcrec_sb_puts(c, " */\n");
         pcrec_sb_cmt_close(c);
         vm_var_emit_eval(v, c, (int)i, x, nameidx);
     }
@@ -12626,7 +12614,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         " * the caller's buffers or at this artifact's default, and this\n"
         " * function runs after it. Re-zeroing them would leave every buffered\n"
         " * call matching against a NULL stack or a capacity of 0\n"
-        " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n");
+        " * ([DD-14.FB] section 11 item 4, sabotage row S-FB3). */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "static %svoid %s_run_state_init(%s_run_state *run)\n"
@@ -12669,7 +12657,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         " * itself a fresh allowance. The four storage fields are untouched\n"
         " * here too, for the same reason and one step further along: a\n"
         " * bump-along to the next start position keeps the caller's buffers\n"
-        " * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */\n");
+        " * exactly as it keeps the budgets ([DD-14.FB] section 11 item 5). */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "static %svoid %s_reset_for_next_attempt(%s_run_state *run)\n"
@@ -12945,7 +12933,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_sb_puts(c,
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
         "     * candidates. The VM returns here immediately and the capture\n"
-        "     * slots at this instant are the answer — no candidate comparison,\n"
+        "     * slots at this instant are the answer -- no candidate comparison,\n"
         "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
         "     * filled by the ENTRY, not here (3.4). */\n");
     pcrec_sb_cmt_close(c);
@@ -12960,7 +12948,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
             "     * A step is one backtrack resumption (4.2), counted at exactly\n"
-            "     * this place — so forward progress is FREE (a linear match over\n"
+            "     * this place -- so forward progress is FREE (a linear match over\n"
             "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
             "     * independent, and the counter measures precisely the thing it is\n"
             "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
@@ -12971,7 +12959,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             "     * indirect jump here, and the pop-and-resume dispatch below\n"
             "     * is omitted rather than emitted dead. A step is one\n"
             "     * backtrack resumption (4.2), counted at exactly this place\n"
-            "     * — forward progress is FREE, the steps_left is subject-\n"
+            "     * -- forward progress is FREE, the steps_left is subject-\n"
             "     * length-independent, and the counter measures precisely the\n"
             "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
             "     * security boundary, and it must not be traded against\n"

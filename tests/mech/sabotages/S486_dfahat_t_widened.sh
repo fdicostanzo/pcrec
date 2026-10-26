@@ -19,8 +19,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\b((?
 SAB_REACH_EXPECT='REACH-AWS-MOVER'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                       "seed (startset.md §6.4.3 item 2)");
+SAB_BEFORE='                       "seed (startset.md section 6.4.3 item 2)");
     cand_derive(t, tv, 0);'
-SAB_AFTER='                       "seed (startset.md §6.4.3 item 2)");
+SAB_AFTER='                       "seed (startset.md section 6.4.3 item 2)");
     for (int b = 0; b < 256; b++) if (u->cand.set[b] && !tv[b]) { tv[b] = 1; break; }   /* SABOTAGE S486 */
     cand_derive(t, tv, 0);'

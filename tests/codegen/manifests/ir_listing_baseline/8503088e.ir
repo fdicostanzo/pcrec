@@ -126,7 +126,7 @@ L12	label			revdet walk: done (all groups witnessed, or the loop's entry reached
 	set	slot_values[3] <- scan_position		group 1 close, recovered by the backward walk
 	set	slot_values[4] <- scan_position		group 2 open, recovered by the backward walk
 	set	slot_values[5] <- scan_position		group 2 close, recovered by the backward walk
-	note			a group the walk never witnessed keeps its previous value -- which is §3.4's ZERO-ITERATION clause at the boundary where the loop never ran
+	note			a group the walk never witnessed keeps its previous value -- which is section 3.4's ZERO-ITERATION clause at the boundary where the loop never ran
 	goto		L2	
 L2	label			
 	consume	'c'	L1	
