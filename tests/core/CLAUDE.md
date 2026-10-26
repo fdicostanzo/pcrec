@@ -20,6 +20,7 @@ be a second home for something that already has one, for zero gain.
 - `varexp_check.c` — [VAR] M1 (2026-09-23): the expansion grammar (`src/core/varexp.c`), checked below any artifact and below any match. 47 sub-checks: accept rows, refuse ...
 - **flag_access_check.py** -- [FLAG-ACCESS] (lane flagacc, 2026-10-10): THE OPTION WORD'S READER CENSUS AS A GATE, run as the last section of `run_core_tests.sh` (a source ...
 - **ksrc_deps_check.sh** -- [KNOW-SRC] K0 (lane ksrc, 2026-10-16): the knowledge module's DEPENDENCY RULE (`docs/design/measure_sets.md` rev 3 §9.2, sabotage S989).
+- **kindrow_check.sh** -- [INLINE-C] stage 1a (lane ic1a, 2026-10-26): `src/core/kindrow.def` is COMPLETE — the AKind/row census as text, a control, and four plants (new kind, deleted/swapped/duplicated row) that must fail to compile. Five `-fsyntax-only` runs on one subject, ksrc_deps_check.sh's shape.
 
 ## What this directory is for
 

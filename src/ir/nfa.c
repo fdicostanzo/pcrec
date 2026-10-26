@@ -583,6 +583,28 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     return true;
 }
 
+/* [INLINE-C] 1a THE ROW-READ LOWERING of a kind with no machine of its own:
+ * text ZERO is an epsilon, and the row's ERASE bit is recorded in
+ * `Nfa.erased` when that epsilon is wider than the kind's language (a
+ * lookaround's filter thrown away), so exactness stays a recorded fact.
+ * Text ANY would be "any bytes, any length", which no kind lowers today
+ * (each such kind declines the prefilter before a machine is built), so it
+ * is the same loud internal error the backreference arm below takes. */
+static Frag frag_row(NB *b, const Ast *a)
+{
+    const KindRow row = pcrec_ast_row(a);
+    switch (row.text) {
+    case KTEXT_ZERO:
+        b->nfa->erased |= row.erase;
+        return frag_single(b, N_EPS);
+    case KTEXT_ANY:
+    case KTEXT_OWN:
+        break;
+    }
+    pcrec_ctx_fail(b->cx, 0, "internal error: a kind with no zero-width "
+                   "lowering reached the row-read arm of the machine builder");
+}
+
 /* Lowers one AST subtree to its NFA fragment, recursively — the tree's
  * one exhaustive `AKind` switch with no `default:` arm, so a new kind is a
  * compile error here rather than a silent miscompile. Re-applies `ast_bare`
@@ -609,7 +631,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         pcrec_cls_bits(b->cx, a, b->nfa->st[f.start].cls);
         return f;
     }
-    case A_EMPTY: return frag_single(b, N_EPS);
+    case A_EMPTY: return frag_row(b, a);   /* [INLINE-C] 1a: its row (exact) */
     case A_EOL:
         /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
          * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with
@@ -688,7 +710,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      *
      * Reversal is identity for the most trivial reason in the file: there is
      * nothing to reverse. */
-    case A_KRESET: return frag_single(b, N_EPS);
+    case A_KRESET: return frag_row(b, a);   /* [INLINE-C] 1a: its row (exact) */
     /* [M6.6.2] A LOOKAROUND LOWERS TO AN EPSILON, BODY AND ALL, and that is
      * the design (lookaround_design.md §5.2/§5.3) rather than a shortcut.
      *
@@ -720,8 +742,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      * recognizer — is chartered as `[ENG-LOOK]` and is not this arm.
      * Reversal is identity for the same trivial reason `\K`'s is: an epsilon
      * has nothing to reverse. */
-    case A_LOOK:   b->nfa->erased |= NFA_ERASED_LOOK;   /* [OPT-REVEND] L0, LR-G3 */
-                   return frag_single(b, N_EPS);
+    case A_LOOK:   return frag_row(b, a);   /* [INLINE-C] 1a: its row records NFA_ERASED_LOOK ([OPT-REVEND] L0, LR-G3) */
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
@@ -917,7 +938,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      * MISCOMPILE, which is what registry.c's own row comment has warned about
      * since before there was a producer, and what sabotage row S91 injects. */
     case A_ATOMIC:
-        b->nfa->erased |= NFA_ERASED_ATOMIC;   /* [OPT-REVEND] L0, LR-G3 */
+        b->nfa->erased |= pcrec_ast_row(a).erase;   /* [INLINE-C] 1a: its row's NFA_ERASED_ATOMIC ([OPT-REVEND] L0, LR-G3) */
         return compile_ast(b, a->l);
     /* [M6.5.2] NO MACHINE, AND THE ANSWER IS TO FALL INTO THE ERROR BELOW —
      * deliberately, not for want of an idea.

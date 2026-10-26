@@ -83,6 +83,9 @@
 # mean two rows whose `SAB_AFTER` differed by one label while their DETECTION
 # is identical. The witness is unchanged (tests/backrefs/nested.rxt), so the
 # recorded figures still describe what this row plants.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: site 2, gk_build's backreference arm, now returns gk_row(g, a)
 SAB_ID="S108-rdshape-accepts-bref"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="brefdiff harness"
@@ -103,8 +106,7 @@ SAB_FILE2="src/opt/possessify.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case A_BREF:
     case A_VAR:
-        g->ok = false;
-        return gk_parts_empty(true);'
+        return gk_row(g, a);'
 SAB_AFTER2='    case A_BREF:
     case A_VAR:
         return gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */'

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # S746 ([OPT-REVEND] L0, lane lfl0; docs/design/locate_finish.md rev 2.1 §5 L0; docs/dev/lanes/lfl0_report.md) -- the lowering's `A_LOOK` arm stops recording its erasure (LR-G3): a lookaround-bearing hybrid's prefilter reads EXACT, `Vm.mrl_win` arms the window ceiling over a superset's span end, and the 16 qualifying shapes of lookaround_design.md §5.5 lose matches. S140 is the same hazard at the READER (`pcrec_vm_prefilter_window` ignores the record's look member); this row is the WRITER.
 # Detector: the corpus harness on tests/lookaround/prefilter.rxt (S140's detector). MEASURED by plant at landing: 6 of 53 cases fail. The census's C7 reads 478 disagreements.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: the arm now lowers through frag_row; the plant lowers to the epsilon without recording (S1640 flips the row instead)
 SAB_ID='S746-look-erasure-unrecorded'
 SAB_FILE='src/ir/nfa.c'
 SAB_SUITES='harness'
@@ -11,5 +14,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\w{1,2}
 SAB_REACH_EXPECT='REACH-LOOK-HYBRID'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case A_LOOK:   b->nfa->erased |= NFA_ERASED_LOOK;   /* [OPT-REVEND] L0, LR-G3 */'
-SAB_AFTER='    case A_LOOK:   /* SABOTAGE S746: the erasure is not recorded */'
+SAB_BEFORE='    case A_LOOK:   return frag_row(b, a);   /* [INLINE-C] 1a: its row records NFA_ERASED_LOOK ([OPT-REVEND] L0, LR-G3) */'
+SAB_AFTER='    case A_LOOK:   return frag_single(b, N_EPS);   /* SABOTAGE S746: the erasure is not recorded */'

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# ic1a: [INLINE-C] stage 1a owed validation of lane/ic1a (the per-kind attribute row, src/core/kindrow.def; ZERO emitted-byte movers, no abi bump): build, strict, test-core (incl. the new kindrow completeness check), the zero-mover proof (emit_sweep.py vs the lane's base 7f7f67dc6 over the corpus -- every stream incl. --emit-facts and the --emit-ir listing that carries possessify's marked/total -- and again over the 336 pcrec-bench patterns), the 14 sabotage rows (ten re-aimed onto the row readers + S1638-S1641), then the full make test.
+# Queued by the lane itself (scripts/boxqueue add --name 520-ic1a-test docs/dev/lanes/ic1a_job); the job runs in the lane worktree.
+# Not ready from 2026-10-26 21:00 local: the ~3 h job must end before the 00:05 full suite owns the box (the brief: nothing starts after 23:30); the manager re-times it if it is still pending then.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1a
+REF=7f7f67dc6
+ROWS="S104 S108 S157 S158 S159 S498 S499 S500 S501 S746 S1638 S1639 S1640 S1641"
+BENCH="$TREE/docs/dev/lanes/ic1a_bench_patterns.txt"
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/tests/core/kindrow_check.sh" ] \
+            && [ -f "$TREE/scripts/emit_sweep.py" ] && [ -s "$BENCH" ] || { echo "no tree, perfrun, kindrow_check.sh, emit_sweep.py or $BENCH in $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$REF" >/dev/null || { echo "ref $REF unknown" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; run_core_tests.sh > \$BQ_LOG.core; emit_sweep.py --ref $REF --jobs 8 > \$BQ_LOG.sweep; emit_sweep.py --ref $REF --jobs 8 --patterns-file $BENCH --no-corpus > \$BQ_LOG.sweepbench; run_sabotage_matrix.sh $ROWS > \$BQ_LOG.mech; scripts/perfrun --label ic1a -- \$BQ_LOG.make"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=1 log=job.log.strict lines=^strict: whole tree compiles clean"
+        echo "boxqueue: expect core=1 log=job.log.core lines=^checks failed: 0$"
+        echo "boxqueue: expect sweep=1 log=job.log.sweep lines=^emit_sweep: DONE rc=0$"
+        echo "boxqueue: expect sweepbench=1 log=job.log.sweepbench lines=^emit_sweep: DONE rc=0$"
+        echo "boxqueue: expect mech=14 log=job.log.mech last=^== mech run COMPLETE:"
+        echo "boxqueue: witness mech=== mech run COMPLETE: 14 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        echo "boxqueue: expect sections=79 log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: 79/79"
+        exit 0 ;;
+    --ready)
+        now=$(date +%s); stop=$(date -d '2026-10-26 21:00' +%s) || exit 1
+        [ "$now" -lt "$stop" ] || { echo "past 2026-10-26 21:00: would overrun the 00:05 full suite; manager re-times this job"; exit 75; }
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1 || rc=1
+( cd "$TREE" && bash tests/core/run_core_tests.sh ) > "$BQ_LOG.core" 2>&1 || rc=1
+python3 "$TREE/scripts/emit_sweep.py" --tree "$TREE" --bin "$TREE/build/pcrec" --ref "$REF" --jobs 8 \
+    --out "$TREE/build/ic1a_sweep_corpus" > "$BQ_LOG.sweep" 2>&1 || rc=1
+python3 "$TREE/scripts/emit_sweep.py" --tree "$TREE" --bin "$TREE/build/pcrec" --ref "$REF" --jobs 8 \
+    --patterns-file "$BENCH" --no-corpus --out "$TREE/build/ic1a_sweep_bench" > "$BQ_LOG.sweepbench" 2>&1 || rc=1
+( cd "$TREE" && bash tests/mech/run_sabotage_matrix.sh $ROWS ) > "$BQ_LOG.mech" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label ic1a -- "$BQ_LOG.make" || rc=1
+exit $rc

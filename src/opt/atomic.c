@@ -635,6 +635,26 @@ bool pcrec_has_bref(const Ast *a)
     }
 }
 
+/* [INLINE-C] 1a: marks the groups node `a` reads, by its kind ROW's READS
+ * column, which also names the payload field that lists them: none, a
+ * backreference's candidate set (`u.bref.refs`), or a call's target. A
+ * number out of `mark`'s range is ignored (see `pcrec_bref_mark`). */
+static void bref_mark_reads(const Ast *a, bool *mark, int nmark)
+{
+    switch (pcrec_ast_row(a).reads) {
+    case KREADS_NONE:
+        return;
+    case KREADS_REFS:
+        for (int i = 0; i < a->u.bref.nrefs; i++)
+            if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;
+        return;
+    case KREADS_TARGET:
+        if (a->u.call.target > 0 && a->u.call.target < nmark)
+            mark[a->u.call.target] = true;
+        return;
+    }
+}
+
 /* §3.2.4's MARKED SET: the UNION of every `A_BREF`'s `refs`.
  *
  * EVERY MEMBER OF A DUPLICATED NAME'S RUN, not merely the one a given match
@@ -654,13 +674,14 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
 {
     for (;;) {
         switch (a->k) {
+        /* [INLINE-C] 1a: a leaf marks the groups its kind ROW says it reads
+         * (`bref_mark_reads`); the call's arm below says why its target is
+         * one of them. */
         case A_BREF:
         case A_VAR:
-            for (int i = 0; i < a->u.bref.nrefs; i++)
-                if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;
-            return;
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
+            bref_mark_reads(a, mark, nmark);
             return;
         /* [M6.6.2] DESCENDS, for `pcrec_has_bref`'s reason: the marked set is
          * the UNION of every A_BREF's `refs` over the WHOLE tree, and a
@@ -707,8 +728,7 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
          * the cell that shows the mark reaching group 3 through the call
          * NODE rather than through a transitive walk. */
         case A_CALL:
-            if (a->u.call.target > 0 && a->u.call.target < nmark)
-                mark[a->u.call.target] = true;
+            bref_mark_reads(a, mark, nmark);
             return;
         case A_CAT:
             while (a->k == A_CAT) {

@@ -94,6 +94,9 @@
 # route to, and `vm_lifts`/S156 stands between the corpus and it. This row is
 # therefore an ANSWER comparison rather than the timeout row it was written as.
 # ============================================================================
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: first_of's and gk_build's call arms now return fst_row(a) / gk_row(g, a)
 SAB_ID="S157-possessify-across-call"
 SAB_FILE="src/opt/possessify.c"
 SAB_SUITES="harness recursion"
@@ -108,12 +111,8 @@ SAB_HARNESS_TARGET="tests/recursion/quantified.rxt"
 SAB_DESC="BOTH arms that decline a call are removed -- first_of stops widening to every byte and gk_build stops refusing -- so the AUTOMATIC possessifier narrows the CALLEE on the strength of a follow computed from an emptied call first-set, and a quantifier INSIDE the callee is made possessive that must be able to back up: ^(a?)(?1)+a\$ on \"a\" goes from (0,1) to NOMATCH"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR9a, D71 item 6): ^(?:(?<g>a?)){0}(?&g)*+\$ HANGS -- emit_vm.c's own comment says vm_poss_star 'PUSHES AND CUTS AT ZERO CONSUMPTION FOREVER, and no work charge fires to stop it', and eng_brep_design 2.2's nullable refusal CANNOT SEE a callee that lives elsewhere in the tree. Scored by tests/harness/run.sh's own run budget. MEASURED on the landed build BEFORE the sabotage: that pattern compiles with RX_VM_STRATS 0x2 -- BACKTRACKING only, no POSSESSIVE bit -- and answers (0,3) on \"aaa\". || MEASURED UNDETECTED at corpus 0fail/346pass EVEN WITH BOTH POSSESSIFY ARMS REMOVED, and the finding is which arm actually stands between the corpus and the hang. \`(?&g)*+\` does NOT go through possessify at all: parse.c desugars the possessive SUFFIX to A_ATOMIC(A_REP(...)) and \`vm_lifts\` routes the cut into the possessive rung -- and \`vm_lifts\` DECLINES on \`vm_nullable(r->l)\`, which for a call is the GRAPH FIXPOINT (S156's arm). So for the user-written spelling the protection is vm_lifts + vm_nullable, not D71 item 6's rung decline; possessify's decline governs the AUTOMATIC possessification of a non-possessive quantifier, whose hang shape this corpus does not contain. The witness cell ^(?:(?<g>a?)){0}(?&g)*+\\$ landed anyway and is MEASURED on the shipped build to take the BACKTRACKING rung (RX_VM_STRATS 0x2, no POSSESSIVE bit). || [WAVE E] CLOSED AS DETECTED. The witness the search had missed is the AUTOMATIC path, not the possessive-suffix one, and the quantifier it wrongly possessifies is the \`a?\` INSIDE THE CALLEE -- made to look prefix-free by an emptied call first-set. MEASURED both ways 2026-08-24: ^(a?)(?1)+a\$ on \"a\" is (0,1) group1=(0,0) clean and NOMATCH sabotaged; ^(a?)(?1){2}a\$ on \"a\" the same through a COUNTED quantifier; ^(a?)(?1)*\$ on \"aaa\" moves RX_VM_STRATS 0x2 -> 0x3 with EVERY ANSWER UNCHANGED, which is why a cell without a trailing literal could never have closed this. The failure is a DELETED MATCH, not the predicted HANG: vm_poss_star is reachable only through the rung this sabotage cannot route to."
 SAB_COUNT=1
-SAB_BEFORE='    case A_CALL: {
-        First r;
-        memset(r.f, 0xff, 32);
-        r.nullable = true;
-        return r;
-    }'
+SAB_BEFORE='    case A_CALL:
+        return fst_row(a);'
 SAB_AFTER='    case A_CALL: {   /* SABOTAGE S157: a call has an EMPTY first set */
         First r;
         memset(r.f, 0, 32);
@@ -123,7 +122,6 @@ SAB_AFTER='    case A_CALL: {   /* SABOTAGE S157: a call has an EMPTY first set 
 SAB_FILE2="src/opt/possessify.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case A_CALL:
-        g->ok = false;
-        return gk_parts_empty(true);'
+        return gk_row(g, a);'
 SAB_AFTER2='    case A_CALL:   /* SABOTAGE S157 (second site): modelled as an epsilon */
         return gk_parts_empty(true);'
