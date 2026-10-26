@@ -608,7 +608,7 @@
 #     firing-class bound, the driver checks, the class table and the
 #     refusals. Its own arm because module `callouts`' callees are linked
 #     only by this directory's manifest and its checks.c, which no other
-#     suite builds. Rows: S1646-S1655, S1657-S1666. Verdict: the
+#     suite builds. Rows: S1646-S1655, S1657-S1669. Verdict: the
 #     script's `checks passed:`/`checks failed:` trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the

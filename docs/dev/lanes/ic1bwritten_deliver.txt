@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic1bwritten_report.md
+sections: Summary; Rewrite survey; Fix; Tests; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic1bwritten-test ic1bwritten-mech ic1bwritten-axes

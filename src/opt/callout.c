@@ -105,8 +105,14 @@ static const Ast *co_choice(Ctx *cx, Ast *a)
         /* The lookaround itself is the live construct (the refusal names
          * it, then the choice inside): re-entering it resumes that choice. */
         return !a->u.look.atomic && co_choice(cx, a->l) ? a : NULL;
+    case A_CTX: {
+        /* A lookaround the parse rewrote into this node keeps the
+         * construct as written: the rule reads the pattern, not the rewrite. */
+        const Ast *wr = a->u.ctx.written;
+        return wr ? co_choice(cx, (Ast *)wr) : NULL;
+    }
     case A_ATOMIC:
-    case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
+    case A_CLASS: case A_EMPTY: case A_EOL: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
         return NULL;
     }

@@ -1609,6 +1609,13 @@ struct Ast {
              * `pcrec_is_bare_anchor`'s one reader. Parse-resolved spelling
              * state, D62's field rule; no engine reads it. */
             bool                anchor;
+            /* THE LOOKAROUND AS WRITTEN, for a NON-ATOMIC lookaround the
+             * parse turned into this node (`(?*a|b)`): the `A_LOOK` the
+             * pattern spelled, kept off the tree so no pass walks it. Only
+             * `pcrec_callout_sites` reads it, so the `once` rule sees the
+             * pattern as written (a rewrite must not hide a construct the
+             * user can read). NULL on every other context node. */
+            const struct Ast   *written;
         } ctx;
 
         /* A_EOL carries NO payload. Until [DD-11.5] it and A_BOL shared a

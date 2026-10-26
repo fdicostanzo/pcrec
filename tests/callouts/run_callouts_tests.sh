@@ -208,9 +208,14 @@ a+?(?C"x,once")c	the quantifier	possessive
 (a)(?1)(?C"x,once")c	the subroutine call	(?>...)
 (?*a+)(?C"x,once")a+c	the non-atomic lookaround at offset 0 keeps the quantifier	use (?=...) / (?!...) (atomic), or wrap it: (?>(?*...))
 (?*(?*a+))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the quantifier	wrap it: (?>(?*...))
+(?*a|b)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
+(?<*a|b)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?<=...) / (?<!...) (atomic), or wrap it: (?>(?<*...))
+(?*(?:a|b))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?=...) / (?!...) (atomic)
+(?*[ab]|c)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
+(?*(?*a|b))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
 EOF
 # The fixes the refusals name are accepted.
-for p in '(?>(?*a+))(?C"x,once")a+c' '(?=a+)(?C"x,once")a+c' 'a++(?C"x,once")c' '(?>a|b)(?C"x,once")c'; do
+for p in '(?>(?*a+))(?C"x,once")a+c' '(?=a+)(?C"x,once")a+c' 'a++(?C"x,once")c' '(?>a|b)(?C"x,once")c' '(?>(?*a|b))(?C"x,once")c' '(?=a|b)(?C"x,once")c' '(?*[ab])(?C"x,once")c'; do
     if "$TIMEOUT_BIN" 60 "$PCREC" --features all -o "$WORK/once.c" --pattern "$p" >/dev/null 2>&1; then
         ok "the named fix is accepted: $p"
     else
