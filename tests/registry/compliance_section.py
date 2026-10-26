@@ -439,8 +439,12 @@ def dump():
     # no-doorway row -- module `vars`' own row.
     # 139 -> 142 ([UCP] U0, 2026-09-28): module `ucp`'s `(*UCP)`, `(*UTF)`,
     # `(*UTF8)` name rows.
-    if len(rows) != 142:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 142. "
+    # 142 -> 143 ([INLINE-C] stage 1b, 2026-10-26): the malformed-`(?C`
+    # REJECTED row `(?Cx)`, which refuses a bad callout as malformed with
+    # module `callouts` on or off (D17), where the module row's port used to
+    # be the first to see it.
+    if len(rows) != 143:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 143. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

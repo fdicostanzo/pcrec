@@ -14,7 +14,7 @@
   - [§3.4](#s3-4) `program` — `label | op | args | target | note`
   - [§3.5](#s3-5) `choicepoints` — `label | resume | note`
   - [§3.6](#s3-6) `islands` — `label | width | note`
-  - [§3.7](#s3-7) `callouts` — `label | note`
+  - [§3.7](#s3-7) `callouts` — `label | site | binding | width | class | tail | note`
 - [§4](#s4) Consuming it
 <!-- spec-toc:end -->
 
@@ -150,9 +150,11 @@
 <a id="s3-6-p1"></a>[3.6¶1] One row per emitted DFA island (`docs/spec/tuning.md` §2.20). The COUNT is `summary`'s `islands` row. An empty population is one empty row with the reason.
 
 <a id="s3-7"></a>
-### 3.7 `callouts` — `label | note`
+### 3.7 `callouts` — `label | site | binding | width | class | tail | note`
 
-<a id="s3-7-p1"></a>[3.7¶1] One row per emitted callout site. The COUNT is `summary`'s `callout-sites` row. Module `callouts` has no producer, so this section is empty on every artifact.
+<a id="s3-7-p1"></a>[3.7¶1] One row per emitted callout site, in program order. The COUNT is `summary`'s `callout-sites` row. A site emitted twice (an unrolled repeat) is two rows with one `site` number. An empty population is one row with every column empty but `note`, which gives the reason.
+
+<a id="s3-7-p2"></a>[3.7¶2] The columns: `label`, the site's program label; `site`, its 1-based number in pattern order; `binding`, the symbol it calls (`rx_callout_<n>` or `rx_callout_<name>`, `match_api.md` §11.2); `width`, `check` or `consume` (§11.4); `class`, its firing class (`once-per-match`, `once-per-start` or `repeated`, `match_api.md` §11.8); `tail`, `tail` when the site is the last item on every path to accept and `-` otherwise; `note`, the reason the class was derived.
 
 <a id="s4"></a>
 ## 4. Consuming it

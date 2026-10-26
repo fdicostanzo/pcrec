@@ -206,6 +206,10 @@ Of PCRE2's syntax surface:
   pass. Their own annotations said "behind the gate" throughout — the
   status column and the annotation had been contradicting each other for
   three days, which is the pairing `--tension` does not check.
+- Module `callouts` ships `OK-GATED` ([INLINE-C] stage 1b, 2026-10-26):
+  `(?C)`, `(?Cn)` and `(?C"name")` call an extern binding the user's C
+  defines, VM only; the answer agrees with libpcre2 run with its
+  answer-moving optimizations off (see the Callouts section).
 - Everything outside those modules is `REJECTED` — measured live at
   [M6.4.2] (2026-08-22, module `atomic-groups`) from
   `tests/reject/run_reject_tests.sh`'s own summary,
@@ -2003,7 +2007,7 @@ additionally requires reporting state back to the caller.
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?C)` `(?Cn)` `(?C"text")` | `REJECTED` | `PLANNED` |
+| `(?C)` `(?Cn)` `(?C"name")` | `OK-GATED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: callouts -->
 
@@ -2012,29 +2016,24 @@ additionally requires reporting state back to the caller.
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`(?C1)`** (2026-08-14)
+**`(?C1)`** (2026-10-26)
 
-**[M4-CALLOUTS] step 1 (D36, Frank, 2026-08-12; flipped 2026-08-14):**
-re-scoped from `OUT-OF-SCOPE` to `PLANNED`, module `callouts`, explicitly
-LOW priority — parked behind the M4 VM engine that hosts the behavior
-(callouts are engine-forcing like backrefs: the compiled DFA erases the
-pattern positions a callout fires at, so callout patterns compile to the
-VM engine only). The PATTERN layer (syntax, where callouts may appear) is
-D26-exact and PCRE2-compatible; the CALLBACK CONTRACT mirrors
-`pcre2_callout_block` field for field; the REGISTRATION API is
-pcrec-native (a compile-time-bound `extern` the embedding program
-defines, zero cost when absent) rather than a runtime
-`pcre2_set_callout`-style registration. The obstacle that kept this
-`OUT-OF-SCOPE` no longer applies as a permanent one: generated code's
-zero runtime dependency on pcrec is preserved by the static-extern
-binding, not by refusing the construct. Step 2 (the behavior itself) is
-not yet built — see `docs/dev/plan.md`'s `[M4-CALLOUTS]` row.
-
-Module `callouts`, M4-hosted, VM-only (D36). Callback block and return
-semantics (0/positive/negative) mirror `pcre2_callout_block` field for
-field; fire-point precision is documented engine-relative, with PCRE2's
-own `PCRE2_NO_START_OPTIMIZE` latitude as the cited precedent that fire
-counts are not the contract.
+**[INLINE-C] stage 1b (2026-10-26): BUILT, extern-bound.** `(?C)`,
+`(?Cn)` and `(?C"name")` (every PCRE2 string delimiter) compile, VM-only,
+to a call of `rx_callout_<n>` / `rx_callout_<name>`, an
+`extern const rx_callout_ref` the artifact's header declares and the user's
+C defines (docs/spec/match_api.md §11). The PATTERN layer is PCRE2's; the
+CALLBACK is pcrec's `rx_matchfn` over a read-only view (the subject, the
+position, every group's last closed value, slot 0 the attempt start), not
+`pcre2_callout_block`; the RETURN is pcrec's: 0 continues, -1 backtracks, a
+`consume` callee's positive return consumes that many bytes (no PCRE2
+form), a give-up code propagates. The answer is the backtracking-order
+answer: libpcre2 agrees with its answer-moving optimizations off
+(`PCRE2_NO_AUTO_POSSESS`, `PCRE2_NO_START_OPTIMIZE`,
+`PCRE2_NO_DOTSTAR_ANCHOR`), and at its default flags only where its answer
+does not depend on them (match_api.md §11.6 gives two measured cases).
+Fire counts are unspecified; each site's firing class is a structural
+bound. Embedded code (`(?C"c: ...")`, `(?{...})`) is a later stage.
 
 <!-- END GENERATED -->
 

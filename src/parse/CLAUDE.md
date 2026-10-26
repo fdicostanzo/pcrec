@@ -62,6 +62,7 @@ Parser structure (PARSE-1):
 - mod_lookaround.c — module `lookaround` (one port, width rule, `\K` check)
 - mod_atomic_groups.c — module `atomic-groups`, `pcrec_atomic_suffix_row`
 - mod_vars.c — module `vars` (`${name}`)
+- mod_callouts.c — module `callouts`: `(?C` forms, the malformed row
 - mod_backrefs.c — module `backrefs`, `pcrec_bref_resolve`
 - mod_recursion.c — module `recursion` (calls, DEFINE)
 - rxt_schema.def / rxt_schema.c — `.rxt` format schema as data and its reader (one exhaustive switch over the constraint kinds)
