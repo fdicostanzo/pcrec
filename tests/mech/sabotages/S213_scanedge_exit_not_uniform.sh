@@ -37,6 +37,11 @@
 # byte, which is the population the clause exists for. Choosing the file that
 # fails is not the point; recording that the obvious neighbour does NOT is
 # (docs/dev/learnings.md §3).
+# RE-ANCHORED 2026-10-26 (lane scanset, [SCANEDGE-SET]): shaped() now keys a
+# class SET by its lowest class, so the plant deletes the uniformity test of
+# the set-rule loop instead of rewriting the one-class body; the intent (the
+# exit is read off one other class and the rest are assumed to agree) and the
+# detector are unchanged.
 SAB_ID="S213-scanedge-exit-not-uniform"
 SAB_FILE="src/opt/scanedge.c"
 SAB_SUITES="harness"
@@ -44,21 +49,6 @@ SAB_HARNESS_TARGET="tests/counterk/counterk.rxt"
 SAB_DESC="scanedge.c's SCAN-SHAPED test reads the run's exit target off ONE other class instead of requiring that every other class share it. States whose non-counted columns disagree are then swallowed into a scan chain, their successors are deleted as chain interior, and the edges that pointed at them become dead -- '\\d{4}-\\d{2}-\\d{2}' on \"2026-08-31\" loses its match entirely and '[a-z]{0,4}b' on \"foobarbaz\" answers (2,7) where the clean tree and python3 re both answer (0,4)(4,7). It is a LOST MATCH and a WRONG SPAN from one plant, on ordinary counted-class patterns"
 SAB_DOC_FIGURE="HAND-MEASURED by the lane at 117a89f (the mech matrix itself is the manager's battery, not this lane's): with the plant applied and the tree rebuilt, 'PROCS=4 bash tests/harness/run.sh tests/counterk/counterk.rxt' reports 12 failed / 1622 passed against 0 failed / 1634 passed clean; 'tests/base/bounded_repeats.rxt' reports 3 failed; 'tests/classes/classes.rxt' reports 0 failed (see the note above). A 25-pattern find-all differential against python3 re moves 0 -> 11 diverging cells of 850, including four LOST matches and two wrong spans. The matrix's own DETECTED figure is owed at the battery."
 SAB_COUNT=1
-SAB_BEFORE='    const int *tr = d->st[s].tr;
-    int e = -2, seen = 0;
-    for (int c = 0; c < d->ncls; c++) {
-        if (c == cls) continue;
-        if (!seen) { e = tr[c]; seen = 1; }
-        else if (tr[c] != e) return false;          /* the exit is not uniform */
-    }
-    if (!seen) return false;         /* a one-class machine has no "every other" */
-    if (tr[cls] == e) return false;  /* nothing advances */
-    *exit = e;
-    return true;'
-SAB_AFTER='    /* SABOTAGE S213: the exit is read off ONE other class and the rest are
-     * assumed to agree with it. */
-    const int *tr = d->st[s].tr;
-    int e = tr[cls == 0 ? 1 : 0];
-    if (tr[cls] == e) return false;  /* nothing advances */
-    *exit = e;
-    return true;'
+SAB_BEFORE='        else if (tr[c] != e) return false;          /* the exit is not uniform */'
+SAB_AFTER='        /* SABOTAGE S213: the exit is read off the FIRST other class and the
+         * rest are assumed to agree with it. */'

@@ -1,0 +1,86 @@
+# [SCANEDGE-SET] (lane scanset, 2026-10-26): a DFA SCAN EDGE over a byte-class
+# SET. Each run below is one counting state whose bytes the machine splits
+# into SEVERAL classes for reasons elsewhere in the pattern (`@` inside `\S`,
+# `0` inside the hex digits, `t`/`x`/`.` inside the reverse `[a-z]+`, the `$`
+# lowering's newline inside `\s`/`[\n ]`), so the edge counts a union of
+# classes (src/opt/scanedge.c). Subjects put the split byte INSIDE long runs,
+# at their ends and as the whole run. `[a-z]+$` is the one-class control and
+# `([a-z]|[0-9]X){0,8}` the negative one (two classes, different successors:
+# no edge); tests/codegen/run_scan_edge_census.sh section (8) holds their
+# artifacts. Expectations generated from libpcre2-8 10.46 and, where the
+# block is not `# pcre2-only` (python `\s` differs on \x1c-\x1f), cross-checked
+# with python3 re: 0 differences.
+
+# pcre2-only
+pattern \S+@\S+
+m "ab cd@ef gh" 3 8
+m "  x@y" 2 5
+m "a@b@c d" 0 5
+n "@@"
+n "foo"
+n "x@"
+n "@y"
+m "name@qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq@more tail" 0 80
+m "aa@bb\tcc@dd" 0 5
+n "nope @ nope"
+
+pattern 0x[0-9a-fA-F]+
+m "0x0" 0 3
+m "0x00f0A" 0 7
+m "00x10" 1 5
+n "0x"
+m "x0x0g" 1 4
+m "0xfffffffff0000000000000000000z" 0 30
+m "ab 0X1 0x1" 7 10
+
+pattern [a-z]+\.txt$
+m "foo.txt" 0 7
+m "x foo.txt" 2 9
+m "foo.txt.txt" 4 11
+m "tttxx.txt\n" 0 9
+n "a.txt.t"
+n "ab.txt\n\n"
+m "texttexttexttext.txt" 0 20
+n ".txt"
+
+# pcre2-only
+pattern \s+$
+m "a  " 1 3
+m "a \n" 1 3
+m "a \t\n\n" 1 5
+m "  \n \n" 0 5
+n "abc"
+m "\n" 0 1
+m "x                                                            " 1 61
+m "x \n                                        \n" 1 44
+
+pattern [\n ]+$
+m "a  " 1 3
+m "a \n" 1 3
+m "a\n\n\n" 1 4
+m "  \n \n" 0 5
+m "a\t " 2 3
+m "x \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n" 1 61
+
+# pcre2-only
+pattern \s*$
+m "a  " 1 3
+m "a \n" 1 3
+m "abc" 3 3
+m "" 0 0
+m "  \n\n" 0 4
+m "x\t\t" 1 3
+
+pattern [a-z]+$
+m "abc" 0 3
+m "abc\n" 0 3
+n "ab1"
+n "12"
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" 0 70
+
+pattern ([a-z]|[0-9]X){0,8}
+m "ab1Xc" 0 5
+m "1X2X3X" 0 6
+m "abcdefghij" 0 8
+m "1Y" 0 0
+m "" 0 0
