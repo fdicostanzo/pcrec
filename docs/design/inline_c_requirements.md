@@ -1067,6 +1067,8 @@ proposed) but requires:
 
 - **Q1 (2026-10-26): PATTERN SIDE FIRST** (not the recommended template-first split). Frank: "Pattern first. The pcrec syntax might also be to support high level languages embedded so it might be different from what we're doing." Consequence for the design: the embedding spelling is a pcrec syntax decision, not necessarily PCRE2's `(?C{...})` callout string, and it must leave room for a LANGUAGE TAG (C first; other embedded languages later). Q3 (the brace rule) is reopened under that frame.
 
+- **Q2 (2026-10-26): AGREED, one call site.** Inline code is a second way to supply the function at [M4-CALLOUTS]'s call site (one emitter, one fire contract, one test population); each embedded language only has to produce a callable function (C directly, others through generated glue). Consequence: the callout call site is the first build step of the pattern side.
+
 ### What the later design note must decide
 
 1. The module names (`callouts-c`, `subst-c`) and the flag spelling for post-match
