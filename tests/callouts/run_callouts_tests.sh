@@ -2,7 +2,7 @@
 # tests/callouts/run_callouts_tests.sh — module `callouts` ([INLINE-C] stage
 # 1b; docs/spec/match_api.md §11): `make test-callouts`.
 #
-# SIX ARMS:
+# SEVEN ARMS:
 #   (1) the corpus: tests/harness/run.sh over this directory (the bindings
 #       link through harness.manifest);
 #   (2) the oracle: verify_callouts.py, every corpus cell against libpcre2
@@ -19,8 +19,11 @@
 #       binding name, a binding symbol the shared ABI block already declares
 #       (read off an emitted artifact, not off pcrec's own list), empty and
 #       malformed attribute lists and declarations (escaped echoes),
-#       `--emit-main`, and `--callout` with `--count-groups`/`--emit-facts`.
-# Arms 2 and 3 SKIP LOUDLY when libpcre2 is absent (PC-3's shape).
+#       `--emit-main`, and `--callout` with `--count-groups`/`--emit-facts`;
+#   (7) the `once` advice: advice_check.py, every refusal's verdict on its
+#       fix (does not change / loses a match / may change) against
+#       libpcre2's answers, the printed witness included.
+# Arms 2, 3 and 7 SKIP LOUDLY when libpcre2 is absent (PC-3's shape).
 #
 # Env: PCREC, CC, GENCFLAGS (the harness's own); CALLOUT_GEN_N (arm 3's
 # population, default 1200), CALLOUT_GEN_FLOOR (default 1000).
@@ -203,14 +206,14 @@ while IFS=$'\t' read -r pat what fix; do
     fi
 done <<'EOF'
 a+(?C"x,once")c	the quantifier	possessive
-a+?(?C"x,once")c	the quantifier	possessive
+a+?(?C"x,once")c	the lazy quantifier	drop `once`
 (?:a|b)(?C"x,once")c	the alternation	(?>...)
 (a)(?1)(?C"x,once")c	the subroutine call	(?>...)
-(?*a+)(?C"x,once")a+c	the non-atomic lookaround at offset 0 keeps the quantifier	use (?=...) / (?!...) (atomic), or wrap it: (?>(?*...))
+(?*a+)(?C"x,once")a+c	the non-atomic lookaround at offset 0 keeps the quantifier	use (?=...) or wrap it: (?>(?*...))
 (?*(?*a+))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the quantifier	wrap it: (?>(?*...))
 (?*a|b)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
-(?<*a|b)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?<=...) / (?<!...) (atomic), or wrap it: (?>(?<*...))
-(?*(?:a|b))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?=...) / (?!...) (atomic)
+(?<*a|b)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?<=...) or wrap it: (?>(?<*...))
+(?*(?:a|b))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	use (?=...) or wrap it
 (?*[ab]|c)(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
 (?*(?*a|b))(?C"x,once")c	the non-atomic lookaround at offset 0 keeps the alternation	wrap it: (?>(?*...))
 EOF
@@ -352,6 +355,17 @@ if [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'cannot define the binding rx_ca
 else
     bad "--emit-main on a callout pattern: want a refusal, got: $out"
 fi
+
+# ---- arm 7: the `once` advice ----------------------------------------------
+echo
+echo "== [INLINE-C] the once advice against libpcre2 (match_api.md §11.8¶3) =="
+"$TIMEOUT_BIN" 900 python3 "$SCRIPT_DIR/advice_check.py" --pcrec "$PCREC" \
+    --work "$WORK/advice" --cc "$CC"
+case $? in
+    0) ok "every once refusal's verdict on its fix agrees with libpcre2's answers" ;;
+    3) note "libpcre2 is unavailable: the once advice was not checked against matches" ;;
+    *) bad "a once refusal's verdict disagrees with what its fix matches, or the advice rows missed their reach" ;;
+esac
 
 echo
 echo "checks passed: $pass"

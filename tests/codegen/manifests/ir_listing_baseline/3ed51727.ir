@@ -102,5 +102,5 @@ L5	L6	shorter run is the resume (retreat one stride)
 
 #section callouts
 #label	site	binding	width	class	tail	note
-L2	1	rx_callout_q	check	repeated	-	the quantifier at offset 2 can be backtracked into; make it possessive (X*+, X++, X?+, X{n,m}+) or wrap it in (?>...)
-L8	2	rx_callout_7	check	repeated	tail	the quantifier at offset 2 can be backtracked into; make it possessive (X*+, X++, X?+, X{n,m}+) or wrap it in (?>...)
+L2	1	rx_callout_q	check	repeated	-	the quantifier at offset 2 can be backtracked into; make it possessive (X++) or use (?>...); that does not change what it matches
+L8	2	rx_callout_7	check	repeated	tail	the quantifier at offset 2 can be backtracked into; make it possessive (X++) or use (?>...); that does not change what it matches
