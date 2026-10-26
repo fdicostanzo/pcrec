@@ -3,6 +3,9 @@
 # returns the empty set, non-nullable: `(?=(a))\1b` (S = all, nullable, not a
 # mover) becomes a mover with an empty S and the seek finds no start.
 # Detector (arm vmhat): vmhat_walk.rxt (`ab` -> (0,2), checks-F4's witness).
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: the backreference now shares the row-read arm (ss_row); the plant splits it out
 SAB_ID='S499-walk-bref-drops-bytes'
 SAB_FILE='src/facts/startset.c'
 SAB_SUITES='vmhat'
@@ -13,12 +16,12 @@ SAB_REACH_EXPECT='REACH-BREF-VM'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        case A_BREF:
-        case A_CALL:
         case A_VAR:
-            return ss_all();'
-SAB_AFTER='        case A_CALL:
-        case A_VAR:
-            return ss_all();
+            /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
+             * every kind above the backreference, ANY for the two. */
+            return ss_row(a, acc);'
+SAB_AFTER='        case A_VAR:
+            return ss_row(a, acc);
         case A_BREF: {   /* SABOTAGE S499: the arm drops its bytes */
             StartSet z = ss_empty();
             z.nullable = false;

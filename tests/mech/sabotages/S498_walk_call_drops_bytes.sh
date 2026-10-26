@@ -4,6 +4,9 @@
 # nullable": a call-led pattern's S loses the callee's bytes and the seek
 # skips the match. Detector (arm vmhat): vmhat.rxt's VMC block `(?1)x(y)`
 # under --engine=vm (`yxy` -> (0,3)), and the differential.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: the call has its own arm again (row OWN); the backreference and variable read ss_row
 SAB_ID='S498-walk-call-drops-bytes'
 SAB_FILE='src/facts/startset.c'
 SAB_SUITES='vmhat'
@@ -13,14 +16,9 @@ SAB_REACH='"$PCREC" --features all --engine=vm -p rx -o "$REACH_TMP/o.c" --patte
 SAB_REACH_EXPECT='REACH-CALL-VMHAT'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        case A_BREF:
-        case A_CALL:
-        case A_VAR:
+SAB_BEFORE='        case A_CALL:
             return ss_all();'
-SAB_AFTER='        case A_BREF:
-        case A_VAR:
-            return ss_all();
-        case A_CALL: {   /* SABOTAGE S498: the arm drops its bytes */
+SAB_AFTER='        case A_CALL: {   /* SABOTAGE S498: the arm drops its bytes */
             StartSet z = ss_empty();
             z.nullable = false;
             return z;

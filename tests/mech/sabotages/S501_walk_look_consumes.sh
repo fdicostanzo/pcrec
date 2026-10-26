@@ -8,6 +8,9 @@
 #
 # Detector at stage 1: tests/startset C-SS* ([ss-ctrl]) and the `(?<=a)z|w`
 # witness of [ss-flag]. Stage 2/3 add answer identity on both hats.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: the lookaround now shares the row-read arm (ss_row); the plant splits it out
 SAB_ID="S501-walk-look-consumes"
 SAB_FILE="src/facts/startset.c"
 SAB_SUITES="startset vmhat dfahat"
@@ -24,11 +27,12 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        case A_KRESET:
         case A_LOOK:
-            return acc;'
+'
 SAB_AFTER='        case A_KRESET:
-            return acc;
+            return ss_row(a, acc);
         case A_LOOK: {   /* SABOTAGE S501: the lookaround read as consuming */
             StartSet b = ss_walk(cx, a->l, ss_empty());
             b.nullable = false;
             return ss_cat(b, &acc);
-        }'
+        }
+'

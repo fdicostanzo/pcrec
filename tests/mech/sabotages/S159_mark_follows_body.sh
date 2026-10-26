@@ -42,6 +42,9 @@
 # lexical position. Where a subtree-relative answer genuinely IS the callee's,
 # it goes through `src/opt/callgraph.c`'s memoised fixpoint and is read from a
 # value CACHED ON THE NODE.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: pcrec_bref_mark's call arm now marks through bref_mark_reads
 SAB_ID="S159-mark-follows-body"
 SAB_FILE="src/opt/atomic.c"
 SAB_SUITES="harness recursion"
@@ -50,11 +53,9 @@ SAB_DESC="pcrec_bref_mark's A_CALL arm DESCENDS into u.call.body after marking, 
 SAB_DOC_FIGURE="PREDICTED: the compiler HANGS and tests/harness/run.sh scores the timeout as a failure on every recursive cell. RE-POINTED FROM pcrec_has_atomic, which the design names and which is UNREACHABLE for this population: Vm.mrl_win short-circuits on fit.prefilter, which SS8.2's predicate makes false for every call-bearing pattern -- measured UNDETECTED at corpus 0fail/346pass before the move. MEASURED 2026-08-25 (srMech, solo run at d58e9d1, AFTER K37): DETECTED, corpus:451fail/1239pass, recdiff:8fail/7pass. THE PREDICTION WAS RIGHT AND THE ROW HAD NEVER BEEN ABLE TO SAY SO. Before K37 this row could not be scored at all: tests/recursion/run_recursion_diff.sh invoked pcrec BARE, the sabotaged compiler does not terminate on ((?1)?a) / ((?1)*a), and the full matrix run burned 49 min 58 s of CPU on one pattern before the manager killed it by PID -- a hang, which is the one outcome no verdict can be derived from. With D45's pcrec_timeout_secs on every call site the same compiler is a FAILED ARM instead. The failures are of two kinds and both are real: most are 'gnutimeout: the monitored command dumped core' (the back-edge walk overflows the stack fast on a cyclic callee), and the ones that used to hang are now bounded at 20 s. Corroborated independently of the driver by the arm logs' own totals."
 SAB_COUNT=1
 SAB_BEFORE='        case A_CALL:
-            if (a->u.call.target > 0 && a->u.call.target < nmark)
-                mark[a->u.call.target] = true;
+            bref_mark_reads(a, mark, nmark);
             return;'
 SAB_AFTER='        case A_CALL:   /* SABOTAGE S159: follow the back edge */
-            if (a->u.call.target > 0 && a->u.call.target < nmark)
-                mark[a->u.call.target] = true;
+            bref_mark_reads(a, mark, nmark);
             if (a->u.call.body) { a = a->u.call.body; continue; }
             return;'
