@@ -389,7 +389,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples test-findings test-knowledge test-ucp \
+      test-uprops test-core test-vars test-callouts test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
@@ -1069,6 +1069,14 @@ test-atomic-identity: all
 test-vars: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vars.ran"; fi
 	bash tests/vars/run_vars_tests.sh
+
+# [INLINE-C] stage 1b — module `callouts`: the corpus (bindings linked through
+# tests/callouts/harness.manifest), its libpcre2 oracle, the generated
+# differential (floor 1,000), the driver checks and the firing-class table.
+# See tests/callouts/CLAUDE.md.
+test-callouts: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-callouts.ran"; fi
+	bash tests/callouts/run_callouts_tests.sh
 
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi

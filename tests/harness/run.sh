@@ -1584,7 +1584,12 @@ flush_batch() {
         done
         return 0
     fi
-    if gen_cc "batch link ($cur_file)" "$CC" $GENCFLAGS -o "$exe" "$dobj" "${surv_objs[@]}"; then
+    local -a man_objs=()
+    local mo_line
+    while IFS= read -r mo_line; do
+        [ -n "$mo_line" ] && man_objs+=("$mo_line")
+    done < <(manifest_objs "$cur_file" "$batch_bdir/${surv_px[0]}.h" "$batch_bdir")
+    if gen_cc "batch link ($cur_file)" "$CC" $GENCFLAGS -o "$exe" "$dobj" "${surv_objs[@]}" "${man_objs[@]+"${man_objs[@]}"}"; then
         local newidx=0
         for mi in "${survivors[@]}"; do
             unpack_batch_member "$mi"
@@ -1607,7 +1612,7 @@ flush_batch() {
         gen_dispatch_c "$px" > "$sdc"
         unpack_batch_member "$mi"
         if gen_cc "solo dispatch ($px)" "$CC" $GENCFLAGS -I"$batch_bdir" -I"$SCRIPT_DIR" -c -o "$sdobj" "$sdc" \
-            && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o"; then
+            && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o" "${man_objs[@]+"${man_objs[@]}"}"; then
             run_case_loop "$sexe" batched 0
         else
             local ci
@@ -1631,6 +1636,45 @@ flush_batch() {
 # failure (the compiler's OWN refusal) is reported HERE, immediately, in
 # the identical shape the unbatched path reports it — it never reaches gcc
 # either way, so it never becomes (or costs) a batch member at all.
+# [INLINE-C] 1b THE SECTION'S HARNESS MANIFEST (docs/design/inline_c.md
+# §3.6). A directory that needs the user's C linked into its drivers (a
+# callout artifact declares `extern const rx_callout_ref rx_callout_<name>`,
+# which only a definition satisfies) carries `harness.manifest`, read ONLY
+# from the directory of the `.rxt` file being run: no `.rxt` text can name a
+# C file, and a directory without one links nothing extra. Its lines:
+#   link FILE    compile FILE (beside the manifest) and link it into every
+#                driver of the section
+# `#` comments and blank lines are skipped; any other line is a hard
+# harness failure. A source is compiled with `-include` of an artifact header
+# in scope, which is how it reaches the shared ABI block (`rx_ctx`,
+# `rx_callout_ref`) without a copy of it. Prints the object paths, one per
+# line; returns nonzero (with $GEN_CC_LOG) on a bad line or a failed compile.
+manifest_objs() {
+    local rxt="$1" hdr="$2" outd="$3"
+    local mdir; mdir="$(cd "$(dirname "$rxt")" && pwd)"
+    local mf="$mdir/harness.manifest"
+    [ -f "$mf" ] || return 0
+    local kw arg rest src obj
+    while read -r kw arg rest; do
+        case "$kw" in
+            ''|'#'*) continue ;;
+            link)
+                src="$mdir/$arg"
+                obj="$outd/manifest_$(basename "$arg" .c).o"
+                if [ ! -f "$obj" ]; then
+                    gen_cc "manifest $arg" "$CC" $GENCFLAGS -include "$hdr" -I"$mdir" \
+                        -c -o "$obj" "$src" || return 1
+                fi
+                printf '%s\n' "$obj"
+                ;;
+            *)
+                GEN_CC_LOG="$mf: unknown manifest line '$kw $arg $rest'"
+                return 1
+                ;;
+        esac
+    done < "$mf"
+}
+
 stage_block_for_batch() {
     if [ "$batch_n" -eq 0 ]; then
         batch_dir_seq=$((batch_dir_seq + 1))
@@ -1784,6 +1828,11 @@ flush_block() {
         fi
         pflags+=(--features "$cur_features")
     fi
+    # [INLINE-C] 1b the block's numbered-callout declarations.
+    local co_d
+    for co_d in "${cur_callouts[@]+"${cur_callouts[@]}"}"; do
+        pflags+=(--callout "$co_d")
+    done
 
     # [DD-14 wave A commit 3] the `engine`/`budget` directives -- the
     # minimal route to a corpus case that can reach `--engine=vm` with a
@@ -2008,7 +2057,12 @@ flush_block() {
         # of the artifact, because a block that binds a variable the pattern
         # never mentions is exactly the "unknown name is ignored" cell, and it
         # must still compile against the un-paired signature.
-        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS $_var_def -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+        local -a man_objs=()
+        local mo_line
+        while IFS= read -r mo_line; do
+            [ -n "$mo_line" ] && man_objs+=("$mo_line")
+        done < <(manifest_objs "$cur_file" "$bdir/gen.h" "$bdir")
+        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS $_var_def -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c" "${man_objs[@]+"${man_objs[@]}"}"
     } 2> "$_sz_tf"
     build_rc=$?
     build_log="$GEN_CC_LOG"
@@ -2110,9 +2164,14 @@ flush_block() {
                     "HARNESS FAILURE: pcrec $cur_file --target $px failed (exit $tsrc_rc): $tsrc_err"
                 continue
             fi
+            local -a tman_objs=()
+            local tmo_line
+            while IFS= read -r tmo_line; do
+                [ -n "$tmo_line" ] && tman_objs+=("$tmo_line")
+            done < <(manifest_objs "$cur_file" "$tdir/gen.h" "$tdir")
             if ! gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$tdir" \
                     -DRXT_PREFIX="$px" -DRXT_UPREFIX="$upx" \
-                    -o "$tdir/t" "$SCRIPT_DIR/driver.c" "$tdir/gen.c"; then
+                    -o "$tdir/t" "$SCRIPT_DIR/driver.c" "$tdir/gen.c" "${tman_objs[@]+"${tman_objs[@]}"}"; then
                 record_fail "$cur_file" "$cur_pattern_line" \
                     "HARNESS FAILURE: $CC failed to build the driver for target '$px': $GEN_CC_LOG"
                 continue
@@ -2260,6 +2319,7 @@ for file in "${files[@]}"; do
     # unset, and `${#cur_vars[@]}` on one is a hard error — the same reason
     # every other array here is initialised at both places.
     cur_vars=()
+    cur_callouts=()
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     case_route=(); case_file=()
     have_block=0
@@ -2697,6 +2757,7 @@ for file in "${files[@]}"; do
             # the first `pattern` line silently discards.
             cur_route="$RXTROUTE"
             cur_vars=()
+            cur_callouts=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
@@ -2726,6 +2787,20 @@ for file in "${files[@]}"; do
             else
                 cur_features="$feat_list"
             fi
+        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]*([a-z,]*)[[:space:]]*$ ]]; then
+            # [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
+            # attributes, passed to pcrec as `--callout N:ATTRS`. The value's
+            # GRAMMAR is pcrec's (a bad attribute is its refusal); this arm
+            # reads the shape only, like `features`.
+            co_decl="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'callout' line before any pattern block"
+            else
+                cur_callouts+=("$co_decl")
+            fi
+        elif [[ "$line" =~ ^callout([[:space:]]|$) ]]; then
+            record_fail_class value-shape "$file" "$lineno" \
+                "'callout' wants a callout number and its attributes, e.g. 'callout 1 consume,once'"
         elif [[ "$line" =~ ^engine[[:space:]]+vm[[:space:]]*$ ]]; then
             # [DD-14 wave A commit 3] the minimal ROUTE §10.3 asks for: a
             # block-scoped directive letting a case reach --engine=vm, the
@@ -3155,6 +3230,7 @@ for file in "${files[@]}"; do
             cur_features_only=0
             cur_route="$RXTROUTE"
             cur_vars=()
+            cur_callouts=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=(); case_file=()
             have_block=1
         elif [[ "$line" =~ ^var[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then

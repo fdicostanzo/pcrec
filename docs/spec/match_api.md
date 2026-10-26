@@ -3874,11 +3874,14 @@ sequence.
 
 <a id="s11-6-p2"></a>[11.6¶2] **Compatibility with PCRE2.** pcrec is compatible with PCRE2 on a callout
 pattern whose PCRE2 answer does not depend on PCRE2's optimizations. Where
-it does, PCRE2's answer moves with its flags and pcrec's does not: on
-`(\d+)(?C1)` over `1234` with a check that vetoes position 4, PCRE2 answers
-`[1,4)` by default and `[0,3)` with `PCRE2_NO_AUTO_POSSESS |
-PCRE2_NO_START_OPTIMIZE`; pcrec answers `[0,3)`. A leading `(?s).*` is
-auto-anchored by PCRE2 unless `PCRE2_NO_DOTSTAR_ANCHOR` is set.
+it does, PCRE2's answer moves with its flags and pcrec's does not. Measured
+on libpcre2 10.46 with a check that vetoes an even position, `(\d+)(?C"even")`
+over `1234`: PCRE2 answers no match by default and `[0,3)` with
+`PCRE2_NO_AUTO_POSSESS | PCRE2_NO_START_OPTIMIZE | PCRE2_NO_DOTSTAR_ANCHOR`;
+pcrec answers `[0,3)`. With a check that vetoes the attempt at offset 0,
+`(?s).*(?C"vetostart")x` over `axbx`: PCRE2 answers no match by default (it
+anchors a leading `(?s).*`) and `[1,4)` with those flags; pcrec answers
+`[1,4)`.
 
 <a id="s11-6-p3"></a>[11.6¶3] **Each fire is one step** against the call's step budget, so a site that
 fires too often gives up `PCREC_ERR_STEPS` like any backtracking blow-up.
