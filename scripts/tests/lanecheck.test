@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# lanecheck + lanewatch self-test: a scratch git repo, one case per issue class
+# with its clean twin, the marker kinds (hand-written, stale, missing, stopped),
+# the no-git critic form, and two PLANTS: a lanecheck whose issue list is
+# discarded and a lanewatch that skips its seal check must each FAIL a case
+# (a checker that always passes must not pass this test).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/lanecheck.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+LC=$here/lanecheck LW=$here/lanewatch
+export LANEWATCH_LOG=$T/misses.log PCREC_BOXQUEUE_DIR=$T/q
+mkdir -p "$T/q/pending" "$T/q/running" "$T/q/done" "$T/q/failed"
+: > "$T/q/pending/100-lane-owedjob"
+
+R=$T/repo
+git init -q "$R"; git -C "$R" config user.email t@t; git -C "$R" config user.name t
+mkdir -p "$R/docs/dev/lanes"; echo build/ > "$R/.gitignore"
+good_report() { cat > "$R/docs/dev/lanes/x_report.md" <<'EOR'
+# Report
+## Summary
+Did the thing. Finding F-1 and F-2.
+## Findings
+- F-1 a
+- F-2 b
+## Evidence
+F-1 measured. F-2 measured.
+### Detail
+more
+## STATE AT HANDOFF
+OWED: none
+EOR
+}
+deliver() { printf '%s\n' "$@" > "$R/docs/dev/lanes/x_deliver.txt"; }
+D_OK=('report: docs/dev/lanes/x_report.md' 'sections: Summary; Findings; Evidence; STATE AT HANDOFF' 'nonempty: all' 'cites: F-[0-9]+ in Findings -> Evidence' 'commit: yes' 'owed: none')
+commit() { git -C "$R" add -A && git -C "$R" commit -qm c > /dev/null; }
+lc() { (cd "$R" && "$TO" 30 python3 "${LCX:-$LC}" "$@" 2>&1); }   # subshell: cwd only
+# check DESC WANT_RC GREP_ERE [lanecheck args...]
+check() {
+    local desc=$1 want=$2 pat=$3; shift 3
+    local out rc; out=$(lc "$@"); rc=$?
+    if [ "$rc" = "$want" ] && printf '%s\n' "$out" | grep -qE "$pat" && printf '%s\n' "$out" | tail -1 | grep -q "^lanecheck: DONE rc=$want$"; then ok "$desc"
+    else bad "$desc: want rc=$want /$pat/, got rc=$rc: $(printf '%s' "$out" | tr '\n' '|')"; fi
+}
+A=(--deliver "$R/docs/dev/lanes/x_deliver.txt" x)
+M=$R/build/lanecheck/x.done
+
+good_report; deliver "${D_OK[@]}"; commit
+check "clean report passes" 0 'all checks pass' "${A[@]}"
+[ -f "$M" ] && ok "pass writes the marker" || bad "no marker after a pass"
+out=$("$TO" 30 bash "$LW" --dir "$R/build/lanecheck" x); rc=$?
+[ "$rc" = 0 ] && [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=0" ] && ok "lanewatch: good marker, no miss" || bad "lanewatch good: rc=$rc $out"
+
+# one-line form of the same block parses identically
+deliver "report: docs/dev/lanes/x_report.md; sections: Summary; Findings; Evidence; STATE AT HANDOFF; nonempty: all; cites: F-[0-9]+ in Findings -> Evidence; commit: yes; owed: none"; commit
+rm -f "$M"; check "one-line DELIVER form (; inside a list) passes" 0 'all checks pass' "${A[@]}"; [ -f "$M" ] && ok "  and writes the marker" || bad "one-line form: no marker"
+deliver "${D_OK[@]}"; commit
+
+# each issue class + the twin above
+rm -f "$M"
+sed -i '/^## Evidence/,/^### Detail/{/^## Evidence/d}' "$R/docs/dev/lanes/x_report.md"; commit
+check "missing section named in prose" 1 "^[0-9]+\. the report has no 'Evidence' section" "${A[@]}"
+[ -f "$M" ] && bad "marker written on a failing check" || ok "no marker on a failing check"
+good_report; printf '## Limits\n' >> "$R/docs/dev/lanes/x_report.md"; deliver "${D_OK[@]/#sections: */sections: Summary; Findings; Evidence; Limits; STATE AT HANDOFF}"; commit
+check "empty section" 1 "the 'Limits' section is empty" "${A[@]}"
+good_report; sed -i 's/^- F-2 b/- F-2 b\n- F-3 c/' "$R/docs/dev/lanes/x_report.md"; deliver "${D_OK[@]}"; commit
+check "uncited finding id" 1 "F-3 is in the 'Findings' section but not cited in 'Evidence'" "${A[@]}"
+good_report; sed -i 's/^OWED: none/nothing to say/' "$R/docs/dev/lanes/x_report.md"; commit
+check "owed: none not said in STATE AT HANDOFF" 1 "does not say 'OWED: none'" "${A[@]}"
+good_report; commit
+echo x >> "$R/docs/dev/lanes/x_report.md"
+check "uncommitted report change" 1 "x_report.md has uncommitted changes" "${A[@]}"
+git -C "$R" checkout -q -- docs/dev/lanes/x_report.md
+echo y > "$R/stray.txt"
+check "dirty tree (untracked stray file)" 1 "the tree is not clean: stray.txt" "${A[@]}"
+deliver "${D_OK[@]}" 'dirty-ok: stray.txt'
+check "dirty-ok declares the stray path" 0 'all checks pass' "${A[@]}"
+rm -f "$R/stray.txt"; deliver "${D_OK[@]}"; commit
+cp "$R/docs/dev/lanes/x_report.md" "$T/keep.md"; git -C "$R" rm -q --cached docs/dev/lanes/x_report.md; git -C "$R" commit -qm rm > /dev/null
+check "report not committed (untracked)" 1 "x_report.md is not committed" "${A[@]}"
+rm -f "$R/docs/dev/lanes/x_report.md"; git -C "$R" reset -q --hard HEAD
+check "report missing entirely" 1 "the report docs/dev/lanes/x_report.md does not exist" "${A[@]}"
+cp "$T/keep.md" "$R/docs/dev/lanes/x_report.md"; commit
+
+# owed jobs: a queued key passes, an unknown key is named
+good_report; sed -i 's/^OWED: none/OWED: lane-owedjob/' "$R/docs/dev/lanes/x_report.md"; deliver "${D_OK[@]/#owed: none/owed: lane-owedjob}"; commit
+check "owed job that exists in the queue" 0 'all checks pass' "${A[@]}"
+grep -q '^owed=lane-owedjob$' "$M" && ok "  marker records the owed key" || bad "owed key not in marker"
+sed -i 's/lane-owedjob/lane-nosuch/' "$R/docs/dev/lanes/x_report.md" "$R/docs/dev/lanes/x_deliver.txt"; commit
+check "owed job absent from the queue" 1 "owed job lane-nosuch is not in the box queue" "${A[@]}"
+good_report; deliver "${D_OK[@]}"; commit
+
+# markers: hand-written, stale, missing, stopped
+check "re-pass for the marker cases" 0 'all checks pass' "${A[@]}"
+W1() { "$TO" 30 bash "${LWX:-$LW}" --dir "$R/build/lanecheck" "$@" 2>&1; }
+rm -f "$T/misses.log"
+out=$(W1 ghost); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q '^ghost: no ghost.done' && grep -q ' ghost missing$' "$T/misses.log" && ok "lanewatch: missing marker reported and logged" || bad "missing: rc=$rc $out"
+W1 ghost > /dev/null; [ "$(wc -l < "$T/misses.log")" = 1 ] && ok "  a repeat poll is not logged twice" || bad "miss log duplicated"
+cp "$M" "$R/build/lanecheck/hand.done"
+mkdir -p "$T/hw"; printf 'name=hand\nreport=%s\ndeliver=%s\ncommit=abc\nowed=none\nutc=2026-01-01T00:00:00Z\nreport_sha=0\ndeliver_sha=0\nseal=deadbeef\n' "$R/docs/dev/lanes/x_report.md" "$R/docs/dev/lanes/x_deliver.txt" > "$R/build/lanecheck/hand.done"
+out=$(W1 hand); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'not a lanecheck marker' && ok "lanewatch: hand-written marker detected" || bad "hand-written: rc=$rc $out"
+sed 's/^commit=.*/commit=forged/' "$M" > "$R/build/lanecheck/edit.done"; sed -i 's/^name=x/name=edit/' "$R/build/lanecheck/edit.done"
+out=$(W1 edit); printf '%s' "$out" | grep -q 'not a lanecheck marker' && ok "lanewatch: an edited real marker detected" || bad "edited marker: $out"
+echo more >> "$R/docs/dev/lanes/x_report.md"
+out=$(W1 x); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q '^x: the report .* changed' && ok "lanewatch: report changed after the marker = stale" || bad "stale: rc=$rc $out"
+git -C "$R" checkout -q -- docs/dev/lanes/x_report.md
+out=$(W1 x); [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=0" ] && ok "lanewatch: report restored = good again" || bad "restored: $out"
+# STATE: stopped
+printf '## Summary\nSTATE: stopped\nran out of budget\n' > "$R/docs/dev/lanes/x_report.md"; rm -f "$M"; commit
+check "STATE: stopped writes .stopped, not .done" 2 'x.stopped written' "${A[@]}"
+[ -f "$R/build/lanecheck/x.stopped" ] && [ ! -f "$M" ] && ok "  stopped marker only" || bad "stopped marker state"
+out=$(W1 x); rc=$?; [ "$rc" = 0 ] && printf '%s' "$out" | grep -q 'stopped early' && ok "lanewatch: stopped is shown, not a miss" || bad "stopped watch: rc=$rc $out"
+good_report; commit; rm -f "$R/build/lanecheck/x.stopped"
+
+# agent with no worktree and no git (a critic): report relative to the DELIVER file
+C=$T/crit; mkdir -p "$C"
+printf '# F\n## Summary\nok\n## PROBED-AND-HELD\n12 cases\n' > "$C/out.md"
+printf 'report: out.md\nsections: Summary; PROBED-AND-HELD\nnonempty: all\ncommit: no\n' > "$C/crit_deliver.txt"
+out=$(cd "$T" && "$TO" 30 python3 "$LC" --deliver "$C/crit_deliver.txt" 2>&1); rc=$?
+[ "$rc" = 0 ] && [ -f "$C/crit.done" ] && ok "critic form: no git, name from the file, marker beside it" || bad "critic: rc=$rc $out"
+out=$("$TO" 30 bash "$LW" --dir "$C" crit); [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=0" ] && ok "critic marker verifies" || bad "critic watch: $out"
+# malformed / usage
+echo 'nonsense' > "$C/bad_deliver.txt"
+out=$(cd "$T" && "$TO" 30 python3 "$LC" --deliver "$C/bad_deliver.txt" 2>&1); rc=$?
+[ "$rc" = 65 ] && ok "malformed DELIVER file -> 65" || bad "malformed: rc=$rc $out"
+out=$("$TO" 30 python3 "$LC" --bogus 2>&1); rc=$?; [ "$rc" = 64 ] && ok "usage -> 64" || bad "usage: rc=$rc"
+
+# PLANT 1: the issue list is discarded (an always-passing checker)
+python3 -I -c 'import sys; s=open(sys.argv[1]).read(); a="    if issues:\n        for n, i"; assert s.count(a)==1; open(sys.argv[2],"w").write(s.replace(a,"    if False:\n        for n, i"))' "$LC" "$T/lanecheck.plant" \
+  && { good_report; sed -i 's/^## Findings/## Other/' "$R/docs/dev/lanes/x_report.md"; commit
+       rm -f "$M"; out=$(cd "$R" && "$TO" 30 python3 "$T/lanecheck.plant" "${A[@]}" 2>&1); rc=$?
+       if [ "$rc" = 0 ] && [ -f "$M" ]; then ok "PLANT always-pass: it writes a marker for a report missing Findings, so the missing-section case catches it"; else bad "PLANT always-pass ineffective: rc=$rc"; fi
+       LCX=$LC; check "  and the real checker refuses the same report" 1 "no 'Findings' section" "${A[@]}"; } \
+  || bad "PLANT always-pass did not land"
+# PLANT 2: lanewatch without its seal check accepts the hand-written marker
+python3 -I -c 'import sys; s=open(sys.argv[1]).read(); a="[ \"$(field seal \"$m\")\" != \"$want\" ] || "; assert s.count(a)==1; open(sys.argv[2],"w").write(s.replace(a,""))' "$LW" "$T/lanewatch.plant" \
+  && { out=$("$TO" 30 bash "$T/lanewatch.plant" --dir "$R/build/lanecheck" hand 2>&1)
+       if printf '%s' "$out" | grep -q 'not a lanecheck marker'; then bad "PLANT no-seal still caught it (plant ineffective)"; else ok "PLANT no-seal: the hand-written marker slips by, so the hand-written case catches it"; fi; } \
+  || bad "PLANT no-seal did not land"
+
+echo "lanecheck.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

@@ -1,0 +1,328 @@
+#!/usr/bin/env python3
+# lanecheck — an agent checks its OWN deliverable against the brief's DELIVER
+# block ([LANECHECK] v1; Frank 2026-10-26: "the session must run a script
+# which will say if they are done or give prose issues like 'the conclusion
+# section of your deliverable is missing'"). A general agent-lifecycle tool:
+# lanes, critics, any agent that owes a report. FORM checks only; whether the
+# report is any good is the reader's job.
+#
+#   scripts/lanecheck [--deliver FILE] [--dir D] [NAME]
+#
+# Run from the agent's worktree (or anywhere inside a git tree). NAME defaults
+# to the worktree's directory name under worktrees/. FILE defaults to
+# <toplevel>/docs/dev/lanes/NAME_deliver.txt; an agent with no worktree
+# (a critic under /tmp/claude-*/crit-*/) passes --deliver FILE, and a relative
+# report path is then taken relative to FILE's directory.
+#
+# THE DELIVER BLOCK: fields, one per line or `;`-separated on one line (a
+# token that does not start with a known key continues the previous field, so
+# `sections: A; B; C` keeps its list). `#` lines are comments.
+#   report: PATH        (or `report=PATH`) the deliverable; relative to the
+#                       git toplevel, else to the DELIVER file's directory
+#   sections: A; B; .. markdown `##`/`###` headings the report must have
+#                       (case-insensitive; a leading number and a trailing
+#                       `:` are ignored; `Name (note)` still matches `Name`)
+#   nonempty: all|A; B  sections that need a real body (all = every listed
+#                       section); a body of only TODO/TBD/XXX counts as empty
+#   cites: RE in X -> Y every id matching extended-style (Python) RE found in
+#                       section X appears in section Y; may repeat
+#   commit: yes|no      report + `files:` committed unchanged on the branch,
+#                       tree clean except `dirty-ok:` paths (and the DELIVER
+#                       file itself); no = skip (an agent outside a git tree)
+#   files: P; Q         extra paths that must be committed
+#   dirty-ok: P; Q      paths (prefix match) the tree may leave dirty
+#   owed: none|KEY ..   report section STATE AT HANDOFF says OWED none, or
+#                       names each boxqueue KEY, and each KEY exists in the
+#                       queue (`boxqueue state KEY` is not `none`)
+# A report that says `STATE: stopped` (an early stop) is the honest
+# alternative to a pass: it must exist and be committed, then NAME.stopped is
+# written instead of NAME.done, for lanewatch to show (not count) as stopped.
+#
+# OUTPUT: numbered prose issues, then ONE final line `lanecheck: DONE rc=N`.
+# ONLY a pass writes <dir>/NAME.done: key=value lines (name, report, deliver,
+# commit sha, owed, UTC time, sha256 of the report and of the DELIVER file,
+# and a seal over the rest) which scripts/lanewatch recomputes, so a
+# hand-written or edited marker is detectable. <dir> is --dir D, else
+# <toplevel>/build/lanecheck (gitignored) in a git tree, else FILE's directory.
+#
+# EXIT: 0 pass (marker written); 1 issues found (no marker); 2 stopped
+# (NAME.stopped written); 64 usage; 65 the DELIVER file is missing/malformed.
+import hashlib, os, re, subprocess, sys, time
+
+KEYS = ("report", "sections", "nonempty", "cites", "commit", "files", "dirty-ok", "owed")
+SEAL_SALT = "lanecheck-v1\n"
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def done(rc, msg=None):
+    if msg:
+        print(msg)
+    print("lanecheck: DONE rc=%d" % rc)
+    sys.exit(rc)
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+
+def git(top, *args):
+    p = subprocess.run(["git", "-C", top] + list(args), capture_output=True, text=True)
+    return p.returncode, p.stdout
+
+
+def parse_deliver(path):
+    """-> dict key -> list of values (cites may repeat). Raises ValueError."""
+    out, cur = {}, None
+    with open(path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    for ln in lines:
+        if ln.lstrip().startswith("#") or not ln.strip():
+            continue
+        for tok in ln.split(";"):
+            t = tok.strip()
+            m = re.match(r"^(%s)\s*[:=]\s*(.*)$" % "|".join(KEYS), t)
+            if m:
+                cur = m.group(1)
+                out.setdefault(cur, []).append(m.group(2).strip())
+            elif t and cur:
+                out[cur][-1] += "; " + t
+            elif t:
+                raise ValueError("%r is not a field (known: %s)" % (t, ", ".join(KEYS)))
+    if "report" not in out:
+        raise ValueError("no `report:` field")
+    return out
+
+
+def norm(s):
+    s = re.sub(r"^[0-9.]+\s+", "", s.strip().lower())
+    return s.rstrip(":").strip()
+
+
+def read_sections(path):
+    """-> list of (level, normalized heading, body lines incl. subsections)."""
+    heads, infence = [], False
+    with open(path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    for i, ln in enumerate(lines):
+        if ln.lstrip().startswith("```") or ln.lstrip().startswith("~~~"):
+            infence = not infence
+            continue
+        m = None if infence else re.match(r"^(#{1,6})\s+(.*?)\s*#*\s*$", ln)
+        if m:
+            heads.append((len(m.group(1)), norm(m.group(2)), i))
+    out = []
+    for k, (lvl, name, i) in enumerate(heads):
+        end = len(lines)
+        for lvl2, _, j in heads[k + 1:]:
+            if lvl2 <= lvl:
+                end = j
+                break
+        out.append((lvl, name, lines[i + 1:end]))
+    return out
+
+
+def find_section(secs, want):
+    w = norm(want)
+    for lvl, name, body in secs:
+        if lvl < 2 or lvl > 3:
+            continue
+        if name == w or re.match(re.escape(w) + r"(?![A-Za-z0-9])", name):
+            return body
+    return None
+
+
+def has_body(body):
+    for ln in body:
+        t = ln.strip()
+        if not t or t.startswith("#") or t.startswith("<!--"):
+            continue
+        if re.fullmatch(r"[-*]?\s*(TODO|TBD|XXX|FIXME)[.:]?", t, re.I):
+            continue
+        return True
+    return False
+
+
+def main(argv):
+    deliver = dirarg = name = None
+    a = list(argv)
+    while a:
+        x = a.pop(0)
+        if x in ("--deliver", "--dir") and a:
+            if x == "--deliver":
+                deliver = a.pop(0)
+            else:
+                dirarg = a.pop(0)
+        elif x in ("-h", "--help"):
+            with open(__file__) as f:
+                for ln in f.read().splitlines()[1:]:
+                    if not ln.startswith("#"):
+                        break
+                    print(ln[2:])
+            return 0
+        elif x.startswith("-") or name:
+            done(64, "usage: scripts/lanecheck [--deliver FILE] [--dir D] [NAME]")
+        else:
+            name = x
+    where = os.path.dirname(os.path.abspath(deliver)) if deliver else "."
+    p = subprocess.run(["git", "-C", where, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    top = os.path.realpath(p.stdout.strip()) if p.returncode == 0 else None
+    if not name:
+        if deliver and re.search(r"_deliver\.txt$", os.path.basename(deliver)):
+            name = re.sub(r"_deliver\.txt$", "", os.path.basename(deliver))
+        elif top and os.path.basename(os.path.dirname(top)) == "worktrees":
+            name = os.path.basename(top)
+        else:
+            done(64, "lanecheck: no NAME given and none derivable (not in worktrees/NAME)")
+    if not deliver:
+        if not top:
+            done(64, "lanecheck: not in a git tree: pass --deliver FILE")
+        deliver = os.path.join(top, "docs/dev/lanes/%s_deliver.txt" % name)
+    deliver = os.path.realpath(deliver)
+    try:
+        spec = parse_deliver(deliver)
+    except (OSError, ValueError) as e:
+        done(65, "lanecheck: cannot use the DELIVER file %s: %s" % (deliver, e))
+    ddir = os.path.dirname(deliver)
+    base = top if top else ddir
+    rpath = spec["report"][-1]
+    report = rpath if os.path.isabs(rpath) else os.path.join(base, rpath)
+    if not os.path.exists(report) and not os.path.isabs(rpath) and os.path.exists(os.path.join(ddir, rpath)):
+        report = os.path.join(ddir, rpath)    # a DELIVER file outside the lane layout names its report beside itself
+    gitok = bool(top) and report.startswith(top + os.sep)
+    std = bool(top) and ddir == os.path.join(top, "docs/dev/lanes")
+    mdir = dirarg or (os.path.join(top, "build/lanecheck") if std else ddir)
+
+    issues = []
+    secs = None
+    if not os.path.isfile(report):
+        issues.append("the report %s does not exist" % rpath)
+    else:
+        secs = read_sections(report)
+    listed = [s.strip() for s in "; ".join(spec.get("sections", [])).split(";") if s.strip()]
+    present = {}
+    if secs is not None:
+        for s in listed:
+            present[s] = find_section(secs, s)
+            if present[s] is None:
+                issues.append("the report has no '%s' section (a ## or ### heading)" % s)
+        ne = "; ".join(spec.get("nonempty", [])).strip()
+        need = listed if ne.lower() == "all" else [s.strip() for s in ne.split(";") if s.strip()]
+        for s in need:
+            if s not in present:
+                present[s] = find_section(secs, s)
+                if present[s] is None:
+                    issues.append("nonempty names '%s' but the report has no such section" % s)
+                    continue
+            if present[s] is not None and not has_body(present[s]):
+                issues.append("the '%s' section is empty" % s)
+        for rule in spec.get("cites", []):
+            m = re.match(r"^(.+) in (.+?)\s*->\s*(.+)$", rule)
+            if not m:
+                issues.append("cites rule %r is not 'RE in SECTION -> SECTION'" % rule)
+                continue
+            rx, sx, sy = m.group(1).strip(), m.group(2).strip(), m.group(3).strip()
+            bx, by = find_section(secs, sx), find_section(secs, sy)
+            for s, b in ((sx, bx), (sy, by)):
+                if b is None and s not in present:
+                    issues.append("cites rule needs a '%s' section, which the report lacks" % s)
+            if bx is None or by is None:
+                continue
+            tx, ty = "\n".join(bx), "\n".join(by)
+            for i in sorted({m2.group(0) for m2 in re.finditer(rx, tx)}):
+                if i not in ty:
+                    issues.append("%s is in the '%s' section but not cited in '%s'" % (i, sx, sy))
+
+    stopped = False
+    if secs is not None:
+        with open(report, encoding="utf-8") as f:
+            stopped = bool(re.search(r"^\W*STATE:\s*stopped\b", f.read(), re.I | re.M))
+
+    sha = "none"
+    commit = (spec.get("commit", ["yes"])[-1].strip().lower() != "no")
+    if commit:
+        if not top:
+            issues.append("commit: yes, but this is not a git tree (use `commit: no`)")
+        else:
+            rc, out = git(top, "rev-parse", "HEAD")
+            sha = out.strip() if rc == 0 else "none"
+            paths = ([report] if gitok else []) + [
+                os.path.join(base, q.strip()) for q in "; ".join(spec.get("files", [])).split(";") if q.strip()]
+            for q in paths:
+                rel = os.path.relpath(q, top)
+                if not os.path.exists(q):
+                    issues.append("%s does not exist" % rel)
+                    continue
+                if git(top, "ls-files", "--error-unmatch", rel)[0] != 0:
+                    issues.append("%s is not committed (untracked)" % rel)
+                elif git(top, "diff", "--quiet", "HEAD", "--", rel)[0] != 0:
+                    issues.append("%s has uncommitted changes" % rel)
+            ok = [os.path.relpath(deliver, top)] if deliver.startswith(top + os.sep) else []
+            ok += [q.strip() for q in "; ".join(spec.get("dirty-ok", [])).split(";") if q.strip()]
+            rc, out = git(top, "status", "--porcelain", "--untracked-files=all")
+            dirty = [ln[3:].split(" -> ")[-1] for ln in out.splitlines()]
+            dirty = [d for d in dirty if not any(d == o or d.startswith(o.rstrip("/") + "/") for o in ok)]
+            skip = {os.path.relpath(q, top) for q in paths}
+            dirty = [d for d in dirty if d not in skip]
+            if dirty:
+                issues.append("the tree is not clean: %s%s (commit it, or list it under dirty-ok)" % (
+                    ", ".join(dirty[:5]), " and %d more" % (len(dirty) - 5) if len(dirty) > 5 else ""))
+
+    owed = "; ".join(spec.get("owed", [])).strip()
+    keys = []
+    if owed and not stopped:
+        state = find_section(secs, "STATE AT HANDOFF") if secs is not None else None
+        if secs is not None and state is None:
+            issues.append("owed is declared but the report has no 'STATE AT HANDOFF' section")
+        elif state is not None:
+            txt = "\n".join(state)
+            if owed.lower() == "none":
+                if not re.search(r"owed\W[^.\n]*\bnone\b|nothing (is )?owed|no runs? (are )?owed", txt, re.I):
+                    issues.append("STATE AT HANDOFF does not say 'OWED: none'")
+            else:
+                keys = owed.split()
+                bq = os.path.join(HERE, "boxqueue")
+                for k in keys:
+                    if k not in txt:
+                        issues.append("STATE AT HANDOFF does not name the owed job %s" % k)
+                    try:
+                        r = subprocess.run(["bash", bq, "state", k], capture_output=True, text=True, timeout=30)
+                        if r.stdout.strip() == "none" or (r.returncode > 1 and not r.stdout.strip()):
+                            issues.append("owed job %s is not in the box queue" % k)
+                    except (OSError, subprocess.TimeoutExpired):
+                        issues.append("could not ask the box queue about owed job %s" % k)
+
+    if stopped:
+        gone = [i for i in issues if "does not exist" in i or "not committed" in i or "uncommitted" in i]
+        if gone:
+            for n, i in enumerate(gone, 1):
+                print("%d. %s" % (n, i))
+            done(1, "the report says STATE: stopped but is not deliverable as is")
+        os.makedirs(mdir, exist_ok=True)
+        with open(os.path.join(mdir, name + ".stopped"), "w") as f:
+            f.write("name=%s\nreport=%s\ncommit=%s\nutc=%s\n" % (
+                name, report, sha, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())))
+        done(2, "lanecheck: the report says STATE: stopped; %s.stopped written (no .done)" % name)
+
+    if issues:
+        for n, i in enumerate(issues, 1):
+            print("%d. %s" % (n, i))
+        print("fix these, commit, and run scripts/lanecheck again; end only on DONE rc=0")
+        done(1)
+
+    os.makedirs(mdir, exist_ok=True)
+    body = "name=%s\nreport=%s\ndeliver=%s\ncommit=%s\nowed=%s\nutc=%s\nreport_sha=%s\ndeliver_sha=%s\n" % (
+        name, report, deliver, sha, " ".join(keys) or "none",
+        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), sha256(report), sha256(deliver))
+    seal = hashlib.sha256((SEAL_SALT + body).encode()).hexdigest()
+    mk = os.path.join(mdir, name + ".done")
+    with open(mk, "w") as f:
+        f.write(body + "seal=%s\n" % seal)
+    print("all checks pass; wrote %s" % mk)
+    done(0)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
