@@ -6368,7 +6368,7 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
   Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.
 - [SCANEDGE-SET] STATE:completed — A SCAN EDGE ADVANCES ON A CLASS SET, NOT ONE CLASS (`\s+$` x6.1 regression)
-  completed: 2026-10-26 merge 002810cac (abi 87; FILEPIN re-pinned 456dbc09e^); validation job 501-scansetfix-test GREEN; \s+$ 1.17->0.19 ns/B; covered by the 2026-10-27 full suite
+  completed: 2026-10-26 merge 002810cac (abi 87; recursion FILEPIN re-pinned to 002810cac in 456dbc09e); validation job 501-scansetfix-test GREEN; \s+$ 1.17->0.19 ns/B; covered by the 2026-10-27 full suite
   filed: 2026-10-26 manager, from lane trimreg (docs/dev/lanes/trimreg_report.md)
   status (2026-10-26): diagnosed, not built. First bad commit 4ea6fb19c (B3 lower_eol, D164) splits `\n` into its own class; the run state then advances on two classes, shaped() (src/opt/scanedge.c ~269) accepts one, so the walk falls to the per-byte table loop (0.19 -> 1.19 ns/B)
   next: lane scanset building (Frank go 2026-10-26: "It's more about the dfa states than the pattern. Go ahead."); merge before the 2026-10-27 full suite if green
