@@ -576,6 +576,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SCANEDGE-SET] STATE:not-started — A SCAN EDGE ADVANCES ON A CLASS SET, NOT ONE CLASS (`\s+$` x6.1 regression)
+  filed: 2026-10-26 manager, from lane trimreg (docs/dev/lanes/trimreg_report.md)
+  status (2026-10-26): diagnosed, not built. First bad commit 4ea6fb19c (B3 lower_eol, D164) splits `\n` into its own class; the run state then advances on two classes, shaped() (src/opt/scanedge.c ~269) accepts one, so the walk falls to the per-byte table loop (0.19 -> 1.19 ns/B)
+  next: Frank's build go; then a lane: scan-shape over a class set S (all of S -> one successor, the rest -> one exit), the single class as S of size 1; abi bump + identity re-pin; bench cell t-trim-match-60k as the witness
+  refs: docs/dev/lanes/trimreg_report.md; src/opt/scanedge.c; src/gen/emit_dfa.c edge_advance/scan_test; [OPT-REVEND]; D164
+  Population: trailing-whitespace trims (`\s+$`, `[\n ]+$`); `\s*$` was already ~68 us at the old pin and gains too. Bench: the only regress among 137 cross-pin cells (+ its nocaps twin). The general form deletes the one-class special case.
 - [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
   filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
   status (2026-10-26): filed; nothing built. A stray A_EMPTY mid-CAT (`a(?:)bc`) hides the required run `abc` from the fact pass (src/facts/req.c, not traced): prefilter handoff instead of memchr, per docs/dev/flag_spell_findings_2026-10-23.md.
