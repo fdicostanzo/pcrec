@@ -196,5 +196,7 @@ else
 fi
 
 echo
-echo "callouts: $pass passed, $fail failed, $skip skipped"
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+echo "checks skipped: $skip"
 [ "$fail" -eq 0 ]

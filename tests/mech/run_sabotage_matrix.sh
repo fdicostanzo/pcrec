@@ -1879,6 +1879,21 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/vars.log" | grep -oE '[0-9]+')"
                 score_arm "$work/vars.log" "$f" "vars:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            callouts)
+                # [INLINE-C] stage 1b — module `callouts`' own arm:
+                # tests/callouts/run_callouts_tests.sh (the corpus, its
+                # libpcre2 oracle, the generated differential, the driver
+                # checks, the class table, the refusals), `vars`' shape. The
+                # generated population is cut to 300 (floor 250) here: one
+                # run per row, and a row's witness is a named check, not the
+                # population's tail.
+                CALLOUT_GEN_N=300 CALLOUT_GEN_FLOOR=250 \
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/callouts/run_callouts_tests.sh" \
+                    > "$work/callouts.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/callouts.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/callouts.log" | grep -oE '[0-9]+')"
+                score_arm "$work/callouts.log" "$f" "callouts:${f:-ERR}fail/${p:-?}pass"
+                ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
                 # tests/codegen/run_vm_frameless.sh — `<PREFIX>_VM_FRAMELESS`
