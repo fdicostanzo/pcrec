@@ -27308,3 +27308,11 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - **Critic round r1 on inline_c.md** (coordinator pattern): 37 items, all FIX-NOW accepted; adversary lens added to the critic skill; denylist rule for plan rows (the coordinator leaked rulings to itself).
 - **Queue lessons:** two jobs killed by their own `lines=` expect (sub-suites print the same trailer); declare by `last=` + witness.
 - **In flight at write time:** 530-ic0-test (stage 0, abi 88) running; ic1b (stage 1b) building; full suite not-before 00:05.
+
+## 2026-10-26 (session 127 cont., manager) — stage 0 landed; stage 1b reviewed and fixed; LANECHECK landed
+
+- **[INLINE-C] stage 0 LANDED** (81454bbf4, abi 88): first job RED on one stale size pin (m5_stage1_stamps.tsv, +2 B per artifact: a byte-count reader no abi grep finds); fixed by ic0fix, re-validated green; FILEPIN re-pinned.
+- **Stage 1b** built (ic1b), code review r2 (coordinator round): answer-level ADV-1 (`(?C"ref")` collides with rx_callout_ref), CON-2 (`once` accepted after a retryable lookahead), CON-3 (compliance index stale: make test red), CON-8, ADV-3, CON-1; all FIX-NOW accepted, EMIT-1 PLAN; jobs 540-542 cancelled; ic1bfix applied everything on lane/ic1b (03f7d70ed, abi 89, main merged in); validation 550-552 pending not-before 2026-10-27T12:00. The review file lives on lane/ic1b (it cites the lane's new spec sections; main's spec-history hook refuses dangling citations).
+- **[LANECHECK] landed** (Frank's idea): DELIVER block in briefs, scripts/lanecheck (DONE or prose issues), lanewatch + miss log; critic skill adopted it. Frank: never tell lanes about the pass record (memory pcrec-lanecheck-hidden-marker); lane-facing text and lanecheck's output scrubbed.
+- **Frank:** subagents stopping without delivering is a long-term problem (nested replies lost today 6/6 in the ic1b round); feedback drafted for /feedback.
+- **Waiting on:** the 00:05 full suite (nothing merges while it runs); then 1b's jobs from 12:00.
