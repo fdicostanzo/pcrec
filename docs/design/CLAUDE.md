@@ -74,7 +74,7 @@ Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
 - `compound.md` — [COMPOUND] compound artifact (rev 2.2), first client [MATCH-SPLIT]; `compound/` — twin; `compound_callout_alignment.md` — compound/callout seams (D163 add. 5); `compound_entries.md` — every entry as a compound controller; `compound_entries/` — probes.
 - `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (not a design, no build go): user C inside pattern `(?C{...})` and template `${{ }}`/`${( )}`; use cases and draft tests, R-P/R-T/R-S rows, post-match predicate analysis, prior art, trust gate, open questions (lane inlinecreq, rev 0).
-- `inline_c.md` — [INLINE-C] DESIGN, pattern side (PROPOSED rev 0, lane inlinecdes): one `A_CALLOUT` node for `(?C`/`(?{`, the call site and return table, generated segment functions, `verify` as a VM hybrid, the `--allow-code` + `sha256=` pin trust gate, staged build plan.
+- `inline_c.md` — [INLINE-C] DESIGN, pattern side (PROPOSED rev 1, lane inlinecrev1, after panel r1): one `A_CALLOUT` node for `(?C`/`(?{`, one call-site emitter and the shared return table, firing classes + `once`, generated segment functions, `verify` as a D156 FINISH row, the `--allow-code` + `sha256` pin trust gate, stages 0/1a/1b/2-5.
 - `match_split_requirements.md` — [MATCH-SPLIT] requirements; `match_split_pinonly.md` — SUPERSEDED (D163) by `compound.md`.
 - `findall_iter.md` — [FINDALL-NEXT] find-all iterator; `findall_iter/` — probes.
 - `kit_proof.md` — [KIT-VERIFY] U1 report without an engine; `kit_proof/` — evidence.

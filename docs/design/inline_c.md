@@ -1404,10 +1404,10 @@ harness entries:
 
 | class | entries | without the opt-in | with it |
 |---|---|---|---|
-| writes C or an artifact | a FILE target, `--pattern`, `-o -`, `--emit-main`, `pcrec_compile` and the library's other compile entries, the harness | refuses every segment by name, emits zero bytes | 5.4's rules |
-| describes only | `--emit-ir`, `--emit-facts`, `--explain`, `--count-groups`, `--probe-ask`, `--trace` (as listed by the mode table at build time) | parses code (a later group must still be counted), writes no C, prints no code text unescaped | same |
+| writes C or an artifact | a FILE target, `--pattern` (with or without `--pattern-esc`), `-o -`, `--emit-main`, `--trace` (an instrumented matcher), `pcrec_compile` and the library's other compile entries, the harness | refuses every segment by name, emits zero bytes | 5.4's rules |
+| describes a pattern | `--emit-ir`, `--emit-facts`, `--count-groups` (as listed by the mode table at build time) | parses code (a later group must still be counted), writes no C, prints no code text unescaped | same |
 | reviews | `--list-callouts` | works; code printed escaped (5.6) | same |
-| lists without parsing | `--list-axes`, `--list-definitions`, `--list-families`, `--list-limits`, `--list-schema`, `--list-source`, `--list-syntax`, `--list-verbs` | no change (none compiles a pattern) | same |
+| takes a construct or nothing, not a pattern | `--explain`, `--probe-ask`, `--list-axes`, `--list-definitions`, `--list-families`, `--list-limits`, `--list-schema`, `--list-source`, `--list-syntax`, `--list-verbs` | no change (none compiles a pattern; `--explain` describes the `(?{` construct like any other) | same |
 
 Rev 0's goal 1 named "every `--list-*` that compiles", which is the empty set
 today and, read literally, made `--list-callouts` refuse what it exists to
