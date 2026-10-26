@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "probe_hooks.h"
+#include "enc/enc.h"
 
 static FILE *po(void)
 {
@@ -30,9 +31,15 @@ static void esc(FILE *f, const char *s, size_t n)
     }
 }
 
+static unsigned g_maxcp = 0xFF;
+
 void probe_begin(const Ctx *cx)
 {
     FILE *f = po();
+    {
+        const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
+        g_maxcp = e ? e->max_cp : 0xFF;
+    }
     fputs("@@\tCOMPILE\t", f);
     esc(f, cx->pat, cx->patlen);
     fputc('\n', f);
@@ -63,6 +70,42 @@ static bool pr_subset(const PrCls *y, const PrCls *x)
     return true;
 }
 static bool pr_eq(const PrCls *a, const PrCls *b) { return pr_subset(a, b) && pr_subset(b, a); }
+
+
+/* is every code point of [lo,hi] inside the union of x's intervals? */
+static bool pr_covers(const PrCls *x, unsigned lo, unsigned hi)
+{
+    unsigned cur = lo;
+    for (int i = 0; i < x->n && cur <= hi; i++) {
+        if (x->iv[i].hi < cur) continue;
+        if (x->iv[i].lo > cur) return false;
+        if (x->iv[i].hi >= hi) return true;
+        cur = x->iv[i].hi + 1;
+    }
+    return cur > hi;
+}
+/* C minus X non-empty? */
+static bool pr_minus_nonempty(const PrCls *c, const PrCls *x)
+{
+    for (int i = 0; i < c->n; i++) if (!pr_covers(x, c->iv[i].lo, c->iv[i].hi)) return true;
+    return false;
+}
+/* universe [0,max] minus (X union C) non-empty? */
+static bool pr_outside_nonempty(const PrCls *x, const PrCls *c, unsigned max)
+{
+    unsigned cur = 0;
+    for (;;) {
+        /* find a covering interval of cur in x or c */
+        bool moved = false;
+        for (int i = 0; i < x->n; i++)
+            if (x->iv[i].lo <= cur && x->iv[i].hi >= cur) { cur = x->iv[i].hi + 1; moved = true; break; }
+        if (!moved)
+            for (int i = 0; i < c->n; i++)
+                if (c->iv[i].lo <= cur && c->iv[i].hi >= cur) { cur = c->iv[i].hi + 1; moved = true; break; }
+        if (!moved) return cur <= max;
+        if (cur > max) return false;
+    }
+}
 
 static const struct { const char *name; int n; PcrecCpRange iv[6]; } named[] = {
     { "\\s", 2, { {9, 13}, {32, 32} } },
@@ -236,14 +279,34 @@ static void scan_spine(const char *stage, const Ast *cat)
                 fprintf(f, "mode=%s capgap=%d rmin=%d X=", mode_of(&el[i], rx), el[i].cap, rx->u.rep.rmin);
                 pr_print(f, &x); fputc('\n', f);
             }
-            /* (d) run of C-chars then \b, or then (?!C) */
+            /* (d) a context assertion after a maximal run whose truth is already decided by
+             * "the next byte is outside X": X+ then A with A true for every feasible
+             * (previous = last run byte, next = not-in-X or absent) cell. */
             if (nx->core->k == A_CTX && rx->u.rep.rmin >= 1) {
                 PrCls cc = { nx->core->u.ctx.iv, nx->core->u.ctx.n };
-                if ((nx->core->u.ctx.fn == CTXFN_BOUNDARY || nx->core->u.ctx.fn == CTXFN_NOT_NEXT) &&
-                    pr_subset(&x, &cc)) {
-                    hit(stage, nx->core->u.ctx.fn == CTXFN_BOUNDARY ? "D-BOUND-AFTER-RUN" : "D-NOTNEXT-AFTER-RUN");
-                    fprintf(f, "mode=%s X=", mode_of(&el[i], rx)); pr_print(f, &x); fputs(" C=", f);
-                    pr_print(f, &cc); fputc('\n', f);
+                unsigned fn = nx->core->u.ctx.fn;
+                int p = pr_subset(&x, &cc) ? 1 : (!pr_minus_nonempty(&x, &cc) ? 1 : -1);
+                /* p: 1 = every run byte in C, 0 = none in C, -1 = mixed */
+                bool all_in = pr_subset(&x, &cc);
+                bool none_in = true;
+                for (int i = 0; i < x.n && none_in; i++)
+                    for (int j = 0; j < cc.n; j++)
+                        if (x.iv[i].lo <= cc.iv[j].hi && cc.iv[j].lo <= x.iv[i].hi) { none_in = false; break; }
+                p = all_in ? 1 : none_in ? 0 : -1;
+                if (p >= 0) {
+                    bool q_in = pr_minus_nonempty(&cc, &x);          /* a next byte in C and not in X */
+                    PrCls cx_ = x;
+                    bool q_out = pr_outside_nonempty(&cx_, &cc, g_maxcp);
+                    bool t_abs = ctxfn_cell(fn, (unsigned)p, 2) != 0;
+                    bool t_in = ctxfn_cell(fn, (unsigned)p, 1) != 0;
+                    bool t_out = ctxfn_cell(fn, (unsigned)p, 0) != 0;
+                    bool all_true = t_abs && (!q_in || t_in) && (!q_out || t_out);
+                    bool all_false = !t_abs && (!q_in || !t_in) && (!q_out || !t_out);
+                    if (all_true || all_false) {
+                        hit(stage, all_true ? "D-CTX-IMPLIED-TRUE" : "D-CTX-IMPLIED-FALSE");
+                        fprintf(f, "mode=%s fn=%03X X=", mode_of(&el[i], rx), fn); pr_print(f, &x);
+                        fputs(" C=", f); pr_print(f, &cc); fputc('\n', f);
+                    }
                 }
             }
         }
@@ -456,4 +519,25 @@ void probe_dfa(const Ctx *cx, const Dfa *d, const char *name, int line)
             name, line, d->n, d->ncls, mem_one, mem_one_v, mem_set, mem_set_v,
             gain_self, gain_self_v, gain_chain, gain_chain_v);
     free(haspred); free(sh);
+}
+
+/* ---- the REAL scan-edge pass's outcome, read before and after it ------- */
+static int se_n0, se_line;
+static const char *se_name;
+
+void probe_se_pre(const Ctx *cx, const Dfa *d, const char *name, int line)
+{
+    probe_dfa(cx, d, name, line);          /* the chain-member MODEL line (hypothesis-level) */
+    se_n0 = d->n; se_name = name; se_line = line;
+}
+
+void probe_se_post(const Ctx *cx, const Dfa *d)
+{
+    (void)cx;
+    int unb = 0, bnd = 0;
+    for (int s = 0; s < d->n; s++) {
+        if (d->st[s].scan_span < 0) unb++;
+        else if (d->st[s].scan_span > 0) bnd++;
+    }
+    fprintf(po(), "SE\t%s\tline=%d\tn_before=%d\tn_after=%d\tunb=%d\tbnd=%d\n", se_name, se_line, se_n0, d->n, unb, bnd);
 }

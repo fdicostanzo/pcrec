@@ -6,4 +6,6 @@
 void probe_begin(const Ctx *cx);                 /* once per pipeline attempt */
 void probe_ast(const Ctx *cx, const char *stage, const Ast *root);
 void probe_dfa(const Ctx *cx, const Dfa *d, const char *name, int line);
+void probe_se_pre(const Ctx *cx, const Dfa *d, const char *name, int line);
+void probe_se_post(const Ctx *cx, const Dfa *d);
 #endif

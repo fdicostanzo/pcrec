@@ -12,7 +12,7 @@ sweep cap: launch it through scripts/boxlock run.
 import os, re, subprocess, sys, glob
 
 W = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PROBE = os.path.join(W, "build/probe/pcrec_probe")
+PROBE = os.environ.get("PROBE_BIN", os.path.join(W, "build/probe/pcrec_probe"))
 CLI = os.path.join(W, "build/pcrec")
 BENCH = "/home/pcrec/projects/pcrec-bench/bench"
 
@@ -75,14 +75,14 @@ def bench_rows():
             yield ("bench:" + s, os.path.basename(f), b, {"encoding": "utf8" if s == "utf8" else "", "features": "all"})
 
 
-def run(rows, out):
+def run(rows, out, stamp=False):
     env = dict(os.environ)
     env["PROBE_OUT"] = out
     n = bad = 0
     for src, name, pat, opt in rows:
         if b"\x00" in pat:
             continue
-        cmd = [PROBE, "-p", "rx", "-o", "-", "--features", "all"]
+        cmd = [CLI if stamp else PROBE, "-p", "rx", "-o", "-", "--features", "all"]
         if opt.get("encoding") == "utf8":
             cmd += ["-e", "utf8"]
         if "i" in opt.get("flags", "").split() or opt.get("flags", "") == "i":
@@ -90,6 +90,16 @@ def run(rows, out):
         if opt.get("engine") in ("vm", "dfa"):
             cmd += ["--engine=" + opt["engine"]]
         cmd += ["--pattern", pat]
+        if stamp:
+            try:
+                r = subprocess.run(cmd, env=env, capture_output=True, timeout=120)
+                m = re.search(rb'#define RX_DFA_SCAN_EDGE "([^"]*)"', r.stdout)
+                with open(out, "ab") as f:
+                    f.write(("%s\t%s\t%d\t%s\n" % (src, name, r.returncode, m.group(1).decode() if m else "-")).encode())
+            except subprocess.TimeoutExpired:
+                pass
+            n += 1
+            continue
         with open(out, "ab") as f:
             f.write(("@@\tSRC\t%s\t%s\tfeat=%s enc=%s flags=%s eng=%s\n" % (
                 src, name, "all", opt.get("encoding", ""), opt.get("flags", ""), opt.get("engine", ""))).encode())
@@ -118,5 +128,9 @@ if __name__ == "__main__":
         run(corpus_rows(), sys.argv[2])
     elif mode == "bench":
         run(bench_rows(), sys.argv[2])
+    elif mode == "stamp-corpus":
+        run(corpus_rows(), sys.argv[2], True)
+    elif mode == "stamp-bench":
+        run(bench_rows(), sys.argv[2], True)
     elif mode == "list":
         run(list_rows(sys.argv[2]), sys.argv[3])
