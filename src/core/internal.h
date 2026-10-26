@@ -2312,12 +2312,12 @@ typedef struct {
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
     /* [OPT-5] THE SCAN EDGE (src/opt/scanedge.c, docs/spec/tuning.md S2.18).
      * A maximal run of states that differ only in HOW MANY bytes of one fixed
-     * class have been counted is collapsed into ONE edge on the run's head,
+     * class SET have been counted is collapsed into ONE edge on the run's head,
      * and the emitter writes it as an address-only-dependent bounded scan loop
      * instead of `span` data-dependent table steps.
      *
      * `scan_span` IS THE PRESENCE FLAG AND ITS ZERO IS "NO EDGE". A
-     * `scan_cls`-shaped presence flag would have made "class 0" the default,
+     * class-shaped presence flag would have made "class 0" the default,
      * which is a live class on every machine. Both `DState` constructors give
      * that zero: src/opt/minimize.c's rebuild `calloc`s, and src/ir/dfa.c's
      * `make_state` `memset`s — the LATTER was added by this row and is a bug
@@ -2326,31 +2326,33 @@ typedef struct {
      * legitimately NOT have is the first one that notices. Its other two
      * values:
      *   > 0   count at most this many bytes, then the state is `scan_next`
-     *   -1    UNBOUNDED (the state's own class-C self-loop: `*` and `+`)
+     *   -1    UNBOUNDED (the state's own class-S self-loop: `*` and `+`)
      *
-     * The other two fields are meaningless when `scan_span == 0` and are not
-     * read there. When the edge exists, `tr[scan_cls]` is set to -1 (dead) and
-     * that cell is NEVER READ: the emitter runs the scan before the step, and
-     * the scan consumes every class-`scan_cls` byte the bound allows, so the
-     * step can only ever be reached on a byte of some OTHER class. See the
-     * pass's own header for the whole argument, which is what licenses
-     * DELETING the run's interior states from the table. */
+     * The other fields are meaningless when `scan_span == 0` and are not
+     * read there. When a BOUNDED edge exists, `tr[c]` is set to -1 (dead) for
+     * every class `c` in `scan_set` and those cells are NEVER READ: the
+     * emitter runs the scan before the step, and the scan consumes every byte
+     * of the set's classes the bound allows, so the step can only ever be
+     * reached on a byte of some class OUTSIDE the set. See the pass's own
+     * header for the whole argument, which is what licenses DELETING the
+     * run's interior states from the table. Read the set through
+     * `pcrec_scan_has`; one class is the set of size one ([SCANEDGE-SET]). */
     int      scan_span;
-    int      scan_cls;   /* the byte class the scan counts */
+    uint8_t  scan_set[32];  /* the byte CLASSES the scan counts (bit per class id) */
     int      scan_next;  /* the state after `scan_span` bytes (-1 == dead) */
     /* [OPT-5] THE PERIOD OF THE COUNTED SEQUENCE, and it is 1 on every edge
      * this compiler builds (manager ruling R3, 2026-08-31, from Frank's
      * "isn't a loop over a static string just a memcmp: `(?:ab){1,100}`").
      * The general shape is a chain whose advance classes CYCLE with period
      * k — k singleton classes being a STRING, whose body is a counted loop
-     * of constant-length compares — and `scan_cls` is that sequence's
+     * of constant-length compares — and `scan_set` is that sequence's
      * element 0.
      *
      * THE FIELD IS HERE AND THE SEQUENCE IS NOT, which is the honest half of
      * the ruling's own "if a period field genuinely complicates STEP 1, skip
      * it and say so". A period-k edge needs k CLASSES, which is an arena
      * array plus a length on a `DState` that is `realloc`'d at a fixed size,
-     * and every reader of `scan_cls` would change shape for a producer that
+     * and every reader of `scan_set` would change shape for a producer that
      * does not exist (D77). What this field buys at zero cost is that the
      * criterion's OUTPUT is already a periodic sequence rather than a single
      * class baked into the representation: period-k is then a criterion
@@ -2360,6 +2362,12 @@ typedef struct {
      * site asserts it is 1 rather than assuming it. */
     int      scan_period;
 } DState;
+
+/* Is byte class `cls` one of the classes state `st`'s scan edge counts? */
+static inline bool pcrec_scan_has(const DState *st, int cls)
+{
+    return st->scan_span != 0 && (st->scan_set[cls >> 3] >> (cls & 7) & 1);
+}
 
 /* [OPT-5] `PCREC_MAX_SCAN_EDGES` — how many scan edges one machine may carry
  * — is NOT declared here. It is a `limits.def` row (home INTERNAL_H, D90),

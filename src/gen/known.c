@@ -13,8 +13,8 @@
  * THE MACHINE IS READ WITH ITS SCAN EDGES. The anchored machine A has been
  * through the scan-edge pass (src/opt/scanedge.c), which deletes a counted
  * run's interior states. A state that heads an edge stands for its whole
- * chain: after i < span class-`scan_cls` bytes the machine is in a member
- * that behaves as the head does on every other class (the chain is
+ * chain: after i < span bytes of its `scan_set` classes the machine is in a
+ * member that behaves as the head does on every other class (the chain is
  * scan-shaped), and after `span` it is `scan_next`. So the reading walks
  * VIRTUAL states (state, count), `kn_step` is the one step, and every fact
  * of a member (accept, views, class-indexed accept) is its head's, which the
@@ -52,7 +52,7 @@ static bool kn_has(const uint8_t s[32], int b) { return s[b >> 3] >> (b & 7) & 1
 static KnVs kn_step(const Dfa *d, KnVs v, int cls)
 {
     const DState *st = &d->st[v.s];
-    if (st->scan_span != 0 && cls == st->scan_cls) {
+    if (pcrec_scan_has(st, cls)) {
         if (st->scan_span < 0) return (KnVs){ v.s, 0 };
         if (v.c + 1 < st->scan_span) return (KnVs){ v.s, v.c + 1 };
         return (KnVs){ st->scan_next, 0 };
