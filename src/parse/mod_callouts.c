@@ -59,24 +59,42 @@ static bool co_ident_cont(char c)
     return co_ident_start(c) || (c >= '0' && c <= '9');
 }
 
+/* Copies `n` bytes of user text into the arena as a diagnostic echo, with
+ * every control byte (ESC, BEL, ...) written as `\xNN` (`pcrec_sb_textn`),
+ * so a refusal cannot drive the reader's terminal. */
+static const char *co_echo(Ctx *cx, const char *s, size_t n)
+{
+    StrBuf b = { .cx = cx };
+    pcrec_sb_textn(&b, s, n);
+    const char *t = pcrec_sb_fragf(&cx->arena, "%s", b.p ? b.p : "");
+    pcrec_sb_free(&b);
+    return t;
+}
+
 /* Applies one attribute list (`attr`, `attr`, ...) to node `a`; `s`/`n` is
  * the list's text with no leading comma, `sep` the separator between items.
  * Returns NULL, or the refusal text. Shared by the string spelling's
  * `,attr` tail and the numbered callout's declarations (`pcrec_callout_
- * apply_attrs`, src/opt/callout.c), so the grammar has one home. */
+ * apply_attrs`, src/opt/callout.c), so the grammar has one home. Every item
+ * is a name, so an empty item is refused wherever it stands (`x,`, `x,,y`,
+ * and an empty list, which declares nothing). */
 const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
                                 char sep)
 {
     bool seen[CO_ATTR_N] = { false };
     size_t i = 0;
-    while (i < n) {
+    for (;;) {
         size_t j = i;
         while (j < n && s[j] != sep) j++;
+        if (j == i)
+            return pcrec_ext_msgf(cx, "empty callout attribute (each item "
+                                  "of the '%c'-separated list is consume, "
+                                  "once or verify)", sep);
         int k = co_attr(s + i, j - i);
         if (k < 0)
-            return pcrec_ext_msgf(cx, "unknown callout attribute '%.*s' "
+            return pcrec_ext_msgf(cx, "unknown callout attribute '%s' "
                                   "(the attributes are consume, once and "
-                                  "verify)", (int)(j - i), s + i);
+                                  "verify)", co_echo(cx, s + i, j - i));
         if (seen[k])
             return pcrec_ext_msgf(cx, "callout attribute '%s' is repeated",
                                   co_attr_names[k]);
@@ -90,12 +108,88 @@ const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
                                   " the callout attribute 'verify' is not "
                                   "implemented yet");
         }
-        i = j < n ? j + 1 : j;
-        if (j < n && i == n)
-            return pcrec_ext_msgf(cx, "empty callout attribute after '%c'",
-                                  sep);
+        if (j == n) return NULL;
+        i = j + 1;
     }
-    return NULL;
+}
+
+/* Reads one numbered callout's declaration, `N<sep>ATTRS`: N a decimal
+ * 0-255, then `sep` (`:` on the command line; one or more spaces or tabs in
+ * a `.rxt` `callout` line), then a non-empty comma-separated list of
+ * lower-case names. The ONE SHAPE READER of both surfaces (the `.rxt` reader
+ * and `--callout`), so the two refuse the same texts; which attributes exist
+ * is `pcrec_callout_attrs`' question, asked by the compile. True with `d`
+ * filled (`d->attrs` points into `v`), else false. */
+bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d)
+{
+    int n = 0;
+    const char *q = v;
+    if (*q < '0' || *q > '9') return false;
+    while (*q >= '0' && *q <= '9')
+        if ((n = n * 10 + (*q++ - '0')) > 255) return false;
+    if (sep == ':') {
+        if (*q++ != ':') return false;
+    } else {
+        if (*q != ' ' && *q != '\t') return false;
+        while (*q == ' ' || *q == '\t') q++;
+    }
+    const char *attrs = q;
+    for (bool item = false; ; q++) {
+        if (*q >= 'a' && *q <= 'z') { item = true; continue; }
+        if ((*q != ',' && *q != '\0') || !item) return false;
+        if (*q == '\0') break;
+        item = false;
+    }
+    d->num = n;
+    d->attrs = attrs;
+    return true;
+}
+
+/* THE BINDING ROWS (inline_c.md §1.4), first match on the site's `bind`: the
+ * symbol the artifact's header declares `extern const rx_callout_ref`, the
+ * call's callee expression and the view's `user` expression. Every reader
+ * (the call site, the listing, the header's extern list, `--emit-main`'s
+ * refusal, the binding-name rule below) takes them from here. Row 1 (an
+ * embedded segment: a direct call, `user` NULL, no extern) is stage 2's
+ * module `code-c`, and arrives as a case here. */
+PcrecCalloutBinding pcrec_callout_binding(Arena *ar, const Ast *a)
+{
+    PcrecCalloutBinding b = { NULL, NULL, NULL, false };
+    switch (a->u.callout.bind) {
+    case CO_NAME:
+        b.symbol = pcrec_sb_fragf(ar, "rx_callout_%s", a->u.callout.name);
+        break;
+    case CO_NUM:
+        b.symbol = pcrec_sb_fragf(ar, "rx_callout_%d", a->u.callout.num);
+        break;
+    }
+    b.callee = pcrec_sb_fragf(ar, "%s.fn", b.symbol);
+    b.user = pcrec_sb_fragf(ar, "%s.user", b.symbol);
+    b.is_extern = true;
+    return b;
+}
+
+/* THE NAMES PCREC ITSELF DECLARES UNPREFIXED in every artifact that a binding
+ * symbol shares a translation unit with: the shared ABI block's fixed
+ * identifiers (match_api.md §1¶5, types and the iterator's helpers). A binding
+ * symbol equal to one of them redeclares it and the artifact does not compile
+ * (`(?C"ref")` binds `rx_callout_ref`, the typedef), so the rule is general:
+ * a binding whose symbol is a name on this list is refused. Only the
+ * `rx_callout_` members can match today (the binding family is
+ * `rx_callout_<ident>`); the list is the whole block so a new fixed name in
+ * the family is refused by adding it here. tests/callouts arm 6 reads the
+ * family members off an emitted header rather than off this table. */
+static const char *const co_abi_names[] = {
+    "rx_var", "rx_ctx", "rx_matchfn", "rx_callout_ref", "rx_renderfn",
+    "rx_group_entry", "rx_nextfn", "rx_nextnfn", "rx_info", "rx_iter",
+    "rx_iter_init", "rx_iter_at", "rx_iter_vars",
+};
+
+static bool co_abi_name(const char *sym)
+{
+    for (size_t i = 0; i < sizeof co_abi_names / sizeof co_abi_names[0]; i++)
+        if (!strcmp(sym, co_abi_names[i])) return true;
+    return false;
 }
 
 /* Does this tree contain a callout site? The kind mask's `PF_KIND_CALLOUT`
@@ -119,14 +213,12 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
     const char *p = cx->pat;
     PcrecCoScan sc;
     /* The recogniser that elected this row ran the same scan on the same
-     * text, with ONE exception: a pattern that ENDS at `(?C` offers the
-     * doorway no text, and a recogniser asked with no text answers the
-     * tail-less question (yes) as every row's does. That text is malformed
-     * by the same rule as the malformed row's, and refused in its words. */
+     * text (a pattern ending at `(?C` elects the malformed row), so this
+     * refusal is a guard, not a path. */
     if (from >= cx->patlen ||
         !pcrec_callout_extent_scan(p + from, cx->patlen - from, &sc))
-        REFUSE(at, "malformed callout: (?C must be followed by ')', a number "
-               "0-255 and ')', or a delimited string and ')'");
+        REFUSE(at, "internal error: the callout row was elected for a "
+               "malformed (?C");
 
     Ast *a = pcrec_ast_node(cx, A_CALLOUT);
     a->not_repeatable = true;
@@ -174,6 +266,10 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
             if (msg) REFUSE(at, "%s", msg);
         }
     }
+    const char *sym = pcrec_callout_binding(&cx->arena, a).symbol;
+    if (co_abi_name(sym))
+        REFUSE(at, "callout binding %s is a name the artifact's shared ABI "
+               "block already declares; choose another name", sym);
     pcrec_ast_stamp(a, rw, at);
     cx->ncallouts++;
 

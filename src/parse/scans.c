@@ -214,12 +214,15 @@ bool pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out)
 /* [INLINE-C] 1b the two `(?C` rows' recognisers: module `callouts`' row
  * answers for the well-formed shape, the malformed row for its exact
  * complement, so exactly one of them answers for any text and the doorway's
- * arbitration never ties. `at == NULL` is the byte-only question (a dump, a
- * probe with no text): the construct the selector names is the callout. */
+ * arbitration never ties. `at == NULL` is NO TEXT, which is what the group
+ * doorway offers a pattern that ENDS at `(?C`: a truncated `(?C` is not a
+ * callout, so the malformed row answers it, in every module state (no
+ * "requires module" for a text no module makes valid; pattern_language.md
+ * §7.11¶3). */
 bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail)
 {
     (void)tail;
-    return !at || pcrec_callout_extent_scan(at, avail, NULL);
+    return at && pcrec_callout_extent_scan(at, avail, NULL);
 }
 
 bool pcrec_callout_malformed_recognise(const char *at, size_t avail,

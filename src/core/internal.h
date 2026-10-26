@@ -195,7 +195,7 @@ typedef struct {
  * it in v1 ([IFACE-PUSH]). */
 typedef struct {
     int         num;      /* 0..255 */
-    const char *attrs;    /* "consume,once"; "" declares none */
+    const char *attrs;    /* "consume,once"; never empty (`pcrec_callout_decl_read`) */
 } PcrecCalloutDecl;
 
 typedef struct {
@@ -1264,6 +1264,17 @@ typedef enum {
     CO_NUM         /* `(?C)`, `(?Cn)`: rx_callout_<n> */
 } CalloutBind;
 
+/* [INLINE-C] stage 1b one site's binding row (`pcrec_callout_binding`,
+ * src/parse/mod_callouts.c), the one answer every reader takes: `symbol` the
+ * name the header declares (`is_extern`), `callee` the call's function
+ * expression, `user` the view's `user` expression. Arena text. */
+typedef struct {
+    const char *symbol;
+    const char *callee;
+    const char *user;
+    bool        is_extern;
+} PcrecCalloutBinding;
+
 /* [INLINE-C] stage 1b a site's FIRING CLASS (inline_c.md §1.10): how many
  * times it can fire within one attempt, derived from structure alone. The
  * ordinal is the table's row order and the listing token is
@@ -1563,7 +1574,21 @@ struct Ast {
              * node nothing analysed keeps its machinery, which is what makes
              * `-fno-revdet` byte-identity-safe. */
             const Ast  *revbody;
+            /* [INLINE-C] 1b THE QUANTIFIER'S PATTERN OFFSET, its blame byte
+             * (`p_rep`'s `cx->pos - 1`: the `*`, `+` or `?`, or a brace
+             * form's closing `}`). `at_known` is true only on a repeat the
+             * base grammar parsed: a repeat a definition or a rewrite built
+             * has no source text, and its zeroed `at` is not an offset.
+             * Read by the callout `once` refusal (src/opt/callout.c), which
+             * names the construct that breaks the promise. */
+            size_t      at;
+            bool        at_known;
         } rep;
+
+        /* [INLINE-C] 1b A_ALT: the pattern offset of the `|` this node was
+         * built at, `at_known` as on `u.rep` (a rewrite's alternation has
+         * none). Read by the callout `once` refusal. */
+        struct { size_t at; bool at_known; } alt;
 
         /* A_CAP: 1-based capturing group number. */
         struct { int no; } cap;
@@ -5593,9 +5618,15 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from);
 /* The attribute grammar's one home (§2.2): applies the `sep`-separated
  * list `s`/`n` to callout node `a`; NULL, or the refusal text (unknown,
- * repeated, empty, or `verify`, refused by name until stage 4). */
+ * repeated, empty -- an empty list included -- or `verify`, refused by name
+ * until stage 4). */
 const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
                                 char sep);
+/* The one shape reader of a numbered callout's declaration, `N<sep>ATTRS`,
+ * for the `.rxt` `callout` line (sep ' ') and `--callout` (sep ':'). */
+bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d);
+/* A site's binding row (inline_c.md §1.4): see PcrecCalloutBinding. */
+PcrecCalloutBinding pcrec_callout_binding(Arena *ar, const Ast *a);
 bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail);
 bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
                                        const char *tail);

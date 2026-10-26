@@ -9005,9 +9005,8 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
     Ctx *cx = v->cx;
-    const char *sym = a->u.callout.bind == CO_NAME
-        ? vm_rolef(v, "rx_callout_%s", a->u.callout.name)
-        : vm_rolef(v, "rx_callout_%d", a->u.callout.num);
+    const PcrecCalloutBinding bind = pcrec_callout_binding(&cx->arena, a);
+    const char *sym = bind.symbol;
     const bool pred = !a->u.callout.consume;
     vm_lbl(v, entry, vm_rolef(v, "callout site %d: %s, %s", a->u.callout.site,
                               sym, pred ? "a check" : "consumes"));
@@ -9025,8 +9024,9 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
         "        %s_co_ctx.pos = scan_position;\n"
         "        %s_co_ctx.ncap = %d;\n"
         "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n"
-        "        %s_co_ctx.user = %s.user;\n",
-        v->p, v->p, v->p, v->p, v->p, v->p, v->ngroups + 1, v->p, v->p, sym);
+        "        %s_co_ctx.user = %s;\n",
+        v->p, v->p, v->p, v->p, v->p, v->p, v->ngroups + 1, v->p, v->p,
+        bind.user);
     if (cx->n_vars > 0)
         pcrec_sb_printf(b,
             "        %s_co_ctx.vars = ctx->vars;\n"
@@ -9037,9 +9037,9 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
             "        %s_co_ctx.nvars = 0;\n", v->p, v->p);
     pcrec_sb_printf(b,
         "        slot_values[0] = (ptrdiff_t)ctx->pos;\n"
-        "        r = %s.fn(&%s_co_ctx);\n"
+        "        r = %s(&%s_co_ctx);\n"
         "        slot_values[0] = %s_co_start;\n",
-        sym, v->p, v->p);
+        bind.callee, v->p, v->p);
     const CsCallee callee = {
         .conv = CS_CONV_MATCHFN, .vm = true, .guarded = true, .utf_check = true,
         .pred = pred, .pos = "scan_position", .subj = "subject",
@@ -10052,9 +10052,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             const char *row[7] = {
                 vm_rolef(v, "L%d", v->ev[i].a),
                 vm_rolef(v, "%d", v->ev[i].b),
-                a->u.callout.bind == CO_NAME
-                    ? vm_rolef(v, "rx_callout_%s", a->u.callout.name)
-                    : vm_rolef(v, "rx_callout_%d", a->u.callout.num),
+                pcrec_callout_binding(&v->cx->arena, a).symbol,
                 a->u.callout.consume ? "consume" : "check",
                 pcrec_callout_class_name(a->u.callout.fclass),
                 a->u.callout.tail ? "tail" : "-",

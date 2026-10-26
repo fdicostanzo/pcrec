@@ -2044,6 +2044,8 @@ have:
         r->l = a;
         r->u.rep.rmin = rmin;
         r->u.rep.rmax = rmax;
+        r->u.rep.at = cx->pos - 1;
+        r->u.rep.at_known = true;
         /* `(?U)` inverts the DEFAULT greed and a trailing `?` then inverts
          * whichever default is in force — measured both directions
          * (probe_mod05.c: `(?U)a+` lazy [0,1), `(?U)a+?` greedy [0,3)). */
@@ -2201,6 +2203,8 @@ static Ast *p_alt_info(Ctx *cx, AltInfo *info)
         Ast *alt = node(cx, A_ALT);
         alt->l = a;
         alt->r = b;
+        alt->u.alt.at = mine.last_bar;
+        alt->u.alt.at_known = true;
         a = alt;
     }
     if (info) *info = mine;

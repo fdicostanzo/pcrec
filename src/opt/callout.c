@@ -1,9 +1,9 @@
 /* callout.c — [INLINE-C] stage 1b: THE CALLOUT SITES PASS (module
  * `callouts`; docs/design/inline_c.md §1.9, §1.10, §2.2).
  *
- * ONE WALK OVER THE TREE AS WRITTEN, run by src/core/compile.c after the
- * composer and the derivation hooks and before `pcrec_altcls` and every
- * optimization pass: the firing class is a fact about the pattern as the
+ * ONE GENERIC VISIT AND ONE WALK OVER THE TREE AS WRITTEN, run by
+ * src/core/compile.c after the composer and the derivation hooks and before
+ * `pcrec_altcls` and every optimization pass: the firing class is a fact about the pattern as the
  * user wrote it, and §1.8 forbids a pass that would add fires, so nothing
  * downstream may be what the class is read from. A pattern with no site
  * (`cx->ncallouts == 0`) returns at the first line, which is what keeps every
@@ -40,6 +40,8 @@ typedef struct {
     unsigned char *called;   /* [ncap + 1]: group g is a call target */
     bool           call_root;/* `(?R)`/`(?0)`: every site is reachable */
     int            next;     /* the next site number */
+    Ast          **sites;    /* [ncallouts]: every site, in visit order */
+    int            nsites;
 } CoWalk;
 
 /* Flattens the `k`-spine rooted at `a` (left-deep: `k(k(x, y), z)`) into
@@ -57,48 +59,88 @@ static Ast **co_items(Ctx *cx, Ast *a, AKind k, int *n)
     return v;
 }
 
-/* Does `a` hold a CHOICE POINT the engine can resume after `a` completes
- * (§1.10): an alternation, a quantifier whose minimum and maximum differ, or
- * a call (conservatively: its body may hold choices). A choice inside an
- * atomic group, a possessive quantifier (`A_ATOMIC(A_REP)`) or a lookaround
- * is SEALED by the time `a` completes, so those answer false; so do a
- * backreference, an anchor and a callout site (its callee is atomic, D38
- * §2). */
-static bool co_choice(Ctx *cx, Ast *a)
+/* A group that never runs (`A_REP{..,0}`, the shape `(?(DEFINE)` and every
+ * composed `lib` definition take): it holds no choice point the engine can
+ * resume, and it can follow a site without making it non-tail. */
+static bool co_inert(const Ast *a)
 {
+    return a->k == A_REP && a->u.rep.rmax == 0;
+}
+
+/* The first CHOICE POINT inside `a` the engine can resume after `a`
+ * completes (§1.10), or NULL: an alternation, a quantifier whose minimum and
+ * maximum differ, or a call (conservatively: its body may hold choices). A
+ * choice inside an atomic group, a possessive quantifier
+ * (`A_ATOMIC(A_REP)`) or an ATOMIC lookaround is SEALED by the time `a`
+ * completes; a NON-ATOMIC lookaround (`(?*...)`, `(*napla:...)`) keeps its
+ * choices live after it completes (a later failure re-enters it), so it
+ * answers with its body's. A group that never runs holds none, and neither
+ * do a backreference, an anchor and a callout site (its callee is atomic,
+ * D38 §2). The node returned is the one the `once` refusal names. */
+static const Ast *co_choice(Ctx *cx, Ast *a)
+{
+    if (co_inert(a)) return NULL;
     switch (a->k) {
     case A_ALT:
-        return true;
+        return a;
     case A_REP:
-        if (a->u.rep.rmin != a->u.rep.rmax) return true;
+        if (a->u.rep.rmin != a->u.rep.rmax) return a;
         return co_choice(cx, a->l);
     case A_CALL:
-        return true;
+        return a;
     case A_CAT: {
         int n;
         Ast **v = co_items(cx, a, A_CAT, &n);
-        for (int i = 0; i < n; i++)
-            if (co_choice(cx, v[i])) return true;
-        return false;
+        for (int i = 0; i < n; i++) {
+            const Ast *c = co_choice(cx, v[i]);
+            if (c) return c;
+        }
+        return NULL;
     }
     case A_CAP:
     case A_WCLASS:
         return co_choice(cx, a->l);
-    case A_ATOMIC:
     case A_LOOK:
+        return a->u.look.atomic ? NULL : co_choice(cx, a->l);
+    case A_ATOMIC:
     case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
-        return false;
+        return NULL;
     }
-    return true;   /* unreachable: -Wswitch makes a new kind a build error */
+    return a;   /* unreachable: -Wswitch makes a new kind a build error */
 }
 
-/* An item that can follow a site without making it non-tail: a group that
- * never runs (`A_REP{..,0}`, the shape `(?(DEFINE)` and every composed `lib`
- * definition take). */
-static bool co_inert(const Ast *a)
+/* " at offset N" for a construct node that carries its pattern offset, or
+ * "" for one a rewrite built (it has none, and gets no invented offset):
+ * arena text for the `once` refusal. */
+static const char *co_at(Ctx *cx, const Ast *c)
 {
-    return a->k == A_REP && a->u.rep.rmax == 0;
+    size_t at = 0;
+    bool known = false;
+    switch (c->k) {
+    case A_REP:  at = c->u.rep.at; known = c->u.rep.at_known; break;
+    case A_ALT:  at = c->u.alt.at; known = c->u.alt.at_known; break;
+    case A_CALL: at = c->reg_at;   known = c->reg != NULL;    break;
+    case A_CAT: case A_CAP: case A_ATOMIC: case A_LOOK: case A_WCLASS:
+    case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
+        break;   /* never a culprit: co_choice and co_walk name none */
+    }
+    return known ? pcrec_sb_fragf(&cx->arena, " at offset %zu", at) : "";
+}
+
+/* The `once` refusal's naming of the live choice point `c` before a site,
+ * and the fix for that construct: arena text. */
+static const char *co_culprit(Ctx *cx, const Ast *c)
+{
+    const char *what = c->k == A_REP ? "the quantifier"
+                     : c->k == A_ALT ? "the alternation"
+                     :                 "the subroutine call";
+    const char *fix = c->k == A_REP
+        ? "make it possessive (X*+, X++, X?+, X{n,m}+) or wrap it in (?>...)"
+        : "wrap it in (?>...)";
+    return pcrec_sb_fragf(&cx->arena, "%s%s can be backtracked into; %s",
+                          what, co_at(cx, c), fix);
 }
 
 const char *pcrec_callout_class_name(int fclass)
@@ -112,11 +154,12 @@ const char *pcrec_callout_class_name(int fclass)
 }
 
 /* One site: its number, its position check, its class, its `once` check.
- * `rep`: inside a quantified group whose maximum is 2 or more; `live`: a
- * choice point before it can be resumed; `tail`: nothing follows it on any
- * path to accept; `behind`/`called`: §1.9 rows 1 and 3. */
-static void co_site(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
-                    bool behind, bool called)
+ * `rep`: the innermost enclosing quantified group whose maximum is 2 or more
+ * (NULL: none); `live`: the first choice point before it that can be resumed
+ * (NULL: none); `tail`: nothing follows it on any path to accept;
+ * `behind`/`called`: §1.9 rows 1 and 3. */
+static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
+                    bool tail, bool behind, bool called)
 {
     Ctx *cx = w->cx;
     size_t at = a->u.callout.at;
@@ -151,15 +194,14 @@ static void co_site(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
     if (a->u.callout.once && c == CO_CLASS_REPEATED)
         pcrec_ctx_fail(cx, at, rep
             ? "callout at offset %zu is marked once but can fire again: it is "
-              "inside a repeat whose maximum is 2 or more"
-            : "callout at offset %zu is marked once but can fire again: a "
-              "quantifier, alternation or call before it can be backtracked "
-              "into; make the quantifier possessive (X*+) or wrap it in "
-              "(?>...)", at);
+              "inside the repeat whose quantifier%s has a maximum of 2 or "
+              "more; a site in such a repeat cannot be marked once"
+            : "callout at offset %zu is marked once but can fire again: %s",
+            at, rep ? co_at(cx, rep) : co_culprit(cx, live));
 }
 
-static void co_walk(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
-                    bool behind, bool called)
+static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
+                    bool tail, bool behind, bool called)
 {
     switch (a->k) {
     case A_CALLOUT:
@@ -171,10 +213,10 @@ static void co_walk(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
         /* `last`: the index after which every item is inert. */
         int last = n - 1;
         while (last > 0 && co_inert(v[last])) last--;
-        bool before = live;
+        const Ast *before = live;
         for (int i = 0; i < n; i++) {
             co_walk(w, v[i], rep, before, tail && i >= last, behind, called);
-            if (!before && co_choice(w->cx, v[i])) before = true;
+            if (!before) before = co_choice(w->cx, v[i]);
         }
         return;
     }
@@ -190,7 +232,8 @@ static void co_walk(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
     case A_REP: {
         const int mx = a->u.rep.rmax;
         const bool many = mx < 0 || mx >= 2;
-        co_walk(w, a->l, rep || many, live, tail && !many, behind, called);
+        co_walk(w, a->l, many ? a : rep, live, tail && !many, behind,
+                called);
         return;
     }
     case A_CAP: {
@@ -217,61 +260,19 @@ static void co_walk(CoWalk *w, Ast *a, bool rep, bool live, bool tail,
     }
 }
 
-/* Marks every call target (group number; 0 is the whole pattern). */
-static void co_targets(CoWalk *w, const Ast *a)
+/* The pass's one generic visit (`pcrec_ast_visit`): marks every call
+ * target (group number; 0 is the whole pattern) and collects every site.
+ * The visitor's node is const by its signature; a site is the arena's, and
+ * the declarations below write its attributes. */
+static void co_scan(void *ud, const Ast *a)
 {
-    switch (a->k) {
-    case A_CALL: {
+    CoWalk *w = ud;
+    if (a->k == A_CALL) {
         const int t = a->u.call.target;
         if (t == 0) w->call_root = true;
         else if (t > 0 && (unsigned)t <= w->cx->ncap) w->called[t] = 1;
-        return;
-    }
-    case A_CAT: case A_ALT: {
-        const AKind k = a->k;
-        const Ast *t = a;
-        for (; t->k == k; t = t->l) co_targets(w, t->r);
-        co_targets(w, t);
-        return;
-    }
-    case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK: case A_WCLASS:
-        co_targets(w, a->l);
-        return;
-    case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
-        return;
-    }
-}
-
-/* Applies the declarations of numbered callouts: one `PcrecCalloutDecl` per
- * number, each naming a number some `CO_NUM` site uses. */
-static void co_apply_decl(Ctx *cx, Ast *a, const PcrecCalloutDecl *d,
-                          bool *used)
-{
-    switch (a->k) {
-    case A_CALLOUT:
-        if (a->u.callout.bind == CO_NUM && a->u.callout.num == d->num) {
-            *used = true;
-            const char *msg = pcrec_callout_attrs(cx, a, d->attrs,
-                                                  strlen(d->attrs), ',');
-            if (msg)
-                pcrec_ctx_fail(cx, a->u.callout.at, "callout %d's "
-                               "declaration: %s", d->num, msg);
-        }
-        return;
-    case A_CAT: case A_ALT: {
-        const AKind k = a->k;
-        Ast *t = a;
-        for (; t->k == k; t = t->l) co_apply_decl(cx, t->r, d, used);
-        co_apply_decl(cx, t, d, used);
-        return;
-    }
-    case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK: case A_WCLASS:
-        co_apply_decl(cx, a->l, d, used);
-        return;
-    case A_CALL: case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX:
-    case A_GSTART: case A_KRESET: case A_BREF: case A_VAR:
-        return;
+    } else if (a->k == A_CALLOUT && w->nsites < w->cx->ncallouts) {
+        w->sites[w->nsites++] = (Ast *)a;
     }
 }
 
@@ -287,13 +288,34 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
                            in->callout_decls[0].num);
         return;
     }
+    CoWalk w = { cx, NULL, false, 1, NULL, 0 };
+    w.called = pcrec_arena_alloc(&cx->arena, cx->ncap + 1);
+    memset(w.called, 0, cx->ncap + 1);
+    w.sites = pcrec_arena_alloc(&cx->arena,
+                                (size_t)cx->ncallouts * sizeof *w.sites);
+    pcrec_ast_visit(root, co_scan, &w);
+    if (w.nsites != cx->ncallouts)
+        pcrec_ctx_fail(cx, 0, "internal error: the parse built %d callout "
+                       "sites and the visit reached %d", cx->ncallouts,
+                       w.nsites);
+
     for (int i = 0; i < nd; i++) {
         const PcrecCalloutDecl *d = &in->callout_decls[i];
         for (int j = 0; j < i; j++)
             if (in->callout_decls[j].num == d->num)
                 pcrec_ctx_fail(cx, 0, "callout %d is declared twice", d->num);
         bool used = false;
-        co_apply_decl(cx, root, d, &used);
+        for (int k = 0; k < w.nsites; k++) {
+            Ast *a = w.sites[k];
+            if (a->u.callout.bind != CO_NUM || a->u.callout.num != d->num)
+                continue;
+            used = true;
+            const char *msg = pcrec_callout_attrs(cx, a, d->attrs,
+                                                  strlen(d->attrs), ',');
+            if (msg)
+                pcrec_ctx_fail(cx, a->u.callout.at, "callout %d's "
+                               "declaration: %s", d->num, msg);
+        }
         if (!used)
             pcrec_ctx_fail(cx, 0, "a callout declaration names callout %d, "
                            "which the pattern does not use", d->num);
@@ -303,11 +325,7 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
         (size_t)(cx->ncallouts + 1) * sizeof *cx->callout_nodes);
     memset(cx->callout_nodes, 0,
            (size_t)(cx->ncallouts + 1) * sizeof *cx->callout_nodes);
-    CoWalk w = { cx, NULL, false, 1 };
-    w.called = pcrec_arena_alloc(&cx->arena, cx->ncap + 1);
-    memset(w.called, 0, cx->ncap + 1);
-    co_targets(&w, root);
-    co_walk(&w, root, false, false, true, false, false);
+    co_walk(&w, root, NULL, NULL, true, false, false);
     if (w.next != cx->ncallouts + 1)
         pcrec_ctx_fail(cx, 0, "internal error: the parse built %d callout "
                        "sites and the numbering walk reached %d",
@@ -317,12 +335,9 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
      * site is a binding at stage 1b (embedded code is stage 2's). */
     if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN)) {
         const Ast *a = cx->callout_nodes[1];
-        if (a->u.callout.bind == CO_NAME)
+        const PcrecCalloutBinding b = pcrec_callout_binding(&cx->arena, a);
+        if (b.is_extern)
             pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot define "
-                           "the binding rx_callout_%s; link your own",
-                           a->u.callout.name);
-        pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot define the "
-                       "binding rx_callout_%d; link your own",
-                       a->u.callout.num);
+                           "the binding %s; link your own", b.symbol);
     }
 }

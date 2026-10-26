@@ -2646,9 +2646,8 @@ static void emit_callout_surface(StrBuf *sb, Ctx *cx, const char *upper)
     int n = 0;
     for (int i = 1; i <= cx->ncallouts; i++) {
         const Ast *a = cx->callout_nodes[i];
-        sym[n++] = a->u.callout.bind == CO_NAME
-            ? pcrec_sb_fragf(&cx->arena, "rx_callout_%s", a->u.callout.name)
-            : pcrec_sb_fragf(&cx->arena, "rx_callout_%d", a->u.callout.num);
+        const PcrecCalloutBinding b = pcrec_callout_binding(&cx->arena, a);
+        if (b.is_extern) sym[n++] = b.symbol;
     }
     qsort(sym, (size_t)n, sizeof *sym, co_sym_cmp);
     int nd = 0;
@@ -2662,7 +2661,7 @@ static void emit_callout_surface(StrBuf *sb, Ctx *cx, const char *upper)
         "#define RX_FAIL (-1)   /* a callout fails this path: backtrack */\n"
         "#endif\n");
     pcrec_sb_stampf(sb, upper, "CALLOUTS", "%d", cx->ncallouts);
-    const char *list = sym[0];
+    const char *list = nd ? sym[0] : "";
     for (int i = 1; i < nd; i++)
         list = pcrec_sb_fragf(&cx->arena, "%s,%s", list, sym[i]);
     pcrec_sb_stamp_str(sb, upper, "CALLOUT_BINDINGS", list);
