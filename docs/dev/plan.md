@@ -228,9 +228,10 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
   status (2026-10-26): requirements merged; all 8 questions answered (doc section 8): pattern side first, one call site, both spellings, verify per segment, CLI + sha-pinned includes, native return, generated names, no press. Frank: "Just get the feature done."
-  next: design note (lane inlinecdes), D6 panel, then build in stages starting with the [M4-CALLOUTS] call site
+  next: D6 critic panel on docs/design/inline_c.md rev 0; Frank's two section-10 questions; then stage 1 (the call site, extern-bound)
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
+  note (2026-10-26, manager rulings on inline_c.md section 10a): (1) no conflict, D38 is already native; (2) [M4-CALLOUTS] step 2 body is stale vs D38: amend it (D38 wins); (3) the prefilter is erased per site by its width class (engine_m4 "uniform" is unsound for consuming callouts); (4) verify is a VM hybrid, so D36/F7 "callout patterns are VM-only" holds literally. Next: D6 panel on inline_c.md rev 0.
 - [SUITE-RESUME] STATE:started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
   filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
   status (2026-10-25): LANDED 4dd8af50b (offline test 33/33); staged real test OWED (report recipe: reduced battery killed after strict, then resume; ~4 min); resume reruns the SAME code (flakes, not fixes)
