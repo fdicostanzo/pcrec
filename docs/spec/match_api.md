@@ -3943,14 +3943,25 @@ is a second, anchored attempt at the same start, so a site can fire once in
 each. None of these is bounded by the class, and class 1's "a passing fire
 IS the match" holds per attempt.
 
-<a id="s11-8-p3"></a>[11.8¶3] THE `once` RULE, AS A TABLE. The rule is read from the pattern AS WRITTEN: it is syntactic, it never depends on an optimization flag or on what the optimizer would prove, and a user can check it by reading the pattern. A site marked `once` is refused when any of the constructs in the first table stands before it (at the same level, or inside a non-atomic lookaround that completes before it), or inside a repeat of maximum 2 or more. Every refusal names the construct, its pattern offset and the fix; `--emit-ir`'s `callouts` `note` column (`ir_listing.md` §3.7) carries the same text for a `repeated` site.
+<a id="s11-8-p3"></a>[11.8¶3] THE `once` RULE, AS A TABLE. The rule is read from the pattern AS WRITTEN: it is syntactic, it never depends on an optimization flag or on what the optimizer would prove, and a user can check it by reading the pattern. A site marked `once` is refused when any of the constructs in the first table stands before it (at the same level, or inside a non-atomic lookaround that completes before it), or inside a repeat of maximum 2 or more. Every refusal names the construct, its pattern offset and the fix, and says whether the fix changes what the pattern matches (¶3a); `--emit-ir`'s `callouts` `note` column (`ir_listing.md` §3.7) carries the same text for a `repeated` site.
 
 | before a `once` site, backtrackable | fix |
 |---|---|
-| a variable quantifier, greedy or lazy (`X*`, `X+`, `X?`, `X{n,m}`, `X*?`) | make it possessive (`X*+`, `X++`, `X?+`, `X{n,m}+`) or wrap it in `(?>...)` |
+| a variable greedy quantifier (`X*`, `X+`, `X?`, `X{n,m}`) | make it possessive (`X*+`, `X++`, `X?+`, `X{n,m}+`) or wrap it in `(?>...)` |
+| a variable lazy quantifier (`X*?`, `X+?`, `X??`, `X{n,m}?`) | none offered: drop `once` (the site then fires on each retry) or rewrite the pattern; `X++` is greedy and `(?>X+?)` keeps only its shortest run |
 | an alternation (`(?:a\|b)`) | wrap it in `(?>...)` |
 | a subroutine call (`(?1)`, `(?R)`, `\g<n>`) | wrap it in `(?>...)` |
-| a non-atomic lookaround (`(?*...)`, `(?<*...)`) holding any of the above | use `(?=...)` / `(?!...)` (`(?<=...)` / `(?<!...)`), which are atomic, or wrap it: `(?>(?*...))` |
+| a non-atomic lookaround (`(?*...)`, `(?<*...)`) holding any of the above | use `(?=...)` (`(?<=...)`), which is atomic, or wrap it: `(?>(?*...))` |
 | a site inside a repeat of maximum 2 or more | none: the site cannot be marked `once` |
+
+<a id="s11-8-p3a"></a>[11.8¶3a] A FIX CAN CHANGE WHAT THE PATTERN MATCHES. Making a construct atomic or possessive removes the retries it had, and a match that needed one is lost: `a+(?C"x,once")ab` matches `aab` at offset 0, `a++(?C"x,once")ab` does not. So the refusal ends with one of three verdicts on its fix, judged with every check site passing; which sites are refused does not depend on the verdict. A lazy quantifier is offered no fix and gets no verdict.
+
+| verdict | the refusal says | meaning |
+|---|---|---|
+| unchanged | `that does not change what it matches` | the fix matches exactly what the pattern as written matches, at every start of every subject |
+| loses a match | `that loses a match (offset 0 of "S")` | on subject `S`, the attempt at offset 0 matches as written and fails with the fix; drop `once` if that match is needed (the site then fires on each retry). `S` is omitted when the message would not fit `pcrec_error.msg` |
+| unknown | `that may change what it matches` | the compiler cannot tell; compare the two patterns' matches yourself |
+
+<a id="s11-8-p3b"></a>[11.8¶3b] "Unchanged" is said for a quantifier or an alternation when the optimizer's possessive rule (`tuning.md` §2.1) shows that its retries can find no match its first way does not (a `-fno-poss-*` flag can turn this into "unknown", never into another verdict), and for a non-atomic lookaround whose body holds no capture group that can be set, no `\K`, no callout site and no subroutine call. "Loses a match" is said only with a subject the compiler built and checked: today when the whole pattern is a sequence of single characters around one alternation or quantifier (or a call to a group holding one) whose every way is itself such a sequence. A subroutine call is never "unchanged" and a lookaround is never "loses a match".
 
 <a id="s11-8-p4"></a>[11.8¶4] Not backtrackable, so never a cause: literals, classes, anchors, fixed-count quantifiers (`X{3}`), possessive quantifiers, atomic groups, ordinary (atomic) lookarounds, backreferences, and groups that never run (`(?(DEFINE)...)`, `{0}`).

@@ -25,7 +25,9 @@
  *      a call re-enters the site at a depth the view does not describe.
  *      Row 2 (a conditional's condition) cannot arise: module `conditionals`
  *      has no producer, so `(?(` is refused before a site inside it exists.
- *   4. THE FIRING CLASS (§1.10) and the `once` check: see `co_site`.
+ *   4. THE FIRING CLASS (§1.10) and the `once` check: see `co_site`. A
+ *      refused site's message comes from the `once` advice table and its
+ *      verdict on the fix (match_api.md §11.8¶3a), below.
  *
  * Spines are walked iteratively (D10/DD-10): a concatenation is as long as
  * the pattern, so a CAT or ALT spine is flattened into an array first, and

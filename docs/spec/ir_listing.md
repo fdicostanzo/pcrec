@@ -155,7 +155,7 @@
 
 <a id="s3-7-p1"></a>[3.7¶1] One row per emitted callout site, in program order. The COUNT is `summary`'s `callout-sites` row. A site emitted twice (an unrolled repeat) is two rows with one `site` number. An empty population is one row with every column empty but `note`, which gives the reason.
 
-<a id="s3-7-p2"></a>[3.7¶2] The columns: `label`, the site's program label; `site`, its 1-based number in pattern order; `binding`, the symbol it calls (`rx_callout_<n>` or `rx_callout_<name>`, `match_api.md` §11.2); `width`, `check` or `consume` (§11.4); `class`, its firing class (`once-per-match`, `once-per-start` or `repeated`, `match_api.md` §11.8); `tail`, `tail` when the site is the last item on every path to accept and `-` otherwise; `note`, the reason the class was derived; for a `repeated` site it is the same text a `once` refusal gives (the construct, its offset and the fix; `match_api.md` §11.8¶3).
+<a id="s3-7-p2"></a>[3.7¶2] The columns: `label`, the site's program label; `site`, its 1-based number in pattern order; `binding`, the symbol it calls (`rx_callout_<n>` or `rx_callout_<name>`, `match_api.md` §11.2); `width`, `check` or `consume` (§11.4); `class`, its firing class (`once-per-match`, `once-per-start` or `repeated`, `match_api.md` §11.8); `tail`, `tail` when the site is the last item on every path to accept and `-` otherwise; `note`, the reason the class was derived; for a `repeated` site it is the same text a `once` refusal gives (the construct, its offset, the fix and what the fix does to the matches; `match_api.md` §11.8¶3, §11.8¶3a).
 
 <a id="s4"></a>
 ## 4. Consuming it

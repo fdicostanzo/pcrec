@@ -36,9 +36,19 @@ contract is `docs/spec/match_api.md` §11; the design is
 - `checks.c` — driver checks no `.rxt` cell can say: the view (A2, A4, A5,
   an enclosing group), give-up propagation and the tier, the step charge,
   DT-4.1, an artifact as a consuming callee, three traps.
-- `run_callouts_tests.sh` — the six arms (corpus, oracle, differential,
-  driver checks, class table + `once`, refusals and declaration shapes);
-  libpcre2 arms skip loudly when it is absent; traps must exit 132/133. `CALLOUT_GEN_N`/`CALLOUT_GEN_FLOOR` size arm 3.
+- `advice_check.py` — the `once` advice (`match_api.md` §11.8¶3a): per row,
+  the refusal's construct and verdict, the fix compiled with `once` and its
+  fires per attempt (`advice_drv.c`), and the fix's matches against the
+  pattern as written by libpcre2 (co_oracle) over every subject of the row's
+  alphabet; a printed PROVEN SAME must hold and a printed witness must be
+  one, whatever the row expected. Its declared reach set fails on a row kind
+  that stops reaching a verdict.
+- `advice_drv.c` — advice_check's driver: most fires of the `x` site in one
+  anchored attempt, per subject.
+- `run_callouts_tests.sh` — the seven arms (corpus, oracle, differential,
+  driver checks, class table + `once`, refusals and declaration shapes, the
+  `once` advice); libpcre2 arms skip loudly when it is absent; traps must
+  exit 132/133. `CALLOUT_GEN_N`/`CALLOUT_GEN_FLOOR` size arm 3.
 
 ## Rules
 
