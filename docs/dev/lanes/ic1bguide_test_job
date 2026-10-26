@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# ic1bguide: [INLINE-C] stage 1b owed validation of lane/ic1b after review r2's fixes (main's stage 0 merged in; abi 88 -> 89): build, strict, the zero-mover census (docs/dev/lanes/ic1b/movers.py: the merge-base with main, 9e0500443, vs the lane built at abi 88, every corpus pattern plus the 336 bench patterns, byte/utf8 x auto/vm plus --no-captures; nothing but a (?C pattern may move), then the full make test (every section, test-callouts and test-codegen included).
+# Re-created by lane ic1bguide from ic1bfix's job (scripts/boxqueue add --name 550-ic1bguide-test docs/dev/lanes/ic1bguide_test_job). Declared not-before 2026-10-27T12:00: the 00:05 full suite owns the box until about noon.
+# Every expect is a FINAL trailer: strict's and the census's DONE lines, and make test's `sections ran:` trailer.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+REF=9e0500443
+BENCH="$TREE/docs/dev/lanes/ic1a_bench_patterns.txt"
+SCR="$TREE/build/ic1bguide/job"
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/docs/dev/lanes/ic1b/movers.py" ] && [ -s "$BENCH" ] \
+            || { echo "no tree, perfrun, movers.py or $BENCH in $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$REF" >/dev/null || { echo "ref $REF unknown" >&2; exit 1; }
+        n=$(make -C "$TREE" -s -p -n nothing 2>/dev/null | sed -n 's/^TEST_SECTIONS := //p' | head -1 | wc -w)
+        [ "$n" -gt 0 ] || { echo "cannot count TEST_SECTIONS" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; build $REF and HEAD-at-abi-88 under $SCR; movers.py > \$BQ_LOG.movers; scripts/perfrun --label ic1bguide -- \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: not-before 2026-10-27T12:00"
+        echo "boxqueue: expect strict=0 log=job.log.strict last=^strict: DONE rc="
+        echo "boxqueue: witness strict=strict: DONE rc=0"
+        echo "boxqueue: expect movers=0 log=job.log.movers last=^movers: DONE cells=[0-9]+ unexpected="
+        echo "boxqueue: witness movers=movers: DONE cells=12345 unexpected=0"
+        echo "boxqueue: expect sections=$n log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: $n/$n"
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1; s=$?
+echo "strict: DONE rc=$s" >> "$BQ_LOG.strict"
+[ "$s" -eq 0 ] || rc=1
+mkdir -p "$SCR"
+rm -rf "$SCR/ref" "$SCR/w88"
+mkdir -p "$SCR/ref" "$SCR/w88"
+git -C "$TREE" archive "$REF" | tar -x -C "$SCR/ref" || exit 1
+git -C "$TREE" archive HEAD | tar -x -C "$SCR/w88" || exit 1
+sed -i 's/^#define PCREC_ARTIFACT_ABI 89$/#define PCREC_ARTIFACT_ABI 88/' "$SCR/w88/src/gen/emit_dfa.c"
+grep -q '^#define PCREC_ARTIFACT_ABI 88$' "$SCR/w88/src/gen/emit_dfa.c" || { echo "abi rewrite missed" > "$BQ_LOG.movers"; exit 1; }
+make -C "$SCR/ref" -j16 >/dev/null 2>&1 || exit 1
+make -C "$SCR/w88" -j16 >/dev/null 2>&1 || exit 1
+python3 "$TREE/docs/dev/lanes/ic1b/movers.py" "$SCR/ref/build/pcrec" "$SCR/w88/build/pcrec" "$TREE" \
+    --patterns-file "$BENCH" --jobs 12 > "$BQ_LOG.movers" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label ic1bguide -- "$BQ_LOG.make" || rc=1
+exit $rc

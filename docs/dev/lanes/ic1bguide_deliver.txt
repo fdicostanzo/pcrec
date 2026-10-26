@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic1bguide_report.md
+sections: Summary; Refusal text; Spec table; List-callouts reason; Tests; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: 550-ic1bguide-test 551-ic1bguide-mech 552-ic1bguide-axes
