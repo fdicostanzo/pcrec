@@ -268,7 +268,7 @@ typedef struct rx_ctx {
  * semantic; PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71
  * item 1) is its first producer -- the artifact's own
  * inconsistency check firing, never a resource give-up -- and a
- * generated call site that invokes an rx_matchfn traps on one.
+ * generated call site that invokes an rx_matchfn propagates one.
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 

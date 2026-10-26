@@ -67,6 +67,7 @@ after the iterator landing.
 - 2026-10-26 456dbc09e major — [SCANEDGE-SET] scan edges over a byte-class set (abi 87; lane scanset + scansetfix)
 ### minor
 
+- 2026-10-26 81454bbf4 minor — [INLINE-C] stage 0: shared-block call-site comment "traps on" -> "propagates" (abi 88; size pin +2 B re-recorded)
 - 2026-10-24 f50d6372e minor — merge lane/qwquiet2: queuewatch QUIET/PENDING-STUCK
 - 2026-10-24 91670a624 minor — merge lane/lockyield: boxlock waits for ready queue jobs
 - 2026-10-24 b11b69add minor — merge lane/qwstart: queuewatch JOB-START once per real run

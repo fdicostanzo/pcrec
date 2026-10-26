@@ -60,6 +60,10 @@
 # S3 branch's): AFTER is 84, the parent's number; same detector, same arm.
 # RE-AIMED 2026-10-26 (lane scanset, [SCANEDGE-SET], abi 86 -> 87): AFTER is
 # 86, the parent's number; same detector, same arm.
+# RE-AIMED 2026-10-26 (lane ic0, [INLINE-C] stage 0, abi 87 -> 88): AFTER is
+# 87, the parent's number; same detector, same arm.
+# RE-AIMED 2026-10-26 (lane ic1b/ic1bfix, [INLINE-C] stage 1b, abi 88 -> 89):
+# AFTER is 88, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"

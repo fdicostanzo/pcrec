@@ -129,7 +129,8 @@ critic; a missed input goes to a fresh critic.
    oracle (libpcre2 / python `re`), speed with `perf stat -e instructions:u`
    pinned `taskset -c 7` and repeats, size with `size`, structural claims by
    quoting the cited lines, design claims by the simulation or grep they name.
-   It writes `verify.md`: HOLDS / REFUTED / PARTLY / not verified (why).
+   It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
+   lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
 3. Draft `/tmp/claude-1001/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
    why chosen); which lens caught what; findings by id with a PROPOSED
