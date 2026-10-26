@@ -1,0 +1,6 @@
+# DELIVER block for lane lanecheck (format: docs/dev/lanes/BRIEF_TEMPLATE.md)
+report: docs/dev/lanes/lanecheck_report.md
+sections: Summary; Format; Tools; Self-test results; Limits; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

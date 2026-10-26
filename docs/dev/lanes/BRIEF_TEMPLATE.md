@@ -59,6 +59,13 @@ A field with nothing to say is written "none", never dropped.
     END": it tells the lane to idle through the run. Wording: memory
     pcrec-subagent-cache-warmth 6a, Frank 2026-09-27.)
 
+    DELIVER: <the checkable block, ALSO written to docs/dev/lanes/<name>_deliver.txt
+    (or a path the agent can read): report: PATH; sections: A; B; ..;
+    nonempty: all|LIST; cites: RE in X -> Y; commit: yes|no; owed: none|KEY..
+    Format: the header of scripts/lanecheck. The agent ends only on
+    `scripts/lanecheck` printing `lanecheck: DONE rc=0`; the manager polls
+    with `scripts/lanewatch NAME..`.>
+
     DELIVERABLE: <files; docs/dev/lanes/<name>_report.md with a STATE AT
     HANDOFF section>.
     REPLY: <size cap, e.g. under 2k chars>: a SendMessage to the manager,
