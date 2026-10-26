@@ -5,8 +5,8 @@
 # lowering's newline inside `\s`/`[\n ]`), so the edge counts a union of
 # classes (src/opt/scanedge.c). Subjects put the split byte INSIDE long runs,
 # at their ends and as the whole run. `[a-z]+$` is the one-class control and
-# `([a-z]|[0-9]X){0,8}` the negative one (two classes, different successors:
-# no edge); tests/codegen/run_scan_edge_census.sh section (8) holds their
+# `(?:[a-z]|[0-9]X){0,8}` and `(?:a|bc)*` the negative ones (two live classes,
+# different successors: no edge); tests/codegen/run_scan_edge_census.sh section (8) holds their
 # artifacts. Expectations generated from libpcre2-8 10.46 and, where the
 # block is not `# pcre2-only` (python `\s` differs on \x1c-\x1f), cross-checked
 # with python3 re: 0 differences.
@@ -78,9 +78,17 @@ n "ab1"
 n "12"
 m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" 0 70
 
-pattern ([a-z]|[0-9]X){0,8}
+pattern (?:[a-z]|[0-9]X){0,8}
 m "ab1Xc" 0 5
 m "1X2X3X" 0 6
 m "abcdefghij" 0 8
 m "1Y" 0 0
+m "" 0 0
+
+pattern (?:a|bc)*
+m "abcaa" 0 5
+m "bcbcx" 0 4
+m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabc" 0 41
+m "b" 0 0
+m "xa" 0 0
 m "" 0 0

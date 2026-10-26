@@ -386,8 +386,10 @@ done
 #   `[a-z]+\.txt$`  reverse: `t`, `x` split `[a-z]`.
 #   `[a-z]+$`       the ONE-CLASS CONTROL: one edge, one class, and its
 #                   pcrec-side text pinned below (it must not move).
-#   `([a-z]|[0-9]X){0,8}` the NEGATIVE control: two classes going to
-#                   DIFFERENT successors, so no state is scan-shaped.
+#   `(?:[a-z]|[0-9]X){0,8}`, `(?:a|bc)*` the NEGATIVE controls: two live
+#                   classes going to DIFFERENT successors (`(?:a|bc)*`'s start
+#                   state: `a` stays, `b` leaves, the rest die), so no state
+#                   is scan-shaped. Non-capturing, so the artifact IS a DFA.
 SETW=(
   '\S+@\S+;;;;anchored=1/1 forward=1/1 reverse=1/1'
   '\s+$;;;;anchored=1/1 reverse=2/2'
@@ -395,7 +397,8 @@ SETW=(
   '0x[0-9a-fA-F]+;;;;anchored=1/1 forward=1/1'
   '[a-z]+\.txt$;;;;reverse=1/1'
   '[a-z]+$;;;;reverse=1/0'
-  '([a-z]|[0-9]X){0,8};;;;'
+  '(?:[a-z]|[0-9]X){0,8};;;;'
+  '(?:a|bc)*;;;;'
 )
 set_edges_on() {   # $1 artifact -> "machine=edges/multi ..." sorted
     awk '
