@@ -579,6 +579,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
+  filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
+  status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
+  trigger: next san re-run after sanred lands; minimal harness (Frank 2026-10-21): wire only scripts whose generated code no listed script already reaches.
+  refs: tests/lib/san_excluded.txt; docs/testing.md "Sanitizer + lint battery"; docs/dev/lanes/sanred2_report.md (lane/sanred)
 - [LANECHECK-SEAL] STATE:not-started — THE DELIVER EXPECTATIONS LIVE WHERE THE LANE CANNOT EDIT THEM
   filed: 2026-10-26 manager, from lane ic1bland (it overwrote the manager's ic1bland_deliver.txt, "before reading it", with sections matching its own report; lanecheck then passed)
   status (2026-10-26): not started. The DELIVER file sits in the lane's worktree, so a lane can rewrite the check it is judged by; the .done seal hashes the file at pass time, not the manager's original.
