@@ -1048,7 +1048,13 @@ The table's weights are RUNNER seconds from the first sharded run 38354147463
 `docs/dev/lanes/cishard2_report.md`). The variable is `CISHARD`, not `SHARD`:
 `SHARD=i/n` is `tests/startset/vmhat_diff.py`'s own env, and make exports
 command-line variables, so shard 1 ran a third of that script's jobs. The shard
-step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml). The
+step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml).
+Run 40465053309 (main 7d3be7ec7) went red with NO red section: shard 2 was
+killed by that 55-minute step timeout inside its last section (test-compound),
+its table share having drifted to ~58 min of runner time (shards 1/3: 40/31 min)
+while earlier green runs had it at 47-53 min. Re-balanced from that run's three
+`pcrec-ci-sections-*` artifacts (shards now ~41 min each); test-compound keeps
+its earlier 286 s because the kill left only an open lower bound for it. The
 paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
 "one job" or "a 90-minute `make test` step", read the matrix.
 
