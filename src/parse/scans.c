@@ -230,3 +230,45 @@ bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
 {
     return !pcrec_callout_recognise(at, avail, tail);
 }
+
+/* ---- [INLINE-C] stage 2: embedded code (docs/design/inline_c.md §2) ----- */
+
+/* A byte of a language tag or an attribute name (`[a-z0-9_]`). */
+static bool code_name_byte(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+/* The offset of the `:` that ends a code TAG `tag(,attr)*` at the start of
+ * `s` (n bytes), or 0 when the text does not begin with exactly that tag
+ * followed by a well-shaped attribute list and `:`. An attribute is any
+ * non-empty name: WHICH names exist is the port's question (an unknown one
+ * is refused by name there), so `c,bogus:` is still code in language `c`.
+ * One home for the tag shape, read by the recogniser and the port. */
+size_t pcrec_code_tag_extent_scan(const char *s, size_t n, const char *tag)
+{
+    const size_t tl = strlen(tag);
+    if (!s || n <= tl || memcmp(s, tag, tl) != 0) return 0;
+    size_t i = tl;
+    while (i < n && s[i] == ',') {
+        const size_t j = ++i;
+        while (i < n && code_name_byte(s[i])) i++;
+        if (i == j) return 0;
+    }
+    return i < n && s[i] == ':' ? i : 0;
+}
+
+/* Does the tagged `(?C` string at `at` (the byte after the `C`) carry code
+ * in language `tag` (§2.2: the decoded string read first-match, `lang attrs
+ * ":"` is code)? The tag bytes are never a PCRE2 delimiter, so the raw
+ * string's prefix IS the decoded prefix and no decode is needed here. A
+ * string with no `:` after the tag (`(?C"c,consume")`) is a binding named
+ * `c`, module `callouts`' (the row this one outranks only on code). */
+bool pcrec_code_tagged_recognise(const char *at, size_t avail,
+                                 const char *tag)
+{
+    PcrecCoScan sc;
+    if (!at || !pcrec_callout_extent_scan(at, avail, &sc) || !sc.string)
+        return false;
+    return pcrec_code_tag_extent_scan(at + sc.str, sc.rawlen, tag) != 0;
+}

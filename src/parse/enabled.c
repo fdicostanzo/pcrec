@@ -170,6 +170,32 @@ static unsigned find_module_bits(const char *name, size_t len)
     return 0;
 }
 
+/* [INLINE-C] stage 2 the GRANT column (RF_INVOKER_ONLY, inline_c.md §5.1):
+ * is module `name` (len bytes) INVOKER-ONLY, i.e. enabled by the invoker's
+ * own grant (`--allow-code`, `pcrec_options.allow_code`) and by no
+ * `features` text? Every row of a module carries the same value
+ * (registry_check asserts it), so the first row answers. */
+static bool module_invoker_only(const char *name, size_t len)
+{
+    for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const char *m = rows[i].module;
+            if (m && strlen(m) == len && strncmp(m, name, len) == 0)
+                return (rows[i].flags & RF_INVOKER_ONLY) != 0;
+        }
+    }
+    return false;
+}
+
+/* The refusal every `features` text gets for an invoker-only module, one
+ * sentence wherever the text arrived from (§2.4's row: "code is enabled by
+ * --allow-code, not by a features list or a file"). */
+#define INVOKER_ONLY_MSG \
+    "module '%.*s' is code; code is enabled by --allow-code (or the " \
+    "library's allow_code member), not by a features list or a file"
+
 /* Whole-token membership test over a comma list, used only to DEDUP
  * render_modules' output below (a module can own more than one row). */
 static bool module_listed(const char *list, const char *name)
@@ -260,10 +286,13 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
     const char *label;
 
     if (!strcmp(spec, "all")) {
+        /* [INLINE-C] stage 2: `all` is every module a features text may
+         * name, so an invoker-only row (the GRANT column) is not in it. */
         for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
             size_t n;
             const RegRow *rows = pcrec_registry(kinds[k], &n);
-            for (size_t i = 0; i < n; i++) mask |= rows[i].feature;
+            for (size_t i = 0; i < n; i++)
+                if (!(rows[i].flags & RF_INVOKER_ONLY)) mask |= rows[i].feature;
         }
         label = "all";
     } else if (!*spec || !strcmp(spec, "none")) {
@@ -296,6 +325,10 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
                 const char *comma = strchr(p, ',');
                 size_t len = comma ? (size_t)(comma - p) : strlen(p);
                 unsigned bits = find_module_bits(p, len);
+                if (bits && module_invoker_only(p, len)) {
+                    snprintf(err, errsz, INVOKER_ONLY_MSG, (int)len, p);
+                    return -1;
+                }
                 if (!bits) {
                     snprintf(err, errsz, "unknown module '%.*s' (names are "
                              "--list-syntax's module column; also 'all', "
@@ -337,5 +370,46 @@ int pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz)
      * which is cheap and keeps `install()` the ONE writer exactly as its
      * own comment states (unchanged by this refactor). */
     install(mask, label);
+    return 0;
+}
+
+/* [INLINE-C] stage 2 THE INVOKER'S GRANT (inline_c.md §5.1): resolves
+ * `spec`, a comma-separated list of language tags (`c`), into the FEAT_*
+ * mask of their `code-<lang>` modules, a mask the feature resolver above
+ * cannot produce (its `all` and its lists refuse invoker-only modules), so
+ * the library has ONE gate for code. NULL or "" grants nothing. An unknown
+ * or empty name is refused by name. Pure: the compile driver ORs the result
+ * into its own `Ctx.enabled_features` and nothing here is global. Returns 0,
+ * or -1 with `err` filled. */
+int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
+                             size_t errsz)
+{
+    unsigned mask = 0;
+    if (spec && *spec) {
+        size_t nl;
+        const PcrecCodeLang *L = pcrec_code_langs(&nl);
+        for (const char *p = spec;;) {
+            const char *comma = strchr(p, ',');
+            size_t len = comma ? (size_t)(comma - p) : strlen(p);
+            unsigned bit = 0;
+            for (size_t i = 0; i < nl; i++)
+                if (strlen(L[i].tag) == len && !strncmp(L[i].tag, p, len))
+                    bit = L[i].feature;
+            if (!bit) {
+                char langs[64] = "";
+                for (size_t i = 0; i < nl; i++)
+                    snprintf(langs + strlen(langs), sizeof langs - strlen(langs),
+                             "%s%s", i ? ", " : "", L[i].tag);
+                snprintf(err, errsz, "unknown code language '%.*s' in "
+                         "--allow-code (the languages are: %s)", (int)len, p,
+                         langs);
+                return -1;
+            }
+            mask |= bit;
+            if (!comma) break;
+            p = comma + 1;
+        }
+    }
+    *mask_out = mask;
     return 0;
 }

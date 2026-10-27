@@ -189,9 +189,12 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUI
 # joined at [DD-11.5] P2a WITH the file: core/internal.h includes it (the
 # A_CTX truth table), so every translation unit reads it; src/core/kindrow.def
 # joined at [INLINE-C] 1a the same way (the per-kind attribute row).
+# src/parse/codelang.def joined at [INLINE-C] stage 2 WITH the file: the
+# embedded-code language table, an X-macro `#include`d by registry.c,
+# scans.c and mod_code.c (one language row, three projections).
 FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
               src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
-              src/core/kindrow.def
+              src/core/kindrow.def src/parse/codelang.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 

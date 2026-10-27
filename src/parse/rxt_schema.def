@@ -159,6 +159,11 @@ PCREC_RXT_SCHEMA(FILE, "ext",         TOKEN, 0, TREE,       REPEAT,      "", FOR
  * entry, r2 M-S6) is the production's; `unique-by value` is the schema's. */
 PCREC_RXT_SCHEMA(FILE, "analysis",    TOKEN, 0, BUNDLE,     REPEAT,      "unique-by value", FORMAT, PCREC, 23)
 
+/* [INLINE-C] stage 2 (inline_c.md §3.3): `code-header <lang> <header>`, a C
+ * header the file's code segments need, emitted AS WRITTEN after the
+ * matcher; never opened by pcrec. Code, so granted only by --allow-code. */
+PCREC_RXT_SCHEMA(FILE, "code-header", LINE,  0, NONE,       REPEAT,      "", FORMAT, PCREC,       1)
+
 /* RESERVED, and the row exists PRECISELY so the refusal is by name. A
  * keyword with no row refuses as an unknown token, which is the truth
  * about a WITHDRAWN production and a lie about a reserved one: `version`

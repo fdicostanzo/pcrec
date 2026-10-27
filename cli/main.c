@@ -605,6 +605,14 @@ typedef struct {
      * to one pattern, which is why the `.rxt` spelling is a BLOCK line. */
     PcrecCalloutDecl *callouts;
     int         ncallouts;
+    /* [INLINE-C] stage 2 `--allow-code=LANGS` (cli.md §1.22), copied into
+     * `opt.allow_code` by the compile paths, and `--code-header LANG:HDR`
+     * (repeatable). In the tail, so no `config` block's `pcrec` line can
+     * set either: code is enabled by the invoker, never by a file
+     * (inline_c.md §5.1). */
+    const char *allow_code;
+    PcrecCodeHeader *code_headers;
+    int         ncode_headers;
 #ifdef PCREC_HARNESS
     /* [COMPOUND] the harness lever (docs/design/compound.md §A.11): only
      * `build/pcrec-harness` has the field or the option; in the tail, so a
@@ -1075,6 +1083,37 @@ static int cli_callout_decl(const char *v, char sep, PcrecCalloutDecl *d)
     return 1;
 }
 
+/* [INLINE-C] stage 2 one `--code-header LANG:HDR` value into `*h`: HDR is
+ * `"name"`, `<name>`, or a bare name the `"..."` form is written for
+ * (cli.md §1.22). Diagnoses and returns 1 on a malformed value. The
+ * strings are the argument's own bytes or a malloc'd quoted copy, owned
+ * by `h` (freed with the CLI state). */
+static int cli_code_header(const char *v, PcrecCodeHeader *h)
+{
+    const char *colon = strchr(v, ':');
+    const char *why = "wants LANG:HEADER, e.g. c:octet.h or 'c:<stdint.h>'";
+    if (colon && colon > v) {
+        char *lang = strndup(v, (size_t)(colon - v));
+        const char *hv = colon + 1;
+        char *hdr = (*hv == '"' || *hv == '<') ? strdup(hv) : NULL;
+        if (!hdr && *hv) {
+            size_t n = strlen(hv);
+            hdr = malloc(n + 3);
+            if (hdr) { hdr[0] = '"'; memcpy(hdr + 1, hv, n); hdr[n + 1] = '"'; hdr[n + 2] = 0; }
+        }
+        if (!lang || !hdr) { free(lang); free(hdr); perror("malloc"); return 1; }
+        why = pcrec_code_header_check(lang, hdr);
+        if (!why) { h->lang = lang; h->header = hdr; return 0; }
+        free(lang);
+        free(hdr);
+    }
+    StrBuf b = { 0 };
+    pcrec_sb_text(&b, v);
+    cli_err("--code-header: %s (got '%s')", why, b.p ? b.p : "");
+    pcrec_sb_free(&b);
+    return 1;
+}
+
 static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
 {
     pcrec_options opt = st->opt;
@@ -1508,6 +1547,33 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
                 return 1;
             st->ncallouts++;
         }
+        /* [INLINE-C] stage 2 the code grant and the code headers, both
+         * spellings; a later `--allow-code` wins, as `--features` does. */
+        else if (!strcmp(a, "--allow-code") || !strcmp(a, "--code-header")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (a[2] == 'a') st->allow_code = argv[++i];
+            else {
+                PcrecCodeHeader *v = realloc(st->code_headers,
+                    (size_t)(st->ncode_headers + 1) * sizeof *v);
+                if (!v) { perror("realloc"); return 1; }
+                st->code_headers = v;
+                if (cli_code_header(argv[++i], &v[st->ncode_headers]) != 0)
+                    return 1;
+                st->ncode_headers++;
+            }
+        }
+        else if (!strncmp(a, "--allow-code=", 13)) st->allow_code = a + 13;
+        else if (!strncmp(a, "--code-header=", 14)) {
+            PcrecCodeHeader *v = realloc(st->code_headers,
+                (size_t)(st->ncode_headers + 1) * sizeof *v);
+            if (!v) { perror("realloc"); return 1; }
+            st->code_headers = v;
+            if (cli_code_header(a + 14, &v[st->ncode_headers]) != 0) return 1;
+            st->ncode_headers++;
+        }
         /* `--features=LIST`, the `=value` spelling `--engine=`/`--encoding=`
          * also take; a later spelling wins either way. */
         else if (!strncmp(a, "--features=", 11)) st->features = a + 11;
@@ -1688,6 +1754,11 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
             free(ts.callouts);  /* ...or for --callout */
+            for (int i = 0; i < ts.ncode_headers; i++) {
+                free((char *)ts.code_headers[i].lang);
+                free((char *)ts.code_headers[i].header);
+            }
+            free(ts.code_headers);   /* ...or for --code-header */
             cli_err("%s:%zu: `pcrec` line: compile options only, "
                     "not output/pattern/prefix/query/source: '%s'",
                     src_path, t->line, t->pcrec_raw);
@@ -1892,6 +1963,8 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         }
         ts.opt.features = fspec;
     }
+    /* [INLINE-C] stage 2 the invoker's grant reaches every target. */
+    ts.opt.allow_code = cli->allow_code;
 
     *out = ts.opt;
     return 0;
@@ -2120,11 +2193,29 @@ static int compile_sources(const CliState *cli)
             ln = nl ? nl + 1 : NULL;
         }
         if (ndecl < 0) { free(cbuf); free(cpath); free(hpath); rc = 1; break; }
+        /* [INLINE-C] stage 2 the source position a code segment's `#line`
+         * names (the FILE as written), and the entry file's `code-header`
+         * lines (inline_c.md §3.3-§3.4). */
+        PcrecCodeHeader hdrs[256];
+        int nh = 0;
+        const RxtSource *osrc = ot->t->defs->file;
+        for (size_t ri = 0; osrc && ri < osrc->nrows && nh < 256; ri++)
+            if (osrc->rows[ri].kind == RXT_DECL_CODE_HEADER)
+                hdrs[nh++] = (PcrecCodeHeader){ osrc->rows[ri].name,
+                                                osrc->rows[ri].value };
         const PcrecEmitIn tin = { .bound = PCREC_PB_UNSTATED,
                                   .callout_decls = decl,
-                                  .ncallout_decls = ndecl };
+                                  .ncallout_decls = ndecl,
+                                  .code_file = ot->owner,
+                                  .code_line = ot->t->block_line,
+                                  .code_col = ot->t->pattern_col,
+                                  .code_esc = ot->t->pattern_esc != NULL,
+                                  .code_headers = hdrs,
+                                  .ncode_headers = nh };
         int crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
-                                     ndecl ? &tin : NULL, &out, &cerr);
+                                     (ndecl || nh || topt.allow_code) ? &tin
+                                                                      : NULL,
+                                     &out, &cerr);
         free(cbuf);
         if (crc != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
@@ -2440,6 +2531,11 @@ int main(int argc, char **argv)
     pcrec_arena_free(&esc);
     free(st.libdirs);
     free(st.callouts);
+    for (int i = 0; i < st.ncode_headers; i++) {
+        free((char *)st.code_headers[i].lang);
+        free((char *)st.code_headers[i].header);
+    }
+    free(st.code_headers);
     free(st.files);
     return rc;
 }
@@ -2523,6 +2619,27 @@ static int cli_dispatch(CliState st)
         }
         opt.features = fspec;
     }
+    /* [INLINE-C] stage 2 the invoker's code grant (cli.md §1.22), checked
+     * here so a bad language is the option's error, not a compile's. */
+    if (st.allow_code) {
+        unsigned gm;
+        char gerr[160];
+        if (pcrec_code_grant_resolve(st.allow_code, &gm, gerr, sizeof gerr)) {
+            cli_err("%s", gerr);
+            return 1;
+        }
+    }
+    opt.allow_code = st.allow_code;
+    /* A `--pattern`'s code segments name the command line in `#line`
+     * (inline_c.md §3.4); its column is the pattern's own. */
+    const PcrecEmitIn pin = { .bound = PCREC_PB_UNSTATED,
+                              .callout_decls = st.callouts,
+                              .ncallout_decls = st.ncallouts,
+                              .code_file = "<command line>",
+                              .code_line = 1, .code_col = 1,
+                              .code_esc = st.pattern_esc != 0,
+                              .code_headers = st.code_headers,
+                              .ncode_headers = st.ncode_headers };
 
     /* [DD-13b.W1.2][REL-1.10] A FILE OPERAND VERSUS EVERY QUERY, CHECKED
      * HERE AND NOT AT THE COMPILE PATH. Each query mode below returns from
@@ -2670,10 +2787,7 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED,
-                                     .callout_decls = st.callouts,
-                                     .ncallout_decls = st.ncallouts };
-            char *text = pcrec_emit_ir(pattern, &opt, &in, &err);
+            char *text = pcrec_emit_ir(pattern, &opt, &pin, &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
@@ -2734,10 +2848,7 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED,
-                                     .callout_decls = st.callouts,
-                                     .ncallout_decls = st.ncallouts };
-            char *text = pcrec_emit_facts(pattern, &opt, &in, encs, nenc,
+            char *text = pcrec_emit_facts(pattern, &opt, &pin, encs, nenc,
                                           &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
@@ -3031,6 +3142,13 @@ static int cli_dispatch(CliState st)
                     "its own numbered callouts with 'callout N ATTRS'");
             return 1;
         }
+        if (st.ncode_headers) {
+            /* [INLINE-C] stage 2 the same rule for the code's headers: a
+             * file names its own (`code-header LANG HEADER`). */
+            cli_err("--code-header applies to --pattern; a .rxt file names "
+                    "its own headers with 'code-header LANG HEADER'");
+            return 1;
+        }
         if (!outpath) {
             cli_err("compiling from a file needs -o: a FILE for "
                             "one target total, an existing DIRECTORY for "
@@ -3070,11 +3188,13 @@ static int cli_dispatch(CliState st)
 #else
     const PcrecHarnessOptions *hopt = NULL;
 #endif
-    /* [INLINE-C] 1b declarations ride the driver's emission input; with none
-     * the compile is the plain entry's, unchanged. */
-    if (st.ncallouts
-            ? pcrec_compile_callouts(pattern, &opt, hopt, st.callouts,
-                                     st.ncallouts, &out, &err) != 0
+    /* [INLINE-C] 1b declarations, and stage 2's code position and headers,
+     * ride the driver's emission input; with none of them the compile is
+     * the plain entry's, unchanged. */
+    PcrecEmitIn cin = pin;
+    cin.harness = hopt;
+    if (st.ncallouts || st.allow_code || st.ncode_headers
+            ? pcrec_compile_in(pattern, &opt, &cin, &out, &err) != 0
 #ifdef PCREC_HARNESS
             : pcrec_harness_compile(pattern, &opt, hopt, &out, &err) != 0) {
 #else

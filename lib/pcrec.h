@@ -1685,6 +1685,17 @@ typedef struct {
      * `rx_info.measures`); one nobody consulted leaves both "". */
     const char        *measures;
     const char *const *measures_dirs;
+
+    /* [INLINE-C] stage 2 (docs/spec/match_api.md §11.9, §8.2): THE CODE
+     * GRANT — a comma-separated list of the embedded-code languages this
+     * call may compile (`"c"`), or NULL (the default) for none. Embedded
+     * code in a pattern (``(?C`c: ...`)``, `(?{ ... })`) is module
+     * `code-<lang>`, and THIS MEMBER IS ITS ONLY LIBRARY DOOR: `features`
+     * cannot enable it (its `"all"` does not contain it, and naming it is
+     * refused), so a pattern string never becomes code without the caller's
+     * say-so. The CLI's `--allow-code=LANGS` sets it. An unknown language
+     * is refused through `pcrec_error`. Per call, like `features`. */
+    const char        *allow_code;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

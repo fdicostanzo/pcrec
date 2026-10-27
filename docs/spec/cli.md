@@ -30,6 +30,7 @@
   - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
   - [§1.20](#s1-20) `--emit-support`: the subst support unit
   - [§1.21](#s1-21) `--callout N:ATTRS`: a numbered callout's attributes
+  - [§1.22](#s1-22) `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -238,7 +239,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-10-p1"></a>[1.10¶1] Appends a standalone `main()` taking the subject as `argv[1]`. The emitted program's exit codes are a separate vocabulary from `pcrec`'s own (§3.1): `0` on match, `1` on no-match, `2` on a usage error (wrong argc) and `3` on an honest give-up, with `PCREC_ERR_STEPS`/`_FRAMES`/`_WORK` printed as `steps`/`frames`/`work`. The body and its argv contract are otherwise not part of this document.
 
-<a id="s1-10-p2"></a>[1.10¶2] A pattern with a callout site is refused under `--emit-main` (`--emit-main cannot define the binding rx_callout_<name>; link your own`): the artifact declares each binding `extern` (`match_api.md` §11.2), and a generated `main()` has no code of the user's to bind it to.
+<a id="s1-10-p2"></a>[1.10¶2] A pattern with a named or numbered callout site is refused under `--emit-main` (`--emit-main cannot define the binding rx_callout_<name>; link your own`): the artifact declares each such binding `extern` (`match_api.md` §11.2), and a generated `main()` has no code of the user's to bind it to. Embedded code (§1.22) is the artifact's own binding and is accepted.
 
 <a id="s1-11"></a>
 ### 1.11 `--no-captures`
@@ -293,7 +294,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-17-p2"></a>[1.17¶2] The library has the same lever: `pcrec_options.features` takes the same vocabulary per `pcrec_compile()` call with no process-global write; NULL there means "no request" rather than `std1` (`match_api.md` §8.2).
 
-<a id="s1-17-p3"></a>[1.17¶3] The modules are the distinct values of `--list-syntax`'s `module` column: `assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `ucp`, `unicode-props`, `vars`, `verbs`. A module's shipped status is read from the `built` column of its rows (`--list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`): `built`, `unbuilt`, or a mix for a module that ships a proper subset of its construct (`ucp`, `unicode-props`). For what any one construct does today, with per-construct divergences and caveats, `docs/pcre2_compliance.md` is the authority.
+<a id="s1-17-p3"></a>[1.17¶3] The modules are the distinct values of `--list-syntax`'s `module` column: `assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `ucp`, `unicode-props`, `vars`, `verbs`. The embedded-code modules (`code-c`, §1.22) are rows of the same column and are not feature modules: `all` does not contain them, and a `LIST` naming one is refused (`module 'code-c' is code; code is enabled by --allow-code ..., not by a features list or a file`). A module's shipped status is read from the `built` column of its rows (`--list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`): `built`, `unbuilt`, or a mix for a module that ships a proper subset of its construct (`ucp`, `unicode-props`). For what any one construct does today, with per-construct divergences and caveats, `docs/pcre2_compliance.md` is the authority.
 
 <a id="s1-17-1"></a>
 #### 1.17.1 Module `unicode-props`
@@ -339,6 +340,13 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ### 1.21 `--callout N:ATTRS`: a numbered callout's attributes
 
 <a id="s1-21-p1"></a>[1.21¶1] Declares the attributes of numbered callout `N` (0-255) in the `--pattern` being compiled, which a numbered callout `(?CN)` has no string to carry (`match_api.md` §11.7). `ATTRS` is a comma-separated list of the attribute names (`consume`, `once`): `--callout 1:consume,once`. Repeatable, one per number. A number declared twice, a declaration naming a number the pattern does not use, an unknown or repeated attribute, an empty `ATTRS` (`--callout 1:`), and a malformed value are refused; the value is echoed with its control bytes escaped. It applies to a compile, `--emit-ir` and `--emit-facts`; `--count-groups` reads no attribute and refuses it. It does not combine with a file operand, where a block's `callout N ATTRS` line says the same thing (`rxt_format.md` §1.5¶13a).
+
+<a id="s1-22"></a>
+### 1.22 `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
+
+<a id="s1-22-p1"></a>[1.22¶1] `--allow-code=LANGS` (also `--allow-code LANGS`; `LANGS` a comma-separated list of embedded-code languages, `c` the one language) grants the compile its pattern's embedded code (``(?C`c: ...`)``; `match_api.md` §11.9). It is the ONLY door to module `code-<lang>`: no `--features` list and no file can open it, and a `config` block's `pcrec` line carrying `--allow-code` is refused (`rxt_format.md` §1.1¶2). Without it a code segment is refused (`(?C...) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables`) and nothing is written. An unknown language is refused by name. A later `--allow-code` wins. Code in a definition read from another `.rxt` file (`lib`, `include`) is refused even with the grant. The grant applies to every compile in the invocation, a file operand's targets included; the describe modes `--emit-ir`, `--emit-facts` and `--count-groups` parse code without it and write no C.
+
+<a id="s1-22-p2"></a>[1.22¶2] `--code-header LANG:HEADER` (also `--code-header=`; repeatable) names a header the `--pattern`'s code needs: `HEADER` is `"name"`, `<name>`, or a bare `name` (written as `"name"`), printable ASCII with no backslash. Each is emitted `#include` as written, in order, a repeated text once, after the matcher and only in the `.c`; pcrec never opens it. It is code: it needs `--allow-code` for its language even when the pattern has no segment. It does not combine with a file operand, whose head names its own (`code-header LANG HEADER`, `rxt_format.md` §1.1).
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

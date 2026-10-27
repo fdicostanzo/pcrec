@@ -1,0 +1,24 @@
+/* src/parse/codelang.def — [INLINE-C] stage 2 THE LANGUAGE TABLE of embedded
+ * code (docs/design/inline_c.md §1.1, §2.2): one row per registered language
+ * of the tagged `(?C` string (``(?C`c: ...`)``), the SINGLE SOURCE every
+ * language fact is projected from.
+ *
+ *   PCREC_CODE_LANG(id, tag, feature, module)
+ *
+ *   id        a C identifier, pasted into the generated names (the
+ *             registry row's recogniser, src/parse/registry.c)
+ *   tag       the language tag as an author writes it before `:`/`,`
+ *             (``(?C`c,once: ...`)``), `[a-z][a-z0-9_]*`
+ *   feature   the module's FEAT_* bit (src/core/internal.h)
+ *   module    the module name, `code-<tag>`, as diagnostics and
+ *             `--list-syntax` spell it
+ *
+ * WHAT IS PROJECTED FROM A ROW: the registry row (owned by `module`,
+ * RF_INVOKER_ONLY: the GRANT column, §5.1), the language list
+ * `--allow-code` accepts (`pcrec_code_grant_resolve`, src/parse/enabled.c),
+ * the tags the recogniser and the port read, and the `<PREFIX>_CODE_LANGS`
+ * stamp's vocabulary. A later language adds ONE row here; nothing else
+ * changes (§2.2's last paragraph). The `(?{ ... })` spelling, whose end needs
+ * a per-language scanner column, is row [SCANNER-DOGFOOD]'s (ruling R1,
+ * 2026-10-27), not this table's yet. */
+PCREC_CODE_LANG(c, "c", FEAT_CODE_C, "code-c")

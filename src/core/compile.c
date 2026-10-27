@@ -2049,6 +2049,39 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             return -1;
         }
     }
+    /* [INLINE-C] stage 2 THE INVOKER'S CODE GRANT (inline_c.md §5.1): the
+     * `code-<lang>` modules `allow_code` names join the MASK only, through
+     * a resolver the `features` vocabulary cannot reach, so the label and
+     * the rendered module list (`PCREC_FEATURE_SET`/`_MODULES`) stay the
+     * requested features and move for no artifact. */
+    {
+        unsigned grant = 0;
+        char gerr[256];
+        if (pcrec_code_grant_resolve(defo.allow_code, &grant, gerr,
+                                     sizeof gerr) != 0) {
+            if (err) snprintf(err->msg, sizeof(err->msg), "%s", gerr);
+            return -1;
+        }
+        feat_mask |= grant;
+        /* A `code-header` line is code (§3.3): its language must be granted
+         * as a segment's must, segment or no segment. */
+        for (int i = 0; emit_in && i < emit_in->ncode_headers; i++) {
+            const PcrecCodeHeader *h = &emit_in->code_headers[i];
+            size_t nl;
+            const PcrecCodeLang *L = pcrec_code_langs(&nl);
+            size_t k = 0;
+            while (k < nl && strcmp(L[k].tag, h->lang)) k++;
+            if (k == nl || !(grant & L[k].feature)) {
+                if (err) snprintf(err->msg, sizeof(err->msg),
+                                  "code-header %s %s requires module "
+                                  "'code-%s', which only the command-line "
+                                  "option --allow-code=%s (or the library's "
+                                  "allow_code member) enables",
+                                  h->lang, h->header, h->lang, h->lang);
+                return -1;
+            }
+        }
+    }
     /* [UCP] O-71: the encoding's implied modules join the MASK only. The
      * label and the rendered module list stay the REQUESTED set, which is what
      * `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamp — so no artifact moves;
@@ -3114,6 +3147,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
+        /* [INLINE-C] stage 2 the segment block, LAST in the `.c` and after
+         * every engine's text (inline_c.md §3.1): nothing it writes can
+         * reach the matcher, and no `#line` needs restoring after it. */
+        pcrec_emit_code_block(&cx, &cx.job->csb);
 
         /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
          * every buffer is finished. An `pcrec_sb_cmt_open` with no matching close
@@ -3512,22 +3549,18 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
                           hopt ? &in : NULL);
 }
 
-/* [INLINE-C] 1b the CLI's compile of a `--pattern` that carries numbered
- * callout declarations (`--callout N:attrs`): `pcrec_compile` (or the
- * harness lever's, when `hopt` is non-NULL) with the declarations on the
- * driver's emission input. There is no library member for them in v1
- * (docs/design/inline_c.md §2.2; [IFACE-PUSH]); a library caller spells
- * attributes in a named callout's string. */
-int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
-                           const PcrecHarnessOptions *hopt,
-                           const PcrecCalloutDecl *decls, int ndecls,
-                           pcrec_output *out, pcrec_error *err)
+/* [INLINE-C] the CLI's compile of a `--pattern` with a driver emission
+ * input: 1b's numbered callout declarations (`--callout N:attrs`), and
+ * stage 2's code position (`#line`) and `--code-header` lines, plus the
+ * harness lever's options when `in->harness` is set. There is no library
+ * member for the declarations or the headers in v1 (docs/design/
+ * inline_c.md §2.2, §3.3; [IFACE-PUSH]). */
+int pcrec_compile_in(const char *pattern, const pcrec_options *opt,
+                     const PcrecEmitIn *in, pcrec_output *out,
+                     pcrec_error *err)
 {
-    const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .harness = hopt,
-                             .callout_decls = decls,
-                             .ncallout_decls = ndecls };
     return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
-                          &in);
+                          in);
 }
 
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
@@ -3568,6 +3601,10 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     if (opt) defo = *opt;
     /* A paired header would only put an #include line in output nobody reads. */
     defo.header_name = NULL;
+    /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): the listing
+     * parses embedded code (a later group must still be counted) and the C
+     * it compiles is thrown away, so it needs no grant from the caller. */
+    if (!defo.allow_code) defo.allow_code = pcrec_code_all_langs();
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
                              NULL, NULL, NULL, in) != 0) {
@@ -3606,6 +3643,16 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
      * process-global gate exactly as it always has, unchanged by this row.
      * See src/parse/enabled.c's own top comment for the customer list. */
     cx.enabled_features = pcrec_enabled_mask();
+    /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): counting
+     * parses embedded code and emits nothing, so every code language's
+     * module is open here without the invoker's grant. */
+    {
+        unsigned code = 0;
+        char gerr[64];
+        if (pcrec_code_grant_resolve(pcrec_code_all_langs(), &code, gerr,
+                                     sizeof gerr) == 0)
+            cx.enabled_features |= code;
+    }
     /* Parse-only: nothing is emitted, so no capture node is wanted and the
      * tree stays exactly D31's. This matters beyond tidiness — --count-groups
      * pins its refusal behaviour to pcrec_compile's, and an AST that differed

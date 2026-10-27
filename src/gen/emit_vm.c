@@ -9005,7 +9005,7 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
     Ctx *cx = v->cx;
-    const PcrecCalloutBinding bind = pcrec_callout_binding(&cx->arena, a);
+    const PcrecCalloutBinding bind = pcrec_callout_binding(cx, a);
     const char *sym = bind.symbol;
     const bool pred = !a->u.callout.consume;
     vm_lbl(v, entry, vm_rolef(v, "callout site %d: %s, %s", a->u.callout.site,
@@ -10052,7 +10052,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             const char *row[7] = {
                 vm_rolef(v, "L%d", v->ev[i].a),
                 vm_rolef(v, "%d", v->ev[i].b),
-                pcrec_callout_binding(&v->cx->arena, a).symbol,
+                pcrec_callout_binding(v->cx, a).symbol,
                 a->u.callout.consume ? "consume" : "check",
                 pcrec_callout_class_name(a->u.callout.fclass),
                 a->u.callout.tail ? "tail" : "-",
@@ -14269,6 +14269,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en, &rs);
     vm_emit_storage(&v, &pl);
+    /* [INLINE-C] stage 2 each code segment's prototype and binding, before
+     * the function whose call sites name them (inline_c.md §3.1). */
+    pcrec_emit_code_protos(cx, &cx->job->csb);
     /* [OPT-REVEND] L0 a VM artifact with no DFA body asks LOCATE on the VM
      * route; a hybrid asked it from its inlined body (`pcrec_emit_dfa_engine`). */
     if (!pcrec_artifact_has_dfa_scan(cx)) pcrec_cand_locate_vm(cx);
