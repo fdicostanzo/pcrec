@@ -64,3 +64,5 @@ manager owes the `make san` re-run.
 Branch lane/sanred, commit 16dc3272e plus this report. Not pushed. Scratch
 files are in the worktree's gitignored `build/`. Only single scripts were
 run (callouts under san, cli plain and under san, codegen); no box lock taken.
+
+OWED: none
