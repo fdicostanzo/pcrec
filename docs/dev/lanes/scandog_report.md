@@ -94,3 +94,4 @@ MEASURE: MB/s of the generated matcher vs the hand-written scanner (and vs
 Committed on lane/scandog: tests/recursion/{cscan.rxt,gen_cscan.py,CLAUDE.md}
 and this report. Not pushed. Rulings file: no entries (last applied: none).
 No src/ change; no make test run (corpus section only, harness run.sh).
+OWED: none
