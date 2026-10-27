@@ -16,11 +16,38 @@
 #
 # Output: the miss lines, then ONE final `lanewatch: DONE rc=N`.
 # Exit: 0 every NAME has a good marker (or stopped); 1 at least one miss; 64 usage.
+#
+#   scripts/lanewatch --follow [--quiet-min N] [--every S] [--max-sec S] [--dir D] NAME
+#
+# FOLLOW MODE (the manager arms it in the background at every lane launch and
+# relaunches it on CAP). Polls every S seconds (default 60) until ONE
+# actionable state, prints that line, then the final `lanewatch: DONE rc=N`:
+#   lanewatch: DONE NAME      the one-shot check above passes (it IS that check,
+#                             run as `lanewatch [--dir D] NAME`; rc 0)
+#   lanewatch: STOPPED NAME   no good marker, but the report said STATE: stopped (rc 13)
+#   lanewatch: QUIET NAME <minutes> last-change=<ISO> last-commit=<ISO>   (rc 10)
+#                             no good marker and no file change in the worktree
+#                             AND no new commit for N minutes (default 25),
+#                             counted from the LATEST of watch start, last file
+#                             change, last commit
+#   lanewatch: GONE NAME      the worktree disappeared (rc 11)
+#   lanewatch: CAP NAME       --max-sec reached (default 14400 = 4 h): relaunch (rc 12)
+# ACTIVITY = the newest mtime of any file under worktrees/NAME EXCEPT .git and
+# build/lanecheck (the marker dir). build/ OTHERWISE COUNTS: measured on
+# finished lanes (2026-10-27), a lane running its own sections writes
+# build/*.log, build/watchdog.log, build/scr/, build/jobs/, objects; an idle
+# lane writes nothing anywhere. Polling never appends to the misses log.
+# Test overrides: --quiet-sec S (replaces --quiet-min), --tree D (worktree dir).
 set -u
-dir="" names=()
+dir="" names=() follow=0 quiet_min=25 quiet_sec="" every=60 max_sec=14400 tree=""
 while [ $# -gt 0 ]; do
     case $1 in
         --dir) [ $# -ge 2 ] || { echo "usage: scripts/lanewatch [--dir D] NAME..."; echo "lanewatch: DONE rc=64"; exit 64; }; dir=$2; shift 2 ;;
+        --follow) follow=1; shift ;;
+        --quiet-min|--quiet-sec|--every|--max-sec|--tree)
+            [ $# -ge 2 ] || { echo "usage: scripts/lanewatch [--follow ...] [--dir D] NAME..."; echo "lanewatch: DONE rc=64"; exit 64; }
+            case $1 in --quiet-min) quiet_min=$2 ;; --quiet-sec) quiet_sec=$2 ;; --every) every=$2 ;; --max-sec) max_sec=$2 ;; --tree) tree=$2 ;; esac
+            shift 2 ;;
         -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
         -*) echo "usage: scripts/lanewatch [--dir D] NAME..."; echo "lanewatch: DONE rc=64"; exit 64 ;;
         *) names+=("$1"); shift ;;
@@ -32,6 +59,29 @@ case $common in /*) ;; *) common=$(cd "$(dirname "$0")" && cd "$common" 2>/dev/n
 main=$(dirname "${common:-/nonexistent/.git}")
 log=${LANEWATCH_LOG:-$main/worktrees/.mgr/lanecheck_misses.log}
 if command -v sha256sum > /dev/null; then hsum() { sha256sum "$@" | cut -d' ' -f1; }; else hsum() { shasum -a 256 "$@" | cut -d' ' -f1; }; fi
+if [ $follow = 1 ]; then
+    [ ${#names[@]} = 1 ] || { echo "usage: scripts/lanewatch --follow [--quiet-min N] [--every S] [--max-sec S] NAME"; echo "lanewatch: DONE rc=64"; exit 64; }
+    n=${names[0]}; t=${tree:-$main/worktrees/$n}
+    qs=${quiet_sec:-$((quiet_min*60))}
+    iso() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -r "$1" +%Y-%m-%dT%H:%M:%SZ; }
+    start=$(date +%s)
+    fin() { echo "lanewatch: $1"; echo "lanewatch: DONE rc=$2"; exit "$2"; }
+    while :; do
+        [ -d "$t" ] || fin "GONE $n" 11
+        out=$(LANEWATCH_LOG=/dev/null bash "$0" ${dir:+--dir "$dir"} "$n" 2>&1); rc=$?
+        if [ $rc = 0 ]; then
+            case $out in *"stopped early"*) fin "STOPPED $n" 13 ;; *) fin "DONE $n" 0 ;; esac
+        fi
+        act=$(find "$t" \( -name .git -o -path "$t/build/lanecheck" \) -prune -o -type f -printf '%T@\n' 2>/dev/null | cut -d. -f1 | sort -n | tail -1)
+        cm=$(git -C "$t" log -1 --format=%ct 2>/dev/null)
+        act=${act:-0}; cm=${cm:-0}
+        now=$(date +%s)
+        last=$start; [ "$act" -gt "$last" ] && last=$act; [ "$cm" -gt "$last" ] && last=$cm
+        [ $((now-last)) -ge "$qs" ] && fin "QUIET $n $(( (now-last)/60 )) last-change=$([ "$act" = 0 ] || iso "$act") last-commit=$([ "$cm" = 0 ] || iso "$cm")" 10
+        [ $((now-start)) -ge "$max_sec" ] && fin "CAP $n" 12
+        sleep "$every"
+    done
+fi
 miss=0
 field() { sed -n "s/^$1=//p" "$2" | head -1; }
 note() { # NAME KIND TEXT
