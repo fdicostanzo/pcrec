@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-27 719a17ccb major — merge lane/ic1b: [INLINE-C] stage 1b, the callout call site (module callouts, `--callout`, firing classes, `once` reading-rule refusals with fix verdicts; abi 89). Validated: 563 test2 GREEN (80/80, movers 0/32,775), 561 mech GREEN (39 rows), 564 axes2 GREEN (13,654 s, batched shape).
 - 2026-10-26 7234c2e86 major — merge lane/emitbidi: [EMIT-BIDI] one C-text escaper, emitted text ASCII-only, abi 86 (abi event: emitted text moves on every -fcomments artifact; job 800 green: strict, test-codegen, AXES=-fcomments, mech S1620-S1622, make test)
 - 2026-10-25 415eade4d none — merge lane/benchres: [BENCH-RESERVE] bench reservations (scripts only)
 - 2026-10-25 4dd8af50b none — merge lane/suiteresume: [SUITE-RESUME] owner-commanded resume of a red full suite (scripts only)
