@@ -219,7 +219,7 @@ single-repeat run and are not a measurement.
 
 ## STATE AT HANDOFF
 
-Owed queue jobs (job files committed in this lane):
+Owed queue jobs, queued as `620-ic2-test`, `621-ic2-mech`, `622-ic2-axes` (queue keys `ic2-test`, `ic2-mech`, `ic2-axes`; job files committed in this lane):
 
 | key | job file | runs | logs | completion lines |
 |---|---|---|---|---|
