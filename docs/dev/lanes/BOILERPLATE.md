@@ -297,7 +297,9 @@ whole queue's plan before a night is committed to it.
   never leave the manager to infer which.
 
 ## Before ending: scripts/lanecheck ([LANECHECK])
-If your brief has a DELIVER block (`docs/dev/lanes/<name>_deliver.txt`), run
+If your brief has a DELIVER block (`docs/dev/lanes/<name>_deliver.txt`, written BY THE MANAGER
+before you start: read it, never create, edit or overwrite it; if it is missing or looks
+wrong, say so in the report), run
 `scripts/lanecheck` from your worktree before the handback; it prints numbered
 prose issues (a missing section, an uncited finding, an uncommitted report)
 or `lanecheck: DONE rc=0`. Fix, commit, rerun; end only on DONE rc=0. If you
