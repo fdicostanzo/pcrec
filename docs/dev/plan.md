@@ -582,7 +582,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
   filed: 2026-10-27 Frank ("Ok scanner dogfood")
   status (2026-10-27): not started. The pattern is in tests/recursion/cscan.rxt (76 cases, libpcre2-verified; merge of lane/scandog) and went to the bench as I-165.
-  next: after [INLINE-C] stage 2 merges: replace the hand-written scanner with the generated matcher; stage 2's scanner table proves both answer the same; decision entry for the bootstrapping rule.
+  next: after [INLINE-C] stage 2 merges: build the `(?{ ... })` spelling ONCE, on the generated cscan matcher (Frank 2026-10-27: no throw-away hand-written scanner; stage 2 ships the tagged (?C`c:`) spelling only); cscan.rxt is its table; decision entry for the bootstrapping rule.
   refs: [INLINE-C]; docs/design/inline_c.md §2.3; the corpus pattern from lane scandog
   Bootstrapping: the generated .c is COMMITTED and refreshed by a make gen-* target (third_party tables are the precedent); a check fails when the committed file differs from a fresh generation; the first build never needs a working pcrec.
 - [MECH-NOCOMPILE] STATE:not-started — 31 SABOTAGE ROWS WHOSE PLANT DOES NOT COMPILE, AND MECH STAYS GREEN

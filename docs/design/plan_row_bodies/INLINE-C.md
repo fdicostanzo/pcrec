@@ -30,3 +30,4 @@ The guidance is the deliverable:
   Stage 2 brief adds:
   - the contract in the SPEC, docs/spec/match_api.md §11.2 Bindings (Frank 2026-10-27: the spec is the source; docs/guide/ derives the friendly version later): a definition the compiler can see (same file, or -flto) is called directly and may be inlined; a separately compiled one is an indirect call;
   - ONE check that compiles the user unity build, the embedded-C artifact and an artifact-as-callout, and fails on any indirect call through a binding.
+- Frank 2026-10-27 ("You could just delay building that piece to a later stage rather than build a throw away scanner of such complexity"): stage 2 builds only the tagged ``(?C`c: ...`)`` spelling. The `(?{ ... })` spelling, its §2.3 scanner, the scanner-table tests and S-IC7 move to [SCANNER-DOGFOOD], which builds them once on the generated matcher of tests/recursion/cscan.rxt. Lane ic2 got this as ruling R1 in its rulings file.
