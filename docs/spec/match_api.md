@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 89
-#error "pcrec: this artifact (abi 89) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 90
+#error "pcrec: this artifact (abi 90) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 89
+#define PCREC_RX_ABI_H 90
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1635,7 +1635,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `89` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `90` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1793,7 +1793,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `89` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `90` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2924,7 +2924,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, `_CODE_LANGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |

@@ -59,6 +59,7 @@ static const StampRow stamp_rows[] = {
     { "VAR_",               true,  SK_PATTERN },
     { "CALLOUTS",           false, SK_PATTERN },      /* [INLINE-C] 1b the sites */
     { "CALLOUT_BINDINGS",   false, SK_PATTERN },      /* and the symbols they need */
+    { "CODE_LANGS",         false, SK_PATTERN },      /* [INLINE-C] stage 2 code's languages */
     { "RESUME_FRAMES",      false, SK_PATTERN },      /* the buffer surface: */
     { "TRAIL_FRAMES",       false, SK_PATTERN },      /* the caller contract */
     { "RESUME_FRAME_SIZE",  false, SK_PATTERN },
