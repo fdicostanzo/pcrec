@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# lanewatch --follow self-test: a fixture worktree (a scratch git repo) per
+# state. DONE (good marker made by the real lanecheck), QUIET (untouched),
+# NOT quiet while files are touched (including under build/), GONE (tree
+# removed), CAP, and a PLANT: a lanewatch whose activity scan sees no files
+# must FAIL the touched case (a watcher that always says QUIET must not pass).
+# Every case is bounded by coreutils timeout; seconds overrides keep it fast.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/lanewatch.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+LW=$here/lanewatch LC=$here/lanecheck
+export LANEWATCH_LOG=$T/misses.log
+mkfix() { # DIR: a committed repo with the DELIVER file and a good report
+    git init -q "$1"; git -C "$1" config user.email t@t; git -C "$1" config user.name t
+    mkdir -p "$1/docs/dev/lanes" "$1/build"; echo build/ > "$1/.gitignore"
+    printf '# R\n## Summary\nx\n## STATE AT HANDOFF\nOWED: none\n' > "$1/docs/dev/lanes/x_report.md"
+    printf '%s\n' 'report: docs/dev/lanes/x_report.md' 'sections: Summary; STATE AT HANDOFF' 'nonempty: all' 'commit: yes' 'owed: none' > "$1/docs/dev/lanes/x_deliver.txt"
+    git -C "$1" add -A; git -C "$1" commit -qm c
+}
+age() { find "$1" -path "$1/.git" -prune -o -type f -exec touch -d '2 hours ago' {} +; local e=$(( $(date +%s) - 7200 )); GIT_COMMITTER_DATE="@$e +0000" git -C "$1" commit -q --amend --no-edit --date="@$e +0000"; }
+fw() { "$TO" 30 bash "${LWX:-$LW}" --follow --every 1 "$@" 2>&1; }
+
+# DONE: the real lanecheck writes the marker; follow reports DONE at once
+F=$T/done; mkfix "$F"; (cd "$F" && "$TO" 30 python3 "$LC" --deliver "$F/docs/dev/lanes/x_deliver.txt" x >/dev/null 2>&1)
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 600 x); rc=$?
+[ $rc = 0 ] && [ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: DONE x" ] && [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=0" ] && ok "good marker -> DONE" || bad "DONE: rc=$rc $out"
+
+# QUIET: an aged tree, no marker
+F=$T/quiet; mkfix "$F"; age "$F"
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 x); rc=$?
+printf '%s\n' "$out" | head -1 | grep -qE '^lanewatch: QUIET x [0-9]+ last-change=20[0-9-]+T[0-9:]+Z last-commit=20[0-9-]+T[0-9:]+Z$' && [ $rc = 10 ] && ok "untouched tree -> QUIET" || bad "QUIET: rc=$rc $out"
+
+# touched: a lane writing a log under build/ stays not-quiet until CAP
+touched() { # LWX-variant; prints the follow output
+    local F=$T/touch; rm -rf "$F"; mkfix "$F"; age "$F"
+    ( for i in 1 2 3 4 5 6 7 8; do sleep 1; echo $i >> "$F/build/watchdog.log"; done ) &
+    local w=$!
+    fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 --max-sec 7 x; wait $w
+}
+out=$(touched)
+[ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: CAP x" ] && ok "a lane writing build/ logs is not QUIET (ends at CAP)" || bad "touched: $out"
+
+# a write to build/lanecheck (the marker dir) alone is NOT activity
+F=$T/mk; mkfix "$F"; age "$F"; mkdir -p "$F/build/lanecheck"
+( for i in 1 2 3 4 5; do sleep 1; echo $i >> "$F/build/lanecheck/x.stopped.tmp"; done ) &
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 --max-sec 20 x); wait
+[ "$(printf '%s\n' "$out" | head -1 | cut -d' ' -f1-3)" = "lanewatch: QUIET x" ] && ok "marker-dir writes do not count as activity" || bad "marker dir: $out"
+
+# GONE
+F=$T/gone; mkfix "$F"; ( sleep 2; rm -rf "$F" ) &
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 600 x); rc=$?; wait
+[ $rc = 11 ] && [ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: GONE x" ] && ok "removed tree -> GONE" || bad "GONE: rc=$rc $out"
+
+# CAP on an otherwise-live tree
+F=$T/cap; mkfix "$F"
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 600 --max-sec 2 x); rc=$?
+[ $rc = 12 ] && [ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: CAP x" ] && ok "max-sec -> CAP" || bad "CAP: rc=$rc $out"
+
+# polling does not append to the misses log
+[ ! -s "$LANEWATCH_LOG" ] && ok "follow polling writes no misses-log entries" || bad "misses log written: $(cat "$LANEWATCH_LOG")"
+
+# one-shot unchanged: a missing marker is a miss, rc 1
+F=$T/shot; mkfix "$F"
+out=$("$TO" 30 bash "$LW" --dir "$F/build/lanecheck" x); rc=$?
+[ $rc = 1 ] && [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=1" ] && ok "one-shot mode unchanged" || bad "one-shot: rc=$rc $out"
+
+# PLANT: the activity scan finds no files -> the touched case must FAIL
+sed 's/-type f -printf/-type f -name NOSUCHFILE -printf/' "$LW" > "$here/.lanewatch_plant.$$"
+cmp -s "$LW" "$here/.lanewatch_plant.$$" && bad "plant sed did not change the script"
+LWX=$here/.lanewatch_plant.$$ out=$(touched); rm -f "$here/.lanewatch_plant.$$"
+[ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: CAP x" ] && bad "PLANT not caught: a blind activity scan passed the touched case" || ok "PLANT (blind activity scan) fails the touched case"
+
+echo "lanewatch.test: pass=$pass fail=$fail"
+[ $fail = 0 ]

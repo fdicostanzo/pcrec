@@ -66,7 +66,8 @@ A field with nothing to say is written "none", never dropped.
     nonempty: all|LIST; cites: RE in X -> Y; commit: yes|no; owed: none|KEY..
     Format: the header of scripts/lanecheck. The agent ends only on
     `scripts/lanecheck` printing `lanecheck: DONE rc=0`; the manager polls
-    with `scripts/lanewatch NAME..`.>
+    with `scripts/lanewatch NAME..`. The MANAGER arms `scripts/lanewatch --follow NAME`
+    (background) at every lane launch and relaunches it on CAP.>
 
     DELIVERABLE: <files; docs/dev/lanes/<name>_report.md with a STATE AT
     HANDOFF section>.
