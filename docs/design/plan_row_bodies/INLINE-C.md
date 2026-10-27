@@ -28,5 +28,5 @@ The guidance is the deliverable:
   - user code: `extern const rx_callout_ref rx_callout_<name>` (C forbids extern-then-static of one name, hence the separate generated name).
   This replaces inline_c.md §1.4 row 1's direct call (a special case). Evidence: a unity build (`#include "out.c"` plus a `const` binding with a `static inline` fn) at -O2 gcc folds the pointer and inlines the callee: 0 indirect calls, vs 5 when the artifact is compiled separately (manager probe, `(?>a+)(?C"x")b`). Artifact-as-callout is the same path (bind B_match).
   Stage 2 brief adds:
-  - a spec/guide section "Getting your callout inlined" (unity build, -flto);
+  - the contract in the SPEC, docs/spec/match_api.md §11.2 Bindings (Frank 2026-10-27: the spec is the source; docs/guide/ derives the friendly version later): a definition the compiler can see (same file, or -flto) is called directly and may be inlined; a separately compiled one is an indirect call;
   - ONE check that compiles the user unity build, the embedded-C artifact and an artifact-as-callout, and fails on any indirect call through a binding.
