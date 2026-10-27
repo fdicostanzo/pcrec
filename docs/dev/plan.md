@@ -1239,7 +1239,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-13 Frank (session 111)
   status (2026-10-13): not started; idea stage, discuss before any design lane
   next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
-  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26
+  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
 
