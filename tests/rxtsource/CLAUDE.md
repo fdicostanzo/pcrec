@@ -12,6 +12,7 @@ building a `.rxt` source cannot be checked without building one.
 ## Files
 
 - **`run_rxtsource_tests.sh`** — the whole section.
+- **`esc_decode.py`** — C1 only: decodes leg B's `pattern-esc` rows (text as written) into leg A's decoded spelling with its own copy of the escape table, so the A-vs-B diff compares like with like (cired2, 2026-10-27).
 - **`build_c3_store.py`** — **[C3 THREE-WAY VERDICT, 2026-09-10/11, lane `pyrole`]** the store-capture script behind C3's redesign (below): populates ...
 - **`fixtures/*.rxtin`** — head-bearing `.rxt` files.
 - `name_dashdot.rxtin` — a definition named `cls-upto-64` and one named `ctx.lazy`, each built through `target = <name>`.
