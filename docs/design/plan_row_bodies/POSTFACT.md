@@ -17,3 +17,12 @@
   - bounded relations between captures (date validity incl. leap years, start<end time ranges), priced against the size ladder.
 - **Not regular** (refused, use `c:`): unbounded two-capture comparisons, balanced counts, palindromes and reversals, unbounded arithmetic.
 - **Leaning for v1:** numeric forms, length, sets, `~`/`!~`. Then named functions built on the same machinery (`luhn($1)`, `valid_date(y,m,d)`). After [INLINE-C] stage 2 (reuses the tag parser). No build without Frank's go.
+
+## 2026-10-27 — security (Frank: "it would not have the same security implications as embedded C")
+
+- An `rx:` predicate is lowered into the pattern; no user code runs and nothing is linked. Its trust class is a PATTERN FEATURE, not code:
+  - an ordinary feature module (GRANT `any`), allowed in feature families and in `all`;
+  - allowed in included and library files without sha256 pins;
+  - no `--allow-code`, no `<PREFIX>_CODE_LANGS` entry.
+- This holds ONLY because of the lowered-or-refused rule: an `rx:` predicate never falls back to a call. A fallback to a `c:` callout, or a named function implemented as C at run time, would bring it back under the code gate. Named functions (`luhn`, `valid_date`) are pcrec-built automata, not shipped C.
+- What remains is a pattern's own risk class: compile-time size and time. A predicate whose product automaton is too big is refused by the size ladder, like any pattern. A wrong lowering is a miscompile, tested by the oracle like any module.
