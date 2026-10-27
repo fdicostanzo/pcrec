@@ -219,6 +219,10 @@ $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
+# [INLINE-C] 1b the call-site code table's header, read by both of its
+# producers (the compound's controller and the VM's callout site).
+$(BUILD_DIR)/obj/gen/callsite_rows.o $(BUILD_DIR)/obj/gen/emit_compound.o \
+$(BUILD_DIR)/obj/gen/emit_vm.o: src/gen/callsite_rows.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
@@ -385,7 +389,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples test-findings test-knowledge test-ucp \
+      test-uprops test-core test-vars test-callouts test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
@@ -1065,6 +1069,14 @@ test-atomic-identity: all
 test-vars: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vars.ran"; fi
 	bash tests/vars/run_vars_tests.sh
+
+# [INLINE-C] stage 1b — module `callouts`: the corpus (bindings linked through
+# tests/callouts/harness.manifest), its libpcre2 oracle, the generated
+# differential (floor 1,000), the driver checks and the firing-class table.
+# See tests/callouts/CLAUDE.md.
+test-callouts: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-callouts.ran"; fi
+	bash tests/callouts/run_callouts_tests.sh
 
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi

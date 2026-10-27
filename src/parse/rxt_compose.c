@@ -291,6 +291,7 @@ static Ast *rc_remap_caps(Ast *a, const int *map, int nmap)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return a;
         case A_CAP:
             a->l = rc_remap_caps(a->l, map, nmap);
@@ -449,6 +450,7 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
     case A_CTX: case A_GSTART: case A_KRESET:
     case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return NULL;
     case A_CAP: case A_LOOK: case A_REP: case A_ATOMIC:
     case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */

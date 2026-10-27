@@ -32,6 +32,7 @@
  *   NONE    reads no group
  *   REFS    `u.bref.refs[0..nrefs)` (a backreference)
  *   TARGET  `u.call.target` (a subroutine call)
+ *   ALL     every group of the pattern (a callout site's view)
  * A variable reads NONE: its bytes come from the caller, not a group (its
  * payload is `u.var`, which has no group list).
  *
@@ -72,3 +73,9 @@ KIND_ROW(A_LOOK,    ZERO, GATE,        NONE,   NFA_ERASED_LOOK)
 KIND_ROW(A_CALL,    OWN,  OPAQUE,      TARGET, 0)
 KIND_ROW(A_VAR,     ANY,  OPAQUE,      NONE,   0)
 KIND_ROW(A_WCLASS,  OWN,  TRANSPARENT, NONE,   0)
+/* [INLINE-C] 1b a callout site, as a CHECK (the default width class): no
+ * text (`A_LOOK`'s analog for the text readers), OPAQUE to a path reader
+ * (`A_VAR`'s: a vetoing site sees every path, so none may be pruned), and it
+ * reads EVERY group. A `consume` site's TEXT is ANY, picked per node by
+ * `pcrec_ast_row` (internal.h). Lowered by its width class, a relaxation. */
+KIND_ROW(A_CALLOUT, ZERO, OPAQUE,      ALL,    NFA_ERASED_CALLOUT)

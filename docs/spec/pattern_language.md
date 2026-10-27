@@ -47,6 +47,7 @@
   - [§7.8](#s7-8) Module `ucp`
   - [§7.9](#s7-9) Module `unicode-props`
   - [§7.10](#s7-10) Module `vars`
+  - [§7.11](#s7-11) Module `callouts`
 - [§8](#s8) Recognised constructs without a producer, and excluded ones
   - [§8.1](#s8-1) Not built
   - [§8.2](#s8-2) Excluded
@@ -551,6 +552,15 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s7-10-p1"></a>[7.10¶1] `${name}` matches, literally, the bytes the caller passes for variable `name` in the call that runs the match; `${name:-word}` and the other bash-shaped forms supply defaults. The spelling, the caller's array, the refusals and the engine are `vars.md` §2-§7. Without the module, `${` is refused (`requires module 'vars'`) anywhere outside a class; PCRE2 reads the same text as `$` followed by literals, which can never match. Inside a class, `$` and `{` are literals (`[${]` matches `{`).
 
+<a id="s7-11"></a>
+### 7.11 Module `callouts`
+
+<a id="s7-11-p1"></a>[7.11¶1] `(?C)`, `(?Cn)` (`n` 0-255; `(?C)` is `(?C0)`) and `(?C"name")` call the user's code at that point of the match: a numbered callout calls `rx_callout_<n>`, a named one `rx_callout_<name>`, each bound by the user's C (`match_api.md` §11). Every PCRE2 string delimiter is accepted for the name (`` ` `` `'` `"` `^` `%` `#` `$` and `{...}`). The string is a C identifier with optional attributes after commas: `(?C"name,consume")`, `(?C"name,once")`. A numbered callout's attributes are declared beside the pattern (`cli.md` §1.21, `rxt_format.md` §1.5¶13a). A callout pattern compiles to the VM engine.
+
+<a id="s7-11-p2"></a>[7.11¶2] The callee's return decides the path: `0` continues, `-1` backtracks, a `consume` callee's positive return consumes that many bytes (`match_api.md` §11.4). A callout cannot be quantified (PCRE2's rule too); wrap it in a group.
+
+<a id="s7-11-p3"></a>[7.11¶3] Refused: a malformed `(?C` (a number above 255, a number followed by other text, an unsupported delimiter, an unterminated string), with or without the module; a name containing `__`; a name that is not a C identifier; a name whose binding symbol is a name the artifact's shared ABI block already declares (`(?C"ref")`, whose `rx_callout_ref` is the bindings' own type; `match_api.md` §11.2); an empty or repeated attribute; the attribute `verify` (not implemented yet); `once` on a site that can fire twice in one attempt (`match_api.md` §11.8, with the table of what to change, §11.8¶3); a callout inside a lookbehind (a `consume` site there is refused first, as a lookbehind whose length is not fixed), inside a conditional's condition, or inside a group reached by a subroutine call or recursion.
+
 <a id="s8"></a>
 ## 8. Recognised constructs without a producer, and excluded ones
 
@@ -562,7 +572,6 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | spelling | PCRE2 meaning | module |
 |---|---|---|
 | `(?\|X\|Y)` | branch reset: alternatives reuse the same group numbers | `branch-reset` |
-| `(?C)`, `(?Cn)`, `(?C"text")`, `(?C{text})` | callout to caller code | `callouts` |
 | `(?#text)` | a comment up to the next `)` | `comments` |
 | `(?(N)Y\|N)`, `(?(<name>)…)`, `(?('name')…)`, `(?(R)…)`, `(?(assert)…)` | conditional group | `conditionals` |
 | `(?[...])` | extended class with set operations | `extended-classes` |
@@ -610,6 +619,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 5. <a id="s9-p6"></a>[9¶6] Module `vars`. With the module enabled, `${name}` and its forms are pcrec syntax with no PCRE2 meaning (§7.10).
 6. <a id="s9-p7"></a>[9¶7] — retired (moved to §6.2¶3).
 7. <a id="s9-p8"></a>[9¶8] — retired (the difference is gone; §3.2¶2).
+8. <a id="s9-p9"></a>[9¶9] Module `callouts`. pcrec's answer for a callout pattern is the backtracking-order answer; libpcre2's moves with its optimizations, so the two agree where libpcre2's answer does not depend on them (`match_api.md` §11.6). A `consume` callout and the binding by symbol have no PCRE2 form.
 
 <a id="s10"></a>
 ## 10. Construct index
@@ -687,7 +697,8 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `(?>...)` | `atomic-groups` | §7.2 |
 | `(?*a)` | `lookaround` | §7.4 |
 | `(?#...)` | `comments` | §8.1 |
-| `(?C1)` | `callouts` | §8.1 |
+| `(?C1)` | `callouts` | §7.11 |
+| `(?Cx)` |  | §7.11 |
 | `(?\|...)` | `branch-reset` | §8.1 |
 | `(?(1)a\|b)` | `conditionals` | §8.1 |
 | `(?(DEFINE)(?<w>a))` | `recursion` | §7.7 |

@@ -1,0 +1,188 @@
+# tests/callouts/shapes.rxt — module `callouts`' NAMED SHAPES ([INLINE-C]
+# stage 1b; docs/spec/match_api.md §11; docs/design/inline_c.md §9.1).
+#
+# Every binding named here is a row of behaviors.h, defined in stubs.c and
+# linked into each driver through this directory's harness.manifest. The
+# expectations are checked against libpcre2 10.46 with its answer-moving
+# optimizations off by verify_callouts.py (this directory's own oracle; the
+# python `re` leg skips the directory). A `consume` site is spliced to its
+# behaviour's equivalent pattern text for that oracle.
+#
+# Numbered callout N binds behaviour row N % 13 (behaviors.h CO_NCHECK):
+# 0 and 13 pass, 1 and 14 veto.
+
+# ---- D1 / P7: backtracking into a shorter capture -------------------------
+pattern (\d+)(?C"le255")
+features all
+m "1234" 0 3
+g 1 0 3
+m "99" 0 2
+m "999" 0 2
+m "999x12" 0 2
+n "x"
+
+# ---- P8: a fire on a path that then fails ---------------------------------
+pattern (\d+)(?C"pass")x|(\d+)y
+features all
+m "12y" 0 3
+g 1 -1 -1
+g 2 0 2
+m "12x" 0 3
+g 1 0 2
+
+# ---- P9: a check before a literal tail ------------------------------------
+pattern (a+)(?C"pass")ab
+features all
+m "aaab" 0 4
+g 1 0 2
+
+pattern (a+)(?C"veto")ab
+features all
+n "aaab"
+
+# ---- P10: an unanchored validator accepts a substring ---------------------
+pattern (\d{1,3})(?C"le255")\.
+features all
+m "999.5" 1 4
+g 1 1 3
+m "255.5" 0 4
+
+pattern ^(\d{1,3})(?C"le255")\.
+features all
+n "999.5"
+m "255.5" 0 4
+
+# ---- D2: a veto on an alternation choice ----------------------------------
+pattern (a|ab)(?C"g1ab")
+features all
+m "ab" 0 2
+g 1 0 2
+n "a"
+
+# ---- A1: a veto of the attempt at offset 0 (the leading (?s).*) -----------
+pattern (?s).*(?C"vetostart")x
+features all
+m "axbx" 1 4
+n "x"
+
+# ---- A2: the view shows every group, last closed value --------------------
+pattern (?:(?C"g1set")(a))+
+features all
+n "aa"
+
+pattern (?:(a)(?C"g1set"))+
+features all
+m "aa" 0 2
+g 1 1 2
+
+# ---- A4: \K and a site after it -------------------------------------------
+pattern a\Kb(?C"notone")c
+features all
+m "abc" 1 3
+
+# ---- an enclosing group around a site -------------------------------------
+pattern (a(?C"aftera")b)+
+features all
+m "abab" 0 4
+g 1 2 4
+
+pattern (a(?C"notb")b)+
+features all
+n "abab"
+
+# ---- a repeated group keeps its last value at a later site ----------------
+pattern (?:(a)|b)+(?C"g1set")c
+features all
+m "abc" 0 3
+g 1 0 1
+n "bbc"
+
+# ---- a consumer between two literals (required run, minimum width) -------
+pattern a(?C"two,consume")b
+features all
+m "axyb" 0 4
+n "ab"
+n "axb"
+m "zzaxybzz" 2 6
+
+pattern (?C"digits,consume")x
+features all
+m "12x" 0 3
+m "x" 0 1
+
+pattern (?:(?C"onea,consume"))+b
+features all
+m "aab" 0 3
+
+# ---- numbered callouts and their declarations -----------------------------
+pattern a(?C)b
+features all
+m "ab" 0 2
+
+pattern a(?C14)b
+features all
+n "ab"
+
+pattern a(?C13)b
+features all
+callout 13 consume
+m "ab" 0 2
+
+pattern a(?C13)b(?C26)
+features all
+callout 13 consume
+callout 26 once
+m "ab" 0 2
+
+# ---- every PCRE2 string delimiter -----------------------------------------
+pattern a(?C`veto`)b
+features all
+n "ab"
+
+pattern a(?C'veto')b
+features all
+n "ab"
+
+pattern a(?C^veto^)b
+features all
+n "ab"
+
+pattern a(?C%veto%)b
+features all
+n "ab"
+
+pattern a(?C#veto#)b
+features all
+n "ab"
+
+pattern a(?C$veto$)b
+features all
+n "ab"
+
+pattern a(?C{veto})b
+features all
+n "ab"
+
+pattern a(?C{pass})b
+features all
+m "ab" 0 2
+
+# ---- a site in a lookahead, and an atomic group ---------------------------
+pattern a(?=b(?C"atend"))
+features all
+m "ab" 0 1
+n "abc"
+
+pattern (?>a+(?C"odd"))b
+features all
+m "aab" 0 3
+n "ab"
+
+# ---- a parity veto steers a lazy repeat ("even" vetoes an even position) --
+pattern a+?(?C"even")b?
+features all
+m "aaab" 0 1
+
+pattern a+?(?C"odd")b
+features all
+m "aab" 0 3

@@ -702,6 +702,8 @@ can fire again: the quantifier \d+ at offset 1 can be backtracked into; make
 it possessive (\d++) or wrap it in (?>...)", or "... is inside the repeat at
 offset 0". The promise costs nothing at run time; it is a compile-time check
 that keeps the class from silently degrading when the pattern is edited.
+(The refusal's text as shipped, and its verdict on whether the fix changes
+what the pattern matches: `match_api.md` §11.8¶3, §11.8¶3a.)
 
 **What the class bounds, and what it does not.** It bounds fires per attempt
 WITHIN ONE ENGINE RUN. Two things the contract already names are outside it,

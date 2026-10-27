@@ -192,6 +192,7 @@ static bool la_has_kreset(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return false;
         /* [DD-14] ANSWERS `false`, AND THE ARM CARRIES AN OBLIGATION FOR THE
          * WAVE THAT BUILDS THE PRODUCER. Read it before touching this line.
@@ -533,6 +534,17 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
             /* [UTF-VALID] a one-character lookbehind is width 1 toward LB
              * whatever node it becomes (utf_valid_design.md §1.4). */
             if (k->behind) pcrec_lb_raise(cx, 1);
+            if (!k->atomic) {
+                /* The as-written lookaround, for `pcrec_callout_sites`'
+                 * `once` rule (internal.h `u.ctx.written`). */
+                Ast *w = pcrec_ast_node(cx, A_LOOK);
+                w->l = body;
+                w->u.look.behind = k->behind;
+                w->u.look.neg    = k->neg;
+                w->u.look.atomic = false;
+                w->u.look.at     = at;
+                cn->u.ctx.written = w;
+            }
             ExtResult cres = { .what = EXT_NODE, .at = at, .msg = "",
                                .answered_at = want };
             cres.node = cn;

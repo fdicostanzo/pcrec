@@ -163,6 +163,7 @@ static unsigned sa_walk(const Ast *a)
         /* The two deliberate declines — see the header. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_CALL:
             return acc;
         }

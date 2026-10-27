@@ -942,6 +942,7 @@ static void cg_length_calls(const struct CallGraph *cg, const Ast *a,
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP: case A_REP: case A_ATOMIC: case A_WCLASS:
             a = a->l;

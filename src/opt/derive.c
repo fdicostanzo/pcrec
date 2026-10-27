@@ -72,6 +72,14 @@ static void qf_walk(QFacts *f, const Ast *a, bool lb)
                 if (a->u.bref.refs[i] >= 0 && a->u.bref.refs[i] <= f->ncap)
                     f->kept[a->u.bref.refs[i]] = true;
             return;
+        /* [INLINE-C] 1b a callout site never reaches a derivation: admission
+         * A3 declines a pattern carrying one first. A hand-coded reader here
+         * would be a second spelling of the kind row's `reads` column, so the
+         * arm is a loud internal error rather than a guess at it. */
+        case A_CALLOUT:
+            pcrec_ctx_fail(f->cx, 0, "internal error: a callout site reached "
+                           "the quantifier derivation, which admission A3 "
+                           "must decline");
         case A_CALL: {
             /* `(?R)` reaches the root, which is never deleted: the root is
              * Q itself. The callee's BODY is visited at its own lexical
@@ -240,6 +248,7 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
         return (QRes){ a, is_never_leaf(a), false };
     case A_EMPTY: case A_EOL: case A_KRESET:
     case A_BREF: case A_VAR: case A_WCLASS:
+    case A_CALLOUT:
     /* Calls are left as they are (§B.1): a callee is rewritten at its own
      * lexical position, and the call reaches the rewritten group. */
     case A_CALL:
@@ -306,6 +315,7 @@ static void qp_walk(QProps *p, const Ast *a, bool lb)
             return;
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+        case A_CALLOUT:
             return;
         case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
             return;

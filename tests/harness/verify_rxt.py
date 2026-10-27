@@ -1140,6 +1140,13 @@ def parse_rxt(path):
                       "'var-unset' wants a bare variable name -- "
                       f"var-unset <name> (got {line!r})")
             # Not appended, for the sibling reason above.
+        elif line.startswith('callout ') or line == 'callout':
+            # [INLINE-C] 1b `callout N ATTRS`: a numbered callout's
+            # attributes. RECOGNISED, not read: python `re` has no callout,
+            # and a callouts block lives in a directory with its own oracle
+            # (tests/callouts/verify_callouts.py). The shape is pcrec's
+            # (schema row PCREC); this leg only knows the line exists.
+            pass
         else:
             # [DD-13b.W23.2] unknown-token-in-scope: the first token has
             # no schema row in this scope at all -- the same fact leg A's

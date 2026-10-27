@@ -16,6 +16,8 @@
  * load-bearing comments moved with them. Signatures are pure (pat, patlen)
  * on purpose: an extent scan needs no Ctx and must not grow one. */
 
+#include <string.h>
+
 #include "core/internal.h"
 
 /* The K4 three-rule delimiter-pair scan, shared by the doorway and the
@@ -158,4 +160,73 @@ bool pcrec_brace_quant_shape(const char *at, size_t avail)
     while (i < avail && at[i] >= '0' && at[i] <= '9') { i++; ndig++; }
     while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
     return ndig > 0 && i < avail && at[i] == '}';     /* {,n} == {0,n} */
+}
+
+/* [INLINE-C] 1b THE `(?C` SHAPE — pure over (at, avail), `at` pointing at the
+ * byte AFTER the `C`. True iff the text is one of PCRE2's three well-formed
+ * callout spellings, each closed by `)`: nothing (`(?C)`, number 0), a
+ * decimal number 0..255 (leading zeros allowed: `(?C01)` is 1), or a string
+ * opened by one of PCRE2's delimiters `` ` ' " ^ % # $ { `` and closed by the
+ * same byte (`}` for `{`), a doubled closing delimiter being one literal
+ * byte. Measured against libpcre2 10.46 (inline_c.md §2.3, and the 1b lane's
+ * probe): `(?C256)` 138, `(?Cx)`/`(?C!x!)`/`(?C 1)`/`(?C-1)` 182, `(?C1x)`/
+ * `(?C"a"x)` 139, `(?C"a` 181, `(?C` 114 — every one of them is NOT this
+ * shape, which is what lets the registry's malformed row answer the exact
+ * complement (D17: a malformed `(?C` is not a callout, in any module state).
+ *
+ * ONE HOME, TWO CALLERS: the two `(?C` rows' recognisers, and module
+ * `callouts`' port, which reads `out` for the parts. */
+bool pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out)
+{
+    PcrecCoScan s = { false, 0, 0, 0, 0, 0 };
+    size_t i = 0;
+    if (!at || avail == 0) return false;
+    if (at[0] == ')') {
+        s.end = 1;
+    } else if (at[0] >= '0' && at[0] <= '9') {
+        while (i < avail && at[i] >= '0' && at[i] <= '9') {
+            s.num = s.num * 10 + (at[i] - '0');
+            if (s.num > 255) return false;
+            i++;
+        }
+        if (i >= avail || at[i] != ')') return false;
+        s.end = i + 1;
+    } else {
+        static const char delims[] = "`'\"^%#${";
+        if (!memchr(delims, at[0], sizeof delims - 1)) return false;
+        s.string = true;
+        s.close = at[0] == '{' ? '}' : at[0];
+        s.str = 1;
+        for (i = 1;; i++) {
+            if (i >= avail) return false;
+            if (at[i] != s.close) continue;
+            if (i + 1 < avail && at[i + 1] == s.close) { i++; continue; }
+            break;
+        }
+        s.rawlen = i - 1;
+        if (i + 1 >= avail || at[i + 1] != ')') return false;
+        s.end = i + 2;
+    }
+    if (out) *out = s;
+    return true;
+}
+
+/* [INLINE-C] 1b the two `(?C` rows' recognisers: module `callouts`' row
+ * answers for the well-formed shape, the malformed row for its exact
+ * complement, so exactly one of them answers for any text and the doorway's
+ * arbitration never ties. `at == NULL` is NO TEXT, which is what the group
+ * doorway offers a pattern that ENDS at `(?C`: a truncated `(?C` is not a
+ * callout, so the malformed row answers it, in every module state (no
+ * "requires module" for a text no module makes valid; pattern_language.md
+ * §7.11¶3). */
+bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail)
+{
+    (void)tail;
+    return at && pcrec_callout_extent_scan(at, avail, NULL);
+}
+
+bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
+                                       const char *tail)
+{
+    return !pcrec_callout_recognise(at, avail, tail);
 }

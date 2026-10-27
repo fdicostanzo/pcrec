@@ -268,6 +268,7 @@ static void earliest_dfa_excluding(const Ast *a, const Ast **best)
          * PREFILTER decline is a different mechanism and is NOT free — see
          * `has_var` in `prefilter_decision` below. */
         case A_VAR:
+        case A_CALLOUT:
             return;
         /* [M6.6.2] DESCENDS, and there is NO new predicate anywhere for this
          * module (design §5.1). SR-8 does the whole job through `Ast.reg`: the
@@ -563,6 +564,7 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
 static bool pfa_bref(const PfAdmitSel *s) { return (s->kinds & PF_KIND_BREF) != 0; }
 static bool pfa_call(const PfAdmitSel *s) { return (s->kinds & PF_KIND_LINKED_CALL) != 0; }
 static bool pfa_var(const PfAdmitSel *s)  { return (s->kinds & PF_KIND_VAR) != 0; }
+static bool pfa_callout(const PfAdmitSel *s) { return (s->kinds & PF_KIND_CALLOUT) != 0; }
 
 /* The DEFAULT scope's decline is asked of: no rung, no overflow, a VM hybrid
  * that would build a prefilter, and no `-fprefilter` (which outranks it). */
@@ -702,6 +704,18 @@ static const PfAdmit pf_admits[] = {
       " with v = x matches axb, the erased ab does not), and its bytes do"
       " not exist until the call; no flag changes this, and -fprefilter"
       " refuses", .axlist = FB_NO_LIST },
+    /* [INLINE-C] 1b THE FOURTH CONSTRUCT ROW (docs/design/inline_c.md §1.8):
+     * a callout pattern has no prefilter at stage 1b. The erasure IS a
+     * superset (a check erases to the empty string, a consumer to any
+     * bytes) and records itself inexact (`NFA_ERASED_CALLOUT`), so the
+     * hybrid would be SOUND; it is declined outright here and admitted by a
+     * later stage with its own tests (stage 4). `-fprefilter` refuses, as on
+     * its three siblings. */
+    { "callout",            pfa_callout,            PFV_OFF,     "no-callout",
+      ESEL_PASS,
+      "callout site -- a callout pattern has no prefilter yet; no flag"
+      " changes this, and -fprefilter refuses",
+      .axlist = FB_NO_LIST },
     /* [OPT-4.2] THE RUNGLESS DECLINE, worded DIFFERENTLY from row 5's, not
      * merely generalized, because there is no rung here to say was
      * "offered": this pattern's own EXACT language is nullable on the
@@ -987,9 +1001,18 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * chosen ONCE and used twice, which is what `[DD-14]`'s own two-argument
      * ternary pair was already doing and what stops the two halves of one
      * sentence naming different constructs. */
+    /* [INLINE-C] 1b a callout site (T2's `callout` row) refuses too, in its
+     * own words: its erasure IS a superset, so the reason is the stage's
+     * decline, not the language. */
+    const bool has_callout = (kinds & PF_KIND_CALLOUT) != 0;
     const char *pf_noun = has_bref ? "backreference"
                         : has_call ? "subroutine call"
                         :            "${...} variable";
+    if (force_on && has_callout && !(has_bref || has_call || has_var))
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter cannot be honoured for a pattern containing a "
+                 "callout: a callout pattern has no prefilter yet "
+                 "(drop -fprefilter)");
     if (force_on && (has_bref || has_call || has_var))
         pcrec_ctx_fail(cx, why_pos,
                  "-fprefilter cannot be honoured for a pattern containing a "

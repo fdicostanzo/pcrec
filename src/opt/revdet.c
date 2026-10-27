@@ -203,6 +203,7 @@ static void rd_shape(Shape *S, const Ast *a)
          * here says an arm is MISSING, never which arm is right. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             S->ok = false;
             return;
         case A_CAP:
@@ -374,6 +375,14 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * WRONG CONSTRUCT sends the next reader hunting in the wrong file. */
     case A_VAR:
         pcrec_ctx_fail(cx, 0, "internal error: a ${...} variable reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
+
+    /* [INLINE-C] 1b and a callout site, for the same reason: the shape scan
+     * declines it (a site's view is the FORWARD path's position and groups,
+     * which a backward walk does not reproduce). */
+    case A_CALLOUT:
+        pcrec_ctx_fail(cx, 0, "internal error: a callout site reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
@@ -549,6 +558,7 @@ void pcrec_revdet_first(Ctx *cx, const Ast *a, uint8_t *out)
         case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_ATOMIC: case A_LOOK: case A_BREF: case A_VAR:
+        case A_CALLOUT:
             /* Unreachable on a shape-scanned body; widening to ALL BYTES is
              * the sound direction, because it makes the disjointness test
              * below fail and the quantifier keep its machinery.
@@ -617,6 +627,7 @@ static bool rd_alt_disjoint(Ctx *cx, const Ast *a)
          * the body first. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_KRESET:
             return false;
         /* [DD-14] DECLINES with them, same sound direction and same reason:
@@ -738,6 +749,7 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
      * [M6.5.2] `A_BREF` joins for the identical reason. */
     case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return;
     /* [M6.6.2] DOES NOT DESCEND, and this is the ONE arm in this file where
      * the decline is a CHOICE rather than a correctness requirement — which is

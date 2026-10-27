@@ -680,14 +680,13 @@ static const char *pf_hex(Ctx *cx, const unsigned char *b,
     return t;
 }
 
-/* The `kinds` value's member names, indexed by `PF_KIND_*` bit position. */
-static const char *const pf_kind_name[] = {
-    "bref", "linked_call", "var", "atomic", "lookaround", "live_capture",
-    "collapsible_rep"
+/* The `kinds` value's member names, indexed by `PF_KIND_*` bit position:
+ * generated from the bits' own rows (`PF_KIND_ROWS`, facts.h). */
+static const char *const pf_kind_name[PF_KIND_NBITS] = {
+#define PF_KIND_NAME_(n, s) s,
+    PF_KIND_ROWS(PF_KIND_NAME_)
+#undef PF_KIND_NAME_
 };
-_Static_assert(PF_KIND_COLLAPSIBLE_REP ==
-                   1u << (sizeof pf_kind_name / sizeof pf_kind_name[0] - 1),
-               "one kind name per PF_KIND_* bit, the last bit last");
 
 /* Fact `f`'s ONE renderer. Every fact with no answer to give renders
  * `"none"` — the stamps' own member for "declined", because 0 is a legal

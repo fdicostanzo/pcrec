@@ -477,6 +477,7 @@ static bool subtree_is_identity(const LowerCtx *lc, const Ast *a)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return true;
         case A_CAP: case A_ATOMIC: case A_LOOK:
             a = a->l;
@@ -532,6 +533,7 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         /* THE BACK EDGE STOPS HERE — see this file's header. */
         case A_CALL:
             return;
@@ -596,6 +598,7 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP:
             (*n)++;

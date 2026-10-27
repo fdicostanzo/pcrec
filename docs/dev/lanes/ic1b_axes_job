@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ic1b: test-axes on worktrees/ic1b ([INLINE-C] stage 1b: every axis answer-identical to default over the corpus, tests/callouts/ included, with the new per-axis callouts floor of 50 reached cases; plus the form census). The two scripts `make test-axes` runs, called directly (the job already holds the box lock).
+# Queued by the lane (scripts/boxqueue add --name 542-ic1b-axes docs/dev/lanes/ic1b_axes_job). Not ready from 2026-10-26 21:30 (cap 2 h; nothing past 23:30).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+case "${1:-}" in
+    --dry-run)
+        [ -f "$TREE/tests/axes/run_axes.sh" ] && [ -f "$TREE/tests/codegen/run_form_census.sh" ] \
+            || { echo "no run_axes.sh or run_form_census.sh in $TREE" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; tests/axes/run_axes.sh > \$BQ_LOG.axes; tests/codegen/run_form_census.sh > \$BQ_LOG.census"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect axes=1 log=job.log.axes lines=^run_axes.sh: all axes answer-identical"
+        echo "boxqueue: expect census=1 log=job.log.census lines=^checks failed: 0$"
+        exit 0 ;;
+    --ready)
+        now=$(date +%s); stop=$(date -d '2026-10-26 21:30' +%s) || exit 1
+        [ "$now" -lt "$stop" ] || { echo "past 2026-10-26 21:30: would overrun 23:30; manager re-times this job"; exit 75; }
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+( cd "$TREE" && bash tests/axes/run_axes.sh ) > "$BQ_LOG.axes" 2>&1 || rc=1
+( cd "$TREE" && PROCS="$(bash tests/lib/procs_default.sh)" bash tests/codegen/run_form_census.sh ) > "$BQ_LOG.census" 2>&1 || rc=1
+exit $rc

@@ -27,7 +27,8 @@
 #                  honest-empty claim is checked against the artifact, not
 #                  taken on trust, so the section starts working the day a
 #                  producer exists.
-#   CALLOUTS       same shape.
+#   CALLOUTS       the listing's site count, its callouts section's rows and
+#                  the artifact's call expressions all agree ([INLINE-C] 1b).
 #   header         RX_NCAPS / step budget / frame + trail capacities agree
 #                  with the macros in the .c.
 #
@@ -109,7 +110,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # no resume frame -- but across a sweep containing an alternation chain and a
 # backtracking rung, ZERO pushes on either side means the extraction stopped
 # matching rather than that the population vanished.
-tot_cpush=0; tot_ipush=0; tot_isl=0
+tot_cpush=0; tot_ipush=0; tot_isl=0; tot_cal=0
 
 # The shapes, chosen so every emission path that can produce a listing event is
 # represented: an alternation chain, both cursor rungs, the frames rung with
@@ -156,6 +157,7 @@ PATTERNS=(
     '((a)|ab){0,12}?c'
     '(?:a|ab){2,3}+'
     'xyz(a|ab)c'
+    '(a+)(?C"q")b(?C7)'
 )
 
 # POSITIONALLY PARALLEL to PATTERNS: the `--features` value each row needs, ''
@@ -182,6 +184,9 @@ PATTERNS=(
 #                                        a two-byte run no longer takes the compare
 #                                        form at all, so it stopped reaching S305's
 #                                        own mechanism.)
+#   (a+)(?C"q")b(?C7)                    [INLINE-C] 1b: the CALLOUTS term's
+#                                        producer, a named and a numbered site
+#                                        (tests/callouts/ carries the shapes).
 PATTERN_FEATURES=(
     '' '' '' '' '' '' '' '' '' '' ''
     'lookaround'
@@ -190,6 +195,7 @@ PATTERN_FEATURES=(
     ''
     'atomic-groups'
     ''
+    'callouts'
 )
 
 if [ "${#PATTERNS[@]}" -ne "${#PATTERN_FEATURES[@]}" ]; then
@@ -490,8 +496,13 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # biconditional rather than a count because "the .c mentions an island" is
     # not a number.
     #
-    # CALLOUTS keep the honest-empty shape: module 'callouts' still has no
-    # producer, so `cal` and `art_cal` must both be 0.
+    # CALLOUTS HAVE A PRODUCER since [INLINE-C] stage 1b, so the honest-empty
+    # shape became the islands block's three-surface comparison: the summary's
+    # `callout-sites` (the emitter's site counter), the callouts SECTION's row
+    # count (the per-site walk over `callout_nodes`), and the artifact TEXT's
+    # call expressions (`rx_callout_<binding>.fn(&`, one per site). A site
+    # emitted without being listed, or listed without being emitted, parts
+    # them.
     #
     # [EMIT-VERB]/D112, 2026-09-19: THE ARTIFACT-TEXT TERM READS THE
     # `-fcomments` BUILD, and only this term does. The island's presence in
@@ -505,19 +516,20 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # pattern. The `-fcomments` artifact keeps this a genuinely THIRD surface;
     # dropping the term instead would have left the block comparing the event
     # stream against the counter with nothing witnessing the emitted C at all.
-    # CALLOUTS is untouched: its needle is code (`rx_callout_ref …(`, `->fn(`),
-    # so it still reads the default artifact.
+    # CALLOUTS' needle is code (`rx_callout_<binding>.fn(&`), so it reads the
+    # default artifact.
     isl="$(table_lookup "$d/ir" summary fact islands value)" || isl=""
     cal="$(table_lookup "$d/ir" summary fact callout-sites value)" || cal=""
     stamp_isl="$(sed -n 's/^#define rx_VM_ALT_ISLANDS \([0-9]*\)$/\1/Ip' "$d/gen.c")"
     art_isl=0
     grep -q 'island' "$d/gen_cmt.c" && art_isl=1
-    art_cal=0
-    grep -qE 'rx_callout_ref [a-z_]*\(|->fn\(' "$d/gen.c" && art_cal=1
+    art_cal="$(grep -cE 'rx_callout_[A-Za-z0-9_]+\.fn\(&' "$d/gen.c")"
+    sec_cal="$(awk -F'\t' '/^#section/{s=($0=="#section callouts")} s && !/^#/ && $1!=""{n++} END{print n+0}' "$d/ir")"
     isl_says_some=0; [ -n "$isl" ] && [ "$isl" -gt 0 ] && isl_says_some=1
     [ "$isl_says_some" = "1" ] && tot_isl=$((tot_isl + 1))
-    if [ "$cal" != "0" ] || [ "$art_cal" != "0" ]; then
-        bad "ir-listing[$pat]: callout accounting disagrees — listing says $cal, artifact says $art_cal (module 'callouts' has no producer, so both must be 0)"
+    [ -n "$cal" ] && [ "$cal" -gt 0 ] && tot_cal=$((tot_cal + 1))
+    if [ "$cal" != "$art_cal" ] || [ "$cal" != "$sec_cal" ]; then
+        bad "ir-listing[$pat]: callout accounting disagrees — the summary counts $cal site(s), the callouts section lists $sec_cal and the artifact calls $art_cal"
     elif [ -z "$stamp_isl" ]; then
         bad "ir-listing[$pat]: the artifact carries no RX_VM_ALT_ISLANDS stamp — it is UNCONDITIONAL on every VM artifact (docs/spec/match_api.md 6.3)"
     elif [ "$isl" != "$stamp_isl" ]; then
@@ -608,6 +620,12 @@ if [ "$tot_isl" -lt 1 ]; then
     bad "ir-listing: NO fixture in the sweep produced an island — the islands term is reading only its empty direction, so the -fcomments artifact-text comparison is unreached ([MECH-REACH])"
 else
     ok "ir-listing: $tot_isl of ${#PATTERNS[@]} fixtures produce an island, so the islands biconditional is exercised in BOTH directions"
+fi
+# The callouts term's reach, the same floor shape ([INLINE-C] 1b).
+if [ "$tot_cal" -lt 1 ]; then
+    bad "ir-listing: NO fixture in the sweep has a callout site — the callouts term is reading only its empty direction ([MECH-REACH])"
+else
+    ok "ir-listing: $tot_cal of ${#PATTERNS[@]} fixtures carry a callout site, so the callouts comparison reads both directions"
 fi
 
 # ---- CHOICE POINTS: the sweep-wide non-vacuity guard --------------------

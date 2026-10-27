@@ -180,7 +180,8 @@ static void fd_hook(Ctx *cx, const char *artifact, size_t len, void *ud)
 }
 
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
-                       const int *encs, int nenc, pcrec_error *err)
+                       const PcrecEmitIn *in, const int *encs, int nenc,
+                       pcrec_error *err)
 {
     FactsRows r;
     pcrec_options defo;
@@ -201,7 +202,7 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
         pcrec_output out;
         o.encoding = encs[i];
         if (pcrec_compile_driver(pattern, &o, &out, err, NULL, NULL, NULL,
-                                 fd_hook, &r, NULL) != 0) {
+                                 fd_hook, &r, in) != 0) {
             pcrec_sb_free(&r.facts);
             pcrec_sb_free(&r.dec);
             pcrec_sb_free(&r.plctl);

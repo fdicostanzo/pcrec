@@ -420,6 +420,7 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * subject at all, so it is neither a single-byte branch stage 1 could
      * merge nor a compile-time first byte stage 2 could peel. */
     case A_VAR:
+    case A_CALLOUT:
     /* [M6.2 wave E] `\K` likewise AS A LEAF — but it is the first kind here
      * that could be damaged by the two stages rather than merely unserved by
      * them, so the reason it is safe is written down instead of assumed.

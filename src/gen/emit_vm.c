@@ -66,6 +66,7 @@
  * point — nothing here knows what an encoding does, only which entries this
  * artifact needs. */
 #include "enc/enc.h"
+#include "gen/callsite_rows.h"
 /* [CLS-TREE] S4 the class-matcher kit: a wide class's VM test is one
  * decode plus one of its matchers (docs/design/cls_tree_design.md §2.2). */
 #include "gen/clskit.h"
@@ -1905,7 +1906,7 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
      * than a silent decline. `A_CAP` is unreachable (`bare` above). */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_CAP: case A_ATOMIC:
-    case A_LOOK: case A_BREF: case A_VAR: case A_CALL:
+    case A_LOOK: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* A_ALT (choice), A_EMPTY (zero length), A_EOL/A_CTX (zero-width
          * assertions, which would make "scan ahead by stride" wrong).
          *
@@ -1984,7 +1985,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
      * enumeration; the answer is unchanged. */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
          * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
          * IS the decline, and this runs only on a body `vm_det_seq` already
@@ -2128,6 +2129,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
         case A_BREF:
         /* [VAR] carries no capture NUMBER either, and is unreachable here for `A_BREF`'s own reason: `rd_shape` declines a body holding one. */
         case A_VAR:
+        case A_CALLOUT:
         /* [DD-14] DECLINES, joining `A_BREF` and `A_ATOMIC`: it carries no
          * capture NUMBER of its own, and it is UNREACHABLE for their reason —
          * `rd_shape` (src/opt/revdet.c) declines every body holding a call.
@@ -2961,6 +2963,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * compare's byte-by-byte work is charged against the WORK budget at the
      * emission site, which is per-SUBJECT work this analysis does not size. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_BREF: {
         Cost c = { 0, 0, 0, 0, false, false };
         return c;
@@ -3245,6 +3248,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * entry wrapper's own stack table before the match loop begins — which
      * is this feature's whole distinction from a backreference. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
@@ -4085,7 +4089,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
      * finite set of literal words this enumeration writes. */
     case A_REP: case A_CAP: case A_ATOMIC: case A_LOOK:
     case A_EOL: case A_CTX: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         return false;
     }
     return false;
@@ -5575,7 +5579,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
      * enumeration, still falling to the hard error below. */
     case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
          * §11's `default:`-carrying sites. SOUND AND LOUD: this falls to a
          * hard compile error rather than a silent accept, which is the right
@@ -7515,6 +7519,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP:
             on_cap(v, a->u.cap.no, u);
@@ -7600,6 +7605,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CALL:
             on_call(v, a, u);
@@ -8969,6 +8975,91 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     vm_emit_node(v, entry, a, next);
 }
 
+/* [INLINE-C] 1b THE CALLOUT SITE: `VE_CALLOUT`'s producer, the ONE emitter
+ * of a call out of the pattern (docs/design/inline_c.md §1.2), here with the
+ * `vm-slots` view source. In order:
+ *
+ *   1. ONE STEP charged to the match budget (§1.11): a fire is a step, so a
+ *      site that fires too often gives up PCREC_ERR_STEPS like any
+ *      backtracking blow-up, and the callee cannot read or spend the meter.
+ *   2. A FRESH `rx_ctx` on the stack: the subject, the position, the WHOLE
+ *      capture array as the view (`ncap` = every group plus one at every
+ *      site, §1.3: a group not yet written reads {-1,-1}, and every group is
+ *      published at close because the site's row READS all of them), the
+ *      binding's `user`, and the caller's variables (NULL/0 when the pattern
+ *      takes none).
+ *   3. SLOT 0 SAVED, SET TO THE ATTEMPT START, RESTORED (§1.3): slot 0 is
+ *      `\K`'s live register, and the view's slot 0 is {attempt start,
+ *      PCREC_UNSET} whether or not a `\K` was crossed.
+ *   4. THE CALL, its return routed through the ONE call-site table
+ *      (src/gen/callsite_rows.c, the `matchfn` convention): -1 backtracks; a
+ *      give-up propagates and sets the run's callee-gave-up bit, so the
+ *      tiered entry does not replay the outer match for a give-up that was
+ *      the callee's (§1.6); a contract break traps; a check (`W_PRED`) passes
+ *      on 0; a consumer (`consume`) continues at `pos + r`.
+ *
+ * The callee is the binding (rows 2-3 of §1.4): `rx_callout_<n>` or
+ * `rx_callout_<name>`, an `extern const rx_callout_ref` the artifact's
+ * header declares and the user defines. */
+static void vm_callout(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    Ctx *cx = v->cx;
+    const PcrecCalloutBinding bind = pcrec_callout_binding(&cx->arena, a);
+    const char *sym = bind.symbol;
+    const bool pred = !a->u.callout.consume;
+    vm_lbl(v, entry, vm_rolef(v, "callout site %d: %s, %s", a->u.callout.site,
+                              sym, pred ? "a check" : "consumes"));
+    vm_ev(v, VE_CALLOUT, entry, a->u.callout.site, a->u.callout.why);
+    if (v->has_budget)
+        pcrec_sb_printf(b, "    if (--run->steps_left < 0) return %s_R_STEPS;\n",
+                        v->up);
+    pcrec_sb_printf(b,
+        "    {\n"
+        "        rx_ctx %s_co_ctx;\n"
+        "        const ptrdiff_t %s_co_start = slot_values[0];\n"
+        "        ptrdiff_t r;\n"
+        "        %s_co_ctx.subject = subject;\n"
+        "        %s_co_ctx.len = subject_length;\n"
+        "        %s_co_ctx.pos = scan_position;\n"
+        "        %s_co_ctx.ncap = %d;\n"
+        "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n"
+        "        %s_co_ctx.user = %s;\n",
+        v->p, v->p, v->p, v->p, v->p, v->p, v->ngroups + 1, v->p, v->p,
+        bind.user);
+    if (cx->n_vars > 0)
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.vars = ctx->vars;\n"
+            "        %s_co_ctx.nvars = ctx->nvars;\n", v->p, v->p);
+    else
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.vars = NULL;\n"
+            "        %s_co_ctx.nvars = 0;\n", v->p, v->p);
+    pcrec_sb_printf(b,
+        "        slot_values[0] = (ptrdiff_t)ctx->pos;\n"
+        "        r = %s(&%s_co_ctx);\n"
+        "        slot_values[0] = %s_co_start;\n",
+        bind.callee, v->p, v->p);
+    const CsCallee callee = {
+        .conv = CS_CONV_MATCHFN, .vm = true, .guarded = true, .utf_check = true,
+        .pred = pred, .pos = "scan_position", .subj = "subject",
+        .len = "subject_length",
+        .enc = pcrec_enc_by_id(cx->opt->encoding),
+    };
+    const CsEdges edges = {
+        .succ = pred ? vm_rolef(v, "goto %s_L%d;", v->p, next)
+                     : vm_rolef(v, "{ scan_position += (size_t)r; goto %s_L%d; }",
+                                v->p, next),
+        .fail = vm_rolef(v, "goto %s_fail;", v->p),
+        .prop = "return r;",
+        .giveup = "{ run->callee_gave_up = 1; return r; }",
+    };
+    pcrec_callsite_emit(cx, b, "        ", &callee, &edges);
+    pcrec_sb_puts(b, "    }\n");
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    vm_ev(v, VE_GOTO, next, 0, NULL);
+}
+
 /* `vm_emit`'s arms without its charge — the one entry that emits a node the
  * caller has already counted. Only `A_WCLASS` recurses here directly: the
  * wrapper's own charge stands in for its child's, so the program's node count
@@ -9175,6 +9266,9 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
          * than two programs that happen to agree. */
         if (a->u.call.link == CALL_SPLICE) vm_splice(v, entry, a, next);
         else                               vm_call(v, entry, a, next);
+        return;
+    case A_CALLOUT:
+        vm_callout(v, entry, a, next);
         return;
     }
     pcrec_ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
@@ -9943,25 +10037,35 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                     " island declined every one -- docs/spec/tuning.md S2.20");
     }
     {
-        static const char *const cols[2] = { "label", "note" };
-        vm_sec(o, "callouts", cols, 2);
-        /* A ROW PER EVENT the day a producer exists, rather than a count and
-         * a blank: the ISLANDS section spent its first two years as an
-         * honest-empty claim and started working unchanged when `vm_isl_emit`
-         * landed, which is the shape being copied here. */
+        /* [INLINE-C] 1b THE PRODUCER EXISTS (`vm_callout`), and the section
+         * has the shape the islands section had when its producer landed: a
+         * row per VE_CALLOUT event, so it cannot claim a site the program
+         * does not contain. A site emitted twice (an unrolled repeat) is two
+         * rows with one site number. The firing class and its reason are
+         * `pcrec_callout_sites`' (inline_c.md §1.10), read off the node. */
+        static const char *const cols[7] = { "label", "site", "binding",
+                                             "width", "class", "tail", "note" };
+        vm_sec(o, "callouts", cols, 7);
         for (int i = 0; i < v->nev; i++) {
             if (v->ev[i].k != VE_CALLOUT) continue;
-            const char *row[2] = { vm_rolef(v, "L%d", v->ev[i].a),
-                                   v->ev[i].role };
-            pcrec_sb_row(o, row, 2);
+            const Ast *a = v->cx->callout_nodes[v->ev[i].b];
+            const char *row[7] = {
+                vm_rolef(v, "L%d", v->ev[i].a),
+                vm_rolef(v, "%d", v->ev[i].b),
+                pcrec_callout_binding(&v->cx->arena, a).symbol,
+                a->u.callout.consume ? "consume" : "check",
+                pcrec_callout_class_name(a->u.callout.fclass),
+                a->u.callout.tail ? "tail" : "-",
+                v->ev[i].role,
+            };
+            pcrec_sb_row(o, row, 7);
         }
         if (ncallout == 0) {
-            const char *cells[2] = {
-                NULL,
-                "none: module 'callouts' has no producer, so no pattern can"
-                " reach a call site -- engine_m4.md S9.1"
+            const char *cells[7] = {
+                NULL, NULL, NULL, NULL, NULL, NULL,
+                "none: this pattern has no callout site"
             };
-            pcrec_sb_row(o, cells, 2);
+            pcrec_sb_row(o, cells, 7);
         }
     }
 }
@@ -11857,6 +11961,12 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
     if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+    /* [INLINE-C] 1b the callee-gave-up bit (inline_c.md §1.6 D8): set by a
+     * callout site that propagates its callee's give-up, read by the tiered
+     * entry so a callee's FRAMES does not replay the outer match. Only on an
+     * artifact with a site, so every other artifact keeps its bytes. */
+    if (v->cx->ncallouts > 0)
+        pcrec_sb_puts(c, "    int callee_gave_up;     /* a callout's callee gave up */\n");
     pcrec_sb_printf(c, "} %s_run_state;\n\n", v->p);
 
     /* [DD-14.FB] (§11 item 2) THE STAMPED DEFAULT STORAGE, now a type of its
@@ -12633,6 +12743,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     if (has_budget) pcrec_sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v->up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         pcrec_sb_printf(c, "    run->work_left = %s_WORK_BUDGET;\n", v->up);
+    if (v->cx->ncallouts > 0)
+        pcrec_sb_puts(c, "    run->callee_gave_up = 0;\n");
     pcrec_sb_puts(c, "}\n\n");
 
     /* [DD-14 wave B+C] §5.6 site 5b — the per-START-POSITION reset. It rewinds
@@ -13581,6 +13693,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * artifact's rx_matchfn AS a callout. `vm_look_behind`'s
          * negative-arm end-check is the one live producer today. */
         "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
+        /* [INLINE-C] 1b a callout site propagates its callee's other codes
+         * (the return table's UTF and UNSET_VAR rows) out of the attempt;
+         * they end the search as the callee's own entry would have. Only on
+         * an artifact with a site, whose attempts can return one. */
+        "%s"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
         "        if (attempt_position >= %s) return 0;\n"
@@ -13597,7 +13714,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_seed);
+        v->up, v->up, v->up, v->up, v->up,
+        v->cx->ncallouts > 0 ? "        if (result < -1) return (int)result;\n" : "",
+        v->p, att_max, retry_adv, retry_seed);
     /* [START-SET] THE VM HAT's retry seek, after the encoding's own advance
      * (K49's `retry_adv`): the next position whose byte can begin a match. */
     pcrec_emit_vm_start_seek(v->cx, c, v->p, "        ", false);

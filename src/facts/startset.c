@@ -142,6 +142,7 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
         /* Not looked into: every byte, nullable (§3.2). */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
              * every kind above the backreference, ANY for the two. */
             return ss_row(a, acc);

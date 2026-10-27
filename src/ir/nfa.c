@@ -587,9 +587,10 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
  * text ZERO is an epsilon, and the row's ERASE bit is recorded in
  * `Nfa.erased` when that epsilon is wider than the kind's language (a
  * lookaround's filter thrown away), so exactness stays a recorded fact.
- * Text ANY would be "any bytes, any length", which no kind lowers today
- * (each such kind declines the prefilter before a machine is built), so it
- * is the same loud internal error the backreference arm below takes. */
+ * Text ANY is "any bytes, any length" (a `consume` callout site, 1b), lowered
+ * only for a row that records an erasure; a row with ANY text and NO erase
+ * bit (a backreference, a variable) has no superset the row could vouch for,
+ * so it is the same loud internal error the backreference arm below takes. */
 static Frag frag_row(NB *b, const Ast *a)
 {
     const KindRow row = pcrec_ast_row(a);
@@ -598,6 +599,14 @@ static Frag frag_row(NB *b, const Ast *a)
         b->nfa->erased |= row.erase;
         return frag_single(b, N_EPS);
     case KTEXT_ANY:
+        if (!row.erase) break;
+        b->nfa->erased |= row.erase;
+        {
+            unsigned char all[32];
+            memset(all, 0xff, sizeof all);
+            Ast *any = pcrec_ast_class_from_bits(b->cx, all, false);
+            return frag_star(b, any, true);
+        }
     case KTEXT_OWN:
         break;
     }
@@ -632,6 +641,11 @@ static Frag compile_ast(NB *b, const Ast *a)
         return f;
     }
     case A_EMPTY: return frag_row(b, a);   /* [INLINE-C] 1a: its row (exact) */
+    /* [INLINE-C] 1b a callout site lowers by its width class (its row): a
+     * check to epsilon, a `consume` site to any bytes; either is recorded in
+     * `Nfa.erased` (`NFA_ERASED_CALLOUT`), so a callout pattern's machine
+     * proves a START and never an END (inline_c.md §1.8). */
+    case A_CALLOUT: return frag_row(b, a);
     case A_EOL:
         /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
          * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with

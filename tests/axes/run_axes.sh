@@ -1502,9 +1502,27 @@ run_one_axis() {
         echo "AXIS FAIL: $label: refused_documented=$refused_documented is BELOW its K35 floor ($floor) — the documented refusal population shrank; find out why before lowering the floor" >&2
         floor_breach=1
     fi
+    # [INLINE-C] 1b ([r1 T6]) THE CALLOUTS FLOOR: every axis must still RUN
+    # the callouts corpus. A callout artifact links its bindings through
+    # tests/callouts/harness.manifest; an axis that stopped building or
+    # running those cases would read as "nothing disagreed" (K35). Counted
+    # off this axis's own dump: case lines from tests/callouts/, a run or a
+    # `REFUSED` compile (a refusal is the REFUSAL_PATTERN table's to judge:
+    # `--engine=dfa` and `-fprefilter` refuse a callout pattern by their
+    # documented texts). The floor is shapes.rxt's measured 49 case lines
+    # (the m/n lines; its 33 blocks), rounded down to 45; only applied on a
+    # whole-tree sweep. (The first floor, 50, was set off a miscount of 59
+    # and failed every axis, ic1badvice-axes 2026-10-26.)
+    local co_ran co_floor_breach=0
+    co_ran=$(awk -F'\t' '$1 ~ /(^|\/)tests\/callouts\// {n++} END{print n+0}' "$dump")
+    if [ "$#" -eq 0 ] && [ "$co_ran" -lt 45 ]; then
+        echo "AXIS FAIL: $label: only $co_ran tests/callouts/ case(s) reached this axis, below the floor of 45 — the callouts corpus stopped being exercised ([r1 T6], K35)" >&2
+        co_floor_breach=1
+    fi
+    echo "  callouts cases reached: $co_ran (floor 45)"
     echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
-    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ]; then
+    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ] || [ "$co_floor_breach" -eq 1 ]; then
         verdict="FAIL"
         fail=1
         echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s), $giveup1_unallowed unallowed one-sided give-up(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2

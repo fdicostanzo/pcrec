@@ -2359,7 +2359,11 @@ else
         # `(*UTF)a`/`(*UTF8)a` print their FIXED capability sentence
         # ("requires --encoding=utf8"), which this loop reads as the row's own
         # text like every RD_FIXED row. NOTHING RETIRED.
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 131 ]; then
+        #
+        # 131 -> 132 at [INLINE-C] stage 1b: module `callouts`' malformed
+        # `(?Cx)` row (REJECTED, RD_FIXED), whose `syntax` prints its own
+        # "malformed callout" sentence in every module state. NOTHING RETIRED.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 132 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"

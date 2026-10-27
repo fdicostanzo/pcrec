@@ -242,6 +242,14 @@ PCREC_RXT_SCHEMA(BLOCK, "gu",             CASE,  0, NONE,  REPEAT,      "", FORM
 PCREC_RXT_SCHEMA(BLOCK, "var",        QUALIFIED, 0, NONE,       REPEAT,      "", FORMAT, ALL_READERS, 1)
 PCREC_RXT_SCHEMA(BLOCK, "var-unset",  TOKEN,     0, NONE,       REPEAT,      "", FORMAT, ALL_READERS, 1)
 
+/* [INLINE-C] 1b module `callouts`' declaration line: `callout N ATTRS`, the
+ * attributes of numbered callout N in this block's pattern (a numbered
+ * callout has no string to carry them). BLOCK-scoped and repeatable, one
+ * line per number: a declaration belongs to one pattern, so no config
+ * composes it. PCREC: the harness (run.sh) passes each line as `--callout
+ * N:ATTRS` and pcrec reads the value, so pcrec is the one validator. */
+PCREC_RXT_SCHEMA(BLOCK, "callout",    LINE,      0, NONE,       REPEAT,      "", FORMAT, PCREC, 1)
+
 /* W23's block lines — rows only at W23.1, arms at W23.3. */
 PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "closed per-key",       FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)

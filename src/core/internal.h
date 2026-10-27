@@ -187,6 +187,17 @@ typedef struct {
  * under it (the lever fence). Not part of the caller contract. */
 #define PCREC_HARNESS_PREFIX "pcrec_harness_"
 
+/* [INLINE-C] 1b ONE NUMBERED CALLOUT'S DECLARATION (inline_c.md §2.2): a
+ * numbered callout has no string to carry its attributes, so they arrive
+ * from a `.rxt` block's `callout <n> <attr>...` line or the CLI's
+ * `--callout N:attr,...`. `attrs` is the comma-separated list, read by the
+ * one attribute grammar (`pcrec_callout_attrs`). No library member carries
+ * it in v1 ([IFACE-PUSH]). */
+typedef struct {
+    int         num;      /* 0..255 */
+    const char *attrs;    /* "consume,once"; never empty (`pcrec_callout_decl_read`) */
+} PcrecCalloutDecl;
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -228,6 +239,10 @@ typedef struct {
      * stated shape, `edge_rank[from][to]` = the edge's PcrecEdgeRank + 1, and
      * 0 where the shape has no such edge (NULL: not wanted). */
     unsigned char (*edge_rank)[PCREC_ENTRY_N];
+    /* [INLINE-C] 1b the numbered callouts' declarations (NULL/0: none), read
+     * by `pcrec_callout_sites` (src/opt/callout.c). */
+    const PcrecCalloutDecl *callout_decls;
+    int                     ncallout_decls;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -1196,7 +1211,27 @@ typedef enum {
      * the head of an `A_CAT` spine used to unroll INTO the spine (`éabc`
      * flattens to five byte elements, and `pcrec_lit_run` reads a five-byte
      * run), and a wrapper that stopped that would move artifacts. */
-    A_WCLASS
+    A_WCLASS,
+    /* [INLINE-C] stage 1b A CALLOUT SITE (docs/design/inline_c.md §1;
+     * module `callouts`, [M4-CALLOUTS] step 2): the engine calls an
+     * `rx_matchfn` here, with a read-only view of the subject, the position
+     * and every group, and routes its return through the call-site return
+     * table (`src/gen/callsite_rows.h`). Every `(?C` spelling parses to this
+     * one kind; the payload is `u.callout` below.
+     *
+     * WHAT IT IS TO EVERY PASS is its attribute row, picked PER NODE by its
+     * width class (`pcrec_ast_row`): a CHECK (the default) adds no text and
+     * a `consume` site any text, and both are OPAQUE to a path reader, so no
+     * pass may prune a path a site could see (the P7 witness: `(\d+)`
+     * possessified before a check moves its answer). It READS every group:
+     * a site's view holds the pattern's whole capture array, so every group
+     * joins the one marked set (publish-at-close, the `--no-captures` keep
+     * set).
+     *
+     * VM-ONLY, by its registry row's stamp; the hybrid's prefilter declines
+     * a callout pattern outright at stage 1b (`pf_admits`). `l`/`r` are
+     * unused. */
+    A_CALLOUT
 } AKind;
 
 /* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
@@ -1220,6 +1255,35 @@ typedef enum {
      * that can express recursion. Wave B+C. */
     CALL_LINKAGE
 } CallLink;
+
+/* [INLINE-C] stage 1b WHO A CALLOUT SITE CALLS: the binding rows of
+ * docs/design/inline_c.md §1.4, first match. Row 1 (`code`, an embedded
+ * segment) arrives with module `code-c` at stage 2. */
+typedef enum {
+    CO_NAME = 1,   /* `(?C"name")`: rx_callout_<name> */
+    CO_NUM         /* `(?C)`, `(?Cn)`: rx_callout_<n> */
+} CalloutBind;
+
+/* [INLINE-C] stage 1b one site's binding row (`pcrec_callout_binding`,
+ * src/parse/mod_callouts.c), the one answer every reader takes: `symbol` the
+ * name the header declares (`is_extern`), `callee` the call's function
+ * expression, `user` the view's `user` expression. Arena text. */
+typedef struct {
+    const char *symbol;
+    const char *callee;
+    const char *user;
+    bool        is_extern;
+} PcrecCalloutBinding;
+
+/* [INLINE-C] stage 1b a site's FIRING CLASS (inline_c.md §1.10): how many
+ * times it can fire within one attempt, derived from structure alone. The
+ * ordinal is the table's row order and the listing token is
+ * `pcrec_callout_class_name`. */
+typedef enum {
+    CO_CLASS_ONCE_PER_MATCH = 1,   /* <= 1 fire per attempt, a pass IS the match */
+    CO_CLASS_ONCE_PER_START,       /* <= 1 fire per attempt */
+    CO_CLASS_REPEATED              /* may fire more than once per attempt */
+} CalloutClass;
 
 /* [M5.0 stage 1] ONE CODE-POINT INTERVAL, inclusive at both ends
  * (docs/design/utf8_design.md §2.2). The `A_CLASS` payload is a sorted,
@@ -1510,7 +1574,21 @@ struct Ast {
              * node nothing analysed keeps its machinery, which is what makes
              * `-fno-revdet` byte-identity-safe. */
             const Ast  *revbody;
+            /* [INLINE-C] 1b THE QUANTIFIER'S PATTERN OFFSET, its blame byte
+             * (`p_rep`'s `cx->pos - 1`: the `*`, `+` or `?`, or a brace
+             * form's closing `}`). `at_known` is true only on a repeat the
+             * base grammar parsed: a repeat a definition or a rewrite built
+             * has no source text, and its zeroed `at` is not an offset.
+             * Read by the callout `once` refusal (src/opt/callout.c), which
+             * names the construct that breaks the promise. */
+            size_t      at;
+            bool        at_known;
         } rep;
+
+        /* [INLINE-C] 1b A_ALT: the pattern offset of the `|` this node was
+         * built at, `at_known` as on `u.rep` (a rewrite's alternation has
+         * none). Read by the callout `once` refusal. */
+        struct { size_t at; bool at_known; } alt;
 
         /* A_CAP: 1-based capturing group number. */
         struct { int no; } cap;
@@ -1531,6 +1609,13 @@ struct Ast {
              * `pcrec_is_bare_anchor`'s one reader. Parse-resolved spelling
              * state, D62's field rule; no engine reads it. */
             bool                anchor;
+            /* THE LOOKAROUND AS WRITTEN, for a NON-ATOMIC lookaround the
+             * parse turned into this node (`(?*a|b)`): the `A_LOOK` the
+             * pattern spelled, kept off the tree so no pass walks it. Only
+             * `pcrec_callout_sites` reads it, so the `once` rule sees the
+             * pattern as written (a rewrite must not hide a construct the
+             * user can read). NULL on every other context node. */
+            const struct Ast   *written;
         } ctx;
 
         /* A_EOL carries NO payload. Until [DD-11.5] it and A_BOL shared a
@@ -1960,6 +2045,39 @@ struct Ast {
             bool        cwmax_known;
             bool        nonnullable;
         } call;
+
+        /* [INLINE-C] stage 1b A_CALLOUT (docs/design/inline_c.md §1.1).
+         *
+         * `bind` picks the callee from the binding rows (§1.4): a NAMED
+         * binding is `rx_callout_<name>`, a NUMBERED one `rx_callout_<num>`;
+         * either way an `extern const rx_callout_ref` the artifact declares
+         * and the user defines. `name` (arena, NUL-terminated, a C
+         * identifier with no `__`) is read for `CO_NAME` only, `num`
+         * (0..255) for `CO_NUM` only.
+         *
+         * `consume` is the WIDTH CLASS: false is `W_PRED` (a check: the
+         * callee returns 0 or -1, and a positive return traps), true is
+         * `W_ANY` (any length, the `consume` attribute). `once` is the
+         * user's compiler-checked promise of §1.10 (firing class 1 or 2).
+         *
+         * `site` is the 1-based textual order among the pattern's sites, and
+         * `at` the site's pattern offset (the listing's and the `once`
+         * diagnostic's). `fclass`/`tail`/`why` are the FIRING CLASS (§1.10),
+         * derived once on the parsed tree by `pcrec_callout_classify`
+         * (src/opt/callout.c) before any optimization pass: `fclass` is a
+         * CalloutClass, `why` the arena reason text the listing prints. */
+        struct {
+            CalloutBind bind;
+            const char *name;
+            int         num;
+            bool        consume;
+            bool        once;
+            int         site;
+            size_t      at;
+            int         fclass;
+            bool        tail;
+            const char *why;
+        } callout;
     } u;
 };
 
@@ -2183,7 +2301,11 @@ typedef struct {
 enum {
     NFA_ERASED_LOOK   = 1u << 0,   /* a lookaround lowered to epsilon */
     NFA_ERASED_ATOMIC = 1u << 1,   /* an atomic group lowered transparently */
-    NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    NFA_ERASED_COUNT  = 1u << 2,   /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    /* [INLINE-C] 1b a callout site lowered by its width class (a check to
+     * epsilon, a `consume` site to any bytes): a relaxation, since a vetoing
+     * site removes paths the machine keeps (inline_c.md §1.8) */
+    NFA_ERASED_CALLOUT = 1u << 3
 };
 
 /* ---- [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW (src/core/kindrow.def;
@@ -2198,7 +2320,7 @@ enum {
  * which column is docs/dev/lanes/ic1a_report.md. */
 typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
 typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
-typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET } KindReads;
+typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET, KREADS_ALL } KindReads;
 typedef struct {
     KindText  text;
     KindPath  path;
@@ -2241,11 +2363,15 @@ static inline KindRow pcrec_kind_row(AKind k)
 #pragma GCC diagnostic pop
 
 /* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
- * by a node field (inline_c.md §1.8's A_CALLOUT by width class) has one place
- * that picks; today every kind has one row. */
+ * by a node field has one place that picks: A_CALLOUT's width class
+ * (inline_c.md §1.8), where a `consume` site's TEXT is ANY (the callee may
+ * consume bytes between its neighbours) and a check's is its kind row's ZERO.
+ * Every other kind has one row. */
 static inline KindRow pcrec_ast_row(const Ast *a)
 {
-    return pcrec_kind_row(a->k);
+    KindRow r = pcrec_kind_row(a->k);
+    if (a->k == A_CALLOUT && a->u.callout.consume) r.text = KTEXT_ANY;
+    return r;
 }
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
@@ -3981,6 +4107,15 @@ struct Ctx {
     /* [COMPOUND] the arrival label of an emitted-size refusal of an
      * ASSEMBLED compound: `fit_rungs[]`' `drop-compound` row reads it. */
     bool                 comp_assembled;
+    /* [INLINE-C] 1b the number of callout sites (A_CALLOUT nodes) the parse
+     * built: the port counts, `pcrec_callout_sites` numbers them 1..n in
+     * textual order, and a pattern with none skips every callout pass and
+     * emits nothing callout-shaped (the identity gate's zero movers). */
+    int                  ncallouts;
+    /* [INLINE-C] 1b the sites by number, `[1..ncallouts]`, written by
+     * `pcrec_callout_sites`: the stamps' binding list and the listing's
+     * `callouts` section read them. */
+    const Ast          **callout_nodes;
     Job                 *job;
 };
 
@@ -5330,6 +5465,9 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
          * WORD is a VarExp, not an Ast, so there is nothing here to descend
          * into either. */
         case A_VAR:
+        /* [INLINE-C] 1b a callout site is a leaf: its callee is outside the
+         * pattern, and `l`/`r` are unused. */
+        case A_CALLOUT:
         /* THE BACK EDGE STOPS HERE — see this function's header. */
         case A_CALL:
             return;
@@ -5376,6 +5514,7 @@ void pcrec_vars_resolve(Ctx *cx, Ast *root);
 /* Does this tree contain an `A_VAR`? The third whole-tree predicate in
  * `prefilter_decision`'s hand-written set (`has_bref`/`has_call`'s shape). */
 bool pcrec_has_var(const Ast *root);
+bool pcrec_has_callout(const Ast *root);   /* [INLINE-C] 1b, mod_callouts.c */
 
 /* [VAR] The trailing `vars, nvars` pair as PARAMETER text or as ARGUMENT
  * text, or `""` on an artifact that mentions no variable — one derivation
@@ -5472,6 +5611,32 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
  * mask and the `why` text still have exactly one home. */
 ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);
+
+/* src/parse/mod_callouts.c — module `callouts` ([INLINE-C] stage 1b,
+ * [M4-CALLOUTS] step 2). The `(?C` port: reads a well-formed numbered or
+ * named callout (`pcrec_callout_extent_scan`), its binding name and
+ * attributes, and returns an A_CALLOUT node stamped with the row. Where a
+ * site may stand, its firing class and the `once` check are the
+ * post-parse pass's (`pcrec_callout_sites`, src/opt/callout.c). The two
+ * recognisers are the module row's (well-formed) and the malformed row's
+ * (its exact complement), so a malformed `(?C` is refused as malformed in
+ * every module state (inline_c.md §2.4, D17). */
+ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+/* The attribute grammar's one home (§2.2): applies the `sep`-separated
+ * list `s`/`n` to callout node `a`; NULL, or the refusal text (unknown,
+ * repeated, empty -- an empty list included -- or `verify`, refused by name
+ * until stage 4). */
+const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
+                                char sep);
+/* The one shape reader of a numbered callout's declaration, `N<sep>ATTRS`,
+ * for the `.rxt` `callout` line (sep ' ') and `--callout` (sep ':'). */
+bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d);
+/* A site's binding row (inline_c.md §1.4): see PcrecCalloutBinding. */
+PcrecCalloutBinding pcrec_callout_binding(Arena *ar, const Ast *a);
+bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail);
+bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
+                                       const char *tail);
 /* The RK_QUANTSUFFIX row for a quantifier spelled by its own selector byte
  * (`*`, `+`, `?` or `{`), for parse.c's desugaring to stamp from. NULL is a
  * registry defect and the caller says so rather than shipping an unstamped
@@ -6129,6 +6294,19 @@ bool   pcrec_class_delim_extent_scan(const char *pat, size_t patlen, int c2,
 bool   pcrec_brace_quant_shape(const char *at, size_t avail);
 size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
                                    size_t nstart);
+/* [INLINE-C] 1b the `(?C` shape: true iff `at` (the byte after the `C`)
+ * holds one of PCRE2's well-formed callout spellings through its `)`; on
+ * true `*out` (may be NULL) carries the parts, offsets relative to `at`.
+ * The two `(?C` rows' recognisers and module `callouts`' port share it. */
+typedef struct {
+    bool   string;    /* a delimited string; false: a number */
+    int    num;       /* the number, 0..255 (`(?C)` is 0) */
+    size_t str;       /* the string's first byte (after the opening delimiter) */
+    size_t rawlen;    /* its length as written (doubled delimiters doubled) */
+    char   close;     /* the closing delimiter */
+    size_t end;       /* just past the closing `)` */
+} PcrecCoScan;
+bool   pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out);
 
 /* src/parse/enabled.c — the enabled feature set (slice 9): one home,
  * process-wide, written once by the CLI's --features before any compile.
@@ -6406,6 +6584,10 @@ typedef struct {
      * group the definition declares is the COMPOSER's question, asked where
      * the sub-parse's `named_groups` is in hand. */
     const char *exports;
+    /* [INLINE-C] 1b a pattern block's `callout N ATTRS` lines, each value
+     * AS WRITTEN, newline-joined in source order (REPEAT, `tags`' shape);
+     * NULL with none. A BLOCK fact only: no config composes it. */
+    const char *callouts;
     /* [DD-13b.W23.4] THREE APPENDED PATTERN-ROW COLUMNS (format_design
      * §2.24). `tags` ACCUMULATES every `tag` line's items, comma-joined in
      * source order — `tag`'s own cardinality is REPEAT, so a block may
@@ -6731,6 +6913,9 @@ typedef struct {
      * of the config that supplied it, on `analysis`' rule exactly. */
     const char *measures;
     size_t      measures_line;
+    /* [INLINE-C] 1b the block's `callout` lines (RxtRow.callouts), read by
+     * the CLI into the compile's numbered-callout declarations. */
+    const char *callouts;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -7354,6 +7539,19 @@ bool  pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
  * that survive are the body's own and keep their own stamps, and no new node
  * is born to inherit the discharged one's. */
 Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root);      /* src/opt/atomic.c */
+
+/* [INLINE-C] 1b THE CALLOUT SITES PASS (src/opt/callout.c), run on the tree
+ * as written — after the composer and the derivation hooks, before
+ * `pcrec_altcls` and every optimization pass — and a no-op when the parse
+ * built no site (`cx->ncallouts == 0`). It applies the numbered callouts'
+ * declarations (`PcrecEmitIn.callout_decls`; a declaration naming no site
+ * is refused), numbers the sites in textual order, refuses the positions
+ * inline_c.md §1.9 does not support, derives each site's FIRING CLASS
+ * (§1.10) and refuses a `once` site of class `repeated`. */
+void pcrec_callout_sites(Ctx *cx, Ast *root);
+/* The listing token of a CalloutClass (`once-per-match`, `once-per-start`,
+ * `repeated`). */
+const char *pcrec_callout_class_name(int fclass);
 
 /* Does this tree carry an A_ATOMIC — i.e. a cut that survived the discharge?
  *
@@ -8061,8 +8259,8 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g);
  * tier reaches a linked program only through `cli/main.c`'s own call to this
  * entry. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err);
+                       const RxtDefs *defs, const PcrecEmitIn *in,
+                       pcrec_output *out, pcrec_error *err);
 
 /* ---- [COMPOUND] derivations (src/opt/derive.c) ---------------------------
  *
@@ -8473,16 +8671,26 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
  * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
  * and the test suite are its only consumers. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err);
+                    const PcrecEmitIn *in, pcrec_error *err);
+/* [INLINE-C] 1b src/core/compile.c: the CLI's `--pattern` compile with
+ * numbered callout declarations (`--callout`). */
+int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
+                           const PcrecHarnessOptions *hopt,
+                           const PcrecCalloutDecl *decls, int ndecls,
+                           pcrec_output *out, pcrec_error *err);
 
 /* src/dump/facts_dump.c — [PATFACTS] `--emit-facts`: the pattern-facts
  * record as a `docs/spec/table_contract.md` listing
  * (`docs/spec/facts_listing.md`). One ordinary compile per encoding in
  * `encs[0..nenc)` (the caller's own `-e` when `nenc` is 0), rows
  * concatenated under each section. malloc'd, caller frees; NULL with `err`
- * filled when a compile refuses. Internal, like `pcrec_emit_ir`. */
+ * filled when a compile refuses. `in` (NULL: none) carries what the CLI's
+ * compile would pass, today the numbered callouts' declarations, so the
+ * listing describes the pattern the compile builds. Internal, like
+ * `pcrec_emit_ir`. */
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
-                       const int *encs, int nenc, pcrec_error *err);
+                       const PcrecEmitIn *in, const int *encs, int nenc,
+                       pcrec_error *err);
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/

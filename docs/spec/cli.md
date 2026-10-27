@@ -29,6 +29,7 @@
   - [§1.18](#s1-18) The `-f`/`-fno-` family and the other flags that share its spelling
   - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
   - [§1.20](#s1-20) `--emit-support`: the subst support unit
+  - [§1.21](#s1-21) `--callout N:ATTRS`: a numbered callout's attributes
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -183,7 +184,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | row | reserved family | refused `PREFIX` |
 |---|---|---|
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
-| 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
+| 2 `callout-bindings` | `rx_callout_<name>` and `rx_callout_<n>`, a callout's binding (`match_api.md` §11) | `rx_callout`, alone or followed by `_` (`-p rx_callout` would emit `rx_callout_search`, which `(?C"search")` binds). The binding NAME has its own rule, the parser's: a `(?C"name")` whose name contains `__` is refused (`pattern_language.md`) |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
 | 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `pcrec_subst_*`, `PCREC_SUBST_*`, `PCREC_SUPPORT_*` | `pcrec_subst` or `pcrec_support`, alone or followed by `_`, in any case; and `pcrec` in any case, whose subst artifact's `<prefix>_subst_*` names would fall in the family |
 
@@ -236,6 +237,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ### 1.10 `--emit-main`
 
 <a id="s1-10-p1"></a>[1.10¶1] Appends a standalone `main()` taking the subject as `argv[1]`. The emitted program's exit codes are a separate vocabulary from `pcrec`'s own (§3.1): `0` on match, `1` on no-match, `2` on a usage error (wrong argc) and `3` on an honest give-up, with `PCREC_ERR_STEPS`/`_FRAMES`/`_WORK` printed as `steps`/`frames`/`work`. The body and its argv contract are otherwise not part of this document.
+
+<a id="s1-10-p2"></a>[1.10¶2] A pattern with a callout site is refused under `--emit-main` (`--emit-main cannot define the binding rx_callout_<name>; link your own`): the artifact declares each binding `extern` (`match_api.md` §11.2), and a generated `main()` has no code of the user's to bind it to.
 
 <a id="s1-11"></a>
 ### 1.11 `--no-captures`
@@ -331,6 +334,11 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ### 1.20 `--emit-support`: the subst support unit
 
 <a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any by its presence, a default value included. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
+
+<a id="s1-21"></a>
+### 1.21 `--callout N:ATTRS`: a numbered callout's attributes
+
+<a id="s1-21-p1"></a>[1.21¶1] Declares the attributes of numbered callout `N` (0-255) in the `--pattern` being compiled, which a numbered callout `(?CN)` has no string to carry (`match_api.md` §11.7). `ATTRS` is a comma-separated list of the attribute names (`consume`, `once`): `--callout 1:consume,once`. Repeatable, one per number. A number declared twice, a declaration naming a number the pattern does not use, an unknown or repeated attribute, an empty `ATTRS` (`--callout 1:`), and a malformed value are refused; the value is echoed with its control bytes escaped. It applies to a compile, `--emit-ir` and `--emit-facts`; `--count-groups` reads no attribute and refuses it. It does not combine with a file operand, where a block's `callout N ATTRS` line says the same thing (`rxt_format.md` §1.5¶13a).
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

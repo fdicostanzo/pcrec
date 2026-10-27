@@ -35,66 +35,26 @@
  * residual, exported by every artifact): a part's copy would be the same
  * text twice. */
 #include "core/internal.h"
+#include "gen/callsite_rows.h"
 
 #include <string.h>
 
 /* ---- the call-site code table (compound.md §A.14) ----------------------- */
 
-typedef enum { CS_SUCCESS, CS_NOMATCH, CS_PROPAGATE, CS_TRAP } CsAction;
-
-typedef struct {
-    const char *name;                         /* the code class */
-    CsAction act;
-    bool (*can_return)(const PcrecPartFacts *f);
-    const char *test;                         /* its test on the code `r` */
-} CallSiteRow;
-
-static bool cs_always(const PcrecPartFacts *f) { (void)f; return true; }
-/* A give-up, an internal error or an unset variable needs a VM callee. */
-static bool cs_vm(const PcrecPartFacts *f)     { return !f->dfa; }
-/* A refused position needs the callee's own guard, a refused subject its own
- * check; a compound's parts are compiled without either. */
-static bool cs_guarded(const PcrecPartFacts *f) { return f->guarded; }
-static bool cs_checks(const PcrecPartFacts *f)  { return f->utf_check; }
-
-static const CallSiteRow callsite_rows[] = {
-    { "span",      CS_SUCCESS,   cs_always,  "r > 0" },
-    { "nomatch",   CS_NOMATCH,   cs_always,  "r == 0" },
-    { "give-up",   CS_PROPAGATE, cs_vm,      "r >= PCREC_ERR_FLOOR && r <= -2" },
-    { "internal",  CS_PROPAGATE, cs_vm,      "r == PCREC_ERR_INTERNAL" },
-    { "utf",       CS_PROPAGATE, cs_checks,  "r == PCREC_ERR_UTF" },
-    { "startpos",  CS_TRAP,      cs_guarded, "r == PCREC_ERR_STARTPOS" },
-    { "unset-var", CS_PROPAGATE, cs_vm,      "r == PCREC_ERR_UNSET_VAR" },
-    { "reserved",  CS_TRAP,      cs_always,  "r < 0" },
-};
-
 /* Writes the handling of one part call's code `r` for the callee `f`, at
- * indent `ind`: every applicable row but `nomatch` as one `if` line in table
- * order (`succ` and `prop` are the combinator's success and propagate
- * statements), then the `nomatch` edge `fail` as the straight-line
- * continuation (only `r == 0` reaches it once every other applicable row has
- * had its test). */
+ * indent `ind`, through the ONE call-site table (src/gen/callsite_rows.c,
+ * lifted there at [INLINE-C] stage 1b): the `part` convention, every row the
+ * part's own compile says it can return. `succ` and `prop` are the
+ * combinator's success and propagate statements, `fail` the no-match edge,
+ * written as the straight-line continuation. */
 static void callsite_emit(StrBuf *c, const char *ind, const PcrecPartFacts *f,
                           const char *succ, const char *prop, const char *fail)
 {
-    for (size_t i = 0; i < sizeof callsite_rows / sizeof callsite_rows[0]; i++) {
-        const CallSiteRow *r = &callsite_rows[i];
-        if (!r->can_return(f)) continue;
-        switch (r->act) {
-        case CS_SUCCESS:
-            pcrec_sb_printf(c, "%sif (%s) %s\n", ind, r->test, succ);
-            break;
-        case CS_PROPAGATE:
-            pcrec_sb_printf(c, "%sif (%s) %s\n", ind, r->test, prop);
-            break;
-        case CS_TRAP:
-            pcrec_sb_printf(c, "%sif (%s) __builtin_trap();\n", ind, r->test);
-            break;
-        case CS_NOMATCH:
-            break;
-        }
-    }
-    pcrec_sb_printf(c, "%s%s\n", ind, fail);
+    const CsCallee callee = { .conv = CS_CONV_PART, .vm = !f->dfa,
+                              .guarded = f->guarded,
+                              .utf_check = f->utf_check };
+    const CsEdges edges = { .succ = succ, .fail = fail, .prop = prop };
+    pcrec_callsite_emit(c->cx, c, ind, &callee, &edges);
 }
 
 /* ---- the parts ------------------------------------------------------------ */

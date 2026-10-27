@@ -344,11 +344,48 @@ static const char *kind_name(RegKind k)
     }
 }
 
+/* [INLINE-C] stage 1b A FAMILY ROW: one RS_REJECTED row that stands for a
+ * whole family of malformed spellings PCRE2 rejects with SEVERAL errors, so
+ * no one PCRE2 sentence is its message (inline_c.md §2.4, D17: a malformed
+ * `(?C` is refused as malformed in every module state, in pcrec's own words,
+ * D26). For such a row the identity half of RS_REJECTED is checked BY CODE
+ * rather than by text: libpcre2 rejects the row's syntax and every listed
+ * member with an error in the declared set, and pcrec refuses each member
+ * with the row's own message. The population is asserted below, like the
+ * capability exemption's, so a second row cannot quietly take this path.
+ * Codes measured against libpcre2 10.46 (lane ic1bfix, 2026-10-26). */
+static const struct {
+    const char *syntax;
+    const char *members[8];
+    int         codes[6];
+} FAMILY_ROWS[] = {
+    { "(?Cx)",
+      { "(?C@a@)", "(?C!x!)", "(?C256)", "(?C1", "(?C1x)", "(?C\"a\"",
+        "(?C\"a", "a(?C" },
+      { 114, 138, 139, 181, 182, 0 } },
+};
+
+static bool family_code(size_t f, int rc)
+{
+    for (size_t i = 0; FAMILY_ROWS[f].codes[i]; i++)
+        if (FAMILY_ROWS[f].codes[i] == rc) return true;
+    return false;
+}
+
+/* The FAMILY_ROWS entry for `r`, or -1. */
+static int family_for(const RegRow *r)
+{
+    for (size_t f = 0; f < sizeof FAMILY_ROWS / sizeof FAMILY_ROWS[0]; f++)
+        if (!strcmp(FAMILY_ROWS[f].syntax, r->syntax)) return (int)f;
+    return -1;
+}
+
 static void check_rows(void)
 {
     int wrappers_used = 0;
     int wrapper_hit[sizeof WRAPPERS / sizeof WRAPPERS[0]] = {0};
     int n_capability = 0;
+    int n_family = 0;
     char label2[320];
 
     for (int k = 0; k < RK_COUNT; k++) {
@@ -468,6 +505,42 @@ static void check_rows(void)
                         label, probe);
                     break;
                 }
+                if (family_for(r) >= 0) {
+                    const size_t f = (size_t)family_for(r);
+                    int fbad = 0;
+                    n_family++;
+                    if (!family_code(f, rc)) {
+                        bad("%s: a family row, and libpcre2 rejects its syntax "
+                            "with error %d (%s), outside the declared family",
+                            label, rc, msg);
+                        fbad++;
+                    }
+                    for (size_t m = 0; m < 8 && FAMILY_ROWS[f].members[m]; m++) {
+                        const char *mp = FAMILY_ROWS[f].members[m];
+                        char mm[256], pm[256];
+                        int mrc = pcre2_try(mp, strlen(mp), mm, sizeof mm);
+                        if (!family_code(f, mrc)) {
+                            bad("%s: family member '%s': libpcre2 answers %d "
+                                "(%s), outside the declared family", label, mp,
+                                mrc, mrc ? mm : "compiles");
+                            fbad++;
+                        }
+                        if (pcrec_try(mp, pm, sizeof pm) == 0 ||
+                            !r->msg || strcmp(pm, r->msg) != 0) {
+                            bad("%s: family member '%s': pcrec must refuse it "
+                                "with the row's message, and said \"%s\"",
+                                label, mp, pm);
+                            fbad++;
+                        }
+                    }
+                    if (!fbad) {
+                        snprintf(label2, sizeof label2, "%.200s (family "
+                                 "row: all members rejected by both, within "
+                                 "its codes)", label);
+                        ok(label2);
+                    }
+                    break;
+                }
                 if (!r->msg || strcmp(r->msg, msg) != 0) {
                     bad("%s: libpcre2 rejects '%s' with error %d, but the identities differ.\n"
                         "        pcrec:   \"%s\"\n        libpcre2: \"%s\"",
@@ -493,6 +566,15 @@ static void check_rows(void)
     else
         ok("capability-refusal exemptions: exactly 1 row (libpcre2 names the "
            "construct and refuses the mode)");
+    /* The family path's population, asserted for the same reason. */
+    if (n_family != (int)(sizeof FAMILY_ROWS / sizeof FAMILY_ROWS[0]))
+        bad("family rows: %d RS_REJECTED rows took the by-code identity path, "
+            "expected %zu (FAMILY_ROWS) -- a family row is gone or renamed, or "
+            "a row reached the path it was not declared for", n_family,
+            sizeof FAMILY_ROWS / sizeof FAMILY_ROWS[0]);
+    else
+        ok("family rows: exactly the declared FAMILY_ROWS took the by-code "
+           "identity path");
 
     /* A wrapper for a row that no longer exists would sit here forever looking
      * like coverage. It is the same shape as the stale-count hazard R6 measured

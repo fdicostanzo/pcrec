@@ -587,7 +587,7 @@ static long long w5_profile(int mode, Trace *t)
     fail_at = 0; sustained = 0; call_n = 0; trace_on = 1; hooked_at = -1;
     int ok_run;
     if (mode == 2) {
-        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, 0, &err);
+        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, NULL, 0, &err);
         ok_run = txt != NULL;
         free(txt);
     } else {
@@ -617,7 +617,7 @@ static int w5_trial(long long n, char *site_out, size_t site_cap)
         fail_at = n; sustained = 0; call_n = 0; fail_site[0] = 0; trace_on = 0;
         pcrec_options o; pcrec_default_options(&o);
         pcrec_error err; memset(&err, 0, sizeof err);
-        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, 0, &err);
+        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, NULL, 0, &err);
         int code;
         if (txt) {
             int rows = 0;

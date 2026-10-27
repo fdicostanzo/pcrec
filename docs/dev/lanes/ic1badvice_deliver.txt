@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic1badvice_report.md
+sections: Summary; Advice table; Verdict source; Probe rows; Tests; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic1badvice-test ic1badvice-mech ic1badvice-axes

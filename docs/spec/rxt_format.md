@@ -559,6 +559,17 @@ off.
   and passes it through. A DUPLICATE name is legal to write and the
   artifact's own rule is FIRST MATCH WINS; collapsing it here would make
   that cell untestable. `docs/spec/vars.md` is the module's contract.
+- <a id="s1-5-p13a"></a>[1.5¶13a] `callout <n> <attrs>` — block-scoped, repeatable, one line per
+  number: the attributes of numbered callout `<n>` (0-255) in the block's
+  pattern, which a numbered callout has no string to carry
+  (`match_api.md` §11.7). `<attrs>` is a non-empty comma-separated list
+  of lower-case names (`callout 1 consume,once`), separated from `<n>` by
+  whitespace. The line's shape is checked where it is read, by the same
+  reader `--callout` uses;
+  which attributes exist, and whether `<n>` names a site of the pattern, are
+  pcrec's compile errors, the same ones `--callout N:ATTRS` gives (`cli.md`),
+  because the harness passes each line as `--callout <n>:<attrs>`. A
+  declaration belongs to one pattern, so no `config` composes it.
 - <a id="s1-5-p14"></a>[1.5¶14] `name <defname>` — block-scoped: names the block, declaring it as a
   DEFINITION. A `<defname>` is a first byte that is a letter or `_`,
   then letters, digits, `_`, `-` or `.`. **The name is in the FILE
@@ -1777,6 +1788,21 @@ failures easy to scan. See `tests/CLAUDE.md` for the current, per-directory
 roster of what each one covers, its oracle rule, and its own supplementary
 checks (differential drivers, structural/identity gates) that no `.rxt`
 block can express.
+
+<a id="s6-p3"></a>[6¶3] **A directory's harness manifest.** A directory whose artifacts need
+user C linked into every driver (a callout artifact declares its bindings
+`extern`, `match_api.md` §11.2) carries `harness.manifest`. `run.sh` reads it
+only from the directory of the `.rxt` file it is running, so no `.rxt` text
+can name a C file and a directory without one links nothing extra. One
+directive per line, `#` comments and blank lines skipped:
+
+| line | meaning |
+|---|---|
+| `link FILE` | compile `FILE` (a file name beside the manifest: no `/`) and link it into every driver built for the directory's `.rxt` files |
+
+<a id="s6-p4"></a>[6¶4] Any other manifest line, a `link` line with no name, a name with a `/`, or anything after the name, is a harness failure: every case of the `.rxt` file being run fails, whether or not its drivers needed the link. A `link` source is compiled with
+`-include` of an artifact header in scope, which gives it the shared ABI
+block (`rx_ctx`, `rx_callout_ref`) without a copy.
 
 <a id="s6-1"></a>
 ### 6.1 Adding a new component test directory

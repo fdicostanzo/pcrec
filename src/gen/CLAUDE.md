@@ -35,7 +35,8 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 - `emit_dfa.c` — both DFA engine emitters (`emit_unanchored`, `emit_attempt`), the six+ axis lists and `cand_rows[]`, naming helpers, shared prologue/ABI types/`rx_info`/`main`/info emission, stamps, `pcrec_emit_find`, start-set/landing/cover rows, the pre-check admission (`req_*`), scan edge, `emit_state_legend`, residual decls/defs, `PCREC_ARTIFACT_ABI`.
 - `emit_vm.c` — the backtracking VM emitter (rungs: cursor/frames/possessive/revdet/counter, MRL pruning, lookaround, atomic, backreferences, calls/splice, alternation island, entry ladder/default entry, hybrid prefilter and retry re-seed, `--emit-ir` listing, VM stamps, class kit callers).
 - `emit_comb.c` — combinator emitters: every exported entry via `pcrec_emit_entry` (`forward`, `finish-at`, `locate-then-finish`, `first-nonzero`).
-- `emit_compound.c` — compound artifact shell: parts' texts and the controller (`first-nonzero`), `callsite_rows[]` call-site table.
+- `emit_compound.c` — compound artifact shell: parts' texts and the controller (`first-nonzero`).
+- `callsite_rows.c` / `.h` — the ONE call-site return table (`part`, `matchfn` conventions): compound part calls and callout sites (`vm_callout`).
 - `entries.c` — entry table and linkage closure (`entry_rows[]`, `PcrecEntryShape`, `pcrec_entry_linkage`); checks `tests/compound/` (`check_entry_ranks.py`, `entry_ranks.tsv`).
 - `part_layout.c` — [ENTRY-TABLE] part-layout tables (art/part/wrap/head rows), marks, render, listings; checks `tests/partlayout/`.
 - `attr_text.c` — [ATTR-TABLE] the one value-to-guarded-text table for function-linkage attributes.

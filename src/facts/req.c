@@ -707,6 +707,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
          * empty set, which disables the check — always sound. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`rb_row_into`): text ZERO
              * for every kind above the backreference, ANY for the two. */
             rb_row_into(acc, a);

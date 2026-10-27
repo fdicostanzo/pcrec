@@ -137,6 +137,7 @@ that live here because an error in them is silent (wrong answers, no warning).
   tests/resource's CPU budget).
 - startanch.c, endwin.c — MOVED to `src/facts/` ([PATFACTS] step 3.0, D126); entries in
   src/facts/CLAUDE.md.
+- callout.c — [INLINE-C] module `callouts`' pass: site numbering, firing classes and `once`, position refusals, numbered-callout declarations; the `once` advice table (one row per culprit kind) and its verdict on the fix, asked only when a message is wanted (possessify's survey on a hypothetical seal, a lookaround retry predicate, a bounded witness builder).
 - reqbyte.c — DELETED ([FINDINGS] B1 = [PATFACTS] 3.1, D126): walk -> `src/facts/req.c`, picks -> `src/core/findings.c`; its still-binding rules are in NOTES.md.
 
 ## Per-topic entries (kept as one-line tags; cited by tests/mech sabotage rows)
