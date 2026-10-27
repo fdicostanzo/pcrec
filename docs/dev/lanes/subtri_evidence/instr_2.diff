@@ -1,0 +1,70 @@
+--- shipped/rx.c
++++ instr/2/rx.c
+@@ -16,6 +16,7 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++unsigned long long g_calls,g_rq_mc,g_rq_bytes,g_rq_hits,g_pf_calls,g_pf_mc,g_pf_bytes,g_pf_steps,g_rev,g_att,g_pf_win;
+ 
+ static inline uint32_t rx_w4(const void *p) { uint32_t w; memcpy(&w, p, 4); return w; }
+ static inline uint64_t rx_w8(const void *p) { uint64_t w; memcpy(&w, p, 8); return w; }
+@@ -346,16 +347,18 @@
+     size_t last_accept_position = (size_t)-1;
+     rx_forward_state forward_state = 0;
+     if (search_from > subject_length) return 0;
++    g_pf_calls++;
+     for (;;) {
+         if (rx_forward_accepts(rx_forward_is_accepting, forward_state)) last_accept_position = scan_position;
+         if (forward_state == 0 && last_accept_position == (size_t)-1) {
+             if (scan_position >= subject_length) return 0;
+             const void *q = memchr(subject + scan_position, 47, subject_length - scan_position);
++            g_pf_mc++; g_pf_bytes += q ? (size_t)((const unsigned char*)q - subject) - scan_position + 1 : subject_length - scan_position;
+             if (!q) return 0;
+             scan_position = (size_t)((const unsigned char *)q - subject);
+         }
+         if (scan_position >= subject_length) break;
+-        forward_state = rx_forward_step(rx_forward_next_state, forward_state, rx_forward_byte_class[subject[scan_position++]]);
++        g_pf_steps++; forward_state = rx_forward_step(rx_forward_next_state, forward_state, rx_forward_byte_class[subject[scan_position++]]);
+         if (rx_forward_is_dead(forward_state)) break;   // dead: no match can continue
+     }
+     if (last_accept_position == (size_t)-1) return 0;
+@@ -367,7 +370,7 @@
+         for (;;) {
+             if (rx_reverse_accepts(rx_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
+             if (rewind_position <= search_from) break;
+-            reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, rx_reverse_byte_class[subject[--rewind_position]]);
++            g_rev++; reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, rx_reverse_byte_class[subject[--rewind_position]]);
+             if (rx_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
+         }
+         if (match_start_position == (size_t)-1) return 0;
+@@ -472,10 +475,11 @@
+     while (pos + 5 < n) {
+         size_t cand;
+         const void *q = memchr(subject + pos + 5, 47, n - pos - 5);
++        g_rq_mc++; g_rq_bytes += q ? (size_t)((const unsigned char*)q - subject) - (pos + 5) + 1 : n - pos - 5;
+         if (!q) return n;
+         cand = (size_t)((const unsigned char *)q - subject) - 5;
+         if (cand + 5 >= n) return n;
+-        if (rx_w4(subject + cand) == rx_w4("admi") && rx_w4(subject + cand + 2) == rx_w4("min/")) return cand;
++        if (rx_w4(subject + cand) == rx_w4("admi") && rx_w4(subject + cand + 2) == rx_w4("min/")) { g_rq_hits++; return cand; }
+         pos = cand + 1;
+     }
+     return n;
+@@ -494,7 +498,7 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
++    g_calls++; size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
+     if (handoff_position >= subject_length) return 0;
+     if (handoff_position - search_from > 6) {
+         handoff_position -= 6;
+@@ -510,7 +514,7 @@
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+-        ctx.pos = attempt_position;
++        ctx.pos = attempt_position; g_att++;
+         result = rx_match_anchored(&ctx, run, window_end);
+         if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+         if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
