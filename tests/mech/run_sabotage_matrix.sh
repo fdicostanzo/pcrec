@@ -610,6 +610,14 @@
 #     only by this directory's manifest and its checks.c, which no other
 #     suite builds. Rows: S1646-S1655, S1657-S1669. Verdict: the
 #     script's `checks passed:`/`checks failed:` trailer.
+#   code — added 2026-10-27 ([INLINE-C] stage 2, lane ic2); runs
+#     tests/code/run_code_tests.sh (`make test-code`) from the SABOTAGED
+#     tree: the corpus (with t2/ and frag/, whose blocks expect refusals),
+#     its libpcre2 oracle, the refusals, the entry-point table, the
+#     diagnostics, header placement, the live-macro, span-helper and
+#     call-form checks. Its own arm because the section's grant, user
+#     source and fixtures live only in that directory. Rows: S1680-S1685.
+#     Verdict: the script's `checks passed:`/`checks failed:` trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1902,6 +1910,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 score_arm "$work/callouts.log" "$f" "callouts:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            code)
+                # [INLINE-C] stage 2 — module `code-c`'s own arm:
+                # tests/code/run_code_tests.sh, `callouts`' shape.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/code/run_code_tests.sh" \
+                    > "$work/code.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/code.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/code.log" | grep -oE '[0-9]+')"
+                score_arm "$work/code.log" "$f" "code:${f:-ERR}fail/${p:-?}pass"
                 ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
