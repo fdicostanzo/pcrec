@@ -2363,7 +2363,11 @@ else
         # 131 -> 132 at [INLINE-C] stage 1b: module `callouts`' malformed
         # `(?Cx)` row (REJECTED, RD_FIXED), whose `syntax` prints its own
         # "malformed callout" sentence in every module state. NOTHING RETIRED.
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 132 ]; then
+        #
+        # 132 -> 133 at [INLINE-C] stage 2: module `code-c`'s tagged row,
+        # whose `syntax` prints "requires module 'code-c'" (and the one door,
+        # `--allow-code=c`) when no grant is given. NOTHING RETIRED.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 133 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"

@@ -1712,8 +1712,10 @@ def main():
         if declares_own_oracle(path) and \
                 _rxt_head_probe(path) not in ('',) + _RXT_BLOCK_OPENERS:
             with open(path, encoding='latin-1') as f:
+                # every expectation line the census counts (rxtsource's
+                # CENSUS_LINES kinds), `g`/`gp`/`perr` included
                 n_cases = sum(1 for l in f
-                              if re.match(r'(m|n|ms|ns|mc|mg)\s', l))
+                              if re.match(r'(m|n|ms|ns|mc|mg|gu|perr|g|gp)([ \t]|$)', l))
             total_skip += n_cases
             total_skip_own_oracle += n_cases
             per_file_counts[fname] = (0, 0, 0, 0, 0, 0, 0, 0, 0)

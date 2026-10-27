@@ -27,6 +27,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
 smoke=0; timed=0; out=/dev/stdout
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -89,7 +90,7 @@ printf 'static long card_fires;\n' > "$WORK/count.h"
 build() {   # build PX PATTERN [extra pcrec args...] -> $WORK/PX
     local px="$1" pat="$2"; shift 2
     local upx; upx="$(printf '%s' "$px" | tr '[:lower:]' '[:upper:]')"
-    "$PCREC" -p "$px" "$@" -o "$WORK/$px.c" --pattern "$pat" || return 1
+    "$TIMEOUT_BIN" 60 "$PCREC" -p "$px" "$@" -o "$WORK/$px.c" --pattern "$pat" || return 1
     printf '#include "%s.c"\n#include "drv.c"\n' "$px" > "$WORK/u_$px.c"
     "$CC" -O2 -std=gnu11 -I"$WORK" -DPX="$px" -DUPX="$upx" ${CDEF:-} \
         -o "$WORK/$px" "$WORK/u_$px.c" || return 1

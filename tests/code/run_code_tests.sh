@@ -292,8 +292,8 @@ while IFS= read -r pat; do
     # system includes alone define: the difference is what pcrec left live.
     awk '/^#define RX_SUBJ /{exit} {print}' "$LM/$px.c" > "$LM/pre.c"
     grep -hE '^[[:space:]]*#[[:space:]]*include[[:space:]]*<' "$LM/$px.c" "$LM/$px.h" > "$LM/sys.c"
-    (cd "$LM" && $CC -E -dM pre.c 2>/dev/null) | awk '{print $2}' | sed 's/(.*//' | sort -u > "$LM/pre.m"
-    $CC -E -dM "$LM/sys.c" | awk '{print $2}' | sed 's/(.*//' | sort -u > "$LM/sys.m"
+    (cd "$LM" && $CC -E -dM pre.c 2>/dev/null) | awk '{print $2}' | sed 's/(.*//' | LC_ALL=C sort -u > "$LM/pre.m"
+    $CC -E -dM "$LM/sys.c" | awk '{print $2}' | sed 's/(.*//' | LC_ALL=C sort -u > "$LM/sys.m"
     live="$(comm -23 "$LM/pre.m" "$LM/sys.m" \
         | grep -vE "^(_|${upx}_|PCREC_|RX_PASS$|RX_FAIL$|RX_ITER_INIT$|RX_NOMATCH$|${upx}_H$)" || true)"
     for m in $MSET; do
@@ -349,7 +349,7 @@ fi
 trap_row() {   # trap_row WHAT PATTERN SUBJECT
     rm -f "$K/tr.c" "$K/tr"
     if ! pc --allow-code=c -p tr --emit-main -o "$K/tr.c" --pattern "$2" 2> "$K/p.log" ||
-       ! $CC -O1 -std=gnu11 -o "$K/tr" "$K/tr.c" 2> "$K/cc.log"; then
+       ! $CC $GENCFLAGS -O1 -std=gnu11 -o "$K/tr" "$K/tr.c" 2> "$K/cc.log"; then
         bad "$1: did not build: $(cat "$K/p.log" "$K/cc.log" | head -3)"; return
     fi
     "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
@@ -363,7 +363,7 @@ trap_row "a segment falling off its end" 'a(?C`c: if (RX_POS > 99) return RX_PAS
 echo
 echo "== [INLINE-C] the span helpers =="
 if pc --allow-code=c -p sp -o "$WORK/sp.c" --pattern "$SEG" &&
-   $CC -O1 -std=gnu11 -Wall -Wextra -Werror -include "$WORK/sp.h" -o "$WORK/span_check" \
+   $CC $GENCFLAGS -O1 -std=gnu11 -Wall -Wextra -Werror -include "$WORK/sp.h" -o "$WORK/span_check" \
        "$SCRIPT_DIR/span_check.c" 2> "$WORK/sp.log"; then
     if "$TIMEOUT_BIN" 60 "$WORK/span_check"; then
         ok "every span helper agrees with its §11.10 reference"
