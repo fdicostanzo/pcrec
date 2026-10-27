@@ -3532,7 +3532,7 @@ else
 fi
 
 # ===========================================================================
-# [TT-9] THE SANITIZER SUITE LIST IS STRUCTURAL: every tests/*/run_*_diff.sh
+# [TT-9] THE SANITIZER SUITE LIST IS STRUCTURAL: every tests/**/run_*.sh
 #        is in tests/lib/san_scripts.txt or in a reasoned exclusion
 # ===========================================================================
 #
@@ -3541,28 +3541,66 @@ fi
 # tests/recursion/run_recursion_diff.sh to `ubsan`'s copy only, and `san`
 # silently never ran it. tests/lib/san_scripts.txt is now the one list all
 # three read (see its own header); this check is what stops a NEW
-# `run_*_diff.sh` from repeating the drift by simply never being added
+# `run_*.sh` from repeating the drift by simply never being added
 # anywhere -- SKIP-is-not-a-pass applies to a suite list exactly as it does
 # to a test result.
-tt9_pats=0
-tt9_bad=""
-tt9_san_list="$ROOT_DIR/tests/lib/san_scripts.txt"
-[ -f "$tt9_san_list" ] || die "[TT-9] tests/lib/san_scripts.txt is missing -- ubsan/asan/san have no suite list to read"
-while IFS= read -r tt9_f; do
-    tt9_pats=$((tt9_pats + 1))
-    tt9_rel="${tt9_f#$ROOT_DIR/}"
-    if ! grep -qxF "$tt9_rel" "$tt9_san_list"; then
-        tt9_bad="$tt9_bad
-    $tt9_rel"
-    fi
-done < <(find "$ROOT_DIR/tests" -name 'run_*_diff.sh' | LC_ALL=C sort)
+# [TT-9, widened by lane sanred2] THE POPULATION IS EVERY tests/**/run_*.sh,
+# not only the run_*_diff.sh subset: the callout drivers were a run_*_tests.sh
+# in neither list, and the san stage never instrumented them. Each script must
+# be in the manifest XOR in tests/lib/san_excluded.txt (PATH<TAB>REASON, a
+# non-empty reason). `tt9_audit ROOT` prints one problem per line (empty =
+# clean) and is run twice: on the real tree, and on a synthetic tree that
+# plants each defect (the negative control -- a check that is never seen to
+# fail has not been shown to be able to).
+tt9_audit() {
+    local root="$1" san="$1/tests/lib/san_scripts.txt" excl="$1/tests/lib/san_excluded.txt"
+    local f rel path reason n=0
+    [ -f "$san" ] || { echo "MISSING-MANIFEST $san"; return; }
+    [ -f "$excl" ] || { echo "MISSING-EXCLUSIONS $excl"; return; }
+    while IFS= read -r f; do
+        rel="${f#$root/}"
+        n=$((n + 1))
+        if grep -qxF "$rel" "$san"; then
+            awk -F'\t' -v p="$rel" '$1 == p { f = 1 } END { exit !f }' "$excl" && echo "BOTH $rel (in the manifest AND the exclusions)"
+        elif ! awk -F'\t' -v p="$rel" '$1 == p && $2 != "" { f = 1 } END { exit !f }' "$excl"; then
+            echo "UNLISTED $rel"
+        fi
+    done < <(find "$root/tests" -name 'run_*.sh' | LC_ALL=C sort)
+    while IFS=$'\t' read -r path reason; do
+        case "$path" in ''|'#'*) continue;; esac
+        [ -n "$reason" ] || echo "NO-REASON $path"
+        [ -f "$root/$path" ] || echo "VACUOUS $path (no such script)"
+        case "$path" in tests/*/run_*.sh|tests/*/*/run_*.sh) ;; *) echo "VACUOUS $path (not a tests/**/run_*.sh)";; esac
+    done < "$excl"
+    echo "COUNT $n"
+}
+tt9_out="$(tt9_audit "$ROOT_DIR")"
+tt9_pats="$(printf '%s\n' "$tt9_out" | sed -n 's/^COUNT //p')"
+tt9_bad="$(printf '%s\n' "$tt9_out" | grep -v '^COUNT ' || true)"
 
-if [ "$tt9_pats" -lt 5 ]; then
-    bad "[TT-9] found only $tt9_pats tests/*/run_*_diff.sh script(s), below its floor of 5 (measured 2026-08-25: 9). A population that collapses means the SWEEP broke, not that the tree lost its diff scripts"
+# The negative control: a synthetic tree with one script in neither list, one
+# in both, one exclusion with no reason, one that names no script.
+tt9_fx="$WORKDIR/tt9fx"
+mkdir -p "$tt9_fx/tests/lib" "$tt9_fx/tests/a"
+: > "$tt9_fx/tests/a/run_listed.sh"; : > "$tt9_fx/tests/a/run_unlisted.sh"
+: > "$tt9_fx/tests/a/run_both.sh";   : > "$tt9_fx/tests/a/run_noreason.sh"
+printf 'tests/a/run_listed.sh\ntests/a/run_both.sh\n' > "$tt9_fx/tests/lib/san_scripts.txt"
+printf '# c\ntests/a/run_both.sh\tr\ntests/a/run_noreason.sh\t\ntests/a/run_gone.sh\tr\n' > "$tt9_fx/tests/lib/san_excluded.txt"
+tt9_fxout="$(tt9_audit "$tt9_fx")"
+tt9_fx_ok=1
+for tt9_want in 'UNLISTED tests/a/run_unlisted.sh' 'BOTH tests/a/run_both.sh' 'NO-REASON tests/a/run_noreason.sh' 'UNLISTED tests/a/run_noreason.sh' 'VACUOUS tests/a/run_gone.sh'; do
+    printf '%s\n' "$tt9_fxout" | grep -qF "$tt9_want" || { tt9_fx_ok=0; echo "tt9 control: did not flag '$tt9_want'" >&2; }
+done
+
+if [ "$tt9_fx_ok" -ne 1 ]; then
+    bad "[TT-9] the check's own negative control (a synthetic tree with an unlisted script, a double-listed one, a reasonless exclusion and a vacuous one) did not flag every planted defect -- the check cannot be trusted"
+elif [ "$tt9_pats" -lt 100 ]; then
+    bad "[TT-9] found only $tt9_pats tests/**/run_*.sh script(s), below its floor of 100 (measured 2026-10-27: 157). A population that collapses means the SWEEP broke, not that the tree lost its scripts"
 elif [ -n "$tt9_bad" ]; then
-    bad "[TT-9] $(printf '%s' "$tt9_bad" | grep -c .) run_*_diff.sh script(s) are in NEITHER tests/lib/san_scripts.txt NOR a stated exclusion -- add each to the manifest, or record why not (a reason, not a silent gap):$tt9_bad"
+    bad "[TT-9] run_*.sh script(s) are in NEITHER tests/lib/san_scripts.txt NOR tests/lib/san_excluded.txt (or an exclusion is vacuous/reasonless/also in the manifest) -- add each to the manifest, or record why not (a reason, not a silent gap):
+$tt9_bad"
 else
-    ok "[TT-9] every tests/*/run_*_diff.sh script ($tt9_pats found) is in tests/lib/san_scripts.txt -- \`make ubsan\`/\`asan\`/\`san\` cannot silently drop one the way \`san\` dropped run_recursion_diff.sh before this manifest existed"
+    ok "[TT-9] every tests/**/run_*.sh script ($tt9_pats found) is in tests/lib/san_scripts.txt xor reasoned in tests/lib/san_excluded.txt, no exclusion is vacuous, and the planted-defect control flagged all five defects -- \`make ubsan\`/\`asan\`/\`san\` cannot silently drop a script the way \`san\` dropped run_recursion_diff.sh and never saw run_callouts_tests.sh"
 fi
 
 # ===========================================================================

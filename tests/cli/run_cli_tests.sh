@@ -2583,6 +2583,18 @@ coerr="$(pcrec_run "$PCREC" --features all -p rx -o "$WORKDIR/co.c" --callout 13
 assert_eq "--callout: a malformed second declaration's refusal is its one line" \
     "1:pcrec: a callout declaration is N:ATTRS (N a number 0-255, ATTRS a comma-separated list such as consume,once; got 'zz')" "$corc:$coerr"
 
+# `main` has ONE cleanup path (lane sanred2): `--help` and `--version` return
+# through it like every other exit, so a parsed `--callout`/`-I` list is
+# freed there too. rc 0 and an empty stderr; the sanitizer axis reds a leak.
+coerr="$(pcrec_run "$PCREC" --callout 13:consume --help 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout 13:consume --help exits 0, stderr empty" "0:" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" -I x --help 2>&1 >/dev/null)"; corc=$?
+assert_eq "-I x --help exits 0, stderr empty" "0:" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" --callout 13:consume -I x --version 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout/-I with --version exits 0, stderr empty" "0:" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" --version 2>/dev/null)"; corc=$?
+assert_eq "--version prints its one line" "0:pcrec $(sed -n 's/^#define PCREC_VERSION "\(.*\)"/\1/p' "$ROOT_DIR/lib/pcrec.h" | head -1)" "$corc:$coerr"
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

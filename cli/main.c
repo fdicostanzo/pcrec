@@ -2287,48 +2287,29 @@ static int cli_emit_support(const CliState *st, const char *unadmitted)
     return rc;
 }
 
-/* Parses the command line via `cli_parse`, refuses the conflicts every mode
- * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
- * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
+/* Refuses the conflicts every mode shares, decodes `--pattern-esc` once
+ * (K98) into `main`'s arena, then `cli_dispatch` dispatches: a
+ * syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
  * — no pattern, no `-o`, each returning before anything else runs), a
  * `.rxt` compile from one or more FILE OPERANDS (`compile_sources`, D118 —
  * one or more targets, pooled across every file given), or an ordinary
  * single-pattern compile to `-o` from `--pattern`. `--target`/`--lib-path`
- * are refused above every query since they apply to a file operand alone
- * (the one refusal that also has to free `st.libdirs`, this CLI's
- * allocations besides `st.files` and `st.callouts`, each freed alongside
- * it at every exit that can see it non-empty; `st.callouts` is freed here
- * after `cli_dispatch` returns, never inside it). Returns 0 on success, 1 on any refusal
- * or compile failure. */
-int main(int argc, char **argv)
+ * are refused above every query since they apply to a file operand alone.
+ * `st` is a BY-VALUE copy of `main`'s parsed state: nothing here (or in
+ * `cli_dispatch`) frees `st.libdirs`, `st.callouts`, `st.files` or `esc`;
+ * every exit returns to `main`, which owns them. Returns 0 on success, 1 on
+ * any refusal or compile failure. */
+static int cli_run(CliState st, CliUnadmitted *unadmitted, Arena *esc)
 {
-    CliState st;
-    CliUnadmitted unadmitted = { NULL, NULL };
-    memset(&st, 0, sizeof st);
-    pcrec_default_options(&st.opt);
-    if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0) {
-        free(st.libdirs);
-        free(st.callouts);
-        free(st.files);
-        return 1;
-    }
     /* [REL-1.4] same shape as the `want_help` check just below: prints and
      * exits 0, one line, stdout. */
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
     if (st.subst || st.subst_file) {
-        const int rc = cli_subst(&st, unadmitted.subst);
-        free(st.libdirs);
-        free(st.callouts);
-        free(st.files);
-        return rc;
+        return cli_subst(&st, unadmitted->subst);
     }
     if (st.emit_support) {
-        const int rc = cli_emit_support(&st, unadmitted.support);
-        free(st.libdirs);
-        free(st.callouts);
-        free(st.files);
-        return rc;
+        return cli_emit_support(&st, unadmitted->support);
     }
 
     /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE
@@ -2336,15 +2317,11 @@ int main(int argc, char **argv)
      * reasons that happen to coincide. A query returns from `main` on its
      * own, so a conflict tested lower down is one the query already won
      * silently; and `--lib-path` is the only FLAG in this CLI that
-     * ALLOCATES, so refusing it here is what makes "st.libdirs is non-NULL"
-     * true on exactly two paths — this one and the file-operand compile —
-     * both of which free it. `st.nfiles` being nonzero here is what a file
-     * operand means, so this same test covers it: `!st.nfiles` already
-     * implies `st.files` is untouched (NULL), nothing to free. */
+     * ALLOCATES, so refusing it here keeps `-I`/`--lib-path` off every mode
+     * but a compile. `st.nfiles` being nonzero here is what a file operand
+     * means, so this same test covers it. */
     if (!st.nfiles && st.target) {
         cli_err("--target applies to a file operand only");
-        free(st.libdirs);
-        free(st.callouts);
         return 1;
     }
     /* [FINDINGS] B2 THE `-I` LIFT [r2 M-S7]: `-I` is also the ANALYSIS
@@ -2369,9 +2346,6 @@ int main(int argc, char **argv)
                     "or to --list-analysis%s only",
                     st.libdirs && !resolves ? "--lib-path/-I" : "--analysis",
                     st.libdirs && !resolves ? "" : " FILE");
-            free(st.libdirs);
-            free(st.callouts);
-            free(st.files);
             return 1;
         }
         st.opt.analysis_dirs = st.libdirs;
@@ -2382,9 +2356,6 @@ int main(int argc, char **argv)
         if (st.opt.measures && !(st.nfiles || (st.pattern && m0 == 0))) {
             cli_err("--measures applies to a compile (a file operand or "
                     "--pattern) only");
-            free(st.libdirs);
-            free(st.callouts);
-            free(st.files);
             return 1;
         }
     }
@@ -2399,9 +2370,6 @@ int main(int argc, char **argv)
         !(st.list_measurements && *st.list_measurements)) {
         cli_err("--view applies to --list-analysis NAME or "
                 "--list-measurements=X only");
-        free(st.libdirs);
-        free(st.callouts);
-        free(st.files);
         return 1;
     }
 
@@ -2411,9 +2379,6 @@ int main(int argc, char **argv)
         cli_err("--pattern does not combine with a file operand "
                 "(got %zu file%s and --pattern)",
                 st.nfiles, st.nfiles == 1 ? "" : "s");
-        free(st.libdirs);
-        free(st.callouts);
-        free(st.files);
         return 1;
     }
 
@@ -2436,30 +2401,47 @@ int main(int argc, char **argv)
      * queries' early returns, and those queries described the raw escaped
      * text with rc 0. With no `--pattern` the flag has nothing to decode.
      *
-     * The arena is `main`'s and is freed after `cli_dispatch` returns, on
+     * The arena is `main`'s and is freed after `cli_run` returns, on
      * every path, so the decoded bytes outlive every mode (`pcrec_compile`
      * copies what it needs into its own arena). */
-    Arena esc = { 0 };
     if (st.pattern_esc && st.pattern) {
         char emsg[192];
         const char *dec = NULL;
-        if (pcrec_rxt_decode_escaped(st.pattern, &esc, &dec, emsg,
+        if (pcrec_rxt_decode_escaped(st.pattern, esc, &dec, emsg,
                                      sizeof emsg) != 0) {
             cli_err("--pattern-esc: %s", emsg);
-            pcrec_arena_free(&esc);
-            free(st.libdirs);
-            free(st.callouts);
-            free(st.files);
             return 1;
         }
         st.pattern = dec;
     }
     {
         const int rc = cli_dispatch(st);
-        pcrec_arena_free(&esc);
-        free(st.callouts);  /* `cli_dispatch` reads it, never frees it */
         return rc;
     }
+}
+
+/* Parses the command line via `cli_parse`, runs it (`cli_run`), and is the
+ * ONE cleanup path: this CLI's heap allocations (`st.libdirs`, `st.callouts`,
+ * `st.files`, the `--pattern-esc` arena) are released here once, after
+ * every exit -- parse refusal, `--help`, `--version`, a mode's refusal, a
+ * compile -- and nowhere else. */
+int main(int argc, char **argv)
+{
+    CliState st;
+    CliUnadmitted unadmitted = { NULL, NULL };
+    Arena esc = { 0 };
+    int rc;
+    memset(&st, 0, sizeof st);
+    pcrec_default_options(&st.opt);
+    if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0)
+        rc = 1;
+    else
+        rc = cli_run(st, &unadmitted, &esc);
+    pcrec_arena_free(&esc);
+    free(st.libdirs);
+    free(st.callouts);
+    free(st.files);
+    return rc;
 }
 
 /* The modes, after `main` has parsed the command line, refused the
@@ -2554,8 +2536,6 @@ static int cli_dispatch(CliState st)
         cli_err("a file operand COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
-        free(st.libdirs);
-        free(st.files);
         return 1;
     }
 
@@ -2819,13 +2799,11 @@ static int cli_dispatch(CliState st)
             (modes & ~CLI_MODES_REGISTRY_QUERY)) {
             cli_err("%s is a separate query; use one",
                     st.list_analyses ? "--list-analyses" : "--list-analysis");
-            free(st.libdirs);
             return 1;
         }
         if (pattern || outpath || flavour) {
             cli_err("%s takes no pattern, no -o and no --flavour",
                     st.list_analyses ? "--list-analyses" : "--list-analysis");
-            free(st.libdirs);
             return 1;
         }
         if (st.list_analyses)
@@ -2839,7 +2817,6 @@ static int cli_dispatch(CliState st)
         else
             v = pcrec_find_list_file(st.list_analysis, st.libdirs,
                                      st.opt.analysis, &lerr);
-        free(st.libdirs);
         if (!v) {
             cli_err("%s", lerr.msg);
             return 1;
@@ -2850,25 +2827,21 @@ static int cli_dispatch(CliState st)
     }
 
     /* [MEASURE-SET] M0 THE MEASUREMENT-SET LISTINGS (docs/spec/measures.md
-     * §6): the analysis listings' shape and position, for the same reason
-     * (the `-I` list is freed here). */
+     * §6): the analysis listings' shape and position. */
     if (st.list_measurements) {
         char *v;
         pcrec_error lerr = { 0 };
         if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1 ||
             (modes & ~CLI_MODES_REGISTRY_QUERY)) {
             cli_err("--list-measurements is a separate query; use one");
-            free(st.libdirs);
             return 1;
         }
         if (pattern || outpath || flavour) {
             cli_err("--list-measurements takes no pattern, no -o and no --flavour");
-            free(st.libdirs);
             return 1;
         }
         v = pcrec_meas_list(*st.list_measurements ? st.list_measurements : NULL,
                             st.libdirs, st.list_view, &lerr);
-        free(st.libdirs);
         if (!v) {
             cli_err("%s", lerr.msg);
             return 1;
@@ -3056,8 +3029,6 @@ static int cli_dispatch(CliState st)
              * blocks declare their own (`callout N ATTRS`). */
             cli_err("--callout applies to --pattern; a .rxt block declares "
                     "its own numbered callouts with 'callout N ATTRS'");
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
         if (!outpath) {
@@ -3065,14 +3036,10 @@ static int cli_dispatch(CliState st)
                             "one target total, an existing DIRECTORY for "
                             "several (which writes <dir>/<prefix>.c and .h "
                             "per target), or '-' for one target on stdout");
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
         {
             int rc = compile_sources(&st);
-            free(st.libdirs);
-            free(st.files);
             return rc;
         }
     }
@@ -3081,7 +3048,6 @@ static int cli_dispatch(CliState st)
                         "operand is a FILE now, never a pattern — see "
                         "--pattern)");
         usage(stderr);
-        free(st.libdirs);
         return 1;
     }
 
@@ -3090,7 +3056,7 @@ static int cli_dispatch(CliState st)
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); free(st.libdirs); return 1; }
+        if (!hpath) { perror("malloc"); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -3116,7 +3082,6 @@ static int cli_dispatch(CliState st)
 #endif
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
-        free(st.libdirs);
         return 1;
     }
 
@@ -3134,6 +3099,5 @@ static int cli_dispatch(CliState st)
     }
     pcrec_output_free(&out);
     free(hpath);
-    free(st.libdirs);
     return rc;
 }
