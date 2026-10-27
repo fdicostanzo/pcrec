@@ -26,6 +26,7 @@
 # the lane's build, every change a handoff.rxt row; the bench rows are the pinned ones, untouched (counted, never checked).
 # cpb4 (2026-10-12, [COMPOUND] B4): +1 row, a tests/compound/split.rxt block (a VM-hat mover the new corpus file brings); census_s1.py on lane/cpb4 (-fno-start-set arm), corpus rows only -- bench rows NOT refreshed (m7fix's note); 0 other rows moved.
 # lf3tri (2026-10-22): +15 rows, every one a block of a new language-fix corpus file (tests/atomic_groups/possessive_ungreedy.rxt, named_groups/utf8_names.rxt, recursion/inlookaround_self.rxt); correct VM-hat movers never pinned; census_s1.py on lane/langfix2 (-fno-start-set arm, bench rows NOT refreshed), 0 existing rows gone, 0 changed.
+# ic1btriage (2026-10-26): +29 rows, every one a tests/callouts/shapes.rxt block ([INLINE-C] stage 1b's callout corpus, a new file); no existing row moved. Rows taken from test-startset's own mover list.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -94,6 +95,35 @@ tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
 tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
 tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
 tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
+tests/callouts/shapes.rxt:101	--features all	61283f432274776f2c636f6e73756d65222962
+tests/callouts/shapes.rxt:118	--features all	61283f432962
+tests/callouts/shapes.rxt:122	--features all	61283f4331342962
+tests/callouts/shapes.rxt:126	--features all	61283f4331332962
+tests/callouts/shapes.rxt:131	--features all	61283f4331332962283f43323629
+tests/callouts/shapes.rxt:138	--features all	61283f43607665746f602962
+tests/callouts/shapes.rxt:142	--features all	61283f43277665746f272962
+tests/callouts/shapes.rxt:146	--features all	61283f435e7665746f5e2962
+tests/callouts/shapes.rxt:15	--features all	285c642b29283f43226c653235352229
+tests/callouts/shapes.rxt:150	--features all	61283f43257665746f252962
+tests/callouts/shapes.rxt:154	--features all	61283f43237665746f232962
+tests/callouts/shapes.rxt:158	--features all	61283f43247665746f242962
+tests/callouts/shapes.rxt:162	--features all	61283f437b7665746f7d2962
+tests/callouts/shapes.rxt:166	--features all	61283f437b706173737d2962
+tests/callouts/shapes.rxt:171	--features all	61283f3d62283f43226174656e64222929
+tests/callouts/shapes.rxt:176	--features all	283f3e612b283f43226f646422292962
+tests/callouts/shapes.rxt:182	--features all	612b3f283f43226576656e2229623f
+tests/callouts/shapes.rxt:186	--features all	612b3f283f43226f6464222962
+tests/callouts/shapes.rxt:25	--features all	285c642b29283f4322706173732229787c285c642b2979
+tests/callouts/shapes.rxt:34	--features all	28612b29283f43227061737322296162
+tests/callouts/shapes.rxt:39	--features all	28612b29283f43227665746f22296162
+tests/callouts/shapes.rxt:44	--features all	285c647b312c337d29283f43226c6532353522295c2e
+tests/callouts/shapes.rxt:56	--features all	28617c616229283f4322673161622229
+tests/callouts/shapes.rxt:69	--features all	283f3a283f432267317365742229286129292b
+tests/callouts/shapes.rxt:73	--features all	283f3a286129283f432267317365742229292b
+tests/callouts/shapes.rxt:79	--features all	615c4b62283f43226e6f746f6e65222963
+tests/callouts/shapes.rxt:84	--features all	2861283f4322616674657261222962292b
+tests/callouts/shapes.rxt:89	--features all	2861283f43226e6f7462222962292b
+tests/callouts/shapes.rxt:94	--features all	283f3a2861297c62292b283f43226731736574222963
 tests/harness/giveup.rxt:48	--engine=vm	28612a292a5b62635d
 tests/harness/giveup.rxt:54	--engine=vm	282861297c62292a5b63645d
 tests/litscan/handoff.rxt:1056	--features all --encoding=utf8 --engine=vm	283f692973747261c39f65

@@ -408,6 +408,19 @@ fi
 #                    `u.cls`, which the check reached on its first run over
 #                    the B3 tree)
 #
+#   opt/callout.c   [INLINE-C] stage 1b's once-advice witness: `co_line_push`
+#                    and `co_line` read a class's interval list onto the line
+#                    of single characters around a culprit callout, to pick
+#                    a subject character from each class (and fit it against
+#                    the competing ways) ABOVE the lowering, where a
+#                    byte-bitmap render would be wrong for a class past the
+#                    byte range.
+#                    FUNCTION-scoped (ALLOW_FN below), so the rest of
+#                    callout.c stays policed. Added by lane ic1btriage (the
+#                    pass's own population: the first callout.c code to read
+#                    `u.cls`, which the check reached on its first run over
+#                    the ic1b tree)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -424,7 +437,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {

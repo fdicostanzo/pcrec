@@ -95,7 +95,7 @@ import sys
 p = sys.argv[1]; s = open(p).read()
 i = s.index("} AKind;")
 j = s.rindex("\n", 0, i)
-assert s[j - len("A_WCLASS"):j] == "A_WCLASS", "the last enumerator moved"
+assert s[j - len("A_CALLOUT"):j] == "A_CALLOUT", "the last enumerator moved"
 s = s[:j] + ",\n    A_KINDROW_PROBE" + s[j:]
 open(p, "w").write(s)'
 

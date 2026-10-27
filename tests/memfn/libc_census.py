@@ -79,6 +79,10 @@ IDIOM = 'c11_idiom_memcpy'
 # (glibc spells them stdin/stdout/stderr; darwin __stdinp/__stdoutp/__stderrp).
 # A data symbol is not a call; any other undefined name is read as one.
 DATA_OBJECTS = {'stdin', 'stdout', 'stderr', '__stdinp', '__stdoutp', '__stderrp'}
+# A callout pattern's artifact names the CALLER's binding as an undefined
+# `extern const rx_callout_ref rx_callout_<name>` (match_api.md section 11.2):
+# the caller's own symbol, not a C library call, so the stamp never lists it.
+CALLER_BINDING = 'rx_callout_'
 CFLAGS = ['-O0', '-fno-builtin', '-fno-stack-protector', '-U_FORTIFY_SOURCE',
           '-std=gnu11', '-w']
 
@@ -195,7 +199,8 @@ class Census:
         if names is None:
             return (key, family, None, None, err)
         idiom = IDIOM in names
-        control = sorted(names - {IDIOM} - DATA_OBJECTS)
+        control = sorted(n for n in names - {IDIOM} - DATA_OBJECTS
+                         if not n.startswith(CALLER_BINDING))
         if control != line:
             return (key, family, line, idiom,
                     'LIBC "%s" but the compile calls "%s"'

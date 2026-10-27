@@ -123,9 +123,9 @@ if [ "$built" = 1 ]; then
         for t in overlong midchar pred1; do
             "$TIMEOUT_BIN" 30 "$D/checks" trap "$t" > "$D/trap.out" 2>&1
             rc=$?
-            # The trap is `__builtin_trap()`: SIGILL (132) on x86, SIGTRAP
-            # (133) on arm64. Any other signal, SIGSEGV's 139 above all, is
-            # a crash, not the trap.
+            # The trap is `__builtin_trap()`: SIGILL (132) or SIGTRAP (133),
+            # whichever the platform's trap instruction raises. Any other
+            # signal, SIGSEGV's 139 above all, is a crash, not the trap.
             if [ "$rc" -eq 132 ] || [ "$rc" -eq 133 ]; then
                 ok "trap '$t': the call site trapped (exit $rc)"
             else
