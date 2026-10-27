@@ -2,4 +2,4 @@ report=docs/dev/lanes/ic1bland_report.md
 sections: Summary; Sections; Axes: SLOW, not a hang; A real red the cap hid; Queued; STATE AT HANDOFF
 nonempty: all
 commit: yes
-owed: 563-ic1badvice-test2 564-ic1badvice-axes2
+owed: ic1badvice-test2 ic1badvice-axes2
