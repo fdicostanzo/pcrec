@@ -274,3 +274,5 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
+
+RED: 2026-10-27 7d3be7ec7 test=green strict=green axes=green san=RED(rc=2) alloc=green lint=green mech=green recidentity=RED(rc=2) log=build/full_suite/20261027_7d3be7ec7 duration=40149s
