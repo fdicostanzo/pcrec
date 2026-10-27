@@ -1689,7 +1689,7 @@ typedef struct {
     /* [INLINE-C] stage 2 (docs/spec/match_api.md §11.9, §8.2): THE CODE
      * GRANT — a comma-separated list of the embedded-code languages this
      * call may compile (`"c"`), or NULL (the default) for none. Embedded
-     * code in a pattern (``(?C`c: ...`)``, `(?{ ... })`) is module
+     * code in a pattern (``(?C`c: ...`)``) is module
      * `code-<lang>`, and THIS MEMBER IS ITS ONLY LIBRARY DOOR: `features`
      * cannot enable it (its `"all"` does not contain it, and naming it is
      * refused), so a pattern string never becomes code without the caller's

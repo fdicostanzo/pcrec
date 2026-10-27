@@ -410,7 +410,10 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
         bool dup = false;
         for (int j = 0; j < i; j++)
             dup |= !strcmp(in->code_headers[j].header, in->code_headers[i].header);
-        if (!dup) pcrec_sb_printf(c, "#include %s\n", in->code_headers[i].header);
+        if (dup) continue;
+        if (in->code_headers[i].line && in->code_file)
+            code_line_dir(c, in->code_headers[i].line, in->code_file);
+        pcrec_sb_printf(c, "#include %s\n", in->code_headers[i].header);
     }
     for (int s = 1; s <= cx->ncodesegs; s++)
         for (int i = 1; i <= cx->ncallouts; i++) {

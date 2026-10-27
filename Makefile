@@ -392,7 +392,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-callouts test-examples test-findings test-knowledge test-ucp \
+      test-uprops test-core test-vars test-callouts test-code test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
@@ -1080,6 +1080,15 @@ test-vars: all
 test-callouts: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-callouts.ran"; fi
 	bash tests/callouts/run_callouts_tests.sh
+
+# [INLINE-C] stage 2 — module `code-c`, embedded C: the corpus (the grant and
+# the user source through tests/code/harness.manifest), its libpcre2 oracle
+# running the same segment text, the refusals, the entry-point table, the
+# diagnostics, the live-macro, span-helper and call-form checks, and the
+# inline-mode card's smoke run. See tests/code/CLAUDE.md.
+test-code: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-code.ran"; fi
+	bash tests/code/run_code_tests.sh
 
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi

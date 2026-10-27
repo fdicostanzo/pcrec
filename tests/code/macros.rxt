@@ -1,0 +1,68 @@
+# tests/code/macros.rxt — the segment's view and spelling (docs/spec/
+# match_api.md §11.9, §11.10): the macro set, the guarded accessors, single
+# evaluation, `RX_G_<name>` with a (?J) run, the span helpers inside a
+# segment, PCRE2's delimiters and its doubled-delimiter rule, and the `once`
+# and `consume` attributes. Checked against libpcre2 10.46 running the same
+# segment text by verify_code.py (a `consume` block has no PCRE2 form and is
+# a counted skip there).
+
+# ---- position macros: RX_POS, RX_START, RX_LEN ----------------------------
+pattern a(?C`c: return RX_POS == 1 && RX_START == 0 && RX_LEN == 3 ? RX_PASS : RX_FAIL;`)bc
+m "abc" 0 3
+n "xabc"
+
+# ---- RX_CAP_SET on an unset group: the path without the group survives ----
+pattern (a)?(?C`c: return RX_CAP_SET(1) ? RX_FAIL : RX_PASS;`)b
+m "ab" 1 2
+g 1 -1 -1
+m "b" 0 1
+
+# ---- slot 0 is not a group; out of range reads unset -----------------------
+pattern (?<yr>\d{4})-(?C`c: return RX_CAP_LEN(RX_G_yr) == 4 && RX_CAP_S(0) == -1 && RX_CAP_E(0) == -1 && !RX_CAP_SET(0) && !RX_CAP_SET(99) && RX_CAP_P(99) == 0 && RX_CAP_LEN(-1) == -1 ? RX_PASS : RX_FAIL;`)x
+features all
+m "2026-x" 0 6
+g 1 0 4
+
+# ---- RX_G_<name> walks a (?J) run to the member set at this fire -----------
+pattern (?J)(?:(?<n>a)|(?<n>b))(?C`c: return RX_G_n == 2 ? RX_PASS : RX_FAIL;`)
+features all
+m "b" 0 1
+n "a"
+m "ab" 1 2
+
+# ---- every accessor evaluates its argument once ----------------------------
+pattern (a)(b)(?C`c: int i = 1; ptrdiff_t s = RX_CAP_S(i++); ptrdiff_t e = RX_CAP_E(i++); return s == 0 && e == 2 && i == 3 ? RX_PASS : RX_FAIL;`)
+m "ab" 0 2
+
+# ---- the span helpers inside a segment -------------------------------------
+pattern (\w+)=(\w+)\b(?C`c: uint64_t v = 0; return rx_eqi(RX_CAP(1), "PORT") && rx_u64(RX_CAP(2), &v) && v < 65536 ? RX_PASS : RX_FAIL;`)
+features all
+m "x=1 Port=80" 4 11
+n "port=99999 x=1"
+m "port=99999 port=443" 11 19
+
+pattern (\S+)(?C`c: ptrdiff_t i = 0; uint32_t cp = 0; int n = 0, k; while ((k = rx_u8next(RX_CAP(1), &i, &cp)) > 0) n++; return k == 0 && n == 2 && cp == 0x20AC ? RX_PASS : RX_FAIL;`)$
+m "a\xe2\x82\xac" 0 4
+
+# ---- PCRE2's delimiters, and a doubled delimiter is one byte ---------------
+pattern a(?C'c: return RX_PASS;')b
+m "ab" 0 2
+
+pattern a(?C"c: return RX_FAIL;")b|ac
+n "ab"
+m "ac" 0 2
+
+pattern a(?C{c: { return RX_PASS; }}})b
+m "ab" 0 2
+
+pattern a(?C`c: const char *q = "``"; return q[0] == 0x60 && q[1] == 0 ? RX_PASS : RX_FAIL;`)b
+m "ab" 0 2
+
+# ---- `once` on a site that fires at most once per attempt ------------------
+pattern ^ab(?C`c,once: return RX_POS == 2 ? RX_PASS : RX_FAIL;`)c
+m "abc" 0 3
+
+# ---- `consume`: the segment's positive return is the length it consumed ---
+pattern a(?C`c,consume: return RX_LEN - RX_POS >= 2 && RX_SUBJ[RX_POS] == 'x' ? 2 : RX_FAIL;`)c
+m "axyc" 0 4
+n "ayxc"

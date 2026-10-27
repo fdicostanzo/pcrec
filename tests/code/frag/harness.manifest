@@ -1,0 +1,4 @@
+# tests/code/frag/harness.manifest — the grant for this directory's ENTRY
+# files only (docs/design/inline_c.md §5.2): entry.rxt. The fragment it
+# includes is compiled without it.
+allow-code c

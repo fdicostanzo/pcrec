@@ -203,10 +203,13 @@ typedef struct {
  * <lang>:<header>`. `header` is AS WRITTEN, quotes or angle brackets
  * included (`"octet.h"`, `<stdint.h>`): pcrec emits it after `#include ` and
  * never opens, resolves or reads the file. No library member carries it in
- * v1 ([IFACE-PUSH]). */
+ * v1 ([IFACE-PUSH]). `line` is the head line's own: a `#line` before the
+ * `#include` names it in the emit input's `code_file`, so a missing header is
+ * reported at the line that names it (DT-3.3); 0 for `--code-header`. */
 typedef struct {
     const char *lang;     /* a registered language tag: "c" */
     const char *header;   /* "octet.h" or <stdint.h>, quotes kept */
+    size_t      line;     /* the `code-header` line; 0: none */
 } PcrecCodeHeader;
 
 typedef struct {
@@ -1292,7 +1295,7 @@ typedef enum {
     CO_NAME = 1,   /* `(?C"name")`: rx_callout_<name> */
     CO_NUM,        /* `(?C)`, `(?Cn)`: rx_callout_<n> */
     /* [INLINE-C] stage 2 row 1 (`code`): an EMBEDDED SEGMENT, ``(?C`c:
-     * ...`)`` or `(?{ ... })` (module `code-<lang>`). pcrec writes its
+     * ...`)`` (module `code-<lang>`). pcrec writes its
      * function and a file-local binding `<prefix>__code<seg>_ref` in the
      * artifact; the site calls it through that binding like every other
      * row (ONE CALL FORM, Frank 2026-10-27). */
@@ -2115,7 +2118,7 @@ struct Ast {
             /* [INLINE-C] stage 2 `CO_CODE` only (inline_c.md §1.1, §3):
              * `lang` the registered language tag ("c"); `text`/`textlen`
              * the DECODED code bytes (arena, NUL-terminated: PCRE2's
-             * doubled delimiters undone, the `(?{` text as written);
+             * doubled delimiters undone);
              * `seg` the 1-based textual order among the pattern's code
              * segments (the generated function is `<prefix>__code<seg>`);
              * `code_at` the pattern offset of the code's first byte, and
@@ -4356,7 +4359,7 @@ enum {
      * encoding may IMPLY it (`PcrecEnc.implied_features`, O-71). */
     FEAT_UCP              = 1u << 18,
     /* [INLINE-C] stage 2 module `code-c` (docs/design/inline_c.md §2, §5):
-     * embedded C in a pattern, ``(?C`c: ...`)`` and `(?{ ... })`. Its rows
+     * embedded C in a pattern, ``(?C`c: ...`)``. Its rows
      * carry RF_INVOKER_ONLY: no `features` text grants it and `all` does not
      * contain it; only `--allow-code=c` / `pcrec_options.allow_code` does
      * (`pcrec_code_grant_resolve`, src/parse/enabled.c). One bit per
