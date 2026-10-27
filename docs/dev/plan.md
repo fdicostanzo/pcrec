@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [FEAT-FAMILIES] STATE:not-started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
+  filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
+  status (2026-10-27): agreed, not started. basic = modules whose constructs never force the backtracking engine (registry engine column, DERIVED); extended = basic + backrefs, lookaround, atomic-groups, conditionals, branch-reset; pcre2 = + recursion, verbs (callouts stay opt-in everywhere).
+  next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
+  refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
+  vars (pcrec-only) is in no family; `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
