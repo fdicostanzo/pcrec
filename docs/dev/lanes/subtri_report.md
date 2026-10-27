@@ -321,7 +321,8 @@ on `acc-main`, span-identical to today, then the bench's subst cell).
 
 ## STATE AT HANDOFF
 
-STATE: done. All three cases reproduced and attributed; no build, nothing
+STATE: done. OWED: none.
+All three cases reproduced and attributed; no build, nothing
 owed. Rulings file `docs/dev/lanes/subtri_rulings.md` re-read before this
 report; last entry applied: R1 (bench facts + subject procedure). R1's
 numbers match the ones used here. R1's procedure (copy `bench/subst/` to
