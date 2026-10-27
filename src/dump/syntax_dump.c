@@ -52,6 +52,9 @@ static const MaskName flag_names[] = {
      * semantics are the row's port now, not a flag the dump can show */
     {RF_CLASS_DELIM, "class-delim"},
     {RF_LEXICAL, "lexical"},
+    /* [INLINE-C] stage 2 the GRANT column (inline_c.md §5.1): the row's
+     * module is enabled only by the invoker (`--allow-code`). */
+    {RF_INVOKER_ONLY, "invoker-only"},
 };
 
 #define NELEMS(a) (sizeof (a) / sizeof (a)[0])

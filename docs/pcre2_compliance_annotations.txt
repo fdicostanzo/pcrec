@@ -1445,7 +1445,23 @@ answer: libpcre2 agrees with its answer-moving optimizations off
 `PCRE2_NO_DOTSTAR_ANCHOR`), and at its default flags only where its answer
 does not depend on them (match_api.md §11.6 gives two measured cases).
 Fire counts are unspecified; each site's firing class is a structural
-bound. Embedded code (`(?C"c: ...")`, `(?{...})`) is a later stage.
+bound. Embedded code is module `code-c` (the next entry); the `(?{...})`
+spelling is a later row ([SCANNER-DOGFOOD]).
+
+=== (?C`c: return RX_PASS;`)
+section: callouts
+date: 2026-10-27
+**[INLINE-C] stage 2 (2026-10-27): BUILT, module `code-c`, invoker-only.**
+``(?C`c: CODE`)`` (every PCRE2 string delimiter, PCRE2's end rule: a doubled
+delimiter is one byte) is PCRE2's own string callout; pcrec compiles CODE
+into the artifact as a function the site calls through the same return
+table as module `callouts` (docs/spec/match_api.md §11.9). The module is
+enabled only by `--allow-code=c` or the library's `allow_code`, never by a
+`features` text (`all` does not contain it). PCRE2 passes the same text to
+the application's callout function, so the two read the same bytes as the
+same pattern; tests/code/ checks its corpus against libpcre2 running the
+same code in its callout function. The `(?{...})` spelling is a later row
+([SCANNER-DOGFOOD]).
 
 === base:replacement-strings
 section: replacement-strings

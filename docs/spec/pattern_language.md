@@ -48,6 +48,7 @@
   - [§7.9](#s7-9) Module `unicode-props`
   - [§7.10](#s7-10) Module `vars`
   - [§7.11](#s7-11) Module `callouts`
+  - [§7.12](#s7-12) Module `code-c`
 - [§8](#s8) Recognised constructs without a producer, and excluded ones
   - [§8.1](#s8-1) Not built
   - [§8.2](#s8-2) Excluded
@@ -561,6 +562,15 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s7-11-p3"></a>[7.11¶3] Refused: a malformed `(?C` (a number above 255, a number followed by other text, an unsupported delimiter, an unterminated string), with or without the module; a name containing `__`; a name that is not a C identifier; a name whose binding symbol is a name the artifact's shared ABI block already declares (`(?C"ref")`, whose `rx_callout_ref` is the bindings' own type; `match_api.md` §11.2); an empty or repeated attribute; the attribute `verify` (not implemented yet); `once` on a site that can fire twice in one attempt (`match_api.md` §11.8, with the table of what to change, §11.8¶3); a callout inside a lookbehind (a `consume` site there is refused first, as a lookbehind whose length is not fixed), inside a conditional's condition, or inside a group reached by a subroutine call or recursion.
 
+<a id="s7-12"></a>
+### 7.12 Module `code-c`
+
+<a id="s7-12-p1"></a>[7.12¶1] ``(?C`c: CODE`)`` embeds C in the pattern: a PCRE2 string callout whose text starts with the language tag `c`, optional attributes after commas (``(?C`c,once: ...`)``, ``(?C`c,consume: ...`)``) and a colon. pcrec writes the CODE into the artifact as a function the match calls at that point (`match_api.md` §11.9); the callout's return table and attributes are module `callouts`' (§7.11). Every PCRE2 string delimiter is accepted, and the string ends where PCRE2 ends it: at the first closing delimiter that is not doubled; a doubled delimiter is one byte of the code. pcrec does not parse the code.
+
+<a id="s7-12-p2"></a>[7.12¶2] The module is enabled only by the person running the compiler: `--allow-code=c` (`cli.md` §1.22) or the library's `allow_code` member (`match_api.md` §8.2). A `features` list cannot enable it, `all` does not contain it, and naming it in a `features` list is refused. Without the grant a code segment is refused by name.
+
+<a id="s7-12-p3"></a>[7.12¶3] Refused: a segment with no grant; an unknown, empty or repeated attribute; a segment containing an invisible or bidirectional control character (U+200B-U+200F, U+202A-U+202E, U+2060-U+2064, U+2066-U+2069, U+FEFF), named with its code point; a segment containing a C0 control byte other than tab, newline, vertical tab, form feed and carriage return, or DEL; a segment in a definition read from another file through a `lib` line (`rxt_format.md` §1.1); and every placement module `callouts` refuses (§7.11¶3).
+
 <a id="s8"></a>
 ## 8. Recognised constructs without a producer, and excluded ones
 
@@ -620,6 +630,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 6. <a id="s9-p7"></a>[9¶7] — retired (moved to §6.2¶3).
 7. <a id="s9-p8"></a>[9¶8] — retired (the difference is gone; §3.2¶2).
 8. <a id="s9-p9"></a>[9¶9] Module `callouts`. pcrec's answer for a callout pattern is the backtracking-order answer; libpcre2's moves with its optimizations, so the two agree where libpcre2's answer does not depend on them (`match_api.md` §11.6). A `consume` callout and the binding by symbol have no PCRE2 form.
+9. <a id="s9-p10"></a>[9¶10] Module `code-c`. PCRE2 reads ``(?C`c: ...`)`` as a string callout and passes its text to the application's callout function; pcrec compiles the text as C. The two read the same bytes as the same pattern, so a PCRE2 callout function that runs the same code gives the same answers under §9¶9's rule.
 
 <a id="s10"></a>
 ## 10. Construct index
@@ -699,6 +710,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `(?#...)` | `comments` | §8.1 |
 | `(?C1)` | `callouts` | §7.11 |
 | `(?Cx)` |  | §7.11 |
+| ``(?C`c: return RX_PASS;`)`` | `code-c` | §7.12 |
 | `(?\|...)` | `branch-reset` | §8.1 |
 | `(?(1)a\|b)` | `conditionals` | §8.1 |
 | `(?(DEFINE)(?<w>a))` | `recursion` | §7.7 |

@@ -637,8 +637,10 @@ static void check_wellformed(void)
      * rows, `(*UCP)`, `(*UTF)` and `(*UTF8)`. */
     /* 142 -> 143 ([INLINE-C] stage 1b, 2026-10-26): the malformed `(?Cx)`
      * row, REJECTED in every module state beside module `callouts`' row. */
-    if (total != 143) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 143. If you added or "
+    /* 143 -> 144 ([INLINE-C] stage 2, 2026-10-27): module `code-c`'s tagged
+     * row, generated from src/parse/codelang.def (one per language). */
+    if (total != 144) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 144. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1255,6 +1257,13 @@ static void check_table_to_parser(void)
              * exists). The independent pin of WHICH rows are NEVER is
              * hand-written in tests/reject/. */
             snprintf(want, sizeof want, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", byte);
+        else if (r->flags & RF_INVOKER_ONLY)
+            /* [INLINE-C] stage 2 the GRANT column: the refusal names the one
+             * door, `--allow-code=<lang>`, the module being `code-<lang>`. */
+            snprintf(want, sizeof want, "(?%c...) requires module '%s', which "
+                     "only the command-line option --allow-code=%s (or the "
+                     "library's allow_code member) enables", byte, r->module,
+                     r->module + strlen("code-"));
         else
             snprintf(want, sizeof want, "(?%c...) requires module '%s'", byte, r->module);
         snprintf(label, sizeof label, "group %s: diagnostic matches the row", r->syntax);
@@ -1927,12 +1936,14 @@ static void check_class_ports(void)
      * rows sharing `pcrec_ucpport_utf`; U1: 94 -> 95, `(*UCP)`'s own port. */
     /* [INLINE-C] stage 1b: ATOM PORTS 95 -> 96, module `callouts`' `(?C`
      * row gains its producer `pcrec_coport_callout`. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 96)
+    /* [INLINE-C] stage 2: ATOM PORTS 96 -> 97, module `code-c`'s row and its
+     * producer `pcrec_codeport`. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 97)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (96: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (97: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
@@ -2020,8 +2031,9 @@ static void check_class_ports(void)
  * than saved blind — the retired check's own rule, kept: every other check in
  * this file believes it runs at the default EMPTY set, which is what makes
  * their "requires module 'X'" expectations mean anything. */
-static bool eng_refuses_by_name(const char *feats, const char *pat,
-                                const char *name, char *msg, size_t msgsz)
+static bool eng_refuses_by_name(const char *feats, const char *allow,
+                                const char *pat, const char *name, char *msg,
+                                size_t msgsz)
 {
     pcrec_options opt;
     pcrec_output  out;
@@ -2038,6 +2050,9 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
      * (none, here) plus documentation; the actual gate this compile sees
      * comes from opt.features. */
     opt.features = feats;
+    /* [INLINE-C] stage 2: an invoker-only row's module is opened by the
+     * grant, never by `feats` (the GRANT column). */
+    opt.allow_code = allow;
     opt.engine = PCREC_ENGINE_DFA;
     /* [DD-14 wave G] `-fno-splice-calls`, AND IT IS A REFINEMENT OF THIS
      * CHECK'S CLAIM RATHER THAN A HOLE IN IT.
@@ -2109,6 +2124,7 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
         /* The other direction: it must COMPILE on the default engine. */
         pcrec_default_options(&opt);
         opt.features = feats;   /* [REL-1.11]: same gate, still open */
+        opt.allow_code = allow;
         memset(&out, 0, sizeof out);
         memset(&perr, 0, sizeof perr);
         if (pcrec_compile(pat, &opt, &out, &perr) != 0) {
@@ -2335,6 +2351,12 @@ static void check_engine_capability(void)
          * so nothing but the row's stamp forces the VM, and the refusal
          * must name the row's own `syntax`. */
         { RK_GROUP, 'C', NULL, "callouts",  "a(?C1)b",      "(?C1)" },
+        /* [INLINE-C] stage 2 MODULE `code-c`'s row: the same site, its
+         * callee written from the segment; granted through `allow_code`
+         * (eng_refuses_by_name), since no `feats` text can open it. Two rows
+         * share (group, 'C') now, so a witness naming the row's own syntax
+         * is preferred (the lookup's pass 0). */
+        { RK_GROUP, 'C', NULL, "none", "a(?C`c: return RX_PASS;`)b", "(?C`c: return RX_PASS;`)" },
         { RK_GROUP, 'R', NULL, "recursion", "a(?R)?b",      "(?R)" },
         { RK_GROUP, '0', NULL, "recursion", "a(?0)?b",      "(?0)" },
         { RK_GROUP, '1', NULL, "recursion", "(a)(?1)",      "(?1)" },
@@ -2429,6 +2451,10 @@ static void check_engine_capability(void)
             built_wired++;
 
             const char *bites = NULL, *name = NULL, *feats = NULL;
+            /* Pass 0 wants a witness naming the row's own syntax (two rows
+             * share (group, 'C') since [INLINE-C] stage 2); pass 1 takes the
+             * first (kind, sel, tail) match, the key every other row uses. */
+            for (int pass = 0; pass < 2 && !bites; pass++)
             for (size_t w = 0; w < sizeof WITNESS / sizeof WITNESS[0]; w++) {
                 if (WITNESS[w].kind != r->kind || WITNESS[w].sel != r->sel)
                     continue;
@@ -2438,6 +2464,8 @@ static void check_engine_capability(void)
                     (!r->tail || strcmp(WITNESS[w].tail, r->tail) != 0))
                     continue;
                 if (!WITNESS[w].tail && r->tail)
+                    continue;
+                if (pass == 0 && strcmp(WITNESS[w].name, r->syntax) != 0)
                     continue;
                 bites = WITNESS[w].bites; name = WITNESS[w].name;
                 feats = WITNESS[w].feats;
@@ -2455,7 +2483,7 @@ static void check_engine_capability(void)
                 continue;
             }
             checked++;
-            if (!eng_refuses_by_name(feats, bites, name, msg, sizeof msg)) {
+            if (!eng_refuses_by_name(feats, (r->flags & RF_INVOKER_ONLY) ? r->module + strlen("code-") : NULL, bites, name, msg, sizeof msg)) {
                 bad("engine capability: '%s' (module '%s'): %s", r->syntax,
                     r->module, msg);
                 bads++;
@@ -2555,10 +2583,12 @@ static void check_engine_capability(void)
      * UNMOVED at 76 -- module `callouts`' `(?C` row was already RS_MODULE and
      * VM_ONLY (planned since [M4-CALLOUTS] step 1); it gains its producer and
      * builds. Its witness is in the table above. */
-    if (qualifying != 76 || wired != 63 || built_wired != 63)
+    /* [INLINE-C] stage 2: 76/63/63 -> 77/64/64, module `code-c`'s row is a
+     * new VM_ONLY row with its producer, built. */
+    if (qualifying != 77 || wired != 64 || built_wired != 64)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 76, 63 "
-            "and 63 -- the VM_ONLY population, its producer set or its built "
+            "have a wired producer and %d of THOSE are BUILT, expected 77, 64 "
+            "and 64 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
         bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
@@ -2717,7 +2747,7 @@ static void check_index_shape_witnesses(void)
             else if (!strstr(wit, "(a)") && !strstr(wit, "(b)")) capfree++;
 
             checked++;
-            if (!eng_refuses_by_name("recursion,named-groups", wit,
+            if (!eng_refuses_by_name("recursion,named-groups", NULL, wit,
                                      disp->syntax, msg, sizeof msg)) {
                 bad("index shape witness: '%s' (dispatches on '%s'): %s",
                     r->syntax, disp->syntax, msg);
@@ -3126,9 +3156,11 @@ static void check_built_status_defects(void)
     /* 142 = 114 + 12 + 16 -> 143 = 115 + 11 + 17 ([INLINE-C] stage 1b):
      * module `callouts`' `(?C1)` row is built (unbuilt -> built), and the new
      * REJECTED malformed `(?Cx)` row is n/a. */
-    else if (checked != 143 || built != 115 || unbuilt != 11 || na != 17)
+    /* 143 = 115 + 11 + 17 -> 144 = 116 + 11 + 17 ([INLINE-C] stage 2): the
+     * code-c row is built (its probe opens the describe grant). */
+    else if (checked != 144 || built != 116 || unbuilt != 11 || na != 17)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 143 = 115 + 11 + 17. Zero defects does NOT imply "
+            "%d n/a, expected 144 = 116 + 11 + 17. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3346,9 +3378,11 @@ static void check_families(void)
      * `(*UTF)`+`(*UTF8)` a family of two, both self-primary verb names. */
     /* 103 -> 104 ([INLINE-C] stage 1b): the malformed `(?Cx)` row is a
      * family of one (family == NULL). */
-    if (families != 104 || multi != 13 || members_in_multi != 52)
+    /* 104 -> 105 ([INLINE-C] stage 2): module `code-c`'s row is a family of
+     * one. */
+    if (families != 105 || multi != 13 || members_in_multi != 52)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 104 / 13 / 52. The index "
+            "member, %d members in those -- expected 105 / 13 / 52. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {
