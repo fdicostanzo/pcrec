@@ -1,0 +1,5 @@
+report=docs/dev/lanes/sanred_report.md
+sections: Summary; Failures; Cause; Fix; Local evidence; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

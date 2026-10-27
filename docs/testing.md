@@ -2940,12 +2940,20 @@ without parsing Makefile syntax (same shape as [SR-11]'s
 `table_contract.md` manifest and `mlscan.py`'s self-contained rule table:
 one file, two readers, never a transcription). That check sweeps every
 `tests/*/run_*_diff.sh` in the tree and requires each to be IN the manifest
-or in a reasoned exclusion — there is no exclusion list today because the
-sweep found none of the tree's 9 `run_*_diff.sh` scripts belongs in one;
-if a future differential script is deliberately NOT a sanitizer-axis
-candidate (no generated-code compile of its own, the way
-`run_atomic_identity.sh`'s TEXT-only comparison above has none), it needs
-a stated reason there, not a silent gap.
+or in a reasoned exclusion. **Widened 2026-10-27 (lane sanred2)**: the
+population is now EVERY `tests/**/run_*.sh` (157), not only the `_diff`
+subset — the callout drivers (`run_callouts_tests.sh`) were in neither list
+and `make san` never instrumented them. The exclusions live in
+`tests/lib/san_excluded.txt` (`PATH<TAB>REASON`, one line each, prefixes
+`NOT-A-SUITE`/`NO-C-RUN`/`OWN-TIER`/`TODO-WIRE`/`DEFER-PLAIN` defined in its
+header); the check also fails on an exclusion that names no script, has no
+reason, or is also in the manifest, and runs a planted-defect control (a
+synthetic tree) so a check that cannot fail is itself red. `TODO-WIRE`
+entries (scripts that take `$GENCFLAGS` yet are absent from the manifest)
+and `DEFER-PLAIN` ones (plain `$CC`, compiler axis only) are the open
+population of the san-coverage gap: wire or re-reason them one at a time.
+The classification of those two prefixes is mechanical (a grep for
+`GENCFLAGS` / compiler tokens), not a per-script review.
 
 **FIVE SCRIPTS WERE MISSING WITH NO STATED REASON, found by enumerating
 every `run_*_diff.sh` and diffing against the three (byte-identical, as of

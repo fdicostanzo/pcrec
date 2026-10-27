@@ -96,3 +96,8 @@ tests/vars/run_vars_tests.sh
 # global loop. Its drivers compile every artifact with $GENCFLAGS, so the
 # sanitizer axes reach `<prefix>_next`, its bind/step parts and the retry.
 tests/findall/run_iter_diff.sh
+
+# [INLINE-C] stage 1b -- the callout drivers. Every generated artifact and
+# driver compiles with $GENCFLAGS, so both axes reach the callout call site,
+# firing classes and the refusal paths (sanred2, 2026-10-27).
+tests/callouts/run_callouts_tests.sh
