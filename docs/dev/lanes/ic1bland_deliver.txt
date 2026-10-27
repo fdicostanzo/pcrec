@@ -1,4 +1,5 @@
-ic1bland deliver (lane/ic1b, commits cd3db10a7 and 6512dc80a); full account in ic1bland_report.md
-Triage patch applied; test-core, memfn-stamps, memfn-arch, subst green; cpset-structure and startset needed two more fixes (below), now green.
-Axes job 562: SLOW not hung; cap 7200 was too small for the unbatched shape. Re-queued as 564 with the batched shape and cap 15600. A separate real red (callouts floor 50 vs 49 measured) fixed.
-Queued: 563-ic1badvice-test2, 564-ic1badvice-axes2. OWED: both verdicts.
+report=docs/dev/lanes/ic1bland_report.md
+sections: Summary; Sections; Axes: SLOW, not a hang; A real red the cap hid; Queued; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: 563-ic1badvice-test2; 564-ic1badvice-axes2
