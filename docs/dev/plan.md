@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
+  filed: 2026-10-27 Frank ("Ok scanner dogfood")
+  status (2026-10-27): not started. The pattern itself goes into the test corpus and to the bench first (lane scandog).
+  next: after [INLINE-C] stage 2 merges: replace the hand-written scanner with the generated matcher; stage 2's scanner table proves both answer the same; decision entry for the bootstrapping rule.
+  refs: [INLINE-C]; docs/design/inline_c.md §2.3; the corpus pattern from lane scandog
+  Bootstrapping: the generated .c is COMMITTED and refreshed by a make gen-* target (third_party tables are the precedent); a check fails when the committed file differs from a fresh generation; the first build never needs a working pcrec.
 - [MECH-NOCOMPILE] STATE:not-started — 31 SABOTAGE ROWS WHOSE PLANT DOES NOT COMPILE, AND MECH STAYS GREEN
   filed: 2026-10-27 manager, from lane suitetri (full suite 20261027 mech: anomalies 31, was 2; CHK-1 classifier, substr1fix 7047b69e4, landed after the previous run)
   status (2026-10-27): not started. 14 plants trip -Werror (unused, maybe-uninitialized, parentheses); 11 are stale against current code (S106/S271 name the pre-rename rx_span_match; S53/S56/S57 `stv` undeclared); 6 are designed compile-time catches the classifier cannot tell apart (S07, S1112, S184, S526, S989, S1242).
