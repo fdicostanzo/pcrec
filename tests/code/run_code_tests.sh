@@ -233,7 +233,12 @@ diag() {   # diag WHAT EXPECT SRC-FILE-OR-PATTERN...
         bad "$what: pcrec refused the source"; return
     fi
     local e; e="$(cd "$G" && $CC -c -o o.o o.c 2>&1)"
-    if [[ "$e" == *"$want"* ]]; then ok "$what"; else bad "$what: wanted '$want' in: ${e:0:300}"; fi
+    # This arm's observable IS a compile error, so a mismatch quotes it with
+    # the `file:L:C: error:` shape broken: the mech matrix reads that shape
+    # in a log as "the plant does not compile" (NOCOMPILE_ERE), which here
+    # would turn a detection into an anomaly.
+    if [[ "$e" == *"$want"* ]]; then ok "$what"
+    else bad "$what: wanted '$want' in: $(printf '%s' "${e:0:300}" | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"; fi
 }
 diag "a segment's error names its .rxt line and column" "err.rxt:3:25: error" err.rxt
 diag "a pattern-esc segment's error names the opener's line" "pe.rxt:3:" pe.rxt
@@ -254,8 +259,15 @@ echo "== [INLINE-C] code headers come after the matcher =="
 H="$WORK/hdr"; mkdir -p "$H"
 pc --allow-code=c -p ph --code-header 'c:"poison.h"' -o "$H/ph.c" \
     --pattern 'hello(?C`c: return RX_PASS;`)world|[a-z]+@[a-z]+\.com'
+# THE TEXT FIRST: the header's #include must follow the matcher's last
+# function (the public search entry's definition). Only then is the compile
+# asked, so a misplaced header reads as this check, not as a compile error.
+inc_at="$(grep -n '^#include "poison.h"' "$H/ph.c" | head -1 | cut -d: -f1)"
+fn_at="$(grep -n '^[a-z].*ph_search(const unsigned char' "$H/ph.c" | tail -1 | cut -d: -f1)"
 if ! grep -qE 'memchr|memcmp|memcpy' "$H/ph.c"; then
     bad "the poison witness's matcher uses none of the poisoned names: it cannot reach S-IC30"
+elif [ -z "$inc_at" ] || [ -z "$fn_at" ] || [ "$inc_at" -le "$fn_at" ]; then
+    bad "the code header's #include (line ${inc_at:-none}) does not follow the matcher (ph_search at line ${fn_at:-none})"
 elif $CC $GENCFLAGS -I"$SCRIPT_DIR" -c -o "$H/ph.o" "$H/ph.c" 2> "$H/cc.log"; then
     ok "a header poisoning matcher identifiers compiles: it is emitted after the matcher"
 else

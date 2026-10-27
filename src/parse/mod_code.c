@@ -63,6 +63,17 @@ const char *pcrec_code_all_langs(void)
     return all[0] ? all + 1 : all;
 }
 
+/* Every registered language's module bit: the grant a DESCRIBE entry
+ * (inline_c.md §5.9's second class: `--count-groups`, the registry's
+ * `built` probe) opens, since it parses code and writes no C. */
+unsigned pcrec_code_describe_mask(void)
+{
+    unsigned m = 0;
+    for (size_t i = 0; i < sizeof code_langs / sizeof code_langs[0]; i++)
+        m |= code_langs[i].feature;
+    return m;
+}
+
 /* THE `code-header` OPERAND (inline_c.md §3.3), one reader for the `.rxt`
  * head line and `--code-header`: `lang` a registered language and `hdr` an
  * `#include` operand, `"name"` or `<name>`, of printable ASCII with no

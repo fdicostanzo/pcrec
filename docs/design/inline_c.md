@@ -317,13 +317,20 @@ The emitter reads the callee from a declared first-match table:
 
 | # | row | callee expression | `user` | width default |
 |---|---|---|---|---|
-| 1 | `code` (`CO_CODE`) | a direct call of the generated `static` function `<prefix>__code<seg>` (section 3) | `NULL` | `W_PRED` |
+| 1 | `code` (`CO_CODE`) | `<prefix>__code<seg>_ref.fn` — a file-local `static const rx_callout_ref <prefix>__code<seg>_ref = { <prefix>__code<seg>, NULL };` the artifact defines beside the generated `static` function (section 3) | `NULL` | `W_PRED` |
 | 2 | `named` (`CO_NAME`) | `rx_callout_<name>.fn` — `extern const rx_callout_ref rx_callout_<name>;` declared by the artifact, defined by the user (D38 §1.1) | `rx_callout_<name>.user` | `W_PRED` `[r1 FR5]` |
 | 3 | `numbered` (`CO_NUM`) | `rx_callout_<n>.fn`, same shape, `<n>` the decimal number | `rx_callout_<n>.user` | `W_PRED` `[r1 FR5]` |
 
 Every row's width is `W_PRED` unless the site says `consume` (2.2); rev 0's
-"bindings are `W_ANY`" is replaced by FR5. Row 1 is a direct call so gcc can
-inline the user's code into the VM; rows 2 and 3 are the D38 binding unit
+"bindings are `W_ANY`" is replaced by FR5. **ONE CALL FORM** (Frank,
+2026-10-27): every row is called the same way, `<binding>.fn(&ctx)`; the rows
+differ only in where the binding is defined. Where the compiler can see the
+binding's definition (row 1 always: the binding and the function are in the
+artifact; rows 2 and 3 when the user's definition is in the same translation
+unit, a unity build, or under `-flto`) the call is direct and gcc may inline
+the callee into the VM; a binding compiled separately is an indirect call
+(`match_api.md` §11.2¶1a; checked by reading the assembly,
+`tests/code/run_code_tests.sh` arm 10). Rows 2 and 3 are the D38 binding unit
 verbatim. `rx_callout_<name>` is the fixed-literal, unprefixed family D38/D41.1
 ruled: two artifacts naming one binding share it, which is the point (one
 definition serves both). The compile-time namespace table in
@@ -889,7 +896,10 @@ static ptrdiff_t <prefix>__code<seg>(const rx_ctx *ctx);
 ```
 
 an `rx_matchfn`, `static` in the artifact's `.c`, `<seg>` the segment index
-(1.1). The prototype is emitted before the VM function; the DEFINITIONS are
+(1.1). The prototype is emitted before the VM function with its file-local
+binding, `static const rx_callout_ref <prefix>__code<seg>_ref = {
+<prefix>__code<seg>, NULL };`, which the site calls like every binding row
+(1.4, ONE CALL FORM); the DEFINITIONS are
 emitted LAST in the `.c`, after the matcher. Putting them last means no
 `#line` has to be restored afterwards, so the artifact's bytes do not depend on
 the output file name; gcc inlines a later-defined `static` function at `-O2`
@@ -1656,7 +1666,12 @@ made unconditional (the identity gate goes red); S-IC25 callout refs omitted
 from the marked set (the `--no-captures` witness); S-IC26 the step charge per
 fire is dropped; S-IC27 the `once` check accepts a site inside a repeat.
 
-**Stage 2 — embedded C (module `code-c`) with the local-only gate.** Both
+**Stage 2 — embedded C (module `code-c`) with the local-only gate.**
+`[R1, Frank 2026-10-27]` Stage 2 builds the tagged spelling only; the `(?{`
+spelling, its C scanner, the scanner table and S-IC7 moved to
+[SCANNER-DOGFOOD], which builds the scanner once, from the pcrec-generated
+matcher of `tests/recursion/cscan.rxt` (lane ic2's report lists the
+deviations). As written before R1: both
 code spellings; the generated language rows (1.1); the tag grammar; the `(?{`
 C scanner; the generated function, macro set (statement expressions,
 `RX_G_<name>` rules), the `#undef` block and `#line` per 3.1; `code-header`

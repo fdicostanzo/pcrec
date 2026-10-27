@@ -835,6 +835,11 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r, int enc)
     Ctx cx;
     memset(&cx, 0, sizeof cx);
     cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this probe Ctx inherits the CLI's process-global gate, unchanged */
+    /* [INLINE-C] stage 2: "all" does not hold the invoker-only code modules
+     * (the GRANT column), and this probe is a DESCRIBE entry (it parses the
+     * row's syntax and writes no C), so it opens them as `--count-groups`
+     * does. */
+    cx.enabled_features |= pcrec_code_describe_mask();
     cx.pat = r->syntax;
     cx.patlen = strlen(r->syntax);
     cx.arena.cx = &cx;

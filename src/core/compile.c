@@ -3646,13 +3646,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): counting
      * parses embedded code and emits nothing, so every code language's
      * module is open here without the invoker's grant. */
-    {
-        unsigned code = 0;
-        char gerr[64];
-        if (pcrec_code_grant_resolve(pcrec_code_all_langs(), &code, gerr,
-                                     sizeof gerr) == 0)
-            cx.enabled_features |= code;
-    }
+    cx.enabled_features |= pcrec_code_describe_mask();
     /* Parse-only: nothing is emitted, so no capture node is wanted and the
      * tree stays exactly D31's. This matters beyond tidiness — --count-groups
      * pins its refusal behaviour to pcrec_compile's, and an AST that differed
