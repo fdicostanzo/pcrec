@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MECH-PROCS] STATE:not-started — MECH ROW CONCURRENCY USES ~HALF THE DEV BOX; MEASURE IT, OR LET THE RUNNER ADAPT TO A CPU TARGET
+  filed: 2026-10-27 Frank ("File it. Include the idea that the script slowly increments parallelism to target 90%+ cpu usage")
+  status (2026-10-27): not started. Full suite 20261027 mech at MECH_PROCS=6 (scripts/battery.sh:131, "[TT-8]'s own measured setting", not measured on the 7700X/16-thread box): 36% user + 18% sys, 46% idle, load ~10; ~1,040 rows take ~7 h.
+  next: (a) measure a fixed 60-row slice at PROCS 6/8/10/12/16 on a quiet box, set the default from the knee, record it beside the constant; (b) Frank's idea: the mech runner starts low and raises concurrency step by step while CPU use stays under ~90% and per-row time does not degrade.
+  refs: scripts/battery.sh (MECH_PROCS); tests/mech/run_sabotage_matrix.sh (PROCS/JOBS/INNER_PROCS); memory pcrec-suspect-tuning-constants; build/full_suite/20261027_7d3be7ec7/mech.log
+  For (b): the target is CPU busy (user+sys) AND rows/hour, since sys time can rise without throughput; step every N completed rows; never above nproc; one log line per change so the run explains itself. (a) may make (b) unnecessary: decide after (a)'s curve.
 - [FEAT-FAMILIES] STATE:not-started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
   filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
   status (2026-10-27): agreed, not started. basic = modules whose constructs never force the backtracking engine (registry engine column, DERIVED); extended = basic + backrefs, lookaround, atomic-groups, conditionals, branch-reset; pcre2 = + recursion, verbs (callouts stay opt-in everywhere).
