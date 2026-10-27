@@ -17,4 +17,4 @@ No change to which patterns are accepted or what they match.
 `make -C worktree test-ci-shards`: checks passed 9, failed 0 (table held to TEST_SECTIONS, matrix lists 3 shards, planted self-test). The timeout itself is runner-only and not reproducible locally; the proof is the next CI run (watch shard times, expect each ~41 min).
 
 ## STATE AT HANDOFF
-Committed on lane/cired. Rulings file read: none present/applied. test-endmark is still an ESTIMATE (60 s); callouts etc. are now measured. Residual risk: runner spread (shard 2's job time varied 47..58 min for similar content), so 41 min vs 55 gives ~1.35x headroom.
+OWED: none. Committed on lane/cired. Rulings file read: none present/applied. test-endmark is still an ESTIMATE (60 s); callouts etc. are now measured. Residual risk: runner spread (shard 2's job time varied 47..58 min for similar content), so 41 min vs 55 gives ~1.35x headroom.
