@@ -221,7 +221,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
   status (2026-10-27): stages 0 (abi 88), 1a (kindrow.def) and 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) LANDED. Rulings in the row body.
-  next: stage 2 (embedded C, local only, span helpers) after the full suite on 7d3be7ec7 ends; brief from inline_c.md rev 1 + the body file.
+  next: stage 2 BUILDING (lane ic2, opus, build go Frank 2026-10-27 "All sounds good. Go."); then stage 3 (sha-pinned includes).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
