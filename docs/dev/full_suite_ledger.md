@@ -272,7 +272,8 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
+| 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
 
-RED: 2026-10-27 7d3be7ec7 test=green strict=green axes=green san=RED(rc=2) alloc=green lint=green mech=green recidentity=RED(rc=2) log=build/full_suite/20261027_7d3be7ec7 duration=40149s
+RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.

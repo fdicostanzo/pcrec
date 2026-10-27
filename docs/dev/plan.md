@@ -579,6 +579,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MECH-NOCOMPILE] STATE:not-started — 31 SABOTAGE ROWS WHOSE PLANT DOES NOT COMPILE, AND MECH STAYS GREEN
+  filed: 2026-10-27 manager, from lane suitetri (full suite 20261027 mech: anomalies 31, was 2; CHK-1 classifier, substr1fix 7047b69e4, landed after the previous run)
+  status (2026-10-27): not started. 14 plants trip -Werror (unused, maybe-uninitialized, parentheses); 11 are stale against current code (S106/S271 name the pre-rename rx_span_match; S53/S56/S57 `stv` undeclared); 6 are designed compile-time catches the classifier cannot tell apart (S07, S1112, S184, S526, S989, S1242).
+  next: fix lane: make the 14 warning-clean, re-anchor the 11, give the runner a per-row declaration for a designed compile-time catch; plus an anomaly-count ratchet so unmeasured rows cannot leave `make mech` green.
+  refs: docs/dev/lanes/suitetri_report.md; build/full_suite/20261027_7d3be7ec7/mech.log; memory pcrec-check-design-lessons (populations nobody counts)
 - [MECH-PROCS] STATE:not-started — MECH ROW CONCURRENCY USES ~HALF THE DEV BOX; MEASURE IT, OR LET THE RUNNER ADAPT TO A CPU TARGET
   filed: 2026-10-27 Frank ("File it. Include the idea that the script slowly increments parallelism to target 90%+ cpu usage")
   status (2026-10-27): not started. Full suite 20261027 mech at MECH_PROCS=6 (scripts/battery.sh:131, "[TT-8]'s own measured setting", not measured on the 7700X/16-thread box): 36% user + 18% sys, 46% idle, load ~10; ~1,040 rows take ~7 h.
@@ -718,6 +723,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
   The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
+  2026-10-27 full suite (7d3be7ec7): (A) counts IDENTICAL to 7234c2e86 (SCANEDGE-SET, INLINE-C 0/1a/1b added no mover; a same-count swap is not excluded). New datum: bref-rename bucket 328 on every axis (366 on 10-23, census 411, band +-30): 38 backref patterns left it; the re-base lane lists bucket membership first (KEEP=1 gate run).
 - [SEQ-FOLD] STATE:not-started — FOLDED TEXT MATCHES: one fold table for full case, accent and look-alike folding
   filed: 2026-10-24 Frank ("The general mechanism sounds good"), from lane utfwant's survey
   status (2026-10-24): go (Frank); starts after every open item and its follow-ups complete; children are rows of ONE fold mechanism, full case folding first (demand), look-alike last (no outside demand found)
