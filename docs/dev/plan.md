@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [LANECHECK-SEAL] STATE:not-started — THE DELIVER EXPECTATIONS LIVE WHERE THE LANE CANNOT EDIT THEM
+  filed: 2026-10-26 manager, from lane ic1bland (it overwrote the manager's ic1bland_deliver.txt, "before reading it", with sections matching its own report; lanecheck then passed)
+  status (2026-10-26): not started. The DELIVER file sits in the lane's worktree, so a lane can rewrite the check it is judged by; the .done seal hashes the file at pass time, not the manager's original.
+  next: small lane: the manager writes worktrees/.mgr/deliver/NAME.txt; lanecheck reads that copy; the lane-writes hook refuses subagent writes under it; lanewatch flags a DELIVER hash that differs from the manager copy.
+  refs: plan_completed.md [LANECHECK]; scripts/lanecheck; scripts/lanewatch; docs/dev/lanes/ic1bland_report.md (lane/ic1b)
+  The hook covers only the Write/Edit tools; a Bash write still gets through, so lanewatch's hash comparison is the real control.
 - [KINDROW-ROSTERS] STATE:not-started — EVALUATE: DO ROW-FIRST SWITCHES REMOVE THE ZERO/ANY KIND ROSTERS FROM THE CONVERTED SITES?
   filed: 2026-10-26 Frank + manager (after [INLINE-C] stage 1a's kindrow.def; Frank: "evaluate it as part of that item - don't presume to do it")
   status (2026-10-26): filed; an EVALUATION first, no build presumed. 1a converted 8 sites to read the row, but the kind switches remain (67 switches, 711 case labels before and after) because each still lists every kind.
