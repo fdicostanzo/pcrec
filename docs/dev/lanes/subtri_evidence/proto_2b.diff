@@ -1,0 +1,89 @@
+--- shipped/2-rare/rx.c
++++ proto/2b/rx.c
+@@ -17,6 +17,7 @@
+ #include "rx.h"
+ #include <string.h>
+ 
++static inline uint16_t rx_w2(const void *p) { uint16_t w; memcpy(&w, p, 2); return w; }
+ static inline uint32_t rx_w4(const void *p) { uint32_t w; memcpy(&w, p, 4); return w; }
+ static inline uint64_t rx_w8(const void *p) { uint64_t w; memcpy(&w, p, 8); return w; }
+ 
+@@ -486,52 +487,47 @@
+     return rx_reqrun__body(subject, n, pos);
+ }
+ 
++static inline size_t rx_proto_d(const unsigned char *subject, size_t n, size_t pos)
++{   /* "admin/" found by memchr on 'd' (offset 1; 2.06M of 362M vs '/' 20.0M) */
++    while (pos + 6 <= n) {
++        const unsigned char *q = memchr(subject + pos + 1, 'd', n - pos - 1 - 4);
++        if (!q) return n;
++        size_t c = (size_t)(q - subject) - 1;
++        if (rx_w4(subject + c) == rx_w4("admi") && rx_w4(subject + c + 2) == rx_w4("min/")) return c;
++        pos = c + 1;
++    }
++    return n;
++}
++/* PROTOTYPE (subtri what-if): the req run "admin/" drives every candidate.
++ * Each hit c fixes the only possible start: c-6 ("/phpmy") or c-4 ("/wp-"),
++ * mutually exclusive (byte c-1), increasing in c ("admin/" cannot overlap
++ * itself), so the first hit whose anchored attempt succeeds is leftmost. */
+ static inline __attribute__((always_inline)) int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+     rx_ctx ctx;
+     ptrdiff_t result;
+-    size_t attempt_position;
+-    size_t window_end;
++    size_t pos = search_from, st;
+     if (search_from > subject_length) return 0;
+-    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
+-    if (handoff_position >= subject_length) return 0;
+-    if (handoff_position - search_from > 6) {
+-        handoff_position -= 6;
+-    } else
+-        handoff_position = search_from;
+-    {
+-        ptrdiff_t window[1][2];
+-        if (rx_prefilter(subject, subject_length, handoff_position, window) != 1) return 0;
+-        attempt_position = (size_t)window[0][0];
+-        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+-    }
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+-        ctx.pos = attempt_position;
+-        result = rx_match_anchored(&ctx, run, window_end);
+-        if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+-        if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+-        if (result == RX_R_WORK)    return PCREC_ERR_WORK;
+-        if (result == RX_R_RECURSE) return PCREC_ERR_RECURSE;
+-        if (result == RX_R_INTERNAL) return PCREC_ERR_INTERNAL;
++        size_t c = rx_reqrun(subject, subject_length, pos);
++        if (c >= subject_length) return 0;
++        pos = c + 1;
++        if (c >= search_from + 6 && rx_w4(subject + c - 6) == rx_w4("/php") && rx_w2(subject + c - 2) == rx_w2("my")) st = c - 6;
++        else if (c >= search_from + 4 && rx_w4(subject + c - 4) == rx_w4("/wp-")) st = c - 4;
++        else continue;
++        ctx.pos = st;
++        result = rx_match_anchored(&ctx, run, subject_length);
++        if (result < -1) return (int)result;
+         if (result >= 0) break;
+         rx_reset_for_next_attempt(run);
+-        if (attempt_position >= subject_length) return 0;
+-        attempt_position++;
+-        {
+-            ptrdiff_t window[1][2];
+-            if (rx_prefilter(subject, subject_length, attempt_position, window) != 1) return 0;
+-            attempt_position = (size_t)window[0][0];
+-            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+-        }
+     }
+-    if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);
++    if (capture_spans) rx_report_captures(run, capture_spans, st, result);
+     return 1;
+ }
+-
+ int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from,
+        ptrdiff_t (*capture_spans)[2])
+ {

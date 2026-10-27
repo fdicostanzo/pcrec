@@ -1,0 +1,45 @@
+--- shipped/rx.c
++++ attr/5b/rx.c
+@@ -16,6 +16,10 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++#include "pmc.h"
++unsigned long long g_b[8], g_n[8];
++#define PB(b) uint64_t _t##b = pmc_now();
++#define PE(b) do { g_b[b] += pmc_now() - _t##b; g_n[b]++; } while (0)
+ 
+ 
+ #define RX_ENGINE "dfa"
+@@ -78,9 +82,10 @@
+ #endif
+ int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])
+ {
+-    if (subject_length <= search_from ||
+-        !memchr(subject + search_from, 64, subject_length - search_from))
+-        return 0;
++    { PB(0) int ok = !(subject_length <= search_from ||
++        !memchr(subject + search_from, 64, subject_length - search_from)); PE(0);
++      if (!ok) return 0; }
++    PB(1)
+     static const unsigned char rx_forward_byte_class[256] = {
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+@@ -207,7 +212,9 @@
+         forward_state = rx_forward_step(rx_forward_next_state, forward_state, rx_forward_byte_class[subject[scan_position++]]);
+         if (rx_forward_is_dead(forward_state)) break;   // dead: no match can continue
+     }
++    PE(1);
+     if (last_accept_position == (size_t)-1) return 0;
++    PB(2)
+     {
+         size_t match_end_position = last_accept_position;
+         size_t match_start_position = (size_t)-1;
+@@ -243,6 +250,7 @@
+             }
+             goto rx_reverse_scan_views;
+         }
++        PE(2);
+         if (match_start_position == (size_t)-1) return 0;
+         if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }
+         return 1;

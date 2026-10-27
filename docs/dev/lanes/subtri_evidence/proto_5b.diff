@@ -1,0 +1,40 @@
+--- shipped/5b-mask-email/rx.c
++++ proto/5b/rx.c
+@@ -76,6 +76,7 @@
+ #if __has_attribute(noclone)
+ __attribute__((noclone))
+ #endif
++ptrdiff_t rx_match(const rx_ctx *ctx);
+ int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])
+ {
+     if (subject_length <= search_from ||
+@@ -193,6 +194,29 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
++    /* PROTOTYPE (subtri what-if, not pcrec code): drive candidates from the
++     * required interior byte '@'; the leading class excludes '@', so the
++     * first '@' at or after search_from whose suffix matches gives the
++     * leftmost match, its start the leftmost run start of the class. */
++    {
++        size_t p = search_from;
++        for (;;) {
++            const unsigned char *q = memchr(subject + p, 64, subject_length - p);
++            if (!q) return 0;
++            size_t at = (size_t)(q - subject), st = at;
++            while (st > search_from && rx_can_begin_match[subject[st - 1]]) st--;
++            if (st < at) {
++                rx_ctx c; c.subject = subject; c.len = subject_length; c.pos = st;
++                ptrdiff_t L = rx_match(&c);
++                if (L >= 0) {
++                    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)st; capture_spans[0][1] = (ptrdiff_t)(st + (size_t)L); }
++                    return 1;
++                }
++            }
++            p = at + 1;
++            if (p >= subject_length) return 0;
++        }
++    }
+     size_t scan_position = search_from;
+     size_t last_accept_position = (size_t)-1;
+     rx_forward_state forward_state = 0;

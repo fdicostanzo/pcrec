@@ -1,0 +1,52 @@
+--- shipped/rx.c
++++ instr/5b/rx.c
+@@ -16,6 +16,7 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++unsigned long long g_calls,g_memchr,g_skip,g_fwd,g_cand,g_rev,g_revrun,g_acc,g_fwd_fail;
+ 
+ 
+ #define RX_ENGINE "dfa"
+@@ -78,9 +79,10 @@
+ #endif
+ int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])
+ {
+-    if (subject_length <= search_from ||
+-        !memchr(subject + search_from, 64, subject_length - search_from))
+-        return 0;
++    g_calls++;
++    { const unsigned char *q = subject_length > search_from ? memchr(subject + search_from, 64, subject_length - search_from) : 0;
++      g_memchr += q ? (size_t)(q - (subject + search_from)) + 1 : subject_length - search_from;
++    if (subject_length <= search_from || !q) return 0; }
+     static const unsigned char rx_forward_byte_class[256] = {
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+@@ -200,14 +202,15 @@
+     for (;;) {
+         if (rx_forward_accepts(rx_forward_is_accepting, forward_state)) last_accept_position = scan_position;
+         if (forward_state == 0 && last_accept_position == (size_t)-1) {
+-            while (scan_position < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++;
++            { size_t b0 = scan_position; while (scan_position < subject_length && !rx_can_begin_match[subject[scan_position]]) scan_position++; g_skip += scan_position - b0; g_cand++; }
+             if (scan_position >= subject_length) return 0;
+         }
+         if (scan_position >= subject_length) break;
+-        forward_state = rx_forward_step(rx_forward_next_state, forward_state, rx_forward_byte_class[subject[scan_position++]]);
++        g_fwd++; forward_state = rx_forward_step(rx_forward_next_state, forward_state, rx_forward_byte_class[subject[scan_position++]]);
+         if (rx_forward_is_dead(forward_state)) break;   // dead: no match can continue
+     }
+-    if (last_accept_position == (size_t)-1) return 0;
++    if (last_accept_position == (size_t)-1) { g_fwd_fail++; return 0; }
++    g_acc++;
+     {
+         size_t match_end_position = last_accept_position;
+         size_t match_start_position = (size_t)-1;
+@@ -218,7 +221,7 @@
+             if (rx_reverse_accepts(rx_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
+           rx_reverse_scan_views:;
+             if (rewind_position <= search_from) break;
+-            reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, rx_reverse_byte_class[subject[--rewind_position]]);
++            g_rev++; reverse_state = rx_reverse_step(rx_reverse_next_state, reverse_state, rx_reverse_byte_class[subject[--rewind_position]]);
+             if (!rx_reverse_is_stop(reverse_state)) continue;   // the generic path
+             if (rx_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
+           rx_reverse_scan_edge:;

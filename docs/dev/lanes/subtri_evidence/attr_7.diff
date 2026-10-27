@@ -1,0 +1,55 @@
+--- shipped/rx.c
++++ attr/7/rx.c
+@@ -16,6 +16,10 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++#include "pmc.h"
++unsigned long long g_b[8], g_n[8];
++#define PB(b) uint64_t _t##b = pmc_now();
++#define PE(b) do { g_b[b] += pmc_now() - _t##b; g_n[b]++; } while (0)
+ 
+ static inline uint16_t rx_w2(const void *p) { uint16_t w; memcpy(&w, p, 2); return w; }
+ static inline uint32_t rx_w4(const void *p) { uint32_t w; memcpy(&w, p, 4); return w; }
+@@ -648,8 +652,8 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+-    if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
++    { PB(0) size_t r1 = rx_reqrun(subject, subject_length, search_from); PE(0); if (r1 >= subject_length) return 0; }
++    { PB(1) size_t r2 = rx_reqrun_whole(subject, subject_length, search_from); PE(1); if (r2 >= subject_length) return 0; }
+     attempt_position = search_from;
+     window_end = subject_length;
+     static const unsigned char rx_start_set[256] = {
+@@ -670,24 +674,26 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++    { PB(2) while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++; PE(2); }
+     if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+         ctx.pos = attempt_position;
+-        result = rx_match_anchored(&ctx, run, window_end);
++        { int url = attempt_position + 12 <= subject_length && !memcmp(subject + attempt_position, "https://www.", 12);
++          if (url) { PB(3) result = rx_match_anchored(&ctx, run, window_end); PE(3); }
++          else { PB(4) result = rx_match_anchored(&ctx, run, window_end); PE(4); } }
+         if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+         if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+         if (result == RX_R_WORK)    return PCREC_ERR_WORK;
+         if (result == RX_R_RECURSE) return PCREC_ERR_RECURSE;
+         if (result == RX_R_INTERNAL) return PCREC_ERR_INTERNAL;
+         if (result >= 0) break;
+-        rx_reset_for_next_attempt(run);
++        { PB(5) rx_reset_for_next_attempt(run); PE(5); }
+         if (attempt_position >= subject_length) return 0;
+         attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        { PB(2) while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++; PE(2); }
+         if (attempt_position >= subject_length) return 0;
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);

@@ -1,0 +1,49 @@
+--- shipped/rx.c
++++ attr/2/rx.c
+@@ -16,6 +16,10 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++#include "pmc.h"
++unsigned long long g_b[8], g_n[8];
++#define PB(b) uint64_t _t##b = pmc_now();
++#define PE(b) do { g_b[b] += pmc_now() - _t##b; g_n[b]++; } while (0)
+ 
+ static inline uint32_t rx_w4(const void *p) { uint32_t w; memcpy(&w, p, 4); return w; }
+ static inline uint64_t rx_w8(const void *p) { uint64_t w; memcpy(&w, p, 8); return w; }
+@@ -494,7 +498,7 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    size_t handoff_position = rx_reqrun(subject, subject_length, search_from);
++    PB(0) size_t handoff_position = rx_reqrun(subject, subject_length, search_from); PE(0);
+     if (handoff_position >= subject_length) return 0;
+     if (handoff_position - search_from > 6) {
+         handoff_position -= 6;
+@@ -502,7 +506,7 @@
+         handoff_position = search_from;
+     {
+         ptrdiff_t window[1][2];
+-        if (rx_prefilter(subject, subject_length, handoff_position, window) != 1) return 0;
++        PB(1) int pr = rx_prefilter(subject, subject_length, handoff_position, window); PE(1); if (pr != 1) return 0;
+         attempt_position = (size_t)window[0][0];
+         window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+     }
+@@ -511,7 +515,7 @@
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+         ctx.pos = attempt_position;
+-        result = rx_match_anchored(&ctx, run, window_end);
++        { PB(2) result = rx_match_anchored(&ctx, run, window_end); PE(2); }
+         if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+         if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+         if (result == RX_R_WORK)    return PCREC_ERR_WORK;
+@@ -523,7 +527,7 @@
+         attempt_position++;
+         {
+             ptrdiff_t window[1][2];
+-            if (rx_prefilter(subject, subject_length, attempt_position, window) != 1) return 0;
++            PB(3) int pr = rx_prefilter(subject, subject_length, attempt_position, window); PE(3); if (pr != 1) return 0;
+             attempt_position = (size_t)window[0][0];
+             window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+         }
