@@ -21,4 +21,4 @@ Every axis printed `AXIS FAIL ... only 49 tests/callouts/ case(s) reached this a
 563-ic1badvice-test2 (copy of the test job, cap 9000) and 564-ic1badvice-axes2 (cap 15600), each checked with `--ready` and `--dry-run`. Job files: worktree build/jobs/ (gitignored).
 
 ## STATE AT HANDOFF
-Rulings file ic1bland_rulings.md: "(none yet)" at every checkpoint. OWED: verdicts of 563 and 564.
+Rulings file ic1bland_rulings.md: "(none yet)" at every checkpoint. OWED (queued): 563-ic1badvice-test2 and 564-ic1badvice-axes2 verdicts.
