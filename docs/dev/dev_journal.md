@@ -27316,3 +27316,12 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - **[LANECHECK] landed** (Frank's idea): DELIVER block in briefs, scripts/lanecheck (DONE or prose issues), lanewatch + miss log; critic skill adopted it. Frank: never tell lanes about the pass record (memory pcrec-lanecheck-hidden-marker); lane-facing text and lanecheck's output scrubbed.
 - **Frank:** subagents stopping without delivering is a long-term problem (nested replies lost today 6/6 in the ic1b round); feedback drafted for /feedback.
 - **Waiting on:** the 00:05 full suite (nothing merges while it runs); then 1b's jobs from 12:00.
+
+## 2026-10-27 (session 127 cont., manager, overnight) — stage 1b landed; full suite running
+
+- Frank freed the box for the night; the 00:05 suite was cancelled and 1b's validation was moved up so one suite run covers 1b.
+- Stage 1b had three more rounds before landing, all from Frank's `once` rulings. ic1bguide: refusals name the construct, its offset and the fix, plus a spec table. ic1bwritten: a parse rewrite (pcre_look_t3) hid a culprit, so `(?*a|b)` was accepted; the as-written fact now rides on the A_CTX node. ic1badvice: a declared advice table with a proven-same / loses-a-match (witness subject) / may-change verdict. The manager's probe had found 7 of 13 offered fixes changed matches.
+- Validation: 560 RED was 6 stale test pins (ic1btriage, plus 2 more fixed by ic1bland). 562 axes hit its cap: SLOW, not hung (unbatched shape); the batched job got cap 15600 and the callouts floor went 50 -> 45 (shapes.rxt has 49 cases). 561 mech, 563 test2 and 564 axes2 GREEN.
+- Merged 719a17ccb (conflict in a history index, both sides kept; strict clean). FILEPIN re-pinned, ledger major, pushed, bench I-163 (abi 87-89).
+- Full suite 600-main-fullsuite-20261027b frozen at 7d3be7ec7, started 03:05.
+- Process: the monitor session is shut down (Frank), so the manager runs scripts/queuewatch itself. A lane overwrote its own DELIVER file (path-only brief, honest mistake): BOILERPLATE/BRIEF_TEMPLATE fixed, [LANECHECK-SEAL] filed. [ONCE-DEADCHOICE] is in Boonies. 256-byte diagnostic candidate for [IFACE-PUSH].
