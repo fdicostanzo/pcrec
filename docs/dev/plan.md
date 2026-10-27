@@ -221,7 +221,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
   status (2026-10-27): stages 0 (abi 88), 1a (kindrow.def) and 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) LANDED. Rulings in the row body.
-  next: stage 2 (embedded C, local only, span helpers) after the full suite on 7d3be7ec7 ends; brief from inline_c.md rev 1 + the body file.
+  next: stage 2 BUILDING (lane ic2, opus, build go Frank 2026-10-27 "All sounds good. Go."); then stage 3 (sha-pinned includes).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
+  filed: 2026-10-27 Frank ("Ok scanner dogfood")
+  status (2026-10-27): not started. The pattern is in tests/recursion/cscan.rxt (76 cases, libpcre2-verified; merge of lane/scandog) and went to the bench as I-165.
+  next: after [INLINE-C] stage 2 merges: build the `(?{ ... })` spelling ONCE, on the generated cscan matcher (Frank 2026-10-27: no throw-away hand-written scanner; stage 2 ships the tagged (?C`c:`) spelling only); cscan.rxt is its table; decision entry for the bootstrapping rule.
+  refs: [INLINE-C]; docs/design/inline_c.md §2.3; the corpus pattern from lane scandog
+  Bootstrapping: the generated .c is COMMITTED and refreshed by a make gen-* target (third_party tables are the precedent); a check fails when the committed file differs from a fresh generation; the first build never needs a working pcrec.
 - [MECH-NOCOMPILE] STATE:not-started — 31 SABOTAGE ROWS WHOSE PLANT DOES NOT COMPILE, AND MECH STAYS GREEN
   filed: 2026-10-27 manager, from lane suitetri (full suite 20261027 mech: anomalies 31, was 2; CHK-1 classifier, substr1fix 7047b69e4, landed after the previous run)
   status (2026-10-27): not started. 14 plants trip -Werror (unused, maybe-uninitialized, parentheses); 11 are stale against current code (S106/S271 name the pre-rename rx_span_match; S53/S56/S57 `stv` undeclared); 6 are designed compile-time catches the classifier cannot tell apart (S07, S1112, S184, S526, S989, S1242).
