@@ -1670,7 +1670,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         if (rc == 0 && ts.opt.memfn && ts.opt.memfn != cli->opt.memfn &&
             cli_keep_string(&ts.opt.memfn) != 0) rc = 1;
         free(v); free(buf);
-        if (rc != 0) { free(ts.libdirs); return 1; }
+        if (rc != 0) { free(ts.libdirs); free(ts.callouts); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config
          * block sets COMPILE OPTIONS; anything else it could have set — an
          * output path, a pattern, a query mode, another source file, `-h`,
@@ -1687,6 +1687,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * "shorten the prose, keep the path and the raw line" rule applies. */
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
+            free(ts.callouts);  /* ...or for --callout */
             cli_err("%s:%zu: `pcrec` line: compile options only, "
                     "not output/pattern/prefix/query/source: '%s'",
                     src_path, t->line, t->pcrec_raw);
@@ -2294,9 +2295,10 @@ static int cli_emit_support(const CliState *st, const char *unadmitted)
  * one or more targets, pooled across every file given), or an ordinary
  * single-pattern compile to `-o` from `--pattern`. `--target`/`--lib-path`
  * are refused above every query since they apply to a file operand alone
- * (the one refusal that also has to free `st.libdirs`, this CLI's only
- * other allocation besides `st.files`, itself freed alongside it at every
- * exit that can see it non-empty). Returns 0 on success, 1 on any refusal
+ * (the one refusal that also has to free `st.libdirs`, this CLI's
+ * allocations besides `st.files` and `st.callouts`, each freed alongside
+ * it at every exit that can see it non-empty; `st.callouts` is freed here
+ * after `cli_dispatch` returns, never inside it). Returns 0 on success, 1 on any refusal
  * or compile failure. */
 int main(int argc, char **argv)
 {
@@ -2306,6 +2308,7 @@ int main(int argc, char **argv)
     pcrec_default_options(&st.opt);
     if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0) {
         free(st.libdirs);
+        free(st.callouts);
         free(st.files);
         return 1;
     }
@@ -2316,12 +2319,14 @@ int main(int argc, char **argv)
     if (st.subst || st.subst_file) {
         const int rc = cli_subst(&st, unadmitted.subst);
         free(st.libdirs);
+        free(st.callouts);
         free(st.files);
         return rc;
     }
     if (st.emit_support) {
         const int rc = cli_emit_support(&st, unadmitted.support);
         free(st.libdirs);
+        free(st.callouts);
         free(st.files);
         return rc;
     }
@@ -2339,6 +2344,7 @@ int main(int argc, char **argv)
     if (!st.nfiles && st.target) {
         cli_err("--target applies to a file operand only");
         free(st.libdirs);
+        free(st.callouts);
         return 1;
     }
     /* [FINDINGS] B2 THE `-I` LIFT [r2 M-S7]: `-I` is also the ANALYSIS
@@ -2364,6 +2370,7 @@ int main(int argc, char **argv)
                     st.libdirs && !resolves ? "--lib-path/-I" : "--analysis",
                     st.libdirs && !resolves ? "" : " FILE");
             free(st.libdirs);
+            free(st.callouts);
             free(st.files);
             return 1;
         }
@@ -2376,6 +2383,7 @@ int main(int argc, char **argv)
             cli_err("--measures applies to a compile (a file operand or "
                     "--pattern) only");
             free(st.libdirs);
+            free(st.callouts);
             free(st.files);
             return 1;
         }
@@ -2392,6 +2400,7 @@ int main(int argc, char **argv)
         cli_err("--view applies to --list-analysis NAME or "
                 "--list-measurements=X only");
         free(st.libdirs);
+        free(st.callouts);
         free(st.files);
         return 1;
     }
@@ -2403,6 +2412,7 @@ int main(int argc, char **argv)
                 "(got %zu file%s and --pattern)",
                 st.nfiles, st.nfiles == 1 ? "" : "s");
         free(st.libdirs);
+        free(st.callouts);
         free(st.files);
         return 1;
     }
@@ -2438,6 +2448,7 @@ int main(int argc, char **argv)
             cli_err("--pattern-esc: %s", emsg);
             pcrec_arena_free(&esc);
             free(st.libdirs);
+            free(st.callouts);
             free(st.files);
             return 1;
         }
@@ -2446,6 +2457,7 @@ int main(int argc, char **argv)
     {
         const int rc = cli_dispatch(st);
         pcrec_arena_free(&esc);
+        free(st.callouts);  /* `cli_dispatch` reads it, never frees it */
         return rc;
     }
 }

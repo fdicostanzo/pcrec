@@ -2564,6 +2564,25 @@ else
     fail "--memfn=precheck-assign-byte (force) was not refused with the kit's text (rc $wrc)" "$werr"
 fi
 
+# ---------------------------------------------------------------------------
+# [INLINE-C] 1b `--callout`'s array is freed on every exit (lane sanred):
+# the full suite's `san` stage (2026-10-27, 7d3be7ec7) read LeakSanitizer
+# on every `--callout` compile -- `cli_parse` reallocs the declarations and
+# no exit freed them. Each case wants rc AND stderr exact, so under the
+# sanitizer axis (this script is in tests/lib/san_scripts.txt) a leak report
+# on any of the four exits reds it: the compile, a query `cli_dispatch`
+# answers, a mode's refusal, and `cli_parse`'s own refusal mid-list.
+coerr="$(pcrec_run "$PCREC" --features all -p rx -o "$WORKDIR/co.c" --callout 13:consume --callout 26:once --pattern 'a(?C13)b(?C26)' 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout: a two-declaration compile exits 0, stderr empty" "0:" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" --features all --emit-ir --callout 13:consume --pattern 'a(?C13)b' 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout: --emit-ir exits 0, stderr empty" "0:" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" --features all --count-groups --callout 1:once --pattern 'a(?C1)' 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout: --count-groups' refusal is its one line" \
+    "1:pcrec: --callout applies to a compile, --emit-ir and --emit-facts; --count-groups reads no callout attribute" "$corc:$coerr"
+coerr="$(pcrec_run "$PCREC" --features all -p rx -o "$WORKDIR/co.c" --callout 13:consume --callout zz --pattern 'a(?C13)b' 2>&1 >/dev/null)"; corc=$?
+assert_eq "--callout: a malformed second declaration's refusal is its one line" \
+    "1:pcrec: a callout declaration is N:ATTRS (N a number 0-255, ATTRS a comma-separated list such as consume,once; got 'zz')" "$corc:$coerr"
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
