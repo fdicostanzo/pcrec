@@ -33,6 +33,7 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 ## Files
 
 - `emit_dfa.c` — both DFA engine emitters (`emit_unanchored`, `emit_attempt`), the six+ axis lists and `cand_rows[]`, naming helpers, shared prologue/ABI types/`rx_info`/`main`/info emission, stamps, `pcrec_emit_find`, start-set/landing/cover rows, the pre-check admission (`req_*`), scan edge, `emit_state_legend`, residual decls/defs, `PCREC_ARTIFACT_ABI`.
+- `emit_code.c` — module `code-c`'s tail (match_api §11.9): `#undef` block, `code-header` includes, per-segment macro set + `#line` + function.
 - `emit_vm.c` — the backtracking VM emitter (rungs: cursor/frames/possessive/revdet/counter, MRL pruning, lookaround, atomic, backreferences, calls/splice, alternation island, entry ladder/default entry, hybrid prefilter and retry re-seed, `--emit-ir` listing, VM stamps, class kit callers).
 - `emit_comb.c` — combinator emitters: every exported entry via `pcrec_emit_entry` (`forward`, `finish-at`, `locate-then-finish`, `first-nonzero`).
 - `emit_compound.c` — compound artifact shell: parts' texts and the controller (`first-nonzero`).

@@ -28,6 +28,9 @@ directory was written.
   page, `--list-syntax`/`--explain`.
 - `tuning-and-limits.md` — `--tune`, the `-f`/`-fno-` axis family, the
   resource limits and their remedies.
+- `embedded-code.md` — module `code-c`: the `--allow-code` grant, the
+  anchored-validator example, `once`, the four escaping layers,
+  `code-header`.
 - `troubleshooting.md` — diagnostic tiers, exit-code vocabularies,
   size-cap refusals, where to ask.
 - `lang/` — per-language integration guides ([LANG-1]); `lang/README.md`

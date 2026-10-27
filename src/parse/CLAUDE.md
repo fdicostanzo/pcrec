@@ -63,6 +63,7 @@ Parser structure (PARSE-1):
 - mod_atomic_groups.c — module `atomic-groups`, `pcrec_atomic_suffix_row`
 - mod_vars.c — module `vars` (`${name}`)
 - mod_callouts.c — module `callouts`: `(?C` forms, the malformed row
+- mod_code.c / codelang.def — modules `code-<lang>` (``(?C`c: ...`)``): one GENERATED registry row per language, RF_INVOKER_ONLY grant, bidi/C0 refusal
 - mod_backrefs.c — module `backrefs`, `pcrec_bref_resolve`
 - mod_recursion.c — module `recursion` (calls, DEFINE)
 - rxt_schema.def / rxt_schema.c — `.rxt` format schema as data and its reader (one exhaustive switch over the constraint kinds)

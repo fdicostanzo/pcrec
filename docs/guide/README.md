@@ -26,7 +26,9 @@ Read in order if you're new, or jump to what you need:
    construct modules, `--features`, and how to tell what pcrec supports.
 7. [Tuning and limits](tuning-and-limits.md) — the speed/size dial, the
    `-f`/`-fno-` axis family, and the resource limits a caller can hit.
-8. [Troubleshooting](troubleshooting.md) — reading a diagnostic, the three
+8. [Embedded code](embedded-code.md) — C inside a pattern (module
+   `code-c`): the grant, an anchored validator, `once`, the escaping layers.
+9. [Troubleshooting](troubleshooting.md) — reading a diagnostic, the three
    exit-code vocabularies, size-cap refusals, where to ask for help.
 
 [`lang/`](lang/) holds per-language integration guides (C, Rust, C++, one
