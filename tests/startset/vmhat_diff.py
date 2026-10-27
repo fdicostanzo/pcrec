@@ -197,14 +197,43 @@ def compile_pair(job):
             "collapsed": b'_VM_PREFILTER_LANG "count-collapsed"' in src}
 
 
+def manifest_objs(bid, d):
+    """The objects of the block's directory `harness.manifest` (the harness's
+    own rule, tests/harness/run.sh `manifest_objs`: `link FILE` lines, compiled
+    beside the manifest with `-include` of an artifact header). A callout
+    artifact declares `extern rx_callout_<name>` that only that link satisfies;
+    a directory without a manifest links nothing."""
+    mdir = os.path.dirname(os.path.join(TREE, bid.rsplit(":", 1)[0]))
+    mf = os.path.join(mdir, "harness.manifest")
+    if not os.path.isfile(mf):
+        return []
+    objs = []
+    for ln in open(mf, encoding="utf-8"):
+        w = ln.split()
+        if not w or w[0].startswith("#"):
+            continue
+        if len(w) != 2 or w[0] != "link" or "/" in w[1]:
+            raise SystemExit("FAIL: %s: unreadable manifest line %r" % (mf, ln))
+        obj = os.path.join(d, "manifest_%s.o" % os.path.splitext(w[1])[0])
+        cc = subprocess.run([CC, *CFLAGS, "-include", os.path.join(d, "pa.h"), "-I", mdir,
+                             "-c", "-o", obj, os.path.join(mdir, w[1])],
+                            capture_output=True, timeout=TMO)
+        if cc.returncode:
+            raise SystemExit("FAIL: %s: link %s did not compile: %s"
+                             % (mf, w[1], cc.stderr.decode("latin-1")[:300]))
+        objs.append(obj)
+    return objs
+
+
 def run(job, d):
     bid, pat, args, cfg, td = job
     S = fact_set(pat, args)
     arg1 = "-" if (S is None or b"\\K" in pat) else bytes(
         sum(1 << (b & 7) for b in S if b >> 3 == i) for i in range(32)).hex()
+    extra = manifest_objs(bid, d)
     cc = subprocess.run([CC, *CFLAGS, "-I", d, "-o", os.path.join(d, "t"),
                          os.path.join(HERE, "vmhat_driver.c"), os.path.join(d, "pa.c"),
-                         os.path.join(d, "pb.c")], capture_output=True, timeout=TMO)
+                         os.path.join(d, "pb.c"), *extra], capture_output=True, timeout=TMO)
     if cc.returncode:
         return {"status": "build", "cfg": cfg, "err": cc.stderr.decode("latin-1")[:300]}
     ctx = ()

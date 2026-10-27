@@ -135,7 +135,9 @@ static const char *co_at(Ctx *cx, const Ast *c)
     case A_ALT:  at = c->u.alt.at; known = c->u.alt.at_known; break;
     case A_CALL: at = c->reg_at;   known = c->reg != NULL;    break;
     case A_LOOK: at = c->u.look.at; known = true; break;
-    case A_CAT: case A_CAP: case A_ATOMIC: case A_WCLASS:
+    case A_WCLASS:   /* its own arm: the A_CLASS arm reads the set */
+        break;
+    case A_CAT: case A_CAP: case A_ATOMIC:
     case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALLOUT:
         break;   /* never a culprit: co_choice and co_walk name none */
