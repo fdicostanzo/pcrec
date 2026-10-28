@@ -805,6 +805,19 @@ $( if [ -s "$HEAD_FILE_LIST" ]; then xargs awk < "$HEAD_FILE_LIST" '
   | awk '{ b += $1; c += $2; p += $3; g += $4 } END { printf "%d %d %d %d\n", b, c, p, g }')
 EOF
 
+# F23 (review 2026-10-27-r1-ic2): the population leg C gives up, pinned
+# EXACTLY beside CENSUS_FRAGMENTS: tests/code/ipv4.rxt (3 blocks, 12 case
+# lines), geoip.rxt (1, 3) and frag/entry.rxt (1, 1); no perr line and 3
+# g/gp lines (measured by this census's awk; the review read 0 g lines).
+HEAD_BLOCKS_PIN=5
+HEAD_CASES_PIN=16
+HEAD_GROUP_PIN=3
+if [ "$head_blocks $head_cases $head_perr $head_group" = "$HEAD_BLOCKS_PIN $HEAD_CASES_PIN 0 $HEAD_GROUP_PIN" ]; then
+    pass "head-bearing files with pattern blocks: $head_blocks blocks, $head_cases case lines leave leg C, matching the pins"
+else
+    fail "head-bearing files with pattern blocks: $head_blocks blocks / $head_cases case / $head_perr perr / $head_group g lines leave leg C; pinned $HEAD_BLOCKS_PIN/$HEAD_CASES_PIN/0/$HEAD_GROUP_PIN (a head line moved a file out of the independent comparison?)"
+fi
+
 # ---------------------------------------------------------------------
 # LEG B — run.sh --dump, through the ARGUMENT branch (§3.1's N2).
 #
@@ -1158,11 +1171,14 @@ fi
 # nothing before now exercised that gap. Rather than teach --dump a
 # second parser for the head (exactly what the seam ruling forbids), leg
 # C's own population EXCLUDES head-bearing files the same way run.sh's
-# no-argument branch excludes tests/known_fail/ — legitimate, since a
-# head-bearing file's leg-B dump is exactly zero rows too (a body-less
-# `analysis` bundle has no `pattern` block to disagree about), so
-# dropping it from both sides of the B-vs-C comparison changes nothing
-# it could have compared.
+# no-argument branch excludes tests/known_fail/. That was free while
+# every head-bearing file was a body-less `analysis` bundle (zero leg-B
+# rows). It is NOT free since [INLINE-C] stage 2: tests/code/'s
+# head-bearing files (`code-header`, `include` heads) carry pattern
+# blocks, which leave the independent B-vs-C comparison (the harness and
+# verify_code.py still read them). That population is PINNED below
+# (HEAD_BLOCKS_PIN/HEAD_CASES_PIN, review 2026-10-27-r1-ic2 F23), so a
+# head line added to a big corpus file cannot move it out unseen.
 BODY_FILES="$WORKDIR/body_files.list"
 grep -vFxf "$HEAD_FILE_LIST" "$FILES" > "$BODY_FILES" || true
 DUMP_C="$WORKDIR/legC.tsv"
