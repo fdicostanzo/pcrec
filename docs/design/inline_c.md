@@ -112,12 +112,21 @@ Ranked; an earlier goal wins a conflict.
    gate over the existing corpus shows zero byte movers other than the abi
    number line at each stage (and none at all at stage 1a), and a sabotage row
    that marks every group publish-at-close unconditionally turns it red
-   `[r1 D13, COST-9]`; (b) `[r1 D13]` INLINE mode: a pattern whose check is the
+   `[r1 D13, COST-9]`; (b) `[r1 D13]` INLINE mode, **within the binding
+   path's own cost** `[2026-10-27-r1-ic2 F18]`: a pattern whose check is the
    empty predicate (`return RX_PASS;`) runs within the A/A spread of the same
-   pattern's callout-free `--engine=vm` twin plus `n` direct calls, `n` the
-   counted fires (the counting binding of DT-4.1), on paths that do not reach
-   the site as well as on paths that do (gcc inlines the user's code into the
-   VM; this catches a VM pessimised by it); (c) VERIFY mode (stage 4):
+   pattern with a unity binding at the site (`(?C"x")`, the call form it
+   replaces) plus `n` direct calls, `n` the counted fires (the counting
+   binding of DT-4.1), on paths that do not reach the site as well as on
+   paths that do (gcc inlines the user's code into the VM; this catches a VM
+   pessimised by it). Restated by the r1-ic2 code review: the earlier text
+   measured against the callout-free `--engine=vm` twin, which no stage meets
+   (an unreached site already costs ~1.9x that twin's instructions, 56.32M vs
+   29.32M, for the binding and the segment alike: framelessness and
+   publish-at-close are decided per artifact, not per path); that loss is
+   the site primitive's, not embedded code's, and its row is the manager's
+   (F18 PLAN). The card (`tests/code/card_inline.sh`) still reports the
+   callout-free twin beside it; (c) VERIFY mode (stage 4):
    on a veto-free subject, the empty-predicate `verify` artifact's search time
    is within the A/A spread of the callout-free pattern's DFA twin plus 5%,
    and is reported beside the inline (`-fno-callout-verify`) twin. The 5% is an
