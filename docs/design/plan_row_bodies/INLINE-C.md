@@ -31,3 +31,13 @@ The guidance is the deliverable:
   - the contract in the SPEC, docs/spec/match_api.md §11.2 Bindings (Frank 2026-10-27: the spec is the source; docs/guide/ derives the friendly version later): a definition the compiler can see (same file, or -flto) is called directly and may be inlined; a separately compiled one is an indirect call;
   - ONE check that compiles the user unity build, the embedded-C artifact and an artifact-as-callout, and fails on any indirect call through a binding.
 - Frank 2026-10-27 ("You could just delay building that piece to a later stage rather than build a throw away scanner of such complexity"): stage 2 builds only the tagged ``(?C`c: ...`)`` spelling. The `(?{ ... })` spelling, its §2.3 scanner, the scanner-table tests and S-IC7 move to [SCANNER-DOGFOOD], which builds them once on the generated matcher of tests/recursion/cscan.rxt. Lane ic2 got this as ruling R1 in its rulings file.
+
+- (2026-10-27, manager, review 2026-10-27 r1 ic2) PLAN items with triggers, for later stages:
+  - F27: the describe/entry class (writes | describe | reviews | takes) as a column of CLI_MODE_TABLE, read by the dispatcher and the entry-point test. Trigger: stage 3's `--list-callouts` (the fifth hand-placed site).
+  - F28: filed as [OPT-SCOPE]; build point decided at the stage-3 brief.
+  - F29: a module-level grant row (module -> door, library member) read by the diagnostics, the resolver and registry_check (removing `strlen("code-")`). Trigger: [SCANNER-DOGFOOD]'s second `code-c` row, or stage 6.
+  - F30: generate the FEAT_ bit from codelang.def at [SCANNER-DOGFOOD].
+  - F36: `writer`/`defn` columns on the binding table. Trigger: the next pcrec-written binding (stage 6 template segments, or the PCREC2 wrapper stage).
+  - F37: filed as [SPAN-HEADER] (Frank: later, same source, the header and the per-artifact copies work together under one guard).
+  - F38: into the stage-3 brief: carry the source text, line and file on the node (a definition's segment must not take the TARGET's #line or read past its buffer), plus an ASan corpus row. Latent today (all 8 routes refused by stage 1b's subroutine rule).
+  - F18's PLAN half: filed as [SITE-FRAMELESS].

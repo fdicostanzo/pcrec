@@ -238,7 +238,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
   status (2026-10-27): stages 0 (abi 88), 1a (kindrow.def) and 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) LANDED. Rulings in the row body.
-  next: stage 2 BUILDING (lane ic2, opus, build go Frank 2026-10-27 "All sounds good. Go."); then stage 3 (sha-pinned includes).
+  next: stage 2 review fixes (lane ic2fix, opus, on lane/ic2fix; review 2026-10-27 r1 ic2 ruled), re-run test/mech/axes, merge; then stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
@@ -612,6 +612,29 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
   refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
   vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
+- [GROUP-BYNAME] STATE:not-started — CALLER-SIDE CAPTURE ACCESS BY NAME: PER-NAME CONSTANTS IN THE .H AND A BY-NAME LOOKUP
+  filed: 2026-10-27 Frank ("file it")
+  status (2026-10-27): filed, not scheduled. Today a caller bsearches rx_info.groups and walks a (?J) run itself (match_api.md §5.4¶6); embedded C has RX_G_<name>; templates resolve $name at compile time.
+  trigger: the first caller (example, binding or user) that writes the bsearch/run walk by hand; or the [IFACE-PUSH] interface round, whichever comes first.
+  refs: docs/spec/match_api.md §5.4; docs/spec/subst_api.md §2; memory pcrec-iface-push-later
+  Shape (answer-free): one constant per UNIQUE name in the .h (the same spelling family as embedded C's RX_G_<name>), and a small `<prefix>_group_by_name()` that does §5.4¶6's walk, so caller and matcher cannot disagree. A caller-visible addition: spec hunk + abi event at build time.
+- [SPAN-HEADER] STATE:not-started — THE SPAN HELPERS AS A STANDALONE HEADER, GENERATED FROM THE SAME SOURCE AS THE PER-ARTIFACT COPY
+  filed: 2026-10-27 Frank (the 2026-10-26 "published as a header from ONE source" ruling, clarified: "we can do it later but i want them to be the same source later so they don't drift")
+  status (2026-10-27): filed, not scheduled. [INLINE-C] stage 2 emits the helpers (rx_span, rx_eq ...) into each code artifact's .h from one text in src/gen/emit_code.c, guarded by PCREC_RX_SPAN_H.
+  trigger: the first shared helper or predicate library (code included by several matchers through code-header) that wants the helpers without an artifact.
+  refs: docs/design/inline_c.md; src/gen/emit_code.c (span_helpers); review 2026-10-27 r1 ic2 F37
+  Frank 2026-10-27: the header and the per-artifact copies must WORK TOGETHER: one #ifdef region, so a program that includes an artifact's .c/.h AND the header defines the static helpers once, in either order. Manager: the guard also carries the helper-set version, so a mismatched pair is a compile error, not a silent pick of whichever came first.
+- [SITE-FRAMELESS] STATE:not-started — AN UNREACHED CODE OR CALLOUT SITE COSTS THE WHOLE ARTIFACT ITS FRAMELESS / INLINE-ENTRY VM
+  filed: 2026-10-27 manager (review 2026-10-27 r1 ic2 F18, PLAN half; the DOC half restates [INLINE-C] goal 3b)
+  status (2026-10-27): filed, not scheduled. An empty-predicate segment costs ~1.9x its --engine=vm twin on paths that never reach it (56.32M vs 29.32M instr); BASE's (?C"x") binding costs the same, so not a stage-2 regression.
+  trigger: a bench or user pattern with a callout or code site whose non-reaching paths dominate its time (the bench's callout rows; [SCANNER-DOGFOOD]'s scanner).
+  refs: review 2026-10-27 r1 ic2 (F18, emitted critic EMIT-2); docs/design/inline_c.md goal 3b
+  Cause: the site moves the VM off frameless/inline-entry and adds publish-at-close slots, and framelessness is decided per ARTIFACT, not per path. Candidate general form: decide it per path (or per entry) from the sites that path can reach.
+- [OPT-SCOPE] STATE:not-started — THE D20 PER-OPTION SCOPE ROW: WHO MAY SET EACH OPTION (CLI, FILE, LIBRARY, CONFIG), DECLARED ONCE
+  filed: 2026-10-27 manager (review 2026-10-27 r1 ic2 F28: the row was never filed and its trigger fired when stage 2 added --allow-code and --code-header to the by-name chain)
+  status (2026-10-27): filed; build point decided at the [INLINE-C] stage-3 brief, which must rewrite the reached rule anyway.
+  next: at the stage-3 brief, decide build-now vs later; candidate general form (slots critic): one AUTHORITY table, fact x source class, read by the CLI, the .rxt reader, the library and the config loader.
+  refs: decisions D20; review 2026-10-27 r1 ic2 (F28, SLOT-1); memory pcrec-decisions-as-first-match-tables
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
