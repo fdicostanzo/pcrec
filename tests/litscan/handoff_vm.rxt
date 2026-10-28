@@ -11,91 +11,80 @@
 # entries), \G before the run, a lookbehind, utf8 round-up, caseless K in
 # bytes, \K, the declines, and bench subst cases 7 and 2 on small subjects.
 
-# GIVE-UP WITNESS: under -fno-req-handoff startpos 0..8 of the first subject give up (steps); the handoff starts the loop at the whole run's hit less K = 24 and answers (one direction only)
-pattern (a?){12}a{12}xyz
+# GIVE-UP WITNESS: under -fno-req-handoff startpos 0..7 of the first subject give up (steps); the handoff starts the loop at the whole run's hit less K = 20 and answers (one direction only)
+pattern (a|aa){0,10}cxyz
 features all
-budget steps=2000
+budget steps=3000
 encoding byte
 engine vm
-ms 0 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 1 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 2 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 3 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 4 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 5 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 6 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 7 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 8 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 9 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 10 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 11 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 12 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 13 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 14 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 15 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 16 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 17 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 18 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 19 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 20 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 21 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 22 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 23 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 24 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 25 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 26 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 27 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 28 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 29 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 30 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 31 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 32 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 33 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 34 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 35 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 36 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 37 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 38 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 39 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 40 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 41 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 42 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ms 43 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
-ns 44 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 45 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 46 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 47 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 48 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 49 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 50 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 51 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 52 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 53 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 54 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 55 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 56 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 57 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ns 58 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
-ms 0 "aaaaaaaaaaaaxyz" 0 15
-ns 1 "aaaaaaaaaaaaxyz"
-ns 2 "aaaaaaaaaaaaxyz"
-ns 3 "aaaaaaaaaaaaxyz"
-ns 4 "aaaaaaaaaaaaxyz"
-ns 5 "aaaaaaaaaaaaxyz"
-ns 6 "aaaaaaaaaaaaxyz"
-ns 7 "aaaaaaaaaaaaxyz"
-ns 8 "aaaaaaaaaaaaxyz"
-ns 9 "aaaaaaaaaaaaxyz"
-ns 10 "aaaaaaaaaaaaxyz"
-ns 11 "aaaaaaaaaaaaxyz"
-ns 12 "aaaaaaaaaaaaxyz"
-ns 13 "aaaaaaaaaaaaxyz"
-ns 14 "aaaaaaaaaaaaxyz"
-ns 15 "aaaaaaaaaaaaxyz"
-ns 0 "xyz"
-ns 1 "xyz"
-ns 2 "xyz"
-ns 3 "xyz"
+ms 0 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 1 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 2 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 3 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 4 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 5 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 6 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 7 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 8 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 9 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 10 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 11 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 12 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 13 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 14 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 15 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 16 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 17 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 18 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 19 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 20 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 21 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 22 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 23 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 24 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 25 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 26 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 27 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 28 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 29 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 30 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 31 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 32 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 33 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 34 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 35 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 36 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 37 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 38 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 39 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 40 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 41 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 42 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 43 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 44 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 45 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 46 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 47 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 48 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 49 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 50 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ms 51 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz" 51 55
+ns 52 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz"
+ns 53 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz"
+ns 54 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz"
+ns 55 "aaaaaaaaaaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqcxyz"
+ms 0 "aacxyz" 0 6
+ms 1 "aacxyz" 1 6
+ms 2 "aacxyz" 2 6
+ns 3 "aacxyz"
+ns 4 "aacxyz"
+ns 5 "aacxyz"
+ns 6 "aacxyz"
+ms 0 "cxyz" 0 4
+ns 1 "cxyz"
+ns 2 "cxyz"
+ns 3 "cxyz"
+ns 4 "cxyz"
 
 # VM-only, K = 1 from the wider branch; dense dead `abc` hits re-enter after each failed attempt
 pattern (?:xx|y)abc

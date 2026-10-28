@@ -15,14 +15,17 @@ pattern with a capture group, the VM HYBRID, whose prefilter's forward scan
 re-enters (`handoff`). A block's optional directives (a `budget`) are
 written after `features all`.
 
-THE GIVE-UP WITNESS. `(a?){12}a{12}xyz` under `budget steps=2000` is
-reqvm0's P1 made small enough for libpcre2's default match limit: from
-startpos 0..8 the attempts on the first `a` run exhaust the step budget
-under `-fno-req-handoff` (it gives up, `PCREC_ERR_STEPS`), and with the
-handoff the whole run's first hit, less K = 24, starts the loop past them,
-so it answers libpcre2's (unbounded) answer. The corpus cells are that
+THE GIVE-UP WITNESS. `(a|aa){0,10}cxyz` under `budget steps=3000` is
+reqvm0's P1 in a shape whose MATCH is cheap: from startpos 0..7 the attempts
+on the decoy `a` run exhaust the step budget under `-fno-req-handoff` (it
+gives up, `PCREC_ERR_STEPS`), and with the handoff the whole run's first
+hit, less K = 20, starts the loop past them, so it answers libpcre2's
+(unbounded) answer. (reqvm0's own `(a?){12}a{12}xyz` also gives up inside
+the matching attempt under `-fno-length-prune`, so it would move that axis
+too; this one moves only `-fno-req-handoff` and the two denies that remove
+the pre-check, `-fno-req-byte` and `-fno-req-run`, measured.) The corpus cells are that
 answer; the deny arm's give-ups are run_axes.sh's GIVEUP1 manifest entries
-for `-fno-req-handoff` (one direction only, tuning.md §2.41¶9a).
+for those three flags (one direction only, tuning.md §2.41¶9a).
 """
 import importlib.util, os, sys, tempfile
 
@@ -39,11 +42,11 @@ RARE2 = "/(phpmyadmin|wp-admin)/[a-z]+\\.php"
 # (pattern, encoding, route, subjects, why[, extra directives])
 CASES = [
  # ---- the give-up witness (the ruling's one-way movement) ----
- ("(a?){12}a{12}xyz", "byte", "vm",
-  ["a" * 12 + "b" + "q" * 30 + "a" * 12 + "xyz", "a" * 12 + "xyz", "xyz"],
-  "GIVE-UP WITNESS: under -fno-req-handoff startpos 0..8 of the first subject give up (steps); "
-  "the handoff starts the loop at the whole run's hit less K = 24 and answers (one direction only)",
-  ["budget steps=2000"]),
+ ("(a|aa){0,10}cxyz", "byte", "vm",
+  ["a" * 20 + "b" + "q" * 30 + "cxyz", "aacxyz", "cxyz"],
+  "GIVE-UP WITNESS: under -fno-req-handoff startpos 0..7 of the first subject give up (steps); "
+  "the handoff starts the loop at the whole run's hit less K = 20 and answers (one direction only)",
+  ["budget steps=3000"]),
  # ---- the maximum offset and two occurrences, VM-only re-entered ----
  ("(?:xx|y)abc", "byte", "vm",
   ["zxxabc", "yabc", "xabcyabc", "zabczabcxxabc", "xyabc", "abcabcxxab"],
