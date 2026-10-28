@@ -271,6 +271,27 @@ for dm in --count-groups --emit-ir --emit-facts; do
         bad "describe '$dm': no grant rc=$q0, --allow-code= rc=$q1 '${e1:0:160}'"
     fi
 done
+# F11/F13/F14 (review 2026-10-27-r1-ic2): no fixed bound on a file's
+# code-header lines; --help lists both code options; an empty HEADER is a
+# shape refusal, not "malloc: Success".
+{ for k in $(seq 1 300); do printf 'code-header c "h%d.h"\n' "$k"; done
+  printf '\npattern %s\n' "$SEG"; } > "$D/many.rxt"
+nh="$(pc --allow-code=c -o - "$D/many.rxt" 2>&1 | grep -cE '^#include "h[0-9]+\.h"')"
+[ "$nh" = 300 ] && ok "a file's 300 code-header lines are 300 #include lines" \
+    || bad "a file's 300 code-header lines emitted $nh #include lines"
+hl="$(pc --help 2>&1)"
+if printf '%s\n' "$hl" | grep -q -- '--allow-code' && printf '%s\n' "$hl" | grep -q -- '--code-header'; then
+    ok "--help lists --allow-code and --code-header"
+else
+    bad "--help omits --allow-code or --code-header"
+fi
+eh="$(pc --code-header c: --pattern a -o - 2>&1)"
+if printf '%s\n' "$eh" | grep -q 'wants LANG:HEADER' && ! printf '%s\n' "$eh" | grep -q malloc; then
+    ok "--code-header c: is refused by its shape"
+else
+    bad "--code-header c: said: ${eh:0:160}"
+fi
+
 # F4 (review 2026-10-27-r1-ic2): a segment's own #defines are not pcrec's
 # decisions; --emit-facts lists the stamps above the code block only.
 FSEG="$(printf 'a(?C`c: return RX_PASS;\n#define RX_FAKE 1\n#undef RX_CODE_LANGS\n#define RX_CODE_LANGS "zzz"\n`)b')"

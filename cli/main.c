@@ -447,6 +447,15 @@ static void usage(FILE *f)
           "  --callout N:ATTRS declare numbered callout N's attributes for\n"
           "                    --pattern (consume, once; repeatable); a .rxt\n"
           "                    block says 'callout N ATTRS'\n"
+          "  --allow-code=LANGS\n"
+          "                    grant the compile its pattern's embedded code\n"
+          "                    ((?C`c: ...`), language 'c'); the only way to\n"
+          "                    enable it: no --features list or file can\n"
+          "  --code-header LANG:HEADER\n"
+          "                    #include HEADER (\"name\" or <name>; a bare name\n"
+          "                    means \"name\") after the matcher for --pattern's\n"
+          "                    LANG code (repeatable); a .rxt file says\n"
+          "                    'code-header LANG HEADER'\n"
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
           "                    module column, a frozen named set ('std1'),\n"
@@ -1092,7 +1101,9 @@ static int cli_code_header(const char *v, PcrecCodeHeader *h)
 {
     const char *colon = strchr(v, ':');
     const char *why = "wants LANG:HEADER, e.g. c:octet.h or 'c:<stdint.h>'";
-    if (colon && colon > v) {
+    /* An empty HEADER is the shape refusal, never an allocation failure
+     * (review 2026-10-27-r1-ic2 F14: it printed "malloc: Success"). */
+    if (colon && colon > v && colon[1]) {
         char *lang = strndup(v, (size_t)(colon - v));
         const char *hv = colon + 1;
         char *hdr = (*hv == '"' || *hv == '<') ? strdup(hv) : NULL;
@@ -1112,6 +1123,19 @@ static int cli_code_header(const char *v, PcrecCodeHeader *h)
     cli_err("--code-header: %s (got '%s')", why, b.p ? b.p : "");
     pcrec_sb_free(&b);
     return 1;
+}
+
+/* Appends one `--code-header` value (either spelling) to the CLI state's
+ * list, diagnosing a malformed one. Returns 0, or 1 having diagnosed. */
+static int cli_push_code_header(CliState *st, const char *v)
+{
+    PcrecCodeHeader *hv = realloc(st->code_headers,
+        (size_t)(st->ncode_headers + 1) * sizeof *hv);
+    if (!hv) { perror("realloc"); return 1; }
+    st->code_headers = hv;
+    if (cli_code_header(v, &hv[st->ncode_headers]) != 0) return 1;
+    st->ncode_headers++;
+    return 0;
 }
 
 static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
@@ -1549,30 +1573,23 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         }
         /* [INLINE-C] stage 2 the code grant and the code headers, both
          * spellings; a later `--allow-code` wins, as `--features` does. */
-        else if (!strcmp(a, "--allow-code") || !strcmp(a, "--code-header")) {
+        else if (!strcmp(a, "--allow-code")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
-            if (a[2] == 'a') st->allow_code = argv[++i];
-            else {
-                PcrecCodeHeader *v = realloc(st->code_headers,
-                    (size_t)(st->ncode_headers + 1) * sizeof *v);
-                if (!v) { perror("realloc"); return 1; }
-                st->code_headers = v;
-                if (cli_code_header(argv[++i], &v[st->ncode_headers]) != 0)
-                    return 1;
-                st->ncode_headers++;
+            st->allow_code = argv[++i];
+        }
+        else if (!strcmp(a, "--code-header")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
             }
+            if (cli_push_code_header(st, argv[++i]) != 0) return 1;
         }
         else if (!strncmp(a, "--allow-code=", 13)) st->allow_code = a + 13;
         else if (!strncmp(a, "--code-header=", 14)) {
-            PcrecCodeHeader *v = realloc(st->code_headers,
-                (size_t)(st->ncode_headers + 1) * sizeof *v);
-            if (!v) { perror("realloc"); return 1; }
-            st->code_headers = v;
-            if (cli_code_header(a + 14, &v[st->ncode_headers]) != 0) return 1;
-            st->ncode_headers++;
+            if (cli_push_code_header(st, a + 14) != 0) return 1;
         }
         /* `--features=LIST`, the `=value` spelling `--engine=`/`--encoding=`
          * also take; a later spelling wins either way. */
@@ -2205,10 +2222,16 @@ static int compile_sources(const CliState *cli)
         /* [INLINE-C] stage 2 the source position a code segment's `#line`
          * names (the FILE as written), and the entry file's `code-header`
          * lines (inline_c.md §3.3-§3.4). */
-        PcrecCodeHeader hdrs[256];
+        /* Sized from the file's own rows, so no line past a fixed bound is
+         * dropped (review 2026-10-27-r1-ic2 F11). */
+        PcrecCodeHeader *hdrs = NULL;
         int nh = 0;
         const RxtSource *osrc = ot->t->defs->file;
-        for (size_t ri = 0; osrc && ri < osrc->nrows && nh < 256; ri++)
+        if (osrc && osrc->nrows &&
+            !(hdrs = malloc(osrc->nrows * sizeof *hdrs))) {
+            perror("malloc"); free(cbuf); free(cpath); free(hpath); rc = 1; break;
+        }
+        for (size_t ri = 0; osrc && ri < osrc->nrows; ri++)
             if (osrc->rows[ri].kind == RXT_DECL_CODE_HEADER)
                 hdrs[nh++] = (PcrecCodeHeader){ osrc->rows[ri].name,
                                                 osrc->rows[ri].value,
@@ -2227,6 +2250,7 @@ static int compile_sources(const CliState *cli)
                                                                       : NULL,
                                      &out, &cerr);
         free(cbuf);
+        free(hdrs);
         if (crc != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
