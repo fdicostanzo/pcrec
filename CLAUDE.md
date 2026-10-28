@@ -13,10 +13,12 @@ see its APPROACH.md — dependencies live THERE, never here). Their paths
 per box: the Linux dev box (pcrec@192.168.1.17, since 2026-10-07)
 /home/pcrec/projects/{pcrec,pcrec-bench}; ubuntubudu
 /home/duxevents/{pcrec,pcrec-bench}; the Mac
-/Users/fdicostanzo/{pcrec,pcrec-bench}. Do not create, modify, or delete
-files anywhere else on this machine — no other directories, no
+/Users/fdicostanzo/{pcrec,pcrec-bench}. The ONE allowed place outside them is the temp root
+`$PCREC_TMPDIR` (default `/var/tmp/pcrec-<user>`, scripts/tmpdir.sh; Frank
+2026-10-28: /tmp is a small RAM tmpfs and is not used). Do not create, modify,
+or delete files anywhere else on this machine — no other directories, no
 home-directory or system config, no other repos. Session-temporary files
-go in the session scratchpad, never committed. Subagents inherit this mandate; state it in their task briefs.
+go under the temp root (`scratch/<lane>/`), never committed. Subagents inherit this mandate; state it in their task briefs.
 
 Ahead-of-time compiler: takes a PCRE pattern, emits specialized, self-contained
 gcc-dialect C source that matches exactly that pattern (no runtime interpreter,

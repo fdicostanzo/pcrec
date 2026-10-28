@@ -39,6 +39,8 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   verified to go red against a deliberately sabotaged copy of the script
   before landing — a test that cannot fail is not a test.
 
+- **tmpdir.sh.test** — tmpdir.sh root + prune cases.
+
 - **wtprune.test** — scripts/wtprune's 52-check self-test against a
   SACRIFICIAL repo it builds under mktemp (never the real worktrees). One
   worktree per gate (unmerged, dirty, fresh mtimes, a live `sleep` with its

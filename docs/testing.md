@@ -170,6 +170,30 @@ that produces no row is a loud FATAL, never a silently smaller denominator.
 budgets are timing medians (D12/D17) and it gates on load average, so it runs
 alone on a quiet box or its numbers mean nothing.
 
+### Where temporary files go (`PCREC_TMPDIR`, 2026-10-28)
+
+`/tmp` on the Linux dev box is a small RAM tmpfs with a per-user quota; killed
+mech runs (`pcrec-mech-sabotage.*`, 0.2-3.7 GB each) and lane scratch filled it
+and a `make test` went red with gcc "Disk quota exceeded". Every temporary
+file now lives under ONE root, `$PCREC_TMPDIR`, default
+`/var/tmp/pcrec-<user>` (per user, mode 0700, created on first use), defined
+once in `scripts/tmpdir.sh`.
+
+- The Makefile exports `TMPDIR=$(PCREC_TMPDIR)` to every recipe,
+  unconditionally: a caller's `TMPDIR=/tmp` does not win; the override is
+  `PCREC_TMPDIR=...`. Suites that call `mktemp` inherit it.
+- `scripts/boxqueue`, `chainrun`, `battery.sh`, `fullsuite_job.sh` and
+  `measure.sh` source `scripts/tmpdir.sh` (so does any shell: `. scripts/tmpdir.sh`).
+  A suite script run by hand without it still falls back to its own
+  `${TMPDIR:-/tmp}`; export TMPDIR first.
+- Lane scratch is `$PCREC_TMPDIR/scratch/<lane>/`.
+- PRUNE: the queue runner, at each job start, removes entries (the root's
+  children and `scratch/`'s children) older than `PCREC_TMP_PRUNE_DAYS`
+  (UNMEASURED default: 3 days) that hold no recent file and that no process
+  has as cwd or open. Nothing outside the root is touched. Self-test:
+  `scripts/tests/tmpdir.sh.test`.
+- Claude Code's own task/output files (`/tmp/claude-<uid>`) are not ours.
+
 ## The `.rxt` test format and driver protocol
 
 **Moved to `docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25): the `.rxt`
