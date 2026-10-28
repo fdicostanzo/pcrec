@@ -650,6 +650,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
   next: re-measure and re-pin the floor.
   refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
+- [CAPDIFF-DRIFT] STATE:not-started — test-capturediff pins exact bucket counts, and one subject moved buckets in CI only
+  filed: 2026-10-28 manager (CI run 40709231225 shard 1/3 RED on a13a7103b, a plan.md-only commit whose parent was green; triage lane cired3)
+  status (2026-10-28): not started; the gate reported oracle inconclusive expected=3 actual=2 (labelled TIMING-SENSITIVE) and pcrec step-budget exhausted expected=0 actual=1; 0 content and 0 accept/reject divergences; the same gate passes locally on main
+  next: find why a subject the oracle times out on locally hits pcrec's step budget in CI (is the budget wall-clock-bound, or the order different?); then pin the deterministic buckets exactly and the timing-sensitive ones as a total, so load cannot turn it red
+  refs: tests/fuzz (fuzz.py's bucket order, ~line 1045); docs/testing.md; docs/dev/learnings.md §3
+
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
