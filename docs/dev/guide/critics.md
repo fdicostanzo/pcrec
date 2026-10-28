@@ -107,3 +107,9 @@ Round 2026-10-24, kit S3 final (memfn-s3-final):
 - (2026-10-24, memfn-s3-final) **A change to the DEFAULT search gets a find-all, real-text instruction sweep per new find form.** The emitted lens runs find-all over one real text and one adversarial text per new form, BASE vs SUBJECT, by instruction count. Both large losses (a quadratic two-stream find-all, a set stop walked where BASE ran memchr) were invisible to the stated timing bar, whose sample held neither shape.
 - (2026-10-24) **A new stamp VALUE or a new pre-empting row is a D94-style reader hunt.** Grep every enumeration of the stamp's values and every witness sentence for the rows it now pre-empts. Six stale spec passages came from this.
 - (2026-10-24) **Critics are launched unnamed, and their results travel only as files.** A coordinator's spawns could not be named, and all six final replies were lost; the files carried everything.
+
+Round 2026-10-27 r1, [INLINE-C] stage 2 code (`docs/dev/reviews/2026-10-27-r1-ic2-code.md`, lane/ic2).
+1. **A rule that protects what a human reads is generated from the standard's property, and the lens probes the property's members** (F1, F2): a hand-typed bidi/invisible list let U+3164 make a failing-looking check pass.
+2. **A keep-list by PREFIX is a control sharing its source** (F3): emitter and check both meant "public" by `<PREFIX>_`; the check's public set comes from what the caller sees (the `.h`).
+3. **A comment claiming "X asserts it" is a finding target** (F5): grep for the assertion; a gate depended on one that did not exist.
+4. **A card row proves it reaches the site** (F19): a prefilter rejected the whole subject before the matcher ran.

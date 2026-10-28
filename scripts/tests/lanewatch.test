@@ -14,7 +14,10 @@ trap 'rm -rf "$T"' EXIT
 pass=0 fail=0
 ok()  { echo "PASS: $*"; pass=$((pass+1)); }
 bad() { echo "FAIL: $*"; fail=$((fail+1)); }
-LW=$here/lanewatch LC=$here/lanecheck
+LW=$here/lanewatch LC=$here/lanecheck BL=$here/boxlock
+export PCREC_BOXLOCK_FILE=$T/box.lock    # SCRATCH lock: lanewatch never reads the real box's waiters
+kids=()
+trap 'for p in ${kids[@]+"${kids[@]}"}; do kill "$p" 2>/dev/null; done; rm -rf "$T"' EXIT
 export LANEWATCH_LOG=$T/misses.log
 mkfix() { # DIR: a committed repo with the DELIVER file and a good report
     git init -q "$1"; git -C "$1" config user.email t@t; git -C "$1" config user.name t
@@ -74,7 +77,30 @@ out=$("$TO" 30 bash "$LW" --dir "$F/build/lanecheck" x); rc=$?
 sed 's/-type f -printf/-type f -name NOSUCHFILE -printf/' "$LW" > "$here/.lanewatch_plant.$$"
 cmp -s "$LW" "$here/.lanewatch_plant.$$" && bad "plant sed did not change the script"
 LWX=$here/.lanewatch_plant.$$ out=$(touched); rm -f "$here/.lanewatch_plant.$$"
+unset LWX    # the bare assignment above persists in this shell
 [ "$(printf '%s\n' "$out" | head -1)" = "lanewatch: CAP x" ] && bad "PLANT not caught: a blind activity scan passed the touched case" || ok "PLANT (blind activity scan) fails the touched case"
+
+# WAITING: a quiet lane whose run waits on the (scratch) box lock reads WAITING rc 14; with no waiter, or another lane's, QUIET
+"$TO" 60 bash "$BL" run --label holder -- sleep 40 & kids+=($!); sleep 1
+"$TO" 60 bash "$BL" run --label x-chain -- true 2>/dev/null & kids+=($!); sleep 1
+"$TO" 60 bash "$BL" run --label other-chain -- true 2>/dev/null & kids+=($!); sleep 1
+F=$T/wait; mkfix "$F"; age "$F"
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 x); rc=$?
+printf '%s\n' "$out" | head -1 | grep -qE '^lanewatch: WAITING x label=x-chain waited=0m holder=holder$' && [ $rc = 14 ] && [ "$(printf '%s\n' "$out" | tail -1)" = "lanewatch: DONE rc=14" ] \
+    && ok "a quiet lane with a waiter labelled x-... -> WAITING (rc 14), not QUIET" || bad "WAITING: rc=$rc $out"
+F=$T/wait2; mkfix "$F"; age "$F"
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 y); rc=$?
+[ "$(printf '%s\n' "$out" | head -1 | cut -d' ' -f1-3)" = "lanewatch: QUIET y" ] && [ $rc = 10 ] && ok "no waiter for the lane (only other-chain, x-chain): QUIET" || bad "QUIET w/ others' waiters: rc=$rc $out"
+# a label that merely STARTS with the name's letters (xx-...) is not the lane x
+F=$T/wait3; mkfix "$F"; age "$F"; "$TO" 60 bash "$BL" run --label xylo-chain -- true 2>/dev/null & kids+=($!); sleep 1
+out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 xy); rc=$?
+[ "$(printf '%s\n' "$out" | head -1 | cut -d' ' -f1-3)" = "lanewatch: QUIET xy" ] && ok "prefix match is NAME- (xy does not match xylo-chain)" || bad "prefix: rc=$rc $out"
+# PLANT: the waiter check is dead -> the WAITING case reads QUIET
+sed 's/fin "WAITING/: "WAITING/' "$LW" > "$here/.lanewatch_plant2.$$"
+cmp -s "$LW" "$here/.lanewatch_plant2.$$" && bad "plant2 sed did not change the script"
+F=$T/wait4; mkfix "$F"; age "$F"
+LWX=$here/.lanewatch_plant2.$$ out=$(fw --tree "$F" --dir "$F/build/lanecheck" --quiet-sec 3 x); rm -f "$here/.lanewatch_plant2.$$"
+[ "$(printf '%s\n' "$out" | head -1 | cut -d' ' -f1-3)" = "lanewatch: QUIET x" ] && ok "PLANT (no WAITING branch): the waiting lane reads QUIET, so the WAITING case goes red" || bad "PLANT waiting not caught: $out"
 
 echo "lanewatch.test: pass=$pass fail=$fail"
 [ $fail = 0 ]

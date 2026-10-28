@@ -51,10 +51,13 @@ message when the draft is ready.
      --format=%H -- <doc>` on its branch); critics read that version.
    The subject stays frozen until the round compiles (learnings §6, R30).
 2. Code mode: make a clean review tree, `git worktree add --detach
-   worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself under
-   `scripts/boxlock run` (critics run `build/pcrec` and `gcc -S` on single
-   patterns, never `make`). If the box is busy, a compiler binary copied from
-   a build of the same source commit will do; say which.
+   worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself, UNLOCKED:
+   `nice make -j2` (critics run `build/pcrec` and `gcc -S` on single
+   patterns, never `make`). NEVER under `scripts/boxlock`: a waiter yields to
+   every ready queue job, often the subject's own validation, and a build of
+   seconds waited 3h50m (round 2026-10-27 r1 ic2). Launch the probe lenses
+   only once `build/pcrec` exists; a critic without a binary waits for it
+   (poll every 10 min, up to 4 h) rather than ending source-only.
 3. Denylist (D27 applied to review): the lane's reports
    (`docs/dev/lanes/<lane>*`), review files on this subject, `git log` bodies
    beyond the subject lines, job logs, other worktrees, the box queue, plus the
@@ -77,7 +80,7 @@ measured twice). Subject column: D = design document, C = code diff.
 |---|---|---|---|---|
 | D C | always | **goals** (fold into another lens if needed) | Does the design state ranked, checkable goals (architecture.md)? Does the subject serve them in that order? No goals = a DOC finding; review against the goals the design implies, saying so. | strong |
 | D | a new mechanism or table | **premise** | Name every assumption the design rests on and test each (grep, measure, read the data): is it true? ("do we really need this?", "is this really constant?" are this lens; so is every sentence of the form "the existing X already does Y": find X by file:line.) | strong |
-| D C | a trust boundary (opt-in, gate, untrusted input becomes code or a file read) | **adversary** | As the author of an untrusted input, find every path from your bytes to code, a file read or a terminal escape that bypasses the gate, including the test harness and tooling as entry points | strong |
+| D C | a trust boundary (opt-in, gate, untrusted input becomes code or a file read) | **adversary** | As the author of an untrusted input, find every path from your bytes to code, a file read or a terminal escape that bypasses the gate, including the test harness and tooling as entry points; and what an ADMITTED input can do to the rest of the output | strong |
 | D | a table, rule or selection | **simulate** | Run the proposed rule over the real corpus or data: does it pick what the design claims, and where does it mispick? | sonnet+ |
 | D C | a table / slot / mechanism | **slot tracing** | Trace every slot to the table or mechanism the design names for it: is anything duplicated, narrowed or unreachable ("one table per slot")? Is it the third member of a family? | strong |
 | D C | rulings relied on | **ruling check** | For each ruling, does it agree with the design and the guide, and what are its CONSEQUENCES? Fold into slot tracing when that runs. | strong |

@@ -151,6 +151,7 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   compiles (a census, a sweep, a probe battery) is heavy — run it as
   `scripts/boxlock run --label NAME -- CMD` or as a `heavy` chainrun stage.
   `PCREC_BOXLOCK=0` opts out, only with the manager's say-so.
+  LABEL EVERY `boxlock run --label <lane-name>-<what>` (2026-10-27): `boxlock status` lists the waiters by label, `lanewatch --follow` reads a lane waiting on the lock as WAITING (not QUIET) by that prefix, and `queuewatch` raises WAIT-LONG for it after 30 min.
   GENERATED LOAD IS HEAVY: a test that spins CPU on purpose (to shake out a
   race) runs under `scripts/boxlock run` like any suite (2026-10-24: a lane's
   32 busy loops pushed a queued make test past its cap).
