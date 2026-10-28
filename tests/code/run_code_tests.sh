@@ -292,6 +292,15 @@ else
     bad "--code-header c: said: ${eh:0:160}"
 fi
 
+# F15 (review 2026-10-27-r1-ic2): a code site's `verify` refusal names its
+# own module, which IS enabled, never "module 'callouts' is enabled".
+vo="$(pc --allow-code=c --pattern 'a(?C`c,verify: return RX_PASS;`)b' -o - 2>&1)"
+if printf '%s\n' "$vo" | grep -q "module 'code-c' is enabled but the callout attribute 'verify'"; then
+    ok "a code site's verify refusal names module code-c"
+else
+    bad "a code site's verify refusal said: ${vo:0:160}"
+fi
+
 # F4 (review 2026-10-27-r1-ic2): a segment's own #defines are not pcrec's
 # decisions; --emit-facts lists the stamps above the code block only.
 FSEG="$(printf 'a(?C`c: return RX_PASS;\n#define RX_FAKE 1\n#undef RX_CODE_LANGS\n#define RX_CODE_LANGS "zzz"\n`)b')"

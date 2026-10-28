@@ -103,10 +103,18 @@ const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
         case CO_ATTR_CONSUME: a->u.callout.consume = true; break;
         case CO_ATTR_ONCE:    a->u.callout.once = true;    break;
         case CO_ATTR_VERIFY:
-            /* §4's `verify` mode is stage 4's: refused BY NAME until then. */
-            return pcrec_ext_msgf(cx, "module 'callouts' " PCREC_UNBUILT_MARKER
-                                  " the callout attribute 'verify' is not "
-                                  "implemented yet");
+            /* §4's `verify` mode is stage 4's: refused BY NAME until then.
+             * The module named is the SITE's, which is enabled here: a code
+             * site's is `code-<lang>`, never `callouts` (review
+             * 2026-10-27-r1-ic2 F15: "module 'callouts' is enabled" was
+             * false in a compile without it). */
+            return a->u.callout.bind == CO_CODE
+                ? pcrec_ext_msgf(cx, "module 'code-%s' " PCREC_UNBUILT_MARKER
+                                 " the callout attribute 'verify' is not "
+                                 "implemented yet", a->u.callout.lang)
+                : pcrec_ext_msgf(cx, "module 'callouts' " PCREC_UNBUILT_MARKER
+                                 " the callout attribute 'verify' is not "
+                                 "implemented yet");
         }
         if (j == n) return NULL;
         i = j + 1;
