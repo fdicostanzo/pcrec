@@ -1520,6 +1520,19 @@ run_one_axis() {
         co_floor_breach=1
     fi
     echo "  callouts cases reached: $co_ran (floor 45)"
+    # [INLINE-C] stage 2 THE EMBEDDED-CODE FLOOR, the same shape (review
+    # 2026-10-27-r1-ic2 F25; design §3.6/T6): tests/code/ links geoip.c
+    # through its manifest and compiles under its grant, and a failed link
+    # or grant leaves only the code-free fragment's rows (measured: 2). The
+    # floor is the corpus's measured 38 dump rows (macros 21, ipv4 12,
+    # geoip 3, frag 2), rounded down to 35; only on a whole-tree sweep.
+    local cc_ran
+    cc_ran=$(awk -F'\t' '$1 ~ /(^|\/)tests\/code\// {n++} END{print n+0}' "$dump")
+    if [ "$#" -eq 0 ] && [ "$cc_ran" -lt 35 ]; then
+        echo "AXIS FAIL: $label: only $cc_ran tests/code/ case(s) reached this axis, below the floor of 35 — the embedded-code corpus stopped building or linking (F25, K35)" >&2
+        co_floor_breach=1
+    fi
+    echo "  embedded-code cases reached: $cc_ran (floor 35)"
     echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
     if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ] || [ "$co_floor_breach" -eq 1 ]; then
