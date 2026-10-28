@@ -569,7 +569,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s7-12-p2"></a>[7.12¶2] The module is enabled only by the person running the compiler: `--allow-code=c` (`cli.md` §1.22) or the library's `allow_code` member (`match_api.md` §8.2). A `features` list cannot enable it, `all` does not contain it, and naming it in a `features` list is refused. Without the grant a code segment is refused by name.
 
-<a id="s7-12-p3"></a>[7.12¶3] Refused: a segment with no grant; an unknown, empty or repeated attribute; a segment containing an invisible or bidirectional control character (U+200B-U+200F, U+202A-U+202E, U+2060-U+2064, U+2066-U+2069, U+FEFF), named with its code point; a segment containing a C0 control byte other than tab, newline, vertical tab, form feed and carriage return, or DEL; a segment in a definition read from another file through a `lib` line (`rxt_format.md` §1.1); and every placement module `callouts` refuses (§7.11¶3).
+<a id="s7-12-p3"></a>[7.12¶3] Refused: a segment with no grant; an unknown, empty or repeated attribute; a segment containing a character that makes the code a reviewer reads differ from the code gcc compiles (a `Bidi_Control` or `Default_Ignorable_Code_Point` character, U+0085, U+2028, U+2029, a carriage return not followed by a line feed, a vertical tab, a form feed, any other C0 control character, or DEL; `match_api.md` §11.9¶3), named with its code point; a segment in a definition read from another file through a `lib` line (`rxt_format.md` §1.1); and every placement module `callouts` refuses (§7.11¶3).
 
 <a id="s8"></a>
 ## 8. Recognised constructs without a producer, and excluded ones

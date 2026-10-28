@@ -101,8 +101,28 @@ refuse "a bidi control in a segment is refused and named" "U+202E" --allow-code=
     --pattern "$(printf 'a(?C`c: return RX_PASS; /* \342\200\256 */`)b')"
 refuse "a zero-width space in a segment is refused" "U+200B" --allow-code=c -o "$R" \
     --pattern "$(printf 'a(?C`c: return RX_PASS;\342\200\213`)b')"
-refuse "a C0 control byte in a segment is refused" "0x01" --allow-code=c -o "$R" \
+refuse "a C0 control byte in a segment is refused" "U+0001" --allow-code=c -o "$R" \
     --pattern "$(printf 'a(?C`c: return RX_PASS;\001`)b')"
+# F1 (review 2026-10-27-r1-ic2): the refused set is the UCD's Bidi_Control and
+# Default_Ignorable_Code_Point, not a typed list; one member of each beyond
+# the old list, at each UTF-8 length, plus the three Unicode line ends. U+3164
+# is the exploit's: `int ok<U+3164> = 1; int ok = 0;` reads as one name.
+for cpw in '\330\234|U+061C' '\343\205\244|U+3164' '\302\255|U+00AD' \
+           '\363\240\201\201|U+E0041' '\342\200\250|U+2028' '\302\205|U+0085'; do
+    refuse "the UCD-derived refusal set holds ${cpw#*|}" "${cpw#*|}" --allow-code=c -o "$R" \
+        --pattern "$(printf "a(?C\`c: int ok${cpw%|*} = 1; return RX_PASS;\`)b")"
+done
+# F2: a lone CR, a VT and a FF are line breaks to a terminal that gcc reads
+# otherwise (`// x<CR>return RX_FAIL;` compiled the hidden statement).
+for cw in '\r|U+000D' '\v|U+000B' '\f|U+000C'; do
+    refuse "a segment's ${cw#*|} is refused (reader and compiler split lines differently)" "${cw#*|}" \
+        --allow-code=c -o "$R" --pattern "$(printf "a(?C\`c: // x${cw%|*}return RX_FAIL;\n return RX_PASS;\`)b")"
+done
+if pc --allow-code=c -o "$R" --pattern "$(printf 'a(?C`c: /* caf\303\251 */\r\n return RX_PASS;`)b')" 2> "$WORK/r.log"; then
+    ok "CR LF and an ordinary non-ASCII character are accepted"
+else
+    bad "CR LF or an ordinary non-ASCII character was refused: $(cat "$WORK/r.log")"
+fi
 refuse "a malformed --code-header operand is refused" "header" --allow-code=c \
     --code-header 'c:"octet.h' -o "$R" --pattern "$SEG"
 refuse "--code-header for an unknown language is refused" "language" --allow-code=c \

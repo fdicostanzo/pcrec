@@ -1842,8 +1842,8 @@ included) is ASCII too, so every byte of the artifact, `.c` and `.h`, is
 ASCII under every option, and it compiles clean under `-Wall -Wextra -Werror
 -Wbidi-chars` for any pattern, except the bytes of an embedded code segment
 and of a `code-header` line (§11.9), which are the user's as written. A
-bidirectional control or invisible format character in a segment is refused
-(§11.9), so such an artifact still compiles clean under `-Wbidi-chars`
+bidirectional control or invisible character in a segment is refused
+(§11.9¶3), so such an artifact still compiles clean under `-Wbidi-chars`
 whenever the user's code does.
 
 <a id="s6-1"></a>
@@ -4021,12 +4021,17 @@ not apply inside the string (`(?x)` does not make `#` a comment there).
 
 <a id="s11-9-p3"></a>[11.9¶3] **The code is the user's, as written.** pcrec never parses, checks or
 rewrites it: there is no substitution of any kind, only the generated names
-of ¶5. Two things are refused in a segment, naming the code point and its byte
-offset in the segment: a Unicode bidirectional control or invisible format
-character (U+200B-U+200F, U+202A-U+202E, U+2060-U+2064, U+2066-U+2069,
-U+FEFF), so the code a reviewer reads is the code that compiles; and a C0
-control byte other than tab, newline, vertical tab, form feed and carriage
-return, or DEL.
+of ¶5. What it refuses in a segment is every character that makes the code a
+reviewer reads differ from the code gcc compiles, naming the code point and
+its byte offset in the segment: a character with the Unicode property
+`Bidi_Control` or `Default_Ignorable_Code_Point` (the sets of the pinned
+Unicode data, `cli.md` §1.17.1); the Unicode line ends gcc does not end a line
+at, U+0085, U+2028 and U+2029; a carriage return not immediately followed by
+a line feed, a vertical tab and a form feed (each a line break to a terminal
+and not to gcc, or the reverse); and every other C0 control character, and
+DEL. Tab, line feed and CR LF are allowed. The segment is read as UTF-8, as
+gcc reads it; a byte that starts no well-formed UTF-8 character is passed
+through as written.
 
 <a id="s11-9-p4"></a>[11.9¶4] **The function.** Each segment becomes `static ptrdiff_t
 <prefix>__code<k>(const rx_ctx *ctx)`, an `rx_matchfn` whose BODY is the

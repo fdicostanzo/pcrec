@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"   /* pcrec_utf8_decode: the segment is UTF-8 to gcc */
 
 /* THE LANGUAGE ROWS, projected from src/parse/codelang.def in its order. */
 static const PcrecCodeLang code_langs[] = {
@@ -105,37 +106,93 @@ const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature)
     return NULL;
 }
 
-/* THE BIDI AND INVISIBLE-FORMAT REFUSAL (§2.4, [r1 T4]; the CVE-2021-42574
- * shape): the code points a reviewer cannot see but gcc compiles. Each row
- * is a UTF-8 lead pair and the range of the third byte, so the check is a
- * table read over the segment's bytes, whatever the pattern's encoding (the
- * segment is C source, which gcc reads as UTF-8). */
-static const struct {
-    unsigned char b0, b1, lo, hi;   /* third byte in [lo, hi] */
-    unsigned      cp_lo;            /* the code point of `lo` */
-} code_invisible[] = {
-    { 0xE2, 0x80, 0x8B, 0x8F, 0x200B },   /* U+200B..U+200F ZWSP, ZWNJ, ZWJ, LRM, RLM */
-    { 0xE2, 0x80, 0xAA, 0xAE, 0x202A },   /* U+202A..U+202E LRE, RLE, PDF, LRO, RLO */
-    { 0xE2, 0x81, 0xA0, 0xA4, 0x2060 },   /* U+2060..U+2064 WJ and invisible operators */
-    { 0xE2, 0x81, 0xA6, 0xA9, 0x2066 },   /* U+2066..U+2069 LRI, RLI, FSI, PDI */
-    { 0xEF, 0xBB, 0xBF, 0xBF, 0xFEFF },   /* U+FEFF ZWNBSP (BOM) */
+/* THE REFUSED CHARACTERS (§2.4, [r1 T4]; the CVE-2021-42574 shape, review
+ * 2026-10-27-r1-ic2 F1/F2/F35): every character that makes the code a
+ * reviewer reads differ from the code gcc compiles, ONE first-match table.
+ * A row is a UCD property (the vendored data's own set, through the table
+ * `make gen-tables` generates, src/parse/uprops_tables.inc) or a code-point
+ * range, with what the diagnostic calls it. The segment is C source, which
+ * gcc reads as UTF-8 whatever the pattern's encoding, so the scan decodes
+ * UTF-8; a byte that starts no well-formed character is not a character to
+ * a renderer or to gcc's identifier reader and is left as it is. A carriage
+ * return is refused unless a line feed follows it (gcc ends a line at a lone
+ * CR; a terminal overwrites the line), which is a rule on two bytes and so
+ * sits beside the table. */
+#define PROP(n)     { (n), 0, 0 }
+#define RANGE(a, b) { NULL, (a), (b) }
+static const struct { PcrecSetTerm t; const char *what; } code_refused[] = {
+    { PROP("BIDICONTROL"),               "a bidirectional control (Bidi_Control)" },
+    { PROP("DEFAULTIGNORABLECODEPOINT"), "an invisible character (Default_Ignorable_Code_Point)" },
+    { RANGE(0x85, 0x85),                 "a Unicode line end gcc does not end a line at" },
+    { RANGE(0x2028, 0x2029),             "a Unicode line end gcc does not end a line at" },
+    { RANGE(0x00, 0x08),                 "a control character" },
+    { RANGE(0x0B, 0x0C),                 "a vertical tab or form feed (a line break to a terminal, not to gcc)" },
+    { RANGE(0x0E, 0x1F),                 "a control character" },
+    { RANGE(0x7F, 0x7F),                 "a control character" },
 };
+#undef PROP
+#undef RANGE
 
-/* The first invisible or bidi control in `s` (n bytes): its code point in
- * `*cp` and its byte offset in `*off`; false when there is none. */
-static bool code_find_invisible(const char *s, size_t n, unsigned *cp,
-                                size_t *off)
+/* Is `cp` in the sorted interval list iv[0..n)? */
+static bool code_span_has(const PcrecCpRange *iv, int n, unsigned cp)
+{
+    int lo = 0, hi = n;
+    while (lo < hi) {
+        const int mid = lo + (hi - lo) / 2;
+        if (cp < iv[mid].lo) hi = mid;
+        else if (cp > iv[mid].hi) lo = mid + 1;
+        else return true;
+    }
+    return false;
+}
+
+/* What the table calls `cp`, or NULL when a segment may carry it. */
+static const char *code_refused_what(Ctx *cx, size_t at, unsigned cp)
+{
+    for (size_t k = 0; k < sizeof code_refused / sizeof code_refused[0]; k++) {
+        const PcrecSetTerm *t = &code_refused[k].t;
+        if (!t->prop) {
+            if (cp >= t->lo && cp <= t->hi) return code_refused[k].what;
+            continue;
+        }
+        int n = 0;
+        const PcrecCpRange *iv = pcrec_uprops_span(t->prop, &n);
+        if (!iv)
+            pcrec_ctx_fail(cx, at, "internal error: the code refusal table "
+                           "names property '%s', which unicode-props does "
+                           "not ship", t->prop);
+        if (code_span_has(iv, n, cp)) return code_refused[k].what;
+    }
+    return NULL;
+}
+
+/* The first refused character of the decoded segment `s` (n bytes): what
+ * it is (the table above, or a lone carriage return), its code point in
+ * `*cp` and its byte offset in `*off`; NULL when there is none. */
+static const char *code_find_refused(Ctx *cx, size_t at, const char *s,
+                                     size_t n, unsigned *cp, size_t *off)
 {
     const unsigned char *u = (const unsigned char *)s;
-    for (size_t i = 0; i + 2 < n; i++)
-        for (size_t k = 0; k < sizeof code_invisible / sizeof code_invisible[0]; k++)
-            if (u[i] == code_invisible[k].b0 && u[i + 1] == code_invisible[k].b1 &&
-                u[i + 2] >= code_invisible[k].lo && u[i + 2] <= code_invisible[k].hi) {
-                *cp = code_invisible[k].cp_lo + (unsigned)(u[i + 2] - code_invisible[k].lo);
-                *off = i;
-                return true;
-            }
-    return false;
+    for (size_t i = 0; i < n;) {
+        unsigned c = u[i];
+        int len = 1;
+        if (u[i] >= 0x80 &&
+            pcrec_utf8_decode(u, n, i, &c, &len) != PCREC_UTF8_OK) {
+            i++;
+            continue;
+        }
+        const char *what = code_refused_what(cx, at, c);
+        if (!what && c == '\r' && !(i + 1 < n && u[i + 1] == '\n'))
+            what = "a carriage return with no line feed after it (a line end "
+                   "to gcc, an overwritten line to a terminal)";
+        if (what) {
+            *cp = c;
+            *off = i;
+            return what;
+        }
+        i += (size_t)len;
+    }
+    return NULL;
 }
 
 /* Reads the code TAG at `s` (n bytes) for language `L`: applies its
@@ -200,22 +257,12 @@ ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
 
     unsigned cp;
     size_t off;
-    if (code_find_invisible(text, textlen, &cp, &off))
-        REFUSE(at, "the code segment at offset %zu contains U+%04X, an "
-               "invisible or bidirectional control character, at byte %zu "
-               "of the segment; such characters make the code a reviewer "
-               "reads differ from what the compiler compiles", at, cp, off);
-
-    /* A C0 control byte other than C's whitespace has no place in source
-     * text, and \x01 is the emitter's own placeholder lead (K79), which a
-     * segment must never carry into the artifact. */
-    for (size_t i = 0; i < textlen; i++) {
-        const unsigned char b = (unsigned char)text[i];
-        if ((b < 0x20 && b != '\t' && b != '\n' && b != '\v' && b != '\f' &&
-             b != '\r') || b == 0x7f)
-            REFUSE(at, "the code segment at offset %zu contains the control "
-                   "byte 0x%02X at byte %zu of the segment", at, b, i);
-    }
+    const char *what = code_find_refused(cx, at, text, textlen, &cp, &off);
+    if (what)
+        REFUSE(at, "the code segment at offset %zu contains U+%04X, %s, at "
+               "byte %zu of the segment; such characters make the code a "
+               "reviewer reads differ from what the compiler compiles", at,
+               cp, what, off);
 
     /* §5.4 row 3: REACHED code (a definition read from another file through
      * a `lib` line) is refused until pins exist (stage 3). */
