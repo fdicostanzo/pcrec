@@ -14,8 +14,9 @@
 #       `code-header` operand;
 #   (4) the entry-point table (inline_c.md §5.9): one row per CLI mode,
 #       ENUMERATED from cli/main.c's CLI_MODE_TABLE (a mode with no row
-#       fails), plus the writers that are not modes, plus the library
-#       (lib_check.c);
+#       fails; the count is pinned exactly), plus the writers that are not
+#       modes, the declared non-table modes (--emit-support, --subst,
+#       --analysis, ...), plus the library (lib_check.c);
 #   (5) diagnostics land on the user's line (DT-3.3): a segment's error at
 #       its .rxt line and column, a `pattern-esc` segment at its opener's
 #       line, `--pattern` at "<command line>", a missing header at its
@@ -208,6 +209,18 @@ a file operand|writes
 -o -|writes
 --emit-main|writes
 --trace|writes'
+# F20 (review 2026-10-27-r1-ic2): the modes and mode-like options that are
+# NOT CLI_MODE_TABLE rows, declared here and run through the same classes
+# (the class as a column of the product table is F27, PLAN). `refuses`: a
+# compile-less mode that refuses every other option by its presence
+# (MODE_ADMITS), the grant included, and runs without it.
+NT_ROWS='--emit-support|refuses
+--subst|refuses
+--subst-file|refuses
+--analysis|writes
+--measures|writes
+--tune|writes
+--view|takes'
 ep_args() {   # ep_args SPELLING -> ARGS
     case "$1" in
         --explain) ARGS=(--explain '(?C') ;;
@@ -220,6 +233,13 @@ ep_args() {   # ep_args SPELLING -> ARGS
         --pattern-esc) ARGS=(-o "$F/w.c" --pattern-esc --pattern "\"$SEG\"") ;;
         '-o -') ARGS=(-o - --pattern "$SEG") ;;
         --emit-main|--trace) ARGS=("$1" -o "$F/w.c" --pattern "$SEG") ;;
+        --emit-support) ARGS=(--emit-support -o -) ;;
+        --subst) ARGS=(--subst x -o -) ;;
+        --subst-file) printf 'x' > "$F/t.tmpl"; ARGS=(--subst-file "$F/t.tmpl" -o -) ;;
+        --analysis) ARGS=(--analysis default -o "$F/w.c" --pattern "$SEG") ;;
+        --measures) ARGS=(--measures zen4-grid1 -o "$F/w.c" --pattern "$SEG") ;;
+        --tune) ARGS=(--tune=min-size -o "$F/w.c" --pattern "$SEG") ;;
+        --view) ARGS=(--list-analysis default --view=decoded) ;;
         *) ARGS=("$1") ;;
     esac
 }
@@ -232,7 +252,10 @@ while IFS= read -r m; do
     nmodes=$((nmodes + 1))
     printf '%s\n' "$EP_ROWS" | grep -qF -- "$m|" || bad "CLI mode '$m' has no row in the entry-point table"
 done <<< "$modes"
-[ "$nmodes" -ge 15 ] || bad "only $nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE: the enumeration stopped reaching it"
+# EXACT (F20): a mode added to the table moves this number, visibly.
+[ "$nmodes" -eq 17 ] || bad "$nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE, expected exactly 17: a mode was added (give it a row and move the pin) or the enumeration stopped reaching it"
+[ "$(printf '%s\n' "$EP_ROWS" | wc -l)" -eq 22 ] && [ "$(printf '%s\n' "$NT_ROWS" | wc -l)" -eq 7 ] ||
+    bad "the entry-point rows are not 22 table+writer rows and 7 non-table rows"
 while IFS='|' read -r spell class; do
     rm -f "$F/w.c" "$F/w.h"
     ep_args "$spell"
@@ -258,8 +281,15 @@ while IFS='|' read -r spell class; do
             else
                 bad "entry '$spell' (takes no pattern): the grant changed the answer (rc $r0 vs $r1)"
             fi ;;
+        refuses)
+            if [ $r0 -eq 0 ] && [ $r1 -ne 0 ] && [[ "$o1" == *"--allow-code"* ]]; then
+                ok "entry '$spell' (compile-less): runs without the grant, refuses it by name"
+            else
+                bad "entry '$spell' (compile-less): without the grant rc=$r0 '${o0:0:160}'; with it rc=$r1 '${o1:0:160}'"
+            fi ;;
     esac
-done <<< "$EP_ROWS"
+done <<< "$EP_ROWS
+$NT_ROWS"
 # F8 (review 2026-10-27-r1-ic2): an EXPLICIT empty grant is no grant to a
 # describe mode either (one fact, one answer): same output as none at all.
 for dm in --count-groups --emit-ir --emit-facts; do
