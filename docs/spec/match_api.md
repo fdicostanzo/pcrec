@@ -4099,9 +4099,12 @@ caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
 
 <a id="s11-10-p1"></a>[11.10¶1] Every callout artifact carries, beside §1¶6a's family and in the guard
 `PCREC_RX_SPAN_H`, a span type and seven `static inline` helpers, for a code
-segment and a hand-written binding alike. A SPAN is a pointer and a length;
-the UNSET span (`p == NULL`, `len == -1`) is an unset group, and every helper
-reads it as matching nothing.
+segment and a hand-written binding alike. A SPAN is a pointer and a length.
+A span is UNSET when its length is negative (`RX_CAP` of an unset group is
+`p == NULL`, `len == -1`), and every helper reads an unset span as matching
+nothing. The pointer decides nothing: an empty group on a `NULL` subject is
+the SET span `p == NULL`, `len == 0`, which every helper reads as it reads
+an empty group on `""`.
 
 ```c
 typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;

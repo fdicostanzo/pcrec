@@ -366,6 +366,25 @@ if $CC $GENCFLAGS -I"$K" -I"$SCRIPT_DIR" -o "$K/dt" "$K/dt_drv.c" 2> "$K/cc.log"
 else
     bad "DT-4.1 inline: $(cat "$K/cc.log")"
 fi
+# F10 (review 2026-10-27-r1-ic2): an empty group on a NULL subject is SET to
+# the span helpers, as it is on "" (unset is len < 0 alone).
+pc --allow-code=c -p nu -o "$K/nu.c" --pattern '()(?C`c: return rx_eq(RX_CAP(1), "") ? RX_PASS : RX_FAIL;`)'
+cat > "$K/nu_drv.c" <<'C'
+#include <stdio.h>
+#include "nu.c"
+int main(void)
+{
+    ptrdiff_t c[NU_NCAPS][2];
+    int a = nu_search(NULL, 0, 0, c), b = nu_search((const unsigned char *)"", 0, 0, c);
+    if (a != 1 || b != 1) { printf("NULL subject %d, empty subject %d\n", a, b); return 1; }
+    return 0;
+}
+C
+if $CC $GENCFLAGS -I"$K" -o "$K/nu" "$K/nu_drv.c" 2> "$K/cc.log" && "$TIMEOUT_BIN" 10 "$K/nu"; then
+    ok "an empty group on a NULL subject reads as set in the span helpers, as on \"\""
+else
+    bad "an empty group on a NULL subject: $("$K/nu" 2>&1; head -3 "$K/cc.log" | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"
+fi
 trap_row() {   # trap_row WHAT PATTERN SUBJECT
     rm -f "$K/tr.c" "$K/tr"
     if ! pc --allow-code=c -p tr --emit-main -o "$K/tr.c" --pattern "$2" 2> "$K/p.log" ||

@@ -30,22 +30,24 @@
 /* THE SPAN HELPERS, one text. `static inline` in a block guarded by
  * PCREC_RX_SPAN_H, so two callout artifacts in one translation unit define
  * them once and an unused one costs nothing. Every helper reads an UNSET
- * span (p NULL, len -1: an unset group) as matching nothing. The contracts
- * are match_api.md §11.10's table, one row per helper. */
+ * span (len < 0: an unset group) as matching nothing; a SET span may have a
+ * NULL `p` with `len` 0 (an empty group on a NULL subject), so `p` decides
+ * nothing (review 2026-10-27-r1-ic2 F10). The contracts are match_api.md
+ * §11.10's table, one row per helper. */
 static const char span_helpers[] =
     "#ifndef PCREC_RX_SPAN_H\n"
     "#define PCREC_RX_SPAN_H\n"
     "typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;\n"
     "static inline int rx_eq(rx_span s, const char *z)\n"
     "{\n"
-    "    if (!s.p || s.len < 0) return 0;\n"
+    "    if (s.len < 0) return 0;\n"
     "    for (ptrdiff_t i = 0; i < s.len; i++)\n"
     "        if (!z[i] || (unsigned char)z[i] != s.p[i]) return 0;\n"
     "    return z[s.len] == 0;\n"
     "}\n"
     "static inline int rx_eqi(rx_span s, const char *z)\n"
     "{\n"
-    "    if (!s.p || s.len < 0) return 0;\n"
+    "    if (s.len < 0) return 0;\n"
     "    for (ptrdiff_t i = 0; i < s.len; i++) {\n"
     "        unsigned a = s.p[i], b = (unsigned char)z[i];\n"
     "        if (!b) return 0;\n"
@@ -58,7 +60,7 @@ static const char span_helpers[] =
     "static inline int rx_u64(rx_span s, uint64_t *out)\n"
     "{\n"
     "    uint64_t v = 0;\n"
-    "    if (!s.p || s.len <= 0) return 0;\n"
+    "    if (s.len <= 0) return 0;\n"
     "    for (ptrdiff_t i = 0; i < s.len; i++) {\n"
     "        unsigned d = (unsigned)s.p[i] - '0';\n"
     "        if (d > 9 || v > (UINT64_MAX - d) / 10) return 0;\n"
@@ -70,7 +72,7 @@ static const char span_helpers[] =
     "static inline int rx_hex(rx_span s, uint64_t *out)\n"
     "{\n"
     "    uint64_t v = 0;\n"
-    "    if (!s.p || s.len <= 0) return 0;\n"
+    "    if (s.len <= 0) return 0;\n"
     "    for (ptrdiff_t i = 0; i < s.len; i++) {\n"
     "        unsigned c = s.p[i], d;\n"
     "        if (c - '0' < 10u) d = c - '0';\n"
@@ -90,7 +92,7 @@ static const char span_helpers[] =
     "static inline ptrdiff_t rx_find(rx_span s, const char *z)\n"
     "{\n"
     "    ptrdiff_t n = 0;\n"
-    "    if (!s.p || s.len < 0) return -1;\n"
+    "    if (s.len < 0) return -1;\n"
     "    while (z[n]) n++;\n"
     "    for (ptrdiff_t i = 0; i + n <= s.len; i++) {\n"
     "        ptrdiff_t k = 0;\n"
@@ -103,7 +105,7 @@ static const char span_helpers[] =
     "{\n"
     "    ptrdiff_t k = *i, n, j;\n"
     "    uint32_t c, min;\n"
-    "    if (!s.p || k < 0 || k >= s.len) return 0;\n"
+    "    if (k < 0 || k >= s.len) return 0;\n"
     "    c = s.p[k];\n"
     "    if (c < 0x80) { *cp = c; *i = k + 1; return 1; }\n"
     "    if (c >= 0xC2 && c <= 0xDF) { n = 2; c &= 0x1F; min = 0x80; }\n"

@@ -25,7 +25,7 @@ static const unsigned char alpha[] = { '0', '9', 'a', 'F', 'g', 'G', 0xC3 };
 /* ---- the references, from §11.10 ---------------------------------------- */
 static int ref_eq(const unsigned char *p, ptrdiff_t n, const char *z, int fold)
 {
-    if (!p || n < 0 || (size_t)n != strlen(z)) return 0;
+    if (n < 0 || (size_t)n != strlen(z)) return 0;
     for (ptrdiff_t i = 0; i < n; i++) {
         unsigned a = p[i], b = (unsigned char)z[i];
         if (fold) {
@@ -39,7 +39,7 @@ static int ref_eq(const unsigned char *p, ptrdiff_t n, const char *z, int fold)
 
 static int ref_num(const unsigned char *p, ptrdiff_t n, unsigned base, uint64_t *out)
 {
-    if (!p || n <= 0) return 0;
+    if (n <= 0) return 0;
     uint64_t v = 0;
     for (ptrdiff_t i = 0; i < n; i++) {
         unsigned d, c = p[i];
@@ -56,8 +56,9 @@ static int ref_num(const unsigned char *p, ptrdiff_t n, unsigned base, uint64_t 
 
 static ptrdiff_t ref_find(const unsigned char *p, ptrdiff_t n, const char *z)
 {
-    if (!p || n < 0) return -1;
+    if (n < 0) return -1;
     size_t m = strlen(z);
+    if (m == 0) return 0;
     for (ptrdiff_t i = 0; i + (ptrdiff_t)m <= n; i++)
         if (!memcmp(p + i, z, m)) return i;
     return -1;
@@ -66,7 +67,7 @@ static ptrdiff_t ref_find(const unsigned char *p, ptrdiff_t n, const char *z)
 /* UTF-8 by the table of well-formed sequences (Unicode 16.0 Table 3-7). */
 static int ref_u8(const unsigned char *p, ptrdiff_t n, ptrdiff_t i, uint32_t *cp)
 {
-    if (!p || n < 0 || i >= n) return 0;
+    if (n < 0 || i >= n) return 0;
     unsigned b0 = p[i];
     if (b0 < 0x80) { *cp = b0; return 1; }
     int len; unsigned lo = 0x80, hi = 0xBF; uint32_t v;
@@ -160,6 +161,12 @@ int main(void)
             for (size_t z = 0; z < NA; z++) { b[2] = alpha[z]; one(b, 3); }
         }
     }
+    /* a SET empty span with a NULL pointer (an empty group on a NULL
+     * subject) is set: unset is `len < 0` alone (§11.10¶1, review
+     * 2026-10-27-r1-ic2 F10) */
+    one(NULL, 0);
+    CHECK(rx_eq((rx_span){ NULL, 0 }, "") && rx_eqi((rx_span){ NULL, 0 }, "") &&
+          rx_find((rx_span){ NULL, 0 }, "") == 0, "the set empty span on a NULL subject");
     /* the unset span reads as matching nothing */
     const rx_span u = { NULL, -1 };
     uint64_t v = 5;
