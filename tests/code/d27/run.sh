@@ -26,11 +26,13 @@ ln -s "$D27/hdr" "$CELL/d27/hdr"
 for f in "$D27"/rxt/*.rxtin; do cp "$f" "$CELL/d27/rxt/$(basename "$f" in)"; done
 : "${PCREC:?set PCREC=<path to pcrec>}"
 CC=${CC:-gcc}
-case $PCREC in /*) ;; *) PCREC=$PWD/$PCREC ;; esac
+RXC=${PCREC}
+case $RXC in /*) ;; *) RXC=$PWD/$RXC ;; esac
 W=$OUT/work
 rm -rf -- "$W"
 mkdir -p "$W/cli" "$W/m" "$W/fb" "$W/misc"
-T="timeout 30"
+[ -n "${TIMEOUT_BIN:-}" ] || . "$D27/../../lib/timeout_bin.sh"
+T="$TIMEOUT_BIN 30"
 # match_api.md §6 (the ASCII rule): every artifact compiles clean under
 # -Wall -Wextra -Werror -Wbidi-chars, a code segment's own bytes excepted
 GCCF=(-std=gnu11 -O1 -Wall -Wextra -Werror -Wbidi-chars=any)
@@ -57,7 +59,7 @@ oneline() { tr '\n' ' ' <"$1" | cut -c1-240; }
 while IFS=$'\t' read -r name cite args pat want_exit ere written; do
     case $name in '' | \#*) continue ;; esac
     out=$W/cli/$name.c
-    cmd=("$PCREC")
+    cmd=("$RXC")
     if [ "$args" != "-" ]; then
         eval "extra=($args)"
         cmd+=("${extra[@]}")
@@ -96,7 +98,7 @@ rawcheck cli.hdr_nonascii_refused_no_raw_bytes "$W/cli/hdr_nonascii_refused.stde
 while IFS=$'\t' read -r name cite args pat subj want; do
     case $name in '' | \#*) continue ;; esac
     gen=$W/m/$name.c
-    cmd=("$PCREC" --allow-code=c --features all)
+    cmd=("$RXC" --allow-code=c --features all)
     if [ "$args" != "-" ]; then
         eval "extra=($args)"
         cmd+=("${extra[@]}")
@@ -143,7 +145,7 @@ done
 # 3. span helpers called directly (§11.10), driver_helpers.c
 # ------------------------------------------------------------------
 gen=$W/misc/helpers_gen.c
-if $T "$PCREC" --allow-code=c -o - --pattern '(?C`c: return RX_PASS;`)a' >"$gen" 2>"$W/misc/helpers.err" &&
+if $T "$RXC" --allow-code=c -o - --pattern '(?C`c: return RX_PASS;`)a' >"$gen" 2>"$W/misc/helpers.err" &&
     $T "$CC" "${GCCF[@]}" -DGEN_C="\"$gen\"" -o "$W/misc/helpers.bin" "$D27/driver_helpers.c" 2>>"$W/misc/helpers.err"; then
     $T "$W/misc/helpers.bin" >"$W/misc/helpers.out" 2>&1
     tally "$W/misc/helpers.out"
@@ -152,7 +154,7 @@ else
 fi
 # the same helpers from a HAND-WRITTEN-binding artifact (§11.10¶1 "alike")
 gen=$W/misc/helpers_named.c
-if $T "$PCREC" -o - --features callouts --pattern '(?C"d27x")a' >"$gen" 2>"$W/misc/helpers_named.err" &&
+if $T "$RXC" -o - --features callouts --pattern '(?C"d27x")a' >"$gen" 2>"$W/misc/helpers_named.err" &&
     $T "$CC" "${GCCF[@]}" -DGEN_C="\"$gen\"" -c -o "$W/misc/helpers_named.o" "$D27/driver_helpers.c" 2>>"$W/misc/helpers_named.err"; then
     pass "helpers.named_binding_artifact_carries_helpers"
 else
@@ -171,7 +173,7 @@ stamp_case() { # name cite prefix pattern pcrec-args... -- cc-defines...
     da=("$@")
     local dir=$W/misc/st_$name
     mkdir -p "$dir"
-    if ! $T "$PCREC" "${pa[@]}" -p "$pfx" -o "$dir/a.c" --pattern "$pat" 2>"$dir/err"; then
+    if ! $T "$RXC" "${pa[@]}" -p "$pfx" -o "$dir/a.c" --pattern "$pat" 2>"$dir/err"; then
         fail "stamps.$name [$cite]" "pcrec refused: $(oneline "$dir/err")"
         return
     fi
@@ -203,7 +205,7 @@ stamp_case prefixed "§1¶2 <PREFIX>_ family" foo 'a(?C`c: return RX_PASS;`)b' -
 # PCREC_FEATURE_MODULES under --features all never lists code-c (cli §1.17¶3, match_api §6.3.11¶1)
 dir=$W/misc/st_features_all
 mkdir -p "$dir"
-if $T "$PCREC" --features all --allow-code=c -o - --pattern 'a(?C`c: return RX_PASS;`)b' >"$dir/a.c" 2>"$dir/err"; then
+if $T "$RXC" --features all --allow-code=c -o - --pattern 'a(?C`c: return RX_PASS;`)b' >"$dir/a.c" 2>"$dir/err"; then
     if grep -E '^#define PCREC_FEATURE_MODULES ' "$dir/a.c" | grep -q 'code-c'; then
         fail "stamps.feature_modules_all_excludes_code [cli§1.17¶3]" "$(grep -E '^#define PCREC_FEATURE_MODULES ' "$dir/a.c")"
     else
@@ -218,7 +220,7 @@ fi
 # ------------------------------------------------------------------
 gen=$W/misc/names_gen.c
 names_pat='"(?C`c: return RX_PASS;`)a(?C`c:\n#define D27_FROM_CODE 1\nreturn RX_FAIL; /* D27_LAST_MARK */\n`)|b(?<nm>z)?"'
-if $T "$PCREC" --allow-code=c --features all -p foo -o - --pattern-esc --pattern "$names_pat" >"$gen" 2>"$W/misc/names.err" &&
+if $T "$RXC" --allow-code=c --features all -p foo -o - --pattern-esc --pattern "$names_pat" >"$gen" 2>"$W/misc/names.err" &&
     $T "$CC" "${GCCF[@]}" -DGEN_C="\"$gen\"" -o "$W/misc/names.bin" "$D27/driver_names.c" 2>>"$W/misc/names.err"; then
     $T "$W/misc/names.bin" >"$W/misc/names.out" 2>&1
     tally "$W/misc/names.out"
@@ -255,8 +257,8 @@ fi
 
 # two code artifacts in one translation unit (§1¶5-¶6b, §11.9¶4)
 ga=$W/misc/two_a.c gb=$W/misc/two_b.c
-if $T "$PCREC" --allow-code=c -p pa -o - --pattern 'x(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)a' >"$ga" 2>"$W/misc/two.err" &&
-    $T "$PCREC" --allow-code=c -p pb -o - --pattern 'x(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)b' >"$gb" 2>>"$W/misc/two.err" &&
+if $T "$RXC" --allow-code=c -p pa -o - --pattern 'x(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)a' >"$ga" 2>"$W/misc/two.err" &&
+    $T "$RXC" --allow-code=c -p pb -o - --pattern 'x(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)b' >"$gb" 2>>"$W/misc/two.err" &&
     $T "$CC" "${GCCF[@]}" -DGEN_A="\"$ga\"" -DGEN_B="\"$gb\"" -o "$W/misc/two.bin" "$D27/driver_two.c" 2>>"$W/misc/two.err"; then
     $T "$W/misc/two.bin" >"$W/misc/two.out" 2>&1
     tally "$W/misc/two.out"
@@ -272,7 +274,7 @@ diag_case() { # name cite expect-ERE gen-producing pcrec args...
     shift 3
     local dir=$W/misc/diag_$name
     mkdir -p "$dir"
-    if ! (cd "$CELL" && $T "$PCREC" "$@" >"$dir/a.c" 2>"$dir/err"); then
+    if ! (cd "$CELL" && $T "$RXC" "$@" >"$dir/a.c" 2>"$dir/err"); then
         fail "diag.$name [$cite]" "pcrec refused: $(oneline "$dir/err")"
         return
     fi
@@ -307,7 +309,7 @@ diag_case cmdline_esc_line1 "§11.9¶4 (--pattern-esc: every decoded line names 
 # ------------------------------------------------------------------
 dir=$W/misc/hdr_cli
 mkdir -p "$dir"
-if $T "$PCREC" --allow-code=c --code-header c:d27a.h --code-header 'c:"d27b.h"' --code-header c:d27a.h \
+if $T "$RXC" --allow-code=c --code-header c:d27a.h --code-header 'c:"d27b.h"' --code-header c:d27a.h \
     '--code-header=c:<stdint.h>' -o "$dir/a.c" \
     --pattern 'a(?C`c: return (d27_a() == 7 && d27_b() == 8) ? RX_PASS : RX_FAIL;`)b' 2>"$dir/err"; then
     n_a=$(grep -c '^#include "d27a.h"' "$dir/a.c")
@@ -344,7 +346,7 @@ fi
 # a code-header with the grant and no segment is still emitted (cli §1.22¶2 "Each is emitted")
 dir=$W/misc/hdr_noseg
 mkdir -p "$dir"
-if $T "$PCREC" --allow-code=c --code-header c:d27a.h -o - --pattern 'abc' >"$dir/a.c" 2>"$dir/err"; then
+if $T "$RXC" --allow-code=c --code-header c:d27a.h -o - --pattern 'abc' >"$dir/a.c" 2>"$dir/err"; then
     grep -q '^#include "d27a.h"' "$dir/a.c" && pass "hdr.no_segment_still_emitted" ||
         fail "hdr.no_segment_still_emitted [cli§1.22¶2]" "no '#include \"d27a.h\"' in a granted no-segment artifact"
 else
@@ -359,7 +361,7 @@ fb() { # name cite want-exit stderr-ERE written(yes|no) files-expected(list or -
     shift 6
     local dir=$W/fb/$name
     mkdir -p "$dir/out"
-    (cd "$CELL" && $T "$PCREC" "$@" -o "$dir/out" >"$dir/stdout" 2>"$dir/stderr")
+    (cd "$CELL" && $T "$RXC" "$@" -o "$dir/out" >"$dir/stdout" 2>"$dir/stderr")
     local got=$? why=""
     [ "$got" = "$want" ] || why="exit: expected $want got $got (stderr: $(oneline "$dir/stderr"))"
     if [ -z "$why" ] && [ "$ere" != - ] && ! grep -Eqi -- "$ere" "$dir/stderr"; then
@@ -401,7 +403,7 @@ rawcheck file.hdr_nonascii_refused_no_raw_bytes "$W/fb/hdr_nonascii_refused/stde
 # -o - with a refused target: nothing on stdout (§11.9¶8 'no artifact is written')
 dir=$W/fb/stdout_refused
 mkdir -p "$dir"
-(cd "$CELL" && $T "$PCREC" --target coded -o - d27/rxt/two_targets.rxt >"$dir/stdout" 2>"$dir/stderr")
+(cd "$CELL" && $T "$RXC" --target coded -o - d27/rxt/two_targets.rxt >"$dir/stdout" 2>"$dir/stderr")
 r=$?
 if [ "$r" = 1 ] && [ ! -s "$dir/stdout" ]; then pass "file.stdout_refused_writes_nothing"; else
     fail "file.stdout_refused_writes_nothing [§11.9¶8;cli§1.1.1¶4]" "exit $r, stdout $(wc -c <"$dir/stdout") bytes"
@@ -434,7 +436,7 @@ fi
 # ------------------------------------------------------------------
 dir=$W/misc/emit_main
 mkdir -p "$dir"
-if $T "$PCREC" --allow-code=c --emit-main -o "$dir/em.c" --pattern 'a(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)b' 2>"$dir/err" &&
+if $T "$RXC" --allow-code=c --emit-main -o "$dir/em.c" --pattern 'a(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)b' 2>"$dir/err" &&
     $T "$CC" -std=gnu11 -O1 -o "$dir/em" "$dir/em.c" 2>>"$dir/err"; then
     $T "$dir/em" ab >/dev/null 2>&1
     r1=$?
@@ -452,7 +454,7 @@ fi
 # ------------------------------------------------------------------
 dir=$W/misc/unreach_split
 mkdir -p "$dir"
-if $T "$PCREC" --allow-code=c -o "$dir/a.c" --pattern '(?:(?C`c: return RX_PASS;`)){0}a' 2>"$dir/err" &&
+if $T "$RXC" --allow-code=c -o "$dir/a.c" --pattern '(?:(?C`c: return RX_PASS;`)){0}a' 2>"$dir/err" &&
     $T "$CC" "${GCCF[@]}" -c -o "$dir/a.o" "$dir/a.c" 2>>"$dir/err"; then
     pass "werror.unreachable_split_form"
 else

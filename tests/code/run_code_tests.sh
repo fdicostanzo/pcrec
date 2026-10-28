@@ -743,7 +743,7 @@ d27_run() { # pcrec-binary log
         bash "$SCRIPT_DIR/d27/run.sh" >"$2" 2>&1
     sed -n 's/^d27: \([0-9]*\) passed, \([0-9]*\) failed$/\1 \2/p' "$2" | tail -1
 }
-read -r d27p d27f <<<"$(d27_run "$PCREC" "$WORK/d27.log")"
+read -r d27p d27f <<<"$(d27_run "${PCREC}" "$WORK/d27.log")"
 if [ "${d27f:-x}" = 0 ] && [ "${d27p:-0}" -ge "$D27_FLOOR" ]; then
     ok "the D27 suite: $d27p passed, 0 failed (floor $D27_FLOOR)"
 else
