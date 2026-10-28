@@ -545,13 +545,18 @@ is the one a scan from `startpos` gives.**
   `tuning.md` §2.42).
 - <a id="s3-1-p13"></a>[3.1¶13] Positions so proved consume no step budget and no capacity: the budgets
   meter only the work the matcher performs.
-- <a id="s3-1-p14"></a>[3.1¶14] No artifact begins a scan later where that could change whether a
-  budget-limited search answers or gives up (`tuning.md` §2.41: a
-  count-collapsed prefilter declines the handoff).
+- <a id="s3-1-p14"></a>[3.1¶14] No artifact with a DFA scan begins that scan later where that could
+  change whether a budget-limited search answers or gives up (`tuning.md`
+  §2.41: a count-collapsed prefilter declines the handoff). A VM artifact
+  with no DFA scan begins its attempts later only as ¶15a allows.
 - <a id="s3-1-p15"></a>[3.1¶15] A search that gives up under `-fno-start-set` — on steps, work, backtrack
   frames, trail, or a caller buffer's capacity — may return the answer an
   unbounded budget and capacity return when the skip is on. It never does the
   reverse: an answer under `-fno-start-set` is the answer with the skip.
+- <a id="s3-1-p15a"></a>[3.1¶15a] Likewise under `-fno-req-handoff` on a VM artifact with no DFA
+  scan, where the handoff skips the attempts before a necessary run's whole
+  run (`tuning.md` §2.41¶8b, ¶9a): a search that gives up denied may return
+  the unbounded answer with the handoff, never the reverse.
 
 <a id="s3-1-p16"></a>[3.1¶16] **`caps[0][0]` is where REPORTING begins, which is not always where matching
 began.** `\K` resets the reported start to wherever the winning path last
@@ -2453,7 +2458,13 @@ the value.
 (`tuning.md` §2.41): an emitted pre-check (`_REQ_WHY "emitted"`), a DFA scan
 in front of the body (a DFA artifact, or a hybrid's prefilter), a finite `K`,
 a prefilter that is not count-collapsed, and not a hybrid with a `\G` start
-family whose prefilter window is its match ceiling. The pre-check's LANDMARK
+family whose prefilter window is its match ceiling; or where one of its
+attempt-loop rows applies (`tuning.md` §2.41¶8b): a VM artifact with no DFA
+scan (`_VM_PREFILTER "none"`), an unanchored pattern, and a whole run with a
+finite `K`, whose landmark is that WHOLE run and whose `K` is its maximum
+byte offset (the attempt loop's first attempt begins at the hit less `K`, and
+re-enters after each failed attempt where every part of the pre-check is a
+byte or slice of the run). The pre-check's LANDMARK
 is the run's window where `_REQ_RUN` is not `"none"`, else the one byte
 `_REQ_BYTE`. Then every match begins at most `K` bytes before an occurrence of
 the landmark; the pre-check's search block returns the LEAST position
@@ -2468,7 +2479,8 @@ under `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before
 the window `TRA`; `(?:\d{1,3}\.){3}\d{1,3}` reads `"3"`, the most digits
 before the first `.`. Where `_DFA_PREFILTER` is `"handoff"` the forward scan
 also re-enters the handoff at each restart (§6.3.4). A non-`"none"` value never
-changes an answer or a give-up.
+changes an answer; on a DFA-scan route it never changes a give-up either, and
+on the attempt-loop rows a give-up may become the unbounded answer (§3.1¶15a).
 
 <a id="s6-3-7-p12"></a>[6.3.7¶12] **`<PREFIX>_VM_START_SCAN`** — where a VM attempt can start.
 

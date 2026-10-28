@@ -1,0 +1,935 @@
+# tests/litscan/handoff_vm.rxt -- [REQRUN-VM], THE HANDOFF ON THE VM ROUTES:
+# the VM attempt loop with no DFA scan (`engine vm`) starts at the whole
+# run's first hit less K and re-enters it after each failed attempt; the VM
+# hybrid's prefilter re-enters it inside its forward scan (tuning.md §2.41).
+#
+# Written by gen_handoff_vm.py with gen_handoff.py's oracles: a `byte`
+# block's cells from python3 `re` AND libpcre2 (which must agree), a
+# `utf8` block's (and \G, \K) from libpcre2 alone (`# pcre2-only`), at
+# EVERY character-boundary start position. The rows are reqvm0's probes:
+# the give-up witness (its deny arm's give-ups are run_axes.sh's GIVEUP1
+# entries), \G before the run, a lookbehind, utf8 round-up, caseless K in
+# bytes, \K, the declines, and bench subst cases 7 and 2 on small subjects.
+
+# GIVE-UP WITNESS: under -fno-req-handoff startpos 0..8 of the first subject give up (steps); the handoff starts the loop at the whole run's hit less K = 24 and answers (one direction only)
+pattern (a?){12}a{12}xyz
+features all
+budget steps=2000
+encoding byte
+engine vm
+ms 0 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 1 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 2 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 3 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 4 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 5 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 6 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 7 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 8 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 9 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 10 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 11 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 12 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 13 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 14 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 15 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 16 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 17 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 18 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 19 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 20 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 21 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 22 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 23 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 24 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 25 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 26 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 27 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 28 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 29 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 30 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 31 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 32 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 33 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 34 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 35 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 36 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 37 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 38 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 39 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 40 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 41 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 42 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ms 43 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz" 43 58
+ns 44 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 45 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 46 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 47 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 48 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 49 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 50 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 51 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 52 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 53 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 54 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 55 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 56 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 57 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ns 58 "aaaaaaaaaaaabqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaxyz"
+ms 0 "aaaaaaaaaaaaxyz" 0 15
+ns 1 "aaaaaaaaaaaaxyz"
+ns 2 "aaaaaaaaaaaaxyz"
+ns 3 "aaaaaaaaaaaaxyz"
+ns 4 "aaaaaaaaaaaaxyz"
+ns 5 "aaaaaaaaaaaaxyz"
+ns 6 "aaaaaaaaaaaaxyz"
+ns 7 "aaaaaaaaaaaaxyz"
+ns 8 "aaaaaaaaaaaaxyz"
+ns 9 "aaaaaaaaaaaaxyz"
+ns 10 "aaaaaaaaaaaaxyz"
+ns 11 "aaaaaaaaaaaaxyz"
+ns 12 "aaaaaaaaaaaaxyz"
+ns 13 "aaaaaaaaaaaaxyz"
+ns 14 "aaaaaaaaaaaaxyz"
+ns 15 "aaaaaaaaaaaaxyz"
+ns 0 "xyz"
+ns 1 "xyz"
+ns 2 "xyz"
+ns 3 "xyz"
+
+# VM-only, K = 1 from the wider branch; dense dead `abc` hits re-enter after each failed attempt
+pattern (?:xx|y)abc
+features all
+encoding byte
+engine vm
+ms 0 "zxxabc" 1 6
+ms 1 "zxxabc" 1 6
+ns 2 "zxxabc"
+ns 3 "zxxabc"
+ns 4 "zxxabc"
+ns 5 "zxxabc"
+ns 6 "zxxabc"
+ms 0 "yabc" 0 4
+ns 1 "yabc"
+ns 2 "yabc"
+ns 3 "yabc"
+ns 4 "yabc"
+ms 0 "xabcyabc" 4 8
+ms 1 "xabcyabc" 4 8
+ms 2 "xabcyabc" 4 8
+ms 3 "xabcyabc" 4 8
+ms 4 "xabcyabc" 4 8
+ns 5 "xabcyabc"
+ns 6 "xabcyabc"
+ns 7 "xabcyabc"
+ns 8 "xabcyabc"
+ms 0 "zabczabcxxabc" 8 13
+ms 1 "zabczabcxxabc" 8 13
+ms 2 "zabczabcxxabc" 8 13
+ms 3 "zabczabcxxabc" 8 13
+ms 4 "zabczabcxxabc" 8 13
+ms 5 "zabczabcxxabc" 8 13
+ms 6 "zabczabcxxabc" 8 13
+ms 7 "zabczabcxxabc" 8 13
+ms 8 "zabczabcxxabc" 8 13
+ns 9 "zabczabcxxabc"
+ns 10 "zabczabcxxabc"
+ns 11 "zabczabcxxabc"
+ns 12 "zabczabcxxabc"
+ns 13 "zabczabcxxabc"
+ms 0 "xyabc" 1 5
+ms 1 "xyabc" 1 5
+ns 2 "xyabc"
+ns 3 "xyabc"
+ns 4 "xyabc"
+ns 5 "xyabc"
+ns 0 "abcabcxxab"
+ns 1 "abcabcxxab"
+ns 2 "abcabcxxab"
+ns 3 "abcabcxxab"
+ns 4 "abcabcxxab"
+ns 5 "abcabcxxab"
+ns 6 "abcabcxxab"
+ns 7 "abcabcxxab"
+ns 8 "abcabcxxab"
+ns 9 "abcabcxxab"
+ns 10 "abcabcxxab"
+
+# VM-only ENTRY ONLY (`x` is a set-rest byte the run does not hold): K = 5
+pattern x{2,5}(?i:cat)
+features all
+encoding byte
+engine vm
+ms 0 "xxxxxCaT" 0 8
+ms 1 "xxxxxCaT" 1 8
+ms 2 "xxxxxCaT" 2 8
+ms 3 "xxxxxCaT" 3 8
+ns 4 "xxxxxCaT"
+ns 5 "xxxxxCaT"
+ns 6 "xxxxxCaT"
+ns 7 "xxxxxCaT"
+ns 8 "xxxxxCaT"
+ms 0 "zxxxxxcat" 1 9
+ms 1 "zxxxxxcat" 1 9
+ms 2 "zxxxxxcat" 2 9
+ms 3 "zxxxxxcat" 3 9
+ms 4 "zxxxxxcat" 4 9
+ns 5 "zxxxxxcat"
+ns 6 "zxxxxxcat"
+ns 7 "zxxxxxcat"
+ns 8 "zxxxxxcat"
+ns 9 "zxxxxxcat"
+ms 0 "xxcat xxcat" 0 5
+ms 1 "xxcat xxcat" 6 11
+ms 2 "xxcat xxcat" 6 11
+ms 3 "xxcat xxcat" 6 11
+ms 4 "xxcat xxcat" 6 11
+ms 5 "xxcat xxcat" 6 11
+ms 6 "xxcat xxcat" 6 11
+ns 7 "xxcat xxcat"
+ns 8 "xxcat xxcat"
+ns 9 "xxcat xxcat"
+ns 10 "xxcat xxcat"
+ns 11 "xxcat xxcat"
+ms 0 "xxcatxxxxxcat" 0 5
+ms 1 "xxcatxxxxxcat" 5 13
+ms 2 "xxcatxxxxxcat" 5 13
+ms 3 "xxcatxxxxxcat" 5 13
+ms 4 "xxcatxxxxxcat" 5 13
+ms 5 "xxcatxxxxxcat" 5 13
+ms 6 "xxcatxxxxxcat" 6 13
+ms 7 "xxcatxxxxxcat" 7 13
+ms 8 "xxcatxxxxxcat" 8 13
+ns 9 "xxcatxxxxxcat"
+ns 10 "xxcatxxxxxcat"
+ns 11 "xxcatxxxxxcat"
+ns 12 "xxcatxxxxxcat"
+ns 13 "xxcatxxxxxcat"
+ns 0 "xcat"
+ns 1 "xcat"
+ns 2 "xcat"
+ns 3 "xcat"
+ns 4 "xcat"
+
+# pcre2-only
+# \G before the run (reqvm0 P4): NOMATCH from 0 on zzabcatdog; a \G reading the moved start reports (2,10)
+pattern (?:\Gab|x)(cat)dog
+features all
+encoding byte
+engine vm
+ns 0 "zzabcatdog"
+ns 1 "zzabcatdog"
+ms 2 "zzabcatdog" 2 10
+ns 3 "zzabcatdog"
+ns 4 "zzabcatdog"
+ns 5 "zzabcatdog"
+ns 6 "zzabcatdog"
+ns 7 "zzabcatdog"
+ns 8 "zzabcatdog"
+ns 9 "zzabcatdog"
+ns 10 "zzabcatdog"
+ms 0 "abcatdog" 0 8
+ns 1 "abcatdog"
+ns 2 "abcatdog"
+ns 3 "abcatdog"
+ns 4 "abcatdog"
+ns 5 "abcatdog"
+ns 6 "abcatdog"
+ns 7 "abcatdog"
+ns 8 "abcatdog"
+ms 0 "zxcatdog" 1 8
+ms 1 "zxcatdog" 1 8
+ns 2 "zxcatdog"
+ns 3 "zxcatdog"
+ns 4 "zxcatdog"
+ns 5 "zxcatdog"
+ns 6 "zxcatdog"
+ns 7 "zxcatdog"
+ns 8 "zxcatdog"
+ms 0 "zzabcatdogxcatdog" 10 17
+ms 1 "zzabcatdogxcatdog" 10 17
+ms 2 "zzabcatdogxcatdog" 2 10
+ms 3 "zzabcatdogxcatdog" 10 17
+ms 4 "zzabcatdogxcatdog" 10 17
+ms 5 "zzabcatdogxcatdog" 10 17
+ms 6 "zzabcatdogxcatdog" 10 17
+ms 7 "zzabcatdogxcatdog" 10 17
+ms 8 "zzabcatdogxcatdog" 10 17
+ms 9 "zzabcatdogxcatdog" 10 17
+ms 10 "zzabcatdogxcatdog" 10 17
+ns 11 "zzabcatdogxcatdog"
+ns 12 "zzabcatdogxcatdog"
+ns 13 "zzabcatdogxcatdog"
+ns 14 "zzabcatdogxcatdog"
+ns 15 "zzabcatdogxcatdog"
+ns 16 "zzabcatdogxcatdog"
+ns 17 "zzabcatdogxcatdog"
+
+# pcre2-only
+# \G matching at the startpos (reqvm0 P3)
+pattern (?:\Gab|x)abc
+features all
+encoding byte
+engine vm
+ms 0 "xxabcab" 1 5
+ms 1 "xxabcab" 1 5
+ns 2 "xxabcab"
+ns 3 "xxabcab"
+ns 4 "xxabcab"
+ns 5 "xxabcab"
+ns 6 "xxabcab"
+ns 7 "xxabcab"
+ms 0 "ababc" 0 5
+ns 1 "ababc"
+ns 2 "ababc"
+ns 3 "ababc"
+ns 4 "ababc"
+ns 5 "ababc"
+ms 0 "abcxabc" 3 7
+ms 1 "abcxabc" 3 7
+ms 2 "abcxabc" 3 7
+ms 3 "abcxabc" 3 7
+ns 4 "abcxabc"
+ns 5 "abcxabc"
+ns 6 "abcxabc"
+ns 7 "abcxabc"
+
+# a lookbehind before the run (reqvm0 P2): the attempt reads below the moved start
+pattern (?<=q.)ab
+features all
+encoding byte
+engine vm
+ms 0 "qzab" 2 4
+ms 1 "qzab" 2 4
+ms 2 "qzab" 2 4
+ns 3 "qzab"
+ns 4 "qzab"
+ms 0 "zqzab" 3 5
+ms 1 "zqzab" 3 5
+ms 2 "zqzab" 3 5
+ms 3 "zqzab" 3 5
+ns 4 "zqzab"
+ns 5 "zqzab"
+ms 0 "qzabqab" 2 4
+ms 1 "qzabqab" 2 4
+ms 2 "qzabqab" 2 4
+ns 3 "qzabqab"
+ns 4 "qzabqab"
+ns 5 "qzabqab"
+ns 6 "qzabqab"
+ns 7 "qzabqab"
+ns 0 "ab"
+ns 1 "ab"
+ns 2 "ab"
+
+# pcre2-only
+# utf8, K = 4 (reqvm0 P5): c - K lands inside a character and rounds up
+pattern .cd
+features all
+encoding utf8
+engine vm
+ms 0 "\xe2\x82\xac\xe2\x82\xaccd" 3 8
+ms 3 "\xe2\x82\xac\xe2\x82\xaccd" 3 8
+ns 6 "\xe2\x82\xac\xe2\x82\xaccd"
+ns 7 "\xe2\x82\xac\xe2\x82\xaccd"
+ns 8 "\xe2\x82\xac\xe2\x82\xaccd"
+ms 0 "x\xe2\x82\xaccd" 1 6
+ms 1 "x\xe2\x82\xaccd" 1 6
+ns 4 "x\xe2\x82\xaccd"
+ns 5 "x\xe2\x82\xaccd"
+ns 6 "x\xe2\x82\xaccd"
+ms 0 "\xf0\x9f\x98\x80cd" 0 6
+ns 4 "\xf0\x9f\x98\x80cd"
+ns 5 "\xf0\x9f\x98\x80cd"
+ns 6 "\xf0\x9f\x98\x80cd"
+ns 0 "cd"
+ns 1 "cd"
+ns 2 "cd"
+ms 0 "\xc3\xa9cd\xe2\x82\xaccd" 0 4
+ms 2 "\xc3\xa9cd\xe2\x82\xaccd" 4 9
+ms 3 "\xc3\xa9cd\xe2\x82\xaccd" 4 9
+ms 4 "\xc3\xa9cd\xe2\x82\xaccd" 4 9
+ns 7 "\xc3\xa9cd\xe2\x82\xaccd"
+ns 8 "\xc3\xa9cd\xe2\x82\xaccd"
+ns 9 "\xc3\xa9cd\xe2\x82\xaccd"
+
+# pcre2-only
+# utf8, K = 12: three characters of up to four bytes
+pattern .{3}cat
+features all
+encoding utf8
+engine vm
+ms 0 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 0 15
+ns 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 12 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ms 0 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat" 0 12
+ns 3 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 6 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 9 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 10 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 11 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ns 12 "\xe2\x82\xac\xe2\x82\xac\xe2\x82\xaccat"
+ms 0 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ms 1 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat" 1 16
+ns 5 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 9 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 13 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 14 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 15 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 16 "a\xf0\x9f\x98\x80\xf0\x9f\x98\x80\xf0\x9f\x98\x80cat"
+ns 0 "\xf0\x9f\x98\x80cat"
+ns 4 "\xf0\x9f\x98\x80cat"
+ns 5 "\xf0\x9f\x98\x80cat"
+ns 6 "\xf0\x9f\x98\x80cat"
+ns 7 "\xf0\x9f\x98\x80cat"
+
+# pcre2-only
+# utf8, ill-formed text before the run: c - K among continuation bytes
+pattern .{1,3}cd
+features all
+encoding utf8
+engine vm
+ns 5 "\x80\x80\x80\x80\x80cd"
+ns 6 "\x80\x80\x80\x80\x80cd"
+ns 7 "\x80\x80\x80\x80\x80cd"
+ns 0 "ab\x80\x80\x80\x80cd"
+ns 1 "ab\x80\x80\x80\x80cd"
+ns 6 "ab\x80\x80\x80\x80cd"
+ns 7 "ab\x80\x80\x80\x80cd"
+ns 8 "ab\x80\x80\x80\x80cd"
+ms 14 "\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80xcd" 14 17
+ns 15 "\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80xcd"
+ns 16 "\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80xcd"
+ns 17 "\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80xcd"
+
+# pcre2-only
+# caseless utf8 (reqvm0 P6): (?i)s matches U+017F, two bytes, so K = 2, not 0
+pattern (?i)stra
+features all
+encoding utf8
+engine vm
+ms 0 "x\xc5\xbftra" 1 6
+ms 1 "x\xc5\xbftra" 1 6
+ns 3 "x\xc5\xbftra"
+ns 4 "x\xc5\xbftra"
+ns 5 "x\xc5\xbftra"
+ns 6 "x\xc5\xbftra"
+ms 0 "\xc5\xbf\xc5\xbftra" 2 7
+ms 2 "\xc5\xbf\xc5\xbftra" 2 7
+ns 4 "\xc5\xbf\xc5\xbftra"
+ns 5 "\xc5\xbf\xc5\xbftra"
+ns 6 "\xc5\xbf\xc5\xbftra"
+ns 7 "\xc5\xbf\xc5\xbftra"
+ms 0 "stra" 0 4
+ns 1 "stra"
+ns 2 "stra"
+ns 3 "stra"
+ns 4 "stra"
+ms 0 "xSTRA" 1 5
+ms 1 "xSTRA" 1 5
+ns 2 "xSTRA"
+ns 3 "xSTRA"
+ns 4 "xSTRA"
+ns 5 "xSTRA"
+ms 0 "\xc3\xa9\xc5\xbfTRA" 2 7
+ms 2 "\xc3\xa9\xc5\xbfTRA" 2 7
+ns 4 "\xc3\xa9\xc5\xbfTRA"
+ns 5 "\xc3\xa9\xc5\xbfTRA"
+ns 6 "\xc3\xa9\xc5\xbfTRA"
+ns 7 "\xc3\xa9\xc5\xbfTRA"
+
+# the same pattern under -e byte: K = 0
+pattern (?i)stra
+features all
+encoding byte
+engine vm
+ns 0 "x\xff\xfftra"
+ns 1 "x\xff\xfftra"
+ns 2 "x\xff\xfftra"
+ns 3 "x\xff\xfftra"
+ns 4 "x\xff\xfftra"
+ns 5 "x\xff\xfftra"
+ns 6 "x\xff\xfftra"
+ms 0 "stra" 0 4
+ns 1 "stra"
+ns 2 "stra"
+ns 3 "stra"
+ns 4 "stra"
+ms 0 "xSTRA" 1 5
+ms 1 "xSTRA" 1 5
+ns 2 "xSTRA"
+ns 3 "xSTRA"
+ns 4 "xSTRA"
+ns 5 "xSTRA"
+
+# pcre2-only
+# \K: the reported start may exceed the moved start
+pattern ab\Kcd
+features all
+encoding byte
+engine vm
+ms 0 "abcd" 2 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+ms 0 "zabcd" 3 5
+ms 1 "zabcd" 3 5
+ns 2 "zabcd"
+ns 3 "zabcd"
+ns 4 "zabcd"
+ns 5 "zabcd"
+ms 0 "abxabcd" 5 7
+ms 1 "abxabcd" 5 7
+ms 2 "abxabcd" 5 7
+ms 3 "abxabcd" 5 7
+ns 4 "abxabcd"
+ns 5 "abxabcd"
+ns 6 "abxabcd"
+ns 7 "abxabcd"
+
+# decline: a backreference before the run (K unbounded)
+pattern (a)\1xyz
+features all
+encoding byte
+engine vm
+ms 0 "aaxyz" 0 5
+ns 1 "aaxyz"
+ns 2 "aaxyz"
+ns 3 "aaxyz"
+ns 4 "aaxyz"
+ns 5 "aaxyz"
+ms 0 "zaaxyz" 1 6
+ms 1 "zaaxyz" 1 6
+ns 2 "zaaxyz"
+ns 3 "zaaxyz"
+ns 4 "zaaxyz"
+ns 5 "zaaxyz"
+ns 6 "zaaxyz"
+ns 0 "axyz"
+ns 1 "axyz"
+ns 2 "axyz"
+ns 3 "axyz"
+ns 4 "axyz"
+
+# decline: an unbounded prefix (a+) before the run
+pattern a+xyz
+features all
+encoding byte
+engine vm
+ms 0 "aaaaxyz" 0 7
+ms 1 "aaaaxyz" 1 7
+ms 2 "aaaaxyz" 2 7
+ms 3 "aaaaxyz" 3 7
+ns 4 "aaaaxyz"
+ns 5 "aaaaxyz"
+ns 6 "aaaaxyz"
+ns 7 "aaaaxyz"
+ms 0 "zaxyz" 1 5
+ms 1 "zaxyz" 1 5
+ns 2 "zaxyz"
+ns 3 "zaxyz"
+ns 4 "zaxyz"
+ns 5 "zaxyz"
+ns 0 "xyz"
+ns 1 "xyz"
+ns 2 "xyz"
+ns 3 "xyz"
+
+# decline: one attempt (^)
+pattern ^abcd
+features all
+encoding byte
+engine vm
+ms 0 "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+ns 0 "zabcd"
+ns 1 "zabcd"
+ns 2 "zabcd"
+ns 3 "zabcd"
+ns 4 "zabcd"
+ns 5 "zabcd"
+
+# bench subst case 7's pattern (url-tld-fix), VM-only: the whole run https://www. at offset 0 drives every attempt
+pattern (https://www\.(?:acme|globex|initech|umbrella|hooli)\.(com|de|fr|nl|org)/[^"?\s]*)(?:(\?(?:[^"\s]*&)?tld=)(?!\2\b)[a-z]+|(?!\?(?:[^"\s]*&)?tld=)(\?[^"\s]*)?(?="))
+features all
+encoding byte
+engine vm
+ms 0 "\x22https://www.acme.com/a?tld=de\x22 x" 1 30
+ms 1 "\x22https://www.acme.com/a?tld=de\x22 x" 1 30
+ns 2 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 3 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 4 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 5 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 6 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 7 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 8 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 9 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 10 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 11 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 12 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 13 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 14 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 15 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 16 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 17 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 18 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 19 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 20 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 21 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 22 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 23 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 24 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 25 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 26 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 27 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 28 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 29 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 30 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 31 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 32 "\x22https://www.acme.com/a?tld=de\x22 x"
+ns 33 "\x22https://www.acme.com/a?tld=de\x22 x"
+ms 0 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22" 1 23
+ms 1 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22" 1 23
+ns 2 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 3 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 4 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 5 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 6 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 7 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 8 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 9 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 10 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 11 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 12 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 13 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 14 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 15 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 16 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 17 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 18 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 19 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 20 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 21 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 22 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 23 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 24 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 25 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 26 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 27 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 28 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 29 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 30 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 31 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 32 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 33 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 34 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 35 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 36 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 37 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 38 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 39 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 40 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 41 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 42 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 43 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 44 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 45 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 46 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 47 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 48 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 49 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 50 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 51 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 52 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 53 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 54 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 55 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 56 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 57 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 58 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ns 59 "\x22https://www.hooli.org/\x22 \x22https://www.acme.de/b?x=1&tld=de\x22"
+ms 0 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 4 34
+ms 1 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 4 34
+ms 2 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 4 34
+ms 3 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 4 34
+ms 4 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 4 34
+ms 5 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 6 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 7 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 8 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 9 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 10 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 11 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 12 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 13 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 14 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 15 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 16 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 17 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 18 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 19 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 20 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 21 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 22 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 23 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 24 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 25 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 26 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 27 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 28 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 29 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 30 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 31 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 32 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 33 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 34 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 35 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ms 36 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22" 36 59
+ns 37 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 38 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 39 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 40 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 41 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 42 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 43 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 44 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 45 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 46 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 47 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 48 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 49 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 50 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 51 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 52 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 53 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 54 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 55 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 56 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 57 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 58 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 59 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+ns 60 "GET https://www.initech.fr/?tld=nl\x22 https://www.globex.nl/p\x22"
+
+# bench subst case 2's pattern (rare), the VM hybrid: dense '/' and dead admin/ hits re-enter inside the prefilter
+pattern /(phpmyadmin|wp-admin)/[a-z]+\.php
+features all
+encoding byte
+ms 0 "/a/b/c/wp-admin/setup.php" 6 25
+ms 1 "/a/b/c/wp-admin/setup.php" 6 25
+ms 2 "/a/b/c/wp-admin/setup.php" 6 25
+ms 3 "/a/b/c/wp-admin/setup.php" 6 25
+ms 4 "/a/b/c/wp-admin/setup.php" 6 25
+ms 5 "/a/b/c/wp-admin/setup.php" 6 25
+ms 6 "/a/b/c/wp-admin/setup.php" 6 25
+ns 7 "/a/b/c/wp-admin/setup.php"
+ns 8 "/a/b/c/wp-admin/setup.php"
+ns 9 "/a/b/c/wp-admin/setup.php"
+ns 10 "/a/b/c/wp-admin/setup.php"
+ns 11 "/a/b/c/wp-admin/setup.php"
+ns 12 "/a/b/c/wp-admin/setup.php"
+ns 13 "/a/b/c/wp-admin/setup.php"
+ns 14 "/a/b/c/wp-admin/setup.php"
+ns 15 "/a/b/c/wp-admin/setup.php"
+ns 16 "/a/b/c/wp-admin/setup.php"
+ns 17 "/a/b/c/wp-admin/setup.php"
+ns 18 "/a/b/c/wp-admin/setup.php"
+ns 19 "/a/b/c/wp-admin/setup.php"
+ns 20 "/a/b/c/wp-admin/setup.php"
+ns 21 "/a/b/c/wp-admin/setup.php"
+ns 22 "/a/b/c/wp-admin/setup.php"
+ns 23 "/a/b/c/wp-admin/setup.php"
+ns 24 "/a/b/c/wp-admin/setup.php"
+ns 25 "/a/b/c/wp-admin/setup.php"
+ms 0 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 1 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 2 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 3 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 4 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 5 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 6 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 7 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 8 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 9 "/x/admin/ /phpmyadmin/index.php" 10 31
+ms 10 "/x/admin/ /phpmyadmin/index.php" 10 31
+ns 11 "/x/admin/ /phpmyadmin/index.php"
+ns 12 "/x/admin/ /phpmyadmin/index.php"
+ns 13 "/x/admin/ /phpmyadmin/index.php"
+ns 14 "/x/admin/ /phpmyadmin/index.php"
+ns 15 "/x/admin/ /phpmyadmin/index.php"
+ns 16 "/x/admin/ /phpmyadmin/index.php"
+ns 17 "/x/admin/ /phpmyadmin/index.php"
+ns 18 "/x/admin/ /phpmyadmin/index.php"
+ns 19 "/x/admin/ /phpmyadmin/index.php"
+ns 20 "/x/admin/ /phpmyadmin/index.php"
+ns 21 "/x/admin/ /phpmyadmin/index.php"
+ns 22 "/x/admin/ /phpmyadmin/index.php"
+ns 23 "/x/admin/ /phpmyadmin/index.php"
+ns 24 "/x/admin/ /phpmyadmin/index.php"
+ns 25 "/x/admin/ /phpmyadmin/index.php"
+ns 26 "/x/admin/ /phpmyadmin/index.php"
+ns 27 "/x/admin/ /phpmyadmin/index.php"
+ns 28 "/x/admin/ /phpmyadmin/index.php"
+ns 29 "/x/admin/ /phpmyadmin/index.php"
+ns 30 "/x/admin/ /phpmyadmin/index.php"
+ns 31 "/x/admin/ /phpmyadmin/index.php"
+ms 0 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 1 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 2 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 3 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 4 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 5 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 6 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 7 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 8 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 9 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 10 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 11 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 12 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 13 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 14 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 15 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 16 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 17 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 18 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 19 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 20 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 21 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ms 22 "/admin//wp-admin/a.ph /wp-admin/b.php" 22 37
+ns 23 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 24 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 25 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 26 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 27 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 28 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 29 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 30 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 31 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 32 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 33 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 34 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 35 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 36 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ns 37 "/admin//wp-admin/a.ph /wp-admin/b.php"
+ms 0 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 1 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 2 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 3 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 4 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 5 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 6 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 7 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 8 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 9 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 10 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 11 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 12 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 13 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 14 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 15 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 16 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ms 17 "GET /wp-admin/ x /phpmyadmin/s.php" 17 34
+ns 18 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 19 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 20 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 21 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 22 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 23 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 24 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 25 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 26 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 27 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 28 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 29 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 30 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 31 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 32 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 33 "GET /wp-admin/ x /phpmyadmin/s.php"
+ns 34 "GET /wp-admin/ x /phpmyadmin/s.php"
+
+# the hybrid's prefilter re-entry over dead landmark hits
+pattern (ab)c?userpass
+features all
+encoding byte
+ms 0 "userpass userpass abuserpass" 18 28
+ms 1 "userpass userpass abuserpass" 18 28
+ms 2 "userpass userpass abuserpass" 18 28
+ms 3 "userpass userpass abuserpass" 18 28
+ms 4 "userpass userpass abuserpass" 18 28
+ms 5 "userpass userpass abuserpass" 18 28
+ms 6 "userpass userpass abuserpass" 18 28
+ms 7 "userpass userpass abuserpass" 18 28
+ms 8 "userpass userpass abuserpass" 18 28
+ms 9 "userpass userpass abuserpass" 18 28
+ms 10 "userpass userpass abuserpass" 18 28
+ms 11 "userpass userpass abuserpass" 18 28
+ms 12 "userpass userpass abuserpass" 18 28
+ms 13 "userpass userpass abuserpass" 18 28
+ms 14 "userpass userpass abuserpass" 18 28
+ms 15 "userpass userpass abuserpass" 18 28
+ms 16 "userpass userpass abuserpass" 18 28
+ms 17 "userpass userpass abuserpass" 18 28
+ms 18 "userpass userpass abuserpass" 18 28
+ns 19 "userpass userpass abuserpass"
+ns 20 "userpass userpass abuserpass"
+ns 21 "userpass userpass abuserpass"
+ns 22 "userpass userpass abuserpass"
+ns 23 "userpass userpass abuserpass"
+ns 24 "userpass userpass abuserpass"
+ns 25 "userpass userpass abuserpass"
+ns 26 "userpass userpass abuserpass"
+ns 27 "userpass userpass abuserpass"
+ns 28 "userpass userpass abuserpass"
+ms 0 "abcuserpas abcuserpass" 11 22
+ms 1 "abcuserpas abcuserpass" 11 22
+ms 2 "abcuserpas abcuserpass" 11 22
+ms 3 "abcuserpas abcuserpass" 11 22
+ms 4 "abcuserpas abcuserpass" 11 22
+ms 5 "abcuserpas abcuserpass" 11 22
+ms 6 "abcuserpas abcuserpass" 11 22
+ms 7 "abcuserpas abcuserpass" 11 22
+ms 8 "abcuserpas abcuserpass" 11 22
+ms 9 "abcuserpas abcuserpass" 11 22
+ms 10 "abcuserpas abcuserpass" 11 22
+ms 11 "abcuserpas abcuserpass" 11 22
+ns 12 "abcuserpas abcuserpass"
+ns 13 "abcuserpas abcuserpass"
+ns 14 "abcuserpas abcuserpass"
+ns 15 "abcuserpas abcuserpass"
+ns 16 "abcuserpas abcuserpass"
+ns 17 "abcuserpas abcuserpass"
+ns 18 "abcuserpas abcuserpass"
+ns 19 "abcuserpas abcuserpass"
+ns 20 "abcuserpas abcuserpass"
+ns 21 "abcuserpas abcuserpass"
+ns 22 "abcuserpas abcuserpass"
+ms 0 "xabuserpassabcuserpass" 1 11
+ms 1 "xabuserpassabcuserpass" 1 11
+ms 2 "xabuserpassabcuserpass" 11 22
+ms 3 "xabuserpassabcuserpass" 11 22
+ms 4 "xabuserpassabcuserpass" 11 22
+ms 5 "xabuserpassabcuserpass" 11 22
+ms 6 "xabuserpassabcuserpass" 11 22
+ms 7 "xabuserpassabcuserpass" 11 22
+ms 8 "xabuserpassabcuserpass" 11 22
+ms 9 "xabuserpassabcuserpass" 11 22
+ms 10 "xabuserpassabcuserpass" 11 22
+ms 11 "xabuserpassabcuserpass" 11 22
+ns 12 "xabuserpassabcuserpass"
+ns 13 "xabuserpassabcuserpass"
+ns 14 "xabuserpassabcuserpass"
+ns 15 "xabuserpassabcuserpass"
+ns 16 "xabuserpassabcuserpass"
+ns 17 "xabuserpassabcuserpass"
+ns 18 "xabuserpassabcuserpass"
+ns 19 "xabuserpassabcuserpass"
+ns 20 "xabuserpassabcuserpass"
+ns 21 "xabuserpassabcuserpass"
+ns 22 "xabuserpassabcuserpass"
