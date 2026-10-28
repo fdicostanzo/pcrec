@@ -53,3 +53,4 @@ manager: re-pin job witness movers rows=219 -> 221; re-measure
 composition_artifacts_floor for the plain arm (86 now vs floor 100) in
 scripts/emit_sweep.py, or leave since the job ignores the sweep rc; requeue.
 Scratch: build/ic2fixmov/ (gitignored).
+OWED: none (manager decisions listed above are not lane-owed runs).
