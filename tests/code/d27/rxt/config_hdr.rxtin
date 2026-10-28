@@ -1,0 +1,7 @@
+# rxt_format.md §1.1¶2: nor may it carry --code-header (refused at parse).
+config cc
+  pcrec --code-header c:d27a.h
+target t = blk with cc
+
+pattern abc
+name blk

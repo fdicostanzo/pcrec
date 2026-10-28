@@ -1,0 +1,3 @@
+# A library file (no target): its definition carries code.
+pattern q(?C`c: return RX_PASS;`)
+name def

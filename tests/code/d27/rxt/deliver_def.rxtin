@@ -1,0 +1,5 @@
+# A library file (no target): a definition with code and an exported group.
+pattern (?<g>q)(?C`c: return RX_PASS;`)
+name def
+export g
+features named-groups

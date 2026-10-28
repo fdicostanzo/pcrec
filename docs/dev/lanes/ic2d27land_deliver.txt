@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2d27land_report.md
+sections: Summary; Tests landed; Bug fixes; Spec gaps; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic2d27-test

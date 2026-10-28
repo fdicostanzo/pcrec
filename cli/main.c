@@ -1078,13 +1078,13 @@ static void mode_admits_note(const char *a, CliUnadmitted *u)
 /* [INLINE-C] 1b one numbered callout's declaration, `N<sep>ATTRS`, read by
  * the library's one shape reader (`pcrec_callout_decl_read`, which the `.rxt`
  * `callout` line's reader also calls); which attributes exist is the
- * compile's question. The echo of the value is escaped (`pcrec_sb_text`):
- * no control byte reaches the terminal. 0, or 1 with a diagnostic. */
+ * compile's question. The echo of the value is escaped (`pcrec_sb_ctext`):
+ * no control byte and no non-ASCII byte (a bidi control) reaches the terminal. 0, or 1 with a diagnostic. */
 static int cli_callout_decl(const char *v, char sep, PcrecCalloutDecl *d)
 {
     if (pcrec_callout_decl_read(v, sep, d)) return 0;
     StrBuf b = { 0 };
-    pcrec_sb_text(&b, v);
+    pcrec_sb_ctext(&b, (const unsigned char *)v, strlen(v), PCREC_CTEXT_COMMENT);
     cli_err("a callout declaration is N%sATTRS (N a number 0-255, ATTRS a "
             "comma-separated list such as consume,once; got '%s')",
             sep == ':' ? ":" : " ", b.p ? b.p : "");
@@ -1119,7 +1119,7 @@ static int cli_code_header(const char *v, PcrecCodeHeader *h)
         free(hdr);
     }
     StrBuf b = { 0 };
-    pcrec_sb_text(&b, v);
+    pcrec_sb_ctext(&b, (const unsigned char *)v, strlen(v), PCREC_CTEXT_COMMENT);
     cli_err("--code-header: %s (got '%s')", why, b.p ? b.p : "");
     pcrec_sb_free(&b);
     return 1;

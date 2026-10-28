@@ -1,0 +1,132 @@
+# D27 spec-first CLI cases for [INLINE-C] stage 2 (embedded C).
+# Columns (TAB-separated):
+#   name  cite  args  pattern  exit  stderr_ere  written
+# args     : extra pcrec arguments, eval'd by run.sh ("-" = none)
+# pattern  : the --pattern-esc VALUE BODY (run.sh adds the double quotes;
+#            the escapes are rxt_format.md §1.5.1's: \" \\ \n \t \r \f \v \xHH);
+#            "-" = no --pattern
+# exit     : pcrec's expected exit code (cli.md §3.1)
+# stderr_ere: an extended regex stderr must match ("-" = not checked)
+# written  : yes = the -o file must exist afterwards; no = it must not;
+#            none = run.sh passes no -o (a describe mode, which writes no C)
+# A refused case writes nothing (match_api.md §11.9¶8 "no artifact is written").
+#
+# ---- the grant (cli.md §1.22¶1, match_api.md §11.9¶8, pattern_language.md §7.12¶2) ----
+grant_absent_refused	cli§1.22¶1; match_api §11.9¶8	-	a(?C`c: return RX_PASS;`)b	1	requires module 'code-c'	no
+grant_absent_names_door	cli§1.22¶1	-	a(?C`c: return RX_PASS;`)b	1	--allow-code=c	no
+grant_eq_form	cli§1.22¶1	--allow-code=c	a(?C`c: return RX_PASS;`)b	0	-	yes
+grant_space_form	cli§1.22¶1	--allow-code c	a(?C`c: return RX_PASS;`)b	0	-	yes
+grant_unknown_lang	cli§1.22¶1 (unknown language refused by name)	--allow-code=py	a(?C`c: return RX_PASS;`)b	1	py	no
+grant_list_with_unknown	cli§1.22¶1 (LANGS a list; unknown refused by name)	--allow-code=c,py	a(?C`c: return RX_PASS;`)b	1	py	no
+grant_unknown_lang_plain	cli§1.22¶1 (unknown language refused by name, even with no segment)	--allow-code=py	abc	1	py	no
+grant_empty_is_none	cli§1.22¶1 (empty list = no grant, cf. describe modes "absent, empty or a list")	--allow-code=	a(?C`c: return RX_PASS;`)b	1	code-c	no
+grant_later_wins_empty	cli§1.22¶1 "A later --allow-code wins"	--allow-code=c --allow-code=	a(?C`c: return RX_PASS;`)b	1	code-c	no
+grant_later_wins_c	cli§1.22¶1 "A later --allow-code wins"	--allow-code= --allow-code=c	a(?C`c: return RX_PASS;`)b	0	-	yes
+grant_no_space_after_colon	§11.9¶1 (tag c then ':')	-	(?C`c:return RX_PASS;`)a	1	code-c	no
+grant_attrs_still_code	§11.9¶1 (c,consume,once:)	-	(?C`c,consume: return 0;`)a	1	code-c	no
+# ---- features cannot open the door (cli §1.17¶3, match_api §11.9¶8, §8.2¶7c) ----
+features_code_c_refused	cli§1.17¶3	--features code-c	abc	1	code-c	no
+features_list_code_c_refused	cli§1.17¶3	--features classes,code-c	abc	1	code-c	no
+features_code_c_even_granted	§11.9¶8 "a features text naming it is refused wherever it arrives from"	--allow-code=c --features code-c	a(?C`c: return RX_PASS;`)b	1	code-c	no
+features_all_not_code	cli§1.17¶3 "all does not contain them"	--features all	a(?C`c: return RX_PASS;`)b	1	requires module 'code-c'	no
+features_all_granted_ok	cli§1.22¶1	--features all --allow-code=c	a(?C`c: return RX_PASS;`)b	0	-	yes
+# ---- a string without a registered tag and ':' stays a binding name (§11.9¶1) ----
+binding_c_plain	§11.9¶1	--features callouts	(?C\"c\")a	0	-	yes
+binding_c_consume	§11.9¶1 "(?C\"c,consume\") names the binding c"	--features callouts	(?C\"c,consume\")a	0	-	yes
+# ---- every PCRE2 string delimiter carries code (§11.9¶1, pattern_language §7.12¶1) ----
+delim_backtick	§11.9¶1	-	(?C`c: return RX_PASS;`)a	1	code-c	no
+delim_quote	§11.9¶1	-	(?C'c: return RX_PASS;')a	1	code-c	no
+delim_dquote	§11.9¶1	-	(?C\"c: return RX_PASS;\")a	1	code-c	no
+delim_caret	§11.9¶1	-	(?C^c: return RX_PASS;^)a	1	code-c	no
+delim_percent	§11.9¶1	-	(?C%c: return RX_PASS;%)a	1	code-c	no
+delim_hash	§11.9¶1	-	(?C#c: return RX_PASS;#)a	1	code-c	no
+delim_dollar	§11.9¶1	-	(?C$c: return RX_PASS;$)a	1	code-c	no
+delim_brace	§11.9¶1	-	(?C{c: return RX_PASS;})a	1	code-c	no
+# ---- the refusal set: one refused case per class, one admitted neighbour (§11.9¶3) ----
+ref_bidi_202e	§11.9¶3 Bidi_Control	--allow-code=c	a(?C`c: /* \xe2\x80\xae */ return RX_PASS;`)b	1	U\+202E	no
+ref_bidi_2066	§11.9¶3 Bidi_Control	--allow-code=c	a(?C`c: /* \xe2\x81\xa6 */ return RX_PASS;`)b	1	U\+2066	no
+ref_bidi_061c	§11.9¶3 Bidi_Control	--allow-code=c	a(?C`c: /* \xd8\x9c */ return RX_PASS;`)b	1	U\+061C	no
+ref_bidi_200f	§11.9¶3 Bidi_Control	--allow-code=c	a(?C`c: /* \xe2\x80\x8f */ return RX_PASS;`)b	1	U\+200F	no
+ok_nonascii_e9	§11.9¶3 (a non-ignorable non-ASCII letter is admitted)	--allow-code=c	a(?C`c: /* \xc3\xa9 */ return RX_PASS;`)b	0	-	yes
+ref_di_200b	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xe2\x80\x8b */ return RX_PASS;`)b	1	U\+200B	no
+ref_di_00ad	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xc2\xad */ return RX_PASS;`)b	1	U\+00AD	no
+ref_di_feff	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xef\xbb\xbf */ return RX_PASS;`)b	1	U\+FEFF	no
+ref_di_fe0f	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xef\xb8\x8f */ return RX_PASS;`)b	1	U\+FE0F	no
+ref_di_034f	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xcd\x8f */ return RX_PASS;`)b	1	U\+034F	no
+ref_di_3164	§11.9¶3 Default_Ignorable_Code_Point	--allow-code=c	a(?C`c: /* \xe3\x85\xa4 */ return RX_PASS;`)b	1	U\+3164	no
+ok_di_neighbour_3163	§11.9¶3 (U+3163 is not ignorable)	--allow-code=c	a(?C`c: /* \xe3\x85\xa3 */ return RX_PASS;`)b	0	-	yes
+ref_di_e0001	§11.9¶3 Default_Ignorable_Code_Point (plane 14 tag)	--allow-code=c	a(?C`c: /* \xf3\xa0\x80\x81 */ return RX_PASS;`)b	1	U\+E0001	no
+ref_di_1d173	§11.9¶3 Default_Ignorable_Code_Point (musical format)	--allow-code=c	a(?C`c: /* \xf0\x9d\x85\xb3 */ return RX_PASS;`)b	1	U\+1D173	no
+ok_4byte_emoji	§11.9¶3 (a 4-byte non-ignorable character is admitted)	--allow-code=c	a(?C`c: /* \xf0\x9f\x98\x80 */ return RX_PASS;`)b	0	-	yes
+ref_nel_0085	§11.9¶3 U+0085	--allow-code=c	a(?C`c: /* \xc2\x85 */ return RX_PASS;`)b	1	U\+0085	no
+ok_c1_0086	§11.9¶3 (only C0, DEL and U+0085 are named; U+0086 is C1)	--allow-code=c	a(?C`c: /* \xc2\x86 */ return RX_PASS;`)b	0	-	yes
+ref_ls_2028	§11.9¶3 U+2028	--allow-code=c	a(?C`c: /* \xe2\x80\xa8 */ return RX_PASS;`)b	1	U\+2028	no
+ref_ps_2029	§11.9¶3 U+2029	--allow-code=c	a(?C`c: /* \xe2\x80\xa9 */ return RX_PASS;`)b	1	U\+2029	no
+ok_2027	§11.9¶3 (U+2027 neighbour, not refused)	--allow-code=c	a(?C`c: /* \xe2\x80\xa7 */ return RX_PASS;`)b	0	-	yes
+ref_cr_lone	§11.9¶3 CR not followed by LF	--allow-code=c	a(?C`c: /* x\ry */ return RX_PASS;`)b	1	(U\+000D|CR|carriage).*would differ from what gcc compiles \(pattern offset 1\)$	no
+ref_cr_at_end	§11.9¶3 CR not followed by LF (CR last byte of the code)	--allow-code=c	a(?C`c: return RX_PASS;\r`)b	1	(U\+000D|CR|carriage)	no
+ref_cr_cr_lf	§11.9¶3 (first CR of CR CR LF has no LF after it)	--allow-code=c	a(?C`c: /* x */\r\r\nreturn RX_PASS;`)b	1	(U\+000D|CR|carriage)	no
+ok_crlf	§11.9¶3 "CR LF are allowed"	--allow-code=c	a(?C`c: /* x */\r\nreturn RX_PASS;`)b	0	-	yes
+ref_vt	§11.9¶3 vertical tab	--allow-code=c	a(?C`c: /* x\vy */ return RX_PASS;`)b	1	U\+000B	no
+ref_ff	§11.9¶3 form feed	--allow-code=c	a(?C`c: /* x\fy */ return RX_PASS;`)b	1	U\+000C	no
+ok_tab	§11.9¶3 "Tab ... allowed"	--allow-code=c	a(?C`c:\treturn RX_PASS;`)b	0	-	yes
+ok_lf	§11.9¶3 "line feed ... allowed"	--allow-code=c	a(?C`c:\nreturn RX_PASS;\n`)b	0	-	yes
+ref_c0_01	§11.9¶3 other C0	--allow-code=c	a(?C`c: /* \x01 */ return RX_PASS;`)b	1	U\+0001	no
+ref_c0_1b	§11.9¶3 other C0 (ESC)	--allow-code=c	a(?C`c: /* \x1b[2J */ return RX_PASS;`)b	1	U\+001B	no
+ref_c0_1f	§11.9¶3 other C0	--allow-code=c	a(?C`c: /* \x1f */ return RX_PASS;`)b	1	U\+001F	no
+ref_del	§11.9¶3 DEL	--allow-code=c	a(?C`c: /* \x7f */ return RX_PASS;`)b	1	U\+007F	no
+ok_tilde_7e	§11.9¶3 (DEL's neighbour 0x7E is printable)	--allow-code=c	a(?C`c: /* ~ */ return RX_PASS;`)b	0	-	yes
+ok_byte_ff	§11.9¶3 "a byte that starts no well-formed UTF-8 character is passed through"	--allow-code=c	a(?C`c: /* \xff */ return RX_PASS;`)b	0	-	yes
+ok_lone_cont	§11.9¶3 (lone continuation byte passed through)	--allow-code=c	a(?C`c: /* \x80 */ return RX_PASS;`)b	0	-	yes
+ok_truncated_3byte	§11.9¶3 (E2 80 then ASCII: ill-formed, passed through)	--allow-code=c	a(?C`c: /* \xe2\x80 */ return RX_PASS;`)b	0	-	yes
+ok_overlong_2028	§11.9¶3 (an overlong 4-byte spelling of U+2028 is not well-formed: passed through)	--allow-code=c	a(?C`c: /* \xf0\x82\x80\xa8 */ return RX_PASS;`)b	0	-	yes
+ok_surrogate_bytes	§11.9¶3 (ED A0 80 is ill-formed UTF-8: passed through)	--allow-code=c	a(?C`c: /* \xed\xa0\x80 */ return RX_PASS;`)b	0	-	yes
+ref_offset_named	§11.9¶3 "naming the code point and its byte offset in the segment"	--allow-code=c	a(?C`c: /*\xe2\x80\xae*/ return RX_PASS;`)b	1	U\+202E.*[0-9]	no
+ref_second_segment	§11.9¶3 (every segment is checked, not only the first)	--allow-code=c	(?C`c: return RX_PASS;`)a(?C`c: /* \xe2\x80\x8b */ return RX_PASS;`)b	1	U\+200B	no
+# ---- every rule of §11.1-§11.8 holds for a code site (§11.9¶1) ----
+site_in_lookbehind_refused	§11.1¶1	--allow-code=c --features all	(?<=a(?C`c: return RX_PASS;`))b	1	-	no
+site_in_lookahead_ok	§11.1¶1	--allow-code=c --features all	(?=a(?C`c: return RX_PASS;`))a	0	-	yes
+site_reached_by_recursion_refused	§11.1¶1	--allow-code=c --features all	(a(?C`c: return RX_PASS;`))(?1)	1	-	no
+site_in_group_not_called_ok	§11.1¶1	--allow-code=c --features all	(a(?C`c: return RX_PASS;`))b	0	-	yes
+site_quantified_refused	§11.1¶1 "A callout itself is not quantifiable"	--allow-code=c	(?C`c: return RX_PASS;`)?a	1	-	no
+site_group_quantified_ok	§11.1¶1 "(?:(?C1))* is a group and is"	--allow-code=c	(?:(?C`c: return RX_PASS;`))*a	0	-	yes
+once_after_greedy_refused	§11.7¶1;§11.8¶3	--allow-code=c --features all	a+(?C`c,once: return RX_PASS;`)b	1	offset	no
+once_after_possessive_ok	§11.8¶3 fix row 1	--allow-code=c --features all	a++(?C`c,once: return RX_PASS;`)b	0	-	yes
+verify_refused	§11.7¶1 "verify refused by name"	--allow-code=c	(?C`c,verify: return RX_PASS;`)a	1	verify	no
+attr_unknown_refused	§11.7¶2	--allow-code=c	(?C`c,bogus: return RX_PASS;`)a	1	bogus	no
+attr_repeated_refused	§11.7¶2	--allow-code=c	(?C`c,once,once: return RX_PASS;`)a	1	-	no
+attr_empty_item_refused	§11.7¶2	--allow-code=c	(?C`c,,once: return RX_PASS;`)a	1	-	no
+attr_trailing_empty_refused	§11.7¶2	--allow-code=c	(?C`c,: return RX_PASS;`)a	1	-	no
+attr_consume_once_ok	§11.9¶1 (c,consume,once:)	--allow-code=c	(?C`c,consume,once: return 0;`)a	0	-	yes
+prefix_rx_callout_refused	§11.2¶2 "-p rx_callout ... refused"	--allow-code=c -p rx_callout	(?C`c: return RX_PASS;`)a	1	-	no
+# ---- --emit-main (cli §1.10¶2, match_api §11.2¶2) ----
+emit_main_code_ok	cli§1.10¶2 "Embedded code ... is accepted"	--allow-code=c --emit-main	a(?C`c: return RX_PASS;`)b	0	-	yes
+emit_main_mixed_refused	§11.2¶2 (names the first binding)	--allow-code=c --features callouts --emit-main	a(?C`c: return RX_PASS;`)(?C\"octet\")b	1	rx_callout_octet	no
+# ---- the describe modes parse code whatever the grant says (cli §1.22¶1, match_api §11.9¶8) ----
+describe_emit_ir_absent	cli§1.22¶1	--emit-ir	a(?C`c: return RX_PASS;`)b	0	-	none
+describe_emit_ir_empty	cli§1.22¶1	--emit-ir --allow-code=	a(?C`c: return RX_PASS;`)b	0	-	none
+describe_emit_facts_absent	cli§1.22¶1	--emit-facts	a(?C`c: return RX_PASS;`)b	0	-	none
+describe_count_groups_absent	cli§1.22¶1	--count-groups	(a)(?C`c: return RX_PASS;`)(b)	0	-	none
+describe_count_groups_granted	cli§1.22¶1	--count-groups --allow-code=c	(a)(?C`c: return RX_PASS;`)(b)	0	-	none
+# ---- --code-header (cli §1.22¶2, match_api §11.9¶7-¶8) ----
+hdr_needs_grant_no_segment	cli§1.22¶2 "It is code: it needs --allow-code ... even when the pattern has no segment"	--code-header c:d27a.h	abc	1	-	no
+hdr_granted_no_segment	cli§1.22¶2	--allow-code=c --code-header c:d27a.h	abc	0	-	yes
+hdr_quoted_ok	cli§1.22¶2	--allow-code=c '--code-header=c:"d27a.h"'	a(?C`c: return RX_PASS;`)b	0	-	yes
+hdr_angle_ok	cli§1.22¶2	--allow-code=c '--code-header=c:<stdint.h>'	a(?C`c: return RX_PASS;`)b	0	-	yes
+hdr_backslash_refused	cli§1.22¶2 "no backslash"	--allow-code=c '--code-header=c:"a\b.h"'	a(?C`c: return RX_PASS;`)b	1	-	no
+hdr_control_refused	cli§1.22¶2 "printable ASCII"	--allow-code=c $'--code-header=c:"a\x01b.h"'	a(?C`c: return RX_PASS;`)b	1	got .c:"a\\x01b\.h"	no
+hdr_nonascii_refused	cli§1.22¶2 "printable ASCII"	--allow-code=c $'--code-header=c:"\xc3\xa9.h"'	a(?C`c: return RX_PASS;`)b	1	\\xc3\\xa9	no
+hdr_bidi_refused	cli§1.22¶2 "printable ASCII" (a Bidi_Control byte run in a header name)	--allow-code=c $'--code-header=c:"a\xe2\x80\xaeb.h"'	a(?C`c: return RX_PASS;`)b	1	\\xe2\\x80\\xae	no
+hdr_unknown_lang_refused	cli§1.22¶2 "needs --allow-code for its language" (py has no grant)	--allow-code=c --code-header py:d27a.h	a(?C`c: return RX_PASS;`)b	1	-	no
+# ---- which strings are code: only a registered tag then ':' (§11.9¶1); without
+#      --features callouts a non-code string callout says module 'callouts' ----
+tag_cc_is_not_code	§11.9¶1 "registered language tag"	-	(?C`cc: return 0;`)a	1	requires module 'callouts'	no
+tag_upper_C_is_not_code	§11.9¶1 (c is the tag; C is not registered)	-	(?C`C: return 0;`)a	1	requires module 'callouts'	no
+tag_leading_space_is_not_code	§11.9¶1 "DECODED string starts with a registered language tag"	-	(?C` c: return 0;`)a	1	requires module 'callouts'	no
+tag_doubled_delim_first_is_not_code	§11.9¶1-¶2 (the decoded string starts with a backtick)	-	(?C```c: return 0;`)a	1	requires module 'callouts'	no
+tag_c_no_colon_is_binding	§11.9¶1 "(?C\"c,consume\") names the binding c"	-	(?C`c,once`)a	1	requires module 'callouts'	no
+grant_upper_C_unknown	cli§1.22¶1 ("c the one language"; unknown refused by name)	--allow-code=C	a(?C`c: return RX_PASS;`)b	1	'C'	no
+cond_condition_refused	pattern_language§7.11¶3 "inside a conditional's condition";§11.9¶1	--allow-code=c --features all	(?(?=a(?C`c: return RX_PASS;`))a|b)	1	-	no
+once_in_repeat_refused	§11.8¶3 last row	--allow-code=c --features all	(?:a(?C`c,once: return RX_PASS;`))+	1	-	no
+ref_bidi_right_after_colon	§11.9¶3 (offset 0 of the code)	--allow-code=c	a(?C`c:\xe2\x80\xae return RX_PASS;`)b	1	U\+202E	no
+ref_in_doubled_region	§11.9¶3 (a refused character next to an undone doubled delimiter)	--allow-code=c	a(?C`c: /* ``\xe2\x80\x8b`` */ return RX_PASS;`)b	1	U\+200B	no

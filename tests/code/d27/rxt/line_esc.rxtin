@@ -1,0 +1,5 @@
+# match_api.md §11.9¶4: under pattern-esc every decoded line carries its own
+# #line naming the opener's line (line 4 here), with no column.
+target rx = blk
+pattern-esc "ab(?C`c:\nint d27_ok = 1;\nreturn d27_undeclared2 + d27_ok;`)"
+name blk
