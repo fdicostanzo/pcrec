@@ -30,6 +30,12 @@
 #                             AND no new commit for N minutes (default 25),
 #                             counted from the LATEST of watch start, last file
 #                             change, last commit
+#   lanewatch: WAITING NAME label=L waited=Mm holder=H   (rc 14)
+#                             the QUIET condition holds but the lane has a live box-lock WAITER (scripts/boxlock
+#                             waiters): its label is NAME or starts `NAME-` (lanes label runs `NAME-what`), or its
+#                             cwd is under the lane's worktree. A lane queued behind the lock is not stalled, but
+#                             the manager should know (2026-10-27: a lane's chain waited 1 h, reported QUIET).
+#                             The lock is the real one unless PCREC_BOXLOCK_FILE is set (the self-test).
 #   lanewatch: GONE NAME      the worktree disappeared (rc 11)
 #   lanewatch: CAP NAME       --max-sec reached (default 14400 = 4 h): relaunch (rc 12)
 # ACTIVITY = the newest mtime of any file under worktrees/NAME EXCEPT .git and
@@ -77,6 +83,17 @@ if [ $follow = 1 ]; then
         act=${act:-0}; cm=${cm:-0}
         now=$(date +%s)
         last=$start; [ "$act" -gt "$last" ] && last=$act; [ "$cm" -gt "$last" ] && last=$cm
+        if [ $((now-last)) -ge "$qs" ]; then
+            w=$(bash "$(dirname "$0")/boxlock" waiters 2>/dev/null | awk -v n="$n" -v t="$t" '
+                { lab = ""; cwd = ""; ep = ""; hold = ""
+                  for (i = 1; i <= NF; i++) { split($i, kv, "="); v = substr($i, length(kv[1]) + 2)
+                      if (kv[1] == "label") lab = v; else if (kv[1] == "cwd") cwd = v; else if (kv[1] == "epoch") ep = v; else if (kv[1] == "holder") hold = v }
+                  if (lab == n || index(lab, n "-") == 1 || cwd == t || index(cwd, t "/") == 1) { print lab, ep, hold; exit } }')
+            if [ -n "$w" ]; then
+                set -- $w
+                fin "WAITING $n label=$1 waited=$(( (now-$2)/60 ))m holder=$3" 14
+            fi
+        fi
         [ $((now-last)) -ge "$qs" ] && fin "QUIET $n $(( (now-last)/60 )) last-change=$([ "$act" = 0 ] || iso "$act") last-commit=$([ "$cm" = 0 ] || iso "$cm")" 10
         [ $((now-start)) -ge "$max_sec" ] && fin "CAP $n" 12
         sleep "$every"

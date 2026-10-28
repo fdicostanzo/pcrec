@@ -395,5 +395,24 @@ P13=$(plant gatedrop 'if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) &&
 # S1631: the REJECTED qscripts form (every not-ready answer is a wait): the failed-dependency job goes silent again
 P14=$(plant anywait '        if [ "$age" -ge "$stuck" ]; then' '        case $ans in not-ready:*|READY-HUNG*) age=0 ;; esac; if [ "$age" -ge "$stuck" ]; then') || bad "plant S1631 did not land"
 [ -n "$P14" ] && { r=$(gate_case "$P14" p14 none "not-ready: waiting on main-build (failed) (since x)"); [ -z "$r" ] && ok "PLANT S1631 (any not-ready exempt): the failed-dependency job goes silent, the after-KEY-failed case goes red" || bad "PLANT S1631 not caught"; }
+# WAIT-LONG (lane lockwait): a real boxlock waiter on a SCRATCH lock, a scratch empty queue beside it; --wait-long-sec is seconds-scale
+WL=$T/wl; mkdir -p "$WL/q"; export PCREC_BOXLOCK_FILE=$WL/.box.lock
+"$TO" 60 bash "$here/boxlock" run --label wl-holder -- sleep 45 & wlk1=$!
+sleep 1
+"$TO" 60 bash "$here/boxlock" run --label wl-lane -- true 2>/dev/null & wlk2=$!
+sleep 4
+wlq() { "$TO" 30 bash "${1:-$QW}" --queue "$WL/q" --state "$WL/state" --no-ci --every 1 --max-sec 3 --wait-long-sec "${2:-2}" 2>&1; }
+mkdir -p "$WL/q"; : > "$WL/state"      # seeded: no history to replay
+w1=$(wlq); w2=$(wlq)
+printf '%s\n' "$w1" | grep -qE '^queuewatch: WAIT-LONG wl-lane pid=[0-9]+ waited=0m holder=wl-holder$' && ok "WAIT-LONG fires for a waiter past the threshold, naming label, pid, minutes and holder" || bad "WAIT-LONG: $w1"
+printf '%s\n' "$w2" | grep -q 'CAP' && ok "WAIT-LONG is reported once: the relaunch sees nothing new" || bad "WAIT-LONG repeated: $w2"
+rm -f "$WL/state"; : > "$WL/state"; w3=$(wlq "$QW" 1000)
+printf '%s\n' "$w3" | grep -q 'CAP' && ok "below the threshold (1000 s): no WAIT-LONG" || bad "WAIT-LONG early: $w3"
+P15=$(plant nothresh '[ -n "$wl_epoch" ] && [ $((now - wl_epoch)) -ge "$waitlong" ] || continue' '[ -n "$wl_epoch" ] || continue') && ln -sf "$here/boxlock" "$(dirname "$P15")/boxlock"
+[ -n "$P15" ] && { rm -f "$WL/state"; : > "$WL/state"; r=$(wlq "$P15" 1000); case $r in *WAIT-LONG*) ok "PLANT (threshold ignored): fires at 1000 s, so the below-threshold case goes red" ;; *) bad "PLANT nothresh not caught: $r" ;; esac; }
+P16=$(plant norepeatguard 'mark "${ev%%$'"'"'\t'"'"'*}"' ':') && ln -sf "$here/boxlock" "$(dirname "$P16")/boxlock"
+[ -n "$P16" ] && { rm -f "$WL/state"; : > "$WL/state"; wlq "$P16" >/dev/null; r=$(wlq "$P16"); case $r in *WAIT-LONG*) ok "PLANT (state not written): the event repeats, so the once-only case goes red" ;; *) bad "PLANT norepeat not caught: $r" ;; esac; }
+for p in $wlk1 $wlk2; do kill "$p" 2>/dev/null; done; wait 2>/dev/null
+
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
