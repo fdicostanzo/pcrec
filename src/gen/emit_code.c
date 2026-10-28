@@ -32,30 +32,32 @@
  * them once and an unused one costs nothing. Every helper reads an UNSET
  * span (len < 0: an unset group) as matching nothing; a SET span may have a
  * NULL `p` with `len` 0 (an empty group on a NULL subject), so `p` decides
- * nothing (review 2026-10-27-r1-ic2 F10). The contracts are match_api.md
- * §11.10's table, one row per helper. */
+ * nothing (review 2026-10-27-r1-ic2 F10). A helper taking a NUL-terminated
+ * `z` measures it first (`__builtin_strlen`), so a LITERAL `z` folds to a
+ * length compare and fixed-width compares with no loop (manager ruling
+ * 2026-10-27, "span-fold"). The contracts are match_api.md §11.10's table,
+ * one row per helper. */
 static const char span_helpers[] =
     "#ifndef PCREC_RX_SPAN_H\n"
     "#define PCREC_RX_SPAN_H\n"
     "typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;\n"
     "static inline int rx_eq(rx_span s, const char *z)\n"
     "{\n"
-    "    if (s.len < 0) return 0;\n"
-    "    for (ptrdiff_t i = 0; i < s.len; i++)\n"
-    "        if (!z[i] || (unsigned char)z[i] != s.p[i]) return 0;\n"
-    "    return z[s.len] == 0;\n"
+    "    size_t n = __builtin_strlen(z);\n"
+    "    if (s.len < 0 || (size_t)s.len != n) return 0;\n"
+    "    return n == 0 || __builtin_memcmp(s.p, z, n) == 0;\n"
     "}\n"
     "static inline int rx_eqi(rx_span s, const char *z)\n"
     "{\n"
-    "    if (s.len < 0) return 0;\n"
-    "    for (ptrdiff_t i = 0; i < s.len; i++) {\n"
+    "    size_t n = __builtin_strlen(z);\n"
+    "    if (s.len < 0 || (size_t)s.len != n) return 0;\n"
+    "    for (size_t i = 0; i < n; i++) {\n"
     "        unsigned a = s.p[i], b = (unsigned char)z[i];\n"
-    "        if (!b) return 0;\n"
     "        if (a - 'A' < 26u) a += 32;\n"
     "        if (b - 'A' < 26u) b += 32;\n"
     "        if (a != b) return 0;\n"
     "    }\n"
-    "    return z[s.len] == 0;\n"
+    "    return 1;\n"
     "}\n"
     "static inline int rx_u64(rx_span s, uint64_t *out)\n"
     "{\n"
@@ -91,9 +93,8 @@ static const char span_helpers[] =
     "}\n"
     "static inline ptrdiff_t rx_find(rx_span s, const char *z)\n"
     "{\n"
-    "    ptrdiff_t n = 0;\n"
+    "    ptrdiff_t n = (ptrdiff_t)__builtin_strlen(z);\n"
     "    if (s.len < 0) return -1;\n"
-    "    while (z[n]) n++;\n"
     "    for (ptrdiff_t i = 0; i + n <= s.len; i++) {\n"
     "        ptrdiff_t k = 0;\n"
     "        while (k < n && s.p[i + k] == (unsigned char)z[k]) k++;\n"

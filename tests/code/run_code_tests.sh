@@ -471,6 +471,56 @@ else
     bad "span_check.c did not build: $(head -5 "$WORK/sp.log")"
 fi
 
+# span-fold (manager ruling 2026-10-27): with a LITERAL z, rx_eq is a length
+# compare and fixed-width compares at -O2: no call and no loop (no branch back
+# to a label above it), read from the x86-64 assembly.
+printf '#include "sp.h"\n__attribute__((noinline)) int sf_eq(rx_span s) { return rx_eq(s, "GET"); }\n' > "$WORK/sf.c"
+if [ "$(uname -m)" != x86_64 ]; then
+    bad "span-fold: the assembly reader reads x86-64 only, and this machine is $(uname -m)"
+elif $CC -O2 -std=gnu11 -S -I"$WORK" -o "$WORK/sf.s" "$WORK/sf.c" 2> "$WORK/sf.log"; then
+    # The function's control-flow graph (blocks split at labels; an edge per
+    # jump, plus the fall-through unless a block ends in jmp/ret): a cycle
+    # is a loop, a backward jump alone is only block layout.
+    sfv="$(python3 - "$WORK/sf.s" <<'PY'
+import re, sys
+body, on = [], False
+for line in open(sys.argv[1]):
+    t = line.strip()
+    if t == "sf_eq:": on = True; continue
+    if on and t.startswith(".cfi_endproc"): break
+    if on and t and not t.startswith(".") or (on and re.match(r"\.L\w+:", t)): body.append(t)
+if not body: print("empty"); sys.exit()
+blocks, cur = [["<entry>"]], None
+for t in body:
+    if re.match(r"\.L\w+:$", t): blocks.append([t[:-1]])
+    else: blocks[-1].append(t)
+idx = {b[0]: i for i, b in enumerate(blocks)}
+out = set()
+edges = {i: set() for i in range(len(blocks))}
+for i, b in enumerate(blocks):
+    last = b[-1].split() if len(b) > 1 else []
+    for t in b[1:]:
+        op = t.split()
+        if op[0].startswith("call"): out.add("call")
+        if op[0].startswith("j") and len(op) > 1 and op[1] in idx: edges[i].add(idx[op[1]])
+    if not last or last[0] not in ("jmp", "ret") and i + 1 < len(blocks): edges[i].add(i + 1)
+state = {}
+def dfs(u):
+    state[u] = 1
+    for v in edges[u]:
+        if state.get(v) == 1: out.add("loop")
+        elif v not in state: dfs(v)
+    state[u] = 2
+dfs(0)
+print(" ".join(sorted(out)))
+PY
+)"
+    if [ -z "$sfv" ]; then ok "span-fold: rx_eq against a literal compiles to no call and no loop at -O2"
+    else bad "span-fold: rx_eq against a literal compiles with: $sfv"; fi
+else
+    bad "span-fold: sf.c did not compile: $(head -3 "$WORK/sf.log")"
+fi
+
 # ---- arm 10: the call form (match_api.md 11.2 1a) -------------------------------
 echo
 echo "== [INLINE-C] no indirect call through a binding the compiler can see =="
