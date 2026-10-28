@@ -577,7 +577,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [REQRUN-VM] STATE:not-started — THE REQUIRED-RUN HANDOFF AND RE-ENTRY WIDENED TO VM CONSUMERS (VM-only and VM-hybrid)
   filed: 2026-10-27 Frank + manager, from lane subtri (bench O-109 cases 7 url-tld-fix x3.89 and 2 rare x2.66 behind JIT); folds [L1-VMHYB] (filed same day) and [OPT-VMSEED]
   status (2026-10-27): not started. ONE behaviour, ONE site: on DFA routes the PRE site hands its run position on (ASSIGN) and the forward scan re-enters it ([REQ-HANDOFF-L1]); VM-only routes take ON_MISS (emit_dfa.c:1592), VM hybrids hand off once and never re-enter. Widen it to VM consumers.
-  next: step 0, a read-only fact lane: why VM routes were excluded (deliberate soundness or scope), and the VM-side soundness rule (every later match holds the run at or after the position; lookbehind, \G, start-anchored cases). Then a design note; measure on subst cases 2 and 7.
+  next: step 0 DONE (lane reqvm0, docs/dev/lanes/reqvm0_report.md): both exclusions were SCOPE. Hybrid half sound as-is (give-ups preserved). VM-only half is answer-identical but moves give-ups one way (budget): RULING NEEDED (Frank), then a build go.
   refs: docs/dev/lanes/subtri_report.md + subtri_evidence/; [REQ-HANDOFF-L1] (plan_completed.md); src/gen/emit_dfa.c emit_req_reentry_use; [PRIOR-COST-UNIFY] (case 2 byte choice, separate); memfn sites (the kit finds the run; pcrec owns the handoff)
   Measured twins (subtri, instructions:u, cycles as ratios): case 7 run-driven x3.7 instr / x2.0 cycles (keyed on `h` x10.7 / x4.9); case 2 run-driven x1.2 cycles alone, x4.8 with the byte re-key.
   - [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
