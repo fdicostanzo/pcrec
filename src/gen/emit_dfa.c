@@ -1584,14 +1584,6 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
                        "nothing on an admitted pre-check (the admission's `dominated` row "
                        "reads the same links)");
 
-    struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
-    mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
-    if (gate >= 0) {
-        if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
-        p[np].need = gate_need;
-        pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
-        p[np++].nterm = 1;
-    }
     /* [REQRUN-VM] the landmark kept is the WHOLE run where FIRST's row says
      * so: its own part where it is longer than the window, else the window,
      * which is then the whole run (`at` 0). The row's predicate read the
@@ -1603,6 +1595,15 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
                                     pcrec_fact_req_run(cx)->len)))
         pcrec_ctx_fail(cx, 0, "internal error: the handoff keeps the whole run, "
                        "but the pre-check's parts do not compare it");
+
+    struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
+    mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
+    if (gate >= 0) {
+        if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
+        p[np].need = gate_need;
+        pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
+        p[np++].nterm = 1;
+    }
     for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
         if (i == keep && handoff) s->ret_pred = (uint8_t)np;
         p[np++].fn_ref = (uint32_t)i + 1;

@@ -14,6 +14,6 @@ SAB_REACH_EXPECT='REACH-UTF8-REENTRY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (round.len > 0) pcrec_sb_splice(c, &round);
-    pf_emit_ofs_reseed('
+    if (f) pf_emit_ofs_reseed('
 SAB_AFTER='    (void)round;   /* SABOTAGE S814: no round-up */
-    pf_emit_ofs_reseed('
+    if (f) pf_emit_ofs_reseed('
