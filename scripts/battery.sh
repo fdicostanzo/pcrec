@@ -78,6 +78,7 @@ set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR" || exit 9
+. "$ROOT_DIR/scripts/tmpdir.sh"    # TMPDIR -> PCREC_TMPDIR (/var/tmp/pcrec-<user>)
 
 # [MACPORT] util-linux setsid (used below to detach) is absent on macOS.
 # Same perl POSIX::setsid() replacement scripts/watchdog uses — see that

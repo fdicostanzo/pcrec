@@ -59,9 +59,10 @@ src="tests/probes/${probe}.c"
 [ -f "$src" ] || { echo "measure.sh: no such probe: $src" >&2; exit 1; }
 mkdir -p docs/measurements
 out="docs/measurements/${probe}.txt"
-bin="$(mktemp /var/tmp/measure.XXXXXX)"
+. "$(dirname "$0")/tmpdir.sh"    # TMPDIR -> the PCREC_TMPDIR root
+bin="$(mktemp "$TMPDIR/measure.XXXXXX")"
 trap 'rm -f "$bin"' EXIT
-TMPDIR=/var/tmp gcc -I tests/fuzz -o "$bin" "$src" -ldl
+gcc -I tests/fuzz -o "$bin" "$src" -ldl
 {
     echo "# ${probe} — archived measurement report (D35: evidence, never an oracle)"
     echo "# regenerate: scripts/measure.sh ${probe}   (git diff shows what changed)"
