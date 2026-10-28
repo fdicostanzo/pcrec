@@ -433,7 +433,7 @@ if $CC $GENCFLAGS -I"$K" -o "$K/nu" "$K/nu_drv.c" 2> "$K/cc.log" && "$TIMEOUT_BI
 else
     bad "an empty group on a NULL subject: $("$K/nu" 2>&1; head -3 "$K/cc.log" | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"
 fi
-trap_row() {   # trap_row WHAT PATTERN SUBJECT
+trap_row() {   # trap_row WHAT PATTERN SUBJECT [other-signal]
     rm -f "$K/tr.c" "$K/tr"
     if ! pc --allow-code=c -p tr --emit-main -o "$K/tr.c" --pattern "$2" 2> "$K/p.log" ||
        ! $CC $GENCFLAGS -O1 -std=gnu11 -o "$K/tr" "$K/tr.c" 2> "$K/cc.log"; then
@@ -441,10 +441,26 @@ trap_row() {   # trap_row WHAT PATTERN SUBJECT
     fi
     "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
     local rc=$?
-    if [ $rc -gt 128 ] && [ $rc -ne 137 ]; then ok "$1: traps (exit $rc)"; else bad "$1: exit $rc, no trap"; fi
+    if [ -z "$TRAP_RC" ]; then bad "$1: exit $rc; no __builtin_trap signal is known for $(uname -m)"
+    elif [ "${4:-}" = other-signal ]; then
+        # The control: a crash by another signal, which the old any-signal
+        # test passed and this one must not.
+        if [ $rc -gt 128 ] && [ $rc -ne "$TRAP_RC" ]; then ok "$1: exit $rc, told apart from a trap"
+        else bad "$1: exit $rc, wanted a non-trap signal"; fi
+    elif [ $rc -eq "$TRAP_RC" ]; then ok "$1: traps (exit $rc, $TRAP_SIG)"
+    else bad "$1: exit $rc, not __builtin_trap's $TRAP_SIG (exit $TRAP_RC)"; fi
 }
+# F22 (review 2026-10-27-r1-ic2): the trap rows want __builtin_trap's own
+# signal, not any signal (a segfault once passed): ud2 is SIGILL on x86-64,
+# brk is SIGTRAP on arm64.
+case "$(uname -m)" in
+    x86_64|i?86)   TRAP_RC=132; TRAP_SIG=SIGILL ;;
+    aarch64|arm64) TRAP_RC=133; TRAP_SIG=SIGTRAP ;;
+    *)             TRAP_RC=; TRAP_SIG= ;;
+esac
 trap_row "a check segment returning 1" 'a(?C`c: return 1;`)b' ab
 trap_row "a segment falling off its end" 'a(?C`c: if (RX_POS > 99) return RX_PASS;`)b' ab
+trap_row "a segfaulting segment is not a trap (the control)" 'a(?C`c: return *(volatile int *)0;`)b' ab other-signal
 # F9 (review 2026-10-27-r1-ic2): a site no match can reach still builds
 # under -Werror (its file-local binding is read by no call).
 for up in 'a(?:(?C`c: return RX_PASS;`)){0}b' '(?(DEFINE)(?<d>x(?C`c: return RX_PASS;`)))ab'; do
