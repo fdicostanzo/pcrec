@@ -32,6 +32,7 @@ design `docs/design/inline_c.md`. `make test-code` runs `run_code_tests.sh`
 - `poison.h` — S-IC30's witness: poisons names a matcher uses.
 - `dt41.h` — DT-4.1 inline's counter.
 - `card_inline.sh` — the inline-mode measurement card (goal 3b): inline vs
-  the callout-free `--engine=vm` twin, fires counted; `--smoke` in make test,
+  the callout-free `--engine=vm` twin, hits/fires counted, instructions:u
+  per arm (`NA` without perf); `--smoke` in make test (each row's reach asserted),
   `--timed` only in a cleared timing window (UNMEASURED otherwise).
 - `run_code_tests.sh` — the eleven arms (its header lists them).

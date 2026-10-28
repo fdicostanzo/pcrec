@@ -689,6 +689,17 @@ if PCREC="$PCREC" CC="$CC" TMPDIR="$WORK" bash "$SCRIPT_DIR/card_inline.sh" --sm
 else
     bad "the inline-mode card did not run: $(cat "$WORK/card.tsv" 2>/dev/null)"
 fi
+# F19 (review 2026-10-27-r1-ic2): each row reaches what it measures. The
+# hit and tail rows fire their segment (fires > 0); the miss row's matcher
+# really walks the subject (hits > 0, so the prefilter did not reject it
+# unread) and never takes the segment's alternative (fires 0).
+cf="$(awk -F'\t' 'NR > 1 {printf "%s=%s/%s ", $1, $4, $5}' "$WORK/card.tsv")"
+if [ "$(awk -F'\t' '(($1=="inline:site_hit"||$1=="inline:tail") && $5+0 > 0) ||
+                    ($1=="inline:site_miss" && $4+0 > 0 && $5 == "0")' "$WORK/card.tsv" | wc -l)" = 3 ]; then
+    ok "the card's rows reach what they measure (hits/fires: $cf)"
+else
+    bad "a card row does not reach what it measures (hits/fires: ${cf:-no rows})"
+fi
 
 echo
 echo "checks passed: $pass"
