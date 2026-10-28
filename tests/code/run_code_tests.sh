@@ -165,6 +165,17 @@ refuse "a config's pcrec line cannot carry --allow-code" "--allow-code" --allow-
 refuse "a block's 'features code-c' is refused" "code-c" --allow-code=c -o "$R" "$D/blk_codec.rxt"
 refuse "reached code (a lib definition's segment) is refused" "lib_code.rxt:1 is not allowed" --allow-code=c --features all -o "$WORK/rdir" "$D/reach.rxt"
 [ -e "$WORK/rdir" ] && bad "a refused FILE target wrote $WORK/rdir"
+# F7 (review 2026-10-27-r1-ic2): a code-free target BEFORE a code target in
+# one file, no grant, -o DIR: the refusal leaves NO file of either target.
+printf 'target fr = fr\ntarget cd = cd\n\npattern ab\nname fr\n\npattern %s\nname cd\n' "$SEG" > "$D/two.rxt"
+mkdir -p "$WORK/tdir"
+if pc -o "$WORK/tdir" "$D/two.rxt" 2> "$WORK/t.log"; then
+    bad "a two-target file with an ungranted code target compiled"
+elif [ -n "$(ls -A "$WORK/tdir")" ]; then
+    bad "a refused two-target build wrote: $(ls "$WORK/tdir" | tr '\n' ' ')"
+else
+    ok "a refused multi-target build writes no target, the code-free one before it included"
+fi
 
 # ---- arm 4: the entry-point table ---------------------------------------------
 echo

@@ -87,7 +87,7 @@ pcrec [options] -o OUT.c --pattern 'PATTERN'
 | any other name | that `.c` plus its `.h` sibling, as §1.2 | exactly one |
 | `-` | one self-contained `.c` on stdout, as §1.2 | exactly one |
 
-<a id="s1-1-1-p4"></a>[1.1.1¶4] `-o FILE` or `-o -` over several targets is refused, naming the targets and the two ways forward (`--target`, or an existing directory). Each target is a separate compile writing its own translation unit.
+<a id="s1-1-1-p4"></a>[1.1.1¶4] `-o FILE` or `-o -` over several targets is refused, naming the targets and the two ways forward (`--target`, or an existing directory). Each target is a separate compile writing its own translation unit. Every target is compiled before any file is written, so a refused target (a code segment without `--allow-code` among the refusals) leaves no file of any target written.
 
 <a id="s1-1-1-p5"></a>[1.1.1¶5] `--target NAME` builds only the target whose prefix is `NAME`, searched across every file operand given. An unknown name is refused and the message lists the declared targets, each with its file.
 

@@ -2137,6 +2137,15 @@ static int compile_sources(const CliState *cli)
         rc = 1;
     }
 
+    /* EVERY TARGET COMPILES BEFORE ANY FILE IS WRITTEN (cli.md §1.1.1¶4;
+     * review 2026-10-27-r1-ic2 F7): a refused target, a code segment without
+     * the grant among them, leaves no earlier target's files behind. The
+     * outputs and their paths are held until the last compile succeeds. */
+    pcrec_output *outs = rc == 0 && nall ? calloc(nall, sizeof *outs) : NULL;
+    char **cpaths = rc == 0 && nall ? calloc(nall, sizeof *cpaths) : NULL;
+    char **hpaths = rc == 0 && nall ? calloc(nall, sizeof *hpaths) : NULL;
+    if (rc == 0 && nall && (!outs || !cpaths || !hpaths)) { perror("calloc"); rc = 1; }
+    size_t ncompiled = 0;
     for (size_t i = 0; rc == 0 && i < nall; i++) {
         const OwnedTarget *ot = &all[i];
         pcrec_options topt;
@@ -2230,20 +2239,31 @@ static int compile_sources(const CliState *cli)
             rc = 1;
             break;
         }
+        outs[i] = out;
+        cpaths[i] = cpath;
+        hpaths[i] = hpath;
+        ncompiled = i + 1;
+    }
+    for (size_t i = 0; rc == 0 && i < ncompiled; i++) {
         if (to_stdout) {
-            fputs(out.c_src, stdout);
+            fputs(outs[i].c_src, stdout);
             if (fflush(stdout) != 0 || ferror(stdout)) {
                 cli_err("write error on stdout");
                 rc = 1;
             }
-        } else if (write_file(cpath, out.c_src) != 0 ||
-                   write_file(hpath, out.h_src) != 0) {
+        } else if (write_file(cpaths[i], outs[i].c_src) != 0 ||
+                   write_file(hpaths[i], outs[i].h_src) != 0) {
             rc = 1;
         }
-        pcrec_output_free(&out);
-        free(cpath);
-        free(hpath);
     }
+    for (size_t i = 0; i < ncompiled; i++) {
+        pcrec_output_free(&outs[i]);
+        free(cpaths[i]);
+        free(hpaths[i]);
+    }
+    free(outs);
+    free(cpaths);
+    free(hpaths);
 
     free(all);
     for (size_t fi = 0; fi < cli->nfiles; fi++)
