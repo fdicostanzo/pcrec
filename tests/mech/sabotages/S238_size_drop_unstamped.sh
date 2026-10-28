@@ -26,12 +26,15 @@
 # `drop-end-mark` fit rung stamps size-cap-retry with the same cell line as
 # the optional-contributor drop; the plant reaches all three retry-stamping
 # rows, and the witness (`\p{L}` -e utf8) is unchanged.
+# RE-AIMED 2026-10-28 (lane reqvm1rung, [REQRUN-VM]): SAB_COUNT 3 -> 4. The new
+# `drop-handoff` fit rung stamps size-cap-retry with the same cell line; the
+# plant reaches all four retry-stamping rows, and the witness is unchanged.
 SAB_ID="S238-size-drop-unstamped"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="an artifact rescued by the optional-contributor drop rung stamps ENGINE_SEL \"selected\", so a caller cannot tell it from an unremarkable compile and the census's size-drop bucket empties into the state-cap overflow one"
 SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop' RE-POINTED 2026-10-13 (lane mechwit; same cause as S237): solo run DETECTED, reach:ok(2/2), anchoredmatch:10fail/18pass."
-SAB_COUNT=3
+SAB_COUNT=4
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking
 # the rung, both rows are certifying nothing.

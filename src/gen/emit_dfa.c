@@ -1178,6 +1178,8 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
      * ahead. */
     if (req_reentered(cx))
         pcrec_sb_printf(c, "%ssize_t landmark_position = handoff_position;\n", indent);
+    /* the whole run is the landmark only on the attempt loop's rows */
+    if (whole) cx->job->req_handoff_vm = true;
     if (k > 0 || round.len > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
@@ -7717,6 +7719,7 @@ static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
 {
     Ctx *cx = f->cx;
     const char *ind = f->dir->bind;
+    if (cand_finish_of(cx) == CAND_ROUTE_VM) cx->job->req_handoff_vm = true;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// this is a fresh search from here: the pre-check's landmark\n"
@@ -8849,12 +8852,14 @@ static bool req_parts_in_whole(Ctx *cx)
  * report): every attempt the loop runs is one it ran before, from a reset
  * run state, with `\G` reading `search_from`. No callout conjunct: fires on
  * attempts the engine skips are unspecified (match_api.md §11.6¶1), and a
- * consumer's text is ANY on the lowered tree, so K bounds it. */
+ * consumer's text is ANY on the lowered tree, so K bounds it. Declined on
+ * the retry after the size-cap ladder's `drop-handoff` row fired. */
 static bool req_handoff_entry_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
     CandSel vs = *s;
+    if (cx->req_handoff_dropped) return false;
     if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)))
         return false;
     if (pcrec_artifact_has_dfa_scan(cx) || !(cand_path_members(cx) & CAND_MVM))
@@ -9014,13 +9019,16 @@ static bool req_landmark_admits(const CandSel *s, long long k)
  * landmark's position, K is finite and the hybrid's two declines hold:
  * FIRST's own conjuncts, not restated), and the K admission passes against
  * the row it displaces. FIRST is READ, never restated: one fact, one proof,
- * one deny (`-fno-req-handoff` removes every handoff row). */
+ * one deny (`-fno-req-handoff` removes every handoff row). Inside a VM
+ * hybrid's prefilter it is declined after the size-cap ladder's
+ * `drop-handoff` row fired. */
 static bool pf_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     const CandUse *u;
     if (!s->forward) return false;
     u = req_use_read(cx, CAND_SLOT_NEXT);
+    if (cx->req_handoff_dropped && cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (u->use != REQ_USE_HANDOFF || u->whole) return false;
     return req_landmark_admits(s, pcrec_fact_req_landmark_maxoff(cx));
 }

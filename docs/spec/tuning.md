@@ -940,6 +940,8 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-41-p9a"></a>[2.41¶9a] **The attempt-loop rows (¶8b) are ANSWER-IDENTICAL and not give-up-preserving, in one direction.** A skipped attempt spends no steps, work, backtrack frames or trail, so a search that gives up under the flag may return, with them, the answer an unbounded budget returns (`match_api.md` §3.1), never the reverse: `(a|aa){0,10}cxyz` under `--engine=vm --step-budget=3000` on `a`×20 `b` `q`×30 `cxyz` gives up `PCREC_ERR_STEPS` from startpos 0 to 7 denied and answers `(51,55)` with the row (`tests/litscan/handoff_vm.rxt`). Because the landmark is the whole run, where a give-up moves is a fact of the pattern, not of the byte-rate prior's window pick.
 
+<a id="s2-41-p9b"></a>[2.41¶9b] **pcrec may give up the VM-side rows itself on a size-cap refusal.** The size-cap ladder's `drop-handoff` rung (`limits.md` §8.4; `--list-axes` axis `fallback`) retries an artifact over a cap without the attempt-loop rows (¶8b) and the hybrid prefilter's re-entry (¶8a); a hybrid keeps its first-start handoff, and a DFA artifact's rows have no rung. The retry stamps `<PREFIX>_ENGINE_SEL "size-cap-retry"`, and a non-fatal stderr note names the drop and points at `--max-emit-bytes` / `--max-emit-code-bytes`.
+
 <a id="s2-41-p10"></a>[2.41¶10] **Dial:** no cell, NOT A RUNG (§5.4).
 
 <a id="s2-42"></a>

@@ -666,7 +666,10 @@ enum { COMP_LEVER_ATTEMPTS = 1 };
  * size rung: one retry with the `rev-end` walk pinned to today's form. It
  * restarts nothing (the size term runs only for the VM, and a hybrid's walk
  * is its prefilter's body, whose artifact the term never measured apart). */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 +
+/* [REQRUN-VM] `drop-handoff`: one more retry, and a FOURTH ladder run, since
+ * it restarts the size term for the prefilter drop's reason and both can fire
+ * on one compile. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 4 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 + 1 +
                               COMP_LEVER_ATTEMPTS };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
@@ -862,7 +865,7 @@ typedef struct {
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
-    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
+    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK, FIT_DROP_HANDOFF
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -1150,6 +1153,23 @@ static bool fit_premul_applies(const FitSel *s)
            !pcrec_flags_has(s->flags, PCREC_NO_PREMUL_TABLE);
 }
 
+/* [REQRUN-VM] `drop-handoff`: give up the VM-side handoff rows the attempt
+ * emitted (`Job.req_handoff_vm`: the attempt loop's `handoff-attempts[-entry]`
+ * or the hybrid prefilter's re-entry). The retry declines those rows
+ * (`Ctx.req_handoff_dropped`) and is the VM artifact without them; a hybrid
+ * keeps its entry, which has no rung. Ordered by measured cost: the rows
+ * gained at most x2.53 in instructions on their witnesses
+ * (docs/dev/lanes/reqvm1_report.md, Measurement), under the prefilter drop's
+ * ~4x, so this row is tried first; a VM-only artifact reaches it only after
+ * the prefilter drop, whose attempt loop then carries the rows. It changes
+ * the VM's figures, so the size term restarts, as for the prefilter drop.
+ * It carries no figures: `VM_PREFILTER_WHY` quotes the hybrid the prefilter
+ * drop refused, and a later VM-only attempt is no hybrid. */
+static bool fit_handoff_applies(const FitSel *s)
+{
+    return s->cx->job && s->cx->job->req_handoff_vm;
+}
+
 /* [PF-DROP] (D135) THE LAST RUNG: drop the VM hybrid's
  * prefilter. Spelled as the caller's own `-fno-prefilter`
  * OR'd in, the way the premul rung spells its flag, so the
@@ -1241,7 +1261,7 @@ static bool fit_sel1_drop_applies(const FitSel *s)
 
 /* The ladder (§1.2's row list, in walk order). Rows 0-2 are the arrivals
  * whose action is code (resume the force loop, propagate, next trial); rows
- * 3-9 retry with the state their `sets` cell names; row 10 refuses on every
+ * 3-12 retry with the state their `sets` cell names; row 13 refuses on every
  * label. KEEP is spelled on every row that writes nothing. */
 #define FIT_SETS_NONE { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false, FIT_COMP_KEEP }
 #define FIT_CELLS_PASS { { ESEL_PASS, ESEL_PASS }, PFLW_PASS, NULL }
@@ -1293,7 +1313,7 @@ static const FitRung fit_rungs[] = {
       .note = { "the compound (its controller and parts)",
                 "the plain artifact's attempt loop ships instead, the form the "
                 "compound exists to avoid (docs/design/compound.md)" } },
-    /* 5 D164 B3 the FIRST size rung: the match-end mark's lowered machines
+    /* 6 D164 B3 the FIRST size rung: the match-end mark's lowered machines
      * cost no answer and no other optimization (endmark.md §R.5); the retry
      * pins the `rev-end` walk to today's form (`Ctx.end_mark_dropped`). */
     { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
@@ -1306,7 +1326,7 @@ static const FitRung fit_rungs[] = {
                 "the rev-end walk keeps its two-seed form: a final-newline "
                 "tie is decided by one more walk and an anchored run "
                 "(docs/design/endmark.md §R.5)" } },
-    /* 6-10 [PF-DROP] (D135) the size-cap rungs, cheapest first; 11 refuses */
+    /* 7-12 [PF-DROP] (D135) the size-cap rungs, cheapest first; 13 refuses */
     { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
       .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = "cap-rescue",
@@ -1356,6 +1376,16 @@ static const FitRung fit_rungs[] = {
                 "slower per-byte scan dispatch, measured ~1.27x "
                 "on scan-bound subjects "
                 "(docs/dev/opt3_dfa_scan_measurement.md)" } },
+    { .name = "drop-handoff",       .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_handoff_applies, .act = FIT_DROP_HANDOFF, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, true, FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the VM's required-run handoff",
+                "the VM no longer jumps its attempts to the necessary "
+                "run's next occurrence, measured up to ~2.5x more "
+                "instructions where it is rare "
+                "(docs/dev/lanes/reqvm1_report.md)" } },
     { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREFILTER, PCREC_NO_PREFILTER,
@@ -1630,6 +1660,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_DROP_PREFILTER: return "retry without the VM hybrid's prefilter";
     case FIT_REFUSE:         return "refuse the compile";
     case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
+    case FIT_DROP_HANDOFF:   return "retry without the VM's required-run handoff rows";
     }
     return "?";
 }
@@ -1771,6 +1802,15 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_DROP_END_MARK, FIT_DROP_PREMUL },
     { FIT_DROP_END_MARK, FIT_COLLAPSE },
     { FIT_DROP_END_MARK, FIT_DROP_PREFILTER },
+    /* [REQRUN-VM] the VM-side handoff rows dropped: before the prefilter
+     * drop on a hybrid that carried the re-entry, after it (or after a
+     * [SEL-1] retry) on a VM-only attempt loop that carries them */
+    { FIT_DROP_END_MARK, FIT_DROP_HANDOFF },
+    { FIT_COLLAPSE,      FIT_DROP_HANDOFF },
+    { FIT_DROP_HANDOFF,  FIT_DROP_PREFILTER },
+    { FIT_DROP_PREFILTER, FIT_DROP_HANDOFF },
+    { FIT_SEL1_COLLAPSE, FIT_DROP_HANDOFF },
+    { FIT_SEL1_DROP,     FIT_DROP_HANDOFF },
 };
 #endif
 
@@ -2268,6 +2308,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             (fit_fired >> (fit_rung_of(FIT_DROP_ANCHORED) - fit_rungs)) & 1u;
         cx.end_mark_dropped =
             (fit_fired >> (fit_rung_of(FIT_DROP_END_MARK) - fit_rungs)) & 1u;
+        cx.req_handoff_dropped =
+            (fit_fired >> (fit_rung_of(FIT_DROP_HANDOFF) - fit_rungs)) & 1u;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
@@ -2479,7 +2521,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
             case FIT_DROP_COMPOUND:
-            case FIT_DROP_END_MARK:
+            case FIT_DROP_END_MARK: case FIT_DROP_HANDOFF:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt
