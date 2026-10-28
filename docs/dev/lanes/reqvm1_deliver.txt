@@ -1,0 +1,5 @@
+report=docs/dev/lanes/reqvm1_report.md
+sections: Summary; What was built; Admission table; Spec hunks; Tests and sabotage; Measurement; abi and re-pins; Deviations; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: reqvm1-test reqvm1-mech reqvm1-axes
