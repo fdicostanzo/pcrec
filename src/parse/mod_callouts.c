@@ -257,12 +257,8 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
          * rule, §2.3). The decoded text is what the grammar reads. */
         const char *raw = p + from + sc.str;
         char *dec = pcrec_arena_alloc(&cx->arena, sc.rawlen + 1);
-        size_t n = 0;
-        for (size_t i = 0; i < sc.rawlen; i++) {
-            dec[n++] = raw[i];
-            if (raw[i] == sc.close) i++;
-        }
-        dec[n] = 0;
+        const size_t n = pcrec_callout_string_decode(raw, sc.rawlen, sc.close,
+                                                     dec, NULL);
 
         size_t id = 0;
         if (n > 0 && co_ident_start(dec[0]))

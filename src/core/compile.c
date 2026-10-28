@@ -2067,11 +2067,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * as a segment's must, segment or no segment. */
         for (int i = 0; emit_in && i < emit_in->ncode_headers; i++) {
             const PcrecCodeHeader *h = &emit_in->code_headers[i];
-            size_t nl;
-            const PcrecCodeLang *L = pcrec_code_langs(&nl);
-            size_t k = 0;
-            while (k < nl && strcmp(L[k].tag, h->lang)) k++;
-            if (k == nl || !(grant & L[k].feature)) {
+            const PcrecCodeLang *L = pcrec_code_lang_by_tag(h->lang,
+                                                            strlen(h->lang));
+            if (!L || !(grant & L->feature)) {
                 if (err) snprintf(err->msg, sizeof(err->msg),
                                   "code-header %s %s requires module "
                                   "'code-%s', which only the command-line "

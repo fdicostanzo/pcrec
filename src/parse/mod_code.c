@@ -86,10 +86,8 @@ unsigned pcrec_code_describe_mask(void)
  * is one well-formed `#include`). NULL when well formed, else the reason. */
 const char *pcrec_code_header_check(const char *lang, const char *hdr)
 {
-    size_t nl, k = 0;
-    const PcrecCodeLang *L = pcrec_code_langs(&nl);
-    while (k < nl && strcmp(L[k].tag, lang)) k++;
-    if (k == nl) return "unknown code language";
+    if (!pcrec_code_lang_by_tag(lang, strlen(lang)))
+        return "unknown code language";
     const size_t n = strlen(hdr);
     const char close = n && hdr[0] == '"' ? '"' : n && hdr[0] == '<' ? '>' : 0;
     if (!close || n < 3 || hdr[n - 1] != close)
@@ -102,6 +100,18 @@ const char *pcrec_code_header_check(const char *lang, const char *hdr)
 }
 
 /* The language whose module owns `feature`, or NULL. */
+/* The language row whose tag is the `len` bytes at `tag`, or NULL: the ONE
+ * lookup by tag (the `code-header` check, the grant resolver, the compile's
+ * header gate; review 2026-10-27-r1-ic2 F32). */
+const PcrecCodeLang *pcrec_code_lang_by_tag(const char *tag, size_t len)
+{
+    for (size_t i = 0; i < sizeof code_langs / sizeof code_langs[0]; i++)
+        if (strlen(code_langs[i].tag) == len &&
+            !memcmp(code_langs[i].tag, tag, len))
+            return &code_langs[i];
+    return NULL;
+}
+
 const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature)
 {
     for (size_t i = 0; i < sizeof code_langs / sizeof code_langs[0]; i++)
@@ -250,13 +260,9 @@ ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
     /* Decode: a doubled closing delimiter is one literal byte (PCRE2's
      * rule, §2.3); the decoded text is what gcc compiles. */
     char *text = pcrec_arena_alloc(&cx->arena, codelen + 1);
-    size_t textlen = 0;
-    bool exact = true;
-    for (size_t i = 0; i < codelen; i++) {
-        text[textlen++] = code[i];
-        if (code[i] == sc.close) { i++; exact = false; }
-    }
-    text[textlen] = 0;
+    bool exact;
+    const size_t textlen = pcrec_callout_string_decode(code, codelen, sc.close,
+                                                       text, &exact);
 
     unsigned cp;
     size_t off;

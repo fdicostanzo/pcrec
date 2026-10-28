@@ -393,11 +393,8 @@ int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
         for (const char *p = spec;;) {
             const char *comma = strchr(p, ',');
             size_t len = comma ? (size_t)(comma - p) : strlen(p);
-            unsigned bit = 0;
-            for (size_t i = 0; i < nl; i++)
-                if (strlen(L[i].tag) == len && !strncmp(L[i].tag, p, len))
-                    bit = L[i].feature;
-            if (!bit) {
+            const PcrecCodeLang *row = pcrec_code_lang_by_tag(p, len);
+            if (!row) {
                 char langs[64] = "";
                 for (size_t i = 0; i < nl; i++)
                     snprintf(langs + strlen(langs), sizeof langs - strlen(langs),
@@ -407,7 +404,7 @@ int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
                          langs);
                 return -1;
             }
-            mask |= bit;
+            mask |= row->feature;
             if (!comma) break;
             p = comma + 1;
         }

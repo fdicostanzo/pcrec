@@ -211,6 +211,28 @@ bool pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out)
     return true;
 }
 
+/* [INLINE-C] stage 2 THE `(?C` STRING DECODE (§2.3; review
+ * 2026-10-27-r1-ic2 F33), pure: copies the `n` bytes at `raw` (string text as
+ * written, from `PcrecCoScan`) into `dst` (room for n + 1) with each doubled
+ * `close` written once, NUL-terminates it and returns the decoded length.
+ * `*exact` (may be NULL) is true when no byte was undoubled, i.e. every
+ * decoded byte is the pattern byte at the same offset. One home for both
+ * `(?C` string ports (module `callouts`' binding text, module `code-<lang>`'s
+ * segment). */
+size_t pcrec_callout_string_decode(const char *raw, size_t n, char close,
+                                   char *dst, bool *exact)
+{
+    size_t k = 0;
+    bool ex = true;
+    for (size_t i = 0; i < n; i++) {
+        dst[k++] = raw[i];
+        if (raw[i] == close) { i++; ex = false; }
+    }
+    dst[k] = 0;
+    if (exact) *exact = ex;
+    return k;
+}
+
 /* [INLINE-C] 1b the two `(?C` rows' recognisers: module `callouts`' row
  * answers for the well-formed shape, the malformed row for its exact
  * complement, so exactly one of them answers for any text and the doorway's

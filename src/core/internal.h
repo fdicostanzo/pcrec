@@ -5751,6 +5751,7 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c);
  * `code-<lang>` modules' FEAT_* mask (inline_c.md §5.1). 0, or -1 + err. */
 int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
                              size_t errsz);
+const PcrecCodeLang *pcrec_code_lang_by_tag(const char *tag, size_t len);
 const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature);
 ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
                          size_t from);
@@ -6426,6 +6427,11 @@ typedef struct {
     size_t end;       /* just past the closing `)` */
 } PcrecCoScan;
 bool   pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out);
+/* [INLINE-C] stage 2 the string's decode (a doubled `close` is one byte) into
+ * `dst` (n + 1 bytes); the decoded length; `*exact` (may be NULL) true when
+ * nothing was undoubled. Both `(?C` string ports share it. */
+size_t pcrec_callout_string_decode(const char *raw, size_t n, char close,
+                                   char *dst, bool *exact);
 /* [INLINE-C] stage 2 embedded code's always-live scans (inline_c.md §2.2;
  * scans.c): the code TAG shape `tag(,attr)*:` (the `:`'s offset, or 0), and
  * the tagged `(?C` row's recogniser for one language. */
