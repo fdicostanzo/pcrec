@@ -237,8 +237,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
-  status (2026-10-27): stages 0 (abi 88), 1a (kindrow.def) and 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) LANDED. Rulings in the row body.
-  next: stage 2 review fixes (lane ic2fix, opus, on lane/ic2fix; review 2026-10-27 r1 ic2 ruled), re-run test/mech/axes, merge; then stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
+  status (2026-10-28): stages 0 (abi 88), 1a (kindrow.def), 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) and 2 (abi 90, merge c6707bb5a: tagged (?C`c: ...`) embedded C, with the review 2026-10-27 r1 ic2 FIX-NOW fixes) LANDED. Rulings in the row body.
+  next: stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
@@ -635,6 +635,21 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-27): filed; build point decided at the [INLINE-C] stage-3 brief, which must rewrite the reached rule anyway.
   next: at the stage-3 brief, decide build-now vs later; candidate general form (slots critic): one AUTHORITY table, fact x source class, read by the CLI, the .rxt reader, the library and the config loader.
   refs: decisions D20; review 2026-10-27 r1 ic2 (F28, SLOT-1); memory pcrec-decisions-as-first-match-tables
+- [CODE-TEST-ARCH] STATE:not-started — tests/code/run_code_tests.sh SPAN-FOLD AND CALL-FORM ARMS REPORT `bad` OFF x86_64
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The span-fold and call-form arms report `bad` on a non-x86_64 box (the Mac).
+  next: make those arms skip with a stated reason off x86_64.
+  refs: tests/code/run_code_tests.sh; docs/dev/lanes/ic2fixtri_report.md
+- [PFC-WITNESS-BUDGET] STATE:not-started — PREFILTER-COLLAPSE SIZE-CAP-RETRY WITNESS COMPILES 15-23 s, NEAR THE PER-COMPILE BUDGET
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The witness went red under load (PROCS=16) on 2026-10-28.
+  next: shrink the witness or give it a declared budget.
+  refs: docs/dev/lanes/ic2fixtri_report.md
+- [SWEEP-COMP-FLOOR] STATE:not-started — scripts/emit_sweep.py COMPOSITION-ARTIFACTS FLOOR 100 vs 86 MEASURED AFTER F7
+  filed: 2026-10-28 manager (ic2fixmov report)
+  status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
+  next: re-measure and re-pin the floor.
+  refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
