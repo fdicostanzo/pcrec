@@ -144,8 +144,8 @@ void pcrec_emit_code_protos(Ctx *cx, StrBuf *c)
         const char *fn = code_fn(cx, a);
         const PcrecCalloutBinding b = pcrec_callout_binding(cx, a);
         pcrec_sb_printf(c, "static ptrdiff_t %s(const rx_ctx *ctx);\n"
-                           "static const rx_callout_ref %s = { %s, NULL };\n",
-                        fn, b.symbol, fn);
+                           "%sstatic const rx_callout_ref %s = { %s, NULL };\n",
+                        fn, pcrec_attr_text(PCREC_ATTR_UNUSED), b.symbol, fn);
     }
 }
 

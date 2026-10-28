@@ -3829,9 +3829,11 @@ PCRE2); `(?:(?C1))*` is a group and is.
 <a id="s11-2-p1a"></a>[11.2¶1a] **One call form.** Every site calls `<binding>.fn(&ctx)` through a
 `const rx_callout_ref`, whoever defines it: rows 1-2 are the user's, declared
 `extern` by the artifact; row 3 is the artifact's own, `static ptrdiff_t
-<prefix>__code<k>(const rx_ctx *)` and `static const rx_callout_ref
-<prefix>__code<k>_ref = { <prefix>__code<k>, NULL };`, file-local, so it is
-never a link symbol and needs nothing from the user. **What gets inlined:** a
+<prefix>__code<k>(const rx_ctx *)` and `__attribute__((unused)) static const
+rx_callout_ref <prefix>__code<k>_ref = { <prefix>__code<k>, NULL };`,
+file-local, so it is never a link symbol and needs nothing from the user, and
+a site no match can reach (`{0}`, an uncalled `DEFINE` group) still builds
+under `-Werror`. **What gets inlined:** a
 binding whose definition the compiler can see when it compiles the matcher
 (the same translation unit, such as a `.c` that defines a `const` binding and
 `#include`s the artifact, or a build with `-flto`) is called directly and may

@@ -378,6 +378,16 @@ trap_row() {   # trap_row WHAT PATTERN SUBJECT
 }
 trap_row "a check segment returning 1" 'a(?C`c: return 1;`)b' ab
 trap_row "a segment falling off its end" 'a(?C`c: if (RX_POS > 99) return RX_PASS;`)b' ab
+# F9 (review 2026-10-27-r1-ic2): a site no match can reach still builds
+# under -Werror (its file-local binding is read by no call).
+for up in 'a(?:(?C`c: return RX_PASS;`)){0}b' '(?(DEFINE)(?<d>x(?C`c: return RX_PASS;`)))ab'; do
+    if pc --allow-code=c --features all -p ur -o "$K/ur.c" --pattern "$up" 2> "$K/p.log" &&
+       $CC $GENCFLAGS -Werror -c -o "$K/ur.o" "$K/ur.c" 2> "$K/cc.log"; then
+        ok "an unreached code site builds under -Werror: $up"
+    else
+        bad "an unreached code site breaks -Werror ($up): $(cat "$K/p.log" "$K/cc.log" | head -3 | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"
+    fi
+done
 
 # ---- arm 9: the span helpers ----------------------------------------------------
 echo

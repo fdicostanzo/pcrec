@@ -11,6 +11,7 @@
  *   A2  [OPT-1]'s deep tier (emit_comb.c): `noinline` on `<name>_deep`;
  *   A3  K24's guarded `noclone` on every DFA search head (emit_dfa.c
  *       `emit_search_head`);
+ *   A4  `unused` on a code segment's file-local binding (emit_code.c);
  *   the part-layout table (part_layout.c): a part row's layout, through
  *       `pcrec_part_attr`.
  *
@@ -70,6 +71,12 @@ static const struct {
      * own. */
     [PCREC_ATTR_NOCLONE] = { "noclone", ATTR_GUARDED(noclone, ""),
             "no clone of the body: noclone where __has_attribute(noclone), else nothing" },
+    /* A code segment's file-local binding (emit_code.c), which no call
+     * reads when no match can reach its site (`{0}`, an uncalled DEFINE):
+     * `-Wunused-const-variable` would otherwise break a `-Werror` build
+     * (review 2026-10-27-r1-ic2 F9). gcc and clang both have it. */
+    [PCREC_ATTR_UNUSED] = { "unused", "__attribute__((unused)) ",
+            "no unused warning when nothing reads it" },
 };
 
 const char *pcrec_attr_text(PcrecAttr a)

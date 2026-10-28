@@ -8071,6 +8071,7 @@ typedef enum {
     PCREC_ATTR_NONE,         /* no attribute (the VM entry's `plain` rung) */
     PCREC_ATTR_NOINLINE,     /* noinline */
     PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
+    PCREC_ATTR_UNUSED,       /* unused: a file-local nothing may read */
     PCREC_ATTR_N
 } PcrecAttr;
 /* `a`'s text, as its writer puts it on (or above) a definition head. */
