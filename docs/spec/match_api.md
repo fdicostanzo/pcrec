@@ -3815,6 +3815,11 @@ reaches (`(?1)`, `(?R)`, `(?&name)`, a `(?(DEFINE)` group, a `lib`
 definition). A callout itself is not quantifiable (`(?C1)?` is refused, as in
 PCRE2); `(?:(?C1))*` is a group and is.
 
+<a id="s11-1-p1a"></a>[11.1¶1a] A `(?(DEFINE)` group is refused when a call reaches it. A group that
+no call reaches holds a site nothing can fire: it is admitted, `<PREFIX>_CALLOUTS`
+counts it (§6.3), and the artifact builds clean under `-Werror` in the self-contained
+and the split form alike.
+
 <a id="s11-2"></a>
 ### 11.2 Bindings
 
@@ -4016,6 +4021,12 @@ string starts with a registered language tag, its optional attributes and
 `:` stays a binding name (`(?C"c,consume")` names the binding `c`). To PCRE2
 the same bytes are an ordinary string callout.
 
+<a id="s11-9-p1a"></a>[11.9¶1a] **Code needs the grant, not module `callouts`.** A code segment compiles
+under the default feature set; `--features callouts` is needed only by the
+numbered and named forms (`(?C1)`, `(?C"name")`, including the binding name
+`c`). `PCREC_FEATURE_MODULES` (§6.3) never lists `code-c`, with or without the grant:
+the languages an artifact carries are `<PREFIX>_CODE_LANGS`.
+
 <a id="s11-9-p2"></a>[11.9¶2] **Where the code ends:** at the first lone closing delimiter, a doubled one
 being one literal byte (PCRE2's own rule, so the same bytes are the same
 pattern to both programs). Code that uses the delimiter writes it doubled, or
@@ -4035,6 +4046,11 @@ and not to gcc, or the reverse); and every other C0 control character, and
 DEL. Tab, line feed and CR LF are allowed. The segment is read as UTF-8, as
 gcc reads it; a byte that starts no well-formed UTF-8 character is passed
 through as written.
+
+<a id="s11-9-p3a"></a>[11.9¶3a] The byte offset ¶3 names is 0-based and counts the DECODED code text,
+starting at the first byte after the tag's `:` (so after any doubled
+delimiter has been undone, and not from the start of the string or the tag).
+The refusal also names the segment's own pattern offset.
 
 <a id="s11-9-p4"></a>[11.9¶4] **The function.** Each segment becomes `static ptrdiff_t
 <prefix>__code<k>(const rx_ctx *ctx)`, an `rx_matchfn` whose BODY is the
@@ -4064,6 +4080,11 @@ names the user's file and line. The name is written as a C string literal
 (the artifact stays ASCII), which the compiler decodes: a control byte in a
 file name reaches the compiler's diagnostics raw, as it reaches pcrec's own.
 `ctx->user` is `NULL` at a code site.
+
+<a id="s11-9-p4a"></a>[11.9¶4a] When the first line is not padded (an undone delimiter doubling, a tab
+or a non-ASCII byte before the code on its line, or `pattern-esc`), gcc's
+column counts from the first byte of the code (the byte after the tag's `:`,
+column 1), not from the column in the source.
 
 <a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined once before the `code-header` lines and the
 first segment's function and `#undef`ed after the last. Every accessor taking `n` evaluates it once and is guarded: an
@@ -4106,6 +4127,18 @@ caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
 list) and write no C. The stamp
 `<PREFIX>_CODE_LANGS` discloses the languages present (§6.3).
 
+<a id="s11-9-p8a"></a>[11.9¶8a] **Corners of the grant.** The describe modes apply ¶3's refusals and
+refuse an unknown language in `--allow-code` (`py`) like a compile does; they
+only differ in writing no C. A language name is matched exactly: `c` is the
+language, `C` is unknown, and a repeated language (`--allow-code=c,c`) is the
+grant once. A granted artifact with a `code-header` line and no segment still
+emits each header, after the matcher, with no macro set before it. The LOCAL
+rule of ¶8 is not observable today for a definition: a site in a definition is
+refused by §11.1¶1 whether the definition is local or read from another file,
+and an `include`d fragment's block is no definition a target can name, so no
+local definition holding code compiles to show the difference from a `lib`
+one. The rule is the contract for the day §11.1 admits a reached site.
+
 <a id="s11-10"></a>
 ### 11.10 The span helpers
 
@@ -4131,3 +4164,9 @@ typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;
 | `int rx_in(rx_span s, uint64_t lo, uint64_t hi)` | 1 when `rx_u64` reads a value `v` with `lo <= v <= hi`; else 0 |
 | `ptrdiff_t rx_find(rx_span s, const char *z)` | the offset in `s` of the first occurrence of the NUL-terminated `z` (0 for an empty `z`), or -1 (none, or `s` unset) |
 | `int rx_u8next(rx_span s, ptrdiff_t *i, uint32_t *cp)` | decodes the UTF-8 character at offset `*i`: its length 1-4, with `*cp` set and `*i` advanced past it; 0 at the end (`*i >= s.len`, or `s` unset); -1, nothing changed, for an ill-formed sequence (an overlong form, a surrogate, a value above U+10FFFF, a bad or missing continuation byte) |
+
+<a id="s11-10-p2"></a>[11.10¶2] A helper returns 0 and changes nothing on its pointer arguments when it
+returns 0. `rx_u8next` treats a negative `*i` as the end (it returns 0, `*i` and
+`*cp` untouched), like `*i >= s.len`, so the loop `while (rx_u8next(s, &i, &cp) > 0)`
+ends on 0 and on -1 alike. A NUL-terminated argument `z` must not be `NULL`: the
+helpers read it, and a `NULL` `z` is outside the contract even for an unset `s`.

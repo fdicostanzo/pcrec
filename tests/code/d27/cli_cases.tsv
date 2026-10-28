@@ -126,6 +126,10 @@ tag_leading_space_is_not_code	§11.9¶1 "DECODED string starts with a registered
 tag_doubled_delim_first_is_not_code	§11.9¶1-¶2 (the decoded string starts with a backtick)	-	(?C```c: return 0;`)a	1	requires module 'callouts'	no
 tag_c_no_colon_is_binding	§11.9¶1 "(?C\"c,consume\") names the binding c"	-	(?C`c,once`)a	1	requires module 'callouts'	no
 grant_upper_C_unknown	cli§1.22¶1 ("c the one language"; unknown refused by name)	--allow-code=C	a(?C`c: return RX_PASS;`)b	1	'C'	no
+# MASKED ROW (D27 finding 3.1): module `conditionals` is not implemented, so
+# "(?(...) is not implemented yet" refuses this pattern before the condition
+# rule (pattern_language §7.11¶3) is reached; the row passes on that other
+# refusal until conditionals ship.
 cond_condition_refused	pattern_language§7.11¶3 "inside a conditional's condition";§11.9¶1	--allow-code=c --features all	(?(?=a(?C`c: return RX_PASS;`))a|b)	1	-	no
 once_in_repeat_refused	§11.8¶3 last row	--allow-code=c --features all	(?:a(?C`c,once: return RX_PASS;`))+	1	-	no
 ref_bidi_right_after_colon	§11.9¶3 (offset 0 of the code)	--allow-code=c	a(?C`c:\xe2\x80\xae return RX_PASS;`)b	1	U\+202E	no

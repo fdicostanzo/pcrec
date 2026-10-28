@@ -384,10 +384,13 @@ fb features_code_c_refused "§11.9¶8 'a features text naming it is refused wher
 fb lib_code_refused "§11.9¶8;cli§1.22¶1 'Code in a definition read from another .rxt file (lib ...) is refused even with the grant'" 1 'embedded code' no - --allow-code=c d27/rxt/lib_user.rxt
 fb lib_code_refused_delivering "§11.9¶8 (lib definition through a delivering call)" 1 'embedded code' no - --allow-code=c d27/rxt/deliver_lib.rxt
 # the same definition LOCAL is still refused, by §11.1¶1 (a delivering call is a call)
+# MASKED ROW (D27 finding 3.3): match_api §11.1¶1 refuses first, so no admitted
+# LOCAL neighbour of the lib rule exists to compare (match_api §11.9¶8a says why).
 fb local_def_delivering_refused "§11.1¶1 (a site in a group a call reaches; 'a lib definition')" 1 'subroutine call' no - --allow-code=c d27/rxt/deliver_local.rxt
 # An included fragment's block is not a definition a target can name (pcrec
 # answers "no definition"), so this refusal holds for a reason other than the
 # code rule; REPORT.md lists the include clause as untestable from the CLI.
+# MASKED ROW (D27 finding 3.2): the "no definition" refusal masks the include rule.
 fb include_code_refused "§11.9¶8;cli§1.22¶1 '(... include) is refused even with the grant'" 1 - no - --allow-code=c d27/rxt/inc_entry.rxt
 fb cli_code_header_with_file "cli§1.22¶2 'It does not combine with a file operand'" 1 - no - --allow-code=c --code-header c:d27a.h d27/rxt/two_targets.rxt
 fb hdr_unknown_lang_refused "rxt§1.1 code-header '<lang> a code language (c)'" 1 - no - --allow-code=c d27/rxt/hdr_unknown_lang.rxt
