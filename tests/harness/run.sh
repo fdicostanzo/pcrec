@@ -1664,7 +1664,7 @@ manifest_objs() {
     local mdir; mdir="$(cd "$(dirname "$rxt")" && pwd)"
     local mf="$mdir/harness.manifest"
     [ -f "$mf" ] || return 0
-    local kw arg rest src obj
+    local kw arg rest src obj nallow=0
     while read -r kw arg rest; do
         case "$kw" in
             ''|'#'*) continue ;;
@@ -1694,6 +1694,13 @@ manifest_objs() {
                 # the one place it means anything; here only its SHAPE.
                 if [ -z "$arg" ] || [ -n "$rest" ]; then
                     printf '%s\n' "$mf: 'allow-code' wants one language list (got 'allow-code $arg $rest')"
+                    return 1
+                fi
+                # At most one (rxt_format.md §6¶3): a second line is not
+                # silently shadowed by the first (review 2026-10-27-r1-ic2 F6).
+                nallow=$((nallow + 1))
+                if [ "$nallow" -gt 1 ]; then
+                    printf '%s\n' "$mf: a second 'allow-code' line (at most one per manifest)"
                     return 1
                 fi
                 ;;

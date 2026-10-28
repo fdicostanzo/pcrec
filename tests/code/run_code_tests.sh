@@ -130,6 +130,26 @@ refuse "--code-header for an unknown language is refused" "language" --allow-cod
 refuse "a code-header with no grant is refused like a segment" "--allow-code" \
     --code-header 'c:"octet.h"' -o "$R" --pattern 'ab'
 
+# F6 (review 2026-10-27-r1-ic2): the manifest's `allow-code` line is the
+# suite invoker's grant, so an EXACT allow-list of the manifests under tests/
+# that carry it (rxt_format.md §6¶3), and a second line is a harness failure.
+mallow="$(cd "$ROOT_DIR" && find tests -name harness.manifest -exec grep -lE '^[[:space:]]*allow-code([[:space:]]|$)' {} + | LC_ALL=C sort | tr '\n' ' ')"
+if [ "$mallow" = "tests/code/frag/harness.manifest tests/code/harness.manifest " ]; then
+    ok "only tests/code/ and tests/code/frag/ manifests carry the allow-code grant"
+else
+    bad "the allow-code grant is carried by: ${mallow:-no manifest} (allowed: tests/code/harness.manifest tests/code/frag/harness.manifest)"
+fi
+M2="$WORK/m2"; mkdir -p "$M2"
+printf 'allow-code c\nallow-code c\n' > "$M2/harness.manifest"
+printf 'pattern %s\nm "ab" 0 2\n' "$SEG" > "$M2/two.rxt"
+if PCREC="$PCREC" bash "$ROOT_DIR/tests/harness/run.sh" "$M2/" > "$WORK/m2.log" 2>&1; then
+    bad "a manifest with two allow-code lines was accepted by the harness"
+elif grep -q "second 'allow-code' line" "$WORK/m2.log"; then
+    ok "a manifest with two allow-code lines is a harness failure"
+else
+    bad "a manifest with two allow-code lines failed for another reason: $(grep -m2 -iE 'fail|error' "$WORK/m2.log")"
+fi
+
 # .rxt files: a block's `features all`, a config's `features all`, a `pcrec`
 # line's --allow-code, a block's `features code-c`, and REACHED code.
 D="$WORK/rxt"; mkdir -p "$D"

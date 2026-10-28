@@ -1804,14 +1804,15 @@ directive per line, `#` comments and blank lines skipped:
 | line | meaning |
 |---|---|
 | `link FILE` | compile `FILE` (a file name beside the manifest: no `/`) and link it into every driver built for the directory's `.rxt` files |
-| `allow-code LANGS` | compile the blocks of the directory's ENTRY files (the `.rxt` files it runs, never a fragment one of them `include`s) with `--allow-code=LANGS` (`cli.md` §1.22). A fragment's block is compiled without it, so code in an included file is refused under the harness exactly as pcrec refuses it, and the harness never asserts where code came from. At most one per manifest |
+| `allow-code LANGS` | compile the blocks of the directory's ENTRY files (the `.rxt` files it runs, never a fragment one of them `include`s) with `--allow-code=LANGS` (`cli.md` §1.22). A fragment's block is compiled without it, so code in an included file is refused under the harness exactly as pcrec refuses it, and the harness never asserts where code came from. At most one per manifest (a second is a harness failure, ¶4). The line is the suite invoker's grant, as `--allow-code` is a person's: only `tests/code/harness.manifest` and `tests/code/frag/harness.manifest` carry it, and `make test-code` fails when any other manifest under `tests/` does |
 
 <a id="s6-p3a"></a>[6¶3a] The harness passes each `code-header` line of the file it is running to
 every block's compile as `--code-header <lang>:<header>`, and compiles each
-driver with `-I` of the manifest's directory, so a header beside the manifest
-is found as a user's build would find it.
+driver of a file that has a `code-header` line with `-I` of that file's
+directory, so a header beside the file is found as a user's build would find
+it.
 
-<a id="s6-p4"></a>[6¶4] Any other manifest line, a `link` line with no name, a name with a `/`, or anything after the name, is a harness failure: every case of the `.rxt` file being run fails, whether or not its drivers needed the link. A `link` source is compiled with
+<a id="s6-p4"></a>[6¶4] Any other manifest line, a `link` line with no name, a name with a `/`, or anything after the name, a second `allow-code` line, is a harness failure: every case of the `.rxt` file being run fails, whether or not its drivers needed the link. A `link` source is compiled with
 `-include` of an artifact header in scope, which gives it the shared ABI
 block (`rx_ctx`, `rx_callout_ref`) without a copy.
 
