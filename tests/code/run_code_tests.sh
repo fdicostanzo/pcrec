@@ -66,7 +66,7 @@ fi
 # ---- arm 2: the corpus oracle ----------------------------------------------
 echo
 echo "== [INLINE-C] the corpus against libpcre2 =="
-PCREC="$PCREC" CC="$CC" TMPDIR="$WORK" python3 "$SCRIPT_DIR/verify_code.py" "$SCRIPT_DIR"/*.rxt
+PCREC="$PCREC" CC="$CC" TMPDIR="$WORK" python3 "$SCRIPT_DIR/verify_code.py" "$SCRIPT_DIR"/*.rxt "$SCRIPT_DIR"/frag/*.rxt
 case $? in
     0) ok "libpcre2, running the same segment text, agrees with every cell in tests/code/" ;;
     3) note "libpcre2 is unavailable: the corpus is scored against its own file only" ;;

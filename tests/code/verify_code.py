@@ -297,6 +297,10 @@ def build(path, headers, segs, td, cc, rxh):
     return base, ""
 
 
+# The checkable (non-`consume`) cells of tests/code/ and tests/code/frag/.
+CELLS_PIN = 36
+
+
 def main():
     if len(sys.argv) < 2:
         sys.stderr.write("usage: verify_code.py <file.rxt>...\n")
@@ -369,10 +373,13 @@ def main():
     if unread:
         print("FAIL: %d line(s) the reader could not check: %s" % (len(unread), ", ".join(unread[:10])))
         return 1
-    # An empty sweep reads like a clean one (K35): floor 30 against the 36
-    # checkable cells written at lane ic2 (2026-10-27).
-    if agree < 30:
-        print("FAIL: only %d cells checked — the reader stopped reaching the corpus" % agree)
+    # An empty sweep reads like a clean one (K35). EXACT, not a floor (review
+    # 2026-10-27-r1-ic2 F24): 34 checkable cells in tests/code/*.rxt and 2 in
+    # tests/code/frag/ (entry.rxt's, frag_code.rxt's code-free block), 36 at
+    # lane ic2fix (2026-10-27). A cell added or lost moves this number.
+    if agree + bad != CELLS_PIN:
+        print("FAIL: %d cells checked, the corpus has %d — the reader stopped reaching "
+              "a cell, or one was added (move CELLS_PIN)" % (agree + bad, CELLS_PIN))
         return 1
     return 1 if bad else 0
 
