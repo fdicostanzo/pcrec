@@ -17,8 +17,10 @@
  * RF_INVOKER_ONLY: the GRANT column, §5.1), the language list
  * `--allow-code` accepts (`pcrec_code_grant_resolve`, src/parse/enabled.c),
  * the tags the recogniser and the port read, and the `<PREFIX>_CODE_LANGS`
- * stamp's vocabulary. A later language adds ONE row here; nothing else
- * changes (§2.2's last paragraph). The `(?{ ... })` spelling, whose end needs
+ * stamp's vocabulary. A later language adds ONE row here and its FEAT_*
+ * bit in src/core/internal.h's feature enum (a second site, since the bit
+ * is a module fact the registry owns; review 2026-10-27-r1-ic2 F30);
+ * nothing else changes (§2.2's last paragraph). The `(?{ ... })` spelling, whose end needs
  * a per-language scanner column, is row [SCANNER-DOGFOOD]'s (ruling R1,
  * 2026-10-27), not this table's yet. */
 PCREC_CODE_LANG(c, "c", FEAT_CODE_C, "code-c")

@@ -3837,8 +3837,9 @@ under `-Werror`. **What gets inlined:** a
 binding whose definition the compiler can see when it compiles the matcher
 (the same translation unit, such as a `.c` that defines a `const` binding and
 `#include`s the artifact, or a build with `-flto`) is called directly and may
-be inlined; a binding compiled separately is an indirect call through the
-binding's `fn`. Row 3 is always in the artifact's own translation unit.
+be inlined when the build optimizes (`-O1` and above; at `-O0` gcc keeps the
+call through `fn`); a binding compiled separately is an indirect call through
+the binding's `fn`. Row 3 is always in the artifact's own translation unit.
 
 <a id="s11-2-p2"></a>[11.2¶2] The artifact DECLARES each binding of rows 1-2, `extern const rx_callout_ref
 rx_callout_<name>;` (§1¶6a), and the user DEFINES it. **An unbound binding is
@@ -4059,7 +4060,10 @@ text maps one-to-one onto its source line (no undone delimiter doubling, and
 no tab or non-ASCII byte before the code on that line). Under `pattern-esc`
 or `--pattern-esc`, every decoded line carries its own `#line` naming the
 opener's line, with no column. So a compiler diagnostic in the user's code
-names the user's file and line. `ctx->user` is `NULL` at a code site.
+names the user's file and line. The name is written as a C string literal
+(the artifact stays ASCII), which the compiler decodes: a control byte in a
+file name reaches the compiler's diagnostics raw, as it reaches pcrec's own.
+`ctx->user` is `NULL` at a code site.
 
 <a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined once before the `code-header` lines and the
 first segment's function and `#undef`ed after the last. Every accessor taking `n` evaluates it once and is guarded: an
