@@ -314,6 +314,37 @@ echo
 echo "== [INLINE-C] what is live at the segment block =="
 LM="$WORK/live"; mkdir -p "$LM"
 MSET='RX_SUBJ RX_LEN RX_POS RX_START RX_CAP_SET RX_CAP_S RX_CAP_E RX_CAP_LEN RX_CAP_P RX_CAP RX_USER'
+# THE PUBLIC SET, from sources the emitter does not read (review
+# 2026-10-27-r1-ic2 F3: the emitter and this check once both meant "public"
+# by the `<PREFIX>_` prefix): per artifact, what its .h defines; and the
+# stamp inventory of the contract, match_api.md §6.3.2, one name per line
+# with the prefix as PREFIX (`_X` after a first name expands at each of the
+# first name's `_` cuts; `<PREFIX>_VAR_<name>` is the family PREFIX_VAR_*).
+python3 - "$ROOT_DIR/docs/spec/match_api.md" > "$LM/inv.names" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+sec = text[text.index('id="s6-3-2"'):text.index('id="s6-3-3"')]
+out = set()
+for line in sec.splitlines():
+    if not line.startswith("|"):
+        continue
+    cell = line.split("|")[1]
+    toks = re.findall(r"`((?:<PREFIX>|PCREC)?_[A-Z0-9_]+(?:<name>)?|PCREC_[A-Z0-9_]+)`", cell)
+    first = None
+    for t in toks:
+        if t.startswith("<PREFIX>_") or t.startswith("PCREC_"):
+            t = t.replace("<PREFIX>", "PREFIX")
+            first = t
+            out.add(t)
+        elif first:
+            cuts = [i for i, ch in enumerate(first) if ch == "_"]
+            for i in cuts:
+                out.add(first[:i] + t)
+for n in sorted(out):
+    print(n)
+PY
+ninv="$(wc -l < "$LM/inv.names" | tr -d ' ')"
+[ "$ninv" -ge 60 ] || bad "the stamp inventory read from match_api.md §6.3.2 holds only $ninv names: the reader stopped reaching it"
 nart=0; lbad=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
@@ -329,8 +360,10 @@ while IFS= read -r pat; do
     grep -hE '^[[:space:]]*#[[:space:]]*include[[:space:]]*<' "$LM/$px.c" "$LM/$px.h" > "$LM/sys.c"
     (cd "$LM" && $CC -E -dM pre.c 2>/dev/null) | awk '{print $2}' | sed 's/(.*//' | LC_ALL=C sort -u > "$LM/pre.m"
     $CC -E -dM "$LM/sys.c" | awk '{print $2}' | sed 's/(.*//' | LC_ALL=C sort -u > "$LM/sys.m"
-    live="$(comm -23 "$LM/pre.m" "$LM/sys.m" \
-        | grep -vE "^(_|${upx}_|PCREC_|RX_PASS$|RX_FAIL$|RX_ITER_INIT$|RX_NOMATCH$|${upx}_H$)" || true)"
+    (cd "$LM" && $CC -E -dM "$px.h" 2>/dev/null) | awk '{print $2}' | sed 's/(.*//' | LC_ALL=C sort -u > "$LM/h.m"
+    sed "s/^PREFIX_/${upx}_/" "$LM/inv.names" | sed 's/<name>$//' > "$LM/pub.m"
+    live="$(LC_ALL=C comm -23 "$LM/pre.m" "$LM/sys.m" | LC_ALL=C comm -23 - "$LM/h.m" \
+        | grep -vxF -f "$LM/pub.m" | grep -vE "^(_|${upx}_VAR_)" || true)"
     for m in $MSET; do
         grep -qx "$m" "$LM/pre.m" && live="$live $m"
     done

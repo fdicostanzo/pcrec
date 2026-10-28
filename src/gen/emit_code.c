@@ -153,28 +153,36 @@ void pcrec_emit_code_protos(Ctx *cx, StrBuf *c)
 
 /* THE PUBLIC CONTRACT AT THE SEGMENT BLOCK (§3.2 "what is live"), first
  * match on a live macro's name: a row that KEEPS it, or the default, which
- * `#undef`s it. Kept: the stamps (the upper prefix's family, match_api.md
- * §6.3), the shared ABI block's and the feature block's `PCREC_` names, the
- * callout family's return names, the iterator initializer, and the
- * compiler-feature shim. `exact` false: the row is a name PREFIX. */
-typedef struct { const char *name; bool exact; } CodeKeep;
+ * `#undef`s it. Kept: the stamps, exactly the stamp catalogue's contract
+ * rows (src/gen/stamp_kinds.c, `pcrec_stamp_is_contract`; never the whole
+ * `<PREFIX>_` namespace, which holds the matcher's own helpers: review
+ * 2026-10-27-r1-ic2 F3), the shared ABI block's and the feature block's
+ * `PCREC_` names, the callout family's return names, the iterator
+ * initializer, and the compiler-feature shim. */
+typedef enum { KEEP_EXACT, KEEP_PREFIX, KEEP_STAMP } CodeKeepHow;
+typedef struct { const char *name; CodeKeepHow how; } CodeKeep;
 static const CodeKeep code_keep[] = {
-    { "\x01Q_",           false },   /* <PREFIX>_* stamps */
-    { "PCREC_",           false },
-    { "RX_PASS",          true  },
-    { "RX_FAIL",          true  },
-    { "RX_ITER_INIT",     true  },
-    { "__has_attribute",  true  },
+    { "\x01Q_",           KEEP_STAMP  },   /* <PREFIX>_<a catalogued stamp> */
+    { "PCREC_",           KEEP_PREFIX },
+    { "RX_PASS",          KEEP_EXACT  },
+    { "RX_FAIL",          KEEP_EXACT  },
+    { "RX_ITER_INIT",     KEEP_EXACT  },
+    { "__has_attribute",  KEEP_EXACT  },
 };
 
 /* Is the macro `name` (len bytes) part of the public contract? */
-static bool code_keep_name(const char *name, size_t len)
+static bool code_keep_name(Ctx *cx, const char *name, size_t len)
 {
     for (size_t r = 0; r < sizeof code_keep / sizeof code_keep[0]; r++) {
         const size_t kl = strlen(code_keep[r].name);
-        if (code_keep[r].exact ? (len == kl && !memcmp(name, code_keep[r].name, kl))
-                               : (len >= kl && !memcmp(name, code_keep[r].name, kl)))
-            return true;
+        const bool pre = len >= kl && !memcmp(name, code_keep[r].name, kl);
+        switch (code_keep[r].how) {
+        case KEEP_EXACT:  if (pre && len == kl) return true; break;
+        case KEEP_PREFIX: if (pre) return true; break;
+        case KEEP_STAMP:
+            if (pre) return pcrec_stamp_is_contract(cx, name + kl, len - kl);
+            break;
+        }
     }
     return false;
 }
@@ -231,7 +239,7 @@ static void code_undef_live(Ctx *cx, StrBuf *c)
         l = nl ? nl + 1 : end;
     }
     for (size_t k = 0; k < nmac; k++)
-        if (mac[k].live && !code_keep_name(mac[k].p, mac[k].n))
+        if (mac[k].live && !code_keep_name(cx, mac[k].p, mac[k].n))
             pcrec_sb_printf(c, "#undef %.*s\n", (int)mac[k].n, mac[k].p);
 }
 

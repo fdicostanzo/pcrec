@@ -8737,6 +8737,9 @@ const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx);
  * internal error. */
 const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
                                         const char *value);
+/* Is `<PREFIX>_<name>` (len bytes after the prefix) a contract stamp: a
+ * catalogue row not marked internal (match_api.md §6.3.1¶10)? */
+bool pcrec_stamp_is_contract(Ctx *cx, const char *name, size_t len);
 
 /* src/gen/emit_dfa.c -- [COMPOUND] THE PLAIN COMPILE's SELECTION PROJECTION
  * (compound.md §A.3, arch S5): the `--list`/stamp name of the row slot

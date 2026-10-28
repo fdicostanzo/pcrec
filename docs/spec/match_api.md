@@ -4042,7 +4042,9 @@ off the end of the text traps. Its prototype and binding (§11.2 row 3) come
 before the matcher; its definition comes LAST in the `.c`, after everything
 else the artifact writes, preceded by `#undef` of every macro the artifact
 defined for its own use that is still defined there (what stays defined is
-the public contract: the stamps, the shared block's and §1¶6a's names), then
+the public contract: the stamps of §6.3, the shared block's and §1¶6a's
+names; the internal macros of §6.3.1¶10, `<PREFIX>_R_*`, `<PREFIX>_SLOT_*`
+and `<PREFIX>_NSLOTS` among them, are `#undef`ed), then
 the macro set of ¶5, the `code-header` lines (¶7), each segment's function,
 and the set's `#undef`. The macro set comes before the first `#line`, so a
 diagnostic inside a macro's expansion names the `.c` itself. A `#line` directive before the text names

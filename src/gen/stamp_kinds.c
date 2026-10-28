@@ -35,91 +35,101 @@ typedef struct {
     const char *name;     /* the stamp's name after `<PREFIX>_` */
     bool family;          /* `name` is a prefix (the emitter computes the rest) */
     StampKind kind;
+    /* true: written as a stamp but internal to the artifact, not the
+     * caller contract (match_api.md §6.3.1¶10), so a code segment block
+     * `#undef`s it (`pcrec_stamp_is_contract`); false on every other row */
+    bool internal;
 } StampRow;
 
 static const StampRow stamp_rows[] = {
     /* the shared prologue (src/gen/emit_dfa.c `pcrec_emit_prologue`) */
-    { "ALTCLS_MERGES",      false, SK_PATTERN },      /* P's tree rewrite */
-    { "ALTCLS_FACTORED",    false, SK_PATTERN },
-    { "STARTPOS_GUARD",     false, SK_PATTERN },      /* the caller contract */
-    { "UTF_CHECK",          false, SK_PATTERN },
-    { "ITER_RETRY",         false, SK_PATTERN },      /* the shell's own iterator */
-    { "END_WINDOW",         false, SK_MACHINE_STR },  /* the search entry's clamp */
-    { "REQ_BYTE",           false, SK_PATTERN },      /* the analysis: a pattern fact */
-    { "REQ_RUN",            false, SK_PATTERN },
-    { "REQ_WHY",            false, SK_MACHINE_STR },  /* whether an entry acted on it */
-    { "REQ_HANDOFF",        false, SK_MACHINE_STR },
-    { "VM_START_SCAN",      false, SK_MACHINE_STR },
-    { "TUNE",               false, SK_PATTERN },
-    { "PART_LAYOUT",        false, SK_PATTERN },      /* the caller's controls, */
-    { "PART_LAYOUT_WHY",    false, SK_PATTERN },      /* over the whole artifact */
-    { "COMPOUND",           false, SK_PATTERN },
-    { "NCAPS",              false, SK_PATTERN },
-    { "NVARS",              false, SK_PATTERN },
-    { "VAR_",               true,  SK_PATTERN },
-    { "CALLOUTS",           false, SK_PATTERN },      /* [INLINE-C] 1b the sites */
-    { "CALLOUT_BINDINGS",   false, SK_PATTERN },      /* and the symbols they need */
-    { "CODE_LANGS",         false, SK_PATTERN },      /* [INLINE-C] stage 2 code's languages */
-    { "RESUME_FRAMES",      false, SK_PATTERN },      /* the buffer surface: */
-    { "TRAIL_FRAMES",       false, SK_PATTERN },      /* the caller contract */
-    { "RESUME_FRAME_SIZE",  false, SK_PATTERN },
-    { "TRAIL_FRAME_SIZE",   false, SK_PATTERN },
-    { "BUFFER_ALIGN",       false, SK_PATTERN },
+    { "ALTCLS_MERGES",      false, SK_PATTERN, false },      /* P's tree rewrite */
+    { "ALTCLS_FACTORED",    false, SK_PATTERN, false },
+    { "STARTPOS_GUARD",     false, SK_PATTERN, false },      /* the caller contract */
+    { "UTF_CHECK",          false, SK_PATTERN, false },
+    { "ITER_RETRY",         false, SK_PATTERN, false },      /* the shell's own iterator */
+    { "END_WINDOW",         false, SK_MACHINE_STR, false },  /* the search entry's clamp */
+    { "REQ_BYTE",           false, SK_PATTERN, false },      /* the analysis: a pattern fact */
+    { "REQ_RUN",            false, SK_PATTERN, false },
+    { "REQ_WHY",            false, SK_MACHINE_STR, false },  /* whether an entry acted on it */
+    { "REQ_HANDOFF",        false, SK_MACHINE_STR, false },
+    { "VM_START_SCAN",      false, SK_MACHINE_STR, false },
+    { "TUNE",               false, SK_PATTERN, false },
+    { "PART_LAYOUT",        false, SK_PATTERN, false },      /* the caller's controls, */
+    { "PART_LAYOUT_WHY",    false, SK_PATTERN, false },      /* over the whole artifact */
+    { "COMPOUND",           false, SK_PATTERN, false },
+    { "NCAPS",              false, SK_PATTERN, false },
+    { "NVARS",              false, SK_PATTERN, false },
+    { "VAR_",               true,  SK_PATTERN, false },
+    { "CALLOUTS",           false, SK_PATTERN, false },      /* [INLINE-C] 1b the sites */
+    { "CALLOUT_BINDINGS",   false, SK_PATTERN, false },      /* and the symbols they need */
+    { "CODE_LANGS",         false, SK_PATTERN, false },      /* [INLINE-C] stage 2 code's languages */
+    { "RESUME_FRAMES",      false, SK_PATTERN, false },      /* the buffer surface: */
+    { "TRAIL_FRAMES",       false, SK_PATTERN, false },      /* the caller contract */
+    { "RESUME_FRAME_SIZE",  false, SK_PATTERN, false },
+    { "TRAIL_FRAME_SIZE",   false, SK_PATTERN, false },
+    { "BUFFER_ALIGN",       false, SK_PATTERN, false },
     /* the engine stamps */
-    { "ENGINE",             false, SK_PATTERN },      /* "can a call give up" */
-    { "ENGINE_SEL",         false, SK_PATTERN },
-    { "MAX_EMIT_BYTES",     false, SK_PATTERN },      /* the limit built under */
-    { "MAX_EMIT_CODE_BYTES", false, SK_PATTERN },
-    { "STEP_BUDGET",        false, SK_PATTERN },      /* per call: the contract */
-    { "WORK_BUDGET",        false, SK_PATTERN },
-    { "FINDINGS",           false, SK_PATTERN },
-    { "MEASURES",           false, SK_PATTERN },      /* over P and the parts (match_api §6.3.10¶13) */
+    { "ENGINE",             false, SK_PATTERN, false },      /* "can a call give up" */
+    { "ENGINE_SEL",         false, SK_PATTERN, false },
+    /* written by hand, never filtered (the VM's reason line); the row
+     * classifies it as a contract stamp for the segment block */
+    { "ENGINE_WHY",         false, SK_PATTERN, false },
+    { "MAX_EMIT_BYTES",     false, SK_PATTERN, false },      /* the limit built under */
+    { "MAX_EMIT_CODE_BYTES", false, SK_PATTERN, false },
+    { "STEP_BUDGET",        false, SK_PATTERN, false },      /* per call: the contract */
+    { "WORK_BUDGET",        false, SK_PATTERN, false },
+    { "FINDINGS",           false, SK_PATTERN, false },
+    { "MEASURES",           false, SK_PATTERN, false },      /* over P and the parts (match_api §6.3.10¶13) */
     /* the DFA scan family (`pcrec_emit_dfa_scan_stamps`, `emit_dfa_stamps`) */
-    { "DFA_SCAN",           false, SK_MACHINE_STR },
-    { "DFA_PREFILTER",      false, SK_MACHINE_STR },
-    { "DFA_TABLE",          false, SK_MACHINE_STR },
-    { "DFA_UNIFORM_FOLDS",  false, SK_MACHINE_NUM },
-    { "DFA_SCAN_EDGE",      false, SK_MACHINE_STR },
-    { "DFA_START",          false, SK_MACHINE_STR },
-    { "DFA_MATCH",          false, SK_MACHINE_STR },
+    { "DFA_SCAN",           false, SK_MACHINE_STR, false },
+    { "DFA_PREFILTER",      false, SK_MACHINE_STR, false },
+    /* written by hand, never filtered (a streamed value, emit_dfa.c); the
+     * row classifies it as a contract stamp for the segment block */
+    { "DFA_PREFILTER_OFFSETS", false, SK_MACHINE_STR, false },
+    { "DFA_TABLE",          false, SK_MACHINE_STR, false },
+    { "DFA_UNIFORM_FOLDS",  false, SK_MACHINE_NUM, false },
+    { "DFA_SCAN_EDGE",      false, SK_MACHINE_STR, false },
+    { "DFA_START",          false, SK_MACHINE_STR, false },
+    { "DFA_MATCH",          false, SK_MACHINE_STR, false },
     /* the kit's every-artifact stamps (src/gen/memfn_stamps.c) */
-    { "RUN_WORDS",          false, SK_MACHINE_NUM },
-    { "MEMFN_FORMS",        false, SK_PARTS_UNION },  /* the forms the parts emit */
-    { "MEMFN_LIBC",         false, SK_PATTERN },      /* the assembled text's calls */
-    { "SIMD_GUARDED_BYTES", false, SK_PATTERN },      /* the assembled text's bytes */
+    { "RUN_WORDS",          false, SK_MACHINE_NUM, false },
+    { "MEMFN_FORMS",        false, SK_PARTS_UNION, false },  /* the forms the parts emit */
+    { "MEMFN_LIBC",         false, SK_PATTERN, false },      /* the assembled text's calls */
+    { "SIMD_GUARDED_BYTES", false, SK_PATTERN, false },      /* the assembled text's bytes */
     /* the VM's stamp block (src/gen/emit_vm.c): a compound's parts are DFA
      * parts in this build, so its shell writes none of these; they are
      * classified so a VM shell (B6) is a value decision, not a crash. */
-    { "VM_PREFILTER",       false, SK_MACHINE_STR },
-    { "VM_PREFILTER_WHY",   false, SK_MACHINE_STR },
-    { "VM_PREFILTER_LANG",  false, SK_MACHINE_STR },
-    { "VM_PREFILTER_LANG_WHY", false, SK_MACHINE_STR },
-    { "VM_START",           false, SK_MACHINE_STR },
-    { "VM_RESEED",          false, SK_MACHINE_STR },
-    { "VM_RUNGS",           false, SK_MACHINE_NUM },
-    { "VM_STRATS",          false, SK_MACHINE_NUM },
-    { "VM_PRUNES",          false, SK_MACHINE_NUM },
-    { "VM_PRUNE_CEILING",   false, SK_MACHINE_STR },
-    { "VM_ENTRY_SHAPE",     false, SK_MACHINE_STR },
-    { "VM_FRAMELESS",       false, SK_MACHINE_NUM },
-    { "VM_LIT_RUNS",        false, SK_MACHINE_NUM },
-    { "VM_POSS_ARMS",       false, SK_MACHINE_NUM },
-    { "VM_ALT_ISLANDS",     false, SK_MACHINE_NUM },
-    { "VM_CLS_ATOMS",       false, SK_MACHINE_NUM },
-    { "VM_CLS_FOLDS",       false, SK_MACHINE_NUM },
-    { "VM_CLS_KIT",         false, SK_MACHINE_STR },
-    { "VM_CALL_LINKED",     false, SK_MACHINE_NUM },
-    { "VM_CALL_SPLICED",    false, SK_MACHINE_NUM },
-    { "VM_ROOT_MINW",       false, SK_MACHINE_NUM },
-    { "VM_PROGRAM_BYTES",   false, SK_MACHINE_NUM },
-    { "UNROLL_K",           false, SK_MACHINE_NUM },
-    { "UNROLL_K_WHY",       false, SK_MACHINE_STR },
-    { "NSLOTS",             false, SK_MACHINE_NUM },
-    { "FAST_FRAMES",        false, SK_MACHINE_NUM },
-    { "FAST_TRAIL",         false, SK_MACHINE_NUM },
-    { "CALL_TOP_NONE",      false, SK_MACHINE_NUM },
-    { "TRACE",              false, SK_PATTERN },      /* a build option */
-    { "R_",                 true,  SK_PATTERN },      /* the give-up codes */
+    { "VM_PREFILTER",       false, SK_MACHINE_STR, false },
+    { "VM_PREFILTER_WHY",   false, SK_MACHINE_STR, false },
+    { "VM_PREFILTER_LANG",  false, SK_MACHINE_STR, false },
+    { "VM_PREFILTER_LANG_WHY", false, SK_MACHINE_STR, false },
+    { "VM_START",           false, SK_MACHINE_STR, false },
+    { "VM_RESEED",          false, SK_MACHINE_STR, false },
+    { "VM_RUNGS",           false, SK_MACHINE_NUM, false },
+    { "VM_STRATS",          false, SK_MACHINE_NUM, false },
+    { "VM_PRUNES",          false, SK_MACHINE_NUM, false },
+    { "VM_PRUNE_CEILING",   false, SK_MACHINE_STR, false },
+    { "VM_ENTRY_SHAPE",     false, SK_MACHINE_STR, false },
+    { "VM_FRAMELESS",       false, SK_MACHINE_NUM, false },
+    { "VM_LIT_RUNS",        false, SK_MACHINE_NUM, false },
+    { "VM_POSS_ARMS",       false, SK_MACHINE_NUM, false },
+    { "VM_ALT_ISLANDS",     false, SK_MACHINE_NUM, false },
+    { "VM_CLS_ATOMS",       false, SK_MACHINE_NUM, false },
+    { "VM_CLS_FOLDS",       false, SK_MACHINE_NUM, false },
+    { "VM_CLS_KIT",         false, SK_MACHINE_STR, false },
+    { "VM_CALL_LINKED",     false, SK_MACHINE_NUM, false },
+    { "VM_CALL_SPLICED",    false, SK_MACHINE_NUM, false },
+    { "VM_ROOT_MINW",       false, SK_MACHINE_NUM, false },
+    { "VM_PROGRAM_BYTES",   false, SK_MACHINE_NUM, false },
+    { "UNROLL_K",           false, SK_MACHINE_NUM, false },
+    { "UNROLL_K_WHY",       false, SK_MACHINE_STR, false },
+    { "NSLOTS",             false, SK_MACHINE_NUM, true },
+    { "FAST_FRAMES",        false, SK_MACHINE_NUM, false },
+    { "FAST_TRAIL",         false, SK_MACHINE_NUM, false },
+    { "CALL_TOP_NONE",      false, SK_MACHINE_NUM, true },
+    { "TRACE",              false, SK_PATTERN, true },   /* a build option */
+    { "R_",                 true,  SK_PATTERN, true },   /* the give-up codes */
 };
 
 /* The catalogue row for stamp `name`, or NULL. An exact name wins over a
@@ -133,6 +143,16 @@ static const StampRow *stamp_row(const char *name)
         if (r->family && !strncmp(r->name, name, strlen(r->name))) fam = r;
     }
     return fam;
+}
+
+/* Is `<PREFIX>_<name>` (the name after the prefix, len bytes) a stamp of
+ * the caller contract: a catalogue row (exact, or a family's prefix) not
+ * marked internal? The segment block's keep rule (emit_code.c; review
+ * 2026-10-27-r1-ic2 F3): a name nobody catalogued is not kept. */
+bool pcrec_stamp_is_contract(Ctx *cx, const char *name, size_t len)
+{
+    const StampRow *r = stamp_row(pcrec_sb_fragf(&cx->arena, "%.*s", (int)len, name));
+    return r && !r->internal;
 }
 
 /* The sorted, distinct union of the comma lists in the shell's parts'
