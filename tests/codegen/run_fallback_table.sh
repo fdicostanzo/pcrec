@@ -293,7 +293,12 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # 30,089, so about 29,943 after it: 57 under, the old witness's margin) is
 # measured with the `trlowsize` reference compiler below on this tree. The next
 # stamp that adds bytes to every artifact will move it again.
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}[a-z]\d' -e utf8
+# [REQRUN-VM] (lane reqvm1, abi 91): the dropped (VM-only) artifact now carries the attempt
+# loop's handoff code, so the drop no longer SHRINKS this shape (30,089 before, 30,710
+# after, cap 30,000) and the 30,000..30,146 window above is empty: no pre-drop size can
+# fit after it. The witness now ends in the refusal the drop leaves; record 2's
+# restart=1 is still the point, and a drop that compiles stays seq-pfcbcat's.
+fseq seq-pfcd2    trlowsize refused 'prefilter-collapse@size > drop-prefilter@size > refuse@size' '(\bcat\b){2,}[a-z]\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8 -fno-start-landing
 fstate seq-anch 1 'sdr=1'

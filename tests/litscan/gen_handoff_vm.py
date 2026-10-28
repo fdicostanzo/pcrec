@@ -3,7 +3,7 @@ THE HANDOFF ON THE VM ROUTES' witnesses (docs/dev/lanes/reqvm0_report.md, the
 VM soundness rule and its probes; docs/spec/tuning.md §2.41). Re-run after
 editing the case list:
 
-    PCREC_PCRE2_PATH=/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 \\
+    PCREC_PCRE2_PATH=libpcre2-8.so.0 \\
         python3 tests/litscan/gen_handoff_vm.py [--check-pcrec BUILD/pcrec]
 
 The oracles, the cell grid (every character-boundary start position) and the
