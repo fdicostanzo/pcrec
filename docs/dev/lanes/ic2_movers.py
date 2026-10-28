@@ -10,6 +10,10 @@ allowed to move:
     `callouts`' artifacts gain the span helpers; a code-c pattern is now a
     module row, so its refusal text changes and the describe modes parse it);
   - a composition row: a tests/code/ file (the `code-header` head line is new);
+  - a composition row whose WORK side wrote no artifact at all
+    (`side_b_ok=artifacts=[]`): review fix F7 (CON-9) -- a file build compiles
+    every target before writing any, so a file with one refused target no
+    longer leaves the earlier targets' files on disk (the REF side did);
   - a dumps row: --list-syntax / --list-families (the new code-c row) and
     --list-schema (the new `code-header` line).
 
@@ -52,7 +56,8 @@ def main(path):
         if st == "dumps":
             off = [k for k in keys if k not in DUMPS_OK]
         elif st == "composition":
-            off = [k for k in keys if "/tests/code/" not in k]
+            off = [k for k in keys
+                   if "/tests/code/" not in k and "side_b_ok=artifacts=[]" not in k]
         else:
             off = [k for k in keys if "(?C" not in k]
         total += len(keys)

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2fixmov_report.md
+sections: Summary; Sweep failures; Mover census; Fixes; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
