@@ -229,6 +229,16 @@ while IFS='|' read -r spell class; do
             fi ;;
     esac
 done <<< "$EP_ROWS"
+# F4 (review 2026-10-27-r1-ic2): a segment's own #defines are not pcrec's
+# decisions; --emit-facts lists the stamps above the code block only.
+FSEG="$(printf 'a(?C`c: return RX_PASS;\n#define RX_FAKE 1\n#undef RX_CODE_LANGS\n#define RX_CODE_LANGS "zzz"\n`)b')"
+fo="$(pc --emit-facts --pattern "$FSEG" 2>&1)"
+if printf '%s\n' "$fo" | grep -qE 'RX_CODE_LANGS[[:space:]]+"c"' &&
+   ! printf '%s\n' "$fo" | grep -qE 'RX_FAKE|"zzz"|RX_SUBJ'; then
+    ok "--emit-facts lists the artifact's stamps and none of a segment's own #defines"
+else
+    bad "--emit-facts read the code block: $(printf '%s\n' "$fo" | grep -E 'RX_FAKE|zzz|RX_SUBJ|CODE_LANGS' | tr '\n' ' ')"
+fi
 if [ -f "$LIBA" ] && $CC -O1 -I"$ROOT_DIR/lib" -o "$WORK/lib_check" "$SCRIPT_DIR/lib_check.c" "$LIBA" 2> "$WORK/lib.log"; then
     if "$TIMEOUT_BIN" 60 "$WORK/lib_check"; then
         ok "the library: allow_code is the only door"

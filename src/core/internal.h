@@ -3434,6 +3434,13 @@ typedef struct {
      * seam as well as for the engine. */
     unsigned enc_mask;
     StrBuf csb, hsb;
+    /* [INLINE-C] the number of lines the code segment block (emit_code.c),
+     * LAST in `csb`, takes, counted once it is written: what `--emit-facts`
+     * stops reading before, so a segment's own `#define`s are never shown as
+     * pcrec's decisions (review 2026-10-27-r1-ic2 F4). A line count from the
+     * end, because the renders that run after the block rewrite bytes before
+     * it and inside it but add no line to it. 0 with no block. */
+    size_t code_block_lines;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
      * must be produced BEFORE the text that precedes it (the class pool, the

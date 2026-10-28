@@ -124,6 +124,11 @@ static void fd_decisions(Ctx *cx, FactsRows *r, const char *enc,
 {
     const char *up = pcrec_sb_upper(&cx->arena, cx->opt->prefix);
     size_t upl = strlen(up), i = 0;
+    /* The code segment block, last in the text, is the user's code and its
+     * macro set, not pcrec's decisions (review 2026-10-27-r1-ic2 F4): stop
+     * at its first line. */
+    for (size_t k = cx->job->code_block_lines; k && n; )
+        if (a[--n] == '\n') k--;
     while (i < n) {
         size_t e = i, ns, ne, vs;
         while (e < n && a[e] != '\n') e++;

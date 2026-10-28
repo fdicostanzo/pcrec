@@ -408,6 +408,7 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
     const int nh = in ? in->ncode_headers : 0;
     if (cx->ncodesegs == 0 && nh == 0) return;
 
+    const size_t from = c->len;
     pcrec_sb_putc(c, '\n');
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -438,4 +439,7 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
                 code_segment(cx, c, a);
         }
     if (cx->ncodesegs) code_macros(cx, c, false);
+    size_t lines = 0;
+    for (size_t i = from; i < c->len; i++) lines += c->p[i] == '\n';
+    cx->job->code_block_lines = lines;
 }
