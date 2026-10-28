@@ -382,7 +382,7 @@ diag "a missing header is reported at its code-header line" "miss.rxt:1:" miss.r
 printf 'code-header c <stdint.h>\n\npattern (a)(?C`c: return RX_CAP(1);`)c\nm "ac" 0 2\n' > "$G/hd.rxt"
 if (cd "$G" && pc --allow-code=c -o hd.c hd.rxt >/dev/null 2>&1); then
     he="$(cd "$G" && $CC -fsyntax-only hd.c 2>&1)"
-    hmax="$(printf '%s\n' "$he" | sed -n 's/.*hd\.rxt:\([0-9][0-9]*\):.*/\1/p' | sort -n | tail -1)"
+    hmax="$(printf '%s\n' "$he" | sed -n 's/.*hd\.rxt:\([0-9][0-9]*\):.*/\1/p' | LC_ALL=C sort -n | tail -1)"
     if [ -n "$hmax" ] && [ "$hmax" -le 4 ] && printf '%s\n' "$he" | grep -q 'hd\.c:'; then
         ok "a diagnostic inside a macro-set expansion names the .c, and the .rxt only at real lines"
     else
