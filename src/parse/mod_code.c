@@ -50,11 +50,15 @@ const PcrecCodeLang *pcrec_code_langs(size_t *n)
     return code_langs;
 }
 
-/* Every registered language's tag, comma-separated ("c"): the grant the
- * DESCRIBE modes take (`--emit-ir`, `--emit-facts`, `--count-groups`;
- * inline_c.md §5.9's second class), which parse code to describe the
- * pattern and write no C. */
-const char *pcrec_code_all_langs(void)
+/* THE DESCRIBE GRANT (inline_c.md §5.9's second class; review
+ * 2026-10-27-r1-ic2 F8): a describe entry parses code to describe the
+ * pattern and writes no C, so it opens EVERY registered language whatever
+ * the caller's grant says (unset, "" or a list alike: one fact, one
+ * answer). Two spellings of that one rule, side by side here and nowhere
+ * else: this tag list, which the string-grant entries (`--emit-ir`,
+ * `--emit-facts`) put in their options, and the module mask below, which the
+ * mask entries (`--count-groups`, the registry's `built` probe) OR in. */
+const char *pcrec_code_describe_grant(void)
 {
     static const char all[] = ""
 #define PCREC_CODE_LANG(id, tag, feat, mod) "," tag
@@ -64,9 +68,8 @@ const char *pcrec_code_all_langs(void)
     return all[0] ? all + 1 : all;
 }
 
-/* Every registered language's module bit: the grant a DESCRIBE entry
- * (inline_c.md §5.9's second class: `--count-groups`, the registry's
- * `built` probe) opens, since it parses code and writes no C. */
+/* Every registered language's module bit: THE DESCRIBE GRANT above, as the
+ * mask the mask entries open. */
 unsigned pcrec_code_describe_mask(void)
 {
     unsigned m = 0;

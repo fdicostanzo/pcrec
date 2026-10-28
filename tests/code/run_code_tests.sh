@@ -260,6 +260,17 @@ while IFS='|' read -r spell class; do
             fi ;;
     esac
 done <<< "$EP_ROWS"
+# F8 (review 2026-10-27-r1-ic2): an EXPLICIT empty grant is no grant to a
+# describe mode either (one fact, one answer): same output as none at all.
+for dm in --count-groups --emit-ir --emit-facts; do
+    e0="$(pc "$dm" --pattern "$SEG" 2>&1)"; q0=$?
+    e1="$(pc --allow-code= "$dm" --pattern "$SEG" 2>&1)"; q1=$?
+    if [ $q0 -eq 0 ] && [ $q1 -eq 0 ] && [ "$e0" = "$e1" ]; then
+        ok "describe '$dm': --allow-code= (empty) answers as no grant"
+    else
+        bad "describe '$dm': no grant rc=$q0, --allow-code= rc=$q1 '${e1:0:160}'"
+    fi
+done
 # F4 (review 2026-10-27-r1-ic2): a segment's own #defines are not pcrec's
 # decisions; --emit-facts lists the stamps above the code block only.
 FSEG="$(printf 'a(?C`c: return RX_PASS;\n#define RX_FAKE 1\n#undef RX_CODE_LANGS\n#define RX_CODE_LANGS "zzz"\n`)b')"

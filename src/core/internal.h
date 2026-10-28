@@ -5737,7 +5737,7 @@ typedef struct {
     const char *module;
 } PcrecCodeLang;
 const PcrecCodeLang *pcrec_code_langs(size_t *n);
-const char          *pcrec_code_all_langs(void);
+const char          *pcrec_code_describe_grant(void);
 unsigned             pcrec_code_describe_mask(void);
 const char          *pcrec_code_header_check(const char *lang, const char *hdr);
 /* src/gen/emit_code.c — the C text a code segment becomes (inline_c.md §3):

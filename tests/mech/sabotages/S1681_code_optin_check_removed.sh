@@ -12,4 +12,4 @@ SAB_REACH='"$PCREC" -o "$REACH_TMP/o.c" --pattern '\''a(?C`c: return RX_PASS;`)b
 SAB_REACH_EXPECT="which only the command-line option --allow-code=c"
 SAB_COUNT=1
 SAB_BEFORE='        if (pcrec_code_grant_resolve(defo.allow_code, &grant, gerr,'
-SAB_AFTER='        if (pcrec_code_grant_resolve(pcrec_code_all_langs() /* SABOTAGE S1681 */, &grant, gerr,'
+SAB_AFTER='        if (pcrec_code_grant_resolve(pcrec_code_describe_grant() /* SABOTAGE S1681 */, &grant, gerr,'

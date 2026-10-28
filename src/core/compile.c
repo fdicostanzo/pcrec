@@ -3604,7 +3604,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): the listing
      * parses embedded code (a later group must still be counted) and the C
      * it compiles is thrown away, so it needs no grant from the caller. */
-    if (!defo.allow_code) defo.allow_code = pcrec_code_all_langs();
+    defo.allow_code = pcrec_code_describe_grant();
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
                              NULL, NULL, NULL, in) != 0) {

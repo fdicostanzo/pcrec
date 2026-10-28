@@ -201,7 +201,7 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
     defo.header_name = NULL;
     /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9), as
      * `pcrec_emit_ir`: code parses, the C is discarded, no grant needed. */
-    if (!defo.allow_code) defo.allow_code = pcrec_code_all_langs();
+    defo.allow_code = pcrec_code_describe_grant();
     own = defo.encoding;
     if (nenc <= 0) { encs = &own; nenc = 1; }
 

@@ -4098,7 +4098,8 @@ grant every segment is refused by name and no artifact is written, and a
 another file (through `lib` or `include`) is refused even with the grant:
 only the file named on the command line, `--pattern` text and a library
 caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
-`--count-groups`) parse code without the grant and write no C. The stamp
+`--count-groups`) parse code whatever the grant says (unset, empty or a
+list) and write no C. The stamp
 `<PREFIX>_CODE_LANGS` discloses the languages present (§6.3).
 
 <a id="s11-10"></a>
