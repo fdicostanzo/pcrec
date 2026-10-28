@@ -15,9 +15,9 @@
  *     form (Frank 2026-10-27), and gcc sees the definition, so the call is
  *     direct and inlinable (`pcrec_emit_code_protos`);
  *   - the SEGMENT BLOCK, LAST in the `.c` (§3.1): the `#undef` of every
- *     artifact-internal macro still live, the `code-header` includes, then
- *     per segment its macro set, its function (the user's text under
- *     `#line`) and the macro set's `#undef` (`pcrec_emit_code_block`).
+ *     artifact-internal macro still live, the macro set, the `code-header`
+ *     includes, per segment its function (the user's text under `#line`),
+ *     then the macro set's `#undef` (`pcrec_emit_code_block`).
  *
  * pcrec never reads the user's text beyond copying it: no parse, no check,
  * no substitution (Q7). The text arrives decoded (`mod_code.c`). */
@@ -254,49 +254,49 @@ static int code_ng_cmp(const void *x, const void *y)
     return r ? r : (a->number > b->number) - (a->number < b->number);
 }
 
-/* THE MACRO SET (§3.2), `#define`d before a segment's function; `set` true,
- * or its `#undef` list after it. Every accessor taking `n` evaluates it once
- * (a statement expression) and is guarded: an unset or out-of-range group
- * reads -1 / NULL. `RX_G_<name>` for every caller-scope ASCII group name: a
- * name one group has is its number; a name several groups share is the
- * first member, in number order, that is set at this fire, else the first
+/* THE MACRO SET (§3.2), one row per macro: its name, its parameter list
+ * ("" for an object-like macro) and its body. The one table both the
+ * `#define`s and the `#undef`s are written from (review 2026-10-27-r1-ic2
+ * F31). Every accessor taking `n` evaluates it once (a statement
+ * expression) and is guarded: an unset or out-of-range group reads -1 /
+ * NULL. */
+#define CAP_GUARD "size_t rx__n = (size_t)(n); " \
+                  "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0"
+static const struct { const char *name, *params, *body; } code_macro_rows[] = {
+    { "RX_SUBJ",    "",    "(ctx->subject)" },
+    { "RX_LEN",     "",    "(ctx->len)" },
+    { "RX_POS",     "",    "(ctx->pos)" },
+    { "RX_START",   "",    "(ctx->caps[0][0])" },
+    { "RX_CAP_SET", "(n)", "__extension__ ({ " CAP_GUARD "; })" },
+    { "RX_CAP_S",   "(n)", "__extension__ ({ " CAP_GUARD " "
+                           "? ctx->caps[rx__n][0] : (ptrdiff_t)-1; })" },
+    { "RX_CAP_E",   "(n)", "__extension__ ({ " CAP_GUARD " "
+                           "? ctx->caps[rx__n][1] : (ptrdiff_t)-1; })" },
+    { "RX_CAP_LEN", "(n)", "__extension__ ({ " CAP_GUARD " "
+                           "? ctx->caps[rx__n][1] - ctx->caps[rx__n][0] : (ptrdiff_t)-1; })" },
+    { "RX_CAP_P",   "(n)", "__extension__ ({ " CAP_GUARD " "
+                           "? ctx->subject + ctx->caps[rx__n][0] : (const unsigned char *)0; })" },
+    { "RX_CAP",     "(n)", "__extension__ ({ " CAP_GUARD " "
+                           "? (rx_span){ ctx->subject + ctx->caps[rx__n][0], "
+                           "ctx->caps[rx__n][1] - ctx->caps[rx__n][0] } "
+                           ": (rx_span){ (const unsigned char *)0, -1 }; })" },
+    { "RX_USER",    "",    "(ctx->user)" },
+};
+#undef CAP_GUARD
+
+/* Writes the macro set's `#define`s (`set` true) or its `#undef`s: the rows
+ * above, then `RX_G_<name>` for every caller-scope ASCII group name. A name
+ * one group has is its number; a name several groups share is the first
+ * member, in number order, that is set at this fire, else the first
  * (match_api.md §5.4¶6's walk). */
 static void code_macros(Ctx *cx, StrBuf *c, bool set)
 {
-    static const char *const fixed[] = {
-        "RX_SUBJ", "RX_LEN", "RX_POS", "RX_START", "RX_CAP_SET", "RX_CAP_S",
-        "RX_CAP_E", "RX_CAP_LEN", "RX_CAP_P", "RX_CAP", "RX_USER",
-    };
-    if (!set) {
-        for (size_t i = 0; i < sizeof fixed / sizeof fixed[0]; i++)
-            pcrec_sb_printf(c, "#undef %s\n", fixed[i]);
-    } else {
-        pcrec_sb_puts(c,
-            "#define RX_SUBJ (ctx->subject)\n"
-            "#define RX_LEN (ctx->len)\n"
-            "#define RX_POS (ctx->pos)\n"
-            "#define RX_START (ctx->caps[0][0])\n"
-            "#define RX_CAP_SET(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0; })\n"
-            "#define RX_CAP_S(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0 "
-            "? ctx->caps[rx__n][0] : (ptrdiff_t)-1; })\n"
-            "#define RX_CAP_E(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0 "
-            "? ctx->caps[rx__n][1] : (ptrdiff_t)-1; })\n"
-            "#define RX_CAP_LEN(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0 "
-            "? ctx->caps[rx__n][1] - ctx->caps[rx__n][0] : (ptrdiff_t)-1; })\n"
-            "#define RX_CAP_P(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0 "
-            "? ctx->subject + ctx->caps[rx__n][0] : (const unsigned char *)0; })\n"
-            "#define RX_CAP(n) __extension__ ({ size_t rx__n = (size_t)(n); "
-            "rx__n >= 1 && rx__n < ctx->ncap && ctx->caps[rx__n][1] >= 0 "
-            "? (rx_span){ ctx->subject + ctx->caps[rx__n][0], "
-            "ctx->caps[rx__n][1] - ctx->caps[rx__n][0] } "
-            ": (rx_span){ (const unsigned char *)0, -1 }; })\n"
-            "#define RX_USER (ctx->user)\n");
-    }
+    for (size_t i = 0; i < sizeof code_macro_rows / sizeof code_macro_rows[0]; i++)
+        if (set)
+            pcrec_sb_printf(c, "#define %s%s %s\n", code_macro_rows[i].name,
+                            code_macro_rows[i].params, code_macro_rows[i].body);
+        else
+            pcrec_sb_printf(c, "#undef %s\n", code_macro_rows[i].name);
 
     /* The caller-scope names, sorted (name, number): a run per name. */
     unsigned n = 0;
@@ -338,7 +338,8 @@ static void code_line_dir(StrBuf *c, size_t line, const char *file)
     pcrec_sb_puts(c, "\"\n");
 }
 
-/* One segment: its comment, its macro set, its function, the set's undef. */
+/* One segment: its comment and its function, the user's text under its
+ * `#line`. */
 static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
 {
     const PcrecEmitIn *in = cx->emit_in;
@@ -369,7 +370,6 @@ static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
     if (pad) pcrec_sb_printf(c, " line %zu, column %zu */\n", line, col);
     else     pcrec_sb_printf(c, " line %zu */\n", line);
     pcrec_sb_cmt_close(c);
-    code_macros(cx, c, true);
     pcrec_sb_printf(c, "static ptrdiff_t %s(const rx_ctx *ctx)\n{\n(void)ctx;\n",
                     code_fn(cx, a));
 
@@ -391,7 +391,6 @@ static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
         }
     }
     pcrec_sb_puts(c, "\n__builtin_trap(); }\n");
-    code_macros(cx, c, false);
 }
 
 void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
@@ -404,10 +403,16 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* [INLINE-C] the pattern's embedded code (match_api.md section 11.9):\n"
-        " * the matcher's own macros end here, then the code-header lines, then\n"
-        " * one function per code segment, its text as written. */\n");
+        " * the matcher's own macros end here, then the code's macro set, the\n"
+        " * code-header lines, and one function per code segment, its text as\n"
+        " * written. */\n");
     pcrec_sb_cmt_close(c);
     code_undef_live(cx, c);
+    /* The macro set once, BEFORE the first `#line`: its lines are the `.c`'s
+     * own, so a diagnostic inside a macro's expansion names the `.c`, never a
+     * line a `code-header` or segment `#line` left in force (review
+     * 2026-10-27-r1-ic2 F12). */
+    if (cx->ncodesegs) code_macros(cx, c, true);
     for (int i = 0; i < nh; i++) {
         bool dup = false;
         for (int j = 0; j < i; j++)
@@ -423,4 +428,5 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
             if (a->u.callout.bind == CO_CODE && a->u.callout.seg == s)
                 code_segment(cx, c, a);
         }
+    if (cx->ncodesegs) code_macros(cx, c, false);
 }

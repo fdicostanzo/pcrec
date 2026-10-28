@@ -4043,8 +4043,9 @@ before the matcher; its definition comes LAST in the `.c`, after everything
 else the artifact writes, preceded by `#undef` of every macro the artifact
 defined for its own use that is still defined there (what stays defined is
 the public contract: the stamps, the shared block's and §1¶6a's names), then
-the `code-header` lines (¶7), then per segment the macro set of ¶5, the
-function, and the set's `#undef`. A `#line` directive before the text names
+the macro set of ¶5, the `code-header` lines (¶7), each segment's function,
+and the set's `#undef`. The macro set comes before the first `#line`, so a
+diagnostic inside a macro's expansion names the `.c` itself. A `#line` directive before the text names
 the source as written (a FILE operand as typed; `--pattern` text as
 `<command line>`; a library pattern as `<pattern>`) and the line of the
 segment's first byte, and the first line is padded to its column when the
@@ -4054,8 +4055,8 @@ or `--pattern-esc`, every decoded line carries its own `#line` naming the
 opener's line, with no column. So a compiler diagnostic in the user's code
 names the user's file and line. `ctx->user` is `NULL` at a code site.
 
-<a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined before each segment's function and `#undef`ed
-after it. Every accessor taking `n` evaluates it once and is guarded: an
+<a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined once before the `code-header` lines and the
+first segment's function and `#undef`ed after the last. Every accessor taking `n` evaluates it once and is guarded: an
 unset, not-yet-closed or out-of-range group reads `-1` / `NULL`. Slot 0 is not
 a group (`RX_CAP_SET(0)` is false); the attempt start is `RX_START`.
 

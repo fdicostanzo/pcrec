@@ -264,6 +264,21 @@ diag "a segment's error names its .rxt line and column" "err.rxt:3:25: error" er
 diag "a pattern-esc segment's error names the opener's line" "pe.rxt:3:" pe.rxt
 diag "a --pattern segment's error names <command line>" "<command line>:1:17: error" --pattern 'xy(?C`c: return undeclared_cl;`)'
 diag "a missing header is reported at its code-header line" "miss.rxt:1:" miss.rxt
+# F12 (review 2026-10-27-r1-ic2): an error inside a macro-set expansion names
+# no line past the end of the .rxt (a code-header's #line once stayed in force
+# over the macro set: hd.rxt:12 of a 4-line file).
+printf 'code-header c <stdint.h>\n\npattern (a)(?C`c: return RX_CAP(1);`)c\nm "ac" 0 2\n' > "$G/hd.rxt"
+if (cd "$G" && pc --allow-code=c -o hd.c hd.rxt >/dev/null 2>&1); then
+    he="$(cd "$G" && $CC -fsyntax-only hd.c 2>&1)"
+    hmax="$(printf '%s\n' "$he" | sed -n 's/.*hd\.rxt:\([0-9][0-9]*\):.*/\1/p' | sort -n | tail -1)"
+    if [ -n "$hmax" ] && [ "$hmax" -le 4 ] && printf '%s\n' "$he" | grep -q 'hd\.c:'; then
+        ok "a diagnostic inside a macro-set expansion names the .c, and the .rxt only at real lines"
+    else
+        bad "a macro-set diagnostic: highest hd.rxt line ${hmax:-none} of 4: $(printf '%s' "${he:0:300}" | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"
+    fi
+else
+    bad "hd.rxt did not compile under the grant"
+fi
 pc --allow-code=c -p geo --code-header 'c:"geoip.h"' -o "$G/geo.c" \
     --pattern '\b(\d{1,3}(?:\.\d{1,3}){3})\b(?C`c: return geo_is_private(RX_CAP_P(1), (size_t)RX_CAP_LEN(1)) ? RX_FAIL : RX_PASS;`)' \
     --features all
