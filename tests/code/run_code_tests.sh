@@ -542,20 +542,47 @@ echo
 echo "== [INLINE-C] no indirect call through a binding the compiler can see =="
 A="$WORK/asm"; mkdir -p "$A"
 icalls() { grep -cE '^\s+call\s+\*' "$1"; }
+# THE POSITIVE WITNESS (review 2026-10-27-r1-ic2 F21): `n == 0` also holds
+# when the site was deleted, so each direct build must also show the callee
+# reached from the CALLER's own functions (`<caller>_*`, a segment's
+# `<caller>__code*` excluded): its marker store inlined there, or a direct
+# call to it. reached ASM CALLER CALLEE-ERE
+reached() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import re, sys
+path, caller, callee = sys.argv[1], sys.argv[2], re.compile(sys.argv[3])
+fn, hit = None, False
+for line in open(path):
+    m = re.match(r"([A-Za-z_][A-Za-z0-9_]*):", line)
+    if m:
+        name = m.group(1)
+        fn = name if name.startswith(caller + "_") and not name.startswith(caller + "__code") else None
+        continue
+    if fn and callee.search(line):
+        hit = True
+sys.exit(0 if hit else 1)
+PY
+}
 pc --features all -p ua -o "$A/ua.c" --pattern '(\d+)(?C"le3")x'
-pc --allow-code=c -p ub -o "$A/ub.c" --pattern '(\d+)(?C`c: return RX_CAP_LEN(1) <= 3 ? RX_PASS : RX_FAIL;`)x'
+pc --allow-code=c -p ub -o "$A/ub.c" --pattern '(\d+)(?C`c: extern volatile int ub_mark; ub_mark = 1; return RX_CAP_LEN(1) <= 3 ? RX_PASS : RX_FAIL;`)x'
 pc --features all -p oc -o "$A/oc.c" --pattern '25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d'
 pc --features all -p uc -o "$A/uc.c" --pattern 'ip=(?C"oc,consume")\.'
 cat > "$A/le3.c" <<'C'
-static ptrdiff_t le3(const rx_ctx *ctx) { return ctx->caps[1][1] - ctx->caps[1][0] <= 3 ? RX_PASS : RX_FAIL; }
+volatile int le3_mark;
+static ptrdiff_t le3(const rx_ctx *ctx) { le3_mark = 1; return ctx->caps[1][1] - ctx->caps[1][0] <= 3 ? RX_PASS : RX_FAIL; }
 const rx_callout_ref rx_callout_le3 = { le3, NULL };
 C
 printf '#include "ua.c"\n#include "le3.c"\n' > "$A/unity.c"
 printf '#include "oc.c"\n#include "uc.c"\nconst rx_callout_ref rx_callout_oc = { oc_match, NULL };\n' > "$A/art.c"
-printf '#include "ua.h"\n#include "le3.c"\n' > "$A/sep_bind.c"
 cbad=0
-for t in unity:unity.c embedded:ub.c artifact-as-callout:art.c control:ua.c; do
-    name="${t%%:*}"; src="${t#*:}"
+if [ "$(uname -m)" != x86_64 ]; then
+    bad "the call-form arm reads x86-64 assembly only, and this machine is $(uname -m)"; cbad=1
+fi
+for t in 'unity:unity.c:ua:le3_mark|call\s+le3\b' 'embedded:ub.c:ub:ub_mark|call\s+ub__code1\b' \
+         'artifact-as-callout:art.c:uc:(call|jmp)\s+oc_match\b' control:ua.c:ua:; do
+    [ "$cbad" = 0 ] || break
+    name="${t%%:*}"; rest="${t#*:}"; src="${rest%%:*}"; rest="${rest#*:}"
+    caller="${rest%%:*}"; wit="${rest#*:}"
     if ! $CC -O2 -std=gnu11 -S -I"$A" -o "$A/$name.s" "$A/$src" 2> "$A/$name.log"; then
         bad "the $name build did not compile: $(head -3 "$A/$name.log")"; cbad=1; continue
     fi
@@ -565,9 +592,11 @@ for t in unity:unity.c embedded:ub.c artifact-as-callout:art.c control:ua.c; do
         [ "$n" -ge 1 ] || { bad "the control (binding in another file) shows no indirect call: the asm reader is blind"; cbad=1; }
     elif [ "$n" -ne 0 ]; then
         bad "the $name build makes $n indirect call(s) through a binding the compiler can see"; cbad=1
+    elif ! reached "$A/$name.s" "$caller" "$wit"; then
+        bad "the $name build shows no call through its site at all: the callee ($wit) is reached from no ${caller}_ function"; cbad=1
     fi
 done
-[ "$cbad" = 0 ] && ok "unity, embedded and artifact-as-callout builds call their bindings directly (the separate-file control calls indirectly)"
+[ "$cbad" = 0 ] && ok "unity, embedded and artifact-as-callout builds reach their bindings directly (the separate-file control calls indirectly)"
 
 # ---- arm 11: the measurement card ------------------------------------------------
 echo
