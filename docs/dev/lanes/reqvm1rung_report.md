@@ -239,10 +239,27 @@ trace compilers (trplain, trlowsize) built, and the three witnesses run.
   spec, tests, sabotage) and the report commit.
 - Rulings file `reqvm1rung_rulings.md`: empty at every checkpoint, so no entry
   was applied.
-- Local validation (this box, nice, unlocked; logs under
-  /tmp/claude-1001/reqvm1rung/v_*.log): see the handback message for the
-  numbers. `make strict` is clean.
-- OWED (queued, not run):
+- Local validation, COMPLETE for these sections (this box, nice, unlocked,
+  on 6e1eada8f; logs /tmp/claude-1001/reqvm1rung/v_<target>.log, verdict
+  from make's `*** [test-` lines, none):
+
+  | section | result |
+  |---|---|
+  | `make test-fallback-table` | 151 passed / 0 failed |
+  | `make test-codegen` | 19/19 scripts, 0 failed |
+  | `make test-registry` | 79 passed / 0 failed in its last group |
+  | `make test-memfn-arch` | 17 / 0 |
+  | `make test-rxtsource` | 298 / 0 |
+  | `make test-spec-history` | 11 / 0 |
+  | `make test-claudemd-size` | 13 / 0 |
+  | `make strict` | clean |
+
+  The suites left the tree clean. The size_ladder_prefilter_drop.rxt
+  witnesses' sections (test-uprops-utf8 §5, test-resource [PF-DROP]) are in
+  job 650's make test. Their `(\p{Xwd})\b` resource witness was checked by
+  hand: the rung does not fire there, and the artifact is still `-fno-prefilter`'s
+  but for the two stamps.
+- OWED (queued 2026-10-28, not run):
   - `650-reqvm1-test`: build, strict, the movers census vs main 490bc2baf
     (trailer `movers: DONE cells=... unexpected=0`), then the full make test.
   - `651-reqvm1-mech`: S1700-S1714, S238, the fallback-table rows S423 S626
@@ -250,7 +267,8 @@ trace compilers (trplain, trlowsize) built, and the three witnesses run.
     first a REACH_ONLY pass (176 rows). Cap 21600.
   - `652-reqvm1-axes`: the axes sweep plus the form census. Cap 18000.
 
-  Each job's `--dry-run` passed before `scripts/boxqueue add`. The job scripts
+  Each job's `--dry-run` passed before `scripts/boxqueue add`, which queued
+  all three (`boxqueue status`: pending). The job scripts
   are copies of 630/631/632 with the ids, caps and descriptions updated.
 - For the manager:
   - the per-form refinement finding (The rung, last paragraph);
