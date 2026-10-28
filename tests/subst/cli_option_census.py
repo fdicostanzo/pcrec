@@ -43,6 +43,8 @@ VALUES = {
     '-i': (['-i'], 'opt'), '--ucp': (['--ucp'], 'opt'),
     '--emit-main': (['--emit-main'], 'opt'), '--pattern-esc': (['--pattern-esc'], 'opt'),
     '--callout': (['--callout', '1:consume'], 'opt'),
+    '--allow-code': (['--allow-code=c'], 'opt'),
+    '--code-header': (['--code-header', 'c:x.h'], 'opt'),
     '--no-captures': (['--no-captures'], 'opt'), '--trace': (['--trace'], 'opt'),
     '--emit-ir': (['--emit-ir'], 'query'), '--emit-facts': (['--emit-facts'], 'query'),
     '--engine': (['--engine=auto'], 'opt'), '--memfn': (['--memfn='], 'opt'),
@@ -76,7 +78,8 @@ VALUES = {
 # one (the option needs a module, or reads the pattern in its own form).
 CONTROL = {'--ucp': ['--features', 'ucp', '--pattern', 'a'],
            '--callout': ['--features', 'callouts', '--pattern', 'a(?C1)b'],
-           '--pattern-esc': ['--pattern', '"a"']}
+           '--pattern-esc': ['--pattern', '"a"'],
+           '--code-header': ['--allow-code=c', '--pattern', 'a']}
 SUBST_MODE = ('--subst/--subst-file takes only', '--subst/--subst-file compiles a template')
 SUPPORT_MODE = '--emit-support takes no pattern'
 
