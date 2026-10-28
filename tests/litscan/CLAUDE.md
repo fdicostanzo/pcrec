@@ -55,7 +55,8 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
 - **handoff.rxt** — [K82] (B), THE HANDOFF (lane k82hbuild, 2026-10-05, abi
   61; `docs/design/litscan_k82h.md` §4.2 item 2, `docs/spec/tuning.md`
   §2.41): cells at EVERY character-boundary start position, each block on the
-  default route and under `engine vm` (no DFA scan: the no-handoff control).
+  default route and under `engine vm` (no DFA scan: the no-handoff control
+  until [REQRUN-VM], whose attempt-loop handoff runs these cells too).
   The maximum offset on all three routes (the unanchored scan's reverse pass
   is bounded by `search_from`, so a short K or a missing clamp shows only on
   the attempt and hybrid routes), two occurrences (the gate's
@@ -77,6 +78,21 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   text, the K admission's admitted/declined witnesses `[a-y]\d{0,100}:` /
   `[a-y]\d{0,150}:`, and Frank's hostile cell `a.{1,50000}z` over z-dense
   text. Detector of S805, S808, S809, S813, S814.
+- **handoff_vm.rxt** — [REQRUN-VM] (lane reqvm1, 2026-10-27;
+  `docs/spec/tuning.md` §2.41¶8b-¶9a): THE HANDOFF ON THE VM ROUTES, cells at
+  every character-boundary start position. `engine vm` blocks: the VM attempt
+  loop with no DFA scan hands off to the WHOLE run's first hit less K and
+  re-enters it after each failed attempt (`handoff-attempts`), or the entry
+  only (`handoff-attempts-entry`, `x{2,5}(?i:cat)`). The give-up witness
+  `(a|aa){0,10}cxyz` (`budget steps=3000`; its deny-arm give-ups are
+  run_axes.sh's GIVEUP1 entries for `-fno-req-handoff`, `-fno-req-byte`,
+  `-fno-req-run`), `\G` before the run, a lookbehind, utf8 round-up and
+  ill-formed text, caseless K in bytes, `\K`, the declines, bench subst case
+  7's pattern; default-route blocks for the VM HYBRID's prefilter re-entry
+  (bench subst case 2's pattern). Detector of S1700, S1702, S1703; the
+  admission's pins are tests/memfn/run_handoff_reach.sh's (S1701, S1704-S1707).
+- **gen_handoff_vm.py** — writes `handoff_vm.rxt` with `gen_handoff.py`'s
+  oracles and writer, imported; `--check-pcrec BIN` runs the result.
 - **gen_handoff.py** — writes `handoff.rxt`: a byte block's cells from
   python3 `re` AND libpcre2 (the borrowed ctypes binding; the two must agree),
   a utf8 block's (and a byte block python cannot compile) from libpcre2 under

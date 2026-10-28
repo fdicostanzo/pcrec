@@ -10332,7 +10332,7 @@ static const CandRow cand_rows[] = {
     { .c = { "handoff-reentry", PCREC_NO_REQ_HANDOFF, pf_handoff_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "handoff", .map = CM_LOWERBOUND,
       .hands = CT_LOWER, .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "handoff" } },
-      .desc = "forward scan of the caller-facing body where the req-use table chose `handoff` and, under the byte-rate prior, the landmark's mean gap less K exceeds the mean gap of the start-byte set the row below scans (1/h - K > 1/m; K times h below one where no start-byte row applies): at each restart (start state, no accept pending) the pre-check's landmark is re-found from the scan position (the kept hit while still ahead; none is NOMATCH) and the scan moves to c - K where that is ahead, rounded up to a character start and re-seeded where the machine seeds ([REQ-HANDOFF-L1])",
+      .desc = "forward scan of the caller-facing body or of a VM hybrid's inlined prefilter where the req-use table chose `handoff` and, under the byte-rate prior, the landmark's mean gap less K exceeds the mean gap of the start-byte set the row below scans (1/h - K > 1/m; K times h below one where no start-byte row applies): at each restart (start state, no accept pending) the pre-check's landmark is re-found from the scan position (the kept hit while still ahead; none is NOMATCH) and the scan moves to c - K where that is ahead, rounded up to a character start and re-seeded where the machine seeds ([REQ-HANDOFF-L1])",
       .u.pf = { .emit = pf_emit_handoff, .reseeds = true, .scan = PF_SCAN_LANDMARK } },
     /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
     { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },
