@@ -12,6 +12,15 @@
 ifeq ($(origin CC),default)
 CC := gcc
 endif
+# PCREC_TMPDIR: the one temporary-file root (scripts/tmpdir.sh owns the
+# default, /var/tmp/pcrec-<user>; /tmp is a small RAM tmpfs here). TMPDIR is
+# forced to it for every recipe: a caller's TMPDIR=/tmp must not win, the
+# override is PCREC_TMPDIR. Created on first use (mode 0700).
+PCREC_TMPDIR := $(shell sh $(dir $(abspath $(lastword $(MAKEFILE_LIST))))scripts/tmpdir.sh --print)
+export PCREC_TMPDIR
+TMPDIR := $(PCREC_TMPDIR)
+export TMPDIR
+
 CFLAGS  ?= -O2 -g
 WARN     = -Wall -Wextra
 ALLFLAGS = $(CFLAGS) $(WARN) -std=gnu11 -Ilib -Isrc
@@ -453,7 +462,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
 # PR device catching honest mistakes (wrong commit, a dirty tree, a stale
 # subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note).
 test:
-	@dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
+	@dir="$$(mktemp -d "$${TMPDIR}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
 	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
 	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
@@ -486,7 +495,7 @@ test:
 test-shard:
 	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
 	secs="$$(echo $$secs)"; \
-	dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
+	dir="$$(mktemp -d "$${TMPDIR}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
 	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
 	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
@@ -526,7 +535,7 @@ test-ci-shards:
 # reads as a pass.
 test-corpus: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-corpus.ran"; fi
-	@set +e; TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/size/run_size_log.sh; rc=$$?; \
+	@set +e; PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/size/run_size_log.sh; rc=$$?; \
 	bash tests/size/check_size_tripwire.sh; rc2=$$?; \
 	if [ "$$rc" -ne 0 ]; then exit "$$rc"; fi; exit "$$rc2"
 
@@ -1384,7 +1393,7 @@ test-utfcheck: all
 # once a pcrec function calls the kit, hence `all`. See tests/memfn/CLAUDE.md.
 test-memfn-manifest: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-manifest.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_site_manifest.sh
+	CC="$(CC)" bash tests/memfn/run_site_manifest.sh
 
 # [MEMFN] R4c: C4, the arch-blindness detector (integration.md §10.4): no ISA
 # vocabulary in src/, cli/, lib/ or tests/ outside tests/memfn/c4_allowlist.tsv
@@ -1393,21 +1402,21 @@ test-memfn-manifest: all
 # a second plus the compiler probes.
 test-memfn-arch:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-arch.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_arch_blind.sh
+	CC="$(CC)" bash tests/memfn/run_arch_blind.sh
 
 # [MEMFN] R4c: C12 (the emitted-form ratchet, tests/memfn/c12_ceilings.tsv),
 # C13 (on_cand duplicability: declared UNREACHED until R4e) and C14 (shape
 # bounds compiled against limits.def). Static plus one syntax-only compile.
 test-memfn-forms:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-forms.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_form_checks.sh
+	CC="$(CC)" bash tests/memfn/run_form_checks.sh
 
 # [MEMFN] R4c: the VM hybrid handoff route's reach floor (integration.md
 # §15.5): three witness patterns whose artifacts carry the route, each also a
 # pattern of the oracle-verified tests/litscan/handoff.rxt. Seconds.
 test-memfn-reach: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-reach.ran"; fi
-	TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_handoff_reach.sh
+	bash tests/memfn/run_handoff_reach.sh
 
 # [MEMFN] R4a: C15 (libpcrec.a exports only pcrec_ names, the kit's
 # included) and C16 (every kit source file carries a D145 SPDX id and its
@@ -1423,7 +1432,7 @@ test-memfn-link: all
 # object (`nm -u`), with K35 floors. About 40 s on the Mac.
 test-memfn-stamps: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-stamps.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_libc_census.sh
+	CC="$(CC)" bash tests/memfn/run_libc_census.sh
 
 # [MEMFN] RQ-3 (D155 item 9 + addendum 2): every artifact's
 # <PREFIX>_SIMD_GUARDED_BYTES is at most its rendered SIMD rows' declared
@@ -1433,14 +1442,14 @@ test-memfn-stamps: all
 # guarded byte. Builds the witness compiler, then a corpus sample at six arms.
 test-memfn-guarded: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-guarded.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_guarded.sh
+	CC="$(CC)" bash tests/memfn/run_simd_guarded.sh
 
 # [MEMFN] R4e' batch 1 (R-13): C18, the floor rule's four legs and the
 # guard lint, plus C9-x86, over every corpus pattern at -fmemfn-simd against
 # -fno-memfn-simd (tests/memfn/run_simd_floor.sh; integration.md §R4.9.8).
 test-memfn-simdfloor: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-simdfloor.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_floor.sh
+	CC="$(CC)" bash tests/memfn/run_simd_floor.sh
 
 # [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
 # predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
@@ -1450,7 +1459,7 @@ test-memfn-simdfloor: all
 # build.
 test-memfn-rank: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rank.sh
+	CC="$(CC)" bash tests/memfn/run_rank.sh
 
 # [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
 # scalar arm the kit carries renders its fixed fixture sites
@@ -1459,14 +1468,14 @@ test-memfn-rank: all
 # Seconds; reads build/libpcrec.a.
 test-memfn-arms: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-arms.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_arm_pins.sh
+	CC="$(CC)" bash tests/memfn/run_arm_pins.sh
 
 # [MEMFN] R4c: C10's static half, DELEG_SITES (src/gen/memfn_sites.def)
 # against D91's budgets and the kit's vocabulary, MF_P_INLOOP's one home and
 # no by-value site description under src/, with planted controls. Seconds.
 test-memfn-deleg: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-deleg.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_deleg_sites.sh
+	CC="$(CC)" bash tests/memfn/run_deleg_sites.sh
 
 # [MEMFN-ROWCON] N4: the kit's ROW MANIFEST (tests/memfn/rows.tsv) against
 # the rows an MF_TRACE build of the kit lists, each row's closed reach reason,
@@ -1476,7 +1485,7 @@ test-memfn-deleg: all
 # traced kit and a traced pcrec in TMPDIR from build/libpcrec.a.
 test-memfn-rows: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rows.sh
+	CC="$(CC)" bash tests/memfn/run_rows.sh
 
 # [MEMFN] R17-b' B1 (lane fdb1; docs/design/memfn/r17b_prime.md rev 3): the
 # kit's FINDER TABLE and its B1 entries: the table's self-check and listing
@@ -1488,7 +1497,7 @@ test-memfn-rows: all
 # a plain and a traced fixture driver in TMPDIR (tests/memfn/run_finder.sh).
 test-memfn-finder: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-finder.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_finder.sh
+	CC="$(CC)" bash tests/memfn/run_finder.sh
 
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
@@ -1506,10 +1515,10 @@ $(BUILD_DIR)/libpcrec_mftrace.a: $(BUILD_DIR)/libpcrec.a $(KITSRCS) $(KITHDRS) t
 
 test-memfn-g2: all $(BUILD_DIR)/libpcrec_mftrace.a
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-g2.ran"; fi
-	G2_ROW_FLOORS=tests/memfn/row_floors.tsv TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh --quick
+	G2_ROW_FLOORS=tests/memfn/row_floors.tsv bash memfn/tests/run_g2.sh --quick
 
 test-memfn-g2-full: all $(BUILD_DIR)/libpcrec_mftrace.a
-	TMPDIR=$${TMPDIR:-/var/tmp} bash memfn/tests/run_g2.sh
+	bash memfn/tests/run_g2.sh
 
 # [START-SET] (D148) the `start_set` fact's checks: C-SS* (the emitted start
 # bytes of every forward DFA, seeded included, are a subset of the fact),
@@ -1892,7 +1901,7 @@ UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(UBSAN_CFLAGS)" \
                SANFLAGS="$(UBSAN_CFLAGS)" \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
-               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)}
 
 # [M6.4.4] `tests/codegen/run_atomic_identity.sh` is deliberately ABSENT
 # from both sanitizer lists as well as from `make test`. It never runs a
@@ -1943,7 +1952,7 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
                SANFLAGS="$(ASAN_CFLAGS)" \
                ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
-               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)}
 
 # K7 (docs/dev/known_issues.md) has NO automated repro in `make test` today — it
 # is reproduced only by hand (`ulimit -v ...; pcrec -p rx ... 'a{0,65535}'`)
@@ -2007,7 +2016,7 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
                ASAN_OPTIONS="detect_leaks=$(SAN_DETECT_LEAKS)" \
                LSAN_OPTIONS="" \
-               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} TMPDIR=$${TMPDIR:-/var/tmp}
+               PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)}
 
 # Same suite list as `ubsan:`/`asan:` (tests/thread/ excluded, same TSan
 # reason; see docs/testing.md's Exclusions section for the full rationale).
@@ -2134,7 +2143,7 @@ test-ksweep: all
 # tree ~20 times (about 6 minutes); run it when a sabotage table's figures are
 # in doubt and after changing any file a sabotage targets.
 mech:
-	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/mech/run_sabotage_matrix.sh
+	PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/mech/run_sabotage_matrix.sh
 
 bench: all
 	bash tests/bench/run_bench.sh

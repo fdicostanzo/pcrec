@@ -36,7 +36,7 @@ Launch one agent: `model: opus`, background, name `crit-<topic>`, prompt =
 /home/pcrec/projects/pcrec/.claude/skills/pcrec-critic/SKILL.md sections 3-8
 and follow them as the coordinator." plus: mode, subject, topic, the scope
 mandate (only the pcrec and pcrec-bench repos; scratch only under
-`/tmp/claude-1001/crit-<topic>/`; no edits to either repo except creating and
+`$PCREC_TMPDIR/scratch/crit-<topic>/`; no edits to either repo except creating and
 removing the review worktree), and the denylist paths the coordinator cannot
 know (lane report names, earlier reviews of this subject). Say NOTHING about
 known results. Then go about other work; the coordinator hands back one
@@ -104,7 +104,7 @@ a contract, RECOMMEND one in the draft; the launcher decides.
 
 ## 5. Brief and launch the critics (coordinator)
 
-Write one COMMON brief file under `/tmp/claude-1001/crit-<topic>/` (scope
+Write one COMMON brief file under `$PCREC_TMPDIR/scratch/crit-<topic>/` (scope
 mandate, read-only rules, subject and paths, the guide files, design docs and
 spec sections the subject cites, the denylist, the output format), then one
 short per-lens prompt: title `CRITIC <lens> (<model>): <topic>`, "read COMMON
@@ -120,7 +120,7 @@ ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
 Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
 findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --deliver FILE NAME`
-prints DONE; the coordinator runs `scripts/lanewatch --dir /tmp/claude-1001/crit-<topic> NAME...`
+prints DONE; the coordinator runs `scripts/lanewatch --dir $PCREC_TMPDIR/scratch/crit-<topic> NAME...`
 instead of waiting for replies (nested replies are often lost).
 
 Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
@@ -139,7 +139,7 @@ critic; a missed input goes to a fresh critic.
    quoting the cited lines, design claims by the simulation or grep they name.
    It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
-3. Draft `/tmp/claude-1001/crit-<topic>/review.md` in the
+3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
    why chosen); which lens caught what; findings by id with a PROPOSED
    disposition (FIX-NOW | PLAN | DOC | REJECTED | NOTED) and a one-line reason;
@@ -151,7 +151,7 @@ critic; a missed input goes to a fresh critic.
 
 ## 7. Meta-monitor the round (coordinator)
 
-Keep `/tmp/claude-1001/crit-<topic>/process.md` AS YOU GO: per agent, launch
+Keep `$PCREC_TMPDIR/scratch/crit-<topic>/process.md` AS YOU GO: per agent, launch
 and end time, model, final state (file complete / resent / nudged / stalled);
 brief confusions; delivery failures; blinding leaks you noticed; per lens,
 findings raised / verified / severity / overlaps; time to draft. At the end
