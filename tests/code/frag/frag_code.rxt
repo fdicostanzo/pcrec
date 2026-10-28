@@ -1,0 +1,8 @@
+# tests/code/frag/frag_code.rxt — a FRAGMENT (included by entry.rxt): its
+# code segment is reached through an include, so the harness compiles it
+# without the entry's grant and pcrec refuses it.
+pattern a(?C`c: return RX_PASS;`)b
+perr
+
+pattern ab
+m "ab" 0 2

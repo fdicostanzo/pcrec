@@ -556,7 +556,14 @@ static void rc_bind(Composer *co, const RxtDef *def)
     cx->opt            = &defopt;
     pcrec_parse_mods_init(cx);
 
+    /* [INLINE-C] stage 2: the code port reads which definition it is in, so
+     * code in one read from another file is refused as REACHED code
+     * (inline_c.md §5.4 row 3). The sub-parse's own refusals longjmp out of
+     * the whole compile, so only the normal return restores it. */
+    const RxtDef *outer_def = cx->code_def;
+    cx->code_def = def;
     Ast *body = pcrec_parse_info(cx, NULL);
+    cx->code_def = outer_def;
 
     int          k     = (int)cx->ncap;
     NamedGroup  *names = cx->named_groups;

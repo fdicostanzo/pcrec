@@ -72,6 +72,8 @@
   - [§11.6](#s11-6) The fire contract and the budget
   - [§11.7](#s11-7) Attributes
   - [§11.8](#s11-8) Firing classes
+  - [§11.9](#s11-9) Embedded code
+  - [§11.10](#s11-10) The span helpers
 <!-- spec-toc:end -->
 
 <a id="s0-p1"></a>[0¶1] This document states what pcrec's library (`lib/pcrec.h`) and every
@@ -198,17 +200,19 @@ hand-written binding may use them too. A consumed length is just the number.
 An artifact with no callout site emits none of it. Beside the family, the
 same artifact declares one `extern const rx_callout_ref rx_callout_<name>;`
 (or `rx_callout_<n>;`) per binding its sites name (§11.2): fixed-literal and
-unprefixed, so two artifacts naming one binding share one definition.
+unprefixed, so two artifacts naming one binding share one definition. The
+family is followed by the span helpers (§11.10), fixed-literal and in their
+own guard `PCREC_RX_SPAN_H`, on the same condition.
 
 <a id="s1-p7"></a>[1¶7] **The guard's value is the `abi`, and a mixed-`abi` translation unit is
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 89
-#error "pcrec: this artifact (abi 89) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 90
+#error "pcrec: this artifact (abi 90) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 89
+#define PCREC_RX_ABI_H 90
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1631,7 +1635,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `89` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `90` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1789,7 +1793,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `89` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `90` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1836,7 +1840,11 @@ ASCII is spelled by number (`\xNN` in a comment, a fixed three-digit octal
 comment-opening pair is split. The emitters' own text (comment prose
 included) is ASCII too, so every byte of the artifact, `.c` and `.h`, is
 ASCII under every option, and it compiles clean under `-Wall -Wextra -Werror
--Wbidi-chars` for any pattern.
+-Wbidi-chars` for any pattern, except the bytes of an embedded code segment
+and of a `code-header` line (§11.9), which are the user's as written. A
+bidirectional control or invisible character in a segment is refused
+(§11.9¶3), so such an artifact still compiles clean under `-Wbidi-chars`
+whenever the user's code does.
 
 <a id="s6-1"></a>
 ### 6.1 `rx_info` is link-time data
@@ -1865,8 +1873,8 @@ selection point must be observable".
 - <a id="s6-3-1-p1"></a>[6.3.1¶1] **Where they live.** The contract constants of the shared block (§2) and
   `<PREFIX>_NCAPS`, the sizing macros of §10.4, on a var-bearing artifact
   `<PREFIX>_NVARS`, and on a callout-bearing artifact §1¶6a's family, the
-  binding declarations, `<PREFIX>_CALLOUTS` and `<PREFIX>_CALLOUT_BINDINGS`
-  are in the `.h` (measured: 29 `#define`s in the `.h` of both
+  span helpers (§11.10), the binding declarations, `<PREFIX>_CALLOUTS`,
+  `<PREFIX>_CODE_LANGS` and `<PREFIX>_CALLOUT_BINDINGS` are in the `.h` (measured: 29 `#define`s in the `.h` of both
   a VM and a DFA build of `'a(b|c)+d'`, identical except `RX_NCAPS`'s value
   and the sizing values). Every other stamp is emitted into the `.c` only, so
   reading one needs a self-contained artifact (`header_name == NULL`) or code
@@ -1990,7 +1998,8 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_RESUME_FRAMES`, `_TRAIL_FRAMES`, `_RESUME_FRAME_SIZE`, `_TRAIL_FRAME_SIZE`, `_BUFFER_ALIGN` | all (`.h`) | integer | the sizing fields | §10.4 |
 | `<PREFIX>_NVARS`, `<PREFIX>_VAR_<NAME>` | var-bearing (`.h`) | integer | `nvars` | `docs/spec/vars.md` |
 | `<PREFIX>_CALLOUTS` | callout-bearing (`.h`) | integer: the number of callout sites | — | §11.2 |
-| `<PREFIX>_CALLOUT_BINDINGS` | callout-bearing (`.h`) | string: the binding symbols the artifact needs, sorted, distinct, comma-separated (`"rx_callout_1,rx_callout_octet"`) | — | §11.2 |
+| `<PREFIX>_CALLOUT_BINDINGS` | callout-bearing (`.h`) | string: the binding symbols the artifact needs, sorted, distinct, comma-separated (`"rx_callout_1,rx_callout_octet"`); a code segment's binding is the artifact's own and is not listed, so an artifact whose every site is code stamps `""` | — | §11.2 |
+| `<PREFIX>_CODE_LANGS` | code-bearing (`.h`) | string: the languages of the artifact's code segments, distinct, comma-separated, in the language table's order (`"c"`) | — | §11.9 |
 
 <a id="s6-3-3"></a>
 #### 6.3.3 Engine selection
@@ -2915,7 +2924,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, `_CODE_LANGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |
@@ -3180,6 +3189,9 @@ typedef struct {
     const char *const *measures_dirs;       /* NULL-terminated directory
                                                list searched for
                                                NAME.measures.tsv; NULL = none */
+    const char        *allow_code;          /* the CODE GRANT: languages of
+                                               embedded code this call may
+                                               compile ("c"); NULL = none */
 } pcrec_options;
 ```
 
@@ -3228,6 +3240,13 @@ a set that does not resolve or parse, or that reuses a committed set's id with
 other values, refuses the compile through `pcrec_error`. A consulted set's id
 is stamped into the artifact (`<PREFIX>_MEASURES`). `docs/spec/measures.md` is
 their contract.
+
+<a id="s8-2-p7c"></a>[8.2¶7c] **`allow_code`** is the code grant (§11.9): a comma-separated list of
+embedded-code languages (`"c"`), `NULL` (the default) for none. It is the
+ONLY library door to embedded code: module `code-<lang>` is in no `features`
+text (`"all"` does not contain it, and naming it is refused), so a pattern
+string never becomes compiled code without the caller's say-so. An unknown
+language refuses the compile through `pcrec_error`.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`
@@ -3781,7 +3800,9 @@ to sit above the boundary.
 `(?Cn)` and `(?C"name")` with PCRE2's eight string delimiters). The callee is
 an `rx_matchfn` (§2); it receives a read-only view of the match so far and
 its return decides the path. A pattern with a callout site compiles to the VM
-engine.
+engine. EMBEDDED CODE (module `code-<lang>`, ``(?C`c: ...`)``, §11.9) is a
+callout site whose callee the artifact itself defines from the pattern's
+text; everything in this section holds for it.
 
 <a id="s11-1"></a>
 ### 11.1 Where a site may stand
@@ -3803,13 +3824,30 @@ PCRE2); `(?:(?C1))*` is a group and is.
 |---|---|---|---|
 | 1 | `(?C"name")` | `rx_callout_<name>.fn` | `rx_callout_<name>.user` |
 | 2 | `(?C)`, `(?Cn)` (`n` 0-255; `(?C)` is `0`) | `rx_callout_<n>.fn`, `<n>` the decimal number | `rx_callout_<n>.user` |
+| 3 | embedded code, ``(?C`c: ...`)`` (§11.9) | `<prefix>__code<k>_ref.fn`, `<k>` the segment's number (1 for the first segment of the pattern, in pattern order) | `<prefix>__code<k>_ref.user`, `NULL` |
 
-<a id="s11-2-p2"></a>[11.2¶2] The artifact DECLARES each binding, `extern const rx_callout_ref
+<a id="s11-2-p1a"></a>[11.2¶1a] **One call form.** Every site calls `<binding>.fn(&ctx)` through a
+`const rx_callout_ref`, whoever defines it: rows 1-2 are the user's, declared
+`extern` by the artifact; row 3 is the artifact's own, `static ptrdiff_t
+<prefix>__code<k>(const rx_ctx *)` and `__attribute__((unused)) static const
+rx_callout_ref <prefix>__code<k>_ref = { <prefix>__code<k>, NULL };`,
+file-local, so it is never a link symbol and needs nothing from the user, and
+a site no match can reach (`{0}`, an uncalled `DEFINE` group) still builds
+under `-Werror`. **What gets inlined:** a
+binding whose definition the compiler can see when it compiles the matcher
+(the same translation unit, such as a `.c` that defines a `const` binding and
+`#include`s the artifact, or a build with `-flto`) is called directly and may
+be inlined when the build optimizes (`-O1` and above; at `-O0` gcc keeps the
+call through `fn`); a binding compiled separately is an indirect call through
+the binding's `fn`. Row 3 is always in the artifact's own translation unit.
+
+<a id="s11-2-p2"></a>[11.2¶2] The artifact DECLARES each binding of rows 1-2, `extern const rx_callout_ref
 rx_callout_<name>;` (§1¶6a), and the user DEFINES it. **An unbound binding is
 a link error, by design**: PCRE2 runs a pattern whose callout has no function
 by ignoring the callout; pcrec does not. `--emit-main` therefore refuses a
-pattern with a binding site, naming it ("--emit-main cannot define the
-binding rx_callout_octet; link your own"). A binding name is a C identifier
+pattern with a site of rows 1-2, naming the first in site order
+("--emit-main cannot define the binding rx_callout_octet; link your own"); a
+pattern whose every site is code is accepted. A binding name is a C identifier
 with no `__`; `-p rx_callout` and `-p rx_callout_...` are refused
 (`cli.md` §1.6's namespace table, row 2). A binding symbol that the
 artifact's shared ABI block already declares (`rx_callout_ref`, the type
@@ -3965,3 +4003,131 @@ IS the match" holds per attempt.
 <a id="s11-8-p3b"></a>[11.8¶3b] "Unchanged" is said for a quantifier or an alternation when the optimizer's possessive rule (`tuning.md` §2.1) shows that its retries can find no match its first way does not (a `-fno-poss-*` flag can turn this into "unknown", never into another verdict), and for a non-atomic lookaround whose body holds no capture group that can be set, no `\K`, no callout site and no subroutine call. "Loses a match" is said only with a subject the compiler built and checked: today when the whole pattern is a sequence of single characters around one alternation or quantifier (or a call to a group holding one) whose every way is itself such a sequence. A subroutine call is never "unchanged" and a lookaround is never "loses a match".
 
 <a id="s11-8-p4"></a>[11.8¶4] Not backtrackable, so never a cause: literals, classes, anchors, fixed-count quantifiers (`X{3}`), possessive quantifiers, atomic groups, ordinary (atomic) lookarounds, backreferences, and groups that never run (`(?(DEFINE)...)`, `{0}`).
+
+<a id="s11-9"></a>
+### 11.9 Embedded code
+
+<a id="s11-9-p1"></a>[11.9¶1] **The spelling.** Embedded code is module `code-<lang>`, `code-c` the one
+language, spelled as a PCRE2 string callout (`pattern_language.md`):
+``(?C`c: CODE`)``, with any of PCRE2's string delimiters, whose DECODED
+string starts with a registered language tag, its optional attributes and
+`:` (`c,consume,once:`). The attributes are §11.7's, and every rule of
+§11.1-§11.8 holds for a code site. A string without a registered tag and a
+`:` stays a binding name (`(?C"c,consume")` names the binding `c`). To PCRE2
+the same bytes are an ordinary string callout.
+
+<a id="s11-9-p2"></a>[11.9¶2] **Where the code ends:** at the first lone closing delimiter, a doubled one
+being one literal byte (PCRE2's own rule, so the same bytes are the same
+pattern to both programs). Code that uses the delimiter writes it doubled, or
+picks a delimiter it does not use (`` ` ``, `$`). The pattern's own modes do
+not apply inside the string (`(?x)` does not make `#` a comment there).
+
+<a id="s11-9-p3"></a>[11.9¶3] **The code is the user's, as written.** pcrec never parses, checks or
+rewrites it: there is no substitution of any kind, only the generated names
+of ¶5. What it refuses in a segment is every character that makes the code a
+reviewer reads differ from the code gcc compiles, naming the code point and
+its byte offset in the segment: a character with the Unicode property
+`Bidi_Control` or `Default_Ignorable_Code_Point` (the sets of the pinned
+Unicode data, `cli.md` §1.17.1); the Unicode line ends gcc does not end a line
+at, U+0085, U+2028 and U+2029; a carriage return not immediately followed by
+a line feed, a vertical tab and a form feed (each a line break to a terminal
+and not to gcc, or the reverse); and every other C0 control character, and
+DEL. Tab, line feed and CR LF are allowed. The segment is read as UTF-8, as
+gcc reads it; a byte that starts no well-formed UTF-8 character is passed
+through as written.
+
+<a id="s11-9-p4"></a>[11.9¶4] **The function.** Each segment becomes `static ptrdiff_t
+<prefix>__code<k>(const rx_ctx *ctx)`, an `rx_matchfn` whose BODY is the
+segment's text: statements ending in a `return` of §11.4's values. Falling
+off the end of the text traps. Its prototype and binding (§11.2 row 3) come
+before the matcher; its definition comes LAST in the `.c`, after everything
+else the artifact writes, preceded by `#undef` of every macro the artifact
+defined for its own use that is still defined there (what stays defined is
+the public contract: the stamps of §6.3, the shared block's and §1¶6a's
+names; the internal macros of §6.3.1¶10, `<PREFIX>_R_*`, `<PREFIX>_SLOT_*`
+and `<PREFIX>_NSLOTS` among them, are `#undef`ed), then
+the macro set of ¶5, the `code-header` lines (¶7), each segment's function,
+and the set's `#undef`. The macro set comes before the first `#line`, so a
+diagnostic inside a macro's expansion names the `.c` itself. A segment is C at
+file scope after the matcher: it can affect the translation unit's macros
+after it (a stamp's value included, for code that reads the stamp after
+`#include`-ing the `.c`), never the code above it, and `--emit-facts` lists
+none of it (`facts_listing.md` §4.2¶3). A `#line` directive before the text names
+the source as written (a FILE operand as typed; `--pattern` text as
+`<command line>`; a library pattern as `<pattern>`) and the line of the
+segment's first byte, and the first line is padded to its column when the
+text maps one-to-one onto its source line (no undone delimiter doubling, and
+no tab or non-ASCII byte before the code on that line). Under `pattern-esc`
+or `--pattern-esc`, every decoded line carries its own `#line` naming the
+opener's line, with no column. So a compiler diagnostic in the user's code
+names the user's file and line. The name is written as a C string literal
+(the artifact stays ASCII), which the compiler decodes: a control byte in a
+file name reaches the compiler's diagnostics raw, as it reaches pcrec's own.
+`ctx->user` is `NULL` at a code site.
+
+<a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined once before the `code-header` lines and the
+first segment's function and `#undef`ed after the last. Every accessor taking `n` evaluates it once and is guarded: an
+unset, not-yet-closed or out-of-range group reads `-1` / `NULL`. Slot 0 is not
+a group (`RX_CAP_SET(0)` is false); the attempt start is `RX_START`.
+
+| macro | value |
+|---|---|
+| `RX_SUBJ`, `RX_LEN`, `RX_POS` | `ctx->subject`, `ctx->len`, `ctx->pos` |
+| `RX_START` | the attempt start (§11.3¶4) |
+| `RX_CAP_SET(n)` | 1 when `n` is a group, `1 <= n < ctx->ncap`, and it is set; else 0 |
+| `RX_CAP_S(n)`, `RX_CAP_E(n)` | the group's start / end offset, or `-1` |
+| `RX_CAP_LEN(n)` | its length, or `-1` |
+| `RX_CAP_P(n)` | `RX_SUBJ + RX_CAP_S(n)`, or `NULL` |
+| `RX_CAP(n)` | the group as an `rx_span` (§11.10), or the unset span |
+| `RX_G_<name>` | a named group's number, for every group name of ASCII identifier bytes the pattern itself declares: the number of the one group with that name; under `(?J)`, the first member of the name's run, in number order, that is set at this fire (§5.4¶6's walk), else the run's first number |
+| `RX_USER` | `ctx->user` |
+
+<a id="s11-9-p6"></a>[11.9¶6] The `RX_` and `rx_` families are reserved: a user header that defines a
+name in them is outside this contract. The user can read `ctx` directly; the
+macros are convenience, not a wall.
+
+<a id="s11-9-p7"></a>[11.9¶7] **`code-header` lines** (`rxt_format.md` §1.1, `cli.md` §1.22) name the
+user's headers: each is written `#include` AS WRITTEN, in the order written, a
+repeated text once, after the matcher and before the first segment, and only
+in the `.c` (a program that only calls the matcher never needs them). pcrec
+never opens, resolves or reads the named file.
+
+<a id="s11-9-p8"></a>[11.9¶8] **The grant.** Embedded code compiles only when the invoker grants its
+language: `--allow-code=c` on the command line or `pcrec_options.allow_code`
+(§8.2¶7c). Nothing else enables it: `code-c` is in no feature set, `all`
+included, and a `features` text naming it is refused wherever it arrives
+from, as is a config's `pcrec` line carrying `--allow-code`. Without the
+grant every segment is refused by name and no artifact is written, and a
+`code-header` line is refused like a segment. Code in a definition read from
+another file (through `lib` or `include`) is refused even with the grant:
+only the file named on the command line, `--pattern` text and a library
+caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
+`--count-groups`) parse code whatever the grant says (unset, empty or a
+list) and write no C. The stamp
+`<PREFIX>_CODE_LANGS` discloses the languages present (§6.3).
+
+<a id="s11-10"></a>
+### 11.10 The span helpers
+
+<a id="s11-10-p1"></a>[11.10¶1] Every callout artifact carries, beside §1¶6a's family and in the guard
+`PCREC_RX_SPAN_H`, a span type and seven `static inline` helpers, for a code
+segment and a hand-written binding alike. A SPAN is a pointer and a length.
+A span is UNSET when its length is negative (`RX_CAP` of an unset group is
+`p == NULL`, `len == -1`), and every helper reads an unset span as matching
+nothing. The pointer decides nothing: an empty group on a `NULL` subject is
+the SET span `p == NULL`, `len == 0`, which every helper reads as it reads
+an empty group on `""`.
+
+```c
+typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;
+```
+
+| helper | returns |
+|---|---|
+| `int rx_eq(rx_span s, const char *z)` | 1 when `s` is set and its bytes are exactly the NUL-terminated `z` (same length); else 0 |
+| `int rx_eqi(rx_span s, const char *z)` | as `rx_eq`, the 26 ASCII letters compared without case; every other byte exactly |
+| `int rx_u64(rx_span s, uint64_t *out)` | 1 and `*out` set when `s` is non-empty, every byte an ASCII decimal digit, and the value at most `UINT64_MAX` (leading zeros allowed); else 0 and `*out` untouched |
+| `int rx_hex(rx_span s, uint64_t *out)` | as `rx_u64` with hexadecimal digits of either case, no `0x` prefix |
+| `int rx_in(rx_span s, uint64_t lo, uint64_t hi)` | 1 when `rx_u64` reads a value `v` with `lo <= v <= hi`; else 0 |
+| `ptrdiff_t rx_find(rx_span s, const char *z)` | the offset in `s` of the first occurrence of the NUL-terminated `z` (0 for an empty `z`), or -1 (none, or `s` unset) |
+| `int rx_u8next(rx_span s, ptrdiff_t *i, uint32_t *cp)` | decodes the UTF-8 character at offset `*i`: its length 1-4, with `*cp` set and `*i` advanced past it; 0 at the end (`*i >= s.len`, or `s` unset); -1, nothing changed, for an ill-formed sequence (an overlong form, a surrogate, a value above U+10FFFF, a bad or missing continuation byte) |

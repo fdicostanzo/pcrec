@@ -112,12 +112,21 @@ Ranked; an earlier goal wins a conflict.
    gate over the existing corpus shows zero byte movers other than the abi
    number line at each stage (and none at all at stage 1a), and a sabotage row
    that marks every group publish-at-close unconditionally turns it red
-   `[r1 D13, COST-9]`; (b) `[r1 D13]` INLINE mode: a pattern whose check is the
+   `[r1 D13, COST-9]`; (b) `[r1 D13]` INLINE mode, **within the binding
+   path's own cost** `[2026-10-27-r1-ic2 F18]`: a pattern whose check is the
    empty predicate (`return RX_PASS;`) runs within the A/A spread of the same
-   pattern's callout-free `--engine=vm` twin plus `n` direct calls, `n` the
-   counted fires (the counting binding of DT-4.1), on paths that do not reach
-   the site as well as on paths that do (gcc inlines the user's code into the
-   VM; this catches a VM pessimised by it); (c) VERIFY mode (stage 4):
+   pattern with a unity binding at the site (`(?C"x")`, the call form it
+   replaces) plus `n` direct calls, `n` the counted fires (the counting
+   binding of DT-4.1), on paths that do not reach the site as well as on
+   paths that do (gcc inlines the user's code into the VM; this catches a VM
+   pessimised by it). Restated by the r1-ic2 code review: the earlier text
+   measured against the callout-free `--engine=vm` twin, which no stage meets
+   (an unreached site already costs ~1.9x that twin's instructions, 56.32M vs
+   29.32M, for the binding and the segment alike: framelessness and
+   publish-at-close are decided per artifact, not per path); that loss is
+   the site primitive's, not embedded code's, and its row is the manager's
+   (F18 PLAN). The card (`tests/code/card_inline.sh`) still reports the
+   callout-free twin beside it; (c) VERIFY mode (stage 4):
    on a veto-free subject, the empty-predicate `verify` artifact's search time
    is within the A/A spread of the callout-free pattern's DFA twin plus 5%,
    and is reported beside the inline (`-fno-callout-verify`) twin. The 5% is an
@@ -317,13 +326,20 @@ The emitter reads the callee from a declared first-match table:
 
 | # | row | callee expression | `user` | width default |
 |---|---|---|---|---|
-| 1 | `code` (`CO_CODE`) | a direct call of the generated `static` function `<prefix>__code<seg>` (section 3) | `NULL` | `W_PRED` |
+| 1 | `code` (`CO_CODE`) | `<prefix>__code<seg>_ref.fn` — a file-local `static const rx_callout_ref <prefix>__code<seg>_ref = { <prefix>__code<seg>, NULL };` the artifact defines beside the generated `static` function (section 3) | `NULL` | `W_PRED` |
 | 2 | `named` (`CO_NAME`) | `rx_callout_<name>.fn` — `extern const rx_callout_ref rx_callout_<name>;` declared by the artifact, defined by the user (D38 §1.1) | `rx_callout_<name>.user` | `W_PRED` `[r1 FR5]` |
 | 3 | `numbered` (`CO_NUM`) | `rx_callout_<n>.fn`, same shape, `<n>` the decimal number | `rx_callout_<n>.user` | `W_PRED` `[r1 FR5]` |
 
 Every row's width is `W_PRED` unless the site says `consume` (2.2); rev 0's
-"bindings are `W_ANY`" is replaced by FR5. Row 1 is a direct call so gcc can
-inline the user's code into the VM; rows 2 and 3 are the D38 binding unit
+"bindings are `W_ANY`" is replaced by FR5. **ONE CALL FORM** (Frank,
+2026-10-27): every row is called the same way, `<binding>.fn(&ctx)`; the rows
+differ only in where the binding is defined. Where the compiler can see the
+binding's definition (row 1 always: the binding and the function are in the
+artifact; rows 2 and 3 when the user's definition is in the same translation
+unit, a unity build, or under `-flto`) the call is direct and gcc may inline
+the callee into the VM; a binding compiled separately is an indirect call
+(`match_api.md` §11.2¶1a; checked by reading the assembly,
+`tests/code/run_code_tests.sh` arm 10). Rows 2 and 3 are the D38 binding unit
 verbatim. `rx_callout_<name>` is the fixed-literal, unprefixed family D38/D41.1
 ruled: two artifacts naming one binding share it, which is the point (one
 definition serves both). The compile-time namespace table in
@@ -862,8 +878,9 @@ The construct's REALITY and OWNER are exact; wording is not:
 | `(?C` numbered/named, module `callouts` off | "(?C...) requires module 'callouts'" |
 | embedded code, `--allow-code` does not name its language | "(?{...}) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables" |
 | `[r1 T1]` `features` text naming `code-c`, in any source; a config's `pcrec` line carrying `--allow-code` | refused at parse: "code is enabled by --allow-code, not by a features list or a file" (5.1) |
-| unknown tag / attribute, untagged non-identifier string, a binding name containing `__` | refused by name, offset of the site |
-| `[r1 T4]` a Unicode bidi control or invisible format character in a segment (U+202A-U+202E, U+2066-U+2069, U+200B-U+200F, U+2060-U+2064, U+FEFF) | refused, naming the code point and its offset in the segment |
+| unknown attribute on a tagged segment, untagged non-identifier string, a binding name containing `__` | refused by name, offset of the site |
+| `[2026-10-27-r1-ic2 F15]` an unregistered tag (`(?C\`py: x\`)`) or a tag-shaped string that is not a tag (`c,:`) | not code: the string stays a binding name (`match_api.md` §11.9¶1) and is refused as one (wording NOTED, D26 tier); this row replaced "unknown tag refused by name" |
+| `[r1 T4]` `[2026-10-27-r1-ic2 F1, F2]` a character that makes the code a reviewer reads differ from what gcc compiles: the UCD properties `Bidi_Control` and `Default_Ignorable_Code_Point` (the vendored data's sets, not a hand list), U+0085 and U+2028-U+2029 (line ends gcc does not end a line at), and the C0 controls other than tab, LF and a CR before LF, and DEL (`match_api.md` §11.9¶3) | refused, naming the code point, the reason and its byte offset in the segment; one first-match table (`code_refused[]`, src/parse/mod_code.c) |
 | a `once` site that can fire more than once per attempt | refused with the construct and the fix (1.10) |
 | a `callout <n>` line for a number the pattern does not use | refused by name |
 | end-rule failures | 2.3 item 5 |
@@ -889,7 +906,10 @@ static ptrdiff_t <prefix>__code<seg>(const rx_ctx *ctx);
 ```
 
 an `rx_matchfn`, `static` in the artifact's `.c`, `<seg>` the segment index
-(1.1). The prototype is emitted before the VM function; the DEFINITIONS are
+(1.1). The prototype is emitted before the VM function with its file-local
+binding, `static const rx_callout_ref <prefix>__code<seg>_ref = {
+<prefix>__code<seg>, NULL };`, which the site calls like every binding row
+(1.4, ONE CALL FORM); the DEFINITIONS are
 emitted LAST in the `.c`, after the matcher. Putting them last means no
 `#line` has to be restored afterwards, so the artifact's bytes do not depend on
 the output file name; gcc inlines a later-defined `static` function at `-O2`
@@ -904,15 +924,16 @@ The layout at the end of the `.c` `[r1 A8]`:
 /* ... the whole matcher ... */
 #undef RX_CUT                  /* every artifact-internal macro still live (A8) */
 /* ... */
+#define RX_SUBJ ...            /* the macro set of 3.2, ONCE, before any #line */
 #include "octet.h"             /* code-header lines (3.3), after the matcher */
 /* code segment 1: ipv4.rxt line 4, column 18 */
-#define RX_SUBJ ...            /* the macro set of 3.2 */
 static ptrdiff_t ipv4__code1(const rx_ctx *ctx)
 {
 #line 4 "ipv4.rxt"
                   return RX_CAP_SET(1) && RX_CAP_LEN(1) <= 3 && octet_le255(RX_CAP_P(1), RX_CAP_LEN(1)) ? RX_PASS : RX_FAIL;
 __builtin_trap(); }
-#undef RX_SUBJ ...
+/* ... later segments ... */
+#undef RX_SUBJ ...             /* once, after the last segment */
 ```
 
 The text is the DECODED segment (PCRE2's doubled delimiters undone; under a
@@ -944,8 +965,14 @@ above pads.
 
 ### 3.2 The macro set (Q7: generated names only)
 
-Defined immediately before each definition, `#undef`ed immediately after, so
-nothing leaks between segments or into the rest of the file:
+`[2026-10-27-r1-ic2 F12, F31]` Defined ONCE, after the artifact-internal
+`#undef`s and before the `code-header` lines and the first segment, and
+`#undef`ed once after the last segment, so nothing leaks into the rest of the
+file. Before the first `#line` on purpose: a `code-header` line's `#line`
+stays in force until the next one, and a macro-set line under it would be
+reported at a line the `.rxt` file does not have. One row table
+(`code_macro_rows[]`, src/gen/emit_code.c) writes both the `#define`s and the
+`#undef`s:
 
 | macro | value |
 |---|---|
@@ -973,7 +1000,15 @@ cannot rewrite pcrec's own code. Before the include block the emitter
 `#undef`s every artifact-internal macro (`RX_CUT`, `RX_PRUNE_*`, `RX_SLOT_*`,
 `RX_R_*`, `<prefix>_VALID_LB`, the pattern-dependent `RX_VAR_<name>` and
 `RX_SLOT_GROUP<n>_*`), so what stays live there is the public contract (the
-stamps and the shared ABI block's fixed literals) plus the macro set. A codegen
+stamps and the shared ABI block's fixed literals) plus the macro set.
+`[2026-10-27-r1-ic2 F3]` The keep rule is the stamp catalogue's own rows, not
+a name prefix: a `<prefix>_` name stays live exactly when
+`src/gen/stamp_kinds.c` has a row for it whose contract column is true (false
+for `<prefix>_R_*`, `_NSLOTS`, `_CALL_TOP_NONE`, `_TRACE`, which
+`match_api.md` §6.3.1¶10 calls internal), and hand-written stamps
+(`_ENGINE_WHY`, `_DFA_PREFILTER_OFFSETS`) have catalogue rows of their own.
+The check's public set is read independently of that catalogue: the `.h`'s
+`#define`s plus the names of `match_api.md` §6.3.2's inventory. A codegen
 check computes, over a CORPUS of callout artifacts (not one; the
 pattern-dependent names differ per pattern), the identifiers `#define`d and
 still live at the segment block, read from the emitted text, and fails when
@@ -1656,7 +1691,12 @@ made unconditional (the identity gate goes red); S-IC25 callout refs omitted
 from the marked set (the `--no-captures` witness); S-IC26 the step charge per
 fire is dropped; S-IC27 the `once` check accepts a site inside a repeat.
 
-**Stage 2 — embedded C (module `code-c`) with the local-only gate.** Both
+**Stage 2 — embedded C (module `code-c`) with the local-only gate.**
+`[R1, Frank 2026-10-27]` Stage 2 builds the tagged spelling only; the `(?{`
+spelling, its C scanner, the scanner table and S-IC7 moved to
+[SCANNER-DOGFOOD], which builds the scanner once, from the pcrec-generated
+matcher of `tests/recursion/cscan.rxt` (lane ic2's report lists the
+deviations). As written before R1: both
 code spellings; the generated language rows (1.1); the tag grammar; the `(?{`
 C scanner; the generated function, macro set (statement expressions,
 `RX_G_<name>` rules), the `#undef` block and `#line` per 3.1; `code-header`

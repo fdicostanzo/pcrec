@@ -198,6 +198,20 @@ typedef struct {
     const char *attrs;    /* "consume,once"; never empty (`pcrec_callout_decl_read`) */
 } PcrecCalloutDecl;
 
+/* [INLINE-C] stage 2 ONE `code-header` LINE (inline_c.md §3.3): a `.rxt`
+ * head line `code-header <lang> <header>` or the CLI's `--code-header
+ * <lang>:<header>`. `header` is AS WRITTEN, quotes or angle brackets
+ * included (`"octet.h"`, `<stdint.h>`): pcrec emits it after `#include ` and
+ * never opens, resolves or reads the file. No library member carries it in
+ * v1 ([IFACE-PUSH]). `line` is the head line's own: a `#line` before the
+ * `#include` names it in the emit input's `code_file`, so a missing header is
+ * reported at the line that names it (DT-3.3); 0 for `--code-header`. */
+typedef struct {
+    const char *lang;     /* a registered language tag: "c" */
+    const char *header;   /* "octet.h" or <stdint.h>, quotes kept */
+    size_t      line;     /* the `code-header` line; 0: none */
+} PcrecCodeHeader;
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -243,6 +257,24 @@ typedef struct {
      * by `pcrec_callout_sites` (src/opt/callout.c). */
     const PcrecCalloutDecl *callout_decls;
     int                     ncallout_decls;
+    /* [INLINE-C] stage 2 WHERE THE PATTERN'S CODE CAME FROM, for each code
+     * segment's `#line` (inline_c.md §3.1, §3.4): `code_file` is the source
+     * AS WRITTEN (a FILE operand, or "<command line>" for `--pattern`; NULL
+     * reads "<pattern>"), `code_line` the 1-based line of the pattern's
+     * first byte (0 reads 1), `code_col` the 1-based column of that byte on
+     * its line, or 0 when the text before it on the line is not plain ASCII
+     * without a TAB (then no segment is padded to a column), and `code_esc`
+     * true when the pattern was DECODED from one escaped source line
+     * (`pattern-esc`, `--pattern-esc`), so every decoded line maps to
+     * `code_line` and no column is padded. */
+    const char             *code_file;
+    size_t                  code_line;
+    size_t                  code_col;
+    bool                    code_esc;
+    /* [INLINE-C] stage 2 the `code-header` lines (NULL/0: none), emitted
+     * after the matcher in the order written, a repeated text once. */
+    const PcrecCodeHeader  *code_headers;
+    int                     ncode_headers;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -1261,7 +1293,13 @@ typedef enum {
  * segment) arrives with module `code-c` at stage 2. */
 typedef enum {
     CO_NAME = 1,   /* `(?C"name")`: rx_callout_<name> */
-    CO_NUM         /* `(?C)`, `(?Cn)`: rx_callout_<n> */
+    CO_NUM,        /* `(?C)`, `(?Cn)`: rx_callout_<n> */
+    /* [INLINE-C] stage 2 row 1 (`code`): an EMBEDDED SEGMENT, ``(?C`c:
+     * ...`)`` (module `code-<lang>`). pcrec writes its
+     * function and a file-local binding `<prefix>__code<seg>_ref` in the
+     * artifact; the site calls it through that binding like every other
+     * row (ONE CALL FORM, Frank 2026-10-27). */
+    CO_CODE
 } CalloutBind;
 
 /* [INLINE-C] stage 1b one site's binding row (`pcrec_callout_binding`,
@@ -2077,6 +2115,22 @@ struct Ast {
             int         fclass;
             bool        tail;
             const char *why;
+            /* [INLINE-C] stage 2 `CO_CODE` only (inline_c.md §1.1, §3):
+             * `lang` the registered language tag ("c"); `text`/`textlen`
+             * the DECODED code bytes (arena, NUL-terminated: PCRE2's
+             * doubled delimiters undone);
+             * `seg` the 1-based textual order among the pattern's code
+             * segments (the generated function is `<prefix>__code<seg>`);
+             * `code_at` the pattern offset of the code's first byte, and
+             * `code_exact` true when every code byte is the pattern byte
+             * at its offset (no doubled delimiter undone), so `code_at`
+             * maps the segment onto its source line and column. */
+            const char *lang;
+            const char *text;
+            size_t      textlen;
+            int         seg;
+            size_t      code_at;
+            bool        code_exact;
         } callout;
     } u;
 };
@@ -3380,6 +3434,13 @@ typedef struct {
      * seam as well as for the engine. */
     unsigned enc_mask;
     StrBuf csb, hsb;
+    /* [INLINE-C] the number of lines the code segment block (emit_code.c),
+     * LAST in `csb`, takes, counted once it is written: what `--emit-facts`
+     * stops reading before, so a segment's own `#define`s are never shown as
+     * pcrec's decisions (review 2026-10-27-r1-ic2 F4). A line count from the
+     * end, because the renders that run after the block rewrite bytes before
+     * it and inside it but add no line to it. 0 with no block. */
+    size_t code_block_lines;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
      * must be produced BEFORE the text that precedes it (the class pool, the
@@ -4116,6 +4177,15 @@ struct Ctx {
      * `pcrec_callout_sites`: the stamps' binding list and the listing's
      * `callouts` section read them. */
     const Ast          **callout_nodes;
+    /* [INLINE-C] stage 2 the number of embedded code segments the parse
+     * built (`CO_CODE` sites): the port numbers each `seg` 1..n. */
+    int                  ncodesegs;
+    /* [INLINE-C] stage 2 the definition whose text the composer is parsing
+     * right now (src/parse/rxt_compose.c `rc_bind`), or NULL while the
+     * target's own pattern is parsed. The code port reads it: code inside a
+     * definition read from another file is REACHED code (inline_c.md §5.2,
+     * §5.4 row 3) and is refused before pins. */
+    const struct RxtDef *code_def;
     Job                 *job;
 };
 
@@ -4294,7 +4364,14 @@ enum {
      * `(*UCP)` verb, the `--ucp` axis and the `(?a…)` letters' UCP meaning.
      * Also owns `(*UTF)`/`(*UTF8)`, which restate `--encoding=utf8`. An
      * encoding may IMPLY it (`PcrecEnc.implied_features`, O-71). */
-    FEAT_UCP              = 1u << 18
+    FEAT_UCP              = 1u << 18,
+    /* [INLINE-C] stage 2 module `code-c` (docs/design/inline_c.md §2, §5):
+     * embedded C in a pattern, ``(?C`c: ...`)``. Its rows
+     * carry RF_INVOKER_ONLY: no `features` text grants it and `all` does not
+     * contain it; only `--allow-code=c` / `pcrec_options.allow_code` does
+     * (`pcrec_code_grant_resolve`, src/parse/enabled.c). One bit per
+     * registered language (src/parse/codelang.def). */
+    FEAT_CODE_C           = 1u << 19
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -4539,7 +4616,19 @@ enum {
      * are ROADMAP_NEVER and refused at parse, so no node carries them yet; a
      * verb producer stamps its node with a row of its own group stating this
      * column per name. A new row states it here. */
-    RF_CROSSES_ATTEMPTS = 1u << 7
+    RF_CROSSES_ATTEMPTS = 1u << 7,
+
+    /* [INLINE-C] stage 2 THE GRANT COLUMN (docs/design/inline_c.md §5.1):
+     * the row's module is INVOKER-ONLY. A row without the flag is `any`: a
+     * `features` text anywhere (a block, a config, a `pcrec` line,
+     * `--features`, `pcrec_options.features`) and the named sets may enable
+     * it. With the flag, the module is outside `all` and every named set,
+     * its name is REFUSED in every `features` text, and only the invoker's
+     * own grant enables it (`--allow-code`, `pcrec_options.allow_code`),
+     * through a separate mask the feature resolver cannot set
+     * (src/parse/enabled.c). Every row of one module carries the same value
+     * (registry_check asserts it). The `code-<lang>` rows carry it. */
+    RF_INVOKER_ONLY = 1u << 8
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -5633,8 +5722,39 @@ const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
  * for the `.rxt` `callout` line (sep ' ') and `--callout` (sep ':'). */
 bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d);
 /* A site's binding row (inline_c.md §1.4): see PcrecCalloutBinding. */
-PcrecCalloutBinding pcrec_callout_binding(Arena *ar, const Ast *a);
+PcrecCalloutBinding pcrec_callout_binding(Ctx *cx, const Ast *a);
 bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail);
+
+/* src/parse/mod_code.c — modules `code-<lang>` ([INLINE-C] stage 2): ONE
+ * LANGUAGE ROW of src/parse/codelang.def (its columns, in its order), the
+ * table's accessors, and the tagged `(?C` row's port (``(?C`c: ...`)``):
+ * reads the tag and attributes, decodes the code, refuses bidi controls,
+ * control bytes and reached code, and returns an A_CALLOUT with `bind`
+ * CO_CODE. */
+typedef struct {
+    const char *tag;
+    unsigned    feature;
+    const char *module;
+} PcrecCodeLang;
+const PcrecCodeLang *pcrec_code_langs(size_t *n);
+const char          *pcrec_code_describe_grant(void);
+unsigned             pcrec_code_describe_mask(void);
+const char          *pcrec_code_header_check(const char *lang, const char *hdr);
+/* src/gen/emit_code.c — the C text a code segment becomes (inline_c.md §3):
+ * the span helpers (in every callout artifact's surface), each segment's
+ * prototype and file-local binding (before the VM function), and the
+ * segment block (LAST in the `.c`). */
+void pcrec_emit_span_helpers(StrBuf *sb);
+void pcrec_emit_code_protos(Ctx *cx, StrBuf *c);
+void pcrec_emit_code_block(Ctx *cx, StrBuf *c);
+/* src/parse/enabled.c: the invoker's code grant, a language list -> the
+ * `code-<lang>` modules' FEAT_* mask (inline_c.md §5.1). 0, or -1 + err. */
+int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
+                             size_t errsz);
+const PcrecCodeLang *pcrec_code_lang_by_tag(const char *tag, size_t len);
+const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature);
+ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
+                         size_t from);
 bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
                                        const char *tail);
 /* The RK_QUANTSUFFIX row for a quantifier spelled by its own selector byte
@@ -6307,6 +6427,17 @@ typedef struct {
     size_t end;       /* just past the closing `)` */
 } PcrecCoScan;
 bool   pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out);
+/* [INLINE-C] stage 2 the string's decode (a doubled `close` is one byte) into
+ * `dst` (n + 1 bytes); the decoded length; `*exact` (may be NULL) true when
+ * nothing was undoubled. Both `(?C` string ports share it. */
+size_t pcrec_callout_string_decode(const char *raw, size_t n, char close,
+                                   char *dst, bool *exact);
+/* [INLINE-C] stage 2 embedded code's always-live scans (inline_c.md §2.2;
+ * scans.c): the code TAG shape `tag(,attr)*:` (the `:`'s offset, or 0), and
+ * the tagged `(?C` row's recogniser for one language. */
+size_t pcrec_code_tag_extent_scan(const char *s, size_t n, const char *tag);
+bool   pcrec_code_tagged_recognise(const char *at, size_t avail,
+                                   const char *tag);
 
 /* src/parse/enabled.c — the enabled feature set (slice 9): one home,
  * process-wide, written once by the CLI's --features before any compile.
@@ -6552,7 +6683,11 @@ typedef enum {
      * <name>` opens a BUNDLE — name=the bundle name, value=its bundle-scope
      * `include <other>` AS WRITTEN (empty with none). A bundle's `include`
      * is NOT an RXT_DECL_INCLUDE row: that kind is the head's path splice. */
-    RXT_DECL_ANALYSIS
+    RXT_DECL_ANALYSIS,
+    /* [INLINE-C] stage 2 file-level `code-header <lang> <header>`
+     * (inline_c.md §3.3) — name=the language, value=the header operand AS
+     * WRITTEN (`"octet.h"` or `<stdint.h>`). */
+    RXT_DECL_CODE_HEADER
 } RxtDeclKind;
 
 typedef struct {
@@ -6603,6 +6738,10 @@ typedef struct {
     const char *tags;
     const char *oracle;
     const char *esc;
+    /* [INLINE-C] stage 2 a `pattern` row's value's 1-based COLUMN on its
+     * line, for a code segment's `#line` padding (inline_c.md §3.1); 0 when
+     * the text before it holds a TAB, and on a `pattern-esc` row. */
+    size_t      col;
     /* [FINDINGS] B2: a CONFIG row's own `analysis <name>` (AT_MOST_ONE),
      * or NULL; composed by `cfg_merge`'s later-wins like `engine`. */
     const char *analysis;
@@ -6808,7 +6947,7 @@ char      *pcrec_rxt_source_tsv(const RxtSource *src);
  * w1_impl §2.2 gives `first_cap_pos` and `Ast.reg_at` — a diagnostic
  * raised inside a definition names the definition's own file and line
  * rather than an offset into a pattern the author never wrote. */
-typedef struct {
+typedef struct RxtDef {
     const char        *name;      /* the block's `name`, FILE namespace     */
     const char        *pattern;   /* the block's pattern text, verbatim     */
     unsigned long long flags;     /* the block's own `flags`, RESOLVED      */
@@ -6916,6 +7055,10 @@ typedef struct {
     /* [INLINE-C] 1b the block's `callout` lines (RxtRow.callouts), read by
      * the CLI into the compile's numbered-callout declarations. */
     const char *callouts;
+    /* [INLINE-C] stage 2 the block's pattern COLUMN (RxtRow.col) and its
+     * `pattern-esc` marker (RxtRow.esc), for a code segment's `#line`. */
+    size_t      pattern_col;
+    const char *pattern_esc;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -7941,6 +8084,7 @@ typedef enum {
     PCREC_ATTR_NONE,         /* no attribute (the VM entry's `plain` rung) */
     PCREC_ATTR_NOINLINE,     /* noinline */
     PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
+    PCREC_ATTR_UNUSED,       /* unused: a file-local nothing may read */
     PCREC_ATTR_N
 } PcrecAttr;
 /* `a`'s text, as its writer puts it on (or above) a definition head. */
@@ -8606,6 +8750,9 @@ const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx);
  * internal error. */
 const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
                                         const char *value);
+/* Is `<PREFIX>_<name>` (len bytes after the prefix) a contract stamp: a
+ * catalogue row not marked internal (match_api.md §6.3.1¶10)? */
+bool pcrec_stamp_is_contract(Ctx *cx, const char *name, size_t len);
 
 /* src/gen/emit_dfa.c -- [COMPOUND] THE PLAIN COMPILE's SELECTION PROJECTION
  * (compound.md §A.3, arch S5): the `--list`/stamp name of the row slot
@@ -8672,12 +8819,11 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
  * and the test suite are its only consumers. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
                     const PcrecEmitIn *in, pcrec_error *err);
-/* [INLINE-C] 1b src/core/compile.c: the CLI's `--pattern` compile with
- * numbered callout declarations (`--callout`). */
-int pcrec_compile_callouts(const char *pattern, const pcrec_options *opt,
-                           const PcrecHarnessOptions *hopt,
-                           const PcrecCalloutDecl *decls, int ndecls,
-                           pcrec_output *out, pcrec_error *err);
+/* [INLINE-C] src/core/compile.c: the CLI's `--pattern` compile with a
+ * driver emission input (`--callout`, `--code-header`, the `#line` source). */
+int pcrec_compile_in(const char *pattern, const pcrec_options *opt,
+                     const PcrecEmitIn *in, pcrec_output *out,
+                     pcrec_error *err);
 
 /* src/dump/facts_dump.c — [PATFACTS] `--emit-facts`: the pattern-facts
  * record as a `docs/spec/table_contract.md` listing

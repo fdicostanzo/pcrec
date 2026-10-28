@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2fixtri_report.md
+sections: Summary; Failure by failure; Fixes; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic2fix-test ic2fix-mech ic2fix-axes

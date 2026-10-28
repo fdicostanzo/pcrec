@@ -198,9 +198,12 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUI
 # joined at [DD-11.5] P2a WITH the file: core/internal.h includes it (the
 # A_CTX truth table), so every translation unit reads it; src/core/kindrow.def
 # joined at [INLINE-C] 1a the same way (the per-kind attribute row).
+# src/parse/codelang.def joined at [INLINE-C] stage 2 WITH the file: the
+# embedded-code language table, an X-macro `#include`d by registry.c,
+# scans.c and mod_code.c (one language row, three projections).
 FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
               src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
-              src/core/kindrow.def
+              src/core/kindrow.def src/parse/codelang.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
@@ -398,7 +401,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-callouts test-examples test-findings test-knowledge test-ucp \
+      test-uprops test-core test-vars test-callouts test-code test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
@@ -1086,6 +1089,15 @@ test-vars: all
 test-callouts: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-callouts.ran"; fi
 	bash tests/callouts/run_callouts_tests.sh
+
+# [INLINE-C] stage 2 — module `code-c`, embedded C: the corpus (the grant and
+# the user source through tests/code/harness.manifest), its libpcre2 oracle
+# running the same segment text, the refusals, the entry-point table, the
+# diagnostics, the live-macro, span-helper and call-form checks, and the
+# inline-mode card's smoke run. See tests/code/CLAUDE.md.
+test-code: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-code.ran"; fi
+	bash tests/code/run_code_tests.sh
 
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# ic2: [INLINE-C] stage 2 owed validation of lane/ic2 (module code-c, the tagged (?C`c: ...`) spelling only per ruling R1; main 614d45eb3 merged in; abi 89 -> 90): build, strict, the zero-mover census (scripts/emit_sweep.py with its mover lists printed in full, REF = the lane base 6d0974b74 built at abi 90, WORK = the lane, corpus plus the 336 bench patterns; docs/dev/lanes/ic2_movers.py: nothing but a (?C pattern, a tests/code/ file or the three dumps may move), then the full make test (every section, test-code, test-callouts and test-codegen included).
+# Every expect is a FINAL trailer: strict's and the census's DONE lines, and make test's `sections ran:` trailer.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic2
+REF=6d0974b74
+BENCH="$TREE/docs/dev/lanes/ic1a_bench_patterns.txt"
+SCR="$TREE/build/ic2/job"
+case "${1:-}" in
+    --ready) exit 0 ;;
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/docs/dev/lanes/ic2_movers.py" ] && [ -s "$BENCH" ] \
+            || { echo "no tree, perfrun, ic2_movers.py or $BENCH in $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$REF" >/dev/null || { echo "ref $REF unknown" >&2; exit 1; }
+        n=$(make -C "$TREE" -s -p -n nothing 2>/dev/null | sed -n 's/^TEST_SECTIONS := //p' | head -1 | wc -w)
+        [ "$n" -gt 0 ] || { echo "cannot count TEST_SECTIONS" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; build $REF at abi 90 under $SCR; emit_sweep (full lists) + ic2_movers.py > \$BQ_LOG.movers; scripts/perfrun --label ic2 -- \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=0 log=job.log.strict last=^strict: DONE rc="
+        echo "boxqueue: witness strict=strict: DONE rc=0"
+        echo "boxqueue: expect movers=0 log=job.log.movers last=^movers: DONE rows=[0-9]+ unexpected="
+        echo "boxqueue: witness movers=movers: DONE rows=219 unexpected=0"
+        echo "boxqueue: expect sections=$n log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: $n/$n"
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1; s=$?
+echo "strict: DONE rc=$s" >> "$BQ_LOG.strict"
+[ "$s" -eq 0 ] || rc=1
+mkdir -p "$SCR"
+rm -rf "$SCR/ref" "$SCR/sweep"
+mkdir -p "$SCR/ref"
+git -C "$TREE" archive "$REF" | tar -x -C "$SCR/ref" || exit 1
+sed -i 's/^#define PCREC_ARTIFACT_ABI 89$/#define PCREC_ARTIFACT_ABI 90/' "$SCR/ref/src/gen/emit_dfa.c"
+grep -q '^#define PCREC_ARTIFACT_ABI 90$' "$SCR/ref/src/gen/emit_dfa.c" || { echo "abi rewrite missed" > "$BQ_LOG.movers"; exit 1; }
+make -C "$SCR/ref" -j16 >/dev/null 2>&1 || exit 1
+sed 's/res\.movers\[:5\]/res.movers/; s/res\.asymmetric\[:5\]/res.asymmetric/' \
+    "$TREE/scripts/emit_sweep.py" > "$SCR/emit_sweep_all.py" || exit 1
+TMPDIR="$SCR" python3 "$SCR/emit_sweep_all.py" --ref-bin "$SCR/ref/build/pcrec" --bin "$TREE/build/pcrec" \
+    --tree "$TREE" --out "$SCR/sweep" --no-self-check --jobs 12 --patterns-file "$BENCH" \
+    > "$BQ_LOG.sweep" 2>&1
+python3 "$TREE/docs/dev/lanes/ic2_movers.py" "$BQ_LOG.sweep" > "$BQ_LOG.movers" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label ic2 -- "$BQ_LOG.make" || rc=1
+exit $rc
