@@ -878,8 +878,9 @@ The construct's REALITY and OWNER are exact; wording is not:
 | `(?C` numbered/named, module `callouts` off | "(?C...) requires module 'callouts'" |
 | embedded code, `--allow-code` does not name its language | "(?{...}) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables" |
 | `[r1 T1]` `features` text naming `code-c`, in any source; a config's `pcrec` line carrying `--allow-code` | refused at parse: "code is enabled by --allow-code, not by a features list or a file" (5.1) |
-| unknown tag / attribute, untagged non-identifier string, a binding name containing `__` | refused by name, offset of the site |
-| `[r1 T4]` a Unicode bidi control or invisible format character in a segment (U+202A-U+202E, U+2066-U+2069, U+200B-U+200F, U+2060-U+2064, U+FEFF) | refused, naming the code point and its offset in the segment |
+| unknown attribute on a tagged segment, untagged non-identifier string, a binding name containing `__` | refused by name, offset of the site |
+| `[2026-10-27-r1-ic2 F15]` an unregistered tag (`(?C\`py: x\`)`) or a tag-shaped string that is not a tag (`c,:`) | not code: the string stays a binding name (`match_api.md` §11.9¶1) and is refused as one (wording NOTED, D26 tier); this row replaced "unknown tag refused by name" |
+| `[r1 T4]` `[2026-10-27-r1-ic2 F1, F2]` a character that makes the code a reviewer reads differ from what gcc compiles: the UCD properties `Bidi_Control` and `Default_Ignorable_Code_Point` (the vendored data's sets, not a hand list), U+0085 and U+2028-U+2029 (line ends gcc does not end a line at), and the C0 controls other than tab, LF and a CR before LF, and DEL (`match_api.md` §11.9¶3) | refused, naming the code point, the reason and its byte offset in the segment; one first-match table (`code_refused[]`, src/parse/mod_code.c) |
 | a `once` site that can fire more than once per attempt | refused with the construct and the fix (1.10) |
 | a `callout <n>` line for a number the pattern does not use | refused by name |
 | end-rule failures | 2.3 item 5 |
@@ -923,15 +924,16 @@ The layout at the end of the `.c` `[r1 A8]`:
 /* ... the whole matcher ... */
 #undef RX_CUT                  /* every artifact-internal macro still live (A8) */
 /* ... */
+#define RX_SUBJ ...            /* the macro set of 3.2, ONCE, before any #line */
 #include "octet.h"             /* code-header lines (3.3), after the matcher */
 /* code segment 1: ipv4.rxt line 4, column 18 */
-#define RX_SUBJ ...            /* the macro set of 3.2 */
 static ptrdiff_t ipv4__code1(const rx_ctx *ctx)
 {
 #line 4 "ipv4.rxt"
                   return RX_CAP_SET(1) && RX_CAP_LEN(1) <= 3 && octet_le255(RX_CAP_P(1), RX_CAP_LEN(1)) ? RX_PASS : RX_FAIL;
 __builtin_trap(); }
-#undef RX_SUBJ ...
+/* ... later segments ... */
+#undef RX_SUBJ ...             /* once, after the last segment */
 ```
 
 The text is the DECODED segment (PCRE2's doubled delimiters undone; under a
@@ -963,8 +965,14 @@ above pads.
 
 ### 3.2 The macro set (Q7: generated names only)
 
-Defined immediately before each definition, `#undef`ed immediately after, so
-nothing leaks between segments or into the rest of the file:
+`[2026-10-27-r1-ic2 F12, F31]` Defined ONCE, after the artifact-internal
+`#undef`s and before the `code-header` lines and the first segment, and
+`#undef`ed once after the last segment, so nothing leaks into the rest of the
+file. Before the first `#line` on purpose: a `code-header` line's `#line`
+stays in force until the next one, and a macro-set line under it would be
+reported at a line the `.rxt` file does not have. One row table
+(`code_macro_rows[]`, src/gen/emit_code.c) writes both the `#define`s and the
+`#undef`s:
 
 | macro | value |
 |---|---|
@@ -992,7 +1000,15 @@ cannot rewrite pcrec's own code. Before the include block the emitter
 `#undef`s every artifact-internal macro (`RX_CUT`, `RX_PRUNE_*`, `RX_SLOT_*`,
 `RX_R_*`, `<prefix>_VALID_LB`, the pattern-dependent `RX_VAR_<name>` and
 `RX_SLOT_GROUP<n>_*`), so what stays live there is the public contract (the
-stamps and the shared ABI block's fixed literals) plus the macro set. A codegen
+stamps and the shared ABI block's fixed literals) plus the macro set.
+`[2026-10-27-r1-ic2 F3]` The keep rule is the stamp catalogue's own rows, not
+a name prefix: a `<prefix>_` name stays live exactly when
+`src/gen/stamp_kinds.c` has a row for it whose contract column is true (false
+for `<prefix>_R_*`, `_NSLOTS`, `_CALL_TOP_NONE`, `_TRACE`, which
+`match_api.md` §6.3.1¶10 calls internal), and hand-written stamps
+(`_ENGINE_WHY`, `_DFA_PREFILTER_OFFSETS`) have catalogue rows of their own.
+The check's public set is read independently of that catalogue: the `.h`'s
+`#define`s plus the names of `match_api.md` §6.3.2's inventory. A codegen
 check computes, over a CORPUS of callout artifacts (not one; the
 pattern-dependent names differ per pattern), the identifiers `#define`d and
 still live at the segment block, read from the emitted text, and fails when
