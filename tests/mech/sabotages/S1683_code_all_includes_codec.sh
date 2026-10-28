@@ -11,5 +11,7 @@ SAB_DESC="the features set 'all' includes the invoker-only code-c module, so --f
 SAB_REACH='"$PCREC" --features all -o "$REACH_TMP/o.c" --pattern '\''a(?C`c: return RX_PASS;`)b'\'' 2>&1; true'
 SAB_REACH_EXPECT="which only the command-line option --allow-code=c"
 SAB_COUNT=1
-SAB_BEFORE='                if (!(rows[i].flags & RF_INVOKER_ONLY)) mask |= rows[i].feature;'
-SAB_AFTER='                mask |= rows[i].feature;   /* SABOTAGE S1683 */'
+SAB_BEFORE='        mask &= ~invoker_only_mask();
+        label = "all";'
+SAB_AFTER='        /* SABOTAGE S1683: no invoker-only mask */
+        label = "all";'

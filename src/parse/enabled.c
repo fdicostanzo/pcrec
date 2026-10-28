@@ -171,22 +171,22 @@ static unsigned find_module_bits(const char *name, size_t len)
 }
 
 /* [INLINE-C] stage 2 the GRANT column (RF_INVOKER_ONLY, inline_c.md §5.1):
- * is module `name` (len bytes) INVOKER-ONLY, i.e. enabled by the invoker's
- * own grant (`--allow-code`, `pcrec_options.allow_code`) and by no
- * `features` text? Every row of a module carries the same value
- * (registry_check asserts it), so the first row answers. */
-static bool module_invoker_only(const char *name, size_t len)
+ * the FEAT_* bits of every module ANY of whose rows is invoker-only, i.e.
+ * enabled by the invoker's own grant (`--allow-code`,
+ * `pcrec_options.allow_code`) and by no `features` text. A MASK of modules,
+ * not a per-row test, so a module with one unflagged row still fails closed
+ * in `all`, a named set and an explicit list alike (review 2026-10-27-r1-ic2
+ * F5); tests/registry/registry_check.c asserts that a module's rows agree. */
+static unsigned invoker_only_mask(void)
 {
+    unsigned m = 0;
     for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
         size_t n;
         const RegRow *rows = pcrec_registry(kinds[k], &n);
-        for (size_t i = 0; i < n; i++) {
-            const char *m = rows[i].module;
-            if (m && strlen(m) == len && strncmp(m, name, len) == 0)
-                return (rows[i].flags & RF_INVOKER_ONLY) != 0;
-        }
+        for (size_t i = 0; i < n; i++)
+            if (rows[i].flags & RF_INVOKER_ONLY) m |= rows[i].feature;
     }
-    return false;
+    return m;
 }
 
 /* The refusal every `features` text gets for an invoker-only module, one
@@ -287,13 +287,13 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
 
     if (!strcmp(spec, "all")) {
         /* [INLINE-C] stage 2: `all` is every module a features text may
-         * name, so an invoker-only row (the GRANT column) is not in it. */
+         * name, so an invoker-only module (the GRANT column) is not in it. */
         for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
             size_t n;
             const RegRow *rows = pcrec_registry(kinds[k], &n);
-            for (size_t i = 0; i < n; i++)
-                if (!(rows[i].flags & RF_INVOKER_ONLY)) mask |= rows[i].feature;
+            for (size_t i = 0; i < n; i++) mask |= rows[i].feature;
         }
+        mask &= ~invoker_only_mask();
         label = "all";
     } else if (!*spec || !strcmp(spec, "none")) {
         mask = 0;
@@ -311,6 +311,8 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
                 const char *m = g_named_sets[s].modules[i];
                 mask |= find_module_bits(m, strlen(m));
             }
+            /* A named set is a features text too: no invoker-only module. */
+            mask &= ~invoker_only_mask();
             named = g_named_sets[s].name;
             break;
         }
@@ -325,7 +327,7 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
                 const char *comma = strchr(p, ',');
                 size_t len = comma ? (size_t)(comma - p) : strlen(p);
                 unsigned bits = find_module_bits(p, len);
-                if (bits && module_invoker_only(p, len)) {
+                if (bits & invoker_only_mask()) {
                     snprintf(err, errsz, INVOKER_ONLY_MSG, (int)len, p);
                     return -1;
                 }

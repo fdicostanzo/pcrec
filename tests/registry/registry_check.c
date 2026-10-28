@@ -701,13 +701,22 @@ static void check_feature_module_bijection(void)
                         bad("feature/module mismatch: %s and %s both print '%s' but carry "
                             "different feature bits", a->syntax, b->syntax, a->module);
                         bad_pairs++;
+                    } else if (strcmp(a->module, b->module) == 0 &&
+                               (a->flags & RF_INVOKER_ONLY) != (b->flags & RF_INVOKER_ONLY)) {
+                        /* [INLINE-C] the GRANT column is a MODULE fact (review
+                         * 2026-10-27-r1-ic2 F5): one invoker-only row makes the
+                         * whole module the invoker's, and its rows say so alike. */
+                        bad("grant mismatch: %s and %s both print '%s' but only one is "
+                            "RF_INVOKER_ONLY", a->syntax, b->syntax, a->module);
+                        bad_pairs++;
                     }
                 }
         }
 
     if (bad_pairs == 0) {
         snprintf(label, sizeof label,
-                 "feature bit <-> module name is a bijection across all %zu rows", total);
+                 "feature bit <-> module name is a bijection, and a module's rows agree on "
+                 "RF_INVOKER_ONLY, across all %zu rows", total);
         ok(label);
     }
 }
