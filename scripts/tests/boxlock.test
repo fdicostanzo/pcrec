@@ -132,5 +132,52 @@ kill "$RUNNER" 2>/dev/null; wait "$RUNNER" 2>/dev/null; sleep 0.3
 out=$("$TO" 10 bash "$BL" run --no-wait --label lane -- echo RAN 2>&1); rc=$?
 [ "$rc" = 0 ] && [ "$out" = RAN ] && ok "yield: no live runner -> a pending job does not block" || bad "yield/no runner: rc=$rc $out"
 
+# 8. waiter registry (lane lockwait): one holder, two waiters (one YIELDING behind a ready job) listed with durations;
+#    a dead waiter's record is pruned; the registry is cleaned on acquire and by an EXIT refusal
+rm -f "$PCREC_BOXLOCK_FILE"; rm -rf "$T/.box.lock.waiters"
+unset PCREC_BOXQUEUE_DIR; rm -rf "$T/.boxqueue"
+holder 14 holder8 || bad "waiter case: holder never took the lock"
+"$TO" 60 bash "$BL" run --label lw-one -- true 2>/dev/null & kids+=($!)
+"$TO" 60 bash "$BL" run --label lw-two -- true 2>/dev/null & kids+=($!)
+sleep 3
+out=$("$TO" 10 bash "$BL" status); rc=$?
+[ "$rc" = 1 ] && [ "$(printf '%s\n' "$out" | sed -n 1p | cut -c1-5)" = HELD\  ] \
+    && printf '%s\n' "$out" | grep -qE '^  WAITING label=lw-one pid=[0-9]+ cwd=[^ ]+ since=[^ ]+ waited=0m$' \
+    && printf '%s\n' "$out" | grep -qE '^  WAITING label=lw-two pid=[0-9]+ ' && [ "$(printf '%s\n' "$out" | wc -l)" = 3 ] \
+    && ok "status lists the holder and BOTH waiters with label, pid, cwd, since and duration" || bad "waiter list: rc=$rc $out"
+w=$("$TO" 10 bash "$BL" waiters)
+[ "$(printf '%s\n' "$w" | grep -c 'holder=holder8$')" = 2 ] && printf '%s\n' "$w" | grep -q 'kind=WAITING pid=[0-9]* start=[0-9]* label=lw-one ' \
+    && ok "waiters: machine lines carry kind, pid, start, label, epoch, holder=" || bad "waiters: $w"
+# a dead waiter's record (SIGKILL leaves it) is pruned on read; a live one stays
+sleep 0 & dead=$!; wait "$dead"
+printf 'kind=WAITING pid=%s start=1 label=ghostwait since=x epoch=1 cwd=/x\n' "$dead" > "$T/.box.lock.waiters/$dead"
+out=$("$TO" 10 bash "$BL" status)
+! printf '%s' "$out" | grep -q ghostwait && [ ! -e "$T/.box.lock.waiters/$dead" ] && printf '%s' "$out" | grep -q 'label=lw-one' \
+    && ok "a dead pid's waiter record is pruned (file removed), the live waiters stay" || bad "stale waiter: $out"
+# PLANT: no pruning -> the ghost is listed
+if P=$(plant noprune 'if [ -n "$l" ] && owner_alive "$l"; then printf '"'"'%s\n'"'"' "$l"; else rm -f "$r" 2>/dev/null; fi' 'printf '"'"'%s\n'"'"' "$l"'); then
+    printf 'kind=WAITING pid=%s start=1 label=ghostwait since=x epoch=1 cwd=/x\n' "$dead" > "$T/.box.lock.waiters/$dead"
+    "$TO" 10 bash "$P" status | grep -q ghostwait && ok "PLANT noprune: the ghost is listed, so the stale-record case goes red" || bad "PLANT noprune not caught"
+    rm -f "$T/.box.lock.waiters/$dead"
+fi
+# the waiters leave the registry when they acquire (holder8 ends, both run)
+for _ in $(seq 400); do [ -z "$(ls -A "$T/.box.lock.waiters" 2>/dev/null)" ] && break; sleep 0.2; done
+[ -z "$(ls -A "$T/.box.lock.waiters" 2>/dev/null)" ] && ok "records are removed on acquire (registry empty after the waiters ran)" || bad "registry not cleaned: $(ls -A "$T/.box.lock.waiters")"
+# YIELDING: a ready queue job goes first; the waiter says YIELDING on=JOB, then is cleaned by its refusal's EXIT trap
+Q=$T/.boxqueue; mkdir -p "$Q/pending" "$Q/.state"; : > "$Q/.runner.lock"; : > "$Q/pending/100-main-maketest"; echo "ready (starting)" > "$Q/.state/main-maketest.answer"
+"$TO" 120 flock "$Q/.runner.lock" sleep 20 & kids+=($!); sleep 0.3
+"$TO" 30 bash "$BL" run --wait 8 --label lw-yield -- true 2>/dev/null & kids+=($!)
+sleep 2
+out=$("$TO" 10 bash "$BL" status)
+printf '%s\n' "$out" | grep -qE '^  YIELDING label=lw-yield .* on=100-main-maketest$' && ok "a waiter behind a ready queue job reads YIELDING on=JOB (not WAITING)" || bad "yielding: $out"
+for _ in $(seq 100); do [ -z "$(ls -A "$T/.box.lock.waiters" 2>/dev/null)" ] && break; sleep 0.2; done
+[ -z "$(ls -A "$T/.box.lock.waiters" 2>/dev/null)" ] && ok "a refused (exit 75) waiter removes its record via the EXIT trap" || bad "refusal left a record: $(ls -A "$T/.box.lock.waiters")"
+# PLANT: the record is not written -> the list case goes red
+rm -f "$Q/pending/100-main-maketest"
+if P=$(plant noreg '        [ "$wait" = 0 ] || register_waiter "$f" WAITING' '        :'); then
+    holder 8 holder9 && { "$TO" 60 bash "$P" run --label lw-three -- true 2>/dev/null & kids+=($!); sleep 2
+    "$TO" 10 bash "$BL" status | grep -q lw-three && bad "PLANT noreg not caught" || ok "PLANT noreg: the waiter is not listed, so the list case goes red"; }
+fi
+
 echo "boxlock.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

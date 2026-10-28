@@ -9,7 +9,7 @@
 # file; the model only acts on the lines this script prints.
 #
 #   scripts/queuewatch [--queue DIR] [--state FILE] [--every S] [--max-sec S] [--quiet-sec S]
-#                      [--stuck-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
+#                      [--stuck-sec S] [--wait-long-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
 #   --queue DIR     the queue (default: `boxqueue path`, honouring PCREC_BOXQUEUE_DIR)
 #   --state FILE    the reported-events file (default DIR/.queuewatch/state); one watcher per state
 #                   (flock: a second is refused, exit 75)
@@ -19,6 +19,7 @@
 #                   battery's logdir, AND no CPU in the process trees of the job's pid file / battery.pid: a QUIET episode
 #   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK; counted from when the job became READY
 #                   (the runner's first non-not-ready answer in queue.log), not from when it was queued
+#   --wait-long-sec 1800  a box-lock WAITER (scripts/boxlock waiters; yielding or waiting) this long: WAIT-LONG
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
 #   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
 #   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
@@ -40,6 +41,11 @@
 #   PENDING-STUCK NAME pending for Ns, nothing running [(queued Qs ago, ready for Ns)] :: <the runner's last answer>
 #                                      not for a job with a DECLARED time gate (`boxqueue: not-before T`) while now < T; its age counts from T.
 #                                      Every other not-ready answer (a failed `after KEY`, a broken --ready) ages as usual.
+#   WAIT-LONG LABEL pid=N waited=Mm holder=LABEL   a `boxlock run` has waited past --wait-long-sec (default 30 min) for the
+#                                      box lock (or yielding to a ready queue job; holder=none then). ONCE per waiter (episode =
+#                                      pid+starttime): a 3 h wait is one alert, not six. Owner = the waiter's lane/session (the
+#                                      label is `<lane>-<what>`). The lock is found from the queue (<lock dir>/.box.lock beside
+#                                      .boxqueue) unless PCREC_BOXLOCK_FILE is set, so a scratch queue never sees the real waiters.
 #   DISK-HIGH <fs> at P% (>= T%)
 #   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
@@ -67,11 +73,11 @@
 # surface despite --ci-every) and the last ask time in state.ci.last.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
+cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 waitlong=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
 while [ $# -gt 0 ]; do
     case "$1" in
         --queue) Q=$2; shift 2 ;; --state) state=$2; shift 2 ;; --every) every=$2; shift 2 ;;
-        --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;;
+        --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;; --wait-long-sec) waitlong=$2; shift 2 ;;
         --disk-pct) diskp=$2; shift 2 ;; --confirm) confirm=$2; shift 2 ;;
         --ci-every) ci_every=$2; shift 2 ;; --no-ci) noci=1; shift ;;
         -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
@@ -272,6 +278,19 @@ conditions() {
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
         fi
+    fi
+    # WAIT-LONG: one event per box-lock waiter past --wait-long-sec (episode = pid+starttime; never forgotten, so it is once)
+    local wl wl_f wl_pid wl_start wl_label wl_epoch wl_holder
+    wl_f=${PCREC_BOXLOCK_FILE:-$(dirname "$Q")/.box.lock}
+    if [ -d "$(dirname "$wl_f")/.box.lock.waiters" ]; then
+        while IFS= read -r wl; do
+            [ -n "$wl" ] || continue
+            wl_pid=$(sed -n 's/.* pid=\([0-9]*\).*/\1/p' <<<"$wl"); wl_start=$(sed -n 's/.* start=\([0-9]*\).*/\1/p' <<<"$wl")
+            wl_label=$(sed -n 's/.* label=\([^ ]*\).*/\1/p' <<<"$wl"); wl_epoch=$(sed -n 's/.* epoch=\([0-9]*\).*/\1/p' <<<"$wl")
+            wl_holder=$(sed -n 's/.* holder=\([^ ]*\).*/\1/p' <<<"$wl")
+            [ -n "$wl_epoch" ] && [ $((now - wl_epoch)) -ge "$waitlong" ] || continue
+            printf 'C|waitlong|%s|%s\t0\tWAIT-LONG %s pid=%s waited=%sm holder=%s\n' "$wl_pid" "$wl_start" "$wl_label" "$wl_pid" "$(( (now - wl_epoch) / 60 ))" "$wl_holder"
+        done < <(PCREC_BOXLOCK_FILE=$wl_f bash "$here/boxlock" waiters 2>/dev/null)
     fi
     # DISK-HIGH
     read -r fs pct < <(df -P "$Q" | awk 'NR == 2 { gsub("%", "", $5); print $1, $5 }')
