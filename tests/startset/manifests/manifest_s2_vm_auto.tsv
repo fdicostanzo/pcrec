@@ -522,3 +522,16 @@ tests/named_groups/utf8_names.rxt:44	--features named-groups,backrefs --encoding
 tests/recursion/inlookaround_self.rxt:106	--features recursion,lookaround	28283f3c3d283f32292961292862283f3d283f31292929
 tests/recursion/inlookaround_self.rxt:115	--features recursion,lookaround	28283f3c3d283f322929292861283f3d283f31292929
 tests/recursion/inlookaround_self.rxt:122	--features recursion,lookaround	28283f3c3d283f322929292861283f21283f31292929
+# reqvm1 (2026-10-27, [REQRUN-VM]): +12 rows, every one a tests/litscan/handoff_vm.rxt block (the lane's new file; its (text, options) twins already pinned under their first id are not repeated); the VM hat row read off each block's own compile on the lane build, no existing row moved.
+tests/litscan/handoff_vm.rxt:15	--features all --encoding=byte --engine=vm	28617c6161297b302c31307d6378797a
+tests/litscan/handoff_vm.rxt:90	--features all --encoding=byte --engine=vm	283f3a78787c7929616263
+tests/litscan/handoff_vm.rxt:259	--features all --encoding=byte --engine=vm	283f3a5c4761627c7829616263
+tests/litscan/handoff_vm.rxt:287	--features all --encoding=byte --engine=vm	283f3c3d712e296162
+tests/litscan/handoff_vm.rxt:316	--features all --encoding=utf8 --engine=vm	2e6364
+tests/litscan/handoff_vm.rxt:381	--features all --encoding=utf8 --engine=vm	2e7b312c337d6364
+tests/litscan/handoff_vm.rxt:400	--features all --encoding=utf8 --engine=vm	283f692973747261
+tests/litscan/handoff_vm.rxt:435	--features all --encoding=byte --engine=vm	283f692973747261
+tests/litscan/handoff_vm.rxt:460	--features all --encoding=byte --engine=vm	61625c4b6364
+tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	2861295c3178797a
+tests/litscan/handoff_vm.rxt:509	--features all --encoding=byte --engine=vm	612b78797a
+tests/litscan/handoff_vm.rxt:550	--features all --encoding=byte --engine=vm	2868747470733a2f2f7777775c2e283f3a61636d657c676c6f6265787c696e69746563687c756d6272656c6c617c686f6f6c69295c2e28636f6d7c64657c66727c6e6c7c6f7267292f5b5e223f5c735d2a29283f3a285c3f283f3a5b5e225c735d2a26293f746c643d29283f215c325c62295b612d7a5d2b7c283f215c3f283f3a5b5e225c735d2a26293f746c643d29285c3f5b5e225c735d2a293f283f3d222929

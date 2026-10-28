@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""docs/dev/lanes/reqvm1/movers.py -- lane reqvm1's mover census ([REQRUN-VM]),
+r"""docs/dev/lanes/reqvm1/movers.py -- lane reqvm1's mover census ([REQRUN-VM]),
 adapted from docs/dev/lanes/ic1b/movers.py (same population and cells).
 
 Every `pattern`/`pattern-esc` line under tests/ (read by `pcrec --list-source`,
@@ -16,8 +16,11 @@ the lane: the working artifact is a VM with no DFA scan (`_VM_PREFILTER
 "none"`) carrying a number in `_REQ_HANDOFF` where the reference read "none"
 (the attempt loop's rows, class `vm-attempts`), or a VM hybrid whose working
 `_DFA_PREFILTER` reads "handoff" where the reference's did not (the
-prefilter's re-entry, class `hybrid-reentry`). Anything else is UNEXPECTED
-and printed.
+prefilter's re-entry, class `hybrid-reentry`), or an artifact whose only
+moved line is `_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"` (the
+hybrid the size cap dropped re-enters, so its measured size N moves; class
+`dropped-hybrid-size`, `(\p{Xwd})x` under utf8 at the landing). Anything else
+is UNEXPECTED and printed.
 
 Usage: movers.py REF_PCREC WORK_PCREC TREE [--patterns-file F]... [--jobs N]
 Trailer: `movers: DONE cells=... unexpected=N`."""
@@ -87,6 +90,13 @@ def stamp(text, name):
 
 def site(ro, wo):
     """The admitted site class a moved cell must be, or None."""
+    rl, wl = ro.splitlines(), wo.splitlines()
+    if len(rl) == len(wl):
+        d = [(a, b) for a, b in zip(rl, wl) if a != b]
+        if d and all(a.startswith(b'#define RX_VM_PREFILTER_WHY "size cap retry, hybrid ')
+                     and b.startswith(b'#define RX_VM_PREFILTER_WHY "size cap retry, hybrid ')
+                     for a, b in d):
+            return "dropped-hybrid-size"
     if stamp(wo, b"VM_PREFILTER") == b'"none"' and stamp(wo, b"ENGINE") == b'"vm"':
         if stamp(wo, b"REQ_HANDOFF") not in (None, b'"none"') and stamp(ro, b"REQ_HANDOFF") == b'"none"':
             return "vm-attempts"
@@ -109,7 +119,7 @@ def one(ref, work, key, pat, cell, flags):
         cls = "GAINED"
     else:
         cls = "LOST"
-    ok = cls in ("IDENTICAL", "REFUSED", "vm-attempts", "hybrid-reentry")
+    ok = cls in ("IDENTICAL", "REFUSED", "vm-attempts", "hybrid-reentry", "dropped-hybrid-size")
     return key, cell, cls, ok, p
 
 

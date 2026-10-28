@@ -9940,10 +9940,13 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                                         CAND_ASKF_PROVEN_PREV },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
-    /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members) */
+    /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members);
+     * [REQRUN-VM] `handoff-attempts[-entry]` read BOUND (one attempt
+     * declines) */
     [CAND_SLOT_FIRST]    = { "FIRST",    CT_HIT | CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_NEXT),
                              .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA),
+                                        [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),
                                         CAND_PATH_READS } },
     [CAND_SLOT_NEXT]     = { "NEXT",     CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_NODE_VERIFIER),
