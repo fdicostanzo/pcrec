@@ -323,3 +323,13 @@ prefilter, codegen (K37/TT-9/size_term), startset, vm and the identity gate as
 whole scripts. Not touched, to flag: `scripts/emit_sweep.py`'s `lowsize`/`lowboth`
 variants and `run_size_term.sh`'s K100 cell still use the 30,000 B cap (not part
 of the failing set; re-measure if the sweep or that cell reads red).
+
+## Landing 2026-10-29 (landtgc)
+
+- Merge `ebcc10aa1` (lane/trailgc ffd1f578e into main at abi 92), landed as abi 93. Conflicts: abi_changelog (both entries kept, 93 current, S3's 92 now "was"), plan.md and the lanes history index (both sides kept), emit_dfa.c, match_api.md (3 spots), run_codegen_tests.sh (ABI_EXPECT=93, both history clauses), S693 (93), cpset_structure comments, recursion_identity (comments), rxtsource census pins (summed: LINES/RUNSH_LINES 75523, C3_SKIP 52780, C3_VERIFIABLE 25046; FILES/BLOCKS = main's ic3 values).
+- Re-pin: `86356a960` moves the (B) FILEPIN to `ebcc10aa1`; (A) untouched ([RECID-A] stays red until lane/recida lands).
+- `make` and `make strict`: clean.
+- Ledger: major line added (counter 31).
+- Not moved, noted: `scripts/emit_sweep.py` lowsize/lowboth and `run_size_term.sh` K100 cell use a deliberately lowered `PCREC_MAX_VM_EMIT_CODE_BYTES=30000` (a test knob, not the trail cap); re-measure only if they read red.
+- plan.md: no trail row existed to change; the lane's seven rows merged as not-started.
+- OWED (not pushed): detached chain `/var/tmp/pcrec-pcrec/scratch/landtgc/chain.log` runs test-codegen, test-registry, test-rxtsource, test-recursion-identity (logs beside it, `<suite>.log`), waiting on the box queue. Expected: chain ends `== ALL DONE`, each `rc=0` except test-recursion-identity, whose only red is identity (A) with the [RECID-A] counts 167/382/167/111 (bucket ~330) and (B) zero-diff. STOP RULE: any answer difference, a (B) diff, or another red means do not push.
