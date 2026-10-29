@@ -1,0 +1,5 @@
+report=docs/dev/lanes/reqvm1tri_report.md
+sections: Summary; Failure by failure; Fixes; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

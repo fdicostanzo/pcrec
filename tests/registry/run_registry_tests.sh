@@ -717,9 +717,13 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # tuning.md heading) go; axes_registry_check's new retired-bit arm (a
 # tuning.md heading `bit N retired` is a header alias named on no row) adds
 # 1. Measured: 236 PASS, 0 failed.
-if [ "$axesn" -ne 236 ]; then
+# 236 -> 242 at [REQRUN-VM] (lane reqvm1, 2026-10-27): the `req-use` axis
+# gains `handoff-attempts` and `handoff-attempts-entry` (the VM attempt
+# loop's rows), each carrying the deny bit (PCREC_NO_REQ_HANDOFF 46), 3
+# checks each. Measured: 242 PASS, 0 failed.
+if [ "$axesn" -ne 242 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 236." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 242." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else

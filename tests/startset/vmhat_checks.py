@@ -21,9 +21,12 @@ basename in two directories so the `#include` line cannot differ.
     prefilter, startset.md §2 V).
 [vm-anchor] a mover is unanchored (`RX_VM_START "unanchored"`): an anchored
     or `\\G`-start artifact runs one attempt (S492's detector).
-[vm-handoff] no mover carries a K82 handoff (`RX_REQ_HANDOFF "none"`):
-    §6.4.3 item 7's structural check -- the seek starts at `search_from`
-    because no VM-route artifact without a prefilter can hand off.
+[vm-handoff] a mover's handoff is the VM attempt loop's ([REQRUN-VM],
+    tuning.md §2.41¶8b): `RX_REQ_HANDOFF` is `"none"` or a decimal K, and
+    the seek then starts at `attempt_position`, the whole run's hit less K,
+    a lower bound on the first match start like `search_from` (§6.4.3 item
+    7's structural check said `"none"` on every mover before the attempt
+    loop could hand off). The movers that hand off are counted.
 [vm-deny] THE DENY ARM IS TODAY'S EMITTER: its stamp reads `"none"` and it
     has no table or seek; a non-mover's default artifact is byte-identical to
     its deny artifact (a stage-3 DFA-hat mover excepted: its identity is
@@ -189,7 +192,7 @@ def corpus_checks():
         bad("[vm-reach] %d blocks compile on both arms, below the floor %d" % (compiled, FLOOR_BLOCKS))
     viol = {"iff": [], "route": [], "anchor": [], "handoff": [], "deny": [], "table": []}
     movers = {"auto": set(), "vm": set()}
-    nmov_tbl = ncomp = 0
+    nmov_tbl = ncomp = nmov_ho = 0
     for (bid, opts, arm), r in by.items():
         if r["status"] != "ok":
             continue
@@ -213,8 +216,11 @@ def corpus_checks():
                 viol["route"].append("%s: ENGINE %s VM_PREFILTER %s" % (key, st.get("ENGINE"), st.get("VM_PREFILTER")))
             if st.get("VM_START") != "unanchored":
                 viol["anchor"].append("%s: VM_START %s" % (key, st.get("VM_START")))
-            if st.get("REQ_HANDOFF") != "none":
-                viol["handoff"].append("%s: REQ_HANDOFF %s" % (key, st.get("REQ_HANDOFF")))
+            ho = st.get("REQ_HANDOFF")
+            if ho != "none" and not (ho or "").isdigit():
+                viol["handoff"].append("%s: REQ_HANDOFF %s" % (key, ho))
+            elif ho != "none":
+                nmov_ho += 1
             nmov_tbl += 1
             if r.get("table") is None or r.get("fact") is None or r["table"] != r["fact"]:
                 viol["table"].append("%s: table %s, fact %s" % (
@@ -232,7 +238,7 @@ def corpus_checks():
     names = {"iff": "[vm-iff] the stamp names the emitted seek",
              "route": "[vm-route] every mover is a prefilter-less VM artifact",
              "anchor": "[vm-anchor] every mover is unanchored",
-             "handoff": "[vm-handoff] no mover carries a K82 handoff",
+             "handoff": "[vm-handoff] a mover's handoff is the attempt loop's (none or a decimal K)",
              "deny": "[vm-deny] the deny arm is today's emitter (non-movers identical; movers identical once the seek is removed)",
              "table": "[vm-table] every mover's table equals its start_set fact"}
     for k, label in names.items():
@@ -244,8 +250,9 @@ def corpus_checks():
             ok("%s (%s)" % (label, "%d movers" % (len(movers["auto"]) + len(movers["vm"]))
                             if k != "deny" else "%d artifact pairs" % sum(1 for r in res if r["status"] == "ok")))
     print("REACH: movers auto %d (floor %d), --engine=vm %d (floor %d); tables read %d; "
-          "compound artifacts (no VM, no mover) %d"
-          % (len(movers["auto"]), FLOOR_MOVERS_AUTO, len(movers["vm"]), FLOOR_MOVERS_VM, nmov_tbl, ncomp))
+          "compound artifacts (no VM, no mover) %d; movers that hand off %d"
+          % (len(movers["auto"]), FLOOR_MOVERS_AUTO, len(movers["vm"]), FLOOR_MOVERS_VM, nmov_tbl, ncomp,
+             nmov_ho))
     for arm, mf, floor in (("auto", "manifest_s2_vm_auto.tsv", FLOOR_MOVERS_AUTO),
                            ("vm", "manifest_s2_vm_forced.tsv", FLOOR_MOVERS_VM)):
         want, nbench = manifest(mf)

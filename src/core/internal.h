@@ -3380,6 +3380,11 @@ typedef struct {
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
     bool   anchored_ok;
+    /* [REQRUN-VM] Did this attempt EMIT a VM-side handoff row: the attempt
+     * loop's (`handoff-attempts[-entry]`) or the hybrid prefilter's re-entry?
+     * Written by the emitter at the text it writes; the size-cap ladder's
+     * `drop-handoff` row applies only where it is true. */
+    bool   req_handoff_vm;
     /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1), asked
      * once per compile by the driver after the three machines are built
      * (`pcrec_revend_form`). The four bools are the rows' inputs, written by
@@ -3969,6 +3974,11 @@ struct Ctx {
      * driver's form decision reads it in place of building the lowered
      * machines: the `rev-end` walk keeps today's form (endmark.md §R.5). */
     bool                 end_mark_dropped;
+    /* [REQRUN-VM] did the ladder's `drop-handoff` row FIRE on this compile?
+     * The VM-side handoff rows read it and decline: the attempt loop's two
+     * `req-use` rows and the hybrid prefilter's re-entry (`Job.req_handoff_vm`
+     * names what they emit). A DFA artifact's handoff is untouched. */
+    bool                 req_handoff_dropped;
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
@@ -7191,6 +7201,17 @@ bool pcrec_vm_prefilter_window(Ctx *cx);
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
+/* [REQRUN-VM] Does the VM hybrid's inlined prefilter re-enter the handoff?
+ * Then its blocks are defined above the prefilter (the DFA emitter's call)
+ * and the VM's search loop does not define them again. */
+bool pcrec_req_site_in_prefilter(Ctx *cx);
+/* [REQRUN-VM] The VM attempt loop's re-entered handoff, written after a
+ * failed attempt's advance and before the start-set seek, at `indent` plus
+ * one level: the whole run re-found from `attempt_position` where the kept
+ * hit is behind it (none: `return 0;`), then `attempt_position` raised to
+ * the hit less K where that is ahead. Emits nothing where the `req-use`
+ * table's `handoff-attempts` row does not apply. */
+void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *indent);
 
 /* [START-SET] THE FIND (`PcrecFind`, `pcrec_emit_find`): declared in
  * src/gen/memfn_sites.h since [MEMFN] M4, beside the kit sites it describes
