@@ -12,7 +12,7 @@ What changed from p1dsg_evidence/population.py (rev 0), each with its review id:
   [r1 D3/S2] row `fixed` becomes `next-landmark` (the selected NEXT row already enters from a
            landmark or a fixed offset). The BUILD reads NEXT's selection (CAND_READ); this
            parse-only census APPROXIMATES it by P's width (fixed: offset-set/run-pinned; bounded:
-           handoff) and says so. Bench rows are corrected from their stamps by bench_stamps.sh.
+           handoff) and says so. Bench rows are corrected from their stamps by bench_stamps.py.
   [r1 S5]  `fixed` under utf8 uses the BYTE width only where every item is ASCII-scoped; otherwise
            the census marks the row width-unknown (no claim).
 Rows not computable without a compile (route, A built, W overflow, deny, utf8 non-ASCII L[0]) are

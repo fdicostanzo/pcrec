@@ -1,0 +1,43 @@
+## corpus: 5203 patterns
+| row | patterns |
+|---|---|
+| no-split | 3307 |
+| bot | 35 |
+| g1 | 368 |
+| next-landmark | 376 |
+| branches | 0 |
+| rarity | 24 |
+| excl-cand | 104 |
+| excl-lower | 26 |
+| factor-free | 0 |
+| plain-shared | 20 |
+| fallback | 10 |
+| uncounted | 933 |
+corpus excl-cand (104): tests/assertions/rev_end.rxt:77 L=.txt ratio=665.41; tests/atomic_groups/possessive.rxt:599 L=ab ratio=5.48; tests/base/caseless.rxt:36 L=- ratio=15.00; tests/base/clskit_range_top.rxt:18 L=@ ratio=997.61; tests/base/clskit_range_top.rxt:22 L=- ratio=15.00; tests/base/clskit_range_top.rxt:28 L=z ratio=150.12; tests/base/d27_forms.rxt:24 L=b ratio=6.48; tests/base/d27_forms.rxt:32 L=b ratio=6.48; tests/base/d27_forms.rxt:40 L=b ratio=5.48; tests/base/d27_forms.rxt:49 L=b ratio=5.48; tests/base/d27_forms.rxt:102 L=b ratio=5.48; tests/base/d27_forms.rxt:112 L=b ratio=5.48
+corpus excl-lower (26): tests/base/k65_precheck_whole_set.rxt:31 L=Z ratio=20000.00; tests/base/k65_precheck_whole_set.rxt:44 L=Z ratio=20000.00; tests/base/k65_precheck_whole_set.rxt:57 L=Z ratio=20000.00; tests/base/k66_precheck_whole_run.rxt:34 L=eeeeeeee~#~#~#~# ratio=12048.19; tests/base/k66_precheck_whole_run.rxt:47 L=eeeeeeee~#~#~#~# ratio=12048.19; tests/litscan/reqcube.rxt:434 L=S ratio=237.93; tests/litscan/reqcube.rxt:457 L=S ratio=237.93; tests/litscan/reqcube.rxt:480 L=S ratio=237.93; tests/possessify/composition_d27.rxt:3882 L=- ratio=200.64; tests/possessify/composition_d27.rxt:4849 L=a ratio=18.46; tests/possessify/composition_d27.rxt:5105 L=X ratio=911.58; tests/possessify/composition_d27.rxt:5604 L=- ratio=200.64
+
+## bench: 346 patterns
+| row | patterns |
+|---|---|
+| no-split | 247 |
+| bot | 0 |
+| g1 | 14 |
+| next-landmark | 25 |
+| branches | 1 |
+| rarity | 10 |
+| excl-cand | 6 |
+| excl-lower | 6 |
+| factor-free | 1 |
+| plain-shared | 1 |
+| fallback | 1 |
+| uncounted | 34 |
+bench g1 (14): capability/balanced-parens-rec L=) ratio=602.05; capability/float-literal-bound L=. ratio=7.50; capability/nested-comment-rec L=*/ ratio=3012.05; capability/wild-logparse-winpath-grok L=\ ratio=1466.37; syntax/grp-atomic-alt L=c ratio=2.94; syntax/grp-atomic-rep L=b ratio=5.48; syntax/qnt-poss-brace L=b ratio=5.48; syntax/qnt-poss-plus L=ab ratio=5.48; syntax/qnt-poss-quest L=a ratio=1.00; syntax/qnt-poss-star L=b ratio=6.48; syntax/rec-1 L=) ratio=602.05; syntax/rec-name L=) ratio=602.05; syntax/rec-r-uc L=) ratio=602.05; email/factored L=@ ratio=1503.76
+bench next-landmark (25): capability/wild-logparse-syslogbase-expanded L=  ratio=2.22; capability/wild-secrets-slack-webhook-url L=COM/SERVICES/T ratio=10.69; capability/wild-validator-uuid-grok L=- ratio=61.28; syntax/cls-dot L=t ratio=0.31; syntax/cls-i-class L=T ratio=0.31; syntax/cls-mixed-case L=t ratio=0.31; syntax/cls-n-uc L=m ratio=2.89; syntax/cls-negset L=t ratio=0.31; syntax/cls-pair-ctl L=t ratio=0.31; syntax/grp-comment L=t ratio=0.31; syntax/mod-reset L=AT ratio=0.34; syntax/mod-s L=done ratio=1.64; syntax/mod-unset L=AT ratio=0.34; syntax/msc-r-uc L=done ratio=1.64; syntax/qnt-quest L=r ratio=0.46; utf8/cls-s-nbsp L=b ratio=5.48; utf8/cls-s-ucp L=b ratio=5.48; utf8/lit-mixed-ascii L=jp ratio=17.00; loglines/ipv4 L=. ratio=7.50; loglines/ipv6 L=: ratio=42.80; loglines/iso-ts L=- ratio=15.00; loglines/kv-quoted L==" ratio=200.39; loglines/uuid L=- ratio=57.07; bounded/csv5 L=, ratio=148.97; bounded/dotted4 L=. ratio=7.50
+bench branches (1): capability/wild-waf-crs-942160-sleep-benchmark L=( ratio=34.38
+bench rarity (10): capability/codegrammar-flat L=" ratio=1.00; capability/mojibake-curly-quote L=\x94 ratio=1.00; capability/wild-waf-crs-942270-union-select L=FROM ratio=1.24; syntax/cls-h L== ratio=1.55; syntax/cls-s-lc L=sat ratio=0.44; syntax/cls-v L=done ratio=1.64; syntax/mod-u-uc L=" ratio=1.00; syntax/qnt-lazy L=" ratio=1.00; syntax/qnt-star L=t ratio=0.31; loglines/http-5xx L=" 5 ratio=1.00
+bench excl-cand (6): capability/dup-param-detect L== ratio=300.93; capability/wild-secrets-username-password-pair L== ratio=6.08; syntax/qnt-plus-ctl L=ab ratio=5.48; syntax/qnt-plus L=b ratio=5.48; loglines/stack-frame L=( ratio=32.61; subtri/5b-mask-email~ L=@ ratio=1237.65
+bench excl-lower (6): capability/tag-depth3-bound L=> ratio=3012.05; capability/tag-pair-match L=> ratio=3012.05; syntax/bak-1 L=  ratio=8.03; syntax/bak-g-rel L=  ratio=8.03; syntax/bak-k-named L=> ratio=3012.05; syntax/mod-j-uc L=  ratio=8.03
+bench factor-free (1): capability/wild-waf-crs-942500-comment-obfuscation L=*/ ratio=12.51
+bench plain-shared (1): syntax/cls-s-uc L=@ ratio=1296.46
+bench fallback (1): email/orig L=@ ratio=1147.51
+

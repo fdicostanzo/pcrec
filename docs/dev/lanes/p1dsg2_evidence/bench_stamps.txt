@@ -1,0 +1,38 @@
+# id | census row | L | RX_ENGINE | RX_DFA_PREFILTER | RX_VM_START_SCAN | rev-1 stage-1 verdict
+capability/dup-param-detect | excl-cand | = | vm | - | first-class | decline: route (vm; stage 2)
+capability/tag-depth3-bound | excl-lower | > | vm | - | first-class | decline: route (vm; stage 2)
+capability/tag-pair-match | excl-lower | > | vm | - | first-class | decline: route (vm; stage 2)
+capability/wild-logparse-syslogbase-expanded | next-landmark |   | vm | first-class-bounded | none | decline: route (vm; stage 2)
+capability/wild-secrets-slack-webhook-url | next-landmark | COM/SERVICES/T | vm | offset-set | none | decline: route (vm; stage 2)
+capability/wild-secrets-username-password-pair | excl-cand | = | vm | handoff | none | decline: route (vm; stage 2)
+capability/wild-validator-uuid-grok | next-landmark | - | dfa | offset-set | none | decline: next-landmark (offset-set)
+syntax/bak-1 | excl-lower |   | vm | - | first-class | decline: route (vm; stage 2)
+syntax/bak-g-rel | excl-lower |   | vm | - | first-class | decline: route (vm; stage 2)
+syntax/bak-k-named | excl-lower | > | vm | - | first-class | decline: route (vm; stage 2)
+syntax/cls-dot | next-landmark | t | dfa | memchr | none | census approximation WRONG: NEXT is memchr, row continues past L7
+syntax/cls-i-class | next-landmark | T | dfa | byte-class | none | census approximation WRONG: NEXT is byte-class, row continues past L7
+syntax/cls-mixed-case | next-landmark | t | dfa | memchr | none | census approximation WRONG: NEXT is memchr, row continues past L7
+syntax/cls-n-uc | next-landmark | m | dfa | offset-set | none | decline: next-landmark (offset-set)
+syntax/cls-negset | next-landmark | t | dfa | memchr | none | census approximation WRONG: NEXT is memchr, row continues past L7
+syntax/cls-pair-ctl | next-landmark | t | dfa | handoff | none | decline: next-landmark (handoff)
+syntax/grp-comment | next-landmark | t | - | - | - | compile failed rc=1
+syntax/mod-j-uc | excl-lower |   | vm | - | first-class | decline: route (vm; stage 2)
+syntax/mod-reset | next-landmark | AT | dfa | run-pinned | none | decline: next-landmark (run-pinned)
+syntax/mod-s | next-landmark | done | dfa | offset-set | none | decline: next-landmark (offset-set)
+syntax/mod-unset | next-landmark | AT | dfa | run-pinned | none | decline: next-landmark (run-pinned)
+syntax/msc-r-uc | next-landmark | done | - | - | - | compile failed rc=1
+syntax/qnt-plus-ctl | excl-cand | ab | dfa | offset-set | none | decline: next-landmark (offset-set)
+syntax/qnt-plus | excl-cand | b | dfa | memchr | none | ADMITTED (stage 1, excl-cand), pending rarity + POST rows
+syntax/qnt-quest | next-landmark | r | dfa | offset-set | none | decline: next-landmark (offset-set)
+utf8/cls-s-nbsp | next-landmark | b | dfa | offset-set | none | decline: next-landmark (offset-set)
+utf8/cls-s-ucp | next-landmark | b | dfa | memchr | none | census approximation WRONG: NEXT is memchr, row continues past L7
+utf8/lit-mixed-ascii | next-landmark | jp | dfa | offset-set | none | decline: next-landmark (offset-set)
+loglines/ipv4 | next-landmark | . | dfa | handoff | none | decline: next-landmark (handoff)
+loglines/ipv6 | next-landmark | : | dfa | handoff | none | decline: next-landmark (handoff)
+loglines/iso-ts | next-landmark | - | dfa | offset-set | none | decline: next-landmark (offset-set)
+loglines/kv-quoted | next-landmark | =" | dfa | handoff | none | decline: next-landmark (handoff)
+loglines/stack-frame | excl-cand | ( | dfa | offset-set-bounded | none | decline: next-landmark (offset-set-bounded)
+loglines/uuid | next-landmark | - | dfa | offset-set-bounded | none | decline: next-landmark (offset-set-bounded)
+bounded/csv5 | next-landmark | , | dfa | memchr | none | census approximation WRONG: NEXT is memchr, row continues past L7
+bounded/dotted4 | next-landmark | . | dfa | handoff | none | decline: next-landmark (handoff)
+subtri/5b-mask-email~ | excl-cand | @ | dfa | byte-class | none | ADMITTED (stage 1, excl-cand), pending rarity + POST rows
