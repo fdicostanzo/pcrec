@@ -1,0 +1,5 @@
+report=docs/dev/lanes/wtclean2_report.md
+sections: Summary; Removed; Left for the manager; Size-log dirt; Branch census; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
