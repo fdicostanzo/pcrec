@@ -92,6 +92,9 @@ somebody else OWNS; none is on a compile path.
   table: needs a pattern, runs real compiles).
 - findings_dump.c -- `--list-analyses`, `--list-analysis NAME|FILE`
   ([FINDINGS] B2; `docs/spec/findings.md` §8; [KNOW-SRC] K3).
+- callouts_dump.c -- `--list-callouts FILE` ([INLINE-C] stage 3; cli.md
+  §2.15): one row per callout site, a REVIEW compile (refusals recorded,
+  not raised); the grant comes from the CLI's mode-class column (F27).
 - measures_dump.c -- `--list-measurements[=REF]` ([MEASURE-SET] M0;
   `docs/spec/measures.md` §6, `docs/spec/cli.md` §2.9a).
 

@@ -1,7 +1,0 @@
-# tests/code/frag/pin_ok.rxt — a FRAGMENT reached through a PINNED include
-# line (pin_entry.rxt, the pin written in upper case): its code is allowed
-# under the entry's grant ([INLINE-C] stage 3, inline_c.md §5.4 row 5).
-pattern (\d+)(?C`c: return RX_CAP_LEN(1) >= 2 ? RX_PASS : RX_FAIL;`)x
-m "123x" 0 4
-m "a12x" 1 4
-n "1x"

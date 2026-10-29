@@ -7,7 +7,7 @@ SAB_ID="S1762-local-reaches-include"
 SAB_FILE="src/parse/mod_code.c"
 SAB_SUITES="code"
 SAB_DESC="the code port ignores the emit input's code_origin, so an included fragment's block is LOCAL and needs no pin"
-SAB_REACH='"$PCREC" --allow-code=c -o "$REACH_TMP/o.c" --include-block "$TREE/tests/code/frag/pin_leaf.rxt:6" "$TREE/tests/code/frag/pin_entry.rxt"'
+SAB_REACH='"$PCREC" --allow-code=c -o "$REACH_TMP/o.c" --include-block "$TREE/tests/code/frag/pin4_leaf.rxt:6" "$TREE/tests/code/frag/pin1_entry.rxt"'
 SAB_REACH_EXPECT='embedded code at'
 SAB_COUNT=1
 SAB_BEFORE='    const char *real = def ? def->file_real : in ? in->code_origin : NULL;'

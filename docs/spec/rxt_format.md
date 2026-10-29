@@ -142,7 +142,7 @@ token in its scope.
 <a id="s1-1-1"></a>
 #### 1.1.1 The `sha256` pin on `include` and `lib`
 
-<a id="s1-1-1-p1"></a>[1.1.1¶1] An `include "path"` or `lib "path"` line may end in `sha256 <hex64>`: the keyword, whitespace, then exactly 64 hexadecimal digits in either case (`lib "net.rxt" sha256 9e37…`). It states the SHA-256 of the named file's bytes. Anything else after the path is refused by value shape. `--list-source` reports the line's value AS WRITTEN, pin included, and verifies nothing.
+<a id="s1-1-1-p1"></a>[1.1.1¶1] An `include "path"` or `lib "path"` line may end in `sha256 <hex64>`, §1.6¶7's spelling and case rule: the keyword, whitespace, then exactly 64 hexadecimal digits in either case, compared case-insensitively (`lib "net.rxt" sha256 9e37…`). It states the SHA-256 of the named file's bytes. Anything else after the path is refused by value shape. `--list-source` reports the line's value AS WRITTEN, pin included, and verifies nothing.
 
 <a id="s1-1-1-p2"></a>[1.1.1¶2] A pin is verified whenever the file is read for a build (a file-operand compile, `--list-callouts`, `--include-block`), whether or not the file holds code and whether or not `--allow-code` is given: the digest is computed over the same bytes the reader parses, and a mismatch refuses the build, naming the line, the path as written and the digest the file has (`lib "net.rxt": sha256 pin mismatch, the file hashes to <h>; re-inspect it, then update the pin`).
 
@@ -815,9 +815,12 @@ none, exactly as their quoted forms do.
   additionally refuses — rather than silently passing — when no sha256
   tool is available at all, because a digest nobody computed must not
   read as a digest that matched. **`pcrec` checks neither the hash nor
-  the 64-digit syntax**: `--list-source` performs no file I/O and reads a
-  case line without parsing it (`--list-schema`'s `#section surface` row
-  `subject-content` is where that non-coverage is declared).
+  the 64-digit syntax of a CASE line's `@file` pin**: `--list-source`
+  performs no file I/O and reads a case line without parsing it
+  (`--list-schema`'s `#section surface` row `subject-content` is where that
+  non-coverage is declared). The same spelling on a head `include`/`lib`
+  line is a different reader's: pcrec reads those files, so pcrec checks
+  their pins (§1.1.1).
 
 <a id="s1-7"></a>
 ### 1.7 `mc` — the find-all count

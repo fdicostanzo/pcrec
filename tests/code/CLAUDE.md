@@ -20,8 +20,12 @@ design `docs/design/inline_c.md`. `make test-code` runs `run_code_tests.sh`
 - `t2/t2.rxt` — the T2 check (§5.7): no manifest, so the block's segment is
   refused (`perr`); S-IC9's and S-IC28's corpus witness.
 - `frag/` — the harness rule (§5.2): `entry.rxt` is granted by its
-  manifest, the fragment `frag_code.rxt` it includes is not (`perr`);
-  S-IC29's witness.
+  manifest; a fragment's block compiles through `--include-block`, so
+  `frag_code.rxt` (included unpinned) is refused (`perr`, S-IC29's
+  witness); `pin1_entry` -> `pin2_ok` (pinned, upper-case hex: compiles)
+  -(no pin)-> `pin3_mid` -> `pin4_leaf` (refused) is stage 3's chain with
+  an unpinned middle (arm 13; S1760-S1762's witnesses). Numbered in
+  closure order, which the rxtsource legs need (K132).
 - `verify_code.py` — this directory's oracle (its NAME makes verify_rxt.py
   skip the directory): libpcre2 10.46 runs the SAME segment text with the
   macro set re-written from §11.9 as functions; floor 30 cells; `consume`
@@ -38,4 +42,5 @@ design `docs/design/inline_c.md`. `make test-code` runs `run_code_tests.sh`
 - `d27/` — the D27 spec-first suite (arm 12; its own CLAUDE.md): 545 checks
   written from the spec by an author denied `src/` and `tests/`, with a
   `/bin/true` control the section checks goes red.
-- `run_code_tests.sh` — the twelve arms (its header lists them).
+- `run_code_tests.sh` — the thirteen arms (its header lists them; arm 13
+  is stage 3's pins, chains, definition-site view and `--list-callouts`).

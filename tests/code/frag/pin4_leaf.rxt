@@ -1,5 +1,5 @@
-# tests/code/frag/pin_leaf.rxt — the end of a THREE-FILE CHAIN whose middle
-# line is unpinned: pin_entry.rxt -(no pin)-> pin_mid.rxt -(pinned)->
+# tests/code/frag/pin4_leaf.rxt — the end of a chain whose MIDDLE line is
+# unpinned: pin1_entry -(pinned)-> pin2_ok -(no pin)-> pin3_mid -(pinned)->
 # here. Its own line is pinned, but the chain is not, so its code is refused
 # (inline_c.md §5.4 row 4; S-IC13's witness: checking only the last link
 # would allow it).

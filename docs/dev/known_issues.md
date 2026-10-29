@@ -11,6 +11,15 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K132 — OPEN (filed 2026-10-29, lane ic3, [INLINE-C] stage 3) — THE RXTSOURCE C1 LEGS COMPARE BLOCK ORDER, AND TWO OF THEM ORDER A CLOSURE DIFFERENTLY; ITS HEAD-ROW COUNT ASSUMES ONE DECLARATION PER FILE
+
+`tests/rxtsource/run_rxtsource_tests.sh` C1 diffs three projections of the corpus line by line. Leg A (`pcrec --list-source` per file) and leg C (`verify_rxt.py --dump`) list blocks in FILE-NAME order; leg B (`run.sh --dump`) lists an entry's fragments in CLOSURE order (the entry, then each `include` as it is spliced). The two agree only while every closure happens to be in file-name order, which held with one fragment. Separately, C1's head-declaration count expects exactly one main-table row per head-bearing file (`a_head_rows == head_files - HEAD_PARSE_FAIL_FILES`), so a file with two `include` lines reads as a mismatch. Lane ic3 hit both with a four-file stage-3 chain and worked around them in the FIXTURES (one `include` per file; files named `pin1_..pin4_` in closure order), not in the check.
+
+**Repro**: give `tests/code/frag/pin1_entry.rxt` a second `include` line naming an existing fragment whose name sorts before `pin2_ok.rxt`; `bash tests/rxtsource/run_rxtsource_tests.sh` fails "C1 leg A != leg B" (order) and "leg A emitted N head-declaration row(s)".
+**Scheduled**: unscheduled; the fix is to compare the legs as sorted multisets (order is not part of the format's meaning) and to count head-bearing FILES from leg A rather than rows. D77: until a fixture needs it.
+
+---
+
 ## K131 — OPEN (filed 2026-10-29, manager, from lane reqvm1's report (docs/dev/lanes/reqvm1_report.md, "Local section runs"); landing lane reqvm1land) — `make test-spec` LINK-FAILS: `pcre2_compile_8` is undefined in check06_cursor, 10 checks RED
 
 The `test-spec` section (the spec-first D27 checks) fails to link on this Linux box: `pcre2_compile_8` undefined at link in check06_cursor, 10 checks red. PRE-EXISTING: lane reqvm1 reproduced the identical red on a clean copy of its merge base, so it is not from [REQRUN-VM]. It is not part of `make test` (the section is run by hand), so no gate reads it. Cause not investigated (likely the check's link line lacks libpcre2-8 on this box, where the 10.46 library is the installed oracle).

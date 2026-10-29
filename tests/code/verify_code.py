@@ -298,7 +298,7 @@ def build(path, headers, segs, td, cc, rxh):
 
 
 # The checkable (non-`consume`) cells of tests/code/ and tests/code/frag/
-# (36 at lane ic2fix; +5 at [INLINE-C] stage 3: pin_ok, pin_mid, pin_entry).
+# (36 at lane ic2fix; +5 at [INLINE-C] stage 3: pin1_entry, pin2_ok, pin3_mid).
 CELLS_PIN = 41
 
 

@@ -782,10 +782,10 @@ fi
 # sha256sum's, over every pinned fixture in the corpus.
 zero="$(printf '0%.0s' $(seq 1 64))"
 nsum=0
-for f in "$SCRIPT_DIR"/frag/pin_*.rxt; do
+for f in "$SCRIPT_DIR"/frag/pin[0-9]_*.rxt; do
     # A copy beside the entry, named relatively: the refusal's digest must
     # survive pcrec_error.msg's 256 bytes whatever the checkout's path.
-    mkdir -p "$P3/dg"; cp "$SCRIPT_DIR"/frag/pin_*.rxt "$P3/dg/"
+    mkdir -p "$P3/dg"; cp "$SCRIPT_DIR"/frag/pin[0-9]_*.rxt "$P3/dg/"
     printf 'include "%s" sha256 %s\n\npattern z\n' "${f##*/}" "$zero" > "$P3/dg/dig.rxt"
     got="$(pc -o "$P3/dig.c" "$P3/dg/dig.rxt" 2>&1 | sed -n 's/.*the file hashes to \([0-9a-f]*\);.*/\1/p')"
     want="$(sha256sum "$f" | cut -c1-64)"
@@ -856,10 +856,10 @@ refuse "a stale include pin refuses a file-operand build too" "sha256 pin mismat
     -o "$R" "$P3/i_bad.rxt"
 # The corpus's three-file chain with an unpinned middle (S-IC13's witness).
 refuse "a three-file chain with an unpinned middle refuses the leaf's code" \
-    "the include line at $SCRIPT_DIR/frag/pin_entry.rxt:8 carries no sha256 pin" \
-    --allow-code=c -o "$R" --include-block "$SCRIPT_DIR/frag/pin_leaf.rxt:6" "$SCRIPT_DIR/frag/pin_entry.rxt"
+    "the include line at $SCRIPT_DIR/frag/pin2_ok.rxt:5 carries no sha256 pin" \
+    --allow-code=c -o "$R" --include-block "$SCRIPT_DIR/frag/pin4_leaf.rxt:6" "$SCRIPT_DIR/frag/pin1_entry.rxt"
 yes_build "the pinned fragment of that entry compiles" \
-    --include-block "$SCRIPT_DIR/frag/pin_ok.rxt:4" "$SCRIPT_DIR/frag/pin_entry.rxt"
+    --include-block "$SCRIPT_DIR/frag/pin2_ok.rxt:7" "$SCRIPT_DIR/frag/pin1_entry.rxt"
 
 # (d) one file reached by two chains, one unpinned: refused in either order.
 printf 'pattern c(?C`c: return RX_PASS;`)d\nname dc\n' > "$P3/dual_c.rxt"
