@@ -548,7 +548,7 @@ echo
 echo "== CHECK 2d: the render helper's assertion, RUN rather than grepped =="
 SCRATCH="$WORKDIR/scratch"
 mkdir -p "$SCRATCH"
-cp -R "$ROOT_DIR/src" "$ROOT_DIR/lib" "$ROOT_DIR/cli" "$ROOT_DIR/memfn" "$SCRATCH/" 2>/dev/null || true
+cp -R "$ROOT_DIR/src" "$ROOT_DIR/lib" "$ROOT_DIR/cli" "$ROOT_DIR/memfn" "$ROOT_DIR/shared" "$SCRATCH/" 2>/dev/null || true
 if [ ! -f "$SCRATCH/src/enc/enc_byte.c" ]; then
     bad "[2d] could not stage a scratch tree for the assertion witness"
 else
