@@ -27335,3 +27335,9 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - Frank's question on a repeat count read from a capture (length-prefixed data): filed [COUNT-FROM-GROUP] beside [POSTFACT]. Scope note: pcrec stays a matcher (validate and locate), not a file-format parser.
 - MISTAKE: `wtprune --apply --dir ic2d27-cell` also removed every gated worktree, including 7 kit memfn-* trees. All were merged, clean and quiet, and their branches remain, so nothing was lost; filed [WTPRUNE-DIR-SCOPE]. The kit should know at its next start.
 - Next: push main after CI 40827253550; D177 says a full suite is due (two major landings since the last, red, run): ask Frank for a window.
+
+## 2026-10-29 (session 127 cont., manager, early morning) — CI timeout raised; parked
+
+- CI red on 42d1a4037 (run 40835409808) was shard 3 hitting its 55-min step timeout on a ~1.3x slower runner, with no red section (lane cired4). Merged ci.yml 55 -> 65 min (job backstop 70 -> 80); CI on 528c5eb62 GREEN (47m44s).
+- Pruned ic2d27m and reqvm1m; cired4 waits for wtprune's 120-min quiet gate.
+- Parked: queue empty, box idle. Owed to Frank: a cleared window for the D177 full suite (two major landings since the last, red, run).
