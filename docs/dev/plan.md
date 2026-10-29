@@ -574,6 +574,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ERR-MSG-TRUNC] STATE:not-started — A DIAGNOSTIC LONGER THAN pcrec_error.msg[256] IS CUT SILENTLY
+  filed: 2026-10-29 manager, from lane ic2d27land's Bug B (docs/dev/lanes/ic2d27land_report.md, "Bug fixes")
+  status (2026-10-29): not started. The public `pcrec_error.msg[256]` (lib/pcrec.h) truncates a refusal without a mark (`pcrec_ext_msgf`); the lone-carriage-return code refusal ran to 268 bytes, was cut mid-word, and was shortened by hand (S1741 holds that fix).
+  trigger: the next diagnostic that overflows, or [IFACE-PUSH].
+  refs: docs/dev/lanes/ic2d27land_report.md; lib/pcrec.h; tests/mech/sabotages/S1741_code_refusal_sentence_cut.sh
+  Direction (manager): a check that every diagnostic template fits at its worst-case argument length, plus a visible truncation mark when one still overflows; the struct size stays (public ABI).
 - [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
   filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
   status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
