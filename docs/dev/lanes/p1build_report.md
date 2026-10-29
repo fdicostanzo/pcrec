@@ -9,7 +9,14 @@ sections after it record the build.
 
 ## Summary
 
-(Written at handoff; see STATE AT HANDOFF.)
+Stage 1 of the P1 landmark walk is built: design rev 3 applies every r7 fix (first commit), then
+the `landmark-walk` LOCATE row with its declared admission table, the `NEXT_cf` memo and asker
+split, the public deny `-fno-landmark-walk`, the size-cap rung, abi 95 (provisional) and the spec
+hunks. Answers: 0 wrong in a libpcre2 differential over 16 witness patterns (1.3M subjects),
+181/181 on a libpcre2-generated answer net under four configurations, identical answers on every
+bench subject. Speed (instructions): 5b email x68.8 on acc-main, qnt-plus `a+b` x5.1; the N1 loss
+cell +3.9%; one NEW loss cell (+31%, a PRESENCE pre-check the walk displaces; filed). utf8 rows
+decline on rarity (a deviation). Owed and queued: make test, 19 mech rows, the timing window.
 
 ## Design rev 3 (r7 fixes)
 
@@ -180,24 +187,161 @@ may re-assign within the range; the final list is §Checks and sabotages.
 
 ## What was built
 
-(In progress.)
+Commits on `lane/p1build` (from main ae1d53859): 00f5010f4 (design rev 3), 108f6688c (asker
+split, `u.locate.gives`, the RECOVER asker, the NULL-slot refusal; no movers), 6a86bb830 (the
+row, `lmwalk_conj[]`, the `NEXT_cf` memo, the ML build, the LMHIT kit site, the emitter),
+8936a8156 (the `drop-landmark-walk` rung, abi 95, spec hunks; the last commit touching `src/`),
+a64bcc920 (answer net, structural script, mech arm, sabotages, re-aims, census re-pins),
+bb41a2d22 (the measurement card), bcf9dc3cb (evidence), e43eaf0f6 (plan rows, identity self-pin).
+
+- **The LOCATE row `landmark-walk`** (`src/gen/emit_dfa.c` `cand_rows[]`, order `empty, rev-end,
+  cover, landmark-walk, composite`), `RX_DFA_SCAN "landmark-walk"`. Per landmark hit (`memchr`
+  through the kit's LMHIT site, `src/gen/memfn_sites.def`) the reverse DFA of P·L walks back from
+  j+1, floored at `search_from`, keeping the minimum accepting start s*; the reach guard
+  (`landmark_position < lmwalk_reach`) relocates to `composite` from s*, else the anchored verify
+  runs INLINE from s* (r7 SOUND-2). New file `src/gen/lmwalk.c` holds the admission.
+- **Admission `lmwalk_conj[]`**, a declared first-match conjunct table, in order: finisher-dfa,
+  anchored-A, branches, split, g1, utf8-l0, exclusion, next-landmark, rarity, machine. Rarity is
+  `pcrec_landmark_margin(h, m, w + LMWALK_K_HIT_UNMEASURED)` with k_hit = 10, an UNMEASURED
+  default (`limits_check.sh` allowlists it as a cost-model term; the card's `lwhit` intercept is
+  its future source). The trace build (`-DPCREC_CAND_TRACE`, env `PCREC_LMWALK_TRACE=1`) prints
+  one `LMWALK` record per decision.
+- **The `NEXT_cf` memo and the asker split** (rev 2 + r7 FIX-1/FIX-5/FIX-6): the counterfactual
+  NEXT read keyed per Job, `used` restored at both fill exits; FINISH's `at_askers`; RECOVER's
+  asker derived by `cand_recover_asker`; a self-check refusing any admitted selection with a NULL
+  slot (`internal error: the selected path asks slot ...`).
+- **The public deny `-fno-landmark-walk`** (`lib/pcrec.h` bit 57, `src/core/axes.def`), honoured
+  at the row AND at the ML build gate (r7 FIX-4); masked out of `rx_info.flags` so a declining
+  pattern's artifact is byte-identical under it.
+- **The size-cap rung `drop-landmark-walk`**, before `drop-anchored` (`src/core/compile.c`; the
+  ladder's sequence table gains its pairs, r7 FIX-3).
+- **Tests:** `tests/landwalk/` (answer net 35 blocks / 181 cases from libpcre2, the generator,
+  the card); `tests/codegen/run_landmark_walk.sh` (in `test-codegen`; 58 checks); mech arm
+  `landwalk`; `cand_oracle_witnesses.tsv` +5 lines.
+- **Measurement card** `tests/landwalk/card_lwalk.sh` ([LANDWALK-CARD]): `lwhit` (wlen 2/8/32 x
+  miss/hit), `lwfit` (a + b*wlen per arm), `lwcall`; walkbytes against one forward DFA step
+  measured in the same run, instructions beside; UNMEASURED without `--timed`.
+- **Not built (held):** the `back_walk` fact and the D27 spec-first cell (r7: only if the manager
+  rules FIX-1's general form a contract on `RX_DFA_START`; no such ruling); the selection WORLD
+  (filed `[SEL-WORLD]`); the priced edge (`[LANDWALK-EDGEPRICE]`, unchanged).
 
 ## Answers
 
-(In progress.)
+- **Answer net** `tests/landwalk/landwalk.rxt`: 181/181 under default, `-fno-landmark-walk`,
+  `-fno-anchored-dfa` and `--engine=vm` (the harness on the one file; the last two re-checked at
+  176 cases before the final 5 R/T cells were added, the default and deny at 181).
+- **libpcre2 differential** (`docs/dev/lanes/p1build_evidence/lwdiff.py`, every subject up to
+  length N over a pattern-specific alphabet, find-all): 18 runs, 16 patterns, **0 wrong** over
+  1.3M subject-answers, all 16 on `landmark-walk` (byte and utf8: `[a-zé]+@x`, `[^@ ]+@x`), plus
+  `[a-z]+@x` under both denies. Includes the 5b email pattern, `a+b`, `\b`/`\B`, `(?i)`, atomic and
+  possessive bodies, lookbehind, the `[a-z]+@...x` overlapping-hit cell. Results:
+  `p1build_evidence/diff_results.txt`. Earlier in the lane: T6 guard 0.00 s vs 5.53 s unguarded
+  at n = 65,536.
+- **Bench population (3 rows):** 5b mask-email walks (byte and utf8); qnt-plus `a+b` walks in byte;
+  cls-s-ucp `(*UCP)a\sb` utf8 DECLINES on `rarity`, as does utf8 `a+b`: the rarity row has no
+  utf8 byte prior (a uniform prior), a DEVIATION from the design's "admitted" for the utf8 rows,
+  recorded here and as a decline witness, not fixed (a prior is a [MEASURE-SET] question).
+  Answers on the bench subjects: identical to main (speed table `answers=same`, count and span
+  hash).
+- **The corpus:** OWED. The corpus census (`$PCREC_TMPDIR/scratch/p1build/census.py`, every
+  unique corpus pattern through the trace build) waited on the box lock behind the queue all
+  afternoon; the corpus's answers are `make test`'s (`test-corpus`), queued as `p1build-test`.
 
 ## Speed
 
-(In progress.)
+Instructions:u per find-all pass, the walk (lane build) against main's `build/pcrec` (362f8e2e1,
+abi 92; its 5b artifact is byte-identical to the lane's `-fno-landmark-walk` one but for the abi
+number), median of 5 interleaved passes, `p1build_evidence/speed.sh`; answers identical on every
+row. Cycles were read on a LOADED box (queue jobs running) and are NOT a timing; the timing run is
+queued (`p1build-timing`, not before 2026-10-30T13:30).
+
+| cell | subject | walk | main | main/walk |
+|---|---|---|---|---|
+| 5b email | acc-main (80,123 matches) | 79.57M | 5,477.6M | x68.8 |
+| 5b email | acc-small (830) | 0.84M | 59.4M | x70.9 |
+| 5b email | fz-me, N1 (7,946) | 101.3M | 97.6M | x0.96 (walk +3.9%) |
+| 5b email | qs-200k (0) | 1.969M | 1.969M | x1.00 |
+| qnt-plus `a+b` | t-1m (1,505) | 0.99M | 5.07M | x5.12 |
+| qnt-plus `a+b` | t-256k (377) | 0.25M | 1.27M | x5.15 |
+| `[a-z]+@x` | acc-small (0) | 0.556M | 0.426M | x0.77 (walk +31%) |
+
+- **5b / acc-main** reads 79.57M against the design's expected 77.76M (+2.3%, outside its ±1%):
+  the difference is the scan edge on the walk's loops (form `bitmap`): under `-fno-scan-edge`
+  the same artifact reads 78.06M. Filed into `[LANDWALK-EDGEPRICE]`'s status (the edge COSTS 1.9%
+  here, where the p1dsg twin's plain edge saved 2.4%). Answers 80123 / e97ca4d6da618f68 as expected.
+- **N1 (fz-me):** the r1/r5 loss cell, walk +3.9% instructions, inside the design's x1.25 bound.
+- **r5 loss cell, a new one:** `[a-z]+@x` on acc-small (830 `@`, no `@x`): the walk +31%
+  instructions, because PRESENCE declines the whole-window required-run pre-check (`dominated`)
+  when the walk answers presence, and that run (`@x`) is rarer than the walk's landmark (`@`).
+  Filed `[LANDWALK-PRES]` (a priced PRESENCE rule; trigger: a bench/corpus cell of that shape).
+- cls-s-ucp: declines (Answers), so main's artifact is unchanged but for the abi number.
+- **Card smoke** (instructions, not timing): wlen 2 miss walk 2.80M vs denied 2.12M; hit 3.66M vs
+  4.06M per 4 KiB; the per-hit intercept is the `--timed` run's.
 
 ## Checks and sabotages
 
-(In progress.)
+Run in the lane and green: `make`, `make strict`; the harness on `landwalk.rxt` (above);
+`tests/codegen/run_landmark_walk.sh` 58/0 (witnesses 10 walk + 12 decline, deny both ways with
+byte identity on declines, reach guard 50,000 landmarks under 2 s, card smoke);
+`run_rxtsource` 300/0 (census pins re-pinned: 312 files, 6298 blocks, 75694 lines, C3 skips);
+`axes_registry_check` 245/0; `limits_check` 39/0; the sabotage BEFORE-count scan 0 mismatches
+over every `tests/mech/sabotages/` row after the re-aims.
+
+NOT run in the lane (box load; queued, OWED): the full `make test` (including test-codegen's
+`run_dfa_stamps`/`run_codegen_tests`, `test-cand-oracle`, `run_fallback_table.sh`, the full
+registry), the identity gate (B), and the mech rows below.
+
+**Sabotages S1820-S1829** (all new, each with its suite):
+
+| id | plant | suite |
+|---|---|---|
+| S1820 | `cand_recover_asker` returns the selected row (r7 FIX-1) | harness + landwalk |
+| S1821 | non-overlapping hit stream (resume past the reach) | harness (`[a-z]+@...x` on `a@b@cdex`) |
+| S1822 | row 1 reads the body's route, not the finisher's (T1) | harness + landwalk |
+| S1823 | LOCATE's kit ask undeclared (FIX-2) | candoracle |
+| S1824 | `anchored-A` admits everything (T7) | landwalk |
+| S1825 | the ML keeps the first (max) start, not the min | harness |
+| S1826 | the rung cells pass without attributing (FIX-3) | fallbacktable |
+| S1827 | the reach guard removed (T6) | landwalk |
+| S1828 | EXCLUSION dropped | landwalk |
+| S1829 | the walk's deny removed from `by[NEXT]` | candoracle |
+
+**Re-aimed** (their BEFORE text moved under this build): S238 (SAB_COUNT 4 -> 5), S693 (abi 95),
+S738, S770 (r7 FIX-7), S741, S744, S777, S811, S844. The 19 rows are the queued `p1build-mech`.
 
 ## abi and spec
 
-(In progress.)
+- **abi 92 -> 95, PROVISIONAL** (the brief's provisional number, other lanes holding 93/94; p10build claims
+  96). Readers found by grep (`abi[ =_:]*92`, `(abi 92)` over src, tests, docs/spec, lib, cli,
+  memfn): the `.abi` stamp, test expectations, the spec sentences, S693, and
+  `docs/dev/history/abi_changelog.md` (the 95 entry). The remaining `92` hits are history
+  (S283's dated figure, the recursion-identity pin's provenance chain). The landing re-numbers if
+  another lane lands first.
+- **Identity gate (B):** self-pinned to 8936a8156 (the last `src/` commit); the manager re-pins to
+  the merge commit.
+- **Spec hunks (D80), same change:** `docs/spec/tuning.md` §2.54 (new: the walk, the deny, the
+  rung, the k_hit default) + TOC + tables + §5.4 row + §2.15 + §3 value;
+  `docs/spec/match_api.md` §6.3.4 (the `landmark-walk` scan value, `rx_info.scan`, `dominated`,
+  `UNIFORM_FOLDS` 0..10); `docs/spec/limits.md` §8.4 row 2a + §8.5; `compound.md` §A.2 row 3;
+  `dec_fallback.md` §1.7 sequence row.
 
 ## STATE AT HANDOFF
 
-(In progress.)
+- **Branch** `lane/p1build`, 9 commits over main ae1d53859, clean except the untracked
+  `p1build_deliver.txt`. Rulings file `p1build_rulings.md`: empty at every read (last: before the
+  report commit).
+- **OWED, queued** (`scripts/boxqueue add`, all `not-before 2026-10-30T13:30`):
+  `710-p1build-test` (make, strict, identity gate (B) at 8936a8156, full make test via perfrun);
+  `711-p1build-mech` (the 19 rows above, after p1build-test); `712-p1build-timing` (the card
+  `--timed` and `speed.sh` against main and against the deny, taskset -c 7, 08:00-16:00 only).
+- **OWED, not queued:** the corpus census (scratch script above; the manager's call whether to
+  re-run it, `census.py PCREC_TRACE PATS OUT`, the trace build at
+  `$PCREC_TMPDIR/scratch/p1build/trace/pcrec`).
+- **Landing notes:** re-number abi if 95 is taken; re-pin the identity FILEPIN to the merge; the
+  history index already carries this report's entry; `k_hit` stays UNMEASURED until the timing
+  run's `lwfit` (then a [MEASURE-SET] row, not a constant edit).
+- **Plan:** `[LANDWALK]` status updated (stays not-started in Candidates per plan_lint PL13);
+  `[LANDWALK-CARD]` built; `[LANDWALK-EDGEPRICE]` status amended; `[LANDWALK-PRES]` and
+  `[SEL-WORLD]` filed.
+- **Deviations from the design:** utf8 rows decline on rarity (no utf8 byte prior); 5b's edge
+  costs +1.9% (edge form `bitmap`); the PRESENCE pre-check loss cell.
