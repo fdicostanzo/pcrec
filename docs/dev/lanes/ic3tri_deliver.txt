@@ -3,3 +3,4 @@ sections: Summary; Red items; Fixes; Re-validation; STATE AT HANDOFF
 nonempty: all
 commit: yes
 owed: ic3-test
+dirty-ok: docs/dev/artifact_size_log.tsv
