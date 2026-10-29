@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# ic2d27: make test of branch ic2d27 (D27 embedded-C suite landed, two diagnostic fixes, spec gaps closed), lane ic2d27land.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic2d27
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] || { echo "no tree or perfrun in $TREE" >&2; exit 1; }
+        git -C "$TREE" merge-base --is-ancestor 85d99c09d HEAD || { echo "ic2d27 lacks 85d99c09d" >&2; exit 1; }
+        n=$(make -C "$TREE" -s -p -n nothing 2>/dev/null | sed -n 's/^TEST_SECTIONS := //p' | head -1 | wc -w)
+        [ "$n" -gt 0 ] || { echo "cannot count TEST_SECTIONS" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; perfrun make test > \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=0 log=job.log.strict last=^strict: DONE rc="
+        echo "boxqueue: witness strict=strict: DONE rc=0"
+        echo "boxqueue: expect sections=$n log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: $n/$n"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1; s=$?
+echo "strict: DONE rc=$s" >> "$BQ_LOG.strict"
+[ "$s" -eq 0 ] || rc=1
+( cd "$TREE" && scripts/perfrun --label ic2d27 -- "$BQ_LOG.make" ) || rc=1
+exit $rc

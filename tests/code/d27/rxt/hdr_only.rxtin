@@ -1,0 +1,7 @@
+# rxt_format.md §1.1 code-header: "a target compiled without --allow-code for
+# its language is refused, segment or no segment".
+code-header c "d27a.h"
+target plain = plainblk
+
+pattern abc
+name plainblk

@@ -35,4 +35,7 @@ design `docs/design/inline_c.md`. `make test-code` runs `run_code_tests.sh`
   the callout-free `--engine=vm` twin, hits/fires counted, instructions:u
   per arm (`NA` without perf); `--smoke` in make test (each row's reach asserted),
   `--timed` only in a cleared timing window (UNMEASURED otherwise).
-- `run_code_tests.sh` — the eleven arms (its header lists them).
+- `d27/` — the D27 spec-first suite (arm 12; its own CLAUDE.md): 545 checks
+  written from the spec by an author denied `src/` and `tests/`, with a
+  `/bin/true` control the section checks goes red.
+- `run_code_tests.sh` — the twelve arms (its header lists them).

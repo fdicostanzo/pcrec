@@ -1,0 +1,10 @@
+# match_api.md §11.9¶7 / rxt_format.md §1.1: code-header lines are #included
+# AS WRITTEN, in order, a repeated text once, after the matcher, only in the .c.
+code-header c "d27a.h"
+code-header c "d27b.h"
+code-header c "d27a.h"
+code-header c <stdint.h>
+target rx = blk
+
+pattern a(?C`c: return (d27_a() == 7 && d27_b() == 8) ? RX_PASS : RX_FAIL;`)b
+name blk

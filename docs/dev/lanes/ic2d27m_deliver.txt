@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2d27m_report.md
+sections: Summary; Merge and conflicts; Pins and counts; ERR-MSG-TRUNC row; Local validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic2d27m-test

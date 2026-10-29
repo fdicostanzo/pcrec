@@ -267,10 +267,13 @@ ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
     unsigned cp;
     size_t off;
     const char *what = code_find_refused(cx, at, text, textlen, &cp, &off);
+    /* The longest `what` (the carriage return's) with six-digit offsets
+     * leaves this sentence under pcrec_error.msg's 256 bytes; a longer
+     * one is cut mid-word by pcrec_ext_msgf (the lone-CR refusal was). */
     if (what)
         REFUSE(at, "the code segment at offset %zu contains U+%04X, %s, at "
-               "byte %zu of the segment; such characters make the code a "
-               "reviewer reads differ from what the compiler compiles", at,
+               "byte %zu of the segment; the code a reviewer reads would "
+               "differ from what gcc compiles", at,
                cp, what, off);
 
     /* §5.4 row 3: REACHED code (a definition read from another file through

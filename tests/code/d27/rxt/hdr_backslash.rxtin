@@ -1,0 +1,6 @@
+# rxt_format.md §1.1 code-header: no backslash.
+code-header c "a\b.h"
+target rx = blk
+
+pattern a(?C`c: return RX_PASS;`)b
+name blk

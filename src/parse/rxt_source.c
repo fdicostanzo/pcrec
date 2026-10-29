@@ -3385,7 +3385,8 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                     }
                 }
                 StrBuf eb = { 0 };
-                pcrec_sb_text(&eb, v);
+                pcrec_sb_ctext(&eb, (const unsigned char *)v, strlen(v),
+                               PCREC_CTEXT_COMMENT);
                 rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'code-header': %s "
                          "(got '%s')", why, eb.p ? eb.p : "");
                 pcrec_sb_free(&eb);
@@ -3854,7 +3855,8 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
             PcrecCalloutDecl d;
             if (!pcrec_callout_decl_read(v, ' ', &d)) {
                 StrBuf eb = { 0 };
-                pcrec_sb_text(&eb, v);
+                pcrec_sb_ctext(&eb, (const unsigned char *)v, strlen(v),
+                               PCREC_CTEXT_COMMENT);
                 rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'callout' wants a "
                          "callout number 0-255 and its attributes, e.g. "
                          "'callout 1 consume,once' (got '%s')",

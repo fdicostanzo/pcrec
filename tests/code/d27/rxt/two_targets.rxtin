@@ -1,0 +1,10 @@
+# cli.md §1.1.1¶4: a refused target leaves no file of ANY target written.
+# The plain target comes first, so a writer that wrote as it went would leave it.
+target plain = plainblk
+target coded = codeblk
+
+pattern abc
+name plainblk
+
+pattern a(?C`c: return RX_PASS;`)b
+name codeblk

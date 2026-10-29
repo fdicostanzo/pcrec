@@ -1,0 +1,5 @@
+# match_api.md §11.9¶4: #line names the FILE operand as typed and the line of
+# the segment's first byte, padded to its column (one-to-one source line).
+target rx = blk
+pattern ab(?C`c: return d27_undeclared;`)
+name blk

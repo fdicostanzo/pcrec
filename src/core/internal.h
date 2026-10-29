@@ -608,7 +608,13 @@ void pcrec_sb_field(StrBuf *sb, const char *s);
  *                              6.4.4.4) and so cannot glue.
  *
  * Newline, tab and CR are `\n` `\t` `\r` in all three. A NULL `s` writes
- * nothing. */
+ * nothing.
+ *
+ * ONE MORE READER: a DIAGNOSTIC that echoes a value the user wrote (the
+ * `code-header` and `callout` shape refusals) goes through
+ * PCREC_CTEXT_COMMENT too, so a control byte AND a non-ASCII byte (a bidi
+ * control, the match_api.md §11.9¶3 reason) reach the terminal by number;
+ * no second escaper. */
 typedef enum {
     PCREC_CTEXT_COMMENT,
     PCREC_CTEXT_COMMENT_QUOTED,

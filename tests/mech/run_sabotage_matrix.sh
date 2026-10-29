@@ -616,7 +616,7 @@
 #     its libpcre2 oracle, the refusals, the entry-point table, the
 #     diagnostics, header placement, the live-macro, span-helper and
 #     call-form checks. Its own arm because the section's grant, user
-#     source and fixtures live only in that directory. Rows: S1680-S1685,
+#     source and fixtures live only in that directory. Rows: S1680-S1685, S1740-S1741,
 #     and from the r1-ic2 review's fixes (lane ic2fix) S1720-S1721.
 #     Verdict: the script's `checks passed:`/`checks failed:` trailer.
 #

@@ -1,0 +1,5 @@
+# match_api.md §11.9¶3 in a FILE operand: a refused character in a segment.
+target rx = blk
+
+pattern a(?C`c: /* ​ */ return RX_PASS;`)b
+name blk

@@ -1,0 +1,13 @@
+# Neighbour of deliver_lib.rxt: the same definition in the file named on the
+# command line is LOCAL (match_api.md §11.9¶8), reached by a DELIVERING call
+# (rxt_format.md §1.2: the callee is written out at the site).
+target t = user
+
+pattern x(?&=def)y
+name user
+features recursion,named-groups
+
+pattern (?<g>q)(?C`c: return RX_PASS;`)
+name def
+export g
+features named-groups

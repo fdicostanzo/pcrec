@@ -31,7 +31,10 @@
 #       binding in a unity build, an embedded segment, or an artifact used
 #       as a callout, read from the assembly; a separately compiled binding
 #       as the reader's control;
-#  (11) the inline-mode measurement card builds and runs (--smoke).
+#  (11) the inline-mode measurement card builds and runs (--smoke);
+#  (12) the D27 spec-first suite (d27/run.sh, written from the spec by an
+#       author denied src/ and tests/), floor 545 passes and no failure,
+#       with its CONTROL: the same suite against /bin/true must go red.
 # Arm 2 SKIPS LOUDLY when libpcre2 is absent (PC-3's shape).
 #
 # Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA.
@@ -729,6 +732,30 @@ if [ "$(awk -F'\t' '(($1=="inline:site_hit"||$1=="inline:tail") && $5+0 > 0) ||
     ok "the card's rows reach what they measure (hits/fires: $cf)"
 else
     bad "a card row does not reach what it measures (hits/fires: ${cf:-no rows})"
+fi
+
+# ---- arm 12: the D27 spec-first suite ----------------------------------------------
+echo
+echo "== [INLINE-C] the D27 spec-first suite (tests/code/d27/) =="
+D27_FLOOR=545
+d27_run() { # pcrec-binary log
+    PCREC="$1" CC="$CC" TMPDIR="$WORK" D27_OUT="$WORK/d27run" "$TIMEOUT_BIN" 1200 \
+        bash "$SCRIPT_DIR/d27/run.sh" >"$2" 2>&1
+    sed -n 's/^d27: \([0-9]*\) passed, \([0-9]*\) failed$/\1 \2/p' "$2" | tail -1
+}
+read -r d27p d27f <<<"$(d27_run "${PCREC}" "$WORK/d27.log")"
+if [ "${d27f:-x}" = 0 ] && [ "${d27p:-0}" -ge "$D27_FLOOR" ]; then
+    ok "the D27 suite: $d27p passed, 0 failed (floor $D27_FLOOR)"
+else
+    bad "the D27 suite: '${d27p:-none} passed, ${d27f:-none} failed' (want 0 failed, >= $D27_FLOOR passed)"
+    grep '^FAIL' "$WORK/d27.log" | head -20 >&2
+fi
+# the control: a compiler that answers nothing must fail most of the suite
+read -r d27cp d27cf <<<"$(d27_run /bin/true "$WORK/d27c.log")"
+if [ "${d27cf:-0}" -ge 100 ]; then
+    ok "the D27 control (PCREC=/bin/true) goes red: ${d27cf} failed"
+else
+    bad "the D27 control did not go red (/bin/true: '${d27cp:-none} passed, ${d27cf:-none} failed'): the suite cannot fail"
 fi
 
 echo

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# ic2d27land: mech rows S1740 (code-header echo escapes non-ASCII) and S1741 (code-refusal sentence fits the message cap) on worktrees/ic2d27.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic2d27
+IDS="S1740 S1741"
+case "${1:-}" in
+    --ready) exit 0 ;;
+    --dry-run)
+        # One pass: seven rows validate well inside boxqueue's 30 s dry-run cap.
+        tmp=$(mktemp -d -p "$TREE/build") || exit 1
+        (cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS > "$tmp/a" 2>&1) \
+            || { tail -3 "$tmp/a" >&2; rm -rf "$tmp"; exit 1; }
+        n=$(sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p' "$tmp/a")
+        [ -n "$n" ] || { echo "no field-validation line" >&2; rm -rf "$tmp"; exit 1; }
+        rm -rf "$tmp"
+        echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
+        echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+exec bash tests/mech/run_sabotage_matrix.sh $IDS
