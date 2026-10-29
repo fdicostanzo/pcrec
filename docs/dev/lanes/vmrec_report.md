@@ -81,3 +81,7 @@ VmStmt; owed with the identity run).
 - Owed: identity sweep, ST/RT/sabotages, make strict/test-codegen, the
   queued vmrec-ident / vmrec-test / vmrec-mech jobs, history index row,
   lanecheck.
+- Exact next command (read the frame copy against its source first):
+  `sed -n 12948,13446p /home/pcrec/projects/pcrec/worktrees/vmrec/src/gen/emit_vm.c`,
+  then start the primitives at `grep -n '^static void vm_lbl\|^static void vm_goto' src/gen/emit_vm.c`.
+- Deliver file's owed line now lists what remains (manager-instructed, 2026-10-29).
