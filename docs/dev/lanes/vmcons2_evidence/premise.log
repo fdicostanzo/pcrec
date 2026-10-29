@@ -1,0 +1,49 @@
+== listing (program section)
+#section program
+#label	op	args	target	note
+L0	label			
+	assert	^ start of subject (absolute offset 0)	L2	
+	fail			backtrack
+L2	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L4	
+L4	label			
+	consume	'a'	L5	
+	fail			backtrack
+L5	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L3	
+L3	label			caller variable ${v}
+	note			caller-variable compare: the bytes it examined, which the fail label never sees
+	fail			backtrack
+	goto		L6	
+L6	label			
+	consume	'c'	L1	
+	fail			backtrack
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+#section choicepoints
+== twin diff
+225c225
+<     RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)scan_position);
+---
+>     /* V3 twin: DEAD under rev 1 (L3 ends at FAIL) */
+231c231
+<     RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)scan_position);
+---
+>     /* V3 twin: DEAD under rev 1 */
+== base
+[abc] rc=1 0:0,3 1:0,1
+[abd] rc=0
+[ac] rc=0
+== twin
+[abc] rc=1 0:0,3 1:-1,-1
+[abd] rc=0
+[ac] rc=0
+== libpcre2 (quotemeta splice of v)
+[abc] rc=1 0:0,3 1:0,1
+[abd] rc=0
+[ac] rc=0
