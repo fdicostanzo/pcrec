@@ -17,7 +17,7 @@ hand edits of pcrec's OWN emitted `rx.c` (scratch), never pcrec code.
 - `census.py` — compile-only census (corpus + bench): seed states and their
   shape, skip gate, REQ_WHY and route stamps. `census.tsv.gz` — its output.
 - `p10_controls.py` — P10 twins over every one-attempt bench pattern;
-  `p10_controls.tsv.gz` — its output (when present).
+  `p10_controls.tsv.gz` — its output (job 691).
 - `job_690_census.sh`, `job_691_p10controls.sh` — the boxqueue jobs that ran them.
 - `run_p9.sh`, `sum_p9.py`, `sum_p10.py` — runners/summaries;
   `p9_results.tsv.gz`, `p10_results.tsv.gz` — raw rows (pattern, variant,

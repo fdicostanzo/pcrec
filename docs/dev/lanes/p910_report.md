@@ -50,7 +50,12 @@ generators in `docs/dev/lanes/p910_evidence/` (their diffs are there too), never
 4. **Shared mechanism:** P9 and P10 share none with each other or with P1. P9 shares the DFA
    loop's skip/edge block with P4+P8 (the same admission question from the other side); P10's
    checkpoint must count table steps, not scan-edge bytes, to compose with P4+P8.
-5. Population (compile census): see "P9 design" and "P10 design".
+5. **Census (jobs 690/691, both GREEN) and corrections to the first draft.** P9: 34 bench
+   artifacts (not 5-6 cells) have the uncovered second seed, 28 scan-shaped; only 6 are measured.
+   P10: 19 bench ids carry `one-attempt` with a required byte, 15 twinned, 0 answer differences
+   over 1,222 file-runs; `paced` gains x14-20 on THREE patterns (email-owasp, iso8601 and the
+   unlisted email-nested-plus), is neutral to +4% on the rest, worst single file x1.37. See
+   "Corrections" below.
 
 ## Premise test
 
@@ -196,7 +201,28 @@ stepped at.
 term the walk scans on, whether the -1 term is tested at all, and the form, are the kit's
 (vmfindm1 vs vmfind shows the choice is regime-dependent; the kit's rate priors decide).
 
-**Population (compile census, corpus + bench).** CENSUS-PENDING.
+**Population (compile census, corpus + bench).** Job 690 (5,588 patterns, one `--features all`
+compile each, no subject run; `p910_evidence/census.tsv.gz`): corpus 4,763 compiled of 5,196 (433
+refused: 431 `rc1`, i.e. constructs pcrec rejects by design, plus 2 `rc125` that are not
+explained here and not counted); bench 368 of 392 (24 refused, all `rc1`: unsupported modules,
+e.g. `syntax/cnd-group`, `utf8/cls-w-ucp`, and the altwide `clsa/clsd/s/w` 1024+ rows). None of
+the ten premise cells is among the refused. Counted from the emitted C (a `rx_forward_seed_state`
+table with >= 2 distinct values, and the `forward_state == 0` skip gate), not from the row's
+predicate:
+
+| population | compiled | seed family >= 2 | of those, state-0 skip gate present | seed shape `scan` (single exit door) | `scan` with stay >= 60 (the word seed) |
+|---|---:|---:|---:|---:|---:|
+| corpus | 4,763 | 281 (279 two seeds, 2 three) | 213 | 106 | 62 (of the 213 gated) |
+| bench | 368 | 34 | 33 | 28 | 25 |
+
+So the defect is not five cells: **34 bench artifacts** (33 gated) carry a second idle seed the
+skip never covers, 28 of them scan-shaped, 25 on a word-class seed (`\b...` patterns: hex8, bignum,
+uuid, `\bcat\b`, aws key, github pat, the isbn/luhn/member twins, `level-context`, the altwide
+`wb-256/512`). This lane MEASURED only the five ctx cells and `level-context` (above); the
+other 28 are admitted by structure and UNMEASURED, and a short-word subject is exactly where the
+measured DFA-local alternative lost, so each needs its card row (d), not an assumption. The one
+ungated bench member (`utf8/asr-b-midchar`, lone `\B`) has no start skip at all and is not a
+P9 customer.
 
 **Remodel overlap (D153).** [DD-11.5] (the -1 term is its span-context producer's output; that
 producer currently DECLINES on these artifacts, `span_facts` "decline:erased-nfa" on the
@@ -339,7 +365,34 @@ entry), and the gate decides, not argument.
 with the same facts; only WHERE pcrec places its use moves. If the kit later owns the attempt
 loop, the checkpoint is a hook the loop states, not a kit method.
 
-**Population (compile census).** CENSUS-PENDING.
+**Population (compile census).** Same job 690 (`census.tsv.gz`): `REQ_WHY one-attempt` is stamped on
+**267 corpus** artifacts (266 with a required byte; 188 VM, 79 DFA; 209 `DFA_SCAN attempt`, 58 with
+none) and **19 bench** artifacts, all with a required byte (15 distinct patterns once the
+`sentinel/` copies are folded; 13 DFA, 6 VM; 18 `attempt`). Job 691 (`p10_controls.tsv.gz`) ran
+the `pre` and `paced` twins over all 19 ids' own subject sets (throughput + short, 47-92 files
+each): 15 twinned (1,222 file-runs per variant), 4 not (`syntax/anc-g-uc`, `unusual/va-tenant`,
+`utf8/asr-a-z`, `utf8/lit-anchored-run`: not a direct-threaded one-attempt route, the generator
+asserts; no twin was hand-built for them).
+
+- **Answer identity: 0 differences** (match count + span hash) of `auto` vs `pre` vs `paced` over
+  all 1,222 file-runs. Weak as a MATCH test: the bench subject sets carry only 37 matches in
+  total (they are reject-heavy by design), so the match side rests on the 208 earlier file runs
+  and their 12 witnesses.
+- **Who gains** (sum of instructions over the pattern's set, `paced`/`auto`): email-owasp 0.06
+  (x16), moment-iso8601 0.05 (x20), **email-nested-plus 0.07 (x14)**; cycles x15 / x15 / x13.
+  Their best single files are x30-36 (`t-evil-*`, `t-trim-*`: the hazard pair above).
+  `ipv4-near-miss` 0.86-0.93, `uuid-near-miss` 0.92-0.93 (small gains: the checkpoint finds the
+  byte absent at D0 and returns early). `anc-a-uc`/`anc-caret` 1.00, `winpath-near-miss` 1.02,
+  `logparse-atomic` / `-removed` **1.04** (cycles 0.99; a required byte present on every subject,
+  so the check is pure overhead: 3-7% instructions, hidden in cycles).
+- **Worst single file:** x1.37 instructions (`email-owasp`, `t-hyb-embed-1k`, 350 -> 480 on a
+  1 KiB subject), x1.36 on a 24-byte email line; 125 of 1,222 files above x1.05, 9 above x1.25,
+  all of them subjects of a few hundred instructions where the fixed call cost dominates.
+- **`pre` (the forced VM's placement) is unusable on 7 of 15:** `winpath-near-miss` x44 in sum
+  (x864 on its worst file), `logparse-atomic` x1.77, per-file worst x466-x661 on the email /
+  iso8601 / logparse patterns' 1 MiB subjects. `paced` has no such file.
+- **Not measured:** the 267 corpus artifacts (no subjects; the corpus is `.rxt` rows, not
+  throughput files), the 4 untwinned bench ids, and the Zen 1 / Mac ratios the card needs.
 
 **Remodel overlap.** [MATCH-SPLIT] none; [OPT-REVEND] / [COMPOUND] none on one-attempt routes
 (they own LOCATE/rev-end, which `dominated` already reads first); P4+P8 (scan edges change the
@@ -360,6 +413,29 @@ from the bound's worst case, not from the twin's code; population counted by the
 emitted stamps. (3) Regeneration: r and D0 are measured constants; re-measuring moves K/D0 and the
 emitted bytes of every admitted artifact: an abi event, and a measurement-set entry if they go
 into `measure_store/` (D166) rather than limits.def.
+
+## Corrections to the first draft (after the census)
+
+1. **P10 cell list was short by one.** The Premise test says only email-owasp and moment-iso8601
+   have a required byte and are P10 cells. The census says 19 bench ids (15 distinct) are
+   `one-attempt` with a required byte, and the controls show a THIRD gaining pattern,
+   `capability/email-nested-plus` (VM route, byte `@`): x14 instructions, x13 cycles. The
+   statement "trim-nested-star / evil-alt-nested / pwd-strength-chain have nothing to reject on"
+   stands (no required byte). `anc-*`, `ipv4/uuid-near-miss`, `winpath-near-miss`,
+   `logparse-atomic` are admitted too but gain nothing.
+2. **"Hot-loop cost is not the check" was not the whole story for the neutral cases:**
+   `logparse-atomic` (+4% instructions, 0% cycles) and the short email lines (x1.36) are
+   admitted, unrejectable, and pay a small fixed price. The design's G2 ("within the null band")
+   holds in cycles but not in instructions for these; the card should read cycles for G2 and say
+   so. The bound claim ("<= x2 of today") held on every file (max x1.37).
+3. **"Five cells" for P9 under-stated the population** (34 bench artifacts, 281 corpus). The
+   mechanism claim (a skip is missing at the second idle seed) is unchanged; the breadth is new
+   and unmeasured. Nothing in the census contradicts the central claims of either design.
+4. **The identity claim for P10 was 208 file runs** (draft); with job 691 it is 1,222 more, but
+   the bench sets hold only 37 matches, so the match-bearing evidence is still the first 208
+   plus the witnesses, and I am saying so rather than reading 1,430 runs as match coverage.
+5. **Evidence note:** the draft's `CLAUDE.md` for `p910_evidence/` listed `census.tsv.gz` and
+   `p10_controls.tsv.gz` as pending; they are committed now.
 
 ## Shared mechanism
 
@@ -418,11 +494,27 @@ band; (c) <= the stated bound 1 + 2^K / r; the HOT-LOOP GATE (instructions/byte 
    with a stated worst case (<= x2, measured x1.2-1.8 on witnesses built to hurt it, most of which
    is a gcc register-allocation side effect the build gates). Leaning: it is not, and it should
    leave [ADAPTIVE-ARM] as its own row (the targets file's proposed [REQBYTE-REJECT] name fits),
-   ranked after P9 because it moves two bench cells (x62/x183 self-trails, not library trails).
-4. **P10's `K`:** 5 (worst case x1.6 on every ratio measured so far, hazard gain ~x25) or 6
+   ranked after P9 because it moves three bench cells (email-owasp, iso8601, email-nested-plus:
+   x14-20 on the capability sets; self-trails, not library trails).
+4. **P10's price on patterns it cannot help:** `paced` costs 3-7% instructions (0% cycles) on
+   `logparse-atomic` and up to x1.37 on 1 KiB email lines. Accept as the insurance premium, or
+   gate the row to routes whose required byte is NOT in the first D0 steps' reach (not known at
+   compile time)? Leaning: accept; it is the bound, and cycles show nothing.
+5. **P9 breadth:** the structure admits 34 bench / 213 gated corpus artifacts but only six are
+   measured. Leaning: build the row with card (d) as the gate, per-id, and let a pattern whose
+   short-word subject regresses decline on its own measurement rather than argue it now.
+6. **P10's `K`:** 5 (worst case x1.6 on every ratio measured so far, hazard gain ~x25) or 6
    (worst case up to x2.2 on selflip's ratio, gain ~x35)? Leaning: decide on the card's Zen 1
    ratio; until then 5, the conservative one.
 
 ## STATE AT HANDOFF
 
-- STATE: in progress (census owed).
+- STATE: done (report complete; census jobs 690 and 691 both GREEN and folded in by lane p910fin).
+- Rulings file `docs/dev/lanes/p910_rulings.md` is empty of entries; none applied.
+- OWED: none. Nothing was re-run; the P9 twins measured only the five ctx cells and level-context,
+  and the other 28 bench P9 members are UNMEASURED by design (card row (d)). The P10 numbers for
+  the 4 untwinned ids and the corpus 267 are likewise unmeasured (no subjects / no twin).
+- Unexplained: 2 corpus/bench compiles returned `rc125` (`tests/vars/caseless.rxt:152`,
+  `capability/mojibake-curly-quote`; both have a `\xff`/`\x93` byte in the pattern). Not
+  investigated; it does not touch any cell.
+- Nothing under `src/`, `cli/`, `lib/`, `memfn/`, `tests/` changed; no build go.
