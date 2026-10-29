@@ -134,7 +134,7 @@ C=[
 ]
 
 K134_BODIES = [
-    ("identifiers, 350", " " + " ".join("x%d_%d" % (i, i * 7919 % 100) for i in range(350)) + " "),
+    ("identifiers, 350", " " + " ".join("v%d_%d" % (i, i * 7919 % 100) for i in range(350)) + " "),
     ("splices, 700", " " + "a\\\n" * 700 + " "),
     ("parentheses, 300 deep", " " + "(" * 300 + ")" * 300 + " "),
     ("mixed statements, 60",

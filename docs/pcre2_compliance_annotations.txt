@@ -1198,9 +1198,11 @@ for call-bearing patterns"). The default STAYS at 2048 frames / 3072
 trail entries: the run struct lives on the C stack of the un-suffixed
 entries (131,144 B call-bearing), which already SIGSEGVs a musl-default
 128 KB thread (K33), and the trail binds BEFORE the frames — 2.0 frames
-against 9.0 trail entries per nesting level of `^(a(?1)?b)$` — so the
-shipped default gives up at n = 342, a 684-byte subject, and raising
-frames alone would change nothing. The remedy is not a bigger default
+per nesting level of `^(a(?1)?b)$` against a trail need of `4n + 17`
+entries once the VM compacts its trail ([K134], `limits.md` §4; 9.0 trail
+entries per level before it) — so the shipped default gives up at
+n = 764, a 1,528-byte subject (n = 342, 684 bytes, before [K134]), and
+raising frames alone would change nothing. The remedy is not a bigger default
 but the CALLER-PROVIDED BUFFER ([DD-14.FB]'s three `_in` entries: a
 224 B frame, a 64 MB `MAP_NORESERVE` reservation matching 800 KB in
 0.056 s). That is why the `becomes` column reads `PLANNED` rather than

@@ -26,7 +26,7 @@ resume-frames	2048
 trail-entries	3072	
 subject-ceiling		exact: no subject ceiling
 labels	23	
-events	97	
+events	99	
 resume-points	2	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	1	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
@@ -137,6 +137,7 @@ L19	label			call a capture group's pattern
 	set	slot_values[3] <- scan_position		park this activation's value on the trail (a trailed SELF-write)
 	set	slot_values[6] <- scan_position		park this activation's value on the trail (a trailed SELF-write)
 	set	slot_values[7] <- scan_position		park this activation's value on the trail (a trailed SELF-write)
+	note			trail checkpoint: compact the trail if it is past its trigger (K134)
 	goto		L2	
 L22	label			the call returned; continue here
 	goto		L21	
@@ -154,6 +155,7 @@ L3	label			the callee region for a capture group returns
 	set	slot_values[3] <- scan_position		restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
 	set	slot_values[6] <- scan_position		restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
 	set	slot_values[7] <- scan_position		restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
+	note			trail checkpoint: compact the trail if it is past its trigger (K134)
 	return	goto* frame.call_ret		return to the caller through the frame's own label
 accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
 fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)

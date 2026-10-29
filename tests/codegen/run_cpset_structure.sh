@@ -1032,6 +1032,10 @@ fi
 # block's one comment line "traps on" -> "propagates" (+2 bytes); the abi digits
 # keep their width; the other stamps read identically. The first run of the
 # stage-0 validation (job 530-ic0-test) was RED here only.
+# RE-RECORDED 2026-10-29 at [K134] (lane trailgc3, abi 93): ONE row moved, `(a(?1)?b)`
+# 41,450 -> 43,357 (+1,907): the only sample artifact whose VM program carries a trail
+# checkpoint, so it gains the `RX_TRAIL_CHECK` macro, its call sites and the
+# compaction routine (the other eleven rows read identically). Diff read, not bumped.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

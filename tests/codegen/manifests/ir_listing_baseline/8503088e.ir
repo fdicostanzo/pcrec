@@ -26,7 +26,7 @@ resume-frames	3
 trail-entries	8	
 subject-ceiling		exact: no subject ceiling
 labels	26	
-events	73	
+events	74	
 resume-points	2	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	0	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
@@ -93,6 +93,7 @@ L5	label			revdet scan: one iteration committed
 	note			work charge: frames discarded by the revdet scan cut
 	note			cut to the iteration's entry depth: a unique-iteration body has no second parse of what just matched
 	set	slot_values[7] <- scan_position		revdet: low-water = the boundary after rmin iterations
+	note			trail checkpoint: compact the trail if it is past its trigger (K134)
 	goto		L3	
 L6	label			revdet scan: the body could not run at this boundary
 	goto		L7	

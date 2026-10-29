@@ -277,3 +277,49 @@ min of 3. BASE = b05ccfc0b, HEAD = 801ad1214, NEW = this lane:
   - F3's question for Frank (above).
   - Re-pin FILEPIN to the merge commit at landing.
   - abi 93 stays provisional in landing order (F19).
+
+## Triage 2026-10-29 (tgctri)
+
+Job 690-trailgc-test ended RED (rc=1, wall 3153 s). Verdict read from make's
+`*** [Makefile:N: test-X] Error` lines: ten sections red (registry,
+prefilter, vm, codegen, cpset-structure, rxtsource, memfn-arch,
+fallback-table, startset, partlayout) plus the identity gate `ident`.
+strict, the mover census (unexpected 0) and the trail compaction check with
+the corpus sweep (39 checks) were GREEN. The job's `ident ran=2 declared=0
+OVER` was not a declaration bug: the captured number is the gate's own exit
+status (`ident: DONE rc=2`), so the OVER was the failure itself.
+
+No failure moved an ANSWER. Every one is a stale pin, a stale hand-written
+reader or a missing manifest row for the new emitted text; the lane's own
+mover census already classed every moved cell as `checkpoints`.
+
+| failure | cause | fix |
+|---|---|---|
+| registry: compliance annotation drift | commit e730f4f88 edited the F15 prose in `docs/pcre2_compliance.md` but not its store | same text in `docs/pcre2_compliance_annotations.txt` |
+| prefilter T2 SIZECAP, fallback-table seq-pfclow/pfcbcat/pfcd2/att-scpfc | the checkpoint adds a FIXED 1,815 B of code to every artifact carrying one (same +1,815 on three unrelated lowsize witnesses, e.g. sc 31293 -> 33108 on `(?:a\K){2,}b`), pushing the 30,000 B lowsize witnesses over the cap | lowsize/trlowsize/trlowboth cap 30,000 -> 31,815 in both scripts (restores each witness's margin exactly); expected rows unchanged |
+| codegen run_size_term: rescue took K=2 | same +1,815 on every rung (K=4 32,801 -> 34,616) against the 33,200 cap | cap 33,200 -> 35,015 (K=6 ~39,697 and K=3 ~35,501 still do not fit, K=4 fits with ~400 B headroom) |
+| vm ir-listing BYTE-NEUTRALITY (5 baselines) | each listing gains the `trail checkpoint` note row(s) and the events count | re-captured (CAPTURE_IR_BASELINE=1); diff is only `events` and the note rows |
+| codegen facts-decisions | `RX_TRAIL_CHECK` is a caller macro, not a decision stamp | added to the MACHINERY list |
+| codegen K37 / TT-9 | `tests/vm/run_trail_compact.sh` ran the compiler and the checker unbounded and was in neither sanitizer list | `$TIMEOUT_BIN` on both calls; added to `tests/lib/san_scripts.txt` (it takes GENCFLAGS) |
+| codegen SABANCHOR | S38's anchor `gslot, v->p, top);` became `gslot, vm_jump(v, top));` | S38 BEFORE/AFTER re-derived from the live source |
+| cpset-structure manifest | `(a(?1)?b)` EMITTED_BYTES 41,450 -> 43,357 (only sample artifact with a checkpoint) | re-recorded after reading the diff (one row) |
+| rxtsource census (+10 lines) and memfn-arch | the K134 long-flat cscan cell for 350 identifiers spelled `x86_...`, an arch noun (C4 class 6); census moved by cscan's 5 new cells x 2 lines | generator identifiers `x%d_%d` -> `v%d_%d` (same length, regenerated, libpcre2-verified, only that line differs); C3/CENSUS/RUNSH pins +10 |
+| startset vm-movers | framebuffer.rxt grew 8 lines: the `(a\|aa)+b` block moved 94 -> 102 | both manifests re-keyed |
+| partlayout attribute census | `P_trail_compact` (cold, noinline) and `P_trail_gc_start` (noinline) unlisted | two K134 rows in `tests/partlayout/writers.tsv` |
+| ident (A) 496 + 312 unrecorded region differences, bref-rename census 248 vs 413 | program regions now contain `RX_TRAIL_CHECK();` statements and `{ RX_TRAIL_CHECK(); goto rx_LN; }` blocks, which no deny axis removes, so every deny-restores excuse and the rename bucket missed | `trail_check_canon` in `prog_region()` (the seventh exception's two-sided shape): strips exactly those two spellings from every extracted region; other spellings still land in rdiff; non-vacuity floor TRAILCHK_TOTAL >= 1; comparison (B) still pins the whole file at FILEPIN |
+
+Local re-validation (the box was held by queue jobs, so the heavy scripts were
+NOT run by this triage; the re-queued job is their validation): rerun and
+GREEN here: registry, cpset-structure, rxtsource, memfn-arch, facts-checks,
+partlayout, ir-listing (164 checks), the S38 anchor check (1076 sabotages, all
+resolve). By direct compile: the three lowsize sequences now read
+`prefilter-collapse@size`, `drop-prefilter@size` and `prefilter-collapse@size >
+drop-prefilter@size > drop-handoff@size`; the SIZECAP prefilter reads
+`yes-collapsed`; the rescue takes K=4 (`cap-rescue`) at cap 35,015; the ident
+canonicalizer, applied to the 18 listed REGION DIFFERS patterns and 300 bench
+patterns on `--engine=vm`, reproduces the base (b05ccfc0b) region exactly with
+no `RX_TRAIL_CHECK` left. OWED to the re-queued 690-trailgc-test: fallback-table,
+prefilter, codegen (K37/TT-9/size_term), startset, vm and the identity gate as
+whole scripts. Not touched, to flag: `scripts/emit_sweep.py`'s `lowsize`/`lowboth`
+variants and `run_size_term.sh`'s K100 cell still use the 30,000 B cap (not part
+of the failing set; re-measure if the sweep or that cell reads red).

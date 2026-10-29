@@ -69,7 +69,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # The cscan pattern, as tests/recursion/cscan.rxt spells it (its one
 # `pattern` row in --list-source, escaped), so the witness follows the corpus file.
-CSCAN="$("$PCREC" --list-source "$ROOT_DIR/tests/recursion/cscan.rxt" 2>/dev/null \
+CSCAN="$("$TIMEOUT_BIN" 60 "$PCREC" --list-source "$ROOT_DIR/tests/recursion/cscan.rxt" 2>/dev/null \
          | awk -F'\t' '$1=="pattern" {print $5; exit}')"
 [ -n "$CSCAN" ] || bad "[K134] could not read the cscan pattern from tests/recursion/cscan.rxt"
 
@@ -194,7 +194,7 @@ else
 fi
 
 if [ "${TRAIL_CORPUS:-1}" != "0" ]; then
-    if out="$(python3 -I "$CHECKER" --corpus "$PCREC" "$ROOT_DIR" 2>&1)"; then
+    if out="$("$TIMEOUT_BIN" 600 python3 -I "$CHECKER" --corpus "$PCREC" "$ROOT_DIR" 2>&1)"; then
         ok "[K134] corpus: $(printf '%s\n' "$out" | tail -1)"
     else
         bad "[K134] corpus: $(printf '%s\n' "$out" | grep -m5 -E 'FAIL|trail_checkpoints' | tr '\n' ' ')"

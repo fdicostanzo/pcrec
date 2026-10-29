@@ -140,6 +140,7 @@ ELIDED_PATTERNS='(a){0}
 SIZETERM_TOTAL=0
 ADVNEW_TOTAL=0   # [MEMFN] R4h: new-layout span-scan loops seen in subject regions
 ADVOLD_TOTAL=0   # ... old one-line loops on the subject side (must stay 0)
+TRAILCHK_TOTAL=0  # [K134] trail checkpoints seen in subject regions (must fire; the ninth exception strips them)
 LAZYOLD_TOTAL=0  # [MEMFN] R-12 VMLAZY: old counted lazy-prefix loops on the subject side (must stay 0)
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
@@ -1488,7 +1489,26 @@ prog_region_raw() { awk '/^    goto rx_L0;$/{on=1} on{print} on&&/^rx_accept:/{e
 # [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
 # every deny-axis build alike, passes the seventh exception's canonicalizer
 # (adv_layout_canon, below) so it composes with every excuse bucket.
-prog_region() { prog_region_raw | adv_layout_canon; }
+# [K134] (lane trailgc3, abi 93) THE NINTH NAMED EXCEPTION, a TWO-SIDED CANONICALIZER
+# in the seventh's shape. A VM artifact whose program writes the trail on a cycle
+# gains trail CHECKPOINTS (src/gen/emit_vm.c `vm_trail_check_text`, the one writer):
+# a statement line `    RX_TRAIL_CHECK();`, or the block `{ RX_TRAIL_CHECK(); goto rx_LN; }`
+# in place of a guarded `goto rx_LN;`. They sit on edges of the program region and
+# nowhere else in it, and they move no other line, so the canonical form is the
+# region WITHOUT them (idempotent on a pre-checkpoint region). It is applied to
+# every region this file extracts, so it composes with every deny-axis excuse
+# without a per-bucket rewrite. A checkpoint in any other spelling survives it and
+# lands in `rdiff`. What it hides is held three other ways: comparison (B) pins the
+# WHOLE file, checkpoints included, against the self-pin `FILEPIN`;
+# tests/vm/run_trail_compact.sh holds the cycle/margin structure over the emitted C
+# and the corpus; and its non-vacuity arm below (TRAILCHK_TOTAL).
+trail_check_canon() {
+    sed -E -e 's/\{ RX_TRAIL_CHECK\(\); (goto rx_L[0-9]+;) \}/\1/' -e '/^ *RX_TRAIL_CHECK\(\);$/d'
+}
+trail_check_count() {
+    grep -cE 'RX_TRAIL_CHECK\(\);' || true
+}
+prog_region() { prog_region_raw | adv_layout_canon | trail_check_canon; }
 # The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
 # artifact only. Counted, never stripped.
 FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
@@ -2120,6 +2140,7 @@ sweep() { # sweep <label> <extra pcrec args>
             # subject's RAW region (prog_region above already canonicalized).
             ra_raw="$(printf '%s\n' "$a" | stamp_strip | prog_region_raw)"
             ADVNEW_TOTAL=$((ADVNEW_TOTAL + $(printf '%s\n' "$ra_raw" | adv_new_count)))
+            TRAILCHK_TOTAL=$((TRAILCHK_TOTAL + $(printf '%s\n' "$ra_raw" | trail_check_count)))
             ADVOLD_TOTAL=$((ADVOLD_TOTAL + $(printf '%s\n' "$ra_raw" | adv_old_count)))
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
             # [ENG-ISL] the artifact's OWN account of what it contains, read
@@ -3075,6 +3096,11 @@ if [ "${ADVNEW_TOTAL:-0}" -lt 1 ]; then
     bad "[MEMFN] R4h the layout canonicalizer saw no new-layout span-scan loop in any subject region — the seventh exception is vacuous"
 else
     ok "[MEMFN] R4h the layout canonicalizer was live: $ADVNEW_TOTAL new-layout span-scan loops across the axes' subject regions, canonicalized on both sides"
+fi
+if [ "${TRAILCHK_TOTAL:-0}" -lt 1 ]; then
+    bad "[K134] the trail-checkpoint canonicalizer saw no checkpoint in any subject region — the ninth exception is vacuous"
+else
+    ok "[K134] the trail-checkpoint canonicalizer was live: $TRAILCHK_TOTAL checkpoints across the axes' subject regions, stripped on both sides"
 fi
 if [ "${ADVOLD_TOTAL:-0}" -ne 0 ]; then
     bad "[MEMFN] R4h $ADVOLD_TOTAL subject region(s) still carry the OLD one-line span-scan loop — the emitter did not move, or the canonicalizer hides a regression"
