@@ -1385,6 +1385,15 @@ int      mf_stamps(const mf_art *, mf_sink *);
  * mf_reach was never called on. */
 int      mf_reach(mf_art *, const char *stem);
 int      mf_reach_table(const mf_art *, mf_sink *file_scope);
+/* THE KIT'S TEST-ONLY LEVERS (R-30): a TEST-HARNESS facility, never called
+ * by a shipped compile, and no options.def row (a change that cannot make a
+ * caller slower carries no public deny). mf_lever(art, name) restores, on
+ * this art, the OLD form a kit change replaced, so an answer-identity sweep
+ * can still produce it: "pres-window" keeps a pre-check's run WINDOW part
+ * beside the WHOLE run that implies it (R-30 drops it). Called before the
+ * first define; refused after it, or for a name the kit does not list. */
+#define mf_lever          MF_NS(lever)
+int      mf_lever(mf_art *, const char *name);
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *
  * THE DECISION, no text: pcrec asks with the spans, the alternatives and the

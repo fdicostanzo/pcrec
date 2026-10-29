@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `92` on every artifact today ([MEMFN] D172 S3, 91 -> 92,
+- **`rx_info.abi` is `94` on every artifact today ([MEMFN] R-30, lane r30b,
+  2026-10-29; 92 -> 94 in landing order: main's trailgc takes 93 first; the
+  number is the next at landing).** On a pre-check whose run WINDOW part sits
+  beside the WHOLE run that implies it (the route with no DFA scan in front,
+  a run longer than its 8-byte window: tuning.md §2.29¶4), the window's
+  search is no longer emitted or asked, at the search entry and at every
+  attempt-loop re-entry; the whole run's search compares the window's bytes
+  first and then the rest of the run. Emitted bytes that move on those
+  artifacts only: the `<prefix>_reqrun` block (its `__body` and selector), its
+  call at the entry and at each re-entry, and the whole run's candidate test
+  (the window's compare first). No stamp value moves but the abi digits.
+  Every other artifact moves only the abi digits. The OFF arm is the
+  test-only harness lever `--harness=pres-window` (build/pcrec-harness),
+  byte-identical to the parent's text but for those digits; no public deny
+  (the change cannot make a caller slower). The mover census is in
+  docs/dev/lanes/r30b_report.md.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `92` on every artifact ([MEMFN] D172 S3, 91 -> 92,
   renumbered by lane s3m, 2026-10-29, over main b05ccfc0b in landing order; lane
   s3 bumped it 2026-10-22 as 83 -> 84 PROVISIONAL, lane s3pair renumbered it
   84 -> 85 on 2026-10-24 when main's iterators had taken 84, and 85 stayed

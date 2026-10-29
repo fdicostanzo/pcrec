@@ -71,6 +71,9 @@
 # RE-AIMED 2026-10-29 (lane s3m, [MEMFN] D172 S3 renumbered at landing order,
 # abi 91 -> 92 over main b05ccfc0b): AFTER is 91, the parent's number; same
 # detector, same arm.
+# RE-AIMED 2026-10-29 (lane r30b, [MEMFN] R-30, abi 93 -> 94 in landing order:
+# main's trailgc takes 93 first): AFTER is 93, the parent's number at landing;
+# same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
@@ -78,5 +81,5 @@ SAB_DESC="PCREC_ARTIFACT_ABI stays 71 (the parent's) while the VMLAZY normalizat
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='#define PCREC_ARTIFACT_ABI 92'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 91   /* SABOTAGE S693 */'
+SAB_BEFORE='#define PCREC_ARTIFACT_ABI 94'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 93   /* SABOTAGE S693 */'
