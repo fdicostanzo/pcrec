@@ -1065,6 +1065,13 @@ fi
 # block's one comment line "traps on" -> "propagates" (+2 bytes); the abi digits
 # keep their width; the other stamps read identically. The first run of the
 # stage-0 validation (job 530-ic0-test) was RED here only.
+# RE-RECORDED 2026-10-29 at lane s3m's merge of main b05ccfc0b (D172 S3 over
+# main at abi 91, renumbered 91 -> 92, same-width digits): the same four
+# `cover` rows, RX_DFA_PREFILTER "none" as above, and each EMITTED_BYTES falls
+# from main's value by EXACTLY its pre-merge S3 delta (28,500 -> 26,096,
+# -2,404; 29,331 -> 26,419, -2,912; 32,296 -> 27,842, -4,454; 32,696 -> 29,962,
+# -2,734): main's +2 comment bytes and S3's cover text add independently. The
+# other eight rows read main's values unchanged.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

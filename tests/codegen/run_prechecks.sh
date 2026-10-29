@@ -116,9 +116,16 @@ run_scan_members() {
 }
 # reqrun_scans_run FILE RUNSTAMP: the window block scans every member of the
 # run's scan position, and a pair's two streams are both there.
+# D172 S3 final review EMIT-1 (lane s3fix; re-aimed by lane s3m, job 621's
+# red): a pair's two streams are searched in bounded look-aheads, each from
+# its own kept hit (`ha`/`hb`) to its window end `e`, so a pair member's
+# memchr reads `memchr(subject + ha, T, e - ha)` / `(subject + hb, M, e - hb)`
+# rather than the exact position's `(subject + pos.., B, n - pos..)`.
 reqrun_scans_run() {
-    local b
-    for b in $(run_scan_members "$2"); do reqrun_scans "$1" "$b" || return 1; done
+    set -- "$1" $(run_scan_members "$2")
+    [ $# -eq 2 ] && { reqrun_scans "$1" "$2"; return; }
+    reqrun_fn "$1" | grep -q "memchr(subject + ha, $2, e - ha)" &&
+        reqrun_fn "$1" | grep -q "memchr(subject + hb, $3, e - hb)"
 }
 
 # =========================================================================
