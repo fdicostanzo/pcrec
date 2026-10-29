@@ -1,0 +1,111 @@
+--- dp_ship/rx.c	2026-10-29 10:43:12.520611076 -0400
++++ dp_twin/rx.c	2026-10-29 10:43:12.527479144 -0400
+@@ -354,6 +354,69 @@
+     }
+ }
+ 
++typedef unsigned rw_reverse_state;
++static inline rw_reverse_state rw_reverse_step(const unsigned short *transitions, rw_reverse_state s, unsigned cl)
++{ return transitions[s + cl]; }
++static inline int rw_reverse_is_dead(rw_reverse_state s) { return s == 65535; }
++static inline int rw_reverse_accepts(const unsigned char *accepting, rw_reverse_state s)
++{ return accepting[s]; }
++static inline int rw_reverse_accepts_class(const unsigned char *accepting, rw_reverse_state s, unsigned cl)
++{ return accepting[s + cl]; }
++
++static size_t rw_walk(const unsigned char *subject, size_t seed, size_t search_from)
++{
++    static const unsigned char rw_reverse_byte_class[256] = {
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   2,   0,   0,
++          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   1,
++          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++    };
++    static const unsigned short rw_reverse_next_state[9] = {
++        65535, 65535, 3, 65535, 6, 65535, 65535, 6, 65535,
++    };
++    static const unsigned char rw_reverse_is_accepting[9] = {
++        0, 0, 0, 0, 0, 0, 1, 1, 1,
++    };
++    static const unsigned char rw_reverse_is_accepting_by_class[9] = {
++        0, 0, 0, 0, 0, 0, 1, 0, 1,
++    };
++    size_t match_end_position = seed;
++    size_t match_start_position = (size_t)-1;
++    {
++        size_t rewind_position = match_end_position;
++        rw_reverse_state reverse_state = 0;
++        for (;;) {
++            if (rewind_position <= search_from) {
++                if (search_from ? rw_reverse_accepts_class(rw_reverse_is_accepting_by_class, reverse_state,
++                                      rw_reverse_byte_class[subject[search_from - 1]])
++                             : rw_reverse_accepts(rw_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
++                break;
++            }
++            {
++                unsigned reverse_class = rw_reverse_byte_class[subject[rewind_position - 1]];
++                if (rw_reverse_accepts_class(rw_reverse_is_accepting_by_class, reverse_state, reverse_class)) match_start_position = rewind_position;
++                reverse_state = rw_reverse_step(rw_reverse_next_state, reverse_state, reverse_class);
++                rewind_position--;
++            }
++            if (rw_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
++        }
++    }
++    return match_start_position;
++}
++
++
+ static int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+@@ -371,6 +434,38 @@
+             if (!memchr(subject + search_from, rq_set[rq_i], subject_length - search_from))
+                 return 0;
+     }
++    /* p1dsg TWIN: candidates from the landmark byte 61; P's reverse DFA seeded at the
++     * landmark, floored at search_from; ONE anchored VM attempt at the smallest accepting
++     * start (exact here: the context item makes starts(j) a singleton). */
++    window_end = subject_length;
++    rx_run_state_init(run);
++    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
++    ctx.caps = NULL; ctx.user = NULL;
++    {
++        size_t p = search_from;
++        while (p < subject_length) {
++            const unsigned char *q = memchr(subject + p, 61, subject_length - p);
++            if (!q) return 0;
++            size_t at = (size_t)(q - subject);
++            size_t st = rw_walk(subject, at + 1, search_from);
++            if (st != (size_t)-1) {
++                ctx.pos = attempt_position = st;
++                result = rx_match_anchored(&ctx, run, window_end);
++                if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
++                if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
++                if (result == RX_R_WORK)    return PCREC_ERR_WORK;
++                if (result == RX_R_RECURSE) return PCREC_ERR_RECURSE;
++                if (result == RX_R_INTERNAL) return PCREC_ERR_INTERNAL;
++                if (result >= 0) {
++                    if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);
++                    return 1;
++                }
++                rx_reset_for_next_attempt(run);
++            }
++            p = at + 1;
++        }
++        return 0;
++    }
+     attempt_position = search_from;
+     window_end = subject_length;
+     static const unsigned char rx_start_set[256] = {

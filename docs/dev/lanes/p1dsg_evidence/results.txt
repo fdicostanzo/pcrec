@@ -1,0 +1,34 @@
+p1dsg twin results (2026-10-29, worktree HEAD 8fcc15669, gcc 15.2 -O2, taskset -c 7,
+box loaded by queue job 622-kit-s3m-heavy: instruction counts are the evidence, cycles a ratio only)
+
+== 5b mask-email, find-all over subst acc-main (361,986,301 B, sha256 a9b0a4cc..., regenerated from
+   a scratch COPY of bench/subst with python3 -I), drv.c
+shipped (DFA, byte-class prefilter, reverse-pass)   res=80123 hash=e97ca4d6da618f68 instr=5,477,638,535 cycles=2,370,023,420
+twin: rev DFA of P.L seeded at '@', scan edge on      res=80123 hash=e97ca4d6da618f68 instr=   77,755,125 cycles=   58,356,127   (x70.4 instr, x40 cycles)
+twin: same, -fno-scan-edge on the P.L machine         res=80123 hash=e97ca4d6da618f68 instr=   79,663,522 cycles=   63-67M        (edge buys 2.4% instr)
+subtri hand memchr walk (subtri_report.md)            instr=73.1M (x75)
+
+== dup-param-detect \b(\w+)=[^&]*&(?:[^&]*&)*\1= (VM), drv_lines.c (each line its own subject)
+acc-main per line (1.6M lines; 52,280 hold '&' and '='; 337,676 \b\w+= candidates)
+  shipped (first-class \w attempt loop)   res=5542 hash=cd1a5c10ee0cac7d instr=3,966,627,603 cycles=1,057,024,802
+  twin (memchr '=', rev DFA of \b\w+=, one anchored VM attempt)
+                                          res=5542 hash=cd1a5c10ee0cac7d instr=2,742,014,891 cycles=  817,993,715  (x1.45 / x1.29)
+  twin, VM attempt stubbed out (attribution: everything but the attempts)       instr=  411,550,641
+  twin + hand scan edge on the \w loop (class-context relaxation)
+                                          res=5542 same hash                instr=2,739,048,047 cycles=  809,597,457
+qs-200k (synthetic query strings, 21.0 MB, 200k lines, 3% with a repeated key; seed 1029)
+  shipped                                 res=6019 hash=fc1953cd03899988 instr=5,275,709,593 cycles=1,647,787,427
+  twin                                    res=6019 same                     instr=3,977,976,081 cycles=1,380,850,674  (x1.33 / x1.19)
+  twin, VM stubbed                                                          instr=   85,239,233
+  twin + hand edge                        res=6019 same                     instr=3,970,135,898 cycles=1,330,567,316
+  twin + hand edge, VM stubbed                                              instr=  168,554,711 (codegen: not chased, one-pass rule)
+bench capability throughput t-1m / t-64k / t-hyb-embed-64k: hold no '&': both forms dismiss at the
+  pre-check, instr identical (98,552 / 6,393 / 6,393).
+
+== answer identity (twin vs shipped, every span of every match hashed)
+fz-dp (300k random lines over "ab=&_ x9", seed 7) per line: 3994 matches, hash 64d953ab4f3c4c04 both; twin 428.0M vs 682.2M instr
+fz-me (300k random lines over "ab@.-_x%c ", seed 7) per line: 7946 matches, hash 9d38ff6d961a6277 both;
+   whole file: hash 815700d70bf55097 both.  NEGATIVE: dense '@' (~1 byte in 10) -> twin SLOWER:
+   per line 150.9M vs 120.9M (x1.25 worse), whole file 117.6M vs 97.6M (x1.21 worse).
+bench capability + email subjects/ and throughput/ (*.bin), both patterns, whole file: 364 checks, 0 diffs.
+whole-file dup-param on fz-dp: both forms give up identically (PCREC_ERR_FRAMES on the first call).
