@@ -137,6 +137,8 @@ critic; a missed input goes to a fresh critic.
    oracle (libpcre2 / python `re`), speed with `perf stat -e instructions:u`
    pinned `taskset -c 7` and repeats, size with `size`, structural claims by
    quoting the cited lines, design claims by the simulation or grep they name.
+   Give it a DELIVER block like a critic's (its file `verify.md`, one section per finding id, a closing
+   `VERIFY COMPLETE` line; 2026-10-29 landwalk: without one the verifier improvised its own shape).
    It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
 3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
