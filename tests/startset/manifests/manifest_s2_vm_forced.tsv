@@ -2885,7 +2885,7 @@ tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
 tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
 tests/recursion/d27/sr_root.rxt:308	--features recursion	2861283f52292a6229
 tests/recursion/d27/sr_spellings.rxt:33	--features recursion,backrefs	28617c62295c31
-tests/recursion/framebuffer.rxt:94	--engine=vm	28617c6161292b62
+tests/recursion/framebuffer.rxt:102	--engine=vm	28617c6161292b62
 tests/recursion/k93.rxt:104	--features recursion	28612b296228283f31292963283f322961
 tests/recursion/k93.rxt:118	--features recursion	28612b2962283f3a78283f3129292a61
 tests/recursion/k93.rxt:129	--features recursion	28612b2962283f31292b61

@@ -16,7 +16,7 @@
 # not fit.
 #
 # [OPT-1], 2026-08-25: WHICH FUNCTION DECLARES IT MOVED, and this script moved
-# with it. `<prefix>_search` now runs on a page-sized fast tier (3,184 B
+# with it. `<prefix>_search` now runs on a page-sized fast tier (3,200 B
 # MEASURED) and calls a `noinline` `<prefix>_search_deep` that owns the stamped
 # default, only on a PCREC_ERR_FRAMES give-up. So the quantity that decides
 # whether a call fits is the DEEP PATH — entry + deep — and `deep_path_frame`
@@ -267,7 +267,7 @@ else
             record "[TS-4] arm A (K33, DARWIN): the call-bearing artifact's DEFAULT entry exited $a_rc ('$a_out') on a $THREAD_STACK B thread -- neither the Linux SIGSEGV nor a clean match. Recorded as observed; docs/dev/known_issues.md K33 DARWIN ADDENDUM's two measured numbers are the place to start"
         fi
     elif [ "$a_rc" -eq 139 ]; then
-        pin "[TS-4] arm A (K33, EXPECTED): the call-bearing artifact's DEFAULT entry dies of SIGSEGV (exit 139) on a $THREAD_STACK B thread with a 684-byte subject it would otherwise MATCH. [OPT-1]: it now dies INSIDE the deep tier — the subject is deep enough to exhaust the fast tier, so the entry escalates into the $cb_frame B deep path and that is what does not fit. This is docs/dev/known_issues.md K33, narrowed but open, and D73 keeps the stamped default that causes it; arm B is the remedy and arm D is the narrowing. Pinned, not passed"
+        pin "[TS-4] arm A (K33, EXPECTED): the call-bearing artifact's DEFAULT entry dies of SIGSEGV (exit 139) on a $THREAD_STACK B thread with a 1,526-byte subject it would otherwise MATCH. [OPT-1]: it now dies INSIDE the deep tier — the subject is deep enough to exhaust the fast tier, so the entry escalates into the $cb_frame B deep path and that is what does not fit. This is docs/dev/known_issues.md K33, narrowed but open, and D73 keeps the stamped default that causes it; arm B is the remedy and arm D is the narrowing. Pinned, not passed"
     elif [ "$a_rc" -gt 128 ] && [ "$a_rc" -ne 124 ]; then
         bad "[TS-4] arm A died of SIG$(kill -l "$((a_rc - 128))" 2>/dev/null || echo "?$((a_rc - 128))") (exit $a_rc), NOT SIGSEGV. K33 is a stack overflow and a stack overflow is SIGSEGV here; a different signal is a different event and must not be reported as K33 reproducing. Output: '$a_out'"
     elif [ "$a_rc" -eq 124 ]; then
@@ -286,7 +286,7 @@ else
 
     # ---- arm D: [OPT-1]'s NARROWING of K33 --------------------------------
     # SAME artifact, SAME entry, SAME thread as arm A. Only the SUBJECT differs
-    # — "ab" instead of 684 bytes — so a difference in outcome between A and D
+    # — "ab" instead of 1,526 bytes — so a difference in outcome between A and D
     # is a statement about DEPTH and nothing else.
     #
     # Before [OPT-1] this arm would have died exactly as arm A does, and spec

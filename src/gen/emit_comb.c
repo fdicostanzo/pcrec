@@ -169,7 +169,7 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
                     const char *params, const char *storage_tail,
                     const char *runargs, const char *deepargs,
                     const char *frames_code, const char *fwdargs,
-                    bool callouts)
+                    bool callouts, bool fast_no_compact)
 {
     if (fwd) {
         /* [CC-DIFF] STEP 2, the FORWARD rungs (`vm_entry_shape` SHARED and
@@ -239,10 +239,15 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
             "    %s result;\n"
             "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
-            "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    result = %s(%s);\n",
-            storage, ret, name, params, p, p, ret, p, up, up,
-            callee, runargs);
+            "                            fast.trail,  %s_FAST_TRAIL);\n",
+            storage, ret, name, params, p, p, ret, p, up, up);
+        /* [K134] THE FAST TIER NEVER COMPACTS ITS TRAIL. Its FRAMES give-up
+         * escalates to a deep tier that re-runs the match from scratch, so a
+         * compaction here could only spend work before the same escalation
+         * (review 2026-10-29-r2 F5: +15-20% instructions on short calls). */
+        if (fast_no_compact)
+            pcrec_sb_puts(c, "    run.trail_gc_floor = (size_t)-1;   /* a FRAMES here escalates */\n");
+        pcrec_sb_printf(c, "    result = %s(%s);\n", callee, runargs);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
@@ -287,11 +292,11 @@ void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
                             const char *storage, const char *ret, const char *name,
                             const char *callee, const char *params,
                             const char *runargs, const char *deepargs,
-                            const char *frames_code)
+                            const char *frames_code, bool fast_no_compact)
 {
     fwd_own(c, cx->opt->prefix, g->upper, tiered, false, storage, "", ret, name,
             callee, params, "", runargs, deepargs, frames_code, "",
-            cx->ncallouts > 0);
+            cx->ncallouts > 0, fast_no_compact);
 }
 
 /* `forward`'s ONE emitter: entry `e` (one of the six) under binding `f`.
@@ -318,7 +323,7 @@ static void comb_forward(Ctx *cx, StrBuf *c, const GenNames *g, PcrecEntry e,
                 pcrec_sb_fragf(&cx->arena, "%s%s", s->params,
                                s->vars ? pcrec_vars_param_text(cx) : ""),
                 s->tail, pcrec_sb_fragf(&cx->arena, "%s, &run%s", s->args, va),
-                args, f->frames_code, args, cx->ncallouts > 0);
+                args, f->frames_code, args, cx->ncallouts > 0, f->fast_no_compact);
         return;
     }
     pcrec_ctx_fail(cx, 0, "internal error: forward binding %d asked of entry %s",

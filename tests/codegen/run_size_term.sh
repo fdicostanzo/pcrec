@@ -250,11 +250,18 @@ srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 # 31,571 (K=4 already sat 70 B under 32,300 on main 48343196). At 33,200 the
 # shape is this cell's again: 6 and 3 do not fit, 4 does (~400 B headroom)
 # and is the largest that does, and 2 fits too.
+# RE-CALIBRATED 33,200 -> 35,015, 2026-10-29 ([K134], lane trailgc3, abi 93).
+# The trail checkpoint's compaction routine adds a FIXED 1,815 B of code to
+# every artifact whose program carries a checkpoint (measured: the same +1,815
+# on three unrelated lowsize witnesses), so every rung moves by it: K=6 ~39,697,
+# K=4 ~34,616, K=3 ~35,501, K=2 ~33,386. The cap moves by the same 1,815, which
+# restores this cell's shape exactly (6 and 3 do not fit, 4 does with ~400 B
+# headroom and is the largest that does, 2 fits too).
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
-       -DPCREC_MAX_VM_EMIT_CODE_BYTES=33200 \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=35015 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the threshold at 20000 and the code cap at 33200"
+    ok "reference compiler built with the threshold at 20000 and the code cap at 35015"
     RESCUE='(?:aa|a){8,12}+b'
     if "$REF" -p rx --features all -o "$WORK/r.c" --pattern "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
@@ -278,7 +285,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         if [ "$rk" = "4" ]; then
             ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (~37,882 B against the 33,200 cap) and rung 4 does (~32,801 B, re-measured 2026-10-11 at [REQ-HANDOFF-L1]), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (~39,697 B against the 35,015 cap) and rung 4 does (~34,616 B, re-measured 2026-10-29 at [K134]), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
         # [PF-DROP] (D135) THE RESCUE IS A DEGRADING ROW of the size-cap
         # ladder (a smaller K measured ~1.03-1.06x slower, pfdrop_report.md
