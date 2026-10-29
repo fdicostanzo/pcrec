@@ -5,6 +5,11 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+PART 12 (2026-10-29, lane s3m): main b05ccfc0b merged (14 conflicts), S3 renumbered to abi 92 (readers
+by grep), job 621's two reds explained and fixed without a ruling (prechecks [3.1b]: a stale pair-scan
+spelling pin from EMIT-1; S283: a merge artifact, main's DETECTED restored); light suites OWED to the
+armed chain `build/chainrun/20261029-091735-s3m-light/`; job 622 staged, not queued (Part 12).
+
 PART 11 (2026-10-24, lane s3fix): the S3 final review's FIX-NOW items and the manager's R-a..R-d
 done (EMIT-1's bounded look-ahead, EMIT-3, the rename to window-search/window-skip, the spec hunks,
 rev 3.3 accepted, the R-d mover declarations, job 588's two-stream sample); job 620's stale axes
@@ -75,6 +80,199 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 12. Merge main b05ccfc0b, abi 92, job 621's reds (lane s3m, 2026-10-29)
+
+Worktree `worktrees/s3m`, branch `lane/memfn-s3m`, cut from `lane/memfn-s3fix` @ e5362a59c. No
+rulings file appeared during the lane (`s3m_rulings.md` was polled before each commit and before the
+chain; none). No DELIVER block was written for this lane (`docs/dev/lanes/s3m_deliver.txt` absent).
+
+## 12.1 Commits
+
+| sha | what |
+|---|---|
+| afe9ee325 | merge main b05ccfc0b (494 commits) into the lane; `make strict` clean before the commit |
+| 342723cba | abi 91 -> 92, readers by grep (12.3) |
+| 704ff2612 | recursion-identity (B) self-pin to 342723cba |
+| 91bd189ef | WIP: the merge's moved pins re-recorded with cause; job 621's prechecks red re-aimed (12.4) |
+| 9b33f0963 | WIP: S283 back to main's DETECTED (12.5); job 622's script; bytediff.sh's abi mask |
+| (this) | this Part |
+
+## 12.2 The merge: conflicts and how each was resolved
+
+Fourteen files conflicted. Rule applied: kit text is the kit's; src and emitters keep main's changes;
+tests keep main's rows AND S3's intent (the cover deny on witnesses that became `cover`); history
+comments keep both sides, S3's first (older), main's after.
+
+| file | resolution |
+|---|---|
+| src/gen/emit_dfa.c | main's side: abi 91 and no `emit_comment_safe_byte` ([EMIT-BIDI] replaced it with `pcrec_sb_ctext`; no S3 code called it). Renumbered to 92 in 342723cba |
+| src/core/internal.h | main's [INLINE-C] kind-row block, with S3's [OPT-K] header text (prefix_k.c retired at S2) |
+| src/gen/CLAUDE.md | main's `emit_subst.c` line plus S3's `known.c` line (main's stale "harness-routed only" `known.c` line dropped) |
+| docs/spec/match_api.md (3 hunks) | main's 91, then 92 in 342723cba |
+| docs/dev/history/abi_changelog.md | S3's entry on top of main's 86-91 entries; S3's partial copy of the 84 heading dropped (main's kept); rewritten as the 92 entry in 342723cba |
+| tests/codegen/cand_oracle_witnesses.tsv | S3's `--memfn=no-window-search` on the four DFA witnesses (`\d\dxyz` x2, `foo\b`, `ABCDE`) plus main's [REQRUN-VM] `--engine=vm` rows unchanged (cover is DFA-only) |
+| tests/codegen/run_scan_edge_census.sh | main's [SCANEDGE-SET] tally inside S3's `$COVER_DENY` compile (the census population stays the pre-S3 default build's, so main's floors hold) |
+| tests/memfn/run_libc_census.sh | main's `composition=38` (ic2fix F7) with S3's `funcs=141` and its comment |
+| tests/memfn/run_handoff_reach.sh | main's want `4` and new `/(phpmyadmin|wp-admin)/...` row; S3's EMIT-1 pair-local spelling `size_t ha = 0, hb = 0, wa` (91bd189ef; 15/15 standalone) |
+| tests/codegen/manifests/m5_stage1_stamps.tsv | main's values at the merge, re-recorded in 91bd189ef (12.4) |
+| tests/codegen/run_codegen_tests.sh | main's ABI_EXPECT line and ledger; 92 and its `91->92` ledger step in 342723cba |
+| tests/codegen/run_cpset_structure.sh | both comment histories |
+| tests/codegen/run_recursion_identity.sh | both comment histories; main's FILEPIN, then the self-pin in 704ff2612 |
+| tests/mech/sabotages/S693_abi_not_bumped.sh | both re-aim histories; main's BEFORE/AFTER, then 92/91 in 342723cba |
+
+## 12.3 abi readers (D76/D94), by grep
+
+Found by `git grep` of the current number (91) restricted to abi contexts, and of S3's own 85, with
+history files (journal, lane reports, docs/dev/history/ except the changelog's live paragraph) excluded.
+Main's 90 -> 91 commit (72c4cd484) touched the same set, which cross-checks the grep.
+
+| reader | change |
+|---|---|
+| src/gen/emit_dfa.c `PCREC_ARTIFACT_ABI` | 91 -> 92 (the provenance line, guard block and `.abi` all read it) |
+| docs/spec/match_api.md §1's guard sample | three spellings: `!= 92`, `(abi 92)`, `PCREC_RX_ABI_H 92` |
+| docs/spec/match_api.md §6¶1's `abi` row, §6¶17's sentence | `92` |
+| tests/codegen/run_codegen_tests.sh | `ABI_EXPECT=92`; the bump ledger gains `91->92: [MEMFN] D172 S3 ...` |
+| tests/mech/sabotages/S693_abi_not_bumped.sh | BEFORE 92, AFTER 91 (the parent's number), re-aim line |
+| tests/codegen/run_recursion_identity.sh (B) | self-pin 342723cba, the lane's last src commit; the manager re-pins to the landing merge |
+| docs/dev/history/abi_changelog.md | S3's entry heads the list as 92 with its renumber history; main's 91 entry past tense |
+| docs/dev/lanes/s3_evidence/census.py | ABI map 92 -> 91 (the job's reference compiler is main at 91) |
+| docs/dev/lanes/s3_evidence/bytediff.sh | abi mask widened `8[0-9]` -> `[89][0-9]` |
+| m5_stage1_stamps.tsv EMITTED_BYTES | no digit-width change (91 and 92 are both two digits) |
+
+Readers that do not cite the number but move with it: the light suites below (codegen, registry,
+rxtsource) run on the merged tree.
+
+## 12.4 Red (a): job 621's test-prechecks
+
+The only failing check was `[3.1b] (?i)abc: run "414243@1/dfdfdf" has a pair scan position but the
+block does not scan both members`. Cause: a stale spelling pin. Lane s3fix moved the bytes under
+review item EMIT-1. Since then, a pair's two streams are searched in bounded, doubling look-aheads,
+each starting from its own kept hit: `memchr(subject + ha, 66, e - ha)` and
+`memchr(subject + hb, 98, e - hb)`. The check's `reqrun_scans` still matched only the exact
+position's spelling, `memchr(subject + pos.., B, n - pos..`. That is a ruled byte move; no match
+answer changed. The check never ran on the S3 tree before job 621 (prechecks was not one of s3fix's
+light sections).
+
+Fix (91bd189ef): `reqrun_scans_run` reads each member of a pair at its own stream (`ha` for `T[idx]`,
+`hb` for `T[idx] | ~K[idx]`). The exact-position path is unchanged. Controls on the same artifact: the
+right stamp passes. Two wrong stamps fail: a wrong scan index (`@2`), and a pair stamp read as an exact
+position (`@1` with no mask).
+
+Also re-recorded on the merged tree, with the cause written in run_cpset_structure.sh. The four `cover`
+rows of m5_stage1_stamps.tsv each fall from main's value by exactly their pre-merge S3 delta:
+
+| row | main | merged | delta |
+|---|---|---|---|
+| `a` | 28,500 | 26,096 | -2,404 |
+| `abc` | 29,331 | 26,419 | -2,912 |
+| `\bword\b` | 32,296 | 27,842 | -4,454 |
+| `(?i)HeLLo` | 32,696 | 29,962 | -2,734 |
+
+Their RX_DFA_PREFILTER reads "none". The other eight rows did not move. After the re-record,
+`tests/codegen/run_cpset_structure.sh` (the file `make test-cpset-structure` runs first) passed 29/0
+standalone.
+
+## 12.5 Red (b): S283 "NOW DETECTED ***UNEXPECTED***"
+
+The S3 branch did not make the plant detectable. Two edits that each answered the same equivalent
+mutant met in a merge:
+
+- On 2026-10-23, lane s3fix600 flipped S283 to `SAB_EXPECT=UNDETECTED` on the S3 branch. Since D172
+  S2, the ONE-site plant (the run rows' deny mask) moves no artifact, because `pf_window_of` already
+  states no window under `-fno-offset-skip`.
+- On 2026-10-24, main's lane fsfix (c40fe4d18) fixed the same equivalence the other way. It planted
+  BOTH readers (site 2: `pf_window_of`'s own `PCREC_NO_OFFSET_SKIP` clause) and kept the default
+  `DETECTED`.
+- Lane s3pair's merge of main 0d3765c87 took fsfix's second site and kept the branch's `UNDETECTED`.
+
+So job 621 measured the two-site plant (DETECTED, prechecks 12 fail / 383 pass) against the one-site
+expectation. The fix restores main's expectation: the `SAB_EXPECT=UNDETECTED` line is removed, the
+cause is written in the row, and SAB_DOC_FIGURE carries job 621's figure plus the merged-tree run.
+OWED: the merged-tree run, the chain's `s283` stage (12.6). The 142 ids job 622 runs pass field
+validation on the merged tree (`== mech FIELD VALIDATION COMPLETE: 142 definition(s) valid`).
+
+## 12.6 Light suites on the merged tree: OWED (armed chain)
+
+The box was held by main's queue the whole time: 680-ic3-test was running, 681-ic3-mech was pending
+and ready, and two other lanes were yielding. So the light suites run as a detached chain. Each heavy
+stage takes the box lock and yields to queued jobs.
+
+- logdir `worktrees/s3m/build/chainrun/20261029-091735-s3m-light/`
+- watch with `scripts/watchrun worktrees/s3m/build/chainrun/20261029-091735-s3m-light`
+- read the verdict with `scripts/verdict .../chain.log`
+- completion line: `== CHAIN DONE` (or `== CHAIN FAILED stage=NAME`)
+
+Stages, in order:
+
+1. `make test-codegen`
+2. `make test-registry`
+3. `make test-rxtsource`
+4. `make test-prechecks`
+5. `bash tests/mech/run_sabotage_matrix.sh S283` (expected: DETECTED)
+
+Each stage's verdict is in `NAME.log` beside chain.log. A fresh agent fills S283's SAB_DOC_FIGURE from
+the `s283` stage's row line.
+
+Already run standalone on the merged tree (direct script runs, no lock: a few compiles each):
+
+| check | result |
+|---|---|
+| `make` | rc 0 |
+| `make strict` | clean |
+| tests/codegen/run_cpset_structure.sh | 29/0 |
+| tests/memfn/run_handoff_reach.sh | 15/0 |
+| the 142-id mech field validation | 142 valid |
+| `bash docs/dev/lanes/s3_job_622-kit-s3m-heavy --dry-run` | rc 0 |
+
+## 12.7 The staged heavy job (NOT queued)
+
+The script is `docs/dev/lanes/s3_job_622-kit-s3m-heavy`, committed. It is job 621's script re-pointed:
+
+- TREE is `worktrees/s3m`;
+- BASE is main b05ccfc0b at abi 91, and the dry run requires the tree at abi 92;
+- OUT is `build/s3/heavy622`;
+- perfrun's label is `s3m`.
+
+The steps (21) and the mech rows (142) are unchanged. Its dry run, with the declarations `boxqueue add`
+reads:
+
+    would run in /home/pcrec/projects/pcrec/worktrees/s3m: mechval(142 ids) build strict refbuild census sweep_start evidence diff_r2 codegen registry rxtsource encoding cpset memfn g2win axes_measure axes_memfn test plants mech(142 rows) reach
+    boxqueue: cap 21600
+    boxqueue: patience none
+    boxqueue: idle-ok
+    boxqueue: expect steps=21 lines=^== s3 step [a-z_0-9]+ rc=0$
+
+The command that queues it (the kit manager's, once main clears the slot):
+
+    scripts/boxqueue add --name 622-kit-s3m-heavy /home/pcrec/projects/pcrec/worktrees/s3m/docs/dev/lanes/s3_job_622-kit-s3m-heavy
+
+Expected wall: about 9,400 s (job 621: 16:30:57 to 19:06 plus reach, 2.6 h). The census and evidence
+steps compare against main's compiler at b05ccfc0b. The movers predicted in predicted_movers.tsv were
+derived against 0d3765c87. If main's 494 commits changed which artifacts carry a two-stream find, the
+census reports it as UNEXPECTED, and that is the job's finding to read, not a red to re-pin blindly.
+It must finish by 19:00 today, or wait until 2026-10-30 about 14:00 (the manager's slot).
+
+## 12.8 Needs a ruling
+
+None. Neither red changes a match answer: (a) is a spelling pin that a ruled byte move (EMIT-1)
+outdated, and (b) is a merge artifact on the expectation, not a property S3 changed.
+
+## 12.9 Charter vs committed
+
+| brief item | artifact or OWED |
+|---|---|
+| 1. merge main b05ccfc0b, merge run alone, conflicts resolved, `make strict`, commit | afe9ee325; 12.2; strict clean |
+| 2. abi 85 -> 92 (as 91 -> 92 over main), every reader by grep | 342723cba + 704ff2612; 12.3 |
+| 2. make test-codegen + registry, codegen, rxtsource through the box lock, one at a time | OWED: armed chain 20261029-091735-s3m-light (12.6) |
+| 3a. test-prechecks red: cause and fix | 91bd189ef; 12.4 (stale spelling pin from EMIT-1; re-aimed with controls). The suite re-run is OWED to the chain's `prechecks` stage |
+| 3b. S283: legitimate flip or a defect | 12.5 (merge artifact; main's DETECTED restored, cause in the row). The single-row run on the merged tree is OWED to the chain's `s283` stage |
+| 4. stage ONE heavy job from 621's script, dry run first, do not queue | docs/dev/lanes/s3_job_622-kit-s3m-heavy; dry run rc 0; key/command/wall in 12.7; not queued |
+| 5. Part 12 + charter checklist, all committed | this Part |
+
+STATE AT HANDOFF: branch `lane/memfn-s3m`; the last rulings entry applied is none (no rulings file).
 
 ---
 
