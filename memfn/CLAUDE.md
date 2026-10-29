@@ -44,7 +44,7 @@
 - docs/ — ledger pair (requests/responses), journal, session wake template (own CLAUDE.md).
 - PROVENANCE.md — file -> source -> licence -> derivations, one row per file under include/ and src/.
 - include/memfn.h — the one header pcrec includes.
-- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), mismatch renderer.
+- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), the standalone find-any kernel (`vany.c`, not routed), mismatch renderer.
 - tests/ — G2, the kit's own tests.
 - data/ — measured data: method cards (`data/cards/`), measurement sets (`data/sets/generate.py`). Own CLAUDE.md.
 

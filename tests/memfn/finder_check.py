@@ -318,9 +318,18 @@ def check_sets(root, form):
     g = run([sys.executable, "-I", os.path.join(root, "memfn/data/sets/generate.py"), "--check"])
     (ok() if g.returncode == 0 else bad("generate.py --check: " + g.stdout.decode().strip()))
     cards = {}
-    for name in ("kit-grid", "kit-synthetic"):
-        cl = read_cards(os.path.join(root, "memfn/data/cards", name + ".tsv"))
+    # every card table in the directory, by listing (a hand list drifts: a
+    # table added later would be read by no check), floored (K35)
+    cdir = os.path.join(root, "memfn/data/cards")
+    names = sorted(f[:-4] for f in os.listdir(cdir) if f.endswith(".tsv"))
+    (ok() if len(names) >= 3 else bad("memfn/data/cards holds %d card tables, under 3" % len(names)))
+    for name in names:
+        cl = read_cards(os.path.join(cdir, name + ".tsv"))
         cards[name] = cl
+        for c in cl:
+            f = c.split("\t")
+            (ok() if len(f) == 13 and f[0] == "kit" and f[4] in UNIT_CODE else
+             bad("%s.tsv: card row is not 13 kit columns with a §3.1 unit: %r" % (name, c)))
     sdir = os.path.join(root, "memfn/data/sets")
     later = set()
     nsets = 0
