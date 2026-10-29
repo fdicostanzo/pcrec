@@ -15,6 +15,10 @@ add = """    /* P48 RELAX TWIN: every remaining self-loop state is an unbounded 
         }
         if (lo < 0 || !outside) continue;
         if (s == d->s0 && !acc_of(d, s)) continue;
+        /* (6) and (8) kept, as for today's unbounded heads (conservative; the
+         * emitter's dfa_form_derive re-derives (8) and refuses loudly). */
+        if (vtg[s]) continue;
+        if (prefilter_reseeds && stg[s]) continue;
         bool dup = false;
         for (int k = 0; k < nfound; k++) if (found[k].head == s && found[k].span < 0) dup = true;
         if (dup) continue;

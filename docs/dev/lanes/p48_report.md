@@ -313,6 +313,31 @@ row, whatever its exits. The other obligations, one at a time:
   emitter's layout checks (heads at the top rows; no state with both a stay
   and an edge) are unaffected.
 
+**Both directions (ruling R1).** Nothing in the argument depends on the
+direction. scanedge.c runs one walk over a `Dfa` and does not know whether
+the machine reads left-to-right (forward, anchored) or right-to-left
+(reverse, revend). `emit_scan_edge` is written once and only swaps the
+cursor step and the bound test (`edge_advance`'s `dir`, the kit ADVANCE
+site's direction fact).
+- In a reverse machine, a one-state self-loop's head is exact when the
+  backward scan stops. The next ordinary step reads the head's true row,
+  in the direction the machine reads.
+- "Every passed position accepts" is the same fact in both directions.
+  When the reverse machine accepts, each passed position IS a candidate
+  start, and the run records the leftmost one (the stop position) exactly
+  as the forward run records the rightmost.
+- (3)'s position views are where the directions differ. A reverse
+  machine's END view is its left edge, which is [OPT-VEDGE]'s own
+  per-direction rule, applied unchanged.
+- The revend `entry_head` writers fall under the entry rule below, the
+  same as the forward and anchored ones.
+- This is what makes the relaxation the ENABLER for the reverse-walk
+  scaffolding (D161 add. 17 Structure, revwalk T3/T4). A reverse DFA seeded
+  at a landmark meets split-exit inner runs: `loglines`' `[^\]]*` before
+  `]`, stack-frame's `[\w.$]+` before `(`. Today's uniform-exit criterion
+  refuses them, and the relaxation admits them.
+- The census counts reverse machines separately ([Population](#population)).
+
 **The same argument fixes the entry dispatch.** `dfa_seed_can_be_scan_head`,
 `dfa_start_is_scan_head` and the two `revend` `entry_head` writers in
 `emit_dfa.c` exist so that a state variable installed ONTO a head reaches the
@@ -326,8 +351,24 @@ instructions per skipped byte on base10num.
 `tnogoto` = HEAD + the bounded-only entry) run the answer sections of
 `make test`: corpus, counterk, possessify, prefilter, assertions,
 anchored-match, search-pinned, revend-twin, compound. Each runs as its own
-queue job (`500-p48-relaxcorpus`, `501-p48-nogotocorpus`). The verdicts are
-in STATE AT HANDOFF.
+queue job.
+- **`tnogoto` (501): GREEN.** All nine sections passed, with no make error
+  line and 0 failures. The bounded-only entry rule is answer-identical over
+  the corpus and every differential those sections carry.
+- **`trelax`, first run (500): RED, but only as refusals.** My first
+  relaxation twin also dropped (6) and (8) for the new heads.
+  - The emitter's `dfa_form_derive` re-derives (8) and refused loudly
+    ("state N carries a scan edge and is named by seed family s1u[1], on a
+    machine whose '…' prefilter reseeds"). Every `\b`/`\B` shape hit it.
+  - Separately, one size-cap pin (§6a, `abcdefghij[0-9]+`, 21,619 bytes
+    against a 21,500 cap) refused because the extra edges added bytes.
+  - No section reported a wrong answer. Every differential that compiled
+    agreed.
+  - So the emitter's guard on (8) is TODAY'S fact. It refuses rather than
+    reasons. Dropping (8) for unbounded heads, which the argument above
+    allows, would also move that guard. That is a separate widening, and
+    this design does not ask for it.
+- **`trelax` corrected (503, keeps (6) and (8)):** see STATE AT HANDOFF.
 
 **What the relaxation admits.**
 - Forward split-exit runs: `\d+-`, `[^<]*</`, revwalk's T3 inner runs, and

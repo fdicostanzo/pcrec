@@ -74,6 +74,8 @@ def main():
         sskip = {(x[0], 0, x[3], x[4]) for x in s[1] if x[1] == 'skip'}
         if sedge:
             C[pop, 'set: artifacts with >=1 edge'] += 1
+        for e in sedge:
+            C[pop, 'set: edges (' + e[0] + (', bounded)' if e[1] > 0 else ', unbounded)')] += 1
         if sedge != gedge:
             C[pop, 'SET movers (edges differ set vs single)'] += 1
             gained = sedge - gedge

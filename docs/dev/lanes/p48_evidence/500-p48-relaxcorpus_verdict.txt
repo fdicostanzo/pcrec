@@ -1,0 +1,33 @@
+# 500-p48-relaxcorpus job.log verdict lines (/home/pcrec/projects/pcrec/worktrees/p48/../.boxqueue/failed/20261029T093055.965473332-500-p48-relaxcorpus)
+FAIL: the DFA-overflow fallback now KEEPS a prefilter, count-collapsed ([OPT-4] §6): '\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b' produced no listing at all
+make: *** [Makefile:979: test-prefilter] Error 1
+FAILURES: 0
+FAIL: §1 [word boundary] '\bfoo\b' did not compile
+FAIL: §2 [start-set arm] '\b(?:true|false|null)\b' did not compile
+FAIL: §6a the capped compiler REFUSED 'abcdefghij[0-9]+' — an OPTIONAL machine's bytes must never be what refuses a pattern (K53): pcrec: pattern too large: 21619 bytes of emitted C source (limit 21500, ~3 KB .o). Lower a repeat count, try --unroll=1, or raise --max-emit-bytes; see limits.md "Handling an oversized artifact" (pattern offset 0)
+FAIL: §6a NO pattern keeps the unwrapped form under the 21500-byte cap — the rung is firing on everything and §6a compares a dead axis
+FAIL: [reach] '(?<=a)b' did not compile
+FAIL: [reach] '(?<*a)b' did not compile
+FAIL: [reach] '(?<!a)b' did not compile
+FAIL: [reach] only 0 of 3 witnesses reach a dead anchored entry
+make: *** [Makefile:728: test-anchored-match] Error 1
+FAIL: corpus:tests/assertions/multiline.rxt:2902:S+F byte b'(?:^|\\b)foo': the part refused where P compiles: internal error: state 4 carries a scan edge and is named by seed family s1u[1], on a machine whose 'offset-set-bounded' prefilter reseeds
+FAIL: corpus:tests/lookaround/d27/expansions.rxt:23:S+F byte b'(?:\\A|(?<=\\n)(?!\\z))x': the part refused where P compiles: internal error: state 2 carries a scan edge and is named by seed family s1u[1], on a machine whose 'handoff' prefilter reseeds
+FAIL: corpus:tests/startset/dfahat.rxt:1203:G+F byte b'(?:\\Gx|\\b)(?:ab|cd)\\b': the part refused where P compiles: internal error: state 4 carries a scan edge and is named by seed family s1u[1], on a machine whose 'first-class-bounded' prefilter reseeds
+FAIL: corpus:tests/ucp/ctxnode.rxt:392:S+LE byte b'(?m)(?:\\A|(?<=\\n)(?!\\z))ERROR$': the part refused where P compiles: internal error: state 7 carries a scan edge and is named by seed family s1u[1], on a machine whose 'offset-set-bounded' prefilter reseeds
+FAIL: B2 derive vs twin2.derive: 114 cases; both-decline=1, both-never=5, both-q=99, refused-p=2, twin-q-refused=1, wider=2; 1098518 startpos cells (387493 matches) compared, 4 failures
+FAIL: corpus:tests/assertions/multiline.rxt:2902:S+F@byte: recorded A4, manifest A5
+FAIL: corpus:tests/startset/dfahat.rxt:1203:G+F@byte: recorded A4, manifest A5
+FAIL: decline controls: 12 named controls, 114 candidates recorded (verdicts over both: A1=37 A2=2 A4=2 A5=38 admit=44 refused=3); 2 failures
+test-compound: FAIL
+make: *** [Makefile:1551: test-compound] Error 1
+FAIL: A8: (?m)^a stamps VALID_LB '0', \ba stamps 'ERR' -- want 0 and 1 (the (?m) builder raised a lookbehind length, or the stamp moved)
+FAIL: [assertions] '\ba' should compile with the module enabled: pcrec: internal error: state 2 carries a scan edge and is named by seed family s1u[1], on a machine whose 'first-memchr-bounded' prefilter reseeds (pattern offset 0)
+FAIL: [assertions] '\Ba' should compile with the module enabled: pcrec: internal error: state 2 carries a scan edge and is named by seed family s1u[1], on a machine whose 'first-memchr-bounded' prefilter reseeds (pattern offset 0)
+FAIL: [budget] [SEL-1] '\b((a)|ab){20000}c\b' under plain auto should COMPILE (the fallback), got rc 1 in 225ms: pcrec: internal error: state 3 carries a scan edge and is named by seed family s1u[1], on a machine whose 'first-memchr-bounded' prefilter reseeds (pattern offset 0)
+FAIL: [budget] CONTROL '\b((a)|ab){40}c\b' should compile: pcrec: internal error: state 82 carries a scan edge and is named by seed family s1u[1], on a machine whose 'first-memchr-bounded' prefilter reseeds (pattern offset 0)
+FAIL: could not build a default-engine artifact for '\ba\Kb\b': pcrec: internal error: state 3 carries a scan edge and is named by seed family s1u[1], on a machine whose 'offset-set-bounded' prefilter reseeds (pattern offset 0)
+FAIL: population: only 28 of 29 \K patterns emitted both halves of the \K machinery (see the table above). The sweep below would be green against a \K that compiled to nothing.
+FAIL: entries: §1 recorded no cells for '\ba\Kb\b' (index 21) — the two sections have drifted apart
+make: *** [Makefile:1344: test-assertions] Error 1
+make: *** [Makefile:541: test-corpus] Error 1
