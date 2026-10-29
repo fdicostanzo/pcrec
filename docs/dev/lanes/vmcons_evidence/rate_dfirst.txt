@@ -1,0 +1,6 @@
+nest-paren-32k DF_ALkf_BCdU_R i=3.87 p=0.000 DF_A_BCdU_R i=4.26 p=1.000 load=62.98
+nest-brace-100k DF_ALkf_BCdU_R i=15.31 p=0.000 DF_A_BCdU_R i=21.11 p=1.000 load=62.98
+js-1m DF_ALkf_BCdU_R i=38.43 p=0.443 DF_A_BCdU_R i=45.52 p=1.008 load=62.98
+idents-1m DF_ALkf_BCdU_R i=53.78 p=0.904 DF_A_BCdU_R i=54.74 p=1.096 load=62.98
+splice-1m DF_ALkf_BCdU_R i=18.42 p=0.333 DF_A_BCdU_R i=18.42 p=0.333 load=62.98
+comment-5m DF_ALkf_BCdU_R i=101.96 p=0.200 DF_A_BCdU_R i=107.46 p=0.300 load=62.98
