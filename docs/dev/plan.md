@@ -714,11 +714,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-28): filed, not scheduled. The witness went red under load (PROCS=16) on 2026-10-28.
   next: shrink the witness or give it a declared budget.
   refs: docs/dev/lanes/ic2fixtri_report.md
-- [SWEEP-COMP-FLOOR] STATE:not-started — scripts/emit_sweep.py COMPOSITION-ARTIFACTS FLOOR 100 vs 86 MEASURED AFTER F7
-  filed: 2026-10-28 manager (ic2fixmov report)
-  status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
-  next: re-measure and re-pin the floor.
-  refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
 - [CAPDIFF-DRIFT] STATE:not-started — test-capturediff pins exact bucket counts, and one subject moved buckets in CI only
   filed: 2026-10-28 manager (CI run 40709231225 shard 1/3 RED on a13a7103b, a plan.md-only commit whose parent was green; triage lane cired3)
   status (2026-10-28): not started; the gate reported oracle inconclusive expected=3 actual=2 (labelled TIMING-SENSITIVE) and pcrec step-budget exhausted expected=0 actual=1; 0 content and 0 accept/reject divergences; the same gate passes locally on main

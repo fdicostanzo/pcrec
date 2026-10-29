@@ -349,7 +349,9 @@ PINS = {
     # nothing, where the one-block file built itself (2 artifacts). Main's
     # tree measures 38 with this file and 37 without it; no other file moved.
     "composition_producing_floor": 37,    # measured 37 at SL2 (38 at C0 and at B1, was 32)
-    "composition_artifacts_floor": 100,   # measured 108 at C0 and at B1 (was 88 / 96); an 8-artifact
+    "composition_artifacts_floor": 86,    # 100 -> 86 (2026-10-29, [SWEEP-COMP-FLOOR]): F7, a file build with a refused
+                                           # target writes nothing, so the plain arm measures 86 (kit job 622, lands3).
+                                           # was: measured 108 at C0 and at B1 (was 88 / 96); an 8-artifact
                                            # margin (one file's worth, at
                                            # this corpus's measured 3.0
                                            # artifacts/producing-file

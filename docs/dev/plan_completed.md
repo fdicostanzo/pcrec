@@ -6400,3 +6400,10 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
     before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
     The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
     2026-10-27 lane subtri (bench O-109 case 7 url-tld-fix, x3.89 behind JIT): the req-run `https://www.` is found by two pre-checks (23%) that return yes/no only; the attempt loop then scans `h` scalar (66%, 3.57M VM attempts); lookahead+backref is 2.9%. Seeding once per call as written gives only x1.3 cycles; the RE-ENTERED form (the run drives every attempt) gives x2.0 cycles, keyed on `h` x4.9. Re-scope to the re-entered form. Evidence docs/dev/lanes/subtri_report.md.
+
+- [SWEEP-COMP-FLOOR] STATE:completed — scripts/emit_sweep.py COMPOSITION-ARTIFACTS FLOOR RE-PINNED 100 -> 86 AFTER F7
+  completed: 2026-10-29 lane lands3: composition_artifacts_floor 100 -> 86 in scripts/emit_sweep.py PINS (F7: a file build with a refused target writes nothing; plain arm measured 86, kit job 622 sweep_start)
+  filed: 2026-10-28 manager (ic2fixmov report)
+  status (2026-10-29): DONE.
+  next: none (landed).
+  refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
