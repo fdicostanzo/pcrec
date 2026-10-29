@@ -16,7 +16,7 @@
 # not fit.
 #
 # [OPT-1], 2026-08-25: WHICH FUNCTION DECLARES IT MOVED, and this script moved
-# with it. `<prefix>_search` now runs on a page-sized fast tier (3,184 B
+# with it. `<prefix>_search` now runs on a page-sized fast tier (3,200 B
 # MEASURED) and calls a `noinline` `<prefix>_search_deep` that owns the stamped
 # default, only on a PCREC_ERR_FRAMES give-up. So the quantity that decides
 # whether a call fits is the DEEP PATH — entry + deep — and `deep_path_frame`

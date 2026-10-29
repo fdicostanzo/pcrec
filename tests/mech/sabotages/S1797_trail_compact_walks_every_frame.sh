@@ -10,7 +10,7 @@ SAB_ID="S1797-trail-compact-walks-every-frame"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="trailcompact"
 SAB_DESC='the trail compaction walks every live frame instead of the topmost cap'
-SAB_DOC_FIGURE='by hand 2026-10-29 (lane trailgc3): see the lane report'
+SAB_DOC_FIGURE='by hand 2026-10-29 (lane trailgc3): run_trail_compact.sh 1 failed / 37 passed (frames-bound timed out)'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='"    size_t f = top > cap ? top - cap : 0, k;\n"'

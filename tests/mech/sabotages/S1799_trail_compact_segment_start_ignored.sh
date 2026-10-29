@@ -10,7 +10,7 @@ SAB_ID="S1799-trail-compact-segment-start-ignored"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="trailcompact"
 SAB_DESC='a partial compaction starts reading the trail at 0, not at its lowest segment'
-SAB_DOC_FIGURE='by hand 2026-10-29 (lane trailgc3): see the lane report'
+SAB_DOC_FIGURE='by hand 2026-10-29 (lane trailgc3): run_trail_compact.sh 2 failed / 35 passed (partial-walk: 98 capture mismatches)'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='"    size_t r = f > 0 ? run->resume_stack[f - 1].trail_mark : 0, w = r;\n"'

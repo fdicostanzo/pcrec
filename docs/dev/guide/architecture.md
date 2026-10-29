@@ -93,6 +93,14 @@ left to the compiler; otherwise label it an unmeasured default where it lives.
 Never adopt one silently. **Why:** an unmeasured constant looks like a decision
 and carries no evidence. **Source:** Frank 2026-10-05.
 
+## A VM capacity change is measured through both entries
+A change to how the VM uses its frame or trail capacity measures its cost
+through BOTH the tiered default entry and `<prefix>_search_in` with ample
+buffers. **Why:** the default entry first runs on page-sized buffers and
+escalates; a mechanism that fires there and not under `_in` (K134's fast-tier
+compaction: +15 % on the default entry, +0.8 % under `_in`) is invisible to an
+`_in`-only measurement. **Source:** review 2026-10-29-r2 (F5).
+
 ## Simplification is a benefit on its own
 A change that deletes special cases or retires a parallel kind qualifies on
 that alone; present the deletions as the benefit, still measured and costed

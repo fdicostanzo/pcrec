@@ -1479,7 +1479,7 @@ site.** An artifact whose frame requirement is not statically bounded keeps
 its default backtracking storage in a non-inlined internal function that only
 a `PCREC_ERR_FRAMES` escalation reaches (§10.9). Measured on a `-p rx
 --features all` build of `^(a(?1)?b)$`: `<prefix>_search`'s own frame is
-3,184 bytes and the internal function's 131,216, so a call needs 134,400 bytes
+3,200 bytes and the internal function's 131,232, so a call needs 134,432 bytes
 of free stack at the call site to be safe on every subject (`limits.md` §5
 states the rule). A call's frame lands wherever the stack pointer already is,
 so a thread's nominal size equals the headroom only at call depth ~0. At depth
@@ -3783,7 +3783,7 @@ which side a call landed on.
 213–268 → 45.6–48.8 ns/call, against 44.2–47.2 for `<prefix>_search_in`, and
 the entry's own frame (`gcc -fstack-usage`) 98,512 → 3,168 B. (The
 `^(a(?1)?b)$` specimen of §5.3 and `limits.md` §5 is a different artifact with
-different numbers: 131,216 → 3,184 B.) The tier is a bet that real calls hold
+different numbers: 131,232 → 3,200 B, re-measured after [K134] added the trail floor to its run state.) The tier is a bet that real calls hold
 on the fast tier, and it loses on some patterns:
 
 - <a id="s10-9-p11"></a>[10.9¶11] **The wasted fast attempt is bounded by the STEP and WORK budgets**, not by

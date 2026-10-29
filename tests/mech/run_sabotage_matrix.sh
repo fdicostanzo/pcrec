@@ -423,7 +423,8 @@
 #     tests/vm/run_trail_compact.sh: the VM trail checkpoints' cycle and
 #     margin check on the emitted C, the witnesses' answers at every trail
 #     capacity against a large-buffer run, the floor that only a compaction
-#     answers below, and the fast tier's single escalation. Its own arm
+#     answers below, every witness's single fast-tier escalation, the
+#     bounded-work run (lane trailgc3) and the corpus-wide cycle check. Its own arm
 #     because a compaction that stops reaching a loop moves no corpus answer
 #     at the stamped capacities the corpus uses. Registered before S1790.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
