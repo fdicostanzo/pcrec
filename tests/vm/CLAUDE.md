@@ -20,6 +20,6 @@ the other:
 - **vm_driver.c** — runs one generated capture-delivering matcher against one subject and prints EVERY capture slot, plus `err_steps`/`err_frames` when the engine gives up.
 - **vm_oracle.py** — the capture-correctness sweep.
 - **run_vm_tests.sh** — the section runner (`make test-vm`, and one of `make test`'s lines).
-- **run_trail_compact.sh** + **trail_compact_driver.c** + **trail_checkpoints.py** — [K134] the trail compaction (`docs/spec/limits.md` §4): the checkpoint cycle/margin check on each witness, answers at every trail capacity against a large-buffer run, the floor only a compaction answers below, the `4n + 17` boundary, the fast tier's one escalation. In `make test-vm`; mech arm `trailcompact` (S1790-S1796); `TRAIL_CORPUS=1` adds the corpus-wide checkpoint check.
+- **run_trail_compact.sh** + **trail_compact_driver.c** + **trail_checkpoints.py** — [K134] the trail compaction (`docs/spec/limits.md` §4): the checkpoint cycle/margin check on each witness, answers at every trail capacity against a large-buffer run, the floor only a compaction answers below, the `4n + 17` boundary, every witness's one fast-tier escalation, the bounded-work run, and the corpus-wide checkpoint check (on by default, ~10 s; `TRAIL_CORPUS=0` skips it). In `make test-vm`; mech arm `trailcompact` (S1790-S1799).
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__vm.md`.
