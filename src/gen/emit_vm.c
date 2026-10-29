@@ -544,6 +544,17 @@ typedef struct {
                            * descriptor (`vm_entry_shape` rungs SHARED and
                            * FORWARD) need this term as well or they would
                            * turn a match into a FRAMES give-up. */
+    long long nset;       /* [K134] `<PREFIX>_SET` sites written so far, counted
+                           * by vm_set in the same call. The program-order
+                           * clock `vm_goto` reads to tell a jump that closes
+                           * a trail-writing cycle (vm_trail_check), and at
+                           * the end the trail margin (<PREFIX>_TRAIL_MARGIN). */
+    long long *lbl_nset;  /* [K134] per label id: 1 + `nset` when vm_lbl
+                           * wrote it, 0 while it is not written yet */
+    int       lbl_cap;    /* entries `lbl_nset` holds */
+    long long ncheck;     /* [K134] `<PREFIX>_TRAIL_CHECK` sites written, by
+                           * vm_trail_check: nonzero is what emits the
+                           * compaction and the matcher's trigger local */
     long long maxcopies;  /* the largest REPLICATION FACTOR any one bounded
                            * repeat over a choice-bearing body demands. This is
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
@@ -3455,6 +3466,27 @@ static void vm_lbl(Vm *v, int id, const char *role)
     }
     pcrec_sb_printf(v->b, "%s_L%d: __attribute__((unused));\n", v->p, id);
     vm_ev(v, VE_LABEL, id, 0, role);
+    if (id >= v->lbl_cap) {
+        int ncap = v->lbl_cap ? v->lbl_cap * 2 : 256;
+        while (ncap <= id) ncap *= 2;
+        long long *nl = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nl);
+        memset(nl, 0, (size_t)ncap * sizeof *nl);
+        if (v->lbl_cap) memcpy(nl, v->lbl_nset, (size_t)v->lbl_cap * sizeof *nl);
+        v->lbl_nset = nl;
+        v->lbl_cap = ncap;
+    }
+    v->lbl_nset[id] = v->nset + 1;
+}
+
+/* [K134] Writes the trail's CHECKPOINT: the one place the trail is compacted
+ * (`<prefix>_trail_compact`), placed on every edge that can close a cycle of
+ * trail writes so a run that loops or recurses passes one at least once per
+ * turn. The checkpoints and the margin are vm_emit_trail_compact's argument;
+ * the trail write itself keeps its plain give-up. */
+static void vm_trail_check(Vm *v)
+{
+    pcrec_sb_printf(v->b, "    %s_TRAIL_CHECK();\n", v->up);
+    v->ncheck++;
 }
 
 /* Writes the artifact's unconditional jump to label `id` and records the
@@ -3462,6 +3494,12 @@ static void vm_lbl(Vm *v, int id, const char *role)
  * about where control goes. */
 static void vm_goto(Vm *v, int id)
 {
+    /* [K134] A jump to a label already written goes BACK in the text. If a
+     * trail write was written since that label, the jump may close a cycle
+     * that writes the trail, so it carries a checkpoint
+     * (vm_emit_trail_compact says why that covers every such cycle). */
+    if (id < v->lbl_cap && v->lbl_nset[id] && v->lbl_nset[id] <= v->nset)
+        vm_trail_check(v);
     pcrec_sb_printf(v->b, "    goto %s_L%d;\n", v->p, id);
     vm_ev(v, VE_GOTO, id, 0, NULL);
 }
@@ -3521,6 +3559,7 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
     /* [CC-DIFF] STEP 2: in the SAME call that writes the bytes — see the
      * field's comment for why the trail counts as touched storage. */
     v->emitted_set = true;
+    v->nset++;
     vm_ev(v, VE_SET, slot, 0, role);
 }
 
@@ -8407,6 +8446,10 @@ static void vm_region(Vm *v, int i)
                "restore the caller's value, itself TRAILED so a retreat into "
                "this callee re-establishes the callee's own");
     }
+    /* [K134] The return jumps back to a label of the CALLER's, which is not a
+     * `vm_goto`: a chain of returns writes the restores above once per level
+     * and passes no backward goto, so the return carries its own checkpoint. */
+    vm_trail_check(v);
     /* THE SECOND INDIRECT JUMP (§5.8), and the amendment to this file's own
      * opening comment: the property that matters is that the indirect jumps
      * are OFF THE HOT PATH — one per backtrack, one per call return — and that
@@ -12171,8 +12214,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
     if (!v->tracing) {
         pcrec_sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= run->trail_cap && !%s_trail_compact(run))   \\\n"
-            "            return %s_R_FRAMES;                                 \\\n"
+            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -12194,7 +12236,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
             "#define %s_CUT(slot_) do {                                   \\\n"
             "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v->up, v->p, v->up, v->up, v->up, v->up, v->up,
+            v->up, v->up, v->up, v->up, v->up, v->up,
             v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -12206,8 +12248,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
          * debugging tool that lies, which is worse than none. */
         pcrec_sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= run->trail_cap && !%s_trail_compact(run))   \\\n"
-            "            return %s_R_FRAMES;                                 \\\n"
+            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -12234,7 +12275,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
             "                run->resume_depth, slot_values[(slot_)]);                        \\\n"
             "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v->up, v->p, v->up, v->up, v->p, v->up, v->up, v->up,
+            v->up, v->up, v->up, v->p, v->up, v->up, v->up,
             v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -12677,9 +12718,10 @@ static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry 
     pcrec_sb_scaffold_close(c);
 }
 
-/* Writes `<prefix>_trail_compact`, which makes room on a full trail by
- * dropping the entries no unwind can ever read back; `<PREFIX>_TRAIL` calls
- * it where it would otherwise give up with `PCREC_ERR_FRAMES` (K134).
+/* Writes `<prefix>_trail_compact`, which shortens the trail by dropping the
+ * entries no unwind can ever read back, with the checkpoint macro
+ * `<PREFIX>_TRAIL_CHECK` that calls it and the trigger floor
+ * `<prefix>_trail_gc_floor` (K134).
  *
  * TRAIL-SEG (docs/design/engine_m4.md §2.4a). The live frames' `trail_mark`s
  * cut the trail into segments. An unwind to a live frame restores every
@@ -12697,47 +12739,94 @@ static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry 
  * call frame is live while its activation is, its |W| parked entries are the
  * first entries of its segment and name distinct slots, so each is the
  * oldest for its slot and is kept; order is kept and the frame's mark moves
- * with them, so they stay at `mark + j`. A return whose restore triggers a
- * compaction reads the mark after it, because `<PREFIX>_SET` evaluates its
- * value after `<PREFIX>_TRAIL`.
+ * with them, so they stay at `mark + j`.
  *
- * THE HYSTERESIS IS AN AMORTIZATION BOUND, not a tuned number. A compaction
- * reads the whole trail and returns success only if it freed MORE THAN HALF
- * of the capacity; then at least half a trail of fresh writes comes before the
- * next one, so each write pays for at most two entry visits, the same order
- * as the write and the unwind that read the entry anyway (the doubling
- * argument of a growable array). Any constant fraction is O(1) per write;
- * one half is the textbook point and was not tuned. A compaction that frees
- * less gives up exactly as the full trail did before, so the fast tier
- * escalates instead of compacting a few entries at a time (the l9look twin,
- * which accepted any progress, compacted 607,662 times on one call). It is
- * never worse than no compaction: it runs only where that gave up.
+ * WHERE IT RUNS: AT CHECKPOINTS, NEVER AT THE TRAIL WRITE. A compaction that
+ * can run inside `<PREFIX>_TRAIL` makes every trail write a point where the
+ * depth may change and rejoin, and gcc then reloads the depth and rebuilds
+ * the address at every write (+5-13% instructions measured, lane trailgc).
+ * The trail only grows without bound around a CYCLE of the program, so the
+ * check goes on the edges that close cycles instead: `vm_goto` puts it on
+ * every jump back to a label written earlier with a trail write written
+ * since, and `vm_region` on every return (a return is the one backward edge
+ * that is not a goto). Every cycle of the emitted program has an edge that
+ * goes back in the text, and for each trail write on a cycle one such edge
+ * jumps from at or after the write to at or before it, so it carries a
+ * checkpoint: no cycle writes the trail without passing one. A resume
+ * after a backtrack restores the depth the frame's push saw, so it adds no
+ * growth of its own. Between two checkpoints a run therefore executes each
+ * `<PREFIX>_SET` site at most once: `nset`, the site count, bounds what the
+ * trail can grow between them (the MARGIN).
  *
- * Emitted only on an artifact that writes the trail (`emitted_set`, which is
- * known here: the program is already in the scratch buffer). The byte map is
- * cleared through the entries just kept, so the cost is the trail plus the
- * live frames, never frames x slots. */
+ * THE TRIGGER, AND WHY NOTHING GIVES UP EARLY. A checkpoint compacts when
+ * the depth is past the trigger, a local of the matcher (a compare against
+ * a register; as a run-state field it cost a load and ~1% more). The trigger
+ * starts each attempt at the FLOOR, `cap - margin` (at least `cap / 2`), so
+ * the next stretch still fits after a compaction there. A compaction that
+ * keeps `w` entries leaves the trigger at the floor if at least a quarter of
+ * the capacity is left below it (`w + cap / 4 <= floor`), so each
+ * compaction, which visits at most `cap` entries, is paid by at least
+ * `cap / 4` fresh writes: at most four entry visits per trail write, plus
+ * the byte map. Otherwise checkpoints stop compacting for the attempt and
+ * the run goes on until it ends or reaches the trail write's own `return
+ * <PREFIX>_R_FRAMES`, as it always could; a stretch between checkpoints
+ * longer than the margin ends the same way. No run gives up that the plain
+ * trail answered, and no answer changes: every dropped entry is one no
+ * unwind reads. The quarter is a choice, not a measurement: any constant
+ * share is O(1) per write, the trailgc lane's at-the-write form used a half
+ * of a trigger AT the capacity, and a quarter below a floor that sits a
+ * margin lower keeps at least that form's reach (lane trailgc2's
+ * nest-brace depths). The fast tier still escalates instead of thrashing:
+ * a run whose kept trail fills it stops compacting.
+ *
+ * Emitted only on an artifact with a checkpoint (`ncheck`, which is known
+ * here: the program is already in the scratch buffer), so a program that
+ * writes the trail on no cycle keeps its bytes. The byte map is cleared
+ * through the entries just kept, so the cost is the trail plus the live
+ * frames, never frames x slots. */
 static void vm_emit_trail_compact(Vm *v)
 {
     StrBuf *c = &v->cx->job->csb;
-    if (!v->emitted_set) return;
+    if (!v->ncheck) return;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
-        "/* Make room on a full trail. Between two live resume frames only\n"
-        " * the OLDEST entry for each slot is ever restored (an unwind\n"
-        " * applies them newest-first), so every later entry for the same\n"
-        " * slot there is dropped and each frame's mark moves down with the\n"
-        " * entries. Order is kept, so a call frame's parked values stay at\n"
-        " * trail_mark + j. Nothing is rewound and no slot changes. Succeeds\n"
-        " * only if more than half the capacity is free afterwards, so the\n"
-        " * work is at most two entry visits per trail write; otherwise the\n"
-        " * caller gives up as a full trail always did. */\n");
+        "/* Where a checkpoint starts compacting the trail: the capacity less\n"
+        " * the most trail writes a run can make between two checkpoints\n"
+        " * (one per write site), so compaction runs before the trail fills,\n"
+        " * but never on a trail less than half full. */\n");
+    pcrec_sb_cmt_close(c);
+    /* `noinline` is MEASURED, not principled: inlined into the matcher's
+     * prologue, gcc 15 -O2 allocated the cscan matcher's loops differently
+     * and the checkpoints cost 3.8% instructions on idents-1m and
+     * nest-paren-32k against 1.6% and 1.1% out of line (lane trailgc2). */
+    pcrec_sb_printf(c,
+        "static %ssize_t %s_trail_gc_floor(size_t cap)\n"
+        "{\n"
+        "    const size_t margin = %lld;\n"
+        "    return cap - (margin < cap / 2 ? margin : cap / 2);\n"
+        "}\n\n",
+        pcrec_attr_text(PCREC_ATTR_NOINLINE), v->p, v->nset);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* Make room on the trail. Between two live resume frames only the\n"
+        " * OLDEST entry for each slot is ever restored (an unwind applies\n"
+        " * them newest-first), so every later entry for the same slot there\n"
+        " * is dropped and each frame's mark moves down with the entries.\n"
+        " * Order is kept, so a call frame's parked values stay at\n"
+        " * trail_mark + j. Nothing is rewound and no slot changes. Returns\n"
+        " * the next trigger: the floor again if a quarter of the trail is\n"
+        " * left below it, so the work is at most four entry visits per\n"
+        " * trail write, else never for this attempt (a trail that then\n"
+        " * fills gives up at the write as it always did). Called only from\n"
+        " * the checkpoints on the program's loops and returns, never from\n"
+        " * the trail write. */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
-        "static %sint %s_trail_compact(%s_run_state *run)\n"
+        "static %ssize_t %s_trail_compact(%s_run_state *run)\n"
         "{\n"
         "    unsigned char seen[%s_NSLOTS] = { 0 };\n"
         "    size_t r = 0, w = 0, f, k;\n"
+        "    const size_t gc_floor = %s_trail_gc_floor(run->trail_cap);\n"
         "    for (f = 0; f <= run->resume_depth; f++) {\n"
         "        const size_t end = f < run->resume_depth ? run->resume_stack[f].trail_mark\n"
         "                                                 : run->trail_depth;\n"
@@ -12752,9 +12841,13 @@ static void vm_emit_trail_compact(Vm *v)
         "        for (k = kept; k < w; k++) seen[run->trail[k].slot_index] = 0;\n"
         "    }\n"
         "    run->trail_depth = w;\n"
-        "    return w < run->trail_cap - w;\n"
-        "}\n\n",
-        pcrec_attr_text(PCREC_ATTR_COLD), v->p, v->p, v->up);
+        "    return w + run->trail_cap / 4 <= gc_floor ? gc_floor : (size_t)-1;\n"
+        "}\n\n"
+        "#define %s_TRAIL_CHECK() do {                              \\\n"
+        "        if (run->trail_depth > %s_trail_gc_at)                 \\\n"
+        "            %s_trail_gc_at = %s_trail_compact(run);             \\\n"
+        "    } while (0)\n\n",
+        pcrec_attr_text(PCREC_ATTR_COLD), v->p, v->p, v->up, v->p, v->up, v->p, v->p, v->p);
 }
 
 static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
@@ -13001,6 +13094,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         en->ai_body, v->p, v->p,
         v->nclamp > 0 ? pl->mrl_param : "",
         v->ngst > 0 ? pl->gst_param : "");
+    /* [K134] the trail checkpoints' trigger, a local so the check is one
+     * compare against a register (vm_emit_trail_compact). */
+    if (v->ncheck)
+        pcrec_sb_printf(c, "    size_t %s_trail_gc_at = %s_trail_gc_floor(run->trail_cap);\n",
+                        v->p, v->p);
     if (v->rungs & vm_rung_bit[VM_RUNG_CURSOR])
         pcrec_sb_printf(c, "    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
