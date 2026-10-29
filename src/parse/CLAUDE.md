@@ -67,7 +67,7 @@ Parser structure (PARSE-1):
 - mod_backrefs.c — module `backrefs`, `pcrec_bref_resolve`
 - mod_recursion.c — module `recursion` (calls, DEFINE)
 - rxt_schema.def / rxt_schema.c — `.rxt` format schema as data and its reader (one exhaustive switch over the constraint kinds)
-- rxt_source.c — `.rxt` head parser, `--list-source`, resolution (`pcrec_rxt_source_resolve`), `lib` closure
+- rxt_source.c — `.rxt` head parser, `--list-source`, resolution, `lib` closure, `sha256` pins + reach graph (every-chain rule)
 - rxt_find.c — analysis-bundle resolution chain ([FINDINGS] B2)
 - ks_analysis.c / ks_lib.c — knowledge-module kind rows for analysis and `lib` ([KNOW-SRC])
 - rxt_compose.c — the composer binding `.rxt` definitions into the target tree (W1.3)

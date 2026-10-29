@@ -1,0 +1,8 @@
+# tests/code/frag/pin3_mid.rxt — reached through pin2_ok.rxt's UNPINNED
+# include line, it holds patterns and no code, which needs no pin
+# (inline_c.md §5.4: "an include without a hash may still supply
+# patterns"); it pins its own include of pin4_leaf.rxt.
+include "pin4_leaf.rxt" sha256 98abf9525926a94dc5a417b71ffaaecc7434476544c39fccc1d4d10290154829
+
+pattern mi+d
+m "miid" 0 4

@@ -1,0 +1,10 @@
+# tests/code/frag/pin2_ok.rxt — a FRAGMENT reached through a PINNED include
+# line (pin1_entry.rxt, the pin written in upper case): its code is allowed
+# under the entry's grant (inline_c.md §5.4 row 5). Its own include of
+# pin3_mid.rxt carries no pin: the middle link of pin4_leaf.rxt's chain.
+include "pin3_mid.rxt"
+
+pattern (\d+)(?C`c: return RX_CAP_LEN(1) >= 2 ? RX_PASS : RX_FAIL;`)x
+m "123x" 0 4
+m "a12x" 1 4
+n "1x"

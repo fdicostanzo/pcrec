@@ -456,6 +456,17 @@ static void usage(FILE *f)
           "                    means \"name\") after the matcher for --pattern's\n"
           "                    LANG code (repeatable); a .rxt file says\n"
           "                    'code-header LANG HEADER'\n"
+          "  --include-block FRAGMENT:LINE\n"
+          "                    with one file operand ENTRY: the pattern is\n"
+          "                    the `pattern` block at LINE of FRAGMENT, a\n"
+          "                    file ENTRY's include lines reach; its code is\n"
+          "                    allowed only through sha256-pinned lines\n"
+          "  --list-callouts FILE\n"
+          "                    TSV, one row per callout site of each target\n"
+          "                    of FILE: source, binding, firing class, the\n"
+          "                    trust a build would give its code and the\n"
+          "                    pinned lines it came through, and the code,\n"
+          "                    escaped. Needs no --allow-code; writes no C\n"
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
           "                    module column, a frozen named set ('std1'),\n"
@@ -586,6 +597,9 @@ typedef struct {
     const char *probe_construct;
     const char *features;
     const char *list_source;
+    /* [INLINE-C] stage 3 `--list-callouts FILE`, the reviewer's view
+     * (docs/spec/cli.md §2.15). */
+    const char *list_callouts;
     /* [FINDINGS] B2 the two analysis listings (docs/spec/findings.md §8):
      * `--list-analyses` (the store's names) and `--list-analysis X`, X a
      * bundle NAME or a `.rxt` FILE (the per-target view). */
@@ -622,6 +636,17 @@ typedef struct {
     const char *allow_code;
     PcrecCodeHeader *code_headers;
     int         ncode_headers;
+    /* [INLINE-C] stage 3 `--include-block FRAGMENT:LINE` (cli.md §1.23):
+     * the pattern is the block at LINE of FRAGMENT, a file the one file
+     * operand (the ENTRY) includes, read from the entry's own parse; the
+     * `block_*` fields are its source position and its reach graph, filled
+     * by `cli_include_block` (which empties the operand slot). */
+    const char *include_block;
+    const char *block_file;
+    size_t      block_line, block_col;
+    int         block_esc;
+    const char *block_origin;
+    const struct RxtReach *block_reach;
 #ifdef PCREC_HARNESS
     /* [COMPOUND] the harness lever (docs/design/compound.md §A.11): only
      * `build/pcrec-harness` has the field or the option; in the tail, so a
@@ -677,28 +702,37 @@ typedef struct {
  * that is also ruled. "Is some OTHER mode active" and "is at most one of
  * these co-equal flags set" are two different relations over one set; one
  * mechanism per relation kind, so the count relation gets
- * `cli_modes_count` and keeps its own shape. */
-#define CLI_MODE_TABLE(X)                                                \
-    X(LIST_SYNTAX,      list_syntax,      INT, "--list-syntax")          \
-    X(LIST_DEFINITIONS, list_definitions, INT, "--list-definitions")     \
-    X(LIST_VERBS,       list_verbs,       INT, "--list-verbs")           \
-    X(LIST_FAMILIES,    list_families,    INT, "--list-families")        \
-    X(LIST_AXES,        list_axes,        INT, "--list-axes")            \
-    X(LIST_LIMITS,      list_limits,      INT, "--list-limits")          \
-    X(LIST_SCHEMA,      list_schema,      INT, "--list-schema")          \
-    X(EXPLAIN,          explain,          PTR, "--explain")              \
-    X(COUNT_GROUPS,     count_groups,     INT, "--count-groups")         \
-    X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
-    X(EMIT_FACTS,       emit_facts,       PTR, "--emit-facts")           \
-    X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
-    X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
-    X(LIST_ANALYSES,    list_analyses,    INT, "--list-analyses")        \
-    X(LIST_ANALYSIS,    list_analysis,    PTR, "--list-analysis")        \
-    X(LIST_MEASUREMENTS, list_measurements, PTR, "--list-measurements")  \
-    X(FILES,            nfiles,           INT, "a file operand")
+ * `cli_modes_count` and keeps its own shape.
+ *
+ * [INLINE-C] stage 3 (review 2026-10-27-r1-ic2 F27) THE ENTRY CLASS is the
+ * last column (inline_c.md §5.9): WRITES (the mode writes C: the invoker's
+ * `--allow-code` is the grant), DESCRIBE (it parses code to describe the
+ * pattern and writes none: every language is opened, whatever the grant),
+ * TAKES (it takes no pattern: the grant changes nothing). The dispatcher
+ * reads it (`cli_mode_class`) and so does tests/code's entry-point arm, so
+ * a new mode states its class where it is declared. */
+#define CLI_MODE_TABLE(X)                                                          \
+    X(LIST_SYNTAX,      list_syntax,       INT, "--list-syntax",       TAKES)    \
+    X(LIST_DEFINITIONS, list_definitions,  INT, "--list-definitions",  TAKES)    \
+    X(LIST_VERBS,       list_verbs,        INT, "--list-verbs",        TAKES)    \
+    X(LIST_FAMILIES,    list_families,     INT, "--list-families",     TAKES)    \
+    X(LIST_AXES,        list_axes,         INT, "--list-axes",         TAKES)    \
+    X(LIST_LIMITS,      list_limits,       INT, "--list-limits",       TAKES)    \
+    X(LIST_SCHEMA,      list_schema,       INT, "--list-schema",       TAKES)    \
+    X(EXPLAIN,          explain,           PTR, "--explain",           TAKES)    \
+    X(COUNT_GROUPS,     count_groups,      INT, "--count-groups",      DESCRIBE)    \
+    X(EMIT_IR,          emit_ir,           INT, "--emit-ir",           DESCRIBE)    \
+    X(EMIT_FACTS,       emit_facts,        PTR, "--emit-facts",        DESCRIBE)    \
+    X(PROBE_ASK,        probe_want,        PTR, "--probe-ask",         TAKES)    \
+    X(LIST_SOURCE,      list_source,       PTR, "--list-source",       TAKES)    \
+    X(LIST_CALLOUTS,    list_callouts,     PTR, "--list-callouts",     DESCRIBE)    \
+    X(LIST_ANALYSES,    list_analyses,     INT, "--list-analyses",     TAKES)    \
+    X(LIST_ANALYSIS,    list_analysis,     PTR, "--list-analysis",     TAKES)    \
+    X(LIST_MEASUREMENTS, list_measurements, PTR, "--list-measurements", TAKES)    \
+    X(FILES,            nfiles,            INT, "a file operand",      WRITES)
 
 typedef enum {
-#define CLI_MODE_ENUM_ROW(id, field, kind, spelling) CM_##id,
+#define CLI_MODE_ENUM_ROW(id, field, kind, spelling, class) CM_##id,
     CLI_MODE_TABLE(CLI_MODE_ENUM_ROW)
 #undef CLI_MODE_ENUM_ROW
     CM_N
@@ -718,7 +752,7 @@ typedef enum {
 static unsigned cli_modes_active(const CliState *st)
 {
     unsigned m = 0u;
-#define CLI_MODE_TEST_ROW(id, field, kind, spelling) \
+#define CLI_MODE_TEST_ROW(id, field, kind, spelling, class) \
     if (CLI_MODE_LIVE_##kind(st->field)) m |= CMB(id);
     CLI_MODE_TABLE(CLI_MODE_TEST_ROW)
 #undef CLI_MODE_TEST_ROW
@@ -729,11 +763,25 @@ static unsigned cli_modes_active(const CliState *st)
  * the hand-written conditional ladder it replaces used. */
 static const char *cli_mode_name(unsigned modes)
 {
-#define CLI_MODE_NAME_ROW(id, field, kind, spelling) \
+#define CLI_MODE_NAME_ROW(id, field, kind, spelling, class) \
     if (modes & CMB(id)) return spelling;
     CLI_MODE_TABLE(CLI_MODE_NAME_ROW)
 #undef CLI_MODE_NAME_ROW
     return "";
+}
+
+/* The entry classes, the table's last column. */
+typedef enum { CEC_TAKES, CEC_DESCRIBE, CEC_WRITES } CliEntryClass;
+
+/* The class of the FIRST active mode in table order; WRITES when none is
+ * active (a `--pattern` compile writes C). */
+static CliEntryClass cli_mode_class(unsigned modes)
+{
+#define CLI_MODE_CLASS_ROW(id, field, kind, spelling, class) \
+    if (modes & CMB(id)) return CEC_##class;
+    CLI_MODE_TABLE(CLI_MODE_CLASS_ROW)
+#undef CLI_MODE_CLASS_ROW
+    return CEC_WRITES;
 }
 
 /* Popcount of `modes`. */
@@ -764,7 +812,8 @@ static int cli_modes_count(unsigned modes)
  * other pattern-bearing query — but not each other, which is block order
  * doing the work and is preserved exactly as it stands. */
 #define CLI_MODES_VS_PATTERN_QUERY \
-    (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS) | CMB(EMIT_FACTS))
+    (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS) | CMB(EMIT_FACTS) |    \
+     CMB(LIST_CALLOUTS))
 
 /* [PATFACTS] `--emit-facts` is a pattern-bearing query that composes with
  * NONE of the others — `--emit-ir` and `--probe-ask` included, unlike that
@@ -794,6 +843,12 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_VS_FILES                                                \
     (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) |         \
      CMB(LIST_SOURCE))
+
+/* [INLINE-C] stage 3 `--list-callouts FILE` READS and compiles a `.rxt`
+ * file to describe its sites: it composes with no other mode. Its bit
+ * rides `CLI_MODES_VS_PATTERN_QUERY`, so every mode refuses it too. */
+#define CLI_MODES_VS_LIST_CALLOUTS                                        \
+    (((1u << CM_N) - 1u) & ~CMB(LIST_CALLOUTS))
 
 /* [REVW.5.1] `--flavour`'s OWN applies-to relation (item 1, w5r): the three
  * modes it composes with. Every other mode refuses it — each site keeps
@@ -1540,6 +1595,23 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
             }
             st->list_source = argv[++i];
         }
+        /* [INLINE-C] stage 3 `--list-callouts FILE` (cli.md §2.15), its
+         * file the option's value as `--list-source`'s is. */
+        else if (!strcmp(a, "--list-callouts")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            st->list_callouts = argv[++i];
+        }
+        /* [INLINE-C] stage 3 `--include-block FRAGMENT:LINE` (§1.23). */
+        else if (!strcmp(a, "--include-block")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            st->include_block = argv[++i];
+        }
         /* [REL-1.10] `--probe-ask WANT CONSTRUCT` (D118 addendum item i):
          * CONSTRUCT is the flag's OWN second argument now, consumed here
          * exactly like `--explain`'s SYNTAX just below rather than through
@@ -2043,6 +2115,10 @@ static int owned_push(OwnedTarget **v, size_t *n, size_t *cap,
  * even if someone wanted one. */
 static int compile_sources(const CliState *cli)
 {
+    /* [INLINE-C] stage 3 `--list-callouts` runs this same resolution and
+     * these same per-target inputs, and lists instead of writing. */
+    const bool listing = cli->list_callouts != NULL;
+    StrBuf lrows = { 0 };
     RxtSource **srcs = calloc(cli->nfiles, sizeof *srcs);
     if (!srcs) { perror("calloc"); return 1; }
 
@@ -2140,10 +2216,11 @@ static int compile_sources(const CliState *cli)
      * A directory is an existing directory. Anything else is a file name,
      * which is what makes `-o out.c` on a fresh checkout behave the same
      * whether or not `out.c` exists yet. */
-    int to_stdout = rc == 0 && !strcmp(cli->outpath, "-");
-    int to_dir    = rc == 0 && !to_stdout && path_is_dir(cli->outpath);
+    int to_stdout = rc == 0 && !listing && !strcmp(cli->outpath, "-");
+    int to_dir    = rc == 0 && !listing && !to_stdout &&
+                    path_is_dir(cli->outpath);
 
-    if (rc == 0 && nall > 1 && !to_dir) {
+    if (rc == 0 && nall > 1 && !to_dir && !listing) {
         fprintf(stderr, "pcrec: %zu targets across %zu input file%s (",
                 nall, cli->nfiles, cli->nfiles == 1 ? "" : "s");
         for (size_t i = 0; i < nall; i++)
@@ -2171,7 +2248,7 @@ static int compile_sources(const CliState *cli)
         if (apply_target(cli, ot->t, ot->owner, &topt) != 0) { rc = 1; break; }
 
         char *cpath = NULL, *hpath = NULL;
-        if (!to_stdout) {
+        if (!to_stdout && !listing) {
             size_t n;
             if (to_dir) {
                 n = strlen(cli->outpath) + 1 + strlen(ot->t->prefix) + 3;
@@ -2237,7 +2314,7 @@ static int compile_sources(const CliState *cli)
             if (osrc->rows[ri].kind == RXT_DECL_CODE_HEADER)
                 hdrs[nh++] = (PcrecCodeHeader){ osrc->rows[ri].name,
                                                 osrc->rows[ri].value,
-                                                osrc->rows[ri].line };
+                                                osrc->rows[ri].line, NULL };
         const PcrecEmitIn tin = { .bound = PCREC_PB_UNSTATED,
                                   .callout_decls = decl,
                                   .ncallout_decls = ndecl,
@@ -2247,12 +2324,26 @@ static int compile_sources(const CliState *cli)
                                   .code_esc = ot->t->pattern_esc != NULL,
                                   .code_headers = hdrs,
                                   .ncode_headers = nh };
-        int crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
+        int crc;
+        if (listing) {
+            char *rows = pcrec_list_callouts(ot->t->pattern, &topt,
+                                             ot->t->defs, &tin, ot->t->prefix,
+                                             &cerr);
+            crc = rows ? 0 : 1;
+            if (rows) pcrec_sb_puts(&lrows, rows);
+            free(rows);
+            free(cbuf);
+            free(hdrs);
+            if (crc == 0) continue;
+        } else
+            crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
                                      (ndecl || nh || topt.allow_code) ? &tin
                                                                       : NULL,
                                      &out, &cerr);
-        free(cbuf);
-        free(hdrs);
+        if (!listing) {
+            free(cbuf);
+            free(hdrs);
+        }
         if (crc != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
@@ -2270,6 +2361,15 @@ static int compile_sources(const CliState *cli)
         hpaths[i] = hpath;
         ncompiled = i + 1;
     }
+    if (rc == 0 && listing) {
+        fputs(pcrec_list_callouts_header(), stdout);
+        if (lrows.p) fputs(lrows.p, stdout);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            cli_err("write error on stdout");
+            rc = 1;
+        }
+    }
+    pcrec_sb_free(&lrows);
     for (size_t i = 0; rc == 0 && i < ncompiled; i++) {
         if (to_stdout) {
             fputs(outs[i].c_src, stdout);
@@ -2558,6 +2658,74 @@ static int cli_run(CliState st, CliUnadmitted *unadmitted, Arena *esc)
     }
 }
 
+/* [INLINE-C] stage 3 `--include-block FRAGMENT:LINE ENTRY` (cli.md
+ * §1.23; inline_c.md §5.2): reads ENTRY (the one file operand) once,
+ * finds FRAGMENT among the files its `include` closure read, and makes the
+ * `pattern` block at LINE of it this run's pattern, from that same read, as
+ * if given with `--pattern`. The block's code is judged against the lines
+ * that reach FRAGMENT from ENTRY (every pin verified here), never as local
+ * code. The operand slot is emptied: ENTRY is where the pattern came from,
+ * not a file to compile. `*keep` holds the parse until the run ends. */
+static int cli_include_block(CliState *st, RxtSource **keep)
+{
+    const char *v = st->include_block;
+    const char *colon = strrchr(v, ':');
+    char *endp = NULL;
+    const unsigned long line = colon ? strtoul(colon + 1, &endp, 10) : 0;
+    if (!colon || colon == v || !colon[1] || *endp || line == 0) {
+        cli_err("--include-block wants FRAGMENT:LINE, a fragment file and the "
+                "line of one of its `pattern` blocks (got '%s')", v);
+        return 1;
+    }
+    if (st->nfiles != 1 || st->pattern || st->pattern_esc) {
+        cli_err("--include-block takes exactly one file operand, the entry "
+                "file that includes the fragment, and no --pattern or "
+                "--pattern-esc");
+        return 1;
+    }
+    pcrec_error err = { 0 };
+    RxtSource *src = pcrec_rxt_source_parse(st->files[0], &err);
+    if (!src) { cli_err("%s", err.msg); return 1; }
+    *keep = src;
+    RxtReach *g = pcrec_rxt_reach_includes(src);
+    if (pcrec_rxt_reach_verify(g, &err) != 0) { cli_err("%s", err.msg); return 1; }
+
+    char *frag = strndup(v, (size_t)(colon - v));
+    char *real = frag ? realpath(frag, NULL) : NULL;
+    const RxtSource *f = real ? pcrec_rxt_frag_by_real(src, real) : NULL;
+    if (!f) {
+        cli_err("--include-block: %s is not a file %s's include lines reach",
+                frag ? frag : v, st->files[0]);
+        free(frag); free(real);
+        return 1;
+    }
+    free(frag);
+    const RxtRow *r = NULL;
+    for (size_t i = 0; i < f->nrows && !r; i++)
+        if (f->rows[i].kind == RXT_DECL_PATTERN && f->rows[i].line == line)
+            r = &f->rows[i];
+    if (!r) {
+        cli_err("--include-block: %s:%lu is not a `pattern` line", f->path,
+                line);
+        free(real);
+        return 1;
+    }
+    /* The origin lives as long as the parse: copy it into its arena. */
+    const size_t rl = strlen(real) + 1;
+    char *origin = pcrec_arena_alloc(&src->arena, rl);
+    memcpy(origin, real, rl);
+    free(real);
+    st->pattern = r->value;
+    st->block_file = f->path;
+    st->block_line = r->line;
+    st->block_col = r->col;
+    st->block_esc = r->esc != NULL;
+    st->block_origin = origin;
+    st->block_reach = g;
+    st->nfiles = 0;
+    return 0;
+}
+
 /* Parses the command line via `cli_parse`, runs it (`cli_run`), and is the
  * ONE cleanup path: this CLI's heap allocations (`st.libdirs`, `st.callouts`,
  * `st.files`, the `--pattern-esc` arena) are released here once, after
@@ -2568,14 +2736,22 @@ int main(int argc, char **argv)
     CliState st;
     CliUnadmitted unadmitted = { NULL, NULL };
     Arena esc = { 0 };
+    RxtSource *block_src = NULL;
     int rc;
     memset(&st, 0, sizeof st);
     pcrec_default_options(&st.opt);
     if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0)
         rc = 1;
+    /* `--subst` and `--emit-support` refuse the option by its presence
+     * (MODE_ADMITS) in `cli_run`; resolving the block first would answer
+     * with its own operand diagnostic instead of the mode's. */
+    else if (st.include_block && !st.subst && !st.subst_file && !st.emit_support
+             && cli_include_block(&st, &block_src) != 0)
+        rc = 1;
     else
         rc = cli_run(st, &unadmitted, &esc);
     pcrec_arena_free(&esc);
+    pcrec_rxt_source_free(block_src);
     free(st.libdirs);
     free(st.callouts);
     for (int i = 0; i < st.ncode_headers; i++) {
@@ -2676,17 +2852,48 @@ static int cli_dispatch(CliState st)
             return 1;
         }
     }
-    opt.allow_code = st.allow_code;
+    /* The entry class decides the grant (F27): a mode that writes C takes
+     * the invoker's, a describe mode opens every language. */
+    opt.allow_code = cli_mode_class(modes) == CEC_DESCRIBE
+                   ? pcrec_code_describe_grant() : st.allow_code;
     /* A `--pattern`'s code segments name the command line in `#line`
-     * (inline_c.md §3.4); its column is the pattern's own. */
+     * (inline_c.md §3.4); its column is the pattern's own. An
+     * `--include-block` pattern names its fragment, and is judged against
+     * the lines that reach it (stage 3, §5.2). */
     const PcrecEmitIn pin = { .bound = PCREC_PB_UNSTATED,
                               .callout_decls = st.callouts,
                               .ncallout_decls = st.ncallouts,
-                              .code_file = "<command line>",
-                              .code_line = 1, .code_col = 1,
-                              .code_esc = st.pattern_esc != 0,
+                              .code_file = st.block_file ? st.block_file
+                                                         : "<command line>",
+                              .code_line = st.block_file ? st.block_line : 1,
+                              .code_col = st.block_file ? st.block_col : 1,
+                              .code_esc = st.block_file ? st.block_esc != 0
+                                                        : st.pattern_esc != 0,
                               .code_headers = st.code_headers,
-                              .ncode_headers = st.ncode_headers };
+                              .ncode_headers = st.ncode_headers,
+                              .code_reach = st.block_reach,
+                              .code_origin = st.block_origin };
+
+    /* [INLINE-C] stage 3 `--list-callouts FILE` (cli.md §2.15): the
+     * reviewer's view, one row per site of each target. It composes with
+     * no other mode, so it is answered first. */
+    if (st.list_callouts) {
+        if (modes & CLI_MODES_VS_LIST_CALLOUTS) {
+            cli_err("--list-callouts is a separate query; use one "
+                    "(it reads the .rxt file named by its own value)");
+            return 1;
+        }
+        if (pattern || outpath || st.include_block) {
+            cli_err("--list-callouts takes no pattern and no -o (it reads "
+                    "the file named by its own value)");
+            return 1;
+        }
+        CliState lc = st;
+        lc.files = &st.list_callouts;
+        lc.nfiles = 1;
+        lc.allow_code = opt.allow_code;
+        return compile_sources(&lc);
+    }
 
     /* [DD-13b.W1.2][REL-1.10] A FILE OPERAND VERSUS EVERY QUERY, CHECKED
      * HERE AND NOT AT THE COMPILE PATH. Each query mode below returns from
@@ -3240,7 +3447,7 @@ static int cli_dispatch(CliState st)
      * the plain entry's, unchanged. */
     PcrecEmitIn cin = pin;
     cin.harness = hopt;
-    if (st.ncallouts || st.allow_code || st.ncode_headers
+    if (st.ncallouts || st.allow_code || st.ncode_headers || st.block_origin
             ? pcrec_compile_in(pattern, &opt, &cin, &out, &err) != 0
 #ifdef PCREC_HARNESS
             : pcrec_harness_compile(pattern, &opt, hopt, &out, &err) != 0) {

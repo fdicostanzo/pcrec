@@ -1,9 +1,8 @@
-/* sha256.c -- one-shot SHA-256 (FIPS 180-4). See sha256.h. */
+/* sha256.c -- one-shot SHA-256 (FIPS 180-4), the tree's ONE implementation. See sha256.h. */
 #include "sha256.h"
 
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 static const uint32_t K[64] = {
     0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u,
@@ -57,7 +56,7 @@ static void sha256_block(uint32_t h[8], const unsigned char block[64])
     h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
 }
 
-void pcrec_analyze_sha256_hex(const unsigned char *data, size_t len, char out[65])
+void pcrec_sha256_hex(const unsigned char *data, size_t len, char out[65])
 {
     uint32_t h[8] = {
         0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,

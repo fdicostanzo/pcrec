@@ -1,0 +1,10 @@
+# tests/code/frag/pin1_entry.rxt — [INLINE-C] stage 3's corpus entry
+# (inline_c.md §5.2-§5.5): the harness compiles its fragments' blocks
+# through `pcrec --include-block` under this directory's grant, so pcrec
+# judges each fragment's code by the include lines that reach it. The
+# files are numbered in closure order (the rxtsource legs list blocks in
+# file-name order and run.sh in closure order: K132).
+include "pin2_ok.rxt" sha256 6CEC020A9E56EDED5D2B5CB255219A73C15D6C1C00D811DAF4BD56477D21511A
+
+pattern e(?C`c: return RX_PASS;`)f
+m "ef" 0 2

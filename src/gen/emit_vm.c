@@ -9021,12 +9021,36 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
         "        ptrdiff_t r;\n"
         "        %s_co_ctx.subject = subject;\n"
         "        %s_co_ctx.len = subject_length;\n"
-        "        %s_co_ctx.pos = scan_position;\n"
-        "        %s_co_ctx.ncap = %d;\n"
-        "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n"
-        "        %s_co_ctx.user = %s;\n",
-        v->p, v->p, v->p, v->p, v->p, v->p, v->ngroups + 1, v->p, v->p,
-        bind.user);
+        "        %s_co_ctx.pos = scan_position;\n",
+        v->p, v->p, v->p, v->p, v->p);
+    const int vn = a->u.callout.view_n;
+    if (vn == 0)
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.ncap = %d;\n"
+            "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n",
+            v->p, v->ngroups + 1, v->p);
+    else {
+        /* [INLINE-C] stage 3 THE DEFINITION-SITE VIEW (§1.9): the
+         * definition's groups in its own numbering, copied out of the
+         * caller's slots at the fire; slot 0 is the attempt start as in
+         * the caller's view. */
+        pcrec_sb_printf(b,
+            "        ptrdiff_t %s_co_view[%d][2];\n"
+            "        %s_co_view[0][0] = (ptrdiff_t)ctx->pos;\n"
+            "        %s_co_view[0][1] = slot_values[1];\n",
+            v->p, vn, v->p, v->p);
+        for (int k = 1; k < vn; k++)
+            pcrec_sb_printf(b,
+                "        %s_co_view[%d][0] = slot_values[%d];\n"
+                "        %s_co_view[%d][1] = slot_values[%d];\n",
+                v->p, k, 2 * a->u.callout.view_map[k],
+                v->p, k, 2 * a->u.callout.view_map[k] + 1);
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.ncap = %d;\n"
+            "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])%s_co_view;\n",
+            v->p, vn, v->p, v->p);
+    }
+    pcrec_sb_printf(b, "        %s_co_ctx.user = %s;\n", v->p, bind.user);
     if (cx->n_vars > 0)
         pcrec_sb_printf(b,
             "        %s_co_ctx.vars = ctx->vars;\n"

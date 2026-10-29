@@ -264,25 +264,68 @@ ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
     const size_t textlen = pcrec_callout_string_decode(code, codelen, sc.close,
                                                        text, &exact);
 
+    /* [INLINE-C] stage 3 THE REVIEWER'S VIEW (`--list-callouts`, §5.6)
+     * reads code BEFORE it is trusted: under `code_review` the two
+     * refusals below are recorded on the node for the listing to print,
+     * never raised. Nothing such a compile emits leaves it. */
+    const bool review = cx->emit_in && cx->emit_in->code_review;
     unsigned cp;
     size_t off;
     const char *what = code_find_refused(cx, at, text, textlen, &cp, &off);
     /* The longest `what` (the carriage return's) with six-digit offsets
      * leaves this sentence under pcrec_error.msg's 256 bytes; a longer
      * one is cut mid-word by pcrec_ext_msgf (the lone-CR refusal was). */
-    if (what)
+    if (what && review)
+        a->u.callout.flag = pcrec_sb_fragf(&cx->arena, "U+%04X %s at byte %zu",
+                                           cp, what, off);
+    else if (what)
         REFUSE(at, "the code segment at offset %zu contains U+%04X, %s, at "
                "byte %zu of the segment; the code a reviewer reads would "
                "differ from what gcc compiles", at,
                cp, what, off);
 
-    /* §5.4 row 3: REACHED code (a definition read from another file through
-     * a `lib` line) is refused until pins exist (stage 3). */
-    if (cx->code_def && cx->defs && cx->defs->file &&
-        cx->code_def->file != cx->defs->file->path)
-        REFUSE(at, "embedded code at %s:%zu is not allowed: code from "
-               "included files needs pinned include lines (not in this "
-               "build)", cx->code_def->file, cx->code_def->line);
+    /* §5.4 rows 2, 4 and 5 (stage 3): code is allowed when it is LOCAL
+     * (the target's own pattern, from the file or string the invoker
+     * named) or when every chain of `include`/`lib` lines from the local
+     * file to the file it was read from is pinned (each pin verified when
+     * the files were read, rxt_source.c). The location the source of the
+     * code: inside a definition, the definition's file; otherwise the emit
+     * input's origin (non-NULL only for a block reached by `include`). */
+    const RxtDef *def = cx->code_def;
+    const PcrecEmitIn *in = cx->emit_in;
+    const char *real = def ? def->file_real : in ? in->code_origin : NULL;
+    const RxtReach *g = def ? (cx->defs ? cx->defs->reach : NULL)
+                            : in ? in->code_reach : NULL;
+    a->u.callout.trust = "local";
+    if (real) {
+        const RxtReachEdge *e = g ? pcrec_rxt_reach_unpinned(g, real) : NULL;
+        if (!g)
+            REFUSE(at, "internal error: reached code with no reach graph");
+        a->u.callout.trust = "pinned";
+        a->u.callout.reach = g;
+        a->u.callout.reach_real = real;
+        if (e && review)
+            a->u.callout.trust = pcrec_sb_fragf(&cx->arena,
+                "refused: the %s line at %s:%zu carries no sha256 pin",
+                e->kind, e->from, e->line);
+        else if (e)
+            REFUSE(at, "embedded code at %s:%zu refused: the %s line at "
+                   "%s:%zu carries no sha256 pin",
+                   def ? def->file : in->code_file,
+                   def ? def->line : in->code_line, e->kind, e->from, e->line);
+    }
+
+    /* F38: the segment's own source, on the node. */
+    a->u.callout.src = cx->pat;          /* a definition's own, inside one */
+    a->u.callout.srclen = cx->patlen;
+    a->u.callout.file = def ? def->file : in ? in->code_file : NULL;
+    a->u.callout.line = def ? def->line : in ? in->code_line : 0;
+    a->u.callout.col = def ? def->col : in ? in->code_col : 0;
+    a->u.callout.esc = def ? def->esc != NULL : in && in->code_esc;
+    if (def && real && g && strcmp(real, g->root_real) != 0) {
+        a->u.callout.headers = def->code_headers;
+        a->u.callout.nheaders = def->ncode_headers;
+    }
 
     a->u.callout.text = text;
     a->u.callout.textlen = textlen;

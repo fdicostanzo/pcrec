@@ -4,8 +4,10 @@
 # witness).
 #
 #   pcrec_lib_srcs ROOT    prints every .c under ROOT/src and, when ROOT has
-#                          one, ROOT/memfn/src (the pcrec-memory-functions
-#                          kit libpcrec links since [MEMFN] R4a), LC_ALL=C
+#                          them, ROOT/memfn/src (the pcrec-memory-functions
+#                          kit libpcrec links since [MEMFN] R4a) and
+#                          ROOT/shared (the leaf sources libpcrec compiles
+#                          since [INLINE-C] stage 3: the one SHA-256), LC_ALL=C
 #                          sorted, one per line. Returns 1, naming ROOT, when
 #                          ROOT/src holds no source.
 #
@@ -30,6 +32,7 @@ pcrec_lib_srcs() {
     local root="$1" dirs list
     dirs=("$root/src")
     [ -d "$root/memfn/src" ] && dirs+=("$root/memfn/src")
+    [ -d "$root/shared" ] && dirs+=("$root/shared")
     list="$(find "${dirs[@]}" -name '*.c' 2>/dev/null | LC_ALL=C sort)"
     if ! printf '%s\n' "$list" | grep -q "^$root/src/"; then
         echo "lib_srcs: no library sources under $root/src" >&2

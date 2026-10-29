@@ -3833,15 +3833,30 @@ text; everything in this section holds for it.
 <a id="s11-1-p1"></a>[11.1¶1] A site may stand in the main sequence, in alternations, in capture and
 non-capture groups, in quantified groups, in atomic groups and in
 lookaheads. These are refused by name, never miscompiled: a site inside a
-lookbehind; a site inside a group that a subroutine call or recursion
-reaches (`(?1)`, `(?R)`, `(?&name)`, a `(?(DEFINE)` group, a `lib`
-definition). A callout itself is not quantifiable (`(?C1)?` is refused, as in
+lookbehind; a site inside a group of the pattern's own that a subroutine
+call or recursion reaches (`(?1)`, `(?R)`, `(?&name)`, a `(?(DEFINE)`
+group); a site inside a composed `.rxt` definition that reaches itself
+through calls. A site inside any other composed definition (a named block
+of the file or of a `lib` file, called by `(?&name)`) is admitted and sees
+the DEFINITION's groups (¶1b). A callout itself is not quantifiable (`(?C1)?` is refused, as in
 PCRE2); `(?:(?C1))*` is a group and is.
 
 <a id="s11-1-p1a"></a>[11.1¶1a] A `(?(DEFINE)` group is refused when a call reaches it. A group that
 no call reaches holds a site nothing can fire: it is admitted, `<PREFIX>_CALLOUTS`
 counts it (§6.3), and the artifact builds clean under `-Werror` in the self-contained
 and the split form alike.
+
+<a id="s11-1-p1b"></a>[11.1¶1b] **The definition-site view.** A site inside a composed definition
+fires with the view of that definition: `ctx->ncap` is the definition's
+group count plus one, `ctx->caps[k]` (`RX_CAP(k)` and its siblings) is the
+definition's own group `k` as the definition numbers it, `ctx->caps[0][0]`
+is the attempt start as at every site, and `RX_G_<name>` names the
+definition's groups by their numbers in that view (§11.9¶5). The caller's
+groups are not visible from inside a definition, and a definition with a
+site keeps all of its groups (no group of it is erased, §5.5), so the view
+is the same whoever calls it. A site is numbered once whatever the number of
+calls reaching it, and its firing class is the worst over them: a site
+reached by two calls is `repeated` (§11.8).
 
 <a id="s11-2"></a>
 ### 11.2 Bindings
@@ -4092,7 +4107,9 @@ file scope after the matcher: it can affect the translation unit's macros
 after it (a stamp's value included, for code that reads the stamp after
 `#include`-ing the `.c`), never the code above it, and `--emit-facts` lists
 none of it (`facts_listing.md` §4.2¶3). A `#line` directive before the text names
-the source as written (a FILE operand as typed; `--pattern` text as
+the source as written (a FILE operand as typed; a definition's own file,
+as the closure resolved it, for a site in a composed definition; the
+fragment for an `--include-block` pattern; `--pattern` text as
 `<command line>`; a library pattern as `<pattern>`) and the line of the
 segment's first byte, and the first line is padded to its column when the
 text maps one-to-one onto its source line (no undone delimiter doubling, and
@@ -4134,7 +4151,10 @@ macros are convenience, not a wall.
 user's headers: each is written `#include` AS WRITTEN, in the order written, a
 repeated text once, after the matcher and before the first segment, and only
 in the `.c` (a program that only calls the matcher never needs them). pcrec
-never opens, resolves or reads the named file.
+never opens, resolves or reads the named file. A `lib` file's own
+`code-header` lines are emitted when one of its definitions contributes a
+segment, after the target file's, under a `#line` naming the `lib` file; a
+`lib` file that contributes no segment contributes no header.
 
 <a id="s11-9-p8"></a>[11.9¶8] **The grant.** Embedded code compiles only when the invoker grants its
 language: `--allow-code=c` on the command line or `pcrec_options.allow_code`
@@ -4142,12 +4162,18 @@ language: `--allow-code=c` on the command line or `pcrec_options.allow_code`
 included, and a `features` text naming it is refused wherever it arrives
 from, as is a config's `pcrec` line carrying `--allow-code`. Without the
 grant every segment is refused by name and no artifact is written, and a
-`code-header` line is refused like a segment. Code in a definition read from
-another file (through `lib` or `include`) is refused even with the grant:
-only the file named on the command line, `--pattern` text and a library
-caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
-`--count-groups`) parse code whatever the grant says (unset, empty or a
-list) and write no C. The stamp
+`code-header` line is refused like a segment. The file named on the
+command line, `--pattern` text and a library caller's pattern are LOCAL.
+Code read from another file is REACHED (a definition read through `lib`, a
+block read through `include` and compiled with `cli.md` §1.23's
+`--include-block`): it compiles only when every chain of `include`/`lib`
+lines from the local file to its file is pinned on every line
+(`rxt_format.md` §1.1.1), and is refused otherwise, even with the grant,
+naming the code's file and line and the first unpinned line of the first
+failing chain. The describe modes (`--emit-ir`, `--emit-facts`,
+`--count-groups`, `--list-callouts`) parse code whatever the grant says
+(unset, empty or a list) and write no C; `--list-callouts` reports the
+verdict a compile would give instead of refusing (`cli.md` §2.15). The stamp
 `<PREFIX>_CODE_LANGS` discloses the languages present (§6.3).
 
 <a id="s11-9-p8a"></a>[11.9¶8a] **Corners of the grant.** The describe modes apply ¶3's refusals and
@@ -4155,12 +4181,10 @@ refuse an unknown language in `--allow-code` (`py`) like a compile does; they
 only differ in writing no C. A language name is matched exactly: `c` is the
 language, `C` is unknown, and a repeated language (`--allow-code=c,c`) is the
 grant once. A granted artifact with a `code-header` line and no segment still
-emits each header, after the matcher, with no macro set before it. The LOCAL
-rule of ¶8 is not observable today for a definition: a site in a definition is
-refused by §11.1¶1 whether the definition is local or read from another file,
-and an `include`d fragment's block is no definition a target can name, so no
-local definition holding code compiles to show the difference from a `lib`
-one. The rule is the contract for the day §11.1 admits a reached site.
+emits each header, after the matcher, with no macro set before it. A
+definition in the file named on the command line is LOCAL: its code
+compiles under the grant with no pin, where the same definition read
+through an unpinned `lib` line is refused.
 
 <a id="s11-10"></a>
 ### 11.10 The span helpers

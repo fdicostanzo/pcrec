@@ -209,6 +209,9 @@ typedef struct {
     const char *lang;     /* a registered language tag: "c" */
     const char *header;   /* "octet.h" or <stdint.h>, quotes kept */
     size_t      line;     /* the `code-header` line; 0: none */
+    /* [INLINE-C] stage 3 the file whose head writes the line, for its
+     * `#line`; NULL: the emit input's `code_file` (the target's own). */
+    const char *file;
 } PcrecCodeHeader;
 
 typedef struct {
@@ -270,6 +273,20 @@ typedef struct {
     size_t                  code_line;
     size_t                  code_col;
     bool                    code_esc;
+    /* [INLINE-C] stage 3 WHETHER THE PATTERN'S CODE IS LOCAL (inline_c.md
+     * §5.2, §5.4): `code_origin` NULL means the pattern is the invoker's own
+     * (a FILE operand's target, `--pattern`, a library caller's string);
+     * otherwise it is the REAL path of the file the pattern was reached in
+     * (`--include-block`), judged against `code_reach`, the graph of the
+     * lines that reach it from the local file. */
+    const struct RxtReach  *code_reach;
+    const char             *code_origin;
+    /* [INLINE-C] stage 3 a REVIEW compile (`--list-callouts`, §5.6): the
+     * code port records a segment's refused character and its trust
+     * verdict on the node instead of refusing, so a reviewer reads code
+     * before trusting it. Set by the listing entry alone; its C is
+     * discarded. */
+    bool                    code_review;
     /* [INLINE-C] stage 2 the `code-header` lines (NULL/0: none), emitted
      * after the matcher in the order written, a repeated text once. */
     const PcrecCodeHeader  *code_headers;
@@ -1318,6 +1335,15 @@ typedef struct {
     bool        is_extern;
 } PcrecCalloutBinding;
 
+/* [INLINE-C] stage 3 one composed definition's wrapper, as the sites pass
+ * reads it (Ctx.defwraps). */
+typedef struct PcrecDefWrap {
+    int                  no;
+    struct Ast          *body;
+    const struct RxtDef *def;
+    int                  ncallouts;
+} PcrecDefWrap;
+
 /* [INLINE-C] stage 1b a site's FIRING CLASS (inline_c.md §1.10): how many
  * times it can fire within one attempt, derived from structure alone. The
  * ordinal is the table's row order and the listing token is
@@ -2136,6 +2162,47 @@ struct Ast {
             int         seg;
             size_t      code_at;
             bool        code_exact;
+            /* [INLINE-C] stage 3 (review 2026-10-27-r1-ic2 F38) WHERE THE
+             * SEGMENT'S TEXT LIVES, carried on the node rather than read
+             * off the target: `src`/`srclen` the pattern text `code_at`
+             * indexes (a definition's own, inside a definition), and
+             * `file`/`line`/`col`/`esc` that text's source as
+             * PcrecEmitIn's `code_*` fields describe the target's.
+             * `headers`/`nheaders` the `code-header` lines of a REACHED
+             * file the segment came from (NULL/0: the target's own, in the
+             * emit input), and `chain` the reach graph's edges that bring
+             * the file in (the reviewer's provenance, §5.6). */
+            const char *src;
+            size_t      srclen;
+            const char *file;
+            size_t      line;
+            size_t      col;
+            bool        esc;
+            const PcrecCodeHeader *headers;
+            int         nheaders;
+            /* [INLINE-C] stage 3 THE DEFINITION-SITE VIEW (inline_c.md
+             * §1.9): a site inside a composed definition sees the
+             * DEFINITION's groups, numbered as the definition numbers
+             * them. `view_n` is that view's `ncap` (the definition's group
+             * count plus one) and `view_map[k]` the caller-space group
+             * number of the definition's group k (`view_map[0]` 0); 0
+             * `view_n` is the caller's own view. `view_names` the
+             * definition's named groups, numbers in the definition's own
+             * space, for its `RX_G_<name>` macros. Written by the composer
+             * once the definition's numbers are assigned. */
+            int         view_n;
+            const int  *view_map;
+            const struct NamedGroup *view_names;
+            /* [INLINE-C] stage 3 the reviewer's view (§5.6), written by
+             * the code port: `trust` "local", "pinned" or the refusal a
+             * build would raise (a `code_review` compile records it
+             * instead), `flag` a refused character the same way (NULL:
+             * none), and the reach graph and file a reached segment's
+             * provenance chain is read from (NULL: local). */
+            const char *trust;
+            const char *flag;
+            const struct RxtReach *reach;
+            const char *reach_real;
         } callout;
     } u;
 };
@@ -4202,6 +4269,12 @@ struct Ctx {
      * definition read from another file is REACHED code (inline_c.md §5.2,
      * §5.4 row 3) and is refused before pins. */
     const struct RxtDef *code_def;
+    /* [INLINE-C] stage 3 the composed definitions' WRAPPERS (group `no`,
+     * the body under it, the definition, its callout-site count), written
+     * by the composer: the sites pass visits a definition's sites through
+     * the calls that reach it (inline_c.md §1.9). */
+    const struct PcrecDefWrap *defwraps;
+    int                  ndefwraps;
     Job                 *job;
 };
 
@@ -5760,6 +5833,11 @@ const char          *pcrec_code_header_check(const char *lang, const char *hdr);
  * the span helpers (in every callout artifact's surface), each segment's
  * prototype and file-local binding (before the VM function), and the
  * segment block (LAST in the `.c`). */
+/* [INLINE-C] stage 3 a code segment's source position (its file, line
+ * and, when its bytes map one to one onto the line, column; 0 otherwise):
+ * the `#line` the artifact writes and the `--list-callouts` source column,
+ * one computation (src/gen/emit_code.c). */
+const char *pcrec_code_source_pos(const Ast *a, size_t *line, size_t *col);
 void pcrec_emit_span_helpers(StrBuf *sb);
 void pcrec_emit_code_protos(Ctx *cx, StrBuf *c);
 void pcrec_emit_code_block(Ctx *cx, StrBuf *c);
@@ -6764,6 +6842,16 @@ typedef struct {
     /* [MEASURE-SET] M0: a CONFIG row's own `measures <set>` (AT_MOST_ONE),
      * or NULL; composed exactly as `analysis` is. */
     const char *measures;
+    /* [INLINE-C] stage 3 an `include`/`lib` row's PIN (inline_c.md §5.3):
+     * `pin` the `sha256 <hex64>` value as written (either case), or NULL
+     * for an unpinned line; `written` the whole value as written, path and
+     * pin, which is what `--list-source` reports (the row's `value` stays
+     * the path the resolver reads). `digest` is an `include` row's
+     * fragment's SHA-256 over the bytes its parse read (the reach graph's
+     * edge; NULL when the fragment was not read: a cycle). */
+    const char *pin;
+    const char *written;
+    const char *digest;
 } RxtRow;
 
 /* [DD-13b.W23.4] THE FOUR `#section` RECORD TYPES (format_design §2.24).
@@ -6913,6 +7001,16 @@ struct RxtSource {
      * of them. Freed recursively by `pcrec_rxt_source_free`. */
     RxtSource **kids;
     size_t      nkids, kidcap;
+    /* [INLINE-C] stage 3 the `include` fragments this parse READ (one
+     * `RxtSource` per `include` row that was read, owned here and freed
+     * with this source), so a fragment's blocks, its digest and its own
+     * `include` rows all come from the one read whose digest the pin is
+     * checked against (inline_c.md §5.5: one read). */
+    RxtSource **frags;
+    size_t      nfrags, fragcap;
+    /* [INLINE-C] stage 3 SHA-256 of this file's bytes exactly as the parse
+     * read them, 64 lowercase hex digits; "" in buffer mode. */
+    char        sha256[65];
     Arena       arena;
 };
 
@@ -6983,15 +7081,76 @@ typedef struct RxtDef {
     const char        *exports;
     const char        *file;      /* the file this block was read from      */
     size_t             line;      /* its `pattern` line in that file        */
+    /* [INLINE-C] stage 3 for a code segment's `#line` (F38: a definition's
+     * segment names its OWN source, never the target's): the pattern's
+     * column (RxtRow.col) and its `pattern-esc` marker (RxtRow.esc). */
+    size_t             col;
+    const char        *esc;
+    /* [INLINE-C] stage 3 the reach graph's key for `file` (its real path),
+     * and the `code-header` lines of `file`'s head (inline_c.md §3.3: a
+     * file that contributes a code segment contributes its headers). */
+    const char        *file_real;
+    const PcrecCodeHeader *code_headers;
+    int                ncode_headers;
 } RxtDef;
 
 /* The closure: this file's named blocks, then each `lib` file's,
  * transitively, in `lib` declaration order, deduplicated BY RESOLVED PATH
  * so a diamond is read once and a cycle terminates. Arena-owned by the
  * `RxtSource` that produced it. */
+/* [INLINE-C] stage 3 THE REACH GRAPH (inline_c.md §5.4, §5.5): one edge
+ * per `include`/`lib` line read for a build, from the file that writes the
+ * line to the file it reaches. Nodes are REAL paths (`from_real`/`to_real`),
+ * so two spellings of one file are one node and a file reached by two
+ * chains is one node with two incoming edges (T7); `from` is the writing
+ * file's path as read and `to` the line's path reference AS WRITTEN, for
+ * diagnostics. `digest` is SHA-256 of the
+ * bytes the read of `to` that this edge's parse made, the value the pin is
+ * checked against. The root is the LOCAL file. */
+typedef struct {
+    const char *from, *from_real;
+    size_t      line;
+    const char *kind;        /* "include" | "lib" */
+    const char *pin;         /* as written, or NULL: an unpinned line */
+    const char *to, *to_real;
+    const char *digest;      /* NULL: the target was not read (a cycle) */
+} RxtReachEdge;
+
+typedef struct RxtReach {
+    const char   *root_real;
+    RxtReachEdge *e;
+    size_t        n, cap;
+} RxtReach;
+
+/* The include half of `src`'s reach graph, from the fragments its parse
+ * read (arena-owned by `src`); the resolver adds the `lib` half. */
+RxtReach *pcrec_rxt_reach_includes(RxtSource *src);
+/* Every pinned edge's pin against its digest (case-insensitively): 0, or
+ * -1 with `err` naming the file, both digests and the line. */
+int pcrec_rxt_reach_verify(const RxtReach *g, pcrec_error *err);
+/* §5.4 row 4 and T7's every-chain rule: NULL when every chain from the
+ * root to the node `real` is pinned on every line (the root itself
+ * included), else the first unpinned line of the first failing chain, in
+ * declaration order. */
+const RxtReachEdge *pcrec_rxt_reach_unpinned(const RxtReach *g,
+                                             const char *real);
+/* A chain of lines from the root to `real` into `path` (at most `max`
+ * edges), root first: the first chain holding an unpinned line when one
+ * exists (the one a build refuses), else the first chain. Returns its
+ * length; 0 for the root itself. */
+size_t pcrec_rxt_reach_chain(const RxtReach *g, const char *real,
+                             const RxtReachEdge **path, size_t max);
+/* The fragment `real` among the sources `src`'s parse read, or NULL. */
+const RxtSource *pcrec_rxt_frag_by_real(const RxtSource *src,
+                                        const char *real);
+
 typedef struct RxtDefs {
     const RxtDef *v;
     size_t        n;
+    /* [INLINE-C] stage 3 the closure's reach graph (includes and libs),
+     * verified at resolve: what the code port asks whether a definition's
+     * file is reached through pins only. */
+    const RxtReach *reach;
     /* [FINDINGS] B2: the FILE this closure is rooted at — stop S1 of every
      * analysis chain its targets resolve (design §4.1: the compiling file
      * itself, never its `lib` closure). A property of the file for the same
@@ -8867,6 +9026,16 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/
+
+/* src/dump/callouts_dump.c — [INLINE-C] stage 3 `--list-callouts` (the
+ * reviewer's view, inline_c.md §5.6): the listing's header, and one target's
+ * rows, from a DESCRIBE + REVIEW compile of `pattern` under `defs` (its C
+ * discarded). `target` fills the first column. malloc'd, caller frees; NULL
+ * with `err` filled when the compile refuses. */
+const char *pcrec_list_callouts_header(void);
+char *pcrec_list_callouts(const char *pattern, const pcrec_options *opt,
+                          const RxtDefs *defs, const PcrecEmitIn *in,
+                          const char *target, pcrec_error *err);
 
 /* src/dump/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

@@ -72,6 +72,8 @@ VALUES = {
     '--list-schema': (['--list-schema'], 'query'), '--explain': (['--explain', 'a'], 'query'),
     '--flavour': (['--flavour', 'pcre2'], 'query'), '--count-groups': (['--count-groups'], 'query'),
     '--list-source': (['--list-source', 'x.rxt'], 'query'),
+    '--list-callouts': (['--list-callouts', 'x.rxt'], 'query'),
+    '--include-block': (['--include-block', 'x.rxt:1'], 'query'),
     '--probe-ask': (['--probe-ask', 'result', 'a'], 'query'),
 }
 # The positive control's pattern arguments where `--pattern a` alone is not

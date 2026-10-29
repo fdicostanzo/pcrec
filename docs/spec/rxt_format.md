@@ -5,6 +5,7 @@
 
 - [§1](#s1) The `.rxt` format
   - [§1.1](#s1-1) The head
+    - [§1.1.1](#s1-1-1) The `sha256` pin on `include` and `lib`
   - [§1.2](#s1-2) The delivering call
   - [§1.3](#s1-3) Building from a source file
   - [§1.4](#s1-4) Lexical rules — the file's shape, in TWO LAYERS
@@ -89,11 +90,11 @@ table — which restates them for a reader, and says what each MEANS:
 
 | declaration | means |
 |---|---|
-| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. The `"path"` form is RESOLVED (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name, when a target is built, if it names no readable file; its CONTENTS ARE READ at that point (§1.3): the library's named definitions — and nothing else, not its configs, targets or cases — join the lookup a pattern's call resolves against (§1.2). `--list-source` reads only this file's own bytes. `<store-name>` is refused as NOT IN THIS BUILD |
+| `lib "path" [sha256 <hex64>]` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. The `"path"` form is RESOLVED (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name, when a target is built, if it names no readable file; its CONTENTS ARE READ at that point (§1.3): the library's named definitions — and nothing else, not its configs, targets or cases — join the lookup a pattern's call resolves against (§1.2), and its `code-header` lines go with any code segment one of its definitions contributes. The optional PIN (§1.1.1) states the file's SHA-256. `--list-source` reads only this file's own bytes. `<store-name>` is refused as NOT IN THIS BUILD |
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under (§1.3). The prefix may be OMITTED (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments stay operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
-| `include "path"` | a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings. UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes". A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error (value-shape and schema-constraint respectively). `pcrec` also READS each fragment (and its own fragments, at any depth), and a fragment holds pattern blocks and `include` lines ONLY — any other file-level line in it (`analysis`, `description`, `lib`, `config`, …) is a schema-constraint parse error of the ENTRY, naming the fragment's own `file:line`. Only that refusal reaches the entry: a fragment broken for any other reason (a malformed line, a cycle, a repeated target) is still the harness's `[resolution]` class (§4), so the entry's own body still runs. Repeatable |
+| `include "path" [sha256 <hex64>]` | a `.rxt` fragment this file draws blocks from; the optional PIN is §1.1.1's. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings. UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes". A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error (value-shape and schema-constraint respectively). `pcrec` also READS each fragment (and its own fragments, at any depth), and a fragment holds pattern blocks and `include` lines ONLY — any other file-level line in it (`analysis`, `description`, `lib`, `config`, …) is a schema-constraint parse error of the ENTRY, naming the fragment's own `file:line`. Only that refusal reaches the entry: a fragment broken for any other reason (a malformed line, a cycle, a repeated target) is still the harness's `[resolution]` class (§4), so the entry's own body still runs. Repeatable |
 | `vocabulary <key> <v1> <v2> …` | declares a CLOSED SET named `<key>`, whose members are the remaining words. It is how a FILE declares the members of a schema `closed` constraint whose row names no members (§1.13.1); the keys it can close are `tag`'s own keys, `under`'s convention and `variant`'s `kind`. The key is an identifier; a set with no members is refused by name, because a closed set nothing satisfies can only ever refuse. **One line per key**: a second `vocabulary` for a key already declared is refused, naming the earlier line. Its value may use the block-scalar continuation form (`vocabulary <key> \|` with the members on indented lines) |
 | `oracle <engine-ref>[/<version>]` | the file-level default oracle (§3.1). **At most ONE per file** |
 | `tag <item>{, <item>}` | file-level classification. Each item is a bare LABEL or a `key=value`, and neither half may carry whitespace. Repeatable |
@@ -137,6 +138,15 @@ row — a withdrawn production, `config … testee` — refuses as an unknown
 token in its scope.
 
 <a id="s1-1-p4"></a>[1.1¶4] **`version` is the one word that is neither**, and §1.13 states it.
+
+<a id="s1-1-1"></a>
+#### 1.1.1 The `sha256` pin on `include` and `lib`
+
+<a id="s1-1-1-p1"></a>[1.1.1¶1] An `include "path"` or `lib "path"` line may end in `sha256 <hex64>`, §1.6¶7's spelling and case rule: the keyword, whitespace, then exactly 64 hexadecimal digits in either case, compared case-insensitively (`lib "net.rxt" sha256 9e37…`). It states the SHA-256 of the named file's bytes. Anything else after the path is refused by value shape. `--list-source` reports the line's value AS WRITTEN, pin included, and verifies nothing.
+
+<a id="s1-1-1-p2"></a>[1.1.1¶2] A pin is verified whenever the file is read for a build (a file-operand compile, `--list-callouts`, `--include-block`), whether or not the file holds code and whether or not `--allow-code` is given: the digest is computed over the same bytes the reader parses, and a mismatch refuses the build, naming the line, the path as written and the digest the file has (`lib "net.rxt": sha256 pin mismatch, the file hashes to <h>; re-inspect it, then update the pin`).
+
+<a id="s1-1-1-p3"></a>[1.1.1¶3] What a pin buys is trust for REACHED code (`match_api.md` §11.9): embedded code in a file this file reaches through `include`/`lib` lines compiles only when EVERY chain of such lines from the local file to it, through any number of files, carries a pin on every line. A file reached by two chains, one of them unpinned, is refused whichever line comes first; the refusal names the first unpinned line of the first failing chain. A reached file with patterns and no code needs no pin.
 
 <a id="s1-2"></a>
 ### 1.2 The delivering call
@@ -805,9 +815,12 @@ none, exactly as their quoted forms do.
   additionally refuses — rather than silently passing — when no sha256
   tool is available at all, because a digest nobody computed must not
   read as a digest that matched. **`pcrec` checks neither the hash nor
-  the 64-digit syntax**: `--list-source` performs no file I/O and reads a
-  case line without parsing it (`--list-schema`'s `#section surface` row
-  `subject-content` is where that non-coverage is declared).
+  the 64-digit syntax of a CASE line's `@file` pin**: `--list-source`
+  performs no file I/O and reads a case line without parsing it
+  (`--list-schema`'s `#section surface` row `subject-content` is where that
+  non-coverage is declared). The same spelling on a head `include`/`lib`
+  line is a different reader's: pcrec reads those files, so pcrec checks
+  their pins (§1.1.1).
 
 <a id="s1-7"></a>
 ### 1.7 `mc` — the find-all count
@@ -1804,7 +1817,7 @@ directive per line, `#` comments and blank lines skipped:
 | line | meaning |
 |---|---|
 | `link FILE` | compile `FILE` (a file name beside the manifest: no `/`) and link it into every driver built for the directory's `.rxt` files |
-| `allow-code LANGS` | compile the blocks of the directory's ENTRY files (the `.rxt` files it runs, never a fragment one of them `include`s) with `--allow-code=LANGS` (`cli.md` §1.22). A fragment's block is compiled without it, so code in an included file is refused under the harness exactly as pcrec refuses it, and the harness never asserts where code came from. At most one per manifest (a second is a harness failure, ¶4). The line is the suite invoker's grant, as `--allow-code` is a person's: only `tests/code/harness.manifest` and `tests/code/frag/harness.manifest` carry it, and `make test-code` fails when any other manifest under `tests/` does |
+| `allow-code LANGS` | compile the blocks of the directory's ENTRY files (the `.rxt` files it runs) with `--allow-code=LANGS` (`cli.md` §1.22). A block of a fragment an entry `include`s is never compiled as a local pattern under it: the harness compiles it as `pcrec --allow-code=LANGS --include-block FRAGMENT:LINE ENTRY` (`cli.md` §1.23), so pcrec judges the fragment's code by the include lines that reach it (pinned: compiled; unpinned: refused, §1.1.1), and the harness never asserts where code came from. At most one per manifest (a second is a harness failure, ¶4). The line is the suite invoker's grant, as `--allow-code` is a person's: only `tests/code/harness.manifest` and `tests/code/frag/harness.manifest` carry it, and `make test-code` fails when any other manifest under `tests/` does |
 
 <a id="s6-p3a"></a>[6¶3a] The harness passes each `code-header` line of the file it is running to
 every block's compile as `--code-header <lang>:<header>`, and compiles each
