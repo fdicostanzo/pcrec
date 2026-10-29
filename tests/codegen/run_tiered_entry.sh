@@ -351,7 +351,9 @@ fi
 # never escalates". OBSERVED: `FAIL: §3(b): 2 of 6 depths escalated when they
 # should not have, or did not when they should: n=9 esc=0 predicted=1; n=342
 # esc=0 predicted=1`. Meanwhile §3(a) passed on all 6 depths — every ANSWER,
-# the n=342 one included, stayed correct. That is the measured proof that an
+# the n=342 one included, stayed correct. (n=342 was the default's last
+# matching depth then; K134's compaction moved it to 763, docs/spec/limits.md
+# §4, and the depths below are bisected, not fixed.) That is the measured proof that an
 # answers-only check for this change goes green on a build where the
 # optimization is absent, which is why this section counts escalations.
 echo
