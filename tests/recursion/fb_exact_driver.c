@@ -14,7 +14,7 @@
  *
  * SO THIS DRIVER REMOVES THE SLACK. For each nesting depth n it allocates
  * EXACTLY the capacity this specimen needs — 2 resume frames per level
- * (`docs/design/frame_buffer_design.md` §4) and 6n - 3 trail entries, the
+ * (`docs/design/frame_buffer_design.md` §4) and 4n + 17 trail entries, the
  * trail compaction's own boundary (below) — and runs three arms:
  *
  *   exact             must MATCH. Every byte of both regions is in use and
@@ -47,17 +47,22 @@
 #include "gen.h"
 
 /* MEASURED (design §4), on this specimen: 2 resume frames per nesting level.
- * THE TRAIL IS THE COMPACTION'S BOUNDARY, not a per-level ratio (K134, lane
- * trailgc). A depth-n walk writes about 9 trail entries per level, but a
- * compaction keeps L(n) = 3n - 2 of them (the oldest per slot between live
- * frames) and succeeds only if that leaves MORE than half the trail free,
- * 2L < ntrail. So n needs exactly 2L + 1 = 6n - 3 entries: measured exact at
- * every n tried (100, 342, 343, 512, 513, 1000, and 699,051 in a 64 MB
- * region), and the `trail_short` arm below is the hysteresis test's own
- * off-by-one. The `one-short` arms subtract from whatever this computes, so
- * they stay exactly one below sufficient. */
+ * THE TRAIL IS THE COMPACTION'S BOUNDARY, not a per-level ratio (K134, lanes
+ * trailgc and trailgc2). A depth-n walk writes about 9 trail entries per
+ * level, but a compaction (run at checkpoints) keeps L(n) = 3n - 2 of them
+ * (the oldest per slot between live frames) and succeeds only if the kept
+ * entries plus a quarter of the trail still fit under the capacity T less
+ * the artifact's margin: L + T/4 <= T - 15 (integer division; 15 is this
+ * artifact's count of trail-write sites). So n needs exactly
+ * T = 4n + 17 entries, valid for n >= 7 (below that the boundary is smaller
+ * and irregular: n = 1..6 need 3, 10, 19, 27, 35, 39), so every depth this
+ * driver or its runner uses must be >= 7. Measured exact at every n tried
+ * (7..16, 20, 50, 100, 342, 512, 513, 763, 764, 1000, 5000), and the
+ * `trail_short` arm below is the compaction test's own off-by-one. The
+ * `one-short` arms subtract from whatever this computes, so they stay
+ * exactly one below sufficient. */
 static size_t frames_for(size_t n) { return 2 * n; }
-static size_t trail_for (size_t n) { return 6 * n - 3; }
+static size_t trail_for (size_t n) { return 4 * n + 17; }  /* n >= 7 */
 
 static int run_at(size_t n, size_t nframes, size_t ntrail)
 {
@@ -79,7 +84,7 @@ static int run_at(size_t n, size_t nframes, size_t ntrail)
 
 int main(int argc, char **argv)
 {
-    static const size_t default_n[] = { 510, 511, 512, 513, 514 };
+    static const size_t default_n[] = { 761, 762, 763, 764, 765 };
     const size_t *ns = default_n;
     size_t nn = sizeof default_n / sizeof default_n[0];
     size_t *parsed = NULL, i;

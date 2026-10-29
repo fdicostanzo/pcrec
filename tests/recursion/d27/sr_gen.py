@@ -1116,14 +1116,16 @@ F_INTER.append(B(
 #   cell and run it to learn whether it gives up, never to derive a match
 #   expectation"). Every match expectation here is still libpcre2's.
 # ===========================================================================
-CEIL_OK = 512      # ^(a(?1)?b)$ still MATCHES at this n (1024-byte subject)
-CEIL_GU = 513      # …and gives up at this one (1026-byte subject; K134's
-                   # trail compaction moved both from 342/343)
+CEIL_OK = 763      # ^(a(?1)?b)$ still MATCHES at this n (1526-byte subject)
+CEIL_GU = 764      # …and gives up at this one (1528-byte subject; K134's
+                   # trail compaction moved both from 342/343, to 512/513
+                   # and then, with checkpoint compaction and the quarter-
+                   # room rule (4n + 17 trail entries), to 763/764)
 F_DEPTH = []
 
 F_DEPTH.append(B(
     "^(a(?1)?b)$", [R],
-    "extract 5's named ceiling shape, BELOW the ceiling. n=512 is the "
+    "extract 5's named ceiling shape, BELOW the ceiling. n=763 is the "
     "largest depth that still answers; n=300 is the same fact with "
     "margin. MEASURED on the compiler as an existence question; the spans "
     "are libpcre2's.",

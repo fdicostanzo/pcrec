@@ -158,8 +158,8 @@ spread_row() {
     fi
 }
 
-# The give-up subject: a^513 b^513, one past the stamped default's reach.
-giveup_subject="$(python3 -c "print('a'*513 + 'b'*513)")"
+# The give-up subject: a^764 b^764, one past the stamped default's reach.
+giveup_subject="$(python3 -c "print('a'*764 + 'b'*764)")"
 
 #           label                pattern              flags                    subject
 spread_row 'plain-match'      'a(b|c)+d'            ''                        'abcd'
@@ -240,7 +240,7 @@ if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion 
 elif ! $CC $GENCFLAGS -I"$d" -o "$d/fb" "$SCRIPT_DIR/fb_mmap_driver.c" "$d/gen.c" >"$d/cc.log" 2>&1; then
     bad "[DD-14.FB §3/§10.6] could not build fb_mmap_driver.c: $(head -5 "$d/cc.log" | tr '\n' ' ')"
 else
-    out="$("$TIMEOUT_BIN" 300 "$d/fb" 512 400000 699000 699100 2>&1)"; rc=$?
+    out="$("$TIMEOUT_BIN" 300 "$d/fb" 763 400000 838860 838861 2>&1)"; rc=$?
     if [ "$rc" -eq 2 ]; then
         info "[DD-14.FB §3/§10.6] SKIPPED LOUDLY: this machine would not give a 2 x 64 MB MAP_NORESERVE reservation ($out). Nothing about the worked example is claimed by this run"
     elif [ "$rc" -ne 0 ]; then
@@ -306,30 +306,35 @@ else
 
         # (d) THE CEILING IS PREDICTABLE, which is the property that lets a
         #     caller SIZE a reservation instead of guessing at one. Since
-        #     K134's trail compaction the trail binds at (ntrail + 3) / 6
-        #     levels (fb_exact_driver.c's 6n - 3), 699,051 for 64 MB.
-        r699a="$(printf '%s\n' "$out" | awk '$1=="row" && $2==699000 {print $4}')"
-        r699b="$(printf '%s\n' "$out" | awk '$1=="row" && $2==699100 {print $4}')"
+        #     K134's trail compaction (checkpoints, quarter-room rule: a
+        #     depth-n walk needs 4n + 17 trail entries, fb_exact_driver.c)
+        #     the ceiling is min(nframes / 2, (ntrail - 17) / 4) levels. For
+        #     64 MB the FRAMES bind first: 838,860 levels (the trail alone
+        #     would allow 1,048,571).
+        pred_f=$((r_frames / 2)); pred_t=$(((r_trail - 17) / 4))
+        pred=$((pred_f < pred_t ? pred_f : pred_t))
+        r699a="$(printf '%s\n' "$out" | awk -v n="$pred" '$1=="row" && $2==n {print $4}')"
+        r699b="$(printf '%s\n' "$out" | awk -v n="$((pred + 1))" '$1=="row" && $2==n {print $4}')"
         if [ "$r699a" = "1" ] && [ "$r699b" = "-3" ]; then
-            ok "[DD-14.FB §3/§10.6] the ceiling sits between n=699,000 and n=699,100, which is where (ntrail + 3) / 6 predicts it ($(((r_trail + 3) / 6)) levels) — a caller CAN size a reservation from the emitted numbers"
+            ok "[DD-14.FB §3/§10.6] the ceiling sits exactly at n=$pred (match) / n=$((pred + 1)) (give-up), which is where min(nframes / 2, (ntrail - 17) / 4) predicts it ($pred_f from frames, $pred_t from the trail: the $([ "$pred" = "$pred_f" ] && echo frames || echo trail) bind) — a caller CAN size a reservation from the emitted numbers"
         else
-            bad "[DD-14.FB §3/§10.6] the ceiling moved: n=699,000 gives $r699a (want 1) and n=699,100 gives $r699b (want -3). The trail-per-level rule the spec's sizing advice rests on has changed"
+            bad "[DD-14.FB §3/§10.6] the ceiling moved: n=$pred gives $r699a (want 1) and n=$((pred + 1)) gives $r699b (want -3), with min(nframes / 2, (ntrail - 17) / 4) = $pred. Either the capacity rule the spec's sizing advice rests on has changed, or the driver's row list (fb_mmap_driver.c / the call above) no longer covers the predicted pair"
         fi
 
         # (e) THE FIRST ROW IS THE DEFAULT'S OWN LARGEST MATCH. §10.6 says the
-        #     un-suffixed entry matches the 1,024 B row and refuses the larger
-        #     ones; §10.1 says 1,024 B is the largest subject it MATCHES.
-        null512="$(printf '%s\n' "$out" | awk '$1=="row" && $2==512 {print $7}')"
-        if [ "$null512" = "1" ]; then
-            ok "[DD-14.FB §10.1/§10.6] the 1,024-byte row's un-suffixed control MATCHES, as §10.1's boundary (matches at 1,024 B, refuses at 1,026 B) says"
-        elif [ "$null512" = "-3" ]; then
-            bad "[DD-14.FB] the 1,024-byte subject no longer matches through <prefix>_search. §10.1's measured give-up boundary (matches at 1,024 B, refuses at 1,026 B) has moved"
+        #     un-suffixed entry matches the 1,526 B row and refuses the larger
+        #     ones; §10.1 says 1,526 B is the largest subject it MATCHES.
+        null763="$(printf '%s\n' "$out" | awk '$1=="row" && $2==763 {print $7}')"
+        if [ "$null763" = "1" ]; then
+            ok "[DD-14.FB §10.1/§10.6] the 1,526-byte row's un-suffixed control MATCHES, as §10.1's boundary (matches at 1,526 B, refuses at 1,528 B) says"
+        elif [ "$null763" = "-3" ]; then
+            bad "[DD-14.FB] the 1,526-byte subject no longer matches through <prefix>_search. §10.1's measured give-up boundary (matches at 1,526 B, refuses at 1,528 B) has moved"
         else
             # NEITHER 1 NOR -3 means the row is MISSING or MALFORMED, and
             # without this arm that read as silence: the two arms above fired
             # nothing and the section still summed green. A check whose
             # evidence went missing must say so, not fall through.
-            bad "[DD-14.FB] no usable n=512 row in the reservation driver's output (got '${null512:-<none>}' for the un-suffixed control). The spec-consistency check above measured NOTHING this run, and a missing row is not a pass"
+            bad "[DD-14.FB] no usable n=763 row in the reservation driver's output (got '${null763:-<none>}' for the un-suffixed control). The spec-consistency check above measured NOTHING this run, and a missing row is not a pass"
         fi
     fi
 fi
