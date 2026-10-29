@@ -1,0 +1,5 @@
+report=docs/dev/lanes/l9look_report.md
+sections: Summary; Premise test; Finding 1 frames on flat input; Finding 3 recursive-member rates; Answers to the bench; Candidate fixes; Existing rows; Questions for Frank; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
