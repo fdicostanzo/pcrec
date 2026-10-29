@@ -1,0 +1,25 @@
+# provenance: lane revwalk 2026-10-29, worktree branch lane/revwalk (tiers.py/model.py/facts_control.py as committed beside this file), pcrec built from ec87afbca, libpcre2 10.46, python 3.14.4
+ok  [%+\-.0-9A-Za-z_]+@[a-z]+\.com           want T2       got T2       strong=True why=segs=1
+ok  \w+@example\.com                         want T2       got T2       strong=True why=segs=1
+ok  [a-z]{1,8}@example\.com                  want T2       got T2       strong=True why=segs=1
+ok  ab[0-9]@x                                want T1       got T1       strong=True why=fixed width 3
+ok  \d+[-.]\d+@                              want T3       got T3       strong=True why=segs=3 var=2
+ok  \b[a-z]+[.,][a-z]+\(                     want T3       got T3       strong=True why=segs=3 var=2
+ok  [a-z]+[0-9]+[a-z]*@                      want T3       got T3       strong=True why=segs=3 var=3
+ok  [a-c][a-z]+@                             want T4       got T4       strong=True why=outer
+ok  =[a-c][a-z]+@                            want T3       got T3       strong=True why=segs=2 var=1 superset
+ok  (?:ab)+@                                 want T4       got T4       strong=True why=outer
+ok  [a-z]+xy                                 want T2       got T2       strong=False why=segs=1
+ok  (a+)\1@                                  want G1       got G1       strong=False why=bref
+ok  (?>a+)@                                  want G1       got G1       strong=True why=atomic
+ok  ^\w+@                                    want anchored got anchored strong=None why=
+ok  \w+@                                     want T2       got T2       strong=True why=segs=1
+ok  \b\w+@                                   want T2       got T2       strong=True why=segs=1
+ok  \w+\b-x                                  want T4       got T4       strong=True why=view inside P
+ok  \bat (?:[A-Za-z_$][A-Za-z0-9_$]*\.){2,}[A-Za-z_$][A-Za-z0-9_$]*\( want T3       got T3       strong=True why=segs=5 var=2 superset
+ok  x*[A-Z][A-Z0-9]*@                        want T4       got T4       strong=True why=outer
+ok  a*\d+@                                   want T3       got T3       strong=True why=segs=2 var=2
+C1: 20/20 PASS
+--- sabotage chain:
+C1: 11/20 FAIL
+sabotage chain: the selftest failed: detected (it must FAIL)

@@ -1,0 +1,23 @@
+# provenance: lane revwalk 2026-10-29, worktree branch lane/revwalk (tiers.py/model.py/facts_control.py as committed beside this file), pcrec built from ec87afbca, libpcre2 10.46, python 3.14.4
+## corpus: 963 landmark rows, 954 compiled (facts read), 9 refused/failed
+C3a start_anchor not 'unanchored': 0 []
+C3b landmark bytes in req_set: agree 922, VIOLATE 2, req_set absent 30 ['tests/possessify/possessify.rxt:4327', 'tests/possessify/possessify.rxt:4354']
+C3c unbounded move-back agrees with req_set_maxoff: agree 244, DISAGREE 0 []
+route by tier (admitted rows: composes, T2/T3 excluded / strong, F>=2):
+  T1: {'dfa': 46, 'vm': 28}
+  T2: {'dfa': 88, 'vm': 109}
+  T3: {'vm': 8, 'dfa': 7}
+  T4: {'vm': 45, 'dfa': 47}
+  G1: {'vm': 138, 'dfa': 56}
+
+## bench: 65 landmark rows, 62 compiled (facts read), 3 refused/failed
+C3a start_anchor not 'unanchored': 0 []
+C3b landmark bytes in req_set: agree 60, VIOLATE 0, req_set absent 2 []
+C3c unbounded move-back agrees with req_set_maxoff: agree 19, DISAGREE 0 []
+route by tier (admitted rows: composes, T2/T3 excluded / strong, F>=2):
+  T1: {'vm': 1, 'dfa': 3}
+  T2: {'vm': 6, 'dfa': 7}
+  T3: {'dfa': 3}
+  T4: {'vm': 2, 'dfa': 3}
+  G1: {'dfa': 4, 'vm': 3}
+
