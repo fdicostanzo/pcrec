@@ -3489,16 +3489,33 @@ static void vm_trail_check(Vm *v)
     v->ncheck++;
 }
 
+/* [K134] Whether a jump to label `id` written NOW goes back in the text over
+ * a trail write: the label is already written and a `<PREFIX>_SET` was
+ * written since. Such a jump may close a cycle that writes the trail, so it
+ * carries a checkpoint (vm_emit_trail_compact says why that covers every
+ * such cycle). */
+static bool vm_jump_closes_trail_cycle(const Vm *v, int id)
+{
+    return id < v->lbl_cap && v->lbl_nset[id] && v->lbl_nset[id] <= v->nset;
+}
+
+/* The text of a jump to label `id` for a site that writes its own `goto`
+ * inside a condition: the bare `goto`, or a block that passes a trail
+ * checkpoint first when the jump closes a trail-writing cycle. */
+static const char *vm_jump(Vm *v, int id)
+{
+    if (!vm_jump_closes_trail_cycle(v, id))
+        return vm_rolef(v, "goto %s_L%d;", v->p, id);
+    v->ncheck++;
+    return vm_rolef(v, "{ %s_TRAIL_CHECK(); goto %s_L%d; }", v->up, v->p, id);
+}
+
 /* Writes the artifact's unconditional jump to label `id` and records the
  * matching listing event, so the emitted C and `--emit-ir` cannot disagree
  * about where control goes. */
 static void vm_goto(Vm *v, int id)
 {
-    /* [K134] A jump to a label already written goes BACK in the text. If a
-     * trail write was written since that label, the jump may close a cycle
-     * that writes the trail, so it carries a checkpoint
-     * (vm_emit_trail_compact says why that covers every such cycle). */
-    if (id < v->lbl_cap && v->lbl_nset[id] && v->lbl_nset[id] <= v->nset)
+    if (vm_jump_closes_trail_cycle(v, id))
         vm_trail_check(v);
     pcrec_sb_printf(v->b, "    goto %s_L%d;\n", v->p, id);
     vm_ev(v, VE_GOTO, id, 0, NULL);
@@ -6568,8 +6585,8 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg)
          * still get their turn. Recorded for [M4.6] rather than solved with a
          * mechanism that mutates a frame in place, which does not survive the
          * loop being re-entered. */
-        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position != slot_values[%d]) goto %s_L%d;\n",
-                  gslot, v->p, top);
+        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position != slot_values[%d]) %s\n",
+                  gslot, vm_jump(v, top));
         vm_goto(v, exit);
     } else {
         vm_goto(v, cur);
