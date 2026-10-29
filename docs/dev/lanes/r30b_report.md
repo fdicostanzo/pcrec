@@ -234,8 +234,9 @@ CHECKS_RESULT
 
 - Commit 38d3143d5 carries the R-30 code and the abi event. The later WIP commit
   d33e0b848 touched `memfn/src/ofsskip.c` again: `verify_chain`'s restructure kept S279's
-  anchor line verbatim. That restructure moves no emitted byte; the census and the
-  identity gate read the tip. Even so, the landing may prefer to squash the lane into
+  anchor line verbatim. That restructure moves no emitted byte: 38d3143d5's build vs the
+  tip compared 219 artifacts (the 71 presence/handoff/k66/reqcube patterns, case 7 and
+  `(a)..(i)\9`, each at default/vm/utf8), and 0 differ. Even so, the landing may prefer to squash the lane into
   one commit and move the identity (B) FILEPIN to it.
 - abi number: 94 assumes trailgc lands 93 first (§4).
 - The `ret_pred` refusal has no corpus population (§6). File it if a landmark window
