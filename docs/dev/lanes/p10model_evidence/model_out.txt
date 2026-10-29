@@ -1,0 +1,193 @@
+== CALIBRATION (instructions; model vs measured, twin = p910 job 691/earlier)
+subject                              strat       model       meas   err%  ratio(model/meas) vs today
+email evil-match-60k                 today      491632     491626   +0.0  x  1.000 / x  1.000
+email evil-match-60k                 pre          5813       5905   -1.6  x  0.012 / x  0.012
+email evil-match-60k                 paced       16373      16491   -0.7  x  0.033 / x  0.034
+email nearmiss-16k                   today      131184     131184   +0.0  x  1.000 / x  1.000
+email nearmiss-16k                   pre          1555       1681   -7.5  x  0.012 / x  0.013
+email nearmiss-16k                   paced        4371       4523   -3.4  x  0.033 / x  0.034
+email prose-1m                       today         176        176   +0.0  x  1.000 / x  1.000
+email prose-1m                       pre         99097      98449   +0.7  x563.054 / x559.369
+email prose-1m                       paced         200        193   +3.6  x  1.136 / x  1.097
+email hyb-digits-4k                  today       32880      32874   +0.0  x  1.000 / x  1.000
+email hyb-digits-4k                  pre           394        529  -25.5  x  0.012 / x  0.016
+email hyb-digits-4k                  paced        1098       1259  -12.8  x  0.033 / x  0.038
+email wit A 30000 cls, 1MiB          today      240112     240112   +0.0  x  1.000 / x  1.000
+email wit A 30000 cls, 1MiB          pre         99097     101265   -2.1  x  0.413 / x  0.422
+email wit A 30000 cls, 1MiB          paced      279321     286663   -2.6  x  1.163 / x  1.194
+email wit B 19800 ltr, 1MiB          today      158512     158512   +0.0  x  1.000 / x  1.000
+email wit B 19800 ltr, 1MiB          pre         99097     100310   -1.2  x  0.625 / x  0.633
+email wit B 19800 ltr, 1MiB          paced      279321     283959   -1.6  x  1.762 / x  1.791
+email wit C 60000 cls + match        today      480112     480239   -0.0  x  1.000 / x  1.000
+email wit C 60000 cls + match        pre        605788     605943   -0.0  x  1.261 / x  1.262
+email wit C 60000 cls + match        paced      665788     665985   -0.0  x  1.386 / x  1.387
+iso trim-match-60k                   today      553106     553106   +0.0  x  1.000 / x  1.000
+iso trim-match-60k                   pre          5813       5944   -2.2  x  0.011 / x  0.011
+iso trim-match-60k                   paced       14902      15571   -4.3  x  0.027 / x  0.028
+iso trim-nearmiss-16k                today      147602     147610   -0.0  x  1.000 / x  1.000
+iso trim-nearmiss-16k                pre          1555       1725   -9.8  x  0.011 / x  0.012
+iso trim-nearmiss-16k                paced        3979       4312   -7.7  x  0.027 / x  0.029
+iso prose-1m                         today         155        154   +0.6  x  1.006 / x  1.000
+iso prose-1m                         pre         99097      98489   +0.6  x643.490 / x639.539
+iso prose-1m                         paced         155        155   +0.3  x  1.010 / x  1.006
+iso wit A 30000 ws, 1MiB (OUTLIER)   today      270146     270154   -0.0  x  1.000 / x  1.000
+iso wit A 30000 ws, 1MiB (OUTLIER)   pre         99097     101270   -2.1  x  0.367 / x  0.375
+iso wit A 30000 ws, 1MiB (OUTLIER)   paced      254221     269856   -5.8  x  0.941 / x  0.999
+iso wit C 140111 + match             today     1261145    1260998   +0.0  x  1.000 / x  1.000
+iso wit C 140111 + match             pre       1339963    1326687   +1.0  x  1.063 / x  1.052
+iso wit C 140111 + match             paced     1339963    1326720   +1.0  x  1.063 / x  1.052
+worst |err| excluding the flagged outlier: 25.5%
+
+cycles hazard gain cyc/email: model x33.2 vs measured x27.2
+cycles hazard gain cyc/iso: model x48.1 vs measured x49.1
+
+== SENSITIVITY: worst ratio vs TODAY's cost (attempt dies just past the checkpoint, byte absent)
+   closed form 1 + gp*2^-K * (a/m)^0 ... = 1 + 2^K/r' with r' = a*gp/m ; derived K = ceil(log2 r')
+    r(a/m)     K=4      K=5      K=6      K=7      K=8    derived K
+        25     1.64     2.28     3.56     6.12    11.24   5
+        53     1.30     1.60     2.21     3.42     5.83   6
+        69     1.23     1.46     1.93     2.86     4.71   7
+       100     1.16     1.32     1.64     2.28     3.56   7
+       194     1.08     1.16     1.33     1.66     2.32   8
+       400     1.04     1.08     1.16     1.32     1.64   9
+  and the same schedule vs hindsight min(today, pre) when pre wins (r > 2^K):
+   r=53: K=6 -> x1.83   K=ceil(log2 r)=6 -> x1.83
+   r=69: K=6 -> x2.08   K=ceil(log2 r)=7 -> x1.54
+   r=194: K=6 -> x4.03   K=ceil(log2 r)=8 -> x1.76
+   r=400: K=6 -> x7.25   K=ceil(log2 r)=9 -> x1.78
+
+== derived D0 and bound fraction (pay-as-spent: b = (C + m*R)/(a*g))
+  instr/email  D0=C/(a*g)=  0.6 steps   fraction m/(a*g)=1/  116
+  instr/iso    D0=C/(a*g)=  0.7 steps   fraction m/(a*g)=1/  100
+  cyc/email    D0=C/(a*g)=  7.6 steps   fraction m/(a*g)=1/   69
+  cyc/iso      D0=C/(a*g)=  2.7 steps   fraction m/(a*g)=1/  195
+  C is UNMEASURED: D0 for C in 20..120 cycles on cyc/email: [7.6, 15.2, 30.3, 45.5]  cyc/iso: [2.7, 5.4, 10.8, 16.2]
+
+== memchr slower than modelled (Zen 1 style, m x2, x4) / attempt faster (a x0.5): worst single-call ratio vs TODAY at K=6
+  as measured    x1.92
+  m x2           x2.84
+  m x4           x4.68
+  a x0.5         x2.84
+  m x2, a x0.5   x4.68
+
+== SWEEP single call, instr/email: worst ratio (vs hindsight opt, all n | vs opt n>=4096 | vs TODAY) and where
+  today            opt:x  84.65 | n>=4096:x 84.65 | today:x 1.00  at n=32 p=None L=0; opt-worst at n=1048576 p=None L=1048576
+  pre              opt:x 885.80 | n>=4096:x885.80 | today:x885.80  at n=1048576 p=1048575 L=0; opt-worst at n=1048576 p=1048575 L=0
+  paced K4         opt:x  28.73 | n>=4096:x  8.27 | today:x 1.47  at n=1024 p=1023 L=65; opt-worst at n=32 p=None L=16
+  paced K5         opt:x  28.73 | n>=4096:x  4.64 | today:x 1.68  at n=4096 p=4095 L=129; opt-worst at n=32 p=None L=16
+  paced K6         opt:x  28.73 | n>=4096:x  2.82 | today:x 2.13  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  paced K7         opt:x  28.73 | n>=4096:x  2.88 | today:x 2.88  at n=1048576 p=1048575 L=8193; opt-worst at n=32 p=None L=16
+  paced K8         opt:x  28.73 | n>=4096:x  4.39 | today:x 4.39  at n=1048576 p=1048575 L=4097; opt-worst at n=32 p=None L=16
+  paced K6 D0=8    opt:x  19.95 | n>=4096:x  2.82 | today:x 2.13  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=8
+  paced K6 D0=32   opt:x  46.29 | n>=4096:x  2.82 | today:x 2.13  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=32
+  paced K6 D0=64   opt:x  62.54 | n>=4096:x  2.82 | today:x 2.13  at n=1048576 p=1048575 L=16385; opt-worst at n=64 p=None L=64
+  derived          opt:x   9.43 | n>=4096:x  2.13 | today:x 2.13  at n=1048576 p=1048575 L=16384; opt-worst at n=64 p=None L=1
+  paced K6 +mem    opt:x  28.73 | n>=4096:x  2.82 | today:x 2.13  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  derived +mem     opt:x   9.43 | n>=4096:x  2.13 | today:x 2.13  at n=1048576 p=1048575 L=16384; opt-worst at n=64 p=None L=1
+  online D0=16     opt:x  28.73 | n>=4096:x  3.00 | today:x 2.75  at n=1048576 p=None L=8193; opt-worst at n=32 p=None L=16
+
+== SWEEP single call, instr/iso: worst ratio (vs hindsight opt, all n | vs opt n>=4096 | vs TODAY) and where
+  today            opt:x  95.23 | n>=4096:x 95.23 | today:x 1.00  at n=32 p=None L=0; opt-worst at n=1048576 p=None L=1048576
+  pre              opt:x 679.75 | n>=4096:x679.75 | today:x679.75  at n=1048576 p=1048575 L=0; opt-worst at n=1048576 p=1048575 L=0
+  paced K4         opt:x  29.68 | n>=4096:x  7.26 | today:x 1.18  at n=1024 p=1023 L=65; opt-worst at n=32 p=None L=16
+  paced K5         opt:x  29.68 | n>=4096:x  4.13 | today:x 1.35  at n=4096 p=4095 L=129; opt-worst at n=32 p=None L=16
+  paced K6         opt:x  29.68 | n>=4096:x  2.57 | today:x 1.72  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  paced K7         opt:x  29.68 | n>=4096:x  2.39 | today:x 2.39  at n=1048576 p=1048575 L=8193; opt-worst at n=32 p=None L=16
+  paced K8         opt:x  29.68 | n>=4096:x  3.73 | today:x 3.73  at n=1048576 p=1048575 L=4097; opt-worst at n=32 p=None L=16
+  paced K6 D0=8    opt:x  22.12 | n>=4096:x  2.57 | today:x 1.72  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=8
+  paced K6 D0=32   opt:x  44.79 | n>=4096:x  2.57 | today:x 1.72  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=32
+  paced K6 D0=64   opt:x  57.63 | n>=4096:x  2.57 | today:x 1.72  at n=1048576 p=1048575 L=16385; opt-worst at n=64 p=None L=64
+  derived          opt:x  15.51 | n>=4096:x  2.00 | today:x 1.72  at n=1048576 p=1048575 L=16384; opt-worst at n=32 p=None L=1
+  paced K6 +mem    opt:x  29.68 | n>=4096:x  2.57 | today:x 1.72  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  derived +mem     opt:x  15.51 | n>=4096:x  2.00 | today:x 1.72  at n=1048576 p=1048575 L=16384; opt-worst at n=32 p=None L=1
+  online D0=16     opt:x  29.68 | n>=4096:x  2.71 | today:x 2.10  at n=1048576 p=None L=8193; opt-worst at n=32 p=None L=16
+
+== SWEEP single call, cyc/email: worst ratio (vs hindsight opt, all n | vs opt n>=4096 | vs TODAY) and where
+  today            opt:x  69.44 | n>=4096:x 69.44 | today:x 1.00  at n=32 p=None L=0; opt-worst at n=1048576 p=None L=1048576
+  pre              opt:x 997.65 | n>=4096:x997.65 | today:x997.65  at n=1048576 p=1048575 L=0; opt-worst at n=1048576 p=1048575 L=0
+  paced K4         opt:x   5.34 | n>=4096:x  5.34 | today:x 1.35  at n=256 p=255 L=17; opt-worst at n=1048576 p=None L=131072
+  paced K5         opt:x   3.88 | n>=4096:x  3.17 | today:x 1.46  at n=4096 p=4095 L=129; opt-worst at n=32 p=None L=16
+  paced K6         opt:x   3.88 | n>=4096:x  2.08 | today:x 1.92  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  paced K7         opt:x   3.88 | n>=4096:x  2.84 | today:x 2.84  at n=1048576 p=1048575 L=8193; opt-worst at n=32 p=None L=16
+  paced K8         opt:x   4.67 | n>=4096:x  4.67 | today:x 4.67  at n=1048576 p=1048575 L=4097; opt-worst at n=1048576 p=1048575 L=4097
+  paced K6 D0=8    opt:x   2.88 | n>=4096:x  2.08 | today:x 1.92  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=8
+  paced K6 D0=32   opt:x   5.87 | n>=4096:x  2.08 | today:x 1.92  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=32
+  paced K6 D0=64   opt:x   9.32 | n>=4096:x  2.08 | today:x 1.92  at n=1048576 p=1048575 L=16385; opt-worst at n=64 p=None L=64
+  derived          opt:x   2.88 | n>=4096:x  2.00 | today:x 1.92  at n=1048576 p=1048575 L=16384; opt-worst at n=32 p=None L=8
+  paced K6 +mem    opt:x   3.88 | n>=4096:x  2.08 | today:x 1.92  at n=1048576 p=1048575 L=16385; opt-worst at n=32 p=None L=16
+  derived +mem     opt:x   2.88 | n>=4096:x  2.00 | today:x 1.92  at n=1048576 p=1048575 L=16384; opt-worst at n=32 p=None L=8
+  online D0=16     opt:x   3.88 | n>=4096:x  2.19 | today:x 2.10  at n=65536 p=None L=129; opt-worst at n=32 p=None L=16
+
+== SWEEP single call, cyc/iso: worst ratio (vs hindsight opt, all n | vs opt n>=4096 | vs TODAY) and where
+  today            opt:x 194.64 | n>=4096:x194.64 | today:x 1.00  at n=32 p=None L=0; opt-worst at n=1048576 p=None L=1048576
+  pre              opt:x 997.65 | n>=4096:x997.65 | today:x997.65  at n=1048576 p=1048575 L=0; opt-worst at n=1048576 p=1048575 L=0
+  paced K4         opt:x  13.16 | n>=4096:x 13.16 | today:x 1.18  at n=256 p=255 L=17; opt-worst at n=1048576 p=None L=131072
+  paced K5         opt:x   7.47 | n>=4096:x  7.08 | today:x 1.18  at n=256 p=255 L=17; opt-worst at n=32 p=None L=16
+  paced K6         opt:x   7.47 | n>=4096:x  4.04 | today:x 1.36  at n=1024 p=1023 L=17; opt-worst at n=32 p=None L=16
+  paced K7         opt:x   7.47 | n>=4096:x  2.52 | today:x 1.66  at n=1048576 p=1048575 L=8193; opt-worst at n=32 p=None L=16
+  paced K8         opt:x   7.47 | n>=4096:x  2.31 | today:x 2.31  at n=1048576 p=1048575 L=4097; opt-worst at n=32 p=None L=16
+  paced K6 D0=8    opt:x   4.68 | n>=4096:x  4.04 | today:x 1.36  at n=1024 p=1023 L=17; opt-worst at n=32 p=None L=8
+  paced K6 D0=32   opt:x  13.05 | n>=4096:x  4.04 | today:x 1.34  at n=4096 p=4095 L=65; opt-worst at n=32 p=None L=32
+  paced K6 D0=64   opt:x  22.90 | n>=4096:x  4.04 | today:x 1.34  at n=4096 p=4095 L=65; opt-worst at n=64 p=None L=64
+  derived          opt:x   2.58 | n>=4096:x  2.00 | today:x 1.66  at n=1048576 p=1048575 L=8192; opt-worst at n=32 p=None L=2
+  paced K6 +mem    opt:x   7.47 | n>=4096:x  4.04 | today:x 1.36  at n=1024 p=1023 L=17; opt-worst at n=32 p=None L=16
+  derived +mem     opt:x   2.58 | n>=4096:x  2.00 | today:x 1.66  at n=1048576 p=1048575 L=8192; opt-worst at n=32 p=None L=2
+  online D0=16     opt:x   7.47 | n>=4096:x  2.55 | today:x 2.03  at n=65536 p=None L=129; opt-worst at n=32 p=None L=16
+
+== REAL-TEXT-LIKE, line per call, instr/email: total cost ratio to per-call hindsight optimum
+  kind            today            pre       paced K5       paced K6        derived paced K6 D0=32   online D0=16
+  prose           9.545          1.030          9.375          9.375          2.216          9.946          9.375
+  logs            1.678          1.203          1.578          1.578          1.313          1.720          1.578
+  code            1.157          1.160          1.329          1.329          1.223          1.348          1.329
+== REAL-TEXT-LIKE, line per call, instr/iso: total cost ratio to per-call hindsight optimum
+  kind            today            pre       paced K5       paced K6        derived paced K6 D0=32   online D0=16
+  prose           9.111          1.025          8.474          8.474          2.582          8.902          8.474
+  logs            1.655          1.060          1.320          1.319          1.089          1.448          1.319
+  code            1.159          1.057          1.158          1.158          1.065          1.173          1.158
+== REAL-TEXT-LIKE, line per call, cyc/email: total cost ratio to per-call hindsight optimum
+  kind            today            pre       paced K5       paced K6        derived paced K6 D0=32   online D0=16
+  prose           2.434          1.027          2.229          2.229          1.995          2.308          2.229
+  logs            1.458          1.154          1.238          1.238          1.209          1.294          1.238
+  code            1.127          1.274          1.146          1.146          1.202          1.126          1.146
+== REAL-TEXT-LIKE, line per call, cyc/iso: total cost ratio to per-call hindsight optimum
+  kind            today            pre       paced K5       paced K6        derived paced K6 D0=32   online D0=16
+  prose           3.444          1.027          3.007          3.007          1.806          3.184          3.007
+  logs            1.590          1.073          1.242          1.242          1.110          1.337          1.242
+  code            1.134          1.152          1.129          1.129          1.145          1.128          1.129
+
+== whole-buffer subjects (n=1 MiB, one call), instr/email
+  prose, dies at 8, byte absent        today=x1.00 pre=x563.05 paced K6=x1.14 derived=x1.14
+  log, dies at 60, byte at 4000        today=x1.00 pre=x1.85 paced K6=x1.30 derived=x1.30
+  hazard, survives all, byte absent    today=x84.65 pre=x1.00 paced K6=x2.82 derived=x2.00
+  survives 20000 then dies             today=x1.62 pre=x1.00 paced K6=x2.82 derived=x2.00
+
+== FIND-ALL scenarios (instr/email, ratio to per-call hindsight opt; <1 = beats stateless opt)
+  scenario                                                            today            pre       paced K6  paced K6 +mem        derived   derived +mem
+  retry loop, byte absent, L=bound+1, n=4096                           2.49           1.00           2.84           0.01           1.97           0.01
+  retry loop, byte absent, L=bound+1, n=65536                          1.40           1.00           2.81           0.00           2.00           0.00
+  retry loop, byte absent, L=3 (dies fast), n=65536                    1.01          23.05           1.08           1.08           1.07           1.07
+  tokenizer 500 matches (byte inside each) + final fail                1.00           1.18           1.22           1.22           1.22           1.22
+  byte at 1990, 90 calls L=40 start<1000 (found memory)                1.00           1.54           1.63           1.29           1.63           1.29
+  tail: n=1200, byte absent, 1000 calls L=30 (D0 floor)                4.81           1.00           3.43           0.03           1.92           0.03
+  1MiB, byte every ~52 B, 400 starts, L~12                             1.00           1.17           1.18           1.18           1.18           1.18
+
+== STREAMING (cyc/email): chunk size B, n unknown to the matcher; only buffered bytes scannable
+ -- B=4096
+   hazard: survives all 1MiB, byte absent             today=x69.44  naive paced=x0.01*  safe paced=x69.44  online doublin=x69.95
+   match: byte at 600000, attempt matches at 600001   today=x1.00  naive paced=x0.00 WRONG*  safe paced=x1.00  online doublin=x1.01
+   dies at 5000, byte absent (n 1MiB)                 today=x1.00  naive paced=x0.03*  safe paced=x1.01  online doublin=x1.03
+   prose: dies at 8, byte absent (n 1MiB)             today=x1.00  naive paced=x1.00  safe paced=x1.00  online doublin=x1.00
+ -- B=65536
+   hazard: survives all 1MiB, byte absent             today=x69.44  naive paced=x0.13*  safe paced=x69.50  online doublin=x70.01
+   match: byte at 600000, attempt matches at 600001   today=x1.00  naive paced=x0.00 WRONG*  safe paced=x1.00  online doublin=x1.01
+   dies at 5000, byte absent (n 1MiB)                 today=x1.00  naive paced=x0.39*  safe paced=x1.19  online doublin=x1.20
+   prose: dies at 8, byte absent (n 1MiB)             today=x1.00  naive paced=x1.00  safe paced=x1.00  online doublin=x1.00
+ -- B=1048576  (whole subject buffered = the non-streaming case)
+   hazard: survives all 1MiB, byte absent             today=x69.44  naive paced=x2.08*  safe paced=x2.08*  online doublin=x2.09*
+   match: byte at 600000, attempt matches at 600001   today=x1.00  naive paced=x1.01  safe paced=x1.01  online doublin=x1.01
+   dies at 5000, byte absent (n 1MiB)                 today=x1.00  naive paced=x1.00  safe paced=x1.00  online doublin=x1.83
+   prose: dies at 8, byte absent (n 1MiB)             today=x1.00  naive paced=x1.00  safe paced=x1.00  online doublin=x1.00
+   (x = cost / offline hindsight optimum that KNOWS n; * = rejected early; WRONG = wrong answer)
+ -- online doubling worst ratio vs TODAY, sweeping attempt depth L, B=65536, n=1MiB, byte absent:
+    worst x2.082 at L=65
+
