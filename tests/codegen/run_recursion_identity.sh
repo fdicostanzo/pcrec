@@ -1361,6 +1361,8 @@ fi
 # abi event, and the first move past R4a would otherwise fail to link.
 FILEPIN_DIRS="src lib cli"
 git -C "$ROOT_DIR" cat-file -e "$FILEPIN:memfn" 2>/dev/null && FILEPIN_DIRS="$FILEPIN_DIRS memfn"
+# shared/ (the SHA-256 leaf) the same way: a pin past its arrival includes it.
+git -C "$ROOT_DIR" cat-file -e "$FILEPIN:shared" 2>/dev/null && FILEPIN_DIRS="$FILEPIN_DIRS shared"
 # shellcheck disable=SC2086
 if ! git -C "$ROOT_DIR" archive "$FILEPIN" $FILEPIN_DIRS \
         | tar -x -C "$FILEREFSRC" 2>"$WORKDIR/filearch.log"; then
