@@ -1,0 +1,19 @@
+# p1dsg size/compile census (size_run.sh over size_rows.tsv): art_bytes = the pattern's artifact (comments stripped); art_ms/pl_ms = wall ms of one pcrec run for the pattern / for P.L (an UPPER bound on building rev(P)); rev_cells = rev(P.L)'s transition cells (states x classes); rev_bytes = the extracted machine text (tables + walk); rev_edges = its scan edges. cls-s-*: utf8 tables are file-scope, extractor missed them: their reverse tables are 1,781 B (nbsp, 16 cells) and 4,279 B (ucp, 247 cells), measured separately
+name	engine	art_bytes	art_ms	pl_ms	rev_cells	rev_bytes	rev_edges
+dup-param-detect	vm	26594	5	6	9	3564	0
+tag-depth3-bound	vm	32980	5	6	16	2865	0
+tag-pair-match	vm	26161	5	5	30	4658	0
+username-password-pair	vm	548919	32	7	289	5852	0
+bak-1	vm	20803	4	5	9	5006	1
+bak-k-named	vm	23103	5	6	16	2865	0
+mod-j-uc	vm	22203	5	7	18	5100	1
+qnt-plus-ctl	dfa	20066	6	6	9	4106	0
+qnt-plus	dfa	16601	7	6	9	3510	0
+cls-s-nbsp	dfa	17255	5	5		596	0
+cls-s-ucp	dfa	26543	7	6		596	0
+ipv4	dfa	21608	8	5	64	3335	0
+kv-quoted	dfa	35874	9	8	396	8908	0
+stack-frame	dfa	63350	12	7	90	4638	0
+csv5	dfa	32998	8	6	9	5324	1
+dotted4	dfa	20589	7	6	12	3888	0
+mask-email	dfa	22661	8	6	9	5006	1

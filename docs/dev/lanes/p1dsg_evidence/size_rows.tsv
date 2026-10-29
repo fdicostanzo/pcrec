@@ -1,0 +1,17 @@
+dup-param-detect	byte	\b(\w+)=[^&]*&(?:[^&]*&)*\1=	\b\w+=
+tag-depth3-bound	byte	<(\w+)>(?:[^<]|<(\w+)>(?:[^<]|<(\w+)>[^<]*</\3>)*</\2>)*</\1>	<\w+>
+tag-pair-match	byte	<([a-zA-Z][\w:-]*)(?:\s[^>]*)?>.*?</\1\s*>	<[a-zA-Z][\w:-]*(?:\s[^>]*)?>
+username-password-pair	byte	(?:username|USERNAME|user|USER)[ \t]*=[ \t]*["']([a-zA-Z0-9.@_\-+]{3,30})["']\s*[,;]?\s*(?:\s*(?:\#|//)[^\n\r]*[\n\r])*(?:password|pass|PASSWORD|PASS)[ \t]*=[ \t]*["']([^"']{5,30})["']	(?:username|USERNAME|user|USER)[ \t]*=
+bak-1	byte	(\w+) \1	\w+ 
+bak-k-named	byte	<(?<t>\w+)>[^<]*</\k<t>>	<\w+>
+mod-j-uc	byte	(?J)(?:(?<w>the)|(?<w>\w+)) \k<w>	(?:the|\w+) 
+qnt-plus-ctl	byte	a+ab	a+ab
+qnt-plus	byte	a+b	a+b
+cls-s-nbsp	utf8	a\sb	a\sb
+cls-s-ucp	utf8	(*UCP)a\sb	(*UCP)a\sb
+ipv4	byte	(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])	(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.
+kv-quoted	byte	\b[a-z_][a-z0-9_]{0,31}="(?:[^"\\]|\\.)*"	\b[a-z_][a-z0-9_]{0,31}="
+stack-frame	byte	\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\.){2,}[A-Za-z_$][A-Za-z0-9_$]*\((?:[A-Za-z0-9_$]+\.java:[0-9]+|Native Method|Unknown Source)\)	\bat (?:[A-Za-z_$][A-Za-z0-9_$]*\.){2,}[A-Za-z_$][A-Za-z0-9_$]*\(
+csv5	byte	(?:[^,\n]{0,32},){4}[^,\n]{0,32}	[^,\n]{0,32},
+dotted4	byte	(?:\d{1,3}\.){3}\d{1,3}	\d{1,3}\.
+mask-email	byte	[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}	[A-Za-z0-9._%+-]+@
