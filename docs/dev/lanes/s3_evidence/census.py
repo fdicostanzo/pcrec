@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""docs/dev/lanes/s3_evidence/census.py -- lane s3's MOVER CENSUS for D172 S3 (abi 84 -> 85 since lane s3pair's merge of main 0d3765c87; was 83 -> 84,
-PROVISIONAL), job 587's stand-in for emit_sweep's five streams (emit_sweep has no abi
+"""docs/dev/lanes/s3_evidence/census.py -- lane s3's MOVER CENSUS for D172 S3 (abi 91 -> 92 since lane s3m's merge of main b05ccfc0b; 84 -> 85
+at lane s3pair's merge of main 0d3765c87; 83 -> 84 before), job 587's stand-in for emit_sweep's five streams (emit_sweep has no abi
 normalization; corefix's census.py is the precedent): which corpus artifacts move, and does
 anything move OUTSIDE the declared population?
 
@@ -12,7 +12,7 @@ engine, under -e utf8 and at --engine=vm, the VM listing (--emit-ir), the facts 
 OFF ARM (NEW under --memfn=no-window-search,no-window-skip against BASE's default .c), and (the S3 review's
 item D) the .c at the SIMD layer (-fmemfn-simd) and under norun (-fno-run-prefilter), each with
 its own OFF arm (the same flag on both sides, NEW also under both denies). NEW's output has the
-abi digits mapped back (85 -> 84) in the places they occur; nothing else is normalized; rc and
+abi digits mapped back (92 -> 91) in the places they occur; nothing else is normalized; rc and
 stderr are compared too.
 
 THE DECLARED POPULATION is read from NEW's OWN ARTIFACT on that arm, a pcrec-side stamp, never
@@ -72,8 +72,8 @@ import re
 import subprocess
 import sys
 
-ABI = [(b"(abi 85)", b"(abi 84)"), (b"(PCREC_RX_ABI_H + 0) != 85", b"(PCREC_RX_ABI_H + 0) != 84"),
-       (b"#define PCREC_RX_ABI_H 85", b"#define PCREC_RX_ABI_H 84"), (b"    .abi = 85,", b"    .abi = 84,")]
+ABI = [(b"(abi 92)", b"(abi 91)"), (b"(PCREC_RX_ABI_H + 0) != 92", b"(PCREC_RX_ABI_H + 0) != 91"),
+       (b"#define PCREC_RX_ABI_H 92", b"#define PCREC_RX_ABI_H 91"), (b"    .abi = 92,", b"    .abi = 91,")]
 COVER = b'#define RX_DFA_SCAN "cover"'
 HORS = b"_sh[256]"
 # the two-stream find's declaration: NEW's bounded form, BASE's unbounded one (the PAIR class)
