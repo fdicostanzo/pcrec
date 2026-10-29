@@ -392,7 +392,7 @@ The census in [Population](#population) counts both.
 3. **G3 (one mechanism).** Scan-edge admission is ONE declared table in
    scanedge.c. A relaxation widens a row's predicate, never a parallel
    path. STAY and the unbounded edge stay two dispatches of one kit ADVANCE
-   row. Unifying their SELECTION is a later row (Questions, item 3), not
+   row. Unifying their SELECTION is a later row (Questions, item 4), not
    this one.
 4. **G4 (priced, not guessed).** Every cut-over the table reads is a
    measured row (measure_store) or a declared fact (findings). A missing one
@@ -431,7 +431,7 @@ and it carries the price the widening needs.
   the byte itself (`oodo`'s `o` after `o`; census below).
 - If Frank prefers a single row, the alternative is row 3's predicate
   widened with no price. Its measured cost is the +2.9% and +3.9% above.
-- Row 4 is HELD (Questions, item 1).
+- Row 4 is HELD (Questions, item 3).
 
 **Within the 4-slot cap** (`PCREC_MAX_SCAN_EDGES`), today's ranking is
 "unbounded first, then longer chains, then lower head". It stays the same,
@@ -463,7 +463,7 @@ and differ only in DISPATCH:
 
 Deciding the dispatch in one table, with the 192-byte cardinality floor (an
 unmeasured constant) retired into the same priced row, is the end state for
-G3. It needs the card's STAY-dispatch rows first (Questions, item 3).
+G3. It needs the card's STAY-dispatch rows first (Questions, item 4).
 
 ### What pcrec hands the kit (D146/D157: facts, not methods)
 
@@ -548,7 +548,61 @@ the answer changes and k\* moves with it, with no pcrec edit.
 
 ## Population
 
-(filled from the census below)
+**Method.** The census pushes every corpus `.rxt` pattern (4,981) and every
+bench pattern (321, from the pcrec-bench pattern lists) through three traced
+twins: `set` (HEAD), `single` (pre-SET) and `relax` (HEAD plus the
+relaxation, keeping (6) and (8)). It reads per-machine edge and stay
+identities from the trace, never from the stamp (`census.py`, queue job
+`502-p48-census`, reduced by `census_read.py` into `census_summary.txt`).
+An edge's identity is (machine, span, accept, member set), because the twins
+number states differently. 261 corpus and 26 bench patterns were refused
+by at least one arm (rejects, size caps) and are not counted.
+
+| population | corpus | bench |
+|---|---|---|
+| artifacts with ≥ 1 edge at HEAD | 1,172 | 112 |
+| HEAD edges, forward: bounded / unbounded | 195 / 410 | 56 / 25 |
+| HEAD edges, reverse: bounded / unbounded | 289 / 429 | 138 / 10 |
+| HEAD edges, anchored: bounded / unbounded | 249 / 304 | 163 / 18 |
+| HEAD edges, retry: bounded / unbounded | 5 / 160 | 13 / 0 |
+| **[SCANEDGE-SET] movers** (edge sets differ, set vs single) | 144 | 10 |
+| … SET took a pre-SET STAY state | 50 | 4 (`\S+@\S+`, `.*\.txt$`, secrets, a Windows-path pattern) |
+| … SET gained an edge where there was no run loop | 99 | 6 (`\s+$`, both base10num, `[a-z]+\.txt$`, `key=\K\w+`, `\buser=(\w+)`) |
+| **machines with a loop-entry jump** (seeded onto a head) | 603 | 66 |
+| … whose heads are ALL unbounded: the bounded-only entry rule removes the jump | **295** | **2** (both base10num) |
+| … jumps new since SET | 40 | 2 |
+| **relaxation: artifacts gaining ≥ 1 edge** | 2,236 | 145 |
+| … added edges, forward / reverse / anchored / retry | 2,533 / 500 / 248 / 9 | 256 / 60 / 33 / 0 |
+| … of which priced in by row 4 (prior p ≥ 0.70, i.e. E[k] ≥ k\* = 2.3): forward / reverse / anchored | 53 / 18 / 13 | 22 / 28 / 19 |
+| … added edge replaces a STAY | 80 | 41 |
+| … the machine's FIRST edge (a loop-shape change) | 2,118 | 137 |
+| … displaced a HEAD edge at the 4-slot cap | 2 | 3 |
+
+**Reading.**
+- **The entry rule's movers are 297 artifacts**, and only two of them are
+  bench cells (the two regressed base10num cells). The corpus ones are `x*`,
+  `(?<!.)`, `(?&g)*` shapes: seeded unbounded heads where the jump is pure
+  overhead. Its abi readers are found by grep at build time.
+- **SET's own movers are small**: 154 artifacts. Of the 10 bench movers,
+  three are measured losses (both base10num, cls-s-uc), four are measured
+  wins or flat (`\s+$`, cls-range via pre-SET, secrets, `.*\.txt$`
+  unmeasured), and three are unmeasured.
+- **The relaxation is mostly trivia unless priced.**
+  - 3,164 of the 3,290 corpus edges it adds sit on sets with prior mass
+    below 0.1. These are the literal-restart loops (`\x{61}+`, `oodo|xzxj`,
+    the `alt-wide` keyword sets).
+  - The priced row keeps 84 corpus and 69 bench edges, roughly a fifth of
+    those in the reverse direction. They are the useful shapes:
+    - reverse runs over `.` in `\b(?:fail|abort|panic)\b.{0,256}\b(?:disk|…)\b`;
+    - `"([^"\\]+)"\s*:\s*` in both directions;
+    - `a.*?(?i:select)`, `a.{1,50000}z`;
+    - `\x93[\x20-\x7e]*\x94`.
+  - These are exactly revwalk's T3/T4 inner runs, the R1 enabler
+    population.
+- **Unpriced, the relaxation also turns 80 corpus and 41 bench STAY
+  states into edges.** The edge-vs-stay shape effect is about ±6% with no
+  predictable sign (Summary, item 2). That is one more reason row 4 is
+  priced and held.
 
 ## Measurement card
 
@@ -574,55 +628,78 @@ trigger fires. Until then the rows are UNMEASURED and row 3 is transparent.
 
 ## Bench asks
 
-a. **Yes to `pcrec-auto-noedge` on the five cells**: both base10num, cls-s-uc,
-   secrets, cls-range. Also add `\s+$` (`tail-space-eol`) as the win control.
-   The pair at one pin is the clean A/B that O-111 lacked. Prediction from
-   the twins (cycles): noedge is faster than auto on base10num (both) by
-   about 15-20% and on cls-s-uc by about 10%; slower on cls-range by about
-   15%; much slower on `tail-space-eol`.
-b. **When a build lands (no build go yet):** run the same five cells at that
-   pin. The prediction is that base10num returns to within the null band of
-   9ae59f5d4 and cls-s-uc to 9ae59f5d4's figure.
+a. **Yes to `pcrec-auto-noedge` on the five cells**: both base10num,
+   cls-s-uc, secrets and cls-range. Please add `\s+$` (`tail-space-eol`) as
+   the win control. The pair at one pin is the clean A/B that O-111 lacked.
+   Predictions from the twins, in cycles, noedge against auto:
+   - both base10num: noedge faster by about 15-20%;
+   - cls-s-uc: noedge faster by about 10-17%;
+   - cls-range: noedge slower by about 12-15%;
+   - `tail-space-eol`: noedge much slower (about 3x);
+   - secrets: flat.
+b. **If the entry-rule row is built (no build go yet):** run the same cells
+   at that pin. Predictions:
+   - both base10num return to within the null band of 9ae59f5d4 (twin: +1.0%
+     and +0.8% instructions);
+   - cls-s-uc is unchanged (+5.5%, a separate question);
+   - cls-range and `tail-space-eol` are unchanged.
 c. **Not asked now:** a quiet-box cycles run of the break-even micro (A/B/C)
-   would turn k\* (cycles) into a measured row. It is owed only when row 3's
-   trigger fires.
+   would turn k\* (cycles) into a measured row. It is owed only when row 2's
+   or row 4's trigger fires.
 
 ## Questions for Frank
 
-1. **Should we fix the losses where they arise, rather than by pricing the
-   edge away?** The measured losses are a loop entry the edge did not need,
-   and a stay skip re-spelled as an edge. Both are emitter-side facts with
-   a soundness argument, and together they bring every regressed cell back
-   within 1% of pre-SET without touching cls-range's or `\s+$`'s wins.
-   - Pricing edges by today's byte prior would instead decline exactly the
-     two big wins (x0.82, x0.29).
-   - My leaning is one small build row: bounded-only entry plus stay
-     precedence, an abi event with a spec hunk. The priced row stays
-     designed and transparent.
-   - Do you see a reason to want the price in the first build?
-2. **The one-state relaxation: build it with that row, or hold it?** It is
-   sound and small (one predicate in scanedge.c). It admits forward
-   split-exit runs (`\d+-`, `[^<]*</`, `foo[a-z]*bar`) and revwalk's inner
-   runs. It also admits rare-byte restart loops in literal alternations,
-   which only the priced ranking would keep out of the 4 slots (census in
-   Population).
-   - My leaning is to HOLD it until a measured cell wants it, per
-     build-under-measurement. A forward split-exit run cell would be the
-     trigger, or P1's T4 path.
-   - It would then come with the ranking refinement.
-3. **The stay rule's 192-byte floor is a cardinality guess.** Under the
-   break-even it is the inequality p > 0.70 with a uniform prior instead of
-   the byte-rate one. M2.10's measured regression is what that inequality
-   predicts. Should STAY's admission move into the same table as a priced
-   row, reading the same card?
-   - My leaning is yes, but as its own later row, because it moves stays on
-     today's corpus. It is filed, not scheduled.
-4. **Do we want a context-aware run estimate at all?** Every pricing row here
-   is blind without one. Neither the byte-rate prior nor a bigram can see
-   that hex follows `0x`. Only a per-state run profile (PGO-like) can. That
-   is a new dataset with no home today (new-dataset lens).
-   - My leaning is no, not now: insurance admission is cheap.
-   - I file it as a BOONIES row so the idea is not lost.
+1. **Build only the entry fix now?** Most of the base10num loss is a jump
+   into the loop that the edge did not need. The jump exists so that a
+   search starting ON a scan-edge head reaches the edge code. For a head
+   whose self-loop table cells were left intact (every unbounded head),
+   the ordinary step gets there on its own one byte later.
+   - Restricting the jump to bounded heads brings both base10num cells to
+     within 1% of pre-SET. It passes all nine answer sections, and it moves
+     297 artifacts (2 of them bench cells). It is an abi event with a spec
+     hunk.
+   - Pricing edges by today's byte prior would instead decline the two big
+     wins (cls-range x0.82, `\s+$` x0.29).
+   - My leaning is to build this alone, when the one-build slot frees after
+     [INLINE-C], and keep the priced rows designed and transparent.
+2. **cls-s-uc's +5.5%: leave it until P1 decides its route?** It is not
+   the scan. With the edge it is +5.5%; with every self-loop an edge it is
+   +5.3%; with the edge path moved to the loop top it is +21%. As a stay it
+   is flat. Yet the same swap is a gain of 7% on `"[^"]*"` and 2% on
+   `.*=.*`.
+   - So this is how gcc lays out the loop around the edge path, and no
+     selection rule I can state predicts its sign.
+   - P1 takes cls-s-uc's forward DFA off its route anyway.
+   - My leaning is to file it as an emitter-shape question for the
+     edge-path layout, held behind P1's route decision, and not chase it now
+     (one-pass rule: one bounded effort, spent here).
+3. **The one-state relaxation: build it with P1's reverse-DFA work, priced?**
+   Per your R1 ruling it is the enabler for the reverse-walk scaffolding.
+   It is sound in both directions (with (6) and (8) kept; the corrected
+   twin's answer run is in STATE AT HANDOFF).
+   - Unpriced, it adds edges to 2,236 corpus artifacts, almost all of them
+     rare-byte restart loops. It costs +2.9% and +3.9% on two bench cells,
+     and turns 121 stays into edges.
+   - Priced at the measured break-even (the byte prior's p ≥ 0.70), it keeps
+     the 84 corpus and 69 bench edges that are the real split-exit runs, a
+     third of them reverse (`.{0,256}` between keyword sets, `"[^"\\]+"`,
+     `a.{1,50000}z`).
+   - My leaning is to land it as row 4, priced, IN the P1/T4 build that
+     needs it, not before. That build supplies the measured cell
+     (build-under-measurement).
+4. **The stay rule's 192-byte floor is an unmeasured cardinality guess.**
+   Under this break-even it is the inequality p > 0.70 with a uniform prior.
+   Should STAY's admission and the stay-or-edge dispatch move into this
+   table as a priced row, reading the same card?
+   - My leaning is yes, eventually, as its own row. It needs the card's
+     STAY-dispatch rows first, and it moves stays on today's corpus.
+     Filed, not scheduled.
+5. **A context-aware run estimate.** Every price here is blind to context:
+   neither the byte prior nor a bigram sees that hex follows `0x`. Only a
+   per-state run profile would, and that is a new dataset with no home
+   (new-dataset lens).
+   - My leaning is no. Unbounded admission is cheap insurance.
+   - I would file it as a BOONIES row.
 
 ## STATE AT HANDOFF
 
