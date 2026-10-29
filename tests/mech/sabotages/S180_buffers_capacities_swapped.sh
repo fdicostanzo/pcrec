@@ -7,9 +7,10 @@
 # THIS IS WHY `tests/recursion/framebuffer.rxt`'"'"'S CAPACITIES ARE ASYMMETRIC.
 # The obvious cell to write is `frames-buffer=8192` — one number, both arrays —
 # and it CANNOT SEE THIS ROW, ever, because under it the sabotage is a no-op.
-# The block instead hands over 1024 frames and 8192 trail entries for a subject
-# that needs 686 and 3,081: sufficient as written, insufficient transposed (1,024
-# trail entries against 3,081 needed). Design §4'"'"'s measured 4.49 trail entries
+# The block instead hands over 2048 frames and 8192 trail entries for a subject
+# that needs 1,528 and 3,073 (n = 764 since K134's compaction; 1024/8192 for 686
+# and 3,081 before it): sufficient as written, insufficient transposed (2,048
+# trail entries against 3,073 needed). Design §4'"'"'s measured 4.49 trail entries
 # per frame is what makes an asymmetric pair the natural one to write, and this
 # row is what makes writing it obligatory.
 #

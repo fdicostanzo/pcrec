@@ -648,6 +648,38 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: before locate_finish L3, L4 or L5 or [LANDWALK-VM] claims a give-up posture for a VM-finisher LOCATE row
   refs: docs/design/locate_finish.md; tests/axes/run_axes.sh; known_issues K82
   The direction rule read from the derived classification, a budget-ladder arm, and the witnesses (K82h's 35 blocks, T6a's 13, W1's constructed `(\w|\w\w)x$`, one per further ONE_WAY row), plus the corpus instrument that derives the classification column and a spec sentence per ONE_WAY row with a deny flag.
+- [TRAIL-CKPT-PRUNE] STATE:not-started — NO TRAIL CHECKPOINT ON A LOOP THAT CAN NEVER COMPACT (K134 cost outside cscan)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F3/F4 (lane trailgc3)
+  status (2026-10-29): not started. Never-full cost after the F1/F5 fixes, both entries: cscan +0.7-0.9 %; `^(a(?1)?b)$` +3.7/+3.8 %, a recursive-parens matcher +3.6/+4.0 %, `(\w+)(?:,(\w+))*;` +1.6/+1.7 % (-O3 +4.2 %). The fix kept every checkpoint.
+  trigger: Frank rules the non-cscan cost above the ~3 % bar (open question in docs/dev/lanes/trailgc3_report.md), or a bench cell on such a shape.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F3 F4; docs/dev/lanes/trailgc3_report.md "F3 re-measure"; decisions D183; known_issues K134
+  Mechanism (review r2 EMIT-1): the cold call's rejoin at a short loop's latch evicts the trail depth from its register. General form (EMIT-2): an `npush` clock beside `nset`; a back-edge whose cycle pushes a resume frame and is not cut inside writes each slot once per segment, so it can never compact and needs no checkpoint. Needs its own proof (the checker's cycle rule learns the exemption) and a sabotage row.
+- [TRAIL-REARM] STATE:not-started — A MONOTONE STOP RULE FOR TRAIL COMPACTION (reach in the trail capacity has holes)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F2 (lane trailgc3)
+  status (2026-10-29): not started. Documented in limits.md §4¶3. Tried once in trailgc3: re-arming at max(floor, w + cap/4) still left holes and moved the specimen boundary off `4n + 17` (n = 200 needed 803), so the latch stays.
+  trigger: a caller or bench report of a sizing hole (a bisected `ntrail` landing in one).
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F2; docs/spec/limits.md §4¶3; decisions D183
+  Cause: the quarter rule's stop is one sample of a trail depth that rises and falls (cscan seg20 answers at T = 185-199, gives up at 200, answers from 201). Candidates: re-arm when a backtrack drops below the kept depth; a geometric re-arm. Bar: no new cost on the never-full path, the work bound of D183 kept.
+- [TRAIL-GC-COUNT] STATE:not-started — A TEST-ONLY COMPACTION COUNTER, ASSERTED AGAINST TRAIL WRITES
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F12 (lane trailgc3)
+  status (2026-10-29): not started. Today the quarter rule's stop branch is seen only through the boundary probes (S1793 is caught by the specimen's 816 probe alone).
+  next: count compactions and visits behind `RX_TEST_TIER_HOOK`; tests/vm/run_trail_compact.sh asserts visits <= 12 x trail writes and that the stop fires on a witness.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F12; tests/vm/trail_compact_driver.c; tests/mech/sabotages/S1793_trail_quarter_stop_off.sh
+- [TRAIL-MECH-COVER] STATE:not-started — SABOTAGE ROWS FOR THE TRAIL TRIGGER'S REMAINING MUTANTS
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F13 (lane trailgc3)
+  status (2026-10-29): not started. S1790-S1799 cover the walk, the floor, the stop, the fast tier and the checkpoint sites; uncovered: the floor margin and cap/2 clamp, the TRAIL_CHECK compare direction, segment-0/last-segment bounds, `<` for `<=` in vm_jump_closes_trail_cycle.
+  next: one row per mutant in tests/mech/sabotages (arm trailcompact), each hand-planted first; a mutant no check sees gets a witness or a written reason.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F13; tests/vm/run_trail_compact.sh
+- [TRAIL-BOUND-SCALE] STATE:not-started — A TRAIL-BOUND RECURSION ROW AT SCALE, ORACLE-ANSWERED
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F14 (lane trailgc3)
+  status (2026-10-29): not started. 4n + 17 and 763/764 are pinned from pcrec's own run (S1793's cell rests on a one-entry margin, n = 764 needs 3,073); the 64 MB `_in` row is frames-bound, so the trail-binding side is covered only at small n.
+  next: one `_in` row where the trail binds at large n (frames ample, the trail sized at the boundary), its span from libpcre2.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F14; docs/spec/limits.md §4
+- [LATCH-HOOK] STATE:not-started — ONE DECLARED LATCH HOOK FOR PER-LOOP-TURN CHECKS IN THE VM EMITTER
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 EMIT-8 (NOTED; lane trailgc3)
+  status (2026-10-29): NOTED. Three per-turn checks today (revdet work charge, counter MRL prune, the trail checkpoint); only the checkpoint is placed by a structural rule (the backward-edge branch of vm_goto/vm_jump).
+  trigger: the next per-loop-turn check, which becomes a row of the hook rather than a fourth construct-local spelling (memory forest-for-trees).
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md (standing questions); src/gen/emit_vm.c vm_jump, vm_trail_check_text
 - [ERR-MSG-TRUNC] STATE:not-started — A DIAGNOSTIC LONGER THAN pcrec_error.msg[256] IS CUT SILENTLY
   filed: 2026-10-29 manager, from lane ic2d27land's Bug B (docs/dev/lanes/ic2d27land_report.md, "Bug fixes")
   status (2026-10-29): not started. The public `pcrec_error.msg[256]` (lib/pcrec.h) truncates a refusal without a mark (`pcrec_ext_msgf`); the lone-carriage-return code refusal ran to 268 bytes, was cut mid-word, and was shortened by hand (S1741 holds that fix).
@@ -1413,6 +1445,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One channel, off by default and switchable (a CLI flag / pcrec_options field / config line; never changes an artifact byte), on which every decision site writes one record: the table and the row that fired, the rows that declined ahead of it and the conjunct that failed, the inputs read (facts, analysis block + provenance + why, measurement-set row, explicit control vs preset), and a held/declined outcome where one applies. pcrec's tables write pcrec records; the kit writes its OWN records through a text callback on the seam (facts in, kit text out: D157 holds).
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 ## Boonies
+- [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
+  status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
+  trigger: any one unlock's trigger below.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md (standing questions); decisions D183; [LATCH-HOOK]
+  Unlocks: (1) a growable caller-supplied trail grown at a safepoint (trigger: a trail give-up with frames to spare after K134); (2) cancellation or deadline polling (trigger: a user request for interruptible matching); (3) dead-frame compaction of the resume stack (trigger: a FRAMES give-up on provably dead frames); (4) work-charge placement for loops the fail label never sees (trigger: another missed-charge finding).
 - [ONCE-DEADCHOICE] STATE:not-started — ACCEPT MORE `once` CALLOUT SITES BY SEALING PROVABLY DEAD CHOICES
   filed: 2026-10-26 manager; Frank: "Save your ideas in a boonies plan item to be revisited if requested"
   status (2026-10-26): BOONIES; DECLINED for now (Frank: "both of those options are not easily predictable. It's hard to program around 'maybe it will work'"); `once` stays a syntactic reading rule (INLINE-C.md ruling 2026-10-26). Nothing built.

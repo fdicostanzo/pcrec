@@ -30,7 +30,8 @@
  *             death is a documented limitation rather than an open wound.
  *
  * The subject is a^n b^n at the n this artifact's stamped capacity supports
- * (MEASURED: 342, a 684-byte subject), so the default arm dies on a subject
+ * (MEASURED: 763, a 1,526-byte subject, since K134's checkpoint trail
+ * compaction; 512 under its first rule, 342 before it), so the default arm dies on a subject
  * it would otherwise MATCH — the failure is the stack, not the pattern.
  *
  * Prints one line to stdout and exits 0 on a clean run; a stack overflow kills
@@ -44,15 +45,15 @@
 #include "gen.h"
 
 #define TS4_STACK_BYTES (128 * 1024)   /* musl's default thread stack size */
-#define TS4_N 342                      /* the stamped default's largest match */
+#define TS4_N 763                      /* the stamped default's largest match */
 /* [OPT-1] the shallow arm's depth: the smallest subject the pattern matches at
  * all, and the one spec §5.3 used to name as still faulting. */
 #define TS4_SHALLOW_N 1
 
 /* The caller-supplied regions, on the HEAP — the point of the buffered arm is
  * that this storage is NOT on the 128 KB stack. Sized in frames/entries from
- * the artifact's own macros, generously above what depth 342 needs (686 frames
- * and 3,073 trail entries, MEASURED). */
+ * the artifact's own macros, generously above what depth 763 needs (1,526
+ * frames and 3,069 trail entries, MEASURED). */
 #define TS4_FRAMES 65536
 #define TS4_TRAIL  262144
 

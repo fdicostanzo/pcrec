@@ -140,6 +140,7 @@ ELIDED_PATTERNS='(a){0}
 SIZETERM_TOTAL=0
 ADVNEW_TOTAL=0   # [MEMFN] R4h: new-layout span-scan loops seen in subject regions
 ADVOLD_TOTAL=0   # ... old one-line loops on the subject side (must stay 0)
+TRAILCHK_TOTAL=0  # [K134] trail checkpoints seen in subject regions (must fire; the ninth exception strips them)
 LAZYOLD_TOTAL=0  # [MEMFN] R-12 VMLAZY: old counted lazy-prefix loops on the subject side (must stay 0)
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
@@ -1283,6 +1284,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # [REQRUN-VM] SELF-PIN (lane reqvm1m, 2026-10-29), abi 90 -> 91: the required-run handoff reaches the VM attempt loop and the VM hybrid's prefilter re-entry; artifacts without those sites move in the abi digits only. `88d3c5209` is the merge of main 78627dbca into the lane (its last src commit); the manager re-pins to the landing merge (the self-pin convention).
 # [INLINE-C] 2 SELF-PIN (lane ic2, 2026-10-27), abi 89 -> 90: module `code-c` (embedded C); every callout artifact gains the span helpers, callout-free artifacts move in the abi digits only. `94568296a` is the lane's last src commit; the manager re-pins to the merge commit.
 # [MEMFN] D172 S3 SELF-PIN (lane s3m, 2026-10-29), abi 91 -> 92 over main b05ccfc0b: the cover LOCATE row routed by default; artifacts it does not take move in the abi digits only. `342723cba` is the lane's last src commit (the renumber over the merge afe9ee325); the manager re-pins to the landing merge (the self-pin convention).
+# [K134] SELF-PIN (lane trailgc3, 2026-10-29), abi 91 -> 93 (provisional; the next number at landing): VM artifacts whose program writes the trail on a cycle gain the trail checkpoints, the compaction and the run state's `trail_gc_floor`; every other artifact moves in the abi digits only. `fcd0c4925` is the lane's last src commit (the review r2 fixes); the manager re-pins to the merge commit (the self-pin convention).
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-0f425c2d0}"   # lane/memfn-s3m merge commit (lane lands3 landing, 2026-10-29): abi 92, re-pinned from the lane self-pin 342723cba; before it 342723cba, lane s3m self-pin (2026-10-29), D172 S3 at abi 92 over main b05ccfc0b; before it 02229045e, [REQRUN-VM] merge commit (lane reqvm1land landing, 2026-10-29): abi 91, re-pinned from the lane self-pin 88d3c5209; before it 88d3c5209, the [REQRUN-VM] self-pin (lane reqvm1m, 2026-10-29): abi 91; before it c6707bb5a, [INLINE-C] stage 2 merge commit (lane ic2fix landing, 2026-10-28): abi 90, re-pinned from the lane self-pin 94568296a; before it [INLINE-C] stage 2 lane self-pin (lane ic2, 2026-10-27): abi 90; the manager re-pins to the merge commit; before it 719a17ccb, the [INLINE-C] stage 1b merge commit (2026-10-27): abi 89, re-pinned from the lane self-pin e3c92158c (ic1bfix); before it cfdf8f5fd, the lane ic1b self-pin (abi 89 provisional, pre-merge); before it 81454bbf4, the [INLINE-C] stage 0 merge commit (2026-10-26): abi 88, re-pinned from the lane self-pin c1dd695bc; before it 002810cac, the [SCANEDGE-SET] merge commit (2026-10-26): abi 87, re-pinned from the lane self-pin ddd18d3df; before it 7234c2e86, the [EMIT-BIDI] merge commit (2026-10-26, landing lane emitbidiland): abi 86, re-pinned from the lane self-pin dba52b4b4; before it 4f39644d8 (lane iterfix2 (2026-10-23): the r2 review's fixes, the 84 event amended, src identical to this commit (was 24d2888f5, lane nomacro, RX_FOREACH dropped; before it 934f8bed1, the lane/iterland stack pre-nomacro; before it 881eac3cf, the I4 lane self-pin; before it 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
 # [MEMFN] D172 S3 SELF-PIN (lane s3pair, 2026-10-24), abi 84 -> 85: the cover
 # LOCATE row routed by default (the kit's window family); every other artifact
@@ -1495,7 +1497,26 @@ prog_region_raw() { awk '/^    goto rx_L0;$/{on=1} on{print} on&&/^rx_accept:/{e
 # [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
 # every deny-axis build alike, passes the seventh exception's canonicalizer
 # (adv_layout_canon, below) so it composes with every excuse bucket.
-prog_region() { prog_region_raw | adv_layout_canon; }
+# [K134] (lane trailgc3, abi 93) THE NINTH NAMED EXCEPTION, a TWO-SIDED CANONICALIZER
+# in the seventh's shape. A VM artifact whose program writes the trail on a cycle
+# gains trail CHECKPOINTS (src/gen/emit_vm.c `vm_trail_check_text`, the one writer):
+# a statement line `    RX_TRAIL_CHECK();`, or the block `{ RX_TRAIL_CHECK(); goto rx_LN; }`
+# in place of a guarded `goto rx_LN;`. They sit on edges of the program region and
+# nowhere else in it, and they move no other line, so the canonical form is the
+# region WITHOUT them (idempotent on a pre-checkpoint region). It is applied to
+# every region this file extracts, so it composes with every deny-axis excuse
+# without a per-bucket rewrite. A checkpoint in any other spelling survives it and
+# lands in `rdiff`. What it hides is held three other ways: comparison (B) pins the
+# WHOLE file, checkpoints included, against the self-pin `FILEPIN`;
+# tests/vm/run_trail_compact.sh holds the cycle/margin structure over the emitted C
+# and the corpus; and its non-vacuity arm below (TRAILCHK_TOTAL).
+trail_check_canon() {
+    sed -E -e 's/\{ RX_TRAIL_CHECK\(\); (goto rx_L[0-9]+;) \}/\1/' -e '/^ *RX_TRAIL_CHECK\(\);$/d'
+}
+trail_check_count() {
+    grep -cE 'RX_TRAIL_CHECK\(\);' || true
+}
+prog_region() { prog_region_raw | adv_layout_canon | trail_check_canon; }
 # The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
 # artifact only. Counted, never stripped.
 FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
@@ -2127,6 +2148,7 @@ sweep() { # sweep <label> <extra pcrec args>
             # subject's RAW region (prog_region above already canonicalized).
             ra_raw="$(printf '%s\n' "$a" | stamp_strip | prog_region_raw)"
             ADVNEW_TOTAL=$((ADVNEW_TOTAL + $(printf '%s\n' "$ra_raw" | adv_new_count)))
+            TRAILCHK_TOTAL=$((TRAILCHK_TOTAL + $(printf '%s\n' "$ra_raw" | trail_check_count)))
             ADVOLD_TOTAL=$((ADVOLD_TOTAL + $(printf '%s\n' "$ra_raw" | adv_old_count)))
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
             # [ENG-ISL] the artifact's OWN account of what it contains, read
@@ -3082,6 +3104,11 @@ if [ "${ADVNEW_TOTAL:-0}" -lt 1 ]; then
     bad "[MEMFN] R4h the layout canonicalizer saw no new-layout span-scan loop in any subject region — the seventh exception is vacuous"
 else
     ok "[MEMFN] R4h the layout canonicalizer was live: $ADVNEW_TOTAL new-layout span-scan loops across the axes' subject regions, canonicalized on both sides"
+fi
+if [ "${TRAILCHK_TOTAL:-0}" -lt 1 ]; then
+    bad "[K134] the trail-checkpoint canonicalizer saw no checkpoint in any subject region — the ninth exception is vacuous"
+else
+    ok "[K134] the trail-checkpoint canonicalizer was live: $TRAILCHK_TOTAL checkpoints across the axes' subject regions, stripped on both sides"
 fi
 if [ "${ADVOLD_TOTAL:-0}" -ne 0 ]; then
     bad "[MEMFN] R4h $ADVOLD_TOTAL subject region(s) still carry the OLD one-line span-scan loop — the emitter did not move, or the canonicalizer hides a regression"

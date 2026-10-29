@@ -12,9 +12,10 @@
 # WHY IT NEEDED A CELL WRITTEN FOR IT. Nothing in this tree before [DD-14.FB]
 # could see this row, because nothing called an entry with a capacity DIFFERENT
 # from the stamped one. `tests/recursion/framebuffer.rxt`'"'"'s buffered cell is the
-# detector by construction: n = 343 needs 686 frames and 3,081 trail entries,
-# the block hands over 1024 and 8192, and under this row the artifact still
-# stops where it stamped.
+# detector by construction: n = 764 needs 1,528 frames and 3,073 trail entries
+# (K134's compaction, docs/spec/limits.md §4; written as n = 343, 686 and 3,081
+# before it), the block hands over 2048 and 8192, and under this row the
+# artifact still stops where it stamped.
 #
 # RE-ANCHORED 2026-08-26 (lane srAnchor): [OPT-1]'"'"'s two-tier default entry
 # (`vm_emit_default_entry`) rewrote the un-suffixed entries this same

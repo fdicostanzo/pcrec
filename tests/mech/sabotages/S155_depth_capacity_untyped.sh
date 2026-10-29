@@ -57,7 +57,8 @@
 #      under the sabotage: framebuffer.rxt 16/0, quantified.rxt 57/0 (its
 #      `^(?R)*$` `gu frames` cell included), leftrec.rxt 7/0, and the
 #      `recursion` arm 10/0 -- including its own explicit check that
-#      `^(a(?1)?b)$` "answers 'frames' at n=343". This is S108's lesson in a
+#      `^(a(?1)?b)$` "answers 'frames' at n=343" (n=764 since K134's
+#      compaction, docs/spec/limits.md §4). This is S108's lesson in a
 #      new place: A ONE-HUNK MUTATION CANNOT FALSIFY A DEFENCE-IN-DEPTH TRIO,
 #      and the corpus asserts the ANSWER, which the other two still produce.
 #
