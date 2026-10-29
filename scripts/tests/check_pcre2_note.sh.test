@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# scripts/tests/check_pcre2_note.test -- planted-case self-test of
+# scripts/check_pcre2_note.sh: a clean prose note must pass, each pasted-code
+# shape must fail. Scratch files under mktemp -d (TMPDIR).
+C=$(dirname "$0")/../check_pcre2_note.sh
+D=$(mktemp -d) || exit 1
+trap 'rm -rf "$D"' EXIT
+fail=0
+t() { # name want text
+    printf '%s\n' "$3" > "$D/n.md"
+    bash "$C" "$D/n.md" >/dev/null 2>&1; got=$?
+    [ "$got" = "$2" ] || { echo "FAIL $1: want $2 got $got"; fail=1; }
+}
+t clean-prose 0 '# Lazy quantifier backtracking
+
+When a lazy quantifier is followed by a literal, the matcher (pcre2_match.c:1204-1230) tries the literal first and only then extends the repeat. PCRE2_CASELESS changes the literal comparison; see pcre2api(3). The behaviour is the same under PCRE2_UTF.
+- Group numbering follows the opening parenthesis.
+- A pattern such as a(b|c)+d never needs more than one capture slot.'
+t fence 1 'text
+```c
+x
+```'
+t define 1 '#define LINK_SIZE 2'
+t include 1 '#include "pcre2_internal.h"'
+t semicolon-stmt 1 '  rc = foo(a, b);'
+t call-stmt 1 'advance(ptr);'
+t brace-open 1 'if (x) {'
+t brace-close 1 '}'
+t arrow 1 'then ptr->next is followed'
+t andand 1 'a && b matters'
+t shift 1 'the value << 3 happens'
+t allcaps-internal 1 'the opcode OP_BRA_ONCE is emitted'
+t meta-const 1 'see META_CAPTURE here'
+t lower-internal 1 'it calls compile_branch_inner for each'
+t suffixed 1 'then pcre2_compile_8 runs'
+t priv 1 'the PRIV macro renames it'
+t public-const-ok 0 'PCRE2_NO_AUTO_CAPTURE disables numbering; PCRE2_DOTALL too.'
+t public-fn-ok 0 'pcre2_substitute and pcre2_match_data_create behave per the man page.'
+t citation-ok 0 'See pcre2_compile.c:455 and pcre2_intmodedep.h for the layout.'
+t prose-semicolon-ok 0 'It first scans the pattern; then it emits the program.'
+[ $fail = 0 ] && echo "check_pcre2_note.test: ok"
+exit $fail

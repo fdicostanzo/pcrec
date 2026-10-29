@@ -1,0 +1,5 @@
+report=docs/dev/lanes/pcre2wall_report.md
+sections: Summary; Premise test; The guard hook; The reader agent type; Notes and the checker; Tests and sabotage; Docs updated; Clone procedure; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

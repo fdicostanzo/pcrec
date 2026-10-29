@@ -315,6 +315,13 @@ is examined for extract candidates before any function-specific restructuring is
 proposed. `emit_predicate_axes` (178 lines, not one `if` or loop) is the pure case:
 the axes-table centralization IS the whole remedy and no split is proposed at all.
 
+**4.1a Cite an outside source you leaned on heavily (Frank 2026-10-29, D181).** When
+the algorithm or structure of a function came from another source (a PCRE2 note in
+`docs/dev/pcre2_notes/`, a paper, another engine), its header carries a citation
+comment: `/* Approach after [PCRE2src] (<what>), see docs/dev/pcre2_notes/<slug>.md */`
+(papers: their REFERENCES.md key), and the note lists the site. Not required for
+matching an outside source's behaviour (D26), only for borrowed design.
+
 **4.2 Comments carry invariants and why-not-the-alternative; HISTORY goes to docs
 with a pointer.** A function header, sized to the function, answers (a) what it
 produces, (b) what it reads that is not a parameter, (c) the one invariant a caller
