@@ -12171,7 +12171,8 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
     if (!v->tracing) {
         pcrec_sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
+            "        if (run->trail_depth >= run->trail_cap && !%s_trail_compact(run))   \\\n"
+            "            return %s_R_FRAMES;                                 \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -12193,7 +12194,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
             "#define %s_CUT(slot_) do {                                   \\\n"
             "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v->up, v->up, v->up, v->up, v->up, v->up,
+            v->up, v->p, v->up, v->up, v->up, v->up, v->up,
             v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -12205,7 +12206,8 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
          * debugging tool that lies, which is worse than none. */
         pcrec_sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
+            "        if (run->trail_depth >= run->trail_cap && !%s_trail_compact(run))   \\\n"
+            "            return %s_R_FRAMES;                                 \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -12232,7 +12234,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
             "                run->resume_depth, slot_values[(slot_)]);                        \\\n"
             "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v->up, v->up, v->up, v->p, v->up, v->up, v->up,
+            v->up, v->p, v->up, v->up, v->p, v->up, v->up, v->up,
             v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -12675,6 +12677,86 @@ static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry 
     pcrec_sb_scaffold_close(c);
 }
 
+/* Writes `<prefix>_trail_compact`, which makes room on a full trail by
+ * dropping the entries no unwind can ever read back; `<PREFIX>_TRAIL` calls
+ * it where it would otherwise give up with `PCREC_ERR_FRAMES` (K134).
+ *
+ * TRAIL-SEG (docs/design/engine_m4.md §2.4a). The live frames' `trail_mark`s
+ * cut the trail into segments. An unwind to a live frame restores every
+ * entry above its mark newest-first, so for each slot the OLDEST entry above
+ * the mark is the value that survives; within one segment every later entry
+ * for a slot the segment already holds is never the survivor of any unwind,
+ * and dropping it changes no answer. A cut frame is not a boundary (RX_CUT
+ * lowers `resume_depth` and leaves the trail, CUT-INV), so a cut merges its
+ * segment into the surviving frame's, which is what makes the dropped entries
+ * appear: a possessive loop's passes leave their writes in one segment.
+ * Nothing is ever REWOUND here, no slot value changes, and CUT-INV holds.
+ *
+ * THE CALL SNAPSHOT STAYS WHERE THE RETURN READS IT. A linked call's return
+ * reads `trail[resume_stack[call_top].trail_mark + j]` (`vm_region`). The
+ * call frame is live while its activation is, its |W| parked entries are the
+ * first entries of its segment and name distinct slots, so each is the
+ * oldest for its slot and is kept; order is kept and the frame's mark moves
+ * with them, so they stay at `mark + j`. A return whose restore triggers a
+ * compaction reads the mark after it, because `<PREFIX>_SET` evaluates its
+ * value after `<PREFIX>_TRAIL`.
+ *
+ * THE HYSTERESIS IS AN AMORTIZATION BOUND, not a tuned number. A compaction
+ * reads the whole trail and returns success only if it freed MORE THAN HALF
+ * of the capacity; then at least half a trail of fresh writes comes before the
+ * next one, so each write pays for at most two entry visits, the same order
+ * as the write and the unwind that read the entry anyway (the doubling
+ * argument of a growable array). Any constant fraction is O(1) per write;
+ * one half is the textbook point and was not tuned. A compaction that frees
+ * less gives up exactly as the full trail did before, so the fast tier
+ * escalates instead of compacting a few entries at a time (the l9look twin,
+ * which accepted any progress, compacted 607,662 times on one call). It is
+ * never worse than no compaction: it runs only where that gave up.
+ *
+ * Emitted only on an artifact that writes the trail (`emitted_set`, which is
+ * known here: the program is already in the scratch buffer). The byte map is
+ * cleared through the entries just kept, so the cost is the trail plus the
+ * live frames, never frames x slots. */
+static void vm_emit_trail_compact(Vm *v)
+{
+    StrBuf *c = &v->cx->job->csb;
+    if (!v->emitted_set) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* Make room on a full trail. Between two live resume frames only\n"
+        " * the OLDEST entry for each slot is ever restored (an unwind\n"
+        " * applies them newest-first), so every later entry for the same\n"
+        " * slot there is dropped and each frame's mark moves down with the\n"
+        " * entries. Order is kept, so a call frame's parked values stay at\n"
+        " * trail_mark + j. Nothing is rewound and no slot changes. Succeeds\n"
+        " * only if more than half the capacity is free afterwards, so the\n"
+        " * work is at most two entry visits per trail write; otherwise the\n"
+        " * caller gives up as a full trail always did. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "static %sint %s_trail_compact(%s_run_state *run)\n"
+        "{\n"
+        "    unsigned char seen[%s_NSLOTS] = { 0 };\n"
+        "    size_t r = 0, w = 0, f, k;\n"
+        "    for (f = 0; f <= run->resume_depth; f++) {\n"
+        "        const size_t end = f < run->resume_depth ? run->resume_stack[f].trail_mark\n"
+        "                                                 : run->trail_depth;\n"
+        "        const size_t kept = w;\n"
+        "        if (f > 0) run->resume_stack[f - 1].trail_mark = w;\n"
+        "        for (; r < end; r++) {\n"
+        "            const unsigned s = run->trail[r].slot_index;\n"
+        "            if (seen[s]) continue;\n"
+        "            seen[s] = 1;\n"
+        "            run->trail[w++] = run->trail[r];\n"
+        "        }\n"
+        "        for (k = kept; k < w; k++) seen[run->trail[k].slot_index] = 0;\n"
+        "    }\n"
+        "    run->trail_depth = w;\n"
+        "    return w < run->trail_cap - w;\n"
+        "}\n\n",
+        pcrec_attr_text(PCREC_ATTR_COLD), v->p, v->p, v->up);
+}
+
 static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
                                 const VmEntry *en, const VmReseed *rs)
 {
@@ -12698,6 +12780,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * written once. Six copies of four assignments is exactly the shape
      * sabotage row S-FB2 (frames capacity passed as the trail capacity)
      * needs in order to be a one-site typo somebody's eye slides over. */
+    vm_emit_trail_compact(v);
+
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* Point a run state at its working storage. Called BEFORE\n"

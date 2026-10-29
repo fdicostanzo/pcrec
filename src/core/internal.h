@@ -8112,6 +8112,7 @@ typedef enum {
     PCREC_ATTR_NOINLINE,     /* noinline */
     PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
     PCREC_ATTR_UNUSED,       /* unused: a file-local nothing may read */
+    PCREC_ATTR_COLD,         /* cold noinline: a rarely-run helper off the hot path */
     PCREC_ATTR_N
 } PcrecAttr;
 /* `a`'s text, as its writer puts it on (or above) a definition head. */

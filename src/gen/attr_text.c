@@ -12,6 +12,8 @@
  *   A3  K24's guarded `noclone` on every DFA search head (emit_dfa.c
  *       `emit_search_head`);
  *   A4  `unused` on a code segment's file-local binding (emit_code.c);
+ *   A5  `cold noinline` on the VM's trail compaction (emit_vm.c
+ *       `vm_emit_trail_compact`);
  *   the part-layout table (part_layout.c): a part row's layout, through
  *       `pcrec_part_attr`.
  *
@@ -77,6 +79,13 @@ static const struct {
      * (review 2026-10-27-r1-ic2 F9). gcc and clang both have it. */
     [PCREC_ATTR_UNUSED] = { "unused", "__attribute__((unused)) ",
             "no unused warning when nothing reads it" },
+    /* The VM's trail compaction (emit_vm.c), called only where a full trail
+     * would otherwise give up: `cold` sends the call and the function to the
+     * unlikely section so the trail write's hot path keeps its shape, and
+     * `noinline` keeps its body out of the matcher. gcc and clang both have
+     * both. */
+    [PCREC_ATTR_COLD] = { "cold", "__attribute__((cold, noinline)) ",
+            "one out-of-line body off the hot path (cold, noinline)" },
 };
 
 const char *pcrec_attr_text(PcrecAttr a)
