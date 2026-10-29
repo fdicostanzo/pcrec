@@ -298,6 +298,9 @@ static const struct { const char *name, *params, *body; } code_macro_rows[] = {
  * one group has is its number; a name several groups share is the first
  * member, in number order, that is set at this fire, else the first
  * (match_api.md §5.4¶6's walk). */
+static void code_gnames(Ctx *cx, StrBuf *c, const NamedGroup *list,
+                        bool set);
+
 static void code_macros(Ctx *cx, StrBuf *c, bool set)
 {
     for (size_t i = 0; i < sizeof code_macro_rows / sizeof code_macro_rows[0]; i++)
@@ -306,15 +309,21 @@ static void code_macros(Ctx *cx, StrBuf *c, bool set)
                             code_macro_rows[i].params, code_macro_rows[i].body);
         else
             pcrec_sb_printf(c, "#undef %s\n", code_macro_rows[i].name);
+    code_gnames(cx, c, cx->named_groups, set);
+}
 
-    /* The caller-scope names, sorted (name, number): a run per name. */
+/* The `RX_G_<name>` half of the macro set over `list`: its caller-scope
+ * ASCII names (a definition's view list holds only its own, all of which
+ * are caller-scope in that view), sorted (name, number), a run per name. */
+static void code_gnames(Ctx *cx, StrBuf *c, const NamedGroup *list, bool set)
+{
     unsigned n = 0;
-    for (const NamedGroup *g = cx->named_groups; g; g = g->next)
+    for (const NamedGroup *g = list; g; g = g->next)
         if (!g->site_scoped && !g->scope && code_gname_ok(g->name)) n++;
     if (!n) return;
     const NamedGroup **v = pcrec_arena_alloc(&cx->arena, n * sizeof *v);
     n = 0;
-    for (const NamedGroup *g = cx->named_groups; g; g = g->next)
+    for (const NamedGroup *g = list; g; g = g->next)
         if (!g->site_scoped && !g->scope && code_gname_ok(g->name)) v[n++] = g;
     qsort(v, n, sizeof *v, code_ng_cmp);
     for (unsigned i = 0; i < n;) {
@@ -351,23 +360,25 @@ static void code_line_dir(StrBuf *c, size_t line, const char *file)
  * `#line`. */
 static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
 {
-    const PcrecEmitIn *in = cx->emit_in;
-    const char *file = in && in->code_file ? in->code_file : "<pattern>";
-    const bool esc = in && in->code_esc;
+    /* F38: the source is the NODE's (a definition's own text and file
+     * inside a definition), never the target's. */
+    const char *file = a->u.callout.file ? a->u.callout.file : "<pattern>";
+    const bool esc = a->u.callout.esc;
+    const char *src = a->u.callout.src;
     const size_t at = a->u.callout.code_at;
 
     /* The segment's first byte, as a source position: the pattern's own
      * lines below its first (a `pattern-esc` value is ONE source line). */
-    size_t line = in && in->code_line ? in->code_line : 1;
-    size_t col = in ? in->code_col : 1;
+    size_t line = a->u.callout.line ? a->u.callout.line : 1;
+    size_t col = a->u.callout.file ? a->u.callout.col : 1;
     size_t bol = 0;
     if (!esc)
         for (size_t i = 0; i < at; i++)
-            if (cx->pat[i] == '\n') { line++; bol = i + 1; }
+            if (src[i] == '\n') { line++; bol = i + 1; }
     if (bol > 0) col = 1;
     bool pad = !esc && a->u.callout.code_exact && col > 0;
     for (size_t i = bol; pad && i < at; i++)
-        if (cx->pat[i] == '\t' || (unsigned char)cx->pat[i] >= 0x80) pad = false;
+        if (src[i] == '\t' || (unsigned char)src[i] >= 0x80) pad = false;
     if (pad) col += at - bol;
 
     pcrec_sb_putc(c, '\n');
@@ -379,6 +390,14 @@ static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
     if (pad) pcrec_sb_printf(c, " line %zu, column %zu */\n", line, col);
     else     pcrec_sb_printf(c, " line %zu */\n", line);
     pcrec_sb_cmt_close(c);
+    /* [INLINE-C] stage 3 a site inside a definition names the
+     * DEFINITION's groups (§1.9): its `RX_G_` set replaces the caller's
+     * around its function. */
+    const bool view = a->u.callout.view_n > 0;
+    if (view) {
+        code_gnames(cx, c, cx->named_groups, false);
+        code_gnames(cx, c, a->u.callout.view_names, true);
+    }
     pcrec_sb_printf(c, "static ptrdiff_t %s(const rx_ctx *ctx)\n{\n(void)ctx;\n",
                     code_fn(cx, a));
 
@@ -400,6 +419,24 @@ static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
         }
     }
     pcrec_sb_puts(c, "\n__builtin_trap(); }\n");
+    if (view) {
+        code_gnames(cx, c, a->u.callout.view_names, false);
+        code_gnames(cx, c, cx->named_groups, true);
+    }
+}
+
+/* One `code-header` line, unless an earlier one (of `seen`, `nseen`
+ * pointers) included the same header: its `#line` (the file whose head
+ * wrote it) and its `#include`. */
+static void code_header(StrBuf *c, const PcrecCodeHeader *h, const char *file,
+                        const PcrecCodeHeader **seen, int *nseen)
+{
+    for (int j = 0; j < *nseen; j++)
+        if (!strcmp(seen[j]->header, h->header)) return;
+    seen[(*nseen)++] = h;
+    const char *f = h->file ? h->file : file;
+    if (h->line && f) code_line_dir(c, h->line, f);
+    pcrec_sb_printf(c, "#include %s\n", h->header);
 }
 
 void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
@@ -423,15 +460,27 @@ void pcrec_emit_code_block(Ctx *cx, StrBuf *c)
      * line a `code-header` or segment `#line` left in force (review
      * 2026-10-27-r1-ic2 F12). */
     if (cx->ncodesegs) code_macros(cx, c, true);
-    for (int i = 0; i < nh; i++) {
-        bool dup = false;
-        for (int j = 0; j < i; j++)
-            dup |= !strcmp(in->code_headers[j].header, in->code_headers[i].header);
-        if (dup) continue;
-        if (in->code_headers[i].line && in->code_file)
-            code_line_dir(c, in->code_headers[i].line, in->code_file);
-        pcrec_sb_printf(c, "#include %s\n", in->code_headers[i].header);
-    }
+    /* The target's own lines, then (stage 3, §3.3) those of each REACHED
+     * file that contributes a segment, in segment order: a file that
+     * contributes code contributes its headers, under the same trust rule
+     * as its code (the segment that brings them in passed it). */
+    int nall = nh;
+    for (int i = 1; i <= cx->ncallouts; i++)
+        nall += cx->callout_nodes[i]->u.callout.nheaders;
+    const PcrecCodeHeader **seen =
+        pcrec_arena_alloc(&cx->arena, (size_t)(nall + 1) * sizeof *seen);
+    int nseen = 0;
+    for (int i = 0; i < nh; i++)
+        code_header(c, &in->code_headers[i], in->code_file, seen, &nseen);
+    for (int s = 1; s <= cx->ncodesegs; s++)
+        for (int i = 1; i <= cx->ncallouts; i++) {
+            const Ast *a = cx->callout_nodes[i];
+            if (a->u.callout.bind != CO_CODE || a->u.callout.seg != s)
+                continue;
+            for (int h = 0; h < a->u.callout.nheaders; h++)
+                code_header(c, &a->u.callout.headers[h], a->u.callout.file,
+                            seen, &nseen);
+        }
     for (int s = 1; s <= cx->ncodesegs; s++)
         for (int i = 1; i <= cx->ncallouts; i++) {
             const Ast *a = cx->callout_nodes[i];

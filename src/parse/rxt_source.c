@@ -57,6 +57,7 @@
 #include "core/internal.h"
 #include "core/ksrc.h"
 #include "enc/enc.h"
+#include "../shared/sha256.h"
 
 /* [LIM-1] (D90, 2026-08-30) THE FOUR CAPS THIS HEAD PARSER HAS ALWAYS HAD
  * (docs/spec/limits.md §3.5) but never NAMED — the survey that built
@@ -294,6 +295,10 @@ typedef struct {
      * because a buffer opens nothing. The embedded store is parsed this way. */
     const char     *buf;
     size_t          buflen;
+    /* [INLINE-C] stage 3 the source being built (its `frags` keep every
+     * fragment this parse reads) and where the file read's SHA-256 goes. */
+    RxtSource      *src;
+    char           *digest;
 } RxtP;
 
 /* Every diagnostic from this file goes through here, so every one of them
@@ -1036,6 +1041,10 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
     buf[got] = 0;
+    /* [INLINE-C] stage 3 (inline_c.md §5.5): the digest a pin is checked
+     * against is of THESE bytes, the ones the split below parses: one read,
+     * no second open, no window between hashing and parsing. */
+    if (p->digest) pcrec_sha256_hex((const unsigned char *)buf, got, p->digest);
     return split_lines(p, buf, got, out);
 }
 
@@ -2705,6 +2714,43 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                             const RxtChain *chain, int *frag_refused,
                             const RxtBufIn *bin);
 
+/* [INLINE-C] stage 3 THE PIN (inline_c.md §5.3): splits an `include`/`lib`
+ * value AS WRITTEN into its path reference (`"path"`, or `<store>` where
+ * `close` admits it) and an optional `sha256 <hex64>` after it, the one
+ * content-pin spelling the format has (§1.6¶7's: keyword then value,
+ * exactly 64 hex digits, either case). `*path` is the reference with its
+ * delimiters, `*pin` the digits as written or NULL. A value with no closing
+ * delimiter is returned whole as the path (the caller's own shape check
+ * names it); anything after the path but a well-formed pin is refused by
+ * value shape. 0, or -1 with the refusal raised. */
+static int path_pin(RxtP *p, size_t line, const char *kind, const char *v,
+                    const char **path, const char **pin)
+{
+    *path = v;
+    *pin = NULL;
+    const char close = v[0] == '"' ? '"' : v[0] == '<' ? '>' : 0;
+    const char *e = close ? strchr(v + 1, close) : NULL;
+    if (!e || !e[1]) return 0;
+    const char *rest = skip_ws(e + 1);
+    if (rest == e + 1) return 0;          /* `"a"b`: the shape check's */
+    if (tok_is(rest, "sha256")) {
+        const char *h = skip_ws(rest + 6);
+        size_t n = 0;
+        while (isxdigit((unsigned char)h[n])) n++;
+        if (h != rest + 6 && n == 64 && !h[n]) {
+            *path = arena_strndup(p->arena, v, (size_t)(e + 1 - v));
+            *pin = h;
+            return 0;
+        }
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'%s' pin wants 'sha256' then exactly 64 hex digits "
+                        "(got '%s')", kind, rest);
+    }
+    return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                    "'%s' takes a path and at most 'sha256 <hex64>' after it "
+                    "(got '%s')", kind, rest);
+}
+
 /* [FINDINGS] B0 (r2 M-B3): reads the fragment an `include` line names —
  * `cand` as the author spelled it, `rp` its real path — in FRAGMENT mode,
  * so a head line anywhere in the include closure is refused at
@@ -2716,8 +2762,10 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
  * lets the entry's own body still run (docs/spec/rxt_format.md). A
  * fragment already on the parse chain is a cycle and is not re-entered.
  * Returns -1 with `p->err` filled when the fragment rule refused, else 0. */
-static int fragment_check(RxtP *p, const char *cand, const char *rp)
+static int fragment_check(RxtP *p, const char *cand, const char *rp,
+                          const char **digest)
 {
+    *digest = NULL;
     char *self = realpath(p->path, NULL);
     int cyc = self && !strcmp(self, rp);
     for (const RxtChain *c = p->chain; c && !cyc; c = c->up)
@@ -2729,7 +2777,22 @@ static int fragment_check(RxtP *p, const char *cand, const char *rp)
     int refused = 0;
     RxtSource *frag = parse_file(cand, &ferr, &node, &refused);
     free(self);
-    if (frag) { pcrec_rxt_source_free(frag); return 0; }
+    if (frag) {
+        /* [INLINE-C] stage 3 KEPT, not freed: its blocks, its digest and
+         * its own `include` rows are the reach graph's and the include
+         * block compile's (inline_c.md §5.5's one read). */
+        RxtSource *s = p->src;
+        if (s->nfrags == s->fragcap) {
+            size_t nc = s->fragcap ? s->fragcap * 2 : 4;
+            RxtSource **nv = realloc(s->frags, nc * sizeof *nv);
+            if (!nv) { pcrec_rxt_source_free(frag); return 0; }
+            s->frags = nv;
+            s->fragcap = nc;
+        }
+        s->frags[s->nfrags++] = frag;
+        *digest = frag->sha256;
+        return 0;
+    }
     if (!refused) return 0;
     *p->err = ferr;
     *p->frag_refused = 1;
@@ -2776,7 +2839,8 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
 
     RxtP p = { .path = path, .arena = &src->arena, .err = err, .failed = 0,
                .chain = chain, .frag_refused = frag_refused,
-               .buf = bin ? bin->text : NULL, .buflen = bin ? bin->len : 0 };
+               .buf = bin ? bin->text : NULL, .buflen = bin ? bin->len : 0,
+               .src = src, .digest = src->sha256 };
     RxtLines L = { 0 };
     if (slurp_lines(&p, &L) != 0) { pcrec_rxt_source_free(src); return NULL; }
     src->path = arena_strdup(&src->arena, path);
@@ -3204,7 +3268,10 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 goto fail;
             }
             if (tok_is(tok, "lib")) {
-                const char *v = value_trimmed(&p, tok);
+                const char *written = value_trimmed(&p, tok);
+                const char *v, *pin;
+                if (path_pin(&p, line, "lib", written, &v, &pin) != 0)
+                    goto fail;
                 /* a `path-ref` is C's own two spellings: "local" or
                  * <store>. Both are RECORDED here and neither is opened:
                  * this parser touches no filesystem at all, which is what
@@ -3220,6 +3287,8 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 }
                 RxtRow *r = row_push(&p, src, RXT_DECL_LIB, line);
                 r->value = arena_strdup(&src->arena, v);
+                r->pin = pin;
+                r->written = written;
                 last_rxtrow = r;
                 continue;
             }
@@ -3259,7 +3328,10 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                  * directly, since an include path has TWO counterparts
                  * (all three legs must resolve it) where a `lib`/definition
                  * resolution has none. */
-                const char *v = value_trimmed(&p, tok);
+                const char *written = value_trimmed(&p, tok);
+                const char *v, *pin;
+                if (path_pin(&p, line, "include", written, &v, &pin) != 0)
+                    goto fail;
                 size_t n = strlen(v);
                 if (n < 3 || v[0] != '"' || v[n - 1] != '"') {
                     rxt_fail(&p, RXTD_VALUE_SHAPE, line,
@@ -3308,10 +3380,14 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                              src->rows[k].value);
                     goto fail;
                 }
-                if (fragment_check(&p, cand, rp) != 0) goto fail;
+                const char *digest;
+                if (fragment_check(&p, cand, rp, &digest) != 0) goto fail;
                 RxtRow *r = row_push(&p, src, RXT_DECL_INCLUDE, line);
                 r->value = arena_strdup(&src->arena, v);
                 r->name = rp;
+                r->pin = pin;
+                r->written = written;
+                r->digest = digest;
                 last_rxtrow = r;
                 continue;
             }
@@ -3952,6 +4028,8 @@ void pcrec_rxt_source_free(RxtSource *src)
      * set bounds at the number of distinct files. */
     for (size_t i = 0; i < src->nkids; i++) pcrec_rxt_source_free(src->kids[i]);
     free(src->kids);
+    for (size_t i = 0; i < src->nfrags; i++) pcrec_rxt_source_free(src->frags[i]);
+    free(src->frags);
     pcrec_arena_free(&src->arena);
     free(src);
 }
@@ -4302,7 +4380,197 @@ typedef struct {
     size_t              nseen, seencap;
     RxtDef             *defs;
     size_t              ndefs, defcap;
+    RxtReach           *reach;    /* [INLINE-C] stage 3: the `lib` edges  */
 } RxtClosure;
+
+/* ---- [INLINE-C] stage 3 THE REACH GRAPH (inline_c.md §5.4, §5.5) -------
+ *
+ * One edge per `include`/`lib` line read for a build. It is built from
+ * what the reader already holds — the fragments the parse kept, the lib
+ * files the closure parsed — so every digest is of the bytes the parse that
+ * read the file saw (one read). Nodes are REAL paths: the closure's own
+ * visited set keys on the resolver's spelling, and the every-chain rule
+ * must see one file reached by two spellings as one file. */
+
+/* `path`'s real path, arena-owned; `path` itself when it does not resolve
+ * (a node keyed on its spelling still equals itself). */
+static const char *reach_real(Arena *a, const char *path)
+{
+    char *r = realpath(path, NULL);
+    if (!r) return path;
+    const char *out = arena_strdup(a, r);
+    free(r);
+    return out;
+}
+
+/* Appends one edge to `g`, growing it in `a`. */
+static void reach_add(Arena *a, RxtReach *g, const RxtReachEdge *e)
+{
+    if (g->n == g->cap) {
+        size_t nc = g->cap ? g->cap * 2 : 8;
+        RxtReachEdge *nv = pcrec_arena_alloc(a, nc * sizeof *nv);
+        if (g->n) memcpy(nv, g->e, g->n * sizeof *nv);
+        g->e = nv;
+        g->cap = nc;
+    }
+    g->e[g->n++] = *e;
+}
+
+/* The fragment among `s`'s kept ones (not deeper) whose real path is
+ * `real`, or NULL (a cycle is never read). */
+static const RxtSource *frag_of(Arena *a, const RxtSource *s, const char *real)
+{
+    for (size_t i = 0; i < s->nfrags; i++)
+        if (!strcmp(reach_real(a, s->frags[i]->path), real)) return s->frags[i];
+    return NULL;
+}
+
+/* Adds `s`'s `include` edges (`s` is the node `sreal`), then each kept
+ * fragment's, depth first in include order. Terminates: a fragment on the
+ * parse chain was never read, so the kept tree has no cycle. */
+static void reach_includes(Arena *a, RxtReach *g, const RxtSource *s,
+                           const char *sreal)
+{
+    for (size_t i = 0; i < s->nrows; i++) {
+        const RxtRow *r = &s->rows[i];
+        if (r->kind != RXT_DECL_INCLUDE) continue;
+        const RxtSource *f = frag_of(a, s, r->name);
+        const RxtReachEdge e = { s->path, sreal, r->line, "include", r->pin,
+                                 r->value, r->name, r->digest };
+        reach_add(a, g, &e);
+        if (f) reach_includes(a, g, f, r->name);
+    }
+}
+
+RxtReach *pcrec_rxt_reach_includes(RxtSource *src)
+{
+    RxtReach *g = pcrec_arena_alloc(&src->arena, sizeof *g);
+    g->root_real = reach_real(&src->arena, src->path);
+    reach_includes(&src->arena, g, src, g->root_real);
+    return g;
+}
+
+const RxtSource *pcrec_rxt_frag_by_real(const RxtSource *src, const char *real)
+{
+    for (size_t i = 0; i < src->nfrags; i++) {
+        char *r = realpath(src->frags[i]->path, NULL);
+        const int hit = r && !strcmp(r, real);
+        free(r);
+        if (hit) return src->frags[i];
+        const RxtSource *d = pcrec_rxt_frag_by_real(src->frags[i], real);
+        if (d) return d;
+    }
+    return NULL;
+}
+
+int pcrec_rxt_reach_verify(const RxtReach *g, pcrec_error *err)
+{
+    for (size_t i = 0; i < g->n; i++) {
+        const RxtReachEdge *e = &g->e[i];
+        if (!e->pin || !e->digest || !strcasecmp(e->pin, e->digest)) continue;
+        /* The location and the file first, the digest it HAS (what the
+         * fix needs) next, the advice last: `pcrec_error.msg` is 256
+         * bytes, a truncation eats the tail, and the pin is on the named
+         * line already. */
+        RxtP fp = { .path = e->from, .err = err };
+        return rxt_fail(&fp, RXTD_SCHEMA_CONSTRAINT, e->line,
+                        "%s %s: sha256 pin mismatch, the file hashes to %s; "
+                        "re-inspect it, then update the pin",
+                        e->kind, e->to, e->digest);
+    }
+    return 0;
+}
+
+/* One step of the chain search from node `at` towards `want`, in edge
+ * (declaration) order. `first` is the first unpinned edge on the chain so
+ * far (NULL: none yet); with `need_unpinned` only a chain holding one ends
+ * the search. The chain is written to `path` (`*depth` edges deep, `max`
+ * room) as it is walked. `seen[2i + t]` marks edge i taken in taint state
+ * t, which bounds the walk at twice the edge count and terminates a cycle.
+ * Returns the chain's first unpinned edge when `need_unpinned`, else the
+ * chain's last edge; NULL when no such chain exists. */
+static const RxtReachEdge *reach_dfs(const RxtReach *g, const char *at,
+                                     const RxtReachEdge *first,
+                                     const char *want, bool need_unpinned,
+                                     unsigned char *seen,
+                                     const RxtReachEdge **path, size_t max,
+                                     size_t *depth)
+{
+    for (size_t i = 0; i < g->n; i++) {
+        const RxtReachEdge *e = &g->e[i];
+        if (strcmp(e->from_real, at) != 0) continue;
+        const RxtReachEdge *f = first ? first : e->pin ? NULL : e;
+        unsigned char *mark = &seen[2 * i + (f != NULL)];
+        if (*mark) continue;
+        *mark = 1;
+        const size_t d = *depth;
+        if (d < max) path[d] = e;
+        *depth = d + 1;
+        if (!strcmp(e->to_real, want) && (f || !need_unpinned))
+            return need_unpinned ? f : e;
+        const RxtReachEdge *hit = reach_dfs(g, e->to_real, f, want,
+                                            need_unpinned, seen, path, max,
+                                            depth);
+        if (hit) return hit;
+        *depth = d;
+    }
+    return NULL;
+}
+
+/* The chain search's entry: `want`'s first chain from the root, or its
+ * first chain holding an unpinned line (`need_unpinned`), into `path`.
+ * `*oom` is set when the search could not run. */
+static const RxtReachEdge *reach_search(const RxtReach *g, const char *want,
+                                        bool need_unpinned,
+                                        const RxtReachEdge **path, size_t max,
+                                        size_t *depth, bool *oom)
+{
+    *depth = 0;
+    unsigned char *seen = calloc(2 * g->n + 1, 1);
+    *oom = !seen;
+    if (!seen) return NULL;
+    const RxtReachEdge *hit = reach_dfs(g, g->root_real, NULL, want,
+                                        need_unpinned, seen, path, max, depth);
+    free(seen);
+    return hit;
+}
+
+const RxtReachEdge *pcrec_rxt_reach_unpinned(const RxtReach *g,
+                                             const char *real)
+{
+    if (!g || !strcmp(real, g->root_real)) return NULL;
+    size_t depth;
+    bool oom;
+    const RxtReachEdge *hit = reach_search(g, real, true, NULL, 0, &depth, &oom);
+    /* A search that could not run is no proof of a pin: the unsound answer
+     * is "pinned", so the first line stands in for the refusal. */
+    return oom && g->n ? &g->e[0] : hit;
+}
+
+size_t pcrec_rxt_reach_chain(const RxtReach *g, const char *real,
+                             const RxtReachEdge **path, size_t max)
+{
+    size_t depth = 0;
+    bool oom;
+    if (!g || !strcmp(real, g->root_real)) return 0;
+    if (!reach_search(g, real, true, path, max, &depth, &oom) &&
+        !reach_search(g, real, false, path, max, &depth, &oom))
+        return 0;
+    return depth < max ? depth : max;
+}
+
+/* The digest of the closure file `real` (the root or a parsed kid), or NULL
+ * when the closure has not read it. */
+static const char *closure_digest(RxtClosure *cl, const char *real)
+{
+    Arena *a = &cl->root->arena;
+    if (!strcmp(reach_real(a, cl->root->path), real)) return cl->root->sha256;
+    for (size_t i = 0; i < cl->root->nkids; i++)
+        if (!strcmp(reach_real(a, cl->root->kids[i]->path), real))
+            return cl->root->kids[i]->sha256;
+    return NULL;
+}
+
 
 /* The `"path"` form's search, EXACTLY as the existence check walks it: the
  * naming file's own directory, then each `--lib-path` in order. Returns the
@@ -4354,6 +4622,23 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
 
     RxtP fp = *cl->p;
     fp.path = s->path;
+    const char *sreal = reach_real(&cl->root->arena, s->path);
+
+    /* [INLINE-C] stage 3 this file's `code-header` lines, which go with any
+     * code segment one of its definitions contributes (inline_c.md §3.3). */
+    PcrecCodeHeader *hdrs = NULL;
+    int nhdr = 0;
+    for (size_t i = 0; i < s->nrows; i++)
+        if (s->rows[i].kind == RXT_DECL_CODE_HEADER) nhdr++;
+    if (nhdr) {
+        hdrs = pcrec_arena_alloc(&cl->root->arena, (size_t)nhdr * sizeof *hdrs);
+        nhdr = 0;
+        for (size_t i = 0; i < s->nrows; i++)
+            if (s->rows[i].kind == RXT_DECL_CODE_HEADER)
+                hdrs[nhdr++] = (PcrecCodeHeader){ s->rows[i].name,
+                                                  s->rows[i].value,
+                                                  s->rows[i].line, s->path };
+    }
 
     /* This file's own named blocks, in file order. */
     for (size_t i = 0; i < s->nrows; i++) {
@@ -4395,6 +4680,11 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         d->exports = r->exports;
         d->file = s->path;
         d->line = r->line;
+        d->col = r->col;
+        d->esc = r->esc;
+        d->file_real = sreal;
+        d->code_headers = hdrs;
+        d->ncode_headers = nhdr;
     }
 
     /* Then its `lib` rows, in declaration order, depth first. */
@@ -4406,7 +4696,16 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
         const char *ref = lib_ref_text(&cl->root->arena, r->value);
         const char *rp = lib_resolve(cl, own, ref);
         if (!rp) continue;                     /* refused by the caller */
-        if (closure_seen(cl, rp)) continue;
+        /* [INLINE-C] stage 3 EVERY `lib` line is an edge, a file already
+         * read included: the every-chain rule (T7) is about the lines that
+         * reach a file, not the one read of it. */
+        const char *rreal = reach_real(&cl->root->arena, rp);
+        RxtReachEdge le = { s->path, sreal, r->line, "lib", r->pin, r->value, rreal,
+                            closure_digest(cl, rreal) };
+        if (closure_seen(cl, rp)) {
+            reach_add(&cl->root->arena, cl->reach, &le);
+            continue;
+        }
         pcrec_error kerr = { 0 };
         RxtSource *kid = pcrec_rxt_source_parse(rp, &kerr);
         if (!kid)
@@ -4421,10 +4720,14 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
             cl->root->kids = nv; cl->root->kidcap = nc;
         }
         cl->root->kids[cl->root->nkids++] = kid;
+        le.digest = kid->sha256;
+        reach_add(&cl->root->arena, cl->reach, &le);
+        reach_includes(&cl->root->arena, cl->reach, kid, rreal);
         if (closure_walk(cl, kid, rp) != 0) return -1;
     }
     return 0;
 }
+
 
 /* ---- the entry ---- */
 
@@ -4498,11 +4801,19 @@ int pcrec_rxt_source_resolve(RxtSource *src,
      * test and every `--source` build takes the same path. */
     RxtDefs *defs = pcrec_arena_alloc(&src->arena, sizeof *defs);
     {
-        RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib };
+        /* [INLINE-C] stage 3 the reach graph: the entry's own `include`
+         * edges, then every `lib` edge (and each lib's includes) the
+         * closure reads. Every pin on it is checked HERE, when the files
+         * are read for a build, code or no code (inline_c.md §5.5). */
+        RxtReach *reach = pcrec_rxt_reach_includes(src);
+        RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib,
+                          .reach = reach };
         if (closure_walk(&cl, src, src->path) != 0) return -1;
+        if (pcrec_rxt_reach_verify(reach, err) != 0) return -1;
         defs->v = cl.defs;
         defs->n = cl.ndefs;
         defs->file = src;
+        defs->reach = reach;
     }
 
     /* (2) WHICH ARTIFACTS. */
@@ -4818,7 +5129,11 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
          * is one scalar. A block's own `description` rides column 4 too,
          * on the block's row, because a second description column would
          * be a second home for one fact. */
-        pcrec_sb_field(&sb, is_pat ? r->description : r->value);   /*  4 value */
+        /* [INLINE-C] stage 3 an `include`/`lib` row's value is the line
+         * AS WRITTEN, its `sha256` pin included (inline_c.md §5.5: the
+         * pin is reported, never verified, here). */
+        pcrec_sb_field(&sb, is_pat ? r->description
+                                   : r->written ? r->written : r->value); /*  4 value */
         pcrec_sb_putc(&sb, '\t');
         if (is_pat) pcrec_sb_field(&sb, r->value);                 /*  5 pattern */
         pcrec_sb_putc(&sb, '\t');

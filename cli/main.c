@@ -2235,7 +2235,7 @@ static int compile_sources(const CliState *cli)
             if (osrc->rows[ri].kind == RXT_DECL_CODE_HEADER)
                 hdrs[nh++] = (PcrecCodeHeader){ osrc->rows[ri].name,
                                                 osrc->rows[ri].value,
-                                                osrc->rows[ri].line };
+                                                osrc->rows[ri].line, NULL };
         const PcrecEmitIn tin = { .bound = PCREC_PB_UNSTATED,
                                   .callout_decls = decl,
                                   .ncallout_decls = ndecl,

@@ -139,6 +139,7 @@ typedef struct {
     int           nmap;
     Ast          *inject;      /* A_REP{0,0}(A_CAP{base}(body))            */
     int           nsites;      /* delivering sites naming this definition  */
+    int           ncallouts;   /* [INLINE-C] stage 3: callout sites in it  */
 } Bound;
 
 /* One DELIVERING CALL SITE. A site is a (call node, scope name) pair, and it
@@ -561,6 +562,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
      * (inline_c.md §5.4 row 3). The sub-parse's own refusals longjmp out of
      * the whole compile, so only the normal return restores it. */
     const RxtDef *outer_def = cx->code_def;
+    const int     outer_ncallouts = cx->ncallouts;
     cx->code_def = def;
     Ast *body = pcrec_parse_info(cx, NULL);
     cx->code_def = outer_def;
@@ -635,6 +637,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
     co->bound[co->nbound].pend   = pend;
     co->bound[co->nbound].k      = k;
     co->bound[co->nbound].nsites = 0;
+    co->bound[co->nbound].ncallouts = cx->ncallouts - outer_ncallouts;
     co->nbound++;
 }
 
@@ -655,6 +658,37 @@ static bool rc_export_lists(const RxtDef *def, const char *want, size_t wlen)
         if ((size_t)(e - b) == wlen && memcmp(b, want, wlen) == 0) return true;
     }
     return false;
+}
+
+/* [INLINE-C] stage 3 writes the definition-site view onto every callout
+ * site in `a`, a definition's body: `map` (local group -> caller group,
+ * `map[0]` the whole match) and `n` its length, `names` the definition's
+ * named groups in its own numbers. A local call inside the body never
+ * reaches a site here (the sites pass refuses a called group's sites), so
+ * the lexical walk is every site the view applies to. */
+static void rc_view(Ast *a, const int *map, int n, const NamedGroup *names)
+{
+    if (!a) return;
+    switch (a->k) {
+    case A_CALLOUT:
+        a->u.callout.view_n = n;
+        a->u.callout.view_map = map;
+        a->u.callout.view_names = names;
+        return;
+    case A_CAP: case A_LOOK: case A_REP: case A_ATOMIC: case A_WCLASS:
+        rc_view(a->l, map, n, names);
+        return;
+    case A_CAT: case A_ALT: {
+        /* The left-nested spine, iteratively ([DD-10]), as rc_remap_caps. */
+        Ast *t = a;
+        for (; t->k == a->k; t = t->l) rc_view(t->r, map, n, names);
+        rc_view(t, map, n, names);
+        return;
+    }
+    case A_CALL: case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX:
+    case A_GSTART: case A_KRESET: case A_BREF: case A_VAR:
+        return;
+    }
 }
 
 /* Assign this definition's numbers and splice it. */
@@ -694,8 +728,27 @@ static void rc_assign(Composer *co, Bound *bd)
                 rc_export_lists(def, g->name, strlen(g->name)))
                 keep[g->number] = true;
 
+    /* [INLINE-C] stage 3 THE DEFINITION-SITE VIEW (inline_c.md §1.9): a
+     * callout site inside the definition sees ALL of the definition's
+     * groups, numbered as the definition numbers them, so none of them may
+     * be erased; a definition with no site keeps the three tiers above
+     * unchanged (no mover: such a definition was refused before). */
+    if (bd->ncallouts > 0)
+        for (int i = 1; i < nmap; i++) keep[i] = true;
+
     int next = base;
     for (int i = 1; i < nmap; i++) map[i] = keep[i] ? ++next : 0;
+
+    /* The view's names: the definition's own, in its own numbers, copied
+     * before the re-base below writes the caller's numbers into them. */
+    NamedGroup *vnames = NULL;
+    if (bd->ncallouts > 0)
+        for (const NamedGroup *g = bd->names; g; g = g->next) {
+            NamedGroup *c = pcrec_arena_alloc(&cx->arena, sizeof *c);
+            *c = *g;
+            c->next = vnames;
+            vnames = c;
+        }
 
     bd->body = rc_remap_caps(bd->body, map, nmap);
     rc_rebase_refs(cx, bd->pend, map, nmap);
@@ -707,6 +760,7 @@ static void rc_assign(Composer *co, Bound *bd)
     bd->base = base;
     bd->map  = map;
     bd->nmap = nmap;
+    if (bd->ncallouts > 0) rc_view(bd->body, map, nmap, vnames);
 
     /* THE INJECTION (w1_impl §2.4): `A_REP{0,0}(A_CAP{base}(body))`. Not a
      * new shape — `mod_recursion.c`'s `(?(DEFINE)…)` port builds exactly
@@ -924,6 +978,16 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
 
     /* ---- PASS 3: NUMBER, ERASE, INJECT --------------------------------- */
     for (size_t i = 0; i < co.nbound; i++) rc_assign(&co, &co.bound[i]);
+
+    /* [INLINE-C] stage 3 the wrappers, for the sites pass: a site inside a
+     * definition is visited THROUGH the calls that reach it (§1.9). */
+    PcrecDefWrap *wr = pcrec_arena_alloc(&cx->arena,
+                                         co.nbound * sizeof *wr);
+    for (size_t i = 0; i < co.nbound; i++)
+        wr[i] = (PcrecDefWrap){ co.bound[i].base, co.bound[i].body,
+                                co.bound[i].def, co.bound[i].ncallouts };
+    cx->defwraps = wr;
+    cx->ndefwraps = (int)co.nbound;
 
     for (PendingRef *pr = cx->pending_refs; pr; pr = pr->next) {
         if (!pr->deferred || !pr->name) continue;

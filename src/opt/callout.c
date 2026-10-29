@@ -19,10 +19,16 @@
  *   2. NUMBERING: sites are numbered 1..n in textual order (the listing's
  *      and the stamps' `site` column).
  *   3. POSITIONS (§1.9, first match): inside a lookbehind, refused; inside a
- *      group a subroutine call or recursion can reach (a local `(?1)`,
- *      `(?R)`, `(?&n)`, a `(?(DEFINE)` group that is called, and every `lib`
- *      definition, which the composer binds as exactly such a group), refused:
- *      a call re-enters the site at a depth the view does not describe.
+ *      group a LOCAL subroutine call or recursion can reach (a local `(?1)`,
+ *      `(?R)`, `(?&n)`, a `(?(DEFINE)` group that is called), refused: a
+ *      call re-enters the site at a depth the view does not describe. A
+ *      COMPOSED definition (stage 3, rows 3b and 4) is not such a group: its
+ *      sites see the DEFINITION's own groups (the composer writes that view),
+ *      so a site there is visited THROUGH each call that reaches it, in the
+ *      call's context, and its class is the worst over those visits (two
+ *      visits: repeated). A definition that reaches itself through calls
+ *      keeps the refusal (row 3a): its sites re-enter at depths no view
+ *      describes.
  *      Row 2 (a conditional's condition) cannot arise: module `conditionals`
  *      has no producer, so `(?(` is refused before a site inside it exists.
  *   4. THE FIRING CLASS (§1.10) and the `once` check: see `co_site`. A
@@ -46,6 +52,13 @@ typedef struct {
     Ast          **sites;    /* [ncallouts]: every site, in visit order */
     int            nsites;
     Ast           *root;     /* the tree as written: the advice's verdict */
+    /* [INLINE-C] stage 3 per composed definition (Ctx.defwraps' order):
+     * how many times a call has walked it, whether it is on the walk's
+     * current call chain, and whether it reaches itself through calls. */
+    int           *visits;
+    unsigned char *onstack;
+    unsigned char *cyclic;
+    bool           again;    /* inside a definition's second visit */
 } CoWalk;
 
 /* Flattens the `k`-spine rooted at `a` (left-deep: `k(k(x, y), z)`) into
@@ -681,8 +694,10 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
 {
     Ctx *cx = w->cx;
     size_t at = a->u.callout.at;
-    a->u.callout.site = w->next++;
-    cx->callout_nodes[a->u.callout.site] = a;
+    if (a->u.callout.site == 0) {
+        a->u.callout.site = w->next++;
+        cx->callout_nodes[a->u.callout.site] = a;
+    }
     if (behind)
         pcrec_ctx_fail(cx, at, "a callout inside a lookbehind is not "
                        "supported");
@@ -692,7 +707,11 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
                        "definition) is not supported: a call re-enters the "
                        "site at a depth its view does not describe");
     CalloutClass c;
-    if (rep) {
+    if (w->again) {
+        c = CO_CLASS_REPEATED;
+        a->u.callout.why = "inside a definition reached by more than one "
+                           "call";
+    } else if (rep) {
         c = CO_CLASS_REPEATED;
         a->u.callout.why = pcrec_sb_fragf(&cx->arena, "inside the repeat "
             "whose quantifier%s has a maximum of 2 or more", co_at(cx, rep));
@@ -720,6 +739,76 @@ static void co_site(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
         pcrec_ctx_fail(cx, at, rep
             ? CO_ONCE_HEAD "%s; a site in such a repeat cannot be marked once"
             : CO_ONCE_HEAD "%s", at, a->u.callout.why);
+}
+
+/* The index in Ctx.defwraps of the definition whose wrapper is group `no`,
+ * or -1. */
+static int co_wrap(const Ctx *cx, int no)
+{
+    for (int i = 0; i < cx->ndefwraps; i++)
+        if (cx->defwraps[i].no == no) return i;
+    return -1;
+}
+
+static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
+                    bool tail, bool behind, bool called);
+
+/* One call to a composed definition: its body walked in the call's
+ * context. The first visit classifies its sites as any position would; a
+ * second visit marks them repeated (a site reached by two calls can fire
+ * twice); later ones add nothing and are skipped, which bounds the walk at
+ * two visits per definition. A definition on a call cycle with a site in
+ * it is refused (§1.9 row 3a). */
+static void co_call(CoWalk *w, const Ast *call, const Ast *rep,
+                    const Ast *live, bool tail, bool behind, bool called)
+{
+    Ctx *cx = w->cx;
+    const int d = co_wrap(cx, call->u.call.target);
+    if (d < 0) return;
+    const PcrecDefWrap *wr = &cx->defwraps[d];
+    if (w->cyclic[d] && wr->ncallouts > 0)
+        pcrec_ctx_fail(cx, 0,
+                       "a callout inside definition '%s' (%s:%zu), which "
+                       "reaches itself through calls, is not supported: a "
+                       "recursive call re-enters the site at a depth its view "
+                       "does not describe", wr->def->name, wr->def->file,
+                       wr->def->line);
+    if (w->onstack[d] || w->visits[d] >= 2) return;
+    const bool outer = w->again;
+    w->again = outer || w->visits[d]++ > 0;
+    w->onstack[d] = 1;
+    co_walk(w, wr->body, rep, live, tail, behind, called);
+    w->onstack[d] = 0;
+    w->again = outer;
+}
+
+/* Does `a` (inside a definition) call the definition `d`, directly or
+ * through the definitions it calls? `seen` marks the definitions entered. */
+static bool co_reaches(const Ctx *cx, const Ast *a, int d, unsigned char *seen)
+{
+    if (!a) return false;
+    switch (a->k) {
+    case A_CALL: {
+        const int t = co_wrap(cx, a->u.call.target);
+        if (t < 0) return false;
+        if (t == d) return true;
+        if (seen[t]) return false;
+        seen[t] = 1;
+        return co_reaches(cx, cx->defwraps[t].body, d, seen);
+    }
+    case A_CAP: case A_LOOK: case A_REP: case A_ATOMIC: case A_WCLASS:
+        return co_reaches(cx, a->l, d, seen);
+    case A_CAT: case A_ALT: {
+        const AKind k = a->k;
+        PCREC_SPINE_EACH(e, a, k)
+            if (co_reaches(cx, e, d, seen)) return true;
+        return false;
+    }
+    case A_CALLOUT: case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX:
+    case A_GSTART: case A_KRESET: case A_BREF: case A_VAR:
+        return false;
+    }
+    return false;
 }
 
 static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
@@ -760,6 +849,7 @@ static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
     }
     case A_CAP: {
         const int no = a->u.cap.no;
+        if (co_wrap(w->cx, no) >= 0) return;   /* visited through its calls */
         const bool c = called ||
             (no >= 0 && (unsigned)no <= w->cx->ncap && w->called[no]);
         co_walk(w, a->l, rep, live, tail, behind, c);
@@ -773,9 +863,12 @@ static void co_walk(CoWalk *w, Ast *a, const Ast *rep, const Ast *live,
         co_walk(w, a->l, rep, live, false, behind || a->u.look.behind,
                 called);
         return;
-    /* The callee's body is visited at its own lexical position, never
-     * through the call (the AST's one back edge). */
+    /* A local callee's body is visited at its own lexical position, never
+     * through the call (the AST's one back edge); a composed definition's
+     * through every call (co_call). */
     case A_CALL:
+        co_call(w, a, rep, live, tail, behind, called);
+        return;
     case A_CLASS: case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR:
         return;
@@ -810,11 +903,22 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
                            in->callout_decls[0].num);
         return;
     }
-    CoWalk w = { cx, NULL, false, 1, NULL, 0, root };
+    CoWalk w = { cx, NULL, false, 1, NULL, 0, root, NULL, NULL, NULL, false };
     w.called = pcrec_arena_alloc(&cx->arena, cx->ncap + 1);
     memset(w.called, 0, cx->ncap + 1);
     w.sites = pcrec_arena_alloc(&cx->arena,
                                 (size_t)cx->ncallouts * sizeof *w.sites);
+    const size_t nd1 = (size_t)cx->ndefwraps + 1;
+    w.visits = pcrec_arena_alloc(&cx->arena, nd1 * sizeof *w.visits);
+    w.onstack = pcrec_arena_alloc(&cx->arena, nd1);
+    w.cyclic = pcrec_arena_alloc(&cx->arena, nd1);
+    memset(w.visits, 0, nd1 * sizeof *w.visits);
+    memset(w.onstack, 0, nd1);
+    for (int d = 0; d < cx->ndefwraps; d++) {
+        unsigned char *seen = pcrec_arena_alloc(&cx->arena, nd1);
+        memset(seen, 0, nd1);
+        w.cyclic[d] = co_reaches(cx, cx->defwraps[d].body, d, seen);
+    }
     pcrec_ast_visit(root, co_scan, &w);
     if (w.nsites != cx->ncallouts)
         pcrec_ctx_fail(cx, 0, "internal error: the parse built %d callout "
