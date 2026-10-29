@@ -89,7 +89,7 @@ W's tree (a prefix of a concat) is not P's tree under erasure, so as the table r
 - docs/dev/decisions.md:9681, D164 addendum 5 Q1: "`-fno-rev-end-onewalk` takes PCREC_BIT(56) (bit 55 went to the kit's `-fno-kit-size-drop`, R17-b); 7 bits remain, above [IFACE-PUSH]'s <= 4 trigger."
 - SLOTS' source, D163 addendum 2 item 2 (decisions.md ~9606: "no flags bit (bit 55 stays free)"), is recorded as STALE by docs/design/compound.md:65/128/1477 ("bit 55 went to the kit and bit 56 to B3, D164 add. 5").
 - Nuance: the kit's bit is reserved, not yet built (docs/design/memfn/r17b_prime.md:1368, B4p "Not built: ... the `drop-kit-bytes` rung and bit 55").
-- plan.md [IFACE-PUSH] (row at plan.md:930, its 2026-10-22 CANDIDATE line) also files bit 57 for the cover locator's deny (`PCREC_NO_WINDOW_REPORT`, deferred to the push).
+- plan.md [IFACE-PUSH] (row its 2026-10-22 CANDIDATE line) also files bit 57 for the cover locator's deny (`PCREC_NO_WINDOW_REPORT`, deferred to the push).
 **Settled:** 7 free (57-63) with 55 reserved to the kit by ruling, so the subject's "about 8" (subject.md:167) is wrong and SLOTS' PROBED-AND-HELD is REFUTED on this point. After `PCREC_NO_LANDMARK_WALK`: 6, or 5 if cover's filed bit-57 candidate is counted. Both are above the ≤ 4 trigger, so COST-3's "state it exactly" is right.
 
 ## 10. SIM-4 (cls-s-nbsp `a\sb` is fixed width under utf8; row 3 should decline it) — HOLDS
@@ -126,13 +126,13 @@ The card rows (subject.md:406-408, `unit instr`) violate both. (A spec could add
 
 ## 15. COST-7 ([PRIOR-COST-UNIFY] names the landmark cut-over family) — HOLDS
 
-plan.md:84 `- [PRIOR-COST-UNIFY] STATE:blocked — ONE primitive for the landmark cut-overs (expected hit gap vs the work it saves)`; trigger line: "FOUR dispersed members of one decision family that read the byte-rate PRIOR to admit a scan: G1 `req_byte_dominated_by`, set-leads `pcrec_find_pick`, R4 `cand_rs_dense_applies`, and the new `req_landmark_admits`", plus "EIGHT further members" (lrrev) and the 2026-10-27 subtri note on the prior keying a landmark. The rarity row (`p(L)·lwhit < c(route) − lwbyte` from "the landmark's prior from the byte table", subject.md:417-419) is a further member; the subject never cites the row (grep of subject.md: no `PRIOR-COST`). Note the row is STATE:blocked (paused by D161, re-scope pending), so "use the primitive" is not available; "cite it and say which side it sits on" is the actionable part.
+plan.md `- [PRIOR-COST-UNIFY] STATE:blocked — ONE primitive for the landmark cut-overs (expected hit gap vs the work it saves)`; trigger line: "FOUR dispersed members of one decision family that read the byte-rate PRIOR to admit a scan: G1 `req_byte_dominated_by`, set-leads `pcrec_find_pick`, R4 `cand_rs_dense_applies`, and the new `req_landmark_admits`", plus "EIGHT further members" (lrrev) and the 2026-10-27 subtri note on the prior keying a landmark. The rarity row (`p(L)·lwhit < c(route) − lwbyte` from "the landmark's prior from the byte table", subject.md:417-419) is a further member; the subject never cites the row (grep of subject.md: no `PRIOR-COST`). Note the row is STATE:blocked (paused by D161, re-scope pending), so "use the primitive" is not available; "cite it and say which side it sits on" is the actionable part.
 
 ## 16. SLOT-13 / COST-8 ([ENTRY-TABLE], [FINDALL-NEXT], [MEASURE-SET] started and absent from the overlap list) — HOLDS
 
-- plan.md:64 `- [ENTRY-TABLE] STATE:started` (nested child; status 2026-10-18 "E0, E0c and E1 MERGED", next E1-prime);
-- plan.md:198 `- [FINDALL-NEXT] STATE:started` (status 2026-10-23, remaining I2 "the kit's `st`", I3);
-- plan.md:183 `- [MEASURE-SET] STATE:started` (status 2026-10-23 M0 on main; deliverables include the set format, `--list-measurements`, the install-time tool).
+- plan.md `- [ENTRY-TABLE] STATE:started` (nested child; status 2026-10-18 "E0, E0c and E1 MERGED", next E1-prime);
+- plan.md `- [FINDALL-NEXT] STATE:started` (status 2026-10-23, remaining I2 "the kit's `st`", I3);
+- plan.md `- [MEASURE-SET] STATE:started` (status 2026-10-23 M0 on main; deliverables include the set format, `--list-measurements`, the install-time tool).
 The subject's "Remodel overlap" (subject.md:482-493) names only [OPT-REVEND], [COMPOUND]/[MATCH-SPLIT], [DD-11.5], [INLINE-C]. Strongest of the three: [MEASURE-SET], since the subject's card "creates" `measure/cards.tsv` (subject.md:402-404) inside that row's scope; [ENTRY-TABLE]/[FINDALL-NEXT] are plausible touch points (new LOCATE→FINISH edge; per-hit state across find-all calls) rather than shown conflicts.
 
 ## 17. Quick structural checks
