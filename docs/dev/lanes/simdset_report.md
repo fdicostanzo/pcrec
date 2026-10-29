@@ -202,7 +202,7 @@ restored. Clean: 1968 passed, 0 failed.
 | `make test-memfn-link` | 11 passed, 0 failed (C15, C16 with vany.c's row, R-28: 342 kit functions, largest frame still 3,600 B) |
 | `make test-memfn-finder` | 1968 passed, 0 failed (with the card-table listing); sabotage red as above |
 | `python3 memfn/tests/run_g2_any.py` alone | 56 passed, 0 failed, 23 s wall (4 builds × 20,292,480 checks; 39 plant runs) |
-| `make test-memfn-g2` | G2RESULT |
+| `make test-memfn-g2` | green, rc 0: 70,358,654 checks passed, 0 failed, 9 m 31 s wall (all families; section 4y `find-any family (checks passed: 56)`), run while the queue's 690-trailgc-test held the box (not a timing window) |
 | zero-mover sweep vs 02a054851, default and `-fmemfn-simd` arms | OWED: queue job `696-simdset-sweep` (see STATE AT HANDOFF) |
 
 No `make test`, no mech run and no timing were run (brief).
