@@ -11,6 +11,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K134 — OPEN (filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
+
+On tests/recursion/cscan.rxt (the bench's cscan-onig), each pass of a `(?:...)*+` loop that calls `(?&sp)` leaves its trailed writes (save/set/restore, 9 per byte) on the trail: RX_CUT pops frames but never compacts the trail, so storage grows with SUBJECT LENGTH (idents-1m: trail 9.1M entries, 145.5 B/byte; resume stack peaks at 4 frames). The default stack-resident arm gives up on idents/comment/splice/nest-paren/nest-brace-128, all answered by libpcre2 10.46 at default limits (interp and JIT). CUT-INV (no trail REWIND at a cut) is correct; the growth was never priced. Correctness-adjacent: a give-up where the reference answers.
+
+**Repro**: compile tests/recursion/cscan.rxt's pattern, run the default arm on a ~1 MB identifier-only subject: PCREC_ERR_FRAMES.
+**Fix direction**: l9look candidate A, TRAIL-SEG compaction (within a segment between live frames only the oldest entry per slot is read back; compaction-on-full with hysteresis; keep the positional call-snapshot read of K36's site). Hand twin answer-identical (85 subjects x 4 caps, 0 diffs), 0 hot-path instructions.
+**Scheduled**: primed list P2 (docs/dev/optloop/primed_2026-10-29.md); build needs Frank's go.
+
+---
+
 ## K131 — OPEN (filed 2026-10-29, manager, from lane reqvm1's report (docs/dev/lanes/reqvm1_report.md, "Local section runs"); landing lane reqvm1land) — `make test-spec` LINK-FAILS: `pcre2_compile_8` is undefined in check06_cursor, 10 checks RED
 
 The `test-spec` section (the spec-first D27 checks) fails to link on this Linux box: `pcre2_compile_8` undefined at link in check06_cursor, 10 checks red. PRE-EXISTING: lane reqvm1 reproduced the identical red on a clean copy of its merge base, so it is not from [REQRUN-VM]. It is not part of `make test` (the section is run by hand), so no gate reads it. Cause not investigated (likely the check's link line lacks libpcre2-8 on this box, where the 10.46 library is the installed oracle).
