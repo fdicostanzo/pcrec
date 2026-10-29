@@ -14,7 +14,7 @@
  *   A4  `unused` on a code segment's file-local binding (emit_code.c);
  *   A5  `cold noinline` on the VM's trail compaction (emit_vm.c
  *       `vm_emit_trail_compact`);
- *   A6  `noinline` on the VM's trail trigger floor (the same function);
+ *   A6  `noinline` on the VM's trail trigger start (the same function);
  *   the part-layout table (part_layout.c): a part row's layout, through
  *       `pcrec_part_attr`.
  *
