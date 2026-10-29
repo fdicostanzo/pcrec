@@ -34,7 +34,7 @@ SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="an artifact rescued by the optional-contributor drop rung stamps ENGINE_SEL \"selected\", so a caller cannot tell it from an unremarkable compile and the census's size-drop bucket empties into the state-cap overflow one"
 SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop' RE-POINTED 2026-10-13 (lane mechwit; same cause as S237): solo run DETECTED, reach:ok(2/2), anchoredmatch:10fail/18pass."
-SAB_COUNT=4
+SAB_COUNT=5
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking
 # the rung, both rows are certifying nothing.
@@ -58,3 +58,7 @@ SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
 # stays; S422/S423 own the [PF-DROP] rung.)
 SAB_BEFORE='      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },'
 SAB_AFTER='      .cells = { { ESEL_PASS, ESEL_PASS }, PFLW_PASS, NULL },   /* SABOTAGE S238 */'
+# RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1): SAB_COUNT 4 -> 5.
+# The new `drop-landmark-walk` fit rung stamps size-cap-retry with the same
+# cell line; the plant reaches all five retry-stamping rows (S1826 owns the
+# new rung alone), and the witness is unchanged.

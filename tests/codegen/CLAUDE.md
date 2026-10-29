@@ -43,6 +43,7 @@ or it has no regression net at all.
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name; see below) for each optimization's signature (skip tables + skip loop, `start_max = 0` for ...
 - **run_size_term.sh** — [ART-SIZE]/D84's structural check (2026-08-29).
 - **run_prefilter_collapse.sh** — [OPT-4]/K39's structural check (2026-08-29).
+- **run_landmark_walk.sh** — [LANDWALK] the `landmark-walk` row held to the artifact (test-codegen; mech arm `landwalk`).
 - **run_rev_end.sh** — LOCATE's `rev-end` row held to the artifact (in `make test-codegen`; mech arm `revend`). §1 named witnesses: the stamp, `rx_info.scan`, the walk's ...
 - **run_start_landing.sh** + **landing_hostile_driver.c** — RECOVER's two new rows held to the artifact (`docs/design/start_landing.md` §7.3; its own section, `make` ...
 - `run_object_neutrality.sh` — section "[M6-READ] `run_object_neutrality.sh` — the two-compiler gate" (history file)
@@ -63,7 +64,7 @@ or it has no regression net at all.
 - `run_fallback_table.sh` — section "`run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)" (history file)
 - `cand_oracle_unreached.tsv` — the UNREACHED witnesses table read with `run_cand_oracle.sh`.
 - `manifests/` — pinned byte/line manifests read by the identity and structure checks.
-- `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY` ([OPT-PRECHECK-ADMIT], 2026-09-23, abi 30 -> 31): the ADMISSION of §3's and §4's pre-checks, ruled by Frank as G1 + G2 (G3 dropped on x86_64 measurement); neither decline is answer-detectable, so this file is where they are defended.
+- `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY`: see NOTES.md (moved for size).
 
 ## TRAPS THIS DIRECTORY HAS PAID FOR — read before writing a `sed` or resolving a `CC`
 
