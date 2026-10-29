@@ -1,0 +1,6 @@
+idents-1m stock i=191.67 c=54.99 B i=90.02 c=33.59 C i=191.53 c=46.38 BC i=91.73 c=22.25 load=3.48
+nest-brace-100k stock i=162.72 c=67.58 B i=124.62 c=38.44 C i=138.52 c=40.44 BC i=91.02 c=24.19 load=3.44
+splice-1m stock i=47.76 c=12.87 B i=19.76 c=3.37 C i=47.42 c=12.95 BC i=20.42 c=3.72 load=3.44
+js-1m stock i=260.71 c=96.69 B i=204.50 c=73.69 C i=163.93 c=51.47 BC i=72.63 c=23.62 load=3.46
+nest-paren-32k stock i=31.07 c=10.09 B i=25.04 c=6.76 C i=31.00 c=9.15 BC i=25.04 c=6.29 load=3.46
+comment-5m stock i=220.97 c=43.91 B i=133.47 c=27.07 C i=222.97 c=44.41 BC i=133.47 c=27.13 load=3.50

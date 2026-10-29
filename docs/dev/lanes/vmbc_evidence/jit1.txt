@@ -1,0 +1,6 @@
+idents-1m jit_i=82.09 jit_c=18.30
+nest-brace-100k jit_i=50.40 jit_c=12.67
+splice-1m jit_i=23.66 jit_c=4.62
+js-1m jit_i=58.58 jit_c=16.86
+nest-paren-32k jit_i=10.35 jit_c=1.77
+comment-5m jit_i=86.50 jit_c=17.89

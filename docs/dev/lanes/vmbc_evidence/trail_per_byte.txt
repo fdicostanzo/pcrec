@@ -1,0 +1,6 @@
+idents-1m stock=9.95 B=.09 C=9.95 BC=.09 (trail entries per byte)
+nest-brace-100k stock=34.49 B=19.99 C=20.49 BC=1.49 (trail entries per byte)
+splice-1m stock=3.00 B=0 C=3.00 BC=0 (trail entries per byte)
+js-1m stock=19.27 B=14.15 C=8.93 BC=.49 (trail entries per byte)
+nest-paren-32k stock=9.00 B=0 C=9.00 BC=0 (trail entries per byte)
+comment-5m stock=1.00 B=.10 C=1.00 BC=.10 (trail entries per byte)
