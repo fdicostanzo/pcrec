@@ -2,7 +2,7 @@
 
 ## Summary
 
-Dry run before any action: 0 removable, 128 kept (premise 126 +-2 holds), 8 unmanaged. Classified: 60 (a) merged + build/test dirt only, 5 (b) tracked changes, 53 (b) unmerged commits, 3 (b) uncommitted job scripts, 2 fullsuite-run-* and 5 kit/self trees untouched. Removal results are in Removed (filled after each batch).
+Dry run before any action: 0 removable, 128 kept (premise 126 +-2 holds), 8 unmanaged. Classified: 60 (a) merged + build/test dirt only, 5 (b) tracked changes, 53 (b) unmerged commits, 3 (b) uncommitted job scripts, 2 fullsuite-run-* and 5 kit/self trees untouched. Applied: 60 worktrees (3 batches of 20, dry run between each: 128 -> 108 -> 88 -> 68 kept) and 4 unmanaged dirs removed; 0 anomalies; the stop rule never fired. Not restarted: the queue runner (a job is pending). artifact_size_log.tsv dirt in main is a test-corpus by-product.
 
 ## Classification table
 
@@ -140,3 +140,35 @@ Basis: `git rev-list --count main..HEAD`, `git status --porcelain` per tree. (a)
 | z2build | A | merged; dirt = artifact_size_log.tsv rewrite and/or untracked rulings/deliver/log/scratch |
 
 Unmanaged dirs (c): iterd27-cell, substd27-cell (branches iterd27, substd27 merged into main), mechpar-scratch, revpred-scratch (lane/mechpar, lane/revpred merged, reports exist): REMOVE by name. Left: g2u-cell (lane is kit-side, merged into lane/memfn-g2floor not main), langmisc-cell (worktree langmisc has 1 unmerged commit), streamcrit1-scratch (no lane branch or report found), memfn-slot (kit's).
+
+## Removed
+
+60 worktrees via `scripts/wtprune --apply --force NAME..` (friendly removal first; each escalation saved to worktrees/.wtprune.force/NAME-TS.diff and audit-logged in worktrees/.wtprune.log). Dry run between batches printed exactly 20 fewer each time (108, 88, 68 kept).
+
+Names: adatwin attrtab b3b b4p b4prep cired cired2 cired4 clibundle corefix ctxp2e dd10b e1 emitbidi fdb0-mt fdb2 flat grid2r3 i1build i2build ic0 ic1a ic1b iterland iteropt iteropt2 k100 k113 langfix2 lockwait m0build m4 pathreads pathtri r26z1 r26zk r4h reqvm0 revbuild revtri rq2 rq3 s25trim sanred scandog scanset subst substcase substext substland subtri suitetri sweeppins wsc2 wsc3 wsc4 wsc6 wsc7 wsmain z2build 
+
+4 unmanaged dirs via `--apply --dir NAME` (named, repeated): iterd27-cell, substd27-cell, mechpar-scratch, revpred-scratch. Final dry run: 0 removable, 68 kept, 4 UNMANAGED left.
+
+## Left for the manager
+
+Not removed, by rule (the table above has the per-tree line):
+- 53 worktrees with commits not in main (class B-unmerged): never removed by this lane (Manager 2026-10-29).
+- 5 with tracked changes beyond the size log: fdb2drop (src/cli edits + deleted S1080/S1081/S1084 sabotages, run_arm_reach.sh), mptime (run_sabotage_matrix.sh edit), mscomp2 (deleted tracked mscomp2_rulings.md), wingame2 (unresolved merge, AA conflicts in docs/design/memfn/window_search_game), wsc1 (edits to wsc1_report, memfn journal/tests).
+- 3 merged trees holding an uncommitted job script that appears in no commit: e8min (560-kit-e8-window-r2, 'the reading of record'), r28 (570-kit-r28-heavy), vb-9950aa672 (vbisect-job). Commit or discard decision is the manager's.
+- fullsuite-run-20261023_5596c3207, fullsuite-run-20261027_7d3be7ec7 (size-log dirt only): manager decides.
+- Never-touch: ic3, wtclean, memfn-r17, memfn-r27, memfn-slot (and its nested b3b/reach/wt).
+- Unmanaged dirs left: g2u-cell (192M; its lane g2u merged into lane/memfn-g2floor, not main, kit's call), langmisc-cell (worktree langmisc has 1 unmerged commit), streamcrit1-scratch (76K, no lane branch or report found), memfn-slot (kit's).
+- Disk: the removed trees included large scratch (e.g. pathreads/scratch 982M and rq3/scratch 2.4G were in the 60).
+
+## Runner restart
+
+NOT restarted. `scripts/boxqueue status`: runner live pid=3920761 (since 2026-10-28T02:30:32), box free, but one job PENDING: `300-main-fullsuite :: not asked yet` (a held full-suite job). The brief restarts only when nothing is running or queued, so I stopped. Documented method for when it is clear: scripts/CLAUDE.md and the boxqueue header name `scripts/boxqueue start [--every S]` (arm the detached runner, idempotent); the runner also re-execs itself between jobs when its script changed ([runnerfix], scripts/NOTES.md), so the old pid may already run current code. The pid-3920761 start time is from the process' lstart (Oct 25), earlier than the 'since' stamp. Whether it predates the temp-root prune was not determined.
+
+## artifact_size_log
+
+Read-only findings in the main tree: `git diff --stat` = docs/dev/artifact_size_log.tsv, 5650 insertions / 5269 deletions (a whole-file regeneration, not an append). Header of the new content: commit=b691d6582 date=2026-10-24T23:25:12Z rows=5649, full corpus; the committed copy is from commit 7baebc8bd, 2026-10-12 (5268 rows). File mtime 2026-10-25 11:52.
+Writer: tests/size/run_size_log.sh (called by Makefile line 541, the test-corpus recipe), which assembles the stable log at $ROOT_DIR/docs/dev/artifact_size_log.tsv after every FULL-CORPUS run (its header; docs/dev/CLAUDE.md says the same). So yes: an expected by-product of `make test` in that tree, and the same tracked-file dirt appeared in 45 of the lane worktrees. Consequence: the tracked file is dirty after any full make test; a lane worktree is never wtprune-clean without --force. Not committed or reverted, per brief. (Whether to commit a refresh, ignore the file, or point ARTSIZE_LOG elsewhere is a manager design call.)
+
+## STATE AT HANDOFF
+
+Complete. Rulings file read at start and before applying (empty, 0 bytes; no entries applied). Report committed on lane/wtclean. Scratch (dry-run, class tables) in $PCREC_TMPDIR/scratch/wtclean/. No make run (owed: none). The two untracked files in the main tree (ic3_deliver.txt, wtclean_deliver.txt) were not touched.
