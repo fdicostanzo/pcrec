@@ -33,6 +33,17 @@
 #     must pass. Its REACH (K35): at least 8 of presence_deny.rxt's patterns
 #     must MOVE under P9 (9 at the lane), or the file stops witnessing the
 #     parts it is about.
+#  D. R-30 (lane r30b): where the pre-check carries the run's WINDOW beside
+#     the WHOLE run that implies it (the route with no DFA scan in front), the
+#     window's search is NOT asked: on each witness, at both engines, the
+#     artifact calls `rx_reqrun_whole(` and never `rx_reqrun(`, and the whole
+#     run's candidate test is the pinned LED compare (the window's bytes
+#     first, then the rest of the run; read off the emitted text). The
+#     test-only lever `--harness=pres-window` (build/pcrec-harness) restores
+#     the old form: its artifact calls `rx_reqrun(` again and differs from the
+#     default's (K35: every witness moves). Its answers: the harness runs C's
+#     files under the lever, at the default engine and at --engine=vm, and all
+#     must pass.
 #
 # Usage: bash tests/memfn/run_presence.sh [TREE]   (needs TREE/build/pcrec)
 set -u
@@ -217,6 +228,69 @@ for i, (pat, enc) in enumerate(pats):
     nmove += d is not None and q is not None and d != q
 (good if nmove >= 8 else fail)("[deny-answers-reach] %d of %d presence_deny.rxt patterns move under P9 (floor 8)"
                                % (nmove, len(pats)))
+
+# D
+hbin = os.path.join(tree, "build", "pcrec-harness")
+LEVER = "--harness=pres-window"
+# (flags, pattern, the whole run's pinned candidate test, or None: masked, no pin)
+LED = [([], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+        'if (!memcmp(subject + cand + 8, "~#~#~#~#", 8) && '
+        '!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
+       (["-e", "utf8"], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+        'if (!memcmp(subject + cand + 8, "~#~#~#~#", 8) && '
+        '!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
+       ([], "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9",
+        'if (!memcmp(subject + cand + 1, "bcdefghi", 8) && '
+        'rx_w8(subject + cand) == rx_w8("abcdefgh")) return cand;'),
+       ([], "(x?)(?i:abcdefghijkl)\\1", None)]
+
+def lever_art(tag, flags, pat):
+    d = os.path.join(work, tag)
+    os.makedirs(d, exist_ok=True)
+    o = os.path.join(d, "o.c")
+    r = subprocess.run([hbin, LEVER, "-p", "rx", "--features", "all"] + flags + ["-o", o, "--pattern", pat],
+                       capture_output=True, timeout=60)
+    return None if r.returncode else open(o, "rb").read()
+
+nled = nlev = 0
+for i, (fl, pat, line) in enumerate(LED):
+    for eng in ([], ["--engine=vm"]):
+        tag = "%s %s %s" % (" ".join(fl + eng) or "-", pat, "")
+        t = art("rd%d%d" % (i, len(eng)), fl + eng, pat)
+        lv = lever_art("rl%d%d" % (i, len(eng)), fl + eng, pat)
+        if t is None or lv is None:
+            fail("[r30] %s: a compile was refused" % tag); continue
+        t = t.decode("utf-8", "replace")
+        lv = lv.decode("utf-8", "replace")
+        if "rx_reqrun(" in t or "rx_reqrun__body" in t or "rx_reqrun_whole(" not in t:
+            fail("[r30] %s: the window is still asked, or the whole run is not" % tag)
+        elif line is not None and line not in t:
+            fail("[r30] %s: the whole run's test is not the led compare `%s`" % (tag, line))
+        else:
+            nled += 1
+            good("[r30] %s: the whole run alone is asked%s" % (tag, ", led by the window" if line else ""))
+        if "rx_reqrun(" not in lv or "rx_reqrun_whole(" not in lv or lv == t:
+            fail("[r30-lever] %s: %s does not restore the window's ask" % (tag, LEVER))
+        else:
+            nlev += 1
+            good("[r30-lever] %s: %s asks the window again" % (tag, LEVER))
+(good if nled == 2 * len(LED) else fail)("[r30-population] %d of %d witnesses" % (nled, 2 * len(LED)))
+(good if nlev == 2 * len(LED) else fail)("[r30-lever-population] %d of %d witnesses" % (nlev, 2 * len(LED)))
+files = base + [os.path.join(tree, "tests", "litscan", f) for f in ("handoff.rxt", "reqcube.rxt")]
+for eng in ("", " --engine=vm"):
+    r = subprocess.run(["bash", harness] + files, capture_output=True, text=True, timeout=1800,
+                       env=dict(os.environ, PCREC=hbin, RXTFLAGS=LEVER + eng))
+    out = r.stdout + r.stderr
+    m = [l for l in out.splitlines() if l.startswith("cases passed:")]
+    f = [l for l in out.splitlines() if l.startswith("cases failed:")]
+    p = int(m[-1].split(":")[1]) if m else -1
+    q = int(f[-1].split(":")[1]) if f else -1
+    if r.returncode or q != 0 or p <= 0:
+        fail("[r30-lever-answers] %s%s: rc %d, cases passed %d failed %d" % (LEVER, eng, r.returncode, p, q))
+        for l in [l for l in out.splitlines() if "FAIL" in l][:10]:
+            print("    " + l)
+    else:
+        good("[r30-lever-answers] %s%s: %d cases over %d files, 0 failed" % (LEVER, eng, p, len(files)))
 print("checks passed: %d" % ok)
 print("checks failed: %d" % bad)
 sys.exit(1 if bad else 0)

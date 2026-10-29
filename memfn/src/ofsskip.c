@@ -191,10 +191,12 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
         if (scan_only(p, i)) continue;
         o->puts(o->u, first ? "" : " &&\n            ");
         first = 0;
-        if (t->kind == MF_T_RUN) {
-            if (x->lead_len ? run_cmp_render_lead(art, t, "subject + cand", t->offset,
-                                                  x->lead_at, x->lead_len, o)
-                            : run_cmp_render(art, t, "subject + cand", t->offset, o))
+        if (t->kind == MF_T_RUN && x->lead_len) {
+            if (run_cmp_render_lead(art, t, "subject + cand", t->offset, x->lead_at,
+                                    x->lead_len, o))
+                return -1;
+        } else if (t->kind == MF_T_RUN) {
+            if (run_cmp_render(art, t, "subject + cand", t->offset, o))
                 return -1;
         } else if (set_count(t->set) == 1) {
             if (t->offset == 0) kit_out(o, "subject[cand] == %d", set_first(t->set));
