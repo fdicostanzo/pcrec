@@ -419,6 +419,13 @@
 #     pcre2_substitute and their generic arms, the template refusals and the
 #     header contract. SKIPS its oracle arms (not the section) without
 #     libpcre2. Registered before S1346.
+#   trailcompact — added 2026-10-29 ([K134], lane trailgc2); runs
+#     tests/vm/run_trail_compact.sh: the VM trail checkpoints' cycle and
+#     margin check on the emitted C, the witnesses' answers at every trail
+#     capacity against a large-buffer run, the floor that only a compaction
+#     answers below, and the fast tier's single escalation. Its own arm
+#     because a compaction that stops reaching a loop moves no corpus answer
+#     at the stamped capacities the corpus uses. Registered before S1790.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -3544,6 +3551,15 @@ run_one() {
                 p="$(grep '^checks passed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
                 f="$(grep '^checks failed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
                 score_arm "$work/core.log" "$f" "core:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            trailcompact)
+                # [K134] tests/vm/run_trail_compact.sh -- see the vocabulary
+                # entry above.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/vm/run_trail_compact.sh" > "$work/trailcompact.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
+                score_arm "$work/trailcompact.log" "$f" "trailcompact:${f:-ERR}fail/${p:-?}pass"
                 ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")

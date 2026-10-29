@@ -236,7 +236,7 @@ def main(argv):
         top = (0, 0, b"")
         for pat in pats:
             r = subprocess.run([pcrec, "-p", "rx", "--features", "all", "--engine=vm",
-                                "--pattern-esc", pat.decode("latin-1"), "-o", "-"],
+                                "--pattern-esc", "--pattern", "\"" + pat.decode("latin-1").replace('"', '\\"') + "\"", "-o", "-"],
                                capture_output=True, timeout=60)
             if r.returncode != 0:
                 continue
