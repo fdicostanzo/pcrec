@@ -47,7 +47,9 @@ message when the draft is ready.
 1. Subject:
    - code: `git rev-parse` the branch yourself (never a hash from prose); record
      `SUBJECT` and `BASE=$(git merge-base main SUBJECT)`.
-   - design: the document path AND the commit that holds it (`git log -1
+   - design: the document path AND the commit that holds it, AND the commit a BUILD would land on
+     (normally main HEAD): build the review tree THERE and tell critics both; any cited code that moved
+     between them is a finding (2026-10-29 r4 p48).
      --format=%H -- <doc>` on its branch); critics read that version.
    The subject stays frozen until the round compiles (learnings §6, R30).
 2. Code mode: make a clean review tree, `git worktree add --detach
