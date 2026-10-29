@@ -19,6 +19,13 @@ NSTEPS=21
 NIDS=142
 IDS="S185 S186 S227 S267 S270 S277 S278 S279 S280 S282 S283 S284 S285 S287 S288 S296 S297 S298 S299 S300 S302 S303 S306 S307 S316 S318 S438 S439 S443 S444 S446 S447 S448 S449 S450 S451 S452 S453 S454 S455 S457 S458 S459 S464 S468 S482 S483 S484 S510 S511 S512 S517 S520 S528 S570 S571 S596 S607 S613 S617 S618 S619 S666 S667 S669 S670 S671 S673 S676 S677 S681 S682 S684 S685 S686 S687 S688 S689 S690 S691 S692 S693 S694 S695 S709 S712 S724 S728 S729 S730 S754 S773 S774 S782 S783 S786 S787 S788 S791 S800 S801 S802 S803 S804 S846 S847 S848 S917 S919 S921 S1018 S1020 S1025 S1026 S1079 S1080 S1081 S1082 S1083 S1084 S1089 S1091 S1092 S1100 S1103 S1105 S1106 S1107 S1108 S1109 S1110 S1121 S1122 S1221 S1224 S1225 S1415 S1416 S1417 S1418 S1419 S1421"
 MEMFN_SECTIONS="test-memfn-arch test-memfn-arms test-memfn-deleg test-memfn-finder test-memfn-forms test-memfn-g2 test-memfn-guarded test-memfn-link test-memfn-manifest test-memfn-rank test-memfn-reach test-memfn-rows test-memfn-simdfloor test-memfn-stamps test-kitproof"
+# Box window (main, 2026-10-29): the run must END by 19:30 local (bench timing
+# window), and must not start between 2026-10-29 ~16:20 and 2026-10-30T14:00
+# (main's full suite). The cap is the seconds left until 19:30 (at most 21600);
+# --ready refuses while fewer than READY_MIN seconds remain (621's wall 9,400 s
+# plus margin). The dry run is re-run at START, so the cap is fresh then.
+READY_MIN=11000
+secs_to_1930() { echo $(( $(date -d 'today 19:30' +%s) - $(date +%s) )); }
 case "${1:-}" in
     --dry-run)
         [ -e "$TREE/.git" ] || { echo "no tree $TREE" >&2; exit 1; }
@@ -41,12 +48,17 @@ case "${1:-}" in
         # the mech field validation (~100 s, over boxqueue's 30 s dry-run bound) is the job's
         # FIRST step (mechval) instead
         echo "would run in $TREE: mechval($NIDS ids) build strict refbuild census sweep_start evidence diff_r2 codegen registry rxtsource encoding cpset memfn g2win axes_measure axes_memfn test plants mech($NIDS rows) reach"
-        echo "boxqueue: cap 21600"
+        left=$(secs_to_1930); [ "$left" -gt 21600 ] && left=21600; [ "$left" -lt 60 ] && left=60
+        echo "boxqueue: cap $left"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"
         echo "boxqueue: expect steps=$NSTEPS lines=^== s3 step [a-z_0-9]+ rc=0\$"
         exit 0 ;;
     --ready)
+        now=$(date +%s)
+        if [ "$now" -gt "$(date -d '2026-10-29T16:00' +%s)" ] && [ "$now" -lt "$(date -d '2026-10-30T14:00' +%s)" ]; then
+            echo "not before 2026-10-30T14:00 (main's full suite)"; exit 75; fi
+        [ "$(secs_to_1930)" -ge "$READY_MIN" ] || { echo "too late to end by 19:30 ($(secs_to_1930) s left < $READY_MIN)"; exit 75; }
         exit 0 ;;
 esac
 cd "$TREE" || exit 1
