@@ -189,6 +189,29 @@ def chain_shape(items, utf8):
         q = succ.pop()
 
 
+def scanedge_cover(items, utf8):
+    """R1 (scan edges, src/opt/scanedge.c precondition (1)): on P's minimal reverse DFA, is EVERY self-loop
+    state SCAN-SHAPED today, i.e. every byte outside its loop set leaves to ONE target (dead counted as one)?
+    -> 'all' | 'some' | 'none' | 'noloop' | 'nochain'"""
+    try:
+        mtrans, macc, live, st, classes = reverse_dfa(items, utf8)
+    except R.Cap:
+        return "nochain"
+    if chain_shape(items, utf8)[0] != "chain":
+        return "nochain"
+    loops = shaped = 0
+    for q in live:
+        row = mtrans[q]
+        if q not in row:
+            continue
+        loops += 1
+        exits = {(t if t in live else -1) for t in row if t != q}
+        shaped += len(exits) == 1
+    if not loops:
+        return "noloop"
+    return "all" if shaped == loops else ("some" if shaped else "none")
+
+
 def is_var(it):
     lo, hi, _a, _f = R.props(it)
     return hi is None or lo != hi
@@ -266,9 +289,15 @@ def segments(body):
     return segs
 
 
+def ascii_only(seg):
+    _lo, _hi, al, _f = R.seq_props(seg)
+    return all(b < 0x80 for b in al)
+
+
 def seg_kind(seg, utf8=False):
+    """plain under utf8 only where every byte is ASCII (a byte-EXACT run, D161 add. 10)"""
     lo, hi, _a, _f = R.seq_props(seg)
-    if not utf8 and plain(seg):
+    if (not utf8 or ascii_only(seg)) and plain(seg):
         return "plain"
     if hi is not None and lo == hi:
         return "fixed"
@@ -288,7 +317,7 @@ def seg_tier(body, utf8=False):
         if po:
             if not (kinds[k] in ("plain", "chain") or (k == 0 and kinds[k] == "fixed")):
                 return "outer", "start may lie in segment %d/%d (%s)" % (k + 1, len(segs), kinds[k]), segs
-        elif kinds[k] == "other" or (utf8 and kinds[k] != "fixed"):
+        elif kinds[k] == "other" or (utf8 and kinds[k] != "fixed" and not ascii_only(q)):
             sup = True
     var = [k for k, q in enumerate(segs) if any(is_var(x) for x in q)]
     if len(var) == 1 and kinds[var[0]] == "plain" and not sup:
@@ -314,6 +343,7 @@ def classify_p(pit, run, utf8, icase):
         o.update(tier="T4", why="view inside P"); return o
     o.update(nvar=sum(1 for x in body if is_var(x)), unb=sum(1 for x in body if R.props(x)[1] is None), ctx=ctx)
     o["chain"] = chain_shape(body, utf8)[0]
+    o["sedge"] = scanedge_cover(body, utf8)
     if SABOTAGE == "chain":
         o.update(tier="T2", why="sabotaged"); return o
     t, why, segs = seg_tier(body, utf8)
@@ -384,6 +414,7 @@ def decide(tree, utf8, icase):
                     nbr=len(res), why=";".join(c["why"] for c in res), unb=max(c.get("unb", 0) for c in res),
                     ctx=any(c.get("ctx") for c in res), srefs=any(c["S_refs"] for c in res),
                     chain=",".join(c.get("chain", "") for c in res), t3x=any(c.get("t3x") for c in res),
+                    sedge=",".join(c.get("sedge", "") for c in res),
                     _pit=res[0]["_pit"] if len(res) == 1 else None, _run=run)
         # prefer: an admissible tier (T1..T3 composing; T2/T3 also excluding), then rarer
         adm = admissible(cand)
@@ -576,6 +607,10 @@ def summarize(rows):
         bad = [r["id"] for r in lm if r.get("chain") == "chain" and r["tier"] not in ("T2", "T3")]
         out.append("C2 cross-check (P's minimal reverse DFA is a chain => a T2/T3 segment tier): %d chain rows, %d violations %s"
                    % (sum(1 for r in lm if r.get("chain") == "chain"), len(bad), bad[:5]))
+        for t in ("T2", "T3"):
+            ad = [r for r in lm if r["tier"] == t and r["comp"] and r["excl"] and r["ratio"] >= 2]
+            out.append("R1 scan edges, %s admitted at F=2 (%d): every loop state of P's reverse DFA scan-shaped today %s"
+                       % (t, len(ad), dict(collections.Counter(r.get("sedge") for r in ad))))
         t3x = [r for r in lm if r.get("t3x")]
         out.append("T4 because the start may lie in a non-plain segment ('outer'): %d" % len(t3x))
         wc = collections.Counter(r.get("whole") for r in rs if r["stage"] not in ("unparsed", "anchored", "approx"))
@@ -607,7 +642,7 @@ def main():
     for r, p in zip(rows, pop):
         r["pat"] = p["pat"].decode("latin-1")
     cols = ["pop", "id", "enc", "stage", "tier", "why", "L", "nbr", "comp", "strong", "excl", "ratio", "unb", "ctx",
-            "srefs", "chain", "whole", "pat"]
+            "srefs", "chain", "sedge", "whole", "pat"]
     with gzip.open(os.path.join(E["OUT"], "rows.tsv.gz"), "wt") as f:
         f.write("\t".join(cols) + "\n")
         for r in rows:
