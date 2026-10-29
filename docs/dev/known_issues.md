@@ -11,13 +11,14 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K134 — OPEN (filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
+## K134 — FIXED on lane/trailgc (2026-10-29, lane trailgc2, pending merge; filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
 
 On tests/recursion/cscan.rxt (the bench's cscan-onig), each pass of a `(?:...)*+` loop that calls `(?&sp)` leaves its trailed writes (save/set/restore, 9 per byte) on the trail: RX_CUT pops frames but never compacts the trail, so storage grows with SUBJECT LENGTH (idents-1m: trail 9.1M entries, 145.5 B/byte; resume stack peaks at 4 frames). The default stack-resident arm gives up on idents/comment/splice/nest-paren/nest-brace-128, all answered by libpcre2 10.46 at default limits (interp and JIT). CUT-INV (no trail REWIND at a cut) is correct; the growth was never priced. Correctness-adjacent: a give-up where the reference answers.
 
 **Repro**: compile tests/recursion/cscan.rxt's pattern, run the default arm on a ~1 MB identifier-only subject: PCREC_ERR_FRAMES.
 **Fix direction**: l9look candidate A, TRAIL-SEG compaction (within a segment between live frames only the oldest entry per slot is read back; compaction-on-full with hysteresis; keep the positional call-snapshot read of K36's site). Hand twin answer-identical (85 subjects x 4 caps, 0 diffs), 0 hot-path instructions.
 **Scheduled**: primed list P2 (docs/dev/optloop/primed_2026-10-29.md); build needs Frank's go.
+**Fixed**: TRAIL-SEG compaction run at checkpoints on the VM program's backward gotos and region returns, never at the trail write (option 4, docs/dev/lanes/trailgc2_report.md): it runs once the trail passes a floor (capacity less the artifact's trail-write site count, at most half), and stops for the attempt when it cannot leave a quarter free below that floor. All five flat cscan subjects (idents, comment, splice, nest-paren 32k/100k) answer on the default arm; `^(a(?1)?b)$` reaches n = 763 (was 342); +1.1-2.1% instructions on the never-full path. Spec: docs/spec/limits.md §4. Checks: tests/vm/run_trail_compact.sh (make test-vm, mech arm trailcompact), the K134 cells in tests/recursion/cscan.rxt, S1790-S1796.
 
 ---
 

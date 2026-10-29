@@ -3,7 +3,7 @@
 # what it promises (src/gen/emit_vm.c `vm_emit_trail_compact`;
 # docs/spec/limits.md §3.2, §4).
 #
-#   1. CHECKPOINT STRUCTURE. tests/codegen/trail_checkpoints.py over every
+#   1. CHECKPOINT STRUCTURE. tests/vm/trail_checkpoints.py over every
 #      witness artifact below: every cycle of the emitted program that writes
 #      the trail passes a `<PREFIX>_TRAIL_CHECK`, and the heaviest
 #      checkpoint-free path is within the artifact's margin. It reads the
@@ -41,7 +41,7 @@ GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="trailcompact"
-CHECKER="$ROOT_DIR/tests/codegen/trail_checkpoints.py"
+CHECKER="$ROOT_DIR/tests/vm/trail_checkpoints.py"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

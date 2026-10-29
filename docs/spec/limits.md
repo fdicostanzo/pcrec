@@ -216,9 +216,11 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 <a id="s4"></a>
 ## 4. Worked example: `^(a(?1)?b)$`
 
-<a id="s4-p1"></a>[4¶1] With `build/pcrec -p rx --features all --emit-main -o rec.c --pattern '^(a(?1)?b)$'` and the default capacities (§3.2), a subject of `n` `a` bytes followed by `n` `b` bytes matches for `n` up to 342 (a 684-byte subject) and returns `PCREC_ERR_FRAMES` from `n` = 343 (686 bytes). `match_api.md` §10.1 states the same ceiling.
+<a id="s4-p1"></a>[4¶1] With `build/pcrec -p rx --features all --emit-main -o rec.c --pattern '^(a(?1)?b)$'` and the default capacities (§3.2), a subject of `n` `a` bytes followed by `n` `b` bytes matches for `n` up to 763 (a 1,526-byte subject) and returns `PCREC_ERR_FRAMES` from `n` = 764 (1,528 bytes). `match_api.md` §10.1 states the same ceiling.
 
-<a id="s4-p2"></a>[4¶2] The trail binds before the resume stack. The two arrays are sized by the stamped defaults (2,048 and 3,072), but this pattern's recursion costs about 2 resume frames and 9 trail entries per nesting level, so the 3,072-entry trail empties first with roughly two thirds of the resume stack unused. `PCREC_ERR_FRAMES` is returned either way.
+<a id="s4-p2"></a>[4¶2] The trail binds before the resume stack. This pattern's recursion costs 2 resume frames per nesting level, and through `<prefix>_search_in` with ample frames a depth of `n` (for `n` of 7 and more) needs exactly `4n + 17` trail entries; one entry fewer returns `PCREC_ERR_FRAMES`. At the default 3,072 entries that is the ceiling of ¶1, with about a quarter of the resume stack unused. `PCREC_ERR_FRAMES` is returned whichever array runs out.
+
+<a id="s4-p3"></a>[4¶3] The trail holds the slot values an unwind restores. Where a run writes a slot again with no new resume frame in between (here the restores that each return writes into its caller), only the oldest of those entries can ever be restored, and the VM drops the others when the trail is nearly full. It does so at checkpoints on the program's loops and returns, never at the trail write, so the work is bounded: it runs once the trail is past a floor of the capacity less the artifact's count of trail-writing sites (at most half the capacity), and it stops for the rest of the attempt when it cannot leave a quarter of the trail free below that floor. That rule is what sets `4n + 17` above: the specimen keeps `3n - 2` entries, and the floor and the quarter come off the capacity. Dropping entries changes no answer and no capture; it only moves the give-up later. A pattern whose every pass pushes its own resume frame keeps every entry and gains nothing.
 
 <a id="s5"></a>
 ## 5. The default entries and the C stack
@@ -232,7 +234,7 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 
 <a id="s5-p5"></a>[5¶5] So the default entries are safe on a call site with at least the entry frame of headroom for every match the fast tier holds, and fault only on a subject deep enough to escalate. Which subjects escalate is a property of the pattern and the subject, so a caller cannot bound it in advance, and the deep tier's storage has no other legal home: a `static` fails the concurrency contract, a thread-local fails reentrancy, and allocation is forbidden by construction. This is `docs/dev/known_issues.md` K33.
 
-<a id="s5-p6"></a>[5¶6] The remedy for the deep case is the caller-provided buffer (`match_api.md` §10): `<prefix>_search_in`'s own frame is 144 bytes for the specimen, and the 684-byte subject that kills the default entry on a 128 KB thread matches through `_search_in` on the same thread. It is the only way to a guarantee. A caller on a small-stack thread supplies its own frame and trail storage.
+<a id="s5-p6"></a>[5¶6] The remedy for the deep case is the caller-provided buffer (`match_api.md` §10): `<prefix>_search_in`'s own frame is 144 bytes for the specimen, and the 1,526-byte subject that kills the default entry on a 128 KB thread matches through `_search_in` on the same thread. It is the only way to a guarantee. A caller on a small-stack thread supplies its own frame and trail storage.
 
 <a id="s6"></a>
 ## 6. Left recursion: a documented divergence

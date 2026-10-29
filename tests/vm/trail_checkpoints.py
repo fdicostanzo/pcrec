@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tests/codegen/trail_checkpoints.py -- [K134] every trail-writing cycle of a
+"""tests/vm/trail_checkpoints.py -- [K134] every trail-writing cycle of a
 VM artifact passes a trail checkpoint, and the stamped margin bounds the trail
 writes between two checkpoints.
 
