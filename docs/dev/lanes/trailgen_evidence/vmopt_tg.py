@@ -24,6 +24,7 @@ Usage: vmopt.py -m MODE IN.c OUT.c   (stats on stderr, one line)
 Anything it does not recognise makes it BAIL for that function (no rewrite):
 the twin is conservative by refusal, not by guess.
 """
+import os
 import re
 import sys
 
@@ -560,8 +561,8 @@ def analyse(text, p, up, mode, stats):
                 fr = mayf[i]
                 if fr is None:
                     continue           # unreachable line: leave it alone
-                need = (li[body[0]] >> a) & 1
-                for L in fr:
+                need = 0 if os.environ.get("TG_SAB_ENTRY") else (li[body[0]] >> a) & 1
+                for L in ([] if os.environ.get("TG_SAB_FRAMES") else fr):
                     if (li[L] >> a) & 1:
                         need = 1
                         break
