@@ -1715,10 +1715,11 @@ manifest_objs() {
 # [INLINE-C] stage 2 THE SECTION'S CODE GRANT (inline_c.md §5.2, rxt_format.md
 # §6¶3): echoes the LANGS of the manifest's `allow-code LANGS` line for FILE
 # when FILE is one of the run's ENTRY files, and nothing otherwise. A block of
-# a fragment an entry `include`s is compiled WITHOUT the grant, so code in an
-# included file is refused here exactly as pcrec refuses it: the harness never
-# decides where code came from, it only declines to launder a fragment's code
-# into a local compile.
+# a fragment an entry `include`s never gets the grant as a LOCAL compile: it
+# is compiled through `--include-block` (block_pattern_source), so pcrec
+# judges its code against the include lines that reach it. The harness never
+# decides where code came from; it only declines to launder a fragment's
+# code into a local compile.
 manifest_allow_code() {
     local rxt="$1"
     rxt_is_entry "$rxt" || return 0
@@ -1728,6 +1729,26 @@ manifest_allow_code() {
     while read -r kw arg rest; do
         [ "$kw" = "allow-code" ] && { printf '%s\n' "$arg"; return 0; }
     done < "$mf"
+    return 0
+}
+
+# [INLINE-C] stage 3 (inline_c.md §5.2, cli.md §1.23) WHERE A BLOCK'S
+# PATTERN COMES FROM: PSRC=(the pcrec arguments naming it). An entry's block
+# is `--pattern` with the entry's grant. A fragment's block, when its entry's
+# manifest grants code, is `--include-block FRAG:LINE ENTRY` with that
+# grant: pcrec reads the block from its own read of the closure and judges
+# its code against the include lines that reach it (pinned: allowed;
+# unpinned: refused), so the harness still decides nothing about trust.
+# Without such a grant a fragment's block is `--pattern` with no grant.
+# PSRC_ALLOW is the grant to pass, or empty.
+block_pattern_source() {
+    PSRC=(--pattern "$cur_pattern")
+    PSRC_ALLOW="$(manifest_allow_code "$cur_file")"
+    [ -n "$PSRC_ALLOW" ] && return 0
+    assoc_has rxt_frag_entry "$cur_file" || return 0
+    local ent; ent="$(assoc_get rxt_frag_entry "$cur_file")"
+    PSRC_ALLOW="$(manifest_allow_code "$ent")"
+    [ -n "$PSRC_ALLOW" ] && PSRC=(--include-block "$cur_file:$cur_pattern_line" "$ent")
     return 0
 }
 
@@ -1766,7 +1787,7 @@ stage_block_for_batch() {
     local upx; upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
     local mc="$batch_bdir/$px.c"
     local pcrec_err pcrec_rc
-    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p "$px" "${pflags[@]+"${pflags[@]}"}" -o "$mc" --pattern "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p "$px" "${pflags[@]+"${pflags[@]}"}" -o "$mc" "${PSRC[@]}" 2>&1 >/dev/null)"
     pcrec_rc=$?
 
     if [ $pcrec_rc -ne 0 ]; then
@@ -1864,7 +1885,8 @@ flush_block() {
     # differential able to see it, because bash would be the only thing
     # that had ever read the bytes. pcrec decodes, once, and the `\x00`
     # refusal (K9) comes back as an ordinary compile diagnostic.
-    [ "$blk_esc" = "1" ] && pflags+=(--pattern-esc)
+    block_pattern_source
+    [ "$blk_esc" = "1" ] && [ "${PSRC[0]}" = "--pattern" ] && pflags+=(--pattern-esc)
 
     # per-block enabled modules (the `features` directive, MOD-0.3c). The
     # SPEC is validated once per distinct list against a trivially-valid
@@ -1915,13 +1937,12 @@ flush_block() {
         pflags+=(--callout "$co_d")
     done
     # [INLINE-C] stage 2 the file's code headers, and the section's code
-    # grant for an ENTRY file's blocks only (manifest_allow_code).
+    # grant (block_pattern_source: an entry's blocks, or a fragment's
+    # through --include-block).
     for co_d in "${head_code_headers[@]+"${head_code_headers[@]}"}"; do
         pflags+=(--code-header "$co_d")
     done
-    local co_allow
-    co_allow="$(manifest_allow_code "$cur_file")"
-    [ -n "$co_allow" ] && pflags+=(--allow-code="$co_allow")
+    [ -n "$PSRC_ALLOW" ] && pflags+=(--allow-code="$PSRC_ALLOW")
 
     # [DD-14 wave A commit 3] the `engine`/`budget` directives -- the
     # minimal route to a corpus case that can reach `--engine=vm` with a
@@ -1955,7 +1976,8 @@ flush_block() {
     # floor) cannot be served by this landing's dispatch.c, which only
     # reproduces the DEFAULT route. All five stay OUT of the batching unit
     # entirely, compiling/running exactly as today.
-    if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ] && [ "$blk_esc" != "1" ]; then
+    if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ] && [ "$blk_esc" != "1" ] &&
+       [ "${PSRC[0]}" = "--pattern" ]; then
         local _batch_excluded=0
         # [VAR] M10 A FIFTH EXCLUSION, found live 2026-09-26 (test-axes'
         # first-ever HARNESS_BATCH run, [MECH-REACH]: dispatch_gen.sh
@@ -2029,7 +2051,7 @@ flush_block() {
     # which is the one compile a change to the compiler can actually slow down.
     # gen_timeout.sh derives it from the same flags everything else does, and
     # carries the measurement the numbers come from.
-    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" --pattern "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" "${PSRC[@]}" 2>&1 >/dev/null)"
     local pcrec_rc=$?
 
     if [ "$cur_is_perr" = "1" ]; then
@@ -2348,6 +2370,9 @@ rxt_expand_closure() {
     done < <(printf '%s\n' "$RXT_LS_OUT" | LC_ALL=C grep -v '^#')
     return 0
 }
+# [INLINE-C] stage 3: each fragment's ENTRY (the file whose closure read
+# it), for `--include-block` (block_pattern_source below).
+assoc_new rxt_frag_entry
 if [ "${#files[@]}" -gt 0 ]; then
     rxt_entry_count=${#files[@]}
     _rxt_new_files=()
@@ -2367,6 +2392,8 @@ if [ "${#files[@]}" -gt 0 ]; then
         fi
         for _rxt_frag in "${rxt_expansion[@]:-}"; do
             [ -n "$_rxt_frag" ] && _rxt_new_files+=("$_rxt_frag")
+            [ -n "$_rxt_frag" ] && ! assoc_has rxt_frag_entry "$_rxt_frag" &&
+                assoc_set rxt_frag_entry "$_rxt_frag" "$_rxt_f"
         done
         rxt_fragment_count=$((rxt_fragment_count + ${#rxt_expansion[@]}))
     done

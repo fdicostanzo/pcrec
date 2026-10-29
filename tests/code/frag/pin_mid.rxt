@@ -1,0 +1,8 @@
+# tests/code/frag/pin_mid.rxt — the MIDDLE of the three-file chain: reached
+# through an unpinned include line, it holds patterns and no code, which
+# needs no pin (inline_c.md §5.4: "an include without a hash may still
+# supply patterns"); it pins its own include of pin_leaf.rxt.
+include "pin_leaf.rxt" sha256 5a00f96e6265b6281eb83c5e8fc0bc6dca8404629824658c68a223e9f3ade4ee
+
+pattern mi+d
+m "miid" 0 4

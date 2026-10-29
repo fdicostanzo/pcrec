@@ -297,8 +297,9 @@ def build(path, headers, segs, td, cc, rxh):
     return base, ""
 
 
-# The checkable (non-`consume`) cells of tests/code/ and tests/code/frag/.
-CELLS_PIN = 36
+# The checkable (non-`consume`) cells of tests/code/ and tests/code/frag/
+# (36 at lane ic2fix; +5 at [INLINE-C] stage 3: pin_ok, pin_mid, pin_entry).
+CELLS_PIN = 41
 
 
 def main():
@@ -342,6 +343,8 @@ def main():
                     qs.append("%s\t%s" % (blk[1].encode("latin-1").hex(),
                                           c[1].encode("latin-1").hex()))
                     cells.append((blk, c))
+            if not qs:
+                continue        # a file of perr blocks has no cell to ask
             out = subprocess.run([exe], input="\n".join(qs) + "\n",
                                  capture_output=True, text=True, timeout=300)
             ans = out.stdout.splitlines()

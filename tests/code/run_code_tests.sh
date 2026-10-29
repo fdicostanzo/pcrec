@@ -34,7 +34,15 @@
 #  (11) the inline-mode measurement card builds and runs (--smoke);
 #  (12) the D27 spec-first suite (d27/run.sh, written from the spec by an
 #       author denied src/ and tests/), floor 545 passes and no failure,
-#       with its CONTROL: the same suite against /bin/true must go red.
+#       with its CONTROL: the same suite against /bin/true must go red;
+#  (13) stage 3 (inline_c.md §1.9, §5.2-§5.6): shared/sha256.c against
+#       FIPS 180-4's vectors and pcrec's digest against sha256sum; pinned,
+#       upper-case, unpinned and mismatched `include`/`lib` lines; a
+#       pinned code-free file still verified; the three-file chain with an
+#       unpinned middle; dual chains in both orders; the definition-site
+#       view run (and F38's #line, the ASan row); a lib's code-header; a
+#       recursive definition refused; `--list-callouts`' rows. Run before
+#       arm 12 so the long suite stays last.
 # Arm 2 SKIPS LOUDLY when libpcre2 is absent (PC-3's shape).
 #
 # Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA.
@@ -167,7 +175,7 @@ refuse "a block's 'features all' does not grant code" "--allow-code=c" -o "$R" "
 refuse "a config's 'features all' does not grant code" "--allow-code=c" -o "$WORK/rdir" "$D/cfg_all.rxt"
 refuse "a config's pcrec line cannot carry --allow-code" "--allow-code" --allow-code=c -o "$WORK/rdir" "$D/cfg_pcrec.rxt"
 refuse "a block's 'features code-c' is refused" "code-c" --allow-code=c -o "$R" "$D/blk_codec.rxt"
-refuse "reached code (a lib definition's segment) is refused" "lib_code.rxt:1 is not allowed" --allow-code=c --features all -o "$WORK/rdir" "$D/reach.rxt"
+refuse "reached code (an unpinned lib definition's segment) is refused" "lib_code.rxt:1 refused: the lib line at $D/reach.rxt:1 carries no sha256 pin" --allow-code=c --features all -o "$WORK/rdir" "$D/reach.rxt"
 [ -e "$WORK/rdir" ] && bad "a refused FILE target wrote $WORK/rdir"
 # F7 (review 2026-10-27-r1-ic2): a code-free target BEFORE a code target in
 # one file, no grant, -o DIR: the refusal leaves NO file of either target.
@@ -189,32 +197,22 @@ printf 'pattern %s\nm "ab" 0 2\n' "$SEG" > "$F/one.rxt"
 # The DESCRIBE class parses code without the grant and prints no code text
 # unescaped: a segment carrying a newline must not reach the output as a line.
 NLSEG='"a(?C`c: int z = 0;\nNLMARK; return RX_PASS;`)b"'
-# mode spelling | class (the arguments: ep_args)
-EP_ROWS='--list-syntax|takes
---list-definitions|takes
---list-verbs|takes
---list-families|takes
---list-axes|takes
---list-limits|takes
---list-schema|takes
---explain|takes
---count-groups|describe
---emit-ir|describe
---emit-facts|describe
---probe-ask|takes
---list-source|takes
---list-analyses|takes
---list-analysis|takes
---list-measurements|takes
-a file operand|writes
+# mode spelling | class (the arguments: ep_args). The CLI_MODE_TABLE modes'
+# rows are READ from cli/main.c, the class its last column (review
+# 2026-10-27-r1-ic2 F27, landed at [INLINE-C] stage 3): a mode states its
+# class where it is declared. The writers that are not modes follow.
+EP_TABLE="$(sed -n '/^#define CLI_MODE_TABLE(X)/,/^$/p' "$ROOT_DIR/cli/main.c" \
+    | sed -nE 's/^[[:space:]]*X\([^"]*"([^"]+)",[[:space:]]*([A-Z]+)\).*/\1|\2/p' \
+    | tr 'A-Z' 'a-z')"
+EP_ROWS="$EP_TABLE
 --pattern|writes
 --pattern-esc|writes
 -o -|writes
 --emit-main|writes
---trace|writes'
+--trace|writes"
 # F20 (review 2026-10-27-r1-ic2): the modes and mode-like options that are
 # NOT CLI_MODE_TABLE rows, declared here and run through the same classes
-# (the class as a column of the product table is F27, PLAN). `refuses`: a
+# (the table modes read their class off CLI_MODE_TABLE, F27). `refuses`: a
 # compile-less mode that refuses every other option by its presence
 # (MODE_ADMITS), the grant included, and runs without it.
 NT_ROWS='--emit-support|refuses
@@ -230,6 +228,7 @@ ep_args() {   # ep_args SPELLING -> ARGS
         --count-groups|--emit-ir|--emit-facts) ARGS=("$1" --pattern-esc --pattern "$NLSEG") ;;
         --probe-ask) ARGS=(--probe-ask claim "$SEG") ;;
         --list-source) ARGS=(--list-source "$F/one.rxt") ;;
+        --list-callouts) ARGS=(--list-callouts "$F/one.rxt") ;;
         --list-analysis|--list-measurements) ARGS=("$1" default) ;;
         'a file operand') ARGS=(-o "$F/w.c" "$F/one.rxt") ;;
         --pattern) ARGS=(-o "$F/w.c" --pattern "$SEG") ;;
@@ -246,19 +245,18 @@ ep_args() {   # ep_args SPELLING -> ARGS
         *) ARGS=("$1") ;;
     esac
 }
-# Every CLI_MODE_TABLE spelling must have a row (a new mode cannot slip by).
-modes="$(sed -n '/^#define CLI_MODE_TABLE(X)/,/^$/p' "$ROOT_DIR/cli/main.c" \
-         | grep -oE '"[^"]+"\)' | tr -d '")')"
+# Every CLI_MODE_TABLE row must carry a class the arms below know (a mode
+# cannot slip by), and every one must reach ep_args.
 nmodes=0
-while IFS= read -r m; do
+while IFS='|' read -r m c; do
     [ -z "$m" ] && continue
     nmodes=$((nmodes + 1))
-    printf '%s\n' "$EP_ROWS" | grep -qF -- "$m|" || bad "CLI mode '$m' has no row in the entry-point table"
-done <<< "$modes"
+    case "$c" in takes|describe|writes) ;; *) bad "CLI mode '$m' has class '$c', which the entry-point arm does not know" ;; esac
+done <<< "$EP_TABLE"
 # EXACT (F20): a mode added to the table moves this number, visibly.
-[ "$nmodes" -eq 17 ] || bad "$nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE, expected exactly 17: a mode was added (give it a row and move the pin) or the enumeration stopped reaching it"
-[ "$(printf '%s\n' "$EP_ROWS" | wc -l)" -eq 22 ] && [ "$(printf '%s\n' "$NT_ROWS" | wc -l)" -eq 7 ] ||
-    bad "the entry-point rows are not 22 table+writer rows and 7 non-table rows"
+[ "$nmodes" -eq 18 ] || bad "$nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE, expected exactly 18: a mode was added (give it its ep_args arguments and move the pin) or the enumeration stopped reaching it"
+[ "$(printf '%s\n' "$EP_ROWS" | wc -l)" -eq 23 ] && [ "$(printf '%s\n' "$NT_ROWS" | wc -l)" -eq 7 ] ||
+    bad "the entry-point rows are not 23 table+writer rows and 7 non-table rows"
 while IFS='|' read -r spell class; do
     rm -f "$F/w.c" "$F/w.h"
     ep_args "$spell"
@@ -733,6 +731,237 @@ if [ "$(awk -F'\t' '(($1=="inline:site_hit"||$1=="inline:tail") && $5+0 > 0) ||
 else
     bad "a card row does not reach what it measures (hits/fires: ${cf:-no rows})"
 fi
+
+# ---- arm 13: stage 3, pinned reached code and the reviewer's view --------------
+echo
+echo "== [INLINE-C] stage 3: pins, chains, the definition-site view, --list-callouts =="
+P3="$WORK/pin"; mkdir -p "$P3"
+# (a) the ONE SHA-256 (shared/sha256.c) against FIPS 180-4's vectors.
+cat > "$P3/nist.c" <<'C'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "sha256.h"
+static int one(const char *what, const unsigned char *d, size_t n, const char *want)
+{
+    char h[65];
+    pcrec_sha256_hex(d, n, h);
+    if (strcmp(h, want)) { printf("%s: %s, wanted %s\n", what, h, want); return 1; }
+    return 0;
+}
+int main(void)
+{
+    int bad = 0;
+    bad |= one("empty", (const unsigned char *)"", 0,
+               "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    bad |= one("abc", (const unsigned char *)"abc", 3,
+               "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    const char *m448 = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    bad |= one("448-bit", (const unsigned char *)m448, strlen(m448),
+               "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+    const char *m896 = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
+                       "hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
+    bad |= one("896-bit", (const unsigned char *)m896, strlen(m896),
+               "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1");
+    unsigned char *mil = malloc(1000000);
+    if (!mil) return 2;
+    memset(mil, 'a', 1000000);
+    bad |= one("a million a", mil, 1000000,
+               "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+    free(mil);
+    return bad;
+}
+C
+if $CC -O1 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/shared" -o "$P3/nist" "$P3/nist.c" \
+       "$ROOT_DIR/shared/sha256.c" 2> "$P3/cc.log" && "$TIMEOUT_BIN" 60 "$P3/nist"; then
+    ok "shared/sha256.c agrees with the FIPS 180-4 vectors (empty, abc, 448-bit, 896-bit, a million a)"
+else
+    bad "shared/sha256.c disagrees with a FIPS 180-4 vector: $(cat "$P3/cc.log")"
+fi
+# (b) pcrec's digest of a file (the one its mismatch refusal names) is
+# sha256sum's, over every pinned fixture in the corpus.
+zero="$(printf '0%.0s' $(seq 1 64))"
+nsum=0
+for f in "$SCRIPT_DIR"/frag/pin_*.rxt; do
+    # A copy beside the entry, named relatively: the refusal's digest must
+    # survive pcrec_error.msg's 256 bytes whatever the checkout's path.
+    mkdir -p "$P3/dg"; cp "$SCRIPT_DIR"/frag/pin_*.rxt "$P3/dg/"
+    printf 'include "%s" sha256 %s\n\npattern z\n' "${f##*/}" "$zero" > "$P3/dg/dig.rxt"
+    got="$(pc -o "$P3/dig.c" "$P3/dg/dig.rxt" 2>&1 | sed -n 's/.*the file hashes to \([0-9a-f]*\);.*/\1/p')"
+    want="$(sha256sum "$f" | cut -c1-64)"
+    if [ -n "$got" ] && [ "$got" = "$want" ]; then nsum=$((nsum + 1))
+    else bad "pcrec's digest of $f is '${got:-none}', sha256sum says $want"; fi
+done
+[ "$nsum" -ge 4 ] && ok "pcrec's digest equals sha256sum's over the $nsum pinned corpus files"
+
+# (c) pins on include and lib: pinned, unpinned and mismatched.
+cd_seg='a(?C`c: return RX_PASS;`)b'
+printf 'pattern %s\nname lc\n' "$cd_seg" > "$P3/lib_code.rxt"
+printf 'pattern qq\nname lq\n' > "$P3/lib_plain.rxt"
+printf 'pattern %s\n' "$cd_seg" > "$P3/frag_code.rxt"
+hl="$(sha256sum "$P3/lib_code.rxt" | cut -c1-64)"
+hp="$(sha256sum "$P3/lib_plain.rxt" | cut -c1-64)"
+hf="$(sha256sum "$P3/frag_code.rxt" | cut -c1-64)"
+mk_lib() {   # mk_lib FILE PIN-OR-EMPTY DEF
+    { printf 'lib "%s"%s\ntarget t = u\n\npattern x(?&%s)y\nname u\nfeatures recursion,named-groups\n' \
+             "$4" "${2:+ sha256 $2}" "$3"; } > "$1"
+}
+mk_lib "$P3/l_pin.rxt" "$hl" lc lib_code.rxt
+mk_lib "$P3/l_up.rxt" "$(printf '%s' "$hl" | tr a-f A-F)" lc lib_code.rxt
+mk_lib "$P3/l_none.rxt" "" lc lib_code.rxt
+mk_lib "$P3/l_bad.rxt" "$zero" lc lib_code.rxt
+mk_lib "$P3/l_plain_none.rxt" "" lq lib_plain.rxt
+mk_lib "$P3/l_plain_bad.rxt" "$zero" lq lib_plain.rxt
+yes_build() {   # yes_build WHAT FILE...
+    local what="$1"; shift
+    if pc --allow-code=c -o "$P3/y.c" "$@" 2> "$P3/y.log"; then ok "$what"
+    else bad "$what: refused: $(cat "$P3/y.log")"; fi
+}
+yes_build "a pinned lib line: the definition's code compiles" "$P3/l_pin.rxt"
+yes_build "a pin in upper-case hex is accepted" "$P3/l_up.rxt"
+yes_build "an unpinned lib whose definitions hold no code still compiles" "$P3/l_plain_none.rxt"
+refuse "an unpinned lib line: the definition's code is refused, naming the line" \
+    "lib_code.rxt:1 refused: the lib line at $P3/l_none.rxt:1 carries no sha256 pin" \
+    --allow-code=c -o "$R" "$P3/l_none.rxt"
+refuse "a lib pin that does not match is refused, naming the digest" \
+    "lib \"lib_code.rxt\": sha256 pin mismatch, the file hashes to $hl" \
+    --allow-code=c -o "$R" "$P3/l_bad.rxt"
+refuse "a pinned file with no code is still verified (and refused when stale)" \
+    "the file hashes to $hp" -o "$R" "$P3/l_plain_bad.rxt"
+printf 'lib "lib_code.rxt" sha256 %s0\n' "$hl" > "$P3/l_long.rxt"
+if pc --list-source "$P3/l_long.rxt" > /dev/null 2> "$P3/ll.log"; then
+    bad "a 65-digit pin was accepted"
+elif grep -q "exactly 64 hex digits" "$P3/ll.log"; then
+    ok "a pin of 65 hex digits is refused by its shape"
+else
+    bad "a 65-digit pin refused for another reason: $(cat "$P3/ll.log")"
+fi
+ls_val="$(pc --list-source "$P3/l_up.rxt" | awk -F'\t' '$1 == "lib" {print $4}')"
+if [ "$ls_val" = "\"lib_code.rxt\" sha256 $(printf '%s' "$hl" | tr a-f A-F)" ]; then
+    ok "--list-source reports the pin as written and verifies nothing"
+else
+    bad "--list-source's lib value is '$ls_val'"
+fi
+printf 'include "frag_code.rxt" sha256 %s\n\npattern z\n' "$hf" > "$P3/i_pin.rxt"
+printf 'include "frag_code.rxt"\n\npattern z\n' > "$P3/i_none.rxt"
+printf 'include "frag_code.rxt" sha256 %s\n\npattern z\n' "$zero" > "$P3/i_bad.rxt"
+yes_build "a pinned include line: the fragment's block compiles through --include-block" \
+    --include-block "$P3/frag_code.rxt:1" "$P3/i_pin.rxt"
+refuse "an unpinned include line: the fragment's code is refused" \
+    "the include line at $P3/i_none.rxt:1 carries no sha256 pin" \
+    --allow-code=c -o "$R" --include-block "$P3/frag_code.rxt:1" "$P3/i_none.rxt"
+refuse "an include pin that does not match is refused" "sha256 pin mismatch" \
+    --allow-code=c -o "$R" --include-block "$P3/frag_code.rxt:1" "$P3/i_bad.rxt"
+refuse "a stale include pin refuses a file-operand build too" "sha256 pin mismatch" \
+    -o "$R" "$P3/i_bad.rxt"
+# The corpus's three-file chain with an unpinned middle (S-IC13's witness).
+refuse "a three-file chain with an unpinned middle refuses the leaf's code" \
+    "the include line at $SCRIPT_DIR/frag/pin_entry.rxt:8 carries no sha256 pin" \
+    --allow-code=c -o "$R" --include-block "$SCRIPT_DIR/frag/pin_leaf.rxt:6" "$SCRIPT_DIR/frag/pin_entry.rxt"
+yes_build "the pinned fragment of that entry compiles" \
+    --include-block "$SCRIPT_DIR/frag/pin_ok.rxt:4" "$SCRIPT_DIR/frag/pin_entry.rxt"
+
+# (d) one file reached by two chains, one unpinned: refused in either order.
+printf 'pattern c(?C`c: return RX_PASS;`)d\nname dc\n' > "$P3/dual_c.rxt"
+hc="$(sha256sum "$P3/dual_c.rxt" | cut -c1-64)"
+printf 'lib "dual_c.rxt" sha256 %s\n\npattern aa\nname da\n' "$hc" > "$P3/dual_a.rxt"
+printf 'lib "dual_c.rxt" sha256 %s\n\npattern bb\nname db\n' "$hc" > "$P3/dual_b.rxt"
+ha="$(sha256sum "$P3/dual_a.rxt" | cut -c1-64)"
+for order in ab ba; do
+    if [ "$order" = ab ]; then
+        l1="lib \"dual_a.rxt\" sha256 $ha"; l2='lib "dual_b.rxt"'; bad_line=2
+    else
+        l1='lib "dual_b.rxt"'; l2="lib \"dual_a.rxt\" sha256 $ha"; bad_line=1
+    fi
+    printf '%s\n%s\ntarget t = u\n\npattern x(?&dc)y\nname u\nfeatures recursion,named-groups\n' \
+        "$l1" "$l2" > "$P3/dual_$order.rxt"
+    refuse "a file reached by a pinned and an unpinned chain is refused ($order order)" \
+        "the lib line at $P3/dual_$order.rxt:$bad_line carries no sha256 pin" \
+        --allow-code=c -o "$R" "$P3/dual_$order.rxt"
+done
+
+# (e) THE DEFINITION-SITE VIEW (§1.9 rows 3b/4): a site in a definition sees
+# the definition's groups, numbered as the definition numbers them. The
+# caller's own groups 1-3 would read 'x', 'q' and 'y'; the definition's
+# group 1 is 'a' and its `w` is its group 2. The definition's text is longer
+# than the target's and its code sits past the target's end (F38's ASan
+# row: a segment once took its source from the TARGET's text).
+cat > "$P3/view_lib.rxt" <<'EOF'
+pattern (a)(?<w>b)(?C`c: return ctx->ncap == 3 && RX_SUBJ[RX_CAP_S(1)] == 'a' && RX_G_w == 2 && RX_CAP_LEN(RX_G_w) == 1 && RX_SUBJ[RX_CAP_S(2)] == 'b' && RX_START == 2 ? RX_PASS : RX_FAIL;`)c
+name vd
+features named-groups
+EOF
+hv="$(sha256sum "$P3/view_lib.rxt" | cut -c1-64)"
+printf 'lib "view_lib.rxt" sha256 %s\ntarget vt = vu\n\npattern (x)(q)(?<w>y)(?&vd)z\nname vu\nfeatures recursion,named-groups\n' \
+    "$hv" > "$P3/view.rxt"
+cat > "$P3/view_drv.c" <<'C'
+#include <stdio.h>
+#include "vt.c"
+int main(void)
+{
+    ptrdiff_t c[VT_NCAPS][2];
+    int rc = vt_search((const unsigned char *)"--xqyabcz", 9, 0, c);
+    if (rc != 1 || c[0][0] != 2 || c[0][1] != 9) { printf("view: rc %d [%td,%td)\n", rc, c[0][0], c[0][1]); return 1; }
+    return 0;
+}
+C
+if pc --allow-code=c -o "$P3" "$P3/view.rxt" 2> "$P3/v.log" &&
+   $CC $GENCFLAGS -I"$P3" -o "$P3/view" "$P3/view_drv.c" 2>> "$P3/v.log" &&
+   "$TIMEOUT_BIN" 10 "$P3/view" >> "$P3/v.log" 2>&1; then
+    ok "a site in a definition sees the definition's own groups (ncap 3, group 1 'a', RX_G_w 2)"
+else
+    bad "the definition-site view: $(sed -E 's/: (fatal )?error: /: [cc \1error] /g' "$P3/v.log" | head -5)"
+fi
+if grep -q "^#line 1 \"$P3/view_lib.rxt\"" "$P3/vt.c"; then
+    ok "a definition's segment names the definition's file in its #line (F38)"
+else
+    bad "a definition's segment does not name view_lib.rxt in its #line: $(grep '^#line' "$P3/vt.c" | head -3)"
+fi
+# A lib's code-header lines go with its segment, under its own #line.
+printf 'code-header c <stdint.h>\npattern k(?C`c: return (uint8_t)1 ? RX_PASS : RX_FAIL;`)\nname kh\n' > "$P3/hdr_lib.rxt"
+hh="$(sha256sum "$P3/hdr_lib.rxt" | cut -c1-64)"
+printf 'lib "hdr_lib.rxt" sha256 %s\ntarget kt = ku\n\npattern (?&kh)\nname ku\nfeatures recursion,named-groups\n' "$hh" > "$P3/hdr.rxt"
+if pc --allow-code=c -o "$P3/kt.c" "$P3/hdr.rxt" 2> "$P3/k.log" &&
+   grep -A1 "^#line 1 \"$P3/hdr_lib.rxt\"" "$P3/kt.c" | grep -q '^#include <stdint.h>' &&
+   $CC $GENCFLAGS -c -o "$P3/kt.o" "$P3/kt.c" 2>> "$P3/k.log"; then
+    ok "a lib's code-header line is emitted with its segment, at the lib's own line"
+else
+    bad "a lib's code-header: $(head -3 "$P3/k.log")"
+fi
+# A definition that reaches itself keeps the refusal (§1.9 row 3a).
+printf 'pattern a(?&rd)?(?C`c: return RX_PASS;`)b\nname rd\nfeatures recursion,named-groups\n' > "$P3/rec_lib.rxt"
+hr="$(sha256sum "$P3/rec_lib.rxt" | cut -c1-64)"
+printf 'lib "rec_lib.rxt" sha256 %s\ntarget rt = ru\n\npattern x(?&rd)y\nname ru\nfeatures recursion,named-groups\n' "$hr" > "$P3/rec.rxt"
+refuse "a site in a recursive definition is still refused" "reaches itself through calls" \
+    --allow-code=c -o "$R" "$P3/rec.rxt"
+# A definition called twice: its site is numbered once and fires repeatedly.
+printf 'lib "view_lib.rxt" sha256 %s\ntarget tw = tu\n\npattern (?&vd)-(?&vd)\nname tu\nfeatures recursion,named-groups\n' "$hv" > "$P3/twice.rxt"
+tw="$(pc --list-callouts "$P3/twice.rxt" 2>&1 | awk -F'\t' '!/^#/ {print $2 "/" $8}')"
+[ "$tw" = "1/repeated" ] && ok "a definition reached by two calls: one site, class repeated" \
+    || bad "a definition reached by two calls lists '$tw'"
+
+# (f) --list-callouts: the rows, describe-class, code escaped, verdicts.
+printf 'lib "lib_code.rxt"\nlib "view_lib.rxt" sha256 %s\ntarget lt = lu\n\npattern (?&lc)(?&vd)%s\nname lu\nfeatures recursion,named-groups\n' \
+    "$hv" "$(printf 'z(?C`c: int t\t= 0; /* \342\200\256 */ return RX_PASS;`)')" > "$P3/lc.rxt"
+l0="$(pc --list-callouts "$P3/lc.rxt" 2>&1)"; q0=$?
+l1="$(pc --allow-code=c --list-callouts "$P3/lc.rxt" 2>&1)"; q1=$?
+rows="$(printf '%s\n' "$l0" | grep -v '^#')"
+hdr="$(printf '%s\n' "$l0" | grep '^#target')"
+if [ $q0 -eq 0 ] && [ "$l0" = "$l1" ] && [ "$(printf '%s\n' "$rows" | wc -l)" = 3 ] &&
+   [ "$hdr" = "$(printf '#target\tsite\tsource\tbinding\tsymbol\tlang\twidth\tclass\tclass_reason\ttrust\tchain\tflag\tcode')" ]; then
+    ok "--list-callouts: 3 rows, 13 columns, the same with and without the grant"
+else
+    bad "--list-callouts: rc $q0/$q1, same=$([ "$l0" = "$l1" ] && echo yes || echo no): ${l0:0:300}"
+fi
+tr_col() { printf '%s\n' "$rows" | awk -F'\t' -v s="$1" -v c="$2" '$2 == s {print $c}'; }
+case "$(tr_col 1 10)" in "refused: the lib line at $P3/lc.rxt:1 carries no sha256 pin") ok "--list-callouts: an unpinned reached site's trust is the refusal" ;; *) bad "row 1 trust: $(tr_col 1 10)" ;; esac
+[ "$(tr_col 2 10)" = pinned ] && ok "--list-callouts: a pinned reached site's trust is pinned" || bad "row 2 trust: $(tr_col 2 10)"
+[ "$(tr_col 3 10)" = local ] && ok "--list-callouts: the target's own site is local" || bad "row 3 trust: $(tr_col 3 10)"
+case "$(tr_col 2 11)" in "$P3/lc.rxt:2 lib \"view_lib.rxt\" sha256 $hv") ok "--list-callouts: the chain names each line and its pin" ;; *) bad "row 2 chain: $(tr_col 2 11)" ;; esac
+case "$(tr_col 3 12)" in *U+202E*) ok "--list-callouts: a bidi control is flagged by name, not refused" ;; *) bad "row 3 flag: $(tr_col 3 12)" ;; esac
+case "$(tr_col 3 13)" in *'int t\x09= 0; /* \xe2\x80\xae */'*) ok "--list-callouts: the code column numbers every non-printable byte" ;; *) bad "row 3 code: $(tr_col 3 13)" ;; esac
+refuse "--list-callouts takes no -o" "takes no pattern and no -o" --list-callouts "$P3/lc.rxt" -o "$R"
+refuse "--list-callouts composes with no other mode" "separate query" --list-callouts "$P3/lc.rxt" --list-syntax
 
 # ---- arm 12: the D27 spec-first suite ----------------------------------------------
 echo

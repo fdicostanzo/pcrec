@@ -385,10 +385,12 @@ fb config_code_header_refused "rxt§1.1¶2 (--code-header refused at parse)" 1 -
 fb features_code_c_refused "§11.9¶8 'a features text naming it is refused wherever it arrives from'" 1 'code-c' no - --allow-code=c d27/rxt/features_code.rxt
 fb lib_code_refused "§11.9¶8;cli§1.22¶1 'Code in a definition read from another .rxt file (lib ...) is refused even with the grant'" 1 'embedded code' no - --allow-code=c d27/rxt/lib_user.rxt
 fb lib_code_refused_delivering "§11.9¶8 (lib definition through a delivering call)" 1 'embedded code' no - --allow-code=c d27/rxt/deliver_lib.rxt
-# the same definition LOCAL is still refused, by §11.1¶1 (a delivering call is a call)
-# MASKED ROW (D27 finding 3.3): match_api §11.1¶1 refuses first, so no admitted
-# LOCAL neighbour of the lib rule exists to compare (match_api §11.9¶8a says why).
-fb local_def_delivering_refused "§11.1¶1 (a site in a group a call reaches; 'a lib definition')" 1 'subroutine call' no - --allow-code=c d27/rxt/deliver_local.rxt
+# the same definition LOCAL: the admitted neighbour of the lib rule. Until
+# [INLINE-C] stage 3 it was a MASKED ROW (D27 finding 3.3: §11.1¶1 refused a
+# site in any called group first); stage 3 lifts that for a composed
+# definition, whose site sees the definition's own groups (match_api §11.9),
+# so the row now asserts the build (re-pinned by lane ic3, 2026-10-29).
+fb local_def_delivering_admitted "§11.9¶8 (local code is allowed); §11.1¶1 (a composed definition's site is not refused)" 0 - yes 't.c t.h' --allow-code=c d27/rxt/deliver_local.rxt
 # An included fragment's block is not a definition a target can name (pcrec
 # answers "no definition"), so this refusal holds for a reason other than the
 # code rule; REPORT.md lists the include clause as untestable from the CLI.
