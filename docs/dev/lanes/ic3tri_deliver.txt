@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic3tri_report.md
+sections: Summary; Red items; Fixes; Re-validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic3-test
