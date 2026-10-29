@@ -1,0 +1,9 @@
+# libpcre2-8 10.46 2025-08-27; pcrec build/pcrec
+# finding | pattern | subject | expected (pcre2 find-all) | pcrec stage-1 stamps | asserts
+SLOT-4 | (?![a-z]*b)[a-z]+@x | ba@x | [(1, 4)] | vm/hybrid locate=unanchored next=byte-class match=- | a VM-hybrid prefilter body declines at L1 `finisher-dfa` (PRE), before ML is built
+SLOT-4 | (?=[a-z]*b)[a-z]+@x$ | ab@x | [(0, 4)] | vm/hybrid locate=rev-end next=none match=- | a LOCATE row IS selected on a hybrid's CR_DFA body today (rev-end): why L1 must read the finisher
+SOUND-2 | [0-9]*aa[bc] | 00000aaabb | [(6, 9)] | dfa/- locate=unanchored next=memchr match=unwrapped | the hit stream carries OVERLAPPING occurrences; the non-overlapping sabotage answers NOMATCH
+SOUND-1 | ((?:xy)?ab)=\1 | xyab=aba | [(2, 7)] | vm/none locate=- next=- match=- | stage 2 net: UNIQUE's reach is one-or-more steps; the one-step reading picks F1 and answers NOMATCH
+SLOT-1 | \b[a-z_][a-z0-9_]{0,31}="(?:[^"\\]|\\.)*" | k="v" ab="c\"d" | [(0, 5), (6, 15)] | dfa/- locate=unanchored next=handoff match=unwrapped | kv-quoted: L6 reads NEXT_cf = handoff, so the walk declines (`next-landmark`) in BOTH worlds
+A2 cell 4 | [a-z]+@(?:[a-z]+@)*[a-z]+! | a@a@a@a@a@a@a@a@ | [] | dfa/- locate=unanchored next=byte-class match=unwrapped | the reach guard's witness (rev 1 cell 4), scaled down for the answer; the timing form is (a@)^65536
+# cells 6, oracle disagreements with the stated expectation 0
