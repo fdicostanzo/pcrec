@@ -2911,3 +2911,11 @@ Lessons:
 - A coordinator's spawned critics lose their replies; files carry the results.
 
 wake.md is rewritten.
+
+## 2026-10-29 — wake; S3 rebase lane; R-30 acked
+
+- Job 621 (S3 at lane/memfn-s3fix e5362a59c) was RED: make test's test-prechecks, and mech S283 NOW DETECTED (1 unexpected). Not triaged before close.
+- Main moved 494 commits (abi 91). Main assigned S3 **abi 92** (landing order). Lane **s3m** (opus, worktrees/s3m, lane/memfn-s3m from s3fix): merge main, 85->92 by grep, triage both reds on the merged tree, fix, STAGE one heavy job (dry-run only), report s3_report Part 12, end.
+- Box: main's ic3 jobs now; bench timing 19:30-00:00; full suite from 00:00 (~13 h). S3's heavy (~9,400 s) must finish by 19:00 today or wait for ~2026-10-30T14:00.
+- R-30 (VM re-find: one ask when the whole run is the landmark) acked, queued after S3; kit worktree `worktrees/memfn` is now branch lane/memfn-r30 from main b05ccfc0b.
+- Main's 2026-10-29 prune removed 7 merged memfn-* worktrees (branches intact; [WTPRUNE-DIR-SCOPE]). Main has a drafted, unfiled ADVANCE-sequence request (D161 add. 17, revwalk_report.md); no lane until filed.
