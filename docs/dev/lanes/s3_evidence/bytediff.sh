@@ -15,7 +15,7 @@ set -u
 export LC_ALL=C
 REF=$1 NEW=$2 OUT=$3 EXTRA=${4:-}
 MAN="$(cd "$(dirname "$0")" && pwd)/predicted_movers.tsv"
-mask() { sed -E 's/\(abi 8[0-9]\)/(abi NN)/g; s/(PCREC_RX_ABI_H \+ 0\) != )8[0-9]/\1NN/; s/(PCREC_RX_ABI_H )8[0-9]/\1NN/; s/(\.abi = )8[0-9],/\1NN,/' "$1"; }
+mask() { sed -E 's/\(abi [89][0-9]\)/(abi NN)/g; s/(PCREC_RX_ABI_H \+ 0\) != )[89][0-9]/\1NN/; s/(PCREC_RX_ABI_H )[89][0-9]/\1NN/; s/(\.abi = )[89][0-9],/\1NN,/' "$1"; }
 bad=0 i=0
 npair() { grep -cE "size_t ([A-Za-z0-9_]*)ha = 0, \\1hb = 0, \\1wa = " "$1"; }
 opair() { grep -cE "size_t ([A-Za-z0-9_]*)ha = 0, \\1hb = 0;" "$1"; }
