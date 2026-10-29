@@ -27371,3 +27371,13 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - p1dsg2 DONE+merged: P1 rev 1 (review r1 applied; UNIQUE over (state, class); every hand walked on both routes; only 5b is a measured mover). Frank asked: accept the dense-landmark loss (~25%) as a non-goal? Bench asked I-172 for a query-string subject. Light re-check before build go. Fixed PL14 (review cited plan.md by line).
 - 622-kit-s3m-heavy ended RED: 20/21 green, the red = our [SWEEP-COMP-FLOOR] (86 < 100). Verdict MERGE; landing lane lands3 (main tree, main_write_ok armed) merged s3m + r30 (ideas.md append conflict: keep both), now re-pinning identity (B) + the floor, suites, ledger, push. abi 92 = S3; trailgc -> 93.
 - Old 690/691-trailgc jobs (pre-review tip) were READY at 12:23 and would have tested a tree trailgc3 is editing: cancelled (`boxqueue cancel` takes the owner key). Slip: launched a queuewatch with output discarded again; killed in seconds (safekill).
+
+## 2026-10-29 (session 128 cont., manager, 12:35-13:15) — stage 3 landed, trail rulings, opt loop opened
+
+- Frank rulings: deny flags follow caller effect (one public flag for D only; verdicts/C a test-only lever via --harness; R and bug fixes none; memory pcrec-flag-follows-caller-effect); land the trail fix at its measured cost (3.6-4.3% never-full on three patterns; [TRAIL-CKPT-PRUNE] later); the reverse walk's dense-landmark loss is a non-goal (remedy = analysis bundle); "if you can work parallel from stage 3 then do it" = the opt loop opens now (2-3 builds).
+- trailgc3 DONE (r2 applied: F1 bounded 12 visits/write, F5 fast tier never compacts); 690-trailgc-test RUNNING since 12:50, 691 queued.
+- vmcons DONE+merged (primed P3v; two landings, D stage 1 only, emitter walks); re-review crit-vmcons running.
+- INLINE-C stage 3: 680 GREEN, 681 GREEN (5/5) -> LANDED b156d8f18 (+02a054851, major 30) by landic3; S3 merged earlier by lands3 (0f425c2d0, abi 92, floor 86). Main NOT pushed: waits 695-lands3-check + 696-landic3-check.
+- 690-p910-census GREEN (5,588 rows); 691-p910-p10controls next, then a fresh finisher.
+- Opened reviews before builds: crit-p48 (P4+P8 design; entry-jump = first small build), crit-landwalk2 (P1 rev 1 re-check).
+- Frank asked about the trail segment structure review: done by trailgen (9 candidates); the open item is FRAME layout (narrower frames), to file as a row after the VM build.
