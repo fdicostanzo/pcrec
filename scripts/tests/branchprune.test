@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# branchprune self-test: every gate, against a SACRIFICIAL repo (and a
+# sacrificial bare "origin") this file builds under mktemp — never the real
+# repository. Each KEEP case is paired with the same branch passing once its
+# one blocker is lifted, so a gate that keeps everything (or nothing) cannot
+# pass.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+BP=$here/branchprune
+T=$(mktemp -d "${TMPDIR:-/tmp}/branchprune.test.XXXXXX")
+cleanup() { chmod -R u+w "$T" 2>/dev/null; rm -rf "$T"; }
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+expect() { # expect NAME VERDICT OUTPUT
+    if printf '%s\n' "$3" | grep -Eq "^$2 +$1( |$)"; then ok "$1 -> $2"; else bad "$1 expected $2; got: $(printf '%s\n' "$3" | grep -E " $1( |$)")"; fi
+}
+run() { bash "$BP" -C "$R" "$@" 2>&1; }
+OLD='2020-01-01T00:00:00'
+R=$T/repo O=$T/origin.git
+git init -q --bare "$O"
+git init -q -b main "$R" || exit 1
+G() { git -C "$R" "$@"; }
+G config user.email t@t; G config user.name t
+mkdir "$R/worktrees"; echo worktrees/ > "$R/.gitignore"; G add .gitignore
+GIT_COMMITTER_DATE=$OLD G commit -qm init --date=$OLD
+G remote add origin "$O"
+# br NAME [merged|unmerged] [old|new]: a branch with one commit of the given age, merged into main or not.
+br() {
+    local d=${3:-old}; [ "$d" = old ] && d=$OLD || d=$(date '+%Y-%m-%dT%H:%M:%S')
+    G checkout -q -b "$1" main; echo "$1" > "$R/f_${1//\//_}"; G add .
+    GIT_COMMITTER_DATE=$d G commit -qm "$1" --date="$d"
+    G checkout -q main
+    [ "$2" = merged ] && G merge -q --no-edit "$1"
+}
+br lane/done1 merged
+br lane/unm   unmerged
+br lane/unm2  unmerged
+br lane/fresh merged new
+br lane/attached merged
+br lane/memfn-x merged
+br memfn      merged
+br lane/memfn-un unmerged
+br lane/pending merged
+G worktree add -q worktrees/att lane/attached
+G push -q origin main lane/done1 lane/unm lane/pending lane/memfn-x lane/fresh
+G branch --set-upstream-to=origin/main main >/dev/null 2>&1
+head=$(G rev-parse main)
+
+out=$(run)
+expect lane/done1    REMOVE "$out"
+expect lane/pending  REMOVE "$out"
+expect lane/unm      KEEP "$out"
+expect lane/fresh    KEEP "$out"
+expect lane/attached KEEP "$out"
+expect lane/memfn-x  KEEP "$out"
+expect memfn         KEEP "$out"
+expect lane/memfn-un KEEP "$out"
+expect main          KEEP "$out"
+printf '%s\n' "$out" | grep -q 'lane/unm .*unmerged' && ok "unmerged kept for being unmerged" || bad "unm wrong reason"
+printf '%s\n' "$out" | grep -q 'lane/fresh .*quiet' && ok "fresh kept for the quiet window" || bad "fresh wrong reason"
+printf '%s\n' "$out" | grep -q 'lane/attached .*worktree' && ok "attached kept for its worktree" || bad "attached wrong reason"
+printf '%s\n' "$out" | grep -q 'main .*protected' && ok "main kept as protected" || bad "main wrong reason"
+printf '%s\n' "$out" | grep -q 'memfn-x .*kit' && ok "kit branch kept as kit" || bad "kit wrong reason"
+G rev-parse -q --verify refs/heads/lane/done1 >/dev/null && ok "dry run deleted nothing" || bad "dry run deleted done1"
+printf '%s\n' "$out" | grep -q '^branchprune: local: 2 removable' && ok "summary counts 2 removable" || bad "summary: $(printf '%s\n' "$out" | tail -1)"
+
+# Paired controls: lift each blocker; the same branch must now pass.
+out=$(run --quiet-min 0 lane/fresh);  expect lane/fresh REMOVE "$out"
+out=$(run --kit lane/memfn-x);        expect lane/memfn-x REMOVE "$out"
+out=$(run --kit memfn);               expect memfn REMOVE "$out"
+G worktree remove worktrees/att
+out=$(run lane/attached);             expect lane/attached REMOVE "$out"
+
+# Apply, named subset first: only the named branch goes.
+out=$(run --apply lane/done1)
+printf '%s\n' "$out" | grep -q '^REMOVED lane/done1' && ! G rev-parse -q --verify refs/heads/lane/done1 >/dev/null && ok "named apply deleted done1" || bad "apply done1: $out"
+G rev-parse -q --verify refs/heads/lane/pending >/dev/null && ok "named apply left the others" || bad "apply deleted an unnamed branch"
+grep -q 'delete branch lane/done1' "$R/worktrees/.branchprune.log" && ok "audit line written" || bad "no audit line"
+# main and an unmerged branch named explicitly are still refused.
+out=$(run --apply main lane/unm)
+G rev-parse -q --verify refs/heads/main >/dev/null && G rev-parse -q --verify refs/heads/lane/unm >/dev/null && ok "named main/unmerged survive --apply" || bad "named apply removed main or unmerged: $out"
+[ "$(G rev-parse main)" = "$head" ] && ok "main untouched" || bad "main moved"
+out=$(run --apply lane/nosuch); rc=$?
+[ $rc = 1 ] && printf '%s\n' "$out" | grep -q '^SKIP .*lane/nosuch' && ok "unknown name SKIPs with rc 1" || bad "nosuch rc=$rc: $out"
+
+# Bulk --apply never touches an unmerged branch.
+run --apply >/dev/null
+G rev-parse -q --verify refs/heads/lane/unm >/dev/null && G rev-parse -q --verify refs/heads/lane/unm2 >/dev/null && ok "bulk apply keeps unmerged branches" || bad "bulk apply deleted an unmerged branch"
+! G rev-parse -q --verify refs/heads/lane/pending >/dev/null && ok "bulk apply removed the merged one" || bad "bulk apply left pending"
+G rev-parse -q --verify refs/heads/lane/fresh >/dev/null && ok "bulk apply kept the fresh one" || bad "bulk apply removed fresh"
+
+# --archive: dry run, refusals, round trip.
+out=$(run --archive lane/unm2);        expect lane/unm2 ARCHIVE "$out"
+G rev-parse -q --verify refs/heads/lane/unm2 >/dev/null && ! G rev-parse -q --verify refs/tags/archive/lane/unm2 >/dev/null && ok "archive dry run changed nothing" || bad "archive dry run changed refs"
+out=$(run --quiet-min 0 --archive lane/fresh); expect lane/fresh KEEP "$out"
+printf '%s\n' "$out" | grep -q 'lane/fresh .*merged' && ok "archive refuses a merged branch" || bad "archive merged: $out"
+out=$(run --archive lane/memfn-un);       expect lane/memfn-un KEEP "$out"
+out=$(run --kit --archive lane/memfn-un); expect lane/memfn-un ARCHIVE "$out"
+out=$(run --archive main);             expect main KEEP "$out"
+out=$(run --apply --archive); rc=$?
+[ $rc = 2 ] && ok "--archive without a NAME is a usage error" || bad "bare --archive rc=$rc"
+out=$(run --archive lane/unm lane/done1 --remote); rc=$?
+[ $rc = 2 ] && ok "--archive with --remote is a usage error" || bad "archive+remote rc=$rc"
+tip=$(G rev-parse lane/unm2)
+out=$(run --apply --archive lane/unm2)
+printf '%s\n' "$out" | grep -q '^ARCHIVED lane/unm2' && ok "archive apply reports ARCHIVED" || bad "archive apply: $out"
+! G rev-parse -q --verify refs/heads/lane/unm2 >/dev/null && [ "$(G rev-parse archive/lane/unm2^{commit})" = "$tip" ] \
+    && ok "archive round trip: branch gone, tag at the old tip" || bad "archive round trip"
+G branch -q lane/unm2 archive/lane/unm2 && [ "$(G rev-parse lane/unm2)" = "$tip" ] && ok "branch restores from the tag" || bad "restore failed"
+# A tag at another commit refuses the archive.
+G tag archive/lane/unm main
+out=$(run --archive lane/unm);         expect lane/unm KEEP "$out"
+printf '%s\n' "$out" | grep -q 'another commit' && ok "archive refuses an existing tag at another commit" || bad "tag clash: $out"
+G tag -d archive/lane/unm >/dev/null
+
+# --remote: lists merged origin branches; dry run never pushes.
+G fetch -q origin
+out=$(run --remote)
+expect origin/lane/pending REMOVE "$out"
+expect origin/lane/done1   REMOVE "$out"
+expect origin/lane/unm     KEEP "$out"
+expect origin/lane/fresh   KEEP "$out"
+expect origin/lane/memfn-x KEEP "$out"
+expect origin/main         KEEP "$out"
+printf '%s\n' "$out" | grep -q 'remote:.*dry run' && ok "remote dry run summary" || bad "remote summary: $(printf '%s\n' "$out" | tail -1)"
+[ -n "$(git -C "$O" rev-parse -q --verify refs/heads/lane/done1)" ] && ok "remote dry run deleted nothing" || bad "remote dry run pushed"
+# Applying: named, then the moved-tip refusal, then the merged list.
+out=$(run --remote --apply lane/done1)
+printf '%s\n' "$out" | grep -q '^REMOVED origin/lane/done1' && [ -z "$(git -C "$O" rev-parse -q --verify refs/heads/lane/done1)" ] && ok "remote apply deleted the named branch on origin" || bad "remote named apply: $out"
+[ -n "$(git -C "$O" rev-parse -q --verify refs/heads/lane/pending)" ] && ok "remote named apply left the others" || bad "remote named apply removed pending"
+# Move origin's pending tip behind our tracking ref's back: must be refused.
+other=$T/other; git clone -q "$O" "$other"; git -C "$other" config user.email t@t; git -C "$other" config user.name t
+git -C "$other" checkout -q lane/pending; echo more > "$other/more"; git -C "$other" add .; git -C "$other" commit -qm more --date=$OLD
+GIT_COMMITTER_DATE=$OLD git -C "$other" commit -q --amend --no-edit --date=$OLD; git -C "$other" push -q origin lane/pending
+out=$(run --remote --apply lane/pending)
+printf '%s\n' "$out" | grep -q 'KEEP .*origin/lane/pending.*fetch first' && [ -n "$(git -C "$O" rev-parse -q --verify refs/heads/lane/pending)" ] && ok "remote apply refuses a moved remote tip" || bad "moved tip: $out"
+run --remote --apply >/dev/null
+[ -z "$(git -C "$O" rev-parse -q --verify refs/heads/lane/memfn-x)" ] && bad "remote bulk apply deleted a kit branch" || ok "remote bulk apply kept the kit branch"
+[ -n "$(git -C "$O" rev-parse -q --verify refs/heads/lane/unm)" ] && [ -n "$(git -C "$O" rev-parse -q --verify refs/heads/main)" ] && ok "remote bulk apply kept unmerged and main" || bad "remote bulk apply deleted unmerged or main"
+
+# Flag hygiene.
+run --bogus >/dev/null; [ $? = 2 ] && ok "unknown flag -> rc 2" || bad "unknown flag rc"
+run --quiet-min x >/dev/null; [ $? = 2 ] && ok "bad --quiet-min -> rc 2" || bad "bad quiet rc"
+want=$(sed -n 's/^quiet_default=\([0-9][0-9]*\).*/\1/p' "$here/wtprune")
+printf '%s\n' "$(run lane/fresh)" | grep -q "< ${want}min quiet" && ok "default quiet window is wtprune's ($want min)" || bad "quiet default not wtprune's"
+
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ $fail = 0 ]

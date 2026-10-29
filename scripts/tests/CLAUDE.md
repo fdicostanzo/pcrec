@@ -40,6 +40,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   before landing — a test that cannot fail is not a test.
 
 - **tmpdir.sh.test** — tmpdir.sh root + prune cases.
+- **branchprune.test** — branchprune's 59 checks; see NOTES.md here.
 
 - **wtprune.test** — scripts/wtprune's 52-check self-test against a
   SACRIFICIAL repo it builds under mktemp (never the real worktrees). One
@@ -48,9 +49,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   path ignored as `memfn/worktrees/` is), each PAIRED with the same tree
   passing once its one blocker is lifted, so a gate that keeps everything
   cannot pass; plus dry-run-touches-nothing, named-subset apply,
-  `--delete-branches`, `--dir` (and its refusals) and the audit line. Each
-  of the seven gates was disabled in a scratch copy and the test went red
-  (2026-10-05). The `--force` block (2026-10-18) adds one case per behaviour:
+  `--delete-branches`, `--dir` (and its refusals) and the audit line. The `--force` block (2026-10-18) adds one case per behaviour:
   refused without `--apply` or without NAMEs, clean target removed by the
   friendly path, unmerged target logging its commits, dirty target
   escalating with a saved status/diff/untracked log and audit line, a nested
