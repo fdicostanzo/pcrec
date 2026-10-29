@@ -27,8 +27,10 @@ Premises held: main = 78627dbca, lane/reqvm1m = 7ea91df96, merge-base = 78627dbc
 
 ## Push and CI
 
-See the PUSH line at the end of this report (written after the push; the report is committed before it).
+Pushed 0e358b446 (the report's first version was committed before the push); CI run 40827253550, in progress. Details in the PUSH line at the end.
 
 ## STATE AT HANDOFF
 
 Rulings file read at each commit: no entries. Main tree: only docs/dev/artifact_size_log.tsv dirty (not mine, not committed). Owed: none.
+
+PUSH: main 78627dbca..0e358b446 pushed (pre-push-light green: spec-scan, strict). CI run id 40827253550 (in_progress at handback; not waited on). This final report edit is committed locally and not pushed (a push would cancel the running CI job); it travels with the next push.
