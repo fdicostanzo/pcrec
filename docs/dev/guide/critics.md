@@ -113,3 +113,10 @@ Round 2026-10-27 r1, [INLINE-C] stage 2 code (`docs/dev/reviews/2026-10-27-r1-ic
 2. **A keep-list by PREFIX is a control sharing its source** (F3): emitter and check both meant "public" by `<PREFIX>_`; the check's public set comes from what the caller sees (the `.h`).
 3. **A comment claiming "X asserts it" is a finding target** (F5): grep for the assertion; a gate depended on one that did not exist.
 4. **A card row proves it reaches the site** (F19): a prefilter rejected the whole subject before the matcher ran.
+
+Round 2026-10-29 r1, landwalk (design) (`docs/dev/reviews/2026-10-29-r1-landwalk.md`, P1's landmark walk), rev 1 in `docs/dev/lanes/p1dsg2_report.md`.
+1. **A rule stated over STATES is checked on a machine with by-class accepts.** A by-class accept and the step that continues read the same byte, so they can exclude each other; a state-level reachability rule cannot see that. Read the emitted tables of the design's own witness (PREMISE-1: the rule rejected dup-param, its headline witness).
+2. **A design's sufficient syntactic forms are a second statement of its rule, and they drift.** The census counted the forms, so it measured neither the rule nor the truth (A1). A simulate lens tests the forms and the rule separately.
+3. **A row that hands a NEW hand is a table walk, not a sentence.** For every hand the row produces, walk the take cells on each route and the path-closure branch it follows; the first LOCATE row to hand AT found a run-time self-cycle the static closure (each cell visited once) cannot see (A2).
+4. **A speed price needs the baseline of the SELECTED path, not of the motivating case.** The motivating pattern was the only admitted row whose shipped path walked every byte; the others already started from the landmark (S2).
+5. **Compile-time admission cannot pass a subject-dependent acceptance cell.** Where one pattern sits in a positive and a negative cell, the design states the loss as a bounded non-goal instead (S3).

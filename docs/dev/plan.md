@@ -237,6 +237,60 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 
 ## Candidates ([OPTLOOP])
+- [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
+  filed: 2026-10-29 lane p1dsg2
+  status (2026-10-29): DESIGNED, rev 1 after review r1 (p1dsg2_report.md); stage 1 (DFA hat) waits on Frank's build go and on one-optimization-build-at-a-time until [INLINE-C] closes
+  trigger: Frank's build go on rev 1 (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
+  refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
+  The later rows below are the review's PLAN items and the general form's unlocks (r1 U1-U5); U3 (one walk emitter for rev-end and the landmark walk) is stage 1's own form (rev 1 D10), so it has no row. The admission sub-table's family unification is [ROWCONJ]; the VM hat's GIVEUP1 check is [GIVEUP-DIFF].
+  - [LANDWALK-CARD] STATE:not-started — the walk's measurement card in time units (lwhit, lwcall), and its wlen sweep
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): lane evidence only (cycles, p1dsg2_evidence/xo_fit.txt): per hit about 40 + 7 cycles per walked byte (miss), 95 + 8 (hit); no set row
+    trigger: stage 1 of [LANDWALK] opens (its step 1); r1 MEAS-3/MEAS-4/MEAS-8, S4
+    refs: docs/dev/lanes/p1dsg2_report.md; docs/design/measure_sets.md; docs/spec/measures.md
+    pcrec card rows `lwhit` (dims wlen;arm, unit walkbytes, fitted a + b*wlen over wlen in {2,8,32} with a miss and a hit arm) and `lwcall` (the per-call fixed term on short calls, COST-4), timing only (measure_sets.md §7.4a), in measure/cards.tsv when [MEASURE-SET] M3 builds it. The rarity row reads the intercept as its per-hit constant; until a set carries it the constant is a labelled UNMEASURED default (D149).
+  - [LANDWALK-CENSUS] STATE:not-started — compile cost and route/NEXT split over the admitted and declined corpus
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): not run (over 50 compiles; the box was held by queue job 622 all day)
+    trigger: stage 1 of [LANDWALK] opens (its step 1, under scripts/boxlock); r1 COST-9 (C6)
+    refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg2_evidence/population2.py
+    Per admission row: the route (RX_ENGINE), NEXT's selected row (which the census approximates by P's width), the landmark the choice rule picks, and the compile-time cost of building the landmark machine and then declining (rows evaluated after the build), against the plain compile.
+  - [LANDWALK-ALLACC] STATE:not-started — walk OUTPUT = every accepting start ascending per hit (r1 U1)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): filed from review r1's general form; not designed
+    trigger: stage 2 ([LANDWALK-VM]) opens, or a bench cell in the `branches` row (ipv6, altwide/sfx-*) is a measured mover
+    refs: docs/dev/reviews/2026-10-29-r1-landwalk.md; decisions D151
+    Exact without UNIQUE or G4 (every start the shipped loop could try for a hit is tried, in order), so `excl-cand` and `excl-lower` merge on the VM, and D151 add. 6's multi-branch admission (one common L, per-branch starts) falls out of one reverse machine over the alternation.
+  - [LANDWALK-WINDOW] STATE:not-started — walk SEED = the kit's window stream, not only a req literal (r1 U2)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): filed from review r1's general form; stage 1 already asks the hits as ONE window request (rev 1 D8)
+    trigger: the kit's window request (R-21) delivers a candidate stream pcrec can read
+    refs: docs/dev/reviews/2026-10-29-r1-landwalk.md; decisions D157 D161
+    The landmark becomes any kit window; pcrec states the facts, the kit chooses the method (D157).
+  - [LANDWALK-FOLD] STATE:not-started — fold the constant-width start rows into the walk as constant walks (r1 U4, C5)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): filed; the rows stay in stage 1 and the landmark walk declines where they are selected
+    trigger: the [LANDWALK-CARD] intercept at width k within noise of `offset-set`'s / `end-minus-width`'s per-hit cost
+    refs: docs/dev/lanes/p1dsg2_report.md; decisions D161
+    Candidates (D161 add. 17: specialised methods that replace the reverse walk): NEXT `run-pinned[-bounded]`, `offset-set[-bounded]`, the req-handoff rows; RECOVER `pinned`, `end-minus-width`, `landing`. Each fold deletes a special case (the benefit) and must be answer-identical.
+  - [LANDWALK-FWD] STATE:not-started — a landmark-seeded FORWARD machine over L.S replacing the anchored verify (r1 U5)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): filed from review r1's general form; not designed
+    trigger: the [LANDWALK-CARD] hit arm shows the verify, not the walk, dominating the per-hit cost
+    refs: docs/dev/reviews/2026-10-29-r1-landwalk.md
+    Lane evidence so far: the hit arm costs about 55 cycles more per hit than the miss arm (xo_fit.txt), against 40 + 7/byte for the walk; not yet a domination.
+  - [LANDWALK-VM] STATE:not-started — stage 2: the VM hat (dup-param x1.33-1.45 per line, off-bench)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): designed to stage-1 depth only; open items below
+    trigger: locate_finish L3 landed AND a bench query-string cell exists for dup-param (r1 C2: acc-main is not a bench subject)
+    refs: docs/dev/lanes/p1dsg2_report.md; docs/design/locate_finish.md; [GIVEUP-DIFF]
+    Open at its design: (r1 D6) place the VM hat as NEXT/FIRST rows, not LOCATE, which may remove the L3 dependency; (r1 D5) the VM-route stamp ruling (RX_VM_START_SCAN is NEXT's; RX_DFA_SCAN on a VM artifact means the hybrid's DFA); (r1 SIM-6) `excl-lower`'s own per-call price; the A1 witnesses (unique_rule.py) as its answer net.
+  - [LANDWALK-EDGEPRICE] STATE:not-started — p48's priced one-state relaxation on the walk's loops, as its own follow-up (r1 D11)
+    filed: 2026-10-29 lane p1dsg2
+    status (2026-10-29): split out of stage 1 by review r1: the plain edge comes free (pcrec_scanedge_dfa already runs on reverse machines) and adds 2.4% on 5b
+    trigger: stage 1 of [LANDWALK] landed and a card of its own shows the relaxation pays on the walk's loops
+    refs: docs/dev/lanes/p48_report.md; docs/dev/lanes/p1dsg2_report.md
+    p48's SCAN_SITE_ROWS row 4 (split-exit, priced by k* about 2.3 B); D161 add. 17 makes edges the optimization inside the walk, and this row is that optimization's priced form.
 - [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
   filed: 2026-10-22 lane landlang
   status (2026-10-22): not started; the K127 fix made the seal redundant (langfix3_report.md)
@@ -575,6 +629,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ROWCONJ] STATE:not-started — one declared conjunct type for every row's admission/form sub-table
+  filed: 2026-10-29 lane p1dsg2
+  status (2026-10-29): filed from review r1 D2 (sibling-of-a-family); three members today, the landmark walk's would be the fourth
+  trigger: the stage-1 build of [LANDWALK], which writes the fourth member
+  refs: docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/lanes/p1dsg2_report.md; [LIST-TABLES]
+  `split_conj[]` (CompConj), `cover_conj[]` (CoverConj) and `revend_forms[]` (RevendFormRow) are three private structs and walkers for one shape: a declared list walked first-match whose first failing row is the decline reason (or whose first holding row is the form). One `RowConj { id; desc; phase PRE/POST; deny; holds; form }`, one walker returning {why, form}, one listing projection (`<row>-admit`), the three migrated as no-mover commits; the deleted structs are the benefit.
+- [GIVEUP-DIFF] STATE:not-started — GIVEUP1 made direction-checked, before the first VM-finisher LOCATE row
+  filed: 2026-10-29 lane p1dsg2 (the step is locate_finish.md's; it had no plan row, review r1 C4)
+  status (2026-10-29): not started; specified in locate_finish.md as three additions to make test-axes' GIVEUP1 relation, no src/ change
+  trigger: before locate_finish L3, L4 or L5 or [LANDWALK-VM] claims a give-up posture for a VM-finisher LOCATE row
+  refs: docs/design/locate_finish.md; tests/axes/run_axes.sh; known_issues K82
+  The direction rule read from the derived classification, a budget-ladder arm, and the witnesses (K82h's 35 blocks, T6a's 13, W1's constructed `(\w|\w\w)x$`, one per further ONE_WAY row), plus the corpus instrument that derives the classification column and a spec sentence per ONE_WAY row with a deny flag.
 - [ERR-MSG-TRUNC] STATE:not-started — A DIAGNOSTIC LONGER THAN pcrec_error.msg[256] IS CUT SILENTLY
   filed: 2026-10-29 manager, from lane ic2d27land's Bug B (docs/dev/lanes/ic2d27land_report.md, "Bug fixes")
   status (2026-10-29): not started. The public `pcrec_error.msg[256]` (lib/pcrec.h) truncates a refusal without a mark (`pcrec_ext_msgf`); the lone-carriage-return code refusal ran to 268 bytes, was cut mid-word, and was shortened by hand (S1741 holds that fix).
