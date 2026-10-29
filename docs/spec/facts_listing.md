@@ -116,7 +116,7 @@
 
 - <a id="s4-2-p1"></a>[4.2¶1] One row per VALUE stamp in the finished artifact, in the order the artifact carries them: every object-like `#define` whose name is `<PREFIX>_…` or `PCREC_FEATURE_…`, read off the artifact's emitted C (compiled without a paired header, so every stamp is in the one `.c` text).
 - <a id="s4-2-p2"></a>[4.2¶2] `stamp` is the macro name exactly as emitted; `value` is its replacement text exactly as emitted (a quoted string stays quoted).
-- <a id="s4-2-p3"></a>[4.2¶3] The function-like machinery macros a VM artifact defines (`<PREFIX>_PUSH(...)` and its family) are code, not stamps, and are not listed.
+- <a id="s4-2-p3"></a>[4.2¶3] The function-like machinery macros a VM artifact defines (`<PREFIX>_PUSH(...)` and its family) are code, not stamps, and are not listed. The embedded-code block at the end of an artifact (`match_api.md` §11.9¶4: the code's macro set, the `code-header` lines and the segments' text) is the user's code, not pcrec's decisions, and nothing in it is listed, whatever it `#define`s.
 - <a id="s4-2-p4"></a>[4.2¶4] What each stamp means is its own spec's (`match_api.md` §6.3, `tuning.md`); this section promises only that it is the artifact's stamp block, byte for byte.
 
 <a id="s4-3"></a>

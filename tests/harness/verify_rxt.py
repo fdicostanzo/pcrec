@@ -693,7 +693,8 @@ def parse_rxt(path):
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
             head_words = ('lib', 'target', 'config', 'description',
-                          'include', 'use', 'oracle', 'tag', 'analysis')
+                          'include', 'use', 'oracle', 'tag', 'analysis',
+                          'code-header')
             if first in head_words:
                 raise ValueError(
                     f"{path}:{lineno}: '{first}' is a file-level (HEAD) "
@@ -1702,6 +1703,25 @@ def main():
 
     for path in files:
         fname = os.path.basename(path)
+        # [INLINE-C] stage 2: a HEAD-BEARING file in a directory that
+        # declares its own oracle (tests/code/, whose files carry
+        # `code-header` and `include` heads) is that oracle's whole: this
+        # leg cannot read a head (see parse_rxt) and would only re-check
+        # cells against the engine the directory names as the wrong one.
+        # Its case lines are COUNTED as own-oracle skips, never dropped.
+        if declares_own_oracle(path) and \
+                _rxt_head_probe(path) not in ('',) + _RXT_BLOCK_OPENERS:
+            with open(path, encoding='latin-1') as f:
+                # every expectation line the census counts (rxtsource's
+                # CENSUS_LINES kinds), `g`/`gp`/`perr` included
+                n_cases = sum(1 for l in f
+                              if re.match(r'(m|n|ms|ns|mc|mg|gu|perr|g|gp)([ \t]|$)', l))
+            total_skip += n_cases
+            total_skip_own_oracle += n_cases
+            per_file_counts[fname] = (0, 0, 0, 0, 0, 0, 0, 0, 0)
+            print(f"  {fname}: {n_cases} case(s) skipped, not python-verifiable "
+                  f"(head-bearing, own-oracle {n_cases})")
+            continue
         entries = parse_rxt(path)
         # a whole-FILE fact, so it is taken over the whole entry list
         # rather than accumulated as blocks go by: a `name` may be

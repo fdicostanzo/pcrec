@@ -62,6 +62,7 @@
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 . "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+. "$here/tmpdir.sh"    # TMPDIR -> PCREC_TMPDIR
 
 die() { echo "chainrun: $*" >&2; exit 64; }
 pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }

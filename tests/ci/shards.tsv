@@ -62,6 +62,7 @@ test-uprops	1	40.3	ci-measured sections.tsv
 test-core	3	3.8	ci-measured sections.tsv
 test-vars	1	8	ci-measured sections.tsv
 test-callouts	2	214.7	ci-measured sections.tsv
+test-code	2	60.0	ESTIMATED (lane ic2: about 50 s on the dev box)
 test-examples	1	0.9	ci-measured sections.tsv
 test-findings	1	210.1	ci-measured sections.tsv
 test-knowledge	1	4.6	ci-measured sections.tsv

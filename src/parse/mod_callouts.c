@@ -103,10 +103,18 @@ const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
         case CO_ATTR_CONSUME: a->u.callout.consume = true; break;
         case CO_ATTR_ONCE:    a->u.callout.once = true;    break;
         case CO_ATTR_VERIFY:
-            /* §4's `verify` mode is stage 4's: refused BY NAME until then. */
-            return pcrec_ext_msgf(cx, "module 'callouts' " PCREC_UNBUILT_MARKER
-                                  " the callout attribute 'verify' is not "
-                                  "implemented yet");
+            /* §4's `verify` mode is stage 4's: refused BY NAME until then.
+             * The module named is the SITE's, which is enabled here: a code
+             * site's is `code-<lang>`, never `callouts` (review
+             * 2026-10-27-r1-ic2 F15: "module 'callouts' is enabled" was
+             * false in a compile without it). */
+            return a->u.callout.bind == CO_CODE
+                ? pcrec_ext_msgf(cx, "module 'code-%s' " PCREC_UNBUILT_MARKER
+                                 " the callout attribute 'verify' is not "
+                                 "implemented yet", a->u.callout.lang)
+                : pcrec_ext_msgf(cx, "module 'callouts' " PCREC_UNBUILT_MARKER
+                                 " the callout attribute 'verify' is not "
+                                 "implemented yet");
         }
         if (j == n) return NULL;
         i = j + 1;
@@ -146,26 +154,44 @@ bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d)
 }
 
 /* THE BINDING ROWS (inline_c.md §1.4), first match on the site's `bind`: the
- * symbol the artifact's header declares `extern const rx_callout_ref`, the
- * call's callee expression and the view's `user` expression. Every reader
- * (the call site, the listing, the header's extern list, `--emit-main`'s
- * refusal, the binding-name rule below) takes them from here. Row 1 (an
- * embedded segment: a direct call, `user` NULL, no extern) is stage 2's
- * module `code-c`, and arrives as a case here. */
-PcrecCalloutBinding pcrec_callout_binding(Arena *ar, const Ast *a)
+ * symbol of the site's `rx_callout_ref`, the call's callee expression and the
+ * view's `user` expression. Every reader (the call site, the listing, the
+ * header's extern list, the artifact's file-local bindings, `--emit-main`'s
+ * refusal, the binding-name rule below) takes them from here.
+ *
+ * ONE CALL FORM (Frank 2026-10-27, "we would be using the same path
+ * ourselves"): every row's callee is `<symbol>.fn` and its `user`
+ * `<symbol>.user`; the rows differ ONLY in who writes the definition, its
+ * name and its linkage:
+ *   - `code` (CO_CODE): pcrec writes `static ptrdiff_t <prefix>__code<seg>`
+ *     and `static const rx_callout_ref <prefix>__code<seg>_ref = { fn, NULL
+ *     }` in the artifact, file-local (`is_extern` false); a generated name,
+ *     since C forbids an extern-then-static of one name;
+ *   - `named`, `numbered`: `extern const rx_callout_ref rx_callout_<name>`
+ *     (`_<n>`), declared by the artifact, defined by the user (D38 §1.1).
+ * A definition the compiler can see (same file, or -flto) is called
+ * directly and may be inlined; a separately compiled one is an indirect
+ * call (match_api.md §11.2). `cx` supplies the arena and the prefix. */
+PcrecCalloutBinding pcrec_callout_binding(Ctx *cx, const Ast *a)
 {
+    Arena *ar = &cx->arena;
     PcrecCalloutBinding b = { NULL, NULL, NULL, false };
     switch (a->u.callout.bind) {
+    case CO_CODE:
+        b.symbol = pcrec_sb_fragf(ar, "%s__code%d_ref", cx->opt->prefix,
+                                  a->u.callout.seg);
+        break;
     case CO_NAME:
         b.symbol = pcrec_sb_fragf(ar, "rx_callout_%s", a->u.callout.name);
+        b.is_extern = true;
         break;
     case CO_NUM:
         b.symbol = pcrec_sb_fragf(ar, "rx_callout_%d", a->u.callout.num);
+        b.is_extern = true;
         break;
     }
     b.callee = pcrec_sb_fragf(ar, "%s.fn", b.symbol);
     b.user = pcrec_sb_fragf(ar, "%s.user", b.symbol);
-    b.is_extern = true;
     return b;
 }
 
@@ -231,22 +257,19 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
          * rule, §2.3). The decoded text is what the grammar reads. */
         const char *raw = p + from + sc.str;
         char *dec = pcrec_arena_alloc(&cx->arena, sc.rawlen + 1);
-        size_t n = 0;
-        for (size_t i = 0; i < sc.rawlen; i++) {
-            dec[n++] = raw[i];
-            if (raw[i] == sc.close) i++;
-        }
-        dec[n] = 0;
+        const size_t n = pcrec_callout_string_decode(raw, sc.rawlen, sc.close,
+                                                     dec, NULL);
 
         size_t id = 0;
         if (n > 0 && co_ident_start(dec[0]))
             while (id < n && co_ident_cont(dec[id])) id++;
-        /* A tagged-code string (`lang attrs ":"`, §2.2) is stage 2's module
-         * `code-c`; until it exists the grammar has one reading here. */
+        /* A tagged-code string (`lang attrs ":"` with a registered `lang`,
+         * §2.2) is module `code-<lang>`'s row, which outranks this one on
+         * exactly that text; what reaches here is a binding or nothing. */
         if (id == 0 || (id < n && dec[id] != ','))
             REFUSE(at, "a (?C\"...\") string is a binding name (a C "
-                   "identifier, with optional ,consume ,once ,verify); "
-                   "tagged code (c: ...) is not supported yet");
+                   "identifier, with optional ,consume ,once ,verify) or "
+                   "tagged code (c: ...)");
         /* The namespace table's binding row (cli.md §1.17, inline_c.md
          * §1.4): `__` is the `<prefix>__<role>` separator and the PCRE2
          * wrapper's helper namespace, so no binding name may hold it. */
@@ -266,7 +289,7 @@ ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
             if (msg) REFUSE(at, "%s", msg);
         }
     }
-    const char *sym = pcrec_callout_binding(&cx->arena, a).symbol;
+    const char *sym = pcrec_callout_binding(cx, a).symbol;
     if (co_abi_name(sym))
         REFUSE(at, "callout binding %s is a name the artifact's shared ABI "
                "block already declares; choose another name", sym);

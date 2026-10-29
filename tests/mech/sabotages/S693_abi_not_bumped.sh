@@ -64,6 +64,8 @@
 # 87, the parent's number; same detector, same arm.
 # RE-AIMED 2026-10-26 (lane ic1b/ic1bfix, [INLINE-C] stage 1b, abi 88 -> 89):
 # AFTER is 88, the parent's number; same detector, same arm.
+# RE-AIMED 2026-10-27 (lane ic2, [INLINE-C] stage 2, abi 89 -> 90): AFTER is
+# 89, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"

@@ -187,6 +187,7 @@ set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 self=$here/$(basename "${BASH_SOURCE[0]}")
 . "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+. "$here/tmpdir.sh"    # TMPDIR -> PCREC_TMPDIR (/var/tmp/pcrec-<user>), pcrec_tmp_prune
 TO=${TIMEOUT_BIN:-timeout}
 BL=$here/boxlock V=$here/verdict
 READY_BOUND=${BOXQUEUE_READY_BOUND:-20}
@@ -1068,6 +1069,7 @@ cmd__start() {
     parse_decl "$rd/dry.log" || D_EXP=()
     [ -s "$rd/cap" ] && D_CAP=$(cat "$rd/cap")
     jlog=$(job_log "$n")
+    [ -z "${PCREC_BOXQUEUE_DIR:-}" ] && pcrec_tmp_prune    # the live queue only; stale leftovers under the temp root, scripts/tmpdir.sh
     capv=(); [ "$D_CAP" != none ] && capv=("$TO" --kill-after=60 "$D_CAP")
     ( cd "$rd" && BQ_MODE=run BQ_JOB=$n BQ_KEY=$(key_of "$n") BQ_OWNER=$(owner_of "$n") BQ_QUEUE=$Q BOXQUEUE=$self \
         BQ_RUNDIR=$rd BQ_LOG=$jlog exec setsid ${capv[@]+"${capv[@]}"} "$rd/job" ) < /dev/null > "$jlog" 2>&1 &

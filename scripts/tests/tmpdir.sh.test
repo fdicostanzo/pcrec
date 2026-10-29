@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# tmpdir.sh self-test: default root + mode, PCREC_TMPDIR override, TMPDIR forced
+# (a caller's TMPDIR=/tmp must not win), and the prune: an old idle entry goes;
+# a recent entry, an old entry holding a recent file, an old entry some process
+# has as cwd, and an old entry a process holds open all stay; nothing outside the
+# root is touched; an empty / relative / "/" root prunes nothing.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+R=$(mktemp -d "${TMPDIR:-/var/tmp}/tmpdir.test.XXXXXX")
+trap 'kill $P1 $P2 2>/dev/null; rm -rf "$R"' EXIT
+P1= P2=
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+eq()  { [ "$2" = "$3" ] && ok "$1" || bad "$1: want '$3' got '$2'"; }
+
+eq "default root" "$(env -u PCREC_TMPDIR TMPDIR=/tmp sh "$here/tmpdir.sh" --print)" "/var/tmp/pcrec-$(id -un)"
+eq "override root" "$(PCREC_TMPDIR=$R/o sh "$here/tmpdir.sh" --print)" "$R/o"
+eq "override mode 0700" "$(stat -c %a "$R/o")" 700
+eq "TMPDIR forced" "$(PCREC_TMPDIR=$R/o TMPDIR=/tmp bash -c ". '$here/tmpdir.sh'; echo \$TMPDIR")" "$R/o"
+
+root=$R/root; mkdir -p "$root/scratch"
+old() { touch -d '10 days ago' "$@"; }
+mkdir "$root/old" "$root/new" "$root/oldfresh" "$root/oldcwd" "$root/oldopen" "$root/scratch/lane_old" "$root/scratch/lane_new"
+touch "$root/old/f" "$root/oldfresh/f" "$root/oldcwd/f" "$root/oldopen/f" "$root/scratch/lane_old/f"
+old "$root/old/f" "$root/old" "$root/oldcwd/f" "$root/oldcwd" "$root/oldopen/f" "$root/oldopen" "$root/scratch/lane_old/f" "$root/scratch/lane_old" "$root/oldfresh"
+( cd "$root/oldcwd" && exec sleep 60 ) & P1=$!
+( exec sleep 60 < "$root/oldopen/f" ) & P2=$!
+mkdir "$R/outside"; touch -d '10 days ago' "$R/outside"
+sleep 0.3
+PCREC_TMPDIR=$root bash -c ". '$here/tmpdir.sh'; pcrec_tmp_prune"
+[ -e "$root/old" ] && bad "old idle entry survived" || ok "old idle entry pruned"
+[ -e "$root/scratch/lane_old" ] && bad "old scratch lane survived" || ok "old scratch lane pruned"
+[ -e "$root/new" ] && ok "recent entry kept" || bad "recent entry pruned"
+[ -e "$root/scratch/lane_new" ] && ok "recent scratch lane kept" || bad "recent scratch lane pruned"
+[ -e "$root/oldfresh" ] && ok "old entry with a recent file kept" || bad "old entry with recent file pruned"
+[ -e "$root/oldcwd" ] && ok "entry that is a process cwd kept" || bad "cwd entry pruned"
+[ -e "$root/oldopen" ] && ok "entry held open kept" || bad "open entry pruned"
+[ -e "$R/outside" ] && ok "outside the root untouched" || bad "outside pruned"
+[ -d "$root/scratch" ] && ok "scratch/ itself kept" || bad "scratch/ pruned"
+for bogus in "" rel /; do
+    PCREC_TMPDIR=$bogus bash -c ". '$here/tmpdir.sh' 2>/dev/null; PCREC_TMPDIR='$bogus'; pcrec_tmp_prune" 2>/dev/null
+done
+[ -e "$R/outside" ] && [ -d "$root" ] && ok "bad roots prune nothing" || bad "bad root pruned"
+
+echo "tmpdir.sh.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

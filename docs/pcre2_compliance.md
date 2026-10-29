@@ -210,6 +210,9 @@ Of PCRE2's syntax surface:
   `(?C)`, `(?Cn)` and `(?C"name")` call an extern binding the user's C
   defines, VM only; the answer agrees with libpcre2 run with its
   answer-moving optimizations off (see the Callouts section).
+- Module `code-c` ships `OK-GATED` ([INLINE-C] stage 2, 2026-10-27):
+  ``(?C`c: ...`)`` embeds C the artifact compiles, VM only, enabled only by
+  `--allow-code=c` (see the Callouts section).
 - Everything outside those modules is `REJECTED` — measured live at
   [M6.4.2] (2026-08-22, module `atomic-groups`) from
   `tests/reject/run_reject_tests.sh`'s own summary,
@@ -2008,6 +2011,7 @@ additionally requires reporting state back to the caller.
 | syntax | status | becomes |
 |---|---|---|
 | `(?C)` `(?Cn)` `(?C"name")` | `OK-GATED` | — |
+| ``(?C`c: ...`)`` | `OK-GATED` (`--allow-code=c`) | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: callouts -->
 
@@ -2033,7 +2037,23 @@ answer: libpcre2 agrees with its answer-moving optimizations off
 `PCRE2_NO_DOTSTAR_ANCHOR`), and at its default flags only where its answer
 does not depend on them (match_api.md §11.6 gives two measured cases).
 Fire counts are unspecified; each site's firing class is a structural
-bound. Embedded code (`(?C"c: ...")`, `(?{...})`) is a later stage.
+bound. Embedded code is module `code-c` (the next entry); the `(?{...})`
+spelling is a later row ([SCANNER-DOGFOOD]).
+
+=== (?C`c: return RX_PASS;`)
+section: callouts
+date: 2026-10-27
+**[INLINE-C] stage 2 (2026-10-27): BUILT, module `code-c`, invoker-only.**
+``(?C`c: CODE`)`` (every PCRE2 string delimiter, PCRE2's end rule: a doubled
+delimiter is one byte) is PCRE2's own string callout; pcrec compiles CODE
+into the artifact as a function the site calls through the same return
+table as module `callouts` (docs/spec/match_api.md §11.9). The module is
+enabled only by `--allow-code=c` or the library's `allow_code`, never by a
+`features` text (`all` does not contain it). PCRE2 passes the same text to
+the application's callout function, so the two read the same bytes as the
+same pattern; tests/code/ checks its corpus against libpcre2 running the
+same code in its callout function. The `(?{...})` spelling is a later row
+([SCANNER-DOGFOOD]).
 
 <!-- END GENERATED -->
 
@@ -2272,7 +2292,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 143 rows from one declarative table (D24), rendered as 104 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 144 rows from one declarative table (D24), rendered as 105 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2345,6 +2365,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 143 rows 
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
 | after `(?` | `(?C1)` | `REJECTED` | `built` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C"name") -- the engine calls rx_callout_<n> or rx_callout_<name> (extern, user-defined) at the site; VM-only |
 | after `(?` | `(?Cx)` | `AGREES-REJECT` | — | never | — | — | a malformed (?C: a bad string delimiter, a number above 255, or no closing parenthesis |
+| after `(?` | ``(?C`c: return RX_PASS;`)`` | `REJECTED` | `built` | planned | `code-c` | vm | embedded c code in a PCRE2 string callout, (?C`c: ...`): pcrec writes a function from the code and the engine calls it at the site; invoker-only (--allow-code=c); VM-only |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
 | after `(?` | `(?(DEFINE)(?<w>a))` | `REJECTED` | `built` | planned | `recursion` | dfa|vm | define-only group: the body never runs where it is written and exists to be called -- the same thing (?:BODY){0} means |

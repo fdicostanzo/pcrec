@@ -237,8 +237,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
-  status (2026-10-27): stages 0 (abi 88), 1a (kindrow.def) and 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) LANDED. Rulings in the row body.
-  next: stage 2 review fixes (lane ic2fix, opus, on lane/ic2fix; review 2026-10-27 r1 ic2 ruled), re-run test/mech/axes, merge; then stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
+  status (2026-10-28): stages 0 (abi 88), 1a (kindrow.def), 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) and 2 (abi 90, merge c6707bb5a: tagged (?C`c: ...`) embedded C, with the review 2026-10-27 r1 ic2 FIX-NOW fixes) LANDED. Rulings in the row body.
+  next: stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
@@ -635,6 +635,27 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-27): filed; build point decided at the [INLINE-C] stage-3 brief, which must rewrite the reached rule anyway.
   next: at the stage-3 brief, decide build-now vs later; candidate general form (slots critic): one AUTHORITY table, fact x source class, read by the CLI, the .rxt reader, the library and the config loader.
   refs: decisions D20; review 2026-10-27 r1 ic2 (F28, SLOT-1); memory pcrec-decisions-as-first-match-tables
+- [CODE-TEST-ARCH] STATE:not-started — tests/code/run_code_tests.sh SPAN-FOLD AND CALL-FORM ARMS REPORT `bad` OFF x86_64
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The span-fold and call-form arms report `bad` on a non-x86_64 box (the Mac).
+  next: make those arms skip with a stated reason off x86_64.
+  refs: tests/code/run_code_tests.sh; docs/dev/lanes/ic2fixtri_report.md
+- [PFC-WITNESS-BUDGET] STATE:not-started — PREFILTER-COLLAPSE SIZE-CAP-RETRY WITNESS COMPILES 15-23 s, NEAR THE PER-COMPILE BUDGET
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The witness went red under load (PROCS=16) on 2026-10-28.
+  next: shrink the witness or give it a declared budget.
+  refs: docs/dev/lanes/ic2fixtri_report.md
+- [SWEEP-COMP-FLOOR] STATE:not-started — scripts/emit_sweep.py COMPOSITION-ARTIFACTS FLOOR 100 vs 86 MEASURED AFTER F7
+  filed: 2026-10-28 manager (ic2fixmov report)
+  status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
+  next: re-measure and re-pin the floor.
+  refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
+- [CAPDIFF-DRIFT] STATE:not-started — test-capturediff pins exact bucket counts, and one subject moved buckets in CI only
+  filed: 2026-10-28 manager (CI run 40709231225 shard 1/3 RED on a13a7103b, a plan.md-only commit whose parent was green; triage lane cired3)
+  status (2026-10-28): not started; the gate reported oracle inconclusive expected=3 actual=2 (labelled TIMING-SENSITIVE) and pcrec step-budget exhausted expected=0 actual=1; 0 content and 0 accept/reject divergences; the same gate passes locally on main
+  next: find why a subject the oracle times out on locally hits pcrec's step budget in CI (is the budget wall-clock-bound, or the order different?); then pin the deterministic buckets exactly and the timing-sensitive ones as a total, so load cannot turn it red
+  refs: tests/fuzz (fuzz.py's bucket order, ~line 1045); docs/testing.md; docs/dev/learnings.md §3
+
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
@@ -1281,6 +1302,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
+
+- [COUNT-FROM-GROUP] STATE:not-started — a repeat count read from an earlier capture's value (length-prefixed data: `5:hello`)
+  filed: 2026-10-28 Frank (session 127), witness `(\d{1,2}):.{\1}` (netstrings; the bench's unusual set does it with a callout)
+  status (2026-10-28): not started; idea stage; unscheduled. TRIGGER: a user ask for length-prefixed parsing (netstrings, bencode, chunked bodies, TLV), or the bench measuring the callout form as slow
+  next: discussion with Frank (spelling, unit), then a design note beside [POSTFACT]'s
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; [INLINE-C] (rx_u64 is the callout form's parser); decisions D26
+  Manager notes (2026-10-28): (1) SPELLING: not `{\1}` — PCRE2 already reads `.{\1}` as literal `{`, backref 1, literal `}`, so it would silently change a valid pattern; needs a form PCRE2 refuses today (the `${...}` family). (2) UNIT: netstrings count BYTES; in UTF mode `.` is a character, so the form must say what it counts. (3) LOWERING, same rule as [POSTFACT]'s HOW GENERAL: a BOUNDED count source (`\d{1,2}` = 0..99) is regular (one alternative per value) and lowers into the DFA when the priced state count fits the size ladder; an unbounded source (`\d+`) is a VM counter loaded from the capture. (4) SHARE with [POSTFACT] how a capture is read as a number. Advantage over the callout form: the compiler sees it (DFA, prefilters, no --allow-code).
+  SCOPE (Frank 2026-10-28, agreed): pcrec stays a MATCHER. This row + binary integer reads (u16be/u32le as count sources, not only decimal) + [CAPTURE-ARRAY] give 'validate and locate' over length-prefixed/chunked data (netstrings, bencode, PNG chunk walk, JPEG segment walk); offsets/random access, checksums beyond callouts, decoding and typed-tree output are a different tool (Kaitai/Hammer territory), not pcrec.
 
 - [CAPTURE-ARRAY] STATE:not-started — a repeated capture group records EVERY iteration (an array), not only the last
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`

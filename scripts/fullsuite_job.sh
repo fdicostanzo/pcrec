@@ -39,6 +39,7 @@
 # the run's commit, or dirty (beyond the suite's own docs/dev/artifact_size_log.tsv), or gone with the commit unknown to git; summary.txt names a stage green with no
 # green record; nothing red or unrun. A resume of a resume chains (carried stages keep their origin run).
 set -u
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/scripts/tmpdir.sh"    # TMPDIR -> PCREC_TMPDIR
 MAIN=/home/pcrec/projects/pcrec
 SIM=""
 RESUME=""

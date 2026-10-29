@@ -2674,7 +2674,7 @@ static void emit_callout_surface(StrBuf *sb, Ctx *cx, const char *upper)
     int n = 0;
     for (int i = 1; i <= cx->ncallouts; i++) {
         const Ast *a = cx->callout_nodes[i];
-        const PcrecCalloutBinding b = pcrec_callout_binding(&cx->arena, a);
+        const PcrecCalloutBinding b = pcrec_callout_binding(cx, a);
         if (b.is_extern) sym[n++] = b.symbol;
     }
     qsort(sym, (size_t)n, sizeof *sym, co_sym_cmp);
@@ -2688,7 +2688,28 @@ static void emit_callout_surface(StrBuf *sb, Ctx *cx, const char *upper)
         "#define RX_PASS 0      /* a callout passes: continue, consuming nothing */\n"
         "#define RX_FAIL (-1)   /* a callout fails this path: backtrack */\n"
         "#endif\n");
+    /* [INLINE-C] stage 2 the span helpers (match_api.md §11.10), for a
+     * segment and a hand-written binding alike. */
+    pcrec_emit_span_helpers(sb);
     pcrec_sb_stampf(sb, upper, "CALLOUTS", "%d", cx->ncallouts);
+    /* [INLINE-C] stage 2 `<PREFIX>_CODE_LANGS`: the languages of the
+     * artifact's code segments, in language-table order; absent when it
+     * has none (§6.3). */
+    if (cx->ncodesegs) {
+        size_t nl;
+        const PcrecCodeLang *L = pcrec_code_langs(&nl);
+        const char *langs = "";
+        for (size_t k = 0; k < nl; k++)
+            for (int i = 1; i <= cx->ncallouts; i++)
+                if (cx->callout_nodes[i]->u.callout.bind == CO_CODE &&
+                    !strcmp(cx->callout_nodes[i]->u.callout.lang, L[k].tag)) {
+                    langs = *langs ? pcrec_sb_fragf(&cx->arena, "%s,%s", langs,
+                                                    L[k].tag)
+                                   : L[k].tag;
+                    break;
+                }
+        pcrec_sb_stamp_str(sb, upper, "CODE_LANGS", langs);
+    }
     const char *list = nd ? sym[0] : "";
     for (int i = 1; i < nd; i++)
         list = pcrec_sb_fragf(&cx->arena, "%s,%s", list, sym[i]);

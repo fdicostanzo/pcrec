@@ -34,9 +34,9 @@ from common import la
 PCREC = os.path.normpath(os.path.join(_HERE, "..", "build", "pcrec"))
 
 # perr existence checks need a real -o target (pcrec also writes a .h
-# beside it); per the SCOPE MANDATE this goes under the session scratchpad,
-# never /tmp directly and never inside the cell.
-_SCRATCH = "/tmp/claude-1001/-home-duxevents-pcrec/3f43c5f0-1e9e-4215-a124-6a0d2eb941c2/scratchpad/la27"
+# beside it); per the SCOPE MANDATE this goes under the PCREC_TMPDIR root
+# (TMPDIR), never /tmp and never inside the cell.
+_SCRATCH = os.path.join(os.environ.get("TMPDIR", "/var/tmp"), "scratch", "la27")
 os.makedirs(_SCRATCH, exist_ok=True)
 _PERR_OUT = os.path.join(_SCRATCH, "checker_perr_probe.c")
 

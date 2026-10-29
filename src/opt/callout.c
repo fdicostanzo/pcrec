@@ -853,13 +853,16 @@ void pcrec_callout_sites(Ctx *cx, Ast *root)
                        "sites and the numbering walk reached %d",
                        cx->ncallouts, w.next - 1);
     /* §1.4 D19: an unbound binding is a link error by design, and the
-     * standalone driver `--emit-main` writes could not link one. Every
-     * site is a binding at stage 1b (embedded code is stage 2's). */
-    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN)) {
-        const Ast *a = cx->callout_nodes[1];
-        const PcrecCalloutBinding b = pcrec_callout_binding(&cx->arena, a);
-        if (b.is_extern)
-            pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot define "
-                           "the binding %s; link your own", b.symbol);
-    }
+     * standalone driver `--emit-main` writes could not link one. An
+     * embedded segment's binding is the artifact's own (stage 2), so only
+     * the first EXTERN binding, in site order, is refused by name. */
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
+        for (int i = 1; i <= cx->ncallouts; i++) {
+            const Ast *a = cx->callout_nodes[i];
+            const PcrecCalloutBinding b = pcrec_callout_binding(cx, a);
+            if (b.is_extern)
+                pcrec_ctx_fail(cx, a->u.callout.at, "--emit-main cannot "
+                               "define the binding %s; link your own",
+                               b.symbol);
+        }
 }

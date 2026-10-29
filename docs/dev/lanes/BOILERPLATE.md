@@ -1,9 +1,11 @@
 # LANE BOILERPLATE — read this FIRST, follow all of it
 
-**NEVER write outside your worktree + session scratchpad — `/tmp`,
-`~/.claude`, `$HOME` and the main tree included. `mktemp` must be given the
-scratchpad dir (e.g. `mktemp -p "$SCRATCH"`); compilers/scripts that default
-to `/tmp` need `TMPDIR` pointed at the scratchpad.**
+**NEVER write outside your worktree + the pcrec temp root — `/tmp`,
+`~/.claude`, `$HOME` and the main tree included. The temp root is
+`$PCREC_TMPDIR` (default `/var/tmp/pcrec-$(id -un)`; `make` and the queue
+scripts already export `TMPDIR` to it; in a plain shell run
+`. scripts/tmpdir.sh`). Your lane scratch is `$PCREC_TMPDIR/scratch/<lane>/`
+(`mktemp -p` it; `mkdir -p` it first). `/tmp` is not used (small RAM tmpfs).**
 
 Standing rules for every pcrec subagent lane. Your brief names your task,
 model tier, and deliverable; everything below applies without restatement.
@@ -15,11 +17,12 @@ and inside it ONLY your own worktree under worktrees/ (read-only elsewhere
 in the repo). NEVER write to the sibling pcrec-bench checkout (read-only
 reference at most), no other
 directories, no system config. Session-temporary files go in the session
-scratchpad directory named in your environment, never committed. Subagents
+scratch directory `$PCREC_TMPDIR/scratch/<lane>/`, never committed. Subagents
 you spawn inherit this mandate — restate it in their briefs.
-`/tmp` IS OUTSIDE THE MANDATE: no backups, plant copies, logs or `-o` outputs
+`/tmp` IS NOT USED (it is a small RAM tmpfs with a per-user quota; a full one
+turned a `make test` red, 2026-10-28): no backups, plant copies, logs or `-o` outputs
 there, not even briefly (2026-10-10: three lanes in one day). Use your
-worktree's `build/` (gitignored) or the scratchpad.
+worktree's `build/` (gitignored) or your scratch dir under the temp root.
 Disclosure: you inherit the session-root CLAUDE.md and the manager's memory
 index at spawn; treat them as context, not tasking.
 

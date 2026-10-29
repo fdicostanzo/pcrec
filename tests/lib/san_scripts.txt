@@ -101,3 +101,8 @@ tests/findall/run_iter_diff.sh
 # driver compiles with $GENCFLAGS, so both axes reach the callout call site,
 # firing classes and the refusal paths (sanred2, 2026-10-27).
 tests/callouts/run_callouts_tests.sh
+
+# [INLINE-C] stage 2 -- module code-c's checks. Its drivers and generated
+# artifacts compile with $GENCFLAGS, so both axes reach the code sites, the
+# span helpers and the refusal paths (lane ic2, 2026-10-27).
+tests/code/run_code_tests.sh

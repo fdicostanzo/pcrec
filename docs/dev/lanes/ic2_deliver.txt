@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2_report.md
+sections: Summary; What was built; Spec hunks; Tests and sabotage; abi and re-pins; Deviations from the design; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic2-test ic2-mech ic2-axes
