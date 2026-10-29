@@ -303,6 +303,10 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->xadfa.tab);
         free(cx->job->xprio.st);
         free(cx->job->xprio.tab);
+        /* [LANDWALK] the landmark machine and the NFA its gate reused. */
+        free(cx->job->lmnfa.st);
+        free(cx->job->lmdfa.st);
+        free(cx->job->lmdfa.tab);
         pcrec_sb_free(&cx->job->csb);
         pcrec_sb_free(&cx->job->hsb);
         pcrec_sb_free(&cx->job->vmsb);
@@ -528,6 +532,29 @@ static void revend_build_marked(Ctx *cx, Ast *root, const EndMark *em)
     }
 out:
     (void)ld;
+    cx->subset_elems = subset_before;
+}
+
+/* [LANDWALK] THE LANDMARK MACHINE ML (rev 2 §Mechanism): the reverse
+ * machine of the cut P·L the admission chose (`PcrecLmwalk.pl`), built where
+ * every PRE row holds (`pcrec_lmwalk_admits`, whose first test is the row's
+ * deny) AFTER the forward, reverse and anchored machines are final, so ML
+ * can never push a mandatory machine or A over a budget
+ * (`build_anchored_dfa`'s rule 1). OPTIONAL like the lowered set: its own
+ * cap, the overflow record and the subset budget restored
+ * (`revend_build_one`), an overflow the POST row `machine`'s decline.
+ * `lm_built` is the one fact the row's predicate reads of it. */
+static void lmwalk_build(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    long long subset_before = cx->subset_elems;
+    job->lm_built = false;
+    if (!pcrec_lmwalk_admits(cx, root)) return;
+    pcrec_build_nfa(cx, pcrec_lmwalk(cx)->pl, &job->lmnfa, true, false);
+    if (job->lmnfa.erased == 0 &&
+        revend_build_one(cx, &job->lmnfa, &job->lmdfa, false, true,
+                         PCREC_MAX_DFA_STATES_TABLE, job->lmnfa.start, false))
+        job->lm_built = true;
     cx->subset_elems = subset_before;
 }
 
@@ -3102,6 +3129,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 /* D164 B3 the `rev-end` walk's form, once the three machines
                  * exist (endmark.md §R.2.1's order). */
                 if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
+                /* [LANDWALK] ML, once the three machines are final (a
+                 * `tagged` form may have swapped the forward one). */
+                lmwalk_build(&cx, root);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the

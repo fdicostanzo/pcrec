@@ -3481,6 +3481,20 @@ typedef struct {
      * set, so `job_cleanup` frees both; `xprio` is `mark_prio`'s probe. */
     Nfa    xnfa, xrnfa;
     Dfa    xdfa, xrdfa, xadfa, xprio;
+    /* [LANDWALK] THE LANDMARK MACHINE ML (docs/dev/lanes/p1build_report.md,
+     * design rev 3): the reverse machine of the CONCAT-PREFIX CUT P·L of the
+     * pattern's top-level concatenation at the walk's chosen landmark L,
+     * built (`lmnfa`, reused for the candidates' prefix NFAs while the
+     * admission runs) by the driver where every PRE row of `lmwalk_conj[]`
+     * holds, after the forward, reverse and anchored machines are final.
+     * OPTIONAL: an overflow is the `machine` row's decline (`lm_built`
+     * false), never a refusal. Heap-held like the live set, freed by
+     * `job_cleanup`. */
+    Nfa    lmnfa;
+    Dfa    lmdfa;
+    bool   lm_built;
+    /* the tree the gate read (the driver's `root`, NULL before the gate) */
+    struct Ast *lm_root;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
@@ -3612,6 +3626,11 @@ typedef struct {
      * kit's class for the REPORT description), memoized on first ask, NULL
      * before it. */
     struct PcrecCover *cover;
+    /* [LANDWALK] this attempt's landmark-walk ADMISSION (`PcrecLmwalk`,
+     * src/gen/lmwalk.c: the `lmwalk_conj[]` walk over the candidates, the
+     * chosen landmark and the counterfactual NEXT read it priced against),
+     * memoized on first ask, NULL before it. */
+    struct PcrecLmwalk *lmwalk;
     /* [WINDOW-E1] this attempt's analysis object (memfn.h's `mf_analysis`,
      * window_contract.md §3.1), built ONCE, eagerly, by `compile_driver`
      * right after the chain resolves (`pcrec_memfn_analysis_build`), and
@@ -8959,6 +8978,55 @@ int pcrec_cand_body_route(Ctx *cx);
  * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
  * emitter writes, so no group above 0 is live. */
 bool pcrec_cand_finisher_dfa(Ctx *cx);
+
+/* ---- [LANDWALK] stage 1: the landmark walk (src/gen/lmwalk.c; design
+ * docs/dev/lanes/p1dsg3_report.md rev 2 + p1build_report.md rev 3) ----
+ *
+ * THE ADMISSION of the LOCATE row `landmark-walk`, one decision per attempt
+ * (memoized on `Job.lmwalk`, keyed like `pcrec_cover` on the machines it
+ * read): `lmwalk_conj[]` walked over each candidate landmark, a byte class at
+ * a top-level concatenation position of a one-branch pattern, with the
+ * non-empty prefix P before it. The first failing row is `why` (NULL: every
+ * PRE row holds; the POST row `machine` is read live, `Job.lm_built`). */
+typedef struct PcrecLmwalk {
+    const char   *why;          /* the first failing row's id, or NULL      */
+    int           at;           /* the landmark's top-level position        */
+    uint8_t       set[32];      /* the landmark's byte set L                */
+    struct Ast   *pl;           /* the cut P·L (a fresh A_CAT spine)        */
+    long long     margin;       /* `pcrec_landmark_margin`'s value          */
+    /* the counterfactual NEXT read (`pcrec_cand_lmwalk_next_cf`): its row's
+     * token, and the start set it proves (`has_set` false: every byte) */
+    bool          cf_done;
+    const char   *cf_tok;
+    bool          cf_has_set;
+    uint8_t       cf_set[256];
+    /* the memo key: the machines the decision read */
+    bool          key_ok;
+    const void   *key_st, *key_ast, *key_fst;
+    int           key_n, key_fin, key_fn;
+} PcrecLmwalk;
+/* The decision, walked on first ask (src/gen/lmwalk.c). Reads `Job.lm_root`. */
+const PcrecLmwalk *pcrec_lmwalk(Ctx *cx);
+/* THE BUILD GATE (r7 FIX-4): false under the row's deny (`-fno-landmark-walk`,
+ * the `drop-landmark-walk` rung's retry) BEFORE any row runs, else whether
+ * every PRE row holds. The driver builds ML where it answers true. */
+bool pcrec_lmwalk_admits(Ctx *cx, struct Ast *root);
+/* The listing of `lmwalk_conj[]` (`--list-axes`' `landmark-walk` axis): row
+ * `i`'s id and words, false past the end. */
+bool pcrec_lmwalk_conj_row(int i, const char **id, const char **phase, const char **desc);
+/* THE COUNTERFACTUAL NEXT READ (src/gen/emit_dfa.c; rev 2 "The NEXT read
+ * cycle"): NEXT's selection for the forward DFA body in the world WITHOUT the
+ * walk (`PCREC_NO_LANDMARK_WALK` set for the whole evaluation), read by
+ * LOCATE through its declared edge, and the start set that row proves, asked
+ * of the kit by LOCATE after NEXT's frame closed; the facts' `used` record is
+ * restored (r7 FIX-5). Fills `lw->cf_*`. */
+void pcrec_cand_lmwalk_next_cf(Ctx *cx, PcrecLmwalk *lw);
+/* [LANDWALK] (r5 SLOT-5, U-c) THE LANDMARK MARGIN, the one primitive the
+ * handoff's K admission and the walk's rarity row read: with `h` the prior's
+ * mass on the landmark's hit, `m` on the start set (both ppm) and `k` the
+ * bytes per hit not skipped, `(10^6 - k*h)*m - 10^6*h`; positive admits.
+ * `h == 0` admits (1); `k*h >= 10^6` declines (-1). */
+long long pcrec_landmark_margin(unsigned long long h, unsigned long long m, long long k);
 int pcrec_dfa_ncaps(Ctx *cx);
 #ifdef PCREC_CAND_TRACE
 /* The trace build's declared-read check: the running conjunct's reads
@@ -9190,7 +9258,8 @@ typedef enum {
 /* [OPT-REVEND] L0 THE MACHINES a start-table row's emitter RUNS
  * (`CandRow.needs[route].mach`, locate_finish.md §2.7): the forward machine
  * `job->dfa`, the reverse `job->rdfa`, the anchored `job->adfa`, the
- * ENG_ATTEMPT machine and the VM program. The path derivation's MEMBERS are
+ * ENG_ATTEMPT machine, the VM program and ([LANDWALK]) the landmark machine
+ * `job->lmdfa`. The path derivation's MEMBERS are
  * the union of these over the selected rows, intersected with what the
  * compile BUILT. */
 enum {
@@ -9198,7 +9267,8 @@ enum {
     CAND_MR   = 1u << 1,
     CAND_MA   = 1u << 2,
     CAND_MATT = 1u << 3,
-    CAND_MVM  = 1u << 4
+    CAND_MVM  = 1u << 4,
+    CAND_ML   = 1u << 5    /* [LANDWALK] the landmark machine `job->lmdfa` */
 };
 
 /* [START-TABLE] C2 the `Vm` fields a start row's predicate reads (§2.2 WIDTH):

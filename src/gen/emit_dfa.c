@@ -4865,6 +4865,16 @@ static bool locate_cover_applies(const CandSel *s)
     return pcrec_cover(s->cx)->why == NULL;
 }
 
+/* [LANDWALK] `landmark-walk`'s predicate: `lmwalk_conj[]`'s decision (its
+ * PRE rows, memoized at the driver's gate) and its POST row read live, the
+ * build of ML. The two machine facts a ladder toggle can move after the gate
+ * (A's availability, `pcrec_cand_drop_anchored_shrinks`) are re-read. */
+static bool locate_landmark_walk_applies(const CandSel *s)
+{
+    const PcrecLmwalk *lw = pcrec_lmwalk(s->cx);
+    return lw->why == NULL && s->cx->job->lm_built && s->cx->job->anchored_ok;
+}
+
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
  * beside the table, where the row type is complete. */
 static bool dfa_engine_is_empty(Ctx *cx);
@@ -4898,23 +4908,24 @@ static bool dfa_engine_is_empty(Ctx *cx);
  * hybrids too (`pcrec_emit_dfa_scan_stamps`, the orientation block), where
  * the finisher is the VM. ENG_ATTEMPT's body and the empty one need no
  * forward machine, so "none" is the fold over a set without one. */
-/* [OPT-REVEND] L2 the path's member machines among F, R, A, in that order
- * (`out`, at most three; returns how many): the machines the three
- * membership folds below compose over. Since `rev-end` the forward machine
- * is not always among them (a walk runs the reverse machine alone). */
-static int dfa_member_machines(Ctx *cx, const Dfa *out[3])
+/* [OPT-REVEND] L2 the path's member machines among F, R, A and ([LANDWALK])
+ * ML, in that order (`out`, at most four; returns how many): the machines
+ * the three membership folds below compose over. Since `rev-end` the forward
+ * machine is not always among them (a walk runs the reverse machine alone). */
+static int dfa_member_machines(Ctx *cx, const Dfa *out[4])
 {
     unsigned m = cand_path_members(cx);
     int n = 0;
     if (m & CAND_MF) out[n++] = &cx->job->dfa;
     if (m & CAND_MR) out[n++] = &cx->job->rdfa;
     if (m & CAND_MA) out[n++] = &cx->job->adfa;
+    if (m & CAND_ML) out[n++] = &cx->job->lmdfa;
     return n;
 }
 
 static const char *dfa_table_name(Ctx *cx)
 {
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int nm = dfa_member_machines(cx, mach);
     if (nm == 0) return "none";
     /* [ENG-FORM] THE STAMP IS THE CHOSEN OBJECT'S NAME. It is not a second
@@ -4986,7 +4997,7 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
  * [OPT-REVEND] L0: "contains" is the path's member set (`dfa_table_name`). */
 static const char *dfa_scan_edge_name(Ctx *cx)
 {
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int nm = dfa_member_machines(cx, mach);
     if (nm == 0) return "none";
     const char *v = scan_edge_of(cx, mach[0], "none");
@@ -5047,7 +5058,7 @@ static int dfa_uniform_folds(Ctx *cx)
     /* An empty scan has no machine, and ENG_ATTEMPT's states are LABELS with
      * no numeric transition table and no scalar accept table to fold — the
      * same set without a forward machine `dfa_table_name` folds over. */
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int n = 0, nm = dfa_member_machines(cx, mach);
     for (int k = 0; k < nm; k++) n += uniform_folds_of(cx, mach[k]);
     /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
@@ -6709,6 +6720,7 @@ static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_CAN_BEGIN]   = "can_begin_match",
     [PCREC_FIND_START_BYTES] = "start_bytes",
     [PCREC_FIND_START_SET]   = "start_set",
+    [PCREC_FIND_LANDMARK]    = "landmark_bytes",
 };
 
 /* D172 S2 commit 2 THE WINDOW STATEMENT's TABLE OFFERS (R-29: per position,
@@ -6889,7 +6901,7 @@ static mf_site *find_site(const PcrecFind *f)
     Ctx *cx = f->cx;
     bool table = f->table != PCREC_FIND_NO_TABLE;
     bool back = f->offset < 0;      /* the term reads the candidate's predecessor */
-    if (f->site != DELEG_PF && f->site != DELEG_MLINE)
+    if (f->site != DELEG_PF && f->site != DELEG_MLINE && f->site != DELEG_LMHIT)
         pcrec_ctx_fail(cx, 0, "internal error: a FIND described under DELEG_SITES "
                        "row %s (src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id);
@@ -9036,6 +9048,18 @@ static bool req_start_set(const CandSel *s, uint8_t start_set[256])
  * the scan proves (`cand_row_scan`). A member of the prior-cost family G1
  * (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4 already
  * belong to. */
+/* [LANDWALK] (r5 SLOT-5, U-c) the margin itself, `pcrec_landmark_margin`
+ * (internal.h): the arithmetic below, generalised over its three inputs so
+ * the landmark walk's rarity row (src/gen/lmwalk.c) prices its landmark with
+ * the same function; this reader's inputs are unchanged, a no-mover by
+ * construction. */
+long long pcrec_landmark_margin(unsigned long long h, unsigned long long m, long long k)
+{
+    if (h == 0) return 1;                           /* the prior never sees it */
+    if ((unsigned long long)k * h >= 1000000u) return -1;
+    return (long long)((1000000u - (unsigned long long)k * h) * m) - (long long)(1000000u * h);
+}
+
 static bool req_landmark_admits(const CandSel *s, long long k)
 {
     Ctx *cx = s->cx;
@@ -9043,10 +9067,9 @@ static bool req_landmark_admits(const CandSel *s, long long k)
     unsigned long long landmark_ppm = req_landmark_hit_ppm(cx, rate), start_ppm = 1000000u;
     uint8_t start_set[256];
     if (req_start_set(s, start_set)) start_ppm = pcrec_find_set_mass(rate, start_set);
-    if (landmark_ppm == 0) return true;             /* the prior never sees it */
-    if ((unsigned long long)k * landmark_ppm >= 1000000u) return false;
-    return (1000000u - (unsigned long long)k * landmark_ppm) * start_ppm > 1000000u * landmark_ppm;
+    return pcrec_landmark_margin(landmark_ppm, start_ppm, k) > 0;
 }
+
 
 /* [REQ-HANDOFF-L1] NEXT's `handoff` row: a forward search machine — the
  * caller-facing body's, or since [REQRUN-VM] the VM hybrid's inlined
@@ -9398,6 +9421,51 @@ static const DfaDir dfa_dir_anchored = {
     "     *\n",
     "a match beginning at ctx->pos may end",
     "    if (search_from > subject_length) return -1;\n", "return -1;",
+    NULL, NULL,
+    "scan_position >= subject_length",
+    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
+    dir_fwd_skip, dir_fwd_bound_accept,
+    "scan_position < subject_length", "scan_position - 1",
+};
+
+/* [LANDWALK] THE LANDMARK WALK's TWO DIRECTIONS. `landmark` is the reverse
+ * direction over ML, the reverse machine of the cut P·L, walked back from
+ * one past a hit and floored at `search_from`, the reverse object's strings
+ * character for character under its own name (its tables and accessors are
+ * its own). `lmverify` is the anchored direction over A, run once from the
+ * walk's start s* INSIDE the search body (rev 3 SOUND-2): the anchored
+ * object's strings, its own name (its accessors are the search body's), no
+ * range guard (the body's prologue ran), and its dead entry leaving the
+ * verify's one-pass block rather than returning `_match`'s -1. Its `from` is
+ * the body's (`emit_landmark_walk` sets it to the walk's start). */
+static const DfaDir dfa_dir_landmark = {
+    { "landmark", 0, cand_always },
+    "Landmark", "LANDMARK", "landmark_state", "landmark_view_state",
+    "rewind_position", "match_start_position",
+    "            ", "                ", true, false,
+    "    /* ---- LANDMARK TABLES: from one past a landmark, where can a\n"
+    "     * match through it begin? The pattern's prefix up to and including\n"
+    "     * the landmark, read right to left and walked backwards.\n"
+    "     *\n",
+    "the backwards walk has consumed the prefix and its landmark",
+    NULL, NULL,
+    "match_end_position < subject_length", "subject[match_end_position]",
+    "rewind_position <= search_from",
+    "subject[rewind_position - 1]", "subject[--rewind_position]", "rewind_position--",
+    dir_rev_skip, dir_rev_bound_accept,
+    "rewind_position > search_from", "rewind_position + 1",
+};
+
+static const DfaDir dfa_dir_lmverify = {
+    { "lmverify", 0, cand_always },
+    "Verify", "VERIFY", "lmverify_state", "lmverify_view_state",
+    "scan_position", "last_accept_position",
+    "            ", "                ", false, false,
+    "    /* ---- VERIFY TABLES: does a match begin at the walk's start, and\n"
+    "     * where does it end? The anchored machine (the match-here entry's).\n"
+    "     *\n",
+    "a match beginning at the walk's start may end",
+    NULL, "break;",
     NULL, NULL,
     "scan_position >= subject_length",
     "subject[scan_position]", "subject[scan_position++]", "scan_position++",
@@ -9959,7 +10027,17 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * NOMATCH / ENDSET, `empty`'s NOMATCH). */
     [CAND_SLOT_LOCATE]   = { "LOCATE",   CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_WINDOW) | CN(CAND_NODE_CALLER) |
-                             CN(CAND_SLOT_FINISH) },
+                             CN(CAND_SLOT_FINISH),
+                             /* [LANDWALK] `landmark-walk`'s rows 8-9 read
+                              * NEXT in the world WITHOUT the walk (the
+                              * counterfactual read, under its own deny, which
+                              * the one row reading it carries) and ask the
+                              * kit for the start set that row proves */
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_LANDMARK_WALK },
+                             .by = { [CAND_SLOT_NEXT] = PCREC_NO_LANDMARK_WALK },
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
     [CAND_SLOT_WINDOW]   = { "WINDOW",   CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_WIDTH) |
                              CN(CAND_SLOT_FIRST) | CN(CAND_SLOT_NEXT) |
@@ -10064,7 +10142,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              CAND_ALL_ROUTES,
                              CN(CAND_SLOT_LOCATE) | CN(CAND_NODE_CALLER) |
                              CN(CAND_SLOT_RETRY),
-                             .raise = CN(CAND_SLOT_RETRY), .rank = CN(CAND_SLOT_LOCATE),
+                             /* [LANDWALK] a seed's `verify-at` NOMATCH
+                              * returns to the walk's NEXT HIT, strictly
+                              * past the one it verified: `raise` */
+                             .raise = CN(CAND_SLOT_RETRY) | CN(CAND_SLOT_LOCATE),
+                             .rank = CN(CAND_SLOT_LOCATE),
                              .entry = CN(CAND_SLOT_LOCATE) },
     /* The successors that are not slots carry the re-entries inside the
      * composite: a candidate the verifier rejects re-enters the scan (E5,
@@ -10160,6 +10242,8 @@ static void emit_empty_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent);
+static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o);
 static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 
@@ -10246,9 +10330,35 @@ static const CandRow cand_rows[] = {
                     .whole = true,
                     .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY },
                                { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
+    /* [LANDWALK] stage 1 `landmark-walk` (docs/dev/lanes/p1dsg3_report.md
+     * rev 2, p1build_report.md rev 3): every occurrence of the landmark L
+     * (the delegated site LMHIT), ascending from `search_from`, overlapping
+     * ones included; the reverse machine of the cut P·L (ML) walked back from
+     * one past it to the smallest accepting position s*, floored at
+     * `search_from`; then a POINT REQUEST at s*, asked as the SEED (`AT`,
+     * `verify-at`: one anchored run, inline). A hit the last verify already
+     * read past is the REACH GUARD: LOWER(s*) to `search-from`, a relocate to
+     * the composite from s* (linear, never quadratic). The hits running out
+     * is NOMATCH. Admitted by `lmwalk_conj[]` (src/gen/lmwalk.c). Its walk
+     * answers presence itself (`whole`) and asks RECOVER nothing (the
+     * relocate's composite asks it: `cand_recover_asker`). After `cover`,
+     * before `composite`; CAND_ROUTE_DFA only. */
+    { .c = { "landmark-walk", PCREC_NO_LANDMARK_WALK, locate_landmark_walk_applies },
+      .slot = CAND_SLOT_LOCATE,
+      .routes = CR_DFA, .tok = "landmark-walk", .map = CM_NONE,
+      .hands = CT_START | CT_VERDICT | CT_LOWER,
+      .list = { [CAND_ROUTE_DFA] = { "locate", 3, "landmark-walk", PCREC_NO_LANDMARK_WALK } },
+      .desc = "a one-branch pattern with a byte class L at a top-level position whose bytes the prefix P before it can never consume, a DFA finisher with its anchored machine, NEXT (without the walk) not already starting from a landmark, and L rare enough against NEXT's start set (the landmark margin): each occurrence of L is found, the reverse machine of P·L walks back from it to the leftmost start, and one anchored run decides the match there; a hit the last run already read past relocates to the forward scan from that start",
+      .needs = { [CAND_ROUTE_DFA] = { CAND_ML | CAND_MA, 0, CN(CAND_SLOT_PRESENCE) } },
+      .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_landmark_walk },
+                    .scan = { [CAND_ROUTE_DFA] = "landmark-walk" },
+                    .whole = true,
+                    .gives = { { CAND_HAND_AT, CAND_ASK_SEED },
+                               { CAND_HAND_LOWER, CAND_ASK_BODY },
+                               { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
     { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
       .routes = CAND_ALL_ROUTES, .tok = "composite", .map = CM_NONE, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "locate", 3, "unanchored" } },
+      .list = { [CAND_ROUTE_DFA] = { "locate", 4, "unanchored" } },
       .desc = "always (fallback): the forward scan from search_from, the candidate-start slots inside it, then the reverse pass for the start (`attempt` on an ENG_ATTEMPT body: the per-start attempt loop; the VM's attempt loop on a VM artifact)",
       .needs = { [CAND_ROUTE_DFA]     = { CAND_MF, CN(CAND_SLOT_NEXT) | CN(CAND_SLOT_RECOVER),
                                           CAND_FRONT_DFA },
@@ -10646,7 +10756,10 @@ static const CandRow cand_rows[] = {
       .needs = { [CAND_ROUTE_DFA]     = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_ATTEMPT] = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_VM]      = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
-      .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_ENDSET },
+      /* [LANDWALK] the DFA LOWER cell: the landmark walk's reach guard
+       * hands the bound below which no match starts, and the relocate to
+       * the composite from it is E-FL for LOWER (the VM cell's meaning) */
+      .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_ENDSET, CAND_HAND_LOWER },
                 [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT },
                 [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
       .u.finish = { CAND_FIN_SEARCH, CAND_ASKER(CAND_ASK_CALLER) } },
@@ -11750,6 +11863,63 @@ static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s
     return r;
 }
 
+/* [LANDWALK] `pcrec_cand_lmwalk_next_cf` (internal.h): THE COUNTERFACTUAL
+ * READ. The world without the walk is the compile with
+ * `PCREC_NO_LANDMARK_WALK` set for the WHOLE evaluation: `cx->opt` points at
+ * a copy carrying the bit, so every nested reader (each builds its flags from
+ * `cx->opt->flags`) is in that world, and is restored after. The bit's one
+ * selection reader is the walk row's `.c.deny`, so the world differs from the
+ * compile by the walk alone. The read is LOCATE's declared edge
+ * (`cand_nodes[LOCATE].reads/under/by[NEXT]`) and, after NEXT's frame
+ * closed, its declared kit ask (`kask[NEXT]`, the start set `cand_row_scan`
+ * proves, r7 FIX-2). The facts' `used` record is restored (r7 FIX-5,
+ * `req_pres_proof_quiet`'s reason: a world that was not built marks nothing).
+ * A longjmp out of the fill ends the attempt (a fresh Ctx per attempt), so
+ * nothing reads `cx->opt` after it. In the trace build the fill runs with
+ * LOCATE on the predicate stack where the gate asks it from the driver, so
+ * its nested selections are checked against LOCATE's declared reads. */
+void pcrec_cand_lmwalk_next_cf(Ctx *cx, PcrecLmwalk *lw)
+{
+    const pcrec_options *saved = cx->opt;
+    pcrec_options *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
+    uint32_t used = cx->job->pf.used;
+    UnanchStart us;
+    *w = *saved;
+    w->flags |= PCREC_NO_LANDMARK_WALK;
+    cx->opt = w;
+#ifdef PCREC_CAND_TRACE
+    bool pushed = cand_eval_depth == 0;
+    if (pushed) {
+        cand_eval_flags[cand_eval_depth] = w->flags;
+        cand_eval_slot[cand_eval_depth++] = CAND_SLOT_LOCATE;
+    }
+#endif
+    unanch_start(cx, &us);
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
+    const CandRow *r = CAND_READ(CAND_SLOT_LOCATE, CAND_SLOT_NEXT, &s, "lmwalk-cf");
+    lw->cf_tok = r->tok;
+    lw->cf_has_set = false;
+    if (r->u.pf.scan == PF_SCAN_BYTE || r->u.pf.scan == PF_SCAN_SET) {
+        CandScan cs = { .byte = -1 };
+        cand_row_scan(cx, CAND_SLOT_LOCATE, &us, r, &cs);
+        if (cs.byte >= 0) {
+            memset(lw->cf_set, 0, 256);
+            lw->cf_set[cs.byte] = 1;
+            lw->cf_has_set = true;
+        } else if (cs.asked && cs.cls.exists) {
+            for (int b = 0; b < 256; b++) lw->cf_set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
+            lw->cf_has_set = true;
+        }
+    }
+#ifdef PCREC_CAND_TRACE
+    if (pushed) cand_eval_depth--;
+#endif
+    cx->job->pf.used = used;
+    cx->opt = saved;
+    lw->cf_done = true;
+}
+
 /* `pcrec_cand_finish_needs` (internal.h): the path derivation's NEEDS half,
  * the static half of the FINISH declarations on the finisher's route, read
  * before any selection exists (src/core/compile.c's anchored build). */
@@ -12070,6 +12240,7 @@ static CandPath cand_path_of(Ctx *cx)
     if (p.body)
         p.built |= cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? CAND_MATT : CAND_MF | CAND_MR;
     if (cx->job->anchored_ok) p.built |= CAND_MA;
+    if (cx->job->lm_built) p.built |= CAND_ML;
     if (cx->job->fit.chosen == ENGM_VM) p.built |= CAND_MVM;
 
     cand_path_visit(cx, &p, CAND_SLOT_LOCATE, p.locate);
@@ -14182,6 +14353,155 @@ static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_sb_puts(c, "    }\n"
                "    search_from = revend_start;\n");
     unanch_scan(cx, c, &fwd, &rev, dfa_search_start_at(cx, CAND_HAND_WINDOW));
+}
+
+/* [LANDWALK] THE LMHIT SITE: the landmark's hit stream (DELEG_SITES row
+ * LMHIT), a FIND at offset 0 over the landmark's byte set from
+ * `landmark_position`, its table offered (`<p>_landmark_bytes`), a miss the
+ * search's NOMATCH. The one constructor, read by the define and the use. */
+static PcrecFind lm_find_of(Ctx *cx, const PcrecLmwalk *lw, uint8_t v[256])
+{
+    for (int b = 0; b < 256; b++) v[b] = lw->set[b >> 3] >> (b & 7) & 1;
+    return (PcrecFind){ .cx = cx, .site = DELEG_LMHIT, .p = cx->opt->prefix, .offset = 0,
+                        .table = PCREC_FIND_LANDMARK, .set = v,
+                        .pos = "landmark_position", .subject = "subject",
+                        .len = "subject_length", .holdback = 0,
+                        .on_miss = "return 0;", .start = PCREC_MF_ORIGIN,
+                        .kind = MF_SK_DFA_SCAN };
+}
+
+/* [LANDWALK] THE LANDMARK WALK, the LOCATE row `landmark-walk`'s body on
+ * CAND_ROUTE_DFA (docs/dev/lanes/p1dsg3_report.md rev 2 §Mechanism, rev 3
+ * SOUND-2). Per hit j of L, ascending (LMHIT, every occurrence): ML walked
+ * back from j + 1, floored at `search_from`, records the smallest accepting
+ * position s*; none, and the next hit. Else, where j lies below the farthest
+ * byte the last verify read (`lmwalk_reach`), the REACH GUARD: LOWER(s*) to
+ * FINISH, whose `search-from` relocates to the composite from s* (no match
+ * starts below it); else the SEED's point request AT(s*), `verify-at`'s one
+ * anchored run of A, inline: a match is the answer (FINISH's SPAN through the
+ * one success tail), none and the next hit. The hits running out is NOMATCH.
+ * Soundness (`exclusion`): a match's landmark is the first occurrence at or
+ * after its start, so the starts through hit j are ML's accepting positions
+ * from it, every one of them matching iff s* does. Linear: the walks back
+ * stop at the previous hit (P consumes no byte of L), a verify re-reads at
+ * most the next walk's span, and the guard hands the rest to one forward
+ * pass. */
+static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    const PcrecLmwalk *lw = pcrec_lmwalk(cx);
+    UnanchStart us, lus, aus;
+    DfaForm fwd, rev, ml, av;
+    uint8_t v[256];
+
+    if (lw->why || !job->lm_built || !job->anchored_ok)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk was emitted on an "
+                       "artifact lmwalk_conj[] declines (%s)", lw->why ? lw->why : "machine");
+    /* the walk's three hands, each asked of FINISH by its asker */
+    if (cand_finish_ask_as(cx, CAND_HAND_AT, CAND_ASK_SEED)->u.finish.act != CAND_FIN_VERIFY)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's seed AT is finished "
+                       "by a row that is not `verify-at`");
+    if (cand_finish_ask(cx, CAND_HAND_LOWER)->u.finish.act != CAND_FIN_SEARCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's reach guard (LOWER) "
+                       "is finished by a row that is not `search-from`");
+    if (cand_finish_ask(cx, CAND_HAND_NOMATCH)->u.finish.act != CAND_FIN_NOMATCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's NOMATCH is "
+                       "finished by a row that is not `nomatch`");
+    if (req_admit_emits(req_admit(cx)))
+        pcrec_ctx_fail(cx, 0, "internal error: a whole-window pre-check was admitted "
+                       "ahead of the landmark walk, which answers presence itself");
+
+    unanch_start(cx, &us);
+    /* the relocate's composite, with ITS RECOVER row (`cand_recover_asker`) */
+    const CandRow *rr = dfa_search_start_of(cx);
+    unsigned act = rr->u.recover.act;
+    if (act == CRA_SEARCH_FROM)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's relocate reached "
+                       "a start-pinned composite");
+    dfa_form_derive(cx, &job->dfa, &us, &dfa_dir_forward, &fwd);
+    fwd.landing = act == CRA_LANDING;
+    if (act == CRA_LANDING) start_landing_assert_unseeded(cx, &job->dfa);
+    if (act == CRA_REVERSE) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    anch_start(&job->lmdfa, &us, &lus);
+    dfa_form_derive(cx, &job->lmdfa, &lus, &dfa_dir_landmark, &ml);
+    anch_start(&job->adfa, &us, &aus);
+    dfa_form_derive(cx, &job->adfa, &aus, &dfa_dir_lmverify, &av);
+    av.from = "lmwalk_start";
+
+    fwd.repr->emit_token(c, &fwd);
+    if (act == CRA_REVERSE) rev.repr->emit_token(c, &rev);
+    ml.repr->emit_token(c, &ml);
+    av.repr->emit_token(c, &av);
+    emit_scan_defs(c, &fwd);
+    if (act == CRA_REVERSE) emit_scan_defs(c, &rev);
+    emit_scan_defs(c, &ml);
+    emit_scan_defs(c, &av);
+    fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
+    if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
+    if (fwd.pf->u.pf.emit_define) fwd.pf->u.pf.emit_define(c, &fwd);
+    PcrecFind fd = lm_find_of(cx, lw, v);
+    fd.stem = dfa_fragf(cx, "%s_lmhit", fn);
+    struct MemfnFind hit = find_define(c, &fd);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", "entry", "entry-gate");
+
+    emit_search_head(cx, c, fn, ent);
+    pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                          "subject_length", PCREC_START0_SEEK);
+    pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
+    emit_machine_tables(c, &fwd);
+    if (act == CRA_REVERSE) emit_machine_tables(c, &rev);
+    emit_machine_tables(c, &ml);
+    emit_machine_tables(c, &av);
+    find_locals(c, "    ", &fd, &hit);
+    if (hit.reads_table) {
+        find_door(cx, &hit, "landmark_bytes", v);
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c, "    /* [LANDWALK] 1 for each byte of the landmark. */\n");
+        pcrec_sb_cmt_close(c);
+        emit_u8_table(c, cx->opt->prefix, "landmark_bytes", v, 256);
+    }
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- LANDMARK WALK: every match passes the landmark, and its\n"
+               "    // prefix can never contain one, so a match's landmark is the\n"
+               "    // first one at or after its start. From each landmark, walk\n"
+               "    // back to the leftmost start a match through it can have,\n"
+               "    // and run the anchored machine once there.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t landmark_position = search_from;\n"
+               "    size_t lmwalk_reach = search_from;\n"
+               "    size_t lmwalk_start;\n"
+               "    for (;;) {\n");
+    find_use(c, "        ", &fd, &hit);
+    pcrec_sb_puts(c, "        {\n"
+               "            size_t match_end_position = landmark_position + 1;\n"
+               "            size_t match_start_position = (size_t)-1;\n"
+               "            size_t rewind_position = match_end_position;\n");
+    emit_reverse_block(c, &ml, dfa_dir_landmark.c.name,
+                       "{ landmark_position++; continue; }");
+    pcrec_sb_puts(c, "            if (match_start_position == (size_t)-1) { landmark_position++; continue; }\n"
+               "            lmwalk_start = match_start_position;\n"
+               "        }\n");
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "        // the last verify read past this landmark: no match starts\n"
+               "        // below the walk's start, so one forward scan from there\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "        if (landmark_position < lmwalk_reach) break;\n"
+               "        {\n"
+               "            size_t scan_position = lmwalk_start;\n"
+               "            size_t last_accept_position = (size_t)-1;\n"
+               "            do {\n");
+    emit_scan_loop(c, &av);
+    pcrec_sb_puts(c, "            } while (0);\n"
+               "            if (last_accept_position != (size_t)-1) {\n");
+    emit_search_success(cx, c, "lmwalk_start", "last_accept_position", "                ");
+    pcrec_sb_puts(c, "            }\n"
+               "            lmwalk_reach = scan_position;\n"
+               "        }\n"
+               "        landmark_position++;\n"
+               "    }\n"
+               "    search_from = lmwalk_start;\n");
+    unanch_scan(cx, c, &fwd, &rev, rr);
 }
 
 /* ---- [ENG-ABS]: THE ANCHORED MATCH-HERE ENTRIES ------------------------- */

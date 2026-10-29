@@ -229,6 +229,7 @@ typedef enum {
     PCREC_FIND_CAN_BEGIN,       /* `<p>_can_begin_match` (byte-class rows)    */
     PCREC_FIND_START_BYTES,     /* `<p>_start_bytes` (the DFA hat's table)    */
     PCREC_FIND_START_SET,       /* `<p>_start_set` (the VM hat's table)       */
+    PCREC_FIND_LANDMARK,        /* `<p>_landmark_bytes` ([LANDWALK]'s LMHIT)  */
     PCREC_FIND_NTABLE
 } PcrecFindTable;
 typedef struct {
