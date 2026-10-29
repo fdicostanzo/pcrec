@@ -368,7 +368,12 @@ queue job.
     reasons. Dropping (8) for unbounded heads, which the argument above
     allows, would also move that guard. That is a separate widening, and
     this design does not ask for it.
-- **`trelax` corrected (503, keeps (6) and (8)):** see STATE AT HANDOFF.
+- **`trelax` corrected (503, keeps (6) and (8)): answer-GREEN.** Eight of
+  the nine sections passed, with 0 differential failures. The one red,
+  `test-anchored-match` §6a, is a size-cap pin: `abcdefghij[0-9]+` grows to
+  21,619 bytes against a test cap of 21,500, which is set just above
+  today's artifact. That cap is a reader that moves with any emitted byte,
+  not a wrong answer. A build of row 4 re-pins it in the same change.
 
 **What the relaxation admits.**
 - Forward split-exit runs: `\d+-`, `[^<]*</`, revwalk's T3 inner runs, and
@@ -703,4 +708,26 @@ c. **Not asked now:** a quiet-box cycles run of the break-even micro (A/B/C)
 
 ## STATE AT HANDOFF
 
-(filled at the end)
+Status: **DONE.** Design and measurement only. Nothing under `src/`, `cli/`,
+`lib/` or `memfn/` was edited. Commits are on `lane/p48`. Owed runs: none.
+
+- Twin answer runs (box queue, all finished; verdict lines are in
+  `p48_evidence/50[013]-*_verdict.txt`):
+  - `501-p48-nogotocorpus` (the bounded-only entry rule): **GREEN**, all
+    nine answer sections.
+  - `500-p48-relaxcorpus` (relaxation dropping (6) and (8)): red, but
+    refusals only. It is superseded.
+  - `503-p48-relaxcorpus2` (relaxation keeping (6) and (8)): answer-green.
+    The one red is the §6a size-cap pin (see One-state relaxation).
+- Census: `502-p48-census` COMPLETE over 5,302 patterns.
+  `census_out.tsv.gz` and `census_summary.txt` are in the evidence dir.
+- Rulings file: R1 (count reverse machines, soundness in both directions)
+  is applied in One-state relaxation and Population.
+- Not done, and why:
+  - No quiet-box cycle figures; all cycles were taken on a box loaded by
+    queue `make test` runs. Instruction counts carry the conclusions.
+  - No measurement-card rows were taken into a measurement set; the card
+    is designed, not run (bench ask c).
+- Scratch: `$PCREC_TMPDIR/scratch/p48/` holds the twin trees (`tset`,
+  `tsingle`, `trelax`, `tnogoto`, `twin`) and the matcher builds. It is safe
+  to remove once this report is merged.
