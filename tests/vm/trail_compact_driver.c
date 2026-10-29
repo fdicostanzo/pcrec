@@ -8,6 +8,12 @@
  * ladder from 1 entry up to the high-water, with the reference's frames.
  * Each smaller run must either give up with PCREC_ERR_FRAMES or return
  * EXACTLY the reference's answer: the same rc and the same capture array.
+ * Every rung's trail is allocated at EXACTLY its capacity (review
+ * 2026-10-29-r2 F11), so under AddressSanitizer a write past the capacity
+ * is a heap-buffer-overflow rather than a quiet write into a large buffer's
+ * slack that reads as "answered below the high-water". The ladder always
+ * ends with a run at the high-water itself, which must answer, so every
+ * witness compares at least one answer (F10).
  * A run that answers with less trail than the reference touched is one
  * the compaction made possible (no plain run can answer below its own
  * high-water); the runner counts those so a witness that never reaches the
@@ -20,6 +26,9 @@
  *
  * Each further argument is a trail capacity to report on its own, as
  * ` at <capacity>:<rc>`, for a check that pins a documented boundary.
+ * TRAIL_LADDER=0 in the environment skips the ladder (`runs 0`): a witness
+ * that only times its `at` runs (the bounded-work check) on a subject too
+ * long to run a whole ladder over.
  *
  * Prints one line:
  *   ref <rc> hw <entries> runs <n> answered <a> below_hw <b> gaveup <g> mismatch <m> [escalations <e> default_rc <r>] [at <capacity>:<rc>...]
@@ -66,6 +75,27 @@ static int run(const unsigned char *s, size_t n, void *frames, size_t nframes,
     return rx_search_in(s, n, 0, caps, &b);
 }
 
+/* The ladder: every capacity up to 256, then about 64 steps per doubling,
+ * and always the high-water itself last. */
+static size_t next_rung(size_t nt, size_t hw)
+{
+    size_t step = nt < 256 ? 1 : (nt / 64 > 0 ? nt / 64 : 1);
+    if (nt == hw) return hw + 1;
+    return nt + step > hw ? hw : nt + step;
+}
+
+/* One run on a trail of exactly `ntrail` entries, its own allocation. */
+static int run_exact(const unsigned char *s, size_t n, void *frames, size_t nframes,
+                     size_t ntrail, ptrdiff_t (*caps)[2])
+{
+    void *t = malloc(ntrail ? ntrail * (size_t)RX_TRAIL_FRAME_SIZE : 1);
+    int rc;
+    if (!t) { fprintf(stderr, "trail_compact: out of memory\n"); exit(2); }
+    rc = run(s, n, frames, nframes, t, ntrail, caps);
+    free(t);
+    return rc;
+}
+
 int main(int argc, char **argv)
 {
     size_t n, hw, nt, runs = 0, answered = 0, below = 0, gaveup = 0, mismatch = 0;
@@ -73,6 +103,7 @@ int main(int argc, char **argv)
     void *frames;
     ptrdiff_t ref[RX_NCAPS][2], got[RX_NCAPS][2];
     int rc0, rc, i;
+    const int ladder = !(getenv("TRAIL_LADDER") && strcmp(getenv("TRAIL_LADDER"), "0") == 0);
 
     if (argc < 2) { fprintf(stderr, "usage: trail_compact SUBJECT-FILE [CAPACITY...]\n"); return 2; }
     s = slurp(argv[1], &n);
@@ -92,9 +123,9 @@ int main(int argc, char **argv)
     /* Every capacity up to 256, then about 64 steps per doubling up to the
      * high-water: the small end is where compaction runs at every
      * checkpoint, the ladder above is where it runs once or twice. */
-    for (nt = 1; nt <= hw; nt += nt < 256 ? 1 : (nt / 64 > 0 ? nt / 64 : 1)) {
+    for (nt = ladder ? 1 : hw + 1; nt <= hw; nt = next_rung(nt, hw)) {
         memset(got, 0, sizeof got);
-        rc = run(s, n, frames, REF_FRAMES, trail, nt, got);
+        rc = run_exact(s, n, frames, REF_FRAMES, nt, got);
         runs++;
         if (rc == PCREC_ERR_FRAMES) { gaveup++; continue; }
         if (rc != rc0 || (rc0 >= 0 && memcmp(got, ref, sizeof ref) != 0)) {
@@ -118,7 +149,7 @@ int main(int argc, char **argv)
 #endif
     for (i = 2; i < argc; i++) {
         nt = (size_t)strtoul(argv[i], NULL, 10);
-        printf(" at %zu:%d", nt, run(s, n, frames, REF_FRAMES, trail, nt, got));
+        printf(" at %zu:%d", nt, run_exact(s, n, frames, REF_FRAMES, nt, got));
     }
     printf("\n");
     free(s); free(frames); free(trail);

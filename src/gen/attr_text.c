@@ -84,7 +84,9 @@ static const struct {
      * checkpoints and only when the trail is nearly full: `cold` sends the
      * call and the function to the unlikely section so the checkpoint's hot
      * path stays one compare, and `noinline` keeps its body out of the
-     * matcher. gcc and clang both have both. */
+     * matcher. ARGUED, not measured: no build without `cold` was timed
+     * (review 2026-10-29-r2 F17); the row's name says `cold`, its text
+     * carries both attributes. gcc and clang both have both. */
     [PCREC_ATTR_COLD] = { "cold", "__attribute__((cold, noinline)) ",
             "one out-of-line body off the hot path (cold, noinline)" },
 };

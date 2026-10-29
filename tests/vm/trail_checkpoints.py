@@ -30,7 +30,18 @@ boundary: no edge leaves it. A `_SET(` is weight 1.
 VERDICT per artifact: (1) no strongly connected component that contains a
 `_SET(`; (2) the heaviest checkpoint-free path is at most the emitted margin;
 (3) no `_SET(` inside a C `for`/`while` body, which the line graph cannot
-see. Usage:
+see.
+
+WHAT (2) CONTROLS, AND WHAT IT CANNOT (review 2026-10-29-r2 F8). The margin
+the emitter writes is its count of `_SET` sites (`nset`), and once (1)
+holds, a checkpoint-free path is simple and visits each `_SET(` line at most
+once, so (2) cannot fail while (1) passes unless the margin is SMALLER than
+the number of `_SET(` sites in the text. It is therefore the control
+"`nset` equals the `_SET(` count of the emitted text" (a SET written by a
+path that does not count it), not an independent bound on the stretch; the
+bound is (1)'s argument. The margin is the whole program's site count, not
+the heaviest checkpoint-free path this script computes (cscan 255 against
+61), which is conservative: the floor sits lower than it needs to. Usage:
     trail_checkpoints.py FILE.c...        check emitted artifacts
     trail_checkpoints.py --corpus PCREC TREE [--limit N]
                                           compile every corpus pattern at
@@ -203,7 +214,8 @@ def check_text(text, label):
     if nchk and margin is None:
         errs.append("%s: checkpoints but no margin in the floor function" % label)
     if margin is not None and worst > margin:
-        errs.append("%s: heaviest checkpoint-free path %d exceeds the margin %d" % (label, worst, margin))
+        errs.append("%s: heaviest checkpoint-free path %d exceeds the margin %d: the margin "
+                    "undercounts the artifact's _SET sites" % (label, worst, margin))
     return errs, worst, margin, nchk
 
 

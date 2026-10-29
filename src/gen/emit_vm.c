@@ -548,8 +548,8 @@ typedef struct {
                            * by vm_set in the same call. The program-order
                            * clock `vm_goto` reads to tell a jump that closes
                            * a trail-writing cycle (vm_trail_check_text), and
-                           * at the end the trail margin (<PREFIX>_TRAIL_MARGIN,
-                           * vm_emit_trail_compact). */
+                           * at the end the trail margin (`margin` in
+                           * `<prefix>_trail_gc_floor`, vm_emit_trail_compact). */
     long long *lbl_nset;  /* [K134] per label id: 1 + `nset` when vm_lbl
                            * wrote it, 0 while it is not written yet */
     int       lbl_cap;    /* entries `lbl_nset` holds */
@@ -12801,12 +12801,18 @@ static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry 
  * `noinline` `<prefix>_trail_gc_start`. Each attempt starts it at the run's
  * FLOOR, `cap - margin` (at least `cap / 2`), so the next
  * stretch still fits after a compaction there. A compaction that keeps `w`
- * entries returns the next trigger, `max(floor, w + cap / 4)`: the next
+ * entries leaves the trigger at the floor if at least a quarter of the
+ * capacity is left below it (`w + cap / 4 <= floor`), so the next
  * compaction waits for at least a quarter of the capacity in fresh writes.
- * A trigger at or past the capacity never fires again in the attempt (the
- * kept trail is within a quarter of full); the run then ends or reaches the
- * trail write's own `return <PREFIX>_R_FRAMES`, as it always could, and a
- * stretch between checkpoints longer than the room left ends the same way.
+ * Otherwise it returns never (`(size_t)-1`) and checkpoints stop compacting
+ * for the attempt; the run then ends or reaches the trail write's own
+ * `return <PREFIX>_R_FRAMES`, as it always could, and a stretch between
+ * checkpoints longer than the room left ends the same way. That stop is
+ * decided by one sample of a depth that rises and falls, so the trail
+ * capacities a pattern answers at need not be one interval (review
+ * 2026-10-29-r2 F2; a re-arming trigger `max(floor, w + cap / 4)` was
+ * tried by lane trailgc3 and left holes too, while moving the specimen's
+ * boundary off `4n + 17`).
  * No run gives up that the plain trail answered, and no answer changes:
  * every dropped entry is one no unwind reads. The FAST TIER's floor is
  * never (`(size_t)-1`, `fwd_own` in emit_comb.c): its FRAMES give-up
@@ -12821,8 +12827,9 @@ static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry 
  * made `_in` with frames >> trail quadratic). That is at most 3 * cap entry
  * and frame visits, plus zeroing the NSLOTS-byte map. The first compaction
  * of an attempt runs past the floor, so the attempt (which starts at depth
- * 0) has made more than cap / 2 writes; each later one runs past
- * `w + cap / 4`, so more than cap / 4 writes came since the last. For a
+ * 0) has made more than cap / 2 writes; each later one runs past the floor
+ * again after a compaction that left it at least `w + cap / 4`, so more
+ * than cap / 4 writes came since the last. For a
  * capacity of at least 4 that is at most 12 visits per trail write plus
  * 4 * NSLOTS / cap map bytes. The floor's `cap / 2` clamp is DERIVED from
  * this, not measured: it is what pays for the first compaction's frame walk.
@@ -12877,10 +12884,10 @@ static void vm_emit_trail_compact(Vm *v)
         " * Only the segments of the topmost `cap` frames are visited; the\n"
         " * ones below stay as they are. Order is kept, so a call frame's\n"
         " * parked values stay at trail_mark + j. Nothing is rewound and no\n"
-        " * slot changes. Returns the next trigger, which waits for a quarter\n"
-        " * of the capacity in fresh writes, so the work is at most 12 visits\n"
-        " * per trail write; a trigger at the capacity never fires (a trail\n"
-        " * that then fills gives up at the write as it always did). Called\n"
+        " * slot changes. Returns the next trigger: the floor again if a\n"
+        " * quarter of the trail is left below it, so the work is at most 12\n"
+        " * visits per trail write, else never for this attempt (a trail that\n"
+        " * then fills gives up at the write as it always did). Called\n"
         " * only from the checkpoints on the program's loops and returns,\n"
         " * never from the trail write. */\n");
     pcrec_sb_cmt_close(c);
@@ -12905,7 +12912,7 @@ static void vm_emit_trail_compact(Vm *v)
         "        for (k = kept; k < w; k++) seen[run->trail[k].slot_index] = 0;\n"
         "    }\n"
         "    run->trail_depth = w;\n"
-        "    return w + cap / 4 > run->trail_gc_floor ? w + cap / 4 : run->trail_gc_floor;\n"
+        "    return w + cap / 4 <= run->trail_gc_floor ? run->trail_gc_floor : (size_t)-1;\n"
         "}\n\n"
         "#define %s_TRAIL_CHECK() do {                              \\\n"
         "        if (run->trail_depth > %s_trail_gc_at)                 \\\n"

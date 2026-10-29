@@ -7,20 +7,33 @@
 #      witness artifact below: every cycle of the emitted program that writes
 #      the trail passes a `<PREFIX>_TRAIL_CHECK`, and the heaviest
 #      checkpoint-free path is within the artifact's margin. It reads the
-#      EMITTED C, not the emitter's own idea of which jumps go back.
-#      TRAIL_CORPUS=1 adds the whole corpus (every pattern line under tests/,
-#      --engine=vm; minutes, not part of make test).
+#      EMITTED C, not the emitter's own idea of which jumps go back. The
+#      same check then runs over the whole corpus (every pattern line under
+#      tests/, --engine=vm; about 10 s on the Linux dev box; TRAIL_CORPUS=0
+#      skips it), which is what turns D183's "revisit when an emitter change
+#      adds a backward edge" into a check (review 2026-10-29-r2 F7).
 #   2. NO ANSWER CHANGES. tests/vm/trail_compact_driver.c runs each witness
 #      subject through `rx_search_in` at every trail capacity of a ladder up
 #      to the plain run's own high-water: each run gives up with
 #      PCREC_ERR_FRAMES or returns exactly the large-buffer answer. Witnesses
 #      marked `compacts` must also ANSWER below that high-water at least once
 #      (only a compaction can do that), so a witness that stopped reaching
-#      the compaction reads as a failure, not as a quiet pass.
-#   3. THE FAST TIER ESCALATES. A long flat cscan subject on the un-suffixed
-#      entry (built with -DRX_TEST_TIER_HOOK) escalates exactly once and
-#      answers: the fast tier's kept trail does not leave a quarter free, so
-#      it stops compacting and gives up instead of compacting at every pass.
+#      the compaction reads as a failure, not as a quiet pass. Each rung's
+#      trail is allocated at exactly its capacity, and the last rung is the
+#      high-water itself, which every witness must answer at, so the
+#      `identity` witnesses compare at least one answer (F10, F11).
+#   3. THE FAST TIER ESCALATES. Every witness subject on the un-suffixed
+#      entry (built with -DRX_TEST_TIER_HOOK) escalates exactly once: each
+#      plain high-water exceeds its artifact's fast trail, and the fast tier
+#      never compacts (its FRAMES give-up escalates, review 2026-10-29-r2
+#      F5), so a fast tier that compacted and answered (0 escalations, the
+#      three possessive/atomic witnesses before the fix) is a failure. The
+#      long flat cscan subject must also answer there.
+#   5. BOUNDED WORK. `(?:a|ab)*(?:(\w+)=(\d+);)*+end` on 200,000 `a` and
+#      200,000 pairs through `_in` with 1M frames and a 64-entry trail must
+#      answer within 5 s: a compaction visits at most `cap` frames, so the
+#      run is linear (0.01 s measured); one that walks every live frame
+#      takes 9 s there (review 2026-10-29-r2 F1).
 #   4. THE DOCUMENTED BOUNDARY. `^(a(?1)?b)$` on a^n b^n needs exactly
 #      4n + 17 trail entries (docs/spec/limits.md §4): n = 200 answers at 817
 #      and gives up at 816. The compaction keeps 3n - 2 entries and continues
@@ -29,7 +42,7 @@
 #      quarter rule 613 entries would do (3n + 13), which no answer shows.
 #
 # Usage: bash tests/vm/run_trail_compact.sh
-# Env: PCREC, CC, GENCFLAGS, KEEP=1, TRAIL_CORPUS=1
+# Env: PCREC, CC, GENCFLAGS, KEEP=1, TRAIL_CORPUS=0
 
 set -u
 
@@ -74,13 +87,19 @@ WITNESSES="$WORKDIR/witnesses"
     printf 'possessive-captures\t%s\t%s\tcompacts\n' '(?:(a)(b)?)*+x' "'ab'*500+'x'"
     printf 'atomic-captures\t%s\t%s\tcompacts\n' '(?>(a)|b)+c' "'ab'*500+'c'"
     printf 'nested-possessive\t%s\t%s\tcompacts\n' '(?:(?:(a)b)++c)*+d' "'abc'*300+'d'"
+    # many live frames over a trail that holds a capture BELOW them: a
+    # compaction at a small capacity visits only the topmost frames, and the
+    # match then backtracks through 120 of them to an older one, whose mark
+    # and group 1 must have survived the partial walk (S1799)
+    printf 'partial-walk\t%s\t%s\tcompacts\n' '^(a)(?:a|ab)*(?:(c)(d)?)*+a{60}(?:cd)+$' "'a'*501+'cd'*300"
     printf 'backref-loop\t%s\t%s\tidentity\n' '(a)\\1+' "'a'*1000"
     printf 'greedy-frames\t%s\t%s\tidentity\n' '(a|ab)*c' "'ab'*300+'c'"
     printf 'empty-guard\t%s\t%s\tidentity\n' '(?:(a)|())+b' "'a'*500+'b'"
+    printf 'frames-bound\t%s\t%s\tbounded\t64:1\n' '(?:a|ab)*(?:(\\w+)=(\\d+);)*+end' "'a'*200000+'k=1;'*200000+'end'"
 } > "$WITNESSES"
 
 nw=0; ncompacts=0
-nprobe=0
+nprobe=0; nbounded=0; nesc=0
 while IFS="$(printf '\t')" read -r name pat subj kind probes; do
     nw=$((nw + 1))
     d="$WORKDIR/$name"; mkdir -p "$d"
@@ -109,6 +128,18 @@ while IFS="$(printf '\t')" read -r name pat subj kind probes; do
     fi
     caps=""
     for pr in ${probes:-}; do caps="$caps ${pr%%:*}"; done
+    if [ "$kind" = "bounded" ]; then
+        # 5. bounded work: the `at` runs only, under a wall bound
+        # shellcheck disable=SC2086
+        res="$(TRAIL_LADDER=0 "$TIMEOUT_BIN" 5 "$d/t" "$d/s.bin" $caps 2>"$d/run.err")"; rc=$?
+        nbounded=$((nbounded + 1))
+        case "$rc: $res " in
+            "0: "*" at 64:1 "*) ok "[K134] $name: the 64-entry trail with a million frames answered within 5 s ($res)" ;;
+            124:*) bad "[K134] $name: still running after 5 s: a compaction is walking every live frame (F1)" ;;
+            *) bad "[K134] $name: rc $rc, want an answer at trail 64: $res $(head -3 "$d/run.err" | tr '\n' ' ')" ;;
+        esac
+        continue
+    fi
     # shellcheck disable=SC2086
     res="$(gen_run "trailcompact $name" "$d/t" "$d/s.bin" $caps 2>"$d/run.err")"; rc=$?
     set -- $res
@@ -118,10 +149,13 @@ while IFS="$(printf '\t')" read -r name pat subj kind probes; do
     fi
     below="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "below_hw") print $(i + 1)}')"
     mism="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "mismatch") print $(i + 1)}')"
+    answered="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "answered") print $(i + 1)}')"
     if [ "$mism" != "0" ]; then
         bad "[K134] $name: an answer changed under a smaller trail: $res"
+    elif [ "${answered:-0}" -lt 1 ]; then
+        bad "[K134] $name: no capacity answered, not even the high-water, so nothing was compared: $res"
     else
-        ok "[K134] $name: no answer changed at any trail capacity ($res)"
+        ok "[K134] $name: no answer changed at any trail capacity, $answered compared ($res)"
     fi
     if [ "$kind" = "compacts" ]; then
         if [ "${below:-0}" -gt 0 ]; then
@@ -139,26 +173,27 @@ while IFS="$(printf '\t')" read -r name pat subj kind probes; do
             *) bad "[K134] $name: trail ${pr%%:*} should return ${pr#*:} (limits.md §4's 4n + 17 for n = 200): $res" ;;
         esac
     done
-    # 3. the fast tier escalates (the cscan identifier witness)
-    if [ "$name" = "cscan-idents" ]; then
-        esc="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "escalations") print $(i + 1)}')"
-        drc="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "default_rc") print $(i + 1)}')"
-        if [ "$esc" = "1" ] && [ "$drc" = "1" ]; then
-            ok "[K134] $name: the un-suffixed entry escalated once and answered"
-        else
-            bad "[K134] $name: the un-suffixed entry escalated ${esc:-?} times (want 1) and returned ${drc:-?} (want 1): the fast tier's hysteresis"
-        fi
+    # 3. the fast tier escalates (every witness; the cscan identifier
+    # witness must also answer)
+    esc="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "escalations") print $(i + 1)}')"
+    drc="$(printf '%s\n' "$res" | awk '{for (i = 1; i < NF; i++) if ($i == "default_rc") print $(i + 1)}')"
+    if [ "$esc" != "1" ]; then
+        bad "[K134] $name: the un-suffixed entry escalated ${esc:-?} times (want 1): the fast tier compacted instead of escalating"
+    elif [ "$name" = "cscan-idents" ] && [ "$drc" != "1" ]; then
+        bad "[K134] $name: the un-suffixed entry escalated once but returned ${drc:-?} (want 1)"
+    else
+        nesc=$((nesc + 1))
     fi
 done < "$WITNESSES"
 
 # K35: the populations, counted.
-if [ "$nw" -eq 11 ] && [ "$ncompacts" -eq 8 ] && [ "$nprobe" -eq 2 ]; then
-    ok "[K134] population: $nw witnesses, $ncompacts of them answered below the plain high-water, $nprobe boundary probes"
+if [ "$nw" -eq 13 ] && [ "$ncompacts" -eq 9 ] && [ "$nprobe" -eq 2 ] && [ "$nbounded" -eq 1 ] && [ "$nesc" -eq 12 ]; then
+    ok "[K134] population: $nw witnesses, $ncompacts of them answered below the plain high-water, $nprobe boundary probes, $nbounded bounded-work run, $nesc escalated exactly once"
 else
-    bad "[K134] population: $nw witnesses (want 11), $ncompacts compacting (want 8), $nprobe boundary probes (want 2)"
+    bad "[K134] population: $nw witnesses (want 13), $ncompacts compacting (want 9), $nprobe boundary probes (want 2), $nbounded bounded-work runs (want 1), $nesc escalating once (want 12)"
 fi
 
-if [ "${TRAIL_CORPUS:-0}" = "1" ]; then
+if [ "${TRAIL_CORPUS:-1}" != "0" ]; then
     if out="$(python3 -I "$CHECKER" --corpus "$PCREC" "$ROOT_DIR" 2>&1)"; then
         ok "[K134] corpus: $(printf '%s\n' "$out" | tail -1)"
     else
