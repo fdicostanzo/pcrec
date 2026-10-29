@@ -1654,8 +1654,11 @@ done
 # `--harness=no-compound` force-declines the compound family, through
 # build/pcrec-harness only; its answers must equal the default's exactly as an
 # axis's do, and tests/compound/check_lever.py holds its two-directional
-# property after the job loop. Selected by the empty AXES= or by its spelling.
-INTERNAL_ARMS=("--harness=no-compound")
+# property after the job loop. [MEMFN] R-30: `--harness=pres-window` keeps a
+# pre-check's run window beside the whole run that implies it (the kit's old
+# form, a change with no public deny); its answers must equal the default's.
+# Selected by the empty AXES= or by its spelling.
+INTERNAL_ARMS=("--harness=no-compound" "--harness=pres-window")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
@@ -1668,7 +1671,7 @@ for arm in "${INTERNAL_ARMS[@]}"; do
     fi
     job_label+=("$arm (internal arm, compound.md §A.11)"); job_flags+=("$arm"); job_lost_ok+=("0")
     job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
-    lever_ran=1
+    [ "$arm" = "--harness=no-compound" ] && lever_ran=1
 done
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
