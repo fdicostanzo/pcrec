@@ -1,0 +1,19 @@
+^(a(?1)?b)\1$                calls=2 W=3 sets=15 undo_dead=3 dead=3 untrailed=3 snap_dropped=5 restores_kept=1 status=ok builds=[True, True, True] R=ok
+^((?>a(?1)?))a$              calls=2 W=4 sets=20 undo_dead=4 dead=3 untrailed=4 snap_dropped=6 restores_kept=2 status=ok builds=[True, True, True] R=ok
+^((a)(?1)?(b))$              calls=2 W=7 sets=35 undo_dead=7 dead=7 untrailed=7 snap_dropped=11 restores_kept=3 status=ok builds=[True, True, True] R=ok
+^(a\Kb)(?1)$                 calls=0 W=0 sets=14 undo_dead=4 dead=10 untrailed=4 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, False] R=ok
+(?:a|bc){3}+                 calls=0 W=0 sets=3 undo_dead=0 dead=3 untrailed=0 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(a)|b                        calls=0 W=0 sets=2 undo_dead=0 dead=0 untrailed=0 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(a|ab)(c|bcd)(d*)            calls=0 W=0 sets=6 undo_dead=6 dead=0 untrailed=6 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+^(?:(a)|b)*$                 calls=0 W=0 sets=5 undo_dead=3 dead=2 untrailed=3 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, False] R=ok
+(a)?b\1                      calls=0 W=0 sets=2 undo_dead=2 dead=0 untrailed=2 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(\w)(\w)\2\1                 calls=0 W=0 sets=6 undo_dead=6 dead=0 untrailed=6 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(?:(a)|(b))+c                calls=0 W=0 sets=7 undo_dead=5 dead=2 untrailed=5 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(a+)+b                       calls=0 W=0 sets=6 undo_dead=3 dead=0 untrailed=3 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(?=(a))a(b)?                 calls=0 W=0 sets=6 undo_dead=6 dead=0 untrailed=6 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(?:x(a)|x(b))c               calls=0 W=0 sets=4 undo_dead=0 dead=0 untrailed=0 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+^(?:(a)|(a)b)*c              calls=0 W=0 sets=4 undo_dead=0 dead=0 untrailed=0 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+(a)(?:b|(c))*d\2?            calls=0 W=0 sets=7 undo_dead=5 dead=2 untrailed=5 snap_dropped=0 restores_kept=0 status=ok builds=[True, True, True] R=ok
+EMIT-FAIL ((a)|b)+?c(?(2)x|y) pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 10)
+EMIT-FAIL (?|(a)|(b))\1 pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+traps: 18 patterns, 492 cells, 0 diffs (a twin answering where stock gave up is not a diff)

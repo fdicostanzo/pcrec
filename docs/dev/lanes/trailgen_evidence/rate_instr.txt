@@ -1,0 +1,12 @@
+idents-1m stock i=191.67 c=- R i=167.75 c=- P i=194.19 c=- RP i=171.65 c=- notrail i=96.48 c=- BCd_stock i=91.73 c=- BCd_R i=79.63 c=- BCd_RP i=80.30 c=- load=6.90
+nest-brace-100k stock i=162.72 c=- R i=140.32 c=- P i=169.22 c=- RP i=149.32 c=- notrail i=95.02 c=- BCd_stock i=91.02 c=- BCd_R i=72.72 c=- BCd_RP i=72.62 c=- load=6.90
+splice-1m stock i=47.76 c=- R i=42.76 c=- P i=48.76 c=- RP i=44.09 c=- notrail i=22.42 c=- BCd_stock i=20.42 c=- BCd_R i=18.76 c=- BCd_RP i=18.76 c=- load=6.90
+js-1m stock i=260.71 c=- R i=227.04 c=- P i=288.12 c=- RP i=254.96 c=- notrail i=97.16 c=- BCd_stock i=72.63 c=- BCd_R i=65.34 c=- BCd_RP i=63.87 c=- load=6.83
+nest-paren-32k stock i=31.07 c=- R i=26.35 c=- P i=31.26 c=- RP i=26.74 c=- notrail i=24.84 c=- BCd_stock i=25.04 c=- BCd_R i=20.05 c=- BCd_RP i=20.05 c=- load=6.83
+comment-5m stock i=220.97 c=- R i=207.47 c=- P i=218.97 c=- RP i=203.47 c=- notrail i=131.47 c=- BCd_stock i=133.47 c=- BCd_R i=126.97 c=- BCd_RP i=133.47 c=- load=6.83
+idents-1m stock i=191.67 c=- R i=165.25 c=- P i=194.19 c=- RP i=170.64 c=- BCd_stock i=91.73 c=- BCd_R i=79.63 c=- BCd_RP i=79.44 c=- load=5.88
+nest-brace-100k stock i=162.72 c=- R i=133.92 c=- P i=169.22 c=- RP i=143.02 c=- BCd_stock i=91.02 c=- BCd_R i=72.72 c=- BCd_RP i=72.42 c=- load=5.97
+splice-1m stock i=47.76 c=- R i=42.76 c=- P i=48.76 c=- RP i=44.42 c=- BCd_stock i=20.42 c=- BCd_R i=18.76 c=- BCd_RP i=18.76 c=- load=5.97
+js-1m stock i=260.71 c=- R i=225.81 c=- P i=288.12 c=- RP i=254.39 c=- BCd_stock i=72.63 c=- BCd_R i=65.02 c=- BCd_RP i=66.59 c=- load=5.97
+nest-paren-32k stock i=31.07 c=- R i=25.43 c=- P i=31.26 c=- RP i=26.02 c=- BCd_stock i=25.04 c=- BCd_R i=20.12 c=- BCd_RP i=19.99 c=- load=5.97
+comment-5m stock i=220.97 c=- R i=202.97 c=- P i=218.97 c=- RP i=196.47 c=- BCd_stock i=133.47 c=- BCd_R i=132.97 c=- BCd_RP i=132.47 c=- load=5.97
