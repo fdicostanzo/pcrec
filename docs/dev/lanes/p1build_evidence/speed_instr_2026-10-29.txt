@@ -1,0 +1,7 @@
+5b-accmain	scan=landmark-walk	res=80123	answers=same	instr lw=79,569,979 main=5,477,638,523 x68.84	cycles lw=89,745,828 main=2,437,066,595 x27.16
+5b-accsmall	scan=landmark-walk	res=830	answers=same	instr lw=838,266 main=59,425,037 x70.89	cycles lw=845,522 main=26,597,596 x31.46
+5b-fzme-N1	scan=landmark-walk	res=7946	answers=same	instr lw=101,349,247 main=97,580,809 x0.96	cycles lw=75,958,033 main=73,301,341 x0.97
+5b-qs200k	scan=landmark-walk	res=0	answers=same	instr lw=1,969,286 main=1,969,273 x1.00	cycles lw=3,684,478 main=3,506,529 x0.95
+qntplus-t1m	scan=landmark-walk	res=1505	answers=same	instr lw=989,639 main=5,070,404 x5.12	cycles lw=661,223 main=2,163,887 x3.27
+qntplus-t256k	scan=landmark-walk	res=377	answers=same	instr lw=247,608 main=1,274,199 x5.15	cycles lw=164,850 main=516,542 x3.13
+lw-az-accsmall	scan=landmark-walk	res=0	answers=same	instr lw=556,239 main=425,549 x0.77	cycles lw=453,925 main=574,675 x1.27
