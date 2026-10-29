@@ -580,6 +580,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the next diagnostic that overflows, or [IFACE-PUSH].
   refs: docs/dev/lanes/ic2d27land_report.md; lib/pcrec.h; tests/mech/sabotages/S1741_code_refusal_sentence_cut.sh
   Direction (manager): a check that every diagnostic template fits at its worst-case argument length, plus a visible truncation mark when one still overflows; the struct size stays (public ABI).
+- [WTPRUNE-DIR-SCOPE] STATE:not-started — `wtprune --apply --dir NAME` ALSO REMOVES EVERY GATED WORKTREE
+  filed: 2026-10-29 manager
+  status (2026-10-29): not started. Meant to remove one D27 cell; with no worktree NAMEs, `--apply` also removed all 9 gated REMOVE candidates (7 kit memfn-* trees). All merged, clean and quiet, branches kept: nothing lost.
+  next: make `--dir` alone scope `--apply` to the named dirs (worktrees only when NAMEs are given too), plus a self-test row.
+  refs: scripts/wtprune (arg parse, line 83); worktrees/.wtprune.log 2026-10-29T02:43
 - [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
   filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
   status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
