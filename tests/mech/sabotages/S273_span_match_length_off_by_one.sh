@@ -24,6 +24,14 @@
 # WHERE inside the identity gate's bucket machinery the difference was
 # supposed to land, and that it did not silently fall into the rename's own
 # exception instead.
+# [RECID-A] 2026-10-29: the gate's named exception buckets this row was a
+# negative control for (the fourth exception, bref_rename_rewrite) were DELETED when comparison (A) was re-based onto
+# a post-module commit (docs/dev/lanes/recida_report.md). The plant is still
+# caught by the same arm, more simply: the plant's program region differs from
+# the base's, and with no exception list to absorb a difference it lands in
+# `REGION DIFFERS` and the gate is red. The row's claim stays "an unruled
+# emission change is NOT admitted"; only the mechanism that could have admitted
+# it is gone. (The arm still reads SKIPPED-no-git-history inside this matrix.)
 SAB_ID="S273-span-match-length-off-by-one"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="recidentity brefdiff harness"

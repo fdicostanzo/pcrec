@@ -1228,7 +1228,8 @@ test-recursion: all
 # stage (scripts/battery.sh, last) runs it, so it no longer goes stale unseen.
 #
 #     make test-recursion-identity                        # the gate, on demand
-#     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # moved base
+#     RECURSION_IDENTITY_ABASE=<sha> make test-recursion-identity # moved (A) base ([RECID-A])
+#     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # the positive control's reference
 test-recursion-identity: all
 	bash scripts/boxlock run --label test-recursion-identity -- $(MAKE) --no-print-directory test-recursion-identity-locked
 

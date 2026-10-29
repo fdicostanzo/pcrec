@@ -8890,6 +8890,8 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 1. `test-encoding-checks` joins `TEST_SECTIONS`, so it runs in `make test` and in CI (+~10 min, bounded by `ENC_MAX_BLOCKS=250`).
 2. `test-recursion-identity` joins the merge battery (`scripts/battery.sh`), not `make test` (it builds two reference compilers, ~35 min).
 
+**Addendum 2026-10-29 ([RECID-A], manager ruling; lane recida): comparison (A) is RE-BASED, not given a ninth exception.** (A) no longer compares against the never-moving pre-module pin `ac4917d`; it compares the program region of every call-free pattern against `ABASEPIN` (`RECURSION_IDENTITY_ABASE`), a ruled post-module main commit that already carries every change the eight canonicalizing exceptions absorbed, and its exception machinery is deleted. A landing that moves a call-free region on purpose re-pins `ABASEPIN` in the same change, as (B)'s `FILEPIN` moves at an abi bump. `ac4917d` stays as `REFCOMMIT` for the per-axis positive control and the elision control only. Why: the pin had cost two triage lanes and went red a third time; a ninth exception (K128's label renumbering and the counter rung's split guard/counter slot) was the same trap again. Account: docs/testing.md "[RECID-A]", docs/dev/lanes/recida_report.md.
+
 ## D137 — parked rows: satisfy their measurement and bench needs; every optimization row lives under [OPTLOOP] (Frank, 2026-09-30, eighty-seventh session)
 
 **Context.** Eight rows sat STATE:started but parked (OPT-3, OPT-5, TT-4M, ENG-ISL, DD-13, DD-13b.W1.3, the OPTLOOP parent, ENG-ABS). Each had shipped a piece and was waiting on a measurement, a bench cell, a sequencing word or a hold.
