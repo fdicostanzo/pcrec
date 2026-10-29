@@ -327,7 +327,7 @@ S738, S770 (r7 FIX-7), S741, S744, S777, S811, S844. The 19 rows are the queued 
 
 ## STATE AT HANDOFF
 
-- **Branch** `lane/p1build`, 11 commits over main ae1d53859 (the last two: the report and this count), clean except the untracked
+- **Branch** `lane/p1build` over main ae1d53859: the commits listed in "What was built" plus the report commits, clean except the untracked
   `p1build_deliver.txt`. Rulings file `p1build_rulings.md`: empty at every read (last: before the
   report commit).
 - **OWED, queued** (`scripts/boxqueue add`, all `not-before 2026-10-30T13:30`):
