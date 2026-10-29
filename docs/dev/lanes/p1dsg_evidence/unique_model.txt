@@ -1,0 +1,40 @@
+# provenance: lane p1dsg 2026-10-29, unique_model.py as committed beside this file, libpcre2 10.46 (/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0), python 3.14.4
+## --subjects 600 --seed 1
+libpcre2 10.46 2025-08-27; seed 1; 600 subjects per row, every startpos
+ok   unique   R=(?:\b(\w+))=(?:[^&]*&(?:[^&]*&)*\1=)         checks   6695 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(\w+)) (?:\1\b)                         checks   6479 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(\w+))=(?:\1)                           checks   6524 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b([a-z]+)\d*)@(?:\1)                     checks   6581 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:^(\w+)):(?:.*\1)                          checks   6663 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:([a-c]{2}))x(?:\1)                        checks   6687 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(a+b*))=(?:\1a)                         checks   6590 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   NEGATIVE R=(?:(\w+)) (?:\1)                             checks   6586 wrong  316  max|starts| 10  max_start-mutant wrong 102
+        e.g. b'a\naa\naa1=aaa aa' lo=0: truth (10, 15, 10, 12), tactic None
+        e.g. b'a\naa\naa1=aaa aa' lo=1: truth (10, 15, 10, 12), tactic None
+ok   NEGATIVE R=(?:(a+))X(?:\1)                              checks   6656 wrong  208  max|starts| 6  max_start-mutant wrong 95
+        e.g. b'aaXa=a&' lo=0: truth (1, 4, 1, 2), tactic None
+        e.g. b'aaaXaXb' lo=0: truth (2, 5, 2, 3), tactic None
+ok   NEGATIVE R=(?:(\w+))=(?:[^&]*&(?:[^&]*&)*\1=)           checks   6627 wrong   12  max|starts| 12  max_start-mutant wrong 0
+        e.g. b'aa=&a=a' lo=0: truth (1, 6, 1, 2), tactic None
+        e.g. b'abaaa=a-aX-&a=' lo=0: truth (4, 14, 4, 5), tactic None
+UNIQUE MODEL: PASS
+
+## --subjects 1500 --seed 2
+libpcre2 10.46 2025-08-27; seed 2; 1500 subjects per row, every startpos
+ok   unique   R=(?:\b(\w+))=(?:[^&]*&(?:[^&]*&)*\1=)         checks  16577 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(\w+)) (?:\1\b)                         checks  16898 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(\w+))=(?:\1)                           checks  16300 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b([a-z]+)\d*)@(?:\1)                     checks  16376 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:^(\w+)):(?:.*\1)                          checks  16163 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:([a-c]{2}))x(?:\1)                        checks  16848 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   unique   R=(?:\b(a+b*))=(?:\1a)                         checks  16287 wrong    0  max|starts| 1  max_start-mutant wrong 0
+ok   NEGATIVE R=(?:(\w+)) (?:\1)                             checks  16737 wrong 1013  max|starts| 9  max_start-mutant wrong 289
+        e.g. b'-X1aa aaaXb & ' lo=0: truth (3, 8, 3, 5), tactic None
+        e.g. b'-X1aa aaaXb & ' lo=1: truth (3, 8, 3, 5), tactic None
+ok   NEGATIVE R=(?:(a+))X(?:\1)                              checks  16693 wrong  528  max|starts| 9  max_start-mutant wrong 290
+        e.g. b'1axaXaaaXa@X' lo=4: truth (7, 10, 7, 8), tactic None
+        e.g. b'1axaXaaaXa@X' lo=5: truth (7, 10, 7, 8), tactic None
+ok   NEGATIVE R=(?:(\w+))=(?:[^&]*&(?:[^&]*&)*\1=)           checks  16313 wrong   13  max|starts| 11  max_start-mutant wrong 2
+        e.g. b'aaaa=&@==aa&a=aaa-' lo=0: truth (3, 14, 3, 4), tactic None
+        e.g. b'aaaa=&@==aa&a=aaa-' lo=1: truth (3, 14, 3, 4), tactic None
+UNIQUE MODEL: PASS

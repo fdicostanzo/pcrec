@@ -1,0 +1,8 @@
+# p1dsg crossover sweep: 5b mask-email twin vs shipped (find-all, drv.c), 4 MB subjects of 8-byte class words, a fraction q of them followed by "@ " (no match); seed 5; instructions:u
+q=1 ship=61600161 twin=117624535 twin_noedge=130024558 ratio=1.909
+q=0.5 ship=61684534 twin=62182486 twin_noedge=68705018 ratio=1.008
+q=0.25 ship=61730121 twin=32347095 twin_noedge=35685564 ratio=0.524
+q=0.1 ship=61758450 twin=13761437 twin_noedge=15122864 ratio=0.223
+q=0.03 ship=61772126 twin=4565790 twin_noedge=4975580 ratio=0.074
+q=0.01 ship=61776231 twin=1842406 twin_noedge=1983271 ratio=0.03
+q=0.001 ship=61778509 twin=517491 twin_noedge=531006 ratio=0.008

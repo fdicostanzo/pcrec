@@ -1,0 +1,71 @@
+# provenance: lane p1dsg 2026-10-29, population.py over revwalk's tiers.py reader (worktree HEAD 38901a53a), pcrec built from 8fcc15669 (--list-source only), python 3.14.4
+## corpus: 5203 patterns
+| row | patterns |
+|---|---|
+| no-split | 3307 |
+| g1 | 374 |
+| fixed | 105 |
+| branches | 1 |
+| rarity | 104 |
+| excl-cand | 259 |
+| excl-lower | 43 |
+| factor-free | 1 |
+| plain-shared | 22 |
+| fallback | 54 |
+| uncounted | 933 |
+admitted rows by revwalk tier / run bound / S reads P's groups:
+  excl-cand T2 bounded -: 70
+  excl-cand T2 unbounded -: 90
+  excl-cand T3 bounded -: 9
+  excl-cand T3 unbounded -: 4
+  excl-cand T4 bounded -: 81
+  excl-cand T4 bounded S-reads-P: 1
+  excl-cand T4 unbounded -: 4
+  excl-lower T2 bounded S-reads-P: 10
+  excl-lower T2 unbounded S-reads-P: 26
+  excl-lower T3 bounded S-reads-P: 2
+  excl-lower T4 bounded S-reads-P: 5
+examples g1: tests/atomic_groups/atomic_assert.rxt:89 L=c; tests/atomic_groups/atomic_assert.rxt:115 L=c; tests/atomic_groups/atomic_assert.rxt:125 L=c; tests/atomic_groups/atomic_assert.rxt:157 L=c; tests/atomic_groups/atomic_basic.rxt:44 L=c; tests/atomic_groups/atomic_basic.rxt:64 L=b; tests/atomic_groups/atomic_basic.rxt:79 L=b; tests/atomic_groups/atomic_basic.rxt:89 L=bc; tests/atomic_groups/atomic_basic.rxt:121 L=c; tests/atomic_groups/atomic_basic.rxt:178 L=c
+examples fixed: tests/assertions/d27/anchors_abs.rxt:51 L=y; tests/assertions/d27/gating.rxt:125 L=y; tests/assertions/d27/multiline.rxt:72 L=b; tests/assertions/d27/multiline.rxt:78 L=b; tests/assertions/gpos.rxt:268 L=b; tests/assertions/multiline.rxt:2255 L=b; tests/assertions/wordb_basic.rxt:1050 L=b; tests/assertions/wordb_basic.rxt:1125 L=b; tests/assertions/wordb_vm.rxt:489 L=y; tests/assertions/wordb_vm.rxt:639 L=b
+examples branches: tests/litscan/handoff.rxt:3177 L=:
+examples rarity: tests/altcls/altcls.rxt:10 L=d; tests/atomic_groups/d27/possessive_spellings.rxt:44 L=a; tests/atomic_groups/d27/possessive_spellings.rxt:79 L=a; tests/base/alternation_trie.rxt:93 L=s; tests/base/bounded_repeats.rxt:55 L=y; tests/base/cls_fold.rxt:68 L=y; tests/base/d27_edge.rxt:103 L=a; tests/base/d27_edge.rxt:115 L=a; tests/base/d27_edge.rxt:127 L=a; tests/base/eol_scan_avoidance.rxt:349 L=y
+examples excl-cand: tests/altcls/altcls.rxt:158 L=c; tests/altcls/altcls.rxt:170 L=x; tests/assertions/gate.rxt:110 L=c; tests/assertions/gate.rxt:230 L=c; tests/assertions/gate.rxt:329 L=c; tests/assertions/gpos.rxt:625 L=b; tests/assertions/rev_end.rxt:77 L=.txt; tests/atomic_groups/possessive.rxt:599 L=ab; tests/base/alternation_trie.rxt:111 L=z; tests/base/bounded_repeats.rxt:36 L=c
+examples excl-lower: tests/backrefs/d27/numeric.rxt:94 L=x; tests/backrefs/nested.rxt:70 L=x; tests/base/k65_precheck_whole_set.rxt:31 L=Z; tests/base/k65_precheck_whole_set.rxt:44 L=Z; tests/base/k65_precheck_whole_set.rxt:57 L=Z; tests/base/k66_precheck_whole_run.rxt:34 L=eeeeeeee~#~#~#~#; tests/base/k66_precheck_whole_run.rxt:47 L=eeeeeeee~#~#~#~#; tests/litscan/reqcube.rxt:242 L=ABCDEFGHIJKL; tests/litscan/reqcube.rxt:434 L=S; tests/litscan/reqcube.rxt:457 L=S
+examples factor-free: tests/litscan/handoff_vm.rxt:316 L=cd
+examples plain-shared: tests/base/clskit_range_top.rxt:13 L=x; tests/base/eol_scan_avoidance.rxt:15 L==; tests/base/eol_scan_avoidance.rxt:343 L==; tests/base/eol_scan_avoidance.rxt:355 L==; tests/base/leftmost_semantics.rxt:26 L=b; tests/base/leftmost_semantics.rxt:29 L=b; tests/base/quantifiers.rxt:57 L=x; tests/base/quantifiers.rxt:60 L=x; tests/classes/scan_set.rxt:17 L=@; tests/possessify/composition_d27.rxt:4728 L=x
+examples fallback: tests/base/d27_edge.rxt:139 L=b; tests/base/d27_edge.rxt:146 L=b; tests/base/long_subjects.rxt:22 L=z; tests/base/review_r2.rxt:43 L=b; tests/base/review_r2.rxt:46 L=b; tests/base/review_r2.rxt:49 L=b; tests/base/vm_lazy_rmin_prefix.rxt:44 L=ab; tests/base/vm_lazy_rmin_prefix.rxt:63 L=ab; tests/captures/empty_iteration.rxt:222 L=b; tests/counterk/counterk.rxt:933 L=b
+
+## bench: 346 patterns
+| row | patterns |
+|---|---|
+| no-split | 247 |
+| g1 | 15 |
+| fixed | 14 |
+| branches | 2 |
+| rarity | 12 |
+| excl-cand | 12 |
+| excl-lower | 6 |
+| factor-free | 2 |
+| plain-shared | 1 |
+| fallback | 1 |
+| uncounted | 34 |
+admitted rows by revwalk tier / run bound / S reads P's groups:
+  excl-cand T2 bounded -: 2
+  excl-cand T2 unbounded -: 3
+  excl-cand T2 unbounded S-reads-P: 1
+  excl-cand T3 bounded -: 2
+  excl-cand T3 unbounded -: 1
+  excl-cand T4 bounded -: 2
+  excl-cand T4 unbounded -: 1
+  excl-lower T2 unbounded S-reads-P: 5
+  excl-lower T4 unbounded S-reads-P: 1
+examples g1: capability/balanced-parens-rec L=); capability/float-literal-bound L=.; capability/nested-comment-rec L=*/; capability/wild-logparse-syslogbase-expanded L=:; capability/wild-logparse-winpath-grok L=\; syntax/grp-atomic-alt L=c; syntax/grp-atomic-rep L=b; syntax/qnt-poss-brace L=b; syntax/qnt-poss-plus L=ab; syntax/qnt-poss-quest L=a
+examples fixed: capability/wild-secrets-slack-webhook-url L=/B; capability/wild-validator-uuid-grok L=-; syntax/cls-dot L=t; syntax/cls-i-class L=T; syntax/cls-mixed-case L=t; syntax/cls-n-uc L=m; syntax/cls-negset L=t; syntax/cls-pair-ctl L=t; syntax/grp-comment L=t; syntax/mod-reset L=AT
+examples branches: capability/wild-waf-crs-942160-sleep-benchmark L=(; loglines/ipv6 L=:
+examples rarity: capability/codegrammar-flat L="; capability/mojibake-curly-quote L=\x94; capability/wild-waf-crs-942270-union-select L=FROM; syntax/cls-h L==; syntax/cls-s-lc L=sat; syntax/cls-v L=done; syntax/mod-u-uc L="; syntax/msc-r-uc L=done; syntax/qnt-lazy L="; syntax/qnt-quest L=r
+examples excl-cand: capability/dup-param-detect L==; capability/wild-secrets-username-password-pair L==; syntax/qnt-plus-ctl L=ab; syntax/qnt-plus L=b; utf8/cls-s-nbsp L=b; utf8/cls-s-ucp L=b; loglines/ipv4 L=.; loglines/kv-quoted L=="; loglines/stack-frame L=(; bounded/csv5 L=,
+examples excl-lower: capability/tag-depth3-bound L=>; capability/tag-pair-match L=>; syntax/bak-1 L= ; syntax/bak-g-rel L= ; syntax/bak-k-named L=>; syntax/mod-j-uc L= 
+examples factor-free: capability/wild-waf-crs-942500-comment-obfuscation L=*/; utf8/lit-mixed-ascii L=jp
+examples plain-shared: syntax/cls-s-uc L=@
+examples fallback: email/orig L=@
+

@@ -1,0 +1,13 @@
+--- rw_dp.inc	2026-10-29 10:43:12.512219773 -0400
++++ rw_dp_se.inc	2026-10-29 10:44:42.071394420 -0400
+@@ -54,6 +54,10 @@
+                 reverse_state = rw_reverse_step(rw_reverse_next_state, reverse_state, reverse_class);
+                 rewind_position--;
+             }
++            /* HAND scan edge (the class-context relaxation): state 6 self-loops on class 1,
++             * and its by-class accept is 0 under class 1 for every passed position. */
++            if (reverse_state == 6)
++                while (rewind_position > search_from && rw_reverse_byte_class[subject[rewind_position - 1]] == 1) rewind_position--;
+             if (rw_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
+         }
+     }

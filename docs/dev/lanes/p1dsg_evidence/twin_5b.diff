@@ -1,0 +1,114 @@
+--- me_ship/rx.c	2026-10-29 10:42:15.937586253 -0400
++++ me_twin/rx.c	2026-10-29 10:42:40.857395888 -0400
+@@ -76,8 +76,111 @@
+ #if __has_attribute(noclone)
+ __attribute__((noclone))
+ #endif
++typedef unsigned rw_reverse_state;
++static inline rw_reverse_state rw_reverse_step(const unsigned short *transitions, rw_reverse_state s, unsigned cl)
++{ return transitions[s + cl]; }
++static inline int rw_reverse_is_dead(rw_reverse_state s) { return s == 65535; }
++static inline int rw_reverse_is_stop(rw_reverse_state s) { return (unsigned)s >= 6u; }
++static inline int rw_reverse_accepts(const unsigned char *accepting, rw_reverse_state s)
++{ return accepting[s]; }
++
++static size_t rw_walk(const unsigned char *subject, size_t seed, size_t search_from)
++{
++    static const unsigned char rw_reverse_byte_class[256] = {
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   1,   0,   1,   1,   0,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,   0,
++          2,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   1,
++          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++    };
++    static const unsigned short rw_reverse_next_state[9] = {
++        65535, 65535, 3, 65535, 6, 65535, 65535, 6, 65535,
++    };
++    static const unsigned char rw_reverse_is_accepting[9] = {
++        0, 0, 0, 0, 0, 0, 1, 1, 1,
++    };
++    static const unsigned char rw_reverse_scan2[256] = {
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   1,   0,   1,   1,   0,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,   0,
++          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   1,
++          0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
++          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
++    };
++    size_t match_end_position = seed;
++    size_t match_start_position = (size_t)-1;
++    {
++        size_t rewind_position = match_end_position;
++        rw_reverse_state reverse_state = 0;
++        for (;;) {
++            if (rw_reverse_accepts(rw_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
++          rw_reverse_scan_views:;
++            if (rewind_position <= search_from) break;
++            reverse_state = rw_reverse_step(rw_reverse_next_state, reverse_state, rw_reverse_byte_class[subject[--rewind_position]]);
++            if (!rw_reverse_is_stop(reverse_state)) continue;   // the generic path
++            if (rw_reverse_is_dead(reverse_state)) break;   // dead: no match can continue
++            if (rw_reverse_accepts(rw_reverse_is_accepting, reverse_state)) match_start_position = rewind_position;
++            if (reverse_state == 6 && rewind_position > search_from && rw_reverse_scan2[subject[rewind_position - 1]]) {
++                rewind_position--;
++                while ((rewind_position > search_from) && (rw_reverse_scan2[subject[rewind_position - 1]])) {
++                    rewind_position--;
++                }
++                match_start_position = rewind_position;   // every position the run passed accepts
++            }
++            goto rw_reverse_scan_views;
++        }
++    }
++    return match_start_position;
++}
++
++
++ptrdiff_t rx_match(const rx_ctx *ctx);
+ int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])
+ {
++    /* p1dsg TWIN: candidates from the landmark byte 64; P's reverse DFA seeded at the
++     * landmark (here: P.L's reverse machine seeded at the landmark's end), floored at
++     * search_from; one anchored forward match at the smallest accepting start. */
++    {
++        size_t p = search_from;
++        while (p < subject_length) {
++            const unsigned char *q = memchr(subject + p, 64, subject_length - p);
++            if (!q) return 0;
++            size_t at = (size_t)(q - subject);
++            size_t st = rw_walk(subject, at + 1, search_from);
++            if (st != (size_t)-1) {
++                rx_ctx c; c.subject = subject; c.len = subject_length; c.pos = st;
++                ptrdiff_t m = rx_match(&c);
++                if (m >= 0) {
++                    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)st; capture_spans[0][1] = (ptrdiff_t)(st + (size_t)m); }
++                    return 1;
++                }
++            }
++            p = at + 1;
++        }
++        return 0;
++    }
++
+     if (subject_length <= search_from ||
+         !memchr(subject + search_from, 64, subject_length - search_from))
+         return 0;
