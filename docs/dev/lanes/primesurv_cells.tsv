@@ -1,0 +1,19 @@
+id	bench	cell	pin	best_eligible_and_ratio	jit_ratio	stamps	group	evidence
+S1	subst	5b mask-email	9ae59f5d4	x3.16 rust (SIMD-flagged); re2 and interp slower than pcrec	x1.59	DFA; prefilter byte-class; start reverse-pass; req_byte 64 emitted; no req_run	G1/P1	diagnosed (subtri instr x75)
+S2	subst	2 rare	9ae59f5d4	none (rust x0.96)	x2.66	VM hybrid; prefilter memchr on /; req_byte 47; req_run admin/@5	G4/P5	diagnosed; REQRUN-VM landed, re-measure
+S3	subst	7 url-tld-fix	9ae59f5d4	x1.29 interp (rust, re2 unsupported)	x3.89	VM only; no prefilter; start first-class; req_run s://www.@3	G4/P5	diagnosed; REQRUN-VM landed, re-measure
+U1	unusual	cscan-onig default-arm FRAMES gave-up (35 cells)	614d45eb3	trails interp, jit-deep (they answer)	jit default also gives up (-46) from 512	vm selected; prefilter none; req_run (?{@1; stack arm 2048 resume+3072 trail frames	G2/P2	stamp-inferred (bench deep_mem_bytes scaling)
+U2	unusual	wild-json js-1m 7.7 MB/s	614d45eb3	x1.74 onig (13.4)	x21.9	as U1	G3/P3	undiagnosed
+U3	unusual	wild-json short 197 ns	614d45eb3	x1.25 onig (IL)	x4.8	as U1	G3/P3	undiagnosed
+U4	unusual	idents-1m 94.6 MB/s	614d45eb3	x1.75 rust ASSISTED (IL); re2 assisted level	x3.0	as U1	G2/P2	guess (about 13 GB/s frame traffic, my arithmetic)
+U5	unusual	nest-paren-32k 35 MB/s	614d45eb3	ahead of onig/interp; x14 behind re2/rust ASSISTED	x5.4	as U1	G2/G3	guess
+U6	unusual	cscan-onig short 296 ns	614d45eb3	none native; x2.1 rust ASSISTED (IL)	x3.6	as U1	G3/P3	undiagnosed
+U7	unusual	nest-brace-100k 11.6 ms	614d45eb3	ahead (interp, onig-deep time out)	x4.8	linear _in arm	G3/P3	undiagnosed
+R1	regular	capability base10num-noatomic large/short	614d45eb3 vs 9ae59f5d4	pcrec self: x1.200/x1.176 (nocaps x1.199/x1.168)	n/a	dfa_scan_edge range->mixed, 1->2 edges	G4/P4	stamp-inferred (no A/B)
+R2	regular	capability base10num-grok (VM) large/short	614d45eb3 vs 9ae59f5d4	pcrec self: x1.102/x1.071	n/a	range->mixed	G4/P4	stamp-inferred
+R3	regular	syntax cls-s-uc large/short	614d45eb3 vs 9ae59f5d4 (cross-window)	pcrec self: x1.116/x1.119	n/a	edge gained; landmark @ is T2 in revwalk census	G4+G1	stamp-inferred
+R4	regular	capability grp-callout large/short	614d45eb3	self-comparison x2.78/x1.18 vs literal cat; libpcre2 not read	n/a	vm; prefilter none; vm_frameless 1; separate-TU pass; fires per call unknown	none/P6	not a library gap
+T1a	regular	bounded ctx-lazy-64/256/1024, ctx-greedy-256	9ae59f5d4 vs 6b2dbd3e engines	x19.0-19.7 rust (SIMD-flagged)	x1.84-1.91	stamps not read	G5/P9	stamp-inferred (10-11 gap report) + pcrec VM x2.1-2.4 faster
+T1b	regular	loglines level-context	9ae59f5d4 vs 6b2dbd3e engines	x3.78 rust (short x3.12)	x0.74 (ahead)	stamps not read	G5/P9	guess
+T1c	regular	loglines stack-frame	9ae59f5d4 vs 6b2dbd3e engines	x3.06 rust short	x3.08	T3 in revwalk census	G1/P1	diagnosed (A01 -72 percent)
+T3	regular	capability moment-iso8601, email-owasp, trim-nested-star, evil-alt-nested, pwd-strength-chain	9ae59f5d4 vs 6b2dbd3e engines	level with rust on iso8601 (68.2 us)	x22.2 / x7.5 / x4.0 / x3.7 / x3.4	stamps not read; auto x183/x62 slower than own vm-caps	G6/P10	hypothesis (source: not read from code)
