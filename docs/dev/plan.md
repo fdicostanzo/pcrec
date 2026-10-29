@@ -223,8 +223,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 - [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
   filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
-  status (2026-10-29): stages 0-2 LANDED (abi 88-90). Stage 3 (pins, definition-site view, --list-callouts, --include-block, F27, F38) DELIVERED on lane/ic3 (docs/dev/lanes/ic3_report.md), awaiting 680/681; F28/[OPT-SCOPE] not built.
-  next: merge stage 3; then stage 4 (verify, after a census).
+  status (2026-10-29): stage 3 LANDED (merge b156d8f18; pins, definition-site view, --list-callouts, --include-block, F27, F38; docs/dev/lanes/ic3_report.md); stages 0-2 LANDED (abi 88-90); F28/[OPT-SCOPE] not built.
+  next: stage 4 (verify; needs a census brief), then stage 5 (PCRE2 wrapper).
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
