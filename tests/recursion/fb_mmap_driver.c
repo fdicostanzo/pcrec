@@ -66,7 +66,7 @@ static double now_s(void)
 
 int main(int argc, char **argv)
 {
-    static const size_t default_n[] = { 342, 100000, 400000, 466000, 470000 };
+    static const size_t default_n[] = { 512, 100000, 400000, 699000, 699100 };
     const size_t *ns = default_n;
     size_t nn = sizeof default_n / sizeof default_n[0];
     size_t *parsed = NULL;
