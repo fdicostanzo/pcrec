@@ -356,30 +356,38 @@ static void code_line_dir(StrBuf *c, size_t line, const char *file)
     pcrec_sb_puts(c, "\"\n");
 }
 
-/* One segment: its comment and its function, the user's text under its
- * `#line`. */
-static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
+const char *pcrec_code_source_pos(const Ast *a, size_t *line, size_t *col)
 {
     /* F38: the source is the NODE's (a definition's own text and file
      * inside a definition), never the target's. */
-    const char *file = a->u.callout.file ? a->u.callout.file : "<pattern>";
     const bool esc = a->u.callout.esc;
     const char *src = a->u.callout.src;
     const size_t at = a->u.callout.code_at;
 
     /* The segment's first byte, as a source position: the pattern's own
      * lines below its first (a `pattern-esc` value is ONE source line). */
-    size_t line = a->u.callout.line ? a->u.callout.line : 1;
-    size_t col = a->u.callout.file ? a->u.callout.col : 1;
+    *line = a->u.callout.line ? a->u.callout.line : 1;
+    size_t c = a->u.callout.file ? a->u.callout.col : 1;
     size_t bol = 0;
     if (!esc)
         for (size_t i = 0; i < at; i++)
-            if (src[i] == '\n') { line++; bol = i + 1; }
-    if (bol > 0) col = 1;
-    bool pad = !esc && a->u.callout.code_exact && col > 0;
+            if (src[i] == '\n') { (*line)++; bol = i + 1; }
+    if (bol > 0) c = 1;
+    bool pad = !esc && a->u.callout.code_exact && c > 0;
     for (size_t i = bol; pad && i < at; i++)
         if (src[i] == '\t' || (unsigned char)src[i] >= 0x80) pad = false;
-    if (pad) col += at - bol;
+    *col = pad ? c + (at - bol) : 0;
+    return a->u.callout.file ? a->u.callout.file : "<pattern>";
+}
+
+/* One segment: its comment and its function, the user's text under its
+ * `#line`. */
+static void code_segment(Ctx *cx, StrBuf *c, const Ast *a)
+{
+    const bool esc = a->u.callout.esc;
+    size_t line, col;
+    const char *file = pcrec_code_source_pos(a, &line, &col);
+    const bool pad = col > 0;
 
     pcrec_sb_putc(c, '\n');
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);

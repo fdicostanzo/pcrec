@@ -5833,6 +5833,11 @@ const char          *pcrec_code_header_check(const char *lang, const char *hdr);
  * the span helpers (in every callout artifact's surface), each segment's
  * prototype and file-local binding (before the VM function), and the
  * segment block (LAST in the `.c`). */
+/* [INLINE-C] stage 3 a code segment's source position (its file, line
+ * and, when its bytes map one to one onto the line, column; 0 otherwise):
+ * the `#line` the artifact writes and the `--list-callouts` source column,
+ * one computation (src/gen/emit_code.c). */
+const char *pcrec_code_source_pos(const Ast *a, size_t *line, size_t *col);
 void pcrec_emit_span_helpers(StrBuf *sb);
 void pcrec_emit_code_protos(Ctx *cx, StrBuf *c);
 void pcrec_emit_code_block(Ctx *cx, StrBuf *c);
@@ -9021,6 +9026,16 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/
+
+/* src/dump/callouts_dump.c — [INLINE-C] stage 3 `--list-callouts` (the
+ * reviewer's view, inline_c.md §5.6): the listing's header, and one target's
+ * rows, from a DESCRIBE + REVIEW compile of `pattern` under `defs` (its C
+ * discarded). `target` fills the first column. malloc'd, caller frees; NULL
+ * with `err` filled when the compile refuses. */
+const char *pcrec_list_callouts_header(void);
+char *pcrec_list_callouts(const char *pattern, const pcrec_options *opt,
+                          const RxtDefs *defs, const PcrecEmitIn *in,
+                          const char *target, pcrec_error *err);
 
 /* src/dump/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

@@ -31,6 +31,7 @@
   - [§1.20](#s1-20) `--emit-support`: the subst support unit
   - [§1.21](#s1-21) `--callout N:ATTRS`: a numbered callout's attributes
   - [§1.22](#s1-22) `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
+  - [§1.23](#s1-23) `--include-block FRAGMENT:LINE`: a block reached by `include`
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -47,6 +48,7 @@
   - [§2.12](#s2-12) `--explain SYNTAX`
   - [§2.13](#s2-13) `--count-groups --pattern PATTERN`
   - [§2.14](#s2-14) `--probe-ask WANT CONSTRUCT`
+  - [§2.15](#s2-15) `--list-callouts FILE`: the reviewer's view
 - [§3](#s3) Diagnostics
   - [§3.1](#s3-1) Exit codes
   - [§3.2](#s3-2) The diagnostic class tag
@@ -344,14 +346,19 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-22"></a>
 ### 1.22 `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
 
-<a id="s1-22-p1"></a>[1.22¶1] `--allow-code=LANGS` (also `--allow-code LANGS`; `LANGS` a comma-separated list of embedded-code languages, `c` the one language) grants the compile its pattern's embedded code (``(?C`c: ...`)``; `match_api.md` §11.9). It is the ONLY door to module `code-<lang>`: no `--features` list and no file can open it, and a `config` block's `pcrec` line carrying `--allow-code` is refused (`rxt_format.md` §1.1¶2). Without it a code segment is refused (`(?C...) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables`) and nothing is written. An unknown language is refused by name. A later `--allow-code` wins. Code in a definition read from another `.rxt` file (`lib`, `include`) is refused even with the grant. The grant applies to every compile in the invocation, a file operand's targets included; the describe modes `--emit-ir`, `--emit-facts` and `--count-groups` parse code whatever `--allow-code` says (absent, empty or a list) and write no C.
+<a id="s1-22-p1"></a>[1.22¶1] `--allow-code=LANGS` (also `--allow-code LANGS`; `LANGS` a comma-separated list of embedded-code languages, `c` the one language) grants the compile its pattern's embedded code (``(?C`c: ...`)``; `match_api.md` §11.9). It is the ONLY door to module `code-<lang>`: no `--features` list and no file can open it, and a `config` block's `pcrec` line carrying `--allow-code` is refused (`rxt_format.md` §1.1¶2). Without it a code segment is refused (`(?C...) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables`) and nothing is written. An unknown language is refused by name. A later `--allow-code` wins. Code read from another `.rxt` file (a definition reached through `lib`, a block reached through `include`) is allowed only when every chain of `include`/`lib` lines from the local file to it carries a `sha256` pin (`rxt_format.md` §1.1, `match_api.md` §11.9); otherwise it is refused even with the grant, naming the code's line and the first unpinned line. The grant applies to every compile in the invocation, a file operand's targets included; the describe modes `--emit-ir`, `--emit-facts`, `--count-groups` and `--list-callouts` parse code whatever `--allow-code` says (absent, empty or a list) and write no C.
 
 <a id="s1-22-p2"></a>[1.22¶2] `--code-header LANG:HEADER` (also `--code-header=`; repeatable) names a header the `--pattern`'s code needs: `HEADER` is `"name"`, `<name>`, or a bare `name` (written as `"name"`), printable ASCII with no backslash and no closing delimiter inside the name (`"` in `"name"`, `>` in `<name>`). A refused value is echoed with every control byte and every non-ASCII byte written as `\xNN`, so a bidirectional control in it never reaches the terminal. Each is emitted `#include` as written, in order, a repeated text once, after the matcher and only in the `.c`; pcrec never opens it. It is code: it needs `--allow-code` for its language even when the pattern has no segment. It does not combine with a file operand, whose head names its own (`code-header LANG HEADER`, `rxt_format.md` §1.1).
+
+<a id="s1-23"></a>
+### 1.23 `--include-block FRAGMENT:LINE`: a block reached by `include`
+
+<a id="s1-23-p1"></a>[1.23¶1] With exactly one file operand ENTRY and no `--pattern`, the pattern is the `pattern` (or `pattern-esc`) block whose line is `LINE` in `FRAGMENT`, a file ENTRY's `include` lines reach, directly or through other fragments. The block's text comes from the same read of the file that the pins are checked against; it compiles as a `--pattern` would, with every compile flag (`-o`, `-p`, `--features`, `--allow-code`, ...) applying, and the file operand is not compiled. Every `sha256` pin on ENTRY's include closure is verified first. Code in the block is reached code: its `#line` names FRAGMENT, and it is allowed only when every chain of `include` lines from ENTRY to FRAGMENT is pinned (§1.22¶1). A value that is not `FRAGMENT:LINE`, a FRAGMENT ENTRY does not reach, a LINE that is not a `pattern` line, a second operand, `--pattern` and `--pattern-esc` are each refused. It is how the test harness compiles a fragment's blocks (`rxt_format.md` §6¶3).
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces
 
-<a id="s2-p1"></a>[2¶1] Eleven flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Seven answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits` and `--list-schema`. `--list-source` reads the file named by its value. `--list-analyses` and `--list-analysis` list analyses, and `--list-measurements` measurement sets. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
+<a id="s2-p1"></a>[2¶1] Twelve flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Seven answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits` and `--list-schema`. `--list-source` reads the file named by its value, and `--list-callouts` lists its callout sites (§2.15). `--list-analyses` and `--list-analysis` list analyses, and `--list-measurements` measurement sets. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
 
 <a id="s2-1"></a>
 ### 2.1 `--list-syntax`
@@ -429,6 +436,15 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ### 2.14 `--probe-ask WANT CONSTRUCT`
 
 <a id="s2-14-p1"></a>[2.14¶1] An internal, test-only query, not part of the public surface. It drives one construct doorway once at ask level `claim`, `verdict` or `result` and reports the parser cursor before and after. `CONSTRUCT` is the flag's own second argument, a syntax fragment consumed as `--explain`'s argument is. Its home is `tests/spec_mod0/CLAUDE.md` and `docs/testing.md`.
+
+<a id="s2-15"></a>
+### 2.15 `--list-callouts FILE`: the reviewer's view
+
+<a id="s2-15-p1"></a>[2.15¶1] One TSV row per callout site of each target of the `.rxt` file named by its value, in site order (`table_contract.md`): `target`, `site` (the site number), `source` (a code segment's `file:line:col`, or `file:line` when its bytes do not map one to one onto the line; `-` for a site with no code), `binding` (`code`, `named` or `numbered`, `match_api.md` §11.2) and `symbol` (the binding's name), `lang`, `width` (`check` or `consume`), `class` and `class_reason` (the firing class, `match_api.md` §11.8), `trust`, `chain`, `flag` and `code`. A cell with nothing to say is `-`.
+
+<a id="s2-15-p2"></a>[2.15¶2] `trust` is what a compile with the grant would do with the site's code: `local`, `pinned` (reached through pinned lines only), or `refused: …` with the reason a compile would give. `chain` is the lines from the file to the code's file, `FILE:LINE KIND "PATH"` and the line's `sha256` pin or `unpinned`, joined by ` > `: the chain a compile refuses when one is unpinned, else the first. `flag` names a character a compile would refuse in the segment (a bidirectional control, an invisible character, a control byte), with its byte offset. `code` is the segment's decoded text with every byte outside printable ASCII written `\xNN` and a backslash doubled, so what a reader sees is byte for byte what gcc would compile.
+
+<a id="s2-15-p3"></a>[2.15¶3] It is a describe mode: it needs no `--allow-code`, prints the same rows with or without it, and writes no C. It compiles each target to find its sites, so a target pcrec refuses for any other reason is refused here too; a pin that does not match its file is refused, as in a compile. It composes with no other mode and takes no pattern and no `-o`; `-I`/`--lib-path` apply.
 
 <a id="s3"></a>
 ## 3. Diagnostics
