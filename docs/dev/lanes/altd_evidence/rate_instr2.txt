@@ -1,0 +1,6 @@
+nest-paren-32k BCd i=25.04 c=- p=- BCd_A i=4.72 c=- p=1.000 BCd_Af i=4.72 c=- p=1.000 BCd_ALp i=4.78 c=- p=1.000 BCd_ALpf i=3.73 c=- p=0.000 stock_ALpf i=9.37 c=- p=0.000 load=8.49
+nest-brace-100k BCd i=91.02 c=- p=- BCd_A i=23.91 c=- p=1.000 BCd_Af i=23.91 c=- p=1.000 BCd_ALp i=24.01 c=- p=1.000 BCd_ALpf i=16.71 c=- p=0.000 stock_ALpf i=68.82 c=- p=0.000 load=8.49
+js-1m BCd i=72.63 c=- p=- BCd_A i=52.14 c=- p=1.008 BCd_Af i=52.14 c=- p=1.008 BCd_ALp i=44.34 c=- p=0.487 BCd_ALpf i=44.34 c=- p=0.487 stock_ALpf i=201.63 c=- p=0.487 load=8.29
+idents-1m BCd i=91.73 c=- p=- BCd_A i=60.37 c=- p=1.096 BCd_Af i=60.37 c=- p=1.096 BCd_ALp i=60.47 c=- p=1.096 BCd_ALpf i=57.78 c=- p=0.904 stock_ALpf i=159.01 c=- p=0.904 load=8.29
+splice-1m BCd i=20.42 c=- p=- BCd_A i=19.76 c=- p=0.333 BCd_Af i=19.76 c=- p=0.333 BCd_ALp i=19.76 c=- p=0.333 BCd_ALpf i=19.76 c=- p=0.333 stock_ALpf i=47.42 c=- p=0.333 load=8.29
+comment-5m BCd i=133.47 c=- p=- BCd_A i=113.46 c=- p=0.300 BCd_Af i=113.46 c=- p=0.300 BCd_ALp i=103.96 c=- p=0.200 BCd_ALpf i=103.96 c=- p=0.200 stock_ALpf i=193.97 c=- p=0.200 load=8.29

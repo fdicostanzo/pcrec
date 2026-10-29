@@ -1,0 +1,4 @@
+stock default reach n=763
+BCd default reach n=1024
+stock_ALkf default reach n=763
+BCd_ALkf default reach n=2049

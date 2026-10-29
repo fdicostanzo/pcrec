@@ -1,0 +1,19 @@
+  rx_L6 branch 1 of 2 preferred; (2 conts) classes[-:254, 2:1, 1:1] eos:-
+  rx_L34 the loop's ONLY frame: t (2 conts) classes[1:253, 1,2:2, 2:1] eos:-
+  rx_L38 branch 1 of 11 preferred (11 conts) classes[1:182, 8:56, 2:10, 3:1, 11:1, 4:1, 2,8:1, 5,6,9:1, 7,10:1, 7:1, -:1] eos:-
+  rx_L65 decline (2 conts, preferred path unchanged) classes[2:63, 1,2:193]
+  rx_L44 branch 1 of 2 preferred; (2 conts) classes[-:245, 1:10, 2:1] eos:-
+  rx_L84 decline (2 conts, preferred path unchanged) classes[2:61, 1,2:195]
+  rx_L88 branch 1 of 3 preferred; (3 conts) classes[2:189, -:62, 1,2:4, 3:1] eos:-
+  rx_L109 the loop's ONLY frame: t (2 conts) classes[1:254, -:1, 2:1] eos:-
+  rx_L110 branch 1 of 3 preferred; (3 conts) classes[1:253, -:2, 2,3:1] eos:-
+  rx_L127 the loop's ONLY frame: t (2 conts) classes[1:254, -:1, 2:1] eos:-
+  rx_L128 branch 1 of 3 preferred; (3 conts) classes[1:253, -:2, 2,3:1] eos:-
+  rx_L151 the loop's ONLY frame: t (2 conts) classes[1:255, 1,2:1] eos:-
+  rx_L152 branch 1 of 2 preferred; (2 conts) classes[1:255, 2:1] eos:-
+  rx_L180 decline (2 conts, preferred path unchanged) classes[1,2:255, 2:1]
+  rx_L181 branch 1 of 3 preferred; (3 conts) classes[1:254, -:1, 2,3:1] eos:-
+  rx_L49 branch 1 of 2 preferred; (2 conts) classes[-:254, 2:1, 1:1] eos:-
+  rx_L202 branch 1 of 2 preferred; (2 conts) classes[-:254, 2:1, 1:1] eos:-
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x3
+altd: mode=AL sites=17 rewritten=14 classes=49

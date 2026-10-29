@@ -1,0 +1,280 @@
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L7 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L16 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[6]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L7 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L16 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[6]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L8 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L17 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  rx_L3 keep (2 conts, no byte drops one)
+  rx_L29 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L38 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[5]) { RX_TRAIL_C x3; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=5 rewritten=4 classes=10
+  rx_L8 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L17 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  rx_L3 keep (2 conts, no byte drops one)
+  rx_L29 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L38 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[5]) { RX_TRAIL_C x3; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=5 rewritten=4 classes=10
+  rx_L5 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=7
+  rx_L5 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=7
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L11 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L18 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  rx_L24 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x4
+altd: mode=AL sites=4 rewritten=4 classes=9
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L11 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L18 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  rx_L24 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x4
+altd: mode=AL sites=4 rewritten=4 classes=9
+  rx_L4 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L21 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=7
+  rx_L4 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L21 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=7
+  rx_L4 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L14 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L25 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=10
+  rx_L4 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L14 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L25 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=10
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L65 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L76 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x9
+altd: mode=AL sites=9 rewritten=9 classes=28
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L65 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L76 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x9
+altd: mode=AL sites=9 rewritten=9 classes=28
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L65 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L76 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x9
+altd: mode=AL sites=9 rewritten=9 classes=28
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L65 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L76 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x9
+altd: mode=AL sites=9 rewritten=9 classes=28
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L56 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L75 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L86 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x10
+altd: mode=AL sites=10 rewritten=10 classes=31
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L56 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L75 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L86 branch (structural) (4 conts) classes[3:253, 2,3:1, 3,4:1, 1,3:1] eos:3
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x10
+altd: mode=AL sites=10 rewritten=10 classes=31
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L56 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L75 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L86 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L83 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x11
+altd: mode=AL sites=11 rewritten=11 classes=32
+  rx_L7 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L8 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L16 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L24 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L32 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L40 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L48 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L56 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L75 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  rx_L86 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L83 branch (structural) (3 conts) classes[2:254, 1,2:1, 2,3:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x11
+altd: mode=AL sites=11 rewritten=11 classes=32
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b23/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b24/gen.c
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (3 conts) classes[1,2:255, 1,2,3:1] eos:1,2
+  ALL-by-refusal statements: { ptrdiff_t ref_start = PCREC_UNSET, ref_end = PCREC_UNSET,  x2; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (3 conts) classes[1,2:255, 1,2,3:1] eos:1,2
+  ALL-by-refusal statements: { ptrdiff_t ref_start = PCREC_UNSET, ref_end = PCREC_UNSET,  x2; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L5 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  rx_L16 branch (structural) (3 conts) classes[-:254, 2,3:1, 1:1] eos:-
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L5 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  rx_L16 branch (structural) (3 conts) classes[-:254, 2,3:1, 1:1] eos:-
+altd: mode=AL sites=2 rewritten=2 classes=5
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L11 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=6
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L14 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L11 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3
+altd: mode=AL sites=3 rewritten=3 classes=6
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b31/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b32/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b33/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b34/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b35/gen.c
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b36/gen.c
+  rx_L0 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x1
+altd: mode=AL sites=1 rewritten=1 classes=3
+  rx_L0 branch (structural) (3 conts) classes[2:254, 2,3:1, 1,2:1] eos:2
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x1
+altd: mode=AL sites=1 rewritten=1 classes=3
+  rx_L4 branch (structural) (2 conts) classes[-:254, 1,2:1, 1:1] eos:-
+  rx_L3 branch (structural) (2 conts) classes[-:254, 2:1, 1,2:1] eos:-
+  rx_L10 branch (structural) (2 conts) classes[-:254, 1,2:1, 1:1] eos:-
+  rx_L12 branch (structural) (2 conts) classes[-:254, 2:1, 1,2:1] eos:-
+  rx_L18 branch (structural) (2 conts) classes[-:254, 2:1, 1:1] eos:-
+altd: mode=AL sites=5 rewritten=5 classes=15
+  rx_L4 branch (structural) (2 conts) classes[-:254, 1,2:1, 1:1] eos:-
+  rx_L3 branch (structural) (2 conts) classes[-:254, 2:1, 1,2:1] eos:-
+  rx_L10 branch (structural) (2 conts) classes[-:254, 1,2:1, 1:1] eos:-
+  rx_L12 branch (structural) (2 conts) classes[-:254, 2:1, 1,2:1] eos:-
+  rx_L18 branch (structural) (2 conts) classes[-:254, 2:1, 1:1] eos:-
+altd: mode=AL sites=5 rewritten=5 classes=15
+  rx_L6 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L15 keep (2 conts, no byte drops one)
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3; RX_CUT (commit-opaque) x2
+altd: mode=AL sites=3 rewritten=2 classes=4
+  rx_L6 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L15 keep (2 conts, no byte drops one)
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x3; RX_CUT (commit-opaque) x2
+altd: mode=AL sites=3 rewritten=2 classes=4
+  rx_L6 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L15 branch (structural) (3 conts) classes[1,2:255, 1,2,3:1] eos:1,2
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x2; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L6 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L15 branch (structural) (3 conts) classes[1,2:255, 1,2,3:1] eos:1,2
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x2; if ((ptrdiff_t)scan_position != slot_values[4]) { RX_TRAIL_C x2
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L0 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=3
+  rx_L0 branch (structural) (3 conts) classes[-:253, 1:1, 2:1, 3:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=4
+  rx_L3 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=3
+  rx_L0 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=3
+refused: repeated label names (more than one matcher body in the file)
+REFUSED /var/tmp/pcrec-pcrec/scratch/altd/tmp/tmp.CDjDDMZ39s/b53/gen.c
+  rx_L3 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L3 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L3 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L3 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L2 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L8 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  ALL-by-refusal statements: if (scan_position + 3 <= subject_length && rx_w2(subject + s x1
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L6 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L3 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+  rx_L8 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+altd: mode=AL sites=2 rewritten=2 classes=6
+  rx_L0 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x1
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L4 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L0 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L6 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  ALL-by-refusal statements: if (scan_position + 4 <= subject_length && !memcmp(subject + x1
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L0 branch (structural) (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L6 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  ALL-by-refusal statements: if (scan_position + 4 <= subject_length && !memcmp(subject + x1
+altd: mode=AL sites=2 rewritten=2 classes=4
