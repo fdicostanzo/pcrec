@@ -1,0 +1,29 @@
+== F1 (premise): ^(?:(?:[bB]|[cC]d)(\w))+by$ ; DEAD on the event stream deletes the revdet entry write
+listing rows naming slot 4: 1 (the set only); C lines reading it: 6
+bxby stock: 0:0,4 1:1,2  twin: 0:0,4 1:-1,-1  pcre2: bxby: 0:0,4 1:1,2 
+bxcdzby stock: 0:0,7 1:4,5  twin: 0:0,7 1:-1,-1  pcre2: bxcdzby: 0:0,7 1:4,5 
+BqBqby stock: 0:0,6 1:3,4  twin: 0:0,6 1:-1,-1  pcre2: BqBqby: 0:0,6 1:3,4 
+== F2: ^(b)(?1) --engine=vm -fno-splice-calls ; the caller's group-1 close writes deleted (call read missing)
+bb stock: 0:0,2 1:0,1  twin: 0:0,2 1:-1,-1  pcre2: bb: 0:0,2 1:0,1 
+== F3 (reach): ^(?:(?>ab|a)c|abd) --engine=vm ; the CUT mark's value text reads run->resume_depth
+190:    RX_SET(RX_SLOT_CUT_MARK0, (ptrdiff_t)run->resume_depth);
+== F6 (reach): left recursion gives FRAMES in stock (D as tabled answers instead)
+b stock: frames pcre2: b: rc -52
+ab stock: frames pcre2: ab: rc -52
+ba stock: frames pcre2: ba: rc -52
+x stock: frames
+b stock: frames
+== F7 (reach): a(?:\dx|[a-z]y)c --engine=vm is framed today with ONE disjoint push
+#define RX_VM_FRAMELESS 0
+#define RX_VM_ENTRY_SHAPE "plain"
+push sites: 1
+== F7 (push-site under-count): [abd]x|[acd]y|[bcd]z --engine=vm ; stock push sites (D's per-class sum is 5)
+resume-points	2	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+islands	0	
+== F8: callout read set is the pattern's ncap under --no-captures ; the group writes deleted
+rx_co_ctx.ncap = 3
+abd stock: nomatch twin: 0:0,3 
+acd stock: 0:0,3  twin: 0:0,3 
+== F14 (reach): (?:a|ab){300}+c --engine=vm takes the counter rung ; (?:a|bc){3}+ does not
+rungs	counter	comma-joined; the rungs section below says which quantifier took which
+rungs	revdet	comma-joined; the rungs section below says which quantifier took which
