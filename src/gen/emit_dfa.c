@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 92
+#define PCREC_ARTIFACT_ABI 95
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -10398,7 +10398,7 @@ static const CandRow cand_rows[] = {
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
-      .desc = "the body's LOCATE row answers presence itself (rev-end, the cover window search, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
+      .desc = "the body's LOCATE row answers presence itself (a LOCATE row with `whole`: rev-end, the cover window search, the landmark walk, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
       .u.admit = { REQ_ADMIT_DOMINATED } },
     { .c = { "set-leads", 0, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
@@ -11944,6 +11944,14 @@ bool pcrec_cand_drop_anchored_shrinks(Ctx *cx)
     after = cand_path_members(cx);
     cx->job->anchored_ok = saved;
     return after != before && !(after & ~before);
+}
+
+/* `pcrec_cand_lmwalk_member` (internal.h): ML is among the path's members,
+ * so the attempt's body is the landmark walk and dropping it shrinks the
+ * member set (rev 3 §Size: {ML, MA, MF, X} to {MA, MF, X}). */
+bool pcrec_cand_lmwalk_member(Ctx *cx)
+{
+    return (cand_path_members(cx) & CAND_ML) != 0;
 }
 
 /* `pcrec_cand_lang_exact` (internal.h): the boundary projection's test. A

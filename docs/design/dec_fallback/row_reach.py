@@ -64,7 +64,7 @@ TRACE_CFLAGS = emit_sweep.TRACE_CFLAGS
 LOWTHR_ARMS = ("base", "vm", "no-st", "unroll4")
 SLOTS = {"fallback": "T1", "admit": "T2", "gate": "T3", "stwhy": "T4", "attrib": "ESEL"}
 SEL1 = ("sel1-collapse", "sel1-drop")
-SIZE = ("prefilter-collapse", "drop-anchored", "drop-premul", "drop-prefilter")
+SIZE = ("prefilter-collapse", "drop-landmark-walk", "drop-anchored", "drop-premul", "drop-prefilter")
 # K35: the distinct-block population, MEASURED 4,794 corpus blocks + 17
 # witnesses at B1's base (attempt_hist.py's floor, the same population).
 POPULATION_FLOOR = 4746 + 17

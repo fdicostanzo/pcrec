@@ -8382,6 +8382,9 @@ bool pcrec_cand_lang_exact(Ctx *cx);
  * forward machine: dropping A would GROW such an artifact. The anchored
  * machine is the one droppable machine today. src/gen/emit_dfa.c. */
 bool pcrec_cand_drop_anchored_shrinks(Ctx *cx);
+/* [LANDWALK] is the landmark machine ML a member of this attempt's path (its
+ * body is the landmark walk)? The `drop-landmark-walk` rung's applicability. */
+bool pcrec_cand_lmwalk_member(Ctx *cx);
 /* [OPT-REVEND] L2.1 the generated stamp rule's ABSENCE value for start-table
  * slot `slot` (a `CandSlot`), or NULL where the slot has none: what its stamp
  * reads where the path does not ask the slot. `--list-axes` shows it as the

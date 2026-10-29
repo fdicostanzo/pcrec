@@ -23,7 +23,28 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `92` on every artifact today ([MEMFN] D172 S3, 91 -> 92,
+- **`rx_info.abi` is `95` on every artifact today ([LANDWALK] stage 1, 92 -> 95
+  PROVISIONAL, lane p1build, 2026-10-29; 93 and 94 reserved on main for
+  trailgc and p4entry, so the landing takes the next free number:
+  docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md
+  rev 3).** A new LOCATE row `landmark-walk` (between `cover` and
+  `composite`): on a one-branch DFA pattern with a byte-class landmark L
+  at a top-level position whose prefix P never consumes a byte of L, NEXT
+  (without the walk) not already starting from a landmark, and L rarer
+  than NEXT's start set by the landmark margin, the search finds each
+  occurrence of L through the delegated site LMHIT (a new DELEG_SITES row,
+  its table `<prefix>_landmark_bytes`), walks the reverse machine of P·L
+  back from it (a FOURTH machine's tables, `<prefix>_landmark_*`, and its
+  accessor block), runs the anchored machine once inline from the leftmost
+  start (its tables again inside the search body, `<prefix>_lmverify_*`),
+  and relocates to the forward-then-reverse search from that start where
+  the last verify read past the landmark. Its stamps move
+  (`<PREFIX>_DFA_SCAN "landmark-walk"`, `<PREFIX>_DFA_TABLE` and
+  `<PREFIX>_DFA_SCAN_EDGE` fold ML in) and `rx_info.scan`; `--list-axes`
+  lists `landmark-walk` at `locate` 3 and re-indexes `unanchored` 3 -> 4,
+  the axis `-fno-landmark-walk` (bit 57), and the fallback rung
+  `drop-landmark-walk`. Every other artifact moves only the number.
+- **`rx_info.abi` was `92` ([MEMFN] D172 S3, 91 -> 92,
   renumbered by lane s3m, 2026-10-29, over main b05ccfc0b in landing order; lane
   s3 bumped it 2026-10-22 as 83 -> 84 PROVISIONAL, lane s3pair renumbered it
   84 -> 85 on 2026-10-24 when main's iterators had taken 84, and 85 stayed

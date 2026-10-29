@@ -331,7 +331,7 @@ above".
 |---|---|---|---|
 | 1 | `different-tree` | the second machine's tree is not P's tree under erasure (a derivation other than `pcrec_derive_none`: split's Q, 4c's per-class searches) | compound PART |
 | 2 | `different-options` | the second machine's options differ from P's beyond what erasure itself sets (`flags_set`/`flags_clear` non-zero, or `engine` other than P's selection: captures on demand, [ADAPTIVE-ARM], arch levels) | compound PART |
-| 3 | `erasure-only` | (no conjunct beyond rows 1-2 failing) P's tree under ERASURE only, P's options (D31): the hybrid's prefilter, `rev-end`, a FINISH `verify-at` | in-Job row (a `cand_rows[]` LOCATE or FINISH row) |
+| 3 | `erasure-only` | (no conjunct beyond rows 1-2 failing) P's tree, or a cut of it that an in-Job row walks, under ERASURE only, P's options (D31): the hybrid's prefilter, `rev-end`, a FINISH `verify-at`, the landmark walk's ML ([LANDWALK] stage 1; row 1's "different tree" is a tree REWRITE, not a cut) | in-Job row (a `cand_rows[]` LOCATE or FINISH row) |
 
 K108's case (a nullable pattern whose hybrid prefilter is declined though a full exact search
 would be linear) lands on row 3, so it is better as an in-Job change, lifting the nullable

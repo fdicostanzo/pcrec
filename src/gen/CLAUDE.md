@@ -45,13 +45,14 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 - `memfn_stamps.c` — the kit's every-artifact stamps (`_MEMFN_FORMS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`) and pcrec's knowledge stamps (`_FINDINGS`, `_MEASURES`) rendered over marks after emission; check `tests/memfn/run_libc_census.sh`.
 - `clskit.c` / `clskit.h` — [CLS-TREE] class-matcher kit: leaf forms, sectioning DP, `ROWS`/`TAB_ROWS` first-match tables, byte test spellings (VM and scan edge callers); reference `studies/cls_tree_study/`, tests `tests/clskit/`.
 - `emit_subst.c` — [M4-SUBST] the subst artifact (`docs/spec/subst_api.md`): the subst types block, the element `<prefix>_render`, the record and stamps, the support unit (`--emit-support`), module subst-extended; sections in NOTES.md.
+- `lmwalk.c` — [LANDWALK] the `landmark-walk` row's admission (`lmwalk_conj[]`, memo, build gate); emits nothing.
 - `known.c` / `known.h` — [KIT-VERIFY] `cover` decision (`cover_conj[]`, `MkEnd`) and its REPORT site; routed by default since D172 S3 (C13 asks the kit; `--memfn=no-window-search` declines it); checks `tests/kitproof/`.
 - `stamp_kinds.c` — [COMPOUND] the STAMP CATALOGUE (match_api.md §6.3): every stamp classified by what it is a fact about, deciding its value on a compound.
 - `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
 
 ## Pointers
 
-`APPROACH.md`; `docs/design/emitter_form.md` (D82); `docs/design/start_table.md`, `docs/design/startset.md` (D148); `docs/design/compound.md`, `compound_entries.md`; `docs/design/memfn/integration.md`; `docs/design/assertions_design.md`, `subroutines_design.md`, `engine_m4.md`, `cls_tree_design.md`; `docs/spec/match_api.md` §6 (stamps, abi), `docs/spec/tuning.md`, `docs/spec/ir_listing.md`; `docs/dev/history/abi_changelog.md`; `docs/dev/coding_guide.md`; `docs/dev/decisions.md` (D7, D11, D37, D44, D46, D58, D63, D75, D76, D82, D94, D105, D106, D112, D135, D146-D148); `src/core/CLAUDE.md`, `src/enc/CLAUDE.md`, `memfn/CLAUDE.md`.
+`APPROACH.md`; `docs/design/emitter_form.md` (D82); `docs/design/start_table.md`, `docs/design/startset.md` (D148); `docs/design/compound.md`, `compound_entries.md`; `docs/design/memfn/integration.md`; `docs/spec/match_api.md` §6 (stamps, abi), `docs/spec/tuning.md`, `docs/spec/ir_listing.md`; `docs/dev/history/abi_changelog.md`; `docs/dev/coding_guide.md`; `docs/dev/decisions.md` (D7, D11, D37, D44, D46, D58, D63, D75, D76, D82, D94, D105, D106, D112, D135, D146-D148); `src/core/CLAUDE.md`, `src/enc/CLAUDE.md`, `memfn/CLAUDE.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__gen.md
 
