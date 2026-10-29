@@ -27406,3 +27406,10 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - rc125: the census's two rc-125 rows = uutils `nice` rejecting non-UTF-8 argv (the fact-finder blamed gnutimeout; manager tested both); recorded docs/testing.md 4464528f9.
 - 695-lands3-check red on identity (A) alone (filed [RECID-A]); s3tri confirmed; MANAGER ACCEPTED 695 as green on its evidence and cancelled the retry; push waits on 696. [RECID-A] ruled re-base (9db59722c); lane recida launched.
 - Kit: queued 697-kit-r30b-heavy for 10-30 13:30 (R-30 early: case 7 1,279M -> 898M instr).
+
+## 2026-10-29 (session 128 cont., manager, 14:50-15:45) — r7/r8, P1 build go, P10 model + build
+
+- Review r7 landwalk3 (b834061a4): no answer finding; FIX-1 a NULL RECOVER on every admitted compile (+ self-check ruled); SOUND-2 verify inline. P1 STAGE-1 BUILD GO: lane p1build (opus, S1820-S1829).
+- Review r8 vmcons2 (26804bd46): 3 answer twins; rev 2's print-then-lex signature re-introduced a token list -> RULED the record is the source, text rendered from it (one renderer per kind). Lane vmcons3 (opus) writes rev 3. Critic skill: sibling-field clause (fix-induced) + mis-typed record per kind (soundness).
+- Frank on P10: questions (back-and-forth, % vs block, density, a cost model) -> cheap lane p10model merged: K = round(log2 r) derivable (6 email, 8 iso), worst x2 vs hindsight, find-all memory rejected (cross-call state), streaming makes the rule WRONG with unknown n (4 limits to state). Frank: "build it speculatively and measure... first off-by-default optimization" -> lane p10build (opus, S1830-S1839, public opt-in flag, flag-off byte-identical).
+- recida DONE, parked until 698-recida-gate green ((A) re-based to 7234c2e86, 10 exception paths deleted, 47 movers 0 diffs).
