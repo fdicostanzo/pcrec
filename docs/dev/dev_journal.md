@@ -27381,3 +27381,10 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - 690-p910-census GREEN (5,588 rows); 691-p910-p10controls next, then a fresh finisher.
 - Opened reviews before builds: crit-p48 (P4+P8 design; entry-jump = first small build), crit-landwalk2 (P1 rev 1 re-check).
 - Frank asked about the trail segment structure review: done by trailgen (9 candidates); the open item is FRAME layout (narrower frames), to file as a row after the VM build.
+
+## 2026-10-29 (session 128 cont., manager, 13:15-14:00) — clean-room wall, first opt build, P1 rev 2
+
+- Frank: pinned PCRE2 copy OK but never copy; "a Chinese wall between reading and writing"; cite the source in code when we lean on it. pcre2wall built and merged (D181: guard hook blocks all but agent_type pcre2-reader, main session included; prose notes + checker; REFERENCES [PCRE2src]; coding.md 4.1a). Cloned tag pcre2-10.46 = b2bd4254b read-only through the one-time setup window (the setup file must exist BEFORE the command the hook checks).
+- Review r4 p48: no answer findings; F1-F5 into the build. FIRST OPT BUILD: lane p4entry (entry-jump rule for bounded heads, S1810-S1819). Critic skill: design review tree at the landing commit.
+- Review r5 landwalk2 (P1 rev 1 re-check): mechanism 0 wrong / 7.27M subjects; rev 1's D3 fix created a LOCATE->NEXT read cycle (kv-quoted two answers), two latent wrong answers (VM-hybrid bodies, overlapping hits). Lane p1dsg3 writes rev 2. Critic skill: fix-induced lens.
+- Kit: R-30 widened to the general fix (no objection; Frank's go); SIMD tier-U job queued Sunday not-before 03:00 (my counter); simdset zero-movers job queued.
