@@ -1,0 +1,6 @@
+nest-paren-32k BCd_ALkf i=3.73 c=- p=0.000 stock_ALkf i=9.37 c=- p=0.000 load=7.44
+nest-brace-100k BCd_ALkf i=16.71 c=- p=0.000 stock_ALkf i=68.82 c=- p=0.000 load=7.44
+js-1m BCd_ALkf i=42.65 c=- p=0.443 stock_ALkf i=199.93 c=- p=0.443 load=7.32
+idents-1m BCd_ALkf i=57.78 c=- p=0.904 stock_ALkf i=159.01 c=- p=0.904 load=7.32
+splice-1m BCd_ALkf i=19.76 c=- p=0.333 stock_ALkf i=47.42 c=- p=0.333 load=7.32
+comment-5m BCd_ALkf i=103.96 c=- p=0.200 stock_ALkf i=193.97 c=- p=0.200 load=7.32

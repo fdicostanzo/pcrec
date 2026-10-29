@@ -1,0 +1,1 @@
+ident json: subjects 161 (matching 124), cells 4508, diffs 0, twin answers where stock gave up 496, twin gives up where stock answered 0

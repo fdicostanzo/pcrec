@@ -1,0 +1,50 @@
+ucp/sets_utf8.rxt	non-vm-or-no-push
+atomic_groups/possessive.rxt	vm	sites=2	rewritten=2	alt=2	loop_opt=0	declined=0	classes=4
+mrl/09_captures.rxt	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=3
+utf8/uprop_more.rxt	non-vm-or-no-push
+utf8/wclass_illformed.rxt	non-vm-or-no-push
+lookaround/d27/matrix.rxt	non-vm-or-no-push
+backrefs/d27/interactions.rxt	non-vm-or-no-push
+revend/stage2_captures.rxt	non-vm-or-no-push
+mrl/03_zerowidth.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+assertions/d27/syntax_errors.rxt	non-vm-or-no-push
+assertions/kreset.rxt	non-vm-or-no-push
+backrefs/spellings.rxt	non-vm-or-no-push
+possessify/possessify.rxt	non-vm-or-no-push
+compound/split.rxt	refused	push sites 2 != listing pushes 1
+named_groups/d27/numbering_capture.rxt	refused	push sites 4 != listing pushes 2
+backrefs/d27/dupnames.rxt	error
+recursion/k93.rxt	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=3
+lookaround/quantified.rxt	non-vm-or-no-push
+vars/unset.rxt	non-vm-or-no-push
+ucp/ctxnode.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+captures/empty_iteration.rxt	vm	sites=3	rewritten=3	alt=3	loop_opt=0	declined=0	classes=9
+possessify/possessify.rxt	non-vm-or-no-push
+base/leftmost_semantics.rxt	non-vm-or-no-push
+compound/split.rxt	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=2
+possessify/composition_d27.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	vm	sites=0	rewritten=0	alt=0	loop_opt=0	declined=0	classes=0
+utf8/axis04_p_categories.rxt	non-vm-or-no-push
+rungselect/rungselect.rxt	vm	sites=8	rewritten=8	alt=4	loop_opt=4	declined=0	classes=24
+callouts/shapes.rxt	non-vm-or-no-push
+ucp/knobs.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+lookaround/d27/matrix.rxt	non-vm-or-no-push
+lookaround/d27/matrix.rxt	vm	sites=0	rewritten=0	alt=0	loop_opt=0	declined=0	classes=0
+revend/stage2_captures.rxt	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=3
+compound/split.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+recursion/d27/sr_interactions.rxt	non-vm-or-no-push
+revend/stage2_captures.rxt	non-vm-or-no-push
+base/eol_scan_avoidance.rxt	non-vm-or-no-push
+lookaround/d27/matrix.rxt	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=2
+lookaround/d27/matrix.rxt	non-vm-or-no-push
+utf8/fold.rxt	non-vm-or-no-push
+recursion/d27/sr_depth.rxt	refused	push sites 4 != listing pushes 2
+possessify/composition_d27.rxt	non-vm-or-no-push
+backrefs/octal_class.rxt	non-vm-or-no-push
+possessify/composition_d27.rxt	non-vm-or-no-push
+base/empty_matches.rxt	non-vm-or-no-push

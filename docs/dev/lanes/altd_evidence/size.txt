@@ -1,0 +1,10 @@
+cscan stock_none text=27874 cbytes=81938 pushsites=34
+cscan stock_ALkf text=28180 cbytes=89000 pushsites=30
+cscan BCd_none text=16320 cbytes=71952 pushsites=34
+cscan BCd_A text=16584 cbytes=77478 pushsites=32
+cscan BCd_ALkf text=16523 cbytes=79014 pushsites=30
+json stock_none text=39921 cbytes=91108 pushsites=27
+json stock_ALkf text=40085 cbytes=97684 pushsites=17
+json BCd_none text=15411 cbytes=72316 pushsites=27
+json BCd_A text=15361 cbytes=75177 pushsites=21
+json BCd_ALkf text=15605 cbytes=78892 pushsites=17

@@ -1,0 +1,36 @@
+  rx_L5 branch (structural) (2 conts) classes[-:254, 1,2:1, 1:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=3
+  rx_L5 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+  rx_L11 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+altd: mode=AL sites=2 rewritten=2 classes=4
+  rx_L9 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L11 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x1
+altd: mode=AL sites=1 rewritten=1 classes=2
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L6 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+  rx_L23 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x2
+altd: mode=AL sites=3 rewritten=3 classes=7
+  rx_L0 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L5 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L12 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  rx_L22 branch (structural) (2 conts) classes[-:254, 2:1, 1:1] eos:-
+  ALL-by-refusal statements: RX_CUT (commit-opaque) x2
+altd: mode=AL sites=4 rewritten=4 classes=9
+altd: mode=AL sites=0 rewritten=0 classes=0
+  rx_L6 branch (structural) (2 conts) classes[-:255, 1,2:1] eos:-
+altd: mode=AL sites=1 rewritten=1 classes=2
+altd: mode=AL sites=0 rewritten=0 classes=0
+  rx_L8 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+  rx_L13 branch (structural) (2 conts) classes[-:253, 1:2, 2:1] eos:-
+  rx_L19 branch (structural) (2 conts) classes[1:255, 1,2:1] eos:1
+  ALL-by-refusal statements: if (scan_position == subject_length || (scan_position + 1 == x1
+altd: mode=AL sites=3 rewritten=3 classes=8
+  rx_L10 branch (structural) (3 conts) classes[-:254, 1:1, 2,3:1] eos:-
+  rx_L17 branch (structural) (2 conts) classes[-:253, 1:2, 2:1] eos:-
+altd: mode=AL sites=2 rewritten=2 classes=6
+  rx_L6 branch (structural) (2 conts) classes[-:254, 1:1, 2:1] eos:-
+  rx_L15 branch (structural) (2 conts) classes[-:254, 2:1, 1:1] eos:-
+altd: mode=AL sites=2 rewritten=2 classes=6

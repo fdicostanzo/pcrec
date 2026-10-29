@@ -1,0 +1,25 @@
+co-isbn-nofn.rx	non-vm-or-no-push
+co-isbn-pass.rx	non-vm-or-no-push
+co-isbn.rx	non-vm-or-no-push
+co-isbn-twin.rx	non-vm-or-no-push
+co-luhn-nofn.rx	non-vm-or-no-push
+co-luhn-pass.rx	non-vm-or-no-push
+co-luhn.rx	non-vm-or-no-push
+co-luhn-twin.rx	non-vm-or-no-push
+co-member-nofn.rx	non-vm-or-no-push
+co-member-pass.rx	non-vm-or-no-push
+co-member.rx	non-vm-or-no-push
+co-member-twin.rx	non-vm-or-no-push
+co-netstr-assist.rx	vm	sites=0	rewritten=0	alt=0	loop_opt=0	declined=0	classes=0
+co-netstr.rx	non-vm-or-no-push
+co-netstr-twin.rx	non-vm-or-no-push
+cscan-onig.rx	vm	sites=17	rewritten=14	alt=10	loop_opt=4	declined=3	classes=49
+cscan.rx	vm	sites=17	rewritten=14	alt=10	loop_opt=4	declined=3	classes=49
+floor.rx	non-vm-or-no-push
+va-route.rx	vm	sites=1	rewritten=1	alt=1	loop_opt=0	declined=0	classes=2
+va-tenant.rx	non-vm-or-no-push
+va-term-bang.rx	non-vm-or-no-push
+va-term.rx	non-vm-or-no-push
+wild-json-validate-onig.rx	vm	sites=14	rewritten=14	alt=6	loop_opt=8	declined=0	classes=45
+wild-json-validate.rx	vm	sites=14	rewritten=14	alt=6	loop_opt=8	declined=0	classes=45
+wild-sexp-balanced.rx	vm	sites=4	rewritten=4	alt=2	loop_opt=2	declined=0	classes=10

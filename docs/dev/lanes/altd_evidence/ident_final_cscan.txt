@@ -1,0 +1,1 @@
+ident cscan: subjects 99 (matching 75), cells 2772, diffs 0, twin answers where stock gave up 510, twin gives up where stock answered 0

@@ -1,0 +1,16 @@
+  rx_L35 another iteration prefer (2 conts) classes[1:223, -:32, 2:1] eos:-
+  rx_L37 branch 1 of 2 preferred; (2 conts) classes[1:222, -:33, 2:1] eos:-
+  rx_L43 branch 1 of 2 preferred; (2 conts) classes[-:247, 1:8, 2:1] eos:-
+  rx_L59 body preferred; resume S (2 conts) classes[-:234, 1:17, 1,2:4, 2:1] eos:-
+  rx_L64 another iteration prefer (2 conts) classes[-:250, 2:5, 1:1] eos:-
+  rx_L80 body preferred; resume S (2 conts) classes[-:250, 1,2:4, 1:1, 2:1] eos:-
+  rx_L85 another iteration prefer (2 conts) classes[-:250, 2:5, 1:1] eos:-
+  rx_L101 branch 1 of 5 preferred; (5 conts) classes[-:239, 1:11, 2:3, 3:1, 4:1, 5:1] eos:-
+  rx_L122 branch 1 of 2 preferred; (2 conts) classes[-:246, 2:9, 1:1] eos:-
+  rx_L125 body preferred; resume S (2 conts) classes[2:255, 1,2:1] eos:2
+  rx_L132 body preferred; resume S (2 conts) classes[2:254, 1,2:2] eos:2
+  rx_L163 another iteration prefer (2 conts) classes[1:223, -:32, 2:1] eos:-
+  rx_L165 branch 1 of 2 preferred; (2 conts) classes[1:222, -:33, 2:1] eos:-
+  rx_L171 branch 1 of 2 preferred; (2 conts) classes[-:247, 1:8, 2:1] eos:-
+  ALL-by-refusal statements: if (scan_position == subject_length || (scan_position + 1 == x2
+altd: mode=AL sites=14 rewritten=14 classes=45

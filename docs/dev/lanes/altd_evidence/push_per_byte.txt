@@ -1,0 +1,6 @@
+nest-paren-32k stock_none:10.999 BCd_none:10.999 BCd_A:1.000 BCd_ALkf:0.000
+nest-brace-100k stock_none:12.000 BCd_none:12.000 BCd_A:1.000 BCd_ALkf:0.000
+js-1m stock_none:1.843 BCd_none:1.843 BCd_A:1.008 BCd_ALkf:0.443
+idents-1m stock_none:2.151 BCd_none:2.151 BCd_A:1.096 BCd_ALkf:0.904
+splice-1m stock_none:0.333 BCd_none:0.333 BCd_A:0.333 BCd_ALkf:0.333
+comment-5m stock_none:0.500 BCd_none:0.500 BCd_A:0.300 BCd_ALkf:0.200

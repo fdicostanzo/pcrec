@@ -1,0 +1,6 @@
+nest-paren-32k stock i=31.07 c=- p=- stock_A i=10.49 c=- p=1.000 stock_AL i=10.88 c=- p=1.000 BCd i=25.04 c=- p=- BCd_A i=4.72 c=- p=1.000 BCd_AL i=5.05 c=- p=1.000 load=9.30
+nest-brace-100k stock i=162.72 c=- p=- stock_A i=94.62 c=- p=1.000 stock_AL i=71.02 c=- p=0.500 BCd i=91.02 c=- p=- BCd_A i=23.91 c=- p=1.000 BCd_AL i=18.21 c=- p=0.500 load=9.12
+js-1m stock i=260.71 c=- p=- stock_A i=210.72 c=- p=1.008 stock_AL i=199.93 c=- p=0.443 BCd i=72.63 c=- p=- BCd_A i=52.14 c=- p=1.008 BCd_AL i=42.65 c=- p=0.443 load=9.12
+idents-1m stock i=191.67 c=- p=- stock_A i=160.70 c=- p=1.096 stock_AL i=150.95 c=- p=1.000 BCd i=91.73 c=- p=- BCd_A i=60.37 c=- p=1.096 BCd_AL i=67.13 c=- p=1.000 load=9.12
+splice-1m stock i=47.76 c=- p=- stock_A i=47.09 c=- p=0.333 stock_AL i=50.76 c=- p=0.333 BCd i=20.42 c=- p=- BCd_A i=19.76 c=- p=0.333 BCd_AL i=23.42 c=- p=0.333 load=9.03
+comment-5m stock i=220.97 c=- p=- stock_A i=203.97 c=- p=0.300 stock_AL i=191.97 c=- p=0.200 BCd i=133.47 c=- p=- BCd_A i=113.46 c=- p=0.300 BCd_AL i=103.96 c=- p=0.200 load=9.03
