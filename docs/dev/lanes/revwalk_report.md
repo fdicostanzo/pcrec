@@ -533,10 +533,10 @@ as a cost.
 
 ## STATE AT HANDOFF
 
-STATE: delivered. Committed on `lane/revwalk`: this report, `revwalk_evidence/` (tiers.py, model.py,
+STATE: delivered. OWED: none. Committed on `lane/revwalk`: this report, `revwalk_evidence/` (tiers.py, model.py,
 facts_control.py, outputs, CLAUDE.md), the history-index line. Rulings file read through R4 (last
 entry applied: R4: no box load after 19:00; the census finished well before). Nothing under src/ cli/ lib/ memfn/ touched; no build, no suite run owed. Runs
-were made: one `make -j16` (to get `build/pcrec` for `--list-source` / `--emit-facts`), the census
+made: one `make -j16` (to get `build/pcrec` for `--list-source` / `--emit-facts`), the census
 (~7 min, parse-only), the facts control under `scripts/boxlock run --label revwalk-facts`, the model
 (~10 min, libpcre2 ctypes). Open for a follow-up: the forward self-loop census for the scan-edge
 relaxation (R1.1) on pcrec's own machines; the reader's non-ASCII caseless fold (C3's 2 rows); the
