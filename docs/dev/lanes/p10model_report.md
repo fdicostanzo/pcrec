@@ -12,7 +12,7 @@ number below is read from that output. Source of the twin numbers: `docs/dev/lan
    Worst misses: `email t-hyb-digits-4k` pre -25.5% / paced -12.8% (the measured 4 KiB `pre` is 135
    instructions above `m*n`; unexplained, flagged), `iso trim-nearmiss-16k` pre -9.8%. One row is
    NOT reproduced: `iso` witness A (30,000 whitespace, 1 MiB absent): measured paced = today
-   (x1.00), model x0.94-1.06 of today... i.e. the model predicts a check cost the twin did not pay
+   (x1.00 of today), model x0.94: the model charges a check the twin evidently did not pay
    (the whitespace run is probably a stay/scan edge that the "table steps only" counting rule
    never counts; the model has no such notion). That row is carried as an OUTLIER, not hidden.
    The cycle-only hazard gains: iso model x48.1 vs measured x49.1; email model x33.2 vs measured
@@ -225,3 +225,11 @@ P10: rates stamped, no switch; each needs its own r from a card.
 3. Is the "iso witness A" mismatch (paced = today although the attempt outlives the bound) worth
    a lane? It suggests the checkpoint counts table steps only and the stay-run bytes are free.
 4. Streaming: agree to state items (1)-(4) of "Streaming" in the P10 design and spec stamp text now?
+
+## STATE AT HANDOFF
+
+- STATE: done. Last rulings entry applied: none (p10model_rulings.md was empty).
+- OWED: none. Nothing was compiled or timed; C and F in cycles are UNMEASURED guesses (20, 40) and
+  every short-subject cycle number depends on them.
+- Evidence: `docs/dev/lanes/p10model_evidence/model.py`, `model_out.txt` (regenerate with
+  `python3 -I model.py`).
