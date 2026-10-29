@@ -4,7 +4,7 @@
 
 the re-based gate and every doc are COMMITTED on lane/recida; its VALIDATION IS OWED (the box was
 never available: 4 ready queue jobs ahead, `boxlock` YIELDING). Nothing was stopped by an answer difference: the answer
-checks that could be run (55 patterns, 38,771 cells) are clean. Do NOT merge before job `698-recida-gate` reads green
+checks that could be run (47 distinct patterns, 55 builds, 38,771 cells) are clean. Do NOT merge before job `698-recida-gate` reads green
 (its `answers` step is the full answer check; its `newgate` and `plant` steps are the gate itself). Rulings file
 `recida_rulings.md`: empty, nothing to apply. Evidence (lists, scripts) is in `docs/dev/lanes/recida_evidence/`.
 
