@@ -237,6 +237,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 
 ## Candidates ([OPTLOOP])
+- [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
+  filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
+  status (2026-10-29): filed, not scheduled; general and independent of [LANDWALK] (its cheap part, usable on every route that has a required run)
+  trigger: (D77) a bench or corpus cell where attempts after the last required-run occurrence are a measurable share (no-match tails on long subjects, RX_REQ_HANDOFF "none")
+  refs: [LANDWALK]; [REQ-HANDOFF]; memfn/docs/responses.md (R-30 note); decisions D157
+  Today, for a required run at an UNBOUNDED distance, the found position is only a yes/no gate. Every match contains the run at or after its start, so no attempt that starts after the run's LAST occurrence can match: one lazy re-find (or one reverse find) as attempts pass the last known occurrence lets the loop stop at the first position past it. pcrec states the fact (required run, unbounded); the kit owns the method (D157).
 - [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
   filed: 2026-10-29 lane p1dsg2
   status (2026-10-29): DESIGNED, rev 1 after review r1 (p1dsg2_report.md); stage 1 (DFA hat) waits on Frank's build go and on one-optimization-build-at-a-time until [INLINE-C] closes
