@@ -9949,6 +9949,7 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Citation (Frank, same day: "If we lean heavily on another source even through this mechanism, provide a citation in source."):** pcrec code designed substantially from a note carries a citation comment at the site, `/* Approach after [PCRE2src] (<what>), see docs/dev/pcre2_notes/<slug>.md */` (`[PCRE2src]` is the REFERENCES.md key), and the note lists the pcrec sites that cite it. Notes have stable slugs. "Leaned on heavily" means the algorithm or structure came from the source; matching PCRE2's behaviour is D26 and needs no citation. Same for any other outside source.
 - **Why:** pcrec stays an independent implementation; PCRE2 remains the semantic source of truth (D26) but its code is never transcribed. License is not the reason (pcrec MIT, PCRE2 BSD-3; nothing is copied either way).
 - **Revisit when:** the pinned tag moves, or a note shape the checker keeps rejecting wrongly shows the rules need a tier.
+- **Pinned (2026-10-29, manager):** tag pcre2-10.46 = commit b2bd4254b379b9d7dc9a3dda060a7e27009ccdff, shallow clone (no submodules: the JIT's sljit dependency is absent), made read-only (chmod -R a-w); cloned through the setup window, which was closed right after.
 
 ## D180 — case changes follow Unicode now; a PCRE2-compatible mapping is a later data set (Frank, 2026-10-24)
 
