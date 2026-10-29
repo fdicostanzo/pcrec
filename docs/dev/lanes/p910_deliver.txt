@@ -1,0 +1,5 @@
+report=docs/dev/lanes/p910_report.md
+sections: Summary; Premise test; P9 stamps and twin; P9 design; P10 stamps and twin; P10 design; Shared mechanism; Measurement cards; Questions for Frank; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

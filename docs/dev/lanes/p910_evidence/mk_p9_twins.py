@@ -45,7 +45,17 @@ def find_fn(words, behind, walk):
     out += 'static inline size_t p9_find(const unsigned char *s, size_t n, size_t c)\n{\n'
     out += f'    if (n < {k}) return n;\n'
     out += f'    const size_t last = n - {k};   /* the last position a candidate may sit at */\n'
-    if walk == 'm1':
+    if walk == 'and2':
+        # the two most selective terms tested together, branch-free, per byte
+        out += f'    if (c == 0) {{ if ({allt.replace("c + ", "0 + ")}) return 0; c = 1; }}\n'
+        out += '    while (c <= last) {\n'
+        out += '        while (c < last && !(p9_s0[s[c]] & !p9_word[s[c - 1]])) c++;\n'
+        out += '        if (!(p9_s0[s[c]] & !p9_word[s[c - 1]])) return n;\n'
+        rest = terms[1:]
+        out += f'        if ({" && ".join(rest) if rest else "1"}) return c;\n'
+        out += '        c++;\n'
+        out += '    }\n    return n;\n}\n'
+    elif walk == 'm1':
         # walk on the look-behind term: the tight loop skips \w runs
         out += f'    if (c == 0) {{ if ({allt.replace("c + ", "0 + ")}) return 0; c = 1; }}\n'
         out += '    while (c <= last) {\n'
@@ -104,6 +114,8 @@ def main(root):
         outs['vmfind'] = patch_vm(vm, find_fn(words, True, '0'))
         outs['vmfind0'] = patch_vm(vm, find_fn(words, False, '0'))
         outs['vmfindm1'] = patch_vm(vm, find_fn(words, True, 'm1'))
+        outs['vmfind2'] = patch_vm(vm, find_fn(words, True, 'and2'))
+        outs['autofind2'], _ = patch_auto(auto, find_fn(words, True, 'and2'))
         for k, v in outs.items():
             od = os.path.join(root, f'{name}-{k}')
             os.makedirs(od, exist_ok=True)

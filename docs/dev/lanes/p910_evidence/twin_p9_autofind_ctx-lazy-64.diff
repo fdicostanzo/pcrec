@@ -1,5 +1,5 @@
 --- /var/tmp/pcrec-pcrec/scratch/p910/p9/ctx-lazy-64-auto/rx.c	2026-10-29 08:59:25.137573996 -0400
-+++ /var/tmp/pcrec-pcrec/scratch/p910/p9/ctx-lazy-64-autofind/rx.c	2026-10-29 09:04:20.590697836 -0400
++++ /var/tmp/pcrec-pcrec/scratch/p910/p9/ctx-lazy-64-autofind/rx.c	2026-10-29 09:18:51.648867610 -0400
 @@ -220,6 +220,70 @@
  #if __has_attribute(noclone)
  __attribute__((noclone))

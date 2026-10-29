@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run every P9 variant's driver over a subject group; prints per-file rows
-S=${S:?scratch dir}; B=${B:?pcrec-bench/bench}
+S=/var/tmp/pcrec-pcrec/scratch/p910; B=/home/pcrec/projects/pcrec-bench/bench
 for n in ctx-lazy-64 ctx-lazy-256 ctx-lazy-1024 ctx-greedy-256 level-context; do
   case $n in
     ctx*) T="$B/bounded/throughput/*.bin"; SH="$B/bounded/subjects/*.bin"; X="$S/subj/stress-ctx.bin $S/subj/edge-ctx.bin";;

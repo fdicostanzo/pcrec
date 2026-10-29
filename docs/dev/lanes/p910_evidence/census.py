@@ -103,7 +103,7 @@ def one(r):
     if r["enc"] == "utf8":
         cmd += ["-e", "utf8"]
     p = subprocess.run(cmd + ["--pattern", text], capture_output=True)
-    o = dict(pop=r["pop"], id=r["id"], enc=r["enc"])
+    o = dict(pop=r["pop"], id=r["id"], enc=r["enc"], icase=int(r["icase"]), pat_hex=r["pat"].hex())
     if p.returncode != 0:
         o["refused"] = "timeout" if p.returncode in (124, 137) else "rc%d" % p.returncode
         return o
@@ -116,13 +116,38 @@ def one(r):
     seeds = sorted({int(x) for x in m.group(2).replace("\n", " ").split(",") if x.strip()}) if m else []
     o["nseed"] = len(seeds)
     o["seeds"] = ",".join(map(str, seeds))
+    # each non-zero seed: how many bytes it stays on, and whether every other
+    # byte leaves by ONE door (scan-shaped, src/opt/scanedge.c precondition 1)
+    shapes = []
+    try:
+        i = c.index("rx_forward_seed_state[")
+        f0 = c.rfind("static int rx_prefilter(", 0, i)
+        f0 = f0 if f0 >= 0 else c.rfind("\nint rx_search(", 0, i)
+        def arr(name):
+            m2 = re.search(r"%s\[(\d+)\] = \{([^}]*)\}" % name, c[f0:])
+            return [int(x) for x in m2.group(2).replace("\n", " ").split(",") if x.strip()]
+        cls = arr("rx_forward_byte_class"); nxt = arr("rx_forward_next_state")
+        ncls = max(cls) + 1
+        pm = re.search(r'^#define RX_DFA_TABLE "premultiplied"', c, re.M) is not None
+        for sd in seeds:
+            if sd == 0:
+                continue
+            base = sd if pm else sd * ncls
+            tr = [nxt[base + cls[b]] for b in range(256)]
+            stay = sum(1 for t in tr if t == sd)
+            exits = {t for t in tr if t != sd}
+            shapes.append("%d:%d:%s" % (sd, stay, "scan" if len(exits) == 1 else "x%d" % len(exits)))
+    except (ValueError, AttributeError, IndexError):
+        if seeds:
+            shapes.append("unread")
+    o["seedshape"] = ";".join(shapes)
     return o
 
 
 def main():
     rows = corpus_pop() + bench_pop()
     if E.get("LIMIT"): rows = [r for r in rows if r["pop"] == "bench"][:int(E["LIMIT"])]
-    cols = ["pop", "id", "enc", "refused", "skip0", "nseed", "seeds"] + list(STAMPS)
+    cols = ["pop", "id", "enc", "refused", "skip0", "nseed", "seeds", "seedshape"] + list(STAMPS) + ["icase", "pat_hex"]
     with open(OUT, "w") as f, cf.ThreadPoolExecutor(JOBS) as ex:
         f.write("\t".join(cols) + "\n")
         for o in ex.map(one, rows):
