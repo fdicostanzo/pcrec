@@ -1,0 +1,172 @@
+== corpus
+    ... RELAX displaced a set edge (cap of 4)                                      2
+    ... added edge replaces a STAY                                                80
+    ... all heads unbounded (jump removed by the bounded-only rule)              295
+    ... new since SET (single twin has no jump there)                             40
+    ... to a machine that had no edge (first edge: loop-shape change)           2118
+    SET gained an edge on a state with no run loop before                         99
+    SET took a pre-SET STAY state                                                 50
+  RELAX added edges (anchored)                                                   248
+  RELAX added edges (forward)                                                   2533
+  RELAX added edges (retry)                                                        9
+  RELAX added edges (reverse)                                                    500
+  RELAX adds >=1 edge                                                           2236
+  SET movers (edges differ set vs single)                                        144
+  any-arm-failed                                                                 261
+  patterns                                                                      4981
+  set: artifacts with >=1 edge                                                  1172
+  set: edges (anchored, bounded)                                                 249
+  set: edges (anchored, unbounded)                                               304
+  set: edges (forward, bounded)                                                  195
+  set: edges (forward, unbounded)                                                410
+  set: edges (retry, bounded)                                                      5
+  set: edges (retry, unbounded)                                                  160
+  set: edges (reverse, bounded)                                                  289
+  set: edges (reverse, unbounded)                                                429
+  set: machines with an entry jump (seedhead)                                    603
+  RELAX added edges, prior mass p<0.1                                           3164
+  RELAX added edges, prior mass p<0.5                                             17
+  RELAX added edges, prior mass p>=0.5                                           109
+== bench
+    ... RELAX displaced a set edge (cap of 4)                                      3
+    ... added edge replaces a STAY                                                41
+    ... all heads unbounded (jump removed by the bounded-only rule)                2
+    ... new since SET (single twin has no jump there)                              2
+    ... to a machine that had no edge (first edge: loop-shape change)            137
+    SET gained an edge on a state with no run loop before                          6
+    SET took a pre-SET STAY state                                                  4
+  RELAX added edges (anchored)                                                    33
+  RELAX added edges (forward)                                                    256
+  RELAX added edges (reverse)                                                     60
+  RELAX adds >=1 edge                                                            145
+  SET movers (edges differ set vs single)                                         10
+  any-arm-failed                                                                  26
+  patterns                                                                       321
+  set: artifacts with >=1 edge                                                   112
+  set: edges (anchored, bounded)                                                 163
+  set: edges (anchored, unbounded)                                                18
+  set: edges (forward, bounded)                                                   56
+  set: edges (forward, unbounded)                                                 25
+  set: edges (retry, bounded)                                                     13
+  set: edges (reverse, bounded)                                                  138
+  set: edges (reverse, unbounded)                                                 10
+  set: machines with an entry jump (seedhead)                                     66
+  RELAX added edges, prior mass p<0.1                                            240
+  RELAX added edges, prior mass p<0.5                                             39
+  RELAX added edges, prior mass p>=0.5                                            70
+-- ('fresh', 'bench') 6
+     [a-z]+\\.txt$
+     \\s+$
+     (?<![0-9.+-])(?>[+-]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+)))
+     (?<![0-9.+-])(?:[+-]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+)))
+     key=\\K\\w+
+     \\buser=(\\w+)
+-- ('fresh', 'corpus') 99
+     ([ab]+)c(?1)a
+     (?<![a-])(?<!\\\\W)[ab]*?(?:ab|b)+
+     [a-]*(?=a)?-
+     [a-c]+(?:(?=a)|)\\\\b
+     [ab]+(?:(?<=a)|)A
+     [a-c]*(?:|\\\\b)
+     [ab]+(?:\\\\b|)$
+     [ab]{2,}(?=a*)a
+-- ('jump', 'bench') 2
+     (?<![0-9.+-])(?>[+-]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+)))
+     (?<![0-9.+-])(?:[+-]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+)))
+-- ('jump', 'corpus') 295
+     (?<!.)
+     x*
+     x*
+     (?(DEFINE)(?<g>a?))(?&g)*
+     (?(DEFINE)(?<g>a?))(?&g)*
+     (?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)*
+     (?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)*
+     (?<![a-])(?<!\\\\W)[ab]*?(?:ab|b)+
+-- ('relax', 'bench') 145
+     (?i)(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|hpc|tvkncrudbyqq|wbhyurodsy
+     (?i)(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|hpc|tvkncrudbyqq|wbhyurodsy
+     (?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp[a-z]|xzxj[a-z]|qnhl[a-z]|dwvtih[a-z]|hy
+     (?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp[a-z]|xzxj[a-z]|qnhl[a-z]|dwvtih[a-z]|hy
+     (?:yoslwssiyybw[0-9]|dybf[0-9]|oodo[0-9]|omykisp[0-9]|idox[0-9]|oemrbp[0-9]|xzxj[0-9]|qnhl[0-9]|dwvtih[0-9]|hy
+     (?:yoslwssiyybw[0-9]|dybf[0-9]|oodo[0-9]|omykisp[0-9]|idox[0-9]|oemrbp[0-9]|xzxj[0-9]|qnhl[0-9]|dwvtih[0-9]|hy
+     (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|hpc|tvkncrudbyqq|wbhyurodsyj|dv
+     (?:gwipefmnb|gbkjy|tfek|buvixwwookl|mybycmuuwget|brjxwkemms|mxpzyewmsc|bpqb|bwevzaozgepg|gvvkxqozsag|gnkavmtpn
+-- ('relax', 'corpus') 2236
+     \\\\x{61}
+     \\\\x{61}+
+     \xce\xb1
+     \xce\xb1+
+     \\\\x{3b1}
+     \\\\x{3b1}+
+     \xce\xb1{1,2}
+     (?:\xce\xb1|\xce\xb2)
+-- ('stolen', 'bench') 4
+     .*\\.txt$
+     (?>[A-Za-z]+:|\\\\)(?:\\\\[^\\\\?*]*)+
+     (?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["']([a-zA-Z0-9.@_\\-+]{3,30})["']\\s*[,;]?\\s*(?:\\s*(?:\\#|//)
+     \\S+@\\S+
+-- ('stolen', 'corpus') 50
+     [^a]*(?:\\\\b)??\\\\w
+     .*?(?:(?!a)|)\\\\B
+     .*(?=a)?\\\\W
+     [^a]{0,}?(?:\\\\b)??\\\\B
+     [^a]+(?:(?<!\\\\w)|)\\\\b
+     [^a]+?(?:(?=a)|)\\\\W
+     [^a]{0,}?(?:\\\\B)*\\\\W
+     .*?(?:\\\\b|\\\\B)a
+== relax-added edges by machine x priced (row 4 at k*=2.3 -> p>=0.70)
+  bench anchored p<0.70                        14
+  bench anchored p>=0.70                       19
+  bench forward p<0.70                        234
+  bench forward p>=0.70                        22
+  bench reverse p<0.70                         32
+  bench reverse p>=0.70                        28
+  corpus anchored p<0.70                      235
+  corpus anchored p>=0.70                      13
+  corpus forward p<0.70                      2480
+  corpus forward p>=0.70                       53
+  corpus retry p<0.70                           9
+  corpus reverse p<0.70                       482
+  corpus reverse p>=0.70                       18
+  admitted examples ('bench', 'anchored')
+      \x93[\\x20-\\x7e]*\x94
+      (?:(?<!\\\\)(?:"(?:\\\\.|[^\\\\"]+)+"|""|(?:'(?:\\\\.|[^\\\\']+)+')|''
+      (?:(?<!\\\\)(?:"(?:\\\\.|[^\\\\"]+)+"|""|(?:'(?:\\\\.|[^\\\\']+)+')|''
+      (?:(?<!\\\\)(?:"(?:\\\\.|[^\\\\"]+)+"|""|(?:'(?:\\\\.|[^\\\\']+)+')|''
+      (?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))
+      (?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))
+  admitted examples ('bench', 'forward')
+      \\b(?:fail|abort|panic)\\b.{0,256}\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,1024}?\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,256}?\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,64}?\\b(?:disk|memory|socket|quota)\\b
+      "([^"\\\\]+)"\\s*:\\s*
+      \x93[\\x20-\\x7e]*\x94
+  admitted examples ('bench', 'reverse')
+      \\b(?:fail|abort|panic)\\b.{0,256}\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,1024}?\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,256}?\\b(?:disk|memory|socket|quota)\\b
+      \\b(?:fail|abort|panic)\\b.{0,64}?\\b(?:disk|memory|socket|quota)\\b
+      "([^"\\\\]+)"\\s*:\\s*
+      \x93[\\x20-\\x7e]*\x94
+  admitted examples ('corpus', 'anchored')
+      a.+a
+      \\\\b[a-z_][a-z0-9_]{0,31}=\\\\"(?:[^\\\\"\\\\\\\\]|\\\\\\\\.)*\\\\"
+      [^a]+?(?:(?=a)|)\\\\W
+      [^a]+?\\\\b
+      a.*?(?i:select)
+      ab.*xyzw
+  admitted examples ('corpus', 'forward')
+      a.+a
+      (?<g>.)(?<=(?&g))x
+      (?<g>[^a])(?<=(?&g))x
+      (?<g>(?i)[a-z])(?<=(?&g))x
+      \\\\b[a-z_][a-z0-9_]{0,31}=\\\\"(?:[^\\\\"\\\\\\\\]|\\\\\\\\.)*\\\\"
+      [^a]*(?:\\\\b)??\\\\w
+  admitted examples ('corpus', 'reverse')
+      a.+a
+      \\\\b[a-z_][a-z0-9_]{0,31}=\\\\"(?:[^\\\\"\\\\\\\\]|\\\\\\\\.)*\\\\"
+      a.*?(?i:select)
+      ab.*xyzw
+      a.{1,50000}z
+      (https://www\\\\.(?:acme|globex|initech|umbrella|hooli)\\\\.(com|de|fr

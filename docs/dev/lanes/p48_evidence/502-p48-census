@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# 502-p48-census: corpus + bench patterns through the three instrumented twins (set/single/relax), P48 trace census
+set -u
+S=/var/tmp/pcrec-pcrec/scratch/p48
+W=/home/pcrec/projects/pcrec/worktrees/p48
+case "${1:-}" in
+    --dry-run)
+        for t in tset tsingle trelax; do [ -x "$S/$t/build/pcrec" ] || { echo "no $t build" >&2; exit 1; }; done
+        [ -f "$S/bench_pats.tsv" ] || { echo "no bench list" >&2; exit 1; }
+        echo "would run: python3 -I $S/census.py $W $S/bench_pats.tsv $S/census_out.tsv 8"
+        echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=python's rc is the job's rc (exec'd); completion line == p48 census COMPLETE"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+exec python3 -I "$S/census.py" "$W" "$S/bench_pats.tsv" "$S/census_out.tsv" 8

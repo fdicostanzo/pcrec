@@ -1,0 +1,3 @@
+# 501-p48-nogotocorpus job.log verdict lines (/home/pcrec/projects/pcrec/worktrees/p48/../.boxqueue/done/20261029T093946.190073639-501-p48-nogotocorpus)
+FAILURES: 0
+test-compound: PASS

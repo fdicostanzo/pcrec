@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# 501-p48-nogotocorpus: answer sections of make test against the p48 NOGOTO twin (bounded-only entry dispatch)
+set -u
+TREE=/var/tmp/pcrec-pcrec/scratch/p48/tnogoto
+SECS="test-corpus test-counterk test-possessify test-prefilter test-assertions test-anchored-match test-search-pinned test-revend-twin test-compound"
+case "${1:-}" in
+    --dry-run)
+        [ -x "$TREE/build/pcrec" ] || { echo "no twin build" >&2; exit 1; }
+        echo "would run in $TREE: make -k -j8 -Otarget $SECS"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=make's rc is the job's rc (exec'd); verdict read from the make error lines"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+exec make -C "$TREE" -k -j8 -Otarget $SECS

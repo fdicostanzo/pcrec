@@ -1,0 +1,17 @@
+# edge entries / guard passes / run bytes, instrumented set-arm artifacts (one find-all pass)
+b10na t-1m
+P48CNT head=20 entries=49151 guardpass=0 runbytes=0
+P48CNT head=24 entries=6000 guardpass=0 runbytes=0
+49151
+b10na t-tail-digits-1m
+P48CNT head=20 entries=20668 guardpass=2159 runbytes=2159
+20668
+b10na t-hyb-datepath-16k
+P48CNT head=20 entries=3576 guardpass=855 runbytes=3959
+3576
+suc syntax/t-1m
+P48CNT head=9 entries=2947 guardpass=2947 runbytes=29470
+2947
+clsrange syntax/t-1m
+P48CNT head=12 entries=2947 guardpass=2946 runbytes=8627
+2947

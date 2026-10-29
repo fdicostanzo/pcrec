@@ -1,0 +1,6 @@
+# 503-p48-relaxcorpus2 job.log verdict lines (/home/pcrec/projects/pcrec/worktrees/p48/../.boxqueue/failed/20261029T094856.312434198-503-p48-relaxcorpus2)
+FAILURES: 0
+FAIL: §6a the capped compiler REFUSED 'abcdefghij[0-9]+' — an OPTIONAL machine's bytes must never be what refuses a pattern (K53): pcrec: pattern too large: 21619 bytes of emitted C source (limit 21500, ~3 KB .o). Lower a repeat count, try --unroll=1, or raise --max-emit-bytes; see limits.md "Handling an oversized artifact" (pattern offset 0)
+FAIL: §6a NO pattern keeps the unwrapped form under the 21500-byte cap — the rung is firing on everything and §6a compares a dead axis
+make: *** [Makefile:728: test-anchored-match] Error 1
+test-compound: PASS
