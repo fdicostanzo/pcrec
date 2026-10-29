@@ -27398,3 +27398,11 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - p910fin merged (P9 broad, P10 paced x14-20 on 3 patterns); Frank asked whether a fixed-checkpoint check is "adaptive". Fact-finder rc125 on two rc-125 compiles.
 - Kit: R-30 building (r30b, abi 94 planned), [REQ-PAST-LAST] filed from its observation. Bench: W1 gains an inline callout arm (stage-3 includes) + a primed jit-deep js-1m re-run; answered its include question.
 - Frank asked how callouts in a composed definition see groups: answered from match_api §11.1¶1b (definition-site view).
+
+## 2026-10-29 (session 128 cont., manager, 14:20-14:50) — VM rev 2, triages, RECID-A ruled
+
+- vmcons2 merged ffb9254cb (VM design rev 2: printing is recording; 91 statement sites, 46 unrecorded; byte-identical refactor lands first). Re-checks crit-vmcons2 + crit-landwalk3 launched.
+- tgctri: 690-trailgc red = fixed 1,815 B size cost + stale pins + ident canon (ffd1f578e, no answer moved); 690/691 re-queued, 690 running 14:19.
+- rc125: the census's two rc-125 rows = uutils `nice` rejecting non-UTF-8 argv (the fact-finder blamed gnutimeout; manager tested both); recorded docs/testing.md 4464528f9.
+- 695-lands3-check red on identity (A) alone (filed [RECID-A]); s3tri confirmed; MANAGER ACCEPTED 695 as green on its evidence and cancelled the retry; push waits on 696. [RECID-A] ruled re-base (9db59722c); lane recida launched.
+- Kit: queued 697-kit-r30b-heavy for 10-30 13:30 (R-30 early: case 7 1,279M -> 898M instr).
