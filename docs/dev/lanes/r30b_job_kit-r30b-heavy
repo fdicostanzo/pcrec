@@ -39,6 +39,7 @@ case "${1:-}" in
             grep -q "^$t:" "$TREE/Makefile" || { echo "no make target $t" >&2; exit 1; }
         done
         echo "would run in $TREE: mechval($NIDS ids) build strict refbuild census codegen registry rxtsource memfn axes_lever test mech($NIDS rows) reach"
+        echo "boxqueue: not-before 2026-10-30T13:30"
         echo "boxqueue: cap 14400"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"
