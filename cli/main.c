@@ -2740,7 +2740,11 @@ int main(int argc, char **argv)
     pcrec_default_options(&st.opt);
     if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0)
         rc = 1;
-    else if (st.include_block && cli_include_block(&st, &block_src) != 0)
+    /* `--subst` and `--emit-support` refuse the option by its presence
+     * (MODE_ADMITS) in `cli_run`; resolving the block first would answer
+     * with its own operand diagnostic instead of the mode's. */
+    else if (st.include_block && !st.subst && !st.subst_file && !st.emit_support
+             && cli_include_block(&st, &block_src) != 0)
         rc = 1;
     else
         rc = cli_run(st, &unadmitted, &esc);
