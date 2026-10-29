@@ -365,8 +365,10 @@ That is candidate C. The large-arm JSON gap has the same cause.
   stackdepth and the tests/recursion harness. It waits for the box behind the
   queue. I left it running; its log is `scratch/trailgc2/sections.log`. It is
   not a verdict this lane read.
-- The helper lane's own validation of its re-aims (11da0ff07) was not reported
-  back to me. The sections run and job 690 cover those files.
+- The helper lane validated its re-aims (11da0ff07): the framebuffer.rxt and
+  sr_depth.rxt harness passed 88/0, `make test-frame-buffer` (ASan) 7/0, and
+  `make test-stackdepth` 39/0. It did not run sr_gen.py; the spans were
+  hand-checked against libpcre2 10.46.
 - OWED: trailgc-test trailgc-mech.
   - Job `690-trailgc-test`: build, strict, mover census, `TRAIL_CORPUS=1`
     checkpoint sweep, full `make test`.
