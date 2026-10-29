@@ -5,7 +5,8 @@
 built by `make` into `build/pcrec-analyze`. It does not link `libpcrec.a`
 and does not read anything under `src/`/`cli/`/`lib/` — its own tiny data
 model (counters, a bundle-text writer, its own bundle-text reader for
-`--merge`/`--check`, a one-shot SHA-256) is entirely self-contained, so a
+`--merge`/`--check`) is entirely self-contained, and its one-shot SHA-256
+is the dependency-free leaf `shared/sha256.c`, so a
 clone that never builds `libpcrec` still gets this tool.
 
 **NOT in `libpcrec` or `pcrec` (R27a)**: it is a standalone counting +
@@ -43,10 +44,11 @@ against.
   `--merge`/`--check` — a DELIBERATELY minimal reader for design.md §2.7's
   bundle subset, not the full `.rxt` schema, same scope
   `scripts/pcrec_analyze.py`'s own `parse_bundle` carried).
-- `sha256.h`/`sha256.c` — a one-shot SHA-256 (FIPS 180-4). One-shot rather
-  than streaming: every caller here already holds its whole input in
-  memory for the counting pass, so there is no separate state to carry
-  across calls.
+- SHA-256: NOT here since [INLINE-C] stage 3 — the tree's one
+  implementation is `shared/sha256.{c,h}` (`pcrec_sha256_hex`), a leaf this
+  binary compiles into itself and libpcrec compiles separately (neither
+  links the other; shared/CLAUDE.md). It includes nothing of pcrec's, so
+  this directory's independence rule holds as written.
 - **[KNOW-SRC] K3 (lane ksrc23, 2026-10-17)**: `parse_bundle` also reads ONE
   whole `analysis` bundle as an author writes it (column-1 comments, blank
   and whitespace-only lines around it, the bundle's `include`/`description`,
@@ -69,7 +71,7 @@ against.
 after a clone has it). `ANALYZEFLAGS` in the top-level Makefile is its own
 small flag set (`$(CFLAGS) $(WARN) -std=gnu11`) — deliberately NOT
 `$(ALLFLAGS)`, whose `-Ilib -Isrc` would misstate a dependency this binary
-does not have. `make strict` covers `analyze/`'s three `.c` files
+does not have. `make strict` covers `analyze/`'s two `.c` files (and `shared/`'s)
 alongside `scripts/ksgen.c` (another standalone build tool) and
 `cli/main.c`.
 

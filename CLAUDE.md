@@ -122,6 +122,9 @@ tier, and PCRE2 is a moving target with no specification.
   (`build/pcrec-analyze`) that counts an exemplar file into an `analysis`
   bundle — links neither `libpcrec` nor anything under `src/`/`cli/`/`lib/`.
   See analyze/CLAUDE.md.
+- `shared/` — dependency-free LEAF sources compiled separately into more
+  than one binary (today the one SHA-256, for `pcrec-analyze` and the
+  `include`/`lib` pins in libpcrec). See shared/CLAUDE.md.
 - `memfn/` — pcrec-memory-functions, the in-tree search-code kit ([MEMFN];
   D146 delegation, D147 layers, Q36): pcrec describes a search site, the
   kit returns its C text. Own CLAUDE.md, journal, request ledger

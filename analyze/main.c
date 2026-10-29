@@ -3,7 +3,7 @@
  * see analyze.h's header comment and docs/dev/lanes/findb6_report.md.
  */
 #include "analyze.h"
-#include "sha256.h"
+#include "../shared/sha256.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -90,7 +90,7 @@ static int cmd_scan(const ScanArgs *a)
         fs = bs = cs = 0;
         fe = be = ce = data_len;
         provenance_bytes = (long long)data_len;
-        pcrec_analyze_sha256_hex(data, data_len, sha_hex);
+        pcrec_sha256_hex(data, data_len, sha_hex);
         have_sha = 1;
     }
 
@@ -171,7 +171,7 @@ static int cmd_digest_only(const char *file)
         return 2;
     }
     char hex[65];
-    pcrec_analyze_sha256_hex(data, len, hex);
+    pcrec_sha256_hex(data, len, hex);
     printf("bytes %zu\n", len);
     printf("sha256 %s\n", hex);
     return 0;
@@ -376,7 +376,7 @@ static int cmd_check(const char *bundle_path, const char *file)
         }
         if (pk->have_sha256) {
             char hex[65];
-            pcrec_analyze_sha256_hex(data, data_len, hex);
+            pcrec_sha256_hex(data, data_len, hex);
             if (strcmp(hex, pk->sha256_val) != 0) {
                 fprintf(stderr, "pcrec-analyze: --check FAILED: %s: provenance sha256 %s != recomputed %s (drift)\n",
                         pcrec_analyze_kind_name((Kind)i), pk->sha256_val, hex);

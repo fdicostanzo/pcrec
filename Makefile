@@ -138,6 +138,15 @@ KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/sr
             memfn/src/plan_cost.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
+# [INLINE-C] stage 3: shared/, the dependency-free LEAF sources compiled
+# separately into each binary that needs them (shared/CLAUDE.md;
+# inline_c.md §5.5's one SHA-256): libpcrec takes their objects, and
+# pcrec-analyze compiles the same .c into itself, so neither binary links
+# the other. A leaf includes nothing of pcrec's, so KITFLAGS' no -Ilib
+# -Isrc set is its flag set too.
+SHAREDSRCS := $(wildcard shared/*.c)
+SHAREDOBJS := $(patsubst shared/%.c,$(BUILD_DIR)/obj/shared/%.o,$(SHAREDSRCS))
+
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
@@ -212,6 +221,10 @@ $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/ksrc.h src/core/ks_me
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
+	@mkdir -p $(dir $@)
+	$(CC) $(KITFLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/obj/shared/%.o: shared/%.c shared/%.h
 	@mkdir -p $(dir $@)
 	$(CC) $(KITFLAGS) -c -o $@ $<
 
@@ -331,7 +344,7 @@ $(FIND_STAGE0)/measures.o: src/core/measures.c src/core/internal.h src/core/ks_m
 $(FIND_STAGE0)/findings.o: src/core/findings.c src/core/internal.h src/core/ksrc.h src/core/ks_measures.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/core/findings_store.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -DPCREC_FIND_STAGE0 -c -o $@ $<
-$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o $(BUILD_DIR)/obj/core/measures.o,$(LIBOBJS)) $(KITOBJS) $(FIND_STAGE0)/findings.o $(FIND_STAGE0)/measures.o
+$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o $(BUILD_DIR)/obj/core/measures.o,$(LIBOBJS)) $(KITOBJS) $(SHAREDOBJS) $(FIND_STAGE0)/findings.o $(FIND_STAGE0)/measures.o
 	@rm -f $@
 	ar rcs $@ $^
 $(FIND_STAGE0)/ksgen: scripts/ksgen.c $(FIND_STAGE0)/libpcrec.a
@@ -342,7 +355,7 @@ $(KS_STORES:%=gen-%): gen-%: $(FIND_STAGE0)/ksgen
 	$(FIND_STAGE0)/ksgen $(KS_KIND_$*) $(KS_TABLE_$*).tmp $(KS_SRCS_$*)
 	@mv $(KS_TABLE_$*).tmp $(KS_TABLE_$*)
 
-$(BUILD_DIR)/libpcrec.a: $(LIBOBJS) $(KITOBJS)
+$(BUILD_DIR)/libpcrec.a: $(LIBOBJS) $(KITOBJS) $(SHAREDOBJS)
 	ar rcs $@ $^
 
 $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
@@ -371,9 +384,9 @@ $(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/c
 # binary deliberately does not have). generate.py (third_party/*/) and
 # tests/findings/run_analyzer_tests.py both invoke it directly.
 ANALYZEFLAGS = $(CFLAGS) $(WARN) -std=gnu11
-$(BUILD_DIR)/pcrec-analyze: analyze/main.c analyze/count.c analyze/sha256.c analyze/analyze.h analyze/sha256.h
+$(BUILD_DIR)/pcrec-analyze: analyze/main.c analyze/count.c shared/sha256.c analyze/analyze.h shared/sha256.h
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(ANALYZEFLAGS) -o $@ analyze/main.c analyze/count.c analyze/sha256.c
+	$(CC) $(ANALYZEFLAGS) -o $@ analyze/main.c analyze/count.c shared/sha256.c
 
 # [TT-2] `test:` is PREREQUISITE-based, not a 13-line recipe of its own —
 # each line moved to become the section target's OWN recipe below (unchanged
@@ -1860,10 +1873,10 @@ smoke: all
 # [FINDINGS] B1: scripts/findgen.c (scripts/ksgen.c since [KNOW-SRC] K2), the store's generator, is checked
 # beside the library.
 strict:
-	@set -e; for f in $(LIBSRCS) scripts/ksgen.c cli/main.c analyze/main.c analyze/count.c analyze/sha256.c; do \
+	@set -e; for f in $(LIBSRCS) scripts/ksgen.c cli/main.c analyze/main.c analyze/count.c; do \
 	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done; \
-	for f in $(KITSRCS); do \
+	for f in $(KITSRCS) $(SHAREDSRCS); do \
 	    $(CC) $(KITFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
 	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
@@ -2070,10 +2083,10 @@ lint-locked:
 	    set -e; for f in $(LIBSRCS) scripts/ksgen.c cli/main.c; do \
 	        $(CC) $(ALLFLAGS) -fanalyzer -c -o /dev/null $$f; \
 	    done; \
-	    for f in $(KITSRCS); do \
+	    for f in $(KITSRCS) $(SHAREDSRCS); do \
 	        $(CC) $(KITFLAGS) -fanalyzer -c -o /dev/null $$f; \
 	    done; \
-	    echo "lint: gcc -fanalyzer: whole tree analyzed clean ($(words $(LIBSRCS)) + $(words $(KITSRCS)) kit + 1 files)"; \
+	    echo "lint: gcc -fanalyzer: whole tree analyzed clean ($(words $(LIBSRCS)) + $(words $(KITSRCS)) kit + $(words $(SHAREDSRCS)) shared + 1 files)"; \
 	else \
 	    echo "lint: SKIP gcc -fanalyzer: $(CC) does not support -fanalyzer on this box"; \
 	fi
