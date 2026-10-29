@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# reqvm1m: [REQRUN-VM] lane/reqvm1 merged onto main 78627dbca at abi 91 (ic2 holds 90): build, strict, mover census (main 78627dbca at abi 90 vs the combination rewritten to abi 90; expected 0 unexpected, every mover an admitted VM-attempt or VM-hybrid re-entry site), then the full make test. No mech/axes. Template: the done 650-reqvm1-test job.
+# Every expect is a FINAL trailer: strict's and the census's DONE lines, and make test's `sections ran:` trailer.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/reqvm1m
+REF=78627dbca
+REFABI=90
+BENCH="$TREE/docs/dev/lanes/ic1a_bench_patterns.txt"
+BENCH2="$TREE/docs/dev/lanes/reqvm1/bench_patterns.txt"
+SCR="$TREE/build/reqvm1m/job"
+case "${1:-}" in
+    --ready) exit 0 ;;
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/docs/dev/lanes/reqvm1/movers.py" ] && [ -s "$BENCH" ] && [ -s "$BENCH2" ] \
+            || { echo "no tree, perfrun, movers.py or bench lists in $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$REF" >/dev/null || { echo "ref $REF unknown" >&2; exit 1; }
+        n=$(make -C "$TREE" -s -p -n nothing 2>/dev/null | sed -n 's/^TEST_SECTIONS := //p' | head -1 | wc -w)
+        [ "$n" -gt 0 ] || { echo "cannot count TEST_SECTIONS" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; build $REF and HEAD-at-abi-$REFABI under $SCR; movers.py > \$BQ_LOG.movers; scripts/perfrun --label reqvm1m -- \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=0 log=job.log.strict last=^strict: DONE rc="
+        echo "boxqueue: witness strict=strict: DONE rc=0"
+        echo "boxqueue: expect movers=0 log=job.log.movers last=^movers: DONE cells=[0-9]+ unexpected="
+        echo "boxqueue: witness movers=movers: DONE cells=12345 unexpected=0"
+        echo "boxqueue: expect sections=$n log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: $n/$n"
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1; s=$?
+echo "strict: DONE rc=$s" >> "$BQ_LOG.strict"
+[ "$s" -eq 0 ] || rc=1
+mkdir -p "$SCR"
+rm -rf "$SCR/ref" "$SCR/wref"
+mkdir -p "$SCR/ref" "$SCR/wref"
+git -C "$TREE" archive "$REF" | tar -x -C "$SCR/ref" || exit 1
+git -C "$TREE" archive HEAD | tar -x -C "$SCR/wref" || exit 1
+sed -i "s/^#define PCREC_ARTIFACT_ABI [0-9]*\$/#define PCREC_ARTIFACT_ABI $REFABI/" "$SCR/wref/src/gen/emit_dfa.c"
+grep -q "^#define PCREC_ARTIFACT_ABI $REFABI\$" "$SCR/wref/src/gen/emit_dfa.c" || { echo "abi rewrite missed" > "$BQ_LOG.movers"; exit 1; }
+make -C "$SCR/ref" -j16 >/dev/null 2>&1 || exit 1
+make -C "$SCR/wref" -j16 >/dev/null 2>&1 || exit 1
+python3 "$TREE/docs/dev/lanes/reqvm1/movers.py" "$SCR/ref/build/pcrec" "$SCR/wref/build/pcrec" "$TREE" \
+    --patterns-file "$BENCH" --patterns-file "$BENCH2" --jobs 12 > "$BQ_LOG.movers" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label reqvm1m -- "$BQ_LOG.make" || rc=1
+exit $rc
