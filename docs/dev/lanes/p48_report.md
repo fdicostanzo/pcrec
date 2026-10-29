@@ -40,13 +40,22 @@ indicative only, because a queue `make test` was running.
    - Before SET, the post-`@` state already had a STAY skip, the same cursor
      loop. SET made it an edge head, and an edge head is excluded from the
      stays.
-   - The per-byte loop is identical: 6 instructions per byte in both the
-     micro-benchmark and the artifact. The edge adds +5 instructions per
-     entry plus the edge-path loop shape.
+   - The per-byte loop is identical (6 instructions per byte). The edge adds
+     +5 instructions per entry, plus the edge path's loop shape.
    - On syntax `t-1m`: +5.5% instructions, +17% cycles. The bench measured
-     x1.12.
-   - On the same text with every `@` removed, where the edge runs once:
-     still +5.6% instructions. So the cost is the loop shape, not the scan.
+     x1.12. On the same text with every `@` removed, where the edge runs
+     once, it is still +5.6%. So the cost is gcc's code for the generic path
+     around the edge path, not the scan.
+   - **That shape cost has no fixed sign.** Edge vs stay on the same state:
+     - `"[^"]*"`: −7.2% instructions;
+     - `.*=.*`: −2.4%;
+     - cls-s-uc: +5.5%.
+   - Two shape twins do not fix cls-s-uc:
+     - every self-loop an edge (no stays left): +5.3%;
+     - the edge path rejoining at the loop top: +21%.
+   - This is not a selection question, and no row in the table separates
+     these cases. It is filed as an emitter-shape question with its
+     population (Questions, item 2).
 3. **cls-range (`0x[0-9a-fA-F]+`, x0.82 faster) and `\s+$` (I-163, x6) are
    real wins of the same mechanism.**
    - cls-range: the edge replaced table steps on hex runs of mean 2.93 bytes
@@ -76,16 +85,24 @@ indicative only, because a queue `make test` was running.
    exists only for multi-state chains, and an unbounded head deletes nothing.
    Its population is in [Population](#population).
 
-**Design (one table, §Design):**
-- Unbounded self-loops are admitted on structure.
-- A stay-eligible state stays a STAY.
-- A priced row is declared but transparent until a context-aware run
-  estimate exists.
-- The entry dispatch reads "bounded head".
+7. **The relaxation, if admitted with no price, costs on the bench cells.**
+   It adds +2.9% instructions on cls-range and +3.9% on secrets, from new
+   edges on short or rare-byte self-loops. So it needs a price, or a ranking
+   at least.
 
-**Leaning:** build the two loop-shape fixes as one small row (they remove the
-measured losses and lose no measured win). Hold the priced row and the
-relaxation behind their own triggers.
+**Design (one table, §Design):**
+- Unbounded self-loops with a uniform exit are admitted on structure, as
+  insurance.
+- The relaxed (split-exit) self-loops are admitted only when priced in.
+- A priced-out row is declared, transparent until a context-aware run
+  estimate exists.
+- The entry dispatch reads "bounded head" (an emitter derivation, not a
+  row).
+
+**Leaning:** build the bounded-only entry rule alone, as one small row. It
+removes the base10num losses, keeps every measured win, and has a soundness
+argument. Hold the priced row and the relaxation behind their triggers. File
+cls-s-uc's edge-path shape as an emitter question, not a selection one.
 
 ## Premise test
 
@@ -325,16 +342,17 @@ The census in [Population](#population) counts both.
 
 ### Goals
 
-1. **G1 (bench cells, users of logparse-style and `\S+@\S+`-style patterns).**
-   Remove the O-111 losses. Target: instructions within 2% of the pre-SET
-   twin on base10num (both) and cls-s-uc, at every subject in
-   `cells_measure.txt`.
+1. **G1 (bench cells, users of logparse-style patterns).** Remove the O-111
+   base10num losses. Target: instructions within 2% of the pre-SET twin on
+   both base10num cells, at every subject in `cells_measure.txt`. cls-s-uc
+   is not a selection target: see item 2 of the Summary.
 2. **G2 (no lost win).** Keep cls-range at ≤ 0.90x of pre-SET cycles and
    `\s+$` at ≤ 0.35x of pre-SET instructions on `t-trim-match-60k`.
-3. **G3 (one mechanism).** A self-loop run has ONE selector. STAY skip and
-   unbounded scan edge are two dispatches of one kit row (the ADVANCE site,
-   memfn R4h), chosen in one declared table and never by two predicates in
-   two files.
+3. **G3 (one mechanism).** Scan-edge admission is ONE declared table in
+   scanedge.c. A relaxation widens a row's predicate, never a parallel
+   path. STAY and the unbounded edge stay two dispatches of one kit ADVANCE
+   row. Unifying their SELECTION is a later row (Questions, item 3), not
+   this one.
 4. **G4 (priced, not guessed).** Every cut-over the table reads is a
    measured row (measure_store) or a declared fact (findings). A missing one
    makes its row transparent and is stamped. It is never presumed.
@@ -357,14 +375,22 @@ candidates; [LIST-TABLES]).
 |---|---|---|---|---|
 | 0 | `deny` | `-fno-scan-edge` | no edge (stays as today) | the soundness gate, byte-identical to today's deny |
 | 1 | `bounded` | bounded chain, m ≥ `PCREC_MIN_SCAN_CHAIN`, preconditions (1)-(8) | EDGE, bounded | unchanged. Deletion pays in size; I-82 measured no separation at m = 2-4 |
-| 2 | `stay-covered` | one-state self-loop whose stay set passes the STAY admission (today `pick_skip_states`' rule, read from the same predicate, never a copy) | STAY | edge per-byte gain 0 (C: 6 = 6 ins/byte), +5 ins/entry, cls-s-uc +5.5% ins |
-| 3 | `priced-out` | one-state self-loop AND a context-aware run estimate E[k] exists AND E[k] < k\* | NONE | k\* = F/g from the loaded measurement set (Measurement card). E[k] from `run-rarity` only. TRANSPARENT while either is NONE, which today is always |
-| 4 | `self-loop` | one-state self-loop; (2), (3); (7) at selection | EDGE, unbounded | insurance: downside F per entry (3.5 ins measured), upside g per byte, unbounded (x0.29 on `\s+$`) |
-| 5 | `fallback` | — | NONE | |
+| 2 | `priced-out` | one-state self-loop AND a run estimate E[k] the row trusts exists AND E[k] < k\* | NONE | k\* = f/(1−beta) from the loaded measurement set (Measurement card). For a uniform-exit loop, E[k] comes from `run-rarity` only. TRANSPARENT while either is NONE, which today is always |
+| 3 | `self-loop` | one-state self-loop with a UNIFORM exit; (2), (3); (7) at selection | EDGE, unbounded | today's admission, kept as insurance: downside F per entry (3.5 ins measured on empty runs), upside g per byte, unbounded (x0.29 on `\s+$`, −12.7% on cls-range) |
+| 4 | `split-exit` | one-state self-loop with ANY exits (the relaxation); (2), (3); (7); AND priced in: E[k] ≥ k\* from the byte-rate prior | EDGE, unbounded | relaxation measured unpriced: +2.9% (cls-range) and +3.9% (secrets) instructions from rare-byte restart loops |
+| 5 | `fallback` | — | NONE (the stay rule may still take the state) | |
 
-Row 4's predicate is today's unbounded admission when (1) is kept, and the
-relaxation when (1) is dropped for one state. That is one row whose
-predicate widens, not a second row. The relaxation is held (Questions).
+Rows 3 and 4 do not hold one fact twice. Row 3's predicate is a STRUCTURAL
+promise that today's population was measured under. Row 4 is the widening,
+and it carries the price the widening needs.
+- Why the byte-rate prior may price row 4 but not row 3: it was right on
+  every unconditioned run measured (base10num), and wrong only where the
+  run follows a context (hex after `0x`, a trim subject).
+- The relaxed population is dominated by restart loops whose context is
+  the byte itself (`oodo`'s `o` after `o`; census below).
+- If Frank prefers a single row, the alternative is row 3's predicate
+  widened with no price. Its measured cost is the +2.9% and +3.9% above.
+- Row 4 is HELD (Questions, item 1).
 
 **Within the 4-slot cap** (`PCREC_MAX_SCAN_EDGES`), today's ranking is
 "unbounded first, then longer chains, then lower head". It stays the same,
@@ -381,24 +407,26 @@ a BOUNDED head (`scan_span > 0`)". It sits at the four sites above. It is
 the fix for base10num, and it is general: it asks the question the dispatch
 exists for, not a property of base10num.
 
-**Why row 2 is not a special case.**
-- STAY and the unbounded EDGE are the same kit ADVANCE row (memfn R4h:
-  `stay_advance` / `edge_advance`, one generic ADVANCE). They differ only
-  in DISPATCH:
-  - STAY: a `state == X` compare on the generic path at each loop top;
-  - EDGE: the shared sentinel plus the edge path.
-- Row 2 is the dispatch choice, read from the stay rule's own predicate.
-  It moves stay selection's AUTHORITY into the one table: scanedge.c
-  annotates `run_dispatch`, and `pick_skip_states` reads the annotation
-  instead of re-deciding.
-- The 192-byte cardinality floor stays as the STAY row's predicate. It is
-  an unmeasured constant (memory: suspect tuning constants), and the
-  Measurement card is how it gets measured. Retiring it is the follow-up
-  (Questions, item 3).
+**Why no "stay first" row.** I designed one and then refuted it by
+measurement before writing it in. A stay-eligible state keeping its STAY
+would restore cls-s-uc, but it would cost:
+- `"[^"]*"`: +7.7% instructions (the edge is −7.2% there);
+- `.*=.*`: +2.5% (the edge is −2.4%).
+
+Edge vs stay on the same state is a loop-shape effect of about ±6%, and
+nothing the table can read predicts its sign. STAY and the unbounded EDGE
+are the same kit ADVANCE row (memfn R4h: `stay_advance` / `edge_advance`)
+and differ only in DISPATCH:
+- STAY: a `state == X` compare at each loop top;
+- EDGE: the shared sentinel plus the edge path.
+
+Deciding the dispatch in one table, with the 192-byte cardinality floor (an
+unmeasured constant) retired into the same priced row, is the end state for
+G3. It needs the card's STAY-dispatch rows first (Questions, item 3).
 
 ### What pcrec hands the kit (D146/D157: facts, not methods)
 
-No new kit fact is needed for rows 0-2, 4 and 5, or for the entry rule.
+No new kit fact is needed for rows 0, 1, 3 and 5, or for the entry rule.
 - The ADVANCE site already carries the set, the direction, stride 1,
   `MF_SPAN_UNBOUNDED` or the span, the peek/step/cursor texts and the
   member test (`edge_advance`, `stay_advance`).
@@ -406,7 +434,7 @@ No new kit fact is needed for rows 0-2, 4 and 5, or for the entry rule.
   and row 2 change which site pcrec states and where pcrec's own dispatch
   text sits.
 
-For row 3 (when its trigger fires), pcrec reads the per-entry and per-byte
+For rows 2 and 4 (when their triggers fire), pcrec reads the per-entry and per-byte
 costs of the ADVANCE site's forms from the loaded measurement set, under
 keys the kit owns (the card below). It states no method: pcrec asks "what
 does an ADVANCE over this set cost per byte and per entry, against the
@@ -422,8 +450,8 @@ the answer changes and k\* moves with it, with no pcrec edit.
      loops on fixed-length runs in the edge arm.
    - A regime with mixed run lengths adds a loop-exit mispredict to F
      (both arms take a branch on exit, but only the edge arm's is a tight
-     loop's). F is then larger and k\* moves up. The decision rows that
-     read k\* (row 3) are transparent today, so no shipped decision flips.
+     loop's). F is then larger and k\* moves up. The rows that read k\*
+     (2 and 4) are transparent or held today, so no shipped decision flips.
    - Instructions and cycles disagree by a factor of about 2 on k\*. The
      cycles figure is the objective, and it needs the quiet box (bench ask
      b).
@@ -437,35 +465,40 @@ the answer changes and k\* moves with it, with no pcrec edit.
    - Population is counted by the twin trace, not by the stamp
      (`census.py`; the stamp folds machines and cannot count edges, which
      is scan_edge_ladder's lesson 2).
-   - Sabotage: rows 2 and 4 each need a witness. Row 2: cls-s-uc's forward
-     state 9 must be STAY. Row 4: `\s+$`'s reverse edge. The entry rule
-     needs base10num-noatomic's forward machine, a seeded unbounded head
-     with no entry jump, and a bounded seeded head WITH one. S213 (the
-     criterion loosened) keeps its role.
+   - Sabotage witnesses:
+     - the entry rule: base10num-noatomic's forward machine (a seeded
+       unbounded head, which must have no entry jump), and a seeded BOUNDED
+       head (which must keep it). Planting `!= 0` back must break the
+       first; planting `< 0` must break the second's answers.
+     - row 4, when built: an `oodo`-shaped restart loop it must decline,
+       and a `\d+-` loop it must take on a prior that favours it.
+     - S213 (the criterion loosened) keeps its role for row 3.
 3. **What moves when the data is regenerated: relevant.**
-   - Rows 0-2, 4 and the entry rule read no data. Their movers are a
-     one-time abi event: the entry line disappears from seeded-unbounded
-     artifacts, and stays return on set-stolen states. That needs readers
-     by grep (D76/D94), a `tuning.md` §2.18 hunk for the stay precedence
-     and the entry rule (D80), and the `match_api.md` §6.3.4¶10 value-set
-     sentence if any stamp value moves.
-   - Row 3 reads the measurement set and `run-rarity`. A re-measured set,
-     or an analysis carrying a bigram block, moves which self-loops get
-     edges. That is a `<PREFIX>_MEASURES` / `<PREFIX>_FINDINGS` stamp
-     change by construction (measures.md §4, findings.md §5), not an abi
-     event.
+   - Rows 0, 1, 3 and the entry rule read no data. The entry rule's movers
+     are a one-time abi event: the entry line disappears from
+     seeded-unbounded artifacts. That needs readers by grep (D76/D94) and a
+     `tuning.md` §2.18 hunk (D80). No stamp value moves.
+   - Rows 2 and 4 read the measurement set and the findings (`run-rarity`;
+     byte-rate for row 4). A re-measured set, or a different analysis,
+     moves which self-loops get edges. That is a `<PREFIX>_MEASURES` /
+     `<PREFIX>_FINDINGS` stamp change by construction (measures.md §4,
+     findings.md §5), not an abi event.
 
 ### How it interacts with P1 (reverse walk) on cls-s-uc
 
 - P1 (revwalk's T2 walk) replaces cls-s-uc's ROUTE: a landmark `memchr('@')`,
   then a back-scan over `\S` and a forward run, all through the kit's
   ADVANCE (widened to a step sequence).
-- This design does not tune for cls-s-uc. Row 2 is general: any
-  stay-eligible state keeps its stay. On cls-s-uc it restores the pre-SET
-  machine, which is the measured better spelling of the same loop today.
-- When P1 lands, cls-s-uc's forward DFA is no longer on its route, so row
-  2's choice there stops mattering. P1 cannot be undone by it, because P1
-  reads the same ADVANCE row through a different site.
+- This design does not tune for cls-s-uc. No row reads its shape, and the
+  stay-first row that would have restored it was refuted on `"[^"]*"` and
+  `.*=.*` (above).
+- cls-s-uc's +5.5% sits on today's forward-DFA route. When P1 lands, that
+  forward DFA is no longer on cls-s-uc's route, so the emitter-shape
+  question no longer matters for that cell. P1 cannot be undone by
+  anything here, because P1 reads the same ADVANCE row through a different
+  site.
+- So the cls-s-uc shape question should wait for P1's route decision; it
+  is not a reason to build anything now.
 - In the other direction, P1 does not need the relaxation. Its runs are
   kit segments, not DFA states. The relaxation is for forward machines and
   for the T4 reverse DFA, which P1 keeps.
