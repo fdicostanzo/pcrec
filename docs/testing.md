@@ -1072,7 +1072,10 @@ The table's weights are RUNNER seconds from the first sharded run 38354147463
 `docs/dev/lanes/cishard2_report.md`). The variable is `CISHARD`, not `SHARD`:
 `SHARD=i/n` is `tests/startset/vmhat_diff.py`'s own env, and make exports
 command-line variables, so shard 1 ran a third of that script's jobs. The shard
-step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml).
+step's `timeout-minutes` is 65 (raised from 55 by cired4, 2026-10-29: run
+40835409808 shard 3 was killed at 55 min with no red section, every section
+~1.3x slower than the previous green run on an unchanged shard; basis in
+ci.yml) against a projected 37.
 Run 40465053309 (main 7d3be7ec7) went red with NO red section: shard 2 was
 killed by that 55-minute step timeout inside its last section (test-compound),
 its table share having drifted to ~58 min of runner time (shards 1/3: 40/31 min)
