@@ -27388,3 +27388,13 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - Review r4 p48: no answer findings; F1-F5 into the build. FIRST OPT BUILD: lane p4entry (entry-jump rule for bounded heads, S1810-S1819). Critic skill: design review tree at the landing commit.
 - Review r5 landwalk2 (P1 rev 1 re-check): mechanism 0 wrong / 7.27M subjects; rev 1's D3 fix created a LOCATE->NEXT read cycle (kv-quoted two answers), two latent wrong answers (VM-hybrid bodies, overlapping hits). Lane p1dsg3 writes rev 2. Critic skill: fix-induced lens.
 - Kit: R-30 widened to the general fix (no objection; Frank's go); SIMD tier-U job queued Sunday not-before 03:00 (my counter); simdset zero-movers job queued.
+
+## 2026-10-29 (session 128 cont., manager, 14:00-14:20) — reviews r6, P1 rev 2, P9/P10, trail triage
+
+- p4entry DELIVERED (base10num back to +1.06%/0.00%; 0 diffs / 114,336; no deny flag: bounded ~15 ins/search, no bench cell slower); 700/701-p4entry queued.
+- Review r6 vmcons: 4 answer holes, all printed statements the event record misses -> ROOT-CAUSE RULING: printing IS recording (complete by construction; unknown kind refuses the function); lane vmcons2 writes rev 2 (likely a byte-identical refactor first). Critic skill: soundness lens enumerates printed statements.
+- p1dsg3 merged (P1 rev 2: NEXT_cf memo; rev 1 had two fixed points on 4 bench rows). Short re-check owed.
+- 690-trailgc-test RED (ident OVER); triage lane tgctri; I cancelled 691-trailgc-mech mid-run (it re-archives HEAD per row; triage commits would race it).
+- p910fin merged (P9 broad, P10 paced x14-20 on 3 patterns); Frank asked whether a fixed-checkpoint check is "adaptive". Fact-finder rc125 on two rc-125 compiles.
+- Kit: R-30 building (r30b, abi 94 planned), [REQ-PAST-LAST] filed from its observation. Bench: W1 gains an inline callout arm (stage-3 includes) + a primed jit-deep js-1m re-run; answered its include question.
+- Frank asked how callouts in a composed definition see groups: answered from match_api §11.1¶1b (definition-site view).
