@@ -1,0 +1,20 @@
+co-isbn-nofn.rx	b'\\b(97[89]\\d{10})\\b(?C2)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-isbn-pass.rx	b'\\b(97[89]\\d{10})\\b(?C2)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-isbn.rx	b'\\b(97[89]\\d{10})\\b(?C2)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-isbn-twin.rx	b'\\b(97[89]\\d{10})\\b'	sets=2 dead=0 calls=0 snap_dropped=0 restores_kept=0
+co-luhn-nofn.rx	b'\\b(\\d{13,19})\\b(?C1)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-luhn-pass.rx	b'\\b(\\d{13,19})\\b(?C1)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-luhn.rx	b'\\b(\\d{13,19})\\b(?C1)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-luhn-twin.rx	b'\\b(\\d{13,19})\\b'	sets=2 dead=0 calls=0 snap_dropped=0 restores_kept=0
+co-member-nofn.rx	b'\\buser=(\\w++)(?C3)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-member-pass.rx	b'\\buser=(\\w++)(?C3)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-member.rx	b'\\buser=(\\w++)(?C3)'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-member-twin.rx	b'\\buser=(\\w+)'	sets=2 dead=0 calls=0 snap_dropped=0 restores_kept=0
+co-netstr-assist.rx	b'(\\d{1,9}):(?>(?s:.)*?(?C4)),'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-netstr.rx	b'(\\d{1,9}):(?C"netstr,consume"),'	BAIL	w/census.c status=bail: direct slot write: slot_values[0] = (ptrdiff_t)ctx->pos;
+co-netstr-twin.rx	b'(\\d{1,9}):'	sets=2 dead=0 calls=0 snap_dropped=0 restores_kept=0
+cscan-onig.rx	b'(?x)\n# pcrec scanner for the C (?{ ... }) segment: docs/desi'	sets=255 dead=183 calls=2 snap_dropped=33 restores_kept=5
+cscan.rx	b'(?x)\n# pcrec scanner for the C (?{ ... }) segment: docs/desi'	sets=255 dead=183 calls=2 snap_dropped=33 restores_kept=5
+wild-json-validate-onig.rx	b'(?sx)\n\\A (?&value) \\Z\n        (?<ws>      [\\t\\n\\r ]* ){0}\n  '	sets=520 dead=102 calls=8 snap_dropped=256 restores_kept=16
+wild-json-validate.rx	b'(?sx)\n    (?(DEFINE)\n        (?<ws>      [\\t\\n\\r ]* )\n      '	sets=520 dead=102 calls=8 snap_dropped=256 restores_kept=16
+wild-sexp-balanced.rx	b'(?x)( \\( ( [^()]++ | (?1) )* \\) )'	sets=25 dead=5 calls=2 snap_dropped=8 restores_kept=2

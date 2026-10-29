@@ -1,0 +1,6 @@
+idents-1m BCd i=91.73 c=22.11 BC i=91.73 c=22.46 load=3.21
+nest-brace-100k BCd i=91.02 c=24.00 BC i=91.02 c=24.08 load=3.21
+splice-1m BCd i=20.42 c=3.71 BC i=20.42 c=3.72 load=3.21
+js-1m BCd i=72.63 c=23.65 BC i=72.63 c=23.56 load=3.21
+nest-paren-32k BCd i=25.04 c=6.31 BC i=25.04 c=6.33 load=3.44
+comment-5m BCd i=133.47 c=27.28 BC i=133.47 c=27.15 load=3.44
