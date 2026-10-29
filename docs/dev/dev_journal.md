@@ -27365,3 +27365,9 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - Review r1 landwalk (P1): not build-ready: A1 UNIQUE rule wrong both ways, A2 hand-off self-cycle/LOWER on DFA route, baselines/units wrong; all dispositions accepted; P1 questions to Frank withdrawn until rev 1 (lane p1dsg2).
 - Review r2 trailgc (code): 0 wrong answers; F1 quadratic compaction, F5 fast tier +15-19%, F6 identity re-pin; all fixes accepted; F3 (+3.5-3.8% non-cscan) re-measured after fixes, to Frank if >3%. Lane trailgc3 in worktrees/trailgc. Critic skill: verifier gets a DELIVER block. Process rule: VM capacity costs measured through both entries.
 - GitHub: 90 merged branches deleted (98 -> 7). lanewatch cannot follow a lane in a differently named worktree (noted).
+
+## 2026-10-29 (session 128 cont., manager, 12:15-12:35) — P1 rev 1, kit S3 landing
+
+- p1dsg2 DONE+merged: P1 rev 1 (review r1 applied; UNIQUE over (state, class); every hand walked on both routes; only 5b is a measured mover). Frank asked: accept the dense-landmark loss (~25%) as a non-goal? Bench asked I-172 for a query-string subject. Light re-check before build go. Fixed PL14 (review cited plan.md by line).
+- 622-kit-s3m-heavy ended RED: 20/21 green, the red = our [SWEEP-COMP-FLOOR] (86 < 100). Verdict MERGE; landing lane lands3 (main tree, main_write_ok armed) merged s3m + r30 (ideas.md append conflict: keep both), now re-pinning identity (B) + the floor, suites, ledger, push. abi 92 = S3; trailgc -> 93.
+- Old 690/691-trailgc jobs (pre-review tip) were READY at 12:23 and would have tested a tree trailgc3 is editing: cancelled (`boxqueue cancel` takes the owner key). Slip: launched a queuewatch with output discarded again; killed in seconds (safekill).
