@@ -16,6 +16,8 @@
 #      which starts an anchored run to the subject's end answers inside a
 #      bound the quadratic walk (no guard) exceeds by a wide margin (measured
 #      at n = 65,536: 0.00 s guarded, 5.5 s unguarded; p1build_report.md).
+#   §4 the measurement card (tests/landwalk/card_lwalk.sh) builds and runs
+#      in its smoke form (never a timing).
 #
 # The size-cap rung `drop-landmark-walk` is tests/codegen/run_fallback_table.sh's
 # (seq-lwdrop, seq-lwref, att-sclw).
@@ -113,6 +115,16 @@ if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx --emit-main -o "$WORKDIR/g.c"
     else bad "[reach] rc=$rc (expected 1, no match) in ${ms} ms (bound 2,000): the reach guard does not hold the walk linear"; fi
 else
     bad "[reach] the witness does not compile"; cat "$WORKDIR/g.log" >&2
+fi
+
+# ---- §4 the measurement card builds and runs (smoke: never a timing) ------
+if PCREC="$PCREC" CC="$CC" TMPDIR="$WORKDIR" bash "$ROOT_DIR/tests/landwalk/card_lwalk.sh" --smoke \
+        -o "$WORKDIR/card.tsv" 2>"$WORKDIR/card.log" \
+   && [ "$(grep -c '^lwalk	lwhit	' "$WORKDIR/card.tsv")" = 6 ] \
+   && grep -q '^lwalk	lwcall	' "$WORKDIR/card.tsv"; then
+    ok "[card] tests/landwalk/card_lwalk.sh --smoke: six lwhit rows and lwcall"
+else
+    bad "[card] tests/landwalk/card_lwalk.sh --smoke did not produce its rows"; cat "$WORKDIR/card.log" >&2
 fi
 
 echo "checks passed: $pass"

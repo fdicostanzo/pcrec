@@ -13,6 +13,11 @@
 - `gen_landwalk.py` — writes `landwalk.rxt` from the oracle
   (`tests/fuzz/pcre2_oracle.c`); re-check with `tests/revend/verify_stage2.py`
   (shares no code with the generator). Usage in its header.
+- `card_lwalk.sh` — the walk's measurement card ([LANDWALK-CARD]): `lwhit`
+  (wlen 2/8/32, miss and hit arms, with the `lwfit` a + b*wlen), `lwcall`;
+  walkbytes against one forward DFA step measured in the same run;
+  instructions beside. `--timed` only in a cleared window, else every row is
+  UNMEASURED; `--smoke` runs in run_landmark_walk.sh §4.
 
 ## Pointers
 
