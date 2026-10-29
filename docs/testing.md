@@ -3495,6 +3495,9 @@ comments. `scripts/m6read_check_sab_anchors.py`: 118 sabotages checked
 (119 anchor sites), all anchors resolve. `bash tests/mech/
 run_sabotage_matrix.sh S43`: `gentmo:2fail/16pass`, DETECTED.
 
+**Every coreutils tool on the Linux dev box is uutils, not just `timeout`** (2026-10-29, fact-finder rc125): `/usr/bin/{nice,env,timeout,...}` link into `/usr/lib/cargo/bin/coreutils/` (115 tools), and uutils REJECTS a non-UTF-8 argument with exit 125 before running anything (`nice -n 10 /bin/true $'\xdf'` -> 125; `gnutimeout`, GNU 9.7, passes it). A raw-byte `--pattern` through any such wrapper is never compiled and reads as a refusal: the p910 census recorded two rows as `rc125` this way (tests/vars/caseless.rxt:152 under `-e utf8`, capability/mojibake-curly-quote under `-e byte`; both compile with rc 0 directly). Pass raw-byte patterns through `$TIMEOUT_BIN`/`scripts/watchdog` only, never `nice`/`env`/`stdbuf`; a census treats rc 125 as a tool failure, never a refusal.
+
+
 ## The encoding seam's checks ([M5-SEAM], 2026-08-18)
 
 > **D136 (2026-09-30): `make test-encoding-checks` IS NOW A `make test`
