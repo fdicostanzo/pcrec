@@ -77,6 +77,8 @@ typedef struct {
     const uint8_t (*proven)[32];/* the define's class, proven[d - PROOF_LO]   */
     const char *form_id;        /* mf_result.form_id (opaque: counted only)   */
     const char *row;            /* mf_result.row                              */
+    int         pair;           /* the text keeps two memchr streams (PAIR):
+                                   the driver's long subjects                 */
 } g2w_site;
 
 /* One wrapper per site: the rendered text called on (s, n, lo, fl).

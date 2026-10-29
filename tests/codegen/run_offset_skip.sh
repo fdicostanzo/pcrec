@@ -126,10 +126,15 @@ OFS_VALUES="offset-set offset-set-bounded run-pinned run-pinned-bounded"
 # constant could not see it move.
 OFSK_MAX_SET=4
 
+# D172 S3: every witness compiles under the `cover` row's deny,
+# `--memfn=no-window-search` (registry.md §6¶8a): the offset-k rows' patterns are
+# fixed-width windows, `cover` artifacts by default (the memfn kit's window
+# site searches them, not the offset-skip block); the deny renders the
+# default build before S3, the one these rows were measured on.
 emit() { # emit <name> <pattern> [extra pcrec args...]
     local name="$1" pat="$2"
     shift 2
-    pcrec_run "$PCREC" -p rx --no-captures --features all "$@" \
+    pcrec_run "$PCREC" -p rx --no-captures --features all --memfn=no-window-search "$@" \
         -o "$WORKDIR/$name.c" --pattern "$pat" >/dev/null 2>&1
 }
 

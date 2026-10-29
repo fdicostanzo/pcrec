@@ -61,7 +61,10 @@ SAB_DOC_FIGURE="MEASURED 2026-09-04 (lane edge2, scratch build of this exact pla
 # RE-AIMED 2026-10-10 (lane slbuild, [START-LANDING] SL2): `foo\B` has fixed
 # width 3 and takes `end-minus-width` by default (no reverse machine), so the
 # reach probe denies that row to reach the reverse machine's seeded-head entry.
-SAB_REACH='"$PCREC" --features all -p rx -fno-start-width -o "$REACH_TMP/o.c" --pattern "foo\\B" && grep -q "rx_reverse_seed_state" "$REACH_TMP/o.c" && grep -q "if (rx_reverse_is_stop(reverse_state) && !rx_reverse_is_dead(reverse_state)) goto rx_reverse_scan_edge;" "$REACH_TMP/o.c" && echo REACH-SEEDED-HEAD-ENTRY-PRESENT'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -fno-start-width -o "$REACH_TMP/o.c" --pattern "foo\\B" && grep -q "rx_reverse_seed_state" "$REACH_TMP/o.c" && grep -q "if (rx_reverse_is_stop(reverse_state) && !rx_reverse_is_dead(reverse_state)) goto rx_reverse_scan_edge;" "$REACH_TMP/o.c" && echo REACH-SEEDED-HEAD-ENTRY-PRESENT'
 SAB_REACH_EXPECT="REACH-SEEDED-HEAD-ENTRY-PRESENT"
 SAB_COUNT=1
 SAB_BEFORE='            pcrec_sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"

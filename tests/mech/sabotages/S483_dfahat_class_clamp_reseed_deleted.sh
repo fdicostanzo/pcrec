@@ -13,7 +13,10 @@ SAB_FILE='memfn/src/pffind.c'
 SAB_SUITES='dfahat'
 SAB_DESC='first-class-bounded re-seeds only where its skip stopped on a T byte before n-1, never at the n-1 clamp, so a clamp landing keeps the stale start state'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/ssbuild3_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S483.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\B(?<!a)[de]'\'' && grep -q '\''^#define RX_DFA_PREFILTER "first-class-bounded"'\'' "$REACH_TMP/o.c" && echo REACH-CLASS-RESTRICTIVE'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\B(?<!a)[de]'\'' && grep -q '\''^#define RX_DFA_PREFILTER "first-class-bounded"'\'' "$REACH_TMP/o.c" && echo REACH-CLASS-RESTRICTIVE'
 SAB_REACH_EXPECT='REACH-CLASS-RESTRICTIVE'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

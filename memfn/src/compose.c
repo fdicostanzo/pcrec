@@ -272,22 +272,21 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
        serve is REFUSED (no fall-back to the walk below, which could render
        another form under the routed row's name). Everything else walks. */
     const char *rid = NULL;
-    const arm *ra = fd_route(art, art->nsites + 1, s, def, gphases, quiet, &rid);
+    *row = NULL;
+    /* R-26.3: a REPORT site's candidate is the answer, and since D172 S3 the
+       window family is its one renderer (window.c's E-find row: its statement
+       is a window site's). An old-field statement of one (terms in `pred`) is
+       refused here, before any walk: no row was written for one */
+    if (s->site_kind == MF_SK_REPORT) return NULL;
+    const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
     *row = rid;
-    if (rid && ra != &fd_nested_walk) {
+    if (rid) {
         for (size_t i = 0; ra && i < NARMS; i++)
             if (arms[i] == ra)
                 return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc, why)
                        ? ra : NULL;
         return NULL;
     }
-    /* R-26.3: a REPORT site renders only through a ROUTED finder row that
-       serves REPORT (the candidate is the answer: no pre-table form was
-       written for one, and NONE is not a legal reply). The REPORT row
-       (R-26.6) is held for its preview step, so on any art that does not
-       preview it a REPORT site is refused here, never walked (define_sel
-       names it); where it decides, its pick is this walk */
-    if (s->site_kind == MF_SK_REPORT && !rid) return NULL;
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
 }
@@ -380,30 +379,6 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
     memcpy(out->proven0, out->proven[0 - MF_PROOF_LO], sizeof out->proven0);
     memcpy(out->proven_prev, out->proven[-1 - MF_PROOF_LO], sizeof out->proven_prev);
     return why;
-}
-
-/* THE REPORT ROW'S APPLICABILITY (R-26.3, R-26.6; kit.h): the arms' walk
- * as select_arm takes it (quiet), the chosen row's class, and that class held
- * EQUAL to the REQUIRED sets at every offset. */
-int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
-                     unsigned gphases)
-{
-    gate_in in = { s, def, NULL, NULL, NULL };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
-    gate_verdict why = { 0, 0 };
-    size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, &why);
-    mf_class c;
-    if (i >= NARMS || kit_class(arms[i], s, &c)) return 0;
-    /* the REQUIRED sets: every term of span 0 at every position it reads
-       (R-26.3 makes them all REQUIRED), unclipped */
-    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
-        uint8_t req[1][32];             /* one offset's row: a 41-row table was a 1.3 KB frame (R-28) */
-        memset(req, 0xFF, sizeof req);
-        for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
-            term_prove(&s->pred.term[t], d, d, req, d);
-        if (memcmp(req[0], c.proven[d - MF_PROOF_LO], 32)) return 0;
-    }
-    return 1;
 }
 
 const gate_contract *kit_arm_contract(size_t i)
@@ -963,7 +938,7 @@ static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *
     if ((*why = wf_parts_check(site))) return -1;
     if (wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
         return -1;
-    if (!site->nalt && !site->alts && !site->wfloor) return 0;
+    if (!WF_STATES(site)) return 0;
     if ((*why = wf_check(site, 1))) return -1;
     const mf_site *leg;
     if (wf_prepare(art, site, def, gphases, quiet, &leg, plan, &pid, why)) return -1;
@@ -989,7 +964,7 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     if (window_route(art, s, def, gphases, 1, &s, &wplan, NULL, &why)) return -1;
     if (wplan) {
         if (s->denies != art->denies) return -1;
-        wf_floor_class(wplan, out);
+        wf_plan_class(wplan, out);
         return 0;
     }
     if (site_check(s) || s->denies != art->denies)
@@ -1058,7 +1033,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
     const char *rid = NULL;
-    const arm *row = wplan ? &wf_floor_arm
+    const arm *row = wplan ? wf_plan_row(wplan)
                            : select_arm(art, s, def, gphases, &declined, 0, &rid);
     if (!row) {
         /* ONE refusal (ruling (d)), walked or routed: it names the routed
@@ -1067,12 +1042,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
            row applies to every site, so on a walk only the gate can leave a
            site with no row; a routed arm can also be DENIED or not apply,
            which declines nothing and so names no field */
-        if (s->site_kind == MF_SK_REPORT && !rid)
-            return kit_fail(art, "mf_define: no row serves `site_kind` REPORT here: the "
-                            "REPORT row (RPT, R-26.6) is unrouted until its routing step "
-                            "and decides only on an art previewing it (mf_preview), and "
-                            "only where its form proves every REQUIRED term's set exactly "
-                            "(R-26.3: NONE is not a legal reply)");
+        if (s->site_kind == MF_SK_REPORT)
+            return kit_fail(art, "mf_define: no row serves `site_kind` REPORT stated in "
+                            "`pred`'s terms: a REPORT site is a window site (its spans; "
+                            "window.c's E-find row renders it, D172 S3), and NONE is not "
+                            "a legal reply (R-26.3)");
         gate_in in = { s, def, NULL, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
@@ -1083,7 +1057,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     mf_class cls;
     const char *cw = NULL;
-    if (wplan) wf_floor_class(wplan, &cls);
+    if (wplan) wf_plan_class(wplan, &cls);
     else cw = kit_class(row, s, &cls);
     if (cw) return kit_fail(art, "mf_define: %s", cw);
 
@@ -1120,14 +1094,18 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     r->cls = cls;
 #ifdef MF_TRACE
-    if (rid)
+    /* the finder row deciding the site's find: the routed row, or (D172 S3)
+       the FIND slot's row deciding E-find's stop (fd_find), whose pick
+       E-find renders */
+    const char *frow = rid ? rid : wplan ? wf_plan_brow(wplan) : NULL;
+    if (frow)
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
-                art->trace_id, h, rid, row->ct->row);
+                art->trace_id, h, frow, row->ct->row);
     /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
        rendering it, the finder row deciding its find where one does) */
     if (wpath)
         fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
-                art->trace_id, h, wpath, row->id, rid ? rid : "-");
+                art->trace_id, h, wpath, row->id, frow ? frow : "-");
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what
@@ -1280,7 +1258,7 @@ int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
     out->handle = handle;
     out->reads_table = r->wplan ? wf_plan_reads_table(r->wplan)
                                 : r->arm->reads_table && site_tabled(&r->site);
-    out->includes = r->arm->includes;
+    out->includes = r->wplan ? r->cls.includes : r->arm->includes;
     out->cls = r->cls;
     snprintf(out->row, sizeof out->row, "%s", r->fd_row ? r->fd_row : "");
     return 0;
@@ -1338,21 +1316,6 @@ int mf_reach(mf_art *art, const char *stem)
     int oom = 0;
     art->reach_stem = art_copy(art, stem, &oom);
     if (oom) return kit_fail(art, "mf_reach: out of memory");
-    return 0;
-}
-
-int mf_preview(mf_art *art, const char *step)
-{
-    if (art->err[0]) return -1;
-    if (art->preview)
-        return kit_fail(art, "mf_preview: called twice on one art");
-    if (art->nsites)
-        return kit_fail(art, "mf_preview: called after the first define");
-    const char *named = fd_preview_step(step);
-    if (!named)
-        return kit_fail(art, "mf_preview: `%s` is not a routing step the kit names",
-                        step ? step : "(null)");
-    art->preview = named;
     return 0;
 }
 

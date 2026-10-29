@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# 622-kit-s3m-heavy: lane s3m (D172 S3 + the S3 final review's fixes, merged over main b05ccfc0b
+# and renumbered to abi 92), the CORRECTNESS job before main lands S3. RESTAGED from job 621
+# (lane s3fix, e5362a59c over 0d3765c87; its header, s3_job_621-kit-s3-heavy, describes every
+# inherited stage) by lane s3m (2026-10-29). What changed:
+#   tree / ref      worktrees/s3m; the reference is main b05ccfc0b (abi 91), the merge's other
+#                   parent; census.py maps NEW's 92 back to 91 and bytediff.sh masks 8x/9x digits
+#   expect          job 621's two reds are re-aimed on this tree (s3_report.md Part 12):
+#                   test-prechecks [3.1b] reads a pair run's bounded look-ahead streams; S283's
+#                   expectation is main's DETECTED again (a merge artifact, not an S3 effect)
+#   label           perfrun --label s3m; output under build/s3/heavy622
+# Same 21 steps, the same 142 mech rows. Correctness run: no quiet gate, no hold.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/s3m
+BASE=b05ccfc0b
+OUT=$TREE/build/s3/heavy622
+E=$TREE/docs/dev/lanes/s3_evidence
+NSTEPS=21
+NIDS=142
+IDS="S185 S186 S227 S267 S270 S277 S278 S279 S280 S282 S283 S284 S285 S287 S288 S296 S297 S298 S299 S300 S302 S303 S306 S307 S316 S318 S438 S439 S443 S444 S446 S447 S448 S449 S450 S451 S452 S453 S454 S455 S457 S458 S459 S464 S468 S482 S483 S484 S510 S511 S512 S517 S520 S528 S570 S571 S596 S607 S613 S617 S618 S619 S666 S667 S669 S670 S671 S673 S676 S677 S681 S682 S684 S685 S686 S687 S688 S689 S690 S691 S692 S693 S694 S695 S709 S712 S724 S728 S729 S730 S754 S773 S774 S782 S783 S786 S787 S788 S791 S800 S801 S802 S803 S804 S846 S847 S848 S917 S919 S921 S1018 S1020 S1025 S1026 S1079 S1080 S1081 S1082 S1083 S1084 S1089 S1091 S1092 S1100 S1103 S1105 S1106 S1107 S1108 S1109 S1110 S1121 S1122 S1221 S1224 S1225 S1415 S1416 S1417 S1418 S1419 S1421"
+MEMFN_SECTIONS="test-memfn-arch test-memfn-arms test-memfn-deleg test-memfn-finder test-memfn-forms test-memfn-g2 test-memfn-guarded test-memfn-link test-memfn-manifest test-memfn-rank test-memfn-reach test-memfn-rows test-memfn-simdfloor test-memfn-stamps test-kitproof"
+# Box window (main, 2026-10-29): the run must END by 19:30 local (bench timing
+# window), and must not start between 2026-10-29 ~16:20 and 2026-10-30T14:00
+# (main's full suite). The cap is the seconds left until 19:30 (at most 21600);
+# --ready refuses while fewer than READY_MIN seconds remain (621's wall 9,400 s
+# plus margin). The dry run is re-run at START, so the cap is fresh then.
+READY_MIN=11000
+secs_to_1930() { echo $(( $(date -d 'today 19:30' +%s) - $(date +%s) )); }
+case "${1:-}" in
+    --dry-run)
+        [ -e "$TREE/.git" ] || { echo "no tree $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "BASE $BASE unknown" >&2; exit 1; }
+        git -C "$TREE" merge-base --is-ancestor "$BASE" HEAD || { echo "BASE $BASE is not merged into the tip" >&2; exit 1; }
+        grep -q '^#define PCREC_ARTIFACT_ABI 92$' "$TREE/src/gen/emit_dfa.c" || { echo "tree is not at abi 92" >&2; exit 1; }
+        # docs/dev/artifact_size_log.tsv is a full-suite run's byproduct (tests/size/run_size_log.sh),
+        # dirty after any `make test` in this tree and never this job's input
+        git -C "$TREE" diff --quiet HEAD -- . ':(exclude)docs/dev/artifact_size_log.tsv' ||
+            { echo "worktree dirty" >&2; exit 1; }
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' \
+            "$E/census.py" "$E/diff_r2.py" "$TREE/tests/axes/memfn_arm.py" || exit 1
+        bash -n "$E/bytediff.sh" || exit 1
+        python3 "$TREE/scripts/emit_sweep.py" --help >/dev/null 2>&1 || { echo "emit_sweep --help fails" >&2; exit 1; }
+        [ -x "$TREE/scripts/perfrun" ] || { echo "no scripts/perfrun" >&2; exit 1; }
+        n=$(echo $IDS | wc -w); [ "$n" = "$NIDS" ] || { echo "IDS has $n ids, not $NIDS" >&2; exit 1; }
+        for t in $MEMFN_SECTIONS test-codegen test-registry test-rxtsource test-encoding-checks test-cpset-structure; do
+            grep -q "^$t:" "$TREE/Makefile" || { echo "no make target $t" >&2; exit 1; }
+        done
+        # the mech field validation (~100 s, over boxqueue's 30 s dry-run bound) is the job's
+        # FIRST step (mechval) instead
+        echo "would run in $TREE: mechval($NIDS ids) build strict refbuild census sweep_start evidence diff_r2 codegen registry rxtsource encoding cpset memfn g2win axes_measure axes_memfn test plants mech($NIDS rows) reach"
+        left=$(secs_to_1930); [ "$left" -gt 21600 ] && left=21600; [ "$left" -lt 60 ] && left=60
+        echo "boxqueue: cap $left"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect steps=$NSTEPS lines=^== s3 step [a-z_0-9]+ rc=0\$"
+        exit 0 ;;
+    --ready)
+        now=$(date +%s)
+        if [ "$now" -gt "$(date -d '2026-10-29T16:00' +%s)" ] && [ "$now" -lt "$(date -d '2026-10-30T14:00' +%s)" ]; then
+            echo "not before 2026-10-30T14:00 (main's full suite)"; exit 75; fi
+        [ "$(secs_to_1930)" -ge "$READY_MIN" ] || { echo "too late to end by 19:30 ($(secs_to_1930) s left < $READY_MIN)"; exit 75; }
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+TIP=$(git rev-parse HEAD)
+echo "== s3 heavy tip $TIP vs $BASE"
+mkdir -p "$OUT"
+export TMPDIR=$TREE/build/tmp
+mkdir -p "$TMPDIR"
+bad=0
+step() {
+    local name=$1; shift
+    echo "== s3 step $name start $(date +%T): $*"
+    "$@" > "$OUT/$name.log" 2>&1
+    local rc=$?
+    grep -E 'strict:|census:|movers|UNEXPECTED|COMPLETE|bytediff[_a-z0-9]*:|list-axes delta|DONE rc=|\*\*\* \[|checks (passed|failed)|PLANT|R-28|ANOMALY|mech run COMPLETE|REACH|memfn arm:|DIFF |FAILED|differ=' "$OUT/$name.log" | tail -40
+    echo "== s3 step $name rc=$rc"
+    [ "$rc" -eq 0 ] || bad=$((bad + 1))
+}
+refbuild() {
+    rm -rf "$OUT/ref" && mkdir -p "$OUT/ref" &&
+        git -C "$TREE" archive "$BASE" | tar -x -C "$OUT/ref" &&
+        make -C "$OUT/ref" -j16 && echo "$BASE" > "$OUT/ref/REV" &&
+        mkdir -p build/s3/bin && cp build/pcrec build/s3/bin/pcrec && echo "refbuild: ref $BASE; build/s3/bin/pcrec = tip $TIP"
+}
+evidence() {
+    local r=0
+    bash "$E/bytediff.sh" "$OUT/ref/build/pcrec" build/pcrec "$OUT/bd_def" || r=1
+    bash "$E/bytediff.sh" "$OUT/ref/build/pcrec" build/pcrec "$OUT/bd_off" --memfn=no-window-search,no-window-skip || r=1
+    bash "$E/list_axes_delta.sh" "$OUT/ref/build/pcrec" build/pcrec || r=1
+    return $r
+}
+g2win() {
+    local r=0
+    bash memfn/tests/run_g2_win.sh || r=1
+    bash memfn/tests/run_g2_win.sh --plants || r=1
+    return $r
+}
+plants() {
+    local r=0
+    bash tests/memfn/run_proof.sh --plants || r=1
+    bash tests/memfn/run_wreply.sh --plants || r=1
+    return $r
+}
+mechval() {
+    local out n
+    out=$(VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) || { printf '%s\n' "$out" | tail -3; return 1; }
+    n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+    echo "mechval: ${n:-none} ids valid"
+    [ "$n" = "$NIDS" ]
+}
+cells() {
+    local row
+    for row in window-search window-skip fd-pres-g1 fd-pres-pick precheck-assign-byte pres-set-lead vrun-pad; do
+        printf -- "--cell\n%s|default|--memfn=no-%s\n--cell\n%s|simd|-fmemfn-simd --memfn=no-%s\n" "$row" "$row" "$row" "$row"
+    done
+}
+mapfile -t CELLS < <(cells)
+step mechval mechval
+step build make -j16
+step strict make strict
+step refbuild refbuild
+step census python3 -I "$E/census.py" --base "$OUT/ref/build/pcrec" --new build/pcrec --tree "$TREE" --out "$OUT/census.tsv" --jobs 16
+step sweep_start python3 scripts/emit_sweep.py --ref-bin build/pcrec --bin build/pcrec --tree "$TREE" --no-self-check --arms start --out "$OUT/sw_start"
+step evidence evidence
+step diff_r2 python3 -I "$E/diff_r2.py" --pcrec build/pcrec --out "$OUT/diff_r2"
+step codegen make test-codegen
+step registry make test-registry
+step rxtsource make test-rxtsource
+step encoding make test-encoding-checks
+step cpset make test-cpset-structure
+step memfn make -k -j16 -Otarget $MEMFN_SECTIONS
+step g2win g2win
+step axes_measure python3 -I tests/axes/memfn_arm.py --pcrec build/pcrec --root "$TREE" --jobs 16 --measure "${CELLS[@]}"
+step axes_memfn env AXES=--memfn MEMFN_REACH_ONLY=1 bash tests/axes/run_axes.sh
+step test scripts/perfrun --label s3m -- "$OUT/test.make.log"
+grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' "$OUT/test.make.log" | sed 's/^/test-red: /'
+step plants plants
+step mech bash tests/mech/run_sabotage_matrix.sh $IDS
+step reach env REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh
+echo "== s3 heavy: $bad step(s) failed"
+[ "$bad" -eq 0 ]

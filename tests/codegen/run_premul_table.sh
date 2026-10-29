@@ -295,6 +295,14 @@ read_artifact() {
         /^    for \(int revend_seed = 0; /                           { scan = 1 }  # REV_END
         /^    if \(subject_length > 0 && subject\[subject_length - 1\] == / { scan = 1 }  # REV_END one-seed form (D164 B3)
         /^    unsigned revend_dist = 0;/                             { scan = 1 }  # REV_END tagged form (D164 B3)
+        # D172 S3 THE COVER WALK (the marker run_dfa_stamps.sh reads): the report of
+        # [c, c + k) off the kit candidate. Its search runs no machine, so its
+        # RX_DFA_TABLE describes the one it carries, the anchored `_match`
+        # machine under `_DFA_MATCH "unwrapped"` (spec 6.3.4 paragraph 7);
+        # missing here, every cover artifact read as stamp-without-a-scan
+        # (811, job 600).
+        /capture_spans\[0\]\[0\] = \(ptrdiff_t\)scan_position; capture_spans\[0\]\[1\] = \(ptrdiff_t\)scan_position \+ [0-9]+;/ \
+                                                                   { scan = 1 }  # COVER
         # ---- (ii) STAMPED: the `#define` line, and nothing else ------------
         /^#define RX_DFA_TABLE "/ { s = $0; sub(/^#define RX_DFA_TABLE "/, "", s);
                                     sub(/"$/, "", s); stamp = s }

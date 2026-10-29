@@ -434,9 +434,11 @@ typedef struct {
      * (`pcrec_fact_req_landmark_maxoff`), -1 where there is no landmark. */
     long long req_landmark_maxoff;
     /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
-     * over the wrapped forward NFA from its anchored start. The offset-k
-     * selection (src/opt/prefix_k.c) reads it; no deny — each USE has its
-     * row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
+     * over the wrapped forward NFA from its anchored start. The offset-skip
+     * window statement (src/gen/emit_dfa.c `window_reply_ask`) states it to the
+     * kit, whose window family makes the selection (memfn/src/window.c,
+     * A-model/C-model; prefix_k.c retired at D172 S2 commit 6); no deny —
+     * each USE has its row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
     KsetWalk  kset_walk;
     /* [OPT-LITSCAN] S1 E3 derived: the run's window pinned on the walk. No
      * deny of its own; a denied run (`len == 0`) pins nothing. */
@@ -542,11 +544,10 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
-const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
-/* The same non-pass read of `span`, for the trace build's cover shadow
- * (`locate_cover_applies` -> `pcrec_cover` -> C8): a check, not a pass, so
- * the trace build's `used` column is the default build's. The harness-routed
- * cover decision keeps the pass ask (`cc_exact`). */
+/* E3 [KIT-VERIFY] U1 Z2: `span`, read WITHOUT a `used` record, its one
+ * reader being the cover decision (`locate_cover_applies` -> `pcrec_cover`),
+ * a check, not a pass: `used` stays the passes' record (facts_listing.md
+ * §4.1¶2). */
 const MkLang   *pcrec_fact_span_stated(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------

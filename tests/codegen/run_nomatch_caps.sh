@@ -99,10 +99,16 @@ trap 'rm -rf "$TMP"' EXIT
 
 # The dead-group witnesses, each with the DFA search form it reaches on the
 # auto route (asserted below, so a witness that drifts off its form is loud).
+# D172 S3: the three fixed-width witnesses that reached end-minus-width are
+# `cover` artifacts by default (the kit's search, the report `[c, c + k)`
+# filling the dead groups through emit_search_success), so they witness the
+# cover form; `(a){0}x$\n` (an EOL view: cover's C9 declines) keeps
+# end-minus-width.
 WITNESSES=(
-    'unanchored/end-minus-width|(?(DEFINE)(?<x>\b))b(?&x)'
-    'unanchored/end-minus-width|(?(DEFINE)(?<g>a))(?&g)b'
-    'unanchored/end-minus-width|(a){0}(b){0}c|d'
+    'cover/attempt-start|(?(DEFINE)(?<x>\b))b(?&x)'
+    'cover/attempt-start|(?(DEFINE)(?<g>a))(?&g)b'
+    'cover/attempt-start|(a){0}(b){0}c|d'
+    'unanchored/end-minus-width|(a){0}x$\n'
     'unanchored/landing|(a){0}\w+'
     'unanchored/reverse-pass|(?(DEFINE)(?<g>a))(?&g)b+'
     'unanchored/reverse-pass|(a){0}x*y'
@@ -179,7 +185,7 @@ for w in "${WITNESSES[@]}"; do
         bad "reach: witness $pat is [$st engine=$eng NCAPS=$nc form=$scan/$start] on the auto route, not a DFA dead-group artifact of form $want — re-derive the witness"
     fi
 done
-for f in unanchored/reverse-pass unanchored/pinned unanchored/end-minus-width unanchored/landing attempt/attempt-start empty/attempt-start rev-end/reverse-pass; do
+for f in unanchored/reverse-pass unanchored/pinned unanchored/end-minus-width unanchored/landing cover/attempt-start attempt/attempt-start empty/attempt-start rev-end/reverse-pass; do
     case "$forms_seen" in *" $f "*) ;; *) bad "reach: no dead-group witness reaches the DFA search form $f" ;; esac
 done
 read -r a n _ _ _ <<< "$(summ '$4=="dfa" && $5>=2')"

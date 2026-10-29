@@ -11,7 +11,8 @@
  *   A  REFUSALS: one site per rule (`span_class` UNSTATED, PRESENCE or on a
  *      reverse FIND; a CONTEXT pred reading its candidate; the REPORT kind's
  *      OPTIONAL term, missing span 0, and a well-formed one, which no row
- *      serves on a plain art; a window site stating each renderer-interface
+ *      serves stated in terms (since D172 S3 a REPORT site is a window site,
+ *      the family's E-find row's); a window site stating each renderer-interface
  *      field), each held to the field its refusal names in backquotes,
  *      beside ACCEPT controls of every shape.
  *   B  THE CLASS: proven[] at negative offsets, inside span 0, after it,
@@ -24,19 +25,14 @@
  *      again under -fmemfn-simd and under each level's deny and held EQUAL
  *      (C-PROOF), its text and its GENERATED facts written to
  *      DIR/proof_sites.c for tests/memfn/proof_run.c, the byte-loop oracle.
- *      Since R-26.6 (lane r26zk) every such site also renders on an art
- *      PREVIEWING "R-26.6" and its text must be byte-identical there (only
- *      the REPORT row moves), and the family adds REPORT sites (span 0 of
- *      1..3 REQUIRED terms, the offset-skip FUNC shape) rendered on a preview
- *      art: decided by the REPORT row, refused on a plain art, proven[d]
- *      EQUAL at every d to the REQUIRED terms' sets read from their MEMBER
- *      STRINGS, and written for the same oracle.
- *   D  THE PREVIEW AND THE REPORT ROW (R-26.6): mf_preview refused twice,
- *      after the first define, for a step the kit does not name and for no
- *      step, with an accepted control; every `--memfn=` spelling of it
- *      refused by mf_opts_check and no options.def row naming it; a REPORT
- *      site with a two-offset term below its candidate served by the REPORT
- *      row.
+ *      The family adds REPORT sites stated in terms (span 0 of 1..3 REQUIRED
+ *      terms, the offset-skip FUNC shape, a term below the candidate), each
+ *      REFUSED, naming `site_kind` REPORT: since D172 S3 RPT, the row that
+ *      served them on an art previewing "R-26.6", is retired with the
+ *      preview (window_site.md §4), and REPORT is a window site's kind (its
+ *      proof is held by G2's window family and pcrec's C14).
+ *   D  THE REPORT KIND SINCE S3: the two-offset-term REPORT site RPT served
+ *      through S2 is refused on every art.
  *
  * Expected outcomes are written here from the request's text, never read
  * from the kit's sources. Prints `checks passed:`/`checks failed:`.
@@ -235,14 +231,10 @@ static mf_hooks stmt_hooks(void)
 /* Defines `s` on a fresh art: NULL and the error text in *err on a refusal,
  * the form id otherwise. */
 static const char *define_on(const mf_site *s, char *err, size_t n, mf_class *cls,
-                             int preview, char *row)
+                             char *row)
 {
     static char form[48];
     mf_art *art = mf_art_begin(&arena, "rx", s->policy, s->denies, NULL, NULL);
-    if (art && preview && mf_preview(art, "R-26.6")) {
-        snprintf(err, n, "mf_preview: %s", mf_art_error(art) ? mf_art_error(art) : "-");
-        return NULL;
-    }
     Text f = { 0 };
     mf_sink sf = sink_of(&f);
     mf_hooks h = stmt_hooks();
@@ -265,7 +257,7 @@ static const char *define_on(const mf_site *s, char *err, size_t n, mf_class *cl
 
 static const char *define(const mf_site *s, char *err, size_t n, mf_class *cls)
 {
-    return define_on(s, err, n, cls, 0, NULL);
+    return define_on(s, err, n, cls, NULL);
 }
 
 /* The case refuses, naming `field` in backquotes (or, for a field the text
@@ -337,7 +329,7 @@ static void family_a(void)
     refuse("REPORT with no BOUNDED span 0", &s, "BOUNDED");
     s = span_site();
     s.site_kind = MF_SK_REPORT;
-    refuse("REPORT well-formed on a plain art: the REPORT row is unrouted", &s,
+    refuse("REPORT well-formed, stated in terms: no row (a REPORT site is a window site)", &s,
            "`site_kind` REPORT");
     s = span_site();
     s.site_kind = MF_SK_REPORT + 1;
@@ -519,13 +511,12 @@ static const char *fn_name(void *u, uint32_t ref) { (void)ref; return u; }
 
 /* The class of `s` asked under policy `policy` and options `opts`. */
 static int ask_under(const mf_site *s0, const mf_hooks *h0, uint32_t policy, const char *opts,
-                     mf_class *c, int preview)
+                     mf_class *c)
 {
     mf_site s = *s0;
     s.policy = policy;
     s.opts = opts;
     mf_art *art = mf_art_begin(&arena, "rx", policy, s.denies, NULL, NULL);
-    if (preview && mf_preview(art, "R-26.6")) return -1;
     return mf_ask(art, &s, h0, c);
 }
 
@@ -554,42 +545,25 @@ static void put_pred(FILE *o, const mf_pred *p, int context)
             context ? PM_FAILS : 0);
 }
 
-/* ---- the REPORT sites (R-26.6) ------------------------------------------- */
+/* ---- the REPORT sites stated in terms (refused since D172 S3) ------------ */
 
-/* One term as it was GENERATED: its offset, and its member string (a SET
- * term) or its bytes (a RUN term). The expected proof is read from these,
- * never from the term's bitset. */
-typedef struct { int off, len, run; char bytes[8]; } rterm;
-typedef struct { unsigned n; rterm t[16]; } rdesc;
-
-static void r_set(rdesc *d, mf_term *t, int off, const char *members)
+static void r_set(mf_term *t, int off, const char *members)
 {
     t_set(t, off, members, MF_REQUIRED);
-    rterm *r = &d->t[d->n++];
-    r->off = off;
-    r->len = 1;
-    r->run = 0;
-    snprintf(r->bytes, sizeof r->bytes, "%s", members);
 }
 
-static void r_run(rdesc *d, mf_term *t, int off, const char *run)
+static void r_run(mf_term *t, int off, const char *run)
 {
     t_run(t, off, run, MF_REQUIRED);
-    rterm *r = &d->t[d->n++];
-    r->off = off;
-    r->len = (int)strlen(run);
-    r->run = 1;
-    snprintf(r->bytes, sizeof r->bytes, "%s", run);
 }
 
 /* REPORT site `i`: every term REQUIRED (R-26.3), span 0 BOUNDED. Shapes: 0
  * span 0 alone, 1 the offset-skip FUNC shape, 2 span 0 with one term below
  * its candidate (once a context item's). */
-static void family_report(unsigned i, mf_site *s, rdesc *d)
+static void family_report(unsigned i, mf_site *s)
 {
     *s = span_site();
     s->site_kind = MF_SK_REPORT;
-    memset(d, 0, sizeof *d);
     unsigned shape = i % 3;
     char m[8];
     if (shape == 1) {
@@ -603,10 +577,10 @@ static void family_report(unsigned i, mf_site *s, rdesc *d)
         r[len] = 0;
         unsigned nt = 1 + rnd(3);
         s->pred.nterm = (uint8_t)nt;
-        r_run(d, &s->pred.term[0], 0, r);
+        r_run(&s->pred.term[0], 0, r);
         for (unsigned t = 1; t < nt; t++) {
             char one[2] = { ALPHA[rnd(4)], 0 };
-            r_set(d, &s->pred.term[t], len + (int)rnd(2), one);
+            r_set(&s->pred.term[t], len + (int)rnd(2), one);
         }
         s->pred.plan_hint = 0;
         return;
@@ -620,44 +594,20 @@ static void family_report(unsigned i, mf_site *s, rdesc *d)
             int len = 1 + (int)rnd(2);
             for (int j = 0; j < len; j++) r[j] = ALPHA[rnd(3)];
             r[len] = 0;
-            r_run(d, &s->pred.term[t], off, r);
+            r_run(&s->pred.term[t], off, r);
         } else {
             rand_members(m);
-            r_set(d, &s->pred.term[t], off, m);
+            r_set(&s->pred.term[t], off, m);
         }
     }
     if (shape == 0) return;
     rand_members(m);
-    r_set(d, &s->pred.term[s->pred.nterm++], -1 - (int)rnd(2), m);
+    r_set(&s->pred.term[s->pred.nterm++], -1 - (int)rnd(2), m);
 }
 
-/* "" iff `proven` holds, at every offset, exactly the bytes every generated
- * term reading that offset admits (all of them where none reads it). */
-static const char *report_expect(const rdesc *d, const uint8_t proven[][32])
-{
-    static char why[128];
-    for (int dd = MF_PROOF_LO; dd < MF_MAX_FWD; dd++)
-        for (int x = 0; x < 256; x++) {
-            int want = 1;
-            for (unsigned t = 0; t < d->n && want; t++) {
-                const rterm *r = &d->t[t];
-                if (dd < r->off || dd >= r->off + r->len) continue;
-                want = r->run ? x == (unsigned char)r->bytes[dd - r->off]
-                              : x != 0 && strchr(r->bytes, x) != NULL;
-            }
-            int got = proven[dd - MF_PROOF_LO][x >> 3] >> (x & 7) & 1;
-            if (want != got) {
-                snprintf(why, sizeof why, "proven[%d] byte 0x%02x %s", dd, x,
-                         got ? "proven, outside the REQUIRED set" : "in the REQUIRED set, not proven");
-                return why;
-            }
-        }
-    return "";
-}
-
-/* One site's define, use and end on a fresh art named `pfx` (previewing
- * "R-26.6" where `preview`): 0, or -1 with the art's error in *err. */
-static int render_site(const mf_site *s, const mf_hooks *h, const char *pfx, int preview,
+/* One site's define, use and end on a fresh art named `pfx`: 0, or -1 with
+ * the art's error in *err. */
+static int render_site(const mf_site *s, const mf_hooks *h, const char *pfx,
                        Text *def, Text *use, mf_result *r, const char **err)
 {
     mf_art *art = mf_art_begin(&arena, pfx, s->policy, s->denies, NULL, NULL);
@@ -665,8 +615,7 @@ static int render_site(const mf_site *s, const mf_hooks *h, const char *pfx, int
     uint32_t handle;
     *err = "mf_art_begin failed";
     if (!art) return -1;
-    if ((preview && mf_preview(art, "R-26.6")) ||
-        mf_define(art, s, h, &sd, &handle) || mf_flush_helpers(art, &sd) ||
+    if (mf_define(art, s, h, &sd, &handle) || mf_flush_helpers(art, &sd) ||
         (s->form == MF_FORM_FUNC ? mf_call(art, handle, h, &su)
                                  : mf_use(art, handle, h, &su, r)) ||
         mf_defined(art, handle, r) || mf_art_end(art, NULL)) {
@@ -674,11 +623,6 @@ static int render_site(const mf_site *s, const mf_hooks *h, const char *pfx, int
         return -1;
     }
     return 0;
-}
-
-static int same_text(const Text *a, const Text *b)
-{
-    return a->len == b->len && (!a->len || !memcmp(a->p, b->p, a->len));
 }
 
 static int family_c(const char *dir, unsigned nsites, unsigned nreport)
@@ -692,15 +636,35 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
           " * proof family, and the facts each site was generated with */\n"
           "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n#include \"proof_meta.h\"\n\n", o);
     unsigned ok = 0, cproof = 0, shapes[4] = { 0 }, nform[16] = { 0 };
-    unsigned nrep = 0, rexact = 0, rplain = 0, same = 0, rform[16] = { 0 };
+    unsigned rrefused = 0;
     char forms[16][48] = { { 0 } };
-    fputs("const pm_site pm_sites[] = {\n", o);
-    for (unsigned i = 0; i < nsites + nreport; i++) {
-        int rep = i >= nsites, stop = !rep && i % 4 == 2;
+    /* the REPORT sites stated in terms: each refused (D172 S3) */
+    for (unsigned i = 0; i < nreport; i++) {
         mf_site s;
-        rdesc rd;
-        if (rep) family_report(i - nsites, &s, &rd);
-        else     family_site(i, &s);
+        family_report(i, &s);
+        char fn[32], name[96];
+        snprintf(fn, sizeof fn, "pm_r%u", i);
+        Text def = { 0 }, use = { 0 };
+        mf_hooks h = stmt_hooks();
+        h.fn_name = fn_name;
+        h.u = fn;
+        mf_result r;
+        const char *err;
+        if (render_site(&s, &h, "pr", &def, &use, &r, &err) == 0 ||
+            !strstr(err, "`site_kind` REPORT")) {
+            snprintf(name, sizeof name, "C REPORT site %u stated in terms refused", i);
+            verdict(name, "rendered, or refused for another reason");
+        } else {
+            rrefused++;
+        }
+        free(def.p);
+        free(use.p);
+    }
+    fputs("const pm_site pm_sites[] = {\n", o);
+    for (unsigned i = 0; i < nsites; i++) {
+        int stop = i % 4 == 2;
+        mf_site s;
+        family_site(i, &s);
         char fn[32];
         snprintf(fn, sizeof fn, "pm_f%u", i);
         char *pfx = a_alloc(NULL, 16);      /* one art per site: names its own */
@@ -716,54 +680,19 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         mf_result r;
         const char *err;
         char name[96];
-        snprintf(name, sizeof name, "C site %u defines and uses%s", i, rep ? " (REPORT, preview)" : "");
-        if (render_site(&s, &h, pfx, rep, &def, &use, &r, &err)) {
+        snprintf(name, sizeof name, "C site %u defines and uses", i);
+        if (render_site(&s, &h, pfx, &def, &use, &r, &err)) {
             verdict(name, err);
             free(def.p);
             free(use.p);
             continue;
         }
         ok++;
-        unsigned *cnt = rep ? rform : nform;
         for (unsigned f = 0; f < 16; f++) {    /* the forms the family reaches */
             if (!forms[f][0]) { snprintf(forms[f], sizeof forms[f], "%s", r.form_id); }
-            if (!strcmp(forms[f], r.form_id)) { cnt[f]++; break; }
+            if (!strcmp(forms[f], r.form_id)) { nform[f]++; break; }
         }
-        if (rep) {
-            nrep++;
-            /* R-26.6: the REPORT row decides it, its class EQUALS the REQUIRED
-               sets, and a plain art refuses it */
-            const char *why = strcmp(r.row, "RPT") ? "not decided by the REPORT row" : "";
-            if (!*why) why = report_expect(&rd, (const uint8_t (*)[32])r.cls.proven);
-            snprintf(name, sizeof name, "C REPORT site %u: row RPT, proven[] the REQUIRED sets", i);
-            if (*why) verdict(name, why);
-            else rexact++;
-            Text d2 = { 0 }, u2 = { 0 };
-            mf_result r2;
-            const char *e2;
-            if (render_site(&s, &h, pfx, 0, &d2, &u2, &r2, &e2) == 0 ||
-                !strstr(e2, "`site_kind` REPORT")) {
-                snprintf(name, sizeof name, "C REPORT site %u refused on a plain art", i);
-                verdict(name, "rendered, or refused for another reason");
-            } else {
-                rplain++;
-            }
-            free(d2.p);
-            free(u2.p);
-        } else {
-            shapes[i % 4]++;
-            /* on a preview art only the REPORT row moves: every other site's
-               text is byte-identical */
-            Text d2 = { 0 }, u2 = { 0 };
-            mf_result r2;
-            const char *e2;
-            snprintf(name, sizeof name, "C site %u byte-identical on a preview art", i);
-            if (render_site(&s, &h, pfx, 1, &d2, &u2, &r2, &e2)) verdict(name, e2);
-            else if (!same_text(&def, &d2) || !same_text(&use, &u2)) verdict(name, "text moved");
-            else same++;
-            free(d2.p);
-            free(u2.p);
-        }
+        shapes[i % 4]++;
         if (def.p) text_put(&files, def.p, def.len);
         char head[160];
         snprintf(head, sizeof head, "static unsigned long pm_s%u(const unsigned char *subject, "
@@ -784,10 +713,10 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
            equals the SIMD-off class at every offset (LAYER-INVARIANT) */
         mf_class off, on, w16, w32;
         snprintf(name, sizeof name, "C site %u C-PROOF", i);
-        if (ask_under(&s, &h, MF_P_PORTABLE_ONLY, NULL, &off, rep) ||
-            ask_under(&s, &h, 0, NULL, &on, rep) ||
-            ask_under(&s, &h, 0, "no-vrun-w32", &w16, rep) ||
-            ask_under(&s, &h, 0, "no-vrun-w16", &w32, rep))
+        if (ask_under(&s, &h, MF_P_PORTABLE_ONLY, NULL, &off) ||
+            ask_under(&s, &h, 0, NULL, &on) ||
+            ask_under(&s, &h, 0, "no-vrun-w32", &w16) ||
+            ask_under(&s, &h, 0, "no-vrun-w16", &w32))
             verdict(name, "a layer refuses the site");
         else if (memcmp(off.proven, r.cls.proven, sizeof off.proven))
             verdict(name, "mf_ask's class is not the define's");
@@ -817,100 +746,45 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
     free(files.p);
     free(bodies.p);
     char name[128];
-    snprintf(name, sizeof name, "C every generated site renders (%u of %u)", ok, nsites + nreport);
-    verdict(name, ok == nsites + nreport ? "" : "a site was refused");
+    snprintf(name, sizeof name, "C every generated site renders (%u of %u)", ok, nsites);
+    verdict(name, ok == nsites ? "" : "a site was refused");
     snprintf(name, sizeof name, "C C-PROOF held on %u sites", cproof);
     verdict(name, cproof == ok ? "" : "a site's class moved with the layer");
-    snprintf(name, sizeof name, "C %u sites byte-identical on a preview art", same);
-    verdict(name, same == ok - nrep ? "" : "a non-REPORT site moved on a preview art");
-    snprintf(name, sizeof name, "C REPORT: %u of %u exact, %u refused on a plain art (floor 100)",
-             rexact, nreport, rplain);
-    verdict(name, rexact == nreport && rplain == nreport && nreport >= 100 ? ""
-                  : "a REPORT site failed, or the population is short");
-    printf("C family: %u span+below, %u span, %u stop, %u func, %u report; forms:", shapes[0],
-           shapes[1], shapes[2], shapes[3], nrep);
-    unsigned nf = 0, nrf = 0;
+    snprintf(name, sizeof name, "C REPORT stated in terms: %u of %u refused (floor 100)",
+             rrefused, nreport);
+    verdict(name, rrefused == nreport && nreport >= 100 ? ""
+                  : "a REPORT site rendered, or the population is short");
+    printf("C family: %u span+below, %u span, %u stop, %u func; forms:", shapes[0],
+           shapes[1], shapes[2], shapes[3]);
+    unsigned nf = 0;
     for (unsigned f = 0; f < 16 && forms[f][0]; f++) {
         if (nform[f]) nf++;
-        if (rform[f]) nrf++;
-        printf(" %s %u/%u", forms[f], nform[f], rform[f]);
+        printf(" %s %u", forms[f], nform[f]);
     }
-    printf(" (plain/report)\n");
+    printf("\n");
     /* K35: the family reaches the generic row and at least one other (the
-       class every row computes, held at every candidate), and so do the
-       REPORT sites (the composer form the REPORT row picks) */
-    snprintf(name, sizeof name, "C the family reaches %u forms, the REPORT sites %u (floor 2 each)",
-             nf, nrf);
-    verdict(name, nf >= 2 && nrf >= 2 ? "" : "one form only");
+       class every row computes, held at every candidate) */
+    snprintf(name, sizeof name, "C the family reaches %u forms (floor 2)", nf);
+    verdict(name, nf >= 2 ? "" : "one form only");
     return 0;
 }
 
-/* ---- D: the preview and the REPORT row's applicability ------------------- */
-
-/* An art that refused: rc nonzero and its error naming mf_preview. */
-static const char *preview_refused(int rc, mf_art *art)
-{
-    if (!rc) return "accepted";
-    if (!mf_art_error(art) || !strstr(mf_art_error(art), "mf_preview"))
-        return "refused without naming mf_preview";
-    return "";
-}
+/* ---- D: the REPORT kind since D172 S3 ------------------------------------- */
 
 static void family_d(void)
 {
-    mf_art *art;
-    mf_site s = span_site();
-    mf_hooks h = stmt_hooks();
-    Text f = { 0 };
-    mf_sink sf = sink_of(&f);
-    uint32_t hd;
-
-    art = mf_art_begin(&arena, "rx", s.policy, s.denies, NULL, NULL);
-    verdict("D mf_preview R-26.6 on a fresh art (control)", mf_preview(art, "R-26.6") ? "refused" : "");
-    verdict("D mf_preview twice", preview_refused(mf_preview(art, "R-26.6"), art));
-    art = mf_art_begin(&arena, "rx", s.policy, s.denies, NULL, NULL);
-    if (mf_define(art, &s, &h, &sf, &hd)) verdict("D a define before mf_preview", "refused");
-    verdict("D mf_preview after the first define", preview_refused(mf_preview(art, "R-26.6"), art));
-    static const char *const unnamed[] = { "R-26.7", "R-26.5", "B4", "B1", "", "r-26.6", "R-26.6 " };
-    for (size_t i = 0; i < sizeof unnamed / sizeof unnamed[0]; i++) {
-        char label[64];
-        snprintf(label, sizeof label, "D mf_preview of the unnamed step \"%s\"", unnamed[i]);
-        art = mf_art_begin(&arena, "rx", s.policy, s.denies, NULL, NULL);
-        verdict(label, preview_refused(mf_preview(art, unnamed[i]), art));
-    }
-    art = mf_art_begin(&arena, "rx", s.policy, s.denies, NULL, NULL);
-    verdict("D mf_preview of no step", preview_refused(mf_preview(art, NULL), art));
-    free(f.p);
-
-    /* no `--memfn=` spelling reaches it */
-    static const char *const spell[] = { "preview", "no-preview", "R-26.6", "no-R-26.6",
-                                         "mf-preview", "preview-R-26.6", "kit-proof",
-                                         "no-kit-proof", "rpt", "no-rpt", "fd-rpt", "no-fd-rpt" };
-    for (size_t i = 0; i < sizeof spell / sizeof spell[0]; i++) {
-        char label[64], err[256];
-        snprintf(label, sizeof label, "D --memfn=%s refused by mf_opts_check", spell[i]);
-        verdict(label, mf_opts_check(spell[i], err, sizeof err) ? "" : "accepted");
-    }
-    size_t no;
-    const mf_option *op = mf_options(&no);
-    const char *named = "";
-    for (size_t i = 0; i < no; i++)
-        if (strstr(op[i].name, "preview") || strstr(op[i].name, "rpt")) named = op[i].name;
-    verdict("D no options.def row names the preview or the REPORT row", named);
-
-    /* a REPORT site with a two-offset term below its candidate (once a
-       context item's, under FAILS) is served by the REPORT row. Its decline
-       arm (a form that cannot prove a REQUIRED set exactly) lost its last
-       witness, the two-offset SATISFIES item, with `absent` (D172 S2 commit
-       6); RPT itself retires at S3 (window_site.md §4) */
+    /* the REPORT site RPT served through S2 (a two-offset term below its
+       candidate, once a context item's) is refused on every art since RPT
+       and the preview retired (window_site.md §4): a REPORT site is a window
+       site, rendered by the family's E-find row */
     char err[512], row[16] = "";
-    s = span_site();
+    mf_site s = span_site();
     s.site_kind = MF_SK_REPORT;
     s.pred.nterm = 2;
     t_run(&s.pred.term[1], -2, "xa", MF_REQUIRED);
-    const char *form = define_on(&s, err, sizeof err, NULL, 1, row);
-    verdict("D REPORT with a two-offset term below its candidate: served by RPT",
-            !form ? err : strcmp(row, "RPT") ? "not the REPORT row" : "");
+    const char *form = define_on(&s, err, sizeof err, NULL, row);
+    verdict("D REPORT with a two-offset term below its candidate, stated in terms: refused",
+            form ? "rendered" : strstr(err, "`site_kind` REPORT") ? "" : err);
 }
 
 int main(int argc, char **argv)

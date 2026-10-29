@@ -1,0 +1,61 @@
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+  §8.5 corpus census: ASCII=4642 excl(pattern)=149 excl(subject)=671
+PASS: §8.5 ASCII population floor met (4642 >= 2000)
+PASS: §8.5 the subject-exclusion count is nonzero (671) — the decode sees a high byte a text scan reads as \xNN ASCII (the method note's own trap)
+  §8.5 K51 manifest row not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers it)
+  §8.5 K51 manifest row not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers it)
+  §8.5 K51 manifest row not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers it)
+  §8.5 K51 manifest row not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers it)
+  §8.5 K51-excused: 0 cell(s) across 0 pattern(s) (manifest rows: 4)
+  §8.5 ran 250 ASCII blocks (0 cc-skipped), 0 divergences
+PASS: §8.5 byte and utf8 artifacts agree on every ASCII subject (250 blocks)
+  CHK3 ASCII stamp differences: 0 (expected 0 — lowering is identity below 0x7F)
+PASS: CHK3 every ASCII pattern's utf8 stamps equal its byte stamps
+  DD12a(i) pairs compared: 247 (byte-only: 0) — strict-identity bucket: 237, widens-under-utf8 bucket: 10
+    EXCISED next_pos=494
+    EXCISED valid_upto=494
+    EXCISED utf_check_stamp=494
+    EXCISED back_step=2
+    EXCISED span_match=4
+    EXCISED span_match_caseless=4
+    EXCISED var_valid=1
+    EXCISED advance=168
+    EXCISED encoding=494
+    EXCISED startpos_guard=509
+    EXCISED startpos_stamp=494
+    EXCISED startpos_attempt=16
+    EXCISED end_window=19
+    EXCISED end_window_stamp=494
+    EXCISED req_run_offset0=5
+    EXCISED req_check=34
+    EXCISED req_why_stamp=494
+    EXCISED var_valid_call=1
+    EXCISED span_ci_helper=6
+    EXCISED req_pick=384
+    EXCISED start_zero=101
+    EXCISED findings_stamp=988
+    EXCISED req_run_asym=21
+    EXCISED handoff_gate=35
+    EXCISED handoff_block=25
+    EXCISED handoff_stamp=494
+    EXCISED handoff_overlong=0
+    EXCISED cover_pick=18
+  DD12a(i) prior-keyed prefilter-form pairs (byte prior -> run-pinned/memchr and utf8 NONE -> offset-set, or (C3) byte offset-set and utf8 run-pinned; declared by stamp): 2
+  DD12a(i) handoff pairs excised on both sides: 13 (landing 13)
+  DD12a(i) [K50] 156 manifest row(s) not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers all 170)
+  DD12a(i) [K50] gate-refinement class: 18 pair(s) — 18 differing in DATA only (comments, table dimensions and cells; never control flow) and 0 whose emitted FORM moved and which SAY SO in their own stamps; all 14 of 170 manifest rows reached this slice swept and still in the class, no unlisted members
+  DD12a(i) [K50] 7 undeclared-form manifest row(s) not reached in this slice (ENC_MAX_BLOCKS=250; the full sweep covers all 9)
+  DD12a(i) [K50] undeclared-form exception list: 2 pattern(s) reached this slice, matched EXACTLY against the manifest — each selects a different accept placement (axis E) under utf8, on an axis with no stamp to declare it (see the manifest's own FINDING note)
+PASS: DD12a(i) the engine minus its named encoding-owned regions carries NO encoding conditional into the hot path: 237 strict-identity pairs, of which 219 are byte-identical and 18 differ ONLY in comment and table text ([K50]'s gate-refinement class, manifested and floored); 10 widens-under-utf8 pairs correctly exempted; source-text comparison, darwin and linux alike
+  DD12a(i) widens-under-utf8 pairs differing (expected — different automaton, not a defect): 10 of 10
+PASS: DD12a(ii) the seam's residual entries appear under identical signatures across both backends (3 entries; D58 P-1)
+PASS: K49 the emitted -e byte retry advance agrees with the artifact's own next_pos on all 10738 cells (pos < n)
+PASS: K49 non-vacuity control: every -e byte advance IS pos + 1 (10738 cells) — the byte artifact's step did not move
+PASS: K49 the emitted -e utf8 retry advance agrees with the artifact's own next_pos on all 10738 cells (pos < n)
+PASS: K49 non-vacuity control: the -e utf8 advance differs from pos + 1 on 2268 of 10738 cells — the sweep reached the multi-byte shape the rule is about
+PASS: S-U8 the utf8 MRL clamp stride is the encoded length (RX_PRUNE_CLAMP_SPAN ... 1, 2) — the prune counts encoded bytes (§5.6.1)
+
+checks passed: 11
+checks failed: 0
+encoding-checks: KEEP=1 /home/pcrec/projects/pcrec/worktrees/s3pair/build/tmp/tmp.HwtXnJkz8i
+rc=0

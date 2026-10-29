@@ -12,13 +12,18 @@
 # carry a deny bit pin the row the deny LANDS on: a deny bit the table drops
 # is caught there and nowhere else.
 #
+# D172 S3: a fixed-width witness is a `cover` artifact by default, so a line
+# naming another LOCATE/RECOVER row on one carries the cover row's deny
+# `--memfn=no-window-search` (the default build before S3); `cover` itself is
+# witnessed by the shipped build since S3 (below).
+#
 # ROW	FLAGS	PATTERN
 empty	-	[^\x00-\xff]
 empty	-	^\B\b
 rev-end	-	abc$
 rev-end	-	\s+$
 rev-end	-e utf8	\s+?$
-composite	-	a
+composite	--memfn=no-window-search	a
 composite	-	^a
 window	-	(abc)$
 window-none	-	a(b|c)+d
@@ -30,8 +35,8 @@ emitted	-fno-req-set-lead	x{2,5}((?i:cat))
 emitted	-	a(b|c)+d
 ceiling	-	^((?1)a)$
 width-none	-	a(b|c)+d
-handoff	-	\d\dxyz
-scan-from-startpos	-fno-req-handoff	\d\dxyz
+handoff	--memfn=no-window-search	\d\dxyz
+scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
 # [REQRUN-VM] the VM attempt loop's rows (tuning.md §2.41¶8b): the whole run
 # re-entered where every pre-check part is a slice of it, entry-only where a
 # set-rest byte (`x`) is not; the deny lands on scan-from-startpos.
@@ -39,14 +44,14 @@ handoff-attempts	--engine=vm	(?:xx|y)abc
 handoff-attempts	--engine=vm	(a|aa){0,10}cxyz
 handoff-attempts-entry	--engine=vm	x{2,5}(?i:cat)
 scan-from-startpos	--engine=vm -fno-req-handoff	(?:xx|y)abc
-run-pinned-bounded	-	foo\b
-run-pinned	-	ABCDE
+run-pinned-bounded	--memfn=no-window-search	foo\b
+run-pinned	--memfn=no-window-search	ABCDE
 # [OPT-REVEND] stage 2 put `a\Kb\z`'s inlined hybrid on rev-end (lane revtri):
 # `\b` keeps the bounded view at default, the deny keeps the old witness.
 offset-set-bounded	-	a\Kb\b
 offset-set-bounded	-fno-rev-end	a\Kb\z
-offset-set	-	\d\dxyz
-offset-set	-fno-run-prefilter	ABCDE
+offset-set	--memfn=no-window-search	\d\dxyz
+offset-set	-fno-run-prefilter --memfn=no-window-search	ABCDE
 # [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark (dotted4's '.',
 # K = 3) and a run landmark (sfx-shaped `ing`), and the deny's landing row.
 handoff-reentry	-	(?:\d{1,3}\.){3}\d{1,3}
@@ -65,8 +70,8 @@ first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
 memchr	-	a(b|c)+d
-byte-class-bounded	-e utf8	[ab]\b
-byte-class	-	\d
+byte-class-bounded	-e utf8 --memfn=no-window-search	[ab]\b
+byte-class	--memfn=no-window-search	\d
 pred-memchr	-	(?m)^ERROR
 next-none	-	a(b|c)+d
 next-none	--engine=vm -fno-start-set	I
@@ -85,16 +90,16 @@ all	-fno-vm-anchor-bound	^(a)(b|c)
 pinned	-	a?+
 reverse-pass	-fno-start-pinned	a?+
 reverse-pass	-	a(b|c)+d
-end-minus-width	-	abcd
+end-minus-width	--memfn=no-window-search	abcd
 landing	-	\w+
-landing	-fno-start-width	[a-z]
+landing	-fno-start-width --memfn=no-window-search	[a-z]
 # [CAND-PATH-READS] the three rows of the cycle 9dec5e6f closed, on one compile:
 # FIRST `handoff` reads the path, which selects RECOVER `landing`, which reads
 # NEXT `handoff-reentry` under the handoff deny (axtri_report.md §2). Unplanted
 # it compiles clean; with RECOVER's deny dropped (S844) the default build
 # SIGSEGVs here and the trace build aborts `table-read-cycle`.
 landing	-e utf8 -fno-offset-skip	€+
-reverse-pass	-fno-start-width -fno-start-landing	abcd
+reverse-pass	-fno-start-width -fno-start-landing --memfn=no-window-search	abcd
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
@@ -120,9 +125,7 @@ report	-	^ab
 # D164 B3: the ENDSET verify needs a tie prio-const cannot decide.
 verify-at	-	(?:\s+|x\s*?)$
 verify-at	-fno-rev-end-onewalk	\s+$
-# [KIT-VERIFY] U1 Z2: `cover` is routed only by the test harness's lever, so its
-# witnesses carry `--harness=kit-proof` and run_cand_oracle.sh compiles them with
-# the trace build's pcrec-harness; the same lines are then compiled WITHOUT the
-# option and must NOT reach the row (the shipped build declines it).
-cover	--harness=kit-proof	foobar
-cover	--harness=kit-proof	\bcat\b
+# [KIT-VERIFY] U1 `cover`: routed by the shipped build since D172 S3 (before it,
+# only by the harness lever `--harness=kit-proof`, so these lines carried it).
+cover	-	foobar
+cover	-	\bcat\b

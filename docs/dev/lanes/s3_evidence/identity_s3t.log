@@ -1,0 +1,110 @@
+== [\b] byte/utf8 diff: main 170 lines, S3 170 lines; identical on both compilers: yes; S3 hunks: 21
+== [\B] byte/utf8 diff: main 170 lines, S3 170 lines; identical on both compilers: yes; S3 hunks: 21
+== [(?i)\bcat\b] byte/utf8 diff: main 107 lines, S3 90 lines; identical on both compilers: no; S3 hunks: 10
+6,7c6,7
+< #define RX_STARTPOS_GUARD "permissive"
+< #define RX_UTF_CHECK "inert"
+---
+> #define RX_STARTPOS_GUARD "guarded"
+> #define RX_UTF_CHECK "off"
+10c10
+< #define RX_REQ_RUN "434154@0/dfdfdf"
+---
+> #define RX_REQ_RUN "434154@2/dfdfdf"
+262a263,270
+>     /* [K50] A caller's start position must be a CHARACTER BOUNDARY of
+>      * this artifact's encoding. A mid-character position is REFUSED
+>      * rather than answered: nothing is attempted and no resource is
+>      * spent, which is why the code sits below PCREC_ERR_FLOOR and is
+>      * not a give-up. libpcre2 under PCRE2_UTF refuses the same
+>      * positions (PCRE2_ERROR_BADUTFOFFSET). Compile with
+>      * -fno-startpos-guard for the permissive semantics instead. */
+>     if (!(search_from == 0 || search_from >= subject_length || (subject[search_from] & 0xC0) != 0x80)) return PCREC_ERR_STARTPOS;
+265c273
+<     scan_position = ({ const unsigned char *rx_mf1_s = (const unsigned char *)(subject); size_t rx_mf1_n = subject_length; size_t rx_mf1_lo = scan_position; size_t rx_mf1_c = rx_mf1_lo; int rx_mf1_f
+---
+>     scan_position = ({ const unsigned char *rx_mf1_s = (const unsigned char *)(subject); size_t rx_mf1_n = subject_length; size_t rx_mf1_lo = scan_position; size_t rx_mf1_c = rx_mf1_lo; int rx_mf1_f
+286a295,302
+>     /* [K50] A caller's start position must be a CHARACTER BOUNDARY of
+>      * this artifact's encoding. A mid-character position is REFUSED
+>      * rather than answered: nothing is attempted and no resource is
+>      * spent, which is why the code sits below PCREC_ERR_FLOOR and is
+>      * not a give-up. libpcre2 under PCRE2_UTF refuses the same
+>      * positions (PCRE2_ERROR_BADUTFOFFSET). Compile with
+>      * -fno-startpos-guard for the permissive semantics instead. */
+>     if (!(search_from == 0 || search_from >= subject_length || (subject[search_from] & 0xC0) != 0x80)) return PCREC_ERR_STARTPOS;
+383,384c399,401
+<     (void)s; (void)n;
+<     return pos + 1;
+---
+>     size_t i = pos + 1;
+>     while (i < n && (s[i] & 0xC0) == 0x80) i++;
+>     return i;
+388c405,440
+<     (void)s; (void)startpos;
+---
+>     size_t p = startpos, k = rx_VALID_LB;
+>     if (startpos > n) return n;
+>     /* The raw step-back: per character, one byte back and then over every
+>      * continuation byte, clamped at 0 -- PCRE2's walk, unvalidated. */
+>     while (k-- > 0 && p > 0) {
+>         p--;
+>         while (p > 0 && (s[p] & 0xC0u) == 0x80u) p--;
+>     }
+>     while (p < n) {
+>         unsigned char b = s[p];
+>         size_t len, i;
+>         unsigned c, floor;
+>         if (b < 0x80u) {
+>             /* ASCII: then eight bytes at a time while none is high. */
+>             uint64_t w;
+>             p++;
+>             while (n - p >= 8) {
+>                 __builtin_memcpy(&w, s + p, 8);
+>                 if (w & 0x8080808080808080ull) break;
+>                 p += 8;
+>             }
+>             continue;
+>         }
+>         if ((b & 0xE0u) == 0xC0u)      { len = 2; c = b & 0x1Fu; floor = 0x80u; }
+>         else if ((b & 0xF0u) == 0xE0u) { len = 3; c = b & 0x0Fu; floor = 0x800u; }
+>         else if ((b & 0xF8u) == 0xF0u) { len = 4; c = b & 0x07u; floor = 0x10000u; }
+>         else return p;
+>         if (len > n - p) return p;
+>         for (i = 1; i < len; i++) {
+>             if ((s[p + i] & 0xC0u) != 0x80u) return p;
+>             c = (c << 6) | (unsigned)(s[p + i] & 0x3Fu);
+>         }
+>         if (c < floor || c > 0x10FFFFu || (c >= 0xD800u && c <= 0xDFFFu))
+>             return p;
+>         p += len;
+>     }
+392c444
+< #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+---
+> #define RX_FINDINGS "byte-rate=none"
+397c449
+<     .encoding = 0,
+---
+>     .encoding = 1,
+422c474
+<     .findings = "byte-rate=default:1822fb973b95a4da",
+---
+>     .findings = "byte-rate=none",
+-- the window statement (scan_position = ({ ... })), byte vs utf8, split at ';':
+10,11c10,11
+< ) { if (rx_mf1_c >= rx_mf1_n) break
+<  if (rx_mf1_fr || rx_mf1_ha < rx_mf1_c) { const void *rx_mf1_q = memchr(rx_mf1_s + rx_mf1_c, 67, rx_mf1_n - rx_mf1_c)
+---
+> ) { if (rx_mf1_c + 2 >= rx_mf1_n) break
+>  if (rx_mf1_fr || rx_mf1_ha < rx_mf1_c + 2) { const void *rx_mf1_q = memchr(rx_mf1_s + rx_mf1_c + 2, 84, rx_mf1_n - (rx_mf1_c + 2))
+13c13
+<  } if (rx_mf1_fr || rx_mf1_hb < rx_mf1_c) { const void *rx_mf1_q = memchr(rx_mf1_s + rx_mf1_c, 99, rx_mf1_n - rx_mf1_c)
+---
+>  } if (rx_mf1_fr || rx_mf1_hb < rx_mf1_c + 2) { const void *rx_mf1_q = memchr(rx_mf1_s + rx_mf1_c + 2, 116, rx_mf1_n - (rx_mf1_c + 2))
+17a18
+>  rx_mf1_c -= 2
+-- stamps the window is held to:
+#define RX_REQ_RUN "434154@0/dfdfdf"
+#define RX_REQ_RUN "434154@2/dfdfdf"
+== identity_s3t COMPLETE

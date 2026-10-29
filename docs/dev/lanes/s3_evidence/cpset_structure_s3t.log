@@ -1,0 +1,148 @@
+bash tests/codegen/run_cpset_structure.sh
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+== CHECK 1: the interval payload exists and every producer reaches it ==
+PASS: [1a] Ast's A_CLASS payload is the interval form
+PASS: [1a] no CODE reference to u.cls.bits survives anywhere in src/ — E1's read does not type-check (comments quoting the old spelling are permitted and expected)
+PASS: [1a] no bits[32] member survives in the A_CLASS payload
+PASS: [1b] src/core/cpset.c defines pcrec_cpset_add
+PASS: [1b] src/core/cpset.c defines pcrec_cpset_complement
+PASS: [1b] src/core/cpset.c defines pcrec_cpset_publish
+PASS: [1b] src/core/cpset.c defines pcrec_cpset_add_bits
+PASS: [1b] src/core/cpset.c defines pcrec_cls_bits
+PASS: [1b] src/core/cpset.c defines pcrec_cls_bits_widen
+PASS: [1c] all four class constructors in src/parse/parse.c publish an interval set (4 publish sites, floor 4)
+PASS: [1c] both negation sites complement within cls_universe(cx), the ENCODING's universe (2 sites)
+PASS: [1c] the universe is read from PcrecEnc.max_cp, the backend's own scalar
+PASS: [1d] src/opt/lower_enc.c defines the encoding lowering
+PASS: [1d] constraint 1: the lowering (2723) runs before pcrec_build_nfa (2761) and pcrec_emit_vm (3005), the two byte-only consumers
+PASS: [1d] constraint 3: the lowering (2723) runs after pcrec_postresolve (2670), which asks lookbehind widths in CHARACTERS
+PASS: [1d] constraint 2 (R2): the lowering walks by SLOT (Ast **), so its only write is one pointer in a parent it never rebuilt
+PASS: [1d] src/opt/lower_enc.c's only direct pcrec_arena_alloc is the Ast** scratch branch array (re-read 2026-09-05) — every node goes through pcrec_ast_node, so nothing in it can rebuild a parent
+
+== CHECK 1R: the same needles, RED against the pre-stage tree cb546b3a ==
+  red (as required): 1a payload is the interval form
+  red (as required): 1a no u.cls.bits survives
+  red (as required): 1a no bits[32] member survives
+  red (as required): 1b the builder's file exists
+  red (as required): 1c four constructors publish an interval set
+  red (as required): 1c both negation sites complement within the encoding's universe
+  red (as required): 1c PcrecEnc carries max_cp
+  red (as required): 1d the lowering exists
+  red (as required): 1d compile.c calls the lowering
+PASS: [1R] all 9 CHECK 1 needles go RED against the pre-stage tree cb546b3a — the check has been seen to fail, which is what makes its green mean something
+
+== CHECK 2: pcrec_cls_bits is the sole path from a class node to a bitmap ==
+PASS: [2a] all six AFTER-row sites go through the cpset.c accessor family (nfa.c 2 + emit_vm.c 4 = 6, floor 6)
+PASS: [2a] the five sites that genuinely need 32 bytes render through pcrec_cls_bits itself (nfa.c 2 + emit_vm.c 3 = 5, floor 5)
+PASS: [2b] no file outside the allowlist touches u.cls — every other consumer goes through the three accessors
+PASS: [2b'] the function-scoped allowance exempts exactly its function (2 reads -> 1, the other function's), and a missing or read-less function is STALE
+PASS: [2c] pcrec_cls_bits's out-of-range check is a pcrec_ctx_fail — it ships enabled in every build
+PASS: [2c] src/core/cpset.c uses no assert(): nothing here is compiled out by NDEBUG
+
+== CHECK 2d: the render helper's assertion, RUN rather than grepped ==
+PASS: [2d] the render helper's assertion FIRES on a class carrying a code point above 0xFF: "pcrec: internal error: a class holding code point U+10FFFF reached a byte-tier consumer — the encoding lowering did not run on this subtree (pattern offset 0)"
+
+== CHECK 3: the stamp census manifest (stage 1's half of §8.1.1 check 3) ==
+PASS: [3] the census compiled 12 sample artifacts and recorded 76 stamp readings
+PASS: [3] every stamp the census names was reached on at least one sample artifact — the instrument is live, not vacuous
+PASS: [3] the recorded manifest (/home/pcrec/projects/pcrec/worktrees/s3pair/tests/codegen/manifests/m5_stage1_stamps.tsv) matches this run exactly
+
+== CHECK 4: the interval algebra, model-checked against a bitset oracle ==
+PASS: [4] cpset model check: PASS (400 trials x 60 ops + 7 edge cases)
+
+checks passed: 29
+checks failed: 0
+bash tests/codegen/run_wclass_census.sh
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+== PART 1: the AKind switch census ==
+PASS: [5] AKind read from internal.h: 16 members incl. A_CLASS, A_WCLASS
+PASS: [5] self-test: the scanner reports a missing arm, a shared A_CLASS/A_WCLASS run and a default: in a synthetic source
+PASS: [5] population: 62 AKind switches (floor 49)
+PASS: [5a] every AKind switch (62) handles A_WCLASS
+PASS: [5b] no arm shares A_WCLASS with A_CLASS
+PASS: [5c] no AKind switch carries a default:
+== PART 2: the reader witnesses ==
+PASS: [W1] éabc: the lowered class unrolls into the spine — one five-byte run compare
+PASS: [W2] (é)+: the quantifier keeps the cursor rung (RX_VM_RUNGS 0x1u)
+PASS: [W3] café|naïve|résumé: the wide literals keep their island (RX_VM_ALT_ISLANDS 1)
+PASS: [W4] x[é]y -e utf8 --engine=vm compiles: no reader renders a wide class's set
+== PART 3: the kit route ==
+PASS: [K1] x\p{L}y --engine=vm: one decode + one kit matcher (RX_VM_CLS_KIT 1), frameless
+PASS: [K2] -fno-cls-kit: no decoder, no matcher, RX_VM_CLS_KIT 0 — the byte alternation
+PASS: [K3] x(é)y: a one-member class keeps its bytes (RX_VM_CLS_KIT 0, no decoder)
+PASS: [K4] \p{L}x\p{L}y\p{N}: two distinct sets, two matchers (the pool dedups)
+PASS: [K5] rx_decode: static inline, absent from the .h, defined (line 141) before its first call (line 276)
+PASS: [K6] (a)\1 -e utf8 -i: the caseless span compare's decoder is the one rx_decode entry (requires closed the mask)
+PASS: [K7] \P{Unknown} --engine=vm (K55) and (\p{L}) at default axes compile
+
+checks passed: 17
+checks failed: 0
+bash tests/codegen/run_clspack.sh
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+== PART 1: the atom row fires, read off the artifact ==
+PASS: [atom-11] 11 table-read classes share one atom table: RX_VM_CLS_ATOMS 12 = the 12 atoms of the -fno-cls-pack artifact's bitmaps, 11 matchers, no bitmap
+PASS: [atom-11] the program reads its classes through the matchers (11 call sites)
+PASS: [atom-reads] 12 table-read classes share one atom table: RX_VM_CLS_ATOMS 13 = the 13 atoms of the -fno-cls-pack artifact's bitmaps, 12 matchers, no bitmap
+PASS: [atom-reads] the program reads its classes through the matchers (13 call sites)
+PASS: [atom-64] 11 table-read classes share one atom table: RX_VM_CLS_ATOMS 64 = the 64 atoms of the -fno-cls-pack artifact's bitmaps, 11 matchers, no bitmap
+PASS: [atom-64] the program reads its classes through the matchers (11 call sites)
+PASS: [atom-64] exactly 64 atoms, the mask's width, fires
+PASS: [atom-11] the entry rung and RX_VM_PROGRAM_BYTES are the -fno-cls-pack build's (#define RX_VM_ENTRY_SHAPE "inline" #define RX_VM_PROGRAM_BYTES 2713ULL)
+PASS: [atom-reads] the entry rung and RX_VM_PROGRAM_BYTES are the -fno-cls-pack build's (#define RX_VM_ENTRY_SHAPE "plain" #define RX_VM_PROGRAM_BYTES 4700ULL)
+PASS: [atom-64] the entry rung and RX_VM_PROGRAM_BYTES are the -fno-cls-pack build's (#define RX_VM_ENTRY_SHAPE "inline" #define RX_VM_PROGRAM_BYTES 2713ULL)
+PASS: [atom-reads] straddles the entry knee from above (4700 bytes > 4,096), so the rung arm can fail
+== PART 2: the thresholds, the deny, --tune, the stamp's scope ==
+PASS: [site-10] ten table-read classes: one short, a bitmap each, RX_VM_CLS_ATOMS 0
+PASS: [atom-65] eleven classes, 65 atoms: over the mask's width, a bitmap each
+PASS: [deny] -fno-cls-pack: RX_VM_CLS_ATOMS 0, no atom table, the eleven bitmaps
+PASS: [deny-kit] -fno-cls-kit: RX_VM_CLS_ATOMS 0, no atom table, the same bitmaps as -fno-cls-pack
+PASS: [tune -2] the atom row lists this position
+PASS: [tune -1] the atom row lists this position
+PASS: [tune 0] the atom row lists this position
+PASS: [tune 1] the atom row lists this position
+PASS: [tune 2] the atom row lists this position
+PASS: [stamp] a class-free VM artifact stamps 0; a DFA artifact carries no stamp
+== PART 3: answer identity, atom table vs -fno-cls-pack ==
+PASS: [diff atom-11] 121344 cells agree (span, every capture slot, failure surface)
+PASS: [diff atom-reads] 100352 cells agree (span, every capture slot, failure surface)
+PASS: [diff atom-64] 121344 cells agree (span, every capture slot, failure surface)
+PASS: [diff] population 343040 cells (floor 10,000)
+== PART 4: answer identity, the kit's byte forms (--tune=-2/-1) vs -fno-cls-kit ==
+PASS: [kit site-10] --tune=-2 emits 10 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit site-10] 74752 cells agree (span, every capture slot, failure surface)
+PASS: [kit site-10-m1] --tune=-1 emits 10 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit site-10-m1] 74752 cells agree (span, every capture slot, failure surface)
+PASS: [kit mixed] --tune=-2 emits 2 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit mixed] 26112 cells agree (span, every capture slot, failure surface)
+PASS: [kit span] --tune=-2 emits 2 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit span] 98304 cells agree (span, every capture slot, failure surface)
+PASS: [kit caseless] --tune=-1 emits 2 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit caseless] 18432 cells agree (span, every capture slot, failure surface)
+PASS: [kit hi255] --tune=-2 emits 1 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit hi255] 8192 cells agree (span, every capture slot, failure surface)
+PASS: [kit utf8-byte] --tune=-2 -e utf8 emits 1 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit utf8-byte] 12800 cells agree (span, every capture slot, failure surface)
+PASS: [kit utf8-wide] --tune=-2 -e utf8 emits 1 kit matcher(s) (stamped), -fno-cls-kit none
+PASS: [kit utf8-wide] 8192 cells agree (span, every capture slot, failure surface)
+PASS: [kit] population 321536 cells (floor 10,000)
+== PART 5: the scan edge's run test is the class table's answer ==
+PASS: [edge] 'x[aeiou]{5,30}y' --tune=-2 stamps "kit" with 2 kit matcher(s)
+PASS: [edge] 'x[aeiou]{5,30}y' --tune=-1 stamps "kit" with 2 kit matcher(s)
+PASS: [edge] 'x[aeiou]{5,30}y' --tune=0 stamps "bitmap" with 0 kit matcher(s)
+PASS: [edge] 'x[aeiou]{5,30}y' --tune=2 stamps "bitmap" with 0 kit matcher(s)
+PASS: [edge] 'x[aeiou]{5,30}y' --tune=-2 -fno-cls-kit stamps "bitmap" with 0 kit matcher(s)
+PASS: [edge] '(?i)xa{3,30}b' --tune=-2 stamps "fold" with 0 kit matcher(s)
+PASS: [edge] '(?i)xa{3,30}b' --tune=0 stamps "bitmap" with 0 kit matcher(s)
+PASS: [edge] '0[a-z]{5,30}1' --tune=-2 stamps "range" with 0 kit matcher(s)
+PASS: [edge] '0[a-z]{5,30}1' --tune=0 stamps "range" with 0 kit matcher(s)
+PASS: [edge-diff] the vowel witness carries kit edges on its reverse and anchored machines
+PASS: [edge-diff vowels] 46592 search + 46592 match cells agree (--tune=-2, kit vs -fno-cls-kit)
+PASS: [edge-diff vowels-m1] 46592 search + 46592 match cells agree (--tune=-1, kit vs -fno-cls-kit)
+PASS: [edge-diff hex] 104960 search + 104960 match cells agree (--tune=-2, kit vs -fno-cls-kit)
+PASS: [edge-diff fold] 26112 search + 26112 match cells agree (--tune=-2, fold vs -fno-cls-fold)
+PASS: [edge-diff utf8] 46592 search + 46592 match cells agree (--tune=-2 -e utf8, kit vs -fno-cls-kit)
+PASS: [edge-diff] population 270848 search cells (floor 5,000)
+PASS: [edge-diff] population 270848 match cells (floor 5,000)
+checks passed: 59
+checks failed: 0
+rc=0

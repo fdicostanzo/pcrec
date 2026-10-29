@@ -170,11 +170,10 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * definitions are appended to the artifact's end, mf_reach_table). Off on
  * every shipped compile, so a default artifact is untouched by it. */
 /* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, "The harness lever's kit channel"):
- * the fourth, `--harness=kit-proof`: the compile ROUTES the `cover` LOCATE
- * row (pcrec's half, `locate_cover_applies`) and states to the memfn kit,
- * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
- * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
- * X1/X3) and never shipped; the default and trace builds decline `cover`. */
+ * the fourth, `--harness=kit-proof`, changes no byte: the default build
+ * routes `cover` itself. It sets only the KITPROOF trace record's `routed`
+ * field, and its callers (tests/kitproof/, site_census.py) still pass it;
+ * its retirement is filed under [KIT-VERIFY] (docs/dev/plan.md). */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
@@ -2434,8 +2433,9 @@ static inline KindRow pcrec_ast_row(const Ast *a)
     return r;
 }
 
-/* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
- *      src/opt/prefix_k.c) ---- */
+/* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c; the
+ *      selection is the kit's window family, memfn/src/window.c, since
+ *      prefix_k.c retired at D172 S2 commit 6) ---- */
 
 /* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
  * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and
@@ -4206,8 +4206,8 @@ struct Ctx {
 };
 
 /* [KIT-VERIFY] U1 Z2 is this compile the harness lever's `--harness=kit-proof`
- * (PcrecHarnessOptions.kit_proof): the one place a compile may route `cover`
- * and preview the kit's R-26.6. False on every shipped compile. */
+ * (PcrecHarnessOptions.kit_proof)? Read only by the KITPROOF trace record
+ * (the lever changes no byte). False on every shipped compile. */
 static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 {
     return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;

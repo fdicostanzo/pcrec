@@ -67,10 +67,10 @@ from concurrent.futures import ThreadPoolExecutor
 # report (docs/dev/lanes/runaxes_report.md).
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
-        {("byte", "c-default"): 176, ("byte", "c-vm"): 0, ("utf8", "c-default"): 244, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 155, ("byte", "c-vm"): 0, ("utf8", "c-default"): 219, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     ("precheck-assign-byte", "simd"): ("DIFFER",
-        {("byte", "c-default"): 176, ("byte", "c-vm"): 0, ("utf8", "c-default"): 244, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 155, ("byte", "c-vm"): 0, ("utf8", "c-default"): 219, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
@@ -100,26 +100,55 @@ MEMFN_CLASS = {
     # `-fno-req-set-lead` (bit 45), its population that flag's; `fd-pres-g1` and
     # `fd-pres-pick` act on the DFA-scanned routes only (c-vm 0: no pre-check there is
     # dominated, and every span is REQUIRED).
+    # RE-PINNED at D172 S3 (lane s3fix, 2026-10-24) from job 620's axes_memfn log on
+    # lane/memfn-s3pair cc4f54eb2 (4796 distinct patterns; docs/dev/lanes/s3_evidence/
+    # tri620.md): `cover` (RX_DFA_SCAN "cover") takes the fixed-width windows off the
+    # pre-check route, so fewer patterns differ under each PRES/assign deny on the default
+    # engine (the corpus GREW 4624 -> 4796, so not corpus noise): fd-pres-g1 1271/1105 ->
+    # 949/878, fd-pres-pick 187/262 -> 168/232, precheck-assign-byte (above) 176/244 ->
+    # 155/219, pres-set-lead c-default 16/8 -> 14/7 (c-vm unchanged: no cover there). The
+    # witnesses `ab`, `é{2}cat` and `a{3}(?i:cat)` are cover artifacts now (the deny is
+    # inert on them); each is replaced by its variable-width sibling, still pre-checked
+    # (`abc+d`, `é{2,}cat`, `a{3,}(?i:cat)`; single compiles at the s3fix tip, both sides).
     **{("fd-pres-g1", ly): ("DIFFER",
-        {("byte", "c-default"): 1271, ("byte", "c-vm"): 0, ("utf8", "c-default"): 1105, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"ab"), ("utf8", "c-default", b"ab")]) for ly in ("default", "simd")},
+        {("byte", "c-default"): 949, ("byte", "c-vm"): 0, ("utf8", "c-default"): 878, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"abc+d"), ("utf8", "c-default", b"abc+d")]) for ly in ("default", "simd")},
     **{("fd-pres-pick", ly): ("DIFFER",
-        {("byte", "c-default"): 187, ("byte", "c-vm"): 0, ("utf8", "c-default"): 262, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 168, ("byte", "c-vm"): 0, ("utf8", "c-default"): 232, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
     **{("pres-set-lead", ly): ("DIFFER",
-        {("byte", "c-default"): 16, ("byte", "c-vm"): 18, ("utf8", "c-default"): 8, ("utf8", "c-vm"): 8},
-        [("byte", "c-default", "é{2}cat".encode()), ("utf8", "c-default", b"a{3}(?i:cat)")]) for ly in ("default", "simd")},
+        {("byte", "c-default"): 14, ("byte", "c-vm"): 18, ("utf8", "c-default"): 7, ("utf8", "c-vm"): 8},
+        [("byte", "c-default", "é{2,}cat".encode()), ("utf8", "c-default", b"a{3,}(?i:cat)")]) for ly in ("default", "simd")},
     ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
     ("fd-r8", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-r8", "simd"): ("ASSERT_ZERO", {}, []),
+    # D172 S3's two window-search denies (window-search: the search itself, so `cover` declines;
+    # window-skip: its skip for a common byte set), absent from this table since S3 while
+    # `--list-axes` listed them (code review r2 R2-4: the population check above could only
+    # fail). CLASSIFIED STATICALLY by lane s3pair (2026-10-23, single compiles of the
+    # witnesses at both layers; the box was held by job 606): both DIFFER on the default
+    # engine, neither on the VM engine (`cover` is a DFA-route row). FLOORS MEASURED by
+    # job 620's `axes_measure` step (this file's --measure over the four cells, lane/
+    # memfn-s3pair cc4f54eb2, 4796 patterns, identical at both layers; tri620.md), under
+    # the rows' names then (`wf-find`, `wf-hors`): window-search byte 805, utf8 613;
+    # window-skip byte 7, utf8 2 (`\b\w*?\B\w`, `\w\B\w`: the static classification's
+    # "byte only" was wrong); c-vm 0 for both.
+    **{("window-search", ly): ("DIFFER",
+        {("byte", "c-default"): 805, ("byte", "c-vm"): 0, ("utf8", "c-default"): 613, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"\\bcat\\b"), ("utf8", "c-default", b"\\bcat\\b")]) for ly in ("default", "simd")},
+    **{("window-skip", ly): ("DIFFER",
+        {("byte", "c-default"): 7, ("byte", "c-vm"): 0, ("utf8", "c-default"): 2, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"\\b[0-9a-f]{8}\\b"), ("utf8", "c-default", b"\\w\\B\\w")]) for ly in ("default", "simd")},
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
+    # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
+    # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
     ("vrun-pad", "simd"): ("DIFFER",
-        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 14, ("utf8", "c-vm"): 14},
+        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 13, ("utf8", "c-vm"): 14},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
     ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-trim", "simd"): ("DIFFER",

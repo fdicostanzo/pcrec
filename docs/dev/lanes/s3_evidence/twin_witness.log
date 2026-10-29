@@ -1,0 +1,7 @@
+genuine       abc        want clean   got clean   
+twin-no-rows  abc        want red     got red     the byte twin's stamps moved, the byte rows did not; the utf8 twin's stamps moved, the utf8 rows did not
+header-moved  abc        want red     got red     non-row lines moved: line 5: base=b'#section facts' new=b'#section factz'
+unmoved-ctl   (?:x)+y    want clean   got clean   
+rows-no-twin  (?:x)+y    want red     got red     byte rows moved, the byte twin's stamps did not: line 41: base=b'byte\tRX_ENGINE\t"dfa"' new=b'byte\tRX_ENGINE\t"xdfa"'
+refused       \x{3b1}    want refused got refused 
+== twin witness COMPLETE: rows=6 ok=6

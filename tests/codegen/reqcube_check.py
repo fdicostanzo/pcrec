@@ -22,8 +22,9 @@ never from the emitted C it checks:
      position; every constant is a string literal (never a byte-order
      statement).
   2. THE DISPATCH: a block whose scan position is a pair carries exactly two
-     `memchr` calls, on A = T[k*] and B = A | ~K[k*], each re-searched iff its
-     hit is `< pos + k*`; a block whose scan position is exact carries one, on
+     `memchr` calls, on A = T[k*] and B = A | ~K[k*], each stream's frontier
+     raised to `pos + k*` (a hit below it is stale); a block whose scan
+     position is exact carries one, on
      T[k*] (S453's shape is one memchr on an all-letter run).
   3. NO SEARCH OUTSIDE THE LOOP: every `memchr(` of a run block sits after the
      block's `while (pos + ` line (S454's detector).
@@ -75,9 +76,17 @@ def bad(msg):
     print("FAIL: [OPT-LITSCAN S4 C3] " + msg)
 
 
+# D172 S3: every witness here is compiled under the `cover` row's deny,
+# `--memfn=no-window-search` (registry.md §6¶8a): a fixed-width witness is a `cover`
+# artifact by default, whose search is the memfn kit's window site, not the
+# offset-skip block this check reads; the deny renders the default build
+# before S3, the artifact this check was written against.
+COVER_DENY = "--memfn=no-window-search"
+
+
 def emit(tag, pat, *flags):
     out = os.path.join(WORK, "rq_" + tag + ".c")
-    r = subprocess.run([PCREC, "--features", "all", "-p", "rx", *flags, "-o", out,
+    r = subprocess.run([PCREC, "--features", "all", "-p", "rx", COVER_DENY, *flags, "-o", out,
                         "--pattern", pat], capture_output=True, timeout=120)
     if r.returncode != 0:
         return None
@@ -156,17 +165,19 @@ def check_block(label, blk, t, k, scan_k):
         bad(f"{label}: a memchr( sits ABOVE the block's `while (pos + ` guard -- a search outside the loop (S454)")
     else:
         ok(f"{label}: all {len(ml)} memchr( calls sit inside the guarded loop")
-    consts = [int(x) for x in re.findall(r"memchr\(subject \+ pos(?: \+ \d+)?, (\d+),", blk)]
+    # one memchr per stream: from `pos [+ k]` (one stream), or from the stream's frontier
+    # `ha`/`hb` in its bounded look-ahead (the pair arm, kit ofsskip.c ofs_pair_text)
+    consts = [int(x) for x in re.findall(r"memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),", blk)]
     a = t[scan_k]
     if k[scan_k] != 0xFF:
         b = a | (~k[scan_k] & 0xFF)
         kk = "pos + %d" % scan_k if scan_k else "pos"
         if sorted(consts) != sorted([a, b]):
             bad(f"{label}: the pair position {scan_k} is scanned on {consts}, expected both members {a} and {b} (S453 scans T alone)")
-        elif ("fresh || ha < %s)" % kk) not in blk or ("fresh || hb < %s)" % kk) not in blk:
-            bad(f"{label}: a stream's re-search condition is not `< {kk}` (S449's `< pos` hangs)")
+        elif ("if (ha < %s) ha = %s;" % (kk, kk)) not in blk or ("if (hb < %s) hb = %s;" % (kk, kk)) not in blk:
+            bad(f"{label}: a stream's frontier is not raised to `{kk}` (S449/S450's `pos` hangs)")
         else:
-            ok(f"{label}: the pair position {scan_k} is two streams ({a}, {b}), each re-searched iff `< {kk}`")
+            ok(f"{label}: the pair position {scan_k} is two streams ({a}, {b}), each frontier raised to `{kk}`")
     else:
         if consts != [a]:
             bad(f"{label}: the exact scan position {scan_k} is scanned on {consts}, expected one memchr of {a}")
@@ -256,7 +267,11 @@ for tag, pat, flags in WIT:
             check_block(f"{lbl} rx_reqrun", b0, run[0], run[1], run[2])
         b1 = block(text, "rx_reqrun_whole")
         if b1 is not None and whole:
-            at = int(re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b1).group(1) or 0)
+            # the scan offset: one stream's `memchr(subject + pos [+ k]`, or the pair arm's
+            # frontier raise `if (ha < pos [+ k])`
+            m = re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b1) or \
+                re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b1)
+            at = int(m.group(1) or 0) if m else -1
             check_block(f"{lbl} rx_reqrun_whole", b1, whole[0], whole[1], at)
         if tag == "k66" and (b1 is None or "&" not in b1):
             bad(f"{lbl}: the K66 site's whole-run block is missing or compares unmasked (S448)")

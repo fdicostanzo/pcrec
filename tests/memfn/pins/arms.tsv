@@ -41,6 +41,12 @@
 # +184); pre-masked-whole-rest holds two functions (+139 +151 = +290). No
 # `use` part and no other arm moved (arms2: 338/0).
 #
+# S3 FINAL REVIEW RE-PINNED (lane s3fix, 2026-10-24, EMIT-1, inside abi 85): the
+# two `def` parts holding the two-stream (fn-pair) body, ofs-pair and
+# pre-masked-whole-rest, each +368 bytes: the streams' bounded look-ahead
+# (kit.h ofs_pair: frontiers, widths, the lower-frontier loop) replaces the
+# `fresh` flag and the unbounded memchrs. No `use` part and no other arm moved.
+#
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
@@ -53,7 +59,7 @@ ofsskip	ofs-miss-n	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea
 ofsskip	ofs-miss-token	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea6b273d581c11
 ofsskip	ofs-miss-n	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 ofsskip	ofs-miss-token	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
-ofsskip	ofs-pair	def	2413	f40a0152e74877a68632bf31709d2b610e668703cd2d9c7983a52d5af6d71201
+ofsskip	ofs-pair	def	2781	7bccaa4e60edd741c5dc7d8bd11467e292e58ebaee4f38875c8e940995b12115
 ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
 ofsskip	ofs-run-pinned	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea6b273d581c11
 ofsskip	ofs-run-pinned	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
@@ -65,7 +71,7 @@ precheck	pre-lead-handoff	def	986	1c01c56ecb33522dada63d4f44edda543f521a3c3089f7
 precheck	pre-lead-handoff-miss-token	def	986	1c01c56ecb33522dada63d4f44edda543f521a3c3089f77e556070be0bbe14b5
 precheck	pre-lead-handoff	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
 precheck	pre-lead-handoff-miss-token	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
-precheck	pre-masked-whole-rest	def	3160	4e41cd3b628b60cff706e1fc2919b67a66500a6a47b8afdfa89c07ea2ec0641e
+precheck	pre-masked-whole-rest	def	3528	704284e9513c4cb42f47cbcd91fa304c81f97a9628c703a2b74ba68187f524fd
 precheck	pre-masked-whole-rest	use	475	43892fbd22fa6beede06ed1aabcdbfb9c34d7b2fd960239f4e4b8856f30ec2a9
 precheck	pre-onebyte-rest	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 precheck	pre-onebyte-rest	use	415	2b9fd70002386da8cf9182d737b936b68524cfb8b3142f92e0793429ab5de084

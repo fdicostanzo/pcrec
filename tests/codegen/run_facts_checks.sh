@@ -426,11 +426,14 @@ fi
 # (6:6+2) where abi 58's exact run `/user` read `6`. `\zabc` is the widened-
 # domain witness (a pin on an artifact whose NEXT row is `none`); since
 # [REQ-HANDOFF-L1] (abi 75) its run handoff re-enters (`handoff`), so it is
-# compiled under `-fno-req-handoff` to stay on that domain.
+# compiled under `-fno-req-handoff` to stay on that domain. Since D172 S3 the
+# fixed-width `abc` and `/abcd[xy]/user` are `cover` artifacts by default (no
+# forward scan), so they are compiled under the cover row's deny,
+# `--memfn=no-window-search` (registry.md §6¶8a), to stay on the unanchored route.
 printf '%s\n' \
-    'E3W	-	abc	unanchored	97,98,99	0' \
-    'E3W	-	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
-    'E3W	-fno-req-run	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
+    'E3W	--memfn=no-window-search	abc	unanchored	97,98,99	0' \
+    'E3W	--memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
+    'E3W	-fno-req-run --memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
     'E3W	-fno-req-handoff	\zabc	unanchored	97,98,99	0' \
     'E3W	-	^abc	attempt	-	-' \

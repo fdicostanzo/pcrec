@@ -17,13 +17,18 @@ SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="codegen"
 SAB_DESC="the pair arm's two searches are hoisted above the block's 'while (pos + maxk < n)' guard, so a subject shorter than the run makes memchr read with a wrapped length and a NULL subject reaches memchr"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/c3build_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S455."
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)select" && grep -q "^#define RX_REQ_RUN \"53454c454354@4/dfdfdfdfdfdf\"" "$REACH_TMP/o.c" && grep -q "ha < pos + 4" "$REACH_TMP/o.c" && echo REACH-PAIR-ARM'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)select" && grep -q "^#define RX_REQ_RUN \"53454c454354@4/dfdfdfdfdfdf\"" "$REACH_TMP/o.c" && grep -q "ha < pos + 4" "$REACH_TMP/o.c" && echo REACH-PAIR-ARM'
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
+# RE-AIMED 2026-10-24 (lane s3fix, the S3 final review's EMIT-1): the declaration is
+# ofs_pair_decl's (`size_t ha = 0, hb = 0, wa = W, wb = W;`), written by pair_body as one string;
+# the plant keeps it and adds the two hoisted searches after it.
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    o->puts(o->u, "    size_t ha = 0, hb = 0;\n"
-                  "    int fresh = 1;\n");'
-SAB_AFTER='    kit_out(o, "    size_t ha, hb;\n    int fresh = 0;\n"   /* SABOTAGE S455 */
-               "    { const void *q = memchr(subject + %s, %d, %s); ha = q ? (size_t)((const unsigned char *)q - subject) : n; }\n"
-               "    { const void *q = memchr(subject + %s, %d, %s); hb = q ? (size_t)((const unsigned char *)q - subject) : n; }\n",
-               at.p, a, len.p, at.p, b, len.p);'
+SAB_BEFORE='    o->puts(o->u, decl.p);'
+SAB_AFTER='    o->puts(o->u, decl.p);   /* SABOTAGE S455 */
+    kit_out(o, "    { const void *q = memchr(subject + %s, %d, n - (%s)); ha = q ? (size_t)((const unsigned char *)q - subject) : n; }\n"
+               "    { const void *q = memchr(subject + %s, %d, n - (%s)); hb = q ? (size_t)((const unsigned char *)q - subject) : n; }\n",
+               at.p, a, at.p, at.p, b, at.p);'

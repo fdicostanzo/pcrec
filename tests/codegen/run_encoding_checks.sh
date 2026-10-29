@@ -596,12 +596,16 @@ REQRUN0_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos), 
 REQRUNK_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos) \+ \d+, (\d+), n - pos - \d+\);$')
 REQRUN0_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\));$')
 REQRUNK_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\)) - \d+;$')
-PAIR_GUARD_RE = re.compile(r'^(\s*if \(fresh \|\| h[ab] < pos)(?: \+ \d+)?\) \{$')
+# the pair arm's two streams (kit ofsskip.c ofs_pair_text): a frontier's raise to `pos + K`, and
+# each stream's byte in its hit test and its bounded memchr
+PAIR_GUARD_RE = re.compile(r'^(\s*if \(h[ab] < pos)(?: \+ \d+)?\) (h[ab] = pos)(?: \+ \d+)?;$')
+PAIR_TEST_RE = re.compile(r'^(\s*if \((?:e == h[ab] \|\| )?subject\[h[ab]\] == )\d+(\) break;)$')
+PAIR_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ h[ab]), \d+, (e - h[ab]\);)$')
 PAIR_BACKOFF_RE = re.compile(r'^\s*cand -= \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
 REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
-REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ pos(?: \+ \d+)?, (\d+),')
+REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),')
 REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(.*?^}$', re.M | re.S)
 REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 #
@@ -1020,6 +1024,126 @@ def pick_form(text):
     return 'exact'
 
 
+# D172 S3 (job 600): THE COVER WINDOW SEARCH'S PICK. A `cover` artifact's
+# search is the window family's find-then-verify statement
+# (`scan_position = ({ ... })`), and the position it SEARCHES for is the run
+# pick (`<PREFIX>_REQ_RUN`'s offset K and member, else `<PREFIX>_REQ_BYTE`),
+# which reads the byte-keyed prior exactly as the run pre-check's pick does
+# (`req_pick` above): byte takes the rarest member, utf8 (prior NONE) the
+# rightmost. So when both sides are cover and their picks differ, the search
+# clause alone is normalized on both sides -- the memchr form (`memchr(s + c
+# [+ K], B, ...)` and its `- K` back-off) or the class form (`while (c [+ K]
+# < n && !(s[c + K] == B || ...)) c++;`) -- counted (`cover_pick`), and each
+# side is held to its own stamp below (`cover_pick_bad`): the bytes it
+# searches are the stamped pick's, at the stamped offset. The verify that
+# follows in the same statement is still compared token for token.
+COVER_SCAN_RE = re.compile(r'^#define RX_DFA_SCAN "cover"$', re.M)
+COVER_MEMCHR_RE = re.compile(
+    r'\{ const void \*(rx_mf\d+)_q = \1_c(?: \+ (\d+))? < \1_n \? memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
+    r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\) : 0; if \(!\1_q\) break; '
+    r'\1_c = \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\)(?: - (\d+))?; \}')
+# The PAIR leapfrog (kit ofsskip.c's ofs_pair_text through window.c's wf_b_pair), one line:
+# the search position's bound check (`if (c [+ K] >= n) break;`), the two frontiers' raise to
+# `c [+ K]`, the streams' bounded look-aheads (each byte in its hit test `s[h] == B` and its
+# `memchr(s + h, B, e - h)`), the nearer hit, its bound check and the `c -= K` back-off. The
+# segment is matched from its bound check to its back-off; the pick's K (every `c + K`, and
+# the back-off) and the two bytes (the hit tests', which must equal the memchrs') are read
+# from it, as the memchr form's.
+COVER_PAIR_RE = re.compile(
+    r'if \((rx_mf\d+)_c(?: \+ (\d+))? >= \1_n\) break; if \(\1_ha < .*?'
+    r'\1_c = \1_ha < \1_hb \? \1_ha : \1_hb; if \(\1_c >= \1_n\) break; (?:\1_c -= (\d+); )?')
+# B-fn: the find is the offset-skip function's call, `<pfx>_ofsskip(...)`, and its pick lives in
+# the file-scope helper `<pfx>_ofsskip__body` (fn-pair's body, the same leapfrog in lines over
+# `subject`/`pos`): the frontiers' raise `if (h < pos [+ K]) h = pos [+ K];`, the hit tests
+# and memchrs carrying the two bytes, and `cand -= K;` (absent at K = 0).
+COVER_FN_CALL_RE = re.compile(r'(rx_mf\d+)_c = \1_ofsskip\(')
+COVER_FN_RAISE_RE = re.compile(r'^(\s*if \(h[ab] < pos)(?: \+ (\d+))?\) (h[ab] = pos)(?: \+ \d+)?;$')
+COVER_CLASS_RE = re.compile(
+    r'while \((rx_mf\d+)_c(?: \+ (\d+))? < \1_n && !\(\(((?:\1_s\[\1_c(?: \+ \d+)?\] == \d+(?: \|\| )?)+)\)\)\) \1_c\+\+;')
+
+
+def cover_pick(text):
+    """(normalized text, [(K, {bytes})] per search clause) for a cover artifact's find."""
+    picks = []
+
+    def m_memchr(m):
+        ks = {int(x) for x in (m.group(2), m.group(3), m.group(5), m.group(6)) if x}
+        picks.append((ks.pop() if len(ks) == 1 else (-1 if ks else 0), {int(m.group(4))}))
+        return '{ /* cover pick K,B normalized */ }'
+
+    def m_pair(m):
+        seg, px = m.group(0), re.escape(m.group(1))
+        ks = {int(x) for x in re.findall(px + r'_c \+ (\d+)', seg)}
+        if m.group(3):
+            ks.add(int(m.group(3)))
+        tests = {int(x) for x in re.findall(px + r'_s\[' + px + r'_h[ab]\] == (\d+)', seg)}
+        scans = {int(x) for x in re.findall(r'memchr\(' + px + r'_s \+ ' + px + r'_h[ab], (\d+),', seg)}
+        k = ks.pop() if len(ks) == 1 else (-1 if ks else 0)
+        picks.append((k if tests == scans else -1, tests | scans))
+        return '{ /* cover pick K,B normalized */ }'
+
+    def m_class(m):
+        k = int(m.group(2) or 0)
+        picks.append((k, {int(b) for b in re.findall(r'== (\d+)', m.group(3))}))
+        return 'while (/* cover pick K,B normalized */) c++;'
+
+    out = []
+    fns = set()
+    for line in text.splitlines(keepends=True):
+        if line.startswith('    scan_position = ({ const unsigned char *rx_mf'):
+            line = COVER_CLASS_RE.sub(m_class, COVER_MEMCHR_RE.sub(m_memchr, COVER_PAIR_RE.sub(m_pair, line)))
+            fns |= {m.group(1) for m in COVER_FN_CALL_RE.finditer(line)}
+        out.append(line)
+    # B-fn: each called function's helper body, its pick read and normalized line by line
+    lines, out, body, k, tests, scans = out, [], None, set(), set(), set()
+    for line in lines:
+        ln = line.rstrip('\n')
+        if body is None:
+            m = re.match(r'^static inline size_t (rx_mf\d+)_ofsskip__body\(', ln)
+            if m and m.group(1) in fns:
+                body, k, tests, scans = m.group(1), set(), set(), set()
+            out.append(line)
+            continue
+        if ln == '}':
+            picks.append((k.pop() if len(k) == 1 else -1, tests | scans) if tests == scans and tests
+                         else (-1, tests | scans))
+            body = None
+            out.append(line)
+            continue
+        mr = COVER_FN_RAISE_RE.match(ln)
+        mt = PAIR_TEST_RE.match(ln)
+        mm = PAIR_MEMCHR_RE.match(ln)
+        mb = PAIR_BACKOFF_RE.match(ln)
+        if mr:
+            k.add(int(mr.group(2) or 0))
+            line = "%s + K) %s + K; /* cover pick K normalized */\n" % (mr.group(1), mr.group(3))
+        elif mt:
+            tests.add(int(re.search(r'== (\d+)\)', ln).group(1)))
+            line = "%sB%s\n" % (mt.group(1), mt.group(2))
+        elif mm:
+            scans.add(int(re.search(r', (\d+), e - ', ln).group(1)))
+            line = "%s, B, %s\n" % (mm.group(1), mm.group(2))
+        elif mb:
+            k.add(int(re.search(r'(\d+)', ln).group(1)))
+            continue    # absent at K = 0, so dropped, not normalized
+        out.append(line)
+    return ''.join(out), picks
+
+
+def cover_pick_stamped(text):
+    """(K, {bytes}) the stamps declare: REQ_RUN's member (its cube if masked) at K, else REQ_BYTE."""
+    m = REQRUN_STAMP_VAL_RE.search(text)
+    if m and '@' in m.group(1):
+        st, _, mask = m.group(1).partition('/')
+        hx, k = st.split('@')
+        k = int(k)
+        member = int(hx[2 * k:2 * k + 2], 16)
+        km = int(mask[2 * k:2 * k + 2], 16) if mask else 0xff
+        return k, {member & km, (member & km) | (~km & 0xff)}
+    mb = REQBYTE_STAMP_VAL_RE.search(text)
+    return None, ({int(mb.group(1))} if mb and mb.group(1).isdigit() else set())
+
+
 def excise(text, label, drop_run=False):
     counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
@@ -1030,7 +1154,7 @@ def excise(text, label, drop_run=False):
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
               'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-              'bind_checks': 0, 'search_split': 0}
+              'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1295,7 +1419,14 @@ def excise(text, label, drop_run=False):
             # carry the same offset K as the two memchr lines above
             mf = PAIR_GUARD_RE.match(ln)
             if mf:
-                out.append("%s + K) {\n" % mf.group(1))
+                out.append("%s + K) %s + K;\n" % (mf.group(1), mf.group(2)))
+                i += 1
+                continue
+            mf = PAIR_TEST_RE.match(ln) or PAIR_MEMCHR_RE.match(ln)
+            if mf:
+                out.append("%sB%s\n" % (mf.group(1), mf.group(2)) if mf.re is PAIR_TEST_RE
+                           else "%s, B, %s\n" % (mf.group(1), mf.group(2)))
+                counts['req_pick'] += 1
                 i += 1
                 continue
             if PAIR_BACKOFF_RE.match(ln):     # absent at K = 0, so dropped, not normalized
@@ -1409,7 +1540,7 @@ def main():
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
            'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-           'bind_checks': 0, 'search_split': 0}
+           'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1463,8 +1594,27 @@ def main():
             # and each side is held to its own stamp below.
             if not drop_run and pick_form(tb) != pick_form(tu):
                 drop_run = True
+            ncov_pick = 0
+            cov_bad = []
+            if COVER_SCAN_RE.search(tb) and COVER_SCAN_RE.search(tu) and \
+                    cover_pick_stamped(tb) != cover_pick_stamped(tu):
+                for side in ('byte', 'utf8'):
+                    t = tb if side == 'byte' else tu
+                    nt, picks = cover_pick(t)
+                    k, want = cover_pick_stamped(t)
+                    if len(picks) != 1:
+                        cov_bad.append("%s cover find carries %d search clause(s), not 1" % (side, len(picks)))
+                    elif picks[0][1] != want or (k is not None and picks[0][0] != k):
+                        cov_bad.append("%s cover find searches %s at +%s, the stamps declare %s at +%s"
+                                       % (side, sorted(picks[0][1]), picks[0][0], sorted(want), k))
+                    if side == 'byte':
+                        tb = nt
+                    else:
+                        tu = nt
+                    ncov_pick += len(picks)
             nb, cb = excise(tb, "byte#%d" % idx, drop_run)
             nu, cu = excise(tu, "utf8#%d" % idx, drop_run)
+            cb['cover_pick'] = ncov_pick
             npairs += 1
             for k in agg:
                 agg[k] += cb[k] + cu[k]
@@ -1523,7 +1673,7 @@ def main():
                                        % (side, rbyte, m.group(1)))
                 if pair is not None:
                     bodies = REQRUN_FN_BODY_RE.findall(text)
-                    if bodies and not any('int fresh = 1;' in b for b in bodies):
+                    if bodies and not any('size_t ha = 0, hb = 0, wa = ' in b for b in bodies):
                         bad_sel.append("%s REQ_RUN \"%s\" stamps a cube scan position but no rx_reqrun body carries the pair arm"
                                        % (side, m.group(1)))
                     if any(b not in pair for b in scanned):
@@ -1600,6 +1750,7 @@ def main():
                     and ew['byte'] != ew['utf8'] and ew['utf8'] != 'none'):
                 bad_sel.append("END_WINDOW byte \"%s\" vs utf8 \"%s\" -- not the utf8 decline"
                                % (ew['byte'], ew['utf8']))
+            bad_sel += cov_bad
             if bad_sel:
                 nselect_bad += 1
                 if len(findings) < 20:
@@ -1667,7 +1818,7 @@ def main():
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
               'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong',
-              'forwarder', 'bind_checks', 'search_split'):
+              'forwarder', 'bind_checks', 'search_split', 'cover_pick'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
@@ -1722,7 +1873,7 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split cover_pick; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"

@@ -77,10 +77,19 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 [ -x "$PCREC" ] || { echo "FAIL: prechecks: no compiler at $PCREC — run \`make\` first" >&2; exit 1; }
 
+# D172 S3 (job 600): every compile below carries the `cover` row's deny
+# (registry.md §6¶8a), run_scan_edge_census.sh's COVER_DENY. A fixed-width
+# window is a `cover` artifact by default, whose search runs no pre-check and
+# no scan (REQ_WHY reads "dominated" there); the deny renders the build before
+# S3, and every artifact that is not cover is byte-identical under it (job
+# 600's census: the default arm's movers are exactly the cover artifacts), so
+# the deny re-aims the witnesses that became cover and moves nothing else.
+# No caller passes a --memfn= of its own (the CLI's last --memfn= wins).
+COVER_DENY=--memfn=no-window-search
 # emit <outfile> <pattern> [extra args...]   (0 = compiled, non-0 = refused)
 emit() {
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --features all "$@" -o "$out" --pattern "$pat" >/dev/null 2>&1
+    pcrec_run "$PCREC" -p rx --features all $COVER_DENY "$@" -o "$out" --pattern "$pat" >/dev/null 2>&1
 }
 # the value of a string stamp, or the empty string when the macro is absent
 stamp() { sed -n "s/^#define RX_$2 \"\\(.*\\)\"\$/\\1/p" "$1" | head -1; }
@@ -107,9 +116,16 @@ run_scan_members() {
 }
 # reqrun_scans_run FILE RUNSTAMP: the window block scans every member of the
 # run's scan position, and a pair's two streams are both there.
+# D172 S3 final review EMIT-1 (lane s3fix; re-aimed by lane s3m, job 621's
+# red): a pair's two streams are searched in bounded look-aheads, each from
+# its own kept hit (`ha`/`hb`) to its window end `e`, so a pair member's
+# memchr reads `memchr(subject + ha, T, e - ha)` / `(subject + hb, M, e - hb)`
+# rather than the exact position's `(subject + pos.., B, n - pos..)`.
 reqrun_scans_run() {
-    local b
-    for b in $(run_scan_members "$2"); do reqrun_scans "$1" "$b" || return 1; done
+    set -- "$1" $(run_scan_members "$2")
+    [ $# -eq 2 ] && { reqrun_scans "$1" "$2"; return; }
+    reqrun_fn "$1" | grep -q "memchr(subject + ha, $2, e - ha)" &&
+        reqrun_fn "$1" | grep -q "memchr(subject + hb, $3, e - hb)"
 }
 
 # =========================================================================
@@ -1635,7 +1651,7 @@ ROWS
 #   (k) Q10: a COUNT-COLLAPSED prefilter declines.
 fact() {   # fact NAME PATTERN [args...]: the --emit-facts value of NAME
     local f="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" --features all "$@" --emit-facts --pattern "$pat" 2>/dev/null \
+    pcrec_run "$PCREC" --features all $COVER_DENY "$@" --emit-facts --pattern "$pat" 2>/dev/null \
         | awk -F'\t' -v f="$f" '$2 == f { print $7; exit }'
 }
 # handoff_block FILE: the gate and the block that moves the start, as emitted

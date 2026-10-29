@@ -11,7 +11,10 @@ SAB_DESC='the pre-multiplied DFA machine'"'"'s _is_dead accessor gains always_in
 SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:1fail/47pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1121."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/x.c" --pattern "ab" && grep -h "_is_dead(rx_forward_state s)" "$REACH_TMP/x.c"'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search -p rx -o "$REACH_TMP/x.c" --pattern "ab" && grep -h "_is_dead(rx_forward_state s)" "$REACH_TMP/x.c"'
 SAB_REACH_EXPECT='static inline int rx_forward_is_dead(rx_forward_state s) { return s == 65535; }'
 SAB_BEFORE='    pcrec_sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",'
 SAB_AFTER='    pcrec_sb_printf(c, "static inline __attribute__((always_inline)) int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",   /* SABOTAGE S1121 */'

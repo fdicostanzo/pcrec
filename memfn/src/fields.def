@@ -232,7 +232,8 @@ MF_FIELD(fn_ref, MF_PH_DEFINE, HOOK, cl_fn_ref,
 MF_FIELD(table_ref, MF_PH_DEFINE, OBLIG, cl_table_ref,
          CM(NONE) | CM(REF) | CM(OTHER),
          "OBLIG: the SET terms' table_ref; 0 is `no table`, set by every term builder "
-         "(REF: some SET term of the site names one)")
+         "(REF: some SET term of the site names one); UNSTATED on a window site, which "
+         "states no terms (its offers are `toffer`)")
 MF_FIELD(fold_kind, MF_PH_DEFINE, OBLIG, cl_fold_kind,
          CM(F_NONE) | CM(F_ASCII) | CM(F_UCP) | CM(OTHER),
          "OBLIG: a MISMATCH's fold fact (mf_fold; RULED Q-R8-4, MF_SITE_ABI 7); F_NONE is a stated "
@@ -266,8 +267,10 @@ MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
          "elsewhere unstated): pcrec STATES it from B2 (PR-3), so at B1 every site reads "
          "UNSTATED and a row that reads the kind (D1, D1c, D1w) declines (R1). There is no ANY "
          "kind ([rev3 A22]): a row serving every kind serves every kind class and does not USE "
-         "the field. REPORT (R-26.3) is served by the REPORT row alone (R-26.6): every other "
-         "row's kinds leave it out, so the gate declines them on a REPORT site")
+         "the field. REPORT (R-26.3) is served by the FIND rows whose pick renders a window "
+         "site's stop (D1, D1c, D1w, PAIR, R7w) since D172 S3 (RPT, the row that alone served "
+         "it, retired): the window family's E-find asks the FIND slot about a REPORT site's "
+         "stop (fd_find)")
 MF_FIELD(layer, MF_PH_DEFINE, VALUE, cl_layer,
          CM(L_OFF) | CM(L_W16) | CM(L_W32) | CM(OTHER),
          "the layer variant the finder walk evaluates (a fact of the walk's input, not of the "

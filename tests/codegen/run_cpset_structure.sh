@@ -1027,11 +1027,51 @@ fi
 # no emitted comments, `__one_local` calls `_next`, `_next_n` its own entry;
 # none of the twelve splits its search any more (byte artifacts, no prologue).
 # Versus BASE 02f357b39 (before the iterator): +7,150 (DFA) .. +8,389.
+# RE-RECORDED 2026-10-23 at D172 S3 (lane s3fix600, job 600, abi 83 -> 84,
+# same-width digits): the four sample patterns that are fixed-width windows
+# (`a`, `abc`, `\bword\b`, `(?i)HeLLo`) are `cover` artifacts by default, and
+# both of their moved readings are that ruling: RX_DFA_PREFILTER reads "none"
+# (no scan, so no candidate-start filter; was memchr / run-pinned /
+# offset-set-bounded / handoff) and EMITTED_BYTES falls by the forward and
+# reverse machines the cover artifact does not carry (21,348 -> 18,944;
+# 22,179 -> 19,267; 25,144 -> 20,690; 25,544 -> 21,700). RX_DFA_TABLE stays
+# "premultiplied": it names the anchored `_match` machine those artifacts
+# still carry. The other eight rows did not move.
+# RE-RECORDED 2026-10-24 (lane s3 trailing checks, job 606's red; abi 84
+# PROVISIONAL, no digit moves): `(?i)HeLLo` 21,700 -> 22,441 (+741), the S3
+# window text alone. The S3 commit was rebuilt with the code reviews' C1/r2
+# fixes folded in (G2's caseless two-byte stream, R2-6's one two-stream
+# renderer), so its cover window find for the caseless run is no longer the
+# in-place class-scan loop over `L`/`l` but a call to an `rx_mf1_ofsskip`
+# helper (`__body`: the two `memchr` streams for 76/108, the nearer hit, the
+# `-= 3` back-off, the same two masked `rx_w4` compares), and RX_MEMFN_LIBC
+# reads "memchr" (was "none"). VERIFIED BY DIFFING against the superseded S3
+# commit d3886a656 at `-o -`: those 30 added helper lines, the one
+# scan_position line and that stamp, nothing else (s3_report.md Part 9). The
+# other eleven rows did not move.
+# RE-RECORDED 2026-10-24 at lane s3pair's merge of main 0d3765c87 (S3 over
+# the iterators, abi 84 -> 85, same-width digits): the same four `cover` rows,
+# RX_DFA_PREFILTER "none" as above, and each EMITTED_BYTES falls from main's
+# value by EXACTLY its pre-merge S3 delta (28,498 -> 26,094, -2,404;
+# 29,329 -> 26,417, -2,912; 32,294 -> 27,840, -4,454; 32,694 -> 29,591,
+# -3,103): the iterator's scaffold and S3's cover text add independently.
+# The other eight rows read main's values unchanged.
+# RE-RECORDED 2026-10-24, lane s3fix (the S3 final review's EMIT-1, inside abi
+# 85), ONE ROW: `(?i)HeLLo` 29,591 -> 29,960 (+369), its B-fn helper's
+# two-stream body now searching each stream in bounded look-aheads (kit.h
+# ofs_pair); the other eleven rows unchanged. A ruled move, not a regression.
 # RE-RECORDED 2026-10-26 at [INLINE-C] stage 0 (lane ic0fix, abi 87 -> 88):
 # all twelve EMITTED_BYTES rows +2, the same on every artifact: the shared
 # block's one comment line "traps on" -> "propagates" (+2 bytes); the abi digits
 # keep their width; the other stamps read identically. The first run of the
 # stage-0 validation (job 530-ic0-test) was RED here only.
+# RE-RECORDED 2026-10-29 at lane s3m's merge of main b05ccfc0b (D172 S3 over
+# main at abi 91, renumbered 91 -> 92, same-width digits): the same four
+# `cover` rows, RX_DFA_PREFILTER "none" as above, and each EMITTED_BYTES falls
+# from main's value by EXACTLY its pre-merge S3 delta (28,500 -> 26,096,
+# -2,404; 29,331 -> 26,419, -2,912; 32,296 -> 27,842, -4,454; 32,696 -> 29,962,
+# -2,734): main's +2 comment bytes and S3's cover text add independently. The
+# other eight rows read main's values unchanged.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

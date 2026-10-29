@@ -79,7 +79,7 @@ done <<'WITNESSES'
 (ab)c?userpass	3	-
 (x)?userz	1	#define RX_DFA_PREFILTER "handoff"
 /(phpmyadmin|wp-admin)/[a-z]+\.php	6	#define RX_DFA_PREFILTER "handoff"
-(?i)(cat)s?dog	4	size_t ha = 0, hb = 0;
+(?i)(cat)s?dog	4	size_t ha = 0, hb = 0, wa
 WITNESSES
 
 echo "witnesses reached: $reached (floor $HANDOFF_REACH_FLOOR)"

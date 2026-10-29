@@ -485,9 +485,18 @@
 #     R17-b' B4' (lane b4p, 2026-10-21): S916 retired with R0 (it was a design-
 #     table id, never registered as a file; its id is reserved), S917 is
 #     UNREACHED (LOCKDOWN withdrew R0, R5 and R7, the only rows reading a set
-#     key), S922/S1079/S1105 are re-aimed at fd_row_decides (the `routed` bit
-#     they planted is deleted), S1020 is re-anchored to R7w.
+#     key), S1020 is re-anchored to R7w.
 #     S1092 (R-24) joined it too: the finder check's provenance family L.
+#     D172 S3 (lane s3, 2026-10-22): S922 retired with the preview hold it
+#     planted (no row is held for a step since RPT retired; no successor: the
+#     LOCKDOWN has no held row), S1251-S1254 with mf_preview and S1255-S1256
+#     with RPT and kit_report_exact (window_site.md §4; their successors are
+#     the window family's REPORT controls in memfn/tests/run_g2_win.sh and its
+#     plants S1422/S1423). tests/memfn/run_proof.sh's two unnumbered plants
+#     ZK6 and ZK7 (never matrix rows) retired with them, for the same reason.
+#     S1079/S1105 (re-aimed at fd_row_decides at B4', when the `routed` bit
+#     they planted was deleted) are re-anchored from fd_row_decides to
+#     fd_route/fd_pres.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their

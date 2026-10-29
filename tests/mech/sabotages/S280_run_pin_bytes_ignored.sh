@@ -30,7 +30,10 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 # start scan is now the run handoff RE-ENTERED (`handoff`, ranked below the run
 # rows and above memchr), still NO run row, which is the shape the plant needs:
 # under it the run-pinned row outranks the re-entry and compares at 0.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f61626364782f75@6/fffffffffffeffff\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"handoff\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f61626364782f75@6/fffffffffffeffff\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"handoff\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
 SAB_REACH_EXPECT="REACH-C0-PIN-WITNESS"
 SAB_COUNT=1
 SAB_BEFORE='        while (i < l && o->k[ro + i].count == 1 &&

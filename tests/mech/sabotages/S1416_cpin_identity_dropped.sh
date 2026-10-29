@@ -20,7 +20,10 @@ SAB_FILE="memfn/src/window.c"
 SAB_SUITES="prechecks offsetskip"
 SAB_DESC="the window family's C-pin drops its IDENTITY clause (the stop is R's member), so a class-C2 pattern whose stop is a different byte at a different offset than the run's member (\\Bfoo\\B: the stop 'o' at offset 1, not the member 'f') is pinned and takes the run-pinned row instead of staying offset-set-bounded"
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1416."
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\Bfoo\\B" && grep -q "^#define RX_DFA_PREFILTER \"offset-set-bounded\"" "$REACH_TMP/o.c" && echo REACH-C2-STAYS-OFFSET-SET'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\Bfoo\\B" && grep -q "^#define RX_DFA_PREFILTER \"offset-set-bounded\"" "$REACH_TMP/o.c" && echo REACH-C2-STAYS-OFFSET-SET'
 SAB_REACH_EXPECT="REACH-C2-STAYS-OFFSET-SET"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

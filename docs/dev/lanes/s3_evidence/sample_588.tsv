@@ -1,0 +1,34 @@
+# docs/dev/lanes/s3_evidence/sample_588.tsv -- job 588's MOVER SAMPLE (not the §6 bar),
+# written by pick_588.py (its header is the rule); do not edit by hand.
+# corpus patterns 4753 (§6's cells excluded), cover movers 804, seed 20261023, want 24, picked 24
+# engine vm: 0 movers (C1, cover is a DFA-route row): no vm stratum
+# stratum LIBC/one/norun: movers 286, generatable 153, picked 5
+# stratum LIBC/one/run: movers 216, generatable 136, picked 5
+# stratum WALK/hors/norun: movers 6, generatable 5, picked 5
+# stratum WALK/one/norun: movers 282, generatable 85, picked 5
+# stratum WALK/one/run: movers 14, generatable 12, picked 4
+#id	stratum	pattern
+smp01	LIBC/one/norun	\\|
+smp02	LIBC/one/run	ABCDEFGH
+smp03	WALK/hors/norun	[^abc]{2,4}?
+smp04	WALK/one/norun	[a[:b]
+smp05	WALK/one/run	(?:(?i:abs)|(?i:ab)S)
+smp06	LIBC/one/norun	z(?!a)
+smp07	LIBC/one/run	z(?:ab){3,}?
+smp08	WALK/hors/norun	\\b\\w*?\\B\\w
+smp09	WALK/one/norun	(?:(?!a)z|w)
+smp10	WALK/one/run	(?i)foobar
+smp11	LIBC/one/norun	(?x)a#
+smp12	LIBC/one/run	.{3}cat
+smp13	WALK/hors/norun	...
+smp14	WALK/one/norun	[a-]
+smp15	WALK/one/run	(?i)abc
+smp16	LIBC/one/norun	(?<!a)c
+smp17	LIBC/one/run	a{ , }
+smp18	WALK/hors/norun	..
+smp19	WALK/one/norun	[[:]
+smp20	WALK/one/run	(?i)x/1234
+smp21	LIBC/one/norun	:
+smp22	LIBC/one/run	a{2,2}c
+smp23	WALK/hors/norun	\\w\\B\\w
+smp24	WALK/one/norun	[:a]

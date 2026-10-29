@@ -43,7 +43,10 @@ SAB_DESC="the necessary-RUN whole-window pre-check emits 'memcmp(...)' where it 
 SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case of every pattern carrying a necessary run reports nomatch, so 'cases failed' moves from 0 to a large count (the run population is 406 of 2,814 corpus patterns that compile at default axes, measured 2026-09-22 by the lane's own base-vs-tip mover census). tests/codegen/run_prechecks.sh §4.1b is the structural detector and names the sense directly ('the compare's sense is not !memcmp(...) — it may be inverted') on each of the seven §4.1 witnesses. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S267."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `a=b`
 # stamps a three-byte run and emits the negated memcmp this row inverts.
-SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -fno-run-overlap -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"a=b\", 3)) return cand;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -fno-offset-skip -fno-run-overlap -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"a=b\", 3)) return cand;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
 SAB_REACH_EXPECT="REACH-REQ-RUN-COMPARE-EMITTED"
 # [OPT-LITSCAN] S1 step 6 (lane s1step6, 2026-09-26): the run pre-check is now
 # a call of a file-scope `rx_reqrun` block written by the offset-skip block's

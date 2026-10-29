@@ -175,7 +175,12 @@ while IFS=$'\t' read -r row flags pat; do
         ok "[cand-oracle-shipped] the shipped compiler declines '$row' on $pat"
     fi
 done < "$WIT"
-if [ "$nshipped" -ge 1 ] && [ "$nshipped" -eq "$nharness" ]; then
+if [ "$nharness" -eq 0 ] && [ "$nshipped" -eq 0 ]; then
+    # D172 S3 routed `cover`, the one row only the lever routed, by default: no
+    # harness-only row exists, so this check has no population. Said so, never
+    # scored as a pass; it bites again when a lever routes a row of its own.
+    echo "UNREACHED: [cand-oracle-shipped] no harness-only row exists (cover ships since D172 S3)"
+elif [ "$nshipped" -ge 1 ] && [ "$nshipped" -eq "$nharness" ]; then
     ok "[cand-oracle-shipped] $nshipped harness witnesses, each also compiled without the lever"
 else bad "[cand-oracle-shipped] $nharness harness witnesses reached, $nshipped checked without the lever"; fi
 

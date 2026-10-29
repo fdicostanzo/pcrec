@@ -18,11 +18,17 @@
  *   the frame and the kit's reply. The driver (g2_win_run.c) holds the reply
  *   to the reference's decision and every answer to the facts.
  * A site the kit refuses is a failure (the floor serves every frame of the
- * family but a stated `moved`, which G2 never states); so is a non-preview
- * art that decides (the CONTROL: mf_wdecide must refuse without the lever,
- * and a spans-only site must be refused there).
+ * family but a stated `moved`, which G2 never states, and a REPORT site),
+ * except a REPORT site E-find cannot render (D172 S3: a frame other than
+ * STMT/ASSIGN, or no stop by G2's own decision), which MUST be refused and
+ * is then rendered as a DFA_SCAN site. The CONTROLS: a plain art decides and
+ * renders; E-find renders a REPORT site and its deny `no-window-search` refuses
+ * it (and sends any other site to the floor); D-hors's deny `no-window-skip`
+ * removes its skip table.
  *
- *   g2_win_gen SEED NSITES OUTDIR
+ *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400;
+ *                                    G2W_C1_SITES: the caseless sites, 300;
+ *                                    G2W_R2_SITES: the two-byte sites, 300)
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -109,7 +115,7 @@ typedef struct {
     uint32_t table[G2W_MAXPOS];
 } gspan;
 typedef struct { int entry, nspan; gspan span[G2W_MAXSPAN]; } galt;
-typedef struct { int nalt; galt alt[2]; int wfloor, floor_is_lo; } gfacts;
+typedef struct { int nalt; galt alt[2]; int wfloor, floor_is_lo, dense, assign; } gfacts;
 
 /* The read-only view of `f` in `x`, its spans in `v`. */
 static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
@@ -135,11 +141,46 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
 
 /* ---- the random stream -------------------------------------------------------- */
 
-static unsigned long long rng;
+/* THE STREAMS. The S2 population (NSITES sites) draws from `rng`; D172
+ * S3's DENSE sites, appended after it (G2W_S3_SITES of them), draw from a
+ * stream of their own, so every site the space generated before S3 is
+ * generated unchanged (S2's floors were measured on it). */
+static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
+                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull;
+static unsigned long long *rngp = &rng;
+static int s3_dense;                    /* generating S3's dense sites */
+/* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
+ * stream of their own): REPORT windows whose positions are mostly two-member
+ * cubes (a caseless literal's shape, a high-byte cube among them), so that
+ * Table B's PAIR decides their stop and E-find renders it two ways, B-fn
+ * (the offset-skip function) and B-pair (the loop's two streams, where a
+ * context item keeps the plan from being the function's predicate). */
+static int c1_caseless;
+static const uint8_t CUBES[][2] = { { 'A', 'a' }, { '0', '1' }, { 0xC4, 0xE4 } };
+#define NCUBES (sizeof CUBES / sizeof CUBES[0])
+/* THE TWO-BYTE SITES (code review r2 R2-1, after the caseless ones, from a
+ * stream of their own): REPORT windows with one position holding ANY two
+ * bytes (rarely a one-bit cube), the others one of three bytes drawn with
+ * them, and sometimes an item after the window holding two bytes (a
+ * lookahead's `[Qq]`), so that Table B's widened PAIR decides their stop and
+ * B-pair renders it. The bytes are the driver's subject alphabet's, so a
+ * dropped stream deletes matches. */
+static int r2_two;
+/* THE BELOW-WINDOW SITES (the S3 final review's CHECK-2, after the two-byte
+ * ones, from a stream of their own): a dense REPORT window with a dense
+ * two-position verify-YES core item just before it, sparser than the window,
+ * so the stop (the least mass) lies in a window wholly below the candidate:
+ * the population of D-hors's `whi >= 0` scope (no D-hors there; the census
+ * below holds it). */
+static int h2_below;
+static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
+#define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
 {
-    rng ^= rng << 13; rng ^= rng >> 7; rng ^= rng << 17;
-    return n ? (unsigned)(rng % n) : 0;
+    unsigned long long r = *rngp;
+    r ^= r << 13; r ^= r >> 7; r ^= r << 17;
+    *rngp = r;
+    return n ? (unsigned)(r % n) : 0;
 }
 
 /* G2's byte alphabet: two one-bit cubes ('a'/'A', '0'/'1') and others. */
@@ -316,24 +357,102 @@ static void gen_facts(int fam, gfacts *x)
     case FAM_REPORT: {
         galt *a = &x->alt[0];
         a->entry = G2W_E_NONE;
-        int k = 1 + (int)rnd(5);
+        int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8) : 1 + (int)rnd(5);
         rand_span(&a->span[a->nspan++], 0, k, G2W_YES, 0);
         a->span[0].core_lo = 0;
         a->span[0].core_len = k;
-        if (rnd(2)) {       /* an item before span 0: FAILS (core) or SATISFIES */
+        if (c1_caseless) {  /* every position a cube, or (mixed) three in four */
+            x->assign = 1;
+            int mixed = (int)rnd(2);
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                const uint8_t *c = CUBES[rnd(NCUBES)];
+                set_add(a->span[0].set[j], c[0]);
+                if (!mixed || rnd(4)) set_add(a->span[0].set[j], c[1]);
+                a->span[0].table[j] = 0;
+            }
+        }
+        uint8_t tw[3];
+        if (r2_two) {       /* one position two bytes; the rest all three, or
+                               (one in six) one of them, so the pair is
+                               mostly the rarest position: PAIR's stop */
+            x->assign = 1;
+            tw[0] = TWOB[rnd(NTWOB)];
+            do tw[1] = TWOB[rnd(NTWOB)]; while (tw[1] == tw[0]);
+            do tw[2] = TWOB[rnd(NTWOB)]; while (tw[2] == tw[0] || tw[2] == tw[1]);
+            int jp = (int)rnd((unsigned)k);
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                if (j == jp) {
+                    set_add(a->span[0].set[j], tw[0]);
+                    set_add(a->span[0].set[j], tw[1]);
+                } else if (rnd(6) == 0) {
+                    set_add(a->span[0].set[j], tw[rnd(3)]);
+                } else {
+                    for (int q = 0; q < 3; q++) set_add(a->span[0].set[j], tw[q]);
+                }
+                a->span[0].table[j] = 0;
+            }
+        }
+        if (h2_below) {     /* five distinct alphabet bytes a position; not REPORT
+                               (E-find cannot find a set stop below the
+                               candidate, so a REPORT site there is refused):
+                               E-find's frames reach Table D, the rest the floor */
+            x->dense = 1;
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                for (unsigned q = rnd(NALPHA), m = 0; m < 5; m++)
+                    set_add(a->span[0].set[j], ALPHA[(q + m) % NALPHA]);
+                a->span[0].table[j] = 0;
+            }
+            gspan *it = &a->span[a->nspan++];   /* three distinct a position */
+            memset(it, 0, sizeof *it);
+            it->start = -2;
+            it->len = 2;
+            it->verify = G2W_YES;
+            it->core_lo = 0;
+            it->core_len = 2;
+            for (int j = 0; j < 2; j++)
+                for (unsigned q = rnd(NALPHA), m = 0; m < 3; m++)
+                    set_add(it->set[j], ALPHA[(q + m) % NALPHA]);
+            x->wfloor = rnd(3) == 0 ? G2W_F_EXPR : G2W_F_SUBJECT;
+            break;
+        }
+        if (s3_dense) {     /* D172 S3: a DENSE window (every position three to
+                               five draws of the alphabet, under the tie-heavy
+                               rate: D-hors's population, window_site.md §2.5) */
+            x->dense = 1;
+            x->assign = 1;
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                unsigned m = 3 + rnd(3);
+                for (unsigned q = 0; q < m; q++) set_add(a->span[0].set[j], ALPHA[rnd(NALPHA)]);
+                a->span[0].table[j] = 0;
+            }
+        }
+        /* the caseless sites state an item less often (with none, the plan
+           can be the offset-skip function's predicate: B-fn) */
+        if (c1_caseless ? rnd(4) == 0 : rnd(2) != 0) {  /* an item before span 0:
+                                                            FAILS (core) or SATISFIES */
             int w = 1 + (int)rnd(2);
             rand_span(&a->span[a->nspan], -w, w, rnd(3) ? G2W_YES : G2W_NO, 1);
             gspan *it = &a->span[a->nspan++];
             it->core_lo = 0;
             it->core_len = rnd(2) ? w : 0;
         }
-        if (rnd(2)) {       /* one after it */
+        if (c1_caseless ? rnd(4) == 0 : rnd(2) != 0) {  /* one after it */
             rand_span(&a->span[a->nspan], k, 1, rnd(3) ? G2W_YES : G2W_NO, 0);
             gspan *it = &a->span[a->nspan++];
             it->core_lo = 0;
             it->core_len = rnd(2);
+            if (r2_two && rnd(2)) {     /* a lookahead's two bytes */
+                memset(it->set[0], 0, 32);
+                set_add(it->set[0], tw[0]);
+                set_add(it->set[0], tw[2]);
+                it->table[0] = 0;
+            }
         }
-        if (rnd(3) == 0) x->wfloor = G2W_F_EXPR;
+        if (rnd(c1_caseless ? 6 : 3) == 0) x->wfloor = G2W_F_EXPR;
         break;
     }
     default: {
@@ -458,11 +577,129 @@ static const char *h_table_name(void *u, uint32_t ref)
 /* ---- main ------------------------------------------------------------------------ */
 
 static long fails, refused_ok, rendered, asked_ok, two_run_refused;
+/* D172 S3: E-find's reach by its text's parts (K35), and the REPORT sites
+   E-find cannot render, each refused */
+static long ef_n, ef_libc, ef_walk, ef_hors, ef_run, ef_below, ef_report, report_refused;
+static long ef_pair, ef_fn;     /* Table B's PAIR: in the loop (B-pair), the function (B-fn) */
+static long ef_hwin;            /* the stop's verify-YES core window wholly below the candidate */
 
 static void fail(int id, const char *what, const char *detail)
 {
     fails++;
     if (fails <= 30) printf("FAIL: site %d: %s: %s\n", id, what, detail ? detail : "");
+}
+
+/* ---- THE S3 CONTROLS (D172 S3; window_site.md §5.2's deny rows) ------------------ */
+
+/* Renders a fixed window site of kind `kind` in frame `form`/`handoff` under
+ * `opts`, the tie-heavy rate when `dense` (every alphabet byte 60,000 ppm);
+ * span 0 is `k` positions of `members` each, verify YES, its core the first
+ * `kc` (a non-core position is one no legacy row expresses). 0 and the form
+ * id and text in *form / *text, or -1 (refused). */
+static int ctl_render(int kind, int form, int handoff, const char *opts, int k, int kc,
+                      const char *members, int dense, const char **form_id, buf *text)
+{
+    static mf_wspan sp;
+    static mf_walt al;
+    static uint32_t rate[256];
+    memset(&sp, 0, sizeof sp);
+    sp.start = 0;
+    sp.len = (uint8_t)k;
+    sp.verify = MF_VERIFY_YES;
+    sp.core = MF_CORE_STATED;
+    sp.core_lo = 0;
+    sp.core_len = (uint8_t)kc;
+    for (int j = 0; j < k; j++)
+        for (const char *m = members; *m; m++) set_add(sp.set[j], (unsigned char)*m);
+    memset(&al, 0, sizeof al);
+    al.entry = MF_ENTRY_NONE;
+    al.nspan = 1;
+    al.spans = &sp;
+    for (int b = 0; b < 256; b++) rate[b] = 50;
+    for (unsigned i = 0; i < NALPHA; i++) rate[ALPHA[i]] = 60000;
+    mf_akind kd;
+    memset(&kd, 0, sizeof kd);
+    kd.tag = "byte-rate";
+    kd.version = 1;
+    kd.present = MF_KIND_PRESENT;
+    kd.prov.source = MF_PROV_MEASURED;
+    kd.prov.bundle = "g2w";
+    kd.prov.digest = 1;
+    kd.payload = rate;
+    mf_analysis an = { MF_ANALYSIS_LIST_V, 1, &kd };
+    mf_site s;
+    memset(&s, 0, sizeof s);
+    s.abi = MF_SITE_ABI;
+    s.form = (uint8_t)form;
+    s.op = MF_OP_FIND;
+    s.handoff = (uint8_t)handoff;
+    s.empty = MF_EMPTY_MISS;
+    s.use = MF_USE_POSITION;
+    s.body = MF_BODY_ONESHOT;
+    s.site_kind = (uint8_t)kind;
+    s.span_hi = MF_SPAN_UNBOUNDED;
+    s.policy = MF_P_PORTABLE_ONLY;
+    s.opts = opts;
+    s.ret_pred = MF_NO_PRED;
+    s.pred.fn_ref = 1;
+    s.nalt = 1;
+    s.alts = &al;
+    s.wfloor = MF_WFLOOR_SUBJECT;
+    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, dense ? &an : NULL);
+    hctx hc = { 9999, { { 0 } }, 0 };
+    mf_hooks h;
+    memset(&h, 0, sizeof h);
+    h.s = "s"; h.n = "n"; h.lo = "lo"; h.result = "r"; h.miss = "((size_t)-1)";
+    h.fn_name = h_fn_name; h.u = &hc;
+    buf b2 = { 0 };
+    mf_sink sb = mk_sink(text), sf = mk_sink(&b2);
+    mf_result res;
+    mf_class c;
+    int rc = mf_emit(art, &s, &h, &sb, &sf, &res);
+    mf_art *aq = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, dense ? &an : NULL);
+    int qc = mf_ask(aq, &s, &h, &c);
+    if (b2.p) bputs(text, b2.p);
+    free(b2.p);
+    if (!rc != !qc) return -2;          /* the query and the define disagree */
+    if (rc) return -1;
+    static char fid[sizeof res.form_id];
+    snprintf(fid, sizeof fid, "%s", res.form_id);
+    *form_id = fid;
+    return 0;
+}
+
+static void s3_controls(long *ok)
+{
+    const char *fid = "";
+    buf t = { 0 };
+    int rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, NULL, 4, 4, "a", 0, &fid, &t);
+    if (rc || strcmp(fid, "window-search")) fail(-1, "control", "E-find does not render a REPORT site");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-window-search", 4, 4, "a", 0, &fid, &t);
+    if (rc != -1) fail(-1, "control", "no-window-search: a REPORT site rendered (or ask and define disagree)");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_FUNC, MF_H_RETURN, NULL, 4, 4, "a", 0, &fid, &t);
+    if (rc != -1) fail(-1, "control", "a REPORT site in the FUNC frame rendered (the floor took it)");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_DFA_SCAN, MF_FORM_STMT, MF_H_ASSIGN, NULL, 3, 2, "ab0", 1, &fid, &t);
+    if (rc || strcmp(fid, "window-search")) fail(-1, "control", "E-find does not render a DFA_SCAN site no legacy row serves");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_DFA_SCAN, MF_FORM_STMT, MF_H_ASSIGN, "no-window-search", 3, 2, "ab0", 1, &fid, &t);
+    if (rc || strcmp(fid, "wf-floor")) fail(-1, "control", "no-window-search: a DFA_SCAN site not on the floor");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, NULL, 3, 3, "ab0", 1, &fid, &t);
+    if (rc || !t.p || !strstr(t.p, "_sh[")) fail(-1, "control", "a dense window renders no D-hors table");
+    else (*ok)++;
+    free(t.p); t = (buf){ 0 };
+    rc = ctl_render(MF_SK_REPORT, MF_FORM_STMT, MF_H_ASSIGN, "no-window-skip", 3, 3, "ab0", 1, &fid, &t);
+    if (rc || !t.p || strstr(t.p, "_sh[")) fail(-1, "control", "no-window-skip: the D-hors table stays");
+    else (*ok)++;
+    free(t.p);
 }
 
 static void emit_set(buf *b, const uint8_t s[32])
@@ -477,6 +714,14 @@ int main(int argc, char **argv)
     if (argc != 4) { fprintf(stderr, "usage: g2_win_gen SEED NSITES OUTDIR\n"); return 2; }
     rng = strtoull(argv[1], NULL, 10) * 2654435761ull + 0x9E3779B97F4A7C15ull;
     int nsites = atoi(argv[2]);
+    const char *s3n = getenv("G2W_S3_SITES");
+    int n3 = s3n ? atoi(s3n) : 400;
+    const char *c1n = getenv("G2W_C1_SITES");
+    int n4 = c1n ? atoi(c1n) : 300;
+    const char *r2n = getenv("G2W_R2_SITES");
+    int n5 = r2n ? atoi(r2n) : 300;
+    const char *h2n = getenv("G2W_H2_SITES");
+    int n6 = h2n ? atoi(h2n) : 100;
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -509,17 +754,33 @@ int main(int argc, char **argv)
         else refused_ok++;
         if (strcmp(res.form_id, "") == 0) fail(-1, "control", "a spans-only site named no form");
         else refused_ok++;
-        /* "window-family" is no longer a step the kit names (S2 commit 6) */
-        mf_art *a2 = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
-        if (!mf_preview(a2, "window-family"))
-            fail(-1, "control", "mf_preview(window-family) was accepted after its retirement");
-        else refused_ok++;
+        s3_controls(&refused_ok);
     }
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites; id++) {
-        int fam = id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
+    for (int id = 0; id < nsites + n3 + n4 + n5 + n6; id++) {
+        if (id == nsites) {             /* D172 S3's dense sites: their own stream */
+            rngp = &rng3;
+            s3_dense = 1;
+        }
+        if (id == nsites + n3) {        /* the caseless sites: theirs */
+            rngp = &rng4;
+            s3_dense = 0;
+            c1_caseless = 1;
+        }
+        if (id == nsites + n3 + n4) {   /* the two-byte sites: theirs */
+            rngp = &rng5;
+            c1_caseless = 0;
+            r2_two = 1;
+        }
+        if (id == nsites + n3 + n4 + n5) {  /* the below-window sites: theirs */
+            rngp = &rng6;
+            r2_two = 0;
+            h2_below = 1;
+        }
+        int fam = s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
+                : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
         famn[fam]++;
@@ -552,6 +813,7 @@ int main(int argc, char **argv)
         static uint32_t rate[256];
         /* the rate: NONE, skewed, or tie-heavy (every alphabet byte equal) */
         x.rate_kind = (int)rnd(3);
+        if (gf.dense) x.rate_kind = 2;
         if (x.rate_kind == 1) {
             for (int b = 0; b < 256; b++) rate[b] = 1 + rnd(40);
             for (unsigned i = 0; i < NALPHA; i++) rate[ALPHA[i]] = 1000 + rnd(120000);
@@ -582,6 +844,9 @@ int main(int argc, char **argv)
         static const uint8_t kinds[] = { MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                                          MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT, MF_SK_REPORT };
         s.site_kind = fam == FAM_MLINE ? MF_SK_DFA_ATTEMPT : kinds[rnd(fam == FAM_REPORT ? 6 : 5)];
+        /* the below-window sites are never REPORT: E-find finds no set stop below the
+           candidate, so one would be refused (their population is Table D's scope) */
+        if (h2_below && s.site_kind == MF_SK_REPORT) s.site_kind = MF_SK_DFA_SCAN;
         s.span_hi = MF_SPAN_UNBOUNDED;
         s.policy = MF_P_PORTABLE_ONLY;
         s.pred.fn_ref = 1;
@@ -635,6 +900,28 @@ int main(int argc, char **argv)
                 ? MF_EMPTY_NOP : x.empty == G2W_EMPTY_EXCLUDED ? MF_EMPTY_EXCLUDED : MF_EMPTY_AT_N;
         s.on_miss_leaves = fr != G2W_FR_FUNC && onm == 2;
         s.use = MF_USE_POSITION;
+        /* D172 S3: a dense window is a REPORT site in an ASSIGN frame, the
+           shape D-hors renders (E-find; the legacy rows serve a whole-core
+           window of any other kind) */
+        if (gf.assign) {
+            s.site_kind = MF_SK_REPORT;
+            frames[fr]--;
+            fr = rnd(2) && below_n ? G2W_FR_ASSIGN_LO : G2W_FR_ASSIGN;
+            frames[fr]++;
+            x.frame = fr;
+            x.miss_n = fr == G2W_FR_ASSIGN_LO ? 1 : below_n ? (int)rnd(2) : 0;
+            onm = (int)rnd(3);
+            x.empty = (int)rnd(4);
+            if (fr == G2W_FR_ASSIGN_LO) {
+                if (onm == 1) onm = 0;
+                x.empty = onm == 2 ? G2W_EMPTY_MISS : G2W_EMPTY_NOP;
+            }
+            s.form = MF_FORM_STMT;
+            s.handoff = MF_H_ASSIGN;
+            s.empty = x.empty == G2W_EMPTY_MISS ? MF_EMPTY_MISS : x.empty == G2W_EMPTY_NOP
+                    ? MF_EMPTY_NOP : x.empty == G2W_EMPTY_EXCLUDED ? MF_EMPTY_EXCLUDED : MF_EMPTY_AT_N;
+            s.on_miss_leaves = onm == 2;
+        }
 
         /* NOP over two alternatives whose empty ranges differ is REFUSED
            (wf_check): count it, then render the site under MISS */
@@ -652,6 +939,29 @@ int main(int argc, char **argv)
             else refused_ok++;
             x.empty = G2W_EMPTY_MISS;
             s.empty = MF_EMPTY_MISS;
+        }
+        /* D172 S3: a REPORT site E-find cannot render (a frame other than
+           STMT/ASSIGN, or no stop by G2's OWN decision) is REFUSED, the floor
+           serving no REPORT site; it is then rendered as a DFA_SCAN site */
+        if (s.site_kind == MF_SK_REPORT &&
+            !((fr == G2W_FR_ASSIGN || fr == G2W_FR_ASSIGN_LO) && ref.has_stop)) {
+            mf_hooks th;
+            memset(&th, 0, sizeof th);
+            th.s = "s"; th.n = "n"; th.lo = "lo"; th.result = "r"; th.miss = "((size_t)-1)";
+            th.on_miss = fr == G2W_FR_ONMISS ? "{ }" : NULL;
+            hctx th_c = { id, { { 0 } }, 0 };
+            th.fn_name = h_fn_name; th.table_name = h_table_name; th.u = &th_c;
+            buf b1 = { 0 }, b2 = { 0 };
+            mf_sink s1 = mk_sink(&b1), s2 = mk_sink(&b2);
+            mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL,
+                                      x.rate_kind ? &an : NULL);
+            mf_result rr;
+            if (!mf_emit(ar, &s, &th, &s1, &s2, &rr))
+                fail(id, "REPORT refusal", "a REPORT site E-find cannot render was rendered");
+            else report_refused++;
+            free(b1.p);
+            free(b2.p);
+            s.site_kind = MF_SK_DFA_SCAN;
         }
         hctx hc = { id, { { 0 } }, 0 };
         char miss_lbl[48], onmiss[96], fname[48];
@@ -684,6 +994,47 @@ int main(int argc, char **argv)
         mf_class asked;
         mf_result def;
         rendered++;
+        if (!strcmp(res.form_id, "window-search")) {
+            const char *t = body.p ? body.p : "";
+            const char *ft = file.p ? file.p : "";
+            ef_n++;
+            ef_libc += strstr(t, "memchr(") != NULL;
+            ef_hors += strstr(ft, "_sh[256]") != NULL;
+            ef_walk += strstr(t, "while (") != NULL;
+            ef_run += strstr(t, "memcmp(") || strstr(t, "_w2(") || strstr(t, "_w4(") ||
+                      strstr(t, "_w8(") || strstr(t, " & 0x") || strstr(t, ") & ");
+            ef_below += ref.has_stop && ref.stop < 0;
+            ef_report += s.site_kind == MF_SK_REPORT;
+            ef_pair += strstr(t, "_ha < ") != NULL;
+            ef_fn += strstr(ft, "_ofsskip__body(") != NULL;
+            /* B-fn renders the FIND slot's pick, PAIR: the function's BODY is
+               fn-pair's two streams (window.c b_fn_holds) */
+            if (strstr(ft, "_ofsskip__body(") && !strstr(ft, "ha < pos"))
+                fail(id, "B-fn", "the offset-skip function renders one stream under PAIR");
+        }
+        /* D-hors's scope (window_site.md §2.5): its window, the stop's
+           verify-YES core span of two positions or more, reaches the candidate
+           (whi >= 0). G2's own reading of the facts, not the kit's: every site
+           whose window lies wholly below is counted, and none may render a skip
+           table */
+        {
+            int hi = 0, found = 0;
+            const galt *ca = &gf.alt[ref.alt];
+            for (int i = 0; ref.has_stop && i < ca->nspan && !found; i++) {
+                const gspan *g = &ca->span[i];
+                int lo0 = g->start + g->core_lo;
+                if (g->verify != G2W_YES || g->core_len < 2) continue;
+                if (ref.stop < lo0 || ref.stop >= lo0 + g->core_len) continue;
+                found = 1;
+                hi = lo0 + g->core_len - 1;
+            }
+            if (found && hi < 0) {
+                ef_hwin++;
+                if (file.p && strstr(file.p, "_sh[256]"))
+                    fail(id, "D-hors scope", "a skip table over a window wholly below the candidate");
+            }
+        }
+        x.pair = strstr(body.p ? body.p : "", "_ha < ") || strstr(file.p ? file.p : "", "ha < pos");
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
            mf_emit's also reads the use hooks, so it may choose otherwise) */
@@ -801,9 +1152,9 @@ int main(int argc, char **argv)
         bputs(&data, "}, {");
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", r.plan_term[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\" },\n",
+        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\", %d },\n",
                 r.pinned, r.run_stated, r.run_member, r.run_lo, r.run_len, r.path, id,
-                res.form_id, res.row);
+                res.form_id, res.row, x.pair);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);
         free(file.p);
@@ -817,11 +1168,15 @@ int main(int argc, char **argv)
     fprintf(f, "const g2w_fn g2w_fns[] = {\n%s};\n", table.p ? table.p : "");
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
-    printf("g2_win_gen: %ld sites rendered of %d; families:", rendered, nsites);
+    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
+           "below-window %d); families:", rendered, nsites + n3 + n4 + n5 + n6, n3, n4, n5, n6);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
            frames[3], refused_ok, asked_ok, two_run_refused);
+    printf("g2_win_gen: e-find %ld: libc %ld walk %ld hors %ld run %ld below %ld report %ld "
+           "pair %ld fn %ld hwin %ld; report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run,
+           ef_below, ef_report, ef_pair, ef_fn, ef_hwin, report_refused);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

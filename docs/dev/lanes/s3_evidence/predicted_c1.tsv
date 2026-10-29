@@ -1,0 +1,47 @@
+# docs/dev/lanes/s3_evidence/predicted_c1.tsv — the CODE REVIEW r1 C1 build's PREDICTED mover
+# manifest (lane s3, 2026-10-23), written and committed BEFORE any diff ran. Compared:
+# `pcrec -p rx -fcomments --features all [FLAGS] --pattern P` at the C1 build (NEW) against the S3
+# tip before it (PRE: a017fe98a, the S3 commit 7e1caad08's code), `.c` and `.h`, nothing masked
+# (no abi move between them). bytediff_c1.sh reads the actual class from NEW's own text:
+#   IDENTICAL      byte-identical to PRE;
+#   MOVES-fn       E-find's stop decided PAIR and rendered by the offset-skip function
+#                  (`_ofsskip__body` with two memchr streams; no SIMD rung at the default layer);
+#   MOVES-fn-simd  the same with its guarded SIMD rungs (`_ofsskip__w32`, -fmemfn-simd);
+#   MOVES-pair     PAIR in E-find's own loop (two pending hits `_ha`/`_hb`): a context item keeps
+#                  the plan from being the offset-skip function's predicate;
+#   MOVES-uncover  the artifact leaves `cover` (E-find has no FIND form for the stop: a set of two
+#                  or more members below the candidate, which no Table B row decides);
+#   MOVES-other    anything else (never predicted).
+# The OFF arm (both kit denies on NEW) is predicted IDENTICAL on every row.
+#pattern	flags	prediction	why
+(?i)foobar	-	MOVES-fn	every window position a cube: C-pin's one run, the stop {B,b} PAIR
+(?i)foobar	-fmemfn-simd	MOVES-fn-simd	the same, vrun's rungs over fn-pair
+(?i)abc	-	MOVES-fn	every position a cube
+(?i)abc	-fmemfn-simd	MOVES-fn-simd	the same
+(?i)x/1234	-	MOVES-fn	the stop {X,x}, a cube inside the run stretch
+(?i)x/1234	-fmemfn-simd	MOVES-fn-simd	the same
+[Qq]uery	-	MOVES-fn	the stop {Q,q} (A-mass's choice, C8 not built), a cube in the stretch
+[Qq]uery	-fmemfn-simd	MOVES-fn-simd	the same
+(?:(?i:abs)|(?i:ab)S)	-	MOVES-fn	smp05: one window of three cubes
+(?i)\bfoo\b	-	MOVES-pair	the word-boundary context items (absence SATISFIES: no core) keep the plan from the function's predicate
+(?i)\bfoo\b	-fmemfn-simd	MOVES-pair	no SIMD row serves a plan that is no offset-skip predicate
+(?<=[qj])[a-z]	-	MOVES-uncover	the stop {q,j} below the candidate: two members, no row (D1c is one byte; R7w needs the stop at or past the candidate)
+(?<=q)[a-z]{2}	-	IDENTICAL	the stop q below the candidate: now D1c, rendered by the same memchr text as before
+foobar	-	IDENTICAL	one-member stop: D1, its loop text unchanged
+foobar	-fmemfn-simd	IDENTICAL	no SIMD row over a one-byte stop
+\b[0-9a-f]{8}\b	-	IDENTICAL	D-hors (Table D now a kit_table; the text unchanged)
+[0-9a-f]{8}	-	IDENTICAL	D-hors
+\d{4}	-	IDENTICAL	year4: its stop and resume unchanged
+\.tar|\.tar\.gz	-	IDENTICAL	one-member stop
+\bcat\b	-	IDENTICAL	one-member stop
+(?m)done$	-	IDENTICAL	one-member stop
+\w(?=\d)\w	-	IDENTICAL	a set stop (walk or D-hors), unchanged
+[a-]	-	IDENTICAL	smp14: two members, no cube: the walk, unchanged (PAIR's scope is a cube)
+[[:]	-	IDENTICAL	smp19: the same
+[:a]	-	IDENTICAL	smp24: the same
+(?:(?!a)z|w)	-	IDENTICAL	smp09: {w,z}, no cube
+\b\w*?\B\w	-	IDENTICAL	smp08: D-hors
+a(b|c)+d	-	IDENTICAL	not a cover
+x+y	-	IDENTICAL	not a cover
+(?i)hello world	--engine=vm	IDENTICAL	the VM engine
+(?i)cat\d+	-	IDENTICAL	not a cover: the pre-check's fn-pair, unchanged

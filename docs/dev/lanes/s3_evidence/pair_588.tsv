@@ -1,0 +1,22 @@
+# docs/dev/lanes/s3_evidence/pair_588.tsv -- job 588's TWO-STREAM SAMPLE (the manager's ruling
+# R-b on the S3 final review's EMIT-1 fix; PART OF THE BAR): patterns whose artifact carries the
+# two-stream find (kit.h's ofs_pair), timed BASE (main's compiler at the merge base 0d3765c87,
+# its default build: the unbounded streams) vs RTE (this tree's default build: the bounded
+# look-ahead), so the bound's cost stays visible. Picked BY HAND by lane s3fix (2026-10-24) per
+# stratum from the review's and the fix's own repros, each stratum read off the tip's artifact
+# (single compiles): REQRUN, not cover, the run pre-check's `rx_reqrun__body` (fn-pair's body, the
+# native two-stream site: BASE has it too); COVER-BFN, cover through B-fn's helper
+# (`<pfx>_ofsskip__body`, the same body; BASE takes the composite search with the pre-check);
+# COVER-PAIR, cover through B-pair's inline streams (BASE: the composite). Columns: id, stratum,
+# pattern (emit_sweep's --list-source escapes). measure_588.sh's premise checks each stratum.
+pr01	REQRUN	(?i)hello.*world
+pr02	REQRUN	(?i)hello\\w*
+pr03	REQRUN	\\w+(?i:select)
+pr04	REQRUN	(?i)(hello|help)
+pr05	COVER-BFN	(?i)hello
+pr06	COVER-BFN	(?i)the
+pr07	COVER-BFN	(?i)select
+pr08	COVER-BFN	(?i)xq
+pr09	COVER-PAIR	x[Q%]y
+pr10	COVER-PAIR	[st][hr]
+pr11	COVER-PAIR	[et][ao]

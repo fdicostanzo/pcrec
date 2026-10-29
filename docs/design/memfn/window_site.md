@@ -1,4 +1,4 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.2)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.3)
 
 Rev 3: lane uwin3, 2026-10-22 (rev 2 + the kit branch). DESIGN ONLY: no source or test edit, no make,
 no timing. Applies the panel `docs/dev/reviews/2026-10-22-r1-memfn-window-site-rev2.md` and job 581's
@@ -9,6 +9,62 @@ Rev 3.1 (uwin3, 2026-10-22): the verification critic's V1-V7 text fixes, each re
 Rev 3.2 (2026-10-22): main's agreement notes 1-7 (S3 bar names every slower cell, match included; both layers
 reported; R-on-PARKED as a soundness fact + the RE-SEED bit; the reply owns the run pin; tie obligations; one
 tie table + one reply-to-stamp table; sabotage ids); marks `[rev3.2 n<k>]`.
+**Rev 3.3 (lane s3, 2026-10-23; ACCEPTED 2026-10-24, below):** records S3 as built and the S3 code review
+r1's C1 build (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, findings C1, C3, C4, C7, C9, C10):
+E-find, the Table E row the design did not have (§2.6); Table B asked the design's question and its
+pick rendered, PAIR and the SIMD rows reachable (§2.2); Table D a kit_table (§2.5); the bar's mover
+sample (§6). Marks `[rev3.3 C<k>]`. Code review r2 (lane s3pair, 2026-10-23,
+`docs/dev/reviews/2026-10-23-r2-memfn-s3-c1-code.md`) adds the ranked GOALS (below), PAIR's widened
+contract (§2.2, Frank 2026-10-23: "Widen two pair s3 now"), the one two-stream renderer (§2.2) and
+D-hors's last-offset condition and row-carried actions (§2.5); marks `[rev3.3 R2-<k>]`. **ACCEPTED
+2026-10-24** by the kit manager with Frank's rulings (the S3 final code review,
+`docs/dev/reviews/2026-10-24-r1-memfn-s3-final-code.md` "Rulings"; lane s3fix's edits, marks
+`[rev3.3 F]`): Goal 2 reworded (no named caps: the relative floor or a measured per-call layout
+allowance), the known gaps listed (D176 witnesses), no exceptions to the goals' ranking. Rev 3.3 is the
+design of record.
+
+---
+
+## Goals `[rev3.3 R2-10]`
+
+Ranked; when two conflict, the higher wins. Each is checkable as stated.
+
+1. **Answers exact** (every caller). A window site's text yields exactly the candidates its facts
+   define, the leftmost first: G2's window family (`memfn/tests/run_g2_win.sh`) green against its
+   reference over the generated space, every plant red; zero corpus answer changes against the OFF arm
+   (`--memfn=no-window-search,no-window-skip`, byte-identical to the default build before the window search
+   but for the abi digits and, since the S3 final review's EMIT-1 fix `[rev3.3 F]`, every two-stream
+   find's bounded look-ahead, kit.h's ofs_pair).
+2. **Not slower than DEF beyond the relative floor or a measured per-call layout allowance** (users of
+   the default build) `[rev3.3 F]`. On the SCALAR layer every §6 cell, and every stratum of the mover
+   sample, reads routed/DEF <= 1 + its floor (this run's A/A), OR routed's time per call exceeds DEF's
+   by no more than the PER-CALL LAYOUT ALLOWANCE: a time in ns per call, measured in the same run (job
+   588) as the largest |delta| per call between layout variants of the DEF arm itself (§6). No
+   per-pattern caps and no per-pattern passes. The populations the bar's sample does not hold are the
+   Known gaps below; they are not exceptions to this goal but its open witnesses.
+3. **Simple: one table per slot** (the next editor). Each slot is one declared table (Table B IS the
+   finder's FIND slot; no private copy of it), each method one renderer (one two-stream text for every
+   PAIR site), and a table's rows carry their own actions (no `if` on which row held outside the walk).
+   Checked by review against `docs/dev/guide/architecture.md` and by the plants each renderer carries.
+4. **Speed wins** (users with common patterns). Where a window search can beat DEF it should: cells
+   below 1 - floor are reported (hex8 2-6x, caseless literals). A win is never a requirement.
+
+**Non-goals.** The SIMD layer as a gate: it is measured and reported, and a SIMD-on loss is a finding for
+the SIMD thread (§6); an arbitrary-pair SIMD kernel (`[MEMFN-PAIRSIMD]`); pricing the stop by its find
+method (D176's priced choice over position x method, `[MEMFN-PAIRSTOP]`): today Table A ranks by mass
+alone and Table B finds whatever A chose.
+
+**Known gaps (D176 witnesses)** `[rev3.3 F]`. Goal 2 losses this revision does not fix, each an
+acceptance cell of D176's priced stop x method choice (`docs/design/memfn/stop_ranking_study.md` §5.1,
+lane/memfn-stopstudy `fc6735cdf`), and none a cap:
+- **the 3+-member set-stop walk**: A-mass picks a rarer position of three or more bytes over a one-byte
+  position, and B walks it byte by byte where DEF ran `memchr` on the one byte. Witnesses `[<>&]x`,
+  `[xqz]ab`, `[jqz]uery`, `[.,;]\d`, `[QXZ]{2}` (find-all over a real text: `[<>&]x` 0.62 -> 11.3
+  instructions per byte, `[xqz]ab` 0.91 -> 12.3). Frank 2026-10-24: "Leave the wart. Its fix is the test
+  for pricing."
+- **dense-hex SKIP**: D-hors on an all-hex subject, where no stop is rare (hex8-bounded throughput/dense
+  1.53x, search_short/dense 1.14x DEF, job 581), for D-hors's 2-6x wins on real and no-hit text. Frank
+  2026-10-24: "Add hex case to the pricing tests".
 
 ---
 
@@ -37,8 +93,10 @@ NEXT predicates read that reply. Phase 2, TEXT: pcrec states the frame its NEXT 
 the C text. The decision reads no frame fact (prefix_k reads none; the mass rule reads none).
 
 **One row family (§2):** A STOP (one least-cost choice over (alternative, stop), with the declared
-MARGIN row), B FIND FORM, C VERIFY PLAN, D RESUME (`c + 1`, or the Horspool row D-hors on a dense stop),
-E FRAME. Floor: `generic`. Every rule is keyed on a stated fact, never on a label `[rev3 dD2]`.
+MARGIN row), B FIND FORM (the finder's FIND slot, asked about the stop itself; its pick rendered
+`[rev3.3 C1]`), C VERIFY PLAN, D RESUME (`c + 1`, or the Horspool row D-hors on a dense stop), E FRAME
+(today's rows, E-find's own find-then-verify text `[rev3.3 C4]`, the floor). Floor: `generic`. Every
+rule is keyed on a stated fact, never on a label `[rev3 dD2]`.
 
 **Staging (§5):** S1+S2 land as ONE branch of six commits `[rev3 seq]`, zero movers, one `MF_SITE_ABI`
 event at the last commit. **S3**: REPORT routed by default, D-hors with it; the one byte-moving step,
@@ -141,8 +199,9 @@ edge's (not covered); else → membership. Core positions get ONE hoisted bound 
 ```
 
 Every table is a `kit_table` on `kit_walk` (compose.c): first match, a contract per row, a deny where it
-moves bytes, a basis; every cost row reads ONE cost table (§3.3). The family emits a PATH ID per site
-(trace build); §2.7 maps paths to old rows for the reach floors `[rev3 bB9]`.
+moves bytes, a basis; every cost row reads ONE cost table (§3.3). Table D is one since the S3 code review
+`[rev3.3 C7]`; Table C and B's renderers (§2.2) are declared row lists read in order. The family emits a
+PATH ID per site (trace build); §2.7 maps paths to old rows for the reach floors `[rev3 bB9]`.
 
 ### 2.1 Table A — the stop; adoption is its alternative half (no ADOPT table) `[rev3 dD1, dD2, bB2]`
 
@@ -175,17 +234,49 @@ three scattered rules `[rev3 bB2, rev3.2 n6]`):
 Table B IS the finder's FIND slot (`fd_rows`, finder.c), asked "the next byte in set(d*) at offset d*".
 The rows R8, R3a, R3b, R4, R1, R2 are KEPT UNCHANGED, inert without the knowledge they read `[rev3 bB8]`.
 
+**The question as built `[rev3.3 C1, C3]`** (`fd_find`; S3 first built a made-up one, `fd_find_form`:
+offset 0, a `table_ref` nobody stated, its decision read as LIBC or WALK only, the contracts widened):
+- the SITE asked about is the window site itself under its define hooks: its consumer kind, `body`,
+  `policy`, options (so `fd-d1` and the VM seek's role keep their effect); a window site states no terms,
+  so the gate reads its `table_ref` as UNSTATED (its offers are `toffer`, read by C-table);
+- the STOP's facts are its own: its set (two members: TWO_MEMBER), its offset d* (below the candidate: a
+  CONTEXT stop), and that it is a window site's stop (WINDOW_STOP: PAIR's renderers are this family's, so
+  a native route, which has none, never meets PAIR) `[rev3.3 R2-1]`; its need is REQUIRED (B's find is
+  the stop's test at every candidate it yields);
+- the decision is the OFF variant's, as `fd_route`'s (the finder's §1.5 rule 1: decided once, every layer
+  inherits it); the SIMD forms are the offset-skip function's PREFIX rows over PAIR's body, which read the
+  site's actual `policy`;
+- REPORT is served only by the rows whose pick renders a window site's stop (D1, D1c, D1w, PAIR, R7w); the
+  inert rows and the PRES rows keep the native kinds (S3's KD_ALL widening reverted where no REPORT site
+  asks).
+
 | row | holds when | form | basis |
 |---|---|---|---|
 | R8, R3a, R3b, R4, R1, R2 | as today (iterator history, measured gaps, crossovers) | as today | as today; inert without knowledge |
-| D1c | the stop lies below the candidate (re-keyed from today's `SF_CONTEXT_STOP`) `[rev3 bB7]` | libc back search | UNMEASURED DEFAULT (today's) |
-| PAIR | today's scope: the stop is a two-member cube inside a stated run stretch (ofsskip's `fn-pair`, now a FIND-slot row) | two `memchr` streams | today's; no PAIR cost constant `[rev3 bB2]` |
-| (SIMD) | `-fmemfn-simd`: vrun's PREFIX rows | today's | inert at OFF |
+| D1c | the stop lies below the candidate (re-keyed from today's `SF_CONTEXT_STOP`) `[rev3 bB7]`; one member; kinds MLINE's (DFA_ATTEMPT) and REPORT `[rev3.3 C3]` | libc back search | UNMEASURED DEFAULT (today's) |
+| PAIR | a window site's stop of ANY two bytes at or past the candidate `[rev3.3 R2-1]` (before: a two-member cube inside a stated run stretch, fn-pair's scope; the cube and the stretch are history, not the method's need: two leapfrogging streams need exactly two bytes); BUILT `[rev3.3 C1]`, after D1w and before R7w (its facts are disjoint from D1/D1c/D1w's) | two `memchr` streams | UNMEASURED DEFAULT (unchanged); no PAIR cost constant `[rev3 bB2]` |
+| (SIMD) | `-fmemfn-simd`: vrun's PREFIX rows, over PAIR's fn-pair body (reached through B-fn, below) | today's | inert at OFF |
 | D1 | one member, not the VM seek | `memchr` | UNMEASURED DEFAULT (finder.c's basis column) |
 | D1w | one member, the VM seek | the table walk | UNMEASURED DEFAULT; retirement trigger §1.4 |
 | R7w | every other set | the WALK (walk_vs_v1_record.md) | MEASURED (B4′) |
 
 `[code]` rev 2 marked D1 MEASURED; finder.c says `FB_UNMEASURED_DEFAULT`. D2 and RPT retire.
+
+**B's renderers on E-find's text `[rev3.3 C1]`** (`wf_brows`, window.c), first match over the pick and
+the plan; they decide nothing about the find, and a pick none names (an unbuilt form) leaves E-find with no
+text for the plan:
+
+| row | holds when | renders |
+|---|---|---|
+| B-fn | PAIR, and the plan IS the offset-skip function's predicate (it translates exactly, one RUN term holding the stop's cube, the function's BODY walk takes it) | the offset-skip function (`fn-pair`'s body, `vrun`'s SIMD rows over it under `-fmemfn-simd`), called from E-find's frame: D155's seam, so the SIMD-on artifact adds only guarded rungs over the SIMD-off text |
+| B-pair | PAIR (any two bytes; a cube whose plan is not the function's predicate) | two `memchr` streams in E-find's loop, each a pending hit searched again only once C + d* passes it: fn-pair's own text, ONE renderer (ofsskip.c `ofs_pair_text`) `[rev3.3 R2-6]`; no SIMD row (an arbitrary-pair kernel is `[MEMFN-PAIRSIMD]`), so its text is the same at both layers |
+| B-memchr | LIBC (D1), LIBC_BACK (D1c) | one `memchr` in the loop; a stop below the candidate raises C first |
+| B-walk | WALK (R7w, D1w) | the walk in the loop (C-table or C-own) |
+
+**No row decides a stop of two or more members below the candidate** (D1c is one byte; R7w and PAIR
+need the stop at or past it; PAIR's widening keeps SPAN0, a below-candidate pair being R2-8's, D176's
+priced choice): E-find declines it, and a REPORT site's cover declines with it (the
+default build's composite). A finding, not a fix: the corpus's count is in the census.
 
 ### 2.3 Table C — the verify plan
 
@@ -233,9 +324,17 @@ A-model never read R, so the RESEED alternative's choice is unchanged under `PCR
 
 ### 2.5 Table D — the resume `[rev3 dD3, 581]`
 
+A `kit_table` on `kit_walk` `[rev3.3 C7]` (window.c `wf_dtable`), asked on E-find's text only: a contract
+per row (D-hors's window is a stated core), the deny `window-skip`, trace and reach counters, a `holds` column
+(D-hors: the rule below, exactly as S3 built it; no new admission predicate, the E[sh] reading decides that
+later); the path id gains `+hors` where it fires. Each row CARRIES ITS ACTIONS `[rev3.3 R2-7]`: whether
+its text runs B's find, its plan's preparation (D-hors's probe and shift table), and its text (the loop
+head, the resume, the file-scope table: `wf_d_text`); the predicates read a window computed before the
+walk.
+
 | row | holds when | resume | basis |
 |---|---|---|---|
-| D-hors | the stop's set has mass >= `HORS_MIN` (~146,000 ppm) and the window is at least 2 positions | Horspool over the TESTED sets (581's HRS text): probe the window's LAST position; on a miss or a failed verify advance by `sh[b]` = least `t` with `b` in the tested set at `last - t`, else the window length. It replaces B's scan on that site | job 581, PROVISIONAL |
+| D-hors | the stop's set has mass >= `HORS_MIN` (~146,000 ppm) and the window (the stop span's core) is at least 2 positions, its LAST at an offset >= 0 (`whi >= 0`: the probe then reads inside the hoisted bound, the window's core being the plan's) `[rev3.3 R2-9]` | Horspool over the TESTED sets (581's HRS text): probe the window's LAST position; on a miss or a failed verify advance by `sh[b]` = least `t` with `b` in the tested set at `last - t`, else the window length. It replaces B's scan on that site | job 581, PROVISIONAL |
 | D-one | always | `c + 1` | the floor (today's) |
 
 `HORS_MIN` (§3.3) is PROVISIONAL: fit on 8 cells with ONE winner (hex8, stop mass 284,434 ppm; the next
@@ -253,10 +352,20 @@ but HRS serves hex8 and SHF's wins elsewhere are marginal.
 |---|---|---|
 | E-func | FUNC/RETURN, miss `n`, no expression floor | today's `static inline size_t` (D155 seam) |
 | E-stmt | STMT/ASSIGN or ON_MISS | today's PF block (guard, post-test, `moved` hook, `decl_point`) |
-| E-generic | anything else | the floor row |
+| E-find `[rev3.3 C4]` | STMT/ASSIGN (its contract), the plan has a stop short of every byte, and Table D resumes it by D-hors or Table B decides its find and one of B's renderers renders it; deny `window-search` | the family's own find-then-verify text: B (§2.2's renderers), C (C-yes under the hoisted bound and the three-way guard; C-run through runcmp), D (§2.5) |
+| E-generic | anything else but a REPORT site | the floor row |
 
-REPORT is STMT/ASSIGN: E-stmt, and **keeps the STMT frame** `[rev3 581]`: PRF (the FUNC twin) reads
+The legacy rows (E-func, E-stmt) come first, so every site today's rows serve keeps today's bytes; they
+never translate a REPORT site (the composer refuses REPORT stated in terms). E-find comes before the floor,
+so the movers are the sites the legacy rows decline that E-find renders: REPORT, and D-hors inside E-find.
+E-generic declines REPORT (the floor's byte loop is COV, R-27's 10x loss), so a REPORT site E-find does not
+render is REFUSED and pcrec keeps its default (`no-window-search` is the OFF arm, the default build before S3).
+E-find and the floor share the statement frame, the statement expression's head and tail and the candidate
+test `[rev3.3 C9]`.
+
+REPORT is STMT/ASSIGN: E-find, and **keeps the STMT frame** `[rev3 581]`: PRF (the FUNC twin) reads
 1.03-1.09x search_short/none, 1.07-1.25x dense vs COV. Native offset-skip sites keep FUNC (zero movers).
+B-fn calls the offset-skip function FROM the STMT frame (the frame stays STMT).
 
 ### 2.7 What folds where, and the path map
 
@@ -268,7 +377,7 @@ REPORT is STMT/ASSIGN: E-stmt, and **keeps the STMT frame** `[rev3 581]`: PRF (t
 | `ofsskip` `fn-memchr` / `fn-pair` / vrun PREFIX | FOLD: A-model (+ C-pin) + D1 / PAIR / vrun + C-model + E-func | `reseed-d1`, `reseed-pair`, `reseed-vrun`, `pin-*` |
 | `precheck` | STAY (ALL_PRESENT); its FUNC parts render through A-mass + C-yes | `part-*` |
 | `runcmp`, `mismatch_inplace`, `generic` | STAY (C-run's compare; MISMATCH; the floor) | — |
-| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2 | RETIRE | `report` (S3) |
+| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2 | RETIRE | `report` (S3): E-find's sites read `mass[+pin][+hors]`, the FIND slot's deciding row in the trace's `FDROUTE`/`WPATH fd=` `[rev3.3 C1]` |
 
 **Deny identities and form names are preserved**: `fd-d1` (→ D1w), `fd-pres-*`, `pres-set-lead`,
 `vrun-*` keep names and effects; `vrun-kb` reads the kit's own ranking (a `registry.md §6¶8a` wording
@@ -479,27 +588,31 @@ of where hex lands"), as main agreed it:
   0.404, 1.18 only vs COV). **Routed form:** D-hors fires on hex8 alone (284,434 ppm; next 74,760): HRS
   there, PRO elsewhere.
 
-**EVERY cell where the routed form is slower than DEF beyond its floor**, all regimes (`match`
-included), from the 581 table; each is capped at its measured ratio plus its floor:
+**Every cell where the routed form is slower than DEF beyond its floor** is judged by Goal 2 alone
+`[rev3.3 F]`: within the relative floor, or within the per-call layout allowance (below); there are no
+named caps. Of 581's slower cells, the two hex8 dense cells (HRS 1.531 and 1.139 against DEF) are the
+dense-hex Known gap (D176 witness, Goals); the three `file-ext-order` cells (1.033 search_short/none,
+1.039 match/real, 1.065 match/none, under 0.020 floors) and job 605's foobar match/real (1.032, a
+LAYOUT move: `rx_match` is byte-identical between the arms and its placement moved, s3_report.md §6.2)
+are read against the allowance in job 588, a cell outside both a FAIL.
 
-| cell | routed form | 581 ratio / DEF | floor | cap | reason |
-|---|---|---|---|---|---|
-| hex8-bounded throughput/dense | HRS | 1.531 | 0.020 | 1.551 | an all-hex subject has no rare stop; every form loses (PRO 1.412, SHF 1.378, COV 1.322); HRS routes hex8 for its 2-6x wins (throughput real 0.458, none 0.490; search_short real 0.523, none 0.173) |
-| hex8-bounded search_short/dense | HRS | 1.139 | 0.020 | 1.159 | the same subject; PRO 1.132, COV 1.184 |
-| file-ext-order search_short/none | PRO | 1.033 | 0.020 | 1.053 | literal `.` stop on a no-hit short subject; one bounded effort (PRF, the FUNC twin) read worse at 1.094; accepted (one-pass rule) |
-| file-ext-order match/real | PRO | 1.039 | 0.020 | 1.059 | `match` regime (T9), reproduced from 580 (1.043); cause not diagnosed; accepted under the same one-pass rule |
-| file-ext-order match/none | PRO | 1.065 | 0.020 | 1.085 | the same (580: 1.057) |
-
-Cells reading S inside their floor (foobar throughput/none PRO 1.011, hex8 match/real HRS 1.011) are not
-named; the bar holds them at the floor like every other cell.
-
-**Users WILL see about 1.53x slower on all-hex dense bulk input**, because D-hors routes hex8 to HRS. This
-is accepted for the 2-6x wins on real and no-hit text (Frank: "we need this regardless of where hex
-lands"; the kit's judgement call), and it is stated in the S2 request (Appendix A).
+**Users WILL see about 1.53x slower on all-hex dense bulk input**, because D-hors routes hex8 to HRS: the
+dense-hex Known gap, kept for the 2-6x wins on real and no-hit text (Frank: "we need this regardless of
+where hex lands"), stated in the S2 request (Appendix A).
 
 S3's go: zero answer changes; on the scalar layer every `real`/`none`/`dense` cell of every regime
-(throughput, search_short, match) not slower than DEF beyond its floor(PRO), the five named cells within
-their caps; G1 green on D-hors's non-REPORT movers; the SIMD-on reading reported. This rewords main's R-27.1
+(throughput, search_short, match) not slower than DEF beyond its floor(PRO) or the per-call layout
+allowance (Goal 2), the dense-hex Known gap reported; G1 green on D-hors's non-REPORT movers; the SIMD-on reading reported.
+
+**Rev 3.3 additions to the bar `[rev3.3 C10, F]`** (main agreed, 2026-10-23; the caps deleted 2026-10-24):
+- **the per-call layout allowance** (Goal 2): job 588 times LAYOUT VARIANTS of the DEF arm (the same C
+  compiled with other function alignments, `-falign-functions=16/32/64`), each cell's per-call time
+  against DEF's own; the allowance is the largest |delta| in ns per call over every variant and cell of
+  the run, printed with its variant and cell, never a hand-set number;
+- **the mover sample is part of the bar**: job 588's 24 stratified cover movers (`sample_588.tsv`), DEF
+  vs routed at the scalar layer, NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR (its cells' geometric-mean
+  ratio within 1 + this run's A/A, or its per-call delta within the allowance), every sample row and cell printed PASS/FAIL, a dropped row a FAIL;
+  the SIMD layer reported. This rewords main's R-27.1
 bar ("`dense` not slower than COV"); main AGREED (rev 3.2). In family terms, 581's PRO = A-mass + B + C-yes
 + D-one + E-stmt and HRS = PRO with D-hors.
 

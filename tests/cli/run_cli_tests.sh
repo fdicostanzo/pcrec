@@ -2395,16 +2395,22 @@ else
     fail "config --memfn= did not win silently (rc $wrc)" "$werr"
 fi
 
+# D172 S3 (job 600): `(?i)cat` is a fixed-width window, a `cover` artifact by
+# default, which carries no reqrun helper at all; every compile in this block
+# therefore carries the cover row's deny `--memfn=no-window-search` (folded into the
+# one --memfn= list: the last --memfn= wins), so it reads the unanchored scan
+# whose run search these vrun rows render. The default path's vrun witnesses
+# are emit_sweep's -fmemfn-simd arm.
 # [MEMFN] R-13 (R4e' batch 1): a SIMD row's own deny, `--memfn=no-vrun-w16`.
 # Inert at the default -fno-memfn-simd (byte-identical); at -fmemfn-simd the
 # row renders its guarded helper on a caseless run, and its deny takes the
 # artifact back to the SIMD-off bytes exactly (a lone row's DENY arm IS the
 # OFF arm, integration.md §R4.9.5 item 4).
 rm -f "$WORKDIR"/mfs*.c
-pcrec_run "$PCREC" -p rx -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs0.c"
-pcrec_run "$PCREC" -p rx --memfn=no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs1.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs3.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs0.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs1.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search -fmemfn-simd -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs3.c"
 if [ -s "$WORKDIR/mfs0.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs1.c"; then
     pass "--memfn=no-vrun-w16 at -fno-memfn-simd is accepted and inert"
 else
@@ -2425,8 +2431,8 @@ fi
 # ... and vrun-w32 above it: rendered with the 16-byte row as its named rung;
 # its own deny leaves the 16-byte row; both denied at -fmemfn-simd is the
 # SIMD-off artifact byte for byte.
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w32 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs4.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w32,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs5.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w32 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs4.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w32,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs5.c"
 if grep -q '^static inline size_t rx_reqrun__w32(' "$WORKDIR/mfs2.c" \
    && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs2.c"; then
     pass "-fmemfn-simd renders the vrun-w32 helper above vrun-w16 (MEMFN_FORMS vrun@w32+w16)"
@@ -2451,8 +2457,8 @@ fi
 # one alone). On (?i)cat (scanned C at 0) the default w32 mask loads at i
 # and i + 1 and the w16 mask at i; the deny keeps both rows and loads at i
 # alone in each. Inert at -fno-memfn-simd.
-pcrec_run "$PCREC" -p rx --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs6.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs6.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
 if [ -s "$WORKDIR/mfs6.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs6.c"; then
     pass "--memfn=no-vrun-kb at -fno-memfn-simd is accepted and inert"
 else
@@ -2478,8 +2484,8 @@ fi
 # is a don't-care), while the w16 mask proves C alone (KB at w32 only, D147
 # addendum 16), so its verify compares A and T; the deny verifies the whole
 # run (two words, both masks whole). Inert at -fno-memfn-simd.
-pcrec_run "$PCREC" -p rx --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs8.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs8.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
 if [ -s "$WORKDIR/mfs8.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs8.c"; then
     pass "--memfn=no-vrun-trim at -fno-memfn-simd is accepted and inert"
 else
@@ -2507,8 +2513,8 @@ fi
 # zeroed), and its guard holds that byte: i + 32 + 2 + 1. The final block
 # keeps the trimmed compare. The deny is the r14b text: one verify, guard
 # i + 34. Inert at -fno-memfn-simd.
-pcrec_run "$PCREC" -p rx --memfn=no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs10.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs11.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs10.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs11.c"
 if [ -s "$WORKDIR/mfs10.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs10.c"; then
     pass "--memfn=no-vrun-pad at -fno-memfn-simd is accepted and inert"
 else

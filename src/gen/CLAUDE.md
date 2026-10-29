@@ -44,8 +44,8 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 - `memfn_sites.c` / `memfn_sites.h` / `memfn_sites.def` — pcrec's side of the kit's sites: DELEG_SITES, the `mf_art`, sink, constructors, define/use wrappers, `PcrecFind`, analysis/measures builders, deny map.
 - `memfn_stamps.c` — the kit's every-artifact stamps (`_MEMFN_FORMS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`) and pcrec's knowledge stamps (`_FINDINGS`, `_MEASURES`) rendered over marks after emission; check `tests/memfn/run_libc_census.sh`.
 - `clskit.c` / `clskit.h` — [CLS-TREE] class-matcher kit: leaf forms, sectioning DP, `ROWS`/`TAB_ROWS` first-match tables, byte test spellings (VM and scan edge callers); reference `studies/cls_tree_study/`, tests `tests/clskit/`.
-- `known.c` / `known.h` — [KIT-VERIFY] Z2 `cover` decision (`cover_conj[]`, `MkEnd`); harness-routed only (`pcrec_kit_proof_routed`); checks `tests/kitproof/`.
 - `emit_subst.c` — [M4-SUBST] the subst artifact (`docs/spec/subst_api.md`): the subst types block, the element `<prefix>_render`, the record and stamps, the support unit (`--emit-support`), module subst-extended; sections in NOTES.md.
+- `known.c` / `known.h` — [KIT-VERIFY] `cover` decision (`cover_conj[]`, `MkEnd`) and its REPORT site; routed by default since D172 S3 (C13 asks the kit; `--memfn=no-window-search` declines it); checks `tests/kitproof/`.
 - `stamp_kinds.c` — [COMPOUND] the STAMP CATALOGUE (match_api.md §6.3): every stamp classified by what it is a fact about, deciding its value on a compound.
 - `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
 

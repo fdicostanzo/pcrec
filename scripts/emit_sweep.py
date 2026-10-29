@@ -442,6 +442,17 @@ ARM_BASES = {"byte": (), "utf8": ("-e", "utf8")}
 # req-handoff byte 163->339 / utf8 275->519 (stamp 517), base a strict subset.
 # Measured against a 677762be build per pattern (l1tri_report.md). Other cells'
 # floors sit below their measured values (corpus growth) and are untouched.
+# S3 RE-PIN (lane s3fix600, job 600, 2026-10-23): D172 S3 routes every fixed-
+# width window to `cover` by default (RX_DFA_SCAN "cover": no scan, so no
+# start-family mechanism for a flag to move), so those patterns stop differing
+# on the start-family arms. MEASURED at the S3 tree (ba6ebf720, one binary, the
+# job's own sweep), and the cause measured per pattern by
+# docs/dev/lanes/s3_evidence/armcause.py: on every re-pinned cell each pattern
+# that left (differs under the cover row's deny --memfn=no-window-search, not by
+# default) is a default-cover artifact, and none joined (DIFFER and STAMP
+# both). Floors are pinned AT the measured value; a manifest that became cover
+# is re-chosen from the arm's non-cover movers (the original's form where one
+# was listed). Cells marked "S3 re-pin" below name the old value.
 DIFFER_PINS = {
     # plain arms: the encoding and caseless populations (§3.3 item 2)
     ("byte", "-e utf8", "c-default"): (3188, 674, b"a"),
@@ -451,15 +462,15 @@ DIFFER_PINS = {
     ("utf8", "-i", "c-default"): (3229, 1775, b"a"),
     ("utf8", "-i", "c-vm"): (3230, 1605, b"a"),
     # the start-family deny/force arms (§3.4's table), byte base
-    ("byte", "-fno-offset-skip", "c-default"): (513, 513, b"ab"),
+    ("byte", "-fno-offset-skip", "c-default"): (328, 328, b"ab+"),    # S3 re-pin (was 513/513, b"ab")
     ("byte", "-fno-offset-skip", "c-vm"): (0, 0, None),
-    ("byte", "-fno-run-prefilter", "c-default"): (127, 127, b"fi"),    # was 132: REVEND re-pin, header
+    ("byte", "-fno-run-prefilter", "c-default"): (54, 54, b"(ABC)"),    # S3 re-pin (was 127/127, b"fi"); was 132: REVEND re-pin, header
     ("byte", "-fno-run-prefilter", "c-vm"): (0, 0, None),
-    ("byte", "-fno-start-set", "c-default"): (136, 136, b"\\Bx"),
+    ("byte", "-fno-start-set", "c-default"): (136, 136, b"(\\b)x"),    # S3 re-pin (manifest was b"\\Bx")
     ("byte", "-fno-start-set", "c-vm"): (2327, 2327, b"."),
     ("byte", "-fno-start-pinned", "c-default"): (183, 183, b".*"),
     ("byte", "-fno-start-pinned", "c-vm"): (0, 0, None),
-    ("byte", "-fno-req-handoff", "c-default"): (339, 339, b"SS"),    # was 163: L1 re-pin, header
+    ("byte", "-fno-req-handoff", "c-default"): (226, 226, b"ab?c"),    # S3 re-pin (was 339/339, b"SS"); was 163: L1 re-pin, header
     ("byte", "-fno-req-handoff", "c-vm"): (0, 0, None),
     ("byte", "-fno-hyb-reseed", "c-default"): (403, 403, b"a*+a"),
     ("byte", "-fno-hyb-reseed", "c-vm"): (0, 0, None),
@@ -469,9 +480,9 @@ DIFFER_PINS = {
     ("byte", "-fno-end-window", "c-vm"): (288, 288, b"$"),
     ("byte", "-fno-req-byte", "c-default"): (2639, 2043, b"$"),
     ("byte", "-fno-req-byte", "c-vm"): (3222, 2043, b"$"),
-    ("byte", "-fno-req-run", "c-default"): (530, 208, b"SS"),    # stamp was 296: L1 re-pin (301 before REVEND), header
+    ("byte", "-fno-req-run", "c-default"): (530, 102, b"SS"),    # S3 re-pin (stamp was 208); stamp was 296: L1 re-pin (301 before REVEND), header
     ("byte", "-fno-req-run", "c-vm"): (530, 17, b"SS"),
-    ("byte", "-fno-req-run-fold", "c-default"): (48, 32, b"(?i)abc"),
+    ("byte", "-fno-req-run-fold", "c-default"): (48, 26, b"(?i)abc"),    # S3 re-pin (stamp was 32)
     ("byte", "-fno-req-run-fold", "c-vm"): (48, 17, b"(?i)abc"),
     ("byte", "-fprefilter-collapse", "c-default"): (213, 212, b"(a){3}"),
     ("byte", "-fprefilter-collapse", "c-vm"): (0, 0, None),
@@ -486,20 +497,26 @@ DIFFER_PINS = {
     # (`(?i)cat` is the shortest); -fcomments adds the artifact's prose to
     # EVERY compiled pattern, so its floor is "nearly all" and the manifest `a`
     # (its commentary diff is the orientation + legend blocks) is the witness.
-    ("byte", "-fmemfn-simd", "c-default"): (20, 0, b"(?i)cat"),
+    # code review r2 R2-3 (lane s3pair): S3's lowering to 9/10 was measured before the C1
+    # build restored the caseless runs' SIMD rows (B-fn); job 606's sweep_start read 22/15 at
+    # the C1 tip, which the PAIR widening leaves unchanged (B-pair's text is the same at both
+    # layers), so the cell is pinned back AT the measure. Its members against main are named
+    # by s3_evidence/simd_members.py (s3_report.md §8.8): a JUDGED trade, SIMD off by default
+    # and a SIMD-on loss the SIMD thread's finding (window_site.md §6).
+    ("byte", "-fmemfn-simd", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
     ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
     ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
     ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
     # the same arms, utf8 base
-    ("utf8", "-fno-offset-skip", "c-default"): (604, 604, b"SS"),
+    ("utf8", "-fno-offset-skip", "c-default"): (376, 376, b"ab+"),    # S3 re-pin (was 604/604, b"SS")
     ("utf8", "-fno-offset-skip", "c-vm"): (0, 0, None),
-    ("utf8", "-fno-run-prefilter", "c-default"): (3, 3, b"aa(?i:a)"),
+    ("utf8", "-fno-run-prefilter", "c-default"): (2, 2, b"frank|fred"),    # S3 re-pin (was 3/3, b"aa(?i:a)")
     ("utf8", "-fno-run-prefilter", "c-vm"): (0, 0, None),
-    ("utf8", "-fno-start-set", "c-default"): (127, 127, b"\\Bx"),
+    ("utf8", "-fno-start-set", "c-default"): (127, 127, b"(\\b)x"),    # S3 re-pin (manifest was b"\\Bx")
     ("utf8", "-fno-start-set", "c-vm"): (2352, 2352, b"."),
     ("utf8", "-fno-start-pinned", "c-default"): (183, 183, b".*"),
     ("utf8", "-fno-start-pinned", "c-vm"): (0, 0, None),
-    ("utf8", "-fno-req-handoff", "c-default"): (519, 517, b"123"),    # was 275: L1 re-pin (280 before REVEND), header
+    ("utf8", "-fno-req-handoff", "c-default"): (349, 347, b"ab?c"),    # S3 re-pin (was 519/517, b"123"); was 275: L1 re-pin (280 before REVEND), header
     ("utf8", "-fno-req-handoff", "c-vm"): (0, 0, None),
     ("utf8", "-fno-hyb-reseed", "c-default"): (420, 420, b"a*+a"),
     ("utf8", "-fno-hyb-reseed", "c-vm"): (0, 0, None),
@@ -509,15 +526,15 @@ DIFFER_PINS = {
     ("utf8", "-fno-end-window", "c-vm"): (0, 0, None),        # ASSERT_ZERO
     ("utf8", "-fno-req-byte", "c-default"): (2631, 2071, b"$"),
     ("utf8", "-fno-req-byte", "c-vm"): (3230, 2071, b"$"),
-    ("utf8", "-fno-req-run", "c-default"): (572, 79, b"SS"),    # stamp was 294: L1 re-pin (299 before REVEND), header
+    ("utf8", "-fno-req-run", "c-default"): (572, 58, b"SS"),    # S3 re-pin (stamp was 79); stamp was 294: L1 re-pin (299 before REVEND), header
     ("utf8", "-fno-req-run", "c-vm"): (572, 15, b"SS"),
-    ("utf8", "-fno-req-run-fold", "c-default"): (38, 31, b"(?i)abc"),
+    ("utf8", "-fno-req-run-fold", "c-default"): (38, 27, b"(?i)abc"),    # S3 re-pin (stamp was 31)
     ("utf8", "-fno-req-run-fold", "c-vm"): (38, 15, b"(?i)abc"),
     ("utf8", "-fprefilter-collapse", "c-default"): (213, 211, b"(a){3}"),
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
-    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
     ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
@@ -557,16 +574,16 @@ DIFFER_PINS = {
     #   fd-pres-pick   187 (byte) / 262 (utf8) on c-default (188 / 263 once the manifest `a.{1,5}z` joined the corpus, pinfix), no stamp moves
     #     (the parts the pre-check tests, not its admission); c-vm an exact 0:
     #     every span there is REQUIRED (P0), which the pick's deny cannot reach.
-    ("byte", "--memfn=no-pres-set-lead", "c-default"): (16, 0, "é{2}cat".encode()),
+    ("byte", "--memfn=no-pres-set-lead", "c-default"): (14, 0, b"x{2,5}(?i:cat)"),    # S3 re-pin (was 16, "é{2}cat")
     ("byte", "--memfn=no-pres-set-lead", "c-vm"): (18, 0, "é{2}cat".encode()),
-    ("utf8", "--memfn=no-pres-set-lead", "c-default"): (8, 0, b"a{3}(?i:cat)"),
+    ("utf8", "--memfn=no-pres-set-lead", "c-default"): (7, 0, b"x{2,5}(?i:cat)"),    # S3 re-pin (was 8, b"a{3}(?i:cat)")
     ("utf8", "--memfn=no-pres-set-lead", "c-vm"): (8, 0, b"a{3}(?i:cat)"),
-    ("byte", "--memfn=no-fd-pres-g1", "c-default"): (1271, 1271, b"ab"),
-    ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (1105, 1105, b"ab"),
+    ("byte", "--memfn=no-fd-pres-g1", "c-default"): (944, 944, b"a+"),    # S3 re-pin (was 1271/1271, b"ab")
+    ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (873, 873, b"a+"),    # S3 re-pin (was 1105/1105, b"ab")
     ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
-    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (188, 0, b"a.{1,5}z"),    # was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
-    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (263, 0, b"a.{1,5}z"),    # was 262: same
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (167, 0, b"a.{1,5}z"),    # S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (231, 0, b"a.{1,5}z"),    # S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }

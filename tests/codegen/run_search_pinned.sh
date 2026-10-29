@@ -202,8 +202,10 @@ witness "two counted runs"   '[a-z]{0,64}[0-9]{0,8}' pinned   n
 # [START-LANDING] `abc` (W = 3) and `(?!a)` (W = 0) take `end-minus-width` by
 # default; the rows test PINNED's decline reasons, so they are compiled with
 # the two new rows denied, which restores the chain pinned -> reverse-pass
-# (start_landing.md §7.4, S218/S220's reach re-aim).
-witness "not nullable"       'abc'               reverse-pass y -fno-start-width -fno-start-landing
+# (start_landing.md §7.4, S218/S220's reach re-aim). D172 S3 (job 600): `abc`
+# is also a fixed-width window, a `cover` artifact by default with no forward
+# or reverse machine, so its row adds the cover row's deny `--memfn=no-window-search`.
+witness "not nullable"       'abc'               reverse-pass y -fno-start-width -fno-start-landing --memfn=no-window-search
 witness "non-null counted"   '[a-z]{4096,}'      reverse-pass y
 witness "eol view (P1/P2)"   '$'                 reverse-pass y
 witness "multiline eol"      '(?m)a*$'           reverse-pass y

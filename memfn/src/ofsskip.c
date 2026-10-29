@@ -23,8 +23,10 @@
  * (pcrec's litscan_k82h.md §1.1a): the leftmost position >= `pos` at which
  * every term holds. pcrec's handoff reads it as a scan start, so an arm that
  * returned "some occurrence" would be a correct discard gate and a wrong
- * handoff gate. The pair arm keeps it by taking the LESSER hit and searching
- * both streams fresh per call.
+ * handoff gate. The pair arm keeps it by taking the LESSER hit, each stream
+ * searched only as far as the other's frontier needs (THE PAIR LEAPFROG
+ * below), so a byte that is absent or far costs a call no more than about
+ * twice the distance to its answer, and a find-all stays linear.
  *
  * EVERY SEARCH IS INSIDE THE GUARDED LOOP: `pos + maxk < n`, maxk the
  * largest byte any term reads, makes every `memchr` length at least 1 and
@@ -237,38 +239,96 @@ typedef struct fn_row {
     const mf_formdecl *decl;
 } fn_row;
 
-/* fn-pair's body: two `memchr` streams, members `a` and `b` of the cube at
- * offset `k`, each holding its one pending hit as an OFFSET (never a
- * pointer, so nothing NULL is compared relationally). `fresh` makes the
- * first iteration search both. */
+/* THE PAIR LEAPFROG (kit.h's ofs_pair). Each stream keeps a FRONTIER, an
+ * offset (never a pointer, so nothing NULL is compared relationally) below
+ * which, from `at`, its byte does not occur; the frontier is a hit where the
+ * byte there is the stream's. The lower frontier is searched next, a
+ * frontier below `at` first raised to it, until the lower one is a hit: then
+ * it is the leftmost of the two bytes at or past `at`.
+ *
+ * WHY BOUNDED LOOK-AHEADS: a search call starts with no frontier, so a
+ * stream searched to `n` on every call costs O(n) per call when its byte is
+ * absent or far, and a find-all O(n x matches). Each `memchr` here reads at most the stream's width, which
+ * doubles only when a look-ahead comes up empty; a stream is searched only
+ * while its frontier is the lower, so it never reads more than about twice
+ * the distance from the call's start to its answer, plus the first width.
+ * One `memchr` per look-ahead, so a near byte costs one call, as before.
+ *
+ * PAIR_LOOKAHEAD, the first width in bytes: MEASURED by instruction count
+ * only (docs/dev/lanes/s3_report.md Part 11: 32, 64, 128, 256 and 512, a
+ * find-all over the review's adversarial repros and a real text, Linux dev
+ * box, gcc 15.2 -O2): 128 is within 1% of the best on every row; its TIME
+ * is an UNMEASURED DEFAULT (instructions under-count memchr's call cost). */
+enum { PAIR_LOOKAHEAD = 128 };
+
+/* The streams' declaration, each width at PAIR_LOOKAHEAD (kit.h). */
+void ofs_pair_decl(kb *o, const ofs_pair *t)
+{
+    kb_printf(o, "size_t %s = 0, %s = 0, %s = %d, %s = %d;", t->ha, t->hb, t->wa,
+              PAIR_LOOKAHEAD, t->wb, PAIR_LOOKAHEAD);
+}
+
+/* The leapfrog's text: raise, search the lower frontier, take the candidate
+ * (kit.h). */
+void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)
+{
+    const char *hit[2] = { t->ha, t->hb }, *wid[2] = { t->wa, t->wb };
+    const char *I = t->ind, *J = t->in2, *L = t->nl;
+    for (unsigned i = 0; i < 2; i++)
+        kb_printf(o, "%sif (%s < %s) %s = %s;%s", I, hit[i], t->at, hit[i], t->at, L);
+    kb_printf(o, "%sfor (;;) {%s", I, L);
+    for (unsigned i = 0; i < 2; i++) {
+        const char *h = hit[i], *w = wid[i], *g = hit[1 - i];
+        if (i == 0) kb_printf(o, "%s%sif (%s <= %s) {%s", I, J, t->ha, t->hb, L);
+        else        kb_printf(o, "%s%s} else {%s", I, J, L);
+        kb_printf(o, "%s%s%ssize_t %s = %s - %s > %s ? %s + %s : %s;%s", I, J, J,
+                  t->e, t->n, h, w, h, w, t->n, L);
+        /* the lower frontier is below `n` unless both are (stream a only):
+           then its look-ahead is empty. Every pass breaks or moves a frontier
+           forward (a hit that stays the lower breaks), so the loop ends by
+           construction, whatever one comparison says */
+        kb_printf(o, "%s%s%sif (%s%s%s%s%s[%s] == %d) break;%s", I, J, J,
+                  i ? "" : t->e, i ? "" : " == ", i ? "" : h, i ? "" : " || ",
+                  t->subject, h, m[i], L);
+        kb_printf(o, "%s%s%sconst void *%s = memchr(%s + %s, %d, %s - %s);%s", I, J, J,
+                  t->q, t->subject, h, m[i], t->e, h, L);
+        /* a hit that is still the lower frontier is the answer at once */
+        kb_printf(o, "%s%s%sif (%s) { %s = (size_t)((const unsigned char *)%s - %s); "
+                     "if (%s %s %s) break; } else { %s = %s; %s += %s; }%s", I, J, J,
+                  t->q, h, t->q, t->subject, h, i ? "<" : "<=", g, h, t->e, w, w, L);
+    }
+    kb_printf(o, "%s%s}%s%s}%s", I, J, L, I, L);
+    kb_printf(o, "%s%s = %s < %s ? %s : %s;%s", I, t->cand, t->ha, t->hb, t->ha, t->hb, L);
+    kb_printf(o, "%sif (%s >= %s) %s;%s", I, t->cand, t->n, t->miss, L);
+    if (k) kb_printf(o, "%s%s -= %d;%s", I, t->cand, k, L);
+}
+
+/* fn-pair's body: the PAIR leapfrog (ofs_pair_text) over members `a` and
+ * `b` of the cube at offset `k`, inside the function's guarded loop. */
 static int pair_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
     const mf_pred *p = x->p;
     int maxk = x->maxk, k = x->k, a = x->a, b = x->b;
-    kb at, len;
+    kb at, decl, lf;
     kb_init(&at, art->a);
-    kb_init(&len, art->a);
-    if (k) { kb_printf(&at, "pos + %d", k); kb_printf(&len, "n - pos - %d", k); }
-    else   { kb_puts(&at, "pos");          kb_puts(&len, "n - pos"); }
-    if (at.oom || len.oom) return kit_fail(art, "ofsskip: out of memory");
-    const char *lim = at.p;   /* the re-search bound: a hit below pos + k is stale */
+    kb_init(&decl, art->a);
+    kb_init(&lf, art->a);
+    if (k) kb_printf(&at, "pos + %d", k);
+    else   kb_puts(&at, "pos");
+    if (at.oom) return kit_fail(art, "ofsskip: out of memory");
+    const ofs_pair t = { "subject", "n", "ha", "hb", "wa", "wb", "e", "q", "cand", at.p,
+                         "return n", "        ", "    ", "\n" };
+    const int m[2] = { a, b };
+    kb_puts(&decl, "    ");
+    ofs_pair_decl(&decl, &t);
+    kb_puts(&decl, "\n");
+    ofs_pair_text(&lf, &t, m, k);
+    if (lf.oom || !lf.p || decl.oom) return kit_fail(art, "ofsskip: out of memory");
 
-    o->puts(o->u, "    size_t ha = 0, hb = 0;\n"
-                  "    int fresh = 1;\n");
+    o->puts(o->u, decl.p);
     kit_out(o, "    while (pos + %d < n) {\n", maxk);
     o->puts(o->u,   "        size_t cand;\n");
-    kit_out(o, "        if (fresh || ha < %s) {\n"
-               "            const void *q = memchr(subject + %s, %d, %s);\n"
-               "            ha = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-               "        }\n", lim, at.p, a, len.p);
-    kit_out(o, "        if (fresh || hb < %s) {\n"
-               "            const void *q = memchr(subject + %s, %d, %s);\n"
-               "            hb = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-               "        }\n", lim, at.p, b, len.p);
-    o->puts(o->u,   "        fresh = 0;\n"
-                    "        cand = ha < hb ? ha : hb;\n"
-                    "        if (cand >= n) return n;\n");
-    if (k) kit_out(o, "        cand -= %d;\n", k);
+    o->puts(o->u, lf.p);
     kit_out(o, "        if (cand + %d >= n) return n;\n", maxk);
     o->puts(o->u,   "        if (");
     if (verify_chain(art, h, p, o)) return -1;
@@ -386,13 +446,14 @@ const gate_contract *fn_row_contract(size_t i)
     return i < NFN ? fn_rows[i].ct : NULL;
 }
 
-/* The row slot `slot` chooses for predicate `x` of site `handle`, NULL when
- * none does. A BODY with no row is an error (the slot has a floor); an empty
- * PREFIX is the ordinary answer, and renders nothing. */
+/* The row slot `slot` chooses for predicate `x` of site `handle` (the site
+ * the gate reads is `x->site`), NULL when none does. A BODY with no row is an
+ * error (the slot has a floor); an empty PREFIX is the ordinary answer, and
+ * renders nothing. */
 static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
-    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL, NULL };
+    gate_in in = { x->site, h, NULL, NULL, NULL };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
@@ -404,6 +465,25 @@ static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                  f[0] ? f : "(no row applies; the slot lost its floor)");
     }
     return NULL;
+}
+
+/* 1 iff the function serves predicate `p` of site `site` under the define
+ * hooks `h`: ofs_fn_applies, then the BODY slot's walk, asked quietly (the
+ * gate reads `site`: what fn_select would decline is not served); *two 1
+ * iff that walk takes fn-pair. */
+int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
+                  const mf_pred *p, int *two)
+{
+    *two = 0;
+    if (!ofs_fn_applies(p, h)) return 0;
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
+    ofs_fn_scan(p, &x.k, &x.a, &x.b);
+    gate_in in = { site, h, NULL, NULL, NULL };
+    gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
+    gate_verdict why = { 0, 0 };
+    size_t r = kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why);
+    *two = r < NFN && fn_rows[r].render == pair_body;
+    return r < NFN;
 }
 
 /* The PREFIX row named `name` (a declaration's rung), NFN when none. */
@@ -423,7 +503,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     unsigned nr = 0;
     rung[nr++] = top;
-    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL, NULL };
+    gate_in in = { x->site, h, NULL, NULL, NULL };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
@@ -542,7 +622,13 @@ static void fn_note_form(mf_art *art, const fn_row *const *rung, unsigned nr)
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o)
 {
-    fn_in x = { p, max_reach(p), 0, 0, 0, &art->sites[handle - 1].site, NULL, NULL,
+    return ofs_fn_define_at(art, handle, &art->sites[handle - 1].site, h, p, fn, o);
+}
+
+int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
+                     const mf_pred *p, const char *fn, mf_sink *o)
+{
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL,
                 o->simd_open && o->simd_close };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     art->includes |= MF_INC_STRING_H;   /* memchr */

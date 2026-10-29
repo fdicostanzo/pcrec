@@ -742,6 +742,34 @@ call restarts cold.
 - Not built and not timed. Trigger: a measured set-FIND site of ≥ 3 terms whose ≤ 2-term superset adds a low-rate member set. Bench or grid cells would show it.
 - Frank's clarification (same day): the point is the V1-vs-walk decision. The term count need not be the span head's. The FIND can filter at a cheaper position a few bytes into the span, where the set has ≤ 2 terms, so V1 applies. It then verifies the costly head positions per candidate. Shape: price the scan POSITION by the form its set would take (V1 at ≤ 2 terms, else the walk) together with its rate, not by rate alone. Who picks: the kit has RQ-2's position ranking (rates) and the per-position sets; the offset-skip FIND already scans at offset k. Open fact to check before any design: whether every set-FIND site the B4 manifest routes to the walk has a ≤ 2-term position within its span.
 
+## 2026-10-23 — D-hors's window: widen it to the contiguous tested core run (S3 review unlock)
+
+- From the D172 S3 review (lane s3, D-hors as built: `memfn/src/window.c` `hors_window`). D-hors's window is the core of the first verify-YES span whose core holds the stop. Its shift is bounded by that window's length, so a pattern whose tested core continues past the span (an adjacent span, or positions C-bound keeps) gets shorter shifts than the tested positions would allow.
+- The general form: the window is the longest CONTIGUOUS run of tested core offsets around the stop, across spans; the shift table is the same computation (`hors_table`) over it.
+- Answers: unchanged (the table's invariant holds over any run of tested offsets). Saving: longer skips on dense stops with long fixed tails.
+- Trigger: a measured cover cell whose tested core run is longer than its D-hors window (a two-span window with both cores tested), where D-hors already fires.
+
+## 2026-10-23 — priced probe choice for D-hors under the byte-rate (S3 review unlock)
+
+- From the D172 S3 review. D-hors probes the window's LAST position, always. Horspool's classic choice is that, but the expected skip depends on which position is probed: E[shift] = sum over bytes b of rate(b) x sh_probe[b]. A position whose tested set is rare (low mass) gives longer skips more often.
+- The general form: price each candidate probe offset by its expected shift under pcrec's byte-rate (the same `kit_set_mass` input the D-hors gate already reads), and take the probe with the largest expected shift (the review's "argmin": the least expected probes per byte). A TIE rule goes in `wf_ties[]`.
+- Answers: unchanged where the shift table is built for the chosen probe. Saving: unknown; plausible on windows whose last position is dense and an earlier one sparse (hex then a delimiter).
+- Trigger: a measured D-hors cell where the last position's set is denser than another tested position's (a declared row table, never an if-ladder).
+
+## 2026-10-23 — D-hors at non-REPORT E-find sites (S3 review unlock)
+
+- From the D172 S3 review. E-find renders any STMT/ASSIGN window site with a stop, and Table D's D-hors applies to every E-find plan, but today E-find only renders sites the legacy rows decline: REPORT (cover) and none else on a default artifact. So D-hors reaches only cover artifacts.
+- The general form: let E-find (and so D-hors) serve a DFA_SCAN/ADVANCE site the legacy rows serve today, where a dense stop and a window of two or more tested positions make Horspool's skip pay. That would be a per-site choice between the legacy text and E-find+D-hors, priced, in Table E's order.
+- Answers: unchanged (E-find is find-then-verify of the same plan). Saving: the 581 hex8 result (2-6x on real and no-hit text) at scan sites with the same shape.
+- Trigger: a measured scan site (not REPORT) with a dense stop and a >= 2-position tested window, losing to a Horspool form in a G1 or bench reading.
+
+## 2026-10-23 — D-hors admission priced on E[sh] (Frank's ruling on the S3 review's fix C)
+
+- D-hors admits today on the stop set's mass alone (HORS_MIN, PROVISIONAL) and a window of two or more positions. The review's fix C (decline where max(sh) == 1) was withdrawn as a byte move without a measurement.
+- The general form: D-hors admission priced on E[sh] = sum over bytes b of rate[b] x sh[b] (the expected shift per probe under the byte-rate), as ONE declared row replacing or joining HORS_MIN: D-hors pays where its skip outweighs its per-candidate overhead relative to D-one.
+- Answers: unchanged (D-hors and D-one are both exact find-then-verify). Saving: the D-hors sites where E[sh] is near 1 (`(?s)[^a]..`, `[aeiou]..[aeiou]`) would stop paying the probe.
+- Trigger: job 588's "D-hors admission (E[sh])" reading (s3_report.md Part 4; esh_588.tsv's 12 sites, alpha sorted by E[sh]).
+
 ## 2026-10-29 — reverse class-run scans are scalar-only; the vector run could read backwards
 
 Frank's question while ruling D161 add. 17 "Structure" (reverse DFA seeded at a landmark = scaffolding, scan edges = optimization, kit owns the scans both ways): can the kit vectorise REVERSE scan edges on classes? Today: the reverse reading is served only by the generic scalar rows (generic.c find_loop `reverse`); vrun refuses it (`[FLD_reverse] = CM(NO), /* the blocks ascend */`), finder.c rows require `!reverse`, strided ADVANCE refuses it (compose.c:519). Nothing about a class-run scan is direction-bound: load the block ENDING at the cursor, the same class test, the stop is the HIGHEST non-member bit (clz instead of tzcnt), and reads are bounded by the floor (search_from / previous match end) the way forward reads are bounded by n. Impact guess: small for landmark walks (short runs, one walk per candidate: 5b's gain came from not stepping forward, not from the walk), real for long reverse runs (reverse-pass DFAs over trailing whitespace / `\s+$`-like trims, long identifier or digit runs walked from the end). Not requested, not timed; under the SIMD thread's rule (-fmemfn-simd opt-in; must beat scalar or name a benefit). Trigger: a measured reverse scan edge whose mean run length makes the scalar walk a visible share of the cell.

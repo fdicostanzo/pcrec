@@ -49,7 +49,8 @@ NAMED = [
 ]
 # N4's door floors (R17-a): set from lane r17a's landing measurement
 # (r17a_report.md, the figure beside each), ~10% below it.
-DOOR_CBM_FLOOR = 1400   # 1,574
+DOOR_CBM_FLOOR = 1179   # 1,574; 1,179 at D172 S3, pinned AT the measure (lane s3: the cover row
+                         # took the fixed-width patterns, whose search reads no can_begin_match door)
 DOOR_SB_FLOOR = 70      # 78
 DOOR_SS_FLOOR = 3100    # 3,441
 # The predicates seen (lane wsc6, D172 S2 commit 6; the figure beside it).

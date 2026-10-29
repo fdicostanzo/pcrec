@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.3 §6, Goal 2): the
+# 650 harness's 8 cells x 3 regimes x 3 classes, the S3 compiler's routed artifacts against its own
+# OFF arm (DEF: --memfn=no-window-search,no-window-skip, byte-identical to main c3ea619c3 but for the abi
+# digits and the two-stream find's bounded look-ahead, the S3 final review's EMIT-1 fix), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
+# T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
+# s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, the per-call delta, PASS/FAIL vs
+# Goal 2: within the floor OR within THE PER-CALL LAYOUT ALLOWANCE, measured in this run from the DEF
+# arm's own layout variants DV1-DV3 (function/loop alignment; the largest |delta| ns per call per
+# regime); NO CAPS; the dense-hex Known gap (hex8-bounded */dense, a D176 witness) printed KNOWN-GAP,
+# not the bar; the G1 alpha of window-search and window-skip at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
+# SAMPLE, the 24 other cover movers of s3_evidence/sample_588.tsv (pick_588.py's committed, seeded,
+# stratified pick), DEF vs routed at both layers, same core and calibration, printed under "Mover
+# sample (part of the bar)": every cell and row PASS/FAIL, and `== s3t BAR` FAILS where a stratum's
+# geometric-mean RTE/DEF exceeds 1 + its floor (this run's A/A) with a cell outside the allowance, or a
+# row was dropped. ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~2,980 items
+# with the three layout variants (~1,900 before them), ~9 min,
+# plus ~1 min of build/differential/gate; the sample ~1,700 items (24 rows x 2 regimes x <= 3
+# classes x the distinct arm texts, 5 launches), ~5 min, plus ~1.5 min of subjects/build/gate;
+# about 17 min in all. Beside both (Frank's ruling 2026-10-23, FINDINGS only, never
+# in the bar): the D-HORS ADMISSION SITES, s3_evidence/esh_588.tsv (pick_esh_588.py: 12 D-hors sites
+# stratified by E[sh], esh_588.py), D-hors (RTE) vs D-one (NOH, --memfn=no-window-skip) at both layers,
+# printed under "D-hors admission (E[sh])": 560 items (12 sites, 28 class subjects as generated, 2
+# regimes, 2 distinct arm texts: a cover artifact's SIMD text is its scalar text; 5 launches), ~1.7
+# min, plus ~0.5 min of subjects/build/gate: about 19-20 min in all (cap 3600 s unchanged).
+# THE TWO-STREAM SAMPLE (the manager's ruling R-b, PART OF THE BAR; measure_588.sh's header):
+# pair_588.tsv's 11 rows (REQRUN, COVER-BFN, COVER-PAIR) x 2 regimes x 3 classes (real, dense,
+# mixed), RTE vs BASE, BASE compiled by MAIN'S compiler at the merge base 0d3765c87, the one job
+# 621's refbuild step builds ($BASE_PCREC below; 621 also copies its tip build into build/s3/bin,
+# so this job times exactly the build 621 checked): 132 items over 5 launches, ~0.5 min, plus
+# ~0.5 min of subjects/build/gate. Queue this job AFTER 621 is done (its dry run needs both
+# compilers; --ready holds it while 621 is pending or running).
+# Queue it with:  scripts/boxqueue add --name 588-kit-s3-timing FILE
+# Everything it writes is under $OUT (the s3fix worktree's build/s3/job588, gitignored; re-staged
+# there by lane s3fix, the S3 final review's fixes: PCREC is that tree's build, copied into
+# build/s3/bin before the job is queued).
+#   --dry-run  measure_588.sh smoke on ONE cell, hex8-bounded (build + premises + differential + gate),
+#              on the mover sample's first row, the E[sh] site esh02 and the two-stream row pr05
+#              (subjects + build + premises + gate): NO clock
+#   --ready    HELD while main's timing job i2build-parity or job 621 is pending/running; then r27c's quiet
+#              gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no box-lock holder
+#   (work)     exec measure_588.sh run
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/s3fix
+E=$W/docs/dev/lanes/s3_evidence
+OUT=$W/build/s3/job588
+MAIN=/home/pcrec/projects/pcrec
+export TMPDIR=$W/build/tmp
+export MEASURE_CPU=7 MEASURE_SIBLING=15
+export PCREC=$W/build/s3/bin/pcrec
+export BASE_PCREC=$W/build/s3/heavy621/ref/build/pcrec
+L=5 T=20000000 N=9
+case "${1:-}" in
+    --dry-run)
+        mkdir -p "$TMPDIR" "$OUT" || exit 1
+        [ -x "$PCREC" ] || { echo "$PCREC missing (the S3 commit's build/pcrec, copied into build/s3/bin)" >&2; exit 1; }
+        [ -x "$BASE_PCREC" ] && [ "$(cat "$W/build/s3/heavy621/ref/REV" 2>/dev/null)" = 0d3765c87 ] ||
+            { echo "$BASE_PCREC missing or not 0d3765c87's (job 621's refbuild): queue this after 621" >&2; exit 1; }
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/read_588.py" || exit 1
+        DRY=$W/build/s3/dry588
+        SMOKE_CELLS="hex8-bounded" SMOKE_SAMPLE="smp01" SMOKE_ESH="esh02" SMOKE_PAIR="pr05" bash "$E/measure_588.sh" smoke "$DRY" > "$DRY.out" 2>&1 ||
+            { tail -8 "$DRY.out" >&2; exit 1; }
+        grep -q '^sample-gate: [1-9][0-9]* arm cells read; 1 sample rows live$' "$DRY.out" ||
+            { grep -E '^(SAMPLE|sample-)' "$DRY.out" | tail -5 >&2; echo "the mover sample's smoke row did not survive" >&2; exit 1; }
+        grep -q '^esh-gate: [1-9][0-9]* arm cells read; 1 esh rows live$' "$DRY.out" ||
+            { grep -E '^(ESH|esh-)' "$DRY.out" | tail -5 >&2; echo "the E[sh] reading's smoke row did not survive" >&2; exit 1; }
+        grep -q '^pair-gate: [1-9][0-9]* arm cells read; 1 pair rows live$' "$DRY.out" ||
+            { grep -E '^(PAIR|pair-)' "$DRY.out" | tail -5 >&2; echo "the two-stream sample's smoke row did not survive" >&2; exit 1; }
+        tail -3 "$DRY.out" | sed 's/^/dry: /'
+        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs) and DEF's layout variants DV1 DV2 DV3; the two-stream sample BASE vs RTE"
+        echo "boxqueue: cap 3600"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect done=1 lines=^== s3t COMPLETE"
+        exit 0 ;;
+    --ready)
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state kit-s3-heavy 2>/dev/null)" in pending*|running*) echo "held: job 621 first"; exit 75;; esac
+        mkdir -p "$OUT" || exit 1
+        st=$OUT/ready.state
+        now=$(date +%s)
+        if ls "$MAIN"/worktrees/.boxqueue/running/* > /dev/null 2>&1; then rm -f "$st"; echo "a queue job is running"; exit 75; fi
+        h=$("$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case "$h" in HELD*) rm -f "$st"; echo "box lock $h"; exit 75 ;; esac
+        l=$(cut -d' ' -f1 /proc/loadavg)
+        if ! awk -v l="$l" 'BEGIN { exit !(l < 2.0) }'; then rm -f "$st"; echo "load1 $l >= 2.0"; exit 75; fi
+        first=$(cat "$st" 2>/dev/null || echo 0)
+        if [ "$first" -gt 0 ] && [ $((now - first)) -le 600 ]; then
+            [ $((now - first)) -ge 55 ] && exit 0
+            echo "second quiet sample due in $((55 - now + first)) s (load1 $l)"; exit 75
+        fi
+        echo "$now" > "$st"
+        echo "first quiet sample taken (load1 $l); the second is due in 55 s"; exit 75 ;;
+esac
+rm -f "$OUT/ready.state"
+exec bash "$E/measure_588.sh" run "$OUT" "$L" "$T" "$N"

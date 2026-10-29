@@ -23,7 +23,31 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `91` on every artifact today ([REQRUN-VM], lane reqvm1, 2026-10-27; 90 -> 91; 90 is [INLINE-C] stage 2's, lane ic2, on main).** The required-run handoff reaches both VM routes (tuning.md §2.41¶8a-¶9a). Emitted bytes that move: on a VM artifact with no DFA scan whose pre-check is emitted and whose whole run has a finite K (the `handoff-attempts` rows), the first attempt's assignment from the whole run's search (`attempt_position = handoff_position`, the entry's handoff block), the `landmark_position` local and, on the re-entered row, the retry's re-entry block (re-ask while behind, move to the hit less K, round-up under utf8), its `-fcomments` comment, and the `<PREFIX>_REQ_HANDOFF` stamp value (`"none"` -> K); on a VM hybrid whose prefilter re-enters, the pre-check's blocks move above the prefilter, the prefilter's restart gains the re-entry block and `landmark_position`, and `<PREFIX>_DFA_PREFILTER` reads `"handoff"`. On every other artifact: the abi digits only. No struct offset moves; no answer moves; on the attempt loop a deny-arm give-up may become the answer.
+- **`rx_info.abi` is `92` on every artifact today ([MEMFN] D172 S3, 91 -> 92,
+  renumbered by lane s3m, 2026-10-29, over main b05ccfc0b in landing order; lane
+  s3 bumped it 2026-10-22 as 83 -> 84 PROVISIONAL, lane s3pair renumbered it
+  84 -> 85 on 2026-10-24 when main's iterators had taken 84, and 85 stayed
+  reserved on main while 86-91 landed: docs/design/memfn/window_site.md
+  rev 3.3 §5.2, §6; kit_proof.md §7's B1 row).**
+  The `cover` LOCATE row is ROUTED by default: a pattern whose every match
+  is one fixed-width window the memfn kit's REPORT site proves exactly
+  (`cover_conj[]`, C1-C14) is searched by the kit's window family (its new
+  E-find row: the stop's find, then every tested position; D-hors's
+  Horspool skip on a dense stop) and reported `[c, c + k)` with no machine
+  run, so its search body, stamps (`<PREFIX>_DFA_SCAN "cover"`,
+  `<PREFIX>_MEMFN_LIBC`) and `rx_info.scan` move; `--list-axes` lists
+  `cover` at `locate` 2 and re-indexes `unanchored` 2 -> 3, and the memfn
+  section gains `window-search` and `window-skip`. Every other artifact moves only
+  the abi digits. The OFF arm `--memfn=no-window-search,no-window-skip` is the
+  parent's text but for those digits. The mover census is in
+  docs/dev/lanes/s3_report.md. Amended inside the S3 event by the S3 final code review's
+  fixes (lane s3fix, 2026-10-24, not yet landed, so no new number): the
+  two-stream (PAIR) find searches each stream in bounded, doubling
+  look-aheads (find-all linear; the native offset-skip and pre-check pair arms
+  share the text), E-find raises the candidate past a below-candidate core
+  once before its loop, and D-hors writes the shared loop bound.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `91` on every artifact ([REQRUN-VM], lane reqvm1, 2026-10-27; 90 -> 91; 90 is [INLINE-C] stage 2's, lane ic2, on main).** The required-run handoff reaches both VM routes (tuning.md §2.41¶8a-¶9a). Emitted bytes that move: on a VM artifact with no DFA scan whose pre-check is emitted and whose whole run has a finite K (the `handoff-attempts` rows), the first attempt's assignment from the whole run's search (`attempt_position = handoff_position`, the entry's handoff block), the `landmark_position` local and, on the re-entered row, the retry's re-entry block (re-ask while behind, move to the hit less K, round-up under utf8), its `-fcomments` comment, and the `<PREFIX>_REQ_HANDOFF` stamp value (`"none"` -> K); on a VM hybrid whose prefilter re-enters, the pre-check's blocks move above the prefilter, the prefilter's restart gains the re-entry block and `landmark_position`, and `<PREFIX>_DFA_PREFILTER` reads `"handoff"`. On every other artifact: the abi digits only. No struct offset moves; no answer moves; on the attempt loop a deny-arm give-up may become the answer.
   The prior entry follows unchanged:
 - **`rx_info.abi` was `90` on every artifact ([INLINE-C] stage 2, lane ic2, 2026-10-27; 89 -> 90; 85 stays RESERVED by the memfn kit's S3 branch).** Module `code-c` (embedded C, ``(?C`c: ...`)``, granted only by `--allow-code`/`pcrec_options.allow_code`): a code segment becomes a file-local `static ptrdiff_t <prefix>__code<k>(const rx_ctx *)` with its `static const rx_callout_ref <prefix>__code<k>_ref`, prototyped before the matcher and defined LAST in the `.c` (an `#undef` block of the artifact's own live macros, the `code-header` `#include`s, the macro set, the user's text under `#line`, a trailing `__builtin_trap()`). Every callout artifact's surface gains the span helpers (`rx_span`, `rx_eq` .. `rx_u8next`, guard `PCREC_RX_SPAN_H`), and a code-bearing one the stamp `<PREFIX>_CODE_LANGS`. An artifact with no callout site moves in the abi digits only (provenance line, the `PCREC_RX_ABI_H` guard, `rx_info.abi`).
   The prior entry follows unchanged:
@@ -37,7 +61,7 @@ the bump's own commit.**
   The prior entry follows unchanged:
 - **`rx_info.abi` was `84` on every artifact today (ONE event, 83 -> 84, assembled on lane iterland, 2026-10-22,
   from lane i1build [FINDALL-NEXT] I1 (first numbered 83 on its own branch), lane i2build I4 (84), lane iteropt and lane
-  iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wants 84 provisionally; whichever lands first keeps it).**
+  iteropt2; main was already at 83 from lane corefix, below. The kit lane memfn-s3 also wanted 84 provisionally; the iterators landed first and kept it, S3 took 85, above).**
   The pieces, in landing order:
   - **`rx_info.abi` I1 part (lane i1build, written as 83 on its branch; it bumped it
     from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3

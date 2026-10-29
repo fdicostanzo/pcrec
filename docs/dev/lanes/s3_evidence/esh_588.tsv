@@ -1,0 +1,28 @@
+# docs/dev/lanes/s3_evidence/esh_588.tsv -- job 588's D-HORS ADMISSION SITES (the E[sh]
+# reading; findings only, never the §6 bar), written by pick_esh_588.py (its header is the
+# rule); do not edit by hand. E[sh], max(sh), stop mass: esh_588.py on NEW, prior
+# tests/findings/default_ppm.tsv.
+# corpus patterns 4753 (§6's cells excluded), corpus D-hors movers 6, hand 19, candidates 24,
+# seed 20261023, want 12, picked 12; hex8-bounded E[sh] 6.009 (the span's top)
+# stratum e1: candidates 2, picked 2
+# stratum b1: candidates 10, picked 2
+# stratum b2: candidates 6, picked 2
+# stratum b3: candidates 2, picked 2
+# stratum b4: candidates 2, picked 2
+# stratum b5: candidates 2, picked 2
+# dropped: corpus \\N{2}: not generatable
+# dropped: hand [0-9A-F]{6}: no _sh[256] table (not D-hors)
+# dropped: hand [0-9a-f]-[0-9a-f]{2}: no _sh[256] table (not D-hors)
+#id	stratum	pattern	esh	maxsh	stop_mass_ppm	source
+esh01	e1	(?s)[0-9a-f].[0-9a-f]	1.000	1	284434	forced
+esh02	e1	(?s)[^a]..	1.000	1	945837	forced
+esh03	b1	[aeiou]..[aeiou]	1.030	4	252788	hand
+esh04	b1	\\b\\w*?\\B\\w	1.193	2	807006	corpus
+esh05	b2	\\w{5}	1.772	5	807006	hand
+esh06	b2	[a-z][a-z0-9]{3}	1.785	4	663413	hand
+esh07	b3	[a-z]{6}	2.683	6	663413	hand
+esh08	b3	[0-9a-f]{4}	3.147	4	284434	hand
+esh09	b4	[0-9a-f]{5}	3.862	5	284434	hand
+esh10	b4	[0-9a-f]{6}	4.578	6	284434	hand
+esh11	b5	[0-9a-f]{7}	5.293	7	284434	hand
+esh12	b5	[0-9a-f]{8}	6.009	8	284434	hand
