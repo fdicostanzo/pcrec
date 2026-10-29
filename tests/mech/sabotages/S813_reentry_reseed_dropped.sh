@@ -17,5 +17,5 @@ SAB_REACH_EXPECT='REACH-SEEDED-REENTRY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (round.len > 0) pcrec_sb_splice(c, &round);
-    pf_emit_ofs_reseed(c, f, dfa_fragf(cx, "%s        ", ind));'
+    if (f) pf_emit_ofs_reseed(c, f, dfa_fragf(cx, "%s        ", ind));'
 SAB_AFTER='    if (round.len > 0) pcrec_sb_splice(c, &round);   /* SABOTAGE S813: no reseed */'

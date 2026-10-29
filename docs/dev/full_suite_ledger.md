@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-29 02229045e major — merge lane/reqvm1m: [REQRUN-VM] required-run handoff and re-entry widened to VM consumers (VM-only attempt loop, VM-hybrid prefilter re-entry) + the drop-handoff fit rung; abi 90 -> 91 (emitted text moved). Validated: 660-reqvm1m-test GREEN (build, strict, mover census 0 unexpected vs 78627dbca@abi90, make test 81/81).
 - 2026-10-28 c6707bb5a major — merge lane/ic2fix: [INLINE-C] stage 2 (tagged (?C`c: ...`), `--allow-code=c`, span helpers) + review 2026-10-27 r1 ic2 FIX-NOW fixes; abi 89 -> 90 (emitted text moved in callout/embedded-code artifacts). Validated: 640 test GREEN + strict GREEN, mover census rows=221 unexpected=0, 641 mech GREEN, 642 axes GREEN (14,448 s).
 - 2026-10-28 c2f0344db none — merge lane/vartmp: temp files under /var/tmp/pcrec-<user> (PCREC_TMPDIR), prune at queue job start (Frank 2026-10-28; scripts/docs only)
 - 2026-10-27 719a17ccb major — merge lane/ic1b: [INLINE-C] stage 1b, the callout call site (module callouts, `--callout`, firing classes, `once` reading-rule refusals with fix verdicts; abi 89). Validated: 563 test2 GREEN (80/80, movers 0/32,775), 561 mech GREEN (39 rows), 564 axes2 GREEN (13,654 s, batched shape).

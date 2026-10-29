@@ -293,8 +293,22 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # 30,089, so about 29,943 after it: 57 under, the old witness's margin) is
 # measured with the `trlowsize` reference compiler below on this tree. The next
 # stamp that adds bytes to every artifact will move it again.
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}[a-z]\d' -e utf8
+# [REQRUN-VM] (lane reqvm1, abi 91): the dropped (VM-only) artifact now carries the attempt
+# loop's handoff code (30,089 before the drop, 30,710 after it, cap 30,000). Lane
+# reqvm1rung's `drop-handoff` rung gives those rows up and the artifact fits again (the
+# caller's own -fno-req-handoff artifact, byte for byte): the third row is that rung
+# reached AFTER the prefilter drop, on the VM-only attempt loop that carries the rows.
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcat\b){2,}[a-z]\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
+fstate seq-pfcd2 3 'restart=1'
+# [REQRUN-VM] the `drop-handoff` rung BEFORE the prefilter drop, at the shipped caps: the
+# hybrid carries the prefilter's re-entry, so the rung fires first; dropping it does not
+# fit (here it grows the hybrid: the re-entry displaced a start-byte row), and the
+# prefilter drop follows. Since abi 91 the mover census's one `dropped-hybrid-size` cell.
+fseq seq-hodrop   trplain ok 'drop-handoff@size > drop-prefilter@size'          '(\p{Xwd})x' -e utf8
+fstate seq-hodrop 1 'restart=1'
+# ... and `--size-cap=refuse` denies it with the other degrading rows (S1714)
+fseq seq-horef    trplain refused 'refuse@size'                                 '(\p{Xwd})x' -e utf8 --size-cap=refuse
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8 -fno-start-landing
 fstate seq-anch 1 'sdr=1'
 # [S636] DEFAULT-PATH witness for the drop-anchored row's `sets` cell (lane
@@ -372,7 +386,9 @@ frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$
 # [DEC-COLLAPSE-WASTE] att-ovfdfa/att-ovfpf fire sel1-drop alone, so the first
 # fired row and the giving row coincide there (dectri, 2026-10-09).
 frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_LOOKR"
-frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-prefilter'     '(\bcat\b){2,}\w\w' -e utf8
+# [REQRUN-VM] att-scpfd's last attempt is now the one after `drop-handoff` (prefilter-
+# collapse > drop-prefilter > drop-handoff, still over the cap): the giving row is the THIRD.
+frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcat\b){2,}\w\w' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8 -fno-start-landing
@@ -542,6 +558,7 @@ NOTE_HEAD='pcrec: note: the emitted-size cap forced a smaller artifact: dropped'
 NOTE_TAIL='. Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.'
 N_ANCH="$NOTE_HEAD the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md)$NOTE_TAIL"
 N_PREM="$NOTE_HEAD the premultiplied DFA transition table -- slower per-byte scan dispatch, measured ~1.27x on scan-bound subjects (docs/dev/opt3_dfa_scan_measurement.md)$NOTE_TAIL"
+N_HO="$NOTE_HEAD the VM's required-run handoff -- the VM no longer jumps its attempts to the necessary run's next occurrence, measured up to ~2.5x more instructions where it is rare (docs/dev/lanes/reqvm1_report.md)$NOTE_TAIL"
 N_PF="$NOTE_HEAD the VM hybrid's prefilter -- the VM tries every start position itself, measured up to ~4x slower where matches are sparse (docs/dev/lanes/pfdrop_report.md)$NOTE_TAIL"
 
 # fnotes ID WANT PATTERN [args...] — the compile (default build) succeeds and
@@ -560,6 +577,8 @@ fnotes note-anch  "$N_ANCH"            '\p{L}' -e utf8 -fno-start-landing
 fnotes note-premul "$N_ANCH
 $N_PREM"                                '[^\p{C}\p{M}\p{P}]' -e utf8 -fno-start-landing
 fnotes note-pf    "$N_PF"              '(\p{Xwd})' -e utf8 -fno-start-landing
+fnotes note-ho    "$N_HO
+$N_PF"                                  '(\p{Xwd})x' -e utf8
 fnotes note-pfc   ""                   '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fnotes note-sel1  ""                   "$W_SEL1"
 fnotes note-none  ""                   '(a)b'

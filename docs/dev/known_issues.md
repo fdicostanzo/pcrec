@@ -11,6 +11,15 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K131 — OPEN (filed 2026-10-29, manager, from lane reqvm1's report (docs/dev/lanes/reqvm1_report.md, "Local section runs"); landing lane reqvm1land) — `make test-spec` LINK-FAILS: `pcre2_compile_8` is undefined in check06_cursor, 10 checks RED
+
+The `test-spec` section (the spec-first D27 checks) fails to link on this Linux box: `pcre2_compile_8` undefined at link in check06_cursor, 10 checks red. PRE-EXISTING: lane reqvm1 reproduced the identical red on a clean copy of its merge base, so it is not from [REQRUN-VM]. It is not part of `make test` (the section is run by hand), so no gate reads it. Cause not investigated (likely the check's link line lacks libpcre2-8 on this box, where the 10.46 library is the installed oracle).
+
+**Repro**: `make test-spec` on main; read the link errors for check06_cursor.
+**Scheduled**: unscheduled; triage the link line first (D77: no fix until someone needs the section's verdict).
+
+---
+
 ## K129 — FIXED on lane/corefix (2026-10-22, pending merge; filed 2026-10-22 from lane iterd27's finding F3 (worktrees/.mgr/iterd27/iterd27_report.md, the manager's scratch); reproduced by lane corefix on main a53296894) — VARS: `_search` answers 0 where every entry must refuse an UNSET variable
 
 `a${v}` with `v` unset: `rx_search` returned `0` (no match) on `"bbb"` and `""`

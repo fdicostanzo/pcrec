@@ -13252,8 +13252,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * measures. C cannot declare a local conditionally, so a single function
      * that decided at run time would carry the arrays either way. */
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's search blocks, at file
-     * scope above the one search loop whose pre-check below calls them. */
-    pcrec_emit_req_run_blocks(v->cx, c);
+     * scope above the one search loop whose pre-check below calls them
+     * ([REQRUN-VM] already above the prefilter where its scan re-enters). */
+    if (!pcrec_req_site_in_prefilter(v->cx)) pcrec_emit_req_run_blocks(v->cx, c);
     /* [MEMFN] R17-a the VM hat's FIND, defined here for both of its seeks. */
     pcrec_emit_vm_start_define(v->cx, c, v->p,
                                pcrec_sb_fragf(&v->cx->arena, "%s_run_pf", g->searchfn));
@@ -13588,11 +13589,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      *     where it costs no emitted bytes: `--emit-ir`'s PRUNING line and the
      *     `mrl_win` field comment at the top of this file.
      */
-    /* [K82] the handoff's premise (a): it applies only where a DFA scan is in
-     * front, and on this engine that scan is `prefn`. */
-    if (!prefn && strcmp(first, "search_from") != 0)
-        pcrec_ctx_fail(v->cx, 0, "internal error: the [K82] handoff reached a VM "
-                       "route with no prefilter to start");
+    /* [K82] where a DFA scan is in front (`prefn`) the handoff moves its first
+     * call; [REQRUN-VM] with none, the attempt loop's own first start
+     * (`handoff-attempts`), and `\G` keeps reading `search_from`. */
     if (prefn) {
         pcrec_sb_printf(c,
             "    {\n"
@@ -13608,7 +13607,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
               : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
-        pcrec_sb_puts(c, "    attempt_position = search_from;\n");
+        pcrec_sb_printf(c, "    attempt_position = %s;\n", first);
         if (v->nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
     /* [K73] The offset-0 start rule, on the FIRST ATTEMPT and not on the
@@ -13621,10 +13620,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [START-SET] THE VM HAT's entry seek (startset.md §4.2's order): after
      * the range guard, K50, `rx_valid_upto` and the K65/K66 pre-check above,
      * after K73's offset-0 seek, and before the first attempt. It starts at
-     * `attempt_position`, which is `search_from` here: the K82 handoff never
-     * reaches a VM route without a prefilter (the assertion above), so the
-     * handoff's `lo` is `search_from`. Nothing on a hybrid or where the row
-     * is `none`. */
+     * `attempt_position`: `search_from`, or [REQRUN-VM] the whole run's
+     * bound where the handoff keeps it — both lower bounds on the first
+     * match start, so the seek's own claim holds from either. Nothing on a
+     * hybrid or where the row is `none`. */
     pcrec_emit_vm_start_seek(v->cx, c, v->p, "    ", true);
 
     /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
@@ -13717,6 +13716,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->up, v->up, v->up, v->up, v->up,
         v->cx->ncallouts > 0 ? "        if (result < -1) return (int)result;\n" : "",
         v->p, att_max, retry_adv, retry_seed);
+    /* [REQRUN-VM] the re-entered handoff, after the encoding's own advance
+     * and before the seek below: two lower bounds, each sound alone. */
+    pcrec_emit_req_attempt_reentry(v->cx, c, "    ");
     /* [START-SET] THE VM HAT's retry seek, after the encoding's own advance
      * (K49's `retry_adv`): the next position whose byte can begin a match. */
     pcrec_emit_vm_start_seek(v->cx, c, v->p, "        ", false);

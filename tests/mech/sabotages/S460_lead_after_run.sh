@@ -24,11 +24,11 @@ SAB_BEFORE='    if (gate >= 0) {
         p[np++].nterm = 1;
     }
     for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
-        if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
+        if (i == keep && handoff) s->ret_pred = (uint8_t)np;
         p[np++].fn_ref = (uint32_t)i + 1;
     }'
 SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after */
-        if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
+        if (i == keep && handoff) s->ret_pred = (uint8_t)np;
         p[np++].fn_ref = (uint32_t)i + 1;
     }
     if (gate >= 0) {
@@ -44,3 +44,6 @@ SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after *
 # name and window facts only (`p[np++].fn_ref`, R1: pcrec's ofs_pred_of
 # retired); the order of the parts in the description is unchanged, and the
 # plant still puts the lead after the run. Intent unchanged.
+# RE-AIMED 2026-10-27 (lane reqvm1, [REQRUN-VM]): the kept FUNC part is
+# `keep` (the whole run's part on the VM attempt loop's `handoff-attempts`
+# rows, else 0); both texts carry it. Intent unchanged: the lead after the run.

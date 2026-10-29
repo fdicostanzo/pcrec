@@ -17,12 +17,14 @@ SAB_REACH_EXPECT='REACH-HANDOFF-K5'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    long long k = pcrec_fact_req_landmark_maxoff(cx);
+SAB_BEFORE='    long long k = req_handoff_k(cx);
+    bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                           "handoff_position",'
-SAB_AFTER='    long long k = pcrec_fact_req_landmark_maxoff(cx) - (pcrec_fact_req_landmark_maxoff(cx) > 0); /* SABOTAGE S463 */
+SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SABOTAGE S463 */
+    bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
@@ -32,3 +34,7 @@ SAB_AFTER='    long long k = pcrec_fact_req_landmark_maxoff(cx) - (pcrec_fact_re
 # witness reads the same K); the anchor carries the entry's round-up target
 # so it cannot land on the re-entry's own K read (`pf_emit_handoff`). Intent
 # unchanged: the ENTRY starts one byte too late.
+# RE-AIMED 2026-10-27 (lane reqvm1, [REQRUN-VM]): K is `req_handoff_k`, the
+# landmark's on the DFA-scan routes and the whole run's on the VM attempt
+# loop's rows; the anchor carries the next line so it stays the entry's.
+# Intent unchanged: the ENTRY starts one byte too late.

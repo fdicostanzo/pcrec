@@ -9,8 +9,8 @@
 # python cannot compile (\G, \K). Cells sit at EVERY
 # character-boundary start position, because the handoff moves where a scan
 # begins. Each block is written on the default route and under `engine vm`,
-# the forced VM with no DFA scan, which never hands off: the same cells, the
-# control route. The rows are the design's witnesses: the maximum offset on
+# the forced VM with no DFA scan: the same cells (its attempt loop hands off
+# too, [REQRUN-VM], handoff_vm.rxt). The rows are the design's witnesses: the maximum offset on
 # all three routes (the unanchored scan's reverse pass is bounded by
 # search_from, so a K one byte short only shows on the attempt and hybrid
 # routes), two occurrences (the gate's leftmost contract), a decoy, multibyte

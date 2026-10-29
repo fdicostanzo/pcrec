@@ -722,3 +722,17 @@ from main's ledger above the highest id on main and in worktrees at filing. The 
 S1148 and S1149; S1257-S1290 does not exist.
 
 **Filing note (main, 2026-10-22):** text verbatim from window_site.md rev 3.2, Appendix A (lane/memfn-ws @ b5603b3c0). Main agreed with rev 3.1 plus seven notes, which are folded into 3.2. Frank's build go is conditional on that agreement (D172 addendum). **Ruling on §9's new question (the readers of `ReqRun.idx`):** AGREE with the kit's leaning. Where a family site states R, `REQ_BYTE` via `pcrec_req_pick`, the `[OPT-REQPOS]` comment, `req_set_leads_own` and the pick shadow take the reply's member at commit 6. The truncation window, and artifacts where no site states R, keep pcrec's index. CONDITIONS: (a) ONE pcrec function resolves the member (reply if stated, else pcrec's index), and every reader calls it, with no per-reader branch; (b) commit 6's zero-mover sweep covers these readers' stamps.
+
+## R-30 (2026-10-29, pcrec manager) — the required-run ask at a VM re-find site: the window and the whole run are asked together, and the window answer is not needed when the whole run is the landmark
+
+**Customer:** [REQRUN-VM] (lane reqvm1m, landed 2026-10-29; docs/dev/lanes/reqvm1_report.md, Deviations item 2).
+
+**Facts (what pcrec's site asks).** On a VM-only artifact whose landmark is the necessary run's whole occurrence (bench case 7, `url-tld-fix`), each re-find in the attempt loop calls both `rx_reqrun` (the window ask) and `rx_reqrun_whole` (the whole-run ask). pcrec's site uses only the whole-run answer as the landmark; the window answer is not read in that case. pcrec does not choose between the two asks: which ask the site makes is the kit's PRES decision.
+
+**Measured.** Case 7 on the acc-main build, instructions:u: main 3,295,070,119, lane 1,304,903,257 (x2.53); the subtri twin 7a is 922.7M. The report attributes most of the 1,304.9M vs 922.7M gap to the second ask (not separately measured).
+
+**What pcrec needs.** At a re-find site whose landmark is the whole run, a single ask of the run, with the cost of the unused window ask gone.
+
+**Not asked:** any method (D157).
+
+**Sabotage ids:** none requested.

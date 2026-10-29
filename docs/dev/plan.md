@@ -31,21 +31,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
-- [REQRUN-VM] STATE:started — THE REQUIRED-RUN HANDOFF AND RE-ENTRY WIDENED TO VM CONSUMERS (VM-only and VM-hybrid)
-  filed: 2026-10-27 Frank + manager, from lane subtri (bench O-109 cases 7 url-tld-fix x3.89 and 2 rare x2.66 behind JIT); folds [L1-VMHYB] (filed same day) and [OPT-VMSEED]
-  status (2026-10-27): not started. ONE behaviour, ONE site: on DFA routes the PRE site hands its run position on (ASSIGN) and the forward scan re-enters it ([REQ-HANDOFF-L1]); VM-only routes take ON_MISS (emit_dfa.c:1592), VM hybrids hand off once and never re-enter. Widen it to VM consumers.
-  next: BUILDING (lane reqvm1, opus; Frank 2026-10-27 "Yes go both halves.", incl. one-way give-up movement on the VM-only half, spelled like tuning §2.42¶3). Step 0: docs/dev/lanes/reqvm0_report.md.
-  refs: docs/dev/lanes/subtri_report.md + subtri_evidence/; [REQ-HANDOFF-L1] (plan_completed.md); src/gen/emit_dfa.c emit_req_reentry_use; [PRIOR-COST-UNIFY] (case 2 byte choice, separate); memfn sites (the kit finds the run; pcrec owns the handoff)
-  Measured twins (subtri, instructions:u, cycles as ratios): case 7 run-driven x3.7 instr / x2.0 cycles (keyed on `h` x10.7 / x4.9); case 2 run-driven x1.2 cycles alone, x4.8 with the byte re-key.
-  - [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
-    filed: 2026-10-12 Frank
-    status (2026-10-12): not started; RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes…
-    trigger: (measured) router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2).
-    refs: docs/design/litscan_k82h.md; decisions D6 D77 D122; known_issues K64 K82
-    folded 2026-10-27 into [REQRUN-VM] (Frank "Yes"): its once-per-call seed is the first attempt of the parent's re-entered form; history kept below.
-    before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
-    The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
-    2026-10-27 lane subtri (bench O-109 case 7 url-tld-fix, x3.89 behind JIT): the req-run `https://www.` is found by two pre-checks (23%) that return yes/no only; the attempt loop then scans `h` scalar (66%, 3.57M VM attempts); lookahead+backref is 2.9%. Seeding once per call as written gives only x1.3 cycles; the RE-ENTERED form (the run drives every attempt) gives x2.0 cycles, keyed on `h` x4.9. Re-scope to the re-entered form. Evidence docs/dev/lanes/subtri_report.md.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -589,6 +574,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
+  filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
+  status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
+  trigger: (measured) the reqvm1m mover census finds a hybrid-with-re-entry pattern whose VM-only form would keep its attempt rows (today 0 at the shipped caps; its one `dropped-hybrid-size` cell has a one-byte landmark).
+  refs: docs/dev/lanes/reqvm1rung_report.md; docs/spec/limits.md §8.4 row 4a; D77
+  A per-form refinement needs a row that can fire once per form (hybrid, then VM-only), which breaks the fit table's once-per-row record bound. Filed unscheduled.
 - [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
   filed: 2026-10-27 Frank ("Ok scanner dogfood")
   status (2026-10-27): not started. The pattern is in tests/recursion/cscan.rxt (76 cases, libpcre2-verified; merge of lane/scandog) and went to the bench as I-165.
@@ -650,6 +641,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
   next: re-measure and re-pin the floor.
   refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
+- [CAPDIFF-DRIFT] STATE:not-started — test-capturediff pins exact bucket counts, and one subject moved buckets in CI only
+  filed: 2026-10-28 manager (CI run 40709231225 shard 1/3 RED on a13a7103b, a plan.md-only commit whose parent was green; triage lane cired3)
+  status (2026-10-28): not started; the gate reported oracle inconclusive expected=3 actual=2 (labelled TIMING-SENSITIVE) and pcrec step-budget exhausted expected=0 actual=1; 0 content and 0 accept/reject divergences; the same gate passes locally on main
+  next: find why a subject the oracle times out on locally hits pcrec's step budget in CI (is the budget wall-clock-bound, or the order different?); then pin the deterministic buckets exactly and the timing-sensitive ones as a total, so load cannot turn it red
+  refs: tests/fuzz (fuzz.py's bucket order, ~line 1045); docs/testing.md; docs/dev/learnings.md §3
+
 - [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
   filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
   status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
@@ -1296,6 +1293,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
+
+- [COUNT-FROM-GROUP] STATE:not-started — a repeat count read from an earlier capture's value (length-prefixed data: `5:hello`)
+  filed: 2026-10-28 Frank (session 127), witness `(\d{1,2}):.{\1}` (netstrings; the bench's unusual set does it with a callout)
+  status (2026-10-28): not started; idea stage; unscheduled. TRIGGER: a user ask for length-prefixed parsing (netstrings, bencode, chunked bodies, TLV), or the bench measuring the callout form as slow
+  next: discussion with Frank (spelling, unit), then a design note beside [POSTFACT]'s
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; [INLINE-C] (rx_u64 is the callout form's parser); decisions D26
+  Manager notes (2026-10-28): (1) SPELLING: not `{\1}` — PCRE2 already reads `.{\1}` as literal `{`, backref 1, literal `}`, so it would silently change a valid pattern; needs a form PCRE2 refuses today (the `${...}` family). (2) UNIT: netstrings count BYTES; in UTF mode `.` is a character, so the form must say what it counts. (3) LOWERING, same rule as [POSTFACT]'s HOW GENERAL: a BOUNDED count source (`\d{1,2}` = 0..99) is regular (one alternative per value) and lowers into the DFA when the priced state count fits the size ladder; an unbounded source (`\d+`) is a VM counter loaded from the capture. (4) SHARE with [POSTFACT] how a capture is read as a number. Advantage over the callout form: the compiler sees it (DFA, prefilters, no --allow-code).
+  SCOPE (Frank 2026-10-28, agreed): pcrec stays a MATCHER. This row + binary integer reads (u16be/u32le as count sources, not only decimal) + [CAPTURE-ARRAY] give 'validate and locate' over length-prefixed/chunked data (netstrings, bencode, PNG chunk walk, JPEG segment walk); offsets/random access, checksums beyond callouts, decoding and typed-tree output are a different tool (Kaitai/Hammer territory), not pcrec.
 
 - [CAPTURE-ARRAY] STATE:not-started — a repeated capture group records EVERY iteration (an array), not only the last
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`
