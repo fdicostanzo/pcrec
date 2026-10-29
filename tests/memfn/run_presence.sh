@@ -36,7 +36,8 @@
 #  D. R-30 (lane r30b): where the pre-check carries the run's WINDOW beside
 #     the WHOLE run that implies it (the route with no DFA scan in front), the
 #     window's search is NOT asked: on each witness, at both engines, the
-#     artifact calls `rx_reqrun_whole(` and never `rx_reqrun(`, and the whole
+#     artifact calls `rx_reqrun_whole(` (the call at the entry, never only the
+#     definition) and never `rx_reqrun(`, and the whole
 #     run's candidate test is the pinned LED compare (the window's bytes
 #     first, then the rest of the run; read off the emitted text). The
 #     test-only lever `--harness=pres-window` (build/pcrec-harness) restores
@@ -232,6 +233,7 @@ for i, (pat, enc) in enumerate(pats):
 # D
 hbin = os.path.join(tree, "build", "pcrec-harness")
 LEVER = "--harness=pres-window"
+ASK = "rx_reqrun_whole(subject, subject_length, search_from)"   # the CALL, not the definition
 # (flags, pattern, the whole run's pinned candidate test, or None: masked, no pin)
 LED = [([], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
         'if (!memcmp(subject + cand + 8, "~#~#~#~#", 8) && '
@@ -262,7 +264,7 @@ for i, (fl, pat, line) in enumerate(LED):
             fail("[r30] %s: a compile was refused" % tag); continue
         t = t.decode("utf-8", "replace")
         lv = lv.decode("utf-8", "replace")
-        if "rx_reqrun(" in t or "rx_reqrun__body" in t or "rx_reqrun_whole(" not in t:
+        if "rx_reqrun(" in t or "rx_reqrun__body" in t or ASK not in t:
             fail("[r30] %s: the window is still asked, or the whole run is not" % tag)
         elif line is not None and line not in t:
             fail("[r30] %s: the whole run's test is not the led compare `%s`" % (tag, line))
