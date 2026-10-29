@@ -121,6 +121,12 @@ Round 2026-10-29 r1, landwalk (design) (`docs/dev/reviews/2026-10-29-r1-landwalk
 4. **A speed price needs the baseline of the SELECTED path, not of the motivating case.** The motivating pattern was the only admitted row whose shipped path walked every byte; the others already started from the landmark (S2).
 5. **Compile-time admission cannot pass a subject-dependent acceptance cell.** Where one pattern sits in a positive and a negative cell, the design states the loss as a bounded non-goal instead (S3).
 
+Round 2026-10-29 r5, landwalk2 (design re-check) (`docs/dev/reviews/2026-10-29-r5-landwalk2.md`, P1 rev 1), rev 2 in `docs/dev/lanes/p1dsg3_report.md`.
+1. **A fix that turns a restated predicate into a READ of another slot traces the read's cycle and its fixed points.** A row whose own selection changes the read slot's inputs makes a counterfactual read, and the fix must name it (SLOT-1: the live read had two self-consistent answers on four bench rows).
+2. **"Unchanged in kind" claims about a self-check are checked by evaluating the check's condition, not its name** (SLOT-2: the inclusion cited as the PASS reason was the failure condition).
+3. **A route conjunct is the FINISHER, not the body shape.** A VM hybrid's prefilter body is CR_DFA (SLOT-4; cover's C1 had already learned it).
+4. **A soundness lens needs a control that can fail for every rule it calls sound** (SOUND's three controls are what make its 0-wrong count mean something).
+
 Round 2026-10-29 r3, vmtrail (design) (`docs/dev/reviews/2026-10-29-r3-vmtrail.md`; three designs, one build sequence, consolidated in `docs/dev/lanes/vmcons_report.md`).
 1. **An "answer-identical by proof" design gets a soundness lens that APPLIES the rule to emitted code.** The lens builds the base tree and hand-applies the rule, as written, to the emitter's real output for crafted witnesses. It produced every answer-level repro of the round (F1-F3, F6, F8); reading the proofs alone accepted them.
 2. **Multi-document subjects: review the SEAMS.** Each document was sound against the stock program; the holes were in the composition (F4, F5, F21). Every critic tags each finding doc or seam.

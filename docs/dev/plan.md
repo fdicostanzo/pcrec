@@ -239,9 +239,9 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Candidates ([OPTLOOP])
 - [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
   filed: 2026-10-29 lane p1dsg2
-  status (2026-10-29): DESIGNED, rev 1 after review r1 (p1dsg2_report.md); stage 1 (DFA hat) waits on Frank's build go and on one-optimization-build-at-a-time until [INLINE-C] closes
-  trigger: Frank's build go on rev 1 (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
-  refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
+  status (2026-10-29): DESIGNED, rev 2 after re-check r5 (p1dsg3_report.md: counterfactual NEXT read, finisher-dfa, asker-typed AT); stage 1 waits on the rev-2 check, Frank's build go, one-optimization-build-at-a-time
+  trigger: the manager's check of rev 2, then Frank's build go (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
+  refs: docs/dev/lanes/p1dsg3_report.md; docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/reviews/2026-10-29-r5-landwalk2.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
   The later rows below are the review's PLAN items and the general form's unlocks (r1 U1-U5); U3 (one walk emitter for rev-end and the landmark walk) is stage 1's own form (rev 1 D10), so it has no row. The admission sub-table's family unification is [ROWCONJ]; the VM hat's GIVEUP1 check is [GIVEUP-DIFF].
   - [LANDWALK-CARD] STATE:not-started — the walk's measurement card in time units (lwhit, lwcall), and its wlen sweep
     filed: 2026-10-29 lane p1dsg2
@@ -254,7 +254,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     status (2026-10-29): not run (over 50 compiles; the box was held by queue job 622 all day)
     trigger: stage 1 of [LANDWALK] opens (its step 1, under scripts/boxlock); r1 COST-9 (C6)
     refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg2_evidence/population2.py
-    Per admission row: the route (RX_ENGINE), NEXT's selected row (which the census approximates by P's width), the landmark the choice rule picks, and the compile-time cost of building the landmark machine and then declining (rows evaluated after the build), against the plain compile.
+    Per admission row: the route (RX_ENGINE), NEXT_cf (the counterfactual NEXT, rev 2; the census approximates it by P's width), the landmark the choice rule picks, and the compile-time cost of the NEXT_cf memo fill and of building the landmark machine and then declining, against the plain compile. Also counts the reach of unrolling a bounded repeat's first iteration at the cut (csv5's shape, r5 SOUND-4) before it is designed.
   - [LANDWALK-ALLACC] STATE:not-started — walk OUTPUT = every accepting start ascending per hit (r1 U1)
     filed: 2026-10-29 lane p1dsg2
     status (2026-10-29): filed from review r1's general form; not designed
@@ -285,6 +285,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     trigger: locate_finish L3 landed AND a bench query-string cell exists for dup-param (r1 C2: acc-main is not a bench subject)
     refs: docs/dev/lanes/p1dsg2_report.md; docs/design/locate_finish.md; [GIVEUP-DIFF]
     Open at its design: (r1 D6) place the VM hat as NEXT/FIRST rows, not LOCATE, which may remove the L3 dependency; (r1 D5) the VM-route stamp ruling (RX_VM_START_SCAN is NEXT's; RX_DFA_SCAN on a VM artifact means the hybrid's DFA); (r1 SIM-6) `excl-lower`'s own per-call price; the A1 witnesses (unique_rule.py) as its answer net.
+    Rev 2 adds (r5): the net gains `((?:xy)?ab)=\1` on "xyab=aba" (UNIQUE's reach is one or more steps, SOUND-1) and keeps the hybrid witness `(?![a-z]*b)[a-z]+@x` (an erased prefilter body still declines); UNIQUE is decided on ML before the scan-edge pass (SOUND-3); `lmwalk_forms[]` (per-hit, lower-once, bot) is this stage's table (SLOT-11).
   - [LANDWALK-EDGEPRICE] STATE:not-started — p48's priced one-state relaxation on the walk's loops, as its own follow-up (r1 D11)
     filed: 2026-10-29 lane p1dsg2
     status (2026-10-29): split out of stage 1 by review r1: the plain edge comes free (pcrec_scanedge_dfa already runs on reverse machines) and adds 2.4% on 5b
