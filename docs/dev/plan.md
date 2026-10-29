@@ -31,21 +31,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
-- [REQRUN-VM] STATE:started — THE REQUIRED-RUN HANDOFF AND RE-ENTRY WIDENED TO VM CONSUMERS (VM-only and VM-hybrid)
-  filed: 2026-10-27 Frank + manager, from lane subtri (bench O-109 cases 7 url-tld-fix x3.89 and 2 rare x2.66 behind JIT); folds [L1-VMHYB] (filed same day) and [OPT-VMSEED]
-  status (2026-10-27): not started. ONE behaviour, ONE site: on DFA routes the PRE site hands its run position on (ASSIGN) and the forward scan re-enters it ([REQ-HANDOFF-L1]); VM-only routes take ON_MISS (emit_dfa.c:1592), VM hybrids hand off once and never re-enter. Widen it to VM consumers.
-  next: BUILDING (lane reqvm1, opus; Frank 2026-10-27 "Yes go both halves.", incl. one-way give-up movement on the VM-only half, spelled like tuning §2.42¶3). Step 0: docs/dev/lanes/reqvm0_report.md.
-  refs: docs/dev/lanes/subtri_report.md + subtri_evidence/; [REQ-HANDOFF-L1] (plan_completed.md); src/gen/emit_dfa.c emit_req_reentry_use; [PRIOR-COST-UNIFY] (case 2 byte choice, separate); memfn sites (the kit finds the run; pcrec owns the handoff)
-  Measured twins (subtri, instructions:u, cycles as ratios): case 7 run-driven x3.7 instr / x2.0 cycles (keyed on `h` x10.7 / x4.9); case 2 run-driven x1.2 cycles alone, x4.8 with the byte re-key.
-  - [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
-    filed: 2026-10-12 Frank
-    status (2026-10-12): not started; RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes…
-    trigger: (measured) router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2).
-    refs: docs/design/litscan_k82h.md; decisions D6 D77 D122; known_issues K64 K82
-    folded 2026-10-27 into [REQRUN-VM] (Frank "Yes"): its once-per-call seed is the first attempt of the parent's re-entered form; history kept below.
-    before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
-    The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
-    2026-10-27 lane subtri (bench O-109 case 7 url-tld-fix, x3.89 behind JIT): the req-run `https://www.` is found by two pre-checks (23%) that return yes/no only; the attempt loop then scans `h` scalar (66%, 3.57M VM attempts); lookahead+backref is 2.9%. Seeding once per call as written gives only x1.3 cycles; the RE-ENTERED form (the run drives every attempt) gives x2.0 cycles, keyed on `h` x4.9. Re-scope to the re-entered form. Evidence docs/dev/lanes/subtri_report.md.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -589,6 +574,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
+  filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
+  status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
+  trigger: (measured) the reqvm1m mover census finds a hybrid-with-re-entry pattern whose VM-only form would keep its attempt rows (today 0 at the shipped caps; its one `dropped-hybrid-size` cell has a one-byte landmark).
+  refs: docs/dev/lanes/reqvm1rung_report.md; docs/spec/limits.md §8.4 row 4a; D77
+  A per-form refinement needs a row that can fire once per form (hybrid, then VM-only), which breaks the fit table's once-per-row record bound. Filed unscheduled.
 - [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
   filed: 2026-10-27 Frank ("Ok scanner dogfood")
   status (2026-10-27): not started. The pattern is in tests/recursion/cscan.rxt (76 cases, libpcre2-verified; merge of lane/scandog) and went to the bench as I-165.

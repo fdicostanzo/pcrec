@@ -6383,3 +6383,20 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   next: v1 lands, then BOILERPLATE + BRIEF_TEMPLATE make "run lanecheck, end only on DONE" standard; critic skill adopts it for critics
   refs: memory pcrec-subagent-cache-warmth (DO-THEN-FINISH, monitoring ladder); docs/dev/lanes/BOILERPLATE.md; docs/dev/lanes/BRIEF_TEMPLATE.md
   General agent-lifecycle tool, NOT part of the box queue/monitor. Form checks only (sections, non-empty, cites, commit, owed jobs); review still judges content. Minimal harness (Frank 2026-10-21).
+
+- [REQRUN-VM] STATE:completed — THE REQUIRED-RUN HANDOFF AND RE-ENTRY WIDENED TO VM CONSUMERS (VM-only and VM-hybrid)
+  completed: 2026-10-29 lane reqvm1m merged (abi 90 -> 91): required-run handoff and re-entry on VM-only and VM-hybrid routes plus the drop-handoff fit rung; mover census 0 unexpected, make test 81/81 (job 660-reqvm1m-test). Bench case 7 x2.53 and case 2 x1.61 on instructions:u.
+  filed: 2026-10-27 Frank + manager, from lane subtri (bench O-109 cases 7 url-tld-fix x3.89 and 2 rare x2.66 behind JIT); folds [L1-VMHYB] (filed same day) and [OPT-VMSEED]
+  status (2026-10-29): DONE. Landed with the drop-handoff fit rung (limits.md §8.4 row 4a); mech S1700-S1714, 631/632 validation per docs/dev/lanes/reqvm1m_report.md. Follow-ups: [RUNG-HYB-GROW], kit request R-30.
+  next: none (landed).
+  refs: docs/dev/lanes/subtri_report.md + subtri_evidence/; [REQ-HANDOFF-L1] (plan_completed.md); src/gen/emit_dfa.c emit_req_reentry_use; [PRIOR-COST-UNIFY] (case 2 byte choice, separate); memfn sites (the kit finds the run; pcrec owns the handoff)
+  Measured twins (subtri, instructions:u, cycles as ratios): case 7 run-driven x3.7 instr / x2.0 cycles (keyed on `h` x10.7 / x4.9); case 2 run-driven x1.2 cycles alone, x4.8 with the byte re-key.
+  - [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
+    filed: 2026-10-12 Frank
+    status (2026-10-12): not started; RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes…
+    trigger: (measured) router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2).
+    refs: docs/design/litscan_k82h.md; decisions D6 D77 D122; known_issues K64 K82
+    folded 2026-10-27 into [REQRUN-VM] (Frank "Yes"): its once-per-call seed is the first attempt of the parent's re-entered form; history kept below.
+    before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
+    The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
+    2026-10-27 lane subtri (bench O-109 case 7 url-tld-fix, x3.89 behind JIT): the req-run `https://www.` is found by two pre-checks (23%) that return yes/no only; the attempt loop then scans `h` scalar (66%, 3.57M VM attempts); lookahead+backref is 2.9%. Seeding once per call as written gives only x1.3 cycles; the RE-ENTERED form (the run drives every attempt) gives x2.0 cycles, keyed on `h` x4.9. Re-scope to the re-entered form. Evidence docs/dev/lanes/subtri_report.md.
