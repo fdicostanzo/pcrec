@@ -581,6 +581,18 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * and the permanent one wins. */
     if (want == WANT_RESULT)
         UNBUILT(at, "(?%c...)", shown);
+    /* [INLINE-C] stage 2 the GRANT column (inline_c.md §2.4, §5.1): an
+     * invoker-only module is enabled by ONE door, so the refusal names it
+     * (a `features` line cannot help, and saying only "requires module"
+     * would send the author looking for one). The language is the row's
+     * own language row (src/parse/codelang.def). */
+    if (r->flags & RF_INVOKER_ONLY) {
+        const PcrecCodeLang *L = pcrec_code_lang_by_feature(r->feature);
+        const char *lang = L ? L->tag : r->module;
+        REFUSE(at, "(?%c...) requires module '%s', which only the "
+               "command-line option --allow-code=%s (or the library's "
+               "allow_code member) enables", shown, r->module, lang);
+    }
     REFUSE(at, "(?%c...) requires module '%s'", shown, r->module);
 }
 

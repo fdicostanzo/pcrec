@@ -337,6 +337,7 @@ static void cap_index(PossCap *F, const Ast *a, bool fill)
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         /* a call's body is the AST's back edge; its A_CAP is visited at its
          * own lexical position */
         case A_CALL:
@@ -403,9 +404,6 @@ static bool cap_group(Fq *q, int g, First *out)
 static First text_first(Fq *q, const Ast *a)
 {
     switch (a->k) {
-    case A_EMPTY: case A_EOL: case A_CTX:
-    case A_GSTART: case A_KRESET: case A_LOOK:
-        return fst_empty(true);
     case A_CAP: case A_ATOMIC:
         return text_first(q, a->l);
     case A_CAT: {
@@ -439,8 +437,14 @@ static First text_first(Fq *q, const Ast *a)
      * met; LOUD, because `first_of`'s class arm would read the set. */
     case A_WCLASS:
         pcrec_wcls_misplaced(q->cx, "text_first");
+    case A_EMPTY: case A_EOL: case A_CTX:
+    case A_GSTART: case A_KRESET: case A_LOOK:
     case A_CLASS: case A_BREF: case A_CALL: case A_VAR:
-        return first_of(q, a);
+    case A_CALLOUT:
+        /* [INLINE-C] 1a: the kind ROW's TEXT column answers: a ZERO kind adds
+         * no character to a text (exact); every other kind defers. */
+        return pcrec_ast_row(a).text == KTEXT_ZERO ? fst_empty(true)
+                                                   : first_of(q, a);
     }
     return first_of(q, a);   /* unreachable: every AKind is listed */
 }
@@ -480,6 +484,29 @@ static bool bref_first(Fq *q, const Ast *a, First *out)
     if (a->u.bref.caseless) bref_fold(q->cx, a->u.bref.ucp, acc.f);
     *out = acc;
     return true;
+}
+
+/* [INLINE-C] 1a: the NEXT-CHARACTER answer of a node whose kind ROW answers
+ * it, by the PATH column: a GATE or an OPAQUE kind widens to every byte and
+ * is nullable (this representation cannot express a gate, and an opaque kind
+ * may stand for any bytes), and a TRANSPARENT zero-width kind is absent (no
+ * bytes, nullable). A transparent kind with text of its own has its own arm;
+ * it would widen, this file's safe direction. */
+static First fst_row(const Ast *a)
+{
+    const KindRow row = pcrec_ast_row(a);
+    First r;
+    switch (row.path) {
+    case KPATH_TRANSPARENT:
+        if (row.text == KTEXT_ZERO) return fst_empty(true);
+        break;
+    case KPATH_GATE:
+    case KPATH_OPAQUE:
+        break;
+    }
+    bs_all(r.f);
+    r.nullable = true;
+    return r;
 }
 
 /* The byte SET that can begin whatever runs from a position at `a`, plus
@@ -543,16 +570,11 @@ static First first_of(Fq *q, const Ast *a)
             q->b_used = true;
             return r;
         }
-        memset(r.f, 0xff, 32);
-        r.nullable = true;
-        return r;
+        return fst_row(a);
     }
-    case A_VAR: {
-        First r;
-        memset(r.f, 0xff, 32);
-        r.nullable = true;
-        return r;
-    }
+    case A_VAR:
+    case A_CALLOUT:
+        return fst_row(a);
     /* [M6.6.2] A LOOKAROUND WIDENS TO EVERY BYTE AND IS NULLABLE — the same
      * maximally conservative answer `A_BREF` gets, reached differently.
      *
@@ -574,12 +596,8 @@ static First first_of(Fq *q, const Ast *a)
      * cannot match makes the assertion FAIL rather than making it narrower,
      * and "0xff plus nullable" already dominates whatever the body would
      * contribute. */
-    case A_LOOK: {
-        First r;
-        memset(r.f, 0xff, 32);
-        r.nullable = true;
-        return r;
-    }
+    case A_LOOK:
+        return fst_row(a);
     /* [DD-14] A SUBROUTINE CALL WIDENS TO EVERY BYTE AND IS NULLABLE — the
      * same maximally conservative answer `A_BREF` and `A_LOOK` get, and
      * design §4.4a site 19 is explicit that the EXACT answer here (the
@@ -608,12 +626,8 @@ static First first_of(Fq *q, const Ast *a)
      * anything the callee could contribute, and following the back edge in a
      * function that recurses on `A_CAT`/`A_ALT` with no visited set is design
      * §4.4's hang. */
-    case A_CALL: {
-        First r;
-        memset(r.f, 0xff, 32);
-        r.nullable = true;
-        return r;
-    }
+    case A_CALL:
+        return fst_row(a);
     case A_EMPTY:
     /* [M6.2 wave E] `\K` takes A_EMPTY's arm, and it is the ONE arm in this
      * switch that needs no closure argument at all.
@@ -636,7 +650,7 @@ static First first_of(Fq *q, const Ast *a)
      * (body and follow both start with `a`), which is why the corpus carries
      * both it and a shape that does possessify. */
     case A_KRESET:
-        return fst_empty(true);
+        return fst_row(a);
 
     case A_EOL:
         /* D47.5's LIVE GATE: transparent, because `$` means "the subject end
@@ -896,6 +910,27 @@ static void gk_link(Gk *g, const uint8_t *lasts, const uint8_t *firsts)
     }
 }
 
+/* [INLINE-C] 1a: the position-automaton fragment of a node whose kind ROW
+ * answers it, by the PATH column: a TRANSPARENT zero-width kind is an
+ * epsilon (no position, nullable); a GATE or an OPAQUE kind has no position
+ * the (U1)/(U2) questions can be asked over, so the whole construction
+ * declines (`g->ok`), which is always available and always safe. A
+ * transparent kind with text of its own has its own arm; it would decline. */
+static GkParts gk_row(Gk *g, const Ast *a)
+{
+    const KindRow row = pcrec_ast_row(a);
+    switch (row.path) {
+    case KPATH_TRANSPARENT:
+        if (row.text == KTEXT_ZERO) return gk_parts_empty(true);
+        break;
+    case KPATH_GATE:
+    case KPATH_OPAQUE:
+        break;
+    }
+    g->ok = false;
+    return gk_parts_empty(true);
+}
+
 /* Builds `a`'s fragment of the Glushkov position automaton `g` accumulates:
  * one interned POSITION per leaf byte-set, with the fragment's own FIRST
  * and LAST position sets returned so the caller can wire them into the
@@ -938,8 +973,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * only the possessification of a quantifier whose body holds a reference. */
     case A_BREF:
     case A_VAR:
-        g->ok = false;
-        return gk_parts_empty(true);
+    case A_CALLOUT:
+        return gk_row(g, a);
     /* [M6.6.2] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for a reason
      * one step subtler, and the subtlety is why it is written out.
      *
@@ -960,8 +995,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * `g->ok`), and it costs only the possessification of a quantifier whose
      * body holds an assertion. */
     case A_LOOK:
-        g->ok = false;
-        return gk_parts_empty(true);
+        return gk_row(g, a);
     /* [DD-14] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for `A_BREF`'s
      * reason and then some. This builds a POSITION AUTOMATON over the body's
      * byte-consuming positions to decide (U1) one-unambiguity and (U2)
@@ -978,8 +1012,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * `g->ok`), and it costs only the possessification of a quantifier whose
      * body holds a call. */
     case A_CALL:
-        g->ok = false;
-        return gk_parts_empty(true);
+        return gk_row(g, a);
     case A_EMPTY:
     case A_EOL:
     case A_CTX:
@@ -992,7 +1025,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
-        return gk_parts_empty(true);
+        return gk_row(g, a);
 
     case A_CAP:
     /* [M6.4.2] TRANSPARENT, and here the transparency is load-bearing in the
@@ -1353,6 +1386,7 @@ static PSum ps_node(Pss *P, const Ast *a)
     case A_CLASS: case A_EMPTY: case A_EOL:
     case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
+    case A_CALLOUT:
         break;
     }
     First f = first_of(&P->fq, a);
@@ -1530,6 +1564,7 @@ static First item_first(Pss *P, const Ast *a, bool a0)
     case A_CLASS: case A_EMPTY: case A_EOL:
     case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
+    case A_CALLOUT:
         break;
     }
     return first_of(&P->fq, a);
@@ -1777,6 +1812,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * analysis is `first_of`'s answer above (every byte, nullable). */
     case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return;
 
     /* [M6.6.2] THIS WALK DOES NOT ENTER A LOOKAROUND BODY AT ALL, so no

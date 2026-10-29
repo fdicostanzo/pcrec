@@ -22,6 +22,8 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # Re-anchored at [CAND-PATH-READS] (lane pathreads): FIRST's `reads` gained
 # the path reads (CAND_PATH_READS), which the plant keeps; it drops PRESENCE.
+# Re-anchored at [REQRUN-VM] (lane reqvm1): FIRST's `reads` gained BOUND on
+# the VM route (`handoff-attempts[-entry]`), which the plant keeps.
 SAB_BEFORE='                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA),
-                                        CAND_PATH_READS } },'
-SAB_AFTER='                             .reads = { CAND_PATH_READS } },   /* SABOTAGE S607 */'
+                                        [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),'
+SAB_AFTER='                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),   /* SABOTAGE S607 */'

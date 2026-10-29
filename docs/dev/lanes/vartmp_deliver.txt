@@ -1,0 +1,5 @@
+report=docs/dev/lanes/vartmp_report.md
+sections: Summary; Temp root; Writers moved; Writers left; Prune; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

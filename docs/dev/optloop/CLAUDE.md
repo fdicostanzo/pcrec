@@ -78,6 +78,7 @@ Later rounds
 - `startset/` — [START-SET] alpha blocks (round 2; `alpha_s2.sh` ...).
 - `artrev/` — [ARTREV] (D150) charter, selection, pilot setup, collected reviews, `confirm/` S4 results, `report_pilot.md`, `generalize.md` + `gen/`; harness in `studies/artrev/` (identity rules in `studies/artrev/CLAUDE.md`).
 - `round3_selection.md` — DRAFT round-3 slate for Frank.
+- `primed_2026-10-29.md` — the PRIMED list (Frank 2026-10-29): candidates from the subst/unusual/regular readouts, each with evidence, state, design and remodel overlap; next round takes 4-6 after [INLINE-C]; one build at a time until then.
 - `et1twin/` — [ENG-TACTICS] stage-1 K12 recount and reverse-inner twins (reading `../lanes/et1twin_report.md`). Own CLAUDE.md.
 - `rlhtwin/`, `rlhbuild/` — [REQ-HANDOFF-L1] twins and as-built identity/timing (readings `../lanes/rlhtwin_report.md`, `rlhbuild_report.md`). Own CLAUDE.md each.
 - `rewtwin/` — [OPT-REVEND] `rev-end-width` twin (reading `../lanes/rewtwin_report.md`). Own CLAUDE.md.

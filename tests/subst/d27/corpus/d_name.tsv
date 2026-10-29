@@ -1,0 +1,103 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+name-000	name		(?J)(?<n>a)|(?<n>b)	<$n>	empty	all	ab	diff
+name-001	name		(?J)(?<n>a)|(?<n>b)	<${n}|$N|$m>	empty	all	ab	diff
+name-002	name		(?J)(?<n>a)|(?<n>b)	<$zeta$alpha$mu|${alpha}>	empty	all	ab	diff
+name-003	name		(?J)(?<n>a)|(?<n>b)	<$a|$ab|$abc|${a}b>	empty	all	ab	diff
+name-004	name		(?J)(?<n>a)|(?<n>b)	<${_}|${_1}|${_}1>	empty	all	ab	diff
+name-005	name		(?J)(?<n>a)?(?<n>b)?	<$n>	empty	all	abba	diff
+name-006	name		(?J)(?<n>a)?(?<n>b)?	<${n}|$N|$m>	empty	all	abba	diff
+name-007	name		(?J)(?<n>a)?(?<n>b)?	<$zeta$alpha$mu|${alpha}>	empty	all	abba	diff
+name-008	name		(?J)(?<n>a)?(?<n>b)?	<$a|$ab|$abc|${a}b>	empty	all	abba	diff
+name-009	name		(?J)(?<n>a)?(?<n>b)?	<${_}|${_1}|${_}1>	empty	all	abba	diff
+name-010	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$n>	empty	all	acbc b	diff
+name-011	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<${n}|$N|$m>	empty	all	acbc b	diff
+name-012	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$zeta$alpha$mu|${alpha}>	empty	all	acbc b	diff
+name-013	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$a|$ab|$abc|${a}b>	empty	all	acbc b	diff
+name-014	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<${_}|${_1}|${_}1>	empty	all	acbc b	diff
+name-015	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$n>	empty	all	yxyyz	diff
+name-016	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<${n}|$N|$m>	empty	all	yxyyz	diff
+name-017	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$zeta$alpha$mu|${alpha}>	empty	all	yxyyz	diff
+name-018	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$a|$ab|$abc|${a}b>	empty	all	yxyyz	diff
+name-019	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<${_}|${_1}|${_}1>	empty	all	yxyyz	diff
+name-020	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$n>	empty	all	abc	diff
+name-021	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<${n}|$N|$m>	empty	all	abc	diff
+name-022	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$zeta$alpha$mu|${alpha}>	empty	all	abc	diff
+name-023	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$a|$ab|$abc|${a}b>	empty	all	abc	diff
+name-024	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<${_}|${_1}|${_}1>	empty	all	abc	diff
+name-025	name		(?<a>x)(?<ab>y)(?<abc>z)	<$n>	empty	all	xyz	diff
+name-026	name		(?<a>x)(?<ab>y)(?<abc>z)	<${n}|$N|$m>	empty	all	xyz	diff
+name-027	name		(?<a>x)(?<ab>y)(?<abc>z)	<$zeta$alpha$mu|${alpha}>	empty	all	xyz	diff
+name-028	name		(?<a>x)(?<ab>y)(?<abc>z)	<$a|$ab|$abc|${a}b>	empty	all	xyz	diff
+name-029	name		(?<a>x)(?<ab>y)(?<abc>z)	<${_}|${_1}|${_}1>	empty	all	xyz	diff
+name-030	name		(?<n>a)|(?<N>b)	<$n>	empty	all	ab	diff
+name-031	name		(?<n>a)|(?<N>b)	<${n}|$N|$m>	empty	all	ab	diff
+name-032	name		(?<n>a)|(?<N>b)	<$zeta$alpha$mu|${alpha}>	empty	all	ab	diff
+name-033	name		(?<n>a)|(?<N>b)	<$a|$ab|$abc|${a}b>	empty	all	ab	diff
+name-034	name		(?<n>a)|(?<N>b)	<${_}|${_1}|${_}1>	empty	all	ab	diff
+name-035	name		(?<_>a)(?<_1>b)	<$n>	empty	all	ab	diff
+name-036	name		(?<_>a)(?<_1>b)	<${n}|$N|$m>	empty	all	ab	diff
+name-037	name		(?<_>a)(?<_1>b)	<$zeta$alpha$mu|${alpha}>	empty	all	ab	diff
+name-038	name		(?<_>a)(?<_1>b)	<$a|$ab|$abc|${a}b>	empty	all	ab	diff
+name-039	name		(?<_>a)(?<_1>b)	<${_}|${_1}|${_}1>	empty	all	ab	diff
+name-040	name		(?<n>a)?b	<$n>	empty	all	bab	diff
+name-041	name		(?<n>a)?b	<${n}|$N|$m>	empty	all	bab	diff
+name-042	name		(?<n>a)?b	<$zeta$alpha$mu|${alpha}>	empty	all	bab	diff
+name-043	name		(?<n>a)?b	<$a|$ab|$abc|${a}b>	empty	all	bab	diff
+name-044	name		(?<n>a)?b	<${_}|${_1}|${_}1>	empty	all	bab	diff
+name-045	name		(?J)(?<n>a)|(?<n>b)	<$n>	error	all	ab	diff
+name-046	name		(?J)(?<n>a)|(?<n>b)	<${n}|$N|$m>	error	all	ab	diff
+name-047	name		(?J)(?<n>a)|(?<n>b)	<$zeta$alpha$mu|${alpha}>	error	all	ab	diff
+name-048	name		(?J)(?<n>a)|(?<n>b)	<$a|$ab|$abc|${a}b>	error	all	ab	diff
+name-049	name		(?J)(?<n>a)|(?<n>b)	<${_}|${_1}|${_}1>	error	all	ab	diff
+name-050	name		(?J)(?<n>a)?(?<n>b)?	<$n>	error	all	abba	diff
+name-051	name		(?J)(?<n>a)?(?<n>b)?	<${n}|$N|$m>	error	all	abba	diff
+name-052	name		(?J)(?<n>a)?(?<n>b)?	<$zeta$alpha$mu|${alpha}>	error	all	abba	diff
+name-053	name		(?J)(?<n>a)?(?<n>b)?	<$a|$ab|$abc|${a}b>	error	all	abba	diff
+name-054	name		(?J)(?<n>a)?(?<n>b)?	<${_}|${_1}|${_}1>	error	all	abba	diff
+name-055	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$n>	error	all	acbc b	diff
+name-056	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<${n}|$N|$m>	error	all	acbc b	diff
+name-057	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$zeta$alpha$mu|${alpha}>	error	all	acbc b	diff
+name-058	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<$a|$ab|$abc|${a}b>	error	all	acbc b	diff
+name-059	name		(?J)(?:(?<n>a)|(?<n>b))(?<n>c)?	<${_}|${_1}|${_}1>	error	all	acbc b	diff
+name-060	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$n>	error	all	yxyyz	diff
+name-061	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<${n}|$N|$m>	error	all	yxyyz	diff
+name-062	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$zeta$alpha$mu|${alpha}>	error	all	yxyyz	diff
+name-063	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<$a|$ab|$abc|${a}b>	error	all	yxyyz	diff
+name-064	name		(?J)(?<n>x)?(?<m>y)(?<n>z)?	<${_}|${_1}|${_}1>	error	all	yxyyz	diff
+name-065	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$n>	error	all	abc	diff
+name-066	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<${n}|$N|$m>	error	all	abc	diff
+name-067	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$zeta$alpha$mu|${alpha}>	error	all	abc	diff
+name-068	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<$a|$ab|$abc|${a}b>	error	all	abc	diff
+name-069	name		(?<zeta>a)(?<alpha>b)(?<mu>c)	<${_}|${_1}|${_}1>	error	all	abc	diff
+name-070	name		(?<a>x)(?<ab>y)(?<abc>z)	<$n>	error	all	xyz	diff
+name-071	name		(?<a>x)(?<ab>y)(?<abc>z)	<${n}|$N|$m>	error	all	xyz	diff
+name-072	name		(?<a>x)(?<ab>y)(?<abc>z)	<$zeta$alpha$mu|${alpha}>	error	all	xyz	diff
+name-073	name		(?<a>x)(?<ab>y)(?<abc>z)	<$a|$ab|$abc|${a}b>	error	all	xyz	diff
+name-074	name		(?<a>x)(?<ab>y)(?<abc>z)	<${_}|${_1}|${_}1>	error	all	xyz	diff
+name-075	name		(?<n>a)|(?<N>b)	<$n>	error	all	ab	diff
+name-076	name		(?<n>a)|(?<N>b)	<${n}|$N|$m>	error	all	ab	diff
+name-077	name		(?<n>a)|(?<N>b)	<$zeta$alpha$mu|${alpha}>	error	all	ab	diff
+name-078	name		(?<n>a)|(?<N>b)	<$a|$ab|$abc|${a}b>	error	all	ab	diff
+name-079	name		(?<n>a)|(?<N>b)	<${_}|${_1}|${_}1>	error	all	ab	diff
+name-080	name		(?<_>a)(?<_1>b)	<$n>	error	all	ab	diff
+name-081	name		(?<_>a)(?<_1>b)	<${n}|$N|$m>	error	all	ab	diff
+name-082	name		(?<_>a)(?<_1>b)	<$zeta$alpha$mu|${alpha}>	error	all	ab	diff
+name-083	name		(?<_>a)(?<_1>b)	<$a|$ab|$abc|${a}b>	error	all	ab	diff
+name-084	name		(?<_>a)(?<_1>b)	<${_}|${_1}|${_}1>	error	all	ab	diff
+name-085	name		(?<n>a)?b	<$n>	error	all	bab	diff
+name-086	name		(?<n>a)?b	<${n}|$N|$m>	error	all	bab	diff
+name-087	name		(?<n>a)?b	<$zeta$alpha$mu|${alpha}>	error	all	bab	diff
+name-088	name		(?<n>a)?b	<$a|$ab|$abc|${a}b>	error	all	bab	diff
+name-089	name		(?<n>a)?b	<${_}|${_1}|${_}1>	error	all	bab	diff
+name-090	name		(?<n>a)(?<m>b)	$m$n$2$1$0	empty	all	abab	diff
+name-091	name		(?<n>a)(?<m>b)	${m}${n}$m$n	empty	all	ab	diff
+name-092	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xa	diff
+name-093	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xa	diff
+name-094	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	$LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL	empty	all	xa	diff
+name-095	name	-e utf8	(?<\xc3\xa9>a)	[${\xc3\xa9}]	empty	all	xa	diff
+name-096	name	-e utf8	(?<\xc3\xa9>a)	[$\xc3\xa9]	empty	all	xa	diff
+name-097	name	-e utf8	(?<a\xc3\xa9>a)	[${a\xc3\xa9}]	empty	all	xa	diff
+name-098	name		(?<_>a)(?<_1>b)	<$_|$_1|${_}1>	empty	all	ab	diff
+name-099	name	--no-captures	(?<n>a)	$n	empty	all	a	expectrc:BIND -16 0
+name-100	name		(?J)(?<n>a)|(?<n>b)|(?<n>c)	[$n]	empty	all	cba	diff
+name-101	name		(?|(?<n>a)|(?<n>b))	[$n]	empty	all	ab	diff

@@ -1,0 +1,36 @@
+--- shipped/7-url-tld-fix/rx.c
++++ proto/7a/rx.c
+@@ -648,9 +648,11 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+-    if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
+-    attempt_position = search_from;
++    /* PROTOTYPE (subtri what-if): every match starts at "https://www." (the
++     * pattern opens with that literal), so the req run's position IS the
++     * candidate; re-enter the run search after a failed attempt. */
++    attempt_position = rx_reqrun_whole(subject, subject_length, search_from);
++    if (attempt_position >= subject_length) return 0;
+     window_end = subject_length;
+     static const unsigned char rx_start_set[256] = {
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+@@ -670,8 +672,6 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+-    if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+@@ -686,8 +686,7 @@
+         if (result >= 0) break;
+         rx_reset_for_next_attempt(run);
+         if (attempt_position >= subject_length) return 0;
+-        attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        attempt_position = rx_reqrun_whole(subject, subject_length, attempt_position + 1);
+         if (attempt_position >= subject_length) return 0;
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);

@@ -63,6 +63,17 @@
   - [§10.7](#s10-7) The freestanding and embedded profile
   - [§10.8](#s10-8) What the `_in` entries do not change
   - [§10.9](#s10-9) The tiered default of the un-suffixed entries
+- [§11](#s11) Callouts
+  - [§11.1](#s11-1) Where a site may stand
+  - [§11.2](#s11-2) Bindings
+  - [§11.3](#s11-3) What the callee sees
+  - [§11.4](#s11-4) Returns and width classes
+  - [§11.5](#s11-5) A callee's give-up and the tiered default
+  - [§11.6](#s11-6) The fire contract and the budget
+  - [§11.7](#s11-7) Attributes
+  - [§11.8](#s11-8) Firing classes
+  - [§11.9](#s11-9) Embedded code
+  - [§11.10](#s11-10) The span helpers
 <!-- spec-toc:end -->
 
 <a id="s0-p1"></a>[0¶1] This document states what pcrec's library (`lib/pcrec.h`) and every
@@ -171,15 +182,37 @@ What stays per-prefix
 is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 (including the three masks), and the budget, capacity and sizing macros.
 
+<a id="s1-p6a"></a>[1¶6a] **The callout-artifact fixed-literal family** is the one CONDITIONAL
+family: it is emitted only on an artifact with a callout site (§11), inside
+its own guard, so two callout artifacts in one translation unit define it
+once:
+
+```c
+#ifndef PCREC_RX_CALLOUT_H
+#define PCREC_RX_CALLOUT_H
+#define RX_PASS 0      /* a callout passes: continue, consuming nothing */
+#define RX_FAIL (-1)   /* a callout fails this path: backtrack */
+#endif
+```
+
+<a id="s1-p6b"></a>[1¶6b] `RX_PASS` and `RX_FAIL` are the return names of a callout check (§11.4); a
+hand-written binding may use them too. A consumed length is just the number.
+An artifact with no callout site emits none of it. Beside the family, the
+same artifact declares one `extern const rx_callout_ref rx_callout_<name>;`
+(or `rx_callout_<n>;`) per binding its sites name (§11.2): fixed-literal and
+unprefixed, so two artifacts naming one binding share one definition. The
+family is followed by the span helpers (§11.10), fixed-literal and in their
+own guard `PCREC_RX_SPAN_H`, on the same condition.
+
 <a id="s1-p7"></a>[1¶7] **The guard's value is the `abi`, and a mixed-`abi` translation unit is
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 85
-#error "pcrec: this artifact (abi 85) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 91
+#error "pcrec: this artifact (abi 91) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 85
+#define PCREC_RX_ABI_H 91
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -239,7 +272,7 @@ typedef struct rx_ctx {
  * semantic; PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71
  * item 1) is its first producer -- the artifact's own
  * inconsistency check firing, never a resource give-up -- and a
- * generated call site that invokes an rx_matchfn traps on one.
+ * generated call site that invokes an rx_matchfn propagates one.
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 
@@ -371,9 +404,13 @@ is per-prefix and is declared outside the block.
 - <a id="s2-p5"></a>[2¶5] **`rx_ctx.vars` / `nvars`** carry the caller's variable values for
   module `vars`, by name (`docs/spec/vars.md`); they are what keeps a
   var-bearing artifact's `<prefix>_match` an `rx_matchfn`.
-- <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.** Every
-  emitted call site sets `ncap = 0` and nothing advances it, so no caller can
-  observe a watermark; it is reserved for a future mid-match view.
+- <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has one producer, a
+  callout site** (§11.3): it sets `ncap` to the pattern's group count plus
+  one at every site, the widest watermark, and a group not yet written reads
+  `{-1, -1}`. Every other emitted call site sets `ncap = 0`. The
+  "ncaps on completion" reading has one producer, the subst element
+  (`docs/spec/subst_api.md` §4): its `ctx.ncap` is the `ncaps` of a COMPLETED
+  match, every pair written.
 - <a id="s2-p7"></a>[2¶7] **`rx_renderfn` carries a sizing protocol**: called with `out == NULL` and
   `outcap == 0` it writes nothing and returns the length it would produce.
   The typedef is in every artifact's block; a FUNCTION of this type is
@@ -512,13 +549,18 @@ is the one a scan from `startpos` gives.**
   `tuning.md` §2.42).
 - <a id="s3-1-p13"></a>[3.1¶13] Positions so proved consume no step budget and no capacity: the budgets
   meter only the work the matcher performs.
-- <a id="s3-1-p14"></a>[3.1¶14] No artifact begins a scan later where that could change whether a
-  budget-limited search answers or gives up (`tuning.md` §2.41: a
-  count-collapsed prefilter declines the handoff).
+- <a id="s3-1-p14"></a>[3.1¶14] No artifact with a DFA scan begins that scan later where that could
+  change whether a budget-limited search answers or gives up (`tuning.md`
+  §2.41: a count-collapsed prefilter declines the handoff). A VM artifact
+  with no DFA scan begins its attempts later only as ¶15a allows.
 - <a id="s3-1-p15"></a>[3.1¶15] A search that gives up under `-fno-start-set` — on steps, work, backtrack
   frames, trail, or a caller buffer's capacity — may return the answer an
   unbounded budget and capacity return when the skip is on. It never does the
   reverse: an answer under `-fno-start-set` is the answer with the skip.
+- <a id="s3-1-p15a"></a>[3.1¶15a] Likewise under `-fno-req-handoff` on a VM artifact with no DFA
+  scan, where the handoff skips the attempts before a necessary run's whole
+  run (`tuning.md` §2.41¶8b, ¶9a): a search that gives up denied may return
+  the unbounded answer with the handoff, never the reverse.
 
 <a id="s3-1-p16"></a>[3.1¶16] **`caps[0][0]` is where REPORTING begins, which is not always where matching
 began.** `\K` resets the reported start to wherever the winning path last
@@ -1097,6 +1139,13 @@ written, and it holds what it held before the call (for a BOUND iterator
 whose setter was refused, the position its next search would have started
 at). Every other field's value is unspecified to the caller.
 
+<a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s`, `n`, `vars` and `nvars` hold valid
+values in every state: `RX_ITER_INIT` writes all of them (¶5), and
+`rx_iter_vars` sets the last two while the iterator is FRESH. The shared
+block that reads them, the subst types block's context setup
+(`docs/spec/subst_api.md` §7¶3), reads exactly these fields; a caller still reads none of them, and uses `pcrec_subst_ctx_init`
+where it needs a context.
+
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an
 independent iterator at the same point, and either may be advanced. Each
 holds the bindings above.
@@ -1197,7 +1246,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 
 | code | value | class | meaning |
 |---|---|---|---|
-| `PCREC_ERR_STEPS` | −2 | give-up | the step budget (backtrack resumptions) ran out |
+| `PCREC_ERR_STEPS` | −2 | give-up | the step budget (backtrack resumptions and callout fires, §11.6) ran out |
 | `PCREC_ERR_FRAMES` | −3 | give-up | a backtracking capacity ran out (below) |
 | `PCREC_ERR_WORK` | −4 | give-up | the work budget (forward work the fail label never sees) ran out |
 | `PCREC_ERR_RECURSE` | −5 | give-up | reserved; no emitter returns it |
@@ -1207,6 +1256,8 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_UNSET_VAR` | −8 | below the floor | refused: an unset or ill-formed variable value (`docs/spec/vars.md`) |
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
 | `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5); `<prefix>_next` and `<prefix>_next_n` leave it, in `it.rc` |
+| `PCREC_SUBST_NOSPACE` … `PCREC_SUBST_MISSING_REF` | −11 … −16 | below the floor | reserved for the subst artifact (`docs/spec/subst_api.md` §8), whose block defines them; no match entry returns one, and no other code takes these values |
+| `PCREC_ERR_ABORT` | −17 | below the floor | reserved for a callout that ends the whole match; no artifact defines or returns it yet, and no other code takes this value |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
 resource. A DFA artifact has no counter and never returns one, though it
@@ -1223,8 +1274,9 @@ reported: measured on `^(a(?1)?b)$`, the artifact gives up with the trail full
 and two thirds of its resume stack unused (`docs/design/
 frame_buffer_design.md` §4). The same code, with the same meaning, covers a
 caller-supplied buffer (§10.3), and there too it does not say whose buffer it
-was. From an un-suffixed entry it always means the stamped default ran out,
-never the fast tier (§10.9).
+was. From an un-suffixed entry it always means this call's stamped default
+ran out, or a callout's callee gave it up (§11.5), never the fast tier
+(§10.9).
 
 <a id="s4-p4"></a>[4¶4] **One call to an un-suffixed entry may spend up to twice the step budget and
 twice the work budget.** The tiered default (§10.9) re-runs a match on the
@@ -1232,7 +1284,11 @@ full default storage after a `PCREC_ERR_FRAMES` give-up on its fast tier, with
 both budgets refilled. A returned `PCREC_ERR_STEPS` still means one attempt
 exhausted a full budget. The `_in` entries have no tier and are bounded by one
 budget; a caller needing a hard bound on one call's work uses `_in` or
-`-fno-tiered-entry` (`tuning.md` §2.12).
+`-fno-tiered-entry` (`tuning.md` §2.12). **Temporarily**, a callout whose
+binding is itself a pcrec artifact runs each fire on that artifact's own
+fresh budget, so one outer call's work is bounded by the outer budget times
+one plus the callee's budget (each fire costs the outer one step, §11.6);
+this multiplier goes away when a callee can charge its caller's meter.
 
 <a id="s4-p5"></a>[4¶5] **Below the floor: not give-ups.** Values strictly below `PCREC_ERR_FLOOR` are
 reserved for abort and refusal semantics. Every artifact defines all five
@@ -1272,11 +1328,14 @@ under a different encoding or engine. None renumbers the give-up partition.
 
 <a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
 Q11; D163 addenda 5 and 6). A generated call site that invokes another
-matcher (a compound's controller calling a part, §3.7; when module `callouts`
-builds, a callout site) handles the callee's return through a first-match
-table over code classes, emitting a row only for the classes the CALLEE CAN
-RETURN, read off the callee (its engine, its startpos guard, its subject
-check):
+matcher (a compound's controller calling a part, §3.7; a callout site, §11)
+handles the callee's return through a first-match table over code classes,
+emitting a row only for the classes the CALLEE CAN RETURN, read off the
+callee (its engine, its startpos guard, its subject check, its width class).
+The table reads the callee's CONVENTION: a compound's part returns `> 0` for
+a match and `0` for none; an `rx_matchfn` (a callout's binding) returns a
+length `>= 0` or `-1`. At an extern binding nothing is known of the callee,
+so every row is live. The rows, in the emitted order:
 
 | # | the callee's code | action |
 |---|---|---|
@@ -1288,12 +1347,19 @@ check):
 | 6 | `PCREC_ERR_STARTPOS` | `__builtin_trap()`: the caller generated the position (§9.5) |
 | 7 | `PCREC_ERR_UNSET_VAR` | propagate unchanged: the caller's data |
 | 8 | any other code below 0 | `__builtin_trap()`: the reserved space (D38 item 4) |
+| 9 | a length `> 0` from a CHECK (a callout without `consume`, §11.4) | `__builtin_trap()`: the check broke its declared width |
+| 10 | a length that leaves the subject, or (under a multi-byte encoding) ends off a character boundary | `__builtin_trap()`: the callee broke `rx_matchfn`'s contract |
 
 <a id="s4-p10a"></a>[4¶10a] The rule binds call sites that call INTO another matcher, not an exported
 entry's own `return`. The compound's controller is the first producer: its
 parts are DFA parts compiled with no startpos guard and no subject check, so
 each part call carries rows 1, 2 and 8 and the trap is unreachable by
 construction.
+
+<a id="s4-p10b"></a>[4¶10b] Rows 9 and 10 apply to an `rx_matchfn` callee's lengths only, so they
+are tested after the negative rows; row 1's success edge is the
+fall-through. A give-up that came from a callout's callee propagates without
+escalating the caller's tiered default (§11.5).
 
 <a id="s4-p11"></a>[4¶11] **Where the numbers live.** This section states what each value means. The
 numeric defaults and overrides of the step and work budgets and the frame and
@@ -1335,6 +1401,10 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
 - <a id="s5-p7"></a>[5¶7] **`ctx->caps` handed to a callout mid-match is valid for that one call
   only**; the engine rewrites the storage afterwards (trail-based undo). A
   callout that keeps the pointer and reads it later has a bug of its own.
+  What it shows is §11.3's: every group of the pattern, each its last
+  CLOSED value or unset, and pair 0 `{attempt start, -1}`. A callout
+  artifact keeps every group under `--no-captures` for that view, and still
+  delivers none (`<PREFIX>_NCAPS 1`).
 - <a id="s5-p8"></a>[5¶8] **A completed match's `caps` are stable until the next match call reusing
   the same buffer**; the matcher never overwrites a buffer mid-splice.
 - <a id="s5-p9"></a>[5¶9] **`caps[k]` is group `k`** for the primary pattern's own groups on a
@@ -1573,7 +1643,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `85` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `91` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1731,7 +1801,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `85` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `91` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1770,6 +1840,19 @@ per-label roles, entry-point paragraphs, the residual entries' doc-comments,
 the feature-set comment line — is emitted only under `-fcomments`. The paired
 `.h` of a default build therefore records the feature set in no form;
 `PCREC_FEATURE_SET` / `PCREC_FEATURE_MODULES` (§6.3) carry it on the `.c`.
+Whatever of the caller's own text the artifact echoes — the pattern in the
+provenance line and in the `-fcomments` orientation block, a substitution
+template, a literal run — is written as ASCII only: a byte outside printable
+ASCII is spelled by number (`\xNN` in a comment, a fixed three-digit octal
+`\NNN` in a string literal), `\n` `\t` `\r` by name, and a comment-closing or
+comment-opening pair is split. The emitters' own text (comment prose
+included) is ASCII too, so every byte of the artifact, `.c` and `.h`, is
+ASCII under every option, and it compiles clean under `-Wall -Wextra -Werror
+-Wbidi-chars` for any pattern, except the bytes of an embedded code segment
+and of a `code-header` line (§11.9), which are the user's as written. A
+bidirectional control or invisible character in a segment is refused
+(§11.9¶3), so such an artifact still compiles clean under `-Wbidi-chars`
+whenever the user's code does.
 
 <a id="s6-1"></a>
 ### 6.1 `rx_info` is link-time data
@@ -1796,8 +1879,10 @@ selection point must be observable".
 #### 6.3.1 Scoping rules
 
 - <a id="s6-3-1-p1"></a>[6.3.1¶1] **Where they live.** The contract constants of the shared block (§2) and
-  `<PREFIX>_NCAPS`, the sizing macros of §10.4 and, on a var-bearing artifact,
-  `<PREFIX>_NVARS` are in the `.h` (measured: 29 `#define`s in the `.h` of both
+  `<PREFIX>_NCAPS`, the sizing macros of §10.4, on a var-bearing artifact
+  `<PREFIX>_NVARS`, and on a callout-bearing artifact §1¶6a's family, the
+  span helpers (§11.10), the binding declarations, `<PREFIX>_CALLOUTS`,
+  `<PREFIX>_CODE_LANGS` and `<PREFIX>_CALLOUT_BINDINGS` are in the `.h` (measured: 29 `#define`s in the `.h` of both
   a VM and a DFA build of `'a(b|c)+d'`, identical except `RX_NCAPS`'s value
   and the sizing values). Every other stamp is emitted into the `.c` only, so
   reading one needs a self-contained artifact (`header_name == NULL`) or code
@@ -1920,6 +2005,9 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_NCAPS` | all (`.h`) | integer | `ncaps` | §5 |
 | `<PREFIX>_RESUME_FRAMES`, `_TRAIL_FRAMES`, `_RESUME_FRAME_SIZE`, `_TRAIL_FRAME_SIZE`, `_BUFFER_ALIGN` | all (`.h`) | integer | the sizing fields | §10.4 |
 | `<PREFIX>_NVARS`, `<PREFIX>_VAR_<NAME>` | var-bearing (`.h`) | integer | `nvars` | `docs/spec/vars.md` |
+| `<PREFIX>_CALLOUTS` | callout-bearing (`.h`) | integer: the number of callout sites | — | §11.2 |
+| `<PREFIX>_CALLOUT_BINDINGS` | callout-bearing (`.h`) | string: the binding symbols the artifact needs, sorted, distinct, comma-separated (`"rx_callout_1,rx_callout_octet"`); a code segment's binding is the artifact's own and is not listed, so an artifact whose every site is code stamps `""` | — | §11.2 |
+| `<PREFIX>_CODE_LANGS` | code-bearing (`.h`) | string: the languages of the artifact's code segments, distinct, comma-separated, in the language table's order (`"c"`) | — | §11.9 |
 
 <a id="s6-3-3"></a>
 #### 6.3.3 Engine selection
@@ -2390,7 +2478,13 @@ the value.
 (`tuning.md` §2.41): an emitted pre-check (`_REQ_WHY "emitted"`), a DFA scan
 in front of the body (a DFA artifact, or a hybrid's prefilter), a finite `K`,
 a prefilter that is not count-collapsed, and not a hybrid with a `\G` start
-family whose prefilter window is its match ceiling. The pre-check's LANDMARK
+family whose prefilter window is its match ceiling; or where one of its
+attempt-loop rows applies (`tuning.md` §2.41¶8b): a VM artifact with no DFA
+scan (`_VM_PREFILTER "none"`), an unanchored pattern, and a whole run with a
+finite `K`, whose landmark is that WHOLE run and whose `K` is its maximum
+byte offset (the attempt loop's first attempt begins at the hit less `K`, and
+re-enters after each failed attempt where every part of the pre-check is a
+byte or slice of the run). The pre-check's LANDMARK
 is the run's window where `_REQ_RUN` is not `"none"`, else the one byte
 `_REQ_BYTE`. Then every match begins at most `K` bytes before an occurrence of
 the landmark; the pre-check's search block returns the LEAST position
@@ -2405,7 +2499,8 @@ under `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before
 the window `TRA`; `(?:\d{1,3}\.){3}\d{1,3}` reads `"3"`, the most digits
 before the first `.`. Where `_DFA_PREFILTER` is `"handoff"` the forward scan
 also re-enters the handoff at each restart (§6.3.4). A non-`"none"` value never
-changes an answer or a give-up.
+changes an answer; on a DFA-scan route it never changes a give-up either, and
+on the attempt-loop rows a give-up may become the unbounded answer (§3.1¶15a).
 
 <a id="s6-3-7-p12"></a>[6.3.7¶12] **`<PREFIX>_VM_START_SCAN`** — where a VM attempt can start.
 
@@ -2852,7 +2947,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, `_CODE_LANGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |
@@ -3117,6 +3212,9 @@ typedef struct {
     const char *const *measures_dirs;       /* NULL-terminated directory
                                                list searched for
                                                NAME.measures.tsv; NULL = none */
+    const char        *allow_code;          /* the CODE GRANT: languages of
+                                               embedded code this call may
+                                               compile ("c"); NULL = none */
 } pcrec_options;
 ```
 
@@ -3165,6 +3263,13 @@ a set that does not resolve or parse, or that reuses a committed set's id with
 other values, refuses the compile through `pcrec_error`. A consulted set's id
 is stamped into the artifact (`<PREFIX>_MEASURES`). `docs/spec/measures.md` is
 their contract.
+
+<a id="s8-2-p7c"></a>[8.2¶7c] **`allow_code`** is the code grant (§11.9): a comma-separated list of
+embedded-code languages (`"c"`), `NULL` (the default) for none. It is the
+ONLY library door to embedded code: module `code-<lang>` is in no `features`
+text (`"all"` does not contain it, and naming it is refused), so a pattern
+string never becomes compiled code without the caller's say-so. An unknown
+language refuses the compile through `pcrec_error`.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`
@@ -3670,8 +3775,9 @@ trigger) and the replay reports `PCREC_ERR_STEPS`.
 <a id="s10-9-p4"></a>[10.9¶4] **What a caller may rely on:**
 
 - <a id="s10-9-p5"></a>[10.9¶5] Every promise of §3, §4 and §5 stands unchanged.
-- <a id="s10-9-p6"></a>[10.9¶6] `PCREC_ERR_FRAMES` from an un-suffixed entry means the STAMPED DEFAULT ran
-  out, never the fast tier.
+- <a id="s10-9-p6"></a>[10.9¶6] `PCREC_ERR_FRAMES` from an un-suffixed entry means this call's STAMPED
+  DEFAULT ran out, or a callout's callee gave it up (§11.5), never the fast
+  tier.
 - <a id="s10-9-p7"></a>[10.9¶7] The depth an artifact can reach is unchanged (D73 keeps the stamped
   2048/3072); only the cost of not reaching it moved.
 - <a id="s10-9-p8"></a>[10.9¶8] The `_in` entries have no tier: the caller owns the storage, so there is
@@ -3706,3 +3812,384 @@ on the fast tier, and it loses on some patterns:
 deep tier (§5.3, K33), supplies its own storage through the `_in` entries and
 never meets the tier; `-fno-tiered-entry` is the answer for a workload measured
 to sit above the boundary.
+
+---
+
+<a id="s11"></a>
+## 11. Callouts
+
+<a id="s11-p1"></a>[11¶1] A CALLOUT is a point in a pattern where the matcher calls the user's code
+(module `callouts`; the spellings are `pattern_language.md`'s: `(?C)`,
+`(?Cn)` and `(?C"name")` with PCRE2's eight string delimiters). The callee is
+an `rx_matchfn` (§2); it receives a read-only view of the match so far and
+its return decides the path. A pattern with a callout site compiles to the VM
+engine. EMBEDDED CODE (module `code-<lang>`, ``(?C`c: ...`)``, §11.9) is a
+callout site whose callee the artifact itself defines from the pattern's
+text; everything in this section holds for it.
+
+<a id="s11-1"></a>
+### 11.1 Where a site may stand
+
+<a id="s11-1-p1"></a>[11.1¶1] A site may stand in the main sequence, in alternations, in capture and
+non-capture groups, in quantified groups, in atomic groups and in
+lookaheads. These are refused by name, never miscompiled: a site inside a
+lookbehind; a site inside a group that a subroutine call or recursion
+reaches (`(?1)`, `(?R)`, `(?&name)`, a `(?(DEFINE)` group, a `lib`
+definition). A callout itself is not quantifiable (`(?C1)?` is refused, as in
+PCRE2); `(?:(?C1))*` is a group and is.
+
+<a id="s11-1-p1a"></a>[11.1¶1a] A `(?(DEFINE)` group is refused when a call reaches it. A group that
+no call reaches holds a site nothing can fire: it is admitted, `<PREFIX>_CALLOUTS`
+counts it (§6.3), and the artifact builds clean under `-Werror` in the self-contained
+and the split form alike.
+
+<a id="s11-2"></a>
+### 11.2 Bindings
+
+<a id="s11-2-p1"></a>[11.2¶1] The callee of a site is its BINDING, first match:
+
+| # | spelling | the callee | its `user` |
+|---|---|---|---|
+| 1 | `(?C"name")` | `rx_callout_<name>.fn` | `rx_callout_<name>.user` |
+| 2 | `(?C)`, `(?Cn)` (`n` 0-255; `(?C)` is `0`) | `rx_callout_<n>.fn`, `<n>` the decimal number | `rx_callout_<n>.user` |
+| 3 | embedded code, ``(?C`c: ...`)`` (§11.9) | `<prefix>__code<k>_ref.fn`, `<k>` the segment's number (1 for the first segment of the pattern, in pattern order) | `<prefix>__code<k>_ref.user`, `NULL` |
+
+<a id="s11-2-p1a"></a>[11.2¶1a] **One call form.** Every site calls `<binding>.fn(&ctx)` through a
+`const rx_callout_ref`, whoever defines it: rows 1-2 are the user's, declared
+`extern` by the artifact; row 3 is the artifact's own, `static ptrdiff_t
+<prefix>__code<k>(const rx_ctx *)` and `__attribute__((unused)) static const
+rx_callout_ref <prefix>__code<k>_ref = { <prefix>__code<k>, NULL };`,
+file-local, so it is never a link symbol and needs nothing from the user, and
+a site no match can reach (`{0}`, an uncalled `DEFINE` group) still builds
+under `-Werror`. **What gets inlined:** a
+binding whose definition the compiler can see when it compiles the matcher
+(the same translation unit, such as a `.c` that defines a `const` binding and
+`#include`s the artifact, or a build with `-flto`) is called directly and may
+be inlined when the build optimizes (`-O1` and above; at `-O0` gcc keeps the
+call through `fn`); a binding compiled separately is an indirect call through
+the binding's `fn`. Row 3 is always in the artifact's own translation unit.
+
+<a id="s11-2-p2"></a>[11.2¶2] The artifact DECLARES each binding of rows 1-2, `extern const rx_callout_ref
+rx_callout_<name>;` (§1¶6a), and the user DEFINES it. **An unbound binding is
+a link error, by design**: PCRE2 runs a pattern whose callout has no function
+by ignoring the callout; pcrec does not. `--emit-main` therefore refuses a
+pattern with a site of rows 1-2, naming the first in site order
+("--emit-main cannot define the binding rx_callout_octet; link your own"); a
+pattern whose every site is code is accepted. A binding name is a C identifier
+with no `__`; `-p rx_callout` and `-p rx_callout_...` are refused
+(`cli.md` §1.6's namespace table, row 2). A binding symbol that the
+artifact's shared ABI block already declares (`rx_callout_ref`, the type
+every binding has, is the one the `rx_callout_` spelling reaches) is
+refused, naming the binding: the generated declarations and pcrec's own
+identifiers never share a name.
+
+<a id="s11-2-p3"></a>[11.2¶3] The stamps `<PREFIX>_CALLOUTS` (the number of sites the pattern
+names) and `<PREFIX>_CALLOUT_BINDINGS` (the binding symbols those sites
+name) are in the header of every callout artifact (§6.3). Both count what
+the pattern NAMES, so a site no match can reach (inside `{0}` or an
+uncalled `(?(DEFINE)...)` group) is counted, and its binding declared
+`extern`, though it never fires; `--emit-ir`'s `callout-sites` counts the
+sites the program can reach.
+
+<a id="s11-3"></a>
+### 11.3 What the callee sees
+
+<a id="s11-3-p1"></a>[11.3¶1] The callee receives `const rx_ctx *`; its return value is its only effect
+on the match. The view is built fresh at every fire:
+
+- <a id="s11-3-p2"></a>[11.3¶2] `subject`, `len`: the call's subject. `pos`: the position the engine
+  has reached at the site.
+- <a id="s11-3-p3"></a>[11.3¶3] `ncap`: the PATTERN's group count plus one, at every site, whatever
+  `--no-captures` says; `caps[k]` is group `k`, its last CLOSED value or
+  `{-1, -1}` (a group is visible after it closes; a repeated group keeps its
+  previous iteration's value until it closes again, §5.1).
+- <a id="s11-3-p4"></a>[11.3¶4] `caps[0]` is `{attempt start, -1}`: the position the current anchored
+  attempt began at, not a `\K`-moved start.
+- <a id="s11-3-p5"></a>[11.3¶5] `user`: the binding's. `vars`, `nvars`: what the entry received (NULL
+  and 0 when the pattern takes none).
+
+<a id="s11-3-p6"></a>[11.3¶6] The view is valid for the call only (§5¶7).
+
+<a id="s11-4"></a>
+### 11.4 Returns and width classes
+
+<a id="s11-4-p1"></a>[11.4¶1] A site is a CHECK unless it says `consume` (§11.7). A check returns
+`RX_PASS` (0: continue at `pos`) or `RX_FAIL` (-1: backtrack, exactly as a
+failed atom). A `consume` site may also return a length `k > 0`: the engine
+continues at `pos + k`, and the consumed bytes belong to every group that
+encloses the site. The callee is ATOMIC: on backtracking past the site the
+engine never asks it for a shorter length; it reaches earlier choice points,
+and a path that reaches the site again calls it again.
+
+<a id="s11-4-p2"></a>[11.4¶2] Every other return is §4¶10's table: a give-up, `PCREC_ERR_INTERNAL`,
+`PCREC_ERR_UTF` and `PCREC_ERR_UNSET_VAR` propagate unchanged out of the
+entry; `PCREC_ERR_STARTPOS` and any other code below 0 trap; a positive
+return from a check traps; a length that leaves the subject or ends off a
+character boundary (`-e utf8`) traps.
+
+<a id="s11-5"></a>
+### 11.5 A callee's give-up and the tiered default
+
+<a id="s11-5-p1"></a>[11.5¶1] A give-up a callee returns propagates unchanged, and it does NOT escalate
+the caller's tiered default (§10.9): the callee's own un-suffixed entry has
+already escalated, and a replay of the outer match could not help.
+
+<a id="s11-6"></a>
+### 11.6 The fire contract and the budget
+
+<a id="s11-6-p1"></a>[11.6¶1] A callout may fire on paths the engine later abandons, zero or several
+times per final match, at engine-chosen positions and in an engine-chosen
+order: **fire count and order are unspecified**, beyond the firing class of
+§11.8. A callee whose return depends only on what `rx_ctx` carries for that
+call (a PURE callee) gets a defined answer: the pattern's BACKTRACKING-ORDER
+answer, start positions in order, at each start the paths in priority order,
+every fire on every tried path honoured. Side effects see an unspecified
+sequence.
+
+<a id="s11-6-p2"></a>[11.6¶2] **Compatibility with PCRE2.** pcrec is compatible with PCRE2 on a callout
+pattern whose PCRE2 answer does not depend on PCRE2's optimizations. Where
+it does, PCRE2's answer moves with its flags and pcrec's does not. Measured
+on libpcre2 10.46 with a check that vetoes an even position, `(\d+)(?C"even")`
+over `1234`: PCRE2 answers no match by default and `[0,3)` with
+`PCRE2_NO_AUTO_POSSESS | PCRE2_NO_START_OPTIMIZE | PCRE2_NO_DOTSTAR_ANCHOR`;
+pcrec answers `[0,3)`. With a check that vetoes the attempt at offset 0,
+`(?s).*(?C"vetostart")x` over `axbx`: PCRE2 answers no match by default (it
+anchors a leading `(?s).*`) and `[1,4)` with those flags; pcrec answers
+`[1,4)`.
+
+<a id="s11-6-p3"></a>[11.6¶3] **Each fire is one step** against the call's step budget, so a site that
+fires too often gives up `PCREC_ERR_STEPS` like any backtracking blow-up.
+Nothing in `rx_ctx` exposes the budget. The callee's own work is not
+metered, except that a pcrec artifact bound as a callee runs on its own
+budget (§4¶4).
+
+<a id="s11-7"></a>
+### 11.7 Attributes
+
+<a id="s11-7-p1"></a>[11.7¶1] A named site's string is `name(,attr)*`. A numbered site's attributes
+come from its declaration: the `.rxt` `callout <n> <attrs>` line
+(`rxt_format.md` §1.5¶13a) or `--callout N:attrs` (`cli.md` §1.21). The attributes:
+
+| attribute | meaning |
+|---|---|
+| `consume` | the callee may return a length `> 0` (§11.4) |
+| `once` | the author's promise that the site is class 1 or 2 (§11.8); a site of class 3 is refused, naming the repeat, alternation, quantifier or subroutine call that makes it so, and its pattern offset |
+| `verify` | refused by name: not built yet |
+
+<a id="s11-7-p2"></a>[11.7¶2] An unknown or repeated attribute, and an empty item of the list
+(`(?C"x,")`, `(?C"x,,once")`), are refused; a declaration's attribute list
+is never empty. A declaration that names a number no site uses, or a number
+declared twice, is refused.
+
+<a id="s11-8"></a>
+### 11.8 Firing classes
+
+<a id="s11-8-p1"></a>[11.8¶1] The compiler derives one structural fact per site from the pattern as
+written, never from a subject: how many times it can fire within one
+ATTEMPT (one anchored try at one start position, within one engine run).
+First match:
+
+| # | class | rule | what the code may rely on |
+|---|---|---|---|
+| 1 | `once-per-match` | no enclosing repeat of maximum 2 or more, no live choice point before the site, and the site is the pattern's tail | at most one fire per attempt, and a passing fire IS the match |
+| 2 | `once-per-start` | no such repeat and no live choice point before the site | at most one fire per attempt |
+| 3 | `repeated` | otherwise | may fire more than once per attempt |
+
+<a id="s11-8-p2"></a>[11.8¶2] A choice point is an alternation, a quantifier whose minimum and maximum
+differ, or a subroutine call; one inside an atomic group, a possessive
+quantifier or an ATOMIC lookaround that completes before the site is SEALED
+and not live. A non-atomic lookaround (`(?*...)`, `(?<*...)`) keeps its
+choice points live after it completes, so `(?*a+)(?C"x,once")a+c` is
+refused, and so is `(?*a|b)(?C"x,once")c`: the rule reads the lookaround
+as written, however small its body. The class is reported in `--emit-ir`'s `callouts` section
+(`ir_listing.md`). Different start positions are different attempts; the
+tiered default's escalation (§10.9) re-runs the whole call, so every site
+fires again in the second run; and the iterator's empty-match retry (§3.8)
+is a second, anchored attempt at the same start, so a site can fire once in
+each. None of these is bounded by the class, and class 1's "a passing fire
+IS the match" holds per attempt.
+
+<a id="s11-8-p3"></a>[11.8¶3] THE `once` RULE, AS A TABLE. The rule is read from the pattern AS WRITTEN: it is syntactic, it never depends on an optimization flag or on what the optimizer would prove, and a user can check it by reading the pattern. A site marked `once` is refused when any of the constructs in the first table stands before it (at the same level, or inside a non-atomic lookaround that completes before it), or inside a repeat of maximum 2 or more. Every refusal names the construct, its pattern offset and the fix, and says whether the fix changes what the pattern matches (¶3a); `--emit-ir`'s `callouts` `note` column (`ir_listing.md` §3.7) carries the same text for a `repeated` site.
+
+| before a `once` site, backtrackable | fix |
+|---|---|
+| a variable greedy quantifier (`X*`, `X+`, `X?`, `X{n,m}`) | make it possessive (`X*+`, `X++`, `X?+`, `X{n,m}+`) or wrap it in `(?>...)` |
+| a variable lazy quantifier (`X*?`, `X+?`, `X??`, `X{n,m}?`) | none offered: drop `once` (the site then fires on each retry) or rewrite the pattern; `X++` is greedy and `(?>X+?)` keeps only its shortest run |
+| an alternation (`(?:a\|b)`) | wrap it in `(?>...)` |
+| a subroutine call (`(?1)`, `(?R)`, `\g<n>`) | wrap it in `(?>...)` |
+| a non-atomic lookaround (`(?*...)`, `(?<*...)`) holding any of the above | use `(?=...)` (`(?<=...)`), which is atomic, or wrap it: `(?>(?*...))` |
+| a site inside a repeat of maximum 2 or more | none: the site cannot be marked `once` |
+
+<a id="s11-8-p3a"></a>[11.8¶3a] A FIX CAN CHANGE WHAT THE PATTERN MATCHES. Making a construct atomic or possessive removes the retries it had, and a match that needed one is lost: `a+(?C"x,once")ab` matches `aab` at offset 0, `a++(?C"x,once")ab` does not. So the refusal ends with one of three verdicts on its fix, judged with every check site passing; which sites are refused does not depend on the verdict. A lazy quantifier is offered no fix and gets no verdict.
+
+| verdict | the refusal says | meaning |
+|---|---|---|
+| unchanged | `that does not change what it matches` | the fix matches exactly what the pattern as written matches, at every start of every subject |
+| loses a match | `that loses a match (offset 0 of "S")` | on subject `S`, the attempt at offset 0 matches as written and fails with the fix; drop `once` if that match is needed (the site then fires on each retry). `S` is omitted when the message would not fit `pcrec_error.msg` |
+| unknown | `that may change what it matches` | the compiler cannot tell; compare the two patterns' matches yourself |
+
+<a id="s11-8-p3b"></a>[11.8¶3b] "Unchanged" is said for a quantifier or an alternation when the optimizer's possessive rule (`tuning.md` §2.1) shows that its retries can find no match its first way does not (a `-fno-poss-*` flag can turn this into "unknown", never into another verdict), and for a non-atomic lookaround whose body holds no capture group that can be set, no `\K`, no callout site and no subroutine call. "Loses a match" is said only with a subject the compiler built and checked: today when the whole pattern is a sequence of single characters around one alternation or quantifier (or a call to a group holding one) whose every way is itself such a sequence. A subroutine call is never "unchanged" and a lookaround is never "loses a match".
+
+<a id="s11-8-p4"></a>[11.8¶4] Not backtrackable, so never a cause: literals, classes, anchors, fixed-count quantifiers (`X{3}`), possessive quantifiers, atomic groups, ordinary (atomic) lookarounds, backreferences, and groups that never run (`(?(DEFINE)...)`, `{0}`).
+
+<a id="s11-9"></a>
+### 11.9 Embedded code
+
+<a id="s11-9-p1"></a>[11.9¶1] **The spelling.** Embedded code is module `code-<lang>`, `code-c` the one
+language, spelled as a PCRE2 string callout (`pattern_language.md`):
+``(?C`c: CODE`)``, with any of PCRE2's string delimiters, whose DECODED
+string starts with a registered language tag, its optional attributes and
+`:` (`c,consume,once:`). The attributes are §11.7's, and every rule of
+§11.1-§11.8 holds for a code site. A string without a registered tag and a
+`:` stays a binding name (`(?C"c,consume")` names the binding `c`). To PCRE2
+the same bytes are an ordinary string callout.
+
+<a id="s11-9-p1a"></a>[11.9¶1a] **Code needs the grant, not module `callouts`.** A code segment compiles
+under the default feature set; `--features callouts` is needed only by the
+numbered and named forms (`(?C1)`, `(?C"name")`, including the binding name
+`c`). `PCREC_FEATURE_MODULES` (§6.3) never lists `code-c`, with or without the grant:
+the languages an artifact carries are `<PREFIX>_CODE_LANGS`.
+
+<a id="s11-9-p2"></a>[11.9¶2] **Where the code ends:** at the first lone closing delimiter, a doubled one
+being one literal byte (PCRE2's own rule, so the same bytes are the same
+pattern to both programs). Code that uses the delimiter writes it doubled, or
+picks a delimiter it does not use (`` ` ``, `$`). The pattern's own modes do
+not apply inside the string (`(?x)` does not make `#` a comment there).
+
+<a id="s11-9-p3"></a>[11.9¶3] **The code is the user's, as written.** pcrec never parses, checks or
+rewrites it: there is no substitution of any kind, only the generated names
+of ¶5. What it refuses in a segment is every character that makes the code a
+reviewer reads differ from the code gcc compiles, naming the code point and
+its byte offset in the segment: a character with the Unicode property
+`Bidi_Control` or `Default_Ignorable_Code_Point` (the sets of the pinned
+Unicode data, `cli.md` §1.17.1); the Unicode line ends gcc does not end a line
+at, U+0085, U+2028 and U+2029; a carriage return not immediately followed by
+a line feed, a vertical tab and a form feed (each a line break to a terminal
+and not to gcc, or the reverse); and every other C0 control character, and
+DEL. Tab, line feed and CR LF are allowed. The segment is read as UTF-8, as
+gcc reads it; a byte that starts no well-formed UTF-8 character is passed
+through as written.
+
+<a id="s11-9-p3a"></a>[11.9¶3a] The byte offset ¶3 names is 0-based and counts the DECODED code text,
+starting at the first byte after the tag's `:` (so after any doubled
+delimiter has been undone, and not from the start of the string or the tag).
+The refusal also names the segment's own pattern offset.
+
+<a id="s11-9-p4"></a>[11.9¶4] **The function.** Each segment becomes `static ptrdiff_t
+<prefix>__code<k>(const rx_ctx *ctx)`, an `rx_matchfn` whose BODY is the
+segment's text: statements ending in a `return` of §11.4's values. Falling
+off the end of the text traps. Its prototype and binding (§11.2 row 3) come
+before the matcher; its definition comes LAST in the `.c`, after everything
+else the artifact writes, preceded by `#undef` of every macro the artifact
+defined for its own use that is still defined there (what stays defined is
+the public contract: the stamps of §6.3, the shared block's and §1¶6a's
+names; the internal macros of §6.3.1¶10, `<PREFIX>_R_*`, `<PREFIX>_SLOT_*`
+and `<PREFIX>_NSLOTS` among them, are `#undef`ed), then
+the macro set of ¶5, the `code-header` lines (¶7), each segment's function,
+and the set's `#undef`. The macro set comes before the first `#line`, so a
+diagnostic inside a macro's expansion names the `.c` itself. A segment is C at
+file scope after the matcher: it can affect the translation unit's macros
+after it (a stamp's value included, for code that reads the stamp after
+`#include`-ing the `.c`), never the code above it, and `--emit-facts` lists
+none of it (`facts_listing.md` §4.2¶3). A `#line` directive before the text names
+the source as written (a FILE operand as typed; `--pattern` text as
+`<command line>`; a library pattern as `<pattern>`) and the line of the
+segment's first byte, and the first line is padded to its column when the
+text maps one-to-one onto its source line (no undone delimiter doubling, and
+no tab or non-ASCII byte before the code on that line). Under `pattern-esc`
+or `--pattern-esc`, every decoded line carries its own `#line` naming the
+opener's line, with no column. So a compiler diagnostic in the user's code
+names the user's file and line. The name is written as a C string literal
+(the artifact stays ASCII), which the compiler decodes: a control byte in a
+file name reaches the compiler's diagnostics raw, as it reaches pcrec's own.
+`ctx->user` is `NULL` at a code site.
+
+<a id="s11-9-p4a"></a>[11.9¶4a] When the first line is not padded (an undone delimiter doubling, a tab
+or a non-ASCII byte before the code on its line, or `pattern-esc`), gcc's
+column counts from the first byte of the code (the byte after the tag's `:`,
+column 1), not from the column in the source.
+
+<a id="s11-9-p5"></a>[11.9¶5] **The macro set**, defined once before the `code-header` lines and the
+first segment's function and `#undef`ed after the last. Every accessor taking `n` evaluates it once and is guarded: an
+unset, not-yet-closed or out-of-range group reads `-1` / `NULL`. Slot 0 is not
+a group (`RX_CAP_SET(0)` is false); the attempt start is `RX_START`.
+
+| macro | value |
+|---|---|
+| `RX_SUBJ`, `RX_LEN`, `RX_POS` | `ctx->subject`, `ctx->len`, `ctx->pos` |
+| `RX_START` | the attempt start (§11.3¶4) |
+| `RX_CAP_SET(n)` | 1 when `n` is a group, `1 <= n < ctx->ncap`, and it is set; else 0 |
+| `RX_CAP_S(n)`, `RX_CAP_E(n)` | the group's start / end offset, or `-1` |
+| `RX_CAP_LEN(n)` | its length, or `-1` |
+| `RX_CAP_P(n)` | `RX_SUBJ + RX_CAP_S(n)`, or `NULL` |
+| `RX_CAP(n)` | the group as an `rx_span` (§11.10), or the unset span |
+| `RX_G_<name>` | a named group's number, for every group name of ASCII identifier bytes the pattern itself declares: the number of the one group with that name; under `(?J)`, the first member of the name's run, in number order, that is set at this fire (§5.4¶6's walk), else the run's first number |
+| `RX_USER` | `ctx->user` |
+
+<a id="s11-9-p6"></a>[11.9¶6] The `RX_` and `rx_` families are reserved: a user header that defines a
+name in them is outside this contract. The user can read `ctx` directly; the
+macros are convenience, not a wall.
+
+<a id="s11-9-p7"></a>[11.9¶7] **`code-header` lines** (`rxt_format.md` §1.1, `cli.md` §1.22) name the
+user's headers: each is written `#include` AS WRITTEN, in the order written, a
+repeated text once, after the matcher and before the first segment, and only
+in the `.c` (a program that only calls the matcher never needs them). pcrec
+never opens, resolves or reads the named file.
+
+<a id="s11-9-p8"></a>[11.9¶8] **The grant.** Embedded code compiles only when the invoker grants its
+language: `--allow-code=c` on the command line or `pcrec_options.allow_code`
+(§8.2¶7c). Nothing else enables it: `code-c` is in no feature set, `all`
+included, and a `features` text naming it is refused wherever it arrives
+from, as is a config's `pcrec` line carrying `--allow-code`. Without the
+grant every segment is refused by name and no artifact is written, and a
+`code-header` line is refused like a segment. Code in a definition read from
+another file (through `lib` or `include`) is refused even with the grant:
+only the file named on the command line, `--pattern` text and a library
+caller's pattern are LOCAL. The describe modes (`--emit-ir`, `--emit-facts`,
+`--count-groups`) parse code whatever the grant says (unset, empty or a
+list) and write no C. The stamp
+`<PREFIX>_CODE_LANGS` discloses the languages present (§6.3).
+
+<a id="s11-9-p8a"></a>[11.9¶8a] **Corners of the grant.** The describe modes apply ¶3's refusals and
+refuse an unknown language in `--allow-code` (`py`) like a compile does; they
+only differ in writing no C. A language name is matched exactly: `c` is the
+language, `C` is unknown, and a repeated language (`--allow-code=c,c`) is the
+grant once. A granted artifact with a `code-header` line and no segment still
+emits each header, after the matcher, with no macro set before it. The LOCAL
+rule of ¶8 is not observable today for a definition: a site in a definition is
+refused by §11.1¶1 whether the definition is local or read from another file,
+and an `include`d fragment's block is no definition a target can name, so no
+local definition holding code compiles to show the difference from a `lib`
+one. The rule is the contract for the day §11.1 admits a reached site.
+
+<a id="s11-10"></a>
+### 11.10 The span helpers
+
+<a id="s11-10-p1"></a>[11.10¶1] Every callout artifact carries, beside §1¶6a's family and in the guard
+`PCREC_RX_SPAN_H`, a span type and seven `static inline` helpers, for a code
+segment and a hand-written binding alike. A SPAN is a pointer and a length.
+A span is UNSET when its length is negative (`RX_CAP` of an unset group is
+`p == NULL`, `len == -1`), and every helper reads an unset span as matching
+nothing. The pointer decides nothing: an empty group on a `NULL` subject is
+the SET span `p == NULL`, `len == 0`, which every helper reads as it reads
+an empty group on `""`.
+
+```c
+typedef struct rx_span { const unsigned char *p; ptrdiff_t len; } rx_span;
+```
+
+| helper | returns |
+|---|---|
+| `int rx_eq(rx_span s, const char *z)` | 1 when `s` is set and its bytes are exactly the NUL-terminated `z` (same length); else 0 |
+| `int rx_eqi(rx_span s, const char *z)` | as `rx_eq`, the 26 ASCII letters compared without case; every other byte exactly |
+| `int rx_u64(rx_span s, uint64_t *out)` | 1 and `*out` set when `s` is non-empty, every byte an ASCII decimal digit, and the value at most `UINT64_MAX` (leading zeros allowed); else 0 and `*out` untouched |
+| `int rx_hex(rx_span s, uint64_t *out)` | as `rx_u64` with hexadecimal digits of either case, no `0x` prefix |
+| `int rx_in(rx_span s, uint64_t lo, uint64_t hi)` | 1 when `rx_u64` reads a value `v` with `lo <= v <= hi`; else 0 |
+| `ptrdiff_t rx_find(rx_span s, const char *z)` | the offset in `s` of the first occurrence of the NUL-terminated `z` (0 for an empty `z`), or -1 (none, or `s` unset) |
+| `int rx_u8next(rx_span s, ptrdiff_t *i, uint32_t *cp)` | decodes the UTF-8 character at offset `*i`: its length 1-4, with `*cp` set and `*i` advanced past it; 0 at the end (`*i >= s.len`, or `s` unset); -1, nothing changed, for an ill-formed sequence (an overlong form, a surrogate, a value above U+10FFFF, a bad or missing continuation byte) |
+
+<a id="s11-10-p2"></a>[11.10¶2] A helper returns 0 and changes nothing on its pointer arguments when it
+returns 0. `rx_u8next` treats a negative `*i` as the end (it returns 0, `*i` and
+`*cp` untouched), like `*i >= s.len`, so the loop `while (rx_u8next(s, &i, &cp) > 0)`
+ends on 0 and on -1 alike. A NUL-terminated argument `z` must not be `NULL`: the
+helpers read it, and a `NULL` `z` is outside the contract even for an unset `s`.

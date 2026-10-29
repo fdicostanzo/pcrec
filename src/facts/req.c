@@ -572,6 +572,20 @@ static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
     acc->runs = rr_cat(rr_none(0), acc->runs);
 }
 
+/* `acc` := node `a` followed by `acc`, for a kind whose ROW answers for its
+ * text: ZERO is a zero-width assertion, ANY a gap of unbounded width (no
+ * byte, a broken run, every run to its right moved). An OWN kind has its own
+ * arm; it would get the gap, which is always sound. */
+static void rb_row_into(RbVal *acc, const Ast *a)
+{
+    switch (pcrec_ast_row(a).text) {
+    case KTEXT_ZERO: rb_assert_into(acc); return;
+    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;
+    case KTEXT_OWN:  break;
+    }
+    rb_gap_into(acc, PCREC_W_UNBOUNDED);
+}
+
 static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t);
 
 /* Writes into `*out` the bytes and the runs EVERY match of `a` must contain,
@@ -687,14 +701,19 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
-            rb_assert_into(acc);
-            return;
         /* The two deliberate declines, `src/facts/startanch.c`'s for the same
          * reasons: a backreference's bytes are the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. Both are the
          * empty set, which disables the check — always sound. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
+            /* [INLINE-C] 1a: the kind ROW answers (`rb_row_into`): text ZERO
+             * for every kind above the backreference, ANY for the two. */
+            rb_row_into(acc, a);
+            return;
+        /* The call's text is its callee's (row OWN), declined for the reason
+         * above rather than computed. */
         case A_CALL:
             rb_gap_into(acc, PCREC_W_UNBOUNDED);
             return;

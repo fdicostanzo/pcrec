@@ -21,7 +21,8 @@ Cells are written at EVERY start position that is a character boundary
 (`ms`/`ns`), because the handoff moves where a scan begins and a start
 position near the run is where its clamp and its round-up live. Each block is
 written on the default route and again under `engine vm` (the forced VM has
-no DFA scan, so it is the no-handoff control for the same cells).
+no DFA scan; since [REQRUN-VM] its attempt loop hands off too, a third
+route for the same cells; tests/litscan/gen_handoff_vm.py has its own).
 """
 import importlib.util, os, re, subprocess, sys, tempfile
 
@@ -243,8 +244,8 @@ def main():
         "# python cannot compile (\\G, \\K). Cells sit at EVERY",
         "# character-boundary start position, because the handoff moves where a scan",
         "# begins. Each block is written on the default route and under `engine vm`,",
-        "# the forced VM with no DFA scan, which never hands off: the same cells, the",
-        "# control route. The rows are the design's witnesses: the maximum offset on",
+        "# the forced VM with no DFA scan: the same cells (its attempt loop hands off",
+        "# too, [REQRUN-VM], handoff_vm.rxt). The rows are the design's witnesses: the maximum offset on",
         "# all three routes (the unanchored scan's reverse pass is bounded by",
         "# search_from, so a K one byte short only shows on the attempt and hybrid",
         "# routes), two occurrences (the gate's leftmost contract), a decoy, multibyte",

@@ -236,6 +236,13 @@ for line in open(census):
         if x is None or y is None: continue
         if x > 2 * y + 4: bad += 1; print('BAD G2 %s: %s %d > 2x%d+4' % (id_, m, x, y))
         else: n['g2'] += 1
+    # [SCANEDGE-SET] G3's model prices STATES; a scan edge adds a 256-byte table and its loop per
+    # head, and since a set (`\s`, `\S`, `[^\n]`) can be an edge the tagged machine carries more of
+    # them than the model counts. The size is therefore read with the edge pass denied on BOTH arms
+    # (the sizes G3 compares are the machines', the edge tables are the edge census's:
+    # run_scan_edge_census.sh).
+    ds, ts = comp(pat, enc, icase, ['-fno-scan-edge']), comp(pat, enc, icase, ['-fno-rev-end-onewalk', '-fno-scan-edge'])
+    if ds and ts: db, tb = ds[1], ts[1]
     grow = 0.0
     for a, b, bps in ((rg, rt, rb), (fg, ft, fb), (ag, at, ab)):
         if '-' in (a, b, bps): continue

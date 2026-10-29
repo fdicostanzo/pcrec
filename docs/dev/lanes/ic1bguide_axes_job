@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# ic1bguide: test-axes on worktrees/ic1b after review r2's fixes ([INLINE-C] stage 1b: every axis answer-identical to default over the corpus, tests/callouts/ included, with the per-axis callouts floor of 50 reached cases; plus the form census). The two scripts `make test-axes` runs, called directly (the job already holds the box lock).
+# Re-created by lane ic1bguide from ic1bfix's job (scripts/boxqueue add --name 552-ic1bguide-axes docs/dev/lanes/ic1bguide_axes_job). Declared not-before 2026-10-27T12:00.
+# Every expect is a FINAL trailer: a DONE line per script carrying its rc, and the census's own `checks failed:` trailer.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+case "${1:-}" in
+    --dry-run)
+        [ -f "$TREE/tests/axes/run_axes.sh" ] && [ -f "$TREE/tests/codegen/run_form_census.sh" ] \
+            || { echo "no run_axes.sh or run_form_census.sh in $TREE" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; tests/axes/run_axes.sh > \$BQ_LOG.axes; tests/codegen/run_form_census.sh > \$BQ_LOG.census"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience 54000"
+        echo "boxqueue: not-before 2026-10-27T12:00"
+        echo "boxqueue: expect axes=0 log=job.log.axes last=^axes: DONE rc="
+        echo "boxqueue: witness axes=axes: DONE rc=0"
+        echo "boxqueue: expect census=0 log=job.log.census last=^checks failed:"
+        echo "boxqueue: witness census=checks failed: 0"
+        echo "boxqueue: expect census_rc=0 log=job.log.census last=^census: DONE rc="
+        echo "boxqueue: witness census_rc=census: DONE rc=0"
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+( cd "$TREE" && bash tests/axes/run_axes.sh ) > "$BQ_LOG.axes" 2>&1; a=$?
+echo "axes: DONE rc=$a" >> "$BQ_LOG.axes"
+[ "$a" -eq 0 ] || rc=1
+( cd "$TREE" && PROCS="$(bash tests/lib/procs_default.sh)" bash tests/codegen/run_form_census.sh ) > "$BQ_LOG.census" 2>&1; c=$?
+echo "census: DONE rc=$c" >> "$BQ_LOG.census"
+[ "$c" -eq 0 ] || rc=1
+exit $rc

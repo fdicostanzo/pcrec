@@ -33,7 +33,7 @@ SAB_BEFORE='    for (int b = 0; b < 256; b++) {
     if (nt == 0 || !proper) return false;
     if (!u->views)
         pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-                       "D11 bound reached the DFA hat (startset.md §6.4.3 item 3)");
+                       "D11 bound reached the DFA hat (startset.md section 6.4.3 item 3)");
     if (!dfa_reseed_exact(s->d, tv))'
 SAB_AFTER='    for (int b = 0; b < 256; b++) {
         tv[b] = (uint8_t)(ss_has(ss, b) && u->cand.set[b]);   /* SABOTAGE S480: r3'\''s S & E */
@@ -43,5 +43,5 @@ SAB_AFTER='    for (int b = 0; b < 256; b++) {
     if (nt == 0 || !proper) return false;
     if (!u->views)
         pcrec_ctx_fail(s->cx, 0, "internal error: a seeded machine without the "
-                       "D11 bound reached the DFA hat (startset.md §6.4.3 item 3)");
+                       "D11 bound reached the DFA hat (startset.md section 6.4.3 item 3)");
     if (0 && !dfa_reseed_exact(s->d, tv))   /* SABOTAGE S480 */'

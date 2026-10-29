@@ -38,5 +38,6 @@ unsigned pcrec_pattern_kinds(const Ast *root)
     if (pcrec_has_lookaround(root))      k |= PF_KIND_LOOK;
     if (pcrec_has_live_capture(root))    k |= PF_KIND_LIVE_CAPTURE;
     if (pcrec_has_collapsible_rep(root)) k |= PF_KIND_COLLAPSIBLE_REP;
+    if (pcrec_has_callout(root))         k |= PF_KIND_CALLOUT;
     return k;
 }

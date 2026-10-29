@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# queuemon -- the box-queue monitor as a plain script ([MON-SCRIPT], Frank 2026-10-25 "ok. lets try it.").
+# Loops scripts/queuewatch (one line per event, then exit) and applies .claude/skills/pcrec-monitor/SKILL.md's
+# first-match table (rows 1-15) as a shell `case`, appending ONE line per event to the journal
+# worktrees/.mgr/monitor.log:   ISO-time CLASS OWNER text
+#   CLASS GREEN RED PROBLEM CI INFO UP (UNEXPECTED lines are class PROBLEM, text `UNEXPECTED <line>`)
+#   OWNER main | kit | mon (journal only: UP, INFO). A job's owner is its NAME's second field; an owner that is
+#         neither main nor kit is addressed to main; RED/PROBLEM for kit are also written for main.
+# Readers keep a cursor per owner (scripts/monread); the main session's hook (scripts/hooks/monitor_unread.sh) shows
+# unread `main` lines. Differences from the haiku session, all by ruling: triage is NEVER launched (rows 4/7 log
+# `owner triages`); the only action is row 8's single `boxqueue start` per run (never kill/cancel/retry) and the
+# ledger append + named-path commit of rows 6/7. A CANCELLED line (queuewatch's own class for outcome=cancelled,
+# pending or RUNNING-stopped-by-`boxqueue cancel`) is INFO: a deliberate stop is no red (the old JOB-DONE..outcome=cancelled branches stay as a fallback).
+#
+#   scripts/queuemon start     detach a loop unless one runs (idempotent; boxqueue add/start call this on the LIVE queue)
+#   scripts/queuemon run       the loop, foreground (single instance: flock on DIR/queuemon.lock, else exit 75)
+#   scripts/queuemon stop      scripts/safekill the loop
+#   scripts/queuemon status    pid + last log line
+# Own queuewatch state (DIR/queuemon.state), so it never competes with the haiku session's state lock.
+# Env (the self-test sets these): QUEUEMON_DIR (default <main tree>/worktrees/.mgr), QUEUEMON_QW (queuewatch command),
+# QUEUEMON_QWOPTS, QUEUEMON_ROOT (tree owning the ledger), QUEUEMON_BOXQUEUE (row 8), QUEUEMON_CAP (queuewatch --max-sec, 3000).
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+main=$(dirname "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
+D=${QUEUEMON_DIR:-$main/worktrees/.mgr}
+ROOT=${QUEUEMON_ROOT:-$main}
+QW=${QUEUEMON_QW:-$here/queuewatch}
+BQ=${QUEUEMON_BOXQUEUE:-$here/boxqueue}
+CAP=${QUEUEMON_CAP:-3000}
+LOG=$D/monitor.log
+LEDGER=$ROOT/docs/dev/full_suite_ledger.md
+
+emit() { # emit CLASS OWNER TEXT: one journal line (O_APPEND, one write)
+    local t=${3//$'\n'/ }
+    printf '%s %s %s %s\n' "$(date -Iseconds)" "$1" "$2" "$t" >> "$LOG"
+}
+# say CLASS OWNER TEXT: to OWNER's reader (kit/main as is, anyone else -> main); RED/PROBLEM for kit also reach main
+say() {
+    local cls=$1 o=$2 t=$3
+    case $o in main|kit) ;; *) o=main ;; esac
+    emit "$cls" "$o" "$t"
+    case $cls in RED|PROBLEM) [ "$o" != main ] && emit "$cls" main "[$o] $t" ;; esac
+    return 0
+}
+
+fields() { # sets NAME OWNER_ from a line `KIND NAME ...`
+    NAME=${1#* }; NAME=${NAME%% *}; OWNER_=${NAME#*-}; OWNER_=${OWNER_%%-*}
+}
+kv() { sed -n "s/.*[ ]$1=\([^ ]*\).*/\1/p" <<<"$2"; }
+ledger() { # ledger MARK SUMMARY-FILE LOGDIR: append under `## Runs`, commit the named path only
+    local mark=$1 sum=$2 line
+    line=$(head -1 "$sum"); [ "$mark" = RED ] && line="RED: $line"
+    [ -f "$LEDGER" ] || return 0
+    printf '\n%s\n' "$line" >> "$LEDGER"
+    git -C "$ROOT" commit -q -m "ledger: full suite $([ "$mark" = RED ] && echo red || echo green)" -- docs/dev/full_suite_ledger.md >/dev/null 2>&1 || true
+}
+simulated() { [ -e "$1/SIMULATED" ] || case $1 in *full_suite_sim*) return 0 ;; *) return 1 ;; esac; }
+q_running() { local q; q=${QUEUEMON_Q:-$(bash "$here/boxqueue" path 2>/dev/null)}; ls "$q/running" 2>/dev/null | sort | tr '\n' ',' ; }
+
+handle() { # handle LINE (queuewatch's line, `queuewatch: ` stripped): the first-match table
+    local l=$1 ld rc st sum key
+    case $l in
+        JOB-START\ *) fields "$l"; emit INFO mon "$l" ;;                                                     # row 2
+        STAGE-END\ *)
+            fields "$l"; ld=$(kv logdir "$l"); rc=$(kv rc "$l")
+            if [ "$rc" = 0 ]; then emit INFO mon "$l"                                                       # row 3
+            else
+                st=${l#STAGE-END $NAME }; st=${st%% *}; key=${ld:-$NAME}
+                if ! grep -qxF -- "$key" "$D/queuemon.reds" 2>/dev/null; then                              # row 4: first red of this run
+                    echo "$key" >> "$D/queuemon.reds"
+                    say RED "$OWNER_" "$NAME: stage $st RED (rc=$rc), owner triages (job dir / logdir=$ld)"
+                else                                                                                        # row 5
+                    [ -n "$ld" ] && ! simulated "$ld" && [ -d "$ld" ] && echo "$st" >> "$ld/red_stages.txt"
+                    emit INFO mon "$l (later red; recorded in red_stages.txt)"
+                fi
+            fi ;;
+        CANCELLED\ *) fields "$l"; sed -i "/^$NAME\$/d" "$D/queuemon.rd" 2>/dev/null; emit INFO mon "$l" ;;               # a deliberate stop: INFO, never RED
+        JOB-DONE\ *)
+            fields "$l"; ld=$(kv logdir "$l"); sed -i "/^$NAME\$/d" "$D/queuemon.rd" 2>/dev/null
+            sum=""; [ -n "$ld" ] && [ -f "$ld/summary.txt" ] && ! simulated "$ld" && sum=$ld/summary.txt
+            if [[ $l == *"(never ran)"* ]]; then
+                case $l in *outcome=cancelled*) emit INFO mon "$l" ;; *) say RED "$OWNER_" "$l; owner triages" ;; esac
+            elif [[ $l == *" outcome=green "* && $l != *" reds="* ]]; then                                   # row 6
+                [ -n "$sum" ] && ledger GREEN "$sum"
+                say GREEN "$OWNER_" "$( [ -n "$sum" ] && head -1 "$sum" || echo "$l")"
+            elif [[ $l == *" outcome=cancelled "* ]]; then emit INFO mon "$l"
+            elif [[ $l == *" rc=0 "* && $l == *" verdict=GREEN"* ]]; then                                     # EXPECT MISMATCH: work green, the declared count is stale
+                say PROBLEM "$OWNER_" "EXPECT $l: work green, the job's expect is stale; owner rules"
+            else                                                                                            # row 7
+                [ -n "$sum" ] && ledger RED "$sum"
+                if [ -n "$ld" ] && [ -f "$ld/trailer.log" ] && [[ $l != *" reds="* ]]; then
+                    say PROBLEM "$OWNER_" "run died: $l; owner triages"
+                else say RED "$OWNER_" "$l; owner triages"; fi
+            fi ;;
+        RUNNER-DEAD*)                                                                                       # row 8
+            key=$(q_running); key=${key:-idle}
+            if grep -qxF -- "$key" "$D/queuemon.rd" 2>/dev/null; then say PROBLEM main "runner dead again after one restart: $l"
+            else echo "$key" >> "$D/queuemon.rd"; bash "$BQ" start >/dev/null 2>&1; emit INFO mon "$l; boxqueue start issued (once)"; fi ;;
+        QUIET\ *) fields "$l"; say PROBLEM "$OWNER_" "$l" ;;                                                 # row 9
+        PENDING-STUCK\ *) fields "$l"; say PROBLEM "$OWNER_" "$l" ;;                                         # row 10
+        DISK-HIGH*) say PROBLEM main "$l" ;;
+        CI-RED\ *) say CI main "$l" ;;                                                                       # rows 11-13
+        CI-CANCELLED\ *) say CI main "$l" ;;
+        CI-UNAVAILABLE*) say CI main "$l" ;;
+        *) say PROBLEM main "UNEXPECTED $l" ;;
+    esac
+}
+
+loop() {
+    local n=0 out rc
+    mkdir -p "$D"
+    exec 9>>"$D/queuemon.lock"
+    flock -n 9 || exit 75
+    printf 'pid=%s\n' "$$" > "$D/queuemon.pid"
+    trap 'rm -f "$D/queuemon.pid"' EXIT
+    while :; do
+        n=$((n + 1)); emit UP mon "queuemon up pid=$$ launch=$n cap=${CAP}s"
+        out=$(bash "$QW" --state "$D/queuemon.state" --max-sec "$CAP" ${QUEUEMON_QWOPTS:-} 9>&- 2>&1); rc=$?
+        out=${out#queuewatch: }
+        case $rc in
+            0) handle "$out" ;;
+            6) ;;                                                                                           # row 1: relaunch (the UP line)
+            75) say PROBLEM main "a second queuewatch holds the queuemon state; queuemon ends: $out"; exit 75 ;;   # row 14
+            *) say PROBLEM main "queuewatch exit $rc, queuemon ends: $out"; exit "$rc" ;;                  # row 15
+        esac
+    done
+}
+
+case ${1:-} in
+    run) loop ;;
+    start)
+        mkdir -p "$D" || exit 0
+        ( exec 8>>"$D/queuemon.lock"; flock -n 8 ) 2>/dev/null || { echo "queuemon: running"; exit 0; }
+        (   for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
+            unset PCREC_BOXLOCK_HELD
+            exec setsid bash "$here/queuemon" run < /dev/null >> "$D/queuemon.out" 2>&1
+        ) &
+        disown
+        echo "queuemon: started (log $LOG)" ;;
+    stop) p=$(sed -n 's/^pid=//p' "$D/queuemon.pid" 2>/dev/null); [ -n "$p" ] && bash "$here/safekill" "$p" || echo "queuemon: not running" ;;
+    status) cat "$D/queuemon.pid" 2>/dev/null || echo "queuemon: not running"; tail -1 "$LOG" 2>/dev/null ;;
+    *) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 64 ;;
+esac

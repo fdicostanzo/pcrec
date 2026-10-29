@@ -28,6 +28,11 @@ empty, and that refusal stays pinned; the module-NAME half of that check —
 WHY a pattern is refused, not just THAT — is tests/reject/'s job, not
 this directory's, since a `.rxt` `perr` block cannot assert WHY).
 
+- **empty_drop.rxt** — [FLAG-SPELL] (lane flagfix): the boundary of the
+  parser's empty drop (a concatenation drops an empty that carries nothing):
+  `(?i)abc+` vs `(?i:abc)+`, quantified empty groups left alone, a run at the
+  end / as the whole pattern / as an alternation branch, and err 109 on a
+  quantified bare run. libpcre2 10.46-generated from `empty_drop.gen.py`.
 - **optrun_group.rxt** — K124 (lane langfix2): a GROUP whose whole body is
   an option setting is repeatable (`(?:(?i))*a`, `((?s))?a`, `(?=(?m))+a`,
   `(?>(?i))*a`, `(?i:(?s))*a`); the bare run quantified stays err 109 (two

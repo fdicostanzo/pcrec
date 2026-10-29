@@ -186,6 +186,31 @@ typedef struct {
  * under it (the lever fence). Not part of the caller contract. */
 #define PCREC_HARNESS_PREFIX "pcrec_harness_"
 
+/* [INLINE-C] 1b ONE NUMBERED CALLOUT'S DECLARATION (inline_c.md §2.2): a
+ * numbered callout has no string to carry its attributes, so they arrive
+ * from a `.rxt` block's `callout <n> <attr>...` line or the CLI's
+ * `--callout N:attr,...`. `attrs` is the comma-separated list, read by the
+ * one attribute grammar (`pcrec_callout_attrs`). No library member carries
+ * it in v1 ([IFACE-PUSH]). */
+typedef struct {
+    int         num;      /* 0..255 */
+    const char *attrs;    /* "consume,once"; never empty (`pcrec_callout_decl_read`) */
+} PcrecCalloutDecl;
+
+/* [INLINE-C] stage 2 ONE `code-header` LINE (inline_c.md §3.3): a `.rxt`
+ * head line `code-header <lang> <header>` or the CLI's `--code-header
+ * <lang>:<header>`. `header` is AS WRITTEN, quotes or angle brackets
+ * included (`"octet.h"`, `<stdint.h>`): pcrec emits it after `#include ` and
+ * never opens, resolves or reads the file. No library member carries it in
+ * v1 ([IFACE-PUSH]). `line` is the head line's own: a `#line` before the
+ * `#include` names it in the emit input's `code_file`, so a missing header is
+ * reported at the line that names it (DT-3.3); 0 for `--code-header`. */
+typedef struct {
+    const char *lang;     /* a registered language tag: "c" */
+    const char *header;   /* "octet.h" or <stdint.h>, quotes kept */
+    size_t      line;     /* the `code-header` line; 0: none */
+} PcrecCodeHeader;
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -227,6 +252,28 @@ typedef struct {
      * stated shape, `edge_rank[from][to]` = the edge's PcrecEdgeRank + 1, and
      * 0 where the shape has no such edge (NULL: not wanted). */
     unsigned char (*edge_rank)[PCREC_ENTRY_N];
+    /* [INLINE-C] 1b the numbered callouts' declarations (NULL/0: none), read
+     * by `pcrec_callout_sites` (src/opt/callout.c). */
+    const PcrecCalloutDecl *callout_decls;
+    int                     ncallout_decls;
+    /* [INLINE-C] stage 2 WHERE THE PATTERN'S CODE CAME FROM, for each code
+     * segment's `#line` (inline_c.md §3.1, §3.4): `code_file` is the source
+     * AS WRITTEN (a FILE operand, or "<command line>" for `--pattern`; NULL
+     * reads "<pattern>"), `code_line` the 1-based line of the pattern's
+     * first byte (0 reads 1), `code_col` the 1-based column of that byte on
+     * its line, or 0 when the text before it on the line is not plain ASCII
+     * without a TAB (then no segment is padded to a column), and `code_esc`
+     * true when the pattern was DECODED from one escaped source line
+     * (`pattern-esc`, `--pattern-esc`), so every decoded line maps to
+     * `code_line` and no column is padded. */
+    const char             *code_file;
+    size_t                  code_line;
+    size_t                  code_col;
+    bool                    code_esc;
+    /* [INLINE-C] stage 2 the `code-header` lines (NULL/0: none), emitted
+     * after the matcher in the order written, a repeated text once. */
+    const PcrecCodeHeader  *code_headers;
+    int                     ncode_headers;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -523,30 +570,56 @@ void pcrec_sb_text (StrBuf *sb, const char *s);              /* NUL-terminated *
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
 void pcrec_sb_field(StrBuf *sb, const char *s);
 
-/* A THIRD VOCABULARY, and it protects something the two above do not: the
- * body of an EMITTED C STRING LITERAL ([OPT-REQPOS] tier 2b, the first
- * emitter to write pattern-derived bytes outside a comment). `n` bytes of
- * `b` are appended as the INSIDE of a `"..."`, with the quotes left to the
- * caller.
+/* A THIRD VOCABULARY, and it protects something the two above do not: USER-
+ * DERIVED BYTES WRITTEN INTO EMITTED C TEXT -- the pattern, a substitution
+ * template, a name, a literal run. `n` bytes of `s` are appended in the
+ * frame `ctx` names, and this is the ONE function that does it ([EMIT-BIDI]:
+ * four near-copies existed, and the one that drifted put a raw U+200F into a
+ * comment). It is not `pcrec_sb_text` with another case: the reader is the
+ * artifact's own C compiler, not a TSV consumer, so the escape set is the
+ * one the C standard fixes and not one this project chooses.
  *
- * WHY IT IS NOT `pcrec_sb_text` WITH ANOTHER CASE. The frame it protects is a
- * C TOKEN read by the artifact's own compiler, not a line in a TSV, so the
- * escape set is the one the C standard fixes and not one this project
- * chooses: `"` and `\` must be escaped or the token ends early, and `?` is
- * escaped so no byte pair this function writes can begin a trigraph.
+ * The shared core: printable ASCII passes through, everything else goes out
+ * BY NUMBER -- so the emitted text is pure ASCII in every frame, which is
+ * what keeps `-Wbidi-chars` (and any reader's terminal) quiet. What differs
+ * per frame is a small declared table in sb.c (the rows, then the numeric
+ * spelling), read first-match.
  *
- * OCTAL, NOT `\xNN`, AND THAT IS THE LOAD-BEARING CHOICE. A hex escape in C
- * consumes as many hex digits as follow it, so `\x0a` immediately before a
- * literal `b` is ONE character escape with the value 0xab — a silent
- * corruption of the next byte, in an emitted literal whose whole job is to
- * be compared against a subject. An octal escape takes AT MOST three digits
- * (C11 6.4.4.4), so a fixed three-digit `\NNN` is self-terminating against
- * any following byte, digit or not.
+ *   PCREC_CTEXT_COMMENT        inside a block comment. A star-slash or
+ *                              slash-star pair is split (a close would end
+ *                              the comment; an open trips -Wcomment under
+ *                              -Werror), judged against the PREVIOUS source
+ *                              byte so each byte is consumed exactly once.
+ *                              Numbers are `\xNN`.
+ *   PCREC_CTEXT_COMMENT_QUOTED the same, for an example shown inside double
+ *                              quotes in a comment: `"` and `\` are also
+ *                              numbered so the quoted text reads unambiguously
+ *                              (a readability choice layered on, not a
+ *                              safety one).
+ *   PCREC_CTEXT_STRING         the BODY of a `"..."` literal (quotes are the
+ *                              caller's). `"` `\` and `?` are backslash-
+ *                              escaped (`?` always, so no pair this function
+ *                              writes can begin a trigraph). Numbers are
+ *                              fixed three-digit OCTAL: a hex escape swallows
+ *                              every hex digit that follows (`\x0a` before a
+ *                              literal `b` is ONE character, 0xab), an octal
+ *                              escape takes at most three digits (C11
+ *                              6.4.4.4) and so cannot glue.
  *
- * NOTHING HERE IS ABOUT READABILITY. A printable byte prints as itself so a
- * human reading the artifact sees the run; everything else goes out by
- * number, and the artifact's compiler is the only reader that must agree. */
-void pcrec_sb_cstr(StrBuf *sb, const unsigned char *b, size_t n);
+ * Newline, tab and CR are `\n` `\t` `\r` in all three. A NULL `s` writes
+ * nothing.
+ *
+ * ONE MORE READER: a DIAGNOSTIC that echoes a value the user wrote (the
+ * `code-header` and `callout` shape refusals) goes through
+ * PCREC_CTEXT_COMMENT too, so a control byte AND a non-ASCII byte (a bidi
+ * control, the match_api.md §11.9¶3 reason) reach the terminal by number;
+ * no second escaper. */
+typedef enum {
+    PCREC_CTEXT_COMMENT,
+    PCREC_CTEXT_COMMENT_QUOTED,
+    PCREC_CTEXT_STRING
+} PcrecCtext;
+void pcrec_sb_ctext(StrBuf *sb, const unsigned char *s, size_t n, PcrecCtext ctx);
 
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
@@ -640,7 +713,7 @@ const char *pcrec_sb_upper(Arena *a, const char *s);
  * byte-identical to what it was before the placeholder existed. The lead
  * byte \x01 never reaches emitted text any other way — every pattern- or
  * caller-derived byte outside printable ASCII is escaped at its emission
- * site (`emit_comment_safe_byte`, `emit_c_string_literal`, the class and
+ * site (`pcrec_sb_ctext`, the class and
  * word renderers) — and the second byte is a LETTER so that `toupper`
  * maps the lower spelling onto the upper one: `\x01q` -> `\x01Q`, with no
  * special case in `pcrec_sb_upper` or any other case transform.
@@ -1175,7 +1248,27 @@ typedef enum {
      * the head of an `A_CAT` spine used to unroll INTO the spine (`éabc`
      * flattens to five byte elements, and `pcrec_lit_run` reads a five-byte
      * run), and a wrapper that stopped that would move artifacts. */
-    A_WCLASS
+    A_WCLASS,
+    /* [INLINE-C] stage 1b A CALLOUT SITE (docs/design/inline_c.md §1;
+     * module `callouts`, [M4-CALLOUTS] step 2): the engine calls an
+     * `rx_matchfn` here, with a read-only view of the subject, the position
+     * and every group, and routes its return through the call-site return
+     * table (`src/gen/callsite_rows.h`). Every `(?C` spelling parses to this
+     * one kind; the payload is `u.callout` below.
+     *
+     * WHAT IT IS TO EVERY PASS is its attribute row, picked PER NODE by its
+     * width class (`pcrec_ast_row`): a CHECK (the default) adds no text and
+     * a `consume` site any text, and both are OPAQUE to a path reader, so no
+     * pass may prune a path a site could see (the P7 witness: `(\d+)`
+     * possessified before a check moves its answer). It READS every group:
+     * a site's view holds the pattern's whole capture array, so every group
+     * joins the one marked set (publish-at-close, the `--no-captures` keep
+     * set).
+     *
+     * VM-ONLY, by its registry row's stamp; the hybrid's prefilter declines
+     * a callout pattern outright at stage 1b (`pf_admits`). `l`/`r` are
+     * unused. */
+    A_CALLOUT
 } AKind;
 
 /* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
@@ -1199,6 +1292,41 @@ typedef enum {
      * that can express recursion. Wave B+C. */
     CALL_LINKAGE
 } CallLink;
+
+/* [INLINE-C] stage 1b WHO A CALLOUT SITE CALLS: the binding rows of
+ * docs/design/inline_c.md §1.4, first match. Row 1 (`code`, an embedded
+ * segment) arrives with module `code-c` at stage 2. */
+typedef enum {
+    CO_NAME = 1,   /* `(?C"name")`: rx_callout_<name> */
+    CO_NUM,        /* `(?C)`, `(?Cn)`: rx_callout_<n> */
+    /* [INLINE-C] stage 2 row 1 (`code`): an EMBEDDED SEGMENT, ``(?C`c:
+     * ...`)`` (module `code-<lang>`). pcrec writes its
+     * function and a file-local binding `<prefix>__code<seg>_ref` in the
+     * artifact; the site calls it through that binding like every other
+     * row (ONE CALL FORM, Frank 2026-10-27). */
+    CO_CODE
+} CalloutBind;
+
+/* [INLINE-C] stage 1b one site's binding row (`pcrec_callout_binding`,
+ * src/parse/mod_callouts.c), the one answer every reader takes: `symbol` the
+ * name the header declares (`is_extern`), `callee` the call's function
+ * expression, `user` the view's `user` expression. Arena text. */
+typedef struct {
+    const char *symbol;
+    const char *callee;
+    const char *user;
+    bool        is_extern;
+} PcrecCalloutBinding;
+
+/* [INLINE-C] stage 1b a site's FIRING CLASS (inline_c.md §1.10): how many
+ * times it can fire within one attempt, derived from structure alone. The
+ * ordinal is the table's row order and the listing token is
+ * `pcrec_callout_class_name`. */
+typedef enum {
+    CO_CLASS_ONCE_PER_MATCH = 1,   /* <= 1 fire per attempt, a pass IS the match */
+    CO_CLASS_ONCE_PER_START,       /* <= 1 fire per attempt */
+    CO_CLASS_REPEATED              /* may fire more than once per attempt */
+} CalloutClass;
 
 /* [M5.0 stage 1] ONE CODE-POINT INTERVAL, inclusive at both ends
  * (docs/design/utf8_design.md §2.2). The `A_CLASS` payload is a sorted,
@@ -1489,7 +1617,21 @@ struct Ast {
              * node nothing analysed keeps its machinery, which is what makes
              * `-fno-revdet` byte-identity-safe. */
             const Ast  *revbody;
+            /* [INLINE-C] 1b THE QUANTIFIER'S PATTERN OFFSET, its blame byte
+             * (`p_rep`'s `cx->pos - 1`: the `*`, `+` or `?`, or a brace
+             * form's closing `}`). `at_known` is true only on a repeat the
+             * base grammar parsed: a repeat a definition or a rewrite built
+             * has no source text, and its zeroed `at` is not an offset.
+             * Read by the callout `once` refusal (src/opt/callout.c), which
+             * names the construct that breaks the promise. */
+            size_t      at;
+            bool        at_known;
         } rep;
+
+        /* [INLINE-C] 1b A_ALT: the pattern offset of the `|` this node was
+         * built at, `at_known` as on `u.rep` (a rewrite's alternation has
+         * none). Read by the callout `once` refusal. */
+        struct { size_t at; bool at_known; } alt;
 
         /* A_CAP: 1-based capturing group number. */
         struct { int no; } cap;
@@ -1510,6 +1652,13 @@ struct Ast {
              * `pcrec_is_bare_anchor`'s one reader. Parse-resolved spelling
              * state, D62's field rule; no engine reads it. */
             bool                anchor;
+            /* THE LOOKAROUND AS WRITTEN, for a NON-ATOMIC lookaround the
+             * parse turned into this node (`(?*a|b)`): the `A_LOOK` the
+             * pattern spelled, kept off the tree so no pass walks it. Only
+             * `pcrec_callout_sites` reads it, so the `once` rule sees the
+             * pattern as written (a rewrite must not hide a construct the
+             * user can read). NULL on every other context node. */
+            const struct Ast   *written;
         } ctx;
 
         /* A_EOL carries NO payload. Until [DD-11.5] it and A_BOL shared a
@@ -1939,6 +2088,55 @@ struct Ast {
             bool        cwmax_known;
             bool        nonnullable;
         } call;
+
+        /* [INLINE-C] stage 1b A_CALLOUT (docs/design/inline_c.md §1.1).
+         *
+         * `bind` picks the callee from the binding rows (§1.4): a NAMED
+         * binding is `rx_callout_<name>`, a NUMBERED one `rx_callout_<num>`;
+         * either way an `extern const rx_callout_ref` the artifact declares
+         * and the user defines. `name` (arena, NUL-terminated, a C
+         * identifier with no `__`) is read for `CO_NAME` only, `num`
+         * (0..255) for `CO_NUM` only.
+         *
+         * `consume` is the WIDTH CLASS: false is `W_PRED` (a check: the
+         * callee returns 0 or -1, and a positive return traps), true is
+         * `W_ANY` (any length, the `consume` attribute). `once` is the
+         * user's compiler-checked promise of §1.10 (firing class 1 or 2).
+         *
+         * `site` is the 1-based textual order among the pattern's sites, and
+         * `at` the site's pattern offset (the listing's and the `once`
+         * diagnostic's). `fclass`/`tail`/`why` are the FIRING CLASS (§1.10),
+         * derived once on the parsed tree by `pcrec_callout_classify`
+         * (src/opt/callout.c) before any optimization pass: `fclass` is a
+         * CalloutClass, `why` the arena reason text the listing prints. */
+        struct {
+            CalloutBind bind;
+            const char *name;
+            int         num;
+            bool        consume;
+            bool        once;
+            int         site;
+            size_t      at;
+            int         fclass;
+            bool        tail;
+            const char *why;
+            /* [INLINE-C] stage 2 `CO_CODE` only (inline_c.md §1.1, §3):
+             * `lang` the registered language tag ("c"); `text`/`textlen`
+             * the DECODED code bytes (arena, NUL-terminated: PCRE2's
+             * doubled delimiters undone);
+             * `seg` the 1-based textual order among the pattern's code
+             * segments (the generated function is `<prefix>__code<seg>`);
+             * `code_at` the pattern offset of the code's first byte, and
+             * `code_exact` true when every code byte is the pattern byte
+             * at its offset (no doubled delimiter undone), so `code_at`
+             * maps the segment onto its source line and column. */
+            const char *lang;
+            const char *text;
+            size_t      textlen;
+            int         seg;
+            size_t      code_at;
+            bool        code_exact;
+        } callout;
     } u;
 };
 
@@ -2162,8 +2360,78 @@ typedef struct {
 enum {
     NFA_ERASED_LOOK   = 1u << 0,   /* a lookaround lowered to epsilon */
     NFA_ERASED_ATOMIC = 1u << 1,   /* an atomic group lowered transparently */
-    NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    NFA_ERASED_COUNT  = 1u << 2,   /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+    /* [INLINE-C] 1b a callout site lowered by its width class (a check to
+     * epsilon, a `consume` site to any bytes): a relaxation, since a vetoing
+     * site removes paths the machine keeps (inline_c.md §1.8) */
+    NFA_ERASED_CALLOUT = 1u << 3
 };
+
+/* ---- [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW (src/core/kindrow.def;
+ *      docs/design/inline_c.md §1.8) ----
+ *
+ * One row of kind-level facts per `AKind`, read by the pass families that
+ * used to decide them arm by arm: the text/width readers read `text`, the
+ * path-pruning readers `path`, the marked set `reads`, the prefilter
+ * lowering `erase`. The column meanings are kindrow.def's header. A reader
+ * whose answer depends on the node or its context keeps its code and reads
+ * the row for the kind-level part; the arm inventory of which readers read
+ * which column is docs/dev/lanes/ic1a_report.md. */
+typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
+typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
+typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET, KREADS_ALL } KindReads;
+typedef struct {
+    KindText  text;
+    KindPath  path;
+    KindReads reads;
+    unsigned  erase;   /* the NFA_ERASED_* bit its lowering records; 0 exact */
+} KindRow;
+
+/* THE ROWS ARE IN AKind ORDER: each row's position is asserted, so the table
+ * reads like the enum and a misplaced row names itself. */
+enum {
+#define KIND_ROW(kind, text, path, reads, erase) KIND_ROW_AT_##kind,
+#include "core/kindrow.def"
+#undef KIND_ROW
+    KIND_ROW_COUNT
+};
+#define KIND_ROW(kind, text, path, reads, erase)                              \
+    _Static_assert((int)(kind) == (int)KIND_ROW_AT_##kind, "core/kindrow.def: " \
+                   "the row for " #kind " is not at its AKind position");
+#include "core/kindrow.def"
+#undef KIND_ROW
+
+/* The row of kind `k`. The switch is built from kindrow.def with -Wswitch
+ * raised to an ERROR here, so a kind without a row fails to compile in every
+ * translation unit (and a duplicated row is a duplicate case label): the
+ * table is complete by construction, and together with the position
+ * assertions above its row count is the kind count. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wswitch"
+static inline KindRow pcrec_kind_row(AKind k)
+{
+    switch (k) {
+#define KIND_ROW(kind, text, path, reads, erase)                              \
+    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads, (erase) };
+#include "core/kindrow.def"
+#undef KIND_ROW
+    }
+    /* unreachable for a valid kind; the row every reader treats as unknown */
+    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0 };
+}
+#pragma GCC diagnostic pop
+
+/* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
+ * by a node field has one place that picks: A_CALLOUT's width class
+ * (inline_c.md §1.8), where a `consume` site's TEXT is ANY (the callee may
+ * consume bytes between its neighbours) and a check's is its kind row's ZERO.
+ * Every other kind has one row. */
+static inline KindRow pcrec_ast_row(const Ast *a)
+{
+    KindRow r = pcrec_kind_row(a->k);
+    if (a->k == A_CALLOUT && a->u.callout.consume) r.text = KTEXT_ANY;
+    return r;
+}
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c; the
  *      selection is the kit's window family, memfn/src/window.c, since
@@ -2292,12 +2560,12 @@ typedef struct {
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
     /* [OPT-5] THE SCAN EDGE (src/opt/scanedge.c, docs/spec/tuning.md S2.18).
      * A maximal run of states that differ only in HOW MANY bytes of one fixed
-     * class have been counted is collapsed into ONE edge on the run's head,
+     * class SET have been counted is collapsed into ONE edge on the run's head,
      * and the emitter writes it as an address-only-dependent bounded scan loop
      * instead of `span` data-dependent table steps.
      *
      * `scan_span` IS THE PRESENCE FLAG AND ITS ZERO IS "NO EDGE". A
-     * `scan_cls`-shaped presence flag would have made "class 0" the default,
+     * class-shaped presence flag would have made "class 0" the default,
      * which is a live class on every machine. Both `DState` constructors give
      * that zero: src/opt/minimize.c's rebuild `calloc`s, and src/ir/dfa.c's
      * `make_state` `memset`s — the LATTER was added by this row and is a bug
@@ -2306,31 +2574,33 @@ typedef struct {
      * legitimately NOT have is the first one that notices. Its other two
      * values:
      *   > 0   count at most this many bytes, then the state is `scan_next`
-     *   -1    UNBOUNDED (the state's own class-C self-loop: `*` and `+`)
+     *   -1    UNBOUNDED (the state's own class-S self-loop: `*` and `+`)
      *
-     * The other two fields are meaningless when `scan_span == 0` and are not
-     * read there. When the edge exists, `tr[scan_cls]` is set to -1 (dead) and
-     * that cell is NEVER READ: the emitter runs the scan before the step, and
-     * the scan consumes every class-`scan_cls` byte the bound allows, so the
-     * step can only ever be reached on a byte of some OTHER class. See the
-     * pass's own header for the whole argument, which is what licenses
-     * DELETING the run's interior states from the table. */
+     * The other fields are meaningless when `scan_span == 0` and are not
+     * read there. When a BOUNDED edge exists, `tr[c]` is set to -1 (dead) for
+     * every class `c` in `scan_set` and those cells are NEVER READ: the
+     * emitter runs the scan before the step, and the scan consumes every byte
+     * of the set's classes the bound allows, so the step can only ever be
+     * reached on a byte of some class OUTSIDE the set. See the pass's own
+     * header for the whole argument, which is what licenses DELETING the
+     * run's interior states from the table. Read the set through
+     * `pcrec_scan_has`; one class is the set of size one ([SCANEDGE-SET]). */
     int      scan_span;
-    int      scan_cls;   /* the byte class the scan counts */
+    uint8_t  scan_set[32];  /* the byte CLASSES the scan counts (bit per class id) */
     int      scan_next;  /* the state after `scan_span` bytes (-1 == dead) */
     /* [OPT-5] THE PERIOD OF THE COUNTED SEQUENCE, and it is 1 on every edge
      * this compiler builds (manager ruling R3, 2026-08-31, from Frank's
      * "isn't a loop over a static string just a memcmp: `(?:ab){1,100}`").
      * The general shape is a chain whose advance classes CYCLE with period
      * k — k singleton classes being a STRING, whose body is a counted loop
-     * of constant-length compares — and `scan_cls` is that sequence's
+     * of constant-length compares — and `scan_set` is that sequence's
      * element 0.
      *
      * THE FIELD IS HERE AND THE SEQUENCE IS NOT, which is the honest half of
      * the ruling's own "if a period field genuinely complicates STEP 1, skip
      * it and say so". A period-k edge needs k CLASSES, which is an arena
      * array plus a length on a `DState` that is `realloc`'d at a fixed size,
-     * and every reader of `scan_cls` would change shape for a producer that
+     * and every reader of `scan_set` would change shape for a producer that
      * does not exist (D77). What this field buys at zero cost is that the
      * criterion's OUTPUT is already a periodic sequence rather than a single
      * class baked into the representation: period-k is then a criterion
@@ -2340,6 +2610,12 @@ typedef struct {
      * site asserts it is 1 rather than assuming it. */
     int      scan_period;
 } DState;
+
+/* Is byte class `cls` one of the classes state `st`'s scan edge counts? */
+static inline bool pcrec_scan_has(const DState *st, int cls)
+{
+    return st->scan_span != 0 && (st->scan_set[cls >> 3] >> (cls & 7) & 1);
+}
 
 /* [OPT-5] `PCREC_MAX_SCAN_EDGES` — how many scan edges one machine may carry
  * — is NOT declared here. It is a `limits.def` row (home INTERNAL_H, D90),
@@ -3110,6 +3386,11 @@ typedef struct {
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
     bool   anchored_ok;
+    /* [REQRUN-VM] Did this attempt EMIT a VM-side handoff row: the attempt
+     * loop's (`handoff-attempts[-entry]`) or the hybrid prefilter's re-entry?
+     * Written by the emitter at the text it writes; the size-cap ladder's
+     * `drop-handoff` row applies only where it is true. */
+    bool   req_handoff_vm;
     /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1), asked
      * once per compile by the driver after the three machines are built
      * (`pcrec_revend_form`). The four bools are the rows' inputs, written by
@@ -3164,6 +3445,13 @@ typedef struct {
      * seam as well as for the engine. */
     unsigned enc_mask;
     StrBuf csb, hsb;
+    /* [INLINE-C] the number of lines the code segment block (emit_code.c),
+     * LAST in `csb`, takes, counted once it is written: what `--emit-facts`
+     * stops reading before, so a segment's own `#define`s are never shown as
+     * pcrec's decisions (review 2026-10-27-r1-ic2 F4). A line count from the
+     * end, because the renders that run after the block rewrite bytes before
+     * it and inside it but add no line to it. 0 with no block. */
+    size_t code_block_lines;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
      * must be produced BEFORE the text that precedes it (the class pool, the
@@ -3692,6 +3980,11 @@ struct Ctx {
      * driver's form decision reads it in place of building the lowered
      * machines: the `rev-end` walk keeps today's form (endmark.md §R.5). */
     bool                 end_mark_dropped;
+    /* [REQRUN-VM] did the ladder's `drop-handoff` row FIRE on this compile?
+     * The VM-side handoff rows read it and decline: the attempt loop's two
+     * `req-use` rows and the hybrid prefilter's re-entry (`Job.req_handoff_vm`
+     * names what they emit). A DFA artifact's handoff is untouched. */
+    bool                 req_handoff_dropped;
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
@@ -3891,6 +4184,24 @@ struct Ctx {
     /* [COMPOUND] the arrival label of an emitted-size refusal of an
      * ASSEMBLED compound: `fit_rungs[]`' `drop-compound` row reads it. */
     bool                 comp_assembled;
+    /* [INLINE-C] 1b the number of callout sites (A_CALLOUT nodes) the parse
+     * built: the port counts, `pcrec_callout_sites` numbers them 1..n in
+     * textual order, and a pattern with none skips every callout pass and
+     * emits nothing callout-shaped (the identity gate's zero movers). */
+    int                  ncallouts;
+    /* [INLINE-C] 1b the sites by number, `[1..ncallouts]`, written by
+     * `pcrec_callout_sites`: the stamps' binding list and the listing's
+     * `callouts` section read them. */
+    const Ast          **callout_nodes;
+    /* [INLINE-C] stage 2 the number of embedded code segments the parse
+     * built (`CO_CODE` sites): the port numbers each `seg` 1..n. */
+    int                  ncodesegs;
+    /* [INLINE-C] stage 2 the definition whose text the composer is parsing
+     * right now (src/parse/rxt_compose.c `rc_bind`), or NULL while the
+     * target's own pattern is parsed. The code port reads it: code inside a
+     * definition read from another file is REACHED code (inline_c.md §5.2,
+     * §5.4 row 3) and is refused before pins. */
+    const struct RxtDef *code_def;
     Job                 *job;
 };
 
@@ -4069,7 +4380,14 @@ enum {
      * `(*UCP)` verb, the `--ucp` axis and the `(?a…)` letters' UCP meaning.
      * Also owns `(*UTF)`/`(*UTF8)`, which restate `--encoding=utf8`. An
      * encoding may IMPLY it (`PcrecEnc.implied_features`, O-71). */
-    FEAT_UCP              = 1u << 18
+    FEAT_UCP              = 1u << 18,
+    /* [INLINE-C] stage 2 module `code-c` (docs/design/inline_c.md §2, §5):
+     * embedded C in a pattern, ``(?C`c: ...`)``. Its rows
+     * carry RF_INVOKER_ONLY: no `features` text grants it and `all` does not
+     * contain it; only `--allow-code=c` / `pcrec_options.allow_code` does
+     * (`pcrec_code_grant_resolve`, src/parse/enabled.c). One bit per
+     * registered language (src/parse/codelang.def). */
+    FEAT_CODE_C           = 1u << 19
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -4314,7 +4632,19 @@ enum {
      * are ROADMAP_NEVER and refused at parse, so no node carries them yet; a
      * verb producer stamps its node with a row of its own group stating this
      * column per name. A new row states it here. */
-    RF_CROSSES_ATTEMPTS = 1u << 7
+    RF_CROSSES_ATTEMPTS = 1u << 7,
+
+    /* [INLINE-C] stage 2 THE GRANT COLUMN (docs/design/inline_c.md §5.1):
+     * the row's module is INVOKER-ONLY. A row without the flag is `any`: a
+     * `features` text anywhere (a block, a config, a `pcrec` line,
+     * `--features`, `pcrec_options.features`) and the named sets may enable
+     * it. With the flag, the module is outside `all` and every named set,
+     * its name is REFUSED in every `features` text, and only the invoker's
+     * own grant enables it (`--allow-code`, `pcrec_options.allow_code`),
+     * through a separate mask the feature resolver cannot set
+     * (src/parse/enabled.c). Every row of one module carries the same value
+     * (registry_check asserts it). The `code-<lang>` rows carry it. */
+    RF_INVOKER_ONLY = 1u << 8
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -4982,6 +5312,11 @@ Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx);      /* \cX */
 Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx);     /* \xHH, \x{HHHH} */
 Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx);   /* \o{OOO}, \NNN, \0 */
 Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx); /* \N{U+HHHH} */
+/* The values behind them, Ctx-free, shared with the substitution-template
+ * parser (src/parse/definitions.c): a digit run's value in base 8 or 16 (-1
+ * when empty or not digits, saturated at 0x7FFFFFFF), and `\cX`'s byte. */
+long pcrec_esc_digits_value(const char *s, size_t len, int base);
+int  pcrec_esc_ctrl_value(int x);
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
@@ -5235,6 +5570,9 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
          * WORD is a VarExp, not an Ast, so there is nothing here to descend
          * into either. */
         case A_VAR:
+        /* [INLINE-C] 1b a callout site is a leaf: its callee is outside the
+         * pattern, and `l`/`r` are unused. */
+        case A_CALLOUT:
         /* THE BACK EDGE STOPS HERE — see this function's header. */
         case A_CALL:
             return;
@@ -5281,6 +5619,7 @@ void pcrec_vars_resolve(Ctx *cx, Ast *root);
 /* Does this tree contain an `A_VAR`? The third whole-tree predicate in
  * `prefilter_decision`'s hand-written set (`has_bref`/`has_call`'s shape). */
 bool pcrec_has_var(const Ast *root);
+bool pcrec_has_callout(const Ast *root);   /* [INLINE-C] 1b, mod_callouts.c */
 
 /* [VAR] The trailing `vars, nvars` pair as PARAMETER text or as ARGUMENT
  * text, or `""` on an artifact that mentions no variable — one derivation
@@ -5377,6 +5716,63 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
  * mask and the `why` text still have exactly one home. */
 ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);
+
+/* src/parse/mod_callouts.c — module `callouts` ([INLINE-C] stage 1b,
+ * [M4-CALLOUTS] step 2). The `(?C` port: reads a well-formed numbered or
+ * named callout (`pcrec_callout_extent_scan`), its binding name and
+ * attributes, and returns an A_CALLOUT node stamped with the row. Where a
+ * site may stand, its firing class and the `once` check are the
+ * post-parse pass's (`pcrec_callout_sites`, src/opt/callout.c). The two
+ * recognisers are the module row's (well-formed) and the malformed row's
+ * (its exact complement), so a malformed `(?C` is refused as malformed in
+ * every module state (inline_c.md §2.4, D17). */
+ExtResult pcrec_coport_callout(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+/* The attribute grammar's one home (§2.2): applies the `sep`-separated
+ * list `s`/`n` to callout node `a`; NULL, or the refusal text (unknown,
+ * repeated, empty -- an empty list included -- or `verify`, refused by name
+ * until stage 4). */
+const char *pcrec_callout_attrs(Ctx *cx, Ast *a, const char *s, size_t n,
+                                char sep);
+/* The one shape reader of a numbered callout's declaration, `N<sep>ATTRS`,
+ * for the `.rxt` `callout` line (sep ' ') and `--callout` (sep ':'). */
+bool pcrec_callout_decl_read(const char *v, char sep, PcrecCalloutDecl *d);
+/* A site's binding row (inline_c.md §1.4): see PcrecCalloutBinding. */
+PcrecCalloutBinding pcrec_callout_binding(Ctx *cx, const Ast *a);
+bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail);
+
+/* src/parse/mod_code.c — modules `code-<lang>` ([INLINE-C] stage 2): ONE
+ * LANGUAGE ROW of src/parse/codelang.def (its columns, in its order), the
+ * table's accessors, and the tagged `(?C` row's port (``(?C`c: ...`)``):
+ * reads the tag and attributes, decodes the code, refuses bidi controls,
+ * control bytes and reached code, and returns an A_CALLOUT with `bind`
+ * CO_CODE. */
+typedef struct {
+    const char *tag;
+    unsigned    feature;
+    const char *module;
+} PcrecCodeLang;
+const PcrecCodeLang *pcrec_code_langs(size_t *n);
+const char          *pcrec_code_describe_grant(void);
+unsigned             pcrec_code_describe_mask(void);
+const char          *pcrec_code_header_check(const char *lang, const char *hdr);
+/* src/gen/emit_code.c — the C text a code segment becomes (inline_c.md §3):
+ * the span helpers (in every callout artifact's surface), each segment's
+ * prototype and file-local binding (before the VM function), and the
+ * segment block (LAST in the `.c`). */
+void pcrec_emit_span_helpers(StrBuf *sb);
+void pcrec_emit_code_protos(Ctx *cx, StrBuf *c);
+void pcrec_emit_code_block(Ctx *cx, StrBuf *c);
+/* src/parse/enabled.c: the invoker's code grant, a language list -> the
+ * `code-<lang>` modules' FEAT_* mask (inline_c.md §5.1). 0, or -1 + err. */
+int pcrec_code_grant_resolve(const char *spec, unsigned *mask_out, char *err,
+                             size_t errsz);
+const PcrecCodeLang *pcrec_code_lang_by_tag(const char *tag, size_t len);
+const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature);
+ExtResult pcrec_codeport(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
+                         size_t from);
+bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
+                                       const char *tail);
 /* The RK_QUANTSUFFIX row for a quantifier spelled by its own selector byte
  * (`*`, `+`, `?` or `{`), for parse.c's desugaring to stamp from. NULL is a
  * registry defect and the caller says so rather than shipping an unstamped
@@ -5482,6 +5878,13 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
  * one construct later. */
 size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
+
+/* The group-name CHARACTER rule both name grammars read (the scan above and
+ * the subst template's, src/parse/subst_template.c): 1 if code point `cp`
+ * is a name character (`first`: in the leading position), 0 if not, -1 when
+ * the unicode-props table it reads is missing. Ctx-free, so the template
+ * parser (no Ctx) reads the same rule. */
+int pcrec_group_name_cp(unsigned cp, bool first);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
  * ports and the end-of-parse resolution pass. Design:
@@ -6027,6 +6430,30 @@ bool   pcrec_class_delim_extent_scan(const char *pat, size_t patlen, int c2,
 bool   pcrec_brace_quant_shape(const char *at, size_t avail);
 size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
                                    size_t nstart);
+/* [INLINE-C] 1b the `(?C` shape: true iff `at` (the byte after the `C`)
+ * holds one of PCRE2's well-formed callout spellings through its `)`; on
+ * true `*out` (may be NULL) carries the parts, offsets relative to `at`.
+ * The two `(?C` rows' recognisers and module `callouts`' port share it. */
+typedef struct {
+    bool   string;    /* a delimited string; false: a number */
+    int    num;       /* the number, 0..255 (`(?C)` is 0) */
+    size_t str;       /* the string's first byte (after the opening delimiter) */
+    size_t rawlen;    /* its length as written (doubled delimiters doubled) */
+    char   close;     /* the closing delimiter */
+    size_t end;       /* just past the closing `)` */
+} PcrecCoScan;
+bool   pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out);
+/* [INLINE-C] stage 2 the string's decode (a doubled `close` is one byte) into
+ * `dst` (n + 1 bytes); the decoded length; `*exact` (may be NULL) true when
+ * nothing was undoubled. Both `(?C` string ports share it. */
+size_t pcrec_callout_string_decode(const char *raw, size_t n, char close,
+                                   char *dst, bool *exact);
+/* [INLINE-C] stage 2 embedded code's always-live scans (inline_c.md §2.2;
+ * scans.c): the code TAG shape `tag(,attr)*:` (the `:`'s offset, or 0), and
+ * the tagged `(?C` row's recogniser for one language. */
+size_t pcrec_code_tag_extent_scan(const char *s, size_t n, const char *tag);
+bool   pcrec_code_tagged_recognise(const char *at, size_t avail,
+                                   const char *tag);
 
 /* src/parse/enabled.c — the enabled feature set (slice 9): one home,
  * process-wide, written once by the CLI's --features before any compile.
@@ -6272,7 +6699,11 @@ typedef enum {
      * <name>` opens a BUNDLE — name=the bundle name, value=its bundle-scope
      * `include <other>` AS WRITTEN (empty with none). A bundle's `include`
      * is NOT an RXT_DECL_INCLUDE row: that kind is the head's path splice. */
-    RXT_DECL_ANALYSIS
+    RXT_DECL_ANALYSIS,
+    /* [INLINE-C] stage 2 file-level `code-header <lang> <header>`
+     * (inline_c.md §3.3) — name=the language, value=the header operand AS
+     * WRITTEN (`"octet.h"` or `<stdint.h>`). */
+    RXT_DECL_CODE_HEADER
 } RxtDeclKind;
 
 typedef struct {
@@ -6304,6 +6735,10 @@ typedef struct {
      * group the definition declares is the COMPOSER's question, asked where
      * the sub-parse's `named_groups` is in hand. */
     const char *exports;
+    /* [INLINE-C] 1b a pattern block's `callout N ATTRS` lines, each value
+     * AS WRITTEN, newline-joined in source order (REPEAT, `tags`' shape);
+     * NULL with none. A BLOCK fact only: no config composes it. */
+    const char *callouts;
     /* [DD-13b.W23.4] THREE APPENDED PATTERN-ROW COLUMNS (format_design
      * §2.24). `tags` ACCUMULATES every `tag` line's items, comma-joined in
      * source order — `tag`'s own cardinality is REPEAT, so a block may
@@ -6319,6 +6754,10 @@ typedef struct {
     const char *tags;
     const char *oracle;
     const char *esc;
+    /* [INLINE-C] stage 2 a `pattern` row's value's 1-based COLUMN on its
+     * line, for a code segment's `#line` padding (inline_c.md §3.1); 0 when
+     * the text before it holds a TAB, and on a `pattern-esc` row. */
+    size_t      col;
     /* [FINDINGS] B2: a CONFIG row's own `analysis <name>` (AT_MOST_ONE),
      * or NULL; composed by `cfg_merge`'s later-wins like `engine`. */
     const char *analysis;
@@ -6524,7 +6963,7 @@ char      *pcrec_rxt_source_tsv(const RxtSource *src);
  * w1_impl §2.2 gives `first_cap_pos` and `Ast.reg_at` — a diagnostic
  * raised inside a definition names the definition's own file and line
  * rather than an offset into a pattern the author never wrote. */
-typedef struct {
+typedef struct RxtDef {
     const char        *name;      /* the block's `name`, FILE namespace     */
     const char        *pattern;   /* the block's pattern text, verbatim     */
     unsigned long long flags;     /* the block's own `flags`, RESOLVED      */
@@ -6629,6 +7068,13 @@ typedef struct {
      * of the config that supplied it, on `analysis`' rule exactly. */
     const char *measures;
     size_t      measures_line;
+    /* [INLINE-C] 1b the block's `callout` lines (RxtRow.callouts), read by
+     * the CLI into the compile's numbered-callout declarations. */
+    const char *callouts;
+    /* [INLINE-C] stage 2 the block's pattern COLUMN (RxtRow.col) and its
+     * `pattern-esc` marker (RxtRow.esc), for a code segment's `#line`. */
+    size_t      pattern_col;
+    const char *pattern_esc;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -6761,6 +7207,17 @@ bool pcrec_vm_prefilter_window(Ctx *cx);
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
+/* [REQRUN-VM] Does the VM hybrid's inlined prefilter re-enter the handoff?
+ * Then its blocks are defined above the prefilter (the DFA emitter's call)
+ * and the VM's search loop does not define them again. */
+bool pcrec_req_site_in_prefilter(Ctx *cx);
+/* [REQRUN-VM] The VM attempt loop's re-entered handoff, written after a
+ * failed attempt's advance and before the start-set seek, at `indent` plus
+ * one level: the whole run re-found from `attempt_position` where the kept
+ * hit is behind it (none: `return 0;`), then `attempt_position` raised to
+ * the hit less K where that is ahead. Emits nothing where the `req-use`
+ * table's `handoff-attempts` row does not apply. */
+void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *indent);
 
 /* [START-SET] THE FIND (`PcrecFind`, `pcrec_emit_find`): declared in
  * src/gen/memfn_sites.h since [MEMFN] M4, beside the kit sites it describes
@@ -7253,6 +7710,19 @@ bool  pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
  * is born to inherit the discharged one's. */
 Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root);      /* src/opt/atomic.c */
 
+/* [INLINE-C] 1b THE CALLOUT SITES PASS (src/opt/callout.c), run on the tree
+ * as written — after the composer and the derivation hooks, before
+ * `pcrec_altcls` and every optimization pass — and a no-op when the parse
+ * built no site (`cx->ncallouts == 0`). It applies the numbered callouts'
+ * declarations (`PcrecEmitIn.callout_decls`; a declaration naming no site
+ * is refused), numbers the sites in textual order, refuses the positions
+ * inline_c.md §1.9 does not support, derives each site's FIRING CLASS
+ * (§1.10) and refuses a `once` site of class `repeated`. */
+void pcrec_callout_sites(Ctx *cx, Ast *root);
+/* The listing token of a CalloutClass (`once-per-match`, `once-per-start`,
+ * `repeated`). */
+const char *pcrec_callout_class_name(int fclass);
+
 /* Does this tree carry an A_ATOMIC — i.e. a cut that survived the discharge?
  *
  * READ AT EMISSION, and it is H3's whole predicate. The capture-erased
@@ -7641,6 +8111,7 @@ typedef enum {
     PCREC_ATTR_NONE,         /* no attribute (the VM entry's `plain` rung) */
     PCREC_ATTR_NOINLINE,     /* noinline */
     PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
+    PCREC_ATTR_UNUSED,       /* unused: a file-local nothing may read */
     PCREC_ATTR_N
 } PcrecAttr;
 /* `a`'s text, as its writer puts it on (or above) a definition head. */
@@ -7798,6 +8269,106 @@ const char *pcrec_revend_form_name(RevendForm f);
 const char *pcrec_mark_prio_name(Ctx *cx);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
+/* [M4-SUBST] src/gen/emit_dfa.c's shared block, abi digit and comment
+ * escaper, for the subst emitter (replace_design.md §R3.8). */
+void pcrec_emit_rx_abi_block(StrBuf *sb);
+int  pcrec_artifact_abi(void);
+void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
+
+/* [M4-SUBST] A PARSED SUBSTITUTION TEMPLATE (src/parse/subst_template.c,
+ * docs/spec/subst_api.md §2-§3): a flat item list in template order, one item
+ * per PIECE, and the REFERENCE LIST, every group the template references
+ * other than group 0, each once, in first-appearance order. Arena-owned. */
+typedef enum {
+    SUBST_LIT,     /* lit[off, off + len): a run of literal bytes, `$$` decoded */
+    SUBST_GROUP,   /* `$k` / `${k}` / `$&`: group `num`, reference `ref` (-1 for group 0) */
+    SUBST_NAME,    /* `$name` / `${name}`: reference `ref` */
+    SUBST_VAR,     /* `${!name}`: vrefs[ref], the caller's variable */
+    SUBST_SUBJECT, /* `$_`: the whole subject */
+    SUBST_BEFORE,  /* `` $` ``: the subject before the match */
+    SUBST_AFTER,   /* `$'`: the subject after the match */
+    SUBST_COND,    /* `${n:-text}` / `${n:+set:unset}` (module subst-extended): group
+                    * `num`, reference `ref`; its SET branch is the next `nset` items,
+                    * its UNSET branch the `nunset` after them (nested items included) */
+    SUBST_CASE     /* `\U \L \u \l \E` (module subst-extended): `num` is the event,
+                    * a SubstCaseEvent; no piece of its own */
+} SubstItemKind;
+
+/* A case-forcing event, in the order of subst_api.md §2¶13's table rows. */
+typedef enum { SUBST_EV_UPPER, SUBST_EV_LOWER, SUBST_EV_ONE_UPPER, SUBST_EV_ONE_LOWER,
+               SUBST_EV_END, SUBST_EV_CHAR, SUBST_NEVENTS } SubstCaseEvent;
+
+typedef struct {
+    SubstItemKind kind;
+    size_t        off, len;   /* SUBST_LIT: its bytes in SubstTmpl.lit */
+    int           ref;
+    int           num;
+    size_t        nset, nunset;   /* SUBST_COND: the items of each branch */
+    size_t        pset, punset;   /* SUBST_COND: the pieces of each branch (§4¶7) */
+} SubstItem;
+
+/* One row of the reference list (subst_api.md §3¶2): a name with number -1,
+ * or a number >= 1 with name NULL. */
+typedef struct {
+    const char *name;
+    int         number;
+} SubstRef;
+
+typedef struct {
+    SubstItem   *items;        /* template order; a SUBST_COND's branches follow it */
+    size_t       nitems;
+    size_t       npieces;      /* pieces per match, the gap included (§4¶5) */
+    size_t       region;       /* the top-level item the CASE REGION starts at, or nitems */
+    char        *lit;          /* every literal item's bytes */
+    size_t       nlit;
+    SubstRef    *refs;         /* the reference list, first-appearance order */
+    int          nrefs;
+    const char **vrefs;        /* `${!name}` names, first-reference order */
+    int          nvrefs;
+    int          maxnum;       /* the highest group number, or 0 */
+    bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
+    bool         uses_ext;     /* a module `subst-extended` form appears */
+    bool         enc_bound;    /* its meaning depends on its encoding (§2¶5): a
+                                * non-ASCII byte, an escape naming a code point
+                                * above 0x7F or `\N{U+..}`, or case forcing */
+    size_t       lit_floor;    /* parser-private: no literal joins an item below it */
+} SubstTmpl;
+
+/* Parses `s[0, n)`, read in `encoding` (PCREC_ENC_*), into `t`; `extended`
+ * selects module `subst-extended` (§2¶7). Returns 0, or -1 with `err` filled
+ * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). */
+int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, bool extended,
+                      SubstTmpl *t, pcrec_error *err);
+
+/* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
+ * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
+ * `header_name` is the `.h` the `.c` includes, or NULL for one
+ * self-contained `.c`; `encoding` is the template's (`-e`, PCREC_ENC_*). */
+typedef struct {
+    const char *prefix;
+    const char *header_name;
+    int         encoding;
+    bool        extended;      /* module subst-extended (`--features subst-extended`) */
+} PcrecSubstOptions;
+
+/* Emits the subst artifact for `t` (src/gen/emit_subst.c): `out->c_src`, and
+ * `out->h_src` when a header is named, both malloc'd. */
+void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
+                      const PcrecSubstOptions *o, pcrec_output *out);
+
+/* [M4-SUBST] THE SUPPORT UNIT (src/gen/emit_subst.c, docs/spec/subst_api.md
+ * §10): its whole text, malloc'd; it depends on the pcrec build alone. */
+char *pcrec_emit_support(void);
+
+/* THE SUBSTITUTION-TEMPLATE COMPILER (src/core/compile.c): parse, then
+ * emit. Returns 0, or -1 with `err` filled. The only caller is the CLI until
+ * [IFACE-PUSH] gives the template a library entry; there is no `Ctx` on this
+ * path, so out of memory aborts (an `Arena`/`StrBuf` with no `.cx`). */
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err);
+/* True iff `p` is a prefix `pcrec_compile` accepts (a C identifier within
+ * PCREC_MAX_PREFIX_LEN, no reserved family); else false with `why` filled. */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
  * SIZING SURFACE, as five facts the emitter that knows the run state's layout
@@ -7859,8 +8430,8 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g);
  * tier reaches a linked program only through `cli/main.c`'s own call to this
  * entry. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err);
+                       const RxtDefs *defs, const PcrecEmitIn *in,
+                       pcrec_output *out, pcrec_error *err);
 
 /* ---- [COMPOUND] derivations (src/opt/derive.c) ---------------------------
  *
@@ -8206,6 +8777,9 @@ const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx);
  * internal error. */
 const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
                                         const char *value);
+/* Is `<PREFIX>_<name>` (len bytes after the prefix) a contract stamp: a
+ * catalogue row not marked internal (match_api.md §6.3.1¶10)? */
+bool pcrec_stamp_is_contract(Ctx *cx, const char *name, size_t len);
 
 /* src/gen/emit_dfa.c -- [COMPOUND] THE PLAIN COMPILE's SELECTION PROJECTION
  * (compound.md §A.3, arch S5): the `--list`/stamp name of the row slot
@@ -8271,16 +8845,25 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
  * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
  * and the test suite are its only consumers. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err);
+                    const PcrecEmitIn *in, pcrec_error *err);
+/* [INLINE-C] src/core/compile.c: the CLI's `--pattern` compile with a
+ * driver emission input (`--callout`, `--code-header`, the `#line` source). */
+int pcrec_compile_in(const char *pattern, const pcrec_options *opt,
+                     const PcrecEmitIn *in, pcrec_output *out,
+                     pcrec_error *err);
 
 /* src/dump/facts_dump.c — [PATFACTS] `--emit-facts`: the pattern-facts
  * record as a `docs/spec/table_contract.md` listing
  * (`docs/spec/facts_listing.md`). One ordinary compile per encoding in
  * `encs[0..nenc)` (the caller's own `-e` when `nenc` is 0), rows
  * concatenated under each section. malloc'd, caller frees; NULL with `err`
- * filled when a compile refuses. Internal, like `pcrec_emit_ir`. */
+ * filled when a compile refuses. `in` (NULL: none) carries what the CLI's
+ * compile would pass, today the numbered callouts' declarations, so the
+ * listing describes the pattern the compile builds. Internal, like
+ * `pcrec_emit_ir`. */
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
-                       const int *encs, int nenc, pcrec_error *err);
+                       const PcrecEmitIn *in, const int *encs, int nenc,
+                       pcrec_error *err);
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/

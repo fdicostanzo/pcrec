@@ -291,6 +291,7 @@ static Ast *rc_remap_caps(Ast *a, const int *map, int nmap)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return a;
         case A_CAP:
             a->l = rc_remap_caps(a->l, map, nmap);
@@ -449,6 +450,7 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
     case A_CTX: case A_GSTART: case A_KRESET:
     case A_BREF:
     case A_VAR:
+    case A_CALLOUT:
         return NULL;
     case A_CAP: case A_LOOK: case A_REP: case A_ATOMIC:
     case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */
@@ -554,7 +556,14 @@ static void rc_bind(Composer *co, const RxtDef *def)
     cx->opt            = &defopt;
     pcrec_parse_mods_init(cx);
 
+    /* [INLINE-C] stage 2: the code port reads which definition it is in, so
+     * code in one read from another file is refused as REACHED code
+     * (inline_c.md §5.4 row 3). The sub-parse's own refusals longjmp out of
+     * the whole compile, so only the normal return restores it. */
+    const RxtDef *outer_def = cx->code_def;
+    cx->code_def = def;
     Ast *body = pcrec_parse_info(cx, NULL);
+    cx->code_def = outer_def;
 
     int          k     = (int)cx->ncap;
     NamedGroup  *names = cx->named_groups;

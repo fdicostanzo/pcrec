@@ -118,5 +118,5 @@ L5	L8	branch 1 of 2 preferred; resume tries branch 2
 L9	2	alternation island: 2 literal alternatives, 5 trie nodes, depth 3, 2 try sites, 0 resume points; size est 1260 B vs the chain's 686 B
 
 #section callouts
-#label	note
-	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1
+#label	site	binding	width	class	tail	note
+						none: this pattern has no callout site

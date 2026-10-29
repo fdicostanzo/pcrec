@@ -170,6 +170,30 @@ that produces no row is a loud FATAL, never a silently smaller denominator.
 budgets are timing medians (D12/D17) and it gates on load average, so it runs
 alone on a quiet box or its numbers mean nothing.
 
+### Where temporary files go (`PCREC_TMPDIR`, 2026-10-28)
+
+`/tmp` on the Linux dev box is a small RAM tmpfs with a per-user quota; killed
+mech runs (`pcrec-mech-sabotage.*`, 0.2-3.7 GB each) and lane scratch filled it
+and a `make test` went red with gcc "Disk quota exceeded". Every temporary
+file now lives under ONE root, `$PCREC_TMPDIR`, default
+`/var/tmp/pcrec-<user>` (per user, mode 0700, created on first use), defined
+once in `scripts/tmpdir.sh`.
+
+- The Makefile exports `TMPDIR=$(PCREC_TMPDIR)` to every recipe,
+  unconditionally: a caller's `TMPDIR=/tmp` does not win; the override is
+  `PCREC_TMPDIR=...`. Suites that call `mktemp` inherit it.
+- `scripts/boxqueue`, `chainrun`, `battery.sh`, `fullsuite_job.sh` and
+  `measure.sh` source `scripts/tmpdir.sh` (so does any shell: `. scripts/tmpdir.sh`).
+  A suite script run by hand without it still falls back to its own
+  `${TMPDIR:-/tmp}`; export TMPDIR first.
+- Lane scratch is `$PCREC_TMPDIR/scratch/<lane>/`.
+- PRUNE: the queue runner, at each job start, removes entries (the root's
+  children and `scratch/`'s children) older than `PCREC_TMP_PRUNE_DAYS`
+  (UNMEASURED default: 3 days) that hold no recent file and that no process
+  has as cwd or open. Nothing outside the root is touched. Self-test:
+  `scripts/tests/tmpdir.sh.test`.
+- Claude Code's own task/output files (`/tmp/claude-<uid>`) are not ours.
+
 ## The `.rxt` test format and driver protocol
 
 **Moved to `docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25): the `.rxt`
@@ -873,7 +897,7 @@ read `gh run list --commit <sha>` on the next wake (manager skill step 0b).
 Separately, `.claude/settings.json` registers
 `scripts/hooks/no_cd_worktree.sh` as a PreToolUse(Bash) hook that blocks a `cd`
 into `worktrees/` and `cd X && ..` chaining (exact scope in scripts/CLAUDE.md);
-both are self-checked by `scripts/tests/hooks.test` (`make testscripts`).
+both are self-checked by `scripts/tests/hooks.test` (`make testscripts`). `no_commit_all.sh` (PreToolUse Bash) blocks `git commit -a`/`--all`; `lane_writes_in_worktree.sh` (Write|Edit|NotebookEdit) refuses a subagent write into the main tree; both have fixture tests `scripts/hooks/test_*.sh`. The queue monitor script ([MON-SCRIPT]): `scripts/queuemon` (journal worktrees/.mgr/monitor.log), `scripts/monread`, and the SessionStart/UserPromptSubmit hook `monitor_unread.sh` are self-checked offline by `scripts/test_queuemon.sh` (`make testscripts`: every table row, UNEXPECTED, cursors, `--wait`, liveness, the hook's main-only gate, an inert boxqueue auto-start on a scratch queue).
 The sanitizer and lint targets (`make san`/`ubsan`/`asan`/`lint`/`alloc`) and
 `make test-recursion-identity` take the box lock like `test-axes` (the target
 re-invokes itself as `<target>-locked` under `scripts/boxlock run`); CI never
@@ -884,6 +908,23 @@ runner takes the box lock for each job in turn and logs every pass ("waiting
 on <holder>" while someone outside the queue holds it); a lane enqueues jobs
 (or a chainrun stages file with `boxqueue batch`) instead of arming its own
 waiter. Contract in the script's header, summary in scripts/CLAUDE.md.
+
+BENCH WINDOWS ([BENCH-RESERVE], 2026-10-25): the bench's timing windows are
+ordered by the same queue without either side running the other's code. The
+bench drops `<name>.window` (key=value) in a declared inbox
+(`scripts/boxqueue.inboxes`); the runner PARSES it (never sourced) into a
+fixed placeholder job `PRIO-bench-NAME` (`scripts/boxqueue_window`) that holds
+the box lock until the bench's log reports the window over, and publishes
+`worktrees/.boxqueue/reservations/PRIO-bench-NAME.state` (QUEUED / RUNNING /
+DONE green|red|failed|cancelled; lock held iff RUNNING; a refused window reads
+`DONE failed <iso> IMPORT-REJECT <reason>`). The log may pre-exist: its size at
+RUNNING is an offset, only appended bytes are scanned, and "started" means the
+log GREW within `start_s` (else NO-START). Import and `.cancel` are also acted
+on WHILE a job runs (the job-wait watcher calls the sync every
+`BOXQUEUE_BENCH_EVERY` s, 15, <= 60). `patience` is declared only. A runner
+with a declared inbox never IDLE-EXITs. Contract, keys, reject reasons and ends: the
+`BENCH WINDOWS` block of `boxqueue -h`; self-check: boxqueue.test case 25
+(scratch queue and inbox, a fake bench runner, nine planted bugs S1610-S1618).
 
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 
@@ -1031,7 +1072,16 @@ The table's weights are RUNNER seconds from the first sharded run 38354147463
 `docs/dev/lanes/cishard2_report.md`). The variable is `CISHARD`, not `SHARD`:
 `SHARD=i/n` is `tests/startset/vmhat_diff.py`'s own env, and make exports
 command-line variables, so shard 1 ran a third of that script's jobs. The shard
-step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml). The
+step's `timeout-minutes` is 65 (raised from 55 by cired4, 2026-10-29: run
+40835409808 shard 3 was killed at 55 min with no red section, every section
+~1.3x slower than the previous green run on an unchanged shard; basis in
+ci.yml) against a projected 37.
+Run 40465053309 (main 7d3be7ec7) went red with NO red section: shard 2 was
+killed by that 55-minute step timeout inside its last section (test-compound),
+its table share having drifted to ~58 min of runner time (shards 1/3: 40/31 min)
+while earlier green runs had it at 47-53 min. Re-balanced from that run's three
+`pcrec-ci-sections-*` artifacts (shards now ~41 min each); test-compound keeps
+its earlier 286 s because the kill left only an open lower bound for it. The
 paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
 "one job" or "a 90-minute `make test` step", read the matrix.
 
@@ -2923,12 +2973,20 @@ without parsing Makefile syntax (same shape as [SR-11]'s
 `table_contract.md` manifest and `mlscan.py`'s self-contained rule table:
 one file, two readers, never a transcription). That check sweeps every
 `tests/*/run_*_diff.sh` in the tree and requires each to be IN the manifest
-or in a reasoned exclusion — there is no exclusion list today because the
-sweep found none of the tree's 9 `run_*_diff.sh` scripts belongs in one;
-if a future differential script is deliberately NOT a sanitizer-axis
-candidate (no generated-code compile of its own, the way
-`run_atomic_identity.sh`'s TEXT-only comparison above has none), it needs
-a stated reason there, not a silent gap.
+or in a reasoned exclusion. **Widened 2026-10-27 (lane sanred2)**: the
+population is now EVERY `tests/**/run_*.sh` (157), not only the `_diff`
+subset — the callout drivers (`run_callouts_tests.sh`) were in neither list
+and `make san` never instrumented them. The exclusions live in
+`tests/lib/san_excluded.txt` (`PATH<TAB>REASON`, one line each, prefixes
+`NOT-A-SUITE`/`NO-C-RUN`/`OWN-TIER`/`TODO-WIRE`/`DEFER-PLAIN` defined in its
+header); the check also fails on an exclusion that names no script, has no
+reason, or is also in the manifest, and runs a planted-defect control (a
+synthetic tree) so a check that cannot fail is itself red. `TODO-WIRE`
+entries (scripts that take `$GENCFLAGS` yet are absent from the manifest)
+and `DEFER-PLAIN` ones (plain `$CC`, compiler axis only) are the open
+population of the san-coverage gap: wire or re-reason them one at a time.
+The classification of those two prefixes is mechanical (a grep for
+`GENCFLAGS` / compiler tokens), not a per-script review.
 
 **FIVE SCRIPTS WERE MISSING WITH NO STATED REASON, found by enumerating
 every `run_*_diff.sh` and diffing against the three (byte-identical, as of
@@ -5337,3 +5395,19 @@ two declines under reference builds. Mech arm `endmark` (rows S881-S890 and the
 re-aimed L2 rows). Lane instruments, not sections: `b3diff.py` (the built
 compiler against libpcre2, every arm, every subject to length 5) and
 `mover_census.py` (movers must be exactly the rev-end population, by id).
+
+## Resuming a red full suite ([SUITE-RESUME])
+
+A red full run (`scripts/fullsuite_job.sh`, D177) can be RESUMED on the owner's explicit command, never
+automatically (Frank 2026-10-25: "auto-restart can go bad"): `scripts/fullsuite_resume [--dry-run] RUNDIR`
+queues `fullsuite_job.sh --resume RUNDIR`. Only the stages whose `== stage S rc=0 END` record is absent (red or
+never ran) run again, via `BATTERY_STAGES`, in the run's own frozen worktree at the same commit; the stages are
+independent `make` invocations (battery.sh keeps no cross-stage state), so a green stage is never re-run. The
+resumed run has its own logdir `build/full_suite/<tag>_r<N>` with the same artifacts as a full run
+(`== logdir`, trailer.log, summary.txt, `== battery_v5 DONE stages=`, so queuewatch/queuemon treat it as one)
+plus `resume_of.txt`; its summary shows carried stages as `green(@<origin tag>)` and ends `resume-of=<parent>`.
+Refusals (exit 65, also at `--dry-run`/`boxqueue add`): missing trailer/summary/frozen record, the battery
+still running, the worktree's HEAD differs from the run's commit or is dirty (the suite's own rewrite of
+`docs/dev/artifact_size_log.tsv` is tolerated: measured, `make test` touches it), a summary that names a stage
+green with no green record, nothing left to run, simulated/real mismatch. Tests: `scripts/tests/fullsuite_resume.test`
+(offline, simulated). Staged real test: docs/dev/lanes/suiteresume_report.md.

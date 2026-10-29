@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# fullsuite_job.sh --resume / fullsuite_resume self-test ([SUITE-RESUME]): OFFLINE, every run SIMULATED (the real
+# job and battery.sh code, fake stage payloads; PATH shims record any make/gcc call and the test asserts none).
+# Parents are FABRICATED run dirs (SIMULATED marker, trailer, summary, frozen.txt) over a scratch git repo that
+# plays the frozen worktree. Covers: exactly the red+unrun stages re-run, green never re-run, the combined verdict,
+# a resume of a resume, queuemon/queuewatch-compatible logdir, every refusal, the unknown-argument guard, the
+# queue helper (stub boxqueue: this test NEVER calls the real `boxqueue add`, which arms a runner), and a PLANT.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/fsresume.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export SIM_STEP=0 FULLSUITE_SIM_DIR=$T/sim FULLSUITE_POLL=1
+unset BATTERY_SIMULATE BATTERY_STAGES PCREC_BOXLOCK_HELD RESUME_DIRTY_OK
+mkdir -p "$T/shim" "$T/sim"
+for c in make gcc cc; do printf '#!/bin/sh\ncase "$1" in --version|-dumpversion|-v) exit 0 ;; esac\necho "$0 $*" >> "%s/shim.calls"\nexit 0\n' "$T" > "$T/shim/$c"; chmod +x "$T/shim/$c"; done
+export PATH=$T/shim:$PATH
+STAGES="test strict axes san alloc lint mech recidentity"
+
+# the frozen tree: a scratch repo with one tracked file
+TREE=$T/tree; mkdir -p "$TREE/docs/dev"; git -C "$TREE" init -q; echo a > "$TREE/f"; echo x > "$TREE/docs/dev/artifact_size_log.tsv"
+git -C "$TREE" add -A; git -C "$TREE" -c user.name=t -c user.email=t@t commit -q -m one
+FULL=$(git -C "$TREE" rev-parse HEAD)
+
+# mk_parent NAME "stage=rc|- ..." [real]: a fabricated run dir; rc `-` = no END line (never ran)
+mk_parent() {
+    local d=$FULLSUITE_SIM_DIR/$1 s rc sum="2026-10-25 ${FULL:0:9}"; shift; local spec=$1; shift
+    d=${d}; mkdir -p "$d"; : > "$d/trailer.log"
+    [ -z "${STAGELINE:-}" ] || echo "== stages: $STAGELINE" > "$d/trailer.log"
+    [ "${1:-}" = real ] || echo "== SIMULATED parent" > "$d/SIMULATED"
+    echo "== full suite ${d##*/} frozen at $FULL tree $TREE" > "$d/frozen.txt"
+    for s in $STAGES; do
+        rc=$(echo " $spec" | sed -n "s/.* $s=\([^ ]*\).*/\1/p")
+        case $rc in
+            -|"") sum="$sum $s=MISSING" ;;
+            0) echo "== stage $s START x" >> "$d/trailer.log"; echo "== stage $s rc=0 END x" >> "$d/trailer.log"; sum="$sum $s=green" ;;
+            *) echo "== stage $s START x" >> "$d/trailer.log"; echo "== stage $s rc=$rc END x" >> "$d/trailer.log"; sum="$sum $s=RED(rc=$rc)" ;;
+        esac
+    done
+    echo "== BATTERY DONE rc=1 x" >> "$d/trailer.log"
+    echo "$sum log=${d##*/} duration=1s" > "$d/summary.txt"
+    echo "$d"
+}
+# resume SCENARIO PARENT TAG: the simulated resume; output $T/out.TAG, rc $T/rc.TAG
+resume() { "$TO" 120 bash "$here/fullsuite_job.sh" --simulate "$1" --resume "$2" > "$T/out.$3" 2>&1; echo $? > "$T/rc.$3"; }
+rcof() { cat "$T/rc.$1"; }
+ldof() { sed -n 's/^== logdir //p' "$T/out.$1" | head -1; }
+stages_of() { sed -n 's/^== stages: //p' "$1/trailer.log"; }
+
+# 1. exactly the red + unrun stages; green never re-run; combined green verdict
+P1=$(mk_parent p1 "test=0 strict=0 axes=2 san=0 alloc=- lint=- mech=2 recidentity=-")
+resume green "$P1" r1; L1=$(ldof r1)
+[ "$(rcof r1)" = 0 ] && [ "$(stages_of "$L1")" = "axes alloc lint mech recidentity" ] && ok "resume re-runs exactly axes alloc lint mech recidentity (red + never-ran)" || bad "stage set: rc=$(rcof r1) [$(stages_of "$L1")]"
+! grep -qE '^== stage (test|strict|san) START' "$L1/trailer.log" && [ ! -e "$L1/test.log" ] && [ ! -e "$L1/san.log" ] && ok "green stages test strict san were never re-run (no START, no stage log)" || bad "a green stage re-ran"
+grep -q "^== battery_v5 DONE stages=8 rc=0" "$T/out.r1" && grep -q 'test=green(@p1) strict=green(@p1) axes=green san=green(@p1)' "$L1/summary.txt" && grep -q "resume-of=${P1#$(cd "$here/.." && pwd)/}" "$L1/summary.txt" && ok "combined verdict: DONE stages=8 rc=0; summary names the parent (resume-of=) and each carried stage's origin" || bad "verdict: $(cat "$L1/summary.txt") / $(tail -1 "$T/out.r1")"
+grep -q "^resume-of $P1\$" "$L1/resume_of.txt" && grep -q "^carried test $P1\$" "$L1/resume_of.txt" && grep -q '^rerun axes alloc lint mech recidentity$' "$L1/resume_of.txt" && grep -q "frozen at $FULL tree $TREE" "$L1/frozen.txt" && ok "resume_of.txt points to the parent; frozen.txt keeps commit and tree" || bad "resume_of: $(cat "$L1/resume_of.txt")"
+# queuemon/queuewatch compatibility: the same artifacts a full run has
+[ -n "$L1" ] && [ -s "$L1/trailer.log" ] && [ -s "$L1/summary.txt" ] && grep -q '^== BATTERY DONE rc=' "$L1/trailer.log" && grep -q '^== stage axes rc=0 END' "$L1/trailer.log" && [ "$(wc -l < "$L1/summary.txt")" = 1 ] && ok "logdir compat: '== logdir' line, trailer.log with stage END + DONE lines, one-line summary.txt" || bad "logdir compat"
+
+# 2. a red resume: combined verdict is red, job rc 1, only the resumed stage red
+P2=$(mk_parent p2 "test=0 strict=0 axes=0 san=0 alloc=0 lint=0 mech=2 recidentity=2")
+resume red:mech "$P2" r2; L2=$(ldof r2)
+[ "$(rcof r2)" = 1 ] && grep -q 'mech=RED(rc=2) recidentity=green' "$L2/summary.txt" && grep -q 'DONE stages=7 rc=1' "$T/out.r2" && [ "$(stages_of "$L2")" = "mech recidentity" ] && ok "red resume: mech=RED(rc=2), DONE stages=7 rc=1, only mech+recidentity ran" || bad "red resume: $(cat "$L2/summary.txt")"
+# 3. a resume of a resume keeps origins and re-runs only what is still red
+resume green "$L2" r3; L3=$(ldof r3)
+[ "$(rcof r3)" = 0 ] && [ "$(stages_of "$L3")" = "mech" ] && grep -q "recidentity=green(@${L2##*/})" "$L3/summary.txt" && grep -q "test=green(@p2)" "$L3/summary.txt" && grep -q "^carried test $P2\$" "$L3/resume_of.txt" && grep -q 'DONE stages=8 rc=0' "$T/out.r3" && ok "chained resume: only mech re-ran; carried stages keep their ORIGIN run (p2 / the first resume)" || bad "chain: [$(stages_of "$L3")] $(cat "$L3/summary.txt")"
+
+# 3b. a REDUCED parent (the staged real test's shape) resumes within its own stage set; the set survives a chain
+P3=$(STAGELINE="strict alloc lint" mk_parent p3 "strict=0 alloc=- lint=-")
+out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P3" --dry-run); resume green "$P3" r4; L4=$(ldof r4)
+[ "$(rcof r4)" = 0 ] && [ "$(stages_of "$L4")" = "alloc lint" ] && grep -q 'DONE stages=3 rc=0' "$T/out.r4" && echo "$out" | grep -q '^boxqueue: expect stages=3 ' && grep -q '^stageset strict alloc lint$' "$L4/resume_of.txt" && ok "reduced parent: only alloc lint re-ran, expect/DONE count its own 3 stages, the stage set is recorded for a chain" || bad "reduced: [$(stages_of "$L4")] $(tail -1 "$T/out.r4")"
+P3b=$(STAGELINE="strict alloc nosuch" mk_parent p3b "strict=0 alloc=-")
+out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P3b" --dry-run 2>&1); [ $? = 65 ] && echo "$out" | grep -q "unknown stage" && ok "refused: a parent whose stage line names an unknown stage" || bad "unknown stage: $out"
+
+# 4. dry-run declarations
+out=$(bash "$here/fullsuite_job.sh" --simulate green --resume "$P1" --dry-run); echo "$out" | grep -q 'stages \[axes mech recidentity alloc lint\]\|stages \[axes alloc lint mech recidentity\]' && echo "$out" | grep -q '^boxqueue: expect stages=8' && ok "--dry-run names the stages to run and the same expect/witness as a full run" || bad "dry-run: $out"
+
+# 5. refusals (each also exit 65, none creates a logdir)
+n0=$(ls "$FULLSUITE_SIM_DIR" | wc -l)
+refused() { # refused TAG PARENT SCENARIO-ARGS... : exit 65 + a REFUSED line
+    local tag=$1 par=$2; shift 2
+    out=$("$TO" 60 bash "$here/fullsuite_job.sh" "$@" --resume "$par" 2>&1); rc=$?
+    [ "$rc" = 65 ] && echo "$out" | grep -q 'REFUSED' && ok "refused ($tag): $(echo "$out" | sed -n 's/.*REFUSED: //p' | head -1 | cut -c1-90)" || bad "$tag not refused: rc=$rc $out"
+}
+D=$(mk_parent r_nosummary "test=0 axes=2"); rm "$D/summary.txt"; refused "no summary.txt" "$D" --simulate green
+D=$(mk_parent r_notrailer "test=0 axes=2"); rm "$D/trailer.log"; refused "no trailer.log" "$D" --simulate green
+D=$(mk_parent r_nofrozen "test=0 axes=2"); rm "$D/frozen.txt"; refused "no frozen.txt" "$D" --simulate green
+refused "missing run dir" "$T/nosuch" --simulate green
+D=$(mk_parent r_running "test=0 axes=2"); sleep 60 & SP=$!; echo $SP > "$D/battery.pid"; refused "battery still running" "$D" --simulate green; kill $SP 2>/dev/null
+D=$(mk_parent r_real "test=0 axes=2" real); refused "real parent, simulated resume" "$D" --simulate green
+D=$(mk_parent r_sim "test=0 axes=2"); out=$(bash "$here/fullsuite_job.sh" --resume "$D" --dry-run 2>&1); [ $? = 65 ] && echo "$out" | grep -q SIMULATED && ok "refused (simulated parent, REAL resume; exit 65 in --dry-run too, before any side effect)" || bad "real resume of sim parent: $out"
+D=$(mk_parent r_lie "test=0 strict=0 axes=2"); sed -i 's/^== stage strict rc=0 END.*//' "$D/trailer.log"; refused "summary says strict green, trailer has no green record" "$D" --simulate green
+D=$(mk_parent r_alldone "test=0 strict=0 axes=0 san=0 alloc=0 lint=0 mech=0 recidentity=0"); refused "nothing red or unrun" "$D" --simulate green
+# carried stage whose origin has no green record (chain with a doctored origin)
+D=$(mk_parent r_origin "test=0 strict=0 axes=0 san=0 alloc=0 lint=0 mech=2 recidentity=0"); resume red:mech "$D" ro; LO=$(ldof ro)
+sed -i 's/^== stage test rc=0 END.*//' "$D/trailer.log"; refused "chained carry whose origin lost its green record" "$LO" --simulate green
+# the tree moved / dirty / gone
+D=$(mk_parent r_moved "test=0 axes=2"); echo b > "$TREE/f2"; git -C "$TREE" add f2; git -C "$TREE" -c user.name=t -c user.email=t@t commit -q -m two
+refused "tree HEAD != the run's commit" "$D" --simulate green
+git -C "$TREE" reset -q --hard "$FULL"; rm -f "$TREE/f2"
+echo dirty >> "$TREE/f"; refused "tree dirty (tracked file edited)" "$D" --simulate green; git -C "$TREE" checkout -q f
+echo more >> "$TREE/docs/dev/artifact_size_log.tsv"
+resume green "$(mk_parent r_artifact "test=0 axes=2")" ra; [ "$(rcof ra)" = 0 ] && ok "the suite's own artifact_size_log.tsv rewrite does NOT count as dirty (measured: make test touches it)" || bad "artifact_size_log refused: $(cat "$T/out.ra")"
+git -C "$TREE" checkout -q docs/dev/artifact_size_log.tsv
+mv "$TREE" "$T/tree.moved"; refused "frozen tree gone (simulated)" "$D" --simulate green; mv "$T/tree.moved" "$TREE"
+n1=$(ls "$FULLSUITE_SIM_DIR" | wc -l); created=$((n1 - n0))
+# parents added in section 5 are counted by mk_parent; the only logdirs resume created are ro and ra
+[ "$created" -le 14 ] && ok "refusals created no resume logdir (only the resumes that ran)" || bad "dirs created: $created"
+
+# 6. unknown-argument guard (an old script that ignored --resume once started a REAL suite)
+out=$(bash "$here/fullsuite_job.sh" --simulate green --bogus 2>&1); [ $? = 64 ] && ok "an unknown argument is refused (64), never falls through to a run" || bad "unknown arg: $out"
+n2=$(ls "$FULLSUITE_SIM_DIR" | wc -l); [ "$n2" = "$n1" ] && ok "the unknown-argument refusal created no logdir" || bad "logdir created by --bogus"
+
+# 7. the queue helper, against a STUB boxqueue (the real `add` arms a runner)
+cat > "$T/bq" <<'STUB'
+#!/usr/bin/env bash
+echo "bq $*" >> "$STUBLOG"; f=${@: -1}; cp "$f" "$STUBLOG.job"; bash "$f" --dry-run > "$STUBLOG.dry" 2>&1; echo "dry rc=$?" >> "$STUBLOG"
+STUB
+chmod +x "$T/bq"; export STUBLOG=$T/stub.log
+printf '#!/usr/bin/env bash\n# SUITE-RESUME test wrapper\nexec bash %q --simulate green "$@"\n' "$here/fullsuite_job.sh" > "$T/simjob"; chmod +x "$T/simjob"
+export FULLSUITE_JOB=$T/simjob
+P7=$(mk_parent p7 "test=0 axes=2")
+BOXQUEUE=$T/bq bash "$here/fullsuite_resume" --dry-run "$P7" > "$T/out.h1" 2>&1
+[ ! -e "$STUBLOG" ] && grep -q 'stages \[' "$T/out.h1" && ok "fullsuite_resume --dry-run prints the job's dry run and queues nothing" || bad "helper dry-run: $(cat "$T/out.h1")"
+BOXQUEUE=$T/bq bash "$here/fullsuite_resume" "$P7" > "$T/out.h2" 2>&1
+grep -q '^bq add --name 301-main-fullsuite-resume ' "$STUBLOG" && grep -q 'dry rc=0' "$STUBLOG" && grep -q -- "--resume $P7" "$STUBLOG.job" && ok "fullsuite_resume queues a one-line job naming the run dir (name 301-main-fullsuite-resume); the job's own --dry-run passes" || bad "helper add: $(cat "$STUBLOG" "$STUBLOG.job" 2>&1)"
+rm -f "$STUBLOG"; BOXQUEUE=$T/bq bash "$here/fullsuite_resume" "$T/nosuch" > /dev/null 2>&1; r1=$?
+BOXQUEUE=$T/bq bash "$here/fullsuite_resume" "$(mk_parent p7b "test=0 strict=0 axes=0 san=0 alloc=0 lint=0 mech=0 recidentity=0")" > /dev/null 2>&1; r2=$?
+[ "$r1" = 65 ] && [ "$r2" = 65 ] && [ ! -e "$STUBLOG" ] && ok "fullsuite_resume refuses (65) a missing dir / an all-green run BEFORE anything is queued" || bad "helper refusals rc=$r1/$r2"
+# NEVER AUTOMATIC: no automatic component names the resume entry points
+auto=$(command grep -ln 'fullsuite_resume\|--resume' "$here/queuemon" "$here/queuewatch" "$here/boxqueue" "$here/battery.sh" "$here/monread" 2>/dev/null)
+[ -z "$auto" ] && ok "never automatic: queuemon, queuewatch, boxqueue, battery.sh and monread do not reference the resume entry points" || bad "automatic reference in: $auto"
+
+# no real stage ever ran
+[ ! -s "$T/shim.calls" ] && ok "no make/gcc/cc was ever called" || bad "a REAL command ran: $(head -3 "$T/shim.calls")"
+
+# 8. PLANT S1600: a job with the green-record check disabled accepts a lying summary -> the refusal row can go red
+P=$T/plant; mkdir -p "$P/scripts" "$P/tests/lib"; cp "$here/battery.sh" "$here/fullsuite_job.sh" "$here/boxlock" "$P/scripts/"; cp "$here"/../tests/lib/*.sh "$P/tests/lib/"
+python3 - "$P/scripts/fullsuite_job.sh" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+a = 'is_green "$s" || refuse "summary.txt names $s green but no run has a green record for it"'
+assert s.count(a) == 1, "anchor"
+open(p, "w").write(s.replace(a, 'true'))
+PY
+if [ $? = 0 ]; then
+    D=$(mk_parent plant_lie "test=0 strict=0 axes=2"); sed -i 's/^== stage strict rc=0 END.*//' "$D/trailer.log"
+    out=$(bash "$P/scripts/fullsuite_job.sh" --simulate green --resume "$D" --dry-run 2>&1); rc=$?
+    [ "$rc" = 0 ] && ok "PLANT S1600 (green-record check disabled): the lying summary is accepted, so the refusal check above can go red" || bad "PLANT not caught: rc=$rc $out"
+else bad "plant did not land (anchor moved?)"; fi
+
+echo "fullsuite_resume.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

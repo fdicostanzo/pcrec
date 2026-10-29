@@ -1,0 +1,12 @@
+# tests/code/t2/t2.rxt — the T2 check (docs/design/inline_c.md §5.7): a code
+# segment in a section WITHOUT the opt-in. This directory has no
+# harness.manifest, so the harness compiles the block with no grant and pcrec
+# must refuse it; the block expects that refusal (`perr`). Sabotage S-IC9
+# (the opt-in check removed) compiles the segment and this block goes red.
+pattern a(?C`c: return RX_PASS;`)b
+perr
+
+# ...and `features all` does not grant it either (S-IC28).
+pattern a(?C`c: return RX_PASS;`)b
+features all
+perr

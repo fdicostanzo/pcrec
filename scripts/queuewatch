@@ -1,0 +1,368 @@
+#!/usr/bin/env bash
+# queuewatch — the box queue's ONE event watcher ([MONITOR-QUEUE], lane monwatch, 2026-10-24).
+# Watches the WHOLE scripts/boxqueue queue and every job's battery trailer and prints ONE line per
+# event, then exits, so a caller (the standing /pcrec-monitor session) wakes exactly once per event.
+# Why not a watchrun mode: watchrun follows ONE log and keeps no memory between launches. The first
+# full-suite run (20261023_5596c3207) lost events three ways — a stage-END shape the watcher did not
+# match, an END landing between two capped launches that the next launch folded into its baseline,
+# and a model keeping its own "seen" list. What has been reported is STATE, so it lives here, in a
+# file; the model only acts on the lines this script prints.
+#
+#   scripts/queuewatch [--queue DIR] [--state FILE] [--every S] [--max-sec S] [--quiet-sec S]
+#                      [--stuck-sec S] [--wait-long-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
+#   --queue DIR     the queue (default: `boxqueue path`, honouring PCREC_BOXQUEUE_DIR)
+#   --state FILE    the reported-events file (default DIR/.queuewatch/state); one watcher per state
+#                   (flock: a second is refused, exit 75)
+#   --every S 15    poll;  --max-sec S 3000  stop and exit 6 (CAP) before a caller's timeout —
+#                   the sleep itself is cut to the time left, so the bound holds to the second
+#   --quiet-sec 1800  no growth of ANY file in a STARTED job's dir (not only job.log: perfrun jobs write job.log.make) and the
+#                   battery's logdir, AND no CPU in the process trees of the job's pid file / battery.pid: a QUIET episode
+#   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK; counted from when the job became READY
+#                   (the runner's first non-not-ready answer in queue.log), not from when it was queued
+#   --wait-long-sec 1800  a box-lock WAITER (scripts/boxlock waiters; yielding or waiting) this long: WAIT-LONG
+#   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
+#   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
+#   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
+#                   launches (env CI_EVERY); --no-ci (env QUEUEWATCH_NO_CI=1) turns the CI source off
+#
+# THE LINES (exit 0 after each; prefix `queuewatch: `), in the order they are raised:
+#   JOB-START NAME owner=O <date>
+#   STAGE-END NAME STAGE rc=N logdir=D each trailer `== stage S rc=N END` (battery) or
+#                                      `== stage S END rc=N` (chainrun), found via the job's
+#                                      `== logdir DIR` line (scripts/fullsuite_job.sh prints it)
+#   JOB-DONE NAME outcome=O rc=R verdict=V wall=Ws [reds=S(rc=N)..] [logdir=D]
+#   CANCELLED NAME rc=R wall=Ws [by-owner] [logdir=D] | CANCELLED NAME (never ran) :: <why>   the job ended
+#                                      outcome=cancelled: `boxqueue cancel` of a pending or RUNNING job, a work exit 77, a bench
+#                                      .cancel. INFORMATIONAL (a deliberate stop is not a red); never JOB-DONE, never RED.
+#   QUIET NAME no log growth or CPU for Ns :: last: <trailer line>   (a bench RESERVATION NNN-bench-W: the placeholder
+#                                      idles by design, so growth of the bench's own log (params log=) and of the `output`
+#                                      file its last `chain pid/pgid N, output P` line names, and the CPU of N's tree, count)
+#   RUNNER-DEAD runner not live with N pending / M running job(s) :: <runner.pid>
+#   PENDING-STUCK NAME pending for Ns, nothing running [(queued Qs ago, ready for Ns)] :: <the runner's last answer>
+#                                      not for a job with a DECLARED time gate (`boxqueue: not-before T`) while now < T; its age counts from T.
+#                                      Every other not-ready answer (a failed `after KEY`, a broken --ready) ages as usual.
+#   WAIT-LONG LABEL pid=N waited=Mm holder=LABEL   a `boxlock run` has waited past --wait-long-sec (default 30 min) for the
+#                                      box lock (or yielding to a ready queue job; holder=none then). ONCE per waiter (episode =
+#                                      pid+starttime): a 3 h wait is one alert, not six. Owner = the waiter's lane/session (the
+#                                      label is `<lane>-<what>`). The lock is found from the queue (<lock dir>/.box.lock beside
+#                                      .boxqueue) unless PCREC_BOXLOCK_FILE is set, so a scratch queue never sees the real waiters.
+#   DISK-HIGH <fs> at P% (>= T%)
+#   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
+#   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
+#                                          is still running or queued (a push cancels the running job; a
+#                                          cancel superseded by a later run is not an event). Green: silent.
+#   CI-UNAVAILABLE <reason>                gh missing / not logged in / network / unreadable answer; once,
+#                                          re-armed when gh works again; never stops the queue events
+# Other exits: 6 CAP (nothing new in --max-sec: relaunch), 2 queue missing, 64 usage, 75 state in use.
+#
+# STATE: every reported event's ID is appended to the state file BEFORE the line is printed, and an
+# event whose ID is in the file is never printed again, so a relaunch between or during events
+# neither misses nor repeats one. Lifecycle events (START/STAGE-END/DONE) come from queue.log and the
+# trailers, which are append-only, so they replay in order. The FIRST launch (no state file) seeds the
+# state with EVERY event present (history is not news: all START/END lines, abandoned or repeated STARTs of
+# restarted jobs, old trailers) EXCEPT the run in progress: a job in running/ keeps its LAST START (nothing
+# after it) and that run's stage ENDs unseen, so its future stages and JOB-DONE (and the START, if not yet
+# reported) still surface. A START is reported only when it is a real run: one followed by `stays pending` (the box lock
+# was held) is abandoned, and the newest START with nothing after it waits for running/NAME/started. Run k of a job is its k-th real START (one followed by its END, or the started one) and k-th END. Conditions (QUIET, RUNNER-DEAD, PENDING-STUCK, DISK-HIGH) are episodes: the
+# ID names the episode (QUIET: the last-change epoch; RUNNER-DEAD: the runner.pid it died with;
+# DISK-HIGH and RUNNER-DEAD are forgotten when the condition clears), so a new episode reports again.
+# QUIET's last-change record per job sits beside the state file (state.sig.NAME).
+# CI: the same state file. The FIRST successful gh answer (even on a later launch, if gh was down at the
+# first) is the baseline: the runs it already shows are history and are marked, never reported. The last
+# answer's events sit in state.ci.out (replayed until reported, so two events from one answer both
+# surface despite --ci-every) and the last ask time in state.ci.last.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 waitlong=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --queue) Q=$2; shift 2 ;; --state) state=$2; shift 2 ;; --every) every=$2; shift 2 ;;
+        --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;; --wait-long-sec) waitlong=$2; shift 2 ;;
+        --disk-pct) diskp=$2; shift 2 ;; --confirm) confirm=$2; shift 2 ;;
+        --ci-every) ci_every=$2; shift 2 ;; --no-ci) noci=1; shift ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        *) echo "queuewatch: unknown argument $1" >&2; exit 64 ;;
+    esac
+done
+[ -n "$Q" ] || Q=$(bash "$here/boxqueue" path 2>/dev/null)
+[ -d "${Q:-/nonexistent}" ] || { echo "queuewatch: NOT ARMED: no queue directory '${Q:-}'" >&2; exit 2; }
+[ -n "$state" ] || state=$Q/.queuewatch/state
+mkdir -p "$(dirname "$state")" || exit 2
+exec 9>>"$state.lock"
+flock -n 9 || { echo "queuewatch: another watcher holds $state" >&2; exit 75; }
+t_start=$(date +%s)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null; TO=${TIMEOUT_BIN:-timeout}
+
+pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
+tree_cpu() { # tree_cpu PID [1 = leave PID's own CPU out: its polling loop, not the job's work]. utime+stime+cutime+cstime ticks of PID and its descendants (cutime/cstime = reaped children: short-lived forks leave no live CPU); empty if unreadable
+    [ -n "${1:-}" ] && [ -r /proc/self/stat ] || return 0
+    local f s
+    for f in /proc/[0-9]*/stat; do s=$(<"$f") 2>/dev/null || continue; printf '%s %s\n' "${f//[!0-9]/}" "${s##*) }"; done 2>/dev/null |
+        awk -v root="$1" -v skip="${2:-0}" '{pp[$1] = $3; cpu[$1] = $13 + $14 + $15 + $16} END {
+            for (p in pp) { q = p; for (i = 0; i < 64 && q != "" && q != 0; i++) { if (q == root) { if (!skip || p != root) t += cpu[p]; break } q = pp[q] } }
+            print t + 0 }'
+}
+runner_live() { [ -f "$Q/.runner.lock" ] && ( exec 7>>"$Q/.runner.lock" && ! flock -n 7 ) 2>/dev/null; }
+seen() { grep -qxF -- "$1" "$state" 2>/dev/null; }
+mark() { printf '%s\n' "$1" >> "$state"; }
+forget() { [ -f "$state" ] && { grep -vF -- "$1" "$state" > "$state.tmp"; mv "$state.tmp" "$state"; }; return 0; }
+
+# job_dirs NAME: the run dirs of NAME in start order (ended ones by their TS prefix, then the running one)
+job_dirs() {
+    local d n
+    for d in "$Q"/done/*-"$1" "$Q"/failed/*-"$1"; do [ -d "$d" ] && printf '%s %s\n' "${d##*/}" "$d"; done | LC_ALL=C sort | cut -d' ' -f2
+    [ -d "$Q/running/$1" ] && printf '%s\n' "$Q/running/$1"
+}
+logdir_of() { sed -n 's/^== logdir //p' "$1/job.log" 2>/dev/null | head -1; }
+stage_ends() { # stage_ends TRAILER: `STAGE RC` per END line, either shape
+    sed -nE 's/^== stage ([^ ]+) rc=([0-9]+) END.*/\1 \2/p; s/^== stage ([^ ]+) END rc=([0-9]+).*/\1 \2/p' "$1" 2>/dev/null
+}
+
+# start_runs: `LINENO REAL OPEN` per START line of queue.log. A job that is not ready is logged START and put back
+# to pending, so one job can carry hundreds of STARTs and one END (live 2026-10-24: 342 STARTs, 151 ENDs). boxqueue logs
+# START BEFORE it knows whether the box lock is free, then `  job N waiting on ...; stays pending` (or `CHANGED in
+# pending/` after taking it); only a START followed by its END is a run. REAL=1 when the START is followed by its END
+# or by nothing yet for that job (undecided); a START followed by another START, a `stays pending` or a `CHANGED` line
+# is an abandoned attempt (REAL=0). OPEN=1 when nothing follows it: the caller decides it by running/NAME/started.
+start_runs() {
+    grep -nE '^(== job [^ ]+ (START|END) |  job [^ ]+ (waiting on .*; stays pending|CHANGED in pending/))' "$Q/queue.log" | awk '
+        { ln = $0; sub(/:.*/, "", ln); body = substr($0, length(ln) + 2)
+          if (body ~ /^== job /) { split(substr(body, 8), f, " "); name = f[1]; kind = f[2] }
+          else { split(substr(body, 7), f, " "); name = f[1]; kind = "ABANDON" }
+          if (kind == "START") { if (name in prev) { r[prev[name]] = 0; o[prev[name]] = 0 } prev[name] = ln; r[ln] = 0; o[ln] = 0; order[++n] = ln }
+          else if (kind == "ABANDON") { if (name in prev) { r[prev[name]] = 0; o[prev[name]] = 0; delete prev[name] } }
+          else if (name in prev) { r[prev[name]] = 1; delete prev[name] } }
+        END { for (name in prev) { r[prev[name]] = 1; o[prev[name]] = 1 }
+              for (i = 1; i <= n; i++) print order[i], r[order[i]], o[order[i]] }'
+}
+
+# lifecycle: print `ID<TAB>CLOSED<TAB>LINE` for every lifecycle event in order. CLOSED=1 unless the event belongs to the run
+# in progress (the job's last START, nothing after it, the job in running/): the first launch marks every CLOSED event
+# as history, so only a job running at that moment has news. Run k of a job (its k-th REAL start, its k-th END) is the
+# k-th of job_dirs.
+lifecycle() {
+    [ -f "$Q/queue.log" ] || return 0
+    local line ln kind name k dir ld tr st rc seq reds closed real open
+    local -A nrun=() nend=() isreal=() isopen=()
+    while read -r ln real open; do isreal[$ln]=$real isopen[$ln]=$open; done < <(start_runs)
+    while IFS= read -r line; do
+        ln=${line%%:*}; line=${line#*:}
+        case "$line" in
+            "== job "*" START "*)
+                name=${line#== job }; name=${name%% *}
+                # an abandoned attempt is not a run; the newest START with nothing after it is held until the lock is ours
+                [ "${isreal[$ln]:-0}" = 1 ] || continue
+                closed=1
+                if [ "${isopen[$ln]:-0}" = 1 ]; then [ -e "$Q/running/$name/started" ] || continue; closed=0; fi
+                k=$(( ${nrun[$name]:-0} + 1 )); nrun[$name]=$k; dir=$(job_dirs "$name" | sed -n "${k}p")
+                printf 'S|%s\t%s\tJOB-START %s owner=%s %s\n' "$line" "$closed" "$name" "$(sed -n 's/.* owner=\([^ ]*\).*/\1/p' <<<"$line")" "${line##* }"
+                ld=""; [ -n "$dir" ] && ld=$(logdir_of "$dir")
+                if [ -n "$ld" ] && [ -f "$ld/trailer.log" ]; then
+                    while read -r st rc; do
+                        printf 'E|%s|%s|%s\t%s\tSTAGE-END %s %s rc=%s logdir=%s\n' "$ld" "$st" "$rc" "$closed" "$name" "$st" "$rc" "$ld"
+                    done < <(stage_ends "$ld/trailer.log")
+                fi
+                ;;
+            "== job "*" END "*)
+                name=${line#== job }; name=${name%% *}
+                k=$(( ${nend[$name]:-0} + 1 )); nend[$name]=$k; dir=$(job_dirs "$name" | sed -n "${k}p")
+                reds="" ld=""
+                if [[ $line == *" outcome=cancelled "* ]]; then
+                    [ -n "$dir" ] && ld=$(logdir_of "$dir")
+                    printf 'D|%s\t1\tCANCELLED %s rc=%s wall=%s%s%s\n' "$line" "$name" "$(sed -n 's/^== job [^ ]* END rc=\([^ ]*\).*/\1/p' <<<"$line")" \
+                        "$(sed -n 's/.* wall=\([^ ]*\).*/\1/p' <<<"$line")" "$([[ $line == *CANCELLED-BY-OWNER* ]] && echo ' by-owner')" "${ld:+ logdir=$ld}"
+                    continue
+                fi
+                if [ -n "$dir" ]; then ld=$(logdir_of "$dir"); [ -n "$ld" ] && reds=$(stage_ends "$ld/trailer.log" | awk '$2 != 0 { printf " %s(rc=%s)", $1, $2 }'); fi
+                printf 'D|%s\t1\tJOB-DONE %s outcome=%s rc=%s verdict=%s wall=%s%s\n' "$line" "$name" \
+                    "$(sed -n 's/.* outcome=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/^== job [^ ]* END rc=\([^ ]*\).*/\1/p' <<<"$line")" \
+                    "$(sed -n 's/.* verdict=\([^ ]*\).*/\1/p' <<<"$line")" "$(sed -n 's/.* wall=\([^ ]*\).*/\1/p' <<<"$line")" "${reds:+ reds=${reds# }}${ld:+ logdir=$ld}"
+                ;;
+            "  job "*" ENDED WITHOUT RUNNING "*)
+                name=${line#  job }; name=${name%% *}
+                if [[ $line == *" outcome=cancelled "* ]]; then
+                    st=${line#* :: }; st=${st%% :: *}
+                    printf 'D|%s\t1\tCANCELLED %s (never ran) :: %s\n' "$line" "$name" "$st"; continue
+                fi
+                printf 'D|%s\t1\tJOB-DONE %s %s (never ran)\n' "$line" "$name" "$(sed -n 's/.*\(outcome=[^ ]*\).*/\1/p' <<<"$line")"
+                ;;
+        esac
+    done < <(grep -nE '^(== job [^ ]+ (START|END) |  job [^ ]+ ENDED WITHOUT RUNNING )' "$Q/queue.log")
+}
+
+# ready_since NAME: epoch of the pass in which the runner first answered NAME other than not-ready, counted from the last
+# not-ready answer or `== add` (ready or waiting on the box lock = the job's own wait, not a dependency's). Pass times come
+# from the `== pass N START <ts>` headers; nothing printed when queue.log has no such answer.
+ready_since() {
+    local ts
+    ts=$(awk -v job="$1" '
+        /^== pass [0-9]+ START / { pt = $5; next }
+        $1 == "==" && $2 == "add" && $3 == job { r = ""; next }
+        $1 == "pass" && $3 == job { a = $4
+            if (a == "not-ready:" || a == "READY-HUNG:") r = ""; else if (r == "" && a != "requeue") r = pt }
+        END { print r }' "$Q/queue.log" 2>/dev/null)
+    [ -n "$ts" ] && date -d "$ts" +%s 2>/dev/null
+}
+
+# conditions: print `ID<TAB>0<TAB>LINE` for each current condition episode; forget the episodes that cleared.
+conditions() {
+    local now rp npend nrun n d name ld tr sig prev pe since k ans age pct fs jp jt jt0 jn0 blog bpid bout bt l
+    now=$(date +%s)
+    npend=$(ls -p "$Q/pending" 2>/dev/null | grep -vc /); nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
+    # RUNNER-DEAD
+    if [ $((npend + nrun)) -gt 0 ] && ! runner_live; then
+        sleep "$confirm" 9>&-
+        npend=$(ls -p "$Q/pending" 2>/dev/null | grep -vc /); nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
+        if [ $((npend + nrun)) -gt 0 ] && ! runner_live; then
+            rp=$(cat "$Q/runner.pid" 2>/dev/null || echo "no runner.pid")
+            printf 'C|runner-dead|%s\t0\tRUNNER-DEAD runner not live with %s pending / %s running job(s) :: %s\n' "$rp" "$npend" "$nrun" "$rp"
+        fi
+    else forget 'C|runner-dead|'; fi
+    # QUIET, per running job. A job dir without `started` is the runner WAITING for the box lock (the job is still pending:
+    # boxqueue puts running/NAME up, takes the lock, and removes it again if the lock is held), not a run.
+    for d in "$Q"/running/*/; do
+        [ -d "$d" ] || continue; d=${d%/}; name=${d##*/}; [ -e "$d/started" ] || continue
+        ld=$(logdir_of "$d"); tr=$ld/trailer.log
+        # A BENCH RESERVATION (NNN-bench-W, scripts/boxqueue_window) idles by design: the bench's work runs in its own process
+        # tree. So its liveness is read from the bench's own files, PARSED never sourced (BD2): the params file's log= (QUEUE/
+        # .bench/KEY.params, written by boxqueue's importer), that log's last `chain pid/pgid N, output PATH` line (the CPU of
+        # N's tree, and the output file's growth), and the log's own growth. Anything unreadable adds nothing: only the old signals.
+        blog="" bpid="" bout=""
+        if [[ $name == *-bench-* ]] && [ -f "$Q/.bench/${name#*-}.params" ]; then
+            blog=$(sed -n 's/^log=//p' "$Q/.bench/${name#*-}.params" | head -1)
+            if [ -r "$blog" ]; then
+                l=$(grep -a 'chain pid/pgid [0-9]' "$blog" | tail -1)
+                bpid=$(sed -n 's/.*chain pid\/pgid \([0-9][0-9]*\).*/\1/p' <<<"$l")
+                bout=$(sed -n 's/.*chain pid\/pgid [0-9]*, output \([A-Za-z0-9_.\/-]*\).*/\1/p' <<<"$l")
+            else blog=""; fi
+            [ -n "$blog" ] && [ -z "$ld" ] && tr=$blog    # the message's `last:` line is the bench's own
+        fi
+        # growth = ANY file in the job dir (job.log, but also perfrun's job.log.make, or whatever log the job's `expect` names;
+        # not the runner's own idle/idle.seen marks) + the battery's logdir; CPU = the battery's process tree (exact change,
+        # as before) and, for jobs with no battery.pid (perfrun), the job's own pid-file tree as a RATE (5% of a core, boxqueue's own idle threshold, UNMEASURED here; env QUEUEWATCH_CPU_PCT): a wrapper's wait
+        # loop (grep + sleep forks) also adds CPU, so only >= $cpupct ticks per second of the interval since the last look
+        # counts as work. `started` is in the signature: a new run is a new episode.
+        sig=$( { for f in "$d"/*; do case ${f##*/} in idle|idle.seen) ;; *) stat -c '%n %s %Y' "$f" 2>/dev/null ;; esac; done
+                cat "$d/started" 2>/dev/null
+                [ -n "$blog" ] && stat -c '%n %s %Y' "$blog" ${bout:+"$bout"} 2>/dev/null
+                if [ -n "$ld" ]; then stat -c %s "$tr" "$ld"/*.log 2>/dev/null; while read -r p; do tree_cpu "$p"; done < <(cat "$ld/battery.pid" 2>/dev/null); fi; } | tr '\n' ' ')
+        jp=$(cut -d' ' -f1 "$d/pid" 2>/dev/null); jt=0; [ -n "$jp" ] && jt=$(tree_cpu "$jp"); jt=${jt:-0}
+        if [ -n "$bpid" ] && [ -d "/proc/$bpid" ]; then bt=$(tree_cpu "$bpid"); jt=$((jt + ${bt:-0})); fi
+        pe=$state.sig.$name
+        if [ -f "$pe" ] && [ "$(sed -n 1p "$pe")" = "$sig" ]; then
+            since=$(sed -n 2p "$pe"); jt0=$(sed -n 3p "$pe"); jn0=$(sed -n 4p "$pe")
+            if [ -n "$jt0" ] && [ -n "$jn0" ] && [ $((jt - jt0)) -ge $((cpupct * (now - jn0))) ] && [ "$now" -gt "$jn0" ]; then since=$now; fi
+        else since=$now; fi
+        printf '%s\n%s\n%s\n%s\n' "$sig" "$since" "$jt" "$now" > "$pe"
+        if [ $((now - since)) -ge "$quiet" ]; then
+            printf 'C|quiet|%s|%s\t0\tQUIET %s no log growth or CPU for %ss :: last: %s\n' "$name" "$since" "$name" "$((now - since))" \
+                "$(tail -1 "${tr}" 2>/dev/null | cut -c1-160)"
+        fi
+    done
+    # PENDING-STUCK: nothing running, the oldest pending job has waited past --stuck-sec
+    if [ "$nrun" = 0 ] && [ "$npend" -gt 0 ]; then
+        n=$(ls -p "$Q/pending" | grep -v / | LC_ALL=C sort | head -1); k=${n#*-}
+        ans=$(cat "$Q/.state/$k.answer" 2>/dev/null || echo 'no answer recorded')
+        queued=$(cat "$Q/.state/$k.since" 2>/dev/null || stat -c %Y "$Q/pending/$n")
+        # A job that WAITED on a dependency was queued long before it was ready; its wait is not the box's idleness.
+        # Age counts from the runner's first ready/waiting-on answer (ready_since), when queue.log has one.
+        since=$queued; rdy=""
+        case $ans in not-ready:*|READY-HUNG*|"no answer recorded") ;; *) rdy=$(ready_since "$n"); [ -n "$rdy" ] && since=$rdy ;; esac
+        age=$((now - since))
+        # A job with a DECLARED TIME GATE (`boxqueue: not-before T` in its dry run, kept in QUEUE/.state/KEY.decl) is waiting by
+        # declaration until T, so its age counts from T (negative before it: never stuck). Every other not-ready answer (`after KEY`
+        # whose KEY failed, a broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
+        nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
+        if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi
+        if [ "$age" -ge "$stuck" ]; then
+            printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
+                "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
+        fi
+    fi
+    # WAIT-LONG: one event per box-lock waiter past --wait-long-sec (episode = pid+starttime; never forgotten, so it is once)
+    local wl wl_f wl_pid wl_start wl_label wl_epoch wl_holder
+    wl_f=${PCREC_BOXLOCK_FILE:-$(dirname "$Q")/.box.lock}
+    if [ -d "$(dirname "$wl_f")/.box.lock.waiters" ]; then
+        while IFS= read -r wl; do
+            [ -n "$wl" ] || continue
+            wl_pid=$(sed -n 's/.* pid=\([0-9]*\).*/\1/p' <<<"$wl"); wl_start=$(sed -n 's/.* start=\([0-9]*\).*/\1/p' <<<"$wl")
+            wl_label=$(sed -n 's/.* label=\([^ ]*\).*/\1/p' <<<"$wl"); wl_epoch=$(sed -n 's/.* epoch=\([0-9]*\).*/\1/p' <<<"$wl")
+            wl_holder=$(sed -n 's/.* holder=\([^ ]*\).*/\1/p' <<<"$wl")
+            [ -n "$wl_epoch" ] && [ $((now - wl_epoch)) -ge "$waitlong" ] || continue
+            printf 'C|waitlong|%s|%s\t0\tWAIT-LONG %s pid=%s waited=%sm holder=%s\n' "$wl_pid" "$wl_start" "$wl_label" "$wl_pid" "$(( (now - wl_epoch) / 60 ))" "$wl_holder"
+        done < <(PCREC_BOXLOCK_FILE=$wl_f bash "$here/boxlock" waiters 2>/dev/null)
+    fi
+    # DISK-HIGH
+    read -r fs pct < <(df -P "$Q" | awk 'NR == 2 { gsub("%", "", $5); print $1, $5 }')
+    if [ "${pct:-0}" -ge "$diskp" ]; then printf 'C|disk\t0\tDISK-HIGH %s at %s%% (>= %s%%)\n' "$fs" "$pct" "$diskp"
+    else forget 'C|disk'; fi
+}
+
+# ci: print `ID<TAB>0<TAB>LINE` for the CI events of the last gh answer (oldest first), asking gh when due.
+CI_PY='
+import sys, json
+runs = sorted(json.load(sys.stdin), key=lambda r: r["createdAt"], reverse=True)
+done = [r for r in runs if r["status"] == "completed"]
+newest = done[0] if done else None
+ev = []
+for r in done:
+    c = r["conclusion"]
+    if c in ("failure", "timed_out", "startup_failure"): kind = "red"
+    elif c == "cancelled" and r is newest and all(x["status"] == "completed" for x in runs if x["createdAt"] > r["createdAt"]): kind = "cancelled"
+    else: continue
+    ev.append("ci|%s|%s\t0\tCI-%s %s %s %s" % (kind, r["databaseId"], kind.upper(), r["headSha"][:9], r["databaseId"], " ".join(str(r["displayTitle"]).split())))
+print("\n".join(reversed(ev)))
+'
+ci() {
+    [ "$noci" = 1 ] && return 0
+    local now last out rc ev id rest reason
+    now=$(date +%s); last=$(cat "$state.ci.last" 2>/dev/null || echo 0)
+    if [ $((now - last)) -ge "$ci_every" ]; then
+        echo "$now" > "$state.ci.last"
+        if ! command -v gh >/dev/null 2>&1; then rc=127 out="gh not installed"
+        else out=$(cd "$here/.." && "$TO" 60 gh run list --branch main --limit 20 --json databaseId,headSha,status,conclusion,createdAt,displayTitle 2>&1 9>&-); rc=$?; fi
+        if [ "$rc" = 0 ]; then ev=$(printf '%s' "$out" | python3 -I -c "$CI_PY" 2>/dev/null) || { rc=65; out="unreadable gh output"; }; fi
+        if [ "$rc" != 0 ]; then
+            reason=$(printf '%s' "$out" | head -1 | cut -c1-160); [ "$rc" = 124 ] && reason="gh timed out"
+            printf 'C|ci-unavail\t0\tCI-UNAVAILABLE %s\n' "${reason:-gh failed rc=$rc}" > "$state.ci.out"
+        else
+            forget 'C|ci-unavail'
+            if ! seen 'ci|baseline'; then    # the first answer is history
+                while IFS=$'\t' read -r id rest; do [ -n "$id" ] && mark "$id"; done <<<"$ev"
+                mark 'ci|baseline'; ev=""
+            fi
+            printf '%s\n' "$ev" | sed '/^$/d' > "$state.ci.out"
+        fi
+    fi
+    cat "$state.ci.out" 2>/dev/null
+    return 0
+}
+
+pick() { # pick: the first event not yet reported, as ID<TAB>LINE (nothing if none)
+    local id closed line all
+    all=$(lifecycle; conditions; ci)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
+    while IFS=$'\t' read -r id closed line; do
+        [ -n "$id" ] || continue
+        seen "$id" && continue
+        printf '%s\t%s\n' "$id" "$line"; return 0
+    done <<<"$all"
+}
+# the FIRST launch seeds the state with the events of jobs that had already ended
+if [ ! -f "$state" ]; then
+    : > "$state"
+    all=$(lifecycle)
+    while IFS=$'\t' read -r id closed line; do [ "$closed" = 1 ] && mark "$id"; done <<<"$all"
+fi
+
+while :; do
+    left=$((maxs - ($(date +%s) - t_start)))
+    if [ "$left" -le 0 ]; then echo "queuewatch: CAP watched ${maxs}s, nothing new — relaunch"; exit 6; fi
+    ev=$(pick)
+    if [ -n "$ev" ]; then
+        mark "${ev%%$'\t'*}"
+        echo "queuewatch: ${ev#*$'\t'}"; exit 0
+    fi
+    left=$((maxs - ($(date +%s) - t_start))); [ "$left" -le 0 ] && continue
+    s=$every; [ "$left" -lt "$s" ] && s=$left
+    sleep "$s" 9>&-    # not holding the state lock: a SIGKILLed watcher must free it at once
+done

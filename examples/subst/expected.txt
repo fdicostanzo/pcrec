@@ -1,0 +1,11 @@
+num:   3 due 2025.12.25, paid 2026.01.01, closed 2026.01.31.
+size:  3 51
+short: -11 51
+nomap: -16
+iso:   3 due 2025-12-25, paid 2026-01-01, closed 2026-01-31.
+next:  due 2025-12-25, paid 2026-01-01, closed 2026-01-31. (0)
+first: due 2025-12-25, paid 01/01/2026, closed 31/01/2026. (0)
+batch: 0 due 2025.12.25, paid 2026.01.01, closed 2026.01.31.
+each: 2025.12.25
+each: 2026.01.01
+each: 2026.01.31

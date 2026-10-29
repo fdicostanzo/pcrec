@@ -1,0 +1,8 @@
+# match_api.md §11.9¶8 / cli.md §1.22¶1: code in a definition read from
+# another file (lib) is refused even with the grant.
+lib "lib_def.rxt"
+target t = user
+
+pattern x(?&def)y
+name user
+features recursion,named-groups

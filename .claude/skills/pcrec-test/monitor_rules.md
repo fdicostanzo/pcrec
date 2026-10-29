@@ -1,5 +1,8 @@
 # pcrec-test monitor rules (first match wins; each fix at most ONCE per run)
 
+SUPERSEDED 2026-10-24 by .claude/skills/pcrec-monitor/SKILL.md (scripts/queuewatch). Rows 1/5/6 below assume a
+watchrun that fires on battery stage ENDs and keeps no state across relaunches; kept as the older per-run table.
+
 | # | you see | do | then |
 |---|---|---|---|
 | 1 | watchrun exits with no line (its cap) | loop again | — |

@@ -206,6 +206,13 @@ Of PCRE2's syntax surface:
   pass. Their own annotations said "behind the gate" throughout — the
   status column and the annotation had been contradicting each other for
   three days, which is the pairing `--tension` does not check.
+- Module `callouts` ships `OK-GATED` ([INLINE-C] stage 1b, 2026-10-26):
+  `(?C)`, `(?Cn)` and `(?C"name")` call an extern binding the user's C
+  defines, VM only; the answer agrees with libpcre2 run with its
+  answer-moving optimizations off (see the Callouts section).
+- Module `code-c` ships `OK-GATED` ([INLINE-C] stage 2, 2026-10-27):
+  ``(?C`c: ...`)`` embeds C the artifact compiles, VM only, enabled only by
+  `--allow-code=c` (see the Callouts section).
 - Everything outside those modules is `REJECTED` — measured live at
   [M6.4.2] (2026-08-22, module `atomic-groups`) from
   `tests/reject/run_reject_tests.sh`'s own summary,
@@ -484,9 +491,10 @@ earliest.
 | `\p{L}` `\p{Lu}` … (general categories) | `OK-GATED` | a code-point interval set, lowered per encoding |
 | `\p{L&}` `\p{Lc}` `\p{Any}` | `OK-GATED` | as above |
 | `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `OK-GATED` | as above |
-| `\p{<binary property>}` | `REJECTED` | — |
+| `\p{<binary property>}` (55 properties: `Alphabetic`, `Emoji`, `Default_Ignorable_Code_Point`, `White_Space`, … and `ASCII`) | `OK-GATED` | a code-point interval set, lowered per encoding; `Bidi_Mirrored` is the UCD's own 554 code points where libpcre2 10.46 has 428 (`upstream_issues.md` U22) |
 | `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `OK-GATED` | a code-point interval set, lowered per encoding; the bare and `scx` spellings are `Script \| Script_Extensions`, `sc` is `Script` alone |
-| `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — |
+| `\p{Bidi_Class:..}` `\p{BC:..}` `\p{bc=..}` | `OK-GATED` | the 23 short value names only, as PCRE2 (the long ones are refused by both) |
+| `\p{Block=..}` `\p{blk:..}` `\p{Age=..}` | `OK-GATED` | a pcrec EXTENSION beyond PCRE2 (D178): libpcre2 refuses both prefixes; a code-point interval set from `Blocks.txt` / `DerivedAge.txt`; `Age=V` is exactly the version of first assignment |
 | `\p{Assigned}` | `REJECTED` | — |
 
 **[M5.0] stage 5 (2026-09-09) built the SCRIPT row**, and it is not the
@@ -528,12 +536,23 @@ literal-alternation `altwide` witnesses. The sixteen `known_fail` blocks this
 parked are restored to their authored positions in `axis04_p_categories.rxt`
 and `axis12_scripts.rxt`.
 
-The remaining `REJECTED` rows are deliberate, not blocked: the binary-property
-and `Bidi_Class` families are declined by design (`utf8_design.md` §3.4, no
-measured demand),
-and `\p{Assigned}` is refused by every libpcre2 this project can reach
-(measured error 147 on 10.42, 10.46 and 10.48) although the design's own §3.1
-survey lists it as accepted — `\P{Cn}` is the same set on all three.
+**[UPROP-MORE] (2026-10-24, lane upropb) built the binary-property and
+`Bidi_Class` rows**, which stage 3 had declined for want of measured demand,
+plus the two extensions D178 ruled in. Measured against libpcre2 10.46 over
+the whole code-point space: 77 of 78 new names agree EXACTLY (55 binary
+properties incl. `ASCII`, 23 `bc=` values); the one exception is
+`Bidi_Mirrored` (upstream_issues.md U22). The data is the vendored Unicode
+16.0.0 files named in `third_party/ucd-16.0.0/PROVENANCE.md` and the claim is
+only "properties as defined by the Unicode 16.0.0 data files" -- no
+conformance level (D178). The UCD binary properties libpcre2 refuses
+(`Hyphen`, `Other_*`, `Expands_On_*`, ...) stay refused. `Bidi_Class` takes
+SHORT value names only, as PCRE2. `Block` and `Age` are beyond PCRE2 and
+ride the same module gate.
+
+The remaining `REJECTED` row is deliberate, not blocked: `\p{Assigned}` is
+refused by every libpcre2 this project can reach (measured error 147 on
+10.42, 10.46 and 10.48) although the design's own §3.1 survey lists it as
+accepted — `\P{Cn}` is the same set on all three.
 
 All of these lower to byte-range sets over UTF-8, which APPROACH §4/§10 already
 commits to.
@@ -567,7 +586,7 @@ behavior, not oracle agreement, until then.
 M5.
 This annotation is keyed to `\p{L}` and covers the survey's general-
 category row (`\p{L}` `\p{Lu}` …). Three of the four rows beneath it in the
-same table (`\p{Xan}` etc., binary properties, `Bidi_Class`) carry no
+same table (`\p{Xan}` etc.) carry no
 distinct content of their own — each reads only "same" in the source
 prose, pointing back to this one. See the [DOC-DRV] migration manifest:
 those rows are disposition dropped-trivial, not silently omitted.
@@ -1991,7 +2010,8 @@ additionally requires reporting state back to the caller.
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?C)` `(?Cn)` `(?C"text")` | `REJECTED` | `PLANNED` |
+| `(?C)` `(?Cn)` `(?C"name")` | `OK-GATED` | — |
+| ``(?C`c: ...`)`` | `OK-GATED` (`--allow-code=c`) | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: callouts -->
 
@@ -2000,29 +2020,40 @@ additionally requires reporting state back to the caller.
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`(?C1)`** (2026-08-14)
+**`(?C1)`** (2026-10-26)
 
-**[M4-CALLOUTS] step 1 (D36, Frank, 2026-08-12; flipped 2026-08-14):**
-re-scoped from `OUT-OF-SCOPE` to `PLANNED`, module `callouts`, explicitly
-LOW priority — parked behind the M4 VM engine that hosts the behavior
-(callouts are engine-forcing like backrefs: the compiled DFA erases the
-pattern positions a callout fires at, so callout patterns compile to the
-VM engine only). The PATTERN layer (syntax, where callouts may appear) is
-D26-exact and PCRE2-compatible; the CALLBACK CONTRACT mirrors
-`pcre2_callout_block` field for field; the REGISTRATION API is
-pcrec-native (a compile-time-bound `extern` the embedding program
-defines, zero cost when absent) rather than a runtime
-`pcre2_set_callout`-style registration. The obstacle that kept this
-`OUT-OF-SCOPE` no longer applies as a permanent one: generated code's
-zero runtime dependency on pcrec is preserved by the static-extern
-binding, not by refusing the construct. Step 2 (the behavior itself) is
-not yet built — see `docs/dev/plan.md`'s `[M4-CALLOUTS]` row.
+**[INLINE-C] stage 1b (2026-10-26): BUILT, extern-bound.** `(?C)`,
+`(?Cn)` and `(?C"name")` (every PCRE2 string delimiter) compile, VM-only,
+to a call of `rx_callout_<n>` / `rx_callout_<name>`, an
+`extern const rx_callout_ref` the artifact's header declares and the user's
+C defines (docs/spec/match_api.md §11). The PATTERN layer is PCRE2's; the
+CALLBACK is pcrec's `rx_matchfn` over a read-only view (the subject, the
+position, every group's last closed value, slot 0 the attempt start), not
+`pcre2_callout_block`; the RETURN is pcrec's: 0 continues, -1 backtracks, a
+`consume` callee's positive return consumes that many bytes (no PCRE2
+form), a give-up code propagates. The answer is the backtracking-order
+answer: libpcre2 agrees with its answer-moving optimizations off
+(`PCRE2_NO_AUTO_POSSESS`, `PCRE2_NO_START_OPTIMIZE`,
+`PCRE2_NO_DOTSTAR_ANCHOR`), and at its default flags only where its answer
+does not depend on them (match_api.md §11.6 gives two measured cases).
+Fire counts are unspecified; each site's firing class is a structural
+bound. Embedded code is module `code-c` (the next entry); the `(?{...})`
+spelling is a later row ([SCANNER-DOGFOOD]).
 
-Module `callouts`, M4-hosted, VM-only (D36). Callback block and return
-semantics (0/positive/negative) mirror `pcre2_callout_block` field for
-field; fire-point precision is documented engine-relative, with PCRE2's
-own `PCRE2_NO_START_OPTIMIZE` latitude as the cited precedent that fire
-counts are not the contract.
+=== (?C`c: return RX_PASS;`)
+section: callouts
+date: 2026-10-27
+**[INLINE-C] stage 2 (2026-10-27): BUILT, module `code-c`, invoker-only.**
+``(?C`c: CODE`)`` (every PCRE2 string delimiter, PCRE2's end rule: a doubled
+delimiter is one byte) is PCRE2's own string callout; pcrec compiles CODE
+into the artifact as a function the site calls through the same return
+table as module `callouts` (docs/spec/match_api.md §11.9). The module is
+enabled only by `--allow-code=c` or the library's `allow_code`, never by a
+`features` text (`all` does not contain it). PCRE2 passes the same text to
+the application's callout function, so the two read the same bytes as the
+same pattern; tests/code/ checks its corpus against libpcre2 running the
+same code in its callout function. The `(?{...})` spelling is a later row
+([SCANNER-DOGFOOD]).
 
 <!-- END GENERATED -->
 
@@ -2030,7 +2061,9 @@ counts are not the contract.
 
 | syntax | status | becomes |
 |---|---|---|
-| `$1` `${n}` `$<name>` `$&` `` $` `` `$'` `$_` `$+` `$*MARK`, `\l \u \L \U \E` | `OUT-OF-SCOPE` | — |
+| `$1` `${n}` `$&` `` $` `` `$'` `$_` | `OK` | — |
+| `\l \u \L \U \E` | `OK-GATED` | — |
+| `$<name>` `$+` `$*MARK` | `REJECTED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: replacement-strings -->
 
@@ -2041,9 +2074,16 @@ counts are not the contract.
 
 **`base:replacement-strings`**
 
-pcrec compiles a MATCHER. It has no substitution API, and APPROACH does
-not propose one. Listed for completeness because pcre2syntax.html covers
-it; a substitution layer would be a separate product decision.
+A replacement template compiles to its own SUBST ARTIFACT (`pcrec --subst`,
+docs/spec/subst_api.md). The non-extended forms are module `subst`; the
+`PCRE2_SUBSTITUTE_EXTENDED` forms (`\l \u \L \U \E`, `${n:-text}`,
+`${n:+set:unset}`, `\Q..\E` and the escapes) are module `subst-extended`,
+selected by `--features subst-extended` (subst_api.md §2¶7). Both are held
+to libpcre2 10.46's pcre2_substitute by tests/subst/ and
+tests/subst-extended/ (2026-10-22), the case mapping over every code point
+libpcre2 maps. `$*MARK` and `${*MARK}` are refused (no pcrec artifact
+reports a mark name), as are `$<name>` and `$+`. The call-level
+differences from pcre2_substitute are subst_api.md §9.
 
 <!-- END GENERATED -->
 
@@ -2252,7 +2292,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 142 rows from one declarative table (D24), rendered as 103 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 144 rows from one declarative table (D24), rendered as 105 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2323,7 +2363,9 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) — also spelled `(*napla:a)`, `(*non_atomic_positive_lookahead:a)` |
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
-| after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
+| after `(?` | `(?C1)` | `REJECTED` | `built` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C"name") -- the engine calls rx_callout_<n> or rx_callout_<name> (extern, user-defined) at the site; VM-only |
+| after `(?` | `(?Cx)` | `AGREES-REJECT` | — | never | — | — | a malformed (?C: a bad string delimiter, a number above 255, or no closing parenthesis |
+| after `(?` | ``(?C`c: return RX_PASS;`)`` | `REJECTED` | `built` | planned | `code-c` | vm | embedded c code in a PCRE2 string callout, (?C`c: ...`): pcrec writes a function from the code and the engine calls it at the site; invoker-only (--allow-code=c); VM-only |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
 | after `(?` | `(?(DEFINE)(?<w>a))` | `REJECTED` | `built` | planned | `recursion` | dfa|vm | define-only group: the body never runs where it is written and exists to be called -- the same thing (?:BODY){0} means |

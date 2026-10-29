@@ -233,6 +233,8 @@ bool pcrec_ast_is_core(AKind k)
                       * and `\z` (the two pins; definitions_table.md §2: "\A
                       * is core") */
     case A_CALL:     /* DD-14 call, the path-fact family */
+    case A_CALLOUT:  /* [INLINE-C] 1b a callout site: a call out of the
+                      * pattern, which no other construct can stand for */
         return true;
     case A_EOL:      /* $/\Z's shipped alias — replaced away under full
                       * reduction (definitions_table.md §2) */
@@ -309,6 +311,25 @@ Ast *pcrec_def_build_identity(Ctx *cx, Ast *body)
  * this outside a test, or — bare `\x` — already validates its own digit
  * count before the definitions layer ever sees the operand). */
 
+/* The value of the digit run `s[0, len)` in `base` (8 or 16): -1 when the
+ * run is empty or holds a non-digit, and saturated at 0x7FFFFFFF so a long
+ * run cannot overflow. The ONE digit-run decode the definitions layer and
+ * the substitution-template parser (src/parse/subst_template.c) share; each
+ * caller applies its own ceiling. */
+long pcrec_esc_digits_value(const char *s, size_t len, int base)
+{
+    long v = 0;
+    if (len == 0) return -1;
+    for (size_t i = 0; i < len; i++) {
+        int d = base == 16 ? pcrec_hexval((unsigned char)s[i])
+              : s[i] >= '0' && s[i] < '0' + base ? s[i] - '0' : -1;
+        if (d < 0) return -1;
+        v = v * base + d;
+        if (v > 0x7FFFFFFFl) v = 0x7FFFFFFFl;
+    }
+    return v;
+}
+
 /* \cX ≡ X xor 0x40 (registry.c's own row note, ESC('c', ...)). `operand`
  * is exactly the one byte X.
  *
@@ -329,11 +350,16 @@ Ast *pcrec_def_build_identity(Ctx *cx, Ast *body)
  * host-side byte); a byte with no case (digits, punctuation) is
  * unaffected by `toupper`, so the fix changes only the previously-wrong
  * lower-case-letter cells. */
+int pcrec_esc_ctrl_value(int x)
+{
+    return (unsigned char)toupper((unsigned char)x) ^ 0x40;
+}
+
+/* `\cX`'s character node. */
 Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx)
 {
     if (len != 1) return NULL;
-    unsigned char x = (unsigned char)toupper((unsigned char)operand[0]);
-    return pcrec_ast_char(cx, (unsigned)(x ^ 0x40));
+    return pcrec_ast_char(cx, (unsigned)pcrec_esc_ctrl_value((unsigned char)operand[0]));
 }
 
 /* bare `\x` (2 hex digits, base tier, esc_char_value's own live rule) and
@@ -346,15 +372,8 @@ Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx)
  * function's to paper over silently. */
 Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx)
 {
-    if (len == 0) return NULL;
-    unsigned v = 0;
-    for (size_t i = 0; i < len; i++) {
-        int d = pcrec_hexval((unsigned char)operand[i]);
-        if (d < 0) return NULL;
-        v = v * 16 + (unsigned)d;
-        if (v > 0xFF) return NULL;
-    }
-    return pcrec_ast_char(cx, v);
+    long v = pcrec_esc_digits_value(operand, len, 16);
+    return v < 0 || v > 0xFF ? NULL : pcrec_ast_char(cx, (unsigned)v);
 }
 
 /* `\o{OOO}` (module misc, UNBUILT) — an arbitrary-length OCTAL run.
@@ -363,15 +382,8 @@ Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx)
  * same reason `pcrec_def_text_hex` refuses them. */
 Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx)
 {
-    if (len == 0) return NULL;
-    unsigned v = 0;
-    for (size_t i = 0; i < len; i++) {
-        unsigned char c = (unsigned char)operand[i];
-        if (c < '0' || c > '7') return NULL;
-        v = v * 8 + (unsigned)(c - '0');
-        if (v > 0xFF) return NULL;
-    }
-    return pcrec_ast_char(cx, v);
+    long v = pcrec_esc_digits_value(operand, len, 8);
+    return v < 0 || v > 0xFF ? NULL : pcrec_ast_char(cx, (unsigned)v);
 }
 
 /* `\N{U+HHHH}` (module unicode-props, UNBUILT) — a Unicode code point BY
@@ -383,15 +395,8 @@ Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx)
  * not something this function decides. */
 Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx)
 {
-    if (len == 0) return NULL;
-    unsigned v = 0;
-    for (size_t i = 0; i < len; i++) {
-        int d = pcrec_hexval((unsigned char)operand[i]);
-        if (d < 0) return NULL;
-        v = v * 16 + (unsigned)d;
-        if (v > 0xFF) return NULL;
-    }
-    return pcrec_ast_char(cx, v);
+    long v = pcrec_esc_digits_value(operand, len, 16);
+    return v < 0 || v > 0xFF ? NULL : pcrec_ast_char(cx, (unsigned)v);
 }
 
 /* ---- D164 B3: THE END MARK's TAIL, read off `\Z`'s definition ----------
@@ -439,7 +444,7 @@ static bool eol_tail_plain(const Ast *a)
         }
         return false;   /* unreachable: -Wswitch makes a new class a build error */
     case A_EOL: case A_LOOK: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         return false;
     }
     return false;

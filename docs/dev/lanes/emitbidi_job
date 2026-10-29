@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# emitbidi: [EMIT-BIDI] owed validation of lane/emitbidi (one C-text escaper pcrec_sb_ctext, abi 84 -> 86): build, strict, test-codegen, the new ctext check, the -fcomments axis, the three sabotage rows, then the full make test. Not ready before 2026-10-26 10:00 local (the box is the bench's / Frank's until then).
+# The manager queues it (scripts/boxqueue add ... docs/dev/lanes/emitbidi_job); the job runs in the lane worktree.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/emitbidi
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/tests/codegen/run_ctext_ascii.sh" ] \
+            && [ -f "$TREE/tests/axes/run_axes.sh" ] || { echo "no tree, perfrun, ctext check or run_axes.sh in $TREE" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; make test-codegen > \$BQ_LOG.codegen; run_ctext_ascii.sh > \$BQ_LOG.ctext; AXES=-fcomments run_axes.sh > \$BQ_LOG.axes; run_sabotage_matrix.sh S1620 S1621 S1622 > \$BQ_LOG.mech; scripts/perfrun --label emitbidi -- \$BQ_LOG.make"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=1 log=job.log.strict lines=^strict: whole tree compiles clean"
+        echo "boxqueue: expect codegen=19 log=job.log.codegen last=^run_group: [0-9]+/"
+        echo "boxqueue: witness codegen=run_group: 19/19 scripts passed"
+        echo "boxqueue: expect ctext=14 log=job.log.ctext last=^checks passed:"
+        echo "boxqueue: witness ctext=checks passed: 14"
+        echo "boxqueue: expect axes=1 log=job.log.axes lines=^run_axes.sh: all axes answer-identical"
+        echo "boxqueue: expect mech=3 log=job.log.mech last=^== mech run COMPLETE:"
+        echo "boxqueue: witness mech=== mech run COMPLETE: 3 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        echo "boxqueue: expect sections=79 log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: 79/79"
+        exit 0 ;;
+    --ready)
+        # After the bench's overnight tier-2 reservation ends (any DONE), or
+        # 2026-10-26 10:00 local if it never shows up (Frank released 20-24).
+        st=/home/pcrec/projects/pcrec/worktrees/.boxqueue/reservations/720-bench-b142-tier2.state
+        if [ -f "$st" ]; then
+            case "$(head -c 4 "$st")" in DONE) exit 0 ;; esac
+            echo "after the bench's 720-bench-b142-tier2 ($(head -c 40 "$st"))"; exit 75
+        fi
+        now=$(date +%s); at=$(date -d '2026-10-26 10:00' +%s) || exit 1
+        [ "$now" -ge "$at" ] || { echo "after 720-bench-b142-tier2 (not yet dropped), else 2026-10-26 10:00"; exit 75; }
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1 || rc=1
+make -C "$TREE" test-codegen > "$BQ_LOG.codegen" 2>&1 || rc=1
+( cd "$TREE" && bash tests/codegen/run_ctext_ascii.sh ) > "$BQ_LOG.ctext" 2>&1 || rc=1
+( cd "$TREE" && AXES=-fcomments bash tests/axes/run_axes.sh ) > "$BQ_LOG.axes" 2>&1 || rc=1
+( cd "$TREE" && bash tests/mech/run_sabotage_matrix.sh S1620 S1621 S1622 ) > "$BQ_LOG.mech" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label emitbidi -- "$BQ_LOG.make" || rc=1
+exit $rc

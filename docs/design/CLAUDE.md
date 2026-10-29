@@ -73,6 +73,8 @@ Option sets, selection, cost
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
 - `compound.md` — [COMPOUND] compound artifact (rev 2.2), first client [MATCH-SPLIT]; `compound/` — twin; `compound_callout_alignment.md` — compound/callout seams (D163 add. 5); `compound_entries.md` — every entry as a compound controller; `compound_entries/` — probes.
+- `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (not a design, no build go): user C inside pattern `(?C{...})` and template `${{ }}`/`${( )}`; use cases and draft tests, R-P/R-T/R-S rows, post-match predicate analysis, prior art, trust gate, open questions (lane inlinecreq, rev 0).
+- `inline_c.md` — [INLINE-C] DESIGN, pattern side (PROPOSED rev 1, lane inlinecrev1, after panel r1): one `A_CALLOUT` node for `(?C`/`(?{`, one call-site emitter and the shared return table, firing classes + `once`, generated segment functions, `verify` as a D156 FINISH row, the `--allow-code` + `sha256` pin trust gate, stages 0/1a/1b/2-5.
 - `match_split_requirements.md` — [MATCH-SPLIT] requirements; `match_split_pinonly.md` — SUPERSEDED (D163) by `compound.md`.
 - `findall_iter.md` — [FINDALL-NEXT] find-all iterator; `findall_iter/` — probes.
 - `kit_proof.md` — [KIT-VERIFY] U1 report without an engine; `kit_proof/` — evidence.
@@ -99,9 +101,12 @@ Engines, bounded repeat, budgets
 Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
+- `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
+- `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.
 - `definitions_table.md` — [DD-11]; `dd13_format/` — [DD-13] file format; `findings/` — [FINDINGS] (D83); `patfacts/` — [PATFACTS] (D120); `oracle_interface.md` — oracle interface/answer store.
 - `variables_common.md`, `variables_pattern.md`, `replace_design.md`, `variables_roadmap.md` — [VAR] design set (paneled r1, revised; pattern half landed 2026-09-23).
+- `subst_api_r4_draft.md` — [M4-SUBST] the DRAFT `docs/spec/subst_api.md` was generated from for `replace_design.md` §R4 (lane substb2); RETIRED to a pointer (review 2026-10-24 r1, IFACE-9): the spec is the contract. `subst_measurements/` — the §R2 glue probe and the §R4.13 `subst-extended` probes against libpcre2.
 - `design_registry_selectors.md` — SR-9 selectors (superseded by R6); `registry_built_status_memo.md` — registry built-status memo.
 - `m6read_samples/` — [M6-READ] approved sample commented artifacts (style of record).
 - `plan_row_bodies/` — verbatim long-form text of plan.md rows moved out by [PLAN-LINT] step 2; the plan.md row is the status of record.

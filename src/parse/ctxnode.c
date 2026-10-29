@@ -56,25 +56,12 @@ static bool lang_charset(const Ast *a, PcrecCpSet *acc)
                 a = a->l;
             }
             continue;
-        case A_CAT: {
-            /* One element carries the character; every other element must be
-             * the empty string, so `(?:)a` is `a`. */
-            const Ast *one = NULL;
-            while (a->k == A_CAT) {
-                if (a->r->k != A_EMPTY) {
-                    if (one) return false;
-                    one = a->r;
-                }
-                a = a->l;
-            }
-            if (a->k != A_EMPTY) {
-                if (one) return false;
-                one = a;
-            }
-            if (!one) return false;
-            a = one;
-            continue;
-        }
+        /* A parsed concatenation holds no empty that carries nothing
+         * (p_cat drops them, [FLAG-SPELL]), so `(?:)a` and `(?i)a` reach
+         * here as `a`, and a concatenation is two or more items that each
+         * carry something: never a single character. */
+        case A_CAT:
+            return false;
         case A_REP:
             if (a->u.rep.rmin != 1 || a->u.rep.rmax != 1) return false;
             a = a->l;
@@ -91,7 +78,7 @@ static bool lang_charset(const Ast *a, PcrecCpSet *acc)
         case A_EMPTY:
         case A_EOL: case A_CTX: case A_GSTART:
         case A_KRESET: case A_LOOK:
-        case A_BREF: case A_VAR: case A_CALL:
+        case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [CLS-TREE] S3: made below the lowering, never at parse time.
          * Declining is the sound answer: its child is BYTES, not the
          * characters this set is made of. */

@@ -1,0 +1,8 @@
+# rxt_format.md §1.1¶2: a config's pcrec line may not carry --allow-code
+# (refused at parse); cli.md §1.22¶1.
+config cc
+  pcrec --allow-code=c
+target t = blk with cc
+
+pattern a(?C`c: return RX_PASS;`)b
+name blk

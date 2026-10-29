@@ -1,0 +1,94 @@
+# D27 spec-first compile-and-run cases for embedded C.
+# Columns (TAB-separated):
+#   name  cite  args  pattern  subject  expect
+# args    : extra pcrec arguments ("-" = none); run.sh always adds
+#           --allow-code=c --features all --pattern-esc and -o - (self-contained)
+# pattern : the --pattern-esc value body (rxt_format.md §1.5.1 escapes)
+# subject : decoded by bash printf %b (\xHH, \n, \t, \\)
+# expect  : what driver_match.c prints for <prefix>_search(s, n, 0, caps):
+#             "M s e [s1 e1 ...]"  (return 1; caps pairs, compared as a prefix)
+#             "N"                  (return 0)
+#             "R <code>"           (any other return)
+#             "TRAP"               (the program died on a signal: __builtin_trap)
+# Generated C and driver are compiled with -std=gnu11 -O1 -Wall -Wextra -Werror.
+#
+# ---- returns (§11.4¶1) and the call form (§11.2¶1a) ----
+ret_pass	§11.4¶1	-	a(?C`c: return RX_PASS;`)b	xab	M 1 3
+ret_fail	§11.4¶1 (RX_FAIL backtracks as a failed atom)	-	a(?C`c: return RX_FAIL;`)b	ab	N
+ret_fail_backtracks	§11.4¶1	-	a(?:(?C`c: return RX_FAIL;`)b|bc)	abc	M 0 3
+two_segments_in_order	§11.2¶1 row 3 (k in pattern order)	-	(?C`c: return RX_POS == 0 ? RX_PASS : RX_FAIL;`)a(?C`c: return RX_POS == 1 ? RX_PASS : RX_FAIL;`)	a	M 0 1
+# ---- the view and the macro set (§11.3, §11.9¶5) ----
+pos_and_start	§11.3¶2;§11.3¶4;§11.9¶5	-	xa(?C`c: return (RX_POS == 3 && RX_START == 1) ? RX_PASS : RX_FAIL;`)b	yxab	M 1 4
+start_not_k_moved	§11.3¶4 "not a \\K-moved start"	-	xa\\K(?C`c: return (RX_START == 0 && RX_POS == 2) ? RX_PASS : RX_FAIL;`)b	xab	M 2 3
+subj_is_whole	§11.3¶2 "the call's subject";§11.9¶5	-	(?C`c: return (RX_LEN == 4 && RX_SUBJ[0] == 'q' && RX_SUBJ == ctx->subject) ? RX_PASS : RX_FAIL;`)r	qrst	M 1 2
+cap_set_accessors	§11.9¶5	-	(a+)(?C`c: return (RX_CAP_SET(1) && RX_CAP_S(1) == 1 && RX_CAP_E(1) == 3 && RX_CAP_LEN(1) == 2 && RX_CAP_P(1) == RX_SUBJ + 1) ? RX_PASS : RX_FAIL;`)b	xaab	M 1 4 1 3
+cap_span	§11.9¶5 RX_CAP;§11.10¶1	-	(a+)(?C`c: rx_span s = RX_CAP(1); return (s.p == RX_SUBJ + 1 && s.len == 2) ? RX_PASS : RX_FAIL;`)b	xaab	M 1 4
+slot0_not_group	§11.9¶5 "RX_CAP_SET(0) is false"	-	a(?C`c: return (!RX_CAP_SET(0) && RX_CAP_S(0) == -1 && RX_CAP(0).len == -1) ? RX_PASS : RX_FAIL;`)	a	M 0 1
+cap_out_of_range	§11.9¶5 "out-of-range group reads -1 / NULL"	-	(a)(?C`c: return (!RX_CAP_SET(2) && RX_CAP_S(99) == -1 && RX_CAP_E(-1) == -1 && RX_CAP_LEN(5) == -1 && RX_CAP_P(7) == NULL && RX_CAP(2).p == NULL && RX_CAP(2).len == -1) ? RX_PASS : RX_FAIL;`)	a	M 0 1
+cap_unset_group	§11.9¶5 "an unset ... group reads -1 / NULL";§11.10¶1	-	(x)?(?C`c: rx_span s = RX_CAP(1); return (!RX_CAP_SET(1) && RX_CAP_S(1) == -1 && RX_CAP_E(1) == -1 && RX_CAP_LEN(1) == -1 && RX_CAP_P(1) == NULL && s.p == NULL && s.len == -1) ? RX_PASS : RX_FAIL;`)b	b	M 0 1
+cap_not_yet_closed	§11.9¶5 "not-yet-closed ... reads -1";§11.3¶3	-	(a(?C`c: return (RX_CAP_SET(1) || RX_CAP_S(1) != -1 || RX_CAP_LEN(1) != -1) ? RX_FAIL : RX_PASS;`)b)	ab	M 0 2 0 2
+cap_empty_set	§11.9¶5;§11.10¶1 (an empty set group is set, len 0)	-	(x*)(?C`c: rx_span s = RX_CAP(1); return (RX_CAP_SET(1) && RX_CAP_LEN(1) == 0 && s.len == 0 && s.p != NULL) ? RX_PASS : RX_FAIL;`)b	b	M 0 1 0 0
+cap_n_evaluated_once	§11.9¶5 "Every accessor taking n evaluates it once"	-	(a)(?C`c: int i = 1, ok = 1; ok &= RX_CAP_SET(i++); ok &= i == 2; ok &= RX_CAP_S(i--) == -1; ok &= i == 1; ok &= RX_CAP_E(i++) == 1; ok &= i == 2; i = 1; ok &= RX_CAP_LEN(i++) == 1; ok &= i == 2; i = 1; ok &= RX_CAP_P(i++) == RX_SUBJ; ok &= i == 2; i = 1; ok &= RX_CAP(i++).len == 1; ok &= i == 2; return ok ? RX_PASS : RX_FAIL;`)	a	M 0 1
+cap_repeat_keeps_previous	§11.3¶3 "a repeated group keeps its previous iteration's value until it closes again"	-	(?:(?C`c: return (RX_POS == 0 ? !RX_CAP_SET(1) : (RX_CAP_E(1) == (ptrdiff_t)RX_POS && RX_CAP_LEN(1) == 1)) ? RX_PASS : RX_FAIL;`)([ab]))+	ab	M 0 2 1 2
+named_group_macro	§11.9¶5 RX_G_<name>;§11.10 rx_in	-	(?<num>\\d+)(?C`c: return rx_in(RX_CAP(RX_G_num), 1, 10) ? RX_PASS : RX_FAIL;`)x	7x	M 0 2
+named_group_backtracks	§11.6¶1 (pure callee: backtracking-order answer)	-	(?<num>\\d+)(?C`c: return rx_in(RX_CAP(RX_G_num), 1, 10) ? RX_PASS : RX_FAIL;`)x	11x	M 1 3
+named_group_number	§11.9¶5 RX_G_<name> is the group's number	-	(a)(?<two>b)(?C`c: return RX_G_two == 2 ? RX_PASS : RX_FAIL;`)	ab	M 0 2
+dupnames_set_member	§11.9¶5 "(?J) the first member ... that is set at this fire"	-	(?J)(?:(?<n>a)|(?<n>b))(?C`c: return RX_G_n == 2 ? RX_PASS : RX_FAIL;`)	b	M 0 1
+dupnames_first_member	§11.9¶5 (?J)	-	(?J)(?:(?<n>a)|(?<n>b))(?C`c: return RX_G_n == 2 ? RX_PASS : RX_FAIL;`)	a	N
+dupnames_none_set	§11.9¶5 "else the run's first number"	-	(?J)(?:(?<n>a)|(?<n>b))?(?C`c: return RX_G_n == 1 ? RX_PASS : RX_FAIL;`)c	c	M 0 1
+user_is_null	§11.9¶4 "ctx->user is NULL at a code site";§11.2¶1 row 3	-	(?C`c: return (RX_USER == NULL && ctx->user == NULL) ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+vars_null_none	§11.3¶5 "NULL and 0 when the pattern takes none"	-	(?C`c: return (ctx->vars == NULL && ctx->nvars == 0) ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+ncap_ignores_no_captures	§11.3¶3 "ncap: the PATTERN's group count plus one ... whatever --no-captures says"	--no-captures	(a)(b)(?C`c: return (ctx->ncap == 3 && RX_CAP_SET(2) && RX_CAP_S(2) == 1) ? RX_PASS : RX_FAIL;`)	ab	M 0 2
+ncap_plain	§11.3¶3	-	(a)(b)(?C`c: return ctx->ncap == 3 ? RX_PASS : RX_FAIL;`)	ab	M 0 2
+# ---- consume (§11.4¶1, §11.7¶1) ----
+consume_len	§11.4¶1 "continues at pos + k"	-	a(?C`c,consume: return 2;`)d	abcd	M 0 4
+consume_in_group	§11.4¶1 "the consumed bytes belong to every group that encloses the site"	-	(a(?C`c,consume: return 2;`))d	abcd	M 0 4 0 3
+consume_zero_is_pass	§11.4¶1	-	a(?C`c,consume: return 0;`)b	ab	M 0 2
+consume_atomic	§11.4¶1 "never asks it for a shorter length"	-	a(?C`c,consume: return RX_LEN - RX_POS >= 2 ? 2 : RX_FAIL;`)c	abc	N
+consume_reasked_on_new_path	§11.4¶1 "a path that reaches the site again calls it again"	-	(?:a|ab)(?C`c,consume: return RX_POS == 2 ? 1 : RX_FAIL;`)c	abxc	M 0 4
+# ---- other returns (§11.4¶2, §4¶10) ----
+giveup_steps_propagates	§11.4¶2;§4¶10 row 3	-	a(?C`c: return PCREC_ERR_STEPS;`)	a	R -2
+giveup_frames_propagates	§11.4¶2;§4¶10 row 3	-	a(?C`c: return PCREC_ERR_FRAMES;`)	a	R -3
+giveup_work_propagates	§11.4¶2;§4¶10 row 3	-	a(?C`c: return PCREC_ERR_WORK;`)	a	R -4
+internal_propagates	§11.4¶2;§4¶10 row 4	-	a(?C`c: return PCREC_ERR_INTERNAL;`)	a	R -6
+unset_var_propagates	§11.4¶2;§4¶10 row 7	-	a(?C`c: return PCREC_ERR_UNSET_VAR;`)	a	R -8
+utf_propagates	§11.4¶2;§4¶10 row 5	-	a(?C`c: return PCREC_ERR_UTF;`)	a	R -9
+startpos_traps	§11.4¶2;§4¶10 row 6	-	a(?C`c: return PCREC_ERR_STARTPOS;`)	a	TRAP
+reserved_iter_traps	§11.4¶2 "any other code below 0 trap";§4¶10 row 8	-	a(?C`c: return PCREC_ERR_ITER;`)	a	TRAP
+reserved_minus42_traps	§11.4¶2;§4¶10 row 8	-	a(?C`c: return -42;`)	a	TRAP
+check_positive_traps	§11.4¶2 "a positive return from a check traps"	-	a(?C`c: return 1;`)	a	TRAP
+consume_past_end_traps	§11.4¶2 "a length that leaves the subject ... traps"	-	a(?C`c,consume: return 5;`)	ab	TRAP
+consume_to_end_ok	§11.4¶1 (a length that ends exactly at the subject end)	-	a(?C`c,consume: return 1;`)	ab	M 0 2
+utf8_off_boundary_traps	§11.4¶2 "ends off a character boundary (-e utf8) traps"	-e utf8	(?C`c,consume: return 1;`)	\xc3\xa9	TRAP
+utf8_on_boundary_ok	§11.4¶1	-e utf8	(?C`c,consume: return 2;`)	\xc3\xa9	M 0 2
+falloff_traps	§11.9¶4 "Falling off the end of the text traps"	-	a(?C`c: if (RX_POS > 1000) return RX_PASS;`)	a	TRAP
+# ---- the spelling: where the code ends, modes (§11.9¶1-¶2) ----
+x_mode_hash_not_comment	§11.9¶2 "(?x) does not make # a comment there"	-	(?x) a (?C`c: return '#' == 35 ? RX_PASS : RX_FAIL;`) b	ab	M 0 2
+x_mode_space_kept	§11.9¶2 (pattern modes do not apply inside the string)	-	(?x) a (?C`c: const char *s = \"a b\"; return s[1] == ' ' ? RX_PASS : RX_FAIL;`) b	ab	M 0 2
+i_mode_no_effect	§11.9¶2;§11.9¶3 (code is the user's, as written)	-	(?i)a(?C`c: return 'A' == 65 ? RX_PASS : RX_FAIL;`)	A	M 0 1
+doubled_quote	§11.9¶2 "a doubled one being one literal byte"	-	(?C'c: return ''A'' == 65 ? RX_PASS : RX_FAIL;')a	a	M 0 1
+doubled_backtick	§11.9¶2	-	(?C`c: const char *s = \"``\"; return (s[0] == 96 && s[1] == 0) ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+brace_delim_doubled	§11.9¶1-¶2 ({ closes with }; }} is one byte)	-	(?C{c: if (RX_POS == 0) {return RX_PASS;}} return RX_FAIL;})a	a	M 0 1
+dollar_delim_runs	§11.9¶1 (code under $ runs)	-	(?C$c: return RX_FAIL;$)a	a	N
+caret_delim_runs	§11.9¶1	-	(?C^c: return RX_FAIL;^)a	a	N
+percent_delim_runs	§11.9¶1	-	(?C%c: return RX_FAIL;%)a	a	N
+hash_delim_runs	§11.9¶1	-	(?C#c: return RX_FAIL;#)a	a	N
+dquote_delim_runs	§11.9¶1	-	(?C\"c: return RX_FAIL;\")a	a	N
+multiline_code	§11.9¶3 (LF allowed);§11.9¶4	-	(?C`c:\nint x = 1;\nreturn x == 1 ? RX_PASS : RX_FAIL;\n`)a	a	M 0 1
+crlf_code	§11.9¶3 (CR LF allowed)	-	(?C`c:\r\nint x = 1;\r\nreturn x == 1 ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+tab_code	§11.9¶3 (tab allowed)	-	(?C`c:\tint x = 1;\treturn x == 1 ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+passthrough_byte_compiles	§11.9¶3 (passed through as written; inside a C comment)	-	(?C`c: /* \xff */ return RX_PASS;`)a	a	M 0 1
+# ---- reachability (§11.2¶1a) and once (§11.8) ----
+unreachable_zero_werror	§11.2¶1a "a site no match can reach ({0} ...) still builds under -Werror"	-	(?:(?C`c: return RX_FAIL;`)){0}a	a	M 0 1
+unreachable_define_werror	§11.2¶1a "an uncalled DEFINE group"	-	(?(DEFINE)(?<d>(?C`c: return RX_FAIL;`)))a	a	M 0 1
+once_possessive_runs	§11.8¶3 (fixed pattern compiles and runs)	-	a++(?C`c,once: return RX_PASS;`)b	aab	M 0 3
+pure_backtracking_order	§11.6¶1 (pure callee: each fire honoured)	-	(\\d+)(?C`c: return (RX_POS % 2) ? RX_PASS : RX_FAIL;`)	1234	M 0 3 0 3
+# ---- helpers are visible inside a segment (§11.10¶1 "for a code segment and a hand-written binding alike") ----
+helpers_in_segment	§11.10¶1	-	(\\w+)(?C`c: uint64_t v = 0; ptrdiff_t i = 0; uint32_t cp = 0; return (rx_eq(RX_CAP(1), \"abc\") && rx_eqi(RX_CAP(1), \"ABC\") && rx_find(RX_CAP(1), \"c\") == 2 && !rx_u64(RX_CAP(1), &v) && rx_hex(RX_CAP(1), &v) && v == 0xabc && !rx_in(RX_CAP(1), 0, 9) && rx_u8next(RX_CAP(1), &i, &cp) == 1 && cp == 'a') ? RX_PASS : RX_FAIL;`)	abc	M 0 3
+# ---- an empty body falls off the end (§11.9¶4) ----
+empty_segment_traps	§11.9¶4 "Falling off the end of the text traps"	-	(?C`c:`)a	a	TRAP
+blank_segment_traps	§11.9¶4	-	(?C`c: \n\t`)a	a	TRAP
+colon_in_code	§11.9¶1 (the first ':' ends the tag; the rest is C)	-	(?C`c: return RX_POS == 0 ? RX_PASS : RX_FAIL;`)a	a	M 0 1
+# ---- the ASCII rule (match_api.md §6, the paragraph before §6.1) ----
+bidi_literal_outside_code	§6 ASCII rule (pattern text echoed as ASCII; -Wbidi-chars clean)	-	\xe2\x80\xae(?C`c: return RX_PASS;`)	x\xe2\x80\xae	M 1 4
+nonascii_comment_in_code	§6 ASCII rule "except the bytes of an embedded code segment"	-	(?C`c: /* caf\xc3\xa9 */ return RX_PASS;`)a	a	M 0 1

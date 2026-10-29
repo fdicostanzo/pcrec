@@ -16,6 +16,8 @@
  * load-bearing comments moved with them. Signatures are pure (pat, patlen)
  * on purpose: an extent scan needs no Ctx and must not grow one. */
 
+#include <string.h>
+
 #include "core/internal.h"
 
 /* The K4 three-rule delimiter-pair scan, shared by the doorway and the
@@ -158,4 +160,137 @@ bool pcrec_brace_quant_shape(const char *at, size_t avail)
     while (i < avail && at[i] >= '0' && at[i] <= '9') { i++; ndig++; }
     while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
     return ndig > 0 && i < avail && at[i] == '}';     /* {,n} == {0,n} */
+}
+
+/* [INLINE-C] 1b THE `(?C` SHAPE — pure over (at, avail), `at` pointing at the
+ * byte AFTER the `C`. True iff the text is one of PCRE2's three well-formed
+ * callout spellings, each closed by `)`: nothing (`(?C)`, number 0), a
+ * decimal number 0..255 (leading zeros allowed: `(?C01)` is 1), or a string
+ * opened by one of PCRE2's delimiters `` ` ' " ^ % # $ { `` and closed by the
+ * same byte (`}` for `{`), a doubled closing delimiter being one literal
+ * byte. Measured against libpcre2 10.46 (inline_c.md §2.3, and the 1b lane's
+ * probe): `(?C256)` 138, `(?Cx)`/`(?C!x!)`/`(?C 1)`/`(?C-1)` 182, `(?C1x)`/
+ * `(?C"a"x)` 139, `(?C"a` 181, `(?C` 114 — every one of them is NOT this
+ * shape, which is what lets the registry's malformed row answer the exact
+ * complement (D17: a malformed `(?C` is not a callout, in any module state).
+ *
+ * ONE HOME, TWO CALLERS: the two `(?C` rows' recognisers, and module
+ * `callouts`' port, which reads `out` for the parts. */
+bool pcrec_callout_extent_scan(const char *at, size_t avail, PcrecCoScan *out)
+{
+    PcrecCoScan s = { false, 0, 0, 0, 0, 0 };
+    size_t i = 0;
+    if (!at || avail == 0) return false;
+    if (at[0] == ')') {
+        s.end = 1;
+    } else if (at[0] >= '0' && at[0] <= '9') {
+        while (i < avail && at[i] >= '0' && at[i] <= '9') {
+            s.num = s.num * 10 + (at[i] - '0');
+            if (s.num > 255) return false;
+            i++;
+        }
+        if (i >= avail || at[i] != ')') return false;
+        s.end = i + 1;
+    } else {
+        static const char delims[] = "`'\"^%#${";
+        if (!memchr(delims, at[0], sizeof delims - 1)) return false;
+        s.string = true;
+        s.close = at[0] == '{' ? '}' : at[0];
+        s.str = 1;
+        for (i = 1;; i++) {
+            if (i >= avail) return false;
+            if (at[i] != s.close) continue;
+            if (i + 1 < avail && at[i + 1] == s.close) { i++; continue; }
+            break;
+        }
+        s.rawlen = i - 1;
+        if (i + 1 >= avail || at[i + 1] != ')') return false;
+        s.end = i + 2;
+    }
+    if (out) *out = s;
+    return true;
+}
+
+/* [INLINE-C] stage 2 THE `(?C` STRING DECODE (§2.3; review
+ * 2026-10-27-r1-ic2 F33), pure: copies the `n` bytes at `raw` (string text as
+ * written, from `PcrecCoScan`) into `dst` (room for n + 1) with each doubled
+ * `close` written once, NUL-terminates it and returns the decoded length.
+ * `*exact` (may be NULL) is true when no byte was undoubled, i.e. every
+ * decoded byte is the pattern byte at the same offset. One home for both
+ * `(?C` string ports (module `callouts`' binding text, module `code-<lang>`'s
+ * segment). */
+size_t pcrec_callout_string_decode(const char *raw, size_t n, char close,
+                                   char *dst, bool *exact)
+{
+    size_t k = 0;
+    bool ex = true;
+    for (size_t i = 0; i < n; i++) {
+        dst[k++] = raw[i];
+        if (raw[i] == close) { i++; ex = false; }
+    }
+    dst[k] = 0;
+    if (exact) *exact = ex;
+    return k;
+}
+
+/* [INLINE-C] 1b the two `(?C` rows' recognisers: module `callouts`' row
+ * answers for the well-formed shape, the malformed row for its exact
+ * complement, so exactly one of them answers for any text and the doorway's
+ * arbitration never ties. `at == NULL` is NO TEXT, which is what the group
+ * doorway offers a pattern that ENDS at `(?C`: a truncated `(?C` is not a
+ * callout, so the malformed row answers it, in every module state (no
+ * "requires module" for a text no module makes valid; pattern_language.md
+ * §7.11¶3). */
+bool pcrec_callout_recognise(const char *at, size_t avail, const char *tail)
+{
+    (void)tail;
+    return at && pcrec_callout_extent_scan(at, avail, NULL);
+}
+
+bool pcrec_callout_malformed_recognise(const char *at, size_t avail,
+                                       const char *tail)
+{
+    return !pcrec_callout_recognise(at, avail, tail);
+}
+
+/* ---- [INLINE-C] stage 2: embedded code (docs/design/inline_c.md §2) ----- */
+
+/* A byte of a language tag or an attribute name (`[a-z0-9_]`). */
+static bool code_name_byte(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+/* The offset of the `:` that ends a code TAG `tag(,attr)*` at the start of
+ * `s` (n bytes), or 0 when the text does not begin with exactly that tag
+ * followed by a well-shaped attribute list and `:`. An attribute is any
+ * non-empty name: WHICH names exist is the port's question (an unknown one
+ * is refused by name there), so `c,bogus:` is still code in language `c`.
+ * One home for the tag shape, read by the recogniser and the port. */
+size_t pcrec_code_tag_extent_scan(const char *s, size_t n, const char *tag)
+{
+    const size_t tl = strlen(tag);
+    if (!s || n <= tl || memcmp(s, tag, tl) != 0) return 0;
+    size_t i = tl;
+    while (i < n && s[i] == ',') {
+        const size_t j = ++i;
+        while (i < n && code_name_byte(s[i])) i++;
+        if (i == j) return 0;
+    }
+    return i < n && s[i] == ':' ? i : 0;
+}
+
+/* Does the tagged `(?C` string at `at` (the byte after the `C`) carry code
+ * in language `tag` (§2.2: the decoded string read first-match, `lang attrs
+ * ":"` is code)? The tag bytes are never a PCRE2 delimiter, so the raw
+ * string's prefix IS the decoded prefix and no decode is needed here. A
+ * string with no `:` after the tag (`(?C"c,consume")`) is a binding named
+ * `c`, module `callouts`' (the row this one outranks only on code). */
+bool pcrec_code_tagged_recognise(const char *at, size_t avail,
+                                 const char *tag)
+{
+    PcrecCoScan sc;
+    if (!at || !pcrec_callout_extent_scan(at, avail, &sc) || !sc.string)
+        return false;
+    return pcrec_code_tag_extent_scan(at + sc.str, sc.rawlen, tag) != 0;
 }

@@ -1,0 +1,54 @@
+--- shipped/7-url-tld-fix/rx.c
++++ proto/7b/rx.c
+@@ -640,6 +640,17 @@
+     return rx_reqrun_whole__body(subject, n, pos);
+ }
+ 
++static inline size_t rx_proto_h(const unsigned char *subject, size_t n, size_t pos)
++{   /* memchr on 'h' (the literal's rarest byte here, 3.58M of 362M) + one compare */
++    while (pos + 12 <= n) {
++        const unsigned char *q = memchr(subject + pos, 'h', n - pos - 11);
++        if (!q) return n;
++        size_t c = (size_t)(q - subject);
++        if (rx_w8(subject + c) == rx_w8("https://") && rx_w8(subject + c + 4) == rx_w8("s://www.")) return c;
++        pos = c + 1;
++    }
++    return n;
++}
+ static int rx_search_run(const unsigned char *subject, size_t subject_length,
+        size_t search_from, ptrdiff_t (*capture_spans)[2], rx_run_state *run)
+ {
+@@ -648,9 +659,11 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+-    if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
+-    attempt_position = search_from;
++    /* PROTOTYPE (subtri what-if): every match starts at "https://www." (the
++     * pattern opens with that literal), so the req run's position IS the
++     * candidate; re-enter the run search after a failed attempt. */
++    attempt_position = rx_proto_h(subject, subject_length, search_from);
++    if (attempt_position >= subject_length) return 0;
+     window_end = subject_length;
+     static const unsigned char rx_start_set[256] = {
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+@@ -670,8 +683,6 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
+-    if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+@@ -686,8 +697,7 @@
+         if (result >= 0) break;
+         rx_reset_for_next_attempt(run);
+         if (attempt_position >= subject_length) return 0;
+-        attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        attempt_position = rx_proto_h(subject, subject_length, attempt_position + 1);
+         if (attempt_position >= subject_length) return 0;
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);

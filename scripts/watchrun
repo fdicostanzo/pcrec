@@ -73,12 +73,12 @@ alive() { # alive PID [START]
         [ -d "/proc/$1" ]
     else kill -0 "$1" 2>/dev/null; fi
 }
-tree_cpu() { # total utime+stime ticks of PID and its descendants (Linux /proc; else empty).
-    # awk's $1 is the pid and $n is /proc stat field n+1 (ppid $3, utime $13, stime $14).
+tree_cpu() { # total utime+stime+cutime+cstime ticks (reaped children included) of PID and its descendants (Linux /proc; else empty).
+    # awk's $1 is the pid and $n is /proc stat field n+1 (ppid $3, utime $13, stime $14, cutime $15, cstime $16).
     [ -n "$1" ] && [ -r /proc/self/stat ] || return 0
     local f s
     for f in /proc/[0-9]*/stat; do s=$(<"$f") 2>/dev/null || continue; printf '%s %s\n' "${f//[!0-9]/}" "${s##*) }"; done 2>/dev/null |
-        awk -v root="$1" '{pp[$1] = $3; cpu[$1] = $13 + $14} END {
+        awk -v root="$1" '{pp[$1] = $3; cpu[$1] = $13 + $14 + $15 + $16} END {
             for (p in pp) { q = p; for (i = 0; i < 64 && q != "" && q != 0; i++) { if (q == root) { t += cpu[p]; break } q = pp[q] } }
             print t + 0 }'
 }
@@ -113,7 +113,13 @@ else
 fi
 
 trailer() { grep -E "$done_ere" "$log" 2>/dev/null | tail -1; }
-nends() { grep -c '^== stage [^ ]* END' "$log" 2>/dev/null; }
+# Two stage-END shapes: chainrun `== stage N END rc=R ...`, battery.sh `== stage N rc=R END ...`.
+END_ERE='^== stage [^ ]+ (rc=[0-9]+ )?END'
+nends() { grep -cE "$END_ERE" "$log" 2>/dev/null; }
+end_fields() { # end_fields LINE: `stage=N rc=R` from either shape
+    printf '%s\n' "$1" | sed -E 's/^== stage ([^ ]+) (rc=[0-9]+ )?END( rc=([0-9]+))?.*/\1 \2\4/' |
+        awk '{ rc = $2; sub(/^rc=/, "", rc); printf "stage=%s rc=%s", $1, rc }'
+}
 lastline() { tail -1 "$log" 2>/dev/null | cut -c1-200; }
 signature() {
     local f
@@ -142,8 +148,8 @@ while :; do
         echo "watchrun: $kind $tname :: $t :: $(vsum)"; exit 0
     fi
     if [ "$on" = stage ] && [ "$(nends)" -gt "$base_ends" ]; then
-        e=$(grep '^== stage [^ ]* END' "$log" | sed -n "$((base_ends + 1))p")
-        echo "watchrun: STAGE-END $tname :: $e"; exit 0
+        e=$(grep -E "$END_ERE" "$log" | sed -n "$((base_ends + 1))p")
+        echo "watchrun: STAGE-END $tname $(end_fields "$e") :: $e"; exit 0
     fi
     if [ -n "$pid" ] && ! alive "$pid" "$pstart"; then
         t=$(trailer)     # it may have written the trailer and exited between the reads

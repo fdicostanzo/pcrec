@@ -47,4 +47,14 @@ tests/hooks.testreport: hooks/no_cd_worktree.sh hooks/pre-push-light ../.claude/
 # chainrun (`batch` reuses its parser) and safekill (cleanup).
 tests/boxqueue.testreport: boxlock verdict chainrun safekill
 
+# lanecheck.test drives lanewatch too.
+tests/lanecheck.testreport: lanewatch
+
+# fullsuite_job.sh.test drives the real battery.sh under --simulate.
+tests/fullsuite_job.sh.testreport: battery.sh
+# fullsuite_resume.test drives fullsuite_job.sh --resume (simulated) and the fullsuite_resume helper.
+tests/fullsuite_resume.test.testreport: battery.sh fullsuite_job.sh fullsuite_resume
+
 .DELETE_ON_ERROR:
+
+tests/queuemon.testreport: monread hooks/monitor_unread.sh test_queuemon.sh

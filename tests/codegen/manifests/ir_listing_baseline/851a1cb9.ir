@@ -113,5 +113,5 @@ L4	L7	lookbehind: the NEXT-BRANCH continuation -- this branch's body failing ret
 		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
 
 #section callouts
-#label	note
-	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1
+#label	site	binding	width	class	tail	note
+						none: this pattern has no callout site

@@ -1,0 +1,6 @@
+# tests/code/harness.manifest — the section's harness manifest
+# (rxt_format.md §6¶3; docs/design/inline_c.md §3.6, §5.2).
+# The code grant for this directory's ENTRY files (never a fragment they
+# include) and the user source UC-3's segments call.
+allow-code c
+link geoip.c

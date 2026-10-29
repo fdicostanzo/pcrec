@@ -36,7 +36,7 @@ Launch one agent: `model: opus`, background, name `crit-<topic>`, prompt =
 /home/pcrec/projects/pcrec/.claude/skills/pcrec-critic/SKILL.md sections 3-8
 and follow them as the coordinator." plus: mode, subject, topic, the scope
 mandate (only the pcrec and pcrec-bench repos; scratch only under
-`/tmp/claude-1001/crit-<topic>/`; no edits to either repo except creating and
+`$PCREC_TMPDIR/scratch/crit-<topic>/`; no edits to either repo except creating and
 removing the review worktree), and the denylist paths the coordinator cannot
 know (lane report names, earlier reviews of this subject). Say NOTHING about
 known results. Then go about other work; the coordinator hands back one
@@ -51,14 +51,18 @@ message when the draft is ready.
      --format=%H -- <doc>` on its branch); critics read that version.
    The subject stays frozen until the round compiles (learnings §6, R30).
 2. Code mode: make a clean review tree, `git worktree add --detach
-   worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself under
-   `scripts/boxlock run` (critics run `build/pcrec` and `gcc -S` on single
-   patterns, never `make`). If the box is busy, a compiler binary copied from
-   a build of the same source commit will do; say which.
+   worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself, UNLOCKED:
+   `nice make -j2` (critics run `build/pcrec` and `gcc -S` on single
+   patterns, never `make`). NEVER under `scripts/boxlock`: a waiter yields to
+   every ready queue job, often the subject's own validation, and a build of
+   seconds waited 3h50m (round 2026-10-27 r1 ic2). Launch the probe lenses
+   only once `build/pcrec` exists; a critic without a binary waits for it
+   (poll every 10 min, up to 4 h) rather than ending source-only.
 3. Denylist (D27 applied to review): the lane's reports
    (`docs/dev/lanes/<lane>*`), review files on this subject, `git log` bodies
    beyond the subject lines, job logs, other worktrees, the box queue, plus the
-   launcher's list. Put it in every brief.
+   launcher's list. Put it in every brief. To deny a plan.md row, locate it by `grep -n '^- \[TAG\]'` only; never print its
+   neighbours (a `sed -n` around the tag line leaked the denied rulings, 2026-10-26 inline-c).
 4. Profile: what does the subject touch? Several can apply:
    - design: a new mechanism or table; a measured quantity, check or data file;
      a caller-facing contract; a build proposal (cost, scope); rulings it rests on
@@ -75,7 +79,8 @@ measured twice). Subject column: D = design document, C = code diff.
 | subject | profile item | lens | its one question | model |
 |---|---|---|---|---|
 | D C | always | **goals** (fold into another lens if needed) | Does the design state ranked, checkable goals (architecture.md)? Does the subject serve them in that order? No goals = a DOC finding; review against the goals the design implies, saying so. | strong |
-| D | a new mechanism or table | **premise** | Name every assumption the design rests on and test each (grep, measure, read the data): is it true? ("do we really need this?", "is this really constant?" are this lens.) | strong |
+| D | a new mechanism or table | **premise** | Name every assumption the design rests on and test each (grep, measure, read the data): is it true? ("do we really need this?", "is this really constant?" are this lens; so is every sentence of the form "the existing X already does Y": find X by file:line.) | strong |
+| D C | a trust boundary (opt-in, gate, untrusted input becomes code or a file read) | **adversary** | As the author of an untrusted input, find every path from your bytes to code, a file read or a terminal escape that bypasses the gate, including the test harness and tooling as entry points; and what an ADMITTED input can do to the rest of the output | strong |
 | D | a table, rule or selection | **simulate** | Run the proposed rule over the real corpus or data: does it pick what the design claims, and where does it mispick? | sonnet+ |
 | D C | a table / slot / mechanism | **slot tracing** | Trace every slot to the table or mechanism the design names for it: is anything duplicated, narrowed or unreachable ("one table per slot")? Is it the third member of a family? | strong |
 | D C | rulings relied on | **ruling check** | For each ruling, does it agree with the design and the guide, and what are its CONSEQUENCES? Fold into slot tracing when that runs. | strong |
@@ -99,7 +104,7 @@ a contract, RECOMMEND one in the draft; the launcher decides.
 
 ## 5. Brief and launch the critics (coordinator)
 
-Write one COMMON brief file under `/tmp/claude-1001/crit-<topic>/` (scope
+Write one COMMON brief file under `$PCREC_TMPDIR/scratch/crit-<topic>/` (scope
 mandate, read-only rules, subject and paths, the guide files, design docs and
 spec sections the subject cites, the denylist, the output format), then one
 short per-lens prompt: title `CRITIC <lens> (<model>): <topic>`, "read COMMON
@@ -113,12 +118,18 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 §; a finding against a ruled D-row cites it and argues, or drops; the file
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
-Launch all critics in one message, background. No addenda to a running
+Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
+findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --deliver FILE NAME`
+prints DONE; the coordinator runs `scripts/lanewatch --dir $PCREC_TMPDIR/scratch/crit-<topic> NAME...`
+instead of waiting for replies (nested replies are often lost).
+
+Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
 critic; a missed input goes to a fresh critic.
 
 ## 6. Monitor, verify, draft (coordinator)
 
-1. Read each critic's FILE when it idles; a critic without its file gets ONE
+1. Critics may return in the launch turn even when backgrounded; then read the files at once.
+   Read each critic's FILE when it idles; a critic without its file gets ONE
    SendMessage asking for it. A critic idle on its own background probes gets
    one nudge to resume. Stop each critic (TaskStop) once its file is complete.
 2. Launch ONE verifier (sonnet unless a finding needs opus judgment) over all
@@ -126,20 +137,21 @@ critic; a missed input goes to a fresh critic.
    oracle (libpcre2 / python `re`), speed with `perf stat -e instructions:u`
    pinned `taskset -c 7` and repeats, size with `size`, structural claims by
    quoting the cited lines, design claims by the simulation or grep they name.
-   It writes `verify.md`: HOLDS / REFUTED / PARTLY / not verified (why).
-3. Draft `/tmp/claude-1001/crit-<topic>/review.md` in the
+   It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
+   lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
+3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
    why chosen); which lens caught what; findings by id with a PROPOSED
    disposition (FIX-NOW | PLAN | DOC | REJECTED | NOTED) and a one-line reason;
    PROBED-AND-HELD; by-id completeness; lessons for the guide. Consolidate
    overlapping findings (name every lens that found it). Copy critic texts and
    `verify.md` beside it in `review/`.
-4. Remove the review worktree (`scripts/wtprune --apply --force crit-<topic>`)
+4. Remove the review worktree (`scripts/wtprune --apply --force --quiet-min 1 crit-<topic>`: the default 120-minute quiet gate keeps a freshly built tree)
    and stop the verifier.
 
 ## 7. Meta-monitor the round (coordinator)
 
-Keep `/tmp/claude-1001/crit-<topic>/process.md` AS YOU GO: per agent, launch
+Keep `$PCREC_TMPDIR/scratch/crit-<topic>/process.md` AS YOU GO: per agent, launch
 and end time, model, final state (file complete / resent / nudged / stalled);
 brief confusions; delivery failures; blinding leaks you noticed; per lens,
 findings raised / verified / severity / overlaps; time to draft. At the end

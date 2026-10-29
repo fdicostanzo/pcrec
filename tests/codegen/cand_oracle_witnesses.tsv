@@ -37,6 +37,13 @@ ceiling	-	^((?1)a)$
 width-none	-	a(b|c)+d
 handoff	--memfn=no-window-search	\d\dxyz
 scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
+# [REQRUN-VM] the VM attempt loop's rows (tuning.md §2.41¶8b): the whole run
+# re-entered where every pre-check part is a slice of it, entry-only where a
+# set-rest byte (`x`) is not; the deny lands on scan-from-startpos.
+handoff-attempts	--engine=vm	(?:xx|y)abc
+handoff-attempts	--engine=vm	(a|aa){0,10}cxyz
+handoff-attempts-entry	--engine=vm	x{2,5}(?i:cat)
+scan-from-startpos	--engine=vm -fno-req-handoff	(?:xx|y)abc
 run-pinned-bounded	--memfn=no-window-search	foo\b
 run-pinned	--memfn=no-window-search	ABCDE
 # [OPT-REVEND] stage 2 put `a\Kb\z`'s inlined hybrid on rev-end (lane revtri):

@@ -107,16 +107,21 @@ regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
 # [ART-POSS-ARMS] 229 -> 231 (lane possbuild, 2026-10-07): §3.3's two
 # tripwires, `(*ACCEPT)` (soundness) and `(?|` (re-verify), each assert their
 # row still reads `unbuilt` (check_poss_arms_tripwires).
-if [ "$regn" -ne 231 ]; then
+# [INLINE-C] 1b 231 -> 232 (lane ic1bfix, 2026-10-26), MEASURED off a run's
+# PASS lines: the malformed `(?Cx)` row adds one "group (?Cx): diagnostic
+# matches the row" line, the generic way.
+# [INLINE-C] stage 2 232 -> 233 (lane ic2, 2026-10-27), MEASURED: module
+# `code-c`'s row adds its "group (?C`c: ...`): diagnostic matches the row".
+if [ "$regn" -ne 233 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 231." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 233." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (231 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (233 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 231 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 233 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -135,9 +140,9 @@ arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is uno
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 7 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
-engine capability: all 62 wired-AND-BUILT VM_ONLY producers refuse|[M6.4.2]/D67, REPLACING the [M4.7a] tripwire whose premise SR-8 discharged: the tripwire asserted that no VM_ONLY row had a producer (the fact that made deferring SR-8 safe); this asserts the thing it demanded instead — every VM_ONLY row that HAS a producer refuses --engine=dfa BY NAME, on a HAND-WRITTEN witness whose cut genuinely bites (the row's own syntax cannot serve: 'a*+' correctly COMPILES, because the free discharge deletes a cut it proves dead), and every witness also COMPILES on the default engine so the check cannot go green on a compiler that stopped accepting the construct. The ITERATION is what makes it generic: a module wiring the NEXT VM_ONLY producer with no witness here is a named failure, which is how backrefs' twelve rows ([M6.5.2]) WERE caught -- they landed 2026-08-22, each with a hand-written witness, taking `wired` from 6 to 18. [M6.6.2] wave B+C took `wired` to 24 and split the number in two: module `lookaround` wires ONE port for six rows and BUILDS only three of them at that wave, so the witness requirement is gated on D65's derived `built` column and the label names the 21 wired-AND-BUILT rows. That is a REFINEMENT of the check and not a relaxation of it — a declining producer has no artifact to refuse and no default-engine compile to assert, so a witness for such a row cannot be written; the check additionally asserts that its checked count EQUALS the built-and-wired count, so a gate that excused a row it should have checked is a MISSING WITNESS rather than a smaller pass. [M6.6.2] wave D took it to 24: the port stopped declining the `<` tails when the back-step seam entry landed, the three lookbehind rows became `built`, and they started demanding witnesses WITH NO EDIT TO THE GATE -- which is the property the wave B+C refinement was built to have. `built_wired` now equals `wired`, so there is nothing left in this module for the gate to excuse. [M6.6.2] wave F took it to 36: the twelve `(*` alpha spellings carry the SAME shared port in their own `aport` and produce on their first call, so all three numbers (qualifying, wired, built) moved together for the first time. Their witnesses are PER MEMBER (D71 item 3's rule) and each one asserts the ALIAS's own syntax appears in the --engine=dfa refusal -- which is what pins that `pcrec_laport_group` stamps the row it was DISPATCHED on rather than the primary it resolved its flags from; point the stamp at the primary and exactly these twelve fail while the rest of the tree stays green. [DD-14] wave B+C took it to 60, and the SHAPE of that move is new: TWENTY-FOUR rows flip `unbuilt -> built` with NO row added and NO row reclassified -- `qualifying` holds at 66 while `wired` and `built_wired` both move by 24 -- because module `recursion`'s `(?` rows were ALREADY VM_ONLY (P4 measured all 26 that way before the module existed) and this wave gave them a PRODUCER rather than a classification. TWO of the twenty-four witnesses are CAPTURE-FREE and the rest cannot be: `(?R)` and `(?0)` call the whole pattern, so `a(?R)?b` has no group at all and is VM-forced by NOTHING BUT THE STAMP -- the sharp form the other witnesses' own capture-freedom rule asks for -- while every other spelling names a group by construction. The twenty-two still fire, because the captures arm of the `--engine=dfa` refusal names no construct and the witness matches on the NAME; the capture-free pair is what makes that argument checkable rather than merely stated. At wave B+C the two `\g<` / `\g'` rows were module `recursion`'s too and were deliberately NOT wired -- design 8.1 kept them `unbuilt` until wave D, since D65 flips `built` from the PORT and flipping them while the emitter could not compile the spelling would have shipped a compliance index that lies. [DD-14] wave D took `wired` and `built_wired` to 62: `pcrec_brport_g` (src/parse/mod_backrefs.c) gained the `<`/`'` arms, both rows' `aport` now points at it, and neither has a tail left to decline -- the same "no code at all" shape that kept them unbuilt now flips them the other way with no code at all either, via D65's live derivation rather than a declared flag
+engine capability: all 64 wired-AND-BUILT VM_ONLY producers refuse|[M6.4.2]/D67, REPLACING the [M4.7a] tripwire whose premise SR-8 discharged: the tripwire asserted that no VM_ONLY row had a producer (the fact that made deferring SR-8 safe); this asserts the thing it demanded instead — every VM_ONLY row that HAS a producer refuses --engine=dfa BY NAME, on a HAND-WRITTEN witness whose cut genuinely bites (the row's own syntax cannot serve: 'a*+' correctly COMPILES, because the free discharge deletes a cut it proves dead), and every witness also COMPILES on the default engine so the check cannot go green on a compiler that stopped accepting the construct. The ITERATION is what makes it generic: a module wiring the NEXT VM_ONLY producer with no witness here is a named failure, which is how backrefs' twelve rows ([M6.5.2]) WERE caught -- they landed 2026-08-22, each with a hand-written witness, taking `wired` from 6 to 18. [M6.6.2] wave B+C took `wired` to 24 and split the number in two: module `lookaround` wires ONE port for six rows and BUILDS only three of them at that wave, so the witness requirement is gated on D65's derived `built` column and the label names the 21 wired-AND-BUILT rows. That is a REFINEMENT of the check and not a relaxation of it — a declining producer has no artifact to refuse and no default-engine compile to assert, so a witness for such a row cannot be written; the check additionally asserts that its checked count EQUALS the built-and-wired count, so a gate that excused a row it should have checked is a MISSING WITNESS rather than a smaller pass. [M6.6.2] wave D took it to 24: the port stopped declining the `<` tails when the back-step seam entry landed, the three lookbehind rows became `built`, and they started demanding witnesses WITH NO EDIT TO THE GATE -- which is the property the wave B+C refinement was built to have. `built_wired` now equals `wired`, so there is nothing left in this module for the gate to excuse. [M6.6.2] wave F took it to 36: the twelve `(*` alpha spellings carry the SAME shared port in their own `aport` and produce on their first call, so all three numbers (qualifying, wired, built) moved together for the first time. Their witnesses are PER MEMBER (D71 item 3's rule) and each one asserts the ALIAS's own syntax appears in the --engine=dfa refusal -- which is what pins that `pcrec_laport_group` stamps the row it was DISPATCHED on rather than the primary it resolved its flags from; point the stamp at the primary and exactly these twelve fail while the rest of the tree stays green. [DD-14] wave B+C took it to 60, and the SHAPE of that move is new: TWENTY-FOUR rows flip `unbuilt -> built` with NO row added and NO row reclassified -- `qualifying` holds at 66 while `wired` and `built_wired` both move by 24 -- because module `recursion`'s `(?` rows were ALREADY VM_ONLY (P4 measured all 26 that way before the module existed) and this wave gave them a PRODUCER rather than a classification. TWO of the twenty-four witnesses are CAPTURE-FREE and the rest cannot be: `(?R)` and `(?0)` call the whole pattern, so `a(?R)?b` has no group at all and is VM-forced by NOTHING BUT THE STAMP -- the sharp form the other witnesses' own capture-freedom rule asks for -- while every other spelling names a group by construction. The twenty-two still fire, because the captures arm of the `--engine=dfa` refusal names no construct and the witness matches on the NAME; the capture-free pair is what makes that argument checkable rather than merely stated. At wave B+C the two `\g<` / `\g'` rows were module `recursion`'s too and were deliberately NOT wired -- design 8.1 kept them `unbuilt` until wave D, since D65 flips `built` from the PORT and flipping them while the emitter could not compile the spelling would have shipped a compliance index that lies. [DD-14] wave D took `wired` and `built_wired` to 62: `pcrec_brport_g` (src/parse/mod_backrefs.c) gained the `<`/`'` arms, both rows' `aport` now points at it, and neither has a tail left to decline -- the same "no code at all" shape that kept them unbuilt now flips them the other way with no code at all either, via D65's live derivation rather than a declared flag
 free discharge: all 4 provably-dead cuts compile to a PURE DFA|[M6.4.2]: the OTHER direction of the per-pattern split, and the only thing in the tree that would notice the free discharge silently ceasing to fire — every ANSWER would still be correct and only the ENGINE would change. VM_ONLY is too STRONG for 'a*+b' (whose cut §2.2 proves dead) and ANY_ENGINE too WEAK for '(?>a|ab)c'; this asserts the first half and the engine-capability check above asserts the second, which together are the first evidence the `engines` column has ever had in BOTH directions
-built-status: 142 rows classified with 0 defects|D65 (docs/design/registry_built_status_memo.md, ratified wholesale 2026-08-21): the ONLY guard that pcrec_construct_built_status classifies every RS_MODULE row's own syntax cleanly (built or unbuilt), never landing in the PCREC_BUILT_DEFECT bucket the generated compliance index must never silently render — deleting it removes the one thing that would fail loudly the day a row's own well-formed syntax stops classifying, e.g. a reworded refusal or a doorway change the classifier's res.what/res.answered_at reading no longer matches
+built-status: 144 rows classified with 0 defects|D65 (docs/design/registry_built_status_memo.md, ratified wholesale 2026-08-21): the ONLY guard that pcrec_construct_built_status classifies every RS_MODULE row's own syntax cleanly (built or unbuilt), never landing in the PCREC_BUILT_DEFECT bucket the generated compliance index must never silently render — deleting it removes the one thing that would fail loudly the day a row's own well-formed syntax stops classifying, e.g. a reworded refusal or a doorway change the classifier's res.what/res.answered_at reading no longer matches
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is
@@ -299,7 +304,16 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     # already do. MEASURED on this box: 210 passing, 0 failing.
     # [UCP] U0 210 -> 213, MEASURED on this box: `check_rows` reaches module
     # `ucp`'s three `(*` name rows, one PASS each, the generic way.
-    if [ "$pc3n" -ne 213 ]; then
+    # [UPROP-MORE] 213 -> 214, MEASURED: the gated unicode-props arm's passes
+    # went from 6 to 7 -- the "real-but-unshipped" wording clause and its
+    # floor are replaced by the T2 converse, the Block/Age extension clause
+    # and the converse list's liveness floor.
+    # [INLINE-C] 1b 214 -> 216 (lane ic1bfix, 2026-10-26), MEASURED:
+    # `check_rows` passes the malformed `(?Cx)` row through its by-code
+    # FAMILY path, and the family path's population assertion adds one.
+    # [INLINE-C] stage 2 216 -> 217 (lane ic2, 2026-10-27), MEASURED: module
+    # `code-c`'s row is one more row libpcre2 compiles (a string callout).
+    if [ "$pc3n" -ne 217 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -308,14 +322,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 213." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 217." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (213 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (217 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 213 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 217 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -380,7 +394,9 @@ uprops differential: pcrec matched libpcre2|MOD-0.6 slice 4: the \p/\P shape-spa
 gated[modifiers] recognition (OPTRUN-B3)|R20/OPTRUN-B3 (MOD-0.8c slice 2): every other differential in this file runs at the DEFAULT (empty) enabled set, so all 48.7M probes of the (? doorway measure recognition and never acceptance. SPEC-1 was a gate-open-only miscompile — a(?i)* accepted, libpcre2 err 109, matcher really matching — and no closed-gate sweep could see it. Reverting the fix in a scratch build fires this check 672 times while registry_check and cli stay green (2026-08-12). The set is FOCUSED per docs/testing.md's differential gate principle -- one module per pass; a second producing module at this doorway gets its own call and its own needle here
 gated[modifiers] liveness: pcrec ACCEPTED|the gated pass's own vacuity guard: if pcrec accepts nothing with the gate open, the producers never ran and T1 cannot fail, so the pass reads as coverage while measuring the closed-gate space twice — OPTRUN-B3's defect reproduced by the check written to close it
 gated[unicode-props] T1|[M5.0 stage 3]: the SECOND focused gated pass, and the needle exists because the CLOSED-gate uprops differential above still reads GREEN and stopped certifying what its name claims the day a producer landed (its own per-cell wall asserts "\p/\P has no producer this phase"). This arm is what asks the acceptance question: pcrec must never emit a matcher for a property name libpcre2 rejects
-gated[unicode-props]: every real-but-unshipped property|[M5.0 stage 3]: stage 3 ships a SUBSET of the names libpcre2 has, deliberately, so T2 cannot be asserted here — this is the half of that direction that CAN be: a real property this stage has not built (Greek, Alphabetic, Script=Greek) must be refused as the MODULE's gap and never as a name pcrec does not recognise, which would be a false claim about the NAME. It is K14's shape, one module over
+gated[unicode-props] T2: pcrec refused no property name|[UPROP-MORE] (lane upropb): the converse of T1, asked now that the binary properties and Bidi_Class ship. It REPLACES the stage-3 needle "every real-but-unshipped property is refused as the module's gap": with those families shipped that population is empty, and a needle for a clause that has nothing to check would be the dead-branch-as-coverage shape. The population is the vendored PropertyAliases.txt binary section plus every bc spelling, three property-name forms and both selectors, with libpcre2 the arbiter of each cell
+gated[unicode-props]: the Block and Age extensions|[UPROP-MORE] (D178): Block and Age are pcrec EXTENSIONS beyond PCRE2, so the arm asserts both halves: pcrec compiles every Block/Age row and this libpcre2 REFUSES it. If a libpcre2 ever adds Block, D26 makes PCRE2 the truth and the row must be re-measured, so that is a red here, not a note
+gated[unicode-props] liveness: the converse list|[UPROP-MORE]: the converse clause's own vacuity floors (accepted and refused halves of the committed list, both non-empty) - a list that lost either half would make T2 or T1 vacuous
 gated[unicode-props] liveness: the producer really compiles|[M5.0 stage 3]: the gated pass's own vacuity guard, and the sharper of its two — a gate that failed to open makes every cell refuse and every clause above pass. The floor is the seven general-category codes across both selectors
 gated[modifiers] quantifier cross: both spelling lists full|SPEC-1's own family, and the reason it is generated rather than listed: check11 owns this module and missed the defect because its structural table is 21 hand-written spellings with not one quantified form. The floor is what stops the family going quiet — check14 measured a refuse-everything pcrec collapsing it to zero cells with no disagreement reported
 MANIFEST
@@ -701,9 +717,13 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # tuning.md heading) go; axes_registry_check's new retired-bit arm (a
 # tuning.md heading `bit N retired` is a header alias named on no row) adds
 # 1. Measured: 236 PASS, 0 failed.
-if [ "$axesn" -ne 236 ]; then
+# 236 -> 242 at [REQRUN-VM] (lane reqvm1, 2026-10-27): the `req-use` axis
+# gains `handoff-attempts` and `handoff-attempts-entry` (the VM attempt
+# loop's rows), each carrying the deny bit (PCREC_NO_REQ_HANDOFF 46), 3
+# checks each. Measured: 242 PASS, 0 failed.
+if [ "$axesn" -ne 242 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 236." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 242." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else

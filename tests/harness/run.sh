@@ -1444,7 +1444,7 @@ batch_member_compile() {
     local rc
     {
         TIMEFORMAT='ARTSIZE_TIME %3R %3U %3S'
-        time gen_cc "${bm_pattern[$mi]}" "$CC" $GENCFLAGS -I"$batch_bdir" -c -o "$mo" "$mc"
+        time gen_cc "${bm_pattern[$mi]}" "$CC" $GENCFLAGS -I"$batch_bdir" "${code_inc[@]+"${code_inc[@]}"}" -c -o "$mo" "$mc"
     } 2> "$_sz_tf"
     rc=$?
     # [ART-SIZE.1b] option (a): this per-member `-c` compile IS "the
@@ -1584,7 +1584,20 @@ flush_batch() {
         done
         return 0
     fi
-    if gen_cc "batch link ($cur_file)" "$CC" $GENCFLAGS -o "$exe" "$dobj" "${surv_objs[@]}"; then
+    if ! manifest_load "$cur_file" "$batch_bdir/${surv_px[0]}.h" "$batch_bdir"; then
+        echo "$cur_file: $GEN_CC_LOG" >&2
+        for mi in "${survivors[@]}"; do
+            unpack_batch_member "$mi"
+            local ci
+            for ci in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$ci]}" "$GEN_CC_LOG"
+                record_case_group_fail "$cur_file" "$ci" "harness.manifest unreadable"
+            done
+        done
+        return 0
+    fi
+    local -a man_objs=("${MANIFEST_OBJS[@]+"${MANIFEST_OBJS[@]}"}")
+    if gen_cc "batch link ($cur_file)" "$CC" $GENCFLAGS -o "$exe" "$dobj" "${surv_objs[@]}" "${man_objs[@]+"${man_objs[@]}"}"; then
         local newidx=0
         for mi in "${survivors[@]}"; do
             unpack_batch_member "$mi"
@@ -1607,7 +1620,7 @@ flush_batch() {
         gen_dispatch_c "$px" > "$sdc"
         unpack_batch_member "$mi"
         if gen_cc "solo dispatch ($px)" "$CC" $GENCFLAGS -I"$batch_bdir" -I"$SCRIPT_DIR" -c -o "$sdobj" "$sdc" \
-            && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o"; then
+            && gen_cc "solo link ($px)" "$CC" $GENCFLAGS -o "$sexe" "$sdobj" "$batch_bdir/$px.o" "${man_objs[@]+"${man_objs[@]}"}"; then
             run_case_loop "$sexe" batched 0
         else
             local ci
@@ -1631,6 +1644,118 @@ flush_batch() {
 # failure (the compiler's OWN refusal) is reported HERE, immediately, in
 # the identical shape the unbatched path reports it — it never reaches gcc
 # either way, so it never becomes (or costs) a batch member at all.
+# [INLINE-C] 1b THE SECTION'S HARNESS MANIFEST (docs/design/inline_c.md
+# §3.6). A directory that needs the user's C linked into its drivers (a
+# callout artifact declares `extern const rx_callout_ref rx_callout_<name>`,
+# which only a definition satisfies) carries `harness.manifest`, read ONLY
+# from the directory of the `.rxt` file being run: no `.rxt` text can name a
+# C file, and a directory without one links nothing extra. Its lines:
+#   link FILE    compile FILE (beside the manifest) and link it into every
+#                driver of the section
+# `#` comments and blank lines are skipped; any other line is a hard
+# harness failure. A source is compiled with `-include` of an artifact header
+# in scope, which is how it reaches the shared ABI block (`rx_ctx`,
+# `rx_callout_ref`) without a copy of it. Prints the object paths, one per
+# line; on a bad line or a failed compile prints the reason as its LAST line
+# and returns nonzero. It runs in a command substitution, so it cannot set
+# the caller's $GEN_CC_LOG: callers go through `manifest_load`, which does.
+manifest_objs() {
+    local rxt="$1" hdr="$2" outd="$3"
+    local mdir; mdir="$(cd "$(dirname "$rxt")" && pwd)"
+    local mf="$mdir/harness.manifest"
+    [ -f "$mf" ] || return 0
+    local kw arg rest src obj nallow=0
+    while read -r kw arg rest; do
+        case "$kw" in
+            ''|'#'*) continue ;;
+            link)
+                # rxt_format.md §6¶3-4: FILE is a name BESIDE the manifest
+                # (no `/`, so neither `../` nor a subdirectory, and two
+                # sources cannot share one object name), and the line has
+                # nothing after it.
+                if [ -z "$arg" ] || [ -n "$rest" ] || [[ "$arg" == */* ]]; then
+                    printf '%s\n' "$mf: 'link' wants one file name beside the manifest (got 'link $arg $rest')"
+                    return 1
+                fi
+                src="$mdir/$arg"
+                obj="$outd/manifest_$(basename "$arg" .c).o"
+                if [ ! -f "$obj" ]; then
+                    if ! gen_cc "manifest $arg" "$CC" $GENCFLAGS -include "$hdr" -I"$mdir" \
+                            -c -o "$obj" "$src"; then
+                        printf '%s\n' "$mf: 'link $arg' did not compile: $GEN_CC_LOG" | tr '\n' ' '
+                        echo
+                        return 1
+                    fi
+                fi
+                printf '%s\n' "$obj"
+                ;;
+            allow-code)
+                # [INLINE-C] stage 2: read by manifest_allow_code, which is
+                # the one place it means anything; here only its SHAPE.
+                if [ -z "$arg" ] || [ -n "$rest" ]; then
+                    printf '%s\n' "$mf: 'allow-code' wants one language list (got 'allow-code $arg $rest')"
+                    return 1
+                fi
+                # At most one (rxt_format.md §6¶3): a second line is not
+                # silently shadowed by the first (review 2026-10-27-r1-ic2 F6).
+                nallow=$((nallow + 1))
+                if [ "$nallow" -gt 1 ]; then
+                    printf '%s\n' "$mf: a second 'allow-code' line (at most one per manifest)"
+                    return 1
+                fi
+                ;;
+            *)
+                printf '%s\n' "$mf: unknown manifest line '$kw $arg $rest'"
+                return 1
+                ;;
+        esac
+    done < "$mf"
+}
+
+# [INLINE-C] stage 2 THE SECTION'S CODE GRANT (inline_c.md §5.2, rxt_format.md
+# §6¶3): echoes the LANGS of the manifest's `allow-code LANGS` line for FILE
+# when FILE is one of the run's ENTRY files, and nothing otherwise. A block of
+# a fragment an entry `include`s is compiled WITHOUT the grant, so code in an
+# included file is refused here exactly as pcrec refuses it: the harness never
+# decides where code came from, it only declines to launder a fragment's code
+# into a local compile.
+manifest_allow_code() {
+    local rxt="$1"
+    rxt_is_entry "$rxt" || return 0
+    local mf; mf="$(cd "$(dirname "$rxt")" && pwd)/harness.manifest"
+    [ -f "$mf" ] || return 0
+    local kw arg rest
+    while read -r kw arg rest; do
+        [ "$kw" = "allow-code" ] && { printf '%s\n' "$arg"; return 0; }
+    done < "$mf"
+    return 0
+}
+
+# Is FILE one of the files named to this run (not a fragment spliced in by
+# the include closure)? `rxt_entries` is filled where the closure is expanded.
+rxt_entries=$'\n'
+rxt_is_entry() {
+    case "$rxt_entries" in *$'\n'"$1"$'\n'*) return 0 ;; esac
+    return 1
+}
+
+# MANIFEST_OBJS=(the section's manifest objects), or return 1 with
+# $GEN_CC_LOG naming the bad line or the failed compile. A manifest that
+# cannot be read FAILS the section's cases (a HARNESS FAILURE), never links
+# nothing silently: a block that happens not to need the link would pass.
+manifest_load() {
+    MANIFEST_OBJS=()
+    local out line
+    if ! out="$(manifest_objs "$@")"; then
+        GEN_CC_LOG="HARNESS FAILURE: harness.manifest: ${out##*$'\n'}"
+        return 1
+    fi
+    while IFS= read -r line; do
+        [ -n "$line" ] && MANIFEST_OBJS+=("$line")
+    done <<< "$out"
+    return 0
+}
+
 stage_block_for_batch() {
     if [ "$batch_n" -eq 0 ]; then
         batch_dir_seq=$((batch_dir_seq + 1))
@@ -1784,6 +1909,19 @@ flush_block() {
         fi
         pflags+=(--features "$cur_features")
     fi
+    # [INLINE-C] 1b the block's numbered-callout declarations.
+    local co_d
+    for co_d in "${cur_callouts[@]+"${cur_callouts[@]}"}"; do
+        pflags+=(--callout "$co_d")
+    done
+    # [INLINE-C] stage 2 the file's code headers, and the section's code
+    # grant for an ENTRY file's blocks only (manifest_allow_code).
+    for co_d in "${head_code_headers[@]+"${head_code_headers[@]}"}"; do
+        pflags+=(--code-header "$co_d")
+    done
+    local co_allow
+    co_allow="$(manifest_allow_code "$cur_file")"
+    [ -n "$co_allow" ] && pflags+=(--allow-code="$co_allow")
 
     # [DD-14 wave A commit 3] the `engine`/`budget` directives -- the
     # minimal route to a corpus case that can reach `--engine=vm` with a
@@ -2008,7 +2146,8 @@ flush_block() {
         # of the artifact, because a block that binds a variable the pattern
         # never mentions is exactly the "unknown name is ignored" cell, and it
         # must still compile against the un-paired signature.
-        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS $_var_def -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+        manifest_load "$cur_file" "$bdir/gen.h" "$bdir" &&
+        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS $_var_def -I"$bdir" "${code_inc[@]+"${code_inc[@]}"}" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c" "${MANIFEST_OBJS[@]+"${MANIFEST_OBJS[@]}"}"
     } 2> "$_sz_tf"
     build_rc=$?
     build_log="$GEN_CC_LOG"
@@ -2110,9 +2249,10 @@ flush_block() {
                     "HARNESS FAILURE: pcrec $cur_file --target $px failed (exit $tsrc_rc): $tsrc_err"
                 continue
             fi
-            if ! gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$tdir" \
+            if ! { manifest_load "$cur_file" "$tdir/gen.h" "$tdir" &&
+                   gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$tdir" \
                     -DRXT_PREFIX="$px" -DRXT_UPREFIX="$upx" \
-                    -o "$tdir/t" "$SCRIPT_DIR/driver.c" "$tdir/gen.c"; then
+                    -o "$tdir/t" "$SCRIPT_DIR/driver.c" "$tdir/gen.c" "${MANIFEST_OBJS[@]+"${MANIFEST_OBJS[@]}"}"; }; then
                 record_fail "$cur_file" "$cur_pattern_line" \
                     "HARNESS FAILURE: $CC failed to build the driver for target '$px': $GEN_CC_LOG"
                 continue
@@ -2213,6 +2353,7 @@ if [ "${#files[@]}" -gt 0 ]; then
     _rxt_new_files=()
     for _rxt_f in "${files[@]}"; do
         _rxt_new_files+=("$_rxt_f")
+        rxt_entries+="$_rxt_f"$'\n'
         rxt_expansion=()
         rxt_expand_failed=0
         assoc_new rxt_closure_seen
@@ -2260,6 +2401,12 @@ for file in "${files[@]}"; do
     # unset, and `${#cur_vars[@]}` on one is a hard error — the same reason
     # every other array here is initialised at both places.
     cur_vars=()
+    cur_callouts=()
+    # [INLINE-C] stage 2 the file's `code-header` lines (from its
+    # `--list-source` head rows, below) and the -I that finds a header
+    # beside the file, set only when the file has such a line.
+    head_code_headers=()
+    code_inc=()
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     case_route=(); case_file=()
     have_block=0
@@ -2438,6 +2585,10 @@ for file in "${files[@]}"; do
         head_target_prefix=()
         head_target_def=()
         while IFS=$'\t' read -r _k _l _n _v _rest; do
+            if [ "$_k" = "code-header" ]; then
+                head_code_headers+=("$_n:$_v")
+                code_inc=(-I"$(cd "$(dirname "$file")" && pwd)")
+            fi
             [ "$_k" = "target" ] || continue
             head_target_prefix+=("$_n")
             head_target_def+=("$_v")
@@ -2697,6 +2848,7 @@ for file in "${files[@]}"; do
             # the first `pattern` line silently discards.
             cur_route="$RXTROUTE"
             cur_vars=()
+            cur_callouts=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
@@ -3155,6 +3307,7 @@ for file in "${files[@]}"; do
             cur_features_only=0
             cur_route="$RXTROUTE"
             cur_vars=()
+            cur_callouts=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=(); case_file=()
             have_block=1
         elif [[ "$line" =~ ^var[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
@@ -3346,6 +3499,27 @@ for file in "${files[@]}"; do
         elif [[ "$line" =~ ^ext([[:space:]]|$) ]]; then
             record_fail_class value-shape "$file" "$lineno" \
                 "'ext' wants a consumer name — a letter or '_' then letters, digits, '_', '-' or '.'"
+        elif [[ "$line" =~ ^callout[[:space:]]+([0-9]+)[[:space:]]+([a-z]+(,[a-z]+)*)[[:space:]]*$ ]]; then
+            # [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
+            # attributes, passed to pcrec as `--callout N:ATTRS`. The value's
+            # GRAMMAR is pcrec's (a bad attribute is its refusal); this arm
+            # reads the shape only, like `features`, and it is the SAME shape
+            # pcrec's own reader accepts (`pcrec_callout_decl_read`: N,
+            # whitespace, a non-empty lower-case comma list), so the two
+            # readers of the line agree on what is a `callout` line.
+            # APPENDED after the pinned region, W1.1's rule above (lane
+            # ic1bfix moved both arms out of the region, where they had been
+            # inserted): a `callout` line hit the catch-all before, so no
+            # existing line changes arm.
+            co_decl="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'callout' line before any pattern block"
+            else
+                cur_callouts+=("$co_decl")
+            fi
+        elif [[ "$line" =~ ^callout([[:space:]]|$) ]]; then
+            record_fail_class value-shape "$file" "$lineno" \
+                "'callout' wants a callout number and its attributes, e.g. 'callout 1 consume,once'"
         else
             # unparseable non-blank/non-comment lines are hard errors: a
             # corrupted corpus must not silently degrade to zero coverage

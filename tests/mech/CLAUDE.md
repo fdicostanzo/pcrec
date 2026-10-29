@@ -13,6 +13,7 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **run_sabotage_matrix.sh** — the driver.
 - **lib/replace.py** — the ONLY thing that edits a sabotaged file.
 - **reach_only_selftest.sh** ([MECH-REACHONLY], 2026-10-21) — self-test of `REACH_ONLY=1` (see its section below): a live probe, a failing probe, a declared-UNREACHED one.
+- **nocompile_selftest.sh** (review 2026-10-24 r1 subst, CHK-1) — self-test of the compile gate (`NOCOMPILE_ERE`: a failing arm whose log shows compiled code failing is ANOMALY, never DETECTED): S1354's original non-compiling plant must read ANOMALY, its warning-clean plant DETECTED.
 - **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given paths, at a path-component ...
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver.
 - `run_recursion_identity.sh` — section "[recidfix/varland] S273, and the FIRST ARM `run_recursion_identity.sh` has ever had (2026-09-25)" (history file)

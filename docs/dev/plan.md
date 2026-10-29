@@ -31,21 +31,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
-- [TT-JTUNE] STATE:started — TUNE `make test` PARALLELISM BY ROTATION, NOT BY SWEEP
-  filed: 2026-10-08 Frank
-  status (2026-10-08): FILED+STARTED 2026-10-08, lane ttune2, admin column; Frank: "our test suites sometimes go serial but we have 16 procs ... it's also possible that we oversaturate the procs ... can we just have it use the natural testing process? we run these all the time, just have it interject then"
-  refs: scripts/perfrun; scripts/perfrun.shapes; docs/dev/ttune_ledger.tsv; docs/dev/ttune_measurement.md; docs/dev/lanes/ttune_report.md; known_issues K44
-  `scripts/perfrun` wraps a chain's make-test line, picks a (make -jJ, PROCS=P) shape from `scripts/perfrun.shapes` (least-sampled uncontaminated), samples CPU + per-section times, returns make's rc unchanged, records a ledger row (`docs/dev/ttune_ledger.tsv`, per-run files folded by `scripts/perfrun --fold`). Red-shape triage (K44-ONLY / LOAD-SUSPECT flagged, not re-run) in BOILERPLATE.md. Profile #0 (decfbB0, -j6 PROCS=16, 13.5 min, ~83% busy, load1 up to 84, serial stretches small) and the DECISION RULE + default-derivation options (P = ceil(nproc/J) from MAKEFLAGS) in docs/dev/ttune_measurement.md. NEXT: chains use perfrun; when the rule's evidence bar is met a follow-up lane changes the default (procs_default.sh). Report docs/dev/lanes/ttune_report.md. Sequel to [TT-12]/K44.
-- [BOXQUEUE] STATE:started — ONE BOX-WIDE JOB QUEUE: jobs as scripts, exit codes say what next
-  filed: 2026-10-20 Frank
-  status (2026-10-21): MERGED b42c0e8f1 (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template; bench told (I-155), kit told.
-  next: the first real queued jobs (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
-  refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/boxqueue; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md; docs/dev/lanes/boxqueue_report.md
-  A queue directory (pending/running/done/failed); each job an executable script, ordered by name prefix, owner in the name. One runner holds scripts/boxlock per job; the job's exit code decides: 0 done, 75 not ready, 76 requeue, 77 cancelled, else failed. Readiness lives at the top of each script before any side effect; snapshot at start; bounded not-ready answers; every pass logged. Shared by main, the kit and the bench; chainrun stage files become job batches.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
   refs: docs/dev/lanes/r1gclose_report.md; docs/dev/optloop/round3_selection.md; docs/dev/optloop/gapreport/gapreport.sh; decisions D119 D137 D144 D153
+  note (2026-10-29, Frank): build a PRIMED list (docs/dev/optloop/primed_2026-10-29.md) from the subst (O-109), unusual (O-112) and regular (O-111) readouts, designs ready now; ONE optimization build at a time until [INLINE-C] is done, then the next round takes 4-6 in total, 2-3 builds at a time (weekend scale).
   analysis (targets by priority, grouped by CAUSE; D119's taxonomy + priority rule) -> per-mechanism plans -> an implementation batch of <=3 mechanisms, each an axis -> surgical correctness (identity gates, test-axes, sabotage) -> bench individually in the carve-out against the measured-gap bar -> make test on the set -> cycle -> full suite. TWO-TIER ACCEPTANCE (D144): alpha = make test + targeted timing per optimization; batch gate = full battery + wide bench per round; regressions become issues unless they are wrong answers. ITERATION POLICY (D119 addendum, Frank 2026-09-22): REPEAT on capability until under threshold; dive into another subbench when a row's investigation is better served there; open a NEW subbench when something deserves dissection — adaptive, searching; selection by measurement (D119).
   The DEFAULT path stays algorithmic and constrained to the engine architecture (wholly different = deferral); SIMD is the memfn kit's opt-in layer ([OPT-SIMD]). Children expand per cycle as [OPTLOOP.N.analysis] / [OPTLOOP.N.impl]; the parked candidates are listed under 'Candidates' below (D137). STANDING DUTY (moved from the archived [OPT-GAPREPORT], delivered: gapscript 0bb52eab, gaprep 829c728b, o83read): run the repeatable gap report (docs/dev/optloop/gapreport/gapreport.sh; D144 addendum 2) at selected round boundaries after a wide bench reading.
   - [LOSS-REVIEW] STATE:started — next OPTLOOP round's selection input: attribute and fix the trailing cells
@@ -56,7 +46,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Phase 3 (remaining twins, D6 panel, ranked list) follows.
   - [OPT-REVEND] STATE:started — REVERSE-FROM-END SEARCH
     filed: 2026-10-05 (first appearance in plan.md, git; author unrecorded)
-    status (2026-10-12): L0 MERGED c85a1aac (2026-10-10, no-mover); L1 + L2 WITH STAGE 2 MERGED 7388f1c0 (2026-10-10; revbuild + revtri + revfloor; abi 73; bit 52 `-fno-rev-end`; window twin 0 diffs vs libpcre2 over 2.77M cells; stage-2 corpus tests/revend/stage2_captures.rxt, 119 blocks)…
+    status (2026-10-26): L0 c85a1aac, L1+L2+stage 2 7388f1c0 (abi 73), B3 match-end mark 206cf0a0b (abi 78; forms one-seed/tagged/two-seed, endmark.md §R); B4 e842fe537 is [COMPOUND]'s driver. No bench cell in the population yet
     trigger: (D77, not met) a bench cell in this population — an `anc-tail` family (`\d+$`, `\s+$`, `\w+\z`, `[^/]+$`, `.*\.txt$`; matching and non-matching tails on a long subject) showing pcrec-vs-peer at rank — or a user/real-world pattern census naming the idiom (the bench's `wild-*` validators are all…
     refs: docs/dev/optloop/revend_census.md; tests/revend/stage2_captures.rxt; docs/design/locate_finish.md; docs/dev/lanes/rewtwin_report.md; docs/design/endmark.md; decisions D62 D77 D137 D156; known_issues K49 K50 K103
     for a pattern every match of which ends at `n` (`\z`) or at `n`/`n-1` (`$`, `\Z`), seed the existing reverse DFA at `n` (and at `n-1` when `s[n-1]=='\n'`), run it backward until it dies or reaches `search_from`, and take the smallest accepting position `s*` as the match START; then run the artifact's existing anchored entry once from `s*` for the end (leftmost-first can still choose `n` or `n-1`) and the captures (the VM over the found span). This REPLACES today's O(subject) forward pass (an end-pinned machine cannot stop before `n`; the skip loop helps only while parked in state 0) by O(match) work, on matching AND non-matching subjects.
@@ -66,7 +56,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     [REVEND-WALK-FORM] ANSWERED 2026-10-12 session 110 (lane b3rev, archived with this cleanup; docs/design/endmark.md section R + endmark/b3rev/timing/): form W — seed views resolved before the loop, first step peeled per seed; the per-iteration view probe is the whole gap (+0.93 ns/call), T/W 1.47-1.90x, 0 wrong over 90.96M cells; B3 adopts W for its walks.
   - [COMPOUND] STATE:started — THE COMPOUND ARTIFACT: one controller over private sub-artifacts (first client MATCH-SPLIT)
     filed: 2026-10-12 Frank
-    status (2026-10-12): session 110 close: B0-B2 MERGED 2a54c3e71 (zero movers); compound.md rev 2.2 (callout alignment, D163 add. 4-6); B4 (driver) BUILT on lane/cpb4 8fbc80081 (abi 76->77; 97 admitted by id, 0 bench; G1-G7 green…
+    status (2026-10-26): B0-B2 merged 2a54c3e71; B4 (driver) merged e842fe537 (abi 76->77); B3 for [OPT-REVEND] 206cf0a0b (abi 78); compound.md rev 2.2; E0, E0c, E1 merged under [ENTRY-TABLE]; first client [MATCH-SPLIT] under way
     trigger: per further client, each gated in the charter (DFA-locate + VM-finish captures, per-branch locators, concatenation split, lookahead-as-check); the first client [MATCH-SPLIT] is under way.
     refs: docs/dev/reviews/2026-10-12-r2-composite.md; decisions D88 D144 D151 D163 D164
     the COMPOUND ARTIFACT as a general tool: one exported call interface (a controller) over private sub-artifacts the unchanged compiler produces, linked via [EMIT-ENTRIES]' three categories (exported / kept static / omitted), one rx_info. First client [MATCH-SPLIT]. Other clients, each gated by its own trigger: DFA-locate + VM-finish captures (TRIGGER: a capture-heavy bench cell on the VM where a DFA locate is possible; check vs the hybrid first); per-branch locators (4c / D151 add. 6 F2); [ADAPTIVE-ARM]; arch-specific versions with run-time dispatch (TRIGGER: a SIMD form that must ship beside its scalar form, D144 add. 4). (2026-10-12, D163 add. 3) ONE captures array in the parent's numbering across all parts (parts declare written/read groups; standalone parts renumbered).
@@ -74,7 +64,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     - [ENTRY-TABLE] STATE:started — ENTRY TABLE: every exported entry is a compound controller over shared parts (E0, E0c, E1)
       filed: 2026-10-16 manager (D163 add. 7-11, Frank, session 113)
       status (2026-10-18): E0, E0c and E1 MERGED (E1 = the part-layout controls, merge 7c0a90479, abi 80, review r1-e1 fixed; [ATTR-TABLE] landed 7d3587441); every preset cell a dagger; next E1-prime (each preset cell by its own measured diff, D103)
-      next: merge lane/e1 on its owed make test, mech solo rows and test-axes arm; then E1′ cells, each by its own ruled diff with a size and a time measurement
+      next: E1-prime: each preset cell by its own ruled diff with a size and a time measurement (E1 merged 7c0a90479)
       refs: docs/design/compound_entries.md (rev 4); docs/dev/lanes/e0build_report.md; decisions D163 add. 7-11
       Steps. E0 = E0a+E0b, zero movers. E0c = the per-combinator entry emitters re-spelled through entry_rows[]. E1 = the part-layout controls go live in ONE abi event: the stamp vocabulary plus the controls' spec hunks (D80), the first live non-zero cell; position 0 stays as emitted (add. 10). Part rank static (add. 9), layout per row through flags (add. 11), switches first with the dial as presets (add. 8).
       F5 (review r1 2026-10-18, docs/dev/reviews/2026-10-18-r1-e1.md): `copyable` is JOB-WIDE, not per entry (`Job.pl.uncopyable`, set by any DFA label table the attempt emits; no computed-goto fact is recorded), true only because every subject today is a DFA body; make it a per-entry fact (an entry-table column, unlock (f)) on its trigger. Trigger: the first VM-bodied or `find` subject.
@@ -98,6 +88,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     refs: docs/dev/summaries/2026-10-11-prior-cost-inputs.html; docs/design/prior_cost_unify.md; docs/dev/optloop/lossreview/fixes.md; docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md; decisions D6 D158 D161; known_issues K102
     propose ONE primitive (expected hit gap of a landmark under the prior, versus the work it saves) that each row's predicate reads, so the cut-overs are derived in one place and not re-hand-set per row. rlhbuild §7 has a proposed shape; not built. Also records that the admission reads the prior only (hcolon_in admitted, x1.5 on colon-dense text).
     2026-10-11 ([LOSS-REVIEW] r2 D6 panel F2/F5, lane lrrev): the primitive GENERALIZES `prefix_k.c` `model_cost`, and the family has EIGHT further members — `run_window_start` (`findings.c:586`), `run_pin` (`kset.c:298-309`), `req_pick`/`req_byte` (`req.c:646,689`), `vm_reseed_cal` (`emit_vm.c:11033-11036`, the gap R4 reads at `emit_dfa.c:8532`), `prefix_k`'s singleton gate (`prefix_k.c:225`), `pass < 4` (`emit_dfa.c:4747`), `MIN_SCAN_CHAIN` (`limits.def:392`), `FIND_FLOOR_PPM` (`limits.def:186`); `deferpre`'s K=64 is unlabelled; pointer `docs/dev/optloop/lossreview/fixes.md` §1 F1 + `docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md`. FOR FRANK: schedule after [REQ-HANDOFF-L1] merges?
+    2026-10-27 lane subtri (bench O-109 case 2 rare): the default prior rates `/` 7x rarer than `d`, so the `admin/` run is keyed on `/` (20M in a web log); `--analysis=weblog` re-keys it to `d`. Byte choice alone 0.3%; with VM-hybrid re-entry ([L1-VMHYB]) x4.8 cycles together.
 - [ARTREV] STATE:started — BOTTOM-UP ARTIFACT REVIEW
   filed: 2026-10-05 Frank
   status (2026-10-05): D150, Frank 2026-10-05; charter docs/dev/optloop/artrev/charter.md; INDEPENDENT of the round workflow, feeds [OPTLOOP] candidates only
@@ -119,6 +110,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: see the charter (re-worded 2026-10-11 after rlhtwin).
   refs: docs/design/plan_row_bodies/ENG-TACTICS.md; docs/design/where_to_start.md; docs/dev/lanes/rlhtwin_report.md; decisions D77 D151 D153 D161
   no general planner — a small fixed set of tactic ROWS (reverse-inner among them), each with a precondition computed from [PATFACTS] facts and a one-time soundness argument, first-match, the plain VM as the always-sound last row. FIRST STEP when opened: a TACTIC CENSUS over the VM-only-at-auto population (backref/linked-call) + `--engine=vm`, reporting which tactics' preconditions hold per pattern (D77: build only what measurably pays). TRIGGER (re-worded 2026-10-11 after rlhtwin): see the full text. Evidence: docs/design/where_to_start.md and where_to_start/, docs/dev/lanes/rlhtwin_report.md, rincensus_report.md, rinmodel_report.md, et1twin_report.md. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/ENG-TACTICS.md.
+  2026-10-27 lane subtri (bench O-109 case 5b mask-email, x3.16 behind rust): rev-inner's trigger fires (an unbounded leading class before a rare `@`; the easy form, the class excludes `@`). The forward DFA steps 93% of 362 MB and restarts 53.6M times; an @-driven hand twin cuts instructions x75 (cycles x45). Evidence docs/dev/lanes/subtri_report.md.
 - [UCP] STATE:started — PCRE2_UCP semantics (`\w \d \s \b` + POSIX classes over code points) under `-e utf8`
   filed: 2026-09-30 filer not recorded
   status (2026-10-12): the design is merged and Q1-Q9 were RULED YES 2026-09-28 (D130); U0+U1 MERGED 2026-09-29 (abi 44 -> 45); U2 — the A_CTX context node + per-machine context-set table — MERGED 2026-09-30 (u2land, abi 45 -> 46, with the anchored-entry dead-state fix of lane ucpu3)…
@@ -126,7 +118,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   supersedes utf8_design.md §14 ASK 4's 'no axis at M5, door open'. Design docs/design/ucp_design.md; inputs docs/dev/ucp_study.md, lookaround_census.md, cls_tree_design.md §3.4/§9. TRIGGER for [ART-POSS-ARMS]'s re-sweep (archived row; poss_arms.md §8.3): when the kit-sized UCP `\w` route lands under `-e utf8 --ucp`, re-sweep the arms' `utf,ucp` rows — `docs/design/poss_arms_measurements/rev21/r21_claimmark.py` pins their REFUSED count (`UCP_PIN`) and exits 3 when it moves. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/UCP.md.
 - [VAR] STATE:started — VARIABLES + SEARCH/REPLACE
   filed: 2026-09-23 Frank
-  status (2026-10-12): the design set was DELIVERED + MERGED 2026-09-23 (four notes + roadmap; D6 panel r1; D121: variables passed BY NAME); the MVP PATTERN HALF is MERGED (809aab12, abi 31 -> 32, module `vars`, `${name}` in a pattern, docs/spec/vars.md; varmvp + vartriage)…
+  status (2026-10-26): pattern half MERGED (809aab12, module `vars`); M9 gate MET: [M4-SUBST] core landed 9ae59f5d4 (replace half = compiled substitution); M9 itself not started. Long form and older status: docs/design/plan_row_bodies/VAR.md
   refs: docs/design/plan_row_bodies/VAR.md; docs/spec/vars.md; docs/design/variables_common.md; decisions D6 D77 D121; known_issues K50
   shell-style variable insertion (bash/zsh syntax, `${name}`, `:-`/`:+`) for patterns and replacements, one common variable design plus two consumers: docs/design/variables_common.md, variables_pattern.md, replace_design.md, variables_roadmap.md (reports vardesign, varmvp, vartriage, varfollow). The central claim, which survived every panel lens: a pattern variable IS a backreference with a caller-supplied span (so caseless is the backref's own compare). ABSORBED [FEAT-VAR] (SUPERSEDED 2026-10-12): its four design questions are answered ((b)(c) answered, (d) a signature change, (a) the DFA string-edge variant stays deferred). FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/VAR.md.
 - [BENCH-UTF8] STATE:started — the `utf8` subbench, requested as I-90 (bench inbox)
@@ -188,14 +180,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     next: hand to [REGIME-EVAL] as its J1 judge population (the kit); rev22_population.py MISLABELLED set + regime_eval.md caveat (c) name the old files
     refs: [UTF-RW] (pattern harvest sibling); [REGIME-EVAL]; docs/design/regime_tables.md
     Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
-- [KNOW-SRC] STATE:started — ONE KNOWLEDGE-SOURCE MODULE: shared loader, stamp and data-mover census
-  filed: 2026-10-14 Frank (endorsing panel r1's sibling-family finding msc2-9 and unlock U1)
-  status (2026-10-17): K0-K3 DONE (K2+K3 merged s115: ksgen, canonical/decoded views, analyze --dump-doc, test-knowledge R1-R3/R5; 0 movers, make test 72/72, mech 41 DETECTED + S1029 expected UNREACHED); next: [MEASURE-SET] M0 adds the measures kind
-  next: land lane/int3; then K2 (ksgen analysis, gen-findings) + K3 (canonical/decoded views, spec hunks) in a fresh lane; ahead of [MEASURE-SET]
-  refs: docs/dev/reviews/2026-10-14-r1-measure-sets.md (msc2-9, msc1 U1/U2); docs/design/measure_sets.md; decisions D162 D166; [MEASURE-SET] [TABLE-JUDGE] [LIST-TABLES]
-  One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
-  ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
-  KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
 - [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-23): M0 on main (measures row, measure_store/ zen4-grid1@1, --measures + config, stamp, --list-measurements); Frank ruled the stop-ranking study Q1 + Q3 (RULED lines below)
@@ -206,41 +190,50 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   FORMAL LIBRARY (Frank 2026-10-23, Q3: "make it a formal thing and build it as a library of values ... pcrec will run on different machines and need timings for each"): (a) a canned, self-contained pcrec script (part of pcrec, not bench) that measures any machine into a set, the install-time tool above; (b) closest-match selection over the library as DECLARED FALLBACK ROWS (microarch -> ISA level -> arch family -> generic), visible in --list-measurements and stamped; (c) targeting another machine (built: --measures / config line); (d) the generic envelope default (M2). Only this box is measured now; the rest stays in this item, unscheduled.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
-  status (2026-10-21): part 2 done (P2e, abi 81); part 1: kit Z1+Zk merged; X0 passed on kit_proof rev 2.2; main Z2 BUILT on lane/z2build (the span_facts slice, the harness-routed `cover` row, zero default movers by the light probes), its heavy checks queued (boxqueue 540-543-z2build)
-  next: merge Z2 on its queued verdicts (docs/dev/lanes/z2build_report.md), then the timing look and B1 after the kit's B4 (kit_proof.md §7)
+  status (2026-10-26): part 2 done (P2e, abi 81); part 1: kit Z1+Zk merged; X0 passed; main Z2 MERGED aeb381c25 (2026-10-21, harness-only, 0 default movers, make test + recursion identity green, post-merge job 125)
+  next: the timing look and B1 after the kit's B4 (kit_proof.md §7)
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
-- [M4-SUBST] STATE:started — compiled substitution: the implementation row of replace_design.md
-  filed: 2026-10-12 Frank
-  status (2026-10-22): design R4c ruled (panels r2 + use-case fit r3); BUILD GO 2026-10-22 ("Subst is a go"); lanes substb2 (interface, lane/subst) and substcase (case table) building
-  next: substb2 + substcase deliver; then the extended-forms lane; replace-all waits for I1+I2 on main; then a D27 adversary and the landing
-  refs: docs/design/replace_design.md; docs/design/subst_template_design.md; docs/design/variables_roadmap.md; decisions D18 D26 D38 D173
-  COMPILED SUBSTITUTION: the IMPLEMENTATION ROW of docs/design/replace_design.md (design of record: D38's fourteen rulings in docs/design/subst_template_design.md plus replace_design.md's caller variable environment). RESTATED 2026-10-12 (Frank kept the row, session 111): M4 shipped 2026-08-18, so nothing waits on M4 any more; unscheduled, starts on Frank's word. [VAR] M9 (the variable side of replacement, docs/design/variables_roadmap.md) is gated on THIS row's core landing. CHARTER (Frank, 2026-08-12: the headline xmas item): the `pcre2_substitute` capability as an AOT artifact — pattern AND replacement template compiled together into one emitted C function (match + splice), first/global modes, caller-buffer zero-allocation mode plus an output-sizing mode.
-  The template compiler is almost completely independent of the matcher (Frank's observation, recorded because it sequences the work): it consumes only the capture-offset CONTRACT, so its design note can precede M4 even though end-to-end substitution is capture-gated. AOT-only win to preserve in the design: `$n`/`${name}` references are resolved and BOUNDS-CHECKED AT COMPILE TIME against the pattern's own group count — a template naming a group that does not exist is a compile error, where PCRE2 discovers it at substitute time. Tier the template language: core `$n`/`${name}`/literal escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing, ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's earn-its-axis discipline.
-  BEYOND-PCRE2 DIRECTION (Frank, 2026-08-13: "this might be an area where we provide more capability than pcre2"): richer shell-style transforms and C FUNCTION CALLBACKS as template segments — a segment that calls an embedder-defined `extern` to render, reusing M4-CALLOUTS' static-extern primitive verbatim (compile-time bound, zero cost when absent). Discipline: everything past PCRE2's surface lives in pcrec's own clearly-flagged namespace (SR-10's rule) so the D26 compatibility story stays clean — PCRE2-compatible core, pcrec-extended templates opt-in; non-portability is a non-issue for the embedded niche, which is compiling in anyway.
-  RE-AFFIRMED + SHARPENED (Frank, 2026-09-06, fifty-sixth session: "extremely fast search/replace engine ... no allocation ... stream or in-place ... the replace front end would know the group output so it wouldn't have to interpret the replacement string. thats pretty cool stuff"): two MODES join the charter with their honest boundaries stated up front. (1) IN-PLACE: free exactly when replacement length <= match length (the write cursor trails the read cursor and the invariant holds left-to-right); a GROWING replacement cannot be in-place left-to-right without a gap — the mode's contract states the boundary rather than letting a caller discover it.
-  (2) STREAMING, with the AOT-specific win: a streaming replace needs a HOLDBACK buffer for a partial match at the chunk boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller supplies a fixed buffer of stamped size, zero allocation; the [DD-14.FB] BufSurface precedent for caller-provided capacity), and an unbounded-width pattern REFUSES streaming mode honestly by name. No runtime engine can promise a compile-time holdback bound; it falls out of the architecture. Positioning note: this is a completeness-category differentiator (memory pcrec-post-spine-direction, 09-06) — subst is where full PCRE semantics + AOT beats both the subset engines (no captures/templates) and pcre2 (runtime template interpretation)
 - [FINDALL-NEXT] STATE:started — find-all iterator over a caller-filled struct (generic callers loop over info->next / next_n)
   filed: 2026-10-09 Frank
   status (2026-10-23): I0+I1+I4 LANDED on main (merge b8c66a739, abi 84, one event; RX_FOREACH dropped D175; r2 critic fixes, review 2026-10-23-r2-iter-code.md); remaining: I2 the kit's `st`, I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]
-  next: I1's validation, then merge; I4 (`_next_n`; RX_FOREACH dropped D175, abi 84, findall_iter_i2.md rev 2) BUILT on lane/i2build, validation + I4-time queued (i2build_report.md); rev 3's stage numbers kept: I2 the kit's `st`, I3 `pair-hits`, I4 next_n; internal batch withdrawn
+  next: I2 (the kit's `st`, arrives with the kit's kit-find row, findall_iter.md IC2) then I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]; none started
   refs: docs/spec/match_api.md; tests/assertions/gstart_findall.c; tests/encseam/findall_driver.c; tests/codegen/entry_shape_driver.c; docs/dev/lanes/f3search_driver.c; decisions D38 D76 D80 D83 D94 D132 D158; known_issues K75 K105
   wrap the find-all advance (match_api.md §3.1 "Finding every match": `p = non-empty ? <prefix>_next_pos(s,n,end-1) : <prefix>_next_pos(s,n,start)`, the [K75]/D132 aligned rule) in an emitted macro or `static inline` per-artifact helper (e.g. `<prefix>_next_start(s, n, caps)`), so callers stop hand-copying it and the looping rule can change later without touching callers. TODAY: the spec carries the loop as prose a caller copies; three in-tree drivers copy it by hand (tests/assertions/gstart_findall.c:64, tests/encseam/findall_driver.c:45, tests/codegen/entry_shape_driver.c:75; plus docs/dev/lanes/f3search_driver.c).
   EVAL QUESTIONS: (1) macro vs `static inline` in the artifact's .h vs an exported function (header-inline keeps it free and type-checked; an exported symbol is an rx_info/[V-E] entry-pointer candidate); (2) helper for the ADVANCE only, or a whole step `<prefix>_search_next(s,n,&p,caps)` returning the next match — the latter is where future flexibility pays: replace_design.md §3.8 notes the §3.1 loop cannot express PCRE2's NOTEMPTY_ATSTART retry for empty-preferring patterns, and [OPT-HYB-RESEED-XCALL]/xcall.md §5 held a caller-owned cross-call state (`_search_ex` + `pcrec_search_state`) that would ride the same entry; (3) relation to [V-E]'s entry-pointer struct; (4) it is emitted scaffolding: an abi event + spec hunk (D76/D94/D80), and the drivers migrate to it in the same change. Cost S.
   LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.
 - [GATE-RUNS] STATE:started — CHECKS OUTSIDE make test HAVE NO REGULAR RUNNER AND NO RETAINED VERDICT
   filed: 2026-10-23 manager, from research lane gatecensus (docs/dev/gate_census_2026-10-23.md)
-  status (2026-10-23): schedule ruled (D177); queueable job scripts/fullsuite_job.sh and docs/dev/full_suite_ledger.md built; no run yet, triggers far past
-  next: first run tonight after the iterator landing, queued by the manager for the window; copy its summary.txt into the ledger
+  status (2026-10-26): first full run 2026-10-24 (job 300, 5596c3207): RED (axes, mech, recid known [RECID-A]); fsfix 1de780cb7 and [EMIT-BIDI] 7234c2e86 fixed the stale reds; 624 axes re-run validated them; ledger has the run line
+  next: the second full run, queued as 600-main-fullsuite-20261027 (not before 2026-10-27 00:05, Frank); copy its summary.txt into the ledger
   refs: scripts/battery.sh; decisions D136; [RECID-A]; docs/dev/gate_census_2026-10-23.md
   The census: every check outside `make test` depends on a hand-launched scripts/battery.sh, which keeps no verdict on this box (battery verdicts survive only as journal prose), and pins inside those checks are re-pinned with nothing exercising them between launches. Seven checks have no runner: ksweep, memfn-g2-full, lbsweep, specimen, tiered-entry, uprops-utf8, spec. test-recursion-identity is the third gate to go silently red (D136 recorded the second).
-- [MONITOR-QUEUE] STATE:started — THE RUN MONITOR MISSED EVENTS; ONE QUEUE WATCHER FOR A STANDING HAIKU SESSION
-  filed: 2026-10-24 manager, from the first full-suite run (both monitors missed events)
-  status (2026-10-24): Frank's go 2026-10-24; lane monwatch: watchrun stage-END format fix, a simulate mode for the full-suite job (fake stages, real code paths), a queue-wide watcher script tested against it, a /pcrec-monitor session skill
-  next: land monwatch; first live use on the owed test-axes re-run
-  refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
-  Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
+- [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
+  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
+  status (2026-10-26): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; main make test after landing = job 622 GREEN 77/77; design uprop_more.md, D178
+  next: a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN] (none started)
+  refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
+  Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
+- [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
+  filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
+  status (2026-10-24): design docs/design/data_plan.md delivered; Frank's rulings D179 (fair effort, simple formats read in place, small form on request, sharing when needed)
+  next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
+  refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
+  Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
+- [INLINE-C] STATE:started — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
+  filed: 2026-10-26 Frank (selling points: speed, convenience over an extern rx_renderfn/callout, the front-page coolness factor)
+  status (2026-10-28): stages 0 (abi 88), 1a (kindrow.def), 1b (abi 89, merge 719a17ccb: callout call site, firing classes, `once` reading rule with fix verdicts) and 2 (abi 90, merge c6707bb5a: tagged (?C`c: ...`) embedded C, with the review 2026-10-27 r1 ic2 FIX-NOW fixes) LANDED. Rulings in the row body.
+  next: stage 3 (sha-pinned includes; its brief carries F27/F28/F29/F38, see the row body).
+  refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
+  A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
+
+- [SUITE-RESUME] STATE:started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
+  filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
+  status (2026-10-25): LANDED 4dd8af50b (offline test 33/33); staged real test OWED (report recipe: reduced battery killed after strict, then resume; ~4 min); resume reruns the SAME code (flakes, not fixes)
+  next: one sonnet lane runs the staged test after 624 and before the bench window; no full-suite use before it
+  refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
+  Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
 
 
 ## Candidates ([OPTLOOP])
@@ -276,6 +269,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   FIRST MEASURED INPUT OUTSIDE THE SYNTAX SUBBENCH (D131 item 8; bench O-74, [FINDINGS-BENCH-TIERS]'s B115 ledger, ORACLE-BEST on email-specimen@0.2's whole-subject forms): the forced-VM route beats what `auto` selects — `floor` compliance ×0.648 under `vm tune 0`, `orig` compliance ×0.856 under `vm tune 2` — while loglines@0.1's own ORACLE-BEST headroom reads ~0 (×0.989-1.001 on every cell but one noise-floor outlier), so the loss is real and CLASS-SPECIFIC (whole-subject email forms), not general. Frank 2026-09-27: on various SHORT patterns (named example: anc-m-caret) the VM WITH captures beats auto's no-captures artifact; "with a few exceptions, pcrec has an engine that beats most in the syntax subbench outside large-subject-search" — i.e. the losses there are largely SELECTION, not missing engines.
   Same family as O-63's finding (short whole-subject matches: auto picks a DFA its own VM beats ×1.5-4.5) and [SEL-SIZE] above (a warned 937 KB DFA picked where the VM is ×6.6 faster), which becomes one instance of this row rather than a parallel mechanism (general-mechanisms rule). FIRST STEP when opened: an EXHAUSTIVE read of the syntax subbench (Frank: "we should look exhaustively") — every row, auto vs each engine form (dfa/vm/hybrid, caps/nocaps), the population where a non-auto form wins and by how much, grouped by cause — from the bench's reports/matrix, bench-only questions relayed to the bench dev (memory pcrec-ask-bench-dev). The mechanism (a measured selection term, [OPT-DIAL]'s territory) is designed from that census, never per-pattern.
   [2026-10-03 bench O-82 Q2/Q3: forced-DFA beating auto is EMPTY in timing too — 191 common syntax cells 0 movers >5%, 83 capability cells 2 movers both at the ~20-30 ns timer floor on program-identical artifacts.] 2026-10-03: step 1 designed (docs/design/sel_cost.md) and NOT built — no bucket clears D119 as a compile-time term; the admission rule (sign holds in every regime, dense and sparse) is the D77 trigger; replaced in round 1 by [OPT-VEDGE] (RULED 2026-10-03 (Frank)).
+  note (2026-10-26, lane selflip, docs/dev/lanes/selflip_report.md): auto-vs-forced-VM losses (litrun lit-l*, bounded ctx-*, capability hazard subjects) reproduce, but NO compile-time rule separates them: same stamps flip by subject (cat: auto x2.45 on prose, VM x2.0 on dense decoys; email-owasp shares stamps with 11 auto wins). sel_cost.md conclusion re-confirmed. Deciding facts are runtime: filter candidate density; attempt survival d vs distance L to the required byte. Kit-proven route: lit-l16 admitted today (scalar chain, 24 us vs VM 15), others decline (k>32, captures, variable width).
 - [OPT-3-RUNEND] STATE:not-started — DFA run-end skip and two-byte transition table (refiled out of OPT-3)
   filed: 2026-09-30 lane parkmeas
   status (2026-09-30): not started; REFILED 2026-09-30 by lane parkmeas out of [OPT-3]'s closed STEP 3, D137; priced, NOT chartered — D77
@@ -364,19 +358,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: (D77) a cell where the prior contradicts the text and the compile-time decision loses by more than the null band — the pair `bak-2` vs `phone-no-start-set` under prior-contradicting text is the named witness; until one is timed, file only.
   refs: docs/dev/optloop/lossreview/fixes.md; docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md; decisions D6 D77; known_issues K105
   ONE runtime-adaptive arm for the decisions that today decline or admit at compile time on the prior alone: members the RETRY adaptive rows (`pcrec_reseed_rows`), K105 (the handoff admission, [PRIOR-COST-UNIFY]'s pick half: hcolon_in admitted, x1.5 on colon-dense text) and [LOSS-REVIEW] candidate 5(a)'s dense decline (a compile-time decline repeats hcolon_in's x1.5 on text that contradicts the prior). General form: a table armed / unarmed / off whose INITIAL state the [PRIOR-COST-UNIFY] primitive sets and a run-time counter may flip. TRIGGER (D77): a cell where the prior contradicts the text and the compile-time decision loses by more than the null band — the pair `bak-2` vs `phone-no-start-set` under prior-contradicting text is the named witness; until one is timed, file only. Pointer: `docs/dev/optloop/lossreview/fixes.md` §1, `docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md` (F6).
+  note (2026-10-26, lane selflip): candidate member T2, PRESENCE `one-attempt-deferred` (run the attempt, fall back to the required-byte memchr once it survives past ~n/53; <=~2% overhead by ski-rental argument); timed witness email-owasp t-evil-match-60k 23 us auto vs 0.375 us VM. G2's premise ("the check scans the window the attempt reads anyway", emit_dfa.c:9926) is false for memchr. Frank 2026-10-21 adaptive-methods caveat applies: filed, not built.
 - [SIZE-KNEE] STATE:not-started — the size-knee / materiality cut-overs as one derived quantity
   filed: 2026-10-11 lane lrrev
   status (2026-10-11): not started; FILED 2026-10-11, [LOSS-REVIEW] r2 D6 panel F6, lane lrrev; filed, NOT scheduled; D77
   trigger: (D77, lane wording) a measured size or throughput miss traced to two of these cut-overs disagreeing, or [OPT-DIAL]'s lambda row reopening; until then it is a pointer so the members are not re-derived.
   refs: docs/dev/optloop/lossreview/fixes.md; docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md; decisions D6 D77
   the SIZE-KNEE / MATERIALITY family of cut-overs that decide on emitted size or on a materiality fraction: members `SIZE_TERM_THRESHOLD`/`SIZE_TERM_BAR` (75%), `INLINE_CHAIN`, the ISL knobs (factor 2), `SCAN_EDGES`, clskit `PLACE` `atom_min_sites` (11), `FAST_TIER`, and `MATERIAL_NUM` (`prefix_k.c`). General form: one derived knee/materiality quantity instead of per-site constants — [OPT-DIAL]'s lambda and the `tune.c` cells are the existing home. File, do not build. TRIGGER (D77, lane wording): a measured size or throughput miss traced to two of these cut-overs disagreeing, or [OPT-DIAL]'s lambda row reopening; until then it is a pointer so the members are not re-derived. Pointer: `docs/dev/optloop/lossreview/fixes.md` §1, `docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md` (F6).
-- [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
-  filed: 2026-10-12 Frank
-  status (2026-10-12): not started; RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes…
-  trigger: (measured) router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2).
-  refs: docs/design/litscan_k82h.md; decisions D6 D77 D122; known_issues K64 K82
-  before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
-  The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
 - [OPT-HYB-RESEED-XCALL] STATE:not-started — carry a last-run density hint across calls in a find-all
   filed: 2026-09-29 lane reseed
   status (2026-09-29): not started; FILED 2026-09-29 by lane reseed, per the charter: the cross-call hint is OUT of [OPT-HYB-RESEED]'s scope
@@ -587,6 +575,125 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ERR-MSG-TRUNC] STATE:not-started — A DIAGNOSTIC LONGER THAN pcrec_error.msg[256] IS CUT SILENTLY
+  filed: 2026-10-29 manager, from lane ic2d27land's Bug B (docs/dev/lanes/ic2d27land_report.md, "Bug fixes")
+  status (2026-10-29): not started. The public `pcrec_error.msg[256]` (lib/pcrec.h) truncates a refusal without a mark (`pcrec_ext_msgf`); the lone-carriage-return code refusal ran to 268 bytes, was cut mid-word, and was shortened by hand (S1741 holds that fix).
+  trigger: the next diagnostic that overflows, or [IFACE-PUSH].
+  refs: docs/dev/lanes/ic2d27land_report.md; lib/pcrec.h; tests/mech/sabotages/S1741_code_refusal_sentence_cut.sh
+  Direction (manager): a check that every diagnostic template fits at its worst-case argument length, plus a visible truncation mark when one still overflows; the struct size stays (public ABI).
+- [WTPRUNE-DIR-SCOPE] STATE:not-started — `wtprune --apply --dir NAME` ALSO REMOVES EVERY GATED WORKTREE
+  filed: 2026-10-29 manager
+  status (2026-10-29): not started. Meant to remove one D27 cell; with no worktree NAMEs, `--apply` also removed all 9 gated REMOVE candidates (7 kit memfn-* trees). All merged, clean and quiet, branches kept: nothing lost.
+  next: make `--dir` alone scope `--apply` to the named dirs (worktrees only when NAMEs are given too), plus a self-test row.
+  refs: scripts/wtprune (arg parse, line 83); worktrees/.wtprune.log 2026-10-29T02:43
+- [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
+  filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
+  status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
+  trigger: (measured) the reqvm1m mover census finds a hybrid-with-re-entry pattern whose VM-only form would keep its attempt rows (today 0 at the shipped caps; its one `dropped-hybrid-size` cell has a one-byte landmark).
+  refs: docs/dev/lanes/reqvm1rung_report.md; docs/spec/limits.md §8.4 row 4a; D77
+  A per-form refinement needs a row that can fire once per form (hybrid, then VM-only), which breaks the fit table's once-per-row record bound. Filed unscheduled.
+- [SCANNER-DOGFOOD] STATE:not-started — THE `(?{ ... })` C SCANNER AS A PCREC-COMPILED PATTERN INSIDE PCREC
+  filed: 2026-10-27 Frank ("Ok scanner dogfood")
+  status (2026-10-27): not started. The pattern is in tests/recursion/cscan.rxt (76 cases, libpcre2-verified; merge of lane/scandog) and went to the bench as I-165.
+  next: after [INLINE-C] stage 2 merges: build the `(?{ ... })` spelling ONCE, on the generated cscan matcher (Frank 2026-10-27: no throw-away hand-written scanner; stage 2 ships the tagged (?C`c:`) spelling only); cscan.rxt is its table; decision entry for the bootstrapping rule.
+  refs: [INLINE-C]; docs/design/inline_c.md §2.3; the corpus pattern from lane scandog
+  Bootstrapping: the generated .c is COMMITTED and refreshed by a make gen-* target (third_party tables are the precedent); a check fails when the committed file differs from a fresh generation; the first build never needs a working pcrec.
+- [MECH-NOCOMPILE] STATE:not-started — 31 SABOTAGE ROWS WHOSE PLANT DOES NOT COMPILE, AND MECH STAYS GREEN
+  filed: 2026-10-27 manager, from lane suitetri (full suite 20261027 mech: anomalies 31, was 2; CHK-1 classifier, substr1fix 7047b69e4, landed after the previous run)
+  status (2026-10-27): not started. 14 plants trip -Werror (unused, maybe-uninitialized, parentheses); 11 are stale against current code (S106/S271 name the pre-rename rx_span_match; S53/S56/S57 `stv` undeclared); 6 are designed compile-time catches the classifier cannot tell apart (S07, S1112, S184, S526, S989, S1242).
+  next: fix lane: make the 14 warning-clean, re-anchor the 11, give the runner a per-row declaration for a designed compile-time catch; plus an anomaly-count ratchet so unmeasured rows cannot leave `make mech` green.
+  refs: docs/dev/lanes/suitetri_report.md; build/full_suite/20261027_7d3be7ec7/mech.log; memory pcrec-check-design-lessons (populations nobody counts)
+- [MECH-PROCS] STATE:not-started — MECH ROW CONCURRENCY USES ~HALF THE DEV BOX; MEASURE IT, OR LET THE RUNNER ADAPT TO A CPU TARGET
+  filed: 2026-10-27 Frank ("File it. Include the idea that the script slowly increments parallelism to target 90%+ cpu usage")
+  status (2026-10-27): not started. Full suite 20261027 mech at MECH_PROCS=6 (scripts/battery.sh:131, "[TT-8]'s own measured setting", not measured on the 7700X/16-thread box): 36% user + 18% sys, 46% idle, load ~10; ~1,040 rows take ~7 h.
+  next: (a) measure a fixed 60-row slice at PROCS 6/8/10/12/16 on a quiet box, set the default from the knee, record it beside the constant; (b) Frank's idea: the mech runner starts low and raises concurrency step by step while CPU use stays under ~90% and per-row time does not degrade.
+  refs: scripts/battery.sh (MECH_PROCS); tests/mech/run_sabotage_matrix.sh (PROCS/JOBS/INNER_PROCS); memory pcrec-suspect-tuning-constants; build/full_suite/20261027_7d3be7ec7/mech.log
+  For (b): the target is CPU busy (user+sys) AND rows/hour, since sys time can rise without throughput; step every N completed rows; never above nproc; one log line per change so the run explains itself. (a) may make (b) unnecessary: decide after (a)'s curve.
+- [FEAT-FAMILIES] STATE:not-started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
+  filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
+  status (2026-10-27): agreed, not started. basic = modules whose constructs never force the backtracking engine (registry engine column, DERIVED); extended = basic + backrefs, lookaround, atomic-groups, conditionals, branch-reset; pcre2 = + recursion, verbs (callouts stay opt-in everywhere).
+  next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
+  refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
+  vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
+- [GROUP-BYNAME] STATE:not-started — CALLER-SIDE CAPTURE ACCESS BY NAME: PER-NAME CONSTANTS IN THE .H AND A BY-NAME LOOKUP
+  filed: 2026-10-27 Frank ("file it")
+  status (2026-10-27): filed, not scheduled. Today a caller bsearches rx_info.groups and walks a (?J) run itself (match_api.md §5.4¶6); embedded C has RX_G_<name>; templates resolve $name at compile time.
+  trigger: the first caller (example, binding or user) that writes the bsearch/run walk by hand; or the [IFACE-PUSH] interface round, whichever comes first.
+  refs: docs/spec/match_api.md §5.4; docs/spec/subst_api.md §2; memory pcrec-iface-push-later
+  Shape (answer-free): one constant per UNIQUE name in the .h (the same spelling family as embedded C's RX_G_<name>), and a small `<prefix>_group_by_name()` that does §5.4¶6's walk, so caller and matcher cannot disagree. A caller-visible addition: spec hunk + abi event at build time.
+- [SPAN-HEADER] STATE:not-started — THE SPAN HELPERS AS A STANDALONE HEADER, GENERATED FROM THE SAME SOURCE AS THE PER-ARTIFACT COPY
+  filed: 2026-10-27 Frank (the 2026-10-26 "published as a header from ONE source" ruling, clarified: "we can do it later but i want them to be the same source later so they don't drift")
+  status (2026-10-27): filed, not scheduled. [INLINE-C] stage 2 emits the helpers (rx_span, rx_eq ...) into each code artifact's .h from one text in src/gen/emit_code.c, guarded by PCREC_RX_SPAN_H.
+  trigger: the first shared helper or predicate library (code included by several matchers through code-header) that wants the helpers without an artifact.
+  refs: docs/design/inline_c.md; src/gen/emit_code.c (span_helpers); review 2026-10-27 r1 ic2 F37
+  Frank 2026-10-27: the header and the per-artifact copies must WORK TOGETHER: one #ifdef region, so a program that includes an artifact's .c/.h AND the header defines the static helpers once, in either order. Manager: the guard also carries the helper-set version, so a mismatched pair is a compile error, not a silent pick of whichever came first.
+- [SITE-FRAMELESS] STATE:not-started — AN UNREACHED CODE OR CALLOUT SITE COSTS THE WHOLE ARTIFACT ITS FRAMELESS / INLINE-ENTRY VM
+  filed: 2026-10-27 manager (review 2026-10-27 r1 ic2 F18, PLAN half; the DOC half restates [INLINE-C] goal 3b)
+  status (2026-10-27): filed, not scheduled. An empty-predicate segment costs ~1.9x its --engine=vm twin on paths that never reach it (56.32M vs 29.32M instr); BASE's (?C"x") binding costs the same, so not a stage-2 regression.
+  trigger: a bench or user pattern with a callout or code site whose non-reaching paths dominate its time (the bench's callout rows; [SCANNER-DOGFOOD]'s scanner).
+  refs: review 2026-10-27 r1 ic2 (F18, emitted critic EMIT-2); docs/design/inline_c.md goal 3b
+  Cause: the site moves the VM off frameless/inline-entry and adds publish-at-close slots, and framelessness is decided per ARTIFACT, not per path. Candidate general form: decide it per path (or per entry) from the sites that path can reach.
+- [OPT-SCOPE] STATE:not-started — THE D20 PER-OPTION SCOPE ROW: WHO MAY SET EACH OPTION (CLI, FILE, LIBRARY, CONFIG), DECLARED ONCE
+  filed: 2026-10-27 manager (review 2026-10-27 r1 ic2 F28: the row was never filed and its trigger fired when stage 2 added --allow-code and --code-header to the by-name chain)
+  status (2026-10-27): filed; build point decided at the [INLINE-C] stage-3 brief, which must rewrite the reached rule anyway.
+  next: at the stage-3 brief, decide build-now vs later; candidate general form (slots critic): one AUTHORITY table, fact x source class, read by the CLI, the .rxt reader, the library and the config loader.
+  refs: decisions D20; review 2026-10-27 r1 ic2 (F28, SLOT-1); memory pcrec-decisions-as-first-match-tables
+- [CODE-TEST-ARCH] STATE:not-started — tests/code/run_code_tests.sh SPAN-FOLD AND CALL-FORM ARMS REPORT `bad` OFF x86_64
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The span-fold and call-form arms report `bad` on a non-x86_64 box (the Mac).
+  next: make those arms skip with a stated reason off x86_64.
+  refs: tests/code/run_code_tests.sh; docs/dev/lanes/ic2fixtri_report.md
+- [PFC-WITNESS-BUDGET] STATE:not-started — PREFILTER-COLLAPSE SIZE-CAP-RETRY WITNESS COMPILES 15-23 s, NEAR THE PER-COMPILE BUDGET
+  filed: 2026-10-28 manager (ic2fixtri report)
+  status (2026-10-28): filed, not scheduled. The witness went red under load (PROCS=16) on 2026-10-28.
+  next: shrink the witness or give it a declared budget.
+  refs: docs/dev/lanes/ic2fixtri_report.md
+- [SWEEP-COMP-FLOOR] STATE:not-started — scripts/emit_sweep.py COMPOSITION-ARTIFACTS FLOOR 100 vs 86 MEASURED AFTER F7
+  filed: 2026-10-28 manager (ic2fixmov report)
+  status (2026-10-28): filed, not scheduled. A file build with a refused target writes nothing (F7), so the measured count fell to 86.
+  next: re-measure and re-pin the floor.
+  refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
+- [CAPDIFF-DRIFT] STATE:not-started — test-capturediff pins exact bucket counts, and one subject moved buckets in CI only
+  filed: 2026-10-28 manager (CI run 40709231225 shard 1/3 RED on a13a7103b, a plan.md-only commit whose parent was green; triage lane cired3)
+  status (2026-10-28): not started; the gate reported oracle inconclusive expected=3 actual=2 (labelled TIMING-SENSITIVE) and pcrec step-budget exhausted expected=0 actual=1; 0 content and 0 accept/reject divergences; the same gate passes locally on main
+  next: find why a subject the oracle times out on locally hits pcrec's step budget in CI (is the budget wall-clock-bound, or the order different?); then pin the deterministic buckets exactly and the timing-sensitive ones as a total, so load cannot turn it red
+  refs: tests/fuzz (fuzz.py's bucket order, ~line 1045); docs/testing.md; docs/dev/learnings.md §3
+
+- [SAN-WIRE] STATE:not-started — TRIAGE THE 117 RUN SCRIPTS EXCLUDED FROM THE SANITIZER LIST
+  filed: 2026-10-27 manager, from lane sanred2 ([TT-9] now counts every run_*.sh under tests/ against tests/lib/san_scripts.txt + san_excluded.txt)
+  status (2026-10-27): not started. 117 excluded, tagged mechanically: 22 TODO-WIRE (take GENCFLAGS but are not in the list), 48 DEFER-PLAIN (plain $CC: the san CLI is covered, the generated matcher is not), the rest by tier. The callout drivers were the found case (added 2026-10-27).
+  trigger: next san re-run after sanred lands; minimal harness (Frank 2026-10-21): wire only scripts whose generated code no listed script already reaches.
+  refs: tests/lib/san_excluded.txt; docs/testing.md "Sanitizer + lint battery"; docs/dev/lanes/sanred2_report.md (lane/sanred)
+- [LANECHECK-SEAL] STATE:not-started — THE DELIVER EXPECTATIONS LIVE WHERE THE LANE CANNOT EDIT THEM
+  filed: 2026-10-26 manager, from lane ic1bland (it overwrote the manager's ic1bland_deliver.txt, "before reading it", with sections matching its own report; lanecheck then passed)
+  status (2026-10-26): not started. The DELIVER file sits in the lane's worktree, so a lane can rewrite the check it is judged by; the .done seal hashes the file at pass time, not the manager's original.
+  next: small lane: the manager writes worktrees/.mgr/deliver/NAME.txt; lanecheck reads that copy; the lane-writes hook refuses subagent writes under it; lanewatch flags a DELIVER hash that differs from the manager copy.
+  refs: plan_completed.md [LANECHECK]; scripts/lanecheck; scripts/lanewatch; docs/dev/lanes/ic1bland_report.md (lane/ic1b)
+  The hook covers only the Write/Edit tools; a Bash write still gets through, so lanewatch's hash comparison is the real control.
+- [KINDROW-ROSTERS] STATE:not-started — EVALUATE: DO ROW-FIRST SWITCHES REMOVE THE ZERO/ANY KIND ROSTERS FROM THE CONVERTED SITES?
+  filed: 2026-10-26 Frank + manager (after [INLINE-C] stage 1a's kindrow.def; Frank: "evaluate it as part of that item - don't presume to do it")
+  status (2026-10-26): filed; an EVALUATION first, no build presumed. 1a converted 8 sites to read the row, but the kind switches remain (67 switches, 711 case labels before and after) because each still lists every kind.
+  next: after 1a lands: an evaluation lane counts the labels a row-first shape would delete per site, names what is lost (a new zero-width kind no longer forces a decision at each site; the row becomes the one forcing point), and recommends do / don't per site; Frank decides
+  refs: src/core/kindrow.def; docs/dev/lanes/ic1a_report.md section 3; [INLINE-C]; memory: simplification is a benefit
+- [CALLOUT-PARSE] STATE:not-started — MALFORMED `(?C` IS REPORTED AS "REQUIRES MODULE 'callouts'"
+  filed: 2026-10-26 manager, from review 2026-10-26-r1-inline-c-design D17
+  status (2026-10-26): filed; `(?C256)`, `(?Cx)`, `(?C1x)` answer "requires module 'callouts'" (a reality-tier misstatement, D26); a small parser fix, independent of [INLINE-C]
+  next: a small lane when convenient
+  refs: docs/design/inline_c.md section 9.4; D26
+- [REWRITE-ADJ] STATE:not-started — TREE REWRITES FROM A RUN AND ITS NEIGHBOUR: ONE DECLARED TABLE, A HOME FOR THE FAMILY
+  filed: 2026-10-26 Frank + manager (from the `\s+$` discussion); a tracking row: related findings add a dated note here
+  status (2026-10-26): filed to gather information; nothing designed or built. Today's rewrites are separate passes (altcls.c, atomic.c, possessify.c) with no shared mechanism.
+  trigger: enough members/notes to judge a first-match rewrite table worth building (D-table style: run facts x follower facts x node options -> action, each fired row named in --explain, PCRE2 differential on/off)
+  refs: D168 add. 1 (text-substitution route retired; options live on the node, D62); possessify.c; altcls.c; [SCANEDGE-SET]; docs/dev/lanes/trimreg_report.md
+  Members known (2026-10-26): (1) ABSORB-OPTIONAL: `X+Y?` / `X+Y*` with Y a subset of X -> `X+` (greedy/possessive only; no capture boundary between; e.g. `\s+\n?`). (2) ABSORB-EOL: `X+$` non-multiline -> `X+\z` when the configured newline is inside X (`\s+$`; lazy excluded: `\s+?$` on "a \n" differs; CRLF/ANY newline need the whole sequence covered). (3) Frank's earlier conditional anchor-rewrite table (option-dependent `$` etc.): mostly covered by A_CTX (D168), remainder belongs here. Possible future member: possessify (the disjoint-follower case; panel-repaired rule, leave in place until the table proves itself).
+  Notes: (add dated notes as related issues surface)
+  note (2026-10-26, lane rwsurvey, docs/dev/lanes/rwsurvey_report.md): no pass CREATES absorb-optional / `X+$` shapes on the 5,735 corpus + 351 bench dumps; constructed witnesses do (altcls: `\s+(?:\n|\r)?` -> `\s+[\n\r]?`, then A then B chain, so the table must iterate). Passes DO leave: altcls empty-branch alternations (`f(|rank)`, 107 corpus), possessify ATOMIC(REP possessive) (57). Only 29 outside-written patterns exist (6 carry a shape). More candidates: CTX-IMPLIED-AFTER-RUN (`\w+\b`), ALT-EMPTY normal form, MERGE-RUN (`[0-9][0-9]?`), REP-OF-REP, TRIVIAL-REP (`{1}`), DUP-ZERO-WIDTH/DEAD-PIN, REDUNDANT-CUT. Placement hypothesis: after atomic discharge, before the call graph, bounded fixpoint; must see through lower_enc A_WCLASS.
+- [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
+  filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
+  status (2026-10-26): filed; nothing built. A stray A_EMPTY mid-CAT (`a(?:)bc`) hides the required run `abc` from the fact pass (src/facts/req.c, not traced): prefilter handoff instead of memchr, per docs/dev/flag_spell_findings_2026-10-23.md.
+  next: Frank's word; then trace req.c's A_EMPTY handling in a CAT and make the run continue across it (or drop the empty earlier, the general form).
+  refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
+  note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
@@ -599,6 +706,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [SUBST-SPEED] STATE:not-started — SUBST'S UTF-8 CASE FORCING AND REPLACE-ALL OVERHEAD
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code (EMIT-1, EMIT-2, EMIT-3)
+  status (2026-10-24): measured: utf8 \U path +15.7% instructions vs pcre2+JIT (two passes, no ASCII fast path, bsearch per letter); replace-all 3.2x a hand loop's per-match overhead (still 22% under pcre2+JIT)
+  next: unscheduled; an optimization-effort candidate after subst lands
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; replace_design.md §R4.11; [M4-SUBST]
+- [SUBST-CLEANUP] STATE:not-started — SUBST HOUSE ITEMS, LIMITS AND CHECK GAPS FROM THE FIRST CODE ROUND
+  filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code
+  status (2026-10-24): HOUSE-2/4/5/6/9/10/11, HOUSE-8 rest, TPL-4 (template length limit row), IFACE-4 (>256 groups in replace-all), CHK-2, CHK-5, CHK-6's two mech rows, CHK-8 token sharing; none changes an answer
+  next: unscheduled; one sonnet lane after subst lands; grep sabotage anchors before moving lines
+  refs: docs/dev/reviews/2026-10-24-r1-subst-code.md; [M4-SUBST]
 - [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
   filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
   status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).
@@ -665,28 +782,49 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: a SIMD-layer kernel finding either of two arbitrary bytes (two compares and an OR) in place of the one-bit case fold, opt-in under the SIMD layer.
 - [RECID-A] STATE:not-started — RECURSION-IDENTITY (A): RE-BASE OR RETIRE THE NEVER-MOVING PRE-MODULE PIN
   filed: 2026-10-23 manager, from lane recpin (docs/dev/lanes/recpin_report.md)
-  status (2026-10-23): (B) re-pinned to bf33d2dab and green (5c9bde73b); (A) RED on main: 78/126/78/54 call-free regions differ from ac4917d; 69 are K128 (corefix), 9 are (?U)+possessive patterns already red before corefix (DFA-selected in every build; cause unbisected)
+  status (2026-10-26): (A) still RED and GROWING: at the [EMIT-BIDI] merge 7234c2e86, 167/381/167/111 regions differ from ac4917d (78/126/78/54 on 10-23); later landings (I1/I2, subst, abi 84-86; emitbidi respells kit run-compare string constants) are uncounted contributors. (B) green, re-pinned f6c230e5f
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
   The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
-- [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
-  filed: 2026-10-23 Frank
-  status (2026-10-23): filed; syntax leaning given, not ruled
-  next: starts after every open item and its follow-ups complete (Frank 2026-10-23); design note first (coordinator design round)
-  refs: docs/dev/compat_fold_facts/ (research, 2026-10-23); third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
-  A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
-- [FLAG-SPELL] STATE:not-started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
-  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
-  status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
-  next: unscheduled; candidate for the next optimization cycle; general form = drop empty nodes from concatenations (also (?:)abc), not a flag special case
-  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
-  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
-- [EMIT-BIDI] STATE:not-started — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
-  filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
-  status (2026-10-24): found, not fixed: (?x)a<U+200E>b and (?x)a<U+200F>b (tests/modifiers/xmode_utf8.rxt:32,38) emit their pattern bytes raw into a C comment; gcc warns -Wbidi-chars and the axes harness drops both cases under -fcomments (LOST 2)
-  next: a lane: escape non-printing and bidi code points in every echo of the pattern into emitted text (an abi event, D76/D94); confirm why the harness drops a warned case rather than failing it
-  refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
-  A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.
+  2026-10-27 full suite (7d3be7ec7): (A) counts IDENTICAL to 7234c2e86 (SCANEDGE-SET, INLINE-C 0/1a/1b added no mover; a same-count swap is not excluded). New datum: bref-rename bucket 328 on every axis (366 on 10-23, census 411, band +-30): 38 backref patterns left it; the re-base lane lists bucket membership first (KEEP=1 gate run).
+- [SEQ-FOLD] STATE:not-started — FOLDED TEXT MATCHES: one fold table for full case, accent and look-alike folding
+  filed: 2026-10-24 Frank ("The general mechanism sounds good"), from lane utfwant's survey
+  status (2026-10-24): go (Frank); starts after every open item and its follow-ups complete; children are rows of ONE fold mechanism, full case folding first (demand), look-alike last (no outside demand found)
+  next: a design note (coordinator design round): the 1:n fold table, then each child as its rows
+  refs: docs/dev/utf_wants_2026-10-24.md (wants 4, 5; the NFKC finding); docs/dev/compat_fold_facts/; third_party/ucd-16.0.0 (CaseFolding.txt F entries); memory general-mechanisms; D26 D174
+  General form (Frank 2026-10-24; widened the same day after Frank asked about n:1 and n:m): BOTH sides pass through the same per-code-point fold (code point -> sequence, generated from UCD) and the folded sequences are compared, so 1:n, n:1 and n:m (ﬃ vs ﬀi, ệ vs ẹ + ̂) are one case. The pattern side folds at compile time; the subject folds as it is read. Full case folding, canonical equivalence and compatibility folding are three data sets for it, not three features. Design questions: match ends inside one character's fold image (s against half of ß: refuse, as ICU does?), mapping offsets and captures back to the subject, combining-mark reordering for canonical equivalence (a bounded buffer; Unicode's stream-safe limit is 30 marks), classes and ranges, \b and lookbehind length, emitted size.
+  - [CASE-COMPAT] STATE:not-started — a PCRE2-compatible case mapping as a selectable data set
+    filed: 2026-10-24 Frank (D180: "follow Unicode for now then have a pcre2 compatibility version later")
+    status (2026-10-24): substitution's case table is Unicode's simple mappings (D180); PCRE2 10.46 differs on 150 code points (lane substr1fix's breakdown in docs/dev/lanes/substland_report.md)
+    next: the [SEQ-FOLD] design note names how a mapping data set is selected; no demand yet
+    refs: D180; docs/dev/reviews/2026-10-24-r1-subst-code.md (EMIT-5)
+  - [FULL-CASEFOLD] STATE:not-started — (?i) uses full case folding: ß matches ss, ligatures match their letters
+    filed: 2026-10-24 manager (utfwant want 4; Unicode TS #18 requires it; ICU and Python regex ship it)
+    status (2026-10-24): first child of [SEQ-FOLD]; pcrec is simple-fold only today; 104 F entries in the vendored CaseFolding.txt
+    next: the [SEQ-FOLD] design note
+    refs: docs/dev/utf_wants_2026-10-24.md; third_party/ucd-16.0.0
+  - [CANON-EQUIV] STATE:not-started — composed and decomposed accents match each other (é = e + combining acute)
+    filed: 2026-10-24 manager (utfwant want 5; recurring questions; Java CANON_EQ ships it)
+    status (2026-10-24): second child of [SEQ-FOLD]; the general case is hard, a literal's alternatives are a table lookup
+    next: after [FULL-CASEFOLD]
+    refs: docs/dev/utf_wants_2026-10-24.md
+  - [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
+    filed: 2026-10-23 Frank
+    status (2026-10-24): third child of [SEQ-FOLD] (Frank 2026-10-24); a pcrec novelty: no engine offers it and no request was found (utfwant)
+    next: after [CANON-EQUIV]
+    refs: docs/dev/compat_fold_facts/; docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); [IFACE-PUSH]; SR-10
+    A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
+- [GRAPHEME] STATE:not-started — \X and grapheme boundaries match what a reader sees as one character
+  filed: 2026-10-24 manager (utfwant want 1; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
+  Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2. DATA RULE (Frank 2026-10-24): the data comes from an official Unicode source only (UCD auxiliary/GraphemeBreakProperty.txt, emoji-data.txt), vendored in third_party/ at a named Unicode version, with Unicode's own GraphemeBreakTest.txt as the oracle; pcrec may build functionality but claims a Unicode standard only where that official test passes, and never defines its own variant under the standard's name.
+- [CLASS-SETOPS] STATE:not-started — character-class set operations: subtraction, intersection, nesting
+  filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED; the only plain workaround is lookaheads
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
@@ -793,7 +931,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-10 Frank
   status (2026-10-10): HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out…
   trigger: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it).
-  refs: decisions D76
+  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md
   UMBRELLA ROW, the gate for: [RXINFO-REMODEL] + [V-E] (rx_info), [STAMP-REVIEW] + [CAP-STAMP-BYTES] (stamps), [OPT-SETS] + the pcrec_options/CLI option surface, [FINDALL-NEXT], [EMIT-ENTRIES]. TRIGGER: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it). ORDER: the interface push as ONE design pass across the four surfaces, THEN the docs pass ([SPEC-ORG], [SPEC-LANG], [GUIDE-1]) once the interface is solid. Until then member rows stay unscheduled; a capability/optimization row that needs a new field or stamp adds it the usual way (D76 ritual), not a remodel. RESIDUE FROM [FLAG-ACCESS] (archived 2026-10-12, merged 67f59d24): the accessors still take/return uint64_t; the word still travels as a uint64_t parameter (cand_select, DFA_SELECT, clskit/memfn deny maps) and is printed into `.flags = N`; writes stay raw and outside the gate.
   So a representation change is a typed sweep over those sites, not one site.
   2026-10-22 CANDIDATE (kit S3, [KIT-VERIFY] B1): flag bit 57, a pcrec-side deny for the cover locator (the proven fixed-width window reported with no engine run, `RX_DFA_SCAN "cover"`); NAME per Frank 2026-10-22: name the behaviour, never an internal module, working name `PCREC_NO_WINDOW_REPORT`, final spelling at the push, deferred here by the manager's ruling; until then the kit deny is the OFF arm (mf_ask refuses, LOCATE falls to composite).
@@ -808,11 +946,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   match_api.md's ORGANIZATION.
   Frank: the rewrite's formatting is better; five structural gaps remain (section numbers as of the specnum numbering, permanent): (1) NO TABLE OF ALL OPTIONS — e.g. the UTF check (`-futf-check`) and the startpos `align` option/config are discussed but never tabulated; (2) CLI and C LIBRARY SURFACES ARE NOT INTER-RELATED — a feature is described with its `--option` in one place and its `pcrec_options` field elsewhere, or not at all (the utf-check section gives the CLI flag but not the C option); wanted shape: describe each FEATURE AREA, then one section/table per area giving the C option AND the CLI option ("this doc desperately needs tables"); (3) SECTIONS ARE INCONSISTENTLY SCOPED — §3 mixes functions (§3.1), objects (§3.4 rx_info), explanations (§3.5) and detailed RX usage (§3.6); `<prefix>_valid_upto` is a subsection (§3.1.2) instead of its own section; at least group like with like; (4) DESCRIPTIONS ARE NOT CONSISTENTLY STRUCTURED — §3.1 `_search` carries a return-code table and
   §3.2 `_match` does not; if entries are uniform, return codes become their own section; §3.4 is a stub pointing at §6; (5) §3.1¶1 and §4 repeat nearly the same data. OVERLAP: [RXINFO-REMODEL] (§3.4/§6's rx_info layout) and [FINDALL-NEXT] (§3.1's find-all prose) would move the same sections — sequence after them if both run; items (1)-(2) also touch cli.md/tuning.md (the option ↔ flag map is cross-document; tuning.md's axes are the option catalogue's other half).
+- [CAP-SPAN] STATE:not-started — PLACE CAPTURES INSIDE A PROVEN SPAN: skip, start late or stop early the VM's capture walk
+  filed: 2026-10-26 Frank (idea: `a+\w+(?:abc|bcd)\w+!(\w+)`, skip to the `!`) + manager (general form)
+  status (2026-10-26): filed, unscheduled; umbrella for [CAP-EARLY-STOP], [CAPTURES-DFA-MB]'s whole-program skip and start_landing U1; nothing built
+  trigger: [CAPTURES-DFA-MB]'s: a match-dense bench cell where the VM's span walk is >=10% of time (Frank: the VM portion of a match is usually small)
+  refs: docs/design/plan_row_bodies/CAP-SPAN.md; [CAP-EARLY-STOP]; [CAPTURES-DFA-MB]; [ENG-TDFA]; D142 D156
+  A capture boundary with exactly one viable position in the proven span needs no VM (static: a separator the prefix cannot contain; dynamic: prefix forward DFA x suffix reverse DFA marks). One first-match table: whole / unique-cut / late-start / early-stop / full.
 - [CAP-EARLY-STOP] STATE:not-started — stop the capture walk at the last group's close when the span is already proven
   filed: 2026-10-09 Frank
   status (2026-10-09): not started; FILED 2026-10-09 by Frank, session 102: "if the match is done, the capture walk can end at the close of the last [group]. this is a general statement"; FOR EVALUATION
   trigger: a hybrid or stage-2 cell where the VM's span walk is a measured share.
-  refs: decisions D156
+  refs: decisions D156; member of [CAP-SPAN] (2026-10-26)
   when the match span is already PROVEN (the hybrid's exact window, REVEND stage 2, any SPAN-handing locator), the VM runs only to place capture groups, so it can stop at the last capturing group's close instead of walking to the match end. CORRECTNESS CONDITION (manager): a group's boundaries depend on whether the REMAINDER can still match (e.g. `(a*)ab` on `aaab`: group 1 is `aa` because `ab` must follow), so stopping at the last close p needs "the remainder after the last group matches exactly [p, end)". A reverse DFA of that remainder, walked once back from the proven end, marks every viable p; the VM stops at the last close the moment its position is marked. GENERAL: applies to every VM-over-proven-span finisher (D156 FINISH's VM hat), not only REVEND.
   EVAL: the remainder machine's size (the pattern suffix after the last close), patterns whose last close sits inside a loop (the last close is not static: the condition is the last close of the LAST ITERATION, which may need the mark at every close), the give-up surface (it can only shorten VM work: one-way or neutral), and the population: capture patterns with a long uncaptured tail (`(\w+)@[a-z.]+`, `(\d+)\.txt$`, log lines with a leading capture). Trigger: a hybrid or stage-2 cell where the VM's span walk is a measured share.
 - [EDGE-STAMP] STATE:not-started — an integer scan-edge-count stamp so the SCAN EDGE comment stops being an instrument
@@ -1158,9 +1302,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-13 Frank (session 111)
   status (2026-10-13): not started; idea stage, discuss before any design lane
   next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
-  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26
+  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
+
+- [COUNT-FROM-GROUP] STATE:not-started — a repeat count read from an earlier capture's value (length-prefixed data: `5:hello`)
+  filed: 2026-10-28 Frank (session 127), witness `(\d{1,2}):.{\1}` (netstrings; the bench's unusual set does it with a callout)
+  status (2026-10-28): not started; idea stage; unscheduled. TRIGGER: a user ask for length-prefixed parsing (netstrings, bencode, chunked bodies, TLV), or the bench measuring the callout form as slow
+  next: discussion with Frank (spelling, unit), then a design note beside [POSTFACT]'s
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; [INLINE-C] (rx_u64 is the callout form's parser); decisions D26
+  Manager notes (2026-10-28): (1) SPELLING: not `{\1}` — PCRE2 already reads `.{\1}` as literal `{`, backref 1, literal `}`, so it would silently change a valid pattern; needs a form PCRE2 refuses today (the `${...}` family). (2) UNIT: netstrings count BYTES; in UTF mode `.` is a character, so the form must say what it counts. (3) LOWERING, same rule as [POSTFACT]'s HOW GENERAL: a BOUNDED count source (`\d{1,2}` = 0..99) is regular (one alternative per value) and lowers into the DFA when the priced state count fits the size ladder; an unbounded source (`\d+`) is a VM counter loaded from the capture. (4) SHARE with [POSTFACT] how a capture is read as a number. Advantage over the callout form: the compiler sees it (DFA, prefilters, no --allow-code).
+  SCOPE (Frank 2026-10-28, agreed): pcrec stays a MATCHER. This row + binary integer reads (u16be/u32le as count sources, not only decimal) + [CAPTURE-ARRAY] give 'validate and locate' over length-prefixed/chunked data (netstrings, bencode, PNG chunk walk, JPEG segment walk); offsets/random access, checksums beyond callouts, decoding and typed-tree output are a different tool (Kaitai/Hammer territory), not pcrec.
 
 - [CAPTURE-ARRAY] STATE:not-started — a repeated capture group records EVERY iteration (an array), not only the last
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`
@@ -1184,6 +1336,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One channel, off by default and switchable (a CLI flag / pcrec_options field / config line; never changes an artifact byte), on which every decision site writes one record: the table and the row that fired, the rows that declined ahead of it and the conjunct that failed, the inputs read (facts, analysis block + provenance + why, measurement-set row, explicit control vs preset), and a held/declined outcome where one applies. pcrec's tables write pcrec records; the kit writes its OWN records through a text callback on the seam (facts in, kit text out: D157 holds).
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 ## Boonies
+- [ONCE-DEADCHOICE] STATE:not-started — ACCEPT MORE `once` CALLOUT SITES BY SEALING PROVABLY DEAD CHOICES
+  filed: 2026-10-26 manager; Frank: "Save your ideas in a boonies plan item to be revisited if requested"
+  status (2026-10-26): BOONIES; DECLINED for now (Frank: "both of those options are not easily predictable. It's hard to program around 'maybe it will work'"); `once` stays a syntactic reading rule (INLINE-C.md ruling 2026-10-26). Nothing built.
+  trigger: Frank asks for it; or user evidence that the reading rule refuses `once` sites people need, where the fix (possessive / (?>...) / (?=...)) is not acceptable.
+  refs: docs/design/plan_row_bodies/INLINE-C.md (ruling 2026-10-26); src/opt/callout.c co_choice (the reading rule); docs/dev/reviews/2026-10-26-r2-ic1b-code.md EMIT-1 (sites are possessify barriers)
+  Ideas: (a) DEAD CHOICES: a choice before a site is dead when no retry can change anything observable. Proofs pcrec has or nearly has: possessify's disjointness verdict (every retry fails, e.g. `a+` before `b`); a non-atomic lookaround whose body sets no capture read later (every retry reaches the site in an identical state, e.g. `(?*a+)(?C"x,once")a+c`). Accept `once` when every live choice is dead, and SEAL them (insert the atomic group) as a requirement of the site, not an optimization, so the class stays flag-independent; seal whenever the proof holds so the reported class equals behaviour. (b) Possessify may look PAST a non-consuming site (same position after it); a consume site stays a barrier. (c) The rejected runtime form: skip a re-fire when the site's observable state (position, captures) is unchanged within an attempt. Why declined: acceptance would depend on an optimizer proof the user cannot see when reading the pattern.
 - [MEMFN-SKIPSWITCH] STATE:not-started — A WALK <-> WIDE-MASK SWITCH INSIDE THE DFA SKIP LOOP
   filed: 2026-10-21 manager, from the kit's notice of Frank's D169 addendum ruling ("use the walk when the subject is not known")
   status (2026-10-21): BOONIES (Frank: "adaptive methods haven't proved their worth"). Near-duplicate of the kit's adatwin (per-stretch switch -2.2%, reading cost 5-7 ns). Nothing built.
@@ -1423,6 +1581,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   BOONIES. The fold stays the default (D138 addendum 2026-09-30); its one real penalty is waf744 (+1.2% throughput, +28% match on a 21-byte subject), a forced-VM-only shape with a default-route population of 0. Research why.
 
 ## Deferred
+- [SUBST-STREAM] STATE:deferred — compiled substitution's STREAMING mode with a stamped holdback
+  filed: 2026-10-26 manager (split from [M4-SUBST] at its close)
+  status (2026-10-26): not built; [M4-SUBST] closed with core, interface and extended forms landed 9ae59f5d4; in-place and C callbacks have their own rows ([SUBST-INPLACE], [INLINE-C])
+  trigger: streaming re-opens (Frank parked streaming 2026-10-23, confirmed 2026-10-26); then this mode with it.
+  refs: docs/design/replace_design.md; docs/design/subst_template_design.md; plan_completed.md [M4-SUBST] charter (2); [DD-14.FB] BufSurface precedent
+  Charter (Frank, 2026-09-06, quoted from [M4-SUBST]): "STREAMING, with the AOT-specific win: a streaming replace needs a HOLDBACK buffer for a partial match at the chunk boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller supplies a fixed buffer of stamped size, zero allocation), and an unbounded-width pattern REFUSES streaming mode honestly by name."
 - [XARCH] STATE:deferred — CROSS-ARCH COMPILER + MATCHER RATES, macOS/M1/gcc-16 vs Linux/Ryzen/gcc-15.2 on identical emitted C
   filed: 2026-09-06 Frank
   status (2026-09-06): tabled by Frank 2026-09-06; no work active

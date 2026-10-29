@@ -1,9 +1,11 @@
 # LANE BOILERPLATE — read this FIRST, follow all of it
 
-**NEVER write outside your worktree + session scratchpad — `/tmp`,
-`~/.claude`, `$HOME` and the main tree included. `mktemp` must be given the
-scratchpad dir (e.g. `mktemp -p "$SCRATCH"`); compilers/scripts that default
-to `/tmp` need `TMPDIR` pointed at the scratchpad.**
+**NEVER write outside your worktree + the pcrec temp root — `/tmp`,
+`~/.claude`, `$HOME` and the main tree included. The temp root is
+`$PCREC_TMPDIR` (default `/var/tmp/pcrec-$(id -un)`; `make` and the queue
+scripts already export `TMPDIR` to it; in a plain shell run
+`. scripts/tmpdir.sh`). Your lane scratch is `$PCREC_TMPDIR/scratch/<lane>/`
+(`mktemp -p` it; `mkdir -p` it first). `/tmp` is not used (small RAM tmpfs).**
 
 Standing rules for every pcrec subagent lane. Your brief names your task,
 model tier, and deliverable; everything below applies without restatement.
@@ -15,11 +17,12 @@ and inside it ONLY your own worktree under worktrees/ (read-only elsewhere
 in the repo). NEVER write to the sibling pcrec-bench checkout (read-only
 reference at most), no other
 directories, no system config. Session-temporary files go in the session
-scratchpad directory named in your environment, never committed. Subagents
+scratch directory `$PCREC_TMPDIR/scratch/<lane>/`, never committed. Subagents
 you spawn inherit this mandate — restate it in their briefs.
-`/tmp` IS OUTSIDE THE MANDATE: no backups, plant copies, logs or `-o` outputs
+`/tmp` IS NOT USED (it is a small RAM tmpfs with a per-user quota; a full one
+turned a `make test` red, 2026-10-28): no backups, plant copies, logs or `-o` outputs
 there, not even briefly (2026-10-10: three lanes in one day). Use your
-worktree's `build/` (gitignored) or the scratchpad.
+worktree's `build/` (gitignored) or your scratch dir under the temp root.
 Disclosure: you inherit the session-root CLAUDE.md and the manager's memory
 index at spawn; treat them as context, not tasking.
 
@@ -78,6 +81,7 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   rulings come there, not by message.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - NEVER `git stash` (push or pop): the stash is ONE list shared by every worktree of the repo, so a pop takes another session's entry (langfix2 popped the K113 landing's stash, 2026-10-22). Park work in a WIP commit on your branch instead.
+- A HOOK refuses a subagent's Write/Edit to a main-tree path outside worktrees/ (scripts/hooks/lane_writes_in_worktree.sh, [HOOK-GUARDS]); another refuses `git commit -a`/`--all`. Blocked: write in your worktree, commit named paths. A lane the manager chartered to write the main tree (a landing lane) is admitted by `worktrees/.mgr/main_write_ok` (manager-written); never create that file yourself.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log. NOR a
   Monitor/notification on a COMPLETION you then go idle waiting for: an
@@ -150,6 +154,15 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   compiles (a census, a sweep, a probe battery) is heavy — run it as
   `scripts/boxlock run --label NAME -- CMD` or as a `heavy` chainrun stage.
   `PCREC_BOXLOCK=0` opts out, only with the manager's say-so.
+  LABEL EVERY `boxlock run --label <lane-name>-<what>` (2026-10-27): `boxlock status` lists the waiters by label, `lanewatch --follow` reads a lane waiting on the lock as WAITING (not QUIET) by that prefix, and `queuewatch` raises WAIT-LONG for it after 30 min.
+  GENERATED LOAD IS HEAVY: a test that spins CPU on purpose (to shake out a
+  race) runs under `scripts/boxlock run` like any suite (2026-10-24: a lane's
+  32 busy loops pushed a queued make test past its cap).
+  A lane's chain of `boxlock run` steps YIELDS to the box queue, and THE LOCK
+  ENFORCES IT: a non-queue `boxlock run` waits (one `YIELDING to queue job`
+  line) while any queue job is pending and ready (2026-10-24: a kit lane's
+  back-to-back lock steps held two queued make tests for 30 min). Nothing to
+  remember; `PCREC_BOXLOCK_JUMP=1` overrides, audited, manager's say-so only.
 - If your task WRITES CODE (anything under `src/`, `cli/`, `lib/`): read
   docs/dev/guide/README.md and the files it names for your area (coding.md
   at least) before your first code edit — house disciplines, the
@@ -224,6 +237,7 @@ with no side effects; the plain call is the work, run under the box lock:
             [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
             echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
             echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+            echo "boxqueue: size rows=$n"    # optional ([EXPECT-PREFLIGHT]): the cap scales past 5400 from earlier green runs' s/row
             echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
             echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (a sample of the line)"
             exit 0 ;;
@@ -232,6 +246,9 @@ with no side effects; the plain call is the work, run under the box lock:
     esac
     cd "$TREE" || exit 1
     exec bash tests/mech/run_sabotage_matrix.sh $IDS
+
+A TIME GATE is a declaration, not a --ready wrapper: `echo "boxqueue: not-before 2026-10-27T00:05"` in the dry run (local ISO-8601, strict; boxqueue
+holds the job until then without asking --ready and PENDING-STUCK stays quiet only until that time).
 
 THE EXPECT DECLARATION has exactly these forms ([WATCH-IDLE]; `add` REFUSES
 anything else and prints them): `expect none reason=WHY` (nothing counted; WHY
@@ -282,6 +299,16 @@ whole queue's plan before a night is committed to it.
   sitting silent — a quiet lane is indistinguishable from a dead one.
 - A handback message names its validation COMPLETE or says what is owed —
   never leave the manager to infer which.
+
+## Before ending: scripts/lanecheck ([LANECHECK])
+If your brief has a DELIVER block (`docs/dev/lanes/<name>_deliver.txt`, written BY THE MANAGER
+before you start: read it, never create, edit or overwrite it; if it is missing or looks
+wrong, say so in the report), run
+`scripts/lanecheck` from your worktree before the handback; it prints numbered
+prose issues (a missing section, an uncited finding, an uncommitted report)
+or `lanecheck: DONE rc=0`. Fix, commit, rerun; end only on DONE rc=0. If you
+must stop early, put `STATE: stopped` in the report (a committed one) and run
+lanecheck: rc=2 is the honest stop, not a pass.
 
 ## Delivery bar
 Branch lane/<lane>, committed, report committed, targeted validation run

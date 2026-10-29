@@ -1,0 +1,8 @@
+# match_api.md §11.9¶8: code in a definition read from another file (lib) is
+# refused even with the grant -- here through a delivering call.
+lib "deliver_def.rxt"
+target t = user
+
+pattern x(?&=def)y
+name user
+features recursion,named-groups

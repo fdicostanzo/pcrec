@@ -250,12 +250,22 @@ static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
           "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
+          "       pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst 'TEMPLATE'\n"
+          "       pcrec --emit-support [-o FILE]\n"
           "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
           "                 below); each is compiled exactly as the other\n"
           "                 form compiles a literal --pattern. A prefix\n"
           "                 collision across files is refused, naming both\n"
           "  --pattern 'X'  compile the literal pattern X instead of a file.\n"
           "                 Exactly one; does not combine with a FILE operand\n"
+          "  --subst 'T'    compile the SUBSTITUTION TEMPLATE T ($n ${n}\n"
+          "                 $name ${name} $$, and ${!var}) into a subst\n"
+          "                 artifact: a render element any rx whose groups\n"
+          "                 fit binds to at run time (docs/spec/subst_api.md)\n"
+          "  --subst-file F the template is FILE's bytes, verbatim\n"
+          "  --emit-support the subst SUPPORT UNIT (flatten, replace-all, the\n"
+          "                 by-name map helper) to stdout or -o FILE; takes\n"
+          "                 no other option (docs/spec/subst_api.md 10)\n"
           "  -o FILE        output C file; a matching header FILE with .h is\n"
           "                 also written. '-o -' prints self-contained C to\n"
           "                 stdout with no header file. '-o DIR' writes\n"
@@ -434,6 +444,18 @@ static void usage(FILE *f)
           "                    parse only; print the number of capturing\n"
           "                    groups. A pattern pcrec refuses is refused\n"
           "                    here too, with the same diagnostic\n"
+          "  --callout N:ATTRS declare numbered callout N's attributes for\n"
+          "                    --pattern (consume, once; repeatable); a .rxt\n"
+          "                    block says 'callout N ATTRS'\n"
+          "  --allow-code=LANGS\n"
+          "                    grant the compile its pattern's embedded code\n"
+          "                    ((?C`c: ...`), language 'c'); the only way to\n"
+          "                    enable it: no --features list or file can\n"
+          "  --code-header LANG:HEADER\n"
+          "                    #include HEADER (\"name\" or <name>; a bare name\n"
+          "                    means \"name\") after the matcher for --pattern's\n"
+          "                    LANG code (repeatable); a .rxt file says\n"
+          "                    'code-header LANG HEADER'\n"
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
           "                    module column, a frozen named set ('std1'),\n"
@@ -526,6 +548,12 @@ typedef struct {
     /* [REL-1.10] the literal PATTERN, set ONLY by `--pattern` (D118): the
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
+    /* [M4-SUBST] a SUBST compile (docs/spec/subst_api.md §5): the template text
+     * (`--subst`) or its file (`--subst-file`); and `--emit-support`, the
+     * support unit (§10), a mode that takes no other option. */
+    const char *subst;
+    const char *subst_file;
+    int         emit_support;
     int         list_syntax;
     int         list_definitions;
     int         list_verbs;
@@ -580,6 +608,20 @@ typedef struct {
      * FILE` did. Zero or more -- `compile_sources` is the sole reader. */
     const char **files;
     size_t      nfiles, filecap;
+    /* [INLINE-C] 1b `--callout N:attrs` (repeatable): the numbered
+     * callouts' declarations for a `--pattern` compile. In the tail, so a
+     * `config` block's `pcrec` line cannot set one: a declaration belongs
+     * to one pattern, which is why the `.rxt` spelling is a BLOCK line. */
+    PcrecCalloutDecl *callouts;
+    int         ncallouts;
+    /* [INLINE-C] stage 2 `--allow-code=LANGS` (cli.md §1.22), copied into
+     * `opt.allow_code` by the compile paths, and `--code-header LANG:HDR`
+     * (repeatable). In the tail, so no `config` block's `pcrec` line can
+     * set either: code is enabled by the invoker, never by a file
+     * (inline_c.md §5.1). */
+    const char *allow_code;
+    PcrecCodeHeader *code_headers;
+    int         ncode_headers;
 #ifdef PCREC_HARNESS
     /* [COMPOUND] the harness lever (docs/design/compound.md §A.11): only
      * `build/pcrec-harness` has the field or the option; in the tail, so a
@@ -990,11 +1032,113 @@ static int cli_operand(CliState *st, const char *a)
     return 0;
 }
 
+/* [M4-SUBST] THE OPTIONS EACH COMPILE-LESS MODE ADMITS (subst_api.md §5¶1,
+ * §10¶2): `--subst`/`--subst-file` and `--emit-support` refuse every other
+ * option by its PRESENCE, whatever value it spells (`--engine=auto` is
+ * refused like `--engine=vm`). A row ending in `=` admits that spelling's
+ * `=VALUE` form. Read once per option token by `cli_parse`. */
+static const struct { const char *tok; bool subst, support; } MODE_ADMITS[] = {
+    { "-o",             true,  true  },
+    { "--emit-support", false, true  },
+    { "--subst",        true,  false },
+    { "--subst-file",   true,  false },
+    { "-p",             true,  false },
+    { "-e",             true,  false },
+    { "--encoding=",    true,  false },
+    { "--features",     true,  false },
+    { "--features=",    true,  false },
+};
+
+/* The first option token on the command line each compile-less mode does
+ * not admit (MODE_ADMITS), or NULL. */
+typedef struct { const char *subst, *support; } CliUnadmitted;
+
+/* Records option token `a` in `*u` where a mode does not admit it. */
+static void mode_admits_note(const char *a, CliUnadmitted *u)
+{
+    bool subst = false, support = false;
+    for (size_t r = 0; r < sizeof MODE_ADMITS / sizeof MODE_ADMITS[0]; r++) {
+        const char *t = MODE_ADMITS[r].tok;
+        const size_t l = strlen(t);
+        if (t[l - 1] == '=' ? !strncmp(a, t, l) : !strcmp(a, t)) {
+            subst = MODE_ADMITS[r].subst;
+            support = MODE_ADMITS[r].support;
+            break;
+        }
+    }
+    if (!subst && !u->subst) u->subst = a;
+    if (!support && !u->support) u->support = a;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
- * same values and the same refusals. */
-static int cli_parse(int argc, char **argv, CliState *st, const char *where)
+ * same values and the same refusals. `u` (NULL for a config block, which
+ * no compile-less mode reads) collects the options the modes do not admit. */
+/* [INLINE-C] 1b one numbered callout's declaration, `N<sep>ATTRS`, read by
+ * the library's one shape reader (`pcrec_callout_decl_read`, which the `.rxt`
+ * `callout` line's reader also calls); which attributes exist is the
+ * compile's question. The echo of the value is escaped (`pcrec_sb_ctext`):
+ * no control byte and no non-ASCII byte (a bidi control) reaches the terminal. 0, or 1 with a diagnostic. */
+static int cli_callout_decl(const char *v, char sep, PcrecCalloutDecl *d)
+{
+    if (pcrec_callout_decl_read(v, sep, d)) return 0;
+    StrBuf b = { 0 };
+    pcrec_sb_ctext(&b, (const unsigned char *)v, strlen(v), PCREC_CTEXT_COMMENT);
+    cli_err("a callout declaration is N%sATTRS (N a number 0-255, ATTRS a "
+            "comma-separated list such as consume,once; got '%s')",
+            sep == ':' ? ":" : " ", b.p ? b.p : "");
+    pcrec_sb_free(&b);
+    return 1;
+}
+
+/* [INLINE-C] stage 2 one `--code-header LANG:HDR` value into `*h`: HDR is
+ * `"name"`, `<name>`, or a bare name the `"..."` form is written for
+ * (cli.md §1.22). Diagnoses and returns 1 on a malformed value. The
+ * strings are the argument's own bytes or a malloc'd quoted copy, owned
+ * by `h` (freed with the CLI state). */
+static int cli_code_header(const char *v, PcrecCodeHeader *h)
+{
+    const char *colon = strchr(v, ':');
+    const char *why = "wants LANG:HEADER, e.g. c:octet.h or 'c:<stdint.h>'";
+    /* An empty HEADER is the shape refusal, never an allocation failure
+     * (review 2026-10-27-r1-ic2 F14: it printed "malloc: Success"). */
+    if (colon && colon > v && colon[1]) {
+        char *lang = strndup(v, (size_t)(colon - v));
+        const char *hv = colon + 1;
+        char *hdr = (*hv == '"' || *hv == '<') ? strdup(hv) : NULL;
+        if (!hdr && *hv) {
+            size_t n = strlen(hv);
+            hdr = malloc(n + 3);
+            if (hdr) { hdr[0] = '"'; memcpy(hdr + 1, hv, n); hdr[n + 1] = '"'; hdr[n + 2] = 0; }
+        }
+        if (!lang || !hdr) { free(lang); free(hdr); perror("malloc"); return 1; }
+        why = pcrec_code_header_check(lang, hdr);
+        if (!why) { h->lang = lang; h->header = hdr; return 0; }
+        free(lang);
+        free(hdr);
+    }
+    StrBuf b = { 0 };
+    pcrec_sb_ctext(&b, (const unsigned char *)v, strlen(v), PCREC_CTEXT_COMMENT);
+    cli_err("--code-header: %s (got '%s')", why, b.p ? b.p : "");
+    pcrec_sb_free(&b);
+    return 1;
+}
+
+/* Appends one `--code-header` value (either spelling) to the CLI state's
+ * list, diagnosing a malformed one. Returns 0, or 1 having diagnosed. */
+static int cli_push_code_header(CliState *st, const char *v)
+{
+    PcrecCodeHeader *hv = realloc(st->code_headers,
+        (size_t)(st->ncode_headers + 1) * sizeof *hv);
+    if (!hv) { perror("realloc"); return 1; }
+    st->code_headers = hv;
+    if (cli_code_header(v, &hv[st->ncode_headers]) != 0) return 1;
+    st->ncode_headers++;
+    return 0;
+}
+
+static int cli_parse(int argc, char **argv, CliState *st, const char *where, CliUnadmitted *u)
 {
     pcrec_options opt = st->opt;
     int no_more_opts = 0;
@@ -1021,6 +1165,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (cli_operand(st, a) != 0) return 1;
             continue;
         }
+        if (u && a[0] == '-' && a[1] && strcmp(a, "--") != 0) mode_admits_note(a, u);
         if (!strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
@@ -1078,6 +1223,20 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->pattern = argv[++i];
         }
+        /* [M4-SUBST] a template, not a pattern: its own compile mode. */
+        else if (!strcmp(a, "--subst") || !strcmp(a, "--subst-file")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (st->subst || st->subst_file) {
+                cli_err("exactly one --subst or --subst-file expected");
+                return 1;
+            }
+            if (a[7] == '-') st->subst_file = argv[++i];
+            else st->subst = argv[++i];
+        }
+        else if (!strcmp(a, "--emit-support")) st->emit_support = 1;
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -1401,6 +1560,39 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->features = argv[++i];
         }
+        else if (!strcmp(a, "--callout")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            PcrecCalloutDecl *v = realloc(st->callouts, (size_t)(st->ncallouts + 1)
+                                                        * sizeof *v);
+            if (!v) { perror("realloc"); return 1; }
+            st->callouts = v;
+            if (cli_callout_decl(argv[++i], ':', &v[st->ncallouts]) != 0)
+                return 1;
+            st->ncallouts++;
+        }
+        /* [INLINE-C] stage 2 the code grant and the code headers, both
+         * spellings; a later `--allow-code` wins, as `--features` does. */
+        else if (!strcmp(a, "--allow-code")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            st->allow_code = argv[++i];
+        }
+        else if (!strcmp(a, "--code-header")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (cli_push_code_header(st, argv[++i]) != 0) return 1;
+        }
+        else if (!strncmp(a, "--allow-code=", 13)) st->allow_code = a + 13;
+        else if (!strncmp(a, "--code-header=", 14)) {
+            if (cli_push_code_header(st, a + 14) != 0) return 1;
+        }
         /* `--features=LIST`, the `=value` spelling `--engine=`/`--encoding=`
          * also take; a later spelling wins either way. */
         else if (!strncmp(a, "--features=", 11)) st->features = a + 11;
@@ -1556,14 +1748,14 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * guard reads tokens, and a wrapped name reads as a bare limit. */
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
-        int rc = cli_parse(n, v, &ts, where);
+        int rc = cli_parse(n, v, &ts, where, NULL);
         /* [MEMFN] RQ-1 `--memfn=` carries a POINTER into the split tokens,
          * which die just below: a value the raw line set (it differs from
          * the CLI's own) is kept for the process's life first. */
         if (rc == 0 && ts.opt.memfn && ts.opt.memfn != cli->opt.memfn &&
             cli_keep_string(&ts.opt.memfn) != 0) rc = 1;
         free(v); free(buf);
-        if (rc != 0) { free(ts.libdirs); return 1; }
+        if (rc != 0) { free(ts.libdirs); free(ts.callouts); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config
          * block sets COMPILE OPTIONS; anything else it could have set — an
          * output path, a pattern, a query mode, another source file, `-h`,
@@ -1580,6 +1772,12 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * "shorten the prose, keep the path and the raw line" rule applies. */
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
+            free(ts.callouts);  /* ...or for --callout */
+            for (int i = 0; i < ts.ncode_headers; i++) {
+                free((char *)ts.code_headers[i].lang);
+                free((char *)ts.code_headers[i].header);
+            }
+            free(ts.code_headers);   /* ...or for --code-header */
             cli_err("%s:%zu: `pcrec` line: compile options only, "
                     "not output/pattern/prefix/query/source: '%s'",
                     src_path, t->line, t->pcrec_raw);
@@ -1784,6 +1982,8 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         }
         ts.opt.features = fspec;
     }
+    /* [INLINE-C] stage 2 the invoker's grant reaches every target. */
+    ts.opt.allow_code = cli->allow_code;
 
     *out = ts.opt;
     return 0;
@@ -1956,6 +2156,15 @@ static int compile_sources(const CliState *cli)
         rc = 1;
     }
 
+    /* EVERY TARGET COMPILES BEFORE ANY FILE IS WRITTEN (cli.md §1.1.1¶4;
+     * review 2026-10-27-r1-ic2 F7): a refused target, a code segment without
+     * the grant among them, leaves no earlier target's files behind. The
+     * outputs and their paths are held until the last compile succeeds. */
+    pcrec_output *outs = rc == 0 && nall ? calloc(nall, sizeof *outs) : NULL;
+    char **cpaths = rc == 0 && nall ? calloc(nall, sizeof *cpaths) : NULL;
+    char **hpaths = rc == 0 && nall ? calloc(nall, sizeof *hpaths) : NULL;
+    if (rc == 0 && nall && (!outs || !cpaths || !hpaths)) { perror("calloc"); rc = 1; }
+    size_t ncompiled = 0;
     for (size_t i = 0; rc == 0 && i < nall; i++) {
         const OwnedTarget *ot = &all[i];
         pcrec_options topt;
@@ -1991,7 +2200,60 @@ static int compile_sources(const CliState *cli)
          * file's definition closure. `t->defs` is never NULL (an empty set
          * for a file with no named block), so there is one call here and no
          * branch on whether this source composes. */
-        if (pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs, &out, &cerr) != 0) {
+        /* [INLINE-C] 1b the block's `callout N ATTRS` lines, read by the
+         * same shape reader as `--callout` into the compile's declarations
+         * (src/opt/callout.c applies them). One line per row of `decl`. */
+        PcrecCalloutDecl decl[256];
+        int ndecl = 0;
+        char *cbuf = ot->t->callouts ? strdup(ot->t->callouts) : NULL;
+        if (ot->t->callouts && !cbuf) { perror("strdup"); free(cpath); free(hpath); rc = 1; break; }
+        for (char *ln = cbuf; ln && *ln; ) {
+            char *nl = strchr(ln, '\n');
+            if (nl) *nl = 0;
+            if (ndecl == 256 || cli_callout_decl(ln, ' ', &decl[ndecl]) != 0) {
+                if (ndecl == 256)
+                    cli_err("%s:%zu: target '%s': more than 256 callout lines",
+                            ot->owner, ot->t->block_line, ot->t->prefix);
+                ndecl = -1;
+                break;
+            }
+            ndecl++;
+            ln = nl ? nl + 1 : NULL;
+        }
+        if (ndecl < 0) { free(cbuf); free(cpath); free(hpath); rc = 1; break; }
+        /* [INLINE-C] stage 2 the source position a code segment's `#line`
+         * names (the FILE as written), and the entry file's `code-header`
+         * lines (inline_c.md §3.3-§3.4). */
+        /* Sized from the file's own rows, so no line past a fixed bound is
+         * dropped (review 2026-10-27-r1-ic2 F11). */
+        PcrecCodeHeader *hdrs = NULL;
+        int nh = 0;
+        const RxtSource *osrc = ot->t->defs->file;
+        if (osrc && osrc->nrows &&
+            !(hdrs = malloc(osrc->nrows * sizeof *hdrs))) {
+            perror("malloc"); free(cbuf); free(cpath); free(hpath); rc = 1; break;
+        }
+        for (size_t ri = 0; osrc && ri < osrc->nrows; ri++)
+            if (osrc->rows[ri].kind == RXT_DECL_CODE_HEADER)
+                hdrs[nh++] = (PcrecCodeHeader){ osrc->rows[ri].name,
+                                                osrc->rows[ri].value,
+                                                osrc->rows[ri].line };
+        const PcrecEmitIn tin = { .bound = PCREC_PB_UNSTATED,
+                                  .callout_decls = decl,
+                                  .ncallout_decls = ndecl,
+                                  .code_file = ot->owner,
+                                  .code_line = ot->t->block_line,
+                                  .code_col = ot->t->pattern_col,
+                                  .code_esc = ot->t->pattern_esc != NULL,
+                                  .code_headers = hdrs,
+                                  .ncode_headers = nh };
+        int crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
+                                     (ndecl || nh || topt.allow_code) ? &tin
+                                                                      : NULL,
+                                     &out, &cerr);
+        free(cbuf);
+        free(hdrs);
+        if (crc != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
              * offset is still printed, because it is the only thing that
@@ -2003,20 +2265,31 @@ static int compile_sources(const CliState *cli)
             rc = 1;
             break;
         }
+        outs[i] = out;
+        cpaths[i] = cpath;
+        hpaths[i] = hpath;
+        ncompiled = i + 1;
+    }
+    for (size_t i = 0; rc == 0 && i < ncompiled; i++) {
         if (to_stdout) {
-            fputs(out.c_src, stdout);
+            fputs(outs[i].c_src, stdout);
             if (fflush(stdout) != 0 || ferror(stdout)) {
                 cli_err("write error on stdout");
                 rc = 1;
             }
-        } else if (write_file(cpath, out.c_src) != 0 ||
-                   write_file(hpath, out.h_src) != 0) {
+        } else if (write_file(cpaths[i], outs[i].c_src) != 0 ||
+                   write_file(hpaths[i], outs[i].h_src) != 0) {
             rc = 1;
         }
-        pcrec_output_free(&out);
-        free(cpath);
-        free(hpath);
     }
+    for (size_t i = 0; i < ncompiled; i++) {
+        pcrec_output_free(&outs[i]);
+        free(cpaths[i]);
+        free(hpaths[i]);
+    }
+    free(outs);
+    free(cpaths);
+    free(hpaths);
 
     free(all);
     for (size_t fi = 0; fi < cli->nfiles; fi++)
@@ -2027,46 +2300,166 @@ static int compile_sources(const CliState *cli)
 
 static int cli_dispatch(CliState st);
 
-/* Parses the command line via `cli_parse`, refuses the conflicts every mode
- * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
- * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
+/* Reads FILE whole into a malloc'd buffer, its length in *len. NULL (with a
+ * diagnostic) on failure. */
+static char *read_whole_file(const char *path, size_t *len)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) { perror(path); return NULL; }
+    size_t cap = 4096, n = 0;
+    char *buf = malloc(cap);
+    while (buf) {
+        n += fread(buf + n, 1, cap - n, f);
+        if (n < cap) break;
+        char *nb = realloc(buf, cap * 2);
+        if (!nb) { free(buf); buf = NULL; break; }
+        buf = nb;
+        cap *= 2;
+    }
+    if (!buf) perror("malloc");
+    else if (ferror(f)) { perror(path); free(buf); buf = NULL; }
+    fclose(f);
+    *len = n;
+    return buf;
+}
+
+/* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst_api.md §5): `--subst
+ * TEMPLATE` or `--subst-file FILE` with `-o`, writing the `.c` and its `.h`
+ * (`-o -`: one self-contained `.c` on stdout). Exclusive with `--pattern`,
+ * a file operand and every query. `unadmitted` is the first option token
+ * MODE_ADMITS does not admit for it, or NULL. Returns 0, or 1 on any
+ * refusal. */
+static int cli_subst(const CliState *st, const char *unadmitted)
+{
+    if (st->pattern || st->nfiles || cli_modes_active(st) || st->emit_support) {
+        cli_err("--subst/--subst-file compiles a template, so it takes no "
+                "--pattern, file operand, query or --emit-support");
+        return 1;
+    }
+    if (!st->outpath) {
+        cli_err("--subst/--subst-file needs -o");
+        return 1;
+    }
+    /* Every rx option is REFUSED rather than ignored (§5¶1), by its
+     * presence, so a default value and an option added later are refused
+     * too. `--features` names the template's own modules: `subst-extended`
+     * (§2¶7) is the one there is. */
+    if (unadmitted) {
+        cli_err("--subst/--subst-file takes only -p, -e, -o and --features subst-extended: "
+                "'%s' is an option for a pattern compile", unadmitted);
+        return 1;
+    }
+    if (st->features && strcmp(st->features, "subst-extended") != 0) {
+        cli_err("--features with --subst/--subst-file takes only the template module "
+                "'subst-extended', not '%s'", st->features);
+        return 1;
+    }
+    size_t len = 0;
+    char *owned = NULL;
+    const char *tmpl = st->subst;
+    if (st->subst_file) {
+        if (!(owned = read_whole_file(st->subst_file, &len))) return 1;
+        tmpl = owned;
+    } else
+        len = strlen(tmpl);
+
+    int to_stdout = !strcmp(st->outpath, "-");
+    char *hpath = NULL;
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->opt.encoding, st->features != NULL };
+    if (!to_stdout) {
+        size_t ol = strlen(st->outpath);
+        if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }
+        strcpy(hpath, st->outpath);
+        if (ol > 2 && !strcmp(hpath + ol - 2, ".c")) strcpy(hpath + ol - 2, ".h");
+        else strcat(hpath, ".h");
+        so.header_name = base_name(hpath);
+    }
+    pcrec_output out;
+    pcrec_error err;
+    int rc = 0;
+    if (pcrec_subst_compile(tmpl, len, &so, &out, &err) != 0) {
+        cli_err("%s (template offset %zu)", err.msg, err.pos);
+        rc = 1;
+    } else {
+        if (to_stdout) {
+            fputs(out.c_src, stdout);
+            if (fflush(stdout) != 0 || ferror(stdout)) {
+                cli_err("write error on stdout");
+                rc = 1;
+            }
+        } else if (write_file(st->outpath, out.c_src) != 0 ||
+                   write_file(hpath, out.h_src) != 0)
+            rc = 1;
+        pcrec_output_free(&out);
+    }
+    free(hpath);
+    free(owned);
+    return rc;
+}
+
+/* [M4-SUBST] THE SUPPORT-UNIT MODE (docs/spec/subst_api.md §10¶2, cli.md
+ * §1.20): `--emit-support` writes the support unit to stdout, or to `-o
+ * FILE`. It takes NOTHING else: `unadmitted`, the first option token
+ * MODE_ADMITS does not admit for it, must be NULL (any value, any option
+ * added later), and there is no file operand. Returns 0, or 1 on a refusal
+ * or a write error. */
+static int cli_emit_support(const CliState *st, const char *unadmitted)
+{
+    if (unadmitted || st->nfiles) {
+        cli_err("--emit-support takes no pattern, template, query or other option "
+                "(only -o FILE)%s%s%s", unadmitted ? ": '" : "", unadmitted ? unadmitted : "",
+                unadmitted ? "' was given" : "");
+        return 1;
+    }
+    char *text = pcrec_emit_support();
+    int rc = 0;
+    if (!st->outpath || !strcmp(st->outpath, "-")) {
+        fputs(text, stdout);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            cli_err("write error on stdout");
+            rc = 1;
+        }
+    } else if (write_file(st->outpath, text) != 0)
+        rc = 1;
+    free(text);
+    return rc;
+}
+
+/* Refuses the conflicts every mode shares, decodes `--pattern-esc` once
+ * (K98) into `main`'s arena, then `cli_dispatch` dispatches: a
+ * syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
  * — no pattern, no `-o`, each returning before anything else runs), a
  * `.rxt` compile from one or more FILE OPERANDS (`compile_sources`, D118 —
  * one or more targets, pooled across every file given), or an ordinary
  * single-pattern compile to `-o` from `--pattern`. `--target`/`--lib-path`
- * are refused above every query since they apply to a file operand alone
- * (the one refusal that also has to free `st.libdirs`, this CLI's only
- * other allocation besides `st.files`, itself freed alongside it at every
- * exit that can see it non-empty). Returns 0 on success, 1 on any refusal
- * or compile failure. */
-int main(int argc, char **argv)
+ * are refused above every query since they apply to a file operand alone.
+ * `st` is a BY-VALUE copy of `main`'s parsed state: nothing here (or in
+ * `cli_dispatch`) frees `st.libdirs`, `st.callouts`, `st.files` or `esc`;
+ * every exit returns to `main`, which owns them. Returns 0 on success, 1 on
+ * any refusal or compile failure. */
+static int cli_run(CliState st, CliUnadmitted *unadmitted, Arena *esc)
 {
-    CliState st;
-    memset(&st, 0, sizeof st);
-    pcrec_default_options(&st.opt);
-    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) {
-        free(st.libdirs);
-        free(st.files);
-        return 1;
-    }
     /* [REL-1.4] same shape as the `want_help` check just below: prints and
      * exits 0, one line, stdout. */
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
+    if (st.subst || st.subst_file) {
+        return cli_subst(&st, unadmitted->subst);
+    }
+    if (st.emit_support) {
+        return cli_emit_support(&st, unadmitted->support);
+    }
 
     /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE
      * OPERAND ALONE, and this is refused HERE — above every query — for two
      * reasons that happen to coincide. A query returns from `main` on its
      * own, so a conflict tested lower down is one the query already won
      * silently; and `--lib-path` is the only FLAG in this CLI that
-     * ALLOCATES, so refusing it here is what makes "st.libdirs is non-NULL"
-     * true on exactly two paths — this one and the file-operand compile —
-     * both of which free it. `st.nfiles` being nonzero here is what a file
-     * operand means, so this same test covers it: `!st.nfiles` already
-     * implies `st.files` is untouched (NULL), nothing to free. */
+     * ALLOCATES, so refusing it here keeps `-I`/`--lib-path` off every mode
+     * but a compile. `st.nfiles` being nonzero here is what a file operand
+     * means, so this same test covers it. */
     if (!st.nfiles && st.target) {
         cli_err("--target applies to a file operand only");
-        free(st.libdirs);
         return 1;
     }
     /* [FINDINGS] B2 THE `-I` LIFT [r2 M-S7]: `-I` is also the ANALYSIS
@@ -2091,8 +2484,6 @@ int main(int argc, char **argv)
                     "or to --list-analysis%s only",
                     st.libdirs && !resolves ? "--lib-path/-I" : "--analysis",
                     st.libdirs && !resolves ? "" : " FILE");
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
         st.opt.analysis_dirs = st.libdirs;
@@ -2103,8 +2494,6 @@ int main(int argc, char **argv)
         if (st.opt.measures && !(st.nfiles || (st.pattern && m0 == 0))) {
             cli_err("--measures applies to a compile (a file operand or "
                     "--pattern) only");
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
     }
@@ -2119,8 +2508,6 @@ int main(int argc, char **argv)
         !(st.list_measurements && *st.list_measurements)) {
         cli_err("--view applies to --list-analysis NAME or "
                 "--list-measurements=X only");
-        free(st.libdirs);
-        free(st.files);
         return 1;
     }
 
@@ -2130,8 +2517,6 @@ int main(int argc, char **argv)
         cli_err("--pattern does not combine with a file operand "
                 "(got %zu file%s and --pattern)",
                 st.nfiles, st.nfiles == 1 ? "" : "s");
-        free(st.libdirs);
-        free(st.files);
         return 1;
     }
 
@@ -2154,28 +2539,52 @@ int main(int argc, char **argv)
      * queries' early returns, and those queries described the raw escaped
      * text with rc 0. With no `--pattern` the flag has nothing to decode.
      *
-     * The arena is `main`'s and is freed after `cli_dispatch` returns, on
+     * The arena is `main`'s and is freed after `cli_run` returns, on
      * every path, so the decoded bytes outlive every mode (`pcrec_compile`
      * copies what it needs into its own arena). */
-    Arena esc = { 0 };
     if (st.pattern_esc && st.pattern) {
         char emsg[192];
         const char *dec = NULL;
-        if (pcrec_rxt_decode_escaped(st.pattern, &esc, &dec, emsg,
+        if (pcrec_rxt_decode_escaped(st.pattern, esc, &dec, emsg,
                                      sizeof emsg) != 0) {
             cli_err("--pattern-esc: %s", emsg);
-            pcrec_arena_free(&esc);
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
         st.pattern = dec;
     }
     {
         const int rc = cli_dispatch(st);
-        pcrec_arena_free(&esc);
         return rc;
     }
+}
+
+/* Parses the command line via `cli_parse`, runs it (`cli_run`), and is the
+ * ONE cleanup path: this CLI's heap allocations (`st.libdirs`, `st.callouts`,
+ * `st.files`, the `--pattern-esc` arena) are released here once, after
+ * every exit -- parse refusal, `--help`, `--version`, a mode's refusal, a
+ * compile -- and nowhere else. */
+int main(int argc, char **argv)
+{
+    CliState st;
+    CliUnadmitted unadmitted = { NULL, NULL };
+    Arena esc = { 0 };
+    int rc;
+    memset(&st, 0, sizeof st);
+    pcrec_default_options(&st.opt);
+    if (cli_parse(argc - 1, argv + 1, &st, "command line", &unadmitted) != 0)
+        rc = 1;
+    else
+        rc = cli_run(st, &unadmitted, &esc);
+    pcrec_arena_free(&esc);
+    free(st.libdirs);
+    free(st.callouts);
+    for (int i = 0; i < st.ncode_headers; i++) {
+        free((char *)st.code_headers[i].lang);
+        free((char *)st.code_headers[i].header);
+    }
+    free(st.code_headers);
+    free(st.files);
+    return rc;
 }
 
 /* The modes, after `main` has parsed the command line, refused the
@@ -2257,6 +2666,27 @@ static int cli_dispatch(CliState st)
         }
         opt.features = fspec;
     }
+    /* [INLINE-C] stage 2 the invoker's code grant (cli.md §1.22), checked
+     * here so a bad language is the option's error, not a compile's. */
+    if (st.allow_code) {
+        unsigned gm;
+        char gerr[160];
+        if (pcrec_code_grant_resolve(st.allow_code, &gm, gerr, sizeof gerr)) {
+            cli_err("%s", gerr);
+            return 1;
+        }
+    }
+    opt.allow_code = st.allow_code;
+    /* A `--pattern`'s code segments name the command line in `#line`
+     * (inline_c.md §3.4); its column is the pattern's own. */
+    const PcrecEmitIn pin = { .bound = PCREC_PB_UNSTATED,
+                              .callout_decls = st.callouts,
+                              .ncallout_decls = st.ncallouts,
+                              .code_file = "<command line>",
+                              .code_line = 1, .code_col = 1,
+                              .code_esc = st.pattern_esc != 0,
+                              .code_headers = st.code_headers,
+                              .ncode_headers = st.ncode_headers };
 
     /* [DD-13b.W1.2][REL-1.10] A FILE OPERAND VERSUS EVERY QUERY, CHECKED
      * HERE AND NOT AT THE COMPILE PATH. Each query mode below returns from
@@ -2270,8 +2700,6 @@ static int cli_dispatch(CliState st)
         cli_err("a file operand COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
-        free(st.libdirs);
-        free(st.files);
         return 1;
     }
 
@@ -2406,7 +2834,7 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            char *text = pcrec_emit_ir(pattern, &opt, &err);
+            char *text = pcrec_emit_ir(pattern, &opt, &pin, &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
@@ -2467,7 +2895,8 @@ static int cli_dispatch(CliState st)
         }
         {
             pcrec_error err;
-            char *text = pcrec_emit_facts(pattern, &opt, encs, nenc, &err);
+            char *text = pcrec_emit_facts(pattern, &opt, &pin, encs, nenc,
+                                          &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
@@ -2497,6 +2926,14 @@ static int cli_dispatch(CliState st)
             cli_err("--count-groups needs a pattern");
             return 1;
         }
+        /* [INLINE-C] 1b the group count reads no attribute, so a numbered
+         * callout's declaration has nothing to apply to here: refused rather
+         * than silently dropped (cli.md §1.21). */
+        if (st.ncallouts) {
+            cli_err("--callout applies to a compile, --emit-ir and "
+                    "--emit-facts; --count-groups reads no callout attribute");
+            return 1;
+        }
         pcrec_error err;
         int n = pcrec_count_groups(pattern, &err);
         if (n < 0) {
@@ -2520,13 +2957,11 @@ static int cli_dispatch(CliState st)
             (modes & ~CLI_MODES_REGISTRY_QUERY)) {
             cli_err("%s is a separate query; use one",
                     st.list_analyses ? "--list-analyses" : "--list-analysis");
-            free(st.libdirs);
             return 1;
         }
         if (pattern || outpath || flavour) {
             cli_err("%s takes no pattern, no -o and no --flavour",
                     st.list_analyses ? "--list-analyses" : "--list-analysis");
-            free(st.libdirs);
             return 1;
         }
         if (st.list_analyses)
@@ -2540,7 +2975,6 @@ static int cli_dispatch(CliState st)
         else
             v = pcrec_find_list_file(st.list_analysis, st.libdirs,
                                      st.opt.analysis, &lerr);
-        free(st.libdirs);
         if (!v) {
             cli_err("%s", lerr.msg);
             return 1;
@@ -2551,25 +2985,21 @@ static int cli_dispatch(CliState st)
     }
 
     /* [MEASURE-SET] M0 THE MEASUREMENT-SET LISTINGS (docs/spec/measures.md
-     * §6): the analysis listings' shape and position, for the same reason
-     * (the `-I` list is freed here). */
+     * §6): the analysis listings' shape and position. */
     if (st.list_measurements) {
         char *v;
         pcrec_error lerr = { 0 };
         if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1 ||
             (modes & ~CLI_MODES_REGISTRY_QUERY)) {
             cli_err("--list-measurements is a separate query; use one");
-            free(st.libdirs);
             return 1;
         }
         if (pattern || outpath || flavour) {
             cli_err("--list-measurements takes no pattern, no -o and no --flavour");
-            free(st.libdirs);
             return 1;
         }
         v = pcrec_meas_list(*st.list_measurements ? st.list_measurements : NULL,
                             st.libdirs, st.list_view, &lerr);
-        free(st.libdirs);
         if (!v) {
             cli_err("%s", lerr.msg);
             return 1;
@@ -2752,19 +3182,29 @@ static int cli_dispatch(CliState st)
         /* the query conflict, and the --pattern-combining conflict, were
          * both refused above before any query could return or any file was
          * read; what is left is this mode's own one requirement. */
+        if (st.ncallouts) {
+            /* [INLINE-C] 1b a declaration belongs to ONE pattern: a file's
+             * blocks declare their own (`callout N ATTRS`). */
+            cli_err("--callout applies to --pattern; a .rxt block declares "
+                    "its own numbered callouts with 'callout N ATTRS'");
+            return 1;
+        }
+        if (st.ncode_headers) {
+            /* [INLINE-C] stage 2 the same rule for the code's headers: a
+             * file names its own (`code-header LANG HEADER`). */
+            cli_err("--code-header applies to --pattern; a .rxt file names "
+                    "its own headers with 'code-header LANG HEADER'");
+            return 1;
+        }
         if (!outpath) {
             cli_err("compiling from a file needs -o: a FILE for "
                             "one target total, an existing DIRECTORY for "
                             "several (which writes <dir>/<prefix>.c and .h "
                             "per target), or '-' for one target on stdout");
-            free(st.libdirs);
-            free(st.files);
             return 1;
         }
         {
             int rc = compile_sources(&st);
-            free(st.libdirs);
-            free(st.files);
             return rc;
         }
     }
@@ -2773,7 +3213,6 @@ static int cli_dispatch(CliState st)
                         "operand is a FILE now, never a pattern — see "
                         "--pattern)");
         usage(stderr);
-        free(st.libdirs);
         return 1;
     }
 
@@ -2782,7 +3221,7 @@ static int cli_dispatch(CliState st)
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); free(st.libdirs); return 1; }
+        if (!hpath) { perror("malloc"); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -2792,13 +3231,24 @@ static int cli_dispatch(CliState st)
     pcrec_output out;
     pcrec_error err;
 #ifdef PCREC_HARNESS
-    if (pcrec_harness_compile(pattern, &opt, &st.harness, &out, &err) != 0) {
+    const PcrecHarnessOptions *hopt = &st.harness;
 #else
-    if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
+    const PcrecHarnessOptions *hopt = NULL;
+#endif
+    /* [INLINE-C] 1b declarations, and stage 2's code position and headers,
+     * ride the driver's emission input; with none of them the compile is
+     * the plain entry's, unchanged. */
+    PcrecEmitIn cin = pin;
+    cin.harness = hopt;
+    if (st.ncallouts || st.allow_code || st.ncode_headers
+            ? pcrec_compile_in(pattern, &opt, &cin, &out, &err) != 0
+#ifdef PCREC_HARNESS
+            : pcrec_harness_compile(pattern, &opt, hopt, &out, &err) != 0) {
+#else
+            : pcrec_compile(pattern, &opt, &out, &err) != 0) {
 #endif
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
-        free(st.libdirs);
         return 1;
     }
 
@@ -2816,6 +3266,5 @@ static int cli_dispatch(CliState st)
     }
     pcrec_output_free(&out);
     free(hpath);
-    free(st.libdirs);
     return rc;
 }

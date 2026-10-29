@@ -66,6 +66,7 @@
  * point — nothing here knows what an encoding does, only which entries this
  * artifact needs. */
 #include "enc/enc.h"
+#include "gen/callsite_rows.h"
 /* [CLS-TREE] S4 the class-matcher kit: a wide class's VM test is one
  * decode plus one of its matchers (docs/design/cls_tree_design.md §2.2). */
 #include "gen/clskit.h"
@@ -1905,7 +1906,7 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
      * than a silent decline. `A_CAP` is unreachable (`bare` above). */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_CAP: case A_ATOMIC:
-    case A_LOOK: case A_BREF: case A_VAR: case A_CALL:
+    case A_LOOK: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* A_ALT (choice), A_EMPTY (zero length), A_EOL/A_CTX (zero-width
          * assertions, which would make "scan ahead by stride" wrong).
          *
@@ -1984,7 +1985,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
      * enumeration; the answer is unchanged. */
     case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
          * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
          * IS the decline, and this runs only on a body `vm_det_seq` already
@@ -2128,6 +2129,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
         case A_BREF:
         /* [VAR] carries no capture NUMBER either, and is unreachable here for `A_BREF`'s own reason: `rd_shape` declines a body holding one. */
         case A_VAR:
+        case A_CALLOUT:
         /* [DD-14] DECLINES, joining `A_BREF` and `A_ATOMIC`: it carries no
          * capture NUMBER of its own, and it is UNREACHABLE for their reason —
          * `rd_shape` (src/opt/revdet.c) declines every body holding a call.
@@ -2961,6 +2963,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * compare's byte-by-byte work is charged against the WORK budget at the
      * emission site, which is per-SUBJECT work this analysis does not size. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_BREF: {
         Cost c = { 0, 0, 0, 0, false, false };
         return c;
@@ -3245,6 +3248,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * entry wrapper's own stack table before the match loop begins — which
      * is this feature's whole distinction from a backreference. */
     case A_VAR:
+    case A_CALLOUT:
     case A_CTX: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
@@ -4085,7 +4089,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
      * finite set of literal words this enumeration writes. */
     case A_REP: case A_CAP: case A_ATOMIC: case A_LOOK:
     case A_EOL: case A_CTX: case A_GSTART:
-    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         return false;
     }
     return false;
@@ -4833,7 +4837,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     if (poss && !a->u.rep.greedy && !a->u.rep.possessive)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the cursor rung's possessive scan was given "
-                 "a LAZY body with no §2.2 verdict behind it. The scan is "
+                 "a LAZY body with no section 2.2 verdict behind it. The scan is "
                  "unconditionally maximal, which that verdict is what "
                  "licenses (see the preference-collapse note below)");
     /* [ENG-BREP] a cursor loop NESTED in a revdet loop's forward scan writes no
@@ -5273,7 +5277,7 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
     if (!pref_ok)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified bounded rung was given a "
-                 "LAZY body with no §2.2 verdict behind it. Its shape ignores "
+                 "LAZY body with no section 2.2 verdict behind it. Its shape ignores "
                  "preference, which that verdict is what licenses");
     int cur = entry;
 
@@ -5350,12 +5354,12 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
                  "NULLABLE body. It emits no empty-iteration guard, and that "
-                 "is licensed by §2.2 refusing such bodies -- not by anything "
+                 "is licensed by section 2.2 refusing such bodies -- not by anything "
                  "this rung does");
     if (!pref_ok)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
-                 "LAZY body with no §2.2 verdict behind it; its shape ignores "
+                 "LAZY body with no section 2.2 verdict behind it; its shape ignores "
                  "preference, which that verdict is what licenses");
 
     vm_lbl(v, entry, "possessified unbounded repeat: one frame for the whole "
@@ -5575,7 +5579,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
      * enumeration, still falling to the hard error below. */
     case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
-    case A_BREF: case A_VAR: case A_CALL:
+    case A_BREF: case A_VAR: case A_CALL: case A_CALLOUT:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
          * §11's `default:`-carrying sites. SOUND AND LOUD: this falls to a
          * hard compile error rather than a silent accept, which is the right
@@ -5888,7 +5892,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         pcrec_sb_puts(b, "    }\n");
     }
     vm_ev(v, VE_NOTE, 0, 0, "a group the walk never witnessed keeps its previous"
-                            " value -- which is §3.4's ZERO-ITERATION clause at"
+                            " value -- which is section 3.4's ZERO-ITERATION clause at"
                             " the boundary where the loop never ran");
     vm_goto(v, next);
 
@@ -6222,7 +6226,7 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     if (!a->u.rep.greedy && !a->u.rep.possessive)
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: the counter rung's possessive optional phase "
-                 "was given a LAZY body with no §2.2 verdict behind it; its "
+                 "was given a LAZY body with no section 2.2 verdict behind it; its "
                  "shape ignores preference, which that verdict is what "
                  "licenses");
     vm_lbl(v, entry, "counter: possessive optional phase begins");
@@ -7280,11 +7284,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
      * diagnostic. Sabotage row S-LB1 deletes the pass and lands here. */
     if (m < 1 || a->u.look.widths == NULL)
         pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
-                           "no width table — the parse hook did not run, or "
+                           "no width table -- the parse hook did not run, or "
                            "its deferred width re-check did not");
     if (pslot < 0)
         pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
-                           "no position slot — the end-check has nothing to "
+                           "no position slot -- the end-check has nothing to "
                            "compare against");
 
     /* THE SEAM, CONSULTED BEFORE THE CALL IS EMITTED, exactly as the `A_BREF`
@@ -7515,6 +7519,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP:
             on_cap(v, a->u.cap.no, u);
@@ -7600,6 +7605,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CALL:
             on_call(v, a, u);
@@ -7825,7 +7831,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
          * at the cause. */
         if (!v->rgn_emit[i] && v->spl_nw && n != v->spl_nw[i])
             pcrec_ctx_fail(cx, 0, "internal error: the spliced callee for group "
-                            "%d reserved %d save slots and needs %d — the "
+                            "%d reserved %d save slots and needs %d -- the "
                             "pre-pass and the W build disagree about its "
                             "transitive group set",
                      pcrec_callgraph_target(v->cg, i), v->spl_nw[i], n);
@@ -8501,7 +8507,7 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
                              a->u.ctx.iv, a->u.ctx.n, bits))
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion's set "
                        "is not byte-expressible under this encoding "
-                       "(ucp_design.md §2.3); it needs [UCP] U4");
+                       "(ucp_design.md section 2.3); it needs [UCP] U4");
     int si = vm_cls(v, bits);
     vm_ctx_row(v, entry, a->u.ctx.fn, si, next);
 }
@@ -8969,6 +8975,91 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     vm_emit_node(v, entry, a, next);
 }
 
+/* [INLINE-C] 1b THE CALLOUT SITE: `VE_CALLOUT`'s producer, the ONE emitter
+ * of a call out of the pattern (docs/design/inline_c.md §1.2), here with the
+ * `vm-slots` view source. In order:
+ *
+ *   1. ONE STEP charged to the match budget (§1.11): a fire is a step, so a
+ *      site that fires too often gives up PCREC_ERR_STEPS like any
+ *      backtracking blow-up, and the callee cannot read or spend the meter.
+ *   2. A FRESH `rx_ctx` on the stack: the subject, the position, the WHOLE
+ *      capture array as the view (`ncap` = every group plus one at every
+ *      site, §1.3: a group not yet written reads {-1,-1}, and every group is
+ *      published at close because the site's row READS all of them), the
+ *      binding's `user`, and the caller's variables (NULL/0 when the pattern
+ *      takes none).
+ *   3. SLOT 0 SAVED, SET TO THE ATTEMPT START, RESTORED (§1.3): slot 0 is
+ *      `\K`'s live register, and the view's slot 0 is {attempt start,
+ *      PCREC_UNSET} whether or not a `\K` was crossed.
+ *   4. THE CALL, its return routed through the ONE call-site table
+ *      (src/gen/callsite_rows.c, the `matchfn` convention): -1 backtracks; a
+ *      give-up propagates and sets the run's callee-gave-up bit, so the
+ *      tiered entry does not replay the outer match for a give-up that was
+ *      the callee's (§1.6); a contract break traps; a check (`W_PRED`) passes
+ *      on 0; a consumer (`consume`) continues at `pos + r`.
+ *
+ * The callee is the binding (rows 2-3 of §1.4): `rx_callout_<n>` or
+ * `rx_callout_<name>`, an `extern const rx_callout_ref` the artifact's
+ * header declares and the user defines. */
+static void vm_callout(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    Ctx *cx = v->cx;
+    const PcrecCalloutBinding bind = pcrec_callout_binding(cx, a);
+    const char *sym = bind.symbol;
+    const bool pred = !a->u.callout.consume;
+    vm_lbl(v, entry, vm_rolef(v, "callout site %d: %s, %s", a->u.callout.site,
+                              sym, pred ? "a check" : "consumes"));
+    vm_ev(v, VE_CALLOUT, entry, a->u.callout.site, a->u.callout.why);
+    if (v->has_budget)
+        pcrec_sb_printf(b, "    if (--run->steps_left < 0) return %s_R_STEPS;\n",
+                        v->up);
+    pcrec_sb_printf(b,
+        "    {\n"
+        "        rx_ctx %s_co_ctx;\n"
+        "        const ptrdiff_t %s_co_start = slot_values[0];\n"
+        "        ptrdiff_t r;\n"
+        "        %s_co_ctx.subject = subject;\n"
+        "        %s_co_ctx.len = subject_length;\n"
+        "        %s_co_ctx.pos = scan_position;\n"
+        "        %s_co_ctx.ncap = %d;\n"
+        "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n"
+        "        %s_co_ctx.user = %s;\n",
+        v->p, v->p, v->p, v->p, v->p, v->p, v->ngroups + 1, v->p, v->p,
+        bind.user);
+    if (cx->n_vars > 0)
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.vars = ctx->vars;\n"
+            "        %s_co_ctx.nvars = ctx->nvars;\n", v->p, v->p);
+    else
+        pcrec_sb_printf(b,
+            "        %s_co_ctx.vars = NULL;\n"
+            "        %s_co_ctx.nvars = 0;\n", v->p, v->p);
+    pcrec_sb_printf(b,
+        "        slot_values[0] = (ptrdiff_t)ctx->pos;\n"
+        "        r = %s(&%s_co_ctx);\n"
+        "        slot_values[0] = %s_co_start;\n",
+        bind.callee, v->p, v->p);
+    const CsCallee callee = {
+        .conv = CS_CONV_MATCHFN, .vm = true, .guarded = true, .utf_check = true,
+        .pred = pred, .pos = "scan_position", .subj = "subject",
+        .len = "subject_length",
+        .enc = pcrec_enc_by_id(cx->opt->encoding),
+    };
+    const CsEdges edges = {
+        .succ = pred ? vm_rolef(v, "goto %s_L%d;", v->p, next)
+                     : vm_rolef(v, "{ scan_position += (size_t)r; goto %s_L%d; }",
+                                v->p, next),
+        .fail = vm_rolef(v, "goto %s_fail;", v->p),
+        .prop = "return r;",
+        .giveup = "{ run->callee_gave_up = 1; return r; }",
+    };
+    pcrec_callsite_emit(cx, b, "        ", &callee, &edges);
+    pcrec_sb_puts(b, "    }\n");
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    vm_ev(v, VE_GOTO, next, 0, NULL);
+}
+
 /* `vm_emit`'s arms without its charge — the one entry that emits a node the
  * caller has already counted. Only `A_WCLASS` recurses here directly: the
  * wrapper's own charge stands in for its child's, so the program's node count
@@ -9175,6 +9266,9 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
          * than two programs that happen to agree. */
         if (a->u.call.link == CALL_SPLICE) vm_splice(v, entry, a, next);
         else                               vm_call(v, entry, a, next);
+        return;
+    case A_CALLOUT:
+        vm_callout(v, entry, a, next);
         return;
     }
     pcrec_ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
@@ -9943,25 +10037,35 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                     " island declined every one -- docs/spec/tuning.md S2.20");
     }
     {
-        static const char *const cols[2] = { "label", "note" };
-        vm_sec(o, "callouts", cols, 2);
-        /* A ROW PER EVENT the day a producer exists, rather than a count and
-         * a blank: the ISLANDS section spent its first two years as an
-         * honest-empty claim and started working unchanged when `vm_isl_emit`
-         * landed, which is the shape being copied here. */
+        /* [INLINE-C] 1b THE PRODUCER EXISTS (`vm_callout`), and the section
+         * has the shape the islands section had when its producer landed: a
+         * row per VE_CALLOUT event, so it cannot claim a site the program
+         * does not contain. A site emitted twice (an unrolled repeat) is two
+         * rows with one site number. The firing class and its reason are
+         * `pcrec_callout_sites`' (inline_c.md §1.10), read off the node. */
+        static const char *const cols[7] = { "label", "site", "binding",
+                                             "width", "class", "tail", "note" };
+        vm_sec(o, "callouts", cols, 7);
         for (int i = 0; i < v->nev; i++) {
             if (v->ev[i].k != VE_CALLOUT) continue;
-            const char *row[2] = { vm_rolef(v, "L%d", v->ev[i].a),
-                                   v->ev[i].role };
-            pcrec_sb_row(o, row, 2);
+            const Ast *a = v->cx->callout_nodes[v->ev[i].b];
+            const char *row[7] = {
+                vm_rolef(v, "L%d", v->ev[i].a),
+                vm_rolef(v, "%d", v->ev[i].b),
+                pcrec_callout_binding(v->cx, a).symbol,
+                a->u.callout.consume ? "consume" : "check",
+                pcrec_callout_class_name(a->u.callout.fclass),
+                a->u.callout.tail ? "tail" : "-",
+                v->ev[i].role,
+            };
+            pcrec_sb_row(o, row, 7);
         }
         if (ncallout == 0) {
-            const char *cells[2] = {
-                NULL,
-                "none: module 'callouts' has no producer, so no pattern can"
-                " reach a call site -- engine_m4.md S9.1"
+            const char *cells[7] = {
+                NULL, NULL, NULL, NULL, NULL, NULL,
+                "none: this pattern has no callout site"
             };
-            pcrec_sb_row(o, cells, 2);
+            pcrec_sb_row(o, cells, 7);
         }
     }
 }
@@ -11716,7 +11820,7 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* One entry of the resume stack: \"if you get stuck, come back to\n"
-            " * HERE\". PRIVATE TO THIS FILE — the layout differs between\n"
+            " * HERE\". PRIVATE TO THIS FILE -- the layout differs between\n"
             " * artifacts (a call-bearing one carries two more members), which is\n"
             " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
@@ -11857,6 +11961,12 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
     if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+    /* [INLINE-C] 1b the callee-gave-up bit (inline_c.md §1.6 D8): set by a
+     * callout site that propagates its callee's give-up, read by the tiered
+     * entry so a callee's FRAMES does not replay the outer match. Only on an
+     * artifact with a site, so every other artifact keeps its bytes. */
+    if (v->cx->ncallouts > 0)
+        pcrec_sb_puts(c, "    int callee_gave_up;     /* a callout's callee gave up */\n");
     pcrec_sb_printf(c, "} %s_run_state;\n\n", v->p);
 
     /* [DD-14.FB] (§11 item 2) THE STAMPED DEFAULT STORAGE, now a type of its
@@ -12214,21 +12324,6 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
  * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_storage`, and before
  * `vm_emit_entries`, whose six entries all delegate into what is written
  * here. */
-/* Emits a WORD's bytes as a C string-literal initializer's contents, escaped
- * so every byte survives. `\xNN` uniformly for anything that is not a plain
- * printable ASCII character, because a value's bytes are DATA and a
- * half-escaped one is a miscompile a reader cannot see. */
-static void vm_var_word_bytes(StrBuf *b, const unsigned char *p, size_t n)
-{
-    for (size_t i = 0; i < n; i++) {
-        unsigned char ch = p[i];
-        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\' && ch != '?')
-            pcrec_sb_printf(b, "%c", (char)ch);
-        else
-            pcrec_sb_printf(b, "\\x%02x\"\"", (unsigned)ch);
-    }
-}
-
 /* Emit the assignment that gives expansion slot `slot` its resolved span,
  * given `raw_p`/`raw_len` already filled for every NAME.
  *
@@ -12293,7 +12388,7 @@ static void vm_var_emit_eval(Vm *v, StrBuf *c, int slot, const VarExp *x,
         lit.cx = v->cx;
         size_t total = 0;
         for (size_t i = 0; i < x->nword; i++) {
-            vm_var_word_bytes(&lit, x->word[i].lit, x->word[i].litlen);
+            pcrec_sb_ctext(&lit, x->word[i].lit, x->word[i].litlen, PCREC_CTEXT_STRING);
             total += x->word[i].litlen;
         }
         wp = pcrec_sb_fragf(&v->cx->arena, "(const unsigned char *)\"%s\"",
@@ -12444,8 +12539,11 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
                      "internal error: a ${...} selector has no resolved name "
                      "slot");
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_printf(c, "    /* %s */\n",
-                        pcrec_varexp_render(&cx->arena, x));
+        /* The render carries the pattern's own ${...} word bytes. */
+        const char *vr = pcrec_varexp_render(&cx->arena, x);
+        pcrec_sb_puts(c, "    /* ");
+        pcrec_sb_ctext(c, (const unsigned char *)vr, strlen(vr), PCREC_CTEXT_COMMENT);
+        pcrec_sb_puts(c, " */\n");
         pcrec_sb_cmt_close(c);
         vm_var_emit_eval(v, c, (int)i, x, nameidx);
     }
@@ -12626,7 +12724,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         " * the caller's buffers or at this artifact's default, and this\n"
         " * function runs after it. Re-zeroing them would leave every buffered\n"
         " * call matching against a NULL stack or a capacity of 0\n"
-        " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n");
+        " * ([DD-14.FB] section 11 item 4, sabotage row S-FB3). */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "static %svoid %s_run_state_init(%s_run_state *run)\n"
@@ -12645,6 +12743,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     if (has_budget) pcrec_sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v->up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         pcrec_sb_printf(c, "    run->work_left = %s_WORK_BUDGET;\n", v->up);
+    if (v->cx->ncallouts > 0)
+        pcrec_sb_puts(c, "    run->callee_gave_up = 0;\n");
     pcrec_sb_puts(c, "}\n\n");
 
     /* [DD-14 wave B+C] §5.6 site 5b — the per-START-POSITION reset. It rewinds
@@ -12669,7 +12769,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         " * itself a fresh allowance. The four storage fields are untouched\n"
         " * here too, for the same reason and one step further along: a\n"
         " * bump-along to the next start position keeps the caller's buffers\n"
-        " * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */\n");
+        " * exactly as it keeps the budgets ([DD-14.FB] section 11 item 5). */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "static %svoid %s_reset_for_next_attempt(%s_run_state *run)\n"
@@ -12945,7 +13045,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_sb_puts(c,
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
         "     * candidates. The VM returns here immediately and the capture\n"
-        "     * slots at this instant are the answer — no candidate comparison,\n"
+        "     * slots at this instant are the answer -- no candidate comparison,\n"
         "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
         "     * filled by the ENTRY, not here (3.4). */\n");
     pcrec_sb_cmt_close(c);
@@ -12960,7 +13060,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
             "     * A step is one backtrack resumption (4.2), counted at exactly\n"
-            "     * this place — so forward progress is FREE (a linear match over\n"
+            "     * this place -- so forward progress is FREE (a linear match over\n"
             "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
             "     * independent, and the counter measures precisely the thing it is\n"
             "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
@@ -12971,7 +13071,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             "     * indirect jump here, and the pop-and-resume dispatch below\n"
             "     * is omitted rather than emitted dead. A step is one\n"
             "     * backtrack resumption (4.2), counted at exactly this place\n"
-            "     * — forward progress is FREE, the steps_left is subject-\n"
+            "     * -- forward progress is FREE, the steps_left is subject-\n"
             "     * length-independent, and the counter measures precisely the\n"
             "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
             "     * security boundary, and it must not be traded against\n"
@@ -13152,8 +13252,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * measures. C cannot declare a local conditionally, so a single function
      * that decided at run time would carry the arrays either way. */
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's search blocks, at file
-     * scope above the one search loop whose pre-check below calls them. */
-    pcrec_emit_req_run_blocks(v->cx, c);
+     * scope above the one search loop whose pre-check below calls them
+     * ([REQRUN-VM] already above the prefilter where its scan re-enters). */
+    if (!pcrec_req_site_in_prefilter(v->cx)) pcrec_emit_req_run_blocks(v->cx, c);
     /* [MEMFN] R17-a the VM hat's FIND, defined here for both of its seeks. */
     pcrec_emit_vm_start_define(v->cx, c, v->p,
                                pcrec_sb_fragf(&v->cx->arena, "%s_run_pf", g->searchfn));
@@ -13488,11 +13589,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      *     where it costs no emitted bytes: `--emit-ir`'s PRUNING line and the
      *     `mrl_win` field comment at the top of this file.
      */
-    /* [K82] the handoff's premise (a): it applies only where a DFA scan is in
-     * front, and on this engine that scan is `prefn`. */
-    if (!prefn && strcmp(first, "search_from") != 0)
-        pcrec_ctx_fail(v->cx, 0, "internal error: the [K82] handoff reached a VM "
-                       "route with no prefilter to start");
+    /* [K82] where a DFA scan is in front (`prefn`) the handoff moves its first
+     * call; [REQRUN-VM] with none, the attempt loop's own first start
+     * (`handoff-attempts`), and `\G` keeps reading `search_from`. */
     if (prefn) {
         pcrec_sb_printf(c,
             "    {\n"
@@ -13508,7 +13607,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
               : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
-        pcrec_sb_puts(c, "    attempt_position = search_from;\n");
+        pcrec_sb_printf(c, "    attempt_position = %s;\n", first);
         if (v->nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
     /* [K73] The offset-0 start rule, on the FIRST ATTEMPT and not on the
@@ -13521,10 +13620,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [START-SET] THE VM HAT's entry seek (startset.md §4.2's order): after
      * the range guard, K50, `rx_valid_upto` and the K65/K66 pre-check above,
      * after K73's offset-0 seek, and before the first attempt. It starts at
-     * `attempt_position`, which is `search_from` here: the K82 handoff never
-     * reaches a VM route without a prefilter (the assertion above), so the
-     * handoff's `lo` is `search_from`. Nothing on a hybrid or where the row
-     * is `none`. */
+     * `attempt_position`: `search_from`, or [REQRUN-VM] the whole run's
+     * bound where the handoff keeps it — both lower bounds on the first
+     * match start, so the seek's own claim holds from either. Nothing on a
+     * hybrid or where the row is `none`. */
     pcrec_emit_vm_start_seek(v->cx, c, v->p, "    ", true);
 
     /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
@@ -13593,6 +13692,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * artifact's rx_matchfn AS a callout. `vm_look_behind`'s
          * negative-arm end-check is the one live producer today. */
         "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
+        /* [INLINE-C] 1b a callout site propagates its callee's other codes
+         * (the return table's UTF and UNSET_VAR rows) out of the attempt;
+         * they end the search as the callee's own entry would have. Only on
+         * an artifact with a site, whose attempts can return one. */
+        "%s"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
         "        if (attempt_position >= %s) return 0;\n"
@@ -13609,7 +13713,12 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_seed);
+        v->up, v->up, v->up, v->up, v->up,
+        v->cx->ncallouts > 0 ? "        if (result < -1) return (int)result;\n" : "",
+        v->p, att_max, retry_adv, retry_seed);
+    /* [REQRUN-VM] the re-entered handoff, after the encoding's own advance
+     * and before the seek below: two lower bounds, each sound alone. */
+    pcrec_emit_req_attempt_reentry(v->cx, c, "    ");
     /* [START-SET] THE VM HAT's retry seek, after the encoding's own advance
      * (K49's `retry_adv`): the next position whose byte can begin a match. */
     pcrec_emit_vm_start_seek(v->cx, c, v->p, "        ", false);
@@ -14162,6 +14271,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en, &rs);
     vm_emit_storage(&v, &pl);
+    /* [INLINE-C] stage 2 each code segment's prototype and binding, before
+     * the function whose call sites name them (inline_c.md §3.1). */
+    pcrec_emit_code_protos(cx, &cx->job->csb);
     /* [OPT-REVEND] L0 a VM artifact with no DFA body asks LOCATE on the VM
      * route; a hybrid asked it from its inlined body (`pcrec_emit_dfa_engine`). */
     if (!pcrec_artifact_has_dfa_scan(cx)) pcrec_cand_locate_vm(cx);

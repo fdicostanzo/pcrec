@@ -2,7 +2,7 @@
 # tests/uprops/run_uprops_tests.sh — module `unicode-props` ([M5.0] stage 3):
 # the structural and differential checks a `.rxt` file cannot make.
 #
-# FIVE SECTIONS, each asking something none of the others can:
+# SIX SECTIONS (§6 is [UPROP-MORE]'s, below §5), each asking something none of the others can:
 #
 #   §1 THE GENERATED TABLE IS NOT STALE. `third_party/ucd-16.0.0/generate.py
 #      --check` re-derives `src/parse/uprops_tables.inc` from the vendored UCD
@@ -33,6 +33,12 @@
 #   §5 THE SIZE-CAP LADDER'S LAST RUNG ([PF-DROP], D135): `(\p{Xwd})` under
 #      `utf8`, rescued at default axes by dropping the VM hybrid's
 #      prefilter, matches `\p{Xwd}` over the whole code-point space.
+#
+#   §6 BLOCK, AGE AND THE PYTHON CROSS-CHECKS ([UPROP-MORE], D178). Block and Age
+#      are pcrec extensions libpcre2 refuses, so the data files are their own
+#      oracle (uprops_ucdref.py re-reads them); Bidi_Mirrored and Bidi_Class
+#      are also held to python's unicodedata where it is Unicode 16.0.0; and the
+#      new axes' spelling identities and caseless invariance, oracle-free.
 #
 # Env: PCREC, CC, KEEP=1, ENC (limit to one encoding), UPROPS_NAMES (limit the
 #   name set — for bisecting, never for a green run).
@@ -67,6 +73,32 @@ NAMES_MAJOR="C L M N P S Z"
 NAMES_SUB="Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn"
 NAMES_DERIVED="L& Lc Any Xan Xps Xsp Xuc Xwd"
 CATEGORIES="$NAMES_MAJOR $NAMES_SUB $NAMES_DERIVED"
+
+# [UPROP-MORE] THE BINARY PROPERTIES AND Bidi_Class, hand-written PROMISE side:
+# the 55 long names libpcre2 10.46 accepts (measured by probing every row of
+# PropertyAliases.txt's "Binary Properties" section) plus `ASCII`, and the 23
+# short Bidi_Class names (PCRE2 refuses the long ones).  The UCD has eighteen
+# more binary properties (Hyphen, Other_*, Expands_On_*, ...) that PCRE2
+# refuses; they are NOT promised and `uprops_names.py` fails if the table
+# ships one.  Short aliases are re-derived from the vendored
+# PropertyAliases.txt by `uprops_names.py`, not listed here.
+NAMES_BINARY="ASCII ASCII_Hex_Digit Alphabetic Bidi_Control Bidi_Mirrored \
+Cased Case_Ignorable Changes_When_Casefolded Changes_When_Casemapped \
+Changes_When_Lowercased Changes_When_Titlecased Changes_When_Uppercased Dash \
+Deprecated Default_Ignorable_Code_Point Diacritic Emoji_Modifier_Base \
+Emoji_Component Emoji_Modifier Emoji Emoji_Presentation Extender \
+Extended_Pictographic Grapheme_Base Grapheme_Extend Grapheme_Link Hex_Digit \
+ID_Compat_Math_Continue ID_Compat_Math_Start ID_Continue Ideographic ID_Start \
+IDS_Binary_Operator IDS_Trinary_Operator IDS_Unary_Operator Join_Control \
+Logical_Order_Exception Lowercase Math Modifier_Combining_Mark \
+Noncharacter_Code_Point Pattern_Syntax Pattern_White_Space \
+Prepended_Concatenation_Mark Quotation_Mark Radical Regional_Indicator \
+Soft_Dotted Sentence_Terminal Terminal_Punctuation Unified_Ideograph Uppercase \
+Variation_Selector White_Space XID_Continue XID_Start"
+BC_VALUES="AL AN B BN CS EN ES ET FSI L LRE LRI LRO NSM ON PDF PDI R RLE RLI RLO S WS"
+NAMES_BC=""
+for v in $BC_VALUES; do NAMES_BC="$NAMES_BC bc=$v"; done
+NAMES_MORE="$NAMES_BINARY $NAMES_BC"
 
 # THE SCRIPT NAMES ([M5.0] stage 5) come from the VENDORED SOURCE rather than
 # from a fourth hand-written list, and the honest reason is that 171 values in
@@ -105,9 +137,10 @@ fi
 
 echo "== §2 the shipped name set =="
 if [ -z "${UPROPS_NAMES:-}" ]; then
-    if python3 "$SCRIPT_DIR/uprops_names.py" "$ROOT_DIR/third_party/ucd-16.0.0" \
+    if UPROPS_BINARY="$NAMES_BINARY" UPROPS_BC="$BC_VALUES" \
+            python3 "$SCRIPT_DIR/uprops_names.py" "$ROOT_DIR/third_party/ucd-16.0.0" \
             "$ROOT_DIR/src/parse/uprops_tables.inc" $CATEGORIES; then
-        pass=$((pass+2))   # the script prints its own two ok: lines
+        pass=$((pass+4))   # the script prints its own four ok: lines
     else
         bad "the shipped name set and the promise disagree (above)"
     fi
@@ -133,6 +166,45 @@ for n in $(script_values); do
     done
 done
 [ "$fail" = "0" ] && ok "all $script_n script values compile in all three namespaces (bare, sc=, scx=)"
+
+more_n=0
+for n in $NAMES_MORE; do
+    more_n=$((more_n+1))
+    compiles "$n" || bad "\\p{$n} does not compile with module unicode-props enabled"
+done
+[ "$fail" = "0" ] && ok "all $more_n promised binary-property and Bidi_Class names compile"
+
+# sweep_names <enc> <outfile> NAME... — compile each \p{NAME}, sweep the whole
+# code-point space of its emitted artifact, append `NAME lo-hi ...` to <outfile>.
+sweep_names() {
+    local enc="$1" out="$2" n extra="" maxcp; shift 2
+    # `-fno-premul-table` is an ANSWER-IDENTICAL axis (D82, and
+    # `make test-axes` is what holds it to that), taken here because several
+    # properties exceed D84's emitted-source cap under `utf8` at default
+    # axes (see the lane report's size census).  Using it keeps the
+    # differential's POPULATION the whole shipped set rather than the subset
+    # that happens to fit: a property nobody can compile is a size finding,
+    # not a reason to stop checking what it matches.
+    [ "$enc" = "utf8" ] && extra="-fno-premul-table"
+    maxcp=0xFF; [ "$enc" = "utf8" ] && maxcp=0x10FFFF
+    : > "$out"
+    for n in "$@"; do
+        if ! "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -e "$enc" $extra \
+                -p rx -o "$WORKDIR/g.c" --pattern "\\p{$n}" >/dev/null 2>&1; then
+            bad "$enc: \\p{$n} does not compile (the differential cannot run on it)"
+            continue
+        fi
+        if ! gen_cc "uprops $enc \\p{$n}" "$CC" -O1 -std=gnu11 -I "$WORKDIR" \
+                -DUPROPS_ARTIFACT='"g.c"' -DUPROPS_MAXCP=$maxcp \
+                -o "$WORKDIR/sweep" "$SCRIPT_DIR/uprops_sweep.c" >/dev/null 2>&1; then
+            bad "$enc: the sweep driver does not build against \\p{$n}'s artifact"
+            continue
+        fi
+        printf '%s' "$n" >> "$out"
+        gen_run "uprops $enc \\p{$n}" "$WORKDIR/sweep" 2>/dev/null >> "$out" \
+            || bad "$enc: the sweep over \\p{$n} did not complete"
+    done
+}
 
 echo "== §3 the membership differential =="
 # [ORACLE-LINK] (D98, 2026-09-09): direct-links libpcre2 now, so the probe
@@ -166,7 +238,6 @@ else
         # subset that happens to fit, which is the honest choice: a property
         # nobody can compile is a size finding, not a reason to stop checking
         # what it matches.
-        extra=""; [ "$enc" = "utf8" ] && extra="-fno-premul-table"
         # THE POPULATION, per encoding — see BYTE_SCRIPTS above for why the
         # two differ.  Both namespaces of each script are swept, because the
         # bare/`scx=` set and the `sc=` set are DIFFERENT sets on 151 of the
@@ -177,28 +248,10 @@ else
         else
             scripts="$(script_values)"
         fi
-        NAMES="$CATEGORIES"
+        NAMES="$CATEGORIES $NAMES_MORE"
         for s in $scripts; do NAMES="$NAMES $s sc=$s"; done
         NAMES="${UPROPS_NAMES:-$NAMES}"
-        : > "$WORKDIR/pcrec-$enc.txt"
-        for n in $NAMES; do
-            if ! "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -e "$enc" $extra \
-                    -p rx -o "$WORKDIR/g.c" --pattern "\\p{$n}" >/dev/null 2>&1; then
-                bad "$enc: \\p{$n} does not compile (the differential cannot run on it)"
-                continue
-            fi
-            maxcp=0xFF; [ "$enc" = "utf8" ] && maxcp=0x10FFFF
-            if ! gen_cc "uprops $enc \\p{$n}" "$CC" -O1 -std=gnu11 -I "$WORKDIR" \
-                    -DUPROPS_ARTIFACT='"g.c"' -DUPROPS_MAXCP=$maxcp \
-                    -o "$WORKDIR/sweep" "$SCRIPT_DIR/uprops_sweep.c" >/dev/null 2>&1; then
-                bad "$enc: the sweep driver does not build against \\p{$n}'s artifact"
-                continue
-            fi
-            printf '%s' "$n" >> "$WORKDIR/pcrec-$enc.txt"
-            gen_run "uprops $enc \\p{$n}" "$WORKDIR/sweep" 2>/dev/null \
-                >> "$WORKDIR/pcrec-$enc.txt" \
-                || bad "$enc: the sweep over \\p{$n} did not complete"
-        done
+        sweep_names "$enc" "$WORKDIR/pcrec-$enc.txt" $NAMES
         "$WORKDIR/uprops_oracle" "$enc" $NAMES > "$WORKDIR/oracle-$enc.txt" 2>/dev/null
         echo "  -- $enc --"
         # [ORWIRE] docs/design/oracle_interface.md §9 Step 1's migration
@@ -375,6 +428,85 @@ elif "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -fno-start-landing -p rx -o "$WORKDIR/pd
 else
     bad "utf8: $wit REFUSED at default axes: $(head -c 300 "$WORKDIR/pd.err")"
 fi
+
+echo "== §6 Block, Age and the python cross-checks ([UPROP-MORE]) =="
+# Block and Age are pcrec EXTENSIONS beyond PCRE2 (D178): libpcre2 refuses
+# both prefixes, so §3's oracle cannot arbitrate them.  `uprops_ucdref.py`
+# re-reads `Blocks.txt` / `DerivedAge.txt` itself and compares the artifacts'
+# whole-space member sets exactly (and checks the structure no single set
+# shows).  The same sweep file feeds the python `unicodedata` control for
+# Bidi_Mirrored / Bidi_Class, which needs no oracle either.
+for enc in ${ENC:-byte utf8}; do
+    ext_names=$(python3 -I "$SCRIPT_DIR/uprops_ucdref.py" names \
+                "$ROOT_DIR/third_party/ucd-16.0.0" "$enc") \
+        || { bad "$enc: uprops_ucdref.py names failed"; continue; }
+    sweep_names "$enc" "$WORKDIR/ext-$enc.txt" $ext_names
+    if python3 -I "$SCRIPT_DIR/uprops_ucdref.py" ext \
+            "$ROOT_DIR/third_party/ucd-16.0.0" "$enc" "$WORKDIR/ext-$enc.txt"
+    then pass=$((pass+1)); else bad "$enc: Block/Age disagree with the data files"; fi
+    sweep_names "$enc" "$WORKDIR/py-$enc.txt" Bidi_Mirrored $NAMES_BC
+    if python3 -I "$SCRIPT_DIR/uprops_ucdref.py" pyuni "$enc" "$WORKDIR/py-$enc.txt"
+    then pass=$((pass+1)); else bad "$enc: Bidi_Mirrored/Bidi_Class disagree with python unicodedata"; fi
+done
+# The spelling identities of the new axes (oracle-free, like §4's).
+for enc in ${ENC:-byte utf8}; do
+    same   "$enc" '\p{bc=R}'            '\p{Bidi_Class:R}'   "bc= is Bidi_Class:"
+    same   "$enc" '\p{Alpha}'           '\p{Alphabetic}'     "the short alias is the long name"
+    same   "$enc" '\p{WSpace}'          '\p{space}'          "PropertyAliases' third spelling"
+    same   "$enc" '\p{blk=Basic_Latin}' '\p{Block:BasicLatin}' "blk= is Block: , loose names"
+    same   "$enc" '\p{blk=ASCII}'       '\p{Block=Basic Latin}'  "the block's short alias"
+    same   "$enc" '\p{^Alphabetic}'     '\P{Alphabetic}'     "caret negation works on a binary property"
+    same   "$enc" '[^\p{Emoji}]'        '\P{Emoji}'          "class negation of a binary property"
+    differ "$enc" '\p{Emoji}'           '\p{Emoji_Presentation}' "Emoji is not Emoji_Presentation"
+    ci_same "$enc" '\p{Alphabetic}' '\p{Alphabetic}' "caseless \\p{Alphabetic} is unchanged"
+    ci_same "$enc" '\p{Lowercase}'  '\p{Lowercase}'  "caseless \\p{Lowercase} is unchanged"
+    ci_same "$enc" '\p{bc=L}'       '\p{bc=L}'       "caseless \\p{bc=L} is unchanged"
+done
+echo "== §7 the generator's coverage check is live ([UPROP-MORE]) =="
+# The generator FAILS when a promised property name has no source line (K35: a
+# population nobody counts).  A check that has never been seen failing is a
+# claim, so each cell below damages a COPY of the vendored data and demands the
+# generator's refusal by name.  The control (an undamaged copy) must pass
+# `--check`, which proves the copy is a faithful stand-in and the failures
+# below are the damage's.
+sab="$WORKDIR/sab"
+mkdir -p "$sab/third_party" "$sab/src/parse" "$sab/src/core" "$sab/src/enc"
+cp -R "$ROOT_DIR/third_party/ucd-16.0.0" "$sab/third_party/ucd-16.0.0"
+for f in src/parse/uprops_tables.inc src/core/fold_tables.inc src/core/case_tables.inc src/enc/utf8_fold_pairs.inc; do
+    cp "$ROOT_DIR/$f" "$sab/$f"
+done
+gen_sab() { python3 "$sab/third_party/ucd-16.0.0/generate.py" --check 2>&1; }
+restore() { cp "$ROOT_DIR/third_party/ucd-16.0.0/$1" "$sab/third_party/ucd-16.0.0/$1"; }
+if gen_sab >/dev/null; then ok "control: an undamaged copy of the data passes the generator's --check"
+else bad "control: an undamaged copy of the data FAILS --check, so the cells below prove nothing"; fi
+sab_cell() {    # sab_cell <file> <sed-delete-ERE> <expected message ERE> <label>
+    sed -E "/$2/d" "$ROOT_DIR/third_party/ucd-16.0.0/$1" > "$sab/third_party/ucd-16.0.0/$1"
+    out=$(gen_sab); rc=$?
+    if [ "$rc" != "0" ] && printf '%s' "$out" | grep -Eq "$3"; then ok "sabotage: $4"
+    else bad "sabotage: $4 -- rc=$rc, output: $(printf '%s' "$out" | tail -2 | tr '\n' ' ' | head -c 200)"; fi
+    restore "$1"
+}
+sab_cell PropList.txt '; Variation_Selector( |$)' "promised binary property 'Variation_Selector' has no source" \
+    "a binary property with no line in PropList.txt is refused by name"
+sab_cell emoji-data.txt '; Extended_Pictographic( |#|$)' "promised binary property 'Extended_Pictographic' has no source" \
+    "a binary property with no line in emoji-data.txt is refused by name"
+sab_cell DerivedCoreProperties.txt '; Default_Ignorable_Code_Point( |#|$)' "promised binary property 'Default_Ignorable_Code_Point' has no source" \
+    "a binary property with no line in DerivedCoreProperties.txt is refused by name"
+sab_cell DerivedBidiClass.txt '; FSI( |#|$)' "promised Bidi_Class 'FSI' has no source" \
+    "a Bidi_Class value with no line in DerivedBidiClass.txt is refused by name"
+sab_cell Blocks.txt '; Greek and Coptic' "disagree on the block list" \
+    "a block missing from Blocks.txt is refused"
+sab_cell DerivedAge.txt '; 16\.0( |#|$)' "disagree on the age list" \
+    "an age with no line in DerivedAge.txt is refused"
+# A planted WRONG ALIAS: the generator still runs, but the table it writes
+# differs from the committed one, so --check names it STALE.
+sed -E 's/^Alpha( *);/Alfa\1;/' "$ROOT_DIR/third_party/ucd-16.0.0/PropertyAliases.txt" \
+    > "$sab/third_party/ucd-16.0.0/PropertyAliases.txt"
+out=$(gen_sab); rc=$?
+if [ "$rc" != "0" ] && printf '%s' "$out" | grep -q "STALE"; then
+    ok "sabotage: a planted wrong alias (Alpha -> Alfa) makes the committed table STALE"
+else bad "sabotage: a planted wrong alias was not detected -- rc=$rc"; fi
+restore PropertyAliases.txt
 echo
 echo "uprops: $pass passed, $fail failed"
 [ "$fail" = "0" ] || exit 1

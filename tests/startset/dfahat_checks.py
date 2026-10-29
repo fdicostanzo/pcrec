@@ -168,6 +168,9 @@ def normalize(text):
     return PF_BLOCK.sub("", t)
 
 
+SCAN_TABLE = re.compile(r'static const unsigned char rx_[a-z]+_scan[0-9]+\[256\]')
+
+
 def classify(t1, t0, s1, s0):
     """The cross-row mover classes a hat artifact differs from its deny by."""
     cls = []
@@ -175,8 +178,13 @@ def classify(t1, t0, s1, s0):
         cls.append("G1:%s->%s" % (s0.get("REQ_WHY"), s1.get("REQ_WHY")))
     if s1.get("VM_RESEED") != s0.get("VM_RESEED"):
         cls.append("reseed-row:%s->%s" % (s0.get("VM_RESEED"), s1.get("VM_RESEED")))
-    if s1.get("DFA_SCAN_EDGE") != s0.get("DFA_SCAN_EDGE"):
-        cls.append("scan-edge:%s->%s" % (s0.get("DFA_SCAN_EDGE"), s1.get("DFA_SCAN_EDGE")))
+    # [SCANEDGE-SET] the stamp names the artifact's edge KIND, not which heads carry one, and
+    # a set-shaped head the hat's re-seed refuses (scanedge.c precondition (8)) leaves the kind
+    # unchanged while an edge table is gone; the tables themselves are counted too.
+    ne1, ne0 = len(SCAN_TABLE.findall(t1)), len(SCAN_TABLE.findall(t0))
+    if s1.get("DFA_SCAN_EDGE") != s0.get("DFA_SCAN_EDGE") or ne1 != ne0:
+        cls.append("scan-edge:%s->%s (%d->%d edge tables)"
+                   % (s0.get("DFA_SCAN_EDGE"), s1.get("DFA_SCAN_EDGE"), ne0, ne1))
     return cls
 
 

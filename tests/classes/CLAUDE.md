@@ -25,6 +25,8 @@ rejections that must HOLD with the module enabled (`[\N]`, `[0-\d]`,
   new blocks pin; tests/reject/'s companion pin is `reject_gated none` for
   the same constructs' old bare refusal.
 
+- **scan_set.rxt** — [SCANEDGE-SET] answers for scan edges over a byte-class SET (runs the pattern splits into several classes), the one-class control and two negative controls; libpcre2-8 10.46 expectations, python3-re cross-checked where not `# pcre2-only`. Census witnesses: tests/codegen/run_scan_edge_census.sh section (8).
+
 ## The D33 §9.3 record
 
 This corpus is the "probe that is false the day before" for the producing

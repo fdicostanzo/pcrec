@@ -1,0 +1,73 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+bsk-000	bsk		a\\Kb	[$0|$1]	empty	all	abab	diff
+bsk-001	bsk		a\\Kb	[$0]	empty	1	abab	diff
+bsk-002	bsk		a\\Kb	[$0]	empty	all	abab	nogap
+bsk-003	bsk		\\Ka	[$0|$1]	empty	all	aa	diff
+bsk-004	bsk		\\Ka	[$0]	empty	1	aa	diff
+bsk-005	bsk		\\Ka	[$0]	empty	all	aa	nogap
+bsk-006	bsk		a\\K	[$0|$1]	empty	all	aaa	diff
+bsk-007	bsk		a\\K	[$0]	empty	1	aaa	diff
+bsk-008	bsk		a\\K	[$0]	empty	all	aaa	nogap
+bsk-009	bsk		(?:a\\K)+b	[$0|$1]	empty	all	aab	diff
+bsk-010	bsk		(?:a\\K)+b	[$0]	empty	1	aab	diff
+bsk-011	bsk		(?:a\\K)+b	[$0]	empty	all	aab	nogap
+bsk-012	bsk		a\\K|b	[$0|$1]	empty	all	abab	diff
+bsk-013	bsk		a\\K|b	[$0]	empty	1	abab	diff
+bsk-014	bsk		a\\K|b	[$0]	empty	all	abab	nogap
+bsk-015	bsk		ab\\K\\w*	[$0|$1]	empty	all	abcd abx	diff
+bsk-016	bsk		ab\\K\\w*	[$0]	empty	1	abcd abx	diff
+bsk-017	bsk		ab\\K\\w*	[$0]	empty	all	abcd abx	nogap
+bsk-018	bsk		(a)\\K(b)	[$0|$1]	empty	all	abab	diff
+bsk-019	bsk		(a)\\K(b)	[$0]	empty	1	abab	diff
+bsk-020	bsk		(a)\\K(b)	[$0]	empty	all	abab	nogap
+bsk-021	bsk		a\\K(?=b)	[$0|$1]	empty	all	abab	diff
+bsk-022	bsk		a\\K(?=b)	[$0]	empty	1	abab	diff
+bsk-023	bsk		a\\K(?=b)	[$0]	empty	all	abab	nogap
+bsk-024	bsk		a+\\K	[$0|$1]	empty	all	aaba	diff
+bsk-025	bsk		a+\\K	[$0]	empty	1	aaba	diff
+bsk-026	bsk		a+\\K	[$0]	empty	all	aaba	nogap
+bsk-027	bsk		\\K	[$0|$1]	empty	all	ab	diff
+bsk-028	bsk		\\K	[$0]	empty	1	ab	diff
+bsk-029	bsk		\\K	[$0]	empty	all	ab	nogap
+bsk-030	bsk		(?<=a)b	[$0|$1]	empty	all	abab	diff
+bsk-031	bsk		(?<=a)b	[$0]	empty	1	abab	diff
+bsk-032	bsk		(?<=a)b	[$0]	empty	all	abab	nogap
+bsk-033	bsk		(?<=^|,)x	[$0|$1]	empty	all	x,x,yx	diff
+bsk-034	bsk		(?<=^|,)x	[$0]	empty	1	x,x,yx	diff
+bsk-035	bsk		(?<=^|,)x	[$0]	empty	all	x,x,yx	nogap
+bsk-036	bsk		(?<![a-z])\\d+	[$0|$1]	empty	all	a1 2 b33	diff
+bsk-037	bsk		(?<![a-z])\\d+	[$0]	empty	1	a1 2 b33	diff
+bsk-038	bsk		(?<![a-z])\\d+	[$0]	empty	all	a1 2 b33	nogap
+bsk-039	bsk		(?<=(a))b	[$0|$1]	empty	all	abab	diff
+bsk-040	bsk		(?<=(a))b	[$0]	empty	1	abab	diff
+bsk-041	bsk		(?<=(a))b	[$0]	empty	all	abab	nogap
+bsk-042	bsk		a(?=(bc))	[$0|$1]	empty	all	abcabd	diff
+bsk-043	bsk		a(?=(bc))	[$0]	empty	1	abcabd	diff
+bsk-044	bsk		a(?=(bc))	[$0]	empty	all	abcabd	nogap
+bsk-045	bsk		(?<=(\\w))\\b	[$0|$1]	empty	all	ab cd	diff
+bsk-046	bsk		(?<=(\\w))\\b	[$0]	empty	1	ab cd	diff
+bsk-047	bsk		(?<=(\\w))\\b	[$0]	empty	all	ab cd	nogap
+bsk-048	bsk		(?=(\\w+))\\w	[$0|$1]	empty	all	abc	diff
+bsk-049	bsk		(?=(\\w+))\\w	[$0]	empty	1	abc	diff
+bsk-050	bsk		(?=(\\w+))\\w	[$0]	empty	all	abc	nogap
+bsk-051	bsk		(?<=\\Ka)b	[$0|$1]	empty	all	ab	diff
+bsk-052	bsk		(?<=\\Ka)b	[$0]	empty	1	ab	diff
+bsk-053	bsk		(?<=\\Ka)b	[$0]	empty	all	ab	nogap
+bsk-054	bsk		(?=a\\K)a	[$0|$1]	empty	all	aa	diff
+bsk-055	bsk		(?=a\\K)a	[$0]	empty	1	aa	diff
+bsk-056	bsk		(?=a\\K)a	[$0]	empty	all	aa	nogap
+bsk-057	bsk		x(?=(?1))|(b\\K)	[$0|$1]	empty	all	xb	diff
+bsk-058	bsk		x(?=(?1))|(b\\K)	[$0]	empty	1	xb	diff
+bsk-059	bsk		x(?=(?1))|(b\\K)	[$0]	empty	all	xb	nogap
+bsk-060	bsk		x|(?<=(?1))y|(\\Kx)	[$0|$1]	empty	all	xy	diff
+bsk-061	bsk		x|(?<=(?1))y|(\\Kx)	[$0]	empty	1	xy	diff
+bsk-062	bsk		x|(?<=(?1))y|(\\Kx)	[$0]	empty	all	xy	diff
+bsk-063	bsk		^|(?<=(?1))y|(?!)(\\Kz)	[$0|$1]	empty	all	zy	known:9
+bsk-064	bsk		^|(?<=(?1))y|(?!)(\\Kz)	[$0]	empty	1	zy	diff
+bsk-065	bsk		^|(?<=(?1))y|(?!)(\\Kz)	[$0]	empty	all	zy	known:9
+bsk-066	bsk		x(?=(?1))|(b\\K)	[$0]	empty	all	xb	diff
+bsk-067	bsk		x|(?<=(?1))y|(\\Kx)	[$0]	empty	all	xy	diff
+bsk-068	bsk		^|(?<=(?1))y|(?!)(\\Kz)	[$0]	empty	all	zy	expect:[][zy]
+bsk-069	bsk		^|(?<=(?1))y|(?!)(\\Kz)	[$0]	empty	all	zyzy	known:9
+bsk-070	bsk		x(?=(?1))|(b\\K)	[$0]	empty	1	xb	diff
+bsk-071	bsk		(?<=(?1))y|(\\Kz)	[$0]	empty	all	zy	diff

@@ -1,0 +1,51 @@
+# provenance: lane revwalk 2026-10-29, worktree branch lane/revwalk (tiers.py/model.py/facts_control.py as committed beside this file), pcrec built from ec87afbca, libpcre2 10.46, python 3.14.4
+## corpus: 5203 patterns; stages {'P-empty': 1050, 'anchored': 470, 'approx': 273, 'landmark': 963, 'no-common-L': 248, 'no-landmark': 1539, 'unparsed': 660}
+unanchored parsed (approximated items excluded): 3800; with an inner landmark (non-empty P): 963
+
+| tier | all | composes | + exclusion (T2/T3) / strong arm (T1, T4) | admitted at F=2 | of those, unbounded run | G4: S refers back |
+|---|---|---|---|---|---|---|
+| T1 | 105 | 105 | 91 | 78 | 0 | 1 |
+| T2 | 256 | 256 | 217 | 197 | 116 | 36 |
+| T3 | 39 | 39 | 37 | 15 | 4 | 2 |
+| T4 | 189 | 189 | 114 | 92 | 4 | 6 |
+| G1 | 374 | 367 | 208 | 197 | 0 | 10 |
+
+T2/T3 admitted by the factor-free arm only (exclusion fails): 0
+T2/T3 chain but NO strong arm (falls to T4's gates / handoff): 41
+T4 by first reason: {'outer': 99, 'view inside P': 90}
+C2 cross-check (P's minimal reverse DFA is a chain => a T2/T3 segment tier): 252 chain rows, 0 violations []
+R1 scan edges, T2 admitted at F=2 (197): every loop state of P's reverse DFA scan-shaped today {'noloop': 69, 'all': 114, 'nochain': 11, 'none': 2, 'noloop,noloop': 1}
+R1 scan edges, T3 admitted at F=2 (15): every loop state of P's reverse DFA scan-shaped today {'noloop': 7, 'none': 1, 'nochain': 5, 'all': 2}
+T4 because the start may lie in a non-plain segment ('outer'): 99
+whole pattern's reverse walk (from a match END), unanchored parsed: {'T2': 569, 'alt': 283, 'views/G1': 1969, 'T1': 573, 'T3': 110, 'T4': 296}
+
+examples T1 (admitted, F>=2): tests/assertions/d27/multiline.rxt:72 L=b; tests/assertions/d27/multiline.rxt:78 L=b; tests/assertions/gpos.rxt:268 L=b; tests/assertions/multiline.rxt:2255 L=b; tests/assertions/wordb_basic.rxt:1050 L=b; tests/assertions/wordb_basic.rxt:1125 L=b; tests/assertions/wordb_vm.rxt:639 L=b; tests/backrefs/d27/dupnames.rxt:189 L=z; tests/base/alternation.rxt:37 L=c; tests/base/alternation_trie.rxt:67 L=foo; tests/base/bounded_repeats.rxt:129 L=c; tests/base/class_brackets.rxt:42 L=]
+examples T2 (admitted, F>=2): tests/altcls/altcls.rxt:158 L=c; tests/altcls/altcls.rxt:170 L=x; tests/assertions/gate.rxt:110 L=c; tests/assertions/gate.rxt:230 L=c; tests/assertions/gate.rxt:329 L=c; tests/assertions/rev_end.rxt:77 L=.txt; tests/atomic_groups/possessive.rxt:599 L=ab; tests/base/bounded_repeats.rxt:36 L=c; tests/base/caseless.rxt:36 L=-; tests/base/clskit_range_top.rxt:18 L=@; tests/base/clskit_range_top.rxt:22 L=-; tests/base/clskit_range_top.rxt:28 L=z
+examples T3 (admitted, F>=2): tests/captures/basic.rxt:31 L=bar; tests/captures/participation_and_zerowidth.rxt:42 L=x; tests/captures/participation_and_zerowidth.rxt:66 L=d; tests/classes/multi_chain.rxt:33 L=z; tests/litscan/reqcube.rxt:284 L=ECT; tests/mrl/03_zerowidth.rxt:52 L=c; tests/mrl/03_zerowidth.rxt:58 L=c; tests/mrl/05_multibyte_body.rxt:21 L=c; tests/possessify/composition_d27.rxt:9497 L=c; tests/possessify/possessify.rxt:4613 L=x; tests/possessify/possessify.rxt:4646 L=x; tests/rungselect/rungselect.rxt:1220 L=c
+examples T4 (admitted, F>=2): tests/assertions/gpos.rxt:625 L=b; tests/backrefs/d27/numeric.rxt:94 L=x; tests/backrefs/nested.rxt:70 L=x; tests/base/alternation_trie.rxt:111 L=z; tests/base/groups.rxt:55 L=c; tests/base/review_r1.rxt:17 L=b; tests/base/vm_lazy_rmin_prefix.rxt:8 L=ac; tests/base/vm_lazy_rmin_prefix.rxt:27 L=c; tests/compound/split.rxt:3284 L=cat; tests/compound/split.rxt:3453 L=catdog; tests/compound/split.rxt:6912 L=x; tests/compound/split.rxt:7039 L=foo
+
+## bench: 346 patterns; stages {'P-empty': 84, 'anchored': 25, 'approx': 17, 'landmark': 65, 'no-common-L': 45, 'no-landmark': 93, 'unparsed': 17}
+unanchored parsed (approximated items excluded): 287; with an inner landmark (non-empty P): 65
+
+| tier | all | composes | + exclusion (T2/T3) / strong arm (T1, T4) | admitted at F=2 | of those, unbounded run | G4: S refers back |
+|---|---|---|---|---|---|---|
+| T1 | 14 | 14 | 10 | 4 | 0 | 0 |
+| T2 | 21 | 21 | 19 | 13 | 10 | 6 |
+| T3 | 6 | 6 | 4 | 3 | 1 | 0 |
+| T4 | 9 | 9 | 5 | 5 | 2 | 1 |
+| G1 | 15 | 15 | 7 | 7 | 0 | 0 |
+
+T2/T3 admitted by the factor-free arm only (exclusion fails): 2
+T2/T3 chain but NO strong arm (falls to T4's gates / handoff): 2
+T4 by first reason: {'outer': 9}
+C2 cross-check (P's minimal reverse DFA is a chain => a T2/T3 segment tier): 19 chain rows, 0 violations []
+R1 scan edges, T2 admitted at F=2 (13): every loop state of P's reverse DFA scan-shaped today {'all': 7, 'none': 2, 'none,none': 1, 'noloop,noloop': 1, 'noloop': 2}
+R1 scan edges, T3 admitted at F=2 (3): every loop state of P's reverse DFA scan-shaped today {'nochain': 3}
+T4 because the start may lie in a non-plain segment ('outer'): 9
+whole pattern's reverse walk (from a match END), unanchored parsed: {'views/G1': 62, 'T3': 15, 'alt': 48, 'T1': 82, 'T2': 39, 'T4': 41}
+
+examples T1 (admitted, F>=2): capability/wild-secrets-slack-webhook-url L=/B; capability/wild-validator-uuid-grok L=-; loglines/iso-ts L=-; loglines/uuid L=-
+examples T2 (admitted, F>=2): capability/dup-param-detect L==; capability/tag-depth3-bound L=>; capability/wild-waf-crs-942160-sleep-benchmark L=(; syntax/bak-1 L= ; syntax/bak-g-rel L= ; syntax/bak-k-named L=>; syntax/mod-j-uc L= ; syntax/qnt-plus-ctl L=ab; syntax/qnt-plus L=b; loglines/ipv6 L=:; bounded/csv5 L=,; bounded/dotted4 L=.
+examples T3 (admitted, F>=2): utf8/cls-s-nbsp L=b; utf8/cls-s-ucp L=b; loglines/stack-frame L=(
+examples T4 (admitted, F>=2): capability/tag-pair-match L=>; capability/wild-secrets-username-password-pair L==; utf8/lit-mixed-ascii L=jp; loglines/ipv4 L=.; loglines/kv-quoted L=="
+

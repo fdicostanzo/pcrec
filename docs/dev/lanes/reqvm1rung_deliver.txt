@@ -1,0 +1,5 @@
+report=docs/dev/lanes/reqvm1rung_report.md
+sections: Summary; The rung; Spec hunk; Tests and sabotage; Re-pins; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: reqvm1-test reqvm1-mech reqvm1-axes

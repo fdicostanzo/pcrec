@@ -283,8 +283,8 @@
  * the attempt sequence; docs/design/compound.md §B.8). The verbs that state
  * the column are the other group and get their own macro with their first
  * producer, so the two stay distinguishable. */
-#define GROUP_XA_CALLOUT(sel, syn, mod, eng, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CROSSES_ATTEMPTS, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
+#define GROUP_XA_CALLOUT(sel, syn, mod, eng, note, q, rec, afn) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CROSSES_ATTEMPTS, (note), ROADMAP_PLANNED, (q), NULL, 0, (rec), {PORT_FN, false, 0, NULL, (afn)}, NO_PORT, NULL, NULL}
 /* as GROUP, but the construct is OUT-OF-SCOPE in docs/pcre2_compliance.md and
  * the diagnostic must not promise the module (K14, design Â§17.2). The module
  * and feature stay as CLASSIFICATION -- which doorway family owns the row --
@@ -390,6 +390,21 @@
 #define REJECTED_DELIM(kind, sel, syn, msg, note, q, ce) \
     {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
      NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER, (q), (ce), 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
+
+/* [INLINE-C] stage 2 THE CODE ROW'S RECOGNISER, generated per language from
+ * src/parse/codelang.def (inline_c.md §1.1: ownership is ROWS, and the
+ * language table is their single source). A recogniser receives its row's
+ * `tail` and nothing else of the row (RegRow.recognise's R11/M5 rule), so
+ * the language tag is pasted into a function per language instead. */
+#define PCREC_CODE_LANG(id, tag, feat, mod)                                  \
+    static bool code_rec_tagged_##id(const char *at, size_t avail,          \
+                                     const char *tail)                      \
+    {                                                                       \
+        (void)tail;                                                         \
+        return pcrec_code_tagged_recognise(at, avail, (tag));               \
+    }
+#include "parse/codelang.def"
+#undef PCREC_CODE_LANG
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
@@ -1023,7 +1038,46 @@ GROUP_LEXICAL('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discard
  * priority, parked behind the M4 VM engine that hosts the behavior (step 2,
  * separately scoped). This row only changes disposition; the syntax and
  * PCRE2 semantics it describes are unchanged. */
-GROUP_XA_CALLOUT('C', "(?C1)", callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at", QF_NO),
+/* [INLINE-C] stage 1b (inline_c.md §2): THE ROW GETS ITS PRODUCER, and its
+ * recogniser answers for the WELL-FORMED shape only (`pcrec_callout_extent_
+ * scan`, src/parse/scans.c): `(?C)`, `(?Cn)` with n 0..255, and a string in
+ * one of PCRE2's eight delimiters. The row below it answers the exact
+ * complement. */
+GROUP_XA_CALLOUT('C', "(?C1)", callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C\"name\") -- the engine calls rx_callout_<n> or rx_callout_<name> (extern, user-defined) at the site; VM-only", QF_NO,
+      pcrec_callout_recognise, pcrec_coport_callout),
+/* [INLINE-C] stage 1b, D17 (inline_c.md §2.4): A MALFORMED `(?C` IS NOT A
+ * CALLOUT, so it is refused AS MALFORMED in every module state and never
+ * "requires module 'callouts'", which would tell the user a module makes it
+ * valid. Its recogniser is the module row's exact complement, so the
+ * arbitration elects exactly one of the two for any text. PCRE2 rejects every
+ * text this row answers for (errors 114/138/139/181/182, measured 10.46), so
+ * agreement is compliance. */
+{RK_GROUP, 'C', NULL, "(?Cx)", 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED,
+ "malformed callout: (?C must be followed by ')', a number 0-255 and ')', or a delimited string and ')'",
+ NULL, 0, "a malformed (?C: a bad string delimiter, a number above 255, or no closing parenthesis", ROADMAP_NEVER, QF_NO, NULL, 0,
+ pcrec_callout_malformed_recognise, NO_PORT, NO_PORT, NULL, NULL},
+/* [INLINE-C] stage 2 (inline_c.md §1.1, §2): EMBEDDED CODE, one row per
+ * language GENERATED from src/parse/codelang.def, owned by module
+ * `code-<lang>` and producing the A_CALLOUT the `(?C` row above produces
+ * (one node, one call site): the TAGGED `(?C` string (``(?C`c: ...`)``), a
+ * spelling PCRE2 accepts as a string callout and pcrec reads as code. Rank
+ * 25, so it outranks module `callouts`' row exactly on a string whose
+ * decoded text opens with `lang attrs ":"` (its recogniser), and a binding
+ * named `c` (`(?C"c,consume")`, no colon) stays `callouts`'. RF_INVOKER_ONLY
+ * is the GRANT column (§5.1): no `features` text enables this row;
+ * `--allow-code=<lang>` does. RF_CROSSES_ATTEMPTS as for every callout row
+ * (compound.md §B.8). VM_ONLY: the engine selector reaches the node through
+ * the registry stamp, as for `callouts`. The `(?{` spelling is row
+ * [SCANNER-DOGFOOD]'s (ruling R1). */
+#define PCREC_CODE_LANG(id, tag, feat, mod)                                                              \
+{RK_GROUP, 'C', NULL, "(?C`" tag ": return RX_PASS;`)", (feat), (mod), FLAV_PCRE2, VM_ONLY,            \
+ RS_MODULE, RD_MODULE, NULL, NULL, RF_CROSSES_ATTEMPTS | RF_INVOKER_ONLY,                               \
+ "embedded " tag " code in a PCRE2 string callout, (?C`" tag ": ...`): pcrec writes a function from "   \
+ "the code and the engine calls it at the site; invoker-only (--allow-code=" tag "); VM-only",          \
+ ROADMAP_PLANNED, QF_NO, NULL, 25, code_rec_tagged_##id, {PORT_FN, false, 0, NULL, pcrec_codeport},     \
+ NO_PORT, NULL, NULL},
+#include "parse/codelang.def"
+#undef PCREC_CODE_LANG
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),

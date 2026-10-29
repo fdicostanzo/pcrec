@@ -1015,7 +1015,8 @@ declare -A GIVEUP1_ALLOWANCE=(
 # lost. Lane k82fix's AXES="-fno-req-run-fold -fno-req-set-lead" run
 # (docs/dev/lanes/k82fix_report.md §6) confirms or populates this group.
 # GROUP F4 — bit 46, `-fno-req-handoff` (PCREC_NO_REQ_HANDOFF, [K82] (B),
-# tuning.md §2.41): EMPTY by construction, the design's §4.2 item 1 stated on
+# tuning.md §2.41): EMPTY by construction ON THE DFA-SCAN ROUTES (the
+# attempt-loop rows below are not), the design's §4.2 item 1 stated on
 # the F3 precedent. The handoff only moves where a scan BEGINS, past positions
 # a necessary run proves cannot begin a match; its budget-bound population is
 # the count-collapsed hybrid movers (the one prefilter language whose answers
@@ -1026,6 +1027,18 @@ declare -A GIVEUP1_ALLOWANCE=(
 # k82h_movers.log), and the corpus's 35 budget/gu blocks are 0 movers
 # (litscan_k82h.md §3.1a). Lane k82hbuild's AXES run over the widened subset
 # (docs/dev/lanes/k82hbuild_report.md) confirms or populates this group.
+# [REQRUN-VM] (lane reqvm1, tuning.md §2.41¶8b-¶9a, match_api.md §3.1¶15a):
+# the VM attempt loop's rows skip attempts before the whole run's hit less K,
+# so a deny-arm GIVE-UP may become the handoff's answer, never the reverse.
+# The population is the witness tests/litscan/handoff_vm.rxt (`(a|aa){0,10}
+# cxyz`, `budget steps=3000`): RXTFLAGS= each of -fno-req-handoff,
+# -fno-req-byte, -fno-req-run (the last two remove the pre-check, so the
+# handoff with it) over that file GAVE UP at exactly these 8 lines (startpos
+# 0..7 of the first subject), every other deny arm read 0; the corpus's other
+# budget/gu files (the 12 that carry `budget` or `gu`) read 0 movers under
+# -fno-req-handoff, measured file by file. The entries of -fno-req-byte
+# (GROUP E) and -fno-req-run (GROUP F) for these lines sit here, beside
+# their cause.
 # GROUP F5 — bit 47, `-fno-start-set` (PCREC_NO_START_SET, [START-SET] stage
 # 2, tuning.md §2.42, match_api.md §3.1's give-up sentence): the VM hat skips
 # only attempts that fail, so a deny-arm GIVE-UP may become the hat's answer,
@@ -1044,6 +1057,30 @@ declare -A GIVEUP1_ALLOWANCE=(
 # the DFA hat's. Its movers ride this plain job at AUTO (`--engine=vm` has no
 # DFA scan), and the DFA-hat arm below the job loop counts and floors them
 # (the ss3 D6 panel's checks-M3).
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:20"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:21"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:22"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:23"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:24"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:25"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:26"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-handoff|tests/litscan/handoff_vm.rxt:27"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:20"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:21"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:22"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:23"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:24"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:25"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:26"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-byte|tests/litscan/handoff_vm.rxt:27"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:20"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:21"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:22"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:23"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:24"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:25"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:26"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
+    ["-fno-req-run|tests/litscan/handoff_vm.rxt:27"]="[REQRUN-VM] (tuning.md §2.41¶9a, match_api.md §3.1¶15a): the deny arm runs the attempts on the decoy a-run, which exhaust budget steps=3000 and give up; the VM attempt loop's handoff starts past them at the whole run's hit less K and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:21"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:22"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:23"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
@@ -1502,9 +1539,40 @@ run_one_axis() {
         echo "AXIS FAIL: $label: refused_documented=$refused_documented is BELOW its K35 floor ($floor) — the documented refusal population shrank; find out why before lowering the floor" >&2
         floor_breach=1
     fi
+    # [INLINE-C] 1b ([r1 T6]) THE CALLOUTS FLOOR: every axis must still RUN
+    # the callouts corpus. A callout artifact links its bindings through
+    # tests/callouts/harness.manifest; an axis that stopped building or
+    # running those cases would read as "nothing disagreed" (K35). Counted
+    # off this axis's own dump: case lines from tests/callouts/, a run or a
+    # `REFUSED` compile (a refusal is the REFUSAL_PATTERN table's to judge:
+    # `--engine=dfa` and `-fprefilter` refuse a callout pattern by their
+    # documented texts). The floor is shapes.rxt's measured 49 case lines
+    # (the m/n lines; its 33 blocks), rounded down to 45; only applied on a
+    # whole-tree sweep. (The first floor, 50, was set off a miscount of 59
+    # and failed every axis, ic1badvice-axes 2026-10-26.)
+    local co_ran co_floor_breach=0
+    co_ran=$(awk -F'\t' '$1 ~ /(^|\/)tests\/callouts\// {n++} END{print n+0}' "$dump")
+    if [ "$#" -eq 0 ] && [ "$co_ran" -lt 45 ]; then
+        echo "AXIS FAIL: $label: only $co_ran tests/callouts/ case(s) reached this axis, below the floor of 45 — the callouts corpus stopped being exercised ([r1 T6], K35)" >&2
+        co_floor_breach=1
+    fi
+    echo "  callouts cases reached: $co_ran (floor 45)"
+    # [INLINE-C] stage 2 THE EMBEDDED-CODE FLOOR, the same shape (review
+    # 2026-10-27-r1-ic2 F25; design §3.6/T6): tests/code/ links geoip.c
+    # through its manifest and compiles under its grant, and a failed link
+    # or grant leaves only the code-free fragment's rows (measured: 2). The
+    # floor is the corpus's measured 38 dump rows (macros 21, ipv4 12,
+    # geoip 3, frag 2), rounded down to 35; only on a whole-tree sweep.
+    local cc_ran
+    cc_ran=$(awk -F'\t' '$1 ~ /(^|\/)tests\/code\// {n++} END{print n+0}' "$dump")
+    if [ "$#" -eq 0 ] && [ "$cc_ran" -lt 35 ]; then
+        echo "AXIS FAIL: $label: only $cc_ran tests/code/ case(s) reached this axis, below the floor of 35 — the embedded-code corpus stopped building or linking (F25, K35)" >&2
+        co_floor_breach=1
+    fi
+    echo "  embedded-code cases reached: $cc_ran (floor 35)"
     echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
-    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ]; then
+    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ] || [ "$co_floor_breach" -eq 1 ]; then
         verdict="FAIL"
         fail=1
         echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s), $giveup1_unallowed unallowed one-sided give-up(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2

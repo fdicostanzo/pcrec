@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# ic1b: [INLINE-C] stage 1b owed validation of lane/ic1b (the extern-bound callout call site, abi 87 -> 89 provisional): build, strict, the zero-mover census (docs/dev/lanes/ic1b/movers.py: the lane's base 43414ddac vs the lane built at abi 87, every corpus pattern plus the 336 bench patterns, byte/utf8 x auto/vm plus --no-captures; nothing but a (?C pattern may move), then the full make test (80 sections, test-callouts and test-codegen included).
+# Queued by the lane itself (scripts/boxqueue add --name 540-ic1b-test docs/dev/lanes/ic1b_job); the job runs in the lane worktree.
+# Not ready from 2026-10-26 21:00 local: the job is capped at 2.5 h and nothing may run past 23:30 (the 00:05 full suite owns the box).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/ic1b
+REF=43414ddac
+BENCH="$TREE/docs/dev/lanes/ic1a_bench_patterns.txt"
+SCR="$TREE/build/ic1b/job"
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/docs/dev/lanes/ic1b/movers.py" ] && [ -s "$BENCH" ] \
+            || { echo "no tree, perfrun, movers.py or $BENCH in $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$REF" >/dev/null || { echo "ref $REF unknown" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; build $REF and HEAD-at-abi-87 under $SCR; movers.py > \$BQ_LOG.movers; scripts/perfrun --label ic1b -- \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=1 log=job.log.strict lines=^strict: whole tree compiles clean"
+        echo "boxqueue: expect movers=1 log=job.log.movers lines=^movers: DONE cells=[0-9]+ unexpected=0$"
+        echo "boxqueue: expect sections=80 log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: 80/80"
+        exit 0 ;;
+    --ready)
+        now=$(date +%s); stop=$(date -d '2026-10-26 21:00' +%s) || exit 1
+        [ "$now" -lt "$stop" ] || { echo "past 2026-10-26 21:00: would overrun 23:30 (the 00:05 full suite); manager re-times this job"; exit 75; }
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1 || rc=1
+mkdir -p "$SCR"
+rm -rf "$SCR/ref" "$SCR/w87"
+mkdir -p "$SCR/ref" "$SCR/w87"
+git -C "$TREE" archive "$REF" | tar -x -C "$SCR/ref" || exit 1
+git -C "$TREE" archive HEAD | tar -x -C "$SCR/w87" || exit 1
+sed -i 's/^#define PCREC_ARTIFACT_ABI 89$/#define PCREC_ARTIFACT_ABI 87/' "$SCR/w87/src/gen/emit_dfa.c"
+grep -q '^#define PCREC_ARTIFACT_ABI 87$' "$SCR/w87/src/gen/emit_dfa.c" || { echo "abi rewrite missed" > "$BQ_LOG.movers"; exit 1; }
+make -C "$SCR/ref" -j16 >/dev/null 2>&1 || exit 1
+make -C "$SCR/w87" -j16 >/dev/null 2>&1 || exit 1
+python3 "$TREE/docs/dev/lanes/ic1b/movers.py" "$SCR/ref/build/pcrec" "$SCR/w87/build/pcrec" "$TREE" \
+    --patterns-file "$BENCH" --jobs 12 > "$BQ_LOG.movers" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label ic1b -- "$BQ_LOG.make" || rc=1
+exit $rc

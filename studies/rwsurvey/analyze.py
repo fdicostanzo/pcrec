@@ -1,0 +1,347 @@
+#!/usr/bin/env python3
+"""rwsurvey analyzer: read a probe dump (run_survey.py output) and print the
+Q2/Q3 shape tables and the Q4 scan-edge reach table.
+
+  analyze.py shapes DUMP        per-code counts: source-level (1-parse), per stage, created-at
+  analyze.py hits DUMP CODE     list patterns with CODE at 1-parse (names + detail)
+  analyze.py created DUMP       hits that first appear at a later stage than 1-parse
+  analyze.py dfa DUMP           Q4 table
+  analyze.py gains DUMP         the GAIN lines of patterns with a view-ok gain
+"""
+import re, sys, collections
+
+STAGES = ["1-parse", "2-hooks", "3-altcls", "4-discharge", "5-select", "6-lower"]
+
+
+def records(path):
+    """yield dict(src, name, rc, pat, attempts=[{ast:{stage:str}, hits:[(stage,code,detail)], dfa:[...], gain:[...]}])"""
+    cur = None
+    att = None
+    with open(path, "rb") as f:
+        for raw in f:
+            ln = raw.decode("utf-8", "replace").rstrip("\n")
+            if ln.startswith("@@\tSRC\t"):
+                if cur:
+                    yield cur
+                c = ln.split("\t")
+                cur = dict(src=c[2], name=c[3], rc=None, pat=None, attempts=[])
+                att = None
+            elif ln.startswith("@@\tCOMPILE\t"):
+                att = dict(ast={}, hits=[], dfa=[], gain=[], se=[])
+                if cur:
+                    cur["pat"] = ln.split("\t", 2)[2]
+                    cur["attempts"].append(att)
+            elif ln.startswith("@@\tRC\t"):
+                if cur:
+                    cur["rc"] = int(ln.split("\t")[2])
+            elif att is not None:
+                c = ln.split("\t")
+                if c[0] == "AST":
+                    att["ast"][c[1]] = c[2]
+                elif c[0] == "HIT":
+                    att["hits"].append((c[1], c[2], c[3] if len(c) > 3 else ""))
+                elif c[0] == "DFA":
+                    d = {"name": c[1]}
+                    for kv in c[2:]:
+                        k, _, v = kv.partition("=")
+                        d[k] = int(v)
+                    att["dfa"].append(d)
+                elif c[0] == "GAIN":
+                    att["gain"].append(c[1:])
+                elif c[0] == "SE":
+                    d = {"name": c[1]}
+                    for kv in c[2:]:
+                        k, _, v = kv.partition("=")
+                        d[k] = int(v)
+                    att["se"].append(d)
+    if cur:
+        yield cur
+
+
+def norm(detail):
+    return re.sub(r"mode=\w+ ", "", detail)
+
+
+def shapes(path):
+    n = 0
+    ok = 0
+    src_pat = collections.Counter()
+    stage_pat = collections.defaultdict(collections.Counter)
+    created = collections.Counter()
+    for r in records(path):
+        n += 1
+        if not r["attempts"]:
+            continue
+        ok += 1
+        a = r["attempts"][0]
+        by = collections.defaultdict(set)
+        for st, code, det in a["hits"]:
+            by[st].add((code, norm(det)))
+        for code in {c for c, _ in by["1-parse"]}:
+            src_pat[code] += 1
+        for st in STAGES:
+            for code in {c for c, _ in by[st]}:
+                stage_pat[st][code] += 1
+        for i in range(1, len(STAGES)):
+            new = by[STAGES[i]] - by[STAGES[i - 1]]
+            for code in {c for c, _ in new}:
+                created[(STAGES[i], code)] += 1
+    print("patterns: %d records, %d with a probe dump (compiled to the pipeline's first pass)" % (n, ok))
+    codes = sorted({c for s in stage_pat.values() for c in s} | set(src_pat))
+    print("code\tsource(1-parse)\t" + "\t".join(STAGES))
+    for code in codes:
+        print(code + "\t%d\t" % src_pat[code] + "\t".join(str(stage_pat[s][code]) for s in STAGES))
+    print("-- first appears at a later stage (pattern counts):")
+    for (st, code), v in sorted(created.items()):
+        print("%s\t%s\t%d" % (st, code, v))
+
+
+def hits(path, code, stage="1-parse"):
+    for r in records(path):
+        if not r["attempts"]:
+            continue
+        a = r["attempts"][0]
+        ds = sorted({d for st, c, d in a["hits"] if st == stage and c == code})
+        if ds:
+            print("%s\t%s\t%s\t%s" % (r["src"], r["name"], r["pat"], " || ".join(ds)))
+
+
+def created(path):
+    for r in records(path):
+        if not r["attempts"]:
+            continue
+        a = r["attempts"][0]
+        by = collections.defaultdict(set)
+        for st, code, det in a["hits"]:
+            by[st].add((code, norm(det)))
+        for i in range(1, len(STAGES)):
+            for code, det in sorted(by[STAGES[i]] - by[STAGES[i - 1]]):
+                print("%s\t%s\t%s\t%s\t%s\t%s" % (STAGES[i], code, r["src"], r["name"], r["pat"], det))
+
+
+MACH = {"3004": "fwd", "3006": "rev", "405": "anch", "425": "nonempty", "426": "nonempty"}
+
+
+def machines(a):
+    out = []
+    xi = 0
+    for d in a["dfa"]:
+        ln = str(d["line"])
+        if ln == "448":
+            nm = ["x-fwd", "x-rev", "x-anch"][min(xi, 2)]
+            xi += 1
+        else:
+            nm = MACH.get(ln, "line" + ln)
+        out.append((nm, d))
+    return out
+
+
+def se_machines(a):
+    out = []
+    xi = 0
+    for d in a["se"]:
+        ln = str(d["line"])
+        if ln == "448":
+            nm = ["x-fwd", "x-rev", "x-anch"][min(xi, 2)]
+            xi += 1
+        else:
+            nm = MACH.get(ln, "line" + ln)
+        out.append((nm, d))
+    return out
+
+
+def se(base, setv, filt=None, show=0):
+    """Compare the REAL pass (base) with the set-rule variant, per population/machine."""
+    B = {}
+    for r in records(base):
+        if r["attempts"]:
+            B[(r["src"], r["name"])] = r
+    tot = collections.defaultdict(collections.Counter)
+    diverged = 0
+    nrec = 0
+    shown = collections.defaultdict(list)
+    for r in records(setv):
+        if not r["attempts"] or (filt and not r["src"].startswith(filt)):
+            continue
+        k = (r["src"], r["name"])
+        if k not in B:
+            continue
+        ma = se_machines(B[k]["attempts"][-1])
+        mb = se_machines(r["attempts"][-1])
+        nrec += 1
+        if [m for m, _ in ma] != [m for m, _ in mb]:
+            diverged += 1
+            continue
+        for (nm, a), (_, b) in zip(ma, mb):
+            ha, hb = a["unb"] + a["bnd"], b["unb"] + b["bnd"]
+            t = tot[nm]
+            t["machines"] += 1
+            if ha: t["pat_edge_base"] += 1
+            if hb: t["pat_edge_set"] += 1
+            if hb > ha:
+                t["pat_gain"] += 1
+                t["heads_gain"] += hb - ha
+                t["unb_gain"] += max(0, b["unb"] - a["unb"])
+                t["states_gain"] += (b["n_before"] - b["n_after"]) - (a["n_before"] - a["n_after"])
+                if len(shown[nm]) < show:
+                    shown[nm].append((r["src"], r["name"], r["pat"][:80], ha, hb))
+            if hb < ha:
+                t["pat_loss"] += 1
+    print("records compared: %d (diverged machine lists, skipped: %d)" % (nrec, diverged))
+    print("machine\tmachines\tpat_edge_base\tpat_edge_set\tpat_gain\theads_gain\tunb_heads_gain\tstates_deleted_gain\tpat_loss")
+    for nm in sorted(tot):
+        t = tot[nm]
+        print("\t".join(str(x) for x in [nm, t["machines"], t["pat_edge_base"], t["pat_edge_set"], t["pat_gain"],
+                                         t["heads_gain"], t["unb_gain"], t["states_gain"], t["pat_loss"]]))
+    for nm, v in shown.items():
+        for x in v:
+            print("  GAIN", nm, x)
+
+
+def validate2(dump, stamps):
+    """Control for the base probe's SE lines: stamp != none  <=>  some non-x machine kept a deleted/edge head."""
+    st = {}
+    for ln in open(stamps, "rb"):
+        c = ln.decode("utf-8", "replace").rstrip("\n").split("\t")
+        if len(c) == 4:
+            st[(c[0], c[1])] = (int(c[2]), c[3])
+    conf = collections.Counter()
+    ex = collections.defaultdict(list)
+    for r in records(dump):
+        if not r["attempts"]:
+            continue
+        k = (r["src"], r["name"])
+        if k not in st or st[k][0] != 0:
+            continue
+        a = r["attempts"][-1]
+        probe = any(d["unb"] + d["bnd"] > 0 for nm, d in se_machines(a) if not nm.startswith("x-"))
+        real = st[k][1] not in ("none", "-", "compound")
+        conf[(real, probe)] += 1
+        if real != probe and len(ex[(real, probe)]) < 8:
+            ex[(real, probe)].append((st[k][1], r["pat"][:60]))
+    print("stamp!=none x base-probe(any non-x head): ", dict(conf))
+    for k, v in ex.items():
+        print(" ", k, v)
+
+
+def union_gain(base, setv, filt=None):
+    B = {}
+    for r in records(base):
+        if r["attempts"]:
+            B[(r["src"], r["name"])] = r
+    g = collections.Counter()
+    n = 0
+    for r in records(setv):
+        if not r["attempts"] or (filt and not r["src"].startswith(filt)):
+            continue
+        k = (r["src"], r["name"])
+        if k not in B:
+            continue
+        ma = se_machines(B[k]["attempts"][-1]); mb = se_machines(r["attempts"][-1])
+        if [m for m, _ in ma] != [m for m, _ in mb]:
+            continue
+        n += 1
+        gset = set(); base_edge = set()
+        for (nm, a), (_, b) in zip(ma, mb):
+            if a["unb"] + a["bnd"] > 0: base_edge.add(nm)
+            if b["unb"] + b["bnd"] > a["unb"] + a["bnd"]: gset.add(nm)
+        core = {"fwd", "rev"}
+        if gset & core: g["gain_on_fwd_or_rev"] += 1
+        if gset - {"x-fwd", "x-rev", "x-anch"}: g["gain_on_any_nonx"] += 1
+        if gset & {"x-fwd", "x-rev", "x-anch"}: g["gain_on_x"] += 1
+        if gset: g["gain_any"] += 1
+        if (gset & core) and not (base_edge & core): g["gain_core_from_zero_edges"] += 1
+        if base_edge & core: g["base_has_core_edge"] += 1
+    print("patterns compared %d: %s" % (n, dict(g)))
+
+
+def dfa(path, filt=None):
+    tot = collections.defaultdict(collections.Counter)
+    npat = collections.defaultdict(collections.Counter)
+    nrec = 0
+    for r in records(path):
+        if not r["attempts"] or (filt and not r["src"].startswith(filt)):
+            continue
+        nrec += 1
+        a = r["attempts"][-1]          # the attempt that produced the artifact
+        for nm, d in machines(a):
+            t = tot[nm]
+            t["machines"] += 1
+            for k in ("mem_one", "mem_one_vok", "mem_set", "mem_set_vok",
+                      "gain_self", "gain_self_vok", "gain_chain", "gain_chain_vok"):
+                t[k] += d[k]
+            p = npat[nm]
+            p["has_machine"] += 1
+            if d["mem_one"] > 0: p["one"] += 1
+            if d["mem_one_vok"] > 0: p["one_vok"] += 1
+            if d["mem_set"] > 0: p["set"] += 1
+            if d["gain_self"] + d["gain_chain"] > 0: p["gain"] += 1
+            if d["gain_self_vok"] + d["gain_chain_vok"] > 0: p["gain_vok"] += 1
+            if d["gain_self_vok"] > 0: p["gain_self_vok"] += 1
+    print("records with a DFA dump: %d" % nrec)
+    hdr = ["machine", "patterns", "pat_one", "pat_one_vok", "pat_gain", "pat_gain_vok", "pat_gainloop_vok",
+           "st_one", "st_one_vok", "st_gain_loop", "st_gain_chain", "st_gain_loop_vok", "st_gain_chain_vok"]
+    print("\t".join(hdr))
+    for nm in sorted(tot):
+        t, p = tot[nm], npat[nm]
+        print("\t".join(str(x) for x in [nm, p["has_machine"], p["one"], p["one_vok"], p["gain"], p["gain_vok"],
+                                         p["gain_self_vok"], t["mem_one"], t["mem_one_vok"], t["gain_self"],
+                                         t["gain_chain"], t["gain_self_vok"], t["gain_chain_vok"]]))
+
+
+def gains(path, only_vok=True):
+    for r in records(path):
+        if not r["attempts"]:
+            continue
+        a = r["attempts"][-1]
+        names = []
+        for nm, d in machines(a):
+            if d["gain_self_vok"] + d["gain_chain_vok"] > 0:
+                names.append("%s(loop=%d,chain=%d)" % (nm, d["gain_self_vok"], d["gain_chain_vok"]))
+        if names:
+            print("%s\t%s\t%s\t%s" % (r["src"], r["name"], r["pat"], " ".join(names)))
+
+
+def _main():
+    m = sys.argv[1]
+    if m == "shapes": shapes(sys.argv[2])
+    elif m == "hits": hits(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else "1-parse")
+    elif m == "created": created(sys.argv[2])
+    elif m == "dfa": dfa(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+    elif m == "gains": gains(sys.argv[2])
+    elif m == "validate": validate(sys.argv[2], sys.argv[3])
+    elif m == "validate2": validate2(sys.argv[2], sys.argv[3])
+    elif m == "union": union_gain(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
+    elif m == "se": se(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != "-" else None,
+                       int(sys.argv[5]) if len(sys.argv) > 5 else 0)
+
+
+def validate(dump, stamps):
+    """Control for the Q4 chain-member model: the real pass's RX_DFA_SCAN_EDGE stamp
+    (!= none means a machine carries a deleted chain) vs the model's one-class members."""
+    st = {}
+    for ln in open(stamps, "rb"):
+        c = ln.decode("utf-8", "replace").rstrip("\n").split("\t")
+        if len(c) == 4:
+            st[(c[0], c[1])] = (int(c[2]), c[3])
+    conf = collections.Counter()
+    ex = collections.defaultdict(list)
+    for r in records(dump):
+        if not r["attempts"]:
+            continue
+        k = (r["src"], r["name"])
+        if k not in st or st[k][0] != 0:
+            continue
+        a = r["attempts"][-1]
+        model = any(d["mem_one_vok"] > 0 for nm, d in machines(a) if not nm.startswith("x-"))
+        real = st[k][1] not in ("none", "-", "compound")
+        conf[(real, model)] += 1
+        if real != model and len(ex[(real, model)]) < 8:
+            ex[(real, model)].append(r["pat"][:70])
+    print("real(stamp!=none) x model(one-class members>0): ", dict(conf))
+    for k, v in ex.items():
+        print(" ", k, v)
+
+
+if __name__ == "__main__":
+    _main()

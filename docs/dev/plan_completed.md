@@ -6223,3 +6223,180 @@ Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on 
   next: a lane adds the five keys to GIVEUP1_ALLOWANCE (tests/axes/run_axes.sh:678 and the -fno-start-set entry near :2120) with the reason, then re-runs test-axes
   refs: tests/axes/run_axes.sh; tests/recursion/inlookaround_self.rxt; docs/testing.md "Answer-identity sweep"
   The cases are ACCEPTED give-ups in the corpus; only the axis allowance list was not extended when they landed.
+
+- [EMIT-BIDI] STATE:completed — THE PATTERN ECHOED INTO GENERATED C CARRIES RAW BIDI CONTROLS (gcc -Wbidi-chars warns)
+  filed: 2026-10-24 manager, from the full-suite axes triage (run 20261023_5596c3207)
+  completed (2026-10-26): merged 7234c2e86 (lanes emitbidi, emitbidifix, emitbidi2; landing lane emitbidiland); `pcrec_sb_ctext` (src/core/sb.c) is the one C-text escaper, emitted text is ASCII-only, abi 86 (85 stays reserved for the kit's S3, which renumbers when it lands); guard `tests/codegen/run_ctext_ascii.sh` (incl. emitter-literal scan) + mech S1620-S1622; follow-up: a kit request to make memfn/src's section-sign literals ASCII (none reach an artifact today); reports docs/dev/lanes/emitbidi_report.md, emitbidifix_report.md, emitbidi2_report.md
+  refs: tests/axes/run_axes.sh; docs/dev/guide/coding.md (emitted text rules); D76 D94
+  A user's generated file should compile without warnings for any admitted pattern; raw bidi controls in source are also the Trojan Source shape (CVE-2021-42574), so the echo must never carry them raw.
+
+## Completed 2026-10-26 (lane closeout26: Active-row close-out; rows verbatim, a `completed` line added)
+
+- [BOXQUEUE] STATE:completed — ONE BOX-WIDE JOB QUEUE: jobs as scripts, exit codes say what next
+  filed: 2026-10-20 Frank
+  completed (2026-10-26): charter delivered. Merge b42c0e8f1 (2026-10-21, lane boxqueue: scripts/boxqueue, `TOOL: DONE rc=N` convention); the queue has run the box since (worktrees/.boxqueue/done and failed, e.g. jobs 622, 623, 800-main-emitbidi-landtest3, 600-main-fullsuite-20261027 pending); the kit's jobs (kit-s3-heavy) and the bench's overnight windows (710-bench-b142-part2, 720-bench-b142-tier2, via [BENCH-RESERVE] 415eade4d) run through it. Hardening landed as [WATCH-IDLE], [MONITOR-QUEUE], [MON-SCRIPT]; open: [BOXQUEUE-GATEFAIR].
+  status (2026-10-21): MERGED b42c0e8f1 (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template; bench told (I-155), kit told.
+  next: the first real queued jobs (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
+  refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/boxqueue; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md; docs/dev/lanes/boxqueue_report.md
+  A queue directory (pending/running/done/failed); each job an executable script, ordered by name prefix, owner in the name. One runner holds scripts/boxlock per job; the job's exit code decides: 0 done, 75 not ready, 76 requeue, 77 cancelled, else failed. Readiness lives at the top of each script before any side effect; snapshot at start; bounded not-ready answers; every pass logged. Shared by main, the kit and the bench; chainrun stage files become job batches.
+
+- [MONITOR-QUEUE] STATE:completed — THE RUN MONITOR MISSED EVENTS; ONE QUEUE WATCHER FOR A STANDING HAIKU SESSION
+  filed: 2026-10-24 manager, from the first full-suite run (both monitors missed events)
+  completed (2026-10-26): charter delivered. Lanes monwatch 88d274fe3 (watchrun reads both END shapes; queuewatch), montest 4062ef31b, monci d5f77228e, qwseed/qwquiet/qwstart/qwquiet2 (merges 07eb6c66c, 0fb34c66f, b11b69add, f50d6372e); first live use was job 624-main-axes (2026-10-25): both monitors reported the red correctly (journal 2026-10-25 session 126); then [MON-SCRIPT] 82abd6b87 made the monitor a script.
+  status (2026-10-24): landed (lane monwatch): watchrun reads both END shapes; fullsuite_job.sh --simulate; scripts/queuewatch (persistent state, one event per launch; every simulated scenario exactly once across relaunches); skill .claude/skills/pcrec-monitor
+  next: Frank starts the standing /pcrec-monitor session; its first live use is the owed test-axes re-run
+  refs: .claude/skills/pcrec-test/SKILL.md §5; scripts/watchrun; scripts/battery.sh; scripts/fullsuite_job.sh; scripts/boxqueue
+  Cause: battery.sh writes `== stage X rc=N END`, chainrun `== stage N END rc=`; watchrun matched only the second. The model-side grep also missed BATTERY DONE: state (what was already reported) belongs in a script, the model only acts on its lines.
+
+- [FLAG-SPELL] STATE:completed — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
+  filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
+  completed (2026-10-26): merged 187608482 (lane flagfix; p_cat drops an empty with no reg stamp, so (?i)abc compiles as (?i:abc)); jobs 615 test, 617 mech green, main make test after both landings = job 622 GREEN 77/77 (2026-10-24), later 623 and 800-main-emitbidi-landtest3 green; the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly (tests/codegen/run_case_spelling_identity.sh). Not built, no row: the req.c run reset on an empty mid-CAT.
+  status (2026-10-24): landed 187608482 (flagfix): p_cat drops an empty with no reg stamp, (?i)abc == (?i:abc); jobs 615 test, 617 mech green
+  next: main's first full make test after the landings (owed, manager queues); then the case-spelling check's flag group compares (?i)abc against (?i:ABC) directly; follow-up (not built): req.c run reset on an empty mid-CAT
+  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md; docs/dev/flag_spell_findings_2026-10-23.md
+  Two spellings with the same meaning should compile to the same matcher. Once fixed, the case-spelling check's flag group can compare (?i)abc against (?i:ABC) directly.
+
+- [KNOW-SRC] STATE:completed — ONE KNOWLEDGE-SOURCE MODULE: shared loader, stamp and data-mover census
+  filed: 2026-10-14 Frank (endorsing panel r1's sibling-family finding msc2-9 and unlock U1)
+  completed (2026-10-26): K0-K3 merged (K2+K3 168a399c7, lane ksrc23: ksgen, canonical/decoded views, analyze --dump-doc, test-knowledge R1-R3/R5, the emit_sweep `--data` census tool); the measures kind added by [MEASURE-SET] M0 (813f43ec8); the remaining kinds ([TABLE-JUDGE] picks, the [REGIME-EVAL] parameter table) ride their own rows. Report docs/dev/lanes/ksrc23_report.md.
+  status (2026-10-17): K0-K3 DONE (K2+K3 merged s115: ksgen, canonical/decoded views, analyze --dump-doc, test-knowledge R1-R3/R5; 0 movers, make test 72/72, mech 41 DETECTED + S1029 expected UNREACHED); next: [MEASURE-SET] M0 adds the measures kind
+  next: land lane/int3; then K2 (ksgen analysis, gen-findings) + K3 (canonical/decoded views, spec hunks) in a fresh lane; ahead of [MEASURE-SET]
+  refs: docs/dev/reviews/2026-10-14-r1-measure-sets.md (msc2-9, msc1 U1/U2); docs/design/measure_sets.md; decisions D162 D166; [MEASURE-SET] [TABLE-JUDGE] [LIST-TABLES]
+  One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
+  ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
+  KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
+
+## Completed 2026-10-26 (lane closeout26b: close-out follow-ups, manager rulings; rows verbatim, a `completed` line added)
+
+- [M4-SUBST] STATE:completed — compiled substitution: the implementation row of replace_design.md
+  filed: 2026-10-12 Frank
+  completed (2026-10-26): LANDED 9ae59f5d4 (core, interface, extended forms; D180); job 623 green 79/79; follow-ups filed as [SUBST-SPEED] [SUBST-CLEANUP] [SUBST-NAMECHK] [SUBST-INPLACE] [CASE-COMPAT]; runtime selection became [INLINE-C]; the unbuilt streaming mode is filed as [SUBST-STREAM] (Deferred). Closed on Frank's word via the manager's ruling, 2026-10-26.
+  status (2026-10-26): LANDED 9ae59f5d4 (core, interface, extended forms; D180; job 623 green 79/79, 800-main-emitbidi-landtest3 green 79/79); runtime-selection discussion held 2026-10-26, produced [INLINE-C]; follow-ups [SUBST-SPEED] [SUBST-CLEANUP] [SUBST-NAMECHK] [SUBST-INPLACE] [CASE-COMPAT] exist
+  next: Frank's word: close this row. Not delivered, not filed as a row: the STREAMING mode with a stamped holdback (charter (2)); in-place and C callbacks have rows ([SUBST-INPLACE], [INLINE-C])
+  refs: docs/design/replace_design.md; docs/design/subst_template_design.md; docs/design/variables_roadmap.md; decisions D18 D26 D38 D173
+  COMPILED SUBSTITUTION: the IMPLEMENTATION ROW of docs/design/replace_design.md (design of record: D38's fourteen rulings in docs/design/subst_template_design.md plus replace_design.md's caller variable environment). RESTATED 2026-10-12 (Frank kept the row, session 111): M4 shipped 2026-08-18, so nothing waits on M4 any more; unscheduled, starts on Frank's word. [VAR] M9 (the variable side of replacement, docs/design/variables_roadmap.md) is gated on THIS row's core landing. CHARTER (Frank, 2026-08-12: the headline xmas item): the `pcre2_substitute` capability as an AOT artifact — pattern AND replacement template compiled together into one emitted C function (match + splice), first/global modes, caller-buffer zero-allocation mode plus an output-sizing mode.
+  The template compiler is almost completely independent of the matcher (Frank's observation, recorded because it sequences the work): it consumes only the capture-offset CONTRACT, so its design note can precede M4 even though end-to-end substitution is capture-gated. AOT-only win to preserve in the design: `$n`/`${name}` references are resolved and BOUNDS-CHECKED AT COMPILE TIME against the pattern's own group count — a template naming a group that does not exist is a compile error, where PCRE2 discovers it at substitute time. Tier the template language: core `$n`/`${name}`/literal escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing, ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's earn-its-axis discipline.
+  BEYOND-PCRE2 DIRECTION (Frank, 2026-08-13: "this might be an area where we provide more capability than pcre2"): richer shell-style transforms and C FUNCTION CALLBACKS as template segments — a segment that calls an embedder-defined `extern` to render, reusing M4-CALLOUTS' static-extern primitive verbatim (compile-time bound, zero cost when absent). Discipline: everything past PCRE2's surface lives in pcrec's own clearly-flagged namespace (SR-10's rule) so the D26 compatibility story stays clean — PCRE2-compatible core, pcrec-extended templates opt-in; non-portability is a non-issue for the embedded niche, which is compiling in anyway.
+  RE-AFFIRMED + SHARPENED (Frank, 2026-09-06, fifty-sixth session: "extremely fast search/replace engine ... no allocation ... stream or in-place ... the replace front end would know the group output so it wouldn't have to interpret the replacement string. thats pretty cool stuff"): two MODES join the charter with their honest boundaries stated up front. (1) IN-PLACE: free exactly when replacement length <= match length (the write cursor trails the read cursor and the invariant holds left-to-right); a GROWING replacement cannot be in-place left-to-right without a gap — the mode's contract states the boundary rather than letting a caller discover it.
+  (2) STREAMING, with the AOT-specific win: a streaming replace needs a HOLDBACK buffer for a partial match at the chunk boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller supplies a fixed buffer of stamped size, zero allocation; the [DD-14.FB] BufSurface precedent for caller-provided capacity), and an unbounded-width pattern REFUSES streaming mode honestly by name. No runtime engine can promise a compile-time holdback bound; it falls out of the architecture. Positioning note: this is a completeness-category differentiator (memory pcrec-post-spine-direction, 09-06) — subst is where full PCRE semantics + AOT beats both the subset engines (no captures/templates) and pcre2 (runtime template interpretation)
+
+- [TT-JTUNE] STATE:completed — TUNE `make test` PARALLELISM BY ROTATION, NOT BY SWEEP
+  filed: 2026-10-08 Frank
+  completed (2026-10-26): closed by the one-pass loss-chasing rule: best shape (8,2) median about 902 s vs baseline (16,16) about 958 s is -6%, at the >=5% noise bar, so the default stays; source docs/dev/ttune_ledger.tsv (71 rows, 7 shapes, latest run 2026-10-18) and docs/dev/ttune_measurement.md DECISION RULE (manager ruling 2026-10-26).
+  status (2026-10-26): perfrun in use; ledger 71 rows, 7 shapes, latest run 2026-10-18; rule (b) not clearly met: best median 8,2 about 902 s vs baseline 16,16 about 958 s (-6%, noise bar >=5%); default unchanged
+  refs: scripts/perfrun; scripts/perfrun.shapes; docs/dev/ttune_ledger.tsv; docs/dev/ttune_measurement.md; docs/dev/lanes/ttune_report.md; known_issues K44
+  `scripts/perfrun` wraps a chain's make-test line, picks a (make -jJ, PROCS=P) shape from `scripts/perfrun.shapes` (least-sampled uncontaminated), samples CPU + per-section times, returns make's rc unchanged, records a ledger row (`docs/dev/ttune_ledger.tsv`, per-run files folded by `scripts/perfrun --fold`). Red-shape triage (K44-ONLY / LOAD-SUSPECT flagged, not re-run) in BOILERPLATE.md. Profile #0 (decfbB0, -j6 PROCS=16, 13.5 min, ~83% busy, load1 up to 84, serial stretches small) and the DECISION RULE + default-derivation options (P = ceil(nproc/J) from MAKEFLAGS) in docs/dev/ttune_measurement.md. NEXT: chains use perfrun; when the rule's evidence bar is met a follow-up lane changes the default (procs_default.sh). Report docs/dev/lanes/ttune_report.md. Sequel to [TT-12]/K44.
+
+- [HOOK-GUARDS] STATE:completed — hooks enforce two remembered rules: no `git commit -a`, a lane writes only in its worktree
+  filed: 2026-10-25 Frank ("yes add it")
+  completed (2026-10-26): LANDED 7592e1397 (both hooks registered, fixture tests ok, live probe blocked a subagent main-tree Write); the row said STATE:not-started because plan_lint keeps Backlog rows so.
+  status (2026-10-25): LANDED 7592e1397: both hooks registered, fixture tests ok, live probe BLOCKED a subagent main-tree Write. Escape: worktrees/.mgr/main_write_ok (`*`) while a landing lane runs. Gap: Bash-side writes, `bash -c "..."`.
+  next: none; the row closes at the next plan audit (Backlog rows stay not-started by plan_lint).
+  refs: scripts/hooks/no_cd_worktree.sh; memory pcrec-no-commit-a-during-landing; bench slips 2026-10-25 (commit -a in a live lane worktree; a lane's CLAUDE.md edits in the main tree)
+  A rule a session must remember fails (the lockyield lesson, 2026-10-24). Both bench slips of 2026-10-25 passed the cd hook: commit -a via git -C, and a lane's Write to an absolute main-tree path. (b) the bench adopting the cd hook is the bench's own call, suggested in its inbox.
+
+- [MON-SCRIPT] STATE:completed — THE BOX-QUEUE MONITOR AS A SCRIPT: AN APPEND-ONLY EVENT LOG, NO MODEL SESSION
+  filed: 2026-10-25 Frank ("your idea is fine ... we could try just a script")
+  completed (2026-10-26): LANDED 82abd6b87 (scripts/queuemon; live trial beside the haiku session from job 624).
+  status (2026-10-25): LANDED 82abd6b87 (Frank go "ok. lets try it."); live trial beside the haiku session from job 624; proposals (stage resume, expect preflight) with Frank
+  next: merge on the manager's verdict; the haiku session stays until the script has watched one real run
+  refs: .claude/skills/pcrec-monitor/SKILL.md (its first-match table); scripts/queuewatch; rule 2 (red -> the owner launches triage)
+  Charter: scripts/queuemon runs queuewatch's loop detached (single instance by queuewatch's state lock; boxqueue add starts it) and applies the monitor's first-match table as a shell case, appending ONE dated line per event to worktrees/.mgr/monitor.log (the journal; a "message" is a line after a reader's cursor file). The haiku session's purpose was the unexpected: every queuewatch line matching no row is written as `UNEXPECTED <line>` and treated as a PROBLEM, so the model that reads it is the owner's. Readers: the manager's background wait on its next unread line (one notification); a SessionStart + UserPromptSubmit hook injecting unread lines into the main session; owner.md's unread count. Triage leaves the monitor (the owner launches it, rule 2). Liveness: an "up" line per loop cap; a stale log or dead PID while the queue holds a job is a PROBLEM the reader reports. Replaces: the haiku session, its /clear between runs, the two-method table and session-name addressing.
+
+- [BENCH-RESERVE] STATE:completed — THE BENCH RESERVES THE BOX THROUGH A DATA FILE; A PCREC PLACEHOLDER JOB HOLDS THE LOCK
+  filed: 2026-10-25 Frank ("i like the separation ... the plan sounds good"; I-161, BD2: no writes into each other's repos)
+  completed (2026-10-26): LANDED 415eade4d (boxqueue.test 120/120, scratch only); the bench side (boxq_window) is built.
+  status (2026-10-25): LANDED 415eade4d (boxqueue.test 120/120, scratch only); the bench side (boxq_window) is built; first real use = the bench's overnight windows
+  next: build + scratch-queue tests; first real use = the bench's tier-2 window
+  refs: pcrec-bench docs/dev/inbox_from_pcrec.md I-161; the contract message of 2026-10-25 (copied into the lane's report); scripts/boxqueue
+  Charter: boxqueue imports <bench inbox>/*.window (key=value, parsed never sourced) into pcrec-authored placeholder jobs 7NN-bench-<name>; the placeholder holds the lock, publishes worktrees/.boxqueue/reservations/<job>.state, ends on done_ere/fail_ere/start_s/cap/.cancel. Neither side runs the other's code.
+
+## Status lines superseded 2026-10-26 (lane closeout26: Active rows whose next step had happened; verbatim)
+
+### [GATE-RUNS] — superseded 2026-10-26, verbatim
+
+status (2026-10-23): schedule ruled (D177); queueable job scripts/fullsuite_job.sh and docs/dev/full_suite_ledger.md built; no run yet, triggers far past
+
+### [GATE-RUNS] — superseded 2026-10-26, verbatim
+
+next: first run tonight after the iterator landing, queued by the manager for the window; copy its summary.txt into the ledger
+
+### [UPROP-MORE] — superseded 2026-10-26, verbatim
+
+status (2026-10-24): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; design uprop_more.md, D178
+
+### [UPROP-MORE] — superseded 2026-10-26, verbatim
+
+next: main's first full make test after the landings (owed); a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN]
+
+### [FINDALL-NEXT] — superseded 2026-10-26, verbatim
+
+next: I1's validation, then merge; I4 (`_next_n`; RX_FOREACH dropped D175, abi 84, findall_iter_i2.md rev 2) BUILT on lane/i2build, validation + I4-time queued (i2build_report.md); rev 3's stage numbers kept: I2 the kit's `st`, I3 `pair-hits`, I4 next_n; internal batch withdrawn
+
+### [DD-11.5] — superseded 2026-10-26, verbatim
+
+status (2026-10-21): part 2 done (P2e, abi 81); part 1: kit Z1+Zk merged; X0 passed on kit_proof rev 2.2; main Z2 BUILT on lane/z2build (the span_facts slice, the harness-routed `cover` row, zero default movers by the light probes), its heavy checks queued (boxqueue 540-543-z2build)
+
+### [DD-11.5] — superseded 2026-10-26, verbatim
+
+next: merge Z2 on its queued verdicts (docs/dev/lanes/z2build_report.md), then the timing look and B1 after the kit's B4 (kit_proof.md §7)
+
+### [ENTRY-TABLE] — superseded 2026-10-26, verbatim
+
+next: merge lane/e1 on its owed make test, mech solo rows and test-axes arm; then E1′ cells, each by its own ruled diff with a size and a time measurement
+
+### [COMPOUND] — superseded 2026-10-26, verbatim
+
+status (2026-10-12): session 110 close: B0-B2 MERGED 2a54c3e71 (zero movers); compound.md rev 2.2 (callout alignment, D163 add. 4-6); B4 (driver) BUILT on lane/cpb4 8fbc80081 (abi 76->77; 97 admitted by id, 0 bench; G1-G7 green…
+
+### [TT-JTUNE] — superseded 2026-10-26, verbatim
+
+status (2026-10-08): FILED+STARTED 2026-10-08, lane ttune2, admin column; Frank: "our test suites sometimes go serial but we have 16 procs ... it's also possible that we oversaturate the procs ... can we just have it use the natural testing process? we run these all the time, just have it interject then"
+
+### [M4-SUBST] — superseded 2026-10-26, verbatim
+
+status (2026-10-24): LANDED on main 9ae59f5d4 (core, interface, extended forms; review r1 fixes; D180; job 623 green 79/79)
+
+### [M4-SUBST] — superseded 2026-10-26, verbatim
+
+next: the runtime-selection discussion with Frank (owner.md); bench subst mini-bench pins 9ae59f5d4 (I-158); filed follow-ups [SUBST-SPEED] [SUBST-CLEANUP] [CASE-COMPAT]
+- [EXPECT-PREFLIGHT] STATE:completed — A JOB'S DRY RUN MEASURES ITS SIZE; ESTIMATE, CAP AND EXPECT DERIVE FROM IT
+  completed: 2026-10-26 lanes qscripts + qscripts2 (merged): dry-run `size NAME=N` scales the cap from the last 5 green runs (x1.25, never below the declared cap); fullsuite_job.sh declares corpus_patterns; plus CANCELLED class, reservation liveness, declared `not-before`
+  filed: 2026-10-25 Frank ("3. agree", queuemon proposal 3)
+  status (2026-10-25): history warning BUILT on lane/expectpre (boxqueue.test 92/92), NOT merged: replay caught 0 of the 5 stale-expect jobs (4 first-of-shape, 1 grew after a matching declaration)
+  trigger: LOW PRIORITY: slip it into the next lane that updates boxqueue or the job scripts (Frank 2026-10-25 "low priority but slip it in with the next update of those scripts")
+  refs: docs/dev/lanes/queuemon_report.md (5 of 51 failed jobs were work-green with a stale expect); scripts/boxqueue
+  Charter: each job's --dry-run counts its work (e.g. --list-axes rows x corpus cases); boxqueue keeps the last green (wall, count) per job shape; estimate = last wall x count ratio, cap = estimate x a margin from measured run-to-run spread, expect = the measured count. Fixes stale expects (first runs, growth) and stale caps (624 ran ~13,500 s against a 10,381 s record). The unmerged history warning (lane/expectpre) is superseded.
+- [SCANEDGE-SET] STATE:completed — A SCAN EDGE ADVANCES ON A CLASS SET, NOT ONE CLASS (`\s+$` x6.1 regression)
+  completed: 2026-10-26 merge 002810cac (abi 87; recursion FILEPIN re-pinned to 002810cac in 456dbc09e); validation job 501-scansetfix-test GREEN; \s+$ 1.17->0.19 ns/B; covered by the 2026-10-27 full suite
+  filed: 2026-10-26 manager, from lane trimreg (docs/dev/lanes/trimreg_report.md)
+  status (2026-10-26): diagnosed, not built. First bad commit 4ea6fb19c (B3 lower_eol, D164) splits `\n` into its own class; the run state then advances on two classes, shaped() (src/opt/scanedge.c ~269) accepts one, so the walk falls to the per-byte table loop (0.19 -> 1.19 ns/B)
+  next: lane scanset building (Frank go 2026-10-26: "It's more about the dfa states than the pattern. Go ahead."); merge before the 2026-10-27 full suite if green
+  refs: docs/dev/lanes/trimreg_report.md; src/opt/scanedge.c; src/gen/emit_dfa.c edge_advance/scan_test; [OPT-REVEND]; D164
+  Population: trailing-whitespace trims (`\s+$`, `[\n ]+$`); `\s*$` was already ~68 us at the old pin and gains too. Bench: the only regress among 137 cross-pin cells (+ its nocaps twin). The general form deletes the one-class special case.
+  note (2026-10-26, lane rwsurvey): reach measured with a class-SET copy of scanedge.c (upper bound, machines built): corpus 269 of 5,735 patterns (4.7%) gain an edge, 140 of them their FIRST fwd/rev edge; bench 11 of 351 (5 outside-written). All gains are unbounded self-loops. Splits come from bytes special elsewhere (`\S+@\S+`, `0x[0-9a-fA-F]+`, reverse `[a-z]+\.txt$`), the `$` lowering, multiline `$`, `\K`. Not a trim-only fix.
+  note (2026-10-26, lane scansetfix): first validation RED = 5 stale fixtures/pins, no wrong answer; re-validation job 501-scansetfix-test. SIZE TRADE (manager): each new edge emits its own 256-byte run table (endmark G3 witness 25454 vs 22582+905 B, ~+10% on artifacts that gain edges); accepted for the ~6x speed on hits; follow-up if size matters: share identical edge tables or test the class map through a 32-byte bitmap.
+- [LANECHECK] STATE:completed — AN AGENT CHECKS ITS DELIVERABLE AGAINST THE BRIEF; ONLY A PASS WRITES .done
+  completed: 2026-10-26 lane lanecheck merged (scripts/lanecheck, scripts/lanewatch, DELIVER block in BRIEF_TEMPLATE, BOILERPLATE "end only on DONE", lanecheck.test 35/35); critic skill adopted it the same day
+  filed: 2026-10-26 Frank (idea: "a script in their dir area which will say if they are done or give prose issues") + manager (marker + watcher)
+  status (2026-10-26): lane lanecheck (wildcard/admin slot) building v1: DELIVER block in the brief; scripts/lanecheck prints DONE or prose issues; pass writes the marker; a plain watcher any parent runs reports missing/stopped markers; miss log
+  next: v1 lands, then BOILERPLATE + BRIEF_TEMPLATE make "run lanecheck, end only on DONE" standard; critic skill adopts it for critics
+  refs: memory pcrec-subagent-cache-warmth (DO-THEN-FINISH, monitoring ladder); docs/dev/lanes/BOILERPLATE.md; docs/dev/lanes/BRIEF_TEMPLATE.md
+  General agent-lifecycle tool, NOT part of the box queue/monitor. Form checks only (sections, non-empty, cites, commit, owed jobs); review still judges content. Minimal harness (Frank 2026-10-21).
+
+- [REQRUN-VM] STATE:completed — THE REQUIRED-RUN HANDOFF AND RE-ENTRY WIDENED TO VM CONSUMERS (VM-only and VM-hybrid)
+  completed: 2026-10-29 lane reqvm1m merged (abi 90 -> 91): required-run handoff and re-entry on VM-only and VM-hybrid routes plus the drop-handoff fit rung; mover census 0 unexpected, make test 81/81 (job 660-reqvm1m-test). Bench case 7 x2.53 and case 2 x1.61 on instructions:u.
+  filed: 2026-10-27 Frank + manager, from lane subtri (bench O-109 cases 7 url-tld-fix x3.89 and 2 rare x2.66 behind JIT); folds [L1-VMHYB] (filed same day) and [OPT-VMSEED]
+  status (2026-10-29): DONE. Landed with the drop-handoff fit rung (limits.md §8.4 row 4a); mech S1700-S1714, 631/632 validation per docs/dev/lanes/reqvm1m_report.md. Follow-ups: [RUNG-HYB-GROW], kit request R-30.
+  next: none (landed).
+  refs: docs/dev/lanes/subtri_report.md + subtri_evidence/; [REQ-HANDOFF-L1] (plan_completed.md); src/gen/emit_dfa.c emit_req_reentry_use; [PRIOR-COST-UNIFY] (case 2 byte choice, separate); memfn sites (the kit finds the run; pcrec owns the handoff)
+  Measured twins (subtri, instructions:u, cycles as ratios): case 7 run-driven x3.7 instr / x2.0 cycles (keyed on `h` x10.7 / x4.9); case 2 run-driven x1.2 cycles alone, x4.8 with the byte re-key.
+  - [OPT-VMSEED] STATE:not-started — A START-POSITION SEED for VM runs with NO DFA in front
+    filed: 2026-10-12 Frank
+    status (2026-10-12): not started; RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes…
+    trigger: (measured) router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2).
+    refs: docs/design/litscan_k82h.md; decisions D6 D77 D122; known_issues K64 K82
+    folded 2026-10-27 into [REQRUN-VM] (Frank "Yes"): its once-per-call seed is the first attempt of the parent's re-entered form; history kept below.
+    before the first attempt, locate the necessary run's first occurrence q and begin attempts at q − (the run's offset bound), since no match can start earlier ([OPT-REQPOS] tier 2's re-opening, reqpos_2b.md). POPULATION = VM-only-at-auto artifacts (backreference / linked-call patterns that decline the hybrid — the K64 41-mover class — hybrid-declined patterns) plus --engine=vm; hybrids already get S1 through the reused DFA scan. TRIGGER (measured): router/keyword forced-VM residual +9-10% (litscan_s1.md §8.2). D77: its population CENSUS at the current pin comes first. Seeds must be answer-identical (a seed skips only starts that cannot begin a match) and respect K64's step-budget lesson. PLACEMENT (D122 addendum 4): rows / a VM consumer hook on the engine-neutral candidate-finding table (`dfa_pfs[]` then, `cand_rows[]` now) — never a VM-local table; full D6 panel before build.
+    The K82(B) HANDOFF (docs/design/litscan_k82h.md) is the DFA-route instance of the same idea. CHARTERED by Frank 2026-09-25, S1 §9 Q3 (a): "vm is important when caps, etc are on so it matters".
+    2026-10-27 lane subtri (bench O-109 case 7 url-tld-fix, x3.89 behind JIT): the req-run `https://www.` is found by two pre-checks (23%) that return yes/no only; the attempt loop then scans `h` scalar (66%, 3.57M VM attempts); lookahead+backref is 2.9%. Seeding once per call as written gives only x1.3 cycles; the RE-ENTERED form (the run drives every attempt) gives x2.0 cycles, keyed on `h` x4.9. Re-scope to the re-entered form. Evidence docs/dev/lanes/subtri_report.md.

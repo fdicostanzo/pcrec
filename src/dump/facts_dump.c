@@ -124,6 +124,11 @@ static void fd_decisions(Ctx *cx, FactsRows *r, const char *enc,
 {
     const char *up = pcrec_sb_upper(&cx->arena, cx->opt->prefix);
     size_t upl = strlen(up), i = 0;
+    /* The code segment block, last in the text, is the user's code and its
+     * macro set, not pcrec's decisions (review 2026-10-27-r1-ic2 F4): stop
+     * at its first line. */
+    for (size_t k = cx->job->code_block_lines; k && n; )
+        if (a[--n] == '\n') k--;
     while (i < n) {
         size_t e = i, ns, ne, vs;
         while (e < n && a[e] != '\n') e++;
@@ -180,7 +185,8 @@ static void fd_hook(Ctx *cx, const char *artifact, size_t len, void *ud)
 }
 
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
-                       const int *encs, int nenc, pcrec_error *err)
+                       const PcrecEmitIn *in, const int *encs, int nenc,
+                       pcrec_error *err)
 {
     FactsRows r;
     pcrec_options defo;
@@ -193,6 +199,9 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
     /* A paired header would move the ABI block's stamps out of the `.c` the
      * decisions section reads; `pcrec_emit_ir`'s own rule. */
     defo.header_name = NULL;
+    /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9), as
+     * `pcrec_emit_ir`: code parses, the C is discarded, no grant needed. */
+    defo.allow_code = pcrec_code_describe_grant();
     own = defo.encoding;
     if (nenc <= 0) { encs = &own; nenc = 1; }
 
@@ -201,7 +210,7 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
         pcrec_output out;
         o.encoding = encs[i];
         if (pcrec_compile_driver(pattern, &o, &out, err, NULL, NULL, NULL,
-                                 fd_hook, &r, NULL) != 0) {
+                                 fd_hook, &r, in) != 0) {
             pcrec_sb_free(&r.facts);
             pcrec_sb_free(&r.dec);
             pcrec_sb_free(&r.plctl);

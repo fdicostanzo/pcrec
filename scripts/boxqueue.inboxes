@@ -1,0 +1,3 @@
+# the bench inbox the runner imports <name>.window files from (BENCH-RESERVE; see boxqueue -h)
+# ABS_INBOX_DIR ABS_LOG_ROOT
+/home/pcrec/projects/pcrec-bench/worktrees/.mgr/boxqueue /home/pcrec/projects/pcrec-bench

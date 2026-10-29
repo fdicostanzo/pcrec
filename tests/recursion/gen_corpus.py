@@ -60,8 +60,7 @@ if O.SELFCHECK:
 PCREC = os.path.join(ROOT, "build", "pcrec")
 SCRATCH_OUT = os.environ.get(
     "SR_GEN_SCRATCH",
-    "/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3"
-    "/scratchpad/srCorpus/probe_out.c")
+    os.path.join(os.environ.get("TMPDIR", "/var/tmp"), "scratch", "srCorpus", "probe_out.c"))
 os.makedirs(os.path.dirname(SCRATCH_OUT), exist_ok=True)
 
 

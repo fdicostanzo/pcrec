@@ -39,6 +39,8 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   verified to go red against a deliberately sabotaged copy of the script
   before landing — a test that cannot fail is not a test.
 
+- **tmpdir.sh.test** — tmpdir.sh root + prune cases.
+
 - **wtprune.test** — scripts/wtprune's 52-check self-test against a
   SACRIFICIAL repo it builds under mktemp (never the real worktrees). One
   worktree per gate (unmerged, dirty, fresh mtimes, a live `sleep` with its
@@ -154,3 +156,10 @@ script's test coverage changes meaningfully.
   must name the anchor), a repeated number, a file with no markers (left
   untouched) and one with no numbered headings, each reported; `--check`
   writes nothing. Pure python, no pcrec.
+
+- **lanecheck.test** — lanecheck + lanewatch in a scratch git repo: one case per issue class with a clean twin, the one-line DELIVER form, owed keys against a scratch queue, marker kinds (hand-written, edited, stale, missing, stopped), the no-git critic form, exit codes; two plants (issue list discarded; seal check removed).
+- **fullsuite_resume.test** — [SUITE-RESUME]: simulated `--resume` over fabricated parents (red+unrun re-run, green never, combined verdict, chained resume, queuemon-compatible logdir), every refusal (exit 65), the unknown-argument guard, the `fullsuite_resume` helper against a STUB boxqueue (never the real `add`), plant S1600.
+- **fullsuite_job.sh.test** — `--simulate` ([MONITOR-QUEUE]): the five scenarios through the real job + battery.sh, PATH shims proving no make/gcc ran, simulate-only logdirs, ledger and worktree list untouched, plus a plant (simulate branch disabled -> the shim sees `make`).
+- **queuewatch.test** — scripts/queuewatch against the REAL boxqueue in a scratch queue (scratch box lock, wrapper jobs that only `exec fullsuite_job.sh --simulate`): every scenario's events exactly once and in order across relaunches, the conditions, the bound, the lock; three plants (state not written, live events swallowed, sleep not clamped). It runs with the CI source off.
+- **queuewatch_ci.test** — queuewatch's CI events against a shim `gh` on PATH (no network): baseline, red, cancelled superseded/deferred/newest, two events in order without re-asking gh, CI-UNAVAILABLE once and re-armed, gh missing, `--no-ci`; four plants.
+- **monitor_preflight.test** — scripts/monitor_preflight with shims: clean pass, gh missing (and `--no-ci`), unauthenticated, no repo run, no git identity; one plant.

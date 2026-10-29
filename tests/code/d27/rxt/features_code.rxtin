@@ -1,0 +1,7 @@
+# match_api.md §11.9¶8: a features text naming code-c is refused wherever it
+# arrives from (here: a block's features line).
+target t = blk
+
+pattern a(?C`c: return RX_PASS;`)b
+name blk
+features code-c

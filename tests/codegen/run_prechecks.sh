@@ -948,7 +948,7 @@ while IFS='%' read -r pat _sep why; do
 done <<'ROWS'
 a{2,4}b%%nothing is joined across a repeat's iterations, so no aa
 (?:xabcy|wabcv)q%%an alternation contributes only its common affixes, so abc is not claimed (x/w and y/v differ in more than one bit, so not even their cube hull is a position: S4 C3)
-a(?i)bc%%d%%the inline option breaks contiguity with the a, and two caseless letters are 14 bits, under the 16-bit floor (S4 C3)
+a(?i)b%%a followed by one caseless letter is 15 bits, under the 16-bit floor (S4 C3); a(?i)bc is no longer a decline: the option run is dropped from the concatenation, so it reads as a(?i:bc), a live run ([FLAG-SPELL])
 (?:ab)*c%%a min-0 repeat breaks contiguity in the one direction that would delete a match
 a[0-9]b[0-9]=%%a multi-member class breaks contiguity around it
 ROWS
@@ -1814,7 +1814,14 @@ while IFS= read -r pat; do
         s512_mov=$((s512_mov + 1)); [ "$st" -gt 0 ] && s512_kpos=$((s512_kpos + 1))
         { [ "$(stamp "$a" REQ_WHY)" = "emitted" ] && { [ "$(stamp "$a" REQ_RUN)" != "none" ] || [ "$(stamp "$a" REQ_BYTE)" != "none" ]; }; } \
             || bad "[5.12e] $pat: REQ_HANDOFF \"$st\" with REQ_WHY \"$(stamp "$a" REQ_WHY)\" / REQ_RUN \"$(stamp "$a" REQ_RUN)\" / REQ_BYTE \"$(stamp "$a" REQ_BYTE)\" — the two tables disagree"
-        [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_landmark_maxoff $k"
+        # [REQRUN-VM] the VM attempt loop's rows subtract the WHOLE run's K,
+        # an unlisted fact never above the landmark's (tuning.md §2.41¶8b).
+        if grep -q '^ *attempt_position = handoff_position;$' "$a"; then
+            [ "$k" != "unbounded" ] && [ "$st" -le "$k" ] \
+                || bad "[5.12b] $pat: attempt-loop REQ_HANDOFF \"$st\" above req_landmark_maxoff $k"
+        else
+            [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_landmark_maxoff $k"
+        fi
     fi
     if [ "$k" = "unbounded" ] && [ "$(stamp "$a" REQ_WHY)" = "emitted" ]; then
         s512_unb=$((s512_unb + 1))
@@ -1853,7 +1860,8 @@ echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512
 #   (o) THE ROUND-UP: under utf8, inside the `> K` branch, bounded by the
 #       subject's end.
 #   (p) THE DENY: `-fno-req-handoff` keeps no landmark and the start-byte row.
-#   (q) A VM HYBRID's prefilter body never re-enters (its retries are RETRY's).
+#   (q) [REQRUN-VM] A VM HYBRID's prefilter body re-enters (tuning.md
+#       §2.41¶8a): the prefilter keeps its own landmark from its start.
 # reentry_block FILE: the forward scan's restart block, as emitted
 reentry_block() {
     awk '/^ *if \(forward_state == [0-9]+ && last_accept_position == \(size_t\)-1\) \{$/ { on = 1; ind = index($0, "if") }
@@ -1864,8 +1872,16 @@ reentry_block() {
 s512_reentry() {
     local a="$1" lbl="$2" pf st nd b
     pf="$(stamp "$a" DFA_PREFILTER)"; st="$(stamp "$a" REQ_HANDOFF)"
-    nd="$(grep -c '^ *size_t landmark_position = handoff_position;$' "$a")"
+    # [REQRUN-VM] a VM hybrid's prefilter declares it from its own start
+    # (`= search_from`); the VM attempt loop's re-entry keeps it with no
+    # DFA_PREFILTER stamp, its retry re-asking from attempt_position.
+    nd="$(grep -c -E '^ *size_t landmark_position = (handoff_position|search_from);$' "$a")"
     if [ "$pf" != "handoff" ]; then
+        if grep -q '^ *if (landmark_position < attempt_position) {$' "$a"; then
+            [ "$(stamp "$a" VM_PREFILTER)" = "none" ] && [ "$nd" -eq 1 ] \
+                || bad "[5.12l] $lbl: an attempt-loop re-entry on VM_PREFILTER \"$(stamp "$a" VM_PREFILTER)\" with $nd landmark declarations"
+            return 0
+        fi
         [ "$nd" -eq 0 ] && ! grep -q landmark_position "$a" \
             || bad "[5.12l] $lbl: DFA_PREFILTER \"$pf\" but the text keeps landmark_position"
         return 0
@@ -1954,12 +1970,13 @@ a="$WORKDIR/s512_p.c"; emit "$a" '(?:\d{1,3}\.){3}\d{1,3}' -fno-req-handoff
     && ok "[5.12p] -fno-req-handoff: no re-entry, the start-byte row" \
     || bad "[5.12p] -fno-req-handoff: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" or a landmark_position remains"
 
-# (q) A VM HYBRID never re-enters
+# (q) [REQRUN-VM] A VM HYBRID re-enters inside its prefilter
 a="$WORKDIR/s512_q.c"; emit "$a" '(?>a|ab)c'
 [ "$(stamp "$a" ENGINE)" = "vm" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "2" ] \
-    && [ "$(stamp "$a" DFA_PREFILTER)" != "handoff" ] && ! grep -q landmark_position "$a" \
-    && ok "[5.12q] the VM hybrid hands off at its first prefilter call and never re-enters inside the prefilter" \
-    || bad "[5.12q] (?>a|ab)c: ENGINE \"$(stamp "$a" ENGINE)\" REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\" DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\": the hybrid re-enters, or the witness moved"
+    && [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] \
+    && grep -q '^ *size_t landmark_position = search_from;$' "$a" \
+    && ok "[5.12q] the VM hybrid hands off at its first prefilter call and re-enters inside the prefilter" \
+    || bad "[5.12q] (?>a|ab)c: ENGINE \"$(stamp "$a" ENGINE)\" REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\" DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\": the hybrid does not re-enter, or the witness moved"
 
 # =========================================================================
 # SECTION 6 — [K68]: rx_info.flags IS BYTE-IDENTICAL TO BASELINE UNDER EACH

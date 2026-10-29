@@ -97,3 +97,19 @@ Round 2026-10-23 r2, kit S3 C1 build (`docs/dev/reviews/2026-10-23-r2-memfn-s3-c
 3. **Keep the check-adequacy lens whenever checks or flags change:** it alone found a broken gate (`make test-axes`'s memfn arm: MEMFN_CLASS lacked the new forms).
 4. **The slot lens lists each ruling's CONSEQUENCES,** not only its agreement with the design.
 
+
+Round 2026-10-24 r1, compiled substitution (`docs/dev/reviews/2026-10-24-r1-subst-code.md`, lane/substland), the coordinator skill on a 16.8k-line diff.
+1. **A sabotage row can score DETECTED because its plant fails to compile** (CHK-1): with -Werror on emitted code, a plant that leaves a parameter unused scores a catch at "driver build" with no cell run. A check-adequacy lens compiles each emitted-text plant on a real artifact; the matrix asserts the plant compiles.
+2. **Encoding-neutral decided from source text, not from what it denotes** (TPL-1): an all-ASCII template with `\xe9` is not neutral. A contract lens probes every escape that produces a byte.
+3. **A spec sentence that pins an upstream version's behaviour can be overtaken by a later ruling** (EMIT-5 vs the D26 addendum, same day): a round checks version-pinning sentences against the current D-rows.
+
+Round 2026-10-24, kit S3 final (memfn-s3-final):
+- (2026-10-24, memfn-s3-final) **A change to the DEFAULT search gets a find-all, real-text instruction sweep per new find form.** The emitted lens runs find-all over one real text and one adversarial text per new form, BASE vs SUBJECT, by instruction count. Both large losses (a quadratic two-stream find-all, a set stop walked where BASE ran memchr) were invisible to the stated timing bar, whose sample held neither shape.
+- (2026-10-24) **A new stamp VALUE or a new pre-empting row is a D94-style reader hunt.** Grep every enumeration of the stamp's values and every witness sentence for the rows it now pre-empts. Six stale spec passages came from this.
+- (2026-10-24) **Critics are launched unnamed, and their results travel only as files.** A coordinator's spawns could not be named, and all six final replies were lost; the files carried everything.
+
+Round 2026-10-27 r1, [INLINE-C] stage 2 code (`docs/dev/reviews/2026-10-27-r1-ic2-code.md`, lane/ic2).
+1. **A rule that protects what a human reads is generated from the standard's property, and the lens probes the property's members** (F1, F2): a hand-typed bidi/invisible list let U+3164 make a failing-looking check pass.
+2. **A keep-list by PREFIX is a control sharing its source** (F3): emitter and check both meant "public" by `<PREFIX>_`; the check's public set comes from what the caller sees (the `.h`).
+3. **A comment claiming "X asserts it" is a finding target** (F5): grep for the assertion; a gate depended on one that did not exist.
+4. **A card row proves it reaches the site** (F19): a prefilter rejected the whole subject before the matcher ran.

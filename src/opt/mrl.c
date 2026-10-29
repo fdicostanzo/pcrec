@@ -182,6 +182,7 @@ long long pcrec_minw(const Ast *a)
          * (below): the two are one property read by two passes. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         /* [M6.2 wave D] `\G` consumes nothing either — it compares the
          * position against `startpos` and reads no byte at all. */
         case A_GSTART:
@@ -348,6 +349,7 @@ bool pcrec_nullable(const Ast *a)
          * harness's derived timeout rather than a wrong span. */
         case A_BREF: return true;
         case A_VAR:  return true;   /* [VAR] an EMPTY value matches nothing, so a variable is nullable exactly as a backreference to an empty group is */
+        case A_CALLOUT: return true;   /* [INLINE-C] 1b a check is zero-width and a `consume` callee may return 0 */
         /* [M6.6.2] TRUE, AND GETTING IT WRONG IS A BUDGET BURN RATHER THAN A
          * WRONG SPAN — which makes it the arm most likely to be written by
          * reflex and least likely to be caught by a corpus reading answers.
@@ -476,6 +478,19 @@ bool pcrec_nullable(const Ast *a)
     }
 }
 
+/* The widest character count of a node whose kind row answers for its
+ * text: none for ZERO, unbounded for ANY. An OWN kind has its own arm and
+ * never asks; it would get the safe top. */
+static long long row_cwmax(const Ast *a)
+{
+    switch (pcrec_ast_row(a).text) {
+    case KTEXT_ZERO: return 0;
+    case KTEXT_ANY:  return PCREC_W_UNBOUNDED;
+    case KTEXT_OWN:  break;
+    }
+    return PCREC_W_UNBOUNDED;
+}
+
 /* [M6.6.2 wave A, RE-AIMED AT M5.0 STAGE 2] THE MAXIMUM WIDTH IN
  * **CHARACTERS** — `pcrec_cwmax`, which until the utf8 backend landed was
  * spelled `pcrec_maxw` and documented as BYTES. utf8_design.md §5.6 measured
@@ -565,12 +580,15 @@ long long pcrec_cwmax(const Ast *a)
          * branch fixed-width 2 rather than variable — the answer libpcre2
          * gives. The body is not descended into. */
         case A_LOOK:
-            return acc;
+        /* UNBOUNDED — see the header. This is where minw's "and it is EXACT"
+         * argument does not carry over to maxw. */
         case A_BREF:
         case A_VAR:
-            /* UNBOUNDED — see the header. This is the one arm where minw's
-             * "and it is EXACT" argument does not carry over to maxw. */
-            return pcrec_sat_add(acc, PCREC_W_UNBOUNDED, MRL_MINW_MAX);
+        case A_CALLOUT:
+            /* [INLINE-C] 1a: the kind's ROW answers (`row_cwmax`): its text
+             * column is ZERO for every kind above the backreference and ANY
+             * for the two below it. */
+            return pcrec_sat_add(acc, row_cwmax(a), MRL_MINW_MAX);
         /* [DD-14] UNBOUNDED UNLESS THE FIXPOINT HAS SAID OTHERWISE, and the
          * asymmetry with `pcrec_minw`'s arm is the whole point of this file
          * having two headers.
@@ -695,6 +713,7 @@ long long pcrec_cwmin(const Ast *a)
          * not change it: zero bytes is zero characters. */
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         case A_GSTART:
         case A_KRESET:
         /* A lookaround consumes nothing in either unit; the body is not

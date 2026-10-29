@@ -1,0 +1,135 @@
+# tests/lib/san_excluded.txt -- [TT-9] the REASONED EXCLUSIONS from the
+# sanitizer suite list. tests/codegen/run_codegen_tests.sh's [TT-9] check
+# requires EVERY tests/**/run_*.sh to be in tests/lib/san_scripts.txt (run
+# under `make ubsan`/`asan`/`san`) or here, with a one-line reason, and
+# requires each entry here to name an existing script that is NOT in the
+# manifest (an entry nothing matches, or one the manifest also lists, fails).
+#
+# Format: PATH<TAB>REASON, one per line; blank and `#` lines are ignored.
+# Reason prefixes:
+#   NOT-A-SUITE   infrastructure or a tier of its own, not a san candidate
+#   NO-C-RUN      reads files / emitted text / CLI output; runs no compiled C
+#   OWN-TIER      has its own build and sanitizer story (named in the reason)
+#   TODO-WIRE     takes $GENCFLAGS, so it CAN ride the san axes, but is not in
+#                 the manifest yet (found by lane sanred2): wire it or replace
+#                 the reason with a real one
+#   DEFER-PLAIN   compiles C with plain $CC and no $GENCFLAGS: san would reach
+#                 only the compiler axis for it, not the matcher axis; wire
+#                 it together with a GENCFLAGS pass or say why not
+tests/axes/run_axes.sh	OWN-TIER	opt-in make test-axes / K-sweep, a multi-hour axis sweep outside make san's budget
+tests/axes/run_ksweep.sh	OWN-TIER	opt-in make test-axes / K-sweep, a multi-hour axis sweep outside make san's budget
+tests/bench/run_bench.sh	NOT-A-SUITE	performance benchmark; timings under a sanitizer are meaningless
+tests/claudemd_size/run_claudemd_size.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/clskit/run_clskit_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_anchored_match.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_atomic_identity.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_backref_identity.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_cand_oracle.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_cand_rows.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/codegen/run_case_spelling_identity.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_cls_fold_agreement.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_clspack.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_comment_escape.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_comments_axis.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_ctext_ascii.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_dfa_stamps.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_dfa_uniform_fold.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_encoding_checks.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_entry_shape_identity.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_facts_checks.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/codegen/run_fallback_table.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_form_census.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_inline_capability.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_longprefix_sweep.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_lookaround_identity.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_n1_budget.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_nomatch_caps.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_object_neutrality.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_offset_skip.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_prechecks.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_prefilter_collapse.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_prefix_invariance.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/codegen/run_premul_table.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_recursion_identity.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_residual_twins.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_rev_end.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_scan_edge_census.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_scan_edge_dispatch.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_search_pinned.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_size_term.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_start_landing.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_tiered_entry.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_tune_dial.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_vm_frameless.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/codegen/run_wclass_census.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/compound/run_compound_unit.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/compound/run_lever_fence.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/compound/run_part_analysis.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/compound/run_part_measures.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/compound/run_shell_checks.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/core/run_alloc_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/counterk/run_counterk_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/counterk/run_counterkdiff.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/definitions/run_definitions_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/endmark/run_b3_checks.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/examples/run_examples_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/findall/run_findall_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/findall/run_one_body.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/findings/run_findings_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/fuzz/run_capturediff_gate.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/island/run_island_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/kitproof/run_cover.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/knowledge/run_knowledge_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/knowledge/run_measures_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/lib/run_group.sh	NOT-A-SUITE	job-pool runner for other scripts, not a suite
+tests/lib/run_san_group.sh	NOT-A-SUITE	job-pool runner for other scripts, not a suite
+tests/mech/run_sabotage_matrix.sh	OWN-TIER	mech: mutates the tree and re-runs other suites (make mech), its own tier
+tests/memfn/run_arch_blind.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_arm_pins.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_arm_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_deleg_sites.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_finder.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_form_checks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_handoff_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_libc_census.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_link_checks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_n2_sample.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_pr11.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_pres_picks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_presence.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_proof.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_rank.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_rows.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_simd_floor.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_simd_guarded.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_site_manifest.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_wreply.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/mrl/run_mrldiff.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/partlayout/run_partlayout_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/plan_lint/run_plan_lint.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/prefilter/run_prefilter_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/recursion/run_frame_buffer.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/recursion/run_specimen_identity.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/registry/run_definitions_oracle.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/registry/run_definitions_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/registry/run_pc4.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/resource/run_resource_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/revend/run_window_twin.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/rxtsource/run_rxtsource_tests.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/size/run_size_log.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/spec_history/run_hook_selftest.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/spec_history/run_spec_history.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/spec_mod0/run_spec_mod0.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/startset/run_dfahat_checks.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/startset/run_startset_checks.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/startset/run_vmhat_checks.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/subst/d27/run_all.sh	NO-C-RUN	D27 blinded corpus driver over the CLI/API drivers, no GENCFLAGS compile
+tests/subst/run_d27.sh	NO-C-RUN	D27 blinded corpus driver over the CLI/API drivers, no GENCFLAGS compile
+tests/subst/run_subst_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/thread/run_compile_stack.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/thread/run_stackdepth_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/thread/run_thread_tests.sh	OWN-TIER	runs under ThreadSanitizer, which cannot combine with ASan/UBSan
+tests/ucp/run_ctxnode_tests.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/ucp/run_ucp_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/uprops/run_uprops_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/utfcheck/run_utfcheck.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output

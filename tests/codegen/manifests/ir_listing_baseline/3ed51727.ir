@@ -1,0 +1,106 @@
+# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+#
+# Produced BY the emitter's own walk, not by a second walk over the
+# AST: every row below was written by the same call that wrote the
+# corresponding C. S10's one constraint -- "the dump must be derived
+# from the same structure the emitter walks, never a parallel
+# description" -- is therefore structural here, not a discipline.
+#
+# TAB-separated, one #section per table, each with its own #header of
+# column names: docs/spec/ir_listing.md is this listing's contract and
+# docs/spec/table_contract.md is the TSV contract it conforms to.
+# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG
+# listing: complete for control structure, lossy on operands (D106).
+
+#section summary
+#fact	value	note
+pattern	(a+)(?C"q")b(?C7)	
+engine	vm	forced by: capture group at pattern offset 0
+prefilter	no-callout	callout site -- a callout pattern has no prefilter yet; no flag changes this, and -fprefilter refuses
+rungs	cursor	comma-joined; the rungs section below says which quantifier took which
+strategies	backtracking	comma-joined; the strategies section below says which quantifier took which
+possessify	0/1	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
+caps	2	RX_NCAPS; 1 capturing group in the pattern text
+step-budget	500000000	backtrack resumptions
+resume-frames	2	
+trail-entries	5	
+subject-ceiling		exact: no subject ceiling
+labels	9	
+events	34	
+resume-points	1	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+max-replicas	0	limit 64, checked before emission
+prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
+prune-bound-sites	1	
+prune-retreats	0	
+islands	0	
+callout-sites	2	
+
+#section slots
+#family	slot	holds	note
+group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
+group	2,3	group 1	written on traverse, trailed
+guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
+low	4	span-loop low-water	the loop's entry position (S2.5)
+mark			
+revdet			
+lookmark			
+lookpos			
+
+#section rungs
+#label	kind	detail
+L3	cursor	span-loop cursor {1,}, stride 1, greedy
+
+#section strategies
+#label	kind	detail
+L3	backtracking	span-loop cursor {1,}, stride 1, greedy
+
+#section pruning
+#label	kind	detail
+L3	clamped	span-loop cursor {1,}, stride 1, greedy
+
+#section program
+#label	op	args	target	note
+L0	label			group 1 opens
+	set	slot_values[5] <- scan_position		group 1 open, PENDING until this iteration closes
+	goto		L3	
+L3	label			span-loop cursor {1,}, stride 1, greedy
+	set	slot_values[4] <- scan_position		span-loop low-water mark (loop entry scan_position)
+	note			MRL: the continuation cannot fit from this loop's entry at all
+	note			MRL: the clamp IS the scan's own bound, so the doomed suffix is never scanned and never retreated over -- and the bound is self-rounding, since the cursor only ever moves by W
+	goto		L5	
+L5	label			span-loop: take the continuation at the cursor
+	note			below the low-water mark: exhausted
+	push		L6	shorter run is the resume (retreat one stride)
+	goto		L4	
+L6	label			span-loop retreat (resumed from the frame)
+	goto		L5	
+L4	label			group 1 closes
+	set	slot_values[2] <- scan_position		group 1 PUBLISHED: the pair goes out together, so a reference never sees a half-open span
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L2	
+L2	label			callout site 1: rx_callout_q, a check
+	fail			backtrack
+	goto		L7	
+L7	label			
+	consume	'b'	L8	
+	fail			backtrack
+L8	label			callout site 2: rx_callout_7, a check
+	fail			backtrack
+	goto		L1	
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+#section choicepoints
+#label	resume	note
+L5	L6	shorter run is the resume (retreat one stride)
+
+#section islands
+#label	width	note
+		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
+
+#section callouts
+#label	site	binding	width	class	tail	note
+L2	1	rx_callout_q	check	repeated	-	the quantifier at offset 2 can be backtracked into; make it possessive (X++) or use (?>...); that does not change what it matches
+L8	2	rx_callout_7	check	repeated	tail	the quantifier at offset 2 can be backtracked into; make it possessive (X++) or use (?>...); that does not change what it matches

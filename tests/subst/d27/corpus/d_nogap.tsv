@@ -1,0 +1,19 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+nogap-000	nogap		a	<$0>	empty	1	banana	nogap
+nogap-001	nogap		a	<$0>	empty	2	banana	nogap
+nogap-002	nogap		a	<$0>	empty	all	banana	nogap
+nogap-003	nogap		x*	<$0>	empty	1	ab	nogap
+nogap-004	nogap		x*	<$0>	empty	2	ab	nogap
+nogap-005	nogap		x*	<$0>	empty	all	ab	nogap
+nogap-006	nogap		(a)(n)?	<$0|$1>	empty	1	banana	nogap
+nogap-007	nogap		(a)(n)?	<$0|$1>	empty	2	banana	nogap
+nogap-008	nogap		(a)(n)?	<$0|$1>	empty	all	banana	nogap
+nogap-009	nogap			<$0>	empty	1		nogap
+nogap-010	nogap			<$0>	empty	2		nogap
+nogap-011	nogap			<$0>	empty	all		nogap
+nogap-012	nogap		q	<$0>	empty	1	abc	nogap
+nogap-013	nogap		q	<$0>	empty	2	abc	nogap
+nogap-014	nogap		q	<$0>	empty	all	abc	nogap
+nogap-015	nogap		\\w+	<$0>	empty	1	hi there you	nogap
+nogap-016	nogap		\\w+	<$0>	empty	2	hi there you	nogap
+nogap-017	nogap		\\w+	<$0>	empty	all	hi there you	nogap

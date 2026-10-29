@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# scanset: [SCANEDGE-SET] owed validation of lane/scanset (scan edge over a byte-class SET, abi 86 -> 87): build, strict, test-codegen (incl. the census's new sections (7)/(8)), the scan-edge deny axes answer-identical (-fno-scan-edge, -fno-view-edge), then the full make test.
+# Queued by the lane itself (scripts/boxqueue add --name 500-scanset-test docs/dev/lanes/scanset_job); the job runs in the lane worktree.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/scanset
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] && [ -f "$TREE/tests/codegen/scan_set_check.py" ] \
+            && [ -f "$TREE/tests/axes/run_axes.sh" ] || { echo "no tree, perfrun, scan_set_check.py or run_axes.sh in $TREE" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict > \$BQ_LOG.strict; make test-codegen > \$BQ_LOG.codegen; AXES='-fno-scan-edge -fno-view-edge' run_axes.sh > \$BQ_LOG.axes; run_sabotage_matrix.sh S213 > \$BQ_LOG.mech; scripts/perfrun --label scanset -- \$BQ_LOG.make"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect strict=1 log=job.log.strict lines=^strict: whole tree compiles clean"
+        echo "boxqueue: expect codegen=19 log=job.log.codegen last=^run_group: [0-9]+/"
+        echo "boxqueue: witness codegen=run_group: 19/19 scripts passed"
+        echo "boxqueue: expect axes=1 log=job.log.axes lines=^run_axes.sh: all axes answer-identical"
+        echo "boxqueue: expect mech=1 log=job.log.mech last=^== mech run COMPLETE:"
+        echo "boxqueue: witness mech=== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc1234 =="
+        echo "boxqueue: expect sections=79 log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: 79/79"
+        exit 0 ;;
+    --ready)
+        exit 0 ;;
+esac
+rc=0
+make -C "$TREE" -j16 >/dev/null || exit 1
+make -C "$TREE" strict > "$BQ_LOG.strict" 2>&1 || rc=1
+make -C "$TREE" test-codegen > "$BQ_LOG.codegen" 2>&1 || rc=1
+( cd "$TREE" && AXES='-fno-scan-edge -fno-view-edge' bash tests/axes/run_axes.sh ) > "$BQ_LOG.axes" 2>&1 || rc=1
+( cd "$TREE" && bash tests/mech/run_sabotage_matrix.sh S213 ) > "$BQ_LOG.mech" 2>&1 || rc=1
+cd "$TREE" || exit 1
+scripts/perfrun --label scanset -- "$BQ_LOG.make" || rc=1
+exit $rc

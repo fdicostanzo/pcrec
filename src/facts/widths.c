@@ -121,7 +121,7 @@ static unsigned em_set(const Ast *a)
         case A_WCLASS: return 0;   /* a wide class consumes a character */
         case A_CLASS: return 0;    /* so does a byte class: no empty path */
         case A_EMPTY: case A_GSTART: case A_KRESET: case A_LOOK:
-        case A_BREF: case A_VAR:
+        case A_BREF: case A_VAR: case A_CALLOUT:
             return acc;
         case A_CALL:
             return a->u.call.nonnullable ? 0 : acc;
@@ -248,7 +248,7 @@ static RepW rw_node(const Ast *a, bool has_k)
             return rw_cat(x, acc);
         }
         case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART: case A_LOOK:
-        case A_BREF: case A_VAR:
+        case A_BREF: case A_VAR: case A_CALLOUT:
             return acc;   /* zero-width, or possibly empty, and no `\K` */
         case A_KRESET: {
             RepW x = { RW_INF, RW_ZERO };

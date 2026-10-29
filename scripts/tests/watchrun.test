@@ -92,6 +92,25 @@ watch --on stage "$LD"
 [ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: STAGE-END .*== stage b END rc=0' && ok "--on stage: the first NEW end (b), not a's from before the watch" || bad "on stage: $out"
 for _ in $(seq 40); do grep -q '^== CHAIN' "$LD/chain.log" && break; sleep 0.25; done
 
+# 5b. both stage-END shapes: battery.sh's `== stage S rc=N END` (lines copied from the real
+# build/full_suite/20261023_5596c3207/trailer.log) and chainrun's `== stage S END rc=N`
+n=$((n + 1)); D=$T/t$n; mkdir -p "$D"
+printf '%s\n' '== battery_v5 start 2026-10-23T19:07:13-04:00 on 5596c3207' '== stage test START 2026-10-23T19:07:13-04:00 load=0.1' > "$D/b.log"
+( sleep 2; echo '== stage test rc=0 END 2026-10-23T19:08:59-04:00' >> "$D/b.log" ) &
+watch --on stage --log "$D/b.log"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: STAGE-END .* stage=test rc=0 :: == stage test rc=0 END' && ok "--on stage: battery.sh's END shape fires, stage and rc extracted" || bad "battery shape: rc=$wrc $out"
+( sleep 2; echo '== stage axes rc=2 END 2026-10-23T22:47:35-04:00' >> "$D/b.log" ) &
+watch --on stage --log "$D/b.log"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q 'stage=axes rc=2 ::' && ok "--on stage: a red battery stage reports rc=2" || bad "battery red: rc=$wrc $out"
+( sleep 2; echo '== stage k END rc=3 verdict=RED wall=1s 2026-10-23T22:47:35-04:00 :: x' >> "$D/b.log" ) &
+watch --on stage --log "$D/b.log"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q 'stage=k rc=3 ::' && ok "--on stage: chainrun's END shape still fires, stage and rc extracted" || bad "chainrun shape: rc=$wrc $out"
+if P=$(plant old-end-pattern "END_ERE='^== stage [^ ]+ (rc=[0-9]+ )?END'" "END_ERE='^== stage [^ ]* END'"); then
+    ( sleep 2; echo '== stage lint rc=0 END 2026-10-23T23:37:10-04:00' >> "$D/b.log" ) &
+    WX=$P watch --on stage --max-sec 5 --log "$D/b.log"
+    [ "$wrc" = 6 ] && ok "PLANT old-end-pattern: battery's END never fires (CAP), so the case catches it" || bad "PLANT old-end-pattern not caught: rc=$wrc $out"
+fi
+
 # 6. DIED: a chain SIGKILLed (no trailer can be written)
 arm 'k light 60 sleep 30'
 read -r kp _ < "$LD/chain.pid"

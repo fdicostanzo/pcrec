@@ -1,0 +1,20 @@
+# provenance: lane revwalk 2026-10-29, worktree branch lane/revwalk (tiers.py/model.py/facts_control.py as committed beside this file), pcrec built from ec87afbca, libpcre2 10.46, python 3.14.4
+EXTRA witness not admitted (check tiers.py): b'\\B[0-9]{2}@' T1
+libpcre2 10.46 2025-08-27; seed 1; 8 subjects per pattern, every startpos
+ADMITTED T2/T3 (byte, single branch): 256 corpus/bench patterns x 8 subjects + 10 hand witnesses x 200 subjects
+  tactic     checks 74824 wrong 0
+  max_start  checks 74824 wrong 761  DETECTED
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=0: truth (4, 8), tactic (5, 8)
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=1: truth (4, 8), tactic (5, 8)
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=2: truth (4, 8), tactic (5, 8)
+  no_ctx     checks 74824 wrong 89  DETECTED
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=0: truth (4, 8), tactic None
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=1: truth (4, 8), tactic None
+      e.g. extra:\B[a-z]+@x on b'\x00x@anz@x@@x@x\\@@aB\x00_z+.B+[x_x' lo=2: truth (4, 8), tactic None
+  no_max     checks 74824 wrong 46  DETECTED
+      e.g. extra:a*[0-9]{1,2}@ on b'959\x851111@@]\xff\x85@@9-_\xff\n-,9{ \n' lo=0: truth (6, 9), tactic None
+      e.g. extra:a*[0-9]{1,2}@ on b'959\x851111@@]\xff\x85@@9-_\xff\n-,9{ \n' lo=1: truth (6, 9), tactic None
+      e.g. extra:a*[0-9]{1,2}@ on b'959\x851111@@]\xff\x85@@9-_\xff\n-,9{ \n' lo=2: truth (6, 9), tactic None
+NEGATIVE CONTROL: chain, NO strong arm (ungated): 43 patterns
+  tactic     checks 5579 wrong 0  (exclusion NOT shown necessary on this population: reported, not gated)
+MODEL: PASS

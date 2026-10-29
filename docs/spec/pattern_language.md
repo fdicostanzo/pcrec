@@ -47,6 +47,8 @@
   - [§7.8](#s7-8) Module `ucp`
   - [§7.9](#s7-9) Module `unicode-props`
   - [§7.10](#s7-10) Module `vars`
+  - [§7.11](#s7-11) Module `callouts`
+  - [§7.12](#s7-12) Module `code-c`
 - [§8](#s8) Recognised constructs without a producer, and excluded ones
   - [§8.1](#s8-1) Not built
   - [§8.2](#s8-2) Excluded
@@ -544,12 +546,32 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\p{X}` | with property `X` | any | yes |
 | `\P{X}`, `\p{^X}` | without property `X` (`\P{^X}` is `\p{X}`) | any | yes |
 
-<a id="s7-9-p1"></a>[7.9¶1] The accepted names (general categories, `L&`/`Lc`, `Any`, `Xan Xps Xsp Xuc Xwd`, scripts in three namespaces), their case and separator rules, the clamping under `byte` and the refused names are `cli.md` §1.17.1. Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}` (`cli.md` §1.8¶5). A property escape is valid inside a class. A malformed escape (`\p` with no name) is refused. The tables are Unicode 16.0.0.
+<a id="s7-9-p1"></a>[7.9¶1] The accepted names (general categories, `L&`/`Lc`, `Any`, `Xan Xps Xsp Xuc Xwd`, scripts in three namespaces, the binary properties, `Bidi_Class`, and the Block and Age extensions beyond PCRE2), their case and separator rules, the clamping under `byte` and the refused names are `cli.md` §1.17.1. Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}` (`cli.md` §1.8¶5). A property escape is valid inside a class. A malformed escape (`\p` with no name) is refused. The tables are Unicode 16.0.0.
 
 <a id="s7-10"></a>
 ### 7.10 Module `vars`
 
 <a id="s7-10-p1"></a>[7.10¶1] `${name}` matches, literally, the bytes the caller passes for variable `name` in the call that runs the match; `${name:-word}` and the other bash-shaped forms supply defaults. The spelling, the caller's array, the refusals and the engine are `vars.md` §2-§7. Without the module, `${` is refused (`requires module 'vars'`) anywhere outside a class; PCRE2 reads the same text as `$` followed by literals, which can never match. Inside a class, `$` and `{` are literals (`[${]` matches `{`).
+
+<a id="s7-11"></a>
+### 7.11 Module `callouts`
+
+<a id="s7-11-p1"></a>[7.11¶1] `(?C)`, `(?Cn)` (`n` 0-255; `(?C)` is `(?C0)`) and `(?C"name")` call the user's code at that point of the match: a numbered callout calls `rx_callout_<n>`, a named one `rx_callout_<name>`, each bound by the user's C (`match_api.md` §11). Every PCRE2 string delimiter is accepted for the name (`` ` `` `'` `"` `^` `%` `#` `$` and `{...}`). The string is a C identifier with optional attributes after commas: `(?C"name,consume")`, `(?C"name,once")`. A numbered callout's attributes are declared beside the pattern (`cli.md` §1.21, `rxt_format.md` §1.5¶13a). A callout pattern compiles to the VM engine.
+
+<a id="s7-11-p2"></a>[7.11¶2] The callee's return decides the path: `0` continues, `-1` backtracks, a `consume` callee's positive return consumes that many bytes (`match_api.md` §11.4). A callout cannot be quantified (PCRE2's rule too); wrap it in a group.
+
+<a id="s7-11-p3"></a>[7.11¶3] Refused: a malformed `(?C` (a number above 255, a number followed by other text, an unsupported delimiter, an unterminated string), with or without the module; a name containing `__`; a name that is not a C identifier; a name whose binding symbol is a name the artifact's shared ABI block already declares (`(?C"ref")`, whose `rx_callout_ref` is the bindings' own type; `match_api.md` §11.2); an empty or repeated attribute; the attribute `verify` (not implemented yet); `once` on a site that can fire twice in one attempt (`match_api.md` §11.8, with the table of what to change, §11.8¶3); a callout inside a lookbehind (a `consume` site there is refused first, as a lookbehind whose length is not fixed), inside a conditional's condition, or inside a group reached by a subroutine call or recursion.
+
+<a id="s7-12"></a>
+### 7.12 Module `code-c`
+
+<a id="s7-12-p1"></a>[7.12¶1] ``(?C`c: CODE`)`` embeds C in the pattern: a PCRE2 string callout whose text starts with the language tag `c`, optional attributes after commas (``(?C`c,once: ...`)``, ``(?C`c,consume: ...`)``) and a colon. pcrec writes the CODE into the artifact as a function the match calls at that point (`match_api.md` §11.9); the callout's return table and attributes are module `callouts`' (§7.11). Every PCRE2 string delimiter is accepted, and the string ends where PCRE2 ends it: at the first closing delimiter that is not doubled; a doubled delimiter is one byte of the code. pcrec does not parse the code.
+
+<a id="s7-12-p2"></a>[7.12¶2] The module is enabled only by the person running the compiler: `--allow-code=c` (`cli.md` §1.22) or the library's `allow_code` member (`match_api.md` §8.2). A `features` list cannot enable it, `all` does not contain it, and naming it in a `features` list is refused. Without the grant a code segment is refused by name.
+
+<a id="s7-12-p2a"></a>[7.12¶2a] Module `code-c` is its own feature: a code segment needs the grant and nothing else. It does not need module `callouts` (that module gates the numbered and named forms, and the binding name `(?C"c,consume")`), and `PCREC_FEATURE_MODULES` never lists `code-c`: the artifact's `<PREFIX>_CODE_LANGS` stamp says which languages it carries (`match_api.md` §6.3, §11.9¶1a).
+
+<a id="s7-12-p3"></a>[7.12¶3] Refused: a segment with no grant; an unknown, empty or repeated attribute; a segment containing a character that makes the code a reviewer reads differ from the code gcc compiles (a `Bidi_Control` or `Default_Ignorable_Code_Point` character, U+0085, U+2028, U+2029, a carriage return not followed by a line feed, a vertical tab, a form feed, any other C0 control character, or DEL; `match_api.md` §11.9¶3), named with its code point; a segment in a definition read from another file through a `lib` line (`rxt_format.md` §1.1); and every placement module `callouts` refuses (§7.11¶3).
 
 <a id="s8"></a>
 ## 8. Recognised constructs without a producer, and excluded ones
@@ -562,7 +584,6 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | spelling | PCRE2 meaning | module |
 |---|---|---|
 | `(?\|X\|Y)` | branch reset: alternatives reuse the same group numbers | `branch-reset` |
-| `(?C)`, `(?Cn)`, `(?C"text")`, `(?C{text})` | callout to caller code | `callouts` |
 | `(?#text)` | a comment up to the next `)` | `comments` |
 | `(?(N)Y\|N)`, `(?(<name>)…)`, `(?('name')…)`, `(?(R)…)`, `(?(assert)…)` | conditional group | `conditionals` |
 | `(?[...])` | extended class with set operations | `extended-classes` |
@@ -601,7 +622,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s9-p1"></a>[9¶1] The compliance page (`docs/pcre2_compliance.md`) is the construct-by-construct delta; this section lists every difference this document states, at the option mapping of §1.2.
 
-1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4), including a group of alternatives of different lengths (`(?<=(?:a|bc))x`), which libpcre2 accepts as a variable-length lookbehind; `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
+1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4), including a group of alternatives of different lengths (`(?<=(?:a|bc))x`), which libpcre2 accepts as a variable-length lookbehind; `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
 2. <a id="s9-p3"></a>[9¶3] Give-ups. A VM artifact may answer `PCREC_ERR_STEPS`, `PCREC_ERR_FRAMES` or `PCREC_ERR_WORK` where libpcre2 answers (§4.6), including the left recursions where libpcre2 concludes no match (`limits.md` §6).
 3. <a id="s9-p4"></a>[9¶4] A recursion with no way to complete. `(?R)` alone, on any subject, is no match under pcrec; libpcre2 returns its recursion-loop error.
    - <a id="s9-p4a"></a>[9¶4a] More generally, where libpcre2's recursion-loop check fires (`PCRE2_ERROR_RECURSELOOP`) because a call can re-enter its own group without consuming, pcrec's matcher runs the search instead and answers a match, no match or a give-up (§4.6): `(?:a|(?R))+` on `a` → `[0, 1)`, on `aa` → `[0, 2)`, on `b` `PCREC_ERR_FRAMES`; `((?1)?a)` on `a` → `[0, 1)`.
@@ -610,6 +631,8 @@ group        = "(" alternation ")"                            (* capturing, §5.
 5. <a id="s9-p6"></a>[9¶6] Module `vars`. With the module enabled, `${name}` and its forms are pcrec syntax with no PCRE2 meaning (§7.10).
 6. <a id="s9-p7"></a>[9¶7] — retired (moved to §6.2¶3).
 7. <a id="s9-p8"></a>[9¶8] — retired (the difference is gone; §3.2¶2).
+8. <a id="s9-p9"></a>[9¶9] Module `callouts`. pcrec's answer for a callout pattern is the backtracking-order answer; libpcre2's moves with its optimizations, so the two agree where libpcre2's answer does not depend on them (`match_api.md` §11.6). A `consume` callout and the binding by symbol have no PCRE2 form.
+9. <a id="s9-p10"></a>[9¶10] Module `code-c`. PCRE2 reads ``(?C`c: ...`)`` as a string callout and passes its text to the application's callout function; pcrec compiles the text as C. The two read the same bytes as the same pattern, so a PCRE2 callout function that runs the same code gives the same answers under §9¶9's rule.
 
 <a id="s10"></a>
 ## 10. Construct index
@@ -687,7 +710,9 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `(?>...)` | `atomic-groups` | §7.2 |
 | `(?*a)` | `lookaround` | §7.4 |
 | `(?#...)` | `comments` | §8.1 |
-| `(?C1)` | `callouts` | §8.1 |
+| `(?C1)` | `callouts` | §7.11 |
+| `(?Cx)` |  | §7.11 |
+| ``(?C`c: return RX_PASS;`)`` | `code-c` | §7.12 |
 | `(?\|...)` | `branch-reset` | §8.1 |
 | `(?(1)a\|b)` | `conditionals` | §8.1 |
 | `(?(DEFINE)(?<w>a))` | `recursion` | §7.7 |

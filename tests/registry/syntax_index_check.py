@@ -36,7 +36,9 @@ ROWS_FLOOR = 142
 
 HEADING = re.compile(r"^#{2,6}\s+(\d+[a-z]?(?:\.\d+[a-z]?)*)\.?\s")
 INDEX_HEAD = re.compile(r"^#{2,6}\s+(?:<a[^>]*></a>\s*)?\d+\.?\s+Construct index\s*$")
-CELL_CODE = re.compile(r"^`(.*)`$")
+# A Markdown code span of N backticks (N > 1 when the syntax itself holds a
+# backtick, as module code-c's ``(?C`c: ...`)`` does).
+CELL_CODE = re.compile(r"^(`+)(.*?)\1$")
 
 
 def registry_rows(pcrec):
@@ -80,7 +82,7 @@ def split_cells(line):
 
 def unquote(cell):
     m = CELL_CODE.match(cell)
-    return m.group(1) if m else cell
+    return m.group(2) if m else cell
 
 
 def read_doc(text):

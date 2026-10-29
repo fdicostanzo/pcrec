@@ -16,6 +16,12 @@ test section under `tests/examples/`, wired into `make test`.
   checks the archive holds every target's entry symbol and the linked
   consumer runs and matches.
 
+- `subst/` — compiled substitution (`docs/spec/subst_api.md`): an rx, two
+  templates and the support unit as Makefile build steps, and a program
+  running the spec's §6 recipes and its §6¶9 setup wrapper verbatim;
+  `tests/examples/run_examples_tests.sh` builds a scratch copy with
+  `-Werror` and compares its output with `expected.txt`.
+
 ## Conventions
 
 An example here is BUILDABLE and TESTED, not merely illustrative — if it

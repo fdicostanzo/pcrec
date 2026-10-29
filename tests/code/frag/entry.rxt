@@ -1,0 +1,9 @@
+# tests/code/frag/entry.rxt — the harness rule of docs/design/inline_c.md
+# §5.2: this ENTRY file's segments are compiled under the section's grant;
+# the fragment it includes (frag_code.rxt) is not, so its segment is refused
+# (its block expects the refusal). Sabotage S-IC29 (the harness passes the
+# opt-in to fragment blocks) compiles the fragment's segment and goes red.
+include "frag_code.rxt"
+
+pattern x(?C`c: return RX_PASS;`)y
+m "xy" 0 2

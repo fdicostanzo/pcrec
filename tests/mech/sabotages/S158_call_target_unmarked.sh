@@ -29,17 +29,18 @@
 # still answers correctly while reporting `RX_NCAPS 1` -- because the answer
 # alone can be right by accident on a subject the callee's own text happens to
 # match.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: the target mark moved into bref_mark_reads's KREADS_TARGET arm (atomic.c)
 SAB_ID="S158-call-target-unmarked"
 SAB_FILE="src/opt/atomic.c"
 SAB_SUITES="recursion"
 SAB_DESC="pcrec_bref_mark's A_CALL arm stops marking u.call.target, so under --no-captures the called group's A_CAP is stripped out from under the call and the callee has no body"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR10/S-SR11a): the --no-captures AXIS ONLY, which is why this row's suite is \`recursion\` (run_recursion_diff.sh 1) and not \`harness\`: no .rxt directive for that flag exists anywhere in the tree, so the corpus is structurally blind to it. 1 asserts BOTH hops -- (a|b)(?1) for S-SR10 and ^(a(?3))(b)((c))\$ for S-SR11a -- and asserts them in the artifact (the slot legend) as well as in the answer, because the answer can be right by accident on a subject the callee's own text happens to match."
 SAB_COUNT=1
-SAB_BEFORE='        case A_CALL:
-            if (a->u.call.target > 0 && a->u.call.target < nmark)
-                mark[a->u.call.target] = true;
-            return;
-        case A_CAT:'
-SAB_AFTER='        case A_CALL:   /* SABOTAGE S158: the target is not marked */
-            return;
-        case A_CAT:'
+SAB_BEFORE='    case KREADS_TARGET:
+        if (a->u.call.target > 0 && a->u.call.target < nmark)
+            mark[a->u.call.target] = true;
+        return;'
+SAB_AFTER='    case KREADS_TARGET:   /* SABOTAGE S158: the target is not marked */
+        return;'

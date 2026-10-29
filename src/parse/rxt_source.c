@@ -869,6 +869,22 @@ static int pcrec_raw_analysis_check(RxtP *p, size_t line, const char *raw)
                             "'pcrec' may not carry '--measures': a config "
                             "names its measurement set with its own "
                             "'measures' line");
+        /* [INLINE-C] stage 2 (inline_c.md §5.1): code is enabled by the
+         * INVOKER, never by a file, and a config can itself be reached
+         * through `include`/`lib`; `--code-header` follows it, since a
+         * header line is code (§3.3). */
+        if ((n == 12 && !strncmp(w, "--allow-code", 12)) ||
+            (n > 12 && !strncmp(w, "--allow-code=", 13)))
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                            "'pcrec' may not carry '--allow-code': code is "
+                            "enabled by --allow-code on the command line, "
+                            "not by a features list or a file");
+        if ((n == 13 && !strncmp(w, "--code-header", 13)) ||
+            (n > 13 && !strncmp(w, "--code-header=", 14)))
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                            "'pcrec' may not carry '--code-header': a "
+                            "file names its headers with its own "
+                            "'code-header' line");
     }
     return 0;
 }
@@ -3346,6 +3362,36 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 row_push(&p, src, RXT_DECL_TAG, line)->value = v;
                 continue;
             }
+            if (tok_is(tok, "code-header")) {
+                /* [INLINE-C] stage 2 `code-header <lang> <header>`
+                 * (rxt_format.md §1.1): the shape is the one reader
+                 * `--code-header` also uses; whether code is GRANTED is the
+                 * compile's, which knows the invoker's `--allow-code`. */
+                const char *v = value_trimmed(&p, tok);
+                const char *sp = strchr(v, ' ');
+                const char *why = "wants a language and a header, e.g. "
+                                  "'code-header c \"octet.h\"'";
+                if (sp) {
+                    const char *lang = arena_strndup(&src->arena, v,
+                                                     (size_t)(sp - v));
+                    const char *hdr = skip_ws(sp);
+                    why = pcrec_code_header_check(lang, hdr);
+                    if (!why) {
+                        RxtRow *cr = row_push(&p, src, RXT_DECL_CODE_HEADER,
+                                              line);
+                        cr->name = lang;
+                        cr->value = hdr;
+                        continue;
+                    }
+                }
+                StrBuf eb = { 0 };
+                pcrec_sb_ctext(&eb, (const unsigned char *)v, strlen(v),
+                               PCREC_CTEXT_COMMENT);
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'code-header': %s "
+                         "(got '%s')", why, eb.p ? eb.p : "");
+                pcrec_sb_free(&eb);
+                goto fail;
+            }
             if (tok_is(tok, "use")) {
                 const char *v = value_trimmed(&p, tok);
                 if (!config_list_ok(v)) {
@@ -3564,6 +3610,11 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 block->value = dec;
             } else {
                 block->value = arena_strdup(&src->arena, after + 1);
+                /* [INLINE-C] stage 2 the value's column, for `#line`
+                 * padding: unknown (0) when the text before it has a TAB. */
+                block->col = (size_t)(after + 1 - l) + 1;
+                for (const char *q = l; q < after + 1; q++)
+                    if (*q == '\t') block->col = 0;
             }
             continue;
         }
@@ -3788,6 +3839,41 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
             if (prose_value(&p, &L, &i, row, indent, 0, &text) != 0)
                 goto fail;
             block->description = text;
+            continue;
+        }
+        if (tok_is(tok, "callout")) {
+            /* [INLINE-C] 1b `callout N ATTRS`: numbered callout N's
+             * attributes (docs/spec/rxt_format.md §1.5¶13a). The SHAPE is
+             * checked here by the one shape reader `--callout` also uses
+             * (`pcrec_callout_decl_read`: N 0-255, whitespace, a non-empty
+             * lower-case comma list), so a line this reader accepts is one
+             * the CLI accepts; which attributes exist, and whether N names a
+             * site, are the compile's (src/opt/callout.c), which sees the
+             * pattern. The echo is escaped: no control byte reaches the
+             * terminal. */
+            const char *v = value_trimmed(&p, tok);
+            PcrecCalloutDecl d;
+            if (!pcrec_callout_decl_read(v, ' ', &d)) {
+                StrBuf eb = { 0 };
+                pcrec_sb_ctext(&eb, (const unsigned char *)v, strlen(v),
+                               PCREC_CTEXT_COMMENT);
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'callout' wants a "
+                         "callout number 0-255 and its attributes, e.g. "
+                         "'callout 1 consume,once' (got '%s')",
+                         eb.p ? eb.p : "");
+                pcrec_sb_free(&eb);
+                goto fail;
+            }
+            if (!block->callouts) {
+                block->callouts = v;
+            } else {
+                size_t a = strlen(block->callouts), b = strlen(v);
+                char *j = pcrec_arena_alloc(&src->arena, a + 1 + b + 1);
+                memcpy(j, block->callouts, a);
+                j[a] = '\n';
+                memcpy(j + a + 1, v, b + 1);
+                block->callouts = j;
+            }
             continue;
         }
         if (parse_setting(&p, block, line, tok, 1) != 0) goto fail;
@@ -4458,6 +4544,9 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             t->tune = lone->tune;
             t->budget_steps = lone->budget_steps;
             t->budget_frames = lone->budget_frames;
+            t->callouts = lone->callouts;
+            t->pattern_col = lone->col;
+            t->pattern_esc = lone->esc;
             t->pcrec_raw = NULL;
             t->defs = defs;
             *out = t;
@@ -4544,6 +4633,9 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->line = tr->line;
         t->block_line = blk->line;
         t->pcrec_raw = s.pcrec_raw;
+        t->callouts = blk->callouts;
+        t->pattern_col = blk->col;
+        t->pattern_esc = blk->esc;
         t->defs = defs;
         t->analysis = s.analysis;
         t->analysis_line = s.analysis_line;
@@ -4623,6 +4715,7 @@ static const char *kind_name(RxtDeclKind k)
     case RXT_DECL_TAG:         return "tag";
     case RXT_DECL_USE:         return "use";
     case RXT_DECL_ANALYSIS:    return "analysis";
+    case RXT_DECL_CODE_HEADER: return "code-header";
     }
     return "?";
 }

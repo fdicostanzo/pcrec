@@ -14,7 +14,7 @@ or it has no regression net at all.
 - **run_cand_rows.sh** + **cand_rows_check.py** — ([OPT-REVEND] L0 adds **[cand-no-row-pointer]**, F-2's revert as a grep row: no comparison against `&cand_rows[...]` and ...
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi 56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it ...
 - **reqcube_check.py** — [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): THE CASELESS NECESSARY RUN's structural checks (`docs/design/litscan_s4.md` §5.4), run by ...
-- **run_case_spelling_identity.sh** — [CASESPELL] (2026-10-23): patterns differing ONLY in the letter case of their caseless text emit the same matcher (declared spelling groups x dfa/vm x byte/utf8; emitted C identical after an exact, count-checked pattern-echo mask, gcc -O2 `.text` identical; two positive controls that must differ). In `make test-codegen`.
+- **run_case_spelling_identity.sh** — [CASESPELL] (2026-10-23): patterns differing ONLY in the letter case of their caseless text emit the same matcher (declared spelling groups x dfa/vm x byte/utf8, two of them bare `(?i)` vs scoped `(?i:` runs since [FLAG-SPELL], S1560; emitted C identical after an exact, count-checked pattern-echo mask, gcc -O2 `.text` identical; two positive controls that must differ). In `make test-codegen`.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no SELECTION reads the prefix.
 - **run_nomatch_caps.sh** + **nomatch_caps_driver.c** — K78 (lane k78, 2026-09-30, abi 55): match_api.md §3.1/§3.3's caps contract on every entry that takes a caps array ...
 - **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8 alternation trie (R3.3).
@@ -52,9 +52,10 @@ or it has no regression net at all.
 - `run_encoding_identity.sh`, `run_cpset_structure.sh` — section "[M5.0] stage 1's PAIR: `run_encoding_identity.sh` (RETIRED 2026-09-05) + `run_cpset_structure.sh`" (history file)
 - `run_tune_dial.sh` — section "`run_tune_dial.sh` — [OPT-DIAL]'s MECHANISM-STATE CROSS-CHECK (2026-09-17)" (history file)
 - `run_recursion_identity.sh` — section "[DD-14] waves D+E — `run_recursion_identity.sh`, opt-in as `make test-recursion-identity`" (history file)
-- `run_scan_edge_census.sh` — section "`run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)" (history file)
+- `run_scan_edge_census.sh` — section "`run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)" (history file); since [SCANEDGE-SET] also section (7) (every edge's run-test bytes vs the head's transition row, via **scan_set_check.py**, a coprocess on the corpus sweep) and section (8) (set witnesses per machine, the one-class control's text pin, two negative controls).
 - `run_encoding_checks.sh` — section "[M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`" (history file)
 - `run_comment_escape.sh` — section "`run_comment_escape.sh` — pcrec-bench O-31 finding F1's regression net (2026-09-17)" (history file)
+- `run_ctext_ascii.sh` — [EMIT-BIDI]: a pattern of bidi controls and every C-text hazard, default and `-fcomments`, auto and forced VM: pure-ASCII artifact, clean under `-Wbidi-chars`, `.pattern` round-trips.
 - `run_comments_axis.sh` — section "`run_comments_axis.sh` — [EMIT-VERB]'s axis check (2026-09-19)" (history file)
 - `run_cls_fold_agreement.sh`, `fold_pairs_dump.c` — section "`run_cls_fold_agreement.sh` + `fold_pairs_dump.c` — the VM class-fold" (history file)
 - `run_clspack.sh` — section "`run_clspack.sh` — [OPT-CLSPACK]'s shared atom table (2026-09-30)" (history file)

@@ -60,8 +60,8 @@ jobs:
     # The shard step below carries its own, tighter timeout-minutes (basis
     # there); this is only a ceiling in case some earlier step itself hangs:
     # ~1 min of setup/build/strict (measured, cached libpcre2; a cache miss
-    # adds the libpcre2 build, a few min) + the 55-minute shard step + upload.
-    timeout-minutes: 70
+    # adds the libpcre2 build, a few min) + the 65-minute shard step + upload.
+    timeout-minutes: 80
     steps:
       # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
       # default: run 2 (2026-09-21/22) measured tests/codegen/
@@ -211,8 +211,13 @@ jobs:
       # Stated spread factor 1.4 (the serial suite's same-tree runner spread
       # was 1.5x, 56..85 min; one sharded run is too little data to go
       # lower): 37.1 x 1.4 = 52, rounded up to 55. NOT headroom for growth.
+      # RAISED 55 -> 65 (cired4, 2026-10-29, run 40835409808): shard 3 of a
+      # tree whose shard 3 is unchanged ran every section ~1.3x slower than
+      # the run before (44.7 min -> killed at 55, no red section), a runner
+      # spread the other two shards also showed (50 min). 65 = ~1.3x on the
+      # slowest shard's ~50 min; the job backstop above moved 70 -> 80.
       - name: make test-shard
-        timeout-minutes: 55
+        timeout-minutes: 65
         run: |
           set -o pipefail
           mkdir -p build/ci

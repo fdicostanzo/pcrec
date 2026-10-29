@@ -388,47 +388,37 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 }
 
 /* The UTF-8 instance's literal reader: decodes one code point at `at` (length
- * 1..4), refusing an ill-formed sequence by name -- a lead byte that cannot
- * start a character, a truncated multi-byte sequence, an overlong encoding, a
- * surrogate code point, or a value above U+10FFFF. */
+ * 1..4) through the one decoder (`pcrec_utf8_decode`, enc.h), refusing an
+ * ill-formed sequence by name -- a lead byte that cannot start a character, a
+ * truncated multi-byte sequence, an overlong encoding (10.46 refuses those in
+ * patterns too), a surrogate code point, or a value above U+10FFFF. */
 static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
 {
     const unsigned char *p = (const unsigned char *)cx->pat;
-    unsigned char b0 = p[at];
-    unsigned cp;
-    int need;
-
-    if (b0 < 0x80) { *len = 1; return b0; }
-    else if ((b0 & 0xE0) == 0xC0) { need = 2; cp = b0 & 0x1Fu; }
-    else if ((b0 & 0xF0) == 0xE0) { need = 3; cp = b0 & 0x0Fu; }
-    else if ((b0 & 0xF8) == 0xF0) { need = 4; cp = b0 & 0x07u; }
-    else
+    unsigned cp = 0;
+    switch (pcrec_utf8_decode(p, cx->patlen, at, &cp, len)) {
+    case PCREC_UTF8_OK:
+        break;
+    case PCREC_UTF8_BAD_LEAD:
         pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: byte 0x%02X cannot "
-                         "start a character", b0);
-
-    for (int i = 1; i < need; i++) {
-        if (at + (size_t)i >= cx->patlen ||
-            (p[at + (size_t)i] & 0xC0) != 0x80)
-            pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: truncated %d-byte "
-                             "character", need);
-        cp = (cp << 6) | (p[at + (size_t)i] & 0x3Fu);
-    }
-
-    {
-        /* The minimum value each length may encode — anything below it is an
-         * OVERLONG spelling, which 10.46 refuses in patterns too. */
-        static const unsigned min_of[5] = { 0, 0, 0x80, 0x800, 0x10000 };
-        if (cp < min_of[need])
-            pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: overlong encoding");
-    }
-    if (cp >= 0xD800 && cp <= 0xDFFF)
+                         "start a character", p[at]);
+        break;
+    case PCREC_UTF8_TRUNCATED:
+        pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: truncated %d-byte "
+                         "character", *len);
+        break;
+    case PCREC_UTF8_OVERLONG:
+        pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: overlong encoding");
+        break;
+    case PCREC_UTF8_SURROGATE:
         pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: surrogate code point "
                          "U+%04X", cp);
-    if (cp > 0x10FFFF)
+        break;
+    case PCREC_UTF8_TOO_BIG:
         pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: code point above "
                          "U+10FFFF");
-
-    *len = need;
+        break;
+    }
     return cp;
 }
 
@@ -487,6 +477,7 @@ static bool subtree_is_identity(const LowerCtx *lc, const Ast *a)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return true;
         case A_CAP: case A_ATOMIC: case A_LOOK:
             a = a->l;
@@ -542,6 +533,7 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
         /* THE BACK EDGE STOPS HERE — see this file's header. */
         case A_CALL:
             return;
@@ -606,6 +598,7 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
+        case A_CALLOUT:
             return;
         case A_CAP:
             (*n)++;

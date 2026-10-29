@@ -1,0 +1,81 @@
+/* src/core/kindrow.def — THE PER-KIND ATTRIBUTE ROW: one row per `AKind`,
+ * the kind-level facts every pass family reads instead of deciding them arm
+ * by arm ([INLINE-C] stage 1a, docs/design/inline_c.md §1.8; decision
+ * families 8 and 14, docs/design/decision_families_survey.md §3.8/§3.14).
+ *
+ * ROW SHAPE:
+ *
+ *   KIND_ROW(KIND, TEXT, PATH, READS, ERASE)
+ *
+ * TEXT is what the kind adds to a matched TEXT, for the language and width
+ * readers (the prefilter lowering, a captured text's first set, the required
+ * run, the widths, the start set):
+ *   ZERO  no bytes, ever (an assertion, `\K`, a lookaround)
+ *   OWN   its own text, which the reader's own arm computes (a class, the
+ *         structural kinds, a call's callee)
+ *   ANY   any bytes, any length, unknown until the match (a backreference,
+ *         a variable)
+ *
+ * PATH is what the kind is to a reader that prunes PATHS ("backtracking here
+ * cannot change the outcome": possessify's next-character-at-a-position
+ * reader and its position automaton). It is a separate column from TEXT on
+ * purpose: one reader handed the other's answer was a live miscompile
+ * ([ART-POSS-ARMS] rev 2.1 N1), and a lookaround is ZERO to a text reader
+ * but must never be ABSENT to a path reader.
+ *   TRANSPARENT  the reader models it with its own arm or as absent
+ *   GATE         zero-width, narrows the live continuations by a sub-pattern
+ *                the path readers do not model (a lookaround)
+ *   OPAQUE       may stand for any bytes; the reader widens and declines
+ *
+ * READS is which capture groups the node reads, by which payload field: the
+ * ONE marked set (`pcrec_bref_mark`, so also the `--no-captures` keep set).
+ *   NONE    reads no group
+ *   REFS    `u.bref.refs[0..nrefs)` (a backreference)
+ *   TARGET  `u.call.target` (a subroutine call)
+ *   ALL     every group of the pattern (a callout site's view)
+ * A variable reads NONE: its bytes come from the caller, not a group (its
+ * payload is `u.var`, which has no group list).
+ *
+ * ERASE is the `NFA_ERASED_*` bit the prefilter lowering (src/ir/nfa.c)
+ * records when it lowers this kind to something WIDER than its language,
+ * 0 where the lowering is exact. A kind the lowering never meets
+ * (a backreference, a variable: the engine selector declines the prefilter
+ * first) writes 0, and nothing reads it.
+ *
+ * A row states the KIND-LEVEL answer only. An answer that depends on the
+ * node or on context keeps its code in the reader and reads the row for the
+ * kind-level part: A_CTX's pins (its row class), possessify's arm B on a
+ * backreference, a call's fixpoint widths, the counted-repeat collapse.
+ *
+ * THE ROWS ARE IN `AKind` ORDER and every kind has exactly one: internal.h
+ * asserts each row's position and builds `pcrec_kind_row`'s switch from this
+ * file with `-Wswitch` raised to an ERROR, so a kind without a row (or with
+ * two) fails to compile in every translation unit
+ * (tests/core/kindrow_check.sh). */
+
+KIND_ROW(A_CLASS,   OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_CAT,     OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_ALT,     OWN,  TRANSPARENT, NONE,   0)
+/* the counted-repeat collapse is a per-node decision (`NFA_ERASED_COUNT`) */
+KIND_ROW(A_REP,     OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_EMPTY,   ZERO, TRANSPARENT, NONE,   0)
+KIND_ROW(A_EOL,     ZERO, TRANSPARENT, NONE,   0)
+KIND_ROW(A_CTX,     ZERO, TRANSPARENT, NONE,   0)
+KIND_ROW(A_GSTART,  ZERO, TRANSPARENT, NONE,   0)
+/* `\K` moves the reported start and adds nothing to the language: exact */
+KIND_ROW(A_KRESET,  ZERO, TRANSPARENT, NONE,   0)
+KIND_ROW(A_CAP,     OWN,  TRANSPARENT, NONE,   0)
+/* lowered transparently: the cut is erased, a superset (nfa.c's arm) */
+KIND_ROW(A_ATOMIC,  OWN,  TRANSPARENT, NONE,   NFA_ERASED_ATOMIC)
+KIND_ROW(A_BREF,    ANY,  OPAQUE,      REFS,   0)
+/* lowered to epsilon, body and all: the filter is erased, a superset */
+KIND_ROW(A_LOOK,    ZERO, GATE,        NONE,   NFA_ERASED_LOOK)
+KIND_ROW(A_CALL,    OWN,  OPAQUE,      TARGET, 0)
+KIND_ROW(A_VAR,     ANY,  OPAQUE,      NONE,   0)
+KIND_ROW(A_WCLASS,  OWN,  TRANSPARENT, NONE,   0)
+/* [INLINE-C] 1b a callout site, as a CHECK (the default width class): no
+ * text (`A_LOOK`'s analog for the text readers), OPAQUE to a path reader
+ * (`A_VAR`'s: a vetoing site sees every path, so none may be pruned), and it
+ * reads EVERY group. A `consume` site's TEXT is ANY, picked per node by
+ * `pcrec_ast_row` (internal.h). Lowered by its width class, a relaxation. */
+KIND_ROW(A_CALLOUT, ZERO, OPAQUE,      ALL,    NFA_ERASED_CALLOUT)

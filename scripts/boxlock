@@ -12,7 +12,26 @@
 #       the wait (PCREC_BOXLOCK_WAIT=S is the same), --no-wait refuses at once.
 #       Not acquired => exit 75 with a `boxlock: REFUSED ...` line naming the
 #       holder.
-#   scripts/boxlock status   one line, exit 0 free / 1 HELD / 3 HELD-ORPHAN
+#       YIELDS to the box queue: a run whose label does not start `queue:`
+#       (the queue runner's own) first WAITS, before it even queues for the
+#       flock, while any box-queue job is pending AND READY (its last
+#       `--ready` answer: ready/starting/waiting-on-the-lock; a not-ready job
+#       does not block; no live runner = nothing blocks), printing ONE line
+#       `YIELDING to queue job NAME`. A waiting step takes its turn the moment
+#       no ready job is pending. --wait/--no-wait/PCREC_BOXLOCK_WAIT bound the
+#       yield too (exit 75 `REFUSED ... yielding to`). PCREC_BOXLOCK_JUMP=1
+#       goes ahead anyway and appends one audit line (epoch, time, pid, label,
+#       cwd, jumped jobs) to <lock dir>/.box.lock.audit. A rule a lane must
+#       remember failed (2026-10-24: three back-to-back steps held two queued
+#       make tests 30 min each); the lock enforces it now. The queue dir is
+#       PCREC_BOXQUEUE_DIR or <lock dir>/.boxqueue.
+#   scripts/boxlock status   the holder line (exit 0 free / 1 HELD / 3 HELD-ORPHAN), then one
+#       line per live WAITER:  `  WAITING|YIELDING label=L pid=P cwd=C since=T waited=Mm [on=JOB]`
+#       (WAITING = the lock is held; YIELDING = a ready queue job goes first, `on=` names it).
+#   scripts/boxlock waiters  the same records, machine-readable, one per line (stale ones pruned):
+#       `kind=K pid=P start=S label=L since=T epoch=E cwd=C [on=JOB] holder=LABEL|none`
+#       (the feed for queuewatch's WAIT-LONG and lanewatch --follow's WAITING; label the run
+#       `<lane>-<what>` so a lane's waits are found by name)
 #   scripts/boxlock held     exit 0 when the caller need not take the lock:
 #       it runs inside the holder's own tree (a valid PCREC_BOXLOCK_HELD), or
 #       locking is off (PCREC_BOXLOCK=0, no flock, no lock path); else 1. An
@@ -38,6 +57,14 @@
 #     (read from /proc/*/fd by exact path, never a process-name grep) and
 #     exits 3; scripts/watchrun reports the transition. Kill the holders with
 #     scripts/safekill PID.
+#
+# THE WAITER REGISTRY (lane lockwait, 2026-10-27). A `run` that has to WAIT (yield or flock)
+# writes <lock dir>/.box.lock.waiters/PID (one line, the owner line's shape plus kind=, on=),
+# removed on acquire and by an EXIT trap. Crash-safe the way the owner line is: a record is LIVE only
+# while its pid exists with the recorded /proc starttime, and `status`/`waiters` prune a dead
+# one on read, so a SIGKILLed waiter leaves a line that vanishes at the next look. It is a side
+# file only: the flock acquire protocol (and so the lock's correctness) is untouched, and a
+# failed registry write is ignored (the wait itself never depends on it).
 #
 # NESTING. `run` exports PCREC_BOXLOCK_HELD (a token) and PCREC_BOXLOCK_FILE;
 # a `run` inside a holder's tree whose token matches the owner line and finds
@@ -69,13 +96,10 @@ owner_line() { [ -s "$1" ] && head -1 "$1"; }
 owner_alive() { local p s; p=$(field pid "$1") || return 1; s=$(field start "$1") || return 1; [ "$(pid_start "$p")" = "$s" ]; }
 # is_held FILE: some process holds the flock (probe on a fresh fd)
 is_held() { ( exec 7>>"$1" && ! flock -n 7 ) 2>/dev/null; }
-holders() { # live pids with the lock file open
-    local f p out=""
-    for f in /proc/[0-9]*/fd/*; do
-        [ "$(readlink "$f" 2>/dev/null)" = "$1" ] || continue
-        p=${f#/proc/}; p=${p%%/*}; case " $out " in *" $p "*) ;; *) out="$out $p" ;; esac
-    done
-    printf '%s\n' "${out# }"
+holders() { # live pids with the lock file open (one find, not a readlink fork per fd: 12 s on a busy box)
+    find /proc -maxdepth 3 -path '/proc/[0-9]*/fd/*' -lname "$1" -printf '%h\n' 2>/dev/null |
+        sed 's|^/proc/||; s|/fd$||' | sort -un | tr '\n' ' ' | sed 's/ $//'
+    echo
 }
 age() { local s; s=$(field epoch "$1") || { echo "?"; return; }; echo "$(( ($(date +%s) - s) / 60 ))m"; }
 describe() { # describe LINE -> human holder text
@@ -83,7 +107,62 @@ describe() { # describe LINE -> human holder text
         "$(field since "$1")" "$(age "$1")" "$(field cwd "$1")"
 }
 
+wdir_of() { printf '%s\n' "$(dirname "$1")/.box.lock.waiters"; }
+# list_waiters FILE: the live waiter records of lock FILE, one line each; a dead pid's record is removed
+list_waiters() {
+    local d r l; d=$(wdir_of "$1")
+    for r in "$d"/*; do
+        [ -f "$r" ] || continue
+        l=$(head -1 "$r" 2>/dev/null)
+        if [ -n "$l" ] && owner_alive "$l"; then printf '%s\n' "$l"; else rm -f "$r" 2>/dev/null; fi
+    done
+}
+# register_waiter FILE KIND [ON]: (re)write this process's record
+register_waiter() {
+    local d; d=$(wdir_of "$1"); mkdir -p "$d" 2>/dev/null || return 0
+    WFILE=$d/$$
+    printf 'kind=%s pid=%s start=%s label=%s since=%s epoch=%s cwd=%s%s\n' "$2" "$$" "$(pid_start $$)" "$WLABEL" \
+        "$(date -Iseconds -d "@$WT0")" "$WT0" "$(pwd | tr ' ' '_')" "${3:+ on=$3}" > "$WFILE.tmp" 2>/dev/null &&
+        mv -f "$WFILE.tmp" "$WFILE" 2>/dev/null
+    return 0
+}
+unregister_waiter() { [ -z "${WFILE:-}" ] || rm -f "$WFILE" "$WFILE.tmp" 2>/dev/null; WFILE=; }
+# holder_label FILE: the live holder's label, else none
+holder_label() { local l; l=$(owner_line "$1"); if [ -n "$l" ] && is_held "$1" && owner_alive "$l"; then field label "$l"; else echo none; fi; }
+waiters() { # machine-readable: each live record plus holder=
+    local f h l; f=$(lock_path) || return 0
+    [ -d "$(wdir_of "$f")" ] || return 0
+    h=$(holder_label "$f")
+    list_waiters "$f" | while IFS= read -r l; do printf '%s holder=%s\n' "$l" "$h"; done
+}
+waiters_text() { # waiters_text FILE: the status lines
+    local l now; now=$(date +%s)
+    list_waiters "$1" | while IFS= read -r l; do
+        printf '  %s label=%s pid=%s cwd=%s since=%s waited=%sm%s\n' "$(field kind "$l")" "$(field label "$l")" "$(field pid "$l")" \
+            "$(field cwd "$l")" "$(field since "$l")" "$(( (now - $(field epoch "$l")) / 60 ))" "$(field on "$l" | sed 's/^./ on=&/')"
+    done
+}
+
+# ready_pending QDIR: names of pending queue jobs whose last answer says ready (a live runner only)
+ready_pending() {
+    local q=$1 n a
+    [ -d "$q/pending" ] && [ -e "$q/.runner.lock" ] || return 0
+    ( exec 7>>"$q/.runner.lock" && ! flock -n 7 ) 2>/dev/null || return 0     # no live runner: nothing will start the job
+    for n in "$q"/pending/*; do
+        [ -f "$n" ] || continue; n=${n##*/}
+        [[ $n =~ ^[0-9]+-[A-Za-z0-9_]+-[A-Za-z0-9_.-]+$ ]] || continue
+        a=$(head -1 "$q/.state/${n#*-}.answer" 2>/dev/null) || continue
+        case "$a" in ready*|"waiting on"*) printf '%s\n' "$n" ;; esac
+    done
+}
+
 status() {
+    local rc=0 f
+    status_holder; rc=$?
+    f=$(lock_path) && command -v flock >/dev/null && waiters_text "$f"
+    return $rc
+}
+status_holder() {
     local f line
     f=$(lock_path) || { echo "boxlock: no lock (not in a git tree, no PCREC_BOXLOCK_FILE)"; return 0; }
     command -v flock >/dev/null || { echo "boxlock: no flock(1) on this box; nothing is locked"; return 0; }
@@ -117,11 +196,39 @@ run() {
     local f; f=$(lock_path) || { echo "boxlock: no git tree and no PCREC_BOXLOCK_FILE, running '$label' unlocked" >&2; exec "$@"; }
     mkdir -p "$(dirname "$f")"
     held && exec "$@"     # nested inside the holder's own tree
-    exec 9>>"$f"
-    local t0 first=1 next now line chunk
+    WLABEL=$label WT0=$(date +%s) WFILE=
+    trap unregister_waiter EXIT
+    local t0 next now line chunk rp q="${PCREC_BOXQUEUE_DIR:-$(dirname "$f")/.boxqueue}"
     t0=$(date +%s); next=$t0
+    case "$label" in queue:*) ;;     # the queue runner's own acquisition is exempt
+    *)  rp=$(ready_pending "$q" | tr '\n' ' '); rp=${rp% }
+        if [ "${PCREC_BOXLOCK_JUMP:-0}" = 1 ]; then
+            [ -z "$rp" ] || { printf 'epoch=%s at=%s pid=%s label=%s cwd=%s jumped=%s\n' "$t0" "$(date -Iseconds)" "$$" "$label" \
+                "$(pwd | tr ' ' '_')" "${rp// /,}" >> "$(dirname "$f")/.box.lock.audit"
+                echo "boxlock: '$label' JUMPS the queue (PCREC_BOXLOCK_JUMP=1), ahead of: $rp (audited)" >&2; }
+        else
+            while [ -n "$rp" ]; do
+                now=$(date +%s)
+                if [ -n "$wait" ] && [ $((now - t0)) -ge "$wait" ]; then
+                    echo "boxlock: REFUSED '$label': yielding to queue job $rp (ready, pending; waited $((now - t0))s; PCREC_BOXLOCK_JUMP=1 to go ahead, audited)" >&2
+                    exit 75
+                fi
+                [ -n "$WFILE" ] || register_waiter "$f" YIELDING "${rp// /,}"
+                if [ "$now" -ge "$next" ]; then
+                    echo "boxlock: '$label' YIELDING to queue job $rp $(date -Iseconds)" >&2
+                    next=$((now + 300))
+                fi
+                sleep 1
+                rp=$(ready_pending "$q" | tr '\n' ' '); rp=${rp% }
+            done
+        fi ;;
+    esac
+    exec 9>>"$f"
+    local first=1
+    next=$(date +%s)
     [ "$wait" = 0 ] && first=0     # --no-wait: one immediate try
     if ! flock -w "$first" 9; then  # -w 1, not -n: a `status` probe holds the lock for a moment
+        [ "$wait" = 0 ] || register_waiter "$f" WAITING
         while :; do
             now=$(date +%s); line=$(owner_line "$f")
             if [ -n "$wait" ] && [ $((now - t0)) -ge "$wait" ]; then
@@ -136,6 +243,7 @@ run() {
             flock -w "$chunk" 9 && break
         done
     fi
+    unregister_waiter; trap - EXIT
     local tok="$$.$(date +%s%N)"
     printf 'pid=%s start=%s label=%s since=%s epoch=%s cwd=%s token=%s\n' "$$" "$(pid_start $$)" "$label" \
         "$(date -Iseconds)" "$(date +%s)" "$(pwd | tr ' ' '_')" "$tok" > "$f"
@@ -154,6 +262,7 @@ case "${1:-}" in
     run) shift; run "$@" ;;
     held) held ;;
     status) status ;;
+    waiters) waiters ;;
     path) lock_path || exit 1 ;;
-    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock held | boxlock path" >&2; exit 64 ;;
+    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock waiters | boxlock held | boxlock path" >&2; exit 64 ;;
 esac

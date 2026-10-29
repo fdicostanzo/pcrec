@@ -17,7 +17,7 @@ studies; listed, not counted).
 Baseline: the last full run on record is about 2026-10-08 (docs/dev/gate_census_2026-10-23.md: full mech
 ~10-08, san 10-03, alloc 10-08, axes 10-20 only); no battery verdict is retained from it.
 
-**major: 25, minor: 80** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
+**major: 28, minor: 84** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
 `git log --first-parent --merges --since=2026-10-08 main` (merges named "merge main into" excluded).
 PROVISIONAL: class is set by a mechanical rule (path touched, abi-event wording in the merge subject,
 a short capability keyword list); manager to confirm. Landings dated 2026-10-08 may predate the
@@ -30,6 +30,17 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-29 02229045e major — merge lane/reqvm1m: [REQRUN-VM] required-run handoff and re-entry widened to VM consumers (VM-only attempt loop, VM-hybrid prefilter re-entry) + the drop-handoff fit rung; abi 90 -> 91 (emitted text moved). Validated: 660-reqvm1m-test GREEN (build, strict, mover census 0 unexpected vs 78627dbca@abi90, make test 81/81).
+- 2026-10-28 c6707bb5a major — merge lane/ic2fix: [INLINE-C] stage 2 (tagged (?C`c: ...`), `--allow-code=c`, span helpers) + review 2026-10-27 r1 ic2 FIX-NOW fixes; abi 89 -> 90 (emitted text moved in callout/embedded-code artifacts). Validated: 640 test GREEN + strict GREEN, mover census rows=221 unexpected=0, 641 mech GREEN, 642 axes GREEN (14,448 s).
+- 2026-10-28 c2f0344db none — merge lane/vartmp: temp files under /var/tmp/pcrec-<user> (PCREC_TMPDIR), prune at queue job start (Frank 2026-10-28; scripts/docs only)
+- 2026-10-27 719a17ccb major — merge lane/ic1b: [INLINE-C] stage 1b, the callout call site (module callouts, `--callout`, firing classes, `once` reading-rule refusals with fix verdicts; abi 89). Validated: 563 test2 GREEN (80/80, movers 0/32,775), 561 mech GREEN (39 rows), 564 axes2 GREEN (13,654 s, batched shape).
+- 2026-10-26 7234c2e86 major — merge lane/emitbidi: [EMIT-BIDI] one C-text escaper, emitted text ASCII-only, abi 86 (abi event: emitted text moves on every -fcomments artifact; job 800 green: strict, test-codegen, AXES=-fcomments, mech S1620-S1622, make test)
+- 2026-10-25 415eade4d none — merge lane/benchres: [BENCH-RESERVE] bench reservations (scripts only)
+- 2026-10-25 4dd8af50b none — merge lane/suiteresume: [SUITE-RESUME] owner-commanded resume of a red full suite (scripts only)
+- 2026-10-25 82abd6b87 none — merge lane/queuemon: [MON-SCRIPT] script-only box-queue monitor (scripts + hook only)
+- 2026-10-25 7592e1397 none — merge lane/hookguards: [HOOK-GUARDS] no_commit_all + lane_writes_in_worktree hooks (scripts/hooks + settings only)
+- 2026-10-24 9ae59f5d4 major — merge lane/substland: [M4-SUBST] compiled substitution (job 623 make test green 79/79)
+- 2026-10-24 731228fb2 major — merge lane/upropb: [UPROP-MORE] B, 55 binary properties, bc=, Block/Age
 - 2026-10-23 b8c66a739 major — merge lane/iterland: find-all iterators, abi 84
 - 2026-10-21 813f43ec8 major — Merge lane/m0build: [MEASURE-SET] M0, the measures kind + <PREFIX>_MEASURES / rx_info.measures, abi 81 -> 82 (
 - 2026-10-20 73c2bb655 major — Merge lane/ctxp2d: P2d (\A/\z at the NFA layer), zero movers, abi 81
@@ -56,8 +67,16 @@ after the iterator landing.
 - 2026-10-08 399eb53fb major — Merge lane/decfbB5: [DEC-FALLBACK] B5, the token derivations read the tables (no movers; light + heavy green, 
 - 2026-10-08 ceff04211 major — Merge lane/decfbB4: [DEC-FALLBACK] B4, T2 replaces the prefilter admission (no movers; light + heavy green, me
 
+- 2026-10-26 93ef76746 major — [INLINE-C] stage 1a: the per-kind attribute row kindrow.def read by 8 pass sites (refactor of a shared mechanism; 0 movers over 6,185 corpus artifacts; removes an A_VAR union misread in pcrec_bref_mark)
+- 2026-10-26 456dbc09e major — [SCANEDGE-SET] scan edges over a byte-class set (abi 87; lane scanset + scansetfix)
 ### minor
 
+- 2026-10-29 0a6ca838d minor — merge lane/ic2d27m: [INLINE-C] stage 2 D27 spec-first suite (tests/code/d27, test arm 12, sabotage S1740-S1741) + two small CLI diagnostic fixes; no abi event (stays 91). Validated: 665-ic2d27m-test GREEN (strict 0, make test 81/81); landing build, strict, test-codegen GREEN with no re-pin.
+- 2026-10-26 81454bbf4 minor — [INLINE-C] stage 0: shared-block call-site comment "traps on" -> "propagates" (abi 88; size pin +2 B re-recorded)
+- 2026-10-24 f50d6372e minor — merge lane/qwquiet2: queuewatch QUIET/PENDING-STUCK
+- 2026-10-24 91670a624 minor — merge lane/lockyield: boxlock waits for ready queue jobs
+- 2026-10-24 b11b69add minor — merge lane/qwstart: queuewatch JOB-START once per real run
+- 2026-10-24 187608482 minor — merge lane/flagfix: [FLAG-SPELL] empty-node removal in concatenations
 - 2026-10-23 2c33a6515 minor — merge lane/casespell: case-spelling identity check in test-codegen (Frank's ask; no case leak on main)
 - 2026-10-23 5c9bde73b minor — merge lane/recpin: recursion-identity (B) FILEPIN re-pinned to the corefix merge (abi 83); (A) left red pendin
 - 2026-10-22 c4164f15b minor — Merge lane/memfn-ws: kit R-29 (D172 S2), MF_SITE_ABI 20, 586 green
@@ -257,5 +276,9 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
+| 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
+
+RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.
+san re-run on main 3e550f92d (after lane/sanred), job 610-main-sanrerun: GREEN, run_san_group 41/41, wall 3441 s. The run's only stage-level red besides the known [RECID-A] is cleared.

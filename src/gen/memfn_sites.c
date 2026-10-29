@@ -312,7 +312,7 @@ static void sink_cmt_close(void *u)
 
 static void sink_cstr(void *u, const uint8_t *bytes, size_t len)
 {
-    pcrec_sb_cstr(((PcrecMfSink *)u)->sb, bytes, len);
+    pcrec_sb_ctext(((PcrecMfSink *)u)->sb, bytes, len, PCREC_CTEXT_STRING);
 }
 
 static void sink_legend_byte(void *u, uint8_t byte)

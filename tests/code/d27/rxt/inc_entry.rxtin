@@ -1,0 +1,4 @@
+# match_api.md §11.9¶8 / cli.md §1.22¶1: code in a definition read from
+# another file (include) is refused even with the grant.
+include "inc_frag.rxt"
+target t = fragblk

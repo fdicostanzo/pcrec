@@ -83,6 +83,13 @@
 # mean two rows whose `SAB_AFTER` differed by one label while their DETECTION
 # is identical. The witness is unchanged (tests/backrefs/nested.rxt), so the
 # recorded figures still describe what this row plants.
+# [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
+# per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
+# new text and the plant is unchanged in meaning: site 2, gk_build's backreference arm, now returns gk_row(g, a)
+# RE-ANCHORED 2026-10-26 (lane ic1bfix, [INLINE-C] stage 1b): both arms
+# gained `case A_CALLOUT:` beside A_VAR; the plant still accepts (site 1) and
+# un-declines (site 2) the backreference and the variable only, and leaves the
+# callout's arm as it is. Same intent, same detectors.
 SAB_ID="S108-rdshape-accepts-bref"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="brefdiff harness"
@@ -92,19 +99,25 @@ SAB_DOC_FIGURE="MEASURED 2026-08-22 with both sites: harness tests/backrefs 390 
 SAB_COUNT=1
 SAB_BEFORE='        case A_BREF:
         case A_VAR:
+        case A_CALLOUT:
             S->ok = false;
             return;'
 SAB_AFTER='        case A_BREF:
         case A_VAR:
-            return;   /* SABOTAGE S108 site 1: ACCEPT it */'
+            return;   /* SABOTAGE S108 site 1: ACCEPT it */
+        case A_CALLOUT:
+            S->ok = false;
+            return;'
 
 # SITE 2 -- the independent decline that made the one-hunk form unfalsifiable.
 SAB_FILE2="src/opt/possessify.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case A_BREF:
     case A_VAR:
-        g->ok = false;
-        return gk_parts_empty(true);'
+    case A_CALLOUT:
+        return gk_row(g, a);'
 SAB_AFTER2='    case A_BREF:
     case A_VAR:
-        return gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */'
+        return gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */
+    case A_CALLOUT:
+        return gk_row(g, a);'

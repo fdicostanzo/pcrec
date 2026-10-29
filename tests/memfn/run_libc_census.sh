@@ -27,6 +27,11 @@
 # R4e'.0b (lane r4e0b, 2026-10-09, Linux dev box, gcc 15.2) adds the ROUTING
 # leg (routing_shape.py) and its population `funcs`, the offset-skip/pre-check
 # functions seen: measured 188 (full) / 119 (--quick), floors ~90%.
+# ic2fix triage (2026-10-28): composition 45 -> 38 (measured 43). A file build
+# now compiles every target before writing any (cli.md §1.1.1¶4, review
+# 2026-10-27-r1-ic2 F7), so the two rxtsource fixtures that carry a refused
+# target (bench_altwide_0_2: an oversized target, compose_encoding_clash)
+# write none of their targets (11 + 1 artifacts they wrote before).
 # No corpus artifact calls `memcpy` with a non-constant length, so a
 # dropped non-idiom `memcpy` is UNREACHED (integration.md §17.6, declared).
 #
@@ -56,7 +61,7 @@ if [ -n "$quick" ]; then
 else
     # D172 S3 (lane s3): funcs 169 -> 141, pinned AT the measure: the cover row
     # took the fixed-width patterns, whose search defines no offset-skip function
-    FLOORS=(artifacts=820 dfa=310 vm=500 composition=45 none=300 idiom=80
+    FLOORS=(artifacts=820 dfa=310 vm=500 composition=38 none=300 idiom=80
             calls-memchr=470 calls-memcmp=40 calls-strlen=40 calls-printf=38
             calls-fprintf=85 funcs=141)
 fi

@@ -397,6 +397,12 @@
 #     composite's, the answers against `-fno-rev-end` and libpcre2, and E-VR
 #     0 on exact hybrids. SKIPPED (not scored) without libpcre2. Registered
 #     before S758.
+#   casespell — added 2026-10-24 ([FLAG-SPELL], lane flagfix); runs
+#     tests/codegen/run_case_spelling_identity.sh: spellings of one caseless
+#     pattern (letter case, and since [FLAG-SPELL] the bare `(?i)abc` against
+#     the scoped `(?i:ABC)`) emit the same matcher. Its own arm because every
+#     spelling is answer-identical by construction, so no answer-keyed arm
+#     can see a spelling reach the emitted code. Registered before S1560.
 #   startlanding — added 2026-10-10 ([START-LANDING] SL2, lane slbuild); runs
 #     tests/codegen/run_start_landing.sh: the two RECOVER rows' witnesses, the
 #     corpus sweep with floors, the stamp against the text, the answers
@@ -408,6 +414,11 @@
 #     global iteration over tests/findall/cells.tsv on three engine arms, the
 #     iterator's state-machine arms, the <PREFIX>_ITER_RETRY stamp against the
 #     text, and the ASan cells. Registered before S1297.
+#   subst — added 2026-10-22 ([M4-SUBST] phase B, lane substb2); runs
+#     tests/subst/run_subst_tests.sh: the subst artifact's cells against
+#     pcre2_substitute and their generic arms, the template refusals and the
+#     header contract. SKIPS its oracle arms (not the section) without
+#     libpcre2. Registered before S1346.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -599,6 +610,24 @@
 #     Its own arm because it reads spec TEXT, which no other suite reads for
 #     this property. Row: S748. Verdict: the script's
 #     `checks passed:`/`checks failed:` summary.
+#   callouts — added 2026-10-26 ([INLINE-C] stage 1b, lane ic1b); runs
+#     tests/callouts/run_callouts_tests.sh (`make test-callouts`) from the
+#     SABOTAGED tree with its generated population cut to 300 (floor 250):
+#     the corpus, its libpcre2 oracle, the generated differential with the
+#     firing-class bound, the driver checks, the class table and the
+#     refusals. Its own arm because module `callouts`' callees are linked
+#     only by this directory's manifest and its checks.c, which no other
+#     suite builds. Rows: S1646-S1655, S1657-S1669. Verdict: the
+#     script's `checks passed:`/`checks failed:` trailer.
+#   code — added 2026-10-27 ([INLINE-C] stage 2, lane ic2); runs
+#     tests/code/run_code_tests.sh (`make test-code`) from the SABOTAGED
+#     tree: the corpus (with t2/ and frag/, whose blocks expect refusals),
+#     its libpcre2 oracle, the refusals, the entry-point table, the
+#     diagnostics, header placement, the live-macro, span-helper and
+#     call-form checks. Its own arm because the section's grant, user
+#     source and fixtures live only in that directory. Rows: S1680-S1685, S1740-S1741,
+#     and from the r1-ic2 review's fixes (lane ic2fix) S1720-S1721.
+#     Verdict: the script's `checks passed:`/`checks failed:` trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -646,7 +675,7 @@ set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/timeout_bin.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; only reach_only_selftest.sh sets it.
+# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; set only by the self-tests (reach_only_selftest.sh, nocompile_selftest.sh).
 SAB_DIR="${MECH_SAB_DIR:-$SCRIPT_DIR/sabotages}"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
@@ -1194,6 +1223,16 @@ _sab_bt_selftest
 #
 # Called inside run_one's subshell, so the flag/array writes land on that
 # row's own copies exactly as the inline spellings did.
+#
+# A COMPILE FAILURE IS NOT A CATCH (review 2026-10-24 r1 subst, CHK-1). The
+# sabotaged compiler itself built (BUILD-FAILED is scored before any arm), so
+# a C compiler error in an arm's log is code the arm COMPILED -- an emitted
+# artifact or a driver -- failing under the arm's -Werror: S1354 and S1374
+# scored DETECTED at "driver build" without one cell running. A failing arm
+# whose log carries one (`NOCOMPILE_ERE`, gcc's and clang's `file:L:C: error:`)
+# marks the row `any_nocompile`, which the verdict block renders as ANOMALY
+# ahead of DETECTED: the plant must compile before its witness can count.
+NOCOMPILE_ERE='[A-Za-z0-9_./-]+\.(c|h|inc):[0-9]+:[0-9]+: (fatal )?error: '
 score_arm() {
     local log="$1" fc="$2" cell="$3" name="${3%%:*}"
     if [ ! -s "$log" ]; then
@@ -1210,6 +1249,10 @@ score_arm() {
     fi
     suite_bits+=("$cell")
     [ "$fc" -gt 0 ] && any_fail=1
+    if [ "$fc" -gt 0 ] && grep -qE "$NOCOMPILE_ERE" "$log"; then
+        any_nocompile=1
+        nocompile_arms+=("$name:$(grep -m1 -oE "$NOCOMPILE_ERE.{0,60}" "$log")")
+    fi
     any_ran=1
 }
 
@@ -1699,6 +1742,8 @@ run_one() {
         # verdict moves.
         any_unmeasured=0
         unmeasured_arms=()  # ...and WHICH, so the verdict can name them
+        any_nocompile=0     # an arm's log shows compiled code failing (CHK-1)
+        nocompile_arms=()
 
         for suite in $SAB_SUITES; do
             case "$suite" in
@@ -1860,6 +1905,30 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/vars.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vars.log" | grep -oE '[0-9]+')"
                 score_arm "$work/vars.log" "$f" "vars:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            callouts)
+                # [INLINE-C] stage 1b — module `callouts`' own arm:
+                # tests/callouts/run_callouts_tests.sh (the corpus, its
+                # libpcre2 oracle, the generated differential, the driver
+                # checks, the class table, the refusals), `vars`' shape. The
+                # generated population is cut to 300 (floor 250) here: one
+                # run per row, and a row's witness is a named check, not the
+                # population's tail.
+                CALLOUT_GEN_N=300 CALLOUT_GEN_FLOOR=250 \
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/callouts/run_callouts_tests.sh" \
+                    > "$work/callouts.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/callouts.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/callouts.log" | grep -oE '[0-9]+')"
+                score_arm "$work/callouts.log" "$f" "callouts:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            code)
+                # [INLINE-C] stage 2 — module `code-c`'s own arm:
+                # tests/code/run_code_tests.sh, `callouts`' shape.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/code/run_code_tests.sh" \
+                    > "$work/code.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/code.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/code.log" | grep -oE '[0-9]+')"
+                score_arm "$work/code.log" "$f" "code:${f:-ERR}fail/${p:-?}pass"
                 ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
@@ -3207,6 +3276,16 @@ run_one() {
                     score_arm "$work/revtwin.log" "$f" "revtwin:${f:-ERR}fail/${p:-?}pass"
                 fi
                 ;;
+            casespell)
+                # [FLAG-SPELL] tests/codegen/run_case_spelling_identity.sh —
+                # see the vocabulary entry above. Its summary line is
+                # `== case-spelling identity: P passed, F failed (...)`.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_case_spelling_identity.sh" > "$work/casespell.log" 2>&1
+                p="$(grep -m1 '^== case-spelling identity:' "$work/casespell.log" | sed -n 's/.*: \([0-9]*\) passed.*/\1/p')"
+                f="$(grep -m1 '^== case-spelling identity:' "$work/casespell.log" | sed -n 's/.* \([0-9]*\) failed.*/\1/p')"
+                score_arm "$work/casespell.log" "$f" "casespell:${f:-ERR}fail/${p:-?}pass"
+                ;;
             startlanding)
                 # [START-LANDING] tests/codegen/run_start_landing.sh — see the
                 # vocabulary entry above.
@@ -3228,6 +3307,15 @@ run_one() {
                     f="$(grep '^checks failed:' "$work/findall.log" | tail -1 | grep -oE '[0-9]+')"
                     score_arm "$work/findall.log" "$f" "findall:${f:-ERR}fail/${p:-?}pass"
                 fi
+                ;;
+            subst)
+                # [M4-SUBST] tests/subst/run_subst_tests.sh — see the
+                # vocabulary entry above. Its last two lines are the totals.
+                PCREC="$pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/subst/run_subst_tests.sh" > "$work/subst.log" 2>&1
+                p="$(grep '^checks passed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                f="$(grep '^checks failed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                score_arm "$work/subst.log" "$f" "subst:${f:-ERR}fail/${p:-?}pass"
                 ;;
             twins)
                 # [FINDALL-NEXT] tests/codegen/run_residual_twins.sh — see the
@@ -3480,7 +3568,9 @@ run_one() {
         # visibly in its verdict, because "caught by nothing" means something
         # different when one of the nets was not in the water.
         verdict="DETECTED"
-        if [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
+        if [ "$any_nocompile" -eq 1 ]; then
+            verdict="ANOMALY (the plant does not compile: $(IFS=' '; echo "${nocompile_arms[*]}") -- a compile failure is not a catch; make the plant warning-clean)"
+        elif [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
             verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
             verdict="ANOMALY (every assigned check binary failed to build)"

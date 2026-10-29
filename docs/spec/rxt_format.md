@@ -83,7 +83,7 @@ can never be confused.
 <a id="s1-1"></a>
 ### 1.1 The head
 
-<a id="s1-1-p1"></a>[1.1¶1] Eleven file-level declarations exist in this build, and the authoritative
+<a id="s1-1-p1"></a>[1.1¶1] Twelve file-level declarations exist in this build, and the authoritative
 roster is `pcrec --list-schema`'s `file`-scope rows rather than this
 table — which restates them for a reader, and says what each MEANS:
 
@@ -100,6 +100,7 @@ table — which restates them for a reader, and says what each MEANS:
 | `use <c1,c2>` | a config list, in `with`/`from`'s own `config-list` grammar. Parsed and validated as a list; it composes nothing in this build. Repeatable |
 | `analysis <name>` | a named ANALYSIS — a BUNDLE of subject-statistics data blocks, with an indented body (§1.10). The name is LOWERCASE (`[a-z][a-z0-9_-]*`), unique in the file. Repeatable |
 | `ext <consumer>` | an AUX block: consumer-namespaced data pcrec carries and does not interpret (§1.12). Repeatable |
+| `code-header <lang> <header>` | a header the file's embedded code needs (`match_api.md` §11.9¶7): `<lang>` a code language (`c`), `<header>` `"name"` or `<name>`, printable ASCII with no backslash or closing delimiter, and a refused value is echoed with its control and non-ASCII bytes as `\xNN` (`code-header c "octet.h"`, `code-header c <stdint.h>`). Emitted `#include` AS WRITTEN after the matcher of every target the file builds, in the order written, a repeated text once; pcrec never opens it. It is code: a target compiled without `--allow-code` for its language is refused, segment or no segment. Repeatable |
 
 <a id="s1-1-p2"></a>[1.1¶2] A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
 `features`, `encoding`, `engine`, `tune`, `budget` and `analysis` lines — the
@@ -113,7 +114,10 @@ pcrec (`findings.md` §7), and composes across `from`/`with` by LATER-WINS,
 target's compile. The CLI's `--analysis` only FILLS a target whose configs
 name none (`cli.md` §1.1). The `pcrec` line may not carry `--analysis`
 (refused at parse): a config names its analysis with its own `analysis`
-line, so the choice is visible in the file. The `pcrec` line's raw text is
+line, so the choice is visible in the file. Nor may it carry `--allow-code`
+or `--code-header` (refused at parse): code is enabled by the invoker, never
+by a file (`cli.md` §1.22), and a file names its headers with its own
+`code-header` line. The `pcrec` line's raw text is
 re-parsed by the CLI's own option parser (`cli.md` §1.1's config-block
 paragraph), so a literal pattern on that line is spelled `--pattern 'X'`
 there too, exactly as on the command line.
@@ -559,6 +563,17 @@ off.
   and passes it through. A DUPLICATE name is legal to write and the
   artifact's own rule is FIRST MATCH WINS; collapsing it here would make
   that cell untestable. `docs/spec/vars.md` is the module's contract.
+- <a id="s1-5-p13a"></a>[1.5¶13a] `callout <n> <attrs>` — block-scoped, repeatable, one line per
+  number: the attributes of numbered callout `<n>` (0-255) in the block's
+  pattern, which a numbered callout has no string to carry
+  (`match_api.md` §11.7). `<attrs>` is a non-empty comma-separated list
+  of lower-case names (`callout 1 consume,once`), separated from `<n>` by
+  whitespace. The line's shape is checked where it is read, by the same
+  reader `--callout` uses;
+  which attributes exist, and whether `<n>` names a site of the pattern, are
+  pcrec's compile errors, the same ones `--callout N:ATTRS` gives (`cli.md`),
+  because the harness passes each line as `--callout <n>:<attrs>`. A
+  declaration belongs to one pattern, so no `config` composes it.
 - <a id="s1-5-p14"></a>[1.5¶14] `name <defname>` — block-scoped: names the block, declaring it as a
   DEFINITION. A `<defname>` is a first byte that is a letter or `_`,
   then letters, digits, `_`, `-` or `.`. **The name is in the FILE
@@ -1353,12 +1368,13 @@ boundary comes from the one head parser, and the two cannot drift.
 | 19 | `esc` | pattern | non-empty exactly when the block opened with `pattern-esc` |
 | 20 | `tune` | config | the `tune` position AS WRITTEN — the ordinal or the alias the author typed, never a normalisation of it |
 
-<a id="s2-p3"></a>[2¶3] Column 1's value set also includes four head-scoped kinds, each printed as
+<a id="s2-p3"></a>[2¶3] Column 1's value set also includes five head-scoped kinds, each printed as
 its own row (`lib`'s own one-row-per-line convention):
 `vocabulary` (`name` = the key, `value` = the escaped member list),
 `oracle` (the file-level override, `value` = the reference text), `tag`
-(`value` = the item list as written) and `use` (`value` = the
-comma-separated config list).
+(`value` = the item list as written), `use` (`value` = the
+comma-separated config list) and `code-header` (`name` = the language,
+`value` = the header as written).
 
 <a id="s2-p4"></a>[2¶4] **A `pattern-esc` BLOCK IS REPORTED AS A `pattern` ROW, WITH ITS DECODED
 BYTES**. The decoding is pcrec's own, so
@@ -1777,6 +1793,28 @@ failures easy to scan. See `tests/CLAUDE.md` for the current, per-directory
 roster of what each one covers, its oracle rule, and its own supplementary
 checks (differential drivers, structural/identity gates) that no `.rxt`
 block can express.
+
+<a id="s6-p3"></a>[6¶3] **A directory's harness manifest.** A directory whose artifacts need
+user C linked into every driver (a callout artifact declares its bindings
+`extern`, `match_api.md` §11.2) carries `harness.manifest`. `run.sh` reads it
+only from the directory of the `.rxt` file it is running, so no `.rxt` text
+can name a C file and a directory without one links nothing extra. One
+directive per line, `#` comments and blank lines skipped:
+
+| line | meaning |
+|---|---|
+| `link FILE` | compile `FILE` (a file name beside the manifest: no `/`) and link it into every driver built for the directory's `.rxt` files |
+| `allow-code LANGS` | compile the blocks of the directory's ENTRY files (the `.rxt` files it runs, never a fragment one of them `include`s) with `--allow-code=LANGS` (`cli.md` §1.22). A fragment's block is compiled without it, so code in an included file is refused under the harness exactly as pcrec refuses it, and the harness never asserts where code came from. At most one per manifest (a second is a harness failure, ¶4). The line is the suite invoker's grant, as `--allow-code` is a person's: only `tests/code/harness.manifest` and `tests/code/frag/harness.manifest` carry it, and `make test-code` fails when any other manifest under `tests/` does |
+
+<a id="s6-p3a"></a>[6¶3a] The harness passes each `code-header` line of the file it is running to
+every block's compile as `--code-header <lang>:<header>`, and compiles each
+driver of a file that has a `code-header` line with `-I` of that file's
+directory, so a header beside the file is found as a user's build would find
+it.
+
+<a id="s6-p4"></a>[6¶4] Any other manifest line, a `link` line with no name, a name with a `/`, or anything after the name, a second `allow-code` line, is a harness failure: every case of the `.rxt` file being run fails, whether or not its drivers needed the link. A `link` source is compiled with
+`-include` of an artifact header in scope, which gives it the shared ABI
+block (`rx_ctx`, `rx_callout_ref`) without a copy.
 
 <a id="s6-1"></a>
 ### 6.1 Adding a new component test directory

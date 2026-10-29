@@ -27,6 +27,10 @@
   - [§1.17](#s1-17) `--features LIST`: the module gate
     - [§1.17.1](#s1-17-1) Module `unicode-props`
   - [§1.18](#s1-18) The `-f`/`-fno-` family and the other flags that share its spelling
+  - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+  - [§1.20](#s1-20) `--emit-support`: the subst support unit
+  - [§1.21](#s1-21) `--callout N:ATTRS`: a numbered callout's attributes
+  - [§1.22](#s1-22) `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -83,7 +87,7 @@ pcrec [options] -o OUT.c --pattern 'PATTERN'
 | any other name | that `.c` plus its `.h` sibling, as §1.2 | exactly one |
 | `-` | one self-contained `.c` on stdout, as §1.2 | exactly one |
 
-<a id="s1-1-1-p4"></a>[1.1.1¶4] `-o FILE` or `-o -` over several targets is refused, naming the targets and the two ways forward (`--target`, or an existing directory). Each target is a separate compile writing its own translation unit.
+<a id="s1-1-1-p4"></a>[1.1.1¶4] `-o FILE` or `-o -` over several targets is refused, naming the targets and the two ways forward (`--target`, or an existing directory). Each target is a separate compile writing its own translation unit. Every target is compiled before any file is written, so a refused target (a code segment without `--allow-code` among the refusals) leaves no file of any target written.
 
 <a id="s1-1-1-p5"></a>[1.1.1¶5] `--target NAME` builds only the target whose prefix is `NAME`, searched across every file operand given. An unknown name is refused and the message lists the declared targets, each with its file.
 
@@ -181,8 +185,9 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | row | reserved family | refused `PREFIX` |
 |---|---|---|
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
-| 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
+| 2 `callout-bindings` | `rx_callout_<name>` and `rx_callout_<n>`, a callout's binding (`match_api.md` §11) | `rx_callout`, alone or followed by `_` (`-p rx_callout` would emit `rx_callout_search`, which `(?C"search")` binds). The binding NAME has its own rule, the parser's: a `(?C"name")` whose name contains `__` is refused (`pattern_language.md`) |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
+| 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `pcrec_subst_*`, `PCREC_SUBST_*`, `PCREC_SUPPORT_*` | `pcrec_subst` or `pcrec_support`, alone or followed by `_`, in any case; and `pcrec` in any case, whose subst artifact's `<prefix>_subst_*` names would fall in the family |
 
 <a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 
@@ -233,6 +238,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ### 1.10 `--emit-main`
 
 <a id="s1-10-p1"></a>[1.10¶1] Appends a standalone `main()` taking the subject as `argv[1]`. The emitted program's exit codes are a separate vocabulary from `pcrec`'s own (§3.1): `0` on match, `1` on no-match, `2` on a usage error (wrong argc) and `3` on an honest give-up, with `PCREC_ERR_STEPS`/`_FRAMES`/`_WORK` printed as `steps`/`frames`/`work`. The body and its argv contract are otherwise not part of this document.
+
+<a id="s1-10-p2"></a>[1.10¶2] A pattern with a named or numbered callout site is refused under `--emit-main` (`--emit-main cannot define the binding rx_callout_<name>; link your own`): the artifact declares each such binding `extern` (`match_api.md` §11.2), and a generated `main()` has no code of the user's to bind it to. Embedded code (§1.22) is the artifact's own binding and is accepted.
 
 <a id="s1-11"></a>
 ### 1.11 `--no-captures`
@@ -287,22 +294,28 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-17-p2"></a>[1.17¶2] The library has the same lever: `pcrec_options.features` takes the same vocabulary per `pcrec_compile()` call with no process-global write; NULL there means "no request" rather than `std1` (`match_api.md` §8.2).
 
-<a id="s1-17-p3"></a>[1.17¶3] The modules are the distinct values of `--list-syntax`'s `module` column: `assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `ucp`, `unicode-props`, `vars`, `verbs`. A module's shipped status is read from the `built` column of its rows (`--list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`): `built`, `unbuilt`, or a mix for a module that ships a proper subset of its construct (`ucp`, `unicode-props`). For what any one construct does today, with per-construct divergences and caveats, `docs/pcre2_compliance.md` is the authority.
+<a id="s1-17-p3"></a>[1.17¶3] The modules are the distinct values of `--list-syntax`'s `module` column: `assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `ucp`, `unicode-props`, `vars`, `verbs`. The embedded-code modules (`code-c`, §1.22) are rows of the same column and are not feature modules: `all` does not contain them, and a `LIST` naming one is refused (`module 'code-c' is code; code is enabled by --allow-code ..., not by a features list or a file`). A module's shipped status is read from the `built` column of its rows (`--list-syntax | awk -F'\t' '$4!="" {print $4,$16}' | sort -u`): `built`, `unbuilt`, or a mix for a module that ships a proper subset of its construct (`ucp`, `unicode-props`). For what any one construct does today, with per-construct divergences and caveats, `docs/pcre2_compliance.md` is the authority.
 
 <a id="s1-17-1"></a>
 #### 1.17.1 Module `unicode-props`
 
-<a id="s1-17-1-p1"></a>[1.17.1¶1] `\p{…}`/`\P{…}` accepts the Unicode general categories (the one-letter codes, the two-letter ones, `L&`/`Lc`, `Any`) and PCRE2's `Xan Xps Xsp Xuc Xwd`, and the `Script` values the pinned UCD declares except `Katakana_Or_Hiragana` (which no reachable libpcre2 accepts). A script answers to its long name, its four-letter code and any deprecated alias the UCD lists, in three namespaces:
+<a id="s1-17-1-p1"></a>[1.17.1¶1] `\p{…}`/`\P{…}` accepts the Unicode general categories (the one-letter codes, the two-letter ones, `L&`/`Lc`, `Any`), PCRE2's `Xan Xps Xsp Xuc Xwd`, the `Script` values the pinned UCD declares except `Katakana_Or_Hiragana` (which no reachable libpcre2 accepts), the 55 binary properties libpcre2 accepts (`\p{Alphabetic}`, `\p{Emoji}`, `\p{White_Space}`, `\p{Default_Ignorable_Code_Point}`, …, each under its long name and every short alias `PropertyAliases.txt` lists, plus `ASCII`), and `Bidi_Class`. Properties are as defined by the Unicode 16.0.0 data files (`third_party/ucd-16.0.0/PROVENANCE.md`); pcrec makes no Unicode regular-expression conformance-level claim. A script answers to its long name, its four-letter code and any deprecated alias the UCD lists, in three namespaces:
 
 | spelling | denotes |
 |---|---|
 | `\p{Greek}` | `Script` union `Script_Extensions` |
 | `\p{sc=Greek}`, `\p{Script=Greek}` | `Script` alone |
 | `\p{scx=Greek}`, `\p{Script_Extensions=Greek}` | the same set as the bare spelling |
+| `\p{Alphabetic}`, `\p{Alpha}` | the binary property, long or short name; no `=Y` form (libpcre2 refuses it) |
+| `\p{bc=R}`, `\p{Bidi_Class:R}`, `\p{bidiclass=R}` | `Bidi_Class` is `R`; the 23 SHORT value names only, as libpcre2 (`bc=Right_To_Left` is refused) |
 
 <a id="s1-17-1-p2"></a>[1.17.1¶2] The bare spelling is not the `Script` property; that is PCRE2's behaviour (U+0342 has `Script=Inherited` and `Script_Extensions={Greek}`, so `\p{Greek}` matches it and `\p{sc=Greek}` does not). Either separator works (`sc=Greek`, `sc:Greek`), and the prefix and value are case-insensitive and loosely matched. There is no `gc=` namespace, because libpcre2 has none.
 
-<a id="s1-17-1-p3"></a>[1.17.1¶3] Every name works at both encodings, negated as `\P{X}` or `\p{^X}` (the two compose), and inside a class. Under `--encoding=byte` a property is clamped to the Latin-1 universe, so most scripts are the empty set and a pattern whose class is empty compiles to a matcher that never matches. The boolean properties (`\p{Alphabetic}`), `Bidi_Class` (`\p{bc=L}`) and names no libpcre2 has (`\p{Foo}`, block spellings such as `\p{InGreek}`) are refused. The property tables are pinned at Unicode 16.0.0.
+<a id="s1-17-1-p3"></a>[1.17.1¶3] Every name works at both encodings, negated as `\P{X}` or `\p{^X}` (the two compose), and inside a class. Under `--encoding=byte` a property is clamped to the Latin-1 universe, so most scripts are the empty set and a pattern whose class is empty compiles to a matcher that never matches. Under `-i` only `Lu`, `Ll` and `Lt` change (to `L&`); every other property, the binary ones and `Bidi_Class` included, is unchanged, as in libpcre2. Names no libpcre2 has (`\p{Foo}`, `\p{InGreek}`, `\p{IsGreek}`), the UCD properties libpcre2 refuses (`\p{Hyphen}`, `\p{Other_Alphabetic}`, `\p{Assigned}`, `\p{gc=Lu}`) and the long `Bidi_Class` value names are refused. The property tables are pinned at Unicode 16.0.0.
+
+<a id="s1-17-1-p4"></a>[1.17.1¶4] `Bidi_Mirrored` is the set `UnicodeData.txt` marks mirrored (554 code points); libpcre2 10.46 omits 126 of them (`upstream_issues.md` U22), so this one property answers differently from libpcre2 on exactly those code points.
+
+<a id="s1-17-1-p5"></a>[1.17.1¶5] EXTENSIONS BEYOND PCRE2. `\p{Block=Greek}` (also `blk=`, `Block:`) matches the code points of a Unicode block named in `Blocks.txt`, by its long name or any short alias `PropertyValueAliases.txt` lists (`Greek` is `Greek and Coptic`; `NB` is `No_Block`, the code points no block holds), and `\p{Age=6.1}` (also `age:`) matches the code points whose Age is exactly that version (`DerivedAge.txt`'s definition, not "that version or earlier"; `Age=NA` is `Unassigned`, and `V6_1` spells `6.1`). libpcre2 refuses both prefixes (error 147), so a pattern using them is not portable to PCRE2, and no valid PCRE2 pattern changes meaning. They are rows of the same table as the other properties and ride module `unicode-props`'s gate, `-e utf8` included. `\p{InGreek}` and `\p{IsGreek}` are not accepted. Block and Age have no independent libpcre2 differential; their sets are the data files' own, checked against them and for structure (tests/uprops).
 
 <a id="s1-18"></a>
 ### 1.18 The `-f`/`-fno-` family and the other flags that share its spelling
@@ -312,6 +325,28 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-18-p2"></a>[1.18¶2] `-futf-check` and `-fstartpos-guard=align` share the spelling and are contract axes (`tuning.md` §2.36 and §2.23): they select which answer a call gives. `-futf-check` makes every entry refuse an ill-formed subject with `PCREC_ERR_UTF` (-9), PCRE2_UTF's contract; `-fstartpos-guard=align` moves a mid-character `startpos` forward to the next character start instead of refusing it (`match_api.md` §9.2). Both are off by default and inert under `-e byte`. `-futf-check=extent` is reserved and refused by name (exit 1); `-fstartpos-guard=align` together with `-fno-startpos-guard` is refused as contradictory.
 
 <a id="s1-18-p3"></a>[1.18¶3] `-fcomments` and `-fno-comments` control the emitted artifact's human commentary and nothing else (`tuning.md` §2.24). The default is `-fno-comments`: an artifact carries only its essential comments, the generated-by line naming pcrec and the `abi` and echoing the pattern, and the shared type block's doc-comments. `-fcomments` restores the rest. Deny wins over force. The object file, the comment-excluded source size, every emitted `#define` and the size-cap verdicts are identical under either setting. A `config` block or a file-operand target may set either spelling, and an explicit command-line flag wins (§1.1.4).
+
+<a id="s1-19"></a>
+### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them by its presence, a default value included (`--engine=auto`); `--features` is accepted only as `--features subst-extended`, the template module of `subst_api.md` §2¶7. A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
+
+<a id="s1-20"></a>
+### 1.20 `--emit-support`: the subst support unit
+
+<a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any by its presence, a default value included. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
+
+<a id="s1-21"></a>
+### 1.21 `--callout N:ATTRS`: a numbered callout's attributes
+
+<a id="s1-21-p1"></a>[1.21¶1] Declares the attributes of numbered callout `N` (0-255) in the `--pattern` being compiled, which a numbered callout `(?CN)` has no string to carry (`match_api.md` §11.7). `ATTRS` is a comma-separated list of the attribute names (`consume`, `once`): `--callout 1:consume,once`. Repeatable, one per number. A number declared twice, a declaration naming a number the pattern does not use, an unknown or repeated attribute, an empty `ATTRS` (`--callout 1:`), and a malformed value are refused; the value is echoed with its control bytes escaped. It applies to a compile, `--emit-ir` and `--emit-facts`; `--count-groups` reads no attribute and refuses it. It does not combine with a file operand, where a block's `callout N ATTRS` line says the same thing (`rxt_format.md` §1.5¶13a).
+
+<a id="s1-22"></a>
+### 1.22 `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
+
+<a id="s1-22-p1"></a>[1.22¶1] `--allow-code=LANGS` (also `--allow-code LANGS`; `LANGS` a comma-separated list of embedded-code languages, `c` the one language) grants the compile its pattern's embedded code (``(?C`c: ...`)``; `match_api.md` §11.9). It is the ONLY door to module `code-<lang>`: no `--features` list and no file can open it, and a `config` block's `pcrec` line carrying `--allow-code` is refused (`rxt_format.md` §1.1¶2). Without it a code segment is refused (`(?C...) requires module 'code-c', which only the command-line option --allow-code=c (or the library's allow_code member) enables`) and nothing is written. An unknown language is refused by name. A later `--allow-code` wins. Code in a definition read from another `.rxt` file (`lib`, `include`) is refused even with the grant. The grant applies to every compile in the invocation, a file operand's targets included; the describe modes `--emit-ir`, `--emit-facts` and `--count-groups` parse code whatever `--allow-code` says (absent, empty or a list) and write no C.
+
+<a id="s1-22-p2"></a>[1.22¶2] `--code-header LANG:HEADER` (also `--code-header=`; repeatable) names a header the `--pattern`'s code needs: `HEADER` is `"name"`, `<name>`, or a bare `name` (written as `"name"`), printable ASCII with no backslash and no closing delimiter inside the name (`"` in `"name"`, `>` in `<name>`). A refused value is echoed with every control byte and every non-ASCII byte written as `\xNN`, so a bidirectional control in it never reaches the terminal. Each is emitted `#include` as written, in order, a repeated text once, after the matcher and only in the `.c`; pcrec never opens it. It is code: it needs `--allow-code` for its language even when the pattern has no segment. It does not combine with a file operand, whose head names its own (`code-header LANG HEADER`, `rxt_format.md` §1.1).
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

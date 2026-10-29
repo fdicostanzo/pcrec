@@ -1,0 +1,12 @@
+# tests/subst/composed.rxtin -- a COMPOSED rx for the subst cells (subst_api.md
+# §3¶3): `piece`'s exported group is delivered at site `d`, so the target
+# declares no group of its own (ngroups 0) while ncaps is 2. A template's
+# no-map form is refused against it at the context setup.
+target = user
+
+pattern (?&d=piece)
+name user
+
+pattern (?<kept>a)
+name piece
+export kept

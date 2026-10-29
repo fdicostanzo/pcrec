@@ -181,6 +181,23 @@ else
     bad "ksrc_deps_check: $(grep -c '^FAIL' "$OUT7") sub-check(s) failed — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW IS COMPLETE (no mech row: a
+# missing row is a compile error, so it is checked by compiling plants): the
+# AKind/KIND_ROW census as text, a live-tree control, and four plants (a new
+# kind, a deleted row, swapped rows, a duplicated row) that must each FAIL to
+# compile. One -fsyntax-only per arm; see kindrow_check.sh's header.
+# ---------------------------------------------------------------------------
+OUT8="$WORKDIR/kindrow_check.out"
+mkdir -p "$WORKDIR/kindrow"
+CC="$CC" bash "$SCRIPT_DIR/kindrow_check.sh" "$ROOT_DIR" "$WORKDIR/kindrow" | tee "$OUT8"
+bin8_rc="${PIPESTATUS[0]}"
+if [ "$bin8_rc" -eq 0 ]; then
+    ok "kindrow_check: $(grep -c '^PASS' "$OUT8") sub-checks green"
+else
+    bad "kindrow_check: $(grep -c '^FAIL' "$OUT8") sub-check(s) failed — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

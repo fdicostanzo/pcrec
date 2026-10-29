@@ -1,0 +1,5 @@
+report=docs/dev/lanes/ic2fix_report.md
+sections: Summary; Fixes by finding id; Spec and design hunks; Tests and sabotage; abi and re-pins; Not done and why; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: ic2fix-test ic2fix-mech ic2fix-axes

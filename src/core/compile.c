@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "core/internal.h"
 #include "enc/enc.h"
@@ -152,8 +153,10 @@ static bool valid_prefix(const char *p)
  * and the user prefixes each refuses -- a prefix that could spell a reserved
  * name inside one translation unit. A new reservation is a row, never a
  * second refusal. `docs/spec/cli.md` lists the rows beside `-p`'s grammar.
- * Row 2 (`callout-bindings`, `rx_callout_<name>`) is added by
- * [M4-CALLOUTS] step 2 with its first producer. */
+ * Row 2 (`callout-bindings`, `rx_callout_<name>`) arrived with its first
+ * producer ([INLINE-C] stage 1b, docs/design/inline_c.md §1.4). The binding
+ * NAME's own rule (no `__`) is the parser's, at the `(?C"name")` port
+ * (src/parse/mod_callouts.c): it is a pattern fact, not a prefix one. */
 typedef struct {
     const char *name;
     bool (*refuses)(const char *prefix);
@@ -163,17 +166,54 @@ typedef struct {
 /* row 1: a compound's parts are `<prefix>__<role>`, so a user prefix with
  * `__` can collide with a part beside a compound in one TU. */
 static bool ns_parts(const char *p) { return strstr(p, "__") != NULL; }
+/* row 2: a callout artifact declares `extern const rx_callout_ref
+ * rx_callout_<name>`, unprefixed; a prefix `rx_callout` or `rx_callout_...`
+ * names its own entries inside that family (`-p rx_callout` emits
+ * `rx_callout_search`, which `(?C"search")` binds). */
+static bool ns_callout(const char *p)
+{
+    static const char fam[] = "rx_callout";
+    const size_t l = sizeof fam - 1;
+    return !strncmp(p, fam, l) && (p[l] == '\0' || p[l] == '_');
+}
 /* row 3: the harness lever's reserved prefix (compound.md §A.11). */
 static bool ns_harness(const char *p)
 {
     return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
 }
 
+/* row 4: the subst types block's and the support unit's names
+ * (docs/spec/subst_api.md §1¶2: `pcrec_subst_*`, and the macros
+ * `PCREC_SUBST_*` and `PCREC_SUPPORT_*`) share a TU with any artifact. A
+ * prefix that opens one of their families, in either case, could spell one;
+ * so could one whose subst artifact's own names do (`<prefix>_subst_*`):
+ * `-p pcrec`'s record would be `pcrec_subst_info`, the record type's tag. */
+static const char *const ns_subst_families[] = { "pcrec_subst", "pcrec_support" };
+static bool ns_subst_opens(const char *p)
+{
+    for (size_t i = 0; i < sizeof ns_subst_families / sizeof ns_subst_families[0]; i++) {
+        size_t l = strlen(ns_subst_families[i]);
+        if (!strncasecmp(p, ns_subst_families[i], l) && (p[l] == '\0' || p[l] == '_'))
+            return true;
+    }
+    return false;
+}
+static bool ns_subst_block(const char *p)
+{
+    char stem[PCREC_MAX_PREFIX_LEN + sizeof "_subst"];   /* p is a valid prefix by now */
+    snprintf(stem, sizeof stem, "%s_subst", p);
+    return ns_subst_opens(p) || ns_subst_opens(stem);
+}
+
 static const NsReserve ns_reserved[] = {
     { "parts", ns_parts,
       "contains `__`, which is reserved for a compound's parts (<prefix>__<role>)" },
+    { "callout-bindings", ns_callout,
+      "is rx_callout or begins with rx_callout_, the family a callout's binding (rx_callout_<name>) is declared in" },
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
+    { "subst-block", ns_subst_block,
+      "is pcrec or opens a family the subst block reserves (pcrec_subst, pcrec_support)" },
 };
 
 /* The reservation row `p` falls under, or NULL. */
@@ -182,6 +222,45 @@ static const NsReserve *ns_reserved_by(const char *p)
     for (size_t i = 0; i < sizeof ns_reserved / sizeof ns_reserved[0]; i++)
         if (ns_reserved[i].refuses(p)) return &ns_reserved[i];
     return NULL;
+}
+
+/* [M4-SUBST] True iff `p` is a prefix pcrec_compile accepts; else false
+ * with `why` filled. The subst compiler's -p check, so a template and a
+ * regex share one prefix rule (valid_prefix + the reservation table). */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
+{
+    if (!valid_prefix(p)) {
+        snprintf(why, whysz, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+                 PCREC_MAX_PREFIX_LEN);
+        return false;
+    }
+    const NsReserve *ns = ns_reserved_by(p);
+    if (ns) {
+        snprintf(why, whysz, "invalid symbol prefix: it %s", ns->why);
+        return false;
+    }
+    return true;
+}
+
+/* [M4-SUBST] Compiles a substitution template into a subst artifact: the
+ * prefix check `pcrec_compile` applies, the template parse, the emitter.
+ * Not a pattern compile, so it does not run `compile_driver` and has no
+ * `Ctx` (docs/spec/subst_api.md §5). */
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err)
+{
+    Arena a = { NULL, NULL };
+    SubstTmpl t;
+    out->c_src = out->h_src = NULL;
+    if (!pcrec_prefix_acceptable(o->prefix, err->msg, sizeof err->msg)) {
+        err->pos = 0;
+        err->input = PCREC_ERR_INPUT_TEMPLATE;
+        return -1;
+    }
+    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, o->extended, &t, err);
+    if (rc == 0) pcrec_emit_subst(tmpl, len, &t, o, out);
+    pcrec_arena_free(&a);
+    return rc;
 }
 
 /* Frees every heap array and StrBuf a Job may have allocated
@@ -587,7 +666,10 @@ enum { COMP_LEVER_ATTEMPTS = 1 };
  * size rung: one retry with the `rev-end` walk pinned to today's form. It
  * restarts nothing (the size term runs only for the VM, and a hybrid's walk
  * is its prefilter's body, whose artifact the term never measured apart). */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 +
+/* [REQRUN-VM] `drop-handoff`: one more retry, and a FOURTH ladder run, since
+ * it restarts the size term for the prefilter drop's reason and both can fire
+ * on one compile. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 4 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 + 1 +
                               COMP_LEVER_ATTEMPTS };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
@@ -783,7 +865,7 @@ typedef struct {
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
-    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
+    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK, FIT_DROP_HANDOFF
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -1071,6 +1153,23 @@ static bool fit_premul_applies(const FitSel *s)
            !pcrec_flags_has(s->flags, PCREC_NO_PREMUL_TABLE);
 }
 
+/* [REQRUN-VM] `drop-handoff`: give up the VM-side handoff rows the attempt
+ * emitted (`Job.req_handoff_vm`: the attempt loop's `handoff-attempts[-entry]`
+ * or the hybrid prefilter's re-entry). The retry declines those rows
+ * (`Ctx.req_handoff_dropped`) and is the VM artifact without them; a hybrid
+ * keeps its entry, which has no rung. Ordered by measured cost: the rows
+ * gained at most x2.53 in instructions on their witnesses
+ * (docs/dev/lanes/reqvm1_report.md, Measurement), under the prefilter drop's
+ * ~4x, so this row is tried first; a VM-only artifact reaches it only after
+ * the prefilter drop, whose attempt loop then carries the rows. It changes
+ * the VM's figures, so the size term restarts, as for the prefilter drop.
+ * It carries no figures: `VM_PREFILTER_WHY` quotes the hybrid the prefilter
+ * drop refused, and a later VM-only attempt is no hybrid. */
+static bool fit_handoff_applies(const FitSel *s)
+{
+    return s->cx->job && s->cx->job->req_handoff_vm;
+}
+
 /* [PF-DROP] (D135) THE LAST RUNG: drop the VM hybrid's
  * prefilter. Spelled as the caller's own `-fno-prefilter`
  * OR'd in, the way the premul rung spells its flag, so the
@@ -1162,7 +1261,7 @@ static bool fit_sel1_drop_applies(const FitSel *s)
 
 /* The ladder (§1.2's row list, in walk order). Rows 0-2 are the arrivals
  * whose action is code (resume the force loop, propagate, next trial); rows
- * 3-9 retry with the state their `sets` cell names; row 10 refuses on every
+ * 3-12 retry with the state their `sets` cell names; row 13 refuses on every
  * label. KEEP is spelled on every row that writes nothing. */
 #define FIT_SETS_NONE { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false, FIT_COMP_KEEP }
 #define FIT_CELLS_PASS { { ESEL_PASS, ESEL_PASS }, PFLW_PASS, NULL }
@@ -1214,7 +1313,7 @@ static const FitRung fit_rungs[] = {
       .note = { "the compound (its controller and parts)",
                 "the plain artifact's attempt loop ships instead, the form the "
                 "compound exists to avoid (docs/design/compound.md)" } },
-    /* 5 D164 B3 the FIRST size rung: the match-end mark's lowered machines
+    /* 6 D164 B3 the FIRST size rung: the match-end mark's lowered machines
      * cost no answer and no other optimization (endmark.md §R.5); the retry
      * pins the `rev-end` walk to today's form (`Ctx.end_mark_dropped`). */
     { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
@@ -1227,7 +1326,7 @@ static const FitRung fit_rungs[] = {
                 "the rev-end walk keeps its two-seed form: a final-newline "
                 "tie is decided by one more walk and an anchored run "
                 "(docs/design/endmark.md §R.5)" } },
-    /* 6-10 [PF-DROP] (D135) the size-cap rungs, cheapest first; 11 refuses */
+    /* 7-12 [PF-DROP] (D135) the size-cap rungs, cheapest first; 13 refuses */
     { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
       .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = "cap-rescue",
@@ -1277,6 +1376,16 @@ static const FitRung fit_rungs[] = {
                 "slower per-byte scan dispatch, measured ~1.27x "
                 "on scan-bound subjects "
                 "(docs/dev/opt3_dfa_scan_measurement.md)" } },
+    { .name = "drop-handoff",       .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_handoff_applies, .act = FIT_DROP_HANDOFF, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, true, FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the VM's required-run handoff",
+                "the VM no longer jumps its attempts to the necessary "
+                "run's next occurrence, measured up to ~2.5x more "
+                "instructions where it is rare "
+                "(docs/dev/lanes/reqvm1_report.md)" } },
     { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREFILTER, PCREC_NO_PREFILTER,
@@ -1551,6 +1660,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_DROP_PREFILTER: return "retry without the VM hybrid's prefilter";
     case FIT_REFUSE:         return "refuse the compile";
     case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
+    case FIT_DROP_HANDOFF:   return "retry without the VM's required-run handoff rows";
     }
     return "?";
 }
@@ -1692,6 +1802,15 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_DROP_END_MARK, FIT_DROP_PREMUL },
     { FIT_DROP_END_MARK, FIT_COLLAPSE },
     { FIT_DROP_END_MARK, FIT_DROP_PREFILTER },
+    /* [REQRUN-VM] the VM-side handoff rows dropped: before the prefilter
+     * drop on a hybrid that carried the re-entry, after it (or after a
+     * [SEL-1] retry) on a VM-only attempt loop that carries them */
+    { FIT_DROP_END_MARK, FIT_DROP_HANDOFF },
+    { FIT_COLLAPSE,      FIT_DROP_HANDOFF },
+    { FIT_DROP_HANDOFF,  FIT_DROP_PREFILTER },
+    { FIT_DROP_PREFILTER, FIT_DROP_HANDOFF },
+    { FIT_SEL1_COLLAPSE, FIT_DROP_HANDOFF },
+    { FIT_SEL1_DROP,     FIT_DROP_HANDOFF },
 };
 #endif
 
@@ -1970,6 +2089,37 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             return -1;
         }
     }
+    /* [INLINE-C] stage 2 THE INVOKER'S CODE GRANT (inline_c.md §5.1): the
+     * `code-<lang>` modules `allow_code` names join the MASK only, through
+     * a resolver the `features` vocabulary cannot reach, so the label and
+     * the rendered module list (`PCREC_FEATURE_SET`/`_MODULES`) stay the
+     * requested features and move for no artifact. */
+    {
+        unsigned grant = 0;
+        char gerr[256];
+        if (pcrec_code_grant_resolve(defo.allow_code, &grant, gerr,
+                                     sizeof gerr) != 0) {
+            if (err) snprintf(err->msg, sizeof(err->msg), "%s", gerr);
+            return -1;
+        }
+        feat_mask |= grant;
+        /* A `code-header` line is code (§3.3): its language must be granted
+         * as a segment's must, segment or no segment. */
+        for (int i = 0; emit_in && i < emit_in->ncode_headers; i++) {
+            const PcrecCodeHeader *h = &emit_in->code_headers[i];
+            const PcrecCodeLang *L = pcrec_code_lang_by_tag(h->lang,
+                                                            strlen(h->lang));
+            if (!L || !(grant & L->feature)) {
+                if (err) snprintf(err->msg, sizeof(err->msg),
+                                  "code-header %s %s requires module "
+                                  "'code-%s', which only the command-line "
+                                  "option --allow-code=%s (or the library's "
+                                  "allow_code member) enables",
+                                  h->lang, h->header, h->lang, h->lang);
+                return -1;
+            }
+        }
+    }
     /* [UCP] O-71: the encoding's implied modules join the MASK only. The
      * label and the rendered module list stay the REQUESTED set, which is what
      * `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamp — so no artifact moves;
@@ -2189,6 +2339,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             (fit_fired >> (fit_rung_of(FIT_DROP_ANCHORED) - fit_rungs)) & 1u;
         cx.end_mark_dropped =
             (fit_fired >> (fit_rung_of(FIT_DROP_END_MARK) - fit_rungs)) & 1u;
+        cx.req_handoff_dropped =
+            (fit_fired >> (fit_rung_of(FIT_DROP_HANDOFF) - fit_rungs)) & 1u;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
@@ -2400,7 +2552,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
             case FIT_DROP_COMPOUND:
-            case FIT_DROP_END_MARK:
+            case FIT_DROP_END_MARK: case FIT_DROP_HANDOFF:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt
@@ -2478,12 +2630,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * validated the caller's prefix and renders the placeholder this
          * compile keeps (`PcrecEmitIn.unrendered`). */
         if (!(emit_in && emit_in->unrendered)) {
-            if (!valid_prefix(user_prefix))
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
-                         PCREC_MAX_PREFIX_LEN);
-            const NsReserve *ns = ns_reserved_by(user_prefix);
-            if (ns)
-                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix: it %s", ns->why);
+            char why[256];
+            if (!pcrec_prefix_acceptable(user_prefix, why, sizeof why))
+                pcrec_ctx_fail(&cx, 0, "%s", why);
         }
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
          * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone
@@ -2601,6 +2750,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             for (size_t h = 0; h < sizeof hooks / sizeof *hooks; h++)
                 if (hooks[h]) root = hooks[h](&cx, root);
         }
+
+        /* [INLINE-C] 1b THE CALLOUT SITES PASS (src/opt/callout.c): on the
+         * tree as written and composed, before any optimization pass reads
+         * a site's row — the numbered declarations set a site's width class
+         * — and before any pass could change the structure its firing class
+         * is read from (inline_c.md §1.10). A no-op with no site. */
+        pcrec_callout_sites(&cx, root);
 
         root = pcrec_altcls(&cx, root);
 
@@ -3031,6 +3187,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
+        /* [INLINE-C] stage 2 the segment block, LAST in the `.c` and after
+         * every engine's text (inline_c.md §3.1): nothing it writes can
+         * reach the matcher, and no `#line` needs restoring after it. */
+        pcrec_emit_code_block(&cx, &cx.job->csb);
 
         /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
          * every buffer is finished. An `pcrec_sb_cmt_open` with no matching close
@@ -3429,6 +3589,20 @@ int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
                           hopt ? &in : NULL);
 }
 
+/* [INLINE-C] the CLI's compile of a `--pattern` with a driver emission
+ * input: 1b's numbered callout declarations (`--callout N:attrs`), and
+ * stage 2's code position (`#line`) and `--code-header` lines, plus the
+ * harness lever's options when `in->harness` is set. There is no library
+ * member for the declarations or the headers in v1 (docs/design/
+ * inline_c.md §2.2, §3.3; [IFACE-PUSH]). */
+int pcrec_compile_in(const char *pattern, const pcrec_options *opt,
+                     const PcrecEmitIn *in, pcrec_output *out,
+                     pcrec_error *err)
+{
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
+                          in);
+}
+
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
  * that `pcrec_compile_defs` now lives in its own translation unit
  * (`src/core/compile_defs.c`) so that THIS file names no `rxt_*` symbol.
@@ -3457,7 +3631,7 @@ int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
  * engine_m4.md S10's constraint one level up from the emitter itself. It is a
  * debug tool; the wasted emission is the price of the guarantee. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err)
+                    const PcrecEmitIn *in, pcrec_error *err)
 {
     pcrec_options defo;
     pcrec_output out;
@@ -3467,9 +3641,13 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     if (opt) defo = *opt;
     /* A paired header would only put an #include line in output nobody reads. */
     defo.header_name = NULL;
+    /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): the listing
+     * parses embedded code (a later group must still be counted) and the C
+     * it compiles is thrown away, so it needs no grant from the caller. */
+    defo.allow_code = pcrec_code_describe_grant();
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-                             NULL, NULL, NULL, NULL) != 0) {
+                             NULL, NULL, NULL, in) != 0) {
         free(text);
         return NULL;
     }
@@ -3505,6 +3683,10 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
      * process-global gate exactly as it always has, unchanged by this row.
      * See src/parse/enabled.c's own top comment for the customer list. */
     cx.enabled_features = pcrec_enabled_mask();
+    /* [INLINE-C] stage 2 a DESCRIBE entry (inline_c.md §5.9): counting
+     * parses embedded code and emits nothing, so every code language's
+     * module is open here without the invoker's grant. */
+    cx.enabled_features |= pcrec_code_describe_mask();
     /* Parse-only: nothing is emitted, so no capture node is wanted and the
      * tree stays exactly D31's. This matters beyond tidiness — --count-groups
      * pins its refusal behaviour to pcrec_compile's, and an AST that differed

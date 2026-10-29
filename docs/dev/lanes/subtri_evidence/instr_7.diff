@@ -1,0 +1,71 @@
+--- shipped/rx.c
++++ instr/7/rx.c
+@@ -16,6 +16,7 @@
+ #define RX_COMPOUND "none"
+ #include "rx.h"
+ #include <string.h>
++unsigned long long g_calls,g_rq_mc,g_rq_bytes,g_rw_mc,g_rw_bytes,g_skip,g_att,g_pass12,g_res,g_ok,g_l5;
+ 
+ static inline uint16_t rx_w2(const void *p) { uint16_t w; memcpy(&w, p, 2); return w; }
+ static inline uint32_t rx_w4(const void *p) { uint32_t w; memcpy(&w, p, 4); return w; }
+@@ -234,7 +235,7 @@
+     RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)scan_position);
+     goto rx_L3;
+ rx_L3: __attribute__((unused));
+-    if (scan_position + 12 <= subject_length && rx_w8(subject + scan_position) == rx_w8("https://") && rx_w8(subject + scan_position + 4) == rx_w8("s://www.")) { scan_position += 12; goto rx_L5; }
++    if (scan_position + 12 <= subject_length && rx_w8(subject + scan_position) == rx_w8("https://") && rx_w8(subject + scan_position + 4) == rx_w8("s://www.")) { g_pass12++; scan_position += 12; goto rx_L5; }
+     goto rx_fail;
+ rx_L5: __attribute__((unused));
+     if (scan_position + 0 < subject_length) switch (subject[scan_position + 0]) {
+@@ -607,6 +608,7 @@
+     while (pos + 7 < n) {
+         size_t cand;
+         const void *q = memchr(subject + pos + 3, 47, n - pos - 3);
++        g_rq_mc++; g_rq_bytes += q ? (size_t)((const unsigned char*)q - subject) - (pos + 3) + 1 : n - pos - 3;
+         if (!q) return n;
+         cand = (size_t)((const unsigned char *)q - subject) - 3;
+         if (cand + 7 >= n) return n;
+@@ -626,6 +628,7 @@
+     while (pos + 11 < n) {
+         size_t cand;
+         const void *q = memchr(subject + pos + 7, 47, n - pos - 7);
++        g_rw_mc++; g_rw_bytes += q ? (size_t)((const unsigned char*)q - subject) - (pos + 7) + 1 : n - pos - 7;
+         if (!q) return n;
+         cand = (size_t)((const unsigned char *)q - subject) - 7;
+         if (cand + 11 >= n) return n;
+@@ -648,7 +651,7 @@
+     size_t attempt_position;
+     size_t window_end;
+     if (search_from > subject_length) return 0;
+-    if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
++    g_calls++; if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;
+     if (rx_reqrun_whole(subject, subject_length, search_from) >= subject_length) return 0;
+     attempt_position = search_from;
+     window_end = subject_length;
+@@ -670,14 +673,14 @@
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     };
+-    while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++    { size_t b0=attempt_position; while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++; g_skip += attempt_position-b0; }
+     if (attempt_position >= subject_length) return 0;
+     rx_run_state_init(run);
+     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
+     ctx.caps = NULL; ctx.user = NULL;
+     for (;;) {
+-        ctx.pos = attempt_position;
+-        result = rx_match_anchored(&ctx, run, window_end);
++        ctx.pos = attempt_position; g_att++;
++        result = rx_match_anchored(&ctx, run, window_end); if (result>=0) g_ok++;
+         if (result == RX_R_STEPS)   return PCREC_ERR_STEPS;
+         if (result == RX_R_FRAMES)  return PCREC_ERR_FRAMES;
+         if (result == RX_R_WORK)    return PCREC_ERR_WORK;
+@@ -687,7 +690,7 @@
+         rx_reset_for_next_attempt(run);
+         if (attempt_position >= subject_length) return 0;
+         attempt_position++;
+-        while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++;
++        { size_t b0=attempt_position; while (attempt_position < subject_length && !rx_start_set[subject[attempt_position]]) attempt_position++; g_skip += attempt_position-b0; }
+         if (attempt_position >= subject_length) return 0;
+     }
+     if (capture_spans) rx_report_captures(run, capture_spans, attempt_position, result);
