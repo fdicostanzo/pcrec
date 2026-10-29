@@ -69,7 +69,7 @@ the monitor SKILL's table only when a run has shown its shape (section 5).
 
 - GREEN: the monitor has appended the ledger line and committed it; check
   the commit, reset nothing by hand (the ledger line IS the reset, D177);
-  prune the run's worktree (`scripts/wtprune`); tell Frank in one line.
+  prune the run's worktree (`scripts/wtprune`, then its branch with `scripts/branchprune`); tell Frank in one line.
 - RED: the monitor has already launched the triage lane (it starts at the
   FIRST red stage, while later stages still run). Read its report, rule,
   send fixes to lanes. Never read the stage logs yourself.

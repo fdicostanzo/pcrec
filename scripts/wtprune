@@ -73,7 +73,8 @@
 
 set -u
 
-apply=0 delbr=0 force=0 quiet=120 repo= names=() dirs=()
+quiet_default=120   # the quiet window in minutes; scripts/branchprune reads this line
+apply=0 delbr=0 force=0 quiet=$quiet_default repo= names=() dirs=()
 while [ $# -gt 0 ]; do
     case $1 in
         --apply) apply=1 ;;

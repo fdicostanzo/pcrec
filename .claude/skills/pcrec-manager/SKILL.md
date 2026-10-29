@@ -179,7 +179,7 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   script header explains why), and keep the brief's disclosure requirement
   for residual spawn-time injections.
 - **Main-tree writers need the escape file** ([HOOK-GUARDS], 2026-10-25): a hook refuses any subagent Write/Edit to the main tree outside worktrees/. Before launching a landing lane (or any lane chartered to edit the main tree; critic coordinators draft under /tmp and need none), `echo '*' > worktrees/.mgr/main_write_ok`; remove it when that lane ends (while it exists, NO subagent is guarded).
-- **Remove delivered worktrees with `scripts/wtprune`** (dry run, then `--apply NAME`), which enforces the straggler check below plus merged/clean/quiet/lock gates. **Before any removal, check for straggling processes** whose cwd is under the worktree (read `/proc/*/cwd` by PID; never pkill) — a harness worker outlived tt12b's delivery by a minute and wrote into the deleted path (2026-09-03).
+- **Remove delivered worktrees with `scripts/wtprune`** (dry run, then `--apply NAME`; then their branches with `scripts/branchprune`, same shape), which enforces the straggler check below plus merged/clean/quiet/lock gates. **Before any removal, check for straggling processes** whose cwd is under the worktree (read `/proc/*/cwd` by PID; never pkill) — a harness worker outlived tt12b's delivery by a minute and wrote into the deleted path (2026-09-03).
 - **NEVER MERGE TO MAIN WHILE A BATTERY IS IN FLIGHT** (2026-09-10:
   mech re-archives HEAD per row, so oralink's mid-battery merge made the
   run's tail measure a half-converted tree — 1 unexpected + 6 anomalies,

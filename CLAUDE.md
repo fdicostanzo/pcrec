@@ -71,7 +71,7 @@ never expand a row into a paragraph.
 
 | about to… | do / read |
 |---|---|
-| remove a delivered lane worktree | `scripts/wtprune` (dry run) then `--apply` — gated on merged/clean/quiet/no-cwd/no-lock/not-pinned; never raw `git worktree remove` or `rm -rf`; dirty/unmerged/nested targets go by name via `--apply --force NAME..` (friendly removal first, diff saved); scripts/CLAUDE.md |
+| remove a delivered lane worktree or branch | `scripts/wtprune` (dry run) then `--apply` — gated on merged/clean/quiet/no-cwd/no-lock/not-pinned; never raw `git worktree remove` or `rm -rf`; dirty/unmerged/nested targets by name via `--apply --force NAME..`; then its branch via `scripts/branchprune` (dry run, `--apply`; unmerged only `--archive NAME..`); scripts/CLAUDE.md |
 | kill any process | `scripts/safekill PID` (kills group + tree, audit line). NEVER `pkill -f`/`pgrep -f` — its header says why (two collateral kills, 2026-08-19) |
 | bound a command's run time | GNU timeout, resolved per box (Mac dev box: bare `timeout` IS GNU; ubuntubudu: `gnutimeout`, its bare `timeout` is uutils ~105 ms/call — docs/testing.md "The boxes" + "The `timeout` binary itself"). In test scripts: `tests/lib/timeout_bin.sh` → `"$TIMEOUT_BIN"` |
 | run something that can hang OR runaway-allocate (compiler on a hostile pattern, generated matcher, a battery, a lane's long run) | `scripts/watchdog -s WALL -m MEM -c CPU -S label -- cmd` (`-m` takes a k/m/g suffix; a BARE number is BYTES; wall + tree-RSS + CPU kill, GNU exit codes, one log line). Per-call overhead → not inside per-case loops (the harness's ~23k calls use `$TIMEOUT_BIN`; `gen_run` already wraps the compile/run path). scripts/CLAUDE.md has the flags |

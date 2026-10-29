@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+#
+# branchprune — delete delivered lane branches safely; wtprune's sibling.
+#
+# WHY THIS EXISTS. wtprune removes a delivered worktree but leaves its branch
+# (wtclean2, 2026-10-29: 494 local branches, 433 merged; origin 98, 95 merged).
+# The classifier cannot judge a hand-run `git branch -d` loop any better than
+# a worktree removal, so this makes the judgement from artifacts and refuses
+# on any doubt. The default is a dry run, one line per branch; nothing is
+# pushed unless --remote --apply.
+#
+# A LOCAL branch is REMOVED only if EVERY gate passes; otherwise KEEP + the
+# first failing reason:
+#   1. not protected: not `main`/`master` (the declared list `protected=`
+#      below);
+#   2. not the kit's: a name `memfn` or `memfn-*` (with or without a `lane/`
+#      prefix) unless --kit;
+#   3. not checked out in any worktree (git worktree list --porcelain; the
+#      main checkout's own branch included);
+#   4. merged: its tip is an ancestor of `main`; removal is `git branch -d`,
+#      which independently refuses an unmerged branch;
+#   5. quiet: the tip commit is older than --quiet-min minutes. The default
+#      is wtprune's own constant, read from the `quiet_default=` line of
+#      scripts/wtprune (one source, not a copy).
+# An UNMERGED branch is never removed in bulk. It goes only by explicit name,
+#   scripts/branchprune --apply --archive NAME..
+# which (gates 1-3 and 5 still apply) creates the tag `archive/NAME` at the
+# tip, verifies the tag resolves to that exact commit, and only then runs
+# `git branch -D`. The dry run shows ARCHIVE for a named candidate. An
+# existing archive tag at a different commit refuses the branch; archiving a
+# merged branch is refused (use plain removal).
+#
+# --remote switches the whole run to origin's branches (instead of local
+# ones): lists `origin/*` tracking refs other than main/HEAD, REMOVE when
+# merged into local main, protected/kit/quiet gates as above, KEEP otherwise.
+# It reads the existing remote-tracking refs (never fetches; `git fetch
+# --prune` first for a current list). Only with --remote --apply does it act:
+# each REMOVE candidate (or only the NAMEs given, e.g. lane/foo) is checked
+# against `git ls-remote origin` (the remote tip must still equal the tracking
+# ref) and deleted with `git push --force-with-lease=REF:SHA origin :REF`.
+# Default OFF; --archive is local-only and refused with --remote.
+#
+# Usage:
+#   scripts/branchprune                 dry run, local branches
+#   scripts/branchprune --apply         delete every REMOVE candidate
+#   scripts/branchprune --apply NAME..  only these branches (still gated)
+#   scripts/branchprune [--apply] --archive NAME..
+#                                       tag-then-delete named unmerged branches
+#   scripts/branchprune --remote [--apply] [NAME..]
+#   --kit                               let the kit's memfn[-*] branches through
+#   --quiet-min N                       gate 5 window in minutes
+#   -C REPO                             operate on REPO (default: the main
+#                                       checkout of the current repository)
+# Every action is appended to worktrees/.branchprune.log (gitignored).
+# Exit: 0 ok, 1 an attempted action failed, 2 usage/environment error.
+
+set -u
+
+protected=(main master)
+
+apply=0 kit=0 remote=0 repo= names=() archives=() quiet=
+here=$(cd "$(dirname "$0")" && pwd)
+while [ $# -gt 0 ]; do
+    case $1 in
+        --apply) apply=1 ;;
+        --kit) kit=1 ;;
+        --remote) remote=1 ;;
+        --archive) shift
+                   while [ $# -gt 0 ] && [[ $1 != -* ]]; do archives+=("$1"); shift; done
+                   [ ${#archives[@]} -gt 0 ] || { echo "branchprune: --archive wants NAME.." >&2; exit 2; }
+                   continue ;;
+        --quiet-min) shift; quiet=${1:-}; [[ $quiet =~ ^[0-9]+$ ]] || { echo "branchprune: --quiet-min wants minutes" >&2; exit 2; } ;;
+        -C) shift; repo=${1:?} ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d'; exit 0 ;;
+        -*) echo "branchprune: unknown flag $1" >&2; exit 2 ;;
+        *) names+=("$1") ;;
+    esac
+    shift
+done
+
+if [ -z "$quiet" ]; then
+    quiet=$(sed -n 's/^quiet_default=\([0-9][0-9]*\).*/\1/p' "$here/wtprune" | head -1)
+    [[ $quiet =~ ^[0-9]+$ ]] || { echo "branchprune: cannot read quiet_default from $here/wtprune" >&2; exit 2; }
+fi
+[ ${#archives[@]} -eq 0 ] || [ $remote = 0 ] || { echo "branchprune: --archive is local-only, not with --remote" >&2; exit 2; }
+[ ${#archives[@]} -eq 0 ] || [ ${#names[@]} -eq 0 ] || { echo "branchprune: --archive NAME.. and plain NAME.. cannot be mixed" >&2; exit 2; }
+
+re_seg='[A-Za-z0-9][A-Za-z0-9._-]*'
+re_name="^$re_seg(/$re_seg)*\$"
+for n in ${names[@]+"${names[@]}"} ${archives[@]+"${archives[@]}"}; do
+    [[ $n =~ $re_name ]] || { echo "branchprune: bad branch name '$n'" >&2; exit 2; }
+done
+
+if [ -z "$repo" ]; then
+    common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+        || { echo "branchprune: not in a git repository" >&2; exit 2; }
+    repo=$(dirname "$common")
+fi
+repo=$(cd "$repo" && pwd -P) || exit 2
+g() { git -C "$repo" "$@"; }
+g rev-parse -q --verify refs/heads/main >/dev/null || { echo "branchprune: no main branch" >&2; exit 2; }
+log=$repo/worktrees/.branchprune.log
+audit() { [ -d "$repo/worktrees" ] && printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$log"; }
+
+now=$(date +%s)
+checked_out=$(g worktree list --porcelain | sed -n 's/^branch refs\/heads\///p')
+
+is_protected() { local p; for p in "${protected[@]}"; do [ "$p" = "$1" ] && return 0; done; return 1; }
+is_kit() { local b=${1#lane/}; [ "$b" = memfn ] || [[ $b == memfn-* ]]; }
+in_list() { local n=$1; shift; local x; for x in "$@"; do [ "$x" = "$n" ] && return 0; done; return 1; }
+
+# Gates shared by both modes for branch NAME ($1) with tip time CT ($2):
+# prints the reason and returns 0 if blocked, returns 1 if clear.
+common_gates() {
+    local name=$1 ct=$2 age
+    if is_protected "$name"; then echo "protected"; return 0; fi
+    if [ $kit = 0 ] && is_kit "$name"; then echo "kit branch (use --kit)"; return 0; fi
+    age=$(( (now - ct) / 60 ))
+    if [ "$age" -lt "$quiet" ]; then echo "tip ${age}min old (< ${quiet}min quiet)"; return 0; fi
+    return 1
+}
+
+rc=0 nrm=0 nkeep=0 narch=0
+
+if [ $remote = 0 ]; then
+    while IFS=' ' read -r name sha ct; do
+        [ -n "$name" ] || continue
+        if [ ${#archives[@]} -gt 0 ]; then in_list "$name" "${archives[@]}" || continue
+        elif [ ${#names[@]} -gt 0 ]; then in_list "$name" "${names[@]}" || continue; fi
+        merged=0
+        g merge-base --is-ancestor "$sha" main 2>/dev/null && merged=1
+        if why=$(common_gates "$name" "$ct"); then :; else why=; fi
+        if [ -z "$why" ] && printf '%s\n' "$checked_out" | grep -qxF -- "$name"; then why="checked out in a worktree"; fi
+        if [ -z "$why" ] && [ ${#archives[@]} -gt 0 ] && [ $merged = 1 ]; then why="merged: use plain removal, not --archive"; fi
+        if [ -z "$why" ] && [ ${#archives[@]} -eq 0 ] && [ $merged = 0 ]; then why="unmerged (by name only: --archive $name)"; fi
+        if [ -z "$why" ] && [ ${#archives[@]} -gt 0 ] && g rev-parse -q --verify "refs/tags/archive/$name" >/dev/null; then
+            [ "$(g rev-parse "refs/tags/archive/$name^{commit}")" = "$sha" ] || why="tag archive/$name exists at another commit"
+        fi
+        if [ -n "$why" ]; then printf 'KEEP    %-40s %s\n' "$name" "$why"; nkeep=$((nkeep+1)); continue; fi
+        if [ ${#archives[@]} -gt 0 ]; then
+            if [ $apply = 0 ]; then printf 'ARCHIVE %-40s (dry run) -> tag archive/%s\n' "$name" "$name"; narch=$((narch+1)); continue; fi
+            audit "archive branch $name tip=$sha"
+            if ! g rev-parse -q --verify "refs/tags/archive/$name" >/dev/null; then
+                out=$(g tag "archive/$name" "$sha" 2>&1) || { printf 'FAILED  %-40s tag: %s\n' "$name" "$out"; audit "FAILED tag $name: $out"; rc=1; continue; }
+            fi
+            if [ "$(g rev-parse "refs/tags/archive/$name^{commit}" 2>/dev/null)" != "$sha" ]; then
+                printf 'FAILED  %-40s tag archive/%s does not verify; branch kept\n' "$name" "$name"; audit "FAILED verify $name"; rc=1; continue
+            fi
+            if out=$(g branch -D "$name" 2>&1); then printf 'ARCHIVED %-39s tag archive/%s at %s\n' "$name" "$name" "${sha:0:8}"; narch=$((narch+1)); audit "deleted branch $name (archived)"
+            else printf 'FAILED  %-40s %s\n' "$name" "$out"; audit "FAILED delete $name: $out"; rc=1; fi
+            continue
+        fi
+        if [ $apply = 0 ]; then printf 'REMOVE  %-40s (dry run)\n' "$name"; nrm=$((nrm+1)); continue; fi
+        audit "delete branch $name tip=$sha"
+        if out=$(g branch -d "$name" 2>&1); then printf 'REMOVED %-40s %s\n' "$name" "${sha:0:8}"; nrm=$((nrm+1))
+        else printf 'FAILED  %-40s %s\n' "$name" "$out"; audit "FAILED delete $name: $out"; rc=1; fi
+    done < <(g for-each-ref --format='%(refname:short) %(objectname) %(committerdate:unix)' refs/heads)
+    for n in ${names[@]+"${names[@]}"} ${archives[@]+"${archives[@]}"}; do
+        g rev-parse -q --verify "refs/heads/$n" >/dev/null || { echo "SKIP    $n is not a local branch"; rc=1; }
+    done
+else
+    g remote get-url origin >/dev/null 2>&1 || { echo "branchprune: no remote origin" >&2; exit 2; }
+    while IFS=' ' read -r ref sha ct; do
+        name=${ref#origin/}
+        [ -n "$name" ] && [ "$name" != "$ref" ] && [ "$name" != HEAD ] || continue
+        if [ ${#names[@]} -gt 0 ]; then in_list "$name" "${names[@]}" || continue; fi
+        if why=$(common_gates "$name" "$ct"); then :; else why=; fi
+        if [ -z "$why" ] && ! g merge-base --is-ancestor "$sha" main 2>/dev/null; then why="unmerged"; fi
+        if [ -n "$why" ]; then printf 'KEEP    origin/%-33s %s\n' "$name" "$why"; nkeep=$((nkeep+1)); continue; fi
+        if [ $apply = 0 ]; then printf 'REMOVE  origin/%-33s (dry run, remote)\n' "$name"; nrm=$((nrm+1)); continue; fi
+        live=$(g ls-remote origin "refs/heads/$name" 2>&1 | awk 'NR==1{print $1}')
+        if [ "$live" != "$sha" ]; then
+            printf 'KEEP    origin/%-33s remote tip %s != tracking ref %s (fetch first)\n' "$name" "${live:0:8}" "${sha:0:8}"; nkeep=$((nkeep+1)); continue
+        fi
+        audit "push --delete origin $name tip=$sha"
+        if out=$(g push --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" 2>&1); then
+            printf 'REMOVED origin/%-33s %s\n' "$name" "${sha:0:8}"; nrm=$((nrm+1))
+        else printf 'FAILED  origin/%-33s %s\n' "$name" "$out"; audit "FAILED push-delete $name: $out"; rc=1; fi
+    done < <(g for-each-ref --format='%(refname:short) %(objectname) %(committerdate:unix)' refs/remotes/origin)
+    for n in ${names[@]+"${names[@]}"}; do
+        g rev-parse -q --verify "refs/remotes/origin/$n" >/dev/null || { echo "SKIP    origin/$n is not a remote-tracking branch"; rc=1; }
+    done
+fi
+
+scope=$([ $remote = 1 ] && echo remote || echo local)
+if [ ${#archives[@]} -gt 0 ]; then verb=$([ $apply = 1 ] && echo archived || echo archivable); cnt=$narch
+else verb=$([ $apply = 1 ] && echo removed || echo removable); cnt=$nrm; fi
+echo "branchprune: $scope: $cnt $verb, $nkeep kept$([ $apply = 0 ] && echo ' — dry run; re-run with --apply')"
+exit $rc
