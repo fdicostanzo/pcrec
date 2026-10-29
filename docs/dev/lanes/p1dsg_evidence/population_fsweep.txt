@@ -1,0 +1,53 @@
+# p1dsg: population.py at P1_F=8 and P1_F=20 (rarity, excl-cand, excl-lower rows only); F=2 is population.txt
+== F=8
+## corpus: 5203 patterns
+| rarity | 313 |
+| excl-cand | 70 |
+| excl-lower | 43 |
+## bench: 346 patterns
+| rarity | 19 |
+| excl-cand | 5 |
+| excl-lower | 6 |
+== F=20
+## corpus: 5203 patterns
+| rarity | 347 |
+| excl-cand | 57 |
+| excl-lower | 40 |
+## bench: 346 patterns
+| rarity | 24 |
+| excl-cand | 5 |
+| excl-lower | 3 |
+
+[exited with code 0]
+
+# bench landmark rows with their rarity ratio (landmark vs first-byte set, revwalk tiers.py)
+excl-cand  bounded/csv5                             ratio=148.97 L=','
+excl-cand  bounded/dotted4                          ratio=7.50 L='.'
+excl-cand  capability/dup-param-detect              ratio=300.93 L='='
+excl-cand  capability/wild-secrets-username-passwor ratio=6.08 L='='
+excl-cand  loglines/ipv4                            ratio=7.50 L='.'
+excl-cand  loglines/kv-quoted                       ratio=200.39 L='="'
+excl-cand  loglines/stack-frame                     ratio=32.61 L='('
+excl-cand  subtri/5b-mask-email~                    ratio=1237.65 L='@'
+excl-cand  syntax/qnt-plus-ctl                      ratio=5.48 L='ab'
+excl-cand  syntax/qnt-plus                          ratio=5.48 L='b'
+excl-cand  utf8/cls-s-nbsp                          ratio=5.48 L='b'
+excl-cand  utf8/cls-s-ucp                           ratio=5.48 L='b'
+excl-lower capability/tag-depth3-bound              ratio=3012.05 L='>'
+excl-lower capability/tag-pair-match                ratio=3012.05 L='>'
+excl-lower syntax/bak-1                             ratio=8.03 L=' '
+excl-lower syntax/bak-g-rel                         ratio=8.03 L=' '
+excl-lower syntax/bak-k-named                       ratio=3012.05 L='>'
+excl-lower syntax/mod-j-uc                          ratio=8.03 L=' '
+rarity     capability/codegrammar-flat              ratio=1.00 L='"'
+rarity     capability/mojibake-curly-quote          ratio=1.00 L='\\x94'
+rarity     capability/wild-waf-crs-942270-union-sel ratio=1.24 L='FROM'
+rarity     loglines/http-5xx                        ratio=1.00 L='" 5'
+rarity     syntax/cls-h                             ratio=1.55 L='='
+rarity     syntax/cls-s-lc                          ratio=0.44 L='sat'
+rarity     syntax/cls-v                             ratio=1.64 L='done'
+rarity     syntax/mod-u-uc                          ratio=1.00 L='"'
+rarity     syntax/msc-r-uc                          ratio=1.64 L='done'
+rarity     syntax/qnt-lazy                          ratio=1.00 L='"'
+rarity     syntax/qnt-quest                         ratio=0.46 L='r'
+rarity     syntax/qnt-star                          ratio=0.31 L='t'
