@@ -159,12 +159,17 @@ census_allocsites() {
 src/core/arena.c
 src/core/compile.c
 src/core/sb.c
+src/dump/callouts_dump.c
 src/ir/dfa.c
 src/ir/nfa.c
 src/opt/dfamemo.c
 src/opt/minimize.c
 src/opt/scanedge.c
 src/parse/rxt_source.c'
+    # [INLINE-C] stage 3 (lane ic3tri, 2026-10-29) src/dump/callouts_dump.c
+    # joined: its one malloc(1) is the empty-result string of
+    # pcrec_list_callouts, which the CALLER free()s like every other dump
+    # entry's malloc'd text (the CLI's --list-callouts, cli.md §2.15).
     # [OPT-RETRY-REUSE] (lane k67, 2026-09-29) src/opt/dfamemo.c joined:
     # a restored machine's `st` must be heap, because job_cleanup free()s
     # every machine's `st`; the one malloc routes through pcrec_ctx_nomem.
