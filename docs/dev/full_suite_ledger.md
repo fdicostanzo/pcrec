@@ -285,3 +285,5 @@ RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row
 
 RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.
 san re-run on main 3e550f92d (after lane/sanred), job 610-main-sanrerun: GREEN, run_san_group 41/41, wall 3441 s. The run's only stage-level red besides the known [RECID-A] is cleared.
+
+RED: 2026-10-30 cb32eda28 test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261030_cb32eda28 duration=42819s
