@@ -912,7 +912,8 @@ test-vm: all
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_vm_identity.sh' \
 	    'bash tests/codegen/run_ir_listing.sh' \
-	    'bash tests/vm/run_vm_tests.sh'
+	    'bash tests/vm/run_vm_tests.sh' \
+	    'bash tests/vm/run_trail_compact.sh'
 
 # [ENG-BREP] The possessification rung's two non-.rxt suites. Its .rxt corpus
 # rides test-corpus like every other module's; these two check what a .rxt file

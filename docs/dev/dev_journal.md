@@ -27371,3 +27371,55 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - p1dsg2 DONE+merged: P1 rev 1 (review r1 applied; UNIQUE over (state, class); every hand walked on both routes; only 5b is a measured mover). Frank asked: accept the dense-landmark loss (~25%) as a non-goal? Bench asked I-172 for a query-string subject. Light re-check before build go. Fixed PL14 (review cited plan.md by line).
 - 622-kit-s3m-heavy ended RED: 20/21 green, the red = our [SWEEP-COMP-FLOOR] (86 < 100). Verdict MERGE; landing lane lands3 (main tree, main_write_ok armed) merged s3m + r30 (ideas.md append conflict: keep both), now re-pinning identity (B) + the floor, suites, ledger, push. abi 92 = S3; trailgc -> 93.
 - Old 690/691-trailgc jobs (pre-review tip) were READY at 12:23 and would have tested a tree trailgc3 is editing: cancelled (`boxqueue cancel` takes the owner key). Slip: launched a queuewatch with output discarded again; killed in seconds (safekill).
+
+## 2026-10-29 (session 128 cont., manager, 12:35-13:15) — stage 3 landed, trail rulings, opt loop opened
+
+- Frank rulings: deny flags follow caller effect (one public flag for D only; verdicts/C a test-only lever via --harness; R and bug fixes none; memory pcrec-flag-follows-caller-effect); land the trail fix at its measured cost (3.6-4.3% never-full on three patterns; [TRAIL-CKPT-PRUNE] later); the reverse walk's dense-landmark loss is a non-goal (remedy = analysis bundle); "if you can work parallel from stage 3 then do it" = the opt loop opens now (2-3 builds).
+- trailgc3 DONE (r2 applied: F1 bounded 12 visits/write, F5 fast tier never compacts); 690-trailgc-test RUNNING since 12:50, 691 queued.
+- vmcons DONE+merged (primed P3v; two landings, D stage 1 only, emitter walks); re-review crit-vmcons running.
+- INLINE-C stage 3: 680 GREEN, 681 GREEN (5/5) -> LANDED b156d8f18 (+02a054851, major 30) by landic3; S3 merged earlier by lands3 (0f425c2d0, abi 92, floor 86). Main NOT pushed: waits 695-lands3-check + 696-landic3-check.
+- 690-p910-census GREEN (5,588 rows); 691-p910-p10controls next, then a fresh finisher.
+- Opened reviews before builds: crit-p48 (P4+P8 design; entry-jump = first small build), crit-landwalk2 (P1 rev 1 re-check).
+- Frank asked about the trail segment structure review: done by trailgen (9 candidates); the open item is FRAME layout (narrower frames), to file as a row after the VM build.
+
+## 2026-10-29 (session 128 cont., manager, 13:15-14:00) — clean-room wall, first opt build, P1 rev 2
+
+- Frank: pinned PCRE2 copy OK but never copy; "a Chinese wall between reading and writing"; cite the source in code when we lean on it. pcre2wall built and merged (D181: guard hook blocks all but agent_type pcre2-reader, main session included; prose notes + checker; REFERENCES [PCRE2src]; coding.md 4.1a). Cloned tag pcre2-10.46 = b2bd4254b read-only through the one-time setup window (the setup file must exist BEFORE the command the hook checks).
+- Review r4 p48: no answer findings; F1-F5 into the build. FIRST OPT BUILD: lane p4entry (entry-jump rule for bounded heads, S1810-S1819). Critic skill: design review tree at the landing commit.
+- Review r5 landwalk2 (P1 rev 1 re-check): mechanism 0 wrong / 7.27M subjects; rev 1's D3 fix created a LOCATE->NEXT read cycle (kv-quoted two answers), two latent wrong answers (VM-hybrid bodies, overlapping hits). Lane p1dsg3 writes rev 2. Critic skill: fix-induced lens.
+- Kit: R-30 widened to the general fix (no objection; Frank's go); SIMD tier-U job queued Sunday not-before 03:00 (my counter); simdset zero-movers job queued.
+
+## 2026-10-29 (session 128 cont., manager, 14:00-14:20) — reviews r6, P1 rev 2, P9/P10, trail triage
+
+- p4entry DELIVERED (base10num back to +1.06%/0.00%; 0 diffs / 114,336; no deny flag: bounded ~15 ins/search, no bench cell slower); 700/701-p4entry queued.
+- Review r6 vmcons: 4 answer holes, all printed statements the event record misses -> ROOT-CAUSE RULING: printing IS recording (complete by construction; unknown kind refuses the function); lane vmcons2 writes rev 2 (likely a byte-identical refactor first). Critic skill: soundness lens enumerates printed statements.
+- p1dsg3 merged (P1 rev 2: NEXT_cf memo; rev 1 had two fixed points on 4 bench rows). Short re-check owed.
+- 690-trailgc-test RED (ident OVER); triage lane tgctri; I cancelled 691-trailgc-mech mid-run (it re-archives HEAD per row; triage commits would race it).
+- p910fin merged (P9 broad, P10 paced x14-20 on 3 patterns); Frank asked whether a fixed-checkpoint check is "adaptive". Fact-finder rc125 on two rc-125 compiles.
+- Kit: R-30 building (r30b, abi 94 planned), [REQ-PAST-LAST] filed from its observation. Bench: W1 gains an inline callout arm (stage-3 includes) + a primed jit-deep js-1m re-run; answered its include question.
+- Frank asked how callouts in a composed definition see groups: answered from match_api §11.1¶1b (definition-site view).
+
+## 2026-10-29 (session 128 cont., manager, 14:20-14:50) — VM rev 2, triages, RECID-A ruled
+
+- vmcons2 merged ffb9254cb (VM design rev 2: printing is recording; 91 statement sites, 46 unrecorded; byte-identical refactor lands first). Re-checks crit-vmcons2 + crit-landwalk3 launched.
+- tgctri: 690-trailgc red = fixed 1,815 B size cost + stale pins + ident canon (ffd1f578e, no answer moved); 690/691 re-queued, 690 running 14:19.
+- rc125: the census's two rc-125 rows = uutils `nice` rejecting non-UTF-8 argv (the fact-finder blamed gnutimeout; manager tested both); recorded docs/testing.md 4464528f9.
+- 695-lands3-check red on identity (A) alone (filed [RECID-A]); s3tri confirmed; MANAGER ACCEPTED 695 as green on its evidence and cancelled the retry; push waits on 696. [RECID-A] ruled re-base (9db59722c); lane recida launched.
+- Kit: queued 697-kit-r30b-heavy for 10-30 13:30 (R-30 early: case 7 1,279M -> 898M instr).
+
+## 2026-10-29 (session 128 cont., manager, 14:50-15:45) — r7/r8, P1 build go, P10 model + build
+
+- Review r7 landwalk3 (b834061a4): no answer finding; FIX-1 a NULL RECOVER on every admitted compile (+ self-check ruled); SOUND-2 verify inline. P1 STAGE-1 BUILD GO: lane p1build (opus, S1820-S1829).
+- Review r8 vmcons2 (26804bd46): 3 answer twins; rev 2's print-then-lex signature re-introduced a token list -> RULED the record is the source, text rendered from it (one renderer per kind). Lane vmcons3 (opus) writes rev 3. Critic skill: sibling-field clause (fix-induced) + mis-typed record per kind (soundness).
+- Frank on P10: questions (back-and-forth, % vs block, density, a cost model) -> cheap lane p10model merged: K = round(log2 r) derivable (6 email, 8 iso), worst x2 vs hindsight, find-all memory rejected (cross-call state), streaming makes the rule WRONG with unknown n (4 limits to state). Frank: "build it speculatively and measure... first off-by-default optimization" -> lane p10build (opus, S1830-S1839, public opt-in flag, flag-off byte-identical).
+- recida DONE, parked until 698-recida-gate green ((A) re-based to 7234c2e86, 10 exception paths deleted, 47 movers 0 diffs).
+
+## 2026-10-29 (session 128 cont., manager, 15:45-16:30) — push, trail merge, token pause
+
+- Reviews r9 vmcons3 (6299b2060): build go for (a); vmrec (opus) building the record-first refactor (told to wrap at the token pause).
+- p10build delivered (opt-in -fdeferred-req-check, bit 58, abi 96 prov., OFF recommended; jobs 702/705/706/707 owed 10-30). p1build delivered (abi 95 prov.; mask-email x68.8; +31% loss [LANDWALK-PRES] = landing condition; jobs 710-712 owed).
+- 696 hit its 1 h cap mid make-test; covered by 695 (tree already had INLINE-C, no code since): PUSHED main 29efe73cd.
+- Trail fix merged on main ebcc10aa1 (abi 93) + (B) re-pin 86356a960 + ledger bacc804fa, NOT pushed; its suite chain waits for the box after 698-recida-gate. 700/701-p4entry cancelled for it (retry 10-30).
+- Kit: 697 to Saturday 09:00; simdset + r30 notes ready to merge (with our emit_sweep.py arm-pin fix).
+- Frank: [SPAN-HELPERS] (survey; RX_STR; letter fold) and an [IFACE-PUSH] candidate (subject-size knowledge: typical + maximum).
+- Token budget ends ~16:30, renews 07:00: heartbeat deleted; queue + full suite (00:00, freezes main at start) run unattended.

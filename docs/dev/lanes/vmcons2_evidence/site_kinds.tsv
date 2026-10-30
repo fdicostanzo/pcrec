@@ -1,0 +1,133 @@
+#line	function	kind_rev2	status	note
+1691	vm_cls_test	FRAG	FRAG	class test text (inline kit form); part of its CONSUME/BRANCH statement
+1763	vm_cls_respell	POSTPASS	POSTPASS	re-spells class table reads in place after the walk; value text only
+3465	vm_lbl	COMMENT	OK	role comment opener (comment tier)
+3466	vm_lbl	COMMENT	OK	role comment line
+3467	vm_lbl	COMMENT	OK	role comment closer
+3469	vm_lbl	LABEL	OK	VE_LABEL
+3502	vm_trail_check	CHECKPOINT	MISTYPED	recorded as VE_NOTE
+3532	vm_goto	GOTO	OK	VE_GOTO
+3541	vm_fail	FAIL	OK	VE_FAIL (unconditional)
+3557	vm_push_at	PUSH	OK	VE_PUSH (traced form)
+3560	vm_push_at	PUSH	OK	VE_PUSH; position operand text unrecorded (span cursor, revdet prev)
+3584	vm_set	SET	OPGAP	VE_SET carries the target only; source reads unrecorded
+3586	vm_set	SET	OPGAP	as above (unnamed slot spelling)
+3652	vm_work_at	WORK	MISTYPED	recorded as VE_NOTE; count text reads unrecorded
+3679	vm_cut	CUT	OK	VE_CUT
+3889	vm_mrl_test	BRANCH|BRANCH_FAIL	MISTYPED	recorded as VE_NOTE; conditional edge invisible
+3891	vm_mrl_test	FRAG	FRAG	the goto fail tail of 3889
+3892	vm_mrl_test	FRAG	FRAG	the goto L tail of 3889
+4657	vm_isl_emit	BRANCH	MISTYPED	island run compare: recorded as unconditional VE_GOTO
+4661	vm_isl_emit	FRAG	FRAG	tail of 4657 (kit run compare between)
+4669	vm_isl_emit	BRANCH	MISTYPED	island single-child compare: recorded as unconditional VE_GOTO
+4674	vm_isl_emit	SWITCH	NONE	island switch opener (cases recorded as unconditional VE_GOTO)
+4678	vm_isl_emit	CASE	MISTYPED	recorded as VE_GOTO
+4682	vm_isl_emit	SWITCH_END	NONE	closer
+4716	vm_isl_emit	SEEK	NONE	scan_position += k (the matched candidate's length)
+4828	vm_emit_span_scan	SPAN	NONE	span block opener; the block (with the kit advance) is ONE statement
+4829	vm_emit_span_scan	FRAG	NONE	it_ declaration inside the span block
+4831	vm_emit_span_scan	FRAG	NONE	lim_ clamp inside the span block
+4833	vm_emit_span_scan	FRAG	NONE	span_cursor = scan_position inside the span block
+4840	vm_emit_span_scan	FRAG	NONE	span block closer
+4850	vm_span_reach	BRANCH_FAIL	NONE	reach test against the low-water slot (reads a slot)
+4944	vm_cursor_rep	FRAG	FRAG	class-test text built in scr_test
+4948	vm_cursor_rep	FRAG	FRAG	as above
+5018	vm_cursor_rep	BRANCH_FAIL	MISTYPED	recorded as VE_NOTE (fewer than rmin iterations)
+5044	vm_cursor_rep	GUARD	NONE	guarded capture publish (S-1)
+5062	vm_cursor_rep	GUARD_END	NONE	closer
+5064	vm_cursor_rep	SEEK	NONE	scan_position = span_cursor (span commit)
+5159	vm_cursor_rep	LSET	NONE	span_cursor = scan_position
+5195	vm_cursor_rep	GUARD	NONE	guarded capture publish (S-1), reads the low-water slot
+5212	vm_cursor_rep	GUARD_END	NONE	closer
+5214	vm_cursor_rep	SEEK	NONE	scan_position = span_cursor (span commit)
+5221	vm_cursor_rep	LSET	NONE	span_cursor = scan_position (resume)
+5223	vm_cursor_rep	BRANCH_FAIL	NONE	retreat floor test (reads the low-water slot)
+5225	vm_cursor_rep	LSET	NONE	span_cursor -= stride
+5228	vm_cursor_rep	BRANCH_FAIL	NONE	lazy ceiling test (reads the low-water slot)
+5230	vm_cursor_rep	BRANCH_FAIL	NONE	lazy extend class test (S-5's consume)
+5232	vm_cursor_rep	LSET	NONE	span_cursor += stride
+5532	vm_rev_emit	CONSUME_BACK	OPGAP	VE_CLASS "consumed BACKWARD": consumes on the walk cursor local, not scan_position
+5534	vm_rev_emit	FRAG	FRAG	tail of 5532
+5561	vm_rev_emit	LSET	NONE	guarded single-line write of a recovered group end
+5568	vm_rev_emit	LSET	NONE	guarded single-line write of a recovered group start + seen + count
+5615	vm_rev_emit	BRANCH	NONE	walk floor test
+5621	vm_rev_emit	BRANCH	NONE	backward alternation byte select
+5623	vm_rev_emit	FRAG	FRAG	tail of 5621
+5790	vm_revdet_rep	LSET	NONE	iteration = 0
+5803	vm_revdet_rep	BRANCH	NONE	rmax test
+5816	vm_revdet_rep	LSET	NONE	frame_mark = run->resume_depth (reads the frame depth)
+5849	vm_revdet_rep	CUT_LOCAL	MISTYPED	run->resume_depth = frame_mark, recorded as VE_NOTE (rev 1's F1 cut)
+5852	vm_revdet_rep	LSET	NONE	iteration++
+5854	vm_revdet_rep	GUARD	NONE	if (iteration == rmin) { SET low-water }
+5857	vm_revdet_rep	GUARD_END	NONE	closer
+5866	vm_revdet_rep	BRANCH_FAIL	NONE	rmin test
+5873	vm_revdet_rep	SEEK	MISTYPED	scan_position = slot (lazy commit), recorded as VE_NOTE
+5895	vm_revdet_rep	LSET	NONE	walk cursor = scan_position
+5896	vm_revdet_rep	LSET	NONE	prev_position = -1
+5898	vm_revdet_rep	LSET	NONE	groups_seen = 0
+5899	vm_revdet_rep	LSET	NONE	seen[] cleared (a loop statement)
+5905	vm_revdet_rep	BRANCH	NONE	walk floor test (reads the entry slot)
+5911	vm_revdet_rep	LSET	NONE	guarded single-line prev_position write
+5914	vm_revdet_rep	BRANCH	NONE	all groups witnessed
+5934	vm_revdet_rep	GUARD	NONE	guarded retreat PUSH (reads the low-water slot)
+5939	vm_revdet_rep	GUARD_END	NONE	closer
+5941	vm_revdet_rep	GUARD	NONE	guarded extend PUSH (reads the high slot)
+5944	vm_revdet_rep	GUARD_END	NONE	closer
+5953	vm_revdet_rep	GUARD	NONE	guarded group publish (S-1)
+5960	vm_revdet_rep	GUARD_END	NONE	closer
+5978	vm_revdet_rep	LSET	NONE	frame_mark = run->resume_depth (lazy extend)
+5990	vm_revdet_rep	CUT_LOCAL	NONE	run->resume_depth = frame_mark (lazy extend cut)
+6099	vm_counter_phase	BRANCH	MISTYPED	counter trip, recorded as VE_NOTE (reads the counter slot)
+6305	vm_counter_poss_opt	BRANCH	MISTYPED	counter bound, recorded as VE_NOTE (reads the counter slot)
+6540	vm_star	BRANCH	MISTYPED	empty-iteration rule, recorded as VE_NOTE (reads the guard slot)
+6600	vm_star	BRANCH	NONE	empty-iteration guard with vm_jump's goto (and possibly a checkpoint)
+7126	vm_look_behind_branch	BRANCH_FAIL	MISTYPED	start-of-subject guard (last branch), recorded as VE_NOTE
+7143	vm_look_behind_branch	BRANCH	OK	VE_ASSERT with target
+7174	vm_look_behind_branch	SEEK	MISTYPED	the back-step (S-3), recorded as VE_NOTE
+7179	vm_look_behind_branch	BRANCH_FAIL	MISTYPED	back-step off the start, recorded as VE_NOTE
+7208	vm_look_behind_branch	BRANCH_ABORT	MISTYPED	end-check hard return, recorded as VE_NOTE (reads the position slot)
+7216	vm_look_behind_branch	BRANCH_FAIL	MISTYPED	end-check, recorded as VE_NOTE (reads the position slot)
+7488	vm_look	SEEK	MISTYPED	cursor restore after a positive lookaround (S-3), recorded as VE_NOTE
+8217	vm_call	CALL	OK	VE_CALL
+8503	vm_region	RETURN	OK	VE_RETURN (block)
+8544	vm_ctx_side	FRAG	FRAG	context-side text
+8548	vm_ctx_side	FRAG	FRAG	context-side text
+8604	vm_ctx_row	BRANCH	OK	VE_ASSERT recorded before the print
+8606	vm_ctx_row	FRAG	FRAG	join
+8608	vm_ctx_row	FRAG	FRAG	tail
+8616	vm_ctx_row	BRANCH	OK	VE_ASSERT
+8618	vm_ctx_row	FRAG	FRAG	tail
+8622	vm_ctx_row	BRANCH	OK	VE_ASSERT
+8624	vm_ctx_row	FRAG	FRAG	tail
+8628	vm_ctx_row	BRANCH	OK	VE_ASSERT
+8632	vm_ctx_row	BRANCH	OK	VE_ASSERT
+8634	vm_ctx_row	BRANCH	OK	VE_ASSERT
+8636	vm_ctx_row	FRAG	FRAG	tail
+8829	vm_bref	BREF	MISTYPED	block opener; the block is ONE statement (reads 2g,2g+1; next and fail edges); recorded as VE_FAIL x2 + note
+8834	vm_bref	FRAG	FRAG	slot reads inside the BREF block
+8842	vm_bref	COMMENT	OK	comment inside the BREF block
+8843	vm_bref	COMMENT	OK	comment line
+8846	vm_bref	COMMENT	OK	comment closer
+8847	vm_bref	FRAG	FRAG	conditional fail + compare call inside the BREF block
+8871	vm_bref	FRAG	FRAG	conditional fail + advance + goto inside the BREF block
+8917	vm_var	VAR	MISTYPED	block opener; ONE statement (S-2); recorded as unconditional VE_FAIL then VE_GOTO
+8932	vm_var	FRAG	FRAG	conditional fail + advance + goto inside the VAR block
+8980	vm_lit	CONSUME	OK	VE_LIT recorded; kit run compare between 8980 and 8983
+8983	vm_lit	FRAG	FRAG	tail
+9087	vm_callout	STEP	NONE	--run->steps_left charge before the callout
+9089	vm_callout	CALLOUT	OPGAP	block opener; ONE statement; VE_CALLOUT then VE_FAIL/VE_GOTO
+9100	vm_callout	FRAG	FRAG	caps view (caller numbering)
+9109	vm_callout	FRAG	FRAG	caps view (definition-site numbering, [INLINE-C] stage 3)
+9115	vm_callout	FRAG	FRAG	view copies: slot reads
+9120	vm_callout	FRAG	FRAG	view caps
+9125	vm_callout	FRAG	FRAG	user pointer
+9127	vm_callout	FRAG	FRAG	vars
+9131	vm_callout	FRAG	FRAG	vars none
+9134	vm_callout	FRAG	FRAG	slot 0 transient write, call, restore
+9154	vm_callout	FRAG	FRAG	block closer (pcrec_callsite_emit's edge text before it)
+9188	vm_emit_node	CONSUME	OK	VE_WCLASS (block)
+9210	vm_emit_node	CONSUME	OK	VE_CLASS
+9212	vm_emit_node	FRAG	FRAG	tail
+9225	vm_emit_node	BRANCH	OK	VE_ASSERT ($)
+9260	vm_emit_node	BRANCH	OK	VE_ASSERT (\G)
+10798	vm_plan	ACCEPT	OK	goto accept (VE_ACCEPT)

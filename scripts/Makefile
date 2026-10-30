@@ -58,3 +58,6 @@ tests/fullsuite_resume.test.testreport: battery.sh fullsuite_job.sh fullsuite_re
 .DELETE_ON_ERROR:
 
 tests/queuemon.testreport: monread hooks/monitor_unread.sh test_queuemon.sh
+
+# hooks.test also runs the sibling hooks' fixture tests (hooks/test_*.sh)
+tests/hooks.testreport: hooks/pcre2_ref_guard.sh hooks/test_pcre2_ref_guard.sh

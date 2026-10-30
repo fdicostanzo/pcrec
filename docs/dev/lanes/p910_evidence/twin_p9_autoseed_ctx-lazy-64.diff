@@ -1,0 +1,29 @@
+--- /var/tmp/pcrec-pcrec/scratch/p910/p9/ctx-lazy-64-auto/rx.c	2026-10-29 08:59:25.137573996 -0400
++++ /var/tmp/pcrec-pcrec/scratch/p910/p9/ctx-lazy-64-autoseed/rx.c	2026-10-29 09:13:58.929692280 -0400
+@@ -220,6 +220,16 @@
+ #if __has_attribute(noclone)
+ __attribute__((noclone))
+ #endif
++static const unsigned char p9_seedstay22[256] = {
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
++    0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,
++    0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
++    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
++};
+ static int rx_prefilter(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])
+ {
+     static const unsigned char rx_forward_byte_class[256] = {
+@@ -624,6 +634,9 @@
+             while (scan_position + 1 < subject_length && !rx_start_bytes[subject[scan_position]]) scan_position++;
+             if (scan_position > skip_from) forward_state = rx_forward_seed_state[rx_forward_byte_class[subject[scan_position - 1]]];
+         }
++        else if (forward_state == 22 && last_accept_position == (size_t)-1) {
++            while (scan_position + 1 < subject_length && p9_seedstay22[subject[scan_position]]) scan_position++;
++        }
+         else if (forward_state == 308) {
+             while ((scan_position + 1 < subject_length) && (rx_forward_stay14[subject[scan_position]])) {
+                 scan_position++;

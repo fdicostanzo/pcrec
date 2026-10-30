@@ -8271,6 +8271,7 @@ typedef enum {
     PCREC_ATTR_NOINLINE,     /* noinline */
     PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
     PCREC_ATTR_UNUSED,       /* unused: a file-local nothing may read */
+    PCREC_ATTR_COLD,         /* cold noinline: a rarely-run helper off the hot path */
     PCREC_ATTR_N
 } PcrecAttr;
 /* `a`'s text, as its writer puts it on (or above) a definition head. */
@@ -8833,6 +8834,9 @@ typedef enum {
 typedef struct {
     PcrecFwdBind bind;
     const char *frames_code;   /* OWN_TIERED: the give-up code that escalates */
+    bool fast_no_compact;      /* OWN_TIERED: the run state has a trail
+                                * compaction floor the fast tier sets to never
+                                * (K134; the VM's `trail_gc_floor`) */
 } PcrecFwd;
 
 /* src/gen/emit_comb.c -- `forward`'s binding texts for a caller that is not
@@ -8845,7 +8849,7 @@ void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
                             const char *storage, const char *ret, const char *name,
                             const char *callee, const char *params,
                             const char *runargs, const char *deepargs,
-                            const char *frames_code);
+                            const char *frames_code, bool fast_no_compact);
 
 /* `finish-at`: which body answers `_match`/`_match_caps` -- axis G's forms
  * (the FINISH row's action) and the compound's. */
@@ -8874,6 +8878,7 @@ typedef struct {
     PcrecFwdBind own;           /* VM: how the iterator binds its own storage
                                  * (OWN, OWN_TIERED or EMPTY, `<p>_search`'s) */
     const char *frames_code;    /* VM OWN_TIERED: the code that escalates */
+    bool fast_no_compact;       /* VM OWN_TIERED: as `PcrecFwd`'s */
 } PcrecIterText;
 
 typedef struct {

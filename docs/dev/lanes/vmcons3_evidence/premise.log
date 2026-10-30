@@ -1,0 +1,32 @@
+text    : if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)scan_position + 1) goto rx_fail;
+counted : {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+declared: FAIL {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+result  : MATCH (no mismatch, no V0)
+text    : if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)scan_position + 1) goto rx_fail;
+counted : {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+declared: BRANCH_FAIL {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+result  : MATCH (no mismatch, no V0)
+text    : if (RX_PRUNE_TOO_SHORT(rx_span_cursor, 1)) goto rx_fail;
+counted : {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+declared: FAIL {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+result  : MATCH (no mismatch, no V0)
+text    : if (RX_PRUNE_TOO_SHORT(rx_span_cursor, 1)) goto rx_fail;
+counted : {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+declared: BRANCH_FAIL {'goto_L': 0, 'goto_fail': 1, 'goto_star': 0, 'return': 0, 'slot_values[': 0, 'cursor_write': 0, 'run_write': 0, 'macros': 0, 'brace': 0}
+result  : MATCH (no mismatch, no V0)
+258d257
+<     RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)scan_position);
+264d262
+<     RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)scan_position);
+== mt
+abbc => rc=1 0:0,4 1:0,1
+abc => rc=1 0:0,3 1:0,1
+ac => rc=0
+== mt_twin
+abbc => rc=1 0:0,4 1:-1,-1
+abc => rc=1 0:0,3 1:-1,-1
+ac => rc=0
+== libpcre2
+abbc => rc=1 0:0,4 1:0,1
+abc => rc=1 0:0,3 1:0,1
+ac => rc=-1

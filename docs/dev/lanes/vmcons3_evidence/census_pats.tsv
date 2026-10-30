@@ -1,0 +1,37 @@
+# flags<TAB>pattern  (one compile each; <= 50 lines, under the sweep cap)
+--features all	^(?:[ab]+b|y)(z)
+--features all	^(?:.*?x|y)(z)
+--features all	^(?:[ab]{2,}?b|y)(z)
+--features all	^(a)b+c
+--features all	^x[^y]*y
+--features all	^\w+@\w+\.com
+--features all	(a+)+b
+--features all	^a{3,}b
+--features all	^[0-9]*?5
+--features all	a++b
+--features all	^(?:\d+y|(?:ab|abc|cd|cde))(z)
+--features all -fno-altcls-factor	^(?:\d+y|(?:ab|abc|abcd|abcde))(z)
+--features all	^(?:hello world|goodbye moon|see you soon)!
+--features all --engine=vm	^\{(a|"x\}")*\}$
+--features all	^(?:return|goto|\{\}|RX_SET\()+;
+--features all	^(?:(a)(b))*c$
+--features all --engine=vm -fno-splice-calls	^(?:(?1)y)*(a|b)$
+--features all --engine=vm -fno-splice-calls	^(x(?>a(?1)?b)y)$
+--features all --engine=vm	^(a)\1$
+--features all	^x(?:a|(?<=x|yz))w
+--features all	^(*napla:x(?:a|))xb
+--features all	^(?:(?:(a)b)*c){2}$
+--features all	(?:ab|cd)*+ef
+--features all	^(\((?:[^()]++|(?1))*+\))$
+--features all -e utf8	^(?:é+|ü)x
+--features all -e utf8	^(?i)k+\w*z
+--features all --engine=vm	^[a-z]{4,}?q
+--features all --engine=vm	(abc|abd|xyz)+w
+--features all -fcomments --engine=vm -fno-splice-calls	^(?:(?1)y)*(a|b)$
+--features all -fcomments	^(?:[ab]+b|y)(z)
+--features all -fcomments --engine=vm	^\{(a|"x\}")*\}$
+--features all -fmemfn-simd	^(?:[ab]+b|y)(z)
+--features all -fmemfn-simd --engine=vm	^(?:hello world|goodbye moon|see you soon)!
+--features all -fmemfn-simd	^x[^y]*y
+--features all -fmemfn-simd --engine=vm	^[a-z]{4,}?q
+--features all --trace	^(?:[ab]+b|y)(z)

@@ -897,7 +897,7 @@ read `gh run list --commit <sha>` on the next wake (manager skill step 0b).
 Separately, `.claude/settings.json` registers
 `scripts/hooks/no_cd_worktree.sh` as a PreToolUse(Bash) hook that blocks a `cd`
 into `worktrees/` and `cd X && ..` chaining (exact scope in scripts/CLAUDE.md);
-both are self-checked by `scripts/tests/hooks.test` (`make testscripts`). `no_commit_all.sh` (PreToolUse Bash) blocks `git commit -a`/`--all`; `lane_writes_in_worktree.sh` (Write|Edit|NotebookEdit) refuses a subagent write into the main tree; both have fixture tests `scripts/hooks/test_*.sh`. The queue monitor script ([MON-SCRIPT]): `scripts/queuemon` (journal worktrees/.mgr/monitor.log), `scripts/monread`, and the SessionStart/UserPromptSubmit hook `monitor_unread.sh` are self-checked offline by `scripts/test_queuemon.sh` (`make testscripts`: every table row, UNEXPECTED, cursors, `--wait`, liveness, the hook's main-only gate, an inert boxqueue auto-start on a scratch queue).
+both are self-checked by `scripts/tests/hooks.test` (`make testscripts`). `no_commit_all.sh` (PreToolUse Bash) blocks `git commit -a`/`--all`; `lane_writes_in_worktree.sh` (Write|Edit|NotebookEdit) refuses a subagent write into the main tree; both have fixture tests `scripts/hooks/test_*.sh`. `pcre2_ref_guard.sh` (all tools; D181) keeps the pinned PCRE2 source copy readable only by a `pcre2-reader` subagent, with its fixture test run from `scripts/tests/hooks.test` and `scripts/tests/check_pcre2_note.sh.test` for the note gate. The queue monitor script ([MON-SCRIPT]): `scripts/queuemon` (journal worktrees/.mgr/monitor.log), `scripts/monread`, and the SessionStart/UserPromptSubmit hook `monitor_unread.sh` are self-checked offline by `scripts/test_queuemon.sh` (`make testscripts`: every table row, UNEXPECTED, cursors, `--wait`, liveness, the hook's main-only gate, an inert boxqueue auto-start on a scratch queue).
 The sanitizer and lint targets (`make san`/`ubsan`/`asan`/`lint`/`alloc`) and
 `make test-recursion-identity` take the box lock like `test-axes` (the target
 re-invokes itself as `<target>-locked` under `scripts/boxlock run`); CI never
@@ -3494,6 +3494,9 @@ anchor was re-derived in the same commit; see that file's own history
 comments. `scripts/m6read_check_sab_anchors.py`: 118 sabotages checked
 (119 anchor sites), all anchors resolve. `bash tests/mech/
 run_sabotage_matrix.sh S43`: `gentmo:2fail/16pass`, DETECTED.
+
+**Every coreutils tool on the Linux dev box is uutils, not just `timeout`** (2026-10-29, fact-finder rc125): `/usr/bin/{nice,env,timeout,...}` link into `/usr/lib/cargo/bin/coreutils/` (115 tools), and uutils REJECTS a non-UTF-8 argument with exit 125 before running anything (`nice -n 10 /bin/true $'\xdf'` -> 125; `gnutimeout`, GNU 9.7, passes it). A raw-byte `--pattern` through any such wrapper is never compiled and reads as a refusal: the p910 census recorded two rows as `rc125` this way (tests/vars/caseless.rxt:152 under `-e utf8`, capability/mojibake-curly-quote under `-e byte`; both compile with rc 0 directly). Pass raw-byte patterns through `$TIMEOUT_BIN`/`scripts/watchdog` only, never `nice`/`env`/`stdbuf`; a census treats rc 125 as a tool failure, never a refusal.
+
 
 ## The encoding seam's checks ([M5-SEAM], 2026-08-18)
 

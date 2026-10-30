@@ -1781,8 +1781,9 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * descriptor is DEFINED to be exactly the un-suffixed call. It exists
  * because a generated matcher never allocates, so the two arrays a
  * backtracking match needs otherwise live on the entry's own stack frame:
- * MEASURED, `<prefix>_search`'s frame is 131,216 bytes on a call-bearing
- * artifact where `<prefix>_search_in`'s is 144. The header also stamps
+ * MEASURED, the default storage's frame is 131,232 bytes on a call-bearing
+ * artifact (the deep tier `<prefix>_search` escalates to) where
+ * `<prefix>_search_in`'s is 144. The header also stamps
  * `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` (the DEFAULT capacities, not
  * limits), `<PREFIX>_RESUME_FRAME_SIZE`/`_TRAIL_FRAME_SIZE` and
  * `<PREFIX>_BUFFER_ALIGN`, which is the arithmetic a caller needs to turn

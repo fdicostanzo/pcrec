@@ -322,7 +322,7 @@ lsrcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 if [ -z "$lsrcs" ]; then
     bad "T2 default-on/SIZECAP: the library source list is EMPTY, the reference compiler cannot be built"
 elif $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
-         -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+         -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000 \
          -DPCREC_SIZE_TERM_THRESHOLD=10000 \
          -o "$LOWSIZE" "$ROOT_DIR/cli/main.c" $lsrcs 2>"$WORKDIR/lowsize.err"; then
     got_ls="$(pcrec_run "$LOWSIZE" --emit-ir --features all --pattern '(?:a\K){2,}b' 2>/dev/null > "$WORKDIR/lowsize.ir" \

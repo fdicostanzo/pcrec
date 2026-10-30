@@ -1072,6 +1072,10 @@ fi
 # -2,404; 29,331 -> 26,419, -2,912; 32,296 -> 27,842, -4,454; 32,696 -> 29,962,
 # -2,734): main's +2 comment bytes and S3's cover text add independently. The
 # other eight rows read main's values unchanged.
+# RE-RECORDED 2026-10-29 at [K134] (lane trailgc3, abi 93): ONE row moved, `(a(?1)?b)`
+# 41,450 -> 43,357 (+1,907): the only sample artifact whose VM program carries a trail
+# checkpoint, so it gains the `RX_TRAIL_CHECK` macro, its call sites and the
+# compaction routine (the other eleven rows read identically). Diff read, not bumped.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

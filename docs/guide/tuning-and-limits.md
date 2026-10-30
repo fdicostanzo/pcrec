@@ -94,7 +94,7 @@ fixed-size stack frame, sized at compile time. That gives every
 recursive or deeply backtracking pattern a hard depth ceiling, expressed
 as a subject **size** rather than a count, and it can be smaller than
 you'd expect: a default build of `^(a(?1)?b)$` matches subjects up to
-684 bytes and gives up (`PCREC_ERR_FRAMES`) at 686. That's not a bug —
+1,526 bytes and gives up (`PCREC_ERR_FRAMES`) at 1,528. That's not a bug —
 it's the trade for a guarantee libpcre2 doesn't give you: the same
 pattern refuses a runaway, non-matching input in constant time, where a
 general backtracking engine can spend seconds or minutes on one. The

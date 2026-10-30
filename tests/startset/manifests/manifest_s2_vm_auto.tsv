@@ -446,7 +446,7 @@ tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
 tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
 tests/recursion/d27/sr_root.rxt:308	--features recursion	2861283f52292a6229
 tests/recursion/d27/sr_spellings.rxt:33	--features recursion,backrefs	28617c62295c31
-tests/recursion/framebuffer.rxt:94	--engine=vm	28617c6161292b62
+tests/recursion/framebuffer.rxt:102	--engine=vm	28617c6161292b62
 tests/recursion/k93.rxt:195	--features recursion	283f3a62283f5229617c612b29
 tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
 tests/size/size_term.rxt:32	--engine=vm	283f3a283f3a283f3a283f3a283f3a283f3a617c62297b34317d297b34317d297b34317d297b34317d297b34317d297b34317d

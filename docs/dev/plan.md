@@ -237,11 +237,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 
 ## Candidates ([OPTLOOP])
+- [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
+  filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
+  status (2026-10-29): filed, not scheduled; general and independent of [LANDWALK] (its cheap part, usable on every route that has a required run)
+  trigger: (D77) a bench or corpus cell where attempts after the last required-run occurrence are a measurable share (no-match tails on long subjects, RX_REQ_HANDOFF "none")
+  refs: [LANDWALK]; [REQ-HANDOFF]; memfn/docs/responses.md (R-30 note); decisions D157
+  Today, for a required run at an UNBOUNDED distance, the found position is only a yes/no gate. Every match contains the run at or after its start, so no attempt that starts after the run's LAST occurrence can match: one lazy re-find (or one reverse find) as attempts pass the last known occurrence lets the loop stop at the first position past it. pcrec states the fact (required run, unbounded); the kit owns the method (D157).
 - [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
   filed: 2026-10-29 lane p1dsg2
-  status (2026-10-29): DESIGNED, rev 1 after review r1 (p1dsg2_report.md); stage 1 (DFA hat) waits on Frank's build go and on one-optimization-build-at-a-time until [INLINE-C] closes
-  trigger: Frank's build go on rev 1 (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
-  refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
+  status (2026-10-29): DESIGNED, rev 2 after re-check r5 (p1dsg3_report.md: counterfactual NEXT read, finisher-dfa, asker-typed AT); stage 1 waits on the rev-2 check, Frank's build go, one-optimization-build-at-a-time
+  trigger: the manager's check of rev 2, then Frank's build go (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
+  refs: docs/dev/lanes/p1dsg3_report.md; docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/reviews/2026-10-29-r5-landwalk2.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
   The later rows below are the review's PLAN items and the general form's unlocks (r1 U1-U5); U3 (one walk emitter for rev-end and the landmark walk) is stage 1's own form (rev 1 D10), so it has no row. The admission sub-table's family unification is [ROWCONJ]; the VM hat's GIVEUP1 check is [GIVEUP-DIFF].
   - [LANDWALK-CARD] STATE:not-started — the walk's measurement card in time units (lwhit, lwcall), and its wlen sweep
     filed: 2026-10-29 lane p1dsg2
@@ -254,7 +260,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     status (2026-10-29): not run (over 50 compiles; the box was held by queue job 622 all day)
     trigger: stage 1 of [LANDWALK] opens (its step 1, under scripts/boxlock); r1 COST-9 (C6)
     refs: docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg2_evidence/population2.py
-    Per admission row: the route (RX_ENGINE), NEXT's selected row (which the census approximates by P's width), the landmark the choice rule picks, and the compile-time cost of building the landmark machine and then declining (rows evaluated after the build), against the plain compile.
+    Per admission row: the route (RX_ENGINE), NEXT_cf (the counterfactual NEXT, rev 2; the census approximates it by P's width), the landmark the choice rule picks, and the compile-time cost of the NEXT_cf memo fill and of building the landmark machine and then declining, against the plain compile. Also counts the reach of unrolling a bounded repeat's first iteration at the cut (csv5's shape, r5 SOUND-4) before it is designed.
   - [LANDWALK-ALLACC] STATE:not-started — walk OUTPUT = every accepting start ascending per hit (r1 U1)
     filed: 2026-10-29 lane p1dsg2
     status (2026-10-29): filed from review r1's general form; not designed
@@ -285,6 +291,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     trigger: locate_finish L3 landed AND a bench query-string cell exists for dup-param (r1 C2: acc-main is not a bench subject)
     refs: docs/dev/lanes/p1dsg2_report.md; docs/design/locate_finish.md; [GIVEUP-DIFF]
     Open at its design: (r1 D6) place the VM hat as NEXT/FIRST rows, not LOCATE, which may remove the L3 dependency; (r1 D5) the VM-route stamp ruling (RX_VM_START_SCAN is NEXT's; RX_DFA_SCAN on a VM artifact means the hybrid's DFA); (r1 SIM-6) `excl-lower`'s own per-call price; the A1 witnesses (unique_rule.py) as its answer net.
+    Rev 2 adds (r5): the net gains `((?:xy)?ab)=\1` on "xyab=aba" (UNIQUE's reach is one or more steps, SOUND-1) and keeps the hybrid witness `(?![a-z]*b)[a-z]+@x` (an erased prefilter body still declines); UNIQUE is decided on ML before the scan-edge pass (SOUND-3); `lmwalk_forms[]` (per-hit, lower-once, bot) is this stage's table (SLOT-11).
   - [LANDWALK-EDGEPRICE] STATE:not-started — p48's priced one-state relaxation on the walk's loops, as its own follow-up (r1 D11)
     filed: 2026-10-29 lane p1dsg2
     status (2026-10-29): split out of stage 1 by review r1: the plain edge comes free (pcrec_scanedge_dfa already runs on reverse machines) and adds 2.4% on 5b
@@ -641,6 +648,38 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: before locate_finish L3, L4 or L5 or [LANDWALK-VM] claims a give-up posture for a VM-finisher LOCATE row
   refs: docs/design/locate_finish.md; tests/axes/run_axes.sh; known_issues K82
   The direction rule read from the derived classification, a budget-ladder arm, and the witnesses (K82h's 35 blocks, T6a's 13, W1's constructed `(\w|\w\w)x$`, one per further ONE_WAY row), plus the corpus instrument that derives the classification column and a spec sentence per ONE_WAY row with a deny flag.
+- [TRAIL-CKPT-PRUNE] STATE:not-started — NO TRAIL CHECKPOINT ON A LOOP THAT CAN NEVER COMPACT (K134 cost outside cscan)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F3/F4 (lane trailgc3)
+  status (2026-10-29): not started. Never-full cost after the F1/F5 fixes, both entries: cscan +0.7-0.9 %; `^(a(?1)?b)$` +3.7/+3.8 %, a recursive-parens matcher +3.6/+4.0 %, `(\w+)(?:,(\w+))*;` +1.6/+1.7 % (-O3 +4.2 %). The fix kept every checkpoint.
+  trigger: Frank rules the non-cscan cost above the ~3 % bar (open question in docs/dev/lanes/trailgc3_report.md), or a bench cell on such a shape.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F3 F4; docs/dev/lanes/trailgc3_report.md "F3 re-measure"; decisions D183; known_issues K134
+  Mechanism (review r2 EMIT-1): the cold call's rejoin at a short loop's latch evicts the trail depth from its register. General form (EMIT-2): an `npush` clock beside `nset`; a back-edge whose cycle pushes a resume frame and is not cut inside writes each slot once per segment, so it can never compact and needs no checkpoint. Needs its own proof (the checker's cycle rule learns the exemption) and a sabotage row.
+- [TRAIL-REARM] STATE:not-started — A MONOTONE STOP RULE FOR TRAIL COMPACTION (reach in the trail capacity has holes)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F2 (lane trailgc3)
+  status (2026-10-29): not started. Documented in limits.md §4¶3. Tried once in trailgc3: re-arming at max(floor, w + cap/4) still left holes and moved the specimen boundary off `4n + 17` (n = 200 needed 803), so the latch stays.
+  trigger: a caller or bench report of a sizing hole (a bisected `ntrail` landing in one).
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F2; docs/spec/limits.md §4¶3; decisions D183
+  Cause: the quarter rule's stop is one sample of a trail depth that rises and falls (cscan seg20 answers at T = 185-199, gives up at 200, answers from 201). Candidates: re-arm when a backtrack drops below the kept depth; a geometric re-arm. Bar: no new cost on the never-full path, the work bound of D183 kept.
+- [TRAIL-GC-COUNT] STATE:not-started — A TEST-ONLY COMPACTION COUNTER, ASSERTED AGAINST TRAIL WRITES
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F12 (lane trailgc3)
+  status (2026-10-29): not started. Today the quarter rule's stop branch is seen only through the boundary probes (S1793 is caught by the specimen's 816 probe alone).
+  next: count compactions and visits behind `RX_TEST_TIER_HOOK`; tests/vm/run_trail_compact.sh asserts visits <= 12 x trail writes and that the stop fires on a witness.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F12; tests/vm/trail_compact_driver.c; tests/mech/sabotages/S1793_trail_quarter_stop_off.sh
+- [TRAIL-MECH-COVER] STATE:not-started — SABOTAGE ROWS FOR THE TRAIL TRIGGER'S REMAINING MUTANTS
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F13 (lane trailgc3)
+  status (2026-10-29): not started. S1790-S1799 cover the walk, the floor, the stop, the fast tier and the checkpoint sites; uncovered: the floor margin and cap/2 clamp, the TRAIL_CHECK compare direction, segment-0/last-segment bounds, `<` for `<=` in vm_jump_closes_trail_cycle.
+  next: one row per mutant in tests/mech/sabotages (arm trailcompact), each hand-planted first; a mutant no check sees gets a witness or a written reason.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F13; tests/vm/run_trail_compact.sh
+- [TRAIL-BOUND-SCALE] STATE:not-started — A TRAIL-BOUND RECURSION ROW AT SCALE, ORACLE-ANSWERED
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 F14 (lane trailgc3)
+  status (2026-10-29): not started. 4n + 17 and 763/764 are pinned from pcrec's own run (S1793's cell rests on a one-entry margin, n = 764 needs 3,073); the 64 MB `_in` row is frames-bound, so the trail-binding side is covered only at small n.
+  next: one `_in` row where the trail binds at large n (frames ample, the trail sized at the boundary), its span from libpcre2.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F14; docs/spec/limits.md §4
+- [LATCH-HOOK] STATE:not-started — ONE DECLARED LATCH HOOK FOR PER-LOOP-TURN CHECKS IN THE VM EMITTER
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 EMIT-8 (NOTED; lane trailgc3)
+  status (2026-10-29): NOTED. Three per-turn checks today (revdet work charge, counter MRL prune, the trail checkpoint); only the checkpoint is placed by a structural rule (the backward-edge branch of vm_goto/vm_jump).
+  trigger: the next per-loop-turn check, which becomes a row of the hook rather than a fourth construct-local spelling (memory forest-for-trees).
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md (standing questions); src/gen/emit_vm.c vm_jump, vm_trail_check_text
 - [ERR-MSG-TRUNC] STATE:not-started — A DIAGNOSTIC LONGER THAN pcrec_error.msg[256] IS CUT SILENTLY
   filed: 2026-10-29 manager, from lane ic2d27land's Bug B (docs/dev/lanes/ic2d27land_report.md, "Bug fixes")
   status (2026-10-29): not started. The public `pcrec_error.msg[256]` (lib/pcrec.h) truncates a refusal without a mark (`pcrec_ext_msgf`); the lone-carriage-return code refusal ran to 268 bytes, was cut mid-word, and was shortened by hand (S1741 holds that fix).
@@ -846,8 +885,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-26): (A) still RED and GROWING: at the [EMIT-BIDI] merge 7234c2e86, 167/381/167/111 regions differ from ac4917d (78/126/78/54 on 10-23); later landings (I1/I2, subst, abi 84-86; emitbidi respells kit run-compare string constants) are uncounted contributors. (B) green, re-pinned f6c230e5f
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
+  RULED 2026-10-29 (manager; answer-free harness choice, memory test-harness-minimal): RE-BASE now, not a ninth exception. It has now cost two triage lanes on landing checks (695-lands3-check red on (A) alone: 167/382/167/111, bucket 330 vs census 413; s3tri db2714e5f). Lane recida: list the movers since ac4917d, check the 9 (?U)-possessive movers' and a K128 sample's answers against libpcre2, then re-pin (A) to a recent ruled main commit with the bucket membership listed; any answer difference stops it.
   The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
   2026-10-27 full suite (7d3be7ec7): (A) counts IDENTICAL to 7234c2e86 (SCANEDGE-SET, INLINE-C 0/1a/1b added no mover; a same-count swap is not excluded). New datum: bref-rename bucket 328 on every axis (366 on 10-23, census 411, band +-30): 38 backref patterns left it; the re-base lane lists bucket membership first (KEEP=1 gate run).
+- [SPAN-HELPERS] STATE:not-started — CALLOUT SPAN HELPERS: a numeric compare of two digit spans in any base, then a surveyed set
+  filed: 2026-10-29 Frank ("a compare string as numbers helper... then you don't need to convert to integers"; "do a survey of potential helpers. Doesn't cost as they are static"; "it would work for any base like hex")
+  status (2026-10-29): survey DONE (docs/dev/span_helpers_survey_2026-10-29.md); manager rulings + 2 questions for Frank below
+  next: the survey's ranked list -> one design note -> a small build lane bundled with the next abi event, AFTER W1's pin (helpers are emitted text in every callout artifact: an abi event + spec hunk + identity re-pin)
+  refs: docs/spec/match_api.md §11.10 (the seven helpers today: rx_eq, rx_eqi, rx_u64, rx_hex, rx_in, rx_find, rx_u8next); D76/D94; memory names-describe-behaviour
+  Survey ranking: rx_numcmp (span vs span, base 2-36), rx_lit (a constant as a span), rx_eqi_index (word-set membership); rx_uint generalises rx_u64/rx_hex; domain checks (Luhn, leap year, mod 97) HELD for demand. Manager rulings: leading zeros stay equal (strictness is the pattern's job); every ordering/count/index helper uses rx_numcmp's separate-valid shape; sign/0x/underscores/separators stay out (the pattern strips them); names at the design note. OPEN for Frank: replace rx_u64/rx_hex with rx_uint or keep them; domain helpers now or on demand. FACT owed by the design note: whether template-side code (UC-2) gets the helpers.
+  Frank 2026-10-29, two more: (1) "you could fold letters": fold a-z to A-Z per digit and compare BYTES, since after folding ASCII order is value order for every base 2-36 ('0'-'9' < 'A'-'Z'), so one fold + a byte compare replaces a per-digit value map. (2) RX_STR("foobar"): a span from a string LITERAL at compile time, ((rx_span){ (const unsigned char *)"" s "", sizeof("" s "") - 1 }), the "" s "" pasting refuses a pointer (sizeof of a pointer would be a silent wrong length) and sizeof keeps embedded NULs; supersedes the survey's rx_lit(z) for constants (no strlen, a constant expression); rx_lit stays only if a run-time C string needs it.
+  First member: rx_cmpn-style compare of two spans as numbers without conversion: skip leading zeros, compare digit counts, then compare digit by digit BY VALUE (decimal may use memcmp; hex/other bases fold case per digit since ASCII order is not value order across cases), any base 2-36; returns valid/invalid separately from the -1/0/1 result (an unset, empty or non-digit side is invalid, never a silent comparison). Problem it solves: comparing two captures to each other ($1 <= $2: ranges, versions, ports) and numbers past 64 bits; a constant bound is already rx_in. Cost: unused static inline helpers emit no object code, but they are artifact text (abi, source size).
 - [SEQ-FOLD] STATE:not-started — FOLDED TEXT MATCHES: one fold table for full case, accent and look-alike folding
   filed: 2026-10-24 Frank ("The general mechanism sounds good"), from lane utfwant's survey
   status (2026-10-24): go (Frank); starts after every open item and its follow-ups complete; children are rows of ONE fold mechanism, full case folding first (demand), look-alike last (no outside demand found)
@@ -992,7 +1040,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-10 Frank
   status (2026-10-10): HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out…
   trigger: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it).
-  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md
+  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank)
   UMBRELLA ROW, the gate for: [RXINFO-REMODEL] + [V-E] (rx_info), [STAMP-REVIEW] + [CAP-STAMP-BYTES] (stamps), [OPT-SETS] + the pcrec_options/CLI option surface, [FINDALL-NEXT], [EMIT-ENTRIES]. TRIGGER: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it). ORDER: the interface push as ONE design pass across the four surfaces, THEN the docs pass ([SPEC-ORG], [SPEC-LANG], [GUIDE-1]) once the interface is solid. Until then member rows stay unscheduled; a capability/optimization row that needs a new field or stamp adds it the usual way (D76 ritual), not a remodel. RESIDUE FROM [FLAG-ACCESS] (archived 2026-10-12, merged 67f59d24): the accessors still take/return uint64_t; the word still travels as a uint64_t parameter (cand_select, DFA_SELECT, clskit/memfn deny maps) and is printed into `.flags = N`; writes stay raw and outside the gate.
   So a representation change is a typed sweep over those sites, not one site.
   2026-10-22 CANDIDATE (kit S3, [KIT-VERIFY] B1): flag bit 57, a pcrec-side deny for the cover locator (the proven fixed-width window reported with no engine run, `RX_DFA_SCAN "cover"`); NAME per Frank 2026-10-22: name the behaviour, never an internal module, working name `PCREC_NO_WINDOW_REPORT`, final spelling at the push, deferred here by the manager's ruling; until then the kit deny is the OFF arm (mf_ask refuses, LOCATE falls to composite).
@@ -1397,6 +1445,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One channel, off by default and switchable (a CLI flag / pcrec_options field / config line; never changes an artifact byte), on which every decision site writes one record: the table and the row that fired, the rows that declined ahead of it and the conjunct that failed, the inputs read (facts, analysis block + provenance + why, measurement-set row, explicit control vs preset), and a held/declined outcome where one applies. pcrec's tables write pcrec records; the kit writes its OWN records through a text callback on the seam (facts in, kit text out: D157 holds).
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 ## Boonies
+- [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
+  filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
+  status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
+  trigger: any one unlock's trigger below.
+  refs: docs/dev/reviews/2026-10-29-r2-trailgc.md (standing questions); decisions D183; [LATCH-HOOK]
+  Unlocks: (1) a growable caller-supplied trail grown at a safepoint (trigger: a trail give-up with frames to spare after K134); (2) cancellation or deadline polling (trigger: a user request for interruptible matching); (3) dead-frame compaction of the resume stack (trigger: a FRAMES give-up on provably dead frames); (4) work-charge placement for loops the fail label never sees (trigger: another missed-charge finding).
 - [ONCE-DEADCHOICE] STATE:not-started — ACCEPT MORE `once` CALLOUT SITES BY SEALING PROVABLY DEAD CHOICES
   filed: 2026-10-26 manager; Frank: "Save your ideas in a boonies plan item to be revisited if requested"
   status (2026-10-26): BOONIES; DECLINED for now (Frank: "both of those options are not easily predictable. It's hard to program around 'maybe it will work'"); `once` stays a syntactic reading rule (INLINE-C.md ruling 2026-10-26). Nothing built.

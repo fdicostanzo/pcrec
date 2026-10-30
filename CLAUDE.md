@@ -90,6 +90,7 @@ never expand a row into a paragraph.
 | end or pause a session | rewrite docs/dev/wake.md from scratch (skill §6) |
 | complete a milestone or close a row | grep plan.md for rows naming it as a TRIGGER or gate (DD-2/M4-CALLOUTS/M4-SUBST/DD-6/DD-11 sat months behind shipped M4/M6/M6.6 — backlog_triage_2026-09-22.md) |
 | read a gate/suite log | the verdict is make's `*** [test-X] Error` lines, never "sections ran" and never a grep for FAIL: (learnings §3, 2026-09-22). GNU make on Linux prints `*** [Makefile:646: test-X] Error 1` — grep `'\*\*\* \[(Makefile:[0-9]+: )?test-'` (-E), never `'\*\*\* \[test-'` alone (that form read a red Linux run as clean, 2026-10-06) |
+| read PCRE2 source, or need a fact only its code has | ONLY via a `pcre2-reader` subagent (one named question; its prose note, checked by `scripts/check_pcre2_note.sh`, lands in `docs/dev/pcre2_notes/`); never open or copy the ref copy yourself; code leaning heavily on a note cites it + `[PCRE2src]` in a comment — D181, that dir's CLAUDE.md |
 | change search/scan emission or a kit kernel | `memfn/CLAUDE.md` + D146/D147 (delegated sites are the kit's; both layers read; a kit byte move is a pcrec abi event in the same commit) |
 
 ## Compatibility standard (D26)

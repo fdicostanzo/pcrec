@@ -449,6 +449,15 @@ Accessed 2026-09-04.
 Cited by: `docs/dev/dfa_online_minimization_study.md` §6 (retrofitted by
 lane m5paper).
 
+### [PCRE2src] PCRE2 10.46 source, read ONLY through the clean-room wall (software, not a paper)
+
+PCRE2 tag pcre2-10.46 (<https://github.com/PCRE2Project/pcre2>). pcrec never
+opens or copies it outside a `pcre2-reader` subagent (D181); what crosses is a
+prose note in `docs/dev/pcre2_notes/`. Cite this key in code ONLY where a design
+leaned heavily on a note (the algorithm or structure came from the source), as
+in docs/dev/pcre2_notes/CLAUDE.md; matching PCRE2's behaviour needs no citation (D26).
+Cited by: `docs/dev/pcre2_notes/CLAUDE.md`; the notes themselves and the code sites that cite them.
+
 ### [PCRE2matching] PCRE2 `pcre2matching` documentation (software documentation, not a paper)
 
 First-hand for what `pcre2_dfa_match` does and does not do: the

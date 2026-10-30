@@ -1,0 +1,24 @@
+cap_alt	--features all --engine=vm	^(a|bc)+d
+span_greedy	--features all --engine=vm	^(?:[ab]+b|y)(z)
+span_lazy	--features all --engine=vm	^(?:.*?x|y)(z)
+span_poss	--features all --engine=vm	^(?:a+?x|y)z
+span_caps	--features all --engine=vm	^(?:(?:(a)b)*c){2}$
+revdet	--features all --engine=vm	^(?:(?:[bB]|[cC]d)(\w))+by$
+revdet_lazy	--features all --engine=vm	^(?:(a)|b)+?c
+counter	--features all --engine=vm	(?:a|ab){300}+c
+counter2	--features all --engine=vm	(?:a|bc){3}+
+lookbehind1	--features all --engine=vm	^[xy](?:a|(?<!y)w|(?!q)[pq])z
+lookbehind2	--features all --engine=vm	^x(?:a|(?<=x|yz))w
+napla	--features all --engine=vm	^(*napla:x(?:a|))xb
+atomic	--features all --engine=vm	^(?:(?>ab|a)c|abd)
+bref	--features all --engine=vm	^(a|b)\1$
+vars	--features all	^(a)${v}c
+callout	--features all --engine=vm	(?C1)a|b
+recurse_linked	--features all --engine=vm -fno-splice-calls	^(x(?>a(?1)?b)y)$
+recurse_spec	--features all --engine=vm	^(a(?1)?b)$
+kreset	--features all --engine=vm	(?:a\K)*ab
+gstart	--features all --engine=vm	\Ga(b)
+island	--features all --engine=vm	foo|bar|baz|qux
+wclass	--features all --engine=vm -e utf8	^(\p{L}+)x
+mrl	--features all --engine=vm	(a{2,4}){3,9}b
+wordb	--features all --engine=vm	\bfoo(\w+)\b

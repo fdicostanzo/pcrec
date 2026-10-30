@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 92
+#define PCREC_ARTIFACT_ABI 93
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -2916,7 +2916,7 @@ static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const GenNames *g)
     const PcrecEntry ins[] = {
         PCREC_ENTRY_SEARCH_IN, PCREC_ENTRY_MATCH_IN, PCREC_ENTRY_MATCH_CAPS_IN,
     };
-    const PcrecFwd inert = { PCREC_FWD_INERT, NULL };
+    const PcrecFwd inert = { PCREC_FWD_INERT, NULL, false };
     const PcrecEntryText t = { .fwd = &inert };
     const char *sep = "";
     for (size_t i = 0; i < sizeof ins / sizeof *ins; i++) {
