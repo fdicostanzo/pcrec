@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 92
-#error "pcrec: this artifact (abi 92) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 93
+#error "pcrec: this artifact (abi 93) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 92
+#define PCREC_RX_ABI_H 93
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1482,7 +1482,7 @@ site.** An artifact whose frame requirement is not statically bounded keeps
 its default backtracking storage in a non-inlined internal function that only
 a `PCREC_ERR_FRAMES` escalation reaches (§10.9). Measured on a `-p rx
 --features all` build of `^(a(?1)?b)$`: `<prefix>_search`'s own frame is
-3,184 bytes and the internal function's 131,216, so a call needs 134,400 bytes
+3,200 bytes and the internal function's 131,232, so a call needs 134,432 bytes
 of free stack at the call site to be safe on every subject (`limits.md` §5
 states the rule). A call's frame lands wherever the stack pointer already is,
 so a thread's nominal size equals the headroom only at call depth ~0. At depth
@@ -1643,7 +1643,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `92` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `93` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1801,7 +1801,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `92` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `93` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -3544,8 +3544,8 @@ reservation).
 
 - <a id="s10-1-p1"></a>[10.1¶1] **The depth ceiling is small, and it is a SUBJECT SIZE.** Measured on a
   default `-p rx --features all` build of `^(a(?1)?b)$` (recursion depth grows
-  with the subject): it matches up to a 684-byte subject and returns
-  `PCREC_ERR_FRAMES` at a 686-byte one. libpcre2 10.46 matches 800 KB of the
+  with the subject): it matches up to a 1,526-byte subject and returns
+  `PCREC_ERR_FRAMES` at a 1,528-byte one (`limits.md` §4). libpcre2 10.46 matches 800 KB of the
   same shape (cited from `docs/design/subroutines_design.md` §5.6).
 - <a id="s10-1-p2"></a>[10.1¶2] **The refusal is constant-time.** Measured on the same build, the
   left-recursive runaway `^(a|(?1)a)$` over aⁿb returns `PCREC_ERR_FRAMES` in
@@ -3697,20 +3697,21 @@ and 4,194,304 trail entries; 1.8 MB resident before the first match):
 
 | subject | result | time | process RSS after |
 |---|---|---|---|
-| 684 B | match | 0.0001 s | 2.0 MB |
-| 200 KB | match | 0.0135 s | 24 MB |
-| **800 KB** | **match** | **0.057 s** | **90 MB** |
-| 932 KB | match | 0.065 s | 102 MB |
-| 940 KB | `PCREC_ERR_FRAMES` | 0.069 s | 103 MB |
+| 1,526 B | match | 0.0001 s | 2.3 MB |
+| 200 KB | match | 0.0096 s | 24 MB |
+| **800 KB** | **match** | **0.033 s** | **90 MB** |
+| 1,677,720 B | match | 0.064 s | 135 MB |
+| 1,677,722 B | `PCREC_ERR_FRAMES` | 0.007 s | 135 MB |
 
-<a id="s10-6-p3"></a>[10.6¶3] Through the un-suffixed `rx_search`, the same artifact matches the 684 B
+<a id="s10-6-p3"></a>[10.6¶3] Through the un-suffixed `rx_search`, the same artifact matches the 1,526 B
 subject and returns `PCREC_ERR_FRAMES` on the four larger ones.
 `tests/recursion/run_frame_buffer.sh` asserts these. 128 MB reserved costs
 about 1.7 MB resident until touched; the 800 KB row is the depth libpcre2 10.46
 reaches from its heap; and **the ceiling is predictable from the emitted
-numbers**: the trail binds, at `ntrail / (trail entries per level)`, which for
-this pattern is 4,194,304 / 8.98 ≈ 467,000 levels, and the measured boundary
-lies between n = 466,000 and n = 470,000. The buffer need not be `mmap`'d: a
+numbers**: the specimen needs 2 frames and `4n + 17` trail entries for depth
+`n` (`limits.md` §4), so the ceiling is `min(nframes / 2, (ntrail - 17) / 4)`
+levels. Here the frames bind: 1,677,721 / 2 = 838,860 levels, and n = 838,860
+matches while n = 838,861 returns `PCREC_ERR_FRAMES`. The buffer need not be `mmap`'d: a
 heap allocation, a static array in the caller's translation unit, or an arena
 slice works.
 
@@ -3793,7 +3794,7 @@ which side a call landed on.
 213–268 → 45.6–48.8 ns/call, against 44.2–47.2 for `<prefix>_search_in`, and
 the entry's own frame (`gcc -fstack-usage`) 98,512 → 3,168 B. (The
 `^(a(?1)?b)$` specimen of §5.3 and `limits.md` §5 is a different artifact with
-different numbers: 131,216 → 3,184 B.) The tier is a bet that real calls hold
+different numbers: 131,232 → 3,200 B, re-measured after [K134] added the trail floor to its run state.) The tier is a bet that real calls hold
 on the fast tier, and it loses on some patterns:
 
 - <a id="s10-9-p11"></a>[10.9¶11] **The wasted fast attempt is bounded by the STEP and WORK budgets**, not by

@@ -27413,3 +27413,13 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - Review r8 vmcons2 (26804bd46): 3 answer twins; rev 2's print-then-lex signature re-introduced a token list -> RULED the record is the source, text rendered from it (one renderer per kind). Lane vmcons3 (opus) writes rev 3. Critic skill: sibling-field clause (fix-induced) + mis-typed record per kind (soundness).
 - Frank on P10: questions (back-and-forth, % vs block, density, a cost model) -> cheap lane p10model merged: K = round(log2 r) derivable (6 email, 8 iso), worst x2 vs hindsight, find-all memory rejected (cross-call state), streaming makes the rule WRONG with unknown n (4 limits to state). Frank: "build it speculatively and measure... first off-by-default optimization" -> lane p10build (opus, S1830-S1839, public opt-in flag, flag-off byte-identical).
 - recida DONE, parked until 698-recida-gate green ((A) re-based to 7234c2e86, 10 exception paths deleted, 47 movers 0 diffs).
+
+## 2026-10-29 (session 128 cont., manager, 15:45-16:30) — push, trail merge, token pause
+
+- Reviews r9 vmcons3 (6299b2060): build go for (a); vmrec (opus) building the record-first refactor (told to wrap at the token pause).
+- p10build delivered (opt-in -fdeferred-req-check, bit 58, abi 96 prov., OFF recommended; jobs 702/705/706/707 owed 10-30). p1build delivered (abi 95 prov.; mask-email x68.8; +31% loss [LANDWALK-PRES] = landing condition; jobs 710-712 owed).
+- 696 hit its 1 h cap mid make-test; covered by 695 (tree already had INLINE-C, no code since): PUSHED main 29efe73cd.
+- Trail fix merged on main ebcc10aa1 (abi 93) + (B) re-pin 86356a960 + ledger bacc804fa, NOT pushed; its suite chain waits for the box after 698-recida-gate. 700/701-p4entry cancelled for it (retry 10-30).
+- Kit: 697 to Saturday 09:00; simdset + r30 notes ready to merge (with our emit_sweep.py arm-pin fix).
+- Frank: [SPAN-HELPERS] (survey; RX_STR; letter fold) and an [IFACE-PUSH] candidate (subject-size knowledge: typical + maximum).
+- Token budget ends ~16:30, renews 07:00: heartbeat deleted; queue + full suite (00:00, freezes main at start) run unattended.

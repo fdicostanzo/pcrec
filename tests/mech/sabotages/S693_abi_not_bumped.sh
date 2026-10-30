@@ -66,6 +66,11 @@
 # AFTER is 88, the parent's number; same detector, same arm.
 # RE-AIMED 2026-10-27 (lane ic2, [INLINE-C] stage 2, abi 89 -> 90): AFTER is
 # 89, the parent's number; same detector, same arm.
+# RE-AIMED 2026-10-24 (lane s3pair, [MEMFN] D172 S3 over the iterators, abi
+# 84 -> 85): AFTER is 84, the parent's number; same detector, same arm.
+# RE-AIMED 2026-10-29 (lane s3m, [MEMFN] D172 S3 renumbered at landing order,
+# abi 91 -> 92 over main b05ccfc0b): AFTER is 91, the parent's number; same
+# detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
