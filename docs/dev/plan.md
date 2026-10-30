@@ -636,6 +636,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [LINT] STATE:not-started — no default: on a switch over a kind enum, enforced by the compiler (-Wswitch-enum)
+  filed: 2026-10-30 Frank (manager wrote the row)
+  status (2026-10-30): unscheduled; P1's lmwalk.c:152 default: caught only by wclass_census [5c] inside test-cpset-structure (AKind only)
+  next: count -Wswitch-enum warnings over src/ cli/ lib/ shared/ memfn/ under make strict; that count picks the arm below
+  refs: tests/codegen/wclass_census.py [5c]; S366; docs/dev/lanes/p1tri_report.md; [LINT-FRAME]
+  Frank 2026-10-30: "We don't do a C linter as such. We might be able to add a rule about switch on nodes using default." His leaning (recorded at his request): the compiler, not a hand-rolled scan. Prefer gcc -Wswitch-enum in `make strict` (warns on a missed enumerator even under default:, every enum, nothing to maintain); fix or narrowly pragma the deliberate defaults if they are few.
+  If the count is large: fall back to ONE small strict-time check over a DECLARED list of node-kind enums (AKind, VM ops, vm_stmt kinds, IR kinds) instead of a grep inside a feature census. Either arm retires wclass_census [5c] (the general rule replaces it; re-aim S366).
 - [ROWCONJ] STATE:not-started — one declared conjunct type for every row's admission/form sub-table
   filed: 2026-10-29 lane p1dsg2
   status (2026-10-29): filed from review r1 D2 (sibling-of-a-family); three members today, the landmark walk's would be the fourth
