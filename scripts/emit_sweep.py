@@ -1783,8 +1783,15 @@ TRACE_EXTRA_PINS = {
 # entry keeps PINS' plain floors. Each floor sits where its PLAIN sibling sits
 # relative to its measured value: producing AT the measured value (zero slack),
 # artifacts 6 below it (plain: 100 against 106).
-#   ("-e", "utf8"): producing 36, artifacts 98 -- measured at a080c69a and at
-#   fae3987e8, population 384 composition files.
+#   RE-PIN (kit, 2026-10-30, after F7 / [SWEEP-COMP-FLOOR] d7a425f41 moved the
+#   plain arm and missed these entries): job 695-kit-simdset-comppin measured
+#   EVERY arm (plain, -fmemfn-simd, -fcomments, -e utf8, --engine=vm) at
+#   producing 38 / artifacts 88, ref-vs-working (merged main 6bc45b974 vs
+#   lane/memfn-simdset 93433207c), 435 composition files: F7 removed the
+#   files a refused target used to write, so no arm differs from plain now.
+#   ("-e", "utf8"): producing 37, artifacts 86 -- the plain floors (its own
+#   stance: sit where the plain sibling sits). Was 36 / 98, measured at
+#   a080c69a and at fae3987e8, population 384 composition files.
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
 #   reshapes blocks the default engine compiles, so 20 fewer files are written.
@@ -1796,8 +1803,8 @@ TRACE_EXTRA_PINS = {
 # floor (the run says so), never the plain arm's (the `--engine=vm` run read
 # 86 < 100 on both sides, ref-vs-ref).
 COMPOSITION_EXTRA_PINS = {
-    ("-e", "utf8"): {"composition_producing_floor": 36,
-                     "composition_artifacts_floor": 98},
+    ("-e", "utf8"): {"composition_producing_floor": 37,
+                     "composition_artifacts_floor": 86},
     ("--engine=vm",): {"composition_producing_floor": 37,
                        "composition_artifacts_floor": 86},
     # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
@@ -1805,11 +1812,12 @@ COMPOSITION_EXTRA_PINS = {
     # plain arm's population, producing 37 / artifacts 106, measured at
     # lane/comppin 4464e1c10 (`--streams composition --extra=FLAG`, one
     # binary, 386 composition files). Floors AT the measured value (the
-    # counts are deterministic), the --engine=vm entry's stance.
-    ("-fmemfn-simd",): {"composition_producing_floor": 37,
-                        "composition_artifacts_floor": 106},
-    ("-fcomments",): {"composition_producing_floor": 37,
-                      "composition_artifacts_floor": 106},
+    # counts are deterministic), the --engine=vm entry's stance. Re-pinned
+    # 37 / 106 -> 38 / 88 from job 695-kit-simdset-comppin (header above).
+    ("-fmemfn-simd",): {"composition_producing_floor": 38,
+                        "composition_artifacts_floor": 88},
+    ("-fcomments",): {"composition_producing_floor": 38,
+                      "composition_artifacts_floor": 88},
 }
 
 
