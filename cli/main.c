@@ -1188,6 +1188,9 @@ static int cli_push_code_header(CliState *st, const char *v)
         (size_t)(st->ncode_headers + 1) * sizeof *hv);
     if (!hv) { perror("realloc"); return 1; }
     st->code_headers = hv;
+    /* line/file are never set by --code-header: a realloc'd slot holds
+     * whatever the heap did (the emitter strlen()s .file). */
+    hv[st->ncode_headers] = (PcrecCodeHeader){ 0 };
     if (cli_code_header(v, &hv[st->ncode_headers]) != 0) return 1;
     st->ncode_headers++;
     return 0;
