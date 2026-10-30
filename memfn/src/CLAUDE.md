@@ -27,6 +27,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - `generic.c` — the generic scalar row (plain byte loop for every vocabulary site; STMT/FUNC/EXPR; its context-span test left with `ctx`/`absent` at D172 S2 commit 6).
 - `ofsskip.c` — offset-skip arm: `fn_rows[]` BODY (`fn-pair`, `fn-memchr`) and PREFIX slots, `ofs_fn_define` (`ofs_fn_define_at` for a site that is not the record's: E-find's B-fn) routed as `<fn>__body` + `<fn>` selector, `ofs_fn_serves`; trace table `fn`; `ofs_pair_text` (+ `ofs_pair_decl`), the ONE two-stream (PAIR) renderer, bounded look-aheads so a find-all stays linear: fn-pair's body and window.c's B-pair.
 - `vrun.c` — fused run-scan SIMD rows `vrun-w16`/`vrun-w32` (KB second filter, trim, padded verify; denies `no-vrun-kb`/`-trim`/`-pad`).
+- `vany.c` — STANDALONE kernel, NOT ROUTED (no row, no deny, no pcrec caller): `mf_kernel_find_any`, find any of 2-3 bytes, `<fn>__body` + per-level helpers + selector (lane simdset). Its tests: `../tests/run_g2_any.py`; its card: `../data/cards/kit-kernels.tsv`.
 - `levels.def`, `levels.c` — the kit's ISA levels table (`MF_LEVEL`), `mf_levels()`, `kit_level()`.
 - `precheck.c` — pre-check composite: `precheck_arm` (ON_MISS), `precheck_assign_arm`, `precheck_assign_byte_arm` (deny `precheck-assign-byte`; pcrec states the shape from [REQ-HANDOFF-L1] only).
 - `runcmp.c` — run compare row table (`words`, `overlap`, `bytes`, `memcmp`), `run_cmp_render[_trim|_pad]`, `mf_flush_helpers`, `mf_run_rows`.
