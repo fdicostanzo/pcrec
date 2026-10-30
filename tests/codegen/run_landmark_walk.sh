@@ -58,6 +58,12 @@ while IFS='|' read -r enc scan row pat; do
         if [ "$got" = landmark-walk ] && has_walk "$a"; then ok "[witness] '$pat' ($enc): \"landmark-walk\" with the walk text"
         else bad "[witness] '$pat' ($enc): \"$got\" (walk text $(has_walk "$a" && echo present || echo absent)); expected \"landmark-walk\" ($row)"; fi
         nwalk=$((nwalk + 1))
+        # the walk answers presence, so PRESENCE declines the whole-window
+        # pre-check on it (match_api.md §6.3's `dominated`; lane p1tri moved
+        # run_prechecks.sh's witnesses off the walk, so this is where it is held)
+        why="$(sed -n 's/^#define RX_REQ_WHY "\(.*\)"$/\1/p' "$a")"
+        if [ "$why" = dominated ]; then ok "[presence] '$pat' ($enc): RX_REQ_WHY \"dominated\" on the walk"
+        else bad "[presence] '$pat' ($enc): RX_REQ_WHY \"$why\" on a walk artifact, expected \"dominated\""; fi
         for deny in -fno-landmark-walk -fno-anchored-dfa; do
             comp "$n" "${fl[@]}" "$deny" --pattern "$pat" || { bad "[deny] '$pat' $deny does not compile"; continue; }
             g2="$(scan_of "$n")"
