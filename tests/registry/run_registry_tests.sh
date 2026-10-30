@@ -721,9 +721,13 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # gains `handoff-attempts` and `handoff-attempts-entry` (the VM attempt
 # loop's rows), each carrying the deny bit (PCREC_NO_REQ_HANDOFF 46), 3
 # checks each. Measured: 242 PASS, 0 failed.
-if [ "$axesn" -ne 242 ]; then
+# 242 -> 245 at [LANDWALK] stage 1 (lane p1build, re-pinned by lane p1tri,
+# 2026-10-30): the `locate` axis gains `landmark-walk`, carrying the deny bit
+# (PCREC_NO_LANDMARK_WALK 57), 3 checks (macro/bit, cli flag, tuning.md
+# heading). Measured: 245 PASS, 0 failed.
+if [ "$axesn" -ne 245 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 242." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 245." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else

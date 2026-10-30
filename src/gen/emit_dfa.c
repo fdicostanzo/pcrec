@@ -10348,7 +10348,7 @@ static const CandRow cand_rows[] = {
       .routes = CR_DFA, .tok = "landmark-walk", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT | CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "locate", 3, "landmark-walk", PCREC_NO_LANDMARK_WALK } },
-      .desc = "a one-branch pattern with a byte class L at a top-level position whose bytes the prefix P before it can never consume, a DFA finisher with its anchored machine, NEXT (without the walk) not already starting from a landmark, and L rare enough against NEXT's start set (the landmark margin): each occurrence of L is found, the reverse machine of P·L walks back from it to the leftmost start, and one anchored run decides the match there; a hit the last run already read past relocates to the forward scan from that start",
+      .desc = "a one-branch pattern with a byte class L at a top-level position whose bytes the prefix P before it can never consume, a DFA finisher with its anchored machine, NEXT (without the walk) not already starting from a landmark, and L rare enough against NEXT's start set (the landmark margin): each occurrence of L is found, the reverse machine of P then L walks back from it to the leftmost start, and one anchored run decides the match there; a hit the last run already read past relocates to the forward scan from that start",
       .needs = { [CAND_ROUTE_DFA] = { CAND_ML | CAND_MA, 0, CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_landmark_walk },
                     .scan = { [CAND_ROUTE_DFA] = "landmark-walk" },
