@@ -89,6 +89,7 @@ Search, start, scan and engine optimization notes
 - `reqbyte_freq_pick.md`, `reqpos_2b.md` — [OPTLOOP.2] cycle-2 notes.
 - `premultiplied_dfa_table.md` [OPT-3], `offset_k_skip.md` [OPT-K], `artifact_size_term.md` [ART-SIZE] (+ `artsize_impl/`), `prefilter_count_independence.md` [OPT-4] (+ `opt4_impl/`), `opt5_step2_twopass.md` [OPT-5], `two_tier_entry.md` [OPT-1] step 2, `emitter_form.md` [ENG-FORM] (D82).
 - `alt_dispatch_study.md` — [ENG-ISL.S0] alternation-dispatch study (`studies/alt_dispatch/`).
+- `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
 - `c3_three_way.md` — C3 tier narrowing (built); `tt4m_harness_batching.md` — [TT-4M] step 2b.
 
