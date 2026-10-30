@@ -137,6 +137,11 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   slot; a failed stage is retried ALONE (`scripts/boxqueue retry KEY`); a
   corrective or forgotten check is one more job, never a second chain or a
   hand-written waiter. `scripts/boxqueue status` answers "why has X not run".
+  ONE STAGE PER JOB (Frank, 2026-10-30): a multi-stage validation (sections,
+  make test, test-axes, asan, mech) is queued as one job PER STAGE (`batch`,
+  or `add` jobs chained with `after`), never one script running them all, so
+  a short job from another session slips in at each stage boundary instead
+  of waiting hours behind a 4-hour chain (730-fsfix-check, one five-stage job, held the box for hours).
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
