@@ -11,8 +11,10 @@
 # `scan_position` but leaves every capture write standing. Nothing about the emitted
 # code's SHAPE changes — the trail is still built, the frames still carry their
 # marks — so no structural check can see it; only spans can.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the fail label moved into the frame (vm_stmt_frame), text unchanged. Same detector, same arm.
 SAB_ID="S36-vm-undo-neutered"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="vm"
 SAB_DESC="the emitted fail label no longer rewinds the capture trail (undo becomes a no-op; scan_position is still restored)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails (wrong spans across the backtracking families)"

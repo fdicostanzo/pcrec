@@ -40,8 +40,10 @@
 # calls consume ordinary frames. So there is ONE line here, it is the one
 # SS9.3 already records as the one whose deletion changes ANSWERS, and
 # S-SR2a (the other line's row) moves to that axis with it.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the fail label moved into the frame (vm_stmt_frame), whose row closes one parenthesis more; the same line dropped. Same detector, same arm.
 SAB_ID="S144-fail-label-call-top"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The fail label stops restoring \`call_top\` from the popped frame, so after a retreat the CURRENT ACTIVATION is whatever the deepest call left behind -- every return then reads its trail_mark one level too deep and restores the wrong values"
@@ -53,8 +55,8 @@ SAB_COUNT=1
 # in it at all. The row is unaffected in substance — its detector
 # `^(a(?1)?b)$` is RECURSIVE, so its call is linked and this line is emitted
 # for it exactly as before.
-SAB_BEFORE='            v->has_linked_calls
+SAB_BEFORE='            f->has_linked_calls
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
-              : "");'
-SAB_AFTER='            "");   /* SABOTAGE S144: the fail label forgets the activation */'
+              : ""));'
+SAB_AFTER='            ""));   /* SABOTAGE S144: the fail label forgets the activation */'

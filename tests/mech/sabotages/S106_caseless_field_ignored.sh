@@ -15,6 +15,8 @@
 # separate row: `caseless.rxt`'s `^(?i:(a))\1$` cell — where the `(?i)` is at
 # the GROUP and the compare is case-SENSITIVE — catches it, and that cell is
 # in the same block as this one's.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the seam entry's name is VK_BREF's caseless operand, still taken from the AST field here; the field ignored at the same site. Same detector, same arm.
 SAB_ID="S106-caseless-field-ignored"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen brefdiff harness"
@@ -29,7 +31,5 @@ SAB_DOC_FIGURE="PREDICTED: the corpus RED on caseless.rxt; codegen RED (the resi
 # The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
 # re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
-SAB_BEFORE='    fn = vm_rolef(v, "%s_span_match%s", v->p,
-                  a->u.bref.caseless ? "_caseless" : "");'
-SAB_AFTER='    fn = vm_rolef(v, "%s_span_match%s", v->p,
-                  0 ? "_caseless" : "");   /* SABOTAGE S106 */'
+SAB_BEFORE='    const VmBrefOps o = { rs, re, nr, a->u.bref.caseless, work, next };'
+SAB_AFTER='    const VmBrefOps o = { rs, re, nr, 0, work, next };   /* SABOTAGE S106 */'

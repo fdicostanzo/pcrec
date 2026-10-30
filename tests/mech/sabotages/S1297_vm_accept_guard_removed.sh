@@ -3,8 +3,10 @@
 #
 # Plant: the guarded matcher's NOTEMPTY_ATSTART line never rejects: the VM retry accepts the empty match it exists to reject.
 # Detector: a retry-budgeted artifact's iterator repeats an empty match (DIFF against libpcre2).
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the guarded copy moved into the frame (vm_fr_guarded_copy), text unchanged. Same detector, same arm.
 SAB_ID="S1297-vm-accept-guard-removed"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="findall"
 SAB_DESC='the guarded matcher'"'"'s NOTEMPTY_ATSTART line never rejects: the VM retry accepts the empty match it exists to reject.'
 SAB_DOC_FIGURE='Owed: the lane queued this row (docs/dev/lanes/i1build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1297.'

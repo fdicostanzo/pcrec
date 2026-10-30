@@ -12,8 +12,10 @@
 # It is also the mirror of S107's mistake one level down: "is the pair set"
 # and "does the pair have length" are one `if` apart, and PCRE2 distinguishes
 # them (§3.3 fails an UNSET reference; §3.4 succeeds an EMPTY one).
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the bref compare block is VK_BREF's renderer (vm_r_bref), text unchanged. Same detector, same arm.
 SAB_ID="S105-unset-test-is-length"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="The emitted chain tests slot_values[START] != slot_values[END] instead of != PCREC_UNSET, so a published EMPTY capture reads as unset and the reference FAILS. ^(x?)y\\1z\$ on \"yz\" answers nomatch where PCRE2 gives (0,2) with group 1 = (0,0); every non-empty cell still passes"

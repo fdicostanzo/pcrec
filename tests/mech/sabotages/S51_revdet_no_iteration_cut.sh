@@ -18,13 +18,15 @@
 #
 # The cut at the LAZY extension's own site is deliberately left alone:
 # sabotaging both would not say which one carries the cost.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the scan's cut is now a CUT_LOCAL record; the record not built (the old AFTER's `(void)<p>_rvN_mk;` named a local the M6-READ rename had already retired, so it no longer compiled: the re-aim plants the cut's removal the row describes). Same detector, same arm.
 SAB_ID="S51-revdet-no-iteration-cut"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="rungdiff"
 SAB_DESC="the revdet scan per-iteration cut removed: the loop frames accumulate per iteration again, so the artifact exhausts its stack below the length it stamps"
 SAB_DOC_FIGURE="tests/rungselect/run_rungdiff.sh: the failure surfaces part"
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
+SAB_BEFORE='    vm_b_cut_local(v->sb, loop);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'
-SAB_AFTER='    pcrec_sb_printf(b, "    (void)%s_mk;\n", rv);  /* SABOTAGE S51 */
+SAB_AFTER='    /* SABOTAGE S51: the per-iteration cut is not emitted */
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'

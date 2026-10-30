@@ -23,8 +23,10 @@
 # itself exactly where it was. The plant is UNCHANGED in meaning: it still
 # replaces the seam CALL with an inline byte loop, which is what makes the
 # fixture-declared per-site count its only possible detector.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the bref compare block is VK_BREF's renderer (vm_r_bref), text unchanged. Same detector, same arm.
 SAB_ID="S109-compare-inlined"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="The A_BREF emission writes an inline byte-compare loop instead of calling the encoding residual entry. Under the byte backend the ANSWERS ARE IDENTICAL, so every corpus and every differential stays green; what moves is that the compare stopped being replaceable by another encoding's backend"

@@ -26,8 +26,10 @@
 # cut at the return as the alternative and SS3.2 measured it wrong for 10.46.
 # The sabotage therefore has to WRITE the cut rather than delete one, which is
 # why its AFTER is longer than its BEFORE.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the region return is VK_RETURN's renderer (vm_r_return), text unchanged. Same detector, same arm.
 SAB_ID="S146-call-return-cuts"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The emitted return CUTS the resume stack back to the call frame, making every subroutine call ATOMIC -- 10.30's semantics, which 10.46 abandoned"
