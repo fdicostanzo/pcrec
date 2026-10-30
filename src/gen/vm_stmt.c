@@ -25,6 +25,7 @@ struct VmBody {
     bool        tracing;
     size_t      clock;
     bool        closed;
+    bool        lax;   /* VMREC-TRANSITION: tiling re-syncs instead of failing */
     VmGuardSpell gstack[16];
     int         gdepth;
     VmStmt     *rec;
@@ -732,6 +733,7 @@ VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
     sb->up = up;
     sb->tracing = tracing;
     sb->clock = pcrec_sb_len_uncut(sb->b);
+    sb->lax = true;   /* VMREC-TRANSITION */
     return sb;
 }
 
@@ -740,6 +742,7 @@ VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
 static void vm_tile(VmBody *sb, const char *what)
 {
     if (pcrec_sb_len_uncut(sb->b) == sb->clock) return;
+    if (sb->lax) { sb->clock = pcrec_sb_len_uncut(sb->b); return; }   /* VMREC-TRANSITION */
     pcrec_ctx_fail(sb->cx, 0, "internal error: the VM body changed outside its "
                    "renderers (%zu bytes where the last record, %s #%d, left %zu) "
                    "before %s", pcrec_sb_len_uncut(sb->b),

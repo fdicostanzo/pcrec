@@ -73,6 +73,9 @@
 /* [MEMFN] M1b the VM's literal-run compares are a kit site (VMRUN,
  * docs/design/memfn/integration.md §15.6, §R4.8). */
 #include "gen/memfn_sites.h"
+/* [VMREC] (a) the matcher body as typed records: every statement of the
+ * body is built through vm_stmt.h and printed by its kind's one renderer. */
+#include "gen/vm_stmt.h"
 
 /* ---- capacities ------------------------------------------------------------
  *
@@ -410,6 +413,8 @@ typedef struct Cost Cost;
 typedef struct {
     Ctx      *cx;
     StrBuf   *b;          /* SCRATCH: the VM function's body, see vm_emit_all */
+    VmBody   *sb;         /* the body's ONE writer (vm_stmt.h): every statement
+                           * is a record printed by its kind's renderer */
     const char *p;        /* --prefix */
     const char *up;       /* uppercased prefix — GenNames.upper, shared */
     int       nlabel;
@@ -887,6 +892,19 @@ static const char *vm_rolef(Vm *v, const char *fmt, ...)
     const char *q = pcrec_sb_fragfv(&v->cx->arena, fmt, ap);
     va_end(ap);
     return q;
+}
+
+/* A record's condition as one formatted text piece: a VALUE fragment, which
+ * carries no control (vm_stmt.h). */
+static VmFrag vm_condf(Vm *v, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+static VmFrag vm_condf(Vm *v, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    const char *q = pcrec_sb_fragfv(&v->cx->arena, fmt, ap);
+    va_end(ap);
+    return vm_frag_of(v->sb, q);
 }
 
 /* Renders the quantifier's bound, `{m,}` or `{m,n}`, once [EP2-E3].
@@ -1689,6 +1707,19 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
         return;
     }
     pcrec_sb_puts(b, vm_cls_read(v, VCR_SITE, ci, byte));
+    vm_cls_note_read(v, ci, byte);
+}
+
+/* The same membership test appended to a record's condition `f`: the class
+ * kit's inline piece, or the table read as text (recorded for the
+ * re-spelling), exactly as vm_cls_test spells it. */
+static void vm_cls_frag(Vm *v, VmFrag *f, int ci, const char *byte)
+{
+    if (vm_cls_inline(v, ci)) {
+        vm_frag_cls(v->sb, f, &v->clsch[ci], byte);
+        return;
+    }
+    vm_frag_text(v->sb, f, vm_cls_read(v, VCR_SITE, ci, byte));
     vm_cls_note_read(v, ci, byte);
 }
 
@@ -3461,12 +3492,7 @@ static void vm_lbl(Vm *v, int id, const char *role)
      * with the listing and with tests/codegen/run_ir_listing.sh, so it is a
      * documented cross-artifact identifier rather than an opaque local. It
      * gets a name in a comment, not a new spelling. */
-    if (role && *role) {
-        pcrec_sb_cmt_open(v->b, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_printf(v->b, "// %s\n", role);
-        pcrec_sb_cmt_close(v->b);
-    }
-    pcrec_sb_printf(v->b, "%s_L%d: __attribute__((unused));\n", v->p, id);
+    vm_b_label(v->sb, id, role);
     vm_ev(v, VE_LABEL, id, 0, role);
     if (id >= v->lbl_cap) {
         int ncap = v->lbl_cap ? v->lbl_cap * 2 : 256;
@@ -3499,7 +3525,8 @@ static const char *vm_trail_check_text(Vm *v)
 /* Writes a trail checkpoint as a statement (vm_trail_check_text). */
 static void vm_trail_check(Vm *v)
 {
-    pcrec_sb_printf(v->b, "    %s\n", vm_trail_check_text(v));
+    (void)vm_trail_check_text(v);
+    vm_b_checkpoint(v->sb);
 }
 
 /* [K134] Whether a jump to label `id` written NOW goes back in the text over
@@ -3522,6 +3549,16 @@ static const char *vm_jump(Vm *v, int id)
     return vm_rolef(v, "{ %s goto %s_L%d; }", vm_trail_check_text(v), v->p, id);
 }
 
+/* A guarded jump's target, label `id`: the checkpoint on the edge where the
+ * jump closes a trail-writing cycle, counted and logged here (vm_jump's rule
+ * for a record's target). */
+static VmTgt vm_jump_tgt(Vm *v, int id)
+{
+    bool ckpt = vm_jump_closes_trail_cycle(v, id);
+    if (ckpt) (void)vm_trail_check_text(v);
+    return vm_tgt_label(id, ckpt);
+}
+
 /* Writes the artifact's unconditional jump to label `id` and records the
  * matching listing event, so the emitted C and `--emit-ir` cannot disagree
  * about where control goes. */
@@ -3529,7 +3566,7 @@ static void vm_goto(Vm *v, int id)
 {
     if (vm_jump_closes_trail_cycle(v, id))
         vm_trail_check(v);
-    pcrec_sb_printf(v->b, "    goto %s_L%d;\n", v->p, id);
+    vm_b_goto(v->sb, id);
     vm_ev(v, VE_GOTO, id, 0, NULL);
 }
 
@@ -3538,27 +3575,23 @@ static void vm_goto(Vm *v, int id)
  * event. Every failure edge in the matcher is written through here. */
 static void vm_fail(Vm *v)
 {
-    pcrec_sb_printf(v->b, "    goto %s_fail;\n", v->p);
+    vm_b_fail(v->sb);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
 }
 
 /* Pushes a resume frame at label `lblid`, recording `posexpr` as the
  * position it resumes at.
  *
- * `posexpr` is `pos` for every ordinary choice point, and the span-loop
- * cursor for S2.5's rung, which is the one site that resumes somewhere
- * other than the current position. Under --trace the macro takes the label
+ * `pos` is `pos` for every ordinary choice point, and the span-loop
+ * cursor for S2.5's rung and the revdet loop's previous boundary (loop
+ * `loop`), the sites that resume somewhere other than the current
+ * position. Under --trace the macro takes the label
  * id too, so the instrumented artifact can name the frame it is pushing;
  * that extra argument is the ONLY difference --trace makes to this line,
  * and it makes none at all without it. */
-static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
+static void vm_push_at(Vm *v, int lblid, VmPosKind pos, int loop, const char *role)
 {
-    if (v->tracing)
-        pcrec_sb_printf(v->b, "    %s_PUSH(%d, &&%s_L%d, %s);\n",
-                  v->up, lblid, v->p, lblid, posexpr);
-    else
-        pcrec_sb_printf(v->b, "    %s_PUSH(&&%s_L%d, %s);\n",
-                  v->up, v->p, lblid, posexpr);
+    vm_b_push(v->sb, lblid, pos, loop);
     v->emitted_push = true;
     vm_ev(v, VE_PUSH, lblid, 0, role);
 }
@@ -3568,7 +3601,20 @@ static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
  * the span-loop rung wants this one. */
 static void vm_push(Vm *v, int lblid, const char *role)
 {
-    vm_push_at(v, lblid, "scan_position", role);
+    vm_push_at(v, lblid, VPOS_CURSOR, 0, role);
+}
+
+/* Records a trail write just built (SET, SNAPSHOT or RESTORE): the
+ * artifact touches the trail, the write count, and the listing event — the
+ * counters every trail-write record shares, at the program point it is
+ * written. */
+static void vm_set_counted(Vm *v, int slot, const char *role)
+{
+    /* [CC-DIFF] STEP 2: in the SAME call that writes the bytes — see the
+     * field's comment for why the trail counts as touched storage. */
+    v->emitted_set = true;
+    v->nset++;
+    vm_ev(v, VE_SET, slot, 0, role);
 }
 
 /* Writes one TRAILED slot assignment — the `<PREFIX>_SET` line, naming the
@@ -3578,18 +3624,24 @@ static void vm_push(Vm *v, int lblid, const char *role)
  * primitives around it share. */
 static void vm_set(Vm *v, int slot, const char *val, const char *role)
 {
-    {
-        const char *nm = vm_slot_name(v, slot);
-        if (nm)
-            pcrec_sb_printf(v->b, "    %s_SET(%s_%s, %s);\n", v->up, v->up, nm, val);
-        else
-            pcrec_sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
-    }
-    /* [CC-DIFF] STEP 2: in the SAME call that writes the bytes — see the
-     * field's comment for why the trail counts as touched storage. */
-    v->emitted_set = true;
-    v->nset++;
-    vm_ev(v, VE_SET, slot, 0, role);
+    vm_b_set(v->sb, slot, vm_slot_name(v, slot), val);
+    vm_set_counted(v, slot, role);
+}
+
+/* A call site's PARK of `slot`'s own value on the trail: vm_set's line with
+ * the slot itself as the source, built as the SNAPSHOT it is (FIX-1). */
+static void vm_snapshot(Vm *v, int slot, const char *role)
+{
+    vm_b_snapshot(v->sb, slot, vm_slot_name(v, slot));
+    vm_set_counted(v, slot, role);
+}
+
+/* A region exit's RESTORE of `slot` from ordinal `j` of the activation's
+ * parked values (FIX-1): vm_set's line with that trail entry as the source. */
+static void vm_restore(Vm *v, int slot, int j, const char *role)
+{
+    vm_b_restore(v->sb, slot, vm_slot_name(v, slot), j);
+    vm_set_counted(v, slot, role);
 }
 
 /* [ENG-BREP] THE CUT — the possessive loop's one new operation, and a
@@ -3637,29 +3689,29 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * `run->resume_depth` is `unsigned` and `slot_values[]` is `ptrdiff_t`, so the count must be
  * taken as `(ptrdiff_t)run->resume_depth - slot_values[slot]` and never the other way, or a
  * momentarily-negative intermediate wraps to an enormous positive charge. */
-/* Writes one `<PREFIX>_CHARGE_WORK` work-budget charge at the given indent level.
+/* Counts one `<PREFIX>_CHARGE_WORK` work-budget charge and logs its listing
+ * event, returning the count expression to print, or NULL where the artifact
+ * has no budget.
  *
- * [M6.5.2] `indent` exists because one charge site is inside an emitted BLOCK
- * rather than at statement level (the A_BREF compare declares locals, so it
- * needs braces). Threading the indentation is what keeps this ONE call — the
- * alternative is a second `pcrec_sb_printf` at that site, and then `nwork` and the
- * listing's NOTE event would count charges the artifact does not make, or the
- * other way round. */
-static void vm_work_at(Vm *v, const char *indent, const char *countexpr,
-                       const char *role)
+ * [M6.5.2] Two charge sites sit inside an emitted BLOCK rather than at
+ * statement level (the A_BREF and caller-variable compares declare locals,
+ * so they need braces): their records (BREF, VAR) print the charge from the
+ * count returned here. Counting in ONE place is what keeps `nwork` and the
+ * listing's NOTE event counting exactly the charges the artifact makes. */
+static const char *vm_work_count(Vm *v, const char *countexpr, const char *role)
 {
-    if (!v->has_budget) return;
-    pcrec_sb_printf(v->b, "%s%s_CHARGE_WORK(%s);\n", indent, v->up, countexpr);
+    if (!v->has_budget) return NULL;
     v->nwork++;
     vm_ev(v, VE_NOTE, 0, 0, role);
+    return countexpr;
 }
 
-/* Charges one WORK unit at statement level -- `vm_work_at` under the
- * standard 4-space indent, which is every work-charge site but the one
- * inside an emitted block. */
+/* Charges one WORK unit at statement level, as a WORK record -- every
+ * work-charge site but the two inside an emitted block. */
 static void vm_work(Vm *v, const char *countexpr, const char *role)
 {
-    vm_work_at(v, "    ", countexpr, role);
+    const char *n = vm_work_count(v, countexpr, role);
+    if (n) vm_b_work(v->sb, n);
 }
 
 /* Writes the possessive loop's CUT — the `<PREFIX>_CUT` line that truncates
@@ -3676,7 +3728,7 @@ static void vm_cut(Vm *v, int slot, const char *role)
         vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot),
                 "work charge: frames discarded by this cut");
     }
-    pcrec_sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+    vm_b_cut(v->sb, slot);
     vm_ev(v, VE_CUT, slot, 0, role);
 }
 
@@ -3886,10 +3938,9 @@ static bool vm_mrl_test(Vm *v, const char *posexpr, long long minrest,
                         int dst, const char *role)
 {
     if (!v->mrl || (minrest <= 0 && !v->fdyn)) return false;
-    pcrec_sb_printf(v->b, "    if (%s_PRUNE_TOO_SHORT(%s, %s)) ", v->up, posexpr,
-              vm_mrl_amt(v, minrest));
-    if (dst < 0) pcrec_sb_printf(v->b, "goto %s_fail;\n", v->p);
-    else         pcrec_sb_printf(v->b, "goto %s_L%d;\n", v->p, dst);
+    vm_b_branch(v->sb, vm_frag_of(v->sb, vm_rolef(v, "%s_PRUNE_TOO_SHORT(%s, %s)",
+                                                   v->up, posexpr, vm_mrl_amt(v, minrest))),
+                dst < 0 ? vm_tgt_fail() : vm_tgt_label(dst, false));
     v->nclamp++;
     vm_ev(v, VE_NOTE, 0, 0, role);
     return true;
@@ -4536,23 +4587,25 @@ static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
     return s;
 }
 
-/* Writes the compare of the literal run `run[0..len)` at `subject +
- * scan_position + off` into `b`, rendered by the kit (memfn/src/runcmp.c):
- * the expression the two literal-run callers (`vm_lit`, `vm_isl_emit`)
- * conjoin after their bounds guard. Its word-load helpers are recorded on
- * the attempt's art and declared by the prologue (`pcrec_emit_prologue`),
- * which is written after the body. */
-static void vm_run_compare(Vm *v, StrBuf *b, const unsigned char *run, int len,
+/* Appends to `f` the compare of the literal run `run[0..len)` at `subject +
+ * scan_position + off`, a kit piece rendered by the kit (memfn/src/runcmp.c)
+ * when its record is: the expression the two literal-run callers (`vm_lit`,
+ * `vm_isl_emit`) conjoin after their bounds guard. Its word-load helpers are
+ * recorded on the attempt's art and declared by the prologue
+ * (`pcrec_emit_prologue`), which is written after the body. The hooks' use
+ * record is arena-owned: the piece is rendered after this returns. */
+static void vm_run_compare(Vm *v, VmFrag *f, const unsigned char *run, int len,
                            int off)
 {
     mf_site *s = vm_run_site(v, run, len, off);
-    PcrecMfU u = { v->cx, s, NULL, NULL };
+    PcrecMfU *u = pcrec_arena_alloc(&v->cx->arena, sizeof *u);
+    *u = (PcrecMfU){ v->cx, s, NULL, NULL };
     mf_hooks h = {
         .s = "subject", .n = "subject_length", .lo = "scan_position",
-        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+        .comment_tier = PCREC_CMT_NONESSENTIAL, .u = u,
     };
     pcrec_memfn_check_use(v->cx, s, false);
-    pcrec_memfn_emit(v->cx, DELEG_VMRUN, s, &h, b);
+    vm_frag_kit(v->sb, f, DELEG_VMRUN, s, &h);
 }
 
 /* Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,
@@ -4564,8 +4617,6 @@ static void vm_run_compare(Vm *v, StrBuf *b, const unsigned char *run, int len,
  * accepting node gets its own `chainlbl` to jump to on a completed match. */
 static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 {
-    StrBuf *b = v->b;
-
     /* Labels first, so a node's dispatch can `goto` a child emitted later.
      * The ROOT takes the caller's `entry` — the island IS the alternation's
      * entry point, not a region reached from one. */
@@ -4654,11 +4705,11 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                 run[i] = t->nd[y].byte;
                 if (i + 1 < len) vm_charge(v);
             }
-            pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
-                            n->depth + len);
-            vm_run_compare(v, b, run, len, n->depth);
+            VmFrag cnd = vm_frag_of(v->sb, vm_rolef(v, "scan_position + %d <= "
+                                                    "subject_length && ", n->depth + len));
+            vm_run_compare(v, &cnd, run, len, n->depth);
             v->nlitrun++;
-            pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
+            vm_b_branch(v->sb, cnd, vm_tgt_label(t->nd[c].lbl, false));
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
                   vm_rolef(v, "island: %d-byte literal run compare", len));
             vm_isl_die(v, t, x);
@@ -4666,20 +4717,20 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
             continue;
         } else if (n->nkids == 1) {
             int c = n->child;
-            pcrec_sb_printf(b, "    if (scan_position + %d < subject_length && "
-                         "subject[scan_position + %d] == %d) goto %s_L%d;\n",
-                      n->depth, n->depth, (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+            vm_b_branch(v->sb, vm_frag_of(v->sb, vm_rolef(v,
+                            "scan_position + %d < subject_length && "
+                            "subject[scan_position + %d] == %d",
+                            n->depth, n->depth, (int)t->nd[c].byte)),
+                        vm_tgt_label(t->nd[c].lbl, false));
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: single-child byte compare");
         } else if (n->nkids > 1) {
-            pcrec_sb_printf(b, "    if (scan_position + %d < subject_length) "
-                         "switch (subject[scan_position + %d]) {\n",
-                      n->depth, n->depth);
+            VmCase *cs = pcrec_arena_alloc(&v->cx->arena, (size_t)n->nkids * sizeof *cs);
+            int ncs = 0;
             for (int c = n->child; c >= 0; c = t->nd[c].sib) {
-                pcrec_sb_printf(b, "    case %d: goto %s_L%d;\n",
-                          (int)t->nd[c].byte, v->p, t->nd[c].lbl);
+                cs[ncs++] = (VmCase){ (int)t->nd[c].byte, t->nd[c].lbl };
                 vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: first-byte switch arm");
             }
-            pcrec_sb_puts(b, "    }\n");
+            vm_b_switch(v->sb, n->depth, cs, ncs);
         }
         vm_isl_die(v, t, x);
 
@@ -4713,7 +4764,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                                     "branch %d", cand[j].idx + 1,
                                  cand[j + 1].idx + 1));
             if (cand[j].len)
-                pcrec_sb_printf(b, "    scan_position += %d;\n", cand[j].len);
+                vm_b_seek(v->sb, VSK_ADVANCE, NULL, cand[j].len);
             vm_goto(v, next);
         }
     }
@@ -4819,25 +4870,19 @@ static PcrecAdvance vm_span_advance(Vm *v, const uint8_t (*seq)[32],
  * `lim_` lives inside it.
  *
  * `cap` is the iteration cap (`it_` is declared only when `cap` >= 0; -1 is
- * unbounded). Reads `v->p`/`v->up`; writes only `v->b`.
+ * unbounded). Reads `v->p`/`v->up`; writes one SPAN record.
  */
 static void vm_emit_span_scan(Vm *v, const uint8_t (*seq)[32], int stride,
                               const char *const *members, const char *clamp, int cap)
 {
-    StrBuf *b = v->b;
-    pcrec_sb_puts(b, "    {\n");
-    if (cap >= 0) pcrec_sb_puts(b, "        unsigned long it_ = 0;\n");
-    if (clamp)
-        pcrec_sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
-                  v->up, clamp, stride);
-    pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
     const char *bound = clamp ? "lim_" : "subject_length";
     PcrecAdvance sa = vm_span_advance(v, seq, stride, members, bound, cap);
     DelegSite id = stride == 1 ? DELEG_VMSPAN : DELEG_VMSTRIDE;
     mf_hooks h;
     mf_site *s = pcrec_memfn_advance_site(v->cx, id, &sa, &h);
-    pcrec_memfn_emit(v->cx, id, s, &h, b);
-    pcrec_sb_puts(b, "    }\n");
+    /* Built while `sa` (which the hooks may point into) is live: the record
+     * renders at once. */
+    vm_b_span(v->sb, cap, clamp, stride, id, s, &h);
 }
 
 /* Emits the cursor rung's reach test: fail unless the cursor stands at least
@@ -4847,8 +4892,9 @@ static void vm_emit_span_scan(Vm *v, const uint8_t (*seq)[32], int stride,
  * prefix. */
 static void vm_span_reach(Vm *v, int low, long long lo_off)
 {
-    pcrec_sb_printf(v->b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld) goto %s_fail;\n",
-                    v->p, low, lo_off, v->p);
+    vm_b_branch(v->sb, vm_frag_of(v->sb, vm_rolef(v, "(ptrdiff_t)%s_span_cursor < "
+                                                   "slot_values[%d] + %lld", v->p, low, lo_off)),
+                vm_tgt_fail());
 }
 
 /* §2.5's cursor rung, with D44.1's capture extension.
@@ -4881,7 +4927,6 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                           const uint8_t (*seq)[32], int stride,
                           const CapOff *caps, int ncaps, bool under_atomic)
 {
-    StrBuf *b = v->b;
     /* [ENG-BREP] A POSSESSIFIED span loop owes NOTHING but the scan: no resume
      * frame, no low-water slot and no trail entry of its own.
      *
@@ -5015,8 +5060,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                                 v->p, entrypos, stride),
                     "work charge: frameless scan iterations");
         }
-        pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < %s + %lld) goto %s_fail;\n",
-                  v->p, entrypos, lo_off, v->p);
+        vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)%s_span_cursor < %s + %lld",
+                                    v->p, entrypos, lo_off), vm_tgt_fail());
         vm_ev(v, VE_NOTE, 0, 0,
               "fewer than rmin iterations: the loop cannot be satisfied");
         /* [M4.6d] MRL on the POSSESSIFIED arm is the TEST form, deliberately,
@@ -5041,8 +5086,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                         "position for any accepting continuation");
         }
         if (ncaps) {
-            pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n",
-                      v->p, entrypos, stride);
+            vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "(ptrdiff_t)%s_span_cursor >= %s + %d",
+                                                  v->p, entrypos, stride));
             for (int i = 0; i < ncaps; i++) {
                 /* K38: the per-site size guess is gone entirely -- this was
                  * widened to PCREC_MAX_EMIT_NAME_LEN alongside the family
@@ -5059,9 +5104,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                        vm_rolef(v, "group %d close, derived from the cursor",
                                 caps[i].group));
             }
-            pcrec_sb_puts(b, "    }\n");
+            vm_b_guard_end(v->sb, VG_BRACED);
         }
-        pcrec_sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
+        vm_b_seek(v->sb, VSK_SPAN_COMMIT, NULL, 0);
         vm_goto(v, next);
         /* `t` is Job-owned scratch: nothing to free here (job_cleanup does). */
         return;
@@ -5156,7 +5201,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
             vm_emit_span_scan(v, seq, stride, members, NULL, a->u.rep.rmin);
             vm_span_reach(v, low, lo_off);
         } else
-            pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
+            vm_b_span_init(v->sb);
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
@@ -5182,7 +5227,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
 
     {
         /* K38: was char cur[64] -- identical overflow to cx above. */
-        vm_push_at(v, again, vm_rolef(v, "%s_span_cursor", v->p), a->u.rep.greedy
+        vm_push_at(v, again, VPOS_SPAN, 0, a->u.rep.greedy
                    ? "shorter run is the resume (retreat one stride)"
                    : "longer run is the resume (extend one stride)");
     }
@@ -5192,8 +5237,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * report — and, inside an enclosing loop, is what makes a failed final
          * iteration restore group k to the value the SUCCESSFUL earlier
          * iteration left rather than to unset (S3.2). */
-        pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n",
-                  v->p, low, stride);
+        vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "(ptrdiff_t)%s_span_cursor >= "
+                                              "slot_values[%d] + %d", v->p, low, stride));
         for (int i = 0; i < ncaps; i++) {
             /* K38: widened alongside the family above (was 96); arena-owned
              * now, so the twice-written buffer is two fragments. */
@@ -5209,27 +5254,28 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                    vm_rolef(v, "group %d close, derived from the cursor",
                             caps[i].group));
         }
-        pcrec_sb_puts(b, "    }\n");
+        vm_b_guard_end(v->sb, VG_BRACED);
     }
-    pcrec_sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
+    vm_b_seek(v->sb, VSK_SPAN_COMMIT, NULL, 0);
     vm_goto(v, next);
 
     vm_lbl(v, again, a->u.rep.greedy ? "span-loop retreat (resumed from the frame)"
                                : "span-loop extend (resumed from the frame)");
     /* the fail label restored pos from this frame, i.e. to the cursor value
      * the push recorded — so the retreat/extension needs no save slot */
-    pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
+    vm_b_span_move(v->sb, VSM_SEED, 0);
     if (a->u.rep.greedy) {
-        pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld + %d) goto %s_fail;\n",
-                  v->p, low, lo_off, stride, v->p);
-        pcrec_sb_printf(b, "    %s_span_cursor -= %d;\n", v->p, stride);
+        vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld + %d",
+                                    v->p, low, lo_off, stride), vm_tgt_fail());
+        vm_b_span_move(v->sb, VSM_BACK, stride);
     } else {
         if (a->u.rep.rmax >= 0)
-            pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %lld) goto %s_fail;\n",
-                      v->p, low, (long long)a->u.rep.rmax * stride, v->p);
-        pcrec_sb_printf(b, "    if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n",
-                  v->p, stride, test, v->p);
-        pcrec_sb_printf(b, "    %s_span_cursor += %d;\n", v->p, stride);
+            vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)%s_span_cursor >= slot_values[%d] + %lld",
+                                        v->p, low, (long long)a->u.rep.rmax * stride),
+                        vm_tgt_fail());
+        vm_b_branch(v->sb, vm_condf(v, "!(%s_span_cursor + %d <= subject_length%s)",
+                                    v->p, stride, test), vm_tgt_fail());
+        vm_b_span_move(v->sb, VSM_FWD, stride);
     }
     vm_goto(v, retry);
     /* `t` is Job-owned scratch: nothing to free here (job_cleanup does). */
@@ -5360,7 +5406,7 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
          * where MRL already knows it cannot, the frame is pure cost. */
         vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, v->fmin), next,
                     "MRL: no room for another copy and the follow");
-        vm_push_at(v, exitl, "scan_position",
+        vm_push_at(v, exitl, VPOS_CURSOR, 0,
                    "the loop's ONLY frame: this copy failing leaves the loop");
         vm_goto(v, bentry);
         vm_emit(v, bentry, body, after);
@@ -5439,7 +5485,7 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
      * follow cannot fit ends the loop without a frame. */
     vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, v->fmin), exitl,
                 "MRL: no room for another iteration and the follow");
-    vm_push_at(v, exitl, "scan_position",
+    vm_push_at(v, exitl, VPOS_CURSOR, 0,
                "the loop's ONLY frame: the iteration failing leaves the loop");
     vm_goto(v, bentry);
 
@@ -5486,6 +5532,7 @@ typedef struct {
     const int  *grp;    /* body group numbers, in the dense index's order */
     int         ngrp;
     int         faill;  /* where any failure in a step lands */
+    int         loop;   /* the revdet loop's index (its locals' `rv<loop>`) */
 } Rev;
 
 /* The DENSE index of capture group `capno` within the reversed body, or -1
@@ -5509,7 +5556,6 @@ static int vm_rev_index(const Rev *R, int capno)
  * approved as reversal-eligible. */
 static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 {
-    StrBuf *b = v->b;
     /* K38: was char byte[80] -- "subject[" + R->cur (a prefix + "_rv%d_cursor"
      * name, up to ~81 bytes at the 60-char prefix maximum) + " - 1]" exceeds
      * 80, truncating the closing bracket ("expected ']'" on the artifact). */
@@ -5529,9 +5575,10 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         int ci = vm_cls(v, bits);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, "consumed BACKWARD");
-        pcrec_sb_printf(b, "    if (%s > %s && (", R->cur, R->floor);
-        vm_cls_test(v, b, ci, byte);
-        pcrec_sb_printf(b, ")) { %s--; goto %s_L%d; }\n", R->cur, v->p, next);
+        VmFrag cnd = vm_condf(v, "%s > %s && (", R->cur, R->floor);
+        vm_cls_frag(v, &cnd, ci, byte);
+        vm_frag_text(v->sb, &cnd, ")");
+        vm_b_consume_back(v->sb, R->loop, cnd, next);
         vm_goto(v, R->faill);
         return;
     }
@@ -5557,17 +5604,26 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         int inner = vm_label(v), close = vm_label(v);
         vm_lbl(v, entry, vm_rolef(v, "group %d: its END, met first going backward",
                                   a->u.cap.no));
-        if (j >= 0)
-            pcrec_sb_printf(b, "    if (!%s[%d]) %s[%d][1] = (ptrdiff_t)%s;\n",
-                      R->gs, j, R->ga, j, R->cur);
+        if (j >= 0) {
+            vm_b_guard(v->sb, VG_INLINE, vm_condf(v, "!%s[%d]", R->gs, j));
+            vm_b_lset(v->sb, (VmLocal){ VL_GROUP_SPAN, R->loop, j, 1 }, VLO_ASSIGN,
+                      vm_rolef(v, "(ptrdiff_t)%s", R->cur), 0, true);
+            vm_b_guard_end(v->sb, VG_INLINE);
+        }
         vm_goto(v, inner);
         vm_rev_emit(v, inner, a->l, close, R);
         vm_lbl(v, close, vm_rolef(v, "group %d: its START -- the last iteration "
                                      "that entered it wins", a->u.cap.no));
-        if (j >= 0)
-            pcrec_sb_printf(b, "    if (!%s[%d]) { %s[%d][0] = (ptrdiff_t)%s;"
-                         " %s[%d] = 1; %s++; }\n",
-                      R->gs, j, R->ga, j, R->cur, R->gs, j, R->ns);
+        if (j >= 0) {
+            vm_b_guard(v->sb, VG_INLINE_BRACED, vm_condf(v, "!%s[%d]", R->gs, j));
+            vm_b_lset(v->sb, (VmLocal){ VL_GROUP_SPAN, R->loop, j, 0 }, VLO_ASSIGN,
+                      vm_rolef(v, "(ptrdiff_t)%s", R->cur), 0, true);
+            vm_b_lset(v->sb, (VmLocal){ VL_GROUP_SEEN, R->loop, j, 0 }, VLO_ASSIGN,
+                      "1", 0, true);
+            vm_b_lset(v->sb, (VmLocal){ VL_RV_GROUPS_SEEN, R->loop, 0, 0 }, VLO_INC,
+                      NULL, 0, true);
+            vm_b_guard_end(v->sb, VG_INLINE_BRACED);
+        }
         vm_goto(v, next);
         return;
     }
@@ -5612,15 +5668,15 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 
         vm_lbl(v, entry, vm_rolef(v, "backward alternation (%d branches):"
                                      " the byte selects, no frame", nbr));
-        pcrec_sb_printf(b, "    if (%s <= %s) goto %s_L%d;\n",
-                  R->cur, R->floor, v->p, R->faill);
+        vm_b_branch(v->sb, vm_condf(v, "%s <= %s", R->cur, R->floor),
+                    vm_tgt_label(R->faill, false));
         for (int j = 0; j < nbr; j++) {
             uint8_t f[32];
             pcrec_revdet_first(v->cx, br[j], f);
             int ci = vm_cls(v, f);
-            pcrec_sb_puts(b, "    if (");
-            vm_cls_test(v, b, ci, byte);
-            pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, bentry[j]);
+            VmFrag cnd = vm_frag();
+            vm_cls_frag(v, &cnd, ci, byte);
+            vm_b_branch(v->sb, cnd, vm_tgt_label(bentry[j], false));
         }
         vm_goto(v, R->faill);
         for (int j = 0; j < nbr; j++) vm_rev_emit(v, bentry[j], br[j], next, R);
@@ -5685,7 +5741,6 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
                           bool under_atomic)
 {
-    StrBuf *b = v->b;
     const bool cuts = vm_cuts(a, under_atomic);
     const int loop = v->nrev++;
     const int se = vm_slot_rev(v, loop, 0);
@@ -5787,7 +5842,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     if (a->u.rep.rmin == 0)
         vm_set(v, sl, "(ptrdiff_t)scan_position",
                "revdet: low-water = the entry, since rmin is 0");
-    pcrec_sb_printf(b, "    %s_iteration = 0;\n", rv);
+    vm_b_lset(v->sb, (VmLocal){ VL_RV_ITERATION, loop, 0, 0 }, VLO_ASSIGN, "0", 0, false);
     vm_goto(v, scanl);
 
     /* ---- the forward scan ------------------------------------------------
@@ -5800,8 +5855,8 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * frames to FIND its match, which is vm_poss_chain's own recorded lesson. */
     vm_lbl(v, scanl, "revdet scan: try one more iteration");
     if (a->u.rep.rmax >= 0)
-        pcrec_sb_printf(b, "    if (%s_iteration >= %dUL) goto %s_L%d;\n",
-                  rv, a->u.rep.rmax, v->p, fulll);
+        vm_b_branch(v->sb, vm_condf(v, "%s_iteration >= %dUL", rv, a->u.rep.rmax),
+                    vm_tgt_label(fulll, false));
     /* [M4.6d] the stop, and it goes to `shortl` rather than to `fulll` — which
      * is not cosmetic. `fulll` is reached from the rmax test above, where the
      * iteration count is known to have met rmin; an MRL stop can fire at ANY
@@ -5813,8 +5868,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), shortl,
                 "MRL: no room for another iteration and the follow -- stop the "
                 "scan on the boundary it is standing on");
-    pcrec_sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
-    vm_push_at(v, shortl, "scan_position",
+    vm_b_lset(v->sb, (VmLocal){ VL_RV_FRAME_MARK, loop, 0, 0 }, VLO_ASSIGN,
+              "run->resume_depth", 0, false);
+    vm_push_at(v, shortl, VPOS_CURSOR, 0,
                "this iteration cannot run -- leave the loop with the ones that did");
     vm_goto(v, bodyl);
 
@@ -5846,15 +5902,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv),
                 "work charge: frames discarded by the revdet scan cut");
     }
-    pcrec_sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
+    vm_b_cut_local(v->sb, loop);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
                             " body has no second parse of what just matched");
-    pcrec_sb_printf(b, "    %s_iteration++;\n", rv);
+    vm_b_lset(v->sb, (VmLocal){ VL_RV_ITERATION, loop, 0, 0 }, VLO_INC, NULL, 0, false);
     if (a->u.rep.rmin > 0) {
-        pcrec_sb_printf(b, "    if (%s_iteration == %dUL) {\n", rv, a->u.rep.rmin);
+        vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "%s_iteration == %dUL", rv, a->u.rep.rmin));
         vm_set(v, sl, "(ptrdiff_t)scan_position",
                "revdet: low-water = the boundary after rmin iterations");
-        pcrec_sb_puts(b, "    }\n");
+        vm_b_guard_end(v->sb, VG_BRACED);
     }
     vm_goto(v, scanl);
 
@@ -5863,14 +5919,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * Everything the commit tests is a slot or `pos`. */
     vm_lbl(v, shortl, "revdet scan: the body could not run at this boundary");
     if (a->u.rep.rmin > 0)
-        pcrec_sb_printf(b, "    if (%s_iteration < %dUL) goto %s_fail;\n", rv, a->u.rep.rmin, v->p);
+        vm_b_branch(v->sb, vm_condf(v, "%s_iteration < %dUL", rv, a->u.rep.rmin),
+                    vm_tgt_fail());
     vm_goto(v, fulll);
 
     vm_lbl(v, fulll, "revdet: the forward scan is complete");
     vm_set(v, sh, "(ptrdiff_t)scan_position",
            "revdet: the maximal boundary reached (the lazy extension's ceiling)");
     if (!greedy && move) {
-        pcrec_sb_printf(b, "    scan_position = (size_t)slot_values[%d];\n", sl);
+        vm_b_seek(v->sb, VSK_RESTORE, vm_rolef(v, "%d", sl), 0);
         vm_ev(v, VE_NOTE, 0, 0,
               "lazy: commit at the MINIMUM and extend on backtrack");
     }
@@ -5890,29 +5947,32 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         const char *gs = vm_rolef(v, "%s_revdet_group_seen", v->p);
         const char *ns = vm_rolef(v, "%s_rv%d_groups_seen", v->p, loop);
         R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
-        R.grp = grp; R.ngrp = ng; R.faill = wendl;
+        R.grp = grp; R.ngrp = ng; R.faill = wendl; R.loop = loop;
 
-        pcrec_sb_printf(b, "    %s_cursor = scan_position;\n", rv);
-        pcrec_sb_printf(b, "    %s_prev_position = -1;\n", rv);
+        vm_b_lset(v->sb, (VmLocal){ VL_RV_CURSOR, loop, 0, 0 }, VLO_ASSIGN,
+                  "scan_position", 0, false);
+        vm_b_lset(v->sb, (VmLocal){ VL_RV_PREV, loop, 0, 0 }, VLO_ASSIGN, "-1", 0, false);
         if (ng) {
-            pcrec_sb_printf(b, "    %s_groups_seen = 0;\n", rv);
-            pcrec_sb_printf(b, "    { int i_; for (i_ = 0; i_ < %d; i_++)"
-                         " %s_revdet_group_seen[i_] = 0; }\n", ng, v->p);
+            vm_b_lset(v->sb, (VmLocal){ VL_RV_GROUPS_SEEN, loop, 0, 0 }, VLO_ASSIGN,
+                      "0", 0, false);
+            vm_b_lset(v->sb, (VmLocal){ VL_GROUP_SEEN, loop, 0, 0 }, VLO_ZERO, NULL, ng,
+                      false);
         }
         vm_goto(v, walkl);
 
         vm_lbl(v, walkl, "revdet walk: one step back over the committed span");
-        pcrec_sb_printf(b, "    if (%s <= %s) goto %s_L%d;\n",
-                  cur, flr, v->p, wendl);
+        vm_b_branch(v->sb, vm_condf(v, "%s <= %s", cur, flr), vm_tgt_label(wendl, false));
         vm_goto(v, revl);
         vm_rev_emit(v, revl, a->u.rep.revbody, wstepl, &R);
 
         vm_lbl(v, wstepl, "revdet walk: landed on the previous boundary");
-        pcrec_sb_printf(b, "    if (%s_prev_position < 0) %s_prev_position = (ptrdiff_t)%s;\n",
-                  rv, rv, cur);
+        vm_b_guard(v->sb, VG_INLINE, vm_condf(v, "%s_prev_position < 0", rv));
+        vm_b_lset(v->sb, (VmLocal){ VL_RV_PREV, loop, 0, 0 }, VLO_ASSIGN,
+                  vm_rolef(v, "(ptrdiff_t)%s", cur), 0, true);
+        vm_b_guard_end(v->sb, VG_INLINE);
         if (ng) {
-            pcrec_sb_printf(b, "    if (%s_groups_seen >= %d) goto %s_L%d;\n",
-                      rv, ng, v->p, wendl);
+            vm_b_branch(v->sb, vm_condf(v, "%s_groups_seen >= %d", rv, ng),
+                        vm_tgt_label(wendl, false));
             vm_goto(v, walkl);
         } else {
             vm_ev(v, VE_NOTE, 0, 0,
@@ -5931,17 +5991,19 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
             /* K38: was 112, then PCREC_MAX_EMIT_NAME_LEN + 32 -- see the
              * scan-cut site above for the capacity-propagation reason, now
              * retired with the buffer. */
-            pcrec_sb_printf(b, "    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n",
-                      sl, rv);
-            vm_push_at(v, commitl, vm_rolef(v, "(size_t)%s_prev_position", rv),
+            vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "(ptrdiff_t)scan_position > "
+                                                  "slot_values[%d] && %s_prev_position >= 0",
+                                                  sl, rv));
+            vm_push_at(v, commitl, VPOS_REVDET_PREV, loop,
                        "retreat: resume this very label with scan_position at the "
                        "PREVIOUS boundary, and re-derive from there");
-            pcrec_sb_puts(b, "    }\n");
+            vm_b_guard_end(v->sb, VG_BRACED);
         } else {
-            pcrec_sb_printf(b, "    if ((ptrdiff_t)scan_position < slot_values[%d]) {\n", sh);
-            vm_push_at(v, extl, "scan_position",
+            vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "(ptrdiff_t)scan_position < "
+                                                  "slot_values[%d]", sh));
+            vm_push_at(v, extl, VPOS_CURSOR, 0,
                        "extend: one more iteration is the lazy resume");
-            pcrec_sb_puts(b, "    }\n");
+            vm_b_guard_end(v->sb, VG_BRACED);
         }
     }
     for (int j = 0; j < ng; j++) {
@@ -5950,14 +6012,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * truncated string is textually IDENTICAL to ga's own truncation,
          * which is why gcc's dedup ("each undeclared identifier is reported
          * only once") hid it as a distinct error during the repro. */
-        pcrec_sb_printf(b, "    if (%s_revdet_group_seen[%d]) {\n", v->p, j);
+        vm_b_guard(v->sb, VG_BRACED, vm_condf(v, "%s_revdet_group_seen[%d]", v->p, j));
         vm_set(v, 2 * grp[j], vm_rolef(v, "%s_revdet_group_span[%d][0]", v->p, j),
                vm_rolef(v, "group %d open, recovered by the backward walk",
                         grp[j]));
         vm_set(v, 2 * grp[j] + 1, vm_rolef(v, "%s_revdet_group_span[%d][1]", v->p, j),
                vm_rolef(v, "group %d close, recovered by the backward walk",
                         grp[j]));
-        pcrec_sb_puts(b, "    }\n");
+        vm_b_guard_end(v->sb, VG_BRACED);
     }
     vm_ev(v, VE_NOTE, 0, 0, "a group the walk never witnessed keeps its previous"
                             " value -- which is section 3.4's ZERO-ITERATION clause at"
@@ -5975,7 +6037,8 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * already tried, which is what "lazy" means. */
         vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), -1,
                     "MRL: the lazy ascent has nowhere left to go");
-        pcrec_sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
+        vm_b_lset(v->sb, (VmLocal){ VL_RV_FRAME_MARK, loop, 0, 0 }, VLO_ASSIGN,
+                  "run->resume_depth", 0, false);
         vm_goto(v, extbl);
         v->nocap++;
         vm_emit_f(v, extbl, a->l, extok, F);
@@ -5987,7 +6050,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
                     "work charge: frames discarded by the revdet "
                     "extra-iteration cut");
         }
-        pcrec_sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
+        vm_b_cut_local(v->sb, loop);
         vm_goto(v, commitl);
         /* The body FAILING here needs no frame of its own: the push above only
          * happens below `hi`, and below `hi` the chain guarantees a next
@@ -6061,7 +6124,6 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                              int next, int ctr, bool optional, long long bw,
                              int lastg)
 {
-    StrBuf *b = v->b;
     const int K = v->unroll_k;
     const int residue = count % K;
     /* [M4.6d] the loop's follow-min, taken before anything below changes it —
@@ -6096,8 +6158,8 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         int body0 = vm_label(v);
         int cur;
         vm_lbl(v, trip, "counter trip: another K iterations, or the residue");
-        pcrec_sb_printf(b, "    if (slot_values[%d] + %d > %d) goto %s_L%d;\n",
-                  ctr, K, count, v->p, tail);
+        vm_b_branch(v->sb, vm_condf(v, "slot_values[%d] + %d > %d", ctr, K, count),
+                    vm_tgt_label(tail, false));
         vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
         /* [M4.6d] ONCE PER TRIP, which is §4.5's own recommendation for this
@@ -6281,7 +6343,6 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
 static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
                                 int next, int ctr, int mark, long long bw)
 {
-    StrBuf *b = v->b;
     const long long F = v->fmin;
     const int trip = vm_label(v);
     const int body0 = vm_label(v);
@@ -6302,7 +6363,8 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_goto(v, trip);
 
     vm_lbl(v, trip, "counter trip (possessive): one iteration, or leave");
-    pcrec_sb_printf(b, "    if (slot_values[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
+    vm_b_branch(v->sb, vm_condf(v, "slot_values[%d] >= %d", ctr, nopt),
+                vm_tgt_label(next, false));
     vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
     /* [M4.6d] cut before push, once per iteration. `stop` cuts and takes the
      * continuation, which is exactly what the popped frame would have done. */
@@ -6537,8 +6599,8 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg)
         top = vm_label(v);
         vm_lbl(v, cur, "unbounded repeat: entered after the mandatory "
                        "iterations");
-        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position == slot_values[%d]) goto %s_L%d;\n",
-                  gslot, v->p, exit);
+        vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)scan_position == slot_values[%d]", gslot),
+                    vm_tgt_label(exit, false));
         vm_ev(v, VE_NOTE, 0, 0,
               "empty-iteration rule: the last mandatory iteration consumed "
               "nothing, so the loop does not iterate (K128)");
@@ -6597,8 +6659,8 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg)
          * still get their turn. Recorded for [M4.6] rather than solved with a
          * mechanism that mutates a frame in place, which does not survive the
          * loop being re-entered. */
-        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position != slot_values[%d]) %s\n",
-                  gslot, vm_jump(v, top));
+        vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)scan_position != slot_values[%d]", gslot),
+                    vm_jump_tgt(v, top));
         vm_goto(v, exit);
     } else {
         vm_goto(v, cur);
@@ -7092,7 +7154,6 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
                                   int pslot, const Ast **br,
                                   int *bl, int *bodl, int *endl)
 {
-    StrBuf *b = v->b;
     const bool neg = a->u.look.neg;
     const int k = a->u.look.widths[i];
     const bool last = (i + 1 == m);
@@ -7123,8 +7184,7 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
      * about whether this particular constant makes it a no-op. */
     if (last) {
         if (k > 0)
-            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
-                      k, v->p);
+            vm_b_branch(v->sb, vm_condf(v, "scan_position < %d", k), vm_tgt_fail());
         /* A NOTE AND NOT AN `assert`, and the reason is the listing's
           * own convention rather than taste: `VE_ASSERT` renders
           * "-> L<a>" and `a` is the label taken when the assertion HOLDS
@@ -7140,8 +7200,8 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
                 "for every cursor");
     } else {
         if (k > 0) {
-            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
-                      k, v->p, bl[i + 1]);
+            vm_b_branch(v->sb, vm_condf(v, "scan_position < %d", k),
+                        vm_tgt_label(bl[i + 1], false));
             vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
                   "lookbehind: fewer than %d characters precede the "
                   "cursor, so try the next branch", k));
@@ -7171,13 +7231,12 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
      * inlines it and the [M5-SEAM] fixture-declared per-site count is its
      * only possible detector, because inlining changes NO ANSWER under
      * this backend. */
-    pcrec_sb_printf(b, "    scan_position = %s_back_step(subject, "
-                 "subject_length, scan_position, %d);\n", v->p, k);
+    vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);
     vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
           "lookbehind: the ENCODING SEAM's back-step, %d character%s",
           k, k == 1 ? "" : "s"));
-    pcrec_sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
-              v->p, v->p);
+    vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
+                vm_tgt_fail());
     vm_ev(v, VE_NOTE, 0, 0,
           "lookbehind: the back-step ran off the start of the subject -- "
           "dead under the byte backend, where the guard above is exact");
@@ -7205,16 +7264,16 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
              * see this function's header comment, note 3, "WHICH
              * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
              * artifact's own inconsistency check firing. */
-            pcrec_sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                         "return %s_R_INTERNAL;\n", sl, v->up);
+            vm_b_branch(v->sb, vm_condf(v, "scan_position != (size_t)slot_values[%s]", sl),
+                        vm_tgt_return("INTERNAL"));
             vm_ev(v, VE_NOTE, 0, 0,
                   "lookbehind end-check FAILED on the negative arm -- a "
                   "hard return (RX_R_INTERNAL, below the give-up floor) "
                   "rather than a decline, because a decline here is a "
                   "false match");
         } else {
-            pcrec_sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                         "goto %s_fail;\n", sl, v->p);
+            vm_b_branch(v->sb, vm_condf(v, "scan_position != (size_t)slot_values[%s]", sl),
+                        vm_tgt_fail());
             vm_ev(v, VE_NOTE, 0, 0,
                   "lookbehind end-check FAILED -- this branch declines");
         }
@@ -7401,7 +7460,6 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
  * "END-CHECK", this function's only runtime evidence that the two agree). */
 static void vm_look(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *b = v->b;
 
     /* §3.2.1 — SAVE, ZERO, and (at the single exit below) RESTORE. */
     const char *sd = v->fdyn;
@@ -7485,7 +7543,7 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
                              "point the body created is discarded, dead or not");
         {
             const char *sl = vm_slot_expr(v, pslot);
-            pcrec_sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);
+            vm_b_seek(v->sb, VSK_RESTORE, sl, 0);
             vm_ev(v, VE_NOTE, 0, 0,
                   "lookaround: the position is DISCARDED -- the cursor goes "
                   "back to the assertion's entry");
@@ -8214,14 +8272,14 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
     /* Through a primitive, like every other emitted push: the listing's
      * PROGRAM trace and the artifact are two views of one walk (§10's drift
      * rule), and a call is a thing that EXECUTES. */
-    pcrec_sb_printf(v->b, "    %s_CALL(&&%s_L%d, scan_position);\n", v->up, v->p, ret);
+    vm_b_call(v->sb, ret);
     vm_ev(v, VE_CALL, v->rgn_lbl[idx], ret,
           vm_rolef(v, "call group %d; the frame carries the return label",
                    a->u.call.target));
     v->ncall++;
     for (int j = 0; j < a->u.call.nsave; j++) {
-        vm_set(v, a->u.call.save[j], vm_slot_ref(v, a->u.call.save[j]),
-               "park this activation's value on the trail (a trailed SELF-write)");
+        vm_snapshot(v, a->u.call.save[j],
+                    "park this activation's value on the trail (a trailed SELF-write)");
     }
     vm_goto(v, v->rgn_lbl[idx]);
     vm_lbl(v, ret, "the call returned; continue here");
@@ -8469,11 +8527,9 @@ static void vm_region(Vm *v, int i)
            vm_rolef(v, "the callee region for %s returns",
                     g == 0 ? "the whole pattern" : "a capture group"));
     for (int j = 0; j < v->rgn_nw[i]; j++) {
-        vm_set(v, v->rgn_w[i][j],
-               vm_rolef(v, "run->trail[run->resume_stack[run->call_top]"
-                           ".trail_mark + %d].saved_value", j),
-               "restore the caller's value, itself TRAILED so a retreat into "
-               "this callee re-establishes the callee's own");
+        vm_restore(v, v->rgn_w[i][j], j,
+                   "restore the caller's value, itself TRAILED so a retreat into "
+                   "this callee re-establishes the callee's own");
     }
     /* [K134] The return jumps back to a label of the CALLER's, which is not a
      * `vm_goto`: a chain of returns writes the restores above once per level
@@ -8500,14 +8556,7 @@ static void vm_region(Vm *v, int i)
      * D72 minted, strictly below the give-up floor so a caller's raise-a-bound
      * retry cannot loop on it. Without the test the same event is
      * `resume_stack[(unsigned)-1]`, which is K27's class in emitted code. */
-    pcrec_sb_printf(v->b,
-        "    {\n"
-        "        const size_t %s_call_frame = run->call_top;\n"
-        "        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n"
-        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
-        "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
-        "    }\n",
-        v->p, v->p, v->up, v->p, v->p);
+    vm_b_return(v->sb);
     vm_ev(v, VE_RETURN, v->rgn_lbl[i], 0,
           "return to the caller through the frame's own label");
 }
@@ -8539,13 +8588,13 @@ static const VmCtxForm vm_ctx_forms[] = {
 };
 
 /* One side's guarded membership test, `(bound && (set test))`. */
-static void vm_ctx_side(Vm *v, StrBuf *b, int ci, int side)
+static void vm_ctx_side(Vm *v, VmFrag *f, int ci, int side)
 {
-    pcrec_sb_puts(b, side == VMCTX_PREV ? "(scan_position > 0 && ("
-                                        : "(scan_position < subject_length && (");
-    vm_cls_test(v, b, ci, side == VMCTX_PREV ? "subject[scan_position-1]"
+    vm_frag_text(v->sb, f, side == VMCTX_PREV ? "(scan_position > 0 && ("
+                                              : "(scan_position < subject_length && (");
+    vm_cls_frag(v, f, ci, side == VMCTX_PREV ? "subject[scan_position-1]"
                                              : "subject[scan_position]");
-    pcrec_sb_puts(b, "))");
+    vm_frag_text(v->sb, f, "))");
 }
 
 /* A_CTX — `\b`, `\B`, every recognized one-character lookaround, the `(?m)`
@@ -8590,7 +8639,6 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
  * no set). */
 static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next)
 {
-    StrBuf *b = v->b;
     const VmCtxForm *f = NULL;
     for (size_t k = 0; k < sizeof vm_ctx_forms / sizeof vm_ctx_forms[0]; k++)
         if (vm_ctx_forms[k].fn == fn) { f = &vm_ctx_forms[k]; break; }
@@ -8600,12 +8648,13 @@ static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next)
                        (unsigned)fn);
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_ASSERT, next, 0, f->role);
+    VmFrag c = vm_frag();
     if (f->side == VMCTX_BOTH) {
-        pcrec_sb_puts(b, "    if ((");
-        vm_ctx_side(v, b, si, VMCTX_PREV);
-        pcrec_sb_printf(b, " %s ", f->join);
-        vm_ctx_side(v, b, si, VMCTX_NEXT);
-        pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+        vm_frag_text(v->sb, &c, "(");
+        vm_ctx_side(v, &c, si, VMCTX_PREV);
+        vm_frag_text(v->sb, &c, vm_rolef(v, " %s ", f->join));
+        vm_ctx_side(v, &c, si, VMCTX_NEXT);
+        vm_frag_text(v->sb, &c, ")");
     } else if (f->side == VMCTX_MLBOL) {
         /* [DD-11.5] `(?m)^`, the two rows that read an ABSENT side: the
          * position half is the expression's first disjunct, so `pos == 0`
@@ -8613,28 +8662,28 @@ static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next)
          * legal `(s == NULL, n == 0)` subject). `pos < n` is NOT a bounds
          * guard — it is the row's `in`/`absent` cell: PCRE2's `(?m)^` does
          * not hold after a newline that ends the string (U11). */
-        pcrec_sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
-        vm_cls_test(v, b, si, "subject[scan_position-1]");
-        pcrec_sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
+        vm_frag_text(v->sb, &c, "scan_position == 0 || (scan_position < subject_length && (");
+        vm_cls_frag(v, &c, si, "subject[scan_position-1]");
+        vm_frag_text(v->sb, &c, "))");
     } else if (f->side == VMCTX_MLEOL) {
         /* `(?m)$`: end of subject, or before ANY newline. `pos == n`
          * short-circuits before `s[pos]`. */
-        pcrec_sb_puts(b, "    if (scan_position == subject_length || (");
-        vm_cls_test(v, b, si, "subject[scan_position]");
-        pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+        vm_frag_text(v->sb, &c, "scan_position == subject_length || (");
+        vm_cls_frag(v, &c, si, "subject[scan_position]");
+        vm_frag_text(v->sb, &c, ")");
     } else if (f->side == VMCTX_START) {
         /* `^`/`\A` — start of SUBJECT, absolute: it anchors to offset 0
          * whatever startpos was (the emitted contract in lib/pcrec.h). */
-        pcrec_sb_printf(b, "    if (scan_position == 0) goto %s_L%d;\n", v->p, next);
+        vm_frag_text(v->sb, &c, "scan_position == 0");
     } else if (f->side == VMCTX_END) {
         /* `\z` — end of subject, and NOT before a final newline. A position
          * test reading no byte, so it needs none of the guards above. */
-        pcrec_sb_printf(b, "    if (scan_position == subject_length) goto %s_L%d;\n", v->p, next);
+        vm_frag_text(v->sb, &c, "scan_position == subject_length");
     } else {
-        pcrec_sb_puts(b, f->neg ? "    if (!" : "    if (");
-        vm_ctx_side(v, b, si, f->side);
-        pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, next);
+        if (f->neg) vm_frag_text(v->sb, &c, "!");
+        vm_ctx_side(v, &c, si, f->side);
     }
+    vm_b_branch(v->sb, c, vm_tgt_label(next, false));
     vm_fail(v);
 }
 
@@ -8789,8 +8838,6 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
      * the compare, and the codegen check's fixture-declared per-site count
      * is its only possible detector: inlining changes NO ANSWER under the
      * byte backend. */
-    StrBuf *bb = v->b;
-    const char *fn;
     /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
      * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
      * emitted the label `PCREC_ENCE_SPAN` (2) instead of the caller's, so
@@ -8821,59 +8868,33 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
                  "not declared engine-callable, so it cannot be routed "
                  "through the seam from an engine body");
     v->enc_mask |= seam_entry;
-    fn = vm_rolef(v, "%s_span_match%s", v->p,
-                  a->u.bref.caseless ? "_caseless" : "");
     vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
                               a->u.bref.nrefs == 1 ? "one group" : "a name-run",
                               a->u.bref.caseless ? ", caseless" : ""));
-    pcrec_sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
-                "ref_end = PCREC_UNSET, took;\n");
-    for (int i = 0; i < a->u.bref.nrefs; i++) {
-        const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
-        const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
-        pcrec_sb_printf(bb,
-            "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
-            "            ref_start = slot_values[%s];\n"
-            "            ref_end   = slot_values[%s];\n"
-            "        }%s",
-            i ? "else " : "", ns, ns, ne,
-            i + 1 == a->u.bref.nrefs ? "\n" : " ");
+    const int nr = a->u.bref.nrefs;
+    const char **rs = pcrec_arena_alloc(&v->cx->arena, (size_t)nr * sizeof *rs);
+    const char **re = pcrec_arena_alloc(&v->cx->arena, (size_t)nr * sizeof *re);
+    for (int i = 0; i < nr; i++) {
+        rs[i] = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
+        re[i] = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
     }
-    pcrec_sb_cmt_open(bb, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(bb,
-        "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
-        "         * it does not match the empty string. */\n");
-    pcrec_sb_cmt_close(bb);
-    pcrec_sb_printf(bb,
-        "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
-        /* [VAR ruling, 2026-09-23] THE REFERENCE SIDE IS A POINTER AND A
-         * LENGTH, which is what lets one seam entry serve this construct and
-         * a `${name}` variable both. A backreference's bytes are a slice of
-         * the subject, so the slice is spelled here rather than the entry
-         * being told to index into `s` itself. */
-        "        took = %s(subject, subject_length,\n"
-        "                  subject + (size_t)ref_start,\n"
-        "                  (size_t)(ref_end - ref_start),\n"
-        "                  scan_position);\n",
-        v->p, fn);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
-    /* §3.8's WORK CHARGE, through the SAME `vm_work` primitive every other
-     * charge site uses — one call, one truth, and a no-op on an artifact
+    /* §3.8's WORK CHARGE, counted through the SAME primitive every other
+     * charge site uses — one call, one truth, and no charge on an artifact
      * with no budget. `took` on success; on failure the entry's negative
      * encoding carries the PREFIX it compared, so the bytes the fail label
      * never sees are charged EITHER WAY. Without it `(a*)\1` over a long
      * subject does unbounded byte comparison per step and DD-2's
      * robustness claim is quietly false for this module's whole
-     * population. */
-    vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
-               "backreference compare: the bytes it examined, which the "
-               "fail label never sees");
-    pcrec_sb_printf(bb,
-        "        if (took < 0) goto %s_fail;\n"
-        "        scan_position += (size_t)took;\n"
-        "        goto %s_L%d;\n"
-        "    }\n",
-        v->p, v->p, next);
+     * population. The BREF record prints it inside its block. */
+    const char *work = vm_work_count(v, "took >= 0 ? took : -took - 1",
+                                     "backreference compare: the bytes it examined, "
+                                     "which the fail label never sees");
+    /* [VAR ruling, 2026-09-23] THE REFERENCE SIDE IS A POINTER AND A LENGTH,
+     * which is what lets one seam entry serve this construct and a `${name}`
+     * variable both: the BREF record spells the subject slice. */
+    const VmBrefOps o = { rs, re, nr, a->u.bref.caseless, work, next };
+    vm_b_bref(v->sb, &o);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
     vm_ev(v, VE_GOTO, next, 0, NULL);
 }
@@ -8895,7 +8916,6 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
  * cannot change during a call. */
 static void vm_var(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *bb = v->b;
     const unsigned seam_entry = a->u.var.caseless
         ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;
     /* `vm_bref`'s own rule, one construct over: the BACKEND's declaration is
@@ -8909,32 +8929,21 @@ static void vm_var(Vm *v, int entry, const Ast *a, int next)
                  "not declared engine-callable, so it cannot be routed "
                  "through the seam from an engine body");
     v->enc_mask |= seam_entry;
-    const char *fn = vm_rolef(v, "%s_span_match%s", v->p,
-                              a->u.var.caseless ? "_caseless" : "");
     vm_lbl(v, entry, vm_rolef(v, "caller variable %s%s",
                               pcrec_varexp_render(&v->cx->arena, a->u.var.exp),
                               a->u.var.caseless ? ", caseless" : ""));
-    pcrec_sb_printf(bb,
-        "    {\n"
-        "        ptrdiff_t took;\n"
-        "        took = %s(subject, subject_length,\n"
-        "                  run->var_value[%d], run->var_length[%d],\n"
-        "                  scan_position);\n",
-        fn, a->u.var.slot, a->u.var.slot);
     /* The SAME `vm_work` primitive and the same charge expression the
      * backreference uses: `took` on success, and on failure the entry's
      * negative encoding carries the PREFIX it compared, so the bytes the fail
      * label never sees are charged either way. Without it `(${v})*` over a
      * long subject does unbounded uncharged byte comparison per step. */
-    vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
-               "caller-variable compare: the bytes it examined, which the "
-               "fail label never sees");
-    pcrec_sb_printf(bb,
-        "        if (took < 0) goto %s_fail;\n"
-        "        scan_position += (size_t)took;\n"
-        "        goto %s_L%d;\n"
-        "    }\n",
-        v->p, v->p, next);
+    const VmVarOps o = {
+        a->u.var.slot, a->u.var.caseless,
+        vm_work_count(v, "took >= 0 ? took : -took - 1",
+                      "caller-variable compare: the bytes it examined, which the "
+                      "fail label never sees"),
+        next };
+    vm_b_var(v->sb, &o);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
     vm_ev(v, VE_GOTO, next, 0, NULL);
 }
@@ -8977,11 +8986,10 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     for (int i = 0; i < len; i++) vm_charge(v);
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
-    pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
-    vm_run_compare(v, v->b, run, len, 0);
+    VmFrag c = vm_condf(v, "scan_position + %d <= subject_length && ", len);
+    vm_run_compare(v, &c, run, len, 0);
     v->nlitrun++;
-    pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
-                    len, v->p, next);
+    vm_b_consume(v->sb, c, VADV_BY, len, next);
     vm_fail(v);
 }
 
@@ -9075,7 +9083,6 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
  * header declares and the user defines. */
 static void vm_callout(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *b = v->b;
     Ctx *cx = v->cx;
     const PcrecCalloutBinding bind = pcrec_callout_binding(cx, a);
     const char *sym = bind.symbol;
@@ -9083,75 +9090,22 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
     vm_lbl(v, entry, vm_rolef(v, "callout site %d: %s, %s", a->u.callout.site,
                               sym, pred ? "a check" : "consumes"));
     vm_ev(v, VE_CALLOUT, entry, a->u.callout.site, a->u.callout.why);
-    if (v->has_budget)
-        pcrec_sb_printf(b, "    if (--run->steps_left < 0) return %s_R_STEPS;\n",
-                        v->up);
-    pcrec_sb_printf(b,
-        "    {\n"
-        "        rx_ctx %s_co_ctx;\n"
-        "        const ptrdiff_t %s_co_start = slot_values[0];\n"
-        "        ptrdiff_t r;\n"
-        "        %s_co_ctx.subject = subject;\n"
-        "        %s_co_ctx.len = subject_length;\n"
-        "        %s_co_ctx.pos = scan_position;\n",
-        v->p, v->p, v->p, v->p, v->p);
-    const int vn = a->u.callout.view_n;
-    if (vn == 0)
-        pcrec_sb_printf(b,
-            "        %s_co_ctx.ncap = %d;\n"
-            "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n",
-            v->p, v->ngroups + 1, v->p);
-    else {
-        /* [INLINE-C] stage 3 THE DEFINITION-SITE VIEW (§1.9): the
-         * definition's groups in its own numbering, copied out of the
-         * caller's slots at the fire; slot 0 is the attempt start as in
-         * the caller's view. */
-        pcrec_sb_printf(b,
-            "        ptrdiff_t %s_co_view[%d][2];\n"
-            "        %s_co_view[0][0] = (ptrdiff_t)ctx->pos;\n"
-            "        %s_co_view[0][1] = slot_values[1];\n",
-            v->p, vn, v->p, v->p);
-        for (int k = 1; k < vn; k++)
-            pcrec_sb_printf(b,
-                "        %s_co_view[%d][0] = slot_values[%d];\n"
-                "        %s_co_view[%d][1] = slot_values[%d];\n",
-                v->p, k, 2 * a->u.callout.view_map[k],
-                v->p, k, 2 * a->u.callout.view_map[k] + 1);
-        pcrec_sb_printf(b,
-            "        %s_co_ctx.ncap = %d;\n"
-            "        %s_co_ctx.caps = (const ptrdiff_t (*)[2])%s_co_view;\n",
-            v->p, vn, v->p, v->p);
-    }
-    pcrec_sb_printf(b, "        %s_co_ctx.user = %s;\n", v->p, bind.user);
-    if (cx->n_vars > 0)
-        pcrec_sb_printf(b,
-            "        %s_co_ctx.vars = ctx->vars;\n"
-            "        %s_co_ctx.nvars = ctx->nvars;\n", v->p, v->p);
-    else
-        pcrec_sb_printf(b,
-            "        %s_co_ctx.vars = NULL;\n"
-            "        %s_co_ctx.nvars = 0;\n", v->p, v->p);
-    pcrec_sb_printf(b,
-        "        slot_values[0] = (ptrdiff_t)ctx->pos;\n"
-        "        r = %s(&%s_co_ctx);\n"
-        "        slot_values[0] = %s_co_start;\n",
-        bind.callee, v->p, v->p);
-    const CsCallee callee = {
-        .conv = CS_CONV_MATCHFN, .vm = true, .guarded = true, .utf_check = true,
-        .pred = pred, .pos = "scan_position", .subj = "subject",
-        .len = "subject_length",
-        .enc = pcrec_enc_by_id(cx->opt->encoding),
+    /* [INLINE-C] stage 3: a non-zero view is THE DEFINITION-SITE VIEW
+     * (§1.9), the definition's groups in its own numbering, copied out of
+     * the caller's slots at the fire; the CALLOUT record writes it. */
+    const VmCalloutOps o = {
+        .steps = v->has_budget, .callee_sym = bind.callee, .user = bind.user,
+        .ncap = v->ngroups + 1, .view_n = a->u.callout.view_n,
+        .view_map = a->u.callout.view_map, .vars = cx->n_vars > 0,
+        .pred = pred, .lbl = next,
+        .callee = {
+            .conv = CS_CONV_MATCHFN, .vm = true, .guarded = true, .utf_check = true,
+            .pred = pred, .pos = "scan_position", .subj = "subject",
+            .len = "subject_length",
+            .enc = pcrec_enc_by_id(cx->opt->encoding),
+        },
     };
-    const CsEdges edges = {
-        .succ = pred ? vm_rolef(v, "goto %s_L%d;", v->p, next)
-                     : vm_rolef(v, "{ scan_position += (size_t)r; goto %s_L%d; }",
-                                v->p, next),
-        .fail = vm_rolef(v, "goto %s_fail;", v->p),
-        .prop = "return r;",
-        .giveup = "{ run->callee_gave_up = 1; return r; }",
-    };
-    pcrec_callsite_emit(cx, b, "        ", &callee, &edges);
-    pcrec_sb_puts(b, "    }\n");
+    vm_b_callout(v->sb, &o);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
     vm_ev(v, VE_GOTO, next, 0, NULL);
 }
@@ -9163,7 +9117,6 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10). */
 static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *b = v->b;
 
     switch (a->k) {
     /* [CLS-TREE] S3: its byte child, uncharged. MUST NOT join the `A_CLASS`
@@ -9185,15 +9138,7 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         v->enc_mask |= PCREC_ENCE_DECODE;
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_WCLASS, wi, next, NULL);
-        pcrec_sb_printf(b,
-            "    {\n"
-            "        unsigned cp_ = 0;\n"
-            "        size_t len_;\n"
-            "        if (scan_position < subject_length\n"
-            "            && (len_ = %s_decode(subject, subject_length, scan_position, &cp_)) != 0\n"
-            "            && %s_wcls%d(cp_)) { scan_position += len_; goto %s_L%d; }\n"
-            "    }\n",
-            v->p, v->p, wi, v->p, next);
+        vm_b_consume_wcls(v->sb, wi, next);
         vm_fail(v);
         return;
     }
@@ -9207,9 +9152,10 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         int ci = vm_cls(v, bits);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, NULL);
-        pcrec_sb_puts(b, "    if (scan_position < subject_length && (");
-        vm_cls_test(v, b, ci, "subject[scan_position]");
-        pcrec_sb_printf(b, ")) { scan_position++; goto %s_L%d; }\n", v->p, next);
+        VmFrag c = vm_frag_of(v->sb, "scan_position < subject_length && (");
+        vm_cls_frag(v, &c, ci, "subject[scan_position]");
+        vm_frag_text(v->sb, &c, ")");
+        vm_b_consume(v->sb, c, VADV_INC, 1, next);
         vm_fail(v);
         return;
     }
@@ -9222,8 +9168,10 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0,
               "$ end of subject, or before a final newline");
-        pcrec_sb_printf(b, "    if (scan_position == subject_length || (scan_position + 1 == subject_length && subject[scan_position] == '\\n')) "
-                     "goto %s_L%d;\n", v->p, next);
+        vm_b_branch(v->sb, vm_frag_of(v->sb, "scan_position == subject_length || "
+                                      "(scan_position + 1 == subject_length && "
+                                      "subject[scan_position] == '\\n')"),
+                    vm_tgt_label(next, false));
         vm_fail(v);
         return;
     case A_GSTART:
@@ -9257,8 +9205,8 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         vm_ev(v, VE_ASSERT, next, 0,
               "\\G the first matching position (search_from)");
         v->ngst++;
-        pcrec_sb_printf(b, "    if (scan_position == %s_search_from) goto %s_L%d;\n",
-                  v->p, v->p, next);
+        vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_search_from", v->p),
+                    vm_tgt_label(next, false));
         vm_fail(v);
         return;
     case A_KRESET:
@@ -10372,9 +10320,6 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
     v->cx = cx;
     v->b = &job->vmsb;   /* Job-owned, so the longjmp cleanup path frees it */
     v->p = cx->opt->prefix;
-#ifdef PCREC_SIMD_WITNESS
-    pcrec_memfn_simd_witness(v->b);   /* [MEMFN] RQ-3: the knee's own block */
-#endif
 
     /* [DD-14.EMPTY] THE ROOT'S MINIMUM WIDTH, READ HERE AND NOT AT ENGINE
      * SELECTION. `pcrec_minw` reads an `A_CALL`'s contribution off
@@ -10546,6 +10491,12 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * it. Every one of `v->up`'s readers is a `%s` or a `const char *`
      * parameter and none of them changed. */
     v->up = g->upper;
+    /* The body opens here, on the spellings it renders with; nothing has
+     * been written to it yet. */
+    v->sb = vm_stmt_open(cx, v->p, v->up, pcrec_opt_has(cx->opt, PCREC_TRACE));
+#ifdef PCREC_SIMD_WITNESS
+    vm_b_witness(v->sb);   /* [MEMFN] RQ-3: the knee's own block */
+#endif
 
     /* THE REPORTED capture count, which `--no-captures` pins at 1 whatever
      * the slot layout holds (§6.3, and §10's measured row: `--no-captures
@@ -10795,7 +10746,7 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
          * genuinely one call. */
         vm_lbl(v, acc, "the pattern is complete");
         vm_ev(v, VE_ACCEPT, 0, 0, NULL);
-        pcrec_sb_printf(v->b, "    goto %s_accept;\n", v->p);
+        vm_b_accept(v->sb);
         /* rootentry is label 0 by construction; the prologue jumps to it */
 
         /* [DD-14 wave B+C] THE SHARED CALLEE REGIONS (§6.3). Emitted in the
