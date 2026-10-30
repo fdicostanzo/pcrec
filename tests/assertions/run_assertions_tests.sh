@@ -147,6 +147,10 @@ fi
 #     turns on and the candidate scan changes form. Witnesses `a(?:\z|)` and
 #     `(?:\z)?a` (no other context set; DFA-routed) must stamp the same
 #     RX_DFA_PREFILTER as their `\z`-free twin `a`, at byte and -e utf8.
+#     All compile with `--memfn=no-window-search`: since D172 S3 these
+#     fixed-width patterns are `cover` (prefilter "none") by default, and the
+#     equality passed vacuously (S1171 read UNDETECTED, full suite cb32eda28).
+#     The twin's stamp must also not be "none" (the vacuity guard).
 #     FAILING DIRECTION: sabotage S1171 (the membership clause dropped) makes
 #     both witnesses `memchr-bounded`. No corpus pattern reaches this: the
 #     2026-10-20 probe moved 0 of 4,636 under the same plant.
@@ -154,7 +158,7 @@ fi
 echo
 echo "== [DD-11.5] P2d a context row that reads no set adds none =="
 p2d_pf() {   # p2d_pf ENC PATTERN -> its RX_DFA_PREFILTER stamp value
-    if pcrec_run "$PCREC" --features all -e "$1" -p rx -o "$WORKDIR/p2d.c" --pattern "$2" \
+    if pcrec_run "$PCREC" --features all -e "$1" --memfn=no-window-search -p rx -o "$WORKDIR/p2d.c" --pattern "$2" \
             >/dev/null 2>"$WORKDIR/p2d.err"; then
         sed -n 's/^#define RX_DFA_PREFILTER "\(.*\)"$/\1/p' "$WORKDIR/p2d.c"
     else echo "ERR"; fi
@@ -163,10 +167,10 @@ for enc in byte utf8; do
     twin="$(p2d_pf "$enc" 'a')"
     for w in 'a(?:\z|)' '(?:\z)?a'; do
         got="$(p2d_pf "$enc" "$w")"
-        if [ -n "$twin" ] && [ "$twin" != "ERR" ] && [ "$got" = "$twin" ]; then
+        if [ -n "$twin" ] && [ "$twin" != "ERR" ] && [ "$twin" != none ] && [ "$got" = "$twin" ]; then
             ok "P2d [$enc]: $w stamps RX_DFA_PREFILTER '$got', as its \\z-free twin a does"
         else
-            bad "P2d [$enc]: $w stamps RX_DFA_PREFILTER '$got', its twin a '$twin' -- want equal and non-empty (an absent-only row put a set on the class axis, or the end view now changes the scan form: read the two artifacts)"
+            bad "P2d [$enc]: $w stamps RX_DFA_PREFILTER '$got', its twin a '$twin' -- want equal, non-empty and not 'none' (a 'none' twin is the cover route: the check has lost its reach; an absent-only row put a set on the class axis, or the end view now changes the scan form: read the two artifacts)"
         fi
     done
 done

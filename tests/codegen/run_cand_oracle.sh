@@ -146,6 +146,10 @@ while IFS=$'\t' read -r row flags pat; do
         bad "[cand-oracle] rc=$rc compiling $flags $pat ($(tail -1 "$WORK/err"))"
     elif ! awk -F'\t' -v r="$row" '$1=="CANDROW" && $4==r {f=1} END {exit !f}' "$WORK/err"; then
         bad "[cand-oracle-reach] $flags $pat does not reach row '$row'"
+    elif [ "$row" != cover ] && grep -q '^#define RX_DFA_SCAN "cover"$' "$WORK/w.c"; then
+        # vacuity guard: a witness the window search now answers carries no
+        # DFA hat, so a plant in the hat's code moves nothing (S1085, D172 S3)
+        bad "[cand-oracle-reach] $flags $pat compiles to the cover route, not a DFA hat: add --memfn=no-window-search"
     else
         ok "[cand-oracle] $flags $pat reaches '$row', self-check clean"
     fi
