@@ -896,7 +896,9 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:36"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
     ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:37"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
 
-# E4 (11 cases) — tests/recursion/d27/sr_depth.rxt, K34 (known_issues.md
+# E4 (11 cases) — tests/recursion/d27/sr_depth.rxt, K34 (keyed by TEXT, not
+# line: `<file>@<pattern line> :: <case line>`, see giveup1_text_id below the
+# table — the file's header comment grows, its line numbers do not hold) (known_issues.md
 # K34, CLOSED [OPTLOOP.1.impl] batch 2) — a DIFFERENT known issue than
 # K64/K65/K66 but the SAME general mechanism (§2.29's necessary-run
 # pre-check, [OPT-REQPOS] tier 2b), applied to LEFT-RECURSION rather than
@@ -914,17 +916,17 @@ declare -A GIVEUP1_ALLOWANCE=(
 # closed (docs/dev/learnings.md §3). Live re-run (this file +3 other
 # `gu`-bearing recursion files ruled out as unaffected, RXTFLAGS="-fno-req-byte"):
 # keys_base=109 giveup1=11, all in sr_depth.rxt.
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:83"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:157"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:158"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:159"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:160"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:161"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:179"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:180"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:181"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:182"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
-    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:183"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a) :: n \"bbb\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)b :: n \"a\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)b :: n \"aa\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)b :: n \"aaa\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)b :: n \"b\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)b :: n \"\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)c :: n \"a\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)c :: n \"aa\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)c :: n \"aaa\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)c :: n \"b\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt@pattern (a|(?1)a)c :: n \"\""]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
 
 # E5 (19 cases) — tests/litscan/reqcube.rxt, the [OPT-LITSCAN] S4 C3 /
 # [K82] S2b and S2c blocks (landed 2026-10-03/04, AFTER this manifest was
@@ -1184,6 +1186,32 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-start-set|tests/recursion/inlookaround_self.rxt:124"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
     ["-fno-start-set|tests/recursion/inlookaround_self.rxt:125"]="tuning.md §2.5/§2.42 (Groups E/F/F5 mechanism): tests/recursion/inlookaround_self.rxt is ACCEPTED corpus (K127) whose self-recursion through a lookaround reaches the documented recursion-loop give-up (match_api.md §3.1) -- default answers nomatch, the denied fno-start-set leaves the matcher to run into it (trc=3 frames); one-sided give-up, mismatches=0"
 )
+
+# giveup1_text_id KEY — the stable identity of the case at KEY (`file:line`,
+# absolute or ROOT-relative): `<relfile>@<governing pattern line> :: <case
+# line>`. A file that shifts under a comment edit keeps its manifest entries
+# keyed this way (fsfix 4: trailgc's 8-line header comment moved sr_depth's
+# eleven line keys). Prints nothing when the file or line is unreadable.
+giveup1_text_id() {
+    local key="$1" f l rel
+    f="${key%:*}"; l="${key##*:}"; rel="${f#"$ROOT_DIR"/}"
+    [ -r "$ROOT_DIR/$rel" ] || return 0
+    awk -v L="$l" -v R="$rel" 'NR<=L && /^pattern /{p=$0} NR==L{print R "@" p " :: " $0; exit}' "$ROOT_DIR/$rel"
+}
+
+# giveup1_named FLAGS KEY — exit 0 when GIVEUP1_ALLOWANCE names the case
+# for FLAGS (or, for a multi-flag job, any one component flag), by its
+# `file:line` key or its text identity.
+giveup1_named() {
+    local flags="$1" key="$2" relkey tid c
+    relkey="${key#"$ROOT_DIR"/}"
+    tid="$(giveup1_text_id "$key")"
+    for c in "$flags" ${flags}; do
+        [ -n "${GIVEUP1_ALLOWANCE[$c|$relkey]:-}" ] && return 0
+        [ -n "$tid" ] && [ -n "${GIVEUP1_ALLOWANCE[$c|$tid]:-}" ] && return 0
+    done
+    return 1
+}
 
 # ============================================================================
 # [RUNAXES] THE `--memfn=` ARM (lane runaxes, 2026-10-16; the kit's per-form
@@ -1506,15 +1534,8 @@ run_one_axis() {
     if [ "$giveup1" -gt 0 ]; then
         while IFS=$'\t' read -r cls key btrc bout atrc aout; do
             [ "$cls" = "GIVEUP1" ] || continue
-            # two statements: one `local` expands every word before it
-            # assigns any, so `$relkey` would be unset in its own line
-            local relkey="${key#"$ROOT_DIR"/}" _c
-            local _allowed="${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}"
-            if [ -z "$_allowed" ] && [ "$flags" != "${flags%% *}" ]; then
-                for _c in $flags; do
-                    [ -n "${GIVEUP1_ALLOWANCE[$_c|$relkey]:-}" ] && _allowed=1
-                done
-            fi
+            local _allowed=""
+            giveup1_named "$flags" "$key" && _allowed=1
             if [ -n "$_allowed" ]; then
                 giveup1_allowed=$((giveup1_allowed + 1))
             else
@@ -2198,8 +2219,7 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
     done
     while IFS=$'\t' read -r cls key btrc bout atrc aout; do
         [ "$cls" = "GIVEUP1" ] || continue
-        rk="${key#"$ROOT_DIR"/}"
-        if [ -n "${GIVEUP1_ALLOWANCE[-fno-start-set|$rk]:-}" ]; then
+        if giveup1_named "-fno-start-set" "$key"; then
             ss_allowed=$((ss_allowed + 1))
         else
             ss_bad=1
