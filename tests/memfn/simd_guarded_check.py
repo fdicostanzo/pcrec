@@ -83,6 +83,13 @@ NAMED = [
     ('ladder', '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'),
     ('dfa', 'abc[0-9]+def'),
     ('vrun', '(?i)union.*?select'),   # R-13: a vrun FUNC under the `simd` arm
+    # fsfix 3: the SIMD-form population must not ride the every-Nth corpus
+    # sample (a 4-file corpus addition shifted it from 6 to 5). Each of these
+    # renders `vrun@w32+w16` under the `simd` arm; FLOORS['simd-form-named']
+    # counts exactly them.
+    ('vrun-fixed', '(?i)foobarbaz'),
+    ('vrun-gap', '(?i)select.*from'),
+    ('vrun-long', '(?i)abcdefghijklmnop'),
 ]
 
 # K35 FLOORS, literal: each population a reader needs, counted over the run.
@@ -97,6 +104,8 @@ FLOORS = {
                             # 3 at D172 S3, the fixed-width caseless runs became `cover`; 6 again at
                             # code review r1 C1, their window search's stop PAIR with its SIMD rows;
                             # pinned AT the measure)
+    'simd-form-named': 4,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (simd arm; 4 of 4);
+                             # the sample-independent control, so 'simd-form' above can drift with the corpus
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
 
@@ -228,6 +237,8 @@ def main():
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
         if sites:
             rec['counts'].append('simd-form')
+            if rec['key'].startswith('named:'):
+                rec['counts'].append('simd-form-named')
         if PROG.search(pout):
             rec['counts'].append('vm')
         why = UNROLL_WHY.search(pout)
