@@ -80,3 +80,8 @@ readers or append-only lists:
 - **Not touched:** 711-p1build-mech, 712-p1build-timing, [LANDWALK-PRES].
 - **Landing notes (unchanged from p1build):** abi 95 provisional (re-number if 94/95 are taken);
   re-pin FILEPIN to the landing merge; the S693 AFTER follows main's number at landing.
+- **lanecheck could not pass:** `scripts/lanecheck p1tri` exits 65: the manager-written
+  `docs/dev/lanes/p1tri_deliver.txt` uses `lane:`/`branch:` lines, which are not lanecheck fields
+  (known: report, sections, nonempty, cites, commit, files, dirty-ok, owed). Not edited (it is the
+  manager's). The tree is otherwise committed; its only untracked files are that file,
+  `p1build_deliver.txt` and `p1build.done` (the earlier lane's, left as found).
