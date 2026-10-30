@@ -52,5 +52,5 @@ checkpoint (last entry applied: none). No flag, no deny lever, no emitted-text c
 - OWED (queued as boxqueue job 730-fsfix-check, behind the full suite's box hold; per-stage logs in
   worktrees/fsfix/build/fsfix_check/{build,sections,test,axes,asan}.log; completion line `== FSFIX CHECK DONE`):
   `make test-code test-cli test-memfn-guarded`, `make test`, `make test-axes`, `make asan SAN_SCRIPTS=tests/code/run_code_tests.sh`.
-  Also owed: the mech rows `bash tests/mech/run_sabotage_matrix.sh S1850 S1852` (not queued; one more job if wanted).
+  Also owed: the mech rows S1850 and S1852, queued by the manager as job 731-fsfix-mech (key fsfix-mech).
 - Could not run `make test-code` etc. myself: the box lock was held by the full suite for the whole lane (a 900 s wait timed out).
