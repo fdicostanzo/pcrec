@@ -65,7 +65,10 @@ first-memchr-bounded	-	\B(?<!a)d
 # which since lmfacts (fe7ece905) is priced off the readers' class: a readers'
 # site carrying E flips that admission to `handoff`, no PF site is defined,
 # and the hold has no define side to compare (S1085 read UNDETECTED).
-first-memchr-bounded	-fno-req-handoff	\B(?<!a)d
+# `--memfn=no-window-search` since D172 S3: without it this fixed-width pattern
+# is `cover` (no DFA, no PF site) and the plant moves nothing (S1085 read
+# UNDETECTED again, full suite cb32eda28).
+first-memchr-bounded	-fno-req-handoff --memfn=no-window-search	\B(?<!a)d
 first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
