@@ -25,7 +25,10 @@
 # its reuse inventory under "NOT USED" with the reason: the plan row offered a
 # cut at the return as the alternative and SS3.2 measured it wrong for 10.46.
 # The sabotage therefore has to WRITE the cut rather than delete one, which is
-# why its AFTER is longer than its BEFORE.
+# why its AFTER is longer than its BEFORE. The added line consumes one more
+# `%s`, so the plant also adds the matching argument: a plant that only added
+# the line left pcrec_sb_printf reading a missing vararg and emitted garbage
+# (`stray \213` in the generated .c, the matrix's S146 ANOMALY, 2026-10-30).
 SAB_ID="S146-call-return-cuts"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
@@ -33,6 +36,12 @@ SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The emitted return CUTS the resume stack back to the call frame, making every subroutine call ATOMIC -- 10.30's semantics, which 10.46 abandoned"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR4): the same cell S145 names goes red, AND THE FOUR ATOMIC CONTROLS STAY GREEN -- which is what distinguishes this row from S145. atomicity.rxt carries both halves."
 SAB_COUNT=1
-SAB_BEFORE='        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"'
+SAB_BEFORE='        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
+        "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
+        "    }\n",
+        v->p, v->p, v->up, v->p, v->p);'
 SAB_AFTER='        "        run->resume_depth = %s_call_frame;   /* SABOTAGE S146 */\n"
-        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"'
+        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
+        "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
+        "    }\n",
+        v->p, v->p, v->up, v->p, v->p, v->p);'

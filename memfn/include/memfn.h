@@ -1718,4 +1718,26 @@ size_t mf_ref_mismatch(const uint8_t *a, const uint8_t *b, size_t n);
 size_t mf_ref_skip_blocks(const uint8_t *s, size_t n, const uint8_t (*sets)[32],
                           size_t w);
 
+/* ---- STANDALONE KERNELS: the stand-alone product's text, NOT ROUTED ------
+ *
+ * A kernel is a search form the kit renders on request, outside any site:
+ * no row, no deny, no pcrec caller (so no pcrec byte depends on it). Its
+ * users are the kit's G2 and the measurement script; a priced choice may
+ * later offer it (memfn/src/vany.c). */
+#define mf_kernel_find_any MF_NS(kernel_find_any)
+
+/* F2 as a kernel (lane simdset): writes to `o` (its `puts` and `vprintf`;
+ * `simd_open`/`simd_close` bracket each level's text where both are set) a
+ * self-contained family of `static inline size_t f(const unsigned char
+ * *subject, size_t n, size_t pos)` functions, each returning the least i in
+ * [pos, n) with subject[i] equal to one of bytes[0..k), else n, and reading
+ * only [pos, n): `<fn>__body` (portable C), one helper per level whose bit
+ * is set in `levels` (bit j = mf_levels()[j]; each under its level's guard
+ * and header), and the selector `<fn>`, which calls the highest level its
+ * compile enables, else the body. k is 2..3 (duplicates allowed);
+ * `levels` 0 renders the portable body and selector alone. Returns 0, or
+ * -1 with the refusal text in err[0..errn) (a bad sink, `fn`, k or level). */
+int mf_kernel_find_any(mf_sink *o, const char *fn, const uint8_t *bytes, unsigned k,
+                       uint32_t levels, char *err, size_t errn);
+
 #endif /* MEMFN_H */

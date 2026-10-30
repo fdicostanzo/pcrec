@@ -1,0 +1,34 @@
+# memfn/data/cards/kit-kernels.tsv — THE STANDALONE KERNELS' METHOD CARDS,
+# `kit-kernels@N` (R-MS5; docs/design/measure_sets.md §7.2; the standing rule
+# "a new method adds its measurement card in the same change", D176,
+# docs/dev/guide/addenda/kit.md). One row per (owner, quantity, ver),
+# APPEND-ONLY by version: a committed row never changes.
+#
+# ver 1 (lane simdset, 2026-10-29): `mf_kernel_find_any` (memfn/src/vany.c),
+# "find any of K bytes", K 2..3, NOT ROUTED. Its forms, the `form` token of
+# every key below (`kit.<quantity>.<form>...`):
+#   vany2-w16 vany2-w32 vany3-w16 vany3-w32   the per-level helpers, K 2 / 3
+#   vany2-body vany3-body                     the portable body (the byte loop)
+# and the comparators a `vs` token names: those forms, WALK (the kit's walk,
+# u's own form) and LIBC (one `memchr` per member, the scalar layer's libc
+# arm). The quantities and dims are kit-grid@1's, so a set measured under
+# this card uses the keys the finder's readers already spell.
+#
+# UNMEASURED. No committed set (measure_store/, memfn/data/sets/) holds a
+# `kit.*.vany*` row and no box has run this card: every reader skips an absent
+# key (docs/spec/measures.md §0¶2), so nothing is priced by a guess. The first
+# run that measures it writes the rows; until then they read UNMEASURED.
+# `deps` name kit:form.<form>; the kernel renders outside any site, so
+# mf_form_hash cannot hash it yet: the deps are OWED (simdset_report.md, open
+# question 2), as tests/memfn/run_finder.sh lists an unresolved dep.
+# `gate_e6` is kit-grid@1's 30000, an UNMEASURED DEFAULT (D149) as there.
+#
+# Columns (measure_sets.md §7.2): owner quantity ver dims unit subject
+# lengths launches rounds aa_rule gate_e6 env deps.
+#
+#owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
+kit	beta	1	form;kind;shape	ratio	streamed	slope 64Ki-1Mi member-free single calls	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	f	1	form;kind;lenclass	walkbytes	fresh	n in {8,16,31,32,48,64,128} member-free	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	saving	1	form;vs;shape	ratio	derived	-	-	-	-	-	-	kit:form.<form>;kit:form.<vs>
+kit	xover	1	form;vs;kind	bytes	derived	-	-	-	-	-	-	kit:form.<form>;kit:form.<vs>
+kit	gstar	1	form;kind	bytes	streamed	g in {2,4,8,16,32,64,256,4096,absent}	5	5	pair-per-group	-	-	kit:form.<form>

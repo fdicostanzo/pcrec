@@ -133,6 +133,15 @@ C=[
  NL+"#define M(x) \\"+NL+"  do { f(x); } while (0)"+NL+"  M(1);"+NL),
 ]
 
+K134_BODIES = [
+    ("identifiers, 350", " " + " ".join("v%d_%d" % (i, i * 7919 % 100) for i in range(350)) + " "),
+    ("splices, 700", " " + "a\\\n" * 700 + " "),
+    ("parentheses, 300 deep", " " + "(" * 300 + ")" * 300 + " "),
+    ("mixed statements, 60",
+     "".join(" int x_%d = f(a, \"s}\", '}'); /* } */ y += 0x1F;" % i for i in range(60)) + " "),
+    ("braces, 60 deep", " " + "{" * 60 + " x; " + "}" * 60 + " "),
+]
+
 
 def load_pcre2():
     p = os.path.join(ROOT, "docs/design/eng_brep_measurements/probes/pcre2_ctypes.py")
@@ -185,6 +194,15 @@ def main():
 
     for lab, subj, exp in C:
         case(lab, subj, exp)
+    # [K134] LONG FLAT SEGMENTS. Each pass of the token loop leaves its
+    # trailed writes (the spliced (?&sp)'s saves and restores) on the trail,
+    # and a possessive loop's cut drops frames without rewinding it, so
+    # before the trail compaction these gave up with PCREC_ERR_FRAMES on the
+    # stamped default capacity (3,072 entries) at a few hundred bytes while
+    # libpcre2 answers them. Sized past that (0.6-2.8 KB); nesting is kept
+    # below the compaction's own depth reach (60 braces).
+    for lab, body in K134_BODIES:
+        case("k134 " + lab, "(?{" + body + "})", body)
     # \G anchors at the start offset: the same segment found at 1, not at 0.
     case("anchored: found at its start offset", "a(?{ x; })", " x; ", 1)
     case("anchored: not found from 0 when it starts later", "a(?{ x; })", None, 0)

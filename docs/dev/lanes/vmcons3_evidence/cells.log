@@ -1,0 +1,66 @@
+=== C5b  ^(?:.*?x|y)(z)  [--features all]
+engine: vm islands: 0 span-blocks: 2 kit-loops: 0 switch: 0
+  base     axz => rc=1 0:0,3 1:2,3
+  base     aaxz => rc=1 0:0,4 1:3,4
+  base     xz => rc=1 0:0,2 1:1,2
+  base     yz => rc=1 0:0,2 1:1,2
+  libpcre2 axz => rc=1 0:0,3 1:2,3
+  libpcre2 aaxz => rc=1 0:0,4 1:3,4
+  libpcre2 xz => rc=1 0:0,2 1:1,2
+  libpcre2 yz => rc=1 0:0,2 1:1,2
+=== C5c  ^(?:[ab]{2,}?b|y)(z)  [--features all]
+engine: vm islands: 0 span-blocks: 2 kit-loops: 1 switch: 0
+  base     abbz => rc=1 0:0,4 1:3,4
+  base     aabz => rc=1 0:0,4 1:3,4
+  base     abz => rc=0
+  base     ababz => rc=1 0:0,5 1:4,5
+  base     yz => rc=1 0:0,2 1:1,2
+  libpcre2 abbz => rc=1 0:0,4 1:3,4
+  libpcre2 aabz => rc=1 0:0,4 1:3,4
+  libpcre2 abz => rc=-1
+  libpcre2 ababz => rc=1 0:0,5 1:4,5
+  libpcre2 yz => rc=1 0:0,2 1:1,2
+=== C7a  ^(?:\d+y|(?:ab|abc|abcd|abcde))(z)  [--features all -fno-altcls-factor]
+engine: vm islands: 1 span-blocks: 1 kit-loops: 1 switch: 0
+  base     abz => rc=1 0:0,3 1:2,3
+  base     abcz => rc=1 0:0,4 1:3,4
+  base     abcdez => rc=1 0:0,6 1:5,6
+  base     12yz => rc=1 0:0,4 1:3,4
+  libpcre2 abz => rc=1 0:0,3 1:2,3
+  libpcre2 abcz => rc=1 0:0,4 1:3,4
+  libpcre2 abcdez => rc=1 0:0,6 1:5,6
+  libpcre2 12yz => rc=1 0:0,4 1:3,4
+=== C7b  ^(?:\d+y|(?:ab|abc|cd|cde))(z)  [--features all]
+engine: vm islands: 1 span-blocks: 1 kit-loops: 1 switch: 1
+  base     abz => rc=1 0:0,3 1:2,3
+  base     abcz => rc=1 0:0,4 1:3,4
+  base     cdz => rc=1 0:0,3 1:2,3
+  base     cdez => rc=1 0:0,4 1:3,4
+  base     12yz => rc=1 0:0,4 1:3,4
+  base     xz => rc=0
+  libpcre2 abz => rc=1 0:0,3 1:2,3
+  libpcre2 abcz => rc=1 0:0,4 1:3,4
+  libpcre2 cdz => rc=1 0:0,3 1:2,3
+  libpcre2 cdez => rc=1 0:0,4 1:3,4
+  libpcre2 12yz => rc=1 0:0,4 1:3,4
+  libpcre2 xz => rc=-1
+=== C6  ^(x(?>a(?1)?b)y)$  [--features all --engine=vm -fno-splice-calls]
+engine: vm islands: 0 span-blocks: 0 kit-loops: 0 switch: 0
+  base     xaby => rc=1 0:0,4 1:0,4
+  base     xaxabyby => rc=1 0:0,8 1:0,8
+  base     xaxaxabybyby => rc=1 0:0,12 1:0,12
+  base     xay => rc=0
+  base     xaxaby => rc=0
+  libpcre2 xaby => rc=1 0:0,4 1:0,4
+  libpcre2 xaxabyby => rc=1 0:0,8 1:0,8
+  libpcre2 xaxaxabybyby => rc=1 0:0,12 1:0,12
+  libpcre2 xay => rc=-1
+  libpcre2 xaxaby => rc=-1
+=== C8  ^(a)b+c  [--features all]
+engine: vm islands: 0 span-blocks: 1 kit-loops: 1 switch: 0
+  base     abbc => rc=1 0:0,4 1:0,1
+  base     abc => rc=1 0:0,3 1:0,1
+  base     ac => rc=0
+  libpcre2 abbc => rc=1 0:0,4 1:0,1
+  libpcre2 abc => rc=1 0:0,3 1:0,1
+  libpcre2 ac => rc=-1

@@ -71,7 +71,7 @@
 # hard-fail on an empty list). Three, because three witnesses have a natural
 # population of ZERO at the shipped limits:
 #   lowdfa   -DPCREC_MAX_AUTO_DFA_ELEMS=3000      overflowed-prefilter
-#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000
+#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000
 #            -DPCREC_SIZE_TERM_THRESHOLD=10000    cap-rescue,
 #                                                 size-model-declined
 #   lowthr   -DPCREC_SIZE_TERM_THRESHOLD=1000     capacity-declined
@@ -119,7 +119,7 @@ build_ref() {   # build_ref NAME CFLAGS...  -> $WORK/pcrec_NAME
 }
 if [ -n "$lsrcs" ]; then
     build_ref lowdfa  -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000 \
                       -DPCREC_SIZE_TERM_THRESHOLD=10000 &
     build_ref lowthr  -DPCREC_SIZE_TERM_THRESHOLD=1000 &
     wait
@@ -142,9 +142,9 @@ REF_lowdfa="$WORK/pcrec_lowdfa"; REF_lowsize="$WORK/pcrec_lowsize"; REF_lowthr="
 if [ -n "$lsrcs" ]; then
     build_ref trplain   -DPCREC_CAND_TRACE &
     build_ref trlowdfa  -DPCREC_CAND_TRACE -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 &
-    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 \
                         -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
     wait

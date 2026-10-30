@@ -74,6 +74,8 @@
 # RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1, abi 92 -> 95
 # PROVISIONAL, 93/94 reserved on main): AFTER is 92, this branch's parent's
 # number; same detector, same arm.
+# RE-AIMED 2026-10-30 (lane p1tri, main merged into lane/p1build: main's abi is
+# 93, [K134]): AFTER is 93, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
@@ -82,4 +84,4 @@ SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='#define PCREC_ARTIFACT_ABI 95'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 92   /* SABOTAGE S693 */'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 93   /* SABOTAGE S693 */'
