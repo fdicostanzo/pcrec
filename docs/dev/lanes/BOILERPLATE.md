@@ -142,6 +142,12 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   or `add` jobs chained with `after`), never one script running them all, so
   a short job from another session slips in at each stage boundary instead
   of waiting hours behind a 4-hour chain (730-fsfix-check, one five-stage job, held the box for hours).
+  SOFT LIMIT ONE HOUR PER JOB, SHORTER RUNS FIRST (Frank, 2026-10-30): size
+  each job to about an hour or less (a long target is split into shards,
+  e.g. mech row ranges); a job capped over 3600 s says why in its header.
+  Within your own prio range, give a SHORTER overall run (all its jobs
+  together) the EARLIER prio number, so quick validations are not starved
+  by long ones.
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
