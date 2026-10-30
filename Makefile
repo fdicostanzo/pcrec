@@ -2152,6 +2152,7 @@ alloc-locked:
 # ([runkit], scripts/boxlock: waits for a holder, nests inside a battery or a
 # chainrun heavy stage; PCREC_BOXLOCK=0 opts out).
 test-axes: all
+	bash tests/axes/giveup1_key_check.sh
 	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh'
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
