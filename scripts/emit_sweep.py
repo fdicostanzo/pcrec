@@ -1794,7 +1794,7 @@ TRACE_EXTRA_PINS = {
 #   a080c69a and at fae3987e8, population 384 composition files.
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
-#   reshapes blocks the default engine compiles, so 20 fewer files are written.
+#   reshapes blocks the default engine compiles, so 20 fewer files are written. Re-pinned 38 / 88 (job 695, header above): AT the measured value, so the self-test +1 plant goes red.
 #   ("-fmemfn-simd",) and ("-fcomments",): producing 37, artifacts 106 each,
 #   AT the measured value ([COMPPIN], lane/comppin 4464e1c10): neither flag
 #   changes which fixtures compile, so both read the plain arm's population.
@@ -1805,8 +1805,8 @@ TRACE_EXTRA_PINS = {
 COMPOSITION_EXTRA_PINS = {
     ("-e", "utf8"): {"composition_producing_floor": 37,
                      "composition_artifacts_floor": 86},
-    ("--engine=vm",): {"composition_producing_floor": 37,
-                       "composition_artifacts_floor": 86},
+    ("--engine=vm",): {"composition_producing_floor": 38,
+                       "composition_artifacts_floor": 88},  # job 695 re-pin (was 37 / 86)
     # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
     # changes WHICH composition files compile, only the text: both read the
     # plain arm's population, producing 37 / artifacts 106, measured at
