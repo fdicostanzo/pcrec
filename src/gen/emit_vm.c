@@ -412,7 +412,6 @@ typedef struct Cost Cost;
 
 typedef struct {
     Ctx      *cx;
-    StrBuf   *b;          /* SCRATCH: the VM function's body, see vm_emit_all */
     VmBody   *sb;         /* the body's ONE writer (vm_stmt.h): every statement
                            * is a record printed by its kind's renderer */
     const char *p;        /* --prefix */
@@ -552,14 +551,14 @@ typedef struct {
     long long nset;       /* [K134] `<PREFIX>_SET` sites written so far, counted
                            * by vm_set in the same call. The program-order
                            * clock `vm_goto` reads to tell a jump that closes
-                           * a trail-writing cycle (vm_trail_check_text), and
+                           * a trail-writing cycle (vm_trail_check_count), and
                            * at the end the trail margin (`margin` in
                            * `<prefix>_trail_gc_floor`, vm_emit_trail_compact). */
     long long *lbl_nset;  /* [K134] per label id: 1 + `nset` when vm_lbl
                            * wrote it, 0 while it is not written yet */
     int       lbl_cap;    /* entries `lbl_nset` holds */
     long long ncheck;     /* [K134] `<PREFIX>_TRAIL_CHECK` sites written, by
-                           * vm_trail_check_text alone: nonzero is what emits
+                           * vm_trail_check_count alone: nonzero is what emits
                            * the compaction, the run state's floor and the
                            * matcher's trigger local */
     long long maxcopies;  /* the largest REPLICATION FACTOR any one bounded
@@ -1750,13 +1749,12 @@ static int vm_cls_kit_count(const Vm *v)
 
 /* Re-spells the finished program's table reads for their final form: every
  * recorded read of a class whose `clsrd` is not `VCR_SITE` becomes that
- * form's spelling, in one pass over `v->b`. Every `(<prefix>_class_bitmap`
+ * form's spelling, in one pass over the body. Every `(<prefix>_class_bitmap`
  * in the program must be a recorded read — the program is the text
  * `vm_cls_test` wrote — so one that is not is an internal error, never a
  * table read left unconverted. */
 static void vm_cls_respell(Vm *v)
 {
-    StrBuf *b = v->b;
     const char *needle = vm_rolef(v, "(%s_class_bitmap", v->p);
     const char **from = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *from);
     const char **to = pcrec_arena_alloc(&v->cx->arena, (size_t)v->ntabrd * sizeof *to);
@@ -1765,44 +1763,20 @@ static void vm_cls_respell(Vm *v)
         to[i] = vm_cls_read(v, (VmClsRead)v->clsrd[v->tabrd[i].ci],
                             v->tabrd[i].ci, v->tabrd[i].byte);
     }
-    /* Two passes over the same matches: the first sizes the output, the
-     * second writes it. */
-    char *out = NULL;
-    size_t olen = 0;
-    for (int pass = 0; pass < 2; pass++) {
-        const char *q = b->p ? b->p : "", *hit;
-        size_t o = 0;
-        while ((hit = strstr(q, needle)) != NULL) {
-            int r = 0;
-            while (r < v->ntabrd && strncmp(hit, from[r], strlen(from[r])) != 0) r++;
-            if (r == v->ntabrd)
-                pcrec_ctx_fail(v->cx, 0, "internal error: a class table read in "
-                               "the VM program was not recorded, so the table "
-                               "selection cannot re-spell it");
-            size_t pre = (size_t)(hit - q), tl = strlen(to[r]);
-            if (pass) { memcpy(out + o, q, pre); memcpy(out + o + pre, to[r], tl); }
-            o += pre + tl;
-            q = hit + strlen(from[r]);
-        }
-        size_t rest = strlen(q);
-        if (pass) { memcpy(out + o, q, rest + 1); break; }
-        olen = o + rest;
-        out = pcrec_arena_alloc(&v->cx->arena, olen + 1);
-    }
-    b->len = 0;
-    if (b->p) b->p[0] = 0;
-    pcrec_sb_puts(b, out);
+    /* The body's ONE declared post-render rewrite (vm_stmt.h), which closes
+     * it. */
+    vm_stmt_respell(v->sb, needle, from, to, v->ntabrd);
 }
 
 /* How many times the finished program reads class `ci`'s table: the
- * occurrences of its bitmap read's opening in `v->b`, the text
+ * occurrences of its bitmap read's opening in the body, the text
  * `vm_cls_respell` re-spells — each one a call a kit matcher would be
  * inlined at. (`tabrd` records distinct (class, byte) PAIRS, so two span
  * loops on the same cursor expression are one record and two calls.) */
 static int vm_cls_reads(Vm *v, int ci)
 {
     const char *needle = vm_rolef(v, "(%s_class_bitmap%d[", v->p, ci);
-    const char *q = v->b->p ? v->b->p : "";
+    const char *q = vm_stmt_text(v->sb);
     int n = 0;
     while ((q = strstr(q, needle)) != NULL) { n++; q++; }
     return n;
@@ -3509,23 +3483,23 @@ static void vm_lbl(Vm *v, int id, const char *role)
 /* [K134] The text of one trail CHECKPOINT, counted and logged: the one place
  * the trail is compacted (`<prefix>_trail_compact`), placed on every edge
  * that can close a cycle of trail writes so a run that loops or recurses
- * passes one at least once per turn. The ONE writer of a checkpoint: both
- * spellings (a statement, vm_trail_check; a guarded jump's block, vm_jump)
- * take their text here, so `ncheck` and the listing's note count the same
- * sites the C has. The checkpoints and the margin are vm_emit_trail_compact's
- * argument; the trail write itself keeps its plain give-up. */
-static const char *vm_trail_check_text(Vm *v)
+ * passes one at least once per turn. The ONE counter of a checkpoint: both
+ * spellings (a CHECKPOINT record, vm_trail_check; a guarded jump's target,
+ * vm_jump_tgt) are counted here, so `ncheck` and the listing's note count
+ * the same sites the C has. The checkpoints and the margin are
+ * vm_emit_trail_compact's argument; the trail write itself keeps its plain
+ * give-up. */
+static void vm_trail_check_count(Vm *v)
 {
     v->ncheck++;
     vm_ev(v, VE_NOTE, 0, 0, "trail checkpoint: compact the trail if it is past"
                             " its trigger (K134)");
-    return vm_rolef(v, "%s_TRAIL_CHECK();", v->up);
 }
 
-/* Writes a trail checkpoint as a statement (vm_trail_check_text). */
+/* Writes a trail checkpoint as a statement (a CHECKPOINT record). */
 static void vm_trail_check(Vm *v)
 {
-    (void)vm_trail_check_text(v);
+    vm_trail_check_count(v);
     vm_b_checkpoint(v->sb);
 }
 
@@ -3539,23 +3513,13 @@ static bool vm_jump_closes_trail_cycle(const Vm *v, int id)
     return id < v->lbl_cap && v->lbl_nset[id] && v->lbl_nset[id] <= v->nset;
 }
 
-/* The text of a jump to label `id` for a site that writes its own `goto`
- * inside a condition: the bare `goto`, or a block that passes a trail
- * checkpoint first when the jump closes a trail-writing cycle. */
-static const char *vm_jump(Vm *v, int id)
-{
-    if (!vm_jump_closes_trail_cycle(v, id))
-        return vm_rolef(v, "goto %s_L%d;", v->p, id);
-    return vm_rolef(v, "{ %s goto %s_L%d; }", vm_trail_check_text(v), v->p, id);
-}
-
-/* A guarded jump's target, label `id`: the checkpoint on the edge where the
- * jump closes a trail-writing cycle, counted and logged here (vm_jump's rule
- * for a record's target). */
+/* The target of a guarded jump to label `id` (a BRANCH record's): the bare
+ * jump, or one that passes a trail checkpoint first when the jump closes a
+ * trail-writing cycle, the checkpoint counted here. */
 static VmTgt vm_jump_tgt(Vm *v, int id)
 {
     bool ckpt = vm_jump_closes_trail_cycle(v, id);
-    if (ckpt) (void)vm_trail_check_text(v);
+    if (ckpt) vm_trail_check_count(v);
     return vm_tgt_label(id, ckpt);
 }
 
@@ -4972,7 +4936,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
 
     /* The body's own inline test, written once and reused by both rungs. */
     /* Job-owned SCRATCH, not a local: this text stays live while the loop
-     * below is emitted into `v->b`, and a size-term ladder trial can longjmp
+     * below is emitted into the body, and a size-term ladder trial can longjmp
      * out of any of those appends (r42 S3 armed vmsb's abort; the battery's
      * LeakSanitizer axis found the local it orphaned). See Job.scr_test. */
     StrBuf *t = &v->cx->job->scr_test;
@@ -10314,11 +10278,8 @@ typedef struct {
  * and the region tables are arena text with the compile's lifetime. */
 static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
 {
-    Job *job = cx->job;
-
     memset(v, 0, sizeof *v);
     v->cx = cx;
-    v->b = &job->vmsb;   /* Job-owned, so the longjmp cleanup path frees it */
     v->p = cx->opt->prefix;
 
     /* [DD-14.EMPTY] THE ROOT'S MINIMUM WIDTH, READ HERE AND NOT AT ENGINE
@@ -10910,7 +10871,7 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
      * comment axis must not reach it. [MEMFN] RQ-3: read through the decision
      * view, which also subtracts the CPU-guarded bytes, so the SIMD switch
      * cannot reach it either (D155 addendum 2). */
-    en->program_bytes = pcrec_sb_len_decide(&job->vmsb);
+    en->program_bytes = vm_stmt_program_bytes(v->sb);
 
     /* [CC-CLANG fix, 2026-09-01] DOES THIS ARTIFACT EVER PUSH A RESUME FRAME
      * — the ONE bool three later readers share: the `<PREFIX>_VM_FRAMELESS`
@@ -12656,47 +12617,6 @@ static const char *vm_vars_resolve_insert(Vm *v, const char *ctxexpr)
         strcmp(ctxexpr, "&ctx") == 0 ? "(int)vr" : "vr");
 }
 
-/* [FINDALL-NEXT] `<prefix>__match_notempty`, the find-all iterator's retry
- * matcher (findall_iter.md §3.3): `<prefix>_match_anchored`'s text,
- * written just above at `matcher_at`, again under its own name with one
- * line more at its accept label (`guard_at`): a match whose REPORTED span is
- * empty at `ctx->pos` is rejected and the program backtracks to its next
- * alternative, exactly as PCRE2's NOTEMPTY_ATSTART retry does. The reported
- * span is `[start, scan_position)` with `ctx->pos <= start <= scan_position`
- * (`start` is the `\K` slot where one was crossed), so it is empty AT
- * `ctx->pos` exactly when `scan_position == ctx->pos`; an empty span a `\K`
- * moved past `ctx->pos` (`ab\K`) is a match.
- *
- * A COPY, NOT A FLAG: a guard on a run-state flag in the one matcher costs
- * every search and match entry a load and a test at each accept, and
- * reshapes the out-of-line matcher (measured +10-14% on nullable
- * patterns); the program's computed goto keeps gcc from
- * inlining or cloning it, so only a second text keeps the entries' code
- * unchanged. Scaffold (§6.4): no length decision reads it. Written where the
- * retry table's winner needs it (`PCREC_ITER_NEEDS_GUARDED`), above the
- * `#undef`s, while the program's macros are defined. */
-static void vm_emit_guarded_matcher(Vm *v, size_t matcher_at, size_t guard_at)
-{
-    StrBuf *c = &v->cx->job->csb;
-    if (!(pcrec_iter_retry_of(v->cx)->needs & PCREC_ITER_NEEDS_GUARDED)) return;
-    const char *name = pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored(", v->p);
-    const char *at = strstr(c->p + matcher_at, name);
-    if (!at || (size_t)(at - c->p) > guard_at)
-        pcrec_ctx_fail(v->cx, 0, "internal error: the guarded matcher's source has "
-                       "no `_match_anchored` head (src/gen/emit_vm.c)");
-    const size_t name_at = (size_t)(at - c->p), end_at = c->len;
-    const char *copy = pcrec_sb_fragf(&v->cx->arena,
-        "%.*s%s__match_notempty(%.*s"
-        "    if (scan_position == ctx->pos) goto %s_fail;\n"
-        "%.*s",
-        (int)(name_at - matcher_at), c->p + matcher_at, v->p,
-        (int)(guard_at - name_at - strlen(name)), c->p + name_at + strlen(name),
-        v->p, (int)(end_at - guard_at), c->p + guard_at);
-    pcrec_sb_scaffold_open(c);
-    pcrec_sb_puts(c, copy);
-    pcrec_sb_scaffold_close(c);
-}
-
 /* [FINDALL-NEXT] `<prefix>_search_run`, the one static every search entry
  * calls: its caller-position prologue -- the range test (the body has none:
  * the iterator's step tests `lo > n` before every call), then the K50
@@ -13131,270 +13051,27 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * It is emitted ONLY where the program contains an MRL bound, so an
      * artifact with no clamp keeps the signature it had before MRL existed
      * and stays byte-identical. */
-    const size_t matcher_at = c->len;   /* [FINDALL-NEXT] the guarded copy's source */
-    pcrec_sb_printf(c,
-        "static %sptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n"
-        "{\n"
-        "    const unsigned char *const subject = ctx->subject;\n"
-        "    const size_t subject_length = ctx->len;\n"
-        "    size_t scan_position = ctx->pos;\n"
-        "    ptrdiff_t *const slot_values = run->slot_values;\n",
-        /* [CC-DIFF] STEP 2: `ai_body`, not `ai` — THIS is the function the
-         * size term prices, and the SHARED rung keeps exactly one copy of it
-         * while every thin helper above still inlines. */
-        en->ai_body, v->p, v->p,
-        v->nclamp > 0 ? pl->mrl_param : "",
-        v->ngst > 0 ? pl->gst_param : "");
-    /* [K134] the trail checkpoints' trigger, a local so the check is one
-     * compare against a register, started at the run's floor
-     * (vm_emit_trail_compact). */
-    if (v->ncheck)
-        pcrec_sb_printf(c, "    size_t %s_trail_gc_at = %s_trail_gc_start(run);\n", v->p, v->p);
-    if (v->rungs & vm_rung_bit[VM_RUNG_CURSOR])
-        pcrec_sb_printf(c, "    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
-                     "                             a plain local, UNTRAILED, whose save\n"
-                     "                             point is a resume frame */\n",
-                  v->p);
-    /* [ENG-BREP] the reverse-deterministic rung's working locals. All UNTRAILED
-     * and all read only where they are provably live: `it`/`mk` inside the
-     * forward scan, `c`/`prev`/`ns` inside one commit's own backward walk. What
-     * has to survive a backtrack lives in slot_values (the three slots per loop) or in
-     * the resume frame's recorded position, which is where the retreat target
-     * rides.
-     *
-     * The capture-recovery arrays are SHARED across every revdet loop in the
-     * program and sized by the widest body, because a walk's results are
-     * published into slot_values before control leaves the loop that ran it — nothing
-     * here outlives its own commit. */
-    for (int i = 0; i < v->nrev_total; i++)
-        pcrec_sb_printf(c,
-            /* [M6-READ] These suffixes MUST match the ones the use sites
-             * NAMES (M6-READ): `cursor` is the walk cursor; `groups_seen`
-             * is the count the walk has witnessed, tested against the group
-             * count at the wstep label (`if (groups_seen >= ng)`);
-             * `revdet_group_span[j][2]` is the span the backward walk
-             * recovered for group j and `revdet_group_seen[j]` whether it has
-             * been witnessed. Read off THIS file's own emission sites (the
-             * `ga`/`gs`/`ns` locals and the "no group to witness" note),
-             * which is where the rung's vocabulary actually lives.
-             *
-             * These suffixes MUST match the ones the use sites
-             * compose with `%s_<suffix>` from the `rv` base -- they are the
-             * same variable, spelled in two places. The rename moved the uses
-             * and left the declarations, and a revdet artifact stopped
-             * compiling; the two-artifact altcls differential caught it. */
-            "    size_t %s_rv%d_cursor = 0; unsigned long %s_rv%d_iteration = 0;\n"
-            "    size_t %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n"
-            "    int %s_rv%d_groups_seen = 0;\n",
-            v->p, i, v->p, i, v->p, i, v->p, i, v->p, i);
-    if (v->nrev_total && v->nrevcaps) {
-        pcrec_sb_printf(c, "    ptrdiff_t %s_revdet_group_span[%d][2] = {{0}};\n", v->p, v->nrevcaps);
-        pcrec_sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v->p, v->nrevcaps);
-    }
-    pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
-    /* Four of the five per-loop locals are used only by shapes that do not
-     * always occur — the walk cursor and `prev` exist only when a walk is
-     * emitted, the seen-counter only when the body has groups, and (found by
-     * [CC-CLANG]'s CLANGGEN sweep, not by inspection) `iteration` only where
-     * a READER exists for it: the rmax-bound test at the scan head fires iff
-     * `rmax >= 0` and the rmin tests at the commit/short labels fire iff
-     * `rmin > 0`, so a bare unbounded `X*` (rmin 0, rmax -1) writes it
-     * (reset, incremented every iteration) and never reads it at all —
-     * gcc's `-Wunused-but-set-variable` does not catch a write-only local
-     * reached through `x++` (measured: gcc accepts `((?<a>a)|(?<b>b))*`
-     * clean at -Wall -Wextra -Werror), clang's does. `mk` (`frame_mark`) is
-     * the only one of the five genuinely used by every shape — the cut it
-     * feeds runs on every commit, rmin or rmax notwithstanding — and is
-     * deliberately not listed, so a future shape that stops using it still
-     * gets caught. The generated matcher is built -Wall -Wextra -Werror;
-     * `--no-captures` on a possessified rung loop is the combination that
-     * has none of the first three, and it failed -Wunused-variable before
-     * this line existed. */
-    for (int i = 0; i < v->nrev_total; i++)
-        pcrec_sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position;"
-                     " (void)%s_rv%d_groups_seen; (void)%s_rv%d_iteration;\n",
-                  v->p, i, v->p, i, v->p, i, v->p, i);
-    if (v->tracing)
-        pcrec_sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
-                     " scan_position, subject_length);\n", v->p);
-    pcrec_sb_printf(c, "    goto %s_L0;\n\n", v->p);
-    pcrec_sb_splice(c, v->b);   /* [MEMFN] RQ-3: the program's guarded record with it */
-    /* The three trace lines. Built here rather than inline so the untraced
-     * artifact's text is the SAME format string with three empty inserts —
-     * one emitted shape, not two, for the same reason the traced macros above
-     * keep the untraced order of operations: a debug build that took a
-     * different path would be a tool that lies. */
-    /* [M6-READ] Widened: the renamed emitted locals (pos -> scan_position,
-     * w -> run, b_ -> frame_index) made every one of these trace strings
-     * longer, and snprintf TRUNCATES rather than failing. gcc's
-     * -Wformat-truncation caught two of the three; the third is widened with
-     * them because a silently cut trace line is a debugging tool that lies. */
-    /* Three more of the JUDGED shape above: an UNTRACED artifact's bytes are
-     * identical because each insert is simply empty, which is what
-     * run_vm_identity.sh's gate cares about and what a debug flag has no
-     * business changing. The old comment below says so in those words. */
-    const char *accept_tr = "", *fail_tr = "", *exhaust_tr = "";
-    if (v->tracing) {
-        /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
-         * on such an artifact they are different and one of them alone is
-         * misleading. `[ctx->pos, pos)` is what the PROGRAM consumed, which is
-         * what a trace of the program should say; the REPORTED span starts at
-         * the last crossed `\K`, and a reader watching `(?:a\K)*ab` retreat
-         * would otherwise see "ACCEPT [0,4)" and the caller print "2 4" with
-         * nothing connecting them. Emitted only where a `\K` exists, so a
-         * `\K`-free traced artifact keeps its line byte for byte. */
-        if (v->nkreset > 0)
-            accept_tr = vm_rolef(v,
-                     "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
-                     " reported [%%td,%%zu)\\n\", ctx->pos, scan_position,"
-                     " slot_values[0] != PCREC_UNSET ? slot_values[0] : (ptrdiff_t)ctx->pos,"
-                     " scan_position);\n", v->p);
-        else
-            accept_tr = vm_rolef(v,
-                     "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
-                     " ctx->pos, scan_position);\n", v->p);
-        fail_tr = vm_rolef(v,
-                 "    fprintf(stderr, \"[%s] backtrack: %%zu frame(subject), trail %%zu\\n\","
-                 " run->resume_depth, run->trail_depth);\n", v->p);
-        /* A separate guarded statement rather than a brace around the
-         * existing one: that keeps the UNTRACED artifact's bytes identical
-         * (the insert is simply empty), which is what run_vm_identity.sh's
-         * gate cares about and what a debug flag has no business changing. */
-        exhaust_tr = vm_rolef(v,
-                 "    if (run->resume_depth == 0)\n"
-                 "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
-                 v->p);
-    }
-    /* `has_push` is derived ABOVE, beside the `<PREFIX>_VM_FRAMELESS` stamp
-     * it is also read by — one derivation, two readers of the same bool
-     * ([OPT-VMFL] STEP 0 §4.2). */
-    /* [CC-CLANG] The fail label's own comment claims "THE ONLY ... INDIRECT
-     * JUMP", which is exactly untrue on a FRAMELESS program (has_push
-     * false, below): there is no `goto *` left in that case at all. The
-     * comment is selected on the same predicate that omits the dispatch,
-     * rather than left to describe a jump the artifact no longer contains. */
-    pcrec_sb_printf(c, "\n%s_accept: __attribute__((unused));\n", v->p);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
-        "     * candidates. The VM returns here immediately and the capture\n"
-        "     * slots at this instant are the answer -- no candidate comparison,\n"
-        "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
-        "     * filled by the ENTRY, not here (3.4). */\n");
-    pcrec_sb_cmt_close(c);
-    const size_t guard_at = c->len;   /* where the guarded copy's accept test goes */
-    pcrec_sb_printf(c,
-        "%s"
-        "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
-        "\n%s_fail: __attribute__((unused));\n",
-        accept_tr, v->p);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        v->has_push
-          ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
-            "     * A step is one backtrack resumption (4.2), counted at exactly\n"
-            "     * this place -- so forward progress is FREE (a linear match over\n"
-            "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
-            "     * independent, and the counter measures precisely the thing it is\n"
-            "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
-            "     * boundary, and it must not be traded against execution speed. */\n"
-          : "    /* [CC-CLANG] THE ONLY BACKTRACKER, AND THIS PROGRAM PUSHES\n"
-            "     * NO RESUME FRAME AT ALL (no RX_PUSH site, no linked\n"
-            "     * subroutine call anywhere in the tree) -- so there is no\n"
-            "     * indirect jump here, and the pop-and-resume dispatch below\n"
-            "     * is omitted rather than emitted dead. A step is one\n"
-            "     * backtrack resumption (4.2), counted at exactly this place\n"
-            "     * -- forward progress is FREE, the steps_left is subject-\n"
-            "     * length-independent, and the counter measures precisely the\n"
-            "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
-            "     * security boundary, and it must not be traded against\n"
-            "     * execution speed. */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "%s%s%s",
-        fail_tr, exhaust_tr,
-        /* [CC-CLANG] `has_push` false means `run->resume_depth` can never
-         * leave 0, so the guard on the return is not merely redundant but
-         * actively wrong to emit AS a guard: an `if` with no covering `else`
-         * leaves the compiler unable to see that every path returns, and
-         * both gcc and clang reject the resulting fall-off-the-end with
-         * `-Wreturn-type` under this project's own default `-Werror`
-         * GENCFLAGS. The honest text is the unconditional return the proof
-         * already licenses, not a conditional one dressed as always-true. */
-        v->has_push ? "    if (run->resume_depth == 0) return -1;\n"
-                 : "    return -1;\n");
-    /* [CC-CLANG] The budget decrement below is reachable only past the
-     * return just emitted, so on a frameless artifact (has_push false) it
-     * would be unreachable dead code -- omitted for the same reason the
-     * pop-and-resume block is, not merely to silence a warning. */
-    if (has_budget && v->has_push)
-        pcrec_sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v->up);
-    if (!v->has_push) {
-        /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no linked
-         * subroutine call exists anywhere in this program, so the
-         * unconditional return just emitted always fires and the
-         * pop-and-resume block that would otherwise follow is unreachable —
-         * omitted rather than emitted dead, and taking the one indirect jump
-         * this file's own header counts (the fail label) down to none. */
-        pcrec_sb_puts(c, "}\n\n");
-    } else {
-        const char *pop_tr = "";
-        if (v->tracing)
-            pop_tr = vm_rolef(v,
-                     "        fprintf(stderr, \"[%s] pop   #%%zu resume L%%d at"
-                     " scan_position %%zu (rewind trail %%zu -> %%zu)\\n\",\n"
-                     "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
-                     " run->resume_stack[frame_index].trail_mark);\n", v->p);
-        pcrec_sb_printf(c,
-            "    {\n"
-            "        const size_t frame_index = --run->resume_depth;\n"
-            "        scan_position = run->resume_stack[frame_index].resume_position;\n"
-            "%s"
-            "%s", pop_tr,
-            /* [DD-14 wave B+C] §5.5's ONE ADDED LINE, and it restores WHICH
-             * ACTIVATION IS CURRENT — exactly as the line above it restores
-             * `scan_position` and the loop below it rewinds the trail.
-             *
-             * IT RUNS FOR EVERY FRAME AND NEEDS NO BRANCH, which is what a
-             * call frame's `resume_label` being the fail label itself buys
-             * (see `RX_CALL`): the fail label needs no knowledge of frame
-             * kinds, so this is a line rather than a test.
-             *
-             * §5.5's DRAWN CELL IS WHY IT IS NOT OPTIONAL, and this lane
-             * REPRODUCED it before adding the line: on `^(a(?1)?b)$` / "aaabbb"
-             * the retreat pops the innermost call frame and then an ordinary
-             * alternation frame INSIDE the enclosing activation, and without
-             * this restore `call_top` still names the POPPED call frame — so
-             * the enclosing activation's return reads `trail_mark` one level
-             * too deep and restores the wrong values. Measured on the traced
-             * artifact: group 1 came back (2,5) where it must be (1,5), one
-             * level off at every depth, and the whole match was lost.
-             *
-             * THE DESIGN CALLS THIS "the fail label's TWO lines" (§5.1/§5.5).
-             * Under D71.1 the second — `call_depth = resume_stack[..].call_mark`
-             * — does not exist in the default artifact at all, because the
-             * recursion-depth COUNTER moved to a diagnostic generation axis
-             * and calls consume ordinary frames. S-SR2 names THIS line, which
-             * §9.3 already records as the one whose deletion changes answers;
-             * S-SR2a, the other line's row, moves to that axis with it.
-             *
-             * EMITTED ONLY ON A CALL-BEARING ARTIFACT — §9.1's byte-identity
-             * claim, held by construction rather than by a filtered diff. */
-            v->has_linked_calls
-              ? "        run->call_top = run->resume_stack[frame_index]"
-                ".call_top;\n"
-              : "");
-        pcrec_sb_puts(c,
-            "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
-            "            run->trail_depth--;\n"
-            "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
-            "        }\n"
-            "        goto *run->resume_stack[frame_index].resume_label;\n"
-            "    }\n"
-            "}\n\n");
-    }
-
-    vm_emit_guarded_matcher(v, matcher_at, guard_at);
+    /* The matcher's whole span, the body spliced in, written by ONE call
+     * (vm_stmt.h's frame), which reads every fact below and nothing else. */
+    const VmFrame fr = {
+        .ai_body = en->ai_body,
+        .mrl_param = v->nclamp > 0 ? pl->mrl_param : "",
+        .gst_param = v->ngst > 0 ? pl->gst_param : "",
+        .trail_gc = v->ncheck > 0,
+        .span_cursor = (v->rungs & vm_rung_bit[VM_RUNG_CURSOR]) != 0,
+        .nrev_total = v->nrev_total,
+        .nrevcaps = v->nrevcaps,
+        .tracing = v->tracing,
+        .kreset = v->nkreset > 0,
+        .has_push = v->has_push,
+        .has_budget = has_budget,
+        .has_linked_calls = v->has_linked_calls,
+        /* [FINDALL-NEXT] the guarded copy `<prefix>__match_notempty`, where
+         * the retry table's winner needs it (findall_iter.md §3.3; the
+         * frame's own header says why a copy and not a flag). */
+        .guarded_copy = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_GUARDED) != 0,
+    };
+    vm_stmt_frame(v->sb, c, &fr);
     pcrec_sb_printf(c, "#undef %s_TRAIL\n#undef %s_SET\n#undef %s_PUSH\n\n",
               v->up, v->up, v->up);
 
@@ -13988,9 +13665,9 @@ static const char *vm_matcher_args(Vm *v, const char *len, const char *pos)
  * iterator's retry `<prefix>__retry`): a fresh run state, then one attempt
  * of `matcher` at `ctx->pos` into `result`. Each caller writes its own
  * prologue (the caller-position checks and the variables, in that order,
- * K129) before it. The retry's matcher is the guarded copy
- * (`vm_emit_guarded_matcher`), so the entries' text and code are the ones
- * they were before the iterator. */
+ * K129) before it. The retry's matcher is the guarded copy (written by
+ * `vm_stmt_frame`), so the entries' text and code are the ones they were
+ * before the iterator. */
 static void vm_emit_anchored_attempt(Vm *v, StrBuf *c, const char *matcher)
 {
     pcrec_sb_printf(c,

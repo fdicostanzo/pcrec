@@ -25,7 +25,6 @@ struct VmBody {
     bool        tracing;
     size_t      clock;
     bool        closed;
-    bool        lax;   /* VMREC-TRANSITION: tiling re-syncs instead of failing */
     VmGuardSpell gstack[16];
     int         gdepth;
     VmStmt     *rec;
@@ -733,7 +732,6 @@ VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
     sb->up = up;
     sb->tracing = tracing;
     sb->clock = pcrec_sb_len_uncut(sb->b);
-    sb->lax = true;   /* VMREC-TRANSITION */
     return sb;
 }
 
@@ -742,7 +740,6 @@ VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
 static void vm_tile(VmBody *sb, const char *what)
 {
     if (pcrec_sb_len_uncut(sb->b) == sb->clock) return;
-    if (sb->lax) { sb->clock = pcrec_sb_len_uncut(sb->b); return; }   /* VMREC-TRANSITION */
     pcrec_ctx_fail(sb->cx, 0, "internal error: the VM body changed outside its "
                    "renderers (%zu bytes where the last record, %s #%d, left %zu) "
                    "before %s", pcrec_sb_len_uncut(sb->b),
@@ -1122,12 +1119,27 @@ static void vm_fr_tile(VmFrameW *fw)
 #define FR_ROW(fw, stmt) \
     do { vm_fr_tile(fw); stmt; (fw)->end = pcrec_sb_len_uncut((fw)->c); } while (0)
 
-/* [FINDALL-NEXT] the guarded copy: `<prefix>__match_notempty`, the matcher
+/* [FINDALL-NEXT] `<prefix>__match_notempty`, the find-all iterator's retry
+ * matcher (findall_iter.md §3.3): `<prefix>_match_anchored`'s text,
  * written just above at `matcher_at`, again under its own name with one
  * line more at its accept label (`guard_at`): a match whose REPORTED span is
- * empty at the attempt's own start is declined. Moved verbatim from
- * emit_vm.c's `vm_emit_guarded_matcher`; its text is a byte copy of the
- * rendered span, so it follows the renderers. */
+ * empty at `ctx->pos` is rejected and the program backtracks to its next
+ * alternative, exactly as PCRE2's NOTEMPTY_ATSTART retry does. The reported
+ * span is `[start, scan_position)` with `ctx->pos <= start <= scan_position`
+ * (`start` is the `\K` slot where one was crossed), so it is empty AT
+ * `ctx->pos` exactly when `scan_position == ctx->pos`; an empty span a `\K`
+ * moved past `ctx->pos` (`ab\K`) is a match.
+ *
+ * A COPY, NOT A FLAG: a guard on a run-state flag in the one matcher costs
+ * every search and match entry a load and a test at each accept, and
+ * reshapes the out-of-line matcher (measured +10-14% on nullable
+ * patterns); the program's computed goto keeps gcc from
+ * inlining or cloning it, so only a second text keeps the entries' code
+ * unchanged. Scaffold (§6.4): no length decision reads it. Written where the
+ * retry table's winner needs it (`PCREC_ITER_NEEDS_GUARDED`), above the
+ * `#undef`s, while the program's macros are defined. Moved from emit_vm.c's
+ * `vm_emit_guarded_matcher`; its text is a byte copy of the rendered span,
+ * so it follows the renderers. */
 static void vm_fr_guarded_copy(VmBody *sb, VmFrameW *fw, size_t matcher_at,
                                size_t guard_at)
 {
