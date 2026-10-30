@@ -427,6 +427,12 @@
 #     bounded-work run (lane trailgc3) and the corpus-wide cycle check. Its own arm
 #     because a compaction that stops reaching a loop moves no corpus answer
 #     at the stamped capacities the corpus uses. Registered before S1790.
+#   stmtwriter — added 2026-10-30 ([VMREC] (a), lane vmrec); runs
+#     tests/codegen/run_stmt_writer.sh: the static scan that the VM body
+#     buffer has one writer (src/gen/vm_stmt.c). Its own arm because the
+#     body's run-time tiling check only fires on a compile that reaches the
+#     foreign write, and a write on an unreached path (the comment tier, a
+#     rare rung) moves no answer. Registered before S1840.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -3570,6 +3576,14 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 score_arm "$work/trailcompact.log" "$f" "trailcompact:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            stmtwriter)
+                # [VMREC] tests/codegen/run_stmt_writer.sh -- see the
+                # vocabulary entry above. Static: reads the planted tree.
+                bash "$tree/tests/codegen/run_stmt_writer.sh" > "$work/stmtwriter.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/stmtwriter.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/stmtwriter.log" | grep -oE '[0-9]+')"
+                score_arm "$work/stmtwriter.log" "$f" "stmtwriter:${f:-ERR}fail/${p:-?}pass"
                 ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")

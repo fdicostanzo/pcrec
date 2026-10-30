@@ -700,7 +700,8 @@ test-codegen: all
 	    'bash tests/codegen/run_nomatch_caps.sh' \
 	    'bash tests/codegen/run_rev_end.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
-	    'bash tests/codegen/run_residual_twins.sh'
+	    'bash tests/codegen/run_residual_twins.sh' \
+	    'bash tests/codegen/run_stmt_writer.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

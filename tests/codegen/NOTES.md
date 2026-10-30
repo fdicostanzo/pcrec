@@ -18,3 +18,5 @@
   (one twin call respelled to the exported name must read as a miss) and a
   population floor of (artifact, residual) pairs. In `make test-codegen`.
 
+
+- run_residual_twins.sh (moved from CLAUDE.md, 2026-10-30): the premul table also has an iterator arm.
