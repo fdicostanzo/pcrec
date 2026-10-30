@@ -70,3 +70,30 @@ Read the verdict from the `== mech run COMPLETE: 4 rows` trailer and each row's
 line; expected DETECTED for all four with the anomaly count down by S1682 and
 S146. If S1682 is still ANOMALY see its section for the next suspect.
 Rulings last entry applied: none (file had no entries).
+
+## fsfix2b
+
+Job 699-fsfix2-mechb: four [cand-oracle-reach] vacuity-guard FAILs (the guard
+at run_cand_oracle.sh, "compiles to the cover route"). None was a "does not
+reach row" failure: every witness STILL printed its CANDROW hit under cover
+(checked on a trace build: dominated, first-memchr-bounded, verify-at, report
+all hit with the default compile). But under cover the hat is absent
+(RX_DFA_SCAN "cover"), so the row is exercised thinly or via the cover
+route (e.g. first-memchr-bounded loses its form-fwd/pf-of asks; report and
+verify-at ride the cover LOCATE, not the DFA hat's). The check is right for
+them, so it was NOT narrowed; reach was restored instead.
+
+| witness | classification | change |
+|---|---|---|
+| dominated  `foo\b` | reaches row, but cover (no hat) | add `--memfn=no-window-search` |
+| first-memchr-bounded `\B(?<!a)d` | same | same |
+| verify-at `a` | same | same |
+| report `a` | same | same |
+
+Every flagged compile (unanchored scan, rows all still hit) was confirmed to
+print the same CANDROW row with the flag. Validation: `run_cand_oracle.sh`
+(trace build in scratch, CAND_ORACLE_BINS) 171 passed, 0 failed, including
+[cand-oracle-cells] and [cand-oracle-shipped]. NOT run through boxlock:
+the queue held the box for 20+ min (yielding behind 4 jobs), and this check
+is ~100 single compiles, so it ran directly; the boxlock wait was safekilled.
+S1085 VALIDATE_ONLY: fields OK. A full S1085 row run was not done (box busy).
