@@ -657,6 +657,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: a short design note when a consumer appears (a callout that wants to hand values back through the match result)
   refs: [INLINE-C]; [MATCH-EVENTS]; [M4-CALLOUTS]; docs/spec/match_api.md (rx_group_entry); [IFACE-PUSH]
   Frank 2026-10-31: "in callouts, we could add a keyword that took a number to reserve groups for use by the callout." Reserved groups would be ordinary capture slots the pattern never sets, which the callout (embedded C, [INLINE-C]) writes; they come back in the match result like any group.
+  Frank 2026-10-31: the callout needs HELPER MACRO support to reach the reserved slots (set/read a reserved group's start/end by its reserved index, not raw slot arithmetic); they join the embedded-C helper set ([INLINE-C] stage 2's rx_span/rx_eq family) and are a caller-visible spelling (spec hunk).
   Check first: the spelling (pcrec-only syntax inside the callout, no PCRE2 equivalent; D26 says it is our extension to name); numbering (after the pattern's own groups, so \N and named refs never collide; reported in rx_info); whether writes are TRAILED so backtracking undoes them like captures (the [MATCH-EVENTS] question; lean yes); engines (VM has the trail; DFA routes need the VM replay); the frame size move is an abi event.
 - [ROWCONJ] STATE:not-started — one declared conjunct type for every row's admission/form sub-table
   filed: 2026-10-29 lane p1dsg2
