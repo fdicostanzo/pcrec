@@ -29,7 +29,7 @@ window	-	(abc)$
 window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)
 one-attempt	-	^(a)(b|c)
-dominated	-	foo\b
+dominated	--memfn=no-window-search	foo\b
 set-leads	-	x{2,5}((?i:cat))
 emitted	-fno-req-set-lead	x{2,5}((?i:cat))
 emitted	-	a(b|c)+d
@@ -57,7 +57,7 @@ offset-set	-fno-run-prefilter --memfn=no-window-search	ABCDE
 handoff-reentry	-	(?:\d{1,3}\.){3}\d{1,3}
 handoff-reentry	-	[a-z]{2,6}ing
 byte-class	-fno-req-handoff	(?:\d{1,3}\.){3}\d{1,3}
-first-memchr-bounded	-	\B(?<!a)d
+first-memchr-bounded	--memfn=no-window-search	\B(?<!a)d
 # [MEMFN] R17-b' B2 THE ASKED-CLASS HOLD'S WITNESS (S1085; lane rowfix,
 # 2026-10-18): the same DFA hat (T = {d}, a proper subset of the start state's
 # escape set E) with the handoff denied, so the PF site is DEFINED and G1 asks
@@ -65,7 +65,10 @@ first-memchr-bounded	-	\B(?<!a)d
 # which since lmfacts (fe7ece905) is priced off the readers' class: a readers'
 # site carrying E flips that admission to `handoff`, no PF site is defined,
 # and the hold has no define side to compare (S1085 read UNDETECTED).
-first-memchr-bounded	-fno-req-handoff	\B(?<!a)d
+# `--memfn=no-window-search` since D172 S3: without it this fixed-width pattern
+# is `cover` (no DFA, no PF site) and the plant moves nothing (S1085 read
+# UNDETECTED again, full suite cb32eda28).
+first-memchr-bounded	-fno-req-handoff --memfn=no-window-search	\B(?<!a)d
 first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
@@ -100,7 +103,7 @@ landing	-fno-start-width --memfn=no-window-search	[a-z]
 # SIGSEGVs here and the trace build aborts `table-read-cycle`.
 landing	-e utf8 -fno-offset-skip	€+
 reverse-pass	-fno-start-width -fno-start-landing --memfn=no-window-search	abcd
-verify-at	-	a
+verify-at	--memfn=no-window-search	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
 # D164 B3: `\s+$` now finishes at prio-const; the DFA ENDSET relocate is the
@@ -120,7 +123,7 @@ prio-const	-	(\s+)$
 nomatch	-	[^\x00-\xff]
 nomatch	-	^\B\b
 nomatch	-	abc$
-report	-	a
+report	--memfn=no-window-search	a
 report	-	^ab
 # D164 B3: the ENDSET verify needs a tie prio-const cannot decide.
 verify-at	-	(?:\s+|x\s*?)$
