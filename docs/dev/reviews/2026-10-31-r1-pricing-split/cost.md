@@ -62,7 +62,7 @@ Columns: change, sites in the review tree, size, what it buys, trigger named by 
 - Unstated dependency: the shadow's price needs ONE set for kit and consumer terms (R4.3). The kit's window code
   reads compiled-in `plan_cost.def` (window.c:65-72, 11 `COST(` uses), not the set. No shared-set shadow can exist
   before the D176 migration (plan_cost.def rows into the sets, [MEASURE-SET] rev 2, gated on the step-0 census,
-  plan.md:183-190). `HORS_MIN` is still read at window.c:1596, so that build has not landed. Stage 1 is behind it.
+  plan.md line 183 (at freeze)-190). `HORS_MIN` is still read at window.c:1596, so that build has not landed. Stage 1 is behind it.
 - Changes the recommendation? No; it changes stage 1's definition.
 
 ### COST-4  Hazard 1 exists, but the remedy "or the quiet walk" does not protect `used`; `_stated` covers six facts only  [shadow plan, CONFIRMED]
@@ -185,19 +185,19 @@ Study Q5 item 2 and standing question 2: held-out regret timed by pcrec-side ben
   unexercised end to end.
 
 ### COST-13  Overlap against D153 ("remodels first")  [ordering, CONFIRMED / SUSPECTED as marked]
-- Done, not blocking: [START-TABLE] C1-C7 (C7 merged 2026-10-08, plan.md:631), [DEC-FALLBACK]
+- Done, not blocking: [START-TABLE] C1-C7 (C7 merged 2026-10-08, plan.md line 631 (at freeze)), [DEC-FALLBACK]
   (plan_completed.md:5415). cand_rows[] is not under remodel from those.
 - In flight and touching the same sites:
-  - [VMREC] D182 step (b)/(c) (plan.md:238). The RETRY slot's spelling is in emit_vm.c (`vm_reseed_cal`,
+  - [VMREC] D182 step (b)/(c) (plan.md line 238 (at freeze)). The RETRY slot's spelling is in emit_vm.c (`vm_reseed_cal`,
     `vm_plan_reseed`; "The emitted retry spells all four as literals", emit_vm.c:11088-11160). COST-1's
     RETRY-first stage collides; D153 puts RETRY after VMREC (c). D182 (c) ruling 1 also asks the kit for
     "declared effects with each delivered window", a second window-contract change to bundle with the frontier
     reply into one MF_SITE_ABI event (SUSPECTED that both land on the same struct).
-  - [MEMFN-UNBOUNDED-SPANS] (plan.md:894, not-started): the same req.c rate picks (crossing 7) and an
-    MF_SITE_ABI event: bundle, do not sequence as two events. [TIE-ALIGN] (plan.md:613, run reader tie vs
+  - [MEMFN-UNBOUNDED-SPANS] (plan.md line 894 (at freeze), not-started): the same req.c rate picks (crossing 7) and an
+    MF_SITE_ABI event: bundle, do not sequence as two events. [TIE-ALIGN] (plan.md line 613 (at freeze), run reader tie vs
     prefix_k pick) is a sibling of crossing 7 the study does not mention.
   - Kit S3 / R-30b / trailgc (abi 92/93/94): window decide code and the abi counter.
-  - D176 build and [MEASURE-SET] rev 2 (plan.md:183): prerequisite (COST-3).
+  - D176 build and [MEASURE-SET] rev 2 (plan.md line 183 (at freeze)): prerequisite (COST-3).
 - The proposed order respects D153 only if "RETRY first" is dropped (COST-1) and the kit reply waits for S3,
   R-30b and UNBOUNDED-SPANS.
 

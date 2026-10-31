@@ -163,7 +163,7 @@ PR = `lane/memfn-pricesurvey:docs/design/memfn/pricing_requirements.md` (copy: `
 
 - S Q2.2 INFERENCE: "No cell is on record showing it wrong". Open point 4: "Engine pricing stays unbuilt. Trigger: a
   both-valid pattern with the VM measured faster". S never cites `[SEL-COST]` (grep: 0).
-- RT `docs/dev/plan.md:331`: `- [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model`. Its
+- RT `docs/dev/plan.md line 331 (at freeze)`: `- [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model`. Its
   STEP 0, RT `docs/dev/sel_cost_census.md:80-84, 193-205` (syntax@0.1, abi 39, Ryzen 1600), finds forced-VM wins over
   auto beyond 1.03x on 10 of 80 large-subject cells and 19 of 83 short-subject cells. The sharpest is `lka-pos`
   `item(?= done)`, 1.30x VM on large-subject-throughput. Caveat: the forced-VM arm also drops the prefilter, so most of
@@ -278,12 +278,12 @@ PR = `lane/memfn-pricesurvey:docs/design/memfn/pricing_requirements.md` (copy: `
 
 | family | members after (d) | S names? |
 |---|---|---|
-| TIE rules | kit `wf_ties[]` (RT `memfn/src/window.c:47`; "every tie reads `wf_ties[]`", memfn/src/CLAUDE.md); D176 Q5 "decided by the existing declared tie rows"; [TIE-ALIGN] (plan.md:613, run reader RIGHTMOST vs prefix_k LEFTMOST, "five tie rules for one pick", decision_families_survey.md:58); (d)'s backend SIMPLICITY ORDER | only the new one |
+| TIE rules | kit `wf_ties[]` (RT `memfn/src/window.c:47`; "every tie reads `wf_ties[]`", memfn/src/CLAUDE.md); D176 Q5 "decided by the existing declared tie rows"; [TIE-ALIGN] (plan.md line 613 (at freeze), run reader RIGHTMOST vs prefix_k LEFTMOST, "five tie rules for one pick", decision_families_survey.md:58); (d)'s backend SIMPLICITY ORDER | only the new one |
 | priced argmins | kit Table A + MARGIN (D176 Q1); kit P1 (designed); (d)'s backend path argmin; the future outer route argmin; `fit_rungs[]`'s measured-cost order (SLOT-4) | two of five |
 | route/engine decision | `analyses[]`, `--engine=`, the auto ternary, `fit_rungs[]` sel1 rows, `pf_admits[]`, (d)'s one-row table (SLOT-6) | three of six |
 | kit-reply FACTS about its form | D161 add. 8 proven facts; D182 ruling (c)(1) "kit windows are OPAQUE WITH DECLARED EFFECTS: the kit states as facts with each delivered window what it reads and writes"; (d)'s footprint | only the footprint |
 | homes for an estimation constant | the measurement set (D166); [EST-REGISTRY] (D141, "one table for every estimation weight, bias, threshold and fitted constant ... reseed thresholds ... DFA/VM cost terms"); `PLACE` | S sends `reseed_gap` (RT `src/core/internal.h:9219`) to "a row of the measurement set or go" without D141 |
-| retry-slot policy | `cand_rows[]` RETRY, [START-DENSE] (plan.md:629; D153 item 4: K90 + K91 + [OPT-HYB-RESEED-POLICY] are ONE retry-slot row, gated on C7) | S's Q6 "RETRY first" never cites [START-DENSE] |
+| retry-slot policy | `cand_rows[]` RETRY, [START-DENSE] (plan.md line 629 (at freeze); D153 item 4: K90 + K91 + [OPT-HYB-RESEED-POLICY] are ONE retry-slot row, gated on C7) | S's Q6 "RETRY first" never cites [START-DENSE] |
 
 - Proposals (each a merge of existing members, not a new mechanism):
   - ONE tie table shared by the kit and the backend. The simplicity order is its cross-row key, `wf_ties[]` its
@@ -352,10 +352,10 @@ PR = `lane/memfn-pricesurvey:docs/design/memfn/pricing_requirements.md` (copy: `
   cards come first. S also names no measured mispick that (d) fixes; its motivation is the owner direction plus PS
   C6/C7 ("never priced"), which are absences, not losses.
 - D153 ("don't live in a house we're remodeling"). Sites (d) touches and their in-flight owners:
-  - the VM consumer cost: [VMREC] `STATE:started` (plan.md:238), D182 steps (b) and (c) owed;
-  - the set format and consumer cards: [MEASURE-SET] `STATE:started` (plan.md:183);
+  - the VM consumer cost: [VMREC] `STATE:started` (plan.md line 238 (at freeze)), D182 steps (b) and (c) owed;
+  - the set format and consumer cards: [MEASURE-SET] `STATE:started` (plan.md line 183 (at freeze));
   - crossing 7's retirement of `req_byte` / `req_run.idx`: [MEMFN-UNBOUNDED-SPANS] `STATE:not-started`
-    (plan.md:894), which S calls "already planned";
+    (plan.md line 894 (at freeze)), which S calls "already planned";
   - Table A's MARGIN and C_ENTER: the D176 build (waits for the step-0 census).
   S places only the reply shape ("designed with the D176 build"). D153 asks for the "remodel overlap" column on
   each of S's Q6 stages.
@@ -373,7 +373,7 @@ PR = `lane/memfn-pricesurvey:docs/design/memfn/pricing_requirements.md` (copy: `
     without the set;
   - per-row deny flags, `*_WHY` stamps, `--list-axes` listing, hit counters and `--tune` positions: deny still
     works (it removes a candidate), but `--tune` positions and listing order lose meaning.
-  The [LIST-TABLES] row (plan.md:1297, "EVERY SELECTION TABLE LISTABLE") must list the new path-family table and
+  The [LIST-TABLES] row (plan.md line 1297 (at freeze), "EVERY SELECTION TABLE LISTABLE") must list the new path-family table and
   its price column.
 - Needed: a D152 addendum ("a priced slot: rows = candidates, order = the simplicity order; reachability is reported
   per set revision; the population count is per set").
@@ -424,7 +424,7 @@ PR = `lane/memfn-pricesurvey:docs/design/memfn/pricing_requirements.md` (copy: `
 7. **Missing: the SIMD layer** (SLOT-16). PR R5.5 reads both layers for verdicts, but no requirement says whether the
    strategy may differ by layer.
 8. **Non-goal "choosing the engine — the engine is an INPUT fact"** is sound for round 1. It should name [SEL-COST]
-   (plan.md:331) and its census (SLOT-8) as the owner of that question, so the non-goal is not read as "no data
+   (plan.md line 331 (at freeze)) and its census (SLOT-8) as the owner of that question, so the non-goal is not read as "no data
    exists".
 
 ### SLOT-22 (CONFIRMED on S's own text, design; CHANGES the seam rule's wording) The five clauses are not consistent with each other or with S's own body

@@ -286,7 +286,7 @@ Fixes spot-checked against rev 1's text and the review tree: 22 CHANGES rows. He
   texts (emit_dfa.c:7872-7876, :8020-8026).
 - **COST-3**: `consulted = 0` (memfn_sites.c:977-980).
 - **COST-9**: `noise_e6` is `-` on all 68 rows of measure_store/zen4-grid1/1/set.tsv (counted).
-- **SLOT-8**: plan.md:331, and the census's 10/80 and 19/83. The census's third row (60/80
+- **SLOT-8**: plan.md line 331 (at freeze), and the census's 10/80 and 19/83. The census's third row (60/80
   match-compliance) is explained there as a bench artifact (cause D), so leaving it out is fair.
 - **SLOT-12**: the LOCATE row order empty, rev-end, cover, composite matches the mixed-slot prefix
   rule (zero movers).
