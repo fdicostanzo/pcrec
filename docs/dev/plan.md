@@ -235,6 +235,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
   Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
 
+- [VMREC] STATE:started — VM emitter record-first: typed records are the only writers of the VM body
+  filed: 2026-10-29 vmcons3 (manager)
+  status (2026-10-31): step (a) DONE, merged 3bc599c92 (byte-identical, no abi bump, D182); steps (b) and (c) not started
+  next: (b) the analysis-free R stage on the records; (c) the analysis build, stage 2a first (lexer, helper registry, FL, CEN), after a soundness round on its lexer section and a D27 spec-first author
+  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md
+  (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
