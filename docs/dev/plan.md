@@ -636,6 +636,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [KIND-FACT-GK] STATE:not-started — \G and \K as PF_KINDS bits; three whole-pattern walkers read the fact
+  filed: 2026-10-30 Frank (manager wrote the row)
+  status (2026-10-30): filed; three sites walk the tree for the same question the E1 kinds mask could answer
+  trigger: after [LANDWALK] (P1) lands, so the P1 branch does not widen
+  refs: src/facts/facts.h PF_KIND_ROWS; src/gen/lmwalk.c lm_has_kind (p1kind); src/facts/widths.c rw_find_k; src/facts/endwin.c ew_see_gstart; docs/dev/lanes/p1kind_report.md; [PATFACTS]
+  Frank 2026-10-30: "lm_has_kind & pcrec_ast_visit sound like patfacts". Add GSTART and KRESET rows to PF_KIND_ROWS (computed once by pcrec_pattern_kinds); lm_has_kind, rw_find_k and ew_see_gstart then read pcrec_fact_kinds and their visitor callbacks go (a simplification: three walkers deleted). Same semantics: all three use pcrec_ast_visit, which never follows a call body.
+  Check first: is PF_KINDS caller-visible (--emit-facts, the analysis bundle)? If so the two bits are a spec hunk (D80). Does widths.c/endwin.c run before E1 is sealed (a reader that feeds the fact cannot read it)? Out of scope: parse/mod_lookaround.c la_has_kreset (a lookaround-body scope, parse time, before facts).
 - [LINT] STATE:not-started — no default: on a switch over a kind enum, enforced by the compiler (-Wswitch-enum)
   filed: 2026-10-30 Frank (manager wrote the row)
   status (2026-10-30): unscheduled; P1's lmwalk.c:152 default: caught only by wclass_census [5c] inside test-cpset-structure (AKind only)
