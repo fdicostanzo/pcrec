@@ -1,0 +1,66 @@
+# VERIFY: bakeoff3 (pricing_bakeoff.md rev 2 @ ed772fd71)
+All scripts were copied from the critics' work/ dirs into verify/work/, paths re-pointed at verify/work/subj (a copy of subject/), and re-run as `nice python3 -I`. Outputs are in verify/work/*.out or were compared against the critics' .out files.
+
+## Verdicts
+
+### SIM-1
+- verdict: HOLDS (the knife-edge side remark is true but harmless)
+- ran/read: (1) `verify/work/plantA/verdict_drill.py` is the critic's copy of the drill. `diff` against the subject's drill shows only two hunks: line 156 now opens the frame only if some G0 pair is UNDERPOWERED on H-core, and a new block reads every other statistic on H-core when the frame is not opened. I re-ran it. Result: `45 scenarios, 3 off-target, 1 rows never reached [('T1','6s')]`. The subject drill gives `0 off-target, 0 never reached`. (2) Read the subject drill's `top_group` (verdict_drill.py:147-161): `if len(null) == n_h: return G0` means the frame opens whenever the scenario supplies extra sites. TSV line 39 (`pred G_size`) says only "when the frame is opened". §7.1 (about lines 981-990 of the design) says "the members' pairs on the frame ... when a member pair is UNDERPOWERED on H-core", and "the tail step ... the set G was read on". (3) `diag2.py TL1 TL1b TL4 TL6` re-run.
+- observed: the critic's patch is faithful to the text. TL1b, TL4 and TL6 have no UNDERPOWERED H-core pair, so the real run would not open a frame for them, and they go off target (TL6 reads NPBF, TL4 reads TAIL-WIN, TL1b TIE-WITH-LOSSES). TL1's H-core pairs are UNDERPOWERED at q05/q95 = -200/+200 = exactly delta. That is real, and a legitimate frame-open, so TL1 lands. The drill therefore certifies behaviour on site sets the experiment would not produce. The script's rule and the text's rule differ, and the file declares no trigger.
+- severity: design, agreed.
+
+### SIM-2
+- verdict: HOLDS
+- ran/read: `verify/work/scale.py`, output identical to scale.out. The script builds per-site mean time ratios (m_so = 1.0 on half the sites, 1.25 on the rest), calls the subject's `vd.verdict` and the critic's evaluator, and computes the ratio-scale count independently. Design lines: §0 regret = mean(pick/cell oracle) minus the same for the site oracle (line 66); §7.5 (line 1110) L_u = "regret minus the unit's floor exceeds `big_loss_bp` (1.5x outside the noise band, PR O1's bar)"; TSV `member_big_loss` is `(1 + r_u)/(1 + r_v) − 1 − NULL_i > big_loss_bp`; F13 says "more than 1.5x slower than its best". PR G1/O1 (quoted in the scale2 check below) says "no site slower than 1.5x its best".
+- observed: A1 has 2 sites at 1.55x its best and Dx has 0 on the ratio scale, but the regret scale reads A1 2 versus Dx 12. Drill: `TAIL-WIN A1`, i.e. the member with the 1.5x losses wins. Second case: ratio 1.416, but (1+r_u)/(1+r_v)−1 = 0.520, so the row reads `TIE-WITH-LOSSES` instead of TIE. The construction is legitimate: m_so ≥ 1 by the §0 definition, and sites with a compile-time choice loss are expected.
+- severity: the mechanism is sound. It becomes a wrong verdict only where m_so is well above 1 on the sites that matter; the size of typical m_so is unmeasured here. I would rate it design (a definitional mismatch with an answer consequence in the constructed range), not a plain answer defect.
+
+### SIM-3
+- verdict: HOLDS (but F3 is declared open, which softens it)
+- ran/read: `verify/work/scale2.py`, identical to scale2.out: A1 mean 4.50 pt (G1 total 2.37 %), Dx mean 2.00 pt (G1 total 10.53 %), drill `WIN Dx`. Quoted PR rev 1 G1 (`90d5150f7:docs/design/memfn/pricing_requirements.md:34`): "REGRET ... total measured time of the picks vs the per-site fastest measured option. Proposed bars: total regret <= 5 %, and no site slower than 1.5x". TSV line 79 `delta_bp`: "two fifths of PR O1's proposed 5 % total-regret allowance". Design §7.1 line 993 states "each site weighs the same, F3; time-weighted regret (PR G1's form)" is reported, and F3 (line 1553) asks "Which average decides?".
+- observed: the arithmetic and the drill outcome reproduce, and the delta rationale is on the total-time scale while every test reads the site-equal mean. The design does flag F3 as an open owner question and reports the time-weighted figure, so the gap is a disclosed choice, not hidden. The construction (13 slow sites at 10x time) is extreme.
+- severity: doc/design-minor (an unreconciled rationale pending F3), not the design-level defect the critic gave.
+
+### SIM-5
+- verdict: HOLDS
+- ran/read: `verify/work/plants.sh` (paths re-pointed) re-run; output `verify/work/plants.out` is line-for-line the critic's: checker GREEN on P1, P2, P4, P5, P6, P7, P8, P9, P10 and RED only on P3. Drill red on P2, P7, P9 only. So the checker catches 1 of 10, and checker plus drill together 4 of 10 (P2, P3, P7, P9); P1, P4, P5, P6, P8 and P10 are caught by neither. I read the plant edits: each is applied to a copy, with `--write` after TSV edits, matching the documented maintainer workflow. Design claims: line 14 ("`check_verdict_table.py` fails when the text and the file disagree"), line 1226-1229 (fails "when the prose quotes a threshold with a value the file does not hold"), and the plants paragraph at line 1481.
+- observed: P5 is the most direct case: prose "δ = 300 basis points (`delta_bp`)" against 200 in the file, and the checker stays GREEN (quoted values drop 20 to 19). P1, P4 and P10 are weaker, since a maintainer who changes `big_loss_bp` would probably also touch the reason text, but the prose in §7.1, §7.5 and F13 would still say 1.5x. The headline claim at line 14 overstates the checker, because only the rendered block and the `name` = VALUE quoting form are checked. The verdict computation itself reads the file, so this is drift risk in the explanatory prose, not a wrong verdict.
+- severity: doc (an overclaim about the checker's reach), maybe design-minor; not design as rated.
+
+### SIM-6
+- verdict: HOLDS in mechanism; PARTLY on "never priced"
+- ran/read: `verify/work/tail2.py` re-run: k = 6 drill `TAIL-WIN Dx`; k = 7 drill `TAIL-WIN`, the critic's evaluator `INCONCLUSIVE` (bootstrap edge); k = 8, 9, 10 `INCONCLUSIVE 'A1-Dx needs ~134/~168/~171 sites'`. The estimate: paired sd ≈ 0.55·sqrt(k/n), interval half-width 1.645·sd/sqrt(n), crossing δ = 0.02 near k = 7-8 at n = 130. Design §7.5 line 1100: tail "read only when every pair in G is EQUIV"; §7.2 line 1060: "on H-core alone it separates members only when one of them carries at least six large losses"; F13 line 1585: "the six-places floor that decides".
+- observed: the mechanism reproduces (more one-way large losses at equal means widen the interval until EQUIV fails). It is not a silent failure, though: the pair is then UNDERPOWERED, the verdict is INCONCLUSIVE, the frame size is printed, and §5.6/§7.1 do price a frame "if a pair is UNDERPOWERED" (line 865). The real gap is that stage 3b's compile-only prediction (line 349) cannot foresee a tail-caused UNDERPOWERED, so J3b is written only after the fact. "The window is 6-7" is right for the equal-mean 1.55x spike construction; the figure moves with the size and mean of the spikes.
+- severity: speed/doc (the frame's cost is not predicted at stage 3b), not design.
+
+### SIM-7
+- verdict: HOLDS
+- ran/read: `verify/work/tail2.py` case T8' (600 units, three members): drill `('TAIL-WIN','KF') [6t|6t]`, the critic's evaluator the same. Design §7.5 line 1126: "G_tail is the members of G that no member TAIL-SUPERIOR-beats on any axis run"; TSV `tail_sole` (line 50): "G has at least two members and G_tail has exactly one"; row 6t text (line 17): "one member has measurably fewer large losses than every other member". I checked the construction: A1 is beaten only by Dx (site axis), Dx only by A1 and KF (density axis), and KF is beaten by nobody. KF against A1 is 3 versus 6 large losses, not measurable.
+- observed: the row text is false for the KF/A1 pair, and the drill, whose code matches the written definition of G_tail, crowns KF. The definition really is non-transitive. This is a gap in the written rule, not a drill bug.
+- severity: answer, agreed (the narrow construction needs three members in a cycle, but the verdict is wrong when it occurs).
+
+### PRE-1
+- verdict: HOLDS
+- ran/read: `nice python3 -I verify/work/overlap.py`, identical to overlap.out: adjacent windows overlap 54 / 51 / 52 / 51 % at 0.4 / 1.4 / 2.0 / 4.0 MiB, 13 % at 8 MiB and 0 % at 64 MiB, about 22 KiB when they do. Code read: `docs/dev/lanes/grid2/streamgen.py:90-99` (`disjoint` hashes whole buffers only), `:100-113` (`room = min(span, size-n+1-j*span)`, so jitter spans the whole stratum width and crosses into the next stratum), `:115-118` (`window_stream`). The only caller is design2.py:379, with count 16 on large sources. `regime_eval.md:948-951`: window j starts at the stratum start plus `h mod (U/M − 64 KiB + 1)`, i.e. kept inside its stratum, so 0 % overlap; the E6 proof at `:1407-1420` is 4 KiB chunk hashes plus byte-range checks. Design §3.2 item 2 (line 396-399) and §5.2 (line 784) name `streamgen.py` as the generator and `disjoint` as the mechanism; the "new work" list (line 726-736) lists only the SHORT generator.
+- observed: all three sub-claims hold (no chunk or byte-range test, a different jitter rule, no pool concatenation, reserve or line trim). Whether D/H overlap results depends on how strata are assigned between D and H, which the design does not fix, so "H and D windows can share text" is a risk, not a certainty.
+- severity: design, agreed.
+
+### PRE-2
+- verdict: HOLDS
+- ran/read: `docs/dev/lanes/grid2/time.sh:152`: `for t in $(seq 1 "$LOADWAIT") ... sleep 20; done` with `LOADWAIT=60` (:49), load below `LOADMAX` 1.5 breaks the loop, otherwise it falls through with no failure branch, exactly the "waits up to 20 min, then proceeds" the design attributes to grid1 only. The re-queue (:210-213) tests `l1 >= LOADBREACH` (3.0) once, at group end, and a second breach is only marked `BREACH(twice)` and kept. grid2read_report.md:33-36 and :94-106: four excursions in grid2's own slot, only `f3-dig` (3.12) caught; the other three ("the harness logged none of them") were found afterwards; the report says "the one-minute average lags, so a row's load1 does not certify the row". Design row at line 708 and "per-core occupancy check ... at every group boundary" (line 738).
+- observed: the table row calls "proceeds after 20 min" a grid1 defect when grid2 has the same start gate. The per-core check at group boundaries does not see an intra-group competitor. The re-queue also uses a threshold twice the gate's.
+- severity: design, agreed.
+
+### PRE-3
+- verdict: HOLDS (the design already says build.sh is not used, which narrows but does not remove the point)
+- ran/read: `grid2/build.sh:17,28` (`grep -q pf-terms-mask || FATAL`), `provcheck.py:38,158-160` (the deny must appear in `--list-axes`), `:70-72,215-224` (V1 signatures `PCREC_MFK_W8_H`, `__next_candidate(`), `check.sh:57-58,77-82` (P and M always run; either failing gives exit 4), `memfn/src/finder.c:80-81` ("V1 (R17-b's `pf_terms_mask`) is NOT built (R7 is withdrawn)"), `design2.py:451` (leg O keys only on `grid.CELLS`). `grep -rln "pf-terms\|pf_terms" src cli lib memfn/src` matches finder.c only. Design §5.1 "What grid2 costs us" item (4) (line 721-723) says build.sh's default is not used; §5.5 line 841 says "grid2's legs for its own cells"; the new-work list (line 726-736) has no wrapper that drops P and M.
+- observed: the code facts are right. The design handles `build.sh` but does not say that legs P and M also assert the withdrawn V1 design, and no gate wrapper or provenance-per-arm record is listed in stage 0.
+- severity: design, but I would put it at speed/design-minor: an unlisted piece of stage-0 work, not a threat to the verdict.
+
+### PRE-4
+- verdict: HOLDS on the arithmetic; the critic's "1-3 h" is at the low end, about 1.4-1.6 h on non-speculative inputs
+- ran/read: rerun share from grid2read_report.md:64-68: (32+5+26+3)/(123+16+60+12) = 66/211 = 0.3128 (the quoted 31 %). Python: 1.0625 × 1.08 = 1.1475 (+14.75 %), against the design's "about +10 %" (line 721); at 31 %: 1.0625 × (5 + 2·0.3128)/5 = 1.195 (+19-20 %). Per-launch cost: the time.sh:55-56 comment says "MEASURED by the DRY run (0.61-0.65 s)", but grid2r3_report.md:24 says that DRY ran "box load 12-17 (not a measurement)" and :112 gives 0.55-0.69 s; grid2p_report says 0.62-0.74 s; the real slot has 5,163 launch rows in a 61 min required wall: 3660/5163 = 0.709 s (0.670 s after subtracting the 200 s gate wait). Rescaling the table's 11.03 h of timed work to 5.62 launches and 0.70 s gives about 12.4 h, i.e. +1.4 h; with 0.71 s +1.5 h. The 60-86 % per-launch-noise figure in rerun_sim.out is a tuned model, so I do not rely on it. EP69 is an estimate (grid2p_report.md:51). The 12 h in the §5.6 table already carries the 17 launches and 20 % share, so only its two inputs are low; the "+10 %" is a prose figure.
+- observed: (a), (b) and (c) hold. (d), that the grid1 cell quotes grid1's repeated-subject cost, matches the streamgen.py header (`GRID2_STREAM_MIB=64` restores grid1's total), which is a parameter difference, not a harness difference.
+- severity: speed, agreed; the verdict is unaffected.
+
+VERIFY COMPLETE
