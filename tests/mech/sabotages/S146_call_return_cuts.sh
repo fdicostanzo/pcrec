@@ -41,9 +41,9 @@ SAB_COUNT=1
 SAB_BEFORE='        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->p, v->p);'
+        sb->p, sb->p, sb->up, sb->p, sb->p);'
 SAB_AFTER='        "        run->resume_depth = %s_call_frame;   /* SABOTAGE S146 */\n"
         "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->p, v->p, v->p);'
+        sb->p, sb->p, sb->up, sb->p, sb->p, sb->p);'
