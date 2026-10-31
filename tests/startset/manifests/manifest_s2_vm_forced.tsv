@@ -1416,8 +1416,14 @@ tests/landwalk/landwalk.rxt:320	--features all	5b612d7a5d7b322c357d4078
 tests/landwalk/landwalk.rxt:328	--features all --encoding=utf8	612b62
 tests/landwalk/landwalk.rxt:337	--features all --encoding=utf8	282a55435029615c7362
 tests/landwalk/landwalk.rxt:355	--features all	612b5c4b62
-tests/landwalk/landwalk.rxt:363	--features all	283f215b612d7a5d2a62295b612d7a5d2b4078
-tests/landwalk/landwalk.rxt:372	--features all	61627c6364
+tests/landwalk/landwalk.rxt:363	--features all	5b612d7a5d2b4078283f3a5c47297b307d
+tests/landwalk/landwalk.rxt:373	--features all	283f3a5c47297b307d5b612d7a5d2b4078
+tests/landwalk/landwalk.rxt:383	--features all	5b612d7a5d2b4078283f28444546494e4529283f3c673e795c472929
+tests/landwalk/landwalk.rxt:392	--features all	5b612d7a5d2b4078283f3a28797c5c47292b297b307d
+tests/landwalk/landwalk.rxt:401	--features all	5b612d7a5d2b4078283f3a5b797a5d5c47297b307d
+tests/landwalk/landwalk.rxt:410	--features all	5b612d7a5d2b4078283f28444546494e4529283f3c6b3e5c4b2929
+tests/landwalk/landwalk.rxt:419	--features all	283f215b612d7a5d2a62295b612d7a5d2b4078
+tests/landwalk/landwalk.rxt:428	--features all	61627c6364
 tests/landwalk/landwalk.rxt:49	--features all	612b62
 tests/landwalk/landwalk.rxt:76	--features all	5b302d395d2a61615b62635d
 tests/litscan/handoff.rxt:1012	--features all --encoding=utf8	283f692973747261c39f65
@@ -4054,6 +4060,7 @@ tests/classes/scan_set.rxt:99		283f3a2d7b322c347d615b61625d7c626229
 # reqvm1 (2026-10-27, [REQRUN-VM]): +13 rows, every one a tests/litscan/handoff_vm.rxt block (the lane's new file; its (text, options) twins already pinned under their first id are not repeated); the VM hat row read off each block's own compile on the lane build, no existing row moved.
 # ic3tri (2026-10-29, [INLINE-C] stage 3): +1 row, the tests/code/frag/pin3_mid.rxt:7 block (stage 3's pin-chain fixture, a patterns-only fragment pattern `mi+d`); a correct forced-VM mover named by [vm-movers] on the lane build, no existing row moved. Bench rows NOT refreshed.
 # RE-PINNED at p1pin ([LANDWALK] stage 1, 2026-10-30): +27 rows, all tests/landwalk/landwalk.rxt (the walk's corpus blocks); no existing row moved. Census (denying the walk and skipping code-callout blocks) matches the suites' population; its tests/code rows are not movers.
+# RE-PINNED at p1kind ([LANDWALK] stage 1, 2026-10-30): +6 rows, the six g1 witness blocks lane p1kind added to tests/landwalk/landwalk.rxt (a \G or \K nested in a {0}/DEFINE body); the two later landwalk.rxt rows renumbered (:363 -> :419, :372 -> :428) by the insertion, same text. Census (census_s1.py, p1pin's invocation) on the lane build; no other row moved.
 tests/litscan/handoff_vm.rxt:15	--features all --encoding=byte --engine=vm	28617c6161297b302c31307d6378797a
 tests/litscan/handoff_vm.rxt:90	--features all --encoding=byte --engine=vm	283f3a78787c7929616263
 tests/litscan/handoff_vm.rxt:259	--features all --encoding=byte --engine=vm	283f3a5c4761627c7829616263
