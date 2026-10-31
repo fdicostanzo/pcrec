@@ -13,5 +13,5 @@ SAB_DESC='the VM'"'"'s (?m)^ test omits pos < n, so a VM-routed (?m)^ holds afte
 SAB_DOC_FIGURE='MEASURED 2026-10-20 (lane ctxbuild validation, solo mech row on the Linux dev box): corpus:3fail/71278pass,asrt:0fail/57pass -- DETECTED'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='        vm_frag_text(v->sb, &c, "scan_position == 0 || (scan_position < subject_length && (");'
-SAB_AFTER='        vm_frag_text(v->sb, &c, "scan_position == 0 || (1 && (");   /* SABOTAGE S1161 */'
+SAB_BEFORE='        pcrec_vm_frag_text(v->sb, &c, "scan_position == 0 || (scan_position < subject_length && (");'
+SAB_AFTER='        pcrec_vm_frag_text(v->sb, &c, "scan_position == 0 || (1 && (");   /* SABOTAGE S1161 */'

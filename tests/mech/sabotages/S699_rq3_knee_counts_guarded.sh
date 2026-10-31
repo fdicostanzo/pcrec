@@ -6,7 +6,7 @@
 # block is counted, so every VM artifact's VM_PROGRAM_BYTES (and every
 # knee-near rung) differs from the plain build's.
 # RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
-# the knee's and VM_PROGRAM_BYTES' one read of the body length is vm_stmt_program_bytes; the same uncut read there. Same detector, same arm.
+# the knee's and VM_PROGRAM_BYTES' one read of the body length is pcrec_vm_stmt_program_bytes; the same uncut read there. Same detector, same arm.
 SAB_ID='S699-rq3-knee-counts-guarded'
 SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES='simdguarded'

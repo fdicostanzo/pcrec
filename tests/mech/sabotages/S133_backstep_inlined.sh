@@ -38,13 +38,13 @@ SAB_HARNESS_TARGET="tests/lookaround/lookbehind.rxt"
 SAB_DESC="vm_look_behind_branch (vm_look_behind's per-branch loop) emits 'scan_position - k' inline instead of calling the encoding residual back-step, and drops the PCREC_ENCE_BACK_STEP mask bit with it. Under the byte backend the ANSWERS ARE IDENTICAL, so every corpus and every differential stays green; what moves is that the back-step stopped being replaceable by another encoding's backend"
 SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residlb1/residlb2/residlb3/residlbneg/residlbna/residlbtwo/residlbbref fixtures AND on the declared-entry-set half; tests/lookaround and the lookaround differential GREEN. Canonical figure owed from run_sabotage_matrix.sh S133."
 SAB_COUNT=1
-SAB_BEFORE='    vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);
+SAB_BEFORE='    pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);
     vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
           "lookbehind: the ENCODING SEAM'\''s back-step, %d character%s",
           k, k == 1 ? "" : "s"));
-    vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
-                vm_tgt_fail());'
-SAB_AFTER='    vm_b_seek(v->sb, VSK_ADVANCE, NULL, -k);   /* SABOTAGE S133: inlined, not routed */
+    pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
+                pcrec_vm_tgt_fail());'
+SAB_AFTER='    pcrec_vm_b_seek(v->sb, VSK_ADVANCE, NULL, -k);   /* SABOTAGE S133: inlined, not routed */
     vm_ev(v, VE_NOTE, 0, 0, "SABOTAGE S133: inlined back-step");'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1

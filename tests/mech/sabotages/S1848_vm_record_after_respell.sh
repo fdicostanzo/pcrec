@@ -13,5 +13,5 @@ SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='    if (respell) vm_cls_respell(v);
 }'
-SAB_AFTER='    if (respell) { vm_cls_respell(v); vm_b_checkpoint(v->sb); }   /* SABOTAGE S1848 */
+SAB_AFTER='    if (respell) { vm_cls_respell(v); pcrec_vm_b_checkpoint(v->sb); }   /* SABOTAGE S1848 */
 }'

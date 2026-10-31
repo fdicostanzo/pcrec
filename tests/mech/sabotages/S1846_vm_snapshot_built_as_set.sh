@@ -11,8 +11,8 @@ SAB_DESC='a call site'\''s park of a slot'\''s own value is built as a SET whose
 SAB_DOC_FIGURE='lane vmrec 2026-10-30, probed by hand on a planted build: internal error on ^(a|b(?1))$ --engine=vm and on C6'\''s ^(x(?>a(?1)?b)y)$ -fno-splice-calls (a SET of slot 2 copies the slot onto itself); scored by the owed vmrec-mech job'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='    vm_b_snapshot(v->sb, slot, vm_slot_name(v, slot));'
-SAB_AFTER='    vm_b_set(v->sb, slot, vm_slot_name(v, slot),   /* SABOTAGE S1846 */
+SAB_BEFORE='    pcrec_vm_b_snapshot(v->sb, slot, vm_slot_name(v, slot));'
+SAB_AFTER='    pcrec_vm_b_set(v->sb, slot, vm_slot_name(v, slot),   /* SABOTAGE S1846 */
              vm_slot_name(v, slot)
              ? vm_rolef(v, "slot_values[%s_%s]", v->up, vm_slot_name(v, slot))
              : vm_rolef(v, "slot_values[%d]", slot));'

@@ -51,13 +51,13 @@ static VmPiece *vm_frag_push(VmBody *sb, VmFrag *f)
 }
 
 /* An empty fragment. */
-VmFrag vm_frag(void)
+VmFrag pcrec_vm_frag(void)
 {
     return (VmFrag){ NULL, 0, 0 };
 }
 
 /* Appends pcrec's own text to `f`. */
-void vm_frag_text(VmBody *sb, VmFrag *f, const char *text)
+void pcrec_vm_frag_text(VmBody *sb, VmFrag *f, const char *text)
 {
     VmPiece *q = vm_frag_push(sb, f);
     q->k = VP_TEXT;
@@ -65,7 +65,7 @@ void vm_frag_text(VmBody *sb, VmFrag *f, const char *text)
 }
 
 /* Appends the class kit's inline membership test of `byte` under `ch`. */
-void vm_frag_cls(VmBody *sb, VmFrag *f, const ClsChoice *ch, const char *byte)
+void pcrec_vm_frag_cls(VmBody *sb, VmFrag *f, const ClsChoice *ch, const char *byte)
 {
     VmPiece *q = vm_frag_push(sb, f);
     q->k = VP_CLS;
@@ -74,7 +74,7 @@ void vm_frag_cls(VmBody *sb, VmFrag *f, const ClsChoice *ch, const char *byte)
 }
 
 /* Appends a delegated kit window: site `s` of row `id`, its hooks copied. */
-void vm_frag_kit(VmBody *sb, VmFrag *f, DelegSite id, const mf_site *s,
+void pcrec_vm_frag_kit(VmBody *sb, VmFrag *f, DelegSite id, const mf_site *s,
                  const mf_hooks *h)
 {
     VmPiece *q = vm_frag_push(sb, f);
@@ -85,10 +85,10 @@ void vm_frag_kit(VmBody *sb, VmFrag *f, DelegSite id, const mf_site *s,
 }
 
 /* A fragment of one text piece. */
-VmFrag vm_frag_of(VmBody *sb, const char *text)
+VmFrag pcrec_vm_frag_of(VmBody *sb, const char *text)
 {
-    VmFrag f = vm_frag();
-    vm_frag_text(sb, &f, text);
+    VmFrag f = pcrec_vm_frag();
+    pcrec_vm_frag_text(sb, &f, text);
     return f;
 }
 
@@ -112,19 +112,19 @@ static void vm_frag_render(VmBody *sb, const VmFrag *f)
 /* ---- targets ------------------------------------------------------------ */
 
 /* A jump to label `lbl`; `ckpt` puts the D183 trail checkpoint on the edge. */
-VmTgt vm_tgt_label(int lbl, bool ckpt)
+VmTgt pcrec_vm_tgt_label(int lbl, bool ckpt)
 {
     return (VmTgt){ VT_LABEL, lbl, ckpt, NULL };
 }
 
 /* The jump to the fail label. */
-VmTgt vm_tgt_fail(void)
+VmTgt pcrec_vm_tgt_fail(void)
 {
     return (VmTgt){ VT_FAIL, -1, false, NULL };
 }
 
 /* A return of artifact code `<P>_R_<code>`. */
-VmTgt vm_tgt_return(const char *code)
+VmTgt pcrec_vm_tgt_return(const char *code)
 {
     return (VmTgt){ VT_RETURN, -1, false, code };
 }
@@ -722,7 +722,7 @@ static const char *vm_kind_name(VmKind k)
 
 /* Opens the body on the Job's VM buffer, which the Job owns so the longjmp
  * cleanup path frees it. */
-VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
+VmBody *pcrec_vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing)
 {
     VmBody *sb = pcrec_arena_alloc(&cx->arena, sizeof *sb);
     memset(sb, 0, sizeof *sb);
@@ -785,7 +785,7 @@ static VmStmt vm_rec(VmKind k)
     return s;
 }
 
-void vm_b_label(VmBody *sb, int lbl, const char *role)
+void pcrec_vm_b_label(VmBody *sb, int lbl, const char *role)
 {
     VmStmt s = vm_rec(VK_LABEL);
     s.u.label.lbl = lbl;
@@ -793,32 +793,32 @@ void vm_b_label(VmBody *sb, int lbl, const char *role)
     vm_build(sb, &s);
 }
 
-void vm_b_checkpoint(VmBody *sb)
+void pcrec_vm_b_checkpoint(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_CHECKPOINT);
     vm_build(sb, &s);
 }
 
-void vm_b_goto(VmBody *sb, int lbl)
+void pcrec_vm_b_goto(VmBody *sb, int lbl)
 {
     VmStmt s = vm_rec(VK_GOTO);
     s.u.go.lbl = lbl;
     vm_build(sb, &s);
 }
 
-void vm_b_fail(VmBody *sb)
+void pcrec_vm_b_fail(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_FAIL);
     vm_build(sb, &s);
 }
 
-void vm_b_accept(VmBody *sb)
+void pcrec_vm_b_accept(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_ACCEPT);
     vm_build(sb, &s);
 }
 
-void vm_b_branch(VmBody *sb, VmFrag c, VmTgt t)
+void pcrec_vm_b_branch(VmBody *sb, VmFrag c, VmTgt t)
 {
     VmStmt s = vm_rec(VK_BRANCH);
     s.u.branch.c = c;
@@ -827,7 +827,7 @@ void vm_b_branch(VmBody *sb, VmFrag c, VmTgt t)
 }
 
 /* Opens a guard; the spelling is pushed so its close must name it. */
-void vm_b_guard(VmBody *sb, VmGuardSpell sp, VmFrag c)
+void pcrec_vm_b_guard(VmBody *sb, VmGuardSpell sp, VmFrag c)
 {
     if (sb->gdepth == (int)(sizeof sb->gstack / sizeof sb->gstack[0]))
         pcrec_ctx_fail(sb->cx, 0, "internal error: VM guards nested too deep");
@@ -840,7 +840,7 @@ void vm_b_guard(VmBody *sb, VmGuardSpell sp, VmFrag c)
 
 /* Closes the innermost guard, refusing a close in another spelling or with
  * no guard open. */
-void vm_b_guard_end(VmBody *sb, VmGuardSpell sp)
+void pcrec_vm_b_guard_end(VmBody *sb, VmGuardSpell sp)
 {
     if (sb->gdepth == 0 || sb->gstack[sb->gdepth - 1] != sp)
         pcrec_ctx_fail(sb->cx, 0, "internal error: a VM guard's close does not "
@@ -851,7 +851,7 @@ void vm_b_guard_end(VmBody *sb, VmGuardSpell sp)
     sb->gdepth--;
 }
 
-void vm_b_switch(VmBody *sb, int depth, const VmCase *cases, int ncase)
+void pcrec_vm_b_switch(VmBody *sb, int depth, const VmCase *cases, int ncase)
 {
     VmStmt s = vm_rec(VK_SWITCH);
     s.u.sw.depth = depth;
@@ -860,7 +860,7 @@ void vm_b_switch(VmBody *sb, int depth, const VmCase *cases, int ncase)
     vm_build(sb, &s);
 }
 
-void vm_b_push(VmBody *sb, int lbl, VmPosKind pos, int loop)
+void pcrec_vm_b_push(VmBody *sb, int lbl, VmPosKind pos, int loop)
 {
     VmStmt s = vm_rec(VK_PUSH);
     s.u.push.lbl = lbl;
@@ -872,7 +872,7 @@ void vm_b_push(VmBody *sb, int lbl, VmPosKind pos, int loop)
 /* A SET whose source is the slot's own value is a call site's park, which is
  * a SNAPSHOT (review r8 SOUND-7): refused here, so the two cannot be
  * confused. */
-void vm_b_set(VmBody *sb, int slot, const char *name, const char *src)
+void pcrec_vm_b_set(VmBody *sb, int slot, const char *name, const char *src)
 {
     if (strcmp(src, vm_slot_read(sb, slot, name)) == 0)
         pcrec_ctx_fail(sb->cx, 0, "internal error: a VM SET of slot %d copies "
@@ -884,7 +884,7 @@ void vm_b_set(VmBody *sb, int slot, const char *name, const char *src)
     vm_build(sb, &s);
 }
 
-void vm_b_snapshot(VmBody *sb, int slot, const char *name)
+void pcrec_vm_b_snapshot(VmBody *sb, int slot, const char *name)
 {
     VmStmt s = vm_rec(VK_SNAPSHOT);
     s.u.snap.slot = slot;
@@ -892,7 +892,7 @@ void vm_b_snapshot(VmBody *sb, int slot, const char *name)
     vm_build(sb, &s);
 }
 
-void vm_b_restore(VmBody *sb, int slot, const char *name, int j)
+void pcrec_vm_b_restore(VmBody *sb, int slot, const char *name, int j)
 {
     VmStmt s = vm_rec(VK_RESTORE);
     s.u.restore.slot = slot;
@@ -901,47 +901,47 @@ void vm_b_restore(VmBody *sb, int slot, const char *name, int j)
     vm_build(sb, &s);
 }
 
-void vm_b_cut(VmBody *sb, int slot)
+void pcrec_vm_b_cut(VmBody *sb, int slot)
 {
     VmStmt s = vm_rec(VK_CUT);
     s.u.cut.slot = slot;
     vm_build(sb, &s);
 }
 
-void vm_b_cut_local(VmBody *sb, int loop)
+void pcrec_vm_b_cut_local(VmBody *sb, int loop)
 {
     VmStmt s = vm_rec(VK_CUT_LOCAL);
     s.u.cut_local.loop = loop;
     vm_build(sb, &s);
 }
 
-void vm_b_call(VmBody *sb, int ret)
+void pcrec_vm_b_call(VmBody *sb, int ret)
 {
     VmStmt s = vm_rec(VK_CALL);
     s.u.call.ret = ret;
     vm_build(sb, &s);
 }
 
-void vm_b_return(VmBody *sb)
+void pcrec_vm_b_return(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_RETURN);
     vm_build(sb, &s);
 }
 
-void vm_b_step(VmBody *sb)
+static void vm_b_step(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_STEP);
     vm_build(sb, &s);
 }
 
-void vm_b_work(VmBody *sb, const char *count)
+void pcrec_vm_b_work(VmBody *sb, const char *count)
 {
     VmStmt s = vm_rec(VK_WORK);
     s.u.work.count = count;
     vm_build(sb, &s);
 }
 
-void vm_b_consume(VmBody *sb, VmFrag c, VmAdv adv, int k, int lbl)
+void pcrec_vm_b_consume(VmBody *sb, VmFrag c, VmAdv adv, int k, int lbl)
 {
     VmStmt s = vm_rec(VK_CONSUME);
     s.u.consume.c = c;
@@ -951,7 +951,7 @@ void vm_b_consume(VmBody *sb, VmFrag c, VmAdv adv, int k, int lbl)
     vm_build(sb, &s);
 }
 
-void vm_b_consume_wcls(VmBody *sb, int wi, int lbl)
+void pcrec_vm_b_consume_wcls(VmBody *sb, int wi, int lbl)
 {
     VmStmt s = vm_rec(VK_CONSUME);
     s.u.consume.adv = VADV_WCLS;
@@ -960,7 +960,7 @@ void vm_b_consume_wcls(VmBody *sb, int wi, int lbl)
     vm_build(sb, &s);
 }
 
-void vm_b_consume_back(VmBody *sb, int loop, VmFrag c, int lbl)
+void pcrec_vm_b_consume_back(VmBody *sb, int loop, VmFrag c, int lbl)
 {
     VmStmt s = vm_rec(VK_CONSUME_BACK);
     s.u.back.loop = loop;
@@ -969,7 +969,7 @@ void vm_b_consume_back(VmBody *sb, int loop, VmFrag c, int lbl)
     vm_build(sb, &s);
 }
 
-void vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
+void pcrec_vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
                DelegSite id, const mf_site *site, const mf_hooks *h)
 {
     VmStmt s = vm_rec(VK_SPAN);
@@ -984,7 +984,7 @@ void vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
     vm_build(sb, &s);
 }
 
-void vm_b_span_init(VmBody *sb)
+void pcrec_vm_b_span_init(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_SPAN);
     s.u.span.block = false;
@@ -992,7 +992,7 @@ void vm_b_span_init(VmBody *sb)
     vm_build(sb, &s);
 }
 
-void vm_b_span_move(VmBody *sb, VmSpanMove mv, int k)
+void pcrec_vm_b_span_move(VmBody *sb, VmSpanMove mv, int k)
 {
     VmStmt s = vm_rec(VK_SPAN_MOVE);
     s.u.span_move.mv = mv;
@@ -1000,7 +1000,7 @@ void vm_b_span_move(VmBody *sb, VmSpanMove mv, int k)
     vm_build(sb, &s);
 }
 
-void vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k)
+void pcrec_vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k)
 {
     VmStmt s = vm_rec(VK_SEEK);
     s.u.seek.sk = sk;
@@ -1009,7 +1009,7 @@ void vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k)
     vm_build(sb, &s);
 }
 
-void vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
+void pcrec_vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
                bool inl)
 {
     VmStmt s = vm_rec(VK_LSET);
@@ -1021,28 +1021,28 @@ void vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
     vm_build(sb, &s);
 }
 
-void vm_b_bref(VmBody *sb, const VmBrefOps *o)
+void pcrec_vm_b_bref(VmBody *sb, const VmBrefOps *o)
 {
     VmStmt s = vm_rec(VK_BREF);
     s.u.bref = *o;
     vm_build(sb, &s);
 }
 
-void vm_b_var(VmBody *sb, const VmVarOps *o)
+void pcrec_vm_b_var(VmBody *sb, const VmVarOps *o)
 {
     VmStmt s = vm_rec(VK_VAR);
     s.u.var = *o;
     vm_build(sb, &s);
 }
 
-void vm_b_callout(VmBody *sb, const VmCalloutOps *o)
+void pcrec_vm_b_callout(VmBody *sb, const VmCalloutOps *o)
 {
     VmStmt s = vm_rec(VK_CALLOUT);
     s.u.callout = *o;
     vm_build(sb, &s);
 }
 
-void vm_b_witness(VmBody *sb)
+void pcrec_vm_b_witness(VmBody *sb)
 {
     VmStmt s = vm_rec(VK_WITNESS);
     vm_build(sb, &s);
@@ -1050,12 +1050,12 @@ void vm_b_witness(VmBody *sb)
 
 /* ---- the body's other readers ------------------------------------------ */
 
-size_t vm_stmt_program_bytes(const VmBody *sb)
+size_t pcrec_vm_stmt_program_bytes(const VmBody *sb)
 {
     return pcrec_sb_len_decide(sb->b);
 }
 
-const char *vm_stmt_text(const VmBody *sb)
+const char *pcrec_vm_stmt_text(const VmBody *sb)
 {
     return sb->b->p ? sb->b->p : "";
 }
@@ -1065,7 +1065,7 @@ const char *vm_stmt_text(const VmBody *sb)
  * output, the second writing it; then the body is rewritten whole. The one
  * post-render rewrite of the body, declared: it runs after the last record,
  * on a body that tiles, and it closes the body. */
-void vm_stmt_respell(VmBody *sb, const char *needle, const char *const *from,
+void pcrec_vm_stmt_respell(VmBody *sb, const char *needle, const char *const *from,
                      const char *const *to, int n)
 {
     StrBuf *b = sb->b;
@@ -1166,7 +1166,7 @@ static void vm_fr_guarded_copy(VmBody *sb, VmFrameW *fw, size_t matcher_at,
  * and the fail block (the pop-and-resume dispatch where the program pushes).
  * Moved from emit_vm.c's `vm_emit_search_body` (the text and its comments are
  * that function's); `f` carries every fact it reads. */
-void vm_stmt_frame(VmBody *sb, StrBuf *c, const VmFrame *f)
+void pcrec_vm_stmt_frame(VmBody *sb, StrBuf *c, const VmFrame *f)
 {
     const char *p = sb->p, *up = sb->up;
     VmFrameW fw = { sb->cx, c, pcrec_sb_len_uncut(c) };

@@ -6,7 +6,7 @@
 SAB_ID="S1842-vm-raw-frame-print"
 SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="codegen"
-SAB_DESC='vm_stmt_frame writes a raw statement into the artifact between two of its frame rows'
+SAB_DESC='pcrec_vm_stmt_frame writes a raw statement into the artifact between two of its frame rows'
 SAB_DOC_FIGURE='lane vmrec 2026-10-30, probed by hand on a planted build: internal error on a(b|c)+d --engine=vm (the matcher'\''s span written outside its frame rows); scored by the owed vmrec-mech job'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'

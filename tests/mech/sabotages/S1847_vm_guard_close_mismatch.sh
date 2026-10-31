@@ -11,5 +11,5 @@ SAB_DESC='the revdet capture walk closes an inline-braced GUARD with a braced cl
 SAB_DOC_FIGURE='lane vmrec 2026-10-30, probed by hand on a planted build: internal error on ((a)|b){0,4}c and ((a)|b)*c --engine=vm (a guard'\''s close does not match its guard); scored by the owed vmrec-mech job'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='            vm_b_guard_end(v->sb, VG_INLINE_BRACED);'
-SAB_AFTER='            vm_b_guard_end(v->sb, VG_BRACED);   /* SABOTAGE S1847 */'
+SAB_BEFORE='            pcrec_vm_b_guard_end(v->sb, VG_INLINE_BRACED);'
+SAB_AFTER='            pcrec_vm_b_guard_end(v->sb, VG_BRACED);   /* SABOTAGE S1847 */'

@@ -10,9 +10,9 @@ SAB_DESC='emit_vm.c writes a non-essential comment line straight into the VM bod
 SAB_DOC_FIGURE='lane vmrec 2026-10-30, probed by hand on a planted build: internal error on a(b|c)+d --engine=vm (48 bytes where 32: the dropped comment counts in the uncut clock); the scan names emit_vm.c; scored by the owed vmrec-mech job'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='    vm_b_label(v->sb, id, role);
+SAB_BEFORE='    pcrec_vm_b_label(v->sb, id, role);
     vm_ev(v, VE_LABEL, id, 0, role);'
-SAB_AFTER='    vm_b_label(v->sb, id, role);
+SAB_AFTER='    pcrec_vm_b_label(v->sb, id, role);
     pcrec_sb_cmt_open(&v->cx->job->vmsb, PCREC_CMT_NONESSENTIAL);   /* SABOTAGE S1841 */
     pcrec_sb_puts(&v->cx->job->vmsb, "    /* S1841 */\n");
     pcrec_sb_cmt_close(&v->cx->job->vmsb);

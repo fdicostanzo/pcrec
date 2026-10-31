@@ -26,7 +26,7 @@ SAB_SUITES="rungdiff"
 SAB_DESC="the revdet scan per-iteration cut removed: the loop frames accumulate per iteration again, so the artifact exhausts its stack below the length it stamps"
 SAB_DOC_FIGURE="tests/rungselect/run_rungdiff.sh: the failure surfaces part"
 SAB_COUNT=1
-SAB_BEFORE='    vm_b_cut_local(v->sb, loop);
+SAB_BEFORE='    pcrec_vm_b_cut_local(v->sb, loop);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'
 SAB_AFTER='    /* SABOTAGE S51: the per-iteration cut is not emitted */
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'

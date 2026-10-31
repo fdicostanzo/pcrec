@@ -21,6 +21,6 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:()|a)
 SAB_REACH_EXPECT='REACH-STAR-ENTRY-TEST'
 SAB_REACH_POP='tests/captures/empty_iteration.rxt|^pattern \(\?:\(\)\|a\)\+\?b$|2'
 SAB_COUNT=1
-SAB_BEFORE='        vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)scan_position == slot_values[%d]", gslot),
-                    vm_tgt_label(exit, false));'
+SAB_BEFORE='        pcrec_vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)scan_position == slot_values[%d]", gslot),
+                    pcrec_vm_tgt_label(exit, false));'
 SAB_AFTER='        (void)exit;   /* SABOTAGE S1470: the entry test is not emitted */'

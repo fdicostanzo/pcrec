@@ -18,7 +18,7 @@
  * buffer, a comment-tier print under `-fno-comments`, a truncation) is an
  * internal error at the next record. Lengths, not names: an append or a
  * truncation is caught, a same-length overwrite is not. The matcher's span in
- * the artifact is written by ONE call, `vm_stmt_frame`, which tiles its own
+ * the artifact is written by ONE call, `pcrec_vm_stmt_frame`, which tiles its own
  * rows the same way.
  *
  * NO ANALYSIS LIVES HERE. Records carry no verdicts, no read sets and no
@@ -234,70 +234,69 @@ typedef struct VmBody VmBody;
 
 /* Opens the body for one VM program: `job->vmsb`, the compile's prefix
  * spellings and the --trace axis. */
-VmBody *vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing);
+VmBody *pcrec_vm_stmt_open(Ctx *cx, const char *p, const char *up, bool tracing);
 
 /* ---- fragments ---------------------------------------------------------- */
-VmFrag  vm_frag(void);
-void    vm_frag_text(VmBody *sb, VmFrag *f, const char *text);
-void    vm_frag_cls(VmBody *sb, VmFrag *f, const ClsChoice *ch, const char *byte);
-void    vm_frag_kit(VmBody *sb, VmFrag *f, DelegSite id, const mf_site *s,
+VmFrag  pcrec_vm_frag(void);
+void    pcrec_vm_frag_text(VmBody *sb, VmFrag *f, const char *text);
+void    pcrec_vm_frag_cls(VmBody *sb, VmFrag *f, const ClsChoice *ch, const char *byte);
+void    pcrec_vm_frag_kit(VmBody *sb, VmFrag *f, DelegSite id, const mf_site *s,
                     const mf_hooks *h);
-VmFrag  vm_frag_of(VmBody *sb, const char *text);
+VmFrag  pcrec_vm_frag_of(VmBody *sb, const char *text);
 
 /* ---- targets ------------------------------------------------------------ */
-VmTgt   vm_tgt_label(int lbl, bool ckpt);
-VmTgt   vm_tgt_fail(void);
-VmTgt   vm_tgt_return(const char *code);
+VmTgt   pcrec_vm_tgt_label(int lbl, bool ckpt);
+VmTgt   pcrec_vm_tgt_fail(void);
+VmTgt   pcrec_vm_tgt_return(const char *code);
 
 /* ---- the builders, one per kind ------------------------------------------ */
-void vm_b_label(VmBody *sb, int lbl, const char *role);
-void vm_b_checkpoint(VmBody *sb);
-void vm_b_goto(VmBody *sb, int lbl);
-void vm_b_fail(VmBody *sb);
-void vm_b_accept(VmBody *sb);
-void vm_b_branch(VmBody *sb, VmFrag c, VmTgt t);
-void vm_b_guard(VmBody *sb, VmGuardSpell sp, VmFrag c);
-void vm_b_guard_end(VmBody *sb, VmGuardSpell sp);
-void vm_b_switch(VmBody *sb, int depth, const VmCase *cases, int ncase);
-void vm_b_push(VmBody *sb, int lbl, VmPosKind pos, int loop);
-void vm_b_set(VmBody *sb, int slot, const char *name, const char *src);
-void vm_b_snapshot(VmBody *sb, int slot, const char *name);
-void vm_b_restore(VmBody *sb, int slot, const char *name, int j);
-void vm_b_cut(VmBody *sb, int slot);
-void vm_b_cut_local(VmBody *sb, int loop);
-void vm_b_call(VmBody *sb, int ret);
-void vm_b_return(VmBody *sb);
-void vm_b_step(VmBody *sb);
-void vm_b_work(VmBody *sb, const char *count);
-void vm_b_consume(VmBody *sb, VmFrag c, VmAdv adv, int k, int lbl);
-void vm_b_consume_wcls(VmBody *sb, int wi, int lbl);
-void vm_b_consume_back(VmBody *sb, int loop, VmFrag c, int lbl);
-void vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
+void pcrec_vm_b_label(VmBody *sb, int lbl, const char *role);
+void pcrec_vm_b_checkpoint(VmBody *sb);
+void pcrec_vm_b_goto(VmBody *sb, int lbl);
+void pcrec_vm_b_fail(VmBody *sb);
+void pcrec_vm_b_accept(VmBody *sb);
+void pcrec_vm_b_branch(VmBody *sb, VmFrag c, VmTgt t);
+void pcrec_vm_b_guard(VmBody *sb, VmGuardSpell sp, VmFrag c);
+void pcrec_vm_b_guard_end(VmBody *sb, VmGuardSpell sp);
+void pcrec_vm_b_switch(VmBody *sb, int depth, const VmCase *cases, int ncase);
+void pcrec_vm_b_push(VmBody *sb, int lbl, VmPosKind pos, int loop);
+void pcrec_vm_b_set(VmBody *sb, int slot, const char *name, const char *src);
+void pcrec_vm_b_snapshot(VmBody *sb, int slot, const char *name);
+void pcrec_vm_b_restore(VmBody *sb, int slot, const char *name, int j);
+void pcrec_vm_b_cut(VmBody *sb, int slot);
+void pcrec_vm_b_cut_local(VmBody *sb, int loop);
+void pcrec_vm_b_call(VmBody *sb, int ret);
+void pcrec_vm_b_return(VmBody *sb);
+void pcrec_vm_b_work(VmBody *sb, const char *count);
+void pcrec_vm_b_consume(VmBody *sb, VmFrag c, VmAdv adv, int k, int lbl);
+void pcrec_vm_b_consume_wcls(VmBody *sb, int wi, int lbl);
+void pcrec_vm_b_consume_back(VmBody *sb, int loop, VmFrag c, int lbl);
+void pcrec_vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
                DelegSite id, const mf_site *s, const mf_hooks *h);
-void vm_b_span_init(VmBody *sb);
-void vm_b_span_move(VmBody *sb, VmSpanMove mv, int k);
-void vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k);
-void vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
+void pcrec_vm_b_span_init(VmBody *sb);
+void pcrec_vm_b_span_move(VmBody *sb, VmSpanMove mv, int k);
+void pcrec_vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k);
+void pcrec_vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
                bool inl);
-void vm_b_bref(VmBody *sb, const VmBrefOps *o);
-void vm_b_var(VmBody *sb, const VmVarOps *o);
-void vm_b_callout(VmBody *sb, const VmCalloutOps *o);
-void vm_b_witness(VmBody *sb);
+void pcrec_vm_b_bref(VmBody *sb, const VmBrefOps *o);
+void pcrec_vm_b_var(VmBody *sb, const VmVarOps *o);
+void pcrec_vm_b_callout(VmBody *sb, const VmCalloutOps *o);
+void pcrec_vm_b_witness(VmBody *sb);
 
 /* ---- the body's other readers ----------------------------------------- */
 
 /* The body's length for a DECISION (`pcrec_sb_len_decide`): the entry-shape
  * knee and the `<PREFIX>_VM_PROGRAM_BYTES` stamp. */
-size_t      vm_stmt_program_bytes(const VmBody *sb);
+size_t      pcrec_vm_stmt_program_bytes(const VmBody *sb);
 /* The body's text, read-only (the class pass counts its table reads). */
-const char *vm_stmt_text(const VmBody *sb);
+const char *pcrec_vm_stmt_text(const VmBody *sb);
 
 /* THE ONE POST-RENDER REWRITE: re-spells every `from[i]` in the body as
  * `to[i]` (the class-table selection), after the walk. It CLOSES the body:
  * no record can be built after it, and the frame splices exactly what it
  * left. `needle` is the opening every recorded read starts with; a match of
  * it that is no recorded read is an internal error. */
-void vm_stmt_respell(VmBody *sb, const char *needle, const char *const *from,
+void pcrec_vm_stmt_respell(VmBody *sb, const char *needle, const char *const *from,
                      const char *const *to, int n);
 
 /* THE MATCHER'S FRAME: what the one call needs to write the whole span (head
@@ -321,8 +320,8 @@ typedef struct {
 } VmFrame;
 
 /* Writes the matcher's whole span into the artifact buffer `c` in one call,
- * the body spliced in; the body must be closed (`vm_stmt_respell`) or end on
+ * the body spliced in; the body must be closed (`pcrec_vm_stmt_respell`) or end on
  * a record. */
-void vm_stmt_frame(VmBody *sb, StrBuf *c, const VmFrame *f);
+void pcrec_vm_stmt_frame(VmBody *sb, StrBuf *c, const VmFrame *f);
 
 #endif

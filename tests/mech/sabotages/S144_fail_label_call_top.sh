@@ -41,7 +41,7 @@
 # SS9.3 already records as the one whose deletion changes ANSWERS, and
 # S-SR2a (the other line's row) moves to that axis with it.
 # RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
-# the fail label moved into the frame (vm_stmt_frame), whose row closes one parenthesis more; the same line dropped. Same detector, same arm.
+# the fail label moved into the frame (pcrec_vm_stmt_frame), whose row closes one parenthesis more; the same line dropped. Same detector, same arm.
 SAB_ID="S144-fail-label-call-top"
 SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="harness recursion"
