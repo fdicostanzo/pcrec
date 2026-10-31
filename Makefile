@@ -241,13 +241,19 @@ $(BUILD_DIR)/obj/shared/%.o: shared/%.c shared/%.h
 # (lane wsc3, 2026-10-22).
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
 $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
+$(BUILD_DIR)/obj/gen/vm_stmt.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
 # [INLINE-C] 1b the call-site code table's header, read by both of its
 # producers (the compound's controller and the VM's callout site).
 $(BUILD_DIR)/obj/gen/callsite_rows.o $(BUILD_DIR)/obj/gen/emit_compound.o \
-$(BUILD_DIR)/obj/gen/emit_vm.o: src/gen/callsite_rows.h
+$(BUILD_DIR)/obj/gen/emit_vm.o $(BUILD_DIR)/obj/gen/vm_stmt.o: src/gen/callsite_rows.h
+# [VMREC] (a) the VM body's record module: its header is read by its two
+# translation units (the emitter that builds the records, the module that
+# renders them), and it includes the class kit's header for a CLS piece.
+$(BUILD_DIR)/obj/gen/emit_vm.o $(BUILD_DIR)/obj/gen/vm_stmt.o: \
+    src/gen/vm_stmt.h src/gen/clskit.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
@@ -694,7 +700,8 @@ test-codegen: all
 	    'bash tests/codegen/run_nomatch_caps.sh' \
 	    'bash tests/codegen/run_rev_end.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
-	    'bash tests/codegen/run_residual_twins.sh'
+	    'bash tests/codegen/run_residual_twins.sh' \
+	    'bash tests/codegen/run_stmt_writer.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
@@ -912,7 +919,8 @@ test-vm: all
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_vm_identity.sh' \
 	    'bash tests/codegen/run_ir_listing.sh' \
-	    'bash tests/vm/run_vm_tests.sh'
+	    'bash tests/vm/run_vm_tests.sh' \
+	    'bash tests/vm/run_trail_compact.sh'
 
 # [ENG-BREP] The possessification rung's two non-.rxt suites. Its .rxt corpus
 # rides test-corpus like every other module's; these two check what a .rxt file
@@ -2151,6 +2159,7 @@ alloc-locked:
 # ([runkit], scripts/boxlock: waits for a holder, nests inside a battery or a
 # chainrun heavy stage; PCREC_BOXLOCK=0 opts out).
 test-axes: all
+	bash tests/axes/giveup1_key_check.sh
 	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh'
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a

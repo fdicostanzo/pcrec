@@ -1,0 +1,101 @@
+# id	kind	spelling	calls	verdict	fragments (typed reads -> pieces)
+lbl	LABEL	role	3465,3466,3467,3469	MATCH	
+lbl0	LABEL	bare	3469	MATCH	
+ckpt	CHECKPOINT	stmt	3502	MATCH	
+goto	GOTO	plain	3532	MATCH	
+fail	FAIL	plain	3541	MATCH	
+pushT	PUSH	traced	3557	MATCH	
+push	PUSH	plain	3560	MATCH	
+setN	SET	named	3584	MATCH	F_src clean
+setU	SET	numbered	3586	MATCH	F_src clean
+work	WORK	indent	3652	MATCH	F_n clean
+cut	CUT	plain	3679	MATCH	
+mrlF	BRANCH	fail	3889,3891	MATCH	F_c clean
+mrlL	BRANCH	label	3889,3892	MATCH	F_c clean
+islrun	BRANCH	label	4657,«KIT»,4661	MATCH	F_c clean
+isl1	BRANCH	label	4669	MATCH	F_c clean
+islsw	SWITCH	island	4674,4678,4678,4682	MATCH	F_c clean; F_d clean
+isladv	SEEK	advance	4716	MATCH	
+span	SPAN	block	4828,4829,4831,4833,«KIT»,4840	MATCH	F_clamp clean
+spanU	SPAN	block	4828,4833,«KIT»,4840	MATCH	
+reach	BRANCH	fail	4850	MATCH	F_c clean (slot_values[)
+members	FRAGMENT	members	4944,«CLS»,4948	MATCH	F_m clean
+possmin	BRANCH	fail	5018	MATCH	F_c clean
+pub1	GUARD	open	5044	MATCH	F_c clean
+pub1e	GUARD_END	close	5062	MATCH	
+commit1	SEEK	span_commit	5064	MATCH	
+lazy0	SPAN	init_only	5159	MATCH	
+pub2	GUARD	open	5195	MATCH	F_c clean (slot_values[)
+pub2e	GUARD_END	close	5212	MATCH	
+commit2	SEEK	span_commit	5214	MATCH	
+resume	LSET	assign	5221	MATCH	F_src clean
+floor	BRANCH	fail	5223	MATCH	F_c clean (slot_values[)
+retreat	LSET	sub	5225	MATCH	
+ceil	BRANCH	fail	5228	MATCH	F_c clean (slot_values[)
+extcls	BRANCH	fail	5230	MATCH	F_c clean
+extend	LSET	add	5232	MATCH	
+back	CONSUME_BACK	dec	5532,«CLS»,5534	MATCH	F_c clean
+rvend	GUARD+LSET	inline	5561	MATCH	F_c clean; F_src clean
+rvstart	GUARD+LSET	inline_braced	5568	MATCH	F_c clean; F_s1 clean
+rvfloor	BRANCH	label	5615	MATCH	F_c clean
+rvsel	BRANCH	label	5621,«CLS»,5623	MATCH	F_c clean
+it0	LSET	assign	5790	MATCH	F_src clean
+rmax	BRANCH	label	5803	MATCH	F_c clean
+mark	LSET	assign	5816	MATCH	F_src clean (run->)
+cutl	CUT_LOCAL	plain	5849	MATCH	
+itpp	LSET	inc	5852	MATCH	
+lowg	GUARD	open	5854	MATCH	F_c clean
+lowge	GUARD_END	close	5857	MATCH	
+rmin	BRANCH	fail	5866	MATCH	F_c clean
+lazyc	SEEK	restore	5873	MATCH	
+rvcur	LSET	assign	5895	MATCH	F_src clean
+rvprev	LSET	assign	5896	MATCH	F_src clean
+rvgs	LSET	assign	5898	MATCH	F_src clean
+rvclr	LSET	clear_array	5899	MATCH	
+rvfl2	BRANCH	label	5905	MATCH	F_c clean
+rvprevg	GUARD+LSET	inline	5911	MATCH	F_c clean; F_src clean
+rvall	BRANCH	label	5914	MATCH	F_c clean
+retg	GUARD	open	5934	MATCH	F_c clean (slot_values[)
+retge	GUARD_END	close	5939	MATCH	
+extg	GUARD	open	5941	MATCH	F_c clean (slot_values[)
+extge	GUARD_END	close	5944	MATCH	
+pubg	GUARD	open	5953	MATCH	F_c clean
+pubge	GUARD_END	close	5960	MATCH	
+mark2	LSET	assign	5978	MATCH	F_src clean (run->)
+cutl2	CUT_LOCAL	plain	5990	MATCH	
+ctrtrip	BRANCH	label	6099	MATCH	F_c clean (slot_values[)
+ctrbound	BRANCH	label	6305	MATCH	F_c clean (slot_values[)
+empty	BRANCH	label	6540	MATCH	F_c clean (slot_values[)
+emptyj	BRANCH	jump	6600	MATCH	F_c clean (slot_values[)
+lbstart	BRANCH	fail	7126	MATCH	F_c clean
+lbstartL	BRANCH	label	7143	MATCH	F_c clean
+backstep	SEEK	backstep	7174	MATCH	
+bsnone	BRANCH	fail	7179	MATCH	F_c clean
+lbhard	BRANCH	abort	7208	MATCH	F_c clean (slot_values[)
+lbend	BRANCH	fail	7216	MATCH	F_c clean (slot_values[)
+lkrest	SEEK	restore	7488	MATCH	
+call	CALL	plain	8217	MATCH	
+ret	RETURN	block	8503	COMPOUND-VERBATIM	
+side	FRAGMENT	ctx_side	8544,«CLS»,8548	MATCH	F_s clean
+sideN	FRAGMENT	ctx_side	('=', '(scan_position < subject_length && ('),«CLS»,8548	MATCH	F_s clean
+ctx2	BRANCH	label	8604,«SIDE»,8606,«SIDE»,8608	MATCH	F_c clean
+mlbol	BRANCH	label	8616,«CLS»,8618	MATCH	F_c clean
+mleol	BRANCH	label	8622,«CLS»,8624	MATCH	F_c clean
+start	BRANCH	label	8628	MATCH	F_c clean
+end	BRANCH	label	8632	MATCH	F_c clean
+ctx1	BRANCH	label	8634,«SIDE»,8636	MATCH	F_c clean
+ctx1p	BRANCH	label	('=', '    if ('),«SIDE»,8636	MATCH	F_c clean
+bref	BREF	one_ref	8829,8834,8842,8843,8846,8847,«WORK»,8871	COMPOUND-VERBATIM	
+bref2	BREF	name_run	8829,8834,8834,8842,8843,8846,8847,«WORK»,8871	COMPOUND-VERBATIM	
+var	VAR	block	8917,«WORK»,8932	COMPOUND-VERBATIM	
+lit	CONSUME	lit	8980,«KIT»,8983	MATCH	F_c clean
+step	STEP	plain	9087	MATCH	
+co	CALLOUT	caller_view	9089,9100,9125,9127,9134,«CALLSITE»,9154	COMPOUND-VERBATIM	
+coV	CALLOUT	def_view	9089,9109,9115,9120,9125,9131,9134,«CALLSITE»,9154	COMPOUND-VERBATIM	
+wcls	CONSUME	wclass	9188	COMPOUND-VERBATIM	
+cls	CONSUME	class	9210,«CLS»,9212	MATCH	F_c clean
+eol	BRANCH	label	9225	MATCH	F_c clean
+gstart	BRANCH	label	9260	MATCH	F_c clean
+accept	ACCEPT	plain	10798	MATCH	
+# statements: 98; body calls covered: 130 of 132 (+2 pieces: 1691 CLS piece (class table read text; vm_cls_test), 1763 POSTPASS (vm_cls_respell, moved into vm_stmt.c verbatim)); uncovered: none
+# result: ALL MATCH, ALL FRAGMENTS CLEAN

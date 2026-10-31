@@ -1,0 +1,35 @@
+compiles: 37
+REFUSED	kcscan.c	match_anchored	span	R4 unknown helper rx_class_atom16
+REFUSED	kcscan.c	match_anchored	span	R4 unknown helper rx_class_atom18
+REFUSED	kcscan.c	match_anchored	span	R4 unknown helper rx_class_atom21
+REFUSED	kcscan.c	match_anchored	span	R4 unknown helper rx_class_atom22
+# windows: 49 (distinct shapes 16), refused: 4
+#    21  span         while ((rx_span_cursor + N <= subject_length) && (subject[rx_span_cursor + N] == N) && (subject[rx_span_cursor + N] == N)) {             rx_sp
+#     4  span         while ((rx_span_cursor + N <= lim_) && ((unsigned)(subject[rx_span_cursor + N] - N) <= Nu)) {             rx_span_cursor += N;         }
+#     4  span         while ((rx_span_cursor + N <= subject_length) && (rx_class_atomN(subject[rx_span_cursor + N]))) {             rx_span_cursor += N;         }
+#     3  span         while ((rx_span_cursor + N <= subject_length) && it_ < NULL && ((unsigned)(subject[rx_span_cursor + N] - N) <= Nu)) {             rx_span_curs
+#     2  span         while ((rx_span_cursor + N <= subject_length) && ((unsigned)(subject[rx_span_cursor + N] - N) <= Nu)) {             rx_span_cursor += N;      
+#     2  run  rx_wN(subject + scan_position + N) == rx_wN("x}") && rx_wN(subject + scan_position + N) == rx_wN("}\"")
+#     2  span         while ((rx_span_cursor + N <= lim_) && (subject[rx_span_cursor + N] == N) && (subject[rx_span_cursor + N] == N)) {             rx_span_cursor 
+#     2  span         while ((rx_span_cursor + N <= subject_length) && ((rx_class_bitmapN[(subject[rx_span_cursor + N]) >> N] >> ((subject[rx_span_cursor + N]) & N)
+#     2  span         while ((rx_span_cursor + N <= lim_) && (subject[rx_span_cursor + N] == N)) {             rx_span_cursor += N;         }
+#     1  run  !memcmp(subject + scan_position, "ab", N)
+#     1  run  !memcmp(subject + scan_position + N, "yz", N)
+#     1  run  rx_wN(subject + scan_position + N) == rx_wN("ee you s") && rx_wN(subject + scan_position + N) == rx_wN("you soon")
+# sabotage goto in a kit window                               DETECTED ok
+# sabotage return in a kit window                             DETECTED ok
+# sabotage label name, no goto                                DETECTED ok
+# sabotage cursor write                                       DETECTED ok
+# sabotage cursor ++                                          DETECTED ok
+# sabotage slot write                                         DETECTED ok
+# sabotage local write (an LSET in a fragment, FIX-6 mirror)  DETECTED ok
+# sabotage address of the cursor                              DETECTED ok
+# sabotage run-state write                                    DETECTED ok
+# sabotage unknown helper                                     DETECTED ok
+# sabotage #define in a window                                DETECTED ok
+# sabotage noreturn call                                      DETECTED ok
+# sabotage pattern bytes in a literal (FIX-1)                 clean ok
+# sabotage return in comment text (FIX-5 i)                   clean ok
+# sabotage == is a read (FIX-5 ii)                            clean ok
+# sabotage span output write allowed                          clean ok
+# result: RED

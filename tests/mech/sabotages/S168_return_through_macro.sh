@@ -43,22 +43,24 @@
 # vm_emit_search_body (lane/tour1, 672b4cdd), where `v` is a POINTER, so the
 # AFTER2 text's `v.` spellings stopped compiling and the row read ANOMALY
 # (BUILD-FAILED) from then until this re-aim. `v.` -> `v->`; intent unchanged.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the region return is VK_RETURN's renderer (vm_r_return), the one place a return is printed; the same shared-macro spelling there (FILE2, the macro's definition, unchanged). Same detector, same arm.
 SAB_ID="S168-return-through-macro"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="codegen recursion"
 SAB_DESC="the callee region's return is emitted through a SHARED MACRO instead of inline, so the artifact carries ONE indirect jump for every callee region however many there are -- no answer changes and the codegen count is the only detector"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR13): NO ANSWER CHANGES -- the frame still carries the return label and every return still reaches it. The codegen count is the only detector, and it is S109's shape. [DD-14-RECURSION rule 1] fires on the THREE-DISTINCT-CALLEE row: (a)(b)(c)(?1)(?2)(?3) emits 4 'goto *' shipped and 2 under this sabotage. The one-callee rows stay GREEN, which is exactly why the rule asserts a RELATION and not a constant -- a hard-coded 'two' would have passed this sabotage on three of its four fixtures."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(v->b,
+SAB_BEFORE='    pcrec_sb_printf(sb->b,
         "    {\n"
         "        const size_t %s_call_frame = run->call_top;\n"
         "        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n"
         "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->p, v->p);'
+        sb->p, sb->p, sb->up, sb->p, sb->p);'
 SAB_AFTER='    /* SABOTAGE S168: one shared macro instead of one inline return */
-    pcrec_sb_printf(v->b, "    %s_RETURN;\n", v->up);'
+    pcrec_sb_printf(sb->b, "    %s_RETURN;\n", sb->up);'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per

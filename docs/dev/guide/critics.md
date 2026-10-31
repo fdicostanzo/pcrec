@@ -121,8 +121,20 @@ Round 2026-10-29 r1, landwalk (design) (`docs/dev/reviews/2026-10-29-r1-landwalk
 4. **A speed price needs the baseline of the SELECTED path, not of the motivating case.** The motivating pattern was the only admitted row whose shipped path walked every byte; the others already started from the landmark (S2).
 5. **Compile-time admission cannot pass a subject-dependent acceptance cell.** Where one pattern sits in a positive and a negative cell, the design states the loss as a bounded non-goal instead (S3).
 
+Round 2026-10-29 r5, landwalk2 (design re-check) (`docs/dev/reviews/2026-10-29-r5-landwalk2.md`, P1 rev 1), rev 2 in `docs/dev/lanes/p1dsg3_report.md`.
+1. **A fix that turns a restated predicate into a READ of another slot traces the read's cycle and its fixed points.** A row whose own selection changes the read slot's inputs makes a counterfactual read, and the fix must name it (SLOT-1: the live read had two self-consistent answers on four bench rows).
+2. **"Unchanged in kind" claims about a self-check are checked by evaluating the check's condition, not its name** (SLOT-2: the inclusion cited as the PASS reason was the failure condition).
+3. **A route conjunct is the FINISHER, not the body shape.** A VM hybrid's prefilter body is CR_DFA (SLOT-4; cover's C1 had already learned it).
+4. **A soundness lens needs a control that can fail for every rule it calls sound** (SOUND's three controls are what make its 0-wrong count mean something).
+
 Round 2026-10-29 r3, vmtrail (design) (`docs/dev/reviews/2026-10-29-r3-vmtrail.md`; three designs, one build sequence, consolidated in `docs/dev/lanes/vmcons_report.md`).
 1. **An "answer-identical by proof" design gets a soundness lens that APPLIES the rule to emitted code.** The lens builds the base tree and hand-applies the rule, as written, to the emitter's real output for crafted witnesses. It produced every answer-level repro of the round (F1-F3, F6, F8); reading the proofs alone accepted them.
 2. **Multi-document subjects: review the SEAMS.** Each document was sound against the stock program; the holes were in the composition (F4, F5, F21). Every critic tags each finding doc or seam.
 3. **"Read from the event stream" is a premise to grep, not a given.** Three designs rested on a stream with no slot reads, no SET sources, missing conditional edges and a cut logged as a note. A premise lens checks every claimed input of an analysis against the producer's struct and its call sites.
 4. **A cited control can stop reaching its site between design and build** (F14: R25 E5's witness now routes to revdet or the DFA). Every witness a design names gets a reach probe at the base commit.
+
+Rounds 2026-10-31 r1-r5, pricing-split and the pricing bake-off (`docs/dev/reviews/2026-10-31-r1-pricing-split.md` .. `r5-bakeoff3.md`).
+1. **Coordinator notes live where critics cannot read them.** Keep them in a `.coord/` subdirectory of the round dir that COMMON denies; a critic read the coordinator's planted-check note when process.md sat in the shared dir (r1).
+2. **Drill any verdict table on CONSTRUCTED outcomes, the design's own prediction first.** The predicted tie read INCONCLUSIVE/UNRESOLVABLE (r3, SIM-5/6/7).
+3. **Implement the rule from the design TEXT before reading the design's own drill script, then diff.** Nine text/script divergences, three scenarios on target only through them (r4).
+4. **Check where every evidence script writes before briefing.** A design's own `--plants` mode wrote into a denied lane dir and lanewatch's default log sits in the main tree; redirect via `PCREC_TMPDIR` and `LANEWATCH_LOG` (r5).

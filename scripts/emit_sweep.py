@@ -229,6 +229,13 @@ OPTIONS
                         must reproduce exactly (stream, base, pattern
                         [, attribution]).
 
+  --list-ident-arms REFREV  print the record-first identity gate's DECLARED arm
+                        set (IDENT_*, [VMREC] step (a), D182) as NAME<TAB>args
+                        rows for a job script; runs nothing else.
+  --ident-arm NAME       this run is that arm; an IDENT_EXEMPT arm (no
+                        composition stream, so no DELIVER witness) prints
+                        its exemption and reason instead of skipping silently.
+
   When the two sides are the SAME binary (realpath), every argv compile runs
   once and is mirrored: identity is trivial and said so, and the run is a
   measurement (reach, DIFFER counts, trace records) at half the cost.
@@ -1783,11 +1790,18 @@ TRACE_EXTRA_PINS = {
 # entry keeps PINS' plain floors. Each floor sits where its PLAIN sibling sits
 # relative to its measured value: producing AT the measured value (zero slack),
 # artifacts 6 below it (plain: 100 against 106).
-#   ("-e", "utf8"): producing 36, artifacts 98 -- measured at a080c69a and at
-#   fae3987e8, population 384 composition files.
+#   RE-PIN (kit, 2026-10-30, after F7 / [SWEEP-COMP-FLOOR] d7a425f41 moved the
+#   plain arm and missed these entries): job 695-kit-simdset-comppin measured
+#   EVERY arm (plain, -fmemfn-simd, -fcomments, -e utf8, --engine=vm) at
+#   producing 38 / artifacts 88, ref-vs-working (merged main 6bc45b974 vs
+#   lane/memfn-simdset 93433207c), 435 composition files: F7 removed the
+#   files a refused target used to write, so no arm differs from plain now.
+#   ("-e", "utf8"): producing 37, artifacts 86 -- the plain floors (its own
+#   stance: sit where the plain sibling sits). Was 36 / 98, measured at
+#   a080c69a and at fae3987e8, population 384 composition files.
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
-#   reshapes blocks the default engine compiles, so 20 fewer files are written.
+#   reshapes blocks the default engine compiles, so 20 fewer files are written. Re-pinned 38 / 88 (job 695, header above): AT the measured value, so the self-test +1 plant goes red.
 #   ("-fmemfn-simd",) and ("-fcomments",): producing 37, artifacts 106 each,
 #   AT the measured value ([COMPPIN], lane/comppin 4464e1c10): neither flag
 #   changes which fixtures compile, so both read the plain arm's population.
@@ -1796,20 +1810,21 @@ TRACE_EXTRA_PINS = {
 # floor (the run says so), never the plain arm's (the `--engine=vm` run read
 # 86 < 100 on both sides, ref-vs-ref).
 COMPOSITION_EXTRA_PINS = {
-    ("-e", "utf8"): {"composition_producing_floor": 36,
-                     "composition_artifacts_floor": 98},
-    ("--engine=vm",): {"composition_producing_floor": 37,
-                       "composition_artifacts_floor": 86},
+    ("-e", "utf8"): {"composition_producing_floor": 37,
+                     "composition_artifacts_floor": 86},
+    ("--engine=vm",): {"composition_producing_floor": 38,
+                       "composition_artifacts_floor": 88},  # job 695 re-pin (was 37 / 86)
     # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
     # changes WHICH composition files compile, only the text: both read the
     # plain arm's population, producing 37 / artifacts 106, measured at
     # lane/comppin 4464e1c10 (`--streams composition --extra=FLAG`, one
     # binary, 386 composition files). Floors AT the measured value (the
-    # counts are deterministic), the --engine=vm entry's stance.
-    ("-fmemfn-simd",): {"composition_producing_floor": 37,
-                        "composition_artifacts_floor": 106},
-    ("-fcomments",): {"composition_producing_floor": 37,
-                      "composition_artifacts_floor": 106},
+    # counts are deterministic), the --engine=vm entry's stance. Re-pinned
+    # 37 / 106 -> 38 / 88 from job 695-kit-simdset-comppin (header above).
+    ("-fmemfn-simd",): {"composition_producing_floor": 38,
+                        "composition_artifacts_floor": 88},
+    ("-fcomments",): {"composition_producing_floor": 38,
+                      "composition_artifacts_floor": 88},
 }
 
 
@@ -2971,6 +2986,69 @@ STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
                "emit-ir-auto", "stderr")
 
 
+# ---------------------------------------------------------------------------
+# The record-first identity gate's ARM SET ([VMREC] step (a), D182): the
+# validated population of two-compiler byte-identity arms, DECLARED here so
+# a job script lists it (`--list-ident-arms`) instead of carrying it. One
+# arm = one emit_sweep run; `--ident-arm NAME` marks the run as that arm.
+IDENT_STREAMS = "c-default,c-vm,emit-ir,composition"
+IDENT_NOCOMP = "c-default,c-vm,emit-ir"
+IDENT_MEMFN = ("vrun-w32", "vrun-w16", "vrun-kb", "vrun-trim", "vrun-pad",
+               "precheck-assign-byte", "fd-r8", "fd-ndisp", "fd-d1", "fd-pres-g1",
+               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip")
+# EXEMPT from the DELIVER witness: the arm removes the composition artifacts
+# the witness needs (no composition stream, so no cross-group SET pair). Its
+# byte identity is checked on IDENT_NOCOMP; the composition stream rides the
+# other arms. The sweep REPORTS the exemption, it never skips silently.
+IDENT_EXEMPT = {
+    "nocaptures": "--no-captures leaves no composition stream, so no cross-group SET pair",
+    "axis-fno-splice-calls": "-fno-splice-calls leaves no composition stream, so no cross-group SET pair",
+}
+# Stream override per flag arm: -fprefilter requires the VM engine (c-default
+# refuses 4463/6263; the reach floor is the plain arm's) and has no
+# composition artifacts either.
+IDENT_AXIS_STREAMS = {"-fprefilter": "c-vm,emit-ir"}
+# -fstartpos-guard is not an optimization axis flag that changes a body (every
+# pattern refuses it: a vacuous arm), so it is not an arm.
+IDENT_AXIS_DROPPED = ("-fstartpos-guard",)
+
+
+def ident_axes(tree_bin):
+    """The axis flags the compiler ACCEPTS (--list-axes text also names flags
+    it refuses; those would be vacuous arms)."""
+    def run(*a):
+        return subprocess.run([tree_bin, *a], capture_output=True, text=True)
+    flags = sorted(set(re.findall(r"(?:^|\s)(-f[a-z0-9-]+)", run("--list-axes").stdout)))
+    out = []
+    for f in flags:
+        if f.startswith("-fstack-protector") or f in IDENT_AXIS_DROPPED:
+            continue
+        r = run("-p", "rx", f, "--emit-main", "-o", os.devnull, "--pattern", "a")
+        if f"unknown option '{f}'" not in r.stderr:
+            out.append(f)
+    return out
+
+
+def ident_arms(tree_bin, ref_rev):
+    """(name, emit_sweep args) rows of the identity gate's arm set."""
+    q = shlex.quote
+    rows = [
+        ("base", f"--streams {IDENT_STREAMS},dumps,facts"),
+        ("start", "--arms start"),
+        ("trace", f"--streams {IDENT_STREAMS} --extra=--trace --no-differ-floor"),
+        ("nocaptures", f"--streams {IDENT_NOCOMP} --extra=--no-captures --no-differ-floor"),
+        ("utf8", f"--streams {IDENT_STREAMS} --extra={q('-e utf8')} --no-differ-floor"),
+    ]
+    for m in IDENT_MEMFN:
+        rows.append((f"memfn-{m}", f"--streams {IDENT_STREAMS} --extra=--memfn=no-{m} --no-differ-floor"))
+    for f in ident_axes(tree_bin):
+        st = IDENT_AXIS_STREAMS.get(f, IDENT_NOCOMP if f"axis{f}" in IDENT_EXEMPT else IDENT_STREAMS)
+        rows.append((f"axis{f}", f"--streams {st} --extra={f} --no-differ-floor"))
+    rows.append(("witness", f"--ref {ref_rev} --tree-rev HEAD --build-cflags={q('-O2 -g -DPCREC_SIMD_WITNESS')} "
+                            "--streams c-default,c-vm --every 4"))
+    return [(n, a if n == "witness" else f"{a} --ident-arm {n}") for n, a in rows]
+
+
 BOX_LOCK_CAP = 50   # BOILERPLATE's sweep cap: a loop above this many compiles takes the box lock
 
 
@@ -3068,8 +3146,20 @@ def main():
     ap.add_argument("--trace-order", action="append", default=[])
     ap.add_argument("--data", nargs=3, metavar=("KIND", "OLD", "NEW"))
     ap.add_argument("--movers")
+    ap.add_argument("--list-ident-arms", metavar="REFREV",
+                    help="print the identity gate's declared arm set (NAME<TAB>args, IDENT_*) "
+                         "for the binary --bin (default TREE/build/pcrec), the witness arm "
+                         "against REFREV; runs nothing else")
+    ap.add_argument("--ident-arm", metavar="NAME",
+                    help="this run IS identity-gate arm NAME; an IDENT_EXEMPT arm reports its "
+                         "DELIVER-witness exemption (and must not run the composition stream)")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    if args.list_ident_arms:
+        tb = os.path.abspath(args.bin) if args.bin else os.path.join(os.path.abspath(args.tree), "build", "pcrec")
+        for n, a in ident_arms(tb, args.list_ident_arms):
+            print(f"{n}\t{a}")
+        sys.exit(0)
     if args.trace:
         # Resolve the late `import trace_diff` NOW: an import failure after the
         # sweep's tables had printed once left movers=0 tables standing as the
@@ -3404,6 +3494,14 @@ def main():
             else:
                 print("DELIVER witness: OK (at least one composition artifact carries the "
                       "cross-group SET-pair shape; both named fixtures produced).")
+
+    if args.ident_arm in IDENT_EXEMPT:
+        if "composition" in streams:
+            run_ok = False
+            print(f"DELIVER WITNESS EXEMPTION INVALID: arm {args.ident_arm} is declared exempt "
+                  f"but runs the composition stream")
+        print(f"DELIVER witness: EXEMPT for arm {args.ident_arm} ({IDENT_EXEMPT[args.ident_arm]}); "
+              f"byte identity is checked on {','.join(streams)}")
 
     # -- the arms: one (--extra) or the table (--arms start) --
     arms = []

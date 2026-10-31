@@ -46,3 +46,5 @@ R-30 (lane r30b) appended the harness-only entry `mf_lever` (a named test-only l
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a
 struct here; an `MF_VOCAB` change adds an op, handoff or term kind.
+
+Lane simdset (2026-10-29) appended, with NO `MF_SITE_ABI`/`MF_VOCAB` move (no struct, field or op changed): the STANDALONE KERNELS section, `mf_kernel_find_any` (F2 as a kernel, find any of 2-3 bytes, rendered outside any site; not routed, no pcrec caller).

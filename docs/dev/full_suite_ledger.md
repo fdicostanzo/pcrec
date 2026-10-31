@@ -17,7 +17,7 @@ studies; listed, not counted).
 Baseline: the last full run on record is about 2026-10-08 (docs/dev/gate_census_2026-10-23.md: full mech
 ~10-08, san 10-03, alloc 10-08, axes 10-20 only); no battery verdict is retained from it.
 
-**major: 30, minor: 84** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
+**major: 31, minor: 84** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
 `git log --first-parent --merges --since=2026-10-08 main` (merges named "merge main into" excluded).
 PROVISIONAL: class is set by a mechanical rule (path touched, abi-event wording in the merge subject,
 a short capability keyword list); manager to confirm. Landings dated 2026-10-08 may predate the
@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-29 ebcc10aa1 major — merge lane/trailgc: [K134] VM trail compaction at checkpoints (D183; backward gotos + region returns, quarter-room stop, fast tier never compacts), abi 92 -> 93 (VM artifacts whose program writes the trail on a cycle gain the checkpoints and `trail_gc_floor`; every other artifact moves in the abi digits only). Validated on the branch: job 690 run 2 red ONLY on identity (A) = the filed [RECID-A] (make test 81/81 green, (B) zero-diff, trail-stripped regions = base on 4,983 patterns), 691 mech GREEN; the landing re-ran codegen/registry/rxtsource/identity (see trailgc3_report.md "Landing 2026-10-29 (landtgc)"). Owed: tonight's full suite.
 - 2026-10-29 b156d8f18 major — merge lane/ic3: [INLINE-C] stage 3 (sha-pinned include/lib lines, every-chain rule, definition-site view, lib code-headers, `--include-block`, `--list-callouts`, F27, F38; no abi bump, main stays 92). Validated on the branch: 680-ic3-test GREEN (1519 s), 681-ic3-mech GREEN (5/5 rows); post-merge check queued as 696-landic3-check. D177 triggers: rows 1, 4, 5 already FIRED (counts only grow); row 3 not claimed (a capability, not a refactor).
 - 2026-10-29 0f425c2d0 major — merge lane/memfn-s3m (+ lane/memfn-r30 notes 4a32fc474): kit D172 S3 (cover LOCATE row routed by default, D-hors), abi 91 -> 92 (artifacts it does not take move in the abi digits only); recursion-identity (B) FILEPIN re-pinned; [SWEEP-COMP-FLOOR] floor 100 -> 86. Validated: kit job 622 20/21 green (the one red = that floor); lands3 identity gate + test-codegen/registry/rxtsource per its report.
 - 2026-10-29 02229045e major — merge lane/reqvm1m: [REQRUN-VM] required-run handoff and re-entry widened to VM consumers (VM-only attempt loop, VM-hybrid prefilter re-entry) + the drop-handoff fit rung; abi 90 -> 91 (emitted text moved). Validated: 660-reqvm1m-test GREEN (build, strict, mover census 0 unexpected vs 78627dbca@abi90, make test 81/81).
@@ -284,3 +285,10 @@ RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row
 
 RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.
 san re-run on main 3e550f92d (after lane/sanred), job 610-main-sanrerun: GREEN, run_san_group 41/41, wall 3441 s. The run's only stage-level red besides the known [RECID-A] is cleared.
+
+RED: 2026-10-30 cb32eda28 test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261030_cb32eda28 duration=42819s
+| 2026-10-30 | cb32eda28 | RED (rc=2) | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261030_cb32eda28/ | 42794 s |
+
+RED run: counters do not reset. test = (1) test-memfn-guarded simd-form floor 5<6 (stale: ic3 stage 3 shifted the sample) and (2) test-code refusal tail cut by the public 256-byte pcrec_error.msg under the long run-tree path; axes = 11 sr_depth GIVEUP1 keys moved +8 lines by trailgc's comment (give-ups 66 -> 74 explained: reqvm1's handoff_vm.rxt 20-27); san = REAL compiler crash, `--code-header` left PcrecCodeHeader.file/.line uninitialised (INLINE-C stage 3, 95832f09c); fixes on lane/fsfix (crash zero-init + MALLOC_PERTURB_ arm, named simd witnesses, text-keyed allowances, test-only path fix). mech = unexpected 2 (S1085, S1171: witnesses became cover artifacts under D172 S3 cover-by-default, lost reach) + new anomalies S1682/S146; fixes on lane/fsfix2. recidentity = only the known (A), (B) 0 differing on all four; (A) 167/382/167/111 (vm +1 vs 381). Triage: scratch reports citriage/axtri/santri/mechtri (summarized here).
+Landing 2026-10-30 62383db53: lane/fsfix (code-header crash fix + test pins; minor, test-side + cli) and the kit's simdset (zero movers) merged; full-suite triggers per D177 unchanged (no abi event).
+Landing 2026-10-31 3bc599c92: lane/vmrec (VM record-first refactor, step (a), D182; class major: an emitter rewrite, byte-identical, no abi event); identity 744-vmrecm-ident 68 arms movers=0, full make test green (745), mech 9/10 + 7/7 detected; full-suite triggers per D177: an emitter rewrite counts as major.

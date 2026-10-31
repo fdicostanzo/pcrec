@@ -15,8 +15,10 @@
 # one, so a table emitted in descending number selects the highest-numbered
 # participant. Two independent routes to the same wrong rule, which is why
 # both have rows.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the bref compare block is VK_BREF's renderer (vm_r_bref), text unchanged. Same detector, same arm.
 SAB_ID="S115-resolution-last-set"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="dupnamesdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="The emitted chain over a duplicated name's run drops its trailing else keyword, so every set member overwrites the previous one and resolution becomes \"LAST set\" instead of \"first set\". (?J)^(?<a>x)(?<a>y)\\k<a>\$ then matches \"xyy\" and not \"xyx\" -- the exact inversion of the measured answer"

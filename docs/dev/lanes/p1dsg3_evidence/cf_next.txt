@@ -1,0 +1,27 @@
+# id | W0 engine/vm-prefilter | W0 RX_DFA_SCAN (LOCATE) | W0 RX_DFA_PREFILTER | W0 REQ_WHY | W1 (-fno-req-handoff) RX_DFA_PREFILTER | rev 1 L6 | rev 2 L6 | lemma
+capability/wild-validator-uuid-grok | dfa/- | unanchored | offset-set | dominated | offset-set | declines | declines | -
+syntax/cls-dot | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/cls-i-class | dfa/- | cover | none | none | none | not evaluated (cover outranks) | not evaluated | -
+syntax/cls-mixed-case | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/cls-n-uc | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/cls-negset | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/cls-pair-ctl | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/mod-reset | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/mod-s | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/mod-unset | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+syntax/qnt-plus-ctl | dfa/- | unanchored | offset-set | emitted | offset-set | declines | declines | -
+syntax/qnt-plus | dfa/- | unanchored | memchr | emitted | memchr | passes | passes | holds
+syntax/qnt-quest | dfa/- | unanchored | offset-set | emitted | offset-set | declines | declines | -
+utf8/cls-s-nbsp | dfa/- | cover | none | dominated | none | not evaluated (cover outranks) | not evaluated | -
+utf8/cls-s-ucp | dfa/- | unanchored | memchr | emitted | memchr | passes | passes | holds
+utf8/lit-mixed-ascii | dfa/- | unanchored | offset-set | emitted | offset-set | declines | declines | -
+loglines/ipv4 | dfa/- | unanchored | handoff | emitted | byte-class | TWO fixed points (declines walk-off, passes walk-on) | declines | -
+loglines/ipv6 | dfa/- | unanchored | handoff | emitted | byte-class | TWO fixed points (declines walk-off, passes walk-on) | declines | -
+loglines/iso-ts | dfa/- | unanchored | offset-set | dominated | offset-set | declines | declines | -
+loglines/kv-quoted | dfa/- | unanchored | handoff | emitted | first-class-bounded | TWO fixed points (declines walk-off, passes walk-on) | declines | -
+loglines/stack-frame | dfa/- | unanchored | offset-set-bounded | emitted | offset-set-bounded | declines | declines | -
+loglines/uuid | dfa/- | unanchored | offset-set-bounded | dominated | offset-set-bounded | declines | declines | -
+bounded/csv5 | dfa/- | unanchored | memchr | dominated | memchr | passes | passes | holds
+bounded/dotted4 | dfa/- | unanchored | handoff | emitted | byte-class | TWO fixed points (declines walk-off, passes walk-on) | declines | -
+subtri/5b-mask-email~ | dfa/- | unanchored | byte-class | emitted | byte-class | passes | passes | holds
+# rows 25; outranked by a LOCATE row above the walk 10; rev 1 two-fixed-point rows 4; rev 2 two-fixed-point rows 0 (one read); lemma holds 4, FAILS 0

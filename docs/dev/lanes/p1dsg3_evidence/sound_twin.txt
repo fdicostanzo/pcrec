@@ -1,0 +1,5 @@
+R=(?:[0-9]*)aa[bc] L=aa alphabet=0abc n<=8 stream=every occurrence: subjects 87381, truth matches 15474, WRONG 0
+R=(?:[0-9]*)aa[bc] L=aa alphabet=0abc n<=8 stream=non-overlapping (sabotage): subjects 87381, truth matches 15474, WRONG 2654; first: b'aaab' pcre2 [(1, 4)] per-hit []
+R=(?:[a-z]+)@x L=@ alphabet=ab@x n<=7 stream=every occurrence: subjects 21845, truth matches 4611, WRONG 0
+R=(?:[0-9]+)aa[0-9]?a? L=aa alphabet=0ab n<=9 stream=every occurrence: subjects 29524, truth matches 6967, WRONG 0
+R=(?:[0-9]+)aa[0-9]?a? L=aa alphabet=0ab n<=9 stream=non-overlapping (sabotage): subjects 29524, truth matches 6967, WRONG 0

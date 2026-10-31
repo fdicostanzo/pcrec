@@ -11,13 +11,24 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K134 — OPEN (filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
+## K135 — OPEN (filed 2026-10-31, lane land1031, from review 2026-10-31 r1 pricing-split finding PREMISE-1; no fix lane yet) — THE NULLABLE PREFILTER DECLINE TURNS AN ANSWER INTO A GIVE-UP: `((a*)*b)?` ON 20,000 `a` GIVES UP BY DEFAULT WHILE `-fprefilter` ANSWERS (D158)
+
+The default build declines the VM's DFA prefilter on a nullable pattern (stamp `RX_ENGINE_SEL "declined-nullable-default"`, `RX_VM_PREFILTER "none"`); the decline also drops the exact window the hybrid hands the VM (select_engine.c:842-850), which is what keeps the VM inside its step budget. The decline was classed a dominance (it can never dismiss a position), but it can cross the give-up contract. D158: if the build with an optimization DENIED answers, the default build must answer too; here the denied form (`-fprefilter`, the decline's own override, stamp `"selected"` / `"hybrid"`) answers and the default gives up. libpcre2 also gives up on this pattern (MATCHLIMIT), so it is not a compatibility regression, but it breaks D158. Blast radius: nullable VM-route patterns with backtracking-heavy bodies. Re-confirmed on main a3cc4de82's build by lane land1031.
+
+**Repro**: `build/pcrec -p rx --emit-main -o n.c --pattern '((a*)*b)?'`, `gcc -O2 -o n n.c`, `./n "$(head -c 20000 /dev/zero | tr '\0' a)"` prints `steps`, exit 3 (budget give-up). The same with `build/pcrec -fprefilter ...` prints `match 0 0`, exit 0.
+**Fix direction**: keep the hybrid where the VM is not provably linear (the G2 `one-attempt` population), or price the decline as a speed trade that cannot cross the give-up contract (the decline's own note cites O-10's 1.2-9.9x).
+**Scheduled**: open, no fix lane yet; a fix needs Frank's build go.
+
+---
+
+## K134 — FIXED on lane/trailgc (2026-10-29, lane trailgc2, pending merge; filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
 
 On tests/recursion/cscan.rxt (the bench's cscan-onig), each pass of a `(?:...)*+` loop that calls `(?&sp)` leaves its trailed writes (save/set/restore, 9 per byte) on the trail: RX_CUT pops frames but never compacts the trail, so storage grows with SUBJECT LENGTH (idents-1m: trail 9.1M entries, 145.5 B/byte; resume stack peaks at 4 frames). The default stack-resident arm gives up on idents/comment/splice/nest-paren/nest-brace-128, all answered by libpcre2 10.46 at default limits (interp and JIT). CUT-INV (no trail REWIND at a cut) is correct; the growth was never priced. Correctness-adjacent: a give-up where the reference answers.
 
 **Repro**: compile tests/recursion/cscan.rxt's pattern, run the default arm on a ~1 MB identifier-only subject: PCREC_ERR_FRAMES.
 **Fix direction**: l9look candidate A, TRAIL-SEG compaction (within a segment between live frames only the oldest entry per slot is read back; compaction-on-full with hysteresis; keep the positional call-snapshot read of K36's site). Hand twin answer-identical (85 subjects x 4 caps, 0 diffs), 0 hot-path instructions.
 **Scheduled**: primed list P2 (docs/dev/optloop/primed_2026-10-29.md); build needs Frank's go.
+**Fixed**: TRAIL-SEG compaction run at checkpoints on the VM program's backward gotos and region returns, never at the trail write (option 4, docs/dev/lanes/trailgc2_report.md): it runs once the trail passes a floor (capacity less the artifact's trail-write site count, at most half), and stops for the attempt when it cannot leave a quarter free below that floor; a compaction visits at most `cap` live frames, so its work is at most 12 visits per trail write, and the page-sized fast tier never compacts (lane trailgc3, review 2026-10-29-r2 F1/F5). All five flat cscan subjects (idents, comment, splice, nest-paren 32k/100k) answer on the default arm; `^(a(?1)?b)$` reaches n = 763 (was 342). Never-full cost, both the tiered default entry and `_in` (lane trailgc3): cscan +0.7-2.1 % instructions; the recursion specimen, a recursive parentheses matcher and a short capture loop +1.6-4.3 % (D183; above the ~3 % bar, Frank's open ruling). Spec: docs/spec/limits.md §4, §5. Checks: tests/vm/run_trail_compact.sh (make test-vm, mech arm trailcompact), the K134 cells in tests/recursion/cscan.rxt, S1790-S1799.
 
 ## K132 — OPEN (filed 2026-10-29, lane ic3, [INLINE-C] stage 3) — THE RXTSOURCE C1 LEGS COMPARE BLOCK ORDER, AND TWO OF THEM ORDER A CLOSURE DIFFERENTLY; ITS HEAD-ROW COUNT ASSUMES ONE DECLARATION PER FILE
 

@@ -1,0 +1,39 @@
+S1790: checks passed: 25 checks failed: 9 
+FAIL: [K134] cscan-idents: no capacity below the plain run's high-water answered, so the compaction never made room (ref 1 hw 17481 runs 537 answered 1 below_hw 0 gaveup 536 mismatch 0 escalations 1 d
+FAIL: [K134] cscan-idents: the un-suffixed entry escalated once but returned -3 (want 1)
+FAIL: [K134] cscan-splice: the driver failed (rc 1): ref 1 hw 7281 runs 480 answered 1 below_hw 0 gaveup 476 mismatch 3 escalations 1 default_rc -3 MISMATCH at trail 31: rc 1 (reference 1), group 0 0.
+FAIL: [K134] cscan-braces: no capacity answered, not even the high-water, so nothing was compared: ref 1 hw 2517 runs 411 answered 0 below_hw 0 gaveup 411 mismatch 0 escalations 1 default_rc 1
+S1791: checks passed: 31 checks failed: 4 
+FAIL: [K134] cscan-braces: no capacity answered, not even the high-water, so nothing was compared: ref 1 hw 2517 runs 411 answered 0 below_hw 0 gaveup 411 mismatch 0 escalations 1 default_rc 1
+FAIL: [K134] cscan-braces: no capacity below the plain run's high-water answered, so the compaction never made room (ref 1 hw 2517 runs 411 answered 0 below_hw 0 gaveup 411 mismatch 0 escalations 1 de
+FAIL: [K134] specimen: the driver failed (rc 1): ref 1 hw 1794 runs 389 answered 0 below_hw 0 gaveup 53 mismatch 336 escalations 1 default_rc 1 at 816:1 at 817:1 MISMATCH at trail 54: rc 1 (reference 
+FAIL: [K134] population: 13 witnesses (want 13), 7 compacting (want 9), 0 boundary probes (want 2), 1 bounded-work runs (want 1), 11 escalating once (want 12)
+S1792: checks passed: 35 checks failed: 3 
+FAIL: [K134] cscan-braces: no capacity answered, not even the high-water, so nothing was compared: ref 1 hw 2517 runs 411 answered 0 below_hw 0 gaveup 411 mismatch 0 escalations 1 default_rc 1
+FAIL: [K134] cscan-braces: no capacity below the plain run's high-water answered, so the compaction never made room (ref 1 hw 2517 runs 411 answered 0 below_hw 0 gaveup 411 mismatch 0 escalations 1 de
+FAIL: [K134] population: 13 witnesses (want 13), 8 compacting (want 9), 2 boundary probes (want 2), 1 bounded-work runs (want 1), 12 escalating once (want 12)
+S1793: checks passed: 37 checks failed: 1 
+FAIL: [K134] specimen: trail 816 should return -3 (limits.md §4's 4n + 17 for n = 200): ref 1 hw 1794 runs 389 answered 74 below_hw 73 gaveup 315 mismatch 0 escalations 1 default_rc 1 at 816:1 at 817:
+S1794: checks passed: 18 checks failed: 21 
+FAIL: [K134] cscan-idents: FAIL: /var/tmp/pcrec-pcrec/tmp.W70giXYxZT/cscan-idents/gen.c: rx_match_anchored: a cycle writes the trail and passes no checkpoint (line 153 of the body: rx_L2: __attribute_
+FAIL: [K134] cscan-idents: no capacity below the plain run's high-water answered, so the compaction never made room (ref 1 hw 17481 runs 537 answered 1 below_hw 0 gaveup 536 mismatch 0 escalations 1 d
+FAIL: [K134] cscan-idents: the un-suffixed entry escalated once but returned -3 (want 1)
+FAIL: [K134] cscan-splice: FAIL: /var/tmp/pcrec-pcrec/tmp.W70giXYxZT/cscan-splice/gen.c: rx_match_anchored: a cycle writes the trail and passes no checkpoint (line 153 of the body: rx_L2: __attribute_
+S1795: checks passed: 34 checks failed: 4 
+FAIL: [K134] specimen: FAIL: /var/tmp/pcrec-pcrec/tmp.mzm2NWJsyo/specimen/gen.c: rx_match_anchored: a cycle writes the trail and passes no checkpoint (line 65 of the body: rx_L21: __attribute__((unuse
+FAIL: [K134] specimen: no capacity below the plain run's high-water answered, so the compaction never made room (ref 1 hw 1794 runs 389 answered 1 below_hw 0 gaveup 388 mismatch 0 escalations 1 defaul
+FAIL: [K134] specimen: trail 817 should return 1 (limits.md §4's 4n + 17 for n = 200): ref 1 hw 1794 runs 389 answered 1 below_hw 0 gaveup 388 mismatch 0 escalations 1 default_rc 1 at 816:-3 at 817:-3
+FAIL: [K134] population: 13 witnesses (want 13), 8 compacting (want 9), 2 boundary probes (want 2), 1 bounded-work runs (want 1), 12 escalating once (want 12)
+S1796: checks passed: 36 checks failed: 2 
+FAIL: [K134] backref-loop: FAIL: /var/tmp/pcrec-pcrec/tmp.Oh8W9THOSI/backref-loop/gen.c: rx_match_anchored: a cycle writes the trail and passes no checkpoint (line 42 of the body: rx_L10: __attribute_
+FAIL: [K134] empty-guard: FAIL: /var/tmp/pcrec-pcrec/tmp.Oh8W9THOSI/empty-guard/gen.c: rx_match_anchored: a cycle writes the trail and passes no checkpoint (line 40 of the body: rx_L16: __attribute__(
+S1797: checks passed: 37 checks failed: 1 
+FAIL: [K134] frames-bound: still running after 5 s: a compaction is walking every live frame (F1)
+S1798: checks passed: 37 checks failed: 4 
+FAIL: [K134] possessive-captures: the un-suffixed entry escalated 0 times (want 1): the fast tier compacted instead of escalating
+FAIL: [K134] atomic-captures: the un-suffixed entry escalated 0 times (want 1): the fast tier compacted instead of escalating
+FAIL: [K134] nested-possessive: the un-suffixed entry escalated 0 times (want 1): the fast tier compacted instead of escalating
+FAIL: [K134] population: 13 witnesses (want 13), 9 compacting (want 9), 2 boundary probes (want 2), 1 bounded-work runs (want 1), 9 escalating once (want 12)
+S1799: checks passed: 35 checks failed: 2 
+FAIL: [K134] partial-walk: the driver failed (rc 1): ref 1 hw 1203 runs 363 answered 243 below_hw 242 gaveup 22 mismatch 98 escalations 1 default_rc 1 MISMATCH at trail 23: rc 1 (reference 1), group 0
+FAIL: [K134] population: 13 witnesses (want 13), 8 compacting (want 9), 2 boundary probes (want 2), 1 bounded-work runs (want 1), 11 escalating once (want 12)

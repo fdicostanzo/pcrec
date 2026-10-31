@@ -6,6 +6,14 @@ this document carries the alternatives, their measured costs, and the reasoning
 the spec deliberately does not repeat (docs/spec/CLAUDE.md's charter: a spec may
 reference a design document informationally, never normatively).
 
+**Note (K134, lane trailgc2, 2026-10-29).** The specimen depths measured below
+(n = 342/343 on the default, 684/686-byte subjects, about 9 trail entries per
+level, 466,000/470,000 in a 64 MB region) are this record's own measurements
+from before the VM compacted its trail. Since K134 the specimen needs
+`4n + 17` trail entries, the default matches up to n = 763 (1,526 bytes) and
+the 64 MB region is frames-bound at n = 838,860; `docs/spec/limits.md` §4 and
+`docs/spec/match_api.md` §10.1/§10.6 are the current numbers.
+
 ## 0. How to read this
 
 ### 0.1 Claim marking

@@ -1,0 +1,159 @@
+1691	vm_cls_test	puts	b	<EXPR:vm_cls_read(v, VCR_SITE, ci, byte)>
+1763	vm_cls_respell	puts	b	<EXPR:out>
+3465	vm_lbl	cmt_open	v->b	<EXPR:PCREC_CMT_NONESSENTIAL>
+3466	vm_lbl	printf	v->b	// %s\n
+3467	vm_lbl	cmt_close	v->b	<EXPR:>
+3469	vm_lbl	printf	v->b	%s_L%d: __attribute__((unused));\n
+3502	vm_trail_check	printf	v->b	    %s\n
+3532	vm_goto	printf	v->b	    goto %s_L%d;\n
+3541	vm_fail	printf	v->b	    goto %s_fail;\n
+3557	vm_push_at	printf	v->b	    %s_PUSH(%d, &&%s_L%d, %s);\n
+3560	vm_push_at	printf	v->b	    %s_PUSH(&&%s_L%d, %s);\n
+3584	vm_set	printf	v->b	    %s_SET(%s_%s, %s);\n
+3586	vm_set	printf	v->b	    %s_SET(%d, %s);\n
+3652	vm_work_at	printf	v->b	%s%s_CHARGE_WORK(%s);\n
+3679	vm_cut	printf	v->b	    %s_CUT(%d);\n
+3889	vm_mrl_test	printf	v->b	    if (%s_PRUNE_TOO_SHORT(%s, %s)) 
+3891	vm_mrl_test	printf	v->b	goto %s_fail;\n
+3892	vm_mrl_test	printf	v->b	goto %s_L%d;\n
+4657	vm_isl_emit	printf	b	    if (scan_position + %d <= subject_length && 
+4661	vm_isl_emit	printf	b	) goto %s_L%d;\n
+4669	vm_isl_emit	printf	b	    if (scan_position + %d < subject_length && subject[scan_position + %d] == %d) goto %s_L%d;\n
+4674	vm_isl_emit	printf	b	    if (scan_position + %d < subject_length) switch (subject[scan_position + %d]) {\n
+4678	vm_isl_emit	printf	b	    case %d: goto %s_L%d;\n
+4682	vm_isl_emit	puts	b	    }\n
+4716	vm_isl_emit	printf	b	    scan_position += %d;\n
+4828	vm_emit_span_scan	puts	b	    {\n
+4829	vm_emit_span_scan	puts	b	        unsigned long it_ = 0;\n
+4831	vm_emit_span_scan	printf	b	        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n
+4833	vm_emit_span_scan	printf	b	        %s_span_cursor = scan_position;\n
+4840	vm_emit_span_scan	puts	b	    }\n
+4850	vm_span_reach	printf	v->b	    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld) goto %s_fail;\n
+4944	vm_cursor_rep	puts	t	 && (
+4948	vm_cursor_rep	puts	t	)
+5018	vm_cursor_rep	printf	b	    if ((ptrdiff_t)%s_span_cursor < %s + %lld) goto %s_fail;\n
+5044	vm_cursor_rep	printf	b	    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n
+5062	vm_cursor_rep	puts	b	    }\n
+5064	vm_cursor_rep	printf	b	    scan_position = %s_span_cursor;\n
+5159	vm_cursor_rep	printf	b	    %s_span_cursor = scan_position;\n
+5195	vm_cursor_rep	printf	b	    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n
+5212	vm_cursor_rep	puts	b	    }\n
+5214	vm_cursor_rep	printf	b	    scan_position = %s_span_cursor;\n
+5221	vm_cursor_rep	printf	b	    %s_span_cursor = scan_position;\n
+5223	vm_cursor_rep	printf	b	    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld + %d) goto %s_fail;\n
+5225	vm_cursor_rep	printf	b	    %s_span_cursor -= %d;\n
+5228	vm_cursor_rep	printf	b	    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %lld) goto %s_fail;\n
+5230	vm_cursor_rep	printf	b	    if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n
+5232	vm_cursor_rep	printf	b	    %s_span_cursor += %d;\n
+5532	vm_rev_emit	printf	b	    if (%s > %s && (
+5534	vm_rev_emit	printf	b	)) { %s--; goto %s_L%d; }\n
+5561	vm_rev_emit	printf	b	    if (!%s[%d]) %s[%d][1] = (ptrdiff_t)%s;\n
+5568	vm_rev_emit	printf	b	    if (!%s[%d]) { %s[%d][0] = (ptrdiff_t)%s; %s[%d] = 1; %s++; }\n
+5615	vm_rev_emit	printf	b	    if (%s <= %s) goto %s_L%d;\n
+5621	vm_rev_emit	puts	b	    if (
+5623	vm_rev_emit	printf	b	) goto %s_L%d;\n
+5790	vm_revdet_rep	printf	b	    %s_iteration = 0;\n
+5803	vm_revdet_rep	printf	b	    if (%s_iteration >= %dUL) goto %s_L%d;\n
+5816	vm_revdet_rep	printf	b	    %s_frame_mark = run->resume_depth;\n
+5849	vm_revdet_rep	printf	b	    run->resume_depth = %s_frame_mark;\n
+5852	vm_revdet_rep	printf	b	    %s_iteration++;\n
+5854	vm_revdet_rep	printf	b	    if (%s_iteration == %dUL) {\n
+5857	vm_revdet_rep	puts	b	    }\n
+5866	vm_revdet_rep	printf	b	    if (%s_iteration < %dUL) goto %s_fail;\n
+5873	vm_revdet_rep	printf	b	    scan_position = (size_t)slot_values[%d];\n
+5895	vm_revdet_rep	printf	b	    %s_cursor = scan_position;\n
+5896	vm_revdet_rep	printf	b	    %s_prev_position = -1;\n
+5898	vm_revdet_rep	printf	b	    %s_groups_seen = 0;\n
+5899	vm_revdet_rep	printf	b	    { int i_; for (i_ = 0; i_ < %d; i_++) %s_revdet_group_seen[i_] = 0; }\n
+5905	vm_revdet_rep	printf	b	    if (%s <= %s) goto %s_L%d;\n
+5911	vm_revdet_rep	printf	b	    if (%s_prev_position < 0) %s_prev_position = (ptrdiff_t)%s;\n
+5914	vm_revdet_rep	printf	b	    if (%s_groups_seen >= %d) goto %s_L%d;\n
+5934	vm_revdet_rep	printf	b	    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n
+5939	vm_revdet_rep	puts	b	    }\n
+5941	vm_revdet_rep	printf	b	    if ((ptrdiff_t)scan_position < slot_values[%d]) {\n
+5944	vm_revdet_rep	puts	b	    }\n
+5953	vm_revdet_rep	printf	b	    if (%s_revdet_group_seen[%d]) {\n
+5960	vm_revdet_rep	puts	b	    }\n
+5978	vm_revdet_rep	printf	b	    %s_frame_mark = run->resume_depth;\n
+5990	vm_revdet_rep	printf	b	    run->resume_depth = %s_frame_mark;\n
+6099	vm_counter_phase	printf	b	    if (slot_values[%d] + %d > %d) goto %s_L%d;\n
+6305	vm_counter_poss_opt	printf	b	    if (slot_values[%d] >= %d) goto %s_L%d;\n
+6540	vm_star	printf	v->b	    if ((ptrdiff_t)scan_position == slot_values[%d]) goto %s_L%d;\n
+6600	vm_star	printf	v->b	    if ((ptrdiff_t)scan_position != slot_values[%d]) %s\n
+7126	vm_look_behind_branch	printf	b	    if (scan_position < %d) goto %s_fail;\n
+7143	vm_look_behind_branch	printf	b	    if (scan_position < %d) goto %s_L%d;\n
+7174	vm_look_behind_branch	printf	b	    scan_position = %s_back_step(subject, subject_length, scan_position, %d);\n
+7179	vm_look_behind_branch	printf	b	    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n
+7208	vm_look_behind_branch	printf	b	    if (scan_position != (size_t)slot_values[%s]) return %s_R_INTERNAL;\n
+7216	vm_look_behind_branch	printf	b	    if (scan_position != (size_t)slot_values[%s]) goto %s_fail;\n
+7488	vm_look	printf	b	    scan_position = (size_t)slot_values[%s];\n
+8217	vm_call	printf	v->b	    %s_CALL(&&%s_L%d, scan_position);\n
+8503	vm_region	printf	v->b	    {\n        const size_t %s_call_frame = run->call_top;\n        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n        run->call_top = run->resume_stack[%s_call_frame].call_top;\n        goto *run->resume_stack[%s_call_frame].call_ret;\n    }\n
+8544	vm_ctx_side	puts	b	<EXPR:side == VMCTX_PREV ? "(scan_position > 0 && (" : "(scan_posi>
+8548	vm_ctx_side	puts	b	))
+8604	vm_ctx_row	puts	b	    if ((
+8606	vm_ctx_row	printf	b	 %s 
+8608	vm_ctx_row	printf	b	)) goto %s_L%d;\n
+8616	vm_ctx_row	puts	b	    if (scan_position == 0 || (scan_position < subject_length && (
+8618	vm_ctx_row	printf	b	))) goto %s_L%d;\n
+8622	vm_ctx_row	puts	b	    if (scan_position == subject_length || (
+8624	vm_ctx_row	printf	b	)) goto %s_L%d;\n
+8628	vm_ctx_row	printf	b	    if (scan_position == 0) goto %s_L%d;\n
+8632	vm_ctx_row	printf	b	    if (scan_position == subject_length) goto %s_L%d;\n
+8634	vm_ctx_row	puts	b	<EXPR:f->neg ? " if (!" : " if (">
+8636	vm_ctx_row	printf	b	) goto %s_L%d;\n
+8829	vm_bref	puts	bb	    {\n        ptrdiff_t ref_start = PCREC_UNSET, ref_end = PCREC_UNSET, took;\n
+8834	vm_bref	printf	bb	        %sif (slot_values[%s] != PCREC_UNSET) {\n            ref_start = slot_values[%s];\n            ref_end   = slot_values[%s];\n        }%s
+8842	vm_bref	cmt_open	bb	<EXPR:PCREC_CMT_NONESSENTIAL>
+8843	vm_bref	puts	bb	        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n         * it does not match the empty string. */\n
+8846	vm_bref	cmt_close	bb	<EXPR:>
+8847	vm_bref	printf	bb	        if (ref_start == PCREC_UNSET) goto %s_fail;\n        took = %s(subject, subject_length,\n                  subject + (size_t)ref_start,\n                  (size_t)(ref_end - ref_start),\n                  scan_position);\n
+8871	vm_bref	printf	bb	        if (took < 0) goto %s_fail;\n        scan_position += (size_t)took;\n        goto %s_L%d;\n    }\n
+8917	vm_var	printf	bb	    {\n        ptrdiff_t took;\n        took = %s(subject, subject_length,\n                  run->var_value[%d], run->var_length[%d],\n                  scan_position);\n
+8932	vm_var	printf	bb	        if (took < 0) goto %s_fail;\n        scan_position += (size_t)took;\n        goto %s_L%d;\n    }\n
+8980	vm_lit	printf	v->b	    if (scan_position + %d <= subject_length && 
+8983	vm_lit	printf	v->b	) { scan_position += %d; goto %s_L%d; }\n
+9087	vm_callout	printf	b	    if (--run->steps_left < 0) return %s_R_STEPS;\n
+9089	vm_callout	printf	b	    {\n        rx_ctx %s_co_ctx;\n        const ptrdiff_t %s_co_start = slot_values[0];\n        ptrdiff_t r;\n        %s_co_ctx.subject = subject;\n        %s_co_ctx.len = subject_length;\n        %s_co_ctx.pos = scan_position;\n
+9100	vm_callout	printf	b	        %s_co_ctx.ncap = %d;\n        %s_co_ctx.caps = (const ptrdiff_t (*)[2])slot_values;\n
+9109	vm_callout	printf	b	        ptrdiff_t %s_co_view[%d][2];\n        %s_co_view[0][0] = (ptrdiff_t)ctx->pos;\n        %s_co_view[0][1] = slot_values[1];\n
+9115	vm_callout	printf	b	        %s_co_view[%d][0] = slot_values[%d];\n        %s_co_view[%d][1] = slot_values[%d];\n
+9120	vm_callout	printf	b	        %s_co_ctx.ncap = %d;\n        %s_co_ctx.caps = (const ptrdiff_t (*)[2])%s_co_view;\n
+9125	vm_callout	printf	b	        %s_co_ctx.user = %s;\n
+9127	vm_callout	printf	b	        %s_co_ctx.vars = ctx->vars;\n        %s_co_ctx.nvars = ctx->nvars;\n
+9131	vm_callout	printf	b	        %s_co_ctx.vars = NULL;\n        %s_co_ctx.nvars = 0;\n
+9134	vm_callout	printf	b	        slot_values[0] = (ptrdiff_t)ctx->pos;\n        r = %s(&%s_co_ctx);\n        slot_values[0] = %s_co_start;\n
+9154	vm_callout	puts	b	    }\n
+9188	vm_emit_node	printf	b	    {\n        unsigned cp_ = 0;\n        size_t len_;\n        if (scan_position < subject_length\n            && (len_ = %s_decode(subject, subject_length, scan_position, &cp_)) != 0\n            && %s_wcls%d(cp_)) { scan_position += len_; goto %s_L%d; }\n    }\n
+9210	vm_emit_node	puts	b	    if (scan_position < subject_length && (
+9212	vm_emit_node	printf	b	)) { scan_position++; goto %s_L%d; }\n
+9225	vm_emit_node	printf	b	    if (scan_position == subject_length || (scan_position + 1 == subject_length && subject[scan_position] == '\\n')) goto %s_L%d;\n
+9260	vm_emit_node	printf	b	    if (scan_position == %s_search_from) goto %s_L%d;\n
+10798	vm_plan	printf	v->b	    goto %s_accept;\n
+12744	vm_emit_guarded_matcher	scaffold_open	frame	<EXPR:>
+12745	vm_emit_guarded_matcher	puts	frame	<EXPR:copy>
+12746	vm_emit_guarded_matcher	scaffold_close	frame	<EXPR:>
+13184	vm_emit_search_body	printf	frame	static %sptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n{\n    const unsigned char *const subject = ctx->subject;\n    const size_t subject_length = ctx->len;\n    size_t scan_position = ctx->pos;\n    ptrdiff_t *const slot_values = run->slot_values;\n
+13201	vm_emit_search_body	printf	frame	    size_t %s_trail_gc_at = %s_trail_gc_start(run);\n
+13203	vm_emit_search_body	printf	frame	    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n                             a plain local, UNTRAILED, whose save\n                             point is a resume frame */\n
+13219	vm_emit_search_body	printf	frame	    size_t %s_rv%d_cursor = 0; unsigned long %s_rv%d_iteration = 0;\n    size_t %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n    int %s_rv%d_groups_seen = 0;\n
+13240	vm_emit_search_body	printf	frame	    ptrdiff_t %s_revdet_group_span[%d][2] = {{0}};\n
+13241	vm_emit_search_body	printf	frame	    unsigned char %s_revdet_group_seen[%d] = {0};\n
+13243	vm_emit_search_body	puts	frame	    (void)subject; (void)subject_length; (void)slot_values;\n
+13263	vm_emit_search_body	printf	frame	    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position; (void)%s_rv%d_groups_seen; (void)%s_rv%d_iteration;\n
+13267	vm_emit_search_body	printf	frame	    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\", scan_position, subject_length);\n
+13269	vm_emit_search_body	printf	frame	    goto %s_L0;\n\n
+13270	vm_emit_search_body	splice	frame	<EXPR:v->b>
+13325	vm_emit_search_body	printf	frame	\n%s_accept: __attribute__((unused));\n
+13326	vm_emit_search_body	cmt_open	frame	<EXPR:PCREC_CMT_NONESSENTIAL>
+13327	vm_emit_search_body	puts	frame	    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n     * candidates. The VM returns here immediately and the capture\n     * slots at this instant are the answer -- no candidate comparison,\n     * no longest-wins, no second pass. The caller's capture_spans array is\n     * filled by the ENTRY, not here (3.4). */\n
+13333	vm_emit_search_body	cmt_close	frame	<EXPR:>
+13335	vm_emit_search_body	printf	frame	%s    return (ptrdiff_t)(scan_position - ctx->pos);\n\n%s_fail: __attribute__((unused));\n
+13340	vm_emit_search_body	cmt_open	frame	<EXPR:PCREC_CMT_NONESSENTIAL>
+13341	vm_emit_search_body	puts	frame	<EXPR:v->has_push ? " /* THE ONLY BACKTRACKER AND THE ONLY INDIREC>
+13361	vm_emit_search_body	cmt_close	frame	<EXPR:>
+13362	vm_emit_search_body	printf	frame	%s%s%s
+13380	vm_emit_search_body	printf	frame	    if (--run->steps_left < 0) return %s_R_STEPS;\n
+13388	vm_emit_search_body	puts	frame	}\n\n
+13397	vm_emit_search_body	printf	frame	    {\n        const size_t frame_index = --run->resume_depth;\n        scan_position = run->resume_stack[frame_index].resume_position;\n%s%s
+13436	vm_emit_search_body	puts	frame	        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n            run->trail_depth--;\n            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n        }\n        goto *run->resume_stack[frame_index].resume_label;\n    }\n}\n\n

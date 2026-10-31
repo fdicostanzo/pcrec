@@ -58,6 +58,7 @@ tests/codegen/run_scan_edge_dispatch.sh	DEFER-PLAIN	compiles with plain $CC, no 
 tests/codegen/run_search_pinned.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
 tests/codegen/run_size_term.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/codegen/run_start_landing.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
+tests/codegen/run_stmt_writer.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
 tests/codegen/run_tiered_entry.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/codegen/run_tune_dial.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/codegen/run_vm_frameless.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
