@@ -11,4 +11,6 @@ Items 1-8 landed and pushed (main a3cc4de82 -> 5c60e118c). Item 9 NOT applied: v
 8. `make strict` green; `git push origin main` ok (pre-push-light passed).
 9. Prune: `scripts/wtprune` dry run lists `KEEP vmrec  uncommitted changes` (REMOVE only p910, pcre2wall, simdset, wtclean2: not mine). vmrec is merged into main but its worktree holds: M docs/dev/artifact_size_log.tsv, ?? docs/dev/lanes/{vmrecf,vmrecg,vmrecm}_deliver.txt, ?? vmrec.done. Not forced (the brief names `--apply vmrec`, which refuses dirty). `scripts/branchprune` dry run: `KEEP lane/vmrec  checked out in a worktree`; branch prune waits on the worktree. To finish: `scripts/wtprune --apply --force vmrec` (manager's say), then `scripts/branchprune --apply`.
 
-STATE AT HANDOFF: main 5c60e118c pushed, tree clean except the not-mine artifact_size_log.tsv and the two *_deliver.txt files. Rulings file: no entries. OWED: item 9 (manager's force say). Scratch: /var/tmp/pcrec-pcrec/scratch/land1031/ (probe binaries).
+## STATE AT HANDOFF
+
+ main 5c60e118c pushed, tree clean except the not-mine artifact_size_log.tsv and the two *_deliver.txt files. Rulings file: no entries. OWED: item 9 (manager's force say). Scratch: /var/tmp/pcrec-pcrec/scratch/land1031/ (probe binaries).
