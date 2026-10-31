@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SUPERSEDED 2026-10-31 by docs/dev/lanes/r30b2_jobs/ (lane r30bfix: one stage per job, BASE main 5c60e118c); kept as job 697's record.
 # kit-r30b-heavy: lane r30b ([MEMFN] R-30: the run window's ask dropped where the whole run
 # implies it; abi 92 -> 94), the CORRECTNESS job before main lands R-30. STAGED by lane r30b
 # (2026-10-29), not queued; the manager queues it (boxqueue add --name NNN-kit-r30b-heavy).
@@ -17,7 +18,7 @@
 # Correctness run: no quiet gate, no hold.
 set -u
 TREE=/home/pcrec/projects/pcrec/worktrees/r30b
-BASE=1f5574fac
+BASE=5c60e118c   # r30bfix 2026-10-31: the merged main tip (was 1f5574fac). SUPERSEDED: re-run as r30b2_jobs/ (one stage per job)
 OUT=$TREE/build/r30b/heavy
 E=$TREE/docs/dev/lanes/r30b_evidence
 NSTEPS=13
