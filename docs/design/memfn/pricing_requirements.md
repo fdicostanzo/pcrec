@@ -135,14 +135,14 @@ backend.
 - **R3.3** Where (b) holds, the design states how the choice is made there
   (joint enumeration of the coupled rows, or a declared order) and the
   validation population MUST contain sites from that scope.
+- **R3.4** Downstream readers of the chosen stop (C10: dominance, reseed,
+  landmark K, `@idx`) read the reply; none recomputes "which byte is
+  scanned".
 - **R3.5** `[rev1]` THE SIZE CAP IS LATE VALIDITY. The caller's size cap is a
   constraint: a path whose artifact does not fit is INVALID, decided before
   the argmin. No rung removes a priced choice after the pick. Today's
   `fit_rungs[]` (`src/core/compile.c:1268-1400`, ordered "by measured
   run-time cost") violates R3.2 and is resolved by the design.
-- **R3.4** Downstream readers of the chosen stop (C10: dominance, reseed,
-  landmark K, `@idx`) read the reply; none recomputes "which byte is
-  scanned".
 
 ## 4. Numbers
 
