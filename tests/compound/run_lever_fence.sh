@@ -45,8 +45,10 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # whose `cover` witnesses are compiled by the trace build's pcrec-harness
 # through the lever and again without it, so a default build is shown to
 # decline the row; and the memfn presence check's R-30 section, whose witnesses
-# compile under the kit's test-only lever `pres-window` (lane r30b).
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
+# compile under the kit's test-only lever `pres-window` (lane r30b), and the
+# R-30 sabotage row S1548 (the lever ignored), whose reach probe must name the
+# lever to exercise it (lane r30bfix).
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"
