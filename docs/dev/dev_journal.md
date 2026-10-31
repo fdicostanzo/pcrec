@@ -27423,3 +27423,39 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - Kit: 697 to Saturday 09:00; simdset + r30 notes ready to merge (with our emit_sweep.py arm-pin fix).
 - Frank: [SPAN-HELPERS] (survey; RX_STR; letter fold) and an [IFACE-PUSH] candidate (subject-size knowledge: typical + maximum).
 - Token budget ends ~16:30, renews 07:00: heartbeat deleted; queue + full suite (00:00, freezes main at start) run unattended.
+
+## 2026-10-31 (Sat) — session 128 continued: VM refactor landed, pricing placement turned into a measurement question
+
+Accomplished
+- VMREC step (a) LANDED: merge 3bc599c92 + follow-up cfb6c4a85 (D182 "the record is the source", guide §2.7, [VMREC] plan row, emit_sweep.py declared identity arms with 2 exempt rows), pushed a3cc4de82.
+  - Validation: 744 ident 68 arms x 548 movers=0; 745 make test green; mech 9/10 + 7/7.
+  - Lanes vmrecf (the 3 make-test reds: TT-9, C15 prefixes, the memfn manifest companion) and vmrecg (5 non-compiling plants).
+  - Manager re-aimed S511 and S684 (the vmrec re-aim had closed S684's walk-open literal). Worktree and branch pruned.
+- 758-fsfix-axes red = six STALE form-census floors. Kit S3 (0f425c2d0) moved 884 patterns onto `cover` on purpose; S3 left the floors OWED, and job 624's && chain skipped the census. Lane axtri re-pinned them (~85%, K35 convention) plus a new cover floor (lane/axtri e1d8894c7); 763-axtri-census queued.
+- qsplit: all six axes shards run (5 green; s4 red only on fsfix's pre-fix give-up keys). A partial combine (my error, below) showed no coverage complaint.
+- P1: 760/761 green (S1824, S811 detected; S1822 unreached as declared); 762 ident running. Timing re-runs 705r/712r valid.
+- land1031: five critic reviews 2026-10-31 r1-r5; 4 accepted process changes (critic skill + guide); K135 (`((a*)*b)?` default gives up, -fprefilter answers; D158); rows [QUEUE-CAPKILL] [LANECHECK-MARKER] [PRICE-BAKEOFF]; kit wake merge 5c60e118c; pushed.
+- Plan rows from Frank: [CALLOUT-GROUPS] (reserved groups + helper macros). Answered \G (anchored when it leads every alternative via the start-anchor fact; otherwise checked).
+
+Pricing placement (Frank's direction: price strategy as well as tactic)
+- My quick split proposal -> study (splitstudy rev 0: footprint split) -> review r1 -> rev 1 (back to the ruled shape a') -> partial re-check. Three looks reversed.
+- Frank: "every look reversed": DECIDE BY EVIDENCE. Bake-off design rev 0-2 (lane/bakeoff, docs/design/pricing_bakeoff.md + verdict TSV + drill + checker), three critic rounds.
+- Frank's rulings:
+  - trace backend-only;
+  - the IDEAL contract is the yardstick (strict handoff: pcrec facts -> arch model builder, with the kit part of arch for now); deviations must prove more;
+  - benefit = speed x REACH;
+  - worst case breaks mean ties;
+  - population = decision-relevant subset (which) vs all patterns (worth building);
+  - subject length is a measured sweep in bytes (the 10-29 subject-size ruling), never named classes.
+- Then Frank: "before we go crazy": first enumerate the choices and test 1/2/3-rule lists against measured ground truth, stopping if one reaches ~95% of ideal on held-out sites. AGREED. Rev 3 stopped before any commit. Pilot lane NOT yet launched (worktree rulepilot created).
+
+Issues / lessons
+- MY ERROR: ran qshard combine by hand outside the box lock; it ran the form census (load 11) and contaminated 705/712 timing; re-queued. Suite tools only via the queue or boxlock.
+- boxqueue's cap kill left a capped make test tree holding the lock for 64 min ([QUEUE-CAPKILL]).
+- lanecheck's .done marker blocked the next lane in a shared worktree ([LANECHECK-MARKER]).
+- Kit job 697 (13 stages, 4 h cap) jumped our 5-min codegen check; the kit now runs one stage per job. qorder is still owed.
+
+Next
+- 762 ident read ((B) differing=0), then 763 census, then merge lane/axtri.
+- The rulepilot lane brief (inventory from bakeoff2_evidence census_dry_sites.tsv, rule pieces, held-out search; timing in a night window from Mon 01:00).
+- Bench W1 tonight 20:00; 640 Sun 03:00; W2 Sunday; Frank holds the box Sun 18:00 - Mon 01:00; kit r30b chain Mon 01:00.
