@@ -242,6 +242,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md
   (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
+- [PRICE-BAKEOFF] STATE:started — a measured bake-off decides where search-strategy pricing lives (Frank 2026-10-31)
+  filed: 2026-10-31 manager (Frank's ruling)
+  status (2026-10-31): design rev 3 in progress on lane/bakeoff (docs/design/pricing_bakeoff.md); three critic rounds done (r3-r5); no build go
+  next: finish design rev 3, then Frank's build go for the harness; the placement (front end, backend, kit) follows the measurement, not a paper look
+  refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
+  Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
+
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
   filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
@@ -642,6 +649,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [QUEUE-CAPKILL] STATE:not-started — boxqueue's cap kill must take the whole job tree and release the box lock
+  filed: 2026-10-31 manager
+  status (2026-10-31): job 745-vmrecm-test hit its cap but its make test tree kept running 64 min and held the box lock; lane vmrecf killed pid 132455 by hand
+  next: fold into the qorder lane: the cap kills the job's whole process tree (scripts/safekill shape) and releases the lock, with a planted self-test
+  refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
+- [LANECHECK-MARKER] STATE:not-started — lanecheck's .done marker must not sit in the worktree root
+  filed: 2026-10-31 manager
+  status (2026-10-31): bakeoff2.done in a reused worktree failed the next lane's (bakeoff3) clean check
+  next: put the marker outside the worktree, or have lanecheck ignore its own markers; the marker stays hidden from lanes (they only learn "run lanecheck")
+  refs: scripts/lanecheck; memory pcrec-lanecheck-hidden-marker
 - [KIND-FACT-GK] STATE:not-started — the kinds mask as ONE declared pass; \G, \K, any call, crosses-attempts join it
   filed: 2026-10-30 Frank (manager wrote the row); widened same day on his word
   status (2026-10-30): filed; pcrec_pattern_kinds runs 8 walks for 8 bits, and 5 more whole-pattern questions walk the tree themselves
