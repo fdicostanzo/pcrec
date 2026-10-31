@@ -636,13 +636,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
-- [KIND-FACT-GK] STATE:not-started — \G and \K as PF_KINDS bits; three whole-pattern walkers read the fact
-  filed: 2026-10-30 Frank (manager wrote the row)
-  status (2026-10-30): filed; three sites walk the tree for the same question the E1 kinds mask could answer
+- [KIND-FACT-GK] STATE:not-started — the kinds mask as ONE declared pass; \G, \K, any call, crosses-attempts join it
+  filed: 2026-10-30 Frank (manager wrote the row); widened same day on his word
+  status (2026-10-30): filed; pcrec_pattern_kinds runs 8 walks for 8 bits, and 5 more whole-pattern questions walk the tree themselves
   trigger: after [LANDWALK] (P1) lands, so the P1 branch does not widen
-  refs: src/facts/facts.h PF_KIND_ROWS; src/gen/lmwalk.c lm_has_kind (p1kind); src/facts/widths.c rw_find_k; src/facts/endwin.c ew_see_gstart; docs/dev/lanes/p1kind_report.md; [PATFACTS]
-  Frank 2026-10-30: "lm_has_kind & pcrec_ast_visit sound like patfacts". Add GSTART and KRESET rows to PF_KIND_ROWS (computed once by pcrec_pattern_kinds); lm_has_kind, rw_find_k and ew_see_gstart then read pcrec_fact_kinds and their visitor callbacks go (a simplification: three walkers deleted). Same semantics: all three use pcrec_ast_visit, which never follows a call body.
-  Check first: is PF_KINDS caller-visible (--emit-facts, the analysis bundle)? If so the two bits are a spec hunk (D80). Does widths.c/endwin.c run before E1 is sealed (a reader that feeds the fact cannot read it)? Out of scope: parse/mod_lookaround.c la_has_kreset (a lookaround-body scope, parse time, before facts).
+  refs: src/facts/facts.h PF_KIND_ROWS; src/facts/kinds.c; src/opt/atomic.c (six pcrec_has_* walkers); src/gen/lmwalk.c lm_has_kind; src/facts/widths.c rw_find_k; src/facts/endwin.c ew_see_gstart, em_see_call; src/opt/derive.c xa_visit; docs/dev/lanes/p1kind_report.md; [PATFACTS]
+  Frank 2026-10-30: "lm_has_kind & pcrec_ast_visit sound like patfacts"; widen, "and set up to be easy to add future predicates". ONE pcrec_ast_visit pass over a DECLARED row table (PF_KIND_ROWS grows a per-node test column: a kind, or a predicate on the node such as LINKED_CALL's link != CALL_SPLICE and CROSSES_ATTEMPTS' RF_CROSSES_ATTEMPTS). Adding a fact = adding ONE row (bit, name, test); no walker, no switch, no reader plumbing (the name table and enum already generate from the rows).
+  New rows: GSTART, KRESET (lm_has_kind, rw_find_k, ew_see_gstart read the mask), CALL (em_see_call), CROSSES_ATTEMPTS (pcrec_ast_crosses_attempts). Whole-pattern callers of the six atomic.c walkers read the mask (e.g. atomic.c:544); SUBTREE callers (e.g. callout.c:309 live_capture on a look body) keep a per-subtree predicate. LIVE_CAPTURE/COLLAPSIBLE_REP stay walkers if a per-node test cannot express them (say which). The delete list is the benefit (simplification).
+  Check first: PF_KINDS caller-visible (--emit-facts, analysis bundle)? Then new bits are a spec hunk (D80). The mask must be computed after the callgraph links calls (LINKED_CALL), and widths.c/endwin.c must not feed E1 while reading it. Out of scope: collectors (co_scan, co_find_cap, cg_*), parse-time la_has_kreset.
 - [LINT] STATE:not-started — no default: on a switch over a kind enum, enforced by the compiler (-Wswitch-enum)
   filed: 2026-10-30 Frank (manager wrote the row)
   status (2026-10-30): unscheduled; P1's lmwalk.c:152 default: caught only by wclass_census [5c] inside test-cpset-structure (AKind only)
