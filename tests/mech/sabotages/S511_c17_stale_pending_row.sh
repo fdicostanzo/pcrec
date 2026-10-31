@@ -33,5 +33,5 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_span_advance,vm_emit_span_scan[[:space:]].*[[:space:]]delegated[[:space:]]|1'
 SAB_DESC='the VMSTRIDE manifest row is flipped back to pending while its emitters (vm_span_advance, vm_emit_span_scan) spell no search form, the kit rendering the loop: a stale pending row'
-SAB_BEFORE='	M6	delegated	vm_cursor_rep,vm_cls_test	'
-SAB_AFTER='	M6	pending	vm_cursor_rep,vm_cls_test	'
+SAB_BEFORE='	M6	delegated	vm_cursor_rep,vm_cls_test,vm_piece_render	'
+SAB_AFTER='	M6	pending	vm_cursor_rep,vm_cls_test,vm_piece_render	'
