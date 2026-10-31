@@ -11,6 +11,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K135 — OPEN (filed 2026-10-31, lane land1031, from review 2026-10-31 r1 pricing-split finding PREMISE-1; no fix lane yet) — THE NULLABLE PREFILTER DECLINE TURNS AN ANSWER INTO A GIVE-UP: `((a*)*b)?` ON 20,000 `a` GIVES UP BY DEFAULT WHILE `-fprefilter` ANSWERS (D158)
+
+The default build declines the VM's DFA prefilter on a nullable pattern (stamp `RX_ENGINE_SEL "declined-nullable-default"`, `RX_VM_PREFILTER "none"`); the decline also drops the exact window the hybrid hands the VM (select_engine.c:842-850), which is what keeps the VM inside its step budget. The decline was classed a dominance (it can never dismiss a position), but it can cross the give-up contract. D158: if the build with an optimization DENIED answers, the default build must answer too; here the denied form (`-fprefilter`, the decline's own override, stamp `"selected"` / `"hybrid"`) answers and the default gives up. libpcre2 also gives up on this pattern (MATCHLIMIT), so it is not a compatibility regression, but it breaks D158. Blast radius: nullable VM-route patterns with backtracking-heavy bodies. Re-confirmed on main a3cc4de82's build by lane land1031.
+
+**Repro**: `build/pcrec -p rx --emit-main -o n.c --pattern '((a*)*b)?'`, `gcc -O2 -o n n.c`, `./n "$(head -c 20000 /dev/zero | tr '\0' a)"` prints `steps`, exit 3 (budget give-up). The same with `build/pcrec -fprefilter ...` prints `match 0 0`, exit 0.
+**Fix direction**: keep the hybrid where the VM is not provably linear (the G2 `one-attempt` population), or price the decline as a speed trade that cannot cross the give-up contract (the decline's own note cites O-10's 1.2-9.9x).
+**Scheduled**: open, no fix lane yet; a fix needs Frank's build go.
+
+---
+
 ## K134 — FIXED on lane/trailgc (2026-10-29, lane trailgc2, pending merge; filed 2026-10-29, manager, from lane l9look's report docs/dev/lanes/l9look_report.md; bench O-112) — the VM TRAIL is never compacted at RX_CUT, so a possessive loop over a subroutine call gives up (`PCREC_ERR_FRAMES`) on FLAT input where libpcre2 answers
 
 On tests/recursion/cscan.rxt (the bench's cscan-onig), each pass of a `(?:...)*+` loop that calls `(?&sp)` leaves its trailed writes (save/set/restore, 9 per byte) on the trail: RX_CUT pops frames but never compacts the trail, so storage grows with SUBJECT LENGTH (idents-1m: trail 9.1M entries, 145.5 B/byte; resume stack peaks at 4 frames). The default stack-resident arm gives up on idents/comment/splice/nest-paren/nest-brace-128, all answered by libpcre2 10.46 at default limits (interp and JIT). CUT-INV (no trail REWIND at a cut) is correct; the growth was never priced. Correctness-adjacent: a give-up where the reference answers.
