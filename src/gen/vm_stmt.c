@@ -928,12 +928,6 @@ void pcrec_vm_b_return(VmBody *sb)
     vm_build(sb, &s);
 }
 
-static void vm_b_step(VmBody *sb)
-{
-    VmStmt s = vm_rec(VK_STEP);
-    vm_build(sb, &s);
-}
-
 void pcrec_vm_b_work(VmBody *sb, const char *count)
 {
     VmStmt s = vm_rec(VK_WORK);
