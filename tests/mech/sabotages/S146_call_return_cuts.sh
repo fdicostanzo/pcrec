@@ -29,8 +29,10 @@
 # `%s`, so the plant also adds the matching argument: a plant that only added
 # the line left pcrec_sb_printf reading a missing vararg and emitted garbage
 # (`stray \213` in the generated .c, the matrix's S146 ANOMALY, 2026-10-30).
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the region return is VK_RETURN's renderer (vm_r_return), text unchanged. Same detector, same arm.
 SAB_ID="S146-call-return-cuts"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The emitted return CUTS the resume stack back to the call frame, making every subroutine call ATOMIC -- 10.30's semantics, which 10.46 abandoned"
@@ -39,9 +41,9 @@ SAB_COUNT=1
 SAB_BEFORE='        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->p, v->p);'
+        sb->p, sb->p, sb->up, sb->p, sb->p);'
 SAB_AFTER='        "        run->resume_depth = %s_call_frame;   /* SABOTAGE S146 */\n"
         "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->p, v->p, v->p);'
+        sb->p, sb->p, sb->up, sb->p, sb->p, sb->p);'

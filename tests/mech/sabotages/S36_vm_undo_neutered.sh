@@ -11,11 +11,16 @@
 # `scan_position` but leaves every capture write standing. Nothing about the emitted
 # code's SHAPE changes — the trail is still built, the frames still carry their
 # marks — so no structural check can see it; only spans can.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the fail label moved into the frame (pcrec_vm_stmt_frame), text unchanged. Same detector, same arm.
 SAB_ID="S36-vm-undo-neutered"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="vm"
 SAB_DESC="the emitted fail label no longer rewinds the capture trail (undo becomes a no-op; scan_position is still restored)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails (wrong spans across the backtracking families)"
 SAB_COUNT=1
-SAB_BEFORE="        \"        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\\n\""
-SAB_AFTER="        \"        while (0 \&\& w->trn > w->bt[b_].mark) {  /* SABOTAGE S36 */\\n\""
+# FIXED 2026-10-31 (lane vmrecg): the first re-aim kept the pre-record spelling (`w->trn`,
+# `w->bt[b_].mark`) in the AFTER, names that no longer exist in the emitted C, so the plant did
+# not compile ('w' undeclared). The AFTER now guards the CURRENT line with `0 &&`.
+SAB_BEFORE='            "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"'
+SAB_AFTER='            "        while (0 && run->trail_depth > run->resume_stack[frame_index].trail_mark) {  /* SABOTAGE S36 */\n"'

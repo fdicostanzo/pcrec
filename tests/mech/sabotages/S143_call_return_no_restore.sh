@@ -27,6 +27,8 @@
 # emits no restore to delete, and the row would go GREEN on a broken
 # compiler. `tests/recursion/captures.rxt` is the population and every one of
 # its cells has one.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the region exit's restores are now RESTORE records (vm_restore); the same loop not emitted. Same detector, same arm.
 SAB_ID="S143-call-return-no-restore"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
@@ -42,10 +44,8 @@ SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR1): every cell whose callee WRITES a c
 # re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
 SAB_BEFORE='    for (int j = 0; j < v->rgn_nw[i]; j++) {
-        vm_set(v, v->rgn_w[i][j],
-               vm_rolef(v, "run->trail[run->resume_stack[run->call_top]"
-                           ".trail_mark + %d].saved_value", j),
-               "restore the caller'"'"'s value, itself TRAILED so a retreat into "
-               "this callee re-establishes the callee'"'"'s own");
+        vm_restore(v, v->rgn_w[i][j], j,
+                   "restore the caller'\''s value, itself TRAILED so a retreat into "
+                   "this callee re-establishes the callee'\''s own");
     }'
 SAB_AFTER='    /* SABOTAGE S143: the return restores nothing. */'

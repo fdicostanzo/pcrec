@@ -23,6 +23,8 @@
 # this row, the assertion CONSUMES its body's bytes, and every expansion in
 # §6.1's table is zero-width by construction — so the whole 8,260-cell
 # population moves, on both the `(?=`/`(?!` and the `(?<=`/`(?<!` halves.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the cursor restore is now a SEEK(RESTORE) record; the same record not built. Same detector, same arm.
 SAB_ID="S123-look-no-cursor-restore"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness lookaround laexpand"
@@ -30,6 +32,6 @@ SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look's positive arm stops restoring scan_position from SLOT_LOOK_POS, so the assertion CONSUMES its body's bytes — a zero-width construct that is not zero-width"
 SAB_DOC_FIGURE="PREDICTED: most of tests/lookaround/ goes red; (?=ab)abc no longer matches \"abc\". Canonical figure owed from run_sabotage_matrix.sh S123."
 SAB_COUNT=1
-SAB_BEFORE='            pcrec_sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);'
+SAB_BEFORE='            pcrec_vm_b_seek(v->sb, VSK_RESTORE, sl, 0);'
 SAB_AFTER='            /* SABOTAGE S123: the cursor is NOT restored */
-            (void)b; (void)sl;'
+            (void)sl;'

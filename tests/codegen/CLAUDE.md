@@ -17,6 +17,7 @@ or it has no regression net at all.
 - **run_case_spelling_identity.sh** — [CASESPELL] (2026-10-23): patterns differing ONLY in the letter case of their caseless text emit the same matcher (declared spelling groups x dfa/vm x byte/utf8, two of them bare `(?i)` vs scoped `(?i:` runs since [FLAG-SPELL], S1560; emitted C identical after an exact, count-checked pattern-echo mask, gcc -O2 `.text` identical; two positive controls that must differ). In `make test-codegen`.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no SELECTION reads the prefix.
 - **run_nomatch_caps.sh** + **nomatch_caps_driver.c** — K78 (lane k78, 2026-09-30, abi 55): match_api.md §3.1/§3.3's caps contract on every entry that takes a caps array ...
+- **run_stmt_writer.sh** + **stmt_writer_scan.py** — [VMREC] ST: the VM body's one writer is vm_stmt.c.
 - **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8 alternation trie (R3.3).
 - **run_vm_identity.sh** — [M4.5b] THE ZERO-REGRESSION GATE (engine_m4.md §5.4, §13 P-7: "this one should be a GATE, not a prediction").
 - **run_endvar_identity.sh** — [M6.2] wave A's BYTE-IDENTITY GATE, the `run_trie_identity.sh` shape one closure view over.
@@ -102,4 +103,4 @@ the count is unstable between builds (171 and 176 observed for the same edit).
 The hoist form above is memory-safe by construction.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__codegen.md`.
-- **run_residual_twins.sh** — [FINDALL-NEXT] I1 residual-twin forwarders check; the premul table also has an iterator arm (NOTES.md).
+- **run_residual_twins.sh** — [FINDALL-NEXT] I1 residual-twin forwarders check (NOTES.md).
