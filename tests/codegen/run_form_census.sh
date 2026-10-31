@@ -367,7 +367,7 @@ floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 2
 # byte-class-bounded, 5 memchr-bounded, 3 none/mixed) — floored at ~85%.
 floor_check "D:RX_DFA_SCAN=rev-end"           200
 # [KIT-S3] (merge 0f425c2d0, lane memfn-s3m, abi 92, triage lane axtri,
-# docs/dev/lanes/axtri_report.md) legitimately re-derives six floors and adds
+# docs/dev/lanes/axtri1031_report.md) legitimately re-derives six floors and adds
 # one: the cover scan form (the kit's locate-by-cover, `locate_cover_applies`,
 # src/gen/emit_dfa.c) takes 884 corpus patterns off RX_DFA_SCAN "unanchored"
 # onto "cover", where each stamps RX_DFA_PREFILTER "none" and RX_DFA_START
