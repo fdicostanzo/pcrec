@@ -13,6 +13,7 @@ case "${1:-}" in
         n=$(echo $IDS_A $IDS_B | wc -w); [ "$n" = $((NIDS_A + NIDS_B)) ] || { echo "IDS has $n ids, not $((NIDS_A + NIDS_B))" >&2; exit 1; }
         echo "would run in $TREE: mechval (both halves' ids) + make -j16 + make strict; records the tip every later stage checks"
         echo "boxqueue: cap 900"
+        echo "boxqueue: not-before 2026-11-02T01:00"   # main's slot ruling (after Frank's Sun 18:00-Mon 01:00 hold); every later job is after this one
         echo "boxqueue: patience none"
         echo "boxqueue: expect steps=3 lines=^== r30b2 step [a-z_]+ rc=0\$"
         exit 0 ;;
