@@ -26,3 +26,11 @@ change:
 Other candidate uses, OPINION until tried: red-suite triage (many reds, one
 coordinator classifying and verifying), landing stacks (several branches, one
 coordinator sequencing merges and validation), bench result reading.
+
+## 2026-10-31 — critic rounds pricing-split, bakeoff, bakeoff2, bakeoff3 (reviews 2026-10-31 r1, r3, r4, r5)
+
+Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the reviews carry the results).
+- pricing-split (4 critics + verifier, ~35 min freeze to draft, zero manager turns): the coordinator is blind to the manager but NOT a firewall to its own critics unless its notes are segregated; the slot critic read the coordinator's planted-check note in process.md. Fixed by a denied `.coord/` subdirectory. Subject citing three other branches' documents fit the pattern (one freeze, one review tree at the merge-base). Elsewhere it might fit (OPINION): a round on a REQUIREMENTS draft reusing the COMMON nearly verbatim.
+- bakeoff (4 critics + verifier, ~32 min): fan-out returned synchronously, so lanewatch was a one-shot confirmation; the blindness held by construction (the coordinator never saw the lane's report or rulings). Overlap among three opus lenses was ~25 % duplicated effort, clustered on the decision table and the external harness. Elsewhere it might fit: any "is this experiment able to decide X" review (measurement plans, evaluator designs such as [REGIME-EVAL]).
+- bakeoff2 (3 critics + verifier, ~35 min, four coordinator wakes): nested agents never returned a handback reply (4/4); files plus lanecheck/lanewatch carried all delivery. Confirms "everything travels as FILES".
+- bakeoff3 (2 critics + verifier, ~35 min, ~3 wakes): on a narrow re-check, splitting by ITEM (not by lens question) gave zero cross-lens overlap and 8-17 min critics; it fits any "re-check items N of review M" request. lanewatch writes to worktrees/.mgr/ in the main tree unless LANEWATCH_LOG is set, a hazard under a no-edits mandate.
