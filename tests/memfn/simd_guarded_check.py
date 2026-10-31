@@ -100,10 +100,12 @@ FLOORS = {
     'two-blocks': 200,      # WITNESS artifacts with the VM program's block
     'ladder-moved': 1,      # UNROLL_K_WHY "size-model" (the ladder ran)
     'refused': 1,           # both sides refused alike, stderr included
-    'simd-form': 6,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
+    'simd-form': 8,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
                             # 3 at D172 S3, the fixed-width caseless runs became `cover`; 6 again at
                             # code review r1 C1, their window search's stop PAIR with its SIMD rows;
-                            # pinned AT the measure)
+                            # 5 at R-30 over main 1f5574fac (job 697: a whole run's window search no
+                            # longer asked); 8 measured on the merge of main 5c60e118c with R-30
+                            # (lane r30bfix, 2026-10-31; the named 4 unmoved); pinned AT the measure)
     'simd-form-named': 4,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (simd arm; 4 of 4);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
