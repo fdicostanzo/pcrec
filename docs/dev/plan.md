@@ -651,6 +651,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: tests/codegen/wclass_census.py [5c]; S366; docs/dev/lanes/p1tri_report.md; [LINT-FRAME]
   Frank 2026-10-30: "We don't do a C linter as such. We might be able to add a rule about switch on nodes using default." His leaning (recorded at his request): the compiler, not a hand-rolled scan. Prefer gcc -Wswitch-enum in `make strict` (warns on a missed enumerator even under default:, every enum, nothing to maintain); fix or narrowly pragma the deliberate defaults if they are few.
   If the count is large: fall back to ONE small strict-time check over a DECLARED list of node-kind enums (AKind, VM ops, vm_stmt kinds, IR kinds) instead of a grep inside a feature census. Either arm retires wclass_census [5c] (the general rule replaces it; re-aim S366).
+- [CALLOUT-GROUPS] STATE:not-started — a callout keyword taking a number that reserves that many capture groups for the callout
+  filed: 2026-10-31 Frank (manager wrote the row)
+  status (2026-10-31): unscheduled; an idea, no named consumer yet
+  next: a short design note when a consumer appears (a callout that wants to hand values back through the match result)
+  refs: [INLINE-C]; [MATCH-EVENTS]; [M4-CALLOUTS]; docs/spec/match_api.md (rx_group_entry); [IFACE-PUSH]
+  Frank 2026-10-31: "in callouts, we could add a keyword that took a number to reserve groups for use by the callout." Reserved groups would be ordinary capture slots the pattern never sets, which the callout (embedded C, [INLINE-C]) writes; they come back in the match result like any group.
+  Check first: the spelling (pcrec-only syntax inside the callout, no PCRE2 equivalent; D26 says it is our extension to name); numbering (after the pattern's own groups, so \N and named refs never collide; reported in rx_info); whether writes are TRAILED so backtracking undoes them like captures (the [MATCH-EVENTS] question; lean yes); engines (VM has the trail; DFA routes need the VM replay); the frame size move is an abi event.
 - [ROWCONJ] STATE:not-started — one declared conjunct type for every row's admission/form sub-table
   filed: 2026-10-29 lane p1dsg2
   status (2026-10-29): filed from review r1 D2 (sibling-of-a-family); three members today, the landmark walk's would be the fourth
