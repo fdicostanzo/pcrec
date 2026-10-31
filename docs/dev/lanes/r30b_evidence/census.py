@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """docs/dev/lanes/r30b_evidence/census.py -- lane r30b's MOVER CENSUS for [MEMFN] R-30
-(abi 92 -> 94 in landing order), in lane s3's census.py shape (emit_sweep has no abi
+(abi 93 -> 94, renumbered over main 5c60e118c by lane r30bfix 2026-10-31), in lane s3's census.py shape (emit_sweep has no abi
 normalization): which corpus artifacts move, and does anything move OUTSIDE the declared
 population?
 
     python3 -I census.py --base BIN --new BIN --harness BIN --tree DIR --out FILE [--jobs N]
 
-BASE is main 1f5574fac's pcrec, NEW the R-30 commit's, HARNESS NEW's build/pcrec-harness. Over
+BASE is main 5c60e118c's pcrec (the merged main tip; was 1f5574fac before r30bfix), NEW the R-30 commit's, HARNESS NEW's build/pcrec-harness. Over
 every distinct corpus pattern (scripts/emit_sweep.py's enumeration, each under its own block's
 options, s3_evidence/census.py's `corpus_tasks`), each arm is compiled by both sides; NEW's
-output has the abi digits mapped back (94 -> 92) in the four places they occur and nothing else
+output has the abi digits mapped back (94 -> 93) in the four places they occur and nothing else
 is normalized; rc and stderr are compared too.
 
 THE DECLARED POPULATION is read from BASE's OWN ARTIFACT on that arm, a pcrec-side read, never
@@ -27,8 +27,8 @@ import os
 import subprocess
 import sys
 
-ABI = [(b"(abi 94)", b"(abi 92)"), (b"(PCREC_RX_ABI_H + 0) != 94", b"(PCREC_RX_ABI_H + 0) != 92"),
-       (b"#define PCREC_RX_ABI_H 94", b"#define PCREC_RX_ABI_H 92"), (b"    .abi = 94,", b"    .abi = 92,")]
+ABI = [(b"(abi 94)", b"(abi 93)"), (b"(PCREC_RX_ABI_H + 0) != 94", b"(PCREC_RX_ABI_H + 0) != 93"),
+       (b"#define PCREC_RX_ABI_H 94", b"#define PCREC_RX_ABI_H 93"), (b"    .abi = 94,", b"    .abi = 93,")]
 LEVER = "--harness=pres-window"
 C = ["-p", "rx", "--features", "all", "-o", "-"]
 
