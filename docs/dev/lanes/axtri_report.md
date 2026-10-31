@@ -1,55 +1,274 @@
-# axtri report: red make test-axes (job 758-fsfix-axes), six form-census floors
+# axtri — triage of the 2026-10-06 overnight `make test-axes` red
 
-Verdict: **a stale-floor / intended-movement case, not a regression, and main is affected identically.**
-The kit S3 merge (0f425c2d0, lane memfn-s3m, abi 92) added the scan form `cover`, which takes 884
-corpus patterns off `RX_DFA_SCAN "unanchored"`. Its plan listed "CHECK-3 test-axes floors" as OWED and
-the form census never ran on main afterwards (journal 2026-10-25: the previous axes job's census did not
-run, `&&` chain), so the floors were never re-derived. No answer moved (all 758 axis groups OK, 0 AXIS FAIL).
+Lane `axtri` (TRIAGE), branch `lane/axtri` off main `2172478b`.
+Input: `worktrees/axes1006/build/ax/axes.log` (read-only), the
+`AXES_FULL=1 HARNESS_BATCH=64 CC=gcc-16 make test-axes` run at main
+`041e450a`, 17,244 s, `make: *** [test-axes] Error 1` (chain rc=2).
 
-## Counts (same 5,108-pattern `pattern ` corpus, default engine)
+## 1. Failure inventory
 
-| form | floor | fsfix (758) | main a3cc4de82 | pre-S3 (f3a3d2b7b) | SL2 build (bfe30c75f) |
-|---|---|---|---|---|---|
-| PREFILTER memchr | 750 | 696 | 696 | 853 | 910 |
-| PREFILTER offset-set | 290 | 270 | 270 | 377 | 377 |
-| PREFILTER offset-set-bounded | 30 | 20 | 20 | 57 | 57 |
-| PREFILTER run-pinned | 100 | 55 | 55 | 134 | 133 |
-| PREFILTER run-pinned-bounded | 7 | 3 | 3 | 9 | 9 |
-| START end-minus-width | 1200 | 667 | 667 | 1509 | 1437 |
-| SCAN cover (no floor today) | - | 884 | 884 | 0 | 0 |
+make's verdict line is the single `*** [test-axes] Error 1`; run_axes.sh's
+own summary names exactly **two** red sections. Everything else is OK,
+including the oracle cross-check ("both plain and -fno-premul-table PC-4
+runs are 0-failure against live libpcre2"), DIAL-S3, both [START-SET]
+arms, all 42 bit-flag axes but one, the engine/shape/analysis/tune axes.
 
-Main reproduces 758 exactly (also attempt-start 1447, reverse-pass 1296, landing 206, pinned 214), so main
-fails the same six floors; fsfix's red is not branch staleness.
+| # | section | count | where |
+|---|---|---|---|
+| A | `-fno-req-byte` (bit 30) | 19 `AXIS FAIL: UNALLOWED one-sided give-up` (giveup1=64, allowed 45) | all `tests/litscan/reqcube.rxt`: 438-440, 450-452, 461-463, 473-475, 484-486, 497-499, 509 |
+| B | `-futf-check` arm (contract, own oracle) | `fail=990` (= `refused=990`; `agree=3220`) | log shows the first 40 (the arm's own cap): 22 `litscan/handoff.rxt`, 18 `startset/dfahat.rxt` — every one `want 'utf N', got 'giveup -9'` |
 
-## Cause (evidence)
+AXIS FAIL lines by axis: 20 total, all `-fno-req-byte` (19 per-case + 1
+summary). No other axis has an AXIS FAIL line. (The `-fno-cls-kit`
+REFUSED lines in the log are its documented refusal population — OK.)
 
-- Bisect over main's first-parent history (849 commits since SL2, a probe compiling the corpus per commit):
-  end-minus-width is 1509 through f3a3d2b7b and 667 from the merge **0f425c2d0 "Merge lane/memfn-s3m: kit S3
-  (abi 92)"**. (Bisect steps: 635/741/767/780/781 good, 782/783/787/794 bad.)
-- Per-pattern A/B f3a3d2b7b vs 0f425c2d0: 884 patterns change, every one to `cover / none / attempt-start`
-  (from unanchored with memchr 141, byte-class 306, offset-set 102, run-pinned 74, handoff 63,
-  memchr-bounded 64, offset-set-bounded 37, ...; start end-minus-width 833, reverse-pass 21, landing 16).
-  Nothing else moves. Hence PREFILTER none 1117 -> 2001 (floor 500, unaffected) and attempt-start up 884.
-- Mechanism: `locate_cover_applies` row (`src/gen/emit_dfa.c` ~10208, tok "cover", `.scan = "cover"`).
-- Not a measurement artifact: no timeouts in the 758 log (grep timed out/killed/watchdog: none), REFUSED stays
-  499 before and after, and an independent probe on main's binary gives 758's numbers to the pattern.
-- s3_report.md line 117 says the census population "stays the pre-S3 default build's, so main's floors hold"
-  but that is about run_scan_edge_census.sh only, not this census; line 543 lists the test-axes floors as OWED.
+## 2. Diagnosis
 
-## Fix (prepared on lane/axtri, tests/codegen/run_form_census.sh)
+### A — stale manifest, not a defect (class (b))
 
-Re-pin at ~85% of the measured counts (the file's convention), reason in a new comment block:
-memchr 750 -> 590, offset-set 290 -> 230, offset-set-bounded 30 -> 16, run-pinned 100 -> 46,
-run-pinned-bounded 7 -> 2, end-minus-width 1200 -> 560, and a NEW floor `RX_DFA_SCAN=cover` 750 (K35:
-every reached value gets a floor; today it has none, so a silent loss of the form would pass).
-Every new floor is below the measured count by arithmetic (696/270/20/55/3/667/884); `bash -n` clean.
+The 19 cells are the [OPT-LITSCAN] S4 C3 / [K82] **S2b and S2c** blocks
+(`(x?)([a-z]+)+S\d(?i:select)\1`, `(x?)([a-z]+)+S\d(?i:s)qz\1`, byte/utf8 ×
+default/vm engine, `budget steps=10000`) plus line 509, the `# pcre2-only`
+L=30 review witness (no budget directive). `git log --follow`:
+`ddc77cdb`/`801db4c7` (2026-10-03) and `f24f9862` (2026-10-04) — all
+AFTER `GIVEUP1_ALLOWANCE` was populated (lane giveupallow, 2026-09-26).
+The 041e450a run is the first full test-axes to reach them.
 
-## STATE AT HANDOFF
-- Commit on lane/axtri only; main untouched (still a3cc4de82); no rulings file entries read (none existed).
-- OWED (not run: the box was held by 697-kit-r30b-heavy and my boxlock'd census sat yielding to queue jobs
-  759/760/762; I killed that waiter by safekill rather than leave a stray run): the census itself on the fix.
-  Run: `bash scripts/boxlock run --label axtri -- env PROCS=16 bash tests/codegen/run_form_census.sh`
-  (~2-3 min of compile, expect `checks failed: 0`). My probe (`$PCREC_TMPDIR/scratch/axtri/probe.sh`) used
-  the census's own stamp reads but is not the census; the census run is the authority.
-- Manager rules whether to merge the re-pin; also consider that the test-axes `&&` chain skipped the census
-  when run_axes fails, so the census can go unrun for weeks (it did here).
+This is Group E1's mechanism exactly (K65): the whole-necessary-set memchr
+of `S` is the block's only linear no-match proof; the blocks' own comments
+say their n cells exist to become step give-ups when that memchr is lost
+(sabotage rows S451/S452). `-fno-req-byte` removes it outright.
+
+Direct reproduction (`--emit-main`, `--features backrefs,classes,modifiers`):
+
+| build | stamps | 16-a subject | 18-a subject |
+|---|---|---|---|
+| default, `--step-budget=10` | REQ_BYTE "83", REQ_RUN "53454c454354@4", REQ_WHY "emitted" | nomatch | nomatch |
+| `-fno-req-byte`, budget 10,000 | all three "none" | `steps` (rc 3) | `steps` |
+| `-fno-req-byte`, budget 100,000 | | nomatch | `steps` |
+| `-fno-req-byte`, budget 1,000,000 (and 10^7, 10^8) | | nomatch | nomatch |
+
+S2c (`...(?i:s)qz\1`) is the same: `steps` at 10,000, nomatch at
+1,000,000, `m "abcS1Sqz" 0 8` identical on both. Line 509 (L=30, default
+budget): default nomatch instantly, axis `steps` after 2.9 s.
+
+So: the default needs ~0 VM steps (pre-check alone), the axis needs
+10^4..10^6 (exponential in the run length), and once the budget covers
+it the axis gives the SAME answer. A correctness-neutral budget
+transition per docs/testing.md's GIVEUP1 rule and tuning.md §2.29 — no
+K-row.
+
+### B — harness defect in the HARNESS_BATCH path (class (c))
+
+`fail == refused == 990` and `agree == 3220`: every well-formed utf8 cell
+agreed and EVERY ill-formed one failed, always as `giveup -9`. The arm
+expects `utf <offset>` — driver.c's word for `PCREC_ERR_UTF`
+([UTF-VALID], 2026-09-30). But under `HARNESS_BATCH` cases run through
+`dispatch.c`, generated by `tests/harness/dispatch_gen.sh`, which kept its
+OWN copy of the give-up-word table and was never taught `utf` (nor
+[VAR]'s `unset-var`). It falls back to `giveup %d`.
+
+Reproduced on `startset/dfahat.rxt` under `RXTFLAGS=-futf-check`:
+`HARNESS_BATCH=0` → 18 `utf N` lines, 0 `giveup -9`; `HARNESS_BATCH=64` →
+0 `utf`, 18 `giveup -9`. The compiler and the artifacts are correct; the
+batched driver mislabels a correct refusal.
+
+This is the **second** time dispatch.c drifted from driver.c (the first
+was module `vars`' signature, 2026-09-26, fixed by excluding var blocks
+from batching). Two hand-kept copies of one table → the general fix is one
+table.
+
+## 3. Fixes (commits on lane/axtri)
+
+- **A**: `tests/axes/run_axes.sh` `GIVEUP1_ALLOWANCE` Group **E5** — the 19
+  measured keys, each with the K65 reason; header comment carries the
+  bisection numbers above. `-fno-req-byte` now names 64 (= the measured
+  giveup1). No other axis touched; no key beyond the measured 19.
+- **B**: new `tests/harness/outcome_word.h` — `rxt_print_negative(code,
+  valid_upto, buf, len, pos)`, the one table (`steps`/`frames`/`work`/
+  `recurse`/`internal`/`unset-var`/`utf <off>`/`giveup <n>`).
+  `driver.c` (both the single-call and `mc` find-all paths) and
+  `dispatch_gen.sh`'s generated `main()` now call it; `run.sh` adds
+  `-I"$SCRIPT_DIR"` to its two dispatch.c compiles. driver.c is compiled
+  in place by every other suite, so its quoted include resolves from its
+  own directory there with no other change. Outside run.sh's pinned arm
+  region; no sabotage row anchors on the replaced text (grepped).
+- Docs: `tests/harness/CLAUDE.md` (new file entry + dispatch_gen note),
+  `tests/axes/CLAUDE.md`, `docs/testing.md` (dated addendum).
+
+Spot checks already run (worktree build, gcc-16):
+- `RXTFLAGS=-futf-check` over `startset/dfahat.rxt` + `litscan/handoff.rxt`:
+  `HARNESS_BATCH=0` and `=64` dumps byte-identical (3,387 rows), 40 `utf N`,
+  0 `giveup -9` on both.
+- Default flags over `startset/dfahat.rxt`, `harness/giveup.rxt`,
+  `tests/vars`, `litscan/reqcube.rxt`: 1628/0 on both `HARNESS_BATCH=0`
+  and `=64`.
+
+## 4. The hand-list question (general-mechanisms rule)
+
+`GIVEUP1_ALLOWANCE` has now needed a late population for the second time
+(E4 was found by re-run after E1-E3; E5 by an overnight red), and 64 of
+its rows on one axis are one mechanism: **the axis removes the req
+pre-check that is the default artifact's only linear no-match proof**. That
+fact is derivable without a hand list: for a `-fno-req*` axis, a GIVEUP1
+case is the documented transition iff (1) the default answer is `nomatch`,
+(2) the default artifact stamps `RX_REQ_WHY "emitted"` and the axis
+artifact stamps the corresponding row `none`, and (3) the axis answer is a
+typed budget give-up (`steps`/`frames`/`work`). Proposal (NOT built here,
+D77 — the trigger is a THIRD late population, or the manager's call now):
+derive those rows from the two artifacts' stamps in `run_one_axis`,
+keeping the manifest for the cases no stamp explains (Groups A-D, F5, G).
+A control is needed so the derivation doesn't share a source with what it
+excuses: keep a floor on the derived count per axis (K35) and a sabotage
+row where the stamp says "emitted" but the pre-check is gone.
+
+## 5. Targeted re-run — OWED at handback
+
+Command (detached, holds `worktrees/.mac-suite.lock`):
+
+    AXES="-fno-req-byte -futf-check" AXES_FULL=1 HARNESS_BATCH=64 CC=gcc-16 make test-axes
+
+Log: `worktrees/axtri/build/axrun/axes.log`; chain markers in
+`worktrees/axtri/build/axrun/chain.log` (`== axes DONE rc=N ... ==`).
+Pass = rc 0, and in axes.log's summary: `-fno-req-byte ...|OK|... giveup1=64
+... giveup1_allowed=64 giveup1_unallowed=0`, and `-futf-check arm (contract,
+own oracle): OK — utfcheck arm: ... fail=0`. Expected ~30-40 min
+(baseline ~330 s + one axis ~510 s + the utfcheck arm + the fixed
+oracle/DIAL sections).
+
+---
+
+# Section 2 — a SECOND lane `axtri` (2026-10-11): triage of lane/rlhbuild's red `make test-axes`
+
+Same lane name, different red; kept as a second section on the axtriage_report.md precedent.
+
+Branch `lane/axtri` off `lane/rlhbuild` 43e1575b ([REQ-HANDOFF-L1], abi 75).
+Input log: `worktrees/rlhbuild/build/land/axes.log` (chain stage, 16:40,
+`make: *** [Makefile:1869: test-axes] Error 1`).
+
+### The red, axis by axis
+
+Seven axes FAIL, all on ONE file, `tests/utf8/axis01_encoded_length.rxt`,
+every failing key an "UNDOCUMENTED refusal" whose text is
+`gnutimeout: the monitored command dumped core` (pcrec itself crashed):
+
+| axis | undocumented refusals | keys (rxt line) |
+|---|---|---|
+| `-fno-offset-skip` | 56 | 270 322 323 376 386 388 478-480 530 531 584 594 595 740 776 777 791 792 805 (20 printed) |
+| `--analysis=fire-c1` | 24 | 477-480 529-531 568 569 571 581-584 594-597 776 777 (20 printed) |
+| `--analysis=fire-c2a` | 56 | same population as `-fno-offset-skip` |
+| `--analysis=fire-c3` | 24 | same population as fire-c1 |
+| `--analysis=fire-c4` | 56 | " |
+| `--analysis=floor-but-one` | 56 | " |
+| `--analysis=onehot-80` | 56 | " |
+| `--analysis=onehot-e` | 56 | " |
+
+(The log's AXIS FAIL lines print the first 20 keys per axis.) No axis had a
+mismatch, a lost case or an unallowed one-sided give-up; every other axis
+and every tail check (oracle cross-check, DIAL-S3, utfcheck arm, START-LANDING
+/ START-SET arms) is OK.
+
+### Fix 1 — the only cause: a selection-read recursion L1 closed (REAL regression, fixed)
+
+**Repro.** `build/pcrec -e utf8 -fno-offset-skip -p rx --emit-main -o o.c
+--pattern '€+'` → SIGSEGV on lane/rlhbuild; rc 0 on main 9683488b (scratch
+worktree `worktrees/axtri-main`, built at main's tip). The analysis axes are
+the same crash (`-I tests/findings/adversarial --analysis=fire-c1 -e utf8
+--pattern '€+'` → 139 pre-fix, 0 post-fix): their priors move NEXT off the
+`offset-set` row, exactly as `-fno-offset-skip` denies it.
+
+**Cause (gdb, ~90k frames).** A four-edge cycle of selection reads:
+
+- RECOVER `landing` (`start_landing_applies`) reads NEXT (`dfa_pf_read`);
+- NEXT `handoff-reentry` (`pf_handoff_applies`, **new in L1**) reads FIRST
+  (`req_use_read`);
+- FIRST `handoff` (`req_handoff_applies`) reads the PATH
+  (`cand_path_members`, pre-existing on main);
+- the path walk (`cand_path_of` → `dfa_search_start_of`) selects RECOVER,
+  whose `landing` predicate reads NEXT again.
+
+It fires wherever the NEXT walk reaches the handoff row (no exact-start row
+applies first) while FIRST's admission emits and Λ (`land_char`) holds — a
+`utf8` single-character pattern with offset-skip off is the corpus witness.
+L1's report found and broke a DIFFERENT cycle (NEXT→FIRST→PRESENCE→NEXT, via
+`CandNode.under/by`); this one was invisible to the trace build's
+`table-read-cycle` self-check because FIRST's read of the PATH is not a
+declared `cand_nodes[].reads` edge (see Open item 1).
+
+**Fix (commit 9dec5e6f).** RECOVER's node gains
+`.under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF }` — the mechanism L1
+itself introduced for G1: `landing` asks NEXT for the row below the
+re-entry. Sound in the declining direction: `landing` only asks whether the
+NEXT row has a block to record in (`u.pf.emit != NULL`); the handoff row has
+one (its emitter sits inside `pf_open`/`pf_close`, so the landing record is
+written unchanged — rlhbuild_report §1.3), so reading the row below can only
+make `landing` decline where that row is `next-none`, never apply where it
+should not.
+
+**Byte-neutral on every compile that did not crash**, by argument (on a
+non-crashing compile the handoff predicate, if reached from `landing`, was
+false before its FIRST read returned handoff, so denying the row selects the
+same row) and by measurement (`scripts/emit_sweep.py --ref-bin` = pre-fix
+43e1575b build, `--bin` = this branch, streams c-default + c-vm):
+
+| arm | c-default | c-vm |
+|---|---|---|
+| byte, default | 5194 both-ok, movers 0, asymmetric 0 | 5195, 0, 0 |
+| byte, `-fno-offset-skip` | 5194, 0, 0 | 5195, 0, 0 |
+| `-e utf8` | 5221, 0, 0 | 5224, 0, 0 |
+| `-e utf8 -fno-offset-skip` | 5192, **movers 0, asymmetric 29** | 5224, 0, 0 |
+
+The 29 asymmetric rows are the crash population: the reference refuses
+(cores), the working side compiles, and its both-ok+asymmetric = 5221, the
+`-e utf8` default-axis population exactly. (That run's rc=1 is the arms
+family's "no differ floor pinned" bookkeeping for an ad-hoc `--extra` arm,
+not a finding.)
+
+**Re-validation.**
+
+- `TMPDIR=… SKIP_ORACLE=1 PROCS=4 AXES="-fno-offset-skip --analysis=fire-c1
+  --analysis=fire-c2a --analysis=fire-c3 --analysis=fire-c4
+  --analysis=floor-but-one --analysis=onehot-80 --analysis=onehot-e" bash
+  tests/axes/run_axes.sh tests/utf8/axis01_encoded_length.rxt` → all 7 axes
+  OK, 256/256 agree each, 0 refused; "all axes answer-identical to default";
+  rc 0 (`build/axtri/axes_fix.log` in this worktree).
+- `make test-cand-oracle` (trace build; self-check incl. the state-based
+  `table-read-cycle` with the new `under` bits) → 91 passed / 0 failed.
+- `make strict` → clean.
+
+**NEWLY REACHABLE, and what covers it.** `landing` + NEXT `handoff` now
+co-select (e.g. `€+` `-e utf8 -fno-offset-skip`: `RX_DFA_PREFILTER
+"handoff"`, `RX_DFA_START "landing"`, `RX_REQ_HANDOFF "0"`). On rlhbuild that
+combination could never compile (it is exactly the crash), so no gate has
+yet measured its answers beyond the axis01 run above (256 cases x 7 axes,
+identical to default). The L1 design intended it (the handoff emitter is
+inside `pf_open`/`pf_close` "so the `landing` record works unchanged"). The
+full `make test-axes` at merge is the population check; OWED, not run here
+(the box was running rlhbuild's chain).
+
+### Open items (not fixed here — design/check questions for the manager)
+
+1. **The selection-read graph does not model PATH reads.** FIRST's `handoff`
+   (`req_handoff_applies`, emit_dfa.c:7705) and LOCATE's `empty`
+   (`locate_empty_applies` region, :4610) call `cand_path_members`, whose
+   walk selects LOCATE/RECOVER/FINISH; none of that is a `cand_nodes[].reads`
+   edge, so `cand_read_cycle` could not see this cycle and the
+   `undeclared-read` trace check does not fire on it. Leaning: declare a
+   path read as reads of every slot the path selects (FIRST →
+   RECOVER/LOCATE/FINISH on CR_DFA), which with today's `under` bits stays
+   acyclic and would have failed `table-read-cycle` on rlhbuild before this
+   fix. That is a check change (learnings §3) with its own sabotage row (a
+   dropped `under` on RECOVER should go red in the self-check, not only as a
+   SIGSEGV in test-axes), so it is filed, not built.
+2. **The cost of the cut**: `landing` now declines where NEXT is `handoff`
+   and the row below it is `next-none` (no start-byte row). Unmeasured; zero
+   corpus movers at default/`-fno-offset-skip` x byte/utf8 says the
+   population is empty in the corpus today.
+
+### Housekeeping
+
+- Scratch worktree `worktrees/axtri-main` (detached, now at 43e1575b, used as
+  the pre-fix reference build) is not a lane branch; prune it with
+  `scripts/wtprune` when convenient.
+- test-encoding-checks (the other known rlhbuild red) is lane/rlhtri's
+  52564f83 and was not touched.
