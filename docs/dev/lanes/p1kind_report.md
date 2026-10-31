@@ -96,9 +96,26 @@ spine (the K20 shape). A pattern long enough to matter does not reach them today
 - `bash tests/codegen/run_landmark_walk.sh` (worktree build): 78 passed, 0 failed.
 - `bash tests/harness/run.sh tests/landwalk/landwalk.rxt`: 207 passed, 0 failed.
   `tests/revend/verify_stage2.py` on it: 207 agree, 0 FAIL.
-- `make test-codegen` and `make test-startset` (boxlock): see STATE AT HANDOFF.
+- `scripts/boxlock run --label p1kind-test-codegen -- make test-codegen`: rc 0, `run_group: 20/20
+  scripts passed`, no `*** [test-` line (`run_landmark_walk.sh` rides here).
+- `scripts/boxlock run --label p1kind-test-startset -- make test-startset`: rc 0, `[vm-movers]` vm
+  3759 rows (3753 + 6) and `[dfa-movers]` 59 rows, both 0 off-diagonal, no `*** [test-` line.
+- Mech `bash tests/mech/run_sabotage_matrix.sh S1855`: `landwalk:10fail/68pass DETECTED` (the five
+  witnesses read "landmark-walk", and their five deny byte-identity arms move with them), `== mech
+  run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0 ...)` at 65536e720.
+- Logs: `$PCREC_TMPDIR/scratch/p1kind/` (`test-*.log`, `mech.log`, `census.log`, `harness.log`).
 
 ## STATE AT HANDOFF
 
-STATE: see the handback message for the final section verdicts. This section is updated in the
-last commit.
+- STATE: done. Branch `lane/p1build`. Commits e766f6b15 (fix, witnesses, sabotage), the manifest
+  re-pin, 0fbe9b4d1 (S1855 renumber), 65536e720 (report WIP), and this report's final commit.
+- Rulings file `p1kind_rulings.md`: read at every commit. The last entry is "(none yet)", so no
+  ruling was applied.
+- Nothing is OWED by this lane. The full `make test` on this tree is the already-queued
+  `709-p1tri-test` (not before 2026-10-31T08:00). It runs on the tree at run time, so it covers
+  these commits. `711-p1build-mech`'s id list does not name S1855. The manager may add it there;
+  the row is already measured DETECTED above.
+- Not changed, noted: `lm_flatten` and `lm_maxw` recurse on the `A_CAT` spine. Today the walk is
+  not reached by a pattern long enough to matter (the DFA overflows first). A `kinds`-fact bit for
+  `\G`/`\K` was considered and not built: it would be an observable `--emit-facts` change with a
+  spec hunk for a decision-identical fix. `pcrec_ast_visit` is the guide's named home.
