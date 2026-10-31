@@ -12,6 +12,7 @@ This file is the kit session's orientation. Run `/pcrec-memfn-manager` and follo
 
 ## Rules learned
 
+- ONE STAGE PER JOB (Frank 2026-10-30, BOILERPLATE): each queued job is one stage, about an hour at most, chained with `boxqueue after KEY`; a multi-stage job (697, 13 stages, 4 h cap) blocks short gating jobs. The coming queue order by total run length (lane qorder) rewards this shape.
 - Write `docs/dev/lanes/NAME_deliver.txt` (the DELIVER block) at brief time; without it every lane's lanecheck exits rc=65.
 - Never leave a bare `boxlock run` waiter for light checks: queue ONE job (`scripts/boxqueue add --name PRIO-kit-NAME script`, script with --dry-run/--ready and `boxqueue:` declarations; scratch copies in /var/tmp/pcrec-pcrec/scratch/memfn/).
 - A job step that runs a `make`-driven self-test loses its report on failure (.DELETE_ON_ERROR): keep the output yourself.
