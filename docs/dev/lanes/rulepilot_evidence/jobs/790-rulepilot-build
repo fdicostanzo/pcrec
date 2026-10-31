@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 780-rulepilot-build: lane rulepilot's timing slot, BUILD + correctness gate (no clock).
+# 790-rulepilot-build: lane rulepilot's timing slot, BUILD + correctness gate (no clock).
 # Re-emits every forceable default-route arm of the 139 inventory sites with the lane's compiler
 # (byte identity against the committed inventory), links grid1's gdrv.c, writes the streamed subjects
 # (gen_subj.py: 3 lengths x miss/dense from each question's own corpus file), then grid1's check.sh

@@ -122,9 +122,9 @@ The drill caught one design defect before any data existed. With thresholds thin
 - **Harness.** grid1's ext-arm-set shape plus grid2 `time.sh` (method `kit-grid@2`: CPU 14, 3
   launches, the base launched three times, the rerun rule, the per-group quiet gate). It is reused, not
   written: the same harness as the E8 and flat slots.
-- **Jobs.** `780-rulepilot-build` re-emits every arm, checks byte identity against the inventory, builds
-  the subjects, and runs grid1 `check.sh` (answers vs the default arm). Then `781`..`786
-  rulepilot-time.sN` (~40 min each) and `787-rulepilot-time` (~16 min), chained with `after`. The last
+- **Jobs.** `790-rulepilot-build` re-emits every arm, checks byte identity against the inventory, builds
+  the subjects, and runs grid1 `check.sh` (answers vs the default arm). Then `791`..`796
+  rulepilot-time.sN` (~40 min each) and `797-rulepilot-time` (~16 min), chained with `after`. The last
   job runs `read_slot.py` + `search.py` and prints the VERDICT.
 - **Constraints.** not-before 2026-11-02T05:00; cap 3600 each.
 - **Cost.** 139 sites, 810 groups, about 3.6 h at 0.65 s per launch (4.2 h at 0.75), plus quiet waits

@@ -12,4 +12,4 @@ product code or built by `make`. Run with `python3 -I`. Compile sweeps over 50 c
 - `drill.py [SEED]`, `drill.out` — the search on four synthetic truths (planted, beyond, noise, null).
 - `gen_subj.py`, `slot_build.py` — the slot: grid1 ext-arm-set shape, streamed subjects from each question's own file.
 - `read_slot.py OUT DATASET` — the timing job's raw launches -> the search's dataset.
-- `mkjobs.py JOBDIR`, `jobs/`, `shards.tsv` — the boxqueue jobs (780 build, 781-787 timing shards).
+- `mkjobs.py JOBDIR`, `jobs/`, `shards.tsv` — the boxqueue jobs (790 build, 791-797 timing shards).

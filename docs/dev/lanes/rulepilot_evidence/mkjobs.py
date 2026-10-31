@@ -8,7 +8,7 @@ estimate rule. SEC = 0.75 s per launch (grid2's MEASURED 0.61-0.65 s per streame
 raised for the 16 MiB 1 MiB-point subjects: an UNMEASURED margin). Sites are packed in census
 order into shards of at most BUDGET seconds of estimated wall, so every job's cap stays at 3600 s.
 
-usage: mkjobs.py JOBDIR       writes JOBDIR/780-rulepilot-build, 781..-rulepilot-time.sN, the
+usage: mkjobs.py JOBDIR       writes JOBDIR/790-rulepilot-build, 791..-rulepilot-time.sN, the
                               last one 7NN-rulepilot-time, and ../shards.tsv
 """
 import csv, json, os, sys
@@ -20,7 +20,7 @@ OUT = "/var/tmp/pcrec-pcrec/scratch/rulepilot/slot"
 NOT_BEFORE = "2026-11-02T05:00"
 
 BUILD = r'''#!/usr/bin/env bash
-# 780-rulepilot-build: lane rulepilot's timing slot, BUILD + correctness gate (no clock).
+# 790-rulepilot-build: lane rulepilot's timing slot, BUILD + correctness gate (no clock).
 # Re-emits every forceable default-route arm of the {nsites} inventory sites with the lane's compiler
 # (byte identity against the committed inventory), links grid1's gdrv.c, writes the streamed subjects
 # (gen_subj.py: 3 lengths x miss/dense from each question's own corpus file), then grid1's check.sh
@@ -62,7 +62,7 @@ TIME = r'''#!/usr/bin/env bash
 # {prio}-rulepilot-{rest}: lane rulepilot's timing shard {shard} of {nshards} ({nsites} sites, {ngroups} groups,
 # estimated {est:.0f} min at {SEC} s per launch). grid2 time.sh (method kit-grid@2: CPU 14, 3 launches, the
 # base launched three times, the rerun rule, the per-group quiet gate) over the shard's cells of the slot
-# 780-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP{shard}.log, OUT/time/raw_RP{shard}.tsv.{last_note}
+# 790-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP{shard}.log, OUT/time/raw_RP{shard}.tsv.{last_note}
 set -u
 W={W}
 E=$W/docs/dev/lanes/rulepilot_evidence
@@ -119,13 +119,13 @@ def main():
         shards.append(cur)
     total = sum(s[3] for s in sites)
     narms = sum(s[1] for s in sites)
-    open(os.path.join(jd, "780-rulepilot-build"), "w").write(BUILD.format(
+    open(os.path.join(jd, "790-rulepilot-build"), "w").write(BUILD.format(
         W=W, OUT=OUT, NOT_BEFORE=NOT_BEFORE, nsites=len(sites), narms=narms, gib=len(sites) * 0.05))
     rows = []
     for k, sh in enumerate(shards, 1):
         last = k == len(shards)
         rest = "time" if last else f"time.s{k}"
-        prio = 780 + k
+        prio = 790 + k
         after = "rulepilot-build" if k == 1 else f"rulepilot-time.s{k - 1}"
         regex = "^rp-(" + "|".join(s[0] for s in sh) + ")$"
         est = sum(s[3] for s in sh) / 60
@@ -138,7 +138,7 @@ def main():
             reading=READING if last else ""))
         os.chmod(fn, 0o755)
         rows.append((k, f"rulepilot-{rest}", len(sh), sum(s[2] for s in sh), f"{est:.1f}", ",".join(s[0] for s in sh)))
-    os.chmod(os.path.join(jd, "780-rulepilot-build"), 0o755)
+    os.chmod(os.path.join(jd, "790-rulepilot-build"), 0o755)
     with open(os.path.join(HERE, "shards.tsv"), "w") as f:
         f.write("shard\tkey\tsites\tgroups\test_min\tids\n")
         for r in rows:

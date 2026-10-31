@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 784-rulepilot-time.s4: lane rulepilot's timing shard 4 of 7 (20 sites, 117 groups,
+# 794-rulepilot-time.s4: lane rulepilot's timing shard 4 of 7 (20 sites, 117 groups,
 # estimated 38 min at 0.75 s per launch). grid2 time.sh (method kit-grid@2: CPU 14, 3 launches, the
 # base launched three times, the rerun rule, the per-group quiet gate) over the shard's cells of the slot
-# 780-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP4.log, OUT/time/raw_RP4.tsv.
+# 790-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP4.log, OUT/time/raw_RP4.tsv.
 set -u
 W=/home/pcrec/projects/pcrec/worktrees/rulepilot
 E=$W/docs/dev/lanes/rulepilot_evidence

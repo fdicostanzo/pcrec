@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# 786-rulepilot-time.s6: lane rulepilot's timing shard 6 of 7 (28 sites, 159 groups,
-# estimated 40 min at 0.75 s per launch). grid2 time.sh (method kit-grid@2: CPU 14, 3 launches, the
+# 793-rulepilot-time.s3: lane rulepilot's timing shard 3 of 7 (21 sites, 126 groups,
+# estimated 39 min at 0.75 s per launch). grid2 time.sh (method kit-grid@2: CPU 14, 3 launches, the
 # base launched three times, the rerun rule, the per-group quiet gate) over the shard's cells of the slot
-# 780-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP6.log, OUT/time/raw_RP6.tsv.
+# 790-rulepilot-build made. QUIET-GATED, so idle-ok. Results: OUT/time_RP3.log, OUT/time/raw_RP3.tsv.
 set -u
 W=/home/pcrec/projects/pcrec/worktrees/rulepilot
 E=$W/docs/dev/lanes/rulepilot_evidence
 OUT=/var/tmp/pcrec-pcrec/scratch/rulepilot/slot
-RE='^rp-(P11|P12|P14|P15|P16|P17|P18|P19|P20|P22|P23|P24|P25|P27|S02|S03|S04|S05|S06|S07|S08|S09|S10|S11|S12|S13|S14|S15)$'
+RE='^rp-(C23|C24|C25|C26|L01|L02|L03|L04|L05|L06|L07|L08|L09|L10|L11|L12|L13|L14|L15|L17|L18)$'
 BQ=${BOXQUEUE:-/home/pcrec/projects/pcrec/scripts/boxqueue}
 case "${1:-}" in
     --dry-run)
         [ -f "$W/docs/dev/lanes/grid2/time.sh" ] && [ -f "$E/read_slot.py" ] && [ -f "$E/search.py" ] || { echo "missing scripts" >&2; exit 1; }
-        n=159
+        n=126
         if [ -f "$OUT/ext/rp/arms.tsv" ]; then   # the slot exists (re-run at START): count the shard's real groups
             n=$(python3 -I "$W/docs/dev/lanes/grid1/arms.py" "$OUT" groups timed EXT | awk -F'\t' -v re="$RE" '$1 ~ re' | wc -l)
             [ "$n" -gt 0 ] || { echo "no groups for this shard in $OUT" >&2; exit 1; }
         fi
-        echo "would run in $OUT: PHASE=EXT CELLS_RE=$RE RAW_TAG=RP6 CPU=14 LAUNCHES=3 LOADWAIT=15 bash grid2/time.sh"
+        echo "would run in $OUT: PHASE=EXT CELLS_RE=$RE RAW_TAG=RP3 CPU=14 LAUNCHES=3 LOADWAIT=15 bash grid2/time.sh"
         echo "boxqueue: cap 3600"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
         echo "boxqueue: not-before 2026-11-02T05:00"
         echo "boxqueue: expect groups=$n last=^time.sh: COMPLETE rows=[0-9]+ groups="
         echo "boxqueue: witness groups=time.sh: COMPLETE rows=$((n * 5)) groups=$n reruns=0 xreruns=0 requeued=0 wall=2000s"
         exit 0 ;;
-    --ready) exec bash "$BQ" after rulepilot-time.s5 ;;
+    --ready) exec bash "$BQ" after rulepilot-time.s2 ;;
 esac
 cd "$OUT" || exit 1
 w=0; while :; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 1.5)}" && break; [ "$w" -ge 600 ] && break; sleep 30; w=$((w + 30)); done
-echo "rulepilot-time 6: quiet load1=$(cut -d' ' -f1 /proc/loadavg) waited=${w}s"
-env OUT="$OUT" PHASE=EXT CELLS_RE="$RE" RAW_TAG=RP6 PASS_STATUS="$OUT/time_RP6.status" CPU=14 LAUNCHES=3 LOADWAIT=15 \
-    bash "$W/docs/dev/lanes/grid2/time.sh" > "$OUT/time_RP6.log" 2>&1
-grep -q '# ANSWER MISMATCH' "$OUT/time_RP6.log" && { grep '# ANSWER MISMATCH' "$OUT/time_RP6.log" | head; echo "rulepilot-time 6: answer mismatch"; exit 1; }
-tail -1 "$OUT/time_RP6.log" | grep -q 'time.sh: COMPLETE' || { tail -5 "$OUT/time_RP6.log"; echo "rulepilot-time 6: timing did not complete"; exit 1; }
-tail -1 "$OUT/time_RP6.log"
+echo "rulepilot-time 3: quiet load1=$(cut -d' ' -f1 /proc/loadavg) waited=${w}s"
+env OUT="$OUT" PHASE=EXT CELLS_RE="$RE" RAW_TAG=RP3 PASS_STATUS="$OUT/time_RP3.status" CPU=14 LAUNCHES=3 LOADWAIT=15 \
+    bash "$W/docs/dev/lanes/grid2/time.sh" > "$OUT/time_RP3.log" 2>&1
+grep -q '# ANSWER MISMATCH' "$OUT/time_RP3.log" && { grep '# ANSWER MISMATCH' "$OUT/time_RP3.log" | head; echo "rulepilot-time 3: answer mismatch"; exit 1; }
+tail -1 "$OUT/time_RP3.log" | grep -q 'time.sh: COMPLETE' || { tail -5 "$OUT/time_RP3.log"; echo "rulepilot-time 3: timing did not complete"; exit 1; }
+tail -1 "$OUT/time_RP3.log"
