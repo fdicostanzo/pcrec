@@ -4867,12 +4867,13 @@ static bool locate_cover_applies(const CandSel *s)
 
 /* [LANDWALK] `landmark-walk`'s predicate: `lmwalk_conj[]`'s decision (its
  * PRE rows, memoized at the driver's gate) and its POST row read live, the
- * build of ML. The two machine facts a ladder toggle can move after the gate
- * (A's availability, `pcrec_cand_drop_anchored_shrinks`) are re-read. */
+ * build of ML. A's availability, which a ladder toggle can move after the
+ * gate (`pcrec_cand_drop_anchored_shrinks`), is row 2 `anchored-A`'s alone:
+ * the memo is keyed on it (`lm_key_holds`), so a toggle re-asks the rows. */
 static bool locate_landmark_walk_applies(const CandSel *s)
 {
     const PcrecLmwalk *lw = pcrec_lmwalk(s->cx);
-    return lw->why == NULL && s->cx->job->lm_built && s->cx->job->anchored_ok;
+    return lw->why == NULL && s->cx->job->lm_built;
 }
 
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
