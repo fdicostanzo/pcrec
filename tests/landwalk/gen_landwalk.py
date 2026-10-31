@@ -115,6 +115,21 @@ C(r"(*UCP)a\sb", "D: the cls-s-ucp population row under utf8 (rarity)",
   S("a b", "a b", "ab"), utf8=True)
 C(r"\Ga+b", "D: \\G (an attempt scan)", SP("aab", 0, 1) + SP("xab", 0, 1))
 C(r"a+\Kb", "D: \\K (a VM finisher)", S("aab", "b", "ab"))
+# g1's \G and \K are found ANYWHERE in R (lane p1kind): a \G only reaches the
+# walk's rows dead (a `{0}` body erases it from the NFA; a live one is an
+# attempt scan), nested here in each child-bearing kind; a \K never does (VM).
+C(r"[a-z]+@x(?:\G){0}", "D: g1/gstart: \\G in a {0} body (a suffix)",
+  S("a@x", "@x", "1@x ab@x") + SP("ab@x", 1, 2))
+C(r"(?:\G){0}[a-z]+@x", "D: g1/gstart: \\G in a {0} body (the prefix head)",
+  S("a@x", "@x", "1@x ab@x") + SP("ab@x", 1, 2))
+C(r"[a-z]+@x(?(DEFINE)(?<g>y\G))", "D: g1/gstart: \\G in a named group in a DEFINE body",
+  S("a@x", "y@x", "1@x ab@xy") + SP("ab@x", 1))
+C(r"[a-z]+@x(?:(y|\G)+){0}", "D: g1/gstart: \\G in an alternation in a repeated capture in a {0} body",
+  S("a@x", "@x", "ab@xy") + SP("ab@x", 1))
+C(r"[a-z]+@x(?:[yz]\G){0}", "D: g1/gstart: \\G after a class in a {0} body",
+  S("a@x", "@x", "ab@xz") + SP("ab@x", 1))
+C(r"[a-z]+@x(?(DEFINE)(?<k>\K))", "D: \\K in a DEFINE body (a VM finisher, never the g1 row)",
+  S("a@x", "@x", "ab@x") + SP("ab@x", 1))
 C(r"(?![a-z]*b)[a-z]+@x", "D: T1 (r5 SLOT-4): a VM hybrid's erased prefilter body declines at finisher-dfa",
   S("ba@x", "ab@x", "bb@x", "cab@x"))
 C(r"ab|cd", "D: branches", S("ab", "xcd", "ac"))

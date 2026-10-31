@@ -144,17 +144,30 @@ static bool lc_branches(LmSt *st) { return st->cx->job->lm_root->k != A_ALT; }
  * position, with a non-empty prefix. */
 static bool lc_split(LmSt *st) { return st->at >= 1; }
 
-/* Does `a` hold a node of kind `k` (through every child a walker owns)? */
+/* `pcrec_ast_visit`'s question for `lm_has_kind`: the kind sought, and
+ * whether a node of it was seen. */
+typedef struct {
+    AKind k;
+    bool  seen;
+} LmKindAsk;
+
+/* pcrec_ast_visit callback: marks the ask seen at a node of its kind. */
+static void lm_kind_seen(void *ud, const Ast *a)
+{
+    LmKindAsk *q = ud;
+    if (a->k == q->k) q->seen = true;
+}
+
+/* Does the tree `a` hold a node of kind `k` anywhere? The generic whole-tree
+ * visit (`pcrec_ast_visit`), so every child of every kind is reached through
+ * its one exhaustive switch (a lookaround body, a group, a `{0}` DEFINE
+ * body), the spines iteratively, and never `u.call.body`: a callee is
+ * visited at its own lexical position. */
 static bool lm_has_kind(const Ast *a, AKind k)
 {
-    if (!a) return false;
-    if (a->k == k) return true;
-    switch (a->k) {
-    case A_CAT: case A_ALT: return lm_has_kind(a->l, k) || lm_has_kind(a->r, k);
-    case A_REP: case A_CAP: case A_ATOMIC: case A_WCLASS: case A_LOOK:
-        return lm_has_kind(a->l, k);
-    default: return false;
-    }
+    LmKindAsk q = { k, false };
+    pcrec_ast_visit(a, lm_kind_seen, &q);
+    return q.seen;
 }
 
 /* 5 `g1`: P is regular-faithful, its NFA records no erasure (an atomic

@@ -358,6 +358,62 @@ m "aab" 2 3
 n "b"
 m "ab" 1 2
 
+# D: g1/gstart: \G in a {0} body (a suffix)
+# pcre2-only
+pattern [a-z]+@x(?:\G){0}
+features all
+m "a@x" 0 3
+n "@x"
+m "1@x ab@x" 4 8
+ms 1 "ab@x" 1 4
+ns 2 "ab@x"
+
+# D: g1/gstart: \G in a {0} body (the prefix head)
+# pcre2-only
+pattern (?:\G){0}[a-z]+@x
+features all
+m "a@x" 0 3
+n "@x"
+m "1@x ab@x" 4 8
+ms 1 "ab@x" 1 4
+ns 2 "ab@x"
+
+# D: g1/gstart: \G in a named group in a DEFINE body
+# pcre2-only
+pattern [a-z]+@x(?(DEFINE)(?<g>y\G))
+features all
+m "a@x" 0 3
+m "y@x" 0 3
+m "1@x ab@xy" 4 8
+ms 1 "ab@x" 1 4
+
+# D: g1/gstart: \G in an alternation in a repeated capture in a {0} body
+# pcre2-only
+pattern [a-z]+@x(?:(y|\G)+){0}
+features all
+m "a@x" 0 3
+n "@x"
+m "ab@xy" 0 4
+ms 1 "ab@x" 1 4
+
+# D: g1/gstart: \G after a class in a {0} body
+# pcre2-only
+pattern [a-z]+@x(?:[yz]\G){0}
+features all
+m "a@x" 0 3
+n "@x"
+m "ab@xz" 0 4
+ms 1 "ab@x" 1 4
+
+# D: \K in a DEFINE body (a VM finisher, never the g1 row)
+# pcre2-only
+pattern [a-z]+@x(?(DEFINE)(?<k>\K))
+features all
+m "a@x" 0 3
+n "@x"
+m "ab@x" 0 4
+ms 1 "ab@x" 1 4
+
 # D: T1 (r5 SLOT-4): a VM hybrid's erased prefilter body declines at finisher-dfa
 # pcre2-only
 pattern (?![a-z]*b)[a-z]+@x

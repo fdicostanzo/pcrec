@@ -92,6 +92,11 @@ u|landmark-walk|admitted|[^@ ]+@x
 b|unanchored|finisher-dfa|a+\Kb
 b|unanchored|finisher-dfa (a VM hybrid's prefilter)|([a-z]+)@x
 b|attempt|anchored scan (\G)|\Ga+b
+b|unanchored|g1/gstart (\G in a {0} body)|[a-z]+@x(?:\G){0}
+b|unanchored|g1/gstart (\G in a {0} body, the prefix head)|(?:\G){0}[a-z]+@x
+b|unanchored|g1/gstart (\G in a named group in DEFINE)|[a-z]+@x(?(DEFINE)(?<g>y\G))
+b|unanchored|g1/gstart (\G in an alternation in a repeat)|[a-z]+@x(?:(y|\G)+){0}
+b|unanchored|g1/gstart (\G after a class)|[a-z]+@x(?:[yz]\G){0}
 b|unanchored|branches|ab|cd
 b|unanchored|exclusion|a.*b@c
 b|unanchored|next-landmark/handoff|[a-z]{2,5}@x
@@ -105,7 +110,7 @@ EOF
 # K35: the populations are counted, so a list that silently loses its walks
 # (or its declines) is a failure, not a smaller pass.
 [ "$nwalk" -ge 10 ] && ok "[floor] $nwalk walk witnesses (floor 10)" || bad "[floor] $nwalk walk witnesses, floor 10"
-[ "$ndecl" -ge 12 ] && ok "[floor] $ndecl declining witnesses (floor 12)" || bad "[floor] $ndecl declining witnesses, floor 12"
+[ "$ndecl" -ge 17 ] && ok "[floor] $ndecl declining witnesses (floor 17)" || bad "[floor] $ndecl declining witnesses, floor 17"
 
 # ---- §3 the reach guard as a cost ------------------------------------------
 pat='[a-z]+@(?:[a-z]+@)*[a-z]+ '
