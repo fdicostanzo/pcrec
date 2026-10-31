@@ -19,5 +19,8 @@ SAB_SUITES="vm"
 SAB_DESC="the emitted fail label no longer rewinds the capture trail (undo becomes a no-op; scan_position is still restored)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails (wrong spans across the backtracking families)"
 SAB_COUNT=1
-SAB_BEFORE="        \"        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\\n\""
-SAB_AFTER="        \"        while (0 \&\& w->trn > w->bt[b_].mark) {  /* SABOTAGE S36 */\\n\""
+# FIXED 2026-10-31 (lane vmrecg): the first re-aim kept the pre-record spelling (`w->trn`,
+# `w->bt[b_].mark`) in the AFTER, names that no longer exist in the emitted C, so the plant did
+# not compile ('w' undeclared). The AFTER now guards the CURRENT line with `0 &&`.
+SAB_BEFORE='            "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"'
+SAB_AFTER='            "        while (0 && run->trail_depth > run->resume_stack[frame_index].trail_mark) {  /* SABOTAGE S36 */\n"'

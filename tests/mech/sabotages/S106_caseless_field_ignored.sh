@@ -31,5 +31,13 @@ SAB_DOC_FIGURE="PREDICTED: the corpus RED on caseless.rxt; codegen RED (the resi
 # The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
 # re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
+# FIXED 2026-10-31 (lane vmrecg): the first re-aim zeroed only the record's operand, but the seam
+# entry the artifact DECLARES (`enc_mask`) still came from the field, so the sensitive entry was
+# called and never emitted (implicit declaration of rx_span_match). Both sites now ignore the field.
 SAB_BEFORE='    const VmBrefOps o = { rs, re, nr, a->u.bref.caseless, work, next };'
 SAB_AFTER='    const VmBrefOps o = { rs, re, nr, 0, work, next };   /* SABOTAGE S106 */'
+SAB_FILE2="src/gen/emit_vm.c"
+SAB_COUNT2=1
+SAB_BEFORE2='    const unsigned seam_entry = a->u.bref.caseless
+        ? vm_caseless_entry(v, a->u.bref.ucp) : PCREC_ENCE_SPAN;'
+SAB_AFTER2='    const unsigned seam_entry = PCREC_ENCE_SPAN;   /* SABOTAGE S106 */'
