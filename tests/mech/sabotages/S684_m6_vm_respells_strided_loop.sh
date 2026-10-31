@@ -18,8 +18,9 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    vm_piece_render(sb, &s->u.span.kit);'
 SAB_AFTER='    if (s->u.span.stride > 1)  /* SABOTAGE S684: pcrec spells the strided loop again */
-        pcrec_sb_printf(sb->b, "        while ((%s_span_cursor + %d <= %s)) {\n            %s_span_cursor += %d;\n        }\n",
-                        sb->p, s->u.span.stride, s->u.span.clamp ? "lim_" : "subject_length",
+        pcrec_sb_printf(sb->b, "        while ((%s_span_cursor + %d <= %s)",
+                        sb->p, s->u.span.stride, s->u.span.clamp ? "lim_" : "subject_length"),
+        pcrec_sb_printf(sb->b, ") {\n            %s_span_cursor += %d;\n        }\n",
                         sb->p, s->u.span.stride);
     else
     vm_piece_render(sb, &s->u.span.kit);'
