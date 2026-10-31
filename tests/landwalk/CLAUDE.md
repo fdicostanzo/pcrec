@@ -24,5 +24,5 @@
 The STRUCTURAL checks (which patterns walk, the deny both ways, the reach
 guard as a cost) are `tests/codegen/run_landmark_walk.sh` (mech arm
 `landwalk`); the size-cap rung is `tests/codegen/run_fallback_table.sh`
-(`seq-lwdrop`, `seq-lwref`, `att-sclw`); sabotages S1820-S1829. Design:
+(`seq-lwdrop`, `seq-lwref`, `att-sclw`); sabotages S1820-S1829 and S1855 (g1 reads nested \G/\K). Design:
 `docs/dev/lanes/p1dsg3_report.md`, `docs/dev/lanes/p1build_report.md`.
