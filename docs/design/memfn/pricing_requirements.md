@@ -52,6 +52,15 @@ backend.
 
 ## 2. Structure and the seam
 
+> **HOLD (2026-10-31, Frank via main):** R2.3 (the split), R2.4 (the seam
+> rule) and R2.5's "priced as the consumer's per-byte cost for the route"
+> are HELD pending main's design study (lane splitstudy) and its critic
+> round. Open point: engine choice (DFA vs VM, `select_engine.c`, front end
+> today) may belong inside the strategy argmin, since a strategy's price is
+> mostly its consumer engine's cost; then the seam may not hold as written.
+> R2.1, R2.2, R2.6 and every other section stand; R7 (backend-only trace)
+> stands either way.
+
 - **R2.1** STRATEGIES ARE DECLARED ROWS. Each strategy (no search, one
   position + verify, pair at a fixed distance, skip, cover, reverse route,
   handoff, ...) is one row of a declared table with: an applicability
