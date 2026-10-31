@@ -203,10 +203,11 @@ job, each about an hour or less, chained by `--ready` = `boxqueue after KEY`:
 - Branch `lane/memfn-r30b`, every task committed (the last WIP commit plus this report's
   commit). Rulings file: last entry applied is 2026-10-29 "pcrec-side edits allowed" (no new
   pcrec-side edit was made).
-- OWED: the eleven staged jobs (`r30b2_jobs/README.md`), queued by the kit manager. The mech
-  figure of the re-planted S678. The S1760/S1761 reach cause, which job 11 will explain if it
-  happens again. A landing renumber of abi 94 if main assigns another number (the Abi readers
-  table is the site list).
+- OWED: none by this lane. The validation runs belong to the kit manager, who queues the
+  eleven staged jobs (`r30b2_jobs/README.md`). Their verdicts carry what is still unmeasured:
+  the re-planted S678's mech figure, and the S1760/S1761 reach cause, which job 11 will explain
+  if it happens again. If main assigns R-30 a number other than 94 at landing, the Abi readers
+  table is the list of sites to change.
 - Scratch: `/var/tmp/pcrec-pcrec/scratch/r30bfix/` (merge resolver, reqcube runs, the guarded
   log, the S678 planted tree, the job generator `genjobs.py`). Nothing under /tmp.
 - Dirty, as instructed: `docs/dev/artifact_size_log.tsv`, `r30b_rulings.md`.
