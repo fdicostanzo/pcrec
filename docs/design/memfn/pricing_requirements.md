@@ -1,4 +1,12 @@
-# Strategy pricing — REQUIREMENTS (draft rev 0, 2026-10-31)
+# Strategy pricing — REQUIREMENTS (draft rev 1, 2026-10-31)
+
+rev 1 (same day): main relayed Frank's ruling that PLACEMENT is decided by
+EVIDENCE (a bake-off, `docs/design/pricing_bakeoff.md`, lane bakeoff), not
+by more paper rounds; the points every look agreed on are now requirements
+(R2.7, §9); the findings of main's split study on rev 0
+(`docs/dev/lanes/splitstudy_report.md` on lane/splitstudy, open point 16)
+are applied where they do not depend on placement. Changed text is marked
+`[rev1]`.
 
 Status: DRAFT for Frank. Not a design and not a build go. Stage 3 of Frank's
 order (2026-10-31): survey -> data inventory -> **explicit requirements** ->
@@ -31,7 +39,8 @@ Priority order for conflicts: G1 > G2 > G3 > G4 > G5.
 
 Non-goals (this round): run-time adaptation between methods (adaptive methods
 are unproven, memory `pcrec-adaptive-methods-unproven`); choosing the engine
-(DFA vs VM) — the engine is an INPUT fact here; the in-engine per-byte tasks
+(DFA vs VM) — the engine is an INPUT fact here, owned by [SEL-COST] `[rev1]`
+(whether it joins the argmin is the bake-off's question); the in-engine per-byte tasks
 T8-T10 and the verify/mismatch tasks T11-T12 (Open O4); AVX-512; a second
 backend.
 
@@ -52,14 +61,20 @@ backend.
 
 ## 2. Structure and the seam
 
-> **HOLD (2026-10-31, Frank via main):** R2.3 (the split), R2.4 (the seam
+> **HOLD (2026-10-31, Frank via main; `[rev1]` placement is decided by the
+> bake-off, §9 R9.4):** R2.3 (the split), R2.4 (the seam
 > rule) and R2.5's "priced as the consumer's per-byte cost for the route"
 > are HELD pending main's design study (lane splitstudy) and its critic
 > round. Open point: engine choice (DFA vs VM, `select_engine.c`, front end
 > today) may belong inside the strategy argmin, since a strategy's price is
 > mostly its consumer engine's cost; then the seam may not hold as written.
-> R2.1, R2.2, R2.6 and every other section stand; R7 (backend-only trace)
-> stands either way.
+> R2.1, R2.2, R2.6, R2.7 and every other section stand; R7 (backend-only
+> trace) stands either way. `[rev1]` Findings against the held text, kept
+> for the bake-off: rev 0's front-end presence fold conflicts with D176 Q4
+> (one decider); "the kit returns its best form's price" is exact only with
+> per-route consumer rows (Q-WR-9) or a full price frontier; "the kit never
+> receives engine costs" contradicts option (a') (the ruled shape: the kit
+> reads per-route consumer rows).
 
 - **R2.1** STRATEGIES ARE DECLARED ROWS. Each strategy (no search, one
   position + verify, pair at a fixed distance, skip, cover, reverse route,
@@ -94,7 +109,16 @@ backend.
   consumer's per-byte cost for the route. It is never a fallback reached by
   "nothing else applied".
 - **R2.6** A row the backend cannot price (R4.5) is declined, visibly, with
-  its reason; it never takes a default price.
+  its reason; it never takes a default price. `[rev1]` Except under the
+  mixed-slot rule (R4.5).
+- **R2.7** `[rev1]` VALIDITY, DOMINANCE AND PRICE ARE SEPARATE (agreed by
+  every look). Every choice is classified as VALIDITY (the row would give a
+  wrong answer or cannot be built), DOMINANCE (the row is never dearer than
+  another, provable from stated facts without any number) or PRICE. A
+  validity or dominance predicate never contains a rate or cost comparison
+  (today's counter-examples, e.g. PRESENCE `dominated`'s "no commoner"
+  disjunct, are listed by the split study §1.2 kind X and become price
+  terms). Checked by classifying every predicate of a priced slot.
 
 ## 3. Couplings
 
@@ -111,6 +135,11 @@ backend.
 - **R3.3** Where (b) holds, the design states how the choice is made there
   (joint enumeration of the coupled rows, or a declared order) and the
   validation population MUST contain sites from that scope.
+- **R3.5** `[rev1]` THE SIZE CAP IS LATE VALIDITY. The caller's size cap is a
+  constraint: a path whose artifact does not fit is INVALID, decided before
+  the argmin. No rung removes a priced choice after the pick. Today's
+  `fit_rungs[]` (`src/core/compile.c:1268-1400`, ordered "by measured
+  run-time cost") violates R3.2 and is resolved by the design.
 - **R3.4** Downstream readers of the chosen stop (C10: dominance, reseed,
   landmark K, `@idx`) read the reply; none recomputes "which byte is
   scanned".
@@ -140,12 +169,20 @@ backend.
   trace. A value from another box enters only through the set's declared
   fallback rows ([MEASURE-SET]), and the trace says which (memory
   `pcrec-no-silent-defaults`).
+  `[rev1]` MIXED-SLOT RULE (split study §6.5): "unmeasured" means no set
+  in the fallback chain has the row. An unmeasured row keeps its first-match
+  position as a prefix ABOVE the priced block; a valid unmeasured row there
+  pre-empts the block exactly as today (zero movers on its population). So
+  the shipped LOCATE `rev-end` is never declined for want of a card.
 - **R4.6** RATES. Single-byte rates come from the committed priors. A
   multi-position stop rate (pair, joint survival C5) MUST come from a
   declared source with a stated error bound; the independence product may
   be used only with its measured error bound folded into the band. The
   survey's 21x-1,750x under-prediction is the witness this requirement
   answers.
+- **R4.7** `[rev1]` THE SIMD LAYER IS APPLICABILITY ONLY (D176 Q1): it
+  changes which methods are available, never a cost. Every price and every
+  regret reading is reported at both layers (D147).
 
 ## 5. Measurement
 
@@ -205,9 +242,28 @@ backend.
   same commit (D76/D94); a re-measured set that moves a pick is one too
   (design standing question 3).
 
+## 9. Migration and staging `[rev1]` (agreed by every look)
+
+- **R9.1** STAGE 1 UNDER EVERY OPTION: consumer-cost cards per route (per
+  subject byte, per false entry, and the no-search cost), measured per
+  engine on the target box, before any slot is priced.
+- **R9.2** SHADOW PICK FIRST: the priced choice runs trace-only beside the
+  first-match choice, artifacts byte-identical, every site's two picks
+  compared in the trace. A slot switches to the priced pick only after its
+  regret reading (G1) passes and Frank gives the go; that switch is a
+  censused mover event and an abi event.
+- **R9.3** THE FIRST PRICED SLOT IS LOCATE: `cover` vs the composite (the
+  stop-ranking witnesses' slot, `emit_dfa.c:4846`), with `empty` (dominance)
+  and `rev-end` (unmeasured prefix, R4.5) above it.
+- **R9.4** PLACEMENT BY EVIDENCE: where strategy pricing lives is decided by
+  the bake-off. Ground truth is every valid strategy path forced and timed
+  per site; each placement is a decision rule over the same measured
+  constants; the score is regret on held-out sites plus robustness to stale
+  or other-box constants. Each requirement held in §2 is re-stated after it.
+
 ---
 
-## 9. Open questions for Frank (each with a leaning)
+## 10. Open questions for Frank (each with a leaning)
 
 - **O1** G1's bars. Leaning: total regret <= 5 % and no site > 1.5x its
   best outside the band, both read on Linux Zen 4. These are acceptance
@@ -216,7 +272,10 @@ backend.
   rates with 0.3x-6.8x error). Leaning: interval arithmetic over the terms'
   measured bands and the rates' stated bounds; a tie is overlapping
   intervals. Wide bands then mean more ties, decided by simplicity, which
-  is the honest outcome when the data cannot tell.
+  is the honest outcome when the data cannot tell. `[rev1]` The split study
+  (§5.4) compares an interval rule with a difference rule and asks for ONE
+  tie table shared by kit and backend; this is ruled once, with per-term
+  noise measured first.
 - **O3** Code size. Leaning: not priced in round 1 (no measured exchange
   rate between bytes of code and time exists); reported in the trace per
   row so a later round can price it.
@@ -227,7 +286,7 @@ backend.
   the table from the start but UNMEASURED (declined) until a joint-rate
   source exists (an exemplar census in the measurement set).
 
-## 10. For the critics
+## 11. For the critics
 
 Use this document twice: (1) as the standard the design must meet — cite
 the requirement each finding violates; (2) as a subject — say which
