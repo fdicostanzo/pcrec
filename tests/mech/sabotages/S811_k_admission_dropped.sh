@@ -10,7 +10,7 @@ SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='prechecks'
 SAB_DESC='the K admission of the re-entered handoff admits every K, so a landmark whose expected hit gap is shorter than K replaces the start-byte scan'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/rlhbuild_report.md §5); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S811.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''[a-y]\d{0,150}:'\'' && grep -q '\''^#define RX_REQ_HANDOFF "151"'\'' "$REACH_TMP/o.c" && grep -q '\''^#define RX_DFA_PREFILTER "byte-class"'\'' "$REACH_TMP/o.c" && echo REACH-ADMISSION-DECLINES'
+SAB_REACH='"$PCREC" --features all --memfn=no-window-search -fno-landmark-walk -p rx -o "$REACH_TMP/o.c" --pattern '\''[a-y]\d{0,150}:'\'' && grep -q '\''^#define RX_REQ_HANDOFF "151"'\'' "$REACH_TMP/o.c" && grep -q '\''^#define RX_DFA_PREFILTER "byte-class"'\'' "$REACH_TMP/o.c" && echo REACH-ADMISSION-DECLINES'
 SAB_REACH_EXPECT='REACH-ADMISSION-DECLINES'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
@@ -20,3 +20,9 @@ SAB_AFTER='    return (void)landmark_ppm, (void)start_ppm, (void)k, true;   /* S
 # arithmetic moved into `pcrec_landmark_margin`, which the landmark walk's
 # rarity row shares; the plant stays at the handoff's reader so it drops the
 # K admission alone (the walk's row keeps its margin).
+# RE-AIMED 2026-10-30 (lane p1mech): the landmark walk now takes the witness
+# by default (`RX_DFA_SCAN "landmark-walk"`, REQ_HANDOFF "none"), so the probe
+# compiles with the detector's own flags, run_prechecks.sh's `emit`
+# (COVER_DENY + WALK_DENY, lane p1tri): there the entry still hands off at 151
+# and the re-entry declines, the site this row plants. Under the plant the
+# re-entry is taken with and without the deny (measured, p1mech_report.md).
