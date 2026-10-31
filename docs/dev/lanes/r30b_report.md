@@ -260,3 +260,19 @@ CHECKS_RESULT
 | report + history index entry in the same change | this file + `docs/dev/history/claude_md/docs__dev__lanes.md` |
 | CLAUDE.md files whose roles changed | cli/, memfn/src/, memfn/include/ |
 | no merge, no push; lanecheck to DONE | yes |
+
+## 12. Addendum (lane r30bfix, 2026-10-31): sections not run before delivery
+
+Job 697 went red (triage: `r30btri_report.md`; no R-30 defect). These sections were NOT run
+before delivery, and each was red at job 697 on a stale expectation:
+- `test-codegen` (only via `tests/codegen/run_codegen_tests.sh`): `reqcube_check.py`'s k66 row
+  still required the window's `rx_reqrun` block R-30 drops. The "71
+  presence/handoff/k66/reqcube patterns" probe above was a byte comparison of two lane builds, not
+  this check.
+- `test-memfn-guarded`: the `simd-form` population floor (6) read 5.
+- `test-compound`: the G7 lever fence's allowlist lacked the new plant S1548, which names the lever.
+
+§9's `CHECKS_RESULT` placeholder was never filled in; the light checks' record is §8's staged job.
+§4's abi numbering (92 -> 94) is superseded: lane r30bfix merged main 5c60e118c (abi 93) and
+renumbered R-30 to 93 -> 94 (provisional). The fixes, the merge and the re-run jobs are in
+`r30bfix_report.md`.
