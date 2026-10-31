@@ -110,7 +110,7 @@ If the manager prefers not to merge main first: run jobs 3, 4, 5 (and 10 narrowe
 
 ## STATE AT HANDOFF
 
-- Delivered: this report only (committed). No code, no log, no manifest changed; `docs/dev/artifact_size_log.tsv` and `r30b_rulings.md` left untouched.
+- OWED: none. Delivered: this report only (committed). No code, no log, no manifest changed; `docs/dev/artifact_size_log.tsv` and `r30b_rulings.md` left untouched.
 - Scratch used: `/var/tmp/pcrec-pcrec/scratch/r30btri/` (probe outputs; two throwaway dirs under `worktrees/r30b/build/tmp/` removed).
 - Open for the manager: whether to merge main before the fixes (recommended, see above); the S1760/S1761 cause is NOT established; the S678 history is unknown.
 - No rulings file named in the brief; `r30b_rulings.md` belongs to the build lane and was not read.
