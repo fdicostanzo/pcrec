@@ -165,7 +165,7 @@ def apply(lst, s):
 
 def evaluate(lst, sites, picks, floors):
     if not sites:
-        return dict(score=float("nan"), tail=0, worst=float("nan"), n=0)
+        return dict(score=float("nan"), tail=0, worst=float("nan"), n=0, tail_sites=[], passed=False)
     sc, tl, wr, bad = [], 0, 0.0, []
     for st in sites:
         p = apply(lst, st); a = st["picks"].get(p) or st["picks"]["default"]

@@ -1,0 +1,31 @@
+pick	argv
+default	-
+k:no-fd-d1	--memfn=no-fd-d1
+k:no-fd-d1+k:no-fd-pres-g1	--memfn=no-fd-d1,no-fd-pres-g1
+k:no-fd-d1+k:no-fd-pres-pick	--memfn=no-fd-d1,no-fd-pres-pick
+k:no-fd-d1+k:no-fd-pres-pick+k:no-pres-set-lead	--memfn=no-fd-d1,no-fd-pres-pick,no-pres-set-lead
+k:no-fd-d1+k:no-pres-set-lead	--memfn=no-fd-d1,no-pres-set-lead
+k:no-fd-d1+k:no-window-search	--memfn=no-fd-d1,no-window-search
+k:no-fd-pres-g1	--memfn=no-fd-pres-g1
+k:no-fd-pres-pick	--memfn=no-fd-pres-pick
+k:no-fd-pres-pick+k:no-pres-set-lead	--memfn=no-fd-pres-pick,no-pres-set-lead
+k:no-pres-set-lead	--memfn=no-pres-set-lead
+k:no-window-search	--memfn=no-window-search
+no-hyb-reseed	-fno-hyb-reseed
+no-offset-skip	-fno-offset-skip
+no-offset-skip+k:no-fd-pres-g1	-fno-offset-skip --memfn=no-fd-pres-g1
+no-offset-skip+k:no-fd-pres-pick	-fno-offset-skip --memfn=no-fd-pres-pick
+no-offset-skip+k:no-fd-pres-pick+k:no-pres-set-lead	-fno-offset-skip --memfn=no-fd-pres-pick,no-pres-set-lead
+no-offset-skip+k:no-pres-set-lead	-fno-offset-skip --memfn=no-pres-set-lead
+no-offset-skip+no-req-handoff	-fno-offset-skip -fno-req-handoff
+no-offset-skip+no-req-handoff+k:no-fd-pres-pick	-fno-offset-skip -fno-req-handoff --memfn=no-fd-pres-pick
+no-offset-skip+no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead	-fno-offset-skip -fno-req-handoff --memfn=no-fd-pres-pick,no-pres-set-lead
+no-offset-skip+no-req-handoff+k:no-pres-set-lead	-fno-offset-skip -fno-req-handoff --memfn=no-pres-set-lead
+no-req-handoff	-fno-req-handoff
+no-req-handoff+k:no-fd-pres-pick	-fno-req-handoff --memfn=no-fd-pres-pick
+no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead	-fno-req-handoff --memfn=no-fd-pres-pick,no-pres-set-lead
+no-req-handoff+k:no-pres-set-lead	-fno-req-handoff --memfn=no-pres-set-lead
+no-req-handoff+no-start-set	-fno-req-handoff -fno-start-set
+no-run-prefilter	-fno-run-prefilter
+no-start-set	-fno-start-set
+no-start-set+k:no-fd-pres-pick	-fno-start-set --memfn=no-fd-pres-pick

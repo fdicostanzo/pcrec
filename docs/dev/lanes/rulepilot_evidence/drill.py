@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """rulepilot: the search's DRILL on synthetic ground truth (docs/design/pricing_rulepilot.md §6).
 
-Builds datasets in search.py's input shape, the real job's shape (139 sites, the 13 picks, 6
+Builds datasets in search.py's input shape, the real job's shape (139 sites, the real pick vocabulary, 3
 log-spaced lengths x 2 density regimes, 3 launches, the base launched three times, a measured
 per-launch noise of 1.5 %), and runs the SAME search.run on them. Four truths:
 
-  (a) PLANTED  a 2-rule truth: "if req_run_len >= 3 -> fno-offset-skip; elif dflt_presence ->
+  (a) PLANTED  a 2-rule truth: "if req_run_len >= 3 -> no-offset-skip; elif dflt_presence ->
                k:no-fd-pres-g1; else default"; every other arm 1.3-2.5x slower.   MUST PASS at <= 2.
   (b) BEYOND   the best pick is a 4-way parity of four BOOL pieces (no 3-rule list can say it);
                wrong picks 1.6-2.5x slower.                                        MUST FAIL.
@@ -20,10 +20,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import search
 from pieces import PIECES
 
-PICKS = ["default", "fno-rev-end", "k:no-window-search", "k:no-fd-pres-g1", "k:no-pres-set-lead",
-         "k:no-fd-pres-pick", "fno-run-prefilter", "fno-offset-skip", "fno-req-handoff", "fno-start-set",
-         "fno-hyb-reseed", "k:no-fd-d1", "k:no-window-skip"]
-LENS = [32, 256, 2048, 16384, 131072, 1048576]
+# the REAL pick vocabulary (inventory/vocabulary.tsv: the default + every census deny set), so the
+# drill's over-fit is the real search's over-fit
+PICKS = [l.split("\t")[0] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                    "inventory", "vocabulary.tsv")).read().splitlines()[1:]]
+LENS = [64, 8192, 1048576]
 DENS = ["miss", "dense"]
 N_SITES, LAUNCHES, NOISE = 139, 3, 0.015
 STRATA = ["FIRST+NEXT", "NEXT", "LOCATE+NEXT", "FIRST+PRESENCE", "(bytes only)", "FIRST+NEXT+PRESENCE"]
@@ -60,13 +61,13 @@ def site(rng, i, truth):
     return dict(id="S%03d" % i, stratum=rng.choice(STRATA), pieces=pv, picks=picks, cells=cells)
 
 def planted(kind, pv, rng, **k):
-    want = ("fno-offset-skip" if pv["req_run_len"] >= 3 else
+    want = ("no-offset-skip" if pv["req_run_len"] >= 3 else
             "k:no-fd-pres-g1" if pv["dflt_presence"] else "default")
     if kind == "pick":
         return want
     return {a: 1.0 if a == k["picks"][want] else rng.uniform(1.3, 2.5) for a in k["arms"]}
 
-PAR = ["fno-start-set", "fno-run-prefilter", "k:no-fd-pres-g1", "fno-req-handoff"]
+PAR = ["no-start-set", "no-run-prefilter", "k:no-fd-pres-g1", "no-req-handoff"]
 def beyond(kind, pv, rng, **k):
     want = PAR[2 * (pv["anchored"] ^ pv["nullable"]) + (pv["caseless"] ^ pv["utf"])]
     if kind == "pick":
@@ -92,7 +93,7 @@ def main():
     pt = {n: t for n, (t, _, _) in PIECES.items()}
     # (a) must pass at exactly 2 rules AND name the planted literals in the planted order
     expect = {"a-planted": lambda r: (r["verdict"] == "PASS at 2 rule(s)"
-                                      and r["lists"][2]["text"].startswith("if req_run_len >= 3 (FITTED) -> fno-offset-skip; if dflt_presence -> k:no-fd-pres-g1")),
+                                      and r["lists"][2]["text"].startswith("if req_run_len >= 3 (FITTED) -> no-offset-skip; if dflt_presence -> k:no-fd-pres-g1")),
               "b-beyond": lambda r: r["verdict"].startswith("FAIL"),
               "c-noise": lambda r: r["verdict"].startswith("FAIL"),
               "d-null": lambda r: r["verdict"] == "PASS at 0 rule(s)"}

@@ -1,0 +1,178 @@
+id	class	refused	narms_default	nroute	nosearch_needs_lrow	base	flags	pattern
+B01	binary	0	7	3	1	a0	-	django-5\.0/[\w/.-]+\.py(?=\x00)
+B02	binary	0	3	3	0	a0	-	\x89PNG\r\n\x1a\n
+B03	binary	0	3	3	0	a0	-	\x1f\x8b\x08
+B04	binary	0	4	3	1	a0	-	\x00{16,}
+B05	binary	0	3	3	0	a0	-	ustar\x0000
+B06	binary	0	3	3	0	a0	-	PK\x03\x04
+B07	binary	0	8	2	1	a0	-	(?s)PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)
+B08	binary	0	3	3	0	a0	-	1AY&SY
+B09	binary	0	1	3	1	a0	-	[\x20-\x7e]{8,}
+B10	binary	0	1	3	1	a0	-	[\x80-\xff]{4,}
+B11	binary	0	3	3	0	a0	-	\xde\x12\x04\x95
+B12	binary	0	3	3	0	a0	-	[0-7]{11}\x00
+B13	binary	0	9	3	0	a0	-	\bpng_[a-z_0-9]+\(
+B14	binary	0	4	3	1	a0	-	(?m)^#!.*python.*$
+B15	binary	0	3	3	0	a0	-	\xef\xbb\xbf
+B16	binary	0	3	3	0	a0	-	\r\n
+B17	binary	0	16	3	1	a0	-	https?://[\x21-\x7e]+
+B18	binary	0	3	3	0	a0	-	\x1f\x8b\x08\x08
+B19	binary	0	3	3	0	a0	-	PK\x05\x06
+B20	binary	0	8	3	1	a0	-i	permission is hereby granted
+B21	binary	0	3	3	0	a0	-	\xff\xd8\xff
+B22	binary	0	1	3	1	a0	-	[\x20-\x7e]{6,}\x00
+C01	code	0	2	3	1	a0	-	\b(?:TODO|FIXME|XXX|HACK)\b.*
+C02	code	0	2	3	1	a0	-	(?m)^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$
+C03	code	0	3	3	1	a0	-	(?m)^\s*#\s*include\s*[<"]([^>"]+)[>"]
+C04	code	0	2	3	1	a0	-	(?m)^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b
+C05	code	0	4	3	1	a0	-	"(?:[^"\\\n]|\\.)*"
+C06	code	0	3	3	1	a0	-	(?m)^\s*def\s+(\w+)\s*\(
+C07	code	0	8	3	1	a0	-	(?m)^class\s+(\w+)\((.*?)\):
+C08	code	0	1	3	1	a0	-	(?m)^(?:from\s+[\w.]+\s+)?import\s+.+$
+C09	code	0	4	3	1	a0	-	@(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b
+C10	code	0	8	3	1	a0	-	public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(
+C11	code	0	12	3	0	a0	-	\bfunction\s+(\w+)\s*\(
+C12	code	0	6	3	1	a0	-	\$\(\s*["'][^"']+["']\s*\)
+C13	code	0	6	3	1	a0	-	(?m)^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(
+C14	code	0	12	3	0	a0	-	\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(
+C15	code	0	9	3	0	a0	-	\bunsafe\s*\{
+C16	code	0	1	3	1	a0	-	(?m)[ \t]+$
+C17	code	0	4	3	0	a0	-	\b0x[0-9a-fA-F]{8,}\b
+C18	code	0	4	3	1	a0	-	\b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(
+C19	code	0	2	1	0	a0	-i	\b(the|a|an|of|to|is|in)\s+\1\b
+C20	code	0	2	3	1	a0	-	[\w.+-]+@[\w-]+\.[\w.-]+
+C21	code	0	2	3	1	a0	-	\b\d+\.\d+\.\d+(?:-[\w.]+)?\b
+C22	code	0	12	3	0	a0	-	\bgoto\s+\w+;
+C23	code	0	8	3	1	a0	-	//.*https?://\S+
+C24	code	0	2	3	0	a0	-i	\bdeprecated\b
+C25	code	0	10	3	0	a0	-	\bf"[^"]*\{[^}]+\}[^"]*"
+C26	code	0	3	3	1	a0	-	\b(?:long|set)jmp\b
+C27	code	0	1	3	1	a0	-	(?m)^.{121,}$
+L01	logs	0	3	3	0	a0	-	\bERROR\b
+L02	logs	0	3	3	1	a0	-	\b(?:\d{1,3}\.){3}\d{1,3}\b
+L03	logs	0	3	3	1	a0	-	\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b
+L04	logs	0	3	3	0	a0	-	\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}
+L05	logs	0	2	3	0	a0	-i	authentication failure
+L06	logs	0	4	3	1	a0	-	"\s5\d\d\s
+L07	logs	0	4	3	1	a0	-	"(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"
+L08	logs	0	4	3	1	a0	-	"GET [^"]*\.php[^"]* HTTP/1\.\d" 404
+L09	logs	0	7	3	1	a0	-	container_\d+_\d+_\d+_\d+
+L10	logs	0	4	3	1	a0	-	\b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b
+L11	logs	0	5	3	1	a0	-	req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}
+L12	logs	0	4	3	0	a0	-i	\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b
+L13	logs	0	3	3	1	a0	-	\b(?:WARNING|ERROR|CRITICAL|TRACE)\b
+L14	logs	0	7	3	1	a0	-	status: (\d{3}) len: (\d+) time: (\d+\.\d+)
+L15	logs	0	4	3	1	a0	-	RAS (?:KERNEL|APP) FATAL
+L16	logs	0	1	3	0	a0	-	^(?!- )\S+
+L17	logs	0	3	3	0	a0	-	R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d
+L18	logs	0	2	1	0	a0	-i	\b(\w+)\s+\1\b
+L19	logs	0	8	3	1	a0	-i	File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*
+L20	logs	0	4	3	1	a0	-i	0x[0-9a-f]{15,16}
+L21	logs	0	3	3	0	a0	-	Exception
+L22	logs	0	6	3	1	a0	-	Connection broken for id \d+
+L23	logs	0	4	3	1	a0	-	\b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]
+L24	logs	0	1	2	0	a0	-	(?m)^(?!.*\bINFO\b).*$
+L25	logs	0	2	3	0	a0	-i	kernel panic
+L26	logs	0	4	3	1	a0	-	\[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d
+L27	logs	0	1	3	1	a0	-	(?m)^.{400,}$
+L28	logs	0	4	3	1	a0	-	\[(notice|error|warn|crit|alert|emerg)\]
+M01	markup	0	8	3	1	a0	-	<a\s+[^>]*href="([^"#][^"]*)"
+M02	markup	0	4	3	1	a0	-	</?([a-z][a-z0-9]*)\b
+M03	markup	0	4	3	0	a0	-	\bid="([^"]+)"
+M04	markup	0	2	1	0	a0	-	<h([1-6])[^>]*>(.*?)</h\1>
+M05	markup	0	4	3	1	a0	-	(?s)<!--.*?-->
+M06	markup	0	8	3	1	a0	-	class="[^"]*\bhighlight\b[^"]*"
+M07	markup	0	4	3	1	a0	-i	&(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);
+M08	markup	0	8	3	1	a0	-	<img\b[^>]*\bsrc="([^"]+)"
+M09	markup	0	6	3	1	a0	-	<script[^>]*\bsrc=
+M10	markup	0	1	3	1	a0	-	(?m)^([=\-~^]{4,})$
+M11	markup	0	6	3	1	a0	-	(?m)^\.\. ([a-z]+)::\s*(.*)$
+M12	markup	0	2	3	1	a0	-	:(?:class|func|meth|attr|mod):`~?([^`]+)`
+M13	markup	0	2	3	1	a0	-	``[^`]+``
+M14	markup	0	4	3	1	a0	-	(?m)^\.\. versionadded:: (\d+\.\d+)
+M15	markup	0	4	3	1	a0	-	\[([^\]]+)\]\(([^)]+)\)
+M16	markup	0	2	3	1	a0	-	(?m)^#{1,6}\s+.+$
+M17	markup	0	16	3	1	a0	-	https?://[^\s)>\]]+
+M18	markup	0	4	3	1	a0	-	(?:Added|Changed|Deprecated) in version \d+\.\d+
+M19	markup	0	4	3	1	a0	-	<code class="[^"]*"><span class="pre">(\w+)</span></code>
+M20	markup	0	3	3	1	a0	-i	\bdeprecat\w*
+M21	markup	0	3	3	0	a0	-	user@example\.invalid
+M22	markup	0	4	3	1	a0	-	<[^>]+>
+M23	markup	0	2	1	0	a0	-i	\b(\w+)\s+\1\b
+M24	markup	0	1	3	1	a0	-	(?m)^\s*$
+N01	nonenglish	0	1	3	1	a0	-e utf8	\p{Han}+
+N02	nonenglish	0	1	3	1	a0	-e utf8	\p{Hiragana}+
+N03	nonenglish	0	1	3	1	a0	-e utf8	\p{Katakana}{2,}
+N04	nonenglish	0	4	3	1	a0	-e utf8	《[^》]+》
+N05	nonenglish	0	2	3	1	a0	-e utf8	(\p{Han}+)《(\p{Hiragana}+)》
+N06	nonenglish	1	0	0	0	None	-e utf8 --ucp	\b\p{Lu}\p{Ll}+\b
+N07	nonenglish	0	1	3	1	a0	-e utf8	\p{Cyrillic}+
+N08	nonenglish	0	1	3	1	a0	-e utf8	\p{Greek}*[άέήίόύώ]\p{Greek}*
+N09	nonenglish	0	1	3	1	a0	-e utf8	\p{Hebrew}+
+N10	nonenglish	0	1	3	1	a0	-e utf8	[\x{0591}-\x{05C7}]
+N11	nonenglish	1	0	0	0	None	-e utf8 --ucp -i	\b\w*[éèêë]\w*\b
+N12	nonenglish	1	0	0	0	None	-e utf8 --ucp	\b\w*[äöüÄÖÜß]\w*\b
+N13	nonenglish	1	0	0	0	None	-e utf8 --ucp	\b(?:der|die|das|den|dem)\s+\p{Lu}\p{L}+
+N14	nonenglish	0	1	3	1	a0	-e utf8	(?<!\p{L})\p{Cyrillic}{7,}(?!\p{L})
+N15	nonenglish	0	1	3	1	a0	-e utf8	[，。！？；：、]
+N16	nonenglish	0	4	3	1	a0	-e utf8	「[^」]*」
+N17	nonenglish	0	1	3	1	a0	-e utf8	(?<=，)\p{Han}{4}(?=，)
+N18	nonenglish	0	1	3	1	a0	-e utf8	[^\x00-\x7f]
+N19	nonenglish	0	1	3	1	a0	-e utf8	(?m)^[\x00-\x7f]*$
+N20	nonenglish	0	4	3	1	a0	-e utf8	[\x{00C0}-\x{00FF}]{4,}
+N21	nonenglish	0	1	3	1	a0	-e utf8	(?<!\p{L})\p{Lu}{3,}(?!\p{L})
+N22	nonenglish	0	1	3	1	a0	-e utf8	\p{M}
+N23	nonenglish	0	1	3	1	a0	-e utf8	\p{Latin}+
+N24	nonenglish	0	1	3	1	a0	-e utf8	\p{Nd}+
+N25	nonenglish	1	0	0	0	None	-e utf8 --ucp -i	(?<!\w)и(?!\w)
+P01	prose	0	3	3	1	a0	-i	\bwhales?\b
+P02	prose	0	2	1	0	a0	-i	\b(\w+)\s+\1\b
+P03	prose	0	4	2	1	a0	-e utf8	“[^”]{5,200}”
+P04	prose	0	4	3	1	a0	-	\b([A-Z][a-z]+) (?:said|replied|cried|answered)\b
+P05	prose	0	4	3	1	a0	-	\b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+
+P06	prose	0	1	3	1	a0	-	(?s)[A-Z][^.!?]*\?
+P07	prose	0	1	3	1	a0	-	\b\w+ly\b
+P08	prose	0	4	3	0	a0	-	\b1[5-9]\d\d\b
+P09	prose	0	4	3	1	a0	-	(?m)^CHAPTER (?:\d+|[IVXLC]+)\.
+P10	prose	0	4	3	1	a0	-	(?m)^CHAPTER [IVXLC]+\.\s*$
+P11	prose	0	2	3	1	a0	-	\b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b
+P12	prose	0	2	3	1	a0	-	(?<=Mr\. )[A-Z]\w+
+P13	prose	0	1	3	1	a0	-	\b\w+(?=,\s+and\b)
+P14	prose	0	2	3	1	a0	-	\b[A-Za-z]+(?:-[A-Za-z]+)+\b
+P15	prose	0	2	3	1	a0	-	\b[A-Z]{4,}\b
+P16	prose	0	4	3	1	a0	-	\*\*\* START OF .*? \*\*\*
+P17	prose	0	3	3	0	a0	-	\bMycroft\b
+P18	prose	0	3	3	0	a0	-	--
+P19	prose	0	3	3	0	a0	-	(?m)\w-$
+P20	prose	0	2	3	0	a0	-i	\bthe\b
+P21	prose	0	1	3	1	a0	-	(?m)^$
+P22	prose	0	3	3	1	a0	-	\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b
+P23	prose	0	4	3	0	a0	-	\bwas\s+\w+ing\b
+P24	prose	0	2	3	1	a0	-e utf8	\b[A-Z]\w+['’]s\b
+P25	prose	0	4	3	1	a0	-	(?s)\*\*\* START OF.*?\*\*\* END OF
+P26	prose	0	1	3	1	a0	-	(?m)^\s*$
+P27	prose	0	4	3	1	a0	-	(?m)\w-\r?$
+S01	structured	0	1	3	1	a0	-	(?m)^[A-Z]{2}\t\d{7}\t\d{8}\t[^\t]* city\t
+S02	structured	0	2	3	1	a0	-	(?m)^TX\t
+S03	structured	0	2	3	1	a0	-	(?m)(-?\d+\.\d+)\t(-?\d+\.\d+)\s*$
+S04	structured	0	2	3	1	a0	-	\t\d+\t0\t\d+\.\d+\t0\.\t
+S05	structured	0	2	3	1	a0	-	(?m)^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),
+S06	structured	0	3	3	0	a0	-	\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z
+S07	structured	0	4	3	1	a0	-	"([^"]*)"
+S08	structured	0	4	3	1	a0	-	"[^"]*,\s(?:Alaska|Hawaii)"
+S09	structured	0	4	3	1	a0	-	,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),
+S10	structured	0	4	3	1	a0	-	"mag":(\d+\.\d+)
+S11	structured	0	4	3	1	a0	-	"place":"([^"]+)"
+S12	structured	0	2	3	1	a0	-	"(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")
+S13	structured	0	2	3	1	a0	-	"felt":[1-9]\d*
+S14	structured	0	2	3	1	a0	-	"NAME":"([^"]+)"
+S15	structured	0	4	3	1	a0	-	"ISO_A2":"([A-Z]{2})"
+S16	structured	0	4	3	1	a0	-	\[-?\d+\.\d+,-?\d+\.\d+\]
+S17	structured	0	4	3	1	a0	-	"POP_EST":(\d{9,})
+S18	structured	0	4	3	1	a0	-	<(\w[\w-]*)(?:\s[^>]*)?>
+S19	structured	0	6	3	1	a0	-	<sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>
+S20	structured	0	4	3	0	a0	-	\bSection\s+\d+[a-z]?\b
+S21	structured	0	4	3	1	a0	-	\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?
+S22	structured	0	6	3	1	a0	-	<action-date date="(\d{8})">
+S23	structured	0	4	3	1	a0	-	(?s)<!--.*?-->
+S24	structured	0	4	3	1	a0	-	&[a-z]+;|&#\d+;
