@@ -420,6 +420,11 @@ distilled forms:
   from 2026-09-12 to 2026-10-18 while every rule sat in memory
   (apply_here.md sections 1 and 7, 2026-10-20).
 
+### 3.ac (2026-11-01, lane axtri) — an `&&` chain silently skipped a check: a stage that never ran is a population nobody counts (K35)
+
+Kit S3 moved 884 patterns to `cover` and left the form-census floors OWED. Job 624 joined its stages with `&&`, so the census never ran after an earlier stage failed, and the stale floors surfaced only in job 758 (full-suite axes red, 2026-10-31; docs/dev/lanes/axtri1031_report.md).
+Rule: a job's stages are separate jobs, or the job reports EVERY stage's verdict (ran, skipped-because-earlier-failed, passed). A green or red job that cannot say which stages ran is the K35 shape.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three

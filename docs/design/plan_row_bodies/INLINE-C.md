@@ -41,3 +41,9 @@ The guidance is the deliverable:
   - F37: filed as [SPAN-HEADER] (Frank: later, same source, the header and the per-artifact copies work together under one guard).
   - F38: into the stage-3 brief: carry the source text, line and file on the node (a definition's segment must not take the TARGET's #line or read past its buffer), plus an ASan corpus row. Latent today (all 8 routes refused by stage 1b's subroutine rule).
   - F18's PLAN half: filed as [SITE-FRAMELESS].
+
+## FYIs filed 2026-11-01 (file1101)
+
+- (i) `--list-callouts` does not see callouts supplied through `--include-block` (its input is a `.rxt` file's targets, cli.md §2.15; `--include-block` is a different entry, §1.23). A reviewer using the block route has no describe view of those sites. A note, not a defect, unless the owner wants the view.
+- (ii) `ctx->user` is `NULL` at a code site, so user data reaches embedded code only through a data symbol. This MATCHES the spec (match_api.md §11.9: "`ctx->user` is `NULL` at a code site"; the `RX_USER` helper reads it), so it is a note and not a K row.
+- (iii) Owner ruling 2026-10-31: the bench rewrote its callout code as special-case C because including shared source looked broken. Frank prefers the same C included via `--include-block`; the bench revisits later (BENCH-side). pcrec-side check OWED (no lane yet): make sure the include route works for the bench's shape (shared source, pinned lines, `-I`) so the bench CAN switch; any gap found is filed as a row here.
