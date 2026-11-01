@@ -74,6 +74,51 @@ the job until then without asking `--ready` (`not-ready: not before T`, shown by
 now < its declared not-before and ages it from T afterwards; every other not-ready answer ages as before (the earlier any-not-ready exemption was
 rejected). Old hand-written --ready gates keep working; new time gates use not-before. Report: docs/dev/lanes/qscripts2_report.md.
 
+## Built (lane qorder, 2026-11-01)
+
+Owner GO 2026-11-01: order by the "unsharded run length"; "if there are waiting jobs and the box is free then let the next job run".
+Report: docs/dev/lanes/qorder_report.md. Four changes to the queue and its watcher.
+
+(1) START ORDER. Among the READY jobs the next one started is the one with the shortest expected run. The expected run is a declared
+number: `boxqueue: est SECONDS` (a new optional dry-run directive), else the job's cap (cap none = last). A shard of a longer run
+declares `boxqueue: run-total SECONDS`, the UNSHARDED total, and that is its length, so shards of one 5000 s run do not each jump
+ahead of a 1000 s job on their own small caps. (Rejected: summing the pending members of a shard set. It needs a set identity the
+queue does not have, and the remaining work shrinks as shards finish, so the last shards would jump the queue, the opposite of the
+ask. A declared total is the same number for every shard.) `est` past the cap and `run-total` below `est` are refused at add.
+The rule is a DECLARED first-match table (`ORDER_ROWS` in scripts/boxqueue, printed by the header): each ready job falls under the
+first row that holds and is sorted by (row, that row's key, name in C-locale):
+
+| row | holds when | sorts by | why |
+|---|---|---|---|
+| reservation | an imported bench window (job `PRIO-bench-W` with a `.bench` params file) | PRIO | the bench's start time is a promise; the window must not wait behind a shorter job |
+| override | PRIO below 100 (`BOXQUEUE_OVERRIDE_BELOW`) | PRIO | the explicit "go first" lane; nobody uses PRIO < 100 today |
+| starved | ready and passed over for 14400 s (`BOXQUEUE_STARVE_AFTER`) | longest wait first | the starvation bound: shortest-first alone would starve a long job indefinitely |
+| length | everything else | expected run, then name | the owner's rule; equal lengths and cap ties fall back to today's name order |
+
+So a PRIO of 100 and up (every PRIO in use) no longer orders the queue; it is the tie-break. The old BOILERPLATE advice to give the
+shorter overall run the earlier number is now automatic. "Ready" time is the runner's first ready answer (`.state/KEY.ready`,
+cleared by any not-ready answer). A not-ready job never holds up a ready one. Cross-session: every owner's jobs go through the same
+table. Every number is an UNMEASURED default: 100, 14400 s (about one long job's run), the 30 s cap-kill grace. `plan` prints the
+order; `status` says, for a ready job that waits, which job goes first and by which row; queue.log has one `ORDER` line per pass.
+The runner's pass sleep is also cut to the nearest declared not-before, so a gate opens when it says, not up to a pass pace later.
+
+(2) [QUEUE-CAPKILL]. The cap used to be `timeout --kill-after=60` around the job, which TERMed the job's own pid: any descendant that
+had changed process group or session survived with the box lock (its fd is inherited). 2026-10-31: job 745-vmrecm-test's make test
+tree outlived its cap for 64 minutes. Now the runner's own watcher enforces the cap: marker `running/NAME/capfired`, safekill of the
+job's group AND ppid tree (TERM, grace, KILL), then safekill of every process still holding the box-lock file open that is not the
+runner's own `_start` chain (`boxlock holders`; a double-forked straggler belongs to no tree but it IS the lock). The end reads
+`CAP-FIRED`; `capkill.log` in the run dir and one `CAP-KILL` line in queue.log say what was killed and whether anything still holds the lock.
+Not done (no measured need): sweeping lock holders after a NORMAL end.
+
+(3) `.window` gains `not_before=YYYY-MM-DDTHH:MM[:SS]`, the same strict local-time parse as the job directive (one function,
+`nb_epoch`). The placeholder declares it, so the window queues at once, is held by the queue's own time gate and shows in
+status/plan; the bench no longer needs a detached sleeper. Revised [B146] contract: docs/dev/lanes/qorder_bench_inbox_draft.md.
+
+(4) WINDOW-MISSED (queuewatch). One event line when a window DECLARED with `not_before=` has its start pass by `--missed-window-sec`
+(900, unmeasured) with the window never started, not cancelled by its owner, and no job of its owner pending or running. It is a
+PROBLEM line the standing monitor relays (SKILL.md row 10, one word added). Limit: the notice sees only DECLARED windows; the
+2026-10-31 W1 was never declared at all. The not_before key is what lets the bench declare a plan ahead of time.
+
 ## Requirements observed from the 2026-10-20 ctxp2d chain (append as found)
 
 - The armed stage list omitted one owed check (recursion identity); with a

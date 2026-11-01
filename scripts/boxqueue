@@ -36,7 +36,7 @@
 #
 # A JOB is one executable SCRIPT named PRIO-OWNER-REST (`100-main-maketest`;
 # PRIO digits, OWNER [A-Za-z0-9_]+, REST [A-Za-z0-9_.-]+ without `--`). PRIO
-# orders the queue (C-locale name order), OWNER says whose it is — a session
+# breaks ties in the START ORDER (below, C-locale name order) and, under 100, overrides it; OWNER says whose it is — a session
 # reorders, retries and cancels only its OWN jobs. Its KEY is OWNER-REST (a
 # requeue changes PRIO, never KEY). Reorder = rename; insert = `add` (or a
 # file dropped in pending/ by hand: it is dry-run on first sight); retry =
@@ -106,6 +106,11 @@
 #                                     `--ready` (the pass answers `not-ready: not before T`; `plan`/`status` show it), so a
 #                                     time gate needs no hand-written --ready wrapper. queuewatch's PENDING-STUCK skips a
 #                                     job ONLY while now < its declared not-before; after it the job ages like any other.
+#   boxqueue: est SECONDS             OPTIONAL ([QORDER]). The job's EXPECTED run, for the START ORDER below. Without it the cap is the
+#                                     length. Refused when it is past the cap.
+#   boxqueue: run-total SECONDS       OPTIONAL ([QORDER]). The UNSHARDED total of the run this job is one shard of: the length the START
+#                                     ORDER uses (before est and cap), so the shards of one long run do not each jump ahead on their own
+#                                     small caps. Declare the same total in every shard. Refused when below est.
 #   log=PATH names the file the population is read from (default: the job's
 #   own job.log; relative = under the run dir, i.e. job.log.make): a tool that
 #   writes its OWN log (perfrun's `-- LOG`) reads POPULATION-SHORT on job.log
@@ -137,6 +142,22 @@
 #                                     SECONDS` is a longer window. The same
 #                                     alarm watches a NON-queue box-lock holder
 #                                     that blocks a pending job (HOLDER-IDLE).
+# START ORDER ([QORDER], lane qorder, 2026-11-01; owner: "order by unsharded run length"). Each pass asks every pending job `--ready`,
+# then starts ONE of the READY ones, chosen by a DECLARED first-match table (ORDER_ROWS below, in this script): a ready job falls under
+# the first row that holds and is sorted by (row, that row's key, name in C-locale). A job that is not ready never holds up a ready one.
+#   reservation  an imported bench window (job PRIO-bench-W with a .bench params file): starts when ready, by PRIO
+#   override     a PRIO below 100 (BOXQUEUE_OVERRIDE_BELOW): the explicit "go first" lane, by PRIO
+#   starved      ready and passed over for 14400 s (BOXQUEUE_STARVE_AFTER, ready time = the runner's first ready answer): longest wait first
+#   length       everything else: the SHORTEST expected run first (run-total, else est, else cap; cap none last), then name order
+# So a PRIO of 100 or more no longer orders the queue; it is the tie-break (equal lengths run in today's name order). Cross-session: every
+# owner's jobs go through the same table. Every number (100, 14400, the cap-kill grace) is an UNMEASURED default. `plan` prints the order;
+# `status` says which job goes first and by which row for a ready job that waits; queue.log has one ORDER line per pass. The runner's
+# sleep between passes is cut to the nearest declared not-before, so a gate opens on time.
+# THE CAP ([QUEUE-CAPKILL], 2026-11-01): the runner's own watcher enforces `cap` (wall seconds, lock wait excluded). On the cap it writes
+# running/NAME/capfired, then scripts/safekill kills the job's process group AND ppid tree (TERM, BOXQUEUE_CAP_GRACE 30 s, KILL), then
+# safekills every other process still holding the box-lock file open (`boxlock holders`) that is not the runner's own _start chain, so the
+# lock is free when the job ends; the end is `CAP-FIRED`, the run dir keeps capkill.log, queue.log gets one CAP-KILL line (naming any
+# holder it could not remove). The old `timeout` TERMed only the job's pid: 745-vmrecm-test's make test tree outlived its cap for 64 min.
 # BENCH WINDOWS ([BENCH-RESERVE], lane benchres, 2026-10-25): the bench reserves the box through a DATA FILE, never
 # by running our code or us running its. Each inbox in scripts/boxqueue.inboxes (`ABS_INBOX ABS_LOG_ROOT` per line;
 # a scratch queue reads none unless BOXQUEUE_INBOXES names a config) is scanned by the runner (every pass pace; a
@@ -146,7 +167,10 @@
 # 700-899, name not [A-Za-z0-9._-]+ (also no `--`, and equal to the file's name), a log not an absolute path
 # (letters digits _ . / -) under ABS_LOG_ROOT without `..`, a bad ERE, a file over 4096 bytes, a control character or
 # a symlink REJECTS it (queue.log line; state `DONE failed <iso> IMPORT-REJECT <reason>` when name+prio are usable). Keys:
-#   prio=7NN name=W cap=S patience=S [idle_ok=S] log=ABS start_s=S done_ere=ERE expect=N witness=LINE fail_ere=ERE
+#   prio=7NN name=W cap=S patience=S [idle_ok=S] [not_before=T] log=ABS start_s=S done_ere=ERE expect=N witness=LINE fail_ere=ERE
+# not_before=T ([QORDER]; local ISO-8601 YYYY-MM-DDTHH:MM[:SS], the SAME strict parse as the job directive) is declared on the imported job as
+# `boxqueue: not-before T`: the window queues NOW, is held by the queue's own time gate, and shows in status/plan. queuewatch raises
+# WINDOW-MISSED when a window's declared start passes (grace 900 s) with it never started and no job of its owner pending or running.
 # It becomes the job PRIO-bench-W (owner bench), the FIXED placeholder scripts/boxqueue_window: cap/patience/idle-ok
 # are the job's own declarations, `expect window=N last=done_ere` + `witness` its population (read from the job's own log: the placeholder echoes
 # the last done_ere line of the bytes the bench log gained since RUNNING). patience and start_s are REQUIRED; patience is
@@ -164,7 +188,7 @@
 # THE RUNNER (one per queue: flock on QUEUE/.runner.lock; a second is REFUSED,
 # exit 75; `add` arms one if none is live). Each PASS asks every pending job,
 # in order, `--ready` (on a snapshot copy) and logs every answer; then it
-# STARTS the first ready job: dry-run again, take scripts/boxlock (`--wait
+# STARTS the one the START ORDER picks: dry-run again, take scripts/boxlock (`--wait
 # 5`; busy = `waiting on <holder>` logged, the job stays pending, asked next
 # pass), and INSIDE the lock compare the snapshot with the pending original
 # (edited meanwhile = CHANGED, not run: the edit is honoured next pass),
@@ -205,6 +229,11 @@ IDLE_TREE_PCT=${BOXQUEUE_IDLE_TREE_PCT:-5}
 SCALE_RUNS=${BOXQUEUE_SCALE_RUNS:-5}
 SCALE_PCT=${BOXQUEUE_SCALE_PCT:-125}
 CLK=$(getconf CLK_TCK 2>/dev/null || echo 100)
+# [QORDER] the start ORDER's and the cap kill's numbers: ALL UNMEASURED defaults (2026-11-01; tune from the first miss).
+OVERRIDE_BELOW=${BOXQUEUE_OVERRIDE_BELOW:-100}   # a PRIO below this is an explicit override (row `override`)
+STARVE_AFTER=${BOXQUEUE_STARVE_AFTER:-14400}     # a ready job passed over this long (s) goes first (row `starved`): about one long job's run
+CAP_GRACE=${BOXQUEUE_CAP_GRACE:-30}              # TERM -> KILL grace (s) of the cap kill, for a job's own cleanup (timeout's old --kill-after was 60)
+NOLEN=999999999999                               # the length of a job with no estimate and no cap
 
 die() { echo "boxqueue: $*" >&2; exit 64; }
 now() { date -Iseconds; }
@@ -253,6 +282,10 @@ callj() {
         BOXQUEUE=$self exec "$TO" --kill-after=2 "$b" "$s" "--$mode" ) < /dev/null > "$o" 2>&1
 }
 
+# nb_epoch TEXT: a not-before / not_before value (local ISO-8601 YYYY-MM-DDTHH:MM[:SS], a REAL date) -> epoch, else rc 1.
+# The ONE strict parse: the job directive and the .window key both use it.
+nb_epoch() { [[ $1 =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?$ ]] && date -d "$1" +%s 2>/dev/null; }
+
 # parse_decl FILE: the dry run's `boxqueue:` declarations -> D_CAP D_PAT D_EXP[] (KEY\tN\tLOG\tMODE\tERE)
 # D_IDLE ("" default window | ok | SECONDS) D_STRICT (newline-joined problems the ENQUEUE gate refuses; the
 # lenient re-reads at START ignore it, so a job queued before a grammar change never changes)
@@ -263,7 +296,7 @@ EXPECT_FORMS="valid expect forms:
                                                     matching line; also print: boxqueue: witness NAME=LINE)"
 ere_ok() { RE=$1 awk 'BEGIN { match("", ENVIRON["RE"]) }' > /dev/null 2>&1; }
 parse_decl() {
-    D_CAP="" D_PAT="" D_EXP=() D_ERR="" D_IDLE="" D_STRICT="" D_WIT=() D_SIZE="" D_CAPNOTE= D_NBF="" D_NBF_TXT=
+    D_CAP="" D_PAT="" D_EXP=() D_ERR="" D_IDLE="" D_STRICT="" D_WIT=() D_SIZE="" D_CAPNOTE= D_NBF="" D_NBF_TXT= D_EST="" D_TOT=
     local l kw rest none=0 nreason="" e k n lg m re w c wf
     while IFS= read -r l || [ -n "$l" ]; do
         case "$l" in "boxqueue: "*) ;; *) continue ;; esac
@@ -279,8 +312,14 @@ parse_decl() {
                 [[ $rest =~ ^[A-Za-z0-9_]+=[1-9][0-9]{0,11}$ ]] || { D_ERR="size wants NAME=N (N a positive integer), got '$rest'"; return 1; }
                 [ -z "$D_SIZE" ] || { D_ERR="more than one size declared"; return 1; }
                 D_SIZE=$rest ;;
+            est)
+                [[ $rest =~ ^[1-9][0-9]{0,11}$ ]] || { D_ERR="est wants a positive number of seconds, got '$rest'"; return 1; }
+                D_EST=$rest ;;
+            run-total)
+                [[ $rest =~ ^[1-9][0-9]{0,11}$ ]] || { D_ERR="run-total wants a positive number of seconds, got '$rest'"; return 1; }
+                D_TOT=$rest ;;
             not-before)
-                [[ $rest =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?$ ]] && D_NBF=$(date -d "$rest" +%s 2>/dev/null) ||
+                D_NBF=$(nb_epoch "$rest") ||
                     { D_ERR="not-before wants a local ISO-8601 time YYYY-MM-DDTHH:MM[:SS] that is a real date, got '$rest'"; D_NBF=""; return 1; }
                 D_NBF_TXT=$rest ;;
             witness)
@@ -293,11 +332,13 @@ parse_decl() {
                     D_EXP+=("${BASH_REMATCH[1]}"$'\t'"${BASH_REMATCH[2]}"$'\t'"${BASH_REMATCH[4]:-@job}"$'\t'"${BASH_REMATCH[5]}"$'\t'"${BASH_REMATCH[6]}")
                 else D_ERR="expect '$rest' is not a valid form
 $EXPECT_FORMS"; return 1; fi ;;
-            *) D_ERR="unknown declaration '$kw' (cap, patience, expect, witness, idle-ok, size, not-before)"; return 1 ;;
+            *) D_ERR="unknown declaration '$kw' (cap, patience, expect, witness, idle-ok, size, not-before, est, run-total)"; return 1 ;;
         esac
     done < "$1"
     [ -n "$D_CAP" ] || { D_ERR="no 'boxqueue: cap' declared"; return 1; }
     [ -n "$D_PAT" ] || { D_ERR="no 'boxqueue: patience' declared"; return 1; }
+    if [ -n "$D_EST" ] && [ "$D_CAP" != none ] && [ "$D_EST" -gt "$D_CAP" ]; then D_ERR="est $D_EST s is past the cap $D_CAP s: a job cannot be expected to outrun its own cap"; return 1; fi
+    if [ -n "$D_TOT" ] && [ -n "$D_EST" ] && [ "$D_TOT" -lt "$D_EST" ]; then D_ERR="run-total $D_TOT s is below est $D_EST s: a shard is no longer than the whole run it belongs to"; return 1; fi
     [ ${#D_EXP[@]} -gt 0 ] || [ $none = 1 ] || { D_ERR="no 'boxqueue: expect' declared
 $EXPECT_FORMS"; return 1; }
     [ ${#D_EXP[@]} -gt 0 ] && [ $none = 1 ] && { D_ERR="'expect none' beside counted populations"; return 1; }
@@ -552,6 +593,7 @@ finish_job() { # finish_job NAME: read running/NAME's rc, judge, move it
     if [ -z "$rc" ]; then reason="RUNNER-DIED (no rc: the job died with its runner)"
     elif [ -e "$rd/over" ]; then reason="POPULATION-OVER killed early: $(cat "$rd/over")"
     elif [ -e "$rd/cancelled" ] && [ "$rc" != 0 ]; then oc=cancelled reason="CANCELLED-BY-OWNER (rc=$rc, $(cat "$rd/cancelled"))"
+    elif [ -e "$rd/capfired" ]; then reason="CAP-FIRED (${D_CAP}s)"
     else
         case "$rc" in
             0)  if [ "$v" = RED ]; then reason="VERDICT-RED rc=0 but a red line: ${vline#VERDICT RED: }"
@@ -561,7 +603,6 @@ finish_job() { # finish_job NAME: read running/NAME's rc, judge, move it
             76) oc=requeued ;;
             77) oc=cancelled ;;
             75) reason="NOT-READY-AFTER-START (exit 75 from the work: readiness belongs in --ready, before any side effect)" ;;
-            124|137) reason="CAP-FIRED (${D_CAP}s)" ;;
             *)  reason="rc=$rc" ;;
         esac
     fi
@@ -612,8 +653,57 @@ reexec_if_changed() {
     BQ_REEXEC=$1 exec bash "$self" run ${RUN_ARGS[@]+"${RUN_ARGS[@]}"}
 }
 
+# ---------- the start ORDER ([QORDER], lane qorder, 2026-11-01; owner: "order by unsharded run length") ----------
+# Among the READY jobs the next one started is chosen by a DECLARED first-match table, not by an if-chain. Each ready job
+# is tried against the rows top to bottom; the FIRST row whose condition holds gives it a TIER (the row's position) and a
+# SORT KEY (the named field, `-` = descending); the job order is (tier, key, name in C-locale). The fields of a job:
+#   reserved  1 for an imported bench window (a PRIO-bench-NAME with a .bench params file), else 0
+#   prefix    its PRIO digits as a number          waited  seconds since the runner first found it ready
+#   len       its expected run, seconds: `boxqueue: run-total` (the UNSHARDED total of a shard set), else `est`, else its cap
+#             (cap none = a very large number: last among equals)
+# A condition is `*` or `field OP value` (OP one of >= <= = < >), value a number or OVERRIDE_BELOW / STARVE_AFTER.
+#   reservation  a bench window starts when ready: it holds the box FOR the bench, its start time is a promise
+#   override     a PRIO below OVERRIDE_BELOW (100) is the explicit "go first" lane, ordered by that number
+#   starved      ready and passed over for STARVE_AFTER (14400 s): oldest first, so a long job cannot wait forever
+#   length       everything else: shortest expected run first; equal lengths fall back to name order (PRIO, then name)
+# So an ordinary PRIO prefix (100 and up) no longer orders the queue, it only breaks ties; the override is the PRIO below 100.
+ORDER_ROWS='reservation|reserved=1|prefix
+override|prefix<OVERRIDE_BELOW|prefix
+starved|waited>=STARVE_AFTER|-waited
+length|*|len'
+# order_sort: stdin NAME<TAB>reserved<TAB>prefix<TAB>waited<TAB>len per ready job -> stdout NAME<TAB>row<TAB>len<TAB>waited, in start order
+order_sort() {
+    ORDER_ROWS=$ORDER_ROWS OB=$OVERRIDE_BELOW SA=$STARVE_AFTER awk -F'\t' '
+        function holds(cond,   fld, op, val) {
+            if (cond == "*") return 1
+            if (!match(cond, /(>=|<=|=|<|>)/)) return 0
+            fld = substr(cond, 1, RSTART - 1); op = substr(cond, RSTART, RLENGTH); val = substr(cond, RSTART + RLENGTH)
+            if (val in sym) val = sym[val]
+            if (op == ">=") return f[fld] + 0 >= val + 0
+            if (op == "<=") return f[fld] + 0 <= val + 0
+            if (op == "=") return f[fld] + 0 == val + 0
+            if (op == "<") return f[fld] + 0 < val + 0
+            return f[fld] + 0 > val + 0
+        }
+        BEGIN { n = split(ENVIRON["ORDER_ROWS"], R, "\n"); sym["OVERRIDE_BELOW"] = ENVIRON["OB"]; sym["STARVE_AFTER"] = ENVIRON["SA"] }
+        { f["reserved"] = $2; f["prefix"] = $3; f["waited"] = $4; f["len"] = $5
+          for (i = 1; i <= n; i++) { split(R[i], c, "|"); if (holds(c[2])) break }
+          key = c[3]; neg = (substr(key, 1, 1) == "-"); if (neg) key = substr(key, 2)
+          printf "%d\t%.0f\t%s\t%s\t%s\t%s\n", i, (neg ? -1 : 1) * f[key], $1, c[1], $5, $4 }' |
+        LC_ALL=C sort -t "$(printf '\t')" -k1,1n -k2,2n -k3,3 | cut -f3-
+}
+# cand_line NAME KEY: the order_sort input line of a READY job (D_* hold its declarations)
+cand_line() {
+    local n=$1 k=$2 rs=0 w=0 len
+    [[ $n == *-bench-* ]] && [ -f "$Q/.bench/$k.params" ] && rs=1
+    [ -f "$Q/.state/$k.ready" ] && w=$(( $(date +%s) - $(cat "$Q/.state/$k.ready") ))
+    len=${D_TOT:-${D_EST:-$D_CAP}}; [ "$len" = none ] && len=$NOLEN
+    printf '%s\t%s\t%s\t%s\t%s\n' "$n" "$rs" "$((10#$(prio_of "$n")))" "$w" "$len"
+}
+
 pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a job ran
     local n k s o rc ans dt t0 chosen="" csnap="" pn=$1 since age
+    local cand=() sorted row len waited frow ordl="" ord_n=0; local -A RSNAP=() RDT=()
     reexec_if_changed "$pn"
     local jobs; jobs=$(pending_jobs)
     qlog "== pass $pn START $(now) pending=$(printf '%s' "$jobs" | grep -c .) box=$(bash "$BL" status 2>&1 | head -1)"
@@ -641,27 +731,43 @@ pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a 
         local why; why=$(grep -v '^boxqueue: ' "$o" | head -1)
         case $rc in
             0)  ans=ready; rm -f "$Q/.state/$k.since" "$Q/.state/$k.reported"
-                if [ -z "$chosen" ]; then chosen=$n; csnap=$s; ans="ready (starting)"; fi ;;
+                [ -f "$Q/.state/$k.ready" ] || date +%s > "$Q/.state/$k.ready"
+                RSNAP[$n]=$s RDT[$n]=$dt; cand+=("$(cand_line "$n" "$k")") ;;
             75|124|137)
                 if [ $rc = 75 ]; then ans="not-ready: ${why:-no reason given}"
                 else ans="READY-HUNG: --ready killed after ${READY_BOUND}s, counted not-ready"; fi
                 [ -f "$Q/.state/$k.since" ] || date +%s > "$Q/.state/$k.since"
+                rm -f "$Q/.state/$k.ready"
                 since=$(cat "$Q/.state/$k.since"); age=$(( $(date +%s) - since ))
                 ans="$ans (since $(date -d "@$since" -Iseconds))"
                 if [ "$D_PAT" != none ] && [ "$age" -gt "$D_PAT" ] && [ ! -e "$Q/.state/$k.reported" ]; then
                     qlog "  pass $pn REPORT $n not ready for ${age}s, past its patience ${D_PAT}s :: $ans"
                     touch "$Q/.state/$k.reported"
                 fi ;;
-            76) local nn; nn=$(next_prio "$(prio_of "$n")")-$k
+            76) local nn; nn=$(next_prio "$(prio_of "$n")")-$k; rm -f "$Q/.state/$k.ready"
                 mv "$Q/pending/$n" "$Q/pending/$nn" && ans="requeue (from --ready): now $nn" ;;
             77) end_pending "$n" done "never (from --ready): ${why:-no reason given}" "$o"; ans="never: cancelled" ;;
             *)  end_pending "$n" failed "READY-ERRORED rc=$rc: ${why:-no output}" "$o"; ans="READY-ERRORED rc=$rc: failed" ;;
         esac
+        rm -f "$o"
+        [ "$rc" = 0 ] && continue    # a ready job is logged below, once the order is decided; its snapshot is kept until then
         qlog "  pass $pn $n $ans (${dt}ms)"
         [ -f "$Q/pending/$n" ] && printf '%s\n' "$ans" > "$Q/.state/$k.answer"
         printf '%s %s\n' "$n" "$ans" >> "$Q/.work/status.$$"
-        rm -f "$o"; [ "$s" = "$csnap" ] || rm -f "$s"
+        rm -f "$s"
     done
+    if [ ${#cand[@]} -gt 0 ]; then    # [QORDER] the first row of ORDER_ROWS that holds decides each ready job's place
+        sorted=$(printf '%s\n' "${cand[@]}" | order_sort)
+        while IFS=$'\t' read -r n row len waited; do
+            k=$(key_of "$n"); ord_n=$((ord_n + 1)); ordl="$ordl${ordl:+ > }$n[$row len=${len}s waited=${waited}s]"
+            if [ -z "$chosen" ]; then chosen=$n csnap=${RSNAP[$n]} frow=$row ans="ready (starting)"
+            else ans="ready (waits: $chosen goes first by row $frow; this job: row $row, length ${len}s, waited ${waited}s)"; rm -f "${RSNAP[$n]}"; fi
+            qlog "  pass $pn $n $ans (${RDT[$n]}ms)"
+            [ -f "$Q/pending/$n" ] && printf '%s\n' "$ans" > "$Q/.state/$k.answer"
+            printf '%s %s\n' "$n" "$ans" >> "$Q/.work/status.$$"
+        done <<<"$sorted"
+        qlog "  pass $pn ORDER ($ord_n ready): $ordl"
+    fi
     bench_reconcile
     { echo "pass $pn at $(now), runner pid $$"; cat "$Q/.work/status.$$"; } > "$Q/status.tmp" && mv "$Q/status.tmp" "$Q/status"
     rm -f "$Q/.work/status.$$"
@@ -709,7 +815,7 @@ win_parse() {
         [[ $l =~ [[:cntrl:]] ]] && { WERR="line $n has a control character"; return 1; }
         [[ $l =~ ^([a-z_]+)=(.*)$ ]] || { WERR="line $n is not key=value"; return 1; }
         k=${BASH_REMATCH[1]} v=${BASH_REMATCH[2]}
-        case $k in prio|name|cap|patience|idle_ok|log|start_s|done_ere|expect|witness|fail_ere) ;; *) WERR="unknown key '$k'"; return 1 ;; esac
+        case $k in prio|name|cap|patience|idle_ok|not_before|log|start_s|done_ere|expect|witness|fail_ere) ;; *) WERR="unknown key '$k'"; return 1 ;; esac
         [ -z "${WV[$k]+x}" ] || { WERR="duplicate key '$k'"; return 1; }
         WV[$k]=$v
     done < "$f"
@@ -719,6 +825,7 @@ win_parse() {
     for k in prio cap patience start_s expect idle_ok; do
         [ -z "${WV[$k]+x}" ] || [[ ${WV[$k]} =~ ^(0|[1-9][0-9]{0,8})$ ]] || { WERR="$k is not an integer: '${WV[$k]}'"; return 1; }
     done
+    [ -z "${WV[not_before]+x}" ] || nb_epoch "${WV[not_before]}" > /dev/null || { WERR="not_before is not a local ISO-8601 time YYYY-MM-DDTHH:MM[:SS] that is a real date: '${WV[not_before]}'"; return 1; }
     { [ "${WV[prio]}" -ge 700 ] && [ "${WV[prio]}" -le 899 ]; } || { WERR="prio ${WV[prio]} outside 700-899"; return 1; }
     [[ ${WV[name]} =~ ^[A-Za-z0-9._-]+$ ]] || { WERR="name is not [A-Za-z0-9._-]+"; return 1; }
     [[ ${WV[name]} != *--* ]] || { WERR="name contains '--' (a queue job name cannot)"; return 1; }
@@ -760,7 +867,7 @@ bench_one() {
     win_parse "$f" "$name" "$root" || { bench_reject "$name" "$WERR" "$pr"; return 0; }
     jn=${WV[prio]}-bench-$name; k=bench-$name
     {
-        for out in prio name cap patience idle_ok log start_s done_ere expect witness fail_ere; do
+        for out in prio name cap patience idle_ok not_before log start_s done_ere expect witness fail_ere; do
             [ -z "${WV[$out]+x}" ] || printf '%s=%s\n' "$out" "${WV[$out]}"
         done
         printf 'cancel=%s/%s.cancel\n' "$ib" "$name"
@@ -824,6 +931,17 @@ bench_sync_locked() {
 }
 
 # ---------- commands ----------
+# gate_wait EVERY: the runner's sleep, EVERY s shortened to the nearest declared not-before among the pending jobs (+1 s), so a
+# time gate opens when it says and the box is not left idle for a pass pace ("waiting jobs and a free box: run the next")
+gate_wait() {
+    local w=$1 n k nb e t=$(date +%s)
+    for n in $(pending_jobs); do
+        k=$(key_of "$n"); nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1); [ -n "$nb" ] || continue
+        e=$(nb_epoch "$nb") || continue
+        [ "$e" -gt "$t" ] && [ $((e - t + 1)) -lt "$w" ] && w=$((e - t + 1))
+    done
+    echo "$w"
+}
 cmd_run() {
     local every=${BOXQUEUE_EVERY:-60} once=0
     RUN_ARGS=("$@")    # kept for reexec_if_changed
@@ -853,7 +971,7 @@ cmd_run() {
             if [ -z "$(pending_jobs)" ]; then qlog "== runner IDLE-EXIT queue empty $(now)"; exit 0; fi
             flock -n 8 || exit 0    # an `add` raced the exit and armed another runner
         fi
-        sleep "$every" & wait $!
+        sleep "$(gate_wait "$every")" & wait $!
     done
     qlog "== runner END (--once) $(now)"
 }
@@ -1038,7 +1156,7 @@ cmd_status() {
 }
 cmd_plan() {
     mkq; bench_sync > /dev/null 2>&1
-    local n s o rc dl rl i=0 bad=0 total=0 capn="" e
+    local n s o rc dl rl i=0 bad=0 total=0 capn="" e cand=() sorted line
     printf '%-4s %-40s %-8s %-10s %s\n' "#" JOB DRY-RUN CAP "READY / EXPECT"
     for n in $(pending_jobs); do
         i=$((i + 1)); s=$Q/.work/$n.plan.$$; cp "$Q/pending/$n" "$s"; chmod +x "$s"; o=$s.out
@@ -1048,6 +1166,7 @@ cmd_plan() {
         else dl=ok; scale_cap "$(key_of "$n")"; [ "$D_CAP" = none ] && capn=" (+ uncapped)" || total=$((total + D_CAP)); fi
         if [ "$dl" = ok ] && [ -n "$D_NBF" ] && [ "$(date +%s)" -lt "$D_NBF" ]; then echo "not before $D_NBF_TXT" > "$o.r"; rc=75
         else callj ready "$s" "$READY_BOUND" "$o.r" "$n"; rc=$?; fi
+        [ $rc = 0 ] && [ "$dl" = ok ] && cand+=("$(cand_line "$n" "$(key_of "$n")")")
         case $rc in 0) rl=ready ;; 75) rl="not-ready: $(grep -v '^boxqueue: ' "$o.r" | head -1)" ;; 76) rl=requeue ;; 77) rl=never ;;
             124|137) rl="READY-HUNG" ;; *) rl="ready-errored($rc)"; bad=1 ;; esac
         printf '%-4s %-40s %-8s %-10s %s / expect %s\n' "$i" "$n" "$dl" "$D_CAP" "$rl" "$(exp_text)"
@@ -1056,8 +1175,40 @@ cmd_plan() {
         [ "$dl" = ok ] && [ -n "$D_STRICT" ] && { echo "       | LEGACY (queued under the older grammar; runs as before, but add/retry would refuse it):"; printf '%s\n' "$D_STRICT" | head -1 | sed 's/^/       | /'; }
         rm -f "$s" "$o" "$o.r"
     done
+    if [ ${#cand[@]} -gt 0 ]; then    # [QORDER] the same table the runner uses (a job not yet seen ready has waited 0 s)
+        sorted=$(printf '%s\n' "${cand[@]}" | order_sort); line=""
+        while IFS=$'\t' read -r n s rc e; do line="$line${line:+ > }$n[$s len=${rc}s]"; done <<<"$sorted"
+        echo "plan: start order among the ready: $line"
+    fi
     echo "plan: $i pending job(s), total cap ${total}s$capn$([ $bad = 1 ] && echo '; SOME WOULD NOT RUN CORRECTLY')"
     return $bad
+}
+
+# cap_kill NAME RD JPID: [QUEUE-CAPKILL] the cap fired. `timeout` used to TERM the job's own process and KILL it 60 s later, which
+# left every descendant that had changed group or session alive: job 745-vmrecm-test's make test tree outlived its cap for 64
+# minutes with the box lock (its fd is inherited), 2026-10-31. Now: the marker first (finish_job reads it), then safekill
+# of the job's group AND ppid tree (TERM, CAP_GRACE s, KILL), then every process still holding the box-lock file open that is
+# not this _start or one of its ancestors (a double-forked straggler is no one's descendant, but it IS the lock). The lock is
+# free when the last holder dies; `boxlock holders` is the instrument, the log is RD/capkill.log.
+cap_kill() {
+    local n=$1 rd=$2 jp=$3 me=$BASHPID skip=" $$ " q=$$ d=0 s p left=""
+    printf 'cap %ss reached %s\n' "$D_CAP" "$(now)" > "$rd/capfired"
+    echo "cap kill: safekill of the job's group and tree (pid $jp, grace ${CAP_GRACE}s)" >> "$rd/capkill.log"
+    bash "$here/safekill" --grace "$CAP_GRACE" "$jp" >> "$rd/capkill.log" 2>&1
+    while [ "$q" -gt 1 ] && [ $d -lt 64 ]; do   # this _start and its ancestors are the legitimate holders
+        s=$(<"/proc/$q/stat") 2>/dev/null || break; s=${s##*) }; set -- $s; q=$2; skip="$skip$q "; d=$((d + 1))
+    done
+    for p in $(bash "$BL" holders 2>/dev/null); do
+        case "$skip" in *" $p "*) continue ;; esac
+        [ "$p" = "$me" ] && continue
+        echo "cap kill: pid $p still holds the box lock (a straggler outside the job's group and tree): safekill" >> "$rd/capkill.log"
+        bash "$here/safekill" --grace 5 "$p" >> "$rd/capkill.log" 2>&1
+    done
+    for p in $(bash "$BL" holders 2>/dev/null); do case "$skip" in *" $p "*) continue ;; esac; [ "$p" = "$me" ] || left="$left $p"; done
+    if kill -0 "$jp" 2>/dev/null; then   # safekill failed or was missing: the group, then the pid, by KILL
+        echo "cap kill: job pid $jp still alive after safekill: KILL its group and pid" >> "$rd/capkill.log"; kill -KILL -- "-$jp" 2>/dev/null; kill -KILL "$jp" 2>/dev/null
+    fi
+    qlog "  job $n CAP-KILL at ${D_CAP}s: job tree killed$([ -n "$left" ] && echo "; STILL HOLDING THE BOX LOCK:$left") (${rd}/capkill.log) $(now)"
 }
 
 # _start NAME — INSIDE the box lock (boxlock run execs this): the stale-copy guard, then the work
@@ -1070,18 +1221,18 @@ cmd__start() {
     [ -s "$rd/cap" ] && D_CAP=$(cat "$rd/cap")
     jlog=$(job_log "$n")
     [ -z "${PCREC_BOXQUEUE_DIR:-}" ] && pcrec_tmp_prune    # the live queue only; stale leftovers under the temp root, scripts/tmpdir.sh
-    capv=(); [ "$D_CAP" != none ] && capv=("$TO" --kill-after=60 "$D_CAP")
     ( cd "$rd" && BQ_MODE=run BQ_JOB=$n BQ_KEY=$(key_of "$n") BQ_OWNER=$(owner_of "$n") BQ_QUEUE=$Q BOXQUEUE=$self \
-        BQ_RUNDIR=$rd BQ_LOG=$jlog exec setsid ${capv[@]+"${capv[@]}"} "$rd/job" ) < /dev/null > "$jlog" 2>&1 &
+        BQ_RUNDIR=$rd BQ_LOG=$jlog exec setsid "$rd/job" ) < /dev/null > "$jlog" 2>&1 &
     jpid=$!
     printf '%s %s\n' "$jpid" "$(pid_start "$jpid")" > "$rd/pid"
     (   # POPULATION-OVER watch: a `lines=` count past its declaration kills the job now, not at cap.
         # It drops the inherited lock fd first, or its last `sleep` outlives the job holding the box lock.
-        local e k nn lg m re c f xl bt=$SECONDS be=${BOXQUEUE_BENCH_EVERY:-15}
+        local e k nn lg m re c f xl bt=$SECONDS be=${BOXQUEUE_BENCH_EVERY:-15} ct=$SECONDS
         for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
         while kill -0 "$jpid" 2>/dev/null; do
             sleep "$MONITOR"
             if [ $((SECONDS - bt)) -ge "$be" ]; then bt=$SECONDS; bench_sync > /dev/null 2>&1; fi   # BENCH-MIDJOB: import + .cancel while a job runs
+            if [ "$D_CAP" != none ] && [ $((SECONDS - ct)) -ge "$D_CAP" ]; then cap_kill "$n" "$rd" "$jpid"; exit 0; fi   # THE CAP (wall, lock wait excluded)
             for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
                 IFS=$'\t' read -r k nn lg m re <<<"$e"; [ "$m" = lines ] || continue
                 xl=$(exp_log "$rd" "$lg")
@@ -1096,7 +1247,8 @@ cmd__start() {
     ipid=""
     if [ "$D_IDLE" != ok ]; then idle_watch "$n" "$rd" "$jpid" "${D_IDLE:-$IDLE_WINDOW}" & ipid=$!; fi
     wait "$jpid"; rc=$?   # RC-CAPTURE: the job's rc, before anything else runs
-    kill "$mpid" $ipid 2>/dev/null; wait "$mpid" $ipid 2>/dev/null
+    if [ -e "$rd/capfired" ]; then kill $ipid 2>/dev/null; wait "$mpid" $ipid 2>/dev/null   # the cap kill sweeps the lock's holders after the job's own pid is gone: let it finish
+    else kill "$mpid" $ipid 2>/dev/null; wait "$mpid" $ipid 2>/dev/null; fi
     printf '%s\n' "$rc" > "$rd/rc"; date +%s > "$rd/end"
     exit 0
 }
