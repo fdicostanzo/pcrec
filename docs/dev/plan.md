@@ -248,6 +248,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: finish design rev 3, then Frank's build go for the harness; the placement (front end, backend, kit) follows the measurement, not a paper look
   refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
   Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
+- [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
+  filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
+  status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
+  next: manager deploys in an idle gap (report DEPLOY), then sends the bench inbox entry (qorder_bench_inbox_draft.md); watch the first ORDER lines in queue.log; tune the unmeasured numbers (100, 14400 s, 900 s) from the first miss
+  refs: scripts/boxqueue; scripts/boxlock; [QUEUE-CAPKILL]; [B146]; docs/design/plan_row_bodies/BOXQUEUE.md; memory pcrec-bench-status
+  Scope: (1) order by the UNSHARDED run length, across sessions, so shorter overall runs go first; (2) [QUEUE-CAPKILL] folds in; (3) `.window` gains `not_before=`; (4) the queue notices a peer's planned window that never starts (2026-10-31: W1 never ran and the box sat idle about 9 h); (5) the [B146] bench contract is revised through the bench inbox (single-file [inbox] commit); (6) NEVER swap the live runner while a timing job runs or is queued next.
+- [QUEUE-CAPKILL] STATE:started — boxqueue's cap kill must take the whole job tree and release the box lock
+  filed: 2026-10-31 manager
+  status (2026-11-01): built with [QORDER] on lane/qorder, not deployed: the runner's watcher enforces the cap (safekill group+tree, then any other box-lock holder); planted test. Origin: 745-vmrecm-test, 64 min over cap, 2026-10-31
+  next: deploys with [QORDER]; close both rows after one real cap fire shows a clean CAP-KILL line
+  refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
@@ -656,17 +667,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/spec/rxt_format.md §1.5¶3 (multi-line capability without multi-line syntax, today); [RXT-ONE-READER]; [INLINE-C] (long embedded C is the driver); dev_journal 2026-11-01
   Design scope: verbatim bytes between the delimiters; the final-newline/CR policy, diagnostic line numbers and the interplay with `pattern-esc`/escaped subjects stated once; it fires [RXT-ONE-READER]'s trigger (a three-leg format change), so the design weighs ONE-READER as stage 1.
   Driver (Frank 2026-11-01): with embedded C, patterns are getting long, and a one-line `pattern-esc` with `\n` escapes is unreadable and unreviewable. A GENERAL form: a value block is a property of the format, not of `pattern`; the existing one-line spellings stay.
-- [QORDER] STATE:not-started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
-  filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
-  status (2026-11-01): not started; starts after the bench window 2026-11-01 17:50 (a timing window is box-wide; no queue edits before it ends)
-  next: brief the lane: order pending jobs by unsharded run length across sessions; fold in [QUEUE-CAPKILL]; a `.window` `not_before=` declaration; notice a peer's planned window that never starts; revise the [B146] bench contract via the bench inbox
-  refs: scripts/boxqueue; scripts/boxlock; [QUEUE-CAPKILL]; [B146]; docs/design/plan_row_bodies/BOXQUEUE.md; memory pcrec-bench-status
-  Scope: (1) order by the UNSHARDED run length, across sessions, so shorter overall runs go first; (2) [QUEUE-CAPKILL] folds in; (3) `.window` gains `not_before=`; (4) the queue notices a peer's planned window that never starts (2026-10-31: W1 never ran and the box sat idle about 9 h); (5) the [B146] bench contract is revised through the bench inbox (single-file [inbox] commit); (6) NEVER swap the live runner while a timing job runs or is queued next.
-- [QUEUE-CAPKILL] STATE:not-started — boxqueue's cap kill must take the whole job tree and release the box lock
-  filed: 2026-10-31 manager
-  status (2026-10-31): job 745-vmrecm-test hit its cap but its make test tree kept running 64 min and held the box lock; lane vmrecf killed pid 132455 by hand
-  next: fold into the qorder lane: the cap kills the job's whole process tree (scripts/safekill shape) and releases the lock, with a planted self-test
-  refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
 - [PIN-MSG-DEPTH] STATE:not-started — mech rows S1760/S1761 depend on scratch depth (256-byte message cut)
   filed: 2026-11-01 manager (kit triage r30b2tri)
   status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits

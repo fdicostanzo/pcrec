@@ -179,5 +179,16 @@ if P=$(plant noreg '        [ "$wait" = 0 ] || register_waiter "$f" WAITING' '  
     "$TO" 10 bash "$BL" status | grep -q lw-three && bad "PLANT noreg not caught" || ok "PLANT noreg: the waiter is not listed, so the list case goes red"; }
 fi
 
+# [QUEUE-CAPKILL] `boxlock holders`: every live pid with the lock file open (boxqueue's cap kill sweeps the stragglers by it).
+# A holder that closes the lock fd is not listed; a plant that lists nothing goes red.
+rm -f "$T/box.lock"
+holder 6 holders-a
+out=$("$TO" 10 bash "$BL" holders | tr -d '\n'); n=$(printf '%s\n' $out | grep -c '^[0-9]')
+[ "$n" -ge 1 ] && ok "holders lists the pids holding the lock file open ($n)" || bad "holders: '$out'"
+if P=$(plant noholders '    holders) f=$(lock_path) || exit 1; holders "$f" ;;' '    holders) : ;;'); then
+    out=$("$TO" 10 bash "$P" holders | tr -d '\n'); [ -z "$out" ] && ok "PLANT noholders: the sweep would see nobody, so the holders case goes red" || bad "PLANT noholders not caught"
+fi
+sleep 6
+
 echo "boxlock.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

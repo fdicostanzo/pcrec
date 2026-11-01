@@ -422,7 +422,7 @@ WM=$T/wm; mkdir -p "$WM"
 wmq() { # wmq TAG OFFSET [params-line-to-drop]
     local d=$WM/$1; rm -rf "$d"; mkdir -p "$d/pending" "$d/running" "$d/done" "$d/failed" "$d/.bench" "$d/reservations"
     { echo prio=700; echo name=w9; echo cap=30; [ "${3:-}" = nonb ] || echo "not_before=$(date -d "$2" +%Y-%m-%dT%H:%M:%S)"; } > "$d/.bench/bench-w9.params"
-    echo "QUEUED $(date -Iseconds)" > "$d/reservations/700-bench-w9.state"; : > "$d/state"; echo "$d"
+    echo "QUEUED $(date -Iseconds)" > "$d/reservations/700-bench-w9.state"; echo 'C|runner-dead|no runner.pid' > "$d/state"; echo "$d"   # no runner here: the RUNNER-DEAD episode is marked seen, so only the window event is under test
 }
 wmw() { "$TO" 30 bash "${3:-$QW}" --queue "$1" --state "$1/state" --no-ci --every 1 --max-sec 3 --missed-window-sec "${2:-60}" 2>&1; }
 d=$(wmq a '-5 minutes'); w1=$(wmw "$d"); w2=$(wmw "$d")
