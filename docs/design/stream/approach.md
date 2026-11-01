@@ -636,8 +636,10 @@ subroutine call with an ambiguous body, and any memo across CALL; **a stretch ho
 callee writes a slot** (captures revert at RETURN, §6.0; the stopgap until §13 hole 6); a
 non-atomic lookaround; a consuming callout.
 
-**Composition across a seam** (held by the SOUND lens by hand): a replacement exact for EVERY entry
-(p, σ) leaves every enclosing stretch's continuation unchanged, so rows compose. Rows exact only
+**Composition across a seam** (held by the SOUND lens by hand, both rounds): a replacement exact for
+EVERY entry (p, σ) leaves every enclosing stretch's continuation unchanged, so rows compose. Rows 1,
+2, 3, 9 and 12 are exact for S·K, not for S alone; the hand checks (row 3 · row 3, row 1 inside a
+row-7 pin, row 3 inside row 4) held once §6.0's rev-3 rules hold. Rows exact only
 under a hand (5, 6, 7) compose only through a valid typing, which is the typing rule's job.
 
 ### 6.2 Per row: profitability, give-up contract, lever, reads
@@ -711,8 +713,8 @@ protocol; HALF = a pair in its analysis only, the kit half already shared; ONE =
 | X12 landmark walk (lane/p1build `emit_landmark_walk`) | a hand-written loop; refuses a VM finisher | PAIR | `FIND`, reverse `AUTO`, forward stretch; the finisher's route becomes a card `demands` |
 | X13 compound controller (`compound.c:248-265`: ONE row, the match split) | whole artifact over whole artifact | PAIR | P5, the one composition home (C9) |
 | X14 engine-context consumer kinds (`emit_dfa.c:1415-1426`, `memfn.h:414-415`) | the engine taxonomy in the kit's ABI | PAIR | the consumer class by behaviour (§8) |
-| X15 find-all empty-match retry (`src/gen/emit_iter.c:48-52`) | `notempty-machine` vs `guarded-matcher`, keyed by `fit.chosen` | PAIR | P5's iterate rule reads the stream's card (a not-empty start constraint), not the engine |
-| X16 the position-domain family ([DEC-POSDOM]) | the offset-0 rule in three spellings; THREE next-start loops (`emit_dfa.c:14554`) | FAMILY | one seam rule (§4.1) and the FIND frame's floor |
+| X15 find-all empty-match retry (`src/gen/emit_iter.c:48-52`) | `notempty-machine` vs `guarded-matcher`, keyed by `fit.chosen` | PAIR | P5's iterate rule reads the stream's card `offers` (whether a not-empty machine or a guarded matcher is offered, today `PCREC_ITER_NEEDS_NEDFA` / `_GUARDED`), not the engine |
+| X16 the position-domain family ([DEC-POSDOM]) | the offset-0 rule in three spellings; THREE next-start loops (`emit_dfa.c:14554`) | FAMILY | one seam rule, stated in P6 and rendered once in P3's seam renderer (§4.1), and the FIND frame's floor |
 | X17 the call-site code table (`callsite_rows.c`) | ONE table for part and callout calls | ONE (the shared protocol) | the `codes` field (§4.1) |
 
 Count: 7 pairs (X1, X3, X4, X12, X13, X14, X15), 2 halves (X2, X7), 1 family (X16), 7 already
@@ -730,7 +732,7 @@ start searches" are withdrawn (C1, C3).
 | C5 | the compound's concat split is today's structural limit | today's compound has ONE row, the match split; the concatenation split is D163 client 7, PARKED. "Today cannot" rests only on islands being one level deep and no callout inside a DFA scan (§9.2) |
 | C6 | row 5 mature; check [ENG-TDFA]'s design | row 5 lives on lane/p1build; [ENG-TDFA] has no design ("BIG FISH", opens on the owner's word); the capture survey sided with prior art (DEFER) |
 | C7 | the derived stamp is cosmetic and agreed | three different rules were merged as one; §5.3 picks one and lists its spec readers |
-| C8 | seam fields `exact`, `meters`; the typing rule replaces five derivations | `exact` → record field `row`; `meters` → kind rows; `Nfa.erased` is the one superset owner and the typing rule a projection over it (§4.1, §6.0) |
+| C8 | seam fields `exact`, `meters`; the typing rule replaces five derivations | `exact` → record field `row`; `meters` → kind rows; the typing rule a projection over TWO facts (rev 3 B1): the language superset `Nfa.erased` and the report/position shift (§4.1, §6.0) |
 | C9 | `PART` kind and a controller above | one home: P5 (§2) |
 | C10 | exits {COMMIT, ENUM, GATE, EXISTS} | `TAGGED` restored, scoped to the mark distance; STATE and rows 11/14/15/16 as HELD kinds (§5) |
 | C11 | give-up surfaces "accepted" | D158: ONE_WAY only; a contract column per row (§6.2) |
@@ -746,23 +748,30 @@ The consumer kind is a BACKWARD fact (what consumes the site's candidates), read
 finder gate (`memfn/src/finder.c:398-404`) and the key of committed measurements (64 lines of
 `src/core/measures_table.inc`; `kit.xover.*.WALK.<KIND>` in `memfn/data/sets/synthetic-all-walk.tsv`,
 whose values are effectively never; `kit.gstar.*.DFA_HAT|DFA_SCAN` in `kit-interim-grid1.tsv`, whose
-values are real). Deleting it (rev 1) would move every keyed site to `MF_SK_UNSTATED`, whose key does
-not resolve: a silent speed change. So it is KEPT, and RE-EXPRESSED by consumer behaviour (D174:
-names say what the consumer does, never the engine):
+values are real; and more, found by grep, below). Deleting it (rev 1) would move every keyed site
+to `MF_SK_UNSTATED`, whose key does not resolve: a silent speed change. So it is KEPT, and
+RE-EXPRESSED by consumer behaviour. The case is F2's (engine context out of the kit's interface),
+not D174's (C12): D174 binds CALLER-facing names, and whether measurement keys are caller-facing
+(`--list-measurements`, `docs/spec/measures.md`) is for the kit and the manager to confirm.
 
 | today's kind (`memfn.h:385-415`) | its behaviour, as facts | proposed behaviour name (the kit confirms) |
 |---|---|---|
 | `DFA_SCAN` | the consumer restarts its forward scan at the candidate; unbudgeted | `RESTART_SCAN` |
 | `DFA_HAT` | a seeded scan that RE-SEEDS where the skip moved (states its `moved` hook) | `RESEED_SCAN` |
-| `HYB_PF` | an inner unbudgeted prefilter with a BUDGETED consumer behind it | `PREFILTER_BUDGETED` |
+| `HYB_PF` | an inner unbudgeted gate with a BUDGETED consumer behind it | `GATE_THEN_BUDGETED` (rev 2's `PREFILTER_BUDGETED` named a method) |
 | `VM_ATTEMPT` | a budgeted attempt loop (steps, frames, work per call) | `ATTEMPT_BUDGETED` |
 | `DFA_ATTEMPT` | an unbudgeted attempt loop (MLINE's predecessor seek, the attempt entry's pre-check) | `ATTEMPT_UNBUDGETED` |
 | `REPORT` | the candidate IS the answer, nothing behind it | `REPORT` (already behaviour-named) |
 
-In the stream the planner derives the class from the consumer's CARD (budgeted or not, re-seeds or
-not, the candidate used as a position or a verdict), never from an engine. This is a kit abi event
+In the stream FIND's site description derives the class by a declared read of the consumer's
+KIND ROW (§4.2, §5.1: budgeted or not, re-seeds or not), never of the consumer's selection and
+never from an engine; the use kind (the candidate used as a position or a verdict) stays per use. This is a kit abi event
 (D146: a kit byte move is a pcrec abi event in the same commit; `MF_SITE_ABI` bump). The keyed rows
 re-key by a one-to-one mapping, so no re-measurement is needed while the mapping stays a bijection.
+The re-key's site list is FOUND BY GREP at the change (D94), never this hand list; at 8e846f501 it
+also holds `memfn/data/sets/synthetic-every-key.tsv` (272 lines), `synthetic-all-v1.tsv`,
+`synthetic-all-wide.tsv`, `measure_store/zen4-grid1/1/set.tsv` (64) and
+`memfn/data/sets/generate.py` (E4).
 The request is the manager's to file (memory `pcrec-requests-are-mine-to-file`); it rides the first
 proof that moves a kit byte, not before.
 
@@ -799,11 +808,11 @@ total subset and gcc-time budget.
 
 | question | today's two engines grown as far as they go | the stream |
 |---|---|---|
-| F1: a new stretch-level capability (say a new deterministic shape) | a home per engine, or a glue site; 70% of code merges already touch the emitter pair | one admission row in P2 (§2's check) |
-| F2: a new target | rewrite two 15k-line emitters, whose decisions and spelling are interleaved | a renderer set + a kit target, once records are target-neutral (§3) |
-| F3: who can validate alone | the kit only | each part against its own oracle; the planner and renderers fully only with the interpreter (PLAN) |
-| F4: backward facts | carried inside ONE table (the start table) and the kit ask; elsewhere absent (lmwalk's reads are its own) | the card, for every part (§4.2) |
-| what today can NEVER do | a capability once; engine context out of the kit; a regular region below an irregular node at any depth (census below); a callout inside a deterministic scan | |
+| F1: a new stretch-level capability (say a new deterministic shape) | a home per engine, or a glue site; 0 of 3 replayed row-adding changes stay in their table (§2.4) | one admission row in P2 plus the declared satellites, after the splits X-0..X-5 (§2.2); not on today's layout |
+| F2: a new target | rewrite two 15k-line emitters, whose decisions and spelling are interleaved | migrate the records, restate the kit's hook interface, then a renderer set + a kit back end; P2 unchanged (§3) |
+| F3: who can validate alone | the kit only | the kit only, until the interpreter and an IR-level executor exist (PLAN); then P1, P2 and P3 against their own oracles (§2). F3 is NOT met by the stream alone |
+| F4: backward facts | carried inside ONE table (the start table), the kit ask and the size-cap ladder; elsewhere absent (lmwalk's reads are its own) | the card, for every part (§4.2; new for stretches and entries) |
+| what today can NEVER do | a capability once; engine context out of the kit. Two REACH observations, G0-neutral and not F1-F4 arguments (D5): a regular region of a VM-routed pattern after its first nested irregular node and outside every irregular ancestor, rendered as an automaton (today's islands reach one level; census M5a); a callout inside a deterministic scan | |
 | what the stream can never do | | keep the two engines as each other's independent check (loss 1); make pure-DFA properties structural rather than derived |
 
 ---
@@ -820,14 +829,14 @@ Population: pcrec-bench's 335 compiled patterns, then the corpus's 4,794 (run fi
 | `no-backreference` prefilter decline (row G's backref superset) | 12 | 453 |
 | `no-callout` decline (rows 13, 9 in §1.1) | 6 | 55 |
 | capture inside a repeat (the HELD capture kinds, §5.2) | 10 | 438 |
-| a regular region after the first nested irregular node (§9.2's "never") | 12 | 490 |
+| a regular consuming region after the first nested irregular node's subtree, outside any irregular ancestor (M5a; §9.2's reach observation) | 12 | 490 |
 | more than one VM-forcing construct | 14 | 409 |
 | capture-forced, resume-points 0, a capture-erased landmark exists (an UPPER BOUND; the admission split needs p1build) | 19 | 456 |
 
 Reading: the stream's F1-F4 case does not rest on these numbers; they size the PROOFS. The bench's
 24 captures-only VM artifacts and 19 landmark candidates are the population a P-f-shaped proof
 would touch; 10 capture-in-repeat artifacts are what the HELD kinds would reach; 12 regular regions
-below an irregular node are the structural "today cannot" made concrete.
+after an irregular node (outside it) are §9.2's reach observation made concrete.
 
 ---
 
@@ -842,6 +851,8 @@ below an irregular node are the structural "today cannot" made concrete.
 | M1 (landmark split) | which of the 19 bench / 456 corpus candidates lmwalk's admission takes | after lane/p1build merges (its admission code is there only) | one queued sweep |
 | M3 classifier | captures-at-seams vs zero-width placement, per pattern | done as the census's seam class | done |
 | M5, M8 (the planner dry run) | the tiling per pattern | a BUILD (it is the planner minus renderers): held under D77 until a proof needs it | planner code |
+| C-card | the card for planned stretches and entries (C2): a per-compile read graph over planned stretches, the class column of rule 4, `offers`, `size`; NEW, not a generalisation (rules 2-3 are trace-only over a static 13-node graph today) | a BUILD, owed with the first proof that needs a card read beyond the start table (P-c needs only today's `take` + `cand_project`, so it does not) | planner code; one sabotage per rule |
+| X-1..X-5 | the F1 splits (§2.2): the abi number to P6, the ladder as a row field, the emitter-to-driver flags as `size`, the kit-site key by `row`, population pins by `row` | each a small independent change, filed as a candidate, not scheduled; a build go each (the owner's). X-4 is the kit's to confirm | one lane each; X-2 and X-3 together |
 | T1, T2, T3 | timing | NO-REGRESSION GATES of the proofs that move bytes (G0), not benefit measurements; each needs the build it would measure | one bench window each, cleared with the owner, never in his evening hold |
 
 ### 11.2 The one byte-identity comparator (D3, PLAN)
@@ -858,7 +869,7 @@ output. PLAN: name it in the first proof lane's brief; build nothing ahead of th
 
 | order | proof | what it shows on F1-F4 | pass criterion | blocks / waits for |
 |---|---|---|---|---|
-| 1 | **P-c**: the VM hybrid's prologue (forward + reverse pair, window handoff, retry) as records, with ONE seam record carrying both halves: the run-time hand and the card (`accepts`, `proves`, `give-up contract`) | F4 (the real seam contract, both ways), F1, F3 | byte identity (§11.2) AND the seam record's own contract tests (seam-in, seam-out) | p1build merged (it edits `pcrec_cand_finish_vm` and the handoff row). It cannot be byte-identical without today's `cand_project` + `take`, so the card half is needed here anyway |
+| 1 | **P-c**: the VM hybrid's prologue (forward + reverse pair, window handoff, retry) as records, with ONE seam record carrying both halves: the run-time hand and the card (`accepts`, `offers`, `proves`, the FIXED mark) | F4 (the real seam contract, both ways), F1, F3 | byte identity (§11.2) AND the seam record's own contract tests (seam-in, seam-out) | p1build merged (it edits `pcrec_cand_finish_vm` and the handoff row). It cannot be byte-identical without today's `cand_project` + `take`, so the card half is needed here anyway |
 | 2 | **P-b**: the DFA artifact's top level (`cover`, `reverse-pass`, scan edge, forward match, report) from `FIND` / reverse `AUTO` / `AUTO` / `ACCEPT` records, stamps derived from the records | F1/F3/F2's falsifier: can the DFA emitter be a back end of the stream? It falsifies the approach if it needs kind-specific escape hatches | byte identity; zero escape hatches | P-c; p1build merged |
 | 3 | **P-d** (P-a folded in): the landmark walk as records; its seam-typed `pcrec_ctx_fail` asserts (AT, LOWER, NOMATCH, of the six) become seam type checks; the finisher route a card `demands`. P-a's part: one SKIP RECORD kind whose renderer has ONE BODY for both hosts (not a shared name over two bodies), field names co-designed with [CAND-SPAN]'s span fact (D6) | F1, F4 (the [LANDWALK-PRES] shape as a card read) | byte identity; one renderer body | P-b; [VMREC] step (b) (it consumes the span kinds `VK_SPAN`/`VK_SPAN_MOVE`, D2) |
 | held | **P-e** the planner dry run | — | — | D77: a proof that needs the planner |
@@ -868,7 +879,8 @@ output. PLAN: name it in the first proof lane's brief; build nothing ahead of th
 **Declined (D4):** round 1's timing note asked that D182 step (c) be designed against the stream's
 record set. Declined: (b) and (c) are not started, and the stream's kinds rest on open holes. The
 one cheap true part is kept as a constraint: (c)'s effects interface stays host-neutral (it already
-is, as its ruling is worded). **Pricing** (D6): any planner pricing waits for lane/rulepilot's verdict.
+is, as its ruling is worded). **Pricing** (D6, B3): no NEW planner pricing ahead of lane/rulepilot's
+verdict; the rows that price today (5, 8, some gates of G) stay as they are.
 
 ---
 
@@ -883,9 +895,17 @@ is, as its ruling is worded). **Pricing** (D6): any planner pricing waits for la
    P2 and P3. Bytes: the comparator's baseline is the previous commit's output. The census
    population is counted by its own scanner, with a parse control against the compiler's `forced by`
    text (scensus `summary.txt`). No sabotage witness is proposed here; each proof lane names its own.
+   **The F1 check's control** (rev 3): the file-to-part map (§2.3) is a DECLARED table written
+   before the replay, from file headers and function names, not derived from the changes it
+   judges; the replay (§2.4) reads the changes' own diffs. Its population is three changes chosen
+   by the round-2 critic, not a census: a different change could fail for a cause §2.2 does not
+   name, and the check would then name it. Answer witnesses in §6 are from PCRE semantics
+   (python `re`, libpcre2 and the two committed PCRE2 notes), never from pcrec's own output.
 3. **What moves when data is regenerated.** The measurement set's rarity facts feed profitability
    columns: a re-measure can move a TILING (emitted bytes, an abi event), never an answer. The consumer
-   kind's re-key (§8) is a kit abi event. The derived stamp's definition is a D80 event (§5.3).
+   kind's re-key (§8) is a kit abi event, its site list found by grep. The derived stamp's definition
+   is a D80 event (§5.3). The file-to-part map moves with every file add or split; it is re-declared
+   in the change that moves a file, like a CLAUDE.md entry.
 
 ---
 
@@ -902,20 +922,86 @@ is, as its ruling is worded). **Pricing** (D6): any planner pricing waits for la
 5. **Proof invalidation must be complete**: "undeclared = may write everything" must be the enforced
    default, and every kit window must declare its effects.
 6. **Recursion and subroutine calls**: stretches inside shared callee bodies need seams across
-   CALL/RETURN and the slot snapshot; not worked through.
+   CALL/RETURN and the slot snapshot; not worked through. Stopgap (rev 3): a stretch holding a CALL
+   whose callee writes a slot is Forced to B (§6.1), because captures revert at RETURN.
 7. **ENUM generator state inside loops**: per-frame accept positions, bounded by the window.
+8. **The kit ask can close a cycle once every part publishes** (C5). Today the site kind is a
+   compile fact fixed before any selection (`site_kind_of`, `emit_dfa.c:1437-1452`, reads the
+   engine and `fit.chosen`), which is why `table-ask-unread` may model an ask as a read of one slot's
+   selection. In the stream there is no engine: if the consumer class came from the consumer's
+   SELECTION, FIND.proves = ask(site{class = f(consumer's selection)}) and the consumer reads FIND's
+   `proves`, a cycle the `kask` edge cannot see. The rule that closes it (§4.2): split each card
+   into IR-only facts (before any selection: `accepts`, `offers`, fixed span, the kind's meters)
+   and selection outputs; an ask reads every input of the site description; the class reads the
+   consumer's KIND ROW, never its selection. The per-compile check that enforces it is new (§11.1
+   C-card).
+9. **F3's oracles** (D3): the interpreter (P2, P3) and an IR-level executor (P1) are PLAN under D77,
+   so F3 is not met (§0, §2). F3 is now one of their triggers.
+10. **The F1 condition for FIND's operands** (§2.4): change 1 passes in the end state, and change 2's
+   P3 share disappears, only if FIND's renderer takes the landmark (a byte or a run) and its K-back
+   position as operands. The
+   first proof that renders FIND for both hosts (P-b) says whether it does.
 
-**Asks for the manager** (D181: questions for a `pcre2-reader` note, never the source):
-- (A2, A13) "After an iteration of an unbounded repeated group that matched the empty string, does
-  PCRE2's interpreter ever start a further iteration (including when it is the m-th mandatory
-  iteration of X{m,}), and are captures set inside that empty iteration kept in the reported match?"
-- (A4) "For a backreference to a duplicate group name, or to a group number inside a `(?|` branch
-  reset, which group's capture does PCRE2 compare against when several are set or some are unset;
-  and under PCRE2_MATCH_UNSET_BACKREF does an unset referent match the empty string in every case?"
+**Asks for the manager: both ANSWERED** (D181) by the committed notes, each confirmed against
+libpcre2 10.46 by the manager on 2026-11-01:
+- (A2, A13) `docs/dev/pcre2_notes/empty-iteration-captures.md`: mandatory iterations always run;
+  beyond the minimum an empty iteration ends the loop on that path; its captures are kept. Used by
+  §6.0's empty-iteration rule and rows 14, 15.
+- (A4) `docs/dev/pcre2_notes/backref-referent-choice.md`: a duplicate name compares against the
+  first SET group in pattern order; a branch-reset number names one slot; an unset referent fails
+  unless `PCRE2_MATCH_UNSET_BACKREF`, which matters only when every same-named group is unset; the
+  backref's own scope decides only the comparison's caselessness. Used by §6.0's backref superset;
+  the union stays a valid superset.
 
 ---
 
-## 14. Changes from rev 1
+## 14. Changes by revision
+
+### 14.1 Changes from rev 2 (crit-stream2, `docs/dev/reviews/2026-11-01-r2-stream2.md`)
+
+Every crit-stream2 id, its ruling (all proposed dispositions accepted, 2026-11-01), and the section
+where rev 3 carries it.
+
+| id | ruling | section |
+|---|---|---|
+| A1 polarity per question (row 3 widened unsoundly) | FIX-NOW | §6.0 Polarity; §6.1 row 3 (two witnesses) |
+| A2 row 2 per branch, not of S | FIX-NOW | §6.1 row 2 (renamed "unique end"; witness `(?:ab\|a..)d`) |
+| A3 "K reads no slot" ignores the caller; which σ survives | FIX-NOW | §6.1 rows 2, 9 (the first in preference order is kept) |
+| A4 rows 2, 3, 8, 9 lack S regular | FIX-NOW | §6.0 regularity rule; §6.1 rows 2, 3, 8, 9 |
+| A5 the backref superset under-states a caseful backref to a caseless group | FIX-NOW | §6.0 backref superset (from `backref-referent-choice.md`); §6.1 row G witness; §13 asks answered |
+| A6 slots across a CALL | DOC | §6.0 capture conjunct; §6.1 Forced to B; §13 hole 6 |
+| A7 row 10's trail order omits FIND frames | DOC | §6.1 row 10 (witness `(?:(a)b\|c)`) |
+| A8 "ambiguous" quantifier and defaults; circular referents | DOC | §6.0 Ambiguous, backref superset (Σ*) |
+| B1 `\K`/`\G` in `Nfa.erased` would flip exact windows | FIX-NOW | §4.1 typing rule (two facts, the definition quoted, readers traced); §6.0 superset owners; §6.1 rows 5, 7 |
+| B2 the stamp rule counts ACCEPT; no kind charges WORK | FIX-NOW | §5.3; §5.1 meters (CUT, frameless SKIP); §1 |
+| B3 rarity declines on rows 7 and G; "any pricing" | FIX-NOW | §6.2 rows 7 (an ordering), G (per gate); §6.3; §11.3 |
+| B4 row 5's conjuncts misfiled | FIX-NOW | §6.1 row 5 (all ten re-sorted); §6.2 row 5 (profit, fit) |
+| C1 [LANDWALK-PRES] through [CAND-SPAN], no rarity of both | FIX-NOW | §4.3; §6.2 row 5; §0 F4 |
+| C2 the card's population | FIX-NOW | §4.2 Population; §0 F4; §11.1 C-card |
+| C3 rule 4 enforced nowhere | FIX-NOW | §4.2 rule 4 (class column, trace trap) |
+| C4 rule 2 stricter than `table-read-cycle` | FIX-NOW | §4.2 rule 2 (acyclic over (part, world) states); §1 |
+| C5 the ask cycle; rules 2-3 trace-only | DOC | §13 hole 8; §4.2 rule 2; §11.1 C-card |
+| C6 `pos` lacks WINDOW/EXISTS/HIT; no `offers` | FIX-NOW | §4.1 (the hand map); §4.2 `offers` |
+| C7 the give-up field re-declares a derived fact | FIX-NOW | §4.2 FIXED mark; §6.2 give-up column and row 13's fire-set rule |
+| C8 `proof` has two homes | FIX-NOW | §4.1 `proof` (a reference); §4.2 `proves` |
+| C9 consumer class is a neighbour fact | FIX-NOW | §4.2 (dropped as a producer field); §8 |
+| C10 four read vocabularies, one general form | PLAN | §4.3 Unlocks (one read table, its trigger) |
+| C11 "easy span" is a method | NOTED | §4.3 [CAND-SPAN] (per-offset sets at every fixed offset) |
+| C12 D174 cited for the rename | DOC | §8 (the case is F2's; `GATE_THEN_BUDGETED`) |
+| D1 F1's check not runnable; three merges fail it | FIX-NOW | §2.2 (satellite set, extended cross-part list, splits X-0..X-5), §2.3 (the map), §2.4 (the replay); §0 F1; §9.2; §11.1; §12 item 2; §13 hole 10 |
+| D2 the size-cap ladder is a missed backward channel | FIX-NOW | §4.2 `size` and the re-plan over worlds; §2.2 X-2, X-3 |
+| D3 F3's oracles run end to end | FIX-NOW | §0 F3; §2 oracle column and "F3, stated plainly"; §3; §9.2; §13 hole 9 |
+| D4 the kit seam carries C text | FIX-NOW | §0 F2; §2 P4; §3; §9.2 |
+| D5 §9.2's census claim; §1.1 row 3's speed note | FIX-NOW | §9.2; §10 M5a row; §1.1 row 3 |
+| D6 the counting rule | DOC | §0.1 |
+| D7 the priority order is the manager's reading | NOTED | §0 (marked for the owner to confirm) |
+| E1 row 1's text is stricter than possessify | DOC | §6.1 row 1 (by reference; D47.5, CALL/VAR, `\G`) |
+| E2 row 7's later clauses are vacuous today | DOC | §6.1 row 7 |
+| E3 X15's card field, X16's owner | DOC | §7.1 X15, X16; §2 P3, P6 |
+| E4 the re-key list misses kind-keyed sets | DOC | §8 (grep-found, the extra sets named) |
+| E5 slips (§5.2's M6 cite, "+ lib/", "§12 maps") | DOC | §5.2; §0.1; the header |
+
+### 14.2 Changes from rev 1 (crit-stream1)
 
 Every ruled crit-stream1 finding, and where rev 2 carries it.
 
