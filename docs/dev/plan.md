@@ -649,6 +649,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RXT-MULTILINE] STATE:not-started — one standard multi-line value form for every .rxt directive, not a pattern special case
+  filed: 2026-11-01 Frank (SCHEDULED: "File it as scheduled. I'd like a standard way to express multi lines and not a special case for patterns.")
+  status (2026-11-01): scheduled after [QORDER] and the P1 landing; design first (spelling is the manager's, semantics Frank's), then build
+  next: design lane: ONE delimited value-block form usable by any value-taking directive (pattern, subject, template, inline-C bodies); newline/CR policy and line numbers; weighs [RXT-ONE-READER] first
+  refs: docs/spec/rxt_format.md §1.5¶3 (multi-line capability without multi-line syntax, today); [RXT-ONE-READER]; [INLINE-C] (long embedded C is the driver); dev_journal 2026-11-01
+  Design scope: verbatim bytes between the delimiters; the final-newline/CR policy, diagnostic line numbers and the interplay with `pattern-esc`/escaped subjects stated once; it fires [RXT-ONE-READER]'s trigger (a three-leg format change), so the design weighs ONE-READER as stage 1.
+  Driver (Frank 2026-11-01): with embedded C, patterns are getting long, and a one-line `pattern-esc` with `\n` escapes is unreadable and unreviewable. A GENERAL form: a value block is a property of the format, not of `pattern`; the existing one-line spellings stay.
 - [QORDER] STATE:not-started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): not started; starts after the bench window 2026-11-01 17:50 (a timing window is box-wide; no queue edits before it ends)
@@ -1093,7 +1100,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the next reader disagreement, or a format change that would need three-leg edits.
   refs: src/parse/rxt_source.c; tests/harness/run.sh; tests/harness/verify_rxt.py
   Today the format has three hand-written readers (rxt_format.md §0¶2: `pcrec`'s src/parse/rxt_source.c, tests/harness/run.sh, tests/harness/verify_rxt.py) kept in step by three-leg fixtures and `--list-schema`'s `validated_by` column — a parallel mechanism, and it drifts ([RXT-READERS] re-aligned oracle/var after specrxt found leg A accepting what B/C refused; its fixtures then found two more B/C bugs). Shape: `run.sh` and `verify_rxt.py` consume `pcrec --list-source`'s table instead of parsing .rxt text; the three-leg fixtures and `validated_by` collapse to one reader's tests. Costs to price when opened: run.sh is the corpus hot path (one more pcrec spawn per file — measure against the harness's spawn budget, [TT-14]); verify_rxt.py's body-only read must come from the listing. Trigger: the next reader disagreement, or a format change that would need three-leg edits.
-  VENTING LOG (manager notes each time the three readers cost us; append, dated): 2026-10-10 — [RXT-READERS] cost a lane to re-agree three parsers on two line kinds; two of the three had silently diverged since W23.
+  VENTING LOG (manager notes each time the three readers cost us; append, dated): 2026-10-10 — [RXT-READERS] cost a lane to re-agree three parsers on two line kinds; two of the three had silently diverged since W23. 2026-11-01 — [RXT-MULTILINE] (Frank, scheduled) is a three-leg format change: this row's trigger fires.
 - [ORACLE-OPTS] STATE:not-started — libpcre2 verifiers compile at options=0, so flagged and utf8 blocks are skipped
   filed: 2026-10-10 lane revtri
   status (2026-10-10): not started; FILED 2026-10-10 by the manager, session 105, from lane revtri's triage; admin column, unscheduled
