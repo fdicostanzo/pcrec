@@ -118,7 +118,7 @@ NOT `wtprune` that worktree before the job has run, or re-queue from main after 
 
 ## STATE AT HANDOFF
 
-Script, job and report committed on lane/scensus; smoke green; full sweep OWED to the box queue (above). Not
+Script, job and report committed on lane/scensus; smoke green; OWED scensus-run (job 798-scensus-run, key scensus-scensus-run; completion line `scensus: COMPLETE plants=11 ...`). Not
 measured: every M0-M6 count (only the populations are known); M1's landmark-admission split is NOT MEASURABLE
 TODAY (proxy only, labelled). Last rulings entry applied: none (`scensus_rulings.md` had only "(none yet)" at
 the last check). Next: after the job, a fresh agent reads `summary.txt` and fills the synthesis section 4
