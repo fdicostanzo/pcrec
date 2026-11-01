@@ -9,12 +9,15 @@ no-regression gate. No build go; no plan row is opened by it.
 
 ## Files
 
-- `approach.md` — the design, REVISION 2 (lane stream2): goals, the part
-  table, the record level, the two-way seam (run-time hand + plan-time card),
-  the kinds, the admission table with full conjuncts, the corrected premises,
-  the census, the proof order, and the map of every crit-stream1 finding.
+- `approach.md` — the design, REVISION 3 (lane stream3): goals, the part
+  table with the declared file-to-part map and the F1 check replayed on three
+  real changes, the record level, the two-way seam (run-time hand + plan-time
+  card), the kinds, the admission table with full conjuncts, the corrected
+  premises, the census, the proof order, and the maps of every crit-stream1
+  and crit-stream2 finding (§14).
 - `round1/` — the round-1 inputs (three drafts, the synthesis = rev 1, the
   common brief), verbatim; own CLAUDE.md.
 
-The critic round on rev 1 (crit-stream1) and its rulings stayed in scratch;
+The critic rounds are recorded in `docs/dev/reviews/2026-11-01-r1-stream1.md`
+(rev 1) and `2026-11-01-r2-stream2.md` (rev 2), each with its rulings;
 `approach.md` §14 maps each finding id to where it was fixed.
