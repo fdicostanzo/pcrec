@@ -649,6 +649,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [CAND-SPAN] STATE:not-started — at a found byte, test the full fixed-size easy span; one fact for walk, pre-check, literal search
+  filed: 2026-11-01 Frank + manager (from [LANDWALK-PRES]'s generated-code reading)
+  status (2026-11-01): filed, ruled, not built; P1 lands without it (its [LANDWALK-PRES] loss recorded); independent of the pricing pilot
+  next: design lane: the span FACT (per-offset byte set at a fixed offset from the found byte; mask-exact flag), the PROVED contract, every site that adopts it; then the kit request (facts, no method)
+  refs: [LANDWALK-PRES] (lane/p1build plan.md, the first consumer); [LANDWALK]; [SEL-COST]; memfn/docs/ideas.md 2026-11-01; D157 (facts, not methods)
+  RULED (Frank, 2026-11-01): "test the 'full fixed-sized easy span' out however many bytes. 1. it's fast, 2. it reduces false positives, 3. they need to be tested anyway so it's not wasted work." So a declared rule, NO price and no byte cap: every fixed-offset, EASY (one mask-and-compare per offset: literal, caseless, bit-pattern sets) byte around the found byte is tested at the hit, and a pass PROVES those offsets for the walk's rewind/verify. Pricing enters only BEYOND the easy span (range classes like [a-z] at an offset, later variable spans: Frank's "fully proved request for other classes, how priced/chosen TBD").
+  Family (three members today): main's required-run pre-check (memchr + memcmp), the landmark walk's hit (rewinds before testing L+1: the [LANDWALK-PRES] x0.83), the literal search's candidate check. One fact and one kit check for all three. Open design point: does a proved span let the verify DFA start past it (pcrec-side, own measurement) or re-test.
 - [RXT-MULTILINE] STATE:not-started — one standard multi-line value form for every .rxt directive, not a pattern special case
   filed: 2026-11-01 Frank (SCHEDULED: "File it as scheduled. I'd like a standard way to express multi lines and not a special case for patterns.")
   status (2026-11-01): scheduled after [QORDER] and the P1 landing; design first (spelling is the manager's, semantics Frank's), then build
