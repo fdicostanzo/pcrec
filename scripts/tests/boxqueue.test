@@ -47,7 +47,7 @@ mkjob() { printf '#!/usr/bin/env bash\nset -u\ncase "${1:-}" in\n  --dry-run) %s
 # plant NAME FROM TO [FROM TO ...]: a scratch scripts/ copy with the changes in boxqueue; echo its path
 plant() {
     local nm=$1 d=$T/plant_$1; shift; mkdir -p "$d/scripts" "$d/tests/lib"
-    cp "$here/boxqueue" "$here/boxlock" "$here/verdict" "$here/chainrun" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
+    cp "$here/boxqueue" "$here/boxlock" "$here/verdict" "$here/chainrun" "$here/safekill" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
     python3 -c 'import sys
 p = sys.argv[1]; s = open(p).read(); a = sys.argv[2:]
 for i in range(0, len(a), 2):
@@ -674,7 +674,7 @@ bash "$BQ" -h | grep -q 'BENCH WINDOWS' && ok "boxqueue -h documents bench windo
 # and the real assertion must go red. plantf NAME FILE FROM TO: scratch scripts/ with boxqueue_window too; echoes the boxqueue path
 plantf() {
     local nm=$1 file=$2 d=$T/plant_$1; mkdir -p "$d/scripts" "$d/tests/lib"
-    cp "$here/boxqueue" "$here/boxqueue_window" "$here/boxlock" "$here/verdict" "$here/chainrun" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
+    cp "$here/boxqueue" "$here/boxqueue_window" "$here/boxlock" "$here/verdict" "$here/chainrun" "$here/safekill" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
     python3 -c 'import sys
 p = sys.argv[1]; s = open(p).read()
 assert s.count(sys.argv[2]) == 1, "anchor"
@@ -829,6 +829,186 @@ if P=$(plantf s1632 boxqueue 'if [ -n "$D_NBF" ] && [ "$(date +%s)" -lt "$D_NBF"
     BQX=$P run1
     [ ! -e "$T/nbf.asked" ] && [ ! -e "$Q/done/"*main-nb* ] 2>/dev/null && bad "PLANT S1632 not caught" || ok "PLANT S1632 (gate not enforced): --ready is asked before the time (the job starts), the 28 case goes red"
 else bad "plant S1632 did not land"; fi
+
+# 29. [QORDER] the start ORDER: among the READY jobs the shortest expected run goes first (est, else cap; a shard counts as its
+# run-total), by a declared first-match table (reservation / override / starved / length), ties by name, across owners.
+# DE EXTRA CAP PAT EXPECT...: D plus one more declaration line
+DE() { local x=$1 out; shift; out=$(D "$@"); printf '%s echo '"'"'boxqueue: %s'"'"'; exit 0' "${out% exit 0}" "$x"; }
+# ojob KEY DRYBODY: a ready job whose work appends its KEY to the queue's order file
+ojob() { mkjob "$T/j/$1" "$2" 'exit 0' "echo $1 >> \"\$BQ_QUEUE.order\""; }
+order_is() { [ "$(tr '\n' ' ' < "$Q.order" 2>/dev/null)" = "$1 " ]; }
+oadd() { local nm=$1; shift; bq add --name "$nm" --no-start "$@" > /dev/null; }
+newq
+ojob lng "$(D 3000 none none)"; ojob shrt "$(D 60 none none)"; ojob mid "$(DE 'est 120' 900 none none)"
+oadd 100-main-lng "$T/j/lng"; oadd 200-kit-shrt "$T/j/shrt"; oadd 300-lane-mid "$T/j/mid"; run1
+order_is "shrt mid lng" && has '^  pass 1 ORDER \(3 ready\): 200-kit-shrt\[length len=60s' \
+    && ok "shortest expected run first across owners (kit 60 s, lane est 120 s, main 3000 s), against the PRIO order 100,200,300" || bad "29a order: $(tr '\n' ' ' < "$Q.order") :: $(ql | grep ORDER)"
+# est beats cap; equal lengths fall back to name order
+newq
+ojob estwin "$(DE 'est 10' 5000 none none)"; ojob capwin "$(D 60 none none)"; ojob t2 "$(D 700 none none)"; ojob t1 "$(D 700 none none)"
+oadd 100-main-capwin "$T/j/capwin"; oadd 200-main-estwin "$T/j/estwin"; oadd 400-main-t2 "$T/j/t2"; oadd 300-main-t1 "$T/j/t1"; run1
+order_is "estwin capwin t1 t2" && ok "a declared est (10 s) outranks a 60 s cap; equal 700 s caps fall back to name order (300 before 400)" || bad "29b est/tie: $(tr '\n' ' ' < "$Q.order")"
+# a shard set counts as its UNSHARDED total (run-total), not the shard's own cap
+newq
+ojob sh1 "$(DE 'run-total 5000' 100 none none)"; ojob sh2 "$(DE 'run-total 5000' 100 none none)"; ojob oth "$(D 1000 none none)"
+oadd 100-main-sh1 "$T/j/sh1"; oadd 110-main-sh2 "$T/j/sh2"; oadd 200-kit-oth "$T/j/oth"; run1
+order_is "oth sh1 sh2" && ok "two 100 s shards of a 5000 s run wait behind a 1000 s job (run-total, not the shard's cap, is their length)" || bad "29c shards: $(tr '\n' ' ' < "$Q.order")"
+# the explicit override: a PRIO below 100 goes first whatever its length
+newq
+ojob urg "$(D 5000 none none)"; ojob s "$(D 10 none none)"
+oadd 050-main-urg "$T/j/urg"; oadd 100-main-s "$T/j/s"; run1
+order_is "urg s" && ok "override: PRIO 050 (below 100) goes first although its cap is 5000 s against 10 s" || bad "29d override: $(tr '\n' ' ' < "$Q.order")"
+# a bench reservation (an imported window: a .bench params file) starts when ready, ahead of a shorter job
+newq; mkdir -p "$Q/.bench"; echo prio=700 > "$Q/.bench/bench-wr.params"
+ojob wr "$(D 9000 none none)"; ojob s "$(D 10 none none)"
+oadd 700-bench-wr "$T/j/wr"; oadd 100-main-s "$T/j/s"; run1
+order_is "wr s" && ok "reservation: a bench window (params file present) starts first although a 10 s job is ready" || bad "29e reservation: $(tr '\n' ' ' < "$Q.order")"
+# starvation: a ready job passed over past the bound goes first, ahead of every shorter job
+newq
+ojob lg "$(D 9000 none none)"; ojob sh "$(D 10 none none)"
+oadd 100-main-lg "$T/j/lg"; oadd 200-main-sh "$T/j/sh"; echo $(( $(date +%s) - 20000 )) > "$Q/.state/main-lg.ready"; run1
+order_is "lg sh" && ok "starved: a 9000 s job ready for 20000 s (bound 14400) goes before a 10 s job" || bad "29f starved: $(tr '\n' ' ' < "$Q.order")"
+newq
+oadd 100-main-lg "$T/j/lg"; oadd 200-main-sh "$T/j/sh"; echo $(( $(date +%s) - 14000 )) > "$Q/.state/main-lg.ready"; run1
+order_is "sh lg" && ok "NEGATIVE: ready for 14000 s (under the bound) is not starved: the 10 s job still goes first" || bad "29f below the bound: $(tr '\n' ' ' < "$Q.order")"
+# a job that is not ready never holds up a ready one, however short
+newq; date -d '+1 hour' +%Y-%m-%dT%H:%M:%S > "$T/nbf.far"; nbjob "$T/j/nbfar" "$T/nbf.far"; ojob lng "$(D 3000 none none)"
+oadd 100-main-nbfar "$T/j/nbfar"; oadd 200-main-lng "$T/j/lng"; run1
+order_is "lng" && [ -f "$Q/pending/100-main-nbfar" ] && ok "a short job gated by not-before does not block a ready long one; it stays pending" || bad "29g not-ready: $(tr '\n' ' ' < "$Q.order")"
+# the declarations are validated at add
+newq
+chk=0
+for row in 'est 9999|past the cap' 'est abc|est wants' 'est 0|est wants' 'run-total 10|run-total 10 s is below est' 'run-total x|run-total wants'; do
+    ex=${row%%|*}; re=${row#*|}; mkjob "$T/j/badd" "$(DE "$ex" 600 none none | sed 's/ exit 0$//') $([ "${ex%% *}" = run-total ] && echo "echo 'boxqueue: est 50';") exit 0" 'exit 0' 'exit 0'
+    out=$(bq add --name 100-main-badd --no-start "$T/j/badd" 2>&1); rc=$?
+    [ "$rc" = 65 ] && grep -q -- "$re" <<<"$out" && [ ! -e "$Q/pending/100-main-badd" ] || { bad "29h '$ex' not refused as '$re': rc=$rc $out"; chk=1; }
+done
+mkjob "$T/j/okd" "$(DE 'run-total 900' 600 none none | sed 's/ exit 0$//') echo 'boxqueue: est 100'; exit 0" 'exit 0' 'exit 0'
+bq add --name 100-main-okd --no-start "$T/j/okd" > /dev/null 2>&1 && [ $chk = 0 ] && ok "est/run-total: past-the-cap, below-est and non-numeric values are refused at add (65); a good pair is accepted" || bad "29h good pair refused"
+# plan prints the order; status says why a ready job waits (the box lock is held by someone else, so the first pick cannot start)
+newq
+ojob lng "$(D 3000 none none)"; ojob shrt "$(D 60 none none)"
+oadd 100-main-lng "$T/j/lng"; oadd 200-main-shrt "$T/j/shrt"
+out=$(bq --dry-run 2>&1)
+grep -q '^plan: start order among the ready: 200-main-shrt\[length len=60s\] > 100-main-lng\[length len=3000s\]' <<<"$out" && ok "--dry-run prints the start order (and the row each job fell under)" || bad "29i plan: $out"
+( exec 9>>"$T/box.lock"; flock 9; sleep 4 ) & hp=$!; kids+=($hp); sleep 0.5
+run1
+bq status 2>&1 | grep -q 'pending: 100-main-lng :: ready (waits: 200-main-shrt goes first by row length; this job: row length, length 3000s' \
+    && ok "status says why a ready job waits: which job goes first, by which row" || bad "29i status: $(bq status 2>&1 | grep pending)"
+wait $hp
+
+# 29p. PLANTS: each ordering rule removed from a scratch copy; its case above must go red against the copy
+plantcase() { # plantcase NAME FROM TO SETUP-FN EXPECT-ORDER DESC
+    local P; P=$(plantf "$1" boxqueue "$2" "$3") || { bad "plant $1 did not land"; return; }
+    newq; "$4"; BQX=$P run1
+    if order_is "$5"; then bad "PLANT $1 not caught ($6)"; else ok "PLANT $1 ($6): the order comes out '$(tr '\n' ' ' < "$Q.order")', the case goes red"; fi
+}
+setup_a() { oadd 100-main-lng "$T/j/lng"; oadd 200-kit-shrt "$T/j/shrt"; oadd 300-lane-mid "$T/j/mid"; }
+setup_b() { oadd 100-main-capwin "$T/j/capwin"; oadd 200-main-estwin "$T/j/estwin"; }
+setup_c() { oadd 100-main-sh1 "$T/j/sh1"; oadd 110-main-sh2 "$T/j/sh2"; oadd 200-kit-oth "$T/j/oth"; }
+setup_d() { oadd 050-main-urg "$T/j/urg"; oadd 100-main-s "$T/j/s"; }
+setup_e() { mkdir -p "$Q/.bench"; echo prio=700 > "$Q/.bench/bench-wr.params"; oadd 700-bench-wr "$T/j/wr"; oadd 100-main-s "$T/j/s"; }
+setup_f() { oadd 100-main-lg "$T/j/lg"; oadd 200-main-sh "$T/j/sh"; echo $(( $(date +%s) - 20000 )) > "$Q/.state/main-lg.ready"; }
+ojob lng "$(D 3000 none none)"; ojob shrt "$(D 60 none none)"; ojob mid "$(DE 'est 120' 900 none none)"
+ojob estwin "$(DE 'est 10' 5000 none none)"; ojob capwin "$(D 60 none none)"
+ojob sh1 "$(DE 'run-total 5000' 100 none none)"; ojob sh2 "$(DE 'run-total 5000' 100 none none)"; ojob oth "$(D 1000 none none)"
+ojob urg "$(D 5000 none none)"; ojob s "$(D 10 none none)"; ojob wr "$(D 9000 none none)"; ojob lg "$(D 9000 none none)"; ojob sh "$(D 10 none none)"
+plantcase byname 'length|*|len' 'length|*|prefix' setup_a "shrt mid lng" "length row sorts by PRIO prefix: the old name order"
+plantcase noest 'len=${D_TOT:-${D_EST:-$D_CAP}}' 'len=${D_TOT:-$D_CAP}' setup_b "estwin capwin" "est ignored, cap used"
+plantcase nototal 'len=${D_TOT:-${D_EST:-$D_CAP}}' 'len=${D_EST:-$D_CAP}' setup_c "oth sh1 sh2" "run-total ignored, the shard's own cap used"
+plantcase nooverride $'override|prefix<OVERRIDE_BELOW|prefix\n' '' setup_d "urg s" "override row removed"
+plantcase noreserv $'reservation|reserved=1|prefix\n' '' setup_e "wr s" "reservation row removed"
+plantcase nostarve $'starved|waited>=STARVE_AFTER|-waited\n' '' setup_f "lg sh" "starved row removed"
+
+# 30. [QUEUE-CAPKILL] a job that hits its cap loses its WHOLE process tree and the box lock is released. The 2026-10-31 miss: job
+# 745-vmrecm-test's make test tree outlived its cap for 64 min holding the lock (timeout only TERMed the job's own pid). Here the job
+# spawns A (same group, ignores TERM, closed the lock fd: only the group/tree kill reaches it) and B (a new session, double-forked,
+# ignores TERM, holds the lock fd: only the lock-holder sweep reaches it); cap 2 s, TERM->KILL grace 2 s.
+live() { [ -d "/proc/$1" ] && ! grep -q '^State:.*Z' "/proc/$1/status" 2>/dev/null; }
+CAPBODY=$(cat <<'EOB'
+echo $$ > "$BQ_QUEUE.jobpid"
+( trap '' TERM; exec sleep 300 9>&- ) < /dev/null > /dev/null 2>&1 &
+echo $! > "$BQ_QUEUE.kidA"
+( setsid bash -c 'echo $$ > "$0.kidB"; trap "" TERM; exec sleep 300' "$BQ_QUEUE" < /dev/null > /dev/null 2>&1 & )
+sleep 1
+wait
+EOB
+)
+mkjob "$T/j/capk" "$(D 2 none none)" 'exit 0' "$CAPBODY"
+# capcase BQX: run the capped job under that boxqueue; sets CK_* for the assertions
+capcase() {
+    newq; rm -f "$T/box.lock"; bq add --name 100-main-capk --no-start "$T/j/capk" > /dev/null
+    local t0=$SECONDS; BQX=${1:-} BOXQUEUE_CAP_GRACE=2 run1; CK_WALL=$((SECONDS - t0))
+    CK_A=$(cat "$Q.kidA" 2>/dev/null); CK_B=$(cat "$Q.kidB" 2>/dev/null); kids+=($CK_A $CK_B)
+    CK_LEFT=""; for p in $CK_A $CK_B $(cat "$Q.jobpid" 2>/dev/null); do live "$p" && CK_LEFT="$CK_LEFT $p"; done
+    CK_HOLD=$(bash "$BL" holders 2>/dev/null | tr -d ' \n')
+}
+capcase
+r=$(res main-capk | head -1)
+[ "$(st main-capk)" = failed ] && [[ $r =~ reason=CAP-FIRED_\(2s\) ]] && [ -n "$CK_A" ] && [ -n "$CK_B" ] && [ -z "$CK_LEFT" ] && [ -z "$CK_HOLD" ] && [ "$CK_WALL" -lt 40 ] \
+    && has '^  job 100-main-capk CAP-KILL at 2s: job tree killed ' && ! has 'STILL HOLDING THE BOX LOCK' \
+    && ok "cap fires: failed CAP-FIRED; the job, a TERM-ignoring child (A) and an escaped double-forked lock holder (B) are all dead; no process holds the box lock (${CK_WALL}s)" \
+    || bad "30 capkill: state=$(st main-capk) res=$r left='$CK_LEFT' holders='$CK_HOLD' wall=$CK_WALL :: $(ql | grep CAP-KILL)"
+# the next job runs at once (the lock is free): it would wait on the straggler otherwise
+mkjob "$T/j/after" "$(D 30 none none)" 'exit 0' 'exit 0'; bq add --name 200-main-after --no-start "$T/j/after" > /dev/null; run1
+[ "$(st main-after)" = green ] && ok "the job queued behind the capped one starts and ends green (the box lock was released)" || bad "30 after: $(st main-after) :: $(ql | tail -3)"
+for p in $CK_A $CK_B; do live "$p" && bash "$here/safekill" --kill-now "$p" > /dev/null 2>&1; done
+# PLANTS: each mechanism of the kill removed from a scratch copy; the case must go red
+capplant() { # capplant NAME FROM TO WHAT-SURVIVES
+    local P; P=$(plantf "$1" boxqueue "$2" "$3") || { bad "plant $1 did not land"; return; }
+    capcase "$P"; r=$(res main-capk | head -1)
+    if [ "$1" = nomarker ]; then
+        [[ $r =~ reason=CAP-FIRED ]] && bad "PLANT $1 not caught" || ok "PLANT $1 (marker not honoured): the capped job reads '${r#*reason=}', not CAP-FIRED, the 30 case goes red"
+    elif [ -z "$CK_LEFT" ] && [ -z "$CK_HOLD" ]; then bad "PLANT $1 not caught ($4)"
+    else ok "PLANT $1 ($4): survivors '$CK_LEFT', lock holders '$CK_HOLD', the 30 case goes red"; fi
+    for p in $CK_A $CK_B; do live "$p" && bash "$here/safekill" --kill-now "$p" > /dev/null 2>&1; done
+}
+capplant nosweep 'bash "$here/safekill" --grace 5 "$p" >> "$rd/capkill.log" 2>&1' ':' "the escaped lock holder B is not swept"
+capplant termonly 'bash "$here/safekill" --grace "$CAP_GRACE" "$jp" >> "$rd/capkill.log" 2>&1' 'kill -TERM "$jp"' "only the job's own pid is TERMed, as timeout did: A survives"
+capplant nomarker 'elif [ -e "$rd/capfired" ]; then reason="CAP-FIRED (${D_CAP}s)"' 'elif false; then reason=x' "x"
+capplant watcherkilled 'if [ -e "$rd/capfired" ]; then kill $ipid' 'if false; then kill $ipid' "the cap watcher is killed once the job's pid is gone, before its sweep: B survives"
+
+# 31. [QORDER] a .window gains `not_before=` (the same strict local-time parse as the job directive); the placeholder declares it,
+# so the job is held by boxqueue's own time gate until then and is visible in status/plan meanwhile
+benchq; rm -f "$T"/lock.* "$T"/hist.*
+NB=$(date -d '+7 seconds' +%Y-%m-%dT%H:%M:%S); mkwin nb1 "not_before=$NB"; run1
+grep -qx "not_before=$NB" "$Q/.bench/bench-nb1.params" && [ -f "$Q/pending/750-bench-nb1" ] && has "^  pass 1 750-bench-nb1 not-ready: not before $NB " \
+    && [[ $(rstate 750-bench-nb1) =~ ^QUEUED ]] && bq status 2>&1 | grep -q "pending: 750-bench-nb1 :: not-ready: not before $NB" \
+    && ok "a window with not_before queues NOW: imported, QUEUED, held 'not before T' (status shows it), no hand-made sleeper" || bad "31 held: $(ql | tail -4) / $(rstate 750-bench-nb1)"
+sampler 750-bench-nb1; fakebench 750-bench-nb1 nb1 "$COMPLETE"
+for _ in $(seq 30); do [ "$(date +%s)" -ge "$(date -d "$NB" +%s)" ] && break; sleep 0.5; done; run1
+st1=$(ql | sed -n 's/^== job 750-bench-nb1 START .* \(20[0-9T:+-]*\)$/\1/p' | head -1)
+[[ $(rstate 750-bench-nb1) =~ ^DONE\ green ]] && [ -n "$st1" ] && [ "$(date -d "$st1" +%s)" -ge "$(date -d "$NB" +%s)" ] \
+    && ok "after T the window runs (RUNNING, DONE green); its START is at or after the declared time" || bad "31 after T: '$(rstate 750-bench-nb1)' start=$st1 nb=$NB"
+chk=0; benchq; for v in 'tomorrow' '2026-13-45T00:00' '2026-11-02 01:00' '2026-11-02T25:00' '2026-11-02T01:00+02:00'; do
+    n=nbbad$RANDOM; mkwin "$n" "not_before=$v"; run1
+    has "bench window $n REJECTED: not_before is not a local ISO-8601" && [ ! -e "$Q/pending/750-bench-$n" ] || { bad "31 reject '$v': $(ql | grep "window $n " | head -2)"; chk=1; }
+done
+[ $chk = 0 ] && ok "malformed not_before values are rejected at import (5 shapes), nothing queued"
+# PLANTS: the strict parse dropped; the key not carried to the job
+if P=$(plantf nbnoparse boxqueue '[ -z "${WV[not_before]+x}" ] || nb_epoch "${WV[not_before]}" > /dev/null || {' '[ -z "${WV[not_before]+x}" ] || true || {'); then
+    benchq; mkwin nbp "not_before=tomorrow"; BQX=$P run1
+    has 'bench window nbp REJECTED: not_before is not a local ISO-8601' && bad "PLANT nbnoparse not caught" || ok "PLANT nbnoparse (strict parse dropped): the garbage value is not rejected by the window parser, the 31 reject case goes red"
+else bad "plant nbnoparse did not land"; fi
+if P=$(plantf nbnocarry boxqueue 'for out in prio name cap patience idle_ok not_before log' 'for out in prio name cap patience idle_ok log'); then
+    benchq; NB=$(date -d '+60 seconds' +%Y-%m-%dT%H:%M:%S); mkwin nbc "not_before=$NB"; fakebench 750-bench-nbc nbc "$COMPLETE"; BQX=$P run1
+    [ "$(st bench-nbc)" = green ] && ok "PLANT nbnocarry (key not copied to the job): the window STARTS before its time, the 31 held case goes red" || bad "PLANT nbnocarry not caught"
+else bad "plant nbnocarry did not land"; fi
+
+# 32. the runner's sleep is shortened to the nearest declared not-before: a gate opens when it says, not a pass pace later
+nbjob "$T/j/gw" "$T/nbf.gw"
+gwcase() { # gwcase BQX: a 30 s pass pace, a job gated 4 s ahead; seconds until it is green (cap 20)
+    newq; date -d '+4 seconds' +%Y-%m-%dT%H:%M:%S > "$T/nbf.gw"; BQX=${1:-} bq add --name 100-main-gw --no-start "$T/j/gw" > /dev/null
+    local t0=$SECONDS; BQX=${1:-} BOXQUEUE_EVERY=30 bq start > /dev/null 2>&1
+    for _ in $(seq 40); do [ "$(st main-gw)" = green ] && break; sleep 0.5; done
+    GW_SECS=$((SECONDS - t0)); GW_ST=$(st main-gw)
+    p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$Q/runner.pid" 2>/dev/null); [ -n "$p" ] && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" > /dev/null 2>&1
+}
+gwcase
+[ "$GW_ST" = green ] && [ "$GW_SECS" -le 12 ] && ok "a job gated 4 s ahead starts within ${GW_SECS}s although the pass pace is 30 s (the sleep is cut to the gate)" || bad "32 gate_wait: $GW_ST after ${GW_SECS}s"
+if P=$(plantf nogatewait boxqueue 'sleep "$(gate_wait "$every")" & wait $!' 'sleep "$every" & wait $!'); then
+    gwcase "$P"; [ "$GW_ST" = green ] && [ "$GW_SECS" -le 12 ] && bad "PLANT nogatewait not caught (${GW_SECS}s)" || ok "PLANT nogatewait (plain 30 s sleep): the gated job is still waiting after 20 s ($GW_ST), the 32 case goes red"
+else bad "plant nogatewait did not land"; fi
 
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]
