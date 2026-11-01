@@ -649,11 +649,29 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [QORDER] STATE:not-started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
+  filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
+  status (2026-11-01): not started; starts after the bench window 2026-11-01 17:50 (a timing window is box-wide; no queue edits before it ends)
+  next: brief the lane: order pending jobs by unsharded run length across sessions; fold in [QUEUE-CAPKILL]; a `.window` `not_before=` declaration; notice a peer's planned window that never starts; revise the [B146] bench contract via the bench inbox
+  refs: scripts/boxqueue; scripts/boxlock; [QUEUE-CAPKILL]; [B146]; docs/design/plan_row_bodies/BOXQUEUE.md; memory pcrec-bench-status
+  Scope: (1) order by the UNSHARDED run length, across sessions, so shorter overall runs go first; (2) [QUEUE-CAPKILL] folds in; (3) `.window` gains `not_before=`; (4) the queue notices a peer's planned window that never starts (2026-10-31: W1 never ran and the box sat idle about 9 h); (5) the [B146] bench contract is revised through the bench inbox (single-file [inbox] commit); (6) NEVER swap the live runner while a timing job runs or is queued next.
 - [QUEUE-CAPKILL] STATE:not-started — boxqueue's cap kill must take the whole job tree and release the box lock
   filed: 2026-10-31 manager
   status (2026-10-31): job 745-vmrecm-test hit its cap but its make test tree kept running 64 min and held the box lock; lane vmrecf killed pid 132455 by hand
   next: fold into the qorder lane: the cap kills the job's whole process tree (scripts/safekill shape) and releases the lock, with a planted self-test
   refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
+- [PIN-MSG-DEPTH] STATE:not-started — mech rows S1760/S1761 depend on scratch depth (256-byte message cut)
+  filed: 2026-11-01 manager (kit triage r30b2tri)
+  status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits
+  next: make the probes path-independent: SAB_REACH copies the fixtures to a short $REACH_TMP-relative path (or the expected phrase is matched on a message that puts it before the path)
+  refs: tests/mech/sabotages/S1760_pin_compare_skipped.sh; S1761; [IFACE-PUSH] (candidate: keep the refusal tail); docs/design/plan_row_bodies/IFACE-PUSH.md
+  Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
+- [X-NEL-RAW] STATE:not-started — does pcrec skip a raw 0x85 byte under (?x) in byte mode as libpcre2 does?
+  filed: 2026-11-01 manager (found 2026-10-30 by lane ri698)
+  status (2026-11-01): UNPROBED (box rule: no runs during the 2026-11-01 bench window); spec pattern_language.md §3.2 promises the skip under -e byte
+  next: write the .rxt case below (argv cannot carry the raw byte) in tests/modifiers/ and oracle it against libpcre2 10.46 as options=0
+  refs: docs/spec/pattern_language.md §3.2; docs/spec/rxt_format.md §1.5 (pattern-esc); lane ri698 (recida's anscheck)
+  Found when recida's anscheck fed `(?x)a<U+0085>b` as UTF-8 `C2 85` to pcrec but as latin-1 `0x85` to libpcre2: the two sides saw different patterns. The case: `pattern-esc "(?x)a\x85b"` with `m "ab" 0 2` and `n "a\x85b"` (byte encoding, no `flags`); expected values come from libpcre2 at options=0, not from this row's guess.
 - [LANECHECK-MARKER] STATE:not-started — lanecheck's .done marker must not sit in the worktree root
   filed: 2026-10-31 manager
   status (2026-10-31): bakeoff2.done in a reused worktree failed the next lane's (bakeoff3) clean check
@@ -1491,6 +1509,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One channel, off by default and switchable (a CLI flag / pcrec_options field / config line; never changes an artifact byte), on which every decision site writes one record: the table and the row that fired, the rows that declined ahead of it and the conjunct that failed, the inputs read (facts, analysis block + provenance + why, measurement-set row, explicit control vs preset), and a held/declined outcome where one applies. pcrec's tables write pcrec records; the kit writes its OWN records through a text callback on the seam (facts in, kit text out: D157 holds).
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 ## Boonies
+- [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine (latent depth hazard)
+  filed: 2026-11-01 manager (noted by lane p1build)
+  status (2026-11-01): BOONIES, unreachable today; the functions live on branch lane/p1build (worktrees/p1build/src/gen/lmwalk.c: lm_flatten line 57, lm_maxw line 80, A_CAT arms at lines 59 and 86), not yet on main
+  trigger: [LANDWALK] stage 1 lands on main, or a pattern whose CAT spine can exceed the recursion budget reaches the walk
+  refs: [LANDWALK]; docs/dev/guide/coding.md (iterative spine descent); branch lane/p1build
+  Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both; check the landing of [LANDWALK] first so the fix rides it.
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
   status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
