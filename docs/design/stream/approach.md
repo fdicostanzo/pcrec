@@ -1,12 +1,21 @@
-# One instruction stream: the end-state architecture (REVISION 2)
+# One instruction stream: the end-state architecture (REVISION 3)
 
-Status: PROPOSED, rev 2 (lane stream2, opus, 2026-11-01). Design text only: no build go, no
-plan row is opened by it. Rev 1 was the round-1 synthesis (`round1/synth.md`); it was reviewed
-by crit-stream1 (review file in `$PCREC_TMPDIR/scratch/crit-stream1/review.md`, its critic
-texts and `verify.md` beside it) and every disposition was ruled by the manager the same day
-(A1-A12, B1-B4, B6-B8, C1-C11, D1, D2, D4-D7 FIX-NOW; A13, B5, C12, C14 DOC; B6's interpreter,
-C13, D3 PLAN; SEAM-8 REJECTED). The ruled fixes are this revision; §12 maps each id to where it
-landed. The round-1 inputs are kept verbatim in `round1/`.
+Status: PROPOSED, rev 3 (lane stream3, opus, 2026-11-01). Design text only: no build go, no
+plan row is opened by it. Rev 1 was the round-1 synthesis (`round1/synth.md`), reviewed by
+crit-stream1 (`docs/dev/reviews/2026-11-01-r1-stream1.md`). Rev 2 carried those rulings and was
+re-checked by crit-stream2 (`docs/dev/reviews/2026-11-01-r2-stream2.md`, rulings inline: every
+proposed disposition accepted; D1, C1 and D3 named). Rev 3 carries the round-2 fixes; §14.1 maps
+each round-2 id to its section, §14.2 keeps the round-1 map. The round-1 inputs are kept verbatim
+in `round1/`.
+
+**What rev 3 changes in substance.** F1's check is now RUN (§2.2-§2.4): a declared file-to-part
+map, replayed on three real row-adding changes. None passes today; two pass in the end state only
+after the stream's own split and five named satellite splits (X-0..X-5), and the third is correctly
+a cross-part event. F3 is stated as NOT met
+until the per-part oracles exist. [LANDWALK-PRES] closes through [CAND-SPAN], with no pricing. The
+superset owner is split into two facts (language superset, report shift), so today's exact windows
+stay exact. Five answer holes in the admission table are closed, using the two committed PCRE2
+notes (`docs/dev/pcre2_notes/empty-iteration-captures.md`, `backref-referent-choice.md`).
 
 Read §0-§2 to hold the end state. §3-§5 are the contracts, §6 the admission table, §7-§11 the
 evidence, corrections and the proof order.
@@ -20,16 +29,17 @@ outcome from which K succeeds. Bench numbers come before corpus numbers (§10).
 
 ## 0. Goals
 
-The owner's criteria (Frank, 2026-11-01), in his order. Each names who benefits and the form in
-which it can fail a review. Priority for conflicts: F1 over F2 over F3; F4 is a constraint on
+The owner's criteria (Frank, 2026-11-01). He numbered F1-F3 and listed F4 without a rank. Each
+row names who benefits and the form in which it can fail a review. **Priority for conflicts (the
+manager's reading, for the owner to confirm; D7):** F1 over F2 over F3; F4 is a constraint on
 how F1-F3 are met (a seam that buys focus by hiding a fact fails F4, whatever it buys).
 
 | goal | who benefits | measurable form (fails when) |
 |---|---|---|
-| **F1 FOCUS**: the unit of focus is one part, with a contract per seam and tests per part | whoever changes pcrec next (owner, manager, a lane) | a new admission row over existing kinds changes files of the PLANNER part only, and the stream listing of every pattern the row does not admit is unchanged (§2's check). Fails if any such change must touch a renderer, the kit or the controller. Baseline today: 66 of 207 code-bearing first-parent merges since 2026-09-01 (32%) touched BOTH emitters, 70% touched the pair (§0.1) |
-| **F2 FLEXIBILITY**: a new back end or a new front end replaces one part | a future target (portable C, a bytecode VM, a JIT) or a second syntax | a new target is a new renderer set plus a kit target, with the planner and every record unchanged (§3's record rule). Fails if any record carries target text. A front end that lowers to the IR with PCRE semantics changes the front-end part only; other semantics are a non-goal (§9) |
-| **F3 DIVISION OF LABOUR**: each part can be owned and validated alone | the manager splitting work across lanes; the kit's owner (the precedent) | every part names an oracle its owner can run without the other parts' code (§2). Fails for a part whose only check is end to end through another part. Today only the kit passes |
-| **F4 NO BLINDNESS**: a handoff carries facts BOTH ways | every part's owner; the user (no silent slowdowns at a seam) | every backward plan-time fact today's tree already carries (seven channels, §4.2) has a home in the card half of the seam, and [LANDWALK-PRES] and [CAND-SPAN] are expressible as card reads (§4.3). Fails if any is dropped |
+| **F1 FOCUS**: the unit of focus is one part, with a contract per seam and tests per part | whoever changes pcrec next (owner, manager, a lane) | a new admission row over existing kinds, exits, hand types and IR facts changes files of P2 plus the DECLARED SATELLITE SET only (§2.2: its lever row, its spec hunk, the abi line, its own pins), each satellite an append of a declared shape; and the stream listing of every pattern the row does not admit is unchanged (§2.2's check). Fails if such a change must touch a renderer, the kit, the controller or the size-cap ladder. **Today: 0 of 3 replayed row-adding changes pass; in the end state 2 of 3 pass after the splits X-0..X-5, and the third is a declared cross-part event (§2.4).** Context, not the check's baseline: 66 of 207 code-bearing first-parent merges since 2026-09-01 (32%) touched both emitters, 70% the pair (§0.1). The owner's other two F1 symptoms ("test errors can come from anywhere", "new code is generated instead of updating existing") are served by F3's oracles and by the row-as-sub-part rule (§2); neither has a measured form yet |
+| **F2 FLEXIBILITY**: a new back end or a new front end replaces one part | a future target (portable C, a bytecode VM, a JIT) or a second syntax | a new target = (1) migrate the records to the target-neutral level (§3; the FIRST target pays it), (2) restate the kit's hook interface for the target (`mf_hooks` passes C text both ways today, §3), then (3) a renderer set plus a kit back end. The checkable part: P2 (the planner and every admission row) unchanged. Fails if any record still carries target text after step 1. A front end that lowers to the IR with PCRE semantics changes the front-end part only; other semantics are a non-goal (§9) |
+| **F3 DIVISION OF LABOUR**: each part can be owned and validated alone | the manager splitting work across lanes; the kit's owner (the precedent) | every part names an oracle its owner can run without the other parts' code (§2). Fails for a part whose only check is end to end through another part. **F3 is NOT met by this design until the per-part oracles exist** (the stream interpreter and an IR-level executor, both PLAN, §2.1, §3): today and at every proof in §11 only P4 (the kit) passes |
+| **F4 NO BLINDNESS**: a handoff carries facts BOTH ways | every part's owner; the user (no silent slowdowns at a seam) | every backward plan-time fact today's tree carries (eight channels, §4.2, the size-cap ladder included) has a home in the card half of the seam, and [LANDWALK-PRES] and [CAND-SPAN] are expressible as card reads (§4.3). Fails if any is dropped. Today's channels exist for start-table rows and kit sites only; the card for planned stretches and entries is NEW (§4.2) |
 | **G0 (gate, not a goal) NO SPEED REGRESSION** | users | every proof and every migration step is answer-identical and, where it moves emitted bytes, within the A/A floor of today on the bench cells it touches (§11). Speed is NOT the case for the design |
 
 **Non-goals.** Speed wins (none is claimed; B1). A dialect with different match semantics, and a
@@ -38,12 +48,16 @@ owner's "for another day"). Re-litigating D182's step (b)/(c) scope (§11, D4).
 
 ### 0.1 What two engines cost forever (measured; B2, verified counts)
 
-- **Co-touch.** Since 2026-09-01, 697 first-parent merges on main; 207 touch `src/`, `cli/` or
-  `lib/`; **66 (32%) touch both `src/gen/emit_dfa.c` and `src/gen/emit_vm.c`**, 79 one of them,
-  so 70% of code merges enter the emitter pair (crit-stream1 `verify.md`, BENEFIT-2 re-run at
-  f574eab2d). That is F1's "a change means scanning too much" in numbers.
+- **Co-touch.** The counting rule: `git log --first-parent --merges --since=2026-09-01 main`
+  (git's `--since`, the commit date), each MERGE diffed against its first parent, at f574eab2d:
+  697 merges; 207 touch `src/`, `cli/` or `lib/`; **66 (32%) touch both `src/gen/emit_dfa.c`
+  and `src/gen/emit_vm.c`**, 79 one of them, so 70% of code merges enter the emitter pair
+  (crit-stream1 `verify.md`, BENEFIT-2; reproduced by crit-stream2 at 8e846f501: 698 = 697 + one
+  code-free merge). "Merges" is load-bearing: over all first-parent commits the same rule gives
+  28% / 62%. This counts ANY code merge, not the admission-row changes F1's check is about; that
+  check's own baseline is §2.4's replay (0 of 3 pass today).
 - **Size.** The two emitters are 16,008 + 14,201 = 30,209 lines, 31% of the 96,159 lines of
-  `src/*/*.c` + `cli/` + `lib/`.
+  `src/*/*.c` + `cli/*.c` (`lib/` has no `.c`; headers excluded).
 - **The split-off part still knows the engines.** The kit's public header carries the engine
   taxonomy as its consumer kind (`memfn/include/memfn.h:414-415`: `MF_SK_DFA_SCAN`,
   `DFA_HAT`, `HYB_PF`, `VM_ATTEMPT`, `DFA_ATTEMPT`), chosen by pcrec's `site_kinds[]`
@@ -69,7 +83,7 @@ target-neutral record level (§3). No section is "the DFA" or "the VM".
 
 | family | what it is today | re-entry |
 |---|---|---|
-| choice | the VM's control: `CHOICE`, `GOTO`, `FAIL`, `SET`, `CUT`, `CALL`/`RETURN`, `ACCEPT` | the only frames |
+| choice | the VM's control: `CHOICE`, `GOTO`, `FAIL`, `SET`, `CUT`, `CALL`/`RETURN`, `ACCEPT` | CHOICE and CALL push frames (ENUM and FIND below push too) |
 | automaton | the DFA: `AUTO(machine, dir, exit)`, exits COMMIT / ENUM / GATE / EXISTS / TAGGED | ENUM pushes a frame |
 | kit | memfn sites, keyed by operation as today: `FIND`, `SKIP`, `VERIFY`, `MISMATCH`, `PRESENT` | FIND pushes a frame |
 | barrier | declared-effect items: `BREF`, `ASSERT`, `CALLOUT` | none; `CALLOUT` may fail |
@@ -85,14 +99,15 @@ Soundness and profitability are separate columns; a price chooses only among row
 
 **The seam** (§4) has two halves. The RUN-TIME half is what a stretch hands the next (a position
 typed per coordinate, the one slot array, proofs, re-entry = none or a frame, declared effects,
-return codes). The PLAN-TIME half is a CARD every part publishes (what it accepts, demands and
-proves, its fixed span, its consumer class, its give-up contract), read by its neighbours along a
-declared acyclic graph. That is today's start-table discipline (`cand_rows[]`/`cand_nodes[]`)
-generalised to every part.
+return codes). The PLAN-TIME half is a CARD every part publishes (what it accepts and offers,
+what it demands and proves, its fixed span, its FIXED give-up mark, its rendered size), read by
+its neighbours along a declared graph, acyclic over (part, world) states. That is today's
+start-table discipline (`cand_rows[]`/`cand_nodes[]`) generalised to every part; for planned
+stretches and entries the card is new (§4.2).
 
-**"dfa" and "vm" become one derived stamp** (§5.3): `RX_ENGINE "dfa"` iff no choice-family or
-barrier record is reachable. Every pattern today routes to the DFA keeps an all-automaton/kit
-stream, byte-identical (the maximality gate, §6.3).
+**"dfa" and "vm" become one derived stamp** (§5.3): `RX_ENGINE "dfa"` iff no choice-family record
+other than `ACCEPT`, and no barrier record, is reachable. Every pattern today routes to the DFA
+keeps an all-automaton/kit stream, byte-identical (the maximality gate, §6.3).
 
 **The picture to hold.** Finder, bounder, finisher is every engine's shape. Today pcrec draws
 those seams per PATTERN and per ENGINE. The stream draws them per STRETCH, with one seam type
@@ -108,7 +123,7 @@ reading, corrected by the review. "Same as today" means the stream renders today
 |---|---|---|---|
 | 1 | `abc` | `FIND lit "abc"` (G; its proof covers the whole pattern) → `ACCEPT` | same as today; stamp "dfa" |
 | 2 | `[a-z]+@x` | `FIND "@x"` → reverse `AUTO` with a `SKIP [a-z]` (row 5) hands `AT start` → forward stretch (row 3), started past the proved span where the landmark is a cut → `ACCEPT` | today's landmark walk (lane/p1build) as records; the [LANDWALK-PRES] and [CAND-SPAN] reads become card reads (§4.3) |
-| 3 | `(\w+)@(\w+)\.com` | `FIND "@"` → reverse `SKIP \w` (row 5) → `SET g1` (row 10) → forward `SKIP \w` (row 1) → `SET g2` → `VERIFY ".com"` → `ACCEPT` | today reads the match three times (forward DFA, reverse DFA, frameless VM); the stream reads it once. Stamp stays "vm" (SETs) |
+| 3 | `(\w+)@(\w+)\.com` | `FIND "@"` → reverse `SKIP \w` (row 5) → `SET g1` (row 10) → forward `SKIP \w` (row 1) → `SET g2` → `VERIFY ".com"` → `ACCEPT` | stamp stays "vm" (SETs). A G0-neutral observation, not an F1-F4 argument: today reads the match three times (forward DFA, reverse DFA, frameless VM), the stream once |
 | 4 | `(a\|ab)(c\|bcd)(d*)` | `AUTO ENUM` g1 (row 9) → `SET` → `AUTO ENUM` g2 (row 9) → `SET` → `SKIP d` (row 3, K = ACCEPT) → `SET` → `ACCEPT` | the capture split is FORCED (§6.1, A6): one tagless `AUTO COMMIT` over the pattern is NOT admitted |
 | 5 | `(\w+)\s+\1` | `FIND` start set (G, a gate) → `SKIP \w` (row 1) → `SET` → `SKIP \s` (row 1) → `BREF` → `ACCEPT` | IS today's artifact (`RX_VM_START_SCAN "first-class"`, frameless; C2). The residual is a richer FIND (a landmark), not a protocol |
 | 6 | `foo(?=bar)\|(?<!x)baz` | one `AUTO ... TAGGED` (the D164 end mark) for the first branch, the lookbehind as context | D164's decision, not a stream claim. Needs module `lookaround` (a clean decline without it) |
@@ -121,42 +136,124 @@ Patterns 1, 6, 7 and 10 are the degeneracy test: the stream must render today's 
 
 ---
 
-## 2. The part table (B3, B6)
+## 2. The part table (B3, B6; rev 3: D1, D3, D4)
 
 Each part has a contract (what crosses its boundary), a test boundary (where its own tests
 observe it), its OWN oracle (one its owner can run without the other parts' code), and an owner.
-"Owner" is a role, assignable to a lane or a session.
+"Owner" is a role, assignable to a lane or a session. The oracle column says plainly where a part
+has none of its own yet (D3).
 
 | part | contract | test boundary | own oracle | owner |
 |---|---|---|---|---|
-| **P1 front end**: parse, AST, IR, the opt passes (possessify, revdet, MRL, facts) | OUT: the IR program, its erasure record `Nfa.erased` (the one superset owner, §6.0), the facts | `--emit-ir` listing (`ir_listing.md`), the .rxt corpus | libpcre2 (PC-3) on answers through the reference tiling (all-B); IR listing pins | front-end owner |
-| **P2 planner**: the admission table (§6), maximality, the derived stamps | IN: IR + cards (§4.2) + kit ask answers + the measurement set. OUT: a well-formed stream: every record's kind exists, every hand typed (§4.1), every record names its admitting `row`, the card-read graph acyclic | a STREAM LISTING (one line per record, like `--emit-ir`), and a well-formedness check over it | now: answer identity of the planned tiling against the reference all-B tiling over the corpus, plus PC-3 (shares the renderers: loss 1, §9.1). PLAN under D77: the stream INTERPRETER (executes records in-process, no renderer, no gcc), which makes the check independent of P3 | planner owner |
-| **P2.r each admission row** (a sub-part) | its conjunct list, its argument, its reads, its lever (§6.2) | its own D27 spec-first witnesses (accepted for the table, due before any NEW row is admitted) | the witnesses' oracle answers (python `re` base tier, libpcre2) against the reference tiling | the row's author |
-| **P3 kind table + renderers** (the back end) | per kind: operands, effects, meter charge, resume behaviour, give-up codes; a renderer per kind writes target text | per-kind seam-in → rendered → seam-out tests | now: byte identity against a frozen baseline (the one comparator, §11.2). PLAN: the interpreter on the same seam-in | back-end owner |
-| **P4 kit** (memfn) | IN: facts (`mf_site`); OUT: target text plus ask answers (`mf_class`), never a method pcrec presumes (D157) | `memfn.h` ABI; the kit's own tests | its own (exists: the kit's G2 tests) | kit manager |
-| **P5 entry controller**: one per exported entry; whole-artifact composition (the match split, arch variants, per-entry tilings, find-all iteration) | IN: streams; OUT: the entries of `match_api.md`; calls parts through the call-site code table (`src/gen/callsite_rows.c`) | entry-shape identity checks; the .rxt corpus per entry | libpcre2 through the .rxt corpus per entry | controller owner |
-| **P6 shared contracts**: the record schema (§3) and the seam (§4) | a change here is a cross-part change, reviewed as such | the well-formedness check; the per-kind seam tests | n/a (a contract, not code) | the manager |
+| **P1 front end**: parse, AST, IR, the opt passes (possessify, revdet, MRL, facts) | OUT: the IR program, its language-superset record `Nfa.erased` and the report-shift fact (§6.0), the facts | `--emit-ir` listing (`ir_listing.md`), the .rxt corpus | **none of its own yet.** libpcre2 (PC-3) on answers runs through P2's all-B tiling, P3's renderers and gcc; the IR listing pins are regression goldens its owner writes. PLAN: an IR-level executor (the interpreter's sibling: runs the IR program, no planner, no renderer) | front-end owner |
+| **P2 planner**: the admission table (§6), maximality, the derived stamps, the size-cap re-plan (§4.2 `size`) | IN: IR + cards (§4.2) + kit ask answers + the measurement set. OUT: a well-formed stream: every record's kind exists, every hand typed (§4.1), every record names its admitting `row`, the card-read graph acyclic over (part, world) states | a STREAM LISTING (one line per record, like `--emit-ir`), and a well-formedness check over it | **none of its own yet.** Now: answer identity of the planned tiling against the reference all-B tiling over the corpus, plus PC-3; both render through P3 (loss 1, §9.1). PLAN under D77: the stream INTERPRETER (executes records in-process, no renderer, no gcc) | planner owner |
+| **P2.r each admission row** (a sub-part) | its conjunct list, its argument, its reads, its lever (§6.2) | its own D27 spec-first witnesses (accepted for the table, due before any NEW row is admitted) | the EXPECTED answers are independent (python `re` base tier, libpcre2); the OBSERVED side runs through P3 until the interpreter exists | the row's author |
+| **P3 kind table + renderers** (the back end) | per kind: operands, effects, meter charge, resume behaviour, give-up codes; a renderer per kind writes target text; the position-domain rule rendered once at every seam (X16) | per-kind seam-in → rendered → seam-out tests | **none of its own yet.** Byte identity against a frozen baseline (§11.2) is a regression pin: the baseline is P1+P2+P3's own output, so it cannot tell a correct renderer change from a wrong one. PLAN: the interpreter on the same seam-in | back-end owner |
+| **P4 kit** (memfn) | IN: facts (`mf_site`) AND C text through the hook record `mf_hooks` (`memfn.h`: C expressions such as `s`, `n`, `lo`, `floor`, `cursor`; statements such as `step` "`pos++;`" and `on_miss`; a declaration prefix; the `on_cand` callback that writes pcrec's verify text into the kit's output). OUT: target text plus ask answers (`mf_class`), never a method pcrec presumes (D157) | `memfn.h` ABI; the kit's own tests | its own (exists: the kit's G2 tests). The ONLY part that passes F3 today | kit manager |
+| **P5 entry controller**: one per exported entry; whole-artifact composition (the match split, arch variants, per-entry tilings, find-all iteration) | IN: streams and their cards (`offers`, §4.2); OUT: the entries of `match_api.md`; calls parts through the call-site code table (`src/gen/callsite_rows.c`) | entry-shape identity checks; the .rxt corpus per entry | **none of its own yet**: libpcre2 through the .rxt corpus per entry runs through every part | controller owner |
+| **P6 shared contracts**: the record schema (§3), the seam (§4), the position-domain RULE (X16), the abi number | a change here is a cross-part change, reviewed as such | the well-formedness check (run in P2); the per-kind seam tests (run in P3) | n/a: a contract holds no code once the position rule renders once in P3; F3's test applies to the parts that run its checks | the manager |
 
-**PART vs controller, resolved (C9).** There is ONE home for composition: P5. The stream has no
-`PART` kind. A controller calls a stream through the call-site code table, which is ALREADY one
-table for compound part calls and callout calls (`callsite_rows.c:1-14`); the barrier kind
-`CALLOUT` uses the same table for its return codes (§4.1's `codes`).
+**F3, stated plainly (D3).** By §0's own failure form, P1, P2, P2.r, P3 and P5 have no oracle of
+their own today, and none gains one from any proof in §11.3: F3 is NOT met until the interpreter
+(P2, P3) and an IR-level executor (P1) exist. Both stay PLAN under D77; F3 itself is now one of
+their triggers (§3). This is the same as today ("only the kit passes"), not a loss.
 
-**The F1 claim, made checkable.** A new admission row over existing kinds, exits and hand types is
-a change to P2 alone. Its change set is: the row's entry in the planner's table, its argument
-(design text plus a spec hunk where a caller can observe it, D80), its D27 witnesses, its lever if
-its class needs one (§6.2), and its listing pins. The check, at review: (a) `git diff --stat`
-touches no file of P3, P4 or P5; (b) the stream listing of every corpus pattern the row does not
-admit is byte-identical (the comparator's stream-listing arm, §11.2). A renderer change is
-checkable the same way in reverse: the stream listing of every pattern is unchanged. The ONLY
-cross-part changes are a new kind, exit or hand type (P2 + P3 + P6), and a new kit operation
-(P2 + P3 + P4); each is a contract event.
+### 2.1 PART vs controller, resolved (C9)
 
-**Why the planner does not become the new unit of focus (B3).** Round 1 conceded that "the
-decisions move into the planner". They move into ROWS, each its own sub-part with its own
-witnesses and lever; the planner's own code is the table walker, maximality and the card graph.
-That is today's `cand_rows[]` idiom (`docs/dev/guide/architecture.md`, "Decisions are declared
-tables"), applied to the whole artifact.
+There is ONE home for composition: P5. The stream has no `PART` kind. A controller calls a stream
+through the call-site code table, which is ALREADY one table for compound part calls and callout
+calls (`callsite_rows.c:1-14`); the barrier kind `CALLOUT` uses the same table for its return
+codes (§4.1's `codes`).
+
+### 2.2 The F1 claim, restated so it can be run (D1)
+
+A new admission row over existing kinds, exits, hand types and IR facts changes **P2's files plus
+a declared satellite set S**, and nothing else. S is a fixed list of registries, each touched by an
+APPEND of a declared shape (no logic):
+
+| satellite | what the row appends | registry (today's file) |
+|---|---|---|
+| S1 lever | one axis row and, for a public lever, one bit (§6.2's class; a test-only lever has no bit) | `src/core/axes.def`; `lib/pcrec.h` `PCREC_BIT` |
+| S2 caller contract | its `docs/spec/` hunk and stamp names (D80) | `docs/spec/*` |
+| S3 abi line | the one-line bump D76/D94 requires when bytes move (every admitting row moves the bytes of the patterns it admits) | `PCREC_ARTIFACT_ABI`, today near the top of `src/gen/emit_dfa.c` (a P3 file; split X-1) |
+| S4 its pins and witnesses | its D27 witnesses, its listing pins, the corpus census numbers its witness files move, and the re-aim of other rows' witnesses it displaces ([MECH-REACH]: a first-match row placed above others takes their witnesses; those are other rows' P2.r files, so still P2) | its own test dir; the census pin; the displaced rows' witness files |
+| S5 a new P2 file | one build line | `Makefile` |
+
+**The check, at review.** (a) `git diff --stat` touches only files the map (§2.3) gives to P2, plus
+S's registries, and every S touch has its declared shape. (b) The stream listing of every corpus
+pattern the row does not admit is byte-identical (the comparator's stream-listing arm, §11.2). The
+listing excludes the abi stamp: S3 moves every artifact's provenance line, so the BYTE form of (b)
+can never pass for a byte-moving row. A renderer change is checkable the same way in reverse: the
+stream listing of every pattern is unchanged.
+
+**The cross-part changes, extended (D1).** Each is a contract event, reviewed as such: a new kind,
+exit or hand type (P2 + P3 + P6); a new kit operation (P2 + P3 + P4); **a new IR fact (P1 + P2)**;
+**a new kit-site id while sites are keyed per site (P2 + the P3/P4 seam, until X-4)**. A new
+backward card field is a P6 change.
+
+**The end-state splits the check needs.** Today's files straddle parts (§2.3), so the check cannot
+pass on today's layout; §2.4 shows it failing on all three replayed changes. It passes in the end
+state only after these splits, each named so it can be proposed, built and checked on its own:
+
+| split | today | end state |
+|---|---|---|
+| X-0 the stream itself | the planner's tables and predicates live in the emitters (`cand_rows[]`, `cand_nodes[]`, every `*_applies` predicate in `emit_dfa.c`; the VM plan in `emit_vm.c`); `internal.h` (9,342 lines) holds every part's types | P2 files hold the tables and predicates; one renderer per kind in P3; a header per part |
+| X-1 the abi number | `#define PCREC_ARTIFACT_ABI` in `emit_dfa.c` | a P6 file (the record schema's version), so S3 is not a P3 touch |
+| X-2 the size-cap ladder | one `fit_rungs[]` rung per droppable row (`drop-handoff`, `drop-landmark-walk`) in `src/core/compile.c` (14 rungs) | a row FIELD declares whether, and in which order, the size cap may drop the row; the ladder walks the table's declared fields (a declared table, not a rung per row), so a new row adds no rung |
+| X-3 emitter-to-driver flags | 14 distinct emitter-written `Job` fields (e.g. `req_handoff_vm`, "written by the emitter at the text it writes") read by the ladder | P3 card facts (`size`, §4.2), read by the re-plan (X-2) |
+| X-4 the kit-site key | one `DELEG_SITE` id per site (`memfn_sites.def`, 11 rows; p1build adds `LMHIT`), each site countable | FIND's site counted by (operation, admitting `row`), the record field §4.1 already carries, so a new row over an existing operation adds no id; Q-R10-6's countability is kept by the key. A kit abi event when made (D146), and the kit's to confirm |
+| X-5 population pins | the start-set manifests, the codegen stamp manifests and the axes allowances count patterns by STRATEGY, so every row that moves a pattern's strategy re-pins them | pins keyed by the listing's `row` field, so a new row moves only pins in its own P2.r files |
+
+### 2.3 The declared file-to-part map, today's tree (main f574eab2d; lane/p1build where named)
+
+| part | whole files | its share of a straddling file |
+|---|---|---|
+| P1 | `src/parse/*` except the `.rxt` tier (`rxt_*.c`, `rxt_schema.def`) and the knowledge-source rows (`ks_*.c`); `src/ir/{nfa,dfa}.c`; `src/opt/*` except `select_engine.c` and `derive.c`; `src/facts/*`; `src/enc/*`; `src/core/{kindrow.def, ctxfn.def, cpset.c, fold.c, case_tables.inc, fold_tables.inc, varexp.c}` | `internal.h`: the AST, IR and `Nfa` types |
+| P2 | `src/opt/select_engine.c`; `src/gen/known.c` (`cover_conj[]`); `src/core/tune.c` (the dial's policy table); lane/p1build `src/gen/lmwalk.c` | `emit_dfa.c`: `cand_rows[]`, `cand_nodes[]`, the req-use rows, every admission predicate, the table checks, `site_kinds[]`; `emit_vm.c`: the VM plan and rung selection (`vm_cursor_fits`, `vm_det_seq`, the hybrid window's decision); `compile.c`: `fit_rungs[]`, `fit_seq_legal[]`; `internal.h`: `Job`'s selection fields |
+| P2's inputs (data, no logic of the planner's) | the measurement and findings tier: `src/core/{measures*.c, measures_*.inc, findings*, ks_measures.*, ksrc*}`, `src/findings/*` | — |
+| P3 | `src/gen/{vm_stmt.c, vm_stmt.h, clskit.c, clskit.h, attr_text.c, emit_code.c, memfn_stamps.c}` | `emit_dfa.c`: every `emit_*`/`pf_emit_*` text writer and the abi constant (X-1); `emit_vm.c`: every `vm_emit_*` writer; `internal.h`: the emitter-written `Job` fields (X-3) |
+| P3/P4 seam, pcrec side | `src/gen/{memfn_sites.c, memfn_sites.def, memfn_sites.h}` | `emit_dfa.c`: each site description (`req_site_define`, `find_site`) |
+| P4 | `memfn/**` | — |
+| P5 | `src/gen/{entries.c, emit_iter.c, emit_compound.c, emit_comb.c, emit_subst.c, part_layout.c, stamp_kinds.c}`; `src/core/{compound.c, part_layout.def}`; `src/opt/derive.c` | `compile.c`: the pipeline driver and its entries |
+| P6 | `src/gen/{callsite_rows.c, callsite_rows.h}` | `internal.h`: the shared seam types |
+| S's registries (no part) | `lib/pcrec.h`, `src/core/axes.def`, `docs/spec/*`, `Makefile` | — |
+| no part: the caller surface and shared tooling | `cli/main.c`, `src/dump/*`, `src/core/{limits.def, limits.h, arena.c, sb.c, compile_defs.c}`, the `.rxt` tier | — |
+
+Four files straddle: `emit_dfa.c` (P2, P3, the seam, the abi number), `emit_vm.c` (P2, P3),
+`compile.c` (P2, P5) and `internal.h` (every part). Together they are 43,273 of today's lines.
+
+### 2.4 The F1 check, replayed on three real row-adding changes (D1)
+
+Read from `git show --stat` and `git diff -U0` hunk contexts (function names), main checkout,
+2026-11-01. Check (a) only; check (b) was NOT replayed (it needs the comparator over the corpus,
+a sweep the evening hold does not allow, and its byte form cannot pass under S3 anyway; each
+lane's report names its own mover census, not re-checked here).
+
+| change | what it added | P1 | P2 | P3 | P3/P4 seam | satellites outside S | (a) today | (a) in the end state |
+|---|---|---|---|---|---|---|---|---|
+| 02229045e [REQRUN-VM] (merged 2026-10-29) | two req-use rows `handoff-attempts`, `handoff-attempts-entry` over existing hands; no new lever (rides `-fno-req-handoff`) | — | `emit_dfa.c`: `req_handoff_applies`, `req_use`, `req_landmark_admits`, `pf_handoff_applies`, `req_reentered`, `cand_nodes[]`, `cand_rows[]` | `emit_dfa.c`: `emit_req_handoff_rest`, `pf_emit_handoff`, `emit_unanchored`; `emit_vm.c`: `vm_emit_search_body` (5 hunks, the attempt loop's re-entry) | `req_site_define` (3 small hunks) | a ladder rung `drop-handoff` (`compile.c`: `fit_rungs[]`, `FitAct`, `fit_seq_legal[]`, the driver); an emitter-to-driver flag `Job.req_handoff_vm` (`internal.h`); abi 90 → 91 in a P3 file; population pins (startset 3, codegen 5, axes, registry, memfn reach) beside its own 15 sabotages and witness file | **FAILS** (P3 in two files, the ladder, the `Job` flag, the abi line in P3) | **PASSES after X-0..X-3 and X-5**, IF FIND's frame takes the landmark's K-back position as an operand: the re-entry is "a `LOWER` hand at c − K", already a `pos` type (§4.1), so the VM-side insertion is FIND's one renderer, not a second spelling |
+| 00c97769e [REQ-HANDOFF-L1] (merged 2026-10-11) | the `handoff` row on a byte landmark where no run shipped; no new lever | `src/facts/`: two new facts (`req_set_maxoff`, `req_landmark_maxoff` in `facts.def`; `facts.c`, `facts.h`, `facts_derive.h`, `req.c`) | `emit_dfa.c`: `req_use` (+94 lines), `req_handoff_applies`, `CandNode`/`cand_nodes[]`, `cand_rows[]`, `cand_rows_selfcheck`, `cand_read` | `emit_dfa.c`: `pcrec_emit_req_byte_check` (+25), `pf_emit_ofs_bounded` (+50), `emit_req_handoff_rest` | `req_site_define` (5 hunks) | abi 74 → 75 in a P3 file; `scripts/emit_sweep.py`; population pins (startset 5, codegen 13, cli, registry, memfn 3) | **FAILS** (P1, P3, the abi line in P3) | **a CROSS-PART event**, correctly so: a new IR fact (P1 + P2) by the extended list. The check classifies it instead of passing it. Its P3 share disappears IF FIND's renderer takes the landmark (a byte or a run) as an operand; today the pre-check's text is spelled per landmark shape |
+| lane/p1build's landmark walk (unmerged; `main...lane/p1build` at 1cd8d220b) | the `landmark-walk` LOCATE row and `lmwalk_conj[]`; lever bit 57 `PCREC_NO_LANDMARK_WALK` (S1) | — | `src/gen/lmwalk.c` (new, 408 lines: the conjunct table and its predicates); `emit_dfa.c`: `locate_landmark_walk_applies`, `CandSel`, `cand_nodes[]`, `cand_rows[]`, `cand_takes`, `cand_finish_sel`/`_ask`, `cand_locate_hands`, the path checks, the NEXT memo | `emit_dfa.c`: `emit_landmark_walk` (+149 lines, a hand-written loop), the cut machine's build (`dfa_member_machines`) | `memfn_sites.def` (a new `DELEG_SITE(LMHIT, MF_OP_FIND, …)`), `memfn_sites.h`, `find_site`, `find_table_tag` | a ladder rung `drop-landmark-walk` (`compile.c`); `Ctx`/`Job` fields and prototypes (`internal.h`, +77); abi 92 → 95 (provisional) in a P3 file; the `Makefile` line (S5); population pins (startset 3, codegen 15, registry 2, memfn 4, findings, lib) beside its own `tests/landwalk/` and 21 mech files | **FAILS** (P3, the kit-site table, the ladder, `internal.h`, the abi line in P3) | **PASSES after X-0..X-5**, IF the walk renders as existing kinds (FIND, a reverse `AUTO` with a `SKIP`, the forward stretch). That is exactly P-d's pass criterion (§11.3), so the condition is proved or refuted there |
+
+The control case holds: 002810cac [SCANEDGE-SET] (a byte-set `SKIP` operand) is a contract event
+by the cross-part list (a new operand of a kind is a P3 change), and the check says so.
+
+**What passes today and what passes only in the end state, honestly.** Today nothing passes:
+0 of 3. The causes are structural and the same in all three: the planner's tables live in
+renderer files, the ladder has one rung per droppable row, flags flow from the emitter to the
+driver, the abi number sits in a P3 file, and the kit-site table and population pins are keyed per
+site and per strategy. In the end state two of the three pass, each under one named condition a
+proof tests (FIND's K-back operand for the first, P-d for the third), and the third is classified
+correctly as a cross-part event. **F1 is therefore met only after X-0..X-5, never on today's
+layout.** That is the concession D1 asked for; X-1..X-5 are small, independent and each a declared
+table or a moved constant, so none waits for the stream to be built.
+
+### 2.5 Why the planner does not become the new unit of focus (B3)
+
+Round 1 conceded that "the decisions move into the planner". They move into ROWS, each its own
+sub-part with its own witnesses and lever; the planner's own code is the table walker, maximality,
+the card graph and the re-plan. That is today's `cand_rows[]` idiom (`docs/dev/guide/architecture.md`,
+"Decisions are declared tables"), applied to the whole artifact.
 
 ---
 
