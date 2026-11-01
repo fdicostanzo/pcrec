@@ -274,3 +274,456 @@ trigger: the first proof that moves a kit byte). Per-entry tilings over shared p
 capture patterns, C13). F2 and F3: a new part implements cards rather than copying another part's
 reads, and is validated against its card rather than its neighbours' code.
 
+---
+
+## 5. The kinds
+
+### 5.1 The kind table (one row per kind, one renderer each)
+
+Every kind row states: its operands, its declared `effects`, the budget it charges (`meters`, C8),
+its resume behaviour if it pushes a frame, and its give-up codes. "Today" names the mechanism the
+kind renders.
+
+| family | kind | resume (if it pushes) | meters | today |
+|---|---|---|---|---|
+| choice | `CHOICE`, `GOTO`, `FAIL`, `CUT`, `ACCEPT` | CHOICE: next alternative | steps, frames | the VM's control records (D182) |
+| choice | `SET` (trailed), `CALL`/`RETURN` | none (trail entry); CALL: return frame | trail; frames | D182 records; subroutine calls |
+| automaton | `AUTO(M, dir, COMMIT)` | none | none | the DFA engine's match; D3's priority-first end |
+| automaton | `AUTO(M, dir, ENUM)` | next end, in preference order | steps | the VM cursor rung, the ENG-ISL trie |
+| automaton | `AUTO(M, dir, GATE)` | none (commits nothing) | none | the hybrid prefilter, the start table's gates |
+| automaton | `AUTO(M, fwd, EXISTS)` | none | none | a lookaround body as a predicate |
+| automaton | `AUTO(M, fwd, TAGGED)` (C10): an accept reports `(end, mark distance)` | none | none | D164 B3: "a machine is TAGGED when an accept reports a mark distance" (`src/ir/dfa.c:1555-1557`) |
+| kit | `FIND` (the candidate generator), `SKIP`, `VERIFY`, `MISMATCH`, `PRESENT` | FIND: next candidate, above the FLOOR | the kit's own (declared) | `memfn_sites.def`: already keyed by operation (`MF_OP_FIND`/`SKIP`/`VERIFY`/`MISMATCH`/`ALL_PRESENT`) |
+| barrier | `BREF` | none | steps | `vm_bref` + the encoding seam's compare loop |
+| barrier | `ASSERT` (a lookaround sub-stream, atomic) | none | as its sub-stream | the VM's lookaround |
+| barrier | `CALLOUT` | none; `codes` from the call-site table | as the callee | `callsite_rows.c` |
+
+Consume kinds (`LIT`, `CLASS`, `SWITCH`) are operands shared by the choice and automaton families.
+A state that loops on a class renders as a kit `SKIP` inside an `AUTO`.
+
+**The four SKIP ids stay separate (C1).** The kit side of "one SKIP" already exists: STAY, EDGE,
+VMSPAN and VMSTRIDE build ONE fact record (`PcrecAdvance`, `src/gen/memfn_sites.h:308-316`) from
+one builder, and are rows of an operation-keyed table. They stay four DELEG ids by ruling
+(`memfn_sites.def:15-18`, Q-R10-6: "each stride class stays countable"). What the stream adds is
+one RECORD kind with one renderer BODY on the pcrec side (§11, P-a's pass criterion), and one shape
+analysis in place of two (`scanedge.c` vs `vm_det_seq`/`vm_cursor_fits`).
+
+### 5.2 HELD kinds and exits (a row cannot admit without a kind, D182)
+
+| held | serves | trigger | blocker named by the review |
+|---|---|---|---|
+| exit `STATE` (carry a state set across a seam) | [CAND-SPAN]'s non-cut case | the [CAND-SPAN] design lane finds the non-cut case worth carrying | none yet |
+| `ONEPASS` (captures inside, one live thread) | row 11 | a census of capture-in-segment patterns (bench: capture-in-repeat 10 of 86 VM, §10) and a design | the capture survey's DEFER (`docs/dev/optloop/captures_via_dfa_survey.md` §3.2); [ENG-TDFA] has no design (C6) |
+| `THREADS` (Pike list) | row 14 | the same census, after ONEPASS | its ε-closure rule and unrolled bounded copies are unwritten (A13); excludes counted rungs and callouts |
+| `GUIDED` (reverse viability, then a frame-free walk) | row 15 | resume>0 regular-apart-from-captures population (bench 10, plus 8 frames-unbounded; §10) | UNSOUND as stated (A1, A2), §6.1 |
+| `MEMO` (failure memo) | row 16 | the same population with frames-unbounded | UNSOUND under CALL (A7), §6.1 |
+
+### 5.3 The derived stamp: ONE rule (C7)
+
+`RX_ENGINE "dfa"` iff no choice-family or barrier record is statically reachable in the stream
+(a reachability question over the records, so it does not depend on a run). `"vm"` otherwise, and
+`_ENGINE_WHY` names the first such record's construct. The budget stamps (`RX_STEP_BUDGET`,
+`RX_WORK_BUDGET`) are emitted iff a reachable kind row charges that budget.
+
+This rule keeps today's values: a frameless capture artifact (pattern 3, `RX_VM_FRAMELESS 1`)
+carries SETs and stays "vm" with its budgets; a callout artifact carries a barrier and stays "vm".
+Its spec readers, which change wording (never values) in the change that lands the planner (D80):
+`match_api.md §6.3.3` (the `RX_ENGINE` value set, `rx_info.engine`, `_ENGINE_WHY`),
+`tuning.md §3.1¶2` (`_DFA_MATCH`'s iff), `cli.md §1.11¶1` (`(a)(b)` builds "dfa" only under
+`--no-captures`). A later tiling that removes the last choice record of some pattern moves that
+pattern's value: a D80 event in that change, never a silent one. The stamp then depends on the
+planner's tiling, which is why the maximality gate (§6.3) is a gate.
+
+---
+
+## 6. The admission table, rewritten
+
+### 6.0 Definitions that every row uses (A3, A4, A5, A6, A8, A13)
+
+- **Ambiguous** (A3): S is ambiguous at p iff it has more than one outcome (e, σ) from p. "One
+  end" is not enough: equal ends with different σ are two outcomes.
+- **Polarity** (A5): a NECESSARY row (G, and row 13's fire-set statement) treats a zero-width item,
+  a non-consuming callout and a backref as their superset (ε, or the backref superset below). A
+  SUFFICIENCY row (1, 2, 3, 4, 8, 9, 11, 12) WIDENS each such item reached in K to "any byte,
+  nullable" unless a named arm proves otherwise (`src/opt/possessify.c:544-590` and the
+  [ART-POSS-ARMS] arms).
+- **The backref superset** (A4), ONE definition used by G, row 1's FOLLOW, the typing rule and the
+  struck row 17: the referent's language under the BACKREF's own caselessness; plus ε where an unset
+  group may match (`PCRE2_MATCH_UNSET_BACKREF`); the union over every group a duplicate name or a
+  `(?|` reset can denote. Witness: `(a)(?i:\1)` on "aA" matches (0,2); the referent's `{a}` would
+  reject it. The duplicate-name and `(?|` halves are an ASK (§13).
+- **The capture conjunct** (A6): a REPLACEMENT row admits S only if every slot S writes is DERIVED
+  (an offset of S's entry or exit at an `AT`-typed coordinate) or produced by a named capture
+  mechanism (today: `TAGGED`'s mark distance; HELD: §5.2). Otherwise the split at the capture is
+  FORCED (a soundness split), never a priced departure.
+- **The fold** (A13): disjointness is on code points, under the fold in force at that position
+  (`-i`, a `(?i)` scope, `--ucp`'s pairs). Witnesses: `\x{212a}*(?i:k)` (KELVIN SIGN) and
+  `\x{17f}*(?i:s)` (LONG S) under UTF-8; the ASCII fold would commit both wrongly.
+- **The superset owner** (C8, A8): `Nfa.erased` (`src/ir/nfa.c`: `NFA_ERASED_CALLOUT` at `:646`,
+  `_LOOK` `:759`, `_COUNT` `:848`, `_ATOMIC` `:955`) is the ONE source; today's readers are
+  `pcrec_vm_prefilter_window` (`emit_vm.c:3774-3777`), `pcrec_cand_lang_exact`, and lmwalk's `g1`.
+  The record covers ANYTHING that makes a stretch's (start, end) differ from the reported
+  (slot0.start, slot0.end): erasures, `\K` (a report shift: `a\Kb` on "xab" is (2,3)), `\G`, and a
+  callout that can veto. An IR kind the record does not know defaults to superset (the D182 (c)
+  ruling-1 polarity). Verbs, when they land, are erasures of this kind.
+
+### 6.1 Soundness: the rows, their full conjuncts and their sources
+
+First match; B always admits. "Source" names every round-1 row merged into it (lesson 2: the
+full conjunct list is kept beside the merged row). Witnesses are from crit-stream1, re-run by its
+verifier (pcrec and python `re` agree on each, except where match_api.md §5.1¶3a's
+empty-iteration rule applies). STATUS: BUILT = today's code holds the conjuncts; NEW = a row with
+no code; HELD = no kind (§5.2).
+
+| # | row | full conjunct list (all must hold) | source rows | why backtracking into it cannot change the answer | witnesses (the conjunct each pins) | status |
+|---|---|---|---|---|---|---|
+| G | gate | the machine's language ⊇ the stretch's under the polarity rule (backref by its superset; lookaround and non-consuming callout ε; a count collapsed; an atomic transparent); hands start `LOWER`/`CAND`, end `NONE`, or `NOMATCH` only | C FIND; T R4 BOUND; P G | it only removes positions that cannot match; it commits nothing | `(a)(?i:\1)` "aA" (backref superset); `a(?=b)\|c` "ac" (no `UPPER`) | BUILT: the start table's gates, the `first-class` start seek (`emit_dfa.c:8026`) |
+| 1 | possessive-equivalent repeat | possessify's rule by reference (`src/opt/possessify.c:10-47`): Q = X{m,n}; X admits a unique iteration (U1 one-unambiguous, U2 prefix-free); X not nullable; EITHER m == n OR FIRST(X) ∩ FOLLOW(Q) = ∅ with FOLLOW widened by the polarity rule (an assertion, callout or backref reached in the follow widens it, except where an [ART-POSS-ARMS] arm proves otherwise); a LAZY Q also requires the remainder non-nullable; the fold | C D (single class); T R1(b); P E1a | the retreat cannot help: no shorter run leaves a byte K can start with | `a{1,3}?` "aaaa" (0,1) (lazy); `[ab]{0,4}\b` "abc" (0,0), `\w*\B` "ab", `a*(?<!a)` "aa", `a*(?=a)` "aa" (widening); `(\d+)(?C"even")` over `1234` (`match_api.md §11.6¶2`, callout widening); `(a)A*(?i:\1)` "aAA" (backref superset); KELVIN/LONG S (fold) | BUILT (possessify); the row text now equals the code |
+| 2 | unique outcome | every branch deterministic with exactly ONE end (fixed width, or a prefix-free literal set, and no branch itself ambiguous); AND where outcomes differ in σ, K reads no slot S writes; the fold | C D/SWITCH; T R1(d); P E1b | there is one outcome, or K cannot tell the outcomes apart | `(?:a\|bc?)c` "bc" (0,2) (an ambiguous branch); `(?:(a)b\|a(b))\2` "abb" (σ under a slot reader) | NEW as a row (the DFA's tries render it today inside whole-pattern machines) |
+| 3 | tail / infallible K | K is ACCEPT, OR K succeeds from every end S can reach (K nullable, with every zero-width item, callout and backref in K widened by polarity, at an unanchored pattern end); the capture conjunct | C T-rule, row 3; T R1(a); P E1c; D3 | the first outcome is the answer, and D3's priority-pruned machine computes exactly e₁ | `(a\|ab)(c\|bcd)(d*)` "abcd" g1=(0,1) g2=(1,4) g3=(4,4) (capture conjunct: no tagless AUTO over it) | BUILT for whole capture-free patterns (the DFA engine); NEW in context |
+| 4 | source atomic or possessive | S = `(?>B)` or a possessive quantifier; B regular; the form delivers B's FIRST body success judged with K = the atomic's end (never with an outer pin); the capture conjunct | C D (atomic context); T R1(c); P V `COMMIT` | only the first way is ever used, by definition | `(?>a+)a` "aa" no match (holds); `(?:(?>a\|ab)(c)\|ab(c)?)` "abc" (the outer-pin clause) | NEW (today an atomic group is an erasure: correct, conservative) |
+| 5 | landmark reverse walk | lmwalk's SOUNDNESS conjuncts (lane/p1build `lmwalk_conj[]`, `src/gen/lmwalk.c:276-287`): `g1` (the prefix's erasure record is empty, \K and \G included), `exclusion` (the walk class excludes every landmark byte), `utf8-l0`; hands `AT start` only then. Its profitability conjuncts are in §6.2 | D161 add. 17; lmwalk; C, T R4, P | no start before one landmark pairs with a later one; FIND's ascending order is the order of starts | the p1build table's own witnesses | on lane/p1build, NOT on main (C6); D161 add. 17's walk is read as "the reverse DFA is pcrec's scaffolding, scan edges the kit's optimization" (C14, recorded) |
+| 6 | walk under a slot-reading K | the walk hands `LOWER`/`CAND` (the typing rule); the finisher tries each start in ascending order; the FIND frame carries the FLOOR | T typing; P exact=NONE + floor; C per-start FIND | each start is still tried in order; the floor only skips starts already failed | `(\w+)\s+\1` | NEW; the floor's bound is unproven (hole 4, §13) |
+| 7 | locate, then pinned finish | the erasure record over the pattern is empty (so the window is exact: today `pcrec_vm_prefilter_window` = prefilter && !erased); the pin kills outcomes that cannot reach e ONLY ABOVE every atomic group, possessive quantifier and ambiguous-body lookaround inside S (an atomic body's choice is its first body success, judged with K = the atomic's end); no veto-capable callout on the commit path | C D (END pin); T R4 + R3; P E3; today's exact window | the true path passes through e; outcomes that cannot reach e are dead | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc": g1 unset, g2=(2,3) (the atomic clause); `(?:a(?C1)b\|a)` with a vetoing callee (the callout clause) | BUILT as today's hybrid exact window (today declines atomic as an erasure, so it is right); the text now carries the conjuncts |
+| 8 | monotone ends | one greedy (lazy) quantifier over a deterministic fixed-stride body; ends strictly descending (ascending); EVERY slot written in the body is written on EVERY iteration at a fixed offset; `(?:aa\|a)*` is not admitted (not fixed stride) | C O; T R2(a); P E4; APPROACH §2 A-1 | ENUM yields the backtracker's sequence; equal ends with equal slots are one continuation | `(?:(a)\|b)*c` "bac" g1=(1,2) (every-iteration clause) | BUILT (the VM cursor rung, `vm_cursor_rep`) |
+| 9 | branch-ordered alternation | deterministic branches, one end each, enumerated in branch order; equal ends merged only with equal σ, or where K reads no slot | T R2(b); C LIST | ENUM is the preference order | `(a\|ab)*c` "aabc" g1=(1,3) (held); `(?:(a)\|a)` kept apart | BUILT (the ENG-ISL trie; its remainder measured thin, [ENG-ISL-S2]) |
+| 10 | captures at a seam | a `SET` at an `AT`-typed coordinate; trailed; its trail entry sits above any ENUM resume frame of the stretch before it | all three | a store of a seam position changes no outcome, and the trail undoes it before ENUM-next | `(?:(a)\|ab)c` "abc" g1 unset (trail order) | BUILT (D163 add. 3; today's derived SETs) |
+| 11 | captures inside, one-pass | one-pass judged over S·K up to the segment's exit commit point (not over S alone) | P E2; C TAGGED; T H1 | at most one live thread per position, so the tags are determinate | `(a*)a` "aa" g1=(0,1) | HELD (§5.2) |
+| 12 | captureless regular lookaround as a predicate | the body is regular, free of captures, backrefs and callouts; AND the predicate sits at a segment EDGE or inside a one-pass region (applied to each candidate end in preference order); elsewhere it stays an `ASSERT` seam | P E5; T GUARD; C ASSERT / AUTO EXISTS | a predicate is atomic; applying it to each candidate end in order is the backtracker's test | `a*(?=a)` "aa" (0,1) (the edge clause) | BUILT at the edge as D164 (TAGGED, the end mark); NEW elsewhere |
+| 13 | non-consuming callout | a statement about FIRE SETS only (`match_api.md §11.6¶1`): a fire skipped on a path that fails whatever the callee returns changes no pure callee's answer. NOT an exactness statement: the callout is in the erasure record, so a stretch over it hands a superset, and a COMMIT path that crosses a callout ENDS at the callout | all three | as stated, for pure callees | the vetoing-callee case of row 7 | BUILT (the start seek: "A CALLOUT IS NOT A CONJUNCT", `emit_dfa.c:8013-8019`; `nfa.c:643-648`) |
+| 14 | thread set | S·K regular to ACCEPT or an atomic boundary; a Pike list whose ε-closure drops a second arrival at the same pc and position (the empty-iteration rule); bounded repeats fully unrolled (no counted rung); no callout | C P | a priority-ordered thread list is leftmost-first with captures | `(a*)*` "aa", `(a\|)*b` "aab", `(?:()\|a)+?b` "ab" (held by hand) | HELD |
+| 15 | guided | UNSOUND AS STATED. A revision needs: viability computed over an automaton whose state carries "this iteration consumed nothing"; viability applied only ABOVE atomic groups (as row 7) | T R3 | (as stated it is wrong) | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc" (atomic); `(?:()\|a)+?b` "ab": pcrec g1 UNSET, python (0,0) (empty iteration) | HELD; 15′ (pruning by viability under an irregular K) is sound by row G, cost unmeasured |
+| 16 | memo | UNSOUND AS STATED. The key must include the frame state K reads (the call-stack top, live counters, empty-iteration guard slots), or the row excludes CALL and counted rungs; no backref to a group rewritten between arrivals; no callout reading slots | P E6 | a failed (point, pos, frame state) fails again | `^(?:(a+)x\|(?1)y)$` "aay" matches (CALL); counter and guard slots exist (`(?:a\|ab){2,40}(c)`, `(?:()\|a)*b`) but no conflation witness was built | HELD |
+| 17 | backref gate by referent copy | STRUCK: it is row G with the backref superset (§6.0) | P | (row G) | `(a)(?i)\1` | merged into G |
+| B | backtracking | always | all | it IS the semantics | | BUILT (the VM) |
+
+**Forced to B** (everything else is a cost question): a backref or `(?(n)` condition reading a slot
+written inside an AMBIGUOUS S (§6.0's definition, so row 2's σ case is caught); recursion or a
+subroutine call with an ambiguous body, and any memo across CALL; a non-atomic lookaround; a
+consuming callout.
+
+**Composition across a seam** (held by the SOUND lens by hand): a replacement exact for EVERY entry
+(p, σ) leaves every enclosing stretch's continuation unchanged, so rows compose. Rows exact only
+under a hand (5, 6, 7) compose only through a valid typing, which is the typing rule's job.
+
+### 6.2 Per row: profitability, give-up contract, lever, reads
+
+Profitability is separate from soundness (SEAM-9): a profitability conjunct may read neighbours'
+cards, rarity and a named counterfactual world; it can make a row decline, never admit an unsound
+one. The GIVE-UP CONTRACT (C11, D158): an optimization may turn a give-up into an answer
+(ONE_WAY), never the reverse; FIXED rows must not move the give-up surface at all (today's
+`CG_FIXED`); the reference all-B tiling is the direction control ([GIVEUP-DIFF]). LEVER (memory
+`pcrec-flag-follows-caller-effect`): a PUBLIC deny only where the row can be slower; TEST-ONLY for
+a wrongness-risk row; NONE for a refactor or a bug fix.
+
+| # | profitability (reads) | give-up contract | lever class | kind / exit |
+|---|---|---|---|---|
+| G | the measurement set's rarity of the gate's terms; a gate that costs a pass can be slower | ONE_WAY | public (today's prefilter denies, e.g. `-fno-prefilter`) | `AUTO GATE`, `FIND`, `PRESENT` |
+| 1 | none: always taken when sound | ONE_WAY, with D158's one accepted exception K102 (possessify's WORK charge) | public (exists: `-fno-possessify`) | `SKIP` in an `AUTO`, or a cursor |
+| 2 | none | ONE_WAY | test-only (new; a wrongness risk) | `AUTO COMMIT`, `SWITCH` |
+| 3 | maximality (§6.3) | ONE_WAY | test-only in context; public for the whole-pattern case (today's engine axis) | `AUTO COMMIT` |
+| 4 | none | ONE_WAY | test-only | `AUTO COMMIT` |
+| 5 | lmwalk's `finisher-dfa`, `anchored-A`, `next-landmark` and `rarity` (reading NEXT in the world WITHOUT the walk, [SEL-WORLD]); the [LANDWALK-PRES] read of PRESENCE (§4.3) | as lane/p1build declares | public (lane/p1build: `PCREC_NO_LANDMARK_WALK`, bit 57) | `FIND` + reverse `AUTO` + `SKIP` |
+| 6 | the floor; rarity | ONE_WAY | test-only | `FIND` frame |
+| 7 | the window's rarity against the VM's unwindowed scan | FIXED (today's `handoff` rows, `CG_FIXED`) | public (exists) | `AUTO GATE` + reverse `AUTO`, `SPAN` hand |
+| 8 | price among ENUM vs frames on a short fragment, from the measurement set (never a constant) | ONE_WAY | as today | `AUTO ENUM` |
+| 9 | as 8; ENG-ISL's measured-thin remainder | ONE_WAY | as today | `AUTO ENUM` |
+| 10 | none | FIXED | none (a refactor) | `SET` |
+| 11, 14, 15, 16 | HELD | (stated with the kind) | test-only when built | HELD kinds |
+| 12 | none at an edge | ONE_WAY | test-only (new placements) | `AUTO TAGGED`, `AUTO EXISTS`, `ASSERT` |
+| 13 | none | FIXED for the fire set's caller-visible rules (`match_api.md §11.6`) | none | `CALLOUT` |
+| B | none | the reference | none | the choice family |
+
+### 6.3 Maximality, departures and the gate
+
+A region takes the largest enclosing stretch that a REPLACEMENT row admits WITH its captures (the
+capture conjunct): G and 15′ are not replacements. A capture-free regular pattern therefore plans to
+today's one whole-pattern DFA by construction. Two kinds of departure from maximality exist, and only
+two: a FORCED split (a conjunct fails, e.g. at a capture with no capture mechanism), and a DECLARED
+cut row (a landmark cut with a proved span, [CAND-SPAN]'s shape). A PRICED split waits for the
+pricing pilot's verdict (lane/rulepilot): no planner pricing ahead of it (D77, D6).
+**The gate:** every pattern today routes to the DFA yields an all-automaton/kit stream,
+byte-identical to today's artifact.
+
+---
+
+## 7. Today's tree, corrected (C1-C14)
+
+### 7.1 The glue-site inventory, recounted (C1, C4)
+
+Each site at main f574eab2d (X12 on lane/p1build). PAIR = two mechanisms joined by their own
+protocol; HALF = a pair in its analysis only, the kit half already shared; ONE = not a pair.
+
+| site | today | verdict | stream home |
+|---|---|---|---|
+| X1 hybrid prefilter window (`emit_vm.c:13005-13033`; H3 at `:10366-10441`) | its own window protocol | PAIR | `AUTO GATE` + reverse `AUTO`, row 7; exactness from the erasure record |
+| X2 VM span-loop cursor rung (`vm_cursor_rep`) | `vm_det_seq`/`vm_cursor_fits` analysis | HALF | `AUTO ENUM` with a `SKIP` (row 8); one shape analysis |
+| X3 revdet (`revdet.c`) | its own reverse walk over a reversed AST | PAIR | the one reverse `AUTO` |
+| X4 ENG-ISL trie (`vm_isl_*`) | a second trie | PAIR | `AUTO ENUM` (row 9) |
+| X5 VMRUN | VM-only `MF_OP_VERIFY` | ONE | `VERIFY`, unchanged |
+| X6 N7 backref compare | the encoding seam's compare loop | ONE | `MISMATCH`, unchanged |
+| X7 DFA scan edges (`scanedge.c`) | its own analysis | HALF | `SKIP`; one shape analysis |
+| X8 DFA stay/skip | the same op, record and builder as X2/X7 | ONE | `SKIP` |
+| X9 start search | ONE table (`cand_rows[]`; the VM seek is its `first-class` row) | ONE | `FIND` |
+| X10 PRESENCE/FIRST text | the same emitter and fact (`emit_vm.c:13259`) | ONE | `PRESENT` |
+| X11 LOCATE→RECOVER→FINISH | ONE declared table, typed hands, five emitter functions | ONE | planner rows over the reverse `AUTO` |
+| X12 landmark walk (lane/p1build `emit_landmark_walk`) | a hand-written loop; refuses a VM finisher | PAIR | `FIND`, reverse `AUTO`, forward stretch; the finisher's route becomes a card `demands` |
+| X13 compound controller (`compound.c:248-265`: ONE row, the match split) | whole artifact over whole artifact | PAIR | P5, the one composition home (C9) |
+| X14 engine-context consumer kinds (`emit_dfa.c:1415-1426`, `memfn.h:414-415`) | the engine taxonomy in the kit's ABI | PAIR | the consumer class by behaviour (§8) |
+| X15 find-all empty-match retry (`src/gen/emit_iter.c:48-52`) | `notempty-machine` vs `guarded-matcher`, keyed by `fit.chosen` | PAIR | P5's iterate rule reads the stream's card (a not-empty start constraint), not the engine |
+| X16 the position-domain family ([DEC-POSDOM]) | the offset-0 rule in three spellings; THREE next-start loops (`emit_dfa.c:14554`) | FAMILY | one seam rule (§4.1) and the FIND frame's floor |
+| X17 the call-site code table (`callsite_rows.c`) | ONE table for part and callout calls | ONE (the shared protocol) | the `codes` field (§4.1) |
+
+Count: 7 pairs (X1, X3, X4, X12, X13, X14, X15), 2 halves (X2, X7), 1 family (X16), 7 already
+single (X5, X6, X8, X9, X10, X11, X17). The planner also replaces every engine-verdict reader:
+`fit.chosen` appears in 28 non-comment lines in 7 files (compile.c, compound.c, internal.h,
+emit_dfa.c, emit_iter.c, known.c, select_engine.c). Round 1's "four skip sites to one" and "two
+start searches" are withdrawn (C1, C3).
+
+### 7.2 The other corrections
+
+| id | round 1 said | corrected |
+|---|---|---|
+| C2 | backref and callout patterns lack a start-only gate | `(\w+)\s+\1` today IS FIND + SKIP + BREF with no frame (`RX_VM_START_SCAN "first-class"`, `RX_VM_FRAMELESS 1`, resume-points 0); `a(?C1)b` the same. The `no-backreference` line is about the WINDOW. The residual is a richer FIND (§1.1 row 5), not a reach claim |
+| C3 | two start searches, two next-start loops; `reentry` FIND-next / START-next | one start search; three next-start loops ([K50], `emit_dfa.c:14554`; [DEC-POSDOM]); `reentry` = none or a frame (§4.1) |
+| C5 | the compound's concat split is today's structural limit | today's compound has ONE row, the match split; the concatenation split is D163 client 7, PARKED. "Today cannot" rests only on islands being one level deep and no callout inside a DFA scan (§9.2) |
+| C6 | row 5 mature; check [ENG-TDFA]'s design | row 5 lives on lane/p1build; [ENG-TDFA] has no design ("BIG FISH", opens on the owner's word); the capture survey sided with prior art (DEFER) |
+| C7 | the derived stamp is cosmetic and agreed | three different rules were merged as one; §5.3 picks one and lists its spec readers |
+| C8 | seam fields `exact`, `meters`; the typing rule replaces five derivations | `exact` → record field `row`; `meters` → kind rows; `Nfa.erased` is the one superset owner and the typing rule a projection over it (§4.1, §6.0) |
+| C9 | `PART` kind and a controller above | one home: P5 (§2) |
+| C10 | exits {COMMIT, ENUM, GATE, EXISTS} | `TAGGED` restored, scoped to the mark distance; STATE and rows 11/14/15/16 as HELD kinds (§5) |
+| C11 | give-up surfaces "accepted" | D158: ONE_WAY only; a contract column per row (§6.2) |
+| C12 | P-g's example `(\w+(?:-\w+)*)@(\w+)` | possessify already makes its three `\w+` frameless; the only frame is the region possessify does NOT prove. P-g needs a different example or a new admission (unique iteration of a starred multi-position body) (§11) |
+| C13 | (absent) | per-entry demand has no channel today or in rev 1: an unlock with a trigger (§4.3) |
+| C14 | (absent) | D161 add. 17's two owner sentences: this design reads it as "the reverse DFA is pcrec's scaffolding; scan edges inside it are the kit's optimization" (row 5) |
+
+---
+
+## 8. The kit's consumer kind, re-expressed by behaviour (B8)
+
+The consumer kind is a BACKWARD fact (what consumes the site's candidates), read by the kit's
+finder gate (`memfn/src/finder.c:398-404`) and the key of committed measurements (64 lines of
+`src/core/measures_table.inc`; `kit.xover.*.WALK.<KIND>` in `memfn/data/sets/synthetic-all-walk.tsv`,
+whose values are effectively never; `kit.gstar.*.DFA_HAT|DFA_SCAN` in `kit-interim-grid1.tsv`, whose
+values are real). Deleting it (rev 1) would move every keyed site to `MF_SK_UNSTATED`, whose key does
+not resolve: a silent speed change. So it is KEPT, and RE-EXPRESSED by consumer behaviour (D174:
+names say what the consumer does, never the engine):
+
+| today's kind (`memfn.h:385-415`) | its behaviour, as facts | proposed behaviour name (the kit confirms) |
+|---|---|---|
+| `DFA_SCAN` | the consumer restarts its forward scan at the candidate; unbudgeted | `RESTART_SCAN` |
+| `DFA_HAT` | a seeded scan that RE-SEEDS where the skip moved (states its `moved` hook) | `RESEED_SCAN` |
+| `HYB_PF` | an inner unbudgeted prefilter with a BUDGETED consumer behind it | `PREFILTER_BUDGETED` |
+| `VM_ATTEMPT` | a budgeted attempt loop (steps, frames, work per call) | `ATTEMPT_BUDGETED` |
+| `DFA_ATTEMPT` | an unbudgeted attempt loop (MLINE's predecessor seek, the attempt entry's pre-check) | `ATTEMPT_UNBUDGETED` |
+| `REPORT` | the candidate IS the answer, nothing behind it | `REPORT` (already behaviour-named) |
+
+In the stream the planner derives the class from the consumer's CARD (budgeted or not, re-seeds or
+not, the candidate used as a position or a verdict), never from an engine. This is a kit abi event
+(D146: a kit byte move is a pcrec abi event in the same commit; `MF_SITE_ABI` bump). The keyed rows
+re-key by a one-to-one mapping, so no re-measurement is needed while the mapping stays a bijection.
+The request is the manager's to file (memory `pcrec-requests-are-mine-to-file`); it rides the first
+proof that moves a kit byte, not before.
+
+---
+
+## 9. Non-goals, losses, and the two end states head to head
+
+### 9.1 Non-goals with their general form (B5)
+
+- **A front end with different semantics** (POSIX leftmost-longest). Every row's argument and the
+  floor are stated against backtracking preference order, so such a dialect would invalidate them.
+  General form: the reference semantics as a named PARAMETER of the table (row B = the dialect's
+  reference machine; each row's argument stated against it). A front end that lowers to the IR with
+  PCRE semantics gains from the IR seam, which exists today (P1).
+- **A set-of-patterns API** (N patterns, one scan, match ids). General form: `FIND` as a stream
+  instruction that feeds several ACCEPT ids, and P5 composing N streams over one FIND.
+- **Trigger for both:** a second dialect or a set API is requested (D77). Not before.
+
+**Loss 1, and its mitigation.** Today `--engine=dfa` against `--engine=vm` is a control that does
+not share a source with what it controls. Every tiling of a stream shares the renderers, so a `SET`
+or `FIND` rendering bug is in all of them. Mitigations: libpcre2 (PC-3) stays the independent
+oracle; the reference all-B tiling is kept; the stream INTERPRETER (PLAN under D77) gives P2 and P3
+an oracle that does not share their code (B6).
+
+**The other losses, carried from rev 1:** pure-DFA properties (no stack, no budget, bounded state)
+become DERIVED, so a stray choice record costs them (mitigated by the maximality gate and the
+derived stamps); a seam has a cost gcc cannot optimize across (every split is forced or declared,
+§6.3; T2 is a no-regression gate); callout fire sets move when a cut moves (allowed, `match_api.md
+§11.6`); one render vocabulary must hold computed-goto DFA states, table DFAs and the VM's
+single-indirect-jump rule (a large `AUTO` renders as its own function); many small machines need a
+total subset and gcc-time budget.
+
+### 9.2 Head to head, both fully built (bird in the hand)
+
+| question | today's two engines grown as far as they go | the stream |
+|---|---|---|
+| F1: a new stretch-level capability (say a new deterministic shape) | a home per engine, or a glue site; 70% of code merges already touch the emitter pair | one admission row in P2 (§2's check) |
+| F2: a new target | rewrite two 15k-line emitters, whose decisions and spelling are interleaved | a renderer set + a kit target, once records are target-neutral (§3) |
+| F3: who can validate alone | the kit only | each part against its own oracle; the planner and renderers fully only with the interpreter (PLAN) |
+| F4: backward facts | carried inside ONE table (the start table) and the kit ask; elsewhere absent (lmwalk's reads are its own) | the card, for every part (§4.2) |
+| what today can NEVER do | a capability once; engine context out of the kit; a regular region below an irregular node at any depth (census below); a callout inside a deterministic scan | |
+| what the stream can never do | | keep the two engines as each other's independent check (loss 1); make pure-DFA properties structural rather than derived |
+
+---
+
+## 10. The census (scensus, 2026-11-01, bench before corpus)
+
+Population: pcrec-bench's 335 compiled patterns, then the corpus's 4,794 (run files:
+`$PCREC_TMPDIR/scratch/scensus/run/`, `summary.txt`). Numbers are of VM artifacts unless stated.
+
+| question (where it is used) | bench (VM 86 of 335) | corpus (VM 2,226 of 4,794) |
+|---|---|---|
+| VM forced ONLY by captures at seams (pattern 3's route; P-f's population) | 24 | 629 |
+| forced only by zero-width items (row 12's placements) | 12 | 459 |
+| `no-backreference` prefilter decline (row G's backref superset) | 12 | 453 |
+| `no-callout` decline (rows 13, 9 in §1.1) | 6 | 55 |
+| capture inside a repeat (the HELD capture kinds, §5.2) | 10 | 438 |
+| a regular region after the first nested irregular node (§9.2's "never") | 12 | 490 |
+| more than one VM-forcing construct | 14 | 409 |
+| capture-forced, resume-points 0, a capture-erased landmark exists (an UPPER BOUND; the admission split needs p1build) | 19 | 456 |
+
+Reading: the stream's F1-F4 case does not rest on these numbers; they size the PROOFS. The bench's
+24 captures-only VM artifacts and 19 landmark candidates are the population a P-f-shaped proof
+would touch; 10 capture-in-repeat artifacts are what the HELD kinds would reach; 12 regular regions
+below an irregular node are the structural "today cannot" made concrete.
+
+---
+
+## 11. Measurements and proofs, reordered (D1-D7)
+
+### 11.1 Measurements
+
+| # | what | status / trigger | cost |
+|---|---|---|---|
+| M0 | the X1-X17 inventory, kind × host cells, the 28 `fit.chosen` readers | DONE in substance (§7.1; scensus `m0_*.tsv`) | grep |
+| M1-M4, M6 (stamp part) | the populations of §10 | DONE (scensus, one queued sweep, stamps only) | done |
+| M1 (landmark split) | which of the 19 bench / 456 corpus candidates lmwalk's admission takes | after lane/p1build merges (its admission code is there only) | one queued sweep |
+| M3 classifier | captures-at-seams vs zero-width placement, per pattern | done as the census's seam class | done |
+| M5, M8 (the planner dry run) | the tiling per pattern | a BUILD (it is the planner minus renderers): held under D77 until a proof needs it | planner code |
+| T1, T2, T3 | timing | NO-REGRESSION GATES of the proofs that move bytes (G0), not benefit measurements; each needs the build it would measure | one bench window each, cleared with the owner, never in his evening hold |
+
+### 11.2 The one byte-identity comparator (D3, PLAN)
+
+Every byte-identical proof uses ONE comparator, not a lane-built harness each time:
+`scripts/emit_sweep.py` with its declared identity arm set (`IDENT_*`, the [VMREC] step (a)
+arms), run once on the pre-change commit to freeze a baseline manifest and once on the change;
+movers must be 0. The baseline is post-p1build main (D1: p1build moves 43 `landmark-walk` codegen
+lines). A stream-listing arm joins the set when a stream listing exists (§2's F1 check). The
+comparator is independent of the change by construction: its baseline is the previous commit's
+output. PLAN: name it in the first proof lane's brief; build nothing ahead of that.
+
+### 11.3 Proofs, in order (D7), all after lane/p1build merges (D1)
+
+| order | proof | what it shows on F1-F4 | pass criterion | blocks / waits for |
+|---|---|---|---|---|
+| 1 | **P-c**: the VM hybrid's prologue (forward + reverse pair, window handoff, retry) as records, with ONE seam record carrying both halves: the run-time hand and the card (`accepts`, `proves`, `give-up contract`) | F4 (the real seam contract, both ways), F1, F3 | byte identity (§11.2) AND the seam record's own contract tests (seam-in, seam-out) | p1build merged (it edits `pcrec_cand_finish_vm` and the handoff row). It cannot be byte-identical without today's `cand_project` + `take`, so the card half is needed here anyway |
+| 2 | **P-b**: the DFA artifact's top level (`cover`, `reverse-pass`, scan edge, forward match, report) from `FIND` / reverse `AUTO` / `AUTO` / `ACCEPT` records, stamps derived from the records | F1/F3/F2's falsifier: can the DFA emitter be a back end of the stream? It falsifies the approach if it needs kind-specific escape hatches | byte identity; zero escape hatches | P-c; p1build merged |
+| 3 | **P-d** (P-a folded in): the landmark walk as records; its seam-typed `pcrec_ctx_fail` asserts (AT, LOWER, NOMATCH, of the six) become seam type checks; the finisher route a card `demands`. P-a's part: one SKIP RECORD kind whose renderer has ONE BODY for both hosts (not a shared name over two bodies), field names co-designed with [CAND-SPAN]'s span fact (D6) | F1, F4 (the [LANDWALK-PRES] shape as a card read) | byte identity; one renderer body | P-b; [VMREC] step (b) (it consumes the span kinds `VK_SPAN`/`VK_SPAN_MOVE`, D2) |
+| held | **P-e** the planner dry run | — | — | D77: a proof that needs the planner |
+| held | **P-f** (the first build that moves bytes): for the captures-only population, `FIND` landmark → reverse `SKIP` → the frameless program run once from the walked start | — | answer identity over the corpus; a test-only lever; its measurement card in the same change; T1 as its no-regression gate | a CONSUMER of [CAND-SPAN]'s fact (D6): waits for its design and kit request; the D27 spec-first author for the admission table first (accepted) |
+| held | **P-g**: deterministic islands inside the VM body | — | as P-f | a new example (C12); cite ENG-ISL's measured-thin result; the D27 author first |
+
+**Declined (D4):** round 1's timing note asked that D182 step (c) be designed against the stream's
+record set. Declined: (b) and (c) are not started, and the stream's kinds rest on open holes. The
+one cheap true part is kept as a constraint: (c)'s effects interface stays host-neutral (it already
+is, as its ruling is worded). **Pricing** (D6): any planner pricing waits for lane/rulepilot's verdict.
+
+---
+
+## 12. Standing questions (docs/design/CLAUDE.md)
+
+1. **The measurement regime.** RELEVANT only to the G0 gate: T1/T2 run on the bench box in a cleared
+   window, match-dense and rare subjects, find-all, both kit layers (D147). A regime flip (rare vs
+   dense) can flip a proof's no-regression verdict; both are run. The census numbers (§10) are
+   compile-only stamp reads, regime-free.
+2. **The independent control.** Answers: libpcre2 (PC-3), which shares nothing with any part; the
+   reference all-B tiling shares P1 and P3 (loss 1), so the interpreter (PLAN) is the control for
+   P2 and P3. Bytes: the comparator's baseline is the previous commit's output. The census
+   population is counted by its own scanner, with a parse control against the compiler's `forced by`
+   text (scensus `summary.txt`). No sabotage witness is proposed here; each proof lane names its own.
+3. **What moves when data is regenerated.** The measurement set's rarity facts feed profitability
+   columns: a re-measure can move a TILING (emitted bytes, an abi event), never an answer. The consumer
+   kind's re-key (§8) is a kit abi event. The derived stamp's definition is a D80 event (§5.3).
+
+---
+
+## 13. Holes still open, ranked, and the asks
+
+1. **Captures inside segments and repeats** (bench 10, corpus 438). Without a capture kind the planner
+   splits at every capture (forced, §6.0), which fragments the stream and pays seams. ONEPASS, THREADS,
+   GUIDED and MEMO are HELD; the capture survey's DEFER stands.
+2. **The planner's departures are unpriced**, by design until the pricing pilot reads (§6.3).
+3. **New rows need written arguments and D27 witnesses** before admission (the table's D27 author is
+   accepted, due before P-f/P-g). Rows 2, 4, 6 and 12-in-context are NEW.
+4. **The floor's bound under non-exact walks** (row 6): per-start runs over a walk window can go
+   quadratic on runs of the walk class; the bound needs a proof.
+5. **Proof invalidation must be complete**: "undeclared = may write everything" must be the enforced
+   default, and every kit window must declare its effects.
+6. **Recursion and subroutine calls**: stretches inside shared callee bodies need seams across
+   CALL/RETURN and the slot snapshot; not worked through.
+7. **ENUM generator state inside loops**: per-frame accept positions, bounded by the window.
+
+**Asks for the manager** (D181: questions for a `pcre2-reader` note, never the source):
+- (A2, A13) "After an iteration of an unbounded repeated group that matched the empty string, does
+  PCRE2's interpreter ever start a further iteration (including when it is the m-th mandatory
+  iteration of X{m,}), and are captures set inside that empty iteration kept in the reported match?"
+- (A4) "For a backreference to a duplicate group name, or to a group number inside a `(?|` branch
+  reset, which group's capture does PCRE2 compare against when several are set or some are unset;
+  and under PCRE2_MATCH_UNSET_BACKREF does an unset referent match the empty string in every case?"
+
+---
+
+## 14. Changes from rev 1
+
+Every ruled crit-stream1 finding, and where rev 2 carries it.
+
+| id | finding (short) | ruling | fixed in |
+|---|---|---|---|
+| A1 | rows 7, 15 unsound with an atomic group inside S | FIX-NOW | §6.1 rows 7, 15 (and 4's outer-pin clause) |
+| A2 | row 15 wrong under the empty-iteration rule | FIX-NOW + ask | §6.1 row 15 UNSOUND AS STATED; §13 ask |
+| A3 | row 2 admits an ambiguous branch; σ under a slot reader; "ambiguous" undefined | FIX-NOW | §6.0 (definition), §6.1 row 2, "Forced to B" |
+| A4 | the backref → referent gate is not necessary | FIX-NOW | §6.0 (one backref superset), rows G and 17; §13 ask |
+| A5 | row 1 weaker than possessify (lazy, widening, callouts, backrefs) | FIX-NOW | §6.0 (polarity), §6.1 row 1 by reference |
+| A6 | rows 3, 4 lack the capture conjunct; Pick 3 makes the split priced | FIX-NOW | §6.0 (capture conjunct), §6.1 rows 3, 4, §6.3 |
+| A7 | row 16 unsound under CALL | FIX-NOW (CALL half); counter half NOTED | §6.1 row 16 |
+| A8 | the typing rule omits `\K`, `\G`, veto-capable callouts; row 13 readable as exact | FIX-NOW | §6.0 (superset owner), §6.1 row 13 |
+| A9 | row 8's slots | FIX-NOW | §6.1 row 8 |
+| A10 | row 11 one-pass over what | FIX-NOW | §6.1 row 11 |
+| A11 | row 12 lacks the edge conjunct | FIX-NOW | §6.1 row 12 |
+| A12 | a superset may emit `UPPER` | FIX-NOW | §4.1 (typing rule, per coordinate) |
+| A13 | rows 10, 1/2, 14 conditions unwritten | DOC | §6.1 rows 10, 14; §6.0 (the fold) |
+| B1 | no Goals; argued on speed | FIX-NOW | §0 (F1-F4, G0 gate), §11 (T rows as gates) |
+| B2 | the measured cost of two engines | FIX-NOW | §0.1 (verified counts) |
+| B3 | no part table; the planner as the new unit of focus | FIX-NOW | §2 (parts, rows as sub-parts, the F1 check) |
+| B4 | the record level | FIX-NOW | §3 |
+| B5 | front ends and set APIs | DOC | §9.1 (non-goals, general form, trigger) |
+| B6 | per-part oracles; the interpreter | FIX-NOW; interpreter PLAN | §2 (oracle column), §3, §9.1 |
+| B7 | the seam is forward-only | FIX-NOW | §4.2 (the card, cited channels), §4.3 |
+| B8 | the consumer kind deleted | FIX-NOW | §8 |
+| B9 | the stream is the general form of X1-X14 | NOTED | §7.1 (now X1-X17) |
+| C1 | §4.3 recount; P-a already half exists | FIX-NOW | §7.1, §5.1, §11.3 (one renderer body) |
+| C2 | backref/callout start gates exist | FIX-NOW | §7.2, §1.1 row 5 |
+| C3 | one start search, three loops; `reentry` | FIX-NOW | §4.1, §7.2 |
+| C4 | glue sites X15-X17, the 28 engine-verdict readers | FIX-NOW | §7.1, §4.1 (`codes`, position domain) |
+| C5 | the concat split is parked | FIX-NOW | §7.2, §9.2 |
+| C6 | row 5 unlanded; no [ENG-TDFA] design | FIX-NOW | §6.1 row 5, §5.2 |
+| C7 | one RX_ENGINE rule and its spec readers | FIX-NOW | §5.3 |
+| C8 | `exact`, `meters`, the superset owner | FIX-NOW | §4.1, §5.1, §6.0 |
+| C9 | PART vs controller | FIX-NOW | §2 |
+| C10 | TAGGED dropped; held kinds | FIX-NOW | §5.1, §5.2 |
+| C11 | D158 and the contract column | FIX-NOW | §6.2 |
+| C12 | P-g's example | DOC | §7.2, §11.3 |
+| C13 | per-entry demand | PLAN | §4.2 (`demands`), §4.3 (unlock + trigger) |
+| C14 | D161 add. 17's two sentences | DOC | §6.1 row 5, §7.2 |
+| D1 | P-b, P-c also on p1build ground | FIX-NOW | §11.3 (all after p1build; post-p1build baseline) |
+| D2 | P-a vs [VMREC] (b) | FIX-NOW | §11.3 (P-a folded into P-d, after (b)) |
+| D3 | one comparator | PLAN | §11.2 |
+| D4 | decline the D182 (c) timing note | FIX-NOW | §11.3 |
+| D5 | measurements reordered; M8 is a build; T rows validate builds | FIX-NOW | §11.1 |
+| D6 | P-f a consumer of [CAND-SPAN]; P-a co-designed; ENG-ISL; rulepilot | FIX-NOW | §11.3, §6.3, §4.3 |
+| D7 | order P-c, P-b, P-d | FIX-NOW | §11.3 |
+| SEAM-8 | Pick 3 vs CAND-SPAN's no-price ruling | REJECTED | §6.3 keeps declared cut rows beside forced splits; no change of substance |
+
+The four review lessons (critics.md) and the owner-criteria lens row (the critic skill) are the
+manager's to land; they are not part of this document.
