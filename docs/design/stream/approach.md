@@ -271,75 +271,147 @@ computed-goto label address (`:48`), and locals named by their C variables. None
 blocks step (b) or (c) of [VMREC]; each is a renderer-side move when its trigger fires (a second
 target, or the interpreter).
 
-**The kit sits on the back-end side.** Its facts interface (`mf_site`, `mf_class`) is
-target-neutral already; its OUTPUT is C text (memfn/CLAUDE.md). A new target is therefore a new
-renderer set in P3 plus a kit target in P4, with P1 and P2 unchanged. `emit_backends_notes.md`
-(forward notes, nothing scheduled) records the same direction.
+**The kit sits on the back-end side, and its seam carries C text both ways (D4).** Its facts
+(`mf_site`, `mf_class`) are target-neutral; but the P3→P4 call also passes `mf_hooks`
+(`memfn.h`): C expressions, C statements, a declaration prefix and the `on_cand` callback that
+writes pcrec's verify text into the kit's output; and the kit's OUTPUT is C text
+(memfn/CLAUDE.md). A new target is therefore three steps, in order: migrate the records (above;
+the first target pays it), restate the hook interface for the target (a P3 + P4 contract event),
+then a renderer set in P3 and a kit back end in P4. P1 and P2 stay unchanged throughout; that is
+F2's checkable part. `emit_backends_notes.md` (forward notes, nothing scheduled) records the same
+direction.
 
 **The test of the rule is the interpreter** (PLAN, D77): it executes records and cannot read
-target text, so any record that needs target text to mean anything fails there. Trigger: the
-first non-gcc target is requested, or loss 1's mitigation is chosen (§9.1).
+target text, so any record that needs target text to mean anything fails there. Triggers: the
+first non-gcc target is requested, loss 1's mitigation is chosen (§9.1), or **F3 is to be met**
+(it is the oracle P2 and P3 lack, §2; its sibling, an IR-level executor, is P1's).
 
 ---
 
-## 4. The two-way seam (B7)
+## 4. The two-way seam (B7; rev 3: B1, C1-C9, D2)
 
 ### 4.1 The run-time half: what a stretch hands the next
 
 | field | content | today's precursor |
 |---|---|---|
-| `pos` | typed PER COORDINATE: start ∈ {`AT`, `LOWER`, `UPPER`, `CAND`, `NONE`}; end ∈ {`AT`, `ENDSET` (its order stated), `NONE`}; or `NOMATCH` | `CAND_HAND_*` / `CT_*` (`emit_dfa.c` near `:9790`) |
+| `pos` | typed PER COORDINATE (the table below): start ∈ {`AT`, `LOWER`, `UPPER`, `CAND`, `HIT`, `NONE`}; end ∈ {`AT`, `ENDSET` (its order stated), `WINDOW`, `EXISTS`, `NONE`}; or `NOMATCH` | `CAND_HAND_*` / `CT_*` (`emit_dfa.c`, the hand enum near `:9790`) |
 | `slots` | the one capture array in the parent's numbering, trailed (D163 add. 3); a `SET` writes only at an `AT`-typed coordinate | D163 add. 3 |
-| `proof` | per-offset proven byte sets, `consumable_len`, context spans, END/START pins, the UTF-8 character-boundary bit. For a kit kind, the proof IS THE KIT'S ANSWER (`mf_class.proven[d]` via `mf_ask`), recorded as a record field (D182 (c) rule 3) | `mf_site.read_floor`, `mf_pred.consumable_len`, `mf_class.proven[]` (memfn.h); lmwalk `utf8-l0` |
+| `proof` | a REFERENCE to the producer's card `proves` (§4.2), the one home of the proof (C8): the hand says which card it carries, never a second copy of the sets. The run-time part is only the position the proof is relative to | `mf_class.proven[d]` via `mf_ask` (memfn.h), recorded as a record field (D182 (c) rule 3) |
 | `reentry` | `none` or `a frame` (C3). The frame's resume behaviour belongs to the PUSHING kind's row (FIND: next candidate; ENUM: next end; CHOICE: next alternative). The FIND frame carries the FLOOR: never re-walk below the last attempt's floor | today's three next-start loops (`emit_dfa.c:14554`, [DEC-POSDOM]) |
 | `effects` | for kit and barrier kinds: reads, writes, cursor movement, may-fail (`RX_FAIL`), may-transfer; undeclared = may write everything | D182 (c) ruling 1 |
 | `codes` | for barrier kinds and controller calls: the call-site code row (span, give-up, internal, utf, startpos, unset-var, reserved) | `src/gen/callsite_rows.c` (X17) |
 
-**The typing rule is a PROJECTION, not a new derivation (C8, A12).** The superset fact has one
-owner, the IR's erasure record `Nfa.erased` (§6.0). A stretch over which the record is non-empty
-hands start `LOWER` or `CAND` and end `NONE`; `NOMATCH` survives. It may NEVER hand `UPPER`
-(witness `a(?=b)|c` on "ac": true (1,2), the superset's (0,1); handing "no match starts above 0"
-loses it). This is exactly today's `cand_project` (`emit_dfa.c:13647-13650`), generalised from
-one hand to every seam.
+**Every hand type of today, mapped (C6).** The `accepts`/`offers` card fields (§4.2) read these
+values, so each of today's types has one:
+
+| today (`CAND_HAND_*`, `CT_*`) | its meaning (today's comment) | `pos` |
+|---|---|---|
+| `AT` (`CT_LOWER\|CT_UPPER` with the point) | a caller's point request | start `AT` |
+| `NOMATCH` (`CT_VERDICT`) | no match now, or the accepted bound unchanged | `NOMATCH` (or the hand passed through unchanged) |
+| `SPAN` (`CT_START`) | the start, and the one end: a match | start `AT`, end `AT` |
+| `ENDSET` (`CT_START\|CT_ENDSET`) | the start and an end set (`rev-end`'s tie) | start `AT`, end `ENDSET` |
+| `LOWER` (`CT_LOWER`) | no match starts below x | start `LOWER` |
+| `CT_UPPER` | no match starts above x | start `UPPER` (never handed by a superset, below) |
+| `CT_CAND` | x is the next position that can start a match | start `CAND` |
+| `CT_HIT` (FIRST hands `CT_HIT\|CT_LOWER`) | x is the gate landmark's leftmost occurrence | start `HIT` (with `LOWER`) |
+| `WINDOW` (`AT`'s mask without the point) | a speculative end, no claim that a match exists (the `rev-end` walk's seeds) | end `WINDOW` |
+| `EXISTS` (`CT_LOWER\|CT_UPPER\|CT_START`) | an end some match has, not necessarily the reported one (the composite's forward accept) | end `EXISTS` |
+
+RECOVER takes `WINDOW` and `EXISTS` today, and RECOVER is in P-b's `reverse-pass`, so P-b's byte
+identity needs both.
+
+**The typing rule is a PROJECTION over TWO facts (B1, A12, C8).** Quoting the definition of the
+record the fact lives in (the process rule this round added): `Nfa.erased` records "each arm of the
+lowering that WIDENS the machine's language past the pattern's records" (`internal.h`, the `Nfa`
+struct), four bits today (`NFA_ERASED_LOOK`, `_ATOMIC`, `_COUNT`, `_CALLOUT`); "a relaxation added
+later (a backreference, a variable, a call in a cycle) adds its bit in the arm that applies it"
+(the enum's comment). Its readers, traced: `pcrec_vm_prefilter_window` (`emit_vm.c:3774-3777`,
+`prefilter && !erased`), `pcrec_cand_lang_exact` → `cand_project` (`emit_dfa.c:13647-13651`), and
+lmwalk's `g1` (lane/p1build). Each reads the whole word, so a bit added for a fact that widens no
+language flips every exact window the word reaches. Hence two facts, never one:
+
+1. **The language superset** (`Nfa.erased`, language-only as defined). A stretch over which it is
+   non-empty hands start `LOWER` or `CAND` and end `NONE`; `NOMATCH` survives. It may NEVER hand
+   `UPPER` (witness `a(?=b)|c` on "ac": true (1,2), the superset's (0,1); handing "no match starts
+   above 0" loses it). This is exactly today's `cand_project`, generalised from one hand to every
+   seam. Row G's backref superset (§6.0) is a widening, so when it is built its arm adds a bit
+   (`BREF`, and `VAR`/`CALL` likewise), as the enum's comment provides. Today the backref,
+   variable and call declines live in the prefilter's admission (`fit.prefilter`), not in the word.
+2. **The report and position shift** (`\K` moves the reported start: `a\Kb` on "xab" is (2,3); `\G`
+   pins the start position). It widens no language, so it is NOT in `Nfa.erased`: today's exact
+   windows for `a\Kb` and `\Ga(x)` (`RX_VM_PREFILTER_LANG "exact"`) are right, because the window
+   is the pre-shift span and the VM applies `\K` itself. The shift is a fact about the hand's
+   CONSUMER: its card `demands` "applies the report shift" (§4.2); a consumer that does not apply
+   it declines. Today that is lmwalk `g1`'s two kind tests (`A_GSTART`, `A_KRESET`, then
+   `erased == 0`). Today's tree carries it as kind tests at each consumer; the end state carries it
+   once, as a P1 fact beside `Nfa.erased`.
 
 **The position domain is one seam rule (X16).** The offset-0 rule, the startpos guard and the UTF
 check ([DEC-POSDOM], today three spellings across both emitters) are applied to every `pos`
-coordinate at every seam, owned by P6, not per emitter.
+coordinate at every seam: stated in P6, rendered once in P3's seam renderer, not per emitter.
 
 **Moved out of the run-time half (C8).** `exact` (round 1: "the admitting row") is a
 compile-time fact: it becomes the record field `row`, printed by the stream listing, never handed
 at run time (and the name collided with four existing meanings of "exact"). `meters` (the budgets
 a looping instruction charges) is a KIND-ROW fact (§5): one per-search counter crosses every seam
-unchanged.
+unchanged. `proof`'s content moved to the card (above).
 
 ### 4.2 The plan-time half: the CARD
 
 Every part (a planned stretch, a kit site, an entry) publishes at plan time a card of FACTS about
-itself. Neighbours read cards along a declared acyclic graph. Today's tree already carries every
-field below, each as its own mechanism (SEAM-14's six members, plus the give-up contract):
+itself. Neighbours read cards along a declared graph.
+
+**Population (C2).** Today's tree carries these fields as PRECURSORS over start-table rows and kit
+sites only: `take` is set on FINISH and RECOVER rows only ("every other slot's rows leave it
+empty"), `needs` on LOCATE/RECOVER/FINISH, `mf_class` at the three ask sites, `CG_FIXED` on
+start-table rows, and [CAND-SPAN] is not started. No field has a channel for a PLANNED STRETCH (the
+part named first above) or an ENTRY. **For stretches and entries the card is new**; its cost is in
+§11.1.
 
 | card field | meaning | today's backward channel (file:line, main f574eab2d unless noted) |
 |---|---|---|
-| **accepts** | the hand types the part takes, per route | `CandRow.take[route][]` (`src/gen/emit_dfa.c:5689-5695`) |
-| **demands** | what it needs of its neighbours: slots it reads, a machine built, captures wanted by the entry, the finisher's route | `CandRow.needs` (`emit_dfa.c:5689`); lmwalk `finisher-dfa`, `anchored-A` (lane/p1build `src/gen/lmwalk.c:276-287`); entry demand (`_match` delivers no captures, `match_api.md §3.2¶3`; today nothing carries it, C13) |
-| **proves** | what it guarantees about bytes around its position (from the kit's ask), a pattern cut | `mf_ask` → `mf_class` (`emit_dfa.c:7060`, `8316`, `8714`; `CAND_ASKF_*` at `:8283`); `proven[d]` "the set the text tests at d" (memfn.h, R-25) |
-| **fixed span** | the continuation's fixed-size easy span after a landmark, and whether the landmark is a cut | [CAND-SPAN] (plan.md); lmwalk's landmark admission |
-| **consumer class** | how the part's result is consumed (§8) | `mf_site.site_kind` (`memfn/include/memfn.h:767-770`), read by the finder gate (`memfn/src/finder.c:398-404`); `site_kinds[]` (`emit_dfa.c:1415-1426`) |
-| **give-up contract** | ANY / FIXED / ONE_WAY (D158) | `CandRow.contract`, `CG_*` (`emit_dfa.c:5682`) |
-| **reads** | which neighbours' cards, and which counterfactual WORLD, a row's predicates read | `cand_nodes[]` `reads` / `under` / `by` / `kask` (`emit_dfa.c:9870-9893`, table at `:9930`; PRESENCE's `dominated` read of LOCATE near `:9944`); lmwalk `next-landmark`, `rarity` via `lm_next_read` (lane/p1build); [SEL-WORLD] (lane/p1build plan.md) |
+| **accepts** | the hand types the part takes, per route (§4.1's `pos` values) | `CandRow.take[route][]` (`src/gen/emit_dfa.c:5689-5695`), FINISH and RECOVER only |
+| **offers** (C6) | the hand types the part HANDS, the dual of `accepts`; P2's "every hand typed" check and the projection read it; P5's find-all rule reads it (X15) | `CandRow.hands` (`emit_dfa.c:5683`); lmwalk's `.gives` (lane/p1build) |
+| **demands** | what it needs of its neighbours: slots it reads, a machine built, the finisher's route, whether it applies the report shift (§4.1), captures wanted by the entry | `CandRow.needs` (`emit_dfa.c:5689`); lmwalk `finisher-dfa`, `anchored-A`, `g1`'s shift tests (lane/p1build `src/gen/lmwalk.c:276-287`); entry demand (`_match` delivers no captures, `match_api.md §3.2¶3`; today nothing carries it, C13) |
+| **proves** | what it guarantees about bytes around its position (from the kit's ask), a pattern cut. The ONE home of the proof (C8); §4.1's `proof` refers to it | `mf_ask` → `mf_class` (`emit_dfa.c:7060`, `8316`, `8714`; `CAND_ASKF_*` at `:8283`); `proven[d]` "the set the text tests at d" (memfn.h, R-25) |
+| **fixed span** | the continuation's per-offset byte sets at fixed offsets after a landmark | [CAND-SPAN] (plan.md, STATE not-started); lmwalk's landmark admission |
+| **FIXED give-up mark** (C7) | set only on a row that must never move the give-up surface; unset is a wildcard, as today. ONE_WAY is not a value: D158 makes it every optimization's rule, checked by [GIVEUP-DIFF], so declaring it would re-declare what today DERIVES ("the give-up classification is derived by an instrument over the corpus, never declared here", `emit_dfa.c:5676-5681`) | `CandRow.contract`, `CG_FIXED` (`emit_dfa.c:5682`, the enum at `:9829-9831`) |
+| **size** (D2) | the rendered size of each record and which droppable rows' records the rendered artifact contains: the renderer side of the size-cap re-plan | the size-cap ladder: `fit_rungs[]` (`src/core/compile.c:1268`, 14 rungs) and the 14 emitter-written `Job` fields it reads (e.g. `req_handoff_vm`, "written by the emitter at the text it writes") |
+| **reads** | which neighbours' cards, which kit-ask inputs, which measurement keys, and which counterfactual WORLD a row's predicates read | `cand_nodes[]` `reads` / `under` / `by` / `kask` (`emit_dfa.c:9870-9893`, table at `:9930`; PRESENCE's `dominated` read of LOCATE near `:9944`); lmwalk `next-landmark`, `rarity` via `lm_next_read` (lane/p1build); the findings reader record (`pcrec_find_byte_rate_at`); [SEL-WORLD] (lane/p1build plan.md) |
 
-Four rules, each already enforced somewhere today:
+**Dropped as a producer field (C9): `consumer class`.** It is a fact about the NEIGHBOUR, not the
+part: today it folds the kit's site kind (`mf_site.site_kind`, `memfn.h:767-770`) and the use kind
+(`mf_use_kind`, POSITION/DISCARD/ENTRY, per use). In the stream FIND's site description makes a
+declared READ of the consumer's KIND ROW (§5.1: budgeted or not, re-seeds or not), never of the
+consumer's selection (that read would close the cycle of §13 hole 8). The use kind stays per use.
+
+**The size-cap ladder is a re-plan over worlds (D2).** Today the driver renders, measures the size
+against the cap, and retries the compile with a row denied (`fit_rungs[]`, its legal order
+`fit_seq_legal[]`). That is a render → measure → re-plan loop, so it is not a plain card read. It
+fits rule 2 because each rung is a new WORLD (the deny bits): the read graph is acyclic over
+(part, world) states, and `fit_seq_legal[]` keeps the world sequence monotone. Its home is P2 (the
+planner owns re-plans); P3 publishes `size`. In the end state the rung is a row field (§2.2 X-2).
+
+Four rules. Two are enforced today for the start table only, and two are new:
 1. **Facts only.** A card states facts, never a method or a cost the other side must trust (D146,
-   D157). The planner reads the kit's CLASS through the ask channel, never a kit price.
-2. **Declared, acyclic reads.** Every read is declared and the graph has no cycle; an ask of the
-   kit is a read. Today's trace-build checks `table-read-cycle` and `table-ask-unread`
-   (`emit_dfa.c:11280-11287`) generalise to every part.
+   D157). The planner reads the kit's CLASS through the ask channel, never a kit price. Today:
+   partial (`kfields` limits which `mf_class` fields a reader reads).
+2. **Declared reads, acyclic over (part, world) states** (C4). Every read is declared; an ask of
+   the kit is a read OF EVERY INPUT of the site description. A slot may read itself or close a slot
+   cycle only through a different world, as today's `table-read-cycle` allows ("let one cycle in
+   the slot graph be acyclic in the rows"; today's table has NEXT reading NEXT and, on the DFA
+   route, PRESENCE→NEXT→FIRST→PRESENCE, both legal only through `under`/`by`). Today
+   `table-read-cycle` and `table-ask-unread` (`emit_dfa.c:11278-11287`) run in the TRACE build only
+   (`-DPCREC_CAND_TRACE`) over a STATIC 13-node graph: a per-compile check over planned stretches is
+   NEW (C5).
 3. **No ask while open.** A card is complete before any selection that reads it (today's
-   `ask-while-open` trap).
-4. **Soundness reads less than profitability.** A row's SOUNDNESS conjuncts read only the IR and a
-   neighbour's `accepts`/`proves`; its PROFITABILITY conjuncts may also read `consumer class`,
-   rarity and a named counterfactual world. So "price never decides soundness" is checkable per
-   row (§6.2).
+   `ask-while-open` trap, trace build, start table).
+4. **Soundness reads less than profitability. NEW: enforced nowhere today** (C3). `lmwalk_conj[]`
+   interleaves both classes with only a PRE/POST phase column. Its check: a CLASS column per
+   conjunct (`sound`, `profit`, `fit`; `fit` = a resource cap, whose decline is never unsound) and a
+   trace trap on a `sound` conjunct that reads a rate, a kit class field beyond `proves`, or a
+   world. A `sound` conjunct reads only the IR and a neighbour's `accepts`/`offers`/`proves`. Then
+   "price never decides soundness" is checkable per row (§6.2).
 
 A run-time backward fact is already carried correctly and stays: backtracking into a frame is the
 finisher's failure reaching the finder, and the FIND frame's floor carries the last attempt back to
@@ -347,29 +419,45 @@ the generator.
 
 ### 4.3 The worked F4 examples
 
-**[LANDWALK-PRES] (lane/p1build plan.md).** Today the walk's PRESENCE declines the required-run
-pre-check as `dominated` by the walk, blind to the pre-check's run being rarer than the landmark on
-a no-match subject (`[a-z]+@x` on acc-small: 556K instructions against main's 425K, x0.77). In the
-stream, `PRESENT`'s row reads `FIND`'s card: what FIND proves (the landmark byte) and the rarity
-of both, from the measurement set. "Dominated" becomes a PROFITABILITY conjunct over two cards;
-soundness is untouched (both are gates). The fix is one row edit in P2 (F1) through a declared read
-(F4). Trigger: its own row's bench cell.
+**[LANDWALK-PRES] closes through [CAND-SPAN] (C1).** Today the walk's PRESENCE declines the
+required-run pre-check as `dominated` by the walk, and on a no-match subject the walk then finds
+every '@' and rewinds (`[a-z]+@x` on acc-small: 556K instructions against main's 425K, x0.77). The
+fix the plan row leads with (lane/p1build plan.md [LANDWALK-PRES], manager 2026-11-01) has no
+pricing: before the rewind, test the bytes the pattern requires right after the landmark. In card
+terms that is [CAND-SPAN]: the continuation publishes its **fixed span** (offset +1 = {x}); FIND
+asks the kit with it, and the kit's answer comes back as FIND's **proves**; the walk reads FIND's
+`proves` at the found byte, before its rewind, and skips a hit whose +1 byte is not 'x'. One row
+edit in P2 (F1) through a declared read (F4); soundness untouched (a hit that fails a required
+byte starts no match). Trigger: [CAND-SPAN]'s design lane; then the row's own bench cell.
+
+**Why not "the rarity of both" (rev 2's form).** On the row's own witness both the pre-check's run
+and the walk's landmark have the rarity of '@' (the measurement set is unigram: a run's rarity is
+its picked byte's, `pcrec_run_pin` in `src/facts/kset.c`; lmwalk's `lc_rarity` reads the same
+mass), so a rarer-than conjunct cannot fire. What differs is a JOINT pair rate (P('x' right after
+'@'), which D157's revisit-when names as what the ranking cannot express) or a cost (card rule 1
+forbids it). The priced PRESENT form is a HELD unlock, with its trigger: a joint-rate fact in the
+measurement set AND lane/rulepilot's verdict.
 
 **[CAND-SPAN] (plan.md, ruled 2026-11-01).** One fact, the per-offset byte set at fixed offsets
-from a found byte, serves three sites: the required-run pre-check, the walk's hit, the literal
-search's candidate check. In card terms: the continuation publishes its **fixed span** (and
-whether the landmark is a cut); `FIND` asks the kit with that span, and the kit's answer comes
-back as FIND's **proves**; the reverse walk and the forward verify read it. The walk stops
-re-testing proven bytes. Where the landmark is a cut, the forward stretch may start past the span
-(CAND-SPAN's open point, its own measurement). Where it is not, the HELD `STATE` exit (carry a state
-set, §5.2) is the trigger. The ruled "test the full fixed-size easy span, no price" is a DECLARED
-rule in a row's action, not a priced departure from maximality (SEAM-8 stays rejected).
+from a found byte, serves three sites: the required-run pre-check, the walk's hit (above), the
+literal search's candidate check. The card publishes the per-offset sets at EVERY fixed offset;
+which of them get tested is the kit's (D157: "easy" names a method, so it binds the action, not the
+card, C11). The reverse walk and the forward verify read FIND's `proves` and stop re-testing proven
+bytes. Where the landmark is a cut, the forward stretch may start past the span (CAND-SPAN's open
+point, its own measurement); where it is not, the HELD `STATE` exit (carry a state set, §5.2) is
+the trigger. The ruled "test the full fixed-size easy span, no price" is a DECLARED rule in a row's
+action, not a priced departure from maximality (SEAM-8 stays rejected).
 
-**Unlocks, each with its trigger (SEAM-14).** The consumer kind re-expressed by behaviour (§8;
+**Unlocks, each with its trigger (SEAM-14, C10).** The consumer kind re-expressed by behaviour (§8;
 trigger: the first proof that moves a kit byte). Per-entry tilings over shared parts (D163 add. 7;
 `_match` of a capture pattern could be all-automaton; trigger: a census of no-capture callers of
-capture patterns, C13). F2 and F3: a new part implements cards rather than copying another part's
-reads, and is validated against its card rather than its neighbours' code.
+capture patterns, C13). **One read table** (C10): today's reads have four declaration vocabularies
+(`CandNode.reads/under/by/kask`, `CompRead`/`LmConj`, the findings reader record, the [SEL-WORLD]
+world); their general form is one read row (reader, target ∈ {card field, kit-ask input,
+measurement key, world}), one table, one cycle walk, and the card is its producer side. Trigger:
+the first conjunct that must read a non-slot target under the cycle check. F2 and F3: a new part
+implements cards rather than copying another part's reads, and is validated against its card rather
+than its neighbours' code.
 
 ---
 
@@ -377,20 +465,22 @@ reads, and is validated against its card rather than its neighbours' code.
 
 ### 5.1 The kind table (one row per kind, one renderer each)
 
-Every kind row states: its operands, its declared `effects`, the budget it charges (`meters`, C8),
-its resume behaviour if it pushes a frame, and its give-up codes. "Today" names the mechanism the
+Every kind row states: its operands, its declared `effects`, WHERE it charges a budget (`meters`,
+C8; whether a budget stamp exists is one gate, §5.3), its resume behaviour if it pushes a frame,
+and its give-up codes. "Today" names the mechanism the
 kind renders.
 
 | family | kind | resume (if it pushes) | meters | today |
 |---|---|---|---|---|
-| choice | `CHOICE`, `GOTO`, `FAIL`, `CUT`, `ACCEPT` | CHOICE: next alternative | steps, frames | the VM's control records (D182) |
+| choice | `CHOICE`, `GOTO`, `FAIL`, `ACCEPT` | CHOICE: next alternative | steps (at FAIL and backtrack), frames | the VM's control records (D182) |
+| choice | `CUT` | none | WORK (today "at each cut", `emit_vm.c` near `:8107`) | the VM's cut |
 | choice | `SET` (trailed), `CALL`/`RETURN` | none (trail entry); CALL: return frame | trail; frames | D182 records; subroutine calls |
 | automaton | `AUTO(M, dir, COMMIT)` | none | none | the DFA engine's match; D3's priority-first end |
 | automaton | `AUTO(M, dir, ENUM)` | next end, in preference order | steps | the VM cursor rung, the ENG-ISL trie |
 | automaton | `AUTO(M, dir, GATE)` | none (commits nothing) | none | the hybrid prefilter, the start table's gates |
 | automaton | `AUTO(M, fwd, EXISTS)` | none | none | a lookaround body as a predicate |
 | automaton | `AUTO(M, fwd, TAGGED)` (C10): an accept reports `(end, mark distance)` | none | none | D164 B3: "a machine is TAGGED when an accept reports a mark distance" (`src/ir/dfa.c:1555-1557`) |
-| kit | `FIND` (the candidate generator), `SKIP`, `VERIFY`, `MISMATCH`, `PRESENT` | FIND: next candidate, above the FLOOR | the kit's own (declared) | `memfn_sites.def`: already keyed by operation (`MF_OP_FIND`/`SKIP`/`VERIFY`/`MISMATCH`/`ALL_PRESENT`) |
+| kit | `FIND` (the candidate generator), `SKIP`, `VERIFY`, `MISMATCH`, `PRESENT` | FIND: next candidate, above the FLOOR | the kit's own (declared); a `SKIP` that completes a frameless scan charges WORK (today "at each frameless scan completion") | `memfn_sites.def`: already keyed by operation (`MF_OP_FIND`/`SKIP`/`VERIFY`/`MISMATCH`/`ALL_PRESENT`) |
 | barrier | `BREF` | none | steps | `vm_bref` + the encoding seam's compare loop |
 | barrier | `ASSERT` (a lookaround sub-stream, atomic) | none | as its sub-stream | the VM's lookaround |
 | barrier | `CALLOUT` | none; `codes` from the call-site table | as the callee | `callsite_rows.c` |
@@ -411,19 +501,25 @@ analysis in place of two (`scanedge.c` vs `vm_det_seq`/`vm_cursor_fits`).
 |---|---|---|---|
 | exit `STATE` (carry a state set across a seam) | [CAND-SPAN]'s non-cut case | the [CAND-SPAN] design lane finds the non-cut case worth carrying | none yet |
 | `ONEPASS` (captures inside, one live thread) | row 11 | a census of capture-in-segment patterns (bench: capture-in-repeat 10 of 86 VM, §10) and a design | the capture survey's DEFER (`docs/dev/optloop/captures_via_dfa_survey.md` §3.2); [ENG-TDFA] has no design (C6) |
-| `THREADS` (Pike list) | row 14 | the same census, after ONEPASS | its ε-closure rule and unrolled bounded copies are unwritten (A13); excludes counted rungs and callouts |
-| `GUIDED` (reverse viability, then a frame-free walk) | row 15 | resume>0 regular-apart-from-captures population (bench 10, plus 8 frames-unbounded; §10) | UNSOUND as stated (A1, A2), §6.1 |
+| `THREADS` (Pike list) | row 14 | the same census, after ONEPASS | the ε-closure rule is now written from the committed PCRE2 note (§6.1 row 14); the unrolled bounded copies are not; excludes counted rungs and callouts |
+| `GUIDED` (reverse viability, then a frame-free walk) | row 15 | resume>0 regular-apart-from-captures population (bench 10, plus 8 frames-unbounded: scensus M6, `summary.txt`; §10 does not tabulate M6) | UNSOUND as stated (A1, A2), §6.1 |
 | `MEMO` (failure memo) | row 16 | the same population with frames-unbounded | UNSOUND under CALL (A7), §6.1 |
 
 ### 5.3 The derived stamp: ONE rule (C7)
 
-`RX_ENGINE "dfa"` iff no choice-family or barrier record is statically reachable in the stream
-(a reachability question over the records, so it does not depend on a run). `"vm"` otherwise, and
-`_ENGINE_WHY` names the first such record's construct. The budget stamps (`RX_STEP_BUDGET`,
-`RX_WORK_BUDGET`) are emitted iff a reachable kind row charges that budget.
+`RX_ENGINE "dfa"` iff no choice-family record OTHER THAN `ACCEPT`, and no barrier record, is
+statically reachable in the stream (a reachability question over the records, so it does not
+depend on a run). `ACCEPT` ends every stream (§1.1 row 1 ends in it and stamps "dfa"), and the
+search loop around the stream is P5's, so neither counts (B2). `"vm"` otherwise, and
+`_ENGINE_WHY` names the first such record's construct. **The budget stamps keep D49's ONE
+existence gate** (today's `has_budget`, `emit_vm.c` near `:8096`: `--fno-step-budget` suppresses
+both counters): `RX_STEP_BUDGET` and `RX_WORK_BUDGET` exist together where the stamp is "vm" and
+the gate is on. Kind rows say WHERE each counter is charged (§5.1: steps at FAIL and backtrack,
+WORK at a CUT and at a frameless SKIP's completion), never whether a stamp exists; so `(a)(b)`,
+frameless and with no CUT, keeps both stamps, as today.
 
 This rule keeps today's values: a frameless capture artifact (pattern 3, `RX_VM_FRAMELESS 1`)
-carries SETs and stays "vm" with its budgets; a callout artifact carries a barrier and stays "vm".
+carries SETs and stays "vm" with both budgets; a callout artifact carries a barrier and stays "vm".
 Its spec readers, which change wording (never values) in the change that lands the planner (D80):
 `match_api.md §6.3.3` (the `RX_ENGINE` value set, `rx_info.engine`, `_ENGINE_WHY`),
 `tuning.md §3.1¶2` (`_DFA_MATCH`'s iff), `cli.md §1.11¶1` (`(a)(b)` builds "dfa" only under
@@ -435,69 +531,110 @@ planner's tiling, which is why the maximality gate (§6.3) is a gate.
 
 ## 6. The admission table, rewritten
 
-### 6.0 Definitions that every row uses (A3, A4, A5, A6, A8, A13)
+### 6.0 Definitions that every row uses (A3, A4, A5, A6, A8, A13; rev 3: A1, A4, A5, A6, A8, B1)
 
-- **Ambiguous** (A3): S is ambiguous at p iff it has more than one outcome (e, σ) from p. "One
-  end" is not enough: equal ends with different σ are two outcomes.
-- **Polarity** (A5): a NECESSARY row (G, and row 13's fire-set statement) treats a zero-width item,
-  a non-consuming callout and a backref as their superset (ε, or the backref superset below). A
-  SUFFICIENCY row (1, 2, 3, 4, 8, 9, 11, 12) WIDENS each such item reached in K to "any byte,
-  nullable" unless a named arm proves otherwise (`src/opt/possessify.c:544-590` and the
-  [ART-POSS-ARMS] arms).
-- **The backref superset** (A4), ONE definition used by G, row 1's FOLLOW, the typing rule and the
-  struck row 17: the referent's language under the BACKREF's own caselessness; plus ε where an unset
-  group may match (`PCRE2_MATCH_UNSET_BACKREF`); the union over every group a duplicate name or a
-  `(?|` reset can denote. Witness: `(a)(?i:\1)` on "aA" matches (0,2); the referent's `{a}` would
-  reject it. The duplicate-name and `(?|` halves are an ASK (§13).
-- **The capture conjunct** (A6): a REPLACEMENT row admits S only if every slot S writes is DERIVED
-  (an offset of S's entry or exit at an `AT`-typed coordinate) or produced by a named capture
-  mechanism (today: `TAGGED`'s mark distance; HELD: §5.2). Otherwise the split at the capture is
-  FORCED (a soundness split), never a priced departure.
+- **Ambiguous** (A3, A8): S is ambiguous iff at SOME entry p it has more than one outcome (e, σ).
+  "One end" is not enough: equal ends with different σ are two outcomes. The decision procedure:
+  for a regular S, the self-product of S's tagged automaton (two runs from one p reaching different
+  (e, σ)); for an S holding a backref, a call, a recursion or a variable, S is ambiguous by
+  DEFAULT (no procedure is claimed).
+- **Polarity, per QUESTION, not per row** (A5; rev 3 A1). Each conjunct names the question it asks,
+  and the approximation follows the question:
+  - a conjunct that tests that something CAN happen, or that two sets are DISJOINT (row G's
+    necessity, row 1's FIRST ∩ FOLLOW, row 11's one-pass) OVER-approximates: each zero-width item,
+    non-consuming callout and backref it reaches is widened to its superset (ε for a gate; the
+    backref superset below), unless a named arm proves otherwise (`src/opt/possessify.c:544-590`
+    and the [ART-POSS-ARMS] arms);
+  - a conjunct that tests that something ALWAYS succeeds (row 3's infallible K) UNDER-approximates:
+    each zero-width item, callout and backref is "may fail", never "nullable". So K is infallible
+    only if K is ACCEPT, or K is nullable and holds no zero-width item, callout or backref.
+  Witnesses (the widening direction on row 3 is unsound): `a*(?=a)` on "aa" is (0,1), `a*?$` on
+  "aa" is (0,2); a row 3 that widened K would commit and answer no match and (2,2).
+- **The backref superset** (A4; rev 3 A5, A8), ONE definition used by G, row 1's FOLLOW, the typing
+  rule and the struck row 17. Facts from `docs/dev/pcre2_notes/backref-referent-choice.md`
+  (confirmed against libpcre2 10.46):
+  - **The referent's CAPTURED language**, under the REFERENT's own fold (what the group can
+    capture), **closed under the backref's fold when the backref is caseless** (the fold in force
+    at the backref, with its caseless-restrict and Turkish flags; the note's §4: the backref's scope
+    decides only the COMPARISON). Witnesses: `(?i:(a))\1` on "AA" matches (0,2) (the group captures
+    "A", a caseful `\1` matches it; reading the referent under the backref's case would give {a}
+    and hand NOMATCH); `(a)(?i:\1)` on "aA" matches (0,2).
+  - **A duplicate name**: the comparison is against the FIRST SET group in pattern order (the
+    note's §2), so the union of the same-named groups' captured languages is a valid superset.
+  - **A branch reset** `(?|`: one number names one slot (§1), so the referent is that slot's
+    captured language: the union over the alternatives that write it.
+  - **ε** only where every referent may be unset AND `PCRE2_MATCH_UNSET_BACKREF` is on: an unset
+    group fails by default, and a duplicate name with at least one set group compares against it
+    whatever the option (the note's §3).
+  - **A circular or non-regular referent** (one that contains the backref itself, `(a|b\1)+`, or a
+    recursion, `(a(?1)?b)\1`): widen to Σ*.
+  §13's A4 ask is answered by the note: the union stays a valid superset.
+- **The capture conjunct** (A6; rev 3 A6): a REPLACEMENT row admits S only if every slot S writes is
+  DERIVED (an offset of S's entry or exit at an `AT`-typed coordinate) or produced by a named
+  capture mechanism (today: `TAGGED`'s mark distance; HELD: §5.2). Otherwise the split at the
+  capture is FORCED (a soundness split), never a priced departure. Slots written inside a CALL's
+  dynamic extent are restored at RETURN (`(a)(?1)` on "aa": g1 = (0,1), not (1,2)), so they are not
+  "slots S writes"; until §13 hole 6 is worked through, a stretch holding a CALL whose callee writes
+  a slot is Forced to B (§6.1).
 - **The fold** (A13): disjointness is on code points, under the fold in force at that position
   (`-i`, a `(?i)` scope, `--ucp`'s pairs). Witnesses: `\x{212a}*(?i:k)` (KELVIN SIGN) and
   `\x{17f}*(?i:s)` (LONG S) under UTF-8; the ASCII fold would commit both wrongly.
-- **The superset owner** (C8, A8): `Nfa.erased` (`src/ir/nfa.c`: `NFA_ERASED_CALLOUT` at `:646`,
-  `_LOOK` `:759`, `_COUNT` `:848`, `_ATOMIC` `:955`) is the ONE source; today's readers are
-  `pcrec_vm_prefilter_window` (`emit_vm.c:3774-3777`), `pcrec_cand_lang_exact`, and lmwalk's `g1`.
-  The record covers ANYTHING that makes a stretch's (start, end) differ from the reported
-  (slot0.start, slot0.end): erasures, `\K` (a report shift: `a\Kb` on "xab" is (2,3)), `\G`, and a
-  callout that can veto. An IR kind the record does not know defaults to superset (the D182 (c)
-  ruling-1 polarity). Verbs, when they land, are erasures of this kind.
+- **The empty-iteration rule** (A2, A13), from `docs/dev/pcre2_notes/empty-iteration-captures.md`
+  (confirmed against libpcre2 10.46): X{m,} runs its first m iterations unconditionally (copies 1
+  to m are unrolled); beyond the minimum, an iteration that ends where it started ends the loop on
+  that path (greedy, lazy and possessive alike: no further iteration is tried); captures set inside
+  that empty iteration are KEPT. Witnesses: `(a|)*b` on "ab" g1 = (1,1); `(a?){3,}b` on "ab"
+  g1 = (1,1); `(?:()|a)+?b` on "ab" g1 UNSET (python `re` gives (0,0): python is not the oracle
+  here). Rows 14 and 15 use it.
+- **Two superset facts, two owners** (C8, A8; rev 3 B1). The LANGUAGE superset is `Nfa.erased`,
+  language-only as its definition says (§4.1 quotes it and traces its three readers); an IR kind
+  the record does not know defaults to superset (the D182 (c) ruling-1 polarity); verbs, when they
+  land, are erasures of this kind. The REPORT/POSITION shift (`\K`, `\G`) is a second P1 fact, read
+  by the hand's consumer (§4.1). A callout that can veto is a language widening (`NFA_ERASED_CALLOUT`
+  is already set for it).
+- **The regularity rule over the table** (rev 3 A4): every row rendered by an automaton kind (an
+  `AUTO` of any exit: rows 2, 3, 8, 9 and 12's body) requires S's language-superset record
+  EMPTY; row 1 is by reference to possessify's own rule (§6.1). Only row G hands a superset (its typing is the projection of
+  §4.1). Witness: `(?:a(?=a))*$` on "aaa" is (3,3); an `AUTO ENUM` over the erased body yields end 3
+  first and answers (0,3). `(?:(a)(?=a)|b)*$` on "aab" is (2,3), g1 unset.
 
 ### 6.1 Soundness: the rows, their full conjuncts and their sources
 
 First match; B always admits. "Source" names every round-1 row merged into it (lesson 2: the
-full conjunct list is kept beside the merged row). Witnesses are from crit-stream1, re-run by its
-verifier (pcrec and python `re` agree on each, except where match_api.md §5.1¶3a's
-empty-iteration rule applies). STATUS: BUILT = today's code holds the conjuncts; NEW = a row with
+full conjunct list is kept beside the merged row; rev 3: every AUTO-rendered row also carries §6.0's
+regularity rule). Witnesses are from crit-stream1 and crit-stream2, re-run by their verifiers
+(pcrec and python `re` agree on each, except where the empty-iteration rule applies, match_api.md
+§5.1¶3a: there libpcre2 is the oracle, per the committed note). STATUS: BUILT = today's code holds the conjuncts; NEW = a row with
 no code; HELD = no kind (§5.2).
 
 | # | row | full conjunct list (all must hold) | source rows | why backtracking into it cannot change the answer | witnesses (the conjunct each pins) | status |
 |---|---|---|---|---|---|---|
-| G | gate | the machine's language ⊇ the stretch's under the polarity rule (backref by its superset; lookaround and non-consuming callout ε; a count collapsed; an atomic transparent); hands start `LOWER`/`CAND`, end `NONE`, or `NOMATCH` only | C FIND; T R4 BOUND; P G | it only removes positions that cannot match; it commits nothing | `(a)(?i:\1)` "aA" (backref superset); `a(?=b)\|c` "ac" (no `UPPER`) | BUILT: the start table's gates, the `first-class` start seek (`emit_dfa.c:8026`) |
-| 1 | possessive-equivalent repeat | possessify's rule by reference (`src/opt/possessify.c:10-47`): Q = X{m,n}; X admits a unique iteration (U1 one-unambiguous, U2 prefix-free); X not nullable; EITHER m == n OR FIRST(X) ∩ FOLLOW(Q) = ∅ with FOLLOW widened by the polarity rule (an assertion, callout or backref reached in the follow widens it, except where an [ART-POSS-ARMS] arm proves otherwise); a LAZY Q also requires the remainder non-nullable; the fold | C D (single class); T R1(b); P E1a | the retreat cannot help: no shorter run leaves a byte K can start with | `a{1,3}?` "aaaa" (0,1) (lazy); `[ab]{0,4}\b` "abc" (0,0), `\w*\B` "ab", `a*(?<!a)` "aa", `a*(?=a)` "aa" (widening); `(\d+)(?C"even")` over `1234` (`match_api.md §11.6¶2`, callout widening); `(a)A*(?i:\1)` "aAA" (backref superset); KELVIN/LONG S (fold) | BUILT (possessify); the row text now equals the code |
-| 2 | unique outcome | every branch deterministic with exactly ONE end (fixed width, or a prefix-free literal set, and no branch itself ambiguous); AND where outcomes differ in σ, K reads no slot S writes; the fold | C D/SWITCH; T R1(d); P E1b | there is one outcome, or K cannot tell the outcomes apart | `(?:a\|bc?)c` "bc" (0,2) (an ambiguous branch); `(?:(a)b\|a(b))\2` "abb" (σ under a slot reader) | NEW as a row (the DFA's tries render it today inside whole-pattern machines) |
-| 3 | tail / infallible K | K is ACCEPT, OR K succeeds from every end S can reach (K nullable, with every zero-width item, callout and backref in K widened by polarity, at an unanchored pattern end); the capture conjunct | C T-rule, row 3; T R1(a); P E1c; D3 | the first outcome is the answer, and D3's priority-pruned machine computes exactly e₁ | `(a\|ab)(c\|bcd)(d*)` "abcd" g1=(0,1) g2=(1,4) g3=(4,4) (capture conjunct: no tagless AUTO over it) | BUILT for whole capture-free patterns (the DFA engine); NEW in context |
+| G | gate | the machine's language ⊇ the stretch's, under the OVER-approximating polarity (§6.0: backref by its superset; lookaround and non-consuming callout ε; a count collapsed; an atomic transparent); hands start `LOWER`/`CAND`, end `NONE`, or `NOMATCH` only (the typing rule's first fact, §4.1) | C FIND; T R4 BOUND; P G | it only removes positions that cannot match; it commits nothing | `(a)(?i:\1)` "aA" (0,2) and `(?i:(a))\1` "AA" (0,2) (the backref superset, both folds); `a(?=b)\|c` "ac" (no `UPPER`) | BUILT: the start table's gates, the `first-class` start seek (`emit_dfa.c` comment block near `:8010-8025`, `pf_vm_start_applies` at `:8026`) |
+| 1 | possessive-equivalent repeat | possessify's rule BY REFERENCE (`src/opt/possessify.c:10-47`; the code is authoritative): Q = X{m,n}; X admits a unique iteration (U1 one-unambiguous, U2 prefix-free); X not nullable; EITHER m == n OR FIRST(X) ∩ FOLLOW(Q) = ∅, FOLLOW over-approximated (§6.0: an assertion, callout or backref reached in the follow widens it, except where an arm proves otherwise); on the disjointness arm a LAZY Q also requires the remainder non-nullable, propagated to the pattern's end; the fold. Where the code is more permissive than this summary (E1): `$` (non-multiline) and `\z` are TRANSPARENT in the follow by D47.5's upward-closure exemption, not an [ART-POSS-ARMS] arm (`(a*)$` possessifies today); a subroutine call or a variable in the follow WIDENS it; `\G` widens it to all bytes, non-nullable | C D (single class); T R1(b); P E1a | the retreat cannot help: no shorter run leaves a byte K can start with | `a{1,3}?` "aaaa" (0,1) (lazy); `[ab]{0,4}\b` "abc" (0,0), `\w*\B` "ab", `a*(?<!a)` "aa", `a*(?=a)` "aa" (widening); `(\d+)(?C"even")` over `1234` (`match_api.md §11.6¶2`, callout widening); `(a)A*(?i:\1)` "aAA" (backref superset); KELVIN/LONG S (fold) | BUILT (possessify). A stream built from this summary rather than the code would lose possessifications and break §6.3's gate, so the planner calls possessify, never re-implements it |
+| 2 | unique end | every outcome of S, from every entry, has the SAME end: judged of S as a WHOLE (fixed width with every branch the same width and deterministic, or a prefix-free literal set), never branch by branch; where outcomes with that end differ in σ, the kept one is the FIRST in preference order and K reads no slot S writes; S's language record empty (§6.0); the fold | C D/SWITCH; T R1(d); P E1b | there is one end; among its outcomes the preferred one is kept, and K cannot tell the others apart | `(?:ab\|a..)d` "abcd" (0,4) (one end per branch is not one end); `(?:a\|bc?)c` "bc" (0,2) (an ambiguous branch); `(?:(a)b\|a(b))\2` "abb" (σ under a slot reader); `(?:(a)\|a)` "a" g1=(0,1) (the preferred σ is kept; at a pattern end K = ACCEPT reads no slot, but the caller does) | NEW as a row (the DFA's tries render it today inside whole-pattern machines) |
+| 3 | tail / infallible K | K is ACCEPT, OR K is nullable at an unanchored pattern end and holds NO zero-width item, callout or backref (the UNDER-approximating polarity, §6.0: each is "may fail"); S's language record empty; the capture conjunct | C T-rule, row 3; T R1(a); P E1c; D3 | the first outcome is the answer, and D3's priority-pruned machine computes exactly e₁ | `a*(?=a)` "aa" (0,1) and `a*?$` "aa" (0,2) (polarity: a widened K would commit and answer no match / (2,2)); `(a\|ab)(c\|bcd)(d*)` "abcd" g1=(0,1) g2=(1,4) g3=(4,4) (capture conjunct: no tagless AUTO over it) | BUILT for whole capture-free patterns (the DFA engine); NEW in context |
 | 4 | source atomic or possessive | S = `(?>B)` or a possessive quantifier; B regular; the form delivers B's FIRST body success judged with K = the atomic's end (never with an outer pin); the capture conjunct | C D (atomic context); T R1(c); P V `COMMIT` | only the first way is ever used, by definition | `(?>a+)a` "aa" no match (holds); `(?:(?>a\|ab)(c)\|ab(c)?)` "abc" (the outer-pin clause) | NEW (today an atomic group is an erasure: correct, conservative) |
-| 5 | landmark reverse walk | lmwalk's SOUNDNESS conjuncts (lane/p1build `lmwalk_conj[]`, `src/gen/lmwalk.c:276-287`): `g1` (the prefix's erasure record is empty, \K and \G included), `exclusion` (the walk class excludes every landmark byte), `utf8-l0`; hands `AT start` only then. Its profitability conjuncts are in §6.2 | D161 add. 17; lmwalk; C, T R4, P | no start before one landmark pairs with a later one; FIND's ascending order is the order of starts | the p1build table's own witnesses | on lane/p1build, NOT on main (C6); D161 add. 17's walk is read as "the reverse DFA is pcrec's scaffolding, scan edges the kit's optimization" (C14, recorded) |
+| 5 | landmark reverse walk | lmwalk's SOUNDNESS conjuncts, re-sorted against all ten rows of lane/p1build `lmwalk_conj[]` (`src/gen/lmwalk.c:276-287`; B4): `finisher-dfa` (the finisher's route is the DFA, so a VM hybrid's superset prefilter body never reaches the walk: `lmwalk.c:124-127`), `anchored-A` (the AT hand's taker, the seed's verify machine, is built), `branches` (one top-level branch), `split` (a byte class at a top-level concat position with a non-empty prefix), `g1` (the prefix's language record empty AND no report/position shift: it tests `A_GSTART`, `A_KRESET`, then `erased == 0`), `utf8-l0`, `exclusion` (the prefix can consume no landmark byte); hands `AT start` only then. `next-landmark` and `rarity` are PROFITABILITY and `machine` is FIT (§6.2) | D161 add. 17; lmwalk; C, T R4, P | no start before one landmark pairs with a later one; FIND's ascending order is the order of starts | the p1build table's own witnesses | on lane/p1build, NOT on main (C6); D161 add. 17's walk is read as "the reverse DFA is pcrec's scaffolding, scan edges the kit's optimization" (C14, recorded) |
 | 6 | walk under a slot-reading K | the walk hands `LOWER`/`CAND` (the typing rule); the finisher tries each start in ascending order; the FIND frame carries the FLOOR | T typing; P exact=NONE + floor; C per-start FIND | each start is still tried in order; the floor only skips starts already failed | `(\w+)\s+\1` | NEW; the floor's bound is unproven (hole 4, §13) |
-| 7 | locate, then pinned finish | the erasure record over the pattern is empty (so the window is exact: today `pcrec_vm_prefilter_window` = prefilter && !erased); the pin kills outcomes that cannot reach e ONLY ABOVE every atomic group, possessive quantifier and ambiguous-body lookaround inside S (an atomic body's choice is its first body success, judged with K = the atomic's end); no veto-capable callout on the commit path | C D (END pin); T R4 + R3; P E3; today's exact window | the true path passes through e; outcomes that cannot reach e are dead | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc": g1 unset, g2=(2,3) (the atomic clause); `(?:a(?C1)b\|a)` with a vetoing callee (the callout clause) | BUILT as today's hybrid exact window (today declines atomic as an erasure, so it is right); the text now carries the conjuncts |
-| 8 | monotone ends | one greedy (lazy) quantifier over a deterministic fixed-stride body; ends strictly descending (ascending); EVERY slot written in the body is written on EVERY iteration at a fixed offset; `(?:aa\|a)*` is not admitted (not fixed stride) | C O; T R2(a); P E4; APPROACH §2 A-1 | ENUM yields the backtracker's sequence; equal ends with equal slots are one continuation | `(?:(a)\|b)*c` "bac" g1=(1,2) (every-iteration clause) | BUILT (the VM cursor rung, `vm_cursor_rep`) |
-| 9 | branch-ordered alternation | deterministic branches, one end each, enumerated in branch order; equal ends merged only with equal σ, or where K reads no slot | T R2(b); C LIST | ENUM is the preference order | `(a\|ab)*c` "aabc" g1=(1,3) (held); `(?:(a)\|a)` kept apart | BUILT (the ENG-ISL trie; its remainder measured thin, [ENG-ISL-S2]) |
-| 10 | captures at a seam | a `SET` at an `AT`-typed coordinate; trailed; its trail entry sits above any ENUM resume frame of the stretch before it | all three | a store of a seam position changes no outcome, and the trail undoes it before ENUM-next | `(?:(a)\|ab)c` "abc" g1 unset (trail order) | BUILT (D163 add. 3; today's derived SETs) |
+| 7 | locate, then pinned finish | the language record over the pattern is empty (so the window is exact: today `pcrec_vm_prefilter_window` = prefilter && !erased; a report shift does not make it inexact, §4.1); and, binding ONLY if a later revision relaxes that first conjunct (today an atomic group, a lookaround and a callout each set a bit, so conjunct 1 already declines them, E2): the pin kills outcomes that cannot reach e only ABOVE every atomic group, possessive quantifier and ambiguous-body lookaround inside S (an atomic body's choice is its first body success, judged with K = the atomic's end), and no veto-capable callout sits on the commit path | C D (END pin); T R4 + R3; P E3; today's exact window | the true path passes through e; outcomes that cannot reach e are dead | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc": g1 unset, g2=(2,3) (the atomic clause); `(?:a(?C1)b\|a)` with a vetoing callee (the callout clause); `a\Kb` and `\Ga(x)` stay exact windows (B1) | BUILT as today's hybrid exact window |
+| 8 | monotone ends | one greedy (lazy) quantifier over a deterministic fixed-stride body; ends strictly descending (ascending); EVERY slot written in the body is written on EVERY iteration at a fixed offset; S's language record empty (§6.0: `(?:a(?=a))*$` "aaa" is (3,3)); `(?:aa\|a)*` is not admitted (not fixed stride) | C O; T R2(a); P E4; APPROACH §2 A-1 | ENUM yields the backtracker's sequence; equal ends with equal slots are one continuation | `(?:(a)\|b)*c` "bac" g1=(1,2) (every-iteration clause) | BUILT (the VM cursor rung, `vm_cursor_rep`) |
+| 9 | branch-ordered alternation | deterministic branches, one end each, enumerated in branch order; equal ends merged only with equal σ, or keeping the FIRST in preference order where K reads no slot S writes; S's language record empty | T R2(b); C LIST | ENUM is the preference order, and a merge keeps the preferred σ | `(a\|ab)*c` "aabc" g1=(1,3) (held); `(?:(a)\|a)` "a" g1=(0,1) and `(?:(a)\|(a))b` "ab" g1=(0,1), g2 unset (the kept σ is the preferred one) | BUILT (the ENG-ISL trie; its remainder measured thin, [ENG-ISL-S2]) |
+| 10 | captures at a seam | a `SET` at an `AT`-typed coordinate; trailed; its trail entry sits above EVERY resume frame (ENUM, FIND, CHOICE) of the stretches before it, so a FIND resume (the next start) undoes it like ENUM-next | all three | a store of a seam position changes no outcome, and the trail undoes it before any resume | `(?:(a)\|ab)c` "abc" g1 unset (ENUM trail order); `(?:(a)b\|c)` "ac" (1,2), g1 unset (FIND trail order) | BUILT (D163 add. 3; today's derived SETs) |
 | 11 | captures inside, one-pass | one-pass judged over S·K up to the segment's exit commit point (not over S alone) | P E2; C TAGGED; T H1 | at most one live thread per position, so the tags are determinate | `(a*)a` "aa" g1=(0,1) | HELD (§5.2) |
 | 12 | captureless regular lookaround as a predicate | the body is regular, free of captures, backrefs and callouts; AND the predicate sits at a segment EDGE or inside a one-pass region (applied to each candidate end in preference order); elsewhere it stays an `ASSERT` seam | P E5; T GUARD; C ASSERT / AUTO EXISTS | a predicate is atomic; applying it to each candidate end in order is the backtracker's test | `a*(?=a)` "aa" (0,1) (the edge clause) | BUILT at the edge as D164 (TAGGED, the end mark); NEW elsewhere |
 | 13 | non-consuming callout | a statement about FIRE SETS only (`match_api.md §11.6¶1`): a fire skipped on a path that fails whatever the callee returns changes no pure callee's answer. NOT an exactness statement: the callout is in the erasure record, so a stretch over it hands a superset, and a COMMIT path that crosses a callout ENDS at the callout | all three | as stated, for pure callees | the vetoing-callee case of row 7 | BUILT (the start seek: "A CALLOUT IS NOT A CONJUNCT", `emit_dfa.c:8013-8019`; `nfa.c:643-648`) |
-| 14 | thread set | S·K regular to ACCEPT or an atomic boundary; a Pike list whose ε-closure drops a second arrival at the same pc and position (the empty-iteration rule); bounded repeats fully unrolled (no counted rung); no callout | C P | a priority-ordered thread list is leftmost-first with captures | `(a*)*` "aa", `(a\|)*b` "aab", `(?:()\|a)+?b` "ab" (held by hand) | HELD |
-| 15 | guided | UNSOUND AS STATED. A revision needs: viability computed over an automaton whose state carries "this iteration consumed nothing"; viability applied only ABOVE atomic groups (as row 7) | T R3 | (as stated it is wrong) | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc" (atomic); `(?:()\|a)+?b` "ab": pcrec g1 UNSET, python (0,0) (empty iteration) | HELD; 15′ (pruning by viability under an irregular K) is sound by row G, cost unmeasured |
+| 14 | thread set | S·K regular to ACCEPT or an atomic boundary; a Pike list whose ε-closure follows the empty-iteration rule (§6.0): copies 1 to m of X{m,} always run; beyond them an iteration that ends where it started continues past the group and never loops back, keeping its captures; bounded repeats fully unrolled (no counted rung); no callout | C P | a priority-ordered thread list is leftmost-first with captures | `(a*)*` "aa"; `(a\|)*b` "ab" g1=(1,1); `(a?){3,}b` "ab" g1=(1,1); `(?:()\|a)+?b` "ab" g1 unset (the last three confirmed against libpcre2 10.46 in the committed note) | HELD |
+| 15 | guided | UNSOUND AS STATED. A revision needs: viability computed over an automaton whose state carries "this iteration consumed nothing" (the empty-iteration rule, §6.0); viability applied only ABOVE atomic groups (as row 7) | T R3 | (as stated it is wrong) | `(?:(?>a\|ab)(c)\|ab(c)?)` "abc" (atomic); `(?:()\|a)+?b` "ab": pcrec and libpcre2 g1 UNSET (the note, confirmed), python (0,0) (empty iteration) | HELD; 15′ (pruning by viability under an irregular K) is sound by row G, cost unmeasured |
 | 16 | memo | UNSOUND AS STATED. The key must include the frame state K reads (the call-stack top, live counters, empty-iteration guard slots), or the row excludes CALL and counted rungs; no backref to a group rewritten between arrivals; no callout reading slots | P E6 | a failed (point, pos, frame state) fails again | `^(?:(a+)x\|(?1)y)$` "aay" matches (CALL); counter and guard slots exist (`(?:a\|ab){2,40}(c)`, `(?:()\|a)*b`) but no conflation witness was built | HELD |
 | 17 | backref gate by referent copy | STRUCK: it is row G with the backref superset (§6.0) | P | (row G) | `(a)(?i)\1` | merged into G |
 | B | backtracking | always | all | it IS the semantics | | BUILT (the VM) |
 
 **Forced to B** (everything else is a cost question): a backref or `(?(n)` condition reading a slot
-written inside an AMBIGUOUS S (§6.0's definition, so row 2's σ case is caught); recursion or a
-subroutine call with an ambiguous body, and any memo across CALL; a non-atomic lookaround; a
-consuming callout.
+written inside an AMBIGUOUS S (§6.0's definition, ambiguous at SOME entry, by default for an S
+holding a backref, call, recursion or variable; so row 2's σ case is caught); recursion or a
+subroutine call with an ambiguous body, and any memo across CALL; **a stretch holding a CALL whose
+callee writes a slot** (captures revert at RETURN, §6.0; the stopgap until §13 hole 6); a
+non-atomic lookaround; a consuming callout.
 
 **Composition across a seam** (held by the SOUND lens by hand): a replacement exact for EVERY entry
 (p, σ) leaves every enclosing stretch's continuation unchanged, so rows compose. Rows exact only
@@ -507,29 +644,35 @@ under a hand (5, 6, 7) compose only through a valid typing, which is the typing 
 
 Profitability is separate from soundness (SEAM-9): a profitability conjunct may read neighbours'
 cards, rarity and a named counterfactual world; it can make a row decline, never admit an unsound
-one. The GIVE-UP CONTRACT (C11, D158): an optimization may turn a give-up into an answer
-(ONE_WAY), never the reverse; FIXED rows must not move the give-up surface at all (today's
-`CG_FIXED`); the reference all-B tiling is the direction control ([GIVEUP-DIFF]). LEVER (memory
+one. The GIVE-UP CONTRACT (C11, D158; rev 3 C7): every optimization may turn a give-up into an
+answer, never the reverse (ONE_WAY is D158's rule for all rows, so it is not declared per row);
+a row marked FIXED must not move the give-up surface at all (today's `CG_FIXED`); an unmarked row
+is a wildcard, as today. The reference all-B tiling is the direction control ([GIVEUP-DIFF]). LEVER (memory
 `pcrec-flag-follows-caller-effect`): a PUBLIC deny only where the row can be slower; TEST-ONLY for
 a wrongness-risk row; NONE for a refactor or a bug fix.
 
-| # | profitability (reads) | give-up contract | lever class | kind / exit |
+| # | profitability (reads), or FIT where the conjunct is a resource cap | give-up: a FIXED mark, else "—" (D158's ONE_WAY holds; C7) | lever class | kind / exit |
 |---|---|---|---|---|
-| G | the measurement set's rarity of the gate's terms; a gate that costs a pass can be slower | ONE_WAY | public (today's prefilter denies, e.g. `-fno-prefilter`) | `AUTO GATE`, `FIND`, `PRESENT` |
-| 1 | none: always taken when sound | ONE_WAY, with D158's one accepted exception K102 (possessify's WORK charge) | public (exists: `-fno-possessify`) | `SKIP` in an `AUTO`, or a cursor |
-| 2 | none | ONE_WAY | test-only (new; a wrongness risk) | `AUTO COMMIT`, `SWITCH` |
-| 3 | maximality (§6.3) | ONE_WAY | test-only in context; public for the whole-pattern case (today's engine axis) | `AUTO COMMIT` |
-| 4 | none | ONE_WAY | test-only | `AUTO COMMIT` |
-| 5 | lmwalk's `finisher-dfa`, `anchored-A`, `next-landmark` and `rarity` (reading NEXT in the world WITHOUT the walk, [SEL-WORLD]); the [LANDWALK-PRES] read of PRESENCE (§4.3) | as lane/p1build declares | public (lane/p1build: `PCREC_NO_LANDMARK_WALK`, bit 57) | `FIND` + reverse `AUTO` + `SKIP` |
-| 6 | the floor; rarity | ONE_WAY | test-only | `FIND` frame |
-| 7 | the window's rarity against the VM's unwindowed scan | FIXED (today's `handoff` rows, `CG_FIXED`) | public (exists) | `AUTO GATE` + reverse `AUTO`, `SPAN` hand |
-| 8 | price among ENUM vs frames on a short fragment, from the measurement set (never a constant) | ONE_WAY | as today | `AUTO ENUM` |
-| 9 | as 8; ENG-ISL's measured-thin remainder | ONE_WAY | as today | `AUTO ENUM` |
+| G | PER GATE (B3): the first-class start seek has no density gate (`\|S\| < 256` is its only narrowness gate, D149); the req-use gates price today (`req_landmark_admits` reads the byte-rate mass); each gate row states which it is | — | public (today's prefilter denies, e.g. `-fno-prefilter`) | `AUTO GATE`, `FIND`, `PRESENT` |
+| 1 | none: always taken when sound | — (D158's one accepted exception K102: possessify's WORK charge) | public (exists: `-fno-possessify`) | `SKIP` in an `AUTO`, or a cursor |
+| 2 | none | — | test-only (new; a wrongness risk) | `AUTO COMMIT`, `SWITCH` |
+| 3 | maximality (§6.3) | — | test-only in context; public for the whole-pattern case (today's engine axis) | `AUTO COMMIT` |
+| 4 | none | — | test-only | `AUTO COMMIT` |
+| 5 | PROFIT: `next-landmark`, `rarity` (reading NEXT in the world WITHOUT the walk, [SEL-WORLD]). FIT: `machine` (the cut's reverse machine fits the DFA caps). [LANDWALK-PRES] closes through [CAND-SPAN], a SOUND read of FIND's `proves` (§4.3), not a price | — (lane/p1build's row sets none) | public (lane/p1build: `PCREC_NO_LANDMARK_WALK`, bit 57) | `FIND` + reverse `AUTO` + `SKIP` |
+| 6 | the floor; rarity | — | test-only | `FIND` frame |
+| 7 | none: an ORDERING rule, not a price (B3). Today's hybrid window: "Prefilter-before-VM is therefore an ORDERING RULE (4.7), not a tuning knob: a pattern whose prefilter can answer must never reach the step budget" (`emit_vm.c:13021-13025`). A decline would turn answers into give-ups (D158), which its FIXED mark forbids | FIXED (today's `handoff` rows, `CG_FIXED`) | public (exists) | `AUTO GATE` + reverse `AUTO`, `SPAN` hand |
+| 8 | price among ENUM vs frames on a short fragment, from the measurement set (never a constant) | — | as today | `AUTO ENUM` |
+| 9 | as 8; ENG-ISL's measured-thin remainder | — | as today | `AUTO ENUM` |
 | 10 | none | FIXED | none (a refactor) | `SET` |
 | 11, 14, 15, 16 | HELD | (stated with the kind) | test-only when built | HELD kinds |
-| 12 | none at an edge | ONE_WAY | test-only (new placements) | `AUTO TAGGED`, `AUTO EXISTS`, `ASSERT` |
-| 13 | none | FIXED for the fire set's caller-visible rules (`match_api.md §11.6`) | none | `CALLOUT` |
+| 12 | none at an edge | — | test-only (new placements) | `AUTO TAGGED`, `AUTO EXISTS`, `ASSERT` |
+| 13 | none | — (its fire-set rule is not a give-up fact; see below) | none | `CALLOUT` |
 | B | none | the reference | none | the choice family |
+
+**Row 13's fire-set rule** (moved out of the give-up column, C7): the caller-visible rules of
+`match_api.md §11.6` bind which callout fires a stretch may skip (a fire skipped on a path that
+fails whatever the callee returns, for a pure callee). It is a rule on the row's ACTION, checked by
+the callout suites, not a give-up fact.
 
 ### 6.3 Maximality, departures and the gate
 
@@ -538,7 +681,8 @@ capture conjunct): G and 15′ are not replacements. A capture-free regular patt
 today's one whole-pattern DFA by construction. Two kinds of departure from maximality exist, and only
 two: a FORCED split (a conjunct fails, e.g. at a capture with no capture mechanism), and a DECLARED
 cut row (a landmark cut with a proved span, [CAND-SPAN]'s shape). A PRICED split waits for the
-pricing pilot's verdict (lane/rulepilot): no planner pricing ahead of it (D77, D6).
+pricing pilot's verdict (lane/rulepilot): no NEW planner pricing ahead of it (D77, D6). Rows 5, 8
+and some gates of G price today; they stay as they are (B3).
 **The gate:** every pattern today routes to the DFA yields an all-automaton/kit stream,
 byte-identical to today's artifact.
 
