@@ -22,7 +22,7 @@ Fix: state "P-a..P-d all after p1build merges; P-a may precede it only if rebase
 
 ### COST-2  P-a's "first record in emit_dfa.c" collides with VMREC (b)/(c) and presupposes a record home D182 has not decided. CONFIRMED (plan row) / design. Subject §8 P-a; D182.
 D182 (decisions.md:9994): the 29 VM kinds live in `src/gen/vm_stmt.c` `vm_kind_rows[]`; VMSPAN and VMSTRIDE
-are two of them, sharing `vm_piece_render`. Plan `[VMREC]` (plan.md:240): step (a) done; "(b) the analysis-free R stage
+are two of them, sharing `vm_piece_render`. Plan `[VMREC]` (plan.md): step (a) done; "(b) the analysis-free R stage
 on the records" is the NEXT step, (c) after a soundness round. A shared `SKIP` record that replaces VMSPAN/VMSTRIDE
 changes the very kind rows (b) is about to consume. P-a therefore either (i) waits for (b), or (ii) re-opens
 D182's "typed records are only writers of the VM body, one row per kind" table mid-flight. D153 (remodel first) says
@@ -78,17 +78,17 @@ all three validate a build (Frank 2026-11-01: speed is not the case). The pre-bu
 what [LANDWALK-PRES] already did (generated-code reading, x0.83 timing from p1prep) and [CAND-SPAN] continues.
 
 ### COST-7  Overlaps with open plan rows. CONFIRMED (plan.md) / design. Subject §4.5, §6, §8.
-- [CAND-SPAN] (plan.md:663, ruled 2026-11-01): "one fact for walk, pre-check, literal search"; its open point "does a proved
+- [CAND-SPAN] (plan.md, ruled 2026-11-01): "one fact for walk, pre-check, literal search"; its open point "does a proved
   span let the verify DFA start past it" and the cut condition (forward DFA state after L is fixed) is the SAME question as
   P-f ("frameless VM program run ONCE from the walked start, no forward DFA pass"). Subject §4.5 waves it off as "already
   pursued" but P-f then re-proposes it as the first benefit proof. Either P-f is a consumer of CAND-SPAN's fact (then it
   waits for CAND-SPAN's design + kit request, D157 facts-not-methods) or it duplicates it. Also P-a (one SKIP record for
   VM+DFA) and CAND-SPAN (one span fact for three sites) are the same shape on different axes and should share one design
   pass, else two "one record for several sites" designs disagree on field names.
-- [ENG-TDFA] (plan.md:503): "BIG FISH, unscheduled, opens only on Frank's word"; subject hole 1 / open choice A: captures
+- [ENG-TDFA] (plan.md): "BIG FISH, unscheduled, opens only on Frank's word"; subject hole 1 / open choice A: captures
   inside repeats need slots, "C relies on it". So §4.2's speed claim and B4.4's reach on `(\w+\.)+com`-shaped patterns are
   contingent on an unopened row. P-f/P-g avoid it (captures only at boundaries), which is the right call; say so in §4.2.
-- [ENG-ISL] family (plan.md:381 [ENG-ISL-S2], refiled out of ENG-ISL by parkmeas): P-g's "automaton islands inside the VM
+- [ENG-ISL] family (plan.md [ENG-ISL-S2], refiled out of ENG-ISL by parkmeas): P-g's "automaton islands inside the VM
   body for sub-regions possessify already proves atomic" is the island idea; ENG-ISL closed its remainder as measured-thin and
   refiled S2 under D137. P-g must cite what ENG-ISL measured before claiming a population (grep'd in the subject: only a
   mention at lines 158/236).
@@ -119,7 +119,7 @@ then P-d; P-a folded in as a by-product; P-e/P-f/P-g held to measurements.
   (rule H3, "THE PREFILTER'S SPAN END IS AN UPPER BOUND ONLY WHERE ...", through `mrl_win = pcrec_cand_lang_exact`).
   In emit_dfa.c those numbers are the DFA loop's edge sentinel/label block and the `first-memchr-bounded` row, so a reader who
   assumes emit_dfa.c (as the manager's brief lists them) lands in unrelated code. Subject §4.3 X1 row names emit_vm.c: correct.
-- D182 step state: plan `[VMREC]` step (a) DONE 3bc599c92, (b) and (c) "not started" (plan.md:240).
+- D182 step state: plan `[VMREC]` step (a) DONE 3bc599c92, (b) and (c) "not started" (plan.md).
 - Pure-VM p1build overlap: `git diff --stat main...lane/p1build -- src/gen/emit_vm.c` is empty (0 hunks).
 - Kit bytes: P-a..P-c as written are byte-identical so no abi event; subject §2 states the abi consequence of deleting `site_kinds[]`.
 - ENG-TDFA, CAND-SPAN, ENG-ISL-S2 plan rows read (rows only); rulepilot design doc read (first 40 lines).

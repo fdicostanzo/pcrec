@@ -127,13 +127,13 @@ subject lines / file:line in the review tree. Scratch counts: benefit/mergestat.
 ### BENEFIT-7. F4: every seam field flows producer->consumer; the round's own F4 example is ceded. CONFIRMED (subject text + lane/p1build plan). Severity design. Effort small (one field + rule). Hits §2 seam contract, §4.5.
 - §2's seam fields pos, slots, proof, reentry, effects, exact, meters: all describe what the
   producer hands forward. None carries what the CONSUMER will test anyway or at what cost.
-- [LANDWALK-PRES] (lane/p1build docs/dev/plan.md:301-306): PRESENCE declines its required-run
+- [LANDWALK-PRES] (lane/p1build docs/dev/plan.md): PRESENCE declines its required-run
   pre-check as `dominated` by the walk, blind to the pre-check's run being rarer than the landmark
   (`[a-z]+@x` on acc-small: 556K vs 425K instructions, x0.77). In the stream, PRESENT and FIND are
   separate kit instructions chosen by first-match rows per stretch, and "price chooses only among
   rows that ADMIT" per stretch: the same local, blind choice, unless the planner is global.
 - §4.5 files "seam proof reuse past the cut (T B7): already pursued ... as [CAND-SPAN]" under NOT
-  benefits. [CAND-SPAN] (plan.md:663-669) is exactly a fact shared both ways by three sites
+  benefits. [CAND-SPAN] (plan.md) is exactly a fact shared both ways by three sites
   (pre-check, walk hit, literal search). On F4 that IS the criterion, and the stream's typed seam
   is its natural home; the subject gave the F4 case away by grading it on speed.
 - Tension the design must face: F4 by a central planner that sees everything works against F1/F3;
@@ -168,8 +168,8 @@ subject lines / file:line in the review tree. Scratch counts: benefit/mergestat.
 - X14 (draft_today.md): `emit_dfa.c:1415-1425` site_kinds[] holds at f574eab2d, five MF_SK_* rows; and
   the enum is public kit ABI at `memfn/include/memfn.h:414-415` (stronger than the draft says).
 - coding.md §2.7 (l.240) states the D182 record rule as the subject cites; D182 at decisions.md:9994.
-- [CAND-SPAN] at plan.md:663 and commit c967685c9 exist as §4.5 cites.
-- [LANDWALK-PRES] exists on lane/p1build plan.md:301 with the measured x0.77 (F4's worked example).
+- [CAND-SPAN] at plan.md and commit c967685c9 exist as §4.5 cites.
+- [LANDWALK-PRES] exists on lane/p1build plan.md with the measured x0.77 (F4's worked example).
 - The subject's §4.3 X1-X14 table: 14 of 14 sites mapped; none left without a stream home (HELD,
   the general-form claim).
 - Emitter sizes: emit_dfa.c 16,008 and emit_vm.c 14,201 lines (subject: "16k lines", HELD).

@@ -141,7 +141,7 @@ HOLDS. Start SEARCH: the VM's seek is `cand_rows[]` row `"first-class"` (emit_df
 the VM start search is "emitted by `emit_dfa.c`". Start LOOP: emit_dfa.c:14554 reads "[K50]
 SITE 2 OF THE THREE 'TRY THE NEXT START' MECHANISMS. K49 fixed the VM's retry, K50's IR gate
 fixed the DFA self-loop, and this loop is the third". AS Pick 1 (lines 71-74) names "the
-second" loop and K49 only. plan.md:1413/1418 [DEC-POSDOM] files the family, to be evaluated
+second" loop and K49 only. plan.md/1418 [DEC-POSDOM] files the family, to be evaluated
 after the start-table fold (D151 addendum 2).
 
 ## PREMISE-4
@@ -157,7 +157,7 @@ kinds and omits `MF_SK_REPORT`. Deleting rather than re-deriving loses a consume
 HOLDS (count corrected). X15: emit_iter.c:48-52 `iter_retry_rows[]` `notempty-machine` /
 `guarded-matcher`, keyed `fit.chosen == ENGM_DFA` / `ENGM_VM` (:36, :41); the header (:20-22)
 says the retry machine is "emitted by the DFA emitter". AS mentions no match-to-match retry.
-X16: plan.md:1418 [DEC-POSDOM] text as quoted. X17: callsite_rows.c:1-14, one code table for
+X16: plan.md [DEC-POSDOM] text as quoted. X17: callsite_rows.c:1-14, one code table for
 `part` and `matchfn` (span, give-up, internal, utf, startpos, unset-var, reserved). The
 `fit.chosen` baseline: my grep finds 28 non-comment lines in 7 files (compile.c, compound.c,
 internal.h, emit_dfa.c, emit_iter.c, known.c, select_engine.c), not "25 in 6"; same order.
@@ -165,19 +165,19 @@ internal.h, emit_dfa.c, emit_iter.c, known.c, select_engine.c), not "25 in 6"; s
 ## PREMISE-7
 HOLDS. compound.c:261-265: `compound_rows[]` has one row, `"split"`, with `split_conj[]`
 A1-A5 (:248-258; A2 "the derivation killed a floor anchor"), `COMB_FIRST_NONZERO`, parts
-`SPLIT_F, SPLIT_Q`: the match split, not a concatenation split. plan.md:63: "Client 7
+`SPLIT_F, SPLIT_Q`: the match split, not a concatenation split. plan.md: "Client 7
 CONCATENATION SPLIT (DFA prefix A, VM suffix B; unique-end A; PARKED ...)". AS line 199
 ("compound concat split only at top level, once") and line 268 ("the compound's concat cut
 needs a unique end") describe the parked client as today's structure.
 
 ## PREMISE-9
 HOLDS. `src/gen/lmwalk.c` does not exist in the review tree (main f574eab2d); it exists on
-lane/p1build (`lmwalk_conj[]` at lmwalk.c:276). plan.md:270 `[LANDWALK] STATE:not-started`.
+lane/p1build (`lmwalk_conj[]` at lmwalk.c:276). plan.md `[LANDWALK] STATE:not-started`.
 AS row 5 (line 154) says "AGREE; the table exists" and hole 3 (line 308) says "Rows 1 and 5 are
 mature". With SOUND-5/PREMISE-8 against row 1's text, neither "mature" row is mature as stated.
 
 ## PREMISE-11
-HOLDS. plan.md:503-510 [ENG-TDFA]: `STATE:not-started`, "unscheduled, a BIG FISH", "Opens
+HOLDS. plan.md [ENG-TDFA]: `STATE:not-started`, "unscheduled, a BIG FISH", "Opens
 only on Frank's word", first step a study "against PCRE2 leftmost-first priority semantics
 (TDFA literature is mostly POSIX/leftmost-longest)". No D3-priority/tags-per-state design is
 recorded. docs/dev/optloop/captures_via_dfa_survey.md §3.2 (line 850) "Verdict: DEFER", line
@@ -223,7 +223,7 @@ site's facts come from its seam") does lose a backward consumer fact; re-derivin
 ## SEAM-3
 HOLDS. `mf_ask` is called at emit_dfa.c:7060, 8316, 8714 (the critic's :11600-11628 is the
 `cand_ask_check` trap, a related site, not the call); `CAND_ASKF_EXISTS/PROVEN0/LIBC_FREE/
-INCLUDES/PROVEN_PREV` at :8283-8284. [CAND-SPAN] (plan.md:663, line 7 of the row): "a pass
+INCLUDES/PROVEN_PREV` at :8283-8284. [CAND-SPAN] (plan.md, line 7 of the row): "a pass
 PROVES those offsets for the walk's rewind/verify". AS §2 `proof` (line 85) and "Who segments"
 (lines 98-102) name no writer for a kit kind's proof and no plan-time ask channel.
 
@@ -246,7 +246,7 @@ family table (lines 62-67) has no kind for rows 11, 14, 15, 16. [CAND-SPAN]'s no
 
 ## SEAM-8
 REFUTED on the core claim; the D153 note stands as a sequencing remark. [CAND-SPAN]'s
-"declared rule, NO price and no byte cap" (plan.md:663 row, line 6-7) rules the SPAN TEST at
+"declared rule, NO price and no byte cap" (plan.md row, line 6-7) rules the SPAN TEST at
 the found byte, which is not a split of a region. The forward split ("forward can start at L+1
 ... scan only the remainder", row lines 11-14) is filed as an "Open design point: ...
 (pcrec-side, own measurement)", i.e. a measured question, which is exactly what AS Pick 3
@@ -259,7 +259,7 @@ HOLDS. lane/p1build src/gen/lmwalk.c:276-287 `lmwalk_conj[]`: `finisher-dfa` ("t
 finisher's route is the DFA"), `anchored-A` ("the anchored machine is built"), `next-landmark`
 and `rarity` with reader `lm_next_read` (comment :209/:270 "NEXT ... in the world without the
 walk"), beside soundness rows `g1`, `utf8-l0`, `exclusion`. [SEL-WORLD] exists on p1build
-plan.md:308. `rarity` is a profitability admission reading a counterfactual selection, which
+plan.md. `rarity` is a profitability admission reading a counterfactual selection, which
 AS's split of "admits" (soundness) vs "price" (lines 100-102) has no column for. The "three
 SEL-WORLD members" count was not re-read (row body not opened).
 
@@ -308,10 +308,10 @@ rendered the D182 way") never states the record level, so target-neutrality (F2 
 not delivered by the text.
 
 ## BENEFIT-7
-HOLDS. lane/p1build docs/dev/plan.md:301-308 [LANDWALK-PRES]: "the walk's `dominated`
+HOLDS. lane/p1build docs/dev/plan.md [LANDWALK-PRES]: "the walk's `dominated`
 PRESENCE drops a required-run pre-check that is cheaper on a no-match subject", measured
 `[a-z]+@x` acc-small "556K instructions against main's run pre-check 425K (x0.77)". AS §4.5
-(line 279) files seam proof reuse / [CAND-SPAN] as "Not benefits"; [CAND-SPAN] (plan.md:663)
+(line 279) files seam proof reuse / [CAND-SPAN] as "Not benefits"; [CAND-SPAN] (plan.md)
 is "one fact for walk, pre-check, literal search". AS §2's seam fields (lines 81-89) are all
 producer->consumer. The F4 case is ceded as described.
 
@@ -328,7 +328,7 @@ lines on p1build, so byte identity needs a post-p1build baseline.
 ## COST-2
 PARTLY. Holds: D182 (decisions.md:9994) is VM-body-only ("every byte of the VM matcher body
 comes from a typed record's renderer in `src/gen/vm_stmt.c` (29 kinds ...)"), so a record "in
-emit_dfa.c" (AS line 371) has no decided home; [VMREC] (plan.md:238-241) step (b) is NEXT,
+emit_dfa.c" (AS line 371) has no decided home; [VMREC] (plan.md) step (b) is NEXT,
 (c) after a soundness round + D27 author. Inaccurate detail: VMSPAN/VMSTRIDE are not two of
 the D182 kinds; the kinds are `VK_SPAN`/`VK_SPAN_MOVE` (vm_kind_rows[] vm_stmt.c:704-705),
 and VMSPAN/VMSTRIDE are DELEG ids inside their VP_KIT piece. The collision with (b) (P-a
