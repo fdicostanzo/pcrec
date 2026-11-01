@@ -2962,3 +2962,7 @@ wake.md is rewritten.
 ## 2026-11-01 — R-30 chain pulled forward; 772 reach red explained
 
 Main pulled the r30b2 chain forward to Sun 07:00 (Frank: a free box runs waiting jobs). 770 build, 771 regrx, 773 census GREEN; 772 reach RED with S1760/S1761 reach:MISSING again. Triage (sonnet, read-only; /var/tmp/pcrec-pcrec/scratch/memfn/r30b2tri/report.md), verified by hand on the kept per-row logs: the rows' expected phrases follow an absolute fixture path in the 256-byte pcrec_error.msg, and MECH_SCRATCH under build/r30b2/ made the path long enough to cut the phrase off. Not R-30 (no diff vs main on src/parse, tests/code, the rows, the runner); main's default /var/tmp scratch reads both reach:ok. Queued 781-kit-r30b2-reach2 (same stage, short scratch /var/tmp/pcrec-pcrec/scratch/memfn/rch). The latent scratch-depth dependence of the rows went to main as a possible plan row. Lesson: keep job scratch paths short; a diagnostic that embeds a path has a length budget.
+
+## 2026-11-01 (later) — R-30 delivered
+
+Bench ended early; main ran 779/780/781 from 14:29. All GREEN: 779 mech-a, 780 mech-b (1 ANOMALY: S526, its designed catch is a static-assert compile failure that main's 7047b69e4 now scores as ANOMALY; pre-existing, not R-30), 781 reach2 (unreached 0, confirming the 772 truncation diagnosis). Posted done: R-30 (lane/memfn-r30b @ 66b1e2254, abi 94 provisional) with the pcrec-side hunks and both pre-existing findings.
