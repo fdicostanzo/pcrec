@@ -25,7 +25,7 @@ the bump's own commit.**
 
 - **`rx_info.abi` is `94` on every artifact today ([MEMFN] R-30, lane r30b,
   2026-10-29; 93 -> 94 over main 5c60e118c, renumbered by lane r30bfix 2026-10-31,
-  PROVISIONAL: the number is the next at landing).** On a pre-check whose run WINDOW part sits
+  confirmed at landing by lane landr30 2026-11-01, merge cd4c36b92).** On a pre-check whose run WINDOW part sits
   beside the WHOLE run that implies it (the route with no DFA scan in front,
   a run longer than its 8-byte window: tuning.md §2.29¶4), the window's
   search is no longer emitted or asked, at the search entry and at every
