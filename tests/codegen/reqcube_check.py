@@ -26,6 +26,10 @@ never from the emitted C it checks:
      raised to `pos + k*` (a hit below it is stale); a block whose scan
      position is exact carries one, on
      T[k*] (S453's shape is one memchr on an all-letter run).
+  2b. R-30's IMPLIED WINDOW (tuning.md §2.29¶4): where the facts put a whole
+     run longer than its window on a VM route with no prefilter, the window's
+     rx_reqrun block is ABSENT and rx_reqrun_whole present; elsewhere the
+     window block is required; both populations are counted (each >= 1).
   3. NO SEARCH OUTSIDE THE LOOP: every `memchr(` of a run block sits after the
      block's `while (pos + ` line (S454's detector).
   4. THE STAMPS: `<PREFIX>_REQ_RUN` equals the `req_run` fact; `REQ_BYTE` is a
@@ -94,7 +98,10 @@ def emit(tag, pat, *flags):
 
 
 def facts(pat, *flags):
-    r = subprocess.run([PCREC.encode(), b"--features", b"all", b"--emit-facts",
+    """The record's facts (7-column rows) and the listing's `decisions` stamps
+    (3-column `RX_*` rows, the route the record does not hold), first encoding
+    only; compiled under the same deny as emit() so the route is the same."""
+    r = subprocess.run([PCREC.encode(), b"--features", b"all", COVER_DENY.encode(), b"--emit-facts",
                         *[f.encode() for f in flags], b"--pattern", pat],
                        capture_output=True, timeout=120)
     if r.returncode != 0:
@@ -104,6 +111,8 @@ def facts(pat, *flags):
         f = ln.split("\t")
         if len(f) >= 7 and f[1] not in d:
             d[f[1]] = f[6]
+        elif len(f) == 3 and f[1].startswith("RX_") and f[1] not in d:
+            d[f[1]] = f[2].strip('"')
     return d
 
 
@@ -229,6 +238,7 @@ WIT = [
     ("gcon", "(?i)group_concat", ()),
 ]
 
+n_whole_part = {True: 0, False: 0}
 for tag, pat, flags in WIT:
     got = emit(tag, pat, *flags)
     fx = facts(pat.encode(), *flags)
@@ -259,13 +269,32 @@ for tag, pat, flags in WIT:
     else:
         ok(f"{lbl}: REQ_WHY '{why}' consistent with REQ_BYTE/REQ_RUN, run_pin '{fx.get('run_pin')}'")
     # 1-3. the blocks
+    # [MEMFN] R-30 (tuning.md §2.29¶4): on a VM route with no prefilter a run
+    # longer than its window is searched WHOLE and the window is not searched
+    # for separately, so its rx_reqrun block is absent and rx_reqrun_whole
+    # carries the search (the dominated shape of run_prechecks.sh [5.10b]
+    # leaves no block either). The condition is read from the FACTS listing
+    # (the run lengths, the engine and VM_PREFILTER decisions), never from the
+    # text checked; anywhere else the window block is still required.
+    whole_part = bool(run and whole and len(whole[0]) > len(run[0])
+                      and fx.get("RX_ENGINE") == "vm" and fx.get("RX_VM_PREFILTER") == "none")
+    if why == "emitted":
+        n_whole_part[whole_part] += 1
     if run and why == "emitted":
         b0 = block(text, "rx_reqrun")
-        if b0 is None:
+        b1 = block(text, "rx_reqrun_whole")
+        if whole_part:
+            if b0 is not None:
+                bad(f"{lbl}: a {len(whole[0])}-byte whole run on a VM route with no prefilter, yet the "
+                    f"{len(run[0])}-byte window's rx_reqrun block is still emitted (R-30: the whole run implies it)")
+            elif b1 is None:
+                bad(f"{lbl}: the window block is gone but no rx_reqrun_whole block carries the search")
+            else:
+                ok(f"{lbl}: the whole run implies its window: no rx_reqrun block, rx_reqrun_whole present")
+        elif b0 is None:
             bad(f"{lbl}: REQ_WHY emitted with a run, but no rx_reqrun block")
         elif run[1] != b"\xff" * len(run[1]):
             check_block(f"{lbl} rx_reqrun", b0, run[0], run[1], run[2])
-        b1 = block(text, "rx_reqrun_whole")
         if b1 is not None and whole:
             # the scan offset: one stream's `memchr(subject + pos [+ k]`, or the pair arm's
             # frontier raise `if (ha < pos [+ k])`
@@ -342,6 +371,16 @@ for tag, pat in (("ctl1", "[0-9]+abcdef"), ("ctl2", "/user|/users"), ("ctl3", "(
         bad(f"control '{pat}': the artifact moves under -fno-req-run-fold though its run is exact")
     else:
         ok(f"control '{pat}': byte-identical with and without -fno-req-run-fold (an exact run)")
+
+
+# R-30's two populations, counted from the facts: an emitted pre-check with a
+# whole part (k66) and one without (the rest). Either at zero means the branch
+# above went unread, so the check could not fail in that direction.
+if n_whole_part[True] < 1 or n_whole_part[False] < 1:
+    bad(f"R-30 populations: {n_whole_part[True]} emitted witness(es) with a whole part, "
+        f"{n_whole_part[False]} without -- each needs at least one")
+else:
+    ok(f"R-30 populations: {n_whole_part[True]} emitted witness(es) with a whole part, {n_whole_part[False]} without")
 
 
 # 8. the canonical form over the whole corpus, as written

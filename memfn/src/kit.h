@@ -296,8 +296,14 @@ struct mf_art {
     const char  *reach_stem;
     const char **reach_row;
     uint32_t     nreach, reach_cap;
+    /* R-30: the test-only levers mf_lever set (bit KIT_LEVER_*; 0 on every
+       shipped compile) */
+    unsigned     levers;
     char        err[256];
 };
+
+/* The test-only levers (mf_lever, compose.c's table). */
+enum { KIT_LEVER_PRES_WINDOW = 1u << 0 };
 
 #define kit_presence_check MF_NS(kit_presence_check)
 /* The presence class's rules (compose.c), NULL iff the site holds them: a
@@ -615,9 +621,11 @@ typedef struct mf_formdecl {
  * offset `k`, byte `a` and second member `b`, -1 for none); the calling
  * site; for a PREFIX row, the BODY row the seam chose (by name, the OVER
  * test) and its helper's name `<fn>__body` (a helper's last fall-through,
- * called by NAME: D155; the row never sees the body's text); and whether
+ * called by NAME: D155; the row never sees the body's text); whether
  * the define sink offers the bracket ops (a host that cannot count guarded
- * bytes never receives them). */
+ * bytes never receives them); and the LEAD (R-30): the run positions
+ * [lead_at, lead_at + lead_len) the verify chain compares FIRST, before the
+ * rest of the run (lead_len 0: none, the run in its row's own order). */
 typedef struct fn_in {
     const mf_pred *p;
     int maxk, k, a, b;
@@ -625,6 +633,7 @@ typedef struct fn_in {
     const char *body_row;
     const char *body_fn;
     int brackets;
+    unsigned lead_at, lead_len;
 } fn_in;
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
@@ -676,6 +685,12 @@ int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
 #define ofs_fn_define_at MF_NS(ofs_fn_define_at)
 int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
                      const mf_pred *p, const char *fn, mf_sink *o);
+/* The same as ofs_fn_define, with the verify chain's RUN compare led by run
+ * positions [lead_at, lead_at + lead_len) (run_cmp_render_lead): the
+ * pre-check's whole run, led by the window part it implies (R-30). */
+#define ofs_fn_define_lead MF_NS(ofs_fn_define_lead)
+int ofs_fn_define_lead(mf_art *art, uint32_t handle, const mf_hooks *h, const mf_pred *p,
+                       const char *fn, unsigned lead_at, unsigned lead_len, mf_sink *o);
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
  * asked quietly; *two 1 iff the BODY row it takes is fn-pair (the two
@@ -767,6 +782,19 @@ int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t 
 /* A FUNC definition's call before its own text: records the word widths the
  * RUN terms of `p` will load and declares every pending helper into `c`. */
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
+/* THE LED COMPARE (R-30): run `t` at `base + off` with its positions
+ * [at, at + len) compared FIRST, as the run of those bytes alone is (the
+ * row the walk picks for it, at `off + at`), then the rest: each word of
+ * the whole run's own words form that does not lie inside the lead, whole;
+ * the whole run's memcmp unchanged; its bytes form less the lead's
+ * positions. A `&&` chain. run_cmp_prepare_lead declares the lead's helper
+ * width before the function that uses it. */
+#define run_cmp_render_lead  MF_NS(run_cmp_render_lead)
+#define run_cmp_prepare_lead MF_NS(run_cmp_prepare_lead)
+int run_cmp_render_lead(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                        unsigned at, unsigned len, mf_sink *c);
+int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned len,
+                         mf_sink *c);
 /* 1 iff every byte of RUN term `t` lies inside its mask (Q-G2-13's
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). */
