@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# 798-scensus-run: the M0-M6 compile-only censuses (lane scensus) over the .rxt
+# corpus + pcrec-bench's pattern sets, read-only. Output: $OUT/*.tsv, summary.txt.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/scensus
+OUT=/var/tmp/pcrec-pcrec/scratch/scensus/run
+CENSUS="$TREE/docs/dev/lanes/scensus_evidence/census.py"
+case "${1:-}" in
+    --dry-run)    # plants only (11 compiles): proves the script, the binary and the plants
+        mkdir -p "$OUT.dry" || exit 1
+        out=$(python3 "$CENSUS" --smoke --root "$TREE" --out "$OUT.dry" 2>&1) ||
+            { printf '%s\n' "$out" | tail -5 >&2; exit 1; }
+        printf '%s\n' "$out" | grep -q '^scensus: COMPLETE plants=' ||
+            { echo "no COMPLETE line in the smoke" >&2; exit 1; }
+        echo "would run: python3 $CENSUS --root $TREE --out $OUT"
+        echo "boxqueue: cap 1800"
+        echo "boxqueue: patience none"
+        echo "boxqueue: est 300"
+        echo "boxqueue: not-before 2026-11-03T01:00"
+        echo "boxqueue: expect plants=11 last=^scensus: COMPLETE plants="
+        echo "boxqueue: witness plants=scensus: COMPLETE plants=11 corpus=5210 bench=356 vm_corpus=1 vm_bench=1"
+        exit 0 ;;
+    --ready)
+        [ -x "$TREE/build/pcrec" ] || { echo "tree or build/pcrec gone: $TREE"; exit 77; }
+        exit 0 ;;
+esac
+[ -x "$TREE/build/pcrec" ] || { echo "tree or build/pcrec gone: $TREE" >&2; exit 1; }
+mkdir -p "$OUT" || exit 1
+exec python3 "$CENSUS" --root "$TREE" --out "$OUT"

@@ -58,3 +58,4 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-10-31-r1-pricing-split.md` (+ dir) — design round on the splitstudy report rev 0 (where strategy pricing lives); direction superseded by the bake-off ruling.
 - `2026-10-31-r2-pricing-split2.md` (+ dir) — PARTIAL re-check of splitstudy rev 1, stopped when Frank ruled a bake-off.
 - `2026-10-31-r3-bakeoff.md` (+ dir), `r4-bakeoff2` (rev 1 re-check), `r5-bakeoff3` (rev 2 re-check) — design rounds on docs/design/pricing_bakeoff.md.
+- `2026-11-01-r1-stream1.md` (+ dir) — design round on the "one instruction stream" end-state synthesis (uncommitted scratch; now docs/design/stream/round1/), coordinator round: 5 lenses (premise, soundness, benefit, seam, cost), 61 raised, rulings inline.
