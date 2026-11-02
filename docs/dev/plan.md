@@ -732,6 +732,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: Frank rules the non-cscan cost above the ~3 % bar (open question in docs/dev/lanes/trailgc3_report.md), or a bench cell on such a shape.
   refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F3 F4; docs/dev/lanes/trailgc3_report.md "F3 re-measure"; decisions D183; known_issues K134
   Mechanism (review r2 EMIT-1): the cold call's rejoin at a short loop's latch evicts the trail depth from its register. General form (EMIT-2): an `npush` clock beside `nset`; a back-edge whose cycle pushes a resume frame and is not cut inside writes each slot once per segment, so it can never compact and needs no checkpoint. Needs its own proof (the checker's cycle rule learns the exemption) and a sabotage row.
+  Bench evidence (2026-11-02): bench O-117 (b149w2) is the trigger's bench cell: short-subject per-call +0.2..+1.2 ns, median +1.9 % caps / +3.8 % nocaps, to +11.4 % on 6-12 ns calls; large subjects free. Its cells are loop programs: a cycle-FREE skip would not move them, this row's cut would. Not scheduled (the ~3 % bar is the owner's).
 - [TRAIL-REARM] STATE:not-started — A MONOTONE STOP RULE FOR TRAIL COMPACTION (reach in the trail capacity has holes)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 F2 (lane trailgc3)
   status (2026-10-29): not started. Documented in limits.md §4¶3. Tried once in trailgc3: re-arming at max(floor, w + cap/4) still left holes and moved the specimen boundary off `4n + 17` (n = 200 needed 803), so the latch stays.
@@ -1529,6 +1530,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/stream/manifesto.md; docs/design/stream/roadmap.md; docs/design/stream/approach.md; docs/dev/reviews/2026-11-01-r3-stream3.md; decisions D182 D185
   THE AGREED END STATE (manifesto.md): every artifact is one program of typed instruction records (VM control, automaton components, kit sites) chosen per point in the pattern; parts with contracts; seams with a run-time hand and a plan-time card carrying facts both ways; crossings deliberate and negotiated through declared seams; "dfa"/"vm" become derived stamps; hubs get owners and declared extension shapes. Frank: "This project is more than simply its stated goal. It's an effort to produce a viable long term project that can grow."
   HOW (roadmap.md, LIVING): incremental, never big bang; byte-identical where possible (one comparator); a RATCHET: the inventory of parallel mechanisms and undeclared crossings (baseline 24 at main 3f777330e) must fall with every step, and a step that adds one without deleting one is rejected. THE RIDE-ALONG RULE: each code AREA is a migration unit; when an optimization, kit request or fix opens an area, its next migration step rides in that change or lands just before it. HELD until measured: the per-stretch planner with new rows, backtracking across seams, the held kinds. NOTHING IS BUILT WITHOUT FRANK'S GO PER STEP.
+- [COVER-PRICE-WITNESS] STATE:not-started — cover vs byte-class-bounded: the bench's utf8-lead-no-cont x1.95 as a named pricing witness
+  filed: 2026-11-02 manager (from bench O-117, window b149w2)
+  status (2026-11-02): filed; nothing built. Bench: `[\xc2-\xdf](?![\x80-\xbf])` x1.95 slower on 19/19 large subjects (0.192 -> 0.375 ns/B), x1.20 short; hex8-bounded x1.5 slower on 60-B subjects (+35 ns) while x0.42 on large.
+  trigger: the kit's D176 priced stop choice build opens (then its pricing tests include this pattern and hex8's tiny-subject cell); or a user-facing complaint.
+  refs: bench O-117; D176; window_site.md "Known gaps"; [MEMFN-POSCOST]; memory pcrec-one-pass-loss-chasing
+  Charter: add the pattern to the pricing tests; confirm the mechanism (set walk of 3+ members vs byte-class-bounded scan); no special-case decline.
+- [PAIR-LOOKAHEAD-TIME] STATE:not-started — measure the two-stream look-ahead's first width in TIME
+  filed: 2026-11-02 manager (from bench O-117)
+  status (2026-11-02): filed; nothing built. memfn/src/ofsskip.c `PAIR_LOOKAHEAD` = 128 is instruction-chosen (s3_report 11.2) and labelled UNMEASURED. Bench: union-select x1.15 large / x1.11 short (cb32eda28 vs 614d45eb3), username-password-pair x0.057 nocaps.
+  trigger: the kit's next timing window on this box, or the measurement-set revision for the pair card (D176 Q3).
+  refs: bench O-117 4.3; s3_report.md 11.2; D176; memory pcrec-suspect-tuning-constants
+  Charter: sweep w (32..512) on union-select and the query-string pair on the two bench subjects' shapes, ONE bounded effort, then accept or retune; bar is memory pcrec-one-pass-loss-chasing. Do it after R-30's abi 94 (it changes the same pre-check; the loss may have moved).
 ## Boonies
 - [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine (latent depth hazard)
   filed: 2026-11-01 manager (noted by lane p1build)
