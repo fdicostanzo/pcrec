@@ -647,7 +647,9 @@
 #     witnesses per admission row, the deny both ways (a walk leaves, a
 #     declining artifact is byte-identical) and the reach guard as a cost.
 #     Its own arm because the row is answer-identical by construction.
-#     Rows: S1820-S1829. Verdict: the script's trailer.
+#     Rows: S1820-S1829 (S1822 retired UNREACHED; re-arm tripwire
+#     `cand_rows_check.py` [cand-ma-dfa-only]) and S1855 (lane p1kind, g1
+#     reads nested \G/\K). Verdict: the script's trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
