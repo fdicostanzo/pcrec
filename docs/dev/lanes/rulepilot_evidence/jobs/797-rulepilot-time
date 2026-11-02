@@ -20,7 +20,7 @@ case "${1:-}" in
         fi
         echo "would run in $OUT: PHASE=EXT CELLS_RE=$RE RAW_TAG=RP7 CPU=14 LAUNCHES=3 LOADWAIT=15 bash grid2/time.sh"
         echo "boxqueue: cap 3600"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
-        echo "boxqueue: not-before 2026-11-02T05:00"
+        echo "boxqueue: not-before 2026-11-02T02:00"
         echo "boxqueue: expect groups=$n last=^time.sh: COMPLETE rows=[0-9]+ groups="
         echo "boxqueue: witness groups=time.sh: COMPLETE rows=$((n * 5)) groups=$n reruns=0 xreruns=0 requeued=0 wall=2000s"
         exit 0 ;;

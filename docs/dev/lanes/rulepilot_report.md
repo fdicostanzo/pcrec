@@ -137,3 +137,30 @@ Two caveats apply to every outcome:
     - report the density table (`slot/subj_rp.tsv`);
     - add a short results section to this report.
   - If a shard fails, run `scripts/boxqueue retry <key>`; the later shards wait on it.
+
+## rpfix (2026-11-02): pre-timing exclusion of N20
+
+- **Cause.** Job 790-rulepilot-build failed at 02:00:53 ( on N20: 
+  missing; lane rwfix removed it as mojibake). No timing had run.
+- **Check.** All 139 sites checked against : N20 is the only missing subject file.
+- **Excluded: N20** (ruling 2026-11-02 02:15). Mechanism: , read by
+  , , ;  computes the split over the original 139
+  (excluded sites as stubs) and drops the stubs, so no other site changes half.
+- **Held-out effect.** N20 was a TRAIN site (72 -> 71 training; held-out 67 unchanged). The pre-registered
+  rule is unchanged; the population is 138 sites, 586 arms, 804 groups. The drill still passes all four
+  truths ( re-run).
+- **Jobs.**  regenerated them (NOT_BEFORE set to the queued 02:00). Changed in the queue:
+   (N20 and P11 moved: 22 sites, 132 groups) and 
+  (27 sites, 153 groups), edited in place; 790 re-added as  (expect sites=138,
+  witness arms=586); 791-794 and 797 are byte-identical to the queued ones. Every job passes .
+   re-reads the failed run's stored copy, so  from the
+  lane's fixed source was used instead.
+- **Design note:**  "Pre-timing exclusions".
+
+### STATE AT HANDOFF (rpfix)
+
+- Rulings read: last entry applied **2026-11-02 02:15**.
+- Queue: 790 pending (not-before passed; waits for the running 799-landr30-test), 791-797 chained behind
+  it (their "waiting on rulepilot-build, which FAILED" line clears once 790 is pending/done).
+- OWED unchanged: the timing chain and the reading (see the first STATE AT HANDOFF above); the site
+  count to expect is 138.

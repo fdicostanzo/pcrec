@@ -15,6 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import census_dry as cd  # noqa: E402
 import pieces as pc      # noqa: E402
+from slot_build import excluded_ids  # noqa: E402
 
 INV = os.environ.get("RP_INV", os.path.join(HERE, "inventory"))
 
@@ -33,8 +34,14 @@ def main():
     for r in csv.DictReader(open(os.path.join(INV, "facts.tsv")), delimiter="\t", quoting=csv.QUOTE_NONE):
         facts[r["id"]] = json.loads(r["facts_json"])
     sites, fell_back, dropped = [], 0, 0
+    skip, stubs = excluded_ids(), []
     for line in open(os.path.join(INV, "census.jsonl")):
         c = json.loads(line)
+        if c["id"] in skip:       # pre-timing exclusion: kept ONLY as a split stub (search.split), never scored
+            keys = {k for a in c["arms"] for k in a["stamps"]}
+            sig = sorted({cd.STAMP_SLOT[k] for k in keys if len({a["stamps"].get(k) for a in c["arms"]}) > 1})
+            stubs.append(dict(id=c["id"], stratum="+".join(sig) or "(bytes only)"))
+            continue
         cell = "rp-" + c["id"]
         cells = {}
         for (ce, subj, arm, rnd), (ns, _) in raw.items():
@@ -62,8 +69,8 @@ def main():
                           pieces=pc.values(facts.get(c["id"], {}), " ".join(c["popts"])),
                           picks=picks, cells=cells))
     names = [l.split("\t")[0] for l in open(os.path.join(INV, "vocabulary.tsv")).read().splitlines()[1:]]
-    json.dump(dict(picks=names, sites=sites), open(dst, "w"))
-    print(f"read_slot: sites {len(sites)}, raw launches {len(raw)}, excluded arms {len(excl)}, "
+    json.dump(dict(picks=names, sites=sites, excluded=stubs), open(dst, "w"))
+    print(f"read_slot: sites {len(sites)} (pre-timing exclusions {len(stubs)}), raw launches {len(raw)}, excluded arms {len(excl)}, "
           f"census arms not timed {dropped}, picks fallen back to default {fell_back}")
 
 if __name__ == "__main__":

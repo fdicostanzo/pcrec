@@ -21,6 +21,14 @@ PCREC = os.environ.get("PCREC", os.path.join(W, "build", "pcrec"))
 CORPUS = os.environ.get("CORPUS", "/home/pcrec/projects/pcrec/worktrees/.corpus")
 INV = os.environ.get("RP_INV", os.path.join(HERE, "inventory"))
 
+def excluded_ids():
+    """The declared pre-timing exclusions (inventory/exclusions.tsv: id, date, reason), read by
+    slot_build, mkjobs, read_slot (and, through the dataset, search's split)."""
+    p = os.path.join(INV, "exclusions.tsv")
+    if not os.path.exists(p):
+        return set()
+    return {r["id"] for r in csv.DictReader(open(p, encoding="utf-8"), delimiter="	", quoting=csv.QUOTE_NONE)}
+
 def sh(argv, **kw):
     return subprocess.run(argv, capture_output=True, **kw)
 
@@ -28,10 +36,10 @@ def plan(only=None):
     files = {r["id"]: r["files"].split(";")[0] for r in csv.DictReader(
         open(os.path.join(W, "docs/dev/lanes/rwquest/questions.tsv"), encoding="utf-8"),
         delimiter="\t", quoting=csv.QUOTE_NONE)}
-    out = []
+    out, skip = [], excluded_ids()
     for line in open(os.path.join(INV, "census.jsonl")):
         r = json.loads(line)
-        if r["refused"] or len(r["arms"]) < 2 or (only and r["id"] not in only):
+        if r["refused"] or len(r["arms"]) < 2 or r["id"] in skip or (only and r["id"] not in only):
             continue
         if files[r["id"]].startswith("sealed"):
             raise SystemExit(f"slot_build: {r['id']} names a sealed file")

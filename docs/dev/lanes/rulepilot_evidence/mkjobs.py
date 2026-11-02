@@ -13,15 +13,18 @@ usage: mkjobs.py JOBDIR       writes JOBDIR/790-rulepilot-build, 791..-rulepilot
 """
 import csv, json, os, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from slot_build import excluded_ids  # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 W = os.path.normpath(os.path.join(HERE, "..", "..", "..", ".."))
 SEC, BUDGET, LAUNCH = 0.75, 2400, 3 + 0.2 * 2
 OUT = "/var/tmp/pcrec-pcrec/scratch/rulepilot/slot"
-NOT_BEFORE = "2026-11-02T05:00"
+NOT_BEFORE = "2026-11-02T02:00"      # as queued (the manager moved it from 05:00)
 
 BUILD = r'''#!/usr/bin/env bash
 # 790-rulepilot-build: lane rulepilot's timing slot, BUILD + correctness gate (no clock).
-# Re-emits every forceable default-route arm of the {nsites} inventory sites with the lane's compiler
+# {nsites} sites after the pre-timing exclusions of inventory/exclusions.tsv (N20, rpfix 2026-11-02). Re-emits every forceable default-route arm of the {nsites} inventory sites with the lane's compiler
 # (byte identity against the committed inventory), links grid1's gdrv.c, writes the streamed subjects
 # (gen_subj.py: 3 lengths x miss/dense from each question's own corpus file), then grid1's check.sh
 # (legs R and C against each site's default arm; SKIP_DEEP: no own cells). Writes ONLY under OUT
@@ -103,10 +106,10 @@ def main():
     jd = sys.argv[1]; os.makedirs(jd, exist_ok=True)
     pyc = {r["id"]: int(r["py_count_full"] or 0) for r in csv.DictReader(
         open(os.path.join(W, "docs/dev/lanes/rwquest/questions.tsv"), encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE)}
-    sites = []
+    sites, skip = [], excluded_ids()
     for line in open(os.path.join(HERE, "inventory", "census.jsonl")):
         r = json.loads(line)
-        if r["refused"] or len(r["arms"]) < 2:
+        if r["refused"] or len(r["arms"]) < 2 or r["id"] in skip:
             continue
         g = 3 + (3 if pyc.get(r["id"], 0) > 0 else 0)
         sites.append((r["id"], len(r["arms"]), g, g * (len(r["arms"]) + 3) * LAUNCH * SEC))

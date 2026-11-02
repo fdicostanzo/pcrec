@@ -146,6 +146,27 @@ The drill caught one design defect before any data existed. With thresholds thin
 - **Leakage.** J1 is the regime evaluator's judge population. A list fitted here is fitted on J1, so
   J1 can no longer judge that list; J1b stays sealed.
 
+## Pre-timing exclusions
+
+Dated 2026-11-02 (after the first build job failed at 02:00, before ANY timing: no clock had run).
+
+- **Site N20** (pattern on ) is excluded. Lane rwfix removed that file from the
+  corpus cache as mojibake; N20 targets the mojibake itself, so no replacement has the property. The
+  manager ruled: no refetch, no substitute. A check over all 139 sites found N20 the only one whose
+  subject file is missing under .
+- **Declared in** , read by ,
+   and .
+- **Population:** 139 -> **138** sites (590 -> 586 arms, 810 -> 804 groups). The rest of this document's
+  139 figures describe the inventory as committed.
+- **Split unchanged:**  passes N20 to  as a stub (id and stratum only), the split
+  is computed over all 139, and the stub is then dropped. Every other site keeps the half it had. (A
+  plain drop would have moved 3 other sites between halves.)
+- **Held-out effect:** N20 fell in TRAIN (72 -> 71 training sites; held-out stays 67). The stratum was
+  read from the census arms (all arms), as the timed arms are not known yet; if a gate-excluded arm
+  changes N20's stratum signature this could differ, and the stub then follows the timed data.
+- **The pass rule is unchanged** (held-out score >= 0.95 and no tail beyond 1.5 x (1 + 2 f)). Only the
+  training population is one smaller.
+
 ## 9. The standing questions (`docs/design/CLAUDE.md`)
 
 1. **Measurement regime: RELEVANT.** One box (Zen 4, CPU 14), streamed subjects, 3 lengths x 2

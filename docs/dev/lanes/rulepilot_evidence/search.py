@@ -221,7 +221,11 @@ def run(ds, piece_types, quiet=False):
     for st in sites:
         st["_s"], st["_r"] = site_scores(st)
     nu, floors, rel = noise(sites)
-    train, test = split(sites)
+    # the split is computed over the ORIGINAL population (pre-timing exclusions as stubs), then the stubs
+    # are dropped: the other sites keep exactly the half they would have had (rpfix, 2026-11-02)
+    stubs = {s["id"] for s in ds.get("excluded", [])}
+    train, test = split(sites + ds.get("excluded", []))
+    train = [s for s in train if s["id"] not in stubs]; test = [s for s in test if s["id"] not in stubs]
     L = literals(train, piece_types)
     lists = search(train, picks, floors, L)
     base = dict(rules=[], default="default")
