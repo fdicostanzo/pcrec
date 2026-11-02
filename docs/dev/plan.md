@@ -244,8 +244,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [PRICE-BAKEOFF] STATE:started — a measured bake-off decides where search-strategy pricing lives (Frank 2026-10-31)
   filed: 2026-10-31 manager (Frank's ruling)
-  status (2026-11-02): Frank: the rule-list pilot is the BASELINE pricing must beat (timed truth, 139 sites); pricing's case is extensibility (a new method = one priced row). Pricing build WAITS until the stream unification moves further (its harness will change).
-  next: pilot verdict (job 806) = the baseline; the bake-off/pricing build is proposed only once [STREAM] steps have reshaped the seams it prices across; no build go
+  status (2026-11-02): pilot DONE: default 0.981 of ideal held-out, PASS at 0 rules (pricing_rulepilot.md Result) = the BASELINE pricing must beat; pricing's case is extensibility; build WAITS for [STREAM] (Frank).
+  next: pricing build proposed only once [STREAM] steps have reshaped the seams it prices across; one bounded look at the pilot's worst sites; no build go
   refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
   Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
   Expected shape (Frank 2026-11-02): rules AND pricing. Non-local costs (engine-switch crossings, the DFA's multi-path tracking lost to a VM split, whole-artifact effects like [SITE-FRAMELESS]) enter as policy rules ("prefer DFA"), a declared first-match table; pricing chooses within them. Crossing prices are an open measurement for [STREAM].

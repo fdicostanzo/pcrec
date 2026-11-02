@@ -1,0 +1,2 @@
+id	date	reason
+N20	2026-11-02	subject file nonenglish/pg20175.txt removed from the corpus cache by lane rwfix as mojibake (N20 targets the mojibake itself, no replacement has the property); pre-timing, no clock had run; no refetch, no substitute

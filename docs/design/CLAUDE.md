@@ -69,6 +69,7 @@ Option sets, selection, cost
 - `measure_sets.md` — [MEASURE-SET] measurement-set format/store/loading (rev 3); store lives in `measure_store/`.
 - `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — raw stamp inventory and `decfb0/` census.
 - `dec_fallback.md` — [DEC-FALLBACK] one fallback ladder; `dec_fallback/` — edit set, anchor map, reach prototype.
+- `pricing_rulepilot.md` — [PRICE-BAKEOFF] the rule-list pilot: can <= 3 rules over stated facts reach 95 % of the measured best strategy (pre-registered; evidence `docs/dev/lanes/rulepilot_evidence/`).
 
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
