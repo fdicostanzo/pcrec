@@ -24,11 +24,18 @@
 # offset-skip one, removes emit_vm.c's build copy, and C14's stride clause
 # (form_checks.py, which reads VM_MAX_STRIDE from the source) refuses it.
 # The offset-skip clause keeps its own in-script control (lowered to 4).
+#
+# [r32, 2026-11-02, R-32] The row's catch is unchanged (C14's stride assert,
+# tripped in the check's own syntax-only probe TU), but the matrix's "a compile
+# failure is not a catch" rule (7047b69e4, NOCOMPILE_ERE) scored it ANOMALY
+# because C14's FAIL line quoted gcc's raw file:L:C: error: text. The probe
+# is the check's instrument, not code under test; form_checks.py's c14_asserts
+# now prints only the assert message.
 SAB_ID="S526-c14-max-term-lowered"
 SAB_FILE="memfn/include/memfn.h"
 SAB_SUITES="memfnforms"
 SAB_DESC='MF_MAX_TERM is lowered from 32 to 31, below VM_MAX_STRIDE (and the build-time copy of the assert in src/gen/emit_vm.c removed, so the tree builds): the VM cursor rung'"'"'s widest strided span site no longer fits one conjunction'
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); RE-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied, tree rebuilt: it BUILDS): memfnforms 1 failed / 4 passed (C14: the stride assert fires on the real header). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
+SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); RE-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied, tree rebuilt: it BUILDS): memfnforms 1 failed / 4 passed (C14: the stride assert fires on the real header). RE-AIMED by lane r32 2026-11-02 (R-32): since 7047b69e4 the scorer reads a gcc file:L:C: error: line in a failing arm'"'"'s log as a compile failure (ANOMALY), and C14 quoted the probe compile'"'"'s raw diagnostic in its FAIL line; C14 now prints only the tripped assert'"'"'s message, so the plant (applied by hand in a scratch copy) reads memfnforms 1 failed / 4 passed with no file:L:C: error: line. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
 SAB_REACH_EXPECT='PASS: C14 stride control
 checks failed: 0'
