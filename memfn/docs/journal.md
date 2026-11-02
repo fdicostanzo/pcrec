@@ -2966,3 +2966,7 @@ Main pulled the r30b2 chain forward to Sun 07:00 (Frank: a free box runs waiting
 ## 2026-11-01 (later) — R-30 delivered
 
 Bench ended early; main ran 779/780/781 from 14:29. All GREEN: 779 mech-a, 780 mech-b (1 ANOMALY: S526, its designed catch is a static-assert compile failure that main's 7047b69e4 now scores as ANOMALY; pre-existing, not R-30), 781 reach2 (unreached 0, confirming the 772 truncation diagnosis). Posted done: R-30 (lane/memfn-r30b @ 66b1e2254, abi 94 provisional) with the pcrec-side hunks and both pre-existing findings.
+
+## 2026-11-02 — R-30 landed; prunes; job 640 read; vrun bench request drafted
+
+R-30 landed on main 657e23231 (abi 94; make test 799 green). Pruned r30b (forced; dirty only in artifact_size_log.tsv + the rulings file, diff kept in .wtprune.force), simdset and the old kit worktree; branches gone. New kit branch lane/memfn-vrunreq from main. Job 640 (tier-U vrun refresh, GREEN, 8,315 s) read: the layer pays broadly; losses at pc16 per-call and sp/n04/v17 at w16 sparse/tail. Its tree predates S3, so OFF was not the current scalar layer, and the official run must be on current main. A sonnet lane (vrunreqd) drafted docs/design/memfn/vrun_bench_request.md (d3ec10bc8); I reviewed §0-§2 and §6 and merged it. Notice posted for main.
