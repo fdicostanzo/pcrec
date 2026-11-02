@@ -180,7 +180,9 @@ def c14_asserts(err):
     is the check FAILING, and the mech scorer's compile-failure reading
     (NOCOMPILE_ERE) must not mistake the quoted diagnostic for broken code."""
     msgs = re.findall(r'static assertion failed: "([^"]*)"', err)
-    return '; '.join(msgs) if msgs else ' '.join(err.split())[:300].replace(': error:', ': diagnostic:')
+    # Any OTHER compile error stays verbatim: broken code is not a catch, and
+    # the scorer must still read it as one.
+    return '; '.join(msgs) if msgs else ' '.join(err.split())[:300]
 
 
 def c14(root, cc, tmpbase):
