@@ -41,8 +41,8 @@ compiles clean with -Werror -Wshadow").
 
 Main is 94, so P1 is 95 (ruling (a)). Readers found by grep
 (`(abi|ABI).{0,15}\b9[3-6]\b` over src lib cli memfn examples tests docs/spec, then `` `9[45]` `` in
-docs/spec, then `abi[ =:_-]*9[45]|_a9[45]|ABI_H 9[45]` over the tree outside docs/dev): **7 reader
-sites, 9 lines**, every one now 95 / 94-as-parent:
+docs/spec, then `abi[ =:_-]*9[45]|_a9[45]|ABI_H 9[45]` over the tree outside docs/dev): **seven
+reader sites (plus the change log), every one now 95, or 94 as the parent:**
 
 1. `src/gen/emit_dfa.c` `#define PCREC_ARTIFACT_ABI 95` (the `.abi` stamp, the banner and the
    `PCREC_RX_ABI_H` guard all come from it)
@@ -99,7 +99,13 @@ bullet ([LANDWALK-PRES]'s fix, `k_hit` measured, [LANDWALK-VM] opening).
 Light suites on the merged tree, run directly, one at a time, `nice`, box free (logs in
 `scratch/p1land/`):
 
-LIGHT_RESULTS
+| command | rc | reading | log |
+|---|---|---|---|
+| `make strict` (on the merge, before its commit) | 0 | "whole tree compiles clean with -Werror -Wshadow" | `strict.log` |
+| `make -j16` | 0 | built | `build.log` |
+| `make test-codegen` | 0 | no `*** [... test-X] Error` line; 19 `checks failed: 0` trailers, none non-zero | `codegen.log` |
+| `make test-registry` | 0 | no error line; last PASS the [DD-11.3] option-matrix self-oracle (31 s) | `test-registry.log` |
+| `make test-rxtsource` | 0 | "INV-COMPAT holds over 312 files / 6304 blocks / 75730 expectation lines" (the p1rxt pins, unchanged by the merge; 70 s) | `test-rxtsource.log` |
 
 Queued (scripts in `scratch/p1land/jobs/`, each `--dry-run` clean, and accepted by `boxqueue add`):
 
@@ -121,4 +127,20 @@ What the manager reads:
 
 ## STATE AT HANDOFF
 
-STATE_TEXT
+Branch `lane/p1build` at this report's commit, over the landing commits: f5de088bf (the merge of main
+0da7ab3bb), fd6de3414 (FILEPIN re-pin, D184, ledger, plan status, landwalk arm rows), then the
+report. No src change after the merge. Light suites green (above).
+
+OWED, queued 2026-11-02 ~20:10 (pending; the box was held by another session's `t588-smoke` at
+enqueue; the runner is live):
+- **830-p1land-test** — completion line `sections ran: 81/81` in the run dir's `job.log.make`,
+  no `*** [Makefile:N: test-X] Error` line (`scripts/verdict`).
+- **831-p1land-mech** (after 830) — `== mech run COMPLETE: 20 rows`; S1822 UNREACHED, 19 DETECTED.
+- **832-p1land-ident** (after 830) — the gate's (A)/(B) `differing=` lines: (B) 0 on all arms,
+  (A) 168 / 383 / 168 / 111.
+
+The manager reads the verdicts and merges lane/p1build into main (main is an ancestor of
+f5de088bf, so main takes the branch and the FILEPIN names a commit main contains). Owed to P10's
+landing: renumber its tuning.md §2.54 to §2.55. Rulings file: last entry applied is
+"2026-11-02 19:05 (manager): brief issued. No entries yet." Nothing stopped: the merge moved no
+answer and the light suites named no mover; the identity (A)/(B) reading is 832's.
