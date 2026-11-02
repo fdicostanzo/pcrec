@@ -1,0 +1,68 @@
+=== drill a-planted (seed 20261031)
+noise: nu (median |base#c - base| / base) = 1.59%, median site floor f = 2.41%
+split: train 70 / held-out 69 sites; literals 118, picks 30
+distinct lists by length: 0: 30, 1: 106,200, 2: 372,762,000, 3: 1,297,211,760,000
+baseline cand_rows (default everywhere): train 0.6622 tail 38; held-out 0.5844 tail 51 worst 2.504
+k=0: else -> no-offset-skip
+      train 0.8743 tail 15 | held-out 0.8480 tail 19 worst 2.504 | over-fit +0.0263 | fail
+k=1: if req_run_len >= 3 (FITTED) -> no-offset-skip; else -> k:no-fd-pres-g1
+      train 0.9623 tail 4 | held-out 0.9453 tail 5 worst 2.430 | over-fit +0.0170 | fail
+k=2: if req_run_len >= 3 (FITTED) -> no-offset-skip; if dflt_presence -> k:no-fd-pres-g1; else -> default
+      train 1.0000 tail 0 | held-out 1.0000 tail 0 worst 1.000 | over-fit +0.0000 | PASS
+k=3: if req_run_len >= 3 (FITTED) -> no-offset-skip; if req_run_len >= 4 (FITTED) -> default; if dflt_presence -> k:no-fd-pres-g1; else -> default
+      train 1.0000 tail 0 | held-out 1.0000 tail 0 worst 1.000 | over-fit +0.0000 | PASS
+VERDICT: PASS at 2 rule(s)
+
+=== drill b-beyond (seed 20261031)
+noise: nu (median |base#c - base| / base) = 1.57%, median site floor f = 2.40%
+split: train 71 / held-out 68 sites; literals 118, picks 30
+distinct lists by length: 0: 30, 1: 106,200, 2: 372,762,000, 3: 1,297,211,760,000
+baseline cand_rows (default everywhere): train 0.4936 tail 71; held-out 0.4941 tail 68 worst 2.526
+k=0: else -> no-req-handoff
+      train 0.6588 tail 47 | held-out 0.6101 tail 52 worst 2.510 | over-fit +0.0487 | fail
+k=1: if req_set_size >= 2 (FITTED) -> no-req-handoff; else -> k:no-fd-pres-g1
+      train 0.7150 tail 40 | held-out 0.6113 tail 52 worst 2.510 | over-fit +0.1038 | fail
+k=2: if caseless -> k:no-fd-pres-g1; if not utf -> k:no-fd-pres-g1; else -> no-req-handoff
+      train 0.7524 tail 34 | held-out 0.6351 tail 49 worst 2.510 | over-fit +0.1172 | fail
+k=3: if caseless -> k:no-fd-pres-g1; if not utf -> k:no-fd-pres-g1; if min_width >= 6 (FITTED) -> no-run-prefilter; else -> no-req-handoff
+      train 0.7835 tail 30 | held-out 0.6610 tail 46 worst 2.510 | over-fit +0.1226 | fail
+VERDICT: FAIL (no list of <= 3 rules passes held-out)
+
+=== drill c-noise (seed 20261031)
+noise: nu (median |base#c - base| / base) = 1.59%, median site floor f = 2.31%
+split: train 71 / held-out 68 sites; literals 118, picks 30
+distinct lists by length: 0: 30, 1: 106,200, 2: 372,762,000, 3: 1,297,211,760,000
+baseline cand_rows (default everywhere): train 0.7579 tail 21; held-out 0.7398 tail 20 worst 1.937
+k=0: else -> no-offset-skip+no-req-handoff
+      train 0.7685 tail 20 | held-out 0.7542 tail 15 worst 1.937 | over-fit +0.0143 | fail
+k=1: if req_run_len >= 4 (FITTED) -> no-offset-skip+k:no-pres-set-lead; else -> k:no-pres-set-lead
+      train 0.7947 tail 12 | held-out 0.7712 tail 14 worst 1.886 | over-fit +0.0235 | fail
+k=2: if start_set_size >= 5 (FITTED) -> no-offset-skip+no-req-handoff; if not nullable -> no-offset-skip+k:no-fd-pres-pick+k:no-pres-set-lead; else -> no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead
+      train 0.8161 tail 12 | held-out 0.7316 tail 20 worst 1.937 | over-fit +0.0846 | fail
+k=3: if start_set_size < 1 (FITTED) -> no-req-handoff+no-start-set; if start_set_size >= 5 (FITTED) -> no-offset-skip+no-req-handoff; if nullable -> no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead; else -> no-offset-skip+k:no-fd-pres-pick+k:no-pres-set-lead
+      train 0.8393 tail 9 | held-out 0.7334 tail 19 worst 1.937 | over-fit +0.1059 | fail
+VERDICT: FAIL (no list of <= 3 rules passes held-out)
+
+=== drill d-null (seed 20261031)
+noise: nu (median |base#c - base| / base) = 1.67%, median site floor f = 2.35%
+split: train 71 / held-out 68 sites; literals 118, picks 30
+distinct lists by length: 0: 30, 1: 106,200, 2: 372,762,000, 3: 1,297,211,760,000
+baseline cand_rows (default everywhere): train 0.9892 tail 0; held-out 0.9911 tail 0 worst 1.030
+k=0: else -> k:no-fd-d1+k:no-fd-pres-pick
+      train 0.9920 tail 0 | held-out 0.9914 tail 0 worst 1.038 | over-fit +0.0006 | PASS
+k=1: if req_set_size >= 4 (FITTED) -> k:no-fd-pres-g1; else -> k:no-fd-d1+k:no-fd-pres-pick
+      train 0.9933 tail 0 | held-out 0.9900 tail 0 worst 1.030 | over-fit +0.0033 | PASS
+k=2: if not dflt_next_byte -> k:no-fd-d1+k:no-fd-pres-pick; if dflt_next_lit -> k:no-fd-d1; else -> k:no-window-search
+      train 0.9944 tail 0 | held-out 0.9921 tail 0 worst 1.030 | over-fit +0.0023 | PASS
+k=3: if not dflt_presence -> k:no-fd-pres-pick; if not dflt_next_byte -> k:no-fd-d1+k:no-fd-pres-pick; if dflt_next_lit -> k:no-fd-d1; else -> no-hyb-reseed
+      train 0.9952 tail 0 | held-out 0.9927 tail 0 worst 1.039 | over-fit +0.0025 | PASS
+VERDICT: PASS at 0 rule(s)
+
+drill a-planted: PASS at 2 rule(s) -> AS INTENDED
+drill b-beyond: FAIL (no list of <= 3 rules passes held-out) -> AS INTENDED
+drill c-noise: FAIL (no list of <= 3 rules passes held-out) -> AS INTENDED
+drill d-null: PASS at 0 rule(s) -> AS INTENDED
+DRILL: ALL FOUR AS INTENDED
+seed 1: DRILL: ALL FOUR AS INTENDED
+seed 2: DRILL: ALL FOUR AS INTENDED
+seed 3: DRILL: ALL FOUR AS INTENDED

@@ -736,3 +736,23 @@ S1148 and S1149; S1257-S1290 does not exist.
 **Not asked:** any method (D157).
 
 **Sabotage ids:** none requested.
+
+## R-31 (2026-11-02, pcrec manager) — a pre-registered cell for the vrun SIMD bench run: the two-byte window of `[\xc2-\xdf](?![\x80-\xbf])`
+
+**Customer:** [COVER-PRICE-WITNESS] (filed 2026-11-02 from bench O-117), and the official SIMD verdict run (docs/design/memfn/vrun_bench_request.md).
+
+**Facts (what pcrec's site states).** Bench pattern `utf8-lead-no-cont`, `[\xc2-\xdf](?![\x80-\xbf])`: a two-byte window, first byte in
+the set C2-DF, second byte NOT in the set 80-BF. Since abi 92 (S3) this site is routed to `cover`.
+
+**Measured (bench O-117, ryzen7700x, scalar default layer, cb32eda28 vs 614d45eb3).** x1.95 slower on 19 of 19 large subjects
+(0.192 -> 0.375 ns/B), x1.20 slower on short subjects, against the earlier byte-class-bounded scan. On valid non-ASCII text nearly
+every lead byte is followed by a continuation byte, so candidates on the first byte are frequent and almost all are rejected.
+
+**What pcrec needs.** (1) This site as a pre-registered cell in the vrun SIMD verdict run, on both layers (scalar default and SIMD-on), so the
+priced choice for this window shape is known per layer. The owner's framing (2026-11-02): the choice is not "cover or not"; it depends on
+whether SIMD is in use. (2) If the kit has no SIMD form for a two-byte window of two sets, say so in the pre-registration; the cell then
+records the gap.
+
+**Not asked:** any method (D157); whether this window shape gets a SIMD form at all is the kit's.
+
+**Sabotage ids:** none requested.

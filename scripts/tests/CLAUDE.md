@@ -80,7 +80,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   ~2 min together, mostly watcher polls at `--every 1`. [BOXQUEUE] added the
   generic `TOOL: DONE rc=N` trailer cases (verdict 31 checks, watchrun 17).
 - **boxqueue.test** — scripts/boxqueue's self-test ([BOXQUEUE], 2026-10-21;
-  86 checks since [runnerfix] (79 at [WATCH-IDLE], 53 at [BOXQUEUE]), ~4 min, one trivial job at a time;
+  174 checks since [QORDER] (86 at [runnerfix], 53 at [BOXQUEUE]), ~6 min, one trivial job at a time;
   run it with TMPDIR set inside your worktree, its mktemp defaults to /tmp). Every case gets a FRESH
   scratch queue (`PCREC_BOXQUEUE_DIR`) and the sacrificial box lock; runners
   and lock holders are killed by pid (safekill) on exit. The protocol both

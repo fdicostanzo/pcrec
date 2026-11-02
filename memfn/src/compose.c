@@ -1319,6 +1319,30 @@ int mf_reach(mf_art *art, const char *stem)
     return 0;
 }
 
+/* THE TEST-ONLY LEVERS (R-30), one row each: the name a harness passes and
+ * the art bit it sets. A lever restores the OLD form of a kit change that
+ * cannot make a caller slower and so has no options.def row. */
+static const struct {
+    const char *name;
+    unsigned    bit;
+} kit_levers[] = {
+    /* precheck.c: a run part implied by a later one is still rendered */
+    { "pres-window", KIT_LEVER_PRES_WINDOW },
+};
+
+int mf_lever(mf_art *art, const char *name)
+{
+    if (art->err[0]) return -1;
+    if (art->nsites)
+        return kit_fail(art, "mf_lever: called after the first define");
+    for (size_t i = 0; i < sizeof kit_levers / sizeof kit_levers[0]; i++)
+        if (name && !strcmp(name, kit_levers[i].name)) {
+            art->levers |= kit_levers[i].bit;
+            return 0;
+        }
+    return kit_fail(art, "mf_lever: the kit lists no lever `%s`", name ? name : "(null)");
+}
+
 int mf_reach_table(const mf_art *art, mf_sink *out)
 {
     if (art->err[0]) return -1;

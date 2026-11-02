@@ -69,6 +69,7 @@ Option sets, selection, cost
 - `measure_sets.md` — [MEASURE-SET] measurement-set format/store/loading (rev 3); store lives in `measure_store/`.
 - `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — raw stamp inventory and `decfb0/` census.
 - `dec_fallback.md` — [DEC-FALLBACK] one fallback ladder; `dec_fallback/` — edit set, anchor map, reach prototype.
+- `pricing_rulepilot.md` — [PRICE-BAKEOFF] the rule-list pilot: can <= 3 rules over stated facts reach 95 % of the measured best strategy (pre-registered; evidence `docs/dev/lanes/rulepilot_evidence/`).
 
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
@@ -89,6 +90,7 @@ Search, start, scan and engine optimization notes
 - `reqbyte_freq_pick.md`, `reqpos_2b.md` — [OPTLOOP.2] cycle-2 notes.
 - `premultiplied_dfa_table.md` [OPT-3], `offset_k_skip.md` [OPT-K], `artifact_size_term.md` [ART-SIZE] (+ `artsize_impl/`), `prefilter_count_independence.md` [OPT-4] (+ `opt4_impl/`), `opt5_step2_twopass.md` [OPT-5], `two_tier_entry.md` [OPT-1] step 2, `emitter_form.md` [ENG-FORM] (D82).
 - `alt_dispatch_study.md` — [ENG-ISL.S0] alternation-dispatch study (`studies/alt_dispatch/`).
+- `stream/` — "one instruction stream" end state: `manifesto.md` (STABLE: goals, end state, principles; changes only with the owner), `roadmap.md` (LIVING: migration areas by code, hubs, provisional admission table, the ratchet), `approach.md` (rev 3, the design record of rounds 1-3); `round1/` keeps the round-1 drafts.
 - `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
 - `c3_three_way.md` — C3 tier narrowing (built); `tt4m_harness_batching.md` — [TT-4M] step 2b.

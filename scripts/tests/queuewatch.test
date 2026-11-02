@@ -414,5 +414,40 @@ P16=$(plant norepeatguard 'mark "${ev%%$'"'"'\t'"'"'*}"' ':') && ln -sf "$here/b
 [ -n "$P16" ] && { rm -f "$WL/state"; : > "$WL/state"; wlq "$P16" >/dev/null; r=$(wlq "$P16"); case $r in *WAIT-LONG*) ok "PLANT (state not written): the event repeats, so the once-only case goes red" ;; *) bad "PLANT norepeat not caught: $r" ;; esac; }
 for p in $wlk1 $wlk2; do kill "$p" 2>/dev/null; done; wait 2>/dev/null
 
+# 4. [QORDER] WINDOW-MISSED: a bench window DECLARED with `not_before=` (QUEUE/.bench/KEY.params) whose start passed --missed-window-sec
+# ago with the window never started and no job of its owner pending or running. The miss: bench W1 of 2026-10-31 was planned for
+# 20:00 and never queued; the box sat idle about 9 h unnoticed. Scratch queue directories only (no runner is needed: the events
+# are read from files). wmq TAG START-OFFSET: a queue with one declared window starting at now+OFFSET
+WM=$T/wm; mkdir -p "$WM"
+wmq() { # wmq TAG OFFSET [params-line-to-drop]
+    local d=$WM/$1; rm -rf "$d"; mkdir -p "$d/pending" "$d/running" "$d/done" "$d/failed" "$d/.bench" "$d/reservations"
+    { echo prio=700; echo name=w9; echo cap=30; [ "${3:-}" = nonb ] || echo "not_before=$(date -d "$2" +%Y-%m-%dT%H:%M:%S)"; } > "$d/.bench/bench-w9.params"
+    echo "QUEUED $(date -Iseconds)" > "$d/reservations/700-bench-w9.state"; echo 'C|runner-dead|no runner.pid' > "$d/state"; echo "$d"   # no runner here: the RUNNER-DEAD episode is marked seen, so only the window event is under test
+}
+wmw() { "$TO" 30 bash "${3:-$QW}" --queue "$1" --state "$1/state" --no-ci --every 1 --max-sec 3 --missed-window-sec "${2:-60}" 2>&1; }
+d=$(wmq a '-5 minutes'); w1=$(wmw "$d"); w2=$(wmw "$d")
+printf '%s\n' "$w1" | grep -qE '^queuewatch: WINDOW-MISSED 700-bench-w9 owner=bench start=[0-9T:-]+ passed [0-9]+s ago \(grace 60s\): the window never started and bench has no job pending or running$' \
+    && ok "WINDOW-MISSED fires for a declared window whose start passed with nothing of its owner queued or running" || bad "WINDOW-MISSED: $w1"
+printf '%s\n' "$w2" | grep -q CAP && ok "WINDOW-MISSED is reported once: the relaunch sees nothing new" || bad "WINDOW-MISSED repeated: $w2"
+d=$(wmq b '-10 seconds'); r=$(wmw "$d" 600); printf '%s\n' "$r" | grep -q CAP && ok "inside the grace (10 s past a 600 s grace): silent" || bad "WINDOW-MISSED early: $r"
+d=$(wmq c '-5 minutes'); : > "$d/pending/710-bench-other"; r=$(wmw "$d"); printf '%s\n' "$r" | grep -q CAP && ok "a job of the owner is pending: silent (it has work queued)" || bad "WINDOW-MISSED with a pending owner job: $r"
+d=$(wmq c2 '-5 minutes'); mkdir -p "$d/running/710-bench-other"; r=$(wmw "$d"); printf '%s\n' "$r" | grep -q CAP && ok "a job of the owner is running: silent" || bad "WINDOW-MISSED with a running owner job: $r"
+d=$(wmq c3 '-5 minutes'); : > "$d/pending/710-main-other"; r=$(wmw "$d"); printf '%s\n' "$r" | grep -q WINDOW-MISSED && ok "another owner's pending job does not hide the miss" || bad "WINDOW-MISSED hidden by a foreign job: $r"
+d=$(wmq d '-5 minutes'); mkdir -p "$d/done/20261101T000000-700-bench-w9"; echo "pid=1 epoch=1" > "$d/done/20261101T000000-700-bench-w9/started"; r=$(wmw "$d")
+printf '%s\n' "$r" | grep -q CAP && ok "the window ran (a done/ run dir with started): silent" || bad "WINDOW-MISSED for a window that ran: $r"
+d=$(wmq e '-5 minutes'); echo "DONE cancelled $(date -Iseconds) CANCELLED by the bench" > "$d/reservations/700-bench-w9.state"; r=$(wmw "$d")
+printf '%s\n' "$r" | grep -q CAP && ok "a window the owner cancelled on purpose: silent" || bad "WINDOW-MISSED for a cancelled window: $r"
+d=$(wmq f '-5 minutes' nonb); r=$(wmw "$d"); printf '%s\n' "$r" | grep -q CAP && ok "a window without not_before declares no start: nothing to miss (silent)" || bad "WINDOW-MISSED without a declaration: $r"
+# PLANTS: each guard removed from a scratch copy; its case above must fire (go red)
+wmplant() { # wmplant NAME FROM TO OFFSET GRACE SETUP-CMD: the guard FROM->TO removed; the case it guards must now fire
+    local P d r; P=$(plant "$1" "$2" "$3") || { bad "plant $1 did not land"; return; }
+    d=$(wmq "p$1" "$4"); eval "$6"; r=$(wmw "$d" "$5" "$P")
+    printf '%s\n' "$r" | grep -q WINDOW-MISSED && ok "PLANT $1: the guard is gone, the event fires where it must be silent, the case goes red" || bad "PLANT $1 not caught: $r"
+}
+wmplant nograce '[ $((now - wne)) -ge "$missed" ] || continue' 'true' '-10 seconds' 600 ':'
+wmplant noowner '[ "$wbusy" = 0 ] || continue' ':' '-5 minutes' 60 ': > "$d/pending/710-bench-other"'
+wmplant nostarted '[ $wstarted = 0 ] || continue' ':' '-5 minutes' 60 'mkdir -p "$d/done/20261101T000000-700-bench-w9"; echo x > "$d/done/20261101T000000-700-bench-w9/started"'
+wmplant nocancel '[ "$w1" = DONE ] && [ "$w2" = cancelled ] && continue' ':' '-5 minutes' 60 'echo "DONE cancelled $(date -Iseconds) x" > "$d/reservations/700-bench-w9.state"'
+
 echo "queuewatch.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

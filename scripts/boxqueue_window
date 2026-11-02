@@ -20,14 +20,14 @@ set -u
 Q=${BQ_QUEUE:-}; K=${BQ_KEY:-}
 PARAMS=$Q/.bench/$K.params
 POLL=${BOXQUEUE_WINDOW_POLL:-2}
-W_prio="" W_name="" W_cap="" W_patience="" W_idle_ok="" W_log="" W_start_s="" W_done_ere="" W_expect="" W_witness="" W_fail_ere="" W_cancel=""
+W_prio="" W_name="" W_cap="" W_patience="" W_idle_ok="" W_not_before="" W_log="" W_start_s="" W_done_ere="" W_expect="" W_witness="" W_fail_ere="" W_cancel=""
 load() {
     local l k v
     [ -n "$Q" ] && [ -n "$K" ] && [ -f "$PARAMS" ] || { echo "no params $PARAMS" >&2; return 1; }
     while IFS= read -r l || [ -n "$l" ]; do
         k=${l%%=*}; v=${l#*=}
         case $k in
-            prio) W_prio=$v ;; name) W_name=$v ;; cap) W_cap=$v ;; patience) W_patience=$v ;; idle_ok) W_idle_ok=$v ;;
+            prio) W_prio=$v ;; name) W_name=$v ;; cap) W_cap=$v ;; patience) W_patience=$v ;; idle_ok) W_idle_ok=$v ;; not_before) W_not_before=$v ;;
             log) W_log=$v ;; start_s) W_start_s=$v ;; done_ere) W_done_ere=$v ;; expect) W_expect=$v ;;
             witness) W_witness=$v ;; fail_ere) W_fail_ere=$v ;; cancel) W_cancel=$v ;;
         esac
@@ -39,6 +39,7 @@ case "${1:-}" in
         load || exit 1
         echo "boxqueue: cap $W_cap"; echo "boxqueue: patience $W_patience"
         if [ -n "$W_idle_ok" ]; then echo "boxqueue: idle-ok $W_idle_ok"; fi
+        if [ -n "$W_not_before" ]; then echo "boxqueue: not-before $W_not_before"; fi    # the window's declared earliest start: boxqueue holds the job until then
         printf 'boxqueue: expect window=%s last=%s\n' "$W_expect" "$W_done_ere"
         printf 'boxqueue: witness window=%s\n' "$W_witness"
         echo "would hold the box lock for bench window $W_name until $W_log reports it (start within ${W_start_s}s)"

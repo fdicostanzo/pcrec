@@ -23,8 +23,10 @@
 # answer on the discriminator and different answers elsewhere, which is why
 # they are two rows (S146 is the cut) and why THIS one's distinguishing mark
 # is that a SECOND call after the first returns reads a clobbered stack.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the region return is VK_RETURN's renderer (vm_r_return), text unchanged. Same detector, same arm.
 SAB_ID="S145-call-return-pops"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The emitted return POPS the call frame (\`--run->resume_depth\`) before jumping, so the callee's choice points die with it -- the call becomes ATOMIC, which is 10.30's behaviour and not 10.46's"

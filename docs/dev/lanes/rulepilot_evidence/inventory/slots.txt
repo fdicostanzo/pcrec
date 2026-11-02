@@ -1,0 +1,18 @@
+compiling sites 172; with >= 2 forceable default-route arms 139; single-path 33
+sites with a FORCEABLE choice in the slot (distinct row values per such site: median, max):
+  NEXT                               95   values median 4 max 6
+  FIRST                              83   values median 2 max 2
+  PRESENCE                           46   values median 2 max 2
+  LOCATE                             27   values median 2 max 2
+  RECOVER(dep)                       27   values median 2 max 2
+  (bytes only: kit within-site)      20   values median 0 max 0
+  RETRY                               1   values median 2 max 2
+row values over all forceable arms (stamp: value count):
+  FINISH(dep) RX_DFA_MATCH: unwrapped 381, - 193, search-filter 16
+  FIRST RX_REQ_HANDOFF: none 400, 0 150, 1 8, 3 6, 2 5, 18 4, 15 4, 4 3, 8 2, 10 2, 7 2, 11 2, 13 1, 6 1
+  LOCATE RX_DFA_SCAN: unanchored 478, attempt 52, cover 50, - 10
+  NEXT RX_DFA_PREFILTER: memchr 208, handoff 96, none 50, offset-set 46, offset-set-bounded 42, first-memchr-bounded 26, byte-class-bounded 25, memchr-bounded 24, first-class-bounded 24, run-pinned 19, byte-class 12, - 10, run-pinned-bounded 8
+  NEXT RX_VM_START_SCAN: none 585, first-class 5
+  PRESENCE RX_REQ_WHY: emitted 466, dominated 108, none 16
+  RECOVER(dep) RX_DFA_START: reverse-pass 418, attempt-start 102, end-minus-width 60, - 10
+  RETRY RX_VM_RESEED: - 407, exact 169, clamped 12, adaptive-dense 1, fixed 1

@@ -237,6 +237,18 @@ not a value. They stay `pcrec_sb_printf`, and four sabotage rows sit on them.
 result; neither is storage any more. Do not re-derive an uppercase at a call
 site and do not add a third field.
 
+**2.7 The VM body is written only by records (D182).** To add VM emission, BUILD A
+RECORD, never write the body: call a `pcrec_vm_b_*` builder (`src/gen/vm_stmt.h`) from
+`emit_vm.c`; its renderer in `src/gen/vm_stmt.c` prints the bytes. A new kind is one
+`VK_*` enum value plus one row in `vm_kind_rows[]` (`vm_stmt.c`) naming its renderer;
+a kind with no row cannot be built. Free text is a value fragment (`pcrec_vm_frag_*`)
+and carries no control. Tiling is strict: any print into the body outside a renderer
+(`sb_printf` on the body, a helper handed the buffer, a comment-tier print) is an
+`internal error: the VM body changed outside its ...` at the next record, and the
+`tests/codegen` ST section counts raw body writes outside `vm_stmt.c`. The class-table
+respell is the one declared post-render rewrite. Anything you would analyse must be
+printed by its renderer or carried as a record field (D182, rulings for (c)).
+
 ## 3. Emitted text — the rules with teeth
 
 **3.1 Any change to an emitted byte IS an `abi` event.** Comments, declarations,

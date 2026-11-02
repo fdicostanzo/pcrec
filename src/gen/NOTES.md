@@ -121,3 +121,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 ## More pointers (moved from CLAUDE.md by lane p1build, 2026-10-29, for its size limit)
 
 `docs/design/assertions_design.md`, `subroutines_design.md`, `engine_m4.md`, `cls_tree_design.md`.
+
+## Deleted files
+
+- `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).

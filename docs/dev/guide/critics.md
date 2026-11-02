@@ -132,3 +132,15 @@ Round 2026-10-29 r3, vmtrail (design) (`docs/dev/reviews/2026-10-29-r3-vmtrail.m
 2. **Multi-document subjects: review the SEAMS.** Each document was sound against the stock program; the holes were in the composition (F4, F5, F21). Every critic tags each finding doc or seam.
 3. **"Read from the event stream" is a premise to grep, not a given.** Three designs rested on a stream with no slot reads, no SET sources, missing conditional edges and a cut logged as a note. A premise lens checks every claimed input of an analysis against the producer's struct and its call sites.
 4. **A cited control can stop reaching its site between design and build** (F14: R25 E5's witness now routes to revdet or the DFA). Every witness a design names gets a reach probe at the base commit.
+
+Rounds 2026-10-31 r1-r5, pricing-split and the pricing bake-off (`docs/dev/reviews/2026-10-31-r1-pricing-split.md` .. `r5-bakeoff3.md`).
+1. **Coordinator notes live where critics cannot read them.** Keep them in a `.coord/` subdirectory of the round dir that COMMON denies; a critic read the coordinator's planted-check note when process.md sat in the shared dir (r1).
+2. **Drill any verdict table on CONSTRUCTED outcomes, the design's own prediction first.** The predicted tie read INCONCLUSIVE/UNRESOLVABLE (r3, SIM-5/6/7).
+3. **Implement the rule from the design TEXT before reading the design's own drill script, then diff.** Nine text/script divergences, three scenarios on target only through them (r4).
+4. **Check where every evidence script writes before briefing.** A design's own `--plants` mode wrote into a denied lane dir and lanewatch's default log sits in the main tree; redirect via `PCREC_TMPDIR` and `LANEWATCH_LOG` (r5).
+
+Round 2026-11-01 r1, stream1 design (`docs/dev/reviews/2026-11-01-r1-stream1.md`), five lenses; lessons ruled 2026-11-01.
+1. **A synthesis of earlier drafts is re-graded when the owner's criteria change between rounds.** The round checks the subject against the criteria in force at the FREEZE, not at writing; a subject that predates them is a DOC finding first.
+2. **A merge of independently written rule tables drops conjuncts.** A synthesis that merges rule tables keeps each source row's FULL conjunct list beside the merged row, and the soundness lens diffs them.
+3. **"Today's design cannot X" claims need a witness compile,** like answer claims; five premise findings were the subject claiming a benefit today's tree already has.
+4. **For an F4/no-blindness question, inventory today's BACKWARD channels first** (start from `CandRow`/`CandNode`, not the subject's table).

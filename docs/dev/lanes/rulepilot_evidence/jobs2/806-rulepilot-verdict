@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# 806-rulepilot-verdict: the pilot's reading, after the last timing chunk. NO TIMING (read_slot.py + search.py are
+# pure python over the raw rows), so no quiet gate and no window. Refuses unless EVERY timed group of the slot is complete
+# in the raw files. Output: OUT/search.out (VERDICT line), OUT/dataset.json, OUT/search.json.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/rulepilot
+E=$W/docs/dev/lanes/rulepilot_evidence
+OUT=/var/tmp/pcrec-pcrec/scratch/rulepilot/slot
+BQ=${BOXQUEUE:-/home/pcrec/projects/pcrec/scripts/boxqueue}
+case "${1:-}" in
+    --dry-run)
+        for f in read_slot.py search.py; do [ -f "$E/$f" ] || { echo "missing $E/$f" >&2; exit 1; }; done
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/read_slot.py" "$E/search.py" || exit 1
+        echo "would run: python3 -I read_slot.py $OUT dataset.json; python3 -I search.py dataset.json (NOT timing: pure python)"
+        echo "boxqueue: cap 1800"; echo "boxqueue: patience none"
+        echo "boxqueue: est 300"
+        echo "boxqueue: expect verdict=1 lines=^VERDICT: "
+        echo "boxqueue: expect complete=1 last=^rulepilot-verdict: groups complete "
+        echo "boxqueue: witness complete=rulepilot-verdict: groups complete 1 763"
+        exit 0 ;;
+    --ready) exec bash "$BQ" after rulepilot-time2.c16 ;;
+esac
+cd "$OUT" || exit 1
+want=$(python3 -I "$W/docs/dev/lanes/grid1/arms.py" "$OUT" groups timed EXT | wc -l)
+have=$(cat "$OUT"/time/raw_RP*.tsv | awk -F'\t' '$1=="EXT"{k[$2"\t"$3"\t"$4]=1} END{n=0; for(x in k)n++; print n}')
+if [ "$have" != "$want" ]; then echo "rulepilot-verdict: only $have of $want groups have rows"; exit 1; fi
+echo "rulepilot-verdict: groups complete 1 $have"
+python3 -I "$E/read_slot.py" "$OUT" "$OUT/dataset.json" && python3 -I "$E/search.py" "$OUT/dataset.json" --json "$OUT/search.json" | tee "$OUT/search.out" \
+    || echo "rulepilot-verdict: the reading failed (the timing is complete; re-run read_slot.py + search.py by hand)"

@@ -264,12 +264,13 @@ static int rc_proven(const int *proven, unsigned np, int i)
  * don't-care of its window, so a window left with none is not loaded. The
  * width stays the full run's: the one helper run_cmp_prepare declared. */
 static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
-                          const rc_run *r, const int *proven, unsigned np)
+                          const rc_run *r, const int *proven, unsigned np, int lo, int hi)
 {
     const char *p = art->prefix;
     int w = rc_width(r->len), nw = 0, done = 0;
     for (int o = 0; o < r->len; o += w) {
         int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */
+        if (at >= lo && at + w <= hi) continue;      /* inside the lead (R-30) */
         uint8_t k[8], t[8];
         for (int i = 0; i < w; i++) {
             int skip = proven && (at + i < done || rc_proven(proven, np, at + i));
@@ -300,14 +301,15 @@ static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
 
 /* The bytes form: `(base)[off + i] == T` or `((base)[off + i] & K) == T` per
  * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded,
- * and so is a position the caller proved (`proven`, as rc_emit_words). */
+ * and so is a position the caller proved (`proven`, as rc_emit_words) or one
+ * inside the lead [lo, hi) (R-30). */
 static void rc_emit_bytes(mf_sink *c, const char *base, int off,
-                          const rc_run *r, const int *proven, unsigned np)
+                          const rc_run *r, const int *proven, unsigned np, int lo, int hi)
 {
     int nb = 0;
     for (int i = 0; i < r->len; i++) {
         int k = r->k ? r->k[i] : 0xFF;
-        if (k == 0x00 || rc_proven(proven, np, i)) continue;
+        if (k == 0x00 || rc_proven(proven, np, i) || (i >= lo && i < hi)) continue;
         if (nb++) c->puts(c->u, " && ");
         if (k == 0xFF) kit_out(c, "(%s)[%d] == %d", base, off + i, r->t[i]);
         else kit_out(c, "((%s)[%d] & %d) == %d", base, off + i, k, r->t[i]);
@@ -345,9 +347,11 @@ int run_cmp_sat(const mf_term *t)
 }
 
 /* The compare of run `t` at `base + off` by the row the walk picks, skipping
- * the run positions `proven[0..np)` (NULL: the whole run). */
+ * the run positions `proven[0..np)` (NULL: the whole run) and the lead
+ * [lo, hi) a led compare tested first (hi == lo: none; the memcmp form keeps
+ * its one string whole). */
 static int rc_render(mf_art *art, const mf_term *t, const char *base, int32_t off,
-                     const int *proven, unsigned np, mf_sink *c)
+                     const int *proven, unsigned np, int lo, int hi, mf_sink *c)
 {
     rc_run r = rc_of(t);
     const rc_row *row = rc_row_of(art, t, &r);
@@ -360,13 +364,13 @@ static int rc_render(mf_art *art, const mf_term *t, const char *base, int32_t of
     int form = proven && row->form == RC_F_MEMCMP ? RC_F_BYTES : row->form;
     switch (form) {
     case RC_F_WORDS:
-        rc_emit_words(art, c, base, off, &r, proven, np);
+        rc_emit_words(art, c, base, off, &r, proven, np, lo, hi);
         /* the helpers' memcpy: a constant 2-8 byte load, the record's one
            exclusion (§R4.3.3), so nothing is noted */
         art->includes |= MF_INC_STRING_H;
         break;
     case RC_F_BYTES:
-        rc_emit_bytes(c, base, off, &r, proven, np);
+        rc_emit_bytes(c, base, off, &r, proven, np, lo, hi);
         break;
     case RC_F_MEMCMP:
         c->puts(c->u, "!memcmp(");
@@ -384,13 +388,55 @@ static int rc_render(mf_art *art, const mf_term *t, const char *base, int32_t of
 int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
                    int32_t off, mf_sink *c)
 {
-    return rc_render(art, t, base, off, NULL, 0, c);
+    return rc_render(art, t, base, off, NULL, 0, 0, 0, c);
 }
 
 int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
                         int32_t off, const int *proven, unsigned np, mf_sink *c)
 {
-    return rc_render(art, t, base, off, proven, np, c);
+    return rc_render(art, t, base, off, proven, np, 0, 0, c);
+}
+
+/* Run `t`'s positions [at, at + len) as a run of their own (the lead), NULL
+ * after recording why where they are not inside it. */
+static int rc_lead_term(mf_art *art, const mf_term *t, unsigned at, unsigned len,
+                        mf_term *w)
+{
+    if (t->kind != MF_T_RUN || !len || at + len > t->run_len)
+        return kit_fail(art, "runcmp: a lead of %u byte(s) at %u is not inside the run",
+                        len, at);
+    *w = *t;
+    w->run = t->run + at;
+    w->mask = t->mask ? t->mask + at : NULL;
+    w->run_len = len;
+    return 0;
+}
+
+/* THE LED COMPARE (kit.h): the lead first, compared as its own run is, so a
+ * candidate it rejects costs that one compare; then what the lead did not
+ * cover, by the whole run's own row. */
+int run_cmp_render_lead(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                        unsigned at, unsigned len, mf_sink *c)
+{
+    mf_term w;
+    if (rc_lead_term(art, t, at, len, &w) ||
+        rc_render(art, &w, base, off + (int32_t)at, NULL, 0, 0, 0, c))
+        return -1;
+    c->puts(c->u, " && ");
+    return rc_render(art, t, base, off, NULL, 0, (int)at, (int)(at + len), c);
+}
+
+int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned len,
+                         mf_sink *c)
+{
+    mf_term w;
+    if (rc_lead_term(art, t, at, len, &w)) return -1;
+    rc_run r = rc_of(&w);
+    const rc_row *row = rc_row_of(art, &w, &r);
+    if (!row) return -1;    /* rc_row_of recorded the refusal */
+    if (row->form != RC_F_WORDS) return 0;
+    art->wused |= (unsigned)rc_width(r.len);
+    return mf_flush_helpers(art, c);
 }
 
 int run_cmp_pad_over(mf_art *art, const mf_term *t)

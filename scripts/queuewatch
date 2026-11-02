@@ -9,7 +9,7 @@
 # file; the model only acts on the lines this script prints.
 #
 #   scripts/queuewatch [--queue DIR] [--state FILE] [--every S] [--max-sec S] [--quiet-sec S]
-#                      [--stuck-sec S] [--wait-long-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
+#                      [--stuck-sec S] [--wait-long-sec S] [--missed-window-sec S] [--disk-pct P] [--confirm S] [--ci-every S] [--no-ci]
 #   --queue DIR     the queue (default: `boxqueue path`, honouring PCREC_BOXQUEUE_DIR)
 #   --state FILE    the reported-events file (default DIR/.queuewatch/state); one watcher per state
 #                   (flock: a second is refused, exit 75)
@@ -20,6 +20,8 @@
 #   --stuck-sec 1800  a pending job, nothing running, this long: PENDING-STUCK; counted from when the job became READY
 #                   (the runner's first non-not-ready answer in queue.log), not from when it was queued
 #   --wait-long-sec 1800  a box-lock WAITER (scripts/boxlock waiters; yielding or waiting) this long: WAIT-LONG
+#   --missed-window-sec 900   WINDOW-MISSED grace: a declared bench window (`not_before=` in its .window) whose start passed this long ago
+#                   (an UNMEASURED default, [QORDER] 2026-11-01) with the window never started and no job of its owner pending or running
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
 #   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
 #   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
@@ -46,6 +48,12 @@
 #                                      pid+starttime): a 3 h wait is one alert, not six. Owner = the waiter's lane/session (the
 #                                      label is `<lane>-<what>`). The lock is found from the queue (<lock dir>/.box.lock beside
 #                                      .boxqueue) unless PCREC_BOXLOCK_FILE is set, so a scratch queue never sees the real waiters.
+#   WINDOW-MISSED NAME owner=O start=T passed Ns ago ...   a window DECLARED with `not_before=T` (QUEUE/.bench/KEY.params, written by the
+#                                      importer; the declaration is what makes a plan visible: W1 of 2026-10-31 was never queued, and the box sat
+#                                      idle about 9 h) whose start passed --missed-window-sec ago, whose job never STARTED (no running/ done/ failed/
+#                                      run dir with `started`), was not deliberately cancelled (reservation DONE cancelled), and whose OWNER has no
+#                                      job pending or running. ONCE per window (episode = the window + its start; never forgotten). A PROBLEM line
+#                                      for the standing monitor (SKILL.md row 10). A window that was never declared at all cannot be seen.
 #   DISK-HIGH <fs> at P% (>= T%)
 #   CI-RED <sha> <run id> <subject>        a completed main run that failed (failure/timed_out/startup_failure)
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
@@ -73,11 +81,11 @@
 # surface despite --ci-every) and the last ask time in state.ci.last.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 waitlong=1800 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
+cpupct=${QUEUEWATCH_CPU_PCT:-5} every=15 maxs=3000 quiet=1800 stuck=1800 waitlong=1800 missed=900 diskp=95 confirm=5 Q="" state="" ci_every=${CI_EVERY:-300} noci=${QUEUEWATCH_NO_CI:-0}
 while [ $# -gt 0 ]; do
     case "$1" in
         --queue) Q=$2; shift 2 ;; --state) state=$2; shift 2 ;; --every) every=$2; shift 2 ;;
-        --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;; --wait-long-sec) waitlong=$2; shift 2 ;;
+        --max-sec) maxs=$2; shift 2 ;; --quiet-sec) quiet=$2; shift 2 ;; --stuck-sec) stuck=$2; shift 2 ;; --wait-long-sec) waitlong=$2; shift 2 ;; --missed-window-sec) missed=$2; shift 2 ;;
         --disk-pct) diskp=$2; shift 2 ;; --confirm) confirm=$2; shift 2 ;;
         --ci-every) ci_every=$2; shift 2 ;; --no-ci) noci=1; shift ;;
         -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
@@ -292,6 +300,22 @@ conditions() {
             printf 'C|waitlong|%s|%s\t0\tWAIT-LONG %s pid=%s waited=%sm holder=%s\n' "$wl_pid" "$wl_start" "$wl_label" "$wl_pid" "$(( (now - wl_epoch) / 60 ))" "$wl_holder"
         done < <(PCREC_BOXLOCK_FILE=$wl_f bash "$here/boxlock" waiters 2>/dev/null)
     fi
+    # WINDOW-MISSED ([QORDER]): a declared window start that passed with nothing of the owner queued or running
+    local wp wk wnb wne wown wjn wst w1 w2 wd wstarted wbusy
+    for wp in "$Q"/.bench/*.params; do
+        [ -f "$wp" ] || continue
+        wk=${wp##*/}; wk=${wk%.params}; wnb=$(sed -n 's/^not_before=//p' "$wp" | head -1); [ -n "$wnb" ] || continue
+        wne=$(date -d "$wnb" +%s 2>/dev/null) || continue
+        [ $((now - wne)) -ge "$missed" ] || continue
+        wown=${wk%%-*}; wjn=$(sed -n 's/^prio=//p' "$wp" | head -1)-$wk; wst=$Q/reservations/$wjn.state
+        read -r w1 w2 _ < "$wst" 2>/dev/null; [ "$w1" = DONE ] && [ "$w2" = cancelled ] && continue    # the owner withdrew it on purpose
+        wstarted=0; for wd in "$Q/running/$wjn" "$Q"/done/*-"$wjn" "$Q"/failed/*-"$wjn"; do [ -e "$wd/started" ] && wstarted=1; done
+        [ $wstarted = 0 ] || continue
+        wbusy=$(ls -p "$Q/pending" "$Q/running" 2>/dev/null | awk -F- -v o="$wown" '$2 == o { c++ } END { print c + 0 }')
+        [ "$wbusy" = 0 ] || continue
+        printf 'C|window-missed|%s|%s\t0\tWINDOW-MISSED %s owner=%s start=%s passed %ss ago (grace %ss): the window never started and %s has no job pending or running\n' \
+            "$wk" "$wne" "$wjn" "$wown" "$wnb" "$((now - wne))" "$missed" "$wown"
+    done
     # DISK-HIGH
     read -r fs pct < <(df -P "$Q" | awk 'NR == 2 { gsub("%", "", $5); print $1, $5 }')
     if [ "${pct:-0}" -ge "$diskp" ]; then printf 'C|disk\t0\tDISK-HIGH %s at %s%% (>= %s%%)\n' "$fs" "$pct" "$diskp"

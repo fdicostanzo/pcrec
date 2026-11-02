@@ -1,0 +1,5 @@
+report=docs/dev/lanes/vmrec_report.md
+sections: Summary; Rev 3.1 patch; What was built; Byte identity (E1-E7); Structural checks and sabotages; Cost; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: vmrec-ident vmrec-test vmrec-mech vmrec-mechre

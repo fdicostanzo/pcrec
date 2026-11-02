@@ -37,6 +37,8 @@
 #       locking is off (PCREC_BOXLOCK=0, no flock, no lock path); else 1. An
 #       entry point re-execs itself under `run` when this says 1.
 #   scripts/boxlock path     the lock file's path
+#   scripts/boxlock holders  every live pid with the lock file open (a process that inherited the lock fd; boxqueue sweeps
+#                            these when a capped job leaves stragglers holding the box)
 #
 # THE LOCK is flock(1) on <main tree>/worktrees/.box.lock (found from this
 # script's own location via git's common dir, so any worktree and any cwd
@@ -264,5 +266,6 @@ case "${1:-}" in
     status) status ;;
     waiters) waiters ;;
     path) lock_path || exit 1 ;;
-    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock waiters | boxlock held | boxlock path" >&2; exit 64 ;;
+    holders) f=$(lock_path) || exit 1; holders "$f" ;;    # every live pid with the lock file open (boxqueue's cap kill sweeps stragglers by it)
+    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock waiters | boxlock held | boxlock path | boxlock holders" >&2; exit 64 ;;
 esac

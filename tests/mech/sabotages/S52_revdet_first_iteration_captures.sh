@@ -22,6 +22,8 @@
 # What this sabotage does NOT touch, deliberately: the ZERO-ITERATION clause,
 # which falls out of the walk taking no step at all and is a separate concern
 # with its own separate way of going wrong.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the two first-seen guards are now GUARD records' condition fragments; the same guard defeated at both. Same detector, same arm.
 SAB_ID="S52-revdet-first-iteration-captures"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="rungdiff harness"
@@ -29,5 +31,5 @@ SAB_HARNESS_TARGET="tests/rungselect/rungselect.rxt"
 SAB_DESC="the backward capture walk's first-seen-wins guard defeated: a group reports the EARLIEST iteration that entered it instead of the latest"
 SAB_DOC_FIGURE="tests/rungselect/rungselect.rxt: the ((a)|b){0,4}c family"
 SAB_COUNT=2
-SAB_BEFORE='"    if (!%s[%d])'
-SAB_AFTER='"    if (1 || !%s[%d])'
+SAB_BEFORE='vm_condf(v, "!%s[%d]", R->gs, j)'
+SAB_AFTER='vm_condf(v, "1 || !%s[%d]", R->gs, j)'

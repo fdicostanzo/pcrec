@@ -78,3 +78,11 @@ holds, the renderer is the ONLY place that knows the target is GNU C.
 - Plausible future triggers: a user need for a non-GNU-C target (MSVC is the
   likeliest), a need for runtime compile, or a pattern class whose C compile
   time is the bottleneck.
+
+## Strategy pricing and its trace (2026-10-31)
+
+Raised by the kit from Frank's pricing direction: price the search STRATEGY as well as the tactic. One declared row per strategy ("no search" included); the cheapest row wins, ties go to the simpler; the full ranking goes in the trace.
+
+- AGREED (Frank, 2026-10-31): the strategy trace is BACKEND-ONLY, with one writer, the backend. Every input it shows arrives as a stated fact, declined rows included, each with its reason, so the trace still answers "why not X?". The kit returns its tactic ranking as data (options, prices, pick), never text, and the backend renders it as a nested section. The front end traces only its own decisions (rewrites, module verdicts). The trace lives with whoever makes the choice.
+- RULED (Frank, 2026-10-31): the yardstick is an IDEAL contract, not the current one. It is a strict one-way handoff: pcrec states facts, and the architecture side (the arch model builder, with the kit as its provider) prices and decides. For now the kit is part of the architecture side; other language targets, which would pull the two apart, are out of scope. A design that deviates from the ideal must prove it more.
+- WHERE pricing lives is NOT decided. Three paper looks each reversed (study lane/splitstudy rev 0 -> rev 1; reviews 2026-10-31 r1/r2). Frank ruled that a measured BAKE-OFF decides: docs/design/pricing_bakeoff.md (lane/bakeoff, in design, with its own critic rounds r3-r5). Benefit is speed x reach, and subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate).

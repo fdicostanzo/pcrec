@@ -174,11 +174,17 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * routes `cover` itself. It sets only the KITPROOF trace record's `routed`
  * field, and its callers (tests/kitproof/, site_census.py) still pass it;
  * its retirement is filed under [KIT-VERIFY] (docs/dev/plan.md). */
+/* [MEMFN] R-30: the fifth, `--harness=pres-window`, the INVERSE lever of a
+ * kit change with no public deny (it cannot make a caller slower): the kit
+ * keeps a pre-check's run WINDOW part beside the WHOLE run that implies it
+ * (mf_lever(art, "pres-window")), the form before R-30, so the
+ * answer-identity sweep can still produce it. Off on every shipped compile. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
+    unsigned pres_window : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user

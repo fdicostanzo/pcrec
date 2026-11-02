@@ -10,13 +10,15 @@
 # FIRST iteration's value) where both oracles give [1,1); `(|a)+` additionally
 # loses the WHOLE MATCH, giving [0,1) against both oracles' [0,0), because
 # rolling the empty iteration back lets the loop go round again.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the bend's jump is now a BRANCH record with vm_jump_tgt's target; the same exit-to-fail swap after it. Same detector, same arm.
 SAB_ID="S38-vm-empty-exit-fails"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vm"
 SAB_DESC="an empty iteration FAILS the path instead of taking the loop's exit continuation (its capture writes are rolled back)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails across the whole nullable-body family"
 SAB_COUNT=1
-SAB_BEFORE="                  gslot, vm_jump(v, top));
-        vm_goto(v, exit);"
-SAB_AFTER="                  gslot, vm_jump(v, top));
-        vm_fail(v);  /* SABOTAGE S38 */"
+SAB_BEFORE='                    vm_jump_tgt(v, top));
+        vm_goto(v, exit);'
+SAB_AFTER='                    vm_jump_tgt(v, top));
+        vm_fail(v);  /* SABOTAGE S38 */'
