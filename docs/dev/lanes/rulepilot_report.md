@@ -188,3 +188,24 @@ Two caveats apply to every outcome:
   - A failed chunk: `scripts/boxqueue retry <key>`; the retry resumes (a half-run chunk re-times only its incomplete groups). Later chunks wait on it.
   - Do not `wtprune` the rulepilot worktree before the verdict is read: the jobs run its scripts.
 - Scratch: `/var/tmp/pcrec-pcrec/scratch/rpresume/` (patch script, fake-clock bin; deletable).
+
+## Verdict and close (rpwrite, 2026-11-02)
+
+The timing chain `rulepilot-time2.c01..c16` finished and `806-rulepilot-verdict` read it. Write-up:
+`docs/design/pricing_rulepilot.md` "Result (2026-11-02)".
+
+- **VERDICT: PASS at 0 rule(s).** Baseline default held-out 0.9812, tail 0, worst 1.183; k=0 0.9816, k=1 0.9838 (both PASS);
+  k=2 0.9722 and k=3 0.9758 over-fit and fail on one tail site each. 138 sites, train 71 / held-out 67, nu 0.42%, median floor 0.69%.
+- **OWED items discharged:** `rulepilot-time` (all 16 chunks COMPLETE, 763 groups); the reading (`search.out`); the c03 expect
+  miscount recorded (data complete, rulings 2026-11-02 15:10); the LOADMAX 2.5 method note with counts (659 of 663 group-done
+  lines at load1 >= 1.5, 4 requeued); the worst-site list (top 5 across all 138 sites, held-out worst C25 1.183).
+- **Not done here, by brief:** the per-length x128 crossover brackets, the excluded-arm list and the density table named in the
+  earlier STATE AT HANDOFF were not part of this write-up lane; `search.out`/`dataset.json` hold the data. No builds or timing ran.
+
+### STATE AT HANDOFF (rpwrite)
+
+- Rulings read: last entry applied **2026-11-02 15:10** (c03 miscount; LOADMAX 2.5 note).
+- Nothing owed to the box. The worktree may be pruned once the manager has merged; the slot scratch
+  (`/var/tmp/pcrec-pcrec/scratch/rulepilot/slot`, about 6 GB) is deletable after the one bounded look at the worst sites, if wanted.
+- Plan row [PRICE-BAKEOFF]'s status line is replaced here (the branch's copy was older than main's): expect a trivial conflict at
+  merge; keep the verdict line and main's other lines.

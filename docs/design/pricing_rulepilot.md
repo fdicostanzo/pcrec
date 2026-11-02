@@ -218,3 +218,72 @@ are hard to price: engine-switch (crossing) costs, the DFA's multi-path tracking
 effects such as one site costing the frameless entry. These enter as policy rules (e.g. "prefer DFA"), a declared first-match
 table; pricing chooses within the space the rules allow. This pilot does not test engine-level rules: the engine choice is
 counted, not timed (header non-goals).
+
+## Result (2026-11-02)
+
+The verdict job `806-rulepilot-verdict` ran after the last timing chunk (log: `rulepilot-verdict: groups complete 1 763`).
+Numbers are quoted as printed.
+
+- **Population.** `read_slot: sites 138 (pre-timing exclusions 1), raw launches 18972, excluded arms 0, census arms not timed 0,
+  picks fallen back to default 0`. Split: train 71 / held-out 67 sites; literals 148, picks 30. Distinct lists by length:
+  0: 30, 1: 133,200, 2: 587,412,000, 3: 2,572,864,560,000.
+- **Noise.** nu (median |base#c - base| / base) = 0.42%; median site floor f = 0.69%.
+- **Baseline (the default arm everywhere).** Train 0.9742, tail 1; **held-out 0.9812, tail 0, worst 1.183**.
+- **Lists** (each chosen on training, read on held-out):
+
+      k=0: else -> no-run-prefilter
+           train 0.9759 tail 1 | held-out 0.9816 tail 0 worst 1.183 | over-fit -0.0056 | PASS
+      k=1: if req_set_size >= 5 (FITTED) -> no-offset-skip; else -> k:no-fd-pres-pick
+           train 0.9806 tail 1 | held-out 0.9838 tail 0 worst 1.183 | over-fit -0.0033 | PASS
+      k=2: (2 rules + else)
+           train 0.9853 tail 0 | held-out 0.9722 tail 1 worst 2.398 | over-fit +0.0131 | fail
+      k=3: (3 rules + else)
+           train 0.9915 tail 0 | held-out 0.9758 tail 1 worst 2.308 | over-fit +0.0157 | fail
+
+  The k=2 and k=3 lists are in `slot/search.out` (scratch tier); they over-fit (+0.0131, +0.0157) and fail the tail test.
+- **VERDICT: PASS at 0 rule(s).** The k=0 line is one non-default pick (`no-run-prefilter`) and it gains 0.0004 on
+  held-out over the default (0.9816 vs 0.9812): the default itself already passes both pre-registered conditions.
+
+### Reading (per the Reading rule above)
+
+The pilot is the BASELINE a pricing model must beat, not a mechanism choice. Within-engine headroom over today's default is
+about 2% in this regime (held-out 0.9812 means the default runs at 98.1% of the per-site ideal arm). A rule list buys at most
+0.0026 (k=1, 0.9838) on held-out and none of k=2/3 generalises. So pricing's case is EXTENSIBILITY (a new method, e.g. a new
+SIMD form, is one priced row with its card; a rule list must be searched again), not mean speed.
+
+### Regime limits (what this result does not say)
+
+Zen 4 (the Ryzen 7 7700X dev box) only; SIMD-off only ([PILOT-SIMD] is the SIMD-on layer); find-all mode; forceable arms only
+(an arm the flags cannot force is not in the census); the ENGINE choice (DFA vs VM) is counted, not timed, so engine-level rules
+(the expected-shape policy rules) are untested here.
+
+### Run facts
+
+- **c03's expect miscount.** One group (`rp-C14 rp_C14_m64-S`, load1 2.20 to 3.39 during bench renders) breached the load ceiling
+  and was requeued, so 46 done lines covered 45 groups and the expect read `groups=46`: the job was recorded FAILED with its timing
+  complete. The data is complete (45 distinct groups); the rulings file (2026-11-02 15:10) has the ruling, and c04 was gated on c03's
+  log (45/45).
+- **LOADMAX raised to 2.5** for c02-c16 (from 1.5; c01 kept 1.5), with the pre-start quiet loop at 2.5, because bench light
+  renders (cores 0-5, nice 19, at most 2) were allowed during the pilot. Counted from the groups' `load1-at-start` fields in
+  `time_RP2..RP16.log`: 663 group-done lines (659 distinct groups plus 4 requeued repeats); **659 of the 663 started at load1
+  >= 1.5** (452 at >= 2.0; maximum 2.48). By chunk header, 13 of the 15 chunks began their first group at >= 1.5. **Requeued: 4**
+  (c03: 1, c07: 2, c11: 1; c01 none). Method note: the per-group base controls (#b/#c) absorb drift and the noise figures
+  above are measured from them, but the groups with load in [1.5, 2.5) are identifiable from the log if a later reading needs
+  to exclude them.
+
+### The worst sites (input to ONE bounded look later; nothing proposed here)
+
+Ratio r = 1 / s of the default arm (`a0`) against the site's ideal arm, cross-fit as `search.py` computes it (loaded through
+`read_slot.py`'s dataset and `site_scores`; the held-out worst reproduces 1.183). The pattern is from the census.
+
+| site | split | default | ideal | ratio | pattern |
+|---|---|---|---|---|---|
+| P05 | train | a0 | a2 (`-fno-start-set`) | 1.581 | `\b(?:Mr\|Mrs\|Miss\|Dr)\.\s+[A-Z][a-z]+` |
+| B12 | train | a0 | a1 (`--memfn=no-fd-d1`) | 1.280 | `[0-7]{11}\x00` |
+| B05 | train | a0 | a2 (`--memfn=no-fd-d1`) | 1.240 | `ustar\x0000` |
+| C11 | train | a0 | a6 (`-fno-offset-skip --memfn=no-pres-set-lead`) | 1.214 | `\bfunction\s+(\w+)\s*\(` |
+| C25 | held-out | a0 | a1 (`-fno-offset-skip`) | 1.183 | `\bf"[^"]*\{[^}]+\}[^"]*"` |
+
+C25 is the held-out worst (1.183). The next two by distance are P23 (1.175, `\bwas\s+\w+ing\b`, ideal a1 `-fno-offset-skip`) and
+S03 (1.141, held-out, ideal a1 `--memfn=no-fd-pres-pick`). P05 and the C25/P23/C11 group are all offset-skip or start-set prefilter
+choices (the default's `RX_DFA_PREFILTER` is `first-class-bounded` / `offset-set-bounded`; the ideal is `handoff` or `first-memchr-bounded`).
