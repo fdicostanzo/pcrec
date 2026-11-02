@@ -11,6 +11,17 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K136 — OPEN (filed 2026-11-02, lane kdoc136, from bench outbox O-117 and O-119; no fix lane yet) — THE DEFAULT (VM) ARTIFACT FOR `\b(\w+)=[^&]*&(?:[^&]*&)*\1=` GIVES UP WITH `PCREC_ERR_FRAMES` WHERE THE LIBPCRE2 INTERPRETER ANSWERS
+
+The bench pattern dup-param-detect, compiled by default (VM route), gives up with `PCREC_ERR_FRAMES` (2,048 resume frames) on the bench's I-172 query-string subjects `t-qs-1m` and `t-qs-nearmiss-256k`, on every trial, at both pins and both configs (bench outbox O-117; the exact cells are there). A capability gap relative to the PCRE2 interpreter: an honest give-up, never a wrong answer.
+
+**Reference** (bench O-119): the libpcre2 10.46 INTERPRETER answers both at default limits: `t-qs-1m` 119 non-overlapping matches, `t-qs-nearmiss-256k` nomatch, both matching the oracle; about 11.4 s and 2.1 s (one indicative niced pass, not a timing). The libpcre2 JIT gives up on both with -46 (JIT stack limit, default 32 KiB).
+**Mechanism** (as understood, UNVERIFIED): one resume frame per `&` iteration of `(?:[^&]*&)*` within one attempt; up to 386 params per line, 52,936 in all. The P1 landmark walk ([LANDWALK-VM]) is a speed mechanism and would not lift the cap.
+**Related**: K135 (sibling: the default gives up where an option answers), [LANDWALK-VM], [GIVEUP-DIFF].
+**Scheduled**: open, no fix scheduled.
+
+---
+
 ## K135 — OPEN (filed 2026-10-31, lane land1031, from review 2026-10-31 r1 pricing-split finding PREMISE-1; no fix lane yet) — THE NULLABLE PREFILTER DECLINE TURNS AN ANSWER INTO A GIVE-UP: `((a*)*b)?` ON 20,000 `a` GIVES UP BY DEFAULT WHILE `-fprefilter` ANSWERS (D158)
 
 The default build declines the VM's DFA prefilter on a nullable pattern (stamp `RX_ENGINE_SEL "declined-nullable-default"`, `RX_VM_PREFILTER "none"`); the decline also drops the exact window the hybrid hands the VM (select_engine.c:842-850), which is what keeps the VM inside its step budget. The decline was classed a dominance (it can never dismiss a position), but it can cross the give-up contract. D158: if the build with an optimization DENIED answers, the default build must answer too; here the denied form (`-fprefilter`, the decline's own override, stamp `"selected"` / `"hybrid"`) answers and the default gives up. libpcre2 also gives up on this pattern (MATCHLIMIT), so it is not a compatibility regression, but it breaks D158. Blast radius: nullable VM-route patterns with backtracking-heavy bodies. Re-confirmed on main a3cc4de82's build by lane land1031.

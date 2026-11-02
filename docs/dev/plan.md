@@ -316,6 +316,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     refs: docs/dev/lanes/p1dsg2_report.md; docs/design/locate_finish.md; [GIVEUP-DIFF]
     Open at its design: (r1 D6) place the VM hat as NEXT/FIRST rows, not LOCATE, which may remove the L3 dependency; (r1 D5) the VM-route stamp ruling (RX_VM_START_SCAN is NEXT's; RX_DFA_SCAN on a VM artifact means the hybrid's DFA); (r1 SIM-6) `excl-lower`'s own per-call price; the A1 witnesses (unique_rule.py) as its answer net.
     Rev 2 adds (r5): the net gains `((?:xy)?ab)=\1` on "xyab=aba" (UNIQUE's reach is one or more steps, SOUND-1) and keeps the hybrid witness `(?![a-z]*b)[a-z]+@x` (an erased prefilter body still declines); UNIQUE is decided on ML before the scan-edge pass (SOUND-3); `lmwalk_forms[]` (per-hit, lower-once, bot) is this stage's table (SLOT-11).
+    K136 (the default VM gives up with PCREC_ERR_FRAMES on dup-param-detect over the bench query-string subjects) is not closed by this row: the landmark walk is a speed mechanism and would not lift the frame cap.
   - [LANDWALK-EDGEPRICE] STATE:not-started — p48's priced one-state relaxation on the walk's loops, as its own follow-up (r1 D11)
     filed: 2026-10-29 lane p1dsg2
     status (2026-10-29): split out of stage 1 by review r1: the plain edge comes free (pcrec_scanedge_dfa already runs on reverse machines) and adds 2.4% on 5b
