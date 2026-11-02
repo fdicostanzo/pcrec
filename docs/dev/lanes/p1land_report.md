@@ -145,3 +145,9 @@ f5de088bf, so main takes the branch and the FILEPIN names a commit main contains
 landing: renumber its tuning.md §2.54 to §2.55. Rulings file: last entry applied is
 "2026-11-02 19:05 (manager): brief issued. No entries yet." Nothing stopped: the merge moved no
 answer and the light suites named no mover; the identity (A)/(B) reading is 832's.
+
+**lanecheck ends rc=1 on one tooling mismatch, not a delivery gap:** the DELIVER file's
+`owed: 830-p1land-test` is the job NAME; lanecheck asks `boxqueue state 830-p1land-test`, and
+boxqueue keys jobs without the priority (`boxqueue state p1land-test` prints `running`;
+`830-p1land-test` prints `none`). The DELIVER file is the manager's and was not edited. Fix for
+later lanes: write `owed: p1land-test` (the key), or have lanecheck strip a leading `NNN-`.
