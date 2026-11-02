@@ -54,6 +54,13 @@ Five stages, each behind a narrow interface so components drop in without touchi
 
 ## 2. Two Engines, One IR
 
+> **Direction (D185, owner-approved 2026-11-01).** The two engines below describe pcrec TODAY and
+> stay accurate until the migration reaches each part. The agreed END STATE is one instruction stream
+> per artifact: typed records (choice, automaton, kit and barrier families) chosen per stretch of the
+> pattern, with "dfa" and "vm" as derived stamps rather than a partition. It is reached
+> incrementally, byte-identical where it can be, under a ratchet. See docs/design/stream/manifesto.md
+> (the agreed end state) and docs/design/stream/roadmap.md (the living migration plan).
+
 PCRE semantics are **leftmost-first with greedy/lazy quantifier preference** — not
 POSIX leftmost-longest. That drives the engine design:
 
@@ -370,6 +377,7 @@ delivery schedule.
 
 1. **Semantics = PCRE leftmost-first**, verified against PCRE2's own tests — not POSIX.
    This forces the two-engine design; a pure-DFA tool couldn't claim PCRE compatibility.
+   (D185: the two engines become the two extremes of one stream; the semantic point stands.)
 2. **DFA-prefilter + VM-verify hybrid** as the default for capture patterns — the only
    way to be both PCRE-correct and fast on long texts.
 3. **Byte-wise UTF-8 automata** (no hot-path decoding) — proven by RE2/Hyperscan,

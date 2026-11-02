@@ -27,7 +27,7 @@ are the owner's four criteria.
 | **F3 DIVISION OF LABOUR.** Each part can be owned and validated alone | the manager dividing work across lanes; the kit's owner, who is the precedent | a part's only check runs end to end through another part's code |
 | **F4 NO BLINDNESS.** A handoff carries facts both ways | every part's owner; the user, who should never see a silent slowdown at a seam | a fact a neighbour needs to choose well exists on one side of a seam and has no declared channel to the other |
 
-**Priority for conflicts** (the manager's reading, for the owner to confirm): F1 over F2 over F3.
+**Priority for conflicts** (confirmed by the owner, 2026-11-01): F1 over F2 over F3.
 F4 is a constraint on how the other three are met: a seam that buys focus by hiding a fact fails
 F4, whatever it buys.
 
