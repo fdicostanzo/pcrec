@@ -244,8 +244,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [PRICE-BAKEOFF] STATE:started — a measured bake-off decides where search-strategy pricing lives (Frank 2026-10-31)
   filed: 2026-10-31 manager (Frank's ruling)
-  status (2026-10-31): design rev 3 in progress on lane/bakeoff (docs/design/pricing_bakeoff.md); three critic rounds done (r3-r5); no build go
-  next: finish design rev 3, then Frank's build go for the harness; the placement (front end, backend, kit) follows the measurement, not a paper look
+  status (2026-11-02): Frank: the rule-list pilot is the BASELINE pricing must beat (timed truth, 139 sites); pricing's case is extensibility (a new method = one priced row). Pricing build WAITS until the stream unification moves further (its harness will change).
+  next: pilot verdict (job 806) = the baseline; the bake-off/pricing build is proposed only once [STREAM] steps have reshaped the seams it prices across; no build go
   refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
   Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
@@ -1543,6 +1543,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the kit's next timing window on this box, or the measurement-set revision for the pair card (D176 Q3).
   refs: bench O-117 4.3; s3_report.md 11.2; D176; memory pcrec-suspect-tuning-constants
   Charter: sweep w (32..512) on union-select and the query-string pair on the two bench subjects' shapes, ONE bounded effort, then accept or retune; bar is memory pcrec-one-pass-loss-chasing. Do it after R-30's abi 94 (it changes the same pre-check; the loss may have moved).
+- [PILOT-SIMD] STATE:not-started — the pilot's SIMD-on layer: re-time only sites whose arm bytes change under -fmemfn-simd
+  filed: 2026-11-02 manager (Frank: the choice depends on whether SIMD is in the cards; the pilot is SIMD-off only)
+  status (2026-11-02): filed; nothing built. The scalar pilot runs now (jobs 805-806).
+  trigger: the scalar pilot verdict (job 806) is read, and the kit's vrun SIMD family has its official verdict run (R-31)
+  refs: docs/design/pricing_rulepilot.md §9 item 1; [PRICE-BAKEOFF]; [COVER-PRICE-WITNESS]; memfn R-31
+  Charter: rebuild every pilot arm with SIMD on; count sites where any arm's bytes move (identical bytes reuse the scalar timings); time only those. Report whether the scalar rule list still holds on the SIMD layer: the first measured test of absorbing a new method (rules re-search, pricing adds rows).
 ## Boonies
 - [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine (latent depth hazard)
   filed: 2026-11-01 manager (noted by lane p1build)
