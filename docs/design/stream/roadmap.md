@@ -38,6 +38,51 @@ adds a member without deleting one is rejected at review.
 
 ---
 
+## 0a. The pipeline shape: a waterfall with one-way seams (owner, 2026-11-02)
+
+The owner's picture, agreed 2026-11-02: the stream is a WATERFALL. Each stage hands the next
+everything it needs and nothing flows back at compile time: parse -> the pcrec designer (facts and
+the legal choices) -> architecture (prices and decides) -> emit (renders the plan) -> gcc. Today
+these are two stages (pcrec's planning, and emit).
+
+- **The kit has two faces, in two stages.** Its PLANNING face sits inside architecture: given a
+  site's facts and the target, it states its candidates and their prices. Its EMITTING face sits
+  inside emit: given the candidate architecture chose, it writes the C. The kit stays one project
+  and one owner (F3); pcrec sees its candidates only as opaque entries with prices (D157, facts not
+  methods). Any exchange between the planner and the kit's planning face is a library call within
+  one stage, not a seam.
+- **Knowledge about later stages travels as DATA.** Architecture needs the cost of the kit's methods
+  and of the automaton renderings: these arrive as price cards loaded at build time, never as a
+  question asked of a later stage. The target (SIMD layer, CPU) is an input given at the top, like
+  a compile flag.
+- **The only backward flow is learning, outside the compile.** Measurement produces new price
+  tables, which the next build loads; the channel exists (`measure_store/`, embedded by
+  `make gen-measures`).
+- **Emit makes no choice a price card covers.** Emit is a pure function of the plan; a choice with
+  a cost consequence belongs to architecture. This is checkable per seam (a plan in, the C out,
+  golden-file tests: the owner's "contract + tests per seam").
+- **Rules and pricing both live in architecture.** Non-local costs (engine-switch crossings, the
+  DFA's multi-path tracking lost to a split, whole-artifact effects) are policy rules such as
+  "prefer DFA", a declared first-match table; pricing chooses within the space they allow (the
+  [PRICE-BAKEOFF] row's expected shape; the rule-list pilot is the baseline pricing must beat).
+- **Motivating case.** `[\xc2-\xdf](?![\x80-\xbf])` (bench O-117): routed to `cover` at emit time,
+  by form, with no price against the old scan and no knowledge of the SIMD layer; x1.95 slower on the
+  scalar build, while a two-load vector window plausibly wins with SIMD on. Under this shape the
+  scalar build and the SIMD build each choose their own winner, with no special case.
+
+**Where today's code differs.** The kit both chooses and writes in one call from pcrec's emitter
+(D146: pcrec describes a site, the kit returns its C). Area A-PLAN below moves the choosing half
+up; it rides the first stream step that touches search sites.
+
+**Manifesto touchpoints, for the owner to confirm the wording** (the manifesto wins until then):
+(1) its parts list names "the kit" as one part; under this shape the kit's planning face is part of
+the planner and its emitting face part of the back end. (2) Principle 7 says a seam never carries "a
+cost the other side must trust". Price cards are measured data with provenance, read inside the
+stage that owns the decision, so this file reads them as facts, not trusted claims; the wording
+should say so.
+
+---
+
 ## 1. The areas
 
 One line each; the sections below carry the fields. "Part" names the manifesto part the area's
@@ -59,6 +104,7 @@ round; L = a proof-sized lane with several rounds.
 | A-FACTS | the superset record `Nfa.erased`, `\G` and `\K` tested per consumer | three P1 facts: language superset, start pin, report shift | [KIND-FACT-GK] | p1build merged | (consumer kind tests; a meter) | M |
 | A-REC | the VM's typed records (D182); the DFA emitter prints directly | one record vocabulary for the whole artifact, target-neutral | [VMREC] (b), designed toward the stream | none | the DFA direct writer, at X-0 | M per step |
 | A-READS | read declarations, counterfactual worlds and conjunct types, each in several private shapes | one read row, one world record, one conjunct type | [ROWCONJ] | p1build (writes the fourth member) | R11, R18, R19 | M |
+| A-PLAN | the kit chooses its method and writes its C in one call from the emitter | the kit's planning face inside architecture (candidates + price cards); its emitting face inside emit; emit a pure function of the plan | split the kit's site call into a plan call and an emit call, no bytes | the kit's agreement (its split); the first stream step that touches search sites | (none in §5 yet; a new inventory row at the split) | M |
 | H-LADDER | the size-cap ladder | one world record; a row field `droppable`; legality and retry budget derived | name the owner, declare the append shape | none | R13 | S, then M |
 | H-FLAGS | emitter-to-driver `Job` flags, driver-to-row `Ctx` flags, driver-built machines | P3 `size` card facts; the plan requests machines, one builder | name the owner, declare the shape | none | R14 | S, then M |
 | H-SITES | per-site kit registries and pins | keyed by (operation, row name) | name the owners (pcrec + kit), declare the shape | the kit's confirmation | R15 | S, then M |
@@ -328,6 +374,23 @@ round; L = a proof-sized lane with several rounds.
 - **Ride-along triggers.** [ROWCONJ]; [LIST-TABLES]; [DECISION-LOG]; [PRICE-BAKEOFF] (wherever
   pricing lands, it reads through the read row); [SEL-COST].
 - **Open findings.** r3-C2, r3-E1; fixed in text / PLAN: r2-C3, r2-C4, r2-C5, r2-C10.
+- **Size.** M.
+
+### A-PLAN: the kit's planning face moves to architecture (owner, 2026-11-02)
+
+- **Today.** One call per search site from pcrec's emitter: pcrec describes the site, the kit picks
+  its method and returns the C text (D146). The choice between a kit site and an automaton
+  rendering of the same stretch is made by form, before any price is compared.
+- **End state.** §0a: the kit's planning face states candidates with price cards inside
+  architecture, per target; architecture chooses across providers under its rules; the kit's
+  emitting face renders the chosen candidate; emit decides nothing a card covers.
+- **Next step.** Split the site call into a plan call (facts in, candidates and cards out) and an
+  emit call (chosen candidate in, C out), byte-identical, with the kit.
+- **Prerequisites.** The kit's agreement (it is their split; a memfn request filed by the manager);
+  the first stream step that touches search sites (ride-along).
+- **Deletes.** Nothing in §5 today; the split adds the plan/emit seam as a declared one.
+- **Ride-along triggers.** [COVER-PRICE-WITNESS]; [PILOT-SIMD]; [PRICE-BAKEOFF]; any R-n that
+  changes how a site is chosen.
 - **Size.** M.
 
 ---
