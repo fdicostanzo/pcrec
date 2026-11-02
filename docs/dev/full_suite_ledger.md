@@ -295,3 +295,4 @@ Landing 2026-10-31 3bc599c92: lane/vmrec (VM record-first refactor, step (a), D1
 Landing 2026-10-31 73f1ea820: lane/axtri (form-census floor re-pin for kit S3 cover, abi 92; class none: test-side floors only, no emitted change); 763-axtri-census checks failed: 0. Closes the 758 axes red (the stale floors); full-suite triggers per D177 unchanged.
 Landing 2026-11-01 (merge of lane/qorder): queue tooling only (scripts/boxqueue, queuewatch, boxlock, boxqueue_window); class none for the product (no src/ change); full-suite triggers per D177 unchanged.
 Landing 2026-11-01 (merge of lane/scensus): docs plus a lane evidence script (docs/dev/lanes/scensus_*, scensus_evidence/); class none, no src/ change; full-suite triggers per D177 unchanged.
+Landing 2026-11-01 (merge of lane/stream2): design docs only (docs/design/stream/, reviews r2/r3, plan [STREAM], D185 PROPOSED, critic skill rows); class none, no src/ change.
