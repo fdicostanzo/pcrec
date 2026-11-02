@@ -756,3 +756,17 @@ records the gap.
 **Not asked:** any method (D157); whether this window shape gets a SIMD form at all is the kit's.
 
 **Sabotage ids:** none requested.
+
+## R-32 (2026-11-02, pcrec manager) — re-aim sabotage row S526: its catch is a compile failure that the mech scorer now counts as ANOMALY
+
+**Customer:** the mech sabotage battery (D177 full suite); 780-kit-r30b2-mech-b, 2026-11-02.
+
+**Facts.** S526's designed catch is a static-assert compile failure. Since main's 7047b69e4 the mech scorer scores a
+compile failure as ANOMALY, not DETECTED, so S526 reads ANOMALY on every run (pre-existing, not R-30's).
+
+**What pcrec needs.** S526 reads DETECTED again under the current scorer: its sabotage caught by a check that observes
+behaviour, or by whatever detection the kit judges right for that row. One queued mech row proves it.
+
+**Not asked:** which check (D157).
+
+**Sabotage ids:** none new; S526 keeps its id.
