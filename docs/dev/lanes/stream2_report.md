@@ -190,7 +190,7 @@ agent resuming this work starts from `docs/design/stream/approach.md` §14 and t
   `grep -E 'plan\.md:[0-9]'` over the copied review files: 0. No `docs/spec` line cite in the
   design (`grep -E '(match_api|tuning|limits|cli|measures)\.md:[0-9]'`: 0).
 
-## STATE AT HANDOFF
+## State at the rev 3 handoff (superseded by the stream4 section below)
 
 STATE: delivered. Branch lane/stream2: 841cbc65f (merge main, docs only), 66de059f4 (review r2
 records, reviews index, critic skill row), d2cb8c163 / a41b25954 / ac7ae3e80 (rev 3 WIP),
@@ -199,3 +199,95 @@ b1ad33cf5 (rev 3 complete, CLAUDE.md indexes), plus this report's commit. Ruling
 owed: no run was launched. Next per the rulings: round 3, two critics (soundness + fix-induced) on
 rev 3. A fresh agent resuming starts from `docs/design/stream/approach.md` §14.1 and the
 judgement calls above.
+
+# Stream4 (lane stream4, opus, 2026-11-01): manifesto + roadmap, round-3 records
+
+Brief: the owner's direction of 2026-11-01 ("I agree" to the assessment; crossings deliberate and
+negotiated; "a viable long term project that can grow"; split the end-state document into a stable
+manifesto and a living roadmap organised by code area). Docs only; the owner's evening hold (git
+reads and greps only; no make, no suites, no queue). Scope held: this worktree plus
+`$PCREC_TMPDIR` (read-only use of the crit-stream3 and scensus scratch).
+
+## Deliverables (branch lane/stream2, continued)
+
+- db51168b4 — D: `docs/dev/reviews/2026-11-01-r3-stream3.md` (crit-stream3's review.md, the
+  RULINGS appended as "## Rulings (manager, 2026-11-01)") and `2026-11-01-r3-stream3/` (COMMON.md,
+  sound.md, fixind.md, verify.md, process.md); `plan.md:<n>` cites stripped with the brief's sed
+  (there were none); the review's one spec-line cite set (C6: `match_api.md`, `tuning.md`, `cli.md`
+  by line) converted to paragraph labels at main HEAD (§6.3.1¶6, §6.3.4¶2, §6.3.4¶13, §2.44¶2,
+  §2.11¶4, §1.13¶2) so `make test-spec-history` stays green; indexed in
+  `docs/dev/reviews/CLAUDE.md`; `.claude/skills/pcrec-critic/SKILL.md` premise row gains "a replay
+  against a part map reads type/enum/table hunks in full, never classifying by hunk-header function
+  names (2026-11-01 r3 stream3)".
+- 97d10a271 — A: `docs/design/stream/manifesto.md` (~2,400 words): why (F1-F4 + the owner's
+  growth sentence), the end state in plain words, eight principles, scope / HELD / non-goals, how
+  the end state is checked, how the document changes. No file:line, row numbers or counts.
+- ae46a0628 — B: `docs/design/stream/roadmap.md` (~7,600 words): the ride-along rule; 13 code
+  AREAS and 6 HUBS, each with files and anchors at main 3f777330e, parallel mechanisms, end-state
+  form, the next byte-identical step, prerequisites, what it deletes, ride-along triggers by plan
+  TAG, open findings by review id, size; round 3's declared-vs-undeclared re-read of the three
+  replayed changes; the admission table as PROVISIONAL with per-row open findings; the RATCHET
+  inventory (R01-R19, baseline 24, 29 at p1build's merge as it stands) with a re-count recipe per
+  row and a log; the proof order; how a lane uses it; the standing questions.
+- 30027110f — C + E: `approach.md` header "Superseded by manifesto.md + roadmap.md; kept as the
+  design record of rounds 1-3"; `docs/design/stream/CLAUDE.md` rewritten; the `stream/` line in
+  `docs/design/CLAUDE.md`; plan row `[STREAM]` STATE:not-started in Backlog; decision D185
+  PROPOSED, awaiting the owner's approval. APPROACH.md not edited.
+
+## Judgement calls a reviewer should check
+
+1. **D185, not D184.** `docs/dev/wake.md` reserves D184 for the P1 landing ("renumbers, D184"), so
+   the proposed entry took D185 and says why; renumber at merge if the reservation moved.
+2. **The ratchet's unit.** One inventory row per glue site, parallel mechanism or undeclared hub;
+   a row's count is members beyond the one the end state keeps; a hub counts 1 until it has an
+   owner AND a declared extension shape. Baseline = census M0 (13) + round 3 (7) + the two families
+   earlier rounds and [ROWCONJ] already named (read vocabularies r2-C10, conjunct types: 4). The
+   brief said "M0 plus round 3"; I included the last 4 because leaving known families out would
+   let a step add to them for free. Drop R18/R19 if the manager prefers the narrower baseline (20).
+3. **R08 reads 3, not M0's 2.** M0 / approach.md counted the offset-0 rule in three spellings; the
+   mechanical recipe (the `PCREC_START0_*` modes, minus one) reads 4 modes at main 3f777330e. I
+   kept the recipe's number, so the baseline is re-countable; the unit is [DEC-POSDOM]'s to settle.
+4. **p1build adds 5 members** (X12's loop, a world spelling, the asker, a read vocabulary, a
+   conjunct type). Its go predates the ratchet; the roadmap's reading is that it lands as ruled and
+   the post-p1build count becomes the baseline later steps must lower ([ROWCONJ] first). That is a
+   manager ruling to make.
+5. **The owner's direction reverses approach.md §11.3's "Declined (D4)"**: [VMREC] (b)/(c) are now
+   designed toward the stream (roadmap A-REC, D185 "Relation to D182"). I recorded it rather than
+   editing the rev-3 record.
+6. **Answer findings not fixed in prose** (the rulings): the roadmap's §4 carries r3-A1..A7 per row
+   and per shared definition, says in one line what each changes, and points to approach.md §6 for
+   the uncorrected rev-3 text. Two corrections that are not answer-level were applied in the
+   roadmap's own text, because rows would otherwise be filed wrong: the FIXED marks per r3-C3
+   (row G on the req-use handoff gates, row 7 on RETRY's rows), and the three-fact split per r3-A5
+   in A-FACTS.
+7. **The hub "owner + declared shape" step** is written as zero-code (header comment + roadmap).
+   A header comment under `src/` is still a `src/` edit, so it needs the owner's go like any step;
+   no emitted byte moves (comments in pcrec's source are not emitted).
+8. **Manifesto priority line** keeps "F1 over F2 over F3, F4 a constraint" as the manager's
+   reading for the owner to confirm (approach.md D7 was NOTED, never confirmed). Ask the owner.
+
+## Asks for the manager
+
+- Rule judgement calls 2 and 4 (ratchet baseline scope; p1build and the ratchet).
+- Ask the owner to confirm the manifesto's priority order (call 8) and to approve or amend D185.
+- r3-E2: a pcre2-reader follow-up for a clarifying line in `empty-iteration-captures.md`
+  ("beyond the minimum"), D181; it gates rows 14/15 only, not any step now.
+
+## Validation
+
+Docs only; no make, no suite, no queue job (evening hold). Run in the worktree:
+`scripts/plan_lint.sh --root worktrees/stream2`: 267 rows parsed, 0 violations;
+`tests/spec_history/run_spec_history.sh` (ROOT_DIR = the worktree): checks passed 187, failed 0,
+then hook self-test 11 / 0; the pre-commit gate on every commit (52 passed, 0 failed;
+check_claudemd_size within limits: docs/design/CLAUDE.md 11,475 B, stream/CLAUDE.md 2,037 B,
+reviews/CLAUDE.md 5,317 B). Every roadmap anchor was read from `git grep -n` at main 3f777330e
+(the worktree's merge base) during this lane. Nothing owed.
+
+## STATE AT HANDOFF
+
+STATE: delivered. Branch lane/stream2: db51168b4 (round-3 records, index, critic skill row),
+97d10a271 (manifesto), ae46a0628 (roadmap), 30027110f (approach.md header, CLAUDE.md files,
+[STREAM] row, D185 PROPOSED), plus this report's commit. Rulings file `stream2_rulings.md`: last
+entry applied "2026-11-01 (manager): crit-stream3 rulings in .../crit-stream3/RULINGS.md; the
+owner's direction is in your brief." Nothing owed: no run launched. A fresh agent resuming starts
+from `docs/design/stream/roadmap.md` §5 (the ratchet) and the judgement calls above.
