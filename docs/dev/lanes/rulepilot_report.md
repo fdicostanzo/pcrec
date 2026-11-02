@@ -140,22 +140,22 @@ Two caveats apply to every outcome:
 
 ## rpfix (2026-11-02): pre-timing exclusion of N20
 
-- **Cause.** Job 790-rulepilot-build failed at 02:00:53 ( on N20: 
+- **Cause.** Job 790-rulepilot-build failed at 02:00:53 (`gen_subj` on N20: `nonenglish/pg20175.txt`
   missing; lane rwfix removed it as mojibake). No timing had run.
-- **Check.** All 139 sites checked against : N20 is the only missing subject file.
-- **Excluded: N20** (ruling 2026-11-02 02:15). Mechanism: , read by
-  , , ;  computes the split over the original 139
+- **Check.** All 139 sites checked against `worktrees/.corpus`: N20 is the only missing subject file.
+- **Excluded: N20** (ruling 2026-11-02 02:15). Mechanism: `inventory/exclusions.tsv`, read by
+  `slot_build.py`, `mkjobs.py`, `read_slot.py`; `search.py` computes the split over the original 139
   (excluded sites as stubs) and drops the stubs, so no other site changes half.
 - **Held-out effect.** N20 was a TRAIN site (72 -> 71 training; held-out 67 unchanged). The pre-registered
-  rule is unchanged; the population is 138 sites, 586 arms, 804 groups. The drill still passes all four
-  truths ( re-run).
-- **Jobs.**  regenerated them (NOT_BEFORE set to the queued 02:00). Changed in the queue:
-   (N20 and P11 moved: 22 sites, 132 groups) and 
-  (27 sites, 153 groups), edited in place; 790 re-added as  (expect sites=138,
-  witness arms=586); 791-794 and 797 are byte-identical to the queued ones. Every job passes .
-   re-reads the failed run's stored copy, so  from the
-  lane's fixed source was used instead.
-- **Design note:**  "Pre-timing exclusions".
+  rule is unchanged; the population is 138 sites, 586 arms, 804 groups. `drill.py` re-run: all four
+  truths still as intended.
+- **Jobs.** `mkjobs.py` regenerated them (NOT_BEFORE set to the queued 02:00). Changed in the queue:
+  `795-rulepilot-time.s5` (N20 and P11 moved: 22 sites, 132 groups) and `796-rulepilot-time.s6`
+  (27 sites, 153 groups), edited in place; 790 re-added as `790-rulepilot-build` (expect sites=138,
+  witness arms=586); 791-794 and 797 are byte-identical to the queued ones. Every job passes `--dry-run`.
+  `boxqueue retry` re-reads the failed run's stored copy, so `boxqueue add --name 790-rulepilot-build`
+  from the lane's fixed source was used instead.
+- **Design note:** `docs/design/pricing_rulepilot.md` "Pre-timing exclusions".
 
 ### STATE AT HANDOFF (rpfix)
 

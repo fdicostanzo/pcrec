@@ -150,20 +150,20 @@ The drill caught one design defect before any data existed. With thresholds thin
 
 Dated 2026-11-02 (after the first build job failed at 02:00, before ANY timing: no clock had run).
 
-- **Site N20** (pattern on ) is excluded. Lane rwfix removed that file from the
+- **Site N20** (subject file `nonenglish/pg20175.txt`) is excluded. Lane rwfix removed that file from the
   corpus cache as mojibake; N20 targets the mojibake itself, so no replacement has the property. The
   manager ruled: no refetch, no substitute. A check over all 139 sites found N20 the only one whose
-  subject file is missing under .
-- **Declared in** , read by ,
-   and .
+  subject file is missing under `worktrees/.corpus`.
+- **Declared in** `docs/dev/lanes/rulepilot_evidence/inventory/exclusions.tsv`, read by `slot_build.py`,
+  `mkjobs.py` and `read_slot.py`.
 - **Population:** 139 -> **138** sites (590 -> 586 arms, 810 -> 804 groups). The rest of this document's
   139 figures describe the inventory as committed.
-- **Split unchanged:**  passes N20 to  as a stub (id and stratum only), the split
+- **Split unchanged:** `read_slot.py` passes N20 to `search.py` as a stub (id and stratum only), the split
   is computed over all 139, and the stub is then dropped. Every other site keeps the half it had. (A
   plain drop would have moved 3 other sites between halves.)
 - **Held-out effect:** N20 fell in TRAIN (72 -> 71 training sites; held-out stays 67). The stratum was
-  read from the census arms (all arms), as the timed arms are not known yet; if a gate-excluded arm
-  changes N20's stratum signature this could differ, and the stub then follows the timed data.
+  read from the census arms (all arms), as the timed arms are not known yet; N20 is never timed, so its
+  stub keeps that census-arm stratum.
 - **The pass rule is unchanged** (held-out score >= 0.95 and no tail beyond 1.5 x (1 + 2 f)). Only the
   training population is one smaller.
 
