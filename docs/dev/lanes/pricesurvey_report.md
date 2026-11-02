@@ -95,7 +95,7 @@ Notes on the table:
   (`finder.c:249-326`: no row picks `FF_NONE`; MLINE "No NONE row ... until measured", D161 add. 15).
 - Population sizes (D161 add. 14's kit correction, sbscope 2026-10-14, 177 blinded questions): 170
   have a start-search site; one-byte FIND 74; RUN-PRE 76; RUN-HANDOFF 50; NEXT-HANDOFF 25; OFS 46.
-  b4close2 (plan row [MEMFN-POSCOST], `docs/dev/plan.md:888-893`): 603 walk-routed set sites.
+  b4close2 (plan row [MEMFN-POSCOST], `docs/dev/plan.md`): 603 walk-routed set sites.
 
 ---
 
@@ -112,20 +112,20 @@ BUILT-UNROUTED, DESIGNED (a design doc, not built), FILED (a plan row with a tri
 |---|---|---|---|---|
 | NO SEARCH | the engine reads every byte from the start state | NEXT `next-none` (`cand_rows[]` offset 271); LOCATE `composite` with no prefilter; PRESENCE `presence-none`; Table D's floor; the window family's floor row (`window.c` header lines 35-38) | BUILT (as the fall-through, never as a priced choice) | S |
 | ONE POSITION + VERIFY | find one position's set, verify the rest | Table B D1 (libc memchr, one member), D1w / R7w (the walk), `pf_memchr*`, `pf_walk*` (`pffind.c`); OFS `memchr` stream + verify chain (`ofsskip.c` header); E-find (T2) | BUILT | S (libc is scalar, Q50) |
-| ONE POSITION, wide mask | V1 SWAR (8 B), M64 / A1 / S1 / W64 (64 B), A3 (state kept across iterator calls) | `finder.c` rows R8, R2, R3b (forms not built: "hold no fact any compile states", `finder.c` header lines 21-27) | CLOSED as a default (`walk_vs_v1_record.md` §5); FILED under [MEMFN-REGIME] (`plan.md:882`) for a measured or stated regime | V1 = S (SWAR); A1/S1/W64/A3 = V |
-| PAIR (two positions or two bytes) | (a) two memchr streams for a two-byte stop set ("leapfrog"); (b) a SIMD filter ANDing two positions (KA, KB) | (a) Table B `PAIR` (`finder.c:299-310`, UNMEASURED-DEFAULT, "no PAIR cost constant"); `ofsskip.c` PAIR leapfrog for a two-member cube; (b) `vrun.c` KB second filter | (a) BUILT for two-member stops; any-two-bytes widening FILED [MEMFN-PAIRSTOP] (`plan.md:900`); (b) BUILT | (a) S; arbitrary-pair kernel FILED [MEMFN-PAIRSIMD] (`plan.md:906`) V; (b) V |
+| ONE POSITION, wide mask | V1 SWAR (8 B), M64 / A1 / S1 / W64 (64 B), A3 (state kept across iterator calls) | `finder.c` rows R8, R2, R3b (forms not built: "hold no fact any compile states", `finder.c` header lines 21-27) | CLOSED as a default (`walk_vs_v1_record.md` §5); FILED under [MEMFN-REGIME] (`plan.md`) for a measured or stated regime | V1 = S (SWAR); A1/S1/W64/A3 = V |
+| PAIR (two positions or two bytes) | (a) two memchr streams for a two-byte stop set ("leapfrog"); (b) a SIMD filter ANDing two positions (KA, KB) | (a) Table B `PAIR` (`finder.c:299-310`, UNMEASURED-DEFAULT, "no PAIR cost constant"); `ofsskip.c` PAIR leapfrog for a two-member cube; (b) `vrun.c` KB second filter | (a) BUILT for two-member stops; any-two-bytes widening FILED [MEMFN-PAIRSTOP] (`plan.md`); (b) BUILT | (a) S; arbitrary-pair kernel FILED [MEMFN-PAIRSIMD] (`plan.md`) V; (b) V |
 | K-OF-SET kernel (find any of 2-3 bytes) | compare per member, OR, movemask | `memfn/src/vany.c` | BUILT-UNROUTED ("NOT ROUTED. No mf_site row", `vany.c` header); how pricing offers it is open (`docs/dev/lanes/simdset_report.md` "Open questions" 1) | V (body is a scalar byte loop) |
 | k-STREAM memchr (3 members) | one memchr stream per member | SRS §6.4 unlock list | FILED in SRS only (trigger: step 0 shows `[jqz]`-shaped sites) | S |
 | TWO-POSITION FILTER at fixed distance (needs joint rates) | test position i and j together before verifying | costmodel A.6's P2/P3 (SRS §6.4); `ideas.md` 2026-10-10 "a vector filter over a byte plus a class at another offset (ipv4 shape)" | IDEA / FILED-in-study (needs JOINT rates, D157's revisit clause) | S+V |
 | SKIP (Horspool) | probe the window's last position, shift by a table | Table D `D-hors` (`window.c:1587-1640`), admission by `HORS_MIN` | BUILT (S3, deny `window-skip`, `options.def:103`); D176 Q2 RULED it becomes a priced METHOD, HORS_MIN deleted; not built | S |
 | CHAIN (rare later span, then search back for the head span) | D161 add. 5: "a chain of 1-2 simple searches" | `window_search_game.md` §8 (P6 `refine`) | DESIGNED/studied; "rarely finds a plan" (§8.2); longer chains FILED as the chain's extension (D161 add. 5) | S |
-| SUPERSET COVER (search a cheaper hull, verify exact) | `\w` through `[0-9]\|[A-z]` | [MEMFN-POSCOST] part 2 (`plan.md:888-893`); SRS §6.4 "one more GENERATOR row" | FILED (408 hulls counted, price never computed) | S+V |
-| UNBOUNDED / PRESENCE-ONLY spans folded into the stop decider | D176 Q4 | [MEMFN-UNBOUNDED-SPANS] (`plan.md:894`) | FILED (an MF_SITE_ABI event) | S |
-| REVERSE: from the end (rev-end) | seed the reverse DFA at `n` | LOCATE `rev-end` (`emit_dfa.c:4835`; [OPT-REVEND] `plan.md:47`) | BUILT | S |
-| REVERSE: from a landmark (start recovery by a reverse walk) | reverse span / reverse DFA seeded at a landmark | D161 add. 17; RECOVER `landing`; rev-inner G3 (`where_to_start.md` §2.4, SRS §3.1 last row) | partially BUILT (one-run case: EDGE/STAY/VMSPAN `reverse`, D161 add. 17); rev-inner HELD ([ENG-TACTICS] `plan.md:107`) | S |
+| SUPERSET COVER (search a cheaper hull, verify exact) | `\w` through `[0-9]\|[A-z]` | [MEMFN-POSCOST] part 2 (`plan.md`); SRS §6.4 "one more GENERATOR row" | FILED (408 hulls counted, price never computed) | S+V |
+| UNBOUNDED / PRESENCE-ONLY spans folded into the stop decider | D176 Q4 | [MEMFN-UNBOUNDED-SPANS] (`plan.md`) | FILED (an MF_SITE_ABI event) | S |
+| REVERSE: from the end (rev-end) | seed the reverse DFA at `n` | LOCATE `rev-end` (`emit_dfa.c:4835`; [OPT-REVEND] `plan.md`) | BUILT | S |
+| REVERSE: from a landmark (start recovery by a reverse walk) | reverse span / reverse DFA seeded at a landmark | D161 add. 17; RECOVER `landing`; rev-inner G3 (`where_to_start.md` §2.4, SRS §3.1 last row) | partially BUILT (one-run case: EDGE/STAY/VMSPAN `reverse`, D161 add. 17); rev-inner HELD ([ENG-TACTICS] `plan.md`) | S |
 | HANDOFF (presence hit becomes the scan start) | T4 | FIRST/NEXT handoff rows | BUILT | S |
-| BIT-PARALLEL locator (bitstreams, Parabix) | one u64 per condition per 64 B block | [SPAN-ISEL] (`plan.md:1667`), [POS-PARALLEL] (`plan.md:1695`) | FILED, "starts only on Frank's word" | V (portable IR) |
-| ADAPTIVE run-time switch (walk <-> mask) | per-stretch or per-call mode switch | [MEMFN-SKIPSWITCH] | BOONIES (`plan.md:1489`); adatwin −2.2% (`walk_vs_v1_record.md` §2) | S+V |
+| BIT-PARALLEL locator (bitstreams, Parabix) | one u64 per condition per 64 B block | [SPAN-ISEL] (`plan.md`), [POS-PARALLEL] (`plan.md`) | FILED, "starts only on Frank's word" | V (portable IR) |
+| ADAPTIVE run-time switch (walk <-> mask) | per-stretch or per-call mode switch | [MEMFN-SKIPSWITCH] | BOONIES (`plan.md`); adatwin −2.2% (`walk_vs_v1_record.md` §2) | S+V |
 | BATCH matches / candidate ring / mask carry | keep a vector pass's mask across candidates | D161 add. 2; `ideas.md` 2026-10-10 "hold the candidate mask across calls", 2026-10-13 "BATCH MATCHES" | flattening CLOSED (`walk_vs_v1_record.md` §6); A3 row designed, form unbuilt | V |
 
 ### 2.2 Per task: what exists, what is filed
@@ -148,7 +148,7 @@ BUILT-UNROUTED, DESIGNED (a design doc, not built), FILED (a plan row with a tri
   `measured`; pricing waits for ... a TUG cell measured losing for want of it" (D161 add. 15). The
   P9 row is "the total default: verify (Q-WR-9)" (`finder.c:349-353`).
 - **T4 handoff.** BUILT; its K admission is a prior comparison (`emit_dfa.c:9016`). [PRIOR-COST-UNIFY]
-  (`plan.md:84`, BLOCKED) lists it with G1, set-leads and R4 as one family of four dispersed
+  (`plan.md`, BLOCKED) lists it with G1, set-leads and R4 as one family of four dispersed
   prior-reading admissions.
 - **T5 VM seek.** BUILT: the walk (D1w, R7w). FILED: V1 on the VM hat waits for [MEMFN-REGIME]
   ("it'll have its day", D169 addendum note).
@@ -160,7 +160,7 @@ BUILT-UNROUTED, DESIGNED (a design doc, not built), FILED (a plan row with a tri
   widening "until a measurement asks for fused runs".
 - **T11 verify.** BUILT: `runcmp.c` rows; vrun VERIFY TRIM (`vrun.c` header). FILED: verify order and
   form ([MEMFN-POSCOST] part 3); IDEA: "a vrun hit is checked three times; verify only what the
-  filter did not prove" (`ideas.md` 2026-10-11); proofs from the find ([KIT-VERIFY] `plan.md:408`,
+  filter did not prove" (`ideas.md` 2026-10-11); proofs from the find ([KIT-VERIFY] `plan.md`,
   D161 add. 16).
 - **T13 reverse.** See 2.1's two REVERSE rows.
 - **T14 reseed.** BUILT rows; R4 `adaptive-dense` is one of [PRIOR-COST-UNIFY]'s four.
@@ -215,7 +215,7 @@ whether the coupling crosses strategy rows (CROSS) or stays inside one (INSIDE).
 | C10 | READERS OF THE CHOSEN STOP | G1 (`req_byte_dominated_by` `:8546`), R4 (`cand_rs_dense_applies` `:10087`), the landmark K, `@idx` recompute "which byte is scanned"; after D176 they READ the reply. A different stop moves their verdicts (and the presence drop) | CROSS (downstream of the stop) | SRS §3.1 rows P5, P7, P8, K10; §3.2 |
 | C11 | CALL SHAPE | one-shot vs iterator (M), call span (N), history (H) select rows; short calls make per-call terms dominate; the find-all iterator's fixed setup ~1.8-3.9 ns accepted | CROSS (all scan strategies) | `regime_tables.md` §2; D171 |
 | C12 | PROOF / consumable_len | what the find proves (proven sets per offset) is not re-tested by the consumer; a method that proves more lowers the consumer's cost | CROSS (kit method x consumer) | D161 add. 8, add. 16 |
-| C13 | STATEMENT LIMITS | what pcrec states bounds the candidates: run truncation to 32 positions, `MF_WREACH` 64, `MF_WMAX_SPAN`, one or two alternatives; Frank ruled positions beyond the verify slice MAY be stated as cheap candidate spans ("Yes unless it has reason not to") | INSIDE (bounds the search space) | `memfn.h:562-571` (MF_WSPAN_POS, MF_WMAX_SPAN, MF_WMAX_ALT, MF_WREACH); [MEMFN-UNBOUNDED-SPANS] charter, `plan.md:894-899` |
+| C13 | STATEMENT LIMITS | what pcrec states bounds the candidates: run truncation to 32 positions, `MF_WREACH` 64, `MF_WMAX_SPAN`, one or two alternatives; Frank ruled positions beyond the verify slice MAY be stated as cheap candidate spans ("Yes unless it has reason not to") | INSIDE (bounds the search space) | `memfn.h:562-571` (MF_WSPAN_POS, MF_WMAX_SPAN, MF_WMAX_ALT, MF_WREACH); [MEMFN-UNBOUNDED-SPANS] charter, `plan.md` |
 | C14 | ORIGIN | pcrec chooses the sub-problem's origin (e.g. send `aaa.{2,5}zxq`, recover `a.*` by reverse DFA); every span price is relative to that origin | CROSS (reverse strategies vs forward) | D161 add. 4, add. 9 |
 | C15 | SIMD LAYER | changes which methods are AVAILABLE, never their cost (ruled) | INSIDE (applicability only) | D176 Q1 |
 | C16 | HYBRID RESEED | the reseed policy reads the candidate rate times the reseed gap; a different stop changes the candidate rate it reads | CROSS (T1 x T14) | `emit_dfa.c:10087` |
@@ -270,7 +270,7 @@ over the emit_sweep corpus and bench; "exemplar" = a named analysis bundle via `
 | VERIFY (all strategies) | v_i per test, mispredict per failed verify | C_VERIFY UNMEASURED DEFAULT; C_MISPRED DERIVED on Zen 1 | measured verify per hit, especially dense-candidate cells (model priced dense hex SKIP at 0.71 ns/B vs measured 2.23, SRS §5.1 item 2) | [MEMFN-POSCOST] part 3's verify-cost reading |
 | CONSUMER per false entry | A_entry per route | C_ENTER MEASURED x ASSUMED (Zen 1, "~2 bytes a false start survives") | Zen 4; per route | armread-style EXT slot (C_match is the nearest measured quantity, armread §2) |
 | SURVIVORS (multi-position plans) | joint survival per span | none | the 21x-1,750x gap | exemplar run-rarity/run-rate per span, or a floor (window_search_game §5.5 item 3) |
-| ALL, per box | the same cards on Zen 1, Mac, Intel | Zen 4 only | the library | [MEASURE-SET] (a)-(d), `plan.md:183-191` |
+| ALL, per box | the same cards on Zen 1, Mac, Intel | Zen 4 only | the library | [MEASURE-SET] (a)-(d), `plan.md` |
 | ALL, subject regime | the subject's own rates (dense hex, non-English) | default prior only | per-deployment rates | named analysis (`pcrec-analyze`), caller hint ([MEMFN-REGIME] trigger) |
 | census of WHERE pricing would move picks | per site: today's pick vs priced pick at both c_probe bracket ends; fold-eligible presence sites; two-byte non-case-pair stops; F0-at-0 and unit-tie sites | none run | SRS step 0 | census after C1 (SRS §7 step 0), heavy -> boxqueue |
 
@@ -379,7 +379,7 @@ it"); pre-registered witnesses with expected outcomes stated before the build (S
   (c) What the trace prints: the brief wants "the full per-strategy ranking visible in a trace";
   `window.c` already has an MF_TRACE build (`gate.c` header) and `--list-measurements`; whether the
   ranking is a compile-time listing, a stamp, or a trace-only record is open ([LIST-TABLES],
-  `plan.md:1297`).
+  `plan.md`).
 
 ### 7.6 Smaller open points raised by the survey
 
