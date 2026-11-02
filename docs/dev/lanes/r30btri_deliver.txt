@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r30btri_report.md
+sections: Summary; Per red step; Cause classes; Proposed fixes; Re-run plan; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

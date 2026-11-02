@@ -1435,6 +1435,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
            read by the KITPROOF trace record; retirement filed under
            [KIT-VERIFY] */
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
+        /* [MEMFN] R-30: the kit's old pre-check form, the window part kept */
+        else if (!strcmp(a, "--harness=pres-window")) st->harness.pres_window = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;

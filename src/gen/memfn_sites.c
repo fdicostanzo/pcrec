@@ -158,6 +158,12 @@ mf_art *pcrec_memfn_art(Ctx *cx)
                                              PCREC_HARNESS_PREFIX, cx->opt->prefix)))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
                            "counter: %s", mf_art_error(job->mf));
+        /* R-30: the harness lever's old pre-check form; never on a shipped
+           compile */
+        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->pres_window &&
+            mf_lever(job->mf, "pres-window"))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
+                           "`pres-window`: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }
