@@ -8,6 +8,19 @@ by more paper rounds; the points every look agreed on are now requirements
 are applied where they do not depend on placement. Changed text is marked
 `[rev1]`.
 
+**2026-11-02 — DEFERRED (Frank, relayed by main).** The rule-list pilot
+(`docs/design/pricing_rulepilot.md` "Result"; `docs/dev/summaries/2026-11-02-rulepilot.md`)
+PASSED at 0 rules: today's default reaches 0.981 of the per-site ideal on
+held-out sites (Zen 4, SIMD off, forceable arms only, engine choice not
+timed), so within-engine headroom is about 2 %. Frank: pricing is NOT A
+PRIORITY ([PRICE-BAKEOFF] moved to Deferred); the pilot is the baseline any
+pricing must beat; pricing's case is extensibility, not mean speed; the final
+engine combines rules (e.g. "prefer DFA" for non-local costs) with pricing; a
+pricing build waits for the stream work (docs/design/stream/roadmap.md §0a,
+area A-PLAN). This draft stays at rev 1: no rev 2 and no critic round now.
+Open questions O1-O5 (§10) stay OPEN and are not put to Frank until pricing
+revives.
+
 Status: DRAFT for Frank. Not a design and not a build go. Stage 3 of Frank's
 order (2026-10-31): survey -> data inventory -> **explicit requirements** ->
 design to them -> D6 critics, who get THIS document both as their guide and
