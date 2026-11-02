@@ -1536,7 +1536,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-02): filed; nothing built. Bench: `[\xc2-\xdf](?![\x80-\xbf])` x1.95 slower on 19/19 large subjects (0.192 -> 0.375 ns/B), x1.20 short; hex8-bounded x1.5 slower on 60-B subjects (+35 ns) while x0.42 on large.
   trigger: the kit's D176 priced stop choice build opens (then its pricing tests include this pattern and hex8's tiny-subject cell); or a user-facing complaint.
   refs: bench O-117; D176; window_site.md "Known gaps"; [MEMFN-POSCOST]; memory pcrec-one-pass-loss-chasing
-  Charter: add the pattern to the pricing tests; confirm the mechanism (set walk of 3+ members vs byte-class-bounded scan); no special-case decline.
+  Charter: add the pattern to the pricing tests on BOTH layers, scalar default and SIMD-on, each against the old byte-class-bounded scan; solved only when the chosen arm is no slower on both (Frank 2026-11-02: not cover-or-not, it depends on whether SIMD is in the cards; a two-load vector window plausibly wins with SIMD on). Confirm the mechanism; no special-case decline. SIMD cell pre-registered via memfn R-31.
 - [PAIR-LOOKAHEAD-TIME] STATE:not-started — measure the two-stream look-ahead's first width in TIME
   filed: 2026-11-02 manager (from bench O-117)
   status (2026-11-02): filed; nothing built. memfn/src/ofsskip.c `PAIR_LOOKAHEAD` = 128 is instruction-chosen (s3_report 11.2) and labelled UNMEASURED. Bench: union-select x1.15 large / x1.11 short (cb32eda28 vs 614d45eb3), username-password-pair x0.057 nocaps.
