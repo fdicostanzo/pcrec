@@ -212,3 +212,9 @@ A passing rule list does not by itself select rules: pricing's case is extensibi
 as one priced row with its card; a rule list must be searched again). The regime is SIMD-off only (§9 item 1); the SIMD-on
 layer is plan row [PILOT-SIMD]. A pricing build waits until the stream unification ([STREAM]) has moved further, since its
 harness would change ([PRICE-BAKEOFF]).
+
+Expected shape (owner, 2026-11-02): the final decision engine COMBINES rules and pricing. Some costs are not local to a site and
+are hard to price: engine-switch (crossing) costs, the DFA's multi-path tracking lost when a stretch goes to the VM, whole-artifact
+effects such as one site costing the frameless entry. These enter as policy rules (e.g. "prefer DFA"), a declared first-match
+table; pricing chooses within the space the rules allow. This pilot does not test engine-level rules: the engine choice is
+counted, not timed (header non-goals).
