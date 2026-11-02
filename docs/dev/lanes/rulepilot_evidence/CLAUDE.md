@@ -14,3 +14,4 @@ product code or built by `make`. Run with `python3 -I`. Compile sweeps over 50 c
 - `read_slot.py OUT DATASET` — the timing job's raw launches -> the search's dataset.
 - `inventory/exclusions.tsv` — declared pre-timing exclusions (N20), read by slot_build/mkjobs/read_slot.
 - `mkjobs.py JOBDIR`, `jobs/`, `shards.tsv` — the boxqueue jobs (790 build, 791-797 timing shards).
+- `mkjobs2.py JOBDIR`, `jobs2/` — the 2026-11-02 re-plan: 805-rulepilot-time2.c01..c16 (45-group resumable, window-gated chunks) + 806-rulepilot-verdict.

@@ -180,3 +180,26 @@ Dated 2026-11-02 (after the first build job failed at 02:00, before ANY timing: 
 3. **What moves when data is regenerated: RELEVANT, and nothing in the default build.** A new compiler
    moves arm bytes; the build job refuses a mismatch with the committed inventory, so a re-run needs a
    re-inventory first.
+
+## Timing re-plan (2026-11-02)
+
+- **Measured rate.** Shard 1 (791) ran 02:36-03:36, was capped at 3600 s, and finished 59 of its 123 groups with
+  0 quiet-gate waits: about 1 min per group, twice the planned 0.75 s per launch. Shards 792-797 were cancelled
+  before starting. The slot job 790 built (138 sites, 586 arms, 763 timed groups) is valid and is not rebuilt.
+- **Resume rule.** `grid2/time.sh` takes `RESUME=1` (and `GROUPS_FILE`). A group is skipped only if the log has its
+  `# group N done:` line AND the raw file holds exactly launches x arms-per-launch rows for it. Rows of any other group
+  of the run's list (the one in progress at a kill) are moved to `raw_*.tsv.discarded` and the group is re-timed whole;
+  the raw file is otherwise only appended to. Each group launches its own base copies (3 per round) and carries the
+  quiet gate at its start, so a resumed group is methodologically identical to an uninterrupted one. Self-test:
+  `bash grid2/time.sh --selftest-resume` (no clock). All 59 of shard 1's groups were checked complete against this rule.
+- **Shard plan.** The remaining 704 groups (763 minus 59) are 16 chunks of at most 45 groups (15 x 45, then 29), in
+  `arms.py` order (deterministic), each `est` 60 s x groups, cap 3600: jobs `805-rulepilot-time2.c01..c16`
+  (`rulepilot_evidence/mkjobs2.py`, `jobs2/groups.cNN.tsv`). c01 resumes shard 1's raw file (tag RP1); the rest write
+  `RP2..RP16`. The held-out/train split is by site inside `search.py` and does not see the chunking.
+- **Window.** Each chunk's `--ready` refuses (exit 75, `not-ready: outside window`) unless local time is 01:00-19:05,
+  after the `after` check; a chunk started at 19:05 ends by about 19:55, before the owner's 20:00-01:00 hold. Chunks are
+  chained in order and not-before 2026-11-02T13:30. The reading (`806-rulepilot-verdict`) is chained after c16, has no
+  window and no quiet gate (pure python over the raw rows); it refuses unless all 763 groups have rows.
+- **Two days.** About 11.7 h of timing: today 13:30 to about 19:20 (7 chunks), Tuesday from 01:00 (9 chunks). Each group is
+  self-contained, so the straddle changes nothing about any group's measurement; a day boundary appears only as a gap in
+  the raw timestamps.

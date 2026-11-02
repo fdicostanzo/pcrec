@@ -164,3 +164,27 @@ Two caveats apply to every outcome:
   it (their "waiting on rulepilot-build, which FAILED" line clears once 790 is pending/done).
 - OWED unchanged: the timing chain and the reading (see the first STATE AT HANDOFF above); the site
   count to expect is 138.
+
+## rpresume (2026-11-02): resumable timing, re-sharded by the measured rate
+
+- **time.sh** (`docs/dev/lanes/grid2/time.sh`): `RESUME=1` skips complete groups (log done line + exact raw row count),
+  discards a partial group's rows to `raw_*.tsv.discarded`, appends to raw; `GROUPS_FILE` restricts a run to a group list;
+  `--selftest-resume` passes (no clock). Design note: `docs/design/pricing_rulepilot.md` "Timing re-plan (2026-11-02)".
+- **Jobs** (all `--dry-run` clean, queued, not-before 2026-11-02T13:30): `805-rulepilot-time2.c01` ... `c16` (keys
+  `rulepilot-time2.c01..c16`; 704 groups, 45 per chunk, last 29; c01 resumes shard 1's 59 complete groups) and
+  `806-rulepilot-verdict` (key `rulepilot-verdict`). Start window 01:00-19:05 local on the timing chunks; the verdict job
+  has no window or quiet gate (no timing).
+- **Expected finish:** c01-c07 today 13:30 to about 19:20, c08-c16 Tuesday from 01:00 to about 08:45, then the verdict.
+
+### STATE AT HANDOFF (rpresume)
+
+- Rulings read: last entry applied **2026-11-02 02:15** (nothing new in the file).
+- **OWED: `rulepilot-time`**, now the chain `rulepilot-time2.c01..c16` -> `rulepilot-verdict`.
+  - Completion line of each chunk: `time.sh: COMPLETE rows=N groups=45 ... resumed_skipped=S` (c16: groups=29).
+  - Verdict job: log shows `rulepilot-verdict: groups complete 1 763`, then `VERDICT: PASS at k rule(s)` or
+    `VERDICT: FAIL (no list of <= 3 rules passes held-out)`; full reading in
+    `/var/tmp/pcrec-pcrec/scratch/rulepilot/slot/search.out`.
+  - A fresh agent completes the delivery as listed in the earlier STATE AT HANDOFF (brackets, excluded arms, density table).
+  - A failed chunk: `scripts/boxqueue retry <key>`; the retry resumes (a half-run chunk re-times only its incomplete groups). Later chunks wait on it.
+  - Do not `wtprune` the rulepilot worktree before the verdict is read: the jobs run its scripts.
+- Scratch: `/var/tmp/pcrec-pcrec/scratch/rpresume/` (patch script, fake-clock bin; deletable).
