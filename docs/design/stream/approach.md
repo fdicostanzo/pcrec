@@ -1,5 +1,7 @@
 # One instruction stream: the end-state architecture (REVISION 3)
 
+**Superseded by manifesto.md + roadmap.md; kept as the design record of rounds 1-3.** (lane stream4, 2026-11-01, the owner's direction)
+
 Status: PROPOSED, rev 3 (lane stream3, opus, 2026-11-01). Design text only: no build go, no
 plan row is opened by it. Rev 1 was the round-1 synthesis (`round1/synth.md`), reviewed by
 crit-stream1 (`docs/dev/reviews/2026-11-01-r1-stream1.md`). Rev 2 carried those rulings and was
