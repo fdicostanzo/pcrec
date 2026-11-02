@@ -242,13 +242,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md
   (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
-- [PRICE-BAKEOFF] STATE:started — a measured bake-off decides where search-strategy pricing lives (Frank 2026-10-31)
-  filed: 2026-10-31 manager (Frank's ruling)
-  status (2026-11-02): pilot DONE: default 0.981 of ideal held-out, PASS at 0 rules (pricing_rulepilot.md Result) = the BASELINE pricing must beat; pricing's case is extensibility; build WAITS for [STREAM] (Frank).
-  next: pricing build proposed only once [STREAM] steps have reshaped the seams it prices across; one bounded look at the pilot's worst sites; no build go
-  refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
-  Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
-  Expected shape (Frank 2026-11-02): rules AND pricing. Non-local costs (engine-switch crossings, the DFA's multi-path tracking lost to a VM split, whole-artifact effects like [SITE-FRAMELESS]) enter as policy rules ("prefer DFA"), a declared first-match table; pricing chooses within them. Crossing prices are an open measurement for [STREAM].
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
@@ -1808,6 +1801,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   BOONIES. The fold stays the default (D138 addendum 2026-09-30); its one real penalty is waf744 (+1.2% throughput, +28% match on a 21-byte subject), a forced-VM-only shape with a default-route population of 0. Research why.
 
 ## Deferred
+- [PRICE-BAKEOFF] STATE:deferred — a measured bake-off decides where search-strategy pricing lives (Frank 2026-10-31)
+  filed: 2026-10-31 manager (Frank's ruling)
+  status (2026-11-02): DEFERRED, not a priority (Frank, after the pilot): default 0.981 of ideal held-out, PASS at 0 rules (pricing_rulepilot.md Result) is the baseline pricing must beat. Build waits for [STREAM].
+  next: revisit only when an unmeasured choice shows headroom (engine choice, no-search, kit options, [PILOT-SIMD]); meanwhile a method-adding change carries its card and shows the default still picks well
+  refs: docs/dev/reviews/2026-10-31-r1-pricing-split.md r2-pricing-split2 r3-bakeoff r4-bakeoff2 r5-bakeoff3; docs/design/emit_backends_notes.md; lane/splitstudy (docs/dev/lanes/splitstudy_report.md); the kit's pricing_requirements.md on lane/memfn-pricesurvey
+  Three paper looks each reversed the placement (study rev 0 -> rev 1; reviews r1/r2), so Frank ruled a measured bake-off. Benefit is speed x reach; subject length is a measured sweep (the [IFACE-PUSH] subject-size candidate). The yardstick is the IDEAL one-way contract: pcrec states facts, the architecture side prices and decides.
+  Expected shape (Frank 2026-11-02): rules AND pricing. Non-local costs (engine-switch crossings, the DFA's multi-path tracking lost to a VM split, whole-artifact effects like [SITE-FRAMELESS]) enter as policy rules ("prefer DFA"), a declared first-match table; pricing chooses within them. Crossing prices are an open measurement for [STREAM].
 - [SUBST-STREAM] STATE:deferred — compiled substitution's STREAMING mode with a stamped holdback
   filed: 2026-10-26 manager (split from [M4-SUBST] at its close)
   status (2026-10-26): not built; [M4-SUBST] closed with core, interface and extended forms landed 9ae59f5d4; in-place and C callbacks have their own rows ([SUBST-INPLACE], [INLINE-C])
