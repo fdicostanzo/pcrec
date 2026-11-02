@@ -115,6 +115,8 @@ Queued (scripts in `scratch/p1land/jobs/`, each `--dry-run` clean, and accepted 
 | 831-p1land-mech | the landing's 20-row mech list (p1prep §5) | 830 | 1800 / 450 s | `rows=20 last=^== mech run COMPLETE: ` |
 | 832-p1land-ident | `test-recursion-identity-locked` at FILEPIN f5de088bf (p1prep §2's landing gate) | 830 | 2700 / 1200 s | `none` (make's rc exec'd; (A) is red by design) |
 
+Queueing notes: the first 831/832 enqueue named `after 830-p1land-test`; boxqueue's `after` takes the KEY without the priority (`p1land-test`), so both ended at once as READY-ERRORED (`failed/20261102T180934.*-83[12]-p1land-*`, wall 0 s, nothing ran). Fixed to `after p1land-test` and re-queued. 831's `--dry-run` (the matrix's VALIDATE_ONLY pass) took 84 s once 830 had started loading the box, past the 30 s enqueue bound, so it was enqueued with `BOXQUEUE_DRY_BOUND=180`; on a free box it ran inside 30 s, which is what the runner's start-time dry run will see after 830. If 831 ends DRY-RUN-FAILED at START, `boxqueue retry p1land-mech` once the box is quiet.
+
 What the manager reads:
 - **830:** `scripts/verdict` on `job.log.make`: `sections ran: 81/81` and no
   `*** [Makefile:N: test-X] Error` line.
@@ -131,8 +133,7 @@ Branch `lane/p1build` at this report's commit, over the landing commits: f5de088
 0da7ab3bb), fd6de3414 (FILEPIN re-pin, D184, ledger, plan status, landwalk arm rows), then the
 report. No src change after the merge. Light suites green (above).
 
-OWED, queued 2026-11-02 ~20:10 (pending; the box was held by another session's `t588-smoke` at
-enqueue; the runner is live):
+OWED, queued 2026-11-02 ~18:10 box time (830 RUNNING since 18:10:40; 831/832 pending after it):
 - **830-p1land-test** — completion line `sections ran: 81/81` in the run dir's `job.log.make`,
   no `*** [Makefile:N: test-X] Error` line (`scripts/verdict`).
 - **831-p1land-mech** (after 830) — `== mech run COMPLETE: 20 rows`; S1822 UNREACHED, 19 DETECTED.
