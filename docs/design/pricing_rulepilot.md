@@ -203,3 +203,12 @@ Dated 2026-11-02 (after the first build job failed at 02:00, before ANY timing: 
 - **Two days.** About 11.7 h of timing: today 13:30 to about 19:20 (7 chunks), Tuesday from 01:00 (9 chunks). Each group is
   self-contained, so the straddle changes nothing about any group's measurement; a day boundary appears only as a gap in
   the raw timestamps.
+
+## Reading rule (owner, 2026-11-02; recorded before any verdict exists)
+
+The pilot is the BASELINE that a pricing model must beat, not a choice of mechanism. Its held-out timings (139 sites, ideal arm
+per site) are the comparison set: any later pricing model is scored against the same truth and the best rule list found here.
+A passing rule list does not by itself select rules: pricing's case is extensibility (a new method, e.g. a new SIMD form, arrives
+as one priced row with its card; a rule list must be searched again). The regime is SIMD-off only (§9 item 1); the SIMD-on
+layer is plan row [PILOT-SIMD]. A pricing build waits until the stream unification ([STREAM]) has moved further, since its
+harness would change ([PRICE-BAKEOFF]).
