@@ -2994,3 +2994,13 @@ Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/
   - smp20 is the first priced departure;
   - a real-text rate sample stands as stage 2's backup (a new dataset; name its home), because the prior inverts x vs '/'.
 - Main was asked to amend D186 add. 1.
+
+## 2026-11-02 22:30 — smp20 watched witness, read two ways (Frank via main), for rev 3
+
+- At every stage, smp20 is read two ways:
+  1. blind, judged as the least-bad pick across subject kinds, not "picks '/'";
+  2. with a text-like `--analysis` bundle, where the mechanism must switch to '/'.
+- A failure in (2) at the last step is a mechanism problem; a failure in (1) alone is answered by caller data, not a rule.
+- Bar, plan [BENCH-WITHDATA]: a with-data compile matches or beats the blind compile on every cell beyond noise. Rev 3 states that as a property of the pick.
+- Open scoping point raised to main: does "every cell" mean the cells whose subjects the bundle describes?
+- Frank also: no real-text rate dataset now; options are evaluated only at the last planned step.
