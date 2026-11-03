@@ -2974,3 +2974,11 @@ R-30 landed on main 657e23231 (abi 94; make test 799 green). Pruned r30b (forced
 ## 2026-11-02 (late) — Frank: "find the span" is structural; kit units survey
 
 588 BAR FAIL triaged (t588tri_report.md): smp20's stop {x,X} vs the skip's '/', two rules in one family; the allowance uncaps throughput. Frank (direct): "This speaks to me as a structural problem. There should be a single set of 'find the span' choices that are used by whoever needs them." He then asked for a survey of the general choice mechanism within the kit, validating: "There are a number of basic units of work in kit like 'find the span' and others. Currently these are spread out. The various scenarios should build up using these basic components rather than search for a complete solution." Lane kitunits (opus, read-only) is running. The smp20 patch is held so it becomes the first step of unification; the check correction and smp04 stay separate.
+
+## 2026-11-02 (night) — R-33 sim; costs within the kit; design + critique go
+
+R-33 (r33_report.md): ~90 % of 3,443 decisions agree with the inner-first pick. The differences come from crude inner rules (dense pairs, no Horspool, offset 0) and from the fragile byte-rate prior (it inverts x vs '/'). Frank asked for a recommendation on costs within the kit; recommended and accepted:
+- costs only inside one site, as measured per-method cards per CPU class (measure_store, chosen by target, DEFAULTS for unknown);
+- a robustness rule (win under both prior and flat rates, beyond the cards' spread);
+- costs propose, D186 evidence disposes.
+Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/span_pick.md rev 1; the critic round follows.
