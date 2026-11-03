@@ -64,6 +64,7 @@ kit-sp1f2-mech3. S919's expected UNREACHED is unchanged (shard 3 unreached: 2).
 
 ## STATE AT HANDOFF
 
-Fixes committed on `lane/memfn-sp1f`; the gate set is OWED, queued as the keys above (the original
-330-339 were cancelled before any ran). Verdicts: `scripts/boxqueue status`. Not for this lane: the
+Fixes committed on `lane/memfn-sp1f`; the gate set is OWED, queued as kit-sp1f2-strict, kit-sp1f2-memfn,
+kit-sp1f2-reach, kit-sp1f2-ident1, kit-sp1f2-ident2, kit-sp1f2-ident3, kit-sp1f2-test, kit-sp1f2-mech,
+kit-sp1f2-mech2, kit-sp1f2-mech3 (the original 330-339 were cancelled before any ran). Verdicts: `scripts/boxqueue status`. Not for this lane: the
 PLAN items (KN_A/I/M/N bits, CHECK-6, CHECK-7, the declared-delta unification row). No rulings file.
