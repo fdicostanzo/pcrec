@@ -1476,8 +1476,11 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
     if gone:
         key = lambda x: (flag, x.split("\t")[0])
         for g in sorted(k for k in gone if k[0] == flag):
-            if not any(key(x) == g for x in la):
+            nref = sum(1 for x in la if key(x) == g)
+            if nref == 0:
                 problems.append("%s: declared gone row %s is not in the REF dump" % g)
+            elif nref > 1:
+                problems.append("%s: declared gone row %s is listed %d times in the REF dump (one expected)" % (g + (nref,)))
             if any(key(x) == g for x in lb):
                 problems.append("%s: declared gone row %s is still in the HEAD dump" % g)
         la = [x for x in la if key(x) not in gone]
@@ -1494,6 +1497,16 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
         elif x != y:
             problems.append("%s: undeclared row moved: %r" % (flag, x[:60]))
     return problems
+
+
+def dumps_declarations(label, rows_arg, gone_arg):
+    """The (declared rows, declared gone rows) a sweep labelled `label`
+    judges its dumps by: the declared deltas are the REAL comparison's; a
+    self-check (label `selfcheck` or a variant's `selfcheck-NAME`) compares
+    one revision with itself, so nothing may move there."""
+    if label.startswith("selfcheck"):
+        return (), ()
+    return (rows_arg.split(",") if rows_arg else ()), (gone_arg.split(",") if gone_arg else ())
 
 
 def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
@@ -3378,10 +3391,9 @@ def main():
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
             # the declared deltas are the REAL comparison's: the self-check
             # compares one revision with itself, so nothing may move there
-            real = label != "selfcheck"
-            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout,
-                                         args.dumps_declared_rows.split(",") if real and args.dumps_declared_rows else (),
-                                         args.dumps_declared_gone.split(",") if real and args.dumps_declared_gone else ())
+            rows, gone = dumps_declarations(label, args.dumps_declared_rows,
+                                            args.dumps_declared_gone)
+            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout, rows, gone)
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     if variants:

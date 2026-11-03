@@ -1016,8 +1016,8 @@ typedef struct {
        storage point). Stated on a site that offers its declaration point,
        at its define AND at its mf_locals, which BINDS it as it binds `s`/`n`
        (a differing text is refused, naming it). NULL is UNSTATED: a row
-       that reads N skips. No rendering reads it before a dispatch row
-       routes (B4/B8) */
+       that reads N skips. No row reads it now (the dispatch rows
+       retired at span_pick 1f) */
     const char *start;
     /* THE MOVED-CANDIDATE HOOK (PR-2, MF_SITE_ABI 13; appended LAST): a FIND
        consumer's STATEMENT, run when the position the site writes differs
@@ -1504,7 +1504,7 @@ const mf_run_row *mf_run_rows(size_t i);
  * moves, not when a name, a comment or a neighbouring declaration moves.
  * pcrec compares the strings and nothing else. Returns 0 and writes out[17]
  * (with its NUL), or -1 when `form_id` names no form this kit renders (a
- * card naming a form a later step builds: V1 at B4, the W64 rows at B6). */
+ * card naming a form this kit does not render). */
 int mf_form_hash(const char *form_id, char out[17]);
 /* The same normalization and hash over `text` (the kit's own fixtures and
  * any tool that hashes a rendering it holds). */
@@ -1527,7 +1527,7 @@ typedef struct {
 typedef struct {
     const char          *id;
     const char          *slot;      /* "FIND" | "PRES"                          */
-    const char          *needs;     /* the knowledge keys: P E A I M N H        */
+    const char          *needs;     /* the knowledge keys: P E (A I M N: no row) */
     const char          *pick;      /* FIND: the form; PRES: the link           */
     const char          *unpaid;    /* "-" for none                            */
     const char          *deny;      /* its options.def name, "-" for none      */

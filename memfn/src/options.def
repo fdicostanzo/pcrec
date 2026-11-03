@@ -53,15 +53,14 @@ MF_OPT("precheck-assign-byte", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
 /* R17-b' B1 (lane fdb1; r17b_prime.md rev 3 §3.4 [rev3 B7, D8]): the finder
  * table's denies, one per built row the evaluator can score (regime_eval
  * §5.2). Each denies its fd_rows[] row through the shared walk (kit_walk's
- * `no-<opt>`). At B1 NO row is routed, so every one is ASSERT_ZERO: accepted,
- * and it moves no byte (its row decides nothing that renders). `fd-d1` flips
- * to DIFFER at B2 (its OFF arm is D1w, the walk). `fd-r0` and `fd-r5`
+ * `no-<opt>`). `fd-d1` is the one left in this group and it MOVES bytes
+ * (DIFFER, since B2: its OFF arm is D1w, the walk). `fd-r0` and `fd-r5`
  * RETIRED at B4' with their rows, `fd-r8` and `fd-ndisp` at span_pick 1f
  * with R8, R1 and R2 (finder.c; finder_history.md). */
 MF_OPT("fd-d1", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the finder table's row D1: a one-member stop outside a VM attempt seek is searched by "
-       "the C library; denied, the site takes D1w's table walk (ASSERT_ZERO until it routes "
-       "at B2)")
+       "the C library; denied, the site takes D1w's table walk (a MOVING deny: it moves "
+       "bytes at a one-byte search site)")
 /* R17-b' B3b (lane b3b; r17b_prime.md rev 3 §1.4, §3.4 [rev3 B7]): the PRES
  * slot's three denies, one per deniable row of the routed slot (P0 is
  * undeniable, D158; P9 is the total default). Each MOVES bytes (DIFFER): the
