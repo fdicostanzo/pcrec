@@ -11,8 +11,8 @@ Hand-written, append-only by version (a committed row never changes):
   setdig: the loader refused sets without a unit row),
   covering every quantity a finder row or its pay rule reads, so a synthetic
   set holding every derivable key is on-card. The pay rule's operand
-  quantities are PROVISIONAL spellings (`memfn/src/finder.c`) until
-  kit-grid@2.
+  quantities (PROVISIONAL spellings) stay, unread, since the rule retired
+  with R1 and R2 (span_pick 1f; `memfn/docs/finder_history.md`).
 
 - `kit-kernels.tsv` — `kit-kernels@1`: the cards of the STANDALONE kernels
   (not routed; lane simdset): `mf_kernel_find_any`'s forms `vany2/3-w16/w32/body`
