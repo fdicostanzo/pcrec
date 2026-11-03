@@ -46,10 +46,11 @@ the legal choices) -> architecture (prices and decides) -> emit (renders the pla
 these are two stages (pcrec's planning, and emit).
 
 - **The kit has two faces, in two stages.** Its PLANNING face sits inside architecture: given a
-  site's facts and the target, it states its candidates and their prices. Its EMITTING face sits
+  site's facts and the frame (engine, target, layer), it returns ONE plan, a pure function; prices
+  and the alternatives considered appear only in the trace (D186 addendum 2; architecture compares
+  scenarios by asking once per frame). Its EMITTING face sits
   inside emit: given the candidate architecture chose, it writes the C. The kit stays one project
-  and one owner (F3); pcrec sees its candidates only as opaque entries with prices (D157, facts not
-  methods). Any exchange between the planner and the kit's planning face is a library call within
+  and one owner (F3); pcrec sees the plan only as an opaque entry (D157, facts not methods). Any exchange between the planner and the kit's planning face is a library call within
   one stage, not a seam.
 - **Knowledge about later stages travels as DATA.** Architecture needs the cost of the kit's methods
   and of the automaton renderings: these arrive as price cards loaded at build time, never as a
@@ -639,6 +640,14 @@ declared extension shape (§2), then 0. The ratchet number is the sum.
 | R17 | H-COUNTS undeclared | r3 rulings | 1 | 1 | H-COUNTS | as R13 |
 | R18 | read-declaration vocabularies | r2-C10 | 2 | 3 | A-READS | vocabularies among `CandNode.reads/under/by/kask`, `CompRead`, the findings reader record, `LmConj` / [SEL-WORLD], minus 1 |
 | R19 | conjunct types | [ROWCONJ] | 2 | 3 | A-READS | private conjunct structs among `CompConj`, `CoverConj`, `RevendFormRow`, `lmwalk_conj[]`'s, minus 1 |
+| R20 | kit find-method deciders (U3) | span_pick rev 5 §Staging; units_inventory §4 U3 | 3 (at 27cfc44f7) | n/a (kit row) | A-PLAN | members among `fd_route` (`^const arm \*fd_route(` in `memfn/src/finder.c`), `fd_find` (`^int fd_find(` there), compose's method walk (`^static const arm \*select_arm(` in `compose.c`), the ofsskip `fn_rows[]` BODY rows (`^    \{ FN_BODY, ` in `ofsskip.c`, 1 if any), minus 1 |
+| R21 | kit position (stop) enumerators | span_pick rev 5 §Staging 1d; kitunits_report §2a.1 | 1 (at 27cfc44f7) | n/a (kit row) | A-PLAN | enumerators among `^static void a_model_choose(` and `^static void a_mass_choose(` in `memfn/src/window.c` (each walks the positions with its own domain, `scan_ok` / `mass_domain`), minus 1 |
+| R22 | kit mass variants (U4) | span_pick rev 5 §Staging 1b | 3 (at 27cfc44f7) | n/a (kit row) | A-PLAN | variants among `^static uint32_t cube_mass(`, `^uint32_t kit_set_mass(`, `^uint32_t kit_set_sum(`, `^static uint32_t window_mass(` in `memfn/src/presence.c`, minus 1 (pcrec's `findings.c` copy stays, D157) |
+| R23 | kit tie-rule tables (U5) | span_pick rev 5 §Staging 1b | 1 (at 27cfc44f7) | n/a (kit row) | A-PLAN | tables among `^\} wf_ties\[` in `memfn/src/window.c` and `^static int tie_over(` in `presence.c`, minus 1 (pcrec's PICK is pcrec-side, not counted) |
+| R24 | kit run-member spellings (U2) | span_pick rev 5 §Staging 1c; kitunits_report §2a.4 | 2 (at 27cfc44f7) | n/a (kit row) | A-PLAN | spellings among `^static void run_member(` in `window.c`, translate's run rank (`p->rank_pos\[j\] = \(uint16_t\)i;` in `window.c`), P3's scan (`out->run_scan = \(int16_t\)scan;` in `presence.c`), minus 1 |
+| R25 | kit landmark-admission shadow (U6) | span_pick rev 5 §Staging 1c; units_inventory Q10 | 1 (at 27cfc44f7) | n/a (kit row) | A-PLAN | `the FIFTH: the landmark admission` present in `memfn/src/presence.c`: 1, else 0 |
+| R26 | inert finder rows R3a, R3b, R4 | span_pick rev 5 §Staging 1a | 3 (at 27cfc44f7) | n/a (kit row) | A-PLAN | the three `fd_rows[]` rows opening `{ "R3a", FD_FIND`, `{ "R3b", FD_FIND`, `{ "R4", FD_FIND` in `memfn/src/finder.c` (the end state keeps none: counted whole) |
+| R27 | `mf_set_terms`, a unit with no caller | span_pick rev 5 §Staging 1a (N3) | 1 (at 27cfc44f7) | n/a (kit row) | A-PLAN | `^int mf_set_terms(` defined in `memfn/src/terms.c` and no `mf_set_terms(` line in `memfn/`, `src/`, `cli/`, `lib/`, `tests/` outside `terms.c` and `kit.h`: 1, else 0 |
 
 **Baseline at main 3f777330e: 24** (census M0 13, round 3's corrections 7, earlier rounds and plan
 rows 4). **At p1build's merge as it stands: 29** (+R10, +R11, +R12, +R18, +R19).
@@ -660,6 +669,7 @@ manager appends one dated line per landed step below.
 
 Ratchet log:
 - 2026-11-01 baseline 24 at main 3f777330e (this file).
+- 2026-11-03 kit rows R20-R27 added (15 at main 27cfc44f7, counted by their recipes; span_pick rev 5 stage 1 base): total 44 = 29 (p1build merge as it stands) + 15.
 
 ---
 
