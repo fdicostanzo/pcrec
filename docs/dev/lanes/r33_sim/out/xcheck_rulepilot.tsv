@@ -1,0 +1,269 @@
+site	pattern	key	sim vs a0	a0 today	sim	arm rendering the sim (ratio to a0)	evidence	A/A floor	faster arms with another search (sim agrees with a0)	best arm
+B01	django-5\.0/[\w/.-]+\.py(?=\x00)	A	agree	[('{j}', 'memchr')]	[('{j}', 'memchr')]	-	-	0.0228	a2=0.959,a3=0.946	a1=0.931
+B01	django-5\.0/[\w/.-]+\.py(?=\x00)	B	agree	[('{j}', 'memchr')]	[('{j}', 'memchr')]	-	-	0.0228	a2=0.959,a3=0.946	a1=0.931
+B02	\x89PNG\r\n\x1a\n	A	agree	[('{\\x1a}', 'memchr')]	[('{\\x1a}', 'memchr')]	-	-	0.0370	-	a0=1.000
+B02	\x89PNG\r\n\x1a\n	B	agree	[('{\\x1a}', 'memchr')]	[('{\\x1a}', 'memchr')]	-	-	0.0370	-	a0=1.000
+B03	\x1f\x8b\x08	A	agree	[('{\\x08}', 'memchr')]	[('{\\x08}', 'memchr')]	-	-	0.0091	-	a0=1.000
+B03	\x1f\x8b\x08	B	agree	[('{\\x08}', 'memchr')]	[('{\\x08}', 'memchr')]	-	-	0.0091	-	a0=1.000
+B04	\x00{16,}	A	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0173	-	a1=0.939
+B04	\x00{16,}	B	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0173	-	a1=0.939
+B05	ustar\x0000	A	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0074	-	a2=0.820
+B05	ustar\x0000	B	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0074	-	a2=0.820
+B06	PK\x03\x04	A	agree	[('{\\x04}', 'memchr')]	[('{\\x04}', 'memchr')]	-	-	0.0614	-	a0=1.000
+B06	PK\x03\x04	B	agree	[('{\\x04}', 'memchr')]	[('{\\x04}', 'memchr')]	-	-	0.0614	-	a0=1.000
+B07	(?s)PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)	A	differ	[('{B}', 'memchr'), ('{P}', 'memchr')]	[('{B}', 'memchr'), ('{\\x03}', 'memchr')]	no arm renders it	-	0.1931	-	a0=1.000
+B07	(?s)PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)	B	differ	[('{B}', 'memchr'), ('{P}', 'memchr')]	[('{B}', 'memchr'), ('{\\x03}', 'memchr')]	no arm renders it	-	0.1931	-	a0=1.000
+B08	1AY&SY	A	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0229	-	a0=1.000
+B08	1AY&SY	B	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0229	-	a0=1.000
+B11	\xde\x12\x04\x95	A	agree	[('{\\x95}', 'memchr')]	[('{\\x95}', 'memchr')]	-	-	0.0127	-	a0=1.000
+B11	\xde\x12\x04\x95	B	agree	[('{\\x95}', 'memchr')]	[('{\\x95}', 'memchr')]	-	-	0.0127	-	a0=1.000
+B12	[0-7]{11}\x00	A	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0183	-	a1=0.814
+B12	[0-7]{11}\x00	B	agree	[('{\\x00}', 'memchr')]	[('{\\x00}', 'memchr')]	-	-	0.0183	-	a1=0.814
+B13	\bpng_[a-z_0-9]+\(	A	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0120	a2=0.969,a3=0.959	a5=0.958
+B13	\bpng_[a-z_0-9]+\(	B	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0120	a2=0.969,a3=0.959	a5=0.958
+B14	(?m)^#!.*python.*$	A	agree	[('{\\x0a}', 'memchr'), ('{p}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0158	-	a0=1.000
+B14	(?m)^#!.*python.*$	B	agree	[('{\\x0a}', 'memchr'), ('{p}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0158	-	a0=1.000
+B15	\xef\xbb\xbf	A	agree	[('{\\xbf}', 'memchr')]	[('{\\xbf}', 'memchr')]	-	-	0.0327	-	a2=0.997
+B15	\xef\xbb\xbf	B	agree	[('{\\xbf}', 'memchr')]	[('{\\xbf}', 'memchr')]	-	-	0.0327	-	a2=0.997
+B16	\r\n	A	agree	[('{\\x0d}', 'memchr')]	[('{\\x0d}', 'memchr')]	-	-	0.0118	-	a0=1.000
+B16	\r\n	B	agree	[('{\\x0d}', 'memchr')]	[('{\\x0d}', 'memchr')]	-	-	0.0118	-	a0=1.000
+B17	https?://[\x21-\x7e]+	A	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0091	a4=0.985,a6=0.989	a4=0.985
+B17	https?://[\x21-\x7e]+	B	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0091	a4=0.985,a6=0.989	a4=0.985
+B18	\x1f\x8b\x08\x08	A	agree	[('{\\x08}', 'memchr')]	[('{\\x08}', 'memchr')]	-	-	0.0126	-	a0=1.000
+B18	\x1f\x8b\x08\x08	B	agree	[('{\\x08}', 'memchr')]	[('{\\x08}', 'memchr')]	-	-	0.0126	-	a0=1.000
+B19	PK\x05\x06	A	agree	[('{\\x06}', 'memchr')]	[('{\\x06}', 'memchr')]	-	-	0.1376	-	a1=0.996
+B19	PK\x05\x06	B	agree	[('{\\x06}', 'memchr')]	[('{\\x06}', 'memchr')]	-	-	0.1376	-	a1=0.996
+B20	permission is hereby granted	A	differ	[('{B,b}', 'pair'), ('{\\x20}', 'memchr')]	[('{B,b}', 'pair'), ('{B,b}', 'pair')]	a4=1.008	AGAINST (measured slower)	0.0047	-	a6=0.995
+B20	permission is hereby granted	B	differ	[('{B,b}', 'pair'), ('{\\x20}', 'memchr')]	[('{B,b}', 'pair'), ('{B,b}', 'pair')]	a4=1.008	AGAINST (measured slower)	0.0047	-	a6=0.995
+B21	\xff\xd8\xff	A	agree	[('{\\xff}', 'memchr')]	[('{\\xff}', 'memchr')]	-	-	0.0201	-	a2=0.991
+B21	\xff\xd8\xff	B	agree	[('{\\xff}', 'memchr')]	[('{\\xff}', 'memchr')]	-	-	0.0201	-	a2=0.991
+C01	\b(?:TODO|FIXME|XXX|HACK)\b.*	A	differ	[('{F,H,T,X}', 'walk')]	[('{C,D,X}', 'walk')]	no arm renders it	-	0.0126	-	a0=1.000
+C01	\b(?:TODO|FIXME|XXX|HACK)\b.*	B	differ	[('{F,H,T,X}', 'walk')]	[('{C,D,X}', 'walk')]	no arm renders it	-	0.0126	-	a0=1.000
+C02	(?m)^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$	A	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0204	-	a1=0.974
+C02	(?m)^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$	B	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0204	-	a1=0.974
+C03	(?m)^\s*#\s*include\s*[<"]([^>"]+)[>"]	A	agree	[('{\\x0a}', 'memchr'), ('{u}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{u}', 'memchr')]	-	-	0.0133	-	a0=1.000
+C03	(?m)^\s*#\s*include\s*[<"]([^>"]+)[>"]	B	agree	[('{\\x0a}', 'memchr'), ('{u}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{u}', 'memchr')]	-	-	0.0133	-	a0=1.000
+C04	(?m)^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b	A	agree	[('{#}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{#}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0099	-	a0=1.000
+C04	(?m)^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b	B	agree	[('{#}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{#}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0099	-	a0=1.000
+C05	"(?:[^"\\\n]|\\.)*"	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0162	-	a0=1.000
+C05	"(?:[^"\\\n]|\\.)*"	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0162	-	a0=1.000
+C06	(?m)^\s*def\s+(\w+)\s*\(	A	agree	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	-	-	0.0142	-	a0=1.000
+C06	(?m)^\s*def\s+(\w+)\s*\(	B	agree	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	-	-	0.0142	-	a0=1.000
+C07	(?m)^class\s+(\w+)\((.*?)\):	A	agree	[('{\\x0a}', 'memchr'), ('{c}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{c}', 'memchr')]	-	-	0.0175	-	a1=0.970
+C07	(?m)^class\s+(\w+)\((.*?)\):	B	agree	[('{\\x0a}', 'memchr'), ('{c}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{c}', 'memchr')]	-	-	0.0175	-	a1=0.970
+C09	@(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b	A	agree	[('{@}', 'memchr')]	[('{@}', 'memchr')]	-	-	0.0132	-	a0=1.000
+C09	@(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b	B	agree	[('{@}', 'memchr')]	[('{@}', 'memchr')]	-	-	0.0132	-	a0=1.000
+C10	public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(	A	agree	[('{b}', 'memchr'), ('{c}', 'memchr')]	[('{b}', 'memchr'), ('{c}', 'memchr')]	-	-	0.0153	-	a0=1.000
+C10	public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(	B	agree	[('{b}', 'memchr'), ('{c}', 'memchr')]	[('{b}', 'memchr'), ('{c}', 'memchr')]	-	-	0.0153	-	a0=1.000
+C11	\bfunction\s+(\w+)\s*\(	A	differ	[('{f}', 'memchr'), ('{u}', 'memchr')]	[('{f}', 'memchr'), ('{f}', 'memchr')]	a10=1.156,a5=1.166,a7=1.132	AGAINST (measured slower)	0.0125	-	a6=0.826
+C11	\bfunction\s+(\w+)\s*\(	B	differ	[('{f}', 'memchr'), ('{u}', 'memchr')]	[('{f}', 'memchr'), ('{f}', 'memchr')]	a10=1.156,a5=1.166,a7=1.132	AGAINST (measured slower)	0.0125	-	a6=0.826
+C12	\$\(\s*["'][^"']+["']\s*\)	A	agree	[('{$}', 'memchr')]	[('{$}', 'memchr')]	-	-	0.0394	-	a2=0.996
+C12	\$\(\s*["'][^"']+["']\s*\)	B	agree	[('{$}', 'memchr')]	[('{$}', 'memchr')]	-	-	0.0394	-	a2=0.996
+C13	(?m)^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(	A	agree	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	-	-	0.0175	-	a1=0.977
+C13	(?m)^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(	B	agree	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{f}', 'memchr')]	-	-	0.0175	-	a1=0.977
+C14	\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(	A	differ	[('{f}', 'memchr'), ('{n}', 'memchr')]	[('{f}', 'memchr'), ('{f}', 'memchr')]	a10=1.415,a5=1.411,a7=1.380	AGAINST (measured slower)	0.0182	-	a4=0.929
+C14	\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(	B	differ	[('{f}', 'memchr'), ('{n}', 'memchr')]	[('{f}', 'memchr'), ('{f}', 'memchr')]	a10=1.415,a5=1.411,a7=1.380	AGAINST (measured slower)	0.0182	-	a4=0.929
+C15	\bunsafe\s*\{	A	agree	[('{f}', 'memchr')]	[('{f}', 'memchr')]	-	-	0.0188	-	a5=0.948
+C15	\bunsafe\s*\{	B	agree	[('{f}', 'memchr')]	[('{f}', 'memchr')]	-	-	0.0188	-	a5=0.948
+C17	\b0x[0-9a-fA-F]{8,}\b	A	agree	[('{x}', 'memchr')]	[('{x}', 'memchr')]	-	-	0.0160	a1=0.979	a2=0.926
+C17	\b0x[0-9a-fA-F]{8,}\b	B	agree	[('{x}', 'memchr')]	[('{x}', 'memchr')]	-	-	0.0160	a1=0.979	a2=0.926
+C18	\b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(	A	agree	[('{(}', 'memchr'), ('{f,l,p,s}', 'walk')]	[('{(}', 'memchr'), ('{f,l,p,s}', 'walk')]	-	-	0.0135	-	a2=0.970
+C18	\b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(	B	agree	[('{(}', 'memchr'), ('{f,l,p,s}', 'walk')]	[('{(}', 'memchr'), ('{f,l,p,s}', 'walk')]	-	-	0.0135	-	a2=0.970
+C19	\b(the|a|an|of|to|is|in)\s+\1\b	A	agree	[('{8 bytes}', 'walk')]	[('{8 bytes}', 'walk')]	-	-	0.0101	-	a0=1.000
+C19	\b(the|a|an|of|to|is|in)\s+\1\b	B	agree	[('{8 bytes}', 'walk')]	[('{8 bytes}', 'walk')]	-	-	0.0101	-	a0=1.000
+C20	[\w.+-]+@[\w-]+\.[\w.-]+	A	agree	[('{66 bytes}', 'walk'), ('{@}', 'memchr')]	[('{66 bytes}', 'walk'), ('{@}', 'memchr')]	-	-	0.0200	-	a0=1.000
+C20	[\w.+-]+@[\w-]+\.[\w.-]+	B	agree	[('{66 bytes}', 'walk'), ('{@}', 'memchr')]	[('{66 bytes}', 'walk'), ('{@}', 'memchr')]	-	-	0.0200	-	a0=1.000
+C21	\b\d+\.\d+\.\d+(?:-[\w.]+)?\b	A	agree	[('{.}', 'memchr'), ('{10 bytes}', 'walk')]	[('{.}', 'memchr'), ('{10 bytes}', 'walk')]	-	-	0.0280	-	a0=1.000
+C21	\b\d+\.\d+\.\d+(?:-[\w.]+)?\b	B	agree	[('{.}', 'memchr'), ('{10 bytes}', 'walk')]	[('{.}', 'memchr'), ('{10 bytes}', 'walk')]	-	-	0.0280	-	a0=1.000
+C22	\bgoto\s+\w+;	A	differ	[('{g}', 'memchr'), ('{o}', 'memchr')]	[('{g}', 'memchr'), ('{g}', 'memchr')]	no arm renders it	-	0.0105	-	a5=0.912
+C22	\bgoto\s+\w+;	B	differ	[('{g}', 'memchr'), ('{o}', 'memchr')]	[('{g}', 'memchr'), ('{g}', 'memchr')]	no arm renders it	-	0.0105	-	a5=0.912
+C23	//.*https?://\S+	A	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0092	-	a0=1.000
+C23	//.*https?://\S+	B	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0092	-	a0=1.000
+C24	\bdeprecated\b	A	agree	[('{P,p}', 'pair')]	[('{P,p}', 'pair')]	-	-	0.0140	-	a0=1.000
+C24	\bdeprecated\b	B	agree	[('{P,p}', 'pair')]	[('{P,p}', 'pair')]	-	-	0.0140	-	a0=1.000
+C25	\bf"[^"]*\{[^}]+\}[^"]*"	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0153	a2=0.884	a1=0.871
+C25	\bf"[^"]*\{[^}]+\}[^"]*"	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0153	a2=0.884	a1=0.871
+C26	\b(?:long|set)jmp\b	A	agree	[('{j}', 'memchr')]	[('{j}', 'memchr')]	-	-	0.0221	-	a0=1.000
+C26	\b(?:long|set)jmp\b	B	agree	[('{j}', 'memchr')]	[('{j}', 'memchr')]	-	-	0.0221	-	a0=1.000
+L01	\bERROR\b	A	agree	[('{R}', 'memchr')]	[('{R}', 'memchr')]	-	-	0.0289	-	a0=1.000
+L01	\bERROR\b	B	agree	[('{R}', 'memchr')]	[('{R}', 'memchr')]	-	-	0.0289	-	a0=1.000
+L04	\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}	A	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0109	-	a0=1.000
+L04	\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}	B	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0109	-	a0=1.000
+L05	authentication failure	A	agree	[('{F,f}', 'pair')]	[('{F,f}', 'pair')]	-	-	0.0207	-	a0=1.000
+L05	authentication failure	B	agree	[('{F,f}', 'pair')]	[('{F,f}', 'pair')]	-	-	0.0207	-	a0=1.000
+L06	"\s5\d\d\s	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0100	-	a0=1.000
+L06	"\s5\d\d\s	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0100	-	a0=1.000
+L07	"(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"	A	agree	[('{"}', 'memchr'), ('{P}', 'memchr')]	[('{"}', 'memchr'), ('{P}', 'memchr')]	-	-	0.0123	-	a0=1.000
+L07	"(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"	B	agree	[('{"}', 'memchr'), ('{P}', 'memchr')]	[('{"}', 'memchr'), ('{P}', 'memchr')]	-	-	0.0123	-	a0=1.000
+L08	"GET [^"]*\.php[^"]* HTTP/1\.\d" 404	A	differ	[('{"}', 'memchr'), ('{G}', 'memchr')]	[('{G}', 'memchr'), ('{G}', 'memchr')]	no arm renders it	-	0.0164	-	a0=1.000
+L08	"GET [^"]*\.php[^"]* HTTP/1\.\d" 404	B	differ	[('{"}', 'memchr'), ('{G}', 'memchr')]	[('{G}', 'memchr'), ('{G}', 'memchr')]	no arm renders it	-	0.0164	-	a0=1.000
+L09	container_\d+_\d+_\d+_\d+	A	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0287	-	a3=0.994
+L09	container_\d+_\d+_\d+_\d+	B	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0287	-	a3=0.994
+L10	\b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b	A	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0092	-	a1=0.970
+L10	\b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b	B	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0092	-	a1=0.970
+L11	req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}	A	agree	[('{q}', 'memchr')]	[('{q}', 'memchr')]	-	-	0.0110	-	a2=0.997
+L11	req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}	B	agree	[('{q}', 'memchr')]	[('{q}', 'memchr')]	-	-	0.0110	-	a2=0.997
+L12	\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b	A	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0135	-	a0=1.000
+L12	\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b	B	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0135	-	a0=1.000
+L14	status: (\d{3}) len: (\d+) time: (\d+\.\d+)	A	agree	[('{:}', 'memchr')]	[('{:}', 'memchr')]	-	-	0.0148	-	a3=0.972
+L14	status: (\d{3}) len: (\d+) time: (\d+\.\d+)	B	agree	[('{:}', 'memchr')]	[('{:}', 'memchr')]	-	-	0.0148	-	a3=0.972
+L15	RAS (?:KERNEL|APP) FATAL	A	agree	[('{F}', 'memchr')]	[('{F}', 'memchr')]	-	-	0.0123	-	a0=1.000
+L15	RAS (?:KERNEL|APP) FATAL	B	agree	[('{F}', 'memchr')]	[('{F}', 'memchr')]	-	-	0.0123	-	a0=1.000
+L17	R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d	A	agree	[('{J}', 'memchr')]	[('{J}', 'memchr')]	-	-	0.0119	-	a0=1.000
+L17	R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d	B	agree	[('{J}', 'memchr')]	[('{J}', 'memchr')]	-	-	0.0119	-	a0=1.000
+L18	\b(\w+)\s+\1\b	A	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0072	-	a0=1.000
+L18	\b(\w+)\s+\1\b	B	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0072	-	a0=1.000
+L19	File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*	A	differ	[('{:}', 'memchr'), ('{X,x}', 'pair')]	[('{X,x}', 'pair'), ('{X,x}', 'pair')]	a6=1.058	AGAINST (measured slower)	0.0123	-	a1=0.968
+L19	File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*	B	differ	[('{:}', 'memchr'), ('{X,x}', 'pair')]	[('{/}', 'memchr'), ('{/}', 'memchr')]	no arm renders it	-	0.0123	-	a1=0.968
+L20	0x[0-9a-f]{15,16}	A	differ	[('{0}', 'memchr'), ('{X,x}', 'walk')]	[('{X,x}', 'pair'), ('{X,x}', 'pair')]	no arm renders it	-	0.0183	-	a0=1.000
+L20	0x[0-9a-f]{15,16}	B	differ	[('{0}', 'memchr'), ('{X,x}', 'walk')]	[('{X,x}', 'pair'), ('{X,x}', 'pair')]	no arm renders it	-	0.0183	-	a0=1.000
+L21	Exception	A	agree	[('{x}', 'memchr')]	[('{x}', 'memchr')]	-	-	0.0248	-	a0=1.000
+L21	Exception	B	agree	[('{x}', 'memchr')]	[('{x}', 'memchr')]	-	-	0.0248	-	a0=1.000
+L22	Connection broken for id \d+	A	agree	[('{C}', 'memchr')]	[('{C}', 'memchr')]	-	-	0.0241	-	a1=0.978
+L22	Connection broken for id \d+	B	agree	[('{C}', 'memchr')]	[('{C}', 'memchr')]	-	-	0.0241	-	a1=0.978
+L23	\b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]	A	agree	[('{6 bytes}', 'walk'), ('{[}', 'memchr')]	[('{6 bytes}', 'walk'), ('{[}', 'memchr')]	-	-	0.0176	-	a2=0.941
+L23	\b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]	B	agree	[('{6 bytes}', 'walk'), ('{[}', 'memchr')]	[('{6 bytes}', 'walk'), ('{[}', 'memchr')]	-	-	0.0176	-	a2=0.941
+L25	kernel panic	A	agree	[('{K,k}', 'pair')]	[('{K,k}', 'pair')]	-	-	0.0056	a1=0.992	a1=0.992
+L25	kernel panic	B	agree	[('{K,k}', 'pair')]	[('{K,k}', 'pair')]	-	-	0.0056	a1=0.992	a1=0.992
+L26	\[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d	A	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0115	a1=0.980	a1=0.980
+L26	\[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d	B	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0115	a1=0.980	a1=0.980
+L28	\[(notice|error|warn|crit|alert|emerg)\]	A	agree	[('{[}', 'memchr')]	[('{[}', 'memchr')]	-	-	0.0090	-	a3=0.992
+L28	\[(notice|error|warn|crit|alert|emerg)\]	B	agree	[('{[}', 'memchr')]	[('{[}', 'memchr')]	-	-	0.0090	-	a3=0.992
+M01	<a\s+[^>]*href="([^"#][^"]*)"	A	agree	[('{"}', 'memchr'), ('{<}', 'memchr')]	[('{"}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0217	-	a7=0.973
+M01	<a\s+[^>]*href="([^"#][^"]*)"	B	agree	[('{"}', 'memchr'), ('{<}', 'memchr')]	[('{"}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0217	-	a7=0.973
+M02	</?([a-z][a-z0-9]*)\b	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0333	-	a3=0.964
+M02	</?([a-z][a-z0-9]*)\b	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0333	-	a3=0.964
+M03	\bid="([^"]+)"	A	agree	[('{"}', 'memchr'), ('{=}', 'memchr')]	[('{"}', 'memchr'), ('{=}', 'memchr')]	-	-	0.0120	-	a2=0.989
+M03	\bid="([^"]+)"	B	agree	[('{"}', 'memchr'), ('{=}', 'memchr')]	[('{"}', 'memchr'), ('{=}', 'memchr')]	-	-	0.0120	-	a2=0.989
+M04	<h([1-6])[^>]*>(.*?)</h\1>	A	agree	[('{<}', 'memchr'), ('{<}', 'memchr')]	[('{<}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0182	-	a0=1.000
+M04	<h([1-6])[^>]*>(.*?)</h\1>	B	agree	[('{<}', 'memchr'), ('{<}', 'memchr')]	[('{<}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0182	-	a0=1.000
+M05	(?s)<!--.*?-->	A	agree	[('{!}', 'memchr')]	[('{!}', 'memchr')]	-	-	0.0356	-	a0=1.000
+M05	(?s)<!--.*?-->	B	agree	[('{!}', 'memchr')]	[('{!}', 'memchr')]	-	-	0.0356	-	a0=1.000
+M06	class="[^"]*\bhighlight\b[^"]*"	A	agree	[('{=}', 'memchr'), ('{g}', 'memchr')]	[('{=}', 'memchr'), ('{g}', 'memchr')]	-	-	0.0165	-	a3=0.948
+M06	class="[^"]*\bhighlight\b[^"]*"	B	agree	[('{=}', 'memchr'), ('{g}', 'memchr')]	[('{=}', 'memchr'), ('{g}', 'memchr')]	-	-	0.0165	-	a3=0.948
+M07	&(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);	A	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0602	-	a0=1.000
+M07	&(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);	B	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0602	-	a0=1.000
+M08	<img\b[^>]*\bsrc="([^"]+)"	A	agree	[('{"}', 'memchr'), ('{<}', 'memchr')]	[('{"}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0126	-	a4=0.968
+M08	<img\b[^>]*\bsrc="([^"]+)"	B	agree	[('{"}', 'memchr'), ('{<}', 'memchr')]	[('{"}', 'memchr'), ('{<}', 'memchr')]	-	-	0.0126	-	a4=0.968
+M09	<script[^>]*\bsrc=	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0148	-	a1=0.950
+M09	<script[^>]*\bsrc=	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0148	-	a1=0.950
+M11	(?m)^\.\. ([a-z]+)::\s*(.*)$	A	agree	[('{.}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{.}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0132	-	a0=1.000
+M11	(?m)^\.\. ([a-z]+)::\s*(.*)$	B	agree	[('{.}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{.}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0132	-	a0=1.000
+M12	:(?:class|func|meth|attr|mod):`~?([^`]+)`	A	agree	[('{`}', 'memchr')]	[('{`}', 'memchr')]	-	-	0.0105	a1=0.986	a1=0.986
+M12	:(?:class|func|meth|attr|mod):`~?([^`]+)`	B	agree	[('{`}', 'memchr')]	[('{`}', 'memchr')]	-	-	0.0105	a1=0.986	a1=0.986
+M13	``[^`]+``	A	agree	[('{`}', 'memchr'), ('{`}', 'memchr')]	[('{`}', 'memchr'), ('{`}', 'memchr')]	-	-	0.0097	-	a0=1.000
+M13	``[^`]+``	B	agree	[('{`}', 'memchr'), ('{`}', 'memchr')]	[('{`}', 'memchr'), ('{`}', 'memchr')]	-	-	0.0097	-	a0=1.000
+M14	(?m)^\.\. versionadded:: (\d+\.\d+)	A	agree	[('{\\x0a}', 'memchr'), ('{v}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{v}', 'memchr')]	-	-	0.0138	-	a0=1.000
+M14	(?m)^\.\. versionadded:: (\d+\.\d+)	B	agree	[('{\\x0a}', 'memchr'), ('{v}', 'memchr')]	[('{\\x0a}', 'memchr'), ('{v}', 'memchr')]	-	-	0.0138	-	a0=1.000
+M15	\[([^\]]+)\]\(([^)]+)\)	A	agree	[('{(}', 'memchr'), ('{[}', 'memchr')]	[('{(}', 'memchr'), ('{[}', 'memchr')]	-	-	0.0167	-	a0=1.000
+M15	\[([^\]]+)\]\(([^)]+)\)	B	agree	[('{(}', 'memchr'), ('{[}', 'memchr')]	[('{(}', 'memchr'), ('{[}', 'memchr')]	-	-	0.0167	-	a0=1.000
+M16	(?m)^#{1,6}\s+.+$	A	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0146	-	a0=1.000
+M16	(?m)^#{1,6}\s+.+$	B	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0146	-	a0=1.000
+M17	https?://[^\s)>\]]+	A	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0082	a1=0.958,a10=0.931	a10=0.931
+M17	https?://[^\s)>\]]+	B	agree	[('{/}', 'memchr'), ('{p}', 'memchr')]	[('{/}', 'memchr'), ('{p}', 'memchr')]	-	-	0.0082	a1=0.958,a10=0.931	a10=0.931
+M18	(?:Added|Changed|Deprecated) in version \d+\.\d+	A	agree	[('{v}', 'memchr')]	[('{v}', 'memchr')]	-	-	0.0213	-	a0=1.000
+M18	(?:Added|Changed|Deprecated) in version \d+\.\d+	B	agree	[('{v}', 'memchr')]	[('{v}', 'memchr')]	-	-	0.0213	-	a0=1.000
+M19	<code class="[^"]*"><span class="pre">(\w+)</span></code>	A	agree	[('{<}', 'memchr'), ('{>}', 'memchr')]	[('{<}', 'memchr'), ('{>}', 'memchr')]	-	-	0.0128	-	a0=1.000
+M19	<code class="[^"]*"><span class="pre">(\w+)</span></code>	B	agree	[('{<}', 'memchr'), ('{>}', 'memchr')]	[('{<}', 'memchr'), ('{>}', 'memchr')]	-	-	0.0128	-	a0=1.000
+M20	\bdeprecat\w*	A	agree	[('{P,p}', 'pair')]	[('{P,p}', 'pair')]	-	-	0.0126	-	a0=1.000
+M20	\bdeprecat\w*	B	agree	[('{P,p}', 'pair')]	[('{P,p}', 'pair')]	-	-	0.0126	-	a0=1.000
+M21	user@example\.invalid	A	agree	[('{@}', 'memchr')]	[('{@}', 'memchr')]	-	-	0.0351	-	a2=0.991
+M21	user@example\.invalid	B	agree	[('{@}', 'memchr')]	[('{@}', 'memchr')]	-	-	0.0351	-	a2=0.991
+M22	<[^>]+>	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0123	-	a0=1.000
+M22	<[^>]+>	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0123	-	a0=1.000
+M23	\b(\w+)\s+\1\b	A	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0146	-	a0=1.000
+M23	\b(\w+)\s+\1\b	B	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0146	-	a0=1.000
+N04	ã[^ã]+ã	A	agree	[('{\\x80}', 'memchr'), ('{\\x8b}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x8b}', 'memchr')]	-	-	0.0113	-	a0=1.000
+N04	ã[^ã]+ã	B	agree	[('{\\x80}', 'memchr'), ('{\\x8b}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x8b}', 'memchr')]	-	-	0.0113	-	a0=1.000
+N05	(\p{Han}+)ã(\p{Hiragana}+)ã	A	agree	[('{12 bytes}', 'walk'), ('{\\x8a}', 'memchr')]	[('{12 bytes}', 'walk'), ('{\\x8a}', 'memchr')]	-	-	0.0111	-	a1=0.998
+N05	(\p{Han}+)ã(\p{Hiragana}+)ã	B	agree	[('{12 bytes}', 'walk'), ('{\\x8a}', 'memchr')]	[('{12 bytes}', 'walk'), ('{\\x8a}', 'memchr')]	-	-	0.0111	-	a1=0.998
+N16	ã[^ã]*ã	A	agree	[('{\\x80}', 'memchr'), ('{\\x8d}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x8d}', 'memchr')]	-	-	0.0090	-	a2=0.977
+N16	ã[^ã]*ã	B	agree	[('{\\x80}', 'memchr'), ('{\\x8d}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x8d}', 'memchr')]	-	-	0.0090	-	a2=0.977
+P01	\bwhales?\b	A	agree	[('{W,w}', 'pair')]	[('{W,w}', 'pair')]	-	-	0.0348	-	a0=1.000
+P01	\bwhales?\b	B	agree	[('{W,w}', 'pair')]	[('{W,w}', 'pair')]	-	-	0.0348	-	a0=1.000
+P02	\b(\w+)\s+\1\b	A	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0108	-	a0=1.000
+P02	\b(\w+)\s+\1\b	B	agree	[('{63 bytes}', 'walk')]	[('{63 bytes}', 'walk')]	-	-	0.0108	-	a0=1.000
+P03	â[^â]{5,200}â	A	agree	[('{\\x80}', 'memchr'), ('{\\x9d}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x9d}', 'memchr')]	-	-	0.0106	-	a1=0.998
+P03	â[^â]{5,200}â	B	agree	[('{\\x80}', 'memchr'), ('{\\x9d}', 'memchr')]	[('{\\x80}', 'memchr'), ('{\\x9d}', 'memchr')]	-	-	0.0106	-	a1=0.998
+P04	\b([A-Z][a-z]+) (?:said|replied|cried|answered)\b	A	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0138	-	a0=1.000
+P04	\b([A-Z][a-z]+) (?:said|replied|cried|answered)\b	B	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0138	-	a0=1.000
+P05	\b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+	A	differ	[('{D,M}', 'walk')]	[('{D,M}', 'pair')]	no arm renders it	-	0.0089	-	a2=0.727
+P05	\b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+	B	differ	[('{D,M}', 'walk')]	[('{D,M}', 'pair')]	no arm renders it	-	0.0089	-	a2=0.727
+P08	\b1[5-9]\d\d\b	A	agree	[('{1}', 'memchr')]	[('{1}', 'memchr')]	-	-	0.0383	-	a0=1.000
+P08	\b1[5-9]\d\d\b	B	agree	[('{1}', 'memchr')]	[('{1}', 'memchr')]	-	-	0.0383	-	a0=1.000
+P09	(?m)^CHAPTER (?:\d+|[IVXLC]+)\.	A	agree	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0230	-	a0=1.000
+P09	(?m)^CHAPTER (?:\d+|[IVXLC]+)\.	B	agree	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0230	-	a0=1.000
+P10	(?m)^CHAPTER [IVXLC]+\.\s*$	A	agree	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0052	-	a0=1.000
+P10	(?m)^CHAPTER [IVXLC]+\.\s*$	B	agree	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{P}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0052	-	a0=1.000
+P11	\b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b	A	agree	[('{7 bytes}', 'walk')]	[('{7 bytes}', 'walk')]	-	-	0.0234	-	a0=1.000
+P11	\b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b	B	agree	[('{7 bytes}', 'walk')]	[('{7 bytes}', 'walk')]	-	-	0.0234	-	a0=1.000
+P12	(?<=Mr\. )[A-Z]\w+	A	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0156	-	a1=0.902
+P12	(?<=Mr\. )[A-Z]\w+	B	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0156	-	a1=0.902
+P14	\b[A-Za-z]+(?:-[A-Za-z]+)+\b	A	agree	[('{52 bytes}', 'walk')]	[('{52 bytes}', 'walk')]	-	-	0.0111	-	a0=1.000
+P14	\b[A-Za-z]+(?:-[A-Za-z]+)+\b	B	agree	[('{52 bytes}', 'walk')]	[('{52 bytes}', 'walk')]	-	-	0.0111	-	a0=1.000
+P15	\b[A-Z]{4,}\b	A	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0088	-	a0=1.000
+P15	\b[A-Z]{4,}\b	B	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0088	-	a0=1.000
+P16	\*\*\* START OF .*? \*\*\*	A	agree	[('{*}', 'memchr')]	[('{*}', 'memchr')]	-	-	0.0099	-	a1=0.994
+P16	\*\*\* START OF .*? \*\*\*	B	agree	[('{*}', 'memchr')]	[('{*}', 'memchr')]	-	-	0.0099	-	a1=0.994
+P17	\bMycroft\b	A	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0187	-	a0=1.000
+P17	\bMycroft\b	B	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0187	-	a0=1.000
+P18	--	A	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0137	-	a0=1.000
+P18	--	B	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0137	-	a0=1.000
+P19	(?m)\w-$	A	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0071	-	a0=1.000
+P19	(?m)\w-$	B	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0071	-	a0=1.000
+P20	\bthe\b	A	agree	[('{H,h}', 'pair')]	[('{H,h}', 'pair')]	-	-	0.0120	-	a0=1.000
+P20	\bthe\b	B	agree	[('{H,h}', 'pair')]	[('{H,h}', 'pair')]	-	-	0.0120	-	a0=1.000
+P23	\bwas\s+\w+ing\b	A	differ	[('{g}', 'memchr'), ('{s}', 'memchr')]	[('{g}', 'memchr'), ('{w}', 'memchr')]	a1=0.896,a3=0.964	supports	0.0156	-	a1=0.896
+P23	\bwas\s+\w+ing\b	B	differ	[('{g}', 'memchr'), ('{s}', 'memchr')]	[('{g}', 'memchr'), ('{w}', 'memchr')]	a1=0.896,a3=0.964	supports	0.0156	-	a1=0.896
+P24	\b[A-Z]\w+['â]s\b	A	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0135	-	a0=1.000
+P24	\b[A-Z]\w+['â]s\b	B	agree	[('{26 bytes}', 'walk')]	[('{26 bytes}', 'walk')]	-	-	0.0135	-	a0=1.000
+P25	(?s)\*\*\* START OF.*?\*\*\* END OF	A	agree	[('{*}', 'memchr')]	[('{*}', 'memchr')]	-	-	0.0207	-	a0=1.000
+P25	(?s)\*\*\* START OF.*?\*\*\* END OF	B	agree	[('{*}', 'memchr')]	[('{*}', 'memchr')]	-	-	0.0207	-	a0=1.000
+P27	(?m)\w-\r?$	A	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0091	a2=0.923	a2=0.923
+P27	(?m)\w-\r?$	B	agree	[('{-}', 'memchr')]	[('{-}', 'memchr')]	-	-	0.0091	a2=0.923	a2=0.923
+S02	(?m)^TX\t	A	agree	[('{X}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{X}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0346	-	a0=1.000
+S02	(?m)^TX\t	B	agree	[('{X}', 'memchr'), ('{\\x0a}', 'memchr')]	[('{X}', 'memchr'), ('{\\x0a}', 'memchr')]	-	-	0.0346	-	a0=1.000
+S03	(?m)(-?\d+\.\d+)\t(-?\d+\.\d+)\s*$	A	differ	[('{10 bytes}', 'walk')]	[('{11 bytes}', 'walk')]	no arm renders it	-	0.0048	-	a1=0.898
+S03	(?m)(-?\d+\.\d+)\t(-?\d+\.\d+)\s*$	B	differ	[('{10 bytes}', 'walk')]	[('{11 bytes}', 'walk')]	no arm renders it	-	0.0048	-	a1=0.898
+S04	\t\d+\t0\t\d+\.\d+\t0\.\t	A	agree	[('{\\x09}', 'memchr'), ('{\\x09}', 'memchr')]	[('{\\x09}', 'memchr'), ('{\\x09}', 'memchr')]	-	-	0.0146	-	a0=1.000
+S04	\t\d+\t0\t\d+\.\d+\t0\.\t	B	agree	[('{\\x09}', 'memchr'), ('{\\x09}', 'memchr')]	[('{\\x09}', 'memchr'), ('{\\x09}', 'memchr')]	-	-	0.0146	-	a0=1.000
+S05	(?m)^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),	A	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0055	-	a0=1.000
+S05	(?m)^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),	B	agree	[('{\\x0a}', 'memchr')]	[('{\\x0a}', 'memchr')]	-	-	0.0055	-	a0=1.000
+S06	\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z	A	agree	[('{Z}', 'memchr')]	[('{Z}', 'memchr')]	-	-	0.0137	-	a0=1.000
+S06	\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z	B	agree	[('{Z}', 'memchr')]	[('{Z}', 'memchr')]	-	-	0.0137	-	a0=1.000
+S07	"([^"]*)"	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0182	-	a2=0.971
+S07	"([^"]*)"	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0182	-	a2=0.971
+S08	"[^"]*,\s(?:Alaska|Hawaii)"	A	agree	[('{"}', 'memchr'), ('{"}', 'memchr')]	[('{"}', 'memchr'), ('{"}', 'memchr')]	-	-	0.0149	-	a0=1.000
+S08	"[^"]*,\s(?:Alaska|Hawaii)"	B	agree	[('{"}', 'memchr'), ('{"}', 'memchr')]	[('{"}', 'memchr'), ('{"}', 'memchr')]	-	-	0.0149	-	a0=1.000
+S09	,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),	A	agree	[('{,}', 'memchr')]	[('{,}', 'memchr')]	-	-	0.0125	-	a3=0.989
+S09	,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),	B	agree	[('{,}', 'memchr')]	[('{,}', 'memchr')]	-	-	0.0125	-	a3=0.989
+S10	"mag":(\d+\.\d+)	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0146	-	a0=1.000
+S10	"mag":(\d+\.\d+)	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0146	-	a0=1.000
+S11	"place":"([^"]+)"	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0096	-	a0=1.000
+S11	"place":"([^"]+)"	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0096	-	a0=1.000
+S12	"(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")	A	agree	[('{"}', 'memchr'), ('{"}', 'memchr')]	[('{"}', 'memchr'), ('{"}', 'memchr')]	-	-	0.0046	-	a1=0.974
+S12	"(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")	B	agree	[('{"}', 'memchr'), ('{"}', 'memchr')]	[('{"}', 'memchr'), ('{"}', 'memchr')]	-	-	0.0046	-	a1=0.974
+S13	"felt":[1-9]\d*	A	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0111	-	a0=1.000
+S13	"felt":[1-9]\d*	B	agree	[('{"}', 'memchr')]	[('{"}', 'memchr')]	-	-	0.0111	-	a0=1.000
+S14	"NAME":"([^"]+)"	A	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0090	-	a0=1.000
+S14	"NAME":"([^"]+)"	B	agree	[('{M}', 'memchr')]	[('{M}', 'memchr')]	-	-	0.0090	-	a0=1.000
+S15	"ISO_A2":"([A-Z]{2})"	A	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0417	-	a0=1.000
+S15	"ISO_A2":"([A-Z]{2})"	B	agree	[('{_}', 'memchr')]	[('{_}', 'memchr')]	-	-	0.0417	-	a0=1.000
+S16	\[-?\d+\.\d+,-?\d+\.\d+\]	A	agree	[('{[}', 'memchr')]	[('{[}', 'memchr')]	-	-	0.0151	-	a1=0.898
+S16	\[-?\d+\.\d+,-?\d+\.\d+\]	B	agree	[('{[}', 'memchr')]	[('{[}', 'memchr')]	-	-	0.0151	-	a1=0.898
+S17	"POP_EST":(\d{9,})	A	agree	[('{P}', 'memchr')]	[('{P}', 'memchr')]	-	-	0.0293	-	a0=1.000
+S17	"POP_EST":(\d{9,})	B	agree	[('{P}', 'memchr')]	[('{P}', 'memchr')]	-	-	0.0293	-	a0=1.000
+S18	<(\w[\w-]*)(?:\s[^>]*)?>	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0148	-	a0=1.000
+S18	<(\w[\w-]*)(?:\s[^>]*)?>	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0148	-	a0=1.000
+S19	<sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0132	-	a2=0.983
+S19	<sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0132	-	a2=0.983
+S20	\bSection\s+\d+[a-z]?\b	A	differ	[('{S}', 'memchr'), ('{c}', 'memchr')]	[('{S}', 'memchr'), ('{S}', 'memchr')]	a3=1.253	AGAINST (measured slower)	0.0101	-	a2=0.915
+S20	\bSection\s+\d+[a-z]?\b	B	differ	[('{S}', 'memchr'), ('{c}', 'memchr')]	[('{S}', 'memchr'), ('{S}', 'memchr')]	a3=1.253	AGAINST (measured slower)	0.0101	-	a2=0.915
+S21	\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?	A	agree	[('{$}', 'memchr')]	[('{$}', 'memchr')]	-	-	0.0794	-	a1=0.979
+S21	\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?	B	agree	[('{$}', 'memchr')]	[('{$}', 'memchr')]	-	-	0.0794	-	a1=0.979
+S22	<action-date date="(\d{8})">	A	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0147	-	a1=0.972
+S22	<action-date date="(\d{8})">	B	agree	[('{<}', 'memchr')]	[('{<}', 'memchr')]	-	-	0.0147	-	a1=0.972
+S23	(?s)<!--.*?-->	A	agree	[('{!}', 'memchr')]	[('{!}', 'memchr')]	-	-	0.0416	-	a2=0.970
+S23	(?s)<!--.*?-->	B	agree	[('{!}', 'memchr')]	[('{!}', 'memchr')]	-	-	0.0416	-	a2=0.970
+S24	&[a-z]+;|&#\d+;	A	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0148	-	a1=0.947
+S24	&[a-z]+;|&#\d+;	B	agree	[('{&}', 'memchr')]	[('{&}', 'memchr')]	-	-	0.0148	-	a1=0.947
