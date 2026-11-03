@@ -178,7 +178,7 @@ incumbent; a candidate departs from it only if cheaper beyond the band under B a
 adds each mass's sampling noise from B's counts (Poisson, `sqrt(n)` on a count n) times its
 coefficient. F is not read: it stands for the absence of data, which B replaces. Cost: two pricings
 per admitted site.
-**The property** (the owner's bar, SCOPE PENDING the owner's confirmation): on every cell whose subject
+**The property** (the owner's bar, plan [BENCH-WITHDATA]; scope CONFIRMED by the owner 2026-11-02: "The analysis data must match the test subject to require same-or-better results."): on every cell whose subject
 kind B describes, a with-data compile matches or beats the blind compile beyond noise. **Why the
 structure gives it:** the with-data pick's predicted price under B is <= the blind pick's by
 construction (the blind pick is the incumbent, a departure must win under B beyond band). The
