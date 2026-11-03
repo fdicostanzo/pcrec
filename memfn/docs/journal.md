@@ -3004,3 +3004,14 @@ Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/
 - Bar, plan [BENCH-WITHDATA]: a with-data compile matches or beats the blind compile on every cell beyond noise. Rev 3 states that as a property of the pick.
 - Open scoping point raised to main: does "every cell" mean the cells whose subjects the bundle describes?
 - Frank also: no real-text rate dataset now; options are evaluated only at the last planned step.
+
+## 2026-11-02/03 — span_pick rev 3 merged; edits queued for rev 3.1
+
+Rev 3 is merged to main. Frank: O3 = WAIT (smp04 and the look-ahead measurement wait for stage 1). C9: he asked for an example (given: smp20 w16; utf8-lead two-byte window); the answer is pending.
+
+Main's answers, for rev 3.1:
+- Witness pass = a one-member stop the bundle rates rarer than {x,X} ('4' passes).
+- C5: new id zen4-grid2 (measures.md §8¶1 beats D176 Q3).
+- C6/M2: priced rows going dark on a bare compile under the M2 envelope is intended ("unknown target prices nothing"), and is M2's dependency; no safe-direction carriage.
+
+Pending with Frank: the blind rule (minimax vs win-under-both), C9, one plan vs priced list, and R9 (D186 over D144 item 3).
