@@ -669,6 +669,26 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SPAN-PICK-UTF8] STATE:not-started — span_pick: a per-encoding default prior (or a priced NONE row) for UTF-8 text
+  filed: 2026-11-03 manager (span_pick rev 5)
+  status (2026-11-03): filed from rev 5 "For main"; not scheduled. Under `-e utf8` the blind pick is NONE today (findings.md §2¶7); the byte-encoded-over-UTF-8-text gap has no prior
+  trigger: the first priced span_pick row over two-member stops that must serve byte-encoded compiles on UTF-8 text, or a priced row on NONE (review 2026-11-03 r2); name the measurement then
+  refs: docs/design/memfn/span_pick.md rev 5 (Uncovered; §The pick 6, utf8-lead-no-cont witness); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md; R-33 `utf8/alt-cyr-64`; docs/spec/findings.md §2¶7; [BENCH-WITHDATA]
+  Rev 5: where real text is far from the default prior P (UTF-8 lead bytes, case-folded pairs, dense classes), P is wrong. Priced rows over two-member stops are GATED on a fix: an encoding fact, or a per-encoding default prior; it joins the kit as one new T-KIND row, not a mechanism. Nothing is tuned meanwhile. A default-prior change is a data event with its census (D186 add. 2). The SIMD witness for that layer is utf8-lead-no-cont, not smp20.
+
+- [SPAN-PICK-PERCALL] STATE:not-started — span_pick: a per-call term for short-subject cells (the cards are per-byte streaming)
+  filed: 2026-11-03 manager (span_pick rev 5)
+  status (2026-11-03): filed from rev 5 "For main"; not scheduled. Stage 2's cards price long subjects; the with-data property's cell condition (i) needs this term for per-call cells
+  trigger: a per-call (short-subject) cell on which a priced span_pick row's pick loses beyond noise though its long-subject cards say it wins, or stage 2's per-call fixed-term (enter) cards landing
+  refs: docs/design/memfn/span_pick.md rev 5 (With data, conditions (i)-(iv); §Cost cards); docs/dev/reviews/2026-11-02-r1-memfn-spanpick/MEAS.md (MEAS-5); [BENCH-WITHDATA]; [MEASURE-SET]
+  Rev 5: the with-data guarantee (a with-data compile matches or beats the blind compile beyond noise) holds when (i) the cards' regime is the cell's, long subjects; per-call cells need this row's term. Cards are per-byte streaming while the bench's losses and the bar are per-call (review r1, MEAS-5).
+
+- [PICK-IDIOM] STATE:not-started — one row format for every "admission condition + action + deny + tie" decider family
+  filed: 2026-11-03 manager (span_pick rev 5)
+  status (2026-11-03): filed from rev 5 "For main"; not scheduled. Siblings today: lmwalk, landmark admission, PRES's P2/P4 picks, precheck-assign-byte in arms[], [PRICE-BAKEOFF]
+  trigger: the first T-PICK row's landing (span_pick stage 3 row 1), so the row format is chosen once before a second family writes rows in its own format (review 2026-11-02 r2, SLOT; the earlier trigger was the first priced row or the bake-off's revisit)
+  refs: docs/design/memfn/span_pick.md rev 5; docs/dev/reviews/2026-11-02-r2-memfn-spanpick2.md (F, SLOT-14); [PRICE-BAKEOFF]; decisions D157 D167 D186
+  Rev 5 names the row; the idiom is the review's: a plan is a vector of levels, each with one declared table of valid values on stated facts, a default vector chosen by default rows, a departure a T-PICK row that opens named levels, one tie table. Inside the kit that is KEY/M/TIE/T-PICK; across the D157 boundary it is a plan row only. Unlocks, each with its trigger, are listed in the review.
 - [CAND-SPAN] STATE:not-started — at a found byte, test the full fixed-size easy span; one fact for walk, pre-check, literal search
   filed: 2026-11-01 Frank + manager (from [LANDWALK-PRES]'s generated-code reading)
   status (2026-11-01): filed, ruled, not built; P1 lands without it (its [LANDWALK-PRES] loss recorded); independent of the pricing pilot
@@ -1128,7 +1148,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-10 Frank
   status (2026-10-10): HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out…
   trigger: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it).
-  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank)
+  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank); 2026-11-03 class option (span_pick rev 5)
   UMBRELLA ROW, the gate for: [RXINFO-REMODEL] + [V-E] (rx_info), [STAMP-REVIEW] + [CAP-STAMP-BYTES] (stamps), [OPT-SETS] + the pcrec_options/CLI option surface, [FINDALL-NEXT], [EMIT-ENTRIES]. TRIGGER: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it). ORDER: the interface push as ONE design pass across the four surfaces, THEN the docs pass ([SPEC-ORG], [SPEC-LANG], [GUIDE-1]) once the interface is solid. Until then member rows stay unscheduled; a capability/optimization row that needs a new field or stamp adds it the usual way (D76 ritual), not a remodel. RESIDUE FROM [FLAG-ACCESS] (archived 2026-10-12, merged 67f59d24): the accessors still take/return uint64_t; the word still travels as a uint64_t parameter (cand_select, DFA_SELECT, clskit/memfn deny maps) and is printed into `.flags = N`; writes stay raw and outside the gate.
   So a representation change is a typed sweep over those sites, not one site.
   2026-10-22 CANDIDATE (kit S3, [KIT-VERIFY] B1): flag bit 57, a pcrec-side deny for the cover locator (the proven fixed-width window reported with no engine run, `RX_DFA_SCAN "cover"`); NAME per Frank 2026-10-22: name the behaviour, never an internal module, working name `PCREC_NO_WINDOW_REPORT`, final spelling at the push, deferred here by the manager's ruling; until then the kit deny is the OFF arm (mf_ask refuses, LOCATE falls to composite).
