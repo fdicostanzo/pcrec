@@ -59,13 +59,18 @@ design's text, sharing no code with the kit):
      is retired, declared UNREACHED.)
      Also (lane n2fix): no PRES shadow decision is declined on `need` (the
      OPTIONAL span on `pre-opt` is on the record, so the control is not blind).
-  L. PROVENANCE LEFT THE SEAM (span_pick.md unit 1g, MF_SITE_ABI 22): memfn.h
-     states no source, bundle, bytes or fidelity (mf_akind's members, and no
-     mf_prov/MF_PROV_/MF_FID_ in its code), and a site renders
-     byte-identically (plain and traced) under analysis objects with the
-     same rates that differ only in `mf_akind.digest` (no kit row reads it).
-     R-24's stanza parts (1)-(3) retired with the stanza (S1092 with them);
-     the digest's offset is prov_check.c's build-only static assertion.
+  L. THE SEAM CARRIES A PAYLOAD AND ITS DIGEST, AND NO ROW READS THE DIGEST
+     (span_pick.md unit 1g, MF_SITE_ABI 22): memfn.h's mf_akind members are
+     exactly {tag, version, present, digest, payload} and mf_analysis's
+     {list_v, nkinds, kinds} (an allowlist, comments stripped), its code names
+     no mf_prov/MF_PROV_/MF_FID_, and no memfn/src file names `digest`. A
+     rate-reading site (pre-lead, pre-lead-run, pre-opt) renders byte-
+     identically (plain and traced) under analysis objects with the same rates
+     that differ only in `mf_akind.digest`, each shown to REACH the object
+     (its render under the reference object differs from the no-object one,
+     floor 1 site); set10 and byte1t, which never consult the object, render
+     identically with no object and with any digest. prov_check.c is the
+     digest's offset as a build-only static assertion.
   J. The retired denies are REFUSED: `--memfn=no-fd-r0` and `no-fd-r5` name
      no row since B4' (withdrawn with R0 and R5), `no-fd-r8` and `no-fd-ndisp`
      none since span_pick 1f (deleted with R8, R1 and R2).
@@ -616,56 +621,96 @@ def check_query(fx, fxt, tmp):
 
 # ---- L ----------------------------------------------------------------------
 
-# span_pick.md unit 1g (MF_SITE_ABI 22): what the analysis object may NOT
-# state. Written HERE from the design (the header is what it is held against).
-PROV_FIELDS = ("source", "bundle", "bytes", "fidelity")
-KIT_READERS_RE = re.compile(r"\b(mf_prov\w*|MF_PROV_\w+|MF_FID_\w+)\b")
+# span_pick.md unit 1g (MF_SITE_ABI 22): the analysis object's members, an
+# ALLOWLIST written HERE from the design (the header is held against it): a
+# new member is a seam event that must edit this table.
+SEAM_MEMBERS = {
+    "mf_akind": {"tag", "version", "present", "digest", "payload"},
+    "mf_analysis": {"list_v", "nkinds", "kinds"},
+}
+# spellings the seam retired (header code must not name them; comments may)
+RETIRED_SEAM_RE = re.compile(r"\b(mf_prov\w*|MF_PROV_\w+|MF_FID_\w+)\b")
 # the digests the render loop hands: the reference first, then one odd, one
 # even, and the extremes (span_pick R22: rates fixed, only the digest varies)
 AN_DIGESTS = ("0", "1", "2", "0x1234", "0xffffffffffffffff")
+# the sites the object is read on: kit_byte_rate's callers (the PRES picks)
+RATE_SITES = ("pre-lead", "pre-lead-run", "pre-opt")
+# FIND sites that never consult the object: identical with or without one
+PLAIN_SITES = ("set10", "byte1t")
+RATE_SITES_FLOOR = 1
 
 
 def strip_c_comments(text):
     return re.sub(r"/\*.*?\*/|//[^\n]*", " ", text, flags=re.S)
 
 
-def check_prov(root, fx, fxt):
-    """span_pick unit 1g (MF_SITE_ABI 22): provenance left the seam. (4a)
-    memfn.h states no source, bundle, bytes or fidelity: mf_akind's members
-    (read off the header, comments stripped) name none of them, and the code
-    names no mf_prov, MF_PROV_ or MF_FID_ (history comments may). (4b) no kit
-    row READS the digest: a site renders byte-identically (stdout and the
-    traced shadow's stderr) under analysis objects that differ only in
-    `mf_akind.digest`, the rates held fixed. (Parts (1)-(3), pcrec's stanza
-    mapping and mf_prov's layout, retired with them; prov_check.c is a
-    build-only assertion of the digest's offset.)"""
+def seam_members(code, name):
+    m = re.search(r"typedef\s+struct\s*\w*\s*\{([^{}]*)\}\s*%s\s*;" % name, code)
+    return None if not m else set(re.findall(r"(\w+)\s*;", m.group(1)))
+
+
+def check_seam(root, fx, fxt):
+    """span_pick unit 1g (MF_SITE_ABI 22): the kit is handed a payload and its
+    digest, and no kit row reads the digest. Statically: memfn.h's analysis
+    structs hold exactly SEAM_MEMBERS (comments stripped), its code names no
+    retired spelling, and no memfn/src file names `digest`. Dynamically
+    (stdout, rc and the traced shadow's stderr): the rate-reading sites render
+    byte-identically under analysis objects that differ only in
+    `mf_akind.digest`, with the rates fixed; each such site's REACH is shown
+    (its render under the reference object differs from its render under no
+    object, floor RATE_SITES_FLOOR sites), and the sites that never consult
+    the object render identically with no object and with any."""
     code = strip_c_comments(open(os.path.join(root, "memfn/include/memfn.h"),
                                  errors="replace").read())
-    m = re.search(r"typedef\s+struct\s*\{([^{}]*)\}\s*mf_akind\s*;", code)
-    if not m:
-        bad("L: memfn.h declares no `typedef struct { ... } mf_akind;` (the object moved)")
-    else:
-        members = re.findall(r"(\w+)\s*;", m.group(1))
-        (ok() if "digest" in members and "payload" in members else
-         bad("L: mf_akind lost its digest or payload (members %s)" % members))
-        named = [f for f in PROV_FIELDS if f in members] + \
-                [x for x in members if x == "prov"]
-        (ok() if not named else
-         bad("L: mf_akind states provenance the seam no longer carries: %s" % named))
-    hits = sorted(set(KIT_READERS_RE.findall(code)))
+    for name, want in SEAM_MEMBERS.items():
+        got = seam_members(code, name)
+        if got is None:
+            bad("L: memfn.h declares no `typedef struct ... { ... } %s;` (the object moved)" % name)
+        else:
+            (ok() if got == want else
+             bad("L: %s members %s, want exactly %s (a seam event must edit this check)"
+                 % (name, sorted(got), sorted(want))))
+    hits = sorted(set(RETIRED_SEAM_RE.findall(code)))
     (ok() if not hits else bad("L: memfn.h's code names retired provenance: %s" % hits[:5]))
+    src = os.path.join(root, "memfn/src")
+    named = sorted(f for f in os.listdir(src) if f.endswith((".c", ".h")) and
+                   re.search(r"digest", strip_c_comments(
+                       open(os.path.join(src, f), errors="replace").read())))
+    (ok() if not named else bad("L: kit sources name `digest` (a kit row reads it): %s" % named))
     for prog, name in ((fx, "plain"), (fxt, "traced")):
-        for site in ("set10", "byte1t"):
+        reached = 0
+        for site in RATE_SITES:
+            none = run([prog, "--fd-site", site])
             ref = run([prog, "--fd-site", site, "--fd-an", AN_DIGESTS[0]])
-            if ref.returncode or b"TEXT" not in ref.stdout:
-                bad("L: %s kit: site %s rendered nothing under the reference analysis (rc %d)"
-                    % (name, site, ref.returncode))
+            if ref.returncode > 1 or none.returncode > 1:
+                bad("L: %s kit: site %s failed to render (rc %d, %d)"
+                    % (name, site, none.returncode, ref.returncode))
                 continue
+            if (none.returncode, none.stdout, none.stderr) != (ref.returncode, ref.stdout, ref.stderr):
+                reached += 1
             for dg in AN_DIGESTS[1:]:
                 got = run([prog, "--fd-site", site, "--fd-an", dg])
                 if (got.returncode, got.stdout, got.stderr) != (ref.returncode, ref.stdout, ref.stderr):
                     bad("L: %s kit: site %s renders differently with mf_akind.digest %s "
                         "(a kit row reads the digest)" % (name, site, dg))
+                else:
+                    ok()
+        (ok() if reached >= RATE_SITES_FLOOR else
+         bad("L: %s kit: %d of %s render differently under an analysis object than under "
+             "none (floor %d): the digest loop reaches no reader"
+             % (name, reached, RATE_SITES, RATE_SITES_FLOOR)))
+        for site in PLAIN_SITES:
+            none = run([prog, "--fd-site", site])
+            if none.returncode or b"TEXT" not in none.stdout:
+                bad("L: %s kit: site %s rendered nothing under no analysis (rc %d)"
+                    % (name, site, none.returncode))
+                continue
+            for dg in AN_DIGESTS:
+                got = run([prog, "--fd-site", site, "--fd-an", dg])
+                if (got.returncode, got.stdout, got.stderr) != (none.returncode, none.stdout, none.stderr):
+                    bad("L: %s kit: site %s renders differently with an analysis object "
+                        "(digest %s) than with none (a kit row reads the object's "
+                        "provenance or digest)" % (name, site, dg))
                 else:
                     ok()
 
@@ -684,7 +729,7 @@ def main():
     check_query(a.fx, a.fxt, a.tmp)
     check_routing(a.fx, a.fxt)
     check_pres_routing(a.fx, a.fxt, a.tmp)
-    check_prov(a.root, a.fx, a.fxt)
+    check_seam(a.root, a.fx, a.fxt)
     for u in unreached:
         print("UNREACHED: " + u)
     print("checks passed: %d" % passed)

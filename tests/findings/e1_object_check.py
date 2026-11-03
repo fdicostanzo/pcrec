@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""tests/findings/e1_object_check.py — the ANALYSIS OBJECT's checks
-([WINDOW-E1], docs/design/memfn/window_contract.md §3.7.7: C-E1-1..C-E1-5),
-read off a `-DPCREC_KS_TRACE` build's `KSRCTRACE object` records.
+"""tests/findings/e1_object_check.py — the checks on pcrec's analysis OFFER and
+the object's one kept field, the DIGEST ([WINDOW-E1],
+docs/design/memfn/window_contract.md §3.7.7: C-E1-1..C-E1-5), read off a
+`-DPCREC_KS_TRACE` build's `KSRCTRACE object` records.
 
     e1_object_check.py TREE KSTPCREC FIXDIR RESDIR WORK
 
@@ -14,11 +15,13 @@ attempt, written where the object is built:
 
     KSRCTRACE object TAG ROW STATE SOURCE BUNDLE DIGEST BYTES FIDELITY SUM UNMEASURED
 
-THE PREMISE (span_pick.md unit 1g, MF_SITE_ABI 22): the record is pcrec's
-OFFER (`pcrec_find_offer`), which the kit object is built from, not the
-built kit object: the object carries the state, digest and payload only, the
-source, bundle, bytes and fidelity staying pcrec's (D186 add. 2). The columns
-are unchanged, so every check below reads the offer the object is built from.
+THE PREMISE (span_pick.md unit 1g, MF_SITE_ABI 22): the kit object carries
+the state, digest and payload only; the source, bundle, bytes and fidelity
+stay pcrec's (D186 add. 2). So the OFFER columns (what the object is built
+from, `pcrec_find_offer`) are TAG ROW STATE SOURCE BUNDLE BYTES FIDELITY SUM
+UNMEASURED, and the one OBJECT column is DIGEST, read from the built
+`mf_akind.digest`: C-E1-1's independent python digest is the witness of the
+object builder's write of it.
 
 Each check's expectation comes from a source the object does not share:
 

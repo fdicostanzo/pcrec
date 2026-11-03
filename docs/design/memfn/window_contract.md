@@ -774,7 +774,8 @@ holds no consumer price (D161 add. 6).
   inside this very plan, at B3a/B3b, and the fact already lives in each data
   block's `provenance bytes` row. So `mf_prov.bytes` (and `fidelity`) are in
   the layout from its first declaration (§3.1), at no extra `MF_SITE_ABI`
-  event. A SAMPLE count (for a kind whose exemplar is not a byte stream) is
+  event. `[span_pick 1g]` Superseded: `mf_prov` is deleted; bytes and fidelity
+  stay pcrec's offer, and a stated sampling noise is stage 2's. A SAMPLE count (for a kind whose exemplar is not a byte stream) is
   the remaining filed half: **trigger**, the first measured kind whose
   provenance states no `bytes`.
 
@@ -795,7 +796,7 @@ analysis would move bytes").
 | the ASK path | `src/core/findings.c` | `pcrec_find_byte_rate` sets `byte_rate_asked`, calls the status derivation, and on UNDERIVABLE or BROKEN calls `pcrec_ctx_fail` with today's two messages verbatim. Its observable behaviour is unchanged: the same compiles refuse, with the same text and offset |
 | the OFFER accessor | `src/core/findings.c` / `.h` | `pcrec_find_offer(Ctx *, size_t query, PcrecFindOffer *)`: evaluates T-KIND (§3.2) for one row through the status derivation and returns `{present, source, bundle, digest, bytes, fidelity, payload}`. It never sets `byte_rate_asked` and never refuses. The split between `asked` (consumption) and `derived` (the memo) is what keeps E-1 zero-mover |
 | provenance in the block `[rev3.1 M2]` | `src/core/findings.h`, `scripts/findgen.c`, `src/parse/rxt_find.c` | `PcrecFindTblBlock` gains `prov_source` (the stanza's `source` token), `prov_bytes` (its `bytes`, 0 if absent) and `prov_fidelity` (its `fidelity`, or none). `findgen`'s pre-parse writes them into the committed `findings_table.inc`; `link_from_source` copies them for a runtime (`-I`, S1) bundle, from `RxtFindBlock`, which gains the same three fields from the source parser. `findgen` asserts that the store's `default` bundle declares `source authored` on every block (the cross-check of §3.2). `findings_table.inc` changes; no emitted byte does |
-| the object builder `[rev3.1 M5]` | `src/core/compile.c` (the build point) and `src/gen/memfn_sites.c` (the mapping) | In `compile_driver`, right after `pcrec_find_resolve(&cx, …)`, one call builds the object for the attempt and stores it on `Job` (`job->analysis`), in the attempt's arena. The mapping `PcrecFind*` → `MF_PROV_*`/`MF_KIND_*`/`MF_FID_*` stays in `memfn_sites.c`, the one file that includes `memfn.h` for art state; `src/core` never includes `memfn.h`, so the call is through a `src/gen` function compile.c already links against. It asserts the payload invariant (§3.1). `pcrec_memfn_art` passes `job->analysis` to `mf_art_begin` and builds nothing |
+| the object builder `[rev3.1 M5]` | `src/core/compile.c` (the build point) and `src/gen/memfn_sites.c` (the mapping) | In `compile_driver`, right after `pcrec_find_resolve(&cx, …)`, one call builds the object for the attempt and stores it on `Job` (`job->analysis`), in the attempt's arena. The mapping `PcrecFind*` → `MF_PROV_*`/`MF_KIND_*`/`MF_FID_*` stays in `memfn_sites.c` `[span_pick 1g: only the `MF_KIND_*` state mapping remains; `MF_PROV_*` and `MF_FID_*` are deleted]`, the one file that includes `memfn.h` for art state; `src/core` never includes `memfn.h`, so the call is through a `src/gen` function compile.c already links against. It asserts the payload invariant (§3.1). `pcrec_memfn_art` passes `job->analysis` to `mf_art_begin` and builds nothing |
 | the record's comment `[rev3.1 m6]` | `src/core/findings.h` | `byte_rate_have`'s comment is re-worded from "... and a block answered" to "the memo holds a table (a block answered and derived), whether or not anything asked". `req_rate_why` (`src/facts/req.c`) reads `pcrec_find_byte_rate`'s return instead of `byte_rate_have`, so no reader outside `findings.c` reads the memo fields (C-E1-6 holds that) |
 | nothing else | — | no emitter text, no stamp code, no flag, no listing. `pcrec_find_stamp` is UNCHANGED at E-1. Its generalization over the kinds table belongs to [KNOW-SRC]'s `ks_stamp` (`measure_sets.md` §9.2 part 5), so it is not built twice |
 
@@ -2033,7 +2034,7 @@ number is reused below.)
   per-site slot. **Trigger:** the decline arm is built (a measured dense cell
   with a state-losing call pattern, D162 add. 1).
 - ~~**The EVIDENCE-STRENGTH fact**~~ `[rev3.1 M2]`: BUILT (`mf_prov.bytes`,
-  `fidelity`, §3.1). Its remaining half, a SAMPLE count for a kind whose
+  `fidelity`, §3.1; `[span_pick 1g]` deleted from the seam, successor: stage 2's stated sampling noise). Its remaining half, a SAMPLE count for a kind whose
   exemplar is not a byte stream, stays filed (§3.6).
 - **U1, one kit out-channel for the knowledge-source family** `[rev3.1, panel
   r4]`. One `mf_art_end` record of `consulted` keyed by (knowledge source,

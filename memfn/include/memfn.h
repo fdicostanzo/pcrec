@@ -1237,7 +1237,8 @@ typedef enum { MF_KIND_UNSTATED = 0, MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_s
 /* A kind states its payload and the payload's digest, nothing about where
  * either came from (span_pick.md unit 1g, D186 add. 2): the source, the
  * bundle and the answering block's provenance stanza are pcrec's (its stamp
- * and trace); the kit's trace names only the digest it was handed. */
+ * and trace); no kit row reads the digest, and the kit's trace names it from
+ * span_pick row 1. */
 typedef struct {
     const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */
     uint32_t    version;    /* this kind's payload shape                        */
@@ -1286,8 +1287,8 @@ typedef struct mf_analysis {
  * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
  * every site defined on the art must carry the same (RULED Q-M1b-1; refused
  * at mf_define). `ms` is the compile's measurement set (R-MS1, NULL: none)
- * and `an` its analysis object (DECLARED, E-1; NULL-tolerant, read by no kit
- * row before B3a); both must outlive the art. NULL only when the arena
+ * and `an` its analysis object (DECLARED, E-1; NULL-tolerant; kit_byte_rate
+ * reads it); both must outlive the art. NULL only when the arena
  * failed. */
 mf_art  *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
                       uint64_t denies, const mf_measures *ms,

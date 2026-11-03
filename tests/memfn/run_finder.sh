@@ -37,11 +37,10 @@ done
 # span_pick unit 1g (MF_SITE_ABI 22): mf_akind.digest's offset
 # (tests/memfn/prov_check.c, a BUILD-ONLY static assertion, never run).
 # Built beside the fixture drivers; -Werror so its static assertion is exact.
-"$CC" -std=gnu11 -O1 -Werror -I"$ROOT/memfn/include" "$ROOT/tests/memfn/prov_check.c" \
-    -o "$WORK/provchk" || { echo "FAIL: the analysis-object layout check does not build (mf_akind.digest moved?)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
+"$CC" -std=gnu11 -fsyntax-only -Werror -I"$ROOT/memfn/include" "$ROOT/tests/memfn/prov_check.c" || { echo "FAIL: the analysis-object layout check does not build (mf_akind.digest moved?)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 # R-25: the form class's proven sets honour the row's declared `tests`
 # (tests/memfn/proven_check.c: a white-box driver over kit_class with test-only
-# rows, the shipped FIND rows, and one mf_ask). -Werror as provchk.
+# rows, the shipped FIND rows, and one mf_ask). -Werror as the other builds.
 "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/proven_check.c" "$LIB" \
     -o "$WORK/provenchk" || { echo "FAIL: the proven-set check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"

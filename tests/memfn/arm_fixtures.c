@@ -48,6 +48,7 @@
  * the counter owned by the kit and by the caller, MF_SITE_ABI 5), and gate
  * cases for the caller-owned counter's rules and for the ADVANCE hooks'
  * shape classes (CONJ `more`, POSTFIX `peek`, EXPR_STMT `step`). */
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1596,8 +1597,18 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts,
     if (setpath && fd_load_set(setpath, &ms)) return 2;
     if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
         return fd_ask_links(site, &s) ? 1 : 0;
-    return fd_render(NULL, site, &s, setpath ? &ms : NULL,
-                     digest ? fd_an_make(strtoull(digest, NULL, 0)) : NULL) ? 1 : 0;
+    const mf_analysis *an = NULL;
+    if (digest) {
+        char *end;
+        errno = 0;
+        unsigned long long d = strtoull(digest, &end, 0);
+        if (!*digest || *end || errno) {
+            fprintf(stderr, "--fd-an %s: not a digest (an unsigned integer, base 0)\n", digest);
+            return 2;
+        }
+        an = fd_an_make(d);
+    }
+    return fd_render(NULL, site, &s, setpath ? &ms : NULL, an) ? 1 : 0;
 }
 
 static int finder_rows_mode(void)

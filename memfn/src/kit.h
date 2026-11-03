@@ -284,7 +284,7 @@ struct mf_art {
     kb          forms;
     unsigned    simd_inc;
     /* R17-b' B1 (MF_SITE_ABI 12): the compile's measurement set (R-MS1) and
-       analysis object (DECLARED, E-1: read by no row before B3a), both the
+       analysis object (DECLARED, E-1; kit_byte_rate reads it), both the
        host's; `consulted` (R-MS2), set when a ROUTED finder decision resolves
        a key (never by the trace build's shadow) */
     const mf_measures *ms;
@@ -321,7 +321,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
 /* THE BYTE-RATE and its masses (presence.c), one definition the PRES ports
  * and the window family read: the analysis object's `byte-rate` table (ppm
  * per byte, uint32_t[256]) or NULL where it carries none (no object, the
- * kind absent, PRIOR_NONE). kit_set_mass is pcrec_find_set_ppm's arithmetic
+ * kind absent, present with no payload). kit_set_mass is pcrec_find_set_ppm's arithmetic
  * (capped at 1e6; NONE: the uniform mass of the cardinality); kit_set_sum
  * the uncapped sum, PICK's cube mass (pcrec_find_pick, run_rank). */
 #define kit_byte_rate MF_NS(kit_byte_rate)

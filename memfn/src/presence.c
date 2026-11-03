@@ -44,7 +44,7 @@
 
 /* The byte-rate table the compile's analysis object carries (ppm per byte,
  * uint32_t[256]), or NULL where it carries none (no object, the kind absent,
- * or present with no table: PRIOR_NONE). */
+ * or present with no payload). */
 const uint32_t *kit_byte_rate(const mf_art *art)
 {
     const mf_analysis *an = art->an;
