@@ -3072,3 +3072,25 @@ Main ruled on the four kit findings (D186 add. 2):
 - **MF_CLASS_V 5 -> 6** (kit-contract event, no MF_SITE_ABI move, no layout move): `mf_class.pres_row`/`pres_led` carry finder-row indices, and three rows left ahead of the PRES rows. pcrec's one reader maps the index through `mf_finder_rows`, so its records keep their row names. For the responses ledger: the kit session's line.
 - The DECIDER CENSUS (span_pick rev 5.2 §The tables) is born: `tests/memfn/decider_census.tsv` + `decider_census.py` (in `make test-memfn-rows`), 50 members, backstop 36 hits, two plants red. Ratchet R20-R27 15 -> 11 (R26 -3, R27 -1).
 - Witness (byte identity on every arm over the corpus + the frozen bench list + job 588's sample + `zzzzzzz~J`; reach equality; census; strict) queued as box-queue jobs 300-30x: docs/dev/lanes/sp1a_report.md.
+
+## 2026-11-03 morning — unit 1a LANDED (main 761521515); mech gap; 1f started
+
+- 1a landed after its gates went green:
+  - code round r3, with its FIX-NOWs fixed in sp1afix;
+  - ident 311/312 red only on a stale main floor, which main re-pinned in ef179b9f4;
+  - 314 hit its cap because make test ran serially; re-run as 315 via perfrun (green) and 316.
+- Main's question exposed a gap: 316 was VALIDATE_ONLY, so the 34 mech rows planting in 1a's files never ran. They are queued now as 321/322 (kit-mech1a-a/b) on worktrees/mech1a at 761521515.
+- From 1f on, every unit runs its touching mech rows for real.
+- Lane sp1f (opus) launched from 761521515; its jobs are 330-339.
+- Lessons:
+  - expect regexes must include digits;
+  - make test goes alone via perfrun;
+  - VALIDATE_ONLY is not a mech run;
+  - never merge into a worktree while a job runs there.
+
+## 2026-11-03 ~11:15 — /close (now); 1f in gates
+
+- 1f fixes landed (4375ecfc4).
+- Gates 340-346 GREEN. 344 needed a retry: the job script passed the dump declarations only to the base arm, but the start arm also runs the dumps stream.
+- 347-349 (mech) were running at close.
+- wake.md rewritten.

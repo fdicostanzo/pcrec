@@ -1,32 +1,44 @@
-# memfn wake — kit session hand-off (rewritten 2026-11-02 ~03:00, going idle)
+# memfn kit — wake-up brief
 
-This file is the kit session's orientation. Run `/pcrec-memfn-manager` and follow its §1 wake order. It is rewritten at every pause and holds the current state; history lives in `journal.md`.
+Rewritten 2026-11-03 ~11:15 at a /close ("now"). Committed docs win on any conflict.
 
-## STEP 0 — what I am waiting for
+## Who you are
+The kit manager (`/pcrec-memfn-manager`). Main = the pcrec manager session `pcrec_main`. Frank rules, mostly via main.
+Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main merged in up to 761521515, plus the kit commits after it).
 
-- **2026-11-02 evening: job 588 BAR FAIL** (210-216 green as jobs; verdict line in worktrees/t588/build/t588/table.log). Triage docs/dev/lanes/t588tri_report.md (k1102 @ 650d2c5b9): smp20 `(?i)x/1234`, where cover scans {x,X} by mass with two streams instead of the run-pinned '/'; smp04 `[a[:b]`, a compare-chain walk; the throughput allowance taken from a calls=1 cell is a whole-pass delta, so the bar is uncapped (13 more rows fail floor-only). Proposed to main for Frank: fix the bar first (reader + Goal 2, re-read with no box time); then one kit lane takes the smp20 stop rule (one stream per member; run-pinned one-member stop wins) and the smp04 table test, re-run 588. WAITING on Frank's choice via main. Since then also: R-31 answered (no vector form for the two-set window), R-32 merged (S526 DETECTED). Pricing DEFERRED (pilot 0.981); O1-O5 held; the pricesurvey branch is unmerged, ready (8122f2935). A-PLAN view sent to main.
-- DELIVER files must be in lanecheck FIELD form (report:, sections:, ...), not free text (lanes r32/t588 hit rc=65).
-- **vrun bench request** (Frank's SIMD go step 1): job 640 (tier U, pre-S3 tree) says the layer pays; draft `docs/design/memfn/vrun_bench_request.md` on **lane/memfn-vrunreq @ cd7dc0d70** (notice in responses.md). Main merges it, relays it to the bench, and owns the pre-registration and window. On the bench verdict: update tests/memfn/simd_accept.tsv from the transcript (§R4.9.6), answer pc16 / sp-n04-v17 per §7, then [MEMFN-RTDISPATCH] (held until the layer wins).
-- **S526-c14 ANOMALY re-aim**: main files it; it may come as an R-n. Pre-existing (7047b69e4 scores its static-assert catch as ANOMALY).
-- **Prune leftover:** `worktrees/vrunreq` (branch lane/memfn-vrunreqd, merged into lane/memfn-vrunreq) was kept by wtprune's <120 min quiet gate: `scripts/wtprune --apply --force vrunreq` (only the untracked deliver file), then `scripts/branchprune --apply --kit lane/memfn-vrunreqd`. Also rq4prep (job 640 done; HEAD 6e0789d0 unmerged: look, then --force/--archive if nothing is owed), memfn-r17/r27 (look before --force).
-- No lanes alive. No heartbeat. Read result files by hand on wake.
+## Read in order
+1. This file. 2. memfn/docs/journal.md tail (2026-11-02/03 entries). 3. docs/design/memfn/span_pick.md REV 5.2 (on main), the design of record.
+4. docs/dev/reviews/2026-11-03-r3-memfn-sp1a.md and r4-memfn-sp1f.md (the code rounds). 5. docs/dev/decisions.md D186 + addenda 1-2.
 
-## Rules learned
+## CURRENT STATE: span_pick STAGE 1 BUILD (main's GO, under Frank's conditional approval of 11-02 ~23:58)
+Landing order 1a, 1f, 1g, 1b, 1c, 1d, 1e. Per unit:
+- an opus lane builds from main;
+- a code critic round (pcrec-critic, code mode), with fixes by a sonnet fix lane;
+- gates as box-queue jobs: strict, kit sections, reach_equal, ident x3, make test ALONE via scripts/perfrun, and the mech rows that touch the unit's files run FOR REAL;
+- the done line in responses.md, then main merges.
+STOP and message main on anything non-routine. Stage 2/3 need main's GO after stage 1 lands.
 
-- ONE STAGE PER JOB (Frank 2026-10-30), chained with `boxqueue after KEY`; about an hour at most.
-- Keep job scratch paths SHORT (/var/tmp/pcrec-pcrec/scratch/memfn/...): diagnostics embedding a path have a 256-byte budget (772, 2026-11-01).
-- A matrix ANOMALY ("a compile failure is not a catch") can be a plant designed before main's 7047b69e4: check the plant's own design before blaming the change.
-- Write `docs/dev/lanes/NAME_deliver.txt` at brief time. Queue jobs, never bare `boxlock run` waiters. A make-driven self-test loses its report on failure: keep output yourself.
-- Floors are pinned AT the measured value; re-pin every arm from one measurement. A sweep's ref after a main merge is the merged main.
-- Abi numbers go in LANDING order; main assigns. Flags: public deny only where a caller can be slower; wrongness-risk changes get a test-only lever.
-- Box: Frank holds 20:00-01:00 daily; main may pull queued jobs earlier onto a free box.
+- **1a: LANDED** (main 761521515). Ratchet R20-R27 at 11. Mech follow-up 321/322: 32 DETECTED, 2 expected-UNREACHED (S917/S919, pre-existing).
+- **1f: IN GATES.** Branch lane/memfn-sp1f @ 4375ecfc4 (98145b3d5 + review fixes). Jobs 340-349, keys kit-sp1f2-*.
+  - GREEN: 340 strict, 341 memfn, 342 reach, 343-345 ident (344 after a retry, see below), 346 make test.
+  - RUNNING at close: 347 mech; then 348 mech2 and 349 mech3 (shard 3 declares S917/S919 UNREACHED).
+  - Job scripts: /var/tmp/pcrec-pcrec/scratch/memfn/sp1ffix/jobs/.
+  - Read the 347-349 results in worktrees/.boxqueue/{done,failed}/. Mech bar: "unexpected 0, undetected 0, anomalies 0"; declared-UNREACHED rows are OK.
+  - If green: post a `done:` line for 1f in responses.md and send main the delivery: branch, gates, the caller-visible change (--memfn=no-fd-r8 / no-fd-ndisp gone, registry floor 14->12, the fd-d1 --list-axes text), the registry.md §6¶8/8a/8b hunks, MF_SITE_ABI 21, MF_CLASS_V 7, ratchet unchanged at 11.
+  - Plan items for main from the r4 review: the KN_A/I/M/N carrier, CHECK-6, CHECK-7, and the unification of the three declared-delta judges.
+- **Next: 1g** (provenance leaves the seam). Cut from main after 1f merges, per rev 5.2's unit text and reader list.
 
-## Current state
+## Lessons from 1a/1f (put them in every unit's job briefs)
+- An expect regex must match digits: use [a-z0-9-]+.
+- make test runs ALONE via perfrun; a serial run hit the 1 h cap.
+- VALIDATE_ONLY is not a mech run.
+- Never merge into a worktree while a job runs there.
+- A dump-stream declaration (--dumps-declared-*) goes to EVERY arm that runs the dumps stream, i.e. base AND start (344 red).
+- Stale main floors are main's to re-pin (ef179b9f4).
+- Critic rounds cap their probe volume at about 3k compiles while the queue runs.
 
-- **Landed:** D172 S3 (abi 92); simdset find-any kernel (unrouted); R-30 (abi 94, main 657e23231, 2026-11-02).
-- **Pricing:** requirements rev 1 (docs/design/memfn/pricing_requirements.md); placement decided by evidence (main's rule-list pilot, then the bake-off if needed). Frank's open rulings O1-O5. No build without Frank's go.
-- **Owed:** 588 per-call allowance timing (from S3, quiet window).
+## Box
+Frank holds 20:00-01:00 daily: light work only, no suites or timing. The queue orders everything; main's standing monitor watches it.
 
-## Who you are / where you work
-
-- Kit manager; `requests.md` is main's, `responses.md` is yours. Kit worktree `worktrees/memfn` = `lane/memfn-vrunreq` (from main 657e23231). Never `cd`, never `git stash`; worktrees via `scripts/wtprune`, branches via `scripts/branchprune --kit`. Kit sabotage ids S1540-S1559 (S1543-S1548 used).
+## Owner questions
+None open.

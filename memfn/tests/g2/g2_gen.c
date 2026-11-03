@@ -409,7 +409,11 @@ static void alloc_preds(gsite *g, int npred)
     g->fnr = calloc((size_t)npred, sizeof *g->fnr);
 }
 
-static void free_site(gsite *g) { free(g->preds); free(g->rb); free(g->mb); free(g->php); free(g->ppp); free(g->fnr); }
+/* the hooks read cur_site (h_member et al.); a freed site must not stay
+ * reachable through it, or a later hook call with no site of its own
+ * (the refusal controls) reads freed memory */
+static gsite *cur_site;
+static void free_site(gsite *g) { if (cur_site == g) cur_site = NULL; free(g->preds); free(g->rb); free(g->mb); free(g->php); free(g->ppp); free(g->fnr); }
 
 /* a deep copy (the semantic differential's variants): the terms' run and
  * mask pointers are re-pointed into the copy's own byte arrays */
@@ -528,7 +532,7 @@ static void emit_descriptor(buf *o, const gsite *g)
 /* every SET term gets a 256-byte table named g2tab_<site>_<pred*8+term>; it
  * is pcrec's T4 spelling here (rule 6) and, under table_ref, pcrec's table
  * (rule 7). Built from the term's set bits, the truth both must agree with. */
-static gsite *cur_site;       /* the site being rendered (hooks read it)     */
+/* cur_site: the site being rendered (hooks read it); declared above free_site */
 
 /* Hook strings live as long as the run: the contract names no lifetime for a
  * returned string, and the kit may hold one past the next hook call
