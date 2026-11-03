@@ -433,6 +433,14 @@ done <<< "$anchored"
 #     (compile.c) is the harness lever's one plain re-emission, a term of the
 #     attempt bound's own arithmetic. Neither is measured against a pattern
 #     or a subject.
+#   A NINTH KIND — A TERM OF A COST MODEL BETWEEN ANSWER-IDENTICAL FORMS:
+#     LMWALK_K_HIT_UNMEASURED (src/gen/lmwalk.c, [LANDWALK] stage 1): the
+#     constant cost the landmark walk's rarity row charges each landmark hit
+#     beside its expected backward walk. It accepts, rejects and promises
+#     nothing (both sides of the choice answer identically, and the walk has
+#     its own deny); it prices a selection, so it is a number to MEASURE, not
+#     a bound a caller raises, and its name carries the UNMEASURED label until
+#     a measurement replaces it (docs/dev/lanes/p1build_report.md).
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -594,7 +602,8 @@ PCREC_PART_NEED_NEXT_POS
 PCREC_PART_NEED_VALID_UPTO
 PCREC_PART_ROLE_MAX
 PCREC_COMP_MAXPARTS
-COMP_LEVER_ATTEMPTS"
+COMP_LEVER_ATTEMPTS
+LMWALK_K_HIT_UNMEASURED"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

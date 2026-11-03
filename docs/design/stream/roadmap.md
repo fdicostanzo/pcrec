@@ -392,6 +392,20 @@ round; L = a proof-sized lane with several rounds.
 - **Ride-along triggers.** [COVER-PRICE-WITNESS]; [PILOT-SIMD]; [PRICE-BAKEOFF]; any R-n that
   changes how a site is chosen.
 - **Size.** M.
+- **Open points for the split** (the kit's review, 2026-11-02; none blocks the shape; each is settled at the split):
+  1. A kit candidate is a COMPOSITION (finder, presence, verify, resume, frame, guarded SIMD rungs over the scalar
+     text, D155), so the plan face returns a BOUNDED set: per-row best first, then competition across strategies.
+  2. Cross-site size effects (shared per-width helper blocks, helper dedup) are decided at emit today: either the
+     plan carries helper sharing, or emit's dedup is declared cost-free.
+  3. Runtime dispatch ([MEMFN-RTDISPATCH], held): with the CPU unknown at compile time, "target given at the top" is a
+     target SET and a candidate is a dispatch bundle with a card per arm; the seam text must allow it.
+  4. Cards are TABLES over stated subject facts (byte frequencies, density, span length), keyed by architecture and
+     regime, re-measurable per box; `measure_store/` fits if the key carries the regime.
+  5. Today's `--memfn=no-X` denies and forces become filters on the candidate set inside architecture, not emit
+     options; this touches the option namespace (D147 add. 9).
+  6. The same-commit abi rule is unchanged: the emit face still produces the bytes.
+  Half of the plan face exists: window_site rev 3.3's two-phase ask returns a decision reply before the text;
+  the plan call is mostly that reply made explicit, and a byte-identical split looks feasible (kit, 2026-11-02).
 
 ---
 

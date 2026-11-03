@@ -324,6 +324,12 @@ fstate seq-anch 1 'sdr=1'
 fseq seq-anchland trplain ok 'drop-anchored@size'                              '\p{N}\p{L}\p{Lu}' -e utf8
 fstate seq-anchland 1 'sdr=1'
 fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
+# [LANDWALK] `drop-landmark-walk` (p1build, 2026-10-29): the walk's artifact (ML and the
+# inline verify's tables) is 63,691 B against trlowsize's 60,000 B cap; without the walk
+# 41,155 B, so the one rung fits it and `drop-anchored` is never asked.
+W_LWSIZE='(?:ab|cd|ef|gh|ij|kl|mn|op|qr|st|uv|wx|yz)+(?:AB|CD|EF|GH)+@x'
+fseq seq-lwdrop   trlowsize ok 'drop-landmark-walk@size'                        "$W_LWSIZE"
+fseq seq-lwref    trlowsize refused 'refuse@size'                               "$W_LWSIZE" --size-cap=refuse
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
 # T1 row 2 (the size term's trial catch), label `other`
 fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
@@ -391,6 +397,7 @@ frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$
 frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcat\b){2,}\w\w' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
+frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8 -fno-start-landing
 frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
 frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8 -fno-start-landing

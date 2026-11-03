@@ -51,6 +51,7 @@ BENCH = E.get("BENCH", "/Users/fdicostanzo/pcrec-bench")
 JOBS = int(E.get("JOBS", "6"))
 SETS = {"capability": [], "syntax": [], "utf8": ["-e", "utf8"], "loglines": [],
         "bounded": [], "email": [], "altwide": [], "litrun": []}
+CODE_CALLOUT = re.compile(rb"\(\?C[`'\"^%#${]c[:,]")
 PLAIN_PF = {"memchr", "memchr-bounded", "byte-class", "byte-class-bounded"}
 
 
@@ -78,7 +79,19 @@ def arm(b, args, td, want_c):
     # [REQ-HANDOFF-L1] (abi 75) and `-fno-req-handoff`: the re-entered
     # handoff ranks above the hat rows; the hat suites deny it on both arms
     # (tests/startset/dfahat_checks.py, NO_HANDOFF), so the census does too.
-    args = [*args, "-fno-start-set", "-fno-req-handoff"]
+    # [LANDWALK] stage 1 (p1pin, 2026-10-30): the landmark walk is denied on
+    # the census arm too. Its admission reads NEXT, and the deny arm (no hat)
+    # takes the walk on blocks whose hat arm keeps the plain unanchored scan
+    # (reseed.rxt:15, :117, ...), so a walk-admitting deny arm read `route`
+    # and dropped seven genuine F movers (the suites' own arms are compared
+    # with the walk denied the same way, dfahat_checks.py CLASS_DENY).
+    # A CODE callout (`(?C`c:...`)`, tests/code) is refused at compile
+    # without --allow-code (the suites' compile_c reads that as no artifact,
+    # so no mover) while --emit-facts still answers: skipped here, else the
+    # census lists 18 movers the suites can never produce.
+    if CODE_CALLOUT.search(b["pattern"]):
+        return {"status": "refused"}
+    args = [*args, "-fno-start-set", "-fno-req-handoff", "-fno-landmark-walk"]
     try:
         r = subprocess.run([PCREC, *args, "--emit-facts", "--pattern", b["pattern"]],
                            capture_output=True, timeout=300)

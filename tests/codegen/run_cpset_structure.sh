@@ -1076,6 +1076,12 @@ fi
 # 41,450 -> 43,357 (+1,907): the only sample artifact whose VM program carries a trail
 # checkpoint, so it gains the `RX_TRAIL_CHECK` macro, its call sites and the
 # compaction routine (the other eleven rows read identically). Diff read, not bumped.
+# RE-RECORDED 2026-10-30 at [LANDWALK] stage 1 (lane p1tri over lane p1build, abi 95
+# provisional): ONE row moved, `[a-z]+@[a-z]+` 35,231 -> 43,368 (+8,137): the sample's
+# only pattern the `landmark-walk` LOCATE row takes (landmark `@`), so it gains the
+# landmark machine, the inline verify's tables and the walk loop; under
+# `-fno-landmark-walk` it reads 35,231 again (measured), and its stamps here read
+# identically (RX_DFA_PREFILTER is the relocate's). The other eleven rows unchanged.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

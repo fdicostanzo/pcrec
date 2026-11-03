@@ -675,6 +675,9 @@ test-examples: all
 # src/ cli/ lib/ for a comparison reading a start-table row name (dfa_pfs[]
 # until [START-TABLE] C3, cand_rows[]'s NEXT/RECOVER rows since), well under a
 # second.
+# [LANDWALK] run_landmark_walk.sh joins at stage 1 (lane p1build): about 45
+# compiles and one gcc'd matcher (a few seconds) -- the `landmark-walk` row's
+# witnesses, its deny both ways and the reach guard as a cost.
 # [CASESPELL] run_case_spelling_identity.sh joins on the same footing: seven
 # groups of three spellings, each compiled and gcc'd per engine and encoding
 # (about 5 s) -- the check that letter case in a caseless pattern never
@@ -699,6 +702,7 @@ test-codegen: all
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh' \
 	    'bash tests/codegen/run_rev_end.sh' \
+	    'bash tests/codegen/run_landmark_walk.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
 	    'bash tests/codegen/run_residual_twins.sh' \
 	    'bash tests/codegen/run_stmt_writer.sh'

@@ -207,7 +207,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says. Any value outside
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
-SCAN_VALUES="unanchored rev-end cover attempt empty"
+SCAN_VALUES="unanchored rev-end cover attempt empty landmark-walk"   # landmark-walk: [LANDWALK] stage 1, match_api.md §6.3.4
 PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded handoff"
 
 # ---------------------------------------------------------------------------
@@ -249,6 +249,11 @@ read_artifact() {
         # goto star, never by a _step call -- so it is the anchor that does
         # not go stale when the table it used to name stops existing.
         /forward_state = rx_forward_step\(/    { unanch = 1 }                   # emit_unanchored: the forward step call
+        # [LANDWALK] THE LANDMARK WALK: its reach local, written once before the
+        # per-landmark loop (emit_landmark_walk). The walk ends in the
+        # relocate (an unanchored scan from the walk start), so this marker
+        # outranks the forward step call above in the END rule.
+        /^    size_t lmwalk_reach = search_from;$/ { lmwalk = 1 }               # emit_landmark_walk
         # D172 S3 THE COVER WALK: the report of [c, c + k) off the kit candidate
         # (emit_cover: emit_search_success over `scan_position`, its only caller
         # with that start); no machine runs in it
@@ -326,7 +331,7 @@ read_artifact() {
                                 f_pf   = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
         END {
             eng = vm ? "vm" : "dfa"
-            scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (cover ? "cover" : (mtnothing ? "empty" : "-"))))
+            scan = attempt ? "attempt" : (revend ? "rev-end" : (lmwalk ? "landmark-walk" : (unanch ? "unanchored" : (cover ? "cover" : (mtnothing ? "empty" : "-")))))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
             else if (pf_ho) pf = "handoff"

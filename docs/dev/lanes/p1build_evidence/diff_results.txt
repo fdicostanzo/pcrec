@@ -1,0 +1,18 @@
+[a-z]+@x	scan=landmark-walk	subjects=97656	wrong=0
+a+b	scan=landmark-walk	subjects=9841	wrong=0
+[0-9]*aa[bc]	scan=landmark-walk	subjects=87381	wrong=0
+[a-z]+@(?:[a-z]+@)*[a-z]+ 	scan=landmark-walk	subjects=21845	wrong=0
+[a-z]+@...x	scan=landmark-walk	subjects=87381	wrong=0
+[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}	scan=landmark-walk	subjects=87381	wrong=0
+\b[a-z]+@x\b	scan=landmark-walk	subjects=97656	wrong=0
+\B[a-z]+@x	scan=landmark-walk	subjects=97656	wrong=0
+(?i)[a-z]+@X	scan=landmark-walk	subjects=97656	wrong=0
+(?>[a-z]+)@x	scan=landmark-walk	subjects=97656	wrong=0
+[a-z]++@x	scan=landmark-walk	subjects=97656	wrong=0
+[a-z]+(?<=a)@x	scan=landmark-walk	subjects=97656	wrong=0
+(?:ab|cd)+@x	scan=landmark-walk	subjects=55987	wrong=0
+[^@ ]+@x	scan=landmark-walk	subjects=87381	wrong=0
+[a-zé]+@x	scan=landmark-walk	subjects=19531	wrong=0
+[^@ ]+@x	scan=landmark-walk	subjects=21845	wrong=0
+[a-z]+@x	scan=unanchored	subjects=97656	wrong=0
+[a-z]+@x	scan=unanchored	subjects=97656	wrong=0

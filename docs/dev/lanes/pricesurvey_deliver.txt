@@ -1,0 +1,5 @@
+report=docs/dev/lanes/pricesurvey_report.md
+sections: Summary; Tasks; Strategies per task; Variations per strategy; Couplings; Data we have; Data we could have; Open questions for the requirements step; Sources read; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

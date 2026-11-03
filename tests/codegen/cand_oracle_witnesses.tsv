@@ -24,6 +24,13 @@ rev-end	-	abc$
 rev-end	-	\s+$
 rev-end	-e utf8	\s+?$
 composite	--memfn=no-window-search	a
+# [LANDWALK] stage 1 (lane p1build): the walk's row, its utf8 form, a pair
+# prefix and mask-email; under its deny the same pattern lands on `composite`.
+landmark-walk	-	[a-z]+@x
+landmark-walk	-e utf8	[^@ ]+@x
+landmark-walk	-	(?:ab|cd)+@x
+landmark-walk	-	[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}
+composite	-fno-landmark-walk	[a-z]+@x
 composite	-	^a
 window	-	(abc)$
 window-none	-	a(b|c)+d

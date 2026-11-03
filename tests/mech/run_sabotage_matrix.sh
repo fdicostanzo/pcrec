@@ -642,6 +642,14 @@
 #     source and fixtures live only in that directory. Rows: S1680-S1685, S1740-S1741,
 #     and from the r1-ic2 review's fixes (lane ic2fix) S1720-S1721.
 #     Verdict: the script's `checks passed:`/`checks failed:` trailer.
+#   landwalk — added 2026-10-29 ([LANDWALK] stage 1, lane p1build); runs
+#     tests/codegen/run_landmark_walk.sh: the `landmark-walk` row's named
+#     witnesses per admission row, the deny both ways (a walk leaves, a
+#     declining artifact is byte-identical) and the reach guard as a cost.
+#     Its own arm because the row is answer-identical by construction.
+#     Rows: S1820-S1829 (S1822 retired UNREACHED; re-arm tripwire
+#     `cand_rows_check.py` [cand-ma-dfa-only]) and S1855 (lane p1kind, g1
+#     reads nested \G/\K). Verdict: the script's trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1934,6 +1942,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 score_arm "$work/callouts.log" "$f" "callouts:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            landwalk)
+                # [LANDWALK] stage 1 tests/codegen/run_landmark_walk.sh — see
+                # the vocabulary entry above.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_landmark_walk.sh" > "$work/landwalk.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/landwalk.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/landwalk.log" | grep -oE '[0-9]+')"
+                score_arm "$work/landwalk.log" "$f" "landwalk:${f:-ERR}fail/${p:-?}pass"
                 ;;
             code)
                 # [INLINE-C] stage 2 — module `code-c`'s own arm:

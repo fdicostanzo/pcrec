@@ -8,5 +8,8 @@
 w-c1	c1	REQ_BYTE	[0-9]+x[0-9]+e[0-9]+	120	101
 w-c2a	c2a	REQ_RUN	github_pat_[0-9]+	6875625f7061745f@7	6769746875625f70@7
 w-c2b	c2b	REQ_RUN	(a|b)+foobarbazquux	7262617a71757578@3	666f6f6261726261@0
-w-c3	c3	REQ_WHY	a+c	emitted	dominated
+# w-c3: `a+c` until [LANDWALK] stage 1 (lane p1tri, 2026-10-30), whose default build takes the
+# landmark walk (REQ_WHY "dominated": the walk answers presence); `(?:a+c)+` keeps the same G1
+# identity flip on the unanchored scan, the walk declining it (the landmark recurs in the prefix).
+w-c3	c3	REQ_WHY	(?:a+c)+	emitted	dominated
 w-c4	c4	DFA_PREFILTER_OFFSETS	(a)\Q(b)\E(c)	0,1*	0*,1,2,3,4

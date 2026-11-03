@@ -21,7 +21,7 @@ SAB_BEFORE='    { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_F
                  [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
                 [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
-      .u.finish = { CAND_FIN_VERIFY } },
+      .u.finish = { CAND_FIN_VERIFY, CAND_ASKER(CAND_ASK_CALLER) | CAND_ASKER(CAND_ASK_SEED) } },
     { .c = { "search-from", 0, cand_always }, .slot = CAND_SLOT_FINISH,
 '
 SAB_AFTER='    /* SABOTAGE S741: verify-at moved after search-from */
@@ -30,10 +30,10 @@ SAB_AFTER='    /* SABOTAGE S741: verify-at moved after search-from */
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
 SAB_BEFORE2='                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
-      .u.finish = { CAND_FIN_SEARCH } },
+      .u.finish = { CAND_FIN_SEARCH, CAND_ASKER(CAND_ASK_CALLER) } },
 '
 SAB_AFTER2='                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
-      .u.finish = { CAND_FIN_SEARCH } },
+      .u.finish = { CAND_FIN_SEARCH, CAND_ASKER(CAND_ASK_CALLER) } },
     { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
       .routes = CR_DFA | CR_VM, .tok = "unwrapped", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
@@ -43,5 +43,8 @@ SAB_AFTER2='                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND
                  [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
                 [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
-      .u.finish = { CAND_FIN_VERIFY } },
+      .u.finish = { CAND_FIN_VERIFY, CAND_ASKER(CAND_ASK_CALLER) | CAND_ASKER(CAND_ASK_SEED) } },
 '
+# RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1, r7 FIX-1): `verify-at`'s
+# `.u.finish` gained its asker set (the seed's AT); the plant moves the same
+# row, intent unchanged.
