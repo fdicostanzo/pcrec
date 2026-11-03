@@ -530,6 +530,15 @@ there is no edge, and an exhausted stream is NOMATCH outright.
 
 ### 3.1 Shape (spellings PROPOSED; the layout is the kit's to finalize)
 
+`[span_pick 1g, MF_SITE_ABI 22]` **Provenance left the seam** (span_pick.md
+rev 5.2 unit 1g, D186 add. 2): the kit's `mf_akind` is now {tag, version,
+present, digest, payload}. `mf_prov`, `mf_prov_source` and `mf_prov_fidelity`
+are deleted; the digest moved to `mf_akind.digest`. The source, bundle, bytes
+and fidelity stay pcrec's: its offer (`PcrecFindOffer`), its stamp and its
+`KSRCTRACE object` record. The block below and the invariant's `prov.source`
+wording are the rev 3.1 record; the invariant itself is checked on pcrec's
+offer, before the object is built.
+
 ```c
 #define MF_ANALYSIS_LIST_V 1        /* the LIST's own shape, not any kind's */
 typedef enum { MF_PROV_UNSTATED = 0,      /* refused at define              */
@@ -593,6 +602,10 @@ stated", legal for a stand-alone K3 caller and for every pcrec compile before
 E-1 lands.
 
 ### 3.2 The kinds table, and provenance `[rev3: one table; rev3.1: the vocabulary's home, an `unmeasured` column, content provenance]`
+
+`[span_pick 1g, MF_SITE_ABI 22]` The provenance this section derives (source,
+bundle, bytes, fidelity) is pcrec's offer and stamp only since unit 1g; the
+kit's object carries none of it (§3.1's revision line).
 
 The object is built from ONE pcrec-side table, `find_queries[]`
 `[rev3.1 m1]`, whose rows ARE the [FINDINGS] query vocabulary. It is the
