@@ -280,10 +280,8 @@ event, `measures.md` §3.3¶1, §5¶4, readers by grep), or a FILE set may not s
 **Where they live** `[rev3 C5]`. The span cards are quantities of the grid's successor method
 (`kit-grid@2`); the grid keys are re-measured under it. `[rev5 D2]` The set is a FRESH id,
 `zen4-grid3` (D186 add. 2; `zen4-grid2` is D167's 2026-10-16 slot, named by its readers, never
-reused; `measures.md` §8¶1). Embedded by `make gen-measures`, handed on `mf_art_begin`.
-
-**Chosen by the set** (`--measures=NAME`, else `DEFAULTS`, `measures.md` §5¶6). **Measured** by
-quiet-gated `idle-ok` jobs, windows cleared with the owner; long-subject cards.
+reused; `measures.md` §8¶1). Embedded by `make gen-measures`, handed on `mf_art_begin`; chosen by
+`--measures=NAME`, else `DEFAULTS` (`measures.md` §5¶6); measured by quiet-gated `idle-ok` jobs.
 
 ## Robustness to the byte rates
 
