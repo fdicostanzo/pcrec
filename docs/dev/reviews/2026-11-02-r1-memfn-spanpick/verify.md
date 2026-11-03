@@ -91,18 +91,18 @@ and the FULL synthetic set decides the same rows") and :43-44 (check F, "`consul
 compile ... the true arms are OWED to the first row that does") exist as quoted: HOLDS.
 
 ## PREMISE-9, MEAS-10, OWNER-7
-**HOLD.** plan.md:952 `[MEMFN-UNBOUNDED-SPANS] STATE:not-started`, status "filed; nothing built",
+**HOLD.** plan.md `[MEMFN-UNBOUNDED-SPANS] STATE:not-started`, status "filed; nothing built",
 trigger "(an MF_SITE_ABI event: pcrec abi bump, identity re-pin and spec hunk in the same change)".
 Presence today is the finder's PRES slot: finder.c:836-841 `fd_scope` (ALL_PRESENT with
 npspan/pspans -> FD_PRES), P0-P9 rows; compile 1 (vm1) shows `slot=PRES ... row=P0`. So subj:75
 ("presence states unbounded spans (D176 Q4)") and subj:267-268 ("every scenario routed through the
 one call ... Abi: none if bytes are identical") rest on the unbuilt row. MEAS-10's other parts:
-plan.md:958 `[MEMFN-PAIRSTOP] STATE:not-started` HOLDS; roadmap.md:388-390 A-PLAN's prerequisites
+plan.md `[MEMFN-PAIRSTOP] STATE:not-started` HOLDS; roadmap.md:388-390 A-PLAN's prerequisites
 "The kit's agreement ...; the first stream step that touches search sites (ride-along)" HOLDS (the
 subject's "the split and stage 1 are one change", subj:97-98, takes that step). OWNER-7's parts:
 `grep -n 'fold\|dropped'` over the subject: no hit, while D176 Q4 (decisions.md:9919) rules "One
 general fold: ... the presence pass is dropped" HOLDS; D176 Q3 "as a new revision of the box's set"
-and plan.md:186 "as zen4-grid1 rev 2" vs subj:274 "a new set id per box per run" HOLDS; D176 Q3
+and plan.md "as zen4-grid1 rev 2" vs subj:274 "a new set id per box per run" HOLDS; D176 Q3
 "gated on the step-0 census" with no step-0 mention in the subject (grep `step.0`: none) HOLDS.
 
 ## PREMISE-12
@@ -141,7 +141,7 @@ practice treats an MF_SITE_ABI event as a pcrec abi event" and MEAS-8's "window_
 every MF_SITE_ABI event with a pcrec abi bump"): window_site.md:518 "The number reaches no artifact
 ... Check: S2's emit_sweep is byte-identical across the number change", and §5.2's abi row
 (:546) gives S1+S2 "ONE `MF_SITE_ABI` event (+ `MF_CLASS_V`) ...; NO pcrec abi event", the pcrec bump
-only in S3 where bytes move. plan.md:955 pairs the two only for [MEMFN-UNBOUNDED-SPANS], a row that
+only in S3 where bytes move. plan.md pairs the two only for [MEMFN-UNBOUNDED-SPANS], a row that
 moves statements. So the stage-1 truth is "one MF_SITE_ABI (+ MF_CLASS_V) event, no pcrec abi
 event if bytes are identical", which makes Goal 2's "byte-identical to main but for the abi digits"
 (subj:23-24) the inconsistent sentence, and SLOT-15's reading (two different numbers; say which moves)
@@ -383,7 +383,7 @@ only the envelope.
 **HOLD (the textual tension is real; whether it is a conflict is the owner's question, as all four
 say).** D186 Relations (decisions.md:10028): "Pricing ([PRICE-BAKEOFF], deferred) returns only if
 hand-written rows start conflicting"; Revisit (:10030): "the row table grows past what hand-written
-rows can keep loss-free (pricing's trigger)". plan.md:1817-1820 [PRICE-BAKEOFF] `STATE:deferred`,
+rows can keep loss-free (pricing's trigger)". plan.md [PRICE-BAKEOFF] `STATE:deferred`,
 status 2026-11-02 "DEFERRED, not a priority (Frank, after the pilot): default 0.981 of ideal held-out,
 PASS at 0 rules ... is the baseline pricing must beat. Build waits for [STREAM]", next "revisit only
 when an unmeasured choice shows headroom". pricing_requirements.md:11-20: "within-engine headroom is

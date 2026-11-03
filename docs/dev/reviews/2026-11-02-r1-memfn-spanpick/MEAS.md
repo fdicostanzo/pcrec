@@ -174,7 +174,7 @@ Effort: n/a. Blast: owner decision on staging and on whether stages 2-3 wait for
 
 ### MEAS-10  Overlap and unnamed dependencies
 CONFIRMED. design (cost/overlap).
-- §The shape "presence states unbounded spans (D176 Q4)": that is [MEMFN-UNBOUNDED-SPANS] (plan.md:952,
+- §The shape "presence states unbounded spans (D176 Q4)": that is [MEMFN-UNBOUNDED-SPANS] (plan.md,
   STATE:not-started, "an MF_SITE_ABI event ... same change"). Stage 1's T-PRES/T-FIND for presence depends on
   a row nothing builds. State that presence in stage 1 keeps today's (non-span) statement.
 - Open question 5 (PF two-stream renderer) and N4/"PAIR in PF frames" are [MEMFN-PAIRSTOP] (not-started) /

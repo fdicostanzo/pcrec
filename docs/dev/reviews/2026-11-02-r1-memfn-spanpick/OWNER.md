@@ -22,7 +22,7 @@ quoted wording. OWNER-1 depends on how the quote and D186 fit together.
   - D186 (decisions.md:10020) says a choice change "is a ROW in the declared choice table: a
     condition on stated facts, plus per-regime evidence". Its Relations say "Pricing ([PRICE-BAKEOFF],
     deferred) returns only if hand-written rows start conflicting".
-  - [PRICE-BAKEOFF] (plan.md:1817), status 2026-11-02: "DEFERRED, not a priority (Frank, after the
+  - [PRICE-BAKEOFF] (plan.md), status 2026-11-02: "DEFERRED, not a priority (Frank, after the
     pilot) ... Build waits for [STREAM] ... revisit only when an unmeasured choice shows headroom".
   - The subject's stage 3 item 1 is the FIRST choice change. It adds a T-PICK row whose action is the
     full priced argmin: cards, two rate models, a quadrature band, three levels. It also deletes the
@@ -161,7 +161,7 @@ quoted wording. OWNER-1 depends on how the quote and D186 fit together.
 - **CONFIRMED (design/doc).** Hits: §What is a scenario then, §Staging stage 1, §Cost cards "Measured
   how".
 - **Unbounded spans for presence.**
-  - "presence states unbounded spans (D176 Q4)" relies on [MEMFN-UNBOUNDED-SPANS] (plan.md:952,
+  - "presence states unbounded spans (D176 Q4)" relies on [MEMFN-UNBOUNDED-SPANS] (plan.md,
     STATE:not-started; a pcrec-side MF_SITE_ABI event).
   - Stage 1 says "every scenario routed through the one call" and "Abi: none if bytes are
     identical". It does not list this row as a prerequisite, and it does not say that presence keeps
@@ -169,7 +169,7 @@ quoted wording. OWNER-1 depends on how the quote and D186 fit together.
   - D176 Q4's ruled "one general fold" (drop the presence pass when the chosen stop's first find
     covers it) is not mentioned anywhere.
 - **New set id vs new revision.**
-  - D176 Q3 says the zen4 cards land "as a new revision of the box's set". [MEASURE-SET] (plan.md:186)
+  - D176 Q3 says the zen4 cards land "as a new revision of the box's set". [MEASURE-SET] (plan.md)
     says "as zen4-grid1 rev 2".
   - The subject's stage 2 says "a new set id per box per run". That is a different store event (a new
     id vs a new rev, measure_sets.md §2), and nothing explains the change.

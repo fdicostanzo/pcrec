@@ -197,7 +197,7 @@ dependency with its abi event). Blast radius: the presence scenario, T-PRES, Sta
 Subject: §What is a scenario ("presence states unbounded spans (D176 Q4) and asks the same tables
 with a presence price"); §Staging stage 1 ("every scenario routed through the one call ... Abi: none
 if bytes are identical").
-- docs/dev/plan.md:952-957: `[MEMFN-UNBOUNDED-SPANS] STATE:not-started`, "nothing built", trigger
+- docs/dev/plan.md: `[MEMFN-UNBOUNDED-SPANS] STATE:not-started`, "nothing built", trigger
   "an MF_SITE_ABI event: pcrec abi bump, identity re-pin and spec hunk in the same change". The
   window statement today has no unbounded-offset span: presence is stated as `npspan`/`pspans`
   predicates on an ALL_PRESENT site and decided by the finder's PRES slot (finder.c:837-841
@@ -291,7 +291,7 @@ disagree with each other). Effort: small (state the MF_SITE_ABI bump and its pcr
   grows from window_site's phase-1 reply ... by the method and resume ... Moving them into the plan is
   exactly stage 1's deletion of the duplicate deciders, so the split and stage 1 are one change". A
   grown public reply is an MF_SITE_ABI event by the header's own rule, whatever `mf_site` does.
-- House practice treats an MF_SITE_ABI event as a pcrec abi event (plan.md:955, [MEMFN-UNBOUNDED-
+- House practice treats an MF_SITE_ABI event as a pcrec abi event (plan.md, [MEMFN-UNBOUNDED-
   SPANS] trigger: "an MF_SITE_ABI event: pcrec abi bump, identity re-pin and spec hunk in the same
   change"). Goal 2 already says "byte-identical to main but for the abi digits"; §Staging's
   "Abi: none if bytes are identical" contradicts it. Say: stage 1 = one MF_SITE_ABI bump (+ its
