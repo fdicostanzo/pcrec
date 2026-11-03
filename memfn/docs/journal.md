@@ -3101,3 +3101,15 @@ Main ruled on the four kit findings (D186 add. 2):
 - **MF_SITE_ABI 20 -> 21** (the entry and the two options leave) and **MF_CLASS_V 6 -> 7** (three rows left ahead of the PRES rows). For the responses ledger: the kit session's line.
 - CALLER-VISIBLE: `--list-axes` loses the two `memfn` rows; `--memfn=no-fd-r8`/`no-fd-ndisp` are unknown options; `docs/spec/registry.md` §6¶8/¶8a/¶8b (floor 14 -> 12).
 - Witness (byte identity on every surviving arm with `--list-axes` judged by `--dumps-declared-gone`; reach equality with the declared gone set fd R8/R1/R2; census; strict; make test; mech) queued as box-queue jobs 330-33x: docs/dev/lanes/sp1f_report.md.
+
+## 2026-11-03 (afternoon) — kit session: 1f delivered and landed; R-34; 1g built, in code review
+
+- Box rebooted ~11:29 and killed mech job 347; main re-queued it. 347/348 GREEN, 349 RED on S677: a pre-existing class-A anomaly (its plant failed -Werror=parentheses). S677 plants in generic.c, which 1f touches, so lane s677fix repaired the ROW (a second pair parenthesises the joined test, same mutant): DETECTED, 0 anomalies. Delivered 1f at lane/memfn-sp1f 9a292d40d; main merged it, c0f0d543b.
+- R-34 (CI segfault in G2's reach control): a use-after-free in the G2 GENERATOR (free_site left cur_site dangling). Lane g2seg fixed it; landed with 1f. The full G2 confirmation is owed at the next make test or CI run.
+- 1g: lane sp1g (opus) delivered lane/memfn-sp1g efd724b4b, MF_SITE_ABI 22, byte-identical on a 3k-compile spot check. The code critic round crit-memfn-sp1g is running (coordinator, opus).
+  - Owed to the fix lane after the round:
+    - the L(4) plant as a real matrix row (needs an S-id);
+    - S678 (shard 1 of the 1g gates, a class-A plant-trips-Werror row) repaired the S677 way, otherwise shard 1 goes red as 349 did;
+    - the sp1g deliver file for lanecheck.
+  - Owed by the kit session at the done line: the MF_SITE_ABI 22 notice in responses.
+  - The gate jobs (350-359, keys kit-sp1g-*) are prepared in scratch/memfn/sp1g/jobs/. They queue after the fix lane, behind main's full suite (300, until ~02:30 11-04).
