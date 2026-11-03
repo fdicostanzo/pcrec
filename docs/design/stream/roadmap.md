@@ -46,10 +46,11 @@ the legal choices) -> architecture (prices and decides) -> emit (renders the pla
 these are two stages (pcrec's planning, and emit).
 
 - **The kit has two faces, in two stages.** Its PLANNING face sits inside architecture: given a
-  site's facts and the target, it states its candidates and their prices. Its EMITTING face sits
+  site's facts and the frame (engine, target, layer), it returns ONE plan, a pure function; prices
+  and the alternatives considered appear only in the trace (D186 addendum 2; architecture compares
+  scenarios by asking once per frame). Its EMITTING face sits
   inside emit: given the candidate architecture chose, it writes the C. The kit stays one project
-  and one owner (F3); pcrec sees its candidates only as opaque entries with prices (D157, facts not
-  methods). Any exchange between the planner and the kit's planning face is a library call within
+  and one owner (F3); pcrec sees the plan only as an opaque entry (D157, facts not methods). Any exchange between the planner and the kit's planning face is a library call within
   one stage, not a seam.
 - **Knowledge about later stages travels as DATA.** Architecture needs the cost of the kit's methods
   and of the automaton renderings: these arrive as price cards loaded at build time, never as a
