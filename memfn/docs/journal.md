@@ -2982,3 +2982,15 @@ R-33 (r33_report.md): ~90 % of 3,443 decisions agree with the inner-first pick. 
 - a robustness rule (win under both prior and flat rates, beyond the cards' spread);
 - costs propose, D186 evidence disposes.
 Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/span_pick.md rev 1; the critic round follows.
+
+## 2026-11-02 (late night) — span_pick rev 1 critiqued, rev 2 written; Frank corrects A2
+
+- Review 2026-11-02 r1 is ruled (no answer-level findings; rev 1 not build-ready). Owner answers A1/A2/A6 are D186 add. 1.
+- Rev 2 (lane spanpick2, 5b3bc376a) is under a re-check round (crit-memfn-spanpick2).
+- Frank then corrected A2: "I didn't intend that (?i)x/1234 needed a special rule. My thinking was that the issue would be resolved by data in the later stage."
+- For rev 3, after the re-check:
+  - drop rev 2's ONE-STREAM row;
+  - stage 2 cards follow stage 1 directly;
+  - smp20 is the first priced departure;
+  - a real-text rate sample stands as stage 2's backup (a new dataset; name its home), because the prior inverts x vs '/'.
+- Main was asked to amend D186 add. 1.
