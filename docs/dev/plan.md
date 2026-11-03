@@ -1550,6 +1550,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the kit's next timing window on this box, or the measurement-set revision for the pair card (D176 Q3).
   refs: bench O-117 4.3; s3_report.md 11.2; D176; memory pcrec-suspect-tuning-constants
   Charter: sweep w (32..512) on union-select and the query-string pair on the two bench subjects' shapes, ONE bounded effort, then accept or retune; bar is memory pcrec-one-pass-loss-chasing. Do it after R-30's abi 94 (it changes the same pre-check; the loss may have moved).
+- [BENCH-WITHDATA] STATE:not-started — bench "pcrec with subject data": held-out analysis bundle, never slower than standard
+  filed: 2026-11-02 manager (Frank: some patterns need subject data to choose well; get the bench on board; "the analyze version should always at least match if not beat the standard")
+  status (2026-11-02): filed; nothing built. Bench told (inbox I-175). The compile-only census is ours and may run as light work at any time.
+  trigger: span_pick stage 2 (measured per-method cards) lands; the census may run before it
+  refs: D186 addendum 1 (smp20 the watched witness, read blind AND with a text-like bundle); analyze/ (pcrec-analyze, the shipped log/weblog bundles); `pcrec --analysis NAME`; docs/design/memfn/span_pick.md; [PILOT-SIMD] (the same re-time-only-movers economy)
+  Charter: (1) compile-only census: every bench pattern compiled blind and under each matching bundle, listing the patterns whose bytes move. (2) The bench adds a second pcrec testee, "pcrec (with subject data)", timed only on the movers; the headline stays the blind pcrec (unknown subject), and other engines take no subject data. (3) No training on the timed bytes: each bundle comes from a HELD-OUT sample of the same subject kind (another file, or the other half of a split), with its name and digest recorded. (4) The bar: with-data pcrec MATCHES OR BEATS standard pcrec on every cell, beyond noise; any loss is a mechanism finding (data made the choice worse), never accepted as a trade. (5) Report the data-limited set: patterns where blind pcrec loses to another engine but with-data pcrec wins.
 - [PILOT-SIMD] STATE:not-started — the pilot's SIMD-on layer: re-time only sites whose arm bytes change under -fmemfn-simd
   filed: 2026-11-02 manager (Frank: the choice depends on whether SIMD is in the cards; the pilot is SIMD-off only)
   status (2026-11-02): filed; nothing built. The scalar pilot runs now (jobs 805-806).
