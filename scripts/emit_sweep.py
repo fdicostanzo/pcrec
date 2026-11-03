@@ -591,8 +591,8 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (873, 873, b"a+"),    # S3 re-pin (was 1105/1105, b"ab")
     ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
-    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (167, 0, b"a.{1,5}z"),    # S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
-    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (231, 0, b"a.{1,5}z"),    # S3 re-pin (was 263); was 262: same
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (142, 0, b"a.{1,5}z"),    # P1 re-pin (was 167): the landmark walk (D184) takes 35 patterns the pick served (29 net of corpus growth), pinbis; S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (224, 0, b"a.{1,5}z"),    # P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }
