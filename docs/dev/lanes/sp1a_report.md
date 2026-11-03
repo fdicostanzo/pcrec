@@ -127,7 +127,10 @@ Each job's result is under `worktrees/.boxqueue/{done,failed}/<timestamp>-<job>/
 
 ## STATE AT HANDOFF
 
-STATE: delivered, validation OWED (jobs 300-305). Code complete for unit 1a at the branch head; no
+STATE: delivered, validation OWED: the box-queue keys kit-sp1a-strict kit-sp1a-memfn kit-sp1a-reach
+kit-sp1a-ident1 kit-sp1a-ident2 kit-sp1a-ident3 (jobs 300-305). The DELIVER file's `owed:` line is
+prose ("witness queue jobs (named in Queue jobs)"), which `scripts/lanecheck` reads as job KEYS; the
+keys above are what it should name (reported to main). Code complete for unit 1a at the branch head; no
 rulings file named in the brief. For the kit manager: the responses-ledger line for MF_CLASS_V 6. For
 main: the ratchet log line (15 -> 11 at 1a's landing) and the landing jobs (full `make test`, mech).
 A fresh agent resumes from the job results above: all green = 1a's witness complete; any byte moved
