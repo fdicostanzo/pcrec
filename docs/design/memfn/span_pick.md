@@ -5,10 +5,9 @@ no timing.** `[rev4]` Carries the owner's rulings since rev 3 (D186 addendum 2: 
 D186 over D144 item 3, C9; one plan with its trace; main's rev 3.1 answers; O3 = wait) over rev 3
 (review 2026-11-02 r2 and D186 add. 1 as amended: A2, smp20 a WATCHED witness). Read §Owner rulings
 since rev 3 and §The watched witness first; rev 4 text is marked `[rev4]`, rev 3's `[rev3 <id>]`
-marks stay. Evidence: `units_inventory.md` (U1-U10, N1-N14),
-`r33_report.md` + `docs/dev/lanes/r33_sim/`, `t588tri_report.md`, `bar588_report.md` (job 588),
-`window_site.md` rev 3.3, `measure_sets.md`, roadmap §0a/A-PLAN/§5; `span_pick/` (recounts, witness
-compiles). Code cites are the r2 review tree's (959c08124).
+marks stay. Evidence: `units_inventory.md` (U1-U10, N1-N14), `r33_report.md` + `docs/dev/lanes/
+r33_sim/`, `t588tri_report.md`, `bar588_report.md` (job 588), `window_site.md` rev 3.3, `measure_sets.md`,
+roadmap §0a/A-PLAN/§5; `span_pick/`. Code cites: the r2 review tree's (959c08124).
 
 ## Goals
 
@@ -98,6 +97,20 @@ row) at unit 3.0, when the plan call takes the frame.
 **A-PLAN's open points.** (1) `[rev4]` ONE PLAN WITH ITS TRACE (owner, 2026-11-02): the kit hands
 back one plan; prices and the alternatives considered appear only in the trace. This AMENDS
 A-PLAN's agreed next step ("facts in, candidates and cards out"); stage 1 edits the roadmap (§Staging).
+**The plan face is a PURE FUNCTION** `[rev4]` (the owner's reason for one plan: "if the kit planner
+was functional, it could ask multiple scenarios and compare"). PROPERTY: the plan is a function of
+(site facts, frame: engine/target/layer, measure set, bundle) alone; same inputs, same plan, no
+hidden state; callable any number of times per site, cheap enough to call once per scenario. That
+makes one plan sufficient: a caller compares scenarios by calling again. REVISIT TRIGGER: when
+whole-artifact pricing is un-deferred, the chosen plan's price becomes a readable output beside the
+plan (still one plan, never a list). **Purity breakers today** (a stage-1 item, unit 1d; grep of
+memfn/src for mutable statics and `art->` writes/readers): (a) `mf_wdecide` refuses on the sticky
+`art->err` (window.c :1062; compose.c :960): an earlier failure changes a later answer; (b) the
+call-order site label `art->nsites + 1` (window.c :997, :1007, :1734, :1818; finder.c :930;
+ofsskip.c :486; compose.c :268, :281), trace-only today (gate.c :936), must stay unread by rows;
+(c) gate.c :850-856's process-global reach counters and `trace_arts`, write-only (MFTRACE),
+likewise. No cache; helper sharing (`wused`, `includes`, `simd_inc`, `libc`) is the emitting face's,
+read only by stamps (compose.c :1363-1417). 1d's witness adds: calls repeated and reordered, equal.
 (2) Helper sharing stays emit's, cost-free. (3) Run-time dispatch stays held. (4) Cards are tables
 keyed by class and regime. (5) `--memfn=no-X` denies become filters on T-FIND and T-PICK rows; the
 namespace is unchanged (D147 add. 9). (6) The same-commit abi rule is unchanged.
@@ -150,7 +163,6 @@ red. `kit_walk` reach stays a population count, not the census (plain-loop decid
 
 **Stage 1: no prices.** The default is TODAY's plan (KEY, M, TIE, then phase 2's frame and method);
 nothing reads a cost but KEY/M's `plan_cost.def` integers, C-model's truncation order kept.
-
 **Stage 3: T-PICK rows, all priced** `[rev3 A2]`. Each row: a condition on stated facts tested
 before any card key is looked up, the LEVELS it opens (method, position, alternative), the priced
 action below, its deny, its per-regime evidence (D186). `keep` is the last row. No hand rows are
@@ -186,18 +198,16 @@ subject is B's kind (the owner's scope, below). Cost: a minimax and a B pricing 
 **The property** (the owner's bar, plan [BENCH-WITHDATA]; scope CONFIRMED by the owner 2026-11-02: "The analysis data must match the test subject to require same-or-better results."): on every cell whose subject
 kind B describes, a with-data compile matches or beats the blind compile beyond noise. **Why the
 structure gives it** `[rev4]` (re-derived under minimax): the with-data pick's predicted price under
-B is <= the blind pick's by construction (the blind pick is the incumbent, a departure must win
-under B beyond band). The argument never reads HOW the incumbent was chosen, so it holds for the
-minimax incumbent exactly as for rev 3's; and when B is itself a blind kind (`log`, `weblog`), the
-with-data pick is B's own least within band, never worse under B than the minimax compromise. The
+B is <= the blind pick's by construction (the incumbent; a departure must win under B beyond band),
+whatever chose the incumbent, so minimax changes nothing; when B is a blind kind (`log`, `weblog`),
+the with-data pick is B's own least within band. The
 MEASURED cell then holds when (i) the cards' regime is the cell's (long subjects; per-call cells
 need [SPAN-PICK-PERCALL]'s term); (ii) model error (independent positions) stays inside the band;
 (iii) the cell's subject is B's kind within B's sampling noise (a held-out sample, never the timed
 bytes); (iv) the site is one a priced row admits. A with-data loss is therefore a broken (i)-(iv):
 a mechanism finding ([BENCH-WITHDATA] item 4), never a trade. NOT covered: sites no priced row
-admits, where KEY's mass-only rows read B as their prior (today's behaviour, kept byte-identical by
-stage 1); [BENCH-WITHDATA]'s census finds their losses, each answered by a priced row (a blind KEY
-incumbent there would undo today's with-data wins, smp20's included).
+admits, where KEY's mass-only rows read B as their prior (today's, kept by stage 1); the census finds
+their losses, each answered by a priced row (a blind KEY incumbent would undo today's wins).
 
 **The price of a plan** `[rev3 C1, C2]`: in the set's unit (the scalar walk's per-byte cost, D176
 Q1) per 1e6 subject bytes; masses in ppm; card values `value_e6` integers. Fixed point (D176 Q5):
@@ -244,17 +254,15 @@ SIMD-form cards RETURN to stage 2 (C9, D186 add. 2): each card below is measured
 | `enter` per consumer kind x entry fact (PARKED resume, RESEED re-seed, NONE) | candidate passed on | false-start survival measured | C_ENTER (MEASURED x ASSUMED) |
 
 MARGIN (2x, ARGUED) stays M's default until the PARKED and RESEED `enter` cards exist for the kinds
-a priced row admits. `[rev3 C10]` Open card-design question for stage 2's lane: survival is a
-property of the pattern's automaton after the stop, so a per-(kind, entry) card may bake in its
-fixture's survival; the alternative is a pcrec-stated survival fact times a per-byte card. OFS
-sites state no kind, so `enter` has no key there (fine while T-FIND declines on OFS). MAX_SET is not
-a card; U9 closes by a grep of `PCREC_OFSK_MAX_SET`'s readers.
+a priced row admits. `[rev3 C10]` Stage 2's card-design question: survival belongs to the automaton
+after the stop, so a per-(kind, entry) card may bake in its fixture's; the alternative is a
+pcrec-stated survival fact x a per-byte card. OFS sites state no kind, so `enter` has no key there
+(fine while T-FIND declines on OFS). MAX_SET is no card; U9 closes by a grep of its readers.
 
-**Noise reaches the kit.** `mf_measure` has no noise field; the committed set's 68 kit rows carry
-`noise_e6` '-'. Stage 2 owes: a kit request (main files it), a noise field (an MF abi event, with
-`measure_sets.md` §4.1 and `match_api` hunks, the kit channel's homes `[rev3 C4]`), a producer, a
-rule for derived rows (quadrature through the row's formula), and `[rev3 C4]` the stamp's honesty
-once noise decides: noise joins `values_digest` (a digest-version event, `measures.md` §3.3¶1 and
+**Noise reaches the kit.** `mf_measure` has no noise field; the set's 68 kit rows carry `noise_e6`
+'-'. Stage 2 owes: a kit request (main files it); a noise field (an MF abi event, `measure_sets.md`
+§4.1 and `match_api` hunks `[rev3 C4]`); a producer; derived rows by quadrature through their
+formula; `[rev3 C4]` noise joins `values_digest` (a digest-version event, `measures.md` §3.3¶1 and
 §5¶4, `measure_sets.md` §1.6/§4.1, readers by grep), or a FILE set may not share a committed id.
 
 **Where they live** `[rev3 C5]`. The span cards are quantities of the grid's successor method
@@ -264,16 +272,14 @@ Q3's wording and plan [MEASURE-SET]'s note ("zen4-grid1 rev 2"). Embedded by `ma
 handed on `mf_art_begin`.
 
 **Chosen by the set** (`--measures=NAME`, else `DEFAULTS`, `measures.md` §5¶6; a class option goes to
-[IFACE-PUSH]). **Measured** by queue jobs (`idle-ok`, quiet-gated, windows cleared with the owner):
-dev box first, ubuntubudu by slot request, the Mac directional. Cards are long-subject quantities; a
-per-call term is owed before a priced row with per-call movers.
+[IFACE-PUSH]). **Measured** by quiet-gated `idle-ok` queue jobs, windows cleared with the owner: dev box
+first, ubuntubudu by slot, the Mac directional. Long-subject cards; a per-call term before per-call movers.
 
 ## Robustness to the byte rates
 
 **The weakest input is the prior.** PRIOR_AUTHORED (`a322116b1b87f9f6`) rates {x,X} at 1,097 ppm and
 '/' at 4,154; job 588's subjects held x 2,338 against '/' 1,026 candidates on real text, 1,388 vs 0
-on none, 21,788 vs 10,856 on random (t588tri §a). The walk-vs-V1 precedent: when the evidence cannot
-say, keep the choice that is never badly wrong.
+on none, 21,788 vs 10,856 on random (t588tri §a). Walk-vs-V1: keep the choice never badly wrong.
 
 **The rule** `[rev4]` (D186 add. 2). Blind: MINIMAX over P, F and the shipped real-data bundles
 (`log`, `weblog`): the least worst-case loss, departing from today's pick only when the worst case
@@ -372,16 +378,13 @@ one-plan roadmap edit: `docs/design/stream/roadmap.md` A-PLAN's next step become
 
 **Witness, per unit**: `scripts/emit_sweep.py` byte-identical over the corpus, the bench patterns and
 job 588's sample on EVERY arm (default, each `--memfn=no-X` deny (1f's two once retired), `--engine=
-vm`, both SIMD layers), stamps included; `tests/findings/manifests/*_movers.txt` unchanged; reach
-floors; G2; the decider census. Counted pcrec-side from artifact diffs.
+vm`, both SIMD layers), stamps included; `*_movers.txt` manifests unchanged; reach floors; G2; the census.
 **Ratchet** (roadmap §5): the kit's duplicates join §5 as rows counted at stage 1's base (proposed
 for main): find-method deciders (`fd_route`, `fd_find`, compose's method walk, `fn_rows` BODY;
 members − 1), position enumerators, kit mass variants, tie spellings, run-member spellings, the
-landmark shadow, inert finder rows. `[rev3 P2]` `b_fn_holds` is in the FRAME family (the renderer
-row), not deleted. Each unit lowers its row and raises none; stage 1 adds no member.
+landmark shadow, inert finder rows (`[rev3 P2]` `b_fn_holds` is FRAME family). Each unit lowers its row.
 **Sequencing** (D153): while stage 1 is in flight, opt rows touching window.c, finder.c, ofsskip.c,
-compose.c or presence.c carry "remodel overlap" and wait. `[rev4]` O3 answered WAIT (owner): the
-`[a[:b]` set-test unit change (smp04) and the look-ahead measurement wait for stage 1.
+compose.c or presence.c carry "remodel overlap" and wait; `[rev4]` O3 = WAIT: smp04 and look-ahead too.
 
 **Stage 2: measure the cards** `[rev3 O1, A2]`. Follows stage 1 directly (D186 add. 1 A2); its
 trigger is stage 1 done. Contents: §Cost cards (`[rev4]` scalar and SIMD forms), the noise channel,
@@ -391,24 +394,21 @@ unchanged.
 **Stage 3: priced choice rows, one per change.**
 - **Unit 3.0, the plan takes the frame** `[rev3 P1]` (the first priced row's prerequisite): pcrec
   states form, handoff and site_kind per candidate frame at phase 1 (one ask per NEXT row's frame:
-  `window_reply_ask` and `req_run_member` change, pcrec-side); the plan call takes the hooks and phase
-  set; the reply grows method, resume and frame row; the asker fact retires. Byte-identical; one
-  MF_SITE_ABI (+ MF_CLASS_V) event; same witness as stage 1.
+  `window_reply_ask`, `req_run_member`); the plan call takes hooks and phase set; the reply grows
+  method, resume, frame row; the asker fact retires. Byte-identical; one MF_SITE_ABI (+ MF_CLASS_V).
 - **Each row**: one T-PICK row naming its levels; a deny with a D174 behaviour name (spec home
   `registry.md` §6¶8a, listed by `cli.md` §2.4¶1); `[rev3 R1]` a 588-style run of RTE vs the row
   denied on EVERY arm (default, the deny, `--engine=vm`, both layers; scalar the bar) and its movers
-  census computed per arm from artifact diffs, never from a default-arm sweep alone, stamp-only
-  movers their own class; `[rev3 C7]` `consulted` set by T-PICK rows; `[rev3 C8]` its drop-F witness
-  from its own population, or the plant declared UNREACHED (never a pass); `[rev3 R5]` its
-  pre-check-part statement; its pcrec abi event and spec hunk.
+  census per arm from artifact diffs (stamp-only movers their own class); `[rev3 C7]` `consulted`
+  set by T-PICK rows; `[rev3 C8]` its drop-F witness from its own population, or the plant UNREACHED
+  (never a pass); `[rev3 R5]` its pre-check-part statement; its pcrec abi event and spec hunk.
 - **Row 1** `[rev3 A2]`: the first priced departure, admitting smp20's class (NONE alternatives
   whose default is a two-member stop), job 588 its evidence, §The watched witness its reading.
   `[rev3 O2]` Its acceptance also compares against the rule-list pilot, "the baseline any pricing
-  must beat" (0.981 of ideal held-out, [PRICE-BAKEOFF]): the pilot is re-run after row 1 and after
-  each later priced row (one pilot job each, SIMD off, Zen 4) and its distance is D186's drift
-  gauge. `[rev3 C6]` Row 1 flips `DEFAULTS` to the new set (a default change with its census,
-  §What moves). `[rev3 R7]` Row 1 is where A-model's one-member preference (`scan_ok`) and A-mass,
-  D186's first unification target, meet: KEY's two rows retire there by census.
+  must beat" (0.981 of ideal held-out, [PRICE-BAKEOFF]), re-run after each priced row (SIMD off,
+  Zen 4), its distance D186's drift gauge. `[rev3 C6]` Row 1 flips `DEFAULTS` to the new set (§What
+  moves). `[rev3 R7]` There A-model's one-member preference (`scan_ok`) and A-mass meet: KEY's two
+  rows retire by census.
 - `[rev3 O7]` **Ratchet delta**: T-PICK with its `keep` row falling to KEY is one table (delta 0 at
   row 1); each later row names the member it deletes or is rejected at review (roadmap §0).
 - `[rev3 R9, rev4]` **Batch gate**: choice-row losses above. **SIMD rows** (C9): §The pick 6.
@@ -417,8 +417,7 @@ unchanged.
 deletes HORS_MIN): `hors.probe`, `hit(walk)`, `hit(hors)`; witnesses hex8-bounded and the five other
 D-hors sites. RESEED admission at any set size: PF E-stmt sites, where PAIR has no renderer: needs
 [MEMFN-PAIRSTOP] (or walk-only) and both `enter` cards. Dense pairs: [MEMFN-PAIRSTOP] first, gated
-on the C5 fix. Offset-0 RESEED stops stay excluded. smp04 `[a[:b]`: a UNIT change (T-SETTEST table
-form), own deny and regime run, after stage 1 (`[rev4]` O3 = wait).
+on the C5 fix. Offset-0 RESEED stops excluded. smp04 `[a[:b]`: a UNIT change, after stage 1 (`[rev4]`).
 
 ## What stage 1 deletes
 
@@ -453,9 +452,8 @@ random, dense).
 `plan_cost.def` integers (Zen 1, ubuntubudu, while the default set is zen4: a box mismatch at every
 stage until they retire); C_ENTER (MEASURED x ASSUMED ~2 bytes of survival); MARGIN (2x, ARGUED);
 HORS_MIN (PROVISIONAL, one job-581 cell, dev box); every card's `gate_e6` (UNMEASURED DEFAULT);
-the prior (authored; the blind reading's P); `[rev4]` the `log` and `weblog` bundles (blind kinds;
-their sampling noise is in the band); the bundle (the with-data reading; likewise). smp20's flips:
-the hit(PAIR)/hit(memchr) ratio and the byte(PAIR) ceilings between {X,x}, '/' and '3' (§Robustness).
+the prior (authored; P); `[rev4]` `log`, `weblog` and the with-data bundle (sampling noise in the
+band). smp20's flips: hit(PAIR)/hit(memchr) and the byte(PAIR) ceilings (§Robustness).
 
 ## The independent control
 
@@ -466,9 +464,9 @@ RELEVANT.
 - **Priced rows:** predicted price vs measured time per mover (R5.3); validation sites share no
   number with the cards (R5.2). `[rev3 C7]` The keys a pick read are counted by a pcrec-side python
   re-price from the stamped set's rows (shares no code with the kit; the artifact carries no trace),
-  `[rev4]` recomputing each kind's prices, the minimax and the with-data departure, whose pick is
-  diffed against the artifact's. finder_check.py checks D and F get their true arms in
-  the first priced row's change. A swapped-cards plant moves a reach witness.
+  `[rev4]` recomputing each kind's prices, the minimax and the with-data departure, its pick diffed
+  against the artifact's. finder_check.py checks D and F get their true arms in the first priced
+  row's change. A swapped-cards plant moves a reach witness.
 - **With data:** [BENCH-WITHDATA]'s compile-only census (blind vs each bundle, movers listed) and its
   held-out bundles (no training on the timed bytes). **The watched witness:** job 588's timings judge
   smp20's pick per regime, never the kit's own price.
@@ -499,6 +497,7 @@ moves nothing; row 1 moves its movers and the stamps of the sites it admits.
 | One plan with its trace; amends A-PLAN's "candidates and cards out" (owner, memfn journal 2026-11-03) | §The shape (trace); §The designer/emitter split (1); §Staging (the roadmap edit in stage 1) |
 | Rev 3.1 (main): witness (2) passes on a one-member stop rarer than {x,X} ('4' passes); new id `zen4-grid2`; priced rows dark on a bare compile under M2 intended, M2's dependency, no safe-direction carriage | §The watched witness; §Cost cards; §What moves |
 | O3 = WAIT: smp04's set-test unit change and the look-ahead measurement wait for stage 1 | §Staging (sequencing; later rows) |
+| The plan face is a PURE FUNCTION of (site facts, frame, measure set, bundle), callable once per scenario; revisit trigger: whole-artifact pricing makes the chosen plan's price readable beside it (owner, via main) | §The designer/emitter split; purity breakers as a unit-1d item |
 
 **Review 2026-11-02 r2** (`docs/dev/reviews/2026-11-02-r2-memfn-spanpick2.md`): dispositioned by id
 in rev 3 (d3c4133cc, "Disposition"), all accepted, ONE-STREAM superseded by A2. Rev 4 reopens none;
@@ -516,5 +515,6 @@ priced row over two-member stops), [SPAN-PICK-PERCALL] (a priced row with a per-
 
 OWED none. Lane spanpick4: rev 4; `span_pick/smp20.py` rewritten for the minimax (blind kinds, with-
 data bundles, the card sweep), `smp20.out` re-made; `witness.sh` re-run (8 compiles, main tree's
-`build/pcrec`; `witness.out` identical); both CLAUDE.md rev lines. No make, no timing. Not a build go:
+`build/pcrec`; `witness.out` identical); both CLAUDE.md rev lines; the pure-function addendum and its
+purity breakers (grep of memfn/src). No make, no timing. Not a build go:
 next, the owner's stage-1 build go (or first a narrow re-check of §The pick and §Robustness).
