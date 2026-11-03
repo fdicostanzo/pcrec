@@ -548,14 +548,9 @@ DIFFER_PINS = {
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
-    # finder table's five denies. No finder row is ROUTED at B1, so each deny
-    # moves no byte: ASSERT_ZERO (below) on both bases and both streams. Each
-    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r8 at
-    # B6; fd-r0/fd-r5 RETIRED at B4' with their rows, fd-ndisp stays ASSERT_ZERO), so `--extra` never runs a kit deny
-    # without a floor.
-    **{(base, "--memfn=no-" + row, stream): (0, 0, None)
-       for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-       for row in ("fd-r8", "fd-ndisp")},
+    # finder table's five denies, ASSERT_ZERO until their rows routed (fd-d1
+    # at B2, below). fd-r0/fd-r5 RETIRED at B4' with their rows, fd-r8 and
+    # fd-ndisp at span_pick 1f with R8, R1 and R2 (unknown options since).
     # [MEMFN] R17-b' B2 (lane fdb2; r17b_prime.md §3.4 [rev3 A17]): fd-d1
     # FLIPS. D1 is routed, so its deny moves every one-byte DFA and hybrid
     # site to D1w's walk over the offered table (answer-identical; no start
@@ -603,10 +598,6 @@ DIFFER_PINS = {
 # utf8 base that lost `-e utf8` reads byte's 288 here.
 ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
                ("utf8", "-fno-end-window", "c-vm")} | {
-    # [MEMFN] R17-b' B1: the finder table's denies, inert until their rows route
-    (base, "--memfn=no-" + row, stream)
-    for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-    for row in ("fd-r8", "fd-ndisp")} | {
     # R17-b' B2: fd-d1 acts on the DFA body's and the hybrid's one-byte sites
     # only; under --engine=vm it has none
     ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")} | {
@@ -1472,16 +1463,26 @@ DUMP_SURFACES = ("--list-syntax", "--list-definitions", "--list-verbs",
                  "--list-schema")
 
 
-def dumps_declared_delta(flag, out_a, out_b, declared):
+def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
     """Judges one registry dump against DECLARED line moves, BOTH ways:
     `declared` is {(flag, first tab field): True}; every other line is
     byte-identical in order, every declared row exists on both sides and
-    differs. Returns the problems."""
+    differs. `gone` is {(flag, first tab field)}: each such row exists on
+    the REF side and on neither side after it is dropped from REF, i.e.
+    the row was removed and nothing else moved. Returns the problems."""
     la = out_a.decode("utf-8", "replace").splitlines()
     lb = out_b.decode("utf-8", "replace").splitlines()
-    if len(la) != len(lb):
-        return ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     problems = []
+    if gone:
+        key = lambda x: (flag, x.split("\t")[0])
+        for g in sorted(k for k in gone if k[0] == flag):
+            if not any(key(x) == g for x in la):
+                problems.append("%s: declared gone row %s is not in the REF dump" % g)
+            if any(key(x) == g for x in lb):
+                problems.append("%s: declared gone row %s is still in the HEAD dump" % g)
+        la = [x for x in la if key(x) not in gone]
+    if len(la) != len(lb):
+        return problems + ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     for x, y in zip(la, lb):
         key = (flag, x.split("\t")[0])
         if key in declared:
@@ -1495,9 +1496,10 @@ def dumps_declared_delta(flag, out_a, out_b, declared):
     return problems
 
 
-def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
+def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
     res = StreamResult("dumps")
     declared = {tuple(r.split(":", 1)): False for r in declared_rows}
+    gone = frozenset(tuple(r.split(":", 1)) for r in gone_rows)
     res.population = len(DUMP_SURFACES)
     for flag in DUMP_SURFACES:
         rc_a, out_a, err_a = run([bin_a, flag], timeout)
@@ -1509,13 +1511,14 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
             res.both_refuse += 1
         elif out_a != out_b:
             res.both_ok += 1
-            if any(k[0] == flag for k in declared):
-                problems = dumps_declared_delta(flag, out_a, out_b, declared)
+            if any(k[0] == flag for k in declared) or any(k[0] == flag for k in gone):
+                problems = dumps_declared_delta(flag, out_a, out_b, declared, gone)
                 if problems:
                     res.movers.append((flag, "\n".join(problems[:6])))
                 else:
                     res.declared_patterns += 1
                     res.declared_moves += sum(1 for k in declared if k[0] == flag)
+                    res.declared_moves += sum(1 for k in gone if k[0] == flag)
             else:
                 res.movers.append((flag, first_diff_hunk(out_a, out_b)))
         else:
@@ -1523,6 +1526,9 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
             for k in declared:
                 if k[0] == flag:
                     res.movers.append((flag, "declared row %s did not move (surface identical)" % k[1]))
+            for k in gone:
+                if k[0] == flag:
+                    res.movers.append((flag, "declared gone row %s is still listed (surface identical)" % k[1]))
     return res
 
 
@@ -2994,7 +3000,7 @@ STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
 IDENT_STREAMS = "c-default,c-vm,emit-ir,composition"
 IDENT_NOCOMP = "c-default,c-vm,emit-ir"
 IDENT_MEMFN = ("vrun-w32", "vrun-w16", "vrun-kb", "vrun-trim", "vrun-pad",
-               "precheck-assign-byte", "fd-r8", "fd-ndisp", "fd-d1", "fd-pres-g1",
+               "precheck-assign-byte", "fd-d1", "fd-pres-g1",
                "fd-pres-pick", "pres-set-lead", "window-search", "window-skip")
 # EXEMPT from the DELIVER witness: the arm removes the composition artifacts
 # the witness needs (no composition stream, so no cross-group SET pair). Its
@@ -3116,6 +3122,11 @@ def main():
                          "each named surface (e.g. --list-limits) the row whose "
                          "first field is KEY must differ and every other line must "
                          "be byte-identical")
+    ap.add_argument("--dumps-declared-gone", metavar="FLAG:KEY[,...]",
+                    help="the dumps stream's DECLARED removals, judged both ways: on "
+                         "each named surface (e.g. --list-axes) the row whose first "
+                         "field is KEY is in REF's dump and not in the working one, "
+                         "and every other line is byte-identical in order")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -3365,8 +3376,12 @@ def main():
                 [f for _, f in comp_files_run], done[:len(comp_files_run)])
         if "dumps" in streams:
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
+            # the declared deltas are the REAL comparison's: the self-check
+            # compares one revision with itself, so nothing may move there
+            real = label != "selfcheck"
             res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout,
-                                         args.dumps_declared_rows.split(",") if args.dumps_declared_rows else ())
+                                         args.dumps_declared_rows.split(",") if real and args.dumps_declared_rows else (),
+                                         args.dumps_declared_gone.split(",") if real and args.dumps_declared_gone else ())
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     if variants:

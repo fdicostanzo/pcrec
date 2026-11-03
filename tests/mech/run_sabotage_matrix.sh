@@ -511,6 +511,10 @@
 #     S1079/S1105 (re-aimed at fd_row_decides at B4', when the `routed` bit
 #     they planted was deleted) are re-anchored from fd_row_decides to
 #     fd_route/fd_pres.
+#     span_pick 1f (lane sp1f, 2026-11-03): S1025 retired with the §2.5 pay
+#     rule it planted in (`fd_pay`, deleted with R1 and R2, the only rows that
+#     paid, and `mf_finder_pay`/`--pay-grid`, its detector's entry: nothing is
+#     left to plant or to detect; no successor, the rule is gone).
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their
