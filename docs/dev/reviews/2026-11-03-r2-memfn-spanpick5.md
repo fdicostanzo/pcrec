@@ -286,3 +286,7 @@ has a disposition.
 - R1: add unit 1g (provenance leaves the seam, an MF_SITE_ABI event), with its full reader list, including prov_check.c; bytes/fidelity/digest decided in the unit text (the digest stays: the kit's trace names it).
 - R10 goes to main as a PLAN item before the build.
 - Process changes ACCEPTED: a "readiness" lens row for the last re-check before a go; COMMON reads every ruling file via `git show <freeze>:path`.
+
+## Diff check of rev 5.1 (kit manager, 2026-11-03)
+
+One opus critic checked rev 5 -> 5.1 (`2026-11-03-r2-memfn-spanpick5/CHECK_rev51.md`). Verdict: ready for go, with text fixes C1-C6; C7 and C8 optional. All are ACCEPTED, including C7 and C8, and fixed in rev 5.2. C1 is the substantive one: as worded, 1d's purity plant cannot fail the harness, because only mf_define moves art->nsites; the harness must interleave defines between plan calls.
