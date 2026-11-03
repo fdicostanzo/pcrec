@@ -28,7 +28,7 @@ committed patterns files; the counts are the kit's own reach counters on
 both sides, so a defect that moves a decision moves a sum (a counter both
 sides lack is invisible: the --gone control is the one row set this
 script expects to differ).
-Last line: `== reach_equal DONE rc=N keys=K differ=D ==`.
+Last line: `reach_equal: DONE rc=N keys=K differ=D` (scripts/verdict's trailer).
 """
 import argparse
 import collections
@@ -150,7 +150,7 @@ def main():
     for p in problems[:200]:
         print("FAIL: " + p)
     rc = 1 if problems else 0
-    print("== reach_equal DONE rc=%d keys=%d differ=%d ==" % (rc, nkeys, differ))
+    print("reach_equal: DONE rc=%d keys=%d differ=%d" % (rc, nkeys, differ))
     return rc
 
 
