@@ -770,3 +770,17 @@ behaviour, or by whatever detection the kit judges right for that row. One queue
 **Not asked:** which check (D157).
 
 **Sabotage ids:** none new; S526 keeps its id.
+
+## R-33 (2026-11-02, pcrec manager) — a cheap simulation of the inner-first "find the span" pick over the corpus, as an example for discussion
+
+**Customer:** the owner (2026-11-02): "I want to mechanically test this somehow ... Build the process on the cheap in script or something and have it return the answers. Not a prescription but an example for discussion." Context: D186 (TRIAL), units_inventory.md, the kit's inner-first ordering (facts, candidate positions, per-candidate method/verify/resume by local rows, the position picked LAST on a fact-derived key: mass x streams + verify per hit).
+
+**What pcrec needs.** A throwaway script (a study, not product code; nothing under src/ or memfn/src/ changes) that, for every search site the kit decides over the corpus (the .rxt corpus plus the bench pattern set and job 588's sample), returns:
+1. TODAY's answer as compiled: the site, its stop position and set, the method rendered, the row that decided it.
+2. The SIMULATED answer: the candidate positions with their score inputs, and the winner.
+3. A summary: how many sites agree and how many differ, by site kind, with every differing site listed (pattern, today vs simulated, the score gap).
+4. A cross-check against timings ALREADY ON FILE, with no new timing: job 588's cells, the rule-list pilot's per-site arms, and the bench ledgers where they cover a site. Do the simulation's disagreements line up with the measured losses (smp20 first)? Does it pick something measured slower anywhere?
+
+**Constraints.** Facts come from the compiler's existing outputs or trace builds; where a fact is not observable without code, say so and approximate it, labelled. A sweep of more than 50 compiles goes through the box queue (light, not timing). Findings only; no build go is implied.
+
+**Not asked:** the design itself (it follows, then a critic round), any re-pin, any choice of method (D157).
