@@ -34,6 +34,7 @@ Population check: the floor cells in `scripts/emit_sweep.py` apply when `full_po
 (Optionally keep floors from rising with kit-local pattern files: 154/244 are those files' population and would be wrong as pins.)
 
 ## STATE AT HANDOFF
+- OWED: none.
 - Done: counts, cause, verdict, proposed pins. emit_sweep.py NOT edited (main's re-pin).
 - Scratch: /var/tmp/pcrec-pcrec/scratch/pinbis2/ (drv.py, drv2.py, an.py, res.pkl).
 - Prebuilt trees pinbis-{99f310c,ee0dc8a,657e232,dc6a40d,564db08} removed via wtprune.
