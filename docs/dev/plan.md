@@ -860,6 +860,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: fix lane: make the 14 warning-clean, re-anchor the 11, give the runner a per-row declaration for a designed compile-time catch; plus an anomaly-count ratchet so unmeasured rows cannot leave `make mech` green.
   refs: docs/dev/lanes/suitetri_report.md; build/full_suite/20261027_7d3be7ec7/mech.log; memory pcrec-check-design-lessons (populations nobody counts)
   note (2026-11-03, file1103): kind A remaining after S677's fix (docs/dev/lanes/s677fix_report.md; template: parenthesise the emitted test in a second SAB_FILE2 pair): 13 rows, S1152 S1159 S1174 S135 S231 S272 S666 S1418 S739 S676 S678 S719 S707; each needs the same warning-clean plant treatment, re-measured DETECTED by a non-compile arm.
+  note (2026-11-03, manager, from the kit): S678 is NOT kind A any more: its 10-31 re-plant (r30bfix) builds without -Werror and is caught (fails 55 of 3653); the 10-27 suitetri listing predates it. 12 remain; re-check each against its current plant before fixing.
 - [TMP-PRUNE-REF] STATE:not-started — the temp-root prune must exempt the read-only `ref` subdirectory
   filed: 2026-11-03 file1103 (session 128 carry-over)
   status (2026-11-03): filed; nothing built. The prune (scripts/tmpdir.sh pcrec_tmp_prune: `rm -rf` of old direct children of the root) tries to delete the root's read-only `ref` tree; the lock.log of box-queue job 347-kit-sp1f2-mech opens with "rm: cannot remove ... Permission denied" lines.
