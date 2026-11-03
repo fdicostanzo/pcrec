@@ -3045,3 +3045,13 @@ Main ruled on the four kit findings (D186 add. 2):
 2. mf_prov.source and the bundle "default" label leave the seam in stage 1 (a stage-1 list item; fold into rev 5's text fixes).
 3. The default-prior change log is filed with the first such change.
 4. M2 is not ordered against row 1: priced rows go dark on bare compiles at M2 (intended); named-set compiles keep priced picks. Stage 2 = zen4-grid3.
+
+## 2026-11-03 ~00:00 — conditional build go for span_pick (Frank via main; Frank AFK)
+
+- Frank: "I've seen enough of the plan to approve it when it's done. Make sure it looks good to you then have kit go through all dev steps to build it."
+- The GO is CONDITIONAL on main's review of rev 5 (plus any 5.1 fixes) after crit-memfn-spanpick5 rules; no build before main's GO message.
+- Then the full dev process, stage by stage:
+  - stage 1 lands and is verified before stage 2;
+  - stage 2's card timing goes through the queue, never 20:00-01:00 or a bench window;
+  - stage 3 rows are each their own D186 choice change.
+- STOP and message main on anything non-routine (an unattributed red, an undeclared byte move, an answer-level finding, an owner ruling).
