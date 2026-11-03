@@ -80,6 +80,36 @@ position each. None carries its own selection.
 with their bands, the default plan, the winner and the deciding level, printable per site (trace
 build, as MFTRACE today). R-33's probe reads the same record.
 
+## The designer/emitter split
+
+This mechanism IS the kit's planning face of roadmap §0a (the waterfall: pcrec designer -> architecture
+-> emit -> gcc) and A-PLAN's "next step". Who does what:
+
+| stage | owns | in this design |
+|---|---|---|
+| pcrec, the designer | the FACTS and the legal choices: spans, alternatives with their entry, floor, frame class it may host, the art's byte rates, the measurement set (from the target) | states them once per site; never a position, a method or a cost (D157) |
+| architecture: the kit's planning face | candidates, the six tables, the pick, the cards | the plan call: facts in, ONE complete plan out (alternative, stop, method, verify, resume, test forms) plus its trace (every candidate's prices under P and F, the default, the winner); a library call inside the stage, not a seam |
+| architecture: pcrec's rules | non-local choices (engine, route, crossings: `next_keys`, the FIRST/NEXT rows) | reads the plan reply as today's NEXT rows read the phase-1 reply (window_site §2.4); never prices across engines |
+| emit: the kit's emitting face | rendering | the emit call: chosen plan in, C text out; Table E and B's renderers select TEXT by the plan's method and the frame; they decide nothing a card covers, so a golden plan-in/C-out test per seam holds |
+
+**What moves across.** The plan reply grows from window_site's phase-1 reply (alternative, stop, plan,
+RE-SEED bit) by the method and resume, which today the text call re-decides (`fd_find` in phase 2,
+`fn_rows` BODY inside the legacy rows). Moving them into the plan is exactly stage 1's deletion of
+the duplicate deciders, so the split and stage 1 are one change, byte-identical (A-PLAN open point 6:
+the emit face still produces the bytes, so the same-commit abi rule is unchanged).
+
+**A-PLAN's open points, as this design answers them.** (1) A candidate is a composition: the plan call
+returns one complete plan per site, the per-level winners kept in the trace, not a set for
+architecture to re-pick (architecture never prices across the kit's internals). (2) Helper sharing
+stays emit's, declared cost-free (no card prices it). (3) Run-time dispatch stays held: a target SET
+would price each arm with its class's cards; nothing here forbids it. (4) Cards are tables keyed by
+class and regime (§Cost cards). (5) `--memfn=no-X` denies become filters on T-FIND rows and `T-PICK`
+rows inside the plan call; the option namespace (D147 add. 9) is unchanged. (6) As above.
+
+**Frame classes are the one backward-looking fact.** Validity (a method must have a renderer in the
+frame, §Frame availability) is knowledge about emit; it travels as DATA, the renderer table's
+declared contract read at plan time, never as a question to emit, as §0a requires.
+
 ## The tables
 
 One per inner question; each is a `kit_table` on `kit_walk` (rows with a contract, a deny where it
