@@ -31,4 +31,4 @@ Scripts in `/var/tmp/pcrec-pcrec/scratch/memfn/sp1afix/jobs/` (copied from sp1a'
 
 ## STATE AT HANDOFF
 
-Fixes committed (822b15c38 plus this report); witness jobs queued as the last act, results OWED. Unit 1a's PLAN items (CHECK-8, SLOT-7, SLOT-8) and the DOC item SLOT-2 are not in this lane. A fresh agent resumes by reading `scripts/boxqueue status` for the four keys and `scripts/verdict` on each log.
+Fixes committed (822b15c38 plus this report); witness jobs kit-sp1a-reach2, kit-sp1a-ident1b, kit-sp1a-ident2b, kit-sp1a-ident3b queued as the last act, results OWED. Unit 1a's PLAN items (CHECK-8, SLOT-7, SLOT-8) and the DOC item SLOT-2 are not in this lane. A fresh agent resumes by reading `scripts/boxqueue status` for the four keys and `scripts/verdict` on each log.
