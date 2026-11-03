@@ -174,7 +174,7 @@ priced with `LMWALK_K_HIT_UNMEASURED`); (2) landmark admission (`req_landmark_ad
 presence.c:222-245, P-landmark); (3) PRES's P2 `dominated` drop (a rate comparison inside `kit_pres_picks`,
 presence.c:209-220) and P4 set-leads (a strict mass compare): these are T-PRES's own little picks, same
 shape; (4) the `precheck-assign-byte` vs generic choice in `arms[]` (SLOT-2); (5) [PRICE-BAKEOFF]'s "policy
-rules as a declared first-match table; pricing chooses within them" (plan.md:1817 row, Expected shape);
+rules as a declared first-match table; pricing chooses within them" (plan.md row, Expected shape);
 (6) engine/route choice (`next_keys` FIRST/NEXT CandSel), explicitly a non-goal here. Rev 2's [PICK-IDIOM] row
 is the right instrument, but its trigger ("the first priced row or the bake-off's revisit") is late:
 ONE-STREAM (stage 3 row 1, a HAND row) is already "admission condition + action + deny + tie" and is the
