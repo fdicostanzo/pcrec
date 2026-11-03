@@ -3025,3 +3025,15 @@ This replaces "win under both P and F". Still open with Frank: C9 (SIMD own posi
 - R9 agreed (D186 add. 2 on main): for choice rows, D186 sets what a fix to a losing row must be (narrow the row, or an owner-approved exception), and D144 keeps when and how (no revert, an issue row, the deny flag as kill switch). Unit changes stay under D144 alone. Rev 4 cites add. 2. Still open: C9, one plan vs priced list.
 - C9 answered by Frank directly: YES, a SIMD build may pick its own search position (its own row, SIMD-on evidence, scalar the bar). Frank noted that smp20 is not a SIMD example: on '/' the SIMD build would call memchr, the same as scalar, so smp20 is a scalar mispick. Rev 4's C9 witness is utf8-lead-no-cont (the two-byte vector window, which no scalar position equals). SIMD-form cards return to stage 2. Still open: one plan vs priced list.
 - One plan vs priced list, answered by Frank directly: ONE PLAN, with the trace. This amends the agreed A-PLAN step "options with costs". All rev 4 inputs are now in; launching lane spanpick4.
+
+## 2026-11-03 — blind compiles use the default prior only, per encoding (Frank, with main's opinion)
+
+- Frank: "if no analysis is provided, use the default". Shipping or recounting a bundle must never move a blind compile.
+- Main agreed:
+  - robustness moves from the pick to D186's per-regime row evidence, which must include a random-like regime;
+  - F is dropped from the pick;
+  - a rate-source first-match table, with the source named in the stamp and trace;
+  - a change to P is a deliberate DEFAULTS event;
+  - smp20 blind is judged "consistent with P".
+- Frank added: "The default is by encoding as well." The code already has that shape (pcrec_find_byte_rate, findings.h:300).
+- Supersedes D186 add. 2's minimax line; main amends it. A2 and B6 dissolve. Rev 5 launched.
