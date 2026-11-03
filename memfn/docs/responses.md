@@ -3081,3 +3081,5 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 315 make test (1377 s); 316 mech field validation (1103 definitions).
   - Kit notice: MF_CLASS_V 5 -> 6 (pres_row shift); no pcrec abi event; no emitted byte moves.
   - Ratchet: R26 -3, R27 -1 (15 -> 11). No counted names kept as thin callers.
+
+- ack: 2026-11-03 — **R-34** (G2 reach-control `gen_plain_lib` segfault, CI run 41672319112). Taken: lane g2seg (sonnet), branch lane/memfn-g2seg from lane/memfn-k1102; light diagnosis only (valgrind / sanitizer / bounded repeat runs) while 1f's mech jobs 347-349 hold the box. Not a 1f gate; delivered on its own branch or riding with 1f, whichever is ready first.
