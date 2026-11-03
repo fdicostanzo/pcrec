@@ -3087,3 +3087,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - make test goes alone via perfrun;
   - VALIDATE_ONLY is not a mech run;
   - never merge into a worktree while a job runs there.
+
+## 2026-11-03 ~11:15 — /close (now); 1f in gates
+
+- 1f fixes landed (4375ecfc4).
+- Gates 340-346 GREEN. 344 needed a retry: the job script passed the dump declarations only to the base arm, but the start arm also runs the dumps stream.
+- 347-349 (mech) were running at close.
+- wake.md rewritten.
