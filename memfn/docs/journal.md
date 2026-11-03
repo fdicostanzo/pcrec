@@ -3022,3 +3022,4 @@ The blind pick takes the least worst-case loss (minimax), with main's two guards
 (a) the subject kinds include real data: the shipped log and weblog bundles, beside the prior and flat;
 (b) depart from today's pick only when the worst case improves by more than the cards' measured noise.
 This replaces "win under both P and F". Still open with Frank: C9 (SIMD own position), one plan vs priced list, R9 (D186 over D144 item 3).
+- R9 agreed (D186 add. 2 on main): for choice rows, D186 sets what a fix to a losing row must be (narrow the row, or an owner-approved exception), and D144 keeps when and how (no revert, an issue row, the deny flag as kill switch). Unit changes stay under D144 alone. Rev 4 cites add. 2. Still open: C9, one plan vs priced list.
