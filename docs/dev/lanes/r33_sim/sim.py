@@ -12,22 +12,25 @@ owner's ordering (R-33, memfn/docs/requests.md):
      covering span's set; window.c `merge`) that is CORE and not the full set (the same domain as
      A-mass's `mass_domain`), with its set;
   3. per candidate, LOCAL rules: method by member count (1 = memchr, one stream; 2 = two-stream
-     PAIR; 3+ = table walk, NOT a stream); verify = every OTHER stated, non-full offset, tested in
-     ascending mass with early exit (expected tests = 1 + p1 + p1 p2 + ..., p = mass / 1e6,
-     positions INDEPENDENT: an ASSUMPTION);
+     PAIR; 3+ = table walk, NOT a stream); verify = every OTHER stated, non-full offset the
+     alternative's plan may read (a PARKED one: its verify-YES facts only), tested in ascending mass
+     with early exit (expected tests = 1 + p1 + p1 p2 + ..., p = mass / 1e6, positions INDEPENDENT:
+     an ASSUMPTION), then the matcher entered on a pass (probability p1 p2 ...);
   4. the position picked LAST over the complete per-candidate plans, on a fact-derived key; then the
      alternative one level up (plain least score; today's MARGIN 2x factor is NOT applied).
 
 THE KEY, in cycles per 1e6 subject bytes (mass = kit_set_sum semantics: ppm summed over the set's
 members under the art's byte-rate, uniform cardinality without one):
-  KEY A (the request's words): mass x streams x H_HIT + mass x E[tests] x C_VERIFY;
-         a walk: 1e6 x C_WALK + mass x E[tests] x C_VERIFY.
+  KEY A (the request's words): mass x streams x H_HIT + mass x VERIFY_PER_HIT;
+         a walk: 1e6 x C_WALK + mass x VERIFY_PER_HIT;
+         VERIFY_PER_HIT = E[tests] x C_VERIFY + P(pass) x C_ENTER.
   KEY B: KEY A + streams x 1e6 x C_SCAN (every memchr stream also pays its per-byte scan).
 CONSTANTS and their basis (labelled; nothing here is a new measurement):
   H_HIT   20 c per stream hit (a memchr return + restart)   ASSUMPTION (no measurement on file)
   C_WALK  1.16 c per byte, the table walk                   plan_cost.def C_BITMAP, MEASURED Zen 1
   C_SCAN  0.06 c per byte per memchr stream                 plan_cost.def C_MEMCHR, MEASURED Zen 1
   C_VERIFY 2.5 c per tested offset                          plan_cost.def C_VERIFY, UNMEASURED DEFAULT
+  C_ENTER 20 c per matcher entry                            plan_cost.def C_ENTER, MEASURED x ASSUMED Zen 1
 Ties: the candidate equal to today's stop is preferred, then the lower offset (marked `tie`).
 Not modelled (labelled in the output): Horspool (D-hors) as a method, C-pin's whole-run compare,
 the walk's per-hit exit, SIMD forms, the PARKED alternative's reseed obligation at a non-k0 stop.
@@ -38,7 +41,7 @@ import json
 import os
 
 PPM = 1_000_000
-CONST = {"H_HIT": 20.0, "C_WALK": 1.16, "C_SCAN": 0.06, "C_VERIFY": 2.5}
+CONST = {"H_HIT": 20.0, "C_WALK": 1.16, "C_SCAN": 0.06, "C_VERIFY": 2.5, "C_ENTER": 20.0}
 ENTRY = {0: "UNSTATED", 1: "NONE", 2: "PARKED", 3: "RESEED"}
 METHOD_OF_ROW = {
     "D1": "memchr", "D1w": "memchr", "D1c": "memchr-back", "PAIR": "pair", "R7w": "walk",
@@ -64,10 +67,17 @@ def merge(alt):
         for j, h in enumerate(sp["sets"]):
             off = sp["start"] + j
             st = setbits(h)
-            p = pos.setdefault(off, {"set": frozenset(range(256)), "core": False})
+            p = pos.setdefault(off, {"set": frozenset(range(256)), "core": False,
+                                     "yset": frozenset(range(256)), "yes": False, "ycore": False})
             p["set"] = p["set"] & st
-            if sp["core_lo"] <= j < sp["core_lo"] + sp["core_len"]:
+            incore = sp["core_lo"] <= j < sp["core_lo"] + sp["core_len"]
+            if incore:
                 p["core"] = True
+            if sp["verify"] == 1:                         # MF_VERIFY_YES
+                p["yes"] = True
+                p["yset"] = p["yset"] & st
+                if incore:
+                    p["ycore"] = True
     return pos
 
 
@@ -75,11 +85,11 @@ def method_of(k):
     return "memchr" if k == 1 else "pair" if k == 2 else "walk"
 
 
-def score(key, c, m, k, etests, method=None):
+def score(key, c, m, k, etests, ppass, method=None):
     """The key for a plan of `k` members found by `method` (default: the local rule's by k).
     TODAY's plan is scored with TODAY's method: a walk, a D-hors shift, a generic loop and a
     loop-only fn arm are all priced as the walk (an ASSUMPTION for the last three)."""
-    ver = m * etests * c["C_VERIFY"]
+    ver = m * (etests * c["C_VERIFY"] + ppass * c["C_ENTER"])
     method = method or method_of(k)
     if method in ("memchr", "memchr-back", "pair"):
         streams = 2 if method == "pair" else 1
@@ -91,21 +101,31 @@ def score(key, c, m, k, etests, method=None):
 
 
 def plans(alt, rate, key, c):
+    """Every candidate stop of one alternative with its complete plan. On a PARKED alternative the
+    plan reads only the verify-YES facts (window.c `rd_set`: the parked machine's own; a stop
+    elsewhere would oblige a re-seed, C-pin's case, not modelled), so its candidates are the
+    verify-YES core positions over their YES sets and its verify the other YES positions."""
     pos = merge(alt)
     full = frozenset(range(256))
+    parked = alt["entry"] == 2
+    sk, ck = ("yset", "ycore") if parked else ("set", "core")
     out = []
     for off, p in sorted(pos.items()):
-        if not p["core"] or p["set"] == full or not p["set"]:
+        if parked and not p["yes"]:
             continue
-        m = mass(rate, p["set"])
-        others = sorted(mass(rate, q["set"]) for o, q in pos.items() if o != off and q["set"] != full)
+        if not p[ck] or p[sk] == full or not p[sk]:
+            continue
+        m = mass(rate, p[sk])
+        others = sorted(mass(rate, q[sk]) for o, q in pos.items()
+                        if o != off and (q["yes"] or not parked) and q[sk] != full)
         et, pr = 0.0, 1.0
         for mo in others:
             et += pr
             pr *= min(mo, PPM) / PPM
-        k = len(p["set"])
-        out.append({"off": off, "set": p["set"], "k": k, "mass": m, "method": method_of(k),
-                    "verify": len(others), "etests": round(et, 4), "score": score(key, c, m, k, et)})
+        k = len(p[sk])
+        out.append({"off": off, "set": p[sk], "k": k, "mass": m, "method": method_of(k),
+                    "verify": len(others), "etests": round(et, 4), "ppass": pr,
+                    "score": score(key, c, m, k, et, pr)})
     return out
 
 
@@ -119,7 +139,9 @@ def today_method(site, part_ix=None):
     frame = tab["wfE"][0] if tab["wfE"] else "?"
     if part_ix is not None:
         fns = tab["fn"]
-        return frame, (METHOD_OF_ROW.get(fns[part_ix], fns[part_ix]) if part_ix < len(fns) else "loop"), "fn"
+        # The fn BODY walks do not carry the part's index: the i-th chosen BODY row is ASSUMED to
+        # be part i's; a part past the count is `unobserved` (not compared on method).
+        return frame, (METHOD_OF_ROW.get(fns[part_ix], fns[part_ix]) if part_ix < len(fns) else "unobserved"), "fn"
     if "D-hors" in tab["wfD"]:
         return frame, "hors", "D-hors"
     if t["fdroute"]:
@@ -175,7 +197,7 @@ def simulate(u, rates, key, c):
         for p in allp:
             if p["alt"] == wr["alt"] and p["off"] == wr["stop"]:
                 today = dict(p, method=u["today_method"],
-                             score=score(key, c, p["mass"], p["k"], p["etests"], u["today_method"]))
+                             score=score(key, c, p["mass"], p["k"], p["etests"], p["ppass"], u["today_method"]))
         today_d = {"alt": wr["alt"], "off": wr["stop"], "set": tset, "k": len(tset),
                    "path": wr["path"], "in_domain": today is not None}
     else:
@@ -193,12 +215,10 @@ def classify(u, td, best):
         return "agree" if td["off"] is None else "differ-stop"
     if td["off"] is None:
         return "differ-floor"
-    if td["alt"] != best["alt"] and len(u["alts"]) > 1:
-        return "differ-alt"
-    if td["off"] != best["off"]:
-        return "differ-stop"
-    if u["today_method"] in ("hors",):
-        return "agree-stop(hors)"
+    if td["off"] != best["off"] or td["set"] != best["set"]:
+        return "differ-alt" if td["alt"] != best["alt"] and len(u["alts"]) > 1 else "differ-stop"
+    if u["today_method"] in ("hors", "unobserved"):
+        return "agree-stop(%s)" % u["today_method"]
     if u["today_method"] != best["method"] and not (u["today_method"] == "memchr-back" and best["method"] == "memchr"):
         return "differ-method"
     return "agree"
