@@ -17,7 +17,7 @@ R5 and R7: D and E below no longer have a deciding row that reads a set key.
 WHAT IT CONTROLS, AND AGAINST WHAT (each expectation is written HERE, from the
 design's text, sharing no code with the kit):
 
-  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 16 rows
+  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 13 rows
      the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn), by slot and
      in order; a basis on every row; a pick on every FIND row; no MEASURED row
      that reads no key (but R7w, MEASURED by the walk ruling); every row
@@ -105,9 +105,10 @@ unreached = []
 # D172 S2 commit 6 (lane wsc5): D2 RETIRED (window_site.md §2.2), id reserved
 # D172 S3 (lane s3): RPT, the REPORT row, RETIRED with its R-26.6 preview
 # (window_site.md §4), id reserved; code review r1 C1 (lane s3): PAIR, ofsskip's
-# fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop
-FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w",
-             "PAIR", "R7w"]
+# fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop;
+# span_pick.md rev 5.2 unit 1a (lane sp1a): the iterator rows R3a, R3b, R4
+# DELETED (zero reach by code), ids reserved
+FIND_ROWS = ["R8", "R1", "R2", "D1", "D1c", "D1w", "PAIR", "R7w"]
 # the ids B4' withdrew (reserved, never reused) and their denies (retired)
 WITHDRAWN_ROWS = ["R0", "R5", "R7"]
 RETIRED_DENIES = ["fd-r0", "fd-r5"]

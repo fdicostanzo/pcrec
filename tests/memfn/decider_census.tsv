@@ -1,0 +1,73 @@
+# tests/memfn/decider_census.tsv -- THE DECIDER CENSUS (span_pick.md rev 5.2
+# §The tables, "The decider census"; Goal 3's check). A DECLARED FUNCTION LIST:
+# every kit function (or a named PART of one, or a DATA definition) that
+# decides a "find the span" question, mapped to the ONE question table that
+# answers it, or to the NAMED EXCEPTION kept beside that table on purpose.
+# Written by unit 1a's lane at its base (main 564db08c5), kept by each later
+# unit's lane: a unit that moves a decider into its table edits its row here.
+# Held by tests/memfn/decider_census.py (make test-memfn-rows), which reads the
+# kit's sources directly: every member must exist, and its BACKSTOP grep must
+# find no decider-shaped line outside a member.
+#
+# Columns:
+#   file     memfn/src/ file name
+#   member   function name, `function:part`, or a data definition's name
+#   kind     fn | part | data | excluded (a hit the backstop may not count)
+#   anchor   for a part: a substring that must occur inside the function
+#            (the part's identity); `-` otherwise
+#   answers  the table (T-FIND, T-VERIFY, T-SETTEST, T-CMP, T-PRES, T-FRAME,
+#            KEY, M, TIE) or `EXC:` + the named exception
+#   retires  the unit or trigger that moves it (span_pick.md §Staging and
+#            §The tables' named exceptions), `-` for a table's own home
+#
+# file	member	kind	anchor	answers	retires
+finder.c	fd_route	fn	-	T-FIND	1e (one walk with the asker fact)
+finder.c	fd_find	fn	-	T-FIND	1e (one walk with the asker fact)
+finder.c	fd_decide	fn	-	T-FIND,T-PRES	-
+finder.c	fd_pres	fn	-	EXC:fd_pres chain order (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
+compose.c	select_arm	fn	-	EXC:compose arms[], the frame selector of non-plan sites	a kit request adds an arm
+compose.c	kit_walk	excluded	-	the table walk's definition (no decision of its own)	-
+kit.h	kit_walk	excluded	-	the table walk's prototype	-
+ofsskip.c	fn_select	fn	-	EXC:fn_rows BODY and PREFIX (T-FIND on OFS, SIMD rungs)	pcrec states a kind on OFS sites; the SIMD census rule
+ofsskip.c	ofs_fn_serves	fn	-	EXC:fn_rows BODY (T-FIND on OFS)	pcrec states a kind on OFS sites
+vrun.c	vrun_kb	fn	-	EXC:vrun KA/KB (SIMD rungs)	the SIMD census rule (C9)
+window.c	decide	fn	-	KEY,M	-
+window.c	a_empty_holds	fn	-	KEY	-
+window.c	a_parked_holds	fn	-	KEY	-
+window.c	a_parked_choose	fn	-	KEY	-
+window.c	f0_of	fn	-	KEY	-
+window.c	walked	fn	-	KEY	-
+window.c	scan_ok	fn	-	KEY	-
+window.c	a_model_holds	fn	-	KEY	-
+window.c	a_model_choose	fn	-	KEY	1d (one candidate builder)
+window.c	in_stretch	fn	-	KEY	-
+window.c	mass_domain	fn	-	KEY	1d (its copy goes)
+window.c	a_mass_holds	fn	-	KEY	-
+window.c	a_mass_choose	fn	-	KEY	-
+window.c	a_floor_holds	fn	-	KEY	-
+window.c	a_none_choose	fn	-	KEY	-
+window.c	m_one_holds	fn	-	M	-
+window.c	m_pair	fn	-	M	-
+window.c	m_margin_holds	fn	-	M,EXC:MARGIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
+window.c	m_parked_holds	fn	-	M	-
+window.c	run_member	fn	-	T-VERIFY	-
+window.c	tie_takes	fn	-	TIE	-
+window.c	wf_ties	data	-	TIE	-
+window.c	wf_tie_to	data	-	TIE	-
+window.c	find_groups	fn	-	T-VERIFY	-
+window.c	run_group_ok	fn	-	T-VERIFY	-
+window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:translate's pterm grouping (T-VERIFY C-run)	a census shows its groups equal find_groups' on every B-fn site
+window.c	translate:run-rank	part	p->rank_ppm[j - 1] > c	TIE	1c (read T_MASS_STRETCH)
+window.c	d_hors_holds	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
+window.c	wf_find_decide	fn	-	T-FIND,T-FRAME	1e
+window.c	wf_prepare	fn	-	T-FRAME	1e
+presence.c	kit_pres_picks:set-pick	part	m < lo	T-PRES	-
+presence.c	kit_pres_picks:run-scan	part	c < sm	T-VERIFY	1c (asks run_member)
+presence.c	kit_pres_picks:run-window	part	wm < wl	TIE	1b (reads T_WINDOW)
+presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate
+presence.c	tie_over	fn	-	TIE	1b (one tie spelling)
+precheck.c	implied_by	fn	-	EXC:implied_by (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
+runcmp.c	rc_row_of	fn	-	T-CMP	-
+generic.c	kit_set_test	fn	-	T-SETTEST	-
+generic.c	member_test	fn	-	T-SETTEST	-
+generic.c	pred_test:run-chain	part	tm->run[j]	EXC:generic.c's per-byte RUN chain (T-CMP)	U8's unit change

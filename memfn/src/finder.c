@@ -22,12 +22,15 @@
  * bit, the trace-only shadow that predicted B4's movers and the POSCOV survey
  * field that rode on it are retired. A set FIND is decided by R7w (the walk,
  * MEASURED); the rows whose forms are not built (R8, R2: W64; R1, R2: a fast
- * terminal; R3a, R3b, R4: an iterator) hold no fact any compile states, so
- * they decide nothing today. The rows are listed through `mf_finder_rows`
- * (R-MS4: needs, keys, basis, refutation).
+ * terminal) hold no fact any compile states, so they decide nothing today.
+ * The iterator rows R3a, R3b and R4 (B9) were deleted with their contracts
+ * and the H comparators only they read (span_pick.md rev 5.2 unit 1a: zero
+ * reach by code; finder_history.md), ids reserved. The rows are listed
+ * through `mf_finder_rows` (R-MS4: needs, keys, basis, refutation).
  *
- * THE ROWS (§1.3, §1.4). Slot FIND: R8 R3a R3b R4 R1 R2 D1 D1c D1w PAIR R7w
- * (R0, R5 and R7 are WITHDRAWN, D2 RETIRED (D172 S2 commit 6) and RPT, the
+ * THE ROWS (§1.3, §1.4). Slot FIND: R8 R1 R2 D1 D1c D1w PAIR R7w
+ * (R0, R5 and R7 are WITHDRAWN, R3a, R3b and R4 DELETED (span_pick 1a), D2
+ * RETIRED (D172 S2 commit 6) and RPT, the
  * REPORT row, RETIRED (D172 S3: a REPORT site is the window family's, its
  * E-find row; window_site.md §4), ids reserved; PAIR, the two-stream find of
  * a window site's two-byte stop, is asked through `fd_find` alone; F0, F1,
@@ -65,7 +68,7 @@ enum { FD_FIND = 0, FD_PRES = 1 };          /* the kit_table slots          */
 
 /* The knowledge keys (regime_tables.md §2, rev 0.5). */
 enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
-       KN_M = 1u << 4, KN_N = 1u << 5, KN_H = 1u << 6 };
+       KN_M = 1u << 4, KN_N = 1u << 5 };
 
 /* Slot FIND's forms are kit.h's `fd_form` (the window family renders them
  * too). One name per fd_form, in its order (D2's RUN and RPT's PROOF left
@@ -79,7 +82,7 @@ _Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_PAIR + 1, "ff_name names
  * family's E-find renders the pick of the row deciding its stop (fd_find;
  * window.c's Table B renderers), PAIR included. V1 (R17-b's
  * `pf_terms_mask`) is NOT built (R7 is withdrawn, [MEMFN-REGIME]), W64
- * lands at B6, NONE at B5, A3 at B9. A row whose pick is W64 does not hold
+ * lands at B6, NONE at B5, A3 with its first row. A row whose pick is W64 does not hold
  * while it is unbuilt (fd_w64_built). */
 static int fd_w64_built(void) { return 0; }
 
@@ -112,7 +115,7 @@ enum {
 };
 
 /* ONE comparator (§1.2 [rev3 D2]): lhs OP key, every threshold a set key. */
-typedef enum { FL_NONE = 0, FL_KEY, FL_N, FL_E_G, FL_H_SPAN, FL_H_POP } fd_lhs;
+typedef enum { FL_NONE = 0, FL_KEY, FL_N, FL_E_G } fd_lhs;
 typedef enum { FO_LT = 1, FO_LE, FO_GT, FO_GE, FO_IN } fd_op;
 typedef struct {
     fd_lhs      lhs;
@@ -205,9 +208,6 @@ static const gate_use use_mn_kind[] = {
     FD_CT_T(name, row, uses, kinds, needs, body, layers, MF_ANY)
 
 FD_CT(ct_r8,  "R8",  use_mn_kind, KD_ALL,            NEED_ALL,        CM(ONESHOT), LY_SIMD)
-FD_CT(ct_r3a, "R3a", use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_SIMD)
-FD_CT(ct_r3b, "R3b", use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_SIMD)
-FD_CT(ct_r4,  "R4",  use_kind,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_r1,  "R1",  use_mn_kind, KD_ALL,            NEED_ALL,        CM(ONESHOT), LY_ALL)
 FD_CT(ct_r2,  "R2",  use_mn,      KD_ALL,            NEED_ALL,        CM(ONESHOT), LY_SIMD)
 FD_CT(ct_d1,  "D1",  use_kind,    KD_STOP,           NEED_ALL,        MF_ANY,      LY_ALL)
@@ -253,21 +253,6 @@ static const fd_row fd_rows[] = {
       FF_W64, FF_V1, { 0, 0, 0, 0 }, "fd-r8", FB_DERIVED, "B6",
       "a long one-shot call with a measured sparse gap: the 64-byte form (gridread §6.3 D2)",
       "a sparse long call on which W64 loses to V1", &ct_r8, 0 },
-    { "R3a", FD_FIND, KN_H, SF_SPAN0, 0,
-      { { FL_H_SPAN, NULL, FO_LT, "kit.h3a", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
-      "PROVISIONAL: an iterator whose history shows short spans: the walk",
-      "an iterator cell where short-span history favours the block form", &ct_r3a, 0 },
-    { "R3b", FD_FIND, KN_H, SF_SPAN0, 0,
-      { { FL_H_SPAN, NULL, FO_IN, "kit.h3a", "kit.h3b" } },
-      FF_A3, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
-      "PROVISIONAL: an iterator with middle spans: A3",
-      "an iterator cell where A3 loses at middle spans", &ct_r3b, 0 },
-    { "R4", FD_FIND, KN_H | KN_P, SF_SPAN0, 0,
-      { { FL_H_POP, NULL, FO_LT, "kit.gstar.<liner>.<kind>", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
-      "an iterator whose population says dense: the walk for that block",
-      "an iterator cell where the dense block wins on the LINER form", &ct_r4, 0 },
     { "R1", FD_FIND, KN_P | KN_M | KN_N | KN_A, SF_SPAN0 | SF_TERMINAL_FAST, 0,
       { { FL_N, NULL, FO_LT, "kit.xover.<t>.WALK.<kind>", NULL } },
       FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, "fd-ndisp", FB_DERIVED, "B4",
@@ -508,7 +493,7 @@ static int cmp_holds(int64_t a, fd_op op, int64_t b)
 
 /* One comparator at compile time: an FL_KEY compare is decided here; an N
  * compare holds iff its key resolves (the run-time compare is the residual
- * step's interval); an E or H compare needs a fact no B1 site has. */
+ * step's interval); an E compare needs a fact no B1 site has. */
 static int cmp_eval(const fd_x *q, const fd_row *r, const fd_cmp *c)
 {
     int64_t a, b, b2;
@@ -522,8 +507,6 @@ static int cmp_eval(const fd_x *q, const fd_row *r, const fd_cmp *c)
         if (!fd_value(q, r->id, c->key, &b)) return 0;
         return c->op != FO_IN || fd_value(q, r->id, c->key2, &b2);
     case FL_E_G:            /* E is read by no row before B3a (E-1)          */
-    case FL_H_SPAN:         /* H exists only inside an iterator (B9)         */
-    case FL_H_POP:
         return 0;
     }
     return 0;
@@ -534,9 +517,8 @@ static int fd_holds(size_t i, const void *x)
 {
     const fd_x *q = x;
     const fd_row *r = &fd_rows[i];
-    if ((r->needs & (KN_N | KN_H)) && q->phase == FD_PH_TERMINAL) return 0;
+    if ((r->needs & KN_N) && q->phase == FD_PH_TERMINAL) return 0;
     if ((q->facts & r->facts) != r->facts || (q->facts & r->nofacts)) return 0;
-    if (r->needs & KN_H) return 0;                 /* no iterator before B9  */
     /* "where it is BUILT" (§1.3): the LINER form at a SIMD layer and every
        W64 pick */
     if (fd_pick_of(r, q) == FF_W64 && !fd_w64_built()) return 0;
@@ -1110,7 +1092,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
 
 /* ---- the listing (R-MS4) -------------------------------------------------------- */
 
-static const char *const needs_names = "PEAIMNH";
+static const char *const needs_names = "PEAIMN";
 
 /* The pay rule's operand keys (pay_fill, PROVISIONAL spellings), declared
  * on every N-dispatch row: `<alt>` its alternative, `<pick>` its pick, `<N>`
@@ -1136,7 +1118,7 @@ void mf_finder_rows(mf_finder_listing *out)
         char *needs = out->needs[i], *pick = out->pick[i];
         mf_finder_key *keys = out->keys[i];
         unsigned n = 0;
-        for (unsigned b = 0; b < 7; b++)
+        for (unsigned b = 0; b < 6; b++)
             if (r->needs >> b & 1) needs[n++] = needs_names[b];
         needs[n] = '\0';
         pick[0] = '\0';

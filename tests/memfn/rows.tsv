@@ -45,7 +45,8 @@
 #
 # [MEMFN] R17-b' B1 (lane fdb1): table `fd`, the finder table (memfn/src/
 # finder.c `fd_rows[]`), 17 rows since B4' (lane b4p: R0, R5 and R7 withdrawn,
-# ids reserved). A `fd` FIND row's signature is read from the traced compile's
+# ids reserved), 13 since span_pick 1a (lane sp1a: R3a, R3b, R4 deleted, ids
+# reserved). A `fd` FIND row's signature is read from the traced compile's
 # `MFTRACE FDROUTE` record (row and arm): a decided row's pick renders
 # exactly the text its pre-table arm did (zero movers), so the artifact's text
 # cannot tell the decision apart (r17b_prime.md §1.6 [rev3 B5]). Every `fd`
@@ -117,9 +118,6 @@ fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-of
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
 fd	R8	pending-site:B6	-	-	-	-	-	-
-fd	R3a	pending-site:B9	-	-	-	-	-	-
-fd	R3b	pending-site:B9	-	-	-	-	-	-
-fd	R4	pending-site:B9	-	-	-	-	-	-
 fd	R1	pending-site:B4	-	-	-	-	-	-
 fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=

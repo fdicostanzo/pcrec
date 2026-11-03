@@ -36,6 +36,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **rows.tsv** — THE KIT'S ROW MANIFEST (row_contracts.md rev 4.1 §4), HAND-maintained: one line per row of the kit's selection tables (13 at N4: the composer's 9 arms, ...
 - **row_floors.tsv** — per-row CHOSEN floors: `pcrec_floor` over the full N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2's quick tier.
 - **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in TEST_SECTIONS; about 1.5 s).
+- **decider_census.tsv**, **decider_census.py** — THE DECIDER CENSUS (span_pick.md rev 5.2 §The tables; unit 1a, lane sp1a): the declared map of every kit decider (function, part or data) to its question table or named exception, its backstop grep (red on a decider shape outside every member, hits floored) and two plants; run by `make test-memfn-rows`. A stage-1 unit that moves a decider edits its row.
+- **reach_equal.py** — REACH EQUALITY between two MF_TRACE pcrec builds over the corpus and patterns files, per pattern and arm, the gone-row set DERIVED from the traces and required to equal `--gone`, failing-pattern sets compared; `--limit` is a smoke run (trailer LIMITED, exit 3, never a verdict) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
