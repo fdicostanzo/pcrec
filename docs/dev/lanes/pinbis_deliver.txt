@@ -2,4 +2,4 @@ report: docs/dev/lanes/pinbis_report.md
 sections: Counts; Cause; Proposed pins; STATE AT HANDOFF
 nonempty: all
 commit: yes
-owed: main-pinbis-count
+owed: none
