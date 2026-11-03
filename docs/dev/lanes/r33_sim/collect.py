@@ -19,7 +19,8 @@ Arms: every pattern its default compile (RTE); job 588's patterns also DEF
 (`--memfn=no-window-search,no-window-skip`, measure_588.sh's flags_of). Sources: corpus = every distinct
 .rxt pattern (scripts/emit_sweep.py's enumerate_corpus, its escapes); bench = every [[patterns]] file
 of pcrec-bench/bench/*/subbench.toml (READ-ONLY; compiled with the same flags, no per-subbench encoding:
-labelled in the report); s588 = kit_proof/measure/cells.tsv + s3_evidence/sample_588.tsv + pair_588.tsv.
+labelled in the report); s588 = kit_proof/measure/cells.tsv + s3_evidence/sample_588.tsv + pair_588.tsv;
+rp = the rule-list pilot's census arms (src_rp; asked only by name, not in the default sources).
 """
 import argparse
 import concurrent.futures
@@ -76,6 +77,28 @@ def src_588(tree, es):
                 continue
             f = line.rstrip("\n").split("\t")
             out.append(("s588", f[0], bytes(es.decode_escape(f[2])), f[1]))
+    return out
+
+
+def src_rp(tree):
+    """The rule-list pilot's sites (rulepilot_evidence/inventory, main e0d716c7d): every census arm of
+    every compiled site, as (source, site:arm, pattern, argv note, flags): the site's own options plus
+    the arm's deny set, so each arm's kit decisions can be held against its timing on file."""
+    inv = os.path.join(tree, "docs/dev/lanes/rulepilot_evidence/inventory")
+    sites = {}
+    for line in open(os.path.join(inv, "sites.tsv"), encoding="utf-8"):
+        f = line.rstrip("\n").split("\t")
+        if f[0] == "id" or f[2] != "0":
+            continue
+        sites[f[0]] = (f[8].encode("utf-8", "surrogateescape"), [] if f[7] == "-" else f[7].split())
+    out = []
+    for line in open(os.path.join(inv, "arms.tsv"), encoding="utf-8"):
+        f = line.rstrip("\n").split("\t")
+        if f[0] == "id" or f[0] not in sites:
+            continue
+        pat, opts = sites[f[0]]
+        argv = [] if f[4] == "-" else f[4].split()
+        out.append(("rp", "%s:%s" % (f[0], f[1]), pat, f[4], opts + argv))
     return out
 
 
@@ -158,12 +181,15 @@ def main():
         items += src_bench(a.bench)
     if "corpus" in srcs:
         items += src_corpus(a.tree, es, plain)
+    items = [(s, i, p, n, []) for s, i, p, n in items]
+    if "rp" in srcs:
+        items += src_rp(a.tree)
     items = items[a.skip:]
     if a.limit:
         items = items[:a.limit]
     tasks = []
-    for src, pid, pat, note in items:
-        tasks.append((a.probe, src, pid, pat, note, "RTE", []))
+    for src, pid, pat, note, flags in items:
+        tasks.append((a.probe, src, pid, pat, note, "RTE", flags))
         if src == "s588":
             tasks.append((a.probe, src, pid, pat, note, "DEF", DEF_FLAGS))
     if a.count_only:
