@@ -66,6 +66,8 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+Round 2026-11-02 r1, kit span_pick rev 1 (`docs/dev/reviews/2026-11-02-r1-memfn-spanpick.md`): (1) a simulate lens recomputes every outcome the design quotes with the design's OWN formula (smp20's quoted win was the evidence study's doubled-hit arithmetic; by the text's formula it loses); (2) give premise/simulate critics the evidence sweep's RAW data as the population; (3) a design's proposed sabotage witness must reach its plant by the design's own arithmetic ([MECH-REACH] applied to a design: drop-F cannot move smp20 because F already agrees there).
+
 Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
 (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, landing with lane/memfn-s3,
 §4). Three of four caught a 29x caseless-literal slowdown from the code alone.
