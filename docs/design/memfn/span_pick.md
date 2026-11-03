@@ -48,10 +48,10 @@ own entry until [MEMFN-UNBOUNDED-SPANS] states unbounded spans. Inner first:
 ```
  PHASE 1, the plan call (pcrec reads its reply for NEXT, the OFFSETS stamp and the run member)
  1 FIXED FACTS   the measurement set (named or DEFAULTS), layer, alternatives (PARKED/RESEED/NONE),
-                 floor, byte rates: ONE source per compile, the rate-source table [rev5]
+                 floor, byte rates: the ONE table pcrec handed, with its digest, or none [rev5]
                  [rev3 P1: form, handoff, site_kind are FRAME facts, stated in phase 2]
  2 CANDIDATES    per alternative: every stated core position after C-meet, with its set S, offset
-                 d, mass under the rate source, table offer, soundness flags (the LIST reads no rate)
+                 d, mass under the handed rates, table offer, soundness flags (the LIST reads no rate)
  3 PER CANDIDATE T-VERIFY (step list incl. the run member) -> T-SETTEST / T-CMP forms
  4 PICK, LAST    the incumbent (KEY, M, TIE: today's answer), then T-PICK's rows (stage 3)
  PHASE 2, the text call (pcrec states the frame its NEXT row chose; window_site §0)
@@ -71,7 +71,7 @@ stated facts. `[rev3 R4]` Of R-33's 1,742 RTE PF sites (1,767 incl. the 43-patte
 1,429 state PARKED + RESEED, 291 one NONE alternative, 22 PARKED only; of the 1,454 RESEED
 alternatives 740 have one core position, 714 two or more (`span_pick/counts.out`). **The trace**:
 every candidate, the rows walked, the incumbent and the deciding row (MFTRACE build); `[rev5]` from
-row 1, the rate source and digest, each candidate's price, the qualifiers and bands. ONE plan out.
+row 1, the handed rates' digest, each candidate's price, the qualifiers and bands. ONE plan out.
 
 ## The designer/emitter split
 
@@ -92,12 +92,12 @@ row) at unit 3.0, when the plan call takes the frame.
 **A-PLAN's open points.** (1) ONE PLAN WITH ITS TRACE (D186 add. 2; `[rev5 D1]` it amends A-PLAN
 OPEN POINT 1, already edited on main, 5e8bcf455/b405ff811; no roadmap edit is left to stage 1).
 **The plan face is a PURE FUNCTION** (D186 add. 2) of (site facts, frame: engine/target/layer,
-measure set, rate source): same inputs, same plan, no hidden state. `[rev5 C1]` One plan SUFFICES to
+measure set, handed rates): same inputs, same plan, no hidden state. `[rev5 C1]` One plan SUFFICES to
 compare scenarios once its price is readable (REVISIT TRIGGER: whole-artifact pricing un-deferred);
 until then the reply carries no price (trace only, MFTRACE) and scenarios compare by the bench.
 `[rev5 C2]` **Axes**: site facts are per CALL (`mf_wdecide(art, site, out)`); the frame is no input
 through stage 1 (window.c :1061; layer hard-coded, finder.c :934), per call from unit 3.0; the set,
-the rate source, denies and levers are per ART (`mf_art_begin`, compose.c :869-882): a new art.
+the handed rates, denies and levers are per ART (`mf_art_begin`, compose.c :869-882): a new art.
 **Purity breakers today** (unit 1d; grep of memfn/src for mutable statics and `art->` uses): (a) the
 sticky `art->err` refusal (window.c :1062; compose.c :960); (b) the call-order label `art->nsites +
 1` (window.c :997, :1007, :1734, :1818; finder.c :930; ofsskip.c :486; compose.c :268, :281), trace-
@@ -159,41 +159,33 @@ census (plain-loop deciders leave no reach).
 **Growth rule.** A new scenario adds no table; a new method adds a T-FIND row and card (D176).
 `[rev5 E2]` **Families, unified at row 1** (trigger: the `enter` cards): "beat the incumbent by a
 margin" (MARGIN, §The pick 3's qualifier test, T_BAND -> TIE_DEFAULT, `pcrec_landmark_margin`); the
-pure queries (`mf_ask`, `mf_wdecide`, `mf_pres_ports`). KEY and the pick read ONE rate source.
+pure queries (`mf_ask`, `mf_wdecide`, `mf_pres_ports`). KEY and the pick read ONE handed rate table.
 
 ## The pick
 
 **Stage 1: no prices.** The default is TODAY's plan (KEY, M, TIE, then phase 2's frame and method);
 nothing reads a cost but KEY/M's `plan_cost.def` integers, C-model's truncation order kept.
-**Stage 3: T-PICK rows, all priced** `[rev3 A2]`: a condition on stated facts (before any card
-lookup), the LEVELS it opens (method, position, alternative), the priced action, its deny, its
-per-regime evidence (D186); `keep` last. No hand rows planned (D186 add. 1 A1, A2).
+**Stage 3: T-PICK rows, all priced** `[rev3 A2]`: a condition on stated facts, the LEVELS it opens
+(method, position, alternative), the priced action, its deny, its per-regime evidence; `keep` last.
 
-**The rate source** `[rev5]` (D186 add. 2 as amended 2026-11-03; first match, one per compile):
+**The rates** `[rev5]` (D186 add. 2 as amended; owner: "kit wouldn't know anything about default
+analysis as pcrec would simply send the default as the analysis"): the kit receives ONE byte-rate
+table with its digest, or none, as a fact (D157), resolved by pcrec (§pcrec-side findings), and never
+distinguishes a bundle from the default. No rates or no card set: rules only.
 
-| # | when | the ONE rate model | stamp and trace name |
-|---|---|---|---|
-| 1 | an `--analysis` chain answers `byte-rate` for this compile's encoding (`findings.md` §1 "answer", §7) | that bundle, B | `B:digest` |
-| 2 | else the built-in `default` serves this encoding (`findings.md` §2¶7: today `-e byte` only) | P, the default prior for this encoding | `default:digest` |
-| 3 | else | NONE: rules only, the same as M2's unknown target; priced rows keep the incumbent | none |
-
-Today's code already: `pcrec_find_byte_rate` (src/core/findings.h :300; terminal `default` by
-identity, `findings.md` §7¶6; bundles read only when named, §6¶3); `<PREFIX>_FINDINGS` names source
-and digest (`witness.out`). No rates OR no card set (`DEFAULTS`/`--measures`): rules only.
-
-**The priced action** `[rev5]` (after stage 2, one row at a time; ONE rate model r, the table above):
+**The priced action** `[rev5]` (after stage 2, one row at a time; r = the handed rate table):
 1. CANDIDATES are the complete plans that differ from the incumbent only at the row's levels, built
    from site facts alone (no rate input), so a blind and a with-data compile of one site see ONE
    candidate set. Each is priced under r; nothing else is priced.
 2. `[rev5 A5]` The INCUMBENT is today's plan (KEY, M, TIE as stage 1 keeps them) evaluated under the
-   same source: P blind, B with data (as KEY's A-mass reads B today: smp20 with `prose` stops at
-   '4', `witness.out`), its NONE answers under NONE (`findings.md` §4¶1).
+   same handed rates (as KEY's A-mass reads them today: smp20 handed `prose` stops at '4',
+   `witness.out`), its NONE answers when none were handed (`findings.md` §4¶1).
 3. c QUALIFIES when `price_r(incumbent) - price_r(c)` exceeds their band. The pick is the CHEAPEST
    qualifier, else the incumbent. `[rev5 A3]` Only qualifiers tie: those within band of the cheapest
    go to TIE's rows (D176 Q5), never the incumbent (within band it stays: T_BAND -> TIE_DEFAULT); the
    method-level tie row is row 1's design item. A never-qualifying candidate cannot move the pick.
 4. Unpriced incumbent: keep. Unpriced candidate (no card, or a card without noise): cannot qualify;
-   a missing `noise_e6` is UNMEASURED, never 0, so it means no departure. Source NONE: keep.
+   a missing `noise_e6` is UNMEASURED, never 0, so it means no departure. No rates handed: keep.
 5. A renderer addition that flips a T-FIND first match moves the DEFAULT: its own row and evidence.
 6. `[rev4]` SIMD (C9, D186 add. 2): a `-fmemfn-simd` build may pick its own position by its OWN T-PICK
    row (SIMD-form cards, SIMD-on evidence, scalar the bar); else SIMD forms are rungs (D147). Witness
@@ -202,8 +194,9 @@ and digest (`witness.out`). No rates OR no card set (`DEFAULTS`/`--measures`): r
 7. `[rev3 R5]` Each row states whether it applies on pre-check parts, where pcrec scans the reply's
    run member, not its stop (`req_run_member`, emit_dfa.c :1045-1077).
 
-**With data** `[rev3 WD, rev5]` (source row 1, bundle B; plan [BENCH-WITHDATA]): the same action
-under B, the band adding B's sampling noise. `[rev5 B4]` The target is B's cheapest qualifier,
+**With data** `[rev3 WD, rev5]` (pcrec hands a named bundle's rates, B; plan [BENCH-WITHDATA]): the
+kit runs the same action on the one table it was handed; the band adds the sampling noise pcrec states
+with it. `[rev5 B4]` The target is B's cheapest qualifier,
 within band to TIE (smp20 with `prose`: '4' is incumbent and B's least: no departure).
 **The property** (the owner's bar, plan [BENCH-WITHDATA]; scope CONFIRMED by the owner 2026-11-02:
 "The analysis data must match the test subject to require same-or-better results."): on every cell
@@ -250,8 +243,8 @@ with data, B's sampling terms: a difference of two prices, smooth (rev 4's kinks
 gone with the minimax). No constant enters but the card gates (`gate_e6` 3 %, UNMEASURED DEFAULT,
 D149). `[rev5 A4]` Stage 2 defines: a COVERAGE FACTOR, labelled UNMEASURED DEFAULT (1 sigma departs
 ~16 % of equal-price comparisons per side); B's sampling noise by block bootstrap per bundle byte
-(Poisson `sqrt(n)` is 0 at n = 0, 2-5x low on clustered text); a source with no sampling record (P;
-a `fidelity synthesized` bundle such as `log`, offered `prior-authored`) is taken as declared, labelled.
+(Poisson `sqrt(n)` is 0 at n = 0, 2-5x low on clustered text), STATED by pcrec with the rates; no
+stated noise (an authored default, a `fidelity synthesized` bundle) means no sampling term.
 
 ## Cost cards
 
@@ -288,8 +281,8 @@ reused; `measures.md` §8¶1). Embedded by `make gen-measures`, handed on `mf_ar
 `[rev5]` **Robustness is MEASURED, by each row's regimes, not modelled in the pick** (D186 add. 2 as
 amended 2026-11-03). The weakest input is P: PRIOR_AUTHORED (`a322116b1b87f9f6`) rates {x,X} 1,097
 ppm, '/' 4,154; job 588's subjects held x 2,338 vs '/' 1,026 candidates on real text, 1,388 vs 0 on
-none, 21,788 vs 10,856 on random (t588tri §a). **The rule** `[rev5]`: blind prices under P alone (no
-flat kind, no shipped bundle, no minimax); every priced row's D186 evidence MUST include a random-like
+none, 21,788 vs 10,856 on random (t588tri §a). **The rule** `[rev5]`: the kit prices under the one
+table handed (blind: pcrec hands its default, P; no flat kind, no shipped bundle, no minimax); every priced row's D186 evidence MUST include a random-like
 regime (job 588's `random`) beside real text and none, and a regime it loses beyond noise narrows the
 row or is an owner exception. A wrong P is a DATA question: a default-prior change is a deliberate
 data event with its census (§What moves). **Model error** is NOT in the band: `[rev3 C3]` row 1 runs
@@ -330,7 +323,7 @@ stops are gated on a fix (an encoding fact, or a per-encoding default prior). **
 `[rev3 A2, WW; rev5]` smp20 `(?i)x/1234` is resolved by data, never by a rule, read TWO ways at
 every stage; `[rev5 B3]` from stage 3 each arm (default, `--engine=vm`, both layers, the DEF deny) is
 judged by its own new/old, not RTE/DEF. (1) BLIND, "consistent with the default" (D186 add. 2 as
-amended): the priced action under P, re-priced pcrec-side; correct by definition, {X,x} or '/'; job
+amended): the priced action on the default rates pcrec hands (P), re-priced pcrec-side; correct by definition, {X,x} or '/'; job
 588's blind timings judge P, and a wrong P is a data question at the last planned step. A blind pick
 that is NOT P's cheapest qualifier is a mechanism problem. (2) WITH a text-like bundle: a one-member
 stop the bundle rates rarer than {x,X}, '/' or '4' (D186 add. 2): passes TODAY ('4') and must at the
@@ -431,6 +424,22 @@ scalar priced row admitting its class.
 - **Landmark admission** `[rev3 O6]`: `req_landmark_admits` (emit_dfa.c :9064) and lmwalk's
   `lc_rarity` share `pcrec_landmark_margin` (+ `LMWALK_K_HIT_UNMEASURED`): a D157 EXCEPTION (D167
   add. 1 A11) until pcrec states the landmark as a candidate and reads `find.hit`.
+- **The rate source, pcrec's resolution** `[rev5]` (D186 add. 2 as amended; first match, one per
+  compile; pcrec hands the kit the chosen table and its digest, or none; pcrec's stamp and trace name
+  the source, the kit's trace only the digest):
+
+| # | when | pcrec hands | pcrec's stamp |
+|---|---|---|---|
+| 1 | an `--analysis` chain answers `byte-rate` for this compile's encoding (`findings.md` §1, §7) | that bundle's rates, B | `B:digest` |
+| 2 | else the built-in `default` serves this encoding (`findings.md` §2¶7: today `-e byte` only) | the default's rates, P | `default:digest` |
+| 3 | else | none (rules only, as M2's unknown target) | none |
+
+  Today's code already (`pcrec_find_byte_rate`, src/core/findings.h :300; `findings.md` §6¶3, §7¶6;
+  `witness.out`). `[rev5]` Kit grep (memfn/src + memfn.h): no built-in rate table, no fallback table;
+  `kit_byte_rate` returns the handed table or NULL (presence.c :48-56); NULL takes the uniform-mass
+  NONE answer (presence.c :58-113), arithmetic, no table. The interface still CARRIES the source:
+  `mf_prov.source` PRIOR_AUTHORED/MEASURED and `bundle` "default" (memfn.h :1212, :1224-1225); no kit
+  `.c` reads it; whether the field stays is main's call.
 - Prerequisites pcrec-side: `[rev3 P1]` unit 3.0's per-frame ask; a consumer kind on OFS sites;
   [MEMFN-UNBOUNDED-SPANS]; [MEMFN-PAIRSTOP]. `next_keys` and lmwalk's route stay architecture's.
 
@@ -442,8 +451,8 @@ long-subject; row evidence regimes are job 588's (throughput, search_short, matc
 random, dense); `[rev5]` a random-like regime is REQUIRED in every row's evidence.
 `[rev3 C11]` Non-card numbers the pick reads: KEY/M's `plan_cost.def` integers (Zen 1, a box
 mismatch until they retire); C_ENTER (MEASURED x ASSUMED); MARGIN (2x, ARGUED); HORS_MIN
-(PROVISIONAL); `gate_e6` and `[rev5]` the coverage factor (UNMEASURED DEFAULTs); the ONE rate source
-(P authored, or B with its sampling noise). smp20's flip: k* per hit pair (§Robustness).
+(PROVISIONAL); `gate_e6` and `[rev5]` the coverage factor (UNMEASURED DEFAULTs); the ONE handed
+rate table (pcrec's resolution; the kit sees its digest). smp20's flip: k* per hit pair (§Robustness).
 
 ## The independent control
 
@@ -482,7 +491,7 @@ Durable home of rows 1-6: D186 add. 2, "Blind compiles use the default" (main 5d
 
 | `[rev5]` ruling | landed in |
 |---|---|
-| A blind compile uses the DEFAULT: one rate model by the first-match rate-source table (B for this encoding; else P for this encoding; else NONE); stamp and trace name source and digest | §The pick (table, steps 1-4, band), "With data"; §The shape; Goal 5 |
+| A blind compile uses the DEFAULT: one rate model by pcrec's first-match rate-source table; the kit sees only the handed rates and digest (correction, D186 add. 2 as amended); pcrec's stamp and trace name the source | §pcrec-side findings (table); §The pick, "With data"; §The shape; Goal 5 |
 | A blind pick depends only on pattern, target, stamped defaults; a bundle never moves it | Goal 5; §What moves |
 | Robustness leaves the pick (F, minimax, kind list, pairwise form dropped); every row's evidence has a random-like regime | §Robustness; Goal 2; §Staging; §The measurement regime |
 | A default-prior change is a data event with its census (log form PENDING-RECORD, main) | §What moves; §Robustness; Non-goals |
@@ -490,30 +499,19 @@ Durable home of rows 1-6: D186 add. 2, "Blind compiles use the default" (main 5d
 | smp20 blind "consistent with the default"; a wrong default is data at the last step; with data '/' or '4' (and add. 2's witness line) | §The watched witness; Goal 5; smp20.py |
 | Review r1's A2 and B6 dissolve (memfn journal 2026-11-03, 0304257b3) | disposition below |
 
-**Rev 4's rulings, durable homes** `[rev5 D3]`: minimax (D186 add. 2, struck, superseded); D186
-over D144 for choice rows, C9, one plan with its trace, the pure-function plan face, the witness
-wording ('/' or '4'), O3 = WAIT, the fresh id `zen4-grid3`: each its own D186 add. 2 line. Priced
-rows dark on a bare compile under M2 (rev 3.1): PENDING-RECORD (main, [MEASURE-SET]).
-
-**Review 2026-11-03 r1, by id** `[rev5]`: A1 SUPERSEDED (no normaliser; pairwise qualifier test,
-§The pick 3). A2 DISSOLVED (regimes judge rows). A3 FIXED (§The pick 3). A4 kinks and per-kind parts
-MOOT; coverage factor, bootstrap noise: PLAN, stage 2. A5 FIXED (§The pick 2; R7 restated). B1, B2,
-B4 FIXED. B3 RE-CHECKED (no DEF move; arms by new/old). B5 DOC. B6 DISSOLVED (`log` never blind;
-labelled synthesized). B7 PLAN (witness names its set; M2 order main's). C1-C5 FIXED. D1, D2, D3, D5
-FIXED. D4 FIXED + PLAN (C9 shape, keys). D6 MOOT. E1 DOC (Goal 5; census shape). E2 NOTED.
-Review 2026-11-02 r2: dispositioned by id in rev 3 (d3c4133cc).
-**For main** (not yet filed): plan rows [SPAN-PICK-UTF8] (trigger: the first priced row over
-two-member stops), [SPAN-PICK-PERCALL] (a priced row with a per-call mover), [PICK-IDIOM] (the first
-T-PICK row), a class option for [IFACE-PUSH], §Staging's ratchet rows; `[rev5]` the byte-rate
-default's change-log line; M2's order against row 1 in [MEASURE-SET].
+**Rev 4's rulings, homes** `[rev5 D3]`: each its own D186 add. 2 line (minimax struck; D186 over
+D144, C9, one plan, pure function, witness wording, O3, `zen4-grid3`); M2-dark: PENDING-RECORD.
+**Review 2026-11-03 r1, by id** `[rev5]`: A1 SUPERSEDED (pairwise qualifier test). A2, B6 DISSOLVED.
+A3, A5 (R7 restated), B1, B2, B4, C1-C5, D1-D3, D5 FIXED. A4 kinks MOOT, noise PLAN (stage 2). B3
+RE-CHECKED (no DEF move). B5, E1 DOC. B7 PLAN. D4 FIXED + PLAN. D6 MOOT. E2 NOTED. r2: rev 3.
+**For main**: rows [SPAN-PICK-UTF8], [SPAN-PICK-PERCALL], [PICK-IDIOM], an [IFACE-PUSH] class option,
+the ratchet rows; `[rev5]` the byte-rate default's log line; M2's order; `mf_prov.source`'s future.
 
 ## Open questions
 
-`[rev5]` None for the owner. A forecast, not a question: smp20 blind follows P, {X,x} or '/' by k*.
+`[rev5]` None for the owner.
 
 ## STATE AT HANDOFF
 
-OWED none. Lane spanpick5: rev 5; `smp20.py` rewritten (P blind, per-bundle with data, incumbents
-from `witness.out`, exact boundaries), `smp20.out` re-made; `witness.sh` adds `log`/`weblog` (16
-compiles, main's `build/pcrec`; blind and `prose` lines unchanged); both CLAUDE.md rev lines. No make,
-no timing. Not a build go: next, the owner's stage-1 build go (or a narrow re-check of §The pick).
+OWED none. Lane spanpick5: rev 5 + the kit-sees-only-handed-rates correction; `smp20.py`, `smp20.out`,
+`witness.sh` (16 compiles), both CLAUDE.md rev lines. No make, no timing. Not a build go.
