@@ -689,6 +689,36 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/memfn/span_pick.md rev 5 (With data, conditions (i)-(iv); §Cost cards); docs/dev/reviews/2026-11-02-r1-memfn-spanpick/MEAS.md (MEAS-5); [BENCH-WITHDATA]; [MEASURE-SET]
   Rev 5: the with-data guarantee (a with-data compile matches or beats the blind compile beyond noise) holds when (i) the cards' regime is the cell's, long subjects; per-call cells need this row's term. Cards are per-byte streaming while the bench's losses and the bar are per-call (review r1, MEAS-5).
 
+- [KN-CARRIERLESS] STATE:not-started — kit finder: KN_A/I/M/N bits and needs_names "PEAIMN" have no carrier
+  filed: 2026-11-03 file1103 (review 2026-11-03-r4 CONTRACT-2, PLAN part)
+  status (2026-11-03): filed; nothing built. The comment part of CONTRACT-2 was FIX-NOW on lane/memfn-sp1f; the bits themselves were ruled PLAN.
+  next: drop the bits and the needs_names letters with no carrier (1a precedent: KN_H dropped "since no row carried them"), riding unit 1e's merged walk if 1e still runs; otherwise a small kit lane
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CONTRACT-2); memfn/src/finder.c:60-61, :827; memfn/docs/responses.md
+  After 1f removed the last consumers, KN_A/KN_I/KN_M/KN_N and the needs_names string "PEAIMN" describe nothing any row carries. 1a already dropped KN_H on exactly that ground. Unscheduled; ride 1e.
+- [FINDER-UNPAID] STATE:not-started — kit finder check: the `unpaid` form column and the stale LATER_FORMS schedule
+  filed: 2026-11-03 file1103 (review 2026-11-03-r4 CHECK-6)
+  status (2026-11-03): filed; nothing built. `fd_form unpaid` (finder.c:141) is FF_UNSTATED on every row and finder_check A:208 asserts "-"; nothing can set it.
+  next: either delete the field, the column and the assert together, or record why the ratchet stays; refresh LATER_FORMS (finder_check.py:128), which still schedules W64 "B6", NONE "B5" and dispatch-twin "B4/B8", none of which is the plan any more
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CHECK-6); memfn/src/finder.c; memfn/tests/finder_check.py
+  A check column that nothing can set, plus a schedule naming steps that no longer exist, reads as live coverage and is not. Unscheduled; fold into whichever unit next edits finder_check.
+- [FINDER-DENY-LISTS] STATE:not-started — kit sweep: IDENT_MEMFN and B1_DENIES hand lists have no cross-check against --list-axes
+  filed: 2026-11-03 file1103 (review 2026-11-03-r4 CHECK-7 (SUSPECTED, not verified))
+  status (2026-11-03): filed; SUSPECTED, not verified. 1f's edits match the binary (12 = 12), so no miss today; a newly added deny could silently miss the answer-identity sweep.
+  next: a check that the two hand lists equal the `--list-axes` memfn section (the controls must not share a source with what they control: memory pcrec-check-design-lessons)
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CHECK-7); memory pcrec-check-design-lessons
+  Pre-existing. Verify the suspicion first (diff the lists against the binary's axis list at the next kit unit), then add the cross-check or close the row.
+- [DELTA-JUDGE-UNIFY] STATE:not-started — one declared-delta judge over keyed surfaces (third judge reached the forest-for-trees threshold)
+  filed: 2026-11-03 file1103 (review 2026-11-03-r4 standing item, NOTED to manager)
+  status (2026-11-03): PROPOSED; nothing built. `--dumps-declared-gone` is the THIRD declared-delta judge after `--dumps-declared-rows` and `--facts-declared-moves`.
+  trigger: the first unit that ADDS a registry row (span_pick stage 2) would otherwise need a fourth flag; unify before it
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (standing); memory pcrec-forest-for-trees
+  General form: one declared-delta judge over keyed surfaces, taking {key: moved|GONE|ADDED}; the three flags become instances of it. Forest-for-trees: unification is proposed at about 3 members. Needs Frank's word before any lane.
+- [SPAN-PICK-WINDOWMASS] STATE:not-started — span_pick stage 2: price windows by the product of position rates times verify cost
+  filed: 2026-11-03 file1103 (session 128 observation)
+  status (2026-11-03): PROPOSED, awaiting Frank's word. memfn/src/presence.c `window_mass` (~line 98) SUMS rates across window positions, so it is a ranking score, not a probability.
+  trigger: the zen4 span cards are measured (stage 2); price windows by the PRODUCT of the position rates times verify cost then. Stage 1 stays byte-identical
+  refs: memfn/src/presence.c (window_mass); docs/design/memfn/span_pick.md; [SPAN-PICK-PERCALL]; [MEASURE-SET]
+  A sum over positions is monotone in the right direction for ranking but is not the chance that a window passes; a product is. The change moves picks, so it is a stage-2 data event with its census, not a stage-1 edit. Unscheduled.
 - [PICK-IDIOM] STATE:not-started — one row format for every "admission condition + action + deny + tie" decider family
   filed: 2026-11-03 manager (span_pick rev 5)
   status (2026-11-03): filed from rev 5 "For main"; not scheduled. Siblings today: lmwalk, landmark admission, PRES's P2/P4 picks, precheck-assign-byte in arms[], [PRICE-BAKEOFF]
@@ -714,6 +744,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits
   next: make the probes path-independent: SAB_REACH copies the fixtures to a short $REACH_TMP-relative path (or the expected phrase is matched on a message that puts it before the path)
   refs: tests/mech/sabotages/S1760_pin_compare_skipped.sh; S1761; [IFACE-PUSH] (candidate: keep the refusal tail); docs/design/plan_row_bodies/IFACE-PUSH.md
+  note (2026-11-03, file1103): session 128 carry-over item "S1760/S1761" is this row; nothing new found (rows added by ic3, docs/dev/lanes/ic3_report.md).
   Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
 - [X-NEL-RAW] STATE:not-started — does pcrec skip a raw 0x85 byte under (?x) in byte mode as libpcre2 does?
   filed: 2026-11-01 manager (found 2026-10-30 by lane ri698)
@@ -822,6 +853,49 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-27): not started. 14 plants trip -Werror (unused, maybe-uninitialized, parentheses); 11 are stale against current code (S106/S271 name the pre-rename rx_span_match; S53/S56/S57 `stv` undeclared); 6 are designed compile-time catches the classifier cannot tell apart (S07, S1112, S184, S526, S989, S1242).
   next: fix lane: make the 14 warning-clean, re-anchor the 11, give the runner a per-row declaration for a designed compile-time catch; plus an anomaly-count ratchet so unmeasured rows cannot leave `make mech` green.
   refs: docs/dev/lanes/suitetri_report.md; build/full_suite/20261027_7d3be7ec7/mech.log; memory pcrec-check-design-lessons (populations nobody counts)
+  note (2026-11-03, file1103): kind A remaining after S677's fix (docs/dev/lanes/s677fix_report.md; template: parenthesise the emitted test in a second SAB_FILE2 pair): 13 rows, S1152 S1159 S1174 S135 S231 S272 S666 S1418 S739 S676 S678 S719 S707; each needs the same warning-clean plant treatment, re-measured DETECTED by a non-compile arm.
+- [TMP-PRUNE-REF] STATE:not-started — the temp-root prune must exempt the read-only `ref` subdirectory
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. The prune (scripts/tmpdir.sh pcrec_tmp_prune: `rm -rf` of old direct children of the root) tries to delete the root's read-only `ref` tree; the lock.log of box-queue job 347-kit-sp1f2-mech opens with "rm: cannot remove ... Permission denied" lines.
+  next: make pcrec_tmp_prune skip `ref` by name (candidates are the root's direct children), with a self-test beside tests for tmpdir.sh
+  refs: scripts/tmpdir.sh; worktrees/.boxqueue/done/*347-kit-sp1f2-mech*/lock.log; root CLAUDE.md (pcre2-reader clean-room wall)
+  The noise is harmless today but it hides real prune failures in the same log, and a prune that does reach the pinned PCRE2 copy would break the reader agent. Unscheduled.
+- [TMP-PRUNE-AGE] STATE:not-started — scratch data is lost after 3 days by the temp-root prune
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; the 3-day default (PCREC_TMP_PRUNE_DAYS) is labelled UNMEASURED in scripts/tmpdir.sh; nobody measured how long a legitimate run keeps scratch.
+  trigger: a lane or a pending measurement loses scratch data it still needed; then measure the age distribution of scratch reads and set the default from it (memory pcrec-suspect-tuning-constants)
+  refs: scripts/tmpdir.sh; memory pcrec-suspect-tuning-constants
+  A multi-day measurement (bench windows, held jobs) can outlive the age floor if its files are not touched; the prune keeps entries with a recent file or an open handle only.
+- [QUEUE-COMPLETE-COUNT] STATE:not-started — a queue job's COMPLETE line must count what actually ran
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. The job COMPLETE line (e.g. "mech run COMPLETE: 17 rows (...)") is not tied to the rows the job was asked to run, so a short run reads as complete.
+  next: have the job print asked/ran counts and fail the COMPLETE line when they differ
+  refs: scripts/boxqueue; scripts/fullsuite_job.sh; tests/mech/run_sabotage_matrix.sh; memory pcrec-check-design-lessons (populations nobody counts)
+  Same shape as the check-design lesson: a population nobody counts. Unscheduled.
+- [PLANREF-LINT] STATE:not-started — kit-side lint for `plan.md:N` line-number citations
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. Plan policy says cite a row by [ID], never by line number; a `plan.md:N` citation goes stale on the next edit, and plan_lint has to be fed a sed-stripped copy at merge time (wake.md).
+  next: a lint over memfn/ (and the kit's docs) that rejects `plan.md:N`; the kit owns its own texts
+  refs: scripts/plan_lint.sh; memfn/CLAUDE.md; docs/dev/wake.md next action 1
+  Unscheduled.
+- [JOB-IDENT-TAIL] STATE:not-started — job.log.ident keeps only 20 lines per arm
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. The per-arm ident log keeps only the last 20 lines, and this twice hid the floor line from a reader of the job.
+  next: keep the whole arm output (or name the floor line so it is always retained)
+  refs: scripts/boxqueue; the kit mech/ident job scripts; worktrees/.boxqueue/done/*/job.log
+  Unscheduled.
+- [MECH-VALIDATE-VERDICT] STATE:not-started — a mech job in VALIDATE_ONLY mode must say so in its verdict line
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. A VALIDATE_ONLY mech run (fields only, no plants run) prints the same-shaped COMPLETE trailer as a real run and can be read as a mech gate.
+  next: print VALIDATE_ONLY (and that no row ran) in the trailer and in the queue result line
+  refs: tests/mech/run_sabotage_matrix.sh (VALIDATE_ONLY, line ~711 and the trailer); docs/dev/wake.md next action 1 ("RUN, not VALIDATE_ONLY")
+  Unscheduled.
+- [LANDMARK-DOC-CITE] STATE:not-started — lib/pcrec.h: PCREC_NO_LANDMARK_WALK comment cites tuning.md section 2.51, should be 2.54
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; verified 2026-11-03: tuning.md 2.51 is `--part-layout=CLASS:V`, 2.54 is `-fno-landmark-walk` (bit 57). The citation near lib/pcrec.h:1210 is wrong.
+  next: fix the section number in the PCREC_NO_LANDMARK_WALK comment (comment-only; lib/pcrec.h is the public header, so check whether a comment edit counts as an abi/stamp event under D76)
+  refs: lib/pcrec.h; docs/spec/tuning.md sections 2.51 and 2.54
+  Comment-only fix, filed not done.
 - [MECH-PROCS] STATE:not-started — MECH ROW CONCURRENCY USES ~HALF THE DEV BOX; MEASURE IT, OR LET THE RUNNER ADAPT TO A CPU TARGET
   filed: 2026-10-27 Frank ("File it. Include the idea that the script slowly increments parallelism to target 90%+ cpu usage")
   status (2026-10-27): not started. Full suite 20261027 mech at MECH_PROCS=6 (scripts/battery.sh:131, "[TT-8]'s own measured setting", not measured on the 7700X/16-thread box): 36% user + 18% sys, 46% idle, load ~10; ~1,040 rows take ~7 h.
