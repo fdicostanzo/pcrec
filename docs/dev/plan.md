@@ -719,6 +719,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the zen4 span cards are measured (stage 2); price windows by the PRODUCT of the position rates times verify cost then. Stage 1 stays byte-identical
   refs: memfn/src/presence.c (window_mass); docs/design/memfn/span_pick.md; [SPAN-PICK-PERCALL]; [MEASURE-SET]
   A sum over positions is monotone in the right direction for ranking but is not the chance that a window passes; a product is. The change moves picks, so it is a stage-2 data event with its census, not a stage-1 edit. Unscheduled.
+- [KIT-PAYLOAD-VERSION] STATE:not-started — kit: payload versions (mf_akind.version, mf_analysis.list_v) are never checked
+  filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
+  status (2026-11-03): filed; nothing built.
+  trigger: the first second payload shape for any analysis kind (a version check lands in that change, or before it)
+  refs: docs/dev/reviews/2026-11-03-r5-memfn-sp1g.md (on lane/memfn-k1102 until merged); memfn/include/memfn.h (mf_akind, mf_analysis)
+  A reader that ignores its payload's version reads any later shape as the current one. Harmless while each kind has one shape; a silent misread the day a second shape appears.
 - [PICK-IDIOM] STATE:not-started — one row format for every "admission condition + action + deny + tie" decider family
   filed: 2026-11-03 manager (span_pick rev 5)
   status (2026-11-03): filed from rev 5 "For main"; not scheduled. Siblings today: lmwalk, landmark admission, PRES's P2/P4 picks, precheck-assign-byte in arms[], [PRICE-BAKEOFF]
@@ -1664,6 +1670,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/pricing_rulepilot.md §9 item 1; [PRICE-BAKEOFF]; [COVER-PRICE-WITNESS]; memfn R-31
   Charter: rebuild every pilot arm with SIMD on; count sites where any arm's bytes move (identical bytes reuse the scalar timings); time only those. Report whether the scalar rule list still holds on the SIMD layer: the first measured test of absorbing a new method (rules re-search, pricing adds rows).
 ## Boonies
+- [SEAM-READER-CENSUS] STATE:not-started — every mf_* seam member has a kit reader or a listed trigger (a census, Boonies weight)
+  filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
+  status (2026-11-03): filed; nothing built.
+  trigger: the next MF_SITE_ABI layout event
+  refs: docs/dev/reviews/2026-11-03-r5-memfn-sp1g.md; [KN-CARRIERLESS] (a member with no carrier is the same smell)
+  1g's own "the kit never reads the digest" check reached no reader until its fix; a census of members against readers would catch the general case.
 - [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine (latent depth hazard)
   filed: 2026-11-01 manager (noted by lane p1build)
   status (2026-11-01): BOONIES, unreachable today; the functions live on branch lane/p1build (worktrees/p1build/src/gen/lmwalk.c: lm_flatten line 57, lm_maxw line 80, A_CAT arms at lines 59 and 86), not yet on main
