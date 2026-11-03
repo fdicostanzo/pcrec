@@ -395,6 +395,8 @@ round; L = a proof-sized lane with several rounds.
 - **Open points for the split** (the kit's review, 2026-11-02; none blocks the shape; each is settled at the split):
   1. A kit candidate is a COMPOSITION (finder, presence, verify, resume, frame, guarded SIMD rungs over the scalar
      text, D155), so the plan face returns a BOUNDED set: per-row best first, then competition across strategies.
+     **Amended (owner, 2026-11-02, span_pick rev 3's last question):** ONE PLAN, WITH THE TRACE. The plan face returns
+     one chosen plan per site; prices and the alternatives considered appear only in the trace (D186 addendum 2).
   2. Cross-site size effects (shared per-width helper blocks, helper dedup) are decided at emit today: either the
      plan carries helper sharing, or emit's dedup is declared cost-free.
   3. Runtime dispatch ([MEMFN-RTDISPATCH], held): with the CPU unknown at compile time, "target given at the top" is a
