@@ -36,7 +36,7 @@ Informational, NOT THE BAR: a relative allowance of 0.0585 read in place of the 
 
 - The driver's DV flags (32/64/64+loops32) differ from the design's 16/32/64; fixing that needs a new timing run (t588tri section (b)).
 - smp20 `(?i)x/1234` (stop-pricing gap) and smp04 `[a[:b]` (compare-chain walk form) causes: held for the kit-units work (t588tri section (a)); they are what keeps WALK/one/run FAIL.
-- The allowance is set by one search_short cell (word-digit/real, a 22 % layout swing) and then applies to every regime, including throughput cells of ~100 ns per call deltas below it; that is the design's literal one-number rule, but it is a large allowance (the manager may want to look at whether DV3's swing on that cell is itself an outlier). Not changed here.
+- The allowance is set by one search_short cell (word-digit/real, a 22 % layout swing) and then applies to every regime, throughput included; that is the design's literal one-number rule, but it is a large allowance (the manager may want to look at whether DV3's swing on that cell is itself an outlier). Not changed here.
 - Anything pcrec-side.
 
 ## STATE AT HANDOFF
