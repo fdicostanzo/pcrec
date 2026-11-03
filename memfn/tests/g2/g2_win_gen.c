@@ -622,9 +622,7 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     kd.tag = "byte-rate";
     kd.version = 1;
     kd.present = MF_KIND_PRESENT;
-    kd.prov.source = MF_PROV_MEASURED;
-    kd.prov.bundle = "g2w";
-    kd.prov.digest = 1;
+    kd.digest = 1;
     kd.payload = rate;
     mf_analysis an = { MF_ANALYSIS_LIST_V, 1, &kd };
     mf_site s;
@@ -827,9 +825,7 @@ int main(int argc, char **argv)
         kind.tag = "byte-rate";
         kind.version = 1;
         kind.present = MF_KIND_PRESENT;
-        kind.prov.source = MF_PROV_MEASURED;
-        kind.prov.bundle = "g2w";
-        kind.prov.digest = 1;
+        kind.digest = 1;
         kind.payload = rate;
         mf_analysis an = { MF_ANALYSIS_LIST_V, 1, &kind };
 

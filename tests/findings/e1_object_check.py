@@ -14,6 +14,12 @@ attempt, written where the object is built:
 
     KSRCTRACE object TAG ROW STATE SOURCE BUNDLE DIGEST BYTES FIDELITY SUM UNMEASURED
 
+THE PREMISE (span_pick.md unit 1g, MF_SITE_ABI 22): the record is pcrec's
+OFFER (`pcrec_find_offer`), which the kit object is built from, not the
+built kit object: the object carries the state, digest and payload only, the
+source, bundle, bytes and fidelity staying pcrec's (D186 add. 2). The columns
+are unchanged, so every check below reads the offer the object is built from.
+
 Each check's expectation comes from a source the object does not share:
 
   C-E1-1 CONTENT   a HAND-WRITTEN (row, state, source, bundle, bytes,

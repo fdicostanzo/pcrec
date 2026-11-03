@@ -515,6 +515,12 @@
 #     rule it planted in (`fd_pay`, deleted with R1 and R2, the only rows that
 #     paid, and `mf_finder_pay`/`--pay-grid`, its detector's entry: nothing is
 #     left to plant or to detect; no successor, the rule is gone).
+#     span_pick 1g (lane sp1g, 2026-11-03): S1092 retired with the provenance
+#     stanza mapping it planted in (`pcrec_memfn_prov_stanza`, deleted with
+#     mf_prov when provenance left the seam; finder_check L's parts (1)-(3),
+#     its detector, retired with it). L's re-aimed part (4) (no kit row reads
+#     `mf_akind.digest`) was planted by hand in the lane (sp1g_report.md); a
+#     matrix row for it waits for an S-id from the kit's range.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their

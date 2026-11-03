@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 21  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 22  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -181,7 +181,15 @@
                            pay rule's entry mf_finder_pay, mf_pay_operands
                            and MF_PAY_MAXPT are DELETED; the listing's
                            `unpaid` column stays, "-" on every row. No
-                           MF_VOCAB move; no pcrec byte moved. */
+                           MF_VOCAB move; no pcrec byte moved. 22
+                           (span_pick.md rev 5.2 unit 1g, D186 add. 2):
+                           PROVENANCE LEAVES THE SEAM: mf_akind is {tag,
+                           version, present, digest, payload}; mf_prov (its
+                           source, bundle, bytes and fidelity), mf_prov_source
+                           and mf_prov_fidelity are DELETED, the digest moving
+                           to mf_akind.digest. No kit row read any of them. A
+                           LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
+                           pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -1221,38 +1229,22 @@ typedef struct mf_measures {
 /* ---- the analysis object (window_contract.md §3.1; DECLARED at B1) --------
  *
  * The E-1 agreement (r17b_prime.md §4.7): B1 declares the object on
- * mf_art_begin, NULL-tolerant, and NO kit row reads it before B3a; main's
- * E-1 (window_contract S1) fills it with no kit edit. The layout is
- * window_contract.md §3.1's, spelled as there. */
+ * mf_art_begin, NULL-tolerant; main's E-1 (window_contract S1) fills it with
+ * no kit edit. The layout is window_contract.md §3.1's as amended by
+ * span_pick.md unit 1g (MF_SITE_ABI 22). */
 #define MF_ANALYSIS_LIST_V 1        /* the LIST's own shape, not any kind's */
-typedef enum { MF_PROV_UNSTATED = 0, MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
-               MF_PROV_MEASURED } mf_prov_source;
 typedef enum { MF_KIND_UNSTATED = 0, MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_state;
-/* The answering block's `fidelity` row (R-24): pcrec's findings vocabulary
- * (src/parse/rxt_schema.def, `closed fidelity verbatim adapted synthesized`),
- * one enumerator per token and the zero for "the block declares none" (the
- * schema requires the row under a PATTERN block only, so a data block states
- * none). A FACT about the block; a row that weighs it is the kit's (D157). */
-typedef enum { MF_FID_UNSTATED = 0, MF_FID_VERBATIM, MF_FID_ADAPTED,
-               MF_FID_SYNTHESIZED } mf_prov_fidelity;
-typedef struct {
-    uint8_t     source;     /* mf_prov_source                                  */
-    const char *bundle;     /* MEASURED: the answering bundle; PRIOR: "default" */
-    uint64_t    digest;     /* what was consumed (the `<PREFIX>_FINDINGS`
-                               digest); 0 under PRIOR_NONE                     */
-    uint64_t    bytes;      /* R-24, MF_SITE_ABI 15 (appended LAST): the
-                               exemplar byte count the answering block's
-                               `provenance bytes` row declares; 0 when it
-                               declares none                                   */
-    uint8_t     fidelity;   /* R-24 (appended LAST): mf_prov_fidelity          */
-} mf_prov;
+/* A kind states its payload and the payload's digest, nothing about where
+ * either came from (span_pick.md unit 1g, D186 add. 2): the source, the
+ * bundle and the answering block's provenance stanza are pcrec's (its stamp
+ * and trace); the kit's trace names only the digest it was handed. */
 typedef struct {
     const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */
     uint32_t    version;    /* this kind's payload shape                        */
     uint8_t     present;    /* mf_kind_state                                    */
-    mf_prov     prov;
-    const void *payload;    /* per tag: non-NULL iff PRESENT and PRIOR_AUTHORED
-                               or MEASURED                                     */
+    uint64_t    digest;     /* the payload's digest (the `<PREFIX>_FINDINGS`
+                               digest); 0 without a payload                    */
+    const void *payload;    /* per tag: non-NULL iff PRESENT with a table      */
 } mf_akind;
 typedef struct mf_analysis {
     uint32_t        list_v;     /* MF_ANALYSIS_LIST_V                          */
