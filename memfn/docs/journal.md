@@ -3004,3 +3004,24 @@ Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/
 - Bar, plan [BENCH-WITHDATA]: a with-data compile matches or beats the blind compile on every cell beyond noise. Rev 3 states that as a property of the pick.
 - Open scoping point raised to main: does "every cell" mean the cells whose subjects the bundle describes?
 - Frank also: no real-text rate dataset now; options are evaluated only at the last planned step.
+
+## 2026-11-02/03 — span_pick rev 3 merged; edits queued for rev 3.1
+
+Rev 3 is merged to main. Frank: O3 = WAIT (smp04 and the look-ahead measurement wait for stage 1). C9: he asked for an example (given: smp20 w16; utf8-lead two-byte window); the answer is pending.
+
+Main's answers, for rev 3.1:
+- Witness pass = a one-member stop the bundle rates rarer than {x,X} ('4' passes).
+- C5: new id zen4-grid2 (measures.md §8¶1 beats D176 Q3).
+- C6/M2: priced rows going dark on a bare compile under the M2 envelope is intended ("unknown target prices nothing"), and is M2's dependency; no safe-direction carriage.
+
+Pending with Frank: the blind rule (minimax vs win-under-both), C9, one plan vs priced list, and R9 (D186 over D144 item 3).
+
+## 2026-11-03 — blind rule = minimax (Frank via main), for rev 4
+
+The blind pick takes the least worst-case loss (minimax), with main's two guards:
+(a) the subject kinds include real data: the shipped log and weblog bundles, beside the prior and flat;
+(b) depart from today's pick only when the worst case improves by more than the cards' measured noise.
+This replaces "win under both P and F". Still open with Frank: C9 (SIMD own position), one plan vs priced list, R9 (D186 over D144 item 3).
+- R9 agreed (D186 add. 2 on main): for choice rows, D186 sets what a fix to a losing row must be (narrow the row, or an owner-approved exception), and D144 keeps when and how (no revert, an issue row, the deny flag as kill switch). Unit changes stay under D144 alone. Rev 4 cites add. 2. Still open: C9, one plan vs priced list.
+- C9 answered by Frank directly: YES, a SIMD build may pick its own search position (its own row, SIMD-on evidence, scalar the bar). Frank noted that smp20 is not a SIMD example: on '/' the SIMD build would call memchr, the same as scalar, so smp20 is a scalar mispick. Rev 4's C9 witness is utf8-lead-no-cont (the two-byte vector window, which no scalar position equals). SIMD-form cards return to stage 2. Still open: one plan vs priced list.
+- One plan vs priced list, answered by Frank directly: ONE PLAN, with the trace. This amends the agreed A-PLAN step "options with costs". All rev 4 inputs are now in; launching lane spanpick4.
