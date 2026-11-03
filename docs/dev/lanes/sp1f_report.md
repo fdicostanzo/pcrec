@@ -156,6 +156,8 @@ builds are `ref/build/pcrec` and `ref-mftrace/pcrec`, from a git archive of 7615
 
 ## STATE AT HANDOFF
 
+- Queued (owed): kit-sp1f-strict, kit-sp1f-memfn, kit-sp1f-reach, kit-sp1f-ident1, kit-sp1f-ident2,
+  kit-sp1f-ident3, kit-sp1f-test, kit-sp1f-mech, kit-sp1f-mech2, kit-sp1f-mech3 (jobs 330-339).
 - Branch `lane/memfn-sp1f` is committed and clean, apart from untracked lane files.
 - Jobs 330-339 are queued, gated after kit-mech1a-b.
 - The DELIVER `owed:` line names the three mech keys.
