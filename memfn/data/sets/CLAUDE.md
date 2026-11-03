@@ -23,8 +23,9 @@ cards).
   under.
 - `synthetic-all-walk.tsv`, `synthetic-all-v1.tsv`, `synthetic-all-wide.tsv`
   — the extreme sets (every saving 0 / 0.5 / 0.5 with W64 open).
-- `synthetic-every-key.tsv` — every key a finder row or its pay rule can
-  read, for every token the shadow can spell: the R-MS1 / R-MS4 tests' set.
+- `synthetic-every-key.tsv` — every key a finder row or its pay rule could
+  read, for every token the shadow can spell: the R-MS1 / R-MS4 tests' set
+  (the pay rule's and R8/R1/R2's keys unread since span_pick 1f).
 
 A regeneration that changes a value moves no artifact byte at B1 (no row is
 routed); from B4 it moves the selections the manifest predicts, a pcrec abi

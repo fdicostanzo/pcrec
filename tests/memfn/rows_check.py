@@ -492,10 +492,10 @@ def main():
     # transcript that exists (C19's binding; its digest half is UNREACHED
     # until a timing run writes one).
     simd_rows = axes_simd_rows(root)
-    # a finder ROW's deny (R17-b' B1: fd-r8, whose row picks W64 at the SIMD
-    # layers) is no SIMD FORM: it has no level, and its pick's forms carry
-    # their own acceptance lines when they are built (B6). The finder rows'
-    # denies are read off the kit's own listing (arm_fixtures --finder-rows).
+    # a finder ROW's deny is no SIMD FORM: it has no level (R17-b' B1's fd-r8,
+    # whose row picked W64 at the SIMD layers, was the one such row until
+    # span_pick 1f deleted it). The finder rows' denies are read off the kit's
+    # own listing (arm_fixtures --finder-rows).
     fdl = run([fx, "--finder-rows"]).stdout.decode().splitlines()
     fd_denies = {ln.split("\t")[5] for ln in fdl if ln and not ln.startswith(("#", "OPTION"))}
     if not fd_denies:

@@ -20,7 +20,7 @@ ok()  { echo "PASS: $*"; pass=$((pass+1)); }
 bad() { echo "FAIL: $*"; fail=$((fail+1)); }
 if [ ! -x "$PCREC" ]; then
     bad "no pcrec binary at $PCREC (build it, or set PCREC)"
-    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 . "$here/../tests/lib/timeout_bin.sh"
 python3 - "$here" > "$T/manifests.txt" <<'PY'
@@ -224,6 +224,38 @@ assert es.dumps_declared_delta(f, base, b"K0\tx\nK1\tnew\n", d()) == []
 assert es.dumps_declared_delta(f, base, base, d())
 assert es.dumps_declared_delta(f, base, b"K0\ty\nK1\tnew\n", d())
 assert es.dumps_declared_delta(f, base, b"K0\tx\n", d())
+PY
+
+# --dumps-declared-gone, judged BOTH ways: a row dropped from REF alone passes;
+# a row still listed, one missing from REF, an extra removal, an addition, a
+# reorder and a duplicated REF line (one key must not swallow its twins) fail.
+python3 - "$here" <<'PY' && ok "dumps declared gone: both directions" || bad "dumps declared gone control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+f = "--list-axes"
+g = frozenset({(f, "x")})
+dd = lambda a, b, **kw: es.dumps_declared_delta(f, a, b, kw.get("d", {}), g)
+ref = b"a\t1\nx\t2\nb\t3\n"
+assert dd(ref, b"a\t1\nb\t3\n") == []
+assert dd(ref, ref)                                   # still listed
+assert dd(b"a\t1\nb\t3\n", b"a\t1\nb\t3\n")      # missing from REF
+assert dd(ref, b"a\t1\n")                            # an extra removal
+assert dd(ref, b"a\t1\nb\t3\nc\t4\n")               # an addition
+assert dd(ref, b"b\t3\na\t1\n")                      # a reorder
+assert dd(b"a\t1\nx\t2\nx\t9\nb\t3\n", b"a\t1\nb\t3\n")  # duplicate REF lines
+# gone and declared-moved together (a removal beside a text change)
+assert dd(ref, b"a\t9\nb\t3\n", d={(f, "a"): False}) == []
+assert dd(ref, b"a\t1\nb\t3\n", d={(f, "a"): False})   # declared a did not move
+PY
+
+# the selfcheck gate: declarations apply to the real comparison only, and a
+# variant's selfcheck-NAME label is a self-check too.
+python3 - "$here" <<'PY' && ok "dumps declarations: selfcheck gate" || bad "dumps declarations gate control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+dec = es.dumps_declarations
+assert dec("real", "f:a,f:b", "f:x") == (["f:a", "f:b"], ["f:x"])
+assert dec("plain-byte", "", "f:x") == ((), ["f:x"])
+assert dec("selfcheck", "f:a", "f:x") == ((), ())
+assert dec("selfcheck-plain", "f:a", "f:x") == ((), ())
 PY
 
 echo "checks passed: $pass"

@@ -79,8 +79,8 @@ MEMFN_CLASS = {
     # No fd_rows[] row is routed at B1 (fdb1_report.md), so each deny is
     # artifact-identical. THESE CLASSES ARE B1's, NOT STANDING FACTS: fd-d1 became DIFFER
     # when lane/fdb2 routed D1 (its OFF arm is D1w's walk; re-measured below). fd-r0 and
-    # fd-r5 RETIRED at B4' (lane b4p) with their rows; fd-ndisp stays ASSERT_ZERO (no
-    # dispatch pays), fd-r8 flips at B6 (options.def's comment). Each landing re-measures.
+    # fd-r5 RETIRED at B4' (lane b4p) with their rows, fd-r8 and fd-ndisp at span_pick 1f
+    # with R8, R1 and R2 (their ASSERT_ZERO cells went with them). Each landing re-measures.
     # fd-d1 RE-MEASURED at B2's landing (lane fdb2land, 2026-10-17, lane/fdb2land =
     # fdclass + main aa66dbd64 + lane/fdb2 01ffd2f2d): B2 routes D1, so the deny moves
     # the one-byte sites to D1w's walk on the default engine; the VM stream has none.
@@ -119,10 +119,6 @@ MEMFN_CLASS = {
     **{("pres-set-lead", ly): ("DIFFER",
         {("byte", "c-default"): 14, ("byte", "c-vm"): 18, ("utf8", "c-default"): 7, ("utf8", "c-vm"): 8},
         [("byte", "c-default", "é{2,}cat".encode()), ("utf8", "c-default", b"a{3,}(?i:cat)")]) for ly in ("default", "simd")},
-    ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
-    ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
-    ("fd-r8", "default"): ("ASSERT_ZERO", {}, []),
-    ("fd-r8", "simd"): ("ASSERT_ZERO", {}, []),
     # D172 S3's two window-search denies (window-search: the search itself, so `cover` declines;
     # window-skip: its skip for a common byte set), absent from this table since S3 while
     # `--list-axes` listed them (code review r2 R2-4: the population check above could only

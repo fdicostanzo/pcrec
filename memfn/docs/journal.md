@@ -3094,3 +3094,10 @@ Main ruled on the four kit findings (D186 add. 2):
 - Gates 340-346 GREEN. 344 needed a retry: the job script passed the dump declarations only to the base arm, but the start arm also runs the dumps stream.
 - 347-349 (mech) were running at close.
 - wake.md rewritten.
+
+## 2026-11-03 — span_pick stage 1 unit 1f built (lane sp1f, branch lane/memfn-sp1f)
+
+- The finder rows R8, R1, R2 deleted with their denies `fd-r8`/`fd-ndisp`, the residual N step, the §2.5 pay rule and its public entry `mf_finder_pay` (finder_history.md). No emitted byte moves by construction: no compile ever reached the three rows (forms never built).
+- **MF_SITE_ABI 20 -> 21** (the entry and the two options leave) and **MF_CLASS_V 6 -> 7** (three rows left ahead of the PRES rows). For the responses ledger: the kit session's line.
+- CALLER-VISIBLE: `--list-axes` loses the two `memfn` rows; `--memfn=no-fd-r8`/`no-fd-ndisp` are unknown options; `docs/spec/registry.md` §6¶8/¶8a/¶8b (floor 14 -> 12).
+- Witness (byte identity on every surviving arm with `--list-axes` judged by `--dumps-declared-gone`; reach equality with the declared gone set fd R8/R1/R2; census; strict; make test; mech) queued as box-queue jobs 330-33x: docs/dev/lanes/sp1f_report.md.

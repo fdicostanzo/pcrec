@@ -1270,7 +1270,6 @@ static void gate_cases(void)
  *       loops of tests/memfn/finder_check.py
  *   arm_fixtures --finder-rows     mf_finder_rows as TSV (R-MS4's listing)
  *   arm_fixtures --hash            R-MS3's fixtures (mf_form_hash)
- *   arm_fixtures --pay-grid        the pay rule over stdin's operand lines
  *
  * Every expectation is finder_check.py's, never this file's. */
 
@@ -1653,44 +1652,10 @@ static int hash_mode(void)
     return 0;
 }
 
-/* The pay rule over stdin: one case per line, `npt s0 f0 ... has_call call
- * cfloor has_next nfloor has_use use ufloor has_wmin wfloor`; prints the
- * bits. */
-static int pay_mode(void)
-{
-    char line[4096];
-    while (fgets(line, sizeof line, stdin)) {
-        mf_pay_operands in;
-        memset(&in, 0, sizeof in);
-        char *t = line, *e;
-        long long v[64];
-        int n = 0;
-        while (n < 64) {
-            v[n] = strtoll(t, &e, 10);
-            if (e == t) break;
-            n++;
-            t = e;
-        }
-        if (n < 1) continue;
-        in.npt = (unsigned)v[0];
-        int k = 1;
-        for (unsigned i = 0; i < in.npt && i < MF_PAY_MAXPT; i++) {
-            in.saving_e6[i] = v[k++];
-            in.saving_floor_e6[i] = v[k++];
-        }
-        in.has_call = (uint8_t)v[k++]; in.call_e6 = v[k++]; in.call_floor_e6 = v[k++];
-        in.has_next = (uint8_t)v[k++]; in.next_floor_e6 = v[k++];
-        in.has_use = (uint8_t)v[k++]; in.use_e6 = v[k++]; in.use_floor_e6 = v[k++];
-        in.has_wmin = (uint8_t)v[k++]; in.wmin_floor_e6 = v[k++];
-        printf("%u\n", mf_finder_pay(&in));
-    }
-    return 0;
-}
-
 int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
-                          "--fd-site SITE [--fd-set FILE] [--fd-an FID] | --finder-rows | --hash | --pay-grid\n", stderr); return 2; }
+                          "--fd-site SITE [--fd-set FILE] [--fd-an FID] | --finder-rows | --hash\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL;
         int fid = -1;
@@ -1703,7 +1668,6 @@ int main(int argc, char **argv)
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();
-    if (!strcmp(argv[1], "--pay-grid")) return pay_mode();
     for (int i = 2; i < argc; i++)
         if (!strcmp(argv[i], "--query")) query_mode = 1;
     if (!strcmp(argv[1], "--gate")) {

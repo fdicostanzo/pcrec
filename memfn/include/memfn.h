@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 20  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 21  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -172,7 +172,16 @@
                            INTERFACE (the translation's and G2's), and a
                            window site stating any of them is REFUSED. A
                            LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
-                           pcrec byte moved. */
+                           pcrec byte moved. 21 (span_pick.md rev 5.2 unit
+                           1f): the finder rows R8, R1 and R2 leave the
+                           listing (mf_finder_rows' indices after them move:
+                           MF_CLASS_V 7) with their denies fd-r8 and
+                           fd-ndisp (no longer options: --memfn=no-fd-r8 and
+                           no-fd-ndisp are refused as unknown), and the §2.5
+                           pay rule's entry mf_finder_pay, mf_pay_operands
+                           and MF_PAY_MAXPT are DELETED; the listing's
+                           `unpaid` column stays, "-" on every row. No
+                           MF_VOCAB move; no pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -1007,8 +1016,8 @@ typedef struct {
        storage point). Stated on a site that offers its declaration point,
        at its define AND at its mf_locals, which BINDS it as it binds `s`/`n`
        (a differing text is refused, naming it). NULL is UNSTATED: a row
-       that reads N skips. No rendering reads it before a dispatch row
-       routes (B4/B8) */
+       that reads N skips. No row reads it now (the dispatch rows
+       retired at span_pick 1f) */
     const char *start;
     /* THE MOVED-CANDIDATE HOOK (PR-2, MF_SITE_ABI 13; appended LAST): a FIND
        consumer's STATEMENT, run when the position the site writes differs
@@ -1044,7 +1053,7 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 6   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
+#define MF_CLASS_V 7   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
                           3 (MF_SITE_ABI 16, B3a): npres uint16_t over
                           MF_MAX_PRES 257. 4 (inside MF_SITE_ABI 17, B3b,
                           unreleased; b3brev U5): pres_row and pres_led,
@@ -1056,7 +1065,9 @@ extern const char mf_miss_n[];
                           MF_SITE_ABI move): the finder rows R3a, R3b and
                           R4 left the listing ahead of the PRES rows, so
                           pres_row/pres_led's indices moved; no layout
-                          move, no pcrec byte moved */
+                          move, no pcrec byte moved. 7 (MF_SITE_ABI 21,
+                          span_pick 1f): R8, R1 and R2 left the listing
+                          ahead of the PRES rows, the same index move */
 /* Presence spans one site states (npspan) and one class answers (npres). A
  * SHAPE BOUND, not a tuning constant, DERIVED at B3a (PR-5's unpicked
  * spans): a necessary set has at most 256 members, each its own span, and a
@@ -1493,7 +1504,7 @@ const mf_run_row *mf_run_rows(size_t i);
  * moves, not when a name, a comment or a neighbouring declaration moves.
  * pcrec compares the strings and nothing else. Returns 0 and writes out[17]
  * (with its NUL), or -1 when `form_id` names no form this kit renders (a
- * card naming a form a later step builds: V1 at B4, the W64 rows at B6). */
+ * card naming a form this kit does not render). */
 int mf_form_hash(const char *form_id, char out[17]);
 /* The same normalization and hash over `text` (the kit's own fixtures and
  * any tool that hashes a rendering it holds). */
@@ -1503,10 +1514,10 @@ void mf_form_hash_text(const char *text, char out[17]);
  *
  * One entry per row of `fd_rows[]`, in first-match order within each slot,
  * in [LIST-TABLES]' census shape: the row's id, slot, the knowledge keys it
- * needs, its pick (slot FIND) or link (slot PRES), its unpaid pick, its
- * deny, its BASIS, its evidence and refutation texts, its routing state and
+ * needs, its pick (slot FIND) or link (slot PRES), its unpaid pick ("-" on
+ * every row since the pay rule retired, MF_SITE_ABI 21), its deny, its BASIS, its evidence and refutation texts, its routing state and
  * the set keys it reads. A key is a TEMPLATE: `<...>` tokens are filled per
- * site (the cover shape, the layer's form, the kind, the terminal pick).
+ * site (the cover shape, the layer's form, the kind).
  * `safe` is the key's SAFE direction (`max`/`min`/`none`), "" until M2
  * (R-MS4: keys at M0, directions at M2). */
 typedef struct {
@@ -1516,7 +1527,7 @@ typedef struct {
 typedef struct {
     const char          *id;
     const char          *slot;      /* "FIND" | "PRES"                          */
-    const char          *needs;     /* the knowledge keys: P E A I M N H        */
+    const char          *needs;     /* the knowledge keys: P E (A I M N: no row) */
     const char          *pick;      /* FIND: the form; PRES: the link           */
     const char          *unpaid;    /* "-" for none                            */
     const char          *deny;      /* its options.def name, "-" for none      */
@@ -1541,24 +1552,6 @@ typedef struct {
     mf_finder_key keys[MF_FINDER_MAX][MF_FINDER_KEYS];
 } mf_finder_listing;
 void mf_finder_rows(mf_finder_listing *out);
-
-/* THE PAY RULE's arithmetic (r17b_prime.md §2.5), over stated operands in
- * value_e6 u·B, for its arithmetic grid (SN-9) and any mirror of the rule:
- * the bits of the tests that pass, 1 T1 (every point's saving lower bound
- * beats the call charge's upper bound STRICTLY; at least one point), 2 T2
- * (the call charge's upper bound is within the next form's floor; a tie
- * passes), 4 T3 (the per-use charge's upper bound is within the cheapest
- * warm use's floor; a tie passes). An operand not `has_*` fails its test.
- * Points past MF_PAY_MAXPT are ignored. */
-#define MF_PAY_MAXPT 16
-#define mf_finder_pay MF_NS(finder_pay)
-typedef struct {
-    unsigned npt;
-    int64_t  saving_e6[MF_PAY_MAXPT], saving_floor_e6[MF_PAY_MAXPT];
-    uint8_t  has_call, has_next, has_use, has_wmin;
-    int64_t  call_e6, call_floor_e6, next_floor_e6, use_e6, use_floor_e6, wmin_floor_e6;
-} mf_pay_operands;
-unsigned mf_finder_pay(const mf_pay_operands *in);
 
 /* ---- THE FIVE-PICK PORTS (R17-b' B3a, KW-8; r17b_prime.md §1.4, §3.1) -----
  *
