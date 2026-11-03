@@ -128,7 +128,7 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
 Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
-findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --deliver FILE NAME`
+findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --dir $PCREC_TMPDIR/scratch/crit-<topic> --deliver FILE NAME` (without `--dir` its pass record lands in the repo root, 2026-11-03 sp1a)
 prints DONE; the coordinator runs `scripts/lanewatch --dir $PCREC_TMPDIR/scratch/crit-<topic> NAME...`
 instead of waiting for replies (nested replies are often lost).
 

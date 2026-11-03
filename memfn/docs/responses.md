@@ -3071,3 +3071,13 @@ the compiler, and is never adopted silently. Proposed for main to file
 - done: 2026-11-02 — **R-32 (re-aim S526): READY TO MERGE. Branch `lane/memfn-k1102` @ 75e8ab124** (lane r32 1db59f145 merged + one fix). Report: `docs/dev/lanes/r32_report.md`. Cause: S526's catch was already an assertion FAIL in C14 (tests/memfn/form_checks.py), but its FAIL line quoted the probe compile's raw `file:L:C: error: static assertion failed`, which the scorer's NOCOMPILE_ERE (7047b69e4) read as broken code. Fix: the FAIL line prints only the tripped assert message(s); any OTHER compile error in the probe stays verbatim, so broken code still reads ANOMALY. Plant and SAB_REACH unchanged; SAB_DOC_FIGURE re-measured. No src/cli/lib/memfn edit: no abi event. **Validation: job 201-kit-r32-mech-s526 GREEN** (31 s): mech `1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0)` at 75e8ab124; make strict rc=0; test-memfn-forms rc=0. The branch also carries ack R-31 (no vector form for the two-set window) and ack R-32.
 
 - notice: 2026-11-02 — **Frank (direct to the kit), after job 588's FAIL:** "There should be a single set of 'find the span' choices that are used by whoever needs them." Survey asked, to validate: "There are a number of basic units of work in kit like 'find the span' and others. Currently these are spread out. The various scenarios should build up using these basic components rather than search for a complete solution." Kit survey lane kitunits running; the smp20 stop-rule patch is HELD as unification step 1. Proposed decision text (for main): "Kit choices are built from shared basic units (find the span, ...) used by every scenario that needs them; a scenario composes units rather than selecting among complete solutions (Frank 2026-11-02, after 588)."
+
+- done: 2026-11-03 — **span_pick stage 1, unit 1a: READY TO MERGE. Branch `lane/memfn-sp1afix` @ 15e78ee0e** (lane sp1a c0c73bc20, review fixes 822b15c38, main ef179b9f4 merged).
+  - Reports: `docs/dev/lanes/sp1a_report.md`, `sp1afix_report.md`. Code round: `docs/dev/reviews/2026-11-03-r3-memfn-sp1a.md` (on lane/memfn-k1102): no answer- or speed-level findings; byte identity HOLDS on about 23,300 compiles x 34 arms; all FIX-NOW items fixed, each with a failing plant.
+  - Validation, all GREEN:
+    - 300 strict; 301 kit sections (9/9);
+    - 310 reach equality (18 arms, derived gone set R3a/R3b/R4);
+    - 311/312/313 byte identity (69 arms, zero movers, after main's ef179b9f4 floor re-pin);
+    - 315 make test (1377 s); 316 mech field validation (1103 definitions).
+  - Kit notice: MF_CLASS_V 5 -> 6 (pres_row shift); no pcrec abi event; no emitted byte moves.
+  - Ratchet: R26 -3, R27 -1 (15 -> 11). No counted names kept as thin callers.
