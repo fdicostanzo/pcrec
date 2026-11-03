@@ -3025,3 +3025,33 @@ This replaces "win under both P and F". Still open with Frank: C9 (SIMD own posi
 - R9 agreed (D186 add. 2 on main): for choice rows, D186 sets what a fix to a losing row must be (narrow the row, or an owner-approved exception), and D144 keeps when and how (no revert, an issue row, the deny flag as kill switch). Unit changes stay under D144 alone. Rev 4 cites add. 2. Still open: C9, one plan vs priced list.
 - C9 answered by Frank directly: YES, a SIMD build may pick its own search position (its own row, SIMD-on evidence, scalar the bar). Frank noted that smp20 is not a SIMD example: on '/' the SIMD build would call memchr, the same as scalar, so smp20 is a scalar mispick. Rev 4's C9 witness is utf8-lead-no-cont (the two-byte vector window, which no scalar position equals). SIMD-form cards return to stage 2. Still open: one plan vs priced list.
 - One plan vs priced list, answered by Frank directly: ONE PLAN, with the trace. This amends the agreed A-PLAN step "options with costs". All rev 4 inputs are now in; launching lane spanpick4.
+
+## 2026-11-03 — blind compiles use the default prior only, per encoding (Frank, with main's opinion)
+
+- Frank: "if no analysis is provided, use the default". Shipping or recounting a bundle must never move a blind compile.
+- Main agreed:
+  - robustness moves from the pick to D186's per-regime row evidence, which must include a random-like regime;
+  - F is dropped from the pick;
+  - a rate-source first-match table, with the source named in the stamp and trace;
+  - a change to P is a deliberate DEFAULTS event;
+  - smp20 blind is judged "consistent with P".
+- Frank added: "The default is by encoding as well." The code already has that shape (pcrec_find_byte_rate, findings.h:300).
+- Supersedes D186 add. 2's minimax line; main amends it. A2 and B6 dissolve. Rev 5 launched.
+
+## 2026-11-03 — rev 5 delivered (9c9aadb60); main's records; final re-check running
+
+Main ruled on the four kit findings (D186 add. 2):
+1. With no rates, the rules rank by MEMBER COUNT, declared as the rules' own tie-break.
+2. mf_prov.source and the bundle "default" label leave the seam in stage 1 (a stage-1 list item; fold into rev 5's text fixes).
+3. The default-prior change log is filed with the first such change.
+4. M2 is not ordered against row 1: priced rows go dark on bare compiles at M2 (intended); named-set compiles keep priced picks. Stage 2 = zen4-grid3.
+
+## 2026-11-03 ~00:00 — conditional build go for span_pick (Frank via main; Frank AFK)
+
+- Frank: "I've seen enough of the plan to approve it when it's done. Make sure it looks good to you then have kit go through all dev steps to build it."
+- The GO is CONDITIONAL on main's review of rev 5 (plus any 5.1 fixes) after crit-memfn-spanpick5 rules; no build before main's GO message.
+- Then the full dev process, stage by stage:
+  - stage 1 lands and is verified before stage 2;
+  - stage 2's card timing goes through the queue, never 20:00-01:00 or a bench window;
+  - stage 3 rows are each their own D186 choice change.
+- STOP and message main on anything non-routine (an unattributed red, an undeclared byte move, an answer-level finding, an owner ruling).

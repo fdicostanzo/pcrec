@@ -1,0 +1,6 @@
+(i) before: ('q2', ['q1', 'q2'], ['q1', 'q2'])
+(i) after adding c_new: ('q1', ['q1', 'q2', 'c_new'], ['q1', 'c_new'])
+(i-b) anchor a tie set ['a', 'b', 'c']
+(i-b) anchor b tie set ['a', 'b']
+(proof) c_P qualifies; pick c3 price 74 vs c_P 72
+(iii) pick ('q', ['q'], ['q'])
