@@ -1519,10 +1519,14 @@ test-memfn-deleg: all
 # each row's text signature in its witness's artifact and absent from its
 # control's (the trace must agree with the text both ways), and the shape of
 # the per-row floor file (tests/memfn/row_floors.tsv). Seconds; builds a
-# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a.
+# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a. Then the
+# DECIDER CENSUS (span_pick.md rev 5.2, unit 1a): the declared deciders of
+# tests/memfn/decider_census.tsv against the kit's sources, its backstop grep
+# and two plants (tests/memfn/decider_census.py; well under a second).
 test-memfn-rows: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
 	CC="$(CC)" bash tests/memfn/run_rows.sh
+	python3 tests/memfn/decider_census.py --root .
 
 # [MEMFN] R17-b' B1 (lane fdb1; docs/design/memfn/r17b_prime.md rev 3): the
 # kit's FINDER TABLE and its B1 entries: the table's self-check and listing
