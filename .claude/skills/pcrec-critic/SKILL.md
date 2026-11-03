@@ -156,7 +156,7 @@ critic; a missed input goes to a fresh critic.
    quoting the cited lines, design claims by the simulation or grep they name.
    Give it a DELIVER block like a critic's (its file `verify.md`, one section per finding id, a closing
    `VERIFY COMPLETE` line; 2026-10-29 landwalk: without one the verifier improvised its own shape).
-   It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
+   A REFUTED verdict quotes the exact call it ran; the coordinator re-runs every REFUTED that rests on a crafted input before drafting (2026-11-03 sp1f: a verifier refuted with a malformed key). It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
 3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
