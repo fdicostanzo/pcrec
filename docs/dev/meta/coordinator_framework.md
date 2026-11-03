@@ -38,3 +38,8 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 ## 2026-11-01 — critic round stream1 (review 2026-11-01 r1)
 
 - stream1 (5 critics + verifier, ~26 min freeze to draft): a design round with no code subject fit the coordinator pattern: one build, five parallel critics, one verifier. All six agents returned without a handback; files plus lanecheck markers carried everything. The verifier's value was correcting magnitudes and refuting one ruling-conflict claim, not re-running answers. Elsewhere it might fit (OPINION): reviewing a SYNTHESIS step (merging N blinded drafts) with a soundness critic diffing source rows against merged rows. Two COMMON-template lessons: resolve every cited doc path before writing COMMON; a count over git history states its window (first..last commit) and command (a critic's count silently truncated at 400 lines). A subject citing its own scratch runs should freeze those outputs as part of the subject.
+
+## 2026-11-03 — critic round memfn-sp1g (review 2026-11-03 r5)
+
+- A small code unit took about 20 minutes from freeze to draft, with one coordinator turn chain and zero manager wakes. The verifier reproduced 8 plants from a critic's own harness copy in under 4 minutes. Pattern worth requiring: a critic that plants leaves plant.sh plus its .sub files for the verifier.
+- A nested final reply was lost again (SubagentHandback failed three times, "spawner no longer running"); the critic's FILES carried the round.
