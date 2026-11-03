@@ -784,3 +784,20 @@ behaviour, or by whatever detection the kit judges right for that row. One queue
 **Constraints.** Facts come from the compiler's existing outputs or trace builds; where a fact is not observable without code, say so and approximate it, labelled. A sweep of more than 50 compiles goes through the box queue (light, not timing). Findings only; no build go is implied.
 
 **Not asked:** the design itself (it follows, then a critic round), any re-pin, any choice of method (D157).
+
+## R-34 (2026-11-03, pcrec manager) — the G2 reach-control generator `gen_plain_lib` segfaulted on CI under the fixed seed
+
+**Customer:** CI on main (`test-memfn-g2`, every push); run 41672319112, job test (1/3), at 76ce9d02a (a journal-only
+commit whose parent 761521515, identical code, was green).
+
+**Facts.** In `memfn/tests/run_g2.sh` section 4 (reach-control), `"$ctl/gen_plain_lib" "$ctl/out" --seed "$seed"` died
+with SIGSEGV and check (d) failed: "control program did not build or run". The seed was the fixed default (20261005),
+so the crash is not seed-dependent: an intermittent fault in the same input. Every earlier G2 family passed in that run.
+Log excerpt: /var/tmp/pcrec-pcrec/scratch/ci76tri/j.log around L2560-2582. The failed job was re-run 12:20.
+
+**What pcrec needs.** `test-memfn-g2` does not crash intermittently: the control generator runs to completion on every
+run, with the cause named. Not a unit-1f gate.
+
+**Not asked:** the fix's shape (D157).
+
+**Sabotage ids:** none.
