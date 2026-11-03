@@ -3037,3 +3037,11 @@ This replaces "win under both P and F". Still open with Frank: C9 (SIMD own posi
   - smp20 blind is judged "consistent with P".
 - Frank added: "The default is by encoding as well." The code already has that shape (pcrec_find_byte_rate, findings.h:300).
 - Supersedes D186 add. 2's minimax line; main amends it. A2 and B6 dissolve. Rev 5 launched.
+
+## 2026-11-03 — rev 5 delivered (9c9aadb60); main's records; final re-check running
+
+Main ruled on the four kit findings (D186 add. 2):
+1. With no rates, the rules rank by MEMBER COUNT, declared as the rules' own tie-break.
+2. mf_prov.source and the bundle "default" label leave the seam in stage 1 (a stage-1 list item; fold into rev 5's text fixes).
+3. The default-prior change log is filed with the first such change.
+4. M2 is not ordered against row 1: priced rows go dark on bare compiles at M2 (intended); named-set compiles keep priced picks. Stage 2 = zen4-grid3.
