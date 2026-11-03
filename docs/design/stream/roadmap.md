@@ -104,7 +104,7 @@ round; L = a proof-sized lane with several rounds.
 | A-FACTS | the superset record `Nfa.erased`, `\G` and `\K` tested per consumer | three P1 facts: language superset, start pin, report shift | [KIND-FACT-GK] | p1build merged | (consumer kind tests; a meter) | M |
 | A-REC | the VM's typed records (D182); the DFA emitter prints directly | one record vocabulary for the whole artifact, target-neutral | [VMREC] (b), designed toward the stream | none | the DFA direct writer, at X-0 | M per step |
 | A-READS | read declarations, counterfactual worlds and conjunct types, each in several private shapes | one read row, one world record, one conjunct type | [ROWCONJ] | p1build (writes the fourth member) | R11, R18, R19 | M |
-| A-PLAN | the kit chooses its method and writes its C in one call from the emitter | the kit's planning face inside architecture (candidates + price cards); its emitting face inside emit; emit a pure function of the plan | split the kit's site call into a plan call and an emit call, no bytes | the kit's agreement (its split); the first stream step that touches search sites | (none in §5 yet; a new inventory row at the split) | M |
+| A-PLAN | the kit chooses its method and writes its C in one call from the emitter | the kit's planning face inside architecture (one plan per site and frame, a pure function; prices and alternatives in the trace); its emitting face inside emit; emit a pure function of the plan | split the kit's site call into a plan call and an emit call, no bytes | the kit's agreement (its split); the first stream step that touches search sites | (none in §5 yet; a new inventory row at the split) | M |
 | H-LADDER | the size-cap ladder | one world record; a row field `droppable`; legality and retry budget derived | name the owner, declare the append shape | none | R13 | S, then M |
 | H-FLAGS | emitter-to-driver `Job` flags, driver-to-row `Ctx` flags, driver-built machines | P3 `size` card facts; the plan requests machines, one builder | name the owner, declare the shape | none | R14 | S, then M |
 | H-SITES | per-site kit registries and pins | keyed by (operation, row name) | name the owners (pcrec + kit), declare the shape | the kit's confirmation | R15 | S, then M |
@@ -381,11 +381,12 @@ round; L = a proof-sized lane with several rounds.
 - **Today.** One call per search site from pcrec's emitter: pcrec describes the site, the kit picks
   its method and returns the C text (D146). The choice between a kit site and an automaton
   rendering of the same stretch is made by form, before any price is compared.
-- **End state.** §0a: the kit's planning face states candidates with price cards inside
-  architecture, per target; architecture chooses across providers under its rules; the kit's
-  emitting face renders the chosen candidate; emit decides nothing a card covers.
-- **Next step.** Split the site call into a plan call (facts in, candidates and cards out) and an
-  emit call (chosen candidate in, C out), byte-identical, with the kit.
+- **End state.** §0a: the kit's planning face inside architecture returns ONE plan per site for a
+  given frame (engine, target, layer), a pure function, so architecture compares scenarios by asking
+  once per frame under its rules; prices and alternatives appear only in the trace (D186 addendum 2);
+  the kit's emitting face renders the plan; emit decides nothing the plan covers.
+- **Next step.** Split the site call into a plan call (facts and frame in, one plan out) and an
+  emit call (the plan in, C out), byte-identical, with the kit.
 - **Prerequisites.** The kit's agreement (it is their split; a memfn request filed by the manager);
   the first stream step that touches search sites (ride-along).
 - **Deletes.** Nothing in §5 today; the split adds the plan/emit seam as a declared one.
