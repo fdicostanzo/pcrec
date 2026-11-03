@@ -3015,3 +3015,10 @@ Main's answers, for rev 3.1:
 - C6/M2: priced rows going dark on a bare compile under the M2 envelope is intended ("unknown target prices nothing"), and is M2's dependency; no safe-direction carriage.
 
 Pending with Frank: the blind rule (minimax vs win-under-both), C9, one plan vs priced list, and R9 (D186 over D144 item 3).
+
+## 2026-11-03 — blind rule = minimax (Frank via main), for rev 4
+
+The blind pick takes the least worst-case loss (minimax), with main's two guards:
+(a) the subject kinds include real data: the shipped log and weblog bundles, beside the prior and flat;
+(b) depart from today's pick only when the worst case improves by more than the cards' measured noise.
+This replaces "win under both P and F". Still open with Frank: C9 (SIMD own position), one plan vs priced list, R9 (D186 over D144 item 3).
