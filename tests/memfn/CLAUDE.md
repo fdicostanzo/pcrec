@@ -81,7 +81,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   dump fails its population, with a scratch control on every run (R4c′).
   Own CLAUDE.md.
 
-- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-Werror`, never runs it): a static assertion of `mf_akind.digest`'s offset. Reduced at span_pick 1g (MF_SITE_ABI 22) when `mf_prov` and pcrec's stanza mapping left the seam; finder_check L's parts (1)-(3) retired with them.
+- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-fsyntax-only -Werror`, never links or runs it): a static assertion of `mf_akind.digest`'s offset. Reduced at span_pick 1g (MF_SITE_ABI 22) when `mf_prov` and pcrec's stanza mapping left the seam; finder_check L (the seam allowlist, rate-site digest loop with reach control, no-`digest` scan) is the digest check.
 - Also (one-line entries for these are in the history file): `c10_onebyte.tsv`, `run_arm_reach.sh`, `run_libc_census.sh`, `run_presence.sh`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__memfn.md`.
