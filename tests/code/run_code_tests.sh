@@ -45,7 +45,7 @@
 #       arm 12 so the long suite stays last.
 # Arm 2 SKIPS LOUDLY when libpcre2 is absent (PC-3's shape).
 #
-# Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA.
+# Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA, SANFLAGS (the library link).
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -352,7 +352,7 @@ if printf '%s\n' "$fo" | grep -qE 'RX_CODE_LANGS[[:space:]]+"c"' &&
 else
     bad "--emit-facts read the code block: $(printf '%s\n' "$fo" | grep -E 'RX_FAKE|zzz|RX_SUBJ|CODE_LANGS' | tr '\n' ' ')"
 fi
-if [ -f "$LIBA" ] && $CC -O1 -I"$ROOT_DIR/lib" -o "$WORK/lib_check" "$SCRIPT_DIR/lib_check.c" "$LIBA" 2> "$WORK/lib.log"; then
+if [ -f "$LIBA" ] && $CC -O1 ${SANFLAGS:-} -I"$ROOT_DIR/lib" -o "$WORK/lib_check" "$SCRIPT_DIR/lib_check.c" "$LIBA" 2> "$WORK/lib.log"; then
     if "$TIMEOUT_BIN" 60 "$WORK/lib_check"; then
         ok "the library: allow_code is the only door"
     else
@@ -562,7 +562,12 @@ trap_row() {   # trap_row WHAT PATTERN SUBJECT [other-signal]
        ! $CC $GENCFLAGS -O1 -std=gnu11 -o "$K/tr" "$K/tr.c" 2> "$K/cc.log"; then
         bad "$1: did not build: $(cat "$K/p.log" "$K/cc.log" | head -3)"; return
     fi
-    "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
+    # Under the san battery a sanitizer catches the control's null store and
+    # exits 1 itself; abort_on_error turns that into SIGABRT (a non-trap
+    # signal), as an unsanitized build's SIGSEGV is.
+    UBSAN_OPTIONS="${UBSAN_OPTIONS:+$UBSAN_OPTIONS:}abort_on_error=1" \
+    ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}abort_on_error=1:handle_sigill=0" \
+        "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
     local rc=$?
     if [ -z "$TRAP_RC" ]; then bad "$1: exit $rc; no __builtin_trap signal is known for $(uname -m)"
     elif [ "${4:-}" = other-signal ]; then
