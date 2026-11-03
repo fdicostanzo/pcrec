@@ -3055,3 +3055,13 @@ Main ruled on the four kit findings (D186 add. 2):
   - stage 2's card timing goes through the queue, never 20:00-01:00 or a bench window;
   - stage 3 rows are each their own D186 choice change.
 - STOP and message main on anything non-routine (an unattributed red, an undeclared byte move, an answer-level finding, an owner ruling).
+
+## 2026-11-03 00:45 — span_pick STAGE 1 BUILD started (main's GO)
+
+- Main reviewed rev 5.2 and gave the GO under Frank's conditional approval (main 564db08c5).
+- Bench pattern list for the witness: every pattern in pcrec-bench/bench/*/subbench.toml at e351528a, read as collect.py reads them. Written once to docs/dev/lanes/spanpick_bench_patterns.txt and frozen for all of stage 1.
+- Landing order: 1a, 1f, 1g, 1b, 1c, 1d, 1e.
+- Per unit: a code critic round before landing, gates through the queue, delivered to main.
+- Kept counted names are reported to main before landing.
+- Stop on anything non-routine.
+- Lane sp1a (opus) launched; its queue jobs are 300-309, not before 01:05.
