@@ -1,13 +1,12 @@
-# span_pick — the kit's ONE "find the span" choice mechanism (design, rev 5.1)
+# span_pick — the kit's ONE "find the span" choice mechanism (design, rev 5.2)
 
-**Status: PROPOSED, rev 5.1 (lane spanpick51, 2026-11-03): THE TEXT THE STAGE-1 BUILD FOLLOWS. Design
-only: no build go by itself, no code, no make, no timing.** `[rev5.1]` Rev 5 plus review 2026-11-03
-r2's FIX-NOW items as the kit manager ruled them (§Disposition of review 2026-11-03 r2; R10 is main's
-pre-build step) and main's rulings after rev 5 (D186 add. 2's provenance and member-count sentences,
-7f55a62f9; [MEASURE-SET]'s RULED M2 line, fa736a260). Read §Staging's stage-1 tables and §The pick
-first; rev 5.1 text is marked `[rev5.1]`, older marks stay. Evidence: `units_inventory.md`,
-`r33_report.md`, `t588tri_report.md`, `bar588_report.md` (job 588), `window_site.md` rev 3.3,
-`measure_sets.md`, roadmap §0a/A-PLAN/§5; `span_pick/`. Code cites re-checked at main 4f9368e7c.
+**Status: PROPOSED, rev 5.2 (lane spanpick52, 2026-11-03): THE TEXT THE STAGE-1 BUILD FOLLOWS. Design
+only: no build go by itself, no code, no make, no timing.** `[rev5.2]` Rev 5.1 plus the diff check's
+C1-C8 (review r2's `CHECK_rev51.md`). `[rev5.1]` Rev 5 plus review 2026-11-03 r2's FIX-NOW items as
+ruled, and main's 7f55a62f9/fa736a260 rulings. Read §Staging's stage-1 tables and §The pick first;
+marks `[rev5.2]`, `[rev5.1]` and older stay. Evidence: `units_inventory.md`, `r33_report.md`,
+`t588tri_report.md`, `bar588_report.md` (job 588), `window_site.md` rev 3.3, `measure_sets.md`,
+roadmap §0a/A-PLAN/§5; `span_pick/`. Code cites re-checked at main 2636dee99 (code tree = 4f9368e7c).
 
 ## Goals
 
@@ -77,21 +76,20 @@ This mechanism IS the kit's planning face (roadmap §0a) and stage 1 IS A-PLAN's
 (an entry, two denies) and 1g (`mf_akind`'s provenance) are MF_SITE_ABI events; 1a and 1f (finder rows
 ahead of the PRES rows) MF_CLASS_V events. The reply grows (method, resume, frame row) at unit 3.0.
 
-**A-PLAN's open points.** (1) ONE PLAN WITH ITS TRACE (D186 add. 2; `[rev5 D1]` A-PLAN OPEN POINT 1
-already amended on main, 5e8bcf455/b405ff811); `[rev5.1 R10]` roadmap §0a's first bullet still says
-"candidates and their prices": main edits it and adds the kit's ratchet rows WITH recipes to §5 BEFORE
-1a; no stage-1 unit edits the roadmap. **The plan face is a PURE FUNCTION** (D186 add. 2) of (site
-facts, frame: engine/target/layer, measure set, handed rates): same inputs, same plan, no hidden
-state. `[rev5 C1]` One plan SUFFICES to compare scenarios once its price is readable (REVISIT TRIGGER:
-whole-artifact pricing un-deferred); until then the reply carries no price (trace only). `[rev5 C2]`
-**Axes**: site facts per CALL (`mf_wdecide(art, site, out)`); the frame no input through stage 1
-(window.c :1061; layer hard-coded, finder.c :934), per call from unit 3.0; set, handed rates, denies
-and levers per ART (`mf_art_begin`, compose.c :869-882). **Purity breakers today** `[rev5.1 R5]` (grep
-of memfn/src for mutable statics and `art->` uses; no local static, `_Thread_local` or `getenv`):
+**A-PLAN's open points.** (1) ONE PLAN WITH ITS TRACE (D186 add. 2; `[rev5 D1]` A-PLAN OPEN POINT 1 already
+amended on main, 5e8bcf455/b405ff811); `[rev5.1 R10, rev5.2 C8]` roadmap §0a and §5's kit rows R20-R27 are
+DONE on main (27cfc44f7, 2636dee99); no stage-1 unit edits the roadmap. **The plan face is a PURE FUNCTION**
+(D186 add. 2) of (site facts, frame: engine/target/layer, measure set, handed rates): same inputs, same
+plan, no hidden state. `[rev5 C1]` One plan SUFFICES to compare scenarios once its price is readable
+(REVISIT TRIGGER: whole-artifact pricing un-deferred); until then the reply carries no price (trace only).
+`[rev5 C2]` **Axes**: site facts per CALL (`mf_wdecide(art, site, out)`); the frame no input through stage 1
+(window.c :1061; layer hard-coded, finder.c :934), per call from unit 3.0; set, handed rates, denies and
+levers per ART (`mf_art_begin`, compose.c :869-882). **Purity breakers today** `[rev5.1 R5]` (grep of
+memfn/src for mutable statics and `art->` uses; no local static, `_Thread_local` or `getenv`):
 
 | breaker | where | unit 1d |
 |---|---|---|
-| (a) the sticky `art->err` refusal | window.c :1062; compose.c :960 | fixed only if every error path keeps its outcome and diagnostic, else its own unit change |
+| (a) the sticky `art->err` refusal | window.c :1062; compose.c :960 | `[rev5.2 C2]` FENCED in 1d, code unchanged: pcrec fails the compile on any refused define (`kit_check`, memfn_sites.c :674-678) and on any plan-call -1 (emit_dfa.c :1068, :7610), so no reply after a refusal reaches an artifact; purity is stated over arts with no error; a fix is its own later unit change, keeping every error path's outcome and diagnostic |
 | (b) the call-order label `art->nsites + 1`, and `fd_route`'s `handle` | window.c :997, :1007, :1734, :1818; finder.c :930, :863; ofsskip.c :486; compose.c :268, :281, :982, :988, :1005 | trace-only (gate.c :936): stays unread by rows |
 | (c) the process-global reach counters and `trace_arts` | gate.c :850-856; read by `reach_print` (:884-900), rows_check.py (`asked` = the phase=ask FD records), run_g2.sh :986-1024 (per-row floors), run_g2_gate.sh :144, `memfn/docs/trace_format.md` "Reach" | ALREADY FENCED, KEPT: `mf_wdecide` decides quiet (window.c :1070) and quiet counts no reach (gate.c :943/:956/:978), so reach counts on the define. The risk is serving phase 2 from a stored phase-1 plan (the counted define drops): no cache. Trace records and counters are fenced together or not at all |
 | (d) `art->consulted` | no writer today: kit.h :292 declares it, `mf_art_end` reads it (compose.c :1303) | a FUTURE breaker: the plan call takes `const mf_art *`, so a T-PICK row sets it on the define path (non-quiet). pcrec ORs it over every attempt and part (memfn_stamps.c :275-286): "taken" means a define, every attempt's define counts |
@@ -140,18 +138,19 @@ retires only when a census shows no site reads it as a pick OR as an incumbent, 
 | `[rev5.1 R2]` HORS_MIN and MARGIN reading the NONE row's uniform mass as a density: D-hors admits under NONE at 38 or more members (window.c :1596, HORS_MIN 145,822); MARGIN's cost ratio (window.c :669-683) | D-hors admission, M (today's answers; every `-e utf8` compile is NONE) | [SPAN-PICK-UTF8]'s per-encoding prior, or a priced row on NONE |
 
 **The decider census** `[rev3 P4, rev5.1 R3a]` (Goal 3's check, per unit HEAD) is a DECLARED FUNCTION
-LIST: a committed map `function[:part] -> table or named exception`, plain loops mapped by hand,
-written by 1a's lane at its base, kept by each unit's lane. Base members (main 4f9368e7c): `fd_route`,
-`fd_find`; compose's `arms[]` walk; `fn_rows` BODY and PREFIX; vrun's KA/KB; Table E's walk and the
-B-row loop (`wf_find_decide`, window.c :1754); KEY's rows (`a_empty_holds` .. `a_none_choose`,
-window.c :398-570); `m_one_holds`, `m_margin_holds`, `m_parked_holds`; `run_member`; `tie_takes`;
-`find_groups`/`run_group_ok`; `translate` (grouping; run rank :1335); `d_hors_holds`;
-`kit_pres_picks`'s set pick (presence.c :165), run scan (:182), run window (:192), landmark
-(:222-245); `fd_pres`'s chain (finder.c :984ff); `implied_by` (precheck.c :158); `rc_row_of`;
-`kit_set_test`; generic.c's RUN chain. A grep of memfn/src is the BACKSTOP, red on a hit in no listed
-function: `kit_walk(`, `< best`, `< bm`, `< lo`, `< sm`, `< wl`, `> c)`, `tie_takes`, `TIE_`,
-`[rev5 E1]` `< inc`. Two plants, byte-identical copies in an unlisted function, must go red:
-`run_member`'s loop and presence.c :182's `c < sm` loop.
+LIST, a committed map `function[:part] -> table or named exception` (plain loops by hand) written by
+1a's lane at its base, kept by each unit's. Members `[rev5.2 C3: by name]`: finder.c `fd_route`,
+`fd_find`, `fd_decide`, `fd_pres`'s chain; compose.c `select_arm` (`arms[]`); ofsskip.c `fn_select`,
+`ofs_fn_serves` (`fn_rows` BODY, PREFIX); vrun's KA/KB; window.c `decide` (KEY, M walks), `a_empty_holds`
+.. `a_none_choose`, `m_one_holds`, `m_margin_holds`, `m_parked_holds`, `run_member`, `tie_takes`,
+`find_groups`, `run_group_ok`, `translate` (grouping; run rank :1335), `d_hors_holds`, `wf_find_decide`
+(Table D, B rows), `wf_prepare` (Table E), DATA member `wf_ties` + `TIE_` (:77-101) -> TIE; presence.c
+`kit_pres_picks`'s set pick (:165), run scan (:182), run window (:192), landmark (:222-245); precheck.c
+`implied_by`; runcmp.c `rc_row_of`; generic.c `kit_set_test`, the RUN chain. EXCLUDED: `kit_walk`'s
+definition (compose.c :192), prototype (kit.h :951). BACKSTOP: a grep of memfn/src/*.{c,h,def}, red
+on a hit in no member: `kit_walk(`, `< best`, `< bm`, `< lo`, `< sm`, `< wl`, `> c)`, `tie_takes`,
+`TIE_`, `[rev5 E1]` `< inc`; at 2636dee99 all 36 hit lines map. Two plants, byte-identical copies in
+an unlisted function, must go red: `run_member`'s loop and presence.c :182's `c < sm` loop.
 
 **Growth rule.** A new scenario adds no table; a new method adds a T-FIND row and card (D176);
 `[rev5.1 R15]` its movers census counts the sites it does NOT win too (§The pick 3). `[rev5 E2]`
@@ -352,42 +351,43 @@ byte-identity witness; one that cannot be byte-identical lands alone as a unit c
 read 1a's census map and ratchet base; 1c needs 1b (presence's `mf_term` cubes need the
 position-multiset primitive); 1e needs 1d (D-hors's admission and D-shift resume read T-VERIFY's step
 list); 1f follows 1a so 1e's merged walk never carries R8/R1/R2, their denies and the pay rule; 1g is
-independent, beside 1f's seam event; main's R10 step comes first.
+independent, beside 1f's seam event; main's R10 step is done (`[rev5.2 C8]`).
 
 | unit | content | deletes |
 |---|---|---|
-| 1a dead code `[rev3 P3]` | N3 `mf_set_terms` (internal: no seam event); inert rows R3a/R3b/R4 (no deny; zero reach by code); MF_CLASS_V (pres_row shift); writes the census map and takes the ratchet base | 4 members |
-| 1f retired denies `[rev3 P3]` | R8/R1/R2 with `fd-r8`/`fd-ndisp`, the §2.5 pay rule (`fd_pay`, `pay_fill`, `n_interval`) and the public `mf_finder_pay`; CALLER-VISIBLE, not a no-mover: `registry.md` §6¶8a/§6¶8b hunks (floor 14 -> 12), `--list-axes` re-pin; an MF_SITE_ABI and `[rev5.1 R3]` an MF_CLASS_V event (R8/R1/R2 precede the PRES rows, finder.c :249ff) | 3 rows, 2 denies, the pay rule, 1 entry |
-| 1g provenance leaves the seam `[rev5.1 R1]` | D186 add. 2 (main 7f55a62f9): `mf_akind` becomes {tag, version, present, digest, payload}. The DIGEST STAYS, as `mf_akind.digest`: the kit's trace names it from row 1. `source` and the bundle label leave as ruled; `bytes` and `fidelity` leave too: they let the kit tell a measured bundle from the default (bytes 0 for the default, findings.c :579), and the band's sampling term is noise pcrec states. `mf_prov`, `mf_prov_source`, `mf_prov_fidelity` and pcrec's stanza mapping go; an MF_SITE_ABI event, byte-identical (no kit `.c` reads them; MF_SITE_ABI reaches no text, memfn_sites.c :413); no docs/spec names them | 1 struct, 2 enums, 1 mapping |
-| 1b primitives `[rev3 S1, S2]` | U4 one mass primitive over a POSITION MULTISET (a list of cubes, a repeated byte counted per position, as `window_mass`: a set-shaped primitive moves `run_window`, e.g. `zzzzzzz~J`), a capped/uncapped argument, the NONE-mode total (62,500, not 62,496); the landmark admission's per-factor round-up product stays its caller's; `[rev5.1 R2]` the DECLARED NONE ROW: no rates handed, a set's mass is its member count's uniform ppm, floor(k x 1e6 / 256) (`uniform_mass`, presence.c :58-62), the rules' own tie-break by member count (D186 add. 2), its density readers the named exception; U5 `wf_ties` with the presence-member row and presence's run window reading T_WINDOW | 2-3 mass variants, 2 tie spellings |
-| 1c kit-only spellings `[rev3 S1]` | U2: P3's `run_scan` asks `run_member`; translate's run rank reads T_MASS_STRETCH, `rank_pos[0]` asserted against `run_member`; `[rev5.1 R4]` U6 is NOT here (a named member; its ratchet row kept) | 2 |
-| 1d planning core `[rev5 C5]` | one candidate builder; KEY/M/TIE as the default; T-VERIFY as a step list with C-bound and the run member (`translate`'s grouping a named member, R8); trace without prices (U1 as two KEY rows, U10 = Table C + ofsskip's legacy plan, N1, N6); PURITY per the breaker table `[rev5.1 R5]` | `a_model_choose`'s private enumeration, `mass_domain`'s copy |
-| 1e phase-2 tables `[rev3 P1, P2]` | T-FRAME (legacy first) at text time; T-FIND as ONE walk with the asker fact, Horspool first, then today's order (R9); the renderer row (B-fn/B-pair, reconciliation kept); compose `arms[]` and `fd_find`'s text become renderers keyed by (frame row, method row, renderer row) (U3 less OFS, N5, N11); no MF_SITE_ABI event; MF_CLASS_V if the Horspool row's move shifts pres_row | `fd_find`/`fd_route`'s second entry walk |
+| 1a dead code `[rev3 P3]` | N3 `mf_set_terms` (internal: no seam event); inert rows R3a/R3b/R4 (no deny; zero reach by code); MF_CLASS_V (pres_row shift); writes the census map and takes the ratchet base | 4 members `[rev5.2 C7]`: R26 -3, R27 -1 |
+| 1f retired denies `[rev3 P3]` | R8/R1/R2 with `fd-r8`/`fd-ndisp`, the §2.5 pay rule (`fd_pay`, `pay_fill`, `n_interval`) and the public `mf_finder_pay`; CALLER-VISIBLE, not a no-mover: `registry.md` §6¶8a/§6¶8b hunks (floor 14 -> 12), `--list-axes` re-pin; an MF_SITE_ABI and `[rev5.1 R3]` an MF_CLASS_V event (R8/R1/R2 precede the PRES rows, finder.c :249ff) | 3 rows, 2 denies, the pay rule, 1 entry `[rev5.2 C7]` (no R20-R27 row counts them: the registry hunks and `--list-axes` do) |
+| 1g provenance leaves the seam `[rev5.1 R1]` | D186 add. 2 (main 7f55a62f9): `mf_akind` becomes {tag, version, present, digest, payload}. The DIGEST STAYS, as `mf_akind.digest`: the kit's trace names it from row 1. `source` and the bundle label leave as ruled; `bytes` and `fidelity` leave too: they let the kit tell a measured bundle from the default (bytes 0 for the default, findings.c :579), and the band's sampling term is noise pcrec states. `mf_prov`, `mf_prov_source`, `mf_prov_fidelity` and pcrec's stanza mapping go; an MF_SITE_ABI event, byte-identical (no kit `.c` reads them; MF_SITE_ABI reaches no text, memfn_sites.c :413); no docs/spec names them | 1 struct, 2 enums, 1 mapping (no R20-R27 row) |
+| 1b primitives `[rev3 S1, S2]` | U4 one mass primitive over a POSITION MULTISET (a list of cubes, a repeated byte counted per position, as `window_mass`: a set-shaped primitive moves `run_window`, e.g. `zzzzzzz~J`), a capped/uncapped argument, the NONE-mode total (62,500, not 62,496); the landmark admission's per-factor round-up product stays its caller's; `[rev5.1 R2]` the DECLARED NONE ROW: no rates handed, a set's mass is its member count's uniform ppm, floor(k x 1e6 / 256) (`uniform_mass`, presence.c :58-62), the rules' own tie-break by member count (D186 add. 2), its density readers the named exception; U5 `wf_ties` with the presence-member row and presence's run window reading T_WINDOW | 2-3 mass variants, `[rev5.2 C7]` 1 tie spelling (`tie_over`; `wf_ties` stays): R22 -2 or -3, R23 -1 |
+| 1c kit-only spellings `[rev3 S1]` | U2: P3's `run_scan` asks `run_member`; translate's run rank reads T_MASS_STRETCH, `rank_pos[0]` asserted against `run_member`; `[rev5.1 R4]` U6 is NOT here (a named member; its ratchet row kept) | `[rev5.2 C7]` 1: R24 -1 (`run_scan`'s spelling); -2 only if translate's rank is derived from `run_member` and its `rank_pos[j] = (uint16_t)i` loop goes; R25 unchanged |
+| 1d planning core `[rev5 C5]` | one candidate builder; KEY/M/TIE as the default; T-VERIFY as a step list with C-bound and the run member (`translate`'s grouping a named member, R8); trace without prices (U1 as two KEY rows, U10 = Table C + ofsskip's legacy plan, N1, N6); PURITY per the breaker table `[rev5.1 R5]` | `a_model_choose`'s private enumeration, `mass_domain`'s copy `[rev5.2 C7]`: R21 -1 (`mass_domain`'s copy: no row, the census map's) |
+| 1e phase-2 tables `[rev3 P1, P2]` | T-FRAME (legacy first) at text time; T-FIND as ONE walk with the asker fact, Horspool first, then today's order (R9); the renderer row (B-fn/B-pair, reconciliation kept); compose `arms[]` and `fd_find`'s text become renderers keyed by (frame row, method row, renderer row) (U3 less OFS, N5, N11); no MF_SITE_ABI event; MF_CLASS_V if the Horspool row's move shifts pres_row | `fd_find`/`fd_route`'s second entry walk `[rev5.2 C7]`: R20 -1 (3 -> 2: `select_arm` and BODY stay, named exceptions) |
 
 **Each unit's readers and extra witness** `[rev5.1 R1, R3, R6, R7, R11]` (readers by grep at main
-4f9368e7c; "RETIRED" = deleted with its registration):
+2636dee99; "RETIRED" = deleted with its registration):
 
 | unit | readers it edits | its witness, beyond the per-unit one |
 |---|---|---|
-| 1a | finder_check.py :109 `FIND_ROWS`; rows.tsv :120-122; row_floors.tsv :104-106 (the `kit.h3a`/`kit.gstar.*` keys stay in zen4-grid1, unread) | the census map's base, red on both plants |
-| 1f | grep `fd-r8\|fd-ndisp\|mf_finder_pay\|fd_pay\|pay_fill\|n_interval`: finder.c (rows :249ff, the pay rule); options.def :58-66; memfn.h :1550-1557 and its MF_SITE_ABI history; arm_fixtures.c :1685 (`--pay-grid`: a build break); finder_check.py :109, :119 `B1_DENIES`, :493, :641 (section H); rows.tsv :119, :123-124; row_floors.tsv :103, :107-108; rows_check.py :495; tests/axes/memfn_arm.py :122-125; emit_sweep.py :553-560, :605-609, :2996-2997 (`IDENT_MEMFN`); S1025_sn9-pay-tie-pays.sh RETIRED (run_sabotage_matrix.sh :497); `registry.md` §6¶8a/§6¶8b (axes_registry_check.sh reads the floor there) | `--list-axes` moves exactly by the two rows (emit_sweep stream 5) |
-| 1g | grep `MF_PROV_\|MF_FID_\|mf_prov\|\.prov\.\|->prov\b\|prov_stanza`: memfn.h :1205-1238 (its stale "NO kit row reads it before B3a" too), its MF_SITE_ABI history, memfn/include/CLAUDE.md; memfn_sites.c :186-191 (`akind_source_map`), :273-280 (writes; the out-of-vocabulary fidelity refusal goes with the mapping, the schema's `closed fidelity` row already holds it), :582-613 (`prov_fidelity_rows`, `pcrec_memfn_prov_stanza`), :233-249 (the `KSRCTRACE object` record reads bytes/fidelity from the BUILT object: it reads pcrec's offer instead, columns unchanged, and tests/findings/e1_object_check.py's header re-states its premise: the offer, not the object); memfn_sites.h :170-176; tests/memfn/prov_check.c (offsetof :27-31: a build break; reduced to `mf_akind.digest`'s offset) and its build, run_finder.sh :37-41; finder_check.py section L (:654-740: parts (1)-(3) test the stanza and retire; part (4)'s `KIT_READERS_RE` :658 re-aimed at "memfn.h states no source, bundle, bytes or fidelity", its render loop varying the digest; docstring :65); S1092_prov-stanza-drops-fidelity.sh RETIRED (run_sabotage_matrix.sh :503); arm_fixtures.c :1267, :1569-1590 (`fd_an_make`); memfn/tests/g2/g2_win_gen.c :625-627, :830-831 (build breaks); `window_contract.md` §3.1/§3.2 (a revision line). NOT readers: the `KSRCTRACE` line counters (emit_sweep.py :2777, run_part_analysis.sh, data_trace_check.py, S1332); docs/dev/lanes/r33_sim/probe.c (lane evidence) | the `KSRCTRACE object` records unchanged byte for byte; finder_check L green |
+| 1a | finder_check.py :109 `FIND_ROWS`; rows.tsv :120-122; row_floors.tsv :104-106 (the `kit.h3a`/`kit.gstar.*` keys stay in zen4-grid1, unread) | the census map's base, red on both plants; `[rev5.2 C6]` reach equality on every SURVIVING row, the declared difference the three gone `table=fd` lines R3a, R3b, R4 |
+| 1f | grep `fd-r8\|fd-ndisp\|mf_finder_pay\|fd_pay\|pay_fill\|n_interval`: finder.c (rows :249ff, the pay rule); options.def :58-66; memfn.h :1550-1557 and its MF_SITE_ABI history; arm_fixtures.c :1685 (`--pay-grid`: a build break); finder_check.py :109, :119 `B1_DENIES`, :493, :641 (section H); rows.tsv :119, :123-124; row_floors.tsv :103, :107-108; rows_check.py :495; tests/axes/memfn_arm.py :122-125; emit_sweep.py :553-560, :605-609, :2996-2997 (`IDENT_MEMFN`); S1025_sn9-pay-tie-pays.sh RETIRED (run_sabotage_matrix.sh :497); `registry.md` §6¶8a/§6¶8b (axes_registry_check.sh reads the floor there) | `--list-axes` moves exactly by the two rows (emit_sweep stream 5); `[rev5.2 C6]` reach equality on every SURVIVING row, the declared difference the three gone `table=fd` lines R8, R1, R2 (whether their `asked` is non-zero today, as heads of the FIND walk, is SUSPECTED, not run: their lines go whatever their counts) |
+| 1g | grep `MF_PROV_\|MF_FID_\|mf_prov\|\.prov\.\|->prov\b\|prov_stanza`: memfn.h :1205-1238 (its stale "NO kit row reads it before B3a" too), its MF_SITE_ABI history (`[rev5.2 C4]` :105-108's 15 entry names `mf_prov`: history, kept; the new entry records the removal), memfn/include/CLAUDE.md; `[rev5.2 C4]` memfn/CLAUDE.md :38 and tests/memfn/CLAUDE.md :82 (name `prov_check.c`: its role restated); memfn_sites.c :186-191 (`akind_source_map`), :273-280 (writes; the out-of-vocabulary fidelity refusal goes with the mapping, the schema's `closed fidelity` row already holds it), :582-613 (`prov_fidelity_rows`, `pcrec_memfn_prov_stanza`), :233-249 (the `KSRCTRACE object` record reads bytes/fidelity from the BUILT object: it reads pcrec's offer instead, columns unchanged, and tests/findings/e1_object_check.py's header re-states its premise: the offer, not the object); memfn_sites.h :170-176; tests/memfn/prov_check.c (offsetof :27-31: a build break; reduced to `mf_akind.digest`'s offset) and its build, run_finder.sh :37-41 (kept: a build-only static assertion); `[rev5.2 C4]` the `--provchk` plumbing GOES with parts (1)-(3): run_finder.sh :67's argument, finder_check.py `prov_run` :675-679, :748 (required argument), :758 (`check_prov(..., a.provchk)`); finder_check.py section L (:654-740: parts (1)-(3) test the stanza and retire; part (4)'s `KIT_READERS_RE` :658 re-aimed at "memfn.h states no source, bundle, bytes or fidelity", its render loop varying the digest, `[rev5.2 C8]` its plant a kit row reading `mf_akind.digest` (holds iff the digest is odd), red; docstring :65); S1092_prov-stanza-drops-fidelity.sh RETIRED (run_sabotage_matrix.sh :503); arm_fixtures.c :1267, :1569-1590 (`fd_an_make`); memfn/tests/g2/g2_win_gen.c :625-627, :830-832 (build breaks; `[rev5.2 C4]` :832's `prov.digest` moves to `mf_akind.digest`, as :627's); `window_contract.md` §3.1/§3.2 (a revision line). NOT readers: the `KSRCTRACE` line counters (emit_sweep.py :2777, run_part_analysis.sh, data_trace_check.py, S1332); docs/dev/lanes/r33_sim/probe.c (lane evidence) | the `KSRCTRACE object` records unchanged byte for byte; finder_check L green |
 | 1b | — | a golden-value test of the one primitive: NONE at k = 1, 3, 6, 16, 256; a repeated byte per position; capped vs uncapped |
-| 1d | compose.c :882's stale comment ("no row reads it before B3a") | REACH EQUALITY; the PURITY HARNESS, built by 1d's lane in arm_fixtures: N window sites, plan calls in order, reversed and repeated, `mf_wreply` compared field by field; it passes trivially today, so its sabotage row reads `art->nsites` (red under reordering), plus a sticky-`err` case (a D27 author optional) |
+| 1d | compose.c :882's stale comment ("no row reads it before B3a") | REACH EQUALITY; the PURITY HARNESS, built by 1d's lane in arm_fixtures `[rev5.2 C1]`: N window sites; each site's `mf_wreply` on a fresh art is compared field by field with its reply after k `mf_define`s of the other sites (k = 0..N-1, in order, reversed and repeated), the plan calls INTERLEAVED with the defines. WHY: `art->nsites`' one writer is `mf_define` (compose.c :1072) and the plan face takes `const mf_art *` (window.c :1058), so plan calls alone see one `nsites` in every order and a row keyed on it stays green (K35); order reaches the plan face only through defines, the real phase-1/phase-2 interleave. Its plant: a KEY or M row that changes an answer with `nsites` (holds iff `nsites > 0`), red; its CONTROL: the plant moves a reply on the unharnessed fixture (plant build vs base build, a site asked after one define), so the plant is reached. `[rev5.2 C2]` The sticky-`err` case: after a refused define every plan call returns -1, asserted as breaker (a) FENCED, not a purity failure; equal replies are asserted only if a later unit fixes (a). A D27 author optional |
 | 1e | a DECLARED `wfD` -> `fd` row map: rows.tsv, row_floors.tsv, rows_check.py's derived row set, the MFTRACE table names | REACH EQUALITY through that map |
 
 **Witness, per unit**: `scripts/emit_sweep.py` byte-identical on EVERY arm (default, each
-`--memfn=no-X` deny, `--engine=vm`, both SIMD layers), stamps included, over the corpus plus
-`[rev5.1 R6]` three `--patterns-file` inputs: job 588's sample
-(`docs/dev/lanes/s3_evidence/sample_588.tsv`, the list `gen_sample_588.py` reads), the bench pattern
-list (main names it) and `zzzzzzz~J`; `*_movers.txt` unchanged; G2; the census; REACH EQUALITY, not
-floors (floors are 0.9 x measured): chosen and asked per row (`MFTRACE REACH`) equal at base and HEAD.
-**Ratchet** (roadmap §5; rows WITH recipes added by main before 1a, R10): find-method deciders
-(`fd_route`, `fd_find`, compose's method walk, `fn_rows` BODY; members − 1), position enumerators,
-mass variants, tie and run-member spellings, the landmark shadow, inert finder rows (`b_fn_holds` is
-FRAME family), counted at 1a's base; each unit lowers its row. **Sequencing** (D153): opt rows
-touching window.c, finder.c, ofsskip.c, compose.c or presence.c carry "remodel overlap" and wait; O3 =
-WAIT: smp04, look-ahead.
+`--memfn=no-X` deny, `--engine=vm`, both SIMD layers), stamps included, over the corpus plus `[rev5.1
+R6]` three `--patterns-file` inputs (a pattern per line in `--list-source` escapes, `#` lines skipped,
+emit_sweep.py :1553): `[rev5.2 C5]` job 588's sample, column 3 of
+`docs/dev/lanes/s3_evidence/sample_588.tsv` (`pick_588.py` writes it in those escapes) less its `#`
+lines, in a scratch file, 24 patterns counted in and out; the bench pattern list (main names it); `zzzzzzz~J`. `*_movers.txt`
+unchanged; G2; the census; REACH EQUALITY, not floors (0.9 x measured): chosen and asked per row
+(`MFTRACE REACH`) equal at base and HEAD on every SURVIVING row, a unit's deleted rows' lines its
+declared difference (1a, 1f; 1e's row map). **Ratchet** `[rev5.2 C7]`: roadmap §5's R20-R27
+(2636dee99; 15 at 27cfc44f7), each unit's delta in its "deletes" cell; stage 1 ends at 4 or 5 (R20 2,
+R24 1, R25 1, R22 0-1). A counted name a unit keeps as a thin caller still counts: main re-states that
+recipe before the unit lands, or the lane drops the name. **Sequencing** (D153): opt rows on window.c,
+finder.c, ofsskip.c, compose.c or presence.c wait ("remodel overlap"); O3 = WAIT: smp04, look-ahead.
 
 **Stage 2: measure the cards** `[rev3 O1, A2]`, directly after stage 1 (D186 add. 1 A2): §Cost cards
 (scalar and SIMD forms; Horspool's later), the noise channel (coverage factor, the noise pcrec
@@ -432,7 +432,7 @@ trigger fires here). No reader, zero movers, stamps and `DEFAULTS` unchanged.
 
 | # | when | pcrec hands | pcrec's stamp |
 |---|---|---|---|
-| 0 `[rev5.1 R12]` | an `--analysis` chain answers `byte-rate` for this encoding but cannot derive it (T-KIND `underivable-arrives`, findings.c :538): the compile is REFUSED iff the kind is consulted (`window_contract.md` §3.3 rule 9; `-e utf8 --analysis l1none` refuses) | unconsulted: none (PRESENT, PRIOR_NONE, no payload) | none |
+| 0 `[rev5.1 R12]` | an `--analysis` chain answers `byte-rate` for this encoding but cannot derive it (T-KIND `underivable-arrives`, findings.c :538): the compile is REFUSED iff the kind is consulted (`window_contract.md` §3.3 rule 9; `-e utf8 --analysis l1none` refuses) | unconsulted: none (PRESENT, no payload; `[rev5.2 C8]` PRIOR_NONE is pcrec's offer state, the seam carries no source after 1g) | none |
 | 1 | an `--analysis` chain answers `byte-rate` for this compile's encoding (`findings.md` §1, §7) | that bundle's rates, B | `B:digest` |
 | 2 | else the built-in `default` serves this encoding (`findings.md` §2¶7: today `-e byte` only) | the default's rates, P | `default:digest` |
 | 3 | else | none (rules only, as M2's unknown target) | none |
@@ -490,7 +490,7 @@ census owns them), INTENDED; named-set compiles keep their priced picks. Stage 1
 
 ## Disposition of review 2026-11-03 r2
 
-`[rev5.1]` Every id, as the kit manager ruled (all PROPOSED dispositions accepted).
+`[rev5.1]` Every id as the kit manager ruled (all PROPOSED accepted); `[rev5.2]` C1-C8 (`CHECK_rev51.md`).
 
 | id | disposition | where |
 |---|---|---|
@@ -509,31 +509,37 @@ census owns them), INTENDED; named-set compiles keep their priced picks. Stage 1
 | R15-R20 (SIM-1/2/3/5/6/8/9, FIX-7/8) | FIXED: weak property, defined anchor, Growth census; the c_P bound; one candidate set scoped, cause (v), row 1 on stated facts; tie rows per level; the either-side noiseless rule; band-0 labels, the stamp digest, the RTE split, 0.971, 3,381 of 3,536 | §The pick; §The tables; §Robustness; §The shape |
 | R21, R22 (SIM-7, FIX-10) | PLAN: row 1's design items, one sentence each now | §Staging row 1 |
 | families (FIX) | NOTED: handed-fact resolution -> a PLAN row (trigger: first priced row reading rates; unlock: the consult mask); hysteresis: E2 at row 1 | For main |
+| C1 (diff check) | FIXED: the purity harness interleaves `mf_define`s between plan calls (fresh art vs after k defines; in order, reversed, repeated), with WHY (one `nsites` writer; `const mf_art *`); plant holds iff `nsites > 0`, with a reach control | 1d's witness |
+| C2 (diff check) | FIXED: breaker (a) FENCED in 1d, code unchanged (pcrec fails the compile on any refusal); sticky-`err` case expects -1 on every later plan call, recorded as breaker (a) | breaker table; 1d's witness |
+| C3 (diff check) | FIXED: census list by name: `fd_decide`, `decide`, `select_arm`, `fn_select`, `ofs_fn_serves`, `wf_prepare` (Table E's walk, split from `wf_find_decide`'s Table D), `wf_ties` a DATA member; `kit_walk` def/prototype excluded; backstop re-run at 2636dee99, all 36 hit lines map | §The tables, the census |
+| C4 (diff check) | FIXED: 1g adds g2_win_gen.c :832, the `--provchk` plumbing (goes: run_finder.sh :67, finder_check.py :675-679, :748, :758), memfn/CLAUDE.md :38, tests/memfn/CLAUDE.md :82, memfn.h :105-108 (history, kept) | 1g's readers |
+| C5 (diff check) | FIXED: the 588 input is column 3 of sample_588.tsv (`pick_588.py`'s, in emit_sweep's escapes), `#` lines dropped, 24 patterns counted; the patterns-file format stated | §Staging, Witness |
+| C6 (diff check) | FIXED: reach equality on surviving rows; 1a's declared difference R3a/R3b/R4, 1f's R8/R1/R2 | 1a, 1f witness; Witness |
+| C7 (diff check) | FIXED: "deletes" restated as R20-R27 deltas (1a R26 -3, R27 -1; 1b R22 -2/-3, R23 -1; 1c R24 -1, -2 only with translate's rank derived; 1d R21 -1; 1e R20 -1; 1f/1g none): 15 -> 4 or 5; thin-caller names re-stated by main first | §Staging table; Ratchet |
+| C8 (diff check) | FIXED: row 0 "(PRESENT, no payload)"; L(4)'s plant (a kit row reading `digest`); R10 and four rows DONE, the bench pattern list still owed | §pcrec-side; 1g; For main |
 
 ## Owner rulings since rev 4
 
-Rev 5's rows stand, durable in D186 add. 2 (main 5d42c5618): blind uses the DEFAULT by pcrec's
-first-match table, the kit sees rates and digest only; no bundle moves a blind pick; robustness is
-measured per row, a random-like regime required; a default-prior change is a data event; the
-[BENCH-WITHDATA] blind testee is P-only; smp20 blind "consistent with the default", with data '/' or
-'4'. `[rev5.1]` Since rev 5: provenance leaves the seam in stage 1, no-rates ranks by member count
-(7f55a62f9: 1g, 1b); M2 unordered against row 1, bare compiles dark at M2 (fa736a260: §What moves).
-**Earlier dispositions** `[rev5 D3]` stand as rev 5 wrote them, except review r1's A1, `[rev5.1 R14e]`
-now REDUCED: within one rate source the pairwise form IS §The pick 3's qualifier test. **For main**
-`[rev5.1]`: BEFORE 1a, roadmap §5's kit ratchet rows WITH recipes (members named, the position
-enumerators too) and §0a's first bullet (R10); name the bench pattern list; a manager line amending
-D176 Q5's "existing rows" for the method tie (R19); D186 add. 2's source list gains the refuse row
-(R12), its "smp20 blind keeps {x,X}" is a forecast the cards may fail (R14d), its pairwise-minimax
-line is reduced to the qualifier test (R14e); [MEASURE-SET]'s `next:` lacks `enter` and memchr-back
-(R14c); a PLAN row for the handed-fact family and its consult mask (R12); rows [SPAN-PICK-UTF8],
-[SPAN-PICK-PERCALL], [PICK-IDIOM], an [IFACE-PUSH] class option.
+Rev 5's rows stand, durable in D186 add. 2 (main 5d42c5618): blind uses the DEFAULT by pcrec's first-match
+table, the kit sees rates and digest only; no bundle moves a blind pick; robustness is measured per row, a
+random-like regime required; a default-prior change is a data event; the [BENCH-WITHDATA] blind testee is
+P-only; smp20 blind "consistent with the default", with data '/' or '4'. `[rev5.1]` Since rev 5: provenance
+leaves the seam in stage 1, no-rates ranks by member count (7f55a62f9: 1g, 1b); M2 unordered against row 1,
+bare compiles dark at M2 (fa736a260: §What moves). **Earlier dispositions** `[rev5 D3]` stand as rev 5 wrote
+them, except review r1's A1, `[rev5.1 R14e]` now REDUCED: within one rate source the pairwise form IS §The
+pick 3's qualifier test. **For main** `[rev5.1]`: `[rev5.2 C8]` DONE on main: R10, [SPAN-PICK-UTF8],
+[SPAN-PICK-PERCALL], [PICK-IDIOM], the [IFACE-PUSH] option. OWED before 1a's witness runs: the bench pattern
+list. Owed otherwise: a manager line amending D176 Q5's "existing rows" for the method tie (R19); D186 add.
+2's source list gains the refuse row (R12), its "smp20 blind keeps {x,X}" is a forecast the cards may fail
+(R14d), its pairwise-minimax line is reduced to the qualifier test (R14e); [MEASURE-SET]'s `next:` lacks
+`enter` and memchr-back (R14c); a PLAN row for the handed-fact family and its consult mask (R12).
 
 ## Open questions
 
-`[rev5.1]` None for the owner or the kit manager (R1, R4 and R8 are decided by the rulings).
+`[rev5.1, rev5.2]` None for the owner or the kit manager (R1, R4 and R8 are decided by the rulings).
 
 ## STATE AT HANDOFF
 
-OWED none. Lane spanpick51: rev 5.1 (review 2026-11-03 r2's FIX-NOW items as ruled; main's 7f55a62f9
-and fa736a260 rulings); every code cite re-checked at main 4f9368e7c by grep; the CLAUDE.md rev line.
-No instrument re-run (the new counts are the review's recomputations). No make, no timing. Not a build go.
+OWED none. Lane spanpick52: rev 5.2 (C1-C8 of `CHECK_rev51.md`), merged with main 2636dee99, new cites
+re-checked there by grep (the backstop, 1g's grep plus `provchk`, sample_588.tsv against
+`read_patterns_file`, R20-R27's recipes); the CLAUDE.md rev line. No make, no timing. Not a build go.
