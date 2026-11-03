@@ -1,0 +1,5 @@
+PF sites 1767 with >=2 alternatives 1454
+FUNC/handoff-0 window sites 381 site_kind UNSTATED 381
+entry x Table A row {('NONE', 'A-mass'): 1432, ('PARKED', 'A-parked'): 1857, ('RESEED', 'A-model'): 415, ('RESEED', 'A-floor'): 1420}
+replies stating a run 483 stop != run member 31
+fd rows {'D1': 1510, 'R7w': 1101, 'P3': 1100, 'PAIR': 101, 'P4': 20, 'P0': 546, 'D1w': 143, 'D1c': 39}
