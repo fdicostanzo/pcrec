@@ -23,7 +23,29 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `94` on every artifact today ([MEMFN] R-30, lane r30b,
+- **`rx_info.abi` is `95` on every artifact today ([LANDWALK] stage 1, 94 -> 95,
+  numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
+  built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;
+  D184; docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md
+  rev 3).** A new LOCATE row `landmark-walk` (between `cover` and
+  `composite`): on a one-branch DFA pattern with a byte-class landmark L
+  at a top-level position whose prefix P never consumes a byte of L, NEXT
+  (without the walk) not already starting from a landmark, and L rarer
+  than NEXT's start set by the landmark margin, the search finds each
+  occurrence of L through the delegated site LMHIT (a new DELEG_SITES row,
+  its table `<prefix>_landmark_bytes`), walks the reverse machine of P·L
+  back from it (a FOURTH machine's tables, `<prefix>_landmark_*`, and its
+  accessor block), runs the anchored machine once inline from the leftmost
+  start (its tables again inside the search body, `<prefix>_lmverify_*`),
+  and relocates to the forward-then-reverse search from that start where
+  the last verify read past the landmark. Its stamps move
+  (`<PREFIX>_DFA_SCAN "landmark-walk"`, `<PREFIX>_DFA_TABLE` and
+  `<PREFIX>_DFA_SCAN_EDGE` fold ML in) and `rx_info.scan`; `--list-axes`
+  lists `landmark-walk` at `locate` 3 and re-indexes `unanchored` 3 -> 4,
+  the axis `-fno-landmark-walk` (bit 57), and the fallback rung
+  `drop-landmark-walk`. Every other artifact moves only the number.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `94` on every artifact ([MEMFN] R-30, lane r30b,
   2026-10-29; 93 -> 94 over main 5c60e118c, renumbered by lane r30bfix 2026-10-31,
   confirmed at landing by lane landr30 2026-11-01, merge cd4c36b92).** On a pre-check whose run WINDOW part sits
   beside the WHOLE run that implies it (the route with no DFA scan in front,

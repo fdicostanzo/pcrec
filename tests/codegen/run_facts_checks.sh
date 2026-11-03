@@ -430,12 +430,16 @@ fi
 # fixed-width `abc` and `/abcd[xy]/user` are `cover` artifacts by default (no
 # forward scan), so they are compiled under the cover row's deny,
 # `--memfn=no-window-search` (registry.md §6¶8a), to stay on the unanchored route.
+# Since [LANDWALK] stage 1 (abi 95) `\zabc` takes the `landmark-walk` LOCATE
+# row under `-fno-req-handoff` (its landmark `c` is rarer than NEXT's start
+# set), so it also carries the walk's deny, `-fno-landmark-walk` (tuning.md
+# §2.54), to stay on the widened domain's unanchored route.
 printf '%s\n' \
     'E3W	--memfn=no-window-search	abc	unanchored	97,98,99	0' \
     'E3W	--memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
     'E3W	-fno-req-run --memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
-    'E3W	-fno-req-handoff	\zabc	unanchored	97,98,99	0' \
+    'E3W	-fno-req-handoff -fno-landmark-walk	\zabc	unanchored	97,98,99	0' \
     'E3W	-	^abc	attempt	-	-' \
     'E3W	--engine=vm -fprefilter	^foo(?=bar)baz	attempt	-	-' \
     'E3W	-	(a)\1b	none	-	-' > "$WORKDIR/e3w"

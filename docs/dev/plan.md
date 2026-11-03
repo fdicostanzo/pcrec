@@ -263,13 +263,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Today, for a required run at an UNBOUNDED distance, the found position is only a yes/no gate. Every match contains the run at or after its start, so no attempt that starts after the run's LAST occurrence can match: one lazy re-find (or one reverse find) as attempts pass the last known occurrence lets the loop stop at the first position past it. pcrec states the fact (required run, unbounded); the kit owns the method (D157).
 - [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
   filed: 2026-10-29 lane p1dsg2
-  status (2026-10-29): DESIGNED, rev 2 after re-check r5 (p1dsg3_report.md: counterfactual NEXT read, finisher-dfa, asker-typed AT); stage 1 waits on the rev-2 check, Frank's build go, one-optimization-build-at-a-time
+  status (2026-11-02): stage 1 landing prepared as abi 95 (D184, lane p1land, merge f5de088bf on lane/p1build); make test queued as 830-p1land-test; the manager merges on its verdict; child rows stay open
   trigger: the manager's check of rev 2, then Frank's build go (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
   refs: docs/dev/lanes/p1dsg3_report.md; docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/reviews/2026-10-29-r5-landwalk2.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
   The later rows below are the review's PLAN items and the general form's unlocks (r1 U1-U5); U3 (one walk emitter for rev-end and the landmark walk) is stage 1's own form (rev 1 D10), so it has no row. The admission sub-table's family unification is [ROWCONJ]; the VM hat's GIVEUP1 check is [GIVEUP-DIFF].
   - [LANDWALK-CARD] STATE:not-started — the walk's measurement card in time units (lwhit, lwcall), and its wlen sweep
     filed: 2026-10-29 lane p1dsg2
-    status (2026-10-29): lane evidence only (cycles, p1dsg2_evidence/xo_fit.txt): per hit about 40 + 7 cycles per walked byte (miss), 95 + 8 (hit); no set row
+    status (2026-10-29): the card script is BUILT (tests/landwalk/card_lwalk.sh, lane p1build; smoke in make test-codegen); its first --timed run is queued (p1build-timing); no set row until [MEASURE-SET] M3. Earlier lane evidence (p1dsg2_evidence/xo_fit.txt): per hit about 40 + 7 cycles per walked byte (miss), 95 + 8 (hit)
     trigger: stage 1 of [LANDWALK] opens (its step 1); r1 MEAS-3/MEAS-4/MEAS-8, S4
     refs: docs/dev/lanes/p1dsg2_report.md; docs/design/measure_sets.md; docs/spec/measures.md
     pcrec card rows `lwhit` (dims wlen;arm, unit walkbytes, fitted a + b*wlen over wlen in {2,8,32} with a miss and a hit arm) and `lwcall` (the per-call fixed term on short calls, COST-4), timing only (measure_sets.md §7.4a), in measure/cards.tsv when [MEASURE-SET] M3 builds it. The rarity row reads the intercept as its per-hit constant; until a set carries it the constant is a labelled UNMEASURED default (D149).
@@ -313,10 +313,23 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     K136 (the default VM gives up with PCREC_ERR_FRAMES on dup-param-detect over the bench query-string subjects) is not closed by this row: the landmark walk is a speed mechanism and would not lift the frame cap.
   - [LANDWALK-EDGEPRICE] STATE:not-started — p48's priced one-state relaxation on the walk's loops, as its own follow-up (r1 D11)
     filed: 2026-10-29 lane p1dsg2
-    status (2026-10-29): split out of stage 1 by review r1: the plain edge comes free (pcrec_scanedge_dfa already runs on reverse machines) and adds 2.4% on 5b
+    status (2026-10-29): split out of stage 1 by review r1. Stage 1's measurement (p1build_report.md "Speed"): on 5b/acc-main the walk's edge (form `bitmap`) COSTS 1.9% instructions (79.57M with it, 78.06M under -fno-scan-edge), where the p1dsg twin's plain edge saved 2.4%
     trigger: stage 1 of [LANDWALK] landed and a card of its own shows the relaxation pays on the walk's loops
     refs: docs/dev/lanes/p48_report.md; docs/dev/lanes/p1dsg2_report.md
     p48's SCAN_SITE_ROWS row 4 (split-exit, priced by k* about 2.3 B); D161 add. 17 makes edges the optimization inside the walk, and this row is that optimization's priced form.
+  - [LANDWALK-PRES] STATE:not-started — the walk's `dominated` PRESENCE drops a required-run pre-check that is cheaper on a no-match subject
+    filed: 2026-10-29 lane p1build
+    status (2026-10-29): measured, not designed: `[a-z]+@x` on acc-small (830 `@`, no `@x`, no match): the walk 556K instructions against main's run pre-check 425K (x0.77); 5b is not affected (its required run is the landmark byte)
+    trigger: a bench or corpus cell where the walk's no-match subjects carry the landmark often and the required run rarely (the run longer or rarer than the landmark)
+    refs: docs/dev/lanes/p1build_report.md; docs/dev/lanes/p1build_evidence/speed_instr_2026-10-29.txt; docs/spec/match_api.md §6.3.4 (`dominated`)
+    The walk answers presence itself, so PRESENCE declines the whole-window pre-check (`dominated`), but the pre-check's run can be rarer than the walk's landmark; a priced PRESENCE rule (keep the pre-check where its run's prior is rarer than L's by the walk's per-hit cost) is the candidate, an admission change on PRESENCE, not on the walk.
+    Generated-code reading (manager, 2026-11-01, emitted C of `[a-z]+@x` on both builds): main's run pre-check is memchr('@') + memcmp("@x",2) per hit, so it ALSO visits all 830 `@`s, at 2 bytes each. P1's walk, per `@`, first REWINDS over the whole preceding [a-z] run (reverse DFA), then re-scans it FORWARD with the verify DFA, and meets the non-`x` byte LAST. LEADING CANDIDATE FIX (no pricing, not the PRESENCE slot): before the rewind, test the bytes the pattern requires right after the landmark (here `x` at L+1, the same test main's pre-check does); a failed test costs one compare and moves to the next landmark. The `whole` = always/by-scan PRESENCE fix (p1prep) stays the alternative.
+  - [SEL-WORLD] STATE:not-started — an explicit selection WORLD passed down cand_select/cand_read, not mutated Ctx state
+    filed: 2026-10-29 lane p1build (review 2026-10-29 r7 landwalk3, "Sibling of a family; general form and unlocks", PLAN)
+    status (2026-10-29): filed, not designed; three members today: the NEXT_cf memo's options copy, pcrec_cand_drop_anchored_shrinks's anchored_ok toggle, the facts hook's cx.opt swap
+    trigger: the next counterfactual reader (stage 2's VM walk, a second deep `under` read) or the next toggle site
+    refs: docs/dev/reviews/2026-10-29-r7-landwalk3.md; docs/dev/lanes/p1build_report.md; src/gen/emit_dfa.c (pcrec_cand_lmwalk_next_cf)
+    Reentrant and longjmp-safe, lets `under` propagate as the static walk assumes, and unifies the ladder's shrink test, the memo and the facts hook (forest-for-trees: the family's third member, so proposed, not built).
 - [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
   filed: 2026-10-22 lane landlang
   status (2026-10-22): not started; the K127 fix made the seal redundant (langfix3_report.md)

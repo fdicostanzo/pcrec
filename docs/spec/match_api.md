@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 94
-#error "pcrec: this artifact (abi 94) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 95
+#error "pcrec: this artifact (abi 95) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 94
+#define PCREC_RX_ABI_H 95
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1643,7 +1643,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `94` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `95` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1662,7 +1662,7 @@ compile time, where one exists.
 | 17 | `pattern_len` | `size_t` | the byte count `pcrec_compile()` saw and compiled (§7) | — |
 | 18 | `groups` | `const rx_group_entry *` | the named-group index, sorted; `NULL` when there is none (§5.4) | — |
 | 19 | `engine_why` | `const char *` | prose: the construct or build outcome that forced the VM, or `NULL`; on a hybrid-eligible artifact it can also carry a prefilter note | `<PREFIX>_ENGINE_WHY` |
-| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"cover"` / `"attempt"` / `"empty"`; `"compound"` on a compound (§3.7); `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
+| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"cover"` / `"landmark-walk"` / `"attempt"` / `"empty"`; `"compound"` on a compound (§3.7); `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
 | 21 | `prefilter` | `const char *` | the artifact's candidate-start mechanism; never `NULL` ([scan and prefilter](#s6-p6)) | `<PREFIX>_DFA_PREFILTER` / `<PREFIX>_VM_PREFILTER` |
 | 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"` / `"nomatch"`, `"compound"` on a compound; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
 | 23 | `name` | `const char *` | the artifact's own name; never `NULL` ([name](#s6-p12)) | — |
@@ -1801,7 +1801,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `94` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `95` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2123,6 +2123,7 @@ apart. Mirrored by `rx_info.scan`.
 | `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
 | `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
+| `"landmark-walk"` | the pattern's one branch passes a byte class L whose bytes the part before it can never consume (`tuning.md` §2.54): the search finds each occurrence of L from `search_from` up, walks the artifact's reverse machine of that prefix and L back from it to the smallest possible start, and runs the anchored machine once from there; where that run already read past the next occurrence, it continues as the `"unanchored"` scan from that start |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
 | `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings): the search body is one `return 0` with no table, loop or skip, on either engine |
 
@@ -2177,7 +2178,7 @@ selection fact, read off the predicate the emitted loop branches on. No
 |---|---|
 | `"premultiplied"` | every numeric transition table holds `next_state * classes`, so the step is `state = table[state + class]` |
 | `"indexed"` | every one holds `next_state`, and the step multiplies |
-| `"mixed"` | the machines took different forms — the choice is per machine, on its own `states * classes` and seed table (a machine that can start dead for some context byte is indexed). The machines are the forward one, the reverse one unless the search is pinned, and the anchored one under `<PREFIX>_DFA_MATCH "unwrapped"` |
+| `"mixed"` | the machines took different forms — the choice is per machine, on its own `states * classes` and seed table (a machine that can start dead for some context byte is indexed). The machines are the forward one, the reverse one unless the search is pinned, the anchored one under `<PREFIX>_DFA_MATCH "unwrapped"`, and on a `"landmark-walk"` scan the reverse machine of its prefix and landmark |
 | `"none"` | the scan has no numeric transition table by construction: `_DFA_SCAN "attempt"` (states are labels, a step is a computed `goto`) or `"empty"` |
 
 <a id="s6-3-4-p8"></a>[6.3.4¶8] The value names the selection that was MADE. After the uniform fold below, an
@@ -2197,7 +2198,7 @@ call site's `subject[pos++]` is still evaluated). Two tables per machine are
 foldable, `<m>_next_state` and `<m>_is_accepting`, over the same machines
 `_DFA_TABLE` and `_DFA_SCAN_EDGE` compose (so none of the three can name a
 machine the artifact does not contain), plus the find-all iterator's retry machine where the
-artifact carries it (a DFA artifact whose `<PREFIX>_ITER_RETRY` is `"retry"`, §6.3.13), so the value runs `0..8`;
+artifact carries it (a DFA artifact whose `<PREFIX>_ITER_RETRY` is `"retry"`, §6.3.13), so the value runs `0..10` (a `"landmark-walk"` scan composes four machines);
 `0` on `"attempt"` and `"empty"` and at most `2` on `"cover"` (the anchored machine's two tables), apart from that retry machine. It is family (b) in nature — what the emitted machine turned out to
 contain — and is owed because a fold is visible only as a table's ABSENCE.
 `tests/codegen/run_dfa_uniform_fold.sh` reads it. The artifact is smaller and
@@ -2458,7 +2459,7 @@ not; a closed token set (`tuning.md` §2.29).
 | `"emitted"` | the artifact emits a pre-check on the byte or run its siblings name — possibly led by a rarer necessary-set byte's one-byte check (`tuning.md` §2.40), possibly handing off (`<PREFIX>_REQ_HANDOFF`) |
 | `"none"` | nothing is necessary: no byte and no run (none found, or `-fno-req-byte`) |
 | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it only adds work |
-| `"dominated"` | declined: the artifact's own candidate-start `memchr` (or run-pinned test) already scans a byte at least as rare, or its locator decides presence itself (`<PREFIX>_DFA_SCAN "rev-end"`, `"cover"` or `"empty"`): a `"cover"` window search finds the match or proves there is none, whatever form its jump takes (`memchr`, two streams, a byte walk, a skip table) |
+| `"dominated"` | declined: the artifact's own candidate-start `memchr` (or run-pinned test) already scans a byte at least as rare, or its locator decides presence itself (`<PREFIX>_DFA_SCAN "rev-end"`, `"cover"`, `"landmark-walk"` or `"empty"`): a `"cover"` window search finds the match or proves there is none, whatever form its jump takes (`memchr`, two streams, a byte walk, a skip table) |
 
 <a id="s6-3-7-p9"></a>[6.3.7¶9] `"none"` holds if and only if `<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` are
 both `"none"`. Any other value asserts that a byte or run was derived, and only

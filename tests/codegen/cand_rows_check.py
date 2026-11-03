@@ -79,6 +79,19 @@ F-2's revert as a grep row)
     or an index compare (`r - cand_rows == k`); `dfa_edge_taken`'s
     `&dfa_edges[0]` (axis H, not a start-table row) is out of its scope.
 
+[cand-ma-dfa-only] ([LANDWALK] stage 1, lane p1mech, 2026-10-30)
+    No FINISH row declares the anchored machine `CAND_MA` in its `.needs`
+    for a non-DFA route it serves (`.routes`). `build_anchored_dfa` builds A
+    iff a FINISH row on the finisher's route declares it
+    (`pcrec_cand_finish_needs`), so while this holds A exists only for a DFA
+    finisher and `lmwalk_conj[]` row 2 (`anchored-A`) implies row 1
+    (`finisher-dfa`): row 1 declines no pattern row 2 would not, and its
+    sabotage S1822 is retired UNREACHED. The check is that retirement's
+    re-arm tripwire. POSITIVE CONTROL: the DFA entry of `verify-at` must read
+    as declaring `CAND_MA`, so a parser that stopped seeing the machine field
+    fails rather than reading an empty absence. WHAT IT CANNOT SEE: a needs
+    entry built by a macro or outside the table's literal text.
+
 The row-name population is read off the table's text and must be non-empty
 (K35): an empty population would make (a) pass vacuously.
 
@@ -292,9 +305,58 @@ def row_pointer_check():
            "in %d files: a FINISH reader tests the row's u.finish.act" % nfiles)
 
 
+def finish_ma_check():
+    """[cand-ma-dfa-only] the landmark walk's row 1 is implied by its row 2."""
+    src = strip_comments(open(EMIT).read())
+    block = table_block(src, "static const CandRow cand_rows[] = {")
+    nrows = nother = ndfa_ma = 0
+    hits = []
+    for row in re.split(r"\n    \{ ", block or "")[1:]:
+        if not re.search(r"\.slot\s*=\s*CAND_SLOT_FINISH\b", row):
+            continue
+        nrows += 1
+        name = (re.findall(r'\.c\s*=\s*\{\s*"([^"]+)"', row) or ["?"])[0]
+        m = re.search(r"\.routes\s*=\s*([^,]*(?:\|[^,]*)*),", row)
+        routes = m.group(1) if m else ""
+        m = re.search(r"\.needs\s*=\s*\{", row)
+        if not m:
+            continue
+        needs = row[m.end():]
+        for e in re.finditer(r"\[CAND_ROUTE_(\w+)\]\s*=\s*\{([^{}]*)\}", needs):
+            route, body = e.group(1), e.group(2)
+            md = re.search(r"\.mach\s*=\s*([^,]*)", body)
+            mach = md.group(1) if md else body.split(",")[0]
+            ma = re.search(r"\bCAND_MA\b", mach) is not None
+            if route == "DFA":
+                ndfa_ma += ma
+                continue
+            if "CAND_ALL_ROUTES" not in routes and not re.search(r"\bCR_%s\b" % route, routes):
+                continue
+            nother += 1
+            if ma:
+                hits.append("%s on CAND_ROUTE_%s" % (name, route))
+    print("REACH: cand_rows[] FINISH rows %d; their non-DFA needs entries %d; DFA entries declaring CAND_MA %d"
+          % (nrows, nother, ndfa_ma))
+    if nrows == 0 or nother == 0:
+        bad("[cand-ma-dfa-only] no FINISH row or no non-DFA needs entry read from %s -- the check reads nothing" % EMIT)
+    elif ndfa_ma == 0:
+        bad("[cand-ma-dfa-only] no DFA-route FINISH needs entry declares CAND_MA (verify-at does today) -- "
+            "the parser no longer sees the machine field, so the absence below would be vacuous")
+    elif hits:
+        bad("[cand-ma-dfa-only] a FINISH row on a non-DFA route declares the anchored machine CAND_MA (%s), so "
+            "build_anchored_dfa builds A for a non-DFA finisher: the landmark walk's row 1 `finisher-dfa` is now "
+            "reachable: re-arm S1822 (tests/mech/sabotages/S1822_lmwalk_row1_body_route.sh) at a witness it "
+            "alone declines" % ", ".join(hits))
+    else:
+        ok("[cand-ma-dfa-only] CAND_MA is declared on the DFA route only (%d FINISH rows, %d non-DFA needs "
+           "entries): A is built only for a DFA finisher, so lmwalk_conj[] row 2 implies row 1 (S1822 retired "
+           "unreachable)" % (nrows, nother))
+
+
 main()
 route_checks()
 row_pointer_check()
+finish_ma_check()
 print("checks passed: %d" % passed)
 print("checks failed: %d" % failed)
 sys.exit(1 if failed else 0)
