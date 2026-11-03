@@ -1,0 +1,27 @@
+count                                              RTE   DEF   total
+  of which site_kind UNSTATED                      371    10     381
+  stop != run member                                28     3      31
+FUNC/handoff-0 window sites                        371    10     381
+PF RESEED core positions 1                         733     7     740
+PF RESEED core positions >=2                       696    18     714
+PF alternatives NONE                               291     0     291
+PF alternatives PARKED                              22     0      22
+PF alternatives PARKED+RESEED                     1429    25    1454
+PF sites                                          1742    25    1767
+PF sites with >=2 alternatives                    1429    25    1454
+Table A NONE A-mass                               1430     2    1432
+Table A PARKED A-parked                           1822    35    1857
+Table A RESEED A-floor                            1397    23    1420
+Table A RESEED A-model                             403    12     415
+alternatives NONE                                 1430     2    1432
+alternatives PARKED                               1822    35    1857
+alternatives RESEED                               1800    35    1835
+fd row D1                                         1503     7    1510
+fd row D1c                                          39     0      39
+fd row D1w                                         143     0     143
+fd row P0                                          546     0     546
+fd row P3                                         1071    29    1100
+fd row P4                                           19     1      20
+fd row PAIR                                        101     0     101
+fd row R7w                                        1081    20    1101
+replies stating a run                              474     9     483

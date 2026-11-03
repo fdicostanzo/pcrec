@@ -1,0 +1,8 @@
+[default]                                blind  memchr on: 'X' 'x'  RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+[default]                                prose  memchr on: '4'  RX_FINDINGS "byte-rate=prose:4542f53066ffb40c"
+[--engine=vm]                            blind  memchr on: 'X' 'x'  RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+[--engine=vm]                            prose  memchr on: '4'  RX_FINDINGS "byte-rate=prose:4542f53066ffb40c"
+[-fmemfn-simd]                           blind  memchr on: 'X' 'x'  RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+[-fmemfn-simd]                           prose  memchr on: '4'  RX_FINDINGS "byte-rate=prose:4542f53066ffb40c"
+[--memfn=no-window-search,no-window-skip] blind  memchr on: '/'  RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+[--memfn=no-window-search,no-window-skip] prose  memchr on: '/' '4'  RX_FINDINGS "byte-rate=prose:4542f53066ffb40c"
