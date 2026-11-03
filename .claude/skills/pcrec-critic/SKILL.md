@@ -62,12 +62,16 @@ message when the draft is ready.
    every ready queue job, often the subject's own validation, and a build of
    seconds waited 3h50m (round 2026-10-27 r1 ic2). Launch the probe lenses
    only once `build/pcrec` exists; a critic without a binary waits for it
-   (poll every 10 min, up to 4 h) rather than ending source-only.
+   (poll every 10 min, up to 4 h) rather than ending source-only. When the promise includes trace records, build BASE and SUBJECT
+   `-DPCREC_KS_TRACE` binaries ONCE into the round dir as part of the round's build
+   (r5 sp1g: saved three per-critic builds).
 3. Denylist (D27 applied to review): the lane's reports
    (`docs/dev/lanes/<lane>*`), review files on this subject, `git log` bodies
    beyond the subject lines, job logs, other worktrees, the box queue, plus the
    launcher's list. Put it in every brief. To deny a plan.md row, locate it by `grep -n '^- \[TAG\]'` only; never print its
-   neighbours (a `sed -n` around the tag line leaked the denied rulings, 2026-10-26 inline-c).
+   neighbours (a `sed -n` around the tag line leaked the denied rulings, 2026-10-26 inline-c). State denied files as PATHS EXCLUDED
+   from EVERY git diff and grep in COMMON (`':!memfn/docs/journal.md'`), not only in one
+   example command (r5 sp1g: a per-directory diff showed a denied journal hunk).
 4. Profile: what does the subject touch? Several can apply:
    - design: a new mechanism or table; a measured quantity, check or data file;
      a caller-facing contract; a build proposal (cost, scope); rulings it rests on
@@ -95,10 +99,10 @@ measured twice). Subject column: D = design document, C = code diff.
 | D C | rulings relied on | **ruling check** | For each ruling, does it agree with the design and the guide, and what are its CONSEQUENCES? Fold into slot tracing when that runs. | strong |
 | D | a measured quantity, check or data file | **measurement** | The docs/design/CLAUDE.md standing questions: the regime, the independent control, what moves when the data is regenerated. | sonnet+ |
 | D | a build proposal | **cost and overlap** | What does it cost, what does it buy, what measurement triggers it (D77), and does it overlap an in-flight refactor (D153)? Costlier must prove more. | sonnet+ |
-| C | emitted C | **emitted vs replaced** | Generate C and asm of the new path AND the path it replaces, and diff every PRE-EXISTING entry BASE vs SUBJECT: what does the new code do worse or differently? | strong |
+| C | emitted C | **emitted vs replaced** | Generate C and asm of the new path AND the path it replaces, and diff every PRE-EXISTING entry BASE vs SUBJECT: what does the new code do worse or differently? For a deletion of fields no kit `.c` reads (grep), cap identity probes at a few hundred and spend the budget on the check lens's plants (r5 sp1g). | strong |
 | D C | a caller-facing contract | **contract** | Does the code (or the design) do exactly what the spec says for every admitted input class; do names describe behaviour (D174, D80)? Code mode probes edges with the built compiler. | strong |
 | C | a performance claim / re-pin | **trade audit** | Every pin, floor or count moved: what speed, size or coverage did it give up, and who judged that trade? | sonnet+ |
-| C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? | sonnet+ |
+| C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? For an INVARIANCE check ("the kit never reads X"), plant the reader where the containing object is CONSUMED, not only where the design's plant sits, and demand a reach control: the varied render differs from the absent-object render on at least one site (2026-11-03 r5 sp1g). | sonnet+ |
 | C | plain C structure | **house rules** | coding.md + style.md: duplication (name the shared abstraction), altitude, tables used as if-chains, side effects in predicates. | sonnet |
 
 Always add the two standing questions to one lens (say which): **sibling of a
