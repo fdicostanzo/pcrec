@@ -16,18 +16,28 @@ files, at each arm, exactly as emit_sweep's c-default stream does
 process prints at exit is summed per (arm, line key): a row's `chosen` and
 `asked`, and each field/class cell's `n`. The verdict:
 
-  - every key of a SURVIVING row has the same sum at BASE and HEAD, per arm;
-  - a row named by --gone has lines at BASE (the declared difference is
-    real) and none at HEAD;
+  - every (pattern, arm) has the same key->count map at BASE and HEAD
+    (per PATTERN, not per sum, so compensating moves between patterns do
+    not cancel), a key absent on one side and 0 on the other differing;
+  - the ROW SET (rows with any line) of each arm is the same at BASE and
+    HEAD less the declared gone rows; the GONE set is DERIVED (rows with
+    lines at BASE and none at HEAD, over all arms) and must equal --gone
+    exactly, both directions; each gone row's BASE chosen/asked per arm
+    is printed (a "zero reach" claim is read from it, not typed);
+  - the compile return codes and timeouts: the SETS of failing patterns
+    per arm are equal at BASE and HEAD (a pattern failing on both sides
+    is counted and printed);
   - REACH_DROPPED is 0 on both sides;
   - K35: compiles counted per arm, and fewer than POP_FLOOR distinct
     patterns, or a side whose rows were never chosen, is red.
 
 Independent control: the population is the tree's own corpus and the
 committed patterns files; the counts are the kit's own reach counters on
-both sides, so a defect that moves a decision moves a sum (a counter both
-sides lack is invisible: the --gone control is the one row set this
-script expects to differ).
+both sides, so a defect that moves a decision moves a count. The gone set
+is derived from the two traces and compared with the declaration.
+A --limit run is a SMOKE run: it skips the population floor, so its last
+line is `reach_equal: LIMITED rc=N ...` and it exits 0 never (3 when clean,
+1 when not): it cannot be read as the verdict.
 Last line: `reach_equal: DONE rc=N keys=K differ=D` (scripts/verdict's trailer).
 """
 import argparse
@@ -54,7 +64,7 @@ def reach_of(binary, pat, arm, timeout):
     try:
         r = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=timeout)
     except subprocess.TimeoutExpired:
-        return None, "timeout"
+        return None, 0, "timeout"
     out = collections.Counter()
     dropped = 0
     for ln in r.stderr.decode("utf-8", "replace").splitlines():
@@ -71,7 +81,7 @@ def reach_of(binary, pat, arm, timeout):
         else:
             out[(table, row, "chosen")] += int(kv["chosen"])
             out[(table, row, "asked")] += int(kv["asked"])
-    return out, dropped
+    return out, dropped, "rc%d" % r.returncode if r.returncode else ""
 
 
 def main():
@@ -80,11 +90,11 @@ def main():
     ap.add_argument("--bin", required=True)
     ap.add_argument("--tree", required=True)
     ap.add_argument("--patterns-file", action="append", default=[])
-    ap.add_argument("--gone", default="", help="TABLE:ROW,... rows deleted at HEAD")
+    ap.add_argument("--gone", default="", help="TABLE:ROW,... rows deleted at HEAD (must equal the derived set)")
     ap.add_argument("--arms", default=";".join(DEFAULT_ARMS), help="`;`-separated arm flag strings")
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--timeout", type=int, default=60)
-    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--limit", type=int, default=0, help="SMOKE: first N patterns; skips the floor, trailer LIMITED")
     a = ap.parse_args()
     es = load_emit_sweep(a.tree)
     pats = es.enumerate_corpus(a.bin, a.tree, 60)
@@ -99,57 +109,92 @@ def main():
     problems = []
     if len(pats) < POP_FLOOR and not a.limit:
         problems.append("population %d distinct patterns under POP_FLOOR %d" % (len(pats), POP_FLOOR))
-    print("population: %d distinct patterns x %d arms" % (len(pats), len(arms)))
-    sums = {s: collections.defaultdict(collections.Counter) for s in ("base", "head")}
+    print("population: %d distinct patterns x %d arms%s" % (len(pats), len(arms), " (LIMITED smoke run)" if a.limit else ""))
+    rows = {s: {arm: set() for arm in arms} for s in ("base", "head")}
+    gone_base = {arm: collections.Counter() for arm in arms}    # (table,row,chosen|asked) summed at BASE
+    chosen_head = collections.Counter()
     dropped = collections.Counter()
-    fails = collections.Counter()
+    fails = {s: collections.defaultdict(dict) for s in ("base", "head")}   # arm -> {pattern: why}
+    pending = {}                       # (arm, pattern) -> (side, counter) of the side that arrived first
+    perpat = collections.Counter()     # arm -> patterns whose maps differ
+    examples = []
     tasks = [(s, b, arm, p) for arm in arms for p in pats
              for s, b in (("base", a.ref_bin), ("head", a.bin))]
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout): (s, arm)
+        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout): (s, arm, p)
                 for s, b, arm, p in tasks}
         for f in concurrent.futures.as_completed(futs):
-            s, arm = futs[f]
-            c, d = f.result()
-            if c is None:
-                fails[(s, arm)] += 1
-                continue
-            sums[s][arm].update(c)
+            s, arm, p = futs[f]
+            c, d, why = f.result()
             dropped[s] += d
+            if why:
+                fails[s][arm][p] = why
+            if c is None:
+                continue
+            rows[s][arm].update((k[0], k[1]) for k in c)
+            if s == "base":
+                for k, v in c.items():
+                    if (k[0], k[1]) in gone and k[2] in ("chosen", "asked"):
+                        gone_base[arm][k] += v
+            else:
+                chosen_head[arm] += sum(v for k, v in c.items() if k[2] == "chosen")
+            other = pending.pop((arm, p), None)
+            if other is None:
+                pending[(arm, p)] = (s, c)
+                continue
+            b, h = (c, other[1]) if s == "base" else (other[1], c)
+            b = {k: v for k, v in b.items() if (k[0], k[1]) not in gone}
+            h = {k: v for k, v in h.items() if (k[0], k[1]) not in gone}
+            if b != h:
+                perpat[arm] += 1
+                if len(examples) < 20:
+                    diff = sorted((k, b.get(k), h.get(k)) for k in set(b) | set(h) if b.get(k) != h.get(k))
+                    examples.append("arm %r pattern %r: %s" % (arm, p[:60], "; ".join(
+                        "%s/%s %s base %s head %s" % (k[0], k[1], k[2], x, y) for k, x, y in diff[:3])))
     differ = nkeys = 0
     for arm in arms:
-        b, h = sums["base"][arm], sums["head"][arm]
-        keys = set(b) | set(h)
-        nkeys += len(keys)
-        armd = 0
-        for k in sorted(keys):
-            if (k[0], k[1]) in gone:
-                continue
-            if b.get(k, 0) != h.get(k, 0):
-                armd += 1
-                problems.append("arm %r %s/%s %s: base %d head %d" % (arm, k[0], k[1], k[2], b.get(k, 0), h.get(k, 0)))
+        armd = perpat[arm]
         differ += armd
-        chosen = sum(v for k, v in h.items() if k[2] == "chosen")
-        print("arm %-14r keys %d, differing %d, head chosen total %d, timeouts base %d head %d"
-              % (arm, len(keys), armd, chosen, fails[("base", arm)], fails[("head", arm)]))
-        if chosen == 0:
+        nb, nh = len(rows["base"][arm]), len(rows["head"][arm])
+        nkeys += nh
+        print("arm %-14r rows base %d head %d, patterns differing %d, head chosen total %d, failing base %d head %d"
+              % (arm, nb, nh, armd, chosen_head[arm], len(fails["base"][arm]), len(fails["head"][arm])))
+        if armd:
+            problems.append("arm %r: %d patterns have a different reach map at HEAD" % (arm, armd))
+        if rows["base"][arm] - gone != rows["head"][arm]:
+            miss = sorted(rows["base"][arm] - gone - rows["head"][arm])
+            new = sorted(rows["head"][arm] - rows["base"][arm])
+            problems.append("arm %r: row sets differ beyond the declared gone rows: lost %s, new %s" % (arm, miss, new))
+        if chosen_head[arm] == 0:
             problems.append("arm %r: no row chosen at HEAD (an empty population)" % arm)
-        if fails[("base", arm)] != fails[("head", arm)]:
-            problems.append("arm %r: timeouts differ (base %d, head %d)" % (arm, fails[("base", arm)], fails[("head", arm)]))
-    for t, r in sorted(gone):
-        at_base = any((t, r) == k[:2] for arm in arms for k in sums["base"][arm])
-        at_head = any((t, r) == k[:2] for arm in arms for k in sums["head"][arm])
-        print("declared gone %s/%s: lines at base %s, at head %s" % (t, r, at_base, at_head))
-        if not at_base:
-            problems.append("declared-gone row %s/%s has no line at BASE: the declared difference is vacuous" % (t, r))
-        if at_head:
-            problems.append("declared-gone row %s/%s still has lines at HEAD" % (t, r))
+        fb, fh = fails["base"][arm], fails["head"][arm]
+        if fb != fh:
+            problems.append("arm %r: failing patterns differ (base %d, head %d; %d only at base, %d only at head, %d differing cause)"
+                            % (arm, len(fb), len(fh), len(set(fb) - set(fh)), len(set(fh) - set(fb)),
+                               sum(1 for q in set(fb) & set(fh) if fb[q] != fh[q])))
+        elif fb:
+            print("  arm %r: %d patterns fail identically on both sides (%s)" % (arm, len(fb), ",".join(sorted(set(fb.values())))))
+    union_b = set().union(*rows["base"].values())
+    union_h = set().union(*rows["head"].values())
+    derived = union_b - union_h
+    print("derived gone rows (lines at BASE, none at HEAD): %s" % (", ".join("%s/%s" % g for g in sorted(derived)) or "none"))
+    if derived != gone:
+        problems.append("derived gone set %s != declared %s" % (sorted(derived), sorted(gone)))
+    for t, r in sorted(derived | gone):
+        for arm in arms:
+            print("gone %s/%s arm %r: BASE chosen %d asked %d" % (
+                t, r, arm, gone_base[arm][(t, r, "chosen")], gone_base[arm][(t, r, "asked")]))
     for s in ("base", "head"):
         if dropped[s]:
             problems.append("%s: REACH_DROPPED %d" % (s, dropped[s]))
+    for e in examples:
+        print("DIFF: " + e)
     for p in problems[:200]:
         print("FAIL: " + p)
     rc = 1 if problems else 0
+    if a.limit:
+        print("reach_equal: LIMITED rc=%d keys=%d differ=%d (smoke run, not a verdict)" % (rc, nkeys, differ))
+        return 1 if rc else 3
     print("reach_equal: DONE rc=%d keys=%d differ=%d" % (rc, nkeys, differ))
     return rc
 

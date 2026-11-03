@@ -68,7 +68,7 @@ enum { FD_FIND = 0, FD_PRES = 1 };          /* the kit_table slots          */
 
 /* The knowledge keys (regime_tables.md §2, rev 0.5). */
 enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
-       KN_M = 1u << 4, KN_N = 1u << 5, KN_H = 1u << 6 };
+       KN_M = 1u << 4, KN_N = 1u << 5 };
 
 /* Slot FIND's forms are kit.h's `fd_form` (the window family renders them
  * too). One name per fd_form, in its order (D2's RUN and RPT's PROOF left
@@ -82,7 +82,7 @@ _Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_PAIR + 1, "ff_name names
  * family's E-find renders the pick of the row deciding its stop (fd_find;
  * window.c's Table B renderers), PAIR included. V1 (R17-b's
  * `pf_terms_mask`) is NOT built (R7 is withdrawn, [MEMFN-REGIME]), W64
- * lands at B6, NONE at B5, A3 at B9. A row whose pick is W64 does not hold
+ * lands at B6, NONE at B5, A3 with its first row. A row whose pick is W64 does not hold
  * while it is unbuilt (fd_w64_built). */
 static int fd_w64_built(void) { return 0; }
 
@@ -1092,7 +1092,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
 
 /* ---- the listing (R-MS4) -------------------------------------------------------- */
 
-static const char *const needs_names = "PEAIMNH";
+static const char *const needs_names = "PEAIMN";
 
 /* The pay rule's operand keys (pay_fill, PROVISIONAL spellings), declared
  * on every N-dispatch row: `<alt>` its alternative, `<pick>` its pick, `<N>`
@@ -1118,7 +1118,7 @@ void mf_finder_rows(mf_finder_listing *out)
         char *needs = out->needs[i], *pick = out->pick[i];
         mf_finder_key *keys = out->keys[i];
         unsigned n = 0;
-        for (unsigned b = 0; b < 7; b++)
+        for (unsigned b = 0; b < 6; b++)
             if (r->needs >> b & 1) needs[n++] = needs_names[b];
         needs[n] = '\0';
         pick[0] = '\0';

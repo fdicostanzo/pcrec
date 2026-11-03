@@ -17,7 +17,7 @@ R5 and R7: D and E below no longer have a deciding row that reads a set key.
 WHAT IT CONTROLS, AND AGAINST WHAT (each expectation is written HERE, from the
 design's text, sharing no code with the kit):
 
-  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 16 rows
+  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 13 rows
      the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn), by slot and
      in order; a basis on every row; a pick on every FIND row; no MEASURED row
      that reads no key (but R7w, MEASURED by the walk ruling); every row
