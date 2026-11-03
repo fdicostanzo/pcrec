@@ -3055,3 +3055,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - stage 2's card timing goes through the queue, never 20:00-01:00 or a bench window;
   - stage 3 rows are each their own D186 choice change.
 - STOP and message main on anything non-routine (an unattributed red, an undeclared byte move, an answer-level finding, an owner ruling).
+
+## 2026-11-03 — span_pick stage 1 unit 1a built (lane sp1a, branch lane/memfn-sp1a)
+
+- Dead code out, no byte moves by construction: `mf_set_terms` and terms.c (N3; kit.h's cover section with it), the finder rows R3a, R3b, R4 with their contracts and the H comparators only they read (finder_history.md).
+- **MF_CLASS_V 5 -> 6** (kit-contract event, no MF_SITE_ABI move, no layout move): `mf_class.pres_row`/`pres_led` carry finder-row indices, and three rows left ahead of the PRES rows. pcrec's one reader maps the index through `mf_finder_rows`, so its records keep their row names. For the responses ledger: the kit session's line.
+- The DECIDER CENSUS (span_pick rev 5.2 §The tables) is born: `tests/memfn/decider_census.tsv` + `decider_census.py` (in `make test-memfn-rows`), 57 members, backstop 36 hits, two plants red. Ratchet R20-R27 15 -> 11 (R26 -3, R27 -1).
+- Witness (byte identity on every arm over the corpus + the frozen bench list + job 588's sample + `zzzzzzz~J`; reach equality; census; strict) queued as box-queue jobs 300-30x: docs/dev/lanes/sp1a_report.md.

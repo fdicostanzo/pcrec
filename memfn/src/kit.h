@@ -459,49 +459,6 @@ extern const arm mismatch_inplace_arm;  /* MISMATCH, a FOLD_STMT fold        */
  * shape is the site's fold_kind and the `fold` text's class. */
 int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
 
-/* ---- the set's term cover (terms.c; setfind.md §3) ------------------------
- *
- * R17-b's search, ported by R17-b' B1 for the finder shadow's cover SHAPE
- * (its renderings land with R17-b's form at B4). Declarations as R17-b's
- * (lane/memfn-r17 memfn/src/kit.h), text for text. */
-
-enum { MF_ST_CUBE = 0, MF_ST_ARC = 1 };
-
-/* K, the term limit of a set row (§3.3): MEASURED-UNOFFICIAL (slot2, dev box
- * Zen 4, gcc 15.2.0 -O2, 2026-10-12): the largest term count whose best
- * SIMD-off form won every sparse regime (reading_slot2.md answer 5). It moves
- * bytes once a cover renders (B4): re-measuring it is a pcrec abi event
- * (§16.3). */
-#define MF_SET_K 4
-/* The compile-time search's node cap per derivation (§3.3), a SAFETY BOUND,
- * not a selection constant. DERIVED (MEASURED, lane r17b2, 2026-10-12, Linux
- * dev box): BUDGET = 4 x M, M = 787, the most nodes the pruned search used
- * over the stated population (R17-b's tests/memfn/pins/setfind_t3_sets.txt,
- * the corpus tables, G2's setfind space and a generated space of 1,354,644
- * sets, docs/dev/lanes/r17b_report.md). The factor 4 is T3's margin. It
- * moves bytes only for a set outside the population needing more than BUDGET
- * nodes (§16.3). */
-#define MF_SET_BUDGET 3148
-
-/* One term: CUBE, a = the care mask M, b = the value V (V & ~M == 0; EQ is
- * M 0xFF); ARC, a = the first byte L, b = the width W, 1 <= W <= 128. */
-typedef struct { uint8_t kind, a, b; } mf_sterm;
-/* A cover: its terms in canonical order, whether they cover the set's
- * COMPLEMENT (the mask is then negated once), and the search's node count. */
-typedef struct {
-    unsigned n;
-    int      complement;
-    unsigned nodes;
-    mf_sterm t[MF_SET_K];
-} mf_cover;
-
-#define mf_set_terms MF_NS(set_terms)
-/* The fewest-terms cover of `set` (bit x of set[x >> 3] at x & 7) within K
- * (<= MF_SET_K) terms: 1 and *out, or 0 (DECLINE: no cover, the budget
- * exceeded, |S| 0 or 256), or -1 (the scratch allocation was refused: a
- * failure, never a decline). Deterministic. */
-int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
-
 /* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */
 
 /* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm

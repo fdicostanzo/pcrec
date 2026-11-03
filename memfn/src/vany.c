@@ -69,7 +69,7 @@
  *              an aligned main loop are variants for the measurement card's
  *              first run, not built.
  *   K          CHOSEN shape bound (VANY_MAX_K 3): the charter's 2..3. A K
- *              past 3 is the set-find's territory (terms.c, the finder),
+ *              past 3 is the set-find's territory (the finder),
  *              where a compare per member stops being the obvious form.
  *   duplicates DERIVED: a repeated member is compared once (OR is
  *              idempotent), so `bytes` {a, a} renders a one-compare kernel.

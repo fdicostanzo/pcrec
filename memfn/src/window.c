@@ -1063,8 +1063,8 @@ int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
         wf_check(site, 0))
         return -1;
     /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
-       above 4 KB is a kit defect; terms.c's targets are the precedent); the
-       ask is pure, so not the art's arena; a refused allocation is -1 */
+       above 4 KB is a kit defect); the ask is pure, so not the art's
+       arena; a refused allocation is -1 */
     wf_dec *d = calloc(1, sizeof *d);
     if (!d) return -1;
     decide(art, site, 1, d);
