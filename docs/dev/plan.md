@@ -183,7 +183,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-23): M0 on main (measures row, measure_store/ zen4-grid1@1, --measures + config, stamp, --list-measurements); Frank ruled the stop-ranking study Q1 + Q3 (RULED lines below)
-  next: span_pick stage 2 measures the zen4 span cards (memchr, two-stream pair, walk, verify; Horspool-probe later) as a FRESH set id `zen4-grid3` (D186 addendum 2; zen4-grid2 is D167's slot), after span_pick stage 1; then M1
+  next: span_pick stage 2 measures the zen4 span cards (memchr, memchr-back, two-stream pair, walk, verify, enter; scalar and SIMD forms; Horspool-probe later, so D-hors incumbents stay unpriced until then) as a FRESH set id `zen4-grid3`, after span_pick stage 1; then M1
   refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
   RULED M2 order (manager, 2026-11-03, span_pick rev 3.1; answer-free): M2 is NOT ordered against span_pick's row 1. At M2 the idk default becomes an ISA envelope with no per-byte cost rows, so priced rows go DARK on bare compiles (picks fall back to the rules; stamps move). INTENDED ("an unknown target prices nothing"); M2's own census owns those stamp moves; named-set compiles keep their priced picks.
   A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
@@ -669,6 +669,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [HANDED-FACTS] STATE:not-started — the handed-fact resolution family: which analysis kinds a compile consults, and its consult mask
+  filed: 2026-11-03 manager (span_pick rev 5.1 R12, review 2026-11-03-r2-memfn-spanpick5)
+  status (2026-11-03): filed; nothing built. Row 0 (refuse when a consulted kind cannot be derived) is in span_pick rev 5.2; the consult side is SUSPECTED incomplete.
+  trigger: the first priced span_pick row that reads byte rates
+  refs: D186 addendum 2 (the rate-source table is pcrec's); docs/design/memfn/span_pick.md "pcrec-side findings"; window_contract.md §3.3 rule 9; findings.md §1/§7
+  Charter: pcrec resolves every handed fact (byte rates first) by one first-match table and hands the kit the value or none. Today the `_FINDINGS` consult is pcrec's mirror asks only; memfn_stamps.c's "no routed kit row consults a kind yet" is stale; known.c's cover site has no mirror ask. Unlock: the kit reports a per-kind consult mask from `mf_art_end`, so pcrec refuses or stamps exactly the kinds a compile actually read.
 - [SPAN-PICK-UTF8] STATE:not-started — span_pick: a per-encoding default prior (or a priced NONE row) for UTF-8 text
   filed: 2026-11-03 manager (span_pick rev 5)
   status (2026-11-03): filed from rev 5 "For main"; not scheduled. Under `-e utf8` the blind pick is NONE today (findings.md §2¶7); the byte-encoded-over-UTF-8-text gap has no prior
