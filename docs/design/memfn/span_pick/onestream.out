@@ -1,9 +1,0 @@
-NONE alternatives: 1637 {'k1': 1056, 'no-one-byte-under-flat': 577}
-row holds on 4 units, 3 distinct (pattern, kind)
-'(?i)x/1234'                       COVER      today @0 {X,x} m1097 -> @1 {/} m4154 (flat 7812)  [corpus/c02129/RTE, s588/smp20/RTE]
-'x[Q%]y'                           COVER      today @1 {%,Q} m481 -> @0 {x} m997 (flat 7812)  [s588/pr09/RTE]
-'x[\\x{e0}-\\x{ff}]y'              COVER      today @1 {32 bytes} m64 -> @0 {x} m997 (flat 125000)  [corpus/c04989/RTE]
-smp20 P c_hit(PAIR)=20: {x,X} PAIR 144694.0  '/' memchr 153476.5  ratio pair/one 0.9428
-smp20 P c_hit(PAIR)=40: {x,X} PAIR 166634.0  '/' memchr 153476.5  ratio pair/one 1.0857
-smp20 F c_hit(PAIR)=20: {x,X} PAIR 295857.8  '/' memchr 147928.9  ratio pair/one 2.0000
-smp20 F c_hit(PAIR)=40: {x,X} PAIR 452107.8  '/' memchr 147928.9  ratio pair/one 3.0563

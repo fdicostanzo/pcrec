@@ -1,16 +1,30 @@
-# docs/design/memfn/span_pick/ — span_pick.md rev 2's recount instruments
+# docs/design/memfn/span_pick/ — span_pick.md's recount and witness instruments
 
-Lane spanpick2 (2026-11-02). Every number rev 2 quotes from R-33's raw sweep is recomputed here (the
-review's lesson 1: recompute with the design's own formula). A study only: never built or run by `make`.
+Lanes spanpick2 (rev 2) and spanpick3 (rev 3), 2026-11-02. Every number the note quotes from R-33's
+raw sweep or from its pricing formula is recomputed here (review lesson 1: recompute with the
+design's own formula). A study only: never built or run by `make`. Run python with `python3 -I`.
 
 ## Files
 
-- `onestream.py SIMDIR SWEEP.jsonl` — the census of stage 3's row ONE-STREAM over every no-entry
-  alternative (reuses R-33's committed `docs/dev/lanes/r33_sim/sim.py` candidate builder unchanged), and
-  smp20's prices under rev 2's formula (Zen 1 `plan_cost.def` constants; hit(PAIR) at 20 and 40 c).
-- `counts.py SWEEP.jsonl` — the populations rev 2 quotes (PF sites with two alternatives, OFS sites with
-  no consumer kind, entry x Table A row, run member vs stop, finder rows reached).
-- `onestream.out`, `counts.out` — their outputs at lane time.
+- `counts.py SWEEP.jsonl` — the populations the note quotes, split by arm (RTE vs the 43-pattern DEF
+  deny recompile): PF alternatives and core positions, OFS sites with no consumer kind, entry x
+  Table A row, run member vs stop, finder rows reached. Output `counts.out`.
+- `smp20.py PRIOR.list [NAME=BUNDLE.list ...]` — smp20 `(?i)x/1234` priced with rev 3's formula
+  (no `streams` factor) under P, F and each bundle, plus the break-even byte(PAIR) under P. Stand-in
+  constants, labelled in its docstring. Output `smp20.out`.
+- `witness.sh PCREC PCREC_ANALYZE SCRATCH` — the watched witness: builds the scratch `prose` bundle
+  (GPL-3 + GFDL-1.3 + Apache-2.0 from /usr/share/common-licenses), writes the four bundle listings
+  `smp20.py` reads into `SCRATCH/bundles/`, and compiles smp20 blind and with `prose` on four arms
+  (default, `--engine=vm`, `-fmemfn-simd`, the DEF deny). 8 compiles. Output `witness.out`.
 
-SWEEP is R-33's raw `sweep.jsonl` (not committed; `/var/tmp/pcrec-pcrec/scratch/memfn/r33/sweep/`,
-re-made by `docs/dev/lanes/r33_sim/240-kit-r33-sweep.sh`). Run with `python3 -I`.
+Rev 2's `onestream.py`/`.out` (the census of the deleted hand row ONE-STREAM) are retired with the
+row (git history, 5b3bc376a).
+
+## Re-run
+
+    SWEEP=/var/tmp/pcrec-pcrec/scratch/memfn/r33/sweep/sweep.jsonl   # R-33's, re-made by its job 240
+    S=/var/tmp/pcrec-pcrec/scratch/memfn/spanpick3
+    python3 -I counts.py "$SWEEP"
+    bash witness.sh build/pcrec build/pcrec-analyze "$S"
+    python3 -I smp20.py $S/bundles/default.list prose=$S/bundles/prose.list \
+        log=$S/bundles/log.list weblog=$S/bundles/weblog.list

@@ -1,15 +1,15 @@
-# span_pick — the kit's ONE "find the span" choice mechanism (design, rev 2)
+# span_pick — the kit's ONE "find the span" choice mechanism (design, rev 3)
 
-**Status: PROPOSED, rev 2 (lane spanpick2, 2026-11-02, from main 959c08124). Design only: not a build
-go, no code, no make, no timing.** Applies review `docs/dev/reviews/2026-11-02-r1-memfn-spanpick.md`
-and the owner's answers (decisions.md D186 addendum 1: A1, A2, A6). Read §Disposition of review
-2026-11-02 r1 first; changed text is marked `[rev2 <id>]`. Direction (owner, 2026-11-02): one set of
-"find the span" choices for every scenario, one table per inner question, the position picked last,
-costs from measured cards per target class, robust to the byte-rate prior, staged under D186.
-Evidence: `units_inventory.md` (ids U1-U10, N1-N14, Q1-Q11), `r33_report.md` + `docs/dev/lanes/r33_sim/`,
-`t588tri_report.md`, `bar588_report.md` (job 588), `window_site.md` rev 3.3, `walk_vs_v1_record.md`,
-`measure_sets.md`, roadmap §0a/A-PLAN/§5; rev 2's recounts in `span_pick/` (over R-33's raw sweep).
-`[rev2 B1]` Code cites are the review tree's (884996ef6; no kit code changed to 959c08124).
+**Status: PROPOSED, rev 3 (lane spanpick3, 2026-11-02). Design only: not a build go, no code, no make,
+no timing.** Applies the ruled re-check `docs/dev/reviews/2026-11-02-r2-memfn-spanpick2.md` and D186
+addendum 1 AS AMENDED (A2: no hand row for `(?i)x/1234`; data resolves it as the first priced
+departure; a WATCHED witness), plus the owner's direction relayed with the rulings (tags `[rev3 WW]`
+the watched witness, `[rev3 WD]` [BENCH-WITHDATA]'s bar as a property of the pick). Read §Disposition
+of review 2026-11-02 r2 and §The watched witness first; changed text is marked `[rev3 <id>]`; rev 2's
+disposition of round 1 is in rev 2 (5b3bc376a). Evidence: `units_inventory.md` (U1-U10, N1-N14),
+`r33_report.md` + `docs/dev/lanes/r33_sim/`, `t588tri_report.md`, `bar588_report.md` (job 588),
+`window_site.md` rev 3.3, `measure_sets.md`, roadmap §0a/A-PLAN/§5; `span_pick/` (recounts, witness
+compiles). Code cites are the r2 review tree's (959c08124).
 
 ## Goals
 
@@ -18,483 +18,503 @@ Ranked; a higher goal wins a conflict.
 1. **Answers exact** (every caller). Every plan the tables can produce yields exactly the candidates
    its facts define: G2 (`memfn/tests/run_g2_win.sh` and the finder G2) green against the scalar byte
    loop, every plant red; zero corpus answer changes at every stage.
-2. **No regime slower beyond noise** (users of the default build; D186's bar). `[rev2 B5]` Stage 1:
-   zero movers on EVERY arm (§Staging's witness list), no pcrec abi number change, one MF_SITE_ABI
-   (+ MF_CLASS_V) event for the grown reply. Stage 3: each row's movers read new/old <= 1 + the A/A
-   floor in every regime of a 588-style run, else the row narrows; a kept loss is an owner-approved
-   exception. `[rev2 A2]` The shipped smp20 loss (S3's `cover` row, RTE/DEF 1.58-4.03x) is a Goal-2
-   matter: D186's bar applies to shipped rows too; it closes by stage 3's first row.
+2. **No regime slower beyond noise** (users of the default build; D186's bar). Stage 1's no-mover
+   units: zero movers on EVERY arm (§Staging), no pcrec abi number change `[rev3 P3]` (unit 1f, the
+   retired denies, is a caller-visible step of its own). Stage 3: each row's movers read new/old <= 1
+   + the A/A floor in every regime and arm of a 588-style run, else the row narrows; a kept loss is
+   an owner-approved exception. `[rev3 A2]` smp20's shipped loss (S3's `cover` row, RTE/DEF
+   1.58-4.03x) is a Goal-2 matter closed BY DATA: the first priced departure, no hand row.
 3. **One table per question** (the next editor; `architecture.md` "One table per slot").
-   `[rev2 B3]` After stage 1: six question tables, four pick-side tables (two are defaults that retire
-   by census), one named untabled pair (§The tables), whatever the scenarios. Check: a decider census
-   per question at each unit's HEAD (deciding functions by grep against their table, `kit_walk` reach
-   over the corpus); a second decider that stays byte-identical fails it.
-4. **Costs measured, by target class, none hand-set: the END STATE** (owner, D186 add. 1 A1; D176
-   Q1/Q3). `[rev2 A1]` No priced departure before its cards are measured; until then a changed pick
-   is a hand row. Every cost a priced row reads is a declared row of the stamped set (a check);
-   `plan_cost.def`'s Zen 1 rows retire with the last default reading them. `[rev2 D2]` "Class" today
-   = the named set or `DEFAULTS` (`idk`).
-5. **The measured losses close** (users of common patterns). smp20 `(?i)x/1234`: RTE/DEF <= 1 +
-   floor on every job-588 cell, by row ONE-STREAM (§Staging); the six D-hors sites keep their wins
-   (RTE/DEF 0.57-0.78). A win is never a requirement.
+   `[rev3 P4]` After stage 1, for plan-call sites: six question tables and three pick-side tables
+   (KEY, M, TIE; T-PICK arrives with the first priced row), plus the NAMED exceptions of §The tables,
+   each with its retiring trigger. Check: the decider census of §The tables, which can fail.
+4. **Costs measured, by target class, none hand-set: the END STATE** (D186 add. 1 A1; D176 Q1/Q3).
+   No priced departure before its cards are measured; every cost a priced row reads is a declared
+   row of the stamped set (checked); `plan_cost.def`'s Zen 1 rows retire with their last reader.
+5. **The measured losses close, and data never hurts** (users of common patterns). `[rev3 A2]`
+   smp20 `(?i)x/1234`: RTE/DEF <= 1 + floor on every job-588 cell via the first priced departure,
+   read at every stage as §The watched witness; the six D-hors sites keep their wins (RTE/DEF
+   0.57-0.78). `[rev3 WD]` A with-data compile matches or beats the blind one (§The pick, "With
+   data"). A win is never a requirement.
 
 **Non-goals.** Engine choice, crossings and whole-artifact effects (architecture's rules; engine
 pricing stays DEFERRED). The SIMD official verdict. New find methods (V1/M64 stay closed). Run-time
-adaptive switching (Boonies). Changing the byte-rate prior (Open question 3).
+adaptive switching (Boonies). `[rev3 A2]` Changing the byte-rate prior, or a real-text rate dataset:
+options are evaluated only if smp20 still mispicks at the last planned step.
 
 ## The shape
 
-`[rev2 B4]` Six scenarios make the SAME call in stage 1 (DFA prefilter OFS, cover/REPORT, PF find,
-VM re-find, MLINE, LMHIT; a pre-check's window-stating parts ride their site's call): facts in, one
-complete plan out. Presence (the PRES slot) keeps its own entry until [MEMFN-UNBOUNDED-SPANS] (not
-started; its own MF_SITE_ABI event) states unbounded spans; then it joins as the seventh. Inner first:
+Six scenarios make the SAME call (DFA prefilter OFS, cover/REPORT, PF find, VM re-find, MLINE,
+LMHIT; a pre-check's window-stating parts ride their site's call). Presence (the PRES slot) keeps its
+own entry until [MEMFN-UNBOUNDED-SPANS] states unbounded spans. Inner first:
 
 ```
- 1 FIXED FACTS   the measurement set (named or DEFAULTS), layer (SIMD on/off), form, handoff,
-                 site_kind (the stated consumer kind), alternatives (PARKED/RESEED/NONE), floor,
-                 byte rates                                   [rev2 B2: no frame fact here]
- 2 CANDIDATES    per alternative: every stated core position after C-meet, not the full set,
-                 with its set S, offset d, prior mass, flat mass, table offer, soundness flags
- 3 PER CANDIDATE the question tables: T-FIND (method + resume) -> T-VERIFY (step list) ->
-                 T-SETTEST / T-CMP forms -> T-FRAME (which renderer serves this plan) => one
-                 COMPLETE plan per (candidate, method) whose frame row renders it
- 4 PICK, LAST    the default plan (the KEY, M and TIE rows: today's answer), then T-PICK's rows
- then EMIT       renders the plan and its frame row; decides nothing a card covers (roadmap §0a)
+ PHASE 1, the plan call (pcrec reads its reply for NEXT, the OFFSETS stamp and the run member)
+ 1 FIXED FACTS   the measurement set (named or DEFAULTS), layer, alternatives (PARKED/RESEED/NONE),
+                 floor, byte rates (the named analysis bundle's, else the prior)
+                 [rev3 P1: form, handoff, site_kind are FRAME facts, stated in phase 2]
+ 2 CANDIDATES    per alternative: every stated core position after C-meet, with its set S, offset
+                 d, prior mass, flat mass, table offer, soundness flags
+ 3 PER CANDIDATE T-VERIFY (step list incl. the run member) -> T-SETTEST / T-CMP forms
+ 4 PICK, LAST    the default plan (KEY, M, TIE: today's answer), then T-PICK's rows (stage 3)
+ PHASE 2, the text call (pcrec states the frame its NEXT row chose; window_site §0)
+ 5 T-FRAME       Table E, legacy rows first, over (plan, frame, hooks, phase set)
+ 6 T-FIND        on E-find only: Horspool first, then the method rows, with the asker fact
+ 7 RENDER        the renderer row (B-fn / B-pair), then the text; decides nothing a card covers
 ```
 
-**The candidate list is data**, built from pcrec's stated spans and the art's byte rates, with
-soundness flags: on a RESEED alternative F0 (offset 0) is never the stop (S188, MISCOMPILE-1).
-`[rev2 B1]` PARKED readability is NOT a step-2 fact: `rd_set` widens a PARKED plan's reads when
-T-VERIFY's C-pin sets the re-seed bit (window.c :251-254, :877-878), so a PARKED candidate's
-readability is a T-VERIFY output; stage 1 is unaffected (the PARKED stop is k0).
-`[rev2 B2]` Frame validity's effective key is the stated consumer kind (on R-33's sweep the E row is a
-function of form, handoff, site_kind and floor; two-member stops are PAIR on REPORT, walked elsewhere).
+`[rev3 P1]` T-FRAME and T-FIND stay TEXT-time through stage 1: Table E reads hooks and a phase set
+the plan call does not take (compose.c :255-258; `window_reply_ask` relies on "the decision reads no
+frame fact", emit_dfa.c :7600-7602), and T-FIND's answer depends on its asker (PAIR needs
+`SF_WINDOW_STOP`, set only by `fd_find`, finder.c :938; Table E's legacy rows ask `fd_route`, which
+never sets it). A priced row compares methods, so it needs the frame at plan time: §Staging's
+prerequisite unit 3.0.
 
-**A scenario** is stated facts. `[rev2 E1]` PF states span 0 on its PARKED alternative and, on 1,454
-of R-33's 1,767 PF sites, a RESEED one with several core positions (`\d{4}`: 0-3). **The trace**
-`[rev2 C9]`: every candidate, the rows walked, the default and the deciding row (MFTRACE build);
-prices and bands join it only with the first priced row.
+**The candidate list is data**, with soundness flags (a RESEED alternative never stops at F0, S188);
+PARKED readability is a T-VERIFY output (`rd_set`, window.c :251-254, :877-878). **A scenario** is
+stated facts. `[rev3 R4]` Of R-33's 1,742 RTE PF sites (1,767 units incl. the
+43-pattern DEF recompile), 1,429 state PARKED + RESEED, 291 one NONE alternative, 22 PARKED only; of
+the 1,454 RESEED alternatives (incl. DEF) 740 have one core position and 714 two or more
+(`span_pick/counts.out`). **The trace**: every candidate, the rows walked, the default and the
+deciding row (MFTRACE build); prices and bands join it with the first priced row.
 
 ## The designer/emitter split
 
-This mechanism IS the kit's planning face (roadmap §0a) and `[rev2 A6]` stage 1 IS A-PLAN's first
-step (D186 add. 1 A6): the plan call and the emit call, byte-identical, with the roadmap's ratchet
-accounting (§Staging).
+This mechanism IS the kit's planning face (roadmap §0a) and stage 1 IS A-PLAN's first step (D186
+add. 1 A6), with the roadmap's ratchet accounting (§Staging).
 
 | stage | owns | in this design |
 |---|---|---|
-| pcrec, the designer | facts and legal choices: spans, alternatives with entry, floor, form/handoff/site_kind, byte rates, the measurement set | states them once per site; never a position, method or cost (D157) |
-| architecture: the kit's planning face | candidates, the question tables, the pick, (later) the cards | the plan call: facts in, ONE complete plan out (alternative, stop, method, resume, verify, test forms, frame row) plus its trace |
-| architecture: pcrec's rules | engine, route, crossings (`next_keys`, FIRST/NEXT rows) | reads the plan reply as NEXT reads the phase-1 reply today (window_site §2.4) |
-| emit: the kit's emitting face | rendering | the emit call: plan in, C out; renderers select TEXT by the plan's method and frame row; golden plan-in/C-out tests per seam |
+| pcrec, the designer | facts and legal choices: spans, candidate positions with their rates, alternatives with entry, floor, frame facts, byte rates, the set | states them once per site; never a CHOSEN position, method or cost `[rev3 O6]` (D157; D167 add. 1 A11's landmark-admission exception stands until restated in code) |
+| the kit's planning face | candidates, the question tables, the pick, (later) the cards | phase 1: facts in, one plan out (alternative, stop, verify plan, test forms) plus its trace |
+| pcrec's rules | engine, route, crossings (`next_keys`, FIRST/NEXT rows) | reads the reply as NEXT reads the phase-1 reply today (window_site §2.4) |
+| the kit's emitting face | frame, method and renderer rows, then text | phase 2: plan + frame in, C out; golden plan-in/C-out tests per seam |
 
-**What moves across.** The reply grows from window_site's phase-1 reply by the method, resume and
-frame row, which the text call re-decides today (`fd_find` in phase 2, `fn_rows` BODY, Table E).
-`[rev2 B5]` One MF_SITE_ABI (+ MF_CLASS_V) event, NO pcrec abi event (window_site §5.2).
+**What moves across** `[rev3 P1]`. In stage 1 the reply does NOT grow (method, resume and frame stay
+phase-2 answers; only 1f's entry removal is an MF_SITE_ABI event). It grows (method, resume, frame
+row) at unit 3.0, when the plan call takes the frame.
 
-**A-PLAN's open points.** `[rev2 A6]` (1) is NOT settled here: stage 1 returns one plan as the
-INTERIM (byte-identical; prices exist nowhere yet); the reply grows a bounded, priced set when
-[PRICE-BAKEOFF] opens (Open question 1). The landmark end state (§pcrec-side findings) reads the
-kit's price only then. (2) Helper sharing stays emit's, declared cost-free. (3) Run-time dispatch
-stays held. (4) Cards are tables keyed by class and regime. (5) `--memfn=no-X` denies become filters
-on T-FIND and T-PICK rows inside the plan call; the namespace is unchanged (D147 add. 9). (6) The
-same-commit abi rule is unchanged.
+**A-PLAN's open points.** (1) `[rev3 O4]` Stage 1 returns ONE plan, which amends the agreed A-PLAN
+step ("candidates and cards out"): Open question 1; stage 1's lane edits the roadmap text either way.
+(2) Helper sharing stays emit's, cost-free. (3) Run-time dispatch stays held. (4) Cards are tables
+keyed by class and regime. (5) `--memfn=no-X` denies become filters on T-FIND and T-PICK rows; the
+namespace is unchanged (D147 add. 9). (6) The same-commit abi rule is unchanged.
 
 ## The tables
 
-`[rev2 B3]` The stage-1 inventory, every decider with its home. Rows say what is VALID; price and
-dominance are separate. Each table answers as today in stage 1.
+Rows say what is VALID; price and dominance are separate. Each table answers as today in stage 1.
 
 | # | question | form and rows (stage 1) | replaces |
 |---|---|---|---|
-| T-FIND | how to find the next member of S at d, and where to resume | first-match `kit_table`; rows carry a RESUME action column `[rev2 SLOT-9]` (Horspool: D-shift, its admission D-hors's holds kept; every other row: D-one `c + 1`); D1c, PAIR, D1, D1w, R7w; SIMD forms are rungs of a row at `-fmemfn-simd` `[rev2 C7]`; validity READS T-FRAME's row contracts `[rev2 B2]`; inert R8/R3a/R3b/R4/R1/R2 deleted `[rev2 C8]` | Q3's `fd_route`/`fd_find`/compose `arms[]`, Table D, T-RESUME |
-| T-VERIFY | which other positions to test, in what order and grouping | `[rev2 B1]` a DECLARED STEP LIST read in order, every holding row applying (Table C's cumulative steps C-floor or C-yes, C-model or C-none, C-pin, C-stop, C-run, C-asc), not first-match; `[rev2 SLOT-2]` its first step is the run member (`run_member`, tie row T_MASS_STRETCH, computed before Table C's rows as today), an output of the plan | Q5, PRES part ordering and ofsskip's legacy plan where byte-identical (U10) |
-| T-SETTEST | how one byte's membership is tested | offered `T[b]`, then `kit_set_test`; C-table/C-own live HERE only, T-VERIFY reads them `[rev2 B1]` | Q11, `member_test` |
-| T-CMP | how a literal stretch is compared | runcmp's rows (`rc_row_of`); `[rev2 B1]` generic.c's per-byte RUN chain stays a SECOND decider until U8's unit change | Q6 |
-| T-PRES | which required members a presence pass tests | the PRES rows (P0, P2, P3, P4, P9); `[rev2 B1]` precheck's three renderers (`gate`, `landmark`, `set_rest`) are T-PRES's rendering, not T-FIND's (N9); `[rev2 SLOT-10]` D176 Q4's fold is a T-PRES row reading the plan's stop, landing as its own choice change | Q9 |
-| T-FRAME | which renderer serves this complete plan | `[rev2 B2]` Table E (`wf_erows`, legacy first, order kept) asked at PLAN time per complete plan; its answer is a plan field the emit face reads | Q8, the E-row half of phase 2 |
+| T-FIND | how to find the next member of S at d, and where to resume | first-match `kit_table`, asked at TEXT time on E-find only `[rev3 P1]`: Horspool FIRST (D-hors's holds kept, deny `window-skip` with it; its admission reads T-VERIFY's tested sets, window.c :1592-1597, and its D-shift resume T-VERIFY's offsets), then D1c, PAIR, D1, D1w, R7w (resume D-one `c + 1`); ONE walk with the asker fact "the asker renders PAIR" (today `SF_WINDOW_STOP`, kept, renamed) replaces `fd_find`/`fd_route`'s two entries; SIMD forms are rungs of a row; inert R3a/R3b/R4 deleted (1a), R8/R1/R2 at 1f | Q3's `fd_route`/`fd_find`, Table D, T-RESUME |
+| T-VERIFY | which other positions to test, in what order and grouping | a DECLARED STEP LIST read in order, every holding row applying: `[rev3 S3]` C-bound (a full-set position is never a test), C-floor or C-yes, C-model or C-none, C-pin, C-stop, C-run (its core/shape clause `run_group_ok` read by BOTH renderers' grouping, `find_groups` and `translate`), C-asc; first step the run member (`run_member`, T_MASS_STRETCH), an output of the plan | Q5, Table C and ofsskip's legacy plan (U10) |
+| T-SETTEST | how one byte's membership is tested | offered `T[b]`, then `kit_set_test`; C-table/C-own live HERE only | Q11, `member_test` |
+| T-CMP | how a literal stretch is compared | runcmp's rows (`rc_row_of`); generic.c's RUN chain is a named exception | Q6 |
+| T-PRES | which required members a presence pass tests, in what order | the PRES rows (P0, P2, P3, P4, P9); `[rev3 S3]` `fd_pres`'s chain order (HEAD/RUN/REST, REST ascending byte, a REST member a whole exact run covers un-verified) and precheck's `implied_by` are its kept renderer-side deciders; precheck's three renderers are its rendering (N9); D176 Q4's fold is a T-PRES row, its own choice change | Q9, PRES part ordering |
+| T-FRAME | which renderer serves this plan in this frame | Table E (`wf_erows`, legacy first, order kept), at TEXT time `[rev3 P1]`; `[rev3 P2]` plus the renderer row: B-fn vs B-pair (both PAIR on E-find, different C: smp05's `ofsskip__body` vs pr09's inline loop), reading the plan's shape and `fn_rows` BODY; `b_fn_holds`'s reconciliation KEPT | Q8, the phase-2 frame walk |
 
-Pick-side tables: **KEY** (`[rev2 SLOT-3]` Table A's five rows: A-empty, A-parked, A-model, A-mass,
-A-floor; the RESEED default with no `scan_ok` walked span is A-floor's "no stop", 1,420 of R-33's
-1,835 RESEED alternatives; A-empty has no population in the sweep, its reach owed); **M** (MARGIN,
-M-one, M-parked); **TIE** (`wf_ties`, plus `[rev2 B1]` a NEW presence-member row: pattern order, then
-the larger byte, for `tie_over`; plus `[rev2 A3]` T_BAND -> TIE_DEFAULT for priced rows); **T-PICK**
-(arrives with stage 3's first row `[rev2 C9]`). KEY and M are the DEFAULT; each retires only when a
-census shows no class reads it, as its own no-mover step `[rev2 C3]`.
-Untabled, named: vrun's KA/KB (U7) are SIMD-rung parameters, kept (they move SIMD-on bytes).
-`[rev2 B1]` OFS sites state no consumer kind (381 of 381 FUNC/handoff-0 window sites in the sweep:
-site_kind UNSTATED), every T-FIND row reads it, so T-FIND declines there: the RESEED KEY row keeps
-`scan_ok`'s one-member test itself, and `fn_rows` BODY (cube -> fn-pair, else fn-memchr) stays a
-decider until pcrec states a kind on OFS sites (a pcrec-side MF_SITE_ABI event, §pcrec-side findings).
+Pick-side tables: **KEY** (Table A's five rows: A-empty, A-parked, A-model, A-mass, A-floor; A-floor
+is the RESEED default with no `scan_ok` walked span, 1,420 of 1,835 RESEED alternatives incl. DEF,
+1,397 of 1,800 RTE; A-empty's reach owed); **M** (MARGIN, M-one, M-parked); **TIE** (`wf_ties`,
+`[rev3 S1]` with three readers made explicit: the presence-member row, a SECOND comparator shape
+(member order, then the larger byte; an UNKNOWN order ranks below every known, declared, as
+`tie_over` reads `MF_ORDER_UNKNOWN` today); presence's run window reads T_WINDOW (LEFTMOST; its "no
+kit reader" text corrected); translate's run rank reads T_MASS_STRETCH (HIGHER), its `rank_pos[0]`
+asserted equal to `run_member`'s answer; plus T_BAND -> TIE_DEFAULT for priced rows). **T-PICK**
+arrives with the first priced row. KEY and M are the DEFAULT; each retires only when a census shows
+no class reads it, as its own no-mover step.
+
+**Named exceptions** `[rev3 P4]`, each a second decider kept on purpose, with its retiring trigger:
+
+| decider | answers | retires when |
+|---|---|---|
+| generic.c's per-byte RUN chain | T-CMP | U8's unit change |
+| `fn_rows` BODY (ofsskip.c :414-416) and the RESEED KEY row's `scan_ok` | T-FIND on OFS sites (no consumer kind: 371 of 371 RTE OFS sites) | pcrec states a kind on OFS sites |
+| `fn_rows` PREFIX (own denies `vrun-w32`/`vrun-w16`) and vrun's KA/KB (U7) | SIMD rungs | a SIMD-layer choice row (Open question 2) |
+| compose's `arms[]` as the frame selector of NON-plan sites (carries the `precheck-assign-byte` deny) | frame + method off the plan call | outside Goal 3's plan-call scope; joins when a kit request adds an arm |
+| `fd_pres` chain order, `implied_by` | T-PRES | presence joins the call ([MEMFN-UNBOUNDED-SPANS]) |
+| the asker fact (the one T-FIND walk answers per asker: E-find with it, legacy rows without) | T-FIND per frame | unit 3.0 (plan takes the frame) |
+
+**The decider census** `[rev3 P4]` (Goal 3's check, per unit HEAD): a committed map `decider ->
+table` (one line per deciding function; written by stage 1's first lane at its base, kept by each
+unit's lane); a grep over `memfn/src` for argmin and walk shapes (`kit_walk(`, `< best`, `< bm`,
+`tie_takes`, `TIE_`) whose every hit must be mapped to a table or a named exception, red on an
+unmapped hit; one sabotage row: a byte-identical copy of `run_member`'s loop added elsewhere must go
+red. `kit_walk` reach stays a population count, not the census (plain-loop deciders leave no reach).
 
 **Growth rule.** A new scenario adds no table; a new method adds a T-FIND row plus its card (D176).
 
 ## The pick
 
-`[rev2 C3, C9]` **Stage 1: no prices.** The default plan is TODAY's complete plan: the KEY row's
-position, T-FIND's first match there, M's alternative, TIE's order. Stage 1 builds the defaults and the
-trace only; no pick code reads a cost other than the KEY/M rows' existing `plan_cost.def` integers,
-whose truncation order (C-model's) is preserved for byte identity `[rev2 B5]`.
+**Stage 1: no prices.** The default is TODAY's plan (KEY, M, TIE, then phase 2's frame and method);
+nothing reads a cost but KEY/M's `plan_cost.def` integers, C-model's truncation order kept.
 
-**Stage 3: T-PICK rows.** Each row: a condition on stated facts, the LEVELS it opens (method,
-position, alternative) `[rev2 C3]`, an action, its deny, its per-regime evidence (D186: a choice
-change is a row). `keep` is the last row. Until the cards are measured every action is a RULE
-(A1); the first is ONE-STREAM (§Staging). The condition is tested before any card key is looked up,
-so a site the row does not admit never consults the set `[rev2 D1]`.
+**Stage 3: T-PICK rows, all priced** `[rev3 A2]`. Each row: a condition on stated facts tested
+before any card key is looked up, the LEVELS it opens (method, position, alternative), the priced
+action below, its deny, its per-regime evidence (D186). `keep` is the last row. No hand rows are
+planned (A1 allows one with its own evidence; A2 rules none for smp20's class).
 
-**The priced action (the end state; only after stage 2, one row at a time, A1).** A row's action may
-be a priced comparison:
+**The priced action** (after stage 2, one row at a time):
 1. Candidates are the complete plans that differ from the default only at the row's levels, each
-   priced under P (the committed prior) and F (flat, `m_F(S) = |S| x 1e6 / 256` ppm `[rev2 C1]`),
-   each with a band.
-2. `[rev2 C3]` ONE comparison of each candidate against the default complete plan (no per-level
-   stickiness; the levels only order the trace). A candidate QUALIFIES only if cheaper than the
-   default beyond the band under BOTH P and F.
-3. `[rev2 A3]` Among qualifiers: the least worst-case ratio `max_r price_r(c) / price_r(default)`,
-   then TIE. A default within band of every candidate is TIE's row T_BAND -> TIE_DEFAULT: D176 Q5's
-   "within the band, the declared tie rows decide" holds to the letter, and the row's content (the
-   incumbent stands) is D186's "keep the choice that is never badly wrong".
-4. `[rev2 C3, C2]` Unpriced default (its method has no card): keep. Unpriced candidate (no card, or a
-   card without noise): cannot qualify; a missing `noise_e6` is UNMEASURED, never 0.
-5. `[rev2 C3]` A renderer addition that flips a T-FIND first match moves the DEFAULT, so it is its own
-   choice change with its own row and evidence, never a side effect.
-6. `[rev2 C7]` Only scalar plans are compared; SIMD forms are rungs inside the chosen scalar plan
-   (D147), so a SIMD-on compile never picks another stop or alternative.
+   priced under the reading's rate models (BLIND: P, the committed prior, and F, flat, `m_F(S) = |S|
+   x 1e6 / 256` ppm; WITH DATA: below).
+2. ONE comparison of each candidate against the default plan. BLIND: a candidate QUALIFIES only if
+   cheaper than the default beyond the comparison's band under BOTH P and F.
+3. `[rev3 C3]` Among qualifiers: the least worst-case ratio `max_r price_r(c) / price_r(default)`
+   beyond the band; qualifiers within band of the best go to TIE's rows (D176 Q5; guide
+   addenda/kit.md "within-noise prices tie through tie rows"). A default within band of every
+   candidate is T_BAND -> TIE_DEFAULT.
+4. Unpriced default: keep. Unpriced candidate (no card, or a card without noise): cannot qualify;
+   a missing `noise_e6` is UNMEASURED, never 0.
+5. A renderer addition that flips a T-FIND first match moves the DEFAULT: its own row and evidence.
+6. Only scalar plans are compared; SIMD forms are rungs inside the chosen scalar plan (D147), until
+   Open question 2 is answered `[rev3 C9]`.
+7. `[rev3 R5]` Each row states whether it applies on pre-check parts, where pcrec scans the reply's
+   run member, not its stop (`req_run_member`, emit_dfa.c :1045-1077).
 
-**The price of a complete plan** `[rev2 C1, C6]`: in the set's unit (the scalar walk's per-byte
-cost, D176 Q1) per 1e6 subject bytes; masses in ppm; card values `value_e6` integers; each term
-computed exactly and rounded half-up once at its end (D176 Q5: integers; no per-factor truncation, so
-`m x prod pass` never vanishes for a rare set). Under rate model r:
+**With data** `[rev3 WD]` (a compile naming an analysis bundle B; plan [BENCH-WITHDATA]). At a site
+a priced row admits, the BLIND pick (steps 1-4 under P and F) is computed first and is the
+incumbent; a candidate departs from it only if cheaper beyond the band under B alone, where the band
+adds each mass's sampling noise from B's counts (Poisson, `sqrt(n)` on a count n) times its
+coefficient. F is not read: it stands for the absence of data, which B replaces. Cost: two pricings
+per admitted site.
+**The property** (the owner's bar, SCOPE PENDING the owner's confirmation): on every cell whose subject
+kind B describes, a with-data compile matches or beats the blind compile beyond noise. **Why the
+structure gives it:** the with-data pick's predicted price under B is <= the blind pick's by
+construction (the blind pick is the incumbent, a departure must win under B beyond band). The
+MEASURED cell then holds when (i) the cards' regime is the cell's (long subjects; per-call cells
+need [SPAN-PICK-PERCALL]'s term); (ii) model error (independent positions) stays inside the band;
+(iii) the cell's subject is B's kind within B's sampling noise (a held-out sample, never the timed
+bytes); (iv) the site is one a priced row admits. A with-data loss is therefore a broken (i)-(iv):
+a mechanism finding ([BENCH-WITHDATA] item 4), never a trade. NOT covered: sites no priced row
+admits, where KEY's mass-only rows read B as their prior (today's behaviour, kept byte-identical by
+stage 1); [BENCH-WITHDATA]'s census finds their losses, each answered by a priced row (a blind KEY
+incumbent there would undo today's with-data wins, smp20's included).
+
+**The price of a plan** `[rev3 C1, C2]`: in the set's unit (the scalar walk's per-byte cost, D176
+Q1) per 1e6 subject bytes; masses in ppm; card values `value_e6` integers. Fixed point (D176 Q5):
+every product is carried in int128 at a scale of 1e-12 of the unit and rounded there half away from
+zero (`measure_sets.md` §1.7), and the price is rounded to an integer at its end; a term under the
+scale contributes 0, deterministically ("exact" is withdrawn). Under rate model r:
 
 ```
- stream methods (memchr, memchr-back, PAIR): streams x byte(method) x 1e6
-                                           + m_r(S) x (hit(method) + verify_r)  + passes_r x enter
- walk:                                       byte(walk) x 1e6
-                                           + m_r(S) x (hit(walk) + verify_r)    + passes_r x enter
- Horspool:   (1e6 / E_r[sh]) x (probe + q_r x (hit(hors) + verify_r))           + passes_r x enter
-   verify_r = sum_i cmp(form_i) x prod_{j<i} pass_r(j);  pass_r(j) = m_r(set_j) / 1e6
-   passes_r = m_r(S) x prod_i pass_r(i);  enter = enter(consumer kind, entry fact)   [rev2 C4]
-   E_r[sh]  = sum_b rate_r(b) x sh[b] / 1e6 over Horspool's shift table for the window
-              (a byte in no window position shifts the full window w); q_r = m_r(S_last) / 1e6
+ stream methods (memchr, memchr-back, PAIR):  byte(m) x 1e6 + m_r(S) x (hit(m) + verify_r) + passes_r x enter
+ walk:                                        byte(walk) x 1e6 + m_r(S) x (hit(walk) + verify_r) + passes_r x enter
+ Horspool:   (1e6 / E_r[sh]) x (probe + q_r x (hit(hors) + verify'_r))                  + passes_r x enter
+   byte(m)  = the method's measured cost per subject byte, ALL its streams (no streams factor)
+   verify_r = sum_i cmp(form_i, pass_r(i)) x prod_{j<i} pass_r(j), i over the other positions in
+              ascending mass; verify'_r the same without S_last (the probe tested it)
+   pass_r(j) = m_r(set_j) / 1e6;   passes_r = m_r(S) x prod_i pass_r(i)
+   cmp(f, p) = cmp0(f) + (cmp½(f) - cmp0(f)) x min(p, 1-p) / 0.5   (ASSUMPTION: the mispredict
+              share is symmetric about 0.5 and linear; the card's two pass rates are its points)
+   enter    = enter(consumer kind, entry fact)
+   E_r[sh]  = sum_b rate_r(b) x sh[b] / 1e6 over Horspool's shift table (a byte in no window
+              position shifts the full window w); q_r = m_r(S_last) / 1e6
 ```
 
-`hit(method)` is per candidate RETURNED, measured as the method's own slope over hit density, so a
-PAIR's second stream is in its measured `hit(PAIR)`, not a formula factor `[rev2 C1]`. Horspool pays
-its candidates inside its own line, never the stream lines too `[rev2 C6]`. Positions are
-independent (an ASSUMPTION; model error is outside the band, §Robustness).
+`hit(m)` is per candidate RETURNED, the method's own slope over hit density. Horspool pays its
+candidates inside its own line. Positions are independent (an ASSUMPTION; model error, §Robustness).
+
+**The band of a comparison** `[rev3 C3]`: for prices a and b, the quadrature sum over cards of
+`(coef_a - coef_b) x noise` (a card both read with one coefficient cancels), plus, with data, B's
+sampling terms. No constant enters except the card gates (kit-grid's `gate_e6` 3 %, an UNMEASURED
+DEFAULT, D149; each new card declares its own).
 
 ## Cost cards
 
-**What is measured** (one card per quantity, regime named, `measure_sets.md` §7.2 shape):
+**What is measured** (one card per quantity, regime named, `measure_sets.md` §7.2 shape; scalar
+only `[rev3 C9]`: SIMD-form cards are dropped from stage 2 until Open question 2 is answered):
 
 | card | per | regime | replaces |
 |---|---|---|---|
-| `find.byte` per method (memchr, memchr-back, PAIR, walk; each SIMD form its OWN row, no layer column `[rev2 C7]`) | byte scanned | miss-only stream, fresh long buffer | C_MEMCHR, C_BITMAP |
-| `find.hit` per method | candidate returned and restarted | slope over hit density, periodic and random landings | the ASSUMED H_HIT |
-| `hors.probe` `[rev2 C6]` | Horspool probe (load, table read, shift) | miss-only, the window's shift distribution | — (no card today) |
-| `verify.cmp` per T-SETTEST form, per T-CMP row x length class | one compare | pass rate 0 and 0.5 | C_VERIFY (UNMEASURED), C_MISPRED |
-| `enter` per consumer kind x entry fact `[rev2 C4]` (PARKED resume, RESEED re-seed, NONE) | candidate passed on | false-start survival measured | C_ENTER (MEASURED x ASSUMED) |
+| `find.byte` per method (memchr, memchr-back, PAIR, walk) `[rev3 C1]` | subject byte, all the method's streams | miss-only stream, fresh long buffer | C_MEMCHR, C_BITMAP |
+| `find.hit` per method (the four, and `hors` `[rev3 C2]`) | candidate returned and restarted | slope over hit density, periodic and random landings; the member split named in its subject (x only vs x/X alternating) | the ASSUMED H_HIT |
+| `hors.probe` | Horspool probe (load, table read, shift) | miss-only, the window's shift distribution | — |
+| `verify.cmp` per T-SETTEST form, per T-CMP row x length class | one compare | pass rate 0 and 0.5 (`cmp0`, `cmp½`) | C_VERIFY (UNMEASURED), C_MISPRED |
+| `enter` per consumer kind x entry fact (PARKED resume, RESEED re-seed, NONE) | candidate passed on | false-start survival measured | C_ENTER (MEASURED x ASSUMED) |
 
-`[rev2 C4]` MARGIN (2x, ARGUED) stays the alternative default until the two `enter` cards exist; a
-PARKED-vs-RESEED priced row needs both. `[rev2 B1]` MAX_SET is not a card and U9 leaves stage 1: the
-kit may not read pcrec's `limits.def` (memfn/CLAUDE.md), so the duplicate is closed at its own unit
-by a grep of `PCREC_OFSK_MAX_SET`'s readers (pcrec states it as a fact, or pcrec's copy retires).
+MARGIN (2x, ARGUED) stays M's default until the PARKED and RESEED `enter` cards exist for the kinds
+a priced row admits. `[rev3 C10]` Open card-design question for stage 2's lane: survival is a
+property of the pattern's automaton after the stop, so a per-(kind, entry) card may bake in its
+fixture's survival; the alternative is a pcrec-stated survival fact times a per-byte card. OFS
+sites state no kind, so `enter` has no key there (fine while T-FIND declines on OFS). MAX_SET is not
+a card; U9 closes by a grep of `PCREC_OFSK_MAX_SET`'s readers.
 
-**Noise reaches the kit** `[rev2 C2]`. Today `mf_measure` has no noise field and the committed set's
-68 kit rows carry `noise_e6` '-'. Stage 2 owes: a kit request (main files it), a noise field (an MF
-abi event with its `measures.md` §4 and match_api hunks), a producer that writes it, and a noise rule
-for derived rows (propagated from their inputs in quadrature through the row's formula).
+**Noise reaches the kit.** `mf_measure` has no noise field; the committed set's 68 kit rows carry
+`noise_e6` '-'. Stage 2 owes: a kit request (main files it), a noise field (an MF abi event, with
+`measure_sets.md` §4.1 and `match_api` hunks, the kit channel's homes `[rev3 C4]`), a producer, a
+rule for derived rows (quadrature through the row's formula), and `[rev3 C4]` the stamp's honesty
+once noise decides: noise joins `values_digest` (a digest-version event, `measures.md` §3.3¶1 and
+§5¶4, `measure_sets.md` §1.6/§4.1, readers by grep), or a FILE set may not share a committed id.
 
-**Where they live** `[rev2 D3]`. A set names ONE method version, so the span cards are quantities of
-the grid's successor method (`kit-grid@2`, grid2's cards) and the grid keys are re-measured under it;
-the job is grid-sized, not "one short job". It lands as a new REVISION of the box's set (D176 Q3:
-`zen4-grid1` rev 2), gated on the step-0 census; whether a revision may carry a successor method
-version is measure_sets' question, asked of main before the job (if not: a new id, said as a
-departure from D176 Q3). Embedded by `make gen-measures`, handed on `mf_art_begin`.
+**Where they live** `[rev3 C5]`. The span cards are quantities of the grid's successor method
+(`kit-grid@2`); the grid keys are re-measured under it (a grid-sized job). By `measures.md` §8¶1 a
+new run is a new id, so the default is `zen4-grid2`; this departs from D176 Q3's wording and plan
+[MEASURE-SET]'s note ("zen4-grid1 rev 2"), surfaced to main as the question. Embedded by `make
+gen-measures`, handed on `mf_art_begin`.
 
-**Chosen by the set, not the host** `[rev2 D2]`. A compile names a set (`--measures=NAME`) or reads
-`DEFAULTS`; no option declares a class, so an unnamed compile uses `idk`'s set (`zen4-grid1@1`,
-`measures.md` §5¶6): a conscious choice. A class option goes to [IFACE-PUSH] (plan row 2).
-
-**Measured how.** Timing jobs through the box queue (`idle-ok`, quiet-gated, windows cleared with the
-owner): dev box first, ubuntubudu by slot request, the Mac directional; uncarded = UNMEASURED.
-`[rev2 D5]` Cards are long-subject per-byte quantities, so a priced pick is a long-subject pick;
-search_short/match stay row evidence, and a per-call term is owed before a priced row with per-call movers.
+**Chosen by the set** (`--measures=NAME`, else `DEFAULTS`, `measures.md` §5¶6; a class option goes to
+[IFACE-PUSH]). **Measured** by queue jobs (`idle-ok`, quiet-gated, windows cleared with the owner):
+dev box first, ubuntubudu by slot request, the Mac directional. Cards are long-subject quantities; a
+per-call term is owed before a priced row with per-call movers.
 
 ## Robustness to the byte rates
 
 **The weakest input is the prior.** PRIOR_AUTHORED (`a322116b1b87f9f6`) rates {x,X} at 1,097 ppm and
 '/' at 4,154; job 588's subjects held x 2,338 against '/' 1,026 candidates on real text, 1,388 vs 0
-on none, 21,788 vs 10,856 on random (t588tri §a). The walk-vs-V1 ruling is the precedent: when the
-evidence cannot say, keep the choice that is never badly wrong.
+on none, 21,788 vs 10,856 on random (t588tri §a). The walk-vs-V1 precedent: when the evidence cannot
+say, keep the choice that is never badly wrong.
 
-**The rule.** Two rate models, P and F; a candidate must win under both, beyond the band. F is the
-absence of a guess about text, so a departure that survives F does not rest on the prior alone.
+**The rule.** Blind: P and F; a candidate must win under both, beyond the band (F is the absence of
+a guess, so a departure that survives it does not rest on the prior alone). With data: the bundle,
+against the blind pick. **Model error** is NOT in the band: `[rev3 C3]` the first priced row runs with
+it UNMEASURED, guarded by its own run's predicted-vs-measured print per mover (R5.3), whose spread is
+the term the NEXT priced row adds.
 
-**The band is measured, not tuned.** A price's band is the quadrature sum of each card's noise times
-its coefficient in the price; `[rev2 C2]` no constant appears except the card gates (kit-grid@1's
-`gate_e6` 3 %, an UNMEASURED DEFAULT, D149). Model error (independent positions, landing regime) is
-NOT in the band: each priced row's run prints predicted vs measured per mover (R5.3), and the spread
-of that ratio is the model-error term the NEXT priced row adds to its band.
+**What the formula says for smp20** `[rev3 C1, C12]` (`span_pick/smp20.py`, `smp20.out`; STAND-INS,
+none a card for these methods: byte(memchr) 0.06 = `plan_cost.def` C_MEMCHR, byte(PAIR) 0.12 = 2 x
+C_MEMCHR (ASSUMPTION: two memchr streams), hit 20 c = R-33's H_HIT ASSUMPTION (no `plan_cost.def`
+row), cmp 2.5 = C_VERIFY flat, enter 20 = C_ENTER):
 
-**What the formula says for smp20** `[rev2 C1]` (recomputed, `span_pick/onestream.out`; Zen 1
-`plan_cost.def` constants scan 0.06, verify 2.5, enter 20, hit 20 c; verify in ascending mass):
+| model | @0 {X,x} PAIR, hit(PAIR) 20 | hit(PAIR) 40 | @1 {/} memchr | least one-member stop |
+|---|---|---|---|---|
+| P (prior) | 144,694 | 166,634 | 153,476 | @1 {/} |
+| F (flat) | 295,858 | 452,108 | 147,929 | all five tie at 147,929 |
+| B (prose stand-in bundle) | 168,871 | 212,311 | 72,938 | @5 {4} 63,555 |
 
-| model | {x,X} PAIR, hit(PAIR) = 20 | {x,X} PAIR, hit(PAIR) = 40 | {/} memchr |
-|---|---|---|---|
-| P | 144,694 ('/' loses by 6.1 %) | 166,634 ('/' wins by 8.6 %) | 153,477 |
-| F | 295,858 | 452,108 | 147,929 |
+Dropping `streams` and defining byte(PAIR) per method gives rev 2's P and F numbers when byte(PAIR)
+= 2 x byte(memchr); the double-counting reading (264,694, review r2 C1) is gone. F favours '/' at
+least 2:1 (2.00 at hit 20, 3.06 at 40). Under P the verdict turns on byte(PAIR) and hit(PAIR): '/'
+qualifies iff byte(PAIR) > 0.1288 c/B (2.15 x byte(memchr)) at hit(PAIR) 20, or > 0.1068 (1.78x) at
+40. Directional only (Zen 1 stand-ins read against a Zen 4 run, the subject taken as 1e6 bytes): job
+588's none cell, where '/' never occurs and the PAIR stop sees 1,388 candidates, is RTE/DEF 2.79,
+which the formula reads as byte(PAIR) ~2.3 x byte(memchr), above the break-even. Stage 2 measures it.
 
-F favours '/' 2:1 either way; under P the verdict turns on `hit(PAIR)`, a card nobody has measured
-(R-33's 8.6 % was its per-stream reading). That is why smp20's fix is a hand row (A1, A2), not a
-price, and why a drop-F plant cannot reach smp20 (§The independent control).
+**Uncovered by F** (review r1 C5). Where real text is far from BOTH the prior and uniform text
+(UTF-8 lead bytes, case-folded letter pairs, dense classes the prior under-rates), P and F agree
+wrongly (R-33's `utf8/alt-cyr-64`). Any priced row over two-member stops is gated on a fix (an
+encoding fact, or a third, adversarial rate model).
 
-**Uncovered by F** `[rev2 C5]`. Where real text is far from BOTH the prior and uniform text (UTF-8
-lead bytes, case-folded letter pairs, dense classes the prior under-rates), P and F agree wrongly
-(R-33's bench `utf8/alt-cyr-64`, {\xd0,\xd1}). Any priced row over two-member stops is gated on a fix
-(an encoding fact, or a third, adversarial rate model).
+**Nothing is tuned:** a mispick is fixed only by a corrected measurement, term or validity row.
 
-**The multi-variable risk.** Cards measured in isolation (never fitted to end-to-end timings or set
-from a validation site), two fixed rate models, a band from the cards' own noise: nothing is tuned;
-a mispick is fixed only by a corrected measurement, a missing carded term or a corrected validity
-row. Hand rows carry no fitted input. Drift gauge: D186's pilot distance (0.981), per stage-3 row.
+## The watched witness
 
-**Horspool** `[rev2 C6]`. With `hors.probe` and `hit(walk)` defined and carded, priced Horspool is
-decided by measured cards; until then the D-hors row stays the default and HORS_MIN its holds.
+`[rev3 A2, WW]` smp20 `(?i)x/1234` is resolved by data, never by a rule, and read TWO ways at every
+stage, each on every arm (default, `--engine=vm`, both layers, the DEF deny):
+(1) BLIND: judged as the least-bad pick across subject kinds (the worst ratio over P, F and job 588's
+regimes), not as "picks '/'"; (2) WITH a text-like bundle: the pick must leave the two-member {X,x}
+stop for a one-member stream: '/' or, as on the stand-in, a stop the bundle rates rarer than '/'
+(main to confirm this reading of "switch to '/'"). At the last planned step (stage 3 row 1; later
+rows are unscheduled) a failure of (2) is a mechanism problem; of (1) alone, answered by caller data.
+**The gap to watch:** (1) is a least-bad judgement, while the rule qualifies a departure only if it
+wins under P AND F. At the stand-ins (hit 20) '/' is least-bad (worst ratio 1.06 vs PAIR's 2.00) yet
+does not qualify. That is A2's stated risk; changing the rule to close it is the owner's call, not
+taken here.
+The text-like bundle until [BENCH-WITHDATA]'s held-out bundle exists: `prose`, GPL-3 + GFDL-1.3 +
+Apache-2.0 counted by `pcrec-analyze` ({x,X} 2,172 ppm, '/' 575, '4' 158; job 588's real text:
+2,338 vs 1,026), built in scratch by `span_pick/witness.sh`, never committed. The shipped `log` and
+`weblog` bundles rate '/' far above {x,X} (14,462 vs 372; 51,754 vs 7,396): on those kinds {X,x} is
+the right stop, so they are not this witness's bundle.
+
+| stage | (1) blind | (2) with the prose bundle |
+|---|---|---|
+| today = stage 1 (byte-identical; compiled, `span_pick/witness.out`) | @0 {X,x} PAIR on default, vm and SIMD-on; '/' on the DEF deny. NOT least-bad: F's worst ratio 2.00 vs '/''s 1.06 (P); job 588 1.58-4.03x. Expected (A2); no rule | @5 {4} memchr on default, vm and SIMD-on (KEY A-mass reads the bundle); PASSES. DEF deny: '/' and '4' |
+| stage 2 (cards measured, no reader) | unchanged; the forecast becomes a reading: '/' qualifies under P iff byte(PAIR) > 2.15 x byte(memchr) (hit 20) | unchanged |
+| unit 3.0 (plan takes the frame) | unchanged (no priced row yet) | unchanged |
+| stage 3 row 1, the LAST planned step | '/' if it beats {X,x} under P and F beyond band; else {X,x} stays: A2's stated risk, then the options question | the blind pick is the incumbent; '4' departs under B (63,555 vs 168,871); must PASS, else a mechanism finding |
 
 ## Staging under D186
 
-D186 (TRIAL): a UNIT change (a better unit inside its cases; bar: no regime slower) or a CHOICE change
-(a row on stated facts with per-regime evidence; a losing regime narrows the row).
+D186 (TRIAL): a UNIT change (bar: no regime slower) or a CHOICE change (a row on stated facts with
+per-regime evidence; a losing regime narrows the row).
 
-**Stage 1: unify, today's answers kept: A-PLAN's first step** `[rev2 A6, E3]`. Neither kind: a
-no-mover refactor. Separable units, each with its own byte-identity witness; a unit that cannot be
-byte-identical leaves stage 1 and lands alone as a unit change with its own deny.
+**Stage 1: unify, today's answers kept: A-PLAN's first step.** Neither kind: a no-mover refactor of
+separable units, each with its own byte-identity witness; a unit that cannot be byte-identical
+leaves stage 1 and lands alone as a unit change with its own deny. `[rev3 P3]` A unit that adds or
+removes a finder row ahead of the PRES rows shifts `mf_class.pres_row`/`pres_led` (1 + a finder row
+index): no emitted byte, an MF_CLASS_V event in that unit.
 
 | unit | content | deletes |
 |---|---|---|
-| 1a dead code | N3 `mf_set_terms`; the inert finder rows R8/R3a/R3b/R4/R1/R2 (zero reach by code, PREMISE probe) | 7 members |
-| 1b primitives | U4 one mass primitive (named capped/uncapped argument; `window_mass` keeps a NONE-mode total: one floor over the total, 62,500, not a sum of floors, 62,496 `[rev2 B1]`); U5 `wf_ties` the one tie table plus the presence-member row | 2-3 mass variants, 1 tie rule |
-| 1c kit-only spellings | U2 presence.c P3 `run_scan` asks `run_member`; U6 the kit's landmark shadow (presence.c :222-245) retired if no census reads it | 1-2 |
-| 1d planning core | one candidate builder; KEY/M/TIE as the default; T-VERIFY as a step list with the run member; trace without prices (U1 as two KEY rows, U10, N1, N6) | `a_model_choose`'s private enumeration, `mass_domain`'s copy |
-| 1e plan/emit split | the reply grows (method, resume, frame row); T-FRAME at plan time; compose `arms[]`, B-fn, `fd_find`'s text become renderers keyed by the plan (U3 less OFS, N4, N5, N11); one MF_SITE_ABI (+ MF_CLASS_V) event, no pcrec abi event | B-fn's reconciliation; `SF_WINDOW_STOP` as a stop fact |
+| 1a dead code `[rev3 P3]` | N3 `mf_set_terms`; inert rows R3a/R3b/R4 (no deny; zero reach by code); MF_CLASS_V (pres_row shift) | 4 members |
+| 1b primitives `[rev3 S1, S2]` | U4 one mass primitive over a POSITION MULTISET (a list of cubes, a repeated byte counted per position, as `window_mass`: a set-shaped primitive moves `run_window`, e.g. `zzzzzzz~J`), a capped/uncapped argument, the NONE-mode total (62,500, not 62,496); the landmark admission's per-factor round-up product stays its caller's; U5 `wf_ties` with the presence-member row and presence's run window reading T_WINDOW | 2-3 mass variants, 2 tie spellings |
+| 1c kit-only spellings `[rev3 S1]` | U2: P3's `run_scan` asks `run_member`; translate's run rank reads T_MASS_STRETCH, `rank_pos[0]` asserted against `run_member`; U6 the kit's landmark shadow (presence.c :222-245) retired if no census reads it | 2-3 |
+| 1d planning core | one candidate builder; KEY/M/TIE as the default; T-VERIFY as a step list with C-bound and the run member; trace without prices (U1 as two KEY rows, U10 = Table C + ofsskip's legacy plan, N1, N6) | `a_model_choose`'s private enumeration, `mass_domain`'s copy |
+| 1e phase-2 tables `[rev3 P1, P2]` | T-FRAME (legacy first) at text time; T-FIND as ONE walk with the asker fact, Horspool first; the renderer row (B-fn/B-pair, reconciliation kept); compose `arms[]` and `fd_find`'s text become renderers keyed by (frame row, method row, renderer row) (U3 less OFS, N5, N11); no MF_SITE_ABI event (the reply does not grow); MF_CLASS_V if the Horspool row's move shifts pres_row | `fd_find`/`fd_route`'s second entry walk |
+| 1f retired denies `[rev3 P3]` | R8/R1/R2 with `fd-r8`/`fd-ndisp`, the §2.5 pay rule (`fd_pay`, `pay_fill`, `n_interval`) and the public `mf_finder_pay`; CALLER-VISIBLE, not a no-mover: `registry.md` §6¶8a/§6¶8b hunks (floor 14 -> 12), `--list-axes` re-pin, `emit_sweep.py`/`memfn_arm.py`/`finder_check.py`/rows edits, an MF_SITE_ABI event | 3 rows, 2 denies, the pay rule, 1 entry |
 
-Not in stage 1 `[rev2 B1]`: U8 (a unit change: generic.c's chain can never match runcmp's rows), U9
-(the boundary, above), N9 (stays T-PRES's rendering), OFS's `fn_rows` BODY (a pcrec-side
-prerequisite), U7/N10 (SIMD-on bytes).
-**Witness, per unit** `[rev2 B5]`: window_site §5.2's list: `scripts/emit_sweep.py` byte-identical
-over the corpus, the bench patterns and job 588's sample on EVERY arm (default, each `--memfn=no-X`
-deny, `--engine=vm`, both SIMD layers), stamps included; `tests/findings/manifests/*_movers.txt`
-unchanged; reach floors; G2; plus Goal 3's decider census. Counted pcrec-side from artifact diffs.
-**Ratchet** `[rev2 A6]` (roadmap §5). A-PLAN's entry says the split "deletes nothing in §5 today", so
-the kit's duplicates join §5 as rows counted at stage 1's base (proposed for main, recipes written by
-the unit's lane at the base): find-method deciders (`fd_route`, `fd_find`, compose's method walk,
-`fn_rows` BODY, `b_fn_holds`; members − 1), position enumerators (`mass_domain`, `a_model_choose`'s
-scan), kit mass variants, tie rules, kit run-member spellings, the landmark shadow, inert finder rows. Each unit lowers its row and raises none; stage 1 adds no
-member (T-PICK waits for stage 3; T-FRAME is Table E moved; the candidate builder replaces two).
-**Sequencing** `[rev2 E2]` (D153: in-flight refactors first): while stage 1 is in flight, opt rows
-touching window.c, finder.c, ofsskip.c, compose.c or presence.c carry "remodel overlap" and wait,
-smp04's unit change included, unless the owner rules otherwise.
+**Witness, per unit**: `scripts/emit_sweep.py` byte-identical over the corpus, the bench patterns and
+job 588's sample on EVERY arm (default, each `--memfn=no-X` deny (1f's two once retired), `--engine=
+vm`, both SIMD layers), stamps included; `tests/findings/manifests/*_movers.txt` unchanged; reach
+floors; G2; the decider census. Counted pcrec-side from artifact diffs.
+**Ratchet** (roadmap §5): the kit's duplicates join §5 as rows counted at stage 1's base (proposed
+for main): find-method deciders (`fd_route`, `fd_find`, compose's method walk, `fn_rows` BODY;
+members − 1), position enumerators, kit mass variants, tie spellings, run-member spellings, the
+landmark shadow, inert finder rows. `[rev3 P2]` `b_fn_holds` is in the FRAME family (the renderer
+row), not deleted. Each unit lowers its row and raises none; stage 1 adds no member.
+**Sequencing** (D153): while stage 1 is in flight, opt rows touching window.c, finder.c, ofsskip.c,
+compose.c or presence.c carry "remodel overlap" and wait, unless the owner rules otherwise (Open
+question 3).
 
-**Stage 2: measure the cards** (§Cost cards; noise channel, method version, step-0 gate). No reader,
-no consult, zero movers, stamps unchanged. `[rev2 D3]` Under D77 and measure_sets §7.3's reader
-closure, the leaning is to run it when its first reader (a priced row) is chartered (Open question 2).
+**Stage 2: measure the cards** `[rev3 O1, A2]`. Follows stage 1 directly (D186 add. 1 A2); its
+trigger is stage 1 done. Contents: §Cost cards (scalar only), the noise channel, the new id, the
+step-0 gate. No reader, no consult, zero movers, stamps and `DEFAULTS` unchanged.
 
-**Stage 3: choice rows, one per change.** Each: one T-PICK row naming its levels, a deny with a D174
-behaviour name (spec home `registry.md` §6¶8a, listed by `cli.md` §2.4¶1) `[rev2 E2]`, a 588-style
-run of RTE vs the row denied (every regime and subject class, A/A floor, both layers, scalar the bar),
-a movers census from artifact diffs with stamp-only movers as their own class `[rev2 D1]`, its own
-pcrec abi event and spec hunk. Hand rows need only stage 1d; priced rows need stage 2.
+**Stage 3: priced choice rows, one per change.**
+- **Unit 3.0, the plan takes the frame** `[rev3 P1]` (the first priced row's prerequisite): pcrec
+  states form, handoff and site_kind per candidate frame at phase 1 (one ask per NEXT row's frame:
+  `window_reply_ask` and `req_run_member` change, pcrec-side); the plan call takes the hooks and phase
+  set; the reply grows method, resume and frame row; the asker fact retires. Byte-identical; one
+  MF_SITE_ABI (+ MF_CLASS_V) event; same witness as stage 1.
+- **Each row**: one T-PICK row naming its levels; a deny with a D174 behaviour name (spec home
+  `registry.md` §6¶8a, listed by `cli.md` §2.4¶1); `[rev3 R1]` a 588-style run of RTE vs the row
+  denied on EVERY arm (default, the deny, `--engine=vm`, both layers; scalar the bar) and its movers
+  census computed per arm from artifact diffs, never from a default-arm sweep alone, stamp-only
+  movers their own class; `[rev3 C7]` `consulted` set by T-PICK rows; `[rev3 C8]` its drop-F witness
+  from its own population, or the plant declared UNREACHED (never a pass); `[rev3 R5]` its
+  pre-check-part statement; its pcrec abi event and spec hunk.
+- **Row 1** `[rev3 A2]`: the first priced departure, admitting smp20's class (NONE alternatives
+  whose default is a two-member stop), job 588 its evidence, §The watched witness its reading.
+  `[rev3 O2]` Its acceptance also compares against the rule-list pilot, "the baseline any pricing
+  must beat" (0.981 of ideal held-out, [PRICE-BAKEOFF]): the pilot is re-run after row 1 and after
+  each later priced row (one pilot job each, SIMD off, Zen 4) and its distance is D186's drift
+  gauge. `[rev3 C6]` Row 1 flips `DEFAULTS` to the new set (a default change with its census,
+  §What moves). `[rev3 R7]` Row 1 is where A-model's one-member preference (`scan_ok`) and A-mass,
+  D186's first unification target, meet: KEY's two rows retire there by census.
+- `[rev3 O7]` **Ratchet delta**: T-PICK with its `keep` row falling to KEY is one table (delta 0 at
+  row 1); each later row names the member it deletes or is rejected at review (roadmap §0).
+- `[rev3 R9]` **Batch gate**: a batch-gate loss of a choice row narrows the row (D186 over D144
+  item 3 for choice rows): a one-line ruling proposed for main.
 
-**Row 1, ONE-STREAM** `[rev2 A2]`, the poster child of the finished refactor (D186 add. 1 A2):
-- **Opens** level (b), the position, on a no-entry (NONE) alternative. **Deny**
-  `--memfn=no-single-byte-stop`.
-- **Condition** (stated facts only: entry, the candidates' sets, the art's byte rates): the default
-  stop (KEY A-mass: least prior mass, ties as today) has a set of k >= 2 members, and some candidate
-  has ONE member whose prior mass is <= `k x 1e6 / 256` (the default's flat mass, floored).
-- **Action**: stop at the least-prior-mass such one-member candidate (ties as A-mass); T-FIND,
-  T-VERIFY and T-FRAME then answer for it as for any stop. Reads no card: no consult, stamp unchanged.
-- **Why the bound** (no constant): the default is a k-stream or walk search whose candidate count on
-  unknown text is its flat mass; the one byte is refused only when the prior positively says it is
-  denser than that. The prior never has to rank x against '/'.
-- **Check on smp20** (prior `a322116b1b87f9f6`): default @0 {x,X}, k = 2, 1,097 ppm; bound 7,812;
-  one-member candidates '/' @1 4,154 and '1'..'4' @2-5 7,476 each, all under it; least is '/', so
-  the stop is @1 {/}: DEF's stop (t588tri: DEF runs memchr on '/'). `span_pick/onestream.out`.
-- **Population** (R-33's sweep: corpus 5,014, bench 392, job 588 2 x 43 compiles): 1,637 NONE
-  alternatives; 1,056 with a one-member default (cannot hold); 577 refused (no one-member candidate
-  under the bound); the row holds on 4 units, 3 patterns, all COVER: smp20 (job 588 and corpus
-  c02129); pr09 `x[Q%]y` @1 {%,Q} 481 ppm -> @0 {x} 997; c04989 `x[\x{e0}-\x{ff}]y` @1 32 bytes 64 ->
-  @0 {x} 997 (bound 125,000). R-33's other R4 sites and the R5 parts are refused.
-- **Evidence.** Motivating: job 588 smp20 RTE/DEF throughput real 1.663, none 2.793, random 4.028,
-  search_short real 1.578 (DEF also changes the route, so it is confounded). Acceptance: the row's own
-  run over its three movers (pr09 is in job 588's set; c04989 joins the pattern list), RTE vs the deny,
-  every regime <= 1 + floor. pr09 and c04989 are the HELD-OUT class `[rev2 D4]` (not the motivating
-  site). A losing held-out regime narrows the condition (e.g. to k = 2) and the run repeats; smp20
-  must also close Goal 5 against DEF.
-- **Moves** the three patterns' artifacts: a pcrec abi event (the next number at landing, readers by
-  grep), its movers census, the deny row and the spec hunk. G2 and every `.rxt` answer unchanged.
-
-**Later rows, each its own change and its own prerequisites** (none scheduled):
-- Horspool priced (D176 Q2; deletes HORS_MIN): `hors.probe`, `hit(walk)`; witnesses hex8-bounded and
-  the five other D-hors sites.
-- RESEED admission at any set size: `[rev2 E1]` its population is PF E-stmt sites, where PAIR has no
-  renderer: needs [MEMFN-PAIRSTOP] (or the row is walk-only) and both `enter` cards (MARGIN goes then).
-- Dense pairs: [MEMFN-PAIRSTOP] first (a unit addition, then its own choice row for the flipped first
-  match), gated on the C5 fix.
-- Offset-0 RESEED stops stay excluded (`[rev2 A4]` the kit's call; one unconfounded timing reopens).
-- smp04 `[a[:b]`: a UNIT change (T-SETTEST table form), own deny and regime run, after stage 1 (D153).
-
-**Re-measuring** is a deliberate data change: §What moves when the data is regenerated.
+**Later rows, each its own change and prerequisites** (none scheduled): Horspool priced (D176 Q2;
+deletes HORS_MIN): `hors.probe`, `hit(walk)`, `hit(hors)`; witnesses hex8-bounded and the five other
+D-hors sites. RESEED admission at any set size: PF E-stmt sites, where PAIR has no renderer: needs
+[MEMFN-PAIRSTOP] (or walk-only) and both `enter` cards. Dense pairs: [MEMFN-PAIRSTOP] first, gated
+on the C5 fix. Offset-0 RESEED stops stay excluded. smp04 `[a[:b]`: a UNIT change (T-SETTEST table
+form), own deny and regime run, after stage 1 unless Open question 3 says otherwise.
 
 ## What stage 1 deletes
 
-Every duplicate (inventory §4) and neither-kind item (§3), by id, with its unit `[rev2 B1, E3]`.
-
 | id | stage 1 does | unit | later |
 |---|---|---|---|
-| U1 | one candidate builder and pick; A-model and A-mass stay as two KEY rows | 1d | ONE-STREAM admits smp20's departure; KEY rows retire by census |
-| U2 | P3's `run_scan` asks `run_member` (one tie rule) | 1c | pcrec's two: §pcrec-side findings |
-| U3 | T-FIND asked once per candidate; arms/B-fn/`fd_find` text become renderers; NOT on OFS (no kind) | 1e | OFS joins when pcrec states a kind |
-| U4 | one primitive, NONE-mode total kept | 1b | pcrec's findings.c copy stays (D157) |
-| U5 | `wf_ties` the one table, plus the presence-member row | 1b | pcrec's PICK: finding |
+| U1, N1 | one candidate builder; A-model and A-mass stay two KEY rows; C-model same arithmetic | 1d | meet at row 1, retire by census `[rev3 R7]` |
+| U2, U5 | `run_scan` asks `run_member`; translate's rank and the run window read `wf_ties`; presence-member row `[rev3 S1]` | 1b, 1c | pcrec's two and its PICK: findings |
+| U3, N4, N5 | one T-FIND walk with the asker fact (N4 kept, renamed `[rev3 P1]`); arms/`fd_find` text become renderers; not on OFS | 1e | the asker fact retires at 3.0; OFS joins with a kind |
+| U4 | one primitive over a position multiset, NONE-mode total kept `[rev3 S2]` | 1b | pcrec's findings.c copy stays (D157) |
 | U6 | the kit's shadow retired if no census reads it | 1c | pcrec owns admission (D167) |
-| U7, N10 | KEPT (SIMD-on bytes) | — | a SIMD-layer choice change: KA/KB from the plan |
-| U8 | NOT in stage 1: a unit change, own deny, regime run | — | T-CMP then one decider |
-| U9 | NOT in stage 1: the kit/pcrec boundary | own unit | closed by a reader grep |
-| U10 | T-VERIFY the one plan; PRES/ofsskip's legacy text render it where byte-identical | 1d | — |
-| N1 | split into candidates + C-model + the RESEED KEY row; same arithmetic | 1d | a priced row |
-| N2 | MARGIN kept as M's default | — | after both `enter` cards |
-| N3 | deleted | 1a | returns only as a carded T-FIND form |
-| N4 | no longer a stop fact; T-FIND reads T-FRAME's contracts | 1e | [MEMFN-PAIRSTOP] |
-| N5 | a renderer keyed on the plan | 1e | — |
-| N6 | candidates -> T-FIND -> T-VERIFY -> T-FRAME -> default; same answers | 1d | priced rows |
-| N7, N8, N13 | kept (D-hors holds; PARKED KEY; Zen 1 integers) | — | priced rows after stage 2 |
-| N9 | stays: T-PRES's rendering | — | — |
-| N11 | Table E becomes T-FRAME, order kept | 1e | legacy rows retire by evidence |
-| N12 | vany: a T-FIND SIMD form, declined (no card) | — | live when carded |
-| N14 + R4/R1/R3a | deleted on the zero-reach proof `[rev2 C8]` | 1a | — |
+| U10, N6 | T-VERIFY = Table C + ofsskip's legacy plan (PRES ordering is T-PRES's `[rev3 S3]`); candidates -> T-VERIFY -> default | 1d | priced rows |
+| N11 | Table E becomes T-FRAME at text time, order kept, plus the renderer row `[rev3 P1, P2]` | 1e | plan-time at 3.0 |
+| N3, N14, R3a/R3b/R4 | deleted (zero reach) | 1a | — |
+| R8/R1/R2 + denies | retired with registry hunks `[rev3 P3]` | 1f | — |
+| kept | U7/N10/N12 (SIMD; no SIMD cards `[rev3 C9]`), U8 (unit change), U9 (boundary), N2 (MARGIN), N7/N8/N13, N9 | — | Open question 2; U8; a reader grep; `enter` cards; priced rows |
 
 ## pcrec-side findings (for main; not changed here)
 
 - **Run pin and scan index**: `pcrec_find_run_scan_index` (findings.c :745), `_window_start` (:780)
   and `pcrec_run_pin` (kset.c :294) restate the run member, held by `req_run_member` (emit_dfa.c
   :1058, loud); end state: pcrec reads the plan reply.
-- **Landmark admission**: `req_landmark_admits` (emit_dfa.c :9064) and lmwalk's `lc_rarity` share
-  `pcrec_landmark_margin`, lmwalk adds `LMWALK_K_HIT_UNMEASURED`; end state: pcrec states the landmark
-  as a candidate and reads the kit's price once the reply carries prices (`find.hit` replaces K_HIT).
-- `[rev2 B1, B4]` Prerequisites stated pcrec-side: a consumer kind on OFS sites (an MF_SITE_ABI event;
-  U3 on OFS waits for it); [MEMFN-UNBOUNDED-SPANS] (presence joins); [MEMFN-PAIRSTOP] (later rows).
-  `next_keys` and lmwalk's route stay architecture rules outside this per-site mechanism.
+- **Landmark admission** `[rev3 O6]`: `req_landmark_admits` (emit_dfa.c :9064) and lmwalk's
+  `lc_rarity` share `pcrec_landmark_margin`, lmwalk adds `LMWALK_K_HIT_UNMEASURED`; a standing D157
+  EXCEPTION (D167 add. 1 A11) until restated; end state: pcrec states the landmark as a candidate and
+  reads the kit's price (`find.hit` replaces K_HIT).
+- Prerequisites stated pcrec-side: `[rev3 P1]` unit 3.0's per-frame ask; a consumer kind on OFS
+  sites; [MEMFN-UNBOUNDED-SPANS]; [MEMFN-PAIRSTOP]. `next_keys` and lmwalk's route stay architecture's.
 
 ## The measurement regime
 
-RELEVANT. Each card names its regime (§Cost cards): miss-only streaming (`find.byte`, `hors.probe`);
-hit-density slope in periodic and random landings (`find.hit`; landing flips walk vs stream choices,
-walk_vs_v1 §3); pass rates 0 and 0.5 (`verify.cmp`); consumer kind x entry fact (`enter`). Per set:
-box, compiler, Linux verdicts, `taskset`-pinned, scalar the bar. Prices are long-subject; per-call
-regimes are row evidence. The byte rates are the regime the compile cannot know (P vs F). Row
-evidence regimes are job 588's: throughput, search_short, match x real, none, random, dense.
+RELEVANT. Each card names its regime (§Cost cards; landing flips walk vs stream choices,
+walk_vs_v1 §3). Per set: box, compiler, Linux verdicts, `taskset`-pinned, scalar the bar. Prices are
+long-subject; row evidence regimes are job 588's (throughput, search_short, match x real, none,
+random, dense).
+`[rev3 C11]` Numbers the pick reads that are NOT cards, each with what would flip it: KEY/M's
+`plan_cost.def` integers (Zen 1, ubuntubudu, while the default set is zen4: a box mismatch at every
+stage until they retire); C_ENTER (MEASURED x ASSUMED ~2 bytes of survival); MARGIN (2x, ARGUED);
+HORS_MIN (PROVISIONAL, one job-581 cell, dev box); every card's `gate_e6` (UNMEASURED DEFAULT);
+the prior (authored; the blind reading's P); the bundle (the with-data reading; its sampling noise
+is in the band). The smp20 table shows one flip: hit(PAIR) 20 vs 40 flips the P verdict.
 
 ## The independent control
 
 RELEVANT.
 - **Answers:** G2 against the scalar byte loop; the `.rxt` oracle under every committed set plus
-  synthetic extreme sets forcing each T-FIND row (`measure_sets.md` §8), giving each row a population.
-- **Stage 1:** per unit, the §Staging witness (every arm, stamps, movers manifests, reach floors),
-  counted pcrec-side from artifact diffs, never from the kit's `moved` (K35); R-33's probe is a
-  diagnostic only. Goal 3's decider census is read at review.
-- **Stage 3, hand rows:** the row's own 588-style run over its movers census (from artifact diffs),
-  with a held-out class `[rev2 D4]`; ONE-STREAM's census in this note was recomputed from R-33's raw
-  sweep by a script that shares only the candidate builder with R-33 (`span_pick/`).
-- **Priced rows:** predicted price vs measured time per mover (R5.3); validation sites share no number
-  with the cards (R5.2). `[rev2 D4]` The drop-F plant's witness is a site where P admits a challenger
-  and F refuses it (a dense two-member stop), chosen with the cards; never smp20, where F already
-  favours '/' 2:1 so dropping F cannot change the verdict. A swapped-cards plant moves a reach witness.
-  `[rev2 D1]` finder_check.py checks D and F (no row reads a key; `consulted` 0) get their true arms in
-  the first consulting row's change; the keys a pick read are counted pcrec-side (the stamped set
-  against the artifact's trace), not by the kit's consult recorder.
+  synthetic extreme sets forcing each T-FIND row (`measure_sets.md` §8). **Stage 1 and 3.0:** the
+  §Staging witness counted pcrec-side from artifact diffs, never the kit's `moved` (K35); the census.
+- **Priced rows:** predicted price vs measured time per mover (R5.3); validation sites share no
+  number with the cards (R5.2). `[rev3 C7]` The keys a pick read are counted by a pcrec-side python
+  re-price from the stamped set's rows (shares no code with the kit; the artifact carries no trace),
+  whose pick is diffed against the artifact's. finder_check.py checks D and F get their true arms in
+  the first priced row's change. A swapped-cards plant moves a reach witness.
+- **With data:** [BENCH-WITHDATA]'s compile-only census (blind vs each bundle, movers listed) and its
+  held-out bundles (no training on the timed bytes). **The watched witness:** job 588's timings judge
+  smp20's pick per regime, never the kit's own price.
 
 ## What moves when the data is regenerated
 
-RELEVANT. Generated C carries no cost, so only picks and the `<PREFIX>_MEASURES` stamp move.
-`[rev2 D1]` The stamp is "" today on every artifact; it becomes `id@rev:digest` on every artifact
-whose pick consults the set (found or absent), and changes on every later card rev, with or without a
-pick change: stamp-only movers are their own census class, counted and re-pinned, never judged as
-choice changes. Because a T-PICK condition is tested before any key lookup, only sites a priced row
-admits consult. A byte move is an abi event (D76/D94, readers by grep, the byte-count class included)
-with its movers census, each moved pick judged per regime as a choice change; `measures.md` §8/§5
-take their hunk when a set or default changes (D80).
-Stage 1 moves no byte (an MF_SITE_ABI event only); stage 2 moves nothing; ONE-STREAM moves its three
-patterns' bytes and no stamp.
+RELEVANT. Only picks and the `<PREFIX>_MEASURES` stamp move. The stamp ("" today) becomes
+`id@rev:digest` on every artifact whose pick consults the set (only sites a priced row admits) and
+changes on every card rev (stamp-only movers: their own census class). A byte move is an abi event
+(D76/D94, readers by grep incl. byte counts) with its per-arm census; `measures.md` §8/§5 hunks.
+`[rev3 C6]` **Defaults.** A bare compile reads `DEFAULTS` (`idk zen4-grid1@1`), which holds no span
+card, so priced rows keep the default on bare compiles until `DEFAULTS` names the new set: that flip
+lands with row 1, a default change with its census (`measures.md` §5¶6, §8¶3; `DEFAULTS.log`). At
+M2 (plan [MEASURE-SET], D166 add. 2) the idk default becomes an ISA envelope that excludes every
+per-byte cost row: priced rows go dark on bare compiles (picks back to the default, stamps move)
+unless the envelope carries the span cards' safe direction or priced rows are named-set-only: a
+stated dependency for main. Noise in the digest: §Cost cards.
+Stage 1 moves no emitted byte (1f moves `--list-axes` and two options); stage 2 moves nothing; 3.0
+moves nothing; row 1 moves its movers and the stamps of the sites it admits.
 
-## Disposition of review 2026-11-02 r1
+## Disposition of review 2026-11-02 r2
 
-Every consolidated id (each critic id maps to one in the review's by-id table). FIX-NOW and E3 applied
-per the rulings; A1, A2, A6 per D186 addendum 1.
+Every consolidated id, per the RULINGS (all PROPOSED dispositions accepted; ONE-STREAM superseded by
+the corrected A2; C9 and O3 to the owner).
 
 | id | disposition | landed in |
 |---|---|---|
-| A1 | owner answered (add. 1 A1): priced costs are the end state; no priced departure before cards; hand rows until then. Trigger sentence corrected (the pick's pricing is per-row, after stage 2) | Goals 4; §The pick (stage 3, priced action); §Staging stage 2/3 |
-| A2 | owner answered (add. 1 A2): no interim narrowing; ONE-STREAM is stage 3's first row, defined, checked, censused, evidenced; Goal 5's smp20 part ranked under Goal 2 | Goals 2, 5; §Staging row 1 |
-| A3 | FIX-NOW: TIE row T_BAND -> TIE_DEFAULT, qualifier choice by worst-case ratio on both models, D176 Q5 + D186 cited | §The tables (TIE); §The pick step 3 |
-| A4 | FIX-NOW: open questions rebuilt (owner-level only); rev 1's Q1 answered by D186, Q4 the kit's call, Q5 = [MEMFN-PAIRSTOP] (D176 Q6), Q2 dropped (D2 covers today's case) | §Open questions; §Staging later rows |
-| A5 | DOC: the prior change is Open question 3 with a source sharing no subject with job 588; ONE-STREAM does not depend on the prior's x-vs-'/' ranking | §Open questions 3; §Staging row 1 "Why the bound" |
-| A6 | owner answered (add. 1 A6): stage 1 IS A-PLAN's first step; ratchet rows proposed; A-PLAN point 1 left open (one plan = interim) | §The designer/emitter split; §Staging stage 1; §Open questions 1 |
-| B1 | FIX-NOW: per item: N9 T-PRES; U8 unit change; OFS no kind (KEY keeps `scan_ok`, BODY stays); Table C a step list; C-table/C-own T-SETTEST only; PARKED readability a T-VERIFY output; U5 new row; U4 NONE total; U9 out; A-floor/A-empty rows | §The shape; §The tables; §Staging; §What stage 1 deletes |
-| B2 | FIX-NOW: option (i): Table E becomes T-FRAME at plan time, its answer a plan field; T-FIND validity READS its contracts; no frame fact in step 1; effective key = stated consumer kind | §The shape; §The tables |
-| B3 | FIX-NOW: true inventory (6 + 4 + KA/KB), run member a T-VERIFY output, T-RESUME folded into T-FIND, presence fold a T-PRES row, decider census as Goal 3's check | Goals 3; §The tables |
-| B4 | FIX-NOW: presence keeps PRES in stage 1 (six scenarios); [MEMFN-UNBOUNDED-SPANS], [MEMFN-PAIRSTOP] named | §The shape; §pcrec-side findings |
-| B5 | FIX-NOW: stage 1 = one MF_SITE_ABI (+ MF_CLASS_V) event, no pcrec abi event; window_site §5.2 witness list per unit; KEY/M keep plan_cost.def integers and truncation order | Goals 2; §The designer/emitter split; §Staging |
-| C1 | FIX-NOW: hit per candidate returned (PAIR's cost in its own card), F in ppm, Horspool term defined, rounding stated; smp20 predictions recomputed with the formula | §The pick (formula); §Robustness table |
-| C2 | FIX-NOW: missing noise = UNMEASURED; noise channel owed in stage 2; derived-row rule; "no constant except the card gates"; model error handled outside the band | §The pick 4; §Cost cards; §Robustness |
-| C3 | FIX-NOW: default = today's complete plan; one comparison per candidate vs the default; KEY/M retire by census; renderer flips are their own rows; unpriced default keeps; rows name levels | §The pick; §The tables |
-| C4 | FIX-NOW: `enter` keyed by entry fact; MARGIN kept until both cards exist | §Cost cards; §Staging later rows |
-| C5 | PLAN: class named uncovered; dense-pair and two-member priced rows gated on an encoding fact or a third model | §Robustness; §Staging later rows; plan row below |
-| C6 | FIX-NOW: `hors.probe`, `hit(walk)` defined and carded; Horspool's line excludes the stream lines | §The pick; §Cost cards; §Robustness |
-| C7 | FIX-NOW: only scalar plans compared; SIMD forms rungs; cards keyed per method, SIMD forms their own rows | §The pick 6; §Cost cards |
-| C8 | PLAN (applied as stage 1a): the six inert rows deleted on the zero-reach proof | §The tables; §Staging 1a; §What stage 1 deletes |
-| C9 | FIX-NOW: stage 1 builds defaults and the trace only; T-PICK arrives with row 1 | §The shape (trace); §The pick |
-| D1 | FIX-NOW: condition before key lookup; stamp-only movers their own class; checks D/F replaced at the first consulting row | §The pick; §The independent control; §What moves |
-| D2 | DOC + PLAN: unnamed compile = DEFAULTS (conscious); class option for [IFACE-PUSH] | Goals 4; §Cost cards; plan row below |
-| D3 | FIX-NOW: kit-grid@2 quantities, new revision (D176 Q3), step-0 gate, grid-sized job | §Cost cards; §Staging stage 2 |
-| D4 | FIX-NOW: drop-F witness at a site where F refuses a P winner; held-out class for row 1 (pr09, c04989) | §Staging row 1; §The independent control |
-| D5 | PLAN: a long-subject pick; per-call term owed before a priced row with per-call movers | §Cost cards; plan row below |
-| E1 | FIX-NOW: RESEED-admission row needs [MEMFN-PAIRSTOP] or walk-only; PF statement corrected (1,454 of 1,767) | §The shape; §Staging later rows |
-| E2 | FIX-NOW: D153 cited for sequencing (remodel overlap, smp04 waits); denies get D174 names, spec home registry.md §6¶8a / cli.md §2.4¶1 | §Staging |
-| E3 | PLAN, adopted: stage 1 as units 1a-1e, each with its own witness | §Staging stage 1 |
-| F | sibling: PLAN (plan row 4 below); unlocks: NOTED (analysis-bundle rate model, per-stretch level, target-set arms, derived crossovers) | — |
-| Lessons 1-3 | NOTED: applied by the review's ruling commit; lesson 1 applied here (every quoted number recomputed) | `span_pick/` |
+| P1 | FIX-NOW: frame and method stay TEXT-time through stage 1; asker fact kept (renamed); Horspool first in T-FIND; "validity reads T-FRAME's contracts" dropped; plan-time frame = unit 3.0 | §The shape; §The tables; §Staging 1e, 3.0 |
+| P2 | FIX-NOW: renderer row B-fn/B-pair in T-FRAME, reconciliation kept, `b_fn_holds` to the frame family | §The tables; §Staging 1e |
+| P3 | FIX-NOW: 1a = N3 + R3a/R3b/R4; R8/R1/R2, denies, pay rule, `mf_finder_pay` = unit 1f with hunks; pres_row shift = MF_CLASS_V | Goals 2; §Staging |
+| P4 | FIX-NOW: count 6 + 3, named exceptions with triggers, census = map + grep + sabotage row | Goals 3; §The tables |
+| S1, S2 | FIX-NOW: rank and run window read `wf_ties`, presence-member comparator + UNKNOWN order; U4 over a position multiset | §The tables; §Staging 1b/1c |
+| S3 | FIX-NOW (SLOT-4): PRES ordering to T-PRES, U10 = Table C + ofsskip; DOC (SLOT-5): C-bound a step, `run_group_ok` a C-run clause | §The tables |
+| C1, C2, C3 | FIX-NOW: no `streams`, byte(m) all streams, smp20 recomputed blind and with data; `hit(hors)`, `verify'_r`, `cmp(f, p)`, 1e-12 scale; qualifiers within band -> TIE, comparison band, first row's model error UNMEASURED | §The pick; §Robustness; `span_pick/smp20.py` |
+| C6, C7 | FIX-NOW: DEFAULTS flip with row 1, M2 dependency; pcrec-side re-price, `consulted` set by T-PICK | §What moves; §The independent control; §Staging |
+| C4, C5, C8, C11, C12 | DOC: noise digest or FILE refusal; new id `zen4-grid2`, conflict to main; drop-F witness or UNREACHED; non-card numbers; 153,476, "at least 2:1", 20 c R-33's | §Cost cards; §Staging; §The measurement regime; §Robustness |
+| C9, O3 | OWNER questions 2 and 3; SIMD-form cards dropped from stage 2 meanwhile | §Open questions; §Cost cards |
+| C10, R5 | PLAN: stage 2's `enter` card design; each row states its pre-check-part scope | §Cost cards; §The pick 7 |
+| R1 | FIX-NOW (general form): every T-PICK row's run and movers census per arm; the witness names its arms | §Staging stage 3; §The watched witness |
+| R2, R3, R6, R8, O5 | SUPERSEDED with ONE-STREAM (R2 NOTED: why a count-only bound is unsafe; R3: `onestream.*` retired; Goal 5 rewritten) | Goals 5; `span_pick/` |
+| R4, R7, R9, O4, O6, O7 | DOC: counts by arm, PF sentence; A-model/A-mass meet at row 1; D186 over D144 (to main); Q1 amends A-PLAN; "CHOSEN position" + A11; ratchet delta | §The shape; §Staging; §The designer/emitter split |
+| O1, O2 | FIX-NOW: Q2 deleted, stage 2's trigger = stage 1 done; pilot comparison in row 1, gauge re-read per priced row | §Staging |
+| F, lessons 1-4 | PLAN: [PICK-IDIOM]'s trigger to the first T-PICK row; unlocks and lessons NOTED (lesson 3 applied) | plan rows below |
+| ONE-STREAM, rev 2's Q3 | DELETED (row, deny `--memfn=no-single-byte-stop`); Q3 ANSWERED by A2: no rate dataset now | Non-goals |
 
-**Plan rows for main to file** (text only; this lane writes no plan.md): (1) [SPAN-PICK-UTF8] the C5
-class, trigger: the first priced row over two-member stops. (2) a class-declaring compile option, for
-[IFACE-PUSH]. (3) [SPAN-PICK-PERCALL] a per-call term and card, trigger: a priced row whose movers
-include a per-call loss. (4) [PICK-IDIOM] one "admission table + declared default + priced action"
-idiom across the D157 boundary (lmwalk, T-PICK, [PRICE-BAKEOFF]'s shape), trigger: the first priced
-row or the bake-off's revisit. (5) the ratchet rows of §Staging, at stage 1's go.
+**For main** (text only): plan rows [SPAN-PICK-UTF8] (the C5 class; trigger: the first priced row over
+two-member stops), a class option for [IFACE-PUSH], [SPAN-PICK-PERCALL] (trigger: a priced row with a
+per-call mover), [PICK-IDIOM] (trigger moved to the first T-PICK row `[rev3 F]`), §Staging's ratchet
+rows; questions `[rev3 C5, C6, R9]`: new id vs revision, the M2 envelope, D186 over D144.
 
 ## Open questions
 
-`[rev2 A4]` For the owner, plain words, each with a leaning.
+For the owner, plain words, each with a leaning.
 
-1. **What the kit hands back.** After stage 1 the kit tells pcrec its one chosen plan for each search.
-   Later, pcrec's own planner could compare the kit's options against other ways of matching, which
-   needs the kit to hand back a short list of options with their costs instead. Hand back one plan
-   for now and switch when that comparison work starts, or build the list now? Leaning: one plan now;
-   a list nobody reads would be built ahead of need, and stage 1 stays byte-identical either way.
-2. **When to measure the costs.** The fixes now planned are hand-written rules (like the `(?i)x/1234`
-   one) and need no measured costs. Measuring them takes a large timing run per machine. Measure right
-   after stage 1, or only when a fix first needs prices (when hand-written rules start to disagree)?
-   Leaning: wait for that need; nothing would read the numbers before then, and they would age.
-3. **The built-in letter frequencies.** When pcrec knows nothing about the text it assumes fixed
-   frequencies, which call '/' about four times as common as 'x' and 'X' together; the job-588 texts
-   say the opposite. Revisit them from a large sample of real text that shares nothing with our timing
-   tests, or leave them? Leaning: leave them for now; the `(?i)x/1234` rule does not depend on them,
-   and a change moves choices across the whole corpus. Revisit when a second loss traces to them.
+1. **What the kit hands back** `[rev3 O4]`. The clean-up's first step was agreed as "the kit hands
+   back its options with their costs". We propose it hands back its ONE chosen plan for now, and
+   the list with costs when pcrec's planner starts comparing the kit's options against other ways of
+   matching. Leaning: one plan now; a list nobody reads is built ahead of need, and the first step
+   gives the same answers either way.
+2. **SIMD builds choosing for themselves** `[rev3 C9]`. May a build with the SIMD switch on pick a
+   different search position than the plain build, when its own measured costs say so? Leaning: yes,
+   by its own row with SIMD-on evidence, the plain build remaining the bar. Until answered, the
+   timing run measures plain-build costs only.
+3. **The `[a[:b]` fix and the look-ahead measurement** `[rev3 O3]`. The small fix for the `[a[:b]`
+   slowdown and the look-ahead measurement: wait for the clean-up, or go first? Leaning: wait (D153:
+   in-flight clean-ups go first; the `[a[:b]` loss is inside today's allowance).
 
 ## STATE AT HANDOFF
 
-OWED none. Design lane: rev 2 of this note, `span_pick/` (two recount scripts over R-33's raw sweep,
-their outputs, its CLAUDE.md) and the index line in `docs/design/memfn/CLAUDE.md`; no make, timing,
-compile or code. Re-run: `python3 -I span_pick/onestream.py docs/dev/lanes/r33_sim SWEEP` and
-`span_pick/counts.py SWEEP`, SWEEP = `/var/tmp/pcrec-pcrec/scratch/memfn/r33/sweep/sweep.jsonl`
-(re-made by R-33's job 240). Not a build go: next is the re-check round on rev 2 (D186 add. 1 A6).
+OWED none. Design lane: rev 3 of this note, `span_pick/` (counts by arm, smp20 priced blind and with
+data, the witness compiles; `onestream.*` retired; re-run lines in its CLAUDE.md), the index line in
+`docs/design/memfn/CLAUDE.md`. No make, no timing; 8 light compiles and 4 bundle listings on the main
+tree's `build/pcrec` (2026-11-02). Not a build go: next is a narrow re-check (FIX + MEAS lenses on
+the changed sections) and the owner's answers to the open questions and the with-data scope.
