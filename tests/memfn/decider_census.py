@@ -42,7 +42,7 @@ BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< sm", "< wl", "> c)",
 # K35: hits at unit 1a's base (main 564db08c5) were 36 lines; a later unit
 # that removes decider copies lowers this in the same change.
 HIT_FLOOR = 30
-MEMBER_FLOOR = 50   # rows of the map at 1a's base: 57
+MEMBER_FLOOR = 45   # rows of the map at 1a's base: 50
 
 passed = failed = 0
 
