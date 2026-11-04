@@ -8,6 +8,7 @@ TREE=/home/pcrec/projects/pcrec/worktrees/recida
 SC=/var/tmp/pcrec-pcrec/scratch/recida2/movers
 EV=$TREE/docs/dev/lanes/recida2_evidence
 case "${1:-}" in
+    --ready) exit 0 ;;
     --dry-run)
         for f in "$TREE/tests/codegen/run_recursion_identity.sh" "$TREE/docs/dev/lanes/recida_evidence/pick_patterns.py"; do
             [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
