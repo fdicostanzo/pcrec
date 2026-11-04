@@ -76,7 +76,6 @@ enum {
 
 typedef enum { TIE_HIGHER, TIE_LOWER, TIE_EXCHANGE, TIE_PARKED, TIE_RESEED,
                TIE_LEFTMOST } wf_tie_to;
-enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_N };
 static const struct {
     const char *where;
     wf_tie_to   to;
@@ -97,16 +96,31 @@ static const struct {
                          "prefix_k's exchange sort over walk-index order (unstable)", "today's" },
     [T_MARGIN]       = { "MARGIN, best * NUM == base * DEN", TIE_PARKED,
                          "prefix_k's `>=` rejects", "today's" },
-    [T_WINDOW]       = { "the run truncation window (pcrec's, a limit of its statement)",
-                         TIE_LEFTMOST, "pcrec_find_run_window_start's strict <",
-                         "today's; no kit reader (window_site.md §9)" },
+    [T_WINDOW]       = { "the run truncation window (pcrec's, a limit of its statement): "
+                         "presence's run window (P3) over its candidate starts",
+                         TIE_LEFTMOST, "pcrec_find_run_window_start's strict <", "today's" },
+    [T_PRES_MEMBER]  = { "P3's set pick, presence member spans of equal mass (keyed by "
+                         "kit_tie_member_key)", TIE_HIGHER,
+                         "the member LAST in pattern order (an UNKNOWN order below every known "
+                         "one), then the larger byte", "today's" },
 };
 
-/* 1 iff a candidate at offset `c`, of a mass EQUAL to the best's at an
- * offset `b` the walk met first (ascending), takes the tie under row `r`. */
-static int tie_takes(int r, int32_t c, int32_t b)
+/* 1 iff a candidate keyed `c` (an offset, or T_PRES_MEMBER's member key), of
+ * a mass EQUAL to the best's keyed `b` that the walk met first, takes the tie
+ * under row `r`. */
+int kit_tie_takes(int r, int32_t c, int32_t b)
 {
-    return wf_ties[r].to == TIE_HIGHER ? c > b : wf_ties[r].to == TIE_LOWER ? c < b : 0;
+    wf_tie_to to = wf_ties[r].to;
+    return to == TIE_HIGHER ? c > b : to == TIE_LOWER || to == TIE_LEFTMOST ? c < b : 0;
+}
+
+/* The presence-member row's key of a one-byte member span: its pattern order
+ * above its byte, an UNKNOWN order as 0, below every known one (a stated
+ * order is 1..256, kit_presence_check). */
+int32_t kit_tie_member_key(unsigned member_order, int byte)
+{
+    unsigned o = member_order == MF_ORDER_UNKNOWN ? 0 : member_order;
+    return (int32_t)(o << 8 | (unsigned)byte);
 }
 
 /* ---- THE DECISION's working state ----------------------------------------- */
@@ -418,7 +432,8 @@ static void a_parked_choose(wf_x *x)
     m->stop = 0;
     /* `base`: the parked scan priced by k0's count, not by B's form (§2.1) */
     m->cost = model_cost(count(k0) == 1 ? COST(C_MEMCHR) : COST(C_BITMAP),
-                         kit_set_mass(x->d->rate, k0), 0, PPM);
+                         kit_mass(x->d->rate, &(const kit_pos){ .set = k0 }, 1, KIT_MASS_CAP),
+                         0, PPM);
     m->priced = 1;
 }
 
@@ -469,7 +484,8 @@ static void a_model_choose(wf_x *x)
     const mf_walt *a = m->alt;
     const uint32_t *rate = x->d->rate;
     unsigned long long mass[MF_WMAX_SPAN];
-    for (unsigned i = 0; i < a->nspan; i++) mass[i] = kit_set_mass(rate, a->spans[i].set[0]);
+    for (unsigned i = 0; i < a->nspan; i++)
+        mass[i] = kit_mass(rate, &(const kit_pos){ .set = a->spans[i].set[0] }, 1, KIT_MASS_CAP);
     int f0 = f0_of(a);
     int best_si = -1, best_sel[2] = { -1, -1 };
     unsigned best_n = 0;
@@ -501,7 +517,7 @@ static void a_model_choose(wf_x *x)
             cost = nc;
         }
         if (best_si < 0 || cost < best ||
-            (cost == best && tie_takes(T_MODEL, a->spans[si].start, a->spans[best_si].start))) {
+            (cost == best && kit_tie_takes(T_MODEL, a->spans[si].start, a->spans[best_si].start))) {
             best = cost;
             best_si = (int)si;
             best_n = n - 1;
@@ -549,10 +565,10 @@ static void a_mass_choose(wf_x *x)
     for (unsigned k = 0; k < WF_NPOS; k++) {
         const wf_pos *p = &m->p[k];
         if (!mass_domain(p)) continue;
-        uint32_t ms = kit_set_sum(x->d->rate, p->set);
+        uint32_t ms = kit_mass(x->d->rate, &(const kit_pos){ .set = p->set }, 1, KIT_MASS_SUM);
         int row = in_stretch(p) ? T_MASS_STRETCH : T_MASS_SET;
         if (bk < 0 || ms < bm ||
-            (ms == bm && tie_takes(row, (int32_t)k + WF_LO, bk + WF_LO))) {
+            (ms == bm && kit_tie_takes(row, (int32_t)k + WF_LO, bk + WF_LO))) {
             bk = (int)k;
             bm = ms;
         }
@@ -771,9 +787,9 @@ static void run_member(wf_dec *d)
     uint32_t bm = 0;
     for (unsigned j = 0; j < r->len; j++) {
         if (exact && count(r->set[j]) != 1) continue;
-        uint32_t ms = kit_set_sum(d->rate, r->set[j]);
+        uint32_t ms = kit_mass(d->rate, &(const kit_pos){ .set = r->set[j] }, 1, KIT_MASS_SUM);
         if (bj < 0 || ms < bm ||
-            (ms == bm && tie_takes(T_MASS_STRETCH, r->start + (int32_t)j, r->start + bj))) {
+            (ms == bm && kit_tie_takes(T_MASS_STRETCH, r->start + (int32_t)j, r->start + bj))) {
             bj = (int)j;
             bm = ms;
         }
@@ -1331,7 +1347,7 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
                 cube[(tm->run[i] | b) >> 3] |= (uint8_t)(1u << ((tm->run[i] | b) & 7));
                 if (!b) break;
             }
-            uint32_t c = kit_set_sum(d->rate, cube);
+            uint32_t c = kit_mass(d->rate, &(const kit_pos){ .set = cube }, 1, KIT_MASS_SUM);
             while (j > 0 && p->rank_ppm[j - 1] > c) {
                 p->rank_ppm[j] = p->rank_ppm[j - 1];
                 p->rank_pos[j] = p->rank_pos[j - 1];
@@ -1593,7 +1609,8 @@ static int d_hors_holds(const void *x)
 {
     const wf_dx *dx = x;
     if (!dx->hw || dx->whi - dx->wlo < 1 || dx->whi < 0) return 0;
-    return kit_set_mass(dx->d->rate, dx->w->set[dx->w->stop_ix]) >= COST(HORS_MIN);
+    return kit_mass(dx->d->rate, &(const kit_pos){ .set = dx->w->set[dx->w->stop_ix] }, 1,
+                    KIT_MASS_CAP) >= COST(HORS_MIN);
 }
 
 /* D-one, the floor's resume: holds wherever it is asked. */

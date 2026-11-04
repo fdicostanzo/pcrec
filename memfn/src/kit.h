@@ -318,18 +318,35 @@ const char *kit_presence_check(const mf_site *s);
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
                     const uint8_t *start_set, mf_pres_picks *out);
 
-/* THE BYTE-RATE and its masses (presence.c), one definition the PRES ports
- * and the window family read: the analysis object's `byte-rate` table (ppm
- * per byte, uint32_t[256]) or NULL where it carries none (no object, the
- * kind absent, present with no payload). kit_set_mass is pcrec_find_set_ppm's arithmetic
- * (capped at 1e6; NONE: the uniform mass of the cardinality); kit_set_sum
- * the uncapped sum, PICK's cube mass (pcrec_find_pick, run_rank). */
+/* THE BYTE-RATE and its ONE mass primitive (presence.c; span_pick.md rev
+ * 5.2 U4, unit 1b), read by the PRES ports and the window family. The rate
+ * is the analysis object's `byte-rate` table (ppm per byte, uint32_t[256]) or
+ * NULL where it carries none (no object, the kind absent, present with no
+ * payload). kit_mass sums it over a POSITION MULTISET: each position a stated
+ * byte set (`set`, its members) or else the cube (`t`, `mask`), the bytes
+ * t | f for f a submask of ~mask (a byte: mask 0xFF); capped at 1e6 or not;
+ * NONE (rate NULL) is the declared NONE row, the uniform mass of the
+ * multiset's member count (presence.c). */
+typedef struct {
+    const uint8_t *set;         /* a byte set (256 bits), or NULL: the cube  */
+    uint8_t        t, mask;     /* the cube, read where `set` is NULL        */
+} kit_pos;
+typedef enum { KIT_MASS_SUM, KIT_MASS_CAP } kit_mass_cap;
 #define kit_byte_rate MF_NS(kit_byte_rate)
-#define kit_set_mass  MF_NS(kit_set_mass)
-#define kit_set_sum   MF_NS(kit_set_sum)
+#define kit_mass      MF_NS(kit_mass)
 const uint32_t *kit_byte_rate(const mf_art *art);
-uint32_t kit_set_mass(const uint32_t *rate, const uint8_t set[32]);
-uint32_t kit_set_sum(const uint32_t *rate, const uint8_t set[32]);
+uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap);
+
+/* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): every
+ * comparison in the kit that can tie reads its row through kit_tie_takes,
+ * which answers whether a candidate keyed `c`, equal to the best keyed `b`
+ * (met first in the walk), takes the tie. Keys are offsets, except
+ * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). */
+enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };
+#define kit_tie_takes      MF_NS(kit_tie_takes)
+#define kit_tie_member_key MF_NS(kit_tie_member_key)
+int kit_tie_takes(int r, int32_t c, int32_t b);
+int32_t kit_tie_member_key(unsigned member_order, int byte);
 
 /* The kit's own membership test of `byte` (an unsigned char expression)
  * against `set` (generic.c): the set's maximal byte ranges, OR-ed; "0" for
