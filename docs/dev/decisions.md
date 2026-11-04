@@ -10017,6 +10017,9 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 - **Why:** the owner's handoff criteria F1-F4 (focus, flexibility, division of labour, no blindness) and his direction of 2026-11-01: "This project is more than simply its stated goal. It's an effort to produce a viable long term project that can grow." Crossings between parts stay expected ("deliberate and negotiated", the kit as the precedent) and go through declared seams. Speed is a no-regression gate, not the case. Evidence: docs/design/stream/approach.md (rev 3) and its three review rounds (docs/dev/reviews/2026-11-01-r1-stream1.md, -r2-stream2.md, -r3-stream3.md).
 - **Relation to D182:** extends D182's record discipline ("the record is the source") from the VM body to the whole artifact; [VMREC] steps (b) and (c) are designed toward the stream (reversing approach.md §11.3's decline of that timing note, by the owner's direction) and stay D182's own steps under its gates.
 - **Revisit when:** the P-b proof (the DFA artifact's top level as stream records) needs a kind-specific escape hatch (the approach's falsifier), or a measured step shows the seam cost cannot meet the no-regression gate.
+- **Addendum 2026-11-04 (owner ruling):** the kit is no longer its own part: its planning face joins the planner and its emitting face the back end, so another target language is another back end (manifesto section 2).
+- Principle 9 added, "every seam is a document" (a seam must survive a write-to-text, read-back-by-another-process round trip, built or not); principle 7 clarified (measured data with provenance is a fact, not a trusted cost).
+- Recorded in manifesto.md's change record; the pcrec-critic lens table gained a seam round trip lens.
 
 ## D186 — optimizations are UNIT changes or CHOICE changes, each with its own bar (owner, 2026-11-02; TRIAL)
 

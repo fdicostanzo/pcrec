@@ -99,6 +99,7 @@ measured twice). Subject column: D = design document, C = code diff.
 | D C | a caller-facing contract | **contract** | Does the code (or the design) do exactly what the spec says for every admitted input class; do names describe behaviour (D174, D80)? Code mode probes edges with the built compiler. | strong |
 | C | a performance claim / re-pin | **trade audit** | Every pin, floor or count moved: what speed, size or coverage did it give up, and who judged that trade? | sonnet+ |
 | C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? | sonnet+ |
+| D C | a planner / kit / back-end seam | **seam round trip** (manifesto principle 9) | Could what crosses this seam be written to text and read back by another process? Name every pointer, callback, shared state or target-language assumption that crosses. | strong |
 | C | plain C structure | **house rules** | coding.md + style.md: duplication (name the shared abstraction), altitude, tables used as if-chains, side effects in predicates. | sonnet |
 
 Always add the two standing questions to one lens (say which): **sibling of a
