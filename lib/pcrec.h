@@ -1197,7 +1197,7 @@ enum {
 #define PCREC_NO_REV_END_ONEWALK PCREC_BIT(56)
 
 /* [LANDWALK] `-fno-landmark-walk` -- deny the LANDMARK WALK locator
- * (docs/spec/tuning.md §2.51): for a one-branch pattern with a required
+ * (docs/spec/tuning.md §2.54): for a one-branch pattern with a required
  * byte class L whose bytes the pattern's prefix P before it can never
  * consume, the search finds each occurrence of L and walks the artifact's
  * own reverse machine of P·L back from it to the leftmost start, then runs
