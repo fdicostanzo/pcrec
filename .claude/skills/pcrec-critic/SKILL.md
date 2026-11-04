@@ -200,7 +200,9 @@ proposed process change. Then END.
 
 1. Read the draft and `process.md`; rule each disposition (overrule with a
    reason); commit the review as `docs/dev/reviews/YYYY-MM-DD-rN-<topic>.md`
-   (+ sibling dir of critic texts), indexed in `docs/dev/reviews/CLAUDE.md`.
+   (+ sibling dir of critic texts), indexed in `docs/dev/reviews/CLAUDE.md`. Before that commit, `grep -rnE 'plan\.md:[0-9]' <review>.md <review dir>` must find nothing:
+   plan_lint PL14 rejects line-numbered plan.md cites (they rot), and one blocked main's push of 2026-11-04 r1;
+   cite a row by its tag instead.
 2. FIX-NOW items go to fix lanes on the subject branch (fresh agents, the
    review as brief source); the round closes when every finding has a
    disposition and every FIX-NOW is landed or ruled.
