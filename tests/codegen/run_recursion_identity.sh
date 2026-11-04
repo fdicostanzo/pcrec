@@ -1395,6 +1395,8 @@ if ! git -C "$ROOT_DIR" rev-parse --verify --quiet "$ABASEPIN^{commit}" >/dev/nu
 fi
 ABASE_DIRS="src lib cli"
 git -C "$ROOT_DIR" cat-file -e "$ABASEPIN:memfn" 2>/dev/null && ABASE_DIRS="$ABASE_DIRS memfn"
+# shared/ (the SHA-256 leaf): a base past its arrival needs it (src/parse/rxt_source.c includes it).
+git -C "$ROOT_DIR" cat-file -e "$ABASEPIN:shared" 2>/dev/null && ABASE_DIRS="$ABASE_DIRS shared"
 # shellcheck disable=SC2086
 if ! git -C "$ROOT_DIR" archive "$ABASEPIN" $ABASE_DIRS \
         | tar -x -C "$ABASESRC" 2>"$WORKDIR/abasearch.log"; then
@@ -1410,7 +1412,7 @@ ABASE_SRCS="$(pcrec_lib_srcs "$ABASESRC")"
 # shellcheck disable=SC2086
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ABASESRC/lib" -I"$ABASESRC/src" $SANFLAGS \
         -o "$ABASE" "$ABASESRC"/cli/main.c $ABASE_SRCS 2>"$WORKDIR/abasebuild.log"; then
-    bad "could not build the (A) base compiler from $ABASEPIN:"
+    bad "could not build the (A) base compiler from $ABASEPIN: $(grep -m3 -E 'error|undefined' "$WORKDIR/abasebuild.log" | tr '\n' ' ' | cut -c1-300)"
     head -20 "$WORKDIR/abasebuild.log" >&2
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi

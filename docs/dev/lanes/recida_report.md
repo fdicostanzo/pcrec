@@ -172,3 +172,25 @@ evidence lists under `recida2_evidence/` are committed. Rulings file `recida_rul
 to plan_completed.md.
 
 OWED: queue jobs main-recida2-movers (329-main-recida2-movers) and main-recida2 (330-main-recida2).
+
+## Re-base 3 (job fix)
+
+Job 330 failed in 28 s on two faults, both fixed (harness only, no src/).
+
+- **Base build**: the gate's (A) base archive took `src lib cli memfn` but not `shared/`;
+  4bd002e20's `src/parse/rxt_source.c` includes `../shared/sha256.h`, so the build died with
+  `fatal error: ../shared/sha256.h`. The (B) file-pin path already added `shared`; the (A) path now does
+  too (`tests/codegen/run_recursion_identity.sh`). The failure line also carries the first error lines of the
+  build log now (it was empty because the log tail went to stderr, which the job greps away). Reproduced
+  alone under `gnutimeout 600` in scratch: without `shared` it fails as above; with it the base builds clean.
+  Not a product fault.
+- **Sampler** (`recida2_job_330`): per-axis stride sampling overlapped (46 distinct, needs 50). It now doubles
+  the divisor until >= 50 distinct across the axes (every mover if need be): 89 distinct at divisor 30
+  (default 31, vm 32, noprefilter 31, nocaptures 31). (?U)-possessive movers: 0 on default, noprefilter and
+  nocaptures, 1 on vm (taken).
+- Job `--dry-run` and `--ready` pass; requeued as `331-main-recida3`.
+
+## STATE AT HANDOFF
+
+Queued job 331-main-recida3 (script docs/dev/lanes/recida2_job_330). Expect three `== recida2 STEP <n> rc=0`
+lines. Any DIFF in answers = stop, merge nothing. Evidence dir recida2_evidence still uncommitted.

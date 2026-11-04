@@ -39,18 +39,28 @@ import sys, re
 ev, sc = sys.argv[1], sys.argv[2]
 axes = ['default', 'vm', 'noprefilter', 'nocaptures']
 rd = lambda a: [l for l in open(f'{ev}/movers.{a}.txt', encoding='utf-8', errors='surrogateescape').read().split('\n') if l]
-U = re.compile(r'\(\?U')
-tot = set(); allm = set()
+allm = set(); M = {}
 for a in axes:
-    m = rd(a); allm |= set(m)
-    poss = [p for p in m if U.search(p) and '+' in p]
-    rest = [p for p in m if p not in poss]
-    k = max(1, len(rest) // 15)
-    pick = poss + rest[::k]
-    tot |= set(pick)
+    M[a] = rd(a); allm |= set(M[a])
+U = re.compile(r'\(\?U')
+# Axes overlap, so widen the per-axis stride sampling until >= 50 DISTINCT patterns; every mover is taken if need be.
+div = 15
+while True:
+    tot = set(); picks = {}
+    for a in axes:
+        m = M[a]
+        poss = [p for p in m if U.search(p) and '+' in p]
+        rest = [p for p in m if p not in poss]
+        k = max(1, len(rest) // div)
+        picks[a] = poss + rest[::k]
+        tot |= set(picks[a])
+    if len(tot) >= 50 or div >= 100000: break
+    div *= 2
+for a in axes:
+    pick = picks[a]
     open(f'{sc}/sample.{a}.txt', 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(pick) + ('\n' if pick else ''))
-    print(a, 'movers', len(m), 'sample', len(pick), '((?U)-possessive:', len(poss), ')')
-print('distinct sample patterns', len(tot))
+    print(a, 'movers', len(M[a]), 'sample', len(pick), '((?U)-possessive:', sum(1 for p in M[a] if U.search(p) and '+' in p), ')')
+print('distinct sample patterns', len(tot), 'divisor', div)
 assert len(tot) >= 50 or tot == allm, 'sample under 50'
 PY
     rc=0
