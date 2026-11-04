@@ -192,5 +192,5 @@ Job 330 failed in 28 s on two faults, both fixed (harness only, no src/).
 
 ## STATE AT HANDOFF
 
-Queued job 331-main-recida3 (script docs/dev/lanes/recida2_job_330). Expect three `== recida2 STEP <n> rc=0`
+Owed job main-recida3 (queue name 331-main-recida3), queued: (script docs/dev/lanes/recida2_job_330). Expect three `== recida2 STEP <n> rc=0`
 lines. Any DIFF in answers = stop, merge nothing. Evidence dir recida2_evidence still uncommitted.

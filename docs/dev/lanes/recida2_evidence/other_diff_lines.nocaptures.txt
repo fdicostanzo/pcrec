@@ -1,0 +1,7 @@
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) ([\x{e0}-\x{ff}]+)\s++\1
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) ([\x{e9}a])x++\1
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) (\b)\w++\1
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) (\x{e9})x++\1
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) (a)(\1b)x++\2
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) (a?)x++\1\b
+POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) (a\2)(b\1)x++\1
