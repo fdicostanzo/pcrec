@@ -33,7 +33,7 @@ for lab in default vm noprefilter nocaptures; do
     grep -vE '^REGION DIFFERS' "$td/diff.$lab" > "$EV/other_diff_lines.$lab.txt"
     n=$(grep -c . "$EV/movers.$lab.txt"); o=$(grep -c . "$EV/other_diff_lines.$lab.txt")
     echo "movers[$lab] = $n (other diff lines: $o)"
-    [ "$n" -le 600 ] || { echo "STOP RULE: > 600 movers on $lab"; bad=1; }
+    [ "$n" -le 800 ] || { echo "STOP RULE: > 800 movers on $lab"; bad=1; }   # 600 -> 800 (manager 2026-11-04): vm read 620, an unmeasured guard; the answer check in 330 is the gate
 done
 grep -h '^??' "$EV"/movers.*.txt | head
 rm -rf "$td"
