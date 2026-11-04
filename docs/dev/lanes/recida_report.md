@@ -2,6 +2,8 @@
 
 ## STATE AT HANDOFF
 
+Update (Re-base 3): owed job main-recida3 (queue 331-main-recida3) re-runs the answers/newgate/plant validation; see the final STATE AT HANDOFF.
+
 SUPERSEDED by re-base 2 (below, same heading at the end of the file): OWED: main-recida2 (330-main-recida2, after main-recida2-movers); job 698-recida-gate is withdrawn. Do not merge before both are green.
 
 the re-based gate and every doc are COMMITTED on lane/recida; its VALIDATION IS OWED (the box was
