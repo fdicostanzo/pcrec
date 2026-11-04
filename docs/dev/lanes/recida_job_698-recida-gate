@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# 698-recida-gate: lane recida's OWED validation of the re-based recursion-identity gate ([RECID-A]).
+# Steps (each prints `== recida STEP <name> rc=N`; the job is green only if all pass):
+#   build        make -j16 in the lane worktree
+#   refs         build the pre-module reference matcher (ac4917d) into the lane scratch, for the answer check
+#   oldgate      run the OLD gate (9db59722c's copy, KEEP=1) to regenerate the exact four REGION DIFFERS lists
+#                (167/382/167/111 expected) and report which are outside the committed answer populations
+#   answers      anscheck.py (docs/dev/lanes/recida_evidence/) over the populations on their axes, vs libpcre2
+#   newgate      bash tests/codegen/run_recursion_identity.sh  (the re-based gate; must be rc 0)
+#   plant        the same gate with a compiler carrying S273's plant (vm_bref length + 1): must be RED with an
+#                (A) REGION DIFFERS line, which shows the exception-free (A) still fails
+# STOP RULE (brief): any `DIFF` line in `answers` (a main/libpcre2 answer difference) means do NOT land the re-pin.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/recida
+SC=/var/tmp/pcrec-pcrec/scratch/recida/job698
+EV=$TREE/docs/dev/lanes/recida_evidence
+case "${1:-}" in
+    --ready)
+        now=$(date +%s)
+        lim=$(date -d '2026-10-29 17:30' +%s)
+        nb=$(date -d '2026-10-30 13:30' +%s)
+        if [ "$now" -lt "$lim" ] || [ "$now" -ge "$nb" ]; then exit 0; fi
+        echo "not ready: after 17:30 (box window), not before 2026-10-30T13:30"; exit 75 ;;
+    --dry-run)
+        for f in "$TREE/tests/codegen/run_recursion_identity.sh" "$EV/anscheck.py" "$EV/pick_patterns.py" "$EV/pop_default.txt" \
+                 "$EV/pop_vm.txt" "$EV/pop_noprefilter.txt" "$EV/pop_nocaptures.txt"; do
+            [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
+        done
+        git -C "$TREE" rev-parse --verify --quiet 7234c2e86^{commit} >/dev/null || { echo "ABASEPIN 7234c2e86 does not resolve" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify --quiet ac4917d^{commit} >/dev/null || { echo "ac4917d does not resolve" >&2; exit 1; }
+        git -C "$TREE" cat-file -e 9db59722c:tests/codegen/run_recursion_identity.sh || { echo "old gate copy missing" >&2; exit 1; }
+        echo "would run in $TREE: build; refs; oldgate (KEEP=1); answers x4 axes; newgate; plant"
+        echo "boxqueue: cap 10800"; echo "boxqueue: patience none"
+        echo "boxqueue: expect steps=6 lines=^== recida STEP .* rc=0\$"
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+mkdir -p "$SC"
+bad=0
+step() { n=$1; shift; "$@"; rc=$?; echo "== recida STEP $n rc=$rc"; [ $rc = 0 ] || bad=1; }
+
+refs() {
+    rm -rf "$SC/ref" && mkdir -p "$SC/ref" || return 1
+    git -C "$TREE" archive ac4917d src lib cli | tar -x -C "$SC/ref" || return 1
+    ( cd "$SC/ref" && gcc -O0 -std=gnu11 -w -Ilib -Isrc -o "$SC/pcrec_ref" cli/main.c $(find src -name '*.c' | LC_ALL=C sort) ) || return 1
+    ls -l "$SC/pcrec_ref"
+}
+
+oldgate() {
+    git -C "$TREE" show 9db59722c:tests/codegen/run_recursion_identity.sh > tests/codegen/.recida_old_gate.sh || return 1
+    KEEP=1 bash tests/codegen/.recida_old_gate.sh > "$SC/oldgate.log" 2>&1
+    rm -f tests/codegen/.recida_old_gate.sh
+    grep -E '^recursion-identity\[[a-z]+\] \(A\)' "$SC/oldgate.log" | cut -c1-200
+    td=$(sed -n 's/^recursion-identity: KEEP=1, temp dir: //p' "$SC/oldgate.log" | head -1)
+    [ -d "$td" ] || { echo "no old-gate temp dir"; return 1; }
+    nonA=$(grep -E '^FAIL:' "$SC/oldgate.log" | grep -vcE '\(A\)')
+    echo "old gate: non-(A) FAIL lines = $nonA (want 0)"
+    [ "$nonA" = 0 ] || return 1
+    : > "$SC/outside.all"
+    for lab in default vm noprefilter nocaptures; do
+        pop=$EV/pop_$lab.txt
+        python3 -I "$EV/pick_patterns.py" "$td/diff.$lab" "$td/patterns" > "$SC/unattr.$lab" || return 1
+        n=$(wc -l < "$SC/unattr.$lab")
+        grep -vxFf "$pop" "$SC/unattr.$lab" > "$SC/outside.$lab"
+        echo "old gate unattributed[$lab] = $n patterns, $(wc -l < "$SC/outside.$lab") outside the committed answer population pop_$lab"
+        cat "$SC/outside.$lab" >> "$SC/outside.all"
+    done
+    sort -u "$SC/outside.all" > "$SC/pop_extra.txt"
+    echo "patterns outside any population (answer-checked below as pop_extra): $(wc -l < "$SC/pop_extra.txt")"
+    rm -rf "$td"
+    return 0
+}
+
+answers() {
+    rc=0
+    export RECIDA_REF="$SC/pcrec_ref"
+    python3 -I "$EV/anscheck.py" "$EV/pop_default.txt" "$SC/ans_default" > "$SC/ans_default.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$EV/pop_vm.txt" "$SC/ans_vm" --engine=vm > "$SC/ans_vm.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$EV/pop_noprefilter.txt" "$SC/ans_nopf" -fno-prefilter > "$SC/ans_nopf.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$EV/pop_nocaptures.txt" "$SC/ans_nocap" --no-captures > "$SC/ans_nocap.out" 2>&1 || rc=1
+    if [ -s "$SC/pop_extra.txt" ]; then
+        python3 -I "$EV/anscheck.py" "$SC/pop_extra.txt" "$SC/ans_extra" > "$SC/ans_extra.out" 2>&1 || rc=1
+    fi
+    tail -n 2 "$SC"/ans_*.out
+    grep -h -E '^(DIFF|MAIN-NOBUILD|LENGTH-MISMATCH)' "$SC"/ans_*.out | head -40
+    return $rc
+}
+
+newgate() {
+    bash tests/codegen/run_recursion_identity.sh > "$SC/newgate.log" 2>&1
+    rc=$?
+    grep -E '^recursion-identity\[[a-z]+\] \((A|B)\)|^checks (passed|failed)|^FAIL' "$SC/newgate.log" | cut -c1-260
+    return $rc
+}
+
+plant() {
+    rm -rf "$SC/sab" && mkdir -p "$SC/sab" || return 1
+    git -C "$TREE" archive HEAD src lib cli memfn shared 2>/dev/null | tar -x -C "$SC/sab" || return 1
+    python3 -I - "$SC/sab/src/gen/emit_vm.c" <<'PY' || return 1
+import sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8', errors='surrogateescape').read()
+before = '        "                  (size_t)(ref_end - ref_start),\\n"'
+after = '        "                  (size_t)(ref_end - ref_start + 1),\\n"   /* SABOTAGE S273: off by one */'
+assert s.count(before) == 1, s.count(before)
+open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s.replace(before, after))
+PY
+    . "$TREE/tests/lib/lib_srcs.sh"
+    ( cd "$SC/sab" && gcc -O1 -std=gnu11 -w -Ilib -Isrc -Imemfn/src -Ishared -o "$SC/pcrec_plant" cli/main.c $(pcrec_lib_srcs "$SC/sab") ) || return 1
+    PCREC="$SC/pcrec_plant" bash tests/codegen/run_recursion_identity.sh > "$SC/plant.log" 2>&1
+    rc=$?
+    grep -E '^FAIL: .*\(A\)|^FAIL: .*\(B\)|^checks (passed|failed)' "$SC/plant.log" | cut -c1-260
+    # the plant must turn the gate RED, through (A)'s REGION DIFFERS line
+    [ "$rc" != 0 ] && grep -qE '^FAIL: .*\(A\).*DIFFERENT PROGRAM REGION' "$SC/plant.log"
+}
+
+step build make -j16
+step refs refs
+step oldgate oldgate
+step answers answers
+step newgate newgate
+step plant plant
+exit $bad

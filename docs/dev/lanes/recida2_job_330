@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# main-recida2: [RECID-A] re-base 2 validation. After main-recida2-movers: (1) answer-check a sample of the movers
+# (>= 50 distinct, spread over the four axes, plus every (?U)-possessive mover) against libpcre2; ANY DIFF is the
+# STOP RULE (do not land the re-pin); (2) the re-based gate (ABASEPIN 4bd002e20) must pass; (3) the S273 plant
+# must turn it red through (A). Green = three `== recida2 STEP <n> rc=0` lines.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/recida
+SC=/var/tmp/pcrec-pcrec/scratch/recida2/val
+EV=$TREE/docs/dev/lanes/recida_evidence
+EV2=$TREE/docs/dev/lanes/recida2_evidence
+MAIN=/home/pcrec/projects/pcrec
+case "${1:-}" in
+    --ready)
+        "$MAIN/scripts/boxqueue" after main-recida2-movers; exit $? ;;
+    --dry-run)
+        for f in "$TREE/tests/codegen/run_recursion_identity.sh" "$EV/anscheck.py"; do
+            [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
+        done
+        git -C "$TREE" rev-parse --verify --quiet 4bd002e20^{commit} >/dev/null || { echo "4bd002e20 unresolved" >&2; exit 1; }
+        grep -q 'ABASE:-4bd002e20' "$TREE/tests/codegen/run_recursion_identity.sh" || { echo "gate not pinned to 4bd002e20" >&2; exit 1; }
+        grep -q 'ref_end - ref_start),' "$TREE/src/gen/vm_stmt.c" || { echo "plant site missing" >&2; exit 1; }
+        echo "would run in $TREE: sample+answers x4 axes; newgate; plant"
+        echo "boxqueue: cap 10800"; echo "boxqueue: patience none"
+        echo "boxqueue: expect steps=3 lines=^== recida2 STEP .* rc=0\$"
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+mkdir -p "$SC"
+bad=0
+step() { n=$1; shift; "$@"; rc=$?; echo "== recida2 STEP $n rc=$rc"; [ $rc = 0 ] || bad=1; }
+
+answers() {
+    rm -rf "$SC/ref" && mkdir -p "$SC/ref" || return 1
+    git -C "$TREE" archive ac4917d src lib cli | tar -x -C "$SC/ref" || return 1
+    ( cd "$SC/ref" && gcc -O0 -std=gnu11 -w -Ilib -Isrc -o "$SC/pcrec_ref" cli/main.c $(find src -name '*.c' | LC_ALL=C sort) ) || return 1
+    export RECIDA_REF="$SC/pcrec_ref"
+    python3 -I - "$EV2" "$SC" <<'PY' || return 1
+import sys, re
+ev, sc = sys.argv[1], sys.argv[2]
+axes = ['default', 'vm', 'noprefilter', 'nocaptures']
+rd = lambda a: [l for l in open(f'{ev}/movers.{a}.txt', encoding='utf-8', errors='surrogateescape').read().split('\n') if l]
+allm = set(); M = {}
+for a in axes:
+    M[a] = rd(a); allm |= set(M[a])
+U = re.compile(r'\(\?U')
+# Axes overlap, so widen the per-axis stride sampling until >= 50 DISTINCT patterns; every mover is taken if need be.
+div = 15
+while True:
+    tot = set(); picks = {}
+    for a in axes:
+        m = M[a]
+        poss = [p for p in m if U.search(p) and '+' in p]
+        rest = [p for p in m if p not in poss]
+        k = max(1, len(rest) // div)
+        picks[a] = poss + rest[::k]
+        tot |= set(picks[a])
+    if len(tot) >= 50 or div >= 100000: break
+    div *= 2
+for a in axes:
+    pick = picks[a]
+    open(f'{sc}/sample.{a}.txt', 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(pick) + ('\n' if pick else ''))
+    print(a, 'movers', len(M[a]), 'sample', len(pick), '((?U)-possessive:', sum(1 for p in M[a] if U.search(p) and '+' in p), ')')
+print('distinct sample patterns', len(tot), 'divisor', div)
+assert len(tot) >= 50 or tot == allm, 'sample under 50'
+PY
+    rc=0
+    python3 -I "$EV/anscheck.py" "$SC/sample.default.txt" "$SC/ans_default" > "$SC/ans_default.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$SC/sample.vm.txt" "$SC/ans_vm" --engine=vm > "$SC/ans_vm.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$SC/sample.noprefilter.txt" "$SC/ans_nopf" -fno-prefilter > "$SC/ans_nopf.out" 2>&1 || rc=1
+    python3 -I "$EV/anscheck.py" "$SC/sample.nocaptures.txt" "$SC/ans_nocap" --no-captures > "$SC/ans_nocap.out" 2>&1 || rc=1
+    tail -n 2 "$SC"/ans_*.out
+    grep -h -E '^(DIFF|MAIN-NOBUILD|LENGTH-MISMATCH)' "$SC"/ans_*.out | head -40
+    return $rc
+}
+
+newgate() {
+    bash tests/codegen/run_recursion_identity.sh > "$SC/newgate.log" 2>&1
+    rc=$?
+    grep -E '^recursion-identity\[[a-z]+\] \((A|B)\)|^checks (passed|failed)|^FAIL' "$SC/newgate.log" | cut -c1-260
+    return $rc
+}
+
+plant() {
+    rm -rf "$SC/sab" && mkdir -p "$SC/sab" || return 1
+    git -C "$TREE" archive HEAD src lib cli memfn shared 2>/dev/null | tar -x -C "$SC/sab" || return 1
+    python3 -I - "$SC/sab/src/gen/vm_stmt.c" <<'PY' || return 1
+import sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8', errors='surrogateescape').read()
+before = '        "                  (size_t)(ref_end - ref_start),\\n"'
+after = '        "                  (size_t)(ref_end - ref_start + 1),\\n"   /* SABOTAGE S273: off by one */'
+assert s.count(before) == 1, s.count(before)
+open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s.replace(before, after))
+PY
+    . "$TREE/tests/lib/lib_srcs.sh"
+    ( cd "$SC/sab" && gcc -O1 -std=gnu11 -w -Ilib -Isrc -Imemfn/src -Ishared -o "$SC/pcrec_plant" cli/main.c $(pcrec_lib_srcs "$SC/sab") ) || return 1
+    PCREC="$SC/pcrec_plant" bash tests/codegen/run_recursion_identity.sh > "$SC/plant.log" 2>&1
+    rc=$?
+    grep -E '^FAIL: .*\(A\)|^FAIL: .*\(B\)|^checks (passed|failed)' "$SC/plant.log" | cut -c1-260
+    [ "$rc" != 0 ] && grep -qE '^FAIL: .*\(A\).*DIFFERENT PROGRAM REGION' "$SC/plant.log"
+}
+
+make -j16 >/dev/null 2>&1 || { echo "make failed"; exit 1; }
+step answers answers
+step newgate newgate
+step plant plant
+exit $bad

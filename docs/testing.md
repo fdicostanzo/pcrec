@@ -1312,7 +1312,8 @@ itself.
 > **READ "The recursion identity gate is two comparisons" (below, [DD-14.FB],
 > 2026-08-25) BEFORE ACTING ON THIS SECTION.** Everything here about the four
 > axes, the opt-in ruling and the `ac4917d` pin still holds, but the gate now
-> asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` and
+> asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` (SINCE 2026-10-29 against a
+> re-based, post-module commit: read "(A) was re-based" below) and
 > (B) the WHOLE FILE against `c940551` ([DD-13c]; was `469a432`, [OPT-1]'s) — because the caller-buffer wave's
 > announced `abi` 2 → 3 boundary put a change on every artifact's surface. A
 > reader who stops at this section will expect one number per axis and find
@@ -1476,8 +1477,8 @@ findings move emitted `#define` bytes on the four proven-empty DFA artifacts
 and on every VM hybrid, and move nothing inside the program region.
 
 **[TT-11]/D76 (2026-08-25): the two pins have two different OWNERS, and the
-FILE pin's guard is now STRUCTURAL.** (A)'s pin is the MODULE's promise
-(pre-module, never moves). (B)'s pin is owned by the emitted `abi` NUMBER
+FILE pin's guard is now STRUCTURAL.** (A)'s pin was the MODULE's promise
+(pre-module, never moves; re-based 2026-10-29, see "[RECID-A]" below). (B)'s pin is owned by the emitted `abi` NUMBER
 (`rx_info.abi`, stamped by `src/gen/emit_dfa.c`): it IS, by definition, the
 commit that introduced the CURRENT `abi`, and any change to emitted
 scaffolding — comments, declarations, layout — is an `abi` bump AND a re-pin
@@ -1489,6 +1490,46 @@ now builds an artifact from each compiler on a call-free pattern and requires
 their `.abi = N` stamps to agree, refusing with a message naming the fix
 ("bump `abi` in src/gen/emit_dfa.c and re-pin comparison (B) ... in the same
 change (D76)") when they do not.
+
+## The recursion identity gate's (A) was re-based ([RECID-A], 2026-10-29)
+
+**What changed.** Comparison (A) (the program region of every call-free corpus pattern, `goto <p>_L0;`
+... `<p>_accept:`, comments included, four axes) no longer compares against the never-moving pre-module
+pin `ac4917d`. It compares against `ABASEPIN` (`RECURSION_IDENTITY_ABASE`, default `4bd002e20`, the 2026-11-04
+full suite's frozen commit; first pinned at `7234c2e86`, the [EMIT-BIDI] merge, abi 86, and re-based
+2026-11-04 after later ruled landings moved call-free regions: report "Re-base 2"), a post-module main commit that already carries every emission change the
+exceptions used to absorb. Manager ruling 2026-10-29: re-base, not a ninth exception (the pin had cost two
+triage lanes and was red a third time, silently, because the gate runs only in the merge battery).
+
+**Why `7234c2e86` (the first pin; re-based to `4bd002e20`, see the report's "Re-base 2").** It is a ruled main commit (merged by the manager; the 10-26/10-27 full-suite reads
+counted (A) there) and the EARLIEST commit at which the call-free regions equal main's: measured at the re-base
+over all 4480 call-free corpus patterns on all four axes, main's regions are byte-identical to it (0 of 4480
+differ, default, `--engine=vm`, `-fno-prefilter`, `--no-captures`), so abi 87-92 (SCANEDGE-SET, INLINE-C,
+REQRUN-VM, S3) moved no region. The commit before it (substitution, `9ae59f5d4`) still differs on two
+`--engine=vm` patterns (`a{\n1}`, `a{\r1}`: EMIT-BIDI's one C-text escaper respells a run-compare string).
+A later base (`FILEPIN` itself) would make (A) a strict subset of (B) and defend nothing extra.
+
+**What was deleted** (each was a pin-relative excuse, none is needed against a post-exception base): the
+size-term mover list ([ART-SIZE]); the wave-G elision expectation inside (A) (`ELIDED_PATTERNS` itself stays,
+for (B)'s zero check and the elision control); the deny-restore buckets for the alternation island, the
+ascii-fold class test, literal runs, the shared atom table and the possessify arms, and the arm-A engine-flip
+bucket; the [VAR] seam-rename rewrite (`bref_rename_rewrite`) and its text census and +/-30 band (the band's
+red was the bucket shrinking 401 -> 366 -> 330 because 74 backreference patterns also moved for K128 and
+[FLAG-SPELL]); the range-from-0 rewrite (D139); the `${...}` var-construct admission and census; the
+context-node bucket and census; the layout canonicalizer (R4h) and its floor; the lazy-prefix rewrite (R-12)
+and its census. A difference is now a `REGION DIFFERS` failure, full stop.
+
+**What stays.** The stamp-truth converses and their four manifests (a stamped island / fold / literal run /
+atom table / possessify arm differs from the SAME compiler's own deny build, an unstamped one does not;
+they never compared against a pin), the per-axis positive control and the elision control (both still need a
+compiler that REFUSES the call spellings, so `REFCOMMIT` stays `ac4917d` for them and nothing else), the
+linkage axis, and (B) unchanged.
+
+**The rule from here.** A landing that moves a call-free program region on purpose re-pins `ABASEPIN` to its
+own last `src` commit in the same change, the way (B)'s `FILEPIN` moves at an abi bump; a landing that did not
+mean to is the finding. The base must be post-module (the gate asserts `src/parse/mod_recursion.c` is in it and
+that it compiles a call-bearing pattern) and must accept every corpus pattern (`base-refused` is a failure).
+Account of the movers, the answer checks and the validation still owed: `docs/dev/lanes/recida_report.md`.
 
 ## The caller-provided frame buffer's checks ([DD-14.FB], 2026-08-25)
 
