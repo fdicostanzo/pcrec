@@ -3109,3 +3109,22 @@ Main ruled on the four kit findings (D186 add. 2):
 - pcrec's `KSRCTRACE object` record now reads pcrec's offer instead of the built object (columns unchanged; e1_object_check.py's header restates the premise).
 - finder_check L: parts (1)-(3) retired with the stanza and the `--provchk` plumbing; part (4) re-aimed (memfn.h states no source, bundle, bytes or fidelity; a site renders identically under analyses differing only in the digest, rates fixed), its plant (a kit row holding iff the digest is odd) RED by hand. S1092 RETIRED. `tests/memfn/prov_check.c` is a build-only assertion of `mf_akind.digest`'s offset.
 - Witness (strict, kit sections, reach equality, byte identity on every arm, make test, mech rows touching the changed files) prepared as box-queue jobs for the manager: docs/dev/lanes/sp1g_report.md.
+
+## 2026-11-03 (afternoon) — kit session: 1f delivered and landed; R-34; 1g built, in code review
+
+- Box rebooted ~11:29 and killed mech job 347; main re-queued it. 347/348 GREEN, 349 RED on S677: a pre-existing class-A anomaly (its plant failed -Werror=parentheses). S677 plants in generic.c, which 1f touches, so lane s677fix repaired the ROW (a second pair parenthesises the joined test, same mutant): DETECTED, 0 anomalies. Delivered 1f at lane/memfn-sp1f 9a292d40d; main merged it, c0f0d543b.
+- R-34 (CI segfault in G2's reach control): a use-after-free in the G2 GENERATOR (free_site left cur_site dangling). Lane g2seg fixed it; landed with 1f. The full G2 confirmation is owed at the next make test or CI run.
+- 1g: lane sp1g (opus) delivered lane/memfn-sp1g efd724b4b, MF_SITE_ABI 22, byte-identical on a 3k-compile spot check. The code critic round crit-memfn-sp1g is running (coordinator, opus).
+  - Owed to the fix lane after the round:
+    - the L(4) plant as a real matrix row (needs an S-id);
+    - S678 (shard 1 of the 1g gates, a class-A plant-trips-Werror row) repaired the S677 way, otherwise shard 1 goes red as 349 did;
+    - the sp1g deliver file for lanecheck.
+  - Owed by the kit session at the done line: the MF_SITE_ABI 22 notice in responses.
+  - The gate jobs (350-359, keys kit-sp1g-*) are prepared in scratch/memfn/sp1g/jobs/. They queue after the fix lane, behind main's full suite (300, until ~02:30 11-04).
+
+## 2026-11-03 (evening) — 1g reviewed, fixed, gates queued
+
+- Review 2026-11-03 r5 (memfn-sp1g) is ruled and committed (5e75b4ecf, skill follow-up 83f019428). It found no answer- or speed-level problems. The unit's own "the kit never reads the digest" check never reached a reader, so it was fixed: per-site reach controls, a scan that no kit source names `digest`, allowlists of members, the trace reading DIGEST from the built object, and matrix row S1856. Main allocated S1856-S1858; S1857-S1858 are unused.
+- Lane sp1gfix delivered 847ce2708, and lane/memfn-sp1g was fast-forwarded to it. Light checks: make strict clean; test-memfn-finder 1934/0; every plant RED then reverted; 1200 identity compiles with 0 diffs.
+- S678 needed no repair: a 10-31 re-plant already made it warning-clean, so suitetri's class-A list is stale for it (told main).
+- Gates 350-359 (keys kit-sp1g2-*) are queued behind main's 300 full suite and 310 census. They run in worktrees/sp1gfix, which is at the same commit as lane/memfn-sp1g. Do not touch that worktree until they end. Watcher: a background shell that exits on any kit-sp1g2 failure or on mech3 done. OWED: real trailers for S1856 (shard 3) and S678 (shard 1).

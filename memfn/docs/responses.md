@@ -3092,3 +3092,22 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Mech shard 3 (job 349): 15 rows clean, S917/S919 UNREACHED as declared (pre-existing since 1a), and ONE pre-existing anomaly, S677-m6-stride-terms-or-joined: its plant made the generated C fail -Werror=parentheses (already listed in suitetri_report.md class A). Because S677 plants in generic.c, which 1f touches, lane s677fix repaired the ROW only (a second plant pair parenthesises the joined test; same OR-for-AND mutant). The single-row run at b5d99d1ff (1f + the row fix) is DETECTED: reach 1/1, memfnarms 32 fail / 342 pass; trailer 0 unexpected / 0 undetected / 0 unreached / 0 anomalies. Log: /var/tmp/pcrec-pcrec/scratch/memfn/s677fix/run.log.
   - Caller-visible: `--memfn=no-fd-r8` and `--memfn=no-fd-ndisp` are gone (registry floor 14 -> 12); the fd-d1 `--list-axes` text changed; the registry.md §6¶8/8a/8b hunks are in the branch. MF_SITE_ABI 21, MF_CLASS_V 7. Ratchet unchanged at 11.
   - For main's plan, from the r4 review: the KN_A/I/M/N carrier; CHECK-6; CHECK-7; unifying the three declared-delta judges. Also: the 13 other class-A plant-trips-Werror rows in suitetri_report.md (S1152, S1159, S1174, S135, S231, S272, S666, S1418, S739, S676, S678, S719, S707) are still anomalous; S677's two-pair shape is the template for repairing them.
+
+- done: 2026-11-04 — **span_pick stage 1, unit 1g (provenance leaves the seam): READY TO MERGE. Branch `lane/memfn-sp1g` @ 847ce2708** (lane sp1g efd724b4b + review-fix lane sp1gfix, cut from main c0f0d543b).
+  - Reports: `docs/dev/lanes/sp1g_report.md`, `sp1gfix_report.md`. Code round: `docs/dev/reviews/2026-11-03-r5-memfn-sp1g.md` (on lane/memfn-k1102). No answer- or speed-level findings. Every FIX-NOW item is fixed, each with a plant that went RED.
+  - Validation at 847ce2708, all GREEN:
+    - 350 strict; 351 kit sections; 352 reach equality;
+    - 353/354/355 byte identity (69 declared arms + 2 `--analysis weblog` arms; zero movers). 354's first run was red on a JOB error: the analysis arms asked for the emit-ir stream, which `--analysis` refuses on both builds. Fixed in the job script and re-run green.
+    - 356 make test (1620 s);
+    - 357/358/359 mech (63 rows): unexpected 0, undetected 0, anomalies 0. The UNREACHED rows are only the declared S917/S919 and S1029.
+    - New row S1856 (S1092's successor) DETECTED (memfnfinder 9 fail / 1925 pass). S678 DETECTED (55/3598).
+  - Changes:
+    - `mf_akind` = {tag, version, present, digest, payload}; `mf_prov`/`mf_prov_source`/`mf_prov_fidelity` and pcrec's stanza mapping are deleted. MF_SITE_ABI 21 -> 22; MF_CLASS_V unchanged.
+    - No emitted byte moves, no pcrec abi event, no docs/spec hunk (docs/spec names none of them; grep empty).
+    - One new pcrec-INTERNAL refusal in memfn_sites.c: an offer whose digest is 0 iff it carries no payload. Only a pcrec defect can trip it.
+    - The KSRCTRACE object record now reads pcrec's offer, except DIGEST, which is read from the built object. The records are byte-identical.
+    - S1092 is retired; S1856 is added (S1857/S1858 unused). The ratchet stays at 11.
+  - For main's plan (from r5):
+    - F15 [kit]: `mf_akind.version` and `mf_analysis.list_v` are never checked. Trigger: the first second payload shape for any kind.
+    - F16 (Boonies): a seam reader census. Trigger: the next MF_SITE_ABI layout event.
+    - S678 needed no repair: suitetri's class-A list is stale for it.

@@ -152,3 +152,9 @@ Round 2026-11-01 r1, stream1 design (`docs/dev/reviews/2026-11-01-r1-stream1.md`
 2. **A merge of independently written rule tables drops conjuncts.** A synthesis that merges rule tables keeps each source row's FULL conjunct list beside the merged row, and the soundness lens diffs them.
 3. **"Today's design cannot X" claims need a witness compile,** like answer claims; five premise findings were the subject claiming a benefit today's tree already has.
 4. **For an F4/no-blindness question, inventory today's BACKWARD channels first** (start from `CandRow`/`CandNode`, not the subject's table).
+
+Round 2026-11-03 r5, memfn-sp1g code (`docs/dev/reviews/2026-11-03-r5-memfn-sp1g.md`), three lenses + verifier; lessons ruled 2026-11-03.
+1. **A "kit never reads X" invariance check picks its witness sites from where the kit READS the containing object, with a reach control** (the varied render differs from the absent-object render on at least one site), plus a static "kit source names no X" scan beside it. (L(4b) varied the digest on two sites that never consult the object; three real readers stayed green.)
+2. **A seam-shape check is an ALLOWLIST of members on every struct of the seam,** never a denylist of retired names (provenance re-entered under a new name and on the parent struct, all green).
+3. **When a deletion removes the last record column read from the built object, move one surviving column to read the object,** or the builder's remaining writes lose their only witness.
+4. **A design reader list built from a grep pattern misses bare vocabulary words:** add each enumerator's bare spelling (`PRIOR_NONE` without `MF_PROV_`) and sweep design docs beyond the named sections.
