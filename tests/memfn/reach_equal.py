@@ -38,6 +38,11 @@ is derived from the two traces and compared with the declaration.
 A --limit run is a SMOKE run: it skips the population floor, so its last
 line is `reach_equal: LIMITED rc=N ...` and it exits 0 never (3 when clean,
 1 when not): it cannot be read as the verdict.
+D187's count rides along: a trace build prints one `MFTRACE KITMASS calls=C
+cubes=Q nonnormal=N mask0=M` line at exit (memfn/src/presence.c, trace builds
+only; no other MFTRACE reader matches the tag). The lines of every run are
+summed and printed as `nonnormal-cubes N mask0-cubes M` before the trailer;
+informational, never a verdict (BASE prints none).
 Last line: `reach_equal: DONE rc=N keys=K differ=D` (scripts/verdict's trailer).
 """
 import argparse
@@ -47,10 +52,13 @@ import os
 import re
 import subprocess
 import sys
+import threading
 
 POP_FLOOR = 1000
 DEFAULT_ARMS = ["", "--engine=vm", "-fmemfn-simd", "-e utf8"]
 LINE = re.compile(r"^MFTRACE REACH table=(\S+) row=(\S+) (.*)$")
+KITMASS_LOCK = threading.Lock()
+KITMASS = collections.Counter()   # the summed `MFTRACE KITMASS` lines of every trace run (both sides)
 
 
 def load_emit_sweep(tree):
@@ -68,6 +76,13 @@ def reach_of(binary, pat, arm, timeout):
     out = collections.Counter()
     dropped = 0
     for ln in r.stderr.decode("utf-8", "replace").splitlines():
+        if ln.startswith("MFTRACE KITMASS "):        # D187's count (HEAD only; BASE has none)
+            with KITMASS_LOCK:
+                for t in ln.split()[2:]:
+                    k, v = t.split("=", 1)
+                    KITMASS[k] += int(v)
+                KITMASS["runs"] += 1
+            continue
         if ln.startswith("MFTRACE REACH_DROPPED n="):
             dropped += int(ln.split("=", 1)[1])
             continue
@@ -187,6 +202,8 @@ def main():
     for s in ("base", "head"):
         if dropped[s]:
             problems.append("%s: REACH_DROPPED %d" % (s, dropped[s]))
+    print("kitmass: runs %d calls %d cubes %d" % (KITMASS["runs"], KITMASS["calls"], KITMASS["cubes"]))
+    print("nonnormal-cubes %d mask0-cubes %d" % (KITMASS["nonnormal"], KITMASS["mask0"]))
     for e in examples:
         print("DIFF: " + e)
     for p in problems[:200]:

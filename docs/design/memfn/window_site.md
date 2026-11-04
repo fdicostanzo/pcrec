@@ -230,7 +230,8 @@ three scattered rules `[rev3 bB2, rev3.2 n6]`):
 | A-model, among stop offsets of equal cost | LOWER offset | prefix_k's strict `cost < best` over `si` in walk-index order | today's; reproduces only under §1.1's walk-index listing obligation `[rev3.2 n5]` |
 | C-model, verify-NO offsets of equal mass | prefix_k's exchange-sort order (unstable, declared as the algorithm, §3.2) | prefix_k's `order[]` over walk-index order | today's; same obligation |
 | MARGIN, `best * 2 == base` | PARKED | prefix_k's `>=` rejects | today's |
-| the truncation window (pcrec's, a limit of the statement, §9) | LEFTMOST window start | `pcrec_find_run_window_start`'s strict `<` | today's |
+| the truncation window (pcrec's, a limit of the statement, §9): presence's run window (P3), read by `kit_tie_takes` (row `T_WINDOW`) | LEFTMOST window start | `pcrec_find_run_window_start`'s strict `<` | today's |
+| presence's set pick (P3), member spans of equal mass (row `T_PRES_MEMBER`, read by `kit_tie_takes`) | the member LAST in pattern order (an UNKNOWN order below every known one), then the LARGER byte: HIGHER over the key `kit_tie_member_key` (member order above the byte) | the set pick's `tie_over` (span_pick unit 1b deleted it) | today's |
 
 ### 2.2 Table B — how the stop is found
 

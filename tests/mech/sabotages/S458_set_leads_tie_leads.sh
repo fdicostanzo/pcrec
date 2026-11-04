@@ -15,6 +15,8 @@
 # The same edit as B3a's S1097 (whose detector is the trace build's five-pick
 # comparator); this row's detector is the pre-check suite, which the port now
 # reaches because P4 renders.
+# span_pick unit 1b (lane sp1b) RE-ANCHORED: cube_mass became the one mass primitive kit_mass; the
+# same `<` of the set-leads compare is planted `<=` (intent unchanged).
 SAB_ID="S458-set-leads-tie-leads"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
@@ -24,5 +26,5 @@ SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern "
 SAB_REACH_EXPECT="REACH-TIE-NO-LEAD"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            out->set_leads = cube_mass(rate, (unsigned)q, 0xFFu) <'
-SAB_AFTER='            out->set_leads = cube_mass(rate, (unsigned)q, 0xFFu) <=   /* SABOTAGE S458 */'
+SAB_BEFORE='            out->set_leads = kit_mass(rate, &qp, 1, KIT_MASS_SUM) <'
+SAB_AFTER='            out->set_leads = kit_mass(rate, &qp, 1, KIT_MASS_SUM) <=   /* SABOTAGE S458 */'
