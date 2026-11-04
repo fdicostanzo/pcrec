@@ -281,6 +281,7 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
 | 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
+| 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
 
@@ -305,3 +306,4 @@ Landing 2026-11-03 c17e43ce8: R-34, G2 test generator use-after-free (test-only)
 Landing 2026-11-03 a33ca7b0a/c0f0d543b: span_pick stage 1 unit 1f (finder rows R8/R1/R2 and denies fd-r8/fd-ndisp retired, pay rule deleted; registry floor 14->12; MF_SITE_ABI 21, MF_CLASS_V 7; byte-identical, no pcrec abi event); class minor. D177: row 4 (two majors, abi 94 and 95) still pending since 10-27's run; minors accrue under row 5 as well; one run covers every trigger, window awaiting Frank.
 
 RED: 2026-11-04 4bd002e20 test=green strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261103_4bd002e20 duration=44409s
+RED run 2026-11-04 4bd002e20: counters do not reset. Dispositions (all triaged, no product defect so far): axes = memfn_arm reach floors stale after P1's landmark walk (lane/axtri3, re-check 320-main-axtri3); san = two faults in tests/code/run_code_tests.sh under sanitizers, no sanitizer report (lane/santri3, re-check 321-main-santri3); mech = S512 floor stale after p1build plus six vmrec-stale build-failed plants re-aimed, no real miss (lane/mechtri3, re-check 322-main-mechtri3); recidentity = triage lane recidtri3 (expected: known [RECID-A]).
