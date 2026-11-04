@@ -158,3 +158,7 @@ Round 2026-11-03 r5, memfn-sp1g code (`docs/dev/reviews/2026-11-03-r5-memfn-sp1g
 2. **A seam-shape check is an ALLOWLIST of members on every struct of the seam,** never a denylist of retired names (provenance re-entered under a new name and on the parent struct, all green).
 3. **When a deletion removes the last record column read from the built object, move one surviving column to read the object,** or the builder's remaining writes lose their only witness.
 4. **A design reader list built from a grep pattern misses bare vocabulary words:** add each enumerator's bare spelling (`PRIOR_NONE` without `MF_PROV_`) and sweep design docs beyond the named sections.
+
+Round 2026-11-04 r1, memfn-sp1b code (`docs/dev/reviews/2026-11-04-r1-memfn-sp1b.md`), four lenses + verifier; lessons ruled 2026-11-04.
+1. **A code round that moves or deletes kit or src text runs the anchor checker once** (`python3 -I scripts/m6read_check_sab_anchors.py`, read-only, seconds) in the check lens. A plant can quote a function's BODY rather than its name (S1094), so a grep of the deleted names misses it.
+2. **The COMMON brief of a rate-sensitive subject names how to reach each rate regime:** default (the prior), NONE (`-e utf8`), all-tie (`--analysis uniform`), and a real bundle (`-I DIR --analysis NAME`, with DIR/NAME.rxt). One critic spent 220 compiles on a misread bundle lookup.
