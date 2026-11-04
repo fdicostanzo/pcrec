@@ -43,3 +43,8 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 - A small code unit took about 20 minutes from freeze to draft, with one coordinator turn chain and zero manager wakes. The verifier reproduced 8 plants from a critic's own harness copy in under 4 minutes. Pattern worth requiring: a critic that plants leaves plant.sh plus its .sub files for the verifier.
 - A nested final reply was lost again (SubagentHandback failed three times, "spawner no longer running"); the critic's FILES carried the round.
+
+## 2026-11-04 — critic round memfn-sp1b (review 2026-11-04 r1)
+
+- Four critics plus a verifier took 22 minutes and cost the launcher one message in and one out. Findings duplicated across lenses were consolidated by the coordinator, not in the launcher's context.
+- A ruling ABOUT the subject (D187) landed mid-round. The coordinator's freeze diff caught it and re-read the dispositions against it without breaking the critics' blindness, since they had finished first.

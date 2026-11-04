@@ -3135,3 +3135,23 @@ Main ruled on the four kit findings (D186 add. 2):
 - U5: `tie_over` is deleted; P3's set pick reads the TIE table's new row `T_PRES_MEMBER` (member order above the byte, an UNKNOWN order as 0, `kit_tie_member_key`), presence's run window reads `T_WINDOW` (TIE_LEFTMOST, now answered by `kit_tie_takes`, window.c's `tie_takes` made kit-wide). The T_ row enum moved to kit.h.
 - No-mover by construction (the same arithmetic, the same truncation-then-cap order); NOT an MF_CLASS_V event, no MF_SITE_ABI field moves, no pcrec abi change, no docs/spec name. Ratchet 11 -> 7 (R22 3 -> 0, read by a recipe that also counts `kit_mass`: roadmap §5's R22 as written reads -1 and is main's to restate; R23 1 -> 0).
 - Golden-value test `tests/memfn/mass_check.c` (part `mass` of test-memfn-finder, floor 20), red under three plants (set-shaped, NONE per position, cap ignored). Census map 50 -> 51 members. S1097/S458 re-anchored (intent unchanged). Witness and gate jobs: docs/dev/lanes/sp1b_report.md.
+
+## 2026-11-04 — 1g landed; 1b started
+
+- 1g gates 350-359 are all GREEN. The first run of 354 was red because the job's --analysis arms asked for emit-ir, which pcrec refuses; fixed in the job script and re-run green. S1856 and S678 are both DETECTED. Delivered at lane/memfn-sp1g 847ce2708; main merged it, b0f3d0339.
+- Frank (11-04, via main): in the END STATE the kit splits. Its planning face goes into the planner and its emitting face into the back end ("another target language is another back end"). Manifesto principle 9: every seam is designed as if what crosses it were written to text and read back by another process. It is a design standard, not a build order; critic rounds on planner, kit or back-end seams carry that lens. Stage 1 is unchanged by it.
+- 1b: lane sp1b (opus) is building on lane/memfn-sp1b from b0f3d0339 (the one position-multiset mass primitive, the NONE row, `tie_over` removed; ratchet 11 -> 8 or 9). Main's RECID-A job 331 holds the box for now.
+
+## 2026-11-04 — Frank (direct to the kit): positions are sets; cubes are derived
+
+- The question: 1b's `kit_mass` takes a position either as a 256-bit byte SET or as a CUBE (t, mask). For a normal-form cube (t & ~mask == 0) the two give identical mass. For a non-normal cube they disagree: the cube path `t | b` counts a member twice and misses another (mask 0xDF, t 'a': 'a' twice, 'A' never), while the set rule `(b & mask) == t` matches nothing. The behaviour is inherited from `cube_mass` and kept by 1b's no-mover promise.
+- Frank's ruling: "If possible, in the end, I'd like all positions to come through the normal general set form and be converted (back) into cubes for optimization."
+- How it applies to 1b's fix lane: count the non-normal cubes that reach `kit_mass` over the corpus and the bench lists. If the count is zero, `kit_mass` becomes set-only (cubes converted to sets where positions are built, normal form a checked fact, the cube path deleted), byte-identical. If it is nonzero, it is a wrong-mass defect to fix as its own unit change with a deny, not in stage 1.
+- Existing cube detector: pcrec's `pcrec_cube_of` (src/core/cpset.c, used by clskit.c). When the kit splits into planner and back end, the derived cube comes from ONE detector, not a second kit copy.
+
+## 2026-11-04 (afternoon) — 1b reviewed, fixed, gates queued
+
+- Review 2026-11-04 r1 (memfn-sp1b) is ruled (2bb34e4ae; skill follow-up 7feed643a, which also restores r5's invariance clause, dropped by main's b0f3d0339 conflict resolution). It found no answer, speed or size problems. R1 was a would-be red test-codegen gate: S1094/S1096 anchored on deleted text, now re-anchored, both DETECTED by hand.
+- Frank on D187's timing: "That can be scheduled appropriately if not now". So 1b carries only the counter (trace build `MFTRACE KITMASS`, summed by reach_equal into `nonnormal-cubes N mask0-cubes M`). The light reading is 0/0 over ~1,360 compiles; a hand-built non-normal cube reads 1. If the gate count is 0 too, the set-only kit_mass rides with 1c.
+- Ratchet under main's restated recipes (roadmap §5): R22 3 -> 0 (-3), R23 1 -> 0 (-1). R23 counts wf_ties + kit_tie_takes as one mechanism.
+- lane/memfn-sp1b fast-forwarded to sp1bfix's d7267b771. Gates 370-379 (keys kit-sp1b2-*) are queued and run in worktrees/sp1bfix. Main's boxqueue now refuses a job FILE without a literal `--ready` case: the shard wrappers needed an explicit `--ready` delegation line (lesson for job briefs).

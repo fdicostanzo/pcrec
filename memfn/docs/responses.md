@@ -3111,3 +3111,19 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F15 [kit]: `mf_akind.version` and `mf_analysis.list_v` are never checked. Trigger: the first second payload shape for any kind.
     - F16 (Boonies): a seam reader census. Trigger: the next MF_SITE_ABI layout event.
     - S678 needed no repair: suitetri's class-A list is stale for it.
+
+- notice: 2026-11-04 — **Frank (direct to the kit): positions travel as SETS; cubes are derived for optimization.** Proposed decision text, for main to file next to D157 / D186 and principle 9: "2026-11-04 (Frank, to the kit): if possible, in the end every position (a run byte, a class position, a mass or verify position) comes through in the normal, general set form (256-bit). A cube (t, mask) is DERIVED from the set where an optimization wants it, never stated beside it. Consequence: two shapes of one position cannot disagree. Today they do for a non-normal cube: `t | b` double-counts in mass while `(b & mask) == t` matches nothing." End state, not a build order. First step in the kit: span_pick 1b's fix lane counts the non-normal cubes reaching `kit_mass`. At zero, `kit_mass` goes set-only, byte-identical. Above zero, it is a defect for a unit change with a deny. Note for main: the derivation should reuse ONE detector (`pcrec_cube_of`, src/core/cpset.c), not a kit copy, once the kit split puts both on pcrec's side.
+
+- done: 2026-11-04 — **span_pick stage 1, unit 1b (primitives): READY TO MERGE. Branch `lane/memfn-sp1b` @ d7267b771** (lane sp1b cca35ffd1 + review-fix lane sp1bfix, cut from main b0f3d0339).
+  - Reports: `docs/dev/lanes/sp1b_report.md`, `sp1bfix_report.md`. Code round: `docs/dev/reviews/2026-11-04-r1-memfn-sp1b.md` (on lane/memfn-k1102). No answer, speed or size findings; every FIX-NOW is fixed, with plants RED then reverted.
+  - Validation at d7267b771, all GREEN:
+    - 370 strict; 371 kit sections; 372 reach equality (18 arms);
+    - 373/374/375 byte identity (69 declared + 2 `--analysis` arms, zero movers);
+    - 376 make test (2429 s);
+    - 377/378/379 mech (45 rows): unexpected 0, undetected 0, anomalies 0; UNREACHED only the declared S917/S919. The re-anchored S1094, S1096, S1097 and S458 are all DETECTED.
+  - Changes:
+    - ONE mass primitive, `kit_mass(rate, pos, n, cap)`, over a position multiset (a repeated byte counted per position), with the declared NONE row floor(k x 1e6 / 256) taken once over the whole count. `cube_mass`, `window_mass`, `kit_set_mass`, `kit_set_sum` and `uniform_mass` are deleted.
+    - `tie_over` is deleted; P3's set pick reads the new TIE row T_PRES_MEMBER, and presence's run window reads T_WINDOW via the kit-wide `kit_tie_takes`.
+    - No emitted byte moves; no pcrec abi, MF_CLASS_V, MF_SITE_ABI or docs/spec change.
+  - Ratchet (main's restated recipes, roadmap §5): R22 3 -> 0 (-3), R23 1 -> 0 (-1).
+  - **D187 counter:** the reach gate reads `nonnormal-cubes 0 mask0-cubes 0` over the full corpus on all 18 arms (trace build only). So, per Frank's scheduling, the set-only `kit_mass` (cube path deleted, normal form a checked input; review R7/R8) rides with UNIT 1c, byte-identical.
