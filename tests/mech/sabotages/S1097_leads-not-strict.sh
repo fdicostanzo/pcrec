@@ -12,4 +12,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <'
 SAB_AFTER='            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <=   /* SABOTAGE S1097 */'
-SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, candoracle:11fail/121pass DETECTED at ebfb5a88a)."
+SAB_DOC_FIGURE="HAND-MEASURED by lane sp1c (re-anchor; docs/dev/lanes/sp1c_report.md): the row's plant on a git archive of 439c263c8, built, tests/codegen/run_cand_oracle.sh: candoracle:16fail/149pass DETECTED (clean 0fail/178pass). Earlier: lane b3afix, candoracle:11fail/121pass at ebfb5a88a."
