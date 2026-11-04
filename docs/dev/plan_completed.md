@@ -6407,3 +6407,36 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-10-29): DONE.
   next: none (landed).
   refs: scripts/emit_sweep.py; docs/dev/lanes/ic2fixmov_report.md
+
+- [BOXQUEUE-READY-GUARD] STATE:completed — `boxqueue add` refuses a job script that has no `--ready` case
+  completed: 2026-11-04 lane smallfix1
+  filed: 2026-11-04 smallfix1 (manager's brief)
+  status (2026-11-04): DONE lane smallfix1. Incident: job 329-main-recida2-movers had no `--ready` case, so the runner's readiness probe (`JOB --ready`) fell through and RAN the whole job (make -j16 and a gate) on every pass until the 20 s readiness kill; PENDING-STUCK alarm. Fix: `add` greps the script text for `--ready` and REFUSES (65) without it, never calling it (a call would run it); scripts/tests/boxqueue.test has the case.
+  refs: scripts/boxqueue (cmd_add, header); scripts/tests/boxqueue.test
+
+- [TMP-PRUNE-REF] STATE:completed — the temp-root prune must exempt the read-only `ref` subdirectory
+  completed: 2026-11-04 lane smallfix1
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. The prune (scripts/tmpdir.sh pcrec_tmp_prune: `rm -rf` of old direct children of the root) tries to delete the root's read-only `ref` tree; the lock.log of box-queue job 347-kit-sp1f2-mech opens with "rm: cannot remove ... Permission denied" lines.
+  status (2026-11-04): DONE lane smallfix1: pcrec_tmp_prune skips the root's `ref` child by name; scripts/tests/tmpdir.sh.test plants an old `ref` and an old other child in a fake root and asserts ref survives.
+  next: make pcrec_tmp_prune skip `ref` by name (candidates are the root's direct children), with a self-test beside tests for tmpdir.sh
+  refs: scripts/tmpdir.sh; worktrees/.boxqueue/done/*347-kit-sp1f2-mech*/lock.log; root CLAUDE.md (pcre2-reader clean-room wall)
+  The noise is harmless today but it hides real prune failures in the same log, and a prune that does reach the pinned PCRE2 copy would break the reader agent. Unscheduled.
+
+- [MECH-VALIDATE-VERDICT] STATE:completed — a mech job in VALIDATE_ONLY mode must say so in its verdict line
+  completed: 2026-11-04 lane smallfix1
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; nothing built. A VALIDATE_ONLY mech run (fields only, no plants run) prints the same-shaped COMPLETE trailer as a real run and can be read as a mech gate.
+  status (2026-11-04): DONE lane smallfix1: premise was partly stale: since [MECH-REACH] (2026-08-25) a VALIDATE_ONLY run ends with `== mech FIELD VALIDATION COMPLETE: N definition(s) valid, 0 rows measured` and NEVER the `mech run COMPLETE` trailer. Added `mode=VALIDATE_ONLY` to that line; the only reader (the boxqueue template's `\([0-9]*\) def.*` sed) is unaffected.
+  next: print VALIDATE_ONLY (and that no row ran) in the trailer and in the queue result line
+  refs: tests/mech/run_sabotage_matrix.sh (VALIDATE_ONLY, line ~711 and the trailer); docs/dev/wake.md next action 1 ("RUN, not VALIDATE_ONLY")
+  Unscheduled.
+
+- [LANDMARK-DOC-CITE] STATE:completed — lib/pcrec.h: PCREC_NO_LANDMARK_WALK comment cites tuning.md section 2.51, should be 2.54
+  completed: 2026-11-04 lane smallfix1
+  filed: 2026-11-03 file1103 (session 128 carry-over)
+  status (2026-11-03): filed; verified 2026-11-03: tuning.md 2.51 is `--part-layout=CLASS:V`, 2.54 is `-fno-landmark-walk` (bit 57). The citation near lib/pcrec.h:1210 is wrong.
+  status (2026-11-04): DONE lane smallfix1: lib/pcrec.h comment now cites tuning.md §2.54. Comment-only; no pin hashes lib/pcrec.h (the identity gate's FILEPIN compares generated output, the registry check reads symbols); make strict and tests/registry/axes_registry_check.sh green.
+  next: fix the section number in the PCREC_NO_LANDMARK_WALK comment (comment-only; lib/pcrec.h is the public header, so check whether a comment edit counts as an abi/stamp event under D76)
+  refs: lib/pcrec.h; docs/spec/tuning.md sections 2.51 and 2.54
+  Comment-only fix, filed not done.

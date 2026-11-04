@@ -207,6 +207,10 @@ out=$(bq add --name 100-main-argerr --no-start "$T/j/argerr" 2>&1); rc=$?
 mkjob "$T/j/nodecl" "echo 'boxqueue: cap 30'; exit 0" 'exit 0' 'exit 0'
 out=$(bq add --name 100-main-nodecl --no-start "$T/j/nodecl" 2>&1); rc=$?
 [ "$rc" = 65 ] && printf '%s' "$out" | grep -q "no 'boxqueue: patience' declared" && ok "missing declarations: REFUSED (no silent defaults)" || bad "nodecl: rc=$rc $out"
+printf '#!/usr/bin/env bash\ncase "${1:-}" in\n  --dry-run) %s ;;\nesac\ntouch "%s"\n' "$(D 30 none none)" "$T/noready.ran" > "$T/j/noready"; chmod +x "$T/j/noready"
+out=$(bq add --name 100-main-noready --no-start "$T/j/noready" 2>&1); rc=$?
+[ "$rc" = 65 ] && printf '%s' "$out" | grep -q "no '--ready' case" && [ -z "$(ls "$Q/pending")" ] && [ ! -e "$T/noready.ran" ] \
+    && ok "[BOXQUEUE-READY-GUARD] a job script with no --ready case is REFUSED at enqueue (65), never run" || bad "noready: rc=$rc $out"
 cp "$T/j/argerr" "$Q/pending/100-main-hand"; run1
 [ "$(st main-hand)" = failed ] && res main-hand | grep -q 'DRY-RUN-FAILED_rc=2_on_first_sight' && [ ! -e "$Q.ran" ] \
     && ok "a job dropped into pending/ by hand is dry-run on first sight and failed, never run" || bad "hand: $(res main-hand)"
