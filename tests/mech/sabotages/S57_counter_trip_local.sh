@@ -21,8 +21,11 @@
 # turning it into exactly the untrailed local the invariant forbids.
 # RE-AIMED 2026-11-04 (lane mechtri3): the vmrec record-first refactor (3bc599c92) removed v->b, so
 # the old direct pcrec_sb_printf no longer builds. The plant is now a PAIR: the emit_vm.c site marks its
-# source with a leading \x01, and vm_r_set (src/gen/vm_stmt.c) prints a marked source as a plain
+# source with a leading \x02, and vm_r_set (src/gen/vm_stmt.c) prints a marked source as a plain
 # slot_values[] store instead of the trailed SET. Same defect: the value is written, the old one is not trailed.
+# MARKER CHANGED 2026-11-04 (lane mechfix1): the first re-aim marked the source with \x01, which is
+# PCREC_PREFIX_LEAD (the prefix placeholder every vm_rolef text starts with), so vm_r_set's untrailed
+# branch fired on EVERY prefixed source and printed an unrewritten `q_...` name. \x02 is unused.
 SAB_ID="S57-counter-trip-local"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="counterkdiff"
@@ -31,13 +34,13 @@ SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §8.4 (S57 and the 
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, low, "(ptrdiff_t)scan_position",
                "span-loop low-water mark (loop entry scan_position)");'
-SAB_AFTER='        vm_set(v, low, "\x01(ptrdiff_t)scan_position",   /* SABOTAGE S57 */
+SAB_AFTER='        vm_set(v, low, "\x02(ptrdiff_t)scan_position",   /* SABOTAGE S57 */
                "span-loop low-water mark (loop entry scan_position)");'
 SAB_FILE2="src/gen/vm_stmt.c"
 SAB_BEFORE2='    vm_renders(sb, s, VK_SET);
     vm_set_line(sb, s->u.set.slot, s->u.set.name, s->u.set.src);'
 SAB_AFTER2='    vm_renders(sb, s, VK_SET);
-    if (s->u.set.src[0] == '\''\x01'\'') {   /* SABOTAGE untrailed */
+    if (s->u.set.src[0] == '\''\x02'\'') {   /* SABOTAGE untrailed */
         pcrec_sb_printf(sb->b, "    slot_values[%d] = %s;\n", s->u.set.slot, s->u.set.src + 1);
         return;
     }

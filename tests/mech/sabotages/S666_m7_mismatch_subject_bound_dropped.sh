@@ -15,6 +15,9 @@
 # loop. pcrec's answer suites see it only where the bytes past a subject
 # happen to equal the reference (a C string's NUL rarely does): hand-measure
 # it rather than rely on it. Arm memfnarms.
+# MADE WARNING-CLEAN 2026-11-04 (lane mechfix1): dropping the bound outright left the compare function's
+# `n` parameter unread (-Werror=unused-parameter in the artifact: ANOMALY). The bound is still emitted,
+# behind `0 &&`, so `n` is read and the compare no longer stops at the subject end.
 SAB_ID="S666-m7-mismatch-subject-bound-dropped"
 SAB_FILE="memfn/src/mismatch.c"
 SAB_SUITES="memfnarms"
@@ -26,4 +29,4 @@ SAB_REACH_EXPECT='    for (i = 0; i < reflen; i++) {
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        kb_printf(b, "%s    if (%s + %s >= %s || %s != %s)\n", ind, LO, R, N, x, y);'
-SAB_AFTER='        kb_printf(b, "%s    if (%s != %s)\n", ind, x, y);  /* SABOTAGE S666 */'
+SAB_AFTER='        kb_printf(b, "%s    if ((0 && %s + %s >= %s) || %s != %s)\n", ind, LO, R, N, x, y);  /* SABOTAGE S666 */'
