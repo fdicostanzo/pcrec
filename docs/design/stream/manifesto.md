@@ -64,8 +64,8 @@ decision entry.
 **The pipeline has parts, and each part has a contract.** A front end (parse, IR, the analysis
 passes, the facts); a planner (one declared admission table, one sub-part per row, the choice
 among sound options, the re-plan under a size cap); a kind table with its renderers (the back end);
-the kit; an entry controller (one per exported entry, composing streams into what callers call);
-and two shared contracts that belong to no part: the record schema and the seam. Each part names
+an entry controller (one per exported entry, composing streams into what callers call);
+and two shared contracts that belong to no part: the record schema and the seam. The kit's two faces become two parts in the end state: its planning face (choosing a search method from stated facts and measured cards) is part of the planner, and its emitting face (writing that method in the target language) is part of the back end. Another target language, Rust for example, is another back end; the planner does not change. Each part names
 what crosses its boundary, where its own tests observe it, the oracle its owner can run without the
 other parts' code, and an owner. Where a part has no oracle of its own yet, the table says so.
 
@@ -120,9 +120,10 @@ a change that touches it does so in a known way.
    a parallel mechanism beside it. Where two mechanisms do one job, the step that next touches them
    merges them.
 7. **Facts both ways.** A seam carries facts in both directions, and only facts: never a method or
-   a cost the other side must trust.
+   a cost the other side must trust. Measured data with its provenance (a price card, a measurement set) is a fact, read inside the stage that owns the decision; what a seam never carries is a cost one side asserts and the other must take on trust.
 8. **Each step has the owner's go.** The agreed end state is not a build go. Every step that
    changes code is proposed, reviewed, and built only on the owner's go for that step.
+9. **Every seam is a document.** Each seam is designed as if what crossed it were written to a text file and read back by a separate process: no pointers, callbacks, shared state or assumptions about the other side's language cross it. Whether the format is ever built does not matter. A seam that could not survive that round trip is not finished.
 
 ---
 
@@ -199,3 +200,6 @@ reason (a goal found wrong, a principle that blocked a sound step, a scope line 
 moved); the owner rules; the change is recorded in the decision log. The roadmap, by contrast, is
 the manager's to revise as parts are looked at in detail; when the roadmap and this document
 disagree, this document wins until the owner rules.
+
+Change record:
+- 2026-11-04, owner ruling: (1) the kit is no longer a separate part; its planning face joins the planner and its emitting face the back end (section 2); (2) principle 9, every seam is a document, added; (3) principle 7 clarified: measured data with provenance is a fact, not a trusted cost.

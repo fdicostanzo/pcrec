@@ -27,6 +27,10 @@ findings CONFIRMED (with repro) or SUSPECTED and carry a PROBED-AND-HELD list
    existing decision family? Name the family.
 6. **Propose the general form and unlocks.** Beyond refutation: name the general
    form of the change and what it would unlock, with triggers.
+7. **Seam round trip (manifesto principle 9).** Could what crosses this seam be written
+   to text and read back by another process? Name every pointer, callback, shared
+   state or target-language assumption that crosses. Applies to design and code
+   rounds touching planner, kit or back-end seams.
 
 ## Rules
 - **A re-pinned floor or count is a TRADE to judge, never bookkeeping.** Example:

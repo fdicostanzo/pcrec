@@ -1,0 +1,4 @@
+report: docs/dev/lanes/manif1_report.md
+sections: Changes; STATE AT HANDOFF
+nonempty: all
+commit: yes

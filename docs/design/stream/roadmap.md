@@ -75,12 +75,7 @@ these are two stages (pcrec's planning, and emit).
 (D146: pcrec describes a site, the kit returns its C). Area A-PLAN below moves the choosing half
 up; it rides the first stream step that touches search sites.
 
-**Manifesto touchpoints, for the owner to confirm the wording** (the manifesto wins until then):
-(1) its parts list names "the kit" as one part; under this shape the kit's planning face is part of
-the planner and its emitting face part of the back end. (2) Principle 7 says a seam never carries "a
-cost the other side must trust". Price cards are measured data with provenance, read inside the
-stage that owns the decision, so this file reads them as facts, not trusted claims; the wording
-should say so.
+**Manifesto touchpoints:** both were ruled 2026-11-04 (the kit split into planner and back-end faces; principle 9 added; principle 7 clarified); see manifesto.md.
 
 ---
 
@@ -387,7 +382,8 @@ round; L = a proof-sized lane with several rounds.
   once per frame under its rules; prices and alternatives appear only in the trace (D186 addendum 2);
   the kit's emitting face renders the plan; emit decides nothing the plan covers.
 - **Next step.** Split the site call into a plan call (facts and frame in, one plan out) and an
-  emit call (the plan in, C out), byte-identical, with the kit.
+  emit call (the plan in, C out), byte-identical, with the kit. Each A-PLAN step is checked against
+  manifesto principle 9: could the plan record survive a text round trip?
 - **Prerequisites.** The kit's agreement (it is their split; a memfn request filed by the manager);
   the first stream step that touches search sites (ride-along).
 - **Deletes.** Nothing in §5 today; the split adds the plan/emit seam as a declared one.
