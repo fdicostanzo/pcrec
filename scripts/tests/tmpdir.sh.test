@@ -21,6 +21,7 @@ eq "TMPDIR forced" "$(PCREC_TMPDIR=$R/o TMPDIR=/tmp bash -c ". '$here/tmpdir.sh'
 
 root=$R/root; mkdir -p "$root/scratch"
 old() { touch -d '10 days ago' "$@"; }
+mkdir "$root/ref"; touch "$root/ref/f"; old "$root/ref/f" "$root/ref"
 mkdir "$root/old" "$root/new" "$root/oldfresh" "$root/oldcwd" "$root/oldopen" "$root/scratch/lane_old" "$root/scratch/lane_new"
 touch "$root/old/f" "$root/oldfresh/f" "$root/oldcwd/f" "$root/oldopen/f" "$root/scratch/lane_old/f"
 old "$root/old/f" "$root/old" "$root/oldcwd/f" "$root/oldcwd" "$root/oldopen/f" "$root/oldopen" "$root/scratch/lane_old/f" "$root/scratch/lane_old" "$root/oldfresh"
@@ -31,6 +32,7 @@ sleep 0.3
 PCREC_TMPDIR=$root bash -c ". '$here/tmpdir.sh'; pcrec_tmp_prune"
 [ -e "$root/old" ] && bad "old idle entry survived" || ok "old idle entry pruned"
 [ -e "$root/scratch/lane_old" ] && bad "old scratch lane survived" || ok "old scratch lane pruned"
+[ -e "$root/ref" ] && ok "old ref child kept ([TMP-PRUNE-REF])" || bad "ref child pruned"
 [ -e "$root/new" ] && ok "recent entry kept" || bad "recent entry pruned"
 [ -e "$root/scratch/lane_new" ] && ok "recent scratch lane kept" || bad "recent scratch lane pruned"
 [ -e "$root/oldfresh" ] && ok "old entry with a recent file kept" || bad "old entry with recent file pruned"

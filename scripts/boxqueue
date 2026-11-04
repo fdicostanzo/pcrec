@@ -47,7 +47,7 @@
 #                   = would run correctly, else not (reason on stderr). Called
 #                   at enqueue (a failure REFUSES the job, exit 65) and again
 #                   just before START (a failure sends it to failed/).
-#   JOB --ready     can I run NOW: 0 ready, 75 not yet (EX_TEMPFAIL; first
+#   JOB --ready     (REQUIRED: `add` refuses a script whose text has no --ready) can I run NOW: 0 ready, 75 not yet (EX_TEMPFAIL; first
 #                   output line = the reason, logged every pass), 76 requeue
 #                   me to the end, 77 never (cancelled). No side effects;
 #                   killed after BOXQUEUE_READY_BOUND s (20, a policy margin,
@@ -1021,6 +1021,9 @@ cmd_add() {
     local k inc o rc p; k=$(key_of "$name")
     p=$(find_pending "$k") && { echo "boxqueue: REFUSED $name: $k is already pending as $p" >&2; exit 65; }
     p=$(find_running "$k") && { echo "boxqueue: REFUSED $name: $k is running ($p)" >&2; exit 65; }
+    # [BOXQUEUE-READY-GUARD] the runner asks every pending job `JOB --ready`; a script with no --ready case runs the WHOLE job
+    # on each pass (job 329-main-recida2-movers, 2026-11-04). Static check, never a call: asking would run it.
+    grep -q -e '--ready' "$f" || { echo "boxqueue: REFUSED $name: the script has no '--ready' case, so every readiness probe would run the whole job; add '--ready) exit 0 ;;' (see -h)" >&2; exit 65; }
     inc=$Q/.incoming/$name.$$; cp "$f" "$inc"; chmod +x "$inc"; o=$inc.dry
     callj dry-run "$inc" "$DRY_BOUND" "$o" "$name"; rc=$?
     if [ $rc -ne 0 ]; then

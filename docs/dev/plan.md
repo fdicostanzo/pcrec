@@ -863,12 +863,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   note (2026-11-03, file1103): kind A remaining after S677's fix (docs/dev/lanes/s677fix_report.md; template: parenthesise the emitted test in a second SAB_FILE2 pair): 13 rows, S1152 S1159 S1174 S135 S231 S272 S666 S1418 S739 S676 S678 S719 S707; each needs the same warning-clean plant treatment, re-measured DETECTED by a non-compile arm.
   note (2026-11-04, manager, full suite 20261103 / lane mechtri3): S53 and S57 (vmrec-stale plants re-aimed into emit_vm.c + vm_stmt.c) still score ANOMALY in re-check 322 (5 of the 7 re-aimed rows DETECTED); their witnesses probably need a pattern that emits the re-aimed text. S271 and S403 are stale too (generated names moved), described in docs/dev/lanes/mechtri3_report.md, not re-aimed.
   note (2026-11-03, manager, from the kit): S678 is NOT kind A any more: its 10-31 re-plant (r30bfix) builds without -Werror and is caught (fails 55 of 3653); the 10-27 suitetri listing predates it. 12 remain; re-check each against its current plant before fixing.
-- [TMP-PRUNE-REF] STATE:not-started — the temp-root prune must exempt the read-only `ref` subdirectory
-  filed: 2026-11-03 file1103 (session 128 carry-over)
-  status (2026-11-03): filed; nothing built. The prune (scripts/tmpdir.sh pcrec_tmp_prune: `rm -rf` of old direct children of the root) tries to delete the root's read-only `ref` tree; the lock.log of box-queue job 347-kit-sp1f2-mech opens with "rm: cannot remove ... Permission denied" lines.
-  next: make pcrec_tmp_prune skip `ref` by name (candidates are the root's direct children), with a self-test beside tests for tmpdir.sh
-  refs: scripts/tmpdir.sh; worktrees/.boxqueue/done/*347-kit-sp1f2-mech*/lock.log; root CLAUDE.md (pcre2-reader clean-room wall)
-  The noise is harmless today but it hides real prune failures in the same log, and a prune that does reach the pinned PCRE2 copy would break the reader agent. Unscheduled.
 - [TMP-PRUNE-AGE] STATE:not-started — scratch data is lost after 3 days by the temp-root prune
   filed: 2026-11-03 file1103 (session 128 carry-over)
   status (2026-11-03): filed; the 3-day default (PCREC_TMP_PRUNE_DAYS) is labelled UNMEASURED in scripts/tmpdir.sh; nobody measured how long a legitimate run keeps scratch.
@@ -893,18 +887,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: keep the whole arm output (or name the floor line so it is always retained)
   refs: scripts/boxqueue; the kit mech/ident job scripts; worktrees/.boxqueue/done/*/job.log
   Unscheduled.
-- [MECH-VALIDATE-VERDICT] STATE:not-started — a mech job in VALIDATE_ONLY mode must say so in its verdict line
-  filed: 2026-11-03 file1103 (session 128 carry-over)
-  status (2026-11-03): filed; nothing built. A VALIDATE_ONLY mech run (fields only, no plants run) prints the same-shaped COMPLETE trailer as a real run and can be read as a mech gate.
-  next: print VALIDATE_ONLY (and that no row ran) in the trailer and in the queue result line
-  refs: tests/mech/run_sabotage_matrix.sh (VALIDATE_ONLY, line ~711 and the trailer); docs/dev/wake.md next action 1 ("RUN, not VALIDATE_ONLY")
-  Unscheduled.
-- [LANDMARK-DOC-CITE] STATE:not-started — lib/pcrec.h: PCREC_NO_LANDMARK_WALK comment cites tuning.md section 2.51, should be 2.54
-  filed: 2026-11-03 file1103 (session 128 carry-over)
-  status (2026-11-03): filed; verified 2026-11-03: tuning.md 2.51 is `--part-layout=CLASS:V`, 2.54 is `-fno-landmark-walk` (bit 57). The citation near lib/pcrec.h:1210 is wrong.
-  next: fix the section number in the PCREC_NO_LANDMARK_WALK comment (comment-only; lib/pcrec.h is the public header, so check whether a comment edit counts as an abi/stamp event under D76)
-  refs: lib/pcrec.h; docs/spec/tuning.md sections 2.51 and 2.54
-  Comment-only fix, filed not done.
 - [MECH-PROCS] STATE:not-started — MECH ROW CONCURRENCY USES ~HALF THE DEV BOX; MEASURE IT, OR LET THE RUNNER ADAPT TO A CPU TARGET
   filed: 2026-10-27 Frank ("File it. Include the idea that the script slowly increments parallelism to target 90%+ cpu usage")
   status (2026-10-27): not started. Full suite 20261027 mech at MECH_PROCS=6 (scripts/battery.sh:131, "[TT-8]'s own measured setting", not measured on the 7700X/16-thread box): 36% user + 18% sys, 46% idle, load ~10; ~1,040 rows take ~7 h.

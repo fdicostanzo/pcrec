@@ -20,7 +20,8 @@
 # days; nobody has measured how long a legitimate run keeps scratch) that hold
 # no recent file and that no process has as cwd or open. Candidates are the
 # root's direct children and, inside scratch/, its direct children. It touches
-# nothing outside the root, and refuses an empty / relative / "/" root.
+# nothing outside the root, never the root's 'ref' child (the read-only PCRE2
+# reference copy; [TMP-PRUNE-REF]), and refuses an empty / relative / "/" root.
 
 pcrec_tmp_root() {
     if [ -z "${PCREC_TMPDIR:-}" ]; then
@@ -42,6 +43,7 @@ pcrec_tmp_prune() {
     for _pp_e in "$_pp_root"/* "$_pp_root"/scratch/*; do
         [ -e "$_pp_e" ] || continue
         [ "$_pp_e" = "$_pp_root/scratch" ] && continue
+        [ "$_pp_e" = "$_pp_root/ref" ] && continue    # the read-only PCRE2 reference copy
         case "$_pp_e" in "$_pp_root"/?*) ;; *) continue ;; esac
         [ -n "$(find "$_pp_e" -mtime "-$_pp_days" -print -quit 2>/dev/null)" ] && continue
         if awk -v p="$_pp_e" 'index($0, p) == 1 { c = substr($0, length(p) + 1, 1); if (c == "" || c == "/") { f = 1; exit } } END { exit !f }' "$_pp_busy"; then
