@@ -303,3 +303,5 @@ Landing 2026-11-03 ef179b9f4: emit_sweep no-fd-pres-pick c-default floor re-pin 
 Landing 2026-11-03 8bc066f96/761521515: span_pick stage 1 unit 1a (dead code removed: mf_set_terms, finder rows R3a/R3b/R4; MF_CLASS_V 6; byte-identical, no pcrec abi event); class minor.
 Landing 2026-11-03 c17e43ce8: R-34, G2 test generator use-after-free (test-only); class minor (a fix).
 Landing 2026-11-03 a33ca7b0a/c0f0d543b: span_pick stage 1 unit 1f (finder rows R8/R1/R2 and denies fd-r8/fd-ndisp retired, pay rule deleted; registry floor 14->12; MF_SITE_ABI 21, MF_CLASS_V 7; byte-identical, no pcrec abi event); class minor. D177: row 4 (two majors, abi 94 and 95) still pending since 10-27's run; minors accrue under row 5 as well; one run covers every trigger, window awaiting Frank.
+
+RED: 2026-11-04 4bd002e20 test=green strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261103_4bd002e20 duration=44409s
