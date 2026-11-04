@@ -338,8 +338,8 @@ const uint32_t *kit_byte_rate(const mf_art *art);
 uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap);
 
 /* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): every
- * comparison in the kit that can tie reads its row through kit_tie_takes,
- * which answers whether a candidate keyed `c`, equal to the best keyed `b`
+ * comparison in the kit that can tie reads its row through the answer
+ * below: whether a candidate keyed `c`, equal to the best keyed `b`
  * (met first in the walk), takes the tie. Keys are offsets, except
  * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). */
 enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };

@@ -12,7 +12,8 @@ question table or named exception, against the kit's sources:
      of that name in its file (a prototype is not one), a `data` member a
      top-level definition; a `part` is its function's definition holding
      the part's anchor; an `excluded` member names a definition or prototype
-     that exists.
+     that exists. A member's own namespace line in its file
+     (`#define NAME MF_NS(NAME)`, exactly its name) belongs to it.
   B  THE BACKSTOP: a grep of memfn/src/*.{c,h,def} for the decider shapes
      (BACKSTOP below) is RED on any hit line that lies in no listed member
      (excluded members included). The hits are COUNTED (K35): fewer than
@@ -45,7 +46,9 @@ BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< sm", "< wl", "> c)",
 HIT_FLOOR = 30
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
-MEMBER_COUNT = 50
+# 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
+# kit_tie_member_key in).
+MEMBER_COUNT = 51
 
 passed = failed = 0
 
@@ -183,6 +186,10 @@ def census(src, rows, count=True):
         if count:
             ok()
         spans += [(r["file"], d[1], d[2]) for d in hit]
+        # its namespace line (`#define NAME MF_NS(NAME)`, kit.h) is the member's
+        ns = re.compile(r"#define\s+%s\s+MF_NS\(%s\)\s*$" % (name, name))
+        spans += [(r["file"], no, no) for no, ln in enumerate(raw[r["file"]].split("\n"), 1)
+                  if ns.match(ln)]
     # B: every backstop hit lies in a member
     hits, stray = 0, []
     for fn, text in raw.items():
