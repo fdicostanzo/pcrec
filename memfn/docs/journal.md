@@ -3161,3 +3161,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - 1b gates 370-379 are all GREEN (S1094/S1096/S1097/S458 DETECTED). The D187 full-corpus count is nonnormal-cubes 0, mask0-cubes 0 on 18 arms. Main merged 1b, 7b671bc2c.
 - 1c: lane sp1c (opus) is building on lane/memfn-sp1c from 7b671bc2c. Part A is the 1c row (run_scan asks run_member; translate's rank reads T_MASS_STRETCH; R24 -1, or -2 if derived and byte-identical). Part B is D187: set-only kit_mass (the cube path and kit_pos's cube fields deleted), normal form refused at kit_presence_check, HOUSE-1's redundant rebuilds retired where byte-identical, the KITMASS counter retired once checked, and no second cube detector.
 - Review-round build scratch cleared (crit-memfn-sp1g builds, crit-memfn-sp1b base/bin; ~1.2 GB).
+
+## 2026-11-04 (evening) — 1c built, reviewed, fixed; gates split around Frank's hold
+
+- 1c (lane sp1c, opus) includes D187's set-only step: kit_mass set-only, kit_pos's cube fields deleted, normal form refused at kit_presence_check (unreachable from pcrec: rn_put already refuses it). The refusal bumps MF_SITE_ABI 22 -> 23 (ruled: a refusal narrowing what the seam may state is a meaning change, the 14/20 precedent). A first G2 red was a race: the ABI bump was committed mid-run, so the header read 23 and the library 22. The final run on the tip is green.
+- Review 2026-11-04 r2 (memfn-sp1c, bde05b012) found no answer/speed problems and no mover; it verified 666 dual-spelling compiles with 0 disagreements and 40k + 200k direct kit differentials. Fix lane sp1cfix delivered 0eed05873 (F1 strict-order precondition with a loud refusal; F2 the promised rank_pos[0] check, which catches the formerly silent `(?i)enzyme -fmemfn-simd` plant). lane/memfn-sp1c is fast-forwarded to it.
+- Main filed F11 as [POS-ONE-DETECTOR], and Frank's [RUN-POS-SET] (required-run positions as byte sets) the same day.
+- Gates 390-399 (kit-sp1c2-*) are queued. 390-393 run now. 394-399 carry `boxqueue: not-before 2026-11-05T01:05` (Frank holds 20:00-01:00). If 393 has not started by ~19:20, re-gate it.
+- My slip: the watcher on sp1c's final run matched the lock LABEL, which survives in `free (last holder ...)`, so it never fired. Watchers match the held state or the queue's done/failed dirs, never a label.
