@@ -86,8 +86,8 @@ else
     echo "FAIL: proven: ${pp:-0} cases passed < floor $PROVEN_FLOOR"; tf=$((tf + 1))
 fi
 # span_pick unit 1b: kit_mass's golden values. MASS_FLOOR is the driver's case
-# count at landing (20), a literal: a driver that silently ran fewer reads red.
-MASS_FLOOR=20
+# count (25 since sp1bfix), a literal: a driver that silently ran fewer reads red.
+MASS_FLOOR=25
 "$WORK/masschk" > "$WORK/mass.log" 2>&1
 rc=$?
 part mass "$WORK/mass.log"

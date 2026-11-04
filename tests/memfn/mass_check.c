@@ -18,7 +18,8 @@
  *         window), under NONE and under rates: a set-shaped primitive (the
  *         union of the positions) reads less;
  *   CAP   capped (KIT_MASS_CAP, 1e6) vs uncapped (KIT_MASS_SUM), under rates
- *         and under NONE past 256 members; a cube and a set position.
+ *         and under NONE past 256 members; a cube and a set position; and the cap
+ *         taken once over the TOTAL of two or more rated positions.
  *
  * THE CONTROL. Every expected value is a LITERAL derived by hand in its
  * comment from the rate tables' formulas below (rate1[b] = 1000 + b, rate2[b]
@@ -120,6 +121,23 @@ int main(void)
     p[1] = (kit_pos){ .set = all };                     /* NONE k = 512: 2,000,000 */
     expect("CAP NONE k=512 uncapped", kit_mass(NULL, p, 2, KIT_MASS_SUM), 2000000);
     expect("CAP NONE k=512 capped", kit_mass(NULL, p, 2, KIT_MASS_CAP), 1000000);
+
+    /* The cap is taken ONCE over the total, never per position (a plant that
+     * capped each position's rated sum and summed the capped values reads
+     * 2,000,000 / 1,280,000 below). */
+    p[0] = (kit_pos){ .set = all };
+    p[1] = (kit_pos){ .set = all };                     /* 2 x 1,280,000 = 2,560,000 */
+    expect("CAP rated two full sets uncapped", kit_mass(rate2, p, 2, KIT_MASS_SUM), 2560000);
+    expect("CAP rated two full sets capped", kit_mass(rate2, p, 2, KIT_MASS_CAP), 1000000);
+    p[0] = (kit_pos){ .t = 0x00, .mask = 0x80 };        /* 0x00..0x7F: 128 x 5000 = 640,000 */
+    p[1] = (kit_pos){ .t = 0x80, .mask = 0x80 };        /* 0x80..0xFF: 640,000 */
+    expect("CAP rated two half cubes uncapped (each under 1e6)",
+           kit_mass(rate2, p, 2, KIT_MASS_SUM), 1280000);
+    expect("CAP rated two half cubes capped (each under 1e6)",
+           kit_mass(rate2, p, 2, KIT_MASS_CAP), 1000000);
+    p[1] = (kit_pos){ .set = abc };                     /* 640,000 + 15,000, still under */
+    expect("CAP rated half cube and a set, under the cap",
+           kit_mass(rate2, p, 2, KIT_MASS_CAP), 655000);
 
     printf("checks passed: %d\n", passed);
     printf("checks failed: %d\n", failed);
