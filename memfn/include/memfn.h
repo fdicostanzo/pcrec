@@ -611,7 +611,10 @@ typedef struct {                    /* one position term, relative to cand    */
                                        vocabulary: under this literal formula
                                        it never holds, and the kit may render
                                        it constant false; it never normalises
-                                       the byte (RULED Q-G2-13)               */
+                                       the byte (RULED Q-G2-13). On a presence
+                                       span (mf_site.pspans) it is REFUSED
+                                       (D187: a presence fact never states
+                                       one)                                   */
     uint32_t       run_len;         /* >= 1 (0 refused, Q-G2-11); no cap (§14.6) */
     uint32_t       ppm_lo, ppm_hi;  /* density hint: matches per 1e6 subject
                                        bytes; 0..MF_PPM_FULL when unknown     */
@@ -791,8 +794,9 @@ typedef struct {
        pspans[0..npspan)  UNPICKED (PR-5): every member of the necessary set
                   as its own one-byte span (one SET term of one byte at offset
                   0, `member_order` stated) and the WHOLE run, when there is
-                  one, as one span (one RUN term with its mask), each with its
-                  `need` (REQUIRED where no DFA scan fronts the route, the
+                  one, as one span (one RUN term with its mask, every byte
+                  inside its mask: a byte outside it is refused, D187), each
+                  with its `need` (REQUIRED where no DFA scan fronts the route, the
                   K65/K66 obligation; OPTIONAL elsewhere), `span_class`
                   PRESENCE and `omin` (PR-6). Members come in descending byte
                   order, the run last. npspan 0 / pspans NULL: no presence
