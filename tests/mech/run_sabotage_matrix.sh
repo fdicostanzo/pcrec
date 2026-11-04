@@ -3887,7 +3887,7 @@ if [ "$VALIDATE_ONLY" = "1" ]; then
     # watcher polls to learn a MATRIX finished, and a field-validation pass
     # answering it would be a green nobody asked for -- this run measured
     # nothing and must not be pollable as though it had.
-    echo "== mech FIELD VALIDATION COMPLETE: $total definition(s) valid, 0 rows measured =="
+    echo "== mech FIELD VALIDATION COMPLETE: $total definition(s) valid, 0 rows measured, mode=VALIDATE_ONLY =="
     exit 0
 fi
 echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetected: ${undetected:-0}, unreached: ${unreached:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
