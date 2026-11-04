@@ -3128,3 +3128,9 @@ Main ruled on the four kit findings (D186 add. 2):
 - Lane sp1gfix delivered 847ce2708, and lane/memfn-sp1g was fast-forwarded to it. Light checks: make strict clean; test-memfn-finder 1934/0; every plant RED then reverted; 1200 identity compiles with 0 diffs.
 - S678 needed no repair: a 10-31 re-plant already made it warning-clean, so suitetri's class-A list is stale for it (told main).
 - Gates 350-359 (keys kit-sp1g2-*) are queued behind main's 300 full suite and 310 census. They run in worktrees/sp1gfix, which is at the same commit as lane/memfn-sp1g. Do not touch that worktree until they end. Watcher: a background shell that exits on any kit-sp1g2 failure or on mech3 done. OWED: real trailers for S1856 (shard 3) and S678 (shard 1).
+
+## 2026-11-04 — 1g landed; 1b started
+
+- 1g gates 350-359 are all GREEN. The first run of 354 was red because the job's --analysis arms asked for emit-ir, which pcrec refuses; fixed in the job script and re-run green. S1856 and S678 are both DETECTED. Delivered at lane/memfn-sp1g 847ce2708; main merged it, b0f3d0339.
+- Frank (11-04, via main): in the END STATE the kit splits. Its planning face goes into the planner and its emitting face into the back end ("another target language is another back end"). Manifesto principle 9: every seam is designed as if what crosses it were written to text and read back by another process. It is a design standard, not a build order; critic rounds on planner, kit or back-end seams carry that lens. Stage 1 is unchanged by it.
+- 1b: lane sp1b (opus) is building on lane/memfn-sp1b from b0f3d0339 (the one position-multiset mass primitive, the NONE row, `tie_over` removed; ratchet 11 -> 8 or 9). Main's RECID-A job 331 holds the box for now.
