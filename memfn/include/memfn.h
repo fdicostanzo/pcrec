@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 22  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 23  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -189,7 +189,12 @@
                            and mf_prov_fidelity are DELETED, the digest moving
                            to mf_akind.digest. No kit row read any of them. A
                            LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
-                           pcrec byte moved. */
+                           pcrec byte moved. 23 (span_pick.md rev 5.2 unit
+                           1c, D187): a pspans RUN byte outside its mask is
+                           REFUSED (kit_presence_check; positions travel as
+                           sets, normal form is a checked fact). No layout
+                           move; no MF_VOCAB or MF_CLASS_V move; no pcrec
+                           byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):

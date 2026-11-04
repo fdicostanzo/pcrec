@@ -41,7 +41,7 @@ approval of 2026-11-02, confirmed by main's GO for stage 1; D187's set-only step
      - compose.c's `term_prove` (its identical inline loop is retired).
   3. **NORMAL FORM, a checked fact at the input boundary**: `kit_presence_check` (compose.c) refuses a RUN presence
      span with a byte outside its mask. The text is "a RUN presence span states a run byte outside its mask
-     (`run[j] & ~mask[j]`: the span would never hold, Q-G2-13)". The check reuses `run_cmp_sat`, the existing
+     (`run[j] & ~mask[j]`: the span would never hold, Q-G2-13; D187, MF_SITE_ABI 23)". The check reuses `run_cmp_sat`, the existing
      normal-form detector beside gate.c's `cl_run` (CL_UNSAT). It adds no second detector. It is documented where
      kit input refusals are documented, in memfn.h:
      - the pspans paragraph: "every byte inside its mask: a byte outside it is refused, D187";
@@ -100,7 +100,8 @@ Commits (oldest first):
   enumeration and its `(x & mask) == run` set are the same bytes, and pcrec states only normal runs, facts_derive.h
   "CANONICAL"). The orders are the same strict total order. The spot check reads 1760/1760 identical (below).
 - **MF_CLASS_V unchanged** (7): no finder row added or removed.
-- **MF_SITE_ABI unchanged** (22). This is a deviation open to ruling: see Design deviations 1.
+- **MF_SITE_ABI 22 -> 23** (RULED by the kit manager: the refusal is a meaning change; no layout move): see Design
+  deviations 1.
 - **No pcrec abi change.**
 - **No docs/spec hunk**: `git grep` over docs/spec for `kit_mass|kit_pos|kit_run|run_member|pspans|presence span|
   kit_presence_check|KITMASS` finds nothing. docs/spec names no kit input refusal, and no caller-visible name or
@@ -208,12 +209,16 @@ on any identity arm.
 
 ## Design deviations
 
-1. **MF_SITE_ABI is not bumped** for the new presence-span refusal. memfn.h says MF_SITE_ABI covers "layout and
-   meaning" of the structs, and precedent bumped it for refusals with no layout move (14: an UNSTATED body refused;
-   20: window sites stating plan fields refused). The brief expected no move. I asked the kit manager by message
-   with a recommendation to bump 22 -> 23: a history entry, readers by grep, still byte-identical because
-   MF_SITE_ABI reaches no text (1g). No answer had arrived when I committed, so I did the no-bump form. **OWED: the
-   kit manager's ruling**; a bump is one line plus re-pins.
+1. (RULED, not a deviation) **MF_SITE_ABI 22 -> 23** for the new presence-span refusal: the kit manager's ruling
+   (2026-11-04), on the 14/20 precedent that a refusal narrowing what the seam may state is a meaning change; the
+   brief's "should not move" was a prediction. History entry in memfn.h ("a pspans RUN byte outside its mask is
+   REFUSED, D187; no layout move; no MF_VOCAB/MF_CLASS_V move; no pcrec byte moved"), memfn/include/CLAUDE.md's
+   carried number, and the refusal text cites `D187, MF_SITE_ABI 23` like its siblings (14, 17, 18). Readers by
+   grep: the `#define` (memfn.h :39) and include/CLAUDE.md are the only readers of the CURRENT number; every other
+   hit of "MF_SITE_ABI 22" (window_contract.md :533/:606, e1_object_check.py, S1856, arm_fixtures.c, finder_check.py,
+   prov_check.c, run_finder.sh, the journal) cites unit 1g's own event and stays true. Code reads the symbol only
+   (`s->abi = MF_SITE_ABI` in formhash.c, window.c, src/gen/memfn_sites.c; the checks in compose.c, presence.c,
+   window.c), and MF_SITE_ABI reaches no emitted text (1g's 21 -> 22 was byte-identical), so no pcrec byte moves.
 2. **The refusal is on presence spans only**, not every RUN term. Q-G2-13 rules that a non-normal byte on a
    rendered term is IN the vocabulary (it never holds, rendered constant false), and G2 generates such terms. The
    set-only mass reads presence runs and the window family's sets, and neither is a rendered term. So the boundary
@@ -249,7 +254,7 @@ on any identity arm.
 | B(5) R10 one-position wrapper only if no parallel mechanism | not needed: the set signature removed the repetition |
 | no second cube detector | none added (`run_cmp_sat` reused; `run_bytes` pre-existing) |
 | zero movers on every arm, no pcrec abi, no spec hunk unless caller-visible | spot 1760/1760; reach smoke 0; no abi; spec grep empty; **the full witness is OWED**: jobs 382-385 |
-| state MF_CLASS_V / MF_SITE_ABI | MF_CLASS_V 7 unchanged; MF_SITE_ABI 22 unchanged, **ruling OWED** (Design deviations 1) |
+| state MF_CLASS_V / MF_SITE_ABI | MF_CLASS_V 7 unchanged; MF_SITE_ABI 22 -> 23 as RULED (Design deviations 1), readers re-pinned by grep |
 | readers by grep, incl. the mech anchor checker, with re-anchors hand-measured | Readers; S1095/S1097/S458 figures in SAB_DOC_FIGURE |
 | CLAUDE.md files, kit journal, census map/ratchet | memfn/src + tests/memfn CLAUDE.md; journal entry; census 50; Ratchet |
 | each new check RED under a plant then reverted | Validation, golden plants (scratch copies; the tree never edited) |
@@ -266,7 +271,6 @@ under `boxlock run --label sp1c-g2`, and its log is `$PCREC_TMPDIR/scratch/memfn
 verdict is in the handback message; if it had not finished, the gate's job 381 runs it anyway.
 
 OWED:
-- the kit manager's MF_SITE_ABI ruling (Design deviations 1);
 - the gate run (jobs 380-389 in `scratch/memfn/sp1c/jobs/`, keys kit-sp1c-strict, -memfn, -reach, -ident1..3,
   -test, -mech..mech3), which the manager queues;
 - main's restatement of roadmap §5 R24;
