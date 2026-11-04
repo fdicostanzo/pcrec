@@ -319,33 +319,53 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
                     const uint8_t *start_set, mf_pres_picks *out);
 
 /* THE BYTE-RATE and its ONE mass primitive (presence.c; span_pick.md rev
- * 5.2 U4, unit 1b), read by the PRES ports and the window family. The rate
- * is the analysis object's `byte-rate` table (ppm per byte, uint32_t[256]) or
- * NULL where it carries none (no object, the kind absent, present with no
- * payload). kit_mass sums it over a POSITION MULTISET: each position a stated
- * byte set (`set`, its members) or else the cube (`t`, `mask`), the bytes
- * t | f for f a submask of ~mask (a byte: mask 0xFF); capped at 1e6 or not;
- * NONE (rate NULL) is the declared NONE row, the uniform mass of the
- * multiset's member count (presence.c). */
-typedef struct {
-    const uint8_t *set;         /* a byte set (256 bits), or NULL: the cube  */
-    uint8_t        t, mask;     /* the cube, read where `set` is NULL        */
-} kit_pos;
+ * 5.2 U4, unit 1b; set-only since unit 1c, D187), read by the PRES ports and
+ * the window family. The rate is the analysis object's `byte-rate` table
+ * (ppm per byte, uint32_t[256]) or NULL where it carries none (no object,
+ * the kind absent, present with no payload). kit_mass sums it over a
+ * POSITION MULTISET: `n` consecutive 256-bit byte sets at `set` (32 bytes
+ * each, one position's members), a byte repeated across positions counted at
+ * each; capped at 1e6 or not; NONE (rate NULL) is the declared NONE row, the
+ * uniform mass of the multiset's member count (presence.c). Every priced
+ * position is a SET (D187): a RUN term's position becomes one through
+ * kit_run_set, never travels as a cube beside it. */
 typedef enum { KIT_MASS_SUM, KIT_MASS_CAP } kit_mass_cap;
 #define kit_byte_rate MF_NS(kit_byte_rate)
 #define kit_mass      MF_NS(kit_mass)
+#define kit_run_set   MF_NS(kit_run_set)
 const uint32_t *kit_byte_rate(const mf_art *art);
-uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap);
+uint32_t kit_mass(const uint32_t *rate, const uint8_t *set, unsigned n, kit_mass_cap cap);
+/* RUN term `t`'s position `j` as its byte set: the bytes x with
+ * (x & mask[j]) == run[j] (mask NULL: 0xFF), the vocabulary's own formula
+ * (memfn.h mf_term.run), so a byte outside its mask is the EMPTY set
+ * (Q-G2-13: it never holds). The kit's ONE run-position-to-set conversion. */
+void kit_run_set(const mf_term *t, unsigned j, uint8_t set[32]);
+
+/* THE RUN MEMBER (window.c; span_pick.md U2, unit 1c): the least-mass
+ * position of a run (KIT_MASS_SUM over each position's set alone), ties per
+ * the TIE table's stretch row (T_MASS_STRETCH: the higher position). It reads
+ * the positions one at a time through `at`, which returns position j of
+ * `src` as a byte set (its own storage, or `buf` filled), so a run stated as
+ * sets and a RUN term are asked alike. `exact` 1: only one-member positions
+ * are candidates. `after` non-NULL: only positions the member order ranks
+ * strictly AFTER it are candidates, so asking again from each answer walks
+ * the whole order (translate's ranking). pos -1: no candidate. Every reader
+ * of a run's member asks it: window.c's run_member, presence's run scan (P3)
+ * and translate's ranking. */
+typedef struct { int pos; uint32_t mass; } kit_member;
+typedef const uint8_t *kit_pos_at(const void *src, unsigned j, uint8_t buf[32]);
+#define kit_run_member MF_NS(kit_run_member)
+kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
+                          int exact, const kit_member *after);
 
 /* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): the
- * kit's PICK ties (window.c's stop/mass choosers and run_member, presence's
- * set pick and run window) read their row through the answer below: whether
- * a candidate keyed `c`, equal to the best keyed `b` (met first in the
- * walk), takes the tie. Keys are offsets, except T_PRES_MEMBER's:
- * kit_tie_member_key (member order above the byte). NOT through it: window.c
- * reads `wf_ties[T_CMODEL/T_MARGIN].to` directly (an exchange sort and a
- * rejection, not a pick); presence's run_scan and translate's run rank keep
- * their own tie spellings (1c's joiners); P2 and P4 compare with no TIE
+ * kit's PICK ties (window.c's stop/mass choosers, the run member
+ * kit_run_member, presence's set pick and run window) read their row through
+ * the answer below: whether a candidate keyed `c`, equal to the best keyed
+ * `b` (met first in the walk), takes the tie. Keys are offsets, except
+ * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). NOT
+ * through it: window.c reads `wf_ties[T_CMODEL/T_MARGIN].to` directly (an
+ * exchange sort and a rejection, not a pick); P2 and P4 compare with no TIE
  * row. */
 enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };
 #define kit_tie_takes      MF_NS(kit_tie_takes)

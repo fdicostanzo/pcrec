@@ -12,7 +12,8 @@
  * provenance, D162 ruling 2: these are the total default reproducing today):
  *   P3  the set's pick (the rarest member; a tie to the member LAST in
  *       pattern order, then to the larger byte), the run's scan position (the
- *       rarest position by its cube's mass; a tie to the rightmost) and the
+ *       run member, kit_run_member: the rarest position by its set's mass; a
+ *       tie to the rightmost) and the
  *       window start (the least window mass among the MF_PRES_WINDOW-position
  *       windows holding the scan position; a tie to the leftmost);
  *   P4  set-leads (the set's pick STRICTLY rarer than the run's scan member);
@@ -37,10 +38,6 @@
  * census, re-run at B3b on the kit-sourced proof).
  */
 #include <string.h>
-#ifdef MF_TRACE
-#include <stdio.h>
-#include <stdlib.h>
-#endif
 
 #include "kit.h"
 
@@ -63,8 +60,11 @@ const uint32_t *kit_byte_rate(const mf_art *art)
  * byte of every listed position, a byte repeated across positions counted at
  * each (a run window's `zzzzzzz~J` sums z seven times; a union set would
  * count it once and move the window). `cap` KIT_MASS_CAP caps the sum at 1e6
- * (pcrec_find_set_mass's arithmetic), KIT_MASS_SUM leaves it (PICK's cube
- * mass, pcrec_find_pick / run_rank).
+ * (pcrec_find_set_mass's arithmetic), KIT_MASS_SUM leaves it (PICK's
+ * position mass, pcrec_find_pick / run_rank). The sets are positions, never
+ * cubes (D187): normal form is a CHECKED fact at the input boundary
+ * (kit_presence_check refuses a presence run byte outside its mask), so a
+ * run's set and the cube pcrec meant are the same bytes.
  *
  * THE NONE ROW (span_pick.md rev 5.2 [rev5.1 R2], D186 add. 2): with no rates
  * handed, the mass is the uniform rate's over the multiset's member count k,
@@ -74,59 +74,22 @@ const uint32_t *kit_byte_rate(const mf_art *art)
  * the named exception (span_pick.md §The tables), and so is P2's dominance
  * compare (kit_pres_picks): it reads the raw rate table, so under NONE it
  * answers "not dominated" where this row's equal counts would answer yes. */
-#ifdef MF_TRACE
-/* D187's count (trace builds only, process-wide like gate.c's reach
- * counters, one line at exit): the cube positions reaching kit_mass, how
- * many are NON-NORMAL (t has a bit outside mask: the cube counts members the
- * vocabulary says never exist), and how many have mask 0 (the full
- * alphabet, also what an omitted `.mask` reads as). The tag is KITMASS, so
- * no MFTRACE reader that matches another prefix sees it. */
-static unsigned long km_calls, km_cubes, km_nonnormal, km_mask0;
-
-static void km_print(void)
+uint32_t kit_mass(const uint32_t *rate, const uint8_t *set, unsigned n, kit_mass_cap cap)
 {
-    fprintf(stderr, "MFTRACE KITMASS calls=%lu cubes=%lu nonnormal=%lu mask0=%lu\n",
-            km_calls, km_cubes, km_nonnormal, km_mask0);
-}
-
-static void km_count(const kit_pos *pos, unsigned n)
-{
-    static int armed;
-    if (!armed) {
-        armed = 1;
-        atexit(km_print);
-    }
-    km_calls++;
-    for (unsigned i = 0; i < n; i++) {
-        if (pos[i].set) continue;
-        km_cubes++;
-        if (pos[i].t & ~pos[i].mask & 0xFFu) km_nonnormal++;
-        if (!pos[i].mask) km_mask0++;
-    }
-}
-#endif
-
-uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap)
-{
-#ifdef MF_TRACE
-    km_count(pos, n);
-#endif
     unsigned long long m = 0, k = 0;
-    for (unsigned i = 0; i < n; i++) {
-        if (pos[i].set) {
-            for (unsigned b = 0; b < 256; b++)
-                if (pos[i].set[b >> 3] >> (b & 7) & 1) { k++; if (rate) m += rate[b]; }
-            continue;
-        }
-        unsigned f = ~pos[i].mask & 0xFFu;
-        for (unsigned b = f;; b = (b - 1) & f) {
-            k++;
-            if (rate) m += rate[pos[i].t | b];
-            if (!b) break;
-        }
-    }
+    for (unsigned i = 0; i < n; i++, set += 32)
+        for (unsigned b = 0; b < 256; b++)
+            if (set[b >> 3] >> (b & 7) & 1) { k++; if (rate) m += rate[b]; }
     uint32_t t = rate ? (uint32_t)m : (uint32_t)(k * 1000000u / 256u);
     return cap == KIT_MASS_CAP && t > 1000000u ? 1000000u : t;
+}
+
+void kit_run_set(const mf_term *t, unsigned j, uint8_t set[32])
+{
+    unsigned mask = t->mask ? t->mask[j] : 0xFFu;
+    memset(set, 0, 32);
+    for (unsigned b = 0; b < 256; b++)
+        if ((b & mask) == t->run[j]) set[b >> 3] |= (uint8_t)(1u << (b & 7));
 }
 
 /* ---- the spans ---------------------------------------------------------------- */
@@ -144,11 +107,11 @@ static int32_t member_key(const mf_pred *p)
     return kit_tie_member_key(p->member_order, one_byte(&p->term[0]));
 }
 
-/* Run position `j` of `t` as a mass position: its cube (the byte under its
- * mask). */
-static kit_pos run_pos(const mf_term *t, unsigned j)
+/* The run member's reader of a RUN term (`src`): position j as its set. */
+static const uint8_t *run_at(const void *src, unsigned j, uint8_t buf[32])
 {
-    return (kit_pos){ .t = t->run[j], .mask = t->mask ? t->mask[j] : 0xFFu };
+    kit_run_set(src, j, buf);
+    return buf;
 }
 
 /* ---- the ports ---------------------------------------------------------------- */
@@ -179,8 +142,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     for (unsigned i = 0; i < s->npspan; i++) {
         const mf_pred *p = &s->pspans[i];
         if (p->term[0].kind == MF_T_RUN) { run = p; continue; }
-        kit_pos b = { .t = (uint8_t)one_byte(&p->term[0]), .mask = 0xFFu };
-        uint32_t m = kit_mass(rate, &b, 1, KIT_MASS_SUM);
+        uint32_t m = kit_mass(rate, p->term[0].set, 1, KIT_MASS_SUM);
         if (best < 0 || m < lo ||
             (m == lo && kit_tie_takes(T_PRES_MEMBER, member_key(p), member_key(&s->pspans[best])))) {
             best = (int)i;
@@ -191,17 +153,13 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     int q = best >= 0 ? one_byte(&s->pspans[best].term[0]) : -1;
 
     /* P3: the run's scan position and window */
-    int scan = -1, at = 0;
+    kit_member sc = { -1, 0 };
+    int at = 0;
     if (run) {
         const mf_term *t = &run->term[0];
         unsigned n = t->run_len;
-        uint32_t sm = 0;
-        for (unsigned k = 0; k < n; k++) {          /* rightmost first: a tie stays */
-            unsigned i = n - 1 - k;
-            kit_pos c1 = run_pos(t, i);
-            uint32_t c = kit_mass(rate, &c1, 1, KIT_MASS_SUM);
-            if (scan < 0 || c < sm) { scan = (int)i; sm = c; }
-        }
+        sc = kit_run_member(rate, run_at, t, n, 0, NULL);
+        int scan = sc.pos;
         if (n > MF_PRES_WINDOW) {
             int lo_s = scan - (MF_PRES_WINDOW - 1), hi_s = scan;
             if (lo_s < 0) lo_s = 0;
@@ -209,16 +167,16 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
             uint32_t wl = 0;
             at = lo_s;
             for (int w = lo_s; w <= hi_s; w++) {
-                kit_pos win[MF_PRES_WINDOW];
-                for (unsigned j = 0; j < MF_PRES_WINDOW; j++) win[j] = run_pos(t, (unsigned)w + j);
-                uint32_t wm = kit_mass(rate, win, MF_PRES_WINDOW, KIT_MASS_SUM);
+                uint8_t win[MF_PRES_WINDOW][32];
+                for (unsigned j = 0; j < MF_PRES_WINDOW; j++) kit_run_set(t, (unsigned)w + j, win[j]);
+                uint32_t wm = kit_mass(rate, win[0], MF_PRES_WINDOW, KIT_MASS_SUM);
                 if (w == lo_s || wm < wl || (wm == wl && kit_tie_takes(T_WINDOW, w, at))) {
                     wl = wm;
                     at = w;
                 }
             }
         }
-        out->run_scan = (int16_t)scan;
+        out->run_scan = (int16_t)sc.pos;
         out->run_window = (int16_t)at;
     }
 
@@ -226,17 +184,14 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     unsigned scan_mask = 0xFFu;
     if (run) {
         const mf_term *t = &run->term[0];
-        scan_mask = t->mask ? t->mask[scan] : 0xFFu;
-        if (q >= 0) {
-            kit_pos qp = { .t = (uint8_t)q, .mask = 0xFFu }, sp = run_pos(t, (unsigned)scan);
-            out->set_leads = kit_mass(rate, &qp, 1, KIT_MASS_SUM) <
-                             kit_mass(rate, &sp, 1, KIT_MASS_SUM);
-        }
+        scan_mask = t->mask ? t->mask[sc.pos] : 0xFFu;
+        if (q >= 0)
+            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) < sc.mass;
     }
 
     /* P2 (G1): the proof against the leading check */
     {
-        int lead = run && scan_mask == 0xFFu ? run->term[0].run[scan] : q;
+        int lead = run && scan_mask == 0xFFu ? run->term[0].run[sc.pos] : q;
         int dom;
         if (!proof || proof->byte < 0) dom = 0;
         else if (run && !proof->run) dom = 0;
@@ -250,25 +205,19 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     /* the FIFTH: the landmark admission, where the site ASSIGNs its landmark */
     if (s->handoff == MF_H_ASSIGN) {
         unsigned long long h = 1000000u, m = 1000000u, k = s->head_max;
-        uint8_t set[32];
-        const kit_pos sp = { .set = set };
-        if (!run) {
-            memset(set, 0, sizeof set);
-            if (q >= 0) set[q >> 3] = (uint8_t)(1u << (q & 7));
-            h = kit_mass(rate, &sp, 1, KIT_MASS_CAP);
+        if (!run) {             /* the set's pick alone (none picked: the empty set, 0) */
+            h = q >= 0 ? kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_CAP) : 0;
         } else {
             const mf_term *t = &run->term[0];
             unsigned len = t->run_len - (unsigned)at < MF_PRES_WINDOW
                          ? t->run_len - (unsigned)at : MF_PRES_WINDOW;
             for (unsigned j = (unsigned)at; j < (unsigned)at + len; j++) {
-                unsigned mask = t->mask ? t->mask[j] : 0xFFu;
-                memset(set, 0, sizeof set);
-                for (unsigned b = 0; b < 256; b++)
-                    if ((b & mask) == t->run[j]) set[b >> 3] |= (uint8_t)(1u << (b & 7));
-                h = (h * kit_mass(rate, &sp, 1, KIT_MASS_CAP) + 999999u) / 1000000u;
+                uint8_t set[32];
+                kit_run_set(t, j, set);
+                h = (h * kit_mass(rate, set, 1, KIT_MASS_CAP) + 999999u) / 1000000u;
             }
         }
-        if (start_set) m = kit_mass(rate, &(const kit_pos){ .set = start_set }, 1, KIT_MASS_CAP);
+        if (start_set) m = kit_mass(rate, start_set, 1, KIT_MASS_CAP);
         if (h == 0) out->landmark = 1;
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);

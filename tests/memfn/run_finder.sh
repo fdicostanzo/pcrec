@@ -43,8 +43,9 @@ done
 # rows, the shipped FIND rows, and one mf_ask). -Werror as the other builds.
 "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/proven_check.c" "$LIB" \
     -o "$WORK/provenchk" || { echo "FAIL: the proven-set check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
-# span_pick unit 1b: the one mass primitive's golden values (tests/memfn/mass_check.c,
-# white-box over kit_mass; hand-derived literals). -Werror as the other builds.
+# span_pick units 1b/1c: the one mass primitive, the run-position set, the run
+# member and the presence run's normal-form refusal (tests/memfn/mass_check.c,
+# white-box; hand-derived literals). -Werror as the other builds.
 "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/mass_check.c" "$LIB" \
     -o "$WORK/masschk" || { echo "FAIL: the mass golden-value check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"
@@ -85,9 +86,10 @@ if [ "${pp:-0}" -ge "$PROVEN_FLOOR" ]; then
 else
     echo "FAIL: proven: ${pp:-0} cases passed < floor $PROVEN_FLOOR"; tf=$((tf + 1))
 fi
-# span_pick unit 1b: kit_mass's golden values. MASS_FLOOR is the driver's case
-# count (25 since sp1bfix), a literal: a driver that silently ran fewer reads red.
-MASS_FLOOR=25
+# span_pick units 1b/1c: kit_mass's golden values and 1c's set-only cases.
+# MASS_FLOOR is the driver's case count (40 since sp1c), a literal: a driver
+# that silently ran fewer reads red.
+MASS_FLOOR=40
 "$WORK/masschk" > "$WORK/mass.log" 2>&1
 rc=$?
 part mass "$WORK/mass.log"

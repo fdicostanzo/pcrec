@@ -158,13 +158,10 @@ line:
   an undercount, and the census (`n2_report.py`) reports it ([MEMFN-ROWCON]
   N4).
 
-- `KITMASS` (span_pick 1b fix, D187's count): one line at exit, printed by
-  the process that reached `kit_mass` (a process that never did prints none),
-  separate from the REACH block and in no fixed order against it:
-  `MFTRACE KITMASS calls=C cubes=Q nonnormal=N mask0=M`. `cubes` counts the
-  cube positions (not byte sets) handed to `kit_mass`; `nonnormal` those with
-  a bit of `t` outside `mask`; `mask0` those with mask 0. A reader that
-  matches records by prefix never sees it; tests/memfn/reach_equal.py sums it.
+- `KITMASS` (span_pick 1b fix, D187's count) is RETIRED at span_pick 1c:
+  `kit_mass` takes byte sets only (no cube reaches it) and a presence run
+  byte outside its mask is refused at the input (`kit_presence_check`), so
+  the count it read (0 over the 1b gate's 18 arms) is a checked fact.
 - The run walk is asked twice for a FUNC part's run (once declaring its
   helpers, once rendering), so `runcmp` counts are per walk, not per
   compare.

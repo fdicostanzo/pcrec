@@ -342,14 +342,8 @@ static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32], l
         long d = (long)t->offset + j;
         if (d < MF_PROOF_LO || d >= MF_MAX_FWD || d < dlo || d > dhi) continue;
         uint8_t b[32];
-        if (t->kind == MF_T_SET) {
-            memcpy(b, t->set, 32);
-        } else {
-            memset(b, 0, 32);
-            unsigned m = t->mask ? t->mask[j] : 0xFFu;
-            for (unsigned x = 0; x < 256; x++)
-                if ((x & m) == t->run[j]) b[x >> 3] |= (uint8_t)(1u << (x & 7));
-        }
+        if (t->kind == MF_T_SET) memcpy(b, t->set, 32);
+        else kit_run_set(t, (unsigned)j, b);
         for (unsigned i = 0; i < 32; i++) pv[d - base][i] &= b[i];
     }
 }
@@ -584,6 +578,13 @@ const char *kit_presence_check(const mf_site *s)
         if (t->kind == MF_T_RUN) {
             if (p->member_order) return "a RUN presence span states no `member_order`";
             if (t->run_len < 2) return "a RUN presence span is at least two positions";
+            /* NORMAL FORM, a checked fact here (D187, span_pick 1c): the ports
+               price each run position as its set, so a byte outside its mask
+               (Q-G2-13: never holds, fine on a rendered term) is refused on a
+               presence span, which states a fact about the match */
+            if (!run_cmp_sat(t))
+                return "a RUN presence span states a run byte outside its mask "
+                       "(`run[j] & ~mask[j]`: the span would never hold, Q-G2-13)";
             if (++nrun > 1) return "at most one RUN presence span (the whole run)";
         } else if (t->kind == MF_T_SET) {
             unsigned m = 0;
