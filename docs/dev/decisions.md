@@ -10047,3 +10047,12 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
   - **The watched witness passes** on any one-member stop the bundle rates rarer than {x,X} ('/' or '4'), not '/' alone (span_pick rev 3.1 wording).
   - **O3 = WAIT** (owner to the kit, relayed): the `[a[:b]` set-test unit change (smp04) and the look-ahead width measurement wait for span_pick stage 1 (D153, remodel first).
   - **Stage 2's measurement set takes a FRESH id, `zen4-grid3`** (manager, answer-free): `zen4-grid2` is D167's 2026-10-16 timing slot (read by docs/dev/lanes/grid2read_report.md and r17b_prime), never committed to measure_store but named in its readers; the id is not reused.
+
+## D187 — positions travel as sets; a cube is derived from the set, never stated beside it (owner, 2026-11-04; END STATE)
+
+- **Status:** END STATE, not a build order (manifesto principle 8: each step still needs the owner's go). Given by the owner directly to the kit, relayed in memfn/docs/responses.md (notice of 2026-11-04); filed by the manager.
+- **Ruling (owner, verbatim):** "If possible, in the end, I'd like all positions to come through the normal general set form and be converted (back) into cubes for optimization."
+- **Meaning:** every position (a run byte, a class position, a mass or verify position) crosses a seam in the general set form (256-bit). A cube (t, mask) is DERIVED from the set where an optimization wants it, never carried beside it, so two shapes of one position cannot disagree.
+- **Why it came up:** span_pick unit 1b found that a non-normal cube (t has bits outside mask) gets a different mass from the same position as a set: `t | b` double-counts in mass while `(b & mask) == t` matches nothing. The behaviour is inherited from `cube_mass`; 1b keeps it (byte-identical).
+- **First step (kit):** 1b's fix lane counts the non-normal cubes that reach `kit_mass`. Zero: `kit_mass` goes set-only, byte-identical. Above zero: a defect, fixed as its own unit change (D186) with a deny.
+- **Later:** the derivation reuses ONE detector, `pcrec_cube_of` (src/core/cpset.c), not a kit copy, once the kit split (manifesto, 2026-11-04) puts both on pcrec's side. Related: D157 (facts not methods), D186, manifesto principles 6 and 9.
