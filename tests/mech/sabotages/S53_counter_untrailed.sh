@@ -18,6 +18,10 @@
 # and its siblings in patterns.txt are exactly that, and they select the counter
 # rung at the default K (12 > 8), which R25 E2 makes a requirement rather than a
 # hope: a witness that does not select the strategy tests the rung below it.
+# RE-AIMED 2026-11-04 (lane mechtri3): the vmrec record-first refactor (3bc599c92) removed v->b, so
+# the old direct pcrec_sb_printf no longer builds. The plant is now a PAIR: the emit_vm.c site marks its
+# source with a leading \x01, and vm_r_set (src/gen/vm_stmt.c) prints a marked source as a plain
+# slot_values[] store instead of the trailed SET. Same defect: the value is written, the old one is not trailed.
 SAB_ID="S53-counter-untrailed"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="counterkdiff"
@@ -36,5 +40,15 @@ SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §2.2"
 SAB_COUNT=1
 SAB_BEFORE='            vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + %d", ctr, K),
                    "counter rung: += K, once per TRIP");'
-SAB_AFTER='            pcrec_sb_printf(v->b, "    stv[%d] = %s;\n", ctr,
-                      vm_rolef(v, "slot_values[%d] + %d", ctr, K));  /* SABOTAGE S53 */'
+SAB_AFTER='            vm_set(v, ctr, vm_rolef(v, "\x01slot_values[%d] + %d", ctr, K),   /* SABOTAGE S53 */
+                   "counter rung: += K, once per TRIP");'
+SAB_FILE2="src/gen/vm_stmt.c"
+SAB_BEFORE2='    vm_renders(sb, s, VK_SET);
+    vm_set_line(sb, s->u.set.slot, s->u.set.name, s->u.set.src);'
+SAB_AFTER2='    vm_renders(sb, s, VK_SET);
+    if (s->u.set.src[0] == '\''\x01'\'') {   /* SABOTAGE untrailed */
+        pcrec_sb_printf(sb->b, "    slot_values[%d] = %s;\n", s->u.set.slot, s->u.set.src + 1);
+        return;
+    }
+    vm_set_line(sb, s->u.set.slot, s->u.set.name, s->u.set.src);'
+SAB_COUNT2=1
