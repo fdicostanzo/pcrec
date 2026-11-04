@@ -715,9 +715,10 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   General form: one declared-delta judge over keyed surfaces, taking {key: moved|GONE|ADDED}; the three flags become instances of it. Forest-for-trees: unification is proposed at about 3 members. Needs Frank's word before any lane.
 - [SPAN-PICK-WINDOWMASS] STATE:not-started — span_pick stage 2: price windows by the product of position rates times verify cost
   filed: 2026-11-03 file1103 (session 128 observation)
-  status (2026-11-03): PROPOSED, awaiting Frank's word. memfn/src/presence.c `window_mass` (~line 98) SUMS rates across window positions, so it is a ranking score, not a probability.
+  status (2026-11-04): ACCEPTED by Frank ("File it"), unscheduled stage 2; FIRST STEP A SURVEY of patterns whose pick would change, before any build. Downside (Frank): it leans harder on pricing.
   trigger: the zen4 span cards are measured (stage 2); price windows by the PRODUCT of the position rates times verify cost then. Stage 1 stays byte-identical
   refs: memfn/src/presence.c (window_mass); docs/design/memfn/span_pick.md; [SPAN-PICK-PERCALL]; [MEASURE-SET]
+  note (2026-11-04): pcrec-analyze already counts byte BIGRAMS per exemplar (analyze/; regime_eval E=exemplar-bigram); for adjacent positions a measured pair rate beats a product of independent rates. The survey compares sum, product and bigram joint rate.
   A sum over positions is monotone in the right direction for ranking but is not the chance that a window passes; a product is. The change moves picks, so it is a stage-2 data event with its census, not a stage-1 edit. Unscheduled.
 - [KIT-PAYLOAD-VERSION] STATE:not-started — kit: payload versions (mf_akind.version, mf_analysis.list_v) are never checked
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
