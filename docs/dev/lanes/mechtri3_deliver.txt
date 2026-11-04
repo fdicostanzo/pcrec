@@ -1,4 +1,0 @@
-report: docs/dev/lanes/mechtri3_report.md
-sections: Failures; Dispositions; STATE AT HANDOFF
-nonempty: all
-commit: yes
