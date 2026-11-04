@@ -157,6 +157,14 @@ line:
   N is 0 in a sound trace; a nonzero N means some row's `chosen` above is
   an undercount, and the census (`n2_report.py`) reports it ([MEMFN-ROWCON]
   N4).
+
+- `KITMASS` (span_pick 1b fix, D187's count): one line at exit, printed by
+  the process that reached `kit_mass` (a process that never did prints none),
+  separate from the REACH block and in no fixed order against it:
+  `MFTRACE KITMASS calls=C cubes=Q nonnormal=N mask0=M`. `cubes` counts the
+  cube positions (not byte sets) handed to `kit_mass`; `nonnormal` those with
+  a bit of `t` outside `mask`; `mask0` those with mask 0. A reader that
+  matches records by prefix never sees it; tests/memfn/reach_equal.py sums it.
 - The run walk is asked twice for a FUNC part's run (once declaring its
   helpers, once rendering), so `runcmp` counts are per walk, not per
   compare.

@@ -37,6 +37,10 @@
  * census, re-run at B3b on the kit-sourced proof).
  */
 #include <string.h>
+#ifdef MF_TRACE
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include "kit.h"
 
@@ -70,8 +74,43 @@ const uint32_t *kit_byte_rate(const mf_art *art)
  * the named exception (span_pick.md §The tables), and so is P2's dominance
  * compare (kit_pres_picks): it reads the raw rate table, so under NONE it
  * answers "not dominated" where this row's equal counts would answer yes. */
+#ifdef MF_TRACE
+/* D187's count (trace builds only, process-wide like gate.c's reach
+ * counters, one line at exit): the cube positions reaching kit_mass, how
+ * many are NON-NORMAL (t has a bit outside mask: the cube counts members the
+ * vocabulary says never exist), and how many have mask 0 (the full
+ * alphabet, also what an omitted `.mask` reads as). The tag is KITMASS, so
+ * no MFTRACE reader that matches another prefix sees it. */
+static unsigned long km_calls, km_cubes, km_nonnormal, km_mask0;
+
+static void km_print(void)
+{
+    fprintf(stderr, "MFTRACE KITMASS calls=%lu cubes=%lu nonnormal=%lu mask0=%lu\n",
+            km_calls, km_cubes, km_nonnormal, km_mask0);
+}
+
+static void km_count(const kit_pos *pos, unsigned n)
+{
+    static int armed;
+    if (!armed) {
+        armed = 1;
+        atexit(km_print);
+    }
+    km_calls++;
+    for (unsigned i = 0; i < n; i++) {
+        if (pos[i].set) continue;
+        km_cubes++;
+        if (pos[i].t & ~pos[i].mask & 0xFFu) km_nonnormal++;
+        if (!pos[i].mask) km_mask0++;
+    }
+}
+#endif
+
 uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap)
 {
+#ifdef MF_TRACE
+    km_count(pos, n);
+#endif
     unsigned long long m = 0, k = 0;
     for (unsigned i = 0; i < n; i++) {
         if (pos[i].set) {
