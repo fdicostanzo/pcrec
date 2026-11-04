@@ -337,11 +337,16 @@ typedef enum { KIT_MASS_SUM, KIT_MASS_CAP } kit_mass_cap;
 const uint32_t *kit_byte_rate(const mf_art *art);
 uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap);
 
-/* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): every
- * comparison in the kit that can tie reads its row through the answer
- * below: whether a candidate keyed `c`, equal to the best keyed `b`
- * (met first in the walk), takes the tie. Keys are offsets, except
- * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). */
+/* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): the
+ * kit's PICK ties (window.c's stop/mass choosers and run_member, presence's
+ * set pick and run window) read their row through the answer below: whether
+ * a candidate keyed `c`, equal to the best keyed `b` (met first in the
+ * walk), takes the tie. Keys are offsets, except T_PRES_MEMBER's:
+ * kit_tie_member_key (member order above the byte). NOT through it: window.c
+ * reads `wf_ties[T_CMODEL/T_MARGIN].to` directly (an exchange sort and a
+ * rejection, not a pick); presence's run_scan and translate's run rank keep
+ * their own tie spellings (1c's joiners); P2 and P4 compare with no TIE
+ * row. */
 enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };
 #define kit_tie_takes      MF_NS(kit_tie_takes)
 #define kit_tie_member_key MF_NS(kit_tie_member_key)

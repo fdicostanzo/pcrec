@@ -73,9 +73,10 @@ enum {
 #define PPM ((unsigned long long)MF_PPM_FULL)
 
 /* ---- THE TIE TABLE (window_site.md §2.1 [rev3.2 n6]) ---------------------- */
+/* The T_* row names live in kit.h (the readers outside this file use them). */
 
 typedef enum { TIE_HIGHER, TIE_LOWER, TIE_EXCHANGE, TIE_PARKED, TIE_RESEED,
-               TIE_LEFTMOST } wf_tie_to;
+               TIE_LEFTMOST } wf_tie_to;   /* LEFTMOST = LOWER over window starts */
 static const struct {
     const char *where;
     wf_tie_to   to;

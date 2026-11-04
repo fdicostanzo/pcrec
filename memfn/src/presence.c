@@ -67,7 +67,9 @@ const uint32_t *kit_byte_rate(const mf_art *art)
  * floor(k x 1e6 / 256), taken ONCE over the whole count (16 bytes: 62,500,
  * not 16 x 3,906 = 62,496); so the rules rank by member count and their own
  * tie rows break an equal count. Its density readers (HORS_MIN, MARGIN) are
- * the named exception (span_pick.md §The tables). */
+ * the named exception (span_pick.md §The tables), and so is P2's dominance
+ * compare (kit_pres_picks): it reads the raw rate table, so under NONE it
+ * answers "not dominated" where this row's equal counts would answer yes. */
 uint32_t kit_mass(const uint32_t *rate, const kit_pos *pos, unsigned n, kit_mass_cap cap)
 {
     unsigned long long m = 0, k = 0;
