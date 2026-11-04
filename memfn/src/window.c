@@ -87,7 +87,9 @@ static const struct {
                          "C-run's grouping), the run MEMBER and C-pin included", TIE_HIGHER,
                          "pcrec_find_run_scan_index / pcrec_find_run_rank ([n-1..0]), "
                          "pcrec_run_pin (exact positions highest first)",
-                         "today's; on REPORT literal stretches UNMEASURED DEFAULT" },
+                         "equals pcrec_find_run_scan_index's tie until pcrec reads the kit's member; a "
+                         "change is a pcrec findings change in the same commit (req_run_member and "
+                         "pres_layout_check pin it); on REPORT literal stretches UNMEASURED DEFAULT" },
     [T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER, "strict < over ascending offsets",
                          "MEASURED on REPORT (581: the rightmost loses 1.23-1.57x on year4)" },
     [T_MODEL]        = { "A-model, stop offsets of equal cost", TIE_LOWER,
@@ -542,7 +544,7 @@ static int in_stretch(const wf_pos *p)
     return p->multi && shape(p->set, &a, &b);
 }
 
-/* A-mass: over the core positions, the least mass (PICK's cube mass), ties
+/* A-mass: over the core positions, the least mass (PICK's position mass), ties
  * per the TIE table (a stretch position to the higher offset, a set position
  * to the lower). A full-set position is no stop (C-bound: the bound alone). */
 static int mass_domain(const wf_pos *p)
@@ -764,6 +766,14 @@ static void plan_drop(wf_dec *d, int32_t off)
 
 static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
 
+/* PRECONDITION: row T_MASS_STRETCH is a STRICT order over positions (HIGHER
+ * or LOWER) that is invariant under translation: the `after` walk skips every
+ * equal-mass position the row does not rank after `after`, so a row answering
+ * 0 (EXCHANGE, PARKED, RESEED) would skip them all and the walk would end at
+ * pos -1 early. The caller refuses a -1 where it expected a position
+ * (translate's ranking does). Positions are keyed by their index j in the
+ * run, a translation of a_mass_choose's offsets; the answers agree because
+ * the row is such an order. */
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
                           int exact, const kit_member *after)
 {
@@ -1358,16 +1368,29 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
        positions' sets (the plan's own, of which the term's run and mask are
        the derived cube), each answer asked again from the last: least mass
        first, ties to the higher position (T_MASS_STRETCH), as
-       pcrec_find_run_rank. rank_pos[0] IS the run member by construction. */
+       pcrec_find_run_rank. rank_pos[0] is the plan term's least-mass
+       position; where C-pin fired the stop IS the run member, so it must be
+       the member (a loud check, not an assumption: the member ranks R's own
+       spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
         kit_member r = { -1, 0 };
         for (unsigned k = 0; k < n; k++) {
             r = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &r : NULL);
+            if (r.pos < 0) {            /* the tie row is no strict order (see kit_run_member) */
+                kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
+                         "(the T_MASS_STRETCH tie row must be a strict order)", k, n);
+                n = k;
+                break;
+            }
             p->rank_pos[k] = (uint16_t)r.pos;
             p->rank_ppm[k] = r.mass;
         }
         p->rank_n = (uint8_t)n;
+        if (n && d->pinned && p->rank_pos[0] != d->member - w->off[hint_at])
+            kit_fail((mf_art *)d->art, "window family: the run ranking's first position %u is not the "
+                     "run member (offset %d, term at %d)", (unsigned)p->rank_pos[0],
+                     (int)d->member, (int)w->off[hint_at]);
     }
     /* span 0's class (MF_SITE_ABI 18): a context stop where every tested
        position lies below the candidate (each is core: a read outside the

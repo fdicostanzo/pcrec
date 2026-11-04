@@ -584,7 +584,8 @@ const char *kit_presence_check(const mf_site *s)
                presence span, which states a fact about the match */
             if (!run_cmp_sat(t))
                 return "a RUN presence span states a run byte outside its mask "
-                       "(`run[j] & ~mask[j]`: the span would never hold, Q-G2-13; D187, MF_SITE_ABI 23)";
+                       "(`run[j] & ~mask[j]`: the span would never hold; a rendered term may state one, "
+                       "Q-G2-13, a presence fact may not, D187, MF_SITE_ABI 23)";
             if (++nrun > 1) return "at most one RUN presence span (the whole run)";
         } else if (t->kind == MF_T_SET) {
             unsigned m = 0;

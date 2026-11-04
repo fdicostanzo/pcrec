@@ -1437,7 +1437,7 @@ int      mf_lever(mf_art *, const char *name);
  *               is R's MEMBER and [run_lo, run_lo + run_len) its stretch: on
  *               a verify-NO R the least-mass EXACT position (ties to the
  *               higher offset) and the exact run around it; on a verify-YES
- *               R the least-mass position of all of R (PICK's cube mass) and
+ *               R the least-mass position of all of R (PICK's position mass) and
  *               R whole. The reply is the ONE owner of both
  *   path        the decision's path id: "parked", "reseed", "mass", "floor",
  *               "empty", each with "+pin" where C-pin fired
@@ -1597,7 +1597,7 @@ void mf_finder_rows(mf_finder_listing *out);
  *               to the member last in pattern order, then to the larger
  *               byte); -1 for an empty set.
  *   run_scan    P3 over the run span: the position inside the whole run the
- *               scan member sits at (the rarest position, its cube's mass; a
+ *               scan member sits at (the rarest position, its set's mass; a
  *               tie to the rightmost); -1 without a run.
  *   run_window  P3: where the run's window of MF_PRES_WINDOW positions
  *               begins inside the whole run (the least window mass among the

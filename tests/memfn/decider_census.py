@@ -23,7 +23,9 @@ question table or named exception, against the kit's sources:
      an UNLISTED function of a scratch copy of the sources -- the first loop
      holding window.c's `ms < bm ||` (a_mass_choose's) and kit_pres_picks'
      run-window loop (presence.c's `wm < wl`; its run-scan loop `c < sm`
-     went with unit 1c) -- must each turn B red.
+     went with unit 1c) and kit_run_member's own (window.c's `ms < b.mass`,
+     the compares `< b.mass` / `< after->mass` stand in the backstop since
+     sp1cfix) -- must each turn B red.
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -40,7 +42,7 @@ import sys
 import tempfile
 
 # The backstop shapes (span_pick.md rev 5.2 §The tables, the census).
-BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< sm", "< wl", "> c)",
+BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< b.mass", "< after->mass", "< wl",
             "tie_takes", "TIE_", "< inc"]
 # K35: hits at unit 1a's base (main 564db08c5) were 36 lines; a later unit
 # that removes decider copies lowers this in the same change.
@@ -252,7 +254,8 @@ def main():
         ok()
     if not a.no_plants:
         for fname, anchor, opener in (("window.c", "ms < bm ||", "for ("),
-                                      ("presence.c", "wm < wl", "for (")):
+                                      ("presence.c", "wm < wl", "for ("),
+                                      ("window.c", "ms < b.mass ||", "for (")):
             with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
                 n, why = plant(src, os.path.join(t, "src"), fname, anchor, opener)
                 if why:

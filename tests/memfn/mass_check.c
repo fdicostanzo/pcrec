@@ -241,6 +241,7 @@ int main(void)
     {
         static const uint8_t folded[] = { 'A', 'B', 'C' }, mask[] = { 0xDF, 0xDF, 0xDF };
         static const uint8_t lower[] = { 'a', 'B', 'C' };      /* 'a' & ~0xDF: outside */
+        static const uint8_t lastbad[] = { 'A', 'B', 'c' };    /* the LAST position outside */
         mf_pred span;
         memset(&span, 0, sizeof span);
         span.nterm = 1;
@@ -267,6 +268,11 @@ int main(void)
         why = kit_presence_check(&s);
         expect("NORMAL a presence run byte outside its mask is refused",
                why != NULL && strstr(why, "outside its mask") != NULL, 1);
+        span.term[0].run = lastbad;                     /* a loop that stops early passes it */
+        why = kit_presence_check(&s);
+        expect("NORMAL a violation at the LAST position is refused",
+               why != NULL && strstr(why, "outside its mask") != NULL, 1);
+        span.term[0].run = lower;
         span.term[0].mask = NULL;                       /* exact: 'a' is normal */
         why = kit_presence_check(&s);
         expect("NORMAL an exact presence run is accepted", why == NULL, 1);
