@@ -3155,3 +3155,9 @@ Main ruled on the four kit findings (D186 add. 2):
 - Frank on D187's timing: "That can be scheduled appropriately if not now". So 1b carries only the counter (trace build `MFTRACE KITMASS`, summed by reach_equal into `nonnormal-cubes N mask0-cubes M`). The light reading is 0/0 over ~1,360 compiles; a hand-built non-normal cube reads 1. If the gate count is 0 too, the set-only kit_mass rides with 1c.
 - Ratchet under main's restated recipes (roadmap §5): R22 3 -> 0 (-3), R23 1 -> 0 (-1). R23 counts wf_ties + kit_tie_takes as one mechanism.
 - lane/memfn-sp1b fast-forwarded to sp1bfix's d7267b771. Gates 370-379 (keys kit-sp1b2-*) are queued and run in worktrees/sp1bfix. Main's boxqueue now refuses a job FILE without a literal `--ready` case: the shard wrappers needed an explicit `--ready` delegation line (lesson for job briefs).
+
+## 2026-11-04 (late afternoon) — 1b landed; 1c started with D187's set-only step
+
+- 1b gates 370-379 are all GREEN (S1094/S1096/S1097/S458 DETECTED). The D187 full-corpus count is nonnormal-cubes 0, mask0-cubes 0 on 18 arms. Main merged 1b, 7b671bc2c.
+- 1c: lane sp1c (opus) is building on lane/memfn-sp1c from 7b671bc2c. Part A is the 1c row (run_scan asks run_member; translate's rank reads T_MASS_STRETCH; R24 -1, or -2 if derived and byte-identical). Part B is D187: set-only kit_mass (the cube path and kit_pos's cube fields deleted), normal form refused at kit_presence_check, HOUSE-1's redundant rebuilds retired where byte-identical, the KITMASS counter retired once checked, and no second cube detector.
+- Review-round build scratch cleared (crit-memfn-sp1g builds, crit-memfn-sp1b base/bin; ~1.2 GB).
