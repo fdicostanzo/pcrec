@@ -169,4 +169,4 @@ evidence lists under `recida2_evidence/` are committed. Rulings file `recida_rul
 698-recida-gate is superseded (it ran the old base). Also owed to the manager: the plan.md row's status, once green, and moving it
 to plan_completed.md.
 
-OWED: queue jobs `329-main-recida2-movers`, `330-main-recida2`.
+OWED: queue jobs main-recida2-movers (329-main-recida2-movers) and main-recida2 (330-main-recida2).
