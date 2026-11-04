@@ -48,3 +48,8 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 - Four critics plus a verifier took 22 minutes and cost the launcher one message in and one out. Findings duplicated across lenses were consolidated by the coordinator, not in the launcher's context.
 - A ruling ABOUT the subject (D187) landed mid-round. The coordinator's freeze diff caught it and re-read the dispositions against it without breaking the critics' blindness, since they had finished first.
+
+## 2026-11-04 — critic round memfn-sp1c (review 2026-11-04 r2)
+
+- A small no-mover unit took about 22 minutes from freeze to draft, with the manager untouched until hand-back. The cost driver was critic depth (one lens made 1,409 compiles), not coordination. For no-mover units the dual-spelling plant (the old spelling recomputed beside the new, with a disagreement counter) was the strongest single witness.
+- The coordinator's own re-run of the plant compares caught two scripts that read failed compiles as silent moves; the verify step earned its place.
