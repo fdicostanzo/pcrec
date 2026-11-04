@@ -3141,3 +3141,10 @@ Main ruled on the four kit findings (D186 add. 2):
 - Frank's ruling: "If possible, in the end, I'd like all positions to come through the normal general set form and be converted (back) into cubes for optimization."
 - How it applies to 1b's fix lane: count the non-normal cubes that reach `kit_mass` over the corpus and the bench lists. If the count is zero, `kit_mass` becomes set-only (cubes converted to sets where positions are built, normal form a checked fact, the cube path deleted), byte-identical. If it is nonzero, it is a wrong-mass defect to fix as its own unit change with a deny, not in stage 1.
 - Existing cube detector: pcrec's `pcrec_cube_of` (src/core/cpset.c, used by clskit.c). When the kit splits into planner and back end, the derived cube comes from ONE detector, not a second kit copy.
+
+## 2026-11-04 (afternoon) — 1b reviewed, fixed, gates queued
+
+- Review 2026-11-04 r1 (memfn-sp1b) is ruled (2bb34e4ae; skill follow-up 7feed643a, which also restores r5's invariance clause, dropped by main's b0f3d0339 conflict resolution). It found no answer, speed or size problems. R1 was a would-be red test-codegen gate: S1094/S1096 anchored on deleted text, now re-anchored, both DETECTED by hand.
+- Frank on D187's timing: "That can be scheduled appropriately if not now". So 1b carries only the counter (trace build `MFTRACE KITMASS`, summed by reach_equal into `nonnormal-cubes N mask0-cubes M`). The light reading is 0/0 over ~1,360 compiles; a hand-built non-normal cube reads 1. If the gate count is 0 too, the set-only kit_mass rides with 1c.
+- Ratchet under main's restated recipes (roadmap §5): R22 3 -> 0 (-3), R23 1 -> 0 (-1). R23 counts wf_ties + kit_tie_takes as one mechanism.
+- lane/memfn-sp1b fast-forwarded to sp1bfix's d7267b771. Gates 370-379 (keys kit-sp1b2-*) are queued and run in worktrees/sp1bfix. Main's boxqueue now refuses a job FILE without a literal `--ready` case: the shard wrappers needed an explicit `--ready` delegation line (lesson for job briefs).
