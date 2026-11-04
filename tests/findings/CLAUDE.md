@@ -151,7 +151,8 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   chain, `l1none`, and a two-target two-analysis `.rxt`), fresh per run.
 - `e1_object_check.py` — [WINDOW-E1] §14's checker over the trace build's
   `KSRCTRACE object` records (see its header for each check's independent
-  source).
+  source). Since span_pick 1g the record is pcrec's OFFER the kit object is
+  built from (the object carries no provenance); columns unchanged.
 - `data_trace_check.py` — [WINDOW-E1] §14b: `emit_sweep.py --data`'s `data_trace`
   drops ONLY `KSRCTRACE\t` lines (the mover test compares the clean stderr, so a
   wider drop hides movers). Hand-written blobs; widening the drop to

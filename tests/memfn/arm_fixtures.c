@@ -48,6 +48,7 @@
  * the counter owned by the kit and by the caller, MF_SITE_ABI 5), and gate
  * cases for the caller-owned counter's rules and for the ADVANCE hooks'
  * shape classes (CONJ `more`, POSTFIX `peek`, EXPR_STMT `step`). */
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1262,9 +1263,10 @@ static void gate_cases(void)
  *   arm_fixtures OUTDIR --only fd-<name>   one witness (rows.tsv's table
  *       `fd`): a site rendered under a fixture set; its .def/.use are the
  *       decided row's text, its FDROUTE/FD records the decision
- *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an FID]
- *       one site under a set FILE and a `--memfn=` string, and (R-24) with an
- *       analysis object whose kinds all state `mf_prov.fidelity` FID
+ *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an DIGEST]
+ *       one site under a set FILE and a `--memfn=` string, and (span_pick
+ *       unit 1g) with an analysis object whose kinds all state the fixed
+ *       rates below and `mf_akind.digest` DIGEST
  *       (measure_sets §1.2's section TSV, its `rows` section read here, with
  *       no pcrec code), printing `CONSULTED<TAB>0|1` (R-MS2): the R-MS1/R-MS4
  *       loops of tests/memfn/finder_check.py
@@ -1558,17 +1560,16 @@ static int fd_load_set(const char *path, mf_measures *ms)
     return 0;
 }
 
-/* R-24 (MF_SITE_ABI 15): an analysis object every one of whose kinds states
- * the provenance fidelity `fid` and a byte count, handed to mf_art_begin so a
- * kit that READ either field before B3a would show it (finder_check.py L:
- * the same site renders identically with and without it). `fid` is stated as
- * given, an out-of-enum value included: nothing reads it, so nothing refuses
- * it. Each kind is PRESENT, MEASURED, with the payload the invariant asks. */
+/* span_pick unit 1g (MF_SITE_ABI 22): an analysis object every one of whose
+ * kinds states the same fixed rates and the digest `digest`, handed to
+ * mf_art_begin so a kit row that READ the digest would show it (finder_check.py
+ * L: the same site renders identically whatever the digest; span_pick R22,
+ * the rates held fixed). Each kind is PRESENT with the payload. */
 static const uint32_t an_rates[256] = { 1000000 };
 static mf_akind an_kinds[2];
 static mf_analysis an_obj;
 
-static const mf_analysis *fd_an_make(int fid)
+static const mf_analysis *fd_an_make(unsigned long long digest)
 {
     static const char *const tags[2] = { "byte-rate", "run-rarity" };
     for (int i = 0; i < 2; i++) {
@@ -1576,11 +1577,7 @@ static const mf_analysis *fd_an_make(int fid)
         an_kinds[i].tag = tags[i];
         an_kinds[i].version = 1;
         an_kinds[i].present = MF_KIND_PRESENT;
-        an_kinds[i].prov.source = MF_PROV_MEASURED;
-        an_kinds[i].prov.bundle = "weblog";
-        an_kinds[i].prov.digest = 0x1234;
-        an_kinds[i].prov.bytes = 999960;
-        an_kinds[i].prov.fidelity = (uint8_t)fid;
+        an_kinds[i].digest = digest;
         an_kinds[i].payload = an_rates;
     }
     an_obj.list_v = MF_ANALYSIS_LIST_V;
@@ -1590,7 +1587,7 @@ static const mf_analysis *fd_an_make(int fid)
 }
 
 static int fd_site_mode(const char *site, const char *setpath, const char *opts,
-                        int fid)
+                        const char *digest)
 {
     mf_site s;
     mf_pred p[2];
@@ -1600,8 +1597,18 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts,
     if (setpath && fd_load_set(setpath, &ms)) return 2;
     if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
         return fd_ask_links(site, &s) ? 1 : 0;
-    return fd_render(NULL, site, &s, setpath ? &ms : NULL,
-                     fid >= 0 ? fd_an_make(fid) : NULL) ? 1 : 0;
+    const mf_analysis *an = NULL;
+    if (digest) {
+        char *end;
+        errno = 0;
+        unsigned long long d = strtoull(digest, &end, 0);
+        if (!*digest || *end || errno) {
+            fprintf(stderr, "--fd-an %s: not a digest (an unsigned integer, base 0)\n", digest);
+            return 2;
+        }
+        an = fd_an_make(d);
+    }
+    return fd_render(NULL, site, &s, setpath ? &ms : NULL, an) ? 1 : 0;
 }
 
 static int finder_rows_mode(void)
@@ -1655,16 +1662,15 @@ static int hash_mode(void)
 int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
-                          "--fd-site SITE [--fd-set FILE] [--fd-an FID] | --finder-rows | --hash\n", stderr); return 2; }
+                          "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
-        const char *set = NULL, *opts = NULL;
-        int fid = -1;
+        const char *set = NULL, *opts = NULL, *digest = NULL;
         for (int i = 3; i + 1 < argc; i += 2) {
             if (!strcmp(argv[i], "--fd-set")) set = argv[i + 1];
             else if (!strcmp(argv[i], "--opts")) opts = argv[i + 1];
-            else if (!strcmp(argv[i], "--fd-an")) fid = atoi(argv[i + 1]);
+            else if (!strcmp(argv[i], "--fd-an")) digest = argv[i + 1];
         }
-        return fd_site_mode(argv[2], set, opts, fid);
+        return fd_site_mode(argv[2], set, opts, digest);
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();

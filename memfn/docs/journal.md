@@ -3101,3 +3101,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - **MF_SITE_ABI 20 -> 21** (the entry and the two options leave) and **MF_CLASS_V 6 -> 7** (three rows left ahead of the PRES rows). For the responses ledger: the kit session's line.
 - CALLER-VISIBLE: `--list-axes` loses the two `memfn` rows; `--memfn=no-fd-r8`/`no-fd-ndisp` are unknown options; `docs/spec/registry.md` §6¶8/¶8a/¶8b (floor 14 -> 12).
 - Witness (byte identity on every surviving arm with `--list-axes` judged by `--dumps-declared-gone`; reach equality with the declared gone set fd R8/R1/R2; census; strict; make test; mech) queued as box-queue jobs 330-33x: docs/dev/lanes/sp1f_report.md.
+
+## 2026-11-03 — span_pick stage 1 unit 1g built (lane sp1g, branch lane/memfn-sp1g)
+
+- PROVENANCE LEAVES THE SEAM (D186 add. 2): `mf_akind` is {tag, version, present, digest, payload}; `mf_prov`, `mf_prov_source`, `mf_prov_fidelity` and pcrec's stanza mapping (`pcrec_memfn_prov_stanza`, `akind_source_map`) are deleted, the digest moved to `mf_akind.digest`. No kit `.c` read any of them, so no emitted byte moves.
+- **MF_SITE_ABI 21 -> 22** (a layout move; no MF_VOCAB, no MF_CLASS_V move; R20-R27 unchanged at 11). For the responses ledger: the kit session's line.
+- pcrec's `KSRCTRACE object` record now reads pcrec's offer instead of the built object (columns unchanged; e1_object_check.py's header restates the premise).
+- finder_check L: parts (1)-(3) retired with the stanza and the `--provchk` plumbing; part (4) re-aimed (memfn.h states no source, bundle, bytes or fidelity; a site renders identically under analyses differing only in the digest, rates fixed), its plant (a kit row holding iff the digest is odd) RED by hand. S1092 RETIRED. `tests/memfn/prov_check.c` is a build-only assertion of `mf_akind.digest`'s offset.
+- Witness (strict, kit sections, reach equality, byte identity on every arm, make test, mech rows touching the changed files) prepared as box-queue jobs for the manager: docs/dev/lanes/sp1g_report.md.

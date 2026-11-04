@@ -59,16 +59,18 @@ design's text, sharing no code with the kit):
      is retired, declared UNREACHED.)
      Also (lane n2fix): no PRES shadow decision is declined on `need` (the
      OPTIONAL span on `pre-opt` is on the record, so the control is not blind).
-  L. PROVENANCE `bytes` AND `fidelity` (R-24, MF_SITE_ABI 15; S1092): pcrec's
-     stanza mapping states each token of the findings vocabulary (read off
-     `pcrec --list-schema`) as its own enumerator (verbatim 1, adapted 2,
-     synthesized 3, from window_contract.md §3.1), a block declaring none as
-     the UNSTATED zero, refuses a word outside the set without a write, and
-     passes `bytes` through exactly; no kit source names mf_prov or
-     fidelity, and a site renders byte-identically (plain and traced) with
-     no analysis object and with one stating each fidelity value (UNSTATED
-     and an out-of-enum 9 included). The layout is prov_check.c's static
-     assertions (appended, never reordered).
+  L. THE SEAM CARRIES A PAYLOAD AND ITS DIGEST, AND NO ROW READS THE DIGEST
+     (span_pick.md unit 1g, MF_SITE_ABI 22): memfn.h's mf_akind members are
+     exactly {tag, version, present, digest, payload} and mf_analysis's
+     {list_v, nkinds, kinds} (an allowlist, comments stripped), its code names
+     no mf_prov/MF_PROV_/MF_FID_, and no memfn/src file names `digest`. A
+     rate-reading site (pre-lead, pre-lead-run, pre-opt) renders byte-
+     identically (plain and traced) under analysis objects with the same rates
+     that differ only in `mf_akind.digest`, each shown to REACH the object
+     (its render under the reference object differs from the no-object one,
+     floor 1 site); set10 and byte1t, which never consult the object, render
+     identically with no object and with any digest. prov_check.c is the
+     digest's offset as a build-only static assertion.
   J. The retired denies are REFUSED: `--memfn=no-fd-r0` and `no-fd-r5` name
      no row since B4' (withdrawn with R0 and R5), `no-fd-r8` and `no-fd-ndisp`
      none since span_pick 1f (deleted with R8, R1 and R2).
@@ -619,90 +621,96 @@ def check_query(fx, fxt, tmp):
 
 # ---- L ----------------------------------------------------------------------
 
-# window_contract.md rev 3.1 §3.1's enumerators, written HERE (the kit's header
-# and pcrec's mapping are what they are held against).
-FID_EXPECT = {"verbatim": 1, "adapted": 2, "synthesized": 3}
-FID_OUTSIDE = ["Verbatim", "VERBATIM", "", "synth", "verbatim ", "none", "measured"]
-KIT_READERS_RE = re.compile(r"mf_prov|mf_akind|MF_FID_|fidelity|->prov\b|\.prov\b")
+# span_pick.md unit 1g (MF_SITE_ABI 22): the analysis object's members, an
+# ALLOWLIST written HERE from the design (the header is held against it): a
+# new member is a seam event that must edit this table.
+SEAM_MEMBERS = {
+    "mf_akind": {"tag", "version", "present", "digest", "payload"},
+    "mf_analysis": {"list_v", "nkinds", "kinds"},
+}
+# spellings the seam retired (header code must not name them; comments may)
+RETIRED_SEAM_RE = re.compile(r"\b(mf_prov\w*|MF_PROV_\w+|MF_FID_\w+)\b")
+# the digests the render loop hands: the reference first, then one odd, one
+# even, and the extremes (span_pick R22: rates fixed, only the digest varies)
+AN_DIGESTS = ("0", "1", "2", "0x1234", "0xffffffffffffffff")
+# the sites the object is read on: kit_byte_rate's callers (the PRES picks)
+RATE_SITES = ("pre-lead", "pre-lead-run", "pre-opt")
+# FIND sites that never consult the object: identical with or without one
+PLAIN_SITES = ("set10", "byte1t")
+RATE_SITES_FLOOR = 1
 
 
-def schema_fidelity_tokens(root):
-    """The closed set of `fidelity` tokens, read off the schema dump the
-    parser's own constraint check reads (`pcrec --list-schema`), never off the
-    mapping under test."""
-    r = run([os.path.join(root, "build", "pcrec"), "--list-schema"])
-    for ln in r.stdout.decode().splitlines():
-        c = ln.split("\t")
-        if c[0] == "provenance" and c[1] == "fidelity":
-            m = re.search(r"closed fidelity ((?:[a-z]+ ?)+)", "\t".join(c))
-            if m:
-                return m.group(1).split()
-    return None
+def strip_c_comments(text):
+    return re.sub(r"/\*.*?\*/|//[^\n]*", " ", text, flags=re.S)
 
 
-def prov_run(provchk, bytes_, tok):
-    r = run([provchk, str(bytes_), tok])
-    f = r.stdout.decode().rstrip("\n").split("\t")
-    return (int(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5])) if f[0] == "RC" else None
+def seam_members(code, name):
+    m = re.search(r"typedef\s+struct\s*\w*\s*\{([^{}]*)\}\s*%s\s*;" % name, code)
+    return None if not m else set(re.findall(r"(\w+)\s*;", m.group(1)))
 
 
-def check_prov(root, fx, fxt, provchk):
-    """R-24 (MF_SITE_ABI 15): mf_prov carries the answering block's `bytes`
-    and `fidelity`. (1) pcrec's mapping states every token of the findings
-    vocabulary as its own nonzero enumerator, NULL as the UNSTATED zero, and
-    refuses a word outside the set without writing (the layout half is
-    prov_check.c's static assertions, a build failure). (2) the closed set is
-    read off --list-schema and equals the mapping's, both directions. (3) `bytes` passes through exactly. (4) no
-    kit row READS either field: the kit's sources name neither, and a site
-    renders byte-identically (stdout and the traced shadow's stderr) with no
-    analysis object and with one stating each fidelity value, UNSTATED and an
-    out-of-enum value included."""
-    toks = schema_fidelity_tokens(root)
-    if toks is None:
-        bad("L: --list-schema carries no `closed fidelity ...` constraint (the vocabulary's source moved)")
-        return
-    (ok() if sorted(toks) == sorted(FID_EXPECT) else
-     bad("L: the schema's fidelity set %s is not the contract's %s" % (toks, sorted(FID_EXPECT))))
-    seen = set()
-    for t in toks:
-        g = prov_run(provchk, 1234, t)
-        e = FID_EXPECT.get(t)
-        if g is None or e is None or g[0] != 0 or g[1] != e or g[2] != 1234:
-            bad("L: token %r maps to %s, expected rc 0 fidelity %s bytes 1234" % (t, g, e))
+def check_seam(root, fx, fxt):
+    """span_pick unit 1g (MF_SITE_ABI 22): the kit is handed a payload and its
+    digest, and no kit row reads the digest. Statically: memfn.h's analysis
+    structs hold exactly SEAM_MEMBERS (comments stripped), its code names no
+    retired spelling, and no memfn/src file names `digest`. Dynamically
+    (stdout, rc and the traced shadow's stderr): the rate-reading sites render
+    byte-identically under analysis objects that differ only in
+    `mf_akind.digest`, with the rates fixed; each such site's REACH is shown
+    (its render under the reference object differs from its render under no
+    object, floor RATE_SITES_FLOOR sites), and the sites that never consult
+    the object render identically with no object and with any."""
+    code = strip_c_comments(open(os.path.join(root, "memfn/include/memfn.h"),
+                                 errors="replace").read())
+    for name, want in SEAM_MEMBERS.items():
+        got = seam_members(code, name)
+        if got is None:
+            bad("L: memfn.h declares no `typedef struct ... { ... } %s;` (the object moved)" % name)
         else:
-            ok()
-            seen.add(g[1])
-    (ok() if seen == {1, 2, 3} else bad("L: the vocabulary reaches enumerators %s, not exactly 1,2,3" % sorted(seen)))
-    g = prov_run(provchk, 0, "@none")
-    (ok() if g and g[0] == 0 and g[1] == 0 and g[2] == 0 else
-     bad("L: a block declaring no fidelity (NULL, bytes 0) maps to %s, expected rc 0 fidelity 0 (UNSTATED) bytes 0" % (g,)))
-    for t in FID_OUTSIDE:
-        g = prov_run(provchk, 55, t)
-        # refused (-1) and the sentinels (fidelity 0xEE = 238, bytes 0xDEADBEEF) untouched
-        (ok() if g and g[0] == -1 and g[1] == 238 and g[2] == 0xDEADBEEF else
-         bad("L: the word %r is outside the vocabulary and must be refused without a write, got %s" % (t, g)))
-    for n in (0, 1, 999960, 1000000, (1 << 40) + 7, (1 << 63) + 5):
-        g = prov_run(provchk, n, "verbatim")
-        (ok() if g and g[2] == n else bad("L: bytes %d did not pass through exactly (got %s)" % (n, g)))
-    # (4) no kit reader
-    hits = []
-    for d in ("memfn/src",):
-        for f in sorted(os.listdir(os.path.join(root, d))):
-            if f.endswith((".c", ".h", ".def")):
-                for i, ln in enumerate(open(os.path.join(root, d, f), errors="replace"), 1):
-                    if KIT_READERS_RE.search(ln):
-                        hits.append("%s/%s:%d" % (d, f, i))
-    (ok() if not hits else bad("L: the kit's sources name mf_prov/fidelity (a reader before B3a): %s" % hits[:5]))
-    base = None
+            (ok() if got == want else
+             bad("L: %s members %s, want exactly %s (a seam event must edit this check)"
+                 % (name, sorted(got), sorted(want))))
+    hits = sorted(set(RETIRED_SEAM_RE.findall(code)))
+    (ok() if not hits else bad("L: memfn.h's code names retired provenance: %s" % hits[:5]))
+    src = os.path.join(root, "memfn/src")
+    named = sorted(f for f in os.listdir(src) if f.endswith((".c", ".h")) and
+                   re.search(r"digest", strip_c_comments(
+                       open(os.path.join(src, f), errors="replace").read())))
+    (ok() if not named else bad("L: kit sources name `digest` (a kit row reads it): %s" % named))
     for prog, name in ((fx, "plain"), (fxt, "traced")):
-        for site in ("set10", "byte1t"):
-            ref = run([prog, "--fd-site", site])
-            for fid in (0, 1, 2, 3, 9):
-                got = run([prog, "--fd-site", site, "--fd-an", str(fid)])
-                if (got.returncode, got.stdout, got.stderr) != (ref.returncode, ref.stdout, ref.stderr) or \
-                        b"TEXT" not in ref.stdout:
-                    bad("L: %s kit: site %s renders differently with an analysis stating fidelity %d "
-                        "(or the control rendered nothing)" % (name, site, fid))
+        reached = 0
+        for site in RATE_SITES:
+            none = run([prog, "--fd-site", site])
+            ref = run([prog, "--fd-site", site, "--fd-an", AN_DIGESTS[0]])
+            if ref.returncode > 1 or none.returncode > 1:
+                bad("L: %s kit: site %s failed to render (rc %d, %d)"
+                    % (name, site, none.returncode, ref.returncode))
+                continue
+            if (none.returncode, none.stdout, none.stderr) != (ref.returncode, ref.stdout, ref.stderr):
+                reached += 1
+            for dg in AN_DIGESTS[1:]:
+                got = run([prog, "--fd-site", site, "--fd-an", dg])
+                if (got.returncode, got.stdout, got.stderr) != (ref.returncode, ref.stdout, ref.stderr):
+                    bad("L: %s kit: site %s renders differently with mf_akind.digest %s "
+                        "(a kit row reads the digest)" % (name, site, dg))
+                else:
+                    ok()
+        (ok() if reached >= RATE_SITES_FLOOR else
+         bad("L: %s kit: %d of %s render differently under an analysis object than under "
+             "none (floor %d): the digest loop reaches no reader"
+             % (name, reached, RATE_SITES, RATE_SITES_FLOOR)))
+        for site in PLAIN_SITES:
+            none = run([prog, "--fd-site", site])
+            if none.returncode or b"TEXT" not in none.stdout:
+                bad("L: %s kit: site %s rendered nothing under no analysis (rc %d)"
+                    % (name, site, none.returncode))
+                continue
+            for dg in AN_DIGESTS:
+                got = run([prog, "--fd-site", site, "--fd-an", dg])
+                if (got.returncode, got.stdout, got.stderr) != (none.returncode, none.stdout, none.stderr):
+                    bad("L: %s kit: site %s renders differently with an analysis object "
+                        "(digest %s) than with none (a kit row reads the object's "
+                        "provenance or digest)" % (name, site, dg))
                 else:
                     ok()
 
@@ -713,7 +721,6 @@ def main():
     ap.add_argument("--fx", required=True)
     ap.add_argument("--fxt", required=True)
     ap.add_argument("--tmp", required=True)
-    ap.add_argument("--provchk", required=True)
     a = ap.parse_args()
     rows = check_table(a.fx)
     form = check_hash(a.fx)
@@ -722,7 +729,7 @@ def main():
     check_query(a.fx, a.fxt, a.tmp)
     check_routing(a.fx, a.fxt)
     check_pres_routing(a.fx, a.fxt, a.tmp)
-    check_prov(a.root, a.fx, a.fxt, a.provchk)
+    check_seam(a.root, a.fx, a.fxt)
     for u in unreached:
         print("UNREACHED: " + u)
     print("checks passed: %d" % passed)

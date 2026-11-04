@@ -176,24 +176,22 @@ mf_art *pcrec_memfn_art(Ctx *cx)
  * pcrec's offer vocabulary onto the kit's, because it is the one file that
  * includes `memfn.h` for art state; the object's facts are findings.c's. */
 
-/* pcrec's kind state and provenance source onto the kit's: one cell each,
- * every enumerator stated (0 is UNSTATED on both sides). */
+/* pcrec's kind state onto the kit's: one cell each, every enumerator stated
+ * (0 is UNSTATED on both sides). The offer's source, bundle and provenance
+ * stanza stay pcrec's (stamp, trace): the kit is handed the payload and its
+ * digest only (span_pick.md unit 1g, D186 add. 2). */
 static const uint8_t akind_state_map[] = {
     [PCREC_FIND_KIND_UNSTATED] = MF_KIND_UNSTATED,
     [PCREC_FIND_KIND_PRESENT]  = MF_KIND_PRESENT,
     [PCREC_FIND_KIND_ABSENT]   = MF_KIND_ABSENT,
 };
-static const uint8_t akind_source_map[] = {
-    [PCREC_FIND_SRC_UNSTATED]       = MF_PROV_UNSTATED,
-    [PCREC_FIND_SRC_PRIOR_AUTHORED] = MF_PROV_PRIOR_AUTHORED,
-    [PCREC_FIND_SRC_PRIOR_NONE]     = MF_PROV_PRIOR_NONE,
-    [PCREC_FIND_SRC_MEASURED]       = MF_PROV_MEASURED,
-};
 
-/* The object's invariant (window_contract.md §3.1), checked as it is built:
- * a payload travels iff the kind is PRESENT with a table-bearing source;
- * PRIOR_NONE states no bundle, digest or bytes; an ABSENT kind states no
- * source. A violation is pcrec's own defect, so an internal-error refusal. */
+/* The offer's invariant (window_contract.md §3.1; the object is built from
+ * the offer), checked as it is built: a payload travels iff the kind is
+ * PRESENT with a table-bearing source; the digest is 0 iff there is no
+ * payload; PRIOR_NONE states no bundle, digest or bytes; an ABSENT kind
+ * states no source. A violation is pcrec's own defect, so an internal-error
+ * refusal. */
 static void analysis_invariant(Ctx *cx, const char *tag, const PcrecFindOffer *o)
 {
     bool table = o->present == PCREC_FIND_KIND_PRESENT &&
@@ -203,6 +201,8 @@ static void analysis_invariant(Ctx *cx, const char *tag, const PcrecFindOffer *o
         (o->present == PCREC_FIND_KIND_UNSTATED) ? "its state is unstated" :
         (table != (o->payload != NULL)) ? "a payload without a table-bearing "
                                           "source, or the reverse" :
+        ((o->payload == NULL) != (o->digest == 0)) ? "a digest without a payload, "
+                                                     "or the reverse" :
         (o->source == PCREC_FIND_SRC_PRIOR_NONE &&
          (o->bundle || o->digest || o->bytes)) ? "prior-none states a bundle, "
                                                  "digest or bytes" :
@@ -210,7 +210,7 @@ static void analysis_invariant(Ctx *cx, const char *tag, const PcrecFindOffer *o
          o->source != PCREC_FIND_SRC_UNSTATED) ? "an absent kind states a source" :
         NULL;
     if (why)
-        pcrec_ctx_fail(cx, 0, "internal error: the analysis object's '%s' kind "
+        pcrec_ctx_fail(cx, 0, "internal error: the analysis offer's '%s' kind "
                        "(T-KIND row '%s') breaks its invariant: %s",
                        tag, o->row, why);
 }
@@ -226,11 +226,11 @@ static const char *const akind_source_name[] = { "UNSTATED", "PRIOR_AUTHORED",
                                                  "PRIOR_NONE", "MEASURED" };
 static const char *const akind_unmeasured_name[] = { "UNSTATED", "ARRIVES", "ABSENT" };
 
-static const char *prov_fidelity_token(uint8_t fid);
-
-/* The record is written from the BUILT kit object's provenance (bytes,
- * fidelity), not from the offer, so tests/findings/e1_object_check.py holds
- * the wiring itself to its hand-written table. */
+/* The record is written from pcrec's OFFER (the kit's object carries no
+ * provenance since span_pick.md unit 1g) except DIGEST, read from the BUILT
+ * object's `k->digest`, the one field the seam keeps, so that
+ * tests/findings/e1_object_check.py holds the object's digest to its
+ * hand-written table too. */
 static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o,
                            const mf_akind *k)
 {
@@ -243,9 +243,8 @@ static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o,
     fprintf(stderr, "KSRCTRACE\tobject\t%s\t%s\t%s\t%s\t%s\t%016llx\t%llu"
             "\t%s\t%s\t%s\n", q->tag, o->row, akind_state_name[o->present],
             akind_source_name[o->source],
-            o->bundle ? o->bundle : "-", (unsigned long long)o->digest,
-            (unsigned long long)k->prov.bytes,
-            prov_fidelity_token(k->prov.fidelity), sum,
+            o->bundle ? o->bundle : "-", (unsigned long long)k->digest,
+            o->bytes, o->fidelity ? o->fidelity : "-", sum,
             akind_unmeasured_name[q->unmeasured]);
 }
 #endif
@@ -270,13 +269,7 @@ void pcrec_memfn_analysis_build(Ctx *cx)
         k[i].tag = q->tag;
         k[i].version = q->version;
         k[i].present = akind_state_map[o.present];
-        k[i].prov.source = akind_source_map[o.source];
-        k[i].prov.bundle = o.bundle;
-        k[i].prov.digest = o.digest;
-        if (pcrec_memfn_prov_stanza(&k[i].prov, o.bytes, o.fidelity))
-            pcrec_ctx_fail(cx, 0, "internal error: the analysis object's '%s' "
-                           "kind carries a provenance fidelity '%s' outside the "
-                           "findings vocabulary", q->tag, o.fidelity);
+        k[i].digest = o.digest;
 #ifdef PCREC_KS_TRACE
         analysis_trace(q, &o, &k[i]);
 #endif
@@ -568,50 +561,6 @@ void pcrec_memfn_part_window_stated(Ctx *cx, mf_pred *p, const mf_walt *alts, in
     p->nalt = (uint8_t)n;
     p->alts = alts;
     p->wfloor = (uint8_t)fl;
-}
-
-/* ---- the answering block's provenance stanza (R-24, MF_SITE_ABI 15) -------
- *
- * The findings vocabulary's closed `fidelity` tokens
- * (src/parse/rxt_schema.def, PROVENANCE `fidelity`: `closed fidelity verbatim
- * adapted synthesized`) onto the kit's mf_prov_fidelity, one row per token.
- * A token outside the set is pcrec's own defect (the schema closes it at
- * parse), so the caller refuses; NULL is "the block declares none". The
- * check tests/memfn/prov_check.c reads the closed set off --list-schema and
- * holds this table to it in both directions. */
-static const struct { const char *tok; uint8_t fid; } prov_fidelity_rows[] = {
-    { "verbatim",    MF_FID_VERBATIM },
-    { "adapted",     MF_FID_ADAPTED },
-    { "synthesized", MF_FID_SYNTHESIZED },
-};
-
-#ifdef PCREC_KS_TRACE
-/* The trace's reverse lookup: the token for an mf_prov_fidelity, `-` for
- * the unstated zero. */
-static const char *prov_fidelity_token(uint8_t fid)
-{
-    for (size_t i = 0; i < sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows; i++)
-        if (prov_fidelity_rows[i].fid == fid) return prov_fidelity_rows[i].tok;
-    return "-";
-}
-#endif
-
-int pcrec_memfn_prov_stanza(mf_prov *p, unsigned long long bytes,
-                            const char *fidelity)
-{
-    uint8_t fid = MF_FID_UNSTATED;
-    if (fidelity) {
-        size_t i = 0;
-        while (i < sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows &&
-               strcmp(prov_fidelity_rows[i].tok, fidelity))
-            i++;
-        if (i == sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows)
-            return -1;
-        fid = prov_fidelity_rows[i].fid;
-    }
-    p->bytes = bytes;
-    p->fidelity = fid;
-    return 0;
 }
 
 /* ---- C10: a site against its DELEG_SITES row ------------------------------ */

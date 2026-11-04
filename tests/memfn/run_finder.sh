@@ -34,14 +34,13 @@ for s in "$ROOT"/memfn/src/*.c; do
 done
 "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" "$ROOT/tests/memfn/arm_fixtures.c" "$WORK"/kit/*.o \
     -o "$WORK/fxt" || { echo "FAIL: the traced fixture driver does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
-# R-24 (MF_SITE_ABI 15): the mf_prov layout and pcrec's stanza mapping
-# (tests/memfn/prov_check.c, held by finder_check.py family L). Built beside the
-# fixture drivers; -Werror so its static assertions and prototypes are exact.
-"$CC" -std=gnu11 -O1 -Werror -I"$ROOT/lib" -I"$ROOT/src" "$ROOT/tests/memfn/prov_check.c" "$LIB" \
-    -o "$WORK/provchk" || { echo "FAIL: the provenance check does not build (mf_prov's layout moved?)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
+# span_pick unit 1g (MF_SITE_ABI 22): mf_akind.digest's offset
+# (tests/memfn/prov_check.c, a BUILD-ONLY static assertion, never run).
+# Built beside the fixture drivers; -Werror so its static assertion is exact.
+"$CC" -std=gnu11 -fsyntax-only -Werror -I"$ROOT/memfn/include" "$ROOT/tests/memfn/prov_check.c" || { echo "FAIL: the analysis-object layout check does not build (mf_akind.digest moved?)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 # R-25: the form class's proven sets honour the row's declared `tests`
 # (tests/memfn/proven_check.c: a white-box driver over kit_class with test-only
-# rows, the shipped FIND rows, and one mf_ask). -Werror as provchk.
+# rows, the shipped FIND rows, and one mf_ask). -Werror as the other builds.
 "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/proven_check.c" "$LIB" \
     -o "$WORK/provenchk" || { echo "FAIL: the proven-set check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"
@@ -64,7 +63,7 @@ part() {   # part LABEL LOG: relabel LOG's counts, add them to the totals
     fi
 }
 python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
-    --fxt "$WORK/fxt" --tmp "$WORK" --provchk "$WORK/provchk" > "$WORK/check.log" 2>&1
+    --fxt "$WORK/fxt" --tmp "$WORK" > "$WORK/check.log" 2>&1
 rc=$?
 part finder_check "$WORK/check.log"
 [ "$rc" -eq 0 ] || [ "$tf" -gt 0 ] || { echo "FAIL: finder_check exited $rc with no failed check"; tf=$((tf + 1)); }
