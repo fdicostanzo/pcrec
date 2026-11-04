@@ -58,3 +58,13 @@ SAB_COUNT=1
 SAB_BEFORE='    const unsigned seam_entry = a->u.var.caseless
         ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;'
 SAB_AFTER='    const unsigned seam_entry = PCREC_ENCE_SPAN;   /* SABOTAGE S271: the field is not read */'
+# RE-ANCHORED 2026-11-04 (lane mechfix1, [MECH-NOCOMPILE]): the emitted call's name now comes from the
+# VmVarOps `caseless` field (pcrec_vm_b_var), not from `seam_entry`, so the plant above alone left the
+# artifact calling `rx_span_match_caseless` with no declaration. The second pair reads the same field
+# as false: the case-SENSITIVE compare is called and its seam entry is the one declared.
+SAB_FILE2="src/gen/emit_vm.c"
+SAB_COUNT2=1
+SAB_BEFORE2='        a->u.var.slot, a->u.var.caseless,
+        vm_work_count(v, "took >= 0 ? took : -took - 1",'
+SAB_AFTER2='        a->u.var.slot, false,   /* SABOTAGE S271: the field is not read */
+        vm_work_count(v, "took >= 0 ? took : -took - 1",'

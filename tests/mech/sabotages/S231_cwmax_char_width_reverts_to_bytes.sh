@@ -51,4 +51,5 @@ SAB_BEFORE='    long w = 0;
     return w;'
 SAB_AFTER='    /* SABOTAGE S231: reverts the 2026-09-05 repair -- the character
      * count degenerates back into the byte count it replaced. */
+    (void)b;   /* the byte-count plant reads no byte: keeps -Wunused-parameter quiet */
     return end - start;'

@@ -5,6 +5,10 @@
 # so the VM cursor rung's strided span loop steps W bytes whenever position 0
 # holds. A wrong answer on every strided body the corpus reaches (the capture
 # route in tests/possessify/possessify.rxt: z(ab)*y), and the pins move.
+# RE-ANCHORED 2026-11-04 (lane mechfix1): the loop bound `(strided ? 1u : nterm)` skipped the later terms'
+# member_test, so their class tables were defined and never referenced (-Werror=unused-const-variable
+# in the artifact: ANOMALY). The later terms are still built, and left out of
+# the test (`&& (1 || ...)`): the same mutant, the tables stay referenced.
 SAB_ID="S676-m6-stride-first-term-only"
 SAB_FILE="memfn/src/generic.c"
 SAB_SUITES="harness memfnarms"
@@ -15,7 +19,14 @@ SAB_REACH='"$PCREC" -p rx --engine=vm -o - --pattern "(?:ab)+c"'
 SAB_REACH_EXPECT='while ((rx_span_cursor + 2 <= subject_length) && (subject[rx_span_cursor + 0] == 97) && (subject[rx_span_cursor + 1] == 98)) {'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    for (unsigned t = 0; t < s->pred.nterm; t++) {
-        kb byte;'
-SAB_AFTER='    for (unsigned t = 0; t < (strided ? 1u : s->pred.nterm); t++) {  /* SABOTAGE S676 */
-        kb byte;'
+SAB_BEFORE='        if (t) kb_puts(&test, " && ");
+        member_test(rc, &test, &s->pred.term[t], t, byte.p ? byte.p : "0");'
+SAB_AFTER='        if (strided && t) {   /* SABOTAGE S676: later terms are built but never decide (`1 ||`), so their class tables stay referenced */
+            kb drop;
+            kb_init(&drop, rc->art->a);
+            member_test(rc, &drop, &s->pred.term[t], t, byte.p ? byte.p : "0");
+            kb_printf(&test, " && (1 || (%s))", drop.p ? drop.p : "0");
+            continue;
+        }
+        if (t) kb_puts(&test, " && ");
+        member_test(rc, &test, &s->pred.term[t], t, byte.p ? byte.p : "0");'

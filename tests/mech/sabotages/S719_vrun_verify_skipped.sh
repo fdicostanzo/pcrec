@@ -8,4 +8,12 @@ SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='               "%s    if (", ind, ind, ind);'
-SAB_AFTER='               "%s    if (1 || ", ind, ind, ind);   /* SABOTAGE S719 */'
+SAB_AFTER='               "%s    if (1 || (", ind, ind, ind);   /* SABOTAGE S719 */'
+# MADE WARNING-CLEAN 2026-11-04 (lane mechfix1): `1 || a == b && c` trips -Werror=parentheses in the
+# artifact (ANOMALY); the second pair closes the compare in parentheses, the mutant is unchanged.
+SAB_FILE2='memfn/src/vrun.c'
+SAB_COUNT2=1
+SAB_BEFORE2='    kit_out(o, ") return cand;\n"
+               "%s    m &= m - 1;\n"'
+SAB_AFTER2='    kit_out(o, ")) return cand;\n"   /* SABOTAGE S719 */
+               "%s    m &= m - 1;\n"'

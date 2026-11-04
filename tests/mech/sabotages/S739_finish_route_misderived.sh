@@ -13,3 +13,10 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    return cx->job->fit.chosen == ENGM_DFA ? cand_route_of(cx) : CAND_ROUTE_VM;'
 SAB_AFTER='    return pcrec_artifact_has_dfa_scan(cx) ? cand_route_of(cx) : CAND_ROUTE_VM;   /* SABOTAGE S739 */'
+# MADE WARNING-CLEAN 2026-11-04 (lane mechfix1): the misderived route keeps the entry front's
+# `landmark_position` declaration where nothing reads it (-Werror=unused-variable in the artifact:
+# ANOMALY). The second pair marks it used; the mutant itself is unchanged.
+SAB_FILE2='src/gen/emit_dfa.c'
+SAB_COUNT2=1
+SAB_BEFORE2='        pcrec_sb_printf(c, "%ssize_t landmark_position = handoff_position;\n", indent);'
+SAB_AFTER2='        pcrec_sb_printf(c, "%ssize_t landmark_position = handoff_position;\n%s(void)landmark_position;\n", indent, indent);   /* SABOTAGE S739 */'
