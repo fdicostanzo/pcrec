@@ -134,3 +134,39 @@ it, that difference is a `REGION DIFFERS` failure.
   a real finding about a deny axis, not about the re-base.
 - Not done by this lane: plan.md [RECID-A] row (the manager's: it leaves plan.md for plan_completed.md when the job is
   green); the history index entry is added below in `docs/dev/history/claude_md/docs__dev__lanes.md`.
+
+## Re-base 2 (2026-11-04, lane recida2, sonnet)
+
+Why: the first re-base's gate job (698-recida-gate, 10-29) failed with 419 call-free movers versus 7234c2e86 on every axis, because
+later ruled landings (abi 93-95: K134 trail checkpoints, R-30, the landmark walk, [VMREC] vm_stmt.c) changed emission before the branch
+merged. It was never merged.
+
+Done here:
+- `git merge main` into lane/recida (merge commit f2238659d). Conflicts: `tests/codegen/run_recursion_identity.sh` (resolved: the
+  branch's side everywhere, i.e. the exception machinery stays deleted, plus main's newer `FILEPIN` line f5de088bf and its
+  self-pin comments), `tests/mech/sabotages/S273_span_match_length_off_by_one.sh` (both comments kept; main's
+  `SAB_FILE=src/gen/vm_stmt.c` kept), and the history index (both sides kept). `bash -n` clean; no conflict markers left.
+- New (A) base: **`4bd002e20`**, the commit the 2026-11-04 full suite froze. The merge showed no reason against it: `git diff
+  4bd002e20 HEAD -- src cli lib memfn/src` is empty, so this tree's compiler IS 4bd002e20's. `ABASEPIN` default and the
+  docs/testing.md "[RECID-A]" section updated; 7234c2e86 is kept as history (the first pin).
+- Plant step updated for the [VMREC] move: the S273 plant site is now `src/gen/vm_stmt.c` (`vm_r_bref`), not emit_vm.c.
+
+NOT yet known (the box was held by the kit's gates; both runs are queued, nothing inline): the mover list between 7234c2e86 and
+4bd002e20, its per-axis counts (STOP RULE > 600), and the answer check. Jobs (scripts `docs/dev/lanes/recida2_job_329/330`):
+- `329-main-recida2-movers`: the gate with `RECURSION_IDENTITY_ABASE=7234c2e86`, KEEP=1; writes `docs/dev/lanes/recida2_evidence/
+  movers.{default,vm,noprefilter,nocaptures}.txt` (+ `other_diff_lines.*`); red if any axis > 600 or the lists are missing.
+- `330-main-recida2` (waits on 329 via `boxqueue after`): answer check of a spread sample (every ~15th mover per axis, ALL (?U)-possessive
+  movers, >= 50 distinct asserted) over libpcre2 with `anscheck.py` (any `DIFF` = STOP, do not land); the re-based gate at the new pin
+  (rc 0); the S273 plant must turn it red through (A).
+The pin edit is committed BEFORE the answers are in: if 330's `answers` step shows a DIFF or 329 reports > 600 movers on an axis, the
+pin commit must be reverted, not merged. The evidence lists land uncommitted in the worktree and must be committed with the verdict.
+
+## STATE AT HANDOFF
+
+Lane/recida = main merged + the pin moved to 4bd002e20 + two queued jobs. NOT validated, DO NOT MERGE until
+`329-main-recida2-movers` and `330-main-recida2` are both green (330 green = three `== recida2 STEP <n> rc=0` lines) and the
+evidence lists under `recida2_evidence/` are committed. Rulings file `recida_rulings.md`: empty, nothing to apply. Old job
+698-recida-gate is superseded (it ran the old base). Also owed to the manager: the plan.md row's status, once green, and moving it
+to plan_completed.md.
+
+OWED: queue jobs `329-main-recida2-movers`, `330-main-recida2`.

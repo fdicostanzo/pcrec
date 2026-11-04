@@ -1495,12 +1495,13 @@ change (D76)") when they do not.
 
 **What changed.** Comparison (A) (the program region of every call-free corpus pattern, `goto <p>_L0;`
 ... `<p>_accept:`, comments included, four axes) no longer compares against the never-moving pre-module
-pin `ac4917d`. It compares against `ABASEPIN` (`RECURSION_IDENTITY_ABASE`, default `7234c2e86`, the
-[EMIT-BIDI] merge, abi 86), a post-module main commit that already carries every emission change the
+pin `ac4917d`. It compares against `ABASEPIN` (`RECURSION_IDENTITY_ABASE`, default `4bd002e20`, the 2026-11-04
+full suite's frozen commit; first pinned at `7234c2e86`, the [EMIT-BIDI] merge, abi 86, and re-based
+2026-11-04 after later ruled landings moved call-free regions: report "Re-base 2"), a post-module main commit that already carries every emission change the
 exceptions used to absorb. Manager ruling 2026-10-29: re-base, not a ninth exception (the pin had cost two
 triage lanes and was red a third time, silently, because the gate runs only in the merge battery).
 
-**Why `7234c2e86`.** It is a ruled main commit (merged by the manager; the 10-26/10-27 full-suite reads
+**Why `7234c2e86` (the first pin; re-based to `4bd002e20`, see the report's "Re-base 2").** It is a ruled main commit (merged by the manager; the 10-26/10-27 full-suite reads
 counted (A) there) and the EARLIEST commit at which the call-free regions equal main's: measured at the re-base
 over all 4480 call-free corpus patterns on all four axes, main's regions are byte-identical to it (0 of 4480
 differ, default, `--engine=vm`, `-fno-prefilter`, `--no-captures`), so abi 87-92 (SCANEDGE-SET, INLINE-C,

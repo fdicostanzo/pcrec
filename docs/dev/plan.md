@@ -1079,7 +1079,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: a SIMD-layer kernel finding either of two arbitrary bytes (two compares and an OR) in place of the one-bit case fold, opt-in under the SIMD layer.
 - [RECID-A] STATE:not-started — RECURSION-IDENTITY (A): RE-BASE OR RETIRE THE NEVER-MOVING PRE-MODULE PIN
   filed: 2026-10-23 manager, from lane recpin (docs/dev/lanes/recpin_report.md)
-  status (2026-10-26): (A) still RED and GROWING: at the [EMIT-BIDI] merge 7234c2e86, 167/381/167/111 regions differ from ac4917d (78/126/78/54 on 10-23); later landings (I1/I2, subst, abi 84-86; emitbidi respells kit run-compare string constants) are uncounted contributors. (B) green, re-pinned f6c230e5f
+  status (2026-11-04): lane recida2 re-based (A) onto 4bd002e20 (lane/recida); jobs 329-main-recida2-movers + 330-main-recida2 OWED, do not merge before both green (recida_report.md "Re-base 2")
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
   RULED 2026-10-29 (manager; answer-free harness choice, memory test-harness-minimal): RE-BASE now, not a ninth exception. It has now cost two triage lanes on landing checks (695-lands3-check red on (A) alone: 167/382/167/111, bucket 330 vs census 413; s3tri db2714e5f). Lane recida: list the movers since ac4917d, check the 9 (?U)-possessive movers' and a K128 sample's answers against libpcre2, then re-pin (A) to a recent ruled main commit with the bucket membership listed; any answer difference stops it.

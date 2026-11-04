@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# main-recida2-movers: [RECID-A] re-base 2, the mover listing. Runs the gate with the OLD base
+# (7234c2e86) against this tree's compiler (src identical to 4bd002e20), KEEP=1, and keeps the four axes'
+# REGION DIFFERS lists = the call-free movers between 7234c2e86 and 4bd002e20. Green = lists written, every
+# axis <= 600 (STOP RULE otherwise). The gate's own rc is NOT the verdict (it is expected red at the old base).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/recida
+SC=/var/tmp/pcrec-pcrec/scratch/recida2/movers
+EV=$TREE/docs/dev/lanes/recida2_evidence
+case "${1:-}" in
+    --dry-run)
+        for f in "$TREE/tests/codegen/run_recursion_identity.sh" "$TREE/docs/dev/lanes/recida_evidence/pick_patterns.py"; do
+            [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
+        done
+        for c in 7234c2e86 4bd002e20; do git -C "$TREE" rev-parse --verify --quiet $c^{commit} >/dev/null || { echo "$c unresolved" >&2; exit 1; }; done
+        echo "would run in $TREE: make -j16; gate KEEP=1 RECURSION_IDENTITY_ABASE=7234c2e86; write movers lists to $EV"
+        echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+        echo "boxqueue: expect movers=1 lines=^== recida2 movers rc=0\$"
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+mkdir -p "$SC" "$EV"
+make -j16 || exit 1
+RECURSION_IDENTITY_ABASE=7234c2e86 KEEP=1 bash tests/codegen/run_recursion_identity.sh > "$SC/gate.log" 2>&1
+echo "gate rc=$? (expected nonzero if movers exist)"
+td=$(sed -n 's/^recursion-identity: KEEP=1, temp dir: //p' "$SC/gate.log" | head -1)
+[ -d "$td" ] || { echo "no temp dir"; exit 1; }
+grep -E '^recursion-identity\[[a-z]+\] \(A\)' "$SC/gate.log" | cut -c1-200
+bad=0
+for lab in default vm noprefilter nocaptures; do
+    python3 -I docs/dev/lanes/recida_evidence/pick_patterns.py "$td/diff.$lab" "$td/patterns" > "$EV/movers.$lab.txt" || bad=1
+    grep -vE '^REGION DIFFERS' "$td/diff.$lab" > "$EV/other_diff_lines.$lab.txt"
+    n=$(grep -c . "$EV/movers.$lab.txt"); o=$(grep -c . "$EV/other_diff_lines.$lab.txt")
+    echo "movers[$lab] = $n (other diff lines: $o)"
+    [ "$n" -le 600 ] || { echo "STOP RULE: > 600 movers on $lab"; bad=1; }
+done
+grep -h '^??' "$EV"/movers.*.txt | head
+rm -rf "$td"
+echo "== recida2 movers rc=$bad"
+exit $bad

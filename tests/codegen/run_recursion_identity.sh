@@ -1258,11 +1258,11 @@ FILEPIN="${RECURSION_IDENTITY_FILEPIN:-f5de088bf}"   # [LANDWALK] stage 1 landin
 # module, that already carries every one of those changes (the eight exceptions,
 # K128's guard/label renumbering, the nine (?U)-possessive movers). The claim is
 # the same shape as (B)'s and moves the same way: a change that moves a call-free
-# region on purpose re-pins ABASEPIN in its own commit. 7234c2e86 is the
-# [EMIT-BIDI] merge (abi 86): the commit the 10-26/10-27 full-suite reads counted
-# (A) at, and the region of every call-free corpus pattern on all four axes is
-# byte-identical between it and main at the re-base (docs/dev/lanes/recida_report.md).
-ABASEPIN="${RECURSION_IDENTITY_ABASE:-7234c2e86}"
+# region on purpose re-pins ABASEPIN in its own commit. 4bd002e20 is the commit
+# the 2026-11-04 full suite froze (every stage dispositioned); it re-bases the
+# first pin 7234c2e86 (the [EMIT-BIDI] merge, abi 86) after later ruled landings
+# moved call-free regions (docs/dev/lanes/recida_report.md "Re-base 2").
+ABASEPIN="${RECURSION_IDENTITY_ABASE:-4bd002e20}"
 # [MEMFN] D172 S3 SELF-PIN (lane s3pair, 2026-10-24), abi 84 -> 85: the cover
 # LOCATE row routed by default (the kit's window family); every other artifact
 # moves only the abi digits. `450dca216` is the lane's last src commit; the
