@@ -24,14 +24,14 @@
 # UNCHANGED -- the loop header, which is what this row truncates to its first
 # member, is byte-identical and still at column 8 -- and the row was re-driven
 # SOLO after the re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the ref chain is written by VK_BREF's renderer from its operand list; the same truncation to the first member. Same detector, same arm.
 SAB_ID="S114-resolution-first-by-number"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="dupnamesdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="The emitted else-if chain over a duplicated name's run is truncated to its FIRST member, so resolution becomes \"first by number\" unconditionally instead of \"first that is SET\". (?J)^(?:(?<a>x)|(?<a>y))\\k<a>\$ stops matching \"yy\"; every cell where the first member participates is unaffected"
 SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"yy\" cell of dupnames.rxt's resolution block. Canonical figure owed from run_sabotage_matrix.sh S114."
 SAB_COUNT=1
-SAB_BEFORE='    for (int i = 0; i < a->u.bref.nrefs; i++) {
-        const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);'
-SAB_AFTER='    for (int i = 0; i < 1 && i < a->u.bref.nrefs; i++) {   /* SABOTAGE S114 */
-        const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);'
+SAB_BEFORE='    for (int i = 0; i < o->nrefs; i++) {'
+SAB_AFTER='    for (int i = 0; i < 1 && i < o->nrefs; i++) {   /* SABOTAGE S114 */'

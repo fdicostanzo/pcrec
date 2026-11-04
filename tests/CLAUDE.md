@@ -77,4 +77,5 @@ Maintenance: update this file when subdirectories/test modules are added or remo
 - Also (one-line entries for these are in the history file): `axes`, `core`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests.md`.
+- **landwalk/** — [LANDWALK] stage 1: `landwalk.rxt`, the `landmark-walk` row's libpcre2-generated answer net (`gen_landwalk.py`); own CLAUDE.md.
 - **findall/** — [FINDALL-NEXT] `make test-findall`: the iterator vs libpcre2 global iteration, `global.rxt`; own CLAUDE.md.

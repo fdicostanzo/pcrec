@@ -229,6 +229,13 @@ OPTIONS
                         must reproduce exactly (stream, base, pattern
                         [, attribution]).
 
+  --list-ident-arms REFREV  print the record-first identity gate's DECLARED arm
+                        set (IDENT_*, [VMREC] step (a), D182) as NAME<TAB>args
+                        rows for a job script; runs nothing else.
+  --ident-arm NAME       this run is that arm; an IDENT_EXEMPT arm (no
+                        composition stream, so no DELIVER witness) prints
+                        its exemption and reason instead of skipping silently.
+
   When the two sides are the SAME binary (realpath), every argv compile runs
   once and is mirrored: identity is trivial and said so, and the run is a
   measurement (reach, DIFFER counts, trace records) at half the cost.
@@ -541,14 +548,9 @@ DIFFER_PINS = {
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
-    # finder table's five denies. No finder row is ROUTED at B1, so each deny
-    # moves no byte: ASSERT_ZERO (below) on both bases and both streams. Each
-    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r8 at
-    # B6; fd-r0/fd-r5 RETIRED at B4' with their rows, fd-ndisp stays ASSERT_ZERO), so `--extra` never runs a kit deny
-    # without a floor.
-    **{(base, "--memfn=no-" + row, stream): (0, 0, None)
-       for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-       for row in ("fd-r8", "fd-ndisp")},
+    # finder table's five denies, ASSERT_ZERO until their rows routed (fd-d1
+    # at B2, below). fd-r0/fd-r5 RETIRED at B4' with their rows, fd-r8 and
+    # fd-ndisp at span_pick 1f with R8, R1 and R2 (unknown options since).
     # [MEMFN] R17-b' B2 (lane fdb2; r17b_prime.md §3.4 [rev3 A17]): fd-d1
     # FLIPS. D1 is routed, so its deny moves every one-byte DFA and hybrid
     # site to D1w's walk over the offered table (answer-identical; no start
@@ -584,8 +586,8 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (873, 873, b"a+"),    # S3 re-pin (was 1105/1105, b"ab")
     ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
-    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (167, 0, b"a.{1,5}z"),    # S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
-    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (231, 0, b"a.{1,5}z"),    # S3 re-pin (was 263); was 262: same
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (142, 0, b"a.{1,5}z"),    # P1 re-pin (was 167): the landmark walk (D184) takes 35 patterns the pick served (29 net of corpus growth), pinbis; S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (224, 0, b"a.{1,5}z"),    # P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }
@@ -596,10 +598,6 @@ DIFFER_PINS = {
 # utf8 base that lost `-e utf8` reads byte's 288 here.
 ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
                ("utf8", "-fno-end-window", "c-vm")} | {
-    # [MEMFN] R17-b' B1: the finder table's denies, inert until their rows route
-    (base, "--memfn=no-" + row, stream)
-    for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-    for row in ("fd-r8", "fd-ndisp")} | {
     # R17-b' B2: fd-d1 acts on the DFA body's and the hybrid's one-byte sites
     # only; under --engine=vm it has none
     ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")} | {
@@ -1465,16 +1463,29 @@ DUMP_SURFACES = ("--list-syntax", "--list-definitions", "--list-verbs",
                  "--list-schema")
 
 
-def dumps_declared_delta(flag, out_a, out_b, declared):
+def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
     """Judges one registry dump against DECLARED line moves, BOTH ways:
     `declared` is {(flag, first tab field): True}; every other line is
     byte-identical in order, every declared row exists on both sides and
-    differs. Returns the problems."""
+    differs. `gone` is {(flag, first tab field)}: each such row exists on
+    the REF side and on neither side after it is dropped from REF, i.e.
+    the row was removed and nothing else moved. Returns the problems."""
     la = out_a.decode("utf-8", "replace").splitlines()
     lb = out_b.decode("utf-8", "replace").splitlines()
-    if len(la) != len(lb):
-        return ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     problems = []
+    if gone:
+        key = lambda x: (flag, x.split("\t")[0])
+        for g in sorted(k for k in gone if k[0] == flag):
+            nref = sum(1 for x in la if key(x) == g)
+            if nref == 0:
+                problems.append("%s: declared gone row %s is not in the REF dump" % g)
+            elif nref > 1:
+                problems.append("%s: declared gone row %s is listed %d times in the REF dump (one expected)" % (g + (nref,)))
+            if any(key(x) == g for x in lb):
+                problems.append("%s: declared gone row %s is still in the HEAD dump" % g)
+        la = [x for x in la if key(x) not in gone]
+    if len(la) != len(lb):
+        return problems + ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     for x, y in zip(la, lb):
         key = (flag, x.split("\t")[0])
         if key in declared:
@@ -1488,9 +1499,20 @@ def dumps_declared_delta(flag, out_a, out_b, declared):
     return problems
 
 
-def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
+def dumps_declarations(label, rows_arg, gone_arg):
+    """The (declared rows, declared gone rows) a sweep labelled `label`
+    judges its dumps by: the declared deltas are the REAL comparison's; a
+    self-check (label `selfcheck` or a variant's `selfcheck-NAME`) compares
+    one revision with itself, so nothing may move there."""
+    if label.startswith("selfcheck"):
+        return (), ()
+    return (rows_arg.split(",") if rows_arg else ()), (gone_arg.split(",") if gone_arg else ())
+
+
+def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
     res = StreamResult("dumps")
     declared = {tuple(r.split(":", 1)): False for r in declared_rows}
+    gone = frozenset(tuple(r.split(":", 1)) for r in gone_rows)
     res.population = len(DUMP_SURFACES)
     for flag in DUMP_SURFACES:
         rc_a, out_a, err_a = run([bin_a, flag], timeout)
@@ -1502,13 +1524,14 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
             res.both_refuse += 1
         elif out_a != out_b:
             res.both_ok += 1
-            if any(k[0] == flag for k in declared):
-                problems = dumps_declared_delta(flag, out_a, out_b, declared)
+            if any(k[0] == flag for k in declared) or any(k[0] == flag for k in gone):
+                problems = dumps_declared_delta(flag, out_a, out_b, declared, gone)
                 if problems:
                     res.movers.append((flag, "\n".join(problems[:6])))
                 else:
                     res.declared_patterns += 1
                     res.declared_moves += sum(1 for k in declared if k[0] == flag)
+                    res.declared_moves += sum(1 for k in gone if k[0] == flag)
             else:
                 res.movers.append((flag, first_diff_hunk(out_a, out_b)))
         else:
@@ -1516,6 +1539,9 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
             for k in declared:
                 if k[0] == flag:
                     res.movers.append((flag, "declared row %s did not move (surface identical)" % k[1]))
+            for k in gone:
+                if k[0] == flag:
+                    res.movers.append((flag, "declared gone row %s is still listed (surface identical)" % k[1]))
     return res
 
 
@@ -1783,11 +1809,18 @@ TRACE_EXTRA_PINS = {
 # entry keeps PINS' plain floors. Each floor sits where its PLAIN sibling sits
 # relative to its measured value: producing AT the measured value (zero slack),
 # artifacts 6 below it (plain: 100 against 106).
-#   ("-e", "utf8"): producing 36, artifacts 98 -- measured at a080c69a and at
-#   fae3987e8, population 384 composition files.
+#   RE-PIN (kit, 2026-10-30, after F7 / [SWEEP-COMP-FLOOR] d7a425f41 moved the
+#   plain arm and missed these entries): job 695-kit-simdset-comppin measured
+#   EVERY arm (plain, -fmemfn-simd, -fcomments, -e utf8, --engine=vm) at
+#   producing 38 / artifacts 88, ref-vs-working (merged main 6bc45b974 vs
+#   lane/memfn-simdset 93433207c), 435 composition files: F7 removed the
+#   files a refused target used to write, so no arm differs from plain now.
+#   ("-e", "utf8"): producing 37, artifacts 86 -- the plain floors (its own
+#   stance: sit where the plain sibling sits). Was 36 / 98, measured at
+#   a080c69a and at fae3987e8, population 384 composition files.
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
-#   reshapes blocks the default engine compiles, so 20 fewer files are written.
+#   reshapes blocks the default engine compiles, so 20 fewer files are written. Re-pinned 38 / 88 (job 695, header above): AT the measured value, so the self-test +1 plant goes red.
 #   ("-fmemfn-simd",) and ("-fcomments",): producing 37, artifacts 106 each,
 #   AT the measured value ([COMPPIN], lane/comppin 4464e1c10): neither flag
 #   changes which fixtures compile, so both read the plain arm's population.
@@ -1796,20 +1829,21 @@ TRACE_EXTRA_PINS = {
 # floor (the run says so), never the plain arm's (the `--engine=vm` run read
 # 86 < 100 on both sides, ref-vs-ref).
 COMPOSITION_EXTRA_PINS = {
-    ("-e", "utf8"): {"composition_producing_floor": 36,
-                     "composition_artifacts_floor": 98},
-    ("--engine=vm",): {"composition_producing_floor": 37,
-                       "composition_artifacts_floor": 86},
+    ("-e", "utf8"): {"composition_producing_floor": 37,
+                     "composition_artifacts_floor": 86},
+    ("--engine=vm",): {"composition_producing_floor": 38,
+                       "composition_artifacts_floor": 88},  # job 695 re-pin (was 37 / 86)
     # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
     # changes WHICH composition files compile, only the text: both read the
     # plain arm's population, producing 37 / artifacts 106, measured at
     # lane/comppin 4464e1c10 (`--streams composition --extra=FLAG`, one
     # binary, 386 composition files). Floors AT the measured value (the
-    # counts are deterministic), the --engine=vm entry's stance.
-    ("-fmemfn-simd",): {"composition_producing_floor": 37,
-                        "composition_artifacts_floor": 106},
-    ("-fcomments",): {"composition_producing_floor": 37,
-                      "composition_artifacts_floor": 106},
+    # counts are deterministic), the --engine=vm entry's stance. Re-pinned
+    # 37 / 106 -> 38 / 88 from job 695-kit-simdset-comppin (header above).
+    ("-fmemfn-simd",): {"composition_producing_floor": 38,
+                        "composition_artifacts_floor": 88},
+    ("-fcomments",): {"composition_producing_floor": 38,
+                      "composition_artifacts_floor": 88},
 }
 
 
@@ -2971,6 +3005,69 @@ STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
                "emit-ir-auto", "stderr")
 
 
+# ---------------------------------------------------------------------------
+# The record-first identity gate's ARM SET ([VMREC] step (a), D182): the
+# validated population of two-compiler byte-identity arms, DECLARED here so
+# a job script lists it (`--list-ident-arms`) instead of carrying it. One
+# arm = one emit_sweep run; `--ident-arm NAME` marks the run as that arm.
+IDENT_STREAMS = "c-default,c-vm,emit-ir,composition"
+IDENT_NOCOMP = "c-default,c-vm,emit-ir"
+IDENT_MEMFN = ("vrun-w32", "vrun-w16", "vrun-kb", "vrun-trim", "vrun-pad",
+               "precheck-assign-byte", "fd-d1", "fd-pres-g1",
+               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip")
+# EXEMPT from the DELIVER witness: the arm removes the composition artifacts
+# the witness needs (no composition stream, so no cross-group SET pair). Its
+# byte identity is checked on IDENT_NOCOMP; the composition stream rides the
+# other arms. The sweep REPORTS the exemption, it never skips silently.
+IDENT_EXEMPT = {
+    "nocaptures": "--no-captures leaves no composition stream, so no cross-group SET pair",
+    "axis-fno-splice-calls": "-fno-splice-calls leaves no composition stream, so no cross-group SET pair",
+}
+# Stream override per flag arm: -fprefilter requires the VM engine (c-default
+# refuses 4463/6263; the reach floor is the plain arm's) and has no
+# composition artifacts either.
+IDENT_AXIS_STREAMS = {"-fprefilter": "c-vm,emit-ir"}
+# -fstartpos-guard is not an optimization axis flag that changes a body (every
+# pattern refuses it: a vacuous arm), so it is not an arm.
+IDENT_AXIS_DROPPED = ("-fstartpos-guard",)
+
+
+def ident_axes(tree_bin):
+    """The axis flags the compiler ACCEPTS (--list-axes text also names flags
+    it refuses; those would be vacuous arms)."""
+    def run(*a):
+        return subprocess.run([tree_bin, *a], capture_output=True, text=True)
+    flags = sorted(set(re.findall(r"(?:^|\s)(-f[a-z0-9-]+)", run("--list-axes").stdout)))
+    out = []
+    for f in flags:
+        if f.startswith("-fstack-protector") or f in IDENT_AXIS_DROPPED:
+            continue
+        r = run("-p", "rx", f, "--emit-main", "-o", os.devnull, "--pattern", "a")
+        if f"unknown option '{f}'" not in r.stderr:
+            out.append(f)
+    return out
+
+
+def ident_arms(tree_bin, ref_rev):
+    """(name, emit_sweep args) rows of the identity gate's arm set."""
+    q = shlex.quote
+    rows = [
+        ("base", f"--streams {IDENT_STREAMS},dumps,facts"),
+        ("start", "--arms start"),
+        ("trace", f"--streams {IDENT_STREAMS} --extra=--trace --no-differ-floor"),
+        ("nocaptures", f"--streams {IDENT_NOCOMP} --extra=--no-captures --no-differ-floor"),
+        ("utf8", f"--streams {IDENT_STREAMS} --extra={q('-e utf8')} --no-differ-floor"),
+    ]
+    for m in IDENT_MEMFN:
+        rows.append((f"memfn-{m}", f"--streams {IDENT_STREAMS} --extra=--memfn=no-{m} --no-differ-floor"))
+    for f in ident_axes(tree_bin):
+        st = IDENT_AXIS_STREAMS.get(f, IDENT_NOCOMP if f"axis{f}" in IDENT_EXEMPT else IDENT_STREAMS)
+        rows.append((f"axis{f}", f"--streams {st} --extra={f} --no-differ-floor"))
+    rows.append(("witness", f"--ref {ref_rev} --tree-rev HEAD --build-cflags={q('-O2 -g -DPCREC_SIMD_WITNESS')} "
+                            "--streams c-default,c-vm --every 4"))
+    return [(n, a if n == "witness" else f"{a} --ident-arm {n}") for n, a in rows]
+
+
 BOX_LOCK_CAP = 50   # BOILERPLATE's sweep cap: a loop above this many compiles takes the box lock
 
 
@@ -3038,6 +3135,11 @@ def main():
                          "each named surface (e.g. --list-limits) the row whose "
                          "first field is KEY must differ and every other line must "
                          "be byte-identical")
+    ap.add_argument("--dumps-declared-gone", metavar="FLAG:KEY[,...]",
+                    help="the dumps stream's DECLARED removals, judged both ways: on "
+                         "each named surface (e.g. --list-axes) the row whose first "
+                         "field is KEY is in REF's dump and not in the working one, "
+                         "and every other line is byte-identical in order")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -3068,8 +3170,20 @@ def main():
     ap.add_argument("--trace-order", action="append", default=[])
     ap.add_argument("--data", nargs=3, metavar=("KIND", "OLD", "NEW"))
     ap.add_argument("--movers")
+    ap.add_argument("--list-ident-arms", metavar="REFREV",
+                    help="print the identity gate's declared arm set (NAME<TAB>args, IDENT_*) "
+                         "for the binary --bin (default TREE/build/pcrec), the witness arm "
+                         "against REFREV; runs nothing else")
+    ap.add_argument("--ident-arm", metavar="NAME",
+                    help="this run IS identity-gate arm NAME; an IDENT_EXEMPT arm reports its "
+                         "DELIVER-witness exemption (and must not run the composition stream)")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    if args.list_ident_arms:
+        tb = os.path.abspath(args.bin) if args.bin else os.path.join(os.path.abspath(args.tree), "build", "pcrec")
+        for n, a in ident_arms(tb, args.list_ident_arms):
+            print(f"{n}\t{a}")
+        sys.exit(0)
     if args.trace:
         # Resolve the late `import trace_diff` NOW: an import failure after the
         # sweep's tables had printed once left movers=0 tables standing as the
@@ -3275,8 +3389,11 @@ def main():
                 [f for _, f in comp_files_run], done[:len(comp_files_run)])
         if "dumps" in streams:
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
-            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout,
-                                         args.dumps_declared_rows.split(",") if args.dumps_declared_rows else ())
+            # the declared deltas are the REAL comparison's: the self-check
+            # compares one revision with itself, so nothing may move there
+            rows, gone = dumps_declarations(label, args.dumps_declared_rows,
+                                            args.dumps_declared_gone)
+            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout, rows, gone)
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     if variants:
@@ -3404,6 +3521,14 @@ def main():
             else:
                 print("DELIVER witness: OK (at least one composition artifact carries the "
                       "cross-group SET-pair shape; both named fixtures produced).")
+
+    if args.ident_arm in IDENT_EXEMPT:
+        if "composition" in streams:
+            run_ok = False
+            print(f"DELIVER WITNESS EXEMPTION INVALID: arm {args.ident_arm} is declared exempt "
+                  f"but runs the composition stream")
+        print(f"DELIVER witness: EXEMPT for arm {args.ident_arm} ({IDENT_EXEMPT[args.ident_arm]}); "
+              f"byte identity is checked on {','.join(streams)}")
 
     # -- the arms: one (--extra) or the table (--arms start) --
     arms = []

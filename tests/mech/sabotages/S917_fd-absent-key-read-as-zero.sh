@@ -24,7 +24,7 @@ SAB_DESC="the finder table's lookup answers 0 for a key the measurement set does
 SAB_DOC_FIGURE="HAND-MEASURED by lane fdb1: see docs/dev/lanes/fdb1_report.md (the solo mech run of this row)."
 SAB_REACH_POP='memfn/src/finder.c|\{ FL_KEY,|1'
 SAB_EXPECT=UNREACHED
-SAB_EXPECT_REASON='LOCKDOWN at B4 withdrew R0, R5 and R7, the only rows whose comparators read a set key and could hold; R8 (W64 unbuilt), R1/R2 (no fast terminal) hold no fact any compile states, so no decision reads fd_lookup. REACH_POP reads NOW REACHED the day a row with a key comparator (FL_KEY) is added ([MEMFN-REGIME], or B6) and this row must be re-aimed at the finder check'"'"'s key-removal loop it then needs'
+SAB_EXPECT_REASON='LOCKDOWN at B4 withdrew R0, R5 and R7, the only rows whose comparators read a set key and could hold; R8, R1 and R2 (which held no fact any compile states) were deleted at span_pick 1f, so no decision reads fd_lookup. REACH_POP reads NOW REACHED the day a row with a key comparator (FL_KEY) is added ([MEMFN-REGIME], or B6) and this row must be re-aimed at the finder check'"'"'s key-removal loop it then needs'
 SAB_COUNT=1
 SAB_BEFORE='    return found;
 }

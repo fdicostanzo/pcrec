@@ -40,7 +40,10 @@ Ranked; when two conflict, the higher wins. Each is checkable as stated.
    sample, reads routed/DEF <= 1 + its floor (this run's A/A), OR routed's time per call exceeds DEF's
    by no more than the PER-CALL LAYOUT ALLOWANCE: a time in ns per call, measured in the same run (job
    588) as the largest |delta| per call between layout variants of the DEF arm itself (§6). No
-   per-pattern caps and no per-pattern passes. The populations the bar's sample does not hold are the
+   per-pattern caps and no per-pattern passes. `[2026-11-02 bar588]` Correction, what the sentence always
+   meant: the allowance is ONE number in ns per call over the whole run (every regime, not one per regime),
+   derived only from cells where a per-call figure is meaningful; a cell with one call per pass (a
+   whole-pass delta) neither sets it nor is excused by it, and is judged on the relative floor alone. The populations the bar's sample does not hold are the
    Known gaps below; they are not exceptions to this goal but its open witnesses.
 3. **Simple: one table per slot** (the next editor). Each slot is one declared table (Table B IS the
    finder's FIND slot; no private copy of it), each method one renderer (one two-stream text for every
@@ -608,7 +611,9 @@ allowance (Goal 2), the dense-hex Known gap reported; G1 green on D-hors's non-R
 - **the per-call layout allowance** (Goal 2): job 588 times LAYOUT VARIANTS of the DEF arm (the same C
   compiled with other function alignments, `-falign-functions=16/32/64`), each cell's per-call time
   against DEF's own; the allowance is the largest |delta| in ns per call over every variant and cell of
-  the run, printed with its variant and cell, never a hand-set number;
+  the run, printed with its variant and cell, never a hand-set number; `[2026-11-02 bar588]` ONE number
+  over the run (not per regime), from cells with more than one call per pass only (calls per pass: one
+  per record in search_short and match, `hits + 1` in throughput), a one-call cell judged on the floor alone;
 - **the mover sample is part of the bar**: job 588's 24 stratified cover movers (`sample_588.tsv`), DEF
   vs routed at the scalar layer, NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR (its cells' geometric-mean
   ratio within 1 + this run's A/A, or its per-call delta within the allowance), every sample row and cell printed PASS/FAIL, a dropped row a FAIL;

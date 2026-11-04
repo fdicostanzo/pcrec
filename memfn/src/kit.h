@@ -296,8 +296,14 @@ struct mf_art {
     const char  *reach_stem;
     const char **reach_row;
     uint32_t     nreach, reach_cap;
+    /* R-30: the test-only levers mf_lever set (bit KIT_LEVER_*; 0 on every
+       shipped compile) */
+    unsigned     levers;
     char        err[256];
 };
+
+/* The test-only levers (mf_lever, compose.c's table). */
+enum { KIT_LEVER_PRES_WINDOW = 1u << 0 };
 
 #define kit_presence_check MF_NS(kit_presence_check)
 /* The presence class's rules (compose.c), NULL iff the site holds them: a
@@ -453,49 +459,6 @@ extern const arm mismatch_inplace_arm;  /* MISMATCH, a FOLD_STMT fold        */
  * shape is the site's fold_kind and the `fold` text's class. */
 int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
 
-/* ---- the set's term cover (terms.c; setfind.md §3) ------------------------
- *
- * R17-b's search, ported by R17-b' B1 for the finder shadow's cover SHAPE
- * (its renderings land with R17-b's form at B4). Declarations as R17-b's
- * (lane/memfn-r17 memfn/src/kit.h), text for text. */
-
-enum { MF_ST_CUBE = 0, MF_ST_ARC = 1 };
-
-/* K, the term limit of a set row (§3.3): MEASURED-UNOFFICIAL (slot2, dev box
- * Zen 4, gcc 15.2.0 -O2, 2026-10-12): the largest term count whose best
- * SIMD-off form won every sparse regime (reading_slot2.md answer 5). It moves
- * bytes once a cover renders (B4): re-measuring it is a pcrec abi event
- * (§16.3). */
-#define MF_SET_K 4
-/* The compile-time search's node cap per derivation (§3.3), a SAFETY BOUND,
- * not a selection constant. DERIVED (MEASURED, lane r17b2, 2026-10-12, Linux
- * dev box): BUDGET = 4 x M, M = 787, the most nodes the pruned search used
- * over the stated population (R17-b's tests/memfn/pins/setfind_t3_sets.txt,
- * the corpus tables, G2's setfind space and a generated space of 1,354,644
- * sets, docs/dev/lanes/r17b_report.md). The factor 4 is T3's margin. It
- * moves bytes only for a set outside the population needing more than BUDGET
- * nodes (§16.3). */
-#define MF_SET_BUDGET 3148
-
-/* One term: CUBE, a = the care mask M, b = the value V (V & ~M == 0; EQ is
- * M 0xFF); ARC, a = the first byte L, b = the width W, 1 <= W <= 128. */
-typedef struct { uint8_t kind, a, b; } mf_sterm;
-/* A cover: its terms in canonical order, whether they cover the set's
- * COMPLEMENT (the mask is then negated once), and the search's node count. */
-typedef struct {
-    unsigned n;
-    int      complement;
-    unsigned nodes;
-    mf_sterm t[MF_SET_K];
-} mf_cover;
-
-#define mf_set_terms MF_NS(set_terms)
-/* The fewest-terms cover of `set` (bit x of set[x >> 3] at x & 7) within K
- * (<= MF_SET_K) terms: 1 and *out, or 0 (DECLINE: no cover, the budget
- * exceeded, |S| 0 or 256), or -1 (the scratch allocation was refused: a
- * failure, never a decline). Deterministic. */
-int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
-
 /* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */
 
 /* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
@@ -615,9 +578,11 @@ typedef struct mf_formdecl {
  * offset `k`, byte `a` and second member `b`, -1 for none); the calling
  * site; for a PREFIX row, the BODY row the seam chose (by name, the OVER
  * test) and its helper's name `<fn>__body` (a helper's last fall-through,
- * called by NAME: D155; the row never sees the body's text); and whether
+ * called by NAME: D155; the row never sees the body's text); whether
  * the define sink offers the bracket ops (a host that cannot count guarded
- * bytes never receives them). */
+ * bytes never receives them); and the LEAD (R-30): the run positions
+ * [lead_at, lead_at + lead_len) the verify chain compares FIRST, before the
+ * rest of the run (lead_len 0: none, the run in its row's own order). */
 typedef struct fn_in {
     const mf_pred *p;
     int maxk, k, a, b;
@@ -625,6 +590,7 @@ typedef struct fn_in {
     const char *body_row;
     const char *body_fn;
     int brackets;
+    unsigned lead_at, lead_len;
 } fn_in;
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
@@ -676,6 +642,12 @@ int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
 #define ofs_fn_define_at MF_NS(ofs_fn_define_at)
 int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
                      const mf_pred *p, const char *fn, mf_sink *o);
+/* The same as ofs_fn_define, with the verify chain's RUN compare led by run
+ * positions [lead_at, lead_at + lead_len) (run_cmp_render_lead): the
+ * pre-check's whole run, led by the window part it implies (R-30). */
+#define ofs_fn_define_lead MF_NS(ofs_fn_define_lead)
+int ofs_fn_define_lead(mf_art *art, uint32_t handle, const mf_hooks *h, const mf_pred *p,
+                       const char *fn, unsigned lead_at, unsigned lead_len, mf_sink *o);
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
  * asked quietly; *two 1 iff the BODY row it takes is fn-pair (the two
@@ -767,6 +739,19 @@ int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t 
 /* A FUNC definition's call before its own text: records the word widths the
  * RUN terms of `p` will load and declares every pending helper into `c`. */
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
+/* THE LED COMPARE (R-30): run `t` at `base + off` with its positions
+ * [at, at + len) compared FIRST, as the run of those bytes alone is (the
+ * row the walk picks for it, at `off + at`), then the rest: each word of
+ * the whole run's own words form that does not lie inside the lead, whole;
+ * the whole run's memcmp unchanged; its bytes form less the lead's
+ * positions. A `&&` chain. run_cmp_prepare_lead declares the lead's helper
+ * width before the function that uses it. */
+#define run_cmp_render_lead  MF_NS(run_cmp_render_lead)
+#define run_cmp_prepare_lead MF_NS(run_cmp_prepare_lead)
+int run_cmp_render_lead(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                        unsigned at, unsigned len, mf_sink *c);
+int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned len,
+                         mf_sink *c);
 /* 1 iff every byte of RUN term `t` lies inside its mask (Q-G2-13's
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). */

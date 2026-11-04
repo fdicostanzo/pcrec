@@ -83,7 +83,12 @@ emit() { # emit <outfile> <prefix> <pattern> [extra pcrec args...]
 stamp()  { grep -m1 "^#define ${2:-RX}_DFA_START \"" "$1" | cut -d'"' -f2; }
 mirror() { grep -m1 '^    \.search_form = ' "$1" \
              | sed 's/^    \.search_form = //; s/,$//; s/^"//; s/"$//'; }
-has_rewind()  { grep -q 'size_t rewind_position' "$1"; }
+# [LANDWALK] stage 1: a `landmark-walk` artifact's own reverse walk writes a
+# `rewind_position` inside the walk loop (emit_landmark_walk, from its
+# `lmwalk_reach` local to `search_from = lmwalk_start;`). That walk is no start
+# recovery: RX_DFA_START names the relocate's (the composite after the loop),
+# so the reverse pass is read OUTSIDE the loop, here and in the sweep's worker.
+has_rewind()  { awk '/^    size_t lmwalk_reach = search_from;$/ { w = 1 } /^    search_from = lmwalk_start;$/ { w = 0 } !w && /size_t rewind_position/ { f = 1 } END { exit !f }' "$1"; }
 has_record()  { grep -q 'landing_position = scan_position;' "$1"; }
 has_minus()   { grep -qE 'size_t match_start_position = last_accept_position - [0-9]+;' "$1"; }
 has_guard()   { grep -q '_decode(subject, subject_length, landing_position' "$1"; }
@@ -187,6 +192,7 @@ set -u
 . "$ROOT_DIR/tests/lib/gen_timeout.sh" >/dev/null 2>&1
 art="$WORKDIR/a.$$.c"; den="$WORKDIR/d.$$.c"
 trap 'rm -f "$art" "$den"' EXIT
+has_rewind() { awk '/^    size_t lmwalk_reach = search_from;$/ { w = 1 } /^    search_from = lmwalk_start;$/ { w = 0 } !w && /size_t rewind_position/ { f = 1 } END { exit !f }' "$1"; }   # the file-level has_rewind's text: the walk loop read past
 cc1() { pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures "$@" -o - --pattern "$pat"; }
 while IFS= read -r pat; do
     cc1 > "$art" 2>/dev/null || { echo "REFUSED"; continue; }
@@ -195,7 +201,7 @@ while IFS= read -r pat; do
     mir="$(grep -m1 '^    \.search_form = ' "$art" | sed 's/^    \.search_form = //; s/,$//; s/^"//; s/"$//')"
     [ "$mir" = "$start" ] || { echo "BAD: mirror '$mir' vs macro '$start': $pat"; }
     eng="$(grep -m1 '^#define RX_ENGINE "' "$art" | cut -d'"' -f2)"
-    rw=0; grep -q 'size_t rewind_position' "$art" && rw=1
+    rw=0; has_rewind "$art" && rw=1
     rec=0; grep -q 'landing_position = scan_position;' "$art" && rec=1
     sub=0; grep -qE 'size_t match_start_position = last_accept_position - [0-9]+;' "$art" && sub=1
     grd=0; grep -q '_decode(subject, subject_length, landing_position' "$art" && grd=1
@@ -225,7 +231,7 @@ while IFS= read -r pat; do
     if [ "$start" = landing ] || [ "$start" = end-minus-width ]; then
         if cc1 -fno-start-width -fno-start-landing > "$den" 2>/dev/null; then
             ps="$(grep -m1 '^#define RX_DFA_START "' "$den" | cut -d'"' -f2)"
-            if [ "$ps" = reverse-pass ] && grep -q 'size_t rewind_position' "$den"; then echo "PRODUCT-R"
+            if [ "$ps" = reverse-pass ] && has_rewind "$den"; then echo "PRODUCT-R"
             else echo "BAD: the product arm stamps '$ps' (or no reverse pass) on a $start artifact: $pat"; fi
             if [ "$start" = landing ] && cc1 -fno-start-landing > "$den" 2>/dev/null &&
                [ "$(grep -m1 '^#define RX_DFA_START "' "$den" | cut -d'"' -f2)" = reverse-pass ]; then

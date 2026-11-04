@@ -18,7 +18,9 @@ DFA-hat row (`first-memchr-bounded`, `first-class-bounded`).
 [dfa-route] every mover is the UNANCHORED forward scan (`RX_DFA_SCAN
     "unanchored"`) of a SEEDED machine (a `rx_forward_seed_state` table):
     sabotage S490's structural detector (no attempt-scan artifact carries a
-    DFA-hat value) and S487's guard.
+    DFA-hat value) and S487's guard. [LANDWALK] stage 1: a `landmark-walk`
+    artifact qualifies too, its hat sitting in the relocate (the unanchored
+    scan the walk hands `search_from = lmwalk_start;` to, emit_landmark_walk).
 [dfa-reseed] THE RE-SEED IS CONDITIONAL (startset.md §6.4.3 item 1, S485's
     structural detector): the hat's skip block writes `forward_state` only
     under `if (scan_position > skip_from)`, never through the unconditional
@@ -83,8 +85,14 @@ FLOOR_MOVERS = 35            # corpus movers (71 at landing)
 
 HAT = ("first-memchr-bounded", "first-class-bounded")
 # The three cross-row mechanisms a DFA-hat mover may move (startset.md §4.3):
-# G1's pre-check admission, the hybrid re-seed row, the scan edge.
-CLASS_DENY = ["-fno-req-byte", "-fno-req-run", "-fno-hyb-reseed", "-fno-scan-edge"]
+# G1's pre-check admission, the hybrid re-seed row, the scan edge. Plus, since
+# [LANDWALK] stage 1, the landmark walk's deny: the walk's admission reads NEXT
+# without the walk (its `next-landmark` and `rarity` rows, tuning.md §2.54), so
+# once the other classes are denied, the deny arm's NEXT (no hat) can admit
+# the walk where the hat arm's does not (reseed.rxt:15 and :117, measured
+# 2026-10-30 by lane p1tri); denied on BOTH arms, the walk cannot answer for
+# a difference outside the hat.
+CLASS_DENY = ["-fno-req-byte", "-fno-req-run", "-fno-hyb-reseed", "-fno-scan-edge", "-fno-landmark-walk"]
 STAMP = re.compile(r'^#define RX_(\w+) +(.*)$', re.M)
 TABLE = "static const unsigned char rx_start_bytes[256] = {"
 FIND_SET = "!rx_start_bytes[subject[scan_position]]"
@@ -277,7 +285,7 @@ def corpus_checks():
                     and r["nfind_memchr"] == 1 - want_tbl and r["ndecl"] == 1 and r["nreseed"] == 1):
                 viol["iff"].append("%s: %s, %d table(s), %d set skip(s), %d memchr skip(s), %d decl(s), %d re-seed(s)"
                                    % (key, pf, r["ntable"], r["nfind_set"], r["nfind_memchr"], r["ndecl"], r["nreseed"]))
-            if st.get("DFA_SCAN") != "unanchored" or not r["seeded"]:
+            if st.get("DFA_SCAN") not in ("unanchored", "landmark-walk") or not r["seeded"]:
                 viol["route"].append("%s: DFA_SCAN %s, seeded %s" % (key, st.get("DFA_SCAN"), r["seeded"]))
             if r.get("uncond") or r["nreseed"] != 1:
                 viol["reseed"].append("%s: unconditional=%s conditional=%d" % (key, r.get("uncond"), r["nreseed"]))

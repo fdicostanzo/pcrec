@@ -419,6 +419,20 @@
 #     pcre2_substitute and their generic arms, the template refusals and the
 #     header contract. SKIPS its oracle arms (not the section) without
 #     libpcre2. Registered before S1346.
+#   trailcompact — added 2026-10-29 ([K134], lane trailgc2); runs
+#     tests/vm/run_trail_compact.sh: the VM trail checkpoints' cycle and
+#     margin check on the emitted C, the witnesses' answers at every trail
+#     capacity against a large-buffer run, the floor that only a compaction
+#     answers below, every witness's single fast-tier escalation, the
+#     bounded-work run (lane trailgc3) and the corpus-wide cycle check. Its own arm
+#     because a compaction that stops reaching a loop moves no corpus answer
+#     at the stamped capacities the corpus uses. Registered before S1790.
+#   stmtwriter — added 2026-10-30 ([VMREC] (a), lane vmrec); runs
+#     tests/codegen/run_stmt_writer.sh: the static scan that the VM body
+#     buffer has one writer (src/gen/vm_stmt.c). Its own arm because the
+#     body's run-time tiling check only fires on a compile that reaches the
+#     foreign write, and a write on an unreached path (the comment tier, a
+#     rare rung) moves no answer. Registered before S1840.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -497,6 +511,10 @@
 #     S1079/S1105 (re-aimed at fd_row_decides at B4', when the `routed` bit
 #     they planted was deleted) are re-anchored from fd_row_decides to
 #     fd_route/fd_pres.
+#     span_pick 1f (lane sp1f, 2026-11-03): S1025 retired with the §2.5 pay
+#     rule it planted in (`fd_pay`, deleted with R1 and R2, the only rows that
+#     paid, and `mf_finder_pay`/`--pay-grid`, its detector's entry: nothing is
+#     left to plant or to detect; no successor, the rule is gone).
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their
@@ -628,6 +646,14 @@
 #     source and fixtures live only in that directory. Rows: S1680-S1685, S1740-S1741,
 #     and from the r1-ic2 review's fixes (lane ic2fix) S1720-S1721.
 #     Verdict: the script's `checks passed:`/`checks failed:` trailer.
+#   landwalk — added 2026-10-29 ([LANDWALK] stage 1, lane p1build); runs
+#     tests/codegen/run_landmark_walk.sh: the `landmark-walk` row's named
+#     witnesses per admission row, the deny both ways (a walk leaves, a
+#     declining artifact is byte-identical) and the reach guard as a cost.
+#     Its own arm because the row is answer-identical by construction.
+#     Rows: S1820-S1829 (S1822 retired UNREACHED; re-arm tripwire
+#     `cand_rows_check.py` [cand-ma-dfa-only]) and S1855 (lane p1kind, g1
+#     reads nested \G/\K). Verdict: the script's trailer.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1920,6 +1946,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/callouts.log" | grep -oE '[0-9]+')"
                 score_arm "$work/callouts.log" "$f" "callouts:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            landwalk)
+                # [LANDWALK] stage 1 tests/codegen/run_landmark_walk.sh — see
+                # the vocabulary entry above.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_landmark_walk.sh" > "$work/landwalk.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/landwalk.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/landwalk.log" | grep -oE '[0-9]+')"
+                score_arm "$work/landwalk.log" "$f" "landwalk:${f:-ERR}fail/${p:-?}pass"
                 ;;
             code)
                 # [INLINE-C] stage 2 — module `code-c`'s own arm:
@@ -3553,6 +3588,23 @@ run_one() {
                 p="$(grep '^checks passed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
                 f="$(grep '^checks failed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
                 score_arm "$work/core.log" "$f" "core:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            trailcompact)
+                # [K134] tests/vm/run_trail_compact.sh -- see the vocabulary
+                # entry above.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/vm/run_trail_compact.sh" > "$work/trailcompact.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
+                score_arm "$work/trailcompact.log" "$f" "trailcompact:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            stmtwriter)
+                # [VMREC] tests/codegen/run_stmt_writer.sh -- see the
+                # vocabulary entry above. Static: reads the planted tree.
+                bash "$tree/tests/codegen/run_stmt_writer.sh" > "$work/stmtwriter.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/stmtwriter.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/stmtwriter.log" | grep -oE '[0-9]+')"
+                score_arm "$work/stmtwriter.log" "$f" "stmtwriter:${f:-ERR}fail/${p:-?}pass"
                 ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")

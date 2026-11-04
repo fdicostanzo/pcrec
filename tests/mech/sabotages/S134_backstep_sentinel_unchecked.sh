@@ -24,6 +24,8 @@
 # body, counted with the same declared integer as the call itself, and
 # `<prefix>_back_step`'s own definition is excluded by the same one-rule
 # exclusion the call count uses. Nothing behavioural can see this.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the sentinel test is now a BRANCH record; the same record not built. Same detector, same arm.
 SAB_ID="S134-backstep-sentinel-unchecked"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
@@ -31,6 +33,6 @@ SAB_HARNESS_TARGET="tests/lookaround/lookbehind.rxt"
 SAB_DESC="vm_look_behind_branch (vm_look_behind's per-branch loop) calls the back-step but does not compare the result against BACK_STEP_NONE, keeping the scan_position < k guard. Under the byte backend the guard is EXACT so the check is unreachable and NO ANSWER CHANGES; under any other encoding the guard is a fast path and the sentinel is the correctness"
 SAB_DOC_FIGURE="PREDICTED: codegen RED on the sentinel count for all seven residlb* fixtures; tests/lookaround and the lookaround differential GREEN — this row cannot be detected behaviourally under the byte backend and says so. Canonical figure owed from run_sabotage_matrix.sh S134."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
-              v->p, v->p);'
+SAB_BEFORE='    pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
+                pcrec_vm_tgt_fail());'
 SAB_AFTER='    /* SABOTAGE S134: the sentinel comparison deleted */'

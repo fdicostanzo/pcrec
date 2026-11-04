@@ -71,7 +71,7 @@
 # hard-fail on an empty list). Three, because three witnesses have a natural
 # population of ZERO at the shipped limits:
 #   lowdfa   -DPCREC_MAX_AUTO_DFA_ELEMS=3000      overflowed-prefilter
-#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000
+#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000
 #            -DPCREC_SIZE_TERM_THRESHOLD=10000    cap-rescue,
 #                                                 size-model-declined
 #   lowthr   -DPCREC_SIZE_TERM_THRESHOLD=1000     capacity-declined
@@ -119,7 +119,7 @@ build_ref() {   # build_ref NAME CFLAGS...  -> $WORK/pcrec_NAME
 }
 if [ -n "$lsrcs" ]; then
     build_ref lowdfa  -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000 \
                       -DPCREC_SIZE_TERM_THRESHOLD=10000 &
     build_ref lowthr  -DPCREC_SIZE_TERM_THRESHOLD=1000 &
     wait
@@ -142,9 +142,9 @@ REF_lowdfa="$WORK/pcrec_lowdfa"; REF_lowsize="$WORK/pcrec_lowsize"; REF_lowthr="
 if [ -n "$lsrcs" ]; then
     build_ref trplain   -DPCREC_CAND_TRACE &
     build_ref trlowdfa  -DPCREC_CAND_TRACE -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 &
-    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 \
                         -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
     wait
@@ -324,6 +324,12 @@ fstate seq-anch 1 'sdr=1'
 fseq seq-anchland trplain ok 'drop-anchored@size'                              '\p{N}\p{L}\p{Lu}' -e utf8
 fstate seq-anchland 1 'sdr=1'
 fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
+# [LANDWALK] `drop-landmark-walk` (p1build, 2026-10-29): the walk's artifact (ML and the
+# inline verify's tables) is 63,691 B against trlowsize's 60,000 B cap; without the walk
+# 41,155 B, so the one rung fits it and `drop-anchored` is never asked.
+W_LWSIZE='(?:ab|cd|ef|gh|ij|kl|mn|op|qr|st|uv|wx|yz)+(?:AB|CD|EF|GH)+@x'
+fseq seq-lwdrop   trlowsize ok 'drop-landmark-walk@size'                        "$W_LWSIZE"
+fseq seq-lwref    trlowsize refused 'refuse@size'                               "$W_LWSIZE" --size-cap=refuse
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
 # T1 row 2 (the size term's trial catch), label `other`
 fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
@@ -391,6 +397,7 @@ frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$
 frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcat\b){2,}\w\w' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
+frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8 -fno-start-landing
 frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
 frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8 -fno-start-landing

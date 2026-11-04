@@ -27,6 +27,10 @@ findings CONFIRMED (with repro) or SUSPECTED and carry a PROBED-AND-HELD list
    existing decision family? Name the family.
 6. **Propose the general form and unlocks.** Beyond refutation: name the general
    form of the change and what it would unlock, with triggers.
+7. **Seam round trip (manifesto principle 9).** Could what crosses this seam be written
+   to text and read back by another process? Name every pointer, callback, shared
+   state or target-language assumption that crosses. Applies to design and code
+   rounds touching planner, kit or back-end seams.
 
 ## Rules
 - **A re-pinned floor or count is a TRADE to judge, never bookkeeping.** Example:
@@ -65,6 +69,10 @@ applies, beyond `architecture.md`:
   challenge, not a veto (Frank 2026-10-17).
 
 ## Lessons from review rounds
+
+Round 2026-11-03 r1, span_pick rev 4 re-check (`docs/dev/reviews/2026-11-03-r1-memfn-spanpick4.md`): (1) a quoted region boundary from a sweep states its grid, and a boundary on a grid point is unproven; (2) a choice rule normalised over the candidate set must state whether it is independent of never-picked candidates (drill: add one); (3) every "owner rulings since rev N" row cites its durable home at the freeze, or is marked PENDING-RECORD.
+
+Round 2026-11-02 r1, kit span_pick rev 1 (`docs/dev/reviews/2026-11-02-r1-memfn-spanpick.md`): (1) a simulate lens recomputes every outcome the design quotes with the design's OWN formula (smp20's quoted win was the evidence study's doubled-hit arithmetic; by the text's formula it loses); (2) give premise/simulate critics the evidence sweep's RAW data as the population; (3) a design's proposed sabotage witness must reach its plant by the design's own arithmetic ([MECH-REACH] applied to a design: drop-F cannot move smp20 because F already agrees there).
 
 Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
 (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, landing with lane/memfn-s3,
@@ -132,3 +140,15 @@ Round 2026-10-29 r3, vmtrail (design) (`docs/dev/reviews/2026-10-29-r3-vmtrail.m
 2. **Multi-document subjects: review the SEAMS.** Each document was sound against the stock program; the holes were in the composition (F4, F5, F21). Every critic tags each finding doc or seam.
 3. **"Read from the event stream" is a premise to grep, not a given.** Three designs rested on a stream with no slot reads, no SET sources, missing conditional edges and a cut logged as a note. A premise lens checks every claimed input of an analysis against the producer's struct and its call sites.
 4. **A cited control can stop reaching its site between design and build** (F14: R25 E5's witness now routes to revdet or the DFA). Every witness a design names gets a reach probe at the base commit.
+
+Rounds 2026-10-31 r1-r5, pricing-split and the pricing bake-off (`docs/dev/reviews/2026-10-31-r1-pricing-split.md` .. `r5-bakeoff3.md`).
+1. **Coordinator notes live where critics cannot read them.** Keep them in a `.coord/` subdirectory of the round dir that COMMON denies; a critic read the coordinator's planted-check note when process.md sat in the shared dir (r1).
+2. **Drill any verdict table on CONSTRUCTED outcomes, the design's own prediction first.** The predicted tie read INCONCLUSIVE/UNRESOLVABLE (r3, SIM-5/6/7).
+3. **Implement the rule from the design TEXT before reading the design's own drill script, then diff.** Nine text/script divergences, three scenarios on target only through them (r4).
+4. **Check where every evidence script writes before briefing.** A design's own `--plants` mode wrote into a denied lane dir and lanewatch's default log sits in the main tree; redirect via `PCREC_TMPDIR` and `LANEWATCH_LOG` (r5).
+
+Round 2026-11-01 r1, stream1 design (`docs/dev/reviews/2026-11-01-r1-stream1.md`), five lenses; lessons ruled 2026-11-01.
+1. **A synthesis of earlier drafts is re-graded when the owner's criteria change between rounds.** The round checks the subject against the criteria in force at the FREEZE, not at writing; a subject that predates them is a DOC finding first.
+2. **A merge of independently written rule tables drops conjuncts.** A synthesis that merges rule tables keeps each source row's FULL conjunct list beside the merged row, and the soundness lens diffs them.
+3. **"Today's design cannot X" claims need a witness compile,** like answer claims; five premise findings were the subject claiming a benefit today's tree already has.
+4. **For an F4/no-blindness question, inventory today's BACKWARD channels first** (start from `CandRow`/`CandNode`, not the subject's table).

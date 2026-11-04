@@ -271,7 +271,17 @@ fi
 #   engine  start-stamp  search_form-mirror  n_start_stamps  n_mirrors
 #   rewind  revtoken  revtbl  table-stamp  edge-stamp  match-stamp
 #   fwd_repr rev_repr anch_repr  fwd_edges fwd_bitmap  rev_edges rev_bitmap
-#   anch_edges anch_bitmap  gate  gatecomment  hybrid_window
+#   anch_edges anch_bitmap  lm_repr lm_edges lm_bitmap  lv_repr lv_edges
+#   lv_bitmap  gate  gatecomment  hybrid_window  proseclash  lmwalk
+#
+# [LANDWALK] stage 1: a `landmark-walk` artifact carries two more machines,
+# the landmark machine (`rx_landmark_*`, ML) and the anchored machine run
+# inline as the walk's verify (`rx_lmverify_*`, MA), and its own reverse
+# walk writes a `rewind_position` inside the walk loop. That loop (from the
+# walk's `lmwalk_reach` local to its hand-off `search_from = lmwalk_start;`,
+# emit_landmark_walk) is the walk's, not a start recovery: RX_DFA_START names
+# the RELOCATE's recovery (the composite after the loop), so `rewind` is read
+# OUTSIDE it.
 #
 # A machine's REPR is read from the accessor block's own emitted C TYPE
 # (`unsigned` pre-multiplied, `int` indexed) AND cross-checked against the
@@ -283,7 +293,7 @@ cat > "$WORKDIR/read.awk" <<'AWK'
 BEGIN {
     eng="-"; start="-"; mir="NONE"; nstart=0; nmir=0;
     rw=0; rtok=0; rtbl=0; tbl="-"; edge="-"; match_form="-";
-    gate=0; gatec=0; hywin=0; pend=0;
+    gate=0; gatec=0; hywin=0; pend=0; lw=0; in_lw=0;
     for (m in repr) delete repr[m];
 }
 /^#define RX_ENGINE "/            { split($0,a,"\""); eng=a[2] }
@@ -296,7 +306,9 @@ BEGIN {
     s=$0; sub(/^    \.search_form = /,"",s); sub(/,$/,"",s);
     if (s=="NULL") mir="NULL"; else { gsub(/"/,"",s); mir=s }
 }
-/size_t rewind_position/                 { rw=1 }
+/^    size_t lmwalk_reach = search_from;$/ { lw=1; in_lw=1 }
+/^    search_from = lmwalk_start;$/          { in_lw=0 }
+!in_lw && /size_t rewind_position/       { rw=1 }
 /^typedef .* rx_reverse_state;/          { rtok=1 }
 /rx_reverse_next_state\[/                { rtbl=1 }
 /^typedef unsigned rx_[a-z]+_state;/ {
@@ -329,16 +341,16 @@ pend && /_state == [0-9]+ &&/ {
 END {
     printf "%s %s %s %d %d %d %d %d %s %s %s", eng, start, mir, nstart, nmir,
            rw, rtok, rtbl, tbl, edge, match_form;
-    split("forward reverse anchored", ms, " ");
-    for (i=1; i<=3; i++) {
+    split("forward reverse anchored landmark lmverify", ms, " ");
+    for (i=1; i<=5; i++) {
         m=ms[i];
         r = (m in repr) ? repr[m] : "-";
         e = (m in edges) ? edges[m] : 0;
         b = (m in bitmaps) ? bitmaps[m] : 0;
         printf " %s %d %d", r, e, b;
     }
-    printf " %d %d %d %s\n", gate, gatec, hywin,
-           (proseclash=="" ? "-" : proseclash);
+    printf " %d %d %d %s %d\n", gate, gatec, hywin,
+           (proseclash=="" ? "-" : proseclash), lw;
 }
 AWK
 
@@ -352,12 +364,14 @@ AWK
 # right-hand sides of ONE `local` statement left to right against each other,
 # so `local f="$1" v="$f"` leaves `v` EMPTY. Every derived local below is its
 # own statement for that reason.
-fold_repr() { # fold_repr <fwd> <rev> <anch> <match_form>
+fold_repr() { # fold_repr <fwd> <rev> <anch> <match_form> <landmark> <lmverify>
     # [OPT-REVEND] L2: over the machines PRESENT, whichever heads the list --
-    # a `rev-end` walk carries no forward machine.
-    local f="$1" r="$2" a="$3" mf="$4" v="" m
+    # a `rev-end` walk carries no forward machine. [LANDWALK]: the landmark
+    # machine and the inline verify (the anchored machine) are present on a
+    # walk, `-` elsewhere.
+    local f="$1" r="$2" a="$3" mf="$4" l="${5:--}" lv="${6:--}" v="" m
     [ "$mf" = "unwrapped" ] || a="-"
-    for m in "$f" "$r" "$a"; do
+    for m in "$f" "$r" "$a" "$l" "$lv"; do
         [ "$m" = "-" ] && continue
         if [ -z "$v" ]; then v="$m"; elif [ "$m" != "$v" ]; then echo mixed; return; fi
     done
@@ -377,11 +391,15 @@ fold_join() { # fold_join <so-far> <next>
     if [ "$so" = none ] || [ "$so" = "$v" ]; then echo "$v"; return; fi
     echo mixed
 }
-fold_edge() { # fold_edge <fe> <fb> <re> <rb> <ae> <ab> <match_form> <has_rev>
+fold_edge() { # fold_edge <fe> <fb> <re> <rb> <ae> <ab> <match_form> <has_rev> [<le> <lb> <ve> <vb> <lmwalk>]
     local v
     v="$(fold_edge_one "$1" "$2")"
     if [ "$8" = 1 ]; then v="$(fold_join "$v" "$(fold_edge_one "$3" "$4")")"; fi
     if [ "$7" = "unwrapped" ]; then v="$(fold_join "$v" "$(fold_edge_one "$5" "$6")")"; fi
+    if [ "${13:-0}" = 1 ]; then
+        v="$(fold_join "$v" "$(fold_edge_one "$9" "${10}")")"
+        v="$(fold_join "$v" "$(fold_edge_one "${11}" "${12}")")"
+    fi
     echo "$v"
 }
 export -f fold_repr fold_edge_one fold_join fold_edge
@@ -435,7 +453,8 @@ one() {
     rw="$6"; rtok="$7"; rtbl="$8"; tbl="$9"; shift 9
     edge="$1"; mf="$2"; fr="$3"; fe="$4"; fb="$5"
     rr="$6"; re="$7"; rb="$8"; ar="$9"; shift 9
-    ae="$1"; ab="$2"; gate="$3"; gatec="$4"; hywin="$5"; clash="$6"
+    ae="$1"; ab="$2"; lr="$3"; le="$4"; lb="$5"; vr="$6"; ve="$7"; vb="$8"; gate="$9"; shift 9
+    gatec="$1"; hywin="$2"; clash="$3"; lw="$4"
 
     [ "$nmir" -eq 1 ] || { echo "MIRRDUP-$ax"; echo "BAD: rx_info.search_form appears $nmir times (expected exactly 1): $pat"; return; }
     [ "$clash" = "-" ] || { echo "PROSECLASH-$ax"; echo "BAD: a machine's accessor typedef and its own prose form marker disagree ($clash) — this file's repr reader is broken, not the emitter: $pat"; }
@@ -492,13 +511,13 @@ one() {
 
     # ---- §3: the two folds, recomputed over the machines PRESENT ----
     hasrev=0; [ "$rr" != "-" ] && hasrev=1
-    want_tbl="$(fold_repr "$fr" "$rr" "$ar" "$mf")"
-    want_edge="$(fold_edge "$fe" "$fb" "$re" "$rb" "$ae" "$ab" "$mf" "$hasrev")"
+    want_tbl="$(fold_repr "$fr" "$rr" "$ar" "$mf" "$lr" "$vr")"
+    want_edge="$(fold_edge "$fe" "$fb" "$re" "$rb" "$ae" "$ab" "$mf" "$hasrev" "$le" "$lb" "$ve" "$vb" "$lw")"
     echo "FOLDCMP-$ax"
     if [ "$tbl" != "none" ]; then
-        [ "$tbl" = "$want_tbl" ] || { echo "FOLDBAD-$ax"; echo "BAD: RX_DFA_TABLE '$tbl' but the machines in the artifact fold to '$want_tbl' (fwd=$fr rev=$rr anch=$ar match=$mf): $pat"; }
+        [ "$tbl" = "$want_tbl" ] || { echo "FOLDBAD-$ax"; echo "BAD: RX_DFA_TABLE '$tbl' but the machines in the artifact fold to '$want_tbl' (fwd=$fr rev=$rr anch=$ar landmark=$lr lmverify=$vr match=$mf): $pat"; }
     fi
-    [ "$edge" = "$want_edge" ] || { echo "EDGEBAD-$ax"; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab match=$mf): $pat"; }
+    [ "$edge" = "$want_edge" ] || { echo "EDGEBAD-$ax"; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab landmark $le/$lb lmverify $ve/$vb match=$mf): $pat"; }
 
     # ---- §9: a DECLINED artifact is byte-identical under the deny flag ----
     # [START-LANDING] every artifact the pinned predicate declined, the two

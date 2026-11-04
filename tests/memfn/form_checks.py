@@ -174,6 +174,17 @@ def c14_compile(cc, root, tmp, include_dir, name, stride):
     return r.returncode, r.stderr
 
 
+def c14_asserts(err):
+    """The assert messages the probe compile tripped, without gcc's file:L:C
+    prefixes: the probe TU is this check's own instrument, so a tripped assert
+    is the check FAILING, and the mech scorer's compile-failure reading
+    (NOCOMPILE_ERE) must not mistake the quoted diagnostic for broken code."""
+    msgs = re.findall(r'static assertion failed: "([^"]*)"', err)
+    # Any OTHER compile error stays verbatim: broken code is not a catch, and
+    # the scorer must still read it as one.
+    return '; '.join(msgs) if msgs else ' '.join(err.split())[:300]
+
+
 def c14(root, cc, tmpbase):
     limits = os.path.join(root, 'src/core/limits.def')
     with open(limits, encoding='utf-8') as fh:
@@ -197,7 +208,7 @@ def c14(root, cc, tmpbase):
         if rc == 0:
             ok('C14: the shape asserts compile against the tree\'s limits.def and memfn.h')
         else:
-            bad('C14: a shape bound fails: %s' % ' '.join(err.split())[:300])
+            bad('C14: a shape bound fails: %s' % c14_asserts(err))
         # control: the same asserts against a header with MF_MAX_TERM below the bound
         cdir = os.path.join(tmp, 'inc')
         os.makedirs(cdir)

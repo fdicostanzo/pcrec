@@ -4,8 +4,10 @@
 # kit writes the loop. The plant has pcrec spell an open strided `while ((`
 # itself at stride > 1: C17 rule 3 (a delegated emitter spells a form) and
 # C12 (a walk-open form in emit_vm.c with no ceiling row) both fire.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the kit's VMSPAN/VMSTRIDE window is now a KIT piece rendered by VK_SPAN's renderer; the same pcrec-spelled strided loop in its place at stride > 1. Same detector, same arm.
 SAB_ID="S684-m6-vm-respells-strided-loop"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="memfnmanifest memfnforms"
 SAB_DESC='pcrec'"'"'s VM span scan spells its own strided while loop again at stride > 1 instead of the kit'"'"'s VMSTRIDE site, while VMSTRIDE is delegated: two spellings of one search (D122)'
 SAB_DOC_FIGURE="HAND-MEASURED by lane m6 2026-10-08 (plant applied, tree rebuilt; docs/dev/lanes/m6_report.md section 6): memfnmanifest 1 failed / 12 passed (C17 rule 3: vm_emit_span_scan, delegated VMSPAN/VMSTRIDE, spells a walk-open form), memfnforms 1 failed / 4 passed (C12: emit_vm.c walk-open 1 spelled, ceiling 0). The matrix figure is owed at the slot."
@@ -14,15 +16,11 @@ SAB_REACH_EXPECT='while ((rx_span_cursor + 2 <= subject_length) && (subject[rx_s
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_span_advance,vm_emit_span_scan[[:space:]].*[[:space:]]delegated[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    DelegSite id = stride == 1 ? DELEG_VMSPAN : DELEG_VMSTRIDE;
-    mf_hooks h;
-    mf_site *s = pcrec_memfn_advance_site(v->cx, id, &sa, &h);
-    pcrec_memfn_emit(v->cx, id, s, &h, b);'
-SAB_AFTER='    DelegSite id = stride == 1 ? DELEG_VMSPAN : DELEG_VMSTRIDE;
-    mf_hooks h;
-    mf_site *s = pcrec_memfn_advance_site(v->cx, id, &sa, &h);
-    if (stride > 1) {  /* SABOTAGE S684: pcrec spells the strided loop again */
-        pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride, bound);
-        pcrec_sb_printf(b, ") {\n            %s_span_cursor += %d;\n        }\n", v->p, stride);
-    } else
-    pcrec_memfn_emit(v->cx, id, s, &h, b);'
+SAB_BEFORE='    vm_piece_render(sb, &s->u.span.kit);'
+SAB_AFTER='    if (s->u.span.stride > 1)  /* SABOTAGE S684: pcrec spells the strided loop again */
+        pcrec_sb_printf(sb->b, "        while ((%s_span_cursor + %d <= %s)",
+                        sb->p, s->u.span.stride, s->u.span.clamp ? "lim_" : "subject_length"),
+        pcrec_sb_printf(sb->b, ") {\n            %s_span_cursor += %d;\n        }\n",
+                        sb->p, s->u.span.stride);
+    else
+    vm_piece_render(sb, &s->u.span.kit);'

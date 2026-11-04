@@ -324,7 +324,8 @@ static void emit_step_own(Ctx *cx, StrBuf *c, const char *p, const GenNames *g,
         pcrec_sb_fragf(&cx->arena, "%s__step", p),
         pcrec_sb_fragf(&cx->arena, "%s, ptrdiff_t (*c)[2], size_t *at", cursor_params(cx, t)),
         pcrec_sb_fragf(&cx->arena, "%s, c, &run, at", ca),
-        pcrec_sb_fragf(&cx->arena, "%s, c, at", ca), t->frames_code);
+        pcrec_sb_fragf(&cx->arena, "%s, c, at", ca), t->frames_code,
+        t->fast_no_compact);
 }
 
 /* `<p>__one`, ONE search of a BOUND iterator from the caller's cursor

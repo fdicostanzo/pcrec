@@ -85,3 +85,13 @@ DELEG_SITE(N7, MF_OP_MISMATCH, DELEG_H(MF_H_ON_DIFF),
  * it before B1. */
 DELEG_SITE(COVER, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
            MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)
+/* LMHIT ([LANDWALK] stage 1; docs/dev/lanes/p1build_report.md): the
+ * `landmark-walk` LOCATE row's hit stream, a FIND / STMT / ASSIGN over the
+ * landmark's one SET term, described by facts (D157): every occurrence of
+ * the set at or after the position it is given, ascending; the walk asks it
+ * again from one past each hit, so overlapping occurrences are all yielded.
+ * Its miss is the search's NOMATCH (`return 0;`). Built by
+ * `lm_find_of` (emit_dfa.c), defined and used by `emit_landmark_walk`. One
+ * scan per call, resumed (PF's budget). */
+DELEG_SITE(LMHIT, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
+           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)

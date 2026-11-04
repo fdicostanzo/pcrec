@@ -1196,6 +1196,19 @@ enum {
  * reason. Bit 55 is the kit's (`-fno-kit-size-drop`, R17-b). */
 #define PCREC_NO_REV_END_ONEWALK PCREC_BIT(56)
 
+/* [LANDWALK] `-fno-landmark-walk` -- deny the LANDMARK WALK locator
+ * (docs/spec/tuning.md §2.51): for a one-branch pattern with a required
+ * byte class L whose bytes the pattern's prefix P before it can never
+ * consume, the search finds each occurrence of L and walks the artifact's
+ * own reverse machine of P·L back from it to the leftmost start, then runs
+ * the anchored machine once from there, instead of stepping the forward
+ * machine over every byte; `<PREFIX>_DFA_SCAN` reads `"landmark-walk"` where
+ * it applies. Answer-identical, so the bit joins the derived strategy mask
+ * (masked out of `rx_info.flags`); a PUBLIC deny because the walk can be
+ * slower where L is dense (one walk and one anchored run per occurrence).
+ * Deny only. A `#define` for bit 32's reason. */
+#define PCREC_NO_LANDMARK_WALK PCREC_BIT(57)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every
@@ -1781,8 +1794,9 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * descriptor is DEFINED to be exactly the un-suffixed call. It exists
  * because a generated matcher never allocates, so the two arrays a
  * backtracking match needs otherwise live on the entry's own stack frame:
- * MEASURED, `<prefix>_search`'s frame is 131,216 bytes on a call-bearing
- * artifact where `<prefix>_search_in`'s is 144. The header also stamps
+ * MEASURED, the default storage's frame is 131,232 bytes on a call-bearing
+ * artifact (the deep tier `<prefix>_search` escalates to) where
+ * `<prefix>_search_in`'s is 144. The header also stamps
  * `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` (the DEFAULT capacities, not
  * limits), `<PREFIX>_RESUME_FRAME_SIZE`/`_TRAIL_FRAME_SIZE` and
  * `<PREFIX>_BUFFER_ALIGN`, which is the arithmetic a caller needs to turn

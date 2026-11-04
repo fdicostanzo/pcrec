@@ -18,10 +18,13 @@ SAB_DESC='the start table'\''s RECOVER node reads NEXT without the handoff deny 
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/pathreads_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S844.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },
+SAB_BEFORE='                                        [CAND_SLOT_FINISH] = CAND_ON(CAND_ROUTE_DFA) },
                              .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },'
-SAB_AFTER='                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },   /* SABOTAGE S844 */'
+SAB_AFTER='                                        [CAND_SLOT_FINISH] = CAND_ON(CAND_ROUTE_DFA) },   /* SABOTAGE S844 */'
 # Re-aimed by lane fdb1 (R17-b' B1, 2026-10-16): RECOVER's node gained the
 # kit-ask fields after `.under`, so the node no longer closes there; the plant
 # still drops RECOVER's read-under deny bits and nothing else (intent
 # re-verified).
+# RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1, r7 FIX-1): RECOVER's
+# reads gained FINISH (its asker asks whether a hand relocates), now the last
+# entry before `.under`; the plant still drops the read-under deny alone.

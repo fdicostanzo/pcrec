@@ -17,8 +17,9 @@ R5 and R7: D and E below no longer have a deciding row that reads a set key.
 WHAT IT CONTROLS, AND AGAINST WHAT (each expectation is written HERE, from the
 design's text, sharing no code with the kit):
 
-  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 16 rows
-     the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn), by slot and
+  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 10 rows
+     the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn; R3a, R3b,
+     R4, R8, R1 and R2 deleted by span_pick 1a and 1f), by slot and
      in order; a basis on every row; a pick on every FIND row; no MEASURED row
      that reads no key (but R7w, MEASURED by the walk ruling); every row
      reading a DERIVED key (the converter's closed list, §5.2 C1: saving,
@@ -26,7 +27,8 @@ design's text, sharing no code with the kit):
      reads nothing; the listing carries no `routed`/`locked` column (the bit
      is deleted, LOCKDOWN); every key the
      kit's (no `pcrec.` key, R-MS1); every deny registered in options.def or
-     one of B3b's three. SN-4 (S1020) plants an UNSTATED basis.
+     one of B3b's three; no row lists an unpaid pick (the pay rule retired
+     with R1 and R2, span_pick 1f). SN-4 (S1020) plants an UNSTATED basis.
   B. R-MS3: `walk` and `libc` hash, the forms later steps build are refused;
      the text hash ignores a rename, a comment and layout and moves on a
      one-operator edit; the walk form's hash IS its canonical text's.
@@ -46,13 +48,13 @@ design's text, sharing no code with the kit):
      define's and with this file's own reading of the site and the text
      (arm_fixtures --query); the query is pure (the same artifacts with and
      without it); the traced driver's define-time re-ask refuses nothing.
-  H. THE PAY RULE'S ARITHMETIC GRID (§2.5 [D9]; SN-9, S1025): T1/T2/T3 over a
-     grid of operands at, below and above every boundary, the expected bits
-     computed here; at least PAY_TIE_FLOOR ties.
+  H. (retired with the pay rule, span_pick 1f: R1 and R2, its only readers,
+     were deleted with `mf_finder_pay` and `--pay-grid`; S1025 retired.)
   I. THE CALL MODE IS A STATED FACT (R-23, MF_SITE_ABI 14; S1089): a site with
      `body` UNSTATED is REFUSED at the define (the kit's refusal names `body`),
      never classed as any mode; PARAM (reserved) and a value outside mf_body
-     are refused too; ONESHOT is accepted and R1's gate does not name `body`.
+     are refused too; ONESHOT is accepted (no refusal, a FIND row decides;
+     no row reads `body` since R1 went, span_pick 1f).
      (S919's gate plant reads a state no site reaches since the refusal: it
      is retired, declared UNREACHED.)
      Also (lane n2fix): no PRES shadow decision is declined on `need` (the
@@ -68,7 +70,8 @@ design's text, sharing no code with the kit):
      and an out-of-enum 9 included). The layout is prov_check.c's static
      assertions (appended, never reordered).
   J. The retired denies are REFUSED: `--memfn=no-fd-r0` and `no-fd-r5` name
-     no row since B4' (withdrawn with R0 and R5).
+     no row since B4' (withdrawn with R0 and R5), `no-fd-r8` and `no-fd-ndisp`
+     none since span_pick 1f (deleted with R8, R1 and R2).
   K. B2's ROUTING (§1.6, R17-b' B2): each of D1, D1c, D1w DECIDES the
      one-byte site it is written for (the kit's report
      `mf_result.row` and the traced `MFTRACE FDROUTE` record, two
@@ -105,18 +108,21 @@ unreached = []
 # D172 S2 commit 6 (lane wsc5): D2 RETIRED (window_site.md §2.2), id reserved
 # D172 S3 (lane s3): RPT, the REPORT row, RETIRED with its R-26.6 preview
 # (window_site.md §4), id reserved; code review r1 C1 (lane s3): PAIR, ofsskip's
-# fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop
-FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w",
-             "PAIR", "R7w"]
-# the ids B4' withdrew (reserved, never reused) and their denies (retired)
-WITHDRAWN_ROWS = ["R0", "R5", "R7"]
-RETIRED_DENIES = ["fd-r0", "fd-r5"]
+# fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop;
+# span_pick.md rev 5.2 unit 1a (lane sp1a): the iterator rows R3a, R3b, R4
+# DELETED (zero reach by code), ids reserved; unit 1f (lane sp1f): R8, R1, R2
+# DELETED with their denies, the pay rule and mf_finder_pay, ids reserved
+FIND_ROWS = ["D1", "D1c", "D1w", "PAIR", "R7w"]
+# the ids B4' withdrew and 1a/1f deleted (reserved, never reused), and the
+# denies that went with them (retired: unknown options)
+WITHDRAWN_ROWS = ["R0", "R5", "R7", "R3a", "R3b", "R4", "R8", "R1", "R2"]
+RETIRED_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp"]
 # a MEASURED row that reads no key: R7w, MEASURED by the walk ruling's real-text
 # verdict (walk_vs_v1_record.md §5), not by a set key
 KEYLESS_MEASURED = {"R7w"}
 PRES_ROWS = ["P0", "P2", "P3", "P4", "P9"]
 DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
-B1_DENIES = ["fd-r8", "fd-ndisp", "fd-d1"]
+B1_DENIES = ["fd-d1"]
 B3B_DENIES = ["fd-pres-g1", "fd-pres-pick", "pres-set-lead"]
 PENDING_DENIES = {}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
@@ -141,7 +147,6 @@ B2_ROUTES = {
     "hat1":    ("D1",  r"^    if \(scan_position \+ 1 < subject_length\) \{\|        size_t skip_from = scan_position;\|        const void \*q = memchr\(subject \+ scan_position, 120, subject_length - 1 - scan_position\);.*\|        if \(scan_position > skip_from\) state = 1;\|    \}\|$"),
     "mline":   ("D1c", r"^    const void \*q = memchr\(subject \+ scan_position, 10, subject_length - scan_position\);\|    if \(!q\) break;\|    scan_position = .*\+ 1;\|$"),
 }
-PAY_TIE_FLOOR = 6
 QUERY_FLOOR = 39
 
 
@@ -200,6 +205,8 @@ def check_table(fx):
             continue
         if r["slot"] == "FIND" and r["pick"] in ("-", ""):
             bad("%s: a FIND row with no pick" % r["id"])
+        if r["unpaid"] != "-":
+            bad("%s: an unpaid pick %s, but the pay rule retired (span_pick 1f)" % (r["id"], r["unpaid"]))
         if not ks and r["basis"] == "MEASURED" and r["id"] not in KEYLESS_MEASURED:
             bad("%s: MEASURED but reads no key" % r["id"])
         quant = {k.split(".")[1] for k in ks if k.count(".") >= 1}
@@ -220,10 +227,10 @@ def check_table(fx):
     for d in B1_DENIES:
         (ok() if d in opts else bad("options.def lacks B1's deny %s" % d))
     for d in RETIRED_DENIES:
-        (ok() if d not in opts else bad("options.def still holds %s (retired at B4')" % d))
+        (ok() if d not in opts else bad("options.def still holds %s (retired with its rows)" % d))
     for rid in WITHDRAWN_ROWS:
         (ok() if rid not in [r["id"] for r in rows] else
-         bad("the listing still holds the withdrawn row %s (its id is reserved)" % rid))
+         bad("the listing still holds the withdrawn or deleted row %s (its id is reserved)" % rid))
     for d in B3B_DENIES:
         (ok() if d in opts else bad("options.def lacks B3b's deny %s" % d))
     for d, step in PENDING_DENIES.items():
@@ -318,9 +325,18 @@ def check_sets(root, form):
     g = run([sys.executable, "-I", os.path.join(root, "memfn/data/sets/generate.py"), "--check"])
     (ok() if g.returncode == 0 else bad("generate.py --check: " + g.stdout.decode().strip()))
     cards = {}
-    for name in ("kit-grid", "kit-synthetic"):
-        cl = read_cards(os.path.join(root, "memfn/data/cards", name + ".tsv"))
+    # every card table in the directory, by listing (a hand list drifts: a
+    # table added later would be read by no check), floored (K35)
+    cdir = os.path.join(root, "memfn/data/cards")
+    names = sorted(f[:-4] for f in os.listdir(cdir) if f.endswith(".tsv"))
+    (ok() if len(names) >= 3 else bad("memfn/data/cards holds %d card tables, under 3" % len(names)))
+    for name in names:
+        cl = read_cards(os.path.join(cdir, name + ".tsv"))
         cards[name] = cl
+        for c in cl:
+            f = c.split("\t")
+            (ok() if len(f) == 13 and f[0] == "kit" and f[4] in UNIT_CODE else
+             bad("%s.tsv: card row is not 13 kit columns with a §3.1 unit: %r" % (name, c)))
     sdir = os.path.join(root, "memfn/data/sets")
     later = set()
     nsets = 0
@@ -470,20 +486,21 @@ def check_sites(root, fx, fxt, tmp, rows):
         (ok() if ref and want in ref and not dec else
          bad("%s: the kit did not refuse a bad call mode naming %s (rc %d, refusal %s, %d "
              "decisions)" % (site, want, rc, ref, len(dec))))
+    # ONESHOT is accepted: no refusal, the FIND rows are asked, and no gate
+    # record names `body` (no row reads it since R1, R2 and R8 went: span_pick 1f)
     _, _, _, _, ref_b, err_b = fd_run(fxt, "set10", full)
-    r1_b = [ln for ln in err_b.splitlines() if "table=fd" in ln and " row=R1 " in ln and "verdict=" in ln]
-    (ok() if not ref_b and r1_b and not any("body:R1" in ln for ln in r1_b) else
-     bad("body ONESHOT: refused (%s) or R1's gate names `body`: %s" % (ref_b, r1_b[:1])))
-    # J: the retired denies name no row (withdrawn with R0 and R5 at B4')
+    g_b = [ln for ln in err_b.splitlines() if "table=fd" in ln and "verdict=" in ln]
+    (ok() if not ref_b and g_b and not any("body:" in ln for ln in g_b) else
+     bad("body ONESHOT: refused (%s), no fd gate record (%d) or one names `body`: %s"
+         % (ref_b, len(g_b), [ln for ln in g_b if "body:" in ln][:1])))
+    # J: the retired denies name no row (withdrawn with R0 and R5 at B4',
+    # deleted with R8, R1 and R2 at span_pick 1f)
     for d in RETIRED_DENIES + ["fd-r7"]:
         r = run([os.path.join(root, "build", "pcrec"), "-p", "rx", "--pattern", "a(b|c)+d",
                  "--memfn=no-" + d, "-o", os.path.join(tmp, "retired.c")])
         (ok() if r.returncode != 0 and b"unknown option" in r.stderr else
-         bad("--memfn=no-%s was not refused as an unknown option (rc %d): the deny is retired "
-             "(B4')" % (d, r.returncode)))
-    for d in ("fd-r8", "fd-ndisp"):
-        unreached.append("deny %s: its row cannot hold on a B2 fixture (E, H, or W64 "
-                         "unbuilt); its reach is its routing step's" % d)
+         bad("--memfn=no-%s was not refused as an unknown option (rc %d): the deny is retired"
+             % (d, r.returncode)))
 
 
 # ---- K ----------------------------------------------------------------------
@@ -600,46 +617,6 @@ def check_query(fx, fxt, tmp):
     (ok() if asks >= QUERY_FLOOR else bad("the traced driver wrote %d ASK records" % asks))
 
 
-# ---- H ----------------------------------------------------------------------
-
-def pay_expect(c):
-    npt, pts, rest = c[0], c[1:1 + 2 * c[0]], c[1 + 2 * c[0]:]
-    hc, call, cf, hn, nf, hu, use, uf, hw, wf = rest
-    t1 = hc and npt >= 1 and all(pts[2 * i] - pts[2 * i + 1] > call + cf for i in range(npt))
-    t2 = hc and hn and call + cf <= nf
-    t3 = hu and hw and use + uf <= wf
-    return (1 if t1 else 0) | (2 if t2 else 0) | (4 if t3 else 0)
-
-
-def check_pay(fx):
-    cases, ties = [], 0
-    for m in (0, 7, 1000, -50, 999999999):      # magnitudes, a negative one included
-        for d in (-1, 0, 1):
-            # T1 at its boundary (saving - floor vs call + cfloor), one point and two
-            cases.append([1, m + 100 + d, 10, 1, m + 80, 10, 1, 10 ** 12, 1, 0, 0, 1, 10])
-            cases.append([2, m + 500, 10, m + 100 + d, 10, 1, m + 80, 10, 1, 10 ** 12, 1, 0, 0, 1, 10])
-            # T2 at its boundary: call + cfloor vs next floor
-            cases.append([1, 10 ** 12, 1, 1, m + 40, 10, 1, m + 50 + d, 1, 0, 0, 1, 10])
-            # T3 at its boundary: use + ufloor vs wmin floor
-            cases.append([1, 10 ** 12, 1, 1, 1, 1, 1, 10 ** 12, 1, m + 7, 3, 1, m + 10 + d])
-            ties += 4 if d == 0 else 0
-    for absent in range(4):
-        c = [1, 1000, 1, 1, 1, 1, 1, 1000, 1, 1, 1, 1, 1000]
-        idx = {0: 3, 1: 6, 2: 8, 3: 11}[absent]
-        c[idx] = 0
-        cases.append(c)
-    cases.append([0, 1, 1, 1, 1, 1000, 1, 1, 1, 1, 1000])   # no measured point: T1 fails
-    r = run([fx, "--pay-grid"], input=("\n".join(" ".join(map(str, c)) for c in cases) + "\n").encode())
-    got = r.stdout.decode().split()
-    if len(got) != len(cases):
-        bad("--pay-grid answered %d of %d cases" % (len(got), len(cases)))
-        return
-    for c, g in zip(cases, got):
-        e = pay_expect(c)
-        (ok() if int(g) == e else bad("pay rule on %s: kit %s, expected %d" % (c, g, e)))
-    (ok() if ties >= PAY_TIE_FLOOR else bad("the grid holds %d ties, under %d" % (ties, PAY_TIE_FLOOR)))
-
-
 # ---- L ----------------------------------------------------------------------
 
 # window_contract.md rev 3.1 §3.1's enumerators, written HERE (the kit's header
@@ -743,7 +720,6 @@ def main():
     check_sets(a.root, form)
     check_sites(a.root, a.fx, a.fxt, a.tmp, rows)
     check_query(a.fx, a.fxt, a.tmp)
-    check_pay(a.fx)
     check_routing(a.fx, a.fxt)
     check_pres_routing(a.fx, a.fxt, a.tmp)
     check_prov(a.root, a.fx, a.fxt, a.provchk)

@@ -45,7 +45,7 @@
 #       arm 12 so the long suite stays last.
 # Arm 2 SKIPS LOUDLY when libpcre2 is absent (PC-3's shape).
 #
-# Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA.
+# Env: PCREC, CC, GENCFLAGS (the harness's own), LIBA, SANFLAGS (the library link).
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -323,6 +323,16 @@ else
     bad "--code-header c: said: ${eh:0:160}"
 fi
 
+# fsfix 1: --code-header leaves .line/.file to the allocator; a dirty heap
+# (MALLOC_PERTURB_) made the emitter strlen() garbage (SEGV, full suite
+# 20261030_cb32eda28). Sabotage S1850.
+ph="$(MALLOC_PERTURB_=190 pc --allow-code=c --code-header 'c:"octet.h"' --pattern "$SEG" -o - 2>&1)"; prc=$?
+if [ "$prc" = 0 ] && printf '%s\n' "$ph" | grep -q '^#include "octet.h"'; then
+    ok "--code-header under a dirty heap (MALLOC_PERTURB_) emits its #include"
+else
+    bad "--code-header under a dirty heap rc=$prc: ${ph:0:160}"
+fi
+
 # F15 (review 2026-10-27-r1-ic2): a code site's `verify` refusal names its
 # own module, which IS enabled, never "module 'callouts' is enabled".
 vo="$(pc --allow-code=c --pattern 'a(?C`c,verify: return RX_PASS;`)b' -o - 2>&1)"
@@ -342,7 +352,7 @@ if printf '%s\n' "$fo" | grep -qE 'RX_CODE_LANGS[[:space:]]+"c"' &&
 else
     bad "--emit-facts read the code block: $(printf '%s\n' "$fo" | grep -E 'RX_FAKE|zzz|RX_SUBJ|CODE_LANGS' | tr '\n' ' ')"
 fi
-if [ -f "$LIBA" ] && $CC -O1 -I"$ROOT_DIR/lib" -o "$WORK/lib_check" "$SCRIPT_DIR/lib_check.c" "$LIBA" 2> "$WORK/lib.log"; then
+if [ -f "$LIBA" ] && $CC -O1 ${SANFLAGS:-} -I"$ROOT_DIR/lib" -o "$WORK/lib_check" "$SCRIPT_DIR/lib_check.c" "$LIBA" 2> "$WORK/lib.log"; then
     if "$TIMEOUT_BIN" 60 "$WORK/lib_check"; then
         ok "the library: allow_code is the only door"
     else
@@ -552,7 +562,12 @@ trap_row() {   # trap_row WHAT PATTERN SUBJECT [other-signal]
        ! $CC $GENCFLAGS -O1 -std=gnu11 -o "$K/tr" "$K/tr.c" 2> "$K/cc.log"; then
         bad "$1: did not build: $(cat "$K/p.log" "$K/cc.log" | head -3)"; return
     fi
-    "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
+    # Under the san battery a sanitizer catches the control's null store and
+    # exits 1 itself; abort_on_error turns that into SIGABRT (a non-trap
+    # signal), as an unsanitized build's SIGSEGV is.
+    UBSAN_OPTIONS="${UBSAN_OPTIONS:+$UBSAN_OPTIONS:}abort_on_error=1" \
+    ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}abort_on_error=1:handle_sigill=0" \
+        "$TIMEOUT_BIN" 10 "$K/tr" "$3" >/dev/null 2>&1
     local rc=$?
     if [ -z "$TRAP_RC" ]; then bad "$1: exit $rc; no __builtin_trap signal is known for $(uname -m)"
     elif [ "${4:-}" = other-signal ]; then
@@ -855,9 +870,14 @@ refuse "an include pin that does not match is refused" "sha256 pin mismatch" \
 refuse "a stale include pin refuses a file-operand build too" "sha256 pin mismatch" \
     -o "$R" "$P3/i_bad.rxt"
 # The corpus's three-file chain with an unpinned middle (S-IC13's witness).
+# pcrec_error.msg is 256 bytes and a long sentence truncates from the TAIL
+# (limits.md 3.5 p5), so the refusal's tail ("... carries no sha256 pin")
+# survives only under a short path: the fragments run from a copy under
+# $WORK, whatever depth the checkout lives at (fsfix 2).
+FR="$WORK/frag"; mkdir -p "$FR"; cp "$SCRIPT_DIR"/frag/pin?_*.rxt "$FR/"
 refuse "a three-file chain with an unpinned middle refuses the leaf's code" \
-    "the include line at $SCRIPT_DIR/frag/pin2_ok.rxt:5 carries no sha256 pin" \
-    --allow-code=c -o "$R" --include-block "$SCRIPT_DIR/frag/pin4_leaf.rxt:6" "$SCRIPT_DIR/frag/pin1_entry.rxt"
+    "the include line at $FR/pin2_ok.rxt:5 carries no sha256 pin" \
+    --allow-code=c -o "$R" --include-block "$FR/pin4_leaf.rxt:6" "$FR/pin1_entry.rxt"
 yes_build "the pinned fragment of that entry compiles" \
     --include-block "$SCRIPT_DIR/frag/pin2_ok.rxt:7" "$SCRIPT_DIR/frag/pin1_entry.rxt"
 

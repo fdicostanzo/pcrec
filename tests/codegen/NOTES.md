@@ -18,3 +18,8 @@
   (one twin call respelled to the exported name must read as a miss) and a
   population floor of (artifact, residual) pairs. In `make test-codegen`.
 
+## Moved from CLAUDE.md (lane p1build, 2026-10-29, size limit)
+
+- `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY` ([OPT-PRECHECK-ADMIT], 2026-09-23, abi 30 -> 31): the ADMISSION of §3's and §4's pre-checks, ruled by Frank as G1 + G2 (G3 dropped on x86_64 measurement); neither decline is answer-detectable, so this file is where they are defended.
+
+- run_residual_twins.sh (moved from CLAUDE.md, 2026-10-30): the premul table also has an iterator arm.

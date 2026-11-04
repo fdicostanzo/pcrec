@@ -67,10 +67,10 @@ from concurrent.futures import ThreadPoolExecutor
 # report (docs/dev/lanes/runaxes_report.md).
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
-        {("byte", "c-default"): 155, ("byte", "c-vm"): 0, ("utf8", "c-default"): 219, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 153, ("byte", "c-vm"): 0, ("utf8", "c-default"): 220, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     ("precheck-assign-byte", "simd"): ("DIFFER",
-        {("byte", "c-default"): 155, ("byte", "c-vm"): 0, ("utf8", "c-default"): 219, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 153, ("byte", "c-vm"): 0, ("utf8", "c-default"): 220, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
@@ -79,8 +79,8 @@ MEMFN_CLASS = {
     # No fd_rows[] row is routed at B1 (fdb1_report.md), so each deny is
     # artifact-identical. THESE CLASSES ARE B1's, NOT STANDING FACTS: fd-d1 became DIFFER
     # when lane/fdb2 routed D1 (its OFF arm is D1w's walk; re-measured below). fd-r0 and
-    # fd-r5 RETIRED at B4' (lane b4p) with their rows; fd-ndisp stays ASSERT_ZERO (no
-    # dispatch pays), fd-r8 flips at B6 (options.def's comment). Each landing re-measures.
+    # fd-r5 RETIRED at B4' (lane b4p) with their rows, fd-r8 and fd-ndisp at span_pick 1f
+    # with R8, R1 and R2 (their ASSERT_ZERO cells went with them). Each landing re-measures.
     # fd-d1 RE-MEASURED at B2's landing (lane fdb2land, 2026-10-17, lane/fdb2land =
     # fdclass + main aa66dbd64 + lane/fdb2 01ffd2f2d): B2 routes D1, so the deny moves
     # the one-byte sites to D1w's walk on the default engine; the VM stream has none.
@@ -110,19 +110,21 @@ MEMFN_CLASS = {
     # witnesses `ab`, `é{2}cat` and `a{3}(?i:cat)` are cover artifacts now (the deny is
     # inert on them); each is replaced by its variable-width sibling, still pre-checked
     # (`abc+d`, `é{2,}cat`, `a{3,}(?i:cat)`; single compiles at the s3fix tip, both sides).
+    # RE-PINNED at P1's landmark walk (dc6a40dfb, D184; lane axtri3, 2026-11-03) from the
+    # full suite 20261103_4bd002e20 axes log (5017 distinct patterns): the walk takes corpus
+    # patterns the presence pick / byte assign served (they stamp "landmark-walk",
+    # byte-identical with and without the deny), so fewer differ on the default engine:
+    # fd-pres-pick 168/232 -> 144/225, precheck-assign-byte byte 155 -> 153 (utf8 219 -> 220,
+    # measured). Same cause as ef179b9f4's emit_sweep re-pin (pinbis_report.md).
     **{("fd-pres-g1", ly): ("DIFFER",
         {("byte", "c-default"): 949, ("byte", "c-vm"): 0, ("utf8", "c-default"): 878, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"abc+d"), ("utf8", "c-default", b"abc+d")]) for ly in ("default", "simd")},
     **{("fd-pres-pick", ly): ("DIFFER",
-        {("byte", "c-default"): 168, ("byte", "c-vm"): 0, ("utf8", "c-default"): 232, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 144, ("byte", "c-vm"): 0, ("utf8", "c-default"): 225, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
     **{("pres-set-lead", ly): ("DIFFER",
         {("byte", "c-default"): 14, ("byte", "c-vm"): 18, ("utf8", "c-default"): 7, ("utf8", "c-vm"): 8},
         [("byte", "c-default", "é{2,}cat".encode()), ("utf8", "c-default", b"a{3,}(?i:cat)")]) for ly in ("default", "simd")},
-    ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
-    ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
-    ("fd-r8", "default"): ("ASSERT_ZERO", {}, []),
-    ("fd-r8", "simd"): ("ASSERT_ZERO", {}, []),
     # D172 S3's two window-search denies (window-search: the search itself, so `cover` declines;
     # window-skip: its skip for a common byte set), absent from this table since S3 while
     # `--list-axes` listed them (code review r2 R2-4: the population check above could only

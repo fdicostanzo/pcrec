@@ -2,22 +2,27 @@
 # docs/dev/lanes/s3_evidence/read_588.py — job 588 (lane s3): s3t_results.tsv -> D172 S3's
 # acceptance reading (docs/design/memfn/window_site.md rev 3.3 §6 and Goal 2).
 #
-# usage: python3 -I read_588.py OUT HEADER_FILE R581_TABLE
+# usage: python3 -I read_588.py OUT HEADER_FILE R581_TABLE [REL]
+#   REL (optional, INFORMATIONAL, NOT THE BAR): a relative allowance, e.g. 0.0585, read INSTEAD of the
+#   per-call allowance; the output is headed "INFORMATIONAL READING" and its last line says so.
 #
 # THE BAR (Goal 2, §6, the SCALAR layer): per (cell, regime, class), R = med(RTE)/med(DEF); the
 #   cell PASSES when R <= 1 + floor, where floor is job 581's floor(PRO) for that cell
 #   (R581_TABLE's Table A, column "floor(PRO) rel": a committed artifact, not this run), OR when
-#   its per-call delta (med(RTE) - med(DEF)) / calls is within THE PER-CALL LAYOUT ALLOWANCE of its
-#   regime (below). NO CAPS: no cell has a limit of its own. The dense-hex KNOWN GAP (window_site.md
+#   its per-call delta (med(RTE) - med(DEF)) / calls is within THE PER-CALL LAYOUT ALLOWANCE (below;
+#   ONE number for the whole run; a cell with one call per pass has no per-call figure and is judged
+#   on the relative floor alone). NO CAPS: no cell has a limit of its own. The dense-hex KNOWN GAP (window_site.md
 #   Goals, a D176 witness: hex8-bounded throughput/dense and search_short/dense) is printed with
 #   its reading, KNOWN-GAP, and does not fail the bar. Any other result FAILS; one failing cell
 #   fails the bar. Every regime and class is read, `match` included.
-# THE PER-CALL LAYOUT ALLOWANCE (Goal 2), measured in THIS run: the DEF arm's text compiled again
-#   with other layouts (measure_588.sh's DV1..DV3: function and loop alignment variants, the same C),
-#   timed beside it; per regime, A = the largest |med(DVk) - med(DEF)| / calls over every variant,
-#   cell and class, in ns per call (calls per pass: one per record in search_short and match, the
-#   find-all's rx_search calls, hits + 1, in throughput; read off the subjects' .expect). Printed
-#   with the variant and cell that set it; a regime with no variant timed has no allowance (0).
+# THE PER-CALL LAYOUT ALLOWANCE (Goal 2; [2026-11-02 bar588] ONE number over the run, from cells with
+#   a per-call figure), measured in THIS run: the DEF arm's text compiled again with other layouts
+#   (measure_588.sh's DV1..DV3: function and loop alignment variants, the same C), timed beside it;
+#   A = the largest |med(DVk) - med(DEF)| / calls over every variant, regime, cell and class, in ns
+#   per call (calls per pass: one per record in search_short and match, the find-all's rx_search
+#   calls, hits + 1, in throughput; read off the subjects' .expect). A cell with ONE call per pass
+#   (calls == 1: its per-call figure is the whole pass) neither sets A nor is excused by it. Printed
+#   with the variant, regime and cell that set it; with no variant timed there is no allowance (0).
 # REPORTED, NOT THE BAR: the SIMD-on layer, Rs = med(RTEs)/med(DEFs), with the same floor and
 #   allowance (a SIMD-on loss is a finding for the SIMD thread, §6).
 # THE A/A: med(RT2)/med(RTE), this run's own noise beside 581's floor.
@@ -56,6 +61,7 @@ import sys
 from collections import defaultdict
 
 out, header, t581 = sys.argv[1], open(sys.argv[2]).read().rstrip("\n"), sys.argv[3]
+REL = float(sys.argv[4]) if len(sys.argv) > 4 else None   # informational relative allowance, NOT the bar
 REG = ("throughput", "search_short", "match")
 CLS = ("real", "none", "dense")
 # the dense-hex KNOWN GAP (window_site.md rev 3.3 Goals; a D176 witness, Frank 2026-10-24): read
@@ -118,39 +124,50 @@ def calls(c, g, cl):
     return calls_of("%s/subj/%s.%s.%s.expect" % (out, c, cl, g), g)
 
 
-# THE PER-CALL LAYOUT ALLOWANCE per regime: (ns per call, variant, cell, class)
-allow = {}
+# THE PER-CALL LAYOUT ALLOWANCE, ONE number over the run: (ns per call, variant, regime, cell, class).
+# A calls == 1 cell is a whole-pass delta, not a per-call one: it sets nothing and is excused by nothing.
+best = (0.0, None, None, None, None)
 for g in REG:
-    best = (0.0, None, None, None)
     for c in cells:
         for cl in CLS:
             k, x = calls(c, g, cl), med(c, g, cl, "DEF")
-            if not k or x is None:
+            if not k or k <= 1 or x is None:
                 continue
             for v in VARIANTS:
                 y = med(c, g, cl, v)
                 if y is not None and abs(y - x) / k > best[0]:
-                    best = (abs(y - x) / k, v, c, cl)
-    allow[g] = best
+                    best = (abs(y - x) / k, v, g, c, cl)
+ALLOW = best[0]
+
+
+def within(x, y, k):
+    """(delta ns per call of x over y, None for a one-call cell; within the allowance).
+    The informational REL reading replaces the per-call allowance by a relative one."""
+    if x is None or y is None:
+        return None, False
+    if REL is not None:
+        return ((x - y) / k if k else None), x / y <= 1 + REL
+    if not k or k <= 1:
+        return None, False
+    dl = (x - y) / k
+    return dl, dl <= ALLOW
 
 
 def per_call_ok(c, g, cl, a, b, k=None):
-    """(delta ns per call of a over b, within the regime's allowance)."""
+    """(delta ns per call of a over b, within the allowance)."""
     k = k if k is not None else calls(c, g, cl)
-    x, y = med(c, g, cl, a), med(c, g, cl, b)
-    if not k or x is None or y is None:
-        return None, False
-    dl = (x - y) / k
-    return dl, dl <= allow[g][0]
+    return within(med(c, g, cl, a), med(c, g, cl, b), k)
 
 
 print(header)
 print()
-print("## The per-call layout allowance (Goal 2: the DEF arm's own layout variants, this run)")
+if REL is not None:
+    print("## INFORMATIONAL READING, NOT THE BAR: a relative allowance of %.4f read in place of the per-call one" % REL)
+    print()
+print("## The per-call layout allowance (Goal 2: the DEF arm's own layout variants, this run; one number)")
 print()
-for g in REG:
-    a, v, c, cl = allow[g]
-    print("- %s: %.3f ns per call%s" % (g, a, "" if v is None else " (%s on %s/%s)" % (v, c, cl)))
+print("- %.3f ns per call%s (calls == 1 cells excluded)" % (
+    ALLOW, "" if best[1] is None else " (%s, %s on %s/%s)" % best[1:]))
 print()
 print("## Table: the bar (SCALAR) and the SIMD-on reading")
 print()
@@ -179,7 +196,7 @@ for c in cells:
                 gaps.append("%s %s/%s %.3f" % (c, g, cl, R))
             elif not ok:
                 fails.append("%s %s/%s %.3f > %.3f, %s ns/call > %.3f" % (
-                    c, g, cl, R, 1 + fl, fmt(dl), allow[g][0]))
+                    c, g, cl, R, 1 + fl, fmt(dl), ALLOW))
             Rs = ratio(c, g, cl, "RTEs", "DEFs")
             dls, saok = per_call_ok(c, g, cl, "RTEs", "DEFs")
             sok = Rs is not None and (Rs <= 1 + fl or saok)
@@ -243,10 +260,7 @@ if os.path.exists(sfile):
     def sdelta(sid, g, cl, a, b):
         """(delta ns per call of a over b, within the regime's allowance)."""
         k = calls_of("%s/ssubj/%s.%s.%s.expect" % (out, sid, cl, g), g)
-        x, y = smed(sid, g, cl, a), smed(sid, g, cl, b)
-        if not k or x is None or y is None:
-            return None, False
-        return (x - y) / k, (x - y) / k <= allow.get(g, (0.0,))[0]
+        return within(smed(sid, g, cl, a), smed(sid, g, cl, b), k)
 
     print("## Mover sample (part of the bar)")
     print()
@@ -372,8 +386,7 @@ else:
                     continue
                 R, fl = x / y, paa.get(g)
                 k = calls_of("%s/psubj/%s.%s.%s.expect" % (out, sid, cl, g), g)
-                dl = (x - y) / k if k else None
-                aok = dl is not None and dl <= allow.get(g, (0.0,))[0]
+                dl, aok = within(x, y, k)
                 rd = "-" if fl is None else ("PASS" if R <= 1 + fl else "PASS (allowance)" if aok else "FAIL")
                 if fl is not None:
                     pstrat[st].append((R, fl, rd != "FAIL"))
@@ -493,9 +506,10 @@ if missing:
 print("SIMD-on reading (reported, not the bar): %s" % (
     "every cell within its scalar limit" if not sfails else "SLOWER: " + "; ".join(sfails)))
 print("Known gap (D176 witness, reported, not the bar): %s" % ("; ".join(gaps) if gaps else "none read"))
-print("== s3t BAR %s: %d cells read on the scalar layer (allowance ns/call: %s)%s; sample %s; two-stream %s" % (
+print("== s3t %s %s: %d cells read on the scalar layer (allowance ns/call: %.3f%s)%s; sample %s; two-stream %s" % (
+    "BAR" if REL is None else "INFORMATIONAL-NOT-THE-BAR(rel %.4f)" % REL,
     "PASS" if not fails and not missing and not sample_fails and not pair_fails else "FAIL", n,
-    ", ".join("%s %.3f" % (g, allow[g][0]) for g in REG),
+    ALLOW, "" if REL is None else ", REL IN PLACE OF IT",
     "" if not fails else "; FAILING: " + "; ".join(fails),
     "PASS" if not sample_fails else "FAIL: " + "; ".join(sample_fails),
     "PASS" if not pair_fails else "FAIL: " + "; ".join(pair_fails)))

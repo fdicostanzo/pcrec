@@ -2927,3 +2927,177 @@ wake.md is rewritten.
 - Main agreed the vrun order, on one condition: the rq4 refresh is a TIMING run and needs a quiet box. After S3 lands I propose either a night tail after a bench window (~00:30-04:30) or a daytime block where main pauses builds; main confirms it against the queue. Nights now: bench tonight 19:30-00:00; main's suite 00:00-~13:00 10-30; bench W1 Fri night, W2 Sat night; Frank off the box until Sunday evening.
 - ~11:00 idle (Frank: nothing to watch -> idle): wake.md rewritten (STEP 0: job 622 queued, its result-file watcher, next action per trigger); heartbeat cron deleted.
 - 12:40 job 622 read: 20/21 green; the one red = sweep_start's composition-artifacts floor 86 < 100 = main's [SWEEP-COMP-FLOOR], not S3. S283 figure filled (01ea9bbbe). done: R-29/S3 posted (lane/memfn-s3m @ 01ea9bbbe); main asked for the merge verdict. Heartbeat re-armed while waiting on main.
+- ~13:00 main: S3 + r30 MERGED on local main (0f425c2d0, 4a32fc474; pins d7a425f41; push after 695/696). Launched three LIGHT lanes from 02a054851: simdset (opus, standalone 2-3-byte SIMD find kernel, unrouted, card + G2, zero movers; no deny row since no caller reaches it), r30scope (sonnet, READ-ONLY R-30 scoping: facts + options, the build waits for Frank's go), rq4prep (sonnet, rq4 harness to abi 92, smoke, stage the quiet-box timing job unqueued).
+- r30scope DELIVERED (stopped; lane/memfn-r30scope @ f58a2596d, docs/dev/lanes/r30scope_report.md; report accepted as is). The window ask is redundant wherever the kit verifies the whole run (whole implies window: same scan position and mask), at entry and re-find alike, not only when the whole run is the landmark. Count: 6 default / 43 --engine=vm artifacts carry both asks. Options: A (drop the window part wherever the whole run is verified; general, no new fact, one abi event), B (R-30 as worded; needs a new ask-time fact from main; special case), C (re-find only; dominated). Leaning A, with a test-only lever (bounded per-candidate cost, not a public flag) and measured on case 7 vs 7a + a candidate-dense control + K66's witness. Asked Frank for the build go; told main R-30's scope would widen. Note: the lane's 18 s census ran at nice 19 outside boxlock (the lock was held); accepted, small.
+- Main: no objection to R-30's widened scope (general fix, no new fact); test-only lever matches Frank's 10-29 flag rule; abi in landing order: trailgc takes 93, plan R-30 as 94 unless it lands first. Build go is Frank's (asked).
+- rq4prep DELIVERED (stopped; lane/memfn-rq4prep @ 76b682e16, rq4prep_report.md). Harness at abi 92: --facts-only pass; a like-for-like gate (no #define RX_* differs across arms; 0 diffs on 51 cells); KB read from w32. Arms slot21x (DEFAULT, NOPAD, FULL, KBDENY, FULLKB, OFF = this tree's scalar layer). 41/51 cells reach vrun (up, cn, m10 dropped; null n04 gained a site) — all kept, null bands from byte identity. w16 KBDENY/FULLKB = DEFAULT's code: kept as an A/A noise control. Job 640-kit-rq4-tieu staged (~2 h 20 min, cap 12,000, quiet --ready). table.md with --prior compares to slot21 (NOT like-for-like; say so when read). Slot proposed to main: not-before 10-30T14:00 with builds paused, fallback Sat daytime.
+- Job 640-kit-rq4-tieu QUEUED: main's slot = Sunday after bench W2 (not-before 2026-11-01T03:00, latest start 13:40, cap 12,000 s, must end by 17:00 — Frank uses the box Sunday evening). Script gate committed on lane/memfn-rq4prep @ 6e0789d07; do NOT prune worktrees/rq4prep before it runs. If W2 slips past 13:40, it pends: re-slot with main.
+- simdset DELIVERED (stopped; lane/memfn-simdset @ 83d9a6255, simdset_report.md): memfn/src/vany.c, `mf_kernel_find_any` (K = 2..3) in memfn.h's new STANDALONE KERNELS section: scalar body + w16 SSE2 + w32 AVX2 helpers + D155 selector; over-read argument in the header (overlapped final block); D149 constants labelled. Unrouted: no row, no deny, no abi event. NEON OWED (no aarch64 compiler here). G2 family run_g2_any.py (section 4y): 160 kernels, 20.3M checks per build at x86-64 / v3 / gpr-only / ASan+UBSan, guard pages; 13 plants red where live. Card memfn/data/cards/kit-kernels.tsv (UNMEASURED; deps OWED, no form hash); finder_check.py check C now reads every card table (it had a hand list). Light checks green (strict, link 11/0, finder 1968/0, g2 70.4M/0). OWED: queue job 696-simdset-sweep (zero movers, plain + simd), watcher armed. Open (report): how pricing is offered it (lean a Table B row "B-any": a byte move, needs deny + abi + G1); form identity; a kernel timing driver now vs [MEASURE-SET]; fold vrun/vany per-level ops tables at a third SIMD form; NEON on the Mac.
+- Frank asked about R-30's history and the run shape. Facts given: runs hold exact bytes or one-bit pairs (case fold, [tu]); a general class ends the run. Runs of 8 bytes or fewer get ONE ask (window = whole), so only longer runs have the redundancy. For the R-30 build brief: compare the window's word FIRST inside the whole-run check, so a window-reject candidate costs the same single compare (never slower per candidate); measure the near-miss control.
+- Frank: R-30 GO (widened, option A); lane r30b (opus) launched from main 1f5574fac, abi 94 planned. Frank: 'add the note' — the unbounded-distance stop-early observation posted for main next to [LANDWALK].
+- Main: r30b may edit emit_dfa.c req_site_define in the same commit (request-site description only; list every pcrec hunk in the delivery) — written to worktrees/r30b/r30b_rulings.md. The stop-early note is filed by main as its own row [REQ-PAST-LAST] (plan.md 01cdd8848; pcrec states the fact, the method is the kit's; trigger: a cell where post-last-occurrence attempts are measurable).
+- r30b progress: change 38d3143d5 (abi 92->94; pcrec's statement unchanged — the kit drops a run part when a later part implies it). Case 7 find-all instructions:u 1,279.05M -> 898.42M (-380.6M), answers identical; no near-miss row slower; plants S1543-S1548 DETECTED. Heavy job staged (docs/dev/lanes/r30b_job_kit-r30b-heavy). Light checks yielding in boxlock behind main's jobs. Lesson: my briefs today wrote no docs/dev/lanes/NAME_deliver.txt, so every lane's lanecheck exits rc=65; write the DELIVER block at brief time (see main's *_deliver.txt) from the next brief on.
+- 14:10 main: a bare boxlock waiter competes with the queue; use an ordered slot. I safekilled r30b's light-check waiter (pid 3534688) and queued the HEAVY job, which contains every light check: 697-kit-r30b-heavy, not-before 2026-10-30T13:30, cap 14,400 s, 13 steps (lane/memfn-r30b tip incl. the not-before commit). r30b STOPPED: its report §5 (census) and §9 (checks) are filled from 697's logs by a fresh agent (or me) after the verdict; heavy-job watcher armed. Box closed 19:00-00:00 tonight, main's full suite 00:00-~13:00.
+- 16:20 696-simdset-sweep: movers 0 both sweeps; red only on the -fmemfn-simd arm's stale composition pin (88 < 106; main's [SWEEP-COMP-FLOOR] re-pin missed the per-arm pins). simdset done: posted. 697 moved to Saturday 2026-10-31T09:00 (main: Friday afternoon is crowded); main pushed 29efe73cd (S3); R-30's abi assigned at its merge (94 or later: P4/P1/P10 hold provisional 94-96).
+- ~16:40 idle: wake.md rewritten (STEP 0: main's merges of simdset + r30, jobs 697 Sat 09:00 and 640 Sun 03:00, actions per trigger); heartbeat deleted.
+
+## 2026-10-30
+
+- Woken by main: simdset's sweep 696 RED on stale composition arm pins (d7a425f41 [SWEEP-COMP-FLOOR] moved the plain floor, missed COMPOSITION_EXTRA_PINS). Merged main 6bc45b974 into lane/memfn-simdset (93433207c; one union conflict, docs/dev/history/claude_md/docs__dev__lanes.md, both sides kept).
+- Job 695-kit-simdset-comppin (green, strict rc=0): EVERY composition arm (plain, -fmemfn-simd, -fcomments, -e utf8, --engine=vm) reads producing 38 / artifacts 88 after F7. Re-pinned 13cb84ce6 (simd/comments 38/88, -e utf8 37/86 = plain floors) and 770b3f3b2 (--engine=vm 38/88: job 694's self-test showed its +1 plants could not go red at 37/86 — a floor below the measured value hides its plant).
+- Job 696-kit-simdset-sweep2: plain + -fmemfn-simd vs merged main, zero movers (sweep ref moved to the merged main: the old cut point would have shown abi 93's movers). 693 self-test 26/26. Lesson: a job step behind `make` with .DELETE_ON_ERROR loses its evidence — run self-tests with output kept.
+- Main MERGED simdset (09917055b) and the r30 notes (6997f5b67), unpushed (goes with fsfix tonight). Pruned worktree memfn + branch lane/memfn-r30. worktrees/simdset kept by wtprune's quiet gate (build/simdset fresh): prune it + branch next session. Kit worktree is now lane/memfn-wake1030 (this note).
+- Main heads-up (Frank): the box queue will order jobs by unsharded run length, ~1 h shards, timed runs preferred at night; main announces before it goes live.
+
+## 2026-10-31
+
+- Frank (direct to the kit), pricing direction: pricing prices STRATEGY as well as TACTICS. Agreed structure: one row per strategy (no search, one position, pair, skip, ...), each finds its own best concrete option, then the cheapest row wins, ties to the simpler strategy, full per-strategy ranking in the trace. Process, in order: survey of tasks / strategies / variations -> inventory of data we have or could have -> explicit written requirements -> design to them -> critics, who get the survey+requirements as a guide AND critique it. Concerns to answer: normalization across strategies without tuning constants; how to measure it all; measuring future additions; one table vs per-task tables; the multi-variable risk (hard to get the numbers to give the result you believe correct). His point that a one-layer model tests nothing: SIMD forms (find-any pricing, pair-at-distance) follow the pricing design; the pair needs a measured pair-rate source first (the independence prior under-predicts survivors 21x-1,700x).
+- Lane pricesurvey (opus, design-only, worktrees/pricesurvey, lane/memfn-pricesurvey from main a3cc4de82): stage 1 survey report.
+- pricesurvey DELIVERED (stopped; lane/memfn-pricesurvey @ bf10b02af, docs/dev/lanes/pricesurvey_report.md): 16 tasks, 16 couplings; only window.c Table A prices today; the strategy level is pcrec's cand_rows[] first-match (cover wins at emit_dfa.c:4846); no NONE row; most terms unmeasured on Zen 4.
+- Placement: main proposed the split along the future front-end/back-end line: the front end states valid strategy rows + facts and reads no cost; the backend (src/gen today) owns route consumer costs and the one argmin; the kit quotes its best tactic's price as a fact. Seam rule: applicability never reads a price; a price never reads the pattern. Frank (via main): the strategy trace is BACKEND-ONLY; the kit returns its ranking as data.
+- Requirements draft rev 0: docs/design/memfn/pricing_requirements.md on lane/memfn-pricesurvey (goals G1-G5, R1-R8, open O1-O5). To Frank before the design step.
+- Main asked for evidence on re-measuring: no one-command per-box re-measure exists; the set format accepts `pcrec.` keys but pcrec cards/readers are M4. Main files the re-measure (kit half + M4) as the bake-off design's stage 1 after its critics and Frank's go. Frank: placement of strategy pricing decided by a BAKE-OFF (lane bakeoff, main's); requirements rev 1 @ 90d5150f7 (agreed points R2.7, R9; placement held).
+- Job 697 (R-30) RED: triage r30btri — no R-30 defect (census 0 unexpected, lever answers identical); reds = stale k66 check, simd-form floor, lever fence ALLOW, S678 plant (predates), S1760/S1761 reach unexplained. r30bfix (opus) merged main 5c60e118c, abi 94 provisional, fixed, staged 11 one-stage jobs; queued 770-780, job 1 not-before 2026-11-02T01:00 (main's ruling: W1 tonight, 640 Sun 03:00, W2 Sun daytime, Frank Sun 18:00-Mon 01:00). Rule adopted: one stage per job.
+
+## 2026-11-01 — R-30 chain pulled forward; 772 reach red explained
+
+Main pulled the r30b2 chain forward to Sun 07:00 (Frank: a free box runs waiting jobs). 770 build, 771 regrx, 773 census GREEN; 772 reach RED with S1760/S1761 reach:MISSING again. Triage (sonnet, read-only; /var/tmp/pcrec-pcrec/scratch/memfn/r30b2tri/report.md), verified by hand on the kept per-row logs: the rows' expected phrases follow an absolute fixture path in the 256-byte pcrec_error.msg, and MECH_SCRATCH under build/r30b2/ made the path long enough to cut the phrase off. Not R-30 (no diff vs main on src/parse, tests/code, the rows, the runner); main's default /var/tmp scratch reads both reach:ok. Queued 781-kit-r30b2-reach2 (same stage, short scratch /var/tmp/pcrec-pcrec/scratch/memfn/rch). The latent scratch-depth dependence of the rows went to main as a possible plan row. Lesson: keep job scratch paths short; a diagnostic that embeds a path has a length budget.
+
+## 2026-11-01 (later) — R-30 delivered
+
+Bench ended early; main ran 779/780/781 from 14:29. All GREEN: 779 mech-a, 780 mech-b (1 ANOMALY: S526, its designed catch is a static-assert compile failure that main's 7047b69e4 now scores as ANOMALY; pre-existing, not R-30), 781 reach2 (unreached 0, confirming the 772 truncation diagnosis). Posted done: R-30 (lane/memfn-r30b @ 66b1e2254, abi 94 provisional) with the pcrec-side hunks and both pre-existing findings.
+
+## 2026-11-02 — R-30 landed; prunes; job 640 read; vrun bench request drafted
+
+R-30 landed on main 657e23231 (abi 94; make test 799 green). Pruned r30b (forced; dirty only in artifact_size_log.tsv + the rulings file, diff kept in .wtprune.force), simdset and the old kit worktree; branches gone. New kit branch lane/memfn-vrunreq from main. Job 640 (tier-U vrun refresh, GREEN, 8,315 s) read: the layer pays broadly; losses at pc16 per-call and sp/n04/v17 at w16 sparse/tail. Its tree predates S3, so OFF was not the current scalar layer, and the official run must be on current main. A sonnet lane (vrunreqd) drafted docs/design/memfn/vrun_bench_request.md (d3ec10bc8); I reviewed §0-§2 and §6 and merged it. Notice posted for main.
+
+## 2026-11-02 (late) — Frank: "find the span" is structural; kit units survey
+
+588 BAR FAIL triaged (t588tri_report.md): smp20's stop {x,X} vs the skip's '/', two rules in one family; the allowance uncaps throughput. Frank (direct): "This speaks to me as a structural problem. There should be a single set of 'find the span' choices that are used by whoever needs them." He then asked for a survey of the general choice mechanism within the kit, validating: "There are a number of basic units of work in kit like 'find the span' and others. Currently these are spread out. The various scenarios should build up using these basic components rather than search for a complete solution." Lane kitunits (opus, read-only) is running. The smp20 patch is held so it becomes the first step of unification; the check correction and smp04 stay separate.
+
+## 2026-11-02 (night) — R-33 sim; costs within the kit; design + critique go
+
+R-33 (r33_report.md): ~90 % of 3,443 decisions agree with the inner-first pick. The differences come from crude inner rules (dense pairs, no Horspool, offset 0) and from the fragile byte-rate prior (it inverts x vs '/'). Frank asked for a recommendation on costs within the kit; recommended and accepted:
+- costs only inside one site, as measured per-method cards per CPU class (measure_store, chosen by target, DEFAULTS for unknown);
+- a robustness rule (win under both prior and flat rates, beyond the cards' spread);
+- costs propose, D186 evidence disposes.
+Frank: "Design and critique." Lane spanpick (opus) is writing docs/design/memfn/span_pick.md rev 1; the critic round follows.
+
+## 2026-11-02 (late night) — span_pick rev 1 critiqued, rev 2 written; Frank corrects A2
+
+- Review 2026-11-02 r1 is ruled (no answer-level findings; rev 1 not build-ready). Owner answers A1/A2/A6 are D186 add. 1.
+- Rev 2 (lane spanpick2, 5b3bc376a) is under a re-check round (crit-memfn-spanpick2).
+- Frank then corrected A2: "I didn't intend that (?i)x/1234 needed a special rule. My thinking was that the issue would be resolved by data in the later stage."
+- For rev 3, after the re-check:
+  - drop rev 2's ONE-STREAM row;
+  - stage 2 cards follow stage 1 directly;
+  - smp20 is the first priced departure;
+  - a real-text rate sample stands as stage 2's backup (a new dataset; name its home), because the prior inverts x vs '/'.
+- Main was asked to amend D186 add. 1.
+
+## 2026-11-02 22:30 — smp20 watched witness, read two ways (Frank via main), for rev 3
+
+- At every stage, smp20 is read two ways:
+  1. blind, judged as the least-bad pick across subject kinds, not "picks '/'";
+  2. with a text-like `--analysis` bundle, where the mechanism must switch to '/'.
+- A failure in (2) at the last step is a mechanism problem; a failure in (1) alone is answered by caller data, not a rule.
+- Bar, plan [BENCH-WITHDATA]: a with-data compile matches or beats the blind compile on every cell beyond noise. Rev 3 states that as a property of the pick.
+- Open scoping point raised to main: does "every cell" mean the cells whose subjects the bundle describes?
+- Frank also: no real-text rate dataset now; options are evaluated only at the last planned step.
+
+## 2026-11-02/03 — span_pick rev 3 merged; edits queued for rev 3.1
+
+Rev 3 is merged to main. Frank: O3 = WAIT (smp04 and the look-ahead measurement wait for stage 1). C9: he asked for an example (given: smp20 w16; utf8-lead two-byte window); the answer is pending.
+
+Main's answers, for rev 3.1:
+- Witness pass = a one-member stop the bundle rates rarer than {x,X} ('4' passes).
+- C5: new id zen4-grid2 (measures.md §8¶1 beats D176 Q3).
+- C6/M2: priced rows going dark on a bare compile under the M2 envelope is intended ("unknown target prices nothing"), and is M2's dependency; no safe-direction carriage.
+
+Pending with Frank: the blind rule (minimax vs win-under-both), C9, one plan vs priced list, and R9 (D186 over D144 item 3).
+
+## 2026-11-03 — blind rule = minimax (Frank via main), for rev 4
+
+The blind pick takes the least worst-case loss (minimax), with main's two guards:
+(a) the subject kinds include real data: the shipped log and weblog bundles, beside the prior and flat;
+(b) depart from today's pick only when the worst case improves by more than the cards' measured noise.
+This replaces "win under both P and F". Still open with Frank: C9 (SIMD own position), one plan vs priced list, R9 (D186 over D144 item 3).
+- R9 agreed (D186 add. 2 on main): for choice rows, D186 sets what a fix to a losing row must be (narrow the row, or an owner-approved exception), and D144 keeps when and how (no revert, an issue row, the deny flag as kill switch). Unit changes stay under D144 alone. Rev 4 cites add. 2. Still open: C9, one plan vs priced list.
+- C9 answered by Frank directly: YES, a SIMD build may pick its own search position (its own row, SIMD-on evidence, scalar the bar). Frank noted that smp20 is not a SIMD example: on '/' the SIMD build would call memchr, the same as scalar, so smp20 is a scalar mispick. Rev 4's C9 witness is utf8-lead-no-cont (the two-byte vector window, which no scalar position equals). SIMD-form cards return to stage 2. Still open: one plan vs priced list.
+- One plan vs priced list, answered by Frank directly: ONE PLAN, with the trace. This amends the agreed A-PLAN step "options with costs". All rev 4 inputs are now in; launching lane spanpick4.
+
+## 2026-11-03 — blind compiles use the default prior only, per encoding (Frank, with main's opinion)
+
+- Frank: "if no analysis is provided, use the default". Shipping or recounting a bundle must never move a blind compile.
+- Main agreed:
+  - robustness moves from the pick to D186's per-regime row evidence, which must include a random-like regime;
+  - F is dropped from the pick;
+  - a rate-source first-match table, with the source named in the stamp and trace;
+  - a change to P is a deliberate DEFAULTS event;
+  - smp20 blind is judged "consistent with P".
+- Frank added: "The default is by encoding as well." The code already has that shape (pcrec_find_byte_rate, findings.h:300).
+- Supersedes D186 add. 2's minimax line; main amends it. A2 and B6 dissolve. Rev 5 launched.
+
+## 2026-11-03 — rev 5 delivered (9c9aadb60); main's records; final re-check running
+
+Main ruled on the four kit findings (D186 add. 2):
+1. With no rates, the rules rank by MEMBER COUNT, declared as the rules' own tie-break.
+2. mf_prov.source and the bundle "default" label leave the seam in stage 1 (a stage-1 list item; fold into rev 5's text fixes).
+3. The default-prior change log is filed with the first such change.
+4. M2 is not ordered against row 1: priced rows go dark on bare compiles at M2 (intended); named-set compiles keep priced picks. Stage 2 = zen4-grid3.
+
+## 2026-11-03 ~00:00 — conditional build go for span_pick (Frank via main; Frank AFK)
+
+- Frank: "I've seen enough of the plan to approve it when it's done. Make sure it looks good to you then have kit go through all dev steps to build it."
+- The GO is CONDITIONAL on main's review of rev 5 (plus any 5.1 fixes) after crit-memfn-spanpick5 rules; no build before main's GO message.
+- Then the full dev process, stage by stage:
+  - stage 1 lands and is verified before stage 2;
+  - stage 2's card timing goes through the queue, never 20:00-01:00 or a bench window;
+  - stage 3 rows are each their own D186 choice change.
+- STOP and message main on anything non-routine (an unattributed red, an undeclared byte move, an answer-level finding, an owner ruling).
+
+## 2026-11-03 00:45 — span_pick STAGE 1 BUILD started (main's GO)
+
+- Main reviewed rev 5.2 and gave the GO under Frank's conditional approval (main 564db08c5).
+- Bench pattern list for the witness: every pattern in pcrec-bench/bench/*/subbench.toml at e351528a, read as collect.py reads them. Written once to docs/dev/lanes/spanpick_bench_patterns.txt and frozen for all of stage 1.
+- Landing order: 1a, 1f, 1g, 1b, 1c, 1d, 1e.
+- Per unit: a code critic round before landing, gates through the queue, delivered to main.
+- Kept counted names are reported to main before landing.
+- Stop on anything non-routine.
+- Lane sp1a (opus) launched; its queue jobs are 300-309, not before 01:05.
+
+## 2026-11-03 — span_pick stage 1 unit 1a built (lane sp1a, branch lane/memfn-sp1a)
+
+- Dead code out, no byte moves by construction: `mf_set_terms` and terms.c (N3; kit.h's cover section with it), the finder rows R3a, R3b, R4 with their contracts and the H comparators only they read (finder_history.md).
+- **MF_CLASS_V 5 -> 6** (kit-contract event, no MF_SITE_ABI move, no layout move): `mf_class.pres_row`/`pres_led` carry finder-row indices, and three rows left ahead of the PRES rows. pcrec's one reader maps the index through `mf_finder_rows`, so its records keep their row names. For the responses ledger: the kit session's line.
+- The DECIDER CENSUS (span_pick rev 5.2 §The tables) is born: `tests/memfn/decider_census.tsv` + `decider_census.py` (in `make test-memfn-rows`), 50 members, backstop 36 hits, two plants red. Ratchet R20-R27 15 -> 11 (R26 -3, R27 -1).
+- Witness (byte identity on every arm over the corpus + the frozen bench list + job 588's sample + `zzzzzzz~J`; reach equality; census; strict) queued as box-queue jobs 300-30x: docs/dev/lanes/sp1a_report.md.
+
+## 2026-11-03 morning — unit 1a LANDED (main 761521515); mech gap; 1f started
+
+- 1a landed after its gates went green:
+  - code round r3, with its FIX-NOWs fixed in sp1afix;
+  - ident 311/312 red only on a stale main floor, which main re-pinned in ef179b9f4;
+  - 314 hit its cap because make test ran serially; re-run as 315 via perfrun (green) and 316.
+- Main's question exposed a gap: 316 was VALIDATE_ONLY, so the 34 mech rows planting in 1a's files never ran. They are queued now as 321/322 (kit-mech1a-a/b) on worktrees/mech1a at 761521515.
+- From 1f on, every unit runs its touching mech rows for real.
+- Lane sp1f (opus) launched from 761521515; its jobs are 330-339.
+- Lessons:
+  - expect regexes must include digits;
+  - make test goes alone via perfrun;
+  - VALIDATE_ONLY is not a mech run;
+  - never merge into a worktree while a job runs there.
+
+## 2026-11-03 ~11:15 — /close (now); 1f in gates
+
+- 1f fixes landed (4375ecfc4).
+- Gates 340-346 GREEN. 344 needed a retry: the job script passed the dump declarations only to the base arm, but the start arm also runs the dumps stream.
+- 347-349 (mech) were running at close.
+- wake.md rewritten.
+
+## 2026-11-03 — span_pick stage 1 unit 1f built (lane sp1f, branch lane/memfn-sp1f)
+
+- The finder rows R8, R1, R2 deleted with their denies `fd-r8`/`fd-ndisp`, the residual N step, the §2.5 pay rule and its public entry `mf_finder_pay` (finder_history.md). No emitted byte moves by construction: no compile ever reached the three rows (forms never built).
+- **MF_SITE_ABI 20 -> 21** (the entry and the two options leave) and **MF_CLASS_V 6 -> 7** (three rows left ahead of the PRES rows). For the responses ledger: the kit session's line.
+- CALLER-VISIBLE: `--list-axes` loses the two `memfn` rows; `--memfn=no-fd-r8`/`no-fd-ndisp` are unknown options; `docs/spec/registry.md` §6¶8/¶8a/¶8b (floor 14 -> 12).
+- Witness (byte identity on every surviving arm with `--list-axes` judged by `--dumps-declared-gone`; reach equality with the declared gone set fd R8/R1/R2; census; strict; make test; mech) queued as box-queue jobs 330-33x: docs/dev/lanes/sp1f_report.md.

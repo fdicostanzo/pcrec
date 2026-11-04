@@ -241,13 +241,19 @@ $(BUILD_DIR)/obj/shared/%.o: shared/%.c shared/%.h
 # (lane wsc3, 2026-10-22).
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
 $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
+$(BUILD_DIR)/obj/gen/vm_stmt.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
 # [INLINE-C] 1b the call-site code table's header, read by both of its
 # producers (the compound's controller and the VM's callout site).
 $(BUILD_DIR)/obj/gen/callsite_rows.o $(BUILD_DIR)/obj/gen/emit_compound.o \
-$(BUILD_DIR)/obj/gen/emit_vm.o: src/gen/callsite_rows.h
+$(BUILD_DIR)/obj/gen/emit_vm.o $(BUILD_DIR)/obj/gen/vm_stmt.o: src/gen/callsite_rows.h
+# [VMREC] (a) the VM body's record module: its header is read by its two
+# translation units (the emitter that builds the records, the module that
+# renders them), and it includes the class kit's header for a CLS piece.
+$(BUILD_DIR)/obj/gen/emit_vm.o $(BUILD_DIR)/obj/gen/vm_stmt.o: \
+    src/gen/vm_stmt.h src/gen/clskit.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
@@ -669,6 +675,9 @@ test-examples: all
 # src/ cli/ lib/ for a comparison reading a start-table row name (dfa_pfs[]
 # until [START-TABLE] C3, cand_rows[]'s NEXT/RECOVER rows since), well under a
 # second.
+# [LANDWALK] run_landmark_walk.sh joins at stage 1 (lane p1build): about 45
+# compiles and one gcc'd matcher (a few seconds) -- the `landmark-walk` row's
+# witnesses, its deny both ways and the reach guard as a cost.
 # [CASESPELL] run_case_spelling_identity.sh joins on the same footing: seven
 # groups of three spellings, each compiled and gcc'd per engine and encoding
 # (about 5 s) -- the check that letter case in a caseless pattern never
@@ -693,8 +702,10 @@ test-codegen: all
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh' \
 	    'bash tests/codegen/run_rev_end.sh' \
+	    'bash tests/codegen/run_landmark_walk.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
-	    'bash tests/codegen/run_residual_twins.sh'
+	    'bash tests/codegen/run_residual_twins.sh' \
+	    'bash tests/codegen/run_stmt_writer.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
@@ -912,7 +923,8 @@ test-vm: all
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_vm_identity.sh' \
 	    'bash tests/codegen/run_ir_listing.sh' \
-	    'bash tests/vm/run_vm_tests.sh'
+	    'bash tests/vm/run_vm_tests.sh' \
+	    'bash tests/vm/run_trail_compact.sh'
 
 # [ENG-BREP] The possessification rung's two non-.rxt suites. Its .rxt corpus
 # rides test-corpus like every other module's; these two check what a .rxt file
@@ -1508,10 +1520,14 @@ test-memfn-deleg: all
 # each row's text signature in its witness's artifact and absent from its
 # control's (the trace must agree with the text both ways), and the shape of
 # the per-row floor file (tests/memfn/row_floors.tsv). Seconds; builds a
-# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a.
+# traced kit and a traced pcrec in TMPDIR from build/libpcrec.a. Then the
+# DECIDER CENSUS (span_pick.md rev 5.2, unit 1a): the declared deciders of
+# tests/memfn/decider_census.tsv against the kit's sources, its backstop grep
+# and two plants (tests/memfn/decider_census.py; well under a second).
 test-memfn-rows: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
 	CC="$(CC)" bash tests/memfn/run_rows.sh
+	python3 tests/memfn/decider_census.py --root .
 
 # [MEMFN] R17-b' B1 (lane fdb1; docs/design/memfn/r17b_prime.md rev 3): the
 # kit's FINDER TABLE and its B1 entries: the table's self-check and listing
@@ -2152,6 +2168,7 @@ alloc-locked:
 # ([runkit], scripts/boxlock: waits for a holder, nests inside a battery or a
 # chainrun heavy stage; PCREC_BOXLOCK=0 opts out).
 test-axes: all
+	bash tests/axes/giveup1_key_check.sh
 	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh'
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a

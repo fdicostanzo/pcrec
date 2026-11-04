@@ -1188,6 +1188,9 @@ static int cli_push_code_header(CliState *st, const char *v)
         (size_t)(st->ncode_headers + 1) * sizeof *hv);
     if (!hv) { perror("realloc"); return 1; }
     st->code_headers = hv;
+    /* line/file are never set by --code-header: a realloc'd slot holds
+     * whatever the heap did (the emitter strlen()s .file). */
+    hv[st->ncode_headers] = (PcrecCodeHeader){ 0 };
     if (cli_code_header(v, &hv[st->ncode_headers]) != 0) return 1;
     st->ncode_headers++;
     return 0;
@@ -1432,6 +1435,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
            read by the KITPROOF trace record; retirement filed under
            [KIT-VERIFY] */
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
+        /* [MEMFN] R-30: the kit's old pre-check form, the window part kept */
+        else if (!strcmp(a, "--harness=pres-window")) st->harness.pres_window = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;

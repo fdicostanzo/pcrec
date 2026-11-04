@@ -17,6 +17,7 @@ or it has no regression net at all.
 - **run_case_spelling_identity.sh** — [CASESPELL] (2026-10-23): patterns differing ONLY in the letter case of their caseless text emit the same matcher (declared spelling groups x dfa/vm x byte/utf8, two of them bare `(?i)` vs scoped `(?i:` runs since [FLAG-SPELL], S1560; emitted C identical after an exact, count-checked pattern-echo mask, gcc -O2 `.text` identical; two positive controls that must differ). In `make test-codegen`.
 - **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no SELECTION reads the prefix.
 - **run_nomatch_caps.sh** + **nomatch_caps_driver.c** — K78 (lane k78, 2026-09-30, abi 55): match_api.md §3.1/§3.3's caps contract on every entry that takes a caps array ...
+- **run_stmt_writer.sh** + **stmt_writer_scan.py** — [VMREC] ST: the VM body's one writer is vm_stmt.c.
 - **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8 alternation trie (R3.3).
 - **run_vm_identity.sh** — [M4.5b] THE ZERO-REGRESSION GATE (engine_m4.md §5.4, §13 P-7: "this one should be a GATE, not a prediction").
 - **run_endvar_identity.sh** — [M6.2] wave A's BYTE-IDENTITY GATE, the `run_trie_identity.sh` shape one closure view over.
@@ -43,6 +44,7 @@ or it has no regression net at all.
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name; see below) for each optimization's signature (skip tables + skip loop, `start_max = 0` for ...
 - **run_size_term.sh** — [ART-SIZE]/D84's structural check (2026-08-29).
 - **run_prefilter_collapse.sh** — [OPT-4]/K39's structural check (2026-08-29).
+- **run_landmark_walk.sh** — [LANDWALK] the `landmark-walk` row held to the artifact (test-codegen; mech arm `landwalk`).
 - **run_rev_end.sh** — LOCATE's `rev-end` row held to the artifact (in `make test-codegen`; mech arm `revend`). §1 named witnesses: the stamp, `rx_info.scan`, the walk's ...
 - **run_start_landing.sh** + **landing_hostile_driver.c** — RECOVER's two new rows held to the artifact (`docs/design/start_landing.md` §7.3; its own section, `make` ...
 - `run_object_neutrality.sh` — section "[M6-READ] `run_object_neutrality.sh` — the two-compiler gate" (history file)
@@ -63,7 +65,7 @@ or it has no regression net at all.
 - `run_fallback_table.sh` — section "`run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)" (history file)
 - `cand_oracle_unreached.tsv` — the UNREACHED witnesses table read with `run_cand_oracle.sh`.
 - `manifests/` — pinned byte/line manifests read by the identity and structure checks.
-- `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY` ([OPT-PRECHECK-ADMIT], 2026-09-23, abi 30 -> 31): the ADMISSION of §3's and §4's pre-checks, ruled by Frank as G1 + G2 (G3 dropped on x86_64 measurement); neither decline is answer-detectable, so this file is where they are defended.
+- `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY`: see NOTES.md (moved for size).
 
 ## TRAPS THIS DIRECTORY HAS PAID FOR — read before writing a `sed` or resolving a `CC`
 
@@ -102,4 +104,4 @@ the count is unstable between builds (171 and 176 observed for the same edit).
 The hoist form above is memory-safe by construction.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__codegen.md`.
-- **run_residual_twins.sh** — [FINDALL-NEXT] I1 residual-twin forwarders check; the premul table also has an iterator arm (NOTES.md).
+- **run_residual_twins.sh** — [FINDALL-NEXT] I1 residual-twin forwarders check (NOTES.md).

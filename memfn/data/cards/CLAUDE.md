@@ -11,8 +11,15 @@ Hand-written, append-only by version (a committed row never changes):
   setdig: the loader refused sets without a unit row),
   covering every quantity a finder row or its pay rule reads, so a synthetic
   set holding every derivable key is on-card. The pay rule's operand
-  quantities are PROVISIONAL spellings (`memfn/src/finder.c`) until
-  kit-grid@2.
+  quantities (PROVISIONAL spellings) stay, unread, since the rule retired
+  with R1 and R2 (span_pick 1f; `memfn/docs/finder_history.md`).
 
-`tests/memfn/finder_check.py` (check C) holds every set's keys to a card here
-and every card's `deps` to the form hashes.
+- `kit-kernels.tsv` — `kit-kernels@1`: the cards of the STANDALONE kernels
+  (not routed; lane simdset): `mf_kernel_find_any`'s forms `vany2/3-w16/w32/body`
+  on kit-grid@1's quantities (beta, f, saving, xover, gstar). UNMEASURED: no
+  set holds a `kit.*.vany*` row; its deps are OWED (no form hash outside a site).
+
+A new search method adds its card here in the same change (D176,
+`docs/dev/guide/addenda/kit.md`). `tests/memfn/finder_check.py` (check C)
+reads EVERY table here (by listing), holds each row's shape, every set's keys
+to a card and every card's `deps` to the form hashes.

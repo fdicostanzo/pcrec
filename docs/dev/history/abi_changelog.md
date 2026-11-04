@@ -23,7 +23,48 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `92` on every artifact today ([MEMFN] D172 S3, 91 -> 92,
+- **`rx_info.abi` is `95` on every artifact today ([LANDWALK] stage 1, 94 -> 95,
+  numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
+  built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;
+  D184; docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md
+  rev 3).** A new LOCATE row `landmark-walk` (between `cover` and
+  `composite`): on a one-branch DFA pattern with a byte-class landmark L
+  at a top-level position whose prefix P never consumes a byte of L, NEXT
+  (without the walk) not already starting from a landmark, and L rarer
+  than NEXT's start set by the landmark margin, the search finds each
+  occurrence of L through the delegated site LMHIT (a new DELEG_SITES row,
+  its table `<prefix>_landmark_bytes`), walks the reverse machine of P·L
+  back from it (a FOURTH machine's tables, `<prefix>_landmark_*`, and its
+  accessor block), runs the anchored machine once inline from the leftmost
+  start (its tables again inside the search body, `<prefix>_lmverify_*`),
+  and relocates to the forward-then-reverse search from that start where
+  the last verify read past the landmark. Its stamps move
+  (`<PREFIX>_DFA_SCAN "landmark-walk"`, `<PREFIX>_DFA_TABLE` and
+  `<PREFIX>_DFA_SCAN_EDGE` fold ML in) and `rx_info.scan`; `--list-axes`
+  lists `landmark-walk` at `locate` 3 and re-indexes `unanchored` 3 -> 4,
+  the axis `-fno-landmark-walk` (bit 57), and the fallback rung
+  `drop-landmark-walk`. Every other artifact moves only the number.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `94` on every artifact ([MEMFN] R-30, lane r30b,
+  2026-10-29; 93 -> 94 over main 5c60e118c, renumbered by lane r30bfix 2026-10-31,
+  confirmed at landing by lane landr30 2026-11-01, merge cd4c36b92).** On a pre-check whose run WINDOW part sits
+  beside the WHOLE run that implies it (the route with no DFA scan in front,
+  a run longer than its 8-byte window: tuning.md §2.29¶4), the window's
+  search is no longer emitted or asked, at the search entry and at every
+  attempt-loop re-entry; the whole run's search compares the window's bytes
+  first and then the rest of the run. Emitted bytes that move on those
+  artifacts only: the `<prefix>_reqrun` block (its `__body` and selector), its
+  call at the entry and at each re-entry, and the whole run's candidate test
+  (the window's compare first). No stamp value moves but the abi digits.
+  Every other artifact moves only the abi digits. The OFF arm is the
+  test-only harness lever `--harness=pres-window` (build/pcrec-harness),
+  byte-identical to the parent's text but for those digits; no public deny
+  (the change cannot make a caller slower). The mover census is in
+  docs/dev/lanes/r30b_report.md.
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `93` on every artifact ([K134], lane trailgc2, 2026-10-29; 92 -> 93, numbered at landing by lane landtgc (built as 91 -> 93 provisional); 92 is the memfn kit's S3).** The VM's trail compaction (docs/spec/limits.md §4). Emitted bytes that move: on a VM artifact whose program writes a capture or counter slot inside a loop or a called region, a `<PREFIX>_TRAIL_CHECK();` line before each backward `goto` that closes a trail-writing cycle and before each region return (a conditional back-jump becomes `{ <PREFIX>_TRAIL_CHECK(); goto ...; }`), the file-scope functions `<prefix>_trail_gc_floor`, `<prefix>_trail_gc_start` and `<prefix>_trail_compact` with the `<PREFIX>_TRAIL_CHECK` macro after the run-state definitions, a `size_t trail_gc_floor` member appended to `<prefix>_run_state`, set by `<prefix>_run_state_bind` and overridden to never on each fast-tier entry (lane trailgc3, review 2026-10-29-r2 F5), and one matcher-local `size_t <prefix>_trail_gc_at` in the matcher's prologue. The trail write (`<PREFIX>_TRAIL`) is unchanged. A DFA artifact, and a VM artifact with no such cycle, is byte-identical apart from the abi number. Size and stack, measured (review r2 F18, lane trailgc3): +1.6-2.0 KB of text per checkpointed artifact (bench O-116 item 4; lane trailgc3 had stated +0.6-1.2 KB) (+3-10 % on small ones); the matcher's own frame grows (56 -> 112-128 B), the cold compaction adds a 64-160 B frame plus NSLOTS bytes while it runs, and the run-state member moves the specimen's entry frame 3,184 -> 3,200 B and deep path 134,400 -> 134,432 B (`limits.md` §5).
+  The prior entry follows unchanged:
+- **`rx_info.abi` was `92` on every artifact ([MEMFN] D172 S3, 91 -> 92,
   renumbered by lane s3m, 2026-10-29, over main b05ccfc0b in landing order; lane
   s3 bumped it 2026-10-22 as 83 -> 84 PROVISIONAL, lane s3pair renumbered it
   84 -> 85 on 2026-10-24 when main's iterators had taken 84, and 85 stayed

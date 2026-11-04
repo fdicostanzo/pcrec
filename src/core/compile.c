@@ -303,6 +303,10 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->xadfa.tab);
         free(cx->job->xprio.st);
         free(cx->job->xprio.tab);
+        /* [LANDWALK] the landmark machine and the NFA its gate reused. */
+        free(cx->job->lmnfa.st);
+        free(cx->job->lmdfa.st);
+        free(cx->job->lmdfa.tab);
         pcrec_sb_free(&cx->job->csb);
         pcrec_sb_free(&cx->job->hsb);
         pcrec_sb_free(&cx->job->vmsb);
@@ -531,6 +535,29 @@ out:
     cx->subset_elems = subset_before;
 }
 
+/* [LANDWALK] THE LANDMARK MACHINE ML (rev 2 §Mechanism): the reverse
+ * machine of the cut P·L the admission chose (`PcrecLmwalk.pl`), built where
+ * every PRE row holds (`pcrec_lmwalk_admits`, whose first test is the row's
+ * deny) AFTER the forward, reverse and anchored machines are final, so ML
+ * can never push a mandatory machine or A over a budget
+ * (`build_anchored_dfa`'s rule 1). OPTIONAL like the lowered set: its own
+ * cap, the overflow record and the subset budget restored
+ * (`revend_build_one`), an overflow the POST row `machine`'s decline.
+ * `lm_built` is the one fact the row's predicate reads of it. */
+static void lmwalk_build(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    long long subset_before = cx->subset_elems;
+    job->lm_built = false;
+    if (!pcrec_lmwalk_admits(cx, root)) return;
+    pcrec_build_nfa(cx, pcrec_lmwalk(cx)->pl, &job->lmnfa, true, false);
+    if (job->lmnfa.erased == 0 &&
+        revend_build_one(cx, &job->lmnfa, &job->lmdfa, false, true,
+                         PCREC_MAX_DFA_STATES_TABLE, job->lmnfa.start, false))
+        job->lm_built = true;
+    cx->subset_elems = subset_before;
+}
+
 /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1, §R.2.1),
  * decided once the forward, reverse and anchored machines exist. `nl_last` is
  * read off TODAY's reverse machine and the first-match table
@@ -669,8 +696,11 @@ enum { COMP_LEVER_ATTEMPTS = 1 };
 /* [REQRUN-VM] `drop-handoff`: one more retry, and a FOURTH ladder run, since
  * it restarts the size term for the prefilter drop's reason and both can fire
  * on one compile. */
+/* [LANDWALK] and a further `+ 1` for `drop-landmark-walk`, one retry with the
+ * walk's deny OR'd in (it restarts nothing: the walk is a DFA artifact's
+ * body, whose size the term never measures). */
 enum { COMPILE_MAX_ATTEMPTS = 3 + 4 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 + 1 +
-                              COMP_LEVER_ATTEMPTS };
+                              COMP_LEVER_ATTEMPTS + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -865,7 +895,8 @@ typedef struct {
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
-    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK, FIT_DROP_HANDOFF
+    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK, FIT_DROP_HANDOFF,
+    FIT_DROP_LANDMARK_WALK
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -1084,6 +1115,16 @@ static bool fit_collapse_applies(const FitSel *s)
 static bool fit_end_mark_applies(const FitSel *s)
 {
     return s->cx->job && s->cx->job->revend_form == RF_TAGGED && !s->cx->end_mark_dropped;
+}
+
+/* [LANDWALK] `drop-landmark-walk` (p1build_report.md rev 3 FIX-3): the
+ * attempt's body is the landmark walk (ML is a path member), so the drop
+ * always shrinks the member set. The retry ORs the walk's deny in, so the
+ * gate builds no ML again and the row never re-applies. */
+static bool fit_lmwalk_applies(const FitSel *s)
+{
+    return s->size_drop_rung == SDR_NONE && s->cx->job && s->cx->job->lm_built &&
+           pcrec_cand_lmwalk_member(s->cx);
 }
 
 /* [K53-SELRETRY] the optional anchored machine: `anchored_ok` is exactly
@@ -1354,7 +1395,20 @@ static const FitRung fit_rungs[] = {
        * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
        * DFA-overflow range at the C level). */
       .axlist = { { "engine-route", 7, "size-cap-retry", 0, 0, "",
-                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
+                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the landmark walk, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
+    /* [LANDWALK] ahead of `drop-anchored`: the walk's own machine ML is the
+     * cheaper loss (the composite's per-byte scan comes back, the anchored
+     * fast path stays); then A, then the table. */
+    { .name = "drop-landmark-walk", .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_lmwalk_applies, .act = FIT_DROP_LANDMARK_WALK, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, PCREC_NO_LANDMARK_WALK, 0,
+                false, false, FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the landmark walk's reverse machine",
+                "the search runs the forward scan over every byte again "
+                "instead of walking back from each landmark "
+                "(docs/spec/tuning.md section 2.54)" } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false,
@@ -1661,6 +1715,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_REFUSE:         return "refuse the compile";
     case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
     case FIT_DROP_HANDOFF:   return "retry without the VM's required-run handoff rows";
+    case FIT_DROP_LANDMARK_WALK: return "retry without the landmark walk's reverse machine";
     }
     return "?";
 }
@@ -1797,6 +1852,9 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_COLLAPSE,      FIT_SEL1_COLLAPSE },  /* the collapsed prefilter overflowed a cap */
     { FIT_COLLAPSE,      FIT_DROP_PREFILTER },
     { FIT_DROP_ANCHORED, FIT_DROP_PREMUL },
+    /* [LANDWALK] the walk dropped, the artifact still over its cap */
+    { FIT_DROP_LANDMARK_WALK, FIT_DROP_ANCHORED },
+    { FIT_DROP_LANDMARK_WALK, FIT_DROP_PREMUL },
     /* D164 B3 the end mark dropped, the artifact still over its cap */
     { FIT_DROP_END_MARK, FIT_DROP_ANCHORED },
     { FIT_DROP_END_MARK, FIT_DROP_PREMUL },
@@ -2552,7 +2610,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
             case FIT_DROP_COMPOUND:
-            case FIT_DROP_END_MARK: case FIT_DROP_HANDOFF:
+            case FIT_DROP_END_MARK: case FIT_DROP_HANDOFF: case FIT_DROP_LANDMARK_WALK:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt
@@ -3102,6 +3160,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 /* D164 B3 the `rev-end` walk's form, once the three machines
                  * exist (endmark.md §R.2.1's order). */
                 if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
+                /* [LANDWALK] ML, once the three machines are final (a
+                 * `tagged` form may have swapped the forward one). */
+                lmwalk_build(&cx, root);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the

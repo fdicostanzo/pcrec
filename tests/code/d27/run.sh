@@ -283,7 +283,10 @@ diag_case() { # name cite expect-ERE gen-producing pcrec args...
         return
     fi
     if grep -Eq -- "$ere" "$dir/cc.err"; then pass "diag.$name"; else
-        fail "diag.$name [$cite]" "expected gcc diagnostic /$ere/ got: $(grep -m2 -E 'error' "$dir/cc.err" | tr '\n' ' ' | cut -c1-200)"
+        fail "diag.$name [$cite]" "expected gcc diagnostic /$ere/ got: $(grep -m2 -E 'error' "$dir/cc.err" | tr '\n' ' ' | cut -c1-200 | sed -E 's/: (fatal )?error: /: [cc \1error] /g')"
+        # (the observable IS a compile error: quoted with the `file:L:C: error:`
+        # shape broken, or the mech matrix reads a detection as a plant that
+        # does not compile -- NOCOMPILE_ERE, S1682)"
     fi
 }
 # 'd' of d27_undeclared is pattern byte 16 (0-based): column 17

@@ -16,6 +16,8 @@ SAB_REACH_EXPECT='REACH-HYB-TIE'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
-      .u.finish = { CAND_FIN_VERIFY } },'
+      .u.finish = { CAND_FIN_VERIFY, CAND_ASKER(CAND_ASK_CALLER) | CAND_ASKER(CAND_ASK_SEED) } },'
 SAB_AFTER='                [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT, CAND_HAND_ENDSET } },   /* SABOTAGE S777 */
-      .u.finish = { CAND_FIN_VERIFY } },'
+      .u.finish = { CAND_FIN_VERIFY, CAND_ASKER(CAND_ASK_CALLER) | CAND_ASKER(CAND_ASK_SEED) } },'
+# RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1): `verify-at`'s
+# `.u.finish` gained its asker set; the plant's one line is unchanged.

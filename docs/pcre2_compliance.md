@@ -1668,7 +1668,7 @@ This annotation is keyed to `\1` and covers the bundled prose row
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` `\g<0>` `\g'0'`, the multi-digit and leading-zero spellings `(?10)` `(?01)` `(?00)` `(?+2)` `(?-10)` — TWO LIMIT KINDS, both RESOURCE-shaped, plus one CAPABILITY note. (1) RESOURCE, the stamped capacity (D73): every LINKED call is a resume frame that outlives its return, so call depth is bounded by the artifact's frame/trail capacities — 2048/3072 by default, and the TRAIL binds first (measured 2.0 frames vs 9.0 trail entries per nesting level of `^(a(?1)?b)$`, so the default gives up at n = 342, a 684-byte subject). Past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one, and the remedy is the caller-provided buffer ([DD-14.FB]'s `_in` entries, 64 MB `MAP_NORESERVE` matching 800 KB in 0.056 s) rather than a bigger default. (2) RESOURCE, the runaway give-up where PCRE2 CONCLUDES (K34): on some same-position left recursions — `(a\|(?1)a)b` on `"a"`, `^(a\|(?1)a)$` on `"aaaaab"` — libpcre2 10.46 returns a clean NOMATCH and pcrec returns `PCREC_ERR_FRAMES`. A give-up says nothing about the language, so this is not a wrong answer under D26; it is a documented answer, and K34 carries the measured rule (65/65 cells) with the lane's recommendation not to adopt it. CAPABILITY note: `--engine=dfa` refuses each call row BY NAME, but that describes the LINKED form — a spliceable (acyclic) callee is inlined exactly and its pattern gets whatever engine the hand-inlined pattern gets (wave G; see the `(?1)` annotation below) | `OK-LIMITED` | `PLANNED` |
+| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` `\g<0>` `\g'0'`, the multi-digit and leading-zero spellings `(?10)` `(?01)` `(?00)` `(?+2)` `(?-10)` — TWO LIMIT KINDS, both RESOURCE-shaped, plus one CAPABILITY note. (1) RESOURCE, the stamped capacity (D73): every LINKED call is a resume frame that outlives its return, so call depth is bounded by the artifact's frame/trail capacities — 2048/3072 by default, and the TRAIL binds first (2.0 frames per nesting level of `^(a(?1)?b)$` against a trail need of `4n + 17` entries once the VM compacts its trail, [K134] and `limits.md` §4, so the default answers up to n = 763 and gives up at n = 764, a 1,528-byte subject; 9.0 trail entries per level and n = 342 before [K134]). Past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one, and the remedy is the caller-provided buffer ([DD-14.FB]'s `_in` entries, 64 MB `MAP_NORESERVE` matching 800 KB in 0.056 s) rather than a bigger default. (2) RESOURCE, the runaway give-up where PCRE2 CONCLUDES (K34): on some same-position left recursions — `(a\|(?1)a)b` on `"a"`, `^(a\|(?1)a)$` on `"aaaaab"` — libpcre2 10.46 returns a clean NOMATCH and pcrec returns `PCREC_ERR_FRAMES`. A give-up says nothing about the language, so this is not a wrong answer under D26; it is a documented answer, and K34 carries the measured rule (65/65 cells) with the lane's recommendation not to adopt it. CAPABILITY note: `--engine=dfa` refuses each call row BY NAME, but that describes the LINKED form — a spliceable (acyclic) callee is inlined exactly and its pattern gets whatever engine the hand-inlined pattern gets (wave G; see the `(?1)` annotation below) | `OK-LIMITED` | `PLANNED` |
 | `(?R(grouplist))` and capture-retaining forms | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: subroutine-recursion -->
@@ -1743,9 +1743,11 @@ for call-bearing patterns"). The default STAYS at 2048 frames / 3072
 trail entries: the run struct lives on the C stack of the un-suffixed
 entries (131,144 B call-bearing), which already SIGSEGVs a musl-default
 128 KB thread (K33), and the trail binds BEFORE the frames — 2.0 frames
-against 9.0 trail entries per nesting level of `^(a(?1)?b)$` — so the
-shipped default gives up at n = 342, a 684-byte subject, and raising
-frames alone would change nothing. The remedy is not a bigger default
+per nesting level of `^(a(?1)?b)$` against a trail need of `4n + 17`
+entries once the VM compacts its trail ([K134], `limits.md` §4; 9.0 trail
+entries per level before it) — so the shipped default gives up at
+n = 764, a 1,528-byte subject (n = 342, 684 bytes, before [K134]), and
+raising frames alone would change nothing. The remedy is not a bigger default
 but the CALLER-PROVIDED BUFFER ([DD-14.FB]'s three `_in` entries: a
 224 B frame, a 64 MB `MAP_NORESERVE` reservation matching 800 KB in
 0.056 s). That is why the `becomes` column reads `PLANNED` rather than

@@ -2,8 +2,10 @@
 # S1651 ([INLINE-C] stage 1b, lane ic1b; design S-IC5) -- the slot-0 restore after a callout's call is dropped, so the attempt start the view was given leaks into \K's live register
 #
 # Witness and reach: checks.c A4, a\Kb(?C"see")c on abc: the reported start must stay 1 (\K), not the 0 the view was shown.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the callout block is VK_CALLOUT's renderer (vm_r_callout), text unchanged. Same detector, same arm.
 SAB_ID="S1651-callout-slot0-not-restored"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/vm_stmt.c"
 SAB_SUITES="callouts"
 SAB_DESC='the slot-0 restore after a callout'\''s call is dropped, so the attempt start the view was given leaks into \K'\''s live register'
 SAB_REACH='"$PCREC" -p rx --features all -o "$REACH_TMP/o.c" --pattern '\''a\Kb(?C"see")c'\'' && grep -qF '\''rx_co_start;'\'' "$REACH_TMP/o.c" && echo REACH-CALLOUT-SLOT0'

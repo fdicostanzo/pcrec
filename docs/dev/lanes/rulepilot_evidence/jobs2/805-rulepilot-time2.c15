@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# 805-rulepilot-time2.c15: lane rulepilot's timing chunk 15 of 16: 45 groups, est 45 min at
+# the MEASURED 1 min/group. grid2 time.sh (method kit-grid@2) with RESUME=1 over the groups of jobs2/groups.c15.tsv, slot of
+# 790-rulepilot-build. START WINDOW 01:00-19:05 local (--ready refuses outside it, so no chunk starts late enough to
+# run into the 20:00-01:00 owner hold). Results: OUT/time_RP15.log (appended), OUT/time/raw_RP15.tsv.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/rulepilot
+E=$W/docs/dev/lanes/rulepilot_evidence
+OUT=/var/tmp/pcrec-pcrec/scratch/rulepilot/slot
+GF=$E/jobs2/groups.c15.tsv
+BQ=${BOXQUEUE:-/home/pcrec/projects/pcrec/scripts/boxqueue}
+case "${1:-}" in
+    --dry-run)
+        [ -f "$W/docs/dev/lanes/grid2/time.sh" ] && [ -f "$GF" ] || { echo "missing time.sh or $GF" >&2; exit 1; }
+        # groups still to time: the list minus those with a done line in the chunk's log (RESUME re-checks the raw rows)
+        n=$(awk -F'\t' -v L="$OUT/time_RP15.log" 'BEGIN{while((getline l < L)>0) if(l ~ /^# group [0-9]+ done: /){split(l,f," "); d[f[5]"\t"f[6]"\t"f[7]]=1}} !(($1"\t"$2"\t"$3) in d){n++} END{print n+0}' "$GF")
+        [ "$n" -gt 0 ] || { echo "nothing left to time in $GF" >&2; exit 1; }
+        echo "would run in $OUT: PHASE=EXT GROUPS_FILE=$GF RESUME=1 RAW_TAG=RP15 CPU=14 LAUNCHES=3 LOADWAIT=15 bash grid2/time.sh >> time_RP15.log"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
+        echo "boxqueue: not-before 2026-11-02T13:30"
+        echo "boxqueue: est $((n * 60))"
+        echo "boxqueue: run-total 42240"
+        echo "boxqueue: expect groups=$n last=^time.sh: COMPLETE rows=[0-9]+ groups="
+        echo "boxqueue: witness groups=time.sh: COMPLETE rows=$((n * 5)) groups=$n reruns=0 xreruns=0 requeued=0 wall=2000s resumed_skipped=0"
+        exit 0 ;;
+    --ready)
+        out=$(bash "$BQ" after rulepilot-time2.c14); rc=$?
+        [ "$rc" = 0 ] || { echo "$out"; exit "$rc"; }
+        t=$((10#$(date +%H%M)))
+        if [ "$t" -lt 100 ] || [ "$t" -gt 1905 ]; then
+            echo "not-ready: outside window (start 01:00-19:05 local), now $(date +%H:%M)"; exit 75
+        fi
+        exit 0 ;;
+esac
+cd "$OUT" || exit 1
+w=0; while :; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 1.5)}" && break; [ "$w" -ge 300 ] && break; sleep 30; w=$((w + 30)); done
+echo "rulepilot-time2 c15: quiet load1=$(cut -d' ' -f1 /proc/loadavg) waited=${w}s"
+env OUT="$OUT" PHASE=EXT GROUPS_FILE="$GF" RESUME=1 RAW_TAG=RP15 PASS_STATUS="$OUT/time_RP15.status" CPU=14 LAUNCHES=3 LOADWAIT=15 \
+    bash "$W/docs/dev/lanes/grid2/time.sh" >> "$OUT/time_RP15.log" 2>&1
+grep -q '# ANSWER MISMATCH' "$OUT/time_RP15.log" && { grep '# ANSWER MISMATCH' "$OUT/time_RP15.log" | head; echo "rulepilot-time2 c15: answer mismatch"; exit 1; }
+tail -1 "$OUT/time_RP15.log" | grep -q 'time.sh: COMPLETE' || { tail -5 "$OUT/time_RP15.log"; echo "rulepilot-time2 c15: timing did not complete"; exit 1; }
+tail -1 "$OUT/time_RP15.log"

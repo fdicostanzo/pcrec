@@ -12,6 +12,7 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): rev-end sits between empty and composite, and empty gained its DFA front, whole and fin; the plant still moves empty after the composite. Intent
 # unchanged.
+# RE-AIMED 2026-10-29 (lane p1build, [LANDWALK], review r7 FIX-7): `u.locate.gives` replaced the `fin` bits on the four LOCATE rows; the plant still moves empty after the composite. Intent unchanged.
 SAB_BEFORE='    { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_LOCATE,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "empty", .map = CM_NONE, .hands = CT_VERDICT,
       .needs = { [CAND_ROUTE_DFA]     = { .front = CN(CAND_SLOT_PRESENCE) },
@@ -19,15 +20,16 @@ SAB_BEFORE='    { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_L
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_empty_unanchored,
                               [CAND_ROUTE_ATTEMPT] = emit_empty_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "empty", [CAND_ROUTE_ATTEMPT] = "empty" },
-                    .nomatch = true, .whole = true, .fin = CT_VERDICT } },
+                    .nomatch = true, .whole = true,
+                    .gives = { { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
 '
 SAB_AFTER='    /* SABOTAGE S738: empty moved after composite */
 '
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
-SAB_BEFORE2='                    .recover = CAND_HAND_EXISTS, .fin = CT_START } },
+SAB_BEFORE2='                    .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY } } } },
 '
-SAB_AFTER2='                    .recover = CAND_HAND_EXISTS, .fin = CT_START } },
+SAB_AFTER2='                    .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY } } } },
     { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_LOCATE,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "empty", .map = CM_NONE, .hands = CT_VERDICT,
       .needs = { [CAND_ROUTE_DFA]     = { .front = CN(CAND_SLOT_PRESENCE) },
@@ -35,5 +37,6 @@ SAB_AFTER2='                    .recover = CAND_HAND_EXISTS, .fin = CT_START } }
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_empty_unanchored,
                               [CAND_ROUTE_ATTEMPT] = emit_empty_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "empty", [CAND_ROUTE_ATTEMPT] = "empty" },
-                    .nomatch = true, .whole = true, .fin = CT_VERDICT } },
+                    .nomatch = true, .whole = true,
+                    .gives = { { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
 '

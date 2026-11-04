@@ -54,6 +54,10 @@
 # is wrong nearly everywhere and a missing-UNDO bug is wrong in SIX places,
 # which is exactly why the second one needs a corpus written to contain those
 # six rather than a sweep hoping to wander into them.
+# RE-AIMED 2026-11-04 (lane mechtri3): the vmrec record-first refactor (3bc599c92) removed v->b, so
+# the old direct pcrec_sb_printf no longer builds. The plant is now a PAIR: the emit_vm.c site marks its
+# source with a leading \x01, and vm_r_set (src/gen/vm_stmt.c) prints a marked source as a plain
+# slot_values[] store instead of the trailed SET. Same defect: the value is written, the old one is not trailed.
 SAB_ID="S86-kreset-write-untrailed"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
@@ -63,4 +67,15 @@ SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:6fail/590pass,kresetdiff:3fail/6pass
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)scan_position",
                "\\K resets the reported start of the match to here");'
-SAB_AFTER='        pcrec_sb_printf(b, "    slot_values[0] = (ptrdiff_t)scan_position;\n");   /* SABOTAGE S86 */'
+SAB_AFTER='        vm_set(v, 0, "\x01(ptrdiff_t)scan_position",   /* SABOTAGE S86 */
+               "\\K resets the reported start of the match to here");'
+SAB_FILE2="src/gen/vm_stmt.c"
+SAB_BEFORE2='    vm_renders(sb, s, VK_SET);
+    vm_set_line(sb, s->u.set.slot, s->u.set.name, s->u.set.src);'
+SAB_AFTER2='    vm_renders(sb, s, VK_SET);
+    if (s->u.set.src[0] == '\''\x01'\'') {   /* SABOTAGE untrailed */
+        pcrec_sb_printf(sb->b, "    slot_values[%d] = %s;\n", s->u.set.slot, s->u.set.src + 1);
+        return;
+    }
+    vm_set_line(sb, s->u.set.slot, s->u.set.name, s->u.set.src);'
+SAB_COUNT2=1

@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 92
+#define PCREC_ARTIFACT_ABI 95
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -231,6 +231,9 @@ static unsigned cand_path_members(Ctx *cx);
  * runs RECOVER (the composite does; `empty` asks nothing). Beside the table. */
 static const CandRow *cand_locate_of(Ctx *cx);
 static bool cand_recover_asked(Ctx *cx);
+/* [LANDWALK] the LOCATE row whose walk runs RECOVER (the body's, or the
+ * relocate target's). Beside the table. */
+static const CandRow *cand_recover_asker(Ctx *cx);
 /* [OPT-REVEND] L2 can the `rev-end` walk TIE (both seeds reach the start), so
  * FINISH is asked for ENDSET? Beside the walk's emitter. */
 static bool revend_ties(Ctx *cx);
@@ -2916,7 +2919,7 @@ static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const GenNames *g)
     const PcrecEntry ins[] = {
         PCREC_ENTRY_SEARCH_IN, PCREC_ENTRY_MATCH_IN, PCREC_ENTRY_MATCH_CAPS_IN,
     };
-    const PcrecFwd inert = { PCREC_FWD_INERT, NULL };
+    const PcrecFwd inert = { PCREC_FWD_INERT, NULL, false };
     const PcrecEntryText t = { .fwd = &inert };
     const char *sep = "";
     for (size_t i = 0; i < sizeof ins / sizeof *ins; i++) {
@@ -3807,12 +3810,26 @@ typedef struct CandSel {
      * `CT_*` mask of what is being finished (`AT` = CT_LOWER|CT_UPPER,
      * `NOMATCH` = CT_VERDICT at L0). MANDATORY on a FINISH ask — a 0 hand
      * selects no row, and the trace build aborts on it — and read by no other
-     * slot. `point`: the ask is for a match starting exactly at the lower
-     * bound (the match-here entry always asks one); only a take cell for
-     * `AT` reads it. */
+     * slot. [LANDWALK] `asker`: WHO asks a FINISH hand (`CAND_ASK_*`): the
+     * search body, the caller (the match-here entry's point request) or a
+     * LOCATE row's per-seed point request; only a FINISH take cell for `AT`
+     * reads it (`CandFinish.at_askers`), and a FINISH ask leaves it UNSTATED
+     * only as a defect the trace build traps. Other slots leave it 0. */
     unsigned    hand;
-    bool        point;
+    unsigned char asker;
 } CandSel;
+
+/* [LANDWALK] the ASKERS of a FINISH hand (`CandSel.asker`, a LOCATE row's
+ * `CandGive.asker`); 0 is UNSTATED (memory pcrec-no-silent-defaults). */
+enum { CAND_ASK_UNSTATED = 0, CAND_ASK_BODY, CAND_ASK_CALLER, CAND_ASK_SEED };
+#define CAND_ASKER(a) (1u << (a))
+
+/* [LANDWALK] ONE HAND a LOCATE row's walk gives FINISH, and who asks it
+ * (`CandLocate.gives`, 0-terminated by `hand`). */
+typedef struct CandGive {
+    unsigned      hand;
+    unsigned char asker;
+} CandGive;
 
 /* [START-SET] THE ROUTES (`CandSel.route`, `CandRoute` in core/internal.h
  * since C2), and a row's ROUTE MASK: bit `CAND_ON(r)` set where the row
@@ -4848,6 +4865,17 @@ static bool locate_cover_applies(const CandSel *s)
     return pcrec_cover(s->cx)->why == NULL;
 }
 
+/* [LANDWALK] `landmark-walk`'s predicate: `lmwalk_conj[]`'s decision (its
+ * PRE rows, memoized at the driver's gate) and its POST row read live, the
+ * build of ML. A's availability, which a ladder toggle can move after the
+ * gate (`pcrec_cand_drop_anchored_shrinks`), is row 2 `anchored-A`'s alone:
+ * the memo is keyed on it (`lm_key_holds`), so a toggle re-asks the rows. */
+static bool locate_landmark_walk_applies(const CandSel *s)
+{
+    const PcrecLmwalk *lw = pcrec_lmwalk(s->cx);
+    return lw->why == NULL && s->cx->job->lm_built;
+}
+
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
  * beside the table, where the row type is complete. */
 static bool dfa_engine_is_empty(Ctx *cx);
@@ -4881,23 +4909,24 @@ static bool dfa_engine_is_empty(Ctx *cx);
  * hybrids too (`pcrec_emit_dfa_scan_stamps`, the orientation block), where
  * the finisher is the VM. ENG_ATTEMPT's body and the empty one need no
  * forward machine, so "none" is the fold over a set without one. */
-/* [OPT-REVEND] L2 the path's member machines among F, R, A, in that order
- * (`out`, at most three; returns how many): the machines the three
- * membership folds below compose over. Since `rev-end` the forward machine
- * is not always among them (a walk runs the reverse machine alone). */
-static int dfa_member_machines(Ctx *cx, const Dfa *out[3])
+/* [OPT-REVEND] L2 the path's member machines among F, R, A and ([LANDWALK])
+ * ML, in that order (`out`, at most four; returns how many): the machines
+ * the three membership folds below compose over. Since `rev-end` the forward
+ * machine is not always among them (a walk runs the reverse machine alone). */
+static int dfa_member_machines(Ctx *cx, const Dfa *out[4])
 {
     unsigned m = cand_path_members(cx);
     int n = 0;
     if (m & CAND_MF) out[n++] = &cx->job->dfa;
     if (m & CAND_MR) out[n++] = &cx->job->rdfa;
     if (m & CAND_MA) out[n++] = &cx->job->adfa;
+    if (m & CAND_ML) out[n++] = &cx->job->lmdfa;
     return n;
 }
 
 static const char *dfa_table_name(Ctx *cx)
 {
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int nm = dfa_member_machines(cx, mach);
     if (nm == 0) return "none";
     /* [ENG-FORM] THE STAMP IS THE CHOSEN OBJECT'S NAME. It is not a second
@@ -4969,7 +4998,7 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
  * [OPT-REVEND] L0: "contains" is the path's member set (`dfa_table_name`). */
 static const char *dfa_scan_edge_name(Ctx *cx)
 {
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int nm = dfa_member_machines(cx, mach);
     if (nm == 0) return "none";
     const char *v = scan_edge_of(cx, mach[0], "none");
@@ -5030,7 +5059,7 @@ static int dfa_uniform_folds(Ctx *cx)
     /* An empty scan has no machine, and ENG_ATTEMPT's states are LABELS with
      * no numeric transition table and no scalar accept table to fold — the
      * same set without a forward machine `dfa_table_name` folds over. */
-    const Dfa *mach[3];
+    const Dfa *mach[4];
     int n = 0, nm = dfa_member_machines(cx, mach);
     for (int k = 0; k < nm; k++) n += uniform_folds_of(cx, mach[k]);
     /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
@@ -5559,10 +5588,11 @@ typedef struct CandLocate {
      * newline: compound A5's "Q is end-pinned", read as this field rather
      * than as the row's name. */
     bool         end_seeded;
-    /* the `CT_*` bits of the hands its walk gives FINISH on a DFA-hat route
-     * (E-LF): START (a SPAN), VERDICT (NOMATCH), ENDSET (a tie), each asked
-     * by the walk where it emits that arm (`cand_finish_ask`). */
-    unsigned     fin;
+    /* [LANDWALK] the HANDS its walk gives FINISH on a DFA-hat route (E-LF),
+     * each with its ASKER, a 0-terminated list (`.take`'s shape; was the
+     * `fin` bits): SPAN, NOMATCH, ENDSET (a tie) asked by the body
+     * (`cand_finish_ask`), and the landmark walk's per-seed AT. */
+    CandGive     gives[4];
 } CandLocate;
 
 /* [OPT-REVEND] L0 THE FINISH SLOT's PAYLOAD, `CandRow.u.finish`
@@ -5574,8 +5604,13 @@ typedef struct CandLocate {
  * where the ask's hand is one of its take cells there. */
 enum { CAND_FIN_REPORT = 1, CAND_FIN_NOMATCH, CAND_FIN_VERIFY, CAND_FIN_SEARCH,
        CAND_FIN_PRIO };
+/* [LANDWALK] `at_askers`: the ASKERS (`CAND_ASKER(a)` bits) whose `AT` the
+ * row takes, set on every row with an `AT` take cell (0 is UNSTATED, which
+ * the self-check refuses): `verify-at` runs A at the position whoever asks,
+ * `search-from`'s `AT` is the caller's own search (E-FC) and nobody else's. */
 typedef struct CandFinish {
     unsigned char act;          /* CAND_FIN_* */
+    unsigned char at_askers;    /* CAND_ASKER(CAND_ASK_*) */
 } CandFinish;
 
 /* [OPT-REVEND] L0 WHAT A ROW USES on one route (`CandRow.needs[route]`,
@@ -6686,6 +6721,7 @@ static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_CAN_BEGIN]   = "can_begin_match",
     [PCREC_FIND_START_BYTES] = "start_bytes",
     [PCREC_FIND_START_SET]   = "start_set",
+    [PCREC_FIND_LANDMARK]    = "landmark_bytes",
 };
 
 /* D172 S2 commit 2 THE WINDOW STATEMENT's TABLE OFFERS (R-29: per position,
@@ -6866,7 +6902,7 @@ static mf_site *find_site(const PcrecFind *f)
     Ctx *cx = f->cx;
     bool table = f->table != PCREC_FIND_NO_TABLE;
     bool back = f->offset < 0;      /* the term reads the candidate's predecessor */
-    if (f->site != DELEG_PF && f->site != DELEG_MLINE)
+    if (f->site != DELEG_PF && f->site != DELEG_MLINE && f->site != DELEG_LMHIT)
         pcrec_ctx_fail(cx, 0, "internal error: a FIND described under DELEG_SITES "
                        "row %s (src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id);
@@ -9013,6 +9049,18 @@ static bool req_start_set(const CandSel *s, uint8_t start_set[256])
  * the scan proves (`cand_row_scan`). A member of the prior-cost family G1
  * (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4 already
  * belong to. */
+/* [LANDWALK] (r5 SLOT-5, U-c) the margin itself, `pcrec_landmark_margin`
+ * (internal.h): the arithmetic below, generalised over its three inputs so
+ * the landmark walk's rarity row (src/gen/lmwalk.c) prices its landmark with
+ * the same function; this reader's inputs are unchanged, a no-mover by
+ * construction. */
+long long pcrec_landmark_margin(unsigned long long h, unsigned long long m, long long k)
+{
+    if (h == 0) return 1;                           /* the prior never sees it */
+    if ((unsigned long long)k * h >= 1000000u) return -1;
+    return (long long)((1000000u - (unsigned long long)k * h) * m) - (long long)(1000000u * h);
+}
+
 static bool req_landmark_admits(const CandSel *s, long long k)
 {
     Ctx *cx = s->cx;
@@ -9020,10 +9068,9 @@ static bool req_landmark_admits(const CandSel *s, long long k)
     unsigned long long landmark_ppm = req_landmark_hit_ppm(cx, rate), start_ppm = 1000000u;
     uint8_t start_set[256];
     if (req_start_set(s, start_set)) start_ppm = pcrec_find_set_mass(rate, start_set);
-    if (landmark_ppm == 0) return true;             /* the prior never sees it */
-    if ((unsigned long long)k * landmark_ppm >= 1000000u) return false;
-    return (1000000u - (unsigned long long)k * landmark_ppm) * start_ppm > 1000000u * landmark_ppm;
+    return pcrec_landmark_margin(landmark_ppm, start_ppm, k) > 0;
 }
+
 
 /* [REQ-HANDOFF-L1] NEXT's `handoff` row: a forward search machine — the
  * caller-facing body's, or since [REQRUN-VM] the VM hybrid's inlined
@@ -9382,6 +9429,51 @@ static const DfaDir dfa_dir_anchored = {
     "scan_position < subject_length", "scan_position - 1",
 };
 
+/* [LANDWALK] THE LANDMARK WALK's TWO DIRECTIONS. `landmark` is the reverse
+ * direction over ML, the reverse machine of the cut P·L, walked back from
+ * one past a hit and floored at `search_from`, the reverse object's strings
+ * character for character under its own name (its tables and accessors are
+ * its own). `lmverify` is the anchored direction over A, run once from the
+ * walk's start s* INSIDE the search body (rev 3 SOUND-2): the anchored
+ * object's strings, its own name (its accessors are the search body's), no
+ * range guard (the body's prologue ran), and its dead entry leaving the
+ * verify's one-pass block rather than returning `_match`'s -1. Its `from` is
+ * the body's (`emit_landmark_walk` sets it to the walk's start). */
+static const DfaDir dfa_dir_landmark = {
+    { "landmark", 0, cand_always },
+    "Landmark", "LANDMARK", "landmark_state", "landmark_view_state",
+    "rewind_position", "match_start_position",
+    "            ", "                ", true, false,
+    "    /* ---- LANDMARK TABLES: from one past a landmark, where can a\n"
+    "     * match through it begin? The pattern's prefix up to and including\n"
+    "     * the landmark, read right to left and walked backwards.\n"
+    "     *\n",
+    "the backwards walk has consumed the prefix and its landmark",
+    NULL, NULL,
+    "match_end_position < subject_length", "subject[match_end_position]",
+    "rewind_position <= search_from",
+    "subject[rewind_position - 1]", "subject[--rewind_position]", "rewind_position--",
+    dir_rev_skip, dir_rev_bound_accept,
+    "rewind_position > search_from", "rewind_position + 1",
+};
+
+static const DfaDir dfa_dir_lmverify = {
+    { "lmverify", 0, cand_always },
+    "Verify", "VERIFY", "lmverify_state", "lmverify_view_state",
+    "scan_position", "last_accept_position",
+    "            ", "                ", false, false,
+    "    /* ---- VERIFY TABLES: does a match begin at the walk's start, and\n"
+    "     * where does it end? The anchored machine (the match-here entry's).\n"
+    "     *\n",
+    "a match beginning at the walk's start may end",
+    NULL, "break;",
+    NULL, NULL,
+    "scan_position >= subject_length",
+    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
+    dir_fwd_skip, dir_fwd_bound_accept,
+    "scan_position < subject_length", "scan_position - 1",
+};
+
 /* ---- AXIS G: WHICH FORM THE ANCHORED MATCH-HERE ENTRY TAKES -------------
  *
  * [ENG-ABS] (docs/design/anchored_match_unwrapped.md §5.1). Two forms, and
@@ -9701,13 +9793,14 @@ static const CandRow *dfa_search_start_at(Ctx *cx, unsigned hand)
 }
 
 /* [OPT-REVEND] L2 the RECOVER cell the PATH asks ([r2-landing]): the hand
- * the body's LOCATE row's walk asks it with (the composite's forward accept,
- * `EXISTS`; the `rev-end` walk's speculative seeds, `WINDOW`), so the stamp
- * and every reader of the selection read the row the walk ran, never a fresh
- * hand-less ask. */
+ * the walk that RUNS the RECOVER block asks it with (the composite's forward
+ * accept, `EXISTS`; the `rev-end` walk's speculative seeds, `WINDOW`), so the
+ * stamp and every reader of the selection read the row the walk ran, never a
+ * fresh hand-less ask. [LANDWALK] that walk is RECOVER's ASKER
+ * (`cand_recover_asker`), the relocate target where the body's row relocates. */
 static const CandRow *dfa_search_start_of(Ctx *cx)
 {
-    return dfa_search_start_at(cx, cand_locate_of(cx)->u.locate.recover);
+    return dfa_search_start_at(cx, cand_recover_asker(cx)->u.locate.recover);
 }
 
 /* AXIS J's chosen row's spelling — `<PREFIX>_DFA_START`'s value and
@@ -9935,7 +10028,17 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * NOMATCH / ENDSET, `empty`'s NOMATCH). */
     [CAND_SLOT_LOCATE]   = { "LOCATE",   CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_WINDOW) | CN(CAND_NODE_CALLER) |
-                             CN(CAND_SLOT_FINISH) },
+                             CN(CAND_SLOT_FINISH),
+                             /* [LANDWALK] `landmark-walk`'s rows 8-9 read
+                              * NEXT in the world WITHOUT the walk (the
+                              * counterfactual read, under its own deny, which
+                              * the one row reading it carries) and ask the
+                              * kit for the start set that row proves */
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_LANDMARK_WALK },
+                             .by = { [CAND_SLOT_NEXT] = PCREC_NO_LANDMARK_WALK },
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
     [CAND_SLOT_WINDOW]   = { "WINDOW",   CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_WIDTH) |
                              CN(CAND_SLOT_FIRST) | CN(CAND_SLOT_NEXT) |
@@ -10018,7 +10121,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER | CT_UPPER | CT_START,
                              CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
                              .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA),
-                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },
+                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA),
+                                        /* [LANDWALK] RECOVER's asker asks
+                                         * FINISH whether a hand relocates
+                                         * (`cand_recover_asker`) */
+                                        [CAND_SLOT_FINISH] = CAND_ON(CAND_ROUTE_DFA) },
                              .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
                              /* [MEMFN] R17-b' B1 `landing` (L4) asks whether a
                               * search text precedes the machine */
@@ -10036,7 +10143,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              CAND_ALL_ROUTES,
                              CN(CAND_SLOT_LOCATE) | CN(CAND_NODE_CALLER) |
                              CN(CAND_SLOT_RETRY),
-                             .raise = CN(CAND_SLOT_RETRY), .rank = CN(CAND_SLOT_LOCATE),
+                             /* [LANDWALK] a seed's `verify-at` NOMATCH
+                              * returns to the walk's NEXT HIT, strictly
+                              * past the one it verified: `raise` */
+                             .raise = CN(CAND_SLOT_RETRY) | CN(CAND_SLOT_LOCATE),
+                             .rank = CN(CAND_SLOT_LOCATE),
                              .entry = CN(CAND_SLOT_LOCATE) },
     /* The successors that are not slots carry the re-entries inside the
      * composite: a candidate the verifier rejects re-enters the scan (E5,
@@ -10132,6 +10243,8 @@ static void emit_empty_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent);
+static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o);
 static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 
@@ -10170,7 +10283,8 @@ static const CandRow cand_rows[] = {
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_empty_unanchored,
                               [CAND_ROUTE_ATTEMPT] = emit_empty_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "empty", [CAND_ROUTE_ATTEMPT] = "empty" },
-                    .nomatch = true, .whole = true, .fin = CT_VERDICT } },
+                    .nomatch = true, .whole = true,
+                    .gives = { { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
     /* [OPT-REVEND] L2 `rev-end` (A2, locate_finish.md §4.1; revend.md form
      * C): an END-PINNED body walks its own reverse machine down from each
      * possible match end (`n`; `n - 1` before a final newline under `$`/`\Z`)
@@ -10192,7 +10306,8 @@ static const CandRow cand_rows[] = {
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_rev_end },
                     .scan = { [CAND_ROUTE_DFA] = "rev-end" },
                     .whole = true, .recover = CAND_HAND_WINDOW, .end_seeded = true,
-                    .fin = CT_START | CT_VERDICT | CT_ENDSET } },
+                    .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY }, { CAND_HAND_NOMATCH, CAND_ASK_BODY },
+                               { CAND_HAND_ENDSET, CAND_ASK_BODY } } } },
     /* [KIT-VERIFY] U1 `cover` (kit_proof.md §2): the kit's site PROVES the
      * whole fixed-width sub-problem, context included, at every candidate it
      * yields (every position REQUIRED, a REPORT site), so the first candidate
@@ -10213,10 +10328,38 @@ static const CandRow cand_rows[] = {
       .needs = { [CAND_ROUTE_DFA] = { 0, 0, CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_cover },
                     .scan = { [CAND_ROUTE_DFA] = "cover" },
-                    .whole = true, .fin = CT_START | CT_VERDICT } },
+                    .whole = true,
+                    .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY },
+                               { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
+    /* [LANDWALK] stage 1 `landmark-walk` (docs/dev/lanes/p1dsg3_report.md
+     * rev 2, p1build_report.md rev 3): every occurrence of the landmark L
+     * (the delegated site LMHIT), ascending from `search_from`, overlapping
+     * ones included; the reverse machine of the cut P·L (ML) walked back from
+     * one past it to the smallest accepting position s*, floored at
+     * `search_from`; then a POINT REQUEST at s*, asked as the SEED (`AT`,
+     * `verify-at`: one anchored run, inline). A hit the last verify already
+     * read past is the REACH GUARD: LOWER(s*) to `search-from`, a relocate to
+     * the composite from s* (linear, never quadratic). The hits running out
+     * is NOMATCH. Admitted by `lmwalk_conj[]` (src/gen/lmwalk.c). Its walk
+     * answers presence itself (`whole`) and asks RECOVER nothing (the
+     * relocate's composite asks it: `cand_recover_asker`). After `cover`,
+     * before `composite`; CAND_ROUTE_DFA only. */
+    { .c = { "landmark-walk", PCREC_NO_LANDMARK_WALK, locate_landmark_walk_applies },
+      .slot = CAND_SLOT_LOCATE,
+      .routes = CR_DFA, .tok = "landmark-walk", .map = CM_NONE,
+      .hands = CT_START | CT_VERDICT | CT_LOWER,
+      .list = { [CAND_ROUTE_DFA] = { "locate", 3, "landmark-walk", PCREC_NO_LANDMARK_WALK } },
+      .desc = "a one-branch pattern with a byte class L at a top-level position whose bytes the prefix P before it can never consume, a DFA finisher with its anchored machine, NEXT (without the walk) not already starting from a landmark, and L rare enough against NEXT's start set (the landmark margin): each occurrence of L is found, the reverse machine of P then L walks back from it to the leftmost start, and one anchored run decides the match there; a hit the last run already read past relocates to the forward scan from that start",
+      .needs = { [CAND_ROUTE_DFA] = { CAND_ML | CAND_MA, 0, CN(CAND_SLOT_PRESENCE) } },
+      .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_landmark_walk },
+                    .scan = { [CAND_ROUTE_DFA] = "landmark-walk" },
+                    .whole = true,
+                    .gives = { { CAND_HAND_AT, CAND_ASK_SEED },
+                               { CAND_HAND_LOWER, CAND_ASK_BODY },
+                               { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
     { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
       .routes = CAND_ALL_ROUTES, .tok = "composite", .map = CM_NONE, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "locate", 3, "unanchored" } },
+      .list = { [CAND_ROUTE_DFA] = { "locate", 4, "unanchored" } },
       .desc = "always (fallback): the forward scan from search_from, the candidate-start slots inside it, then the reverse pass for the start (`attempt` on an ENG_ATTEMPT body: the per-start attempt loop; the VM's attempt loop on a VM artifact)",
       .needs = { [CAND_ROUTE_DFA]     = { CAND_MF, CN(CAND_SLOT_NEXT) | CN(CAND_SLOT_RECOVER),
                                           CAND_FRONT_DFA },
@@ -10227,7 +10370,8 @@ static const CandRow cand_rows[] = {
                               [CAND_ROUTE_ATTEMPT] = emit_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "unanchored",
                               [CAND_ROUTE_ATTEMPT] = "attempt" },
-                    .recover = CAND_HAND_EXISTS, .fin = CT_START } },
+                    .recover = CAND_HAND_EXISTS,
+                    .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY } } } },
 
     /* WINDOW (§2.2; read by `pcrec_emit_end_window_clamp` and the
      * `<PREFIX>_END_WINDOW` stamp) */
@@ -10255,7 +10399,7 @@ static const CandRow cand_rows[] = {
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
-      .desc = "the body's LOCATE row answers presence itself (rev-end, the cover window search, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
+      .desc = "the body's LOCATE row answers presence itself (a LOCATE row with `whole`: rev-end, the cover window search, the landmark walk, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
       .u.admit = { REQ_ADMIT_DOMINATED } },
     { .c = { "set-leads", 0, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
@@ -10604,7 +10748,7 @@ static const CandRow cand_rows[] = {
                  [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
                 [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
-      .u.finish = { CAND_FIN_VERIFY } },
+      .u.finish = { CAND_FIN_VERIFY, CAND_ASKER(CAND_ASK_CALLER) | CAND_ASKER(CAND_ASK_SEED) } },
     { .c = { "search-from", 0, cand_always }, .slot = CAND_SLOT_FINISH,
       .routes = CAND_ALL_ROUTES, .tok = "search-filter", .map = CM_NONE,
       .hands = CT_LOWER | CT_START | CT_VERDICT,
@@ -10613,10 +10757,13 @@ static const CandRow cand_rows[] = {
       .needs = { [CAND_ROUTE_DFA]     = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_ATTEMPT] = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_VM]      = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
-      .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_ENDSET },
+      /* [LANDWALK] the DFA LOWER cell: the landmark walk's reach guard
+       * hands the bound below which no match starts, and the relocate to
+       * the composite from it is E-FL for LOWER (the VM cell's meaning) */
+      .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_ENDSET, CAND_HAND_LOWER },
                 [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT },
                 [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
-      .u.finish = { CAND_FIN_SEARCH } },
+      .u.finish = { CAND_FIN_SEARCH, CAND_ASKER(CAND_ASK_CALLER) } },
     { .c = { "nomatch", 0, cand_always }, .slot = CAND_SLOT_FINISH,
       .routes = CAND_ALL_ROUTES, .tok = "nomatch", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 3, "nomatch" } },
@@ -10642,13 +10789,16 @@ static const CandRow cand_rows[] = {
 #define CAND_HANDED_SLOTS (CN(CAND_SLOT_FINISH) | CN(CAND_SLOT_RECOVER))
 
 /* [OPT-REVEND] does row `r` take the ask's hand on its route: one of its take
- * cells there, and FINISH's `AT` only on a point ask (§2.2)? A 0 hand
- * matches no cell. */
+ * cells there, and FINISH's `AT` only from an asker the row serves (§2.2;
+ * [LANDWALK] `CandFinish.at_askers`, was the caller's `point` alone)? A 0
+ * hand matches no cell. The asker is read on FINISH's `AT` only, as `point`
+ * was: RECOVER's `WINDOW` is `AT`'s mask and carries no asker. */
 static bool cand_takes(const CandRow *r, const CandSel *s)
 {
     for (int k = 0; k < 4 && r->take[s->route][k]; k++)
         if (r->take[s->route][k] == s->hand &&
-            (r->slot != CAND_SLOT_FINISH || s->hand != CAND_HAND_AT || s->point))
+            (r->slot != CAND_SLOT_FINISH || s->hand != CAND_HAND_AT ||
+             (r->u.finish.at_askers & CAND_ASKER(s->asker))))
             return true;
     return false;
 }
@@ -10761,45 +10911,52 @@ static unsigned dfa_match_hand(Ctx *cx)
     return dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT;
 }
 
-/* FINISH's row for `hand` on route `rt` (`point`: the ask is the caller's
- * point request), with no record. */
-static const CandRow *cand_finish_sel(Ctx *cx, CandRoute rt, unsigned hand, bool point)
+/* FINISH's row for `hand` asked by `asker` on route `rt`, with no record. */
+static const CandRow *cand_finish_sel(Ctx *cx, CandRoute rt, unsigned hand,
+                                      unsigned char asker)
 {
     CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                  .route = rt, .point = point, .hand = hand };
+                  .route = rt, .asker = asker, .hand = hand };
     return cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
 }
 
 /* [OPT-REVEND] L2 a SEARCH BODY's FINISH ask (E-LF): the row that finishes
- * `hand`, one of the hands its LOCATE row gives (`u.locate.fin`), on the
- * path's finisher route, with its trace record and hit. The emitter writes
- * that row's action (or asserts the arm it writes is it). */
-static const CandRow *cand_finish_ask(Ctx *cx, unsigned hand)
+ * `hand`, one of the hands its LOCATE row gives (`u.locate.gives`), asked by
+ * `asker` (the body, or [LANDWALK] the walk's per-seed point request), on
+ * the path's finisher route, with its trace record and hit. The emitter
+ * writes that row's action (or asserts the arm it writes is it). */
+static const CandRow *cand_finish_ask_as(Ctx *cx, unsigned hand, unsigned char asker)
 {
     CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                  .route = cand_finish_of(cx), .point = false, .hand = hand };
+                  .route = cand_finish_of(cx), .asker = asker, .hand = hand };
     const CandRow *r = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
     CAND_HIT(CAND_SLOT_FINISH, &s, r, "finish-search");
     PCREC_CAND_TRACE_REC("FINISH", CAND_ROUTE_NAME(s.route), r->tok, "finish-search");
     return r;
 }
 
-/* The hands LOCATE row `r`'s walk gives FINISH on this compile (`h`, at most
- * three; returns how many): its `u.locate.fin` bits as hands, ENDSET only
- * where the walk can tie (`revend_ties`). */
-static int cand_locate_hands(Ctx *cx, const CandRow *r, unsigned h[3])
+/* The body's own FINISH ask of `hand` (`cand_finish_ask_as`, asker BODY). */
+static const CandRow *cand_finish_ask(Ctx *cx, unsigned hand)
+{
+    return cand_finish_ask_as(cx, hand, CAND_ASK_BODY);
+}
+
+/* The hands LOCATE row `r`'s walk gives FINISH on this compile (`g`, at most
+ * four; returns how many): its `u.locate.gives` in order, ENDSET only where
+ * the walk can tie (`revend_ties`). */
+static int cand_locate_hands(Ctx *cx, const CandRow *r, CandGive g[4])
 {
     int n = 0;
-    if (r->u.locate.fin & CT_START)   h[n++] = CAND_HAND_SPAN;
-    if (r->u.locate.fin & CT_VERDICT) h[n++] = CAND_HAND_NOMATCH;
-    if ((r->u.locate.fin & CT_ENDSET) && revend_ties(cx)) h[n++] = CAND_HAND_ENDSET;
+    for (int k = 0; k < 4 && r->u.locate.gives[k].hand; k++)
+        if (r->u.locate.gives[k].hand != CAND_HAND_ENDSET || revend_ties(cx))
+            g[n++] = r->u.locate.gives[k];
     return n;
 }
 
 static const CandRow *dfa_match_of(Ctx *cx)
 {
     CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                  .route = cand_finish_of(cx), .point = true,
+                  .route = cand_finish_of(cx), .asker = CAND_ASK_CALLER,
                   .hand = dfa_match_hand(cx) };
     const CandRow *r = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
     /* The hit FIRST: in the trace build it holds the hand mandatory and the
@@ -11370,9 +11527,16 @@ static void cand_path_selfcheck(void)
             cand_oracle_fail("table-progress-cycle", cand_nodes[n].name, "-", "selfcheck");
     /* THE RANK INEQUALITY, per relocating row: a FINISH row whose action is
      * a relocate (`search-from` on a DFA-hat route) must take no hand its
-     * relocation target, the route's fallback LOCATE row, hands it back, or
-     * the relocate would re-enter itself (O9). `AT` is the match-here entry's
-     * E-FC (`entry`, once per call), not a relocate. */
+     * relocation target, the route's fallback LOCATE row, hands FINISH back
+     * ([LANDWALK], review r5 SLOT-2: the target's `u.locate.gives`, the hands
+     * its walk gives FINISH, never `.hands`, what it hands its own front), or
+     * the relocate would re-enter itself (O9). `AT` is exempt as the
+     * match-here entry's E-FC (`entry`, once per call), not a relocate, and
+     * that premise is CHECKED: such a row serves `AT` to the caller alone
+     * (`at_askers`), never to a LOCATE row's seed. The VM route stays
+     * skipped: there the FIN_SEARCH row IS the search entry (E-FC, the
+     * projected hand), not a relocate to the fallback, whose `gives` do not
+     * describe it, so the operand would pass there vacuously (r7 FIX-8). */
     for (int n = 0; n < CAND_NSLOTS; n++)
         for (int t = 0; t < CAND_NSLOTS; t++) {
             if (!(cand_nodes[n].rank & CN(t)) || !(cand_nodes[t].succ & CN(n))) continue;
@@ -11384,10 +11548,18 @@ static void cand_path_selfcheck(void)
                     if (r->slot != (CandSlot)n || !(r->routes & CAND_ON(rt)) ||
                         r->u.finish.act != CAND_FIN_SEARCH)
                         continue;
-                    for (int k = 0; k < 4 && r->take[rt][k]; k++)
-                        if (r->take[rt][k] != CAND_HAND_AT && !(r->take[rt][k] & ~fb->hands))
-                            cand_oracle_fail("table-progress-rank", fb->c.name,
-                                             r->c.name, "selfcheck");
+                    for (int k = 0; k < 4 && r->take[rt][k]; k++) {
+                        if (r->take[rt][k] == CAND_HAND_AT) {
+                            if (r->u.finish.at_askers != CAND_ASKER(CAND_ASK_CALLER))
+                                cand_oracle_fail("table-progress-rank-at", fb->c.name,
+                                                 r->c.name, "selfcheck");
+                            continue;
+                        }
+                        for (int g = 0; g < 4 && fb->u.locate.gives[g].hand; g++)
+                            if (r->take[rt][k] == fb->u.locate.gives[g].hand)
+                                cand_oracle_fail("table-progress-rank", fb->c.name,
+                                                 r->c.name, "selfcheck");
+                    }
                 }
             }
         }
@@ -11401,34 +11573,73 @@ static void cand_path_selfcheck(void)
         const unsigned always_built[3] = {
             [CAND_ROUTE_DFA] = CAND_MF | CAND_MR, [CAND_ROUTE_ATTEMPT] = CAND_MATT,
             [CAND_ROUTE_VM] = CAND_MVM };
-        /* The hands each route's askers give (0-terminated): the match-here
-         * entry's `AT` and `NOMATCH`, the search bodies' SPAN, `rev-end`'s
-         * ENDSET; on CAND_ROUTE_VM the VM entry's projected hand (SPAN, or
-         * LOWER behind a superset body or none) and an inlined tie's. */
-        const unsigned asked[3][6] = {
-            [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN,
-                                     CAND_HAND_ENDSET },
-            [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN },
-            [CAND_ROUTE_VM]      = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN,
-                                     CAND_HAND_LOWER, CAND_HAND_ENDSET } };
+        /* [LANDWALK] (review r5 SLOT-3) the ASKERS are read OFF THE TABLE on
+         * the DFA-hat routes, RECOVER's totality's shape: the caller (the
+         * match-here entry's `AT` and `NOMATCH`, with no machine beyond the
+         * route's own) and each LOCATE row routed there, every hand it gives
+         * with its asker, available within the route's machines plus the
+         * row's own needs. On CAND_ROUTE_VM the asker is the VM entry (its
+         * projected hand, an inlined tie), whose hands stay listed. */
+        typedef struct { unsigned hand; unsigned char asker; unsigned mach; } FinAsk;
+        FinAsk ask[3][24];
+        int nask[3] = { 0, 0, 0 };
+        for (int rt = 0; rt < 3; rt++) {
+            if (rt == CAND_ROUTE_VM) {
+                const unsigned vmh[] = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN,
+                                         CAND_HAND_LOWER, CAND_HAND_ENDSET };
+                for (int h = 0; h < 5; h++)
+                    ask[rt][nask[rt]++] = (FinAsk){ vmh[h], h == 0 ? CAND_ASK_CALLER
+                                                                   : CAND_ASK_BODY, 0 };
+                continue;
+            }
+            ask[rt][nask[rt]++] = (FinAsk){ CAND_HAND_AT, CAND_ASK_CALLER, 0 };
+            ask[rt][nask[rt]++] = (FinAsk){ CAND_HAND_NOMATCH, CAND_ASK_CALLER, 0 };
+            for (size_t j = 0; j < CAND_NROWS; j++) {
+                const CandRow *lr = &cand_rows[j];
+                if (lr->slot != CAND_SLOT_LOCATE || !(lr->routes & CAND_ON(rt))) continue;
+                for (int g = 0; g < 4 && lr->u.locate.gives[g].hand && nask[rt] < 24; g++)
+                    ask[rt][nask[rt]++] = (FinAsk){ lr->u.locate.gives[g].hand,
+                                                    lr->u.locate.gives[g].asker,
+                                                    lr->needs[rt].mach };
+            }
+        }
         for (int rt = 0; rt < 3; rt++)
-            for (int h = 0; h < 6 && asked[rt][h]; h++) {
+            for (int h = 0; h < nask[rt]; h++) {
                 const CandRow *last = NULL;
-                CandSel q = { .route = rt, .hand = asked[rt][h], .point = true };
+                CandSel q = { .route = rt, .hand = ask[rt][h].hand, .asker = ask[rt][h].asker };
                 for (size_t i = 0; i < CAND_NROWS; i++)
                     if (cand_rows[i].slot == CAND_SLOT_FINISH &&
                         (cand_rows[i].routes & CAND_ON(rt)) && cand_takes(&cand_rows[i], &q))
                         last = &cand_rows[i];
                 /* Available BY CONSTRUCTION: an undeniable row whose
                  * predicate is always true, or is the availability test of
-                 * needs this route always builds. */
+                 * needs this route always builds (or the asking row needs). */
                 if (!last || last->c.deny ||
                     (last->c.applies != cand_always && last->c.applies != finish_available) ||
-                    (last->needs[rt].mach & ~always_built[rt]))
+                    (last->needs[rt].mach & ~(always_built[rt] | ask[rt][h].mach)))
                     cand_oracle_fail("table-finish-not-total", CAND_ROUTE_NAME(rt),
-                                     cand_hand_alias(CAND_SLOT_FINISH, asked[rt][h]),
+                                     cand_hand_alias(CAND_SLOT_FINISH, ask[rt][h].hand),
                                      "selfcheck");
             }
+        /* [LANDWALK] every hand a LOCATE row gives names its asker, and every
+         * FINISH row that takes `AT` names the askers it serves (0 is
+         * UNSTATED, memory pcrec-no-silent-defaults). */
+        for (size_t i = 0; i < CAND_NROWS; i++) {
+            const CandRow *r = &cand_rows[i];
+            if (r->slot == CAND_SLOT_LOCATE)
+                for (int g = 0; g < 4 && r->u.locate.gives[g].hand; g++)
+                    if (!r->u.locate.gives[g].asker)
+                        cand_oracle_fail("table-give-unasked", r->c.name,
+                                         cand_hand_alias(CAND_SLOT_FINISH,
+                                                         r->u.locate.gives[g].hand),
+                                         "selfcheck");
+            if (r->slot == CAND_SLOT_FINISH)
+                for (int rt = 0; rt < 3; rt++)
+                    for (int k = 0; k < 4 && r->take[rt][k]; k++)
+                        if (r->take[rt][k] == CAND_HAND_AT && !r->u.finish.at_askers)
+                            cand_oracle_fail("table-at-askers-unstated", r->c.name,
+                                             CAND_ROUTE_NAME(rt), "selfcheck");
+        }
         /* [START-LANDING] SL3 RECOVER's totality is per HAND too, and its
          * askers are READ OFF THE TABLE: each LOCATE row's `u.locate.recover`
          * is the hand its walk asks RECOVER with (the composite's verified
@@ -11443,11 +11654,16 @@ static void cand_path_selfcheck(void)
             if (!(cand_nodes[CAND_SLOT_RECOVER].asks & CAND_ON(rt))) continue;
             for (size_t j = 0; j < CAND_NROWS; j++) {
                 const CandRow *lr = &cand_rows[j];
-                if (lr->slot != CAND_SLOT_LOCATE || !(lr->routes & CAND_ON(rt)) ||
-                    !lr->u.locate.recover)
-                    continue;
+                if (lr->slot != CAND_SLOT_LOCATE || !(lr->routes & CAND_ON(rt))) continue;
+                /* [LANDWALK] (review r7 lesson 2) a row whose walk runs the
+                 * RECOVER block states the hand it asks: an unstated one is a
+                 * failure here, never a skip (a row asking none is skipped). */
+                if (!(lr->needs[rt].cells & CN(CAND_SLOT_RECOVER))) continue;
+                if (!lr->u.locate.recover)
+                    cand_oracle_fail("table-recover-hand-unstated", CAND_ROUTE_NAME(rt),
+                                     lr->c.name, "selfcheck");
                 const CandRow *last = NULL;
-                CandSel q = { .route = rt, .hand = lr->u.locate.recover, .point = true };
+                CandSel q = { .route = rt, .hand = lr->u.locate.recover };
                 for (size_t i = 0; i < CAND_NROWS; i++)
                     if (cand_rows[i].slot == CAND_SLOT_RECOVER &&
                         (cand_rows[i].routes & CAND_ON(rt)) && cand_takes(&cand_rows[i], &q))
@@ -11512,6 +11728,10 @@ static void cand_hit_as(CandSlot slot, const CandSel *s, const CandRow *r,
     if ((CN(slot) & CAND_HANDED_SLOTS) && !s->hand)
         cand_oracle_fail(slot == CAND_SLOT_FINISH ? "finish-no-hand" : "recover-no-hand",
                          cand_nodes[slot].name, "-", site);
+    /* [LANDWALK] (review r7 FIX-6) a FINISH ask names its asker; RECOVER's
+     * asks carry none (the asker is read on FINISH's `AT` alone). */
+    if (slot == CAND_SLOT_FINISH && !s->asker)
+        cand_oracle_fail("finish-no-asker", cand_nodes[slot].name, "-", site);
     if (!r)
         cand_oracle_fail("no-row", cand_nodes[slot].name, "-", site);
     fprintf(stderr, "CANDROW\t%s\t%s\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
@@ -11644,6 +11864,63 @@ static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s
     return r;
 }
 
+/* [LANDWALK] `pcrec_cand_lmwalk_next_cf` (internal.h): THE COUNTERFACTUAL
+ * READ. The world without the walk is the compile with
+ * `PCREC_NO_LANDMARK_WALK` set for the WHOLE evaluation: `cx->opt` points at
+ * a copy carrying the bit, so every nested reader (each builds its flags from
+ * `cx->opt->flags`) is in that world, and is restored after. The bit's one
+ * selection reader is the walk row's `.c.deny`, so the world differs from the
+ * compile by the walk alone. The read is LOCATE's declared edge
+ * (`cand_nodes[LOCATE].reads/under/by[NEXT]`) and, after NEXT's frame
+ * closed, its declared kit ask (`kask[NEXT]`, the start set `cand_row_scan`
+ * proves, r7 FIX-2). The facts' `used` record is restored (r7 FIX-5,
+ * `req_pres_proof_quiet`'s reason: a world that was not built marks nothing).
+ * A longjmp out of the fill ends the attempt (a fresh Ctx per attempt), so
+ * nothing reads `cx->opt` after it. In the trace build the fill runs with
+ * LOCATE on the predicate stack where the gate asks it from the driver, so
+ * its nested selections are checked against LOCATE's declared reads. */
+void pcrec_cand_lmwalk_next_cf(Ctx *cx, PcrecLmwalk *lw)
+{
+    const pcrec_options *saved = cx->opt;
+    pcrec_options *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
+    uint32_t used = cx->job->pf.used;
+    UnanchStart us;
+    *w = *saved;
+    w->flags |= PCREC_NO_LANDMARK_WALK;
+    cx->opt = w;
+#ifdef PCREC_CAND_TRACE
+    bool pushed = cand_eval_depth == 0;
+    if (pushed) {
+        cand_eval_flags[cand_eval_depth] = w->flags;
+        cand_eval_slot[cand_eval_depth++] = CAND_SLOT_LOCATE;
+    }
+#endif
+    unanch_start(cx, &us);
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
+    const CandRow *r = CAND_READ(CAND_SLOT_LOCATE, CAND_SLOT_NEXT, &s, "lmwalk-cf");
+    lw->cf_tok = r->tok;
+    lw->cf_has_set = false;
+    if (r->u.pf.scan == PF_SCAN_BYTE || r->u.pf.scan == PF_SCAN_SET) {
+        CandScan cs = { .byte = -1 };
+        cand_row_scan(cx, CAND_SLOT_LOCATE, &us, r, &cs);
+        if (cs.byte >= 0) {
+            memset(lw->cf_set, 0, 256);
+            lw->cf_set[cs.byte] = 1;
+            lw->cf_has_set = true;
+        } else if (cs.asked && cs.cls.exists) {
+            for (int b = 0; b < 256; b++) lw->cf_set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
+            lw->cf_has_set = true;
+        }
+    }
+#ifdef PCREC_CAND_TRACE
+    if (pushed) cand_eval_depth--;
+#endif
+    cx->job->pf.used = used;
+    cx->opt = saved;
+    lw->cf_done = true;
+}
+
 /* `pcrec_cand_finish_needs` (internal.h): the path derivation's NEEDS half,
  * the static half of the FINISH declarations on the finisher's route, read
  * before any selection exists (src/core/compile.c's anchored build). */
@@ -11668,6 +11945,14 @@ bool pcrec_cand_drop_anchored_shrinks(Ctx *cx)
     after = cand_path_members(cx);
     cx->job->anchored_ok = saved;
     return after != before && !(after & ~before);
+}
+
+/* `pcrec_cand_lmwalk_member` (internal.h): ML is among the path's members,
+ * so the attempt's body is the landmark walk and dropping it shrinks the
+ * member set (rev 3 §Size: {ML, MA, MF, X} to {MA, MF, X}). */
+bool pcrec_cand_lmwalk_member(Ctx *cx)
+{
+    return (cand_path_members(cx) & CAND_ML) != 0;
 }
 
 /* `pcrec_cand_lang_exact` (internal.h): the boundary projection's test. A
@@ -11810,13 +12095,40 @@ static bool dfa_engine_is_empty(Ctx *cx)
     return cand_locate_of(cx)->u.locate.nomatch;
 }
 
-/* Does the body's LOCATE row run RECOVER on its route (the composite's
- * forward+reverse pass does; `empty` and the attempt loop do not)? Read off
- * the row's declaration, so RECOVER's own predicate (P4) can ask it without
- * asking RECOVER. */
+/* [LANDWALK] (review 2026-10-29 r7 FIX-1) RECOVER's ASKER: the LOCATE row
+ * whose walk RUNS the RECOVER block on this compile's path. The body's row
+ * where its own cells name RECOVER (`composite`, `rev-end`); else, where
+ * FINISH RELOCATES one of the hands it gives (a `CAND_FIN_SEARCH` row on a
+ * DFA-hat finisher for a hand that is not the caller's `AT`,
+ * `cand_path_finish`'s own condition), the route's FALLBACK row, whose cells
+ * the relocate runs; else the body's row (it asks none). Every RECOVER reader
+ * reads it (`dfa_search_start_of`, `cand_recover_asked`), so a cell visited
+ * on a relocate target's behalf is read off that target, never off the row
+ * that handed it over. */
+static const CandRow *cand_recover_asker(Ctx *cx)
+{
+    CandRoute rt = cand_locate_route(cx);
+    const CandRow *r = cand_locate_of(cx);
+    CandGive g[4];
+    int n;
+    if ((r->needs[rt].cells & CN(CAND_SLOT_RECOVER)) || cand_finish_of(cx) == CAND_ROUTE_VM)
+        return r;
+    n = cand_locate_hands(cx, r, g);
+    for (int k = 0; k < n; k++) {
+        const CandRow *f = cand_finish_sel(cx, cand_finish_of(cx), g[k].hand, g[k].asker);
+        if (f && f->u.finish.act == CAND_FIN_SEARCH && g[k].hand != CAND_HAND_AT)
+            return cand_fallback(CAND_SLOT_LOCATE, rt);
+    }
+    return r;
+}
+
+/* Does the body's path run RECOVER on its route (the composite's
+ * forward+reverse pass does, and a walk that relocates to it; `empty` and the
+ * attempt loop do not)? Read off RECOVER's ASKER's declaration, so RECOVER's
+ * own predicate (P4) can ask it without asking RECOVER. */
 static bool cand_recover_asked(Ctx *cx)
 {
-    return cand_locate_of(cx)->needs[cand_locate_route(cx)].cells & CN(CAND_SLOT_RECOVER);
+    return cand_recover_asker(cx)->needs[cand_locate_route(cx)].cells & CN(CAND_SLOT_RECOVER);
 }
 
 /* THE SELECTED PATH of one compile (§2.7's table): the two route fields, the
@@ -11839,12 +12151,26 @@ typedef struct CandPath {
  * the emitters already use, so the derivation evaluates no predicate the
  * emitters do not; every other asked cell is recorded without a walk (the
  * self-check holds those rows' needs zero). */
+/* [LANDWALK] (review 2026-10-29 r7, the manager's ruling on FIX-1) THE
+ * NULL-SLOT REFUSAL: a cell the closure SELECTS in (LOCATE, RECOVER, FINISH
+ * per hand) that yields no row is an internal error, in every build, so a
+ * row that leaves a field its readers need unstated is refused here and can
+ * never reach the stamp rule (which reads the same selections). Returns `r`. */
+static const CandRow *cand_path_selected(Ctx *cx, const CandRow *r, CandSlot slot)
+{
+    if (!r)
+        pcrec_ctx_fail(cx, 0, "internal error: the selected path asks slot %s and its "
+                       "selection is empty (a row's hand or cell left unstated; "
+                       "locate_finish.md section 2.7)", cand_nodes[slot].name);
+    return r;
+}
+
 static const CandRow *cand_path_row(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt)
 {
     (void)rt;
     switch (slot) {
-    case CAND_SLOT_LOCATE:  return cand_locate_of(cx);
-    case CAND_SLOT_RECOVER: return p->recover = dfa_search_start_of(cx);
+    case CAND_SLOT_LOCATE:  return cand_path_selected(cx, cand_locate_of(cx), slot);
+    case CAND_SLOT_RECOVER: return p->recover = cand_path_selected(cx, dfa_search_start_of(cx), slot);
     case CAND_SLOT_FINISH:
     case CAND_SLOT_WINDOW:
     case CAND_SLOT_PRESENCE:
@@ -11891,12 +12217,12 @@ static void cand_path_visit(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt)
  * RELOCATE (E-FL): its walk is the route's FALLBACK LOCATE row's, entered at
  * the located start, below that row's front, so its cells join the path and
  * its front does not. */
-static void cand_path_finish(Ctx *cx, CandPath *p, CandRoute rt, unsigned hand, bool point,
-                             int reloc)
+static void cand_path_finish(Ctx *cx, CandPath *p, CandRoute rt, unsigned hand,
+                             unsigned char asker, int reloc)
 {
-    const CandRow *r = cand_finish_sel(cx, rt, hand, point);
+    const CandRow *r = cand_path_selected(cx, cand_finish_sel(cx, rt, hand, asker),
+                                          CAND_SLOT_FINISH);
     p->asks[rt] |= CN(CAND_SLOT_FINISH);
-    if (!r) return;
     if (r->u.finish.act == CAND_FIN_SEARCH && reloc >= 0 && hand != CAND_HAND_AT) {
         const CandRow *fb = cand_fallback(CAND_SLOT_LOCATE, reloc);
         p->needs |= fb->needs[reloc].mach;
@@ -11923,6 +12249,7 @@ static CandPath cand_path_of(Ctx *cx)
     if (p.body)
         p.built |= cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? CAND_MATT : CAND_MF | CAND_MR;
     if (cx->job->anchored_ok) p.built |= CAND_MA;
+    if (cx->job->lm_built) p.built |= CAND_ML;
     if (cx->job->fit.chosen == ENGM_VM) p.built |= CAND_MVM;
 
     cand_path_visit(cx, &p, CAND_SLOT_LOCATE, p.locate);
@@ -11930,18 +12257,19 @@ static CandPath cand_path_of(Ctx *cx)
         /* The VM entry's FINISH asks (`pcrec_cand_finish_vm`): its search
          * entry's projected hand and NOMATCH, its `_match`'s `AT`; and an
          * inlined walk's tie, whose relocate runs on the BODY's route. */
-        cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_vm_search_hand(cx), false, -1);
-        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_NOMATCH, false, -1);
-        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_AT, true, -1);
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_vm_search_hand(cx), CAND_ASK_BODY, -1);
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_NOMATCH, CAND_ASK_BODY, -1);
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_AT, CAND_ASK_CALLER, -1);
         if (p.body && revend_tie_asked(cx))
-            cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_project(cx, CAND_HAND_ENDSET), false,
-                             p.locate);
+            cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_project(cx, CAND_HAND_ENDSET),
+                             CAND_ASK_BODY, p.locate);
         if (p.body) cand_path_visit(cx, &p, CAND_SLOT_RETRY, CAND_ROUTE_VM);
     } else {
-        unsigned h[3];
-        int nh = cand_locate_hands(cx, cand_locate_of(cx), h);
-        for (int k = 0; k < nh; k++) cand_path_finish(cx, &p, p.finish, h[k], false, p.finish);
-        cand_path_finish(cx, &p, p.finish, dfa_match_hand(cx), true, p.finish);
+        CandGive g[4];
+        int nh = cand_locate_hands(cx, cand_locate_of(cx), g);
+        for (int k = 0; k < nh; k++)
+            cand_path_finish(cx, &p, p.finish, g[k].hand, g[k].asker, p.finish);
+        cand_path_finish(cx, &p, p.finish, dfa_match_hand(cx), CAND_ASK_CALLER, p.finish);
     }
     p.members = p.needs & p.built;
 #ifdef PCREC_CAND_TRACE
@@ -13584,9 +13912,9 @@ const char *pcrec_revend_form_name(RevendForm f)
  * LOCATE row and the walk can tie. */
 static bool revend_tie_asked(Ctx *cx)
 {
-    unsigned h[3];
-    int n = cand_locate_hands(cx, cand_locate_of(cx), h);
-    for (int k = 0; k < n; k++) if (h[k] == CAND_HAND_ENDSET) return true;
+    CandGive g[4];
+    int n = cand_locate_hands(cx, cand_locate_of(cx), g);
+    for (int k = 0; k < n; k++) if (g[k].hand == CAND_HAND_ENDSET) return true;
     return false;
 }
 
@@ -13598,7 +13926,7 @@ static bool dfa_search_calls_match(Ctx *cx)
 {
     if (cand_finish_of(cx) == CAND_ROUTE_VM || !revend_tie_asked(cx)) return false;
     CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                  .route = cand_finish_of(cx), .point = false,
+                  .route = cand_finish_of(cx), .asker = CAND_ASK_BODY,
                   .hand = cand_project(cx, CAND_HAND_ENDSET) };
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_trace_quiet++;
@@ -13628,7 +13956,8 @@ void pcrec_cand_finish_vm(Ctx *cx, bool mrl_win)
     const unsigned hand[3] = { cand_vm_search_hand(cx), CAND_HAND_NOMATCH, CAND_HAND_AT };
     for (int k = 0; k < 3; k++) {
         CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                      .route = CAND_ROUTE_VM, .point = k == 2, .hand = hand[k] };
+                      .route = CAND_ROUTE_VM,
+                      .asker = k == 2 ? CAND_ASK_CALLER : CAND_ASK_BODY, .hand = hand[k] };
         r[k] = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
         CAND_HIT(CAND_SLOT_FINISH, &s, r[k], "finish-vm");
         PCREC_CAND_TRACE_REC("FINISH", "vm", r[k]->tok, "finish-vm");
@@ -14033,6 +14362,155 @@ static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_sb_puts(c, "    }\n"
                "    search_from = revend_start;\n");
     unanch_scan(cx, c, &fwd, &rev, dfa_search_start_at(cx, CAND_HAND_WINDOW));
+}
+
+/* [LANDWALK] THE LMHIT SITE: the landmark's hit stream (DELEG_SITES row
+ * LMHIT), a FIND at offset 0 over the landmark's byte set from
+ * `landmark_position`, its table offered (`<p>_landmark_bytes`), a miss the
+ * search's NOMATCH. The one constructor, read by the define and the use. */
+static PcrecFind lm_find_of(Ctx *cx, const PcrecLmwalk *lw, uint8_t v[256])
+{
+    for (int b = 0; b < 256; b++) v[b] = lw->set[b >> 3] >> (b & 7) & 1;
+    return (PcrecFind){ .cx = cx, .site = DELEG_LMHIT, .p = cx->opt->prefix, .offset = 0,
+                        .table = PCREC_FIND_LANDMARK, .set = v,
+                        .pos = "landmark_position", .subject = "subject",
+                        .len = "subject_length", .holdback = 0,
+                        .on_miss = "return 0;", .start = PCREC_MF_ORIGIN,
+                        .kind = MF_SK_DFA_SCAN };
+}
+
+/* [LANDWALK] THE LANDMARK WALK, the LOCATE row `landmark-walk`'s body on
+ * CAND_ROUTE_DFA (docs/dev/lanes/p1dsg3_report.md rev 2 §Mechanism, rev 3
+ * SOUND-2). Per hit j of L, ascending (LMHIT, every occurrence): ML walked
+ * back from j + 1, floored at `search_from`, records the smallest accepting
+ * position s*; none, and the next hit. Else, where j lies below the farthest
+ * byte the last verify read (`lmwalk_reach`), the REACH GUARD: LOWER(s*) to
+ * FINISH, whose `search-from` relocates to the composite from s* (no match
+ * starts below it); else the SEED's point request AT(s*), `verify-at`'s one
+ * anchored run of A, inline: a match is the answer (FINISH's SPAN through the
+ * one success tail), none and the next hit. The hits running out is NOMATCH.
+ * Soundness (`exclusion`): a match's landmark is the first occurrence at or
+ * after its start, so the starts through hit j are ML's accepting positions
+ * from it, every one of them matching iff s* does. Linear: the walks back
+ * stop at the previous hit (P consumes no byte of L), a verify re-reads at
+ * most the next walk's span, and the guard hands the rest to one forward
+ * pass. */
+static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    const PcrecLmwalk *lw = pcrec_lmwalk(cx);
+    UnanchStart us, lus, aus;
+    DfaForm fwd, rev, ml, av;
+    uint8_t v[256];
+
+    if (lw->why || !job->lm_built || !job->anchored_ok)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk was emitted on an "
+                       "artifact lmwalk_conj[] declines (%s)", lw->why ? lw->why : "machine");
+    /* the walk's three hands, each asked of FINISH by its asker */
+    if (cand_finish_ask_as(cx, CAND_HAND_AT, CAND_ASK_SEED)->u.finish.act != CAND_FIN_VERIFY)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's seed AT is finished "
+                       "by a row that is not `verify-at`");
+    if (cand_finish_ask(cx, CAND_HAND_LOWER)->u.finish.act != CAND_FIN_SEARCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's reach guard (LOWER) "
+                       "is finished by a row that is not `search-from`");
+    if (cand_finish_ask(cx, CAND_HAND_NOMATCH)->u.finish.act != CAND_FIN_NOMATCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's NOMATCH is "
+                       "finished by a row that is not `nomatch`");
+    if (req_admit_emits(req_admit(cx)))
+        pcrec_ctx_fail(cx, 0, "internal error: a whole-window pre-check was admitted "
+                       "ahead of the landmark walk, which answers presence itself");
+
+    unanch_start(cx, &us);
+    /* the relocate's composite, with ITS RECOVER row (`cand_recover_asker`) */
+    const CandRow *rr = dfa_search_start_of(cx);
+    unsigned act = rr->u.recover.act;
+    if (act == CRA_SEARCH_FROM)
+        pcrec_ctx_fail(cx, 0, "internal error: the landmark walk's relocate reached "
+                       "a start-pinned composite");
+    dfa_form_derive(cx, &job->dfa, &us, &dfa_dir_forward, &fwd);
+    fwd.landing = act == CRA_LANDING;
+    if (act == CRA_LANDING) start_landing_assert_unseeded(cx, &job->dfa);
+    if (act == CRA_REVERSE) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    anch_start(&job->lmdfa, &us, &lus);
+    dfa_form_derive(cx, &job->lmdfa, &lus, &dfa_dir_landmark, &ml);
+    anch_start(&job->adfa, &us, &aus);
+    dfa_form_derive(cx, &job->adfa, &aus, &dfa_dir_lmverify, &av);
+    av.from = "lmwalk_start";
+
+    fwd.repr->emit_token(c, &fwd);
+    if (act == CRA_REVERSE) rev.repr->emit_token(c, &rev);
+    ml.repr->emit_token(c, &ml);
+    av.repr->emit_token(c, &av);
+    emit_scan_defs(c, &fwd);
+    if (act == CRA_REVERSE) emit_scan_defs(c, &rev);
+    emit_scan_defs(c, &ml);
+    emit_scan_defs(c, &av);
+    fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
+    if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
+    if (fwd.pf->u.pf.emit_define) fwd.pf->u.pf.emit_define(c, &fwd);
+    PcrecFind fd = lm_find_of(cx, lw, v);
+    fd.stem = dfa_fragf(cx, "%s_lmhit", fn);
+    struct MemfnFind hit = find_define(c, &fd);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", "entry", "entry-gate");
+
+    emit_search_head(cx, c, fn, ent);
+    pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                          "subject_length", PCREC_START0_SEEK);
+    pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
+    emit_machine_tables(c, &fwd);
+    if (act == CRA_REVERSE) emit_machine_tables(c, &rev);
+    emit_machine_tables(c, &ml);
+    emit_machine_tables(c, &av);
+    find_locals(c, "    ", &fd, &hit);
+    if (hit.reads_table) {
+        find_door(cx, &hit, "landmark_bytes", v);
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c, "    /* [LANDWALK] 1 for each byte of the landmark. */\n");
+        pcrec_sb_cmt_close(c);
+        emit_u8_table(c, cx->opt->prefix, "landmark_bytes", v, 256);
+    }
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- LANDMARK WALK: every match passes the landmark, and its\n"
+               "    // prefix can never contain one, so a match's landmark is the\n"
+               "    // first one at or after its start. From each landmark, walk\n"
+               "    // back to the leftmost start a match through it can have,\n"
+               "    // and run the anchored machine once there.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t landmark_position = search_from;\n"
+               "    size_t lmwalk_reach = search_from;\n"
+               "    size_t lmwalk_start;\n"
+               "    for (;;) {\n");
+    find_use(c, "        ", &fd, &hit);
+    pcrec_sb_puts(c, "        {\n"
+               "            size_t match_end_position = landmark_position + 1;\n"
+               "            size_t match_start_position = (size_t)-1;\n"
+               "            size_t rewind_position = match_end_position;\n");
+    emit_reverse_block(c, &ml, dfa_dir_landmark.c.name,
+                       "{ landmark_position++; continue; }");
+    pcrec_sb_puts(c, "            if (match_start_position == (size_t)-1) { landmark_position++; continue; }\n"
+               "            lmwalk_start = match_start_position;\n"
+               "        }\n");
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "        // the last verify read past this landmark: no match starts\n"
+               "        // below the walk's start, so one forward scan from there\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "        if (landmark_position < lmwalk_reach) break;\n"
+               "        {\n"
+               "            size_t scan_position = lmwalk_start;\n"
+               "            size_t last_accept_position = (size_t)-1;\n"
+               "            do {\n");
+    emit_scan_loop(c, &av);
+    pcrec_sb_puts(c, "            } while (0);\n"
+               "            if (last_accept_position != (size_t)-1) {\n");
+    emit_search_success(cx, c, "lmwalk_start", "last_accept_position", "                ");
+    pcrec_sb_puts(c, "            }\n"
+               "            lmwalk_reach = scan_position;\n"
+               "        }\n"
+               "        landmark_position++;\n"
+               "    }\n"
+               "    search_from = lmwalk_start;\n");
+    unanch_scan(cx, c, &fwd, &rev, rr);
 }
 
 /* ---- [ENG-ABS]: THE ANCHORED MATCH-HERE ENTRIES ------------------------- */

@@ -34,7 +34,8 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 
 - `emit_dfa.c` — both DFA engine emitters (`emit_unanchored`, `emit_attempt`), the six+ axis lists and `cand_rows[]`, naming helpers, shared prologue/ABI types/`rx_info`/`main`/info emission, stamps, `pcrec_emit_find`, start-set/landing/cover rows, the pre-check admission (`req_*`), scan edge, `emit_state_legend`, residual decls/defs, `PCREC_ARTIFACT_ABI`.
 - `emit_code.c` — module `code-c`'s tail (match_api §11.9): `#undef` block, `code-header` includes, per-segment macro set + `#line` + function.
-- `emit_vm.c` — the backtracking VM emitter (rungs: cursor/frames/possessive/revdet/counter, MRL pruning, lookaround, atomic, backreferences, calls/splice, alternation island, entry ladder/default entry, hybrid prefilter and retry re-seed, `--emit-ir` listing, VM stamps, class kit callers).
+- `emit_vm.c` — the backtracking VM emitter (rungs, MRL pruning, lookaround, atomic, backreferences, calls/splice, island, entry ladder, hybrid prefilter/re-seed, `--emit-ir` listing, VM stamps). Body text only via `vm_stmt`.
+- `vm_stmt.c` / `.h` — [VMREC] the VM body as typed records: ONE renderer per kind (`vm_kind_rows[]`), tiling, respell, the matcher frame. The only `vmsb` writer (ST check).
 - `emit_comb.c` — combinator emitters: every exported entry via `pcrec_emit_entry` (`forward`, `finish-at`, `locate-then-finish`, `first-nonzero`).
 - `emit_compound.c` — compound artifact shell: parts' texts and the controller (`first-nonzero`).
 - `callsite_rows.c` / `.h` — the ONE call-site return table (`part`, `matchfn` conventions): compound part calls and callout sites (`vm_callout`).
@@ -45,13 +46,13 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 - `memfn_stamps.c` — the kit's every-artifact stamps (`_MEMFN_FORMS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`) and pcrec's knowledge stamps (`_FINDINGS`, `_MEASURES`) rendered over marks after emission; check `tests/memfn/run_libc_census.sh`.
 - `clskit.c` / `clskit.h` — [CLS-TREE] class-matcher kit: leaf forms, sectioning DP, `ROWS`/`TAB_ROWS` first-match tables, byte test spellings (VM and scan edge callers); reference `studies/cls_tree_study/`, tests `tests/clskit/`.
 - `emit_subst.c` — [M4-SUBST] the subst artifact (`docs/spec/subst_api.md`): the subst types block, the element `<prefix>_render`, the record and stamps, the support unit (`--emit-support`), module subst-extended; sections in NOTES.md.
+- `lmwalk.c` — [LANDWALK] the `landmark-walk` row's admission (`lmwalk_conj[]`, memo, build gate); emits nothing.
 - `known.c` / `known.h` — [KIT-VERIFY] `cover` decision (`cover_conj[]`, `MkEnd`) and its REPORT site; routed by default since D172 S3 (C13 asks the kit; `--memfn=no-window-search` declines it); checks `tests/kitproof/`.
 - `stamp_kinds.c` — [COMPOUND] the STAMP CATALOGUE (match_api.md §6.3): every stamp classified by what it is a fact about, deciding its value on a compound.
-- `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
 
 ## Pointers
 
-`APPROACH.md`; `docs/design/emitter_form.md` (D82); `docs/design/start_table.md`, `docs/design/startset.md` (D148); `docs/design/compound.md`, `compound_entries.md`; `docs/design/memfn/integration.md`; `docs/design/assertions_design.md`, `subroutines_design.md`, `engine_m4.md`, `cls_tree_design.md`; `docs/spec/match_api.md` §6 (stamps, abi), `docs/spec/tuning.md`, `docs/spec/ir_listing.md`; `docs/dev/history/abi_changelog.md`; `docs/dev/coding_guide.md`; `docs/dev/decisions.md` (D7, D11, D37, D44, D46, D58, D63, D75, D76, D82, D94, D105, D106, D112, D135, D146-D148); `src/core/CLAUDE.md`, `src/enc/CLAUDE.md`, `memfn/CLAUDE.md`.
+`APPROACH.md`; `docs/design/emitter_form.md` (D82); `docs/design/start_table.md`, `docs/design/startset.md` (D148); `docs/design/compound.md`, `compound_entries.md`; `docs/design/memfn/integration.md`; `docs/spec/match_api.md` §6 (stamps, abi), `docs/spec/tuning.md`, `docs/spec/ir_listing.md`; `docs/dev/history/abi_changelog.md`; `docs/dev/coding_guide.md`; `docs/dev/decisions.md` (D7, D11, D37, D44, D46, D58, D63, D75, D76, D82, D94, D105, D106, D112, D135, D146-D148); `src/core/CLAUDE.md`, `src/enc/CLAUDE.md`, `memfn/CLAUDE.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__gen.md
 

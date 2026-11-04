@@ -736,3 +736,68 @@ S1148 and S1149; S1257-S1290 does not exist.
 **Not asked:** any method (D157).
 
 **Sabotage ids:** none requested.
+
+## R-31 (2026-11-02, pcrec manager) — a pre-registered cell for the vrun SIMD bench run: the two-byte window of `[\xc2-\xdf](?![\x80-\xbf])`
+
+**Customer:** [COVER-PRICE-WITNESS] (filed 2026-11-02 from bench O-117), and the official SIMD verdict run (docs/design/memfn/vrun_bench_request.md).
+
+**Facts (what pcrec's site states).** Bench pattern `utf8-lead-no-cont`, `[\xc2-\xdf](?![\x80-\xbf])`: a two-byte window, first byte in
+the set C2-DF, second byte NOT in the set 80-BF. Since abi 92 (S3) this site is routed to `cover`.
+
+**Measured (bench O-117, ryzen7700x, scalar default layer, cb32eda28 vs 614d45eb3).** x1.95 slower on 19 of 19 large subjects
+(0.192 -> 0.375 ns/B), x1.20 slower on short subjects, against the earlier byte-class-bounded scan. On valid non-ASCII text nearly
+every lead byte is followed by a continuation byte, so candidates on the first byte are frequent and almost all are rejected.
+
+**What pcrec needs.** (1) This site as a pre-registered cell in the vrun SIMD verdict run, on both layers (scalar default and SIMD-on), so the
+priced choice for this window shape is known per layer. The owner's framing (2026-11-02): the choice is not "cover or not"; it depends on
+whether SIMD is in use. (2) If the kit has no SIMD form for a two-byte window of two sets, say so in the pre-registration; the cell then
+records the gap.
+
+**Not asked:** any method (D157); whether this window shape gets a SIMD form at all is the kit's.
+
+**Sabotage ids:** none requested.
+
+## R-32 (2026-11-02, pcrec manager) — re-aim sabotage row S526: its catch is a compile failure that the mech scorer now counts as ANOMALY
+
+**Customer:** the mech sabotage battery (D177 full suite); 780-kit-r30b2-mech-b, 2026-11-02.
+
+**Facts.** S526's designed catch is a static-assert compile failure. Since main's 7047b69e4 the mech scorer scores a
+compile failure as ANOMALY, not DETECTED, so S526 reads ANOMALY on every run (pre-existing, not R-30's).
+
+**What pcrec needs.** S526 reads DETECTED again under the current scorer: its sabotage caught by a check that observes
+behaviour, or by whatever detection the kit judges right for that row. One queued mech row proves it.
+
+**Not asked:** which check (D157).
+
+**Sabotage ids:** none new; S526 keeps its id.
+
+## R-33 (2026-11-02, pcrec manager) — a cheap simulation of the inner-first "find the span" pick over the corpus, as an example for discussion
+
+**Customer:** the owner (2026-11-02): "I want to mechanically test this somehow ... Build the process on the cheap in script or something and have it return the answers. Not a prescription but an example for discussion." Context: D186 (TRIAL), units_inventory.md, the kit's inner-first ordering (facts, candidate positions, per-candidate method/verify/resume by local rows, the position picked LAST on a fact-derived key: mass x streams + verify per hit).
+
+**What pcrec needs.** A throwaway script (a study, not product code; nothing under src/ or memfn/src/ changes) that, for every search site the kit decides over the corpus (the .rxt corpus plus the bench pattern set and job 588's sample), returns:
+1. TODAY's answer as compiled: the site, its stop position and set, the method rendered, the row that decided it.
+2. The SIMULATED answer: the candidate positions with their score inputs, and the winner.
+3. A summary: how many sites agree and how many differ, by site kind, with every differing site listed (pattern, today vs simulated, the score gap).
+4. A cross-check against timings ALREADY ON FILE, with no new timing: job 588's cells, the rule-list pilot's per-site arms, and the bench ledgers where they cover a site. Do the simulation's disagreements line up with the measured losses (smp20 first)? Does it pick something measured slower anywhere?
+
+**Constraints.** Facts come from the compiler's existing outputs or trace builds; where a fact is not observable without code, say so and approximate it, labelled. A sweep of more than 50 compiles goes through the box queue (light, not timing). Findings only; no build go is implied.
+
+**Not asked:** the design itself (it follows, then a critic round), any re-pin, any choice of method (D157).
+
+## R-34 (2026-11-03, pcrec manager) — the G2 reach-control generator `gen_plain_lib` segfaulted on CI under the fixed seed
+
+**Customer:** CI on main (`test-memfn-g2`, every push); run 41672319112, job test (1/3), at 76ce9d02a (a journal-only
+commit whose parent 761521515, identical code, was green).
+
+**Facts.** In `memfn/tests/run_g2.sh` section 4 (reach-control), `"$ctl/gen_plain_lib" "$ctl/out" --seed "$seed"` died
+with SIGSEGV and check (d) failed: "control program did not build or run". The seed was the fixed default (20261005),
+so the crash is not seed-dependent: an intermittent fault in the same input. Every earlier G2 family passed in that run.
+Log excerpt: /var/tmp/pcrec-pcrec/scratch/ci76tri/j.log around L2560-2582. The failed job was re-run 12:20.
+
+**What pcrec needs.** `test-memfn-g2` does not crash intermittently: the control generator runs to completion on every
+run, with the cause named. Not a unit-1f gate.
+
+**Not asked:** the fix's shape (D157).
+
+**Sabotage ids:** none.

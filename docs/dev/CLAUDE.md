@@ -37,3 +37,4 @@ Full rule detail and the per-file list (verbatim): NOTES.md here.
 
 History (not auto-injected): docs/dev/history/claude_md/docs__dev.md
 - `utf_wants_2026-10-24.md` — survey of Unicode regex wants vs plain-regex workarounds (A/B/C), pcrec status, ranked top list (lane utfwant).
+- `span_helpers_survey_2026-10-29.md` — callout span-helper candidates, ranked, with open rulings (lane spansurv; plan [SPAN-HELPERS]).

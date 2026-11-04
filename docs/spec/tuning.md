@@ -57,6 +57,7 @@
   - [§2.51](#s2-51) `--part-layout=CLASS:V` — the parts' layout, per class
   - [§2.52](#s2-52) `--part-inline-rank=R` — the parts' inline threshold
   - [§2.53](#s2-53) `--part-residual=V` — the layout of every other part
+  - [§2.54](#s2-54) `-fno-landmark-walk` — `PCREC_NO_LANDMARK_WALK` (bit 57)
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -159,6 +160,7 @@
 | 2.51 | `--part-layout=CLASS:V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
 | 2.52 | `--part-inline-rank=R` | — | unset (`none`) | answer-identical | — | `<PREFIX>_PART_LAYOUT`, `<PREFIX>_PART_LAYOUT_WHY` |
 | 2.53 | `--part-residual=V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
+| 2.54 | `-fno-landmark-walk` | 57 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -284,7 +286,7 @@
 
 <a id="s2-11-p1"></a>[2.11¶1] Not a `-f` flag; it is the coarsest selection the engine-selecting axes (§1) also reach. Default: `auto`, the per-pattern selection (APPROACH.md §2). `dfa` and `vm` are diagnostic overrides, and DO-OR-DIE: a request the pattern cannot honour refuses with a diagnostic naming the construct, never a silent fallback (`src/opt/select_engine.c`). `--engine=vm` also turns the hybrid prefilter off unless `-fprefilter` is passed (§2.5), which is what makes a `--engine=vm` build an independent derivation of the span. **The stamps** are `<PREFIX>_ENGINE` (`"dfa"` or `"vm"`), `<PREFIX>_ENGINE_WHY` on a VM artifact (the construct that forced the VM), and `<PREFIX>_ENGINE_SEL` (the route the selection took, §2.17's attribution order). `PCREC_ENGINE_AUTO` is an enum member of `lib/pcrec.h`; `PCREC_ENGINE_DFA` and `PCREC_ENGINE_VM` are `#define`s, so an artifact's own identical `#define` of the same name does not collide with the header.
 
-<a id="s2-11-p2"></a>[2.11¶2] **Forcing the VM can turn a match into a give-up.** A DFA has no per-nesting-level frame cost; the VM's resume stack and trail are consumed at about two frames and nine trail entries per nesting level whatever the subject length (`limits.md` §4). A pattern nested deeply enough matches a one-byte subject under `auto` (on the DFA) and gives up `PCREC_ERR_FRAMES` under `--engine=vm`: `tests/base/k18_deep_nesting.rxt` is the witness (K18).
+<a id="s2-11-p2"></a>[2.11¶2] **Forcing the VM can turn a match into a give-up.** A DFA has no per-nesting-level frame cost; the VM's resume stack and trail are consumed per nesting level whatever the subject length (two frames and four trail entries for `limits.md` §4's specimen). A pattern nested deeply enough matches a one-byte subject under `auto` (on the DFA) and gives up `PCREC_ERR_FRAMES` under `--engine=vm`: `tests/base/k18_deep_nesting.rxt` is the witness (K18).
 
 <a id="s2-11-p3"></a>[2.11¶3] **`auto`'s one exception to do-or-die is a DFA cap.** Every other refusal is decided from the pattern before an automaton is built. A DFA-cap overflow (state count, table entries, the subset-element budget, `limits.md` §3.3) is found only by attempting the build, and under `auto` — with neither `--engine=dfa` nor `-fprefilter` — it is a selection outcome: the compile falls back to the VM (`<PREFIX>_ENGINE "vm"`, `<PREFIX>_ENGINE_WHY` naming the cap, `"dfa overflowed: >N states at pattern offset 0"`), and a VM-routed pattern whose auto-selected prefilter's DFA overflowed has the prefilter dropped or collapsed (§2.5, §2.17). `--engine=dfa` and `-fprefilter` still refuse, with `pattern too complex for the DFA engine (>N states; try --engine=vm)`.
 
@@ -334,13 +336,13 @@
 <a id="s2-15"></a>
 ### 2.15 `-fno-anchored-dfa` — `PCREC_NO_ANCHORED_DFA` (bit 17)
 
-<a id="s2-15-p1"></a>[2.15¶1] **Denies** the ANCHORED MACHINE behind `<prefix>_match` and `<prefix>_match_caps` on a DFA artifact. With the axis on, the artifact carries a third machine — the same subset construction over the same NFA, rooted at the pattern's own first state instead of the start-anywhere self-loop — and runs it forward from `ctx->pos`, with no reverse pass and no candidate skip. Denied, those entries run the artifact's unanchored search and reject a match whose start is not `ctx->pos`, and no third machine is built. Default: on, subject to the selection below. ANSWER-IDENTICAL (`match_api.md` §3.2; the argument is `docs/design/anchored_match_unwrapped.md` §3), masked out of `rx_info.flags`. Deny-only.
+<a id="s2-15-p1"></a>[2.15¶1] **Denies** the ANCHORED MACHINE behind `<prefix>_match` and `<prefix>_match_caps` on a DFA artifact. With the axis on, the artifact carries a third machine — the same subset construction over the same NFA, rooted at the pattern's own first state instead of the start-anywhere self-loop — and runs it forward from `ctx->pos`, with no reverse pass and no candidate skip. Denied, those entries run the artifact's unanchored search and reject a match whose start is not `ctx->pos`, and no third machine is built; the landmark walk (§2.54), which runs the anchored machine once at each start it locates, is declined with it. Default: on, subject to the selection below. ANSWER-IDENTICAL (`match_api.md` §3.2; the argument is `docs/design/anchored_match_unwrapped.md` §3), masked out of `rx_info.flags`. Deny-only.
 
 <a id="s2-15-p2"></a>[2.15¶2] **The selection is not this flag.** The anchored form needs the one-pass unanchored DFA engine (a `^`- or `\G`-bearing pattern runs on the per-start `attempt` scan and keeps the search-filter form), an artifact that is not the empty engine, and an anchored machine that builds inside the DFA caps (`PCREC_ANCHORED_MAX_STATES`, and the shared caps after the mandatory machines are built). A machine over a cap declines the form; it never refuses a pattern.
 
-<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"`, `"search-filter"` or, on the empty engine, `"nomatch"` (`<prefix>_match` returns no match without a scan), mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`).
+<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"`, `"search-filter"` or, on the empty engine, `"nomatch"` (`<prefix>_match` returns no match without a scan), mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`). Denying it can also move `<PREFIX>_DFA_SCAN` off `"landmark-walk"` (§2.54).
 
-<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally. The rung is skipped where the drop would add a machine (`limits.md` §8.4¶2a).
+<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). It is asked after the `drop-landmark-walk` rung (§2.54¶5), which keeps the machine. If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally. The rung is skipped where the drop would add a machine (`limits.md` §8.4¶2a).
 
 <a id="s2-15-p5"></a>[2.15¶5] **Dial:** no cell, deliberately excluded from `−2` pending its own measurement (§5.4).
 
@@ -689,7 +691,7 @@ A fact deny over the run: every consumer sees no run — the run pre-check and `
 
 <a id="s2-29-p3"></a>[2.29¶3] **On a VM route with no DFA scan, an emitted pre-check tests the WHOLE necessary set** (the kit's P0: every span there is REQUIRED, and a REQUIRED span is never dropped or narrowed). Where `<PREFIX>_VM_PREFILTER` is `"none"` the pre-check is the call's only linear no-match proof, so the emitted check (§2.27's byte or §2.28's run) is followed by one `memchr` per remaining member of the necessary set, and any absent member answers no-match. Whether the call is proved a no-match then depends on the set, a fact about the pattern, and not on which member the pick chose. An artifact whose set is its pick alone (or its run's bytes alone) emits nothing more. Where a DFA scan runs in front, nothing changes.
 
-<a id="s2-29-p4"></a>[2.29¶4] **On the same route, a run longer than its window is compared WHOLE.** §2.28 truncates a long run to one window, and `<PREFIX>_REQ_RUN` names that window. On a VM artifact with `<PREFIX>_VM_PREFILTER "none"` the window's compare is followed by one compare of the whole run as the analysis holds it (up to `PCREC_MAX_REQ_RUN_SCAN` bytes), scanned on the same member, and its absence answers no-match. A masked run is compared masked in both blocks. The whole-set half above then skips every EXACT position's byte of the whole run; a pair position proves only that one of its members is present, so a set member equal to its `T` keeps its own `memchr`.
+<a id="s2-29-p4"></a>[2.29¶4] **On the same route, a run longer than its window is compared WHOLE.** §2.28 truncates a long run to one window, and `<PREFIX>_REQ_RUN` names that window. On a VM artifact with `<PREFIX>_VM_PREFILTER "none"` the pre-check searches for the whole run as the analysis holds it (up to `PCREC_MAX_REQ_RUN_SCAN` bytes) instead of the window, scanned on the window's member, and its absence answers no-match: the whole run's presence implies the window's, so the window is not searched for separately. Each candidate's compare tests the window's bytes FIRST, as the window's own compare would, then the rest of the whole run, so a candidate the window rejects costs one compare. A masked run is compared masked. The whole-set half above then skips every EXACT position's byte of the whole run; a pair position proves only that one of its members is present, so a set member equal to its `T` keeps its own `memchr`.
 
 <a id="s2-29-p5"></a>[2.29¶5] **`dominated`: not a second pass on a byte already scanned** (the kit's P2, over the proof pcrec states for the start search; the LOCATE half, a `rev-end`, `cover` or `empty` body, is pcrec's withholding: each finds the match or proves there is none itself). Let `p` be the byte the artifact's own candidate-start scan runs on: the `memchr` form's byte, or the scan byte of an `offset-set` or `run-pinned` prefilter. A `byte-class` prefilter scans no single byte, and an artifact with no DFA scan has no `p`. The pre-check on `q` is declined where:
 
@@ -1133,6 +1135,21 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-53-p2"></a>[2.53¶2] ANSWER-IDENTICAL, a selection outcome never a refusal; the tables, the stamps and the sweep are §2.51's. **Dial:** the `part-residual` row (§5.4).
 
+<a id="s2-54"></a>
+### 2.54 `-fno-landmark-walk` — `PCREC_NO_LANDMARK_WALK` (bit 57)
+
+<a id="s2-54-p1"></a>[2.54¶1] **Denies** the LANDMARK WALK, a LOCATE row asked after §2.46's walk and the window search (`match_api.md` §6.3.4¶2) and before the forward-then-reverse search. Where a pattern's one branch is a concatenation with a byte class L (the LANDMARK) at a top-level position, and the part P before it can never consume a byte of L, every match reads as its L the first occurrence of L at or after its start. The search then finds each occurrence of L from `search_from` up, every one of them, overlapping or not, walks a reverse machine of P followed by L (its own tables, `<prefix>_landmark_*`) backwards from one past it to the smallest position where a match through it can start (no lower than `search_from`), and runs the anchored machine (§2.15) once from there (its tables again inside the search body, `<prefix>_lmverify_*`): a match there is the answer, none and the next occurrence is tried. Where that run already read past the next occurrence, the search instead continues as the forward-then-reverse search from the start the walk found, so no byte is walked more than a bounded number of times. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only; a declined artifact is byte-identical under the flag.
+
+<a id="s2-54-p2"></a>[2.54¶2] **Where it applies**, read in order, the first failing condition being the decline: the artifact is a DFA artifact (not a VM hybrid, whose DFA scan is the VM's prefilter); its anchored machine is built (§2.15); the pattern has one top-level branch; a byte class follows a non-empty prefix at a top-level position; the prefix is matched exactly by its machines (no atomic group, lookaround or counted repeat that the DFA approximates) and the pattern has no `\G` or `\K`; under `-e utf8` every byte of L is ASCII; the prefix can consume no byte of L; the candidate-start filter the search would otherwise take does not already start from a landmark (`"run-pinned"`, `"run-pinned-bounded"`, `"offset-set"`, `"offset-set-bounded"`, `"handoff"`); L is rarer, under the byte-rate prior (`findings.md`), than that filter's start set by the landmark margin, which charges each occurrence the expected backward walk plus a constant (10 bytes, an unmeasured default); and the reverse machine of the prefix and L builds inside the DFA caps. Among several landmarks it takes the largest margin, then the leftmost. `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}` and `a+b` take it (on `@` and `b`); `[^@]+@x` does not (its prefix is almost every byte, so the expected walk is long), nor `a.*b@c` (the prefix consumes `@`), nor `(*UCP)a\sb` under `-e utf8` (with no byte-rate prior for the encoding, `b` is no rarer than `a`).
+
+<a id="s2-54-p3"></a>[2.54¶3] **The cost it can add.** Each occurrence costs a backward walk and, where a start is found, one anchored run; where occurrences of L are dense and few of them lead to a match, the walk can be slower than the forward scan it replaces, which is why the flag is public. The margin's rule declines the cases the prior predicts; a caller's own subjects may differ from the prior.
+
+<a id="s2-54-p4"></a>[2.54¶4] **The stamp** is `<PREFIX>_DFA_SCAN "landmark-walk"` (and `rx_info.scan`); the denied build reads `"unanchored"`. On a `"landmark-walk"` artifact `<PREFIX>_DFA_START` names the start recovery of the forward-then-reverse search the walk continues as, `<PREFIX>_DFA_PREFILTER` that search's candidate-start filter, `<PREFIX>_REQ_WHY` reads `"dominated"` where a necessary byte exists (the walk answers presence itself), and the table stamps describe every machine the search body holds, the reverse machine of the prefix and L included.
+
+<a id="s2-54-p5"></a>[2.54¶5] **Under the size caps.** The walk's machine and the anchored machine's second copy count toward the emitted-size caps. On a size-cap refusal of a `"landmark-walk"` artifact, the size-cap ladder's `drop-landmark-walk` rung (`limits.md` §8.4) re-emits the artifact this flag produces, plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`; the `drop-anchored` rung follows if the cap still refuses.
+
+<a id="s2-54-p6"></a>[2.54¶6] **Dial:** no cell (§5.4). Design: `docs/dev/lanes/p1dsg3_report.md` rev 2 and `docs/dev/lanes/p1build_report.md` rev 3.
+
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
 
@@ -1140,7 +1157,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 | stamp | names | axis | `rx_info` mirror |
 |---|---|---|---|
-| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the O(n) forward scan, followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"`), `"rev-end"` (the reverse walk from the subject's end, §2.46), `"cover"` (the window search alone, `match_api.md` §6.3.4¶2), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | §2.46, §2.43¶3d; otherwise the engine's own selection | `rx_info.scan` |
+| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the O(n) forward scan, followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"`), `"rev-end"` (the reverse walk from the subject's end, §2.46), `"cover"` (the window search alone, `match_api.md` §6.3.4¶2), `"landmark-walk"` (a backward walk from each landmark, §2.54), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | §2.46, §2.43¶3d, §2.54; otherwise the engine's own selection | `rx_info.scan` |
 | `<PREFIX>_DFA_PREFILTER` | the candidate-start mechanism | §2.14, §2.30, §2.42; the plain forms have no flag | `rx_info.prefilter` |
 | `<PREFIX>_DFA_PREFILTER_OFFSETS` | the offsets an `offset-set` or `run-pinned` filter tests | §2.14, §2.30 | none |
 | `<PREFIX>_DFA_TABLE` | the transition tables' encoding | §2.13 | none |
@@ -1233,6 +1250,7 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bit `PCREC_NO_POSS_CTX_FOLLOW` | `-fno-poss-ctx-follow` | §2.44 |
 | `flags` bit `PCREC_NO_POSS_BREF_FIRST` | `-fno-poss-bref-first` | §2.45 |
 | `flags` bit `PCREC_NO_REV_END` | `-fno-rev-end` | §2.46 |
+| `flags` bit `PCREC_NO_LANDMARK_WALK` | `-fno-landmark-walk` | §2.54 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO` / `_DFA` / `_VM`) | `--engine=E` | §2.11 |
@@ -1333,6 +1351,7 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 | `-fno-start-pinned` | — | — | — | — | — | §2.19; PURE WIN |
 | `-fno-start-width` | — | — | — | — | — | §2.47; PURE WIN |
 | `-fno-start-landing` | — | — | — | — | — | §2.48; PURE WIN |
+| `-fno-landmark-walk` | — | — | — | — | — | §2.54; GATE 3: its loss cells (a dense landmark) are a non-goal, unmeasured against the size it adds |
 | `-fno-alt-island` | — | — | — | — | — | §2.20; PURE WIN |
 | `-fno-cls-fold` | — | — | — | — | — | §2.22; NOT A RUNG: absorbed into λ |
 | `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; GATE 1 |

@@ -49,5 +49,6 @@ change.
 (Rest of this section: see the history file.)
 
 - Also (one-line entries for these are in the history file): `run_ksweep.sh`, `start_landing_movers.tsv`.
+- `giveup1_key_check.sh`: light check (runs first in `make test-axes`) that GIVEUP1_ALLOWANCE's text-keyed entries (`file@pattern :: case`) resolve and survive a comment edit above them.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__axes.md`.

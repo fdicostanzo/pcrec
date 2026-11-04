@@ -1,40 +1,44 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-29, going idle)
+# memfn kit — wake-up brief
 
-This file is the kit session's orientation. Run `/pcrec-memfn-manager` and follow its §1 wake order. It is rewritten at every pause and holds the current state; history lives in `journal.md`.
+Rewritten 2026-11-03 ~11:15 at a /close ("now"). Committed docs win on any conflict.
 
-## STEP 0 — what I am waiting for (idle since 2026-10-29 ~11:00)
+## Who you are
+The kit manager (`/pcrec-memfn-manager`). Main = the pcrec manager session `pcrec_main`. Frank rules, mostly via main.
+Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main merged in up to 761521515, plus the kit commits after it).
 
-- **Job 622-kit-s3m-heavy** (D172 S3 on `lane/memfn-s3m` @ aab7cf1be + one job-script commit; abi 92) is QUEUED in the box queue behind main's 500-502 p48, 681 ic3-mech and 690 jobs.
-  - Its own gate: cap = seconds to 19:30 at START (max 21,600); `--ready` refuses when < 11,000 s remain or between 10-29 16:00 and 10-30T14:00. So it runs today (ending by 19:30) or from 2026-10-30 14:00 by itself.
-  - Monitor: a background shell loop (gnutimeout 40h) that exits when `worktrees/.boxqueue/{done,failed}/*-622-kit-s3m-heavy/result` exists and prints it. If the session restarted, read that file by hand.
-  - Verdict: `result` (`verdict=`); red steps are `== s3 step NAME rc=N` with N != 0 in its job.log. Logs under `worktrees/s3m/build/s3/heavy622/`. Census UNEXPECTED movers are FINDINGS (predicted_movers.tsv came from main 0d3765c87), never blind re-pins.
-- **Who messages me:** main = `pcrec_main` (uds:/run/user/1001/cc-socks/4169866.sock; check ListAgents). Nothing else is alive: no lanes, no other watchers. Heartbeat cron deleted at idle.
+## Read in order
+1. This file. 2. memfn/docs/journal.md tail (2026-11-02/03 entries). 3. docs/design/memfn/span_pick.md REV 5.2 (on main), the design of record.
+4. docs/dev/reviews/2026-11-03-r3-memfn-sp1a.md and r4-memfn-sp1f.md (the code rounds). 5. docs/dev/decisions.md D186 + addenda 1-2.
 
-## Next action per trigger
+## CURRENT STATE: span_pick STAGE 1 BUILD (main's GO, under Frank's conditional approval of 11-02 ~23:58)
+Landing order 1a, 1f, 1g, 1b, 1c, 1d, 1e. Per unit:
+- an opus lane builds from main;
+- a code critic round (pcrec-critic, code mode), with fixes by a sonnet fix lane;
+- gates as box-queue jobs: strict, kit sections, reach_equal, ident x3, make test ALONE via scripts/perfrun, and the mech rows that touch the unit's files run FOR REAL;
+- the done line in responses.md, then main merges.
+STOP and message main on anything non-routine. Stage 2/3 need main's GO after stage 1 lands.
 
-- **622 GREEN:** fill S283's SAB_DOC_FIGURE (reads "OWED 2026-10-29 (lane s3m)") from 622's mech step; post `done: R-29/S3 — branch lane/memfn-s3m @ <tip>, report docs/dev/lanes/s3_report.md Part 12, validation 622 <verdict>` in responses.md; SendMessage main. Main re-pins the recursion-identity (B) pin to the landing merge. abi 92 holds unless a pcrec byte-mover lands first (main tells me; S3 then takes the next number).
-- **622 RED:** a read-only triage lane first, then a fix lane with NO box access that stages ONE job (dry run); clear the slot with main before queueing.
-- **S3 landed:** (a) propose to main a QUIET-box slot for the tier-U vrun refresh (rq4 harness, slot21 arm set, ~3.6 h; docs/design/memfn/probes/rq4/) — a night tail after a bench window (~00:30-04:30) or a daytime block with main's builds paused; (b) launch the kit-only SIMD lane: "find any of 2-3 arbitrary bytes" kernel + measurement card + G2 against the scalar byte loop, NOT routed (pricing consumes it); (c) then R-30 on `lane/memfn-r30`.
-- **Box calendar (main, 10-29):** bench 19:30-00:00 tonight; main's full suite 00:00-~13:00 10-30; bench W1 Friday night, W2 Saturday night; Frank off the box until Sunday evening.
+- **1a: LANDED** (main 761521515). Ratchet R20-R27 at 11. Mech follow-up 321/322: 32 DETECTED, 2 expected-UNREACHED (S917/S919, pre-existing).
+- **1f: IN GATES.** Branch lane/memfn-sp1f @ 4375ecfc4 (98145b3d5 + review fixes). Jobs 340-349, keys kit-sp1f2-*.
+  - GREEN: 340 strict, 341 memfn, 342 reach, 343-345 ident (344 after a retry, see below), 346 make test.
+  - RUNNING at close: 347 mech; then 348 mech2 and 349 mech3 (shard 3 declares S917/S919 UNREACHED).
+  - Job scripts: /var/tmp/pcrec-pcrec/scratch/memfn/sp1ffix/jobs/.
+  - Read the 347-349 results in worktrees/.boxqueue/{done,failed}/. Mech bar: "unexpected 0, undetected 0, anomalies 0"; declared-UNREACHED rows are OK.
+  - If green: post a `done:` line for 1f in responses.md and send main the delivery: branch, gates, the caller-visible change (--memfn=no-fd-r8 / no-fd-ndisp gone, registry floor 14->12, the fd-d1 --list-axes text), the registry.md §6¶8/8a/8b hunks, MF_SITE_ABI 21, MF_CLASS_V 7, ratchet unchanged at 11.
+  - Plan items for main from the r4 review: the KN_A/I/M/N carrier, CHECK-6, CHECK-7, and the unification of the three declared-delta judges.
+- **Next: 1g** (provenance leaves the seam). Cut from main after 1f merges, per rev 5.2's unit text and reader list.
 
-## 1. Who you are and where you work
+## Lessons from 1a/1f (put them in every unit's job briefs)
+- An expect regex must match digits: use [a-z0-9-]+.
+- make test runs ALONE via perfrun; a serial run hit the 1 h cap.
+- VALIDATE_ONLY is not a mech run.
+- Never merge into a worktree while a job runs there.
+- A dump-stream declaration (--dumps-declared-*) goes to EVERY arm that runs the dumps stream, i.e. base AND start (344 red).
+- Stale main floors are main's to re-pin (ef179b9f4).
+- Critic rounds cap their probe volume at about 3k compiles while the queue runs.
 
-- You are the pcrec-memory-functions kit manager. `requests.md` is main's (only main writes it); `responses.md` is yours.
-- **Box:** the Linux dev box, repo `/home/pcrec/projects/pcrec`. `gnutimeout`. Commit with `-c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
-- **Never `cd`**, never `git stash`. Remove worktrees only with `scripts/wtprune`, branches with `scripts/branchprune`.
-- **Kit worktree:** `worktrees/memfn` = branch `lane/memfn-r30` (from main b05ccfc0b), carrying today's responses/journal/wake commits. Main merges it whenever.
-- **Kit sabotage-id range:** S1540-S1559.
-- **Box courtesy:** lanes edit without the box and put every check into ONE queued job; no back-to-back boxlock chains.
+## Box
+Frank holds 20:00-01:00 daily: light work only, no suites or timing. The queue orders everything; main's standing monitor watches it.
 
-## 2. Current state
-
-- **abi:** main 91; S3 holds 92.
-- **Open requests:** R-29/S3 (validating, above); R-30 (acked, queued after S3: at a VM re-find site whose landmark is the whole run, one ask — case 7 `url-tld-fix`).
-- **Frank's SIMD go (2026-10-29, posted in responses.md as a proposed D147 addendum):** (1) verdict on the vrun family (14 CANDIDATE lines, tests/memfn/simd_accept.tsv); interim order (mine, main agreed): tier-U refresh after S3 first, then the bench request text for main ONLY if the layer still pays (the bench needs adapter rows for -fmemfn-simd / --memfn=no-vrun-*, vrun cells, an A/A twin, Zen 1 + Zen 4 + Mac); (2) the small-set kernel after S3; (3) runtime dispatch held until (1) wins.
-- **Settled, do not re-ask:** Q-R14-1 was RULED 2026-10-11 (KB at w32 only; R-16 built it).
-- **Withdrawn:** main's ADVANCE sequence-widening draft (D161 add. 17: reverse DFA at the landmark is the scaffolding; EDGE ADVANCE per looping state). Later: more EDGE sites (pcrec lane p48).
-- **Stop ranking / pricing (D176):** ruled, not built; after S3. Witnesses in stop_ranking_study.md §5.1 (lane/memfn-stopstudy fc6735cdf, unmerged).
-
-## 3. Prune when quiet
-
-s3, s3pair, s3fix (after s3m lands), stopstudy (after main merges the study), and the older delivered memfn-* lanes listed by `scripts/wtprune` (dry run first).
+## Owner questions
+None open.

@@ -1,0 +1,7 @@
+questions 177, compile 172, refused 5 (N06 N11 N12 N13 N25)
+sites with >=2 FORCEABLE default-route arms: 139 (arms per such site median 4, max 16, total 590; of them pick-only arms 70)
+sites whose picks reach >=2 distinct arms: 139
+sites with an UNFORCEABLE no-search NEXT arm (needs L-ROW): 128
+route-seed arms (counted, not timed): 503
+picks that move the bytes, by site count: k:no-fd-d1+k:no-fd-pres-pick+k:no-pres-set-lead 91; k:no-fd-d1+k:no-fd-pres-pick 84; no-offset-skip+no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead 83; no-offset-skip+no-req-handoff+k:no-fd-pres-pick 81; no-offset-skip+k:no-fd-pres-pick+k:no-pres-set-lead 69; no-offset-skip+no-req-handoff+k:no-pres-set-lead 69; no-req-handoff+k:no-fd-pres-pick+k:no-pres-set-lead 67; k:no-fd-d1+k:no-fd-pres-g1 65; no-offset-skip+k:no-fd-pres-pick 65; no-req-handoff+k:no-fd-pres-pick 65; no-offset-skip+no-req-handoff 62; k:no-fd-d1+k:no-pres-set-lead 62; no-start-set+k:no-fd-pres-pick 56; no-req-handoff+no-start-set 55; k:no-fd-d1+k:no-window-search 53; k:no-fd-pres-pick+k:no-pres-set-lead 51; k:no-fd-d1 49; no-req-handoff+k:no-pres-set-lead 49; no-offset-skip+k:no-fd-pres-g1 45; k:no-fd-pres-pick 44; no-offset-skip+k:no-pres-set-lead 41; no-req-handoff 40; no-offset-skip 31; k:no-fd-pres-g1 30; k:no-window-search 27; k:no-pres-set-lead 17; no-start-set 16; no-run-prefilter 11; no-hyb-reseed 1
+compiles 5160

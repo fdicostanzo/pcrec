@@ -312,7 +312,7 @@ floor_check "D:RX_DFA_PREFILTER=none"         500
 # forms: memchr measured 900+ → 825 on the union sweep (floor re-derived,
 # rounded down), offset-set 360, offset-set-bounded 40 (floored on first
 # sight — K35: every value the corpus reaches gets a floor in the same change).
-floor_check "D:RX_DFA_PREFILTER=memchr"       750
+floor_check "D:RX_DFA_PREFILTER=memchr"       590
 floor_check "D:RX_DFA_PREFILTER=byte-class"   250
 # [OPT-LITSCAN] S1 (2026-09-25, abi 36) put the run-pinned pair ahead of
 # both: pinned-run artifacts with no k-set leave memchr[-bounded] and those
@@ -320,8 +320,8 @@ floor_check "D:RX_DFA_PREFILTER=byte-class"   250
 # census at the S1 build: memchr 872, offset-set 322 (floor re-derived
 # 300 -> 290), offset-set-bounded 34, run-pinned 150, run-pinned-bounded
 # 14 (both floored on first sight, K35).
-floor_check "D:RX_DFA_PREFILTER=offset-set"   290
-floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
+floor_check "D:RX_DFA_PREFILTER=offset-set"   230
+floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 16
 # [FIND-TIE] (2026-09-28, merge 72e3ae41, abi 43->44) legitimately re-derives
 # run-pinned's floor, by mechanism (lane rpfloor, docs/dev/lanes/
 # rpfloor_report.md): `pf_run_applies_common` (src/gen/emit_dfa.c ~5357)
@@ -348,7 +348,7 @@ floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
 # same mechanism to U2's newly-exact one-char-lookaround DFA machines).
 # Floored per K35's convention (~85-90% margin, matching offset-set's own
 # 290/322): 100 clears both main's 117 and U2's 113 with margin to spare.
-floor_check "D:RX_DFA_PREFILTER=run-pinned"   100
+floor_check "D:RX_DFA_PREFILTER=run-pinned"   46
 # [OPT-REVEND] L2 (2026-10-10, abi 73) legitimately re-derives
 # run-pinned-bounded's floor, by mechanism (lane revfloor, docs/dev/lanes/
 # revfloor_report.md): the rev-end locator (tuning.md §2.46) takes every
@@ -360,12 +360,26 @@ floor_check "D:RX_DFA_PREFILTER=run-pinned"   100
 # (main a15fb77b vs lane/revtri): 20 -> 9, exactly those eleven leave and
 # nothing moves into the form. Floored at ~80% of 9 (the 14 -> 12 convention,
 # rounded down).
-floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 7
+floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 2
 # The value that took them is floored in the same change (K35: every value the
 # corpus reaches gets a floor on first sight): 235 corpus patterns stamp
 # RX_DFA_SCAN "rev-end" at the L2 build (triples: 219 none/premultiplied, 8
 # byte-class-bounded, 5 memchr-bounded, 3 none/mixed) — floored at ~85%.
 floor_check "D:RX_DFA_SCAN=rev-end"           200
+# [KIT-S3] (merge 0f425c2d0, lane memfn-s3m, abi 92, triage lane axtri,
+# docs/dev/lanes/axtri1031_report.md) legitimately re-derives six floors and adds
+# one: the cover scan form (the kit's locate-by-cover, `locate_cover_applies`,
+# src/gen/emit_dfa.c) takes 884 corpus patterns off RX_DFA_SCAN "unanchored"
+# onto "cover", where each stamps RX_DFA_PREFILTER "none" and RX_DFA_START
+# "attempt-start". Per-pattern A/B (main f3a3d2b7b vs 0f425c2d0, same corpus):
+# every changed pattern moves to cover/none/attempt-start and nothing else
+# moves. The movers came out of memchr 853 -> 696, offset-set 377 -> 270,
+# offset-set-bounded 57 -> 20, run-pinned 134 -> 55, run-pinned-bounded 9 -> 3,
+# end-minus-width 1,509 -> 667; floors are ~85% of the new counts (the
+# memchr/offset-set/offset-set-bounded/run-pinned/run-pinned-bounded/
+# end-minus-width lines above and below carry them). Cover is floored on
+# first sight (K35): 884 -> 750.
+floor_check "D:RX_DFA_SCAN=cover"             750
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # [ENG-ABS] (2026-08-29, abi 10) axis G. Measured on this tree: 825
 # `unwrapped` and 184 `search-filter` (180 of them ENG_ATTEMPT, 4 the empty
@@ -379,7 +393,7 @@ floor_check "D:RX_DFA_MATCH=search-filter"    150
 # five values, floored on first sight (K35, ~85% of this census's count at
 # the SL2 build: end-minus-width 1,407, reverse-pass 1,247, attempt-start
 # 504, landing 211, pinned 191).
-floor_check "D:RX_DFA_START=end-minus-width"  1200
+floor_check "D:RX_DFA_START=end-minus-width"  560
 floor_check "D:RX_DFA_START=reverse-pass"     1050
 floor_check "D:RX_DFA_START=attempt-start"    430
 floor_check "D:RX_DFA_START=landing"          180

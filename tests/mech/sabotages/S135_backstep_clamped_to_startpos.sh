@@ -38,23 +38,30 @@
 # this row, the inherited corpus contributes 2,943 of its 8,260 qualifying cells
 # AT A NONZERO STARTPOS, over `\b`/`\B`-expanded lookbehinds — which is the
 # axis §3.8's contract lives on, arriving here for free.
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the two start-of-subject guards are now BRANCH records; the same clamp to the search window in both conditions. Same detector, same arm.
 SAB_ID="S135-backstep-clamped-to-startpos"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look_behind_branch's start-of-subject guard is clamped to the SEARCH WINDOW (scan_position - search_from < k) instead of the subject, so a lookbehind can no longer read bytes before startpos — which is what design §3.8 measures both oracles doing"
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/startpos.rxt RED on its ms/ns cells (a positive lookbehind stops matching, and a NEGATIVE one starts matching where it must not — a FALSE MATCH); every startpos-0 cell in lookbehind.rxt, lookbehind_widths.rxt and nonatomic_behind.rxt GREEN. Canonical figure owed from run_sabotage_matrix.sh S135."
+# MADE WARNING-CLEAN 2026-10-31 (lane vmrecg): the first re-aim bumped `ngst` unconditionally at
+# the last-branch guard, so a ZERO-WIDTH body (`(?<=)z`, k == 0, no guard emitted) got the
+# `search_from` parameter and nothing read it: -Werror=unused-parameter, a gcc verdict not
+# the check's. The bump now rides each guard that READS the parameter (k > 0), at both arms.
 SAB_COUNT=1
 SAB_BEFORE='        if (k > 0)
-            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
-                      k, v->p);'
-SAB_AFTER='        v->ngst++;   /* SABOTAGE S135: force the search_from parameter */
-        if (k > 0)
-            pcrec_sb_printf(b, "    if (scan_position - %s_search_from < %d)"
-                         " goto %s_fail;\n", v->p, k, v->p);'
+            pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position < %d", k), pcrec_vm_tgt_fail());'
+SAB_AFTER='        if (k > 0) {
+            v->ngst++;   /* SABOTAGE S135: force the search_from parameter, where it is READ */
+            pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position - %s_search_from < %d", v->p, k),
+                        pcrec_vm_tgt_fail());
+        }'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
-                      k, v->p, bl[i + 1]);'
-SAB_AFTER2='            pcrec_sb_printf(b, "    if (scan_position - %s_search_from < %d)"
-                         " goto %s_L%d;\n", v->p, k, v->p, bl[i + 1]);'
+SAB_BEFORE2='            pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position < %d", k),
+                        pcrec_vm_tgt_label(bl[i + 1], false));'
+SAB_AFTER2='            v->ngst++;   /* SABOTAGE S135: force the search_from parameter, where it is READ */
+            pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position - %s_search_from < %d", v->p, k),
+                        pcrec_vm_tgt_label(bl[i + 1], false));'

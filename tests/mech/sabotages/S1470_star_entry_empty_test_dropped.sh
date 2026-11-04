@@ -9,6 +9,8 @@
 # empty iteration m, and a group the empty iteration set survives the later
 # one (iterd27 F4: `(?:()|a)+?b` over "ab", group 1 (0,0) where libpcre2
 # leaves it unset).
+# RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
+# the entry test is now a BRANCH record; the same record not built. Same detector, same arm.
 SAB_ID="S1470-star-entry-empty-test-dropped"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness"
@@ -19,6 +21,6 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:()|a)
 SAB_REACH_EXPECT='REACH-STAR-ENTRY-TEST'
 SAB_REACH_POP='tests/captures/empty_iteration.rxt|^pattern \(\?:\(\)\|a\)\+\?b$|2'
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position == slot_values[%d]) goto %s_L%d;\n",
-                  gslot, v->p, exit);'
+SAB_BEFORE='        pcrec_vm_b_branch(v->sb, vm_condf(v, "(ptrdiff_t)scan_position == slot_values[%d]", gslot),
+                    pcrec_vm_tgt_label(exit, false));'
 SAB_AFTER='        (void)exit;   /* SABOTAGE S1470: the entry test is not emitted */'

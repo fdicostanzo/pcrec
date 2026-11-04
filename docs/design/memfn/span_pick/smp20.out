@@ -1,0 +1,42 @@
+== prices, byte(PAIR) 0.12 (k 2), hit(PAIR) 20, hit(memchr) 20
+P          @0 {X,x} 144694  @1 {/} 153476  @2 {1} 228231  @3 {2} 228231  @4 {3} 228231  @5 {4} 228231  least @0 {X,x}
+B:prose    @0 {X,x} 168871  @1 {/} 72938  @2 {1} 73905  @3 {2} 70350  @4 {3} 66143  @5 {4} 63555  least @5 {4}
+B:log      @0 {X,x} 128384  @1 {/} 385409  @2 {1} 1147606  @3 {2} 1241525  @4 {3} 760657  @5 {4} 854238  least @0 {X,x}
+B:weblog   @0 {X,x} 286612  @1 {/} 1225432  @2 {1} 1145198  @3 {2} 696603  @4 {3} 441512  @5 {4} 302235  least @0 {X,x}
+-- the pick per rate source and arm (incumbent = today's compiled pick, WITNESS.out)
+P          default incumbent @0 {X,x} 144694 -> pick @0 {X,x} 144694  qualifiers none
+P          DEF     incumbent @1 {/} 153476 -> pick @1 {/} 153476  qualifiers none
+B:prose    default incumbent @5 {4} 63555 -> pick @5 {4} 63555  qualifiers none
+B:prose    DEF     incumbent not one modelled stop (WITNESS.out); not priced
+B:log      default incumbent @0 {X,x} 128384 -> pick @0 {X,x} 128384  qualifiers none
+B:log      DEF     incumbent @1 {/} 385409 -> pick @1 {/} 385409  qualifiers none
+B:weblog   default incumbent @0 {X,x} 286612 -> pick @0 {X,x} 286612  qualifiers none
+B:weblog   DEF     incumbent @5 {4} 302235 -> pick @5 {4} 302235  qualifiers none
+== prices, byte(PAIR) 0.12 (k 2), hit(PAIR) 40, hit(memchr) 20
+P          @0 {X,x} 166634  @1 {/} 153476  @2 {1} 228231  @3 {2} 228231  @4 {3} 228231  @5 {4} 228231  least @1 {/}
+B:prose    @0 {X,x} 212311  @1 {/} 72938  @2 {1} 73905  @3 {2} 70350  @4 {3} 66143  @5 {4} 63555  least @5 {4}
+B:log      @0 {X,x} 135824  @1 {/} 385409  @2 {1} 1147606  @3 {2} 1241525  @4 {3} 760657  @5 {4} 854238  least @0 {X,x}
+B:weblog   @0 {X,x} 434532  @1 {/} 1225432  @2 {1} 1145198  @3 {2} 696603  @4 {3} 441512  @5 {4} 302235  least @5 {4}
+-- the pick per rate source and arm (incumbent = today's compiled pick, WITNESS.out)
+P          default incumbent @0 {X,x} 166634 -> pick @1 {/} 153476  qualifiers @1 {/}  gap 13158 (1.086x)
+P          DEF     incumbent @1 {/} 153476 -> pick @1 {/} 153476  qualifiers none
+B:prose    default incumbent @5 {4} 63555 -> pick @5 {4} 63555  qualifiers none
+B:prose    DEF     incumbent not one modelled stop (WITNESS.out); not priced
+B:log      default incumbent @0 {X,x} 135824 -> pick @0 {X,x} 135824  qualifiers none
+B:log      DEF     incumbent @1 {/} 385409 -> pick @1 {/} 385409  qualifiers none
+B:weblog   default incumbent @0 {X,x} 434532 -> pick @5 {4} 302235  qualifiers @5 {4}  gap 132298 (1.438x)
+B:weblog   DEF     incumbent @5 {4} 302235 -> pick @5 {4} 302235  qualifiers none
+== blind (P), default arm: EXACT boundary of {X,x} vs P's cheapest one-member stop
+   grid: hit(memchr) h1 in 5,10,20,40; hit(PAIR) = 1,2,4,8 x h1; k = byte(PAIR)/byte(memchr) solved
+h1 5   cheapest one-member @1 {/} 91166; {X,x} kept for k < k*, departs above: hit(PAIR) 5: k* 1.3821; hit(PAIR) 10: k* 1.2907; hit(PAIR) 20: k* 1.1079; hit(PAIR) 40: departs at every k >= 1 (k* 0.7422); at k 2 departs at every hit(PAIR)
+h1 10  cheapest one-member @1 {/} 111936; {X,x} kept for k < k*, departs above: hit(PAIR) 10: k* 1.6369; hit(PAIR) 20: k* 1.4540; hit(PAIR) 40: k* 1.0884; hit(PAIR) 80: departs at every k >= 1 (k* 0.3570); at k 2 departs at every hit(PAIR)
+h1 20  cheapest one-member @1 {/} 153476; {X,x} kept for k < k*, departs above: hit(PAIR) 20: k* 2.1464; hit(PAIR) 40: k* 1.7807; hit(PAIR) 80: k* 1.0494; hit(PAIR) 160: departs at every k >= 1 (k* -0.4133); at k 2 departs iff hit(PAIR) > 28.006 (1.400x h1)
+h1 40  cheapest one-member @1 {/} 236556; {X,x} kept for k < k*, departs above: hit(PAIR) 40: k* 3.1654; hit(PAIR) 80: k* 2.4340; hit(PAIR) 160: departs at every k >= 1 (k* 0.9714); hit(PAIR) 320: departs at every k >= 1 (k* -1.9540); at k 2 departs iff hit(PAIR) > 103.740 (2.593x h1)
+== blind (P), DEF arm: P's cheapest one-member stop per hit(memchr) (k, hit(PAIR) do not enter)
+   h1 5: @1 {/}; h1 10: @1 {/}; h1 20: @1 {/}; h1 40: @1 {/}
+== with data prose: B's cheapest stop over the grid (h1 5..40, hit(PAIR) 1-8 x h1, k 1.00-12.00 by 0.05)
+   @5 {4} at 3536 points
+== with data log: B's cheapest stop over the grid (h1 5..40, hit(PAIR) 1-8 x h1, k 1.00-12.00 by 0.05)
+   @0 {X,x} at 1502 points; @1 {/} at 2034 points
+== with data weblog: B's cheapest stop over the grid (h1 5..40, hit(PAIR) 1-8 x h1, k 1.00-12.00 by 0.05)
+   @0 {X,x} at 98 points; @5 {4} at 3438 points

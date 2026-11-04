@@ -52,6 +52,9 @@ message when the draft is ready.
      BUILD would land on (normally main HEAD), build the review tree THERE and tell critics both;
      any cited code that moved between them is a finding (2026-10-29 r4 p48).
    The subject stays frozen until the round compiles (learnings §6, R30).
+   Freeze the RULINGS too: record main's decisions.md/plan.md commit at the freeze, diff them against main at
+   hand-back, and report any change as FREEZE DRIFT in the draft (2026-11-02 r2 spanpick2: the owner amended
+   D186 add. 1 mid-round; caught by chance).
 2. Code mode: make a clean review tree, `git worktree add --detach
    worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself, UNLOCKED:
    `nice make -j2` (critics run `build/pcrec` and `gcc -S` on single
@@ -81,11 +84,13 @@ measured twice). Subject column: D = design document, C = code diff.
 | subject | profile item | lens | its one question | model |
 |---|---|---|---|---|
 | D C | always | **goals** (fold into another lens if needed) | Does the design state ranked, checkable goals (architecture.md)? Does the subject serve them in that order? No goals = a DOC finding; review against the goals the design implies, saying so. | strong |
-| D | a new mechanism or table | **premise** | Name every assumption the design rests on and test each (grep, measure, read the data): is it true? ("do we really need this?", "is this really constant?" are this lens; so is every sentence of the form "the existing X already does Y": find X by file:line.) | strong |
+| D | the owner has stated benefit criteria for this subject | **owner criteria** | Grade the subject on the owner's stated criteria in force at the FREEZE, in his order: does each claim serve them, or argue something he ranked as a constraint? | strong |
+| D | a new mechanism or table | **premise** | Name every assumption the design rests on and test each (grep, measure, read the data): is it true? ("do we really need this?", "is this really constant?" are this lens; so is every sentence of the form "the existing X already does Y": find X by file:line.) A replay against a part map reads type/enum/table hunks in full, never classifying by hunk-header function names (2026-11-01 r3 stream3: a hand-schema change was filed under the planner because it sat beside a planner function) | strong |
 | D C | a trust boundary (opt-in, gate, untrusted input becomes code or a file read) | **adversary** | As the author of an untrusted input, find every path from your bytes to code, a file read or a terminal escape that bypasses the gate, including the test harness and tooling as entry points; and what an ADMITTED input can do to the rest of the output | strong |
-| D | a table, rule or selection | **simulate** | Run the proposed rule over the real corpus or data: does it pick what the design claims, and where does it mispick? | sonnet+ |
-| D | a claim of answer identity BY PROOF (a rewrite, an elision, a dropped record) | **soundness** | Build the base tree and APPLY the documented rule, as written, to the emitter's real output for crafted witnesses (and to every seam where two documents' rules compose): does any answer move? (2026-10-29 r3 vmtrail: produced every answer-level repro). When the design reads a RECORD of the program (an event stream, a listing), also enumerate every statement the emitter prints inside a matcher and check each is recorded or a declared no-effect form (r6 vmcons: 4 of 5 answer holes were unrecorded statements) | opus |
-| D | a RE-CHECK of a revised design | **fix-induced** | For each claimed fix: does it add a read, a hand, a row or a check? Trace each addition in today's code (read cycles, new take cells, checks that now fire). (2026-10-29 r5 landwalk2: rev 1's D3 fix closed a LOCATE->NEXT read cycle) | opus |
+| D | a table, rule or selection | **simulate** | Run the proposed rule over the real corpus or data: does it pick what the design claims, and where does it mispick? Where the output is a verdict table over measured outcomes, drill it first-match on CONSTRUCTED outcomes, the design's own predicted outcome first, then adversarial ones (2026-10-31 bakeoff: the predicted tie read INCONCLUSIVE). Where the design ships its own drill script, implement the rule from the design TEXT before reading the script, then diff the two (bakeoff2: nine text/script divergences); and recompute every outcome the design QUOTES from its OWN formula: a number borrowed from an evidence study's different arithmetic is a finding (2026-11-02 spanpick: smp20's 8.6 % was R-33's doubled hits); and run two standing drills: ADD A NEVER-PICKED CANDIDATE (a normaliser over the candidate set, such as a ratio-to-best, must not flip the pick) and RE-SWEEP every quoted region boundary finer than the study's grid (a boundary on a grid point is unproven) (2026-11-03 spanpick4) | sonnet+ |
+| D | a claim of answer identity BY PROOF (a rewrite, an elision, a dropped record) | **soundness** | Build the base tree and APPLY the documented rule, as written, to the emitter's real output for crafted witnesses (and to every seam where two documents' rules compose): does any answer move? (2026-10-29 r3 vmtrail: produced every answer-level repro). When the design reads a RECORD of the program (an event stream, a listing), also enumerate every statement the emitter prints inside a matcher and check each is recorded or a declared no-effect form (r6 vmcons: 4 of 5 answer holes were unrecorded statements); and build one MIS-TYPED record per kind class (a conditional fail typed FAIL, a guarded write typed SET) and check the design's checks catch each (r8 vmcons2: a token-list signature passed a mis-typed fail); and list every post-render rewrite of the text and each check's domain, and ask whether each analysed operand prints (r9 vmcons3: a respell after rendering and non-printing operands broke rendered-from-the-record) | opus |
+| D | a RE-CHECK of a revised design | **fix-induced** | For each claimed fix: does it add a read, a hand, a row or a check? Trace each addition in today's code (read cycles, new take cells, checks that now fire). (2026-10-29 r5 landwalk2: rev 1's D3 fix closed a LOCATE->NEXT read cycle) When a fix adds or changes a field, list the SIBLING fields it leaves unstated and trace every reader of them (r7 landwalk3: a new LOCATE row stated no RECOVER; its readers dereferenced NULL). Quote the DEFINITION, and trace every reader, of any existing record a fix names as a fact's home (2026-11-01 r2 stream2: `Nfa.erased` gaining `\K`/`\G` flipped exact windows) | opus |
+| D | the LAST re-check before a build go | **readiness** | Per build unit: do its cites hold at the build tree, can its witness fail, is it separable, is it complete (every reader of what it changes listed)? A per-unit verdict, and the round's overall verdict "ready / ready with listed text fixes / not ready" (2026-11-03 r2 spanpick5: the most productive lens of the round) | opus |
 | D C | a table / slot / mechanism | **slot tracing** | Trace every slot to the table or mechanism the design names for it: is anything duplicated, narrowed or unreachable ("one table per slot")? Is it the third member of a family? | strong |
 | D C | rulings relied on | **ruling check** | For each ruling, does it agree with the design and the guide, and what are its CONSEQUENCES? Fold into slot tracing when that runs. | strong |
 | D | a measured quantity, check or data file | **measurement** | The docs/design/CLAUDE.md standing questions: the regime, the independent control, what moves when the data is regenerated. | sonnet+ |
@@ -94,6 +99,7 @@ measured twice). Subject column: D = design document, C = code diff.
 | D C | a caller-facing contract | **contract** | Does the code (or the design) do exactly what the spec says for every admitted input class; do names describe behaviour (D174, D80)? Code mode probes edges with the built compiler. | strong |
 | C | a performance claim / re-pin | **trade audit** | Every pin, floor or count moved: what speed, size or coverage did it give up, and who judged that trade? | sonnet+ |
 | C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? | sonnet+ |
+| D C | a planner / kit / back-end seam | **seam round trip** (manifesto principle 9) | Could what crosses this seam be written to text and read back by another process? Name every pointer, callback, shared state or target-language assumption that crosses. | strong |
 | C | plain C structure | **house rules** | coding.md + style.md: duplication (name the shared abstraction), altitude, tables used as if-chains, side effects in predicates. | sonnet |
 
 Always add the two standing questions to one lens (say which): **sibling of a
@@ -108,7 +114,7 @@ a contract, RECOMMEND one in the draft; the launcher decides.
 
 ## 5. Brief and launch the critics (coordinator)
 
-Write one COMMON brief file under `$PCREC_TMPDIR/scratch/crit-<topic>/` (scope
+When the subject's evidence includes a sweep with committed or scratch RAW data, copy it read-only into the round dir and name it in COMMON as the population (2026-11-02 spanpick: three lenses counted populations the report alone would not show). COMMON has critics read every ruling file (decisions.md, plan.md) via `git show <freeze>:path`, never the live tree (2026-11-03 r2: a ruling landed mid-round). Write one COMMON brief file under `$PCREC_TMPDIR/scratch/crit-<topic>/` (scope
 mandate, read-only rules, subject and paths, the guide files, design docs and
 spec sections the subject cites, the denylist, the output format), then one
 short per-lens prompt: title `CRITIC <lens> (<model>): <topic>`, "read COMMON
@@ -123,9 +129,17 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words.
 
 Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
-findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --deliver FILE NAME`
+findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --dir $PCREC_TMPDIR/scratch/crit-<topic> --deliver FILE NAME` (without `--dir` its pass record lands in the repo root, 2026-11-03 sp1a)
 prints DONE; the coordinator runs `scripts/lanewatch --dir $PCREC_TMPDIR/scratch/crit-<topic> NAME...`
 instead of waiting for replies (nested replies are often lost).
+
+Coordinator-only notes (process.md, planted checks, suspicions) live in a
+`.coord/` subdirectory of the round dir, and COMMON's denylist names `.coord/`
+(2026-10-31 pricing-split: a critic read the coordinator's planted-check note).
+Before briefing, check where every evidence script the critics will run writes,
+and redirect writes out of denied dirs and out of the main tree (set
+`PCREC_TMPDIR` to the critic's own dir; set `LANEWATCH_LOG` under `.coord/`)
+or forbid the mode (2026-10-31 bakeoff3).
 
 Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
 critic; a missed input goes to a fresh critic.
@@ -143,7 +157,7 @@ critic; a missed input goes to a fresh critic.
    quoting the cited lines, design claims by the simulation or grep they name.
    Give it a DELIVER block like a critic's (its file `verify.md`, one section per finding id, a closing
    `VERIFY COMPLETE` line; 2026-10-29 landwalk: without one the verifier improvised its own shape).
-   It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
+   A REFUTED verdict quotes the exact call it ran; the coordinator re-runs every REFUTED that rests on a crafted input before drafting (2026-11-03 sp1f: a verifier refuted with a malformed key). It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
 3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
@@ -157,7 +171,7 @@ critic; a missed input goes to a fresh critic.
 
 ## 7. Meta-monitor the round (coordinator)
 
-Keep `$PCREC_TMPDIR/scratch/crit-<topic>/process.md` AS YOU GO: per agent, launch
+Keep `$PCREC_TMPDIR/scratch/crit-<topic>/.coord/process.md` AS YOU GO: per agent, launch
 and end time, model, final state (file complete / resent / nudged / stalled);
 brief confusions; delivery failures; blinding leaks you noticed; per lens,
 findings raised / verified / severity / overlaps; time to draft. At the end

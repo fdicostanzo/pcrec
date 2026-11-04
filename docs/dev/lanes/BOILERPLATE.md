@@ -137,6 +137,22 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   slot; a failed stage is retried ALONE (`scripts/boxqueue retry KEY`); a
   corrective or forgotten check is one more job, never a second chain or a
   hand-written waiter. `scripts/boxqueue status` answers "why has X not run".
+  ONE STAGE PER JOB (Frank, 2026-10-30): a multi-stage validation (sections,
+  make test, test-axes, asan, mech) is queued as one job PER STAGE (`batch`,
+  or `add` jobs chained with `after`), never one script running them all, so
+  a short job from another session slips in at each stage boundary instead
+  of waiting hours behind a 4-hour chain (730-fsfix-check, one five-stage job, held the box for hours).
+  SOFT LIMIT ONE HOUR PER JOB, SHORTER RUNS FIRST (Frank, 2026-10-30): size
+  each job to about an hour or less (a long target is split into shards,
+  e.g. mech row ranges); a job capped over 3600 s says why in its header.
+  THE QUEUE NOW ORDERS BY RUN LENGTH ([QORDER], 2026-11-01): among the ready
+  jobs the one with the SHORTEST expected run starts first, across owners.
+  Declare it: `boxqueue: est SECONDS` in the dry run (else the cap is the
+  length), and in EVERY shard of a longer run `boxqueue: run-total SECONDS`
+  (the unsharded total), so shards do not each jump ahead on their own caps.
+  A prio of 100 or more only breaks ties; a prio under 100 is the explicit
+  go-first override (the manager's); a ready job passed over for 4 h goes
+  first. `boxqueue -h` has the table.
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
@@ -237,6 +253,7 @@ with no side effects; the plain call is the work, run under the box lock:
             [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
             echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
             echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+            echo "boxqueue: est 3000"       # optional ([QORDER]): the expected run, for the start order (the cap is the default)
             echo "boxqueue: size rows=$n"    # optional ([EXPECT-PREFLIGHT]): the cap scales past 5400 from earlier green runs' s/row
             echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
             echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (a sample of the line)"

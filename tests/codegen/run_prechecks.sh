@@ -86,10 +86,20 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # the deny re-aims the witnesses that became cover and moves nothing else.
 # No caller passes a --memfn= of its own (the CLI's last --memfn= wins).
 COVER_DENY=--memfn=no-window-search
+# [LANDWALK] stage 1 (lane p1tri, 2026-10-30), the same shape: a pattern the
+# `landmark-walk` LOCATE row takes runs no whole-window pre-check (the walk
+# answers presence, REQ_WHY "dominated", match_api.md §6.3) and its walk loop
+# keeps a `landmark_position` local of its own, so every compile below also
+# carries the walk's deny (tuning.md §2.54). A pattern the walk declines is
+# byte-identical under it (the deny is masked out of rx_info.flags; tests/
+# codegen/run_landmark_walk.sh holds that), so the deny re-aims the witnesses
+# the walk took and moves nothing else. The walk's own presence decline is
+# run_landmark_walk.sh's.
+WALK_DENY=-fno-landmark-walk
 # emit <outfile> <pattern> [extra args...]   (0 = compiled, non-0 = refused)
 emit() {
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --features all $COVER_DENY "$@" -o "$out" --pattern "$pat" >/dev/null 2>&1
+    pcrec_run "$PCREC" -p rx --features all $COVER_DENY $WALK_DENY "$@" -o "$out" --pattern "$pat" >/dev/null 2>&1
 }
 # the value of a string stamp, or the empty string when the macro is absent
 stamp() { sed -n "s/^#define RX_$2 \"\\(.*\\)\"\$/\\1/p" "$1" | head -1; }
@@ -1651,7 +1661,7 @@ ROWS
 #   (k) Q10: a COUNT-COLLAPSED prefilter declines.
 fact() {   # fact NAME PATTERN [args...]: the --emit-facts value of NAME
     local f="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" --features all $COVER_DENY "$@" --emit-facts --pattern "$pat" 2>/dev/null \
+    pcrec_run "$PCREC" --features all $COVER_DENY $WALK_DENY "$@" --emit-facts --pattern "$pat" 2>/dev/null \
         | awk -F'\t' -v f="$f" '$2 == f { print $7; exit }'
 }
 # handoff_block FILE: the gate and the block that moves the start, as emitted

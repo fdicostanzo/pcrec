@@ -21,8 +21,8 @@
 
 ## Compile-time stack (R-28)
 
-- The kit runs inside `pcrec_compile`, on a caller's thread of any size. Bar: NO kit function has a stack frame over 4 KB; working storage beyond that lives on the heap (or the caller's arena) and an allocation failure takes a loud refusal (`mf_form_hash` -1; `mf_set_terms` -1, which is not a decline). Held by `tests/memfn/run_link_checks.sh` (`make test-memfn-link`), which compiles every `memfn/src` file `-O2 -fstack-usage`.
-- PEAK, measured 2026-10-23 (gcc 15.2 x86_64 -O2, `tests/memfn/run_link_checks.sh`'s `-fstack-usage` recipe, re-read at the S3 code review's C1 build): the largest single frame is 3,600 B (`pcrec_mf_form_hash`; next `define_sel` 3,456 B, `wf_parts_prepare` 3,376 B, `wf_parts_check` 3,024 B, `pair_facts` 2,448 B; S3's `fd_find_form` (3,456 B, one `mf_site`) retired for `fd_find`, 560 B, below `define_sel` through `wf_prepare` 720 B and `wf_find_decide` 416 B; `kit_report_exact`'s 3,184 B retired with RPT). The deepest measured kit chain (`mf_form_hash` over both canonical forms, which renders a site through `mf_emit`, and `mf_set_terms` at K=4 on a painted stack) reaches 13.7 KB. Before R-28 the frames were 36,368 B (`mf_form_hash`) and 36,256 B (`mf_set_terms`) and the same chain reached 47.1 KB. Re-measure if a recursion or a fixed table is added (`dfs` recurses at most `MF_SET_K` deep at 1,376 B a level).
+- The kit runs inside `pcrec_compile`, on a caller's thread of any size. Bar: NO kit function has a stack frame over 4 KB; working storage beyond that lives on the heap (or the caller's arena) and an allocation failure takes a loud refusal (`mf_form_hash` -1). Held by `tests/memfn/run_link_checks.sh` (`make test-memfn-link`), which compiles every `memfn/src` file `-O2 -fstack-usage`.
+- PEAK, measured 2026-10-23 (gcc 15.2 x86_64 -O2, `tests/memfn/run_link_checks.sh`'s `-fstack-usage` recipe, re-read at the S3 code review's C1 build): the largest single frame is 3,600 B (`pcrec_mf_form_hash`; next `define_sel` 3,456 B, `wf_parts_prepare` 3,376 B, `wf_parts_check` 3,024 B; terms.c's `pair_facts`, 2,448 B, deleted with `mf_set_terms` at span_pick 1a; S3's `fd_find_form` (3,456 B, one `mf_site`) retired for `fd_find`, 560 B, below `define_sel` through `wf_prepare` 720 B and `wf_find_decide` 416 B; `kit_report_exact`'s 3,184 B retired with RPT). The deepest kit chain is UNMEASURED since span_pick 1a deleted `mf_set_terms`, the chain the old figure was taken on (history: NOTES.md). Re-measure if a recursion or a fixed table is added.
 
 ## The boundary with pcrec
 
@@ -44,7 +44,7 @@
 - docs/ — ledger pair (requests/responses), journal, session wake template (own CLAUDE.md).
 - PROVENANCE.md — file -> source -> licence -> derivations, one row per file under include/ and src/.
 - include/memfn.h — the one header pcrec includes.
-- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), mismatch renderer.
+- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), the standalone find-any kernel (`vany.c`, not routed), mismatch renderer.
 - tests/ — G2, the kit's own tests.
 - data/ — measured data: method cards (`data/cards/`), measurement sets (`data/sets/generate.py`). Own CLAUDE.md.
 

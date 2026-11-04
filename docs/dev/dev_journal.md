@@ -27398,3 +27398,84 @@ Frank put the project in normal mode (feature: subst then [UPROP-MORE]; optimiza
 - p910fin merged (P9 broad, P10 paced x14-20 on 3 patterns); Frank asked whether a fixed-checkpoint check is "adaptive". Fact-finder rc125 on two rc-125 compiles.
 - Kit: R-30 building (r30b, abi 94 planned), [REQ-PAST-LAST] filed from its observation. Bench: W1 gains an inline callout arm (stage-3 includes) + a primed jit-deep js-1m re-run; answered its include question.
 - Frank asked how callouts in a composed definition see groups: answered from match_api §11.1¶1b (definition-site view).
+
+## 2026-10-29 (session 128 cont., manager, 14:20-14:50) — VM rev 2, triages, RECID-A ruled
+
+- vmcons2 merged ffb9254cb (VM design rev 2: printing is recording; 91 statement sites, 46 unrecorded; byte-identical refactor lands first). Re-checks crit-vmcons2 + crit-landwalk3 launched.
+- tgctri: 690-trailgc red = fixed 1,815 B size cost + stale pins + ident canon (ffd1f578e, no answer moved); 690/691 re-queued, 690 running 14:19.
+- rc125: the census's two rc-125 rows = uutils `nice` rejecting non-UTF-8 argv (the fact-finder blamed gnutimeout; manager tested both); recorded docs/testing.md 4464528f9.
+- 695-lands3-check red on identity (A) alone (filed [RECID-A]); s3tri confirmed; MANAGER ACCEPTED 695 as green on its evidence and cancelled the retry; push waits on 696. [RECID-A] ruled re-base (9db59722c); lane recida launched.
+- Kit: queued 697-kit-r30b-heavy for 10-30 13:30 (R-30 early: case 7 1,279M -> 898M instr).
+
+## 2026-10-29 (session 128 cont., manager, 14:50-15:45) — r7/r8, P1 build go, P10 model + build
+
+- Review r7 landwalk3 (b834061a4): no answer finding; FIX-1 a NULL RECOVER on every admitted compile (+ self-check ruled); SOUND-2 verify inline. P1 STAGE-1 BUILD GO: lane p1build (opus, S1820-S1829).
+- Review r8 vmcons2 (26804bd46): 3 answer twins; rev 2's print-then-lex signature re-introduced a token list -> RULED the record is the source, text rendered from it (one renderer per kind). Lane vmcons3 (opus) writes rev 3. Critic skill: sibling-field clause (fix-induced) + mis-typed record per kind (soundness).
+- Frank on P10: questions (back-and-forth, % vs block, density, a cost model) -> cheap lane p10model merged: K = round(log2 r) derivable (6 email, 8 iso), worst x2 vs hindsight, find-all memory rejected (cross-call state), streaming makes the rule WRONG with unknown n (4 limits to state). Frank: "build it speculatively and measure... first off-by-default optimization" -> lane p10build (opus, S1830-S1839, public opt-in flag, flag-off byte-identical).
+- recida DONE, parked until 698-recida-gate green ((A) re-based to 7234c2e86, 10 exception paths deleted, 47 movers 0 diffs).
+
+## 2026-10-29 (session 128 cont., manager, 15:45-16:30) — push, trail merge, token pause
+
+- Reviews r9 vmcons3 (6299b2060): build go for (a); vmrec (opus) building the record-first refactor (told to wrap at the token pause).
+- p10build delivered (opt-in -fdeferred-req-check, bit 58, abi 96 prov., OFF recommended; jobs 702/705/706/707 owed 10-30). p1build delivered (abi 95 prov.; mask-email x68.8; +31% loss [LANDWALK-PRES] = landing condition; jobs 710-712 owed).
+- 696 hit its 1 h cap mid make-test; covered by 695 (tree already had INLINE-C, no code since): PUSHED main 29efe73cd.
+- Trail fix merged on main ebcc10aa1 (abi 93) + (B) re-pin 86356a960 + ledger bacc804fa, NOT pushed; its suite chain waits for the box after 698-recida-gate. 700/701-p4entry cancelled for it (retry 10-30).
+- Kit: 697 to Saturday 09:00; simdset + r30 notes ready to merge (with our emit_sweep.py arm-pin fix).
+- Frank: [SPAN-HELPERS] (survey; RX_STR; letter fold) and an [IFACE-PUSH] candidate (subject-size knowledge: typical + maximum).
+- Token budget ends ~16:30, renews 07:00: heartbeat deleted; queue + full suite (00:00, freezes main at start) run unattended.
+
+## 2026-10-31 (Sat) — session 128 continued: VM refactor landed, pricing placement turned into a measurement question
+
+Accomplished
+- VMREC step (a) LANDED: merge 3bc599c92 + follow-up cfb6c4a85 (D182 "the record is the source", guide §2.7, [VMREC] plan row, emit_sweep.py declared identity arms with 2 exempt rows), pushed a3cc4de82.
+  - Validation: 744 ident 68 arms x 548 movers=0; 745 make test green; mech 9/10 + 7/7.
+  - Lanes vmrecf (the 3 make-test reds: TT-9, C15 prefixes, the memfn manifest companion) and vmrecg (5 non-compiling plants).
+  - Manager re-aimed S511 and S684 (the vmrec re-aim had closed S684's walk-open literal). Worktree and branch pruned.
+- 758-fsfix-axes red = six STALE form-census floors. Kit S3 (0f425c2d0) moved 884 patterns onto `cover` on purpose; S3 left the floors OWED, and job 624's && chain skipped the census. Lane axtri re-pinned them (~85%, K35 convention) plus a new cover floor (lane/axtri e1d8894c7); 763-axtri-census queued.
+- qsplit: all six axes shards run (5 green; s4 red only on fsfix's pre-fix give-up keys). A partial combine (my error, below) showed no coverage complaint.
+- P1: 760/761 green (S1824, S811 detected; S1822 unreached as declared); 762 ident running. Timing re-runs 705r/712r valid.
+- land1031: five critic reviews 2026-10-31 r1-r5; 4 accepted process changes (critic skill + guide); K135 (`((a*)*b)?` default gives up, -fprefilter answers; D158); rows [QUEUE-CAPKILL] [LANECHECK-MARKER] [PRICE-BAKEOFF]; kit wake merge 5c60e118c; pushed.
+- Plan rows from Frank: [CALLOUT-GROUPS] (reserved groups + helper macros). Answered \G (anchored when it leads every alternative via the start-anchor fact; otherwise checked).
+
+Pricing placement (Frank's direction: price strategy as well as tactic)
+- My quick split proposal -> study (splitstudy rev 0: footprint split) -> review r1 -> rev 1 (back to the ruled shape a') -> partial re-check. Three looks reversed.
+- Frank: "every look reversed": DECIDE BY EVIDENCE. Bake-off design rev 0-2 (lane/bakeoff, docs/design/pricing_bakeoff.md + verdict TSV + drill + checker), three critic rounds.
+- Frank's rulings:
+  - trace backend-only;
+  - the IDEAL contract is the yardstick (strict handoff: pcrec facts -> arch model builder, with the kit part of arch for now); deviations must prove more;
+  - benefit = speed x REACH;
+  - worst case breaks mean ties;
+  - population = decision-relevant subset (which) vs all patterns (worth building);
+  - subject length is a measured sweep in bytes (the 10-29 subject-size ruling), never named classes.
+- Then Frank: "before we go crazy": first enumerate the choices and test 1/2/3-rule lists against measured ground truth, stopping if one reaches ~95% of ideal on held-out sites. AGREED. Rev 3 stopped before any commit. Pilot lane NOT yet launched (worktree rulepilot created).
+
+Issues / lessons
+- MY ERROR: ran qshard combine by hand outside the box lock; it ran the form census (load 11) and contaminated 705/712 timing; re-queued. Suite tools only via the queue or boxlock.
+- boxqueue's cap kill left a capped make test tree holding the lock for 64 min ([QUEUE-CAPKILL]).
+- lanecheck's .done marker blocked the next lane in a shared worktree ([LANECHECK-MARKER]).
+- Kit job 697 (13 stages, 4 h cap) jumped our 5-min codegen check; the kit now runs one stage per job. qorder is still owed.
+
+Next
+- 762 ident read ((B) differing=0), then 763 census, then merge lane/axtri.
+- The rulepilot lane brief (inventory from bakeoff2_evidence census_dry_sites.tsv, rule pieces, held-out search; timing in a night window from Mon 01:00).
+- Bench W1 tonight 20:00; 640 Sun 03:00; W2 Sunday; Frank holds the box Sun 18:00 - Mon 01:00; kit r30b chain Mon 01:00.
+
+## 2026-11-02 (evening, session 128) — 588 to span_pick; D186; conditional build go
+
+- **Job 588** (the kit's S3 per-call acceptance): BAR FAIL. smp20 `(?i)x/1234` 1.6-4.0x slower under `cover` (it scans {x,X} with two memchr streams; the old route memchr'd '/'). Triage found the throughput allowance mis-derived (a calls==1 cell's whole-pass delta used per call); the fixed reader (bar588) still FAILs and flips 11 more cells. Cause: two stop rules in one kit family (A-model vs A-mass).
+- **Frank's direction:** one shared set of "find the span" choices, scenarios composed from basic units (memory pcrec-kit-basic-units). **D186 (TRIAL):** every optimization is a UNIT change (no regime slower) or a CHOICE change (a declared row; no regime loses, or narrow, or an owner exception). Addendum 1 (A1 cards before priced departures; A2 smp20 resolved by DATA, a watched witness, no special rule; A6 stage 1 = the kit's first A-PLAN step). Addendum 2 (D186 over D144 item 3 for choice rows; C9 a SIMD build may pick its own position; one plan per site, a pure function, prices in the trace; pairwise comparison vs the incumbent; blind compiles use pcrec's per-encoding default only, the source table is pcrec's, the kit only receives rates; NONE path ranks by member count; the flat guard dropped on condition of random-like regime evidence).
+- **Kit studies merged:** kitunits survey (U1-U14), units_inventory.md, R-33 simulation (90% agree; disagreements from crude inner rules; a fact-only key is unsafe because the authored prior inverts x vs '/'), span_pick revs 1-4 with reviews 2026-11-02-r1, -r2 and 2026-11-03-r1.
+- **Filed:** [BENCH-WITHDATA] (a bench "pcrec with subject data" testee; bar: same-or-better on cells whose subject kind matches the bundle); bench inbox I-175; R-33. [MEASURE-SET] next = span_pick stage 2 as `zen4-grid3`; M2 dark-at-bare-compile intended.
+- **Frank AFK ~23:58:** "approve it when it's done. Make sure it looks good to you then have kit go through all dev steps to build it." The kit is told: GO only after my review of rev 5's ruled verdict; stages in order with full gates; stop on anything non-routine.
+- **Lessons:** I misread "poster child" as a hand row (Frank corrected via the kit). Several PL14 strips were needed on merged kit reviews: kit critic dirs cite plan line numbers (worth a kit-side lint).
+- **Next:** review rev 5's verdict; send the GO or changes. Tue: mover census + vrun prereg (I-176); Frank's window answers.
+
+## 2026-11-03 (session 128, night to 11:05) — span_pick stage 1: unit 1a landed, 1f in its gates
+
+- **Stale pin, explained and re-pinned (ef179b9f4):** the emit_sweep `no-fd-pres-pick` c-default differ floors 167/231 -> 142/224. Lanes pinbis + pinbis2 bisected it: R-30 moved nothing; P1's landmark walk (D184, dc6a40dfb) takes 35 byte / 18 utf8 corpus patterns the presence pick served (they stamp "landmark-walk", byte-identical with and without the deny). Intended. The floor reads the corpus alone; the kit's sweep adds three pattern files (154/244), both clear it. Report docs/dev/lanes/pinbis_report.md.
+- **Unit 1a MERGED (761521515, pushed):** dead code out (mf_set_terms/terms.c, finder rows R3a/R3b/R4), MF_CLASS_V 6, no pcrec abi; byte identity on 69 arms, zero movers; reach equality; make test; critic round 2026-11-03-r3 clean; ratchet 15 -> 11. Kit branch k1102 merged with it (journal conflict, both kept).
+- **Gap caught at landing:** 1a's "mech" gate was VALIDATE_ONLY (definitions only, 7 s); no sabotage row ran, though 34 rows plant in or read files 1a changed. Kit ran them post-merge (321/322): 32 DETECTED, 2 expected-UNREACHED (S917, S919, pre-existing and documented). From 1f on, each unit runs the mech rows touching its files before merge.
+- **Unit 1f** (retire R8/R1/R2 + deny options fd-r8/fd-ndisp, caller-visible): gates 340-345 green, 346 make test green; 347+ mech running at close. 344's first red was the kit's ident.sh passing the declared --list-axes delta only to the `base` arm (the `start` arm also runs the dumps stream); fixed, retried green.
+- **Frank asked** why the default prior ranks `x|X` rarer than `/`: default.rxt is a log-line prior (structural punctuation raised, letters by English frequency); both measured log bundles agree more strongly (weblog `/` 51,772 vs `x` 5,649 ppm). He challenged adding rates: per-position class mass as a sum is correct (exclusive outcomes), but `window_mass` sums ACROSS positions, a ranking score and not a probability. Proposed a stage-2 row (price windows by product x verify cost once cards exist); not filed yet, Frank to say.
+- **Lessons:** a job named "mech" is not a mech run: read what it ran. A job of several stages under one 1 h cap dies (314: serial make test). Queue PENDING-STUCK at a predecessor's end is a race, not a false alarm.
+- **Next:** 1f's mech verdict -> my merge review (spec hunks D80, registry floor 14 -> 12) -> 1g, 1b, 1c, 1d, 1e. Frank's open questions: SIMD bench window, full suite timing, manifesto wording, and the window-sum row.
