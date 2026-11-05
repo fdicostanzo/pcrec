@@ -307,3 +307,5 @@ Landing 2026-11-03 a33ca7b0a/c0f0d543b: span_pick stage 1 unit 1f (finder rows R
 
 RED: 2026-11-04 4bd002e20 test=green strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261103_4bd002e20 duration=44409s
 RED run 2026-11-04 4bd002e20: counters do not reset. Dispositions (all triaged, no product defect so far): axes = memfn_arm reach floors stale after P1's landmark walk (lane/axtri3, re-check 320-main-axtri3); san = two faults in tests/code/run_code_tests.sh under sanitizers, no sanitizer report (lane/santri3, re-check 321-main-santri3); mech = S512 floor stale after p1build plus six vmrec-stale build-failed plants re-aimed, no real miss (lane/mechtri3, re-check 322-main-mechtri3); recidentity = known [RECID-A] part (A) only (168/383/168/111, bref bucket 330 vs 413, unchanged since P1's landing); part (B) clean (lane recidtri3).
+
+2026-11-05 daf6f002b test=green strict=green axes=green san=green alloc=green lint=green mech=green recidentity=green log=build/full_suite/20261104_daf6f002b duration=44139s
