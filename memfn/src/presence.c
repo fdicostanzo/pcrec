@@ -135,20 +135,17 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     if (!s->npspan) return;
     const uint32_t *rate = kit_byte_rate(art);
     const mf_pred *run = NULL;
-    int best = -1;
-    uint32_t lo = 0;
+    kit_pick bs = KIT_PICK_NONE;
 
     /* P3: the set's pick */
     for (unsigned i = 0; i < s->npspan; i++) {
         const mf_pred *p = &s->pspans[i];
         if (p->term[0].kind == MF_T_RUN) { run = p; continue; }
         uint32_t m = kit_mass(rate, p->term[0].set, 1, KIT_MASS_SUM);
-        if (best < 0 || m < lo ||
-            (m == lo && kit_tie_takes(T_PRES_MEMBER, member_key(p), member_key(&s->pspans[best])))) {
-            best = (int)i;
-            lo = m;
-        }
+        if (kit_pick_takes(&bs, m, T_PRES_MEMBER, member_key(p)))
+            bs = (kit_pick){ (int)i, member_key(p), m };
     }
+    int best = bs.pos;
     out->set_pick = (int16_t)best;
     int q = best >= 0 ? one_byte(&s->pspans[best].term[0]) : -1;
 
@@ -164,17 +161,14 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
             int lo_s = scan - (MF_PRES_WINDOW - 1), hi_s = scan;
             if (lo_s < 0) lo_s = 0;
             if (hi_s > (int)n - MF_PRES_WINDOW) hi_s = (int)n - MF_PRES_WINDOW;
-            uint32_t wl = 0;
-            at = lo_s;
+            kit_pick bw = KIT_PICK_NONE;
             for (int w = lo_s; w <= hi_s; w++) {
                 uint8_t win[MF_PRES_WINDOW][32];
                 for (unsigned j = 0; j < MF_PRES_WINDOW; j++) kit_run_set(t, (unsigned)w + j, win[j]);
                 uint32_t wm = kit_mass(rate, win[0], MF_PRES_WINDOW, KIT_MASS_SUM);
-                if (w == lo_s || wm < wl || (wm == wl && kit_tie_takes(T_WINDOW, w, at))) {
-                    wl = wm;
-                    at = w;
-                }
+                if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };
             }
+            at = bw.pos;
         }
         out->run_scan = (int16_t)sc.pos;
         out->run_window = (int16_t)at;

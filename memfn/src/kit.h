@@ -362,16 +362,28 @@ kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src,
  * kit's PICK ties (window.c's stop/mass choosers, the run member
  * kit_run_member, presence's set pick and run window) read their row through
  * the answer below: whether a candidate keyed `c`, equal to the best keyed
- * `b` (met first in the walk), takes the tie. Keys are offsets, except
- * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). NOT
- * through it: window.c reads `wf_ties[T_CMODEL/T_MARGIN].to` directly (an
- * exchange sort and a rejection, not a pick); P2 and P4 compare with no TIE
- * row. */
+ * `b` (met first in the walk), takes the tie. Keys are offsets (the run
+ * member's are its run-relative indices, a translation of them), except
+ * T_PRES_MEMBER's: kit_tie_member_key (member order above the byte). Every
+ * pick asks it through kit_pick_takes below. NOT through it: window.c reads
+ * `wf_ties[T_CMODEL/T_MARGIN].to` directly (an exchange sort and a
+ * rejection, not a pick); P2 and P4 compare with no TIE row. */
 enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };
 #define kit_tie_takes      MF_NS(kit_tie_takes)
 #define kit_tie_member_key MF_NS(kit_tie_member_key)
 int kit_tie_takes(int r, int32_t c, int32_t b);
 int32_t kit_tie_member_key(unsigned member_order, int byte);
+
+/* THE PICK's ONE before-relation (window.c; span_pick.md unit 1d): the best
+ * candidate so far of an argmin over (value, TIE row), `pos` -1 for none, and
+ * whether a candidate of value `v` keyed `key` is taken over it (a lesser
+ * value, or an equal one row `r` sends its way). Every pick of the kit asks
+ * it: Table A's A-mass and A-model, the run member and its `after` walk,
+ * presence's set pick and run window. */
+typedef struct { int pos; int32_t key; unsigned long long v; } kit_pick;
+#define KIT_PICK_NONE ((kit_pick){ -1, 0, 0 })
+#define kit_pick_takes MF_NS(kit_pick_takes)
+int kit_pick_takes(const kit_pick *b, unsigned long long v, int r, int32_t key);
 
 /* The kit's own membership test of `byte` (an unsigned char expression)
  * against `set` (generic.c): the set's maximal byte ranges, OR-ed; "0" for
@@ -741,6 +753,7 @@ void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k);
 #define run_cmp_render  MF_NS(run_cmp_render)
 #define run_cmp_prepare MF_NS(run_cmp_prepare)
 #define run_cmp_sat     MF_NS(run_cmp_sat)
+#define run_pos_sat     MF_NS(run_pos_sat)
 #define run_cmp_render_trim MF_NS(run_cmp_render_trim)
 #define run_cmp_trim_none   MF_NS(run_cmp_trim_none)
 #define run_cmp_pad_over    MF_NS(run_cmp_pad_over)
@@ -796,8 +809,12 @@ int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned le
                          mf_sink *c);
 /* 1 iff every byte of RUN term `t` lies inside its mask (Q-G2-13's
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
- * compare `-Wtautological-compare` flags). */
+ * compare `-Wtautological-compare` flags). THE NORMAL FORM's one spelling:
+ * gate.c's CL_UNSAT class and kit_presence_check's refusal (D187) ask it,
+ * and generic.c's per-byte RUN chain asks its position form, run_pos_sat
+ * (position `j` holds its byte inside its mask; NULL mask: 1). */
 int run_cmp_sat(const mf_term *t);
+int run_pos_sat(const mf_term *t, unsigned j);
 
 /* ---- THE WINDOW FAMILY (window.c; D172 S2 commit 1) ----------------------
  *
@@ -964,11 +981,25 @@ int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */
 int kit_opt_denied(const char *opts, const char *name);
 
+/* One candidate of the window family's list as its trace record writes it
+ * (span_pick.md §The shape "The trace", stage 1: no price): its alternative
+ * and offset, its meet's member count and mass, whether it is core, a STOP
+ * candidate and a walked offset, and whether Table A chose it as its
+ * alternative's stop (`key`) and the plan as THE stop (`incumbent`). */
+typedef struct {
+    unsigned alt;
+    int32_t  off;
+    unsigned members;
+    uint32_t mass;
+    uint8_t  core, stop, walked, key, incumbent;
+} gate_cand;
+
 #ifdef MF_TRACE
 #define gate_trace_art MF_NS(gate_trace_art)
 #define gate_trace_sel MF_NS(gate_trace_sel)
 #define gate_trace_row MF_NS(gate_trace_row)
 #define gate_trace_end MF_NS(gate_trace_end)
+#define gate_trace_cand MF_NS(gate_trace_cand)
 /* Numbers a new art. */
 void gate_trace_art(mf_art *art);
 /* MFTRACE SEL: a selection begins. */
@@ -985,6 +1016,8 @@ void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verd
  * a chosen row's reach. */
 void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v,
                     const gate_contract *mc, const gate_verdict *mv);
+/* MFTRACE WCAND: one candidate of the window family's list (unit 1d). */
+void gate_trace_cand(const gate_tctx *t, const gate_cand *c);
 #else
 static inline void gate_trace_art(mf_art *art) { (void)art; }
 static inline void gate_trace_sel(const gate_tctx *t) { (void)t; }
@@ -999,6 +1032,10 @@ static inline void gate_trace_end(const gate_tctx *t, const gate_contract *c,
                                   const gate_verdict *mv)
 {
     (void)t; (void)c; (void)v; (void)mc; (void)mv;
+}
+static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
+{
+    (void)t; (void)c;
 }
 #endif
 

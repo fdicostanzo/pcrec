@@ -338,11 +338,16 @@ static void rc_pad_bytes(const rc_run *r, const int *proven, unsigned np, int w,
     }
 }
 
+int run_pos_sat(const mf_term *t, unsigned j)
+{
+    return !(t->mask && t->run[j] & ~t->mask[j] & 0xFF);
+}
+
 int run_cmp_sat(const mf_term *t)
 {
     if (t->kind != MF_T_RUN || !t->run || t->run_len == 0) return 0;
-    for (uint32_t j = 0; t->mask && j < t->run_len; j++)
-        if (t->run[j] & ~t->mask[j] & 0xFF) return 0;
+    for (uint32_t j = 0; j < t->run_len; j++)
+        if (!run_pos_sat(t, j)) return 0;
     return 1;
 }
 
