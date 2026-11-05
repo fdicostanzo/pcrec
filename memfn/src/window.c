@@ -28,8 +28,8 @@
  *        find-then-verify text, below), E-generic (the family's floor, below)
  *     B  how the stop is found and where the loop resumes: T-FIND, the
  *        finder's FIND slot (finder.c fd_rows[]: D-hors first, then D1 D1c
- *        D1w PAIR R7w; span_pick 1e joined Table D's D-hors to it, and its
- *        D-one, `c + 1`, is every other row's resume) and the offset-skip
+ *        D1w PAIR R7w; span_pick 1e joined Table D's D-hors to it, and
+ *        `c + 1` is every other row's resume) and the offset-skip
  *        function's BODY/PREFIX slots (ofsskip.c), reached through the row E
  *        hands the plan to (no parallel table, see E). On E-find's own text
  *        the FIND slot is asked about the stop itself (fd_find, the one
@@ -66,14 +66,9 @@
 
 #include "kit.h"
 
-/* ---- THE COST TABLE (plan_cost.def; window_site.md §3.3) ------------------ */
+/* ---- THE COST TABLE (plan_cost.def; window_site.md §3.3; the KIT_COST_ enum is kit.h's) ---- */
 
-enum {
-#define MF_COST(name, value, unit, provenance, box, basis) WC_##name = (value),
-#include "plan_cost.def"
-#undef MF_COST
-};
-#define COST(name) ((unsigned long long)WC_##name)
+#define COST(name) ((unsigned long long)KIT_COST_##name)
 #define PPM ((unsigned long long)MF_PPM_FULL)
 
 /* ---- THE TIE TABLE (window_site.md §2.1 [rev3.2 n6]) ---------------------- */
@@ -1841,7 +1836,8 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
     if (!m->has_stop || w->stop_ix < 0 || full(w->set[w->stop_ix])) return 0;
     const mf_site *s = d->s;
     wf_facts f = { s, m->alt };
-    fd_stop st = { w->set[w->stop_ix], w->off[w->stop_ix], 0, 0, 0, d->rate, &f, 1 };
+    fd_stop st = { .set = w->set[w->stop_ix], .off = w->off[w->stop_ix], .rate = d->rate,
+                   .wf = &f, .renders_pair = 1 };
     st.hw = (uint8_t)hors_window(d, &st.wlo, &st.whi);
     if (!fd_find(art, s, def, &st, quiet, &fx->pick, &fx->brow)) return 0;
     fx->wlo = st.wlo;
@@ -2307,9 +2303,9 @@ static void wf_close(const wf_rc *rc, kb *e, int want_value)
     else            kb_printf(e, "%s; })", rc->F);
 }
 
-/* The resume both loops share: D-one, the floor's C + 1 (every T-FIND row's
- * but D-hors's, span_pick 1e). */
-static void d_one_next(const wf_rc *rc, kb *b)
+/* The resume both loops share: C + 1, the floor's (every T-FIND row's
+ * but D-hors's, which resumes by its shift table). */
+static void resume_next(const wf_rc *rc, kb *b)
 {
     kb_printf(b, "%s++", rc->C);
 }
@@ -2325,7 +2321,7 @@ static int wf_floor_expr(wf_rc *rc, mf_sink *o, int want_value)
     wf_open(rc, &e, rc->used & PARAM_S, rc->used & PARAM_FL);
     wf_cand(rc, &e);
     kb_printf(&e, "for (; %s; ", cond.p);
-    d_one_next(rc, &e);
+    resume_next(rc, &e);
     kb_printf(&e, ") if %s { %s = 1; break; } ", t.p, rc->F);
     wf_close(rc, &e, want_value);
     return wf_put(rc->art, o, &e);
@@ -2433,7 +2429,7 @@ static int wf_floor_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_s
         any = 1;
     }
     kb_printf(&f, ")\n{\n    for (size_t %s = %s; %s; ", rc.C, rc.LO, cond.p);
-    d_one_next(&rc, &f);
+    resume_next(&rc, &f);
     kb_printf(&f, ")\n        if %s return %s;\n    return %s;\n}\n\n", t.p, rc.C, rc.MISS);
     r->fn = fn;
     r->params = rc.used;
@@ -2504,14 +2500,14 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  *   TEST   the floor's test less the stop where C-stop dropped it (B proved
  *          it): wf_test_to, a C-run stretch as ONE run compare (runcmp.c's
  *          rows).
- *   C++    D-one.
+ *   C++    the resume, C + 1 (resume_next).
  * Under D-HORS (T-FIND's first row; B-hors) B is replaced: BOUND first, then the window's last
  * position `hl` probed into `b`; a byte outside its tested set resumes at
  * C + sh[b] at once, and so does a candidate whose TEST fails (TEST less the
  * probed position, which the probe proved). sh[] is a file-scope table the
  * define writes.
  * Under B-FN (PAIR, where the plan IS the offset-skip function's predicate)
- * B, C and D-one are that function's (ofsskip.c: fn-pair's body, and its
+ * B, C and the resume are that function's (ofsskip.c: fn-pair's body, and its
  * PREFIX SIMD rows under -fmemfn-simd), defined at file scope as
  * `<prefix>_mf<handle>_ofsskip` (pcrec's FUNC suffix for that function, the
  * one D155's routing rule reads); the expression is its call, `n` read as
@@ -2660,10 +2656,10 @@ static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
     return 0;
 }
 
-/* D-one's loop head (every renderer row that finds the stop): its find,
+/* The loop head of every renderer row that finds the stop: its find,
  * then the bound; *skip the stop where C-stop dropped it from the test (B
  * proved it). */
-static int d_one_head(wf_rc *rc, kb *b, const char *bound, int *skip)
+static int find_head(wf_rc *rc, kb *b, const char *bound, int *skip)
 {
     if (wf_find_b(rc, b)) return -1;
     kb_printf(b, "if (!(%s)) break; ", bound);
@@ -2694,7 +2690,7 @@ static int d_hors_define(mf_art *art, const wf_rc *rc, mf_sink *out)
 }
 
 /* THE RENDERER ROWS' TEXT, in wf_brows' order: the loop's head (the find
- * and the bound, or D-hors's probe), its resume (D-one's `c + 1`, or
+ * and the bound, or D-hors's probe), its resume (the `c + 1`, or
  * D-hors's shift), and the row's file-scope text (or NULL). B-fn renders
  * the function instead (wf_find_fn, wf_find_define). Until span_pick 1e the
  * head, resume and file-scope text were Table D's rows' own. */
@@ -2702,14 +2698,14 @@ static const struct {
     int  (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
     void (*next)(const wf_rc *rc, kb *b);
     int  (*define)(mf_art *art, const wf_rc *rc, mf_sink *out);
-} wf_b_text[] = {
+} wf_b_render[] = {
     [B_FN]     = { NULL,        NULL,        NULL },
-    [B_PAIR]   = { d_one_head,  d_one_next,  NULL },
-    [B_MEMCHR] = { d_one_head,  d_one_next,  NULL },
-    [B_WALK]   = { d_one_head,  d_one_next,  NULL },
+    [B_PAIR]   = { find_head,  resume_next,  NULL },
+    [B_MEMCHR] = { find_head,  resume_next,  NULL },
+    [B_WALK]   = { find_head,  resume_next,  NULL },
     [B_HORS]   = { d_hors_head, d_hors_next, d_hors_define },
 };
-_Static_assert(sizeof wf_b_text / sizeof wf_b_text[0] == WF_NBROWS,
+_Static_assert(sizeof wf_b_render / sizeof wf_b_render[0] == WF_NBROWS,
                "every Table B renderer row has its text (B-fn's is the function)");
 _Static_assert(sizeof wf_b_find / sizeof wf_b_find[0] == WF_NBROWS,
                "every Table B renderer row has its find slot (NULL: B-fn, B-hors)");
@@ -2740,12 +2736,12 @@ static int wf_find_expr(wf_rc *rc, mf_sink *o, int want_value)
     wf_raise(rc, &b);
     kb_puts(&b, "for (;;) { ");
     int skip;
-    if (wf_b_text[w->bren].head(rc, &b, bound.p, &skip)) return -1;
+    if (wf_b_render[w->bren].head(rc, &b, bound.p, &skip)) return -1;
     kb_puts(&b, "if ");
     if (wf_test_to(rc, &b, o, skip, 0) || wf_put(art, o, &b)) return -1;
     kb_init(&b, art->a);
     kb_printf(&b, " { %s = 1; break; } ", rc->F);
-    wf_b_text[w->bren].next(rc, &b);
+    wf_b_render[w->bren].next(rc, &b);
     kb_puts(&b, "; } ");
     wf_close(rc, &b, 1);
     return wf_put(art, o, &b);
@@ -2765,7 +2761,7 @@ static int wf_find_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_si
         return run_cmp_prepare(art, &w->fsite->pred, out) ||
                ofs_fn_define_at(art, handle, w->fsite, h, &w->fsite->pred, rc.FN, out) ? -1 : 0;
     if (w->runs->nterm && run_cmp_prepare(art, w->runs, out)) return -1;
-    return wf_b_text[w->bren].define ? wf_b_text[w->bren].define(art, &rc, out) : 0;
+    return wf_b_render[w->bren].define ? wf_b_render[w->bren].define(art, &rc, out) : 0;
 }
 
 /* E-find's use: its search in the floor's statement frame (wf_frame). */
@@ -2821,6 +2817,13 @@ int wf_plan_reads_table(const struct wf_plan *w)
 const char *wf_plan_brow(const struct wf_plan *w)
 {
     return w->row == &wf_find_arm && w->bren < WF_NBROWS ? w->brow : NULL;
+}
+
+/* Table B's renderer row that renders E-find's find (B-fn, B-pair, B-memchr,
+ * B-walk, B-hors), NULL where the plan is not E-find's. */
+const char *wf_plan_bren(const struct wf_plan *w)
+{
+    return w->row == &wf_find_arm && w->bren < WF_NBROWS ? wf_brows[w->bren].row : NULL;
 }
 
 /* The family row that renders the plan: E-find's arm or the floor's. */

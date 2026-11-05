@@ -1,0 +1,37 @@
+# tests/memfn/renderer_rows.tsv — THE DECLARED RENDERER ROWS (span_pick 1e's
+# F4): the (method row, renderer row) pairs `MFTRACE FDROUTE ... row=ROW
+# ren=REN` may print. The text a FIND site gets is keyed by (frame row,
+# method row, renderer row); the method row is T-FIND's (finder.c `fd_rows[]`),
+# the renderer row is the asker's own (docs/trace_format.md "FDROUTE"):
+#   E-find    window.c Table B (`wf_brows`): B-fn, B-pair, B-memchr, B-walk, B-hors
+#   composer  compose.c `fd_renderers`: the arm that renders the pick
+# HAND-MAINTAINED, and written from the two renderer tables, not from the
+# trace. A row added to either table adds its pair(s) here in the same commit.
+#
+# Reader: tests/memfn/rows_check.py section R: (1) every FDROUTE pair any
+# traced compile of the run prints is a line here; (2) a line with a witness
+# is printed by its witness (a pcrec compile of `pattern` under `flags`,
+# after `-p rx --features all`); a line with no witness (`-`) prints
+# UNREACHED, never a pass.
+#
+# Columns (TAB-separated; `-` is empty):
+#   row      the T-FIND row (fd_rows[] id)
+#   ren      the renderer row (the trace's `ren=`)
+#   frame    `E-find` or `composer`
+#   flags    pcrec flags for the witness compile (space-separated)
+#   witness  the pattern text, or `-`
+# row	ren	frame	flags	witness
+D-hors	B-hors	E-find	-	..
+D1	B-memchr	E-find	-	#
+D1c	B-memchr	E-find	-	-
+D1w	B-walk	E-find	-	-
+R7w	B-walk	E-find	-	(*UCP)\d{4}
+PAIR	B-fn	E-find	-	(?:(?i:abs)|(?i:ab)S)
+PAIR	B-pair	E-find	-	(?:(?!a)z|w)
+D1	pf_memchr	composer	-	"([^"\\]+)"\s*:\s*
+D1	pf_memchr_bounded	composer	-	"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\.[01]" 5[0-9]{2}\b
+D1c	pf_memchr_back	composer	-	(?m)^item
+D1w	pf_walk	composer	-	(/\*(?:[^*/]|\*(?!/)|/(?!\*)|(?1))*\*/)
+D1w	pf_walk_bounded	composer	-	-
+R7w	pf_walk	composer	-	foo|bar\d
+R7w	pf_walk_bounded	composer	-	(?:(?<!\\)(?:"(?:\\.|[^\\"]+)+"|""|(?:'(?:\\.|[^\\']+)+')|''|(?:`(?:\\.|[^\\`]+)+`)|``))

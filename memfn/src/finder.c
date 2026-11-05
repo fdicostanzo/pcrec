@@ -250,10 +250,10 @@ static const fd_row fd_rows[] = {
        order, R9): the window family's skip, `window-skip` its deny, as at
        S3. Its facts are the STOP's own (a stated window, a common set), so
        the composer, which states no stop, never meets it, and every window
-       stop it does not take walks on to the rows below exactly as Table D's
-       D-one sent it to them. Its pick finds no stop: E-find's renderer
-       (window.c's B-hors) probes the window's last position and resumes by
-       the shift table; every other row's resume is D-one's, c + 1 */
+       stop it does not take walks on to the rows below. Its pick finds no
+       stop: E-find's renderer (window.c's B-hors) probes the window's last
+       position and resumes by the shift table; every other row's resume is
+       c + 1 */
     { "D-hors", FD_FIND, KN_P | KN_E, SF_HORS_WINDOW | SF_HORS_DENSE, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_HORS, FF_UNSTATED, { 0, 0, 0, 0 }, "window-skip", FB_UNMEASURED_DEFAULT, "S3",
@@ -525,11 +525,10 @@ typedef struct {
 /* Slot `slot`'s decision for the walk input `q`: kit_walk over the table,
  * first match. (The residual N step and the §2.5 pay rule went with the
  * dispatch rows R1 and R2: span_pick 1f.) */
-static void fd_decide(fd_x *q, int slot, const gate_tctx *tc, fd_decision *d)
+static void fd_decide(fd_x *q, int slot, const gate_in *in, const gate_tctx *tc, fd_decision *d)
 {
-    gate_in in = { q->site, NULL, NULL, &q->ff, NULL };
     gate_verdict why = { 0, 0 };
-    d->terminal = kit_walk(&fd_table, slot, &in, MF_PH_DEFINE, 0, q, tc, &why);
+    d->terminal = kit_walk(&fd_table, slot, in, MF_PH_DEFINE, 0, q, tc, &why);
     d->pick = d->terminal < FD_NROWS ? fd_pick_of(&fd_rows[d->terminal], q) : FF_UNSTATED;
 }
 
@@ -622,14 +621,6 @@ static int fd_scope(const mf_site *s)
  * define's is a SELECTION (phase define), traced and counted. No FIND row
  * reads a set key (§3.2), so a decision never sets `consulted` here. */
 
-/* plan_cost.def's HORS_MIN (D-hors's threshold; window.c reads the rest of
- * the table). */
-enum {
-#define MF_COST(name, value, unit, provenance, box, basis) FD_COST_##name = (value),
-#include "plan_cost.def"
-#undef MF_COST
-};
-
 /* D-hors's facts (window_site.md §2.5; Table D's predicate until 1e): the
  * stop states a window of two positions or more whose last offset is >= 0
  * (the probe reads inside the hoisted bound: the window's core is the
@@ -639,7 +630,7 @@ static void hors_facts(fd_x *q, const fd_stop *st)
 {
     if (!st->hw || st->whi - st->wlo < 1 || st->whi < 0) return;
     q->facts |= SF_HORS_WINDOW;
-    if (kit_mass(st->rate, st->set, 1, KIT_MASS_CAP) >= (unsigned long long)FD_COST_HORS_MIN)
+    if (kit_mass(st->rate, st->set, 1, KIT_MASS_CAP) >= (unsigned long long)KIT_COST_HORS_MIN)
         q->facts |= SF_HORS_DENSE;
 }
 
@@ -679,7 +670,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
     gate_in in = { s, def, NULL, &q.ff, st ? st->wf : NULL };
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
-    fd_decide(&q, FD_FIND, &tc, &d);
+    fd_decide(&q, FD_FIND, &in, &tc, &d);
     if (d.terminal >= FD_NROWS) return 0;
     *pick = d.pick;
     *row = fd_rows[d.terminal].id;
@@ -771,7 +762,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;
-        fd_decide(&q, FD_PRES, &tc, &d);
+        fd_decide(&q, FD_PRES, &in, &tc, &d);
         if (d.terminal >= FD_NROWS) {
             *why = "a presence span no routed PRES row decides";
             return -1;

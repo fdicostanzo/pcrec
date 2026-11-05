@@ -13,6 +13,16 @@
 
 #include "../include/memfn.h"
 
+/* ---- THE COST TABLE (plan_cost.def; window_site.md §3.3) ------------------ *
+ * One enum, KIT_COST_<name>, for every reader (window.c's plan model,
+ * finder.c's D-hors facts): a value is read by name, never by a second
+ * expansion of the table. */
+enum {
+#define MF_COST(name, value, unit, provenance, box, basis) KIT_COST_##name = (value),
+#include "plan_cost.def"
+#undef MF_COST
+};
+
 /* ---- kb: growable text over the caller's mf_arena ------------------------ */
 
 /* Text the kit builds before handing it to a sink. Storage comes from the
@@ -844,6 +854,7 @@ struct wf_plan;
 #define wf_find_arm     MF_NS(wf_find_arm)
 #define wf_plan_reads_table MF_NS(wf_plan_reads_table)
 #define wf_plan_brow    MF_NS(wf_plan_brow)
+#define wf_plan_bren    MF_NS(wf_plan_bren)
 
 /* 1 iff `x` (an mf_site, or an mf_pred: a pre-check part) states window
  * facts: alternatives, or a window floor (which wf_check refuses without
@@ -901,6 +912,10 @@ const struct arm *wf_plan_row(const struct wf_plan *plan);
 /* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
  * included since span_pick 1e), or NULL (the floor). */
 const char *wf_plan_brow(const struct wf_plan *plan);
+/* Table B's renderer row rendering E-find's find (B-fn .. B-hors), or NULL
+ * (the floor): the third member of the key (frame row, method row, renderer
+ * row) the text is keyed by; MF_TRACE's FDROUTE prints it. */
+const char *wf_plan_bren(const struct wf_plan *plan);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic")
  * and E-find's row (D172 S3: the family's own find-then-verify text). */

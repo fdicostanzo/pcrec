@@ -113,8 +113,9 @@ also writes its PATH ID (window_site.md §2.7):
   mf_wreply.path);
 - `arm`: the row that renders it (`wf-floor`, the family's floor, `window-search`,
   E-find, or the form id of today's row the plan was translated for);
-- `fd`: the finder row whose pick decided its find (a routed row, or the FIND
-  slot's row deciding E-find's stop), `-` for none.
+- `fd`: the finder row that decided its find (a routed row, or the FIND
+  slot's row deciding E-find's stop: `fd=D-hors` names the row that decided
+  E-find's skip, whose pick finds no stop), `-` for none.
 
 THE CANDIDATE LIST (span_pick unit 1d, `memfn/src/window.c` `cands`; the
 "every candidate, the incumbent" of span_pick.md's "The trace", stage 1: no
@@ -164,10 +165,22 @@ their own: every holding step applies, and the plan's shape is `WPATH`'s
 `path`.
 
 A define whose site's find a finder row decides writes `MFTRACE FDROUTE
-art=A site=H row=ROW arm=CT`: the routed row and its arm's contract row, or
-(D172 S3) the row deciding E-find's stop and `arm=E-find` (its pick is E-find's
-to render: B-fn, B-pair, B-memchr, B-walk, and since span_pick 1e B-hors, so
-D-hors writes `row=D-hors arm=E-find` where it wrote no FDROUTE before).
+art=A site=H row=ROW arm=CT ren=REN`: the routed row and its arm's contract row,
+or (D172 S3) the row deciding E-find's stop and `arm=E-find` (its pick is
+E-find's to render: B-fn, B-pair, B-memchr, B-walk, and since span_pick 1e
+B-hors, so D-hors writes `row=D-hors arm=E-find` where it wrote no FDROUTE
+before). `ren` is the RENDERER row, the third member of the key the text is
+keyed by (frame row, method row, renderer row): Table B's row for E-find
+(`B-fn`, `B-pair`, `B-memchr`, `B-walk`, `B-hors`), the composer's own arm for
+a routed row (compose.c `fd_renderers`; equal to `arm`). tests/memfn/
+renderer_rows.tsv declares the (row, ren) pairs; rows_check holds every pair
+the traces print to it.
+
+The composer's `table=fd` FIND walk also writes the D-hors ROW record
+(`verdict=PRED_FALSE gate=PASS`, or DENIED under `window-skip`), a row the
+composer can never answer: it states no stop, so D-hors's facts never hold for
+it. In the fd record "not applicable to this asker" and "asked, false" print
+the same line.
 
 THE TRACE SHADOW (D172 S2 commit 3, `MFTRACE WSHADOW`) RETIRED at S2 commit 6
 with the old path it compared against (window.c `wf_shadow`, `memfn/tests/

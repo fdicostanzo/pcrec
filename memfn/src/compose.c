@@ -1134,11 +1134,13 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
 #ifdef MF_TRACE
     /* the finder row deciding the site's find: the routed row, or (D172 S3)
        the FIND slot's row deciding E-find's stop (fd_find), whose pick
-       E-find renders */
+       E-find renders; `ren` is the renderer row that did (the composer's
+       fd_renderers arm, or Table B's row), the third member of the key the
+       text is keyed by */
     const char *frow = rid ? rid : wplan ? wf_plan_brow(wplan) : NULL;
     if (frow)
-        fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
-                art->trace_id, h, frow, row->ct->row);
+        fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s ren=%s\n",
+                art->trace_id, h, frow, row->ct->row, rid ? row->ct->row : wf_plan_bren(wplan));
     /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
        rendering it, the finder row deciding its find where one does) */
     if (wpath)
