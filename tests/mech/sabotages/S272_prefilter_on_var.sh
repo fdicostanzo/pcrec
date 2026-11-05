@@ -32,6 +32,7 @@ SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED with every tests/vars/ pattern fai
 # this row UNDETECTED for a reason unrelated to the line it plants.
 SAB_REACH='"$PCREC" --features vars -p rx -o "$REACH_TMP/o.c" --pattern "a\${v}b" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && echo REACH-VAR-PATTERN-HAS-NO-PREFILTER'
 SAB_REACH_EXPECT="REACH-VAR-PATTERN-HAS-NO-PREFILTER"
+SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] designed: prefilter built for a var pattern breaks the artifact (header names the compile error; its wording has drifted)
 SAB_COUNT=1
 # [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
 # The verdict ternary is gone: T2's `var` row (row 9, design §4.4) forces

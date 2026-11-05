@@ -78,7 +78,7 @@
 # firing, or something else caught the plant): UNDETECTED ***UNEXPECTED***,
 # counted and exit-1. Undeclared, the same compile failure stays ANOMALY.
 # THE ANOMALY CEILING: the run exits 1 when `anomalies` exceeds
-# MECH_ANOMALY_CEILING (default $ANOMALY_CEILING_PIN below), so an unmeasured
+# MECH_ANOMALY_CEILING (default $ANOMALY_CEILING_PIN below, 0), so an unmeasured
 # row cannot leave the matrix green.
 #
 # A row failing SAB_REACH/SAB_REACH_POP is **UNREACHED**: a THIRD verdict
@@ -3820,9 +3820,9 @@ if [ "$REACH_ONLY" = "1" ]; then
 fi
 
 # [MECH-NOCOMPILE] ceiling on the run's anomalies; 0 = every row measured.
-# S272's plant trips -Werror in the emitted code (kind A, not a designed catch),
-# so it is the one pinned anomaly until its plant is made warning-clean.
-ANOMALY_CEILING_PIN=1
+# Every designed compile-time catch is declared (COMPILE-CATCH), so the
+# expected count is 0.
+ANOMALY_CEILING_PIN=0
 ANOMALY_CEILING="${MECH_ANOMALY_CEILING:-$ANOMALY_CEILING_PIN}"
 
 echo
