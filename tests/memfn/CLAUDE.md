@@ -40,6 +40,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **reach_equal.py** — REACH EQUALITY between two MF_TRACE pcrec builds over the corpus and patterns files, per pattern and arm, the gone-row set DERIVED from the traces and required to equal `--gone`, failing-pattern sets compared; `--limit` is a smoke run (trailer LIMITED, exit 3, never a verdict) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
+- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (its header: replies on a fresh art vs between interleaved defines; the sticky-err fence); run_finder.sh's `purity` part floors it, plants an `nsites`-keyed row (RED) and checks the plant is reached.
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3) and holds each card row's shape.
