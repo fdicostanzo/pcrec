@@ -3217,3 +3217,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - Kit branch merged with 20fb73159.
   - 1e started: lane sp1e (opus) on lane/memfn-sp1e from 20fb73159. Phase-2 tables: T-FRAME, T-FIND as one walk with the Horspool row first, the renderer row, the wfD->fd row map; R20 -1.
   - It is the last stage-1 unit; light checks only, and none heavy in Frank's 20:00-01:00 hold.
+- 11-05 15:55: sp1e delivered lane/memfn-sp1e @ accc55eeb (+ deliver block 9de5b5638).
+  - T-FIND is one walk: fd_route merged into fd_find, the asker fact SF_ASKER_PAIR. Table D is gone (D-hors is fd's first FIND row). The renderer rows are declared (fd_renderers). Row map tests/memfn/row_map.tsv, with reach_equal --map.
+  - Spot check 1021/1021 SAME. MF_SITE_ABI 23. MF_CLASS_V 7 -> 8: D-hors joins ahead of the PRES rows, as the design allows.
+  - R20 3 -> 2 by the written recipe; the stage-1 total goes 4 -> 3.
+  - G2 70.36M/0 and test-codegen rc 0.
+  - Gates 420-429 prepared, not queued.
+  - Critic round crit-memfn-sp1e launched (light probes; Frank's hold 20:00-01:00).
