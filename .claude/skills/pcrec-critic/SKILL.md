@@ -72,7 +72,7 @@ message when the draft is ready.
    beyond the subject lines, job logs, other worktrees, the box queue, plus the
    launcher's list. Put it in every brief. To deny a plan.md row, locate it by `grep -n '^- \[TAG\]'` only; never print its
    neighbours (a `sed -n` around the tag line leaked the denied rulings, 2026-10-26 inline-c). State denied files as PATHS EXCLUDED
-   from EVERY git diff and grep in COMMON (`':!memfn/docs/journal.md'`), not only in one
+   from EVERY git diff and grep in COMMON (for PLAIN grep, `--exclude=` per denied file: plain `grep -r` ignores git pathspecs; r2 sp1c) (`':!memfn/docs/journal.md'`), not only in one
    example command (r5 sp1g: a per-directory diff showed a denied journal hunk).
 4. Profile: what does the subject touch? Several can apply:
    - design: a new mechanism or table; a measured quantity, check or data file;
@@ -104,7 +104,7 @@ measured twice). Subject column: D = design document, C = code diff.
 | C | emitted C | **emitted vs replaced** | Generate C and asm of the new path AND the path it replaces, and diff every PRE-EXISTING entry BASE vs SUBJECT: what does the new code do worse or differently? For a deletion of fields no kit `.c` reads (grep), cap identity probes at a few hundred and spend the budget on the check lens's plants (r5 sp1g). | strong |
 | D C | a caller-facing contract | **contract** | Does the code (or the design) do exactly what the spec says for every admitted input class; do names describe behaviour (D174, D80)? Code mode probes edges with the built compiler. | strong |
 | C | a performance claim / re-pin | **trade audit** | Every pin, floor or count moved: what speed, size or coverage did it give up, and who judged that trade? | sonnet+ |
-| C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? For an INVARIANCE check ("the kit never reads X"), plant the reader where the containing object is CONSUMED, not only where the design's plant sits, and demand a reach control: the varied render differs from the absent-object render on at least one site (2026-11-03 r5 sp1g). Code mode: when the subject deletes or respells kit or src text, this lens runs `python3 -I scripts/m6read_check_sab_anchors.py` against the review tree (a plant may quote a body, not a name; 2026-11-04 r1 sp1b). | sonnet+ |
+| C | checks / pins / sabotage / flags | **check adequacy** | Per new or changed check: what input makes it fail, who chose it, does a witness reach the site, is the population counted (learnings §3)? For an INVARIANCE check ("the kit never reads X"), plant the reader where the containing object is CONSUMED, not only where the design's plant sits, and demand a reach control: the varied render differs from the absent-object render on at least one site (2026-11-03 r5 sp1g). Code mode: when the subject deletes or respells kit or src text, this lens runs `python3 -I scripts/m6read_check_sab_anchors.py` against the review tree (a plant may quote a body, not a name; 2026-11-04 r1 sp1b). Classify every plant compare as SAME, SILENT-MOVE (rc 0, bytes differ) or LOUD (rc != 0), deleting old outputs before each compare: a LOUD plant is caught by every corpus compile (r2 sp1c). | sonnet+ |
 | D C | a planner / kit / back-end seam | **seam round trip** (manifesto principle 9) | Could what crosses this seam be written to text and read back by another process? Name every pointer, callback, shared state or target-language assumption that crosses. | strong |
 | C | plain C structure | **house rules** | coding.md + style.md: duplication (name the shared abstraction), altitude, tables used as if-chains, side effects in predicates. | sonnet |
 
@@ -163,7 +163,7 @@ critic; a missed input goes to a fresh critic.
    quoting the cited lines, design claims by the simulation or grep they name.
    Give it a DELIVER block like a critic's (its file `verify.md`, one section per finding id, a closing
    `VERIFY COMPLETE` line; 2026-10-29 landwalk: without one the verifier improvised its own shape).
-   A REFUTED verdict quotes the exact call it ran; the coordinator re-runs every REFUTED that rests on a crafted input before drafting (2026-11-03 sp1f: a verifier refuted with a malformed key). It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
+   Per plant claim the verifier records the plant compiler's exit code beside the byte verdict (r2 sp1c). A REFUTED verdict quotes the exact call it ran; the coordinator re-runs every REFUTED that rests on a crafted input before drafting (2026-11-03 sp1f: a verifier refuted with a malformed key). It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
 3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,
@@ -200,7 +200,9 @@ proposed process change. Then END.
 
 1. Read the draft and `process.md`; rule each disposition (overrule with a
    reason); commit the review as `docs/dev/reviews/YYYY-MM-DD-rN-<topic>.md`
-   (+ sibling dir of critic texts), indexed in `docs/dev/reviews/CLAUDE.md`.
+   (+ sibling dir of critic texts), indexed in `docs/dev/reviews/CLAUDE.md`. Before that commit, `grep -rnE 'plan\.md:[0-9]' <review>.md <review dir>` must find nothing:
+   plan_lint PL14 rejects line-numbered plan.md cites (they rot), and one blocked main's push of 2026-11-04 r1;
+   cite a row by its tag instead.
 2. FIX-NOW items go to fix lanes on the subject branch (fresh agents, the
    review as brief source); the round closes when every finding has a
    disposition and every FIX-NOW is landed or ruled.

@@ -162,3 +162,7 @@ Round 2026-11-03 r5, memfn-sp1g code (`docs/dev/reviews/2026-11-03-r5-memfn-sp1g
 Round 2026-11-04 r1, memfn-sp1b code (`docs/dev/reviews/2026-11-04-r1-memfn-sp1b.md`), four lenses + verifier; lessons ruled 2026-11-04.
 1. **A code round that moves or deletes kit or src text runs the anchor checker once** (`python3 -I scripts/m6read_check_sab_anchors.py`, read-only, seconds) in the check lens. A plant can quote a function's BODY rather than its name (S1094), so a grep of the deleted names misses it.
 2. **The COMMON brief of a rate-sensitive subject names how to reach each rate regime:** default (the prior), NONE (`-e utf8`), all-tie (`--analysis uniform`), and a real bundle (`-I DIR --analysis NAME`, with DIR/NAME.rxt). One critic spent 220 compiles on a misread bundle lookup.
+
+Round 2026-11-04 r2, memfn-sp1c code (`docs/dev/reviews/2026-11-04-r2-memfn-sp1c.md`), coordinator round + verifier; lessons ruled 2026-11-04.
+1. **A "MOVED" from a plant compare checks the plant's exit code first, and deletes old outputs before each compare.** Classify every compare as SAME, SILENT-MOVE (rc 0, bytes differ) or LOUD (rc != 0). A LOUD plant is caught by every corpus compile and is not a test gap; two compare scripts reported failed compiles as silent moves.
+2. **Plain `grep -r` ignores git pathspecs:** a denied file inside a directory a critic greps recursively leaks. COMMON gives `--exclude=` per denied file for plain grep, or `git grep` with the pathspecs.
