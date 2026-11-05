@@ -3212,3 +3212,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fixed at sp1dfix 0044a0ee7 (LC_ALL=C, plus an OWN-TIER row). 416 retried; 417-419 run after it.
   - Slip: my bash watcher never fired on the RED; the queue monitor's line did. Replaced it with a python watcher keyed on per-job END lines.
   - Lesson for lane briefs: a new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (listed in san_scripts or san_excluded). Run `make test-codegen` before delivering any new test script.
+- 11-05 15:20: 1d LANDED and pushed: main 20fb73159 (sp1d merge 39e7b20c5, k1102 merge 2d7f4bd8c). R21 restated (9f985c9bf); the stage-1 kit-row total is 4.
+  - Plan rows filed by main: [SP1D-M-INPUTS], [SP1D-ARGMIN], [SP1D-SETLEADS], [SP1D-KITSPLIT-SEAMS], [SP1D-AMODEL-CANDS].
+  - Kit branch merged with 20fb73159.
+  - 1e started: lane sp1e (opus) on lane/memfn-sp1e from 20fb73159. Phase-2 tables: T-FRAME, T-FIND as one walk with the Horspool row first, the renderer row, the wfD->fd row map; R20 -1.
+  - It is the last stage-1 unit; light checks only, and none heavy in Frank's 20:00-01:00 hold.
