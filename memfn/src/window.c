@@ -66,7 +66,7 @@
 
 #include "kit.h"
 
-/* ---- THE COST TABLE (plan_cost.def; window_site.md §3.3; the KIT_COST_ enum is kit.h's) ---- */
+/* ---- THE COST TABLE (plan_cost.def, window_site.md §3.3; kit.h's KIT_COST_ enum) ---- */
 
 #define COST(name) ((unsigned long long)KIT_COST_##name)
 #define PPM ((unsigned long long)MF_PPM_FULL)
@@ -2501,9 +2501,9 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  *          it): wf_test_to, a C-run stretch as ONE run compare (runcmp.c's
  *          rows).
  *   C++    the resume, C + 1 (resume_next).
- * Under D-HORS (T-FIND's first row; B-hors) B is replaced: BOUND first, then the window's last
- * position `hl` probed into `b`; a byte outside its tested set resumes at
- * C + sh[b] at once, and so does a candidate whose TEST fails (TEST less the
+ * Under D-HORS (T-FIND's first row; B-hors) B is replaced: BOUND first, then
+ * the window's last position `hl` probed into `b`; a byte outside its tested
+ * set resumes at C + sh[b] at once, and so does a candidate whose TEST fails (TEST less the
  * probed position, which the probe proved). sh[] is a file-scope table the
  * define writes.
  * Under B-FN (PAIR, where the plan IS the offset-skip function's predicate)

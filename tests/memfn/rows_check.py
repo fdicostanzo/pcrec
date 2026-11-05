@@ -22,7 +22,9 @@ subject):
      docs/spec/tuning.md §2.38's row table.
   B. THE REASONS. Every row's reach is from the closed set (pcrec,
      total-fallback, pending-site:<trigger>, contract-reach:<G2 family>,
-     the family read from memfn/tests/run_g2.sh's FAM_FLOORS); a `pcrec`
+     the family read from memfn/tests/run_g2.sh's FAM_FLOORS; `pcrec:trace-only`
+     is `pcrec` for a row whose text equals its fallback's, so only the trace
+     observes it, span_pick 1e review F12); a `pcrec`
      row's witness is a pcrec compile and every other row's a fixture.
      Whether a `pcrec` row IS reached, and a closed-reason row is NOT, over
      the whole corpus is the census's (n2_report.py --floors): this check
@@ -120,7 +122,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import row_map   # the ONE parser of row_map.tsv (reach_equal.py reads it too)
 
-REASONS = ("pcrec", "total-fallback", "pending-site:", "contract-reach:")
+REASONS = ("pcrec", "pcrec:trace-only", "total-fallback", "pending-site:", "contract-reach:")
+PCREC_REASONS = ("pcrec", "pcrec:trace-only")    # a pcrec compile is the witness and a census floor holds the row
 ASK_MARK = " phase=ask"     # a signature carrying it: the row is decided at the ask
 passed = failed = 0
 unreached = []
@@ -415,7 +418,7 @@ def judge_plants(root):
         bad("rows.tsv names no row decided at the ask (no ` phase=ask` signature): "
             "the ask judge has no population")
         return
-    pc = [(c[0], c[1]) for c in mrows if c[2] == "pcrec"]
+    pc = [(c[0], c[1]) for c in mrows if c[2] in PCREC_REASONS]
     meta = {"limit": 0, "explicit patterns": 0, "arms run": 1, "arms in table": 1}
 
     def agg(asked_of, rec_of, chosen_ask=0):
@@ -569,7 +572,7 @@ def main():
         fams = []
     for c in rows:
         t, rw, why, wk = c[0], c[1], c[2], c[3]
-        if why == "pcrec" or why == "total-fallback":
+        if why in PCREC_REASONS or why == "total-fallback":
             good = True
         elif why.startswith("pending-site:"):
             good = len(why) > len("pending-site:")
@@ -578,10 +581,10 @@ def main():
         else:
             good = False
         if not good:
-            bad("%s/%s: reach %r is not in the closed set (pcrec, total-fallback, "
+            bad("%s/%s: reach %r is not in the closed set (pcrec, pcrec:trace-only, total-fallback, "
                 "pending-site:<trigger>, contract-reach:<G2 family %s>)" % (t, rw, why, ",".join(fams)))
             continue
-        want = "pattern" if why == "pcrec" else "fixture"
+        want = "pattern" if why in PCREC_REASONS else "fixture"
         if t == "fd" and wk == "-" and why.startswith("pending-site:"):
             unreached.append("fd/%s: no B1 site can reach it (its witness arrives with %s)"
                              % (rw, why[len("pending-site:"):]))
@@ -804,7 +807,7 @@ def main():
         key, pf, gf = (c[0], c[1]), c[2], c[3]
         if key not in why:
             continue
-        good_p = (pf == "-") if why[key] != "pcrec" else (pf == "PLACEHOLDER" or (pf.isdigit() and int(pf) > 0))
+        good_p = (pf == "-") if why[key] not in PCREC_REASONS else (pf == "PLACEHOLDER" or (pf.isdigit() and int(pf) > 0))
         good_g = gf == "PLACEHOLDER" or (gf.isdigit() and int(gf) > 0)
         if not (good_p and good_g):
             bad("row_floors.tsv %s/%s: pcrec %r, g2 %r (pcrec: a positive integer or PLACEHOLDER, "

@@ -44,7 +44,13 @@ naming it, phase neither use nor shadow) and, wherever BASE printed the
 target table's REACH lines, added to BASE's map under the target's key
 (`asked` 0). A dissolved row's BASE selections are printed per arm. A map
 line whose target never prints at HEAD, or a from_table that prints any
-record at HEAD, is red.
+record at HEAD, is red. The map is held to BASE's own trace BOTH WAYS (it is
+parsed by tests/memfn/row_map.py, which rows_check.py shares): a from-row with
+no BASE selection over the population is red (an invented line, or a sample
+too small to see it: K35); a table with records at BASE and none at HEAD that
+no map line (or --gone row) names is red, as is a map from-table with no BASE
+record; and a row of such a table that BASE selected and the map does not name
+is red (a deleted line).
 A --limit or --no-corpus (the patterns files alone) run is a SMOKE run: it skips the population floor, so its last
 line is `reach_equal: LIMITED rc=N ...` and it exits 0 never (3 when clean,
 1 when not): it cannot be read as the verdict.
@@ -58,24 +64,19 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import row_map   # the ONE parser of row_map.tsv (rows_check.py reads it too)
+
 POP_FLOOR = 1000
 DEFAULT_ARMS = ["", "--engine=vm", "-fmemfn-simd", "-e utf8"]
 LINE = re.compile(r"^MFTRACE REACH table=(\S+) row=(\S+) (.*)$")
 END = re.compile(r"^MFTRACE END table=(\S+) .*\bphase=(\S+) chosen=(\S+) ")
+TABLE = re.compile(r"^MFTRACE (?!REACH)\S+ .*?\btable=(\S+)")
 
-
-def read_map(path):
-    """[(from_table, from_row, to_table or None, to_row or None)] from a row map."""
-    out = []
-    with open(path, encoding="utf-8") as f:
-        for ln in f:
-            if not ln.strip() or ln.startswith("#"):
-                continue
-            c = ln.rstrip("\n").split("\t")
-            if len(c) < 4:
-                raise SystemExit("reach_equal: %s: a map line needs 4 columns: %r" % (path, ln))
-            out.append((c[0], c[1], None if c[2] == "-" else c[2], None if c[3] == "-" else c[3]))
-    return out
+# One compile's trace. counts: the REACH lines summed per key; tables: every table
+# a non-REACH record names; ends: (table, row) -> the selections the kit counts
+# (a non-quiet END, phase neither use nor shadow), for every table.
+Reach = collections.namedtuple("Reach", "counts dropped why tables ends")
 
 
 def load_emit_sweep(tree):
@@ -84,51 +85,53 @@ def load_emit_sweep(tree):
     return emit_sweep
 
 
-def reach_of(binary, pat, arm, timeout, rmap=(), base=False):
+def reach_of(binary, pat, arm, timeout):
     argv = [binary, "-p", "rx", "--features", "all"] + arm.split() + ["-o", "-", "--pattern", pat]
     try:
         r = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=timeout)
     except subprocess.TimeoutExpired:
-        return None, 0, "timeout"
-    out = collections.Counter()
+        return Reach(None, 0, "timeout", set(), collections.Counter())
+    counts = collections.Counter()
+    ends = collections.Counter()
+    tables = set()
     dropped = 0
-    ends = collections.Counter()       # (table, row) mapped: BASE's END selections
-    fromt = {m[0] for m in rmap}
     for ln in r.stderr.decode("utf-8", "replace").splitlines():
-        if rmap and ln.startswith("MFTRACE ") and not ln.startswith("MFTRACE REACH"):
-            t = ln.split(" table=", 1)
-            if len(t) == 2 and t[1].split(" ", 1)[0] in fromt:
-                if not base:
-                    out[("?map", t[1].split(" ", 1)[0], "head-record")] += 1
-                else:
-                    e = END.match(ln)
-                    if e and e.group(2) not in ("use", "shadow"):
-                        ends[(e.group(1), e.group(3))] += 1
-            continue
         if ln.startswith("MFTRACE REACH_DROPPED n="):
             dropped += int(ln.split("=", 1)[1])
             continue
         m = LINE.match(ln)
         if not m:
+            t = TABLE.match(ln)
+            if t:
+                tables.add(t.group(1))
+                e = END.match(ln)
+                if e and e.group(2) not in ("use", "shadow") and e.group(3) != "-":
+                    ends[(e.group(1), e.group(3))] += 1
             continue
         table, row, rest = m.groups()
         kv = dict(t.split("=", 1) for t in rest.split())
         if "field" in kv:
-            out[(table, row, "field=%s class=%s" % (kv["field"], kv["class"]))] += int(kv["n"])
+            counts[(table, row, "field=%s class=%s" % (kv["field"], kv["class"]))] += int(kv["n"])
         else:
-            out[(table, row, "chosen")] += int(kv["chosen"])
-            out[(table, row, "asked")] += int(kv["asked"])
-    if base:
-        tables = {k[0] for k in out}
-        for ft, fr, tt, tr in rmap:
-            n = ends[(ft, fr)]
-            if tt is None:
-                if n:
-                    out[("?dissolved", "%s:%s" % (ft, fr), "chosen")] += n
-            elif tt in tables:
-                out[(tt, tr, "chosen")] += n
-                out[(tt, tr, "asked")] += 0
-    return out, dropped, "rc%d" % r.returncode if r.returncode else ""
+            counts[(table, row, "chosen")] += int(kv["chosen"])
+            counts[(table, row, "asked")] += int(kv["asked"])
+    return Reach(counts, dropped, "rc%d" % r.returncode if r.returncode else "", tables, ends)
+
+
+def through_map(rc, rmap, dissolved):
+    """BASE's counts with the declared moves applied: a moved row's END selections
+    under its target's key (where BASE printed the target table's REACH lines), a
+    dissolved row's added to `dissolved` (printed, never compared)."""
+    out = collections.Counter(rc.counts)
+    reach_tables = {k[0] for k in out}
+    for ft, fr, tt, tr, _unit in rmap:
+        n = rc.ends[(ft, fr)]
+        if tt == "-":
+            dissolved["%s:%s" % (ft, fr)] += n
+        elif tt in reach_tables:
+            out[(tt, tr, "chosen")] += n
+            out[(tt, tr, "asked")] += 0
+    return out
 
 
 def main():
@@ -156,10 +159,16 @@ def main():
     smoke = bool(a.limit or a.no_corpus)
     arms = a.arms.split(";")
     gone = {tuple(g.split(":", 1)) for g in a.gone.split(",") if g}
-    rmap = read_map(a.map) if a.map else []
+    try:
+        rmap = row_map.read_map(a.map) if a.map else []
+    except row_map.MapError as e:
+        raise SystemExit("reach_equal: " + str(e))
     problems = []
     dissolved = {arm: collections.Counter() for arm in arms}
     mapped = collections.Counter()     # (side, to_table, to_row): chosen summed
+    tables = {"base": set(), "head": set()}                   # tables any non-REACH record names
+    base_ends = collections.Counter()  # (table, row) -> BASE selections over the whole population
+    from_tables = {m[0] for m in rmap}
     if len(pats) < POP_FLOOR and not smoke:
         problems.append("population %d distinct patterns under POP_FLOOR %d" % (len(pats), POP_FLOOR))
     print("population: %d distinct patterns x %d arms%s" % (len(pats), len(arms), " (LIMITED smoke run)" if smoke else ""))
@@ -174,27 +183,27 @@ def main():
     tasks = [(s, b, arm, p) for arm in arms for p in pats
              for s, b in (("base", a.ref_bin), ("head", a.bin))]
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout,
-                          rmap, s == "base"): (s, arm, p)
+        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout): (s, arm, p)
                 for s, b, arm, p in tasks}
         for f in concurrent.futures.as_completed(futs):
             s, arm, p = futs[f]
-            c, d, why = f.result()
+            rc = f.result()
+            c, d, why = rc.counts, rc.dropped, rc.why
             dropped[s] += d
             if why:
                 fails[s][arm][p] = why
             if c is None:
                 continue
-            for ft, fr, tt, tr in rmap:
-                if tt is not None:
+            tables[s] |= rc.tables
+            if s == "base":
+                base_ends.update(rc.ends)
+                c = through_map(rc, rmap, dissolved[arm])
+            elif rc.tables & from_tables:
+                problems.append("arm %r pattern %r: HEAD prints a record of the mapped-away table %s"
+                                % (arm, p[:60], sorted(rc.tables & from_tables)))
+            for ft, fr, tt, tr, _unit in rmap:
+                if tt != "-":
                     mapped[(s, tt, tr)] += c.get((tt, tr, "chosen"), 0)
-            for k in [k for k in c if k[0] in ("?map", "?dissolved")]:
-                if k[0] == "?map":
-                    problems.append("arm %r pattern %r: HEAD prints a record of the mapped-away table %s"
-                                    % (arm, p[:60], k[1]))
-                else:
-                    dissolved[arm][k[1]] += c[k]
-                del c[k]
             rows[s][arm].update((k[0], k[1]) for k in c)
             if s == "base":
                 for k, v in c.items():
@@ -241,8 +250,8 @@ def main():
     union_b = set().union(*rows["base"].values())
     union_h = set().union(*rows["head"].values())
     derived = union_b - union_h
-    for ft, fr, tt, tr in rmap:
-        if tt is None:
+    for ft, fr, tt, tr, _unit in rmap:
+        if tt == "-":
             for arm in arms:
                 print("dissolved %s/%s arm %r: BASE chosen %d (its selections are its new table's rows')"
                       % (ft, fr, arm, dissolved[arm]["%s:%s" % (ft, fr)]))
@@ -253,6 +262,25 @@ def main():
                   % (ft, fr, tt, tr, mapped[("base", tt, tr)], mapped[("head", tt, tr)]))
             if not mapped[("head", tt, tr)]:
                 problems.append("map target %s/%s never chosen at HEAD (the map is unexercised)" % (tt, tr))
+    if rmap:
+        # the map held to BASE's own trace, BOTH WAYS (the BASE side is the control
+        # for the file the map is read from)
+        gone_t = {t for t, _r in gone}
+        for ft in sorted(from_tables - tables["base"]):
+            problems.append("map from-table %s has no record at BASE (an invented line, or a sample too small)" % ft)
+        for ft in sorted((tables["base"] - tables["head"]) - from_tables - gone_t):
+            problems.append("table %s has records at BASE and none at HEAD, and no map line or --gone row "
+                            "names it (a deleted line)" % ft)
+        for ft, fr, _tt, _tr, _unit in rmap:
+            if not base_ends[(ft, fr)]:
+                problems.append("map from-row %s/%s has no BASE selection over the population (K35: "
+                                "an invented line, or a sample too small to see it)" % (ft, fr))
+        named = {(m[0], m[1]) for m in rmap}
+        for (t, r), n in sorted(base_ends.items()):
+            if t in from_tables and (t, r) not in named:
+                problems.append("BASE selected %s/%s %d times and no map line names it (a deleted line)" % (t, r, n))
+        print("map vs BASE trace: from-tables %s, BASE selections of mapped rows %s"
+              % (sorted(from_tables), {"%s/%s" % (m[0], m[1]): base_ends[(m[0], m[1])] for m in rmap}))
     print("derived gone rows (lines at BASE, none at HEAD): %s" % (", ".join("%s/%s" % g for g in sorted(derived)) or "none"))
     if derived != gone:
         problems.append("derived gone set %s != declared %s" % (sorted(derived), sorted(gone)))

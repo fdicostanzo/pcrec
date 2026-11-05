@@ -4,7 +4,9 @@
 #
 # Columns (TAB-separated):
 #   table, row     as rows.tsv
-#   pcrec_floor    the least number of selections (define + run phases) of
+#   pcrec_floor    (rows.tsv reach `pcrec` and `pcrec:trace-only` alike: D1c, D1w and
+#                  R7w are trace-only, their text equal to their fallback's, so this
+#                  census count is their only observation.) The least number of selections (define + run phases) of
 #                  the row over pcrec's FULL N2 census: every --list-axes arm
 #                  x both comment tiers x the whole corpus (c-default, c-vm,
 #                  composition), summed from the MF_TRACE REACH lines.

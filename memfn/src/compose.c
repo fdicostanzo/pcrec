@@ -261,22 +261,23 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
 static const char *site_check(const mf_site *s);
 
 /* THE COMPOSER'S RENDERER ROWS for a T-FIND pick (span_pick 1e; U3 less
- * OFS): first match over (the method row's pick, the site's `end_back`, -1
- * either), the arm that renders it, keyed so the text is the frame's (the
+ * OFS): first match over (the method row's pick, the site's `end_back`, or
+ * END_EITHER), the arm that renders it, keyed so the text is the frame's (the
  * composer's arms), the method row's (finder.c's fd_rows) and this row's.
  * LIBC is the memchr rows (bounded by end_back), LIBC_BACK the memchr below
  * the candidate, WALK the walks. A pick no row names (NONE, V1, W64, A3:
  * unbuilt; PAIR and HORS: the window family's alone) has no renderer here,
  * and the composer refuses it. (D2's RUN pick retired with D2: a RUN span 0
  * takes the walk below with no deciding row, the same text.) */
+#define END_EITHER (-1)             /* a renderer row's `end_back` wildcard */
 static const struct {
     fd_form    pick;
-    int        end_back;
+    int        end_back;        /* 0, 1 or END_EITHER */
     const arm *a;
 } fd_renderers[] = {
     { FF_LIBC,      0,  &pf_memchr_arm },
     { FF_LIBC,      1,  &pf_memchr_bounded_arm },
-    { FF_LIBC_BACK, -1, &pf_memchr_back_arm },
+    { FF_LIBC_BACK, END_EITHER, &pf_memchr_back_arm },
     { FF_WALK,      0,  &pf_walk_arm },
     { FF_WALK,      1,  &pf_walk_bounded_arm },
 };
@@ -285,7 +286,7 @@ static const arm *fd_renderer(const mf_site *s, fd_form pick)
 {
     for (size_t i = 0; i < sizeof fd_renderers / sizeof fd_renderers[0]; i++)
         if (fd_renderers[i].pick == pick &&
-            (fd_renderers[i].end_back < 0 || fd_renderers[i].end_back == !!s->end_back))
+            (fd_renderers[i].end_back == END_EITHER || fd_renderers[i].end_back == !!s->end_back))
             return fd_renderers[i].a;
     return NULL;
 }
@@ -310,6 +311,8 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
        refused here, before any walk: no row was written for one */
     if (s->site_kind == MF_SK_REPORT) return NULL;
     fd_form pick;
+    /* the return is 1 iff a row decides; `rid` alone is the signal here (kit.h):
+       the "?need" refusal names a row (rid set) with no pick, and renders nothing */
     fd_find(art, s, def, NULL, quiet, &pick, &rid);
     const arm *ra = rid ? fd_renderer(s, pick) : NULL;
     *row = rid;

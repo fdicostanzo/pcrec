@@ -1,4 +1,4 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.3)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.3; §2.5, §2.6 revised 2026-11-05)
 
 Rev 3: lane uwin3, 2026-10-22 (rev 2 + the kit branch). DESIGN ONLY: no source or test edit, no make,
 no timing. Applies the panel `docs/dev/reviews/2026-10-22-r1-memfn-window-site-rev2.md` and job 581's
@@ -22,6 +22,9 @@ D-hors's last-offset condition and row-carried actions (§2.5); marks `[rev3.3 R
 `[rev3.3 F]`): Goal 2 reworded (no named caps: the relative floor or a measured per-call layout
 allowance), the known gaps listed (D176 witnesses), no exceptions to the goals' ranking. Rev 3.3 is the
 design of record.
+**Revision 2026-11-05 (lane sp1efix, span_pick unit 1e):** Table D is gone as a table. D-hors is the finder
+table's first FIND row (finder.c `fd_rows[]`, T-FIND's one walk), and D-one, `c + 1`, is the resume of every other
+row's renderer, no row of its own (tests/memfn/row_map.tsv); §2.5 and §2.6 are rewritten to say so.
 
 ---
 
@@ -326,20 +329,23 @@ run-pinned pair's deny bits remove C-pin's row from pcrec's NEXT, as today).
 state R, so no reply can carry C-pin and the OFFSETS stamp cannot show a pinned plan. C-model and
 A-model never read R, so the RESEED alternative's choice is unchanged under `PCREC_NO_RUN_PREFILTER`.
 
-### 2.5 Table D — the resume `[rev3 dD3, 581]`
+### 2.5 D-hors — the resume row of T-FIND `[rev3 dD3, 581; revised 2026-11-05, span_pick 1e]`
 
-A `kit_table` on `kit_walk` `[rev3.3 C7]` (window.c `wf_dtable`), asked on E-find's text only: a contract
-per row (D-hors's window is a stated core), the deny `window-skip`, trace and reach counters, a `holds` column
-(D-hors: the rule below, exactly as S3 built it; no new admission predicate, the E[sh] reading decides that
-later); the path id gains `+hors` where it fires. Each row CARRIES ITS ACTIONS `[rev3.3 R2-7]`: whether
-its text runs B's find, its plan's preparation (D-hors's probe and shift table), and its text (the loop
-head, the resume, the file-scope table: `wf_d_text`); the predicates read a window computed before the
-walk.
+Until span_pick 1e this was Table D (`wf_dtable`, window.c): a `kit_table` of two rows, D-hors and D-one,
+asked on E-find's text only. It is now ONE ROW of the finder table's FIND slot, FIRST in its walk (finder.c
+`fd_rows[]`, `fd_find`, the one walk of both T-FIND askers): a contract (D-hors's window is a stated core,
+`core` CORED, checked against the window family's facts the walk is handed), the deny `window-skip`, trace and
+reach counters (`REACH table=fd row=D-hors`), and its predicate `hors_facts` (the rule below, exactly as S3 built
+it). The composer states no stop, so D-hors's facts never hold for it. D-hors's pick, `HORS`, finds no stop; the
+renderer that takes it is E-find's Table B row B-hors (window.c `wf_brows`), which CARRIES ITS ACTIONS `[rev3.3
+R2-7]`: its plan's preparation (D-hors's probe and shift table), and its text (the loop head, the resume, the
+file-scope table: `wf_b_render`); the path id gains `+hors` where it fires. D-one is no row: every other
+renderer's resume is `c + 1`, and a stop D-hors does not take walks on to the rows below it.
 
 | row | holds when | resume | basis |
 |---|---|---|---|
 | D-hors | the stop's set has mass >= `HORS_MIN` (~146,000 ppm) and the window (the stop span's core) is at least 2 positions, its LAST at an offset >= 0 (`whi >= 0`: the probe then reads inside the hoisted bound, the window's core being the plan's) `[rev3.3 R2-9]` | Horspool over the TESTED sets (581's HRS text): probe the window's LAST position; on a miss or a failed verify advance by `sh[b]` = least `t` with `b` in the tested set at `last - t`, else the window length. It replaces B's scan on that site | job 581, PROVISIONAL |
-| D-one | always | `c + 1` | the floor (today's) |
+| (every other T-FIND row) | its own | `c + 1` | the floor (today's), formerly Table D's D-one |
 
 `HORS_MIN` (§3.3) is PROVISIONAL: fit on 8 cells with ONE winner (hex8, stop mass 284,434 ppm; the next
 densest 74,760 ppm), at the gap's geometric middle. Physically: with no rare stop to skip to, skip by the
@@ -347,7 +353,7 @@ window's end (the stop span's core). It is re-read at S3 at BOTH layers (G1, sca
 and SIMD-on, §6) and on any new population (S1's count, §5.2, is the first) before the row is called
 measured `[rev3.2 n2]`.
 
-D-hors moves bytes: it lands at S3 with its own deny, never at S2. D-shift stays out: 581 fits its rule,
+D-hors moves bytes: it landed at S3 with its own deny, never at S2. D-shift stays out: 581 fits its rule,
 but HRS serves hex8 and SHF's wins elsewhere are marginal.
 
 ### 2.6 Table E — the frame
@@ -356,7 +362,7 @@ but HRS serves hex8 and SHF's wins elsewhere are marginal.
 |---|---|---|
 | E-func | FUNC/RETURN, miss `n`, no expression floor | today's `static inline size_t` (D155 seam) |
 | E-stmt | STMT/ASSIGN or ON_MISS | today's PF block (guard, post-test, `moved` hook, `decl_point`) |
-| E-find `[rev3.3 C4]` | STMT/ASSIGN (its contract), the plan has a stop short of every byte, and Table D resumes it by D-hors or Table B decides its find and one of B's renderers renders it; deny `window-search` | the family's own find-then-verify text: B (§2.2's renderers), C (C-yes under the hoisted bound and the three-way guard; C-run through runcmp), D (§2.5) |
+| E-find `[rev3.3 C4]` | STMT/ASSIGN (its contract), the plan has a stop short of every byte, and T-FIND's row for the stop (D-hors first, §2.5, else D1 D1c D1w PAIR R7w) has a renderer row that renders it (B-hors, B-fn, B-pair, B-memchr, B-walk); deny `window-search` | the family's own find-then-verify text: B (§2.2's renderers), C (C-yes under the hoisted bound and the three-way guard; C-run through runcmp), D (§2.5: the resume, `c + 1` or D-hors's shift) |
 | E-generic | anything else but a REPORT site | the floor row |
 
 The legacy rows (E-func, E-stmt) come first, so every site today's rows serve keeps today's bytes; they

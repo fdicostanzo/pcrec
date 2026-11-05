@@ -15,7 +15,7 @@ Ranked; a higher goal wins a conflict.
 | # | goal (who benefits) | measurable form |
 |---|---|---|
 | 1 | **Answers exact** (every caller) | every plan the tables can produce yields exactly the candidates its facts define: G2 (`memfn/tests/run_g2_win.sh` and the finder G2) green against the scalar byte loop, every plant red; zero corpus answer changes at every stage |
-| 2 | **No regime slower beyond noise** (users of the default build; D186's bar) | stage 1: zero movers on EVERY arm, no pcrec abi number change `[rev3 P3]` (1f is a caller-visible step of its own; `[rev5.1]` 1f/1g are MF_SITE_ABI events, 1a/1f MF_CLASS_V events, none moves a byte); stage 3: each row's movers read new/old <= 1 + the A/A floor in every regime and arm of a 588-style run, `[rev5]` a random-like regime among them, else the row narrows or is an owner exception |
+| 2 | **No regime slower beyond noise** (users of the default build; D186's bar) | stage 1: zero movers on EVERY arm, no pcrec abi number change `[rev3 P3]` (1f is a caller-visible step of its own; `[rev5.1]` 1f/1g are MF_SITE_ABI events, 1a/1f/1e MF_CLASS_V events, none moves a byte); stage 3: each row's movers read new/old <= 1 + the A/A floor in every regime and arm of a 588-style run, `[rev5]` a random-like regime among them, else the row narrows or is an owner exception |
 | 3 | **One table per question** (the next editor; `architecture.md` "One table per slot") | `[rev3 P4]` after stage 1, for plan-call sites: six question tables and three pick-side tables (KEY, M, TIE; T-PICK arrives with the first priced row), plus the NAMED exceptions of §The tables, each with its retiring trigger; check: the decider census of §The tables, which can fail |
 | 4 | **Costs measured, by target class, none hand-set: the END STATE** (D186 add. 1 A1; D176 Q1/Q3) | no priced departure before its cards are measured; every cost a priced row reads is a declared row of the stamped set (checked); `plan_cost.def`'s Zen 1 rows retire with their last reader |
 | 5 | **Blind picks are the default's, data never hurts** (users of common patterns) | `[rev5]` a blind pick depends only on the pattern, the target and the stamped defaults: no bundle moves it; smp20 `(?i)x/1234` blind is "consistent with the default" by definition (E1); with a bundle matching job 588's real text it moves to '/' or '4', RTE/DEF <= 1 + floor there (§The watched witness); the six D-hors sites keep their wins (0.57-0.78); `[rev3 WD]` with data matches or beats blind; a win is never a requirement |
@@ -73,8 +73,8 @@ This mechanism IS the kit's planning face (roadmap §0a) and stage 1 IS A-PLAN's
 | the kit's emitting face | frame, method and renderer rows, then text | phase 2: plan + frame in, C out; golden plan-in/C-out tests per seam |
 
 **What moves across** `[rev3 P1, rev5.1 R1]`. In stage 1 the reply does NOT grow. Its seam events: 1f
-(an entry, two denies) and 1g (`mf_akind`'s provenance) are MF_SITE_ABI events; 1a and 1f (finder rows
-ahead of the PRES rows) MF_CLASS_V events. The reply grows (method, resume, frame row) at unit 3.0.
+(an entry, two denies) and 1g (`mf_akind`'s provenance) are MF_SITE_ABI events; 1a, 1f and 1e (finder rows
+added or removed ahead of the PRES rows) MF_CLASS_V events. The reply grows (method, resume, frame row) at unit 3.0.
 
 **A-PLAN's open points.** (1) ONE PLAN WITH ITS TRACE (D186 add. 2; `[rev5 D1]` A-PLAN OPEN POINT 1 already
 amended on main, 5e8bcf455/b405ff811); `[rev5.1 R10, rev5.2 C8]` roadmap §0a and §5's kit rows R20-R27 are

@@ -562,8 +562,10 @@ typedef struct {
  * asks about window site `s`'s stop `st` (need REQUIRED). The decision is the
  * OFF variant's (§1.5 rule 1: decided once, every layer inherits it), under
  * `def` (the site's kind, body, policy and options). 1 with the deciding
- * row's pick and id, or 0 where no row decides. `quiet` 1: no record, no
- * reach; 0: a SELECTION (traced, counted). */
+ * row's pick and id, or 0 where no row decides; `*row` is NULL on a 0, but
+ * the "?need" refusal, which names a row and returns 0: a caller that must
+ * tell the refusal from "no row" reads `*row`, not the return. `quiet` 1: no
+ * record, no reach; 0: a SELECTION (traced, counted). */
 #define fd_find MF_NS(fd_find)
 int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
             int quiet, fd_form *pick, const char **row);
