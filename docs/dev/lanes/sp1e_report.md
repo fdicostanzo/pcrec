@@ -338,7 +338,7 @@ How the mech rows were derived:
 | light validation (make, strict, finder, rows, arms, run_finder incl. purity, rows_check through the map, G2 once, anchors, spot, REACH sample) | yes, all green |
 | test-codegen if test scripts are touched | yes, rc 0 |
 | gate jobs 420-429, scratch-queue accepted, `--no-start` | yes |
-| `docs/dev/lanes/sp1e_deliver.txt` | ABSENT: no such file in the worktree or the main tree. I did not invent one (sp1dfix wrote its own deliver file after an earlier one) |
+| `docs/dev/lanes/sp1e_deliver.txt` | ABSENT: no such file in the worktree or the main tree. To run lanecheck, I wrote one, UNTRACKED, mirroring sp1dfix's own (report, this report's sections, nonempty all, commit yes, owed none). The kit manager may replace it |
 | report + lanes history index | yes |
 
 ## STATE AT HANDOFF
