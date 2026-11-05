@@ -27496,3 +27496,10 @@ Next
 - Filed: [RUN-POS-SET] (Frank: required-run positions as byte sets, so caseless UTF-8 letters stop cutting runs; survey first) and [POS-ONE-DETECTOR] (kit review r2 F11: pcrec's run-position cube copies become one conversion, D187 Later).
 - FULL SUITE 300-main-fullsuite queued 22:15 and started 22:09 on frozen daf6f002b (~12 h). It is the clean re-run owed after 11-03's red run and covers 1g/1b/1c. The kit cuts 1d and queues no heavy jobs until the verdict.
 - Lesson: queuewatch reports one event per launch, so a burst of old events (the kit's cancel-and-re-add) costs one wake each. A bounded foreground drain loop works; never leave a backgrounded drain beside the armed watcher (two watchers contend for the state lock).
+
+## 2026-11-05 — session 130 (morning): full suite GREEN, ledger reset
+
+- **Full suite 300 GREEN** on every stage at daf6f002b (44139 s; mech 1102 rows, unexpected 0, undetected 18, unreached 16, anomalies 7): the first fully green full suite on record, closing the 11-03 red run's four dispositions. The job committed its own summary line (f8ba7021c), so the ledger header's "the job never commits" is stale.
+- **Ledger reset (D177)** by lane fsgreen (sonnet), merged d3ed151bb and pushed: run row added; every landing up to daf6f002b moved verbatim into "Covered by run 2026-11-05 daf6f002b"; open counts major 0, minor 0, triggers un-fired. The old header counts (31/84) under-read the lists (42/86); 20 missing 11-02..11-04 lines added (1c classed minor like 1a/1f).
+- **Kit** hold lifted at the verdict; sp1d gates 410-419 queued ~10:35 (~4.5 h, cap 9 h). Next: review 1d on the kit's done line, restate R21 (sp1d_report "Ratchet"), then 1e.
+- Lesson: queuewatch replays every past stage event after a session gap; drain with a bounded loop before arming the hour watcher (worked: 6 events, then CAP).
