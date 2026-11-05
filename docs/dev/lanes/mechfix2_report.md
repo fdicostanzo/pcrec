@@ -59,3 +59,11 @@ Docs updated: tests/mech/CLAUDE.md, docs/testing.md (field table), the runner's 
   - `433-mechfix2-mechfull` (LAST, ~7 h, cap 36000): `== mech run COMPLETE: N rows (... anomalies: 0 ...)` and job rc 0; seven DETECTED-BUILD rows. The ratchet itself rode this run.
 - If 430/431 show a declared row DETECTED (not -BUILD) or UNEXPECTED, that row's compile catch has stopped firing: read its log, do not re-declare blindly.
 - After green: set the plan row STATE:done (move per plan policy), update S86's SAB_DOC_FIGURE from the measured cells, S272's header wording if wanted.
+
+## Triage 432 (lane mechtri5, 2026-11-05)
+
+Cause: a bug in the self-test, not the runner. Job 432 read 6 of 7 `ok`; the one FAIL was "Sy3 (declared) reads DETECTED-BUILD". The matrix output did show `Sy3-selftest ... DETECTED-BUILD (the designed compile-time catch fired: ...)`, but the check's grep required a literal TAB before `DETECTED-BUILD`, and the matrix table pads columns with spaces (the tab-separated form is only the per-script `-- running` echo). Runner (`run_sabotage_matrix.sh` COMPILE-CATCH declaration, anomaly ceiling) behaved as designed in both runs: run A anomalies 1 / unexpected 0 / ceiling exit 1; run B UNEXPECTED, exit 1.
+
+Fix: commit e5b0a5d0a, `tests/mech/nocompile_selftest.sh` line 45 only (tab -> `.* ` space match). The runner is UNCHANGED, so job 433 (runs this worktree HEAD) needs no new pickup for runner reasons, and the 4-row re-checks (435/436) were NOT re-queued (430/431 stand).
+
+Queued: 434-mechtri5-selftest (owner mechtri5). Read: the last line must be `nocompile_selftest: DONE rc=0` with seven `ok` lines and no `FAIL`; job rc 0.
