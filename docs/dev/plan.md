@@ -669,6 +669,21 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
+  filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
+  status (2026-11-05): investigation lane vlbinv started; pcrec refuses "variable-length lookbehind is not implemented"; 37 corpus + 1 bench patterns libpcre2 10.46 accepts
+  next: the investigation report (docs/dev/lanes/vlbinv_report.md), then Frank's word on a design lane
+  refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [ENG-LOOK]
+- [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
+  filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
+  status (2026-11-05): investigation lane condinv started; module `conditionals` refuses ("not implemented yet", registry PLANNED-HARD); 5 corpus patterns + 1 bench probe
+  next: the investigation report (docs/dev/lanes/condinv_report.md), then Frank's word on a design lane
+  refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md
+- [PCRE2-GAPS-TBD] STATE:not-started — PCRE2 gap rank 4 (catch-all, TBD): the remaining refused constructs, each 0-1 uses
+  filed: 2026-11-05 Frank ("one rank 4 item as a catch all group rank 4 'tbd'"), from the completeness scoreboard
+  status (2026-11-05): members `\R`, `(*ACCEPT)`, `(*FAIL)`, `\C`, `\cX`, `\o{}`, `\N{U+..}`, `(?#..)`, `(?|..)`, `[[:<:]]`; each 0 or 1 corpus/bench uses; unranked within the group
+  next: Frank's word; a member leaves the group for its own row when a use or demand appears
+  refs: docs/dev/lanes/scoreboard_report.md (rows 5-16); docs/dev/lanes/scoreboard_evidence/gaps.tsv
 - [HANDED-FACTS] STATE:not-started — the handed-fact resolution family: which analysis kinds a compile consults, and its consult mask
   filed: 2026-11-03 manager (span_pick rev 5.1 R12, review 2026-11-03-r2-memfn-spanpick5)
   status (2026-11-03): filed; nothing built. Row 0 (refuse when a consulted kind cannot be derived) is in span_pick rev 5.2; the consult side is SUSPECTED incomplete.
@@ -1144,13 +1159,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
 - [GRAPHEME] STATE:not-started — \X and grapheme boundaries match what a reader sees as one character
   filed: 2026-10-24 manager (utfwant want 1; Frank 2026-10-24 "set these up")
-  status (2026-10-24): filed, unscheduled; registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
+  status (2026-11-05): PCRE2 gap rank 3 (completeness scoreboard; utf_wants rank 1); registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
   Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2. DATA RULE (Frank 2026-10-24): the data comes from an official Unicode source only (UCD auxiliary/GraphemeBreakProperty.txt, emoji-data.txt), vendored in third_party/ at a named Unicode version, with Unicode's own GraphemeBreakTest.txt as the oracle; pcrec may build functionality but claims a Unicode standard only where that official test passes, and never defines its own variant under the standard's name.
 - [CLASS-SETOPS] STATE:not-started — character-class set operations: subtraction, intersection, nesting
   filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
-  status (2026-10-24): filed, unscheduled; TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED; the only plain workaround is lookaheads
+  status (2026-11-05): PCRE2 gap rank 3 (completeness scoreboard; utf_wants rank 3); TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
