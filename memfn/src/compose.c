@@ -260,17 +260,48 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const char *site_check(const mf_site *s);
 
+/* THE COMPOSER'S RENDERER ROWS for a T-FIND pick (span_pick 1e; U3 less
+ * OFS): first match over (the method row's pick, the site's `end_back`, -1
+ * either), the arm that renders it, keyed so the text is the frame's (the
+ * composer's arms), the method row's (finder.c's fd_rows) and this row's.
+ * LIBC is the memchr rows (bounded by end_back), LIBC_BACK the memchr below
+ * the candidate, WALK the walks. A pick no row names (NONE, V1, W64, A3:
+ * unbuilt; PAIR and HORS: the window family's alone) has no renderer here,
+ * and the composer refuses it. (D2's RUN pick retired with D2: a RUN span 0
+ * takes the walk below with no deciding row, the same text.) */
+static const struct {
+    fd_form    pick;
+    int        end_back;
+    const arm *a;
+} fd_renderers[] = {
+    { FF_LIBC,      0,  &pf_memchr_arm },
+    { FF_LIBC,      1,  &pf_memchr_bounded_arm },
+    { FF_LIBC_BACK, -1, &pf_memchr_back_arm },
+    { FF_WALK,      0,  &pf_walk_arm },
+    { FF_WALK,      1,  &pf_walk_bounded_arm },
+};
+
+static const arm *fd_renderer(const mf_site *s, fd_form pick)
+{
+    for (size_t i = 0; i < sizeof fd_renderers / sizeof fd_renderers[0]; i++)
+        if (fd_renderers[i].pick == pick &&
+            (fd_renderers[i].end_back < 0 || fd_renderers[i].end_back == !!s->end_back))
+            return fd_renderers[i].a;
+    return NULL;
+}
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
 {
     gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
-    /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
-       ROUTED row renders the table's pick, through the arm that renders it,
-       asked on its own (deny, gate, predicate); a pick its arm does not
-       serve is REFUSED (no fall-back to the walk below, which could render
-       another form under the routed row's name). Everything else walks. */
+    /* R17-b' B2 (r17b_prime.md §1.6): a site T-FIND decides (fd_find, the
+       one walk; span_pick 1e) renders the deciding row's pick through the
+       arm its renderer row names, asked on its own (deny, gate, predicate);
+       a pick its arm does not serve, or no renderer row names, is REFUSED
+       (no fall-back to the walk below, which could render another form under
+       the deciding row's name). Everything else walks. */
     const char *rid = NULL;
     *row = NULL;
     /* R-26.3: a REPORT site's candidate is the answer, and since D172 S3 the
@@ -278,7 +309,9 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
        is a window site's). An old-field statement of one (terms in `pred`) is
        refused here, before any walk: no row was written for one */
     if (s->site_kind == MF_SK_REPORT) return NULL;
-    const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
+    fd_form pick;
+    fd_find(art, s, def, NULL, quiet, &pick, &rid);
+    const arm *ra = rid ? fd_renderer(s, pick) : NULL;
     *row = rid;
     if (rid) {
         for (size_t i = 0; ra && i < NARMS; i++)
