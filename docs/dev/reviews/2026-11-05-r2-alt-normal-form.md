@@ -3,6 +3,13 @@
 
 **RULING (manager, 2026-11-05):** every proposed disposition is ACCEPTED as drafted (FIX-NOW items go to rev 1 of the note; PLAN: SIM-2, SLOT-5, SLOT-6; DOC and NOTED as listed; none rejected). Verdict accepted: NOT READY for a build go. Rev 1 waits on the owner's answers to the round's questions (a), (b) and the note's own §12 questions. Process changes: 1 and 2 ACCEPTED (skill §4 soundness and simulate rows, guide critics.md); 3 DECLINED (the kit wake was harmless and useful here; launcher's call per round).
 
+
+**OWNER ADDENDUM (Frank, 2026-11-05 19:20): "Those ideas should be saved as possible solutions but should be vetted."** Candidate solutions for SND-1/SND-2, NOT ruled, for rev 1 to vet (each needs a soundness check and a witness that can fail):
+- C1 facts are order-free: a required-run/set fact describes the string set, not which branch wins, so stages 1, 2 and 3 cannot meet SND-1; it is confined to tree rewrites (stage 2b).
+- C2 tree rewrites exact-only: prefix factoring on a FIXED-WIDTH key keeps a shorter branch as an EMPTY branch in its own slot (`(?:ab|a|ad)` -> `a(?:b||d)`); merge only adjacent branches with no sibling between them that can match a prefix or extension of either.
+- C3 priority-sensitive tries live in the matcher: the VM island's sorted trie with priority-tagged accepts (docs/design/alt_dispatch_study.md, Frank's earlier brainstorm), answering the lowest original branch index.
+- C4 (Frank's question, assessed by the manager as likely unsound in general): a zero-width lookahead after the shorter branch; the original's `ad` wins only when the REST of the pattern fails after `a`, so an exact lookahead must contain the continuation (`a(?=X)`), and a local one such as `a(?!d)` moves answers. Vet before discarding.
+
 ## Subject
 
 - `docs/design/alt_normal_form.md` rev 0 (PROPOSED, lane altdesign) at its own
