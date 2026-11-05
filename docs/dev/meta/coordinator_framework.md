@@ -53,3 +53,7 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 - A small no-mover unit took about 22 minutes from freeze to draft, with the manager untouched until hand-back. The cost driver was critic depth (one lens made 1,409 compiles), not coordination. For no-mover units the dual-spelling plant (the old spelling recomputed beside the new, with a disagreement counter) was the strongest single witness.
 - The coordinator's own re-run of the plant compares caught two scripts that read failed compiles as silent moves; the verify step earned its place.
+
+2026-11-05 r1 memfn-sp1d (code):
+- The round took about 30 minutes wall, with every critic under 12 minutes. Its value was blinding and consolidation (34 critic ids became 13 findings), not monitoring.
+- Pre-building BASE/SUBJECT release and MF_TRACE pairs once (4 builds) meant critics needed no builds of their own. This repeats r5 sp1g's lesson; make it the default in code mode whenever MF_TRACE output is in the promise.

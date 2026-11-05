@@ -166,3 +166,9 @@ Round 2026-11-04 r1, memfn-sp1b code (`docs/dev/reviews/2026-11-04-r1-memfn-sp1b
 Round 2026-11-04 r2, memfn-sp1c code (`docs/dev/reviews/2026-11-04-r2-memfn-sp1c.md`), coordinator round + verifier; lessons ruled 2026-11-04.
 1. **A "MOVED" from a plant compare checks the plant's exit code first, and deletes old outputs before each compare.** Classify every compare as SAME, SILENT-MOVE (rc 0, bytes differ) or LOUD (rc != 0). A LOUD plant is caught by every corpus compile and is not a test gap; two compare scripts reported failed compiles as silent moves.
 2. **Plain `grep -r` ignores git pathspecs:** a denied file inside a directory a critic greps recursively leaks. COMMON gives `--exclude=` per denied file for plain grep, or `git grep` with the pathspecs.
+
+Round 2026-11-05 r1, memfn-sp1d code (`docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md`), coordinator round + verifier; lessons ruled 2026-11-05.
+1. **Check every rate-regime spelling in COMMON against the build before briefing.** `--analysis uniform` is refused; the working spelling is `-I tests/findings/adversarial --analysis=uniform`.
+2. **A census backstop's shape must be one a BYPASS has to use, and its plant must not contain the conforming call's text** (F2: every plant contained `pick_takes(`, the backstop's own shape).
+3. **An invariance harness needs a per-row REACH table, not one plant** (F1: four shipped rows were unreached and uncounted).
+4. **A trace record added for a seam gets a sufficiency drill: two inputs with equal records must have equal picks** (F4: three constructed pairs broke it).
