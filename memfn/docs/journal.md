@@ -3189,3 +3189,12 @@ Main ruled on the four kit findings (D186 add. 2):
   - Owed: F13 (its home is the kit split). The R21 recipe restatement is main's. Deviation 1: A-model still reads the walked spans' own sets (moving it would change G2-visible decisions; a later ruled change).
   - Slip: the lane ran ~3.8k spot compiles against a ~3k cap.
   - Gates 400-409 prepared; they queue after job 300's verdict. The critic round crit-memfn-sp1d (opus coordinator) is launched, light probes only.
+- 11-05 00:20: sp1dfix delivered c1c6ce26c, and lane/memfn-sp1d is fast-forwarded to it. The review is ruled in 3a981c43e.
+  - F1: per-row purity reach table, 16 rows move a reply, 3 are declared SAME; purity floor -eq 1157.
+  - F2: the census sees bypass shapes; HITS exact at 37.
+  - F3: S1096's witness is now `-e utf8 --memfn=no-window-search`; its DETECTED re-measure is in mech shard 417-419.
+  - F4: WCAND gains stretch/stop_ok/src records.
+  - F5-F7, F9, F11 done.
+  - Light validation all green, including G2 (70.36M/0). Spot checks: 765 pairs SAME; MFTRACE identical except WCAND.
+  - Gates 410-419 are prepared in scratch/memfn/sp1dfix/jobs (TREE=worktrees/sp1dfix) and wait for job 300's verdict.
+  - Slip: `boxqueue add` on the scratch queue without `--no-start` armed a runner, which the lane safekilled before any job body ran. Briefs say `--no-start`; the lane dropped it.
