@@ -27488,3 +27488,11 @@ Next
 - [MECH-NOCOMPILE] part 1 merged (mechfix1): 12 plants detected (jobs 200-202). S53/S57's marker \x01 is PCREC_PREFIX_LEAD and fired on every prefixed source; S86 has the same bug (open).
 - Lessons: (1) my conflict resolutions kept only main's side of a table row twice-risk: the 1g merge dropped r5's critic clause (the kit restored it) — for a conflicting table row, merge the two rows' text, never pick a side. (2) `boxqueue retry` re-runs the saved copy of a job script; after editing the script, cancel and re-add. (3) A review file citing plan.md:N blocks the push (PL14); the kit's review commit step now greps for it.
 - Next: review 1c when delivered; S86; full-suite re-run night (Frank); SIMD bench run on the first quiet night.
+
+## 2026-11-04 — session 129 (evening, close)
+
+- Frank lifted tonight's hold ("No hold on computer tonight. Schedule as needed"). The kit's 1c gates ran 18:50-22:05. 396 (make test) went red on test-plan-lint only, because the branch predated main's PL14 fix of review r1's check.md; the kit merged main (docs only) and the retry was green.
+- span_pick unit 1c merged (daf6f002b): D187's set-only step (kit_mass set-only, cube path deleted, normal form refused at kit_presence_check; MF_SITE_ABI 23, no pcrec abi), zero movers. Ratchet R24 2->0 under a restated recipe that counts a run_member that prices its own positions, not one by name (window.c's run_member is now a thin caller of kit_run_member). Stage 1: 1a, 1f, 1g, 1b, 1c landed; 1d, 1e to go.
+- Filed: [RUN-POS-SET] (Frank: required-run positions as byte sets, so caseless UTF-8 letters stop cutting runs; survey first) and [POS-ONE-DETECTOR] (kit review r2 F11: pcrec's run-position cube copies become one conversion, D187 Later).
+- FULL SUITE 300-main-fullsuite queued 22:15 and started 22:09 on frozen daf6f002b (~12 h). It is the clean re-run owed after 11-03's red run and covers 1g/1b/1c. The kit cuts 1d and queues no heavy jobs until the verdict.
+- Lesson: queuewatch reports one event per launch, so a burst of old events (the kit's cancel-and-re-add) costs one wake each. A bounded foreground drain loop works; never leave a backgrounded drain beside the armed watcher (two watchers contend for the state lock).
