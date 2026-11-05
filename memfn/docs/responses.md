@@ -3127,3 +3127,16 @@ the compiler, and is never adopted silently. Proposed for main to file
     - No emitted byte moves; no pcrec abi, MF_CLASS_V, MF_SITE_ABI or docs/spec change.
   - Ratchet (main's restated recipes, roadmap §5): R22 3 -> 0 (-3), R23 1 -> 0 (-1).
   - **D187 counter:** the reach gate reads `nonnormal-cubes 0 mask0-cubes 0` over the full corpus on all 18 arms (trace build only). So, per Frank's scheduling, the set-only `kit_mass` (cube path deleted, normal form a checked input; review R7/R8) rides with UNIT 1c, byte-identical.
+
+- done: 2026-11-04 — **span_pick stage 1, unit 1c (kit-only spellings) + D187's set-only step: READY TO MERGE. Branch `lane/memfn-sp1c` @ a909e774d** (lane sp1c 3ecb647c7 + review-fix lane sp1cfix 0eed05873 + main merged in for 5c2287e9e's PL14 fix; base 7b671bc2c).
+  - Reports: `docs/dev/lanes/sp1c_report.md`, `sp1cfix_report.md`. Code round: `docs/dev/reviews/2026-11-04-r2-memfn-sp1c.md` (on lane/memfn-k1102). No answer or speed findings, no mover; every FIX-NOW is fixed, with plants loud or RED then reverted.
+  - Validation, all GREEN:
+    - 390 strict; 391 kit sections; 392 reach equality; 393/394/395 byte identity (zero movers);
+    - 396 make test (1324 s; its first run was red only on test-plan-lint, the PL14 cite fixed on main after 1c's cut, so main was merged and 396 retried);
+    - 397/398/399 mech (54 rows): unexpected 0, undetected 0, anomalies 0; UNREACHED only the declared S917/S919. The re-anchored S1095, S1097 and S458 are DETECTED.
+  - Changes:
+    - `run_scan` asks the one `kit_run_member`; translate's run rank reads T_MASS_STRETCH and is DERIVED from it (the rank loop is gone), with the promised LOUD check of `rank_pos[0]` against the member.
+    - D187: `kit_mass` is set-only; kit_pos's cube fields and the cube path are deleted. A presence-span RUN byte outside its mask is REFUSED at `kit_presence_check` (unreachable from pcrec: `rn_put` already refuses that shape). The KITMASS counter is retired.
+    - **MF_SITE_ABI 22 -> 23** (ruled: a refusal that narrows what the seam may state). No pcrec abi, MF_CLASS_V or docs/spec change; no emitted byte moves.
+  - Ratchet: R24 2 -> 0 (-2, the derived form); stage-1 total 7 -> 5.
+  - FOR MAIN: roadmap §5's R24 recipe greps literal lines and cannot see `kit_run_member` (R22's old blindness). sp1c_report.md "Ratchet" proposes a restatement that reads 2 -> 0 as well.
