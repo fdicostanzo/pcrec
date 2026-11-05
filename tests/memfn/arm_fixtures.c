@@ -191,6 +191,12 @@ static const char *h_note_tag(void *u, uint32_t part)
 
 /* ---- building the fixtures ------------------------------------------------ */
 
+/* Adds byte `b` to the 256-bit set `set`. */
+static void set_add(uint8_t set[32], unsigned b)
+{
+    set[b >> 3] |= (uint8_t)(1u << (b & 7));
+}
+
 static void t_byte(mf_term *t, int off, int b)
 {
     memset(t, 0, sizeof *t);
@@ -205,7 +211,7 @@ static void t_set(mf_term *t, int off, const char *members, uint32_t ref)
 {
     t_byte(t, off, (unsigned char)members[0]);
     for (const char *m = members; *m; m++)
-        t->set[(unsigned char)*m >> 3] |= (uint8_t)(1u << (*m & 7));
+        set_add(t->set, (unsigned char)*m);
     t->table_ref = ref;
     t->need = MF_OPTIONAL;
 }
@@ -346,7 +352,7 @@ static void q_proven0(const mf_site *s, uint8_t out[32])
         else if (tm->kind == MF_T_RUN) {
             for (unsigned x = 0; x < 256; x++)
                 if ((x & (tm->mask ? tm->mask[0] : 0xFFu)) == tm->run[0])
-                    b[x >> 3] |= (uint8_t)(1u << (x & 7));
+                    set_add(b, x);
         } else continue;
         for (int i = 0; i < 32; i++) out[i] &= b[i];
     }
@@ -760,7 +766,7 @@ static mf_site stride_site(const StrideFx *x)
         } else {
             t_byte(t, (int)i, (unsigned char)x->lo[i]);
             for (int b = (unsigned char)x->lo[i]; b <= (unsigned char)x->hi[i]; b++)
-                t->set[b >> 3] |= (uint8_t)(1u << (b & 7));
+                set_add(t->set, (unsigned)b);
         }
         t->need = MF_REQUIRED;
     }
@@ -1569,7 +1575,8 @@ static const uint32_t an_rates[256] = { 1000000 };
 static mf_akind an_kinds[2];
 static mf_analysis an_obj;
 
-static const mf_analysis *fd_an_make(unsigned long long digest)
+/* The analysis object stating `rates` (256 ppm) and `digest` on both kinds. */
+static const mf_analysis *an_make(unsigned long long digest, const uint32_t *rates)
 {
     static const char *const tags[2] = { "byte-rate", "run-rarity" };
     for (int i = 0; i < 2; i++) {
@@ -1578,12 +1585,17 @@ static const mf_analysis *fd_an_make(unsigned long long digest)
         an_kinds[i].version = 1;
         an_kinds[i].present = MF_KIND_PRESENT;
         an_kinds[i].digest = digest;
-        an_kinds[i].payload = an_rates;
+        an_kinds[i].payload = rates;
     }
     an_obj.list_v = MF_ANALYSIS_LIST_V;
     an_obj.nkinds = 2;
     an_obj.kinds = an_kinds;
     return &an_obj;
+}
+
+static const mf_analysis *fd_an_make(unsigned long long digest)
+{
+    return an_make(digest, an_rates);
 }
 
 static int fd_site_mode(const char *site, const char *setpath, const char *opts,
@@ -1689,7 +1701,7 @@ static int hash_mode(void)
  * The sites reach every Table A row but A-empty and A-floor's floor-only
  * path (A-mass, A-parked, A-model, MARGIN's two alternatives) and the run
  * member (a verify-YES run R). */
-enum { PUR_N = 5 };
+enum { PUR_N = 11 };
 static mf_wspan pur_spans[PUR_N][2][4];
 static mf_walt pur_alts[PUR_N][2];
 
@@ -1705,7 +1717,7 @@ static void pur_span(mf_wspan *w, int32_t start, const char *const *sets, unsign
     w->core_len = (uint8_t)core_len;
     for (unsigned j = 0; j < len; j++)
         for (const char *c = sets[j]; *c; c++)
-            w->set[j][(unsigned char)*c >> 3] |= (uint8_t)(1u << (*c & 7));
+            set_add(w->set[j], (unsigned char)*c);
 }
 
 /* The RESEED alternative of sites 2 and 3: F0 and three walked offsets, two
@@ -1752,10 +1764,44 @@ static mf_site pur_site(unsigned i)
         pur_reseed(sp[1], &a[1]);
         s.nalt = 2;
         break;
-    default:                    /* NONE with a verify-YES run R: the run member */
+    case 4:                     /* NONE with a verify-YES run R: the run member */
         pur_span(&sp[0][0], 0, (const char *const[]){ "a", "b", "c", "d" }, 4, MF_VERIFY_YES,
                  0, 4);
         a[0] = (mf_walt){ MF_ENTRY_NONE, 1, sp[0] };
+        break;
+    case 5:                     /* A-empty: an empty meet inside a core */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 0, (const char *const[]){ "b" }, 1, MF_VERIFY_YES, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 6:                     /* A-floor: no core position; a full-set one (C-bound) */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a" }, 1, MF_VERIFY_YES, 0, 0);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
+        memset(sp[0][1].set[0], 0xFF, 32);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 7:                     /* A-mass with a full-set verify-YES position (C-bound) */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "ab" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 2, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
+        memset(sp[0][1].set[0], 0xFF, 32);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 8:                     /* RESEED first, PARKED second: M-parked wins at index 1 */
+        pur_reseed(sp[0], &a[0]);
+        pur_span(&sp[1][0], 0, (const char *const[]){ "F" }, 1, MF_VERIFY_YES, 0, 1);
+        a[1] = (mf_walt){ MF_ENTRY_PARKED, 1, sp[1] };
+        s.nalt = 2;
+        break;
+    case 9:                     /* NONE with a verify-NO run R: the exact run member */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "x" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "m", "jk", "n" }, 3, MF_VERIFY_NO, 0, 3);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    default:                    /* RESEED, a rare non-scan walked offset: C-model's pick */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "f" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "p" }, 1, MF_VERIFY_NO, 0, 1);
+        pur_span(&sp[0][2], 2, (const char *const[]){ "rR" }, 1, MF_VERIFY_NO, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_RESEED, 3, sp[0] };
         break;
     }
     s.alts = a;
@@ -1776,27 +1822,18 @@ static mf_site pur_refused(void)
 
 /* The skewed rate table: ties among g/h (equal walked masses) and b/d. */
 static uint32_t pur_rates[256];
-static mf_akind pur_kind;
-static mf_analysis pur_an;
 
 static const mf_analysis *pur_rated(void)
 {
     for (int b = 0; b < 256; b++) pur_rates[b] = 3000;
     static const struct { char c; uint32_t r; } skew[] = {
         { 'a', 90000 }, { 'b', 500 }, { 'c', 70000 }, { 'd', 500 }, { 'q', 800 },
-        { 'z', 100 }, { 'f', 20000 }, { 'F', 600 }, { 'g', 400 }, { 'h', 400 },
-        { 'i', 30000 }, { 'x', 5000 }, { 'y', 900 }, { 'w', 900 },
+        { 'z', 100 }, { 'f', 500000 }, { 'F', 600 }, { 'g', 400 }, { 'h', 400 },
+        { 'i', 30000 }, { 'x', 5000 }, { 'y', 900 }, { 'w', 900 }, { 'j', 100 }, { 'k', 100 }, { 'p', 100000 }, { 'r', 300 }, { 'R', 300 },
     };
     for (size_t i = 0; i < sizeof skew / sizeof skew[0]; i++)
         pur_rates[(unsigned char)skew[i].c] = skew[i].r;
-    memset(&pur_kind, 0, sizeof pur_kind);
-    pur_kind.tag = "byte-rate";
-    pur_kind.version = 1;
-    pur_kind.present = MF_KIND_PRESENT;
-    pur_kind.digest = 1;
-    pur_kind.payload = pur_rates;
-    pur_an = (mf_analysis){ MF_ANALYSIS_LIST_V, 1, &pur_kind };
-    return &pur_an;
+    return an_make(1, pur_rates);
 }
 
 /* NULL iff replies `a` and `b` are equal field by field, else the first
@@ -1848,10 +1885,17 @@ static int purity_mode(void)
     static mf_arena ar = { NULL, a_alloc };
     mf_site site[PUR_N];
     for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
-    static const unsigned in_order[] = { 0, 1, 2, 3, 4 }, reversed[] = { 4, 3, 2, 1, 0 },
-                          repeated[] = { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4 };
-    static const struct { const char *name; const unsigned *seq; unsigned n; } orders[] = {
-        { "in-order", in_order, 5 }, { "reversed", reversed, 5 }, { "repeated", repeated, 10 },
+    unsigned in_order[PUR_N], reversed[PUR_N], repeated[2 * PUR_N];
+    for (unsigned i = 0; i < 2 * PUR_N; i++) {
+        if (i < PUR_N) {
+            in_order[i] = i;
+            reversed[i] = PUR_N - 1 - i;
+        }
+        repeated[i] = i % PUR_N;
+    }
+    const struct { const char *name; const unsigned *seq; unsigned n; } orders[] = {
+        { "in-order", in_order, PUR_N }, { "reversed", reversed, PUR_N },
+        { "repeated", repeated, 2 * PUR_N },
     };
     char m[160];
     for (int rated = 0; rated < 2; rated++) {
@@ -1918,8 +1962,10 @@ static int purity_control_mode(void)
                        mf_art_error(art));
                 continue;
             }
-            printf("%s site %u: alt=%u reseed=%u stop=%u@%d plan=", rated ? "rated" : "none", i,
+            printf("%s site %u: alt=%u reseed=%u stop=%u@%d set=", rated ? "rated" : "none", i,
                    r.alt, r.reseed, r.has_stop, (int)r.stop);
+            for (unsigned k = 0; k < 32; k++) printf("%02x", r.stop_set[k]);
+            printf(" plan=");
             for (unsigned k = 0; k < r.nplan; k++) printf("%s%d/%u", k ? "," : "", (int)r.plan[k],
                                                           r.plan_term[k]);
             printf(" pinned=%u run=%u@%d+%d/%u path=%s\n", r.pinned, r.run_stated,

@@ -1,0 +1,32 @@
+# tests/memfn/purity_rows.tsv — THE PURITY HARNESS's per-row REACH table (span_pick unit 1d fix, review
+# 2026-11-05-r1 F1): every Table A, M and T-VERIFY row, plus the sub-branch rows marked `+`, is DROPPED
+# unconditionally in a COPY of memfn/src (the `old` text of window.c replaced by `new`; both must match
+# exactly once) and the plant's `arm_fixtures --purity-control` print must DIFFER from this build's
+# (status REACH), or equal it (status UNREACHED, with its reason: a row that cannot move a reply by
+# construction). A row that moves though declared UNREACHED, and a REACH row that does not, is RED.
+# tests/memfn/run_purity_reach.sh also checks that this table's ids are exactly window.c's row ids.
+# `pur_never_d`/`pur_never_x` (injected by the runner) are the never-holding predicates.
+# Fields: id <TAB> old <TAB> new <TAB> status (REACH | UNREACHED reason). `-` : nothing to drop.
+A-empty	return x->d->a[x->ai].any_empty;	return 0;	REACH
+A-parked	return p->present && p->yes && p->ycore;	return 0;	REACH
+A-model	return m->f0 >= 0 && m->any_scan;	return 0;	REACH
+A-mass	return x->d->a[x->ai].any_stop;	return 0;	REACH
+A-floor	-	-	UNREACHED the walk's fallback IS the floor row: dropping it changes nothing by construction
+M-one	return x->d->na == 1;	return 0;	UNREACHED the walk's fallthrough chooses alternative 0, the one alternative M-one chooses: dropping it changes nothing by construction
+MARGIN	return l < r || (l == r && wf_ties[T_MARGIN].to == TIE_RESEED);	return 0;	REACH
+M-parked	return x->d->na == 2;	return 0;	REACH
+C-meet	-	-	UNREACHED not a step of the list: `merge` runs in `cands` before Table A, whose rows read the meet
+C-member	"C-member", c_always,	"C-member", pur_never_d,	REACH
+C-floor	"C-floor", c_floor_holds,	"C-floor", pur_never_d,	REACH
+C-bound(floor)	"C-bound(floor)", c_floor_holds,	"C-bound(floor)", pur_never_d,	REACH
+C-yes	"C-yes",   c_stop_holds,	"C-yes",   pur_never_d,	REACH
+C-bound(yes)	"C-bound(yes)", c_stop_holds,	"C-bound(yes)", pur_never_d,	REACH
+C-model	"C-model", c_model_holds,	"C-model", pur_never_d,	REACH
+C-none	"C-none",  c_none_holds,	"C-none",  pur_never_d,	UNREACHED a no-op row (c_none does nothing): it only names the case
+C-pin	"C-pin",   c_stop_holds,	"C-pin",   pur_never_d,	REACH
+C-stop	"C-stop",  c_stop_holds,	"C-stop",  pur_never_d,	REACH
+C-run	"C-run",   c_always,	"C-run",   pur_never_d,	REACH
+C-table	-	-	UNREACHED applied by `plan_of` (phase 2, the hooks name the table), not by the plan face
+C-own	-	-	UNREACHED applied by `plan_of` (phase 2), not by the plan face
+C-asc	"C-asc",   c_always,	"C-asc",   pur_never_d,	UNREACHED C-run orders the plan first (it calls c_asc, idempotent), and it always holds
++C-member(verify-NO)	int exact = r->verify == MF_VERIFY_NO;	int exact = 0;	REACH

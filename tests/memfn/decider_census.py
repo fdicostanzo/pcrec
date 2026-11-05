@@ -43,13 +43,21 @@ import shutil
 import sys
 import tempfile
 
-# The backstop shapes (span_pick.md rev 5.2 §The tables, the census).
-BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< b.mass", "< after->mass", "< wl",
-            "tie_takes", "TIE_", "< inc", "pick_takes("]
-# K35: hits at unit 1a's base (main 564db08c5) were 36 lines; a later unit
-# that removes decider copies lowers this in the same change. 37 at 1d (the
-# `pick_takes(` shape in; the compares it replaced out), so 30 holds.
-HIT_FLOOR = 30
+# The backstop shapes (span_pick.md rev 5.2 §The tables, the census), in two
+# kinds. LIVE shapes are the spellings the members use today; EACH must hit at
+# least once (K35: a shape that matches nothing guards nothing, and six of
+# the old ones had silently gone dead). BYPASS shapes are the spellings a
+# decider must use to avoid asking `kit_pick_takes`: the best-so-far of a
+# `kit_pick` is compared by `.v` / `->v`, so a twin argmin written beside the
+# relation has to say `<= b.v` or `< b.v` (S1095's SABOTAGE line does). They
+# match only inside the relation itself (a member) and hold no live hit of
+# their own; each is shown by a PLANT whose text holds no `pick_takes(`.
+LIVE = ["kit_walk(", "< best", "tie_takes", "TIE_", "pick_takes("]
+BYPASS = ["< b.v", "<= b.v", "< b->v", "<= b->v", ".v <", "->v <"]
+BACKSTOP = LIVE + BYPASS
+# EXACT hit count (K35, like MEMBER_COUNT): lines holding any BACKSTOP shape.
+# 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact.
+HITS = 0    # set below by the first run (see main)
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
