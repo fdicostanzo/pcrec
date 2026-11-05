@@ -204,3 +204,18 @@
 # assertion condition that is a backreference-bearing body
 ^(a)(?(?=\1)a|b)$	aa
 ^(a)(?(?=\1)a|b)$	ab
+# --- round 3: (?(R) name-vs-recursion disambiguation, (?(Rn) "most recent" vs "any on the stack"
+^(?:(?(R)b|c)(?<R>a))+$	caba
+^(?:(?(R)b|c)(?<R>a))+$	caca
+^(?1)(?(DEFINE)(a(?2))((?(R1)x|y)))$	ax
+^(?1)(?(DEFINE)(a(?2))((?(R1)x|y)))$	ay
+^(?1)(?(DEFINE)(a(?2))((?(R)x|y)))$	ax
+# group named R1 and a group 1: which does (?(R1) read
+^(?<R1>a)?(?(R1)b|c)(?1)?$	ab
+^(x)?(?<R1>a)?(?(R1)b|c)$	ab
+# equal-width arms inside a lookbehind
+^(a)?b(?<=(?(1)ab|bb))c$	abc
+^(a)?b(?<=(?(1)ab|bb))c$	bc
+# conditional repeated with an empty-matching arm (empty-iteration guard)
+^(?:(?(1)|a)(b)?)*c$	abc
+^(?:(?(1)|a)(b)?)*c$	c
