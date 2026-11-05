@@ -3183,3 +3183,32 @@ Main ruled on the four kit findings (D186 add. 2):
 - F12: the normal form has one spelling, `run_pos_sat` / `run_cmp_sat`. F13 is OWED until the planner/back-end split (window.c still mixes both faces). R10: no wrapper.
 - The PURITY HARNESS is `arm_fixtures --purity`. It checks 5 window sites with the defines interleaved, in order, reversed and repeated, under NONE and skewed rates, and holds the sticky-err fence. It is run_finder.sh's `purity` part (floor 287). Its nsites plant goes RED and its control shows the plant is reached.
 - No mover: spot 1788/1788, multi-target 405/405, reach smoke 0 differ. MF_SITE_ABI 23 and MF_CLASS_V 7 are unchanged. Census 52. S1095/S1096 are re-anchored and hand-measured DETECTED. The R21 recipe cannot see the copies go, so a restatement is proposed for main (it reads 1 -> 0). Gates 400-409 (kit-sp1d-*) are prepared, not queued; job 300 holds the box.
+
+## 2026-11-04 (night) — 1c landed; 1d started
+
+- 1c gates 390-399 are all GREEN. The first run of 396 was red only on test-plan-lint (the PL14 cite fixed on main after 1c's cut); main was merged and 396 retried. Frank lifted the evening hold for tonight (18:49, via main), so 394-399 were un-gated. Main merged 1c, daf6f002b, and restated R24. Main's full suite 300 is frozen at daf6f002b (~12 h). No heavy kit jobs until its verdict.
+- My slip: the watcher matched cancelled jobs' entries in done/. Watchers read queue.log END lines for the CURRENT run only.
+- 1d: lane sp1d (opus) is building on lane/memfn-sp1d from daf6f002b: the one candidate builder, T-VERIFY as a step list, the purity harness, breaker (a) FENCED.
+  - Folded in: r2 F12 (one normal-form predicate), F13 (a home for the position primitives), the five-member argmin family into T-PICK, and r1 R10 if the call shape still repeats.
+  - Plus a "Seam notes" section for principle 9 (observations only).
+- 11-04 23:20: sp1d delivered lane/memfn-sp1d @ e9e5f035e (report docs/dev/lanes/sp1d_report.md).
+  - What it did: one candidate builder; mass_domain deleted; the five argmin members share kit_pick_takes; T-VERIFY is a step list; the purity harness is green and its plant goes RED; F12 done.
+  - Validation: zero movers in light spot checks; MF_SITE_ABI 23 unchanged.
+  - Owed: F13 (its home is the kit split). The R21 recipe restatement is main's. Deviation 1: A-model still reads the walked spans' own sets (moving it would change G2-visible decisions; a later ruled change).
+  - Slip: the lane ran ~3.8k spot compiles against a ~3k cap.
+  - Gates 400-409 prepared; they queue after job 300's verdict. The critic round crit-memfn-sp1d (opus coordinator) is launched, light probes only.
+- 11-05 00:20: sp1dfix delivered c1c6ce26c, and lane/memfn-sp1d is fast-forwarded to it. The review is ruled in 3a981c43e.
+  - F1: per-row purity reach table, 16 rows move a reply, 3 are declared SAME; purity floor -eq 1157.
+  - F2: the census sees bypass shapes; HITS exact at 37.
+  - F3: S1096's witness is now `-e utf8 --memfn=no-window-search`; its DETECTED re-measure is in mech shard 417-419.
+  - F4: WCAND gains stretch/stop_ok/src records.
+  - F5-F7, F9, F11 done.
+  - Light validation all green, including G2 (70.36M/0). Spot checks: 765 pairs SAME; MFTRACE identical except WCAND.
+  - Gates 410-419 are prepared in scratch/memfn/sp1dfix/jobs (TREE=worktrees/sp1dfix) and wait for job 300's verdict.
+  - Slip: `boxqueue add` on the scratch queue without `--no-start` armed a runner, which the lane safekilled before any job body ran. Briefs say `--no-start`; the lane dropped it.
+- 11-05 13:35: main's suite 300 is GREEN, so the sp1d gates were queued at 10:26.
+  - 410-415 GREEN.
+  - 416 (make test) went RED on test-codegen only: the new tests/memfn/run_purity_reach.sh (sp1dfix F1) had unguarded `sort` (K35) and was missing from san_excluded.txt (TT-9). Triage tri416 classed it (b), a stale expectation, with no emitted change.
+  - Fixed at sp1dfix 0044a0ee7 (LC_ALL=C, plus an OWN-TIER row). 416 retried; 417-419 run after it.
+  - Slip: my bash watcher never fired on the RED; the queue monitor's line did. Replaced it with a python watcher keyed on per-job END lines.
+  - Lesson for lane briefs: a new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (listed in san_scripts or san_excluded). Run `make test-codegen` before delivering any new test script.

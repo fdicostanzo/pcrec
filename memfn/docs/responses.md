@@ -3140,3 +3140,25 @@ the compiler, and is never adopted silently. Proposed for main to file
     - **MF_SITE_ABI 22 -> 23** (ruled: a refusal that narrows what the seam may state). No pcrec abi, MF_CLASS_V or docs/spec change; no emitted byte moves.
   - Ratchet: R24 2 -> 0 (-2, the derived form); stage-1 total 7 -> 5.
   - FOR MAIN: roadmap §5's R24 recipe greps literal lines and cannot see `kit_run_member` (R22's old blindness). sp1c_report.md "Ratchet" proposes a restatement that reads 2 -> 0 as well.
+
+- done: 2026-11-05 — **span_pick stage 1, unit 1d (planning core): READY TO MERGE. Branch `lane/memfn-sp1d` @ 0044a0ee7** (base main daf6f002b; lane sp1d e9e5f035e + review-fix lane sp1dfix c1c6ce26c + the gate-416 fix 0044a0ee7).
+  - Reports: `docs/dev/lanes/sp1d_report.md`, `sp1dfix_report.md`. Code round: `docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md` (on lane/memfn-k1102). No answer, speed or size findings. Every FIX-NOW is fixed, and each plant went RED or LOUD and was then reverted.
+  - Validation, all GREEN at 0044a0ee7 or its parent:
+    - 410 strict; 411 kit sections; 412 reach equality; 413/414/415 byte identity (zero movers);
+    - 416 make test (1299 s). Its first run was RED only on test-codegen: the new run_purity_reach.sh needed LC_ALL=C (K35) and a san_excluded row (TT-9), fixed in 0044a0ee7;
+    - 417/418/419 mech (73 rows): unexpected 0, undetected 0, anomalies 0. The only UNREACHED rows are the declared S917/S919. S1095, S1096 (witness re-aimed at `-e utf8 --memfn=no-window-search`) and S1097 are DETECTED.
+  - Changes:
+    - One candidate builder (window.c `cands`) feeds every Table A row; `mass_domain` and A-model's private enumeration are deleted. The five argmin members ask one relation, `kit_pick_takes` (strict-order precondition stated).
+    - T-VERIFY is a step list: the run member is its first step, and C-bound(floor) and C-bound(yes) are declared rows.
+    - The normal-form test has one spelling (`run_pos_sat`/`run_cmp_sat`); ofsskip's dead fourth spelling is deleted.
+    - New MFTRACE WCAND record (no prices; stretch/stop_ok/src facts) per manifesto principle 9.
+    - Purity harness (arm_fixtures --purity: 11 sites, defines interleaved, floor -eq 1157) with a per-row reach table. Breaker (a) is FENCED (sticky err returns -1).
+    - The census backstop sees bypass shapes.
+    - MF_SITE_ABI 23 and MF_CLASS_V 7 unchanged. No pcrec abi, docs/spec or emitted-byte change.
+  - Ratchet: R21 -1 by the design. FOR MAIN: R21's recipe as written reads 1 -> 1 (both chooser functions remain, thinner). The proposed restatement in sp1d_report.md "Ratchet" reads 1 -> 0.
+  - Design deviation 1 (sp1d_report): A-model still reads the walked spans' own sets, not the merged candidates. Changing that moves G2-visible decisions, so it is left for a later ruled change.
+  - PLAN rows from the review, for main to file:
+    - F4's M inputs, with row 1;
+    - F9 U-1 (kit_member into kit_pick) and U-2 (one kit_argmin), trigger row 1 or a sixth argmin;
+    - F9 P4's set-leads pick, trigger the next T-PRES change;
+    - F10 + r2 F13 (position primitives' home) and F12 (rates snapshot by tag+version, rules digest, `alt=`), both at the kit split.
