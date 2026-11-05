@@ -3175,3 +3175,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - Main filed F11 as [POS-ONE-DETECTOR], and Frank's [RUN-POS-SET] (required-run positions as byte sets) the same day.
 - Gates 390-399 (kit-sp1c2-*) are queued. 390-393 run now. 394-399 carry `boxqueue: not-before 2026-11-05T01:05` (Frank holds 20:00-01:00). If 393 has not started by ~19:20, re-gate it.
 - My slip: the watcher on sp1c's final run matched the lock LABEL, which survives in `free (last holder ...)`, so it never fired. Watchers match the held state or the queue's done/failed dirs, never a label.
+
+## 2026-11-04 (night) — 1c landed; 1d started
+
+- 1c gates 390-399 are all GREEN. The first run of 396 was red only on test-plan-lint (the PL14 cite fixed on main after 1c's cut); main was merged and 396 retried. Frank lifted the evening hold for tonight (18:49, via main), so 394-399 were un-gated. Main merged 1c, daf6f002b, and restated R24. Main's full suite 300 is frozen at daf6f002b (~12 h). No heavy kit jobs until its verdict.
+- My slip: the watcher matched cancelled jobs' entries in done/. Watchers read queue.log END lines for the CURRENT run only.
+- 1d: lane sp1d (opus) is building on lane/memfn-sp1d from daf6f002b: the one candidate builder, T-VERIFY as a step list, the purity harness, breaker (a) FENCED.
+  - Folded in: r2 F12 (one normal-form predicate), F13 (a home for the position primitives), the five-member argmin family into T-PICK, and r1 R10 if the call shape still repeats.
+  - Plus a "Seam notes" section for principle 9 (observations only).
