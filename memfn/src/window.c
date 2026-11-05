@@ -2503,9 +2503,9 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  *   C++    the resume, C + 1 (resume_next).
  * Under D-HORS (T-FIND's first row; B-hors) B is replaced: BOUND first, then
  * the window's last position `hl` probed into `b`; a byte outside its tested
- * set resumes at C + sh[b] at once, and so does a candidate whose TEST fails (TEST less the
- * probed position, which the probe proved). sh[] is a file-scope table the
- * define writes.
+ * set resumes at C + sh[b] at once, and so does a candidate whose TEST fails
+ * (TEST less the probed position, which the probe proved). sh[] is a
+ * file-scope table the define writes.
  * Under B-FN (PAIR, where the plan IS the offset-skip function's predicate)
  * B, C and the resume are that function's (ofsskip.c: fn-pair's body, and its
  * PREFIX SIMD rows under -fmemfn-simd), defined at file scope as
