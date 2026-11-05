@@ -669,6 +669,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
+  filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
+  status (2026-11-05): filed and SCHEDULED: designed inside the alternation normal-form rev 1 general form (every fixed-width piece one description); build after span_pick 1e (moved run facts move kit arms)
+  next: alt_normal_form.md rev 1 states it (or stages it); then a critic round and Frank's build go
+  refs: docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
+  Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
+  Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
 - [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
   status (2026-11-05): vlbinv investigated (docs/dev/lanes/vlbinv_report.md): the 37 corpus rows are pcrec's own refusal pins (1 false positive); general form = per-branch step-back loop longest-first (fixed = one turn), VM-only, covers 32/37 (+backref width 36); 4 questions for Frank
