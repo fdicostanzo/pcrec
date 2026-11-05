@@ -301,3 +301,7 @@ No build, no heavy run, nothing owed. Evidence: `docs/dev/lanes/vlbinv_evidence/
 (`premise.txt`, `oracle_probe.c`, `compile_probes.{txt,out}`, `compile_probes_utf.out`,
 `match_probes.{txt,out}`, `corpus76_vs_pcre2.tsv`, `population.tsv`, `population_coverage.txt`,
 `bench_expansion.txt`).
+
+## Owner addendum (Frank, 2026-11-05 19:30) — candidate approach D, to be vetted by the design lane
+
+"I'm certainly not going to try a reverse vm just for this. But we could reverse dfa then forward vm for captures." No reverse VM. Candidate D: a reverse DFA of the lookbehind body, run from the cursor back at most the max width, finds where the body can start (per alternative, or one DFA with priority-tagged accepts); PCRE2's order picks the first alternative with any start, then its longest step-back; one forward anchored VM run from that start, required to end at the cursor, sets the captures. Capture-free and negative lookbehinds need the DFA only. Manager's note: this is the landmark walk's own shape (D184: a reverse machine to the accepting start, then one anchored forward finish), so it may be a second client of that mechanism rather than a new one. To vet: non-atomic retries (record every accepting start, not just the farthest); DFA size per lookbehind; whether the VM artifact can host the reverse DFA as the walk's finisher pairing does today; and versus the step-back loop (B) on speed and simplicity.
