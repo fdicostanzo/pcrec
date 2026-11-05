@@ -1,0 +1,17 @@
+pattern	today	s0	s1	s2c	s3	s3m	today_scan/pf	s1_scan/pf	entries today/s0->s1	bytes s0->s1
+abcdÀefgh	6	6	10	10	10	10	"cover"/"none"	"cover"/"none"	132/132->121	12340->12207
+москва	0	0	0	0	0	4	"unanchored"/"memchr"	"unanchored"/"memchr"	1140/1140->900	26760->24366
+αβγ	0	3	3	3	6	6	"unanchored"/"offset-set"	"unanchored"/"handoff"	160/160->128	15358->15026
+straße	3	3	3	3	3	5	"unanchored"/"handoff"	"unanchored"/"handoff"	462/462->429	21952->21611
+é	0	0	0	0	0	0	"cover"/"none"	"cover"/"none"	12/12->9	10673->10629
+σ	0	0	0	0	0	0	"unanchored"/"byte-class"	"unanchored"/"byte-class"	40/40->40	14546->14546
+k	0	0	0	0	0	0	"unanchored"/"byte-class"	"unanchored"/"byte-class"	48/72->60	17491->17393
+s	0	0	0	0	0	0	"unanchored"/"byte-class"	"unanchored"/"byte-class"	30/45->36	17200->17124
+abc	3	3	3	3	3	3	"cover"/"none"	"cover"/"none"	16/16->16	11835->11835
+information_schema	12	12	12	12	12	13	"unanchored"/"offset-set"	"unanchored"/"offset-set"	1020/1020->960	29221->28601
+select	5	5	5	5	5	6	"unanchored"/"handoff"	"unanchored"/"handoff"	216/216->192	19525->19274
+éclair	7	7	7	7	7	7	"cover"/"none"	"cover"/"none"	72/72->64	11552->11443
+Ελληνικά	0	4	10	10	10	11	"unanchored"/"offset-set"	"unanchored"/"offset-set"	1430/1430->1170	34036->31475
+привет мир	0	4	7	7	7	8	"unanchored"/"offset-set"	"unanchored"/"handoff"	1620/1620->1296	32668->29513
+naïve café	8	10	12	12	12	12	"cover"/"none"	"cover"/"none"	169/169->143	12784->12463
+β	0	0	0	0	0	0	"unanchored"/"byte-class"	"unanchored"/"byte-class"	48/48->48	14617->14617
