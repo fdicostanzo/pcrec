@@ -6,3 +6,6 @@
 (?<=a{1,2})x	ax
 (?<=a{0,2})x	x
 (?<!a{0,2})x	bx
+(?<=bc|d)x	abcx
+(?<!bc|d)x	abcx
+(?<!bc|d)x	bcax

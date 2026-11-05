@@ -6,3 +6,6 @@
 (?<=a{1,2})x	ax	[1-2]
 (?<=a{0,2})x	x	[0-1]
 (?<!a{0,2})x	bx	nomatch
+(?<=bc|d)x	abcx	[3-4]
+(?<!bc|d)x	abcx	nomatch
+(?<!bc|d)x	bcax	[3-4]
