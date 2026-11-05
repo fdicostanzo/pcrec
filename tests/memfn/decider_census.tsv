@@ -29,6 +29,7 @@ compose.c	select_arm	fn	-	EXC:compose arms[], the frame selector of non-plan sit
 compose.c	kit_walk	excluded	-	the table walk's definition (no decision of its own)	-
 kit.h	kit_walk	excluded	-	the table walk's prototype	-
 kit.h	kit_tie_takes	excluded	-	the TIE table's answer, its prototype (presence.c reads TIE through it, unit 1b)	-
+kit.h	kit_pick_takes	excluded	-	the pick's one before-relation, its prototype (presence.c's picks ask it, unit 1d)	-
 ofsskip.c	fn_select	fn	-	EXC:fn_rows BODY and PREFIX (T-FIND on OFS, SIMD rungs)	pcrec states a kind on OFS sites; the SIMD census rule
 ofsskip.c	ofs_fn_serves	fn	-	EXC:fn_rows BODY (T-FIND on OFS)	pcrec states a kind on OFS sites
 vrun.c	vrun_kb	fn	-	EXC:vrun KA/KB (SIMD rungs)	the SIMD census rule (C9)
@@ -36,13 +37,13 @@ window.c	decide	fn	-	KEY,M	-
 window.c	a_empty_holds	fn	-	KEY	-
 window.c	a_parked_holds	fn	-	KEY	-
 window.c	a_parked_choose	fn	-	KEY	-
+window.c	cands	fn	-	KEY,T-VERIFY	- (unit 1d: THE candidate list, C-meet; every Table A row reads it)
 window.c	f0_of	fn	-	KEY	-
 window.c	walked	fn	-	KEY	-
 window.c	scan_ok	fn	-	KEY	-
 window.c	a_model_holds	fn	-	KEY	-
-window.c	a_model_choose	fn	-	KEY	1d (one candidate builder)
+window.c	a_model_choose	fn	-	KEY	- (reads cands' walked list since 1d)
 window.c	in_stretch	fn	-	KEY	-
-window.c	mass_domain	fn	-	KEY	1d (its copy goes)
 window.c	a_mass_holds	fn	-	KEY	-
 window.c	a_mass_choose	fn	-	KEY	-
 window.c	a_floor_holds	fn	-	KEY	-
@@ -54,6 +55,7 @@ window.c	m_parked_holds	fn	-	M	-
 window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c: run_member, P3's run scan and translate's ranking ask it)
 window.c	run_member	fn	-	T-VERIFY	-
 window.c	kit_tie_takes	fn	-	TIE	-
+window.c	kit_pick_takes	fn	-	TIE	- (unit 1d: the pick's one before-relation; every argmin asks it)
 window.c	kit_tie_member_key	fn	-	TIE	-
 window.c	wf_ties	data	-	TIE	-
 window.c	wf_tie_to	data	-	TIE	-
@@ -63,8 +65,8 @@ window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:tr
 window.c	d_hors_holds	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
 window.c	wf_find_decide	fn	-	T-FIND,T-FRAME	1e
 window.c	wf_prepare	fn	-	T-FRAME	1e
-presence.c	kit_pres_picks:set-pick	part	m < lo	T-PRES	-
-presence.c	kit_pres_picks:run-window	part	wm < wl	TIE	- (reads T_WINDOW since 1b)
+presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
+presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate
 precheck.c	implied_by	fn	-	EXC:implied_by (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
 runcmp.c	rc_row_of	fn	-	T-CMP	-
