@@ -2816,8 +2816,8 @@ int wf_plan_reads_table(const struct wf_plan *w)
 }
 
 /* The FIND slot's row that decided E-find's stop (kit.h; Table B's renderer
- * row is wf_brows[w->bren]), NULL where none did (the floor, or D-hors's
- * probe, which finds no stop). */
+ * row is wf_brows[w->bren]), NULL where none did (the floor). Since span_pick
+ * 1e D-hors is that row too (its FDROUTE record is new; no byte moves). */
 const char *wf_plan_brow(const struct wf_plan *w)
 {
     return w->row == &wf_find_arm && w->bren < WF_NBROWS ? w->brow : NULL;

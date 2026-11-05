@@ -898,8 +898,8 @@ int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
  * (mf_defined's `reads_table`). */
 void wf_plan_class(const struct wf_plan *plan, mf_class *out);
 const struct arm *wf_plan_row(const struct wf_plan *plan);
-/* The FIND slot's row deciding E-find's stop (Table B: fd_find), or NULL
- * (the floor; E-find under D-hors, which finds no stop). */
+/* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
+ * included since span_pick 1e), or NULL (the floor). */
 const char *wf_plan_brow(const struct wf_plan *plan);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic")

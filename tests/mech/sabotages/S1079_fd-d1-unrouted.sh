@@ -18,7 +18,7 @@ SAB_ID="S1079-fd-d1-unrouted"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="memfnfinder"
 SAB_DESC="finder row D1 is held back from deciding for the composer (fd_find declines its decision when no stop is stated): its sites render their pre-table form under no decided row"
-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1079) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 7fail/894pass (docs/dev/lanes/fdb2land_report.md). RE-ANCHORED at B4' (lane b4p): read the current figure from a run."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1079) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 7fail/894pass (docs/dev/lanes/fdb2land_report.md). RE-ANCHORED at B4' (lane b4p): read the current figure from a run. RE-ANCHORED at span_pick 1e (lane sp1e) into fd_find: MEASURED 2026-11-05 BY HAND (the plant applied to a git archive of lane/memfn-sp1e 7d5d6711c, built, tests/memfn/run_finder.sh against its build/libpcrec.a): DETECTED, memfnfinder 6fail/3155pass (byte1t and hat1 decided by no row; the routed census and the lever cases under their floors); the mech run's own figure is gate job 427's (docs/dev/lanes/sp1e_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (d.terminal >= FD_NROWS) return 0;'
