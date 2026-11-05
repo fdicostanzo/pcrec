@@ -84,6 +84,14 @@ subject):
      `asked` no ask record stands behind must read ASK MISMATCH, and the
      consistent aggregate must read neither.
 
+  THE ROW MAP (M; span_pick 1e, lane sp1e): tests/memfn/row_map.tsv
+     declares each row that MOVED between tables (window.c's `wfD`/D-hors to
+     `fd`/D-hors; `wfD`/D-one dissolved). Its old (table, row) must be no
+     row of the derived set nor of rows.tsv, its target a row of both, and
+     no traced compile of this run may name a mapped-away table in any
+     record (at least one traced compile read). reach_equal.py --map is the
+     map's other reader (REACH equality through it).
+
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
 rows); a row whose witness stops being chosen in the corpus but stays chosen
@@ -246,6 +254,8 @@ class Art:
     def __init__(self, label, text, chosen, fdtext="", err=b""):
         self.label, self.text, self.chosen, self.fdtext = label, text, chosen, fdtext
         self.asked, self.askrec = reach_asked(err), ask_records(err)
+        # every table a trace record names (section M: a mapped-away table)
+        self.tables = set(re.findall(r"^MFTRACE \S+ table=(\S+)", err.decode("utf-8", "replace"), re.M))
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -660,6 +670,40 @@ def main():
         ok()
     print("ask count vs ask records: %d (row, process) comparisons, %d nonzero" % (ncmp, nask))
     judge_plants(root)
+
+    # ---- M. the declared row map (span_pick 1e: tests/memfn/row_map.tsv) ----
+    # A row that moved between tables: its old (table, row) is no row of the
+    # kit's derived set nor of rows.tsv; its target is in both; and no traced
+    # compile of this run names the old table in any record.
+    rmap = read_tsv(os.path.join(root, os.environ.get("ROW_MAP_TSV", "tests/memfn/row_map.tsv")), 5)
+    if not rmap:
+        bad("row_map.tsv declares no line (the map's reader is blind)")
+    for ft, fr, tt, tr, unit in rmap:
+        if (ft, fr) in kit or (ft, fr) in man:
+            bad("row map (%s): %s/%s moved away but is still a row (kit %s, rows.tsv %s)"
+                % (unit, ft, fr, (ft, fr) in kit, (ft, fr) in man))
+        else:
+            ok()
+        if tt != "-" and ((tt, tr) not in kit or (tt, tr) not in man):
+            bad("row map (%s): target %s/%s missing (kit %s, rows.tsv %s)"
+                % (unit, tt, tr, (tt, tr) in kit, (tt, tr) in man))
+        elif tt != "-":
+            ok()
+    gone_tables = {c[0] for c in rmap} - {k[0] for k in kit}
+    ntr = 0
+    for art in arts:
+        if not art.tables:
+            continue
+        ntr += 1
+        hit = gone_tables & art.tables
+        if hit:
+            bad("%s: a trace record names the mapped-away table(s) %s" % (art.label, sorted(hit)))
+    if ntr == 0:
+        bad("no traced compile named any table (section M's trace control is vacuous)")
+    else:
+        ok()
+    print("row map: %d lines, mapped-away tables %s, %d traced compiles read"
+          % (len(rmap), sorted(gone_tables), ntr))
 
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}

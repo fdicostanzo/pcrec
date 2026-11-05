@@ -77,7 +77,10 @@
 # PRESENCE ASK, floor(0.9 x asked)); their g2 floors stay PLACEHOLDER (G2's log
 # carries no per-row reach count; OWED, docs/dev/lanes/b3b_report.md §14). D2 RETIRED at D172 S2 commit 6
 # (no pcrec site ever stated a RUN span 0), its row with it; RPT RETIRED at D172
-# S3 with the R-26.6 preview (window_site.md §4).
+# S3 with the R-26.6 preview (window_site.md §4). D-hors (span_pick 1e, lane
+# sp1e: window.c's Table D row, which printed no REACH line, moved to `fd`;
+# tests/memfn/row_map.tsv) is PLACEHOLDER in both columns until the next N2
+# census and a G2 rows run measure it (no number invented).
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
@@ -100,6 +103,7 @@ fn	fn-pair	5205	10422
 fn	fn-memchr	117902	18981
 fn	vrun-w16	70	743
 fn	vrun-w32	70	743
+fd	D-hors	PLACEHOLDER	PLACEHOLDER
 fd	D1	129159	PLACEHOLDER
 fd	D1c	4287	PLACEHOLDER
 fd	D1w	211402	PLACEHOLDER

@@ -149,8 +149,9 @@ plant_spec() {
         echo 'ofsskip.c@@} else { %s = %s; %s += %s; }%s"@@} else { %s = %s + 1; %s += %s; }%s"' ;;
     S1542) # the S3 final review's CHECK-2: D-hors's `whi >= 0` scope dropped, so D-hors
         # renders a window wholly below the candidate (the below-window sites; the
-        # generator's D-hors scope census goes red)
-        echo 'window.c@@    if (!dx->hw || dx->whi - dx->wlo < 1 || dx->whi < 0) return 0;@@    if (!dx->hw || dx->whi - dx->wlo < 1) return 0;' ;;
+        # generator's D-hors scope census goes red). Re-aimed at span_pick 1e (lane
+        # sp1e): D-hors's predicate left window.c's Table D for finder.c's hors_facts
+        echo 'finder.c@@    if (!st->hw || st->whi - st->wlo < 1 || st->whi < 0) return;@@    if (!st->hw || st->whi - st->wlo < 1) return;' ;;
     S1543) # the S3 final review's EMIT-3: E-find's RAISE dropped (no expression floor):
         # with the test's lower half hoisted into it, a core position below the
         # candidate is read below the subject (layout L's guard page)

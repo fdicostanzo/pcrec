@@ -60,15 +60,18 @@ LIVE = ["kit_walk(", "< best", "tie_takes", "TIE_", "pick_takes("]
 BYPASS = ["< b.v", "<= b.v", "< b->v", "<= b->v", ".v <", "->v <"]
 BACKSTOP = LIVE + BYPASS
 # EXACT hit count (K35, like MEMBER_COUNT): lines holding any BACKSTOP shape.
-# 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact.
-HITS = 37
+# 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact;
+# 36 at 1e (Table D's `kit_walk(&wf_dtable` gone: D-hors is T-FIND's row).
+HITS = 36
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
 # kit_tie_member_key in); 50 at 1c (translate:run-rank and
 # kit_pres_picks:run-scan gone into kit_run_member, which is in); 52 at 1d
 # (mass_domain gone into the candidate builder cands, which is in, and
-# kit_pick_takes in with its kit.h prototype).
+# kit_pick_takes in with its kit.h prototype); 52 at 1e (fd_route gone into
+# fd_find, the one walk; window.c's d_hors_holds out, finder.c's hors_facts
+# in; compose.c's fd_renderer, the composer's renderer rows, in).
 MEMBER_COUNT = 52
 
 passed = failed = 0

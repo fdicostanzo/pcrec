@@ -21,11 +21,12 @@
 #            §The tables' named exceptions), `-` for a table's own home
 #
 # file	member	kind	anchor	answers	retires
-finder.c	fd_route	fn	-	T-FIND	1e (one walk with the asker fact)
-finder.c	fd_find	fn	-	T-FIND	1e (one walk with the asker fact)
+finder.c	fd_find	fn	-	T-FIND	- (unit 1e: THE one walk, both askers, the asker fact; fd_route retired into it)
+finder.c	hors_facts	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE (unit 1e: Table D's d_hors_holds, D-hors's facts)
 finder.c	fd_decide	fn	-	T-FIND,T-PRES	-
 finder.c	fd_pres	fn	-	EXC:fd_pres chain order (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
 compose.c	select_arm	fn	-	EXC:compose arms[], the frame selector of non-plan sites	a kit request adds an arm
+compose.c	fd_renderer	fn	-	T-FRAME	- (unit 1e: the composer's renderer rows for a T-FIND pick)
 compose.c	kit_walk	excluded	-	the table walk's definition (no decision of its own)	-
 kit.h	kit_walk	excluded	-	the table walk's prototype	-
 kit.h	kit_tie_takes	excluded	-	the TIE table's answer, its prototype (presence.c reads TIE through it, unit 1b)	-
@@ -62,9 +63,8 @@ window.c	wf_tie_to	data	-	TIE	-
 window.c	find_groups	fn	-	T-VERIFY	-
 window.c	run_group_ok	fn	-	T-VERIFY	-
 window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:translate's pterm grouping (T-VERIFY C-run)	a census shows its groups equal find_groups' on every B-fn site
-window.c	d_hors_holds	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
-window.c	wf_find_decide	fn	-	T-FIND,T-FRAME	1e
-window.c	wf_prepare	fn	-	T-FRAME	1e
+window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once, then B's renderer row)
+window.c	wf_prepare	fn	-	T-FRAME	- (unit 1e: Table E, legacy first, at text time)
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate

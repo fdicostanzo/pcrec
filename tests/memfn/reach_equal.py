@@ -6,7 +6,7 @@ target; a corpus run is heavy (it takes the box lock through its caller).
 
   reach_equal.py --ref-bin BASE --bin HEAD --tree TREE
                  [--patterns-file F]... [--gone TABLE:ROW,...] [--arms A;B;...]
-                 [--jobs N] [--timeout S] [--limit N]
+                 [--map FILE] [--jobs N] [--timeout S] [--limit N] [--no-corpus]
 
 Both binaries are built with -DMF_TRACE (`make BUILD_DIR=D CFLAGS="-O2 -g
 -DMF_TRACE"`). Each compiles every distinct pattern of the corpus (the
@@ -35,7 +35,17 @@ Independent control: the population is the tree's own corpus and the
 committed patterns files; the counts are the kit's own reach counters on
 both sides, so a defect that moves a decision moves a count. The gone set
 is derived from the two traces and compared with the declaration.
-A --limit run is a SMOKE run: it skips the population floor, so its last
+THE ROW MAP (--map, span_pick 1e: tests/memfn/row_map.tsv): a DECLARED move
+of a row from BASE's table to HEAD's, `from_table from_row to_table to_row`
+(`-` `-` a row dissolved into the rows of its new table). A BASE table that
+prints no REACH lines (window.c's wfD did not) is read from its END records:
+its row's selections are counted as the kit counts them (a non-quiet END
+naming it, phase neither use nor shadow) and, wherever BASE printed the
+target table's REACH lines, added to BASE's map under the target's key
+(`asked` 0). A dissolved row's BASE selections are printed per arm. A map
+line whose target never prints at HEAD, or a from_table that prints any
+record at HEAD, is red.
+A --limit or --no-corpus (the patterns files alone) run is a SMOKE run: it skips the population floor, so its last
 line is `reach_equal: LIMITED rc=N ...` and it exits 0 never (3 when clean,
 1 when not): it cannot be read as the verdict.
 Last line: `reach_equal: DONE rc=N keys=K differ=D` (scripts/verdict's trailer).
@@ -51,6 +61,21 @@ import sys
 POP_FLOOR = 1000
 DEFAULT_ARMS = ["", "--engine=vm", "-fmemfn-simd", "-e utf8"]
 LINE = re.compile(r"^MFTRACE REACH table=(\S+) row=(\S+) (.*)$")
+END = re.compile(r"^MFTRACE END table=(\S+) .*\bphase=(\S+) chosen=(\S+) ")
+
+
+def read_map(path):
+    """[(from_table, from_row, to_table or None, to_row or None)] from a row map."""
+    out = []
+    with open(path, encoding="utf-8") as f:
+        for ln in f:
+            if not ln.strip() or ln.startswith("#"):
+                continue
+            c = ln.rstrip("\n").split("\t")
+            if len(c) < 4:
+                raise SystemExit("reach_equal: %s: a map line needs 4 columns: %r" % (path, ln))
+            out.append((c[0], c[1], None if c[2] == "-" else c[2], None if c[3] == "-" else c[3]))
+    return out
 
 
 def load_emit_sweep(tree):
@@ -59,7 +84,7 @@ def load_emit_sweep(tree):
     return emit_sweep
 
 
-def reach_of(binary, pat, arm, timeout):
+def reach_of(binary, pat, arm, timeout, rmap=(), base=False):
     argv = [binary, "-p", "rx", "--features", "all"] + arm.split() + ["-o", "-", "--pattern", pat]
     try:
         r = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=timeout)
@@ -67,7 +92,19 @@ def reach_of(binary, pat, arm, timeout):
         return None, 0, "timeout"
     out = collections.Counter()
     dropped = 0
+    ends = collections.Counter()       # (table, row) mapped: BASE's END selections
+    fromt = {m[0] for m in rmap}
     for ln in r.stderr.decode("utf-8", "replace").splitlines():
+        if rmap and ln.startswith("MFTRACE ") and not ln.startswith("MFTRACE REACH"):
+            t = ln.split(" table=", 1)
+            if len(t) == 2 and t[1].split(" ", 1)[0] in fromt:
+                if not base:
+                    out[("?map", t[1].split(" ", 1)[0], "head-record")] += 1
+                else:
+                    e = END.match(ln)
+                    if e and e.group(2) not in ("use", "shadow"):
+                        ends[(e.group(1), e.group(3))] += 1
+            continue
         if ln.startswith("MFTRACE REACH_DROPPED n="):
             dropped += int(ln.split("=", 1)[1])
             continue
@@ -81,6 +118,16 @@ def reach_of(binary, pat, arm, timeout):
         else:
             out[(table, row, "chosen")] += int(kv["chosen"])
             out[(table, row, "asked")] += int(kv["asked"])
+    if base:
+        tables = {k[0] for k in out}
+        for ft, fr, tt, tr in rmap:
+            n = ends[(ft, fr)]
+            if tt is None:
+                if n:
+                    out[("?dissolved", "%s:%s" % (ft, fr), "chosen")] += n
+            elif tt in tables:
+                out[(tt, tr, "chosen")] += n
+                out[(tt, tr, "asked")] += 0
     return out, dropped, "rc%d" % r.returncode if r.returncode else ""
 
 
@@ -92,24 +139,30 @@ def main():
     ap.add_argument("--patterns-file", action="append", default=[])
     ap.add_argument("--gone", default="", help="TABLE:ROW,... rows deleted at HEAD (must equal the derived set)")
     ap.add_argument("--arms", default=";".join(DEFAULT_ARMS), help="`;`-separated arm flag strings")
+    ap.add_argument("--map", help="the declared row map (tests/memfn/row_map.tsv)")
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--timeout", type=int, default=60)
     ap.add_argument("--limit", type=int, default=0, help="SMOKE: first N patterns; skips the floor, trailer LIMITED")
+    ap.add_argument("--no-corpus", action="store_true", help="SMOKE: the patterns files alone; trailer LIMITED")
     a = ap.parse_args()
     es = load_emit_sweep(a.tree)
-    pats = es.enumerate_corpus(a.bin, a.tree, 60)
+    pats = [] if a.no_corpus else es.enumerate_corpus(a.bin, a.tree, 60)
     for f in a.patterns_file:
         pats += es.read_patterns_file(f)
     pats = sorted(set(bytes(p[2]) if not isinstance(p[2], str) else p[2].encode("utf-8", "surrogateescape")
                       for p in pats))
     if a.limit:
         pats = pats[:a.limit]
+    smoke = bool(a.limit or a.no_corpus)
     arms = a.arms.split(";")
     gone = {tuple(g.split(":", 1)) for g in a.gone.split(",") if g}
+    rmap = read_map(a.map) if a.map else []
     problems = []
-    if len(pats) < POP_FLOOR and not a.limit:
+    dissolved = {arm: collections.Counter() for arm in arms}
+    mapped = collections.Counter()     # (side, to_table, to_row): chosen summed
+    if len(pats) < POP_FLOOR and not smoke:
         problems.append("population %d distinct patterns under POP_FLOOR %d" % (len(pats), POP_FLOOR))
-    print("population: %d distinct patterns x %d arms%s" % (len(pats), len(arms), " (LIMITED smoke run)" if a.limit else ""))
+    print("population: %d distinct patterns x %d arms%s" % (len(pats), len(arms), " (LIMITED smoke run)" if smoke else ""))
     rows = {s: {arm: set() for arm in arms} for s in ("base", "head")}
     gone_base = {arm: collections.Counter() for arm in arms}    # (table,row,chosen|asked) summed at BASE
     chosen_head = collections.Counter()
@@ -121,7 +174,8 @@ def main():
     tasks = [(s, b, arm, p) for arm in arms for p in pats
              for s, b in (("base", a.ref_bin), ("head", a.bin))]
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout): (s, arm, p)
+        futs = {ex.submit(reach_of, b, p.decode("utf-8", "surrogateescape"), arm, a.timeout,
+                          rmap, s == "base"): (s, arm, p)
                 for s, b, arm, p in tasks}
         for f in concurrent.futures.as_completed(futs):
             s, arm, p = futs[f]
@@ -131,6 +185,16 @@ def main():
                 fails[s][arm][p] = why
             if c is None:
                 continue
+            for ft, fr, tt, tr in rmap:
+                if tt is not None:
+                    mapped[(s, tt, tr)] += c.get((tt, tr, "chosen"), 0)
+            for k in [k for k in c if k[0] in ("?map", "?dissolved")]:
+                if k[0] == "?map":
+                    problems.append("arm %r pattern %r: HEAD prints a record of the mapped-away table %s"
+                                    % (arm, p[:60], k[1]))
+                else:
+                    dissolved[arm][k[1]] += c[k]
+                del c[k]
             rows[s][arm].update((k[0], k[1]) for k in c)
             if s == "base":
                 for k, v in c.items():
@@ -177,6 +241,18 @@ def main():
     union_b = set().union(*rows["base"].values())
     union_h = set().union(*rows["head"].values())
     derived = union_b - union_h
+    for ft, fr, tt, tr in rmap:
+        if tt is None:
+            for arm in arms:
+                print("dissolved %s/%s arm %r: BASE chosen %d (its selections are its new table's rows')"
+                      % (ft, fr, arm, dissolved[arm]["%s:%s" % (ft, fr)]))
+        elif (tt, tr) not in union_h:
+            problems.append("map target %s/%s prints no REACH line at HEAD" % (tt, tr))
+        else:
+            print("mapped %s/%s -> %s/%s: chosen BASE %d HEAD %d (all arms)"
+                  % (ft, fr, tt, tr, mapped[("base", tt, tr)], mapped[("head", tt, tr)]))
+            if not mapped[("head", tt, tr)]:
+                problems.append("map target %s/%s never chosen at HEAD (the map is unexercised)" % (tt, tr))
     print("derived gone rows (lines at BASE, none at HEAD): %s" % (", ".join("%s/%s" % g for g in sorted(derived)) or "none"))
     if derived != gone:
         problems.append("derived gone set %s != declared %s" % (sorted(derived), sorted(gone)))
@@ -192,7 +268,7 @@ def main():
     for p in problems[:200]:
         print("FAIL: " + p)
     rc = 1 if problems else 0
-    if a.limit:
+    if smoke:
         print("reach_equal: LIMITED rc=%d keys=%d differ=%d (smoke run, not a verdict)" % (rc, nkeys, differ))
         return 1 if rc else 3
     print("reach_equal: DONE rc=%d keys=%d differ=%d" % (rc, nkeys, differ))

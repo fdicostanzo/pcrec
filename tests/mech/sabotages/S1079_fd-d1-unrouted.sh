@@ -10,12 +10,16 @@
 # RE-ANCHORED at D172 S3 (lane s3): fd_row_decides, which held back only the
 # R-26.6 preview's row, retired with RPT and the preview; the plant is now
 # fd_route itself declining a D1 decision (intent unchanged).
+# RE-ANCHORED at span_pick 1e (lane sp1e): fd_route merged into fd_find, the
+# one T-FIND walk; the plant declines a D1 decision for the composer's ask
+# (`st` NULL) alone, so the window family's stops are untouched (intent
+# unchanged).
 SAB_ID="S1079-fd-d1-unrouted"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="memfnfinder"
-SAB_DESC="finder row D1 is held back from deciding (fd_route declines its decision): its sites render their pre-table form under no decided row"
+SAB_DESC="finder row D1 is held back from deciding for the composer (fd_find declines its decision when no stop is stated): its sites render their pre-table form under no decided row"
 SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1079) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 7fail/894pass (docs/dev/lanes/fdb2land_report.md). RE-ANCHORED at B4' (lane b4p): read the current figure from a run."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (d.terminal >= FD_NROWS) return NULL;'
-SAB_AFTER='    if (d.terminal >= FD_NROWS || !strcmp(fd_rows[d.terminal].id, "D1")) return NULL;   /* SABOTAGE S1079 */'
+SAB_BEFORE='    if (d.terminal >= FD_NROWS) return 0;'
+SAB_AFTER='    if (d.terminal >= FD_NROWS || (!st && !strcmp(fd_rows[d.terminal].id, "D1"))) return 0;   /* SABOTAGE S1079 */'

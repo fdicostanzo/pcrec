@@ -84,8 +84,9 @@ MF_OPT("pres-set-lead", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
  * none), mf_ask refuses it, and pcrec's `cover` declines, so the OFF arm is
  * the build before the window search was the default, exactly, not the
  * floor; any other site E-find renders falls to the floor. Its find is Table
- * B's pick (PAIR for any two bytes). `window-skip` denies Table D's D-hors
- * row: the site resumes by D-one. */
+ * B's pick (PAIR for any two bytes). `window-skip` denies T-FIND's D-hors
+ * row (Table D's until span_pick 1e): the stop is found by the next row's
+ * pick and the site resumes at c + 1. */
 MF_OPT("window-search", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the window search: jump to the next byte of one window position's bytes (memchr for "
        "one byte, two memchr streams for any two, a byte walk for more; SIMD under "
