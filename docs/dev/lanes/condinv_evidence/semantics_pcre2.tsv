@@ -1,0 +1,164 @@
+(a)?(?(1)b|c)	ab	MATCH (0,2) g1=(0,1)
+(a)?(?(1)b|c)	c	MATCH (0,1) g1=-
+(a)?(?(1)b|c)	ac	MATCH (1,2) g1=-
+(a)?(?(1)b|c)	b	NOMATCH
+(?(?=a)ab|cd)	ab	MATCH (0,2)
+(?(?=a)ab|cd)	cd	MATCH (0,2)
+(?(?=a)ab|cd)	ad	NOMATCH
+^(a)?(?(1)b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(a)?(?(1)b|c)$	c	MATCH (0,1) g1=-
+^(a)?(?(1)b|c)$	b	NOMATCH
+^(a)?(?(1)b)c$	abc	MATCH (0,3) g1=(0,1)
+^(a)?(?(1)b)c$	c	MATCH (0,1) g1=-
+^(a)?(?(1)b)c$	ac	NOMATCH
+(a)(?(1)x|y|z)		REJECT 127 @3 conditional subpattern contains more than two branches
+^(a)?(?(1)(?:b|d)|c)$	ad	MATCH (0,2) g1=(0,1)
+(?(1)a|b)(x)		ACCEPT
+^(?(1)a|b)(x)$	bx	MATCH (0,2) g1=(1,2)
+(?(1)a|b)		REJECT 115 @2 reference to non-existent subpattern
+(?(0)a|b)		REJECT 115 @4 reference to non-existent subpattern
+(?()a|b)		REJECT 162 @3 subpattern name expected
+(?(01)a|b)(x)		ACCEPT
+^(?(+1)a|b)(x)$	bx	MATCH (0,2) g1=(1,2)
+(a)(?(-1)b|c)	ab	MATCH (0,2) g1=(0,1)
+^(a)?(?(-1)b|c)$	c	MATCH (0,1) g1=-
+(?(-1)a|b)(a)		REJECT 115 @5 reference to non-existent subpattern
+^(?<n>a)?(?(<n>)b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(?<n>a)?(?(<n>)b|c)$	c	MATCH (0,1) g1=-
+^(?<n>a)?(?('n')b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(?<n>a)?(?(n)b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(?<n>a)?(?(n)b|c)$	c	MATCH (0,1) g1=-
+^(?(n)a|b)(?<n>c)$	bc	MATCH (0,2) g1=(1,2)
+(?(<n>)a|b)		REJECT 115 @4 reference to non-existent subpattern
+(?(nope)a|b)		REJECT 115 @3 reference to non-existent subpattern
+(?(define)a|b)		REJECT 115 @3 reference to non-existent subpattern
+^(?<R>a)?(?(R)b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(?<R>a)?(?(R)b|c)$	c	MATCH (0,1) g1=-
+^(?(R)b|c)(?<R>a)?$	ca	MATCH (0,2) g1=(1,2)
+^(?(R)b|c)$	c	MATCH (0,1)
+^(?(R)b|c)$	b	NOMATCH
+^(?<R1>a)?(?(R1)b|c)$	ab	MATCH (0,2) g1=(0,1)
+^(?J)(?:(?<n>a)|(?<n>b))(?(<n>)c|d)$	ac	MATCH (0,2) g1=(0,1) g2=-
+^(?J)(?:(?<n>a)|(?<n>b))(?(<n>)c|d)$	bc	MATCH (0,2) g1=- g2=(0,1)
+^(?J)(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	xd	MATCH (0,2) g1=- g2=-
+^(?J)(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	xc	NOMATCH
+^(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	bc	REJECT 143 @17 two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+(?(R)a|b)	a	NOMATCH
+(?(R)a|b)	b	MATCH (0,1)
+^(a(?(R)b|c))(?1)$	acab	MATCH (0,4) g1=(0,2)
+^(a(?(R)b|c))(?1)$	acac	NOMATCH
+^(a(?(R1)b|c))(?1)$	acab	MATCH (0,4) g1=(0,2)
+^(a(?(R1)b|c))(?1)$	acac	NOMATCH
+^(?<g>a(?(R&g)b|c))(?&g)$	acab	MATCH (0,4) g1=(0,2)
+^(?<g>a(?(R&g)b|c))(?&g)$	acac	NOMATCH
+(?(R1)a|b)(x)		ACCEPT
+(?(R2)a|b)(x)		REJECT 115 @3 reference to non-existent subpattern
+(?(R&g)a|b)(?<g>x)		ACCEPT
+^(x(?(R)y|z)(?1)?)$	xzxy	MATCH (0,4) g1=(0,4)
+^(x(?(R)y|z)(?1)?)$	xzxyxy	MATCH (0,6) g1=(0,6)
+^(x(?(R)y|z)(?1)?)$	xz	MATCH (0,2) g1=(0,2)
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayp	NOMATCH
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayq	NOMATCH
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayqyp	NOMATCH
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ypyq	NOMATCH
+^(?:a(?R)?(?(R)b|c))$	aabc	NOMATCH
+^(?:a(?R)?(?(R)b|c))$	aacc	NOMATCH
+^(?:a(?R)?(?(R)b|c))$	ac	MATCH (0,2)
+^(?(?=a)ab|cd)$	ab	MATCH (0,2)
+^(?(?=a)ab|cd)$	cd	MATCH (0,2)
+^(?(?=a)ab|cd)$	ad	NOMATCH
+^(?(?!a)cd|ab)$	ab	MATCH (0,2)
+^x(?(?<=x)y|z)$	xy	MATCH (0,2)
+^x(?(?<=q)y|z)$	xz	MATCH (0,2)
+^x(?(?<!x)y|z)$	xz	MATCH (0,2)
+^(?(?=a)a)b$	ab	MATCH (0,2)
+^(?(?=a)a)b$	b	MATCH (0,1)
+^(?(?=(a))a\1|b)$	aa	MATCH (0,2) g1=(0,1)
+^(?(?=(a))a\1|b)$	b	MATCH (0,1) g1=-
+^(?(?=(a))a|b)$	a	MATCH (0,1) g1=(0,1)
+^(?(?!(a))b|a)$	a	MATCH (0,1) g1=(0,1)
+^(?(?!(a))b|a)$	b	MATCH (0,1) g1=-
+^(?(?=(a+))a*\1|x)$	aa	MATCH (0,2) g1=(0,2)
+^(?(?=(a+?))a*\1|x)$	aa	MATCH (0,2) g1=(0,1)
+^(?(?=(a+))\1a|x)$	aaa	NOMATCH
+(?(?*a)a|b)		REJECT 128 @2 atomic assertion expected after (?( or (?(?C)
+(?(*napla:a)a|b)		REJECT 128 @9 atomic assertion expected after (?( or (?(?C)
+(?(*pla:a)a|b)		ACCEPT
+(?(*positive_lookahead:a)a|b)		ACCEPT
+(?(*nla:a)a|b)		ACCEPT
+(?(*plb:a)a|b)		ACCEPT
+(?(?C1)(?=a)a|b)		ACCEPT
+(?(?C1)(1)a|b)		REJECT 128 @7 atomic assertion expected after (?( or (?(?C)
+^ab(?(?<=a|bb)c|d)$	abd	MATCH (0,3)
+(?(?<=a+)b|c)		REJECT 125 @2 length of lookbehind assertion is not limited
+^(?(?=ab)a|abc)	abc	MATCH (0,1)
+^(?(?=ab)abx|a)	abc	NOMATCH
+(?(VERSION>=10.0)a|b)	a	MATCH (0,1)
+(?(VERSION>=99.0)a|b)	a	NOMATCH
+(?(VERSION>=99.0)a|b)	b	MATCH (0,1)
+(?(VERSION=10.46)a|b)	a	MATCH (0,1)
+(?(VERSION>10.0)a|b)		REJECT 179 @11 syntax error or number too big in (?(VERSION condition
+(?(DEFINE)(?<w>a))^x$	x	MATCH (0,1) g1=-
+(?(DEFINE)a|b)		REJECT 154 @3 DEFINE subpattern contains more than one branch
+^(?:(a)|b(?(1)c|d))+$	abc	MATCH (0,3) g1=(0,1)
+^(?:(a)|b(?(1)c|d))+$	abd	NOMATCH
+^(?:(a)|b(?(1)c|d))+$	bd	MATCH (0,2) g1=-
+^(?:(a)|b(?(1)c|d))+$	bdac	NOMATCH
+^(?:(a)|b(?(1)c|d))+$	bdabc	MATCH (0,5) g1=(2,3)
+^(a(?(1)b|c))$	ac	MATCH (0,2) g1=(0,2)
+^(a(?(1)b|c))$	ab	NOMATCH
+^(?:(a(?(1)b|c)))+$	acab	MATCH (0,4) g1=(2,4)
+^(?:(a(?(1)b|c)))+$	acac	NOMATCH
+^(?:(a)?(?(1)b|c))+$	abc	NOMATCH
+^(?:(a)?(?(1)b|c))+$	cab	MATCH (0,3) g1=(1,2)
+^(?:(a)|x)+(?(1)y|z)$	axy	MATCH (0,3) g1=(0,1)
+^(?:(a)|x)+(?(1)y|z)$	xz	MATCH (0,2) g1=-
+^(a)?(?(1)b|ab)$	ab	MATCH (0,2) g1=(0,1)
+^(a)?(?(1)ab|b)$	ab	NOMATCH
+^(a)?(?(1)ab|b)$	b	MATCH (0,1) g1=-
+^(a*)(?(1)x|y)$	y	NOMATCH
+^(a*)(?(1)x|y)$	x	MATCH (0,1) g1=(0,0)
+^(a+)?(?(1)ab|b)$	aab	MATCH (0,3) g1=(0,1)
+^(a+)?(?(1)ab|b)$	ab	NOMATCH
+^(a)?(?(1)b|c)*$	abbb	MATCH (0,4) g1=(0,1)
+^(a)?(?(1)b|c){2}$	cc	MATCH (0,2) g1=-
+(?(1)a|b)++(x)		ACCEPT
+^(a)?(?(1)b|c)++b$	abb	NOMATCH
+^(a)?(?>(?(1)b+|c))b$	abb	NOMATCH
+^(a)?(?(1)b+|c)b$	abb	MATCH (0,3) g1=(0,1)
+^(a)?(?!(?(1)b|c))..$	ac	MATCH (0,2) g1=-
+^(a)?(?!(?(1)b|c))..$	ab	MATCH (0,2) g1=-
+^(a)(?<=(?(1)a|bc))x$	ax	MATCH (0,2) g1=(0,1)
+(?<=(?(1)a|bc))x(a)		ACCEPT
+^(?=(a))?(?(1)ab|cd)$	ab	MATCH (0,2) g1=(0,1)
+^(?!(a))(?(1)ab|cd)$	cd	MATCH (0,2) g1=-
+^(?=(a)b)?(?(1)ab|cd)$	ab	MATCH (0,2) g1=(0,1)
+^(a)?(?(1)(b)|(c))$	ab	MATCH (0,2) g1=(0,1) g2=(1,2) g3=-
+^(a)?(?(1)(b)|(c))$	c	MATCH (0,1) g1=- g2=- g3=(0,1)
+^(?(2)a|b(c)?)(d)$	bcd	MATCH (0,3) g1=(1,2) g2=(2,3)
+^(?:(?(2)a|b)(c))+$	bcac	REJECT 115 @6 reference to non-existent subpattern
+^(?:(?(2)a|b)(c))+$	bcbc	REJECT 115 @6 reference to non-existent subpattern
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	aypyq	MATCH (0,5) g1=(0,3) g2=(3,5)
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	aypyp	NOMATCH
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	axpyq	NOMATCH
+^(a(?1)?(?(R)b|c))$	aabc	MATCH (0,4) g1=(0,4)
+^(a(?1)?(?(R)b|c))$	aacc	NOMATCH
+^(a(?1)?(?(R)b|c))$	ac	MATCH (0,2) g1=(0,2)
+^(a(?1)?(?(R)b|c))$	aaabbc	MATCH (0,6) g1=(0,6)
+(?:a(?R)?(?(R)b|c))	aabc	MATCH (0,4)
+^(?1)(?(1)y|z)(a)$	aza	MATCH (0,3) g1=(2,3)
+^(?1)(?(1)y|z)(a)$	aya	NOMATCH
+^(?:(?(1)a|b)(c))+$	bcac	MATCH (0,4) g1=(3,4)
+^(?:(?(1)a|b)(c))+$	bcbc	NOMATCH
+^(?!(a)b)(?(1)x|a)	ac	MATCH (0,1) g1=-
+^(a)?(?(1)|b)c$	ac	MATCH (0,2) g1=(0,1)
+^(a)?(?(1)|b)c$	bc	MATCH (0,2) g1=-
+^(a)?(?(1)|b)c$	c	NOMATCH
+^(?(?=a)a\Kb|c)$	ab	MATCH (1,2)
+(?J)(?<n>a)(?<n>b)(?(R&n)x|y)		ACCEPT
+^(?:(?(?=a)ab|a)c|ad)$	ad	MATCH (0,2)
+^(?:(a)|b)(?(1)x|y)$	ax	MATCH (0,2) g1=(0,1)
+^(?:(a)|b)(?(1)x|y)$	by	MATCH (0,2) g1=-
+^(?:(a)|b)(?(1)x|y)$	bx	NOMATCH
+^(a)(?(?=\1)a|b)$	aa	MATCH (0,2) g1=(0,1)
+^(a)(?(?=\1)a|b)$	ab	MATCH (0,2) g1=(0,1)

@@ -1,0 +1,206 @@
+# --- PREMISE TEST
+(a)?(?(1)b|c)	ab
+(a)?(?(1)b|c)	c
+(a)?(?(1)b|c)	ac
+(a)?(?(1)b|c)	b
+(?(?=a)ab|cd)	ab
+(?(?=a)ab|cd)	cd
+(?(?=a)ab|cd)	ad
+# --- K1 group-set, absolute number
+^(a)?(?(1)b|c)$	ab
+^(a)?(?(1)b|c)$	c
+^(a)?(?(1)b|c)$	b
+# no-arm missing = empty
+^(a)?(?(1)b)c$	abc
+^(a)?(?(1)b)c$	c
+^(a)?(?(1)b)c$	ac
+# three arms refused
+(a)(?(1)x|y|z)
+# alternation inside an arm is fine when grouped
+^(a)?(?(1)(?:b|d)|c)$	ad
+# condition before the group (forward number)
+(?(1)a|b)(x)
+^(?(1)a|b)(x)$	bx
+(?(1)a|b)
+(?(0)a|b)
+(?()a|b)
+(?(01)a|b)(x)
+# K2 relative
+^(?(+1)a|b)(x)$	bx
+(a)(?(-1)b|c)	ab
+^(a)?(?(-1)b|c)$	c
+(?(-1)a|b)(a)
+# K3 named: <n> 'n' bare n
+^(?<n>a)?(?(<n>)b|c)$	ab
+^(?<n>a)?(?(<n>)b|c)$	c
+^(?<n>a)?(?('n')b|c)$	ab
+^(?<n>a)?(?(n)b|c)$	ab
+^(?<n>a)?(?(n)b|c)$	c
+^(?(n)a|b)(?<n>c)$	bc
+(?(<n>)a|b)
+(?(nope)a|b)
+# a name spelt like DEFINE / R
+(?(define)a|b)
+^(?<R>a)?(?(R)b|c)$	ab
+^(?<R>a)?(?(R)b|c)$	c
+^(?(R)b|c)(?<R>a)?$	ca
+^(?(R)b|c)$	c
+^(?(R)b|c)$	b
+^(?<R1>a)?(?(R1)b|c)$	ab
+# K3b duplicate names: true if ANY member set?
+^(?J)(?:(?<n>a)|(?<n>b))(?(<n>)c|d)$	ac
+^(?J)(?:(?<n>a)|(?<n>b))(?(<n>)c|d)$	bc
+^(?J)(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	xd
+^(?J)(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	xc
+^(?:(?<n>a)|(?<n>b)|x)(?(<n>)c|d)$	bc
+# K4 recursion conditions
+(?(R)a|b)	a
+(?(R)a|b)	b
+^(a(?(R)b|c))(?1)$	acab
+^(a(?(R)b|c))(?1)$	acac
+^(a(?(R1)b|c))(?1)$	acab
+^(a(?(R1)b|c))(?1)$	acac
+^(?<g>a(?(R&g)b|c))(?&g)$	acab
+^(?<g>a(?(R&g)b|c))(?&g)$	acac
+(?(R1)a|b)(x)
+(?(R2)a|b)(x)
+(?(R&g)a|b)(?<g>x)
+^(x(?(R)y|z)(?1)?)$	xzxy
+^(x(?(R)y|z)(?1)?)$	xzxyxy
+^(x(?(R)y|z)(?1)?)$	xz
+# R inside a call to group 2 from group 1: R1 false, R2 true
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayp
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayq
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ayqyp
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	ypyq
+# (?(R) in (?R) whole-pattern recursion
+^(?:a(?R)?(?(R)b|c))$	aabc
+^(?:a(?R)?(?(R)b|c))$	aacc
+^(?:a(?R)?(?(R)b|c))$	ac
+# K5 assertion conditions
+^(?(?=a)ab|cd)$	ab
+^(?(?=a)ab|cd)$	cd
+^(?(?=a)ab|cd)$	ad
+^(?(?!a)cd|ab)$	ab
+^x(?(?<=x)y|z)$	xy
+^x(?(?<=q)y|z)$	xz
+^x(?(?<!x)y|z)$	xz
+^(?(?=a)a)b$	ab
+^(?(?=a)a)b$	b
+# assertion-condition captures carry into the yes arm
+^(?(?=(a))a\1|b)$	aa
+^(?(?=(a))a\1|b)$	b
+^(?(?=(a))a|b)$	a
+^(?(?!(a))b|a)$	a
+^(?(?!(a))b|a)$	b
+# is the assertion atomic? (a body that could choose again)
+^(?(?=(a+))a*\1|x)$	aa
+^(?(?=(a+?))a*\1|x)$	aa
+^(?(?=(a+))\1a|x)$	aaa
+# non-atomic assertion as a condition
+(?(?*a)a|b)
+(?(*napla:a)a|b)
+(?(*pla:a)a|b)
+(?(*positive_lookahead:a)a|b)
+(?(*nla:a)a|b)
+(?(*plb:a)a|b)
+# callout before an assertion condition
+(?(?C1)(?=a)a|b)
+(?(?C1)(1)a|b)
+# a lookbehind condition with a variable body
+^ab(?(?<=a|bb)c|d)$	abd
+(?(?<=a+)b|c)
+# the no-arm of an assertion condition is reached when the assertion fails
+^(?(?=ab)a|abc)	abc
+^(?(?=ab)abx|a)	abc
+# K6 VERSION, DEFINE
+(?(VERSION>=10.0)a|b)	a
+(?(VERSION>=99.0)a|b)	a
+(?(VERSION>=99.0)a|b)	b
+(?(VERSION=10.46)a|b)	a
+(?(VERSION>10.0)a|b)
+(?(DEFINE)(?<w>a))^x$	x
+(?(DEFINE)a|b)
+# K7 interactions: repeats, enclosing group, backtracking, atomic, possessive
+^(?:(a)|b(?(1)c|d))+$	abc
+^(?:(a)|b(?(1)c|d))+$	abd
+^(?:(a)|b(?(1)c|d))+$	bd
+^(?:(a)|b(?(1)c|d))+$	bdac
+^(?:(a)|b(?(1)c|d))+$	bdabc
+^(a(?(1)b|c))$	ac
+^(a(?(1)b|c))$	ab
+^(?:(a(?(1)b|c)))+$	acab
+^(?:(a(?(1)b|c)))+$	acac
+^(?:(a)?(?(1)b|c))+$	abc
+^(?:(a)?(?(1)b|c))+$	cab
+# a later iteration that does not set group 1 keeps the earlier value
+^(?:(a)|x)+(?(1)y|z)$	axy
+^(?:(a)|x)+(?(1)y|z)$	xz
+# backtracking from the yes arm into what set the group
+^(a)?(?(1)b|ab)$	ab
+^(a)?(?(1)ab|b)$	ab
+^(a)?(?(1)ab|b)$	b
+^(a*)(?(1)x|y)$	y
+^(a*)(?(1)x|y)$	x
+^(a+)?(?(1)ab|b)$	aab
+^(a+)?(?(1)ab|b)$	ab
+# quantified conditional
+^(a)?(?(1)b|c)*$	abbb
+^(a)?(?(1)b|c){2}$	cc
+(?(1)a|b)++(x)
+^(a)?(?(1)b|c)++b$	abb
+^(a)?(?>(?(1)b+|c))b$	abb
+^(a)?(?(1)b+|c)b$	abb
+# conditional inside a negative lookahead, inside a lookbehind
+^(a)?(?!(?(1)b|c))..$	ac
+^(a)?(?!(?(1)b|c))..$	ab
+^(a)(?<=(?(1)a|bc))x$	ax
+(?<=(?(1)a|bc))x(a)
+# conditions on a group inside an assertion
+^(?=(a))?(?(1)ab|cd)$	ab
+^(?!(a))(?(1)ab|cd)$	cd
+^(?=(a)b)?(?(1)ab|cd)$	ab
+# conditional with \K and captures inside the arms
+^(a)?(?(1)(b)|(c))$	ab
+^(a)?(?(1)(b)|(c))$	c
+# condition naming a group in the no-arm (self-reference by number in arm)
+^(?(2)a|b(c)?)(d)$	bcd
+^(?:(?(2)a|b)(c))+$	bcac
+^(?:(?(2)a|b)(c))+$	bcbc
+# --- round 2 (case-design fixes after round 1)
+# R1/R2 inside a call to group 2 made from group 1
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	aypyq
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	aypyp
+^(a(?2))((?(R1)x|y)(?(R2)p|q))$	axpyq
+# (?(R) in nested recursion of group 1
+^(a(?1)?(?(R)b|c))$	aabc
+^(a(?1)?(?(R)b|c))$	aacc
+^(a(?1)?(?(R)b|c))$	ac
+^(a(?1)?(?(R)b|c))$	aaabbc
+# whole-pattern recursion (?R) and (?(R)
+(?:a(?R)?(?(R)b|c))	aabc
+# captures written in a called group are restored after the call
+^(?1)(?(1)y|z)(a)$	aza
+^(?1)(?(1)y|z)(a)$	aya
+# backward self-reference inside a repeated group, correctly numbered
+^(?:(?(1)a|b)(c))+$	bcac
+^(?:(?(1)a|b)(c))+$	bcbc
+# condition on a group set inside a negative assertion (always unset after)
+^(?!(a)b)(?(1)x|a)	ac
+# empty yes-arm and empty no-arm
+^(a)?(?(1)|b)c$	ac
+^(a)?(?(1)|b)c$	bc
+^(a)?(?(1)|b)c$	c
+# assertion condition with a \K inside the yes arm
+^(?(?=a)a\Kb|c)$	ab
+# (?(R&name) with duplicate-name groups
+(?J)(?<n>a)(?<n>b)(?(R&n)x|y)
+# assertion condition: is the assertion re-evaluated if the yes-arm fails (it is one test)
+^(?:(?(?=a)ab|a)c|ad)$	ad
+# conditional on a group in a different alternative of the same alternation
+^(?:(a)|b)(?(1)x|y)$	ax
+^(?:(a)|b)(?(1)x|y)$	by
+^(?:(a)|b)(?(1)x|y)$	bx
+# assertion condition that is a backreference-bearing body
+^(a)(?(?=\1)a|b)$	aa
+^(a)(?(?=\1)a|b)$	ab
