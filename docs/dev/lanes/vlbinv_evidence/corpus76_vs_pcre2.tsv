@@ -1,0 +1,76 @@
+tests/lookaround/alpha_spellings.rxt	369	(*plb:(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/refusals.rxt	13	(?<=(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/refusals.rxt	18	(?<=a{2,3})x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/d27/refusals.rxt	23	(?<=a?)x	ACCEPT	maxlookbehind=1 caps=0
+tests/lookaround/d27/refusals.rxt	28	(?<=a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	33	(?<=a+)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	38	(?<=a{2,})x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	43	(?<=a*?)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	48	(?<=a*+)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	53	(?<=(?>a*))x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	58	(?<=(?:a|bc)d)x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/d27/refusals.rxt	63	(?<=((a|bc)d))x	ACCEPT	maxlookbehind=3 caps=2
+tests/lookaround/d27/refusals.rxt	68	(?<=a{1,255})x	ACCEPT	maxlookbehind=255 caps=0
+tests/lookaround/d27/refusals.rxt	73	(?=(?<=a*)b)x	REJECT	125 at 3: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	78	(?<!a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	83	(?<*a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/d27/refusals.rxt	88	(?<=a{2}b{0,1})x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/d27/refusals.rxt	93	(a)(?<=\1)x	ACCEPT	maxlookbehind=1 caps=1
+tests/lookaround/d27/refusals.rxt	98	(a|bc)(?<=\1)x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	139	(?<*(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	148	(*naplb:(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	157	(*non_atomic_positive_lookbehind:(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	211	(?<=(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	220	(?<*(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	229	(*naplb:(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/d27/spellings.rxt	238	(*plb:(a|ba))c	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/gated.rxt	109	(?<=(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/lookbehind_group_alt.rxt	99	(?<=(?:a|bc))x	ACCEPT	maxlookbehind=2 caps=0
+tests/lookaround/lookbehind_group_alt.rxt	104	(?<=(?i:a|bc))x	ACCEPT	maxlookbehind=2 caps=0
+tests/lookaround/lookbehind_group_alt.rxt	110	(?<=(?:a|bc)|d)x	ACCEPT	maxlookbehind=2 caps=0
+tests/lookaround/lookbehind_group_alt.rxt	116	(?<!(?:a|bc))x	ACCEPT	maxlookbehind=2 caps=0
+tests/lookaround/refused.rxt	104	(?<=(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/refused.rxt	115	(?<=a{2,3})x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/refused.rxt	124	(?<=a?)x	ACCEPT	maxlookbehind=1 caps=0
+tests/lookaround/refused.rxt	132	(?<=a{0,3})x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/refused.rxt	143	(?<=a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	149	(?<=a+)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	155	(?<=a{2,})x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	161	(?<=a*?)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	169	(?<=a*+)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	177	(?<=(?>a*))x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	189	(?<=(?:a|bc)d)x	ACCEPT	maxlookbehind=3 caps=0
+tests/lookaround/refused.rxt	197	(?<=((a|bc)d))x	ACCEPT	maxlookbehind=3 caps=2
+tests/lookaround/refused.rxt	205	(?<!a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	212	(?<*a*)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	220	(?<!(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/refused.rxt	228	(?<*(a|bc))x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/refused.rxt	247	(a)(?<=\1)x	ACCEPT	maxlookbehind=1 caps=1
+tests/lookaround/refused.rxt	258	(a|bc)(?<=\1)x	ACCEPT	maxlookbehind=2 caps=1
+tests/lookaround/refused.rxt	270	(?=(?<=a*)b)x	REJECT	125 at 3: length of lookbehind assertion is not limited
+tests/lookaround/refused.rxt	284	(?<=\n?\z)x	ACCEPT	maxlookbehind=1 caps=0
+tests/lookaround/refused.rxt	294	(?<=\w?)x	ACCEPT	maxlookbehind=1 caps=0
+tests/recursion/d27/sr_interactions.rxt	245	^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$	ACCEPT	maxlookbehind=2 caps=1
+tests/recursion/d27/sr_interactions.rxt	252	^(?(DEFINE)(?<g>a(?&g)?b))aabb(?<=(?&g))$	REJECT	125 at 30: length of lookbehind assertion is not limited
+tests/recursion/d27/sr_interactions.rxt	258	^(?(DEFINE)(?<g>a+))aa(?<=(?&g))$	REJECT	125 at 22: length of lookbehind assertion is not limited
+tests/recursion/d27/sr_interactions.rxt	265	^(?(DEFINE)(?<g>a{1,300}))aaaa(?<=(?&g))$	REJECT	200 at 30: branch too long in variable-length lookbehind assertion
+tests/recursion/d27/sr_wrapped.rxt	122	^ab(?<=(a(?1)?b))$	REJECT	125 at 3: length of lookbehind assertion is not limited
+tests/recursion/inlookaround.rxt	121	^(?:(?<g>a|ab)){0}ab(?<=(?&g))$	ACCEPT	maxlookbehind=2 caps=1
+tests/recursion/inlookaround.rxt	127	^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$	REJECT	125 at 26: length of lookbehind assertion is not limited
+tests/recursion/inlookaround.rxt	133	^(?:(?<g>a(?&h)?b)){0}(?:(?<h>(?&g))){0}aabb(?<=(?&g))$	REJECT	125 at 44: length of lookbehind assertion is not limited
+tests/recursion/inlookaround.rxt	139	^(?:(?<h>a(?&h)?b)){0}(?:(?<g>(?&h)x)){0}abx(?<=(?&g))$	REJECT	125 at 44: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	20	(?<=(?R))x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	24	x(?<=(?R))	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	29	((?<=(?1))a)	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	34	((?<!(?1))x)	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	39	((?<=(?2))a)(b|(?1))	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	44	(a(?=(?<=(?1))))	REJECT	125 at 5: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	49	((?<=(?1){0})x)	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	54	((?<=(?>(?1)))x)	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	59	(?<=(?R)|b)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	64	(?(DEFINE)(?<g>a(?<=(?&g))))x(?&g)	REJECT	125 at 16: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	70	((?<=(?2)))(a(?<=(?1)))	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	75	((?<=(?2)))(a(?<!(?1)))	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	80	((?<=(?2)))(a(?<=b(?1)))	REJECT	125 at 1: length of lookbehind assertion is not limited
+tests/recursion/inlookaround_self.rxt	87	(?<=(?1)|(?2))(a)(b(?<=(?3)))(c(?<=(?2)))	REJECT	125 at 31: length of lookbehind assertion is not limited
+tests/vars/basic.rxt	79	(?<=${v})x	ACCEPT	maxlookbehind=3 caps=0

@@ -1,0 +1,6 @@
+(?<=é{1,255})x	ACCEPT	maxlookbehind=255 caps=0
+(?<=é{1,256})x	REJECT	200 at 0: branch too long in variable-length lookbehind assertion
+(?<=\X)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+(?<=[é]{1,3})x	ACCEPT	maxlookbehind=3 caps=0
+(?<=(é{1,3}))x	ééx	[4-5,0-4]
+(?<=(é|aé))x	aéx	[3-4,0-3]

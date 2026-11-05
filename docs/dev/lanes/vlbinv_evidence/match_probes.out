@@ -1,0 +1,47 @@
+(?<=(a{1,3}))c	aaac	[3-4,0-3]
+(?<=(a{1,3}?))c	aaac	[3-4,0-3]
+(?<=(a{0,2}?)(a{0,2}))c	aac	[2-3,0-0,0-2]
+(?<=(a|aa))c	aac	[2-3,0-2]
+(?<=(aa|a))c	aac	[2-3,0-2]
+(?<=(a)|(aa))c	aac	[2-3,1-2]
+(?<=(a|aa)|(b))c	aac	[2-3,0-2]
+(?<=(a|ab)(b|))x	abbx	[3-4,0-2,2-3]
+(?<=(ab|a)(b|))x	abbx	[3-4,0-2,2-3]
+(?<=(a|ab)(b|))x	abx	[2-3,0-1,1-2]
+(?<=(a|ba))c\1	baca	nomatch
+(?<*(a|ba))c\1	baca	[2-4,1-2]
+(*naplb:(a|ba))c\1	baca	[2-4,1-2]
+(?<*(a{1,3}))c\1	aaaca	[3-5,2-3]
+(?<=(a{1,3}))c\1	aaaca	nomatch
+(?<!(a|bc))x	bcx	nomatch
+(?<!(a|bc))x	ax	nomatch
+(?<!(a|bc))x	dx	[1-2]
+(?<!(a|bc))x	x	[0-1]
+(?<!(a|bc))x(?:)	cx	[1-2]
+(?<!(a|bc)d)x	bcdx	nomatch
+(a|bc)(?<=\1)x	bcx	[0-3,0-2]
+(a|bc)(?<=\1)x	ax	[0-2,0-1]
+(a|bc)d(?<=\1d)x	bcdx	[0-4,0-2]
+(?<=a{1,2}(?=x))x	aax	[2-3]
+(?<=(?<=b)a{1,2})x	baax	[3-4]
+(?<=(?<=b)a{1,2})x	caax	nomatch
+(?<=(?<!b)a{1,2})x	baax	[3-4]
+(?<=a?)x	x	[0-1]
+(?<!a?)x	x	nomatch
+(?<=\n?\z)x	x	nomatch
+(?<=\w?)x	x	[0-1]
+(?<=\b\w{1,3})x	ab cdx	[5-6]
+(?<=^a{0,3})x	aax	[2-3]
+(?<=^a{0,3})x	baax	nomatch
+(?<=a{2}b{0,1})x	aabx	[3-4]
+(?<=a{2}b{0,1})x	aax	[2-3]
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	is not really available	nomatch
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	is available	[3-12]
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	not a b c d available	[12-21]
+(?<=(?:a|bc){1,3})x	abcax	[4-5]
+(?<=(?:(a)|(bc)){1,3})x	abcax	[4-5,3-4,1-3]
+(?<=(a+?|b){0,2}c)x	REJECT	125 at 0: length of lookbehind assertion is not limited
+(?<=(a{1,2})|(aaa))c	aaac	[3-4,1-3]
+(?<*(a{1,2})|(aaa))c\2	aaacaaa	[3-7,-,0-3]
+(?<=(a|ab)(c?))x	abcx	[3-4,0-2,2-3]
+(?<!(a{1,2}))x(?:)	bx	[1-2]

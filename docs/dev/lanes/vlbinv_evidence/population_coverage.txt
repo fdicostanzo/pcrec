@@ -1,0 +1,5 @@
+rows 37 distinct 27
+A (capture-free expansion): 15 rows 12 distinct
+A with duplicated capture numbers: 30 rows 22 distinct
+B loop: 32 rows 24 distinct
+B + backref width: 36 rows 26 distinct

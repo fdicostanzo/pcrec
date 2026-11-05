@@ -671,7 +671,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Backlog
 - [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-05): investigation lane vlbinv started; pcrec refuses "variable-length lookbehind is not implemented"; 37 corpus + 1 bench patterns libpcre2 10.46 accepts
+  status (2026-11-05): vlbinv investigated (docs/dev/lanes/vlbinv_report.md): the 37 corpus rows are pcrec's own refusal pins (1 false positive); general form = per-branch step-back loop longest-first (fixed = one turn), VM-only, covers 32/37 (+backref width 36); 4 questions for Frank
   next: the investigation report (docs/dev/lanes/vlbinv_report.md), then Frank's word on a design lane
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [ENG-LOOK]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`

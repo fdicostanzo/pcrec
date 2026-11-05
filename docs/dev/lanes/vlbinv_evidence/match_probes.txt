@@ -1,0 +1,43 @@
+(?<=(a{1,3}))c	aaac
+(?<=(a{1,3}?))c	aaac
+(?<=(a{0,2}?)(a{0,2}))c	aac
+(?<=(a|aa))c	aac
+(?<=(aa|a))c	aac
+(?<=(a)|(aa))c	aac
+(?<=(a|aa)|(b))c	aac
+(?<=(a|ab)(b|))x	abbx
+(?<=(ab|a)(b|))x	abbx
+(?<=(a|ab)(b|))x	abx
+(?<=(a|ba))c\1	baca
+(?<*(a|ba))c\1	baca
+(*naplb:(a|ba))c\1	baca
+(?<*(a{1,3}))c\1	aaaca
+(?<=(a{1,3}))c\1	aaaca
+(?<!(a|bc))x	bcx
+(?<!(a|bc))x	ax
+(?<!(a|bc))x	dx
+(?<!(a|bc))x	x
+(?<!(a|bc))x(?:)	cx
+(?<!(a|bc)d)x	bcdx
+(a|bc)(?<=\1)x	bcx
+(a|bc)(?<=\1)x	ax
+(a|bc)d(?<=\1d)x	bcdx
+(?<=a{1,2}(?=x))x	aax
+(?<=(?<=b)a{1,2})x	baax
+(?<=(?<=b)a{1,2})x	caax
+(?<=(?<!b)a{1,2})x	baax
+(?<=a?)x	x
+(?<!a?)x	x
+(?<=\n?\z)x	x
+(?<=\w?)x	x
+(?<=\b\w{1,3})x	ab cdx
+(?<=^a{0,3})x	aax
+(?<=^a{0,3})x	baax
+(?<=a{2}b{0,1})x	aabx
+(?<=a{2}b{0,1})x	aax
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	is not really available
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	is available
+(?<!\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3})\bavailable\b	not a b c d available
+(?<=(?:a|bc){1,3})x	abcax
+(?<=(?:(a)|(bc)){1,3})x	abcax
+(?<=(a+?|b){0,2}c)x	acx
