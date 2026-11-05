@@ -92,6 +92,7 @@ tests/memfn/run_arm_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.m
 tests/memfn/run_deleg_sites.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_finder.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_form_checks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_purity_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_handoff_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_libc_census.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_link_checks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run

@@ -117,6 +117,70 @@ else
     tf=$((tf + 1))
 fi
 echo "run_finder: the arm-entry counter (R-MS6)"
+# span_pick unit 1d: THE PURITY HARNESS (arm_fixtures --purity; its header
+# says what it holds and why the defines are interleaved). PURITY_FLOOR is its
+# EXACT check count (1157 since sp1dfix), a literal. ITS PLANTS: a COPY of
+# memfn/src whose A-mass row, then whose M-parked row, is keyed on the art's
+# site count (one line each, awk; the row holds only on an art that has
+# defined nothing): the planted --purity must go RED. ITS CONTROL: the planted
+# --purity-control (each reply after ONE define) must differ from this build's
+# and neither print may be empty, so the plant is REACHED on the unharnessed
+# fixture and a green harness is not merely blind to it. ITS REACH TABLE
+# (tests/memfn/run_purity_reach.sh, purity_rows.tsv): every Table A, M and
+# T-VERIFY row, dropped unconditionally, moves some harness reply or is
+# declared unreached with a reason.
+PURITY_FLOOR=1157
+"$WORK/fx" --purity > "$WORK/purity.log" 2>&1
+rc=$?
+part purity "$WORK/purity.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/purity.log")" -gt 0 ] || { echo "FAIL: --purity exited $rc with no failed check"; tf=$((tf + 1)); }
+pu=$(grep -m1 '^checks passed:' "$WORK/purity.log" | grep -oE '[0-9]+')
+if [ "${pu:-0}" -eq "$PURITY_FLOOR" ]; then
+    echo "ok   purity: ${pu} checks passed == $PURITY_FLOOR"; tp=$((tp + 1))
+else
+    echo "FAIL: purity: ${pu:-0} checks passed != $PURITY_FLOOR"; tf=$((tf + 1))
+fi
+"$WORK/fx" --purity-control > "$WORK/control.log" 2>&1
+purity_plant() {   # purity_plant NAME OLD NEW: one-line plant, RED + control moved
+    local name=$1 old=$2 new=$3 pd="$WORK/plant_$1" pn pbuilt=1
+    mkdir -p "$pd/src" "$pd/obj"
+    cp "$ROOT"/memfn/src/*.c "$ROOT"/memfn/src/*.h "$ROOT"/memfn/src/*.def "$pd/src/"
+    awk -v o="$old" -v n="$new" '$0 == o { print n; next } { print }' \
+        "$ROOT/memfn/src/window.c" > "$pd/src/window.c"
+    pn=$(diff "$ROOT/memfn/src/window.c" "$pd/src/window.c" | grep -c '^>')
+    for s in "$pd"/src/*.c; do
+        "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" -I"$ROOT/memfn/src" -c \
+            -o "$pd/obj/$(basename "${s%.c}").o" "$s" || pbuilt=0
+    done
+    [ "$pbuilt" -eq 1 ] && "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" "$ROOT/tests/memfn/arm_fixtures.c" \
+        "$pd"/obj/*.o -o "$pd/fxp" || pbuilt=0
+    if [ "$pn" -ne 1 ] || [ "$pbuilt" -ne 1 ]; then
+        echo "FAIL: the $name purity plant did not apply as one line and build (lines changed: $pn; built: $pbuilt)"; tf=$((tf + 1))
+        return
+    fi
+    "$pd/fxp" --purity > "$pd/purity.log" 2>&1
+    local pf
+    pf=$(grep -m1 '^checks failed:' "$pd/purity.log" | grep -oE '[0-9]+')
+    if [ "${pf:-0}" -gt 0 ]; then
+        echo "ok   purity plant $name: RED (${pf} checks failed), as it must be"; tp=$((tp + 1))
+    else
+        echo "FAIL: purity plant $name: the harness stayed green over a row keyed on the art's site count"; tf=$((tf + 1))
+    fi
+    "$pd/fxp" --purity-control > "$pd/control.log" 2>&1
+    if [ -s "$WORK/control.log" ] && [ -s "$pd/control.log" ] && ! cmp -s "$WORK/control.log" "$pd/control.log"; then
+        echo "ok   purity control $name: the plant is reached (a reply after one define moves)"; tp=$((tp + 1))
+    else
+        echo "FAIL: purity control $name: the planted replies after one define equal this build's, or a print is empty (the plant is not reached)"; tf=$((tf + 1))
+    fi
+}
+purity_plant a-mass '    return x->d->a[x->ai].any_stop;' \
+    '    return x->d->a[x->ai].any_stop && !x->d->art->nsites;   /* PURITY PLANT */'
+purity_plant m-parked '    return x->d->na == 2;' \
+    '    return x->d->na == 2 && !x->d->art->nsites;   /* PURITY PLANT */'
+bash "$ROOT/tests/memfn/run_purity_reach.sh" "$ROOT" "$WORK" "$CC" "$WORK/fx" > "$WORK/purity_reach.log" 2>&1
+rc=$?
+part purity_reach "$WORK/purity_reach.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/purity_reach.log")" -gt 0 ] || { echo "FAIL: run_purity_reach exited $rc with no failed check"; tf=$((tf + 1)); }
 TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&1
 rc=$?
 part arm_reach "$WORK/reach.log"

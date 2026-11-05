@@ -1,0 +1,6 @@
+report=docs/dev/lanes/sp1dfix_report.md
+sections: By id; Validation; Gate jobs; Charter vs committed; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/; docs/dev/wake.md; docs/dev/owner.md
+owed: 

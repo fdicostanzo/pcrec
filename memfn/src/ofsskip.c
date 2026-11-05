@@ -17,7 +17,10 @@
  * `plan_pos` inside a RUN term), then at each hit the other terms in array
  * order, a failed candidate resuming one position later. A RUN term whose
  * scanned position is a two-member cube takes the PAIR leapfrog instead:
- * one `memchr` stream per member, the nearer hit taken.
+ * one `memchr` stream per member, the nearer hit taken. Which term is
+ * scanned and the verify order are PCREC'S STATED facts (`plan_hint`,
+ * `plan_pos`, the term array): no kit decider picks either, so ofsskip's
+ * legacy plan is no member of the window family's Table C (span_pick.md U10).
  *
  * THE RETURNED POSITION IS THE CONTRACT, not only its comparison with `n`
  * (pcrec's litscan_k82h.md §1.1a): the leftmost position >= `pos` at which
@@ -126,9 +129,10 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
     if (sc->kind == MF_T_RUN) {
         if (p->plan_pos >= sc->run_len) return 0;
         int m = run_mask_at(sc, p->plan_pos);
-        /* exact, or a two-member cube whose run byte is its lower member */
-        if (m != 0xFF && (__builtin_popcount(~m & 0xFF) != 1 ||
-                          (sc->run[p->plan_pos] & ~m & 0xFF)))
+        /* exact, or a two-member cube (its run byte is the lower member: the
+           loop above refused every term failing `run_cmp_sat`, the normal
+           form's one spelling) */
+        if (m != 0xFF && __builtin_popcount(~m & 0xFF) != 1)
             return 0;
     }
     return runs <= 1 && checked > 0;

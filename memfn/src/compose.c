@@ -881,7 +881,10 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     art->policy = policy;
     art->denies = denies;
     art->ms = ms;
-    art->an = an;       /* DECLARED (E-1): no row reads it before B3a */
+    art->an = an;       /* the handed rates: kit_byte_rate reads them (the PRES
+                           picks, KEY's A-parked/A-model/A-mass, MARGIN, the
+                           run member (C-member), translate's ranking, D-hors:
+                           the readers of `d->rate`, found by grep) */
     gate_trace_art(art);
     const char *why = ms ? measures_check(ms) : NULL;
     if (why) kit_fail(art, "mf_art_begin: the measurement set `%s` is refused: %s",

@@ -722,13 +722,10 @@ static int cl_run(const gate_in *in)
 {
     const mf_term *t = in->t;
     if (!t || t->kind != MF_T_RUN || !t->run || t->run_len == 0) return CL_OTHER;
-    if (!t->mask) return CL_EXACT;
-    int masked = 0;
-    for (uint32_t j = 0; j < t->run_len; j++) {
-        if (t->run[j] & ~t->mask[j] & 0xFF) return CL_UNSAT;
-        if (t->mask[j] != 0xFF) masked = 1;
-    }
-    return masked ? CL_MASKED : CL_EXACT;
+    if (!run_cmp_sat(t)) return CL_UNSAT;       /* the normal form's one spelling */
+    for (uint32_t j = 0; t->mask && j < t->run_len; j++)
+        if (t->mask[j] != 0xFF) return CL_MASKED;
+    return CL_EXACT;
 }
 
 static int cl_run_len(const gate_in *in)
@@ -1018,6 +1015,23 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
         int k = class_of(f, t->in);
         reach_cell[slot][f][k < 0 ? CL_N : (unsigned)k]++;
     }
+}
+
+void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
+{
+    if (t->quiet) return;
+    head(t, "WCAND");
+    if (c->src == GATE_CAND_WALK)
+        fprintf(stderr, " src=walk alt=%u idx=%u off=%d own_members=%u own_mass=%u scan=%u\n",
+                c->alt, c->idx, (int)c->off, c->members, (unsigned)c->mass, c->scan);
+    else if (c->src == GATE_CAND_F0)
+        fprintf(stderr, " src=f0 alt=%u off=%d own_members=%u own_mass=%u\n", c->alt,
+                (int)c->off, c->members, (unsigned)c->mass);
+    else
+        fprintf(stderr, " src=pos alt=%u off=%d members=%u mass=%u core=%u stop_ok=%u "
+                "stretch=%u walked=%u key=%u incumbent=%u\n", c->alt, (int)c->off, c->members,
+                (unsigned)c->mass, c->core, c->stop_ok, c->stretch, c->walked, c->key,
+                c->incumbent);
 }
 
 #endif /* MF_TRACE */

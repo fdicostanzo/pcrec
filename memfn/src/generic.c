@@ -193,7 +193,7 @@ static int pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
                 }
             } else {
                 uint8_t m = tm->mask ? tm->mask[j] : 0xFF;
-                if (tm->run[j] & (uint8_t)~m) {
+                if (!run_pos_sat(tm, j)) {
                     /* a run byte with a bit its mask clears never holds
                      * under the literal formula (Q-G2-13): constant
                      * false, the same answer with no tautological compare */

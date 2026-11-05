@@ -191,6 +191,12 @@ static const char *h_note_tag(void *u, uint32_t part)
 
 /* ---- building the fixtures ------------------------------------------------ */
 
+/* Adds byte `b` to the 256-bit set `set`. */
+static void set_add(uint8_t set[32], unsigned b)
+{
+    set[b >> 3] |= (uint8_t)(1u << (b & 7));
+}
+
 static void t_byte(mf_term *t, int off, int b)
 {
     memset(t, 0, sizeof *t);
@@ -205,7 +211,7 @@ static void t_set(mf_term *t, int off, const char *members, uint32_t ref)
 {
     t_byte(t, off, (unsigned char)members[0]);
     for (const char *m = members; *m; m++)
-        t->set[(unsigned char)*m >> 3] |= (uint8_t)(1u << (*m & 7));
+        set_add(t->set, (unsigned char)*m);
     t->table_ref = ref;
     t->need = MF_OPTIONAL;
 }
@@ -346,7 +352,7 @@ static void q_proven0(const mf_site *s, uint8_t out[32])
         else if (tm->kind == MF_T_RUN) {
             for (unsigned x = 0; x < 256; x++)
                 if ((x & (tm->mask ? tm->mask[0] : 0xFFu)) == tm->run[0])
-                    b[x >> 3] |= (uint8_t)(1u << (x & 7));
+                    set_add(b, x);
         } else continue;
         for (int i = 0; i < 32; i++) out[i] &= b[i];
     }
@@ -760,7 +766,7 @@ static mf_site stride_site(const StrideFx *x)
         } else {
             t_byte(t, (int)i, (unsigned char)x->lo[i]);
             for (int b = (unsigned char)x->lo[i]; b <= (unsigned char)x->hi[i]; b++)
-                t->set[b >> 3] |= (uint8_t)(1u << (b & 7));
+                set_add(t->set, (unsigned)b);
         }
         t->need = MF_REQUIRED;
     }
@@ -1569,7 +1575,8 @@ static const uint32_t an_rates[256] = { 1000000 };
 static mf_akind an_kinds[2];
 static mf_analysis an_obj;
 
-static const mf_analysis *fd_an_make(unsigned long long digest)
+/* The analysis object stating `rates` (256 ppm) and `digest` on both kinds. */
+static const mf_analysis *an_make(unsigned long long digest, const uint32_t *rates)
 {
     static const char *const tags[2] = { "byte-rate", "run-rarity" };
     for (int i = 0; i < 2; i++) {
@@ -1578,12 +1585,17 @@ static const mf_analysis *fd_an_make(unsigned long long digest)
         an_kinds[i].version = 1;
         an_kinds[i].present = MF_KIND_PRESENT;
         an_kinds[i].digest = digest;
-        an_kinds[i].payload = an_rates;
+        an_kinds[i].payload = rates;
     }
     an_obj.list_v = MF_ANALYSIS_LIST_V;
     an_obj.nkinds = 2;
     an_obj.kinds = an_kinds;
     return &an_obj;
+}
+
+static const mf_analysis *fd_an_make(unsigned long long digest)
+{
+    return an_make(digest, an_rates);
 }
 
 static int fd_site_mode(const char *site, const char *setpath, const char *opts,
@@ -1659,10 +1671,314 @@ static int hash_mode(void)
     return 0;
 }
 
+/* ---- THE PURITY HARNESS (span_pick unit 1d; span_pick.md rev 5.2 §Staging,
+ * 1d's test row) ----------------------------------------------------------
+ *
+ * The plan face (mf_wdecide) is a PURE FUNCTION of the site's facts, the
+ * frame, the measurement set and the handed rates (D186 add. 2): the same
+ * site gets the same reply on a fresh art and on an art that has defined
+ * any number of other sites, in any order.
+ *
+ * WHY THE DEFINES ARE INTERLEAVED: `art->nsites`' one writer is mf_define
+ * and the plan face takes a `const mf_art *`, so plan calls alone see one
+ * nsites in every order, and a row keyed on it would stay green (K35).
+ * Order reaches the plan face only through the defines, the real phase-1 /
+ * phase-2 interleave, so every site is asked between every two defines.
+ *
+ *   arm_fixtures --purity          per rate table (NONE, a skewed one with
+ *       ties) and per define order (in order, reversed, repeated): before
+ *       each define and after the last, every site's reply compared field
+ *       by field with its reply on a FRESH art; then THE STICKY-ERR CASE:
+ *       after a refused define every plan call answers -1 (breaker (a),
+ *       FENCED: pcrec fails the compile on any refusal, so no such reply
+ *       reaches an artifact; asserted as the fence, not as purity). One
+ *       `FAIL:` line per difference; `checks passed/failed` counts.
+ *   arm_fixtures --purity-control  THE CONTROL: each site's reply after ONE
+ *       define of the next site, printed; run_finder.sh compares a planted
+ *       build's print (a KEY row keyed on nsites) with this build's, so the
+ *       plant is shown REACHED on the unharnessed fixture.
+ *
+ * The sites reach every Table A row but A-empty and A-floor's floor-only
+ * path (A-mass, A-parked, A-model, MARGIN's two alternatives) and the run
+ * member (a verify-YES run R). */
+enum { PUR_N = 11 };
+static mf_wspan pur_spans[PUR_N][2][4];
+static mf_walt pur_alts[PUR_N][2];
+
+static void pur_span(mf_wspan *w, int32_t start, const char *const *sets, unsigned len,
+                     int verify, unsigned core_lo, unsigned core_len)
+{
+    memset(w, 0, sizeof *w);
+    w->start = start;
+    w->len = (uint8_t)len;
+    w->verify = (uint8_t)verify;
+    w->core = MF_CORE_STATED;
+    w->core_lo = (uint8_t)core_lo;
+    w->core_len = (uint8_t)core_len;
+    for (unsigned j = 0; j < len; j++)
+        for (const char *c = sets[j]; *c; c++)
+            set_add(w->set[j], (unsigned char)*c);
+}
+
+/* The RESEED alternative of sites 2 and 3: F0 and three walked offsets, two
+ * of equal rate under the skewed table (C-model's exchange order). */
+static void pur_reseed(mf_wspan *sp, mf_walt *a)
+{
+    pur_span(&sp[0], 0, (const char *const[]){ "f" }, 1, MF_VERIFY_YES, 0, 1);
+    pur_span(&sp[1], 1, (const char *const[]){ "g" }, 1, MF_VERIFY_NO, 0, 1);
+    pur_span(&sp[2], 2, (const char *const[]){ "h" }, 1, MF_VERIFY_NO, 0, 1);
+    pur_span(&sp[3], 3, (const char *const[]){ "i" }, 1, MF_VERIFY_NO, 0, 1);
+    *a = (mf_walt){ MF_ENTRY_RESEED, 4, sp };
+}
+
+static mf_site pur_site(unsigned i)
+{
+    mf_site s = base_site();
+    s.pred.need = 0;            /* a window site states no renderer interface */
+    s.op = MF_OP_FIND;
+    s.form = MF_FORM_FUNC;
+    s.handoff = MF_H_RETURN;
+    s.use = MF_USE_POSITION;
+    s.site_kind = MF_SK_DFA_SCAN;
+    s.pred.fn_ref = 1;
+    mf_wspan (*sp)[4] = pur_spans[i];
+    mf_walt *a = pur_alts[i];
+    s.nalt = 1;
+    switch (i) {
+    case 0:                     /* NONE: A-mass, a set position among one-byte ones */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a", "bc", "q" }, 3, MF_VERIFY_YES, 0, 3);
+        pur_span(&sp[0][1], 4, (const char *const[]){ "z" }, 1, MF_VERIFY_YES, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 1:                     /* PARKED: A-parked */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "x" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "y", "w" }, 2, MF_VERIFY_YES, 0, 2);
+        a[0] = (mf_walt){ MF_ENTRY_PARKED, 2, sp[0] };
+        break;
+    case 2:                     /* RESEED: A-model, C-model */
+        pur_reseed(sp[0], &a[0]);
+        break;
+    case 3:                     /* PARKED + RESEED: the MARGIN */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "fF" }, 1, MF_VERIFY_YES, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_PARKED, 1, sp[0] };
+        pur_reseed(sp[1], &a[1]);
+        s.nalt = 2;
+        break;
+    case 4:                     /* NONE with a verify-YES run R: the run member */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a", "b", "c", "d" }, 4, MF_VERIFY_YES,
+                 0, 4);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 1, sp[0] };
+        break;
+    case 5:                     /* A-empty: an empty meet inside a core */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 0, (const char *const[]){ "b" }, 1, MF_VERIFY_YES, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 6:                     /* A-floor: no core position; a full-set one (C-bound) */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "a" }, 1, MF_VERIFY_YES, 0, 0);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
+        memset(sp[0][1].set[0], 0xFF, 32);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 7:                     /* A-mass with a full-set verify-YES position (C-bound) */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "ab" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 2, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
+        memset(sp[0][1].set[0], 0xFF, 32);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    case 8:                     /* RESEED first, PARKED second: M-parked wins at index 1 */
+        pur_reseed(sp[0], &a[0]);
+        pur_span(&sp[1][0], 0, (const char *const[]){ "F" }, 1, MF_VERIFY_YES, 0, 1);
+        a[1] = (mf_walt){ MF_ENTRY_PARKED, 1, sp[1] };
+        s.nalt = 2;
+        break;
+    case 9:                     /* NONE with a verify-NO run R: the exact run member */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "x" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "m", "jk", "n" }, 3, MF_VERIFY_NO, 0, 3);
+        a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
+        break;
+    default:                    /* RESEED, a rare non-scan walked offset: C-model's pick */
+        pur_span(&sp[0][0], 0, (const char *const[]){ "f" }, 1, MF_VERIFY_YES, 0, 1);
+        pur_span(&sp[0][1], 1, (const char *const[]){ "p" }, 1, MF_VERIFY_NO, 0, 1);
+        pur_span(&sp[0][2], 2, (const char *const[]){ "rR" }, 1, MF_VERIFY_NO, 0, 1);
+        a[0] = (mf_walt){ MF_ENTRY_RESEED, 3, sp[0] };
+        break;
+    }
+    s.alts = a;
+    return s;
+}
+
+/* A site no define accepts: two NONE alternatives (wf_check: only a PARKED
+ * and a RESEED one pair). */
+static mf_site pur_refused(void)
+{
+    mf_site s = pur_site(0);
+    static mf_walt two[2];
+    two[0] = two[1] = pur_alts[0][0];
+    s.alts = two;
+    s.nalt = 2;
+    return s;
+}
+
+/* The skewed rate table: ties among g/h (equal walked masses) and b/d. */
+static uint32_t pur_rates[256];
+
+static const mf_analysis *pur_rated(void)
+{
+    for (int b = 0; b < 256; b++) pur_rates[b] = 3000;
+    static const struct { char c; uint32_t r; } skew[] = {
+        { 'a', 90000 }, { 'b', 500 }, { 'c', 70000 }, { 'd', 500 }, { 'q', 800 },
+        { 'z', 100 }, { 'f', 500000 }, { 'F', 600 }, { 'g', 400 }, { 'h', 400 },
+        { 'i', 30000 }, { 'x', 5000 }, { 'y', 900 }, { 'w', 900 }, { 'j', 100 }, { 'k', 100 }, { 'p', 100000 }, { 'r', 300 }, { 'R', 300 },
+    };
+    for (size_t i = 0; i < sizeof skew / sizeof skew[0]; i++)
+        pur_rates[(unsigned char)skew[i].c] = skew[i].r;
+    return an_make(1, pur_rates);
+}
+
+/* NULL iff replies `a` and `b` are equal field by field, else the first
+ * field that differs. */
+static const char *pur_diff(const mf_wreply *a, const mf_wreply *b)
+{
+    if (a->alt != b->alt) return "alt";
+    if (a->reseed != b->reseed) return "reseed";
+    if (a->has_stop != b->has_stop) return "has_stop";
+    if (a->stop != b->stop) return "stop";
+    if (memcmp(a->stop_set, b->stop_set, 32)) return "stop_set";
+    if (a->nplan != b->nplan) return "nplan";
+    for (unsigned i = 0; i < a->nplan; i++)
+        if (a->plan[i] != b->plan[i] || a->plan_term[i] != b->plan_term[i]) return "plan";
+    if (a->pinned != b->pinned) return "pinned";
+    if (a->run_stated != b->run_stated) return "run_stated";
+    if (a->run_member != b->run_member) return "run_member";
+    if (a->run_lo != b->run_lo || a->run_len != b->run_len) return "run stretch";
+    if (strcmp(a->path, b->path)) return "path";
+    return NULL;
+}
+
+static long pur_pass, pur_fail;
+
+static void pur_ok(int ok, const char *what)
+{
+    if (ok) { pur_pass++; return; }
+    pur_fail++;
+    printf("FAIL: %s\n", what);
+}
+
+/* Site `i`'s define on `art` (FUNC/RETURN, the fixture hooks): 0 or the
+ * kit's refusal. */
+static int pur_define(mf_art *art, const mf_site *s)
+{
+    Text def = { 0 };
+    mf_sink sd = sink_of(&def);
+    Fx fd = { s, "rx_pur", NULL };
+    mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name, .note = h_note,
+                    .note_tag = h_note_tag, .u = &fd, .miss = MF_MISS_N };
+    uint32_t h = 0;
+    int rc = mf_define(art, s, &hd, &sd, &h);
+    free(def.p);
+    return rc;
+}
+
+static int purity_mode(void)
+{
+    static mf_arena ar = { NULL, a_alloc };
+    mf_site site[PUR_N];
+    for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
+    unsigned in_order[PUR_N], reversed[PUR_N], repeated[2 * PUR_N];
+    for (unsigned i = 0; i < 2 * PUR_N; i++) {
+        if (i < PUR_N) {
+            in_order[i] = i;
+            reversed[i] = PUR_N - 1 - i;
+        }
+        repeated[i] = i % PUR_N;
+    }
+    const struct { const char *name; const unsigned *seq; unsigned n; } orders[] = {
+        { "in-order", in_order, PUR_N }, { "reversed", reversed, PUR_N },
+        { "repeated", repeated, 2 * PUR_N },
+    };
+    char m[160];
+    for (int rated = 0; rated < 2; rated++) {
+        const mf_analysis *an = rated ? pur_rated() : NULL;
+        mf_wreply fresh[PUR_N];
+        for (unsigned i = 0; i < PUR_N; i++) {
+            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, an);
+            snprintf(m, sizeof m, "%s: site %u: the fresh art's plan call refused",
+                     rated ? "rated" : "none", i);
+            pur_ok(mf_wdecide(art, &site[i], &fresh[i]) == 0, m);
+        }
+        for (size_t o = 0; o < sizeof orders / sizeof orders[0]; o++) {
+            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, an);
+            for (unsigned k = 0; k <= orders[o].n; k++) {
+                for (unsigned i = 0; i < PUR_N; i++) {
+                    mf_wreply r;
+                    int rc = mf_wdecide(art, &site[i], &r);
+                    const char *d = rc ? "the plan call refused" : pur_diff(&r, &fresh[i]);
+                    snprintf(m, sizeof m, "%s %s: site %u after %u defines: %s differs from "
+                             "the fresh art's", rated ? "rated" : "none", orders[o].name, i, k,
+                             d ? d : "-");
+                    pur_ok(!d, m);
+                }
+                if (k == orders[o].n) break;
+                unsigned j = orders[o].seq[k];
+                int rc = pur_define(art, &site[j]);
+                if (rc) snprintf(m, sizeof m, "%s %s: site %u's define refused: %s",
+                                 rated ? "rated" : "none", orders[o].name, j, mf_art_error(art));
+                pur_ok(rc == 0, m);
+            }
+        }
+    }
+    /* THE STICKY-ERR CASE: breaker (a), FENCED (no reply after a refusal
+       reaches an artifact); equal replies are asserted only once a later
+       unit makes the refusal non-sticky */
+    mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    pur_ok(pur_define(art, &site[0]) == 0, "sticky-err: the first define refused");
+    mf_site bad = pur_refused();
+    pur_ok(pur_define(art, &bad) != 0, "sticky-err: the two-NONE site's define was accepted");
+    for (unsigned i = 0; i < PUR_N; i++) {
+        mf_wreply r;
+        snprintf(m, sizeof m, "sticky-err: site %u's plan call after a refused define did not "
+                 "answer -1 (breaker (a) is FENCED by the refusal)", i);
+        pur_ok(mf_wdecide(art, &site[i], &r) == -1, m);
+    }
+    printf("checks passed: %ld\n", pur_pass);
+    printf("checks failed: %ld\n", pur_fail);
+    return pur_fail ? 1 : 0;
+}
+
+/* THE CONTROL's print: each site's reply after one define of the next. */
+static int purity_control_mode(void)
+{
+    static mf_arena ar = { NULL, a_alloc };
+    mf_site site[PUR_N];
+    for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
+    for (int rated = 0; rated < 2; rated++)
+        for (unsigned i = 0; i < PUR_N; i++) {
+            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL,
+                                       rated ? pur_rated() : NULL);
+            mf_wreply r;
+            if (pur_define(art, &site[(i + 1) % PUR_N]) || mf_wdecide(art, &site[i], &r)) {
+                printf("%s site %u: refused: %s\n", rated ? "rated" : "none", i,
+                       mf_art_error(art));
+                continue;
+            }
+            printf("%s site %u: alt=%u reseed=%u stop=%u@%d set=", rated ? "rated" : "none", i,
+                   r.alt, r.reseed, r.has_stop, (int)r.stop);
+            for (unsigned k = 0; k < 32; k++) printf("%02x", r.stop_set[k]);
+            printf(" plan=");
+            for (unsigned k = 0; k < r.nplan; k++) printf("%s%d/%u", k ? "," : "", (int)r.plan[k],
+                                                          r.plan_term[k]);
+            printf(" pinned=%u run=%u@%d+%d/%u path=%s\n", r.pinned, r.run_stated,
+                   (int)r.run_member, (int)r.run_lo, r.run_len, r.path);
+        }
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
-                          "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash\n", stderr); return 2; }
+                          "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
+                          "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
         for (int i = 3; i + 1 < argc; i += 2) {
@@ -1674,6 +1990,8 @@ int main(int argc, char **argv)
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();
+    if (!strcmp(argv[1], "--purity")) return purity_mode();
+    if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();
     for (int i = 2; i < argc; i++)
         if (!strcmp(argv[i], "--query")) query_mode = 1;
     if (!strcmp(argv[1], "--gate")) {

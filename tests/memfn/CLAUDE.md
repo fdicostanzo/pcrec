@@ -2,10 +2,7 @@
 
 pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 `docs/design/memfn/integration.md`). The kit's OWN tests (G2) live under
-`memfn/tests/`, not here. Born at R4a (lane memfnmanifest, 2026-10-05) with
-C17. R4c's lane r4cchecks (2026-10-06) added C4, C12, C13, C14, C17's
-re-keyed dynamic half and the VM hybrid handoff reach floor (below). Later
-pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
+`memfn/tests/`, not here. Born at R4a (2026-10-05) with C17.
 
 ## Files
 
@@ -36,10 +33,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **rows.tsv** — THE KIT'S ROW MANIFEST (row_contracts.md rev 4.1 §4), HAND-maintained: one line per row of the kit's selection tables (13 at N4: the composer's 9 arms, ...
 - **row_floors.tsv** — per-row CHOSEN floors: `pcrec_floor` over the full N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2's quick tier.
 - **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in TEST_SECTIONS; about 1.5 s).
-- **decider_census.tsv**, **decider_census.py** — THE DECIDER CENSUS (span_pick.md rev 5.2 §The tables; unit 1a, lane sp1a): the declared map of every kit decider (function, part or data) to its question table or named exception, its backstop grep (red on a decider shape outside every member, hits floored) and two plants; run by `make test-memfn-rows`. A stage-1 unit that moves a decider edits its row.
+- **decider_census.tsv**, **decider_census.py** — THE DECIDER CENSUS (span_pick.md rev 5.2 §The tables; unit 1a, lane sp1a): the declared map of every kit decider (function, part or data) to its question table or named exception, its backstop grep (LIVE + BYPASS shapes; red outside every member; hits exact) and plants (incl. no-`pick_takes(` bypass twins); run by `make test-memfn-rows`. A stage-1 unit that moves a decider edits its row.
 - **reach_equal.py** — REACH EQUALITY between two MF_TRACE pcrec builds over the corpus and patterns files, per pattern and arm, the gone-row set DERIVED from the traces and required to equal `--gone`, failing-pattern sets compared; `--limit` is a smoke run (trailer LIMITED, exit 3, never a verdict) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
+- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; replies on a fresh art vs between interleaved defines; the sticky-err fence). run_finder.sh floors it EXACTLY, plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each Table A/M/T-VERIFY row dropped must move a reply or be declared unreached (population = window.c's rows).
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3) and holds each card row's shape.
