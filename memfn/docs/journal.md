@@ -3224,3 +3224,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - G2 70.36M/0 and test-codegen rc 0.
   - Gates 420-429 prepared, not queued.
   - Critic round crit-memfn-sp1e launched (light probes; Frank's hold 20:00-01:00).
+- 11-05 16:30: review 2026-11-05 r2 on 1e is ruled (f44f03d7b). No answer, speed or size findings; zero movers; MF_CLASS_V 7->8 warranted, all readers found.
+  - FIX-NOW: F1 (D-hors's `core` clause could not refuse: fd_decide's gate_in lacks wf), F2, F3 (the row map was checked for existence only), F4 (the renderer row is in no trace record), F5-F8, F11 (G2 plants S1405/S1410 rotted at 1d), F12-F14.
+  - PLAN for main: one renderer table keyed by (frame, pick, layer) with the asker fact derived from it (F5+F6+F9, at unit 3.0); the D-hors floor measurement (F10); the anchor check covering run_g2_win.sh (F11).
+  - Fix lane sp1efix (sonnet) launched on lane/memfn-sp1efix. Its gates 430-439 carry not-before 11-06 01:05 (Frank's hold).
