@@ -3198,3 +3198,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - Light validation all green, including G2 (70.36M/0). Spot checks: 765 pairs SAME; MFTRACE identical except WCAND.
   - Gates 410-419 are prepared in scratch/memfn/sp1dfix/jobs (TREE=worktrees/sp1dfix) and wait for job 300's verdict.
   - Slip: `boxqueue add` on the scratch queue without `--no-start` armed a runner, which the lane safekilled before any job body ran. Briefs say `--no-start`; the lane dropped it.
+- 11-05 13:35: main's suite 300 is GREEN, so the sp1d gates were queued at 10:26.
+  - 410-415 GREEN.
+  - 416 (make test) went RED on test-codegen only: the new tests/memfn/run_purity_reach.sh (sp1dfix F1) had unguarded `sort` (K35) and was missing from san_excluded.txt (TT-9). Triage tri416 classed it (b), a stale expectation, with no emitted change.
+  - Fixed at sp1dfix 0044a0ee7 (LC_ALL=C, plus an OWN-TIER row). 416 retried; 417-419 run after it.
+  - Slip: my bash watcher never fired on the RED; the queue monitor's line did. Replaced it with a python watcher keyed on per-job END lines.
+  - Lesson for lane briefs: a new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (listed in san_scripts or san_excluded). Run `make test-codegen` before delivering any new test script.
