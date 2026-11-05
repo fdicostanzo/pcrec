@@ -3175,3 +3175,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - Main filed F11 as [POS-ONE-DETECTOR], and Frank's [RUN-POS-SET] (required-run positions as byte sets) the same day.
 - Gates 390-399 (kit-sp1c2-*) are queued. 390-393 run now. 394-399 carry `boxqueue: not-before 2026-11-05T01:05` (Frank holds 20:00-01:00). If 393 has not started by ~19:20, re-gate it.
 - My slip: the watcher on sp1c's final run matched the lock LABEL, which survives in `free (last holder ...)`, so it never fired. Watchers match the held state or the queue's done/failed dirs, never a label.
+
+## 2026-11-04 (night) — span_pick stage 1 unit 1d built: the planning core (lane sp1d, branch lane/memfn-sp1d)
+
+- ONE candidate builder, window.c `cands`. It runs C-meet, then lists each position's SUM mass, its STOP-candidate flag and its stretch row, plus the walked offsets on their OWN sets and F0. Every Table A row reads it. `mass_domain` is deleted, and A-model's private enumeration and pricing are gone. A-model keeps own sets in listing order: the G2 reference reads them, and G2's overlapping R spans would move on the meet (report deviation 1).
+- THE PICK's one before-relation, `kit_pick_takes`. All five argmins ask it: A-mass, A-model, kit_run_member (pick and `after` walk), and P3's set pick and run window. Each keeps its own enumeration (the standing question's answer). T-VERIFY is now a step list: C-member first, C-bound an applied step. MFTRACE WCAND traces every candidate, with no price.
+- F12: the normal form has one spelling, `run_pos_sat` / `run_cmp_sat`. F13 is OWED until the planner/back-end split (window.c still mixes both faces). R10: no wrapper.
+- The PURITY HARNESS is `arm_fixtures --purity`. It checks 5 window sites with the defines interleaved, in order, reversed and repeated, under NONE and skewed rates, and holds the sticky-err fence. It is run_finder.sh's `purity` part (floor 287). Its nsites plant goes RED and its control shows the plant is reached.
+- No mover: spot 1788/1788, multi-target 405/405, reach smoke 0 differ. MF_SITE_ABI 23 and MF_CLASS_V 7 are unchanged. Census 52. S1095/S1096 are re-anchored and hand-measured DETECTED. The R21 recipe cannot see the copies go, so a restatement is proposed for main (it reads 1 -> 0). Gates 400-409 (kit-sp1d-*) are prepared, not queued; job 300 holds the box.

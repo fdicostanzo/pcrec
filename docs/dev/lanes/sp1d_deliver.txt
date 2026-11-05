@@ -1,0 +1,6 @@
+report=docs/dev/lanes/sp1d_report.md
+sections: What changed; Readers; Ratchet; Validation; Gate jobs; Seam notes; Design deviations; Charter vs committed; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/; docs/dev/wake.md; docs/dev/owner.md
+owed: 
