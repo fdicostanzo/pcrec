@@ -162,6 +162,7 @@ typedef struct {
 typedef struct {
     int32_t  off;
     uint32_t mass;              /* its own set's mass, KIT_MASS_CAP          */
+    unsigned members;           /* its own set's member count                */
     uint8_t  scan;              /* it may be the STOP (`scan_ok`)            */
 } wf_walk;
 
@@ -175,6 +176,7 @@ typedef struct {
     wf_walk  walk[MF_WMAX_SPAN];
     int      f0;                /* F0's span index, -1: none                 */
     uint32_t f0_mass;           /* F0's own position-0 mass, KIT_MASS_CAP    */
+    unsigned f0_members;        /* F0's own set's member count               */
     uint8_t  any_empty;         /* an empty meet inside a core (A-empty)     */
     uint8_t  any_stop;          /* a STOP candidate (A-mass's domain)        */
     uint8_t  any_scan;          /* a walked offset that may be the stop      */
@@ -359,12 +361,16 @@ static void cands(const mf_walt *alt, const uint32_t *rate, wf_alt *m)
         m->any_empty |= p->core && !count(p->set);
     }
     m->f0 = f0_of(alt);
-    if (m->f0 >= 0) m->f0_mass = kit_mass(rate, alt->spans[m->f0].set[0], 1, KIT_MASS_CAP);
+    if (m->f0 >= 0) {
+        m->f0_mass = kit_mass(rate, alt->spans[m->f0].set[0], 1, KIT_MASS_CAP);
+        m->f0_members = count(alt->spans[m->f0].set[0]);
+    }
     for (unsigned i = 0; i < alt->nspan; i++) {
         if (!walked(alt, i)) continue;
         wf_walk *w = &m->walk[m->nwalk++];
         w->off = alt->spans[i].start;
         w->mass = kit_mass(rate, alt->spans[i].set[0], 1, KIT_MASS_CAP);
+        w->members = count(alt->spans[i].set[0]);
         w->scan = (uint8_t)scan_ok(alt, i);
         m->any_scan |= w->scan;
     }
@@ -788,13 +794,14 @@ static const kit_table wf_mtable = { "wfM", WF_NMROWS, m_ct, NULL, NULL, m_holds
 
 /* ---- TABLE C: the verify plan (window_site.md §2.3) ------------------------
  *
- * Its rows in step order, each applied where it holds, over the chosen
- * alternative and its stop; the rows sharing a step hold exclusively (C-floor
- * or C-yes; C-model or C-none; C-table or C-own). Three rows are applied
- * elsewhere and listed for the order: C-meet by `merge` (Table A reads the
- * meet), C-bound inside C-floor and C-yes (the bound itself is `plan_of`'s)
- * and C-table/C-own by `plan_of` (phase 2, where the hooks say whether pcrec
- * names its tables). */
+ * Its rows in step order, each applied where it holds, in listed order within
+ * a step, over the chosen alternative and its stop; C-floor or C-yes, C-model
+ * or C-none, C-table or C-own hold exclusively. Three rows are not applied by
+ * this list: C-meet by `merge` in the candidate builder `cands` (BEFORE Table
+ * A, which reads the meet; so before C-member, which runs after M), and
+ * C-table/C-own by `plan_of` (phase 2, where the hooks say whether pcrec
+ * names its tables). C-bound is the subtraction after each adder (two rows:
+ * its set is the adder's), where the design lists it first as the rule. */
 
 /* 1 iff offset `off` is in the plan so far. */
 static int in_plan(const wf_dec *d, int32_t off)
@@ -803,6 +810,10 @@ static int in_plan(const wf_dec *d, int32_t off)
     return 0;
 }
 
+/* THE PLAN IS A SET until C-asc: `plan_drop` swaps the last entry into the
+ * hole, so the order between steps is the adders' and the drops' accident
+ * (BASE sorted at a different point). Every reader between them is order-free
+ * (`in_plan`, `tested_elsewhere`, `in_pinned`); C-run and C-asc order it. */
 static void plan_add(wf_dec *d, int32_t off)
 {
     if (!in_plan(d, off) && d->np < WF_NPOS) d->poff[d->np++] = off;
@@ -919,17 +930,22 @@ static void c_yes(wf_dec *d)
         if (m->p[k].present && m->p[k].yes) plan_add(d, (int32_t)k + WF_LO);
 }
 
-/* C-bound: minus every position step 2 added whose meet is the full set (it
- * tests nothing; the hoisted bound is its only role, `plan_of`): the
- * verify-YES meet under C-yes, the meet the plan reads under C-floor. */
-static void c_bound(wf_dec *d)
+/* C-bound: minus every position the adder just before it put in whose meet is
+ * the full set (it tests nothing; the hoisted bound is its only role,
+ * `plan_of`): `yes` the verify-YES meet (after C-yes), else the meet the plan
+ * reads (after C-floor). Two rows below, one per adder, so no apply re-derives
+ * which adder ran. */
+static void bound_by(wf_dec *d, int yes)
 {
     const wf_alt *m = chosen(d);
     for (unsigned i = d->np; i-- > 0;) {
         const wf_pos *p = &m->p[d->poff[i] - WF_LO];
-        if (full(m->has_stop ? p->yset : rd_set(d, p))) plan_drop(d, d->poff[i]);
+        if (full(yes ? p->yset : rd_set(d, p))) plan_drop(d, d->poff[i]);
     }
 }
+
+static void c_bound_yes(wf_dec *d)   { bound_by(d, 1); }
+static void c_bound_floor(wf_dec *d) { bound_by(d, 0); }
 
 /* C-model: A-model's greedy picks (prefix_k's `sel[]`). */
 static void c_model(wf_dec *d)
@@ -1040,20 +1056,23 @@ static const struct {
     void      (*apply)(wf_dec *d);      /* NULL: applied where the doc says */
     const char *rule;
 } wf_crows[] = {
-    { 0, "C-member", c_always,     run_member,
+    { 0, "C-meet",  c_always,      NULL,
+      "positions at one offset, across spans, are ONE position: their sets' intersection "
+      "over the spans the plan may read (`merge`, in the candidate builder `cands`, BEFORE "
+      "Table A: not applied by this list)" },
+    { 1, "C-member", c_always,     run_member,
       "THE RUN MEMBER first, an output of the plan (mf_wreply.run_member): R's least-mass "
       "position and its stretch (kit_run_member, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
-    { 1, "C-meet",  c_always,      NULL,
-      "positions at one offset, across spans, are ONE position: their sets' intersection "
-      "over the spans the plan may read (`merge`, in the candidate builder `cands`, before "
-      "Table A)" },
     { 2, "C-floor", c_floor_holds, c_floor,
       "the floor row (no stop): every position of the chosen alternative's spans" },
-    { 2, "C-yes",   c_stop_holds,  c_yes,   "every verify-YES position" },
-    { 2, "C-bound", c_always,      c_bound,
+    { 2, "C-bound(floor)", c_floor_holds, c_bound_floor,
       "a FULL-SET position is never a plan test: its only role is the hoisted core bound "
-      "(`plan_of`; window_site.md F3, end_back a core position): minus C-yes's over the "
-      "verify-YES meet, C-floor's over the meet the plan reads" },
+      "(`plan_of`; window_site.md F3, end_back a core position): minus C-floor's over the "
+      "meet the plan reads (the design lists C-bound first, as the rule; it is applied "
+      "here as the subtraction after its adder)" },
+    { 2, "C-yes",   c_stop_holds,  c_yes,   "every verify-YES position" },
+    { 2, "C-bound(yes)", c_stop_holds, c_bound_yes,
+      "the same rule after C-yes, over the verify-YES meet" },
     { 2, "C-model", c_model_holds, c_model,
       "on a RESEED alternative: plus prefix_k's greedy pick among the walked offsets" },
     { 2, "C-none",  c_none_holds,  c_none,  "otherwise no verify-NO position" },
@@ -1088,8 +1107,12 @@ static void c_plan(wf_dec *d)
 
 /* The trace of decision `d`'s candidate list (MF_TRACE builds, a define's
  * decision only): per alternative every position after C-meet, with the
- * stops Table A chose and the plan's own (span_pick.md §The shape "The
- * trace"; stage 1 traces no price). */
+ * stops Table A chose and the plan's own, then F0 and the walked offsets AS
+ * STATED in LISTED order (the facts A-model and C-model read; their order is
+ * an input), so the records determine KEY's pick (span_pick.md §The shape "The
+ * trace"; stage 1 traces no price). M's inputs (A-parked's k0 facts, each
+ * alternative's entry, the verify-YES meet at 0) are NOT in the records yet:
+ * they come with row 1. */
 static void trace_cands(const wf_dec *d, const gate_tctx *tm)
 {
     if (!GATE_TRACING || tm->quiet) return;
@@ -1100,11 +1123,23 @@ static void trace_cands(const wf_dec *d, const gate_tctx *tm)
         for (unsigned k = 0; k < WF_NPOS; k++) {
             const wf_pos *p = &m->p[k];
             if (!p->present) continue;
-            gate_cand c = { ai, (int32_t)k + WF_LO, count(p->set), p->mass, p->core, p->stop_ok,
-                            0, 0, 0 };
+            gate_cand c = { .src = GATE_CAND_POS, .alt = ai, .off = (int32_t)k + WF_LO,
+                            .members = count(p->set), .mass = p->mass, .core = p->core,
+                            .stop_ok = p->stop_ok, .stretch = p->stretch };
             for (unsigned i = 0; i < m->nwalk; i++) c.walked |= m->walk[i].off == c.off;
             c.key = m->has_stop && m->stop == c.off;
             c.incumbent = c.key && (int)ai == d->ch;
+            gate_trace_cand(&tc, &c);
+        }
+        if (m->f0 >= 0) {
+            gate_cand c = { .src = GATE_CAND_F0, .alt = ai, .members = m->f0_members,
+                            .mass = m->f0_mass };
+            gate_trace_cand(&tc, &c);
+        }
+        for (unsigned i = 0; i < m->nwalk; i++) {
+            gate_cand c = { .src = GATE_CAND_WALK, .alt = ai, .idx = i, .off = m->walk[i].off,
+                            .members = m->walk[i].members, .mass = m->walk[i].mass,
+                            .scan = m->walk[i].scan };
             gate_trace_cand(&tc, &c);
         }
     }

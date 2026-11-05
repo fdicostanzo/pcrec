@@ -1877,8 +1877,6 @@ static int purity_mode(void)
                 }
                 if (k == orders[o].n) break;
                 unsigned j = orders[o].seq[k];
-                snprintf(m, sizeof m, "%s %s: site %u's define refused: %s",
-                         rated ? "rated" : "none", orders[o].name, j, "?");
                 int rc = pur_define(art, &site[j]);
                 if (rc) snprintf(m, sizeof m, "%s %s: site %u's define refused: %s",
                                  rated ? "rated" : "none", orders[o].name, j, mf_art_error(art));

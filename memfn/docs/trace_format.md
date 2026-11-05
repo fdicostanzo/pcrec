@@ -114,20 +114,46 @@ also writes its PATH ID (window_site.md §2.7):
 
 THE CANDIDATE LIST (span_pick unit 1d, `memfn/src/window.c` `cands`; the
 "every candidate, the incumbent" of span_pick.md's "The trace", stage 1: no
-price). A define's decision writes, per alternative, one record per position
-after C-meet, in alternative then offset order, before its `WPATH`:
+price). A define's decision writes, per alternative in index order, the
+records below, in this order, before its `WPATH` where it writes one (a
+define whose site no WPATH describes, such as `(^)*ab`'s, writes WCAND records
+and no WPATH): the alternative's POSITION
+records (one per position after C-meet, in offset order), its F0 record (if
+it has an F0), then its WALK records (one per walked offset, in LISTED order).
+Together they carry every fact Table A's KEY rows (A-mass, A-model) and
+C-model read, so two decisions with equal records pick the same stop and
+verify offsets.
 
-    MFTRACE WCAND table=wfA art=A site=H phase=define alt=I off=D members=K mass=M core=C stop=S walked=W key=Y incumbent=N
+    MFTRACE WCAND table=wfA art=A site=H phase=define src=pos alt=I off=D members=K mass=M core=C stop_ok=S stretch=T walked=W key=Y incumbent=N
+    MFTRACE WCAND table=wfA art=A site=H phase=define src=f0 alt=I off=0 own_members=K own_mass=M
+    MFTRACE WCAND table=wfA art=A site=H phase=define src=walk alt=I idx=J off=D own_members=K own_mass=M scan=S
 
+`src=pos`:
 - `alt`: the alternative's index in the site's list; `off`: the position's
   offset from the candidate;
 - `members`, `mass`: the meet's member count and its SUM mass under the
   handed rates (`kit_mass`; the NONE table without rates);
-- `core`: 1 iff the position lies in a span's core; `stop`: 1 iff it is a
-  STOP candidate (core, not the full set: A-mass's domain); `walked`: 1 iff a
-  RESEED walked offset (A-model's domain, priced on its span's OWN set);
+- `core`: 1 iff the position lies in a span's core; `stop_ok`: 1 iff it may
+  be a STOP (core, not the full set: A-mass's domain);
+- `stretch`: 1 iff the position lies inside a stated run stretch (the TIE
+  table's first row): A-mass breaks a mass tie at a stretch position to the
+  HIGHER offset (T_MASS_STRETCH), at any other to the LOWER (T_MASS_SET);
+- `walked`: 1 iff the alternative lists a walked span there (a one-position
+  span at an offset other than 0), whatever its entry;
 - `key`: 1 iff Table A chose it as its alternative's stop; `incumbent`: 1 iff
   it is THE stop of the plan (the alternative the MARGIN chose).
+
+`src=f0`: F0's OWN set (the first verify-YES span starting at offset 0), as
+A-model prices it: `own_members`, `own_mass` (CAP mass).
+
+`src=walk`: a walked offset AS STATED, at list index `idx`: its OWN set's
+`own_members` and `own_mass` (CAP mass; the meet may differ), and `scan`: 1
+iff it may be the stop (one member, core). The list order is an input: C-model
+exchange-sorts the others by mass over the listed order.
+
+NOT YET IN THE RECORDS: M's inputs (A-parked's k0 facts, each alternative's
+`entry` and the verify-YES meet at offset 0). They come with row 1's
+independent control (span_pick.md "The independent control").
 
 A query writes none (as for the walks). The T-VERIFY steps write no record of
 their own: every holding step applies, and the plan's shape is `WPATH`'s

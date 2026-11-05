@@ -379,7 +379,11 @@ int32_t kit_tie_member_key(unsigned member_order, int byte);
  * whether a candidate of value `v` keyed `key` is taken over it (a lesser
  * value, or an equal one row `r` sends its way). Every pick of the kit asks
  * it: Table A's A-mass and A-model, the run member and its `after` walk,
- * presence's set pick and run window. */
+ * presence's set pick and run window.
+ * PRECONDITION: the TIE row `r` is a STRICT order over keys: for two distinct
+ * keys exactly one of kit_tie_takes(r, c, b) and kit_tie_takes(r, b, c) is 1.
+ * kit_run_member's `after` filter swaps the operands and relies on it (a row
+ * answering 0 both ways, EXCHANGE, PARKED or RESEED, would skip every tie). */
 typedef struct { int pos; int32_t key; unsigned long long v; } kit_pick;
 #define KIT_PICK_NONE ((kit_pick){ -1, 0, 0 })
 #define kit_pick_takes MF_NS(kit_pick_takes)
@@ -982,16 +986,27 @@ int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
 int kit_opt_denied(const char *opts, const char *name);
 
 /* One candidate of the window family's list as its trace record writes it
- * (span_pick.md §The shape "The trace", stage 1: no price): its alternative
- * and offset, its meet's member count and mass, whether it is core, a STOP
- * candidate and a walked offset, and whether Table A chose it as its
- * alternative's stop (`key`) and the plan as THE stop (`incumbent`). */
+ * (span_pick.md §The shape "The trace", stage 1: no price). Three sources
+ * (`src`), each the facts a KEY row reads:
+ *   GATE_CAND_POS   a position after C-meet: its alternative and offset, the
+ *                   meet's member count and mass, whether it is core, a STOP
+ *                   candidate (`stop_ok`), inside a run stretch (`stretch`,
+ *                   which picks T_MASS_STRETCH over T_MASS_SET) and a walked
+ *                   offset, and whether Table A chose it as its alternative's
+ *                   stop (`key`) and the plan as THE stop (`incumbent`);
+ *   GATE_CAND_WALK  a walked offset AS STATED, at list index `idx`: its OWN
+ *                   set's member count and mass and whether it may be the
+ *                   stop (`scan`), in LISTED order;
+ *   GATE_CAND_F0    F0's own set's member count and mass (offset 0). */
+enum { GATE_CAND_POS, GATE_CAND_WALK, GATE_CAND_F0 };
 typedef struct {
+    uint8_t  src;
     unsigned alt;
     int32_t  off;
+    unsigned idx;
     unsigned members;
     uint32_t mass;
-    uint8_t  core, stop, walked, key, incumbent;
+    uint8_t  core, stop_ok, stretch, walked, scan, key, incumbent;
 } gate_cand;
 
 #ifdef MF_TRACE
