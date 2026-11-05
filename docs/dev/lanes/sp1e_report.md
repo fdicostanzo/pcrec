@@ -340,3 +340,10 @@ How the mech rows were derived:
 | gate jobs 420-429, scratch-queue accepted, `--no-start` | yes |
 | `docs/dev/lanes/sp1e_deliver.txt` | ABSENT: no such file in the worktree or the main tree. I did not invent one (sp1dfix wrote its own deliver file after an earlier one) |
 | report + lanes history index | yes |
+
+## STATE AT HANDOFF
+
+STATE: done. OWED none: this lane queued nothing. Gate jobs 420-429 are prepared in
+`/var/tmp/pcrec-pcrec/scratch/memfn/sp1e/jobs/` for the kit manager to queue (`boxqueue add`, without
+`--no-start`, against the real queue). The scratch test queue `.../sp1e/bqtest` was never started.
+Branch tip: the commit that adds this section. The worktree is clean except the deliver file.
