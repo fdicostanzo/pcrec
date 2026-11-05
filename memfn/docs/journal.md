@@ -3228,3 +3228,12 @@ Main ruled on the four kit findings (D186 add. 2):
   - FIX-NOW: F1 (D-hors's `core` clause could not refuse: fd_decide's gate_in lacks wf), F2, F3 (the row map was checked for existence only), F4 (the renderer row is in no trace record), F5-F8, F11 (G2 plants S1405/S1410 rotted at 1d), F12-F14.
   - PLAN for main: one renderer table keyed by (frame, pick, layer) with the asker fact derived from it (F5+F6+F9, at unit 3.0); the D-hors floor measurement (F10); the anchor check covering run_g2_win.sh (F11).
   - Fix lane sp1efix (sonnet) launched on lane/memfn-sp1efix. Its gates 430-439 carry not-before 11-06 01:05 (Frank's hold).
+- 11-05 17:25: sp1efix delivered 9cf199ed3, and lane/memfn-sp1e is fast-forwarded to it.
+  - F1: fd_decide walks the asker's gate_in; G2 plant S1549 (CM(NOCORE)) is RED. S1549 is confirmed free; it is the kit G2 range's next id.
+  - F3/F4: one map parser; the map is held to BASE's trace both ways; FDROUTE prints ren=; rows_check section R; plant B is LOUD.
+  - F11: S1405/S1410 re-anchored; run_g2_win --plants 22 RED.
+  - The rest done. tests/memfn/CLAUDE.md is at its limit, so its history moved to NOTES.md.
+  - Light validation all green, including G2 70.36M/0 and test-codegen; 558 identity pairs SAME.
+  - Open: S1079's hand figure is 6/3155 vs the review's 3/3160, cause not found. Job 437's mech run is the figure of record.
+  - Three renderer pairs have no witness (UNREACHED in rows_check).
+  - Gates 430-439 QUEUED with not-before 11-06 01:05 (Frank's hold); python watcher armed.
