@@ -1,0 +1,8 @@
+(?<=a{1,2})x	abx
+(?<!ab?)x	acx
+(?<=ab?)x	acx
+(?<=(a|aa))c	aac
+(?<=(a|ab)(b|))x	abbx
+(?<=a{1,2})x	ax
+(?<=a{0,2})x	x
+(?<!a{0,2})x	bx

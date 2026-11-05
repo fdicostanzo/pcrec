@@ -1,0 +1,8 @@
+(?<=a{1,2})x	abx	nomatch
+(?<!ab?)x	acx	[2-3]
+(?<=ab?)x	acx	nomatch
+(?<=(a|aa))c	aac	[2-3,0-2]
+(?<=(a|ab)(b|))x	abbx	[3-4,0-2,2-3]
+(?<=a{1,2})x	ax	[1-2]
+(?<=a{0,2})x	x	[0-1]
+(?<!a{0,2})x	bx	nomatch
