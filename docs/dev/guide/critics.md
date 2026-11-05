@@ -172,3 +172,9 @@ Round 2026-11-05 r1, memfn-sp1d code (`docs/dev/reviews/2026-11-05-r1-memfn-sp1d
 2. **A census backstop's shape must be one a BYPASS has to use, and its plant must not contain the conforming call's text** (F2: every plant contained `pick_takes(`, the backstop's own shape).
 3. **An invariance harness needs a per-row REACH table, not one plant** (F1: four shipped rows were unreached and uncounted).
 4. **A trace record added for a seam gets a sufficiency drill: two inputs with equal records must have equal picks** (F4: three constructed pairs broke it).
+
+Round 2026-11-05 r2, memfn-sp1e code (`docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md`), coordinator round + verifier; lessons ruled 2026-11-05.
+1. **When a row moves between tables, compare the gate INPUT each walk hands `gate_check`, not only the row's predicate and contract.** Plant the contract's opposite and require a refusal. F1: a clause became unable to refuse in a byte-identical move.
+2. **For a declared map or list read by a check, plant a DELETED line and an INVENTED line; both must go red** (F3: both were green).
+3. **For a key the subject declares, every member must be printed in the trace record**: a member missing from the record is where a bypass plant hides (F4).
+4. **For a zero-mover unit, spend part of the emitted lens reading the equivalence argument rather than probing**: F1 came from reading.

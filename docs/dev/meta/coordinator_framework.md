@@ -57,3 +57,8 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 2026-11-05 r1 memfn-sp1d (code):
 - The round took about 30 minutes wall, with every critic under 12 minutes. Its value was blinding and consolidation (34 critic ids became 13 findings), not monitoring.
 - Pre-building BASE/SUBJECT release and MF_TRACE pairs once (4 builds) meant critics needed no builds of their own. This repeats r5 sp1g's lesson; make it the default in code mode whenever MF_TRACE output is in the promise.
+
+2026-11-05 r2 memfn-sp1e (code):
+- Freeze to draft took ~36 min, with no resends.
+- The verifier reused a critic's plant directory read-only, which saved builds. Worth stating in the verifier brief template.
+- Reading found the one gate defect (F1) that ~2k byte-identical compiles could not: on a zero-mover unit, probes confirm the bar and reading finds the defects.
