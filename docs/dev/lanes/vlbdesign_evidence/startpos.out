@@ -1,0 +1,3 @@
+(?<=a{1,2})b	aab	start=2	[2-3]
+(?<!a{1,2})b	aab	start=2	nomatch
+(?<=^a{1,2})b	aab	start=2	[2-3]

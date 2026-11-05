@@ -1,0 +1,2 @@
+(?<=a|bc)x	compiles rc=0
+(?<=a{1,3})b	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..3 characters) (pattern offset 0)

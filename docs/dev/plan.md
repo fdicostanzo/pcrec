@@ -678,9 +678,9 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
 - [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-05): vlbinv investigated (docs/dev/lanes/vlbinv_report.md): the 37 corpus rows are pcrec's own refusal pins (1 false positive); general form = per-branch step-back loop longest-first (fixed = one turn), VM-only, covers 32/37 (+backref width 36); 4 questions for Frank
-  next: the investigation report (docs/dev/lanes/vlbinv_report.md), then Frank's word on a design lane
-  refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [ENG-LOOK]
+  status (2026-11-05): design PROPOSED (docs/design/vlookbehind.md, lane vlbdesign): one loop, candidate starts farthest first per branch; source = choice row: range (B, stage 1) ships, reverse-DFA (D) HELD until A-REV + a measured need; fixed width folds byte-identical; 4 questions
+  next: critic round on docs/design/vlookbehind.md, then Frank's answers to its §13 and a build go
+  refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
