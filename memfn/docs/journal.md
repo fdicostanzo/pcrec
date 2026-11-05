@@ -3212,3 +3212,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fixed at sp1dfix 0044a0ee7 (LC_ALL=C, plus an OWN-TIER row). 416 retried; 417-419 run after it.
   - Slip: my bash watcher never fired on the RED; the queue monitor's line did. Replaced it with a python watcher keyed on per-job END lines.
   - Lesson for lane briefs: a new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (listed in san_scripts or san_excluded). Run `make test-codegen` before delivering any new test script.
+- 11-05 (lane sp1e, opus): span_pick unit 1e, the phase-2 tables, on lane/memfn-sp1e from 20fb73159 (report docs/dev/lanes/sp1e_report.md).
+  - T-FIND is ONE walk: `fd_route` merged into `fd_find` (`st` NULL = the composer; a stop = E-find); D-hors moved from window.c's Table D to the finder's FIRST FIND row (facts SF_HORS_WINDOW/SF_HORS_DENSE, `hors_facts`); D-one dissolved into the renderer rows' resume; B-hors renders HORS; SF_WINDOW_STOP renamed SF_ASKER_PAIR (N4 kept, renamed); the composer's pick-to-arm switch is a declared row list `fd_renderers`.
+  - MF_CLASS_V 7 -> 8 (the listing gained D-hors ahead of the PRES rows; probed by --finder-rows); MF_SITE_ABI 23. Zero movers: spot 1021/1021 SAME (stdout and stderr; utf8, vm, simd, weblog, uniform, no-window-skip, multi-target .rxt).
+  - Witness: the DECLARED row map tests/memfn/row_map.tsv (wfD D-hors -> fd D-hors; D-one dissolved), read by rows_check section M and `reach_equal.py --map` (BASE's wfD END selections counted under fd/D-hors). Sample: 0 differ, D-hors chosen 21 = 21. Plants LOUD.
+  - R20 3 -> 2 by the written recipe. S1079 re-anchored into fd_find (composer only), hand-measured DETECTED 6fail/3155pass; S1542 (G2) re-aimed at hors_facts. Census HITS 37 -> 36, members 52.
+  - Gates 420-429 prepared in scratch/memfn/sp1e/jobs (not queued; scratch-queue accepted with --no-start). sp1e_deliver.txt was absent; noted in the report.
