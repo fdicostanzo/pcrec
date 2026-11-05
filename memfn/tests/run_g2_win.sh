@@ -85,7 +85,7 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
 # Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8; S1540
-# (code review r2, lane s3pair), S1541-S1543 (the S3 final review, lane s3fix) and S1544
+# (code review r2, lane s3pair), S1541-S1543 (the S3 final review, lane s3fix) and S1549
 # (the span_pick 1e review, lane sp1efix) are the kit's S1540-S1559.
 plant_spec() {
     case "$1" in
@@ -162,7 +162,7 @@ plant_spec() {
         # (re-anchored at span_pick 1d, which made C-bound an applied step: bound_by; the
         # plant drops the verify-YES case, C-bound-floor still drops its own)
         echo 'window.c@@        if (full(yes ? p->yset : rd_set(d, p))) plan_drop(d, d->poff[i]);@@        if (!yes \&\& full(rd_set(d, p))) plan_drop(d, d->poff[i]);' ;;
-    S1544) # the sp1e review's F1: D-hors's `core` contract the opposite (CM(NOCORE)), the
+    S1549) # the sp1e review's F1: D-hors's `core` contract the opposite (CM(NOCORE)), the
         # contract fd_find's gate_in now reaches (it states the window family's facts): D-hors
         # refuses every E-find stop, whose core the alternative states, so no site resumes by
         # the shift table (the generator's hors census goes red)
@@ -170,7 +170,7 @@ plant_spec() {
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1544"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
