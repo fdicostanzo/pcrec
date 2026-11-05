@@ -14,6 +14,7 @@
 # usage: run_purity_reach.sh ROOT WORK CC FX     (FX: the unplanted driver)
 # Prints `ok`/`FAIL` lines and `checks passed:`/`checks failed:` counts.
 set -u
+export LC_ALL=C
 ROOT=$1 WORK=$2 CC=$3 FX=$4
 TSV="$ROOT/tests/memfn/purity_rows.tsv"
 W="$WORK/preach"
