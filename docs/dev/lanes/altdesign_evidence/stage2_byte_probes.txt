@@ -1,0 +1,6 @@
+byte	abcd()efgh	whole=65666768 run=65666768@2 width=[8,8] eng="vm" scan="unanchored" pf="offset-set" fac=0 kset=97,98,99,100,101,102,103,104
+byte	abcd(?:|)efgh	whole=65666768 run=65666768@2 width=[8,8] eng="dfa" scan="cover" pf="none" fac=0 kset=97,98,99,100,101,102,103,104
+byte	abcd(?:ab|ab)efgh	whole=616263646162 run=616263646162@5 width=[10,10] eng="dfa" scan="cover" pf="none" fac=1 kset=97,98,99,100,97,98,101,102,103,104
+byte	abcdabefgh	whole=61626364616265666768 run=6263646162656667@4 width=[10,10] eng="dfa" scan="cover" pf="none" fac=0 kset=97,98,99,100,97,98,101,102,103,104
+byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	whole=43644566/dfffdfff run=43644566@3/dfffdfff width=[6,6] eng="dfa" scan="cover" pf="none" fac=0 kset=[2],98,[2],100,[2],102
+byte	[aA]b[cC]d[eE]f	whole=416243644566/dfffdfffdfff run=416243644566@1/dfffdfffdfff width=[6,6] eng="dfa" scan="cover" pf="none" fac=0 kset=[2],98,[2],100,[2],102
