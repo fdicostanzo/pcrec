@@ -51,6 +51,7 @@ window.c	m_one_holds	fn	-	M	-
 window.c	m_pair	fn	-	M	-
 window.c	m_margin_holds	fn	-	M,EXC:MARGIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
 window.c	m_parked_holds	fn	-	M	-
+window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c: run_member, P3's run scan and translate's ranking ask it)
 window.c	run_member	fn	-	T-VERIFY	-
 window.c	kit_tie_takes	fn	-	TIE	-
 window.c	kit_tie_member_key	fn	-	TIE	-
@@ -59,12 +60,10 @@ window.c	wf_tie_to	data	-	TIE	-
 window.c	find_groups	fn	-	T-VERIFY	-
 window.c	run_group_ok	fn	-	T-VERIFY	-
 window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:translate's pterm grouping (T-VERIFY C-run)	a census shows its groups equal find_groups' on every B-fn site
-window.c	translate:run-rank	part	p->rank_ppm[j - 1] > c	TIE	1c (read T_MASS_STRETCH)
 window.c	d_hors_holds	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
 window.c	wf_find_decide	fn	-	T-FIND,T-FRAME	1e
 window.c	wf_prepare	fn	-	T-FRAME	1e
 presence.c	kit_pres_picks:set-pick	part	m < lo	T-PRES	-
-presence.c	kit_pres_picks:run-scan	part	c < sm	T-VERIFY	1c (asks run_member)
 presence.c	kit_pres_picks:run-window	part	wm < wl	TIE	- (reads T_WINDOW since 1b)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate
 precheck.c	implied_by	fn	-	EXC:implied_by (T-PRES)	[MEMFN-UNBOUNDED-SPANS]

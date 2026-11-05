@@ -225,7 +225,7 @@ three scattered rules `[rev3 bB2, rev3.2 n6]`):
 
 | where the tie arises | tie goes to | code it reproduces | basis |
 |---|---|---|---|
-| A-mass, a position inside a stated run stretch (one-member or cube positions, C-run's grouping), incl. the run MEMBER C-pin and `@idx` read (§2.3, §3.4) | HIGHER offset | `pcrec_find_run_scan_index`/`pcrec_find_run_rank` (candidates `[n-1..0]`), `pcrec_run_pin` (exact positions listed highest first); finder P3 | today's; on REPORT literal stretches UNMEASURED DEFAULT |
+| A-mass, a position inside a stated run stretch (one-member or cube positions, C-run's grouping), incl. the run MEMBER C-pin and `@idx` read (§2.3, §3.4); since span_pick 1c the ONE run member `kit_run_member` (row `T_MASS_STRETCH`, read by `kit_tie_takes`), asked by `run_member`, presence's run scan (P3) and translate's ranking | HIGHER offset | `pcrec_find_run_scan_index`/`pcrec_find_run_rank` (candidates `[n-1..0]`), `pcrec_run_pin` (exact positions listed highest first); finder P3 | today's; on REPORT literal stretches UNMEASURED DEFAULT |
 | A-mass, a set position | LOWER offset | strict `<` over ascending offsets | MEASURED on REPORT: 581's PRR (rightmost) loses 1.23-1.57x on year4, 1.03-1.40x on hex8 `[rev3 581]` |
 | A-model, among stop offsets of equal cost | LOWER offset | prefix_k's strict `cost < best` over `si` in walk-index order | today's; reproduces only under §1.1's walk-index listing obligation `[rev3.2 n5]` |
 | C-model, verify-NO offsets of equal mass | prefix_k's exchange-sort order (unstable, declared as the algorithm, §3.2) | prefix_k's `order[]` over walk-index order | today's; same obligation |

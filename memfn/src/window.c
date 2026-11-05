@@ -87,7 +87,9 @@ static const struct {
                          "C-run's grouping), the run MEMBER and C-pin included", TIE_HIGHER,
                          "pcrec_find_run_scan_index / pcrec_find_run_rank ([n-1..0]), "
                          "pcrec_run_pin (exact positions highest first)",
-                         "today's; on REPORT literal stretches UNMEASURED DEFAULT" },
+                         "equals pcrec_find_run_scan_index's tie until pcrec reads the kit's member; a "
+                         "change is a pcrec findings change in the same commit (req_run_member and "
+                         "pres_layout_check pin it); on REPORT literal stretches UNMEASURED DEFAULT" },
     [T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER, "strict < over ascending offsets",
                          "MEASURED on REPORT (581: the rightmost loses 1.23-1.57x on year4)" },
     [T_MODEL]        = { "A-model, stop offsets of equal cost", TIE_LOWER,
@@ -433,7 +435,7 @@ static void a_parked_choose(wf_x *x)
     m->stop = 0;
     /* `base`: the parked scan priced by k0's count, not by B's form (§2.1) */
     m->cost = model_cost(count(k0) == 1 ? COST(C_MEMCHR) : COST(C_BITMAP),
-                         kit_mass(x->d->rate, &(const kit_pos){ .set = k0 }, 1, KIT_MASS_CAP),
+                         kit_mass(x->d->rate, k0, 1, KIT_MASS_CAP),
                          0, PPM);
     m->priced = 1;
 }
@@ -486,7 +488,7 @@ static void a_model_choose(wf_x *x)
     const uint32_t *rate = x->d->rate;
     unsigned long long mass[MF_WMAX_SPAN];
     for (unsigned i = 0; i < a->nspan; i++)
-        mass[i] = kit_mass(rate, &(const kit_pos){ .set = a->spans[i].set[0] }, 1, KIT_MASS_CAP);
+        mass[i] = kit_mass(rate, a->spans[i].set[0], 1, KIT_MASS_CAP);
     int f0 = f0_of(a);
     int best_si = -1, best_sel[2] = { -1, -1 };
     unsigned best_n = 0;
@@ -542,7 +544,7 @@ static int in_stretch(const wf_pos *p)
     return p->multi && shape(p->set, &a, &b);
 }
 
-/* A-mass: over the core positions, the least mass (PICK's cube mass), ties
+/* A-mass: over the core positions, the least mass (PICK's position mass), ties
  * per the TIE table (a stretch position to the higher offset, a set position
  * to the lower). A full-set position is no stop (C-bound: the bound alone). */
 static int mass_domain(const wf_pos *p)
@@ -566,7 +568,7 @@ static void a_mass_choose(wf_x *x)
     for (unsigned k = 0; k < WF_NPOS; k++) {
         const wf_pos *p = &m->p[k];
         if (!mass_domain(p)) continue;
-        uint32_t ms = kit_mass(x->d->rate, &(const kit_pos){ .set = p->set }, 1, KIT_MASS_SUM);
+        uint32_t ms = kit_mass(x->d->rate, p->set, 1, KIT_MASS_SUM);
         int row = in_stretch(p) ? T_MASS_STRETCH : T_MASS_SET;
         if (bk < 0 || ms < bm ||
             (ms == bm && kit_tie_takes(row, (int32_t)k + WF_LO, bk + WF_LO))) {
@@ -764,6 +766,42 @@ static void plan_drop(wf_dec *d, int32_t off)
 
 static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
 
+/* PRECONDITION: row T_MASS_STRETCH is a STRICT order over positions (HIGHER
+ * or LOWER) that is invariant under translation: the `after` walk skips every
+ * equal-mass position the row does not rank after `after`, so a row answering
+ * 0 (EXCHANGE, PARKED, RESEED) would skip them all and the walk would end at
+ * pos -1 early. The caller refuses a -1 where it expected a position
+ * (translate's ranking does). Positions are keyed by their index j in the
+ * run, a translation of a_mass_choose's offsets; the answers agree because
+ * the row is such an order. */
+kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
+                          int exact, const kit_member *after)
+{
+    kit_member b = { -1, 0 };
+    for (unsigned j = 0; j < n; j++) {
+        uint8_t buf[32];
+        const uint8_t *set = at(src, j, buf);
+        if (exact && count(set) != 1) continue;
+        uint32_t ms = kit_mass(rate, set, 1, KIT_MASS_SUM);
+        if (after && (ms < after->mass || (ms == after->mass &&
+                      !kit_tie_takes(T_MASS_STRETCH, after->pos, (int32_t)j))))
+            continue;                   /* ranked at or before `after` */
+        if (b.pos < 0 || ms < b.mass ||
+            (ms == b.mass && kit_tie_takes(T_MASS_STRETCH, (int32_t)j, b.pos))) {
+            b.pos = (int)j;
+            b.mass = ms;
+        }
+    }
+    return b;
+}
+
+/* The run member's reader of consecutive 32-byte sets (`src`): position j. */
+static const uint8_t *sets_at(const void *src, unsigned j, uint8_t buf[32])
+{
+    (void)buf;
+    return (const uint8_t *)src + 32u * j;
+}
+
 /* R's MEMBER and STRETCH (the reply owns both, §2.3 [rev3.2 n4]), keyed on
  * R's stated verify (wsc3 rulings 3-4):
  *   verify NO   R is a filter the plan may skip in part (the DFA prefilter's
@@ -773,7 +811,7 @@ static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
  *               exact positions around it (today's run-pinned compare); no
  *               exact position, no member;
  *   verify YES  R must hold whole (a pre-check part's run): the member is
- *               the least-mass position of all of R (PICK's cube mass, the
+ *               the least-mass position of all of R (PICK's position mass, the
  *               same tie: pcrec_find_run_scan_index's rule, the part's scan
  *               and `@idx`), and the stretch R whole (a masked part is one
  *               compare today). */
@@ -784,17 +822,7 @@ static void run_member(wf_dec *d)
     if (!d->run_stated) return;
     const mf_wspan *r = &m->alt->spans[m->run];
     int exact = r->verify == MF_VERIFY_NO;
-    int bj = -1;
-    uint32_t bm = 0;
-    for (unsigned j = 0; j < r->len; j++) {
-        if (exact && count(r->set[j]) != 1) continue;
-        uint32_t ms = kit_mass(d->rate, &(const kit_pos){ .set = r->set[j] }, 1, KIT_MASS_SUM);
-        if (bj < 0 || ms < bm ||
-            (ms == bm && kit_tie_takes(T_MASS_STRETCH, r->start + (int32_t)j, r->start + bj))) {
-            bj = (int)j;
-            bm = ms;
-        }
-    }
+    int bj = kit_run_member(d->rate, sets_at, r->set, r->len, exact, NULL).pos;
     if (bj < 0) {                       /* no exact position: no member */
         d->run_stated = 0;
         return;
@@ -1293,6 +1321,7 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
     p->fn_ref = s->pred.fn_ref;         /* the FUNC name: a frame fact (§0)    */
     p->plan_hint = MF_NO_PRED;
     int below = 1;
+    unsigned hint_at = 0;               /* the plan_hint term's first position */
     /* the terms: each plan compare (pterm) and the stop, ascending */
     for (unsigned i = 0; i < w->n;) {
         if (full(w->set[i])) { i++; continue; }
@@ -1329,35 +1358,39 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
         if (m->has_stop && m->stop >= w->off[i] && m->stop < w->off[j - 1] + 1) {
             p->plan_hint = p->nterm;
             p->plan_pos = (uint16_t)(m->stop - w->off[i]);
+            hint_at = i;
         }
         if (w->off[j - 1] >= 0) below = 0;
         p->nterm++;
         i = j;
     }
-    /* the scanned RUN term's ranking (RQ-2): its positions by PICK's cube
-       mass, ties to the higher position, as pcrec_find_run_rank */
+    /* the scanned RUN term's ranking (RQ-2): the run member's order over its
+       positions' sets (the plan's own, of which the term's run and mask are
+       the derived cube), each answer asked again from the last: least mass
+       first, ties to the higher position (T_MASS_STRETCH), as
+       pcrec_find_run_rank. rank_pos[0] is the plan term's least-mass
+       position; where C-pin fired the stop IS the run member, so it must be
+       the member (a loud check, not an assumption: the member ranks R's own
+       spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
-        const mf_term *tm = &p->term[p->plan_hint];
-        unsigned n = tm->run_len;
+        unsigned n = p->term[p->plan_hint].run_len;
+        kit_member r = { -1, 0 };
         for (unsigned k = 0; k < n; k++) {
-            unsigned i = n - 1 - k, j = k;
-            uint8_t cube[32];
-            memset(cube, 0, 32);
-            unsigned msk = tm->mask ? tm->mask[i] : 0xFFu, f = ~msk & 0xFFu;
-            for (unsigned b = f;; b = (b - 1) & f) {
-                cube[(tm->run[i] | b) >> 3] |= (uint8_t)(1u << ((tm->run[i] | b) & 7));
-                if (!b) break;
+            r = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &r : NULL);
+            if (r.pos < 0) {            /* the tie row is no strict order (see kit_run_member) */
+                kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
+                         "(the T_MASS_STRETCH tie row must be a strict order)", k, n);
+                n = k;
+                break;
             }
-            uint32_t c = kit_mass(d->rate, &(const kit_pos){ .set = cube }, 1, KIT_MASS_SUM);
-            while (j > 0 && p->rank_ppm[j - 1] > c) {
-                p->rank_ppm[j] = p->rank_ppm[j - 1];
-                p->rank_pos[j] = p->rank_pos[j - 1];
-                j--;
-            }
-            p->rank_ppm[j] = c;
-            p->rank_pos[j] = (uint16_t)i;
+            p->rank_pos[k] = (uint16_t)r.pos;
+            p->rank_ppm[k] = r.mass;
         }
         p->rank_n = (uint8_t)n;
+        if (n && d->pinned && p->rank_pos[0] != d->member - w->off[hint_at])
+            kit_fail((mf_art *)d->art, "window family: the run ranking's first position %u is not the "
+                     "run member (offset %d, term at %d)", (unsigned)p->rank_pos[0],
+                     (int)d->member, (int)w->off[hint_at]);
     }
     /* span 0's class (MF_SITE_ABI 18): a context stop where every tested
        position lies below the candidate (each is core: a read outside the
@@ -1610,8 +1643,7 @@ static int d_hors_holds(const void *x)
 {
     const wf_dx *dx = x;
     if (!dx->hw || dx->whi - dx->wlo < 1 || dx->whi < 0) return 0;
-    return kit_mass(dx->d->rate, &(const kit_pos){ .set = dx->w->set[dx->w->stop_ix] }, 1,
-                    KIT_MASS_CAP) >= COST(HORS_MIN);
+    return kit_mass(dx->d->rate, dx->w->set[dx->w->stop_ix], 1, KIT_MASS_CAP) >= COST(HORS_MIN);
 }
 
 /* D-one, the floor's resume: holds wherever it is asked. */

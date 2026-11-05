@@ -385,8 +385,9 @@ lines, in a scratch file, 24 patterns counted in and out; the bench pattern list
 unchanged; G2; the census; REACH EQUALITY, not floors (0.9 x measured): chosen and asked per row
 (`MFTRACE REACH`) equal at base and HEAD on every SURVIVING row, a unit's deleted rows' lines its
 declared difference (1a, 1f; 1e's row map). **Ratchet** `[rev5.2 C7]`: roadmap §5's R20-R27
-(2636dee99; 15 at 27cfc44f7), each unit's delta in its "deletes" cell; stage 1 ends at 4 or 5 (R20 2,
-R24 1, R25 1, R22 0-1). A counted name a unit keeps as a thin caller still counts: main re-states that
+(2636dee99; 15 at 27cfc44f7), each unit's delta in its "deletes" cell; stage 1 ends at 3 or 4 (R20 2,
+R25 1, R22 0-1; R24 reads 0 since 1c derived translate's rank from the run member, `[rev5.2 C7]`'s -2 case),
+restated against roadmap §5's current recipes. A counted name a unit keeps as a thin caller still counts: main re-states that
 recipe before the unit lands, or the lane drops the name. **Sequencing** (D153): opt rows on window.c,
 finder.c, ofsskip.c, compose.c or presence.c wait ("remodel overlap"); O3 = WAIT: smp04, look-ahead.
 

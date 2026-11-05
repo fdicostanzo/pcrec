@@ -20,9 +20,12 @@ question table or named exception, against the kit's sources:
      HIT_FLOOR is red, so a grep that silently read nothing cannot pass.
   C  THE PLANTS (the check's failing direction; skipped by --no-plants):
      two byte-identical copies of a member's decider loop, each pasted into
-     an UNLISTED function of a scratch copy of the sources -- run_member's
-     loop (window.c) and kit_pres_picks' run-scan loop (presence.c's
-     `c < sm`) -- must each turn B red.
+     an UNLISTED function of a scratch copy of the sources -- the first loop
+     holding window.c's `ms < bm ||` (a_mass_choose's) and kit_pres_picks'
+     run-window loop (presence.c's `wm < wl`; its run-scan loop `c < sm`
+     went with unit 1c) and kit_run_member's own (window.c's `ms < b.mass`,
+     the compares `< b.mass` / `< after->mass` stand in the backstop since
+     sp1cfix) -- must each turn B red.
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -39,7 +42,7 @@ import sys
 import tempfile
 
 # The backstop shapes (span_pick.md rev 5.2 §The tables, the census).
-BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< sm", "< wl", "> c)",
+BACKSTOP = ["kit_walk(", "< best", "< bm", "< lo", "< b.mass", "< after->mass", "< wl",
             "tie_takes", "TIE_", "< inc"]
 # K35: hits at unit 1a's base (main 564db08c5) were 36 lines; a later unit
 # that removes decider copies lowers this in the same change.
@@ -47,8 +50,9 @@ HIT_FLOOR = 30
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
-# kit_tie_member_key in).
-MEMBER_COUNT = 51
+# kit_tie_member_key in); 50 at 1c (translate:run-rank and
+# kit_pres_picks:run-scan gone into kit_run_member, which is in).
+MEMBER_COUNT = 50
 
 passed = failed = 0
 
@@ -250,7 +254,8 @@ def main():
         ok()
     if not a.no_plants:
         for fname, anchor, opener in (("window.c", "ms < bm ||", "for ("),
-                                      ("presence.c", "c < sm", "for (")):
+                                      ("presence.c", "wm < wl", "for ("),
+                                      ("window.c", "ms < b.mass ||", "for (")):
             with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
                 n, why = plant(src, os.path.join(t, "src"), fname, anchor, opener)
                 if why:

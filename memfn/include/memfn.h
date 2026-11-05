@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 22  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 23  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -189,7 +189,12 @@
                            and mf_prov_fidelity are DELETED, the digest moving
                            to mf_akind.digest. No kit row read any of them. A
                            LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
-                           pcrec byte moved. */
+                           pcrec byte moved. 23 (span_pick.md rev 5.2 unit
+                           1c, D187): a pspans RUN byte outside its mask is
+                           REFUSED (kit_presence_check; positions travel as
+                           sets, normal form is a checked fact). No layout
+                           move; no MF_VOCAB or MF_CLASS_V move; no pcrec
+                           byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -611,7 +616,10 @@ typedef struct {                    /* one position term, relative to cand    */
                                        vocabulary: under this literal formula
                                        it never holds, and the kit may render
                                        it constant false; it never normalises
-                                       the byte (RULED Q-G2-13)               */
+                                       the byte (RULED Q-G2-13). On a presence
+                                       span (mf_site.pspans) it is REFUSED
+                                       (D187: a presence fact never states
+                                       one)                                   */
     uint32_t       run_len;         /* >= 1 (0 refused, Q-G2-11); no cap (§14.6) */
     uint32_t       ppm_lo, ppm_hi;  /* density hint: matches per 1e6 subject
                                        bytes; 0..MF_PPM_FULL when unknown     */
@@ -791,8 +799,9 @@ typedef struct {
        pspans[0..npspan)  UNPICKED (PR-5): every member of the necessary set
                   as its own one-byte span (one SET term of one byte at offset
                   0, `member_order` stated) and the WHOLE run, when there is
-                  one, as one span (one RUN term with its mask), each with its
-                  `need` (REQUIRED where no DFA scan fronts the route, the
+                  one, as one span (one RUN term with its mask, every byte
+                  inside its mask: a byte outside it is refused, D187), each
+                  with its `need` (REQUIRED where no DFA scan fronts the route, the
                   K65/K66 obligation; OPTIONAL elsewhere), `span_class`
                   PRESENCE and `omin` (PR-6). Members come in descending byte
                   order, the run last. npspan 0 / pspans NULL: no presence
@@ -1428,7 +1437,7 @@ int      mf_lever(mf_art *, const char *name);
  *               is R's MEMBER and [run_lo, run_lo + run_len) its stretch: on
  *               a verify-NO R the least-mass EXACT position (ties to the
  *               higher offset) and the exact run around it; on a verify-YES
- *               R the least-mass position of all of R (PICK's cube mass) and
+ *               R the least-mass position of all of R (PICK's position mass) and
  *               R whole. The reply is the ONE owner of both
  *   path        the decision's path id: "parked", "reseed", "mass", "floor",
  *               "empty", each with "+pin" where C-pin fired
@@ -1588,7 +1597,7 @@ void mf_finder_rows(mf_finder_listing *out);
  *               to the member last in pattern order, then to the larger
  *               byte); -1 for an empty set.
  *   run_scan    P3 over the run span: the position inside the whole run the
- *               scan member sits at (the rarest position, its cube's mass; a
+ *               scan member sits at (the rarest position, its set's mass; a
  *               tie to the rightmost); -1 without a run.
  *   run_window  P3: where the run's window of MF_PRES_WINDOW positions
  *               begins inside the whole run (the least window mass among the
