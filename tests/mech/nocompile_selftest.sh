@@ -42,7 +42,7 @@ chk "the ceiling alone fails the run (rc=1, unexpected: 0)" '[ "$rc" = 1 ] && gr
 chk "Sy1 reads ANOMALY (the plant does not compile)" 'grep -qE "^Sy1-selftest.*ANOMALY \(the plant does not compile" "$T/out"'
 chk "Sy1 never reads DETECTED" '! grep -qE "^Sy1-selftest.* DETECTED *$" "$T/out"'
 chk "Sy2 reads DETECTED" 'grep -qE "^Sy2-selftest.* DETECTED *$" "$T/out"'
-chk "Sy3 (declared) reads DETECTED-BUILD" 'grep -qE "^Sy3-selftest.*	DETECTED-BUILD " "$T/out"'
+chk "Sy3 (declared) reads DETECTED-BUILD" 'grep -qE "^Sy3-selftest..* DETECTED-BUILD " "$T/out"'
 MECH_ANOMALY_CEILING=0 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy4 > "$T/out4" 2>"$T/err4"
 rc4=$?
 chk "Sy4 (declared, builds) reads UNEXPECTED and exits 1 (rc=$rc4)" '[ "$rc4" = 1 ] && grep -qE "^Sy4-selftest.*NO ARM.S ARTIFACT FAILED TO COMPILE.*UNEXPECTED" "$T/out4" && grep -qE "unexpected: 1," "$T/out4"'
