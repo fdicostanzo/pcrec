@@ -1,0 +1,9 @@
+24 ascii
+489 exact/allcube<=2/contig
+253 exact/allcube<=2/noncontig
+54 exact/noncube/contig
+199 exact/noncube/noncontig
+37 mixed
+132 superset/allcube<=2/noncontig
+1 superset/noncube/contig
+265 superset/noncube/noncontig
