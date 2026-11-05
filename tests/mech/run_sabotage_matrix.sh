@@ -70,6 +70,17 @@
 # runs either way. Without the declaration a failing build stays the
 # BUILD-FAILED ANOMALY (an unbuildable tree measured nothing).
 #
+# [MECH-NOCOMPILE] SAB_EXPECT=COMPILE-CATCH. A row whose plant is meant to
+# make a GENERATED or COMPILED artifact fail to build (a _Static_assert, a
+# missing declaration, a header edge a check compiles without -I) declares it.
+# Some arm's log carries a compiler error (`NOCOMPILE_ERE`): verdict
+# DETECTED-BUILD. No arm's artifact failed to compile (the catch stopped
+# firing, or something else caught the plant): UNDETECTED ***UNEXPECTED***,
+# counted and exit-1. Undeclared, the same compile failure stays ANOMALY.
+# THE ANOMALY CEILING: the run exits 1 when `anomalies` exceeds
+# MECH_ANOMALY_CEILING (default $ANOMALY_CEILING_PIN below), so an unmeasured
+# row cannot leave the matrix green.
+#
 # A row failing SAB_REACH/SAB_REACH_POP is **UNREACHED**: a THIRD verdict
 # beside DETECTED/UNDETECTED/ANOMALY, counted in the trailer, RED in the
 # headline, and its sabotaged tree is never built. A row may declare
@@ -850,6 +861,10 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
                          mismatch exits 1. BUILD-REFUSED: the sabotage must
                          make the BUILD fail; failing = DETECTED, building =
                          UNDETECTED ***UNEXPECTED*** (no suite is run)
+                         COMPILE-CATCH: the plant must make an ARM's artifact
+                         fail to compile (a compiler error in the failing
+                         arm's log); that = DETECTED-BUILD, none =
+                         UNDETECTED ***UNEXPECTED***
     SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
 
   [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
@@ -1333,9 +1348,9 @@ run_one() {
         # falling back to the default would turn a checked claim back into an
         # unchecked one -- which is the exact failure this field exists to fix.
         case "${SAB_EXPECT:-DETECTED}" in
-            DETECTED|UNDETECTED|UNREACHED|BUILD-REFUSED) ;;
+            DETECTED|UNDETECTED|UNREACHED|BUILD-REFUSED|COMPILE-CATCH) ;;
             *)  echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT must be" \
-                     "DETECTED, UNDETECTED, UNREACHED or BUILD-REFUSED (got '$SAB_EXPECT')" >&2
+                     "DETECTED, UNDETECTED, UNREACHED, BUILD-REFUSED or COMPILE-CATCH (got '$SAB_EXPECT')" >&2
                 exit 2 ;;
         esac
         # ---- [MECH-REACH] THE REACH FIELDS, VALIDATED BEFORE ANYTHING RUNS --
@@ -3628,7 +3643,9 @@ run_one() {
         # visibly in its verdict, because "caught by nothing" means something
         # different when one of the nets was not in the water.
         verdict="DETECTED"
-        if [ "$any_nocompile" -eq 1 ]; then
+        if [ "$any_nocompile" -eq 1 ] && [ "${SAB_EXPECT:-DETECTED}" = "COMPILE-CATCH" ]; then
+            verdict="DETECTED-BUILD (the designed compile-time catch fired: $(IFS=' '; echo "${nocompile_arms[*]}"))"
+        elif [ "$any_nocompile" -eq 1 ]; then
             verdict="ANOMALY (the plant does not compile: $(IFS=' '; echo "${nocompile_arms[*]}") -- a compile failure is not a catch; make the plant warning-clean)"
         elif [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
             verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
@@ -3675,6 +3692,7 @@ run_one() {
         expect="${SAB_EXPECT:-DETECTED}"
         case "$verdict" in
             DETECTED)              actual="DETECTED"   ;;
+            DETECTED-BUILD*)       actual="DETECTED-BUILD" ;;
             \*\*UNDETECTED*)        actual="UNDETECTED" ;;
             *)                     actual="OTHER"      ;;
         esac
@@ -3684,6 +3702,10 @@ run_one() {
             verdict="NOW DETECTED -- re-measure and flip the expectation ***UNEXPECTED***"
         elif [ "$actual" = "UNDETECTED" ] && [ "$expect" = "DETECTED" ]; then
             verdict="$verdict ***UNEXPECTED***"
+        elif [ "$expect" = "COMPILE-CATCH" ] && { [ "$actual" = "DETECTED" ] || [ "$actual" = "UNDETECTED" ]; }; then
+            # the declared compile-time catch did not fire: no arm's artifact
+            # failed to compile, whatever else did or did not fail
+            verdict="**UNDETECTED -- NO ARM'S ARTIFACT FAILED TO COMPILE (SAB_EXPECT=COMPILE-CATCH wanted one)** ***UNEXPECTED***"
         fi
 
         # The suffix NAMES the arms that skipped rather than assuming `pc3`:
@@ -3797,6 +3819,12 @@ if [ "$REACH_ONLY" = "1" ]; then
     exit "$ro_rc"
 fi
 
+# [MECH-NOCOMPILE] ceiling on the run's anomalies; 0 = every row measured.
+# S272's plant trips -Werror in the emitted code (kind A, not a designed catch),
+# so it is the one pinned anomaly until its plant is made warning-clean.
+ANOMALY_CEILING_PIN=1
+ANOMALY_CEILING="${MECH_ANOMALY_CEILING:-$ANOMALY_CEILING_PIN}"
+
 echo
 # [admin1007] EVERY counter below reads the VERDICT COLUMN (the last tab
 # field) ONLY, via `vcount`/`vrows` (defined with the argument parsing, where
@@ -3906,5 +3934,14 @@ echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetecte
 # a row that disagrees with its own definition is a broken contract and the
 # caller must see it in the exit status, not only in the log.
 [ "${unexpected:-0}" -gt 0 ] && exit 1
+
+# THE ANOMALY CEILING ([MECH-NOCOMPILE]): an anomaly is a row that was NOT
+# MEASURED, so a count above the pin is red even though no row mismatched.
+# The pin is the measured count of undeclared unmeasured rows; lowering it is
+# the goal, raising it needs the row named in the plan row.
+if [ "${anomalies:-0}" -gt "$ANOMALY_CEILING" ]; then
+    echo "*** mech: anomalies ${anomalies:-0} exceed the ceiling $ANOMALY_CEILING: unmeasured rows cannot leave mech green. ***"
+    exit 1
+fi
 
 exit 0

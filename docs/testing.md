@@ -2223,6 +2223,7 @@ this direction had no checker.
 | `SAB_REACH_POP` | is the POPULATION still there? `FILE\|EREGEX\|MIN` lines. **The count is printed on every run**, green or red |
 | `SAB_REQUIRE` | can this RUN measure at all? Closed vocabulary (`asan`). Unsatisfiable ⇒ ANOMALY |
 | `SAB_EXPECT=UNREACHED` + `SAB_EXPECT_REASON` | a row that DECLARES its witness dead, and is told (`NOW REACHED`) when it comes back |
+| `SAB_EXPECT=COMPILE-CATCH` | a row whose plant must make an ARM's artifact fail to compile ([MECH-NOCOMPILE]): a compiler error in a failing arm's log ⇒ `DETECTED-BUILD`; none ⇒ UNDETECTED `***UNEXPECTED***` (exit 1). Undeclared, the same compile failure is ANOMALY. The run also exits 1 when `anomalies` exceeds the pinned ceiling (`ANOMALY_CEILING_PIN` in the runner, env `MECH_ANOMALY_CEILING`) |
 | `SAB_EXPECT=BUILD-REFUSED` | a row whose plant must make the BUILD fail: build fails ⇒ DETECTED, build succeeds ⇒ UNDETECTED `***UNEXPECTED***` (exit 1); no suite runs either way ([admin1007]) |
 
 The runner takes any number of row ids (`run_sabotage_matrix.sh S13 S14 ...`);
