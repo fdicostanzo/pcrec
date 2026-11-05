@@ -13,4 +13,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };'
 SAB_AFTER='                if (bw.pos < 0 || wm <= bw.v) bw = (kit_pick){ w, w, wm };   /* SABOTAGE S1096 */'
-SAB_DOC_FIGURE="HAND-MEASURED by lane sp1bfix after the span_pick 1b re-anchor: the sabotaged tree under tests/codegen/run_cand_oracle.sh, candoracle:5fail/173pass DETECTED (the solo mech run is left to the gate shard)."
+SAB_DOC_FIGURE="HAND-MEASURED by lane sp1d (re-anchor on kit_pick_takes; docs/dev/lanes/sp1d_report.md): the row's plant applied by tests/mech/lib/replace.py to a git archive of 9eb7d7837, built, tests/codegen/run_cand_oracle.sh: candoracle:5fail/177pass DETECTED (clean 0fail/182pass). Earlier: lane sp1bfix after the span_pick 1b re-anchor: the sabotaged tree under tests/codegen/run_cand_oracle.sh, candoracle:5fail/173pass DETECTED (the solo mech run is left to the gate shard)."
