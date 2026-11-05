@@ -683,7 +683,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [ENG-LOOK]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
-  status (2026-11-05): condinv investigation delivered: all kinds but DEFINE refused; demand 0 (5 corpus = own refusal pins, 1 bench probe); one A_COND node (set/look/callctx/const), VM-only; first slice set+assertion, medium; report docs/dev/lanes/condinv_report.md
+  status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
   next: Frank's word on a design lane (four plain-words questions at the end of docs/dev/lanes/condinv_report.md)
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md
 - [PCRE2-GAPS-TBD] STATE:not-started — PCRE2 gap rank 4 (catch-all, TBD): the remaining refused constructs, each 0-1 uses
@@ -1197,7 +1197,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   pattern-comment/rx_info.pattern render for non-ASCII pattern text (today it renders \xNN-escaped — probably right, but say so in the spec); (5) registry/compliance rows if any construct's answer changes by pattern encoding. NOT this row: UCP semantics for \w/\d (stage 3-4 territory), utf8-by-default (a separate ruling if ever). Sonnet-sized measurement+corpus+spec; engine changes only if (1)'s measurement finds a silent-byte hole (then it is a miscompile-class fix, escalate).
 - [UTF-RW] STATE:not-started — THE REAL-WORLD UTF REGEX HARVEST + THE CLASS-SHAPE CENSUS
   filed: 2026-09-05 Frank
-  status (2026-10-12): its sequencing condition (M5.0 stages 3-5 landed) is MET — M5.0 closed 2026-09-12; the row is unblocked and unscheduled. CHARTERED by Frank 2026-09-05, fifty-fifth session, SEQUENCED after the utf build (M5.0 stages 3-5) lands: "go out and find some good real world utf regex for testing.…
+  status (2026-11-05): MOVED UP by Frank ("move up"): the PCRE2 completeness scoreboard reads 0 outside our own refusal tests for every gap; step 1 = a sourcing lane (candidate sources, licenses, extraction; nothing downloaded into the tree)
   next: starts on Frank's word; no row-specific trigger recorded
   refs: tests/utf8/; decisions D27 D77
   Two deliverables from one collection: (1) THE HARVEST — sourced real-world UTF-8 patterns from NON-ENGLISH-LOCALE ecosystems, deliberately outside this project's own authoring bias: validation patterns from CJK/Arabic/Devanagari/Thai/Cyrillic/Greek/Hebrew codebases and frameworks (form validators, ID/postal formats, tokenizers, log/line parsers written BY speakers of those languages, not English-locale approximations), i18n test suites (W3C/CLDR-adjacent), combining-mark and RTL material — every pattern with PROVENANCE AND LICENSE recorded (REFERENCES.md-style citation discipline; no unlicensed corpus text lands in the tree), oracle-verified against 10.46 under PCRE2_UTF, landed as a tests/utf8/ corpus arm (not D27-blinded — a harvest is public material, the blinding lever does not apply; the D27 lever for this milestone already ran) AND proposed to the bench as a real-world utf SET (their syntax-census/[B36] machinery is the natural consumer — coordinate via the channel).
