@@ -381,7 +381,7 @@ int32_t kit_tie_member_key(unsigned member_order, int byte);
  * it: Table A's A-mass and A-model, the run member and its `after` walk,
  * presence's set pick and run window.
  * PRECONDITION: the TIE row `r` is a STRICT order over keys: for two distinct
- * keys exactly one of kit_tie_takes(r, c, b) and kit_tie_takes(r, b, c) is 1.
+ * keys it answers 1 for exactly one of the two operand orders.
  * kit_run_member's `after` filter swaps the operands and relies on it (a row
  * answering 0 both ways, EXCHANGE, PARKED or RESEED, would skip every tie). */
 typedef struct { int pos; int32_t key; unsigned long long v; } kit_pick;

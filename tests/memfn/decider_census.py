@@ -25,9 +25,13 @@ question table or named exception, against the kit's sources:
      p->mass`), kit_pres_picks' run-window loop (presence.c's
      `kit_pick_takes(&bw, wm`) and kit_run_member's own (window.c's
      `kit_pick_takes(&b, c.v`); since unit 1d every argmin asks the one
-     before-relation kit_pick_takes, so its call `pick_takes(` stands in the
-     backstop for the compares `< bm` / `< wl` / `< b.mass` it replaced --
-     must each turn B red.
+     before-relation kit_pick_takes, so its call `pick_takes(` is a LIVE
+     backstop shape -- must each turn B red; and THREE BYPASS plants, each an
+     unlisted function holding a twin argmin that holds NO `pick_takes(` text
+     (it compares the best-so-far of a `kit_pick` by `.v`, `<= b.v` and
+     `< b.v`, as S1095's SABOTAGE line does): the backstop must see a twin that
+     does not ask the relation. A plant that held the call's text would show
+     only that a conforming twin is flagged (sp1dfix, review 2026-11-05 F2).
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -57,7 +61,7 @@ BYPASS = ["< b.v", "<= b.v", "< b->v", "<= b->v", ".v <", "->v <"]
 BACKSTOP = LIVE + BYPASS
 # EXACT hit count (K35, like MEMBER_COUNT): lines holding any BACKSTOP shape.
 # 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact.
-HITS = 0    # set below by the first run (see main)
+HITS = 37
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -68,6 +72,7 @@ HITS = 0    # set below by the first run (see main)
 MEMBER_COUNT = 52
 
 passed = failed = 0
+SHAPE_HITS = {}     # the last census()'s lines per BACKSTOP shape
 
 
 def ok():
@@ -209,8 +214,12 @@ def census(src, rows, count=True):
                   if ns.match(ln)]
     # B: every backstop hit lies in a member
     hits, stray = 0, []
+    SHAPE_HITS.clear()
     for fn, text in raw.items():
         for no, ln in enumerate(text.split("\n"), 1):
+            for p in BACKSTOP:
+                if p in ln:
+                    SHAPE_HITS[p] = SHAPE_HITS.get(p, 0) + 1
             if any(p in ln for p in BACKSTOP):
                 hits += 1
                 if not any(f == fn and a <= no <= b for f, a, b in spans):
@@ -259,8 +268,10 @@ def main():
     hits, stray, errs = census(src, rows)
     for e in errs:
         bad(e)
-    print("backstop hits: %d (floor %d), outside a member: %d" % (hits, HIT_FLOOR, len(stray)))
-    (ok() if hits >= HIT_FLOOR else bad("backstop hits %d under HIT_FLOOR %d" % (hits, HIT_FLOOR)))
+    print("backstop hits: %d (expected %d), outside a member: %d" % (hits, HITS, len(stray)))
+    (ok() if hits == HITS else bad("backstop hits %d, not HITS %d (edit both together)" % (hits, HITS)))
+    for sh in LIVE:
+        (ok() if SHAPE_HITS.get(sh) else bad("the live backstop shape %r matches no line (dead: respell or delete it)" % sh))
     for s in stray:
         bad("a decider shape outside every census member: " + s)
     if not stray:
@@ -279,6 +290,26 @@ def main():
                 (ok() if planted else
                  bad("plant %s (%d lines, `%s`) did not turn the backstop red" % (fname, n, anchor)))
                 print("plant %s `%s`: %d stray hit(s)" % (fname, anchor, len(planted)))
+        # C2: the bypass plants (no `pick_takes(` text in any of them)
+        for label, cmp_line in (("<= b.v", "if (b.pos < 0 || v[j] <= b.v)"),
+                                ("< b.v", "if (b.pos < 0 || v[j] < b.v)"),
+                                (".v <", "if (b.pos < 0 || b.v < v[j])")):
+            text = ("\nstatic void census_bypass(const unsigned long long *v, unsigned n)\n{\n"
+                    "    kit_pick b = KIT_PICK_NONE;\n"
+                    "    for (unsigned j = 0; j < n; j++)\n"
+                    "        " + cmp_line + "\n"
+                    "            b = (kit_pick){ (int)j, (int32_t)j, v[j] };\n}\n")
+            if "pick_takes(" in text:
+                bad("bypass plant %s holds the relation's call text" % label)
+                continue
+            with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
+                shutil.copytree(src, os.path.join(t, "src"))
+                with open(os.path.join(t, "src", "window.c"), "a") as fh:
+                    fh.write(text)
+                _, pst, _ = census(os.path.join(t, "src"), rows, count=False)
+                planted = [x for x in pst if x.startswith("window.c:")]
+                (ok() if planted else bad("bypass plant `%s` (no pick_takes( text) did not turn the backstop red" % label))
+                print("bypass plant `%s`: %d stray hit(s)" % (label, len(planted)))
         # C3: a decider reduced to a bare prototype must turn A red.
         fn_row = next(r for r in rows if r["kind"] == "fn")
         with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
