@@ -676,8 +676,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [ENG-LOOK]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
-  status (2026-11-05): investigation lane condinv started; module `conditionals` refuses ("not implemented yet", registry PLANNED-HARD); 5 corpus patterns + 1 bench probe
-  next: the investigation report (docs/dev/lanes/condinv_report.md), then Frank's word on a design lane
+  status (2026-11-05): condinv investigation delivered: all kinds but DEFINE refused; demand 0 (5 corpus = own refusal pins, 1 bench probe); one A_COND node (set/look/callctx/const), VM-only; first slice set+assertion, medium; report docs/dev/lanes/condinv_report.md
+  next: Frank's word on a design lane (four plain-words questions at the end of docs/dev/lanes/condinv_report.md)
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md
 - [PCRE2-GAPS-TBD] STATE:not-started — PCRE2 gap rank 4 (catch-all, TBD): the remaining refused constructs, each 0-1 uses
   filed: 2026-11-05 Frank ("one rank 4 item as a catch all group rank 4 'tbd'"), from the completeness scoreboard

@@ -1,0 +1,18 @@
+# source	location	pattern	condition kind	what it is
+# pcrec corpus (scoreboard corpus_compile.tsv, 6,304 patterns; re-grepped tests/**/*.rxt for '(?(' minus DEFINE on lane/condinv @ 6c6e68086)
+corpus	tests/recursion/refused.rxt:45	(a)(?(1)b|c)	group-set, absolute number	a REFUSAL PIN (perr, default features) -- pcrec's own test that the doorway refuses
+corpus	tests/recursion/refused.rxt:50	(a)(?(R)b|c)	recursion (R)	a REFUSAL PIN (perr, default features)
+corpus	tests/recursion/refused.rxt:55	(a)(?(1)b|c)	group-set, absolute number	a REFUSAL PIN (perr, default features)
+corpus	tests/recursion/refused.rxt:60	(a)(?(1)b|c)	group-set, absolute number	a REFUSAL PIN (perr, --features recursion)
+corpus	tests/compound/split.rxt:10572	(?(?=^)a|ab)c	assertion (positive lookahead)	a `# pcre2-only` + perr cell (hand:cond1) -- the compound split differential's own exclusion
+# pcrec corpus, NOT conditionals (scoreboard counted them as pc2-rejects)
+corpus	tests/recursion/define.rxt:145	(?(define)(?<w>a))^x$	name condition (no such group)	libpcre2 REJECTS (115); pcrec refuses with the conditionals wording
+corpus	tests/recursion/define.rxt:151	(?(DEF)(?<w>a))^x$	name condition (no such group)	as above
+# pcrec-bench (bench/*/patterns/*.rx, 392 files; worktrees/ and reports/ excluded)
+bench	bench/syntax/patterns/cnd-group.rx	(<)?item(?(1)>)	group-set, absolute number	a SYNTAX PROBE (the optional-matching-bracket idiom); the bench's only conditional
+bench	catalogue/rules.toml:473,869	-	-	the bench's catalogue rule that classifies the conditionals refusal text; not a pattern
+bench	tools/check_w1fix.py	(?(DEFINE)...)	DEFINE (built)	the bench's own check that w1fix patterns use DEFINE and no other conditional
+# real-world populations
+wild	32 bench patterns with a source_url	-	-	0 conditionals (scoreboard; wild-json-validate uses (?(DEFINE) only, built)
+realistic	eng_brep_measurements/probes/realistic_patterns.txt (40)	-	-	0 conditionals (scoreboard)
+harvest	none in the tree ([UTF-RW] not-started)	-	-	no real-world harvest exists
