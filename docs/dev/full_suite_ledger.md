@@ -14,21 +14,64 @@ studies; listed, not counted).
 
 ## Since the last green full suite
 
-Baseline: the last full run on record is about 2026-10-08 (docs/dev/gate_census_2026-10-23.md: full mech
-~10-08, san 10-03, alloc 10-08, axes 10-20 only); no battery verdict is retained from it.
+Baseline: run 2026-11-05 daf6f002b, the first fully green full suite on record (log `build/full_suite/20261104_daf6f002b/`).
+Every earlier landing is listed under "Covered by run 2026-11-05 daf6f002b" in the Runs section.
 
-**major: 31, minor: 84** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
-`git log --first-parent --merges --since=2026-10-08 main` (merges named "merge main into" excluded).
-PROVISIONAL: class is set by a mechanical rule (path touched, abi-event wording in the merge subject,
-a short capability keyword list); manager to confirm. Landings dated 2026-10-08 may predate the
-last run.
+**major: 0, minor: 0** (plus 2 no-code landings, not counted). Class is set by the manager at each landing.
 
-Trigger state (D177): rows 1, 4 and 5 are FIRED (tonight's run; far past 2-3 major and 4-6 minor);
-row 3 fires if the manager classes any of the majors below as a refactor (corefix, dd10b, attrtab, rpunion
-are candidates); row 2 not applicable until a major version shift is named. Next window: the first run,
-after the iterator landing.
+Trigger state (D177): all un-fired. Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
 
 ### major
+
+none yet
+
+### minor
+
+none yet
+
+### none (not counted)
+
+- 2026-11-05 f8ba7021c none — ledger: full suite green (docs)
+- 2026-11-05 442686b7b none — journal: session 129 evening close (docs)
+
+## Runs
+
+One line per full run, copied from the job's `summary.txt`: date, commit, verdict per stage, log path,
+duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored, kept on this box).
+
+| date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
+| 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
+| 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
+| 2026-11-05 | daf6f002b | green | green | green | green | green | green | green | green | build/full_suite/20261104_daf6f002b/ | 44139 s |
+
+RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
+
+RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.
+san re-run on main 3e550f92d (after lane/sanred), job 610-main-sanrerun: GREEN, run_san_group 41/41, wall 3441 s. The run's only stage-level red besides the known [RECID-A] is cleared.
+
+RED: 2026-10-30 cb32eda28 test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261030_cb32eda28 duration=42819s
+| 2026-10-30 | cb32eda28 | RED (rc=2) | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261030_cb32eda28/ | 42794 s |
+
+RED run: counters do not reset. test = (1) test-memfn-guarded simd-form floor 5<6 (stale: ic3 stage 3 shifted the sample) and (2) test-code refusal tail cut by the public 256-byte pcrec_error.msg under the long run-tree path; axes = 11 sr_depth GIVEUP1 keys moved +8 lines by trailgc's comment (give-ups 66 -> 74 explained: reqvm1's handoff_vm.rxt 20-27); san = REAL compiler crash, `--code-header` left PcrecCodeHeader.file/.line uninitialised (INLINE-C stage 3, 95832f09c); fixes on lane/fsfix (crash zero-init + MALLOC_PERTURB_ arm, named simd witnesses, text-keyed allowances, test-only path fix). mech = unexpected 2 (S1085, S1171: witnesses became cover artifacts under D172 S3 cover-by-default, lost reach) + new anomalies S1682/S146; fixes on lane/fsfix2. recidentity = only the known (A), (B) 0 differing on all four; (A) 167/382/167/111 (vm +1 vs 381). Triage: scratch reports citriage/axtri/santri/mechtri (summarized here).
+
+RED: 2026-11-04 4bd002e20 test=green strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261103_4bd002e20 duration=44409s
+RED run 2026-11-04 4bd002e20: counters do not reset. Dispositions (all triaged, no product defect so far): axes = memfn_arm reach floors stale after P1's landmark walk (lane/axtri3, re-check 320-main-axtri3); san = two faults in tests/code/run_code_tests.sh under sanitizers, no sanitizer report (lane/santri3, re-check 321-main-santri3); mech = S512 floor stale after p1build plus six vmrec-stale build-failed plants re-aimed, no real miss (lane/mechtri3, re-check 322-main-mechtri3); recidentity = known [RECID-A] part (A) only (168/383/168/111, bref bucket 330 vs 413, unchanged since P1's landing); part (B) clean (lane recidtri3).
+
+2026-11-05 daf6f002b test=green strict=green axes=green san=green alloc=green lint=green mech=green recidentity=green log=build/full_suite/20261104_daf6f002b duration=44139s
+
+GREEN run 2026-11-05 daf6f002b: the first fully green full suite on record; counters reset (D177). mech: 1102 rows, unexpected 0, undetected 18, unreached 16, anomalies 7. Landings covered: the block below.
+
+### Covered by run 2026-11-05 daf6f002b
+
+The first fully green full suite on record: every landing up to and including daf6f002b is covered. The lines
+below moved here verbatim from "Since the last green full suite" (the D177 reset), followed by the landings that
+had no line yet (added at the reset, classed by the rule in the header). Merges before 2026-11-02 that were never
+given a line (mostly docs/design/kit-docs merges) are covered too: the run froze at daf6f002b, so
+`git log --first-parent --merges` through it is the covered set.
+
+**major**
 
 - 2026-11-02 f5de088bf major — merge lane/p1build: [LANDWALK] stage 1, the `landmark-walk` LOCATE row (D184; reverse machine of P·L from each landmark hit, inline anchored verify, reach guard to composite; RECOVER's asker derived; the `drop-landmark-walk` size rung; public deny `-fno-landmark-walk`, bit 57), abi 94 -> 95 (artifacts it does not take move in the abi digits only; numbered at landing over main's R-30 94, lane p1land). Validated on the branch: 709-p1tri-test make test, 706-p1pin-startset, 713/761 mech (S1824 DETECTED, S811 DETECTED, S1822 retired UNREACHED, S1855 DETECTED), 762 identity (B) 0 on all arms, (A) = the known [RECID-A] at 168/383/168/111 (+1 each from two NEW landwalk.rxt patterns identical to main; p1prep_report.md MOVER); 712 timing (p1prep_report.md TIMING). At landing: make strict, test-codegen, registry, rxtsource on the merge, make test queued as 830-p1land-test (p1land_report.md). Known loss recorded: [LANDWALK-PRES]. Owed: the next full suite.
 - 2026-10-29 ebcc10aa1 major — merge lane/trailgc: [K134] VM trail compaction at checkpoints (D183; backward gotos + region returns, quarter-room stop, fast tier never compacts), abi 92 -> 93 (VM artifacts whose program writes the trail on a cycle gain the checkpoints and `trail_gc_floor`; every other artifact moves in the abi digits only). Validated on the branch: job 690 run 2 red ONLY on identity (A) = the filed [RECID-A] (make test 81/81 green, (B) zero-diff, trail-stripped regions = base on 4,983 patterns), 691 mech GREEN; the landing re-ran codegen/registry/rxtsource/identity (see trailgc3_report.md "Landing 2026-10-29 (landtgc)"). Owed: tonight's full suite.
@@ -70,10 +113,10 @@ after the iterator landing.
 - 2026-10-08 6e7fc41e5 major — Merge lane/memfn-m7: [MEMFN] R-8 / M7 (zero movers, no abi event; slot12+slot13 green: census, identity gate 7
 - 2026-10-08 399eb53fb major — Merge lane/decfbB5: [DEC-FALLBACK] B5, the token derivations read the tables (no movers; light + heavy green, 
 - 2026-10-08 ceff04211 major — Merge lane/decfbB4: [DEC-FALLBACK] B4, T2 replaces the prefilter admission (no movers; light + heavy green, me
-
 - 2026-10-26 93ef76746 major — [INLINE-C] stage 1a: the per-kind attribute row kindrow.def read by 8 pass sites (refactor of a shared mechanism; 0 movers over 6,185 corpus artifacts; removes an A_VAR union misread in pcrec_bref_mark)
 - 2026-10-26 456dbc09e major — [SCANEDGE-SET] scan edges over a byte-class set (abi 87; lane scanset + scansetfix)
-### minor
+
+**minor**
 
 - 2026-10-29 0a6ca838d minor — merge lane/ic2d27m: [INLINE-C] stage 2 D27 spec-first suite (tests/code/d27, test arm 12, sabotage S1740-S1741) + two small CLI diagnostic fixes; no abi event (stays 91). Validated: 665-ic2d27m-test GREEN (strict 0, make test 81/81); landing build, strict, test-codegen GREEN with no re-pin.
 - 2026-10-26 81454bbf4 minor — [INLINE-C] stage 0: shared-block call-site comment "traps on" -> "propagates" (abi 88; size pin +2 B re-recorded)
@@ -162,7 +205,19 @@ after the iterator landing.
 - 2026-10-09 287133bae minor — Merge lane/memfn-m6: [MEMFN] R-10 / M6 (N6 + VMSTRIDE, zero movers, no abi event; slot14 green: identity gate 
 - 2026-10-08 1debbd043 minor — Merge branch 'lane/decfbB3' ([DEC-FALLBACK] B3: the dispatch replaced — one fit_walk over the arrival labels, 
 
-### none (not counted)
+- 2026-11-04 693f61c98 minor — merge lane/mechtri3: full suite 20261103 mech red: S512 re-pinned (C17_ROW_FLOOR 15 after p1build); six vmrec-stale plants re-aimed (S41 S53 S56 S57 S709 S86)
+- 2026-11-04 5a5d30222 minor — merge lane/santri3: run_code_tests.sh under sanitizers (library link takes SANFLAGS; the segfault control aborts on the sanitizer's report)
+- 2026-11-04 dbaeed6ba minor — merge lane/axtri3: memfn_arm reach floors re-pinned after P1's landmark walk (fd-pres-pick 144/225, precheck-assign-byte 153/220)
+- 2026-11-04 ffe68b3c1 minor — merge lane/smallfix1: temp prune skips ref; VALIDATE_ONLY mech line carries mode marker; pcrec.h landmark-walk cite 2.54 (comment only); boxqueue add refuses a job with no --ready case ([BOXQUEUE-READY-GUARD])
+- 2026-11-04 7f7b7b8f1 minor — merge lane/recida: [RECID-A] recursion-identity (A) re-based onto 4bd002e20, exception machinery removed (check-side)
+- 2026-11-04 c9642c095 minor — merge lane/mechfix1: [MECH-NOCOMPILE] part 1: 10 -Werror plants made warning-clean, S271 re-anchored, S53/S57 marker \x01 -> \x02; all 12 DETECTED (mech plants only)
+- 2026-11-04 94f37cfd5 minor — merge lane/memfn-sp1g: span_pick stage 1 unit 1g (provenance off the kit seam; MF_SITE_ABI 22; byte-identical, no pcrec abi event)
+- 2026-11-04 cb24c5aa5 minor — merge lane/memfn-sp1b: span_pick stage 1 unit 1b (one mass primitive + NONE row; zero movers, no abi)
+- 2026-11-04 509c94908 minor — merge lane/memfn-sp1c: span_pick stage 1 unit 1c (U2; D187 set-only step: kit_mass set-only, cube path deleted, normal form refused at kit_presence_check; MF_SITE_ABI 23, no pcrec abi; zero movers); classed minor like 1a and 1f (byte-identical kit-internal step)
+- 2026-11-02 c5fecdf89 minor — merge lane/memfn-k1102: kit R-32 (S526 reads DETECTED) touched tests/mech/sabotages/S526 and tests/memfn/form_checks.py (check-side)
+- 2026-11-03 499b7430d minor — merge lane/pinbis: fd-pres-pick differ floor drop explained (P1 landmark walk; the re-pin is ef179b9f4's)
+
+**none**
 
 - 2026-10-23 f04019218 none — merge lane/fileq: D176 stop-ranking rulings, three plan rows, kit addendum rules (Frank)
 - 2026-10-23 9fbca5b9e none — merge lane/guide: living coding/architecture/style/critics guide in docs/dev/guide/ (Frank)
@@ -272,26 +327,17 @@ after the iterator landing.
 - 2026-10-09 ee1c79b23 none — Merge lane/r9d (ad3d9ea4): [MEMFN] R-9 done, r9b light re-check applied (docs only)
 - 2026-10-09 f27ff639f none — Merge lane/memfn-m7: kit wake.md + journal at session reset (docs only)
 
-## Runs
+- 2026-11-04 416eee8f4 none — merge lane/memfn-k1102: unit 1c done line, review 2026-11-04-r2, critic skill, journal, wake (docs)
+- 2026-11-04 7b671bc2c none — merge lane/memfn-k1102: unit 1b done line, review 2026-11-04-r1, critic skill, journal (docs)
+- 2026-11-04 b0f3d0339 none — merge lane/memfn-k1102: unit 1g done line, review r5, critic lessons, kit journal and wake (docs)
+- 2026-11-04 260a64f6d none — merge lane/manif1: manifesto owner ruling 2026-11-04 (docs)
+- 2026-11-05 daf6f002b none — roadmap §5 R24 restated (docs; the commit the run froze at)
+- 2026-11-03 564db08c5, 2636dee99 none — merges lane/memfn-k1102 (span_pick rev 5.2 + review r2) and lane/krat (kit ratchet rows, plan rows); docs
+- 2026-11-02 f765579fa, 6c0510439, 0aad640a4, 884996ef6, b921496ac, 42668dd6a, 80e549c9c, 00529d7fa, 60825d388, 2f21bc9ae none — merges (lane/memfn-k1102 span_pick revs 1-4 and reviews, R-33 simulation, D186 units inventory, kitunits survey, 588 bar re-read; lane/memfn-pricesurvey; lane/rulepilot pilot; lane/kdoc136); no src/ cli/ lib/ memfn/src/ tests/ scripts/ change (docs, studies, ledgers)
+- 2026-11-02 dc6a40dfb major — merge lane/p1build, the merge of record of the f5de088bf landing already listed above (P1 landmark walk, abi 95); one landing, not a second major
 
-One line per full run, copied from the job's `summary.txt`: date, commit, verdict per stage, log path,
-duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored, kept on this box).
+**loose landing lines** (as recorded in the Runs section before the reset)
 
-| date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-10-24 | 5596c3207 | green | green | RED (rc=2) | green | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261023_5596c3207/ | 36877 s |
-| 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
-| 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
-
-RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
-
-RED run: counters do not reset. san = one LSan leak from [INLINE-C] 1b `--callout` (cli_parse realloc never freed), FIXED by lane/sanred (merged after the run; san-only re-run 610-main-sanrerun). recidentity = only the known (A), counts identical to 7234c2e86 (167/381/167/111); bref-rename bucket 328 (was 366, census 411). mech green: unexpected 0, anomalies 31 = plants that do not compile (14 -Werror, 11 stale, 6 designed compile catches) -> [MECH-NOCOMPILE]. Triage: docs/dev/lanes/suitetri_report.md, sanred_report.md.
-san re-run on main 3e550f92d (after lane/sanred), job 610-main-sanrerun: GREEN, run_san_group 41/41, wall 3441 s. The run's only stage-level red besides the known [RECID-A] is cleared.
-
-RED: 2026-10-30 cb32eda28 test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261030_cb32eda28 duration=42819s
-| 2026-10-30 | cb32eda28 | RED (rc=2) | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2, known [RECID-A]) | build/full_suite/20261030_cb32eda28/ | 42794 s |
-
-RED run: counters do not reset. test = (1) test-memfn-guarded simd-form floor 5<6 (stale: ic3 stage 3 shifted the sample) and (2) test-code refusal tail cut by the public 256-byte pcrec_error.msg under the long run-tree path; axes = 11 sr_depth GIVEUP1 keys moved +8 lines by trailgc's comment (give-ups 66 -> 74 explained: reqvm1's handoff_vm.rxt 20-27); san = REAL compiler crash, `--code-header` left PcrecCodeHeader.file/.line uninitialised (INLINE-C stage 3, 95832f09c); fixes on lane/fsfix (crash zero-init + MALLOC_PERTURB_ arm, named simd witnesses, text-keyed allowances, test-only path fix). mech = unexpected 2 (S1085, S1171: witnesses became cover artifacts under D172 S3 cover-by-default, lost reach) + new anomalies S1682/S146; fixes on lane/fsfix2. recidentity = only the known (A), (B) 0 differing on all four; (A) 167/382/167/111 (vm +1 vs 381). Triage: scratch reports citriage/axtri/santri/mechtri (summarized here).
 Landing 2026-10-30 62383db53: lane/fsfix (code-header crash fix + test pins; minor, test-side + cli) and the kit's simdset (zero movers) merged; full-suite triggers per D177 unchanged (no abi event).
 Landing 2026-10-31 3bc599c92: lane/vmrec (VM record-first refactor, step (a), D182; class major: an emitter rewrite, byte-identical, no abi event); identity 744-vmrecm-ident 68 arms movers=0, full make test green (745), mech 9/10 + 7/7 detected; full-suite triggers per D177: an emitter rewrite counts as major.
 Landing 2026-10-31 73f1ea820: lane/axtri (form-census floor re-pin for kit S3 cover, abi 92; class none: test-side floors only, no emitted change); 763-axtri-census checks failed: 0. Closes the 758 axes red (the stale floors); full-suite triggers per D177 unchanged.
@@ -305,7 +351,3 @@ Landing 2026-11-03 8bc066f96/761521515: span_pick stage 1 unit 1a (dead code rem
 Landing 2026-11-03 c17e43ce8: R-34, G2 test generator use-after-free (test-only); class minor (a fix).
 Landing 2026-11-03 a33ca7b0a/c0f0d543b: span_pick stage 1 unit 1f (finder rows R8/R1/R2 and denies fd-r8/fd-ndisp retired, pay rule deleted; registry floor 14->12; MF_SITE_ABI 21, MF_CLASS_V 7; byte-identical, no pcrec abi event); class minor. D177: row 4 (two majors, abi 94 and 95) still pending since 10-27's run; minors accrue under row 5 as well; one run covers every trigger, window awaiting Frank.
 
-RED: 2026-11-04 4bd002e20 test=green strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261103_4bd002e20 duration=44409s
-RED run 2026-11-04 4bd002e20: counters do not reset. Dispositions (all triaged, no product defect so far): axes = memfn_arm reach floors stale after P1's landmark walk (lane/axtri3, re-check 320-main-axtri3); san = two faults in tests/code/run_code_tests.sh under sanitizers, no sanitizer report (lane/santri3, re-check 321-main-santri3); mech = S512 floor stale after p1build plus six vmrec-stale build-failed plants re-aimed, no real miss (lane/mechtri3, re-check 322-main-mechtri3); recidentity = known [RECID-A] part (A) only (168/383/168/111, bref bucket 330 vs 413, unchanged since P1's landing); part (B) clean (lane recidtri3).
-
-2026-11-05 daf6f002b test=green strict=green axes=green san=green alloc=green lint=green mech=green recidentity=green log=build/full_suite/20261104_daf6f002b duration=44139s
