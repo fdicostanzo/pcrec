@@ -3183,3 +3183,9 @@ Main ruled on the four kit findings (D186 add. 2):
 - 1d: lane sp1d (opus) is building on lane/memfn-sp1d from daf6f002b: the one candidate builder, T-VERIFY as a step list, the purity harness, breaker (a) FENCED.
   - Folded in: r2 F12 (one normal-form predicate), F13 (a home for the position primitives), the five-member argmin family into T-PICK, and r1 R10 if the call shape still repeats.
   - Plus a "Seam notes" section for principle 9 (observations only).
+- 11-04 23:20: sp1d delivered lane/memfn-sp1d @ e9e5f035e (report docs/dev/lanes/sp1d_report.md).
+  - What it did: one candidate builder; mass_domain deleted; the five argmin members share kit_pick_takes; T-VERIFY is a step list; the purity harness is green and its plant goes RED; F12 done.
+  - Validation: zero movers in light spot checks; MF_SITE_ABI 23 unchanged.
+  - Owed: F13 (its home is the kit split). The R21 recipe restatement is main's. Deviation 1: A-model still reads the walked spans' own sets (moving it would change G2-visible decisions; a later ruled change).
+  - Slip: the lane ran ~3.8k spot compiles against a ~3k cap.
+  - Gates 400-409 prepared; they queue after job 300's verdict. The critic round crit-memfn-sp1d (opus coordinator) is launched, light probes only.
