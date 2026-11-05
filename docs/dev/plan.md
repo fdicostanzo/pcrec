@@ -720,6 +720,32 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: memfn/src/presence.c (window_mass); docs/design/memfn/span_pick.md; [SPAN-PICK-PERCALL]; [MEASURE-SET]
   note (2026-11-04): pcrec-analyze already counts byte BIGRAMS per exemplar (analyze/; regime_eval E=exemplar-bigram); for adjacent positions a measured pair rate beats a product of independent rates. The survey compares sum, product and bigram joint rate.
   A sum over positions is monotone in the right direction for ranking but is not the chance that a window passes; a product is. The change moves picks, so it is a stage-2 data event with its census, not a stage-1 edit. Unscheduled.
+- [SP1D-M-INPUTS] STATE:not-started — span_pick: the WCAND record names M's inputs so the pick is determined by its trace
+  filed: 2026-11-05 land1105 (review 2026-11-05-r1, F4)
+  status (2026-11-05): filed from the 1d review; the KEY facts and `stop_ok` rename landed in 1d, M's inputs are not yet recorded
+  trigger: with span_pick stage 3 row 1 (the first T-PICK row)
+  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F4); docs/dev/lanes/sp1d_report.md
+- [SP1D-ARGMIN] STATE:not-started — span_pick: kit_member into kit_pick (U-1) and one kit_argmin (U-2)
+  filed: 2026-11-05 land1105 (review 2026-11-05-r1, F9)
+  status (2026-11-05): filed; 1d has five argmins sharing kit_pick_takes, but kit_pick is still a second best-so-far struct beside kit_member
+  trigger: span_pick stage 3 row 1, or a sixth argmin member, whichever comes first
+  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F9, U-1, U-2); docs/dev/lanes/sp1d_report.md
+- [SP1D-SETLEADS] STATE:not-started — span_pick: P4's set-leads pick as declared data
+  filed: 2026-11-05 land1105 (review 2026-11-05-r1, F9)
+  status (2026-11-05): filed; nothing built
+  trigger: the next T-PRES change
+  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F9, P4)
+- [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: position primitives' home and the seam facts (rates snapshot, rules digest, alt=)
+  filed: 2026-11-05 land1105 (review 2026-11-05-r1, F10 + r2 F13, F12)
+  status (2026-11-05): filed; noted at 1d. Primitives (kit_pick_takes, kit_tie_*) sit in window.c while kit_mass and kit_run_set sit in presence.c; the rates are host-mutable and the trace names no rules version
+  trigger: the kit split (a planner file is the natural home)
+  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F10, F12); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md
+  Scope: move the position primitives to one home; snapshot the rates by (tag, version) at mf_art_begin; a rules digest in the trace; `alt=` on the per-alternative SEL/ROW/END lines.
+- [SP1D-AMODEL-CANDS] STATE:not-started — span_pick: A-model reads the merged candidates, not the walked spans' own sets
+  filed: 2026-11-05 land1105 (sp1d_report "Design deviation 1"; review 2026-11-05-r1)
+  status (2026-11-05): filed; 1d left A-model reading each walked span's own set, because reading the merged candidates moves G2-visible decisions
+  trigger: a ruled change (it moves picks, so it needs its census)
+  refs: docs/dev/lanes/sp1d_report.md (Design deviation 1); docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md
 - [KIT-PAYLOAD-VERSION] STATE:not-started — kit: payload versions (mf_akind.version, mf_analysis.list_v) are never checked
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
   status (2026-11-03): filed; nothing built.
