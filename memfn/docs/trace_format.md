@@ -112,6 +112,27 @@ also writes its PATH ID (window_site.md §2.7):
 - `fd`: the finder row whose pick decided its find (a routed row, or the FIND
   slot's row deciding E-find's stop), `-` for none.
 
+THE CANDIDATE LIST (span_pick unit 1d, `memfn/src/window.c` `cands`; the
+"every candidate, the incumbent" of span_pick.md's "The trace", stage 1: no
+price). A define's decision writes, per alternative, one record per position
+after C-meet, in alternative then offset order, before its `WPATH`:
+
+    MFTRACE WCAND table=wfA art=A site=H phase=define alt=I off=D members=K mass=M core=C stop=S walked=W key=Y incumbent=N
+
+- `alt`: the alternative's index in the site's list; `off`: the position's
+  offset from the candidate;
+- `members`, `mass`: the meet's member count and its SUM mass under the
+  handed rates (`kit_mass`; the NONE table without rates);
+- `core`: 1 iff the position lies in a span's core; `stop`: 1 iff it is a
+  STOP candidate (core, not the full set: A-mass's domain); `walked`: 1 iff a
+  RESEED walked offset (A-model's domain, priced on its span's OWN set);
+- `key`: 1 iff Table A chose it as its alternative's stop; `incumbent`: 1 iff
+  it is THE stop of the plan (the alternative the MARGIN chose).
+
+A query writes none (as for the walks). The T-VERIFY steps write no record of
+their own: every holding step applies, and the plan's shape is `WPATH`'s
+`path`.
+
 A define whose site's find a finder row decides writes `MFTRACE FDROUTE
 art=A site=H row=ROW arm=CT`: the routed row and its arm's contract row, or
 (D172 S3) the row deciding E-find's stop and `arm=E-find` (its pick is E-find's
