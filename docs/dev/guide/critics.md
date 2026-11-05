@@ -172,3 +172,8 @@ Round 2026-11-05 r1, memfn-sp1d code (`docs/dev/reviews/2026-11-05-r1-memfn-sp1d
 2. **A census backstop's shape must be one a BYPASS has to use, and its plant must not contain the conforming call's text** (F2: every plant contained `pick_takes(`, the backstop's own shape).
 3. **An invariance harness needs a per-row REACH table, not one plant** (F1: four shipped rows were unreached and uncounted).
 4. **A trace record added for a seam gets a sufficiency drill: two inputs with equal records must have equal picks** (F4: three constructed pairs broke it).
+
+Round 2026-11-05 r2, alt-normal-form design (`docs/dev/reviews/2026-11-05-r2-alt-normal-form.md`), coordinator round + verifier; lessons ruled 2026-11-05.
+1. **A proposed sabotage witness must be able to fail.** Compute whether its fact clears every floor and domain test in both the correct and the sabotaged build (S-c out of domain, S-f under the 16-bit floor, S-d named none).
+2. **A fixpoint rewrite called a "normal form" gets a confluence drill** over every merge order (SIM-2: 23% of small grids ended in different forms; `\p{Lu}` 76 vs 66 boxes).
+3. **"Not an abi event" is checked against match_api.md §6¶19 and the abi log's precedents** (two lenses reversed this round's claim independently).
