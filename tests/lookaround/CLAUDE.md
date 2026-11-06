@@ -31,7 +31,9 @@ going down is the module landing.
 - **gated.rxt** — the module gate and D65's `built` column, cell by cell: the closed gate, the wrong module, the three lookbehind rows' enabled-but-unbuilt refusal (the ...
 - **alpha_spellings.rxt** — ALL TWELVE `(*` alpha spellings ([M6.6.2] wave F; design §2.1, §10.2), 26 blocks / 52 cells / 2 `perr`, and `# pcre2-only` in its ENTIRETY — ...
 - **prefilter.rxt** — §10.1(1)'s qualifying shapes, and the ONE file in this directory whose cells were chosen by MEASURING A COMPILER rather than by reading the design.
-- **run_lookaround_diff.sh** — the behavioural instrument, `make test-lookaround`, four sections.
+- **run_lookaround_diff.sh** — the behavioural instrument, `make test-lookaround`, seven sections; §5-§7 are [VLOOKBEHIND] stage 1's gates 1, 3 and 4 (`docs/design/vlookbehind.md` §6).
+- **vlb_cells.py** / **vlb_one.sh** — §5's cell set (bounded variable lookbehind, four oracle modes, counted per mode) and its per-pattern compare against libpcre2.
+- **vlb_accept.py** — §6: the accept set inside libpcre2's, and the `width LO..HI` judgment against libpcre2 at `max_varlookbehind = 0`.
 - `d27/` — the [M6.6.3] BLINDED corpus (D27): 7 .rxt files (457 blocks, 1,819 harness cases after acceptance triage) written from the design extract and the oracles only, ...
 - `run_expansion_diff.sh`, `expand_corpus.py` — section "`run_expansion_diff.sh` + `expand_corpus.py` — THE SUBSTITUTION DRIVER (wave E2)" (history file)
 

@@ -420,4 +420,62 @@ else
     fi
 fi
 
+# =========================================================================
+# §6 THE ACCEPT SET AND THE CLASSIFICATION CONTROL ([VLOOKBEHIND] gate 3)
+# =========================================================================
+# tests/lookaround/vlb_accept.py: every lookbehind pcrec compiles, libpcre2
+# compiles (one stated divergence, the zero-width unbounded repeat, counted
+# on its own), and pcrec's per-branch `width LO..HI` judgment holds exactly
+# where libpcre2 at max_varlookbehind = 0 refuses. Its population and every
+# bucket are pinned EXACTLY (K35): a bucket that moved is a decision.
+VLB_ACC_EXPECT="vlb_accept: total=234 both=154 divergent=32 pcre2only=2 bad=0"
+python3 "$SCRIPT_DIR/vlb_accept.py" "$PCREC" > "$WORKDIR/vlb_acc" 2>&1
+vlb_acc_last="$(tail -1 "$WORKDIR/vlb_acc")"
+if [ "$vlb_acc_last" = "$VLB_ACC_EXPECT" ]; then
+    ok "§6 the accept set: 234 cells, pcrec's accepts inside libpcre2's (32 zero-width-repeat cells the stated divergence, 2 backreference rows libpcre2 alone accepts until stage 2), and on all 154 shared accepts pcrec's 'width LO..HI' judgment equals libpcre2's refusal at max_varlookbehind = 0"
+else
+    bad "§6 the accept set: '$vlb_acc_last', not '$VLB_ACC_EXPECT'"
+    head -10 "$WORKDIR/vlb_acc" >&2
+fi
+
+# =========================================================================
+# §7 THE BUDGET CELL ([VLOOKBEHIND] gate 4; vlookbehind.md §5.5)
+# =========================================================================
+# The variable twin of workbudget.rxt's long-subject leading lookbehind. Two
+# shapes over all-`a` subjects (no match anywhere, so every start is tried):
+#   common path  `(?<=a{1,255})b` — one far try per evaluation (§5.5): it
+#                answers as libpcre2 does at the largest size the batch
+#                driver carries (60,000 bytes);
+#   worst case   `(?<=a{1,254}b)` — no literal to skip on, and the body
+#                backtracks through every candidate: O(hi²) per position,
+#                which libpcre2 also pays in time. MEASURED 2026-11-06 at the
+#                default budgets: it answers through 7,889 bytes and gives
+#                up from 7,890 with PCREC_ERR_STEPS (-2, the body's backtrack
+#                resumptions; §5.5 named the work budget). The cell asserts
+#                the answer at 4,000 and a STEPS-or-WORK give-up at 20,000 —
+#                margins either side, so the cell pins the CLASS of outcome,
+#                not one byte — and NEVER PCREC_ERR_FRAMES (-3): the trail
+#                term must make every evaluation fit.
+g4_bad=0
+for spec in "(?<=a{1,255})b 60000 answer" "(?<=a{1,254}b) 4000 answer" \
+            "(?<=a{1,254}b) 20000 giveup"; do
+    read -r g4pat g4n g4want <<< "$spec"
+    head -c "$g4n" /dev/zero | tr '\0' a > "$WORKDIR/g4subj"
+    g4d="$WORKDIR/g4$RANDOM"; mkdir -p "$g4d"
+    if ! pcrec_run "$PCREC" --features "$FEATS" -p rx -o "$g4d/gen.c" --pattern "$g4pat" 2>/dev/null \
+       || ! $CC $GENCFLAGS -I"$g4d" -o "$g4d/t" "$BATCH" "$g4d/gen.c" 2>/dev/null; then
+        bad "§7 could not build $g4pat"; g4_bad=$((g4_bad + 1)); continue
+    fi
+    g4mine="$(printf '%s\t0\n' "$WORKDIR/g4subj" | "$TIMEOUT_BIN" 60 "$g4d/t")"
+    case "$g4want:$g4mine" in
+        answer:nomatch) ;;
+        giveup:"giveup -2"|giveup:"giveup -4") ;;
+        *) bad "§7 $g4pat on $g4n bytes of 'a': '$g4mine', wanted the $g4want class (libpcre2: nomatch; never 'giveup -3', PCREC_ERR_FRAMES)"
+           g4_bad=$((g4_bad + 1)) ;;
+    esac
+done
+if [ "$g4_bad" -eq 0 ]; then
+    ok "§7 the budget cell: the common path answers nomatch (= libpcre2) at 60,000 bytes; the worst case answers at 4,000 and gives up with PCREC_ERR_STEPS/WORK at 20,000 (measured boundary 7,890), never PCREC_ERR_FRAMES"
+fi
+
 finish
