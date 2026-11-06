@@ -7280,8 +7280,8 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
     const int k = a->u.look.widths[i].lo;
     const bool last = (i + 1 == m);
     const int *bl = L->b, *bodl = L->body, *endl = L->end;
-    /* The nearest-start slot, in emission order (the count pass's total is
-     * checked against it at the end of the walk). */
+    /* The nearest-start slot, in emission order: the count pass sized the
+     * sub-block by the same `vm_lb_varies` test, one per varying branch. */
     const int lox = range ? vm_slot_lblow(v, v->nlblow++) : -1;
 
     if (range)

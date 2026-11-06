@@ -269,11 +269,12 @@ PY
 # [VLOOKBEHIND] stage 1 69 -> 85: the bounded variable-width rows that were
 # `perr` now answer, and python refuses every one, so each is `# pcre2-only`:
 # lookbehind_variable.rxt +10 (refused.rxt's family, moved), gated.rxt +1,
-# alpha_spellings.rxt +1 (`(*plb:(a|bc))x`), lookbehind_group_alt.rxt +4.
-# Re-derived from the population extractor over the flipped tree.
+# alpha_spellings.rxt +1 (`(*plb:(a|bc))x`), lookbehind_group_alt.rxt +4;
+# then 85 -> 115: lookbehind_variable_witness.rxt's 30 answer-bearing
+# sabotage witnesses (W1-W16). Re-derived from the extractor over the tree.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 85 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 85 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 115 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 115 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do
