@@ -357,6 +357,13 @@ and this composes as follows, per the **[DD-14.LB] amendment** (2026-08-24),
 which is a RULING, not merely a design intent — treat it as the authoritative
 statement of what SHIPS:
 
+> **SUPERSEDED IN PART (2026-11-06, [VLOOKBEHIND] stage 1, D189).** The
+> second bullet below is reversed: with the candidate loop built, row 2
+> (`^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$`) COMPILES and answers (0,2) as
+> libpcre2 10.46 does. A call's width is still read through the callee; a
+> callee wider than 255 characters with a varying branch is refused at
+> PCRE2's own cap (the `a{1,300}` row's err 200). The first and third bullets stand.
+
 - **An acyclic, fixed-per-branch callee composes and SHIPS.** A call inside
   a lookbehind to a callee whose own top-level branches are each individually
   fixed-width (row 1 above; also a two-hop acyclic call chain, or an
