@@ -1,0 +1,319 @@
+# vlbbuild — [VLOOKBEHIND] stage 1 build (2026-11-06, lane vlbbuild, opus)
+
+Design: `docs/design/vlookbehind.md` rev 4 (with erratum r3-1106 and this lane's
+`[vlbbuild R2 erratum]`). Branch `lane/vlbbuild` over main `fb22c62a6`. Build go
+covered STAGE 1 only: backreferences in a lookbehind (stage 2) and the reverse DFA
+stay out. No `docs/dev/lanes/vlbbuild_deliver.txt` exists (the brief said so), so
+there is no lanecheck DELIVER block to run against.
+
+## STATE AT HANDOFF
+
+- **Code and docs: COMPLETE and committed.** Last commit is this report's.
+- **Rulings applied:** R1 (the 15 D27-owned rows) and R2 (gate 4 gives up with
+  STEPS). R2 is the last entry in `vlbbuild_rulings.md`.
+- **Validation run in the lane, all on the clean rebuild:**
+  - `test-encoding-checks` GREEN;
+  - `test-partlayout` GREEN;
+  - `test-codegen` GREEN (this includes the SABANCHOR check over every new and
+    re-anchored row);
+  - `test-lookaround` GREEN (re-run after the oracle fix below);
+  - `test-backrefs` GREEN (re-run after the oracle fix; log
+    `$PCREC_TMPDIR/scratch/vlbbuild/chk2_test-backrefs.log`).
+- **OWED:** nine box-queue jobs, `200-vlbbuild-*` .. `208-vlbbuild-*`, all queued
+  detached. Logs and completion lines are in "OWED runs" below.
+
+## Commits (in order)
+
+| commit | unit | what |
+|---|---|---|
+| ea4fcbbac | U1-U5 | the exact width pair; the 255 cap and the 65535 ceiling (`limits.def`); the range candidate loop; the LO slot sub-block; `VSK_STEP_CHAR` / `VL_LB_COUNT`; the `$_fwd_step` seam entry |
+| 6f6d27975 | U6 | gate 1: oracle modes (UTF-8 patterns, `MATCH_INVALID_UTF`, a compile context); `bref_oracle` MODE column; `run_lookaround_diff.sh` §5 |
+| e013203ee | U6 | gate 3 (accept set and classification, §6) and gate 4 (the budget cell, §7) |
+| 3b9754edf | U6 | `tests/codegen/enc_entry_list.c` (the seam reader); DD12a(i) region (1), twins, keys, rules (a) and (b) derived; DD12a(ii) names derived, plus the witness; K49 (b) boundary members read from the seam |
+| 786312130 | K137 + abi | **K137 FIXED.** abi 95 -> 96. U6 fixtures (`residlbrange` plus its utf8 twin), guards, W-low's codegen detector |
+| 142dcb4ff | U7 | the 17 non-D27 corpus flips; the reject row re-aimed; the call sweep's refusal regex; K37 bounds on two new sites |
+| 7dc2c4183 | U7 (R1) | the 15 D27-owned flips; the generators moved in the same commit |
+| b195cf80e | U7 | the NPO guard 69 -> 85; `tests/lookaround/CLAUDE.md` |
+| cba188ead | U9 | spec hunks (`pattern_language.md`, `limits.md`, `match_api.md`); `limits_check` 78 -> 80; the comment readers for INTERNAL |
+| 63250b5cb | R2 | the design erratum: §5.5's give-up is STEPS |
+| b589d1710 | readers | `mrl.c` and `internal.h` width headers; `VMREC.md` body and plan refs; `arev.md`; `src/enc/CLAUDE.md`; **D189** |
+| 7521c7163 | readers | the D27 extracts and `lookaround_design.md` §2.5 marked SUPERSEDED IN PART |
+| 97eadaca4 | U8 | the witness corpus (W1-W16, W-low); NPO 85 -> 115; the `emit_vm` LO comment corrected. **Last src commit.** |
+| 7c87559a6 | U8 | sabotage rows S1960-S1980; S133/S134/S170/S-U6 re-anchored; S136 and S-U4 re-aimed; S136's two witness cells; NPO 117 |
+| b3c045e78 | FIXIND-6 | plan row `[ENC-SIDE-EMIT]` (Backlog, trigger: a second side emission) |
+| 57bed924a | finding | `bref_oracle.py` byte mode passes the pattern's UTF-8 bytes (see Findings) |
+| 713282fc1 | gate 2 | `run_recursion_identity.sh` self-pin: FILEPIN = ABASEPIN = 97eadaca4 |
+
+## What was built, per unit
+
+- **U1 (width rule, `mod_lookaround.c` `la_widths`).**
+  - The per-branch `[lo, hi]` is stored in written order.
+  - Branches are refused when unbounded (err 125 class), above the 65,535 ceiling,
+    or above the 255 cap once any branch varies.
+  - Both rows are in `limits.def`: `LA_LOOKBEHIND_BRANCH_MAX` and
+    `LA_LOOKBEHIND_VAR_MAX`.
+  - The verdict is an `LbVerdict` plus a figure. The parse hook and the deferred
+    (call-bearing) re-check share it.
+- **U2 (exact ends).** The `pcrec_cwmin`/`pcrec_cwmax` headers are rewritten as
+  EXACT for the lookbehind consumer (`mrl.c`, `internal.h` call table).
+- **U3-U5 (the emitter, `emit_vm.c` `vm_look_behind*`, `vm_stmt.c`).**
+  - A one-length branch is unchanged.
+  - A varying branch is the cursor-rung loop:
+    - LO_i is written once per evaluation as a TRAILED slot (`RX_SLOT_LB_LO<j>`,
+      sub-block sized by the count pass's `vm_lb_varies`);
+    - the far count `K = min(hi - lo, LO)` is a local (`VL_LB_COUNT`);
+    - the far step is the seam's `back_step` with a local count (the byloc
+      operand), with retry-one-shorter on the sentinel;
+    - candidates run farthest first;
+    - each candidate steps one character with `$_fwd_step` bounded by the cursor
+      in POS (`VSK_STEP_CHAR`);
+    - the exhaustion test is `scan_position == LO_i`, then `L_n_i` restores the
+      cursor.
+  - On a varying branch the end-check DECLINES on both polarities; the INTERNAL
+    return stays for one-length negative branches only.
+  - The trail term is `2 + (varying branches)`.
+  - The non-atomic `(?<*` keeps its candidate frames live.
+- **U6 (checks).** The seam reader `tests/codegen/enc_entry_list.c`. DD12a(i)
+  region (1), K49's boundary members and the fwd_step guard are derived from the
+  seam. `residlbrange` fixtures (byte and utf8). W-low's codegen detector. Gates 1,
+  3 and 4 live in `run_lookaround_diff.sh` §5-§7.
+- **U7 (corpus).** 32 rows flip (24 distinct patterns); the full table is below.
+  The reject row is re-aimed at the 255 cap reached through a call:
+  `^(?:(?<g>a{1,300})){0}b(?<=(?&g))$`, err 200 at offset 23, which libpcre2 also
+  gives. The call sweep's refusal regex is widened. The NPO guard went
+  69 -> 85 -> 115 -> 117.
+- **U8 (witnesses and sabotage).** The `lookbehind_variable_witness.rxt` corpus
+  (libpcre2-generated from `lookbehind_variable_witness.gen.py`: 36 blocks, S136's
+  two cells included, 4 of them `perr`). 21 new rows and 6 re-cut legacy rows (table
+  below).
+- **U9 (spec, D80).**
+  - `pattern_language.md`:
+    - §7.4¶5: the bounded rule, 65535/255, and the zero-width divergence;
+    - new ¶5b: written order, farthest first, the non-atomic retry, with examples
+      verified on libpcre2 and the harness;
+    - §2.4: shapes 5 and 7;
+    - §9¶2 trimmed, plus a new indented ¶2a for the accepted divergence;
+    - §7.11¶3.
+  - `limits.md`: new §3.1¶5 (the charge; the STEPS give-up class, R2) and new §3.11
+    (the two rows); TOC regenerated.
+  - `match_api.md`: §3¶2 (`<prefix>_fwd_step`) and §4¶6 (two INTERNAL producers).
+  - Re-read with no change needed: `match_api.md` §9.4¶2 and ¶8.
+
+## abi event (95 -> 96, D76/D94) and K137
+
+K137 is **FIXED in 786312130**: the utf8 retry advance's prose is now a D112 doc
+half (`advance_doc`) behind the comment gate, so `-e utf8 -fno-comments` no longer
+emits it.
+
+The abi readers were found by grep for the number:
+- `emit_dfa.c`;
+- `match_api.md` §1¶7, the §6 table and §6¶17;
+- `ABI_EXPECT`;
+- S693;
+- `docs/dev/history/abi_changelog.md`.
+
+`test-codegen` is green. Registry and rxtsource run inside the owed `make test`.
+
+The (B) pin moves with the abi: see gate 2.
+
+## Gates (design §6)
+
+| gate | status |
+|---|---|
+| 1. 0 diffs vs libpcre2 (byte, utf8, utf8-invalid) | GREEN: §5 covers 661 patterns (byte=48,863, utf8=15,145, utf8-clip=2,064, utf8-invalid=252 cells), 0 disagreements. The 49 utf8-clip cells are D142's stated divergence. §1's `# pcre2-only` sweep: 117 blocks / 11,349 cells, 0 disagreements |
+| 2. byte identity except the K137 flag pair | OWED: jobs id1, abisweep, id2 (below) |
+| 3. accept set inside PCRE2's; width judgment exact | GREEN: 234 cells; 32 zero-width-repeat cells are the stated divergence; 2 backreference rows only libpcre2 accepts (stage 2); 154 shared accepts judged equal to libpcre2 at `max_varlookbehind = 0` |
+| 4. budget cell | GREEN: the common path answers at 60,000 bytes. The worst case answers at 4,000 and gives up with STEPS at 20,000. The measured boundary is 7,890 bytes. Never FRAMES |
+| sabotage RED planted / GREEN without | OWED: jobs mech1-3 |
+| encoding checks | GREEN (`test-encoding-checks`) |
+| 32 corpus rows flip with oracle-verified expectations | DONE (table below). The harness passes over all flipped files (697/697 at U7) |
+
+### R2: when gate 4's give-up starts, and how it scales with the cap
+
+For `(?<=a{1,K}b)` on an all-`a` subject, the cost is about K² steps per cursor
+position. The first give-up length (PCREC_ERR_STEPS, default step budget) was
+measured as:
+
+| K | first give-up length (bytes) |
+|---|---|
+| 32 | 473,507 |
+| 64 | 120,236 |
+| 127 | 30,843 |
+| 254 | 7,890 |
+
+Each doubling of K divides the length by about 4. libpcre2 answers all of these.
+The pinned margins (4,000 answers, 20,000 gives up) are unchanged. The spec states
+this class in `limits.md` §3.1¶5.
+
+## The flipped rows (R1: file:line in HEAD, libpcre2 10.46 answers)
+
+The 15 D27-owned rows are refusals.rxt ×7, spellings.rxt ×7 and
+sr_interactions.rxt ×1. Their expectations come from libpcre2 only; the
+generators moved in 7dc2c4183.
+
+| HEAD location (was) | pattern | answers |
+|---|---|---|
+| tests/lookaround/alpha_spellings.rxt:368 (was :369) | `(*plb:(a\|bc))x` | m "ax" 1 2; g 1 0 1; m "bcx" 2 3; g 1 0 2; n "cx" |
+| tests/lookaround/d27/refusals.rxt:14 (was :13) | `(?<=(a\|bc))x` | n "x"; m "ax" 1 2; g 1 0 1; m "aax" 2 3; g 1 1 2; m "aaax" 3 4; g 1 2 3; m "bcx" 2 3; g 1 0 2; m "abcx" 3 4; g 1 1 3; n "adx"; n "bcdx"; n "cdx"; n "aabx"; n "abx"; n "zx" |
+| tests/lookaround/d27/refusals.rxt:36 (was :18) | `(?<=a{2,3})x` | n "x"; n "ax"; m "aax" 2 3; m "aaax" 3 4; n on the other eight |
+| tests/lookaround/d27/refusals.rxt:53 (was :23) | `(?<=a?)x` | m on all twelve subjects, at the x |
+| tests/lookaround/d27/refusals.rxt:100 (was :58) | `(?<=(?:a\|bc)d)x` | m "adx" 2 3; m "bcdx" 3 4; n on the other ten |
+| tests/lookaround/d27/refusals.rxt:117 (was :63) | `(?<=((a\|bc)d))x` | m "adx" 2 3; g 1 0 2; g 2 0 1; m "bcdx" 3 4; g 1 0 3; g 2 0 2; n on the rest |
+| tests/lookaround/d27/refusals.rxt:138 (was :68) | `(?<=a{1,255})x` | m "ax" 1 2; m "aax" 2 3; m "aaax" 3 4; n on the rest |
+| tests/lookaround/d27/refusals.rxt:170 (was :88) | `(?<=a{2}b{0,1})x` | m "aax" 2 3; m "aaax" 3 4; m "aabx" 3 4; n on the rest |
+| tests/lookaround/d27/spellings.rxt:140 (was :139) | `(?<*(a\|ba))c` | n "ba"; n "xa" |
+| tests/lookaround/d27/spellings.rxt:151 (was :148) | `(*naplb:(a\|ba))c` | n "ba"; n "xa" |
+| tests/lookaround/d27/spellings.rxt:162 (was :157) | `(*non_atomic_positive_lookbehind:(a\|ba))c` | n "ba"; n "xa" |
+| tests/lookaround/d27/spellings.rxt:218 (was :211) | `(?<=(a\|ba))c` | m "bac" 2 3; g 1 0 2; m "xac" 2 3; g 1 1 2; m "aac" 2 3; g 1 1 2 |
+| tests/lookaround/d27/spellings.rxt:233 (was :220) | `(?<*(a\|ba))c` | same as above |
+| tests/lookaround/d27/spellings.rxt:248 (was :229) | `(*naplb:(a\|ba))c` | same as above |
+| tests/lookaround/d27/spellings.rxt:263 (was :238) | `(*plb:(a\|ba))c` | same as above |
+| tests/lookaround/gated.rxt:105 (was :109) | `(?<=(a\|bc))x` | m "ax" 1 2; g 1 0 1; m "bcx" 2 3; g 1 0 2; n "cx" |
+| tests/lookaround/lookbehind_group_alt.rxt:99 | `(?<=(?:a\|bc))x` | m "ax" 1 2; m "bcx" 2 3; n "cx"; n "x" |
+| tests/lookaround/lookbehind_group_alt.rxt:108 (was :104) | `(?<=(?i:a\|bc))x` | m "Ax" 1 2; m "bCx" 2 3; n "cx" |
+| tests/lookaround/lookbehind_group_alt.rxt:117 (was :110) | `(?<=(?:a\|bc)\|d)x` | m "ax" 1 2; m "bcx" 2 3; m "dx" 1 2; n "cx" |
+| tests/lookaround/lookbehind_group_alt.rxt:126 (was :116) | `(?<!(?:a\|bc))x` | n "ax"; n "bcx"; m "cx" 1 2; m "x" 0 1 |
+| tests/lookaround/lookbehind_variable.rxt:38 (was refused.rxt:104) | `(?<=(a\|bc))x` | m "ax" 1 2; g 1 0 1; m "bcx" 2 3; g 1 0 2; n "cx"; n "x"; m "abcx" 3 4; g 1 1 3; ms 1 "zbcx" 3 4; g 1 1 3 |
+| tests/lookaround/lookbehind_variable.rxt:56 (was refused.rxt:115) | `(?<=a{2,3})x` | m "aax" 2 3; m "aaax" 3 4; n "ax"; m "baax" 3 4; m "aaaax" 4 5 |
+| tests/lookaround/lookbehind_variable.rxt:70 (was refused.rxt:124) | `(?<=a?)x` | m "x" 0 1; m "ax" 1 2; m "bx" 1 2; ms 1 "aax" 2 3 |
+| tests/lookaround/lookbehind_variable.rxt:81 (was refused.rxt:132) | `(?<=a{0,3})x` | m "x" 0 1; m "aaax" 3 4; ms 2 "aaaax" 4 5; m "bx" 1 2 |
+| tests/lookaround/lookbehind_variable.rxt:94 (was refused.rxt:189) | `(?<=(?:a\|bc)d)x` | m "adx" 2 3; m "bcdx" 3 4; n "cdx"; n "dx" |
+| tests/lookaround/lookbehind_variable.rxt:105 (was refused.rxt:197) | `(?<=((a\|bc)d))x` | m "adx" 2 3; g 1 0 2; g 2 0 1; m "bcdx" 3 4; g 1 0 3; g 2 0 2; n "cdx" |
+| tests/lookaround/lookbehind_variable.rxt:121 (was refused.rxt:220) | `(?<!(a\|bc))x` | n "ax"; n "bcx"; m "cx" 1 2; g 1 -1 -1; m "x" 0 1; g 1 -1 -1; m "zzx" 2 3; g 1 -1 -1 |
+| tests/lookaround/lookbehind_variable.rxt:137 (was refused.rxt:228) | `(?<*(a\|bc))x` | m "ax" 1 2; g 1 0 1; m "bcx" 2 3; g 1 0 2; n "cx" |
+| tests/lookaround/lookbehind_variable.rxt:152 (was refused.rxt:284) | `(?<=\n?\z)x` | n "x"; n "\nx"; n "a" |
+| tests/lookaround/lookbehind_variable.rxt:163 (was refused.rxt:294) | `(?<=\w?)x` | m "x" 0 1; m "ax" 1 2; m "-x" 1 2; ms 1 "aax" 2 3 |
+| tests/recursion/d27/sr_interactions.rxt:244 (was :245) | `^(?(DEFINE)(?<g>a\|ab))ab(?<=(?&g))$` | m "ab" 0 2; g 1 -1 -1; n "b"; n "aab" |
+| tests/recursion/inlookaround.rxt:119 (was :121) | `^(?:(?<g>a\|ab)){0}ab(?<=(?&g))$` | m "ab" 0 2; n "b"; n "a" |
+
+Outside the corpus, three things moved:
+- **The reject row.** It is re-aimed rather than flipped (U7 above).
+- **`gated.rxt`'s new capability cell.** `(a)(?<=\1)x` is a `perr` on module
+  `backrefs`; libpcre2 accepts it, and it is stage 2.
+- **Generator moves.** `sr_check.py`'s `PCREC_ONLY_PERR` is emptied, and the
+  `sr_gen.py` spec is moved. `checker.py`: 342 ok, plus 2 "no features line"
+  failures that predate this lane (a control on the base shows them).
+
+## Sabotage rows (ids S1960-S1989; S1981-S1989 unused)
+
+The plant verdicts are OWED from jobs mech1-3. Predictions are in each row's
+`SAB_DOC_FIGURE`. Every row passed `VALIDATE_ONLY`, and the anchors pass codegen's
+SABANCHOR check.
+
+| row | design witness | plant | predicted detector |
+|---|---|---|---|
+| S1960 | W1 | far count 0 (nearest candidate only) | W1's group span |
+| S1961 | W2 | the range end-check never fires | W2, W3 |
+| S1962 | W4 | INTERNAL on a varying negative branch | W4 (PCREC_ERR_INTERNAL) |
+| S1963 | W5 | every lookaround cuts (the `(?<*` retry lost) | W5, W16 |
+| S1964 | S134 twin (READY-1) | the far sentinel test always passes | W6 utf8 |
+| S1965 | W6 (a) | a far sentinel ends the branch | W6 utf8 |
+| S1966 | W6 (b), W15 | a far sentinel jumps to the try at LO | W6, W15 utf8 |
+| S1967 | W8 | the cap applies only to varying branches | W8 (`perr`), gate 3 |
+| S1968 | W9 | the cap admits 256 | W9 |
+| S1969 | W9b | the ceiling admits 65,536 | W9b |
+| S1970 | W11 (a) | exhaustion skips the restore | W11 (a) |
+| S1971 | W11 (b) | LO's sentinel skips `L_n_i` | W11 (b) utf8 |
+| S1972 | W12 (b) | the trail term loses `+ varying` | W12 (b) (FRAMES) |
+| S1973 | W13 | the step is bounded by `subject_length` | W13 utf8 |
+| S1974 | W14 | the byte `fwd_step` moves 2 | W14, W16 |
+| S1975 | W16 | the exhaustion test fires one early | W16, W3b |
+| S1976 | W-low (FIXIND-5) | LO is written untrailed | codegen W-low detector; harness W-low |
+| S1977 | fwd_step (i) | the step is inlined (`+= 1`) | codegen fwd_step per-site count |
+| S1978 | fwd_step (ii) | the utf8 `fwd_step` steps one byte | K49 boundary tie (encoding checks) |
+| S1979 | S133 twin (READY-1) | the far back_step is inlined | codegen back_step per-site count |
+| S1980 | W12 (a) | LO is written per candidate (a second write at `L_try_i`) | W12 (a); depends on K134's compaction trigger, as noted in the row |
+
+Legacy rows re-cut:
+- **S133 and S134 (READY-1)** are re-anchored on the shared builder line and the
+  `k_none` sentinel branch.
+- **S170** is re-anchored on the `LbVerdict` call.
+- **S-U6** is re-anchored with its signature, because the utf8 `fwd_step` has the
+  same body (READY-10).
+- **S136** is re-aimed. Every one-length pair is stored one too wide at both ends
+  (r3 F9 / r6 V8). Its two new witness cells are `(?<=bc|d)x` on `abcx` and
+  `(?<!bc|d)x` on `bcax`.
+- **S-U4** is re-aimed at gate 3's classification control. Its old detector (a
+  class-bearing lookbehind refuses) is gone by construction.
+- **S172** is unchanged: its two moving rows are unbounded and still refused.
+
+NOT PLANTED. Their witnesses are in the corpus; no clean one-edit plant exists:
+- **W3 / W3b** (no backtracking into the body at the end-check). The cut is the
+  body's frame structure, not one emitter line. A plant means possessifying or
+  atomic-wrapping the body across several sites.
+- **W10** (branch order lost). The order is the walk that builds the branch
+  table. Reversing it touches the branch split and every label that
+  `vm_look_behind` derives from it.
+
+## OWED runs (box queue, detached, owner `vlbbuild`)
+
+All jobs live under `$PCREC_TMPDIR/scratch/vlbbuild/` (`jobs/` holds the scripts).
+Read each verdict with `scripts/boxqueue state vlbbuild-<name>`.
+
+| job | what | log / completion line |
+|---|---|---|
+| 200 id1 | gate 2 RUN 1: subject built from 3b9754edf (abi 95, pre-K137) vs the pre-landing pins f5de088bf / 4bd002e20 | `id1.log`, judged into `id1_judge.out`. Completion line: `id1: VERDICT GREEN` |
+| 201 abisweep | every distinct corpus pattern, 3b9754edf vs HEAD, byte/utf8 × comments on/off, abi digits masked | `abisweep.tsv`; `abisweep: patterns=N unexpected=0` |
+| 202 id2 | gate 2 RUN 2: HEAD vs the self-pin 97eadaca4 | the job log; the script's own ok lines |
+| 203 maketest | `make strict` + `make test` | `maketest.log`; no `*** [...test-` line |
+| 204-206 mech1-3 | the 30 rows above plus S135/S169/S693, real plants | `mech/{1,2,3}/mech.log`; `== mech run COMPLETE: 10 rows (unexpected: 0, ...` |
+| 207 reach | `REACH_ONLY=1` over the whole matrix (the delivery bar for a widened admission) | `mech/reach/reach.log`; `mech-reach-only: DONE rc=0` |
+| 208 axes | `make test-axes` | `axes.log` |
+
+Predictions:
+- **id1.** (B) and (A) both show `differing=0` on every axis. Every refusal
+  mismatch is subject=compiled reference=refused, on a pattern libpcre2 accepts at
+  `max_varlookbehind` 255 and refuses at 0. The set is the manifest's call-free
+  patterns (`vlbinv_evidence/population.tsv`; 22 distinct expected) plus this
+  lane's added witness patterns. The judge prints both list differences for the
+  reader. The identity script's own rc is RED by construction, so it is not the
+  verdict.
+- **abisweep.** Differences appear only under utf8 `-fno-comments` (K137). The
+  identity gate is byte-only and runs with `-fcomments`, so it cannot see K137;
+  this sweep is the check.
+
+Two gaps remain:
+- **The identity run is byte-only.** Gate 2's G2 claim for utf8 artifacts is
+  covered by the abisweep's utf8 classes. That sweep is pcrec vs pcrec, so a byte
+  move it does not predict is the signal.
+- **The STOP RULE stays live.** An unpredicted identity mover in id1 or abisweep
+  is the STOP case. A fresh agent reads the judge output before landing.
+
+## Findings
+
+1. **`bref_oracle.py`'s byte mode handed libpcre2 a latin-1 `str` (fixed in
+   57bed924a).**
+   - pcre2_ctypes encodes a non-UTF `str` as latin-1, so `é` was one byte for
+     libpcre2 and two for pcrec.
+   - The first non-ASCII `# pcre2-only` blocks (the witness file's utf8 cells,
+     swept byte-mode by §1) disagreed: `(?<=(é{0,2}))x`, 9 cells, and
+     `(?<=(é{0,2}))b`, 41 cells.
+   - After the fix, §1 shows 117 blocks / 11,349 cells with 0 disagreements.
+   - Other users: backrefs, dupnames, expansion and recursion diffs. Only
+     non-ASCII byte-mode patterns move, and those were previously mis-posed.
+     `test-backrefs` was re-run GREEN; the rest ride the owed `make test`.
+2. **The Makefile has no header-dependency tracking.**
+   - After the `enc.h` struct change, the stale `nfa.o` read garbage `start_cls`,
+     and every utf8 compile failed with `[K50-NULLGATE]` (18 codegen FAILs).
+   - `make clean` cured it.
+   - Any lane that changes a struct in a header must `make clean`. Not filed as a
+     row (D2's plain make); the manager decides.
+3. **The spec-history checker only recognises paragraph labels at column 0.** An
+   indented `- <a id>` sub-bullet (`§9¶2a`) is not citable, so D189 cites §9.
+4. **D189 numbering.** main already has D188. D189 was free at the base; renumber
+   at landing if taken.
+5. **`src/gen/CLAUDE.md` is NOT edited.** It is at 12,284 of 12,288 bytes, and no
+   file changed role.
+6. **`docs/testing.md` has no edit.** No passage there describes DD12a(i), K49 or
+   gate 1's harness (grep), so it has no reader to update.
+7. **`docs/pcre2_compliance.md` is OWED after landing**, via the
+   `compliance-refresh` skill: variable lookbehind moves from refused to compiled.
+8. **FIXIND-6.** The shared predicate is in; the general hook is filed as
+   `[ENC-SIDE-EMIT]` (trigger: a second side emission).
+
+## For the manager at landing
+
+- Re-pin FILEPIN and ABASEPIN to the merge commit (the self-pin convention).
+- Check D189's number.
+- Run the compliance refresh.
+- The tree's `docs/dev/artifact_size_log.tsv` is written by `make test`, as always.
