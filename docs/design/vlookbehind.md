@@ -505,7 +505,7 @@ that reads it:
 
 | row | `D_i` slot (count pass, layout) | push sites (count pass `npush`) | trail entries per evaluation (`vm_cost_look`) | labels (`vm_look_behind`) | trail checkpoint (`vm_goto`, K134) | role and note texts (`vm_lbl`/`vm_ev`: `-fcomments` C and the listing) |
 |---|---|---|---|---|---|---|
-| `one-length` | none | 1 if not last, else 0 | 0 | `bl`, `bodl`, `endl` (today's) | none | today's seven texts, unchanged |
+| `one-length` | none | 1 if not last, else 0 | 0 (beyond the assertion's own 2, charged once per lookbehind) | `bl`, `bodl`, `endl` (today's) | none | today's seven texts, unchanged |
 | `range` | one `SLOT_COUNTER` slot | 1 (the `L_try_i` push, last branch included) | `hi_i − lo_i + 1` (a bound: `min(hi_i, cursor) − lo_i + 1` at run time) | today's three plus `L_try_i`, `L_adv_i` | one, on `L_adv_i`'s `goto L_try_i` | the `range` texts listed below |
 
 The table's properties:
@@ -1475,8 +1475,10 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 - Whether stage 1 owes an abi bump at all.
   - Under question 1 (A), `match_api.md` §6¶18 says a bump is owed for "any change to the emitted
     scaffolding for identical inputs", so none is owed when no previously compiling pattern moves
-    `[r6 V12]`. Rev 1 cited §6¶19, which says what is fixed WITHIN one abi. The 65535 ceiling only refuses; it moves no compiled bytes. The manager confirms
-    at landing, with readers found by grep.
+    `[r6 V12]`. Rev 1 cited §6¶19, which says what is fixed WITHIN one abi. The 65535 ceiling
+    only refuses; it moves no compiled bytes. A `range` artifact's new text (the loop, the
+    checkpoint, K134's helpers) is new output for a newly compiling pattern, not a change for an
+    identical input. The manager confirms at landing, with readers found by grep.
   - Under (B), it is an abi event: the next number at landing.
 - The `reverse-dfa` row's design detail: tagged vs per-branch machines, re-walk vs stored set for
   non-atomic retries, record kind vs helper part. These are A-REV's and [LANDWALK-VM]'s.
