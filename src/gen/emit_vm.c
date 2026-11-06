@@ -973,6 +973,27 @@ static int vm_slot_lblow(Vm *v, int j)
 {
     return vm_slot_low(v, v->nlow_total - v->nlblow_total + j);
 }
+/* [VLOOKBEHIND] Takes the next varying branch's nearest-start slot, in
+ * emission order, and refuses the compile when it falls outside the
+ * sub-block the count pass sized. K27's class, as `vm_splice`'s overflow
+ * guard is: the count pass (`vm_count_slots_look`) and this walk disagreeing
+ * about how many varying branches there are, or the slot formula drifting,
+ * would otherwise write another family's slot in EMITTED code and the
+ * artifact would hang or crash (review r4 F15). The bounds come from
+ * `vm_slot_low`, not `vm_slot_lblow`, so a drift in the formula is seen. Its
+ * sibling is the equality check after the body's emission. */
+static int vm_take_lblow(Vm *v)
+{
+    const int j = v->nlblow++;
+    const int slot = vm_slot_lblow(v, j);
+    if (j >= v->nlblow_total
+        || slot < vm_slot_low(v, v->nlow_total - v->nlblow_total)
+        || slot >= vm_slot_low(v, v->nlow_total))
+        pcrec_ctx_fail(v->cx, 0, "internal error: the lookbehind low sub-block "
+                           "overflowed (branch %d of %d, slot %d)", j + 1,
+                           v->nlblow_total, slot);
+    return slot;
+}
 /* Returns the slot index for slot class four: a possessified frames-rung
  * loop's CUT MARK, the resume-stack depth to truncate back to [ENG-BREP].
  * It sits above the low-water marks, so like them its base is computed
@@ -7282,7 +7303,7 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
     const int *bl = L->b, *bodl = L->body, *endl = L->end;
     /* The nearest-start slot, in emission order: the count pass sized the
      * sub-block by the same `vm_lb_varies` test, one per varying branch. */
-    const int lox = range ? vm_slot_lblow(v, v->nlblow++) : -1;
+    const int lox = range ? vm_take_lblow(v) : -1;
 
     if (range)
         vm_lbl(v, bl[i], vm_rolef(v,
@@ -10935,6 +10956,14 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
          * totals agreeing site for site. */
         for (int i = 0; i < v->nregion; i++)
             if (v->rgn_emit[i]) vm_region(v, i);
+        /* `vm_take_lblow`'s sibling: the count pass sized the lookbehind low
+         * sub-block for exactly the varying branches emitted (review r4 F15;
+         * an over-count is a slot nothing writes, an under-count the overflow
+         * the take refuses). */
+        if (v->nlblow != v->nlblow_total)
+            pcrec_ctx_fail(v->cx, 0, "internal error: the lookbehind low "
+                               "sub-block was sized for %d branches and %d "
+                               "were emitted", v->nlblow_total, v->nlblow);
     }
 
     /* [DD-14.FB] The caller-buffer sizing surface, computed HERE — after the
