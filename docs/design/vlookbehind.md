@@ -1330,7 +1330,7 @@ Further consequences:
 `n·Σ(hi_i − lo_i + 1)·hi_i` in the worst case. The long-subject leading-lookbehind cell it asked
 for gains a variable twin (stage 1, gate 4).
 
-### 5.6 Overlap with the VM record remodel (D153, [VMREC]) `[r3 F13]` `[r-cursor: re-mapped]`
+### 5.6 Overlap with the VM record remodel (D153, [VMREC]) `[r3 F13]` `[r-cursor: re-mapped]` `[r2-1106 F1, F3, F5, F7]`
 
 Stage 1 is a capability row, so D153's sequencing rule does not bind it formally. It does add a VM
 body shape that [VMREC] steps (b) and (c) must model `[r-cursor]`:
@@ -1343,39 +1343,194 @@ Every statement maps to an existing KIND. Three need a new member or operand ins
 | statement | kind | new? |
 |---|---|---|
 | guard, both sentinel tests, exhaustion test | `VK_BRANCH` | no |
-| `LO_i`'s write | `VK_SET`, trailed | no |
-| `K_i`'s writes | `VK_LSET` (`VLO_ASSIGN`) on a new `VmLocalKind` member, `VL_LB_COUNT` (`<p>_lb<n>_count`, declared by the frame as the `rv` locals are) | a sub-kind MEMBER |
+| `LO_i`'s write | `VK_SET`, trailed, slot `vm_slot_lblow(v, j)` (§5.1b) | no |
+| `K_i`'s writes | `VK_LSET` on a new `VmLocalKind` member, `VL_LB_COUNT`: ONE artifact-wide local `<p>_lb_count` `[r2-1106 F3]`. The first write is `VLO_ASSIGN` with a src text that names no local (`scan_position < D ? scan_position : D`, `D` the literal `hi_i − lo_i`); the decrement is `VLO_ASSIGN` with src `<name> - 1` | a sub-kind MEMBER |
 | the frame | `VK_PUSH` at `VPOS_CURSOR` | no |
 | the charges | `VK_WORK`: the literal `lo_i`, the local's name, the literal 1 | no |
-| the `lo_i` back-step | `VK_SEEK` `VSK_BACKSTEP`, literal `k` (today's record) | no |
-| the far back-step | `VK_SEEK` `VSK_BACKSTEP` with a LOCAL count operand: the seek record gains an optional typed `VmLocal`, rendered through `vm_local_name` | an OPERAND |
+| the `lo_i` back-step | `VK_SEEK` `VSK_BACKSTEP`, literal count (today's record), built by the SAME builder line as the `one-length` row's back-step `[r2-1106 F5]` | no |
+| the far back-step | `VK_SEEK` `VSK_BACKSTEP` with a LOCAL count operand `[r2-1106 F5]`: the `seek` operand gains `bool byloc; VmLocal x;`, set only by a new builder `pcrec_vm_b_seek_local(sb, sk, x)`; `vm_r_seek` renders `x`'s name iff `byloc`, else `k` as today | an OPERAND |
 | the two restores | `VK_SEEK` `VSK_RESTORE` from `LO_i` and from `POS` (today's record) | no |
-| the one-character step | `VK_SEEK` with a new `VmSeek` member, `VSK_STEP_CHAR`: the encoding's `advance` text with `@P` = `scan_position`, `@S` = `subject`, `@N` = `(size_t)slot_values[<slotx>]` (`slotx` = `POS`) | a sub-kind MEMBER |
+| the one-character step | `VK_SEEK` with a new `VmSeek` member, `VSK_STEP_CHAR` `[r2-1106 F1]`: rendered `scan_position = <p>_fwd_step(subject, (size_t)slot_values[<slotx>], scan_position);` with `slotx` = `POS`, the same text under every encoding | a sub-kind MEMBER |
 
 Notes on the three:
 - **No new `VmKind`.** The review r5 ruling ("the step adding a VM record kind waits for the
-  remodel's analysis stage") is about a new KIND (`VK_AUTO`). Whether it also covers members of
-  `VmSeek` and `VmLocalKind` is the manager's call (§13 Q5). The leaning is no: both enums are
-  closed vocabularies that grow by a member, and (c)'s declared-effects rule takes one row each
-  (`VSK_STEP_CHAR`: writes the cursor, reads the subject and one slot; `VL_LB_COUNT`: an untrailed
-  local).
+  remodel's analysis stage") is about a new KIND (`VK_AUTO`). `[r2-1106 F7]` RULED (ruling 7,
+  2026-11-06): new members of the closed lists `VmSeek` and `VmLocalKind` are row additions and do
+  not wait for [VMREC], but [VMREC] must list them (below).
 - **Rev 2's `slotx`-as-value arm on `VSK_BACKSTEP` `[r6 V3]` is not needed.** The far count lives in
   a local, so the operand is typed as a local, and `slotx` keeps its one meaning (an index, as
   `VSK_RESTORE` reads it). V3's warning still applies to the new operand: render the local's VALUE
   (its name), never an index.
-- **`VSK_STEP_CHAR` is a new CALLER of an existing seam field, not a new entry.** `advance` is
-  inline text designed for engine-side use (enc.h: "an engine body calling the entry" is what DD-12
-  (7) forbids; `advance` exists so the VM's retry loop need not). Two things widen:
-  - `advance`'s `@N` comment, from "the subject-length variable" to "the bound the step never
-    passes: the subject length at the retry loop, the cursor in a lookbehind loop". The utf8 text
-    reads `@S[@P]` only while `@P < @N`, so a bound below the subject length is in range by
-    construction;
-  - `tests/codegen/run_encoding_checks.sh`'s advance-agreement check reads the text out of an
-    emitted artifact. It is unaffected, because the text is the same and only a token's
-    substitution differs. A `range` fixture under `-e utf8` gives it a second site to read (§7).
-  - The byte backend's text is `@P++;`. It never reads `@N`, so under bytes the bound is not even
-    spelled, and nothing can get it wrong.
 - **The `one-length` row's records are unchanged** (ruling A).
+
+**Builder shapes and the two sabotage anchors that read builder TEXT `[r2-1106 F5]`.**
+- S133's `SAB_BEFORE` is the exact line `    pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);`, with
+  `SAB_COUNT=1`. Stage 1 keeps exactly one such line: `vm_look_behind_branch` computes the first
+  back-step's literal count once (`k` for `one-length`, `lo_i` for `range`) and emits it through
+  that one line, so the existing builder's signature and its six call sites do not move. S133's
+  sabotage then inlines the first back-step of BOTH rows, and the `residlbrange` fixture's
+  per-site count sees it (§7). The far step is the new builder's only call, so it has an anchor of
+  its own (S133's `range` twin).
+- S123's `SAB_BEFORE` is `            pcrec_vm_b_seek(v->sb, VSK_RESTORE, sl, 0);` in `vm_look`,
+  `SAB_COUNT=1`. The `range` row's two restores live in `vm_look_behind_branch` and name their
+  slot through their own variables (`posx`, `lox`), never `sl`, so S123's exact line still matches
+  once. The build confirms both counts with the matrix's field validation (`VALIDATE_ONLY=1`).
+
+**`K_i`'s declaration and name `[r2-1106 F3]`.**
+- ONE local serves every `range` branch of the artifact. It is written and read only between
+  `L_b_i` and the branch's first push, which is straight-line code with no choice point and no
+  call, so no two `K` values are ever live at once, in any nesting, recursion or splice. So there
+  is no `<n>` and no per-branch numbering (rev 3's `<p>_lb<n>_count` is withdrawn).
+- Its sizing pass: `VmFrame` gains `bool lb_count` (the `span_cursor` precedent). `pcrec_emit_vm`
+  sets it from the count pass's `nlblow_total > 0`, the SAME count that sizes the `LO_i`
+  sub-block (§5.1b), so the local exists exactly when a `LO_i` slot does. `pcrec_vm_stmt_frame`
+  declares `size_t <p>_lb_count;` from it. Every `range` branch reads the local, so no `(void)`
+  suppression row is needed.
+- Its name has ONE source: `vm_local_name` gains the arm `VL_LB_COUNT` → `<p>_lb_count`
+  (`VmLocal`'s `loop`/`j`/`half` unused, 0). The frame's declaration row and the two TEXT reads (the
+  decrement's src, the far `VK_WORK` count) take the name from the same function, exported from
+  `vm_stmt.c` as `pcrec_vm_local_name` and declared in `vm_stmt.h`. That closes the
+  declaration/use split [M6-READ] records as a past break ("the rename moved the uses and left the
+  declarations").
+
+**The forward step is a seam ENTRY, `$_fwd_step` `[r2-1106 F1]` (the manager's ruling).** Rev 3
+spliced the encoding's `advance` text into the VM body as a new caller of an existing field. The
+review traced its readers: DD12a(i) went red (a second encoding splice, outside every named
+region); the advance-agreement check never read the new site, so W14's byte-step arm had no
+detector; the body's length, which the entry-shape knee reads (`pcrec_vm_stmt_program_bytes` →
+`pcrec_sb_len_decide` against `VM_INLINE_CHAIN_MAX_BYTES`), would differ by encoding; and the utf8
+text carries a K49 comment that is false at a lookbehind and survives `-fno-comments` (measured,
+`vlbrev4_evidence/premise.out`). Rev 4's form:
+
+- **The entry.** `PCREC_ENCE_FWD_STEP` (the next free bit, `1u << 8`), one row in `entries_byte[]`
+  and one in `entries_utf8[]`, placed after `PCREC_ENCE_BACK_STEP`. `engine_callable` true,
+  `inline_def` true, `requires` 0. Contract (its `decls_doc`, the inline entry's contract doc):
+  `$_fwd_step(s, n, pos)` returns the position one CHARACTER after `pos`, never past `n`; the
+  caller guarantees `pos < n <= subject_length`; it reads `s` only in `[pos + 1, n)`. It is
+  `next_pos` over the prefix `[0, n)`, which is what K49's tie checks. Bodies:
+  - byte: `(void)s; (void)n; return pos + 1;`
+  - utf8: `size_t i = pos + 1; while (i < n && (s[i] & 0xC0) == 0x80) i++; return i;` (`next_pos`'s
+    body; §5.1a shows it equals rev 3's bounded `advance` on every input).
+- **Why it may be engine-callable when `next_pos` is not.** `next_pos`'s `false` rests on
+  unanchoredness being the automaton's own self-loop, so an engine has no external advance to route
+  through (enc.h). A lookbehind's candidate step has no automaton representation, which is exactly
+  `$_back_step`'s and the span compare's case. The entry's id comment says so.
+- **The mask, and the STOP RULE.** `vm_look_behind_branch` consults
+  `pcrec_enc_entry_engine_callable(..., PCREC_ENCE_FWD_STEP)` and ORs the bit only when it emits a
+  `range` branch (the `$_back_step` precedent in `vm_look`). Inline definitions are emitted only
+  for entries in the mask (`enc_emit_inline_defs` tests `mask & t->id`), and a lookbehind-free
+  artifact carries no `rx_back_step` today (measured, `premise.out`): the same gate keeps
+  `$_fwd_step` out of every artifact without a `range` branch. Every such artifact is a pattern
+  refused today. So NO EXISTING ENCODING'S OUTPUT MOVES A BYTE, and the STOP RULE is not triggered.
+  The build confirms by grep that no emitted text reads the mask's numeric value (none is known).
+- **What the entry form removes from the owed list.**
+  1. The second splice: the matcher body holds one CALL line, the same text under `byte` and
+     `utf8`, so DD12a(i)'s body comparison is satisfied as it is for `$_back_step` today.
+  2. The entry-shape knee: the body's length counts the call line only. The definition is emitted
+     ahead of the program by `pcrec_enc_emit_inline_defs`, outside `VmBody`, as `$_back_step`'s
+     is: `(?<=a|bc)x` stamps `RX_VM_PROGRAM_BYTES 2628ULL` under both encodings today
+     (`premise.out`). So the entry-shape decision never reads the step's encoding-dependent
+     length. A regression would change the body text or the `<PREFIX>_VM_PROGRAM_BYTES` stamp
+     line, and DD12a(i) compares both.
+  3. The K49 comment: the step's prose is its own D112 doc pair (`decls_doc`, `defs_doc`), emitted
+     through `PCREC_CMT_NONESSENTIAL`, so a `-fno-comments` artifact carries none of it. The retry
+     loop's `advance` text and its comment are untouched.
+  4. The "one splice" sentences stay TRUE (DD12a(i)'s header item (2), emit_vm.c's K49 comment,
+     enc.h's `advance` contract, src/gen/CLAUDE.md), and rev 3's widening of `advance`'s `@N`
+     comment is withdrawn. None of them is edited.
+- **What it adds:** a third spelling of the boundary rule (`next_pos`, `advance`, `fwd_step`), tied
+  by K49 below; one bullet in `match_api.md` §3¶2 (§10); src/enc/CLAUDE.md's entry list; a
+  decision-log line at landing recording the entry (the `$_back_step` precedent: no D58 contract
+  change, since no `PcrecEncEntry` field, seam signature or recipe line moves).
+
+**DD12a(i) reads region (1) FROM THE SEAM `[r2-1106 F1]`.** Today region (1) is `SIG_RE`
+(`tests/codegen/run_encoding_checks.sh`, the DD12a(i) Python block): a hand-written alternation of
+ten entry and helper NAMES and of nine RETURN TYPES, plus the hand lists `TWINNED`, the
+`span_ci_helper` mapping, and the residual keys of `agg` and of the floor tuple. Its own comments
+record three drifts of those lists ([VAR]'s `int` return type, the `span_ci_` rename's KeyError,
+[CLS-TREE]'s `decode`). Stage 1 replaces them with the seam's own answer:
+1. **A seam function** (enc.h/enc.c): `void pcrec_enc_entry_symbols(const PcrecEnc *e, unsigned id,
+   void (*each)(const char *sym, void *u), void *u)`. It names every file-scope symbol entry `id`'s
+   emission DEFINES: each `$_<ident>` that opens a column-0 declarator (a function head or a table)
+   in the row's `defs` text, plus what enc.c itself emits beside a row (today only
+   `SPAN_CASELESS_UCP`'s Latin-1 fold table, written by `enc_emit_latin1_fold_table`). It sits beside
+   the code that emits those symbols, so the list cannot drift from the emission.
+2. **A test reader**, `tests/codegen/enc_entry_list.c`, linked against `build/libpcrec.a` (the
+   `tests/utf8/startbnd_backend_check.c` precedent, which reads backend rows directly). For every
+   backend in the registry and every row it prints `backend <TAB> id <TAB> inline|outline <TAB>
+   symbols...`, and a member column for `PCREC_ENC_BOUNDARY_ENTRIES` (K49, below).
+3. **DD12a(i)'s Python reads that table** (its path is an argument) and derives:
+   - the head matcher: a column-0 line whose declarator is `<prefix>_<sym>` or `<prefix>__<sym>`
+     followed by `(` or `[`, after ANY return-type tokens. Both of `SIG_RE`'s alternations go;
+   - `TWINNED` = the `outline` entries' symbols;
+   - the counter KEY = the entry, so a helper symbol counts under the entry whose text defines it
+     (the `span_ci_helper` mapping goes);
+   - rule (b)'s per-pair symmetry compares, per entry, PRESENCE on each side, and admits presence on
+     one side only where the reader lists the entry in that backend alone (today `var_valid` and
+     `decode`, utf8 only, and the UCP caseless compare, byte only);
+   - rule (a)'s floor: every entry the reader lists is reached at least once across the run, on the
+     side(s) that carry it. The residual keys of `agg` and of the floor tuple come from the reader.
+   Regions (2)-(5) are fields, stamps and selections, not entries, and are unchanged.
+   The legacy `span_ci_decode` alias goes too: DD12a(i) re-emits every pair from the current
+   compiler, so no artifact from before [CLS-TREE] S4 reaches it.
+4. **One witness joins the explicit list:** `(?<=a{1,2})x`. It reaches `back_step` and `fwd_step`
+   under both encodings. Without it the derived floor is red, which is the point: a new entry
+   cannot pass DD12a(i) without a witness.
+5. **Re-validation (the section's own (d))**, in a throwaway tree: the existing plant before
+   `_accept:` stays red; a plant that drops one symbol from `pcrec_enc_entry_symbols` turns the
+   section red (the unexcised definitions differ); the `fwd_step`-inlined plant of §7 turns it red
+   under `-e utf8`.
+- **Proportion.** About 40 lines in enc.c, a reader of about 60 lines, and one Python block whose
+  hand lists shrink. That is proportionate to stage 1, and it deletes the lists whose drift the
+  file records three times, so the named-region fallback is NOT taken. Had it been, the entry
+  form would still make the step a member of region (1): the fallback is "add `fwd_step` to
+  `SIG_RE`, `agg` and the floor tuple by hand", the `$_back_step` precedent, not a region (6).
+
+**K49 reads its agreement sites FROM THE SEAM `[r2-1106 F1]`.**
+1. enc.h declares, beside the entry enum, `PCREC_ENC_BOUNDARY_ENTRIES` = `PCREC_ENCE_NEXT_POS |
+   PCREC_ENCE_FWD_STEP`: the entries that spell the boundary rule, with the contract each member
+   meets, `entry(s, n, pos) == next_pos(s, n, pos)` for every `pos < n`. A new boundary-spelling
+   entry joins the mask where its contract is written. (A `PcrecEncEntry` column was the
+   alternative; a mask does not touch every positional row of both backends, D58 addendum 2 item
+   2's reason.)
+2. The reader prints the mask's members and their symbols per backend.
+3. The check compiles one witness per encoding that carries every member (`(?<=a{1,2})x`,
+   `--engine=vm`; `next_pos` is always in the mask). Its driver `#include`s the artifact rather
+   than linking it, so the `static inline` members are callable. For every cell of today's
+   alphabet sweep and every member other than `next_pos`, it sweeps every bound `b` in `(pos, n]`
+   and requires `member(s, b, pos) == next_pos(s, b, pos)`.
+4. Non-vacuity per member, as today per encoding: under `byte` every answer is `pos + 1`; under
+   `utf8` at least one is not. The member count is printed and floored (2 per encoding today), so
+   a member that leaves the witness's mask is red (K35).
+5. The retry advance keeps its own extraction, anchored on the retry loop's guard line. `advance`
+   is a FIELD, not an entry, and making it one would move every byte artifact (enc.h's own reason
+   it is text). This is the one site K49 still finds by anchor, and it is the one splice DD-12 (7)
+   admits.
+
+**Other readers of the new entry.**
+- DD12a(ii) (the signature-identity check, same file): its `sigs_of` name list comes from the same
+  reader (entries both backends carry), and a second witness, `(?<=a{1,2})x`, is compared beside
+  `(?i)(?<=ab)(b)\1x`, so `fwd_step`'s signature is compared too.
+- [M5-SEAM] (`tests/codegen/run_codegen_tests.sh`): `INLINE_RESID` gains `rx_fwd_step` BY HAND.
+  That check states its expectation from the test on purpose (its header, R32 E7/C2: "the
+  expectation comes from the test, not from the artifact"), so it is not derived. The new fixture
+  `residlbrange` declares `fwd_step:1` (§7); existing fixtures are unchanged, since the entry is
+  absent from their masks.
+
+**[VMREC]'s member list, and its home `[r2-1106 F7]`.** Ruling 7 makes the list a condition. Its
+home is a new long-form body, `docs/design/plan_row_bodies/VMREC.md`, written directly as a body
+(the `BOXQUEUE.md` and `CAP-SPAN.md` precedent) by the stage-1 build commit, when the members
+exist. The same commit adds it to the [VMREC] row's refs line and to that directory's CLAUDE.md.
+Its entries, each with the declared effect (c) will read:
+- `VSK_STEP_CHAR`: writes the subject cursor; reads the cursor, one slot (`POS`) and the subject;
+  calls the seam entry `$_fwd_step`;
+- `VL_LB_COUNT`: an untrailed local, one per artifact, live only between a `range` branch's guard
+  and its first push;
+- the `VSK_BACKSTEP` local count operand (`byloc`, `x`): reads that local;
+- two operands that read the local through TEXT rather than as a record field: the decrement's
+  src and the far `VK_WORK` count. Existing `rv` locals have the same shape, so (c)'s rule "every
+  analysed operand is printed by its renderer or carried as a record field" lists them with the
+  `rv` reads rather than treating them as new.
 
 ## 6. Staging and acceptance gates
 
