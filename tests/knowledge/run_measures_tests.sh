@@ -31,8 +31,8 @@
 #   CONTROLS R5 on a decode with two rows swapped, R3 on a canonical view with
 #           its `cells` dropped (R1's digest unmoved by that edit).
 #
-# Population floors (K35): store sets >= 1, ok fixtures = 6, bad fixtures >= 26
-# (6 of them format 2), format-2 pairs = 2.
+# Populations (K35): store sets >= 1, ok fixtures = 6, bad fixtures = 29
+# (8 of them format 2), format-2 pairs = 3.
 set -u
 export LC_ALL=C
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -187,7 +187,7 @@ for f in "$WORKDIR"/fx/pair/*.tsv; do
         bad "$n: pcrec digest '$pd', ks_ref '$rd', fx-f2 '$f2d' ($(head -c 200 "$WORKDIR/$n.perr"))"
     fi
 done
-[ "$npair" -eq 2 ] && ok "format-2 pairs: 2" || bad "format-2 pairs: $npair, expected 2 (K35)"
+[ "$npair" -eq 3 ] && ok "format-2 pairs: 3" || bad "format-2 pairs: $npair, expected 3 (K35)"
 # fx-messy normalizes to fx-store: one document, one canonical view but the id
 sed 's/^id\tfx-messy$/id\tfx-store/' "$WORKDIR/fx-messy.c1" > "$WORKDIR/messy.as.store"
 cmp -s "$WORKDIR/messy.as.store" "$WORKDIR/fx-store.c1" && ok "fx-messy's canonical view is fx-store's (order, comments, unknown column, absent key normalized)" \
@@ -206,7 +206,9 @@ while IFS="$(printf '\t')" read -r n sub; do
         bad "refuse $n: refused without '$sub': $(head -c 300 "$WORKDIR/b.err")"
     fi
 done < "$WORKDIR/fx/bad/EXPECT.tsv"
-[ "$nbad" -ge 26 ] && ok "refusals: $nbad classes (floor 26)" || bad "refusals: $nbad classes, under the floor 26 (K35)"
+nbad2="$(grep -c '^f2-' "$WORKDIR/fx/bad/EXPECT.tsv")"
+[ "$nbad" -eq 29 ] && ok "refusals: 29 classes" || bad "refusals: $nbad classes, expected 29 (K35)"
+[ "$nbad2" -eq 8 ] && ok "refusals: 8 format-2 classes" || bad "refusals: $nbad2 format-2 classes, expected 8 (K35)"
 if LM --measures="$WORKDIR/fx/bad/digest.tsv" -o "$WORKDIR/x.c" --pattern a 2> "$WORKDIR/b.err"; then
     bad "a bad set as --measures= compiled"
 else

@@ -225,6 +225,9 @@ static int tab_load(const KsAlloc *a, const KsTsvSection *s, const char *const *
 
 /* ---- the digest (§1.6) ------------------------------------------------- */
 
+/* A row's folded bytes: unit, status, value_e6 (8); format 2 adds noise_e6 (8). */
+enum { FOLD_W1 = 2 + 8, FOLD_W2 = FOLD_W1 + 8 };
+
 /* Folds every row in canonical order: the key and a NUL, the unit and status
  * bytes, `value_e6` as int64 LE and, when `noise` (format 2), `noise_e6` as
  * int64 LE (KS_MEAS_EMPTY, INT64_MIN, for `-`). */
@@ -232,7 +235,7 @@ static uint64_t meas_fold_rows(uint64_t h, const KsMeasSet *set, bool noise)
 {
     for (size_t i = 0; i < set->nrows; i++) {
         const KsMeasRow *r = &set->rows[i];
-        unsigned char b[18];
+        unsigned char b[FOLD_W2];
         uint64_t v = (uint64_t)r->value_e6;
         uint64_t nz = (uint64_t)r->noise_e6;
         h = pcrec_ks_fnv1a(h, r->col[KS_MR_key], strlen(r->col[KS_MR_key]) + 1);
@@ -240,7 +243,7 @@ static uint64_t meas_fold_rows(uint64_t h, const KsMeasSet *set, bool noise)
         b[1] = r->status_code;
         for (int k = 0; k < 8; k++) b[2 + k] = (unsigned char)(v >> (8 * k));
         for (int k = 0; k < 8; k++) b[10 + k] = (unsigned char)(nz >> (8 * k));
-        h = pcrec_ks_fnv1a(h, b, noise ? 18 : 10);
+        h = pcrec_ks_fnv1a(h, b, noise ? FOLD_W2 : FOLD_W1);
     }
     return h;
 }
@@ -269,21 +272,41 @@ const KsDigest pcrec_ks_meas_values2_role = {
     KS_DOMAIN("pcrec-meas-2"), KS_SUB_NONE, meas_fold2
 };
 
+/* THE PER-FORMAT ROW (measures.md §2.1¶1a), indexed by `KsMeasSet.format`:
+ * the digest's role, the cells table's width and column names, and whether
+ * the format has the noise (a rows column parsed, a cell `events`, the
+ * decoded `noise_parsed`). A format 3 is one more row. */
+typedef struct {
+    const KsDigest *role;
+    size_t cell_w;
+    const char *const *cell_cols;
+    bool noise;
+} MeasFormat;
+
+static const MeasFormat meas_formats[3] = {
+    [1] = { &pcrec_ks_meas_values_role,  KS_MEAS_NCELL1, cell_cols1, false },
+    [2] = { &pcrec_ks_meas_values2_role, KS_MEAS_NCELL,  cell_cols,  true },
+};
+
+static const MeasFormat *fmt_of(const KsMeasSet *set)
+{
+    return &meas_formats[set->format];
+}
+
 uint64_t pcrec_ks_meas_digest(const KsMeasSet *set)
 {
-    return pcrec_ks_digest(set->format == 2 ? &pcrec_ks_meas_values2_role
-                                            : &pcrec_ks_meas_values_role, set, NULL);
+    return pcrec_ks_digest(fmt_of(set)->role, set, NULL);
 }
 
 size_t pcrec_ks_meas_cell_w(const KsMeasSet *set)
 {
-    return set->format == 2 ? KS_MEAS_NCELL : KS_MEAS_NCELL1;
+    return fmt_of(set)->cell_w;
 }
 
 /* The column names of `set`'s cells table, pcrec_ks_meas_cell_w wide. */
 static const char *const *cell_cols_of(const KsMeasSet *set)
 {
-    return set->format == 2 ? cell_cols : cell_cols1;
+    return fmt_of(set)->cell_cols;
 }
 
 void pcrec_ks_meas_hex(uint64_t d, char out[17])
@@ -339,7 +362,7 @@ static int check_header(KsMeasSet *set, const char *where, KsErr *err)
     int64_t v;
     if (strcmp(h[KS_MH_FORMAT], "1") && strcmp(h[KS_MH_FORMAT], "2"))
         return mfail(err, where, "format %s (this pcrec reads formats 1 and 2)", h[KS_MH_FORMAT]);
-    set->format = h[KS_MH_FORMAT][0] == '2' ? 2 : 1;
+    set->format = h[KS_MH_FORMAT][0] - '0';
     if (!pcrec_ks_name_ok(h[KS_MH_ID], strlen(h[KS_MH_ID])))
         return mfail(err, where, "id '%s' is not a set name ([a-z][a-z0-9_-]*)", h[KS_MH_ID]);
     if (!dec_i64(h[KS_MH_REV], &v) || v < 1 || v > 0xffffffffll)
@@ -429,7 +452,7 @@ static int load_rows(const KsAlloc *a, const KsTsvSection *s, KsMeasSet *set,
                          "its one decimal spelling", ln, m->col[KS_MR_value_e6]);
         }
         m->noise_e6 = KS_MEAS_EMPTY;
-        if (set->format == 2 && noise_load(m, ln, where, err)) return -1;
+        if (fmt_of(set)->noise && noise_load(m, ln, where, err)) return -1;
     }
     qsort(rows, s->nrows, sizeof *rows, row_cmp);
     set->rows = rows;
@@ -475,6 +498,26 @@ static bool is_cell_id(const KsMeasSet *set, const char *id, size_t n)
         if (strlen(c) == n && !memcmp(c, id, n)) return true;
     }
     return false;
+}
+
+/* The cells table's rules: each id once, and a noise format's `events` is
+ * `-` or a non-negative integer in its one spelling, at most INT64_MAX. */
+static int check_cells(const KsMeasSet *set, const char *where, KsErr *err)
+{
+    size_t w = pcrec_ks_meas_cell_w(set);
+    for (size_t i = 0; i < set->cells.nrows; i++) {
+        const char *const *c = set->cells.cells + i * w;
+        int64_t e;
+        for (size_t j = i + 1; j < set->cells.nrows; j++)
+            if (!strcmp(c[0], set->cells.cells[j * w]))
+                return mfail(err, where, "cell id '%s' appears twice", c[0]);
+        if (fmt_of(set)->noise && strcmp(c[KS_MC_events], "-") &&
+            (!dec_i64(c[KS_MC_events], &e) || e < 0))
+            return mfail(err, where, "cell '%s': events '%s' is neither '-' nor a "
+                         "non-negative integer in its one decimal spelling",
+                         c[0], c[KS_MC_events]);
+    }
+    return 0;
 }
 
 /* Every per-row rule of §1.6, the unit row, the count, the cell ids (and a
@@ -556,21 +599,7 @@ static int check_rows(const KsAlloc *a, const KsMeasSet *set, const char *where,
         (uint64_t)declared != set->nrows)
         return mfail(err, where, "header rows %s, but the rows section has %zu",
                      set->hdr[KS_MH_ROWS], set->nrows);
-    {
-        size_t w = pcrec_ks_meas_cell_w(set);
-        for (size_t i = 0; i < set->cells.nrows; i++) {
-            const char *const *c = set->cells.cells + i * w;
-            int64_t e;
-            for (size_t j = i + 1; j < set->cells.nrows; j++)
-                if (!strcmp(c[0], set->cells.cells[j * w]))
-                    return mfail(err, where, "cell id '%s' appears twice", c[0]);
-            if (set->format == 2 && strcmp(c[KS_MC_events], "-") &&
-                (!dec_i64(c[KS_MC_events], &e) || e < 0))
-                return mfail(err, where, "cell '%s': events '%s' is neither '-' nor a "
-                             "non-negative integer in its one decimal spelling",
-                             c[0], c[KS_MC_events]);
-        }
-    }
+    if (check_cells(set, where, err)) return -1;
     if (set->composite != (set->members.nrows > 0) ||
         set->composite != (*set->hdr[KS_MH_MEMBERS] != 0))
         return mfail(err, where, "composite %u with %zu member rows and members '%s' "
@@ -724,7 +753,7 @@ static int meas_write_decoded(const KsOut *o, const void *doc, KsErr *err)
         rc = rc || dec(o, scope, "unit_code", num);
         snprintf(num, sizeof num, "%u", m->status_code);
         rc = rc || dec(o, scope, "status_code", num);
-        if (set->format == 2) {
+        if (fmt_of(set)->noise) {
             if (m->noise_e6 == KS_MEAS_EMPTY) num[0] = 0;
             else snprintf(num, sizeof num, "%lld", (long long)m->noise_e6);
             rc = rc || dec(o, scope, "noise_parsed", num);
@@ -800,8 +829,8 @@ const KsKind pcrec_ks_measures = {
     .noun          = "measurement set",
     .nouns         = "measurement sets",
     .item_noun     = "set",
-    .item          = &pcrec_ks_meas_values_role,
-    .stamp         = &pcrec_ks_meas_values_role,
+    .item          = NULL,   /* the role is per set (meas_formats[]) */
+    .stamp         = NULL,
     .probe         = meas_probe,
     .write_canonical = meas_write_canonical,
     .write_decoded   = meas_write_decoded,

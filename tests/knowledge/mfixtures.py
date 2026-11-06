@@ -24,7 +24,9 @@ From the committed store set it writes, under OUTDIR:
            fx-f1noise a FORMAT-1 set with numeric noise text on every row: the
                       text is provenance, so every row is handed unmeasured
   pair/    format-2 sets that must load and digest APART from fx-f2:
-           fx-f2-noise (one noise changed), fx-f2-class (`class` changed)
+           fx-f2-noise (one noise changed), fx-f2-class (`class` changed),
+           fx-f2-noisemax (one noise exactly 10^15, the bound's last
+           admitted value)
   store/   a format-2 fixture store for scripts/ksgen.c: DEFAULTS and
            fx-f2/1/set.tsv (fx-f2's text)
   bad/     one set per refusal class of docs/spec/measures.md §7 (the
@@ -270,7 +272,14 @@ def f2_bad_sets(f2):
          "a derived row carries noise_e6 7"),
         ("f2-noise-null", edit_rows(f2, "kit.enter.walk", "noise_e6", "7"),
          "a null row carries noise_e6 7"),
+        ("f2-noise-fitted",
+         edit_rows(edit_rows(edit_rows(f2, "kit.saving.memchr.walk", "status", "fitted"),
+                             "kit.saving.memchr.walk", "derivation", "interp-log2"),
+                   "kit.saving.memchr.walk", "noise_e6", "7"),
+         "a fitted row carries noise_e6 7"),
         ("f2-events", cell("c2", "events", "x"), "events 'x' is neither"),
+        ("f2-events-bound", cell("c2", "events", "9223372036854775808"),
+         "events '9223372036854775808' is neither"),
     ]
 
 
@@ -350,6 +359,7 @@ def main(store_set, outdir):
     f2 = open(os.path.join(ok, "fx-f2.tsv"), encoding="utf-8").read()
     # pair: fx-f2 apart by one noise, and by class alone
     for name, text in (("fx-f2-noise", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "1731")),
+                       ("fx-f2-noisemax", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "1000000000000000")),
                        ("fx-f2-class", f2.replace("\nclass\tcls-a\n", "\nclass\tcls-b\n", 1))):
         p = os.path.join(outdir, "pair", name + ".tsv")
         write(p, text)
