@@ -189,7 +189,7 @@ foo|bar
 (cat|dog)(s|es)
 thin|think|thinker|thinking
 cat|cats|dog|dogs
-(?:ab|ba|aa|bb){24}c'
+(?:ab|cd|aqr|cst){8}z'
 #
 # [FORM-CHAR] THE FOLD MANIFEST, `ISLAND_PATTERNS`' shape for the second
 # region-moving axis: corpus patterns MEASURED (2026-09-05, this lane's

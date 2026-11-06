@@ -1911,9 +1911,11 @@ n "aaaaaaaab"
 n "babababababab"
 n "aaaaaaaaaaaaab"
 
-# [ART-SIZE] §9 witness-pool member — island-bearing (four prefix-free literals), ladder TAKEN.
-# The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
-# why); expectations from python3 `re`.
+# FORMERLY the [ART-SIZE] §9 pool's four-literal island member. Since the
+# alternation owner (src/opt/altnf.c, rule M) its four two-byte words are one
+# class pair, so it stamps neither an island nor a size-model K; the pool's
+# member is now `(?:ab|cd|aqr|cst){8}z` below. Kept as an answer witness.
+# Expectations from python3 `re`.
 pattern (?:ab|ba|aa|bb){24}c
 m "ababababababababababababababababababababababababc" 0 49
 m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac" 0 49
@@ -1921,6 +1923,22 @@ m "abbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbac" 0 49
 n ""
 n "z"
 n "abz"
+
+# [ART-SIZE] §9 witness-pool member — island-bearing (four literals, two shared
+# first bytes and no shared suffix, so the alternation owner's rules M/P/S
+# leave it whole), ladder TAKEN. Replaces `(?:ab|ba|aa|bb){24}c` above (lane
+# altbuild2, 2026-11-06). Expectations from python3 `re`.
+pattern (?:ab|cd|aqr|cst){8}z
+m "abababababababababz" 2 19
+m "cdcdcdcdcdcdcdcdz" 0 17
+m "aqrcstabcdaqrcstabcdz" 0 21
+m "abcdaqrcstabcdaqrcstz" 0 21
+m "xxabcdabcdabcdabcdzyy" 2 19
+n ""
+n "z"
+n "abz"
+n "abababababababz"
+n "aqraqraqraqraqraqraqrz"
 
 # [ART-SIZE] §9 witness-pool member — island-bearing prefix ladder, four alternatives.
 # The pool must be CORPUS patterns (run_size_term.sh §9's own comment says
