@@ -9,7 +9,10 @@
 #   python3 -I est.py selftest SCRATCH          the input cross-checks over synthetic run directories (r9 G3)
 # RUNDIR holds the FINALIZED run_record.tsv (record.py), cells.J<j>.tsv per ran timing job (format 2's cell
 # columns under a `#run_id` line) and <job>/cell_text.tsv (link.py). THE RECORD IS THE INPUT (r9 G3): the plan,
-# the floor and which jobs ran are its sections, never a live plan.py rebuild and never "a cells file exists".
+# the floor and which jobs ran are its sections, never a live plan.py rebuild and never "a cells file exists";
+# and so are the CARD AND POLICY VALUES ([rev1.3 r9fc-FIX-1]): the estimators, lengths, launches, rounds, units
+# and gates come from the record's pinned `cards` and `policy` rows (plan.parse_cards over them), never from
+# memfn/data's live tables, so a table edited after the run never moves its verdict.
 # Refused inputs exit 2: a cells file of a never-ran job, a ran job missing a planned cell, a cells file of
 # another run, an id whose fields disagree with its columns, a delta cell naming another base than the family
 # rule's (plan.base_of), a ran job with no cell texts.
@@ -103,8 +106,9 @@ def read_cells(rundir, rec):
     return cells
 
 def read_record(rundir):
-    """the finalized run record: run (dict), jobs {job: (state, cause)}, plan [(key, group, job)], floor"""
-    rec, sec = {"run": {}, "jobs": {}, "plan": [], "floor": []}, None
+    """the finalized run record: run (dict), jobs {job: (state, cause)}, plan [(key, group, job)], floor, the
+    pinned card and policy rows, and from them `card` ({quantity: card}) and `facts` (plan.card_facts)"""
+    rec, sec = {"run": {}, "jobs": {}, "plan": [], "floor": [], "cards": [], "policy": []}, None
     p = os.path.join(rundir, "run_record.tsv")
     if not os.path.exists(p):
         raise InputError("%s is absent (record.py finalize writes it)" % p)
@@ -122,8 +126,21 @@ def read_record(rundir):
             rec["jobs"][f[0]] = (f[1], f[2])
         elif sec in ("plan", "floor"):
             rec[sec].append(tuple(f))
+        elif sec in ("cards", "policy"):
+            rec[sec].append(f)
     if not rec["run"].get("run_id") or not rec["jobs"] or not rec["plan"] or not rec["floor"]:
         raise InputError("%s is not finalized (run_id, jobs, plan and floor are all required)" % p)
+    for k in ("cards", "policy"):
+        if not rec[k] or not re.fullmatch(r"[0-9a-f]{64}", rec["run"].get(k + "_sha256", "")):
+            raise InputError("%s pins no %s values or no %s_sha256 (r9fc FIX-1: the verdict reads the values the "
+                             "run was planned under, never the live tables)" % (p, k, k))
+    try:
+        rec["card"] = plan.parse_cards(rec["cards"], plan.parse_policy(rec["policy"]))
+        rec["facts"] = plan.card_facts(rec["card"])
+    except (SystemExit, KeyError, ValueError) as e:
+        raise InputError("%s's pinned cards or policy do not parse: %s" % (p, e))
+    if len(rec["card"]) != len(rec["cards"]):
+        raise InputError("%s pins %d card rows, %d of them ver-%s cards" % (p, len(rec["cards"]), len(rec["card"]), plan.METHOD_VER))
     if rec["run"].get("rules") != "kit-grid@" + plan.METHOD_VER:
         raise InputError("the record's rules owner %r is not this producer's kit-grid@%s (measures.md §3.5¶8a)"
                          % (rec["run"].get("rules"), plan.METHOD_VER))
@@ -133,8 +150,11 @@ def compute(rundir):
     rec = read_record(rundir)
     cells = read_cells(rundir, rec)
     floor = rec["floor"]
-    rows = [(k, g, j, plan.CARD[k.split(".")[1]]["est"], plan.base_of(k)) for k, g, j in rec["plan"]]
-    L = plan.L_LAUNCHES
+    card = rec["card"]                         # the PINNED cards (r9fc FIX-1), never plan.CARD
+    LENGTHS, _LEN, L, _R, GU = rec["facts"]
+    if any(k.split(".")[1] not in card for k, _g, _j in rec["plan"]):
+        raise InputError("a planned key's quantity has no pinned card (%s)" % sorted({k.split(".")[1] for k, _g, _j in rec["plan"]} - set(card)))
+    rows = [(k, g, j, card[k.split(".")[1]]["est"], plan.base_of(k)) for k, g, j in rec["plan"]]
     c = {}
     for x in cells:
         c[(x["job"], x["arm"], x["length"], x["launch"])] = x
@@ -149,7 +169,7 @@ def compute(rundir):
     for j in sorted(ran):
         if not any(r[2] == j for r in rows):
             continue
-        u[j] = [slope([(x, cell(j, "ctl", x, l)) for x in plan.LENGTHS]) for l in range(1, L + 1)]
+        u[j] = [slope([(x, cell(j, "ctl", x, l)) for x in LENGTHS]) for l in range(1, L + 1)]
         if min(u[j]) <= 0:
             raise InputError("job %s's control slopes %s: every u_l must be positive (measures.md §3.4¶14a)" % (j, u[j]))
     out = {}
@@ -193,12 +213,11 @@ def compute(rundir):
                 r["why"] = "null: below its paired A/A or signs mixed over the trimmed six"
         else:
             # §3.5¶2: the card's gate; the unit's is HALF, compared doubled (exact for an odd gate, r9 G7)
-            G = plan.CARD[key.split(".")[1]]["gate"]
+            G = card[key.split(".")[1]]["gate"]
             half = 2 if key == plan.UNIT_KEY else 1
             r["gate"] = r["value"] > 0 and half * r["noise"] * 10**6 <= G * r["value"]
     unit = out.get(plan.UNIT_KEY, {})
     unit_bad = None
-    GU = plan.CARD[plan.UNIT_KEY.split(".")[1]]["gate"]
     if "absent" in unit or not unit or W is None or W <= 0:
         unit_bad = "unit absent"                  # measures.md §3.5¶12 row 1: no unit, no set (r9 CONTRACT-4)
     else:
@@ -306,19 +325,17 @@ def write_draft(rundir, path, out, drift, outcome):
             raise InputError("the record's run section has no %s (record.py window writes it)" % k)
     texts = cell_texts(rundir, rec)
     rsha = hashlib.sha256(open(os.path.join(rundir, "run_record.tsv"), "rb").read()).hexdigest()
-    cards = []
-    for ln in open(plan.CARDS):              # the ver-3 cards, each gate_e6 RESOLVED (a `-` is the policy's, r9 SLOT-17)
-        f = ln.rstrip("\n").split("\t")
-        if not ln.startswith("#") and f[2:3] == [plan.METHOD_VER]:
-            f[10] = str(plan.CARD[f[1]]["gate"])
-            cards.append("\t".join(f))
+    # the ver-3 cards as the record pins them, VERBATIM: each states its declared gate_e6 (`-`), so check C's
+    # set-vs-card-table equality holds; the value a `-` took is the record's pinned policy ([rev1.3 r9fc-FIX-8])
+    cards = ["\t".join(f) for f in rec["cards"]]
+    n = str(rec["facts"][2] * rec["facts"][3])
     rows = []
     for k in sorted(out):
         r = out[k]
         if "absent" in r or r.get("gate") is False or drift.get(r["job"], (0, 0, False))[2]:
             continue
         q = k.split(".")
-        unit = plan.CARD[q[1]]["unit"]
+        unit = rec["card"][q[1]]["unit"]
         deps, tags = "-", "-"
         if q[1] != "enter":
             if k not in texts:
@@ -328,11 +345,11 @@ def write_draft(rundir, path, out, drift, outcome):
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
         if r.get("null"):
-            rows.append([k, unit, "", str(r["abs"]), "-", str(plan.L_LAUNCHES * plan.R_ROUNDS), "null", "-", "-",
+            rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
         else:
             rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]),
-                         str(plan.L_LAUNCHES * plan.R_ROUNDS), "measured", "-", "-", deps, tags, "slot " + r["job"]])
+                         n, "measured", "-", "-", deps, tags, "slot " + r["job"]])
     hdr = [("format", "2"), ("id", "zen4-grid3"), ("rev", "1"), ("class", "x86_64/zen4"),
            ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
            ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % plan.METHOD_VER),
@@ -375,8 +392,7 @@ def _synth(d, run_id="selftest"):
     rec["run"] = [["set", record.SET], ["rules", record.RULES], ["run_id", run_id], ["code_commit", "0000000"],
                   ["j1_verdict", "a"]]
     rec["jobs"] = [[j, "ran", "-"] for j in record.JOBS]
-    rec["plan"] = [r[:3] for r in fr["rows"]]
-    rec["floor"] = fr["floor"]
+    record.pin(rec, fr)
     record.write(os.path.join(d, "run_record.tsv"), rec)
     for j, arms in jobs.items():
         if j == "J1":
@@ -408,6 +424,23 @@ def selftest(scratch):
         edit(os.path.join(d, "run_record.tsv"), lambda t: t.replace("J3\tran\t-", "J3\tnever-ran\tfailed"))
     def base_swap(t):
         return re.sub(r"(/kit\.find_hit\.libc\.[^\t]*/)base\.libc\t", r"\1base.walk\t", t, count=1)
+    def unpin(d):
+        edit(os.path.join(d, "run_record.tsv"), lambda t: re.sub(r"(#section policy\n#[^\n]*\n)[^#]*", r"\1", t))
+    def unit_twin_skew(d):     # 4 of the unit twin's 7 launches x1.004 at every length (fixcheck FIX-1's repro)
+        def f(t):
+            out = []
+            for ln in t.split("\n"):
+                c = ln.split("\t")
+                if len(c) == 8 and c[2] == plan.UNIT_KEY + "#b" and int(c[4]) <= 4:
+                    c[7] = str(int(c[7]) * 1004 // 1000)
+                out.append("\t".join(c))
+            return "\n".join(out)
+        edit(os.path.join(d, "cells.J2.tsv"), f)
+    def live_edit(d):          # the live tables move after the run: est must not read them (r9fc FIX-1)
+        unit_twin_skew(d)
+        for c in plan.CARD.values():
+            c["gate"] = 300
+        plan.CARD["find_byte"]["est"] = "slope 1,2,3"
     cases = [
         ("complete", lambda d: None, "ok"),
         ("leftover cells of a never-ran job", set_never, "refused"),
@@ -417,8 +450,14 @@ def selftest(scratch):
         ("a delta cell naming another base", lambda d: edit(os.path.join(d, "cells.J3.tsv"), base_swap), "refused"),
         ("an id disagreeing with its launch column", lambda d: edit(os.path.join(d, "cells.J2.tsv"),
             lambda t: re.sub(r"(J2\.unit/kit\.find_byte\.walk/65536/)4(\t)", r"\g<1>5\2", t, count=1)), "refused"),
+        ("a record pinning no policy values", unpin, "refused"),
+        ("a unit twin skewed (the baseline of the next case)", unit_twin_skew, "ok"),
+        ("live card/policy edit after the run", live_edit, "same"),
     ]
-    bad = 0
+    # `same`: the record and cells equal the previous case's byte for byte, only the LIVE tables differ (the
+    # plant edits plan.CARD in memory, restored after), and the outcome must be the previous case's
+    bad, prev = 0, None
+    live = {q: dict(c) for q, c in plan.CARD.items()}
     for name, plant, want in cases:
         d = _synth(os.path.join(scratch, "est_selftest"))
         before = open(os.path.join(d, "run_record.tsv")).read() + "".join(
@@ -426,7 +465,7 @@ def selftest(scratch):
         plant(d)
         after = open(os.path.join(d, "run_record.tsv")).read() + "".join(
             open(os.path.join(d, f)).read() for f in sorted(os.listdir(d)) if f.startswith("cells."))
-        if want == "refused" and before == after:
+        if want != "ok" and before == after and plan.CARD == live:
             print("selftest\t%s\tPLANT DID NOT APPLY" % name)
             bad += 1
             continue
@@ -435,7 +474,15 @@ def selftest(scratch):
             got = "ok"
             why = "%s exit %d" % outcome[:2]
         except InputError as e:
-            got, why = "refused", str(e)
+            outcome, got, why = None, "refused", str(e)
+        finally:
+            for q, c in live.items():
+                plan.CARD[q].clear()
+                plan.CARD[q].update(c)
+        if want == "same":
+            got = "same" if outcome is not None and prev is not None and outcome[:2] == prev[:2] and after == prev_after else "moved"
+            why += " (the previous case's: %s)" % ("%s exit %d" % prev[:2] if prev else "none")
+        prev, prev_after = outcome, after
         ok = got == want
         bad += not ok
         print("selftest\t%s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))

@@ -12,10 +12,14 @@
 #                                                the window's last step (job J9): the window facts, `jobs` from
 #                                                STATES (lines `job TAB state`, boxqueue's end states) by the
 #                                                CAUSE table below, `plan` and `floor` from the DRY RUN's frozen
-#                                                plan RUNDIR/plan.tsv (never a live rebuild, r9 G3), and
-#                                                `transcript_sha256` (RUNDIR/transcript.tsv)
+#                                                plan RUNDIR/plan.tsv (never a live rebuild, r9 G3), the CARD AND
+#                                                POLICY VALUES the run was planned under (sections `cards`,
+#                                                `policy`, verbatim from the frozen plan, with the two tables'
+#                                                sha-256 in `run`: `cards_sha256`, `policy_sha256`; est.py reads
+#                                                only these, [rev1.3 r9fc-FIX-1]) and `transcript_sha256`
+#                                                (RUNDIR/transcript.tsv)
 # table_contract.md's section shape: `#section NAME`, a `#`-header line, TAB fields. Sections in this order:
-# run, jobs, plan, floor, j1_cells. Exit 2 on a refused input.
+# run, jobs, plan, floor, cards, policy, j1_cells. Exit 2 on a refused input.
 import hashlib, os, platform, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +27,7 @@ sys.path.insert(0, HERE)
 import plan  # noqa: E402
 
 SECTIONS = [("run", ["key", "value"]), ("jobs", ["job", "state", "cause"]), ("plan", ["key", "group", "job"]),
-            ("floor", ["clause", "key", "when"]),
+            ("floor", ["clause", "key", "when"]), ("cards", plan.CARD_COLS), ("policy", plan.POLICY_COLS),
             ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"])]
 JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
 SET = "zen4-grid3@1"
@@ -101,6 +105,22 @@ def box_facts():
             ("libc", "%s %s" % (lib, ver) if lib else "-"), ("gcc", r.stdout.strip()))
 
 
+def pin(rec, fr):
+    """the frozen plan `fr` (plan.read_frozen) into the record: plan, floor, the card and policy rows it was
+    planned under, and the two tables' sha-256 from its `inputs` (r9 G3, r9fc FIX-1)"""
+    shas = {f[0]: f[1] for f in fr.get("inputs", [])}
+    for k, name in (("cards_sha256", plan.CARDS), ("policy_sha256", plan.POLICY)):
+        rel = os.path.relpath(name, plan.TREE)
+        if not re.fullmatch(r"[0-9a-f]{64}", shas.get(rel, "")) or not fr.get(k.split("_")[0]):
+            refuse("the frozen plan pins no %s (inputs %s, section %s): a plan frozen before r9fc FIX-1; a new RUNDIR"
+                   % (k, rel, k.split("_")[0]))
+        setrun(rec, k, shas[rel])
+    rec["plan"] = [r[:3] for r in fr["rows"]]
+    rec["floor"] = fr["floor"]
+    rec["cards"] = fr["cards"]
+    rec["policy"] = fr["policy"]
+
+
 def window(rec, run_id, commit):
     """the window facts, idempotent; another run's record or an empty commit REFUSES"""
     if not run_id or not re.fullmatch(r"[0-9a-f]{7,40}", commit or ""):
@@ -168,15 +188,14 @@ def main():
         fp = os.path.join(rundir, "plan.tsv")
         if not os.path.exists(fp):
             refuse("%s is absent: finalize writes the DRY RUN's frozen plan, never a live one" % fp)
-        fr = plan.read_frozen(fp)
         rec["jobs"] = jobs
-        rec["plan"] = [r[:3] for r in fr["rows"]]
-        rec["floor"] = fr["floor"]
+        pin(rec, plan.read_frozen(fp))
         tp = os.path.join(rundir, "transcript.tsv")
         setrun(rec, "transcript_sha256", hashlib.sha256(open(tp, "rb").read()).hexdigest() if os.path.exists(tp) else "-")
         write(path, rec)
-        print("== s2 FINALIZE %s: %d jobs (%d ran), %d plan keys, %d floor lines"
-              % (path, len(jobs), sum(1 for r in jobs if r[1] == "ran"), len(rec["plan"]), len(rec["floor"])))
+        print("== s2 FINALIZE %s: %d jobs (%d ran), %d plan keys, %d floor lines, %d cards, %d policy rows"
+              % (path, len(jobs), sum(1 for r in jobs if r[1] == "ran"), len(rec["plan"]), len(rec["floor"]),
+                 len(rec["cards"]), len(rec["policy"])))
         return 0
     raise SystemExit("record.py: window | j1 | ready-j2p | finalize")
 

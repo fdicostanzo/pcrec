@@ -14,7 +14,9 @@
 # `plan.py report`, never forced). J1's cells are j1/'s.
 # THE CARD FACTS have ONE home (review r9 G7): the kit-grid@3 cards (memfn/data/cards/kit-grid.tsv: estimator,
 # unit, launches, rounds) and the kit policy table (memfn/data/policy.tsv: the gate a card stating `-` takes,
-# R-35 (e), r9 SLOT-17); nothing below restates them.
+# R-35 (e), r9 SLOT-17); nothing below restates them. The FROZEN plan pins their values verbatim (sections
+# `cards`, `policy`), the run record copies them with the files' sha-256, and est.py reads only that copy
+# ([rev1.3 r9fc-FIX-1]: a table edited after the run never moves its verdict).
 #   python3 -I plan.py report          the plan, the floor, the counts (§3.7's table, recounted)
 #   python3 -I plan.py groups JOB      the job's group count (a job script's `expect groups=N`)
 #   python3 -I plan.py freeze OUT      the frozen plan (rows, floor, inputs' sha-256) into OUT
@@ -32,45 +34,50 @@ METHOD_VER = "3"                       # kit-grid@3 (span_cards.md §2.1)
 UNIT_KEY = "kit.find_byte.walk"        # the set's unit row (§2.2): the walk's find_byte
 
 
-def read_policy():
+CARD_COLS = ["owner", "quantity", "ver", "dims", "unit", "subject", "lengths", "launches", "rounds", "aa_rule",
+             "gate_e6", "env", "deps"]
+POLICY_COLS = ["name", "value", "reason"]
+
+
+def table_rows(path):
+    """a TAB table's data rows, as field lists"""
+    return [ln.rstrip("\n").split("\t") for ln in open(path) if ln.strip() and not ln.startswith("#")]
+
+
+def card_rows(rows):
+    """the ver-METHOD_VER rows of a card table (the rows the frozen plan and the run record pin, verbatim)"""
+    return [f for f in rows if len(f) == len(CARD_COLS) and f[2] == METHOD_VER]
+
+
+def parse_policy(rows):
     pol = {}
-    for ln in open(POLICY):
-        if ln.startswith("#") or not ln.strip():
-            continue
-        f = ln.rstrip("\n").split("\t")
-        if f[0] in pol:
-            raise SystemExit("plan: policy.tsv names %s twice" % f[0])
+    for f in rows:
+        if len(f) != len(POLICY_COLS) or f[0] in pol:
+            raise SystemExit("plan: the policy rows name %s twice or with %d fields" % (f[0], len(f)))
         pol[f[0]] = int(f[1])
     return pol
 
 
-def read_cards():
-    """{quantity: card} for the kit-grid@3 cards; `est` the estimator (`lengths`), `gate` the gate_e6 the card
-    states or, for `-`, the policy table's gate_default_e6"""
-    pol = read_policy()
-    cols = ["owner", "quantity", "ver", "dims", "unit", "subject", "lengths", "launches", "rounds", "aa_rule",
-            "gate_e6", "env", "deps"]
+def parse_cards(rows, pol):
+    """{quantity: card} for the kit-grid@3 card rows; `est` the estimator (`lengths`), `gate` the gate_e6 the card
+    states or, for `-`, the policy's gate_default_e6. One parser for the live tables (the dry run) and the run
+    record's pinned copies (est.py, [rev1.3 r9fc-FIX-1])"""
     cards = {}
-    for ln in open(CARDS):
-        if ln.startswith("#") or not ln.strip():
-            continue
-        f = ln.rstrip("\n").split("\t")
-        if len(f) != len(cols) or f[2] != METHOD_VER:
-            continue
-        c = dict(zip(cols, f))
+    for f in card_rows(rows):
+        c = dict(zip(CARD_COLS, f))
         c["gate"] = pol["gate_default_e6"] if c["gate_e6"] == "-" else int(c["gate_e6"])
         c["est"] = c["lengths"]
         cards[c["quantity"]] = c
     if not cards:
-        raise SystemExit("plan: %s holds no ver-%s card" % (CARDS, METHOD_VER))
+        raise SystemExit("plan: the card rows hold no ver-%s card" % METHOD_VER)
     return cards
 
 
-CARD = read_cards()
+CARD = parse_cards(table_rows(CARDS), parse_policy(table_rows(POLICY)))
 
 
-def _one(field):
-    v = {c[field] for c in CARD.values()}
+def _one(cards, field):
+    v = {c[field] for c in cards.values()}
     if len(v) != 1:
         raise SystemExit("plan: the ver-3 cards disagree on %s (%s): one window times one L x R" % (field, sorted(v)))
     return int(v.pop())
@@ -83,15 +90,20 @@ def _est_parse(est):
     return m.group(1), tuple(int(x) for x in m.group(2).split(","))
 
 
-LENGTHS = _est_parse(CARD["find_byte"]["est"])[1]                     # find_byte's slope (§2.3)
-_DELTA = {_est_parse(c["est"])[1] for c in CARD.values() if _est_parse(c["est"])[0] == "delta"}
-if len(_DELTA) != 1 or len(next(iter(_DELTA))) != 1:
-    raise SystemExit("plan: the delta cards name %s, not one LEN" % sorted(_DELTA))
-LEN = next(iter(_DELTA))[0]                                           # every delta row's LEN
-L_LAUNCHES, R_ROUNDS = _one("launches"), _one("rounds")              # the cards' launches and rounds (§2.1)
-if L_LAUNCHES != 7:                    # measures.md §3.4¶2a: the estimator's constants are seven launches'
-    raise SystemExit("plan: the ver-3 cards state %d launches; the spec's estimator is written for 7" % L_LAUNCHES)
-GATE_E6 = CARD["find_byte"]["gate"]    # the UNIT card's gate (§3.5: drift's G and the unit's half gate)
+def card_facts(cards):
+    """the window's facts the cards determine: find_byte's slope LENGTHS (§2.3), every delta row's LEN, the
+    launches L and rounds R (§2.1), the UNIT card's gate (§3.5: drift's G and the unit's half gate)"""
+    delta = {_est_parse(c["est"])[1] for c in cards.values() if _est_parse(c["est"])[0] == "delta"}
+    if len(delta) != 1 or len(next(iter(delta))) != 1:
+        raise SystemExit("plan: the delta cards name %s, not one LEN" % sorted(delta))
+    L = _one(cards, "launches")
+    if L != 7:                         # measures.md §3.4¶2a: the estimator's constants are seven launches'
+        raise SystemExit("plan: the ver-3 cards state %d launches; the spec's estimator is written for 7" % L)
+    return (_est_parse(cards["find_byte"]["est"])[1], next(iter(delta))[0], L, _one(cards, "rounds"),
+            cards["find_byte"]["gate"])
+
+
+LENGTHS, LEN, L_LAUNCHES, R_ROUNDS, GATE_E6 = card_facts(CARD)
 GAPS = (256, 1024)
 LANDINGS = ("periodic", "random")
 PASSES = ("p0", "p50")
@@ -321,7 +333,8 @@ def sha256(path):
 
 
 def frozen_text():
-    """the frozen plan: its inputs' sha-256, the rows (key group job estimator base) and the floor"""
+    """the frozen plan: its inputs' sha-256, the rows (key group job estimator base), the floor, the ver-3 card
+    rows and the policy rows (verbatim) and the jobs"""
     jobs, rows, floor, _un = build()
     t = ["# span_cards stage-2 FROZEN PLAN (slot/plan.py freeze; review r9 G3): the plan every later step reads"]
     t += ["#section inputs", "#path\tsha256"]
@@ -330,6 +343,9 @@ def frozen_text():
     t += ["#section rows", "#key\tgroup\tjob\testimator\tbase"]
     t += ["\t".join([k, g, j, e, b or "-"]) for k, g, j, e, b in rows]
     t += ["#section floor", "#clause\tkey\twhen"] + ["\t".join(f) for f in floor]
+    # the card and policy VALUES the run is planned under, verbatim (r9fc FIX-1: the record pins them, est reads them)
+    t += ["#section cards", "#" + "\t".join(CARD_COLS)] + ["\t".join(f) for f in card_rows(table_rows(CARDS))]
+    t += ["#section policy", "#" + "\t".join(POLICY_COLS)] + ["\t".join(f) for f in table_rows(POLICY)]
     t += ["#section jobs", "#job\tarms\tgroups"]
     t += ["%s\t%d\t%d" % (j, len(jobs[j]), len(groups(jobs, j))) for j in sorted(jobs)]
     return "\n".join(t) + "\n"

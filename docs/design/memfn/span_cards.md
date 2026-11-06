@@ -366,9 +366,12 @@ here). §2.5 states row 1's position; §2.7 carries D188 and the held SIMD job.
 
 `gate_e6` 30000 is grid1's UNMEASURED DEFAULT (D149) carried; the unit group gates at half (§1.4). `[rev1.3
 r9-SLOT-17, r9-G7]` The ver-3 cards state `gate_e6` `-`: their gate is the POLICY table's `gate_default_e6`
-(`memfn/data/policy.tsv`, R-35 (e), §6), the one home; the producer publishes the resolved value on the set's
-cards. The slot harness reads lengths, launches, rounds, unit and gate from the ver-3 card rows and that table,
-never from its own constants. `[rev1.3 r9-SLOT-11]` The `enter` card's subject `die1` holds for kinds 1-5;
+(`memfn/data/policy.tsv`, R-35 (e), §6), the one home. `[rev1.3 r9fc-FIX-8]` The set's cards are the card
+table's rows AS DECLARED (`-`; check C requires a set's cards equal to its card table), and the value a `-`
+took is pinned in the run record's `policy` section (§3.5 "The run record"), which the recompute reads. The slot
+harness reads lengths, launches, rounds, unit and gate from the ver-3 card rows and that table at the dry run,
+never from its own constants; `[rev1.3 r9fc-FIX-1]` the frozen plan pins those rows' values and its estimator
+reads them from the run record, never from the live tables. `[rev1.3 r9-SLOT-11]` The `enter` card's subject `die1` holds for kinds 1-5;
 kind 6 (REPORT) has no die (its window IS the match, `slot/art.py`): its rows' regime is the pass-every-candidate
 one, stated in `slot/enter/fixtures.tsv`.
 `[rev1 SLOT-4]` `deps` are R-MS3 form ids; a card whose `deps` names `kit:form.<form>` has `form` as a dim,
@@ -954,7 +957,12 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   cancelled -> `declined-j1b` for J2p when the record's `j1_verdict` is `b`, else `cancelled`; none ->
   `never-queued`; any other state REFUSES), and writes `plan` and `floor` from the DRY RUN's frozen plan
   (`RUNDIR/plan.tsv`, written by the first dry run and required equal by every later one), never a live
-  rebuild. The slot's estimator reads the record's `jobs`, `plan` and `floor` (never "a cells file exists"):
+  rebuild. `[rev1.3 r9fc-FIX-1]` It also writes the CARD AND POLICY VALUES the run was planned under (sections
+  `cards` and `policy`, the frozen plan's verbatim copies of the ver-3 card rows and the policy table's rows,
+  with `cards_sha256` and `policy_sha256`, the two tables' sha-256 from the frozen plan's inputs), and the
+  estimator reads its estimators, lengths, launches, rounds, units and gates from them alone: two equal records
+  with equal cells give one verdict, whatever the live tables say later (est.py's self-test plants a live edit;
+  slot sabotage S2937). The slot's estimator reads the record's `jobs`, `plan` and `floor` (never "a cells file exists"):
   it refuses the cells of a never-ran job, a ran job missing a planned cell, a cells file whose `#run_id` line
   names another run, an id disagreeing with its columns and a base other than the family rule's (est.py's
   self-test plants each; slot sabotage (g3), S2936). Everything the verdict reads
@@ -967,6 +975,8 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   | `jobs` | `job state cause` | every job J1-J5 and J2p: `ran`, or `never-ran` with `declined-j1b`, `failed`, `wait-timeout`, `[rev1.3 r9-G6]` `cancelled` or `never-queued` |
   | `plan` | `key group job` | every row key the run planned (§2.5's keys as census0 scoped them), its group and job |
   | `floor` | `clause key when` | Goal 2's floor: one line per (clause, key); a clause is met by ONE priced key of its lines; `when` is `always` or `unless-j1-b` (the pair clauses) |
+  | `cards` | the card table's columns | `[rev1.3 r9fc-FIX-1]` the ver-3 card rows the run was planned under, verbatim (`run`'s `cards_sha256` is the table's sha-256) |
+  | `policy` | `name value reason` | `[rev1.3 r9fc-FIX-1]` the kit policy rows the run was planned under, verbatim (`run`'s `policy_sha256`): the value a card's `-` gate took |
   | `j1_cells` | `cell pattern subject regime width launch ns_e6` | J1's cells, each a median over rounds as §3.4 step 1 (widths 32-512 and `128#b`) |
 
   Its sha-256 is cited in the set's PROVENANCE.md and in the set header's `run` value (`<run id>

@@ -4,8 +4,11 @@
 # reason (memory pcrec-suspect-tuning-constants). z and MATERIAL join WITH their reader, row 1 (D77); the gate
 # default is here first because the stage-2 slot reads it now.
 # Columns: name value reason. One row per name.
-#   gate_default_e6   the gate_e6 of a card that states `-` (kit-grid@3's four cards): read by
-#                     docs/design/memfn/span_cards/slot/plan.py, which publishes the value it gated by on the
-#                     card it writes into a set (the set stays self-contained, measures.md §3.5¶2)
+#   gate_default_e6   the gate_e6 of a card that states `-` (kit-grid@3's four cards). Readers: (1)
+#                     docs/design/memfn/span_cards/slot/plan.py at the dry run, which freezes this row into the
+#                     run's plan; the run record pins it (`policy` section, this file's sha-256) and the slot's
+#                     est.py reads only that pinned copy; (2) the cards a set carries keep `-` (check C,
+#                     tests/memfn/finder_check.py, requires a set's cards equal to its card table), so a
+#                     set's recompute takes the value from the run record (span_cards.md §2.4, r9fc FIX-8)
 #name	value	reason
 gate_default_e6	30000	POLICY: the noise a cost row may carry and still be priced, a quality choice; UNMEASURED DEFAULT (D149) carried from grid1 (span_cards.md §2.4)
