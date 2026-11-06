@@ -1,0 +1,82 @@
+[emit_sweep] tree=/home/pcrec/projects/pcrec/worktrees/altbuild out=/var/tmp/pcrec-pcrec/scratch/altbuild/es1 cc=gcc jobs=8 comp_timeout=180 comp_jobs=6 streams=c-default,c-vm,emit-ir,emit-ir-auto,stderr,dumps extra=[] arms=None trace=False
+[emit_sweep] archiving 475950986 (tree) into /var/tmp/pcrec-pcrec/scratch/altbuild/es1/src_tree ...
+[emit_sweep] building tree (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] reference=ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec working=tree-rev:475950986 corpus_dir=/var/tmp/pcrec-pcrec/scratch/altbuild/es1/src_tree
+[emit_sweep] corpus: 6314 pattern rows (+0 from patterns files), 437 composition files
+[emit_sweep] === SELF-CHECK: building a second independent copy of ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec ===
+[emit_sweep] === selfcheck: stream 1 (.c default engine) ===
+[emit_sweep] === selfcheck: stream 2 (.c --engine=vm) ===
+[emit_sweep] === selfcheck: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === selfcheck: stream emit-ir-auto (--emit-ir, default engine) <base> ===
+[emit_sweep] === selfcheck: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter ===
+[emit_sweep] === selfcheck: stream emit-ir-auto (--emit-ir, default engine) -fprefilter ===
+[emit_sweep] === selfcheck: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter-collapse ===
+[emit_sweep] === selfcheck: stream stderr (full stderr + rc of streams 1-2) ===
+[emit_sweep] === selfcheck: stream 5 (registry dumps) ===
+[emit_sweep] === REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec vs tree-rev:475950986 ===
+[emit_sweep] === real: stream 1 (.c default engine) ===
+[emit_sweep] === real: stream 2 (.c --engine=vm) ===
+[emit_sweep] === real: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) <base> ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fprefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter-collapse ===
+[emit_sweep] === real: stream stderr (full stderr + rc of streams 1-2) ===
+[emit_sweep] === real: stream 5 (registry dumps) ===
+
+===== SELF-CHECK (ref vs. independent rebuild of the same rev) =====
+-- stream: c-default --
+  population=6314 both_ok(reach)=5771 both_refuse=543 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=6314 both_ok(reach)=5772 both_refuse=542 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=6314 both_ok(reach)=5796 both_refuse=518 movers=0 asymmetric=0
+-- stream: emit-ir-auto --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fno-prefilter] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fprefilter] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fno-prefilter-collapse] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+-- stream: stderr --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+self-check reach: c-default=5771 c-vm=5772 emit-ir-vm=5796 emit-ir-auto=6314 emit-ir-auto[-fno-prefilter]=6314 emit-ir-auto[-fprefilter]=6314 emit-ir-auto[-fno-prefilter-collapse]=6314 stderr=6314 dumps=7 composition producing=0 artifacts=0
+SELF-CHECK PASSED: all-identical, no asymmetry, at full reach.
+
+===== REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec  vs  tree-rev:475950986 =====
+-- stream: c-default --
+  population=6314 both_ok(reach)=5771 both_refuse=543 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=6314 both_ok(reach)=5772 both_refuse=542 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=6314 both_ok(reach)=5796 both_refuse=518 movers=0 asymmetric=0
+-- stream: emit-ir-auto --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=504/504 no-callout=57/57 no-dfa-overflow=1/1 no-linked-call=132/132 no-nullable-collapsed=1/1 no-nullable-exact=165/165 no-variable=45/45 refused=3768/3768 yes=1638/1638 yes-collapsed=3/3
+  tag floors: 9 pinned, all held
+-- stream: emit-ir-auto[-fno-prefilter] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=504/504 no-callout=57/57 no-dfa-overflow=3/3 no-fno-prefilter=1639/1639 no-linked-call=132/132 no-nullable-collapsed=1/1 no-nullable-exact=165/165 no-variable=45/45 refused=3768/3768
+  tag floors: 8 pinned, all held
+-- stream: emit-ir-auto[-fprefilter] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused=4511/4511 yes=1803/1803
+  tag floors: 2 pinned, all held
+-- stream: emit-ir-auto[-fno-prefilter-collapse] --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=504/504 no-callout=57/57 no-dfa-overflow=5/5 no-linked-call=132/132 no-nullable-exact=165/165 no-variable=45/45 refused=3768/3768 yes=1638/1638
+  tag floors: 7 pinned, all held
+-- stream: stderr --
+  population=6314 both_ok(reach)=6314 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused-default=543/543 refused-vm=542/542 stderr-default=6/6
+  tag floors: 3 pinned, all held
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+  DECLARED MOVES (--facts-declared-moves, judged both ways): patterns=2 rows=2
+
+population: argv=6314 composition_files=437 composition_producing=0 composition_artifacts=0
+elapsed: 58.7s
+emit_sweep: DONE rc=0

@@ -1,0 +1,47 @@
+[emit_sweep] tree=/home/pcrec/projects/pcrec/worktrees/altbuild out=/var/tmp/pcrec-pcrec/scratch/altbuild/es2 cc=gcc jobs=8 comp_timeout=180 comp_jobs=6 streams=c-default,c-vm,emit-ir,emit-ir-auto,stderr extra=[] arms=None trace=False
+[emit_sweep] archiving 475950986 (tree) into /var/tmp/pcrec-pcrec/scratch/altbuild/es2/src_tree ...
+[emit_sweep] building tree (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] reference=ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec working=tree-rev:475950986 corpus_dir=/var/tmp/pcrec-pcrec/scratch/altbuild/es2/src_tree
+[emit_sweep] corpus: 0 pattern rows (+389 from patterns files), 0 composition files
+[emit_sweep] === REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec vs tree-rev:475950986 ===
+[emit_sweep] === real: stream 1 (.c default engine) ===
+[emit_sweep] === real: stream 2 (.c --engine=vm) ===
+[emit_sweep] === real: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) <base> ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fprefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter-collapse ===
+[emit_sweep] === real: stream stderr (full stderr + rc of streams 1-2) ===
+
+===== REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec  vs  tree-rev:475950986 =====
+(PARTIAL POPULATION (--no-corpus/--limit/--every): reach, population and DIFFER floors are NOT applied; identity, manifests in the population, asserted zeros and the null arm are)
+-- stream: c-default --
+  population=389 both_ok(reach)=363 both_refuse=26 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=389 both_ok(reach)=363 both_refuse=26 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=389 both_ok(reach)=363 both_refuse=26 movers=0 asymmetric=0
+-- stream: emit-ir-auto --
+  population=389 both_ok(reach)=389 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=12/12 no-callout=12/12 no-linked-call=11/11 no-nullable-collapsed=1/1 no-variable=4/4 refused=290/290 yes=53/53 yes-collapsed=6/6
+  tag floors: 9 pinned, all held (partial population: floors NOT applied, manifests are)
+-- stream: emit-ir-auto[-fno-prefilter] --
+  population=389 both_ok(reach)=389 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=12/12 no-callout=12/12 no-dfa-overflow=5/5 no-fno-prefilter=54/54 no-linked-call=11/11 no-nullable-collapsed=1/1 no-variable=4/4 refused=290/290
+  tag floors: 8 pinned, all held (partial population: floors NOT applied, manifests are)
+-- stream: emit-ir-auto[-fprefilter] --
+  population=389 both_ok(reach)=389 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused=335/335 yes=53/53 yes-collapsed=1/1
+  tag floors: 2 pinned, all held (partial population: floors NOT applied, manifests are)
+-- stream: emit-ir-auto[-fno-prefilter-collapse] --
+  population=389 both_ok(reach)=389 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=12/12 no-callout=12/12 no-dfa-overflow=6/6 no-linked-call=11/11 no-size-cap=1/1 no-variable=4/4 refused=290/290 yes=53/53
+  tag floors: 7 pinned, all held (partial population: floors NOT applied, manifests are)
+-- stream: stderr --
+  population=389 both_ok(reach)=389 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused-default=26/26 refused-vm=26/26 stderr-default=35/35 stderr-vm=7/7
+  tag floors: 3 pinned, all held (partial population: floors NOT applied, manifests are)
+
+population: argv=389 composition_files=0 composition_producing=0 composition_artifacts=0
+elapsed: 58.2s
+emit_sweep: DONE rc=0

@@ -1,0 +1,16 @@
+[emit_sweep] tree=/home/pcrec/projects/pcrec/worktrees/altbuild out=/var/tmp/pcrec-pcrec/scratch/altbuild/es4 cc=gcc jobs=8 comp_timeout=180 comp_jobs=6 streams=composition extra=[] arms=None trace=False
+[emit_sweep] archiving 475950986 (tree) into /var/tmp/pcrec-pcrec/scratch/altbuild/es4/src_tree ...
+[emit_sweep] building tree (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] reference=ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec working=tree-rev:475950986 corpus_dir=/var/tmp/pcrec-pcrec/scratch/altbuild/es4/src_tree
+[emit_sweep] corpus: 6314 pattern rows (+0 from patterns files), 437 composition files
+[emit_sweep] === REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec vs tree-rev:475950986 ===
+[emit_sweep] === real: stream 4 (composition) ===
+
+===== REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/altbuild/base96/build/pcrec  vs  tree-rev:475950986 =====
+-- stream: composition --
+  population=437 both_ok(reach)=38 both_refuse=399 movers=0 asymmetric=0
+DELIVER witness: OK (at least one composition artifact carries the cross-group SET-pair shape; both named fixtures produced).
+
+population: argv=6314 composition_files=437 composition_producing=38 composition_artifacts=88
+elapsed: 26.2s
+emit_sweep: DONE rc=0

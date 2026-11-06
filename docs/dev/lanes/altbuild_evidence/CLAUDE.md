@@ -25,3 +25,12 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
 - `p2_model.py` / `p2_model.out` — stage 2p's gate: `req_pieces` equals an
   independent model's (CaseFolding.txt + UTF-8) on the 37 mixed-width fold
   classes and bench/utf8 (95 agree, 0 differ, 16 unpredicted, 2 refused).
+- `b0_run.sh`, `b0_part{1,2,3c,3f}.log` — Gate B0 for stages 1 + 2p (REF =
+  base `80341284e` with only the abi digit bumped to 96, the advtri/b3build
+  precedent; WORK = `475950986`): part 1 corpus argv streams + dumps (two
+  declared rows), part 2 every bench pattern, part 3 composition and the
+  facts stream at `--facts-encodings byte` (one declared new row). All 0
+  movers. (3f ran against the live stage 1+2p build, ref the plain base.)
+- `altnf_rules_gen.py` — writes `tests/altcls/altnf_rules.rxt` from
+  libpcre2 10.46 (stage 2b's answer witnesses).
+- `p2b_work.py` — stage 2b's work census (sets `PCREC_MAX_ALTNF_WORK`).

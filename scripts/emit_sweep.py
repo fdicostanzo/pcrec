@@ -1530,12 +1530,18 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset(),
     if len(la) != len(lb):
         return problems + ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     for x, y in zip(la, lb):
-        key = (flag, x.split("\t")[0])
+        # a surface that lists one key on several rows (`--list-axes`' row 1 and
+        # row 2 of an axis) names ONE of them as `KEY@SECOND-FIELD` ([RUN-POS-SET]
+        # B0, lane altbuild: `--list-axes:altcls-merge@1`)
+        f = x.split("\t")
+        key = (flag, f[0])
+        if key not in declared and len(f) > 1 and (flag, f[0] + "@" + f[1]) in declared:
+            key = (flag, f[0] + "@" + f[1])
         if key in declared:
             if x == y:
                 problems.append("%s: declared row %s did not move" % key)
             declared[key] = True
-            if y.split("\t")[0] != key[1]:
+            if y.split("\t")[0] != key[1].split("@")[0]:
                 problems.append("%s: declared row %s lost its key" % key)
         elif x != y:
             problems.append("%s: undeclared row moved: %r" % (flag, x[:60]))
@@ -3189,7 +3195,8 @@ def main():
                     help="the dumps stream's DECLARED delta, judged both ways: on "
                          "each named surface (e.g. --list-limits) the row whose "
                          "first field is KEY must differ and every other line must "
-                         "be byte-identical")
+                         "be byte-identical; KEY@F names the one row of a key "
+                         "listed on several whose second field is F")
     ap.add_argument("--dumps-declared-gone", metavar="FLAG:KEY[,...]",
                     help="the dumps stream's DECLARED removals, judged both ways: on "
                          "each named surface (e.g. --list-axes) the row whose first "
