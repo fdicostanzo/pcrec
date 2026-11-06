@@ -1,0 +1,13 @@
+body	form	cells	range differs	pieces differs	trim differs
+(?:(a)|(a))(a{0,2})	nonatomic	2040	0	0	0
+(?:(a)|(a))(a{0,2})	pos	2040	0	0	0
+(a|aa)(?:(b)|(b))	nonatomic	2040	0	4	4
+(a|aa)(?:(b)|(b))	pos	2040	0	0	0
+(a|ab)(?:(b)|(a))	nonatomic	2040	0	0	0
+(a|ab)(?:(b)|(a))	pos	2040	0	0	0
+(?:(a)|(b))(b?)	nonatomic	2040	0	0	0
+(?:(a)|(b))(b?)	pos	2040	0	0	0
+(a{1,2})(?:(a)|(a))	nonatomic	2040	0	12	12
+(a{1,2})(?:(a)|(a))	pos	2040	0	0	0
+(?:(b)|(b))(a|aa)	nonatomic	2040	0	0	0
+(?:(b)|(b))(a|aa)	pos	2040	0	0	0

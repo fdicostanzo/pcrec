@@ -1,0 +1,16 @@
+form	captures	variable pieces	cells	range differs	pieces differs (any group / group 0)	trim differs (any group / group 0)
+neg	capfree	nvar<=1	1778	0	0 / 0	0 / 0
+neg	capfree	nvar>=2	508	0	0 / 0	0 / 0
+neg	caps	nvar<=1	3429	0	0 / 0	0 / 0
+neg	caps	nvar>=2,exposed	2794	0	0 / 0	0 / 0
+neg	caps	nvar>=2,not-exposed	508	0	0 / 0	0 / 0
+nonatomic	capfree	nvar<=1	1778	0	0 / 0	0 / 0
+nonatomic	capfree	nvar>=2	508	0	0 / 0	0 / 0
+nonatomic	caps	nvar<=1	4826	0	0 / 0	0 / 0
+nonatomic	caps	nvar>=2,exposed	4445	0	274 / 136	0 / 0
+nonatomic	caps	nvar>=2,not-exposed	508	0	0 / 0	0 / 0
+pos	capfree	nvar<=1	1778	0	0 / 0	0 / 0
+pos	capfree	nvar>=2	508	0	0 / 0	0 / 0
+pos	caps	nvar<=1	3429	0	0 / 0	0 / 0
+pos	caps	nvar>=2,exposed	2794	0	342 / 0	0 / 0
+pos	caps	nvar>=2,not-exposed	508	0	0 / 0	0 / 0
