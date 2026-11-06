@@ -1750,7 +1750,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
 - [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL), outside the sets
   filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
-  status (2026-11-06): not started; today noise policy has two homes (COVER_Z_E3 in plan_cost.def, gate_e6 in kit-grid.tsv); unify when row 1 writes z (row 1's E2 unification)
+  status (2026-11-06): not started; today noise policy has no single home (gate_e6 in kit-grid.tsv; z not yet a constant anywhere); unify when row 1 writes z (row 1's E2 unification)
   trigger: span_pick row 1
   refs: docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md; [MEASURE-SET]; decisions D176
 - [SCAN-MULTIEXIT] STATE:not-started — scan-edge spans for runs whose rows agree outside the class, not only ONE exit target
