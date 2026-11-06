@@ -27,3 +27,4 @@ Full text and the complete directory list (verbatim): NOTES.md here.
 
 History (not auto-injected): docs/dev/history/claude_md/docs__dev__lanes.md
 - `i1build`/`i1tri*`/`s1300`/`i2design`/`i2build`/`iteropt`/`iteropt2`/`itertri`/`iterdoc`/`iterland` `_report.md` — [FINDALL-NEXT] iterator lanes (I0-I4); one-liners in NOTES.md.
+- `qspeed_report.md` — box-hours measurement (7 days of queue records) and the `boxqueue batch --snapshot` quick win; light-job sharing and the rest written up, not built.
