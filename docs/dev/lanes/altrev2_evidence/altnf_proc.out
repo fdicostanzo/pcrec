@@ -1,0 +1,7 @@
+aaa|aab|aba|bba    -> aa[ab]|[ab]ba          branches 4->2  oracle mismatches 0
+aab|bbb|bab        -> aab|b[ab]b             branches 3->2  oracle mismatches 0
+ab|ab              -> ab                     branches 2->1  oracle mismatches 0
+ab|a|ad            -> ab|a|ad                branches 3->3  oracle mismatches 0
+ab|xy|ad           -> a[bd]|xy               branches 3->2  oracle mismatches 0
+ab|abc|ad          -> a[bd]|abc              branches 3->2  oracle mismatches 0
+aaa|ab|aab         -> aa[ab]|ab              branches 3->2  oracle mismatches 0
