@@ -3273,3 +3273,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - For main: the DEFAULTS conflict. D166 add. 2's latest-set default contradicts R-35's "DEFAULTS unchanged"; the lane recommends a zero-mover flip at S2e. Also memchr-back deferred, and the bundle sampling-noise field deferred.
   - Critic round crit-memfn-span-cards (opus coordinator) launched, blind.
 - 11-06: Frank ruled directly to the kit. First, the SIMD three facts per level (cpu-has, build-compiled from the MEMFN_FORMS stamp, cost only when both hold), applied in span_cards rev 1 after the critic round. Second, a plan item to test cross-arch dev (for main to file). Third, multi-arch builds to be worked out with main. Posted as a responses notice; main told.
+- 11-06: review r4 on span_cards rev 0 RULED NOT READY (568ce6721): rev 1, then a re-check. Lessons went to the critic skill and critics.md.
+  - Main ruled DEFAULTS (B), the flip at S2e (74f453e9a). CONTRACT-5 became K138 (pcrec) and SLOT-7 became [KIT-POLICY-TABLE].
+  - Heads-up, not yet ruled: Frank is reconsidering the SIMD model, from #if fall-through arms to per-target planned variants. Rev 1 keeps the SIMD text model-neutral, and J6 is a separable unit HELD until the SIMD model is ruled.
+  - Lane s2rev1 (opus) on lane/memfn-s2rev1 (s2design + k1102 merged).
