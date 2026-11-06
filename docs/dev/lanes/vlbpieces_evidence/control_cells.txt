@@ -20,3 +20,4 @@
 (?<!a{1,2})a	aaa
 (?<=(a{1,2})(a{1,2}))x	aaax
 (?<=(a{1,2})(a{1,2}))x	aaaax
+(?<=a{1,9})x	bbbbbbbbbax
