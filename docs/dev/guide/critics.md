@@ -199,3 +199,6 @@ Round 2026-11-06 r6, memfn-span-cards re-check 2 (`docs/dev/reviews/2026-11-06-r
 
 Round 2026-11-06 r8, memfn-s2a code (`docs/dev/reviews/2026-11-06-r8-memfn-s2a.md`); lesson ruled 2026-11-06.
 1. **A witness record over a struct is planted field by field**: SEAM-1's noise digest covered the noise but not the value beside it, so a value+1 fill passed every check.
+
+Round 2026-11-06 r9, memfn-s2c code (`docs/dev/reviews/2026-11-06-r9-memfn-s2c.md`); lesson ruled 2026-11-06.
+1. **A harness is reviewed for fidelity**: the answer gate ran the gate entry, not the timed one; a cell-text check read the arm, not the key; the verdict ignored the run record; a dep hashed a different instance from the one timed. Every check was green. New lens row "harness fidelity".
