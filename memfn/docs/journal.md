@@ -3281,3 +3281,7 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06: s2rev1 delivered rev 1 (1cb93fdd4). Its checklist did NOT apply D188 add. 1 (the message reached a running lane, which still wrote "PENDING"), so the no-addenda lesson held again. I applied it myself as a small text edit (b06c7447f): facts per declared target, J6 = S2g HELD until [XARCH-DEV]'s go.
   - Rev 1 highlights: row 1 scalar-only; estimator a literal integer recipe; J1 spurious (b) goes from 50% to 0/20k; z re-derived to 3.0; cells section used; the producer split on §7.1's seam; window 35 min.
   - Re-check round crit-memfn-span-cards-r1 (opus coordinator; fix-induced + readiness) launched.
+- 11-06: re-check r5 on span_cards rev 1 RULED (38f1047f0). NOT READY as a whole: S2a/S2b ready with text fixes; S2c-S2e need rev 1.1 plus a 2-critic re-check (readiness + measurement). No answer or byte finding.
+  - Main fixes: CELLS-1..3, CHECKC (check C over zero grid3 keys), HASH, TWIN (STT_FILE makes the objects-differ check vacuous), PLACE, DRIFT, Z, FLOOR, CENSUS (emit_sweep has no measures kind), GOAL2, TARGET, J1-WIN; S2a's KSGEN/BOUND/MFMEAS; the SIMD interim stated.
+  - Asked main to record DEFAULTS (B) (no record existed) and to rule EMBED (kit: omit cells from the embed) and POLICY.
+  - Rev 1.1 is briefed only after main answers (no addenda to running lanes). Lessons went to the skill and critics.md.
