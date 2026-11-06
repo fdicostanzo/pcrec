@@ -3285,3 +3285,19 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main fixes: CELLS-1..3, CHECKC (check C over zero grid3 keys), HASH, TWIN (STT_FILE makes the objects-differ check vacuous), PLACE, DRIFT, Z, FLOOR, CENSUS (emit_sweep has no measures kind), GOAL2, TARGET, J1-WIN; S2a's KSGEN/BOUND/MFMEAS; the SIMD interim stated.
   - Asked main to record DEFAULTS (B) (no record existed) and to rule EMBED (kit: omit cells from the embed) and POLICY.
   - Rev 1.1 is briefed only after main answers (no addenda to running lanes). Lessons went to the skill and critics.md.
+- 11-06: main ruled at 78e7da573: DEFAULTS (B) recorded as R-35 (c); EMBED omits cells (set.tsv keeps them; the embed is declared cell-less); POLICY accepted (Q3 covers measured costs only; z, the gate default and MATERIAL go to one policy table; HORS_MIN and MAX_SET leave [KIT-POLICY-TABLE]).
+  - Lane s2rev11 (opus) on lane/memfn-s2rev11 (rev 1 + k1102, with one append-only index conflict resolved keeping both lines) writes rev 1.1.
+  - Next: S2a/S2b build lanes once rev 1.1's text for them is in; the 2-critic re-check of S2c-S2e runs in parallel.
+- 11-06: s2rev11 delivered rev 1.1 (e52cd716a). Placement is now noise (a fresh placement per launch, checked by nm); delta rows priced on their paired A/A; FRG dropped; class in the format-2 digest (fact b); embed cell-less (~16 KB); z=3.0 re-drilled; census tool movers.py; check C guard on card rows.
+  - Main to ack the §10 amendments 8-10 (and 11: K138's form = two literals + _Static_assert).
+  - Launched three lanes:
+    - s2a (opus): build S2a, the noise channel + format 2, on lane/memfn-s2a.
+    - s2b (sonnet): build S2b, census0, on lane/memfn-s2b.
+    - crit-memfn-span-cards-r11 (opus coordinator, 2 critics: readiness + measurement) on S2c-S2e.
+  - Sabotage ids: the kit block is S2900-S2949 (max in use anywhere was S1980). S2a gets S2900-2919, S2b S2920-2929, S2c-S2e S2930-2949.
+  - Heavy runs (S2a's make test, S2b's J0) are prepared by the lanes, not queued; the slot is to be agreed with main.
+- 11-06: main ACKed rev 1.1's §10 items 8-11 (K138's fix form rides S2a). Main's standing rule: non-timing heavy runs are queued by the kit without asking; only timing needs a window (memory pcrec-kit-nontiming-runs-no-ask).
+  - S2b DELIVERED on lane/memfn-s2b (base 3094c45c0, code 02619feb1). census0.py replaces smp20.py. Control GREEN: smp20.out byte for byte plus the P-blind line, "@1 {/} at 3381" of 3536, matching span_pick. Sabotage S2920 red then reverted. The provisional census0.out shows 207 row-1-class units, 166 movers.
+  - The lane skipped writing its deliver file, so lanecheck could not pass. The work is accepted on review.
+  - Open for S2c: the verify `cls` vocabulary is the lane's reading (run <=8 or long; set1/2/N); S2c fixes the real boundaries.
+  - J0 queued as 440-kit-s2b-j0 (5,492 compiles, cap 1800); watcher armed. On green, commit census0.out by path.
