@@ -3386,3 +3386,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fixed 10ae71974: two c4_allowlist rows with their reason. C4 is 17/0; the total of 71 stays >= the floor of 26.
   - 472 retried; 473 mech chains after it; watcher armed.
   - S2d FROZEN = the tip that passes the gates (now 10ae71974, unless another fix lands).
+- 11-06 evening: Frank, via main: "Do not hold the box for me tonight". The hold is lifted for tonight only. hold.sh allows gate starts from 2026-11-06 19:00 to 2026-11-07 01:00; the date-bounded clause expires on its own. The S2d timing window is unchanged (07:00). No overnight timing window asked: 07:00 is soon enough.
