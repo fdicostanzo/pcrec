@@ -3380,3 +3380,5 @@ Main ruled on the four kit findings (D186 add. 2):
 - RULED residual FIX-5: 4 `[^x]` sites lower to ONE cmpb, so the class follows the lowering: count them alu1/one-compare. The majority holds either way. OWED: a two-line vcls fix before S2e's set commit.
 - S2c gates 470-474 REQUEUED (watcher armed).
 - Asked main for the S2d 35-min timing window (cleared with Frank; likely tomorrow given the 19:00 guard).
+- 11-06: main relayed Frank's CLEARANCE: the S2d timing window from 2026-11-07 07:00. The kit queues it itself: 480 prep -> quiet-gated screen -> J1-J5 + J2p -> finalize (~35 min). Conditions: quiet-gated; never 20:00-01:00; no other timing alongside; ONLY after S2c gates 470-474 are green; boxqueue not-before; tell main when it ends.
+  - Plan: on 470-474 green, fill s2d window.env (RUN_ID, FROZEN = the gated tip's full sha), dry-run each job, queue with `not-before 2026-11-07T07:00`. The owed vcls residual stays AFTER the window (counts only, no plan change).
