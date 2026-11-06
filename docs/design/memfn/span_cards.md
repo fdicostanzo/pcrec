@@ -118,8 +118,8 @@ Cross-set comparison is only within one `method@ver` (`measure_sets.md` §1.4), 
 not compared with grid1's. `[rev1 SLOT-12]` Rounds: 7, as grid2's §5.4 slot ran (kit-grid@1's cards say 5;
 a new version may differ). `[rev1 MEAS-9, MEAS-10, MEAS-14]` Launches: **7, fixed, with no rerun rule**
 (rev 0: 5, +2 by rev3 C7's cross-launch trigger). grid2's trigger fired in 28 of its 32 F1 reruns, so a
-"+2 when spread exceeds the floor" rule is close to "+2 always"; a fixed 7 gives the spread estimate six
-degrees of freedom after the trim (§3.4), an odd launch count (a true median), and a box time that is a
+"+2 when spread exceeds the floor" rule is close to "+2 always"; a fixed 7 gives the spread estimate about
+five degrees of freedom after the trim (§3.4), an odd launch count (a true median), and a box time that is a
 number, not a range.
 
 ### 2.2 What carries over from kit-grid@1: only the unit's regime
@@ -189,7 +189,7 @@ grammar (§3.4), so a card says how its rows are computed.
 | kit | find_byte | 3 | form | ratio | streamed-fresh pool16Mi miss-only | slope 65536,262144,1048576 | 7 | 7 | twin-per-arm;bimodal-unit | 30000 | - | kit:form.\<form\> (walk, libc; pair, walk-set NEW) |
 | kit | find_hit | 3 | form;landing;split;gap | walkbytes | streamed-fresh pool16Mi landed:periodic\|random | delta base.\<form\> 1048576 per-hit | 7 | 7 | twin-per-arm | 30000 | - | as find_byte |
 | kit | verify_cmp | 3 | form;cls;pass | walkbytes | candidate-array pass:0\|1/2 | delta base.null.\<cls\> 1048576 per-compare | 7 | 7 | twin-per-arm | 30000 | - | kit:form.\<form\> (settest, rc-words, rc-overlap, rc-bytes, rc-memcmp NEW; the census's (form, cls) pairs only) |
-| kit | enter | 3 | kind;entry | walkbytes | artifact die1 g256 | delta \<key\>.fail 1048576 per-candidate | 7 | 7 | twin-per-arm | 30000 | - | `-` (kit side: the pass-minus-fail difference cancels the find form, §2.3); pcrec: OWED (§2.6) |
+| kit | enter | 3 | kind;entry | walkbytes | artifact die1 g256 | delta base.fail.\<kind\>.\<entry\> 1048576 per-candidate | 7 | 7 | twin-per-arm | 30000 | - | `-` (kit side: the pass-minus-fail difference cancels the find form, §2.3); pcrec: OWED (§2.6) |
 
 `walk-set` is the walk over a two-member stop (T-FIND's R7w). If S2c finds its text hashes as canon's
 `walk` (one renderer row, the set test inlined identically), the id is `walk` and the `walk-set` keys fold
@@ -413,7 +413,8 @@ control `abs_l` (its `slope`) in launch l. `v_l = rhafz(abs_l x 10^6, u_l)` (rat
 10^6). A launch-wide shift (frequency, page colouring) moves the arm and the control together and cancels
 in v_l, so it never enters a row's spread, and the unit's own launch noise is inside every ratio. **The unit
 row** (J2's control): `v_l = rhafz(u_l x 10^6, U)` with `U = med(u_l)`; its median launch maps to exactly
-10^6, so `value_e6 = 10^6` holds by construction.
+10^6, so `value_e6 = 10^6` holds by construction; its twin is normalized by the same `U`
+(`v#b_l = rhafz(u#b_l x 10^6, U)`), so step 5's difference compares like with like.
 
 **4. value.** `value_e6 = med(v_l)`. `abs_ns_e6` (provenance) = `med(abs_l)`.
 
