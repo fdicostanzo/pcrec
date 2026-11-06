@@ -273,6 +273,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
   Superseded framing (filed 2026-11-04; Frank 2026-11-05 replaced the byte-set framing with folds-as-alternations): "REQUIRED-RUN POSITIONS AS BYTE SETS: caseless UTF-8 letters stop cutting runs"; filed status: req.c's run carries one byte CUBE per position, so in UTF-8 (?i)k (k|K|E2 84 AA) and (?i)s (with U+017F) cut the run; filed trigger: the survey finds runs cut on real bench cells, or [SEQ-FOLD]'s first child lands.
   Facts kept from the filing: a class that is not one cube, or has a member above 0xFF, is a gap; UTF-8 alternatives keep only their common cube-hull head/tail (rr_alt); single-byte encodings are unaffected for ASCII letters; the k-set path (src/facts/kset.c) already hands the kit full sets. The filed plan (a survey, then a D186 choice change) ran: survey rpsurvey, thought lane altthink, design altdesign.
+- [ANCH-AT] STATE:blocked — one anchored DFA run where the start is known (F-11: 328 _match bodies)
+  filed: 2026-11-06 Frank ("File it scheduled"), after asking why the DFA may drift to other starts when the start is known
+  status (2026-11-06): SCHEDULED: next after lookbehind stage 1 + alternation land, beside A-REV's chain; a D186 CHOICE change on take[CR_ATTEMPT] adding AT (locate_finish §8 Q7's row), measured on the 328 bodies
+  trigger: scheduled (Frank 2026-11-06); starts when the two current builds have landed
+  refs: docs/design/locate_finish.md (FIN3 verify-at, the F-11 cell, §8 Q7); decisions D156 D186
+  The unanchored machine keeps its restart (start unknown); where the start is known (_match, a pinned candidate) the anchored machine fails at the first byte no prefix allows instead of scanning on. Gate: answers identical; instructions:u per moved body vs search-filter; losses listed by name.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
@@ -1703,6 +1709,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/stream/manifesto.md; docs/design/stream/roadmap.md; docs/design/stream/approach.md; docs/dev/reviews/2026-11-01-r3-stream3.md; decisions D182 D185
   THE AGREED END STATE (manifesto.md): every artifact is one program of typed instruction records (VM control, automaton components, kit sites) chosen per point in the pattern; parts with contracts; seams with a run-time hand and a plan-time card carrying facts both ways; crossings deliberate and negotiated through declared seams; "dfa"/"vm" become derived stamps; hubs get owners and declared extension shapes. Frank: "This project is more than simply its stated goal. It's an effort to produce a viable long term project that can grow."
   HOW (roadmap.md, LIVING): incremental, never big bang; byte-identical where possible (one comparator); a RATCHET: the inventory of parallel mechanisms and undeclared crossings (baseline 24 at main 3f777330e) must fall with every step, and a step that adds one without deleting one is rejected. THE RIDE-ALONG RULE: each code AREA is a migration unit; when an optimization, kit request or fix opens an area, its next migration step rides in that change or lands just before it. HELD until measured: the per-stretch planner with new rows, backtracking across seams, the held kinds. NOTHING IS BUILT WITHOUT FRANK'S GO PER STEP.
+  2026-11-06 (lane spandir; manager): forward and reverse spans are ALREADY one mechanism in the table DFA (one scan-edge pass, one emitter, one kit ADVANCE site with `reverse` as a fact). The reverse loop span for `(?<=a{1,254}b)` comes for free on the proof step's reverse machine. A-REV S1 also folds dir_fwd_skip/dir_rev_skip into one renderer (0 bytes). vlookbehind's adopting revision words the pieces study's backward span count as a rendering row of the A-REV record, never a second analysis.
 - [COVER-PRICE-WITNESS] STATE:not-started — cover vs byte-class-bounded: the bench's utf8-lead-no-cont x1.95 as a named pricing witness
   filed: 2026-11-02 manager (from bench O-117, window b149w2)
   status (2026-11-02): filed; nothing built. Bench: `[\xc2-\xdf](?![\x80-\xbf])` x1.95 slower on 19/19 large subjects (0.192 -> 0.375 ns/B), x1.20 short; hex8-bounded x1.5 slower on 60-B subjects (+35 ns) while x0.42 on large.
@@ -1749,9 +1756,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
 - [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL), outside the sets
   filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
-  status (2026-11-06): not started; today noise policy has two homes (COVER_Z_E3 in plan_cost.def, gate_e6 in kit-grid.tsv); unify when row 1 writes z (row 1's E2 unification)
+  status (2026-11-06): not started; today noise policy has no single home (gate_e6 in kit-grid.tsv; z not yet a constant anywhere); unify when row 1 writes z (row 1's E2 unification)
   trigger: span_pick row 1
   refs: docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md; [MEASURE-SET]; decisions D176
+- [SCAN-MULTIEXIT] STATE:not-started — scan-edge spans for runs whose rows agree outside the class, not only ONE exit target
+  filed: 2026-11-06 manager, from lane spandir (U1, SUSPECTED)
+  status (2026-11-06): not started; held [OPTLOOP] candidate. `^[a-z]{2,12}(?:\s|;)` gets 0 edges in every machine because precondition (1) requires one exit target; the emitter's argument seems to need only agreement outside the class. Direction-neutral
+  trigger: a hot bench/corpus cell with a counted run followed by a multi-way continuation; first step a compile-only census on a scratch probe build
+  refs: docs/dev/lanes/spandir_report.md; src/opt/scanedge.c; [OPT-5]; roadmap A-REV
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
