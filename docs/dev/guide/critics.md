@@ -193,3 +193,9 @@ Round 2026-11-06 r5, memfn-span-cards re-check (`docs/dev/reviews/2026-11-06-r5-
 1. **Locate each in-force ruling's record at the freeze**; a ruling with no record is a freeze note (DEFAULTS (B) existed only as a message).
 2. **Two fixes touching one check or directory: recompute the check's population** (CHECKC: each fix held alone, together they left zero keys).
 3. **"Built objects differ" is vacuous across differently named sources** (STT_FILE carries the file name); assert on linked addresses or `.text`.
+
+Round 2026-11-06 r6, memfn-span-cards re-check 2 (`docs/dev/reviews/2026-11-06-r6-memfn-span-cards-recheck2.md`); lesson ruled 2026-11-06.
+1. **Readiness runs the loader over every new data-row shape the design writes, and lists every embed-vs-source check** (READY-1: a measured row naming an arm in `inputs` is refused today; READY-3: a cell-less embed reds three STORE checks).
+
+Round 2026-11-06 r8, memfn-s2a code (`docs/dev/reviews/2026-11-06-r8-memfn-s2a.md`); lesson ruled 2026-11-06.
+1. **A witness record over a struct is planted field by field**: SEAM-1's noise digest covered the noise but not the value beside it, so a value+1 fill passed every check.
