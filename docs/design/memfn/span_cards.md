@@ -989,7 +989,7 @@ span_pick.md:234-238 puts B's sampling noise (block bootstrap, "pcrec STATES it 
 2's MF_SITE_ABI event". **Decision: deferred to its producer.** No producer exists (`pcrec-analyze` writes
 no noise; the bundle format has no field), a blind compile's P is an authored prior with no sample, and
 row 1's witness compiles with data use the scratch `prose` bundle only. A seam field nobody writes and
-nobody reads is built ahead of need (D77). Trigger: [BENCH-WITHDATA]'s held-out bundles (plan.md:1717) or
+nobody reads is built ahead of need (D77). Trigger: [BENCH-WITHDATA]'s held-out bundles or
 row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcrec producer. For main
 (`[rev1.1 XREF]` §10 item 2): it amends span_pick.md:237-238's "stage 2's".
 
