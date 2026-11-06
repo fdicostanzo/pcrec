@@ -151,7 +151,7 @@ offset-0 rule. So `a${v}` with `v` unset is `PCREC_ERR_UNSET_VAR` from
 | a malformed `${...}` | compile | names the rule (the name's first byte, an unknown operator, an unterminated reference) |
 | a name or a nesting depth past its limit | compile | names the limit; see `--list-limits` |
 | a `word` mixing literal text with a nested `${...}` | compile | says so, and says to write the default as one nested reference or as literal text |
-| a `${...}` inside a lookbehind | compile | a lookbehind containing a backreference or a variable is not implemented (`pattern_language.md` §7.4¶5) |
+| a `${...}` inside a lookbehind | compile | a lookbehind containing a backreference, a variable or a consuming callout is not implemented (`pattern_language.md` §7.4¶5) |
 | UNSET value at a bare `${name}`, or at `${name:?}` | run | `PCREC_ERR_UNSET_VAR` |
 | an ill-formed value under a multi-byte encoding | run | `PCREC_ERR_UNSET_VAR` |
 

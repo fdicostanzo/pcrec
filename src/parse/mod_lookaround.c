@@ -410,9 +410,9 @@ static void la_width_refusal(char *buf, size_t n, LbVerdict why, long long bad)
                  LA_LOOKBEHIND_VAR_MAX, bad);
         return;
     case LBW_NOTBUILT:
-        snprintf(buf, n, "a lookbehind containing a backreference or a "
-                         "variable is not implemented (its length is known "
-                         "only when matching)");
+        snprintf(buf, n, "a lookbehind containing a backreference, a "
+                         "variable or a consuming callout is not implemented "
+                         "(its length is known only when matching)");
         return;
     case LBW_OK:
         break;
