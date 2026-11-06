@@ -273,6 +273,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
   Superseded framing (filed 2026-11-04; Frank 2026-11-05 replaced the byte-set framing with folds-as-alternations): "REQUIRED-RUN POSITIONS AS BYTE SETS: caseless UTF-8 letters stop cutting runs"; filed status: req.c's run carries one byte CUBE per position, so in UTF-8 (?i)k (k|K|E2 84 AA) and (?i)s (with U+017F) cut the run; filed trigger: the survey finds runs cut on real bench cells, or [SEQ-FOLD]'s first child lands.
   Facts kept from the filing: a class that is not one cube, or has a member above 0xFF, is a gap; UTF-8 alternatives keep only their common cube-hull head/tail (rr_alt); single-byte encodings are unaffected for ASCII letters; the k-set path (src/facts/kset.c) already hands the kit full sets. The filed plan (a survey, then a D186 choice change) ran: survey rpsurvey, thought lane altthink, design altdesign.
+- [ANCH-AT] STATE:blocked — one anchored DFA run where the start is known (F-11: 328 _match bodies)
+  filed: 2026-11-06 Frank ("File it scheduled"), after asking why the DFA may drift to other starts when the start is known
+  status (2026-11-06): SCHEDULED: next after lookbehind stage 1 + alternation land, beside A-REV's chain; a D186 CHOICE change on take[CR_ATTEMPT] adding AT (locate_finish §8 Q7's row), measured on the 328 bodies
+  trigger: scheduled (Frank 2026-11-06); starts when the two current builds have landed
+  refs: docs/design/locate_finish.md (FIN3 verify-at, the F-11 cell, §8 Q7); decisions D156 D186
+  The unanchored machine keeps its restart (start unknown); where the start is known (_match, a pinned candidate) the anchored machine fails at the first byte no prefix allows instead of scanning on. Gate: answers identical; instructions:u per moved body vs search-filter; losses listed by name.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
