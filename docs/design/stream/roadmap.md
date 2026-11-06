@@ -306,6 +306,19 @@ round; L = a proof-sized lane with several rounds.
   mechanism.
 - **Ride-along triggers.** [SEL-COST]; [STAMP-REVIEW]; [IFACE-PUSH]; [RXINFO-REMODEL]; [ENG-PGO].
 - **Open findings.** r3-C6; fixed in text: r1-C7, r2-B2.
+- **Open question, for consideration (owner, 2026-11-05; not ruled).** A sharper frame for this
+  area: every artifact IS the general matcher (the VM), and a DFA stretch is an OPTIMIZATION
+  section the planner substitutes where sound and cheaper; an artifact where the DFA does all
+  the work is the extreme case. The question then is not "which engine" but "which
+  optimization": engine selection becomes ordinary admission rows (D186 shape), and the plain VM
+  with every optimization denied is the one reference matcher every section is checked against.
+  First worked example: variable lookbehind's reverse-DFA candidate source inside a VM body
+  (docs/design/vlookbehind.md; A-REV). Conditions any adoption must keep: (a) the degenerate
+  all-DFA case emits today's DFA artifact byte for byte (no VM scaffolding, frames or budget);
+  (b) pure-DFA guarantees (linear time, no stack, no budget error) stay caller-visible as DERIVED
+  properties of the plan, stamped and in docs/spec/. Adopting it would amend the manifesto's
+  "derived stamps" paragraph and APPROACH.md's "two engines, one IR" (an owner decision entry);
+  until then it is a lens for steps in this area and A-REV, not a rule.
 - **Size.** — (spread over the other areas).
 
 ### A-FACTS: the superset record, the start pin and the report shift
