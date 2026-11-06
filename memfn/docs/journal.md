@@ -3278,3 +3278,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - Heads-up, not yet ruled: Frank is reconsidering the SIMD model, from #if fall-through arms to per-target planned variants. Rev 1 keeps the SIMD text model-neutral, and J6 is a separable unit HELD until the SIMD model is ruled.
   - Lane s2rev1 (opus) on lane/memfn-s2rev1 (s2design + k1102 merged).
 - 11-06: Frank RULED the SIMD end state (D188 add. 1, via main): per-target variants, no #if arms, an explicit target list with a stamped default, building waits for [XARCH-DEV]'s go. Sent to s2rev1 as a ruling; the deliverable's checklist must confirm it (no-addenda rule: verify on delivery).
+- 11-06: s2rev1 delivered rev 1 (1cb93fdd4). Its checklist did NOT apply D188 add. 1 (the message reached a running lane, which still wrote "PENDING"), so the no-addenda lesson held again. I applied it myself as a small text edit (b06c7447f): facts per declared target, J6 = S2g HELD until [XARCH-DEV]'s go.
+  - Rev 1 highlights: row 1 scalar-only; estimator a literal integer recipe; J1 spurious (b) goes from 50% to 0/20k; z re-derived to 3.0; cells section used; the producer split on §7.1's seam; window 35 min.
+  - Re-check round crit-memfn-span-cards-r1 (opus coordinator; fix-induced + readiness) launched.
