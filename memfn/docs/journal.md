@@ -3328,3 +3328,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - lanecheck rc=1 only because my deliver file's `owed:` held prose; it must hold queue keys or "none" (my error, again in the deliver step).
   - GATES 460-468 QUEUED (mech now 72 rows). New guard scratch/memfn/s2a/jobs/hold.sh: no gate starts 19:00-01:00 (Frank's hold, plus ~1 h of run). Watcher armed.
   - S2c started: lane s2c (opus) on lane/memfn-s2c = rev 1.2 + S2b + S2a@4b0686f19 (one index conflict resolved keeping both lines). Rev 1.3 text first, then the producer; sabotage S2930-S2949; dry runs only; the S2d window jobs are prepared, not queued.
+- 11-06 12:30: gate 461 (S2a kit sections) RED in test-registry: limits_check 3a refused S2a's new `KS_MEAS_MAX` define (5c8722ea1). That is the set format's field bound, on neither allowlist. Triage tri461 found it; the review round and s2afix both missed it (no lane ran test-registry).
+  - Fixed d9afba62b: KS_MEAS_MAX joins NONLIMIT_ALLOWLIST with its reason (format grammar, not a policy). limits_check passes alone.
+  - 461 retried; 462-468 chain behind it; watcher re-armed. Strict 460 was green.
+  - Lesson for S2c's validation: run test-registry when a unit adds a #define.
