@@ -213,3 +213,13 @@ and J9. J1 and J5 needed prep in that RUNDIR first, which the refusal names.
 | no emitted pcrec byte moves | yes, emit_sweep spot 0 movers |
 | gate jobs (strict, sections, test, mech) + S2d J1-J5 + J2p | prepared, not queued |
 | CLAUDE.md for every added file | yes, slot/CLAUDE.md, span_cards/CLAUDE.md, memfn and tests/memfn CLAUDE.md |
+
+## STATE AT HANDOFF
+
+Delivered; owed: none from the lane. Main owes:
+- Queue gate jobs 470-474 (in order, behind hold.sh).
+- Rule on deviation 1 (placement phases vs object alignment) and deviation 2 (walk-set folded).
+- Fill `jobs/s2d/common.sh`'s RUN_ID and FROZEN when the window is cleared with Frank.
+- Run the placement screen quiet before J1.
+
+Last rev entry applied: rev 1.3 (§R1.3, READY-1..9).
