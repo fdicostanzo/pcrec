@@ -18,10 +18,11 @@ Why retire it:
    header). It never compares matches. So the second half of the rule was always satisfied by every module with
    a registry row, built or not (even unbuilt `comments`/`misc` pass it). The real comparison is each module's own
    libpcre2 differential script, which the rule did not name.
-2. **The panel half is already met for the modules the families contain, by the landing process.** Eleven of the
-   fourteen built modules landed through a D6 design panel; the three that did not (quoting, named-groups, and
-   to a degree ucp's code side) are the same two weak spots featfam found, and a per-module rule would not have
-   caught them either: they were already default-OFF-eligible by the rule's text on the day nobody checked.
+2. **The panel half is already met by the landing process for most modules.** Ten of the thirteen built modules
+   in section 2 have a D6 panel (design, close, or both); the exceptions are quoting and named-groups (named only
+   inside broader panels) and callouts (family-excluded). Those are the same two weak spots featfam found, and a
+   per-module rule only fires when someone proposes a default move, so it did not catch them: the checklist, run
+   at the cut over the whole set, will.
 3. **The rule's real purpose was a protection for strangers' default**, and the thing that protects them now is the
    frozen member (a promise per VERSION, not per module) plus a check made once at the cut. A per-module panel
    that says "ok" in 2026-08 tells you little about the whole set in 2026-12 (interactions, wording, the bench list).
