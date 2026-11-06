@@ -182,7 +182,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
 - [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
-  status (2026-10-23): M0 on main (measures row, measure_store/ zen4-grid1@1, --measures + config, stamp, --list-measurements); Frank ruled the stop-ranking study Q1 + Q3 (RULED lines below)
+  status (2026-11-06): span_pick stage 1 COMPLETE at the 1e merge, stages 2-3 await Frank's GO; M0 on main (measures row, measure_store/ zen4-grid1@1, --measures + config, stamp, --list-measurements); Frank ruled the stop-ranking study Q1 + Q3 (RULED lines below)
   next: span_pick stage 2 measures the zen4 span cards (memchr, memchr-back, two-stream pair, walk, verify, enter; scalar and SIMD forms; Horspool-probe later, so D-hors incumbents stay unpriced until then) as a FRESH set id `zen4-grid3`, after span_pick stage 1; then M1
   refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
   RULED M2 order (manager, 2026-11-03, span_pick rev 3.1; answer-free): M2 is NOT ordered against span_pick's row 1. At M2 the idk default becomes an ISA envelope with no per-byte cost rows, so priced rows go DARK on bare compiles (picks fall back to the rules; stamps move). INTENDED ("an unknown target prices nothing"); M2's own census owns those stamp moves; named-set compiles keep their priced picks.
@@ -774,6 +774,26 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-05): filed; 1d left A-model reading each walked span's own set, because reading the merged candidates moves G2-visible decisions
   trigger: a ruled change (it moves picks, so it needs its census)
   refs: docs/dev/lanes/sp1d_report.md (Design deviation 1); docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md
+- [SP1E-RENDERER-TABLE] STATE:not-started — span_pick: one renderer table keyed by (frame, pick, layer), the asker fact derived from it
+  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F5+F6+F9)
+  status (2026-11-06): filed; 1e declared the renderer rows (fd_renderers, 14 pairs) but the asker fact SF_ASKER_PAIR is still a separate declaration
+  trigger: span_pick unit 3.0
+  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F5, F6, F9); docs/dev/lanes/sp1e_report.md
+- [SP1E-HORS-FLOOR] STATE:not-started — span_pick: measure the D-hors floor
+  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F10)
+  status (2026-11-06): filed; D-hors is the first FIND row and its floor is unmeasured
+  trigger: name the measurement when the D-hors floor first decides a pick that matters (stage 2 cards)
+  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F10)
+- [SP1E-ANCHOR-G2WIN] STATE:not-started — kit: the anchor check covers run_g2_win.sh
+  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F11)
+  status (2026-11-06): filed; nothing built
+  trigger: the next change to a G2 window anchor, or the next mech round
+  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F11)
+- [SP1E-RENDERER-WITNESS] STATE:not-started — span_pick: witness patterns for the 3 unreached renderer pairs
+  filed: 2026-11-06 land1106 (kit done line, known gap; not routed elsewhere)
+  status (2026-11-06): filed; D1c/B-memchr, D1w/B-walk and D1w/pf_walk_bounded have no witness pattern; rows_check lists them UNREACHED
+  trigger: a pattern class that reaches one of them, or the renderer table (SP1E-RENDERER-TABLE) landing
+  refs: memfn/docs/responses.md (2026-11-06 span_pick stage 1 unit 1e done line); docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md; tests/memfn/renderer_rows.tsv
 - [KIT-PAYLOAD-VERSION] STATE:not-started — kit: payload versions (mf_akind.version, mf_analysis.list_v) are never checked
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
   status (2026-11-03): filed; nothing built.
