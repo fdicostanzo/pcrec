@@ -20,7 +20,19 @@ SAB_DESC="vm_isl_words' A_WCLASS arm is replaced by a default: return false, so 
 SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip: wclass:3fail/7pass DETECTED -- [5a] (no A_WCLASS label), [5c] (a default:) and [W3] (RX_VM_ALT_ISLANDS gone on café|naïve|résumé)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case A_WCLASS:
-        return vm_isl_words(v, a->l, out, depth, budget);'
+SAB_BEFORE='    case A_WCLASS: {
+        int n, nb;
+        const PcrecCpRange *iv = pcrec_wcls_set(v->cx, a, &n);
+        Ast **box = pcrec_lower_boxes(v->cx, iv, n, &nb);
+        if (nb == 0 || nb > VM_ISL_MAX_WORDS) return false;
+        Ast *split = box[0];
+        for (int i = 1; i < nb; i++) {
+            Ast *alt = pcrec_ast_node(v->cx, A_ALT);
+            alt->l = split;
+            alt->r = box[i];
+            split = alt;
+        }
+        return vm_isl_words(v, split, out, depth, budget);
+    }'
 SAB_AFTER='    default:
         return false;'

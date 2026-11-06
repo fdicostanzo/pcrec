@@ -119,12 +119,20 @@ static void anf_describe(Ctx *cx, AnfBr *b, Ast *a)
     b->merge = true;
 }
 
+/* Is position `i` part of the grouping key that excludes position `p`? The
+ * one statement of "equal everywhere but `p`", read by the hash and the
+ * equality test alike. */
+static bool anf_in_key(int i, int p)
+{
+    return i != p;
+}
+
 /* The all-but-`p` key hash of mergeable branch `b` (`p` = -1: every position). */
 static unsigned anf_key(const AnfBr *b, int p)
 {
     unsigned h = (unsigned)b->w * 0x9e3779b9u;
     for (int i = 0; i < b->w; i++)
-        if (i != p) h = (h ^ b->ph[i]) * 0x01000193u + (unsigned)i;
+        if (anf_in_key(i, p)) h = (h ^ b->ph[i]) * 0x01000193u + (unsigned)i;
     return h;
 }
 
@@ -134,7 +142,7 @@ static bool anf_key_eq(const AnfBr *a, const AnfBr *b, int p)
 {
     if (a->w != b->w) return false;
     for (int i = 0; i < a->w; i++)
-        if (i != p && !anf_cls_eq(a->pos[i], b->pos[i])) return false;
+        if (anf_in_key(i, p) && !anf_cls_eq(a->pos[i], b->pos[i])) return false;
     return true;
 }
 

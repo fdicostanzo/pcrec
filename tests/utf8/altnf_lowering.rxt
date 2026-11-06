@@ -1,0 +1,118 @@
+# [RUN-POS-SET] STAGE 1 -- THE UTF-8 LOWERING'S BOX MERGE (lane altbuild).
+#
+# Since stage 1 the UTF-8 lowering hands a wide class's byte-range boxes to
+# the alternation owner (src/opt/altnf.c, rule M: two boxes of one width equal
+# at every position but one become one box with the union there), and the
+# VM island reads a wide class as its code-point SET
+# (docs/design/alt_normal_form.md §5 stage 1). Each block below is a cell a
+# wrong merge or a wrong set reading answers differently:
+#
+#   1. `(?i)β` (boxes `ce 92`, `ce b2`, `cf 90` -> `ce [92 b2]|cf 90`): a merge
+#      that joins boxes differing in TWO positions gives `[ce cf][92 b2 90]`
+#      and matches `ΐ` (`ce 90`), `ϒ` (`cf 92`) and `ϲ` (`cf b2`). Row S1880.
+#   2. `(?i)k` (boxes `4b`, `6b`, `e2 84 aa`): a merge that aligns boxes of
+#      unequal width truncates the Kelvin sign to `e2` and reports (0,1) on
+#      it. Row S1881.
+#   3. `x(?:1[éà]|q2|r3)y` on the VM (kit on or denied alike): the island's
+#      words for the class come from its set (`c3 a0`, `c3 a9`); a set
+#      reading that keeps only the lowest member loses `x1éy`. Row S1882.
+#   4. K123: `(?<=[a\x{3b1}])x` keeps compiling and matching with the
+#      `A_CAT(A_EMPTY, alt)` seal gone (the `A_WCLASS` wrapper is what a
+#      lookbehind's first-branch slot needs).
+#   5. Merged classes over a whole run, both engines: `(?i)abcdÀefgh`,
+#      `(?i)Ελληνικά`, `\p{Nd}+`.
+#
+# ORACLE: libpcre2 10.46 under PCRE2_UTF|PCRE2_UCP|PCRE2_MATCH_INVALID_UTF,
+# every cell read from it before it was written (lane altbuild's probe,
+# docs/dev/lanes/altbuild_report.md). `# pcre2-only` throughout: the
+# verify_rxt.py subject decoder is byte-oriented (U14), this directory's
+# standing exclusion.
+
+# 1. (?i)beta: three boxes, two merge
+# pcre2-only
+pattern (?i)β
+encoding utf8
+m "\xce\x92" 0 2
+m "\xce\xb2" 0 2
+m "\xcf\x90" 0 2
+n "\xce\x90"
+n "\xcf\x92"
+n "\xcf\xb2"
+
+# 1b. the same class on the VM (`make test-axes` runs it with the kit denied)
+# pcre2-only
+pattern (?i)β
+encoding utf8
+engine vm
+m "\xce\x92" 0 2
+m "\xcf\x90" 0 2
+n "\xce\x90"
+n "\xcf\xb2"
+
+# 2. (?i)k: boxes of three widths never align
+# pcre2-only
+pattern (?i)k
+encoding utf8
+m "K" 0 1
+m "k" 0 1
+m "\xe2\x84\xaa" 0 3
+n "\xe2\x84"
+
+# 2b. the same on the VM
+# pcre2-only
+pattern (?i)k
+encoding utf8
+engine vm
+m "\xe2\x84\xaa" 0 3
+n "\xe2\x84"
+
+# 3. the island reads the class's set (class in a right slot)
+# pcre2-only
+pattern x(?:1[éà]|q2|r3)y
+encoding utf8
+engine vm
+m "x1\xc3\xa9y" 0 5
+m "x1\xc3\xa0y" 0 5
+m "xr3y" 0 4
+n "x1\xc3\xa8y"
+
+# 4. K123: the lookbehind's first-branch slot without the seal
+# pcre2-only
+pattern (?<=[a\x{3b1}])x
+encoding utf8
+features all
+m "\xce\xb1x" 2 3
+m "ax" 1 2
+n "bx"
+
+# 4b. the same on the VM
+# pcre2-only
+pattern (?<=[a\x{3b1}])x
+encoding utf8
+features all
+engine vm
+m "\xce\xb1x" 2 3
+n "\xce\xb2x"
+
+# 5. a merged class inside a whole run
+# pcre2-only
+pattern (?i)abcdÀefgh
+encoding utf8
+m "ABCD\xc3\xa0efgh" 0 10
+m "abcd\xc3\x80EFGH" 0 10
+n "abcd\xc3\xa1efgh"
+
+# pcre2-only
+pattern (?i)Ελληνικά
+encoding utf8
+m "\xce\xb5\xce\xbb\xce\xbb\xce\xb7\xce\xbd\xce\xb9\xce\xba\xce\xac" 0 16
+m "\xce\x95\xce\x9b\xce\x9b\xce\x97\xce\x9d\xce\x99\xce\x9a\xce\x86" 0 16
+n "\xce\xb5\xce\xbb\xce\xbb\xce\xb7\xce\xbd\xce\xb9\xce\xba\xce\xb1"
+
+# pcre2-only
+pattern \p{Nd}+
+encoding utf8
+features all
+engine vm
+m "x\xd9\xa3\xdf\x80\xef\xbc\x99y" 1 8
+n "xy"

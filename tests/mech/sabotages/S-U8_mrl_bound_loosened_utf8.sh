@@ -36,14 +36,12 @@ SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(a)(?:\x{3b1}){0,3}x" | grep -
 SAB_REACH_EXPECT='RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)'
 SAB_REACH_POP='tests/codegen/run_encoding_checks.sh|RX_PRUNE_CLAMP_SPAN|1'
 SAB_COUNT=1
-SAB_BEFORE='            if (bl.n > 1) {
-                Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
-                seal->l = pcrec_ast_node(lc->cx, A_EMPTY);
-                seal->r = res;
-                res = seal;
+SAB_BEFORE='                res = alt;
             }
             return wclass_of(lc, a, res);'
-SAB_AFTER='            {   /* SABOTAGE S-U8: a matches-nothing branch — language
+SAB_AFTER='                res = alt;
+            }
+            {   /* SABOTAGE S-U8: a matches-nothing branch — language
                  * identical, minw of the alternation loosened to 1 */
                 Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
                 Ast *dead = pcrec_ast_node(lc->cx, A_CLASS);
@@ -51,11 +49,5 @@ SAB_AFTER='            {   /* SABOTAGE S-U8: a matches-nothing branch — langua
                 pcrec_cpset_init(&ds, &lc->cx->arena);
                 pcrec_cpset_publish(&ds, dead);
                 alt->l = res; alt->r = dead; res = alt;
-            }
-            {
-                Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
-                seal->l = pcrec_ast_node(lc->cx, A_EMPTY);
-                seal->r = res;
-                res = seal;
             }
             return wclass_of(lc, a, res);'

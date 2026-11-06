@@ -46,9 +46,9 @@ SAB_REACH_EXPECT="REACH-UTF8-LOWERING-REWRITES"
 SAB_REACH_POP="tests/codegen/run_facts_checks.sh|^    'E1W[[:space:]]utf8[[:space:]].*[[:space:]]no'|4"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                res = seal;
+SAB_BEFORE='                res = alt;
             }
             return wclass_of(lc, a, res);'
-SAB_AFTER='                res = seal;
+SAB_AFTER='                res = alt;
             }
             return pcrec_ast_node(lc->cx, A_EMPTY);   /* SABOTAGE S303: a non-empty class lowers to A_EMPTY */'
