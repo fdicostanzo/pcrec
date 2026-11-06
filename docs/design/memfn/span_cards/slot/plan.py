@@ -176,18 +176,58 @@ def enter_fixtures():
     return fx
 
 
+# THE KEY'S DIMS ([rev1.3 r9fc-FIX-2], r9 G2's general form): each card dim -> the Arm field its key token
+# names, ONE table. A row key `kit.<quantity>.<t1>...` has exactly its card's `dims` (key_dims); link.py's render
+# reads every token through this table and REFUSES an Arm whose field disagrees (KEY-ARM MISMATCH), so the
+# subject an arm is planted and timed with is the one its key prices. A card dim with no line here refuses.
+DIM_FIELD = (
+    ("form",    lambda a: a.form),
+    ("landing", lambda a: a.landing),
+    ("split",   lambda a: a.split),
+    ("gap",     lambda a: None if a.gap is None else str(a.gap)),
+    ("cls",     lambda a: a.cls),
+    ("pass",    lambda a: a.pas),
+    ("kind",    lambda a: a.fixture[0] if a.fixture else None),
+    ("entry",   lambda a: a.fixture[1] if a.fixture else None),
+)
+
+
+def key_dims(name):
+    """{dim: token} of a row key (KEY#b: its arm's) read by its card's `dims`; None for a name that is no row
+    key (a base, ctl, a J1 arm). A quantity with no card, or a token count other than its dims', refuses"""
+    n = name[:-2] if name.endswith("#b") else name
+    q = n.split(".")
+    if q[0] != "kit":
+        return None
+    if q[1] not in CARD:
+        raise SystemExit("plan: key %s names quantity %s, which has no ver-%s card" % (name, q[1], METHOD_VER))
+    dims = CARD[q[1]]["dims"].split(";")
+    if len(q) - 2 != len(dims):
+        raise SystemExit("plan: key %s has %d tokens, its card's dims %s are %d" % (name, len(q) - 2, dims, len(dims)))
+    return dict(zip(dims, q[2:]))
+
+
+def key_arm_mismatch(a):
+    """[(dim, key token, Arm field)] where the Arm's field is not the token its key names (empty: they agree)"""
+    kd = key_dims(a.name) or {}
+    field = dict(DIM_FIELD)
+    for dim in kd:
+        if dim not in field:
+            raise SystemExit("plan: card dim %s (key %s) has no DIM_FIELD line" % (dim, a.name))
+    return [(dim, tok, field[dim](a)) for dim, tok in kd.items() if field[dim](a) != tok]
+
+
 def key_form(name):
     """the (form, cls) whose site text an arm NAMED `name` times, read off the name's tokens alone (review r9
-    G2: the cell-text check compares against the KEY, never the Arm's own fields); None for an arm with no form
-    text (the null base, whole artifacts)"""
+    G2: the cell-text check compares against the KEY, never the Arm's own fields; a row key through its card's
+    dims, r9fc FIX-2); None for an arm with no form text (the null base, whole artifacts)"""
     n = name[:-2] if name.endswith("#b") else name
     q = n.split(".")
     if n == "ctl":
         return ("walk", None)
-    if q[0] == "kit" and q[1] in ("find_byte", "find_hit"):
-        return (q[2], None)
-    if q[0] == "kit" and q[1] == "verify_cmp":
-        return (q[2], q[3])
+    kd = key_dims(n)
+    if kd is not None:
+        return (kd["form"], kd.get("cls")) if "form" in kd else None
     if q[0] == "base" and len(q) == 2:
         return (q[1], None)
     return None

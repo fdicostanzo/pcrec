@@ -5,7 +5,7 @@
 # expects the named refusal (precedent: docs/design/r17b_prime/b3a/sabotage/run_skb3a.sh). A control run of
 # the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected
 # text) or MISSED; exit 0 iff the control is green and every row is DETECTED.
-#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 (default all)
+#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
 #   (j2) a twin linked at its arm's phase (its pad sized to land it there): the per-launch constraint
@@ -17,22 +17,32 @@
 #   (l2) the find wrapper returns each hit one byte late (count kept): the POSITION sum and FNV-1a-64 gate
 #        (the wrapper is every find arm's and the control's, so the miss is matched by its shape: found =
 #        timed = planted, sum differs; the control's sentinel misses first since r9)
-#   (l3) S2934 [r9 G1] the TIMED loop alone scans half the subject (the gate loop untouched): the answer gate
-#        runs `_time` over every subject and its sentinel (a hit at the last byte), so even the miss-only
-#        find_byte arms miss
+#   (l3) S2934 [r9 G1] the TIMED loop alone scans half the subject (the gate loop untouched), in the ARMS' TUs
+#        only ([rev1.3 r9fc-FIX-4]: the control is built from the unplanted text and gates green, so the refusal
+#        is a LAUNCH gate's): the answer gate runs `_time` over every subject and its sentinel (a hit at the last
+#        byte), so even the miss-only find_byte arms miss
 #   (g2) S2935 [r9 G2] plan.py builds the libc row's Arm with walk's form: the KEY names libc, the render
 #        refuses KEY-ARM MISMATCH (before r9 the cell-text check compared the Arm's form and stayed green)
 #   (g3) S2936 [r9 G3] est.py's never-ran cross-check removed: est.py's self-test (a leftover cells file of a
 #        job the record says never ran) goes red; this row runs the self-test, not a dry run
-# `want` is an extended regex (grep -E). Ids S2934-S2936 are the kit's (span_cards §R1.3 r9 rows); they are
-# slot-local rows, not tests/mech rows (no make suite runs their detectors).
+#   (f1) S2937 [r9fc FIX-1] est.py takes a cost row's gate from the LIVE cards (plan.CARD) instead of the run
+#        record's pinned rows: est.py's self-test case "live card/policy edit after the run" (equal record and
+#        cells, the live gate moved) moves the outcome; the self-test, not a dry run
+#   (f2) S2938 [r9fc FIX-2] plan.py builds J3's periodic find_hit Arms with landing `random` (form and class
+#        kept, so r9 G2's check alone stays green): the render's per-dim check refuses KEY-ARM MISMATCH on dim
+#        landing
+#   (f6) S2939 [r9fc FIX-6] the driver's call loop runs half its calls for a compare arm (the gate untouched):
+#        the dry run's ROUND CHECK (`drv check`) refuses ROUND MISS on a p50 verify arm (its subjects' planted
+#        counts differ, so ACC is short; a p0 arm plants 0 and cannot see it)
+# `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows); they
+# are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=$(cd "$here/../../../../.." && pwd)
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -53,13 +63,15 @@ open(p, "w").write(t.replace(a, b))
 PY
 }
 
-dry() {    # NAME JOB: the job's dry run in the copy (a fresh RUNDIR), its rc and output; JOB `est` runs est.py's
+dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR run.NAME), its rc and output NAME.out
+           # (NAME defaults to COPY; the control's two runs keep their own, r9fc FIX-4); JOB `est` runs est.py's
            # self-test instead
-    rm -rf "$SCR/run.$1"
+    local n=${3:-$1}
+    rm -rf "$SCR/run.$n"
     if [ "$2" = est ]; then
-        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$1" > "$SCR/$1.out" 2>&1
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     else
-        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/run.py" dry "$2" "$SCR/run.$1" s2c-dry > "$SCR/$1.out" 2>&1
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/run.py" dry "$2" "$SCR/run.$n" s2c-dry > "$SCR/$n.out" 2>&1
     fi
 }
 
@@ -70,9 +82,9 @@ if [ $? -ne 0 ]; then
     echo "sabotage: CONTROL red (the unplanted copy's J2 dry run):"; tail -5 "$SCR/control.out"; exit 2
 fi
 echo "control   J2 dry run green"
-dry control est
+dry control est control.est
 if [ $? -ne 0 ]; then
-    echo "sabotage: CONTROL red (the unplanted copy's est.py self-test):"; tail -5 "$SCR/control.out"; exit 2
+    echo "sabotage: CONTROL red (the unplanted copy's est.py self-test):"; tail -5 "$SCR/control.est.out"; exit 2
 fi
 echo "control   est.py self-test green"
 
@@ -98,9 +110,12 @@ for row in $ROWS; do
         patch "$SCR/$row/link.py" '    *io = pos;
     return pos < n;' '    *io = pos < n ? pos + 1 : pos;
     return pos < n;' ;;
-    l3) job=J2 want='GATE MISS (ctl|kit\.find_byte\.walk) len [0-9]+ subject [0-9]+ SENTINEL: found 1 sum [0-9]+ fnv [0-9a-f]+ timed 0, planted 1 '
-        patch "$SCR/$row/link.py" '    for (size_t p = 0; p < n && step(s, n, &p); p++) k++;' \
-'    for (size_t p = 0; p < n / 2 && step(s, n / 2, &p); p++) k++;   /* SABOTAGE S2934 */' ;;
+    l3) job=J2 want='GATE MISS kit\.find_byte\.walk len [0-9]+ subject [0-9]+ SENTINEL: found 1 sum [0-9]+ fnv [0-9a-f]+ timed 0, planted 1 '
+        # the ARMS' TUs only: ctl (job "ctl") compiles the unplanted text and gates green first, so the miss is
+        # a launch executable's (the control's gate line precedes it in the output)
+        patch "$SCR/$row/link.py" '        o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)' \
+'        o = compile_tu(src if job == "ctl" else src.replace("for (size_t p = 0; p < n && step(s, n, &p); p++) k++;",
+                       "for (size_t p = 0; p < n / 2 && step(s, n / 2, &p); p++) k++;"), os.path.join(d, "arm%d.c" % k), sym)   # SABOTAGE S2934' ;;
     g2) job=J2 want='KEY-ARM MISMATCH kit\.find_byte\.libc'
         patch "$SCR/$row/plan.py" 'row("J2", Arm("kit.find_byte.libc", "J2.byte", "find", "libc", lengths=LENGTHS))' \
 'row("J2", Arm("kit.find_byte.libc", "J2.byte", "find", "walk", lengths=LENGTHS))   # SABOTAGE S2935' ;;
@@ -108,6 +123,15 @@ for row in $ROWS; do
         patch "$SCR/$row/est.py" '        if j not in ran:
             raise InputError("%s holds cells of job %s' '        if False:   # SABOTAGE S2936
             raise InputError("%s holds cells of job %s' ;;
+    f1) job=est want='selftest	live card/policy edit after the run	WRONG'
+        patch "$SCR/$row/est.py" '            G = card[key.split(".")[1]]["gate"]' \
+'            G = plan.CARD[key.split(".")[1]]["gate"]   # SABOTAGE S2937' ;;
+    f2) job=J3 want='KEY-ARM MISMATCH kit\.find_hit\.(libc|walk)\.periodic\.one\.[0-9]+: dim landing: the key names periodic, the Arm random'
+        patch "$SCR/$row/plan.py" '                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing=ld, split=sp, gap=g,' \
+'                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing="random", split=sp, gap=g,   # SABOTAGE S2938' ;;
+    f6) job=J4 want='ROUND MISS kit\.verify_cmp\.[a-z0-9-]+\.[a-z0-9]+\.p50(#b)? len [0-9]+: [0-9]+ calls, ACC [0-9]+, planted [0-9]+'
+        patch "$SCR/$row/drv.c" '    for (uint64_t k = 0; k < n; k++) {' \
+'    for (uint64_t k = 0; k < (a->kind == K_CMP ? n / 2 : n); k++) {   /* SABOTAGE S2939 */' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }

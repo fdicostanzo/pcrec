@@ -19,7 +19,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   two compares); the header stamps the sweep's sha-256 and commit.
 - `slot.h`, `gen.c`, `drv.c` — the arm table, the seeded subject generator (hits, candidates, the gate's
   expected count/position sum/FNV-1a-64, the sentinel subject) and the driver (`gate`: `_gate` and `_time` on
-  every subject and sentinel, the population line; `addr`; `round R NFILE`). `-DCAND_STRIDE`/`-DPOOL_BYTES`
+  every subject and sentinel, the population line; `addr`; `round R NFILE`, its ACC checked against the planted
+  counts; `check`: the round's loop over every subject once, the dry run's, r9fc FIX-6). `-DCAND_STRIDE`/`-DPOOL_BYTES`
   come from plan.py.
 - `link.py` — renders each arm's TU from `arm_fixtures --site-parts` for the (form, cls) its KEY names
   (KEY-ARM MISMATCH otherwise), the cell-text check against that instance's hash, `cell_text.tsv` (instance
@@ -31,7 +32,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
 - `enter/fixtures.tsv` — J5's fixture per (kind, entry), or `-` with the reason it is unreached.
 - `j1/patterns.tsv`, `j1/subjects.py` — J1's two bench patterns (path + sha-256 pin, read at run time) and its
   seeded subject generators (shapes mixed, qs; regimes throughput, short).
-- `run.py` — `dry JOB RUNDIR RUN_ID` (frozen plan, ctl, links, placement, the gate on ctl and every launch,
+- `run.py` — `dry JOB RUNDIR RUN_ID` (frozen plan, ctl, links, placement, the gate and the round check on ctl
+  and every launch,
   the job's manifest; no clock), `run JOB RUNDIR RUN_ID` (manifest first, the window facts, quiet-gated with
   the total wait bounded, 7 launches x 7 rounds on the plan's CPU; cells.JOB.tsv under `#run_id`, or J1's
   j1_cells.tsv), `screen RUNDIR RUN_ID` (quiet-gated; J2's unit noise vs the half gate, on J2's manifest; queue
@@ -45,7 +47,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
 - `record.py` — the run record's one writer: `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
   floor, cards and policy pinned from the frozen plan with the tables' sha-256).
 - `sabotage.sh SCRATCH [ROW..]` — the slot-local sabotage rows (j), (j2), (k), (l1), (l2), (l3) S2934, (g2)
-  S2935, (g3) S2936, planted in scratch copies; DETECTED/MISSED per row.
+  S2935, (g3) S2936, (f1) S2937, (f2) S2938, (f6) S2939, planted in scratch copies; DETECTED/MISSED per row.
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.
 - `run_record.tsv` (S2d, later) — the run record zen4-grid3's PROVENANCE.md cites by sha-256.

@@ -3,7 +3,9 @@
 #                                   r9 G3), builds or checks `ctl` (its sha-256), links the job's seven launch
 #                                   executables and asserts placement (link.py), runs THE ANSWER GATE on ctl and
 #                                   on EVERY launch (no clock; the timed entry over the timed population, its
-#                                   arms, pools, subjects and timed calls asserted against the plan, r9 G1), and
+#                                   arms, pools, subjects and timed calls asserted against the plan, r9 G1), THE
+#                                   ROUND CHECK on ctl and every launch (`drv check`: the round's call loop, every
+#                                   subject once, its ACC against the planted counts, [rev1.3 r9fc-FIX-6]), and
 #                                   writes the job's MANIFEST (RUNDIR/JOB/manifest.tsv: the run id and the sha-256
 #                                   of every input and executable the work will time); prints the group count
 #   run.py run JOB RUNDIR RUN_ID    the work: the MANIFEST first (a mismatch refuses: the work times only the
@@ -93,6 +95,25 @@ def gate(exe, arms):
     return last
 
 
+CHECK_LINE = re.compile(r"== s2 ROUND CHECK ok: (\d+) points, (\d+) calls, 0 misses$")
+
+
+def round_check(exe, arms):
+    """THE ROUND CHECK on one executable (r9fc FIX-6): the round's call loop over every pool subject once, its
+    ACC (the timed calls' summed counts) against gen.c's planted counts, its population asserted like the gate's"""
+    rc, out, err = sh([exe, "check"])
+    last = (out.strip().splitlines() or ["(no output)"])[-1]
+    if rc:
+        raise SystemExit("run: THE ROUND CHECK refused %s:\n%s%s" % (exe, out[-2000:], err[-500:]))
+    m = CHECK_LINE.match(last)
+    want = (sum(len(a.lengths) for a in arms),
+            sum(1 if a.kind in ("enter", "j1") else plan.POOL_BYTES // x for a in arms for x in a.lengths))
+    if not m or tuple(int(g) for g in m.groups()) != want:
+        raise SystemExit("run: THE ROUND CHECK's population on %s is %r; the plan's is %d points, %d calls"
+                         % (exe, last, *want))
+    return last
+
+
 def job_arms(job):
     jobs, _r, _f, _u = plan.build()
     if job not in jobs:
@@ -148,10 +169,13 @@ def dry(job, rundir, run_id):
     print("plan: %s frozen (%s)" % (freeze(rundir), sha(os.path.join(rundir, "plan.tsv"))[:16]))
     exe_ctl, csha = ctl_check(rundir)
     print("ctl: %s sha256 %s" % (exe_ctl, csha))
-    print("ctl gate: " + gate(exe_ctl, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)]))
+    ctl_arm = [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)]
+    print("ctl gate: " + gate(exe_ctl, ctl_arm))
+    print("ctl round check: " + round_check(exe_ctl, ctl_arm))
     exes = link.link_job(job, rundir, run_id)
     for l in range(1, plan.L_LAUNCHES + 1):
         print("%s launch %d gate: %s" % (job, l, gate(exes[l], arms)))
+        print("%s launch %d round check: %s" % (job, l, round_check(exes[l], arms)))
     m = manifest(job, rundir, run_id, exes)
     open(os.path.join(rundir, job, "manifest.tsv"), "w").write(
         "#name\tvalue\n" + "".join("%s\t%s\n" % kv for kv in sorted(m.items())))
@@ -226,7 +250,7 @@ def run(job, rundir, run_id):
                     nf = os.path.join(rundir, job, "L%d" % l, "N.%s" % who)
                     rc, out, err = sh(["taskset", "-c", CPU, x, "round", str(r), nf])
                     if rc:
-                        print("== s2 JOB %s FAILED: %s round %d rc %d %s" % (job, x, r, rc, err[-300:]))
+                        print("== s2 JOB %s FAILED: %s round %d rc %d %s%s" % (job, x, r, rc, out[-600:], err[-300:]))
                         return 1
                     for ln in out.splitlines():
                         p = ln.split("\t")
@@ -292,7 +316,7 @@ def screen(rundir, run_id):
             nf = os.path.join(rundir, "J2", "L%d" % l, "N.screen.%s" % who)
             rc, out, err = sh(["taskset", "-c", CPU, e, "round", "1", nf])
             if rc:
-                raise SystemExit("screen: %s rc %d %s" % (e, rc, err))
+                raise SystemExit("screen: %s rc %d %s%s" % (e, rc, out[-600:], err))
             c = {(p[1], int(p[2])): int(p[5]) for p in (ln.split("\t") for ln in out.splitlines())}
             if who == "ctl":
                 u = est.slope([(n, c[("ctl", n)]) for n in plan.LENGTHS])

@@ -676,7 +676,11 @@ The fixture binary, the artifacts and the subjects are cached by their INPUTS' s
 landing refuses (it would plant nothing and pass 0 = 0). **The cell-text check** (COST-5 (10)): for every cell TU, the hash of its site-text
 span by `mf_form_hash`'s fold equals `mf_form_hash(<the key's form token>)`. `[rev1.3 r9-G2, r9-G4]` The
 (form, cls) is read off the KEY's tokens (`kit.<quantity>.<form>[.<cls>]`; `ctl` is the walk), the render uses
-it, and an Arm whose own form or class disagrees refuses KEY-ARM MISMATCH (slot sabotage (g2), S2935); the
+it, and an Arm whose own form or class disagrees refuses KEY-ARM MISMATCH (slot sabotage (g2), S2935);
+`[rev1.3 r9fc-FIX-2]` so does an Arm disagreeing with ANY token of its key: the key is parsed by its card's `dims`
+and each dim is compared with the Arm field ONE table (`plan.DIM_FIELD`) maps it to (form, landing, split, gap,
+cls, pass, kind, entry), so the subject an arm is planted and timed with is the one its key prices (slot
+sabotage S2938); the
 compare is with the hash of the INSTANCE the key names (its cls; the canonical one when the key names none),
 and the row's dep is the id's FOLD (§2.4), both written to the job's `cell_text.tsv`. With one renderer it guards the
 KEY-to-ROW mapping (sabotage (k)); whether the stated facts reach the row through the kit's router is FAM-A's

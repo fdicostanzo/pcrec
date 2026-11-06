@@ -13,7 +13,8 @@
 # Cell texts come from tests/memfn/arm_fixtures.c's `--site-parts` (formhash's entry table: the ONE renderer,
 # the texts mf_form_hash folds); the wrapper is ONE text per site shape (below). THE KEY NAMES THE TEXT (r9 G2):
 # a row key's (form, cls) is read off its tokens (plan.key_form), the render uses it, and an Arm whose own form
-# or class disagrees REFUSES (KEY-ARM MISMATCH). gcc 15.2 -O2 -march=x86-64 -mtune=generic, the declared target
+# or class disagrees REFUSES (KEY-ARM MISMATCH); so does an Arm disagreeing with ANY token of its key, each card
+# dim read through plan.DIM_FIELD ([rev1.3 r9fc-FIX-2]: landing, split, gap, pass, kind, entry too). gcc 15.2 -O2 -march=x86-64 -mtune=generic, the declared target
 # (§2.7). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P is a multiple of 16 in [16, 4096); its
 # draw is seeded by (run id, job, l, arm, d) (MEAS-1, READY-8).
 import hashlib, os, re, shutil, subprocess, sys
@@ -188,7 +189,12 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
 """
 
 def render(fx, a):
-    """(source text, (form, cls) or None, facts): (form, cls) the KEY's (r9 G2), the Arm's own must agree"""
+    """(source text, (form, cls) or None, facts): (form, cls) the KEY's (r9 G2), the Arm's own must agree, and
+    every token of a row key with it (each card dim's Arm field, plan.DIM_FIELD, r9fc FIX-2)"""
+    bad = plan.key_arm_mismatch(a)
+    if bad:
+        raise SystemExit("link: KEY-ARM MISMATCH %s: %s" % (a.name, "; ".join(
+            "dim %s: the key names %s, the Arm %s" % b for b in bad)))
     if a.kind == "verify" and a.form == "null":
         q = a.name.split(".")
         if len(q) != 3 or q[:2] != ["base", "null"] or not a.of or a.of[1] != q[2]:
