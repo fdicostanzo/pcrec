@@ -184,3 +184,7 @@ Round 2026-11-05 r2, memfn-sp1e code (`docs/dev/reviews/2026-11-05-r2-memfn-sp1e
 2. **For a declared map or list read by a check, plant a DELETED line and an INVENTED line; both must go red** (F3: both were green).
 3. **For a key the subject declares, every member must be printed in the trace record**: a member missing from the record is where a bypass plant hides (F4).
 4. **For a zero-mover unit, spend part of the emitted lens reading the equivalence argument rather than probing**: F1 came from reading.
+
+Round 2026-11-06 r4, memfn-span-cards design (`docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md`), coordinator round + verifier; lessons ruled 2026-11-06.
+1. **Re-diff the frozen rulings at each critic return.** A ruling homed in the subject that lands mid-round gets a fresh critic on its section (D188 was seen only at hand-back).
+2. **Drill a named measurement estimator like a selection rule**, on constructed outcomes (clean, outlier, bimodal, A/A above spread, equal-effect sweep): these drills found every gate defect of the round.
