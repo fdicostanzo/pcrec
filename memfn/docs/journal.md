@@ -3313,3 +3313,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - Deviation: sabotage (r)'s detector is the format-2 fixture store, not grid1.
   - Code round crit-memfn-s2a launched before the gates (the per-unit process).
   - Lesson (MINE): s2a and s2b both lacked a deliver file. My briefs said "a deliver file per BOILERPLATE", and both lanes read it as the manager's to write. From now on the manager writes NAME_deliver.txt into the worktree BEFORE launch.
+- 11-06: s2rev12 delivered rev 1.2 (040309e7b); lanecheck DONE. "Needs S2a: none" VERIFIED by me: the header `run` key is existing free provenance (measures.md §2.1 table), and the cell id's base field is checked only for uniqueness.
+  - Decisions: run_record.tsv; deps recorded with a STALE count, 0 asserted at S2e; drift threshold max(G/2, 3 s.e.); J1 m 0.5/k 5 at 95.1% power and ~0% false; seed (run, job, l, arm); one first-match outcome table.
+  - One readiness critic (crit-s2rev12-ready, opus) on the rev 1.2 diff only.
