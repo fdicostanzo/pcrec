@@ -3347,3 +3347,6 @@ Main ruled on the four kit findings (D186 add. 2):
 - The review is committed on lane/memfn-s2c (79c5e91e5), with the new lens row "harness fidelity" in the skill and critics.md.
 - Fix lane s2cfix (opus) is running; sabotage ids from S2933.
 - Frank, on code size: stage 1's kit C fell 434 lines (13,101 -> 12,667), all from deleting dead code; the unification units were net +275. "Interesting but not actionable": no audit, no size line.
+- 11-06 14:28: S2a gates 461 (retry), 462, 463 and 464 GREEN: sections, plus the three ident shards with no byte moved. Gate 465 make test RED in test-plan-lint only: PL14, two plan.md line-number cites (span_cards.md, s2design_report.md) that came in with the k1102 records merge. Triage tri465.
+  - Fixed 7355ea430: cite by [BENCH-WITHDATA] tag; plan-lint 2/0. 465 retried; 466-468 chain after it; watcher re-armed.
+  - OWED on s2c after s2cfix delivers: the same span_cards.md cite fix (I did not touch a tree with a running lane). k1102's copies are fixed in this commit if present.
