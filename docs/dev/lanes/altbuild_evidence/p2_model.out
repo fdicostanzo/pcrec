@@ -1,0 +1,116 @@
+OK	fold-mixed U+004B	(?i)abcdKefgh	2 pieces
+OK	fold-mixed U+0053	(?i)abcdSefgh	2 pieces
+OK	fold-mixed U+00C5	(?i)abcdÅefgh	2 pieces
+OK	fold-mixed U+00DF	(?i)abcdßefgh	2 pieces
+OK	fold-mixed U+019B	(?i)abcdƛefgh	2 pieces
+OK	fold-mixed U+023A	(?i)abcdȺefgh	2 pieces
+OK	fold-mixed U+023E	(?i)abcdȾefgh	2 pieces
+OK	fold-mixed U+023F	(?i)abcdȿefgh	2 pieces
+OK	fold-mixed U+0240	(?i)abcdɀefgh	2 pieces
+OK	fold-mixed U+0250	(?i)abcdɐefgh	2 pieces
+OK	fold-mixed U+0251	(?i)abcdɑefgh	2 pieces
+OK	fold-mixed U+0252	(?i)abcdɒefgh	2 pieces
+OK	fold-mixed U+025C	(?i)abcdɜefgh	2 pieces
+OK	fold-mixed U+0261	(?i)abcdɡefgh	2 pieces
+OK	fold-mixed U+0264	(?i)abcdɤefgh	2 pieces
+OK	fold-mixed U+0265	(?i)abcdɥefgh	2 pieces
+OK	fold-mixed U+0266	(?i)abcdɦefgh	2 pieces
+OK	fold-mixed U+026A	(?i)abcdɪefgh	2 pieces
+OK	fold-mixed U+026B	(?i)abcdɫefgh	2 pieces
+OK	fold-mixed U+026C	(?i)abcdɬefgh	2 pieces
+OK	fold-mixed U+0271	(?i)abcdɱefgh	2 pieces
+OK	fold-mixed U+027D	(?i)abcdɽefgh	2 pieces
+OK	fold-mixed U+0282	(?i)abcdʂefgh	2 pieces
+OK	fold-mixed U+0287	(?i)abcdʇefgh	2 pieces
+OK	fold-mixed U+029D	(?i)abcdʝefgh	2 pieces
+OK	fold-mixed U+029E	(?i)abcdʞefgh	2 pieces
+OK	fold-mixed U+0345	(?i)abcdͅefgh	2 pieces
+OK	fold-mixed U+0390	(?i)abcdΐefgh	2 pieces
+OK	fold-mixed U+03A9	(?i)abcdΩefgh	2 pieces
+OK	fold-mixed U+03B0	(?i)abcdΰefgh	2 pieces
+OK	fold-mixed U+0412	(?i)abcdВefgh	2 pieces
+OK	fold-mixed U+0414	(?i)abcdДefgh	2 pieces
+OK	fold-mixed U+041E	(?i)abcdОefgh	2 pieces
+OK	fold-mixed U+0421	(?i)abcdСefgh	2 pieces
+OK	fold-mixed U+0422	(?i)abcdТefgh	2 pieces
+OK	fold-mixed U+042A	(?i)abcdЪefgh	2 pieces
+OK	fold-mixed U+0462	(?i)abcdѢefgh	2 pieces
+OK	bench/utf8/alt-cyr-64.rx	над|больше|через|эти|нас|про|всего|них|какая|много|разве|три	6 pieces
+OK	bench/utf8/alt-distinct-lead.rx	日本|Москва|café	3 pieces
+OK	bench/utf8/alt-mixed-width.rx	a|é|日|😀	4 pieces
+OK	bench/utf8/alt-nearmiss.rx	日本語|日本国	decline:one-group
+OK	bench/utf8/alt-shared-char.rx	日本|日曜|日付	decline:one-group
+OK	bench/utf8/alt-shared-lead.rx	α|β|γ	decline:one-group
+OK	bench/utf8/asr-a-z.rx	\A日本語\z	decline:not-fixed-width
+OK	bench/utf8/asr-b-ascii.rx	\bcat\b	decline:not-fixed-width
+REFUSED	bench/utf8/asr-b-cyr-ucp.rx	(*UCP)\bМосква\b	(pcrec refuses the compile)
+OK	bench/utf8/asr-b-cyr.rx	\bМосква\b	decline:not-fixed-width
+OK	bench/utf8/asr-b-midchar.rx	\B	decline:not-fixed-width
+OK	bench/utf8/asr-caret-ml.rx	(?m)^日	decline:not-fixed-width
+OK	bench/utf8/asr-dollar-ml.rx	(?m)語$	decline:not-fixed-width
+OK	bench/utf8/asr-lb-class.rx	(?<=[\x{400}-\x{4FF}])\s	decline:not-fixed-width
+OK	bench/utf8/asr-lb-fixed.rx	(?<=é)x	decline:not-fixed-width
+OK	bench/utf8/asr-lb-neg.rx	(?<!日)本	decline:not-fixed-width
+OK	bench/utf8/asr-lb-varwidth.rx	(?<=a|é)x	decline:not-fixed-width
+OK	bench/utf8/ci-ascii-control.rx	(?i)abc	decline:one-group
+OK	bench/utf8/ci-class-range.rx	(?i)[a-z]+	decline:not-fixed-width
+OK	bench/utf8/ci-e-acute.rx	(?i)é	decline:one-group
+OK	bench/utf8/ci-greek-run.rx	(?i)αβγ	decline:one-group
+OK	bench/utf8/ci-kelvin.rx	(?i)k	2 pieces
+OK	bench/utf8/ci-long-s.rx	(?i)s	2 pieces
+OK	bench/utf8/ci-moskva.rx	(?i)москва	4 pieces
+OK	bench/utf8/ci-neg-fold.rx	(?i)[^é]	4 pieces
+OK	bench/utf8/ci-sigma.rx	(?i)σ	decline:one-group
+OK	bench/utf8/ci-strasse.rx	(?i)straße	3 pieces
+OK	bench/utf8/ci-turkish-i.rx	(?i)i	decline:one-group
+OK	bench/utf8/ci-ucp-invariance.rx	(*UCP)(?i)é	decline:one-group
+OK	bench/utf8/cls-boundary-range.rx	[a-é]+	decline:not-fixed-width
+OK	bench/utf8/cls-d-ascii.rx	\d{4}	decline:not-fixed-width
+UNPREDICTED	bench/utf8/cls-d-ucp.rx	(*UCP)\d{4}	(UCP class)	pcrec: decline:not-fixed-width
+OK	bench/utf8/cls-dot-rep.rx	^.{5}$	decline:not-fixed-width
+OK	bench/utf8/cls-dot.rx	.	4 pieces
+OK	bench/utf8/cls-high-range.rx	[\x{100}-\x{2000}]+	decline:not-fixed-width
+OK	bench/utf8/cls-lead-pair.rx	[α-ω]+	decline:not-fixed-width
+OK	bench/utf8/cls-mixed.rx	[a-zé\x{430}-\x{44F}]+	decline:not-fixed-width
+OK	bench/utf8/cls-neg-allhigh.rx	[^\x{80}-\x{10FFFF}]+	decline:not-fixed-width
+OK	bench/utf8/cls-neg-cjk.rx	[^\x{4E00}-\x{9FFF}]+	decline:not-fixed-width
+OK	bench/utf8/cls-neg-single.rx	[^é]	4 pieces
+UNPREDICTED	bench/utf8/cls-posix-alpha.rx	[[:alpha:]]+	(posix class)	pcrec: decline:not-fixed-width
+OK	bench/utf8/cls-s-nbsp.rx	a\sb	decline:one-group
+UNPREDICTED	bench/utf8/cls-s-ucp.rx	(*UCP)a\sb	(UCP class)	pcrec: 
+OK	bench/utf8/cls-w-ascii.rx	\w+	decline:not-fixed-width
+UNPREDICTED	bench/utf8/cls-w-ucp.rx	(*UCP)\w+	(UCP class)	pcrec: None
+OK	bench/utf8/floor.rx	~	decline:one-group
+OK	bench/utf8/lit-1ch-2b.rx	é	decline:one-group
+OK	bench/utf8/lit-1ch-3b.rx	日	decline:one-group
+OK	bench/utf8/lit-1ch-4b.rx	😀	decline:one-group
+OK	bench/utf8/lit-anchored-run.rx	^日本語$	decline:not-fixed-width
+OK	bench/utf8/lit-cyr-run.rx	Москва	decline:one-group
+OK	bench/utf8/lit-mixed-ascii.rx	user@例え.jp	4 pieces
+OK	bench/utf8/lit-nearmiss-run.rx	日本語	decline:one-group
+OK	bench/utf8/lit-nfc-pair.rx	café	decline:one-group
+OK	bench/utf8/lit-offset-at-head.rx	@é	decline:one-group
+OK	bench/utf8/lit-offset-at-tail.rx	é@	decline:one-group
+OK	bench/utf8/lit-run-3.rx	日本語	decline:one-group
+OK	bench/utf8/lit-sharp-s.rx	Straße	decline:one-group
+UNPREDICTED	bench/utf8/prp-cyrillic.rx	\p{Cyrillic}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-greek-sc.rx	\p{sc=Greek}	(property)	pcrec: 
+UNPREDICTED	bench/utf8/prp-greek.rx	\p{Greek}	(property)	pcrec: 
+UNPREDICTED	bench/utf8/prp-han.rx	\p{Han}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-ingreek.rx	\p{InGreek}	(property)	pcrec: None
+REFUSED	bench/utf8/prp-l-anchored.rx	^\p{L}{4}$	(pcrec refuses the compile)
+UNPREDICTED	bench/utf8/prp-l.rx	\p{L}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-latin.rx	\p{Latin}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-lu.rx	\p{Lu}	(property)	pcrec: 
+UNPREDICTED	bench/utf8/prp-n.rx	\p{N}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-notl.rx	\P{L}+	(property)	pcrec: decline:not-fixed-width
+UNPREDICTED	bench/utf8/prp-zs.rx	\p{Zs}	(property)	pcrec: 
+OK	bench/utf8/qnt-bounded-4b.rx	😀{2,4}	decline:not-fixed-width
+OK	bench/utf8/qnt-class-run.rx	[\x{400}-\x{4FF}]{4,16}	decline:not-fixed-width
+UNPREDICTED	bench/utf8/qnt-counted-3b.rx	(?:日本){2,}	(group)	pcrec: decline:not-fixed-width
+OK	bench/utf8/qnt-dot-bounded.rx	.{3,8}	decline:not-fixed-width
+OK	bench/utf8/qnt-lazy-2b.rx	é+?	decline:not-fixed-width
+OK	bench/utf8/qnt-plus-2b.rx	é+	decline:not-fixed-width
+mixed-width fold classes: 37 (design: 37)
+cells: 95 agree, 0 differ, 16 unpredicted, 2 refused
+p2 model: PASS

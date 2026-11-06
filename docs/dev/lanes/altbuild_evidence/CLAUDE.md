@@ -20,3 +20,8 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
 - `u4_movers_stage1.tsv`, `u4_stage1.log` — the U4 census's first full run
   (before its refusal-retired classification: its 31 REFUSAL-MOVED are all
   base refusals the merge retires).
+- `p2_census.py` / `p2_census.out` — stage 2p's group-count census (corpus +
+  every bench pattern, census-only bound 4096): max 10, the limits row's value.
+- `p2_model.py` / `p2_model.out` — stage 2p's gate: `req_pieces` equals an
+  independent model's (CaseFolding.txt + UTF-8) on the 37 mixed-width fold
+  classes and bench/utf8 (95 agree, 0 differ, 16 unpredicted, 2 refused).

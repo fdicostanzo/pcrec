@@ -118,8 +118,14 @@ DEF="$TREE/src/facts/facts.def"
 HDR="$TREE/src/facts/facts.h"
 
 # ---- the owner list, from the table's text --------------------------------
+# THE NODE-GRAIN CARVE-OUT (src/facts/CLAUDE.md; docs/design/alt_normal_form.md
+# §3.5 r7 FIX-4): a file here that is a pure function over a subtree, reading
+# no sealed fact, is not a derivation owner. Its own header is its public
+# surface (the opt layer calls it: the owner's code-point call site), and it
+# must NOT include facts_derive.h, which is checked below.
+CARVE="src/facts/desc.c"
 {
-    (cd "$TREE" && ls src/facts/*.c 2>/dev/null)
+    (cd "$TREE" && ls src/facts/*.c 2>/dev/null) | grep -vxF "$(printf '%s\n' $CARVE)"
     grep -E '^PF_FACT\(' "$DEF" | awk -F',' '{ gsub(/[ "]/, "", $6); print $6 }'
 } | LC_ALL=C sort -u > "$WORKDIR/owners"
 nown="$(wc -l < "$WORKDIR/owners" | tr -d ' ')"
@@ -131,6 +137,14 @@ fi
 while read -r f; do
     [ -f "$TREE/$f" ] || bad "facts.def names owner '$f', which does not exist"
 done < "$WORKDIR/owners"
+
+for f in $CARVE; do
+    if [ ! -f "$TREE/$f" ]; then
+        bad "[facts-include] the carve-out names '$f', which does not exist"
+    elif grep -qE '^[[:space:]]*#[[:space:]]*include[[:space:]]+"facts/facts_derive\.h"' "$TREE/$f"; then
+        bad "[facts-include] carve-out '$f' includes facts_derive.h: a node-grain pure function reads no sealed fact"
+    fi
+done
 
 # ---- 1. include graph -------------------------------------------------------
 (cd "$TREE" && grep -rlE '^[[:space:]]*#[[:space:]]*include[[:space:]]+"facts/facts_derive\.h"' \
@@ -555,6 +569,49 @@ elif [ -n "$slbad" ]; then
     bad "[facts-sl1] land_char/width disagree with the hand table:$slbad"
 else
     ok "[facts-sl1] $nsl witnesses list land_char and width exactly as the definitions give them (all 4 reachable declines)"
+fi
+
+# ---- [RUN-POS-SET] stage 2p: the piece set ----------------------------------
+# `req_pieces` (docs/design/alt_normal_form.md §3.4; facts_listing.md
+# §4.1.2) on witnesses whose values are an INDEPENDENT model's
+# (docs/dev/lanes/altbuild_evidence/p2_model.py, CaseFolding.txt and UTF-8
+# alone: ci-moskva and the Kelvin fold class are in its population; the byte
+# row is two strings by hand), plus one witness per decline. A CAT product
+# that keeps only the shortest group (S-p) loses ci-moskva's widths 13-15.
+ob='a|bb|ccc|dddd|eeeee|ffffff|ggggggg|hhhhhhhh|iiiiiiiii|jjjjjjjjjj|kkkkkkkkkkk'
+printf '%s\n' \
+    'utf8	(?i)москва	12:[208][156,188][208][158,190][208,209][129,161][208][154,186][208][146,178][208][144,176]|13:[208][156,188][208,225][158,178,190][130,208,209,225][129,161,178,208,209][129,131,161,208][154,186,208][154,186,225][178,208][128,146,178][208][144,176]|14:[208][156,188][208,225][158,178,190][130,225][178,208,209,225][129,131,161,178][131,208][154,186,208][154,186,225][178,208][128,146,178][208][144,176]|15:[208][156,188][225][178][130][225][178][131][208][154,186][225][178][128][208][144,176]' \
+    'utf8	(?i)abcdKefgh	9:[65,97][66,98][67,99][68,100][75,107][69,101][70,102][71,103][72,104]|11:[65,97][66,98][67,99][68,100][226][132][170][69,101][70,102][71,103][72,104]' \
+    'utf8	a|é|日|😀	1:[97]|2:[195][169]|3:[230][151][165]|4:[240][159][152][128]' \
+    'byte	a(?:bc|d)e	3:[97][100][101]|4:[97][98][99][101]' \
+    'byte	abc	decline:one-group' \
+    'byte	x.*y	decline:not-fixed-width' \
+    "byte	$ob	decline:over-bound" > "$WORKDIR/pw"
+npw=0; pwbad=""
+: > "$WORKDIR/pwhy"
+while IFS=$'\t' read -r enc pat want; do
+    npw=$((npw + 1))
+    case "$want" in decline:*) echo "$want" >> "$WORKDIR/pwhy" ;; esac
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all -e "$enc" --emit-facts --pattern "$pat" > "$WORKDIR/pw.l" 2> "$WORKDIR/pw.err"; then
+        pwbad="$pwbad $enc '$pat': refused ($(head -1 "$WORKDIR/pw.err"));"; continue
+    fi
+    sect "$WORKDIR/pw.l" facts > "$WORKDIR/pw.f"
+    prow="$(grep -F "$(printf 'fact=req_pieces\t')" "$WORKDIR/pw.f")"
+    case "$(col status <<< "$prow")" in
+        derived)  got="$(col value <<< "$prow")" ;;
+        declined) got="$(col why <<< "$prow")" ;;
+        *)        got="[$(col status <<< "$prow")/$(col why <<< "$prow")]" ;;
+    esac
+    [ "$got" = "$want" ] || pwbad="$pwbad $enc '$pat': req_pieces [$got], the model's [$want];"
+done < "$WORKDIR/pw"
+npwhy="$(LC_ALL=C sort -u "$WORKDIR/pwhy" | wc -l | tr -d ' ')"
+echo "REACH: $npw [RUN-POS-SET] piece witness(es), $npwhy of 3 req_pieces decline(s) witnessed"
+if [ "$npw" -eq 0 ] || [ "$npwhy" -ne 3 ]; then
+    bad "[facts-pieces] the witness table reaches $npwhy of the 3 declines — the check is vacuous where it is short"
+elif [ -n "$pwbad" ]; then
+    bad "[facts-pieces] req_pieces disagrees with the model:$pwbad"
+else
+    ok "[facts-pieces] $npw witnesses list req_pieces exactly as the independent model gives it (all 3 declines)"
 fi
 
 echo "checks passed: $pass"

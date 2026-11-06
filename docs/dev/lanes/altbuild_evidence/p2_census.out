@@ -1,0 +1,29 @@
+boxlock: 'altbuild-p2census' WAITING 2026-11-06T08:54:49-05:00: box busy, held by pid=100054 label=vlbbuild-vlb5 since=2026-11-06T08:54:44-05:00 (0m) cwd=/home/pcrec/projects/pcrec
+population: 6696 compiles
+  groups=10                    20
+  groups=2                     125
+  groups=3                     102
+  groups=4                     237
+  groups=6                     1
+  groups=7                     5
+  groups=9                     1
+  REFUSED                      486
+  decline:not-fixed-width      4876
+  decline:one-group            843
+max groups: 10
+  10	bench/altwide/ci-256.rx	(?i)(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcw
+  10	bench/altwide/ci-512.rx	(?i)(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcw
+  10	bench/altwide/clsa-256.rx	(?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp[a-z]|xzxj
+  10	bench/altwide/clsa-64.rx	(?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp[a-z]|xzxj
+  10	bench/altwide/clsd-256.rx	(?:yoslwssiyybw[0-9]|dybf[0-9]|oodo[0-9]|omykisp[0-9]|idox[0-9]|oemrbp[0-9]|xzxj
+  10	bench/altwide/clsd-64.rx	(?:yoslwssiyybw[0-9]|dybf[0-9]|oodo[0-9]|omykisp[0-9]|idox[0-9]|oemrbp[0-9]|xzxj
+  10	bench/altwide/nar4-256.rx	(?:gwipefmnb|gbkjy|tfek|buvixwwookl|mybycmuuwget|brjxwkemms|mxpzyewmsc|bpqb|bwev
+  10	bench/altwide/nar4-512.rx	(?:gwipefmnb|gbkjy|tfek|buvixwwookl|mybycmuuwget|brjxwkemms|mxpzyewmsc|bpqb|bwev
+  10	bench/altwide/sh1-256.rx	(?:kszku|kugrerswj|kbslpglukne|kfsj|kbimunvi|kbwclwybkai|koyezkqbb|kybf|kvcdhzbr
+  10	bench/altwide/sh1-512.rx	(?:kszku|kugrerswj|kbslpglukne|kfsj|kbimunvi|kbwclwybkai|koyezkqbb|kybf|kvcdhzbr
+  10	bench/altwide/sh1-64.rx	(?:kszku|kugrerswj|kbslpglukne|kfsj|kbimunvi|kbwclwybkai|koyezkqbb|kybf|kvcdhzbr
+  10	bench/altwide/srt-256.rx	(?:aasvudppw|abrof|absxfdpml|abvrjs|abzcedqwxz|anpgmtwu|atfhdjfabrvd|auyg|axrgfy
+  10	bench/altwide/srt-512.rx	(?:aasvudppw|abrof|absxfdpml|abvrjs|abzcedqwxz|acztzwpgbb|adbplpwbgo|ahkhhrsts|a
+  10	bench/altwide/w-128.rx	(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h
+  10	bench/altwide/w-192.rx	(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h
+p2 census: PASS

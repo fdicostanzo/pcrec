@@ -211,6 +211,7 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUI
 # embedded-code language table, an X-macro `#include`d by registry.c,
 # scans.c and mod_code.c (one language row, three projections).
 FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
+              src/facts/desc.h \
               src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
               src/core/kindrow.def src/parse/codelang.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \

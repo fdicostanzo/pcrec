@@ -89,6 +89,29 @@ typedef struct {
     long long maxoff;
 } ReqRun;
 
+/* [RUN-POS-SET] stage 2p THE PIECE DESCRIPTION's value types (its combinators
+ * are src/facts/desc.h's, docs/design/alt_normal_form.md §3.4-§3.5). */
+/* One width group. `pos[0..n)` are the group's LAST `n` positions, so the
+ * first stored one sits at offset `w - n` inside the piece. `exact`: the
+ * group's strings ARE its positions' product (never on a truncated group). */
+typedef struct {
+    long long w;
+    int n;
+    bool exact;
+    const void **pos;
+} PdGroup;
+
+/* Why a subtree has no description. */
+enum { PD_DESCRIBED, PD_WALL, PD_OVER };
+
+/* `ng` groups in ascending width, or `ng < 0` (no description; `why` says
+ * which). */
+typedef struct {
+    int ng;
+    int why;
+    PdGroup *g;
+} PdDesc;
+
 /* Does the run's WINDOW carry a position that is not one exact byte? */
 static inline bool pcrec_req_run_masked(const ReqRun *r)
 {
@@ -372,7 +395,14 @@ typedef enum {
      * its accepts carry D164 mark distances (a lowered `$` tail, whose bytes
      * lie past the match end); `nullable` and `dead-start` are Λ's. */
     PF_WHY_ERASED,
-    PF_WHY_MARKED
+    PF_WHY_MARKED,
+    /* [RUN-POS-SET] stage 2p `req_pieces`' declines (src/facts/desc.h): no
+     * description (a wall: a variable width, a cut, a repeat), over the
+     * group bound, or ONE group (the single run's business, not a piece
+     * set). */
+    PF_WHY_PIECES_WALL,
+    PF_WHY_PIECES_OVER,
+    PF_WHY_PIECES_ONE
 } PfWhyCode;
 
 typedef struct {
@@ -426,6 +456,10 @@ typedef struct {
      * denies the run with it — there is no run check without a byte to
      * `memchr`. One struct, two facts: `req_whole_run` and `req_run`. */
     ReqRun    req_run;
+    /* [RUN-POS-SET] stage 2p E2 core: the req walk's byte-level piece
+     * description of the whole pattern (`req_pieces`); inert, no reader
+     * but `--emit-facts`. Empty (`ng < 0`) under `-fno-req-run`/`-byte`. */
+    PdDesc    req_pieces;
     /* [OPT-REQBYTE] E2 derived: the byte the emitted `memchr` tests (the
      * run's scan member where a run shipped, the set's pick otherwise), or
      * -1; -1 under `-fno-req-byte`. */

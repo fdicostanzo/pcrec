@@ -126,9 +126,11 @@ static inline bool rb_has(const RbSet *s, int b)
  * in so the walk itself reads no option. src/facts/req.c's header carries
  * the whole account: why the whole window and not PCRE2's "other than at its
  * start", why a SET and a RUN, and why a lookaround's body is a correctness
- * decline. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
-                    RbRun *run);
+ * decline. [RUN-POS-SET] stage 2p: the same walk builds the whole pattern's
+ * byte-level piece description into `*pieces` (src/facts/desc.h), at most
+ * `max_pieces` width groups. */
+void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, int max_pieces,
+                    RbSet *set, RbRun *run, PdDesc *pieces);
                                                         /* src/facts/req.c */
 
 /* THE DERIVED FACTS, speed choices over the core ones, composed in
