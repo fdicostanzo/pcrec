@@ -352,3 +352,226 @@ OWED heavy runs (launched detached at the end, logs under
 test-codegen + registry + rxtsource (`owed_suites.log`).
 
 lanecheck: there is no `altbuild_deliver.txt`, so lanecheck does not apply.
+
+## Lane altbuild2, 2026-11-06 — K139, the R4 items, item 3
+
+The predecessor's text above is unchanged. Rulings read through R4; no
+"LOOKBEHIND LANDED" line was in `altbuild_rulings.md` at any boundary, so the
+vlookbehind merge (item 4) did NOT happen; lane/altbuild is still based on
+its own base.
+
+### Commits
+
+| commit | what |
+|---|---|
+| `3b5a231c6` | K139 probe evidence (`altbuild_evidence/k139_*`); the ruled local guard fix regressed a dense family, reverted, STOP (led to R4) |
+| `06db77410` | readers re-read (stale altcls comments name the owner); U4 post-2b and ofs re-probe instruments |
+| `cfd28cf38` | **K139 FIXED**: the `drop-islands` row (R4) |
+| `82ef1d9c3` | R4 (a): size-term pool member re-picked; island manifest re-pinned |
+| `78caf76cb` | R4 (b): trie identity controls deny the owner on both sides |
+| (this commit) | this section; `altbuild_evidence/u1_bench.py` |
+
+### K139: one declared row in the size-cap retry table (R4)
+
+- `fit_rungs[]` (`src/core/compile.c`) gains `drop-islands`, placed after
+  `drop-landmark-walk` and before `drop-anchored`. In VM order it comes after
+  `unroll-rescue`/`prefilter-collapse` and before `drop-handoff`/`drop-prefilter`.
+  - Applies when the refused attempt's VM program emitted an island. The new
+    `Job.vm_islands` field is written beside the `VM_ALT_ISLANDS` stamp.
+  - Sets `flags_or = PCREC_NO_ALT_ISLAND`, `restart = true` (the size term
+    re-runs, so `COMPILE_MAX_ATTEMPTS` gets a fifth ladder run and one more
+    retry).
+  - Degrading, FOF_IN, its own `size-cap-retry` cells, its own stderr note.
+  - Sequence pairs added after `drop-end-mark`/`collapse`/`sel1-collapse`/`sel1-drop`
+    and before `drop-handoff`/`drop-prefilter`. The trace build's
+    self-check and the sequence check stay clean on every witness.
+- The in-emitter guard is UNCHANGED. It is a speed shortcut and a deletion
+  candidate under [ISL-PRICE].
+- No emitted byte moves for a pattern that compiled before: the row is only
+  reached from a refusal. So there is no abi event.
+- Spec:
+  - `limits.md` §8.4: table row 2b, ¶2 (VM rows), new ¶2c, ¶3 "all ten".
+  - `limits.md` §8.5: new ¶1b (the stamp), ¶5 and ¶6 (2b listed).
+  - `tuning.md` §2.20: ¶2's size row (the cap guard stated, plus the retry) and ¶6.
+  - Also updated: `dec_fallback.md` sequence table, `row_reach.py` SIZE, and
+    K139 in `known_issues.md`, marked FIXED. That entry exists only on main,
+    so the merge will conflict there; keep the FIXED text.
+- Witnesses, all ACCEPTED on the row build (each was refused before):
+
+  | witness | flags | result |
+  |---|---|---|
+  | ladder N=300 | owner deny pair | DROPPED islands, ships the chain |
+  | ladder N=340 | owner deny pair | DROPPED islands, ships the chain |
+  | rand-1000 eight-letter words | default flags, `--engine=vm` | retried |
+  | six concatenated 200-word alternations | default, `--engine=vm` | retried |
+  | six concatenated 200-word alternations | default, auto route | VM, `RX_ENGINE_SEL "size-cap-retry"` |
+  | dense 1,600 / 1,800 / 2,000 words | owner deny pair | KEEP their island (361,656 / 404,567 / 447,307 code bytes) |
+
+  - `--size-cap=refuse` on rand-1000 refuses with the caller's own 518,578 B
+    figure.
+  - The retry artifact is byte-identical to the direct `-fno-alt-island`
+    artifact on all four retry witnesses.
+- Retry compile cost, median of 5 runs, against the direct `-fno-alt-island`
+  compile:
+
+  | witness | retry | direct `-fno-alt-island` |
+  |---|---|---|
+  | ladder 300 | 55.7 ms | 35.5 ms |
+  | ladder 340 | 64.6 ms | 37.6 ms |
+  | rand-1000 | 65.2 ms | 36.0 ms |
+  | six alternations | 111.9 ms | 56.7 ms |
+
+  So the retry costs about 1.6x to 2x one compile.
+- Tests:
+  - `run_fallback_table.sh`, witness `W_ISLSIZE` (24 random words,
+    trlowsize, `--engine=vm`): `seq-isldrop` (`drop-islands@size`),
+    `seq-islref` (refused under `--size-cap=refuse`), `seq-islnone`
+    (`-fno-alt-island` arrives nowhere), and `note-isl` (the hand-written
+    note). The existing trlowsize/trlowboth witnesses were re-run on a
+    scratch trlowsize trace build: every sequence is unchanged.
+  - `run_island_tests.sh` section 11: see item 1.
+- Sabotage S1894 (row inert, `fallbacktable` arm): DETECTED on a scratch
+  trlowsize plant. `seq-isldrop` reads `refuse@size` and the compile is
+  refused. The mech run is in job 303.
+- The row-deleted plant was also built at the shipped caps
+  (`a2/pcrec_plant`). Section 11 goes RED on the ladder (N=340) and on the
+  rand-1000 retry cell. The dense cell stays green, as it should: it guards
+  the opposite direction.
+
+### Item 1: the cap-guard witness (R4)
+
+`run_island_tests.sh` section 11, rewritten:
+
+1. The ladder N=260/300/340 runs under the owner deny pair (the default
+   shrinks it to about 31 KB).
+   - No rung may be refused with the island and accepted without it.
+   - A rung that stamps no island must equal its `-fno-alt-island` artifact.
+   - N=260's islands now fit, so they are kept.
+2. The non-vacuity cell is now "the retry row FIRES" at the default flags,
+   on rand-1000 under `--engine=vm`:
+   - the compile succeeds;
+   - the drop note is printed, one note per fired row, which is the count;
+   - the artifact stamps `RX_VM_ALT_ISLANDS 0`;
+   - the artifact is byte-identical to `-fno-alt-island`'s.
+3. A new dense cell checks that the islands which fit are kept (1,600/1,800/2,000
+   words, deny pair).
+
+Results: green on the row build (3/3), red on the row-deleted plant (2 of 3).
+
+### R4 (a): the size-term pool
+
+- Cause: rule M merges `(?:ab|ba|aa|bb){24}c`. It stamped `UNROLL_K_WHY
+  "default"` and no island, a prediction/stamp mismatch. This was the
+  predecessor's `owed_suites.log` test-codegen red, `run_size_term.sh` FAIL 1.
+- New member `(?:ab|cd|aqr|cst){8}z`, added to `counterk.rxt` with python3
+  `re` expectations (harness 10/10). Measured:
+  - MERGES 0 and FACTORED 0;
+  - ratio 0.7158, `size-model`, 1 island.
+- Whole pool re-measured on a scratch threshold-1000 reference:
+  - 0 mismatches;
+  - 9 members in band;
+  - 3 below-bar shapes, 4 or more above-bar shapes;
+  - 2 islanded members.
+- Corpus pin moved: `run_recursion_identity.sh` `ISLAND_PATTERNS`. The old
+  pattern stamps 0 islands under `--engine=vm`; the new one stamps 8.
+- The old pattern stays in the corpus as an answer witness.
+
+### R4 (b): the trie identity controls
+
+- Before: the controls read factored/factored (4 and 8 branches) and
+  compiled/compiled (256 branches). This was `owed_suites.log`'s other red.
+  Rule P factors the `[aA]`-class prefix that the [OPT-ALTCLS] precedent
+  relied on altcls declining.
+- Fix: both sides of `check_control` pass the deny pair, with a comment
+  citing the precedent.
+- Measured against a scratch `-DPCREC_NO_TRIE` build: all three controls
+  read factored/unfactored again.
+
+### Item 3
+
+- **U4 after 2b, corpus part** (`a2/u4b/u4.log`, `u4_movers.tsv`; instrument
+  `altbuild_evidence/u4_census_2b.py`; the restore control is the deny pair):
+  - 862 patterns x 4 axes = 3,448 cells; 196 refused on both sides.
+  - 91 movers:
+    - 55 bare-class island/rung losses, restored by the pair;
+    - 7 alt-family island losses, restored by the pair:
+      - `(?:éx|ʩx)` in `litscan/handoff.rxt`;
+      - 2b's own `altnf_rules.rxt` cells;
+    - 29 base refusals retired by the owner.
+  - 0 findings. PASS.
+  - Run against the pre-K139 build.
+- **U4 bench part:** the first run pointed at `bench/utf8` instead of
+  `bench/utf8/patterns`. It is OWED as job 300.
+- **U1 for bench/utf8:** instrument `altbuild_evidence/u1_bench.py`
+  (base96 vs s12p, a construct predicate with a bracket scanner). OWED as
+  job 301.
+- **ofs_test_of PREM-6 re-probe** (`a2/ofs_reprobe.log`, `ofs_reprobe.py`):
+  - 7,338 patterns x 2 flag sets = 14,676 compiles; 1,304 refused, 0 timeouts.
+  - The run-term was reached on 87 default compiles and 218 ofs compiles.
+  - Masked positions inside the pinned run: **0**. It remains unreached, as
+    §4.2 noted.
+- **Readers re-read:**
+  - `run_axes`: the `-fno-altcls-merge` refusal entry is still reached.
+  - `run_form_census`: no ALTCLS floors. The `RX_VM_CLS_FOLDS` floors are
+    unverified; they are in test-axes, OWED.
+  - `run_registry_tests.sh:447-456`: the text is still true.
+  - S67: VALIDATE_ONLY valid.
+  - `emit_vm.c` Vm.isl_over_cap comment: updated.
+  - `run_specimen_identity`: 9 FAIL / 6 pass. The failure is identical on
+    base `80341284e`, s12p, the stage and main's build: pre-existing, opt-in,
+    not this lane's.
+  - `run_resource_tests.sh:1405`: says "all five" degrading rungs, which
+    was already stale. It has no 2b witness; `seq-islref` covers the switch
+    instead.
+  - `row_reach.py`: no corpus pattern reaches `drop-islands@size`. The reach
+    gate may want a declared zero; see the reach run.
+- **Predecessor's OWED runs, read:**
+  - mech S1888-S1893: 6/6 DETECTED, 0 unexpected (`logs/owed_mech2b.log`).
+  - `run_altdiff.sh --corpus`: 153/153 agree, 110,729 cells.
+  - `owed_suites.log`: test-codegen was red on exactly (a) and (b); both
+    are now fixed. Registry and rxtsource did not run (no `-k`); that is
+    job 302.
+
+### Acceptance table (MEASURED vs predicted, every mover class)
+
+| stage | mover class | predicted | measured |
+|---|---|---|---|
+| 1 | utf8 fold runs/tables, multi-box classes | §5 stage 1 list | corpus: stage 1 section; bench/utf8 U1: OWED (job 301) |
+| 1 | bare-class island/rung losses, restored by bit 10 | yes (RDY-1/RDY-3) | 60 at stage 1; 55 after 2b (pair) |
+| 1 | knee `x(?:[éà]\|q2\|r3)y` island loss | NO (R1/R2 STOP, ruled D186 cell) | no corpus or bench member at stage 1 |
+| 1 | refusals retired | fewer only (FIX-3) | 31 at stage 1, 29 after 2b, 0 new refusals |
+| 2b | ALTCLS stamps, VM program bytes, DFA tables, island census, rungs | yes (§5 2b) | 117 patterns, every one in these classes (`p2b_movers`); alt-family island losses 7 cells (U4), restored by the pair |
+| 2b | refusals retired | not named | 4 (`altwide/clsa-1024`, `clsd-1024`, `wild-datetime` both routes) |
+| 2b | cap-guard ladder witness | NO | STOP; ruled R4; K139 row + item 1 |
+| 2b | size-term pool, trie controls | NO | ruled R4 (a)/(b) |
+| K139 | refusals retired by `drop-islands` | (R4) | the four witnesses; no corpus pattern reaches it |
+| all | answers | none | altdiff 153/153; witnesses vs libpcre2 10.46; harness green on touched blocks |
+
+### Gates the design did not name (for the code round)
+
+1. `run_cpset_structure.sh` ALLOW_FN (stage 1, confirmed).
+2. `run_axes.sh` `-fno-cls-kit` refusal floor retired (stage 1, confirmed).
+3. **K139 row** `drop-islands` (R4).
+4. **Item 1 witness**: section 11 rewritten (deny-pair ladder, the retry
+   fires, dense keeps its island).
+5. **(a)** `run_size_term.sh` pool member + `ISLAND_PATTERNS`.
+6. **(b)** `run_trie_identity.sh` controls under the deny pair.
+
+### OWED (detached box-queue jobs; read with `scripts/boxqueue state KEY`)
+
+All four jobs are queued behind lane vlbbuild's long chain. None had run
+when this lane ended.
+
+| job | runs | log |
+|---|---|---|
+| `300-altbuild2-u4bench` | U4 with the bench/utf8 population, on the CURRENT build (K139 row included; rescues by the row would show as refusal movers) | `a2/u4c/` |
+| `301-altbuild2-u1bench` | U1 for bench/utf8 | `a2/u1b/u1_bench.tsv` |
+| `302-altbuild2-regrx` | `make -k test-registry test-rxtsource` | (job log) |
+| `303-altbuild2-k139` | `make -k test-fallback-table test-island test-codegen test-recursion-identity-locked`, then mech S1894 | `a2/logs303/` |
+
+Still owed with no job: `make test`, test-axes (form census floors) and
+the reach run for the new row. The vlookbehind merge waits for the
+manager's "LOOKBEHIND LANDED" line.
+
+(`a2/` = `$PCREC_TMPDIR/scratch/altbuild/a2/`; `logs/` =
+`$PCREC_TMPDIR/scratch/altbuild/logs/`.)
