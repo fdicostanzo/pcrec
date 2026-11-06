@@ -1,6 +1,6 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-05 ~23:55 by a fresh kit session (pcrec-memfn [174c0c]). Committed docs win on any conflict.
+Rewritten 2026-11-05 ~23:55, updated 11-06 01:35 by a fresh kit session (pcrec-memfn [174c0c]). Committed docs win on any conflict.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Main is the pcrec manager session `pcrec-main`. Frank rules, sometimes directly to the kit.
@@ -13,7 +13,9 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main 20fb73159 merged 
 4. Review docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (rulings), and r1 (1d) before it.
 5. D186 + addenda, D187, manifesto principle 9.
 
-## CURRENT STATE: span_pick STAGE 1, unit 1e (the LAST stage-1 unit) FIXED, GATES RUNNING
+## CURRENT STATE: span_pick STAGE 1, unit 1e DELIVERED (done: 5f1f968f5, 11-06 01:35); WAITING ON MAIN'S MERGE
+Gates 430-439 all GREEN; S1079's record figure is 6/3155 DETECTED. Once main merges: stage 1 is complete, so merge main into k1102, prune sp1e/sp1efix via main, and wait for Frank's stage 2-3 GO.
+The history below is kept for context.
 Landed on main: 1a, 1f, 1g, 1b, 1c, 1d (20fb73159).
 - **1e:** lane/memfn-sp1e @ 9cf199ed3 (sp1e accc55eeb + fix lane sp1efix, fast-forwarded). Reports: docs/dev/lanes/sp1e_report.md and sp1efix_report.md.
   - Zero movers. MF_SITE_ABI 23. MF_CLASS_V 7 -> 8 (D-hors joins ahead of PRES rows). Ratchet R20 3 -> 2; stage-1 kit-row total 4 -> 3.

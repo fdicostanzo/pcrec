@@ -3241,3 +3241,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main relayed Frank's D187 addendum 1 (0b7ee8898), for reading only. A covering (lossy) cube is the kit's private method: rebuilt from the set, never on the seam.
   - It may be the last word only where D172's verify-exactly flag is off (reply "not exact"). Elsewhere it is a first pass before the kit's own exact check, which can earn pcrec a skip. Using it is the kit's priced choice.
   - Pricing gap noted: pcrec's finish cost becomes a stated fact when pricing opens. Not now.
+- 11-06 01:35: 1e gates 430-439 all GREEN at 9cf199ed3. 436's make test rc is 0 with no `*** [test-` line. Mech: 50 rows, with only the declared S917/S919 unreached.
+  - S1079's figure of record is 6/3155 DETECTED (job 437), which matches sp1efix's hand figure.
+  - done: posted 5f1f968f5; main told. Stage 1 is complete once main merges. Stages 2-3 wait for Frank's GO via main.
