@@ -446,3 +446,117 @@ Scripts are in `$PCREC_TMPDIR/scratch/vlbfix/jobs/`; S below is
 
 At queue time 212 had started at 10:51 on the tree as of 937bed801. That is
 the code HEAD; only this report followed it.
+
+## 2026-11-06 lane mttri: triage of vlbfix's red make test
+
+Subject: vlbfix's job 212 make test at e9ede562a
+(`/var/tmp/pcrec-pcrec/scratch/vlbfix/maketest.log`, perfrun `class=RED-REAL
+contaminated=YES`; the contamination was the box at load1 29 with another
+tree running). Branch HEAD at start d7aaa3bc1. Rulings file re-read; last
+entry R4, nothing in it touches these sections. PREMISE TEST: the log's five
+red sections were test-registry, test-vars, test-rxtsource, test-memfn-arch,
+test-startset. Each was re-run SOLO (`nice make -C <worktree> test-X`, one at
+a time). All five reds were real and owned by the branch; none was
+contamination, and none was pre-existing on main (main has moved no .rxt file,
+no rxtsource/registry script and no manifest since the merge base
+fb22c62a6). No answer regression vs libpcre2 and no check weakened.
+
+### Per section
+
+- **test-vars**: solo RED, now GREEN at dc9283a80. Fixed in d378202ac.
+  - Real regression in the test harness. vlbbuild U6 (6f6d27975) changed
+    the shared binding `docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`
+    so a `str` is encoded UTF-8 whenever `PCRE2_UTF` is set.
+  - `tests/vars/verify_vars.py` already passed `PCRE2_UTF` with latin-1
+    byte-strings. Its three non-ASCII caseless subjects
+    (`tests/vars/caseless.rxt` lines 76/86/96: the Kelvin sign and sharp s)
+    were double-encoded, so libpcre2 answered nomatch (69 agree, 3 disagree).
+  - Fix: restore the binding's contract, a `str` is always latin-1 (one
+    character per byte), and a caller wanting UTF-8 hands bytes. Every UTF
+    caller the branch added (bref_oracle.py, vlb_accept.py) and
+    utfcheck_arm.py already pass bytes. U6's other additions stay:
+    `PCRE2_MATCH_INVALID_UTF`, the `max_varlookbehind` compile context and
+    `Pcre2Error.code`.
+  - Solo: `verify_vars.py` 72 agree / 0 disagree; `make test-vars` green.
+- **test-registry**: solo RED, now GREEN at dc9283a80. Fixed in 4f1667414.
+  - Stale pin the stage legitimately moves. U1 added the limits.def rows
+    LA_LOOKBEHIND_BRANCH_MAX and LA_LOOKBEHIND_VAR_MAX, each with a
+    limits.md §3.11 anchor, so `limits_check.sh` gains two `[doc]` PASS
+    lines (41 PASS, 0 failed, read from a run).
+  - cba188ead moved that script's own manifest (78 -> 80). The second
+    reader of the same fact, run_registry_tests.sh's coverage guard, stayed
+    at 39.
+  - Re-pinned 39 -> 41, with the cause in the guard's history comment.
+    `make test-registry` green.
+- **test-rxtsource**: solo RED, now GREEN at d7125694f. Fixed in d7125694f.
+  - Stale pins. The stage added two .rxt files and edited eight more, and
+    no lane moved the census. Measured per changed file, base vs HEAD,
+    with the check's own awk and `verify_rxt.py`, not re-derived from the
+    corpus. Census and RUNSH both move 312/6304/75730 -> 314/6341/75962:
+    - lookbehind_variable.rxt: +1 file, 10 blocks, 54 lines.
+    - lookbehind_variable_witness.rxt: +1 file, 36 blocks, 54 lines.
+    - refused.rxt: -10 blocks, -10 lines.
+    - gated.rxt: +1 block, +5 lines.
+    - Lines only: d27/refusals +86, d27/spellings +23,
+      lookbehind_group_alt +11, alpha_spellings +4,
+      recursion/d27/sr_interactions +3, recursion/inlookaround +2.
+  - C3 moves:
+    - PASS -25 (22650 -> 22625). These are perr refusal lines python could
+      check, for shapes stage 1 now ACCEPTS: refused -10, d27/refusals -7,
+      lookbehind_group_alt -4, and one each in alpha_spellings, gated,
+      sr_interactions and inlookaround.
+    - SKIP +257 = pcre2-only +250 (python `re` has no variable-width
+      lookbehind) + no-python-expression +7 (the recursion files).
+    - Verifiable -18.
+  - `make test-rxtsource` 300 passed / 0 failed.
+- **test-memfn-arch**: solo GREEN at d7aaa3bc1. Already fixed by reachtri's C4
+  allowlist rows (docs/dev/lanes/reachtri_report.md); nothing changed here.
+- **test-startset**: solo RED, now GREEN at dc9283a80. Fixed in dc9283a80.
+  - Stale manifests. `manifest_s2_vm_{auto,forced}.tsv` key rows by
+    file:line, and the stage's .rxt edits moved them.
+  - Every off-diagonal row was listed IN FULL (vmhat_checks.py's own
+    `one()`/`corpus_blocks` in a scratch driver; the check prints six) and
+    classified against the base text.
+  - auto +3/-1:
+    - 2 new-file blocks.
+    - 1 line shift, sr_interactions :361 -> :363.
+  - forced +74/-25:
+    - 24 line shifts, same text and options.
+    - +33 blocks of the two new files.
+    - +17 blocks that were `perr` at the base and that stage 1 now accepts.
+    - -1: lookbehind_widths.rxt:91 `(?<=(a)|(aa))c` yields its id to its
+      dedup twin lookbehind_variable_witness.rxt:114, which sorts first (the
+      ssbuild3 precedent).
+  - No other row in an unchanged file moved; the bench rows are untouched.
+    Rows follow the upropb2 precedent: the hat's own mover rule. A fresh
+    `census_s1.py` would not reproduce today's manifests byte for byte
+    (s3fix600 and others pinned measured rows), so it was not the control.
+  - `make test-startset` green: vm-movers 491/3808, 0 off-diagonal.
+
+### OWED runs (box queue, owner `mttri`, detached; scripts in /var/tmp/pcrec-pcrec/scratch/mttri/jobs/)
+
+All at the branch HEAD current when each job starts (dc9283a80 or this
+report's commit, which adds no code). Read verdicts with `scripts/verdict`
+on each job's `done/*/job.log`.
+
+| job | what | log | completion line |
+|---|---|---|---|
+| 220-mttri-maketest | make, make strict, make test via perfrun | scratch/mttri/strict.log, scratch/mttri/maketest.log (+ .perfrun) | perfrun `DONE rc=0`; no `*** [...test-` line |
+| 221-mttri-abisweep | vlbfix's abi sweep (3b9754edf abi 95 vs HEAD) | scratch/mttri/abisweep.tsv; job.log | **DONE, GREEN**: patterns=5048, only utf8 -fno-comments differs (2244, K137), unexpected=0 |
+| 222..225-mttri-mech1..4 | vlbfix's rows: S1960-S1989, S133 S134 S135 S136 S169 S170 S693 S-U4 S-U6 | scratch/mttri/mech/{1,2,3,4}/mech.log | `== mech run COMPLETE: N rows (unexpected: 0, ... anomalies: 0` |
+| 226-mttri-reach6 | REACH_ONLY S518-S523 (reachtri's owed check) | scratch/mttri/mech/reach6/reach.log | `mech-reach-only: DONE rc=0 rows=6 reached=6 unreached=0` |
+| 227-mttri-reach | REACH_ONLY, the whole matrix | scratch/mttri/mech/reach/reach.log | `mech-reach-only: DONE rc=0` (vlbfix's run read unreached=6, the six above) |
+| 228-mttri-axes | make test-axes | scratch/mttri/axes.log | no `*** [...test-` line |
+
+### Commits
+
+d378202ac (pcre2_ctypes str = latin-1), 4f1667414 (registry 39 -> 41),
+d7125694f (rxtsource pins), dc9283a80 (start-set manifests), then this report.
+
+### For the manager
+
+- The binding fix restores a shared contract that 30+ probe and test callers
+  rely on. If a later stage wants a UTF-8 `str` convenience, it should be an
+  explicit parameter, not keyed on the option bit.
+- History index lines for reachtri and mttri are placed in
+  docs/dev/history/claude_md/docs__dev__lanes.md.
