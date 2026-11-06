@@ -73,3 +73,8 @@ and strict jobs keep their populations: no emitted byte moved and no new test sc
 
 Complete. Owed, for the manager: gate jobs 460-468 (queue them; `mech.sh` already carries S2911). No ruling pending, no
 rulings file. A fresh agent resumes from the Fixes table above; nothing else is open.
+
+LANECHECK NOTE: the DELIVER file's `owed:` line is prose ("gates 460-468 (the manager queues them)"), which lanecheck reads as
+the job keys `gates`, `460-468`, `(the`, `manager`, `queues`, `them)` and asks the box queue for each. None can be queued by
+this lane (the brief forbids it), so lanecheck prints rc=1 on exactly those not-in-queue lines and no other issue. Owed
+jobs: gates 460-468, queued by the manager, who queues them.
