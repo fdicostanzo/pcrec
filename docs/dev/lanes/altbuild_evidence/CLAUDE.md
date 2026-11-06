@@ -52,3 +52,9 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
   on the stage build and on the ruled local fix (the chain-side conjunct
   dropped; reverted). `k139_nswk.py` — K concatenated alternations of words
   no M/P/S rule rewrites (distinct first and last bytes).
+- `u4_census_2b.py` — lane altbuild2's post-2b U4 island/rung census (base
+  vs stage, the deny pair as the restore control, single-bit attribution).
+- `ofs_reprobe.py` — the `ofs_test_of` PREM-6 re-probe (a probe-binary sweep
+  over the corpus and bench, default vs ofs flags; 0 masked positions).
+- `u1_bench.py` — U1 for bench/utf8 (base96 vs s12p, construct predicate
+  with a bracket scanner); its run is box-queue job 301.
