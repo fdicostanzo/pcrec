@@ -6211,6 +6211,11 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
  * encoding spells a character — and is the parser's literal reader for any
  * byte >= 0x80 (utf8_design.md §2.7). */
 unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len);
+/* [RUN-POS-SET] The canonical split of a code-point set into the compile
+ * encoding's boxes (byte-range sequences, ascending, before any merge): the
+ * lowering's own splitter, for the VM island's set reading
+ * (src/opt/lower_enc.c). `*nb` gets the box count. */
+Ast **pcrec_lower_boxes(Ctx *cx, const PcrecCpRange *iv, int n, int *nb);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the one fixpoint
  * the emitter runs — `W`'s (a set of SLOT INDICES, which exist nowhere but
@@ -7785,6 +7790,20 @@ bool pcrec_state_view_invariant(const Dfa *d, const DState *st);  /* src/opt/sca
  * build's cx->job->altcls_merges/altcls_factored stay at 0 -- the same
  * "no trace" rule possessify.c's -fno-possessify follows. */
 Ast *pcrec_altcls(Ctx *cx, Ast *root);               /* src/opt/altcls.c */
+
+/* [RUN-POS-SET] THE ALTERNATION OWNER (src/opt/altnf.c;
+ * docs/design/alt_normal_form.md §3.3): rewrites the branch list `br[0..n)`,
+ * in preference order, by the rules `rules` names and returns the new count, the
+ * list rewritten in place. Exact and preference-keeping (§3.2's adjacency
+ * test gates every branch it moves); allocates only new nodes; reads no
+ * option (a denied rule is the caller's to leave out). `*folds`, when
+ * non-NULL, gets the number of sibling-merge folds made. */
+typedef struct {
+    bool merge;    /* rule M, sibling merge */
+    bool prefix;   /* rule P, prefix factoring (stage 2b) */
+    bool suffix;   /* rule S, suffix factoring (stage 2b) */
+} PcrecAnfRules;
+int pcrec_altnf(Ctx *cx, Ast **br, int n, PcrecAnfRules rules, int *folds);
 
 /* ---- [M4.5b] the VM engine (docs/design/engine_m4.md) ---- */
 

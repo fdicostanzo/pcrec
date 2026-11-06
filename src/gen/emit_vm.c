@@ -4083,13 +4083,33 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     if (depth > VM_ISL_MAX_DEPTH) return false;
 
     switch (a->k) {
-    /* [CLS-TREE] S3: its byte child, at the SAME depth — the wrapper is
-     * transparent, so a wide literal (`é|x`) keeps its island exactly as it
-     * did before the kind existed. The `default: return false` this switch
-     * used to carry would have dropped the island SILENTLY
-     * (docs/dev/cls_s3_reader_inventory.md §3 row 10). */
-    case A_WCLASS:
-        return vm_isl_words(v, a->l, out, depth, budget);
+    /* [RUN-POS-SET] stage 1 (docs/design/alt_normal_form.md §5 stage 1, G-2):
+     * a wide class is read as its code-point SET, never its byte child, which
+     * the alternation owner may have merged (`[éà]`'s `c3 a0|c3 a9` becomes
+     * `c3 [a0 a9]`, a class the island declines). TODAY'S ADMISSION, stated
+     * on the set: admitted iff every box of the set's canonical split (the
+     * lowering's own splitter, before any merge) is a single string; its
+     * words are then the members' encodings in ascending code point, one per
+     * box, enumerated by the same arms and budget charges the unmerged child
+     * took. The predicate exists only to keep today's admission; widening it
+     * is [ENG-ISL-S2]'s class-member shape, which deletes it. A split already
+     * over the word cap (`\p{L}`) declines before any word is built. The
+     * `default: return false` this switch used to carry would have dropped
+     * the island SILENTLY (docs/dev/cls_s3_reader_inventory.md §3 row 10). */
+    case A_WCLASS: {
+        int n, nb;
+        const PcrecCpRange *iv = pcrec_wcls_set(v->cx, a, &n);
+        Ast **box = pcrec_lower_boxes(v->cx, iv, n, &nb);
+        if (nb == 0 || nb > VM_ISL_MAX_WORDS) return false;
+        Ast *split = box[0];
+        for (int i = 1; i < nb; i++) {
+            Ast *alt = pcrec_ast_node(v->cx, A_ALT);
+            alt->l = split;
+            alt->r = box[i];
+            split = alt;
+        }
+        return vm_isl_words(v, split, out, depth, budget);
+    }
     case A_EMPTY:
         out->w = pcrec_arena_alloc(&v->cx->arena, sizeof *out->w);
         out->w[0].b = empty; out->w[0].len = 0;
@@ -4111,12 +4131,16 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
          * cost pcrec's own C stack one frame per branch. Preference order is
          * left to right, which for a LEFT-NESTED chain means the deepest `l`
          * first. */
+        /* [RUN-POS-SET] stage 1: the ISLAND-LOCAL step `t->l` stops at an
+         * `A_WCLASS` in a head slot, so the class reaches the set arm above
+         * exactly as one in a right slot does (`pcrec_ast_seethru` would hand
+         * the switch its possibly merged byte child). */
         int nbr = 1;
-        for (const Ast *t = a; t->k == A_ALT; t = pcrec_ast_seethru(t->l)) nbr++;
+        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
         const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
         int i = nbr;
         const Ast *t = a;
-        while (t->k == A_ALT) { br[--i] = t->r; t = pcrec_ast_seethru(t->l); }
+        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
         br[0] = t;
 
         VmIslWL *sub = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
@@ -4133,14 +4157,15 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
         return true;
     }
     case A_CAT: {
-        /* [CLS-TREE] S3: a lowered class at the spine head unrolls into the
-         * spine through `pcrec_ast_seethru`, as it did before the kind. */
+        /* [RUN-POS-SET] stage 1: the island-local step `t->l`, as in the
+         * `A_ALT` walk: a wide class at the spine head is ONE element, read
+         * as its set, never unrolled into the spine as its byte child. */
         int nsp = 1;
-        for (const Ast *t = a; t->k == A_CAT; t = pcrec_ast_seethru(t->l)) nsp++;
+        for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
         const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
         int i = nsp;
         const Ast *t = a;
-        while (t->k == A_CAT) { el[--i] = t->r; t = pcrec_ast_seethru(t->l); }
+        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
         el[0] = t;
 
         if (!vm_isl_words(v, el[0], out, depth + 1, budget)) return false;
