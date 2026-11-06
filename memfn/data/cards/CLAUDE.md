@@ -4,8 +4,13 @@ Hand-written, append-only by version (a committed row never changes):
 
 - `kit-grid.tsv` — `kit-grid@1`, grid1's method (zen4-grid1, gridread @
   540649453): the cards every row of `../sets/kit-interim-grid1.tsv` was
-  measured under. Its header documents the columns (`measure_sets.md` §7.2).
-  `kit-grid@2` (grid2's cards) is grid2's prep lane's, not written here.
+  measured under. Its header documents the columns (`measure_sets.md` §7.2),
+  the unit per version and, for ver 3, the `lengths` estimator grammar and
+  the `aa_rule` tokens. `kit-grid@2` (grid2's cards) is grid2's prep lane's,
+  not written here. `kit-grid@3` (span_pick stage 2, `span_cards.md` §2.4,
+  unit S2c): find_byte, find_hit, verify_cmp, enter, zen4-grid3's method;
+  their `deps` name formhash.c's entry-table ids (`walk-set` folded into
+  `walk`), `enter` none.
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets
   (@1 is untouched; `kit-synthetic@2` = @1 plus `beta` for the sets' unit row, lane
   setdig: the loader refused sets without a unit row),
@@ -22,4 +27,6 @@ Hand-written, append-only by version (a committed row never changes):
 A new search method adds its card here in the same change (D176,
 `docs/dev/guide/addenda/kit.md`). `tests/memfn/finder_check.py` (check C)
 reads EVERY table here (by listing), holds each row's shape, every set's keys
-to a card and every card's `deps` to the form hashes.
+to a card and every card's `deps` to the form hashes; its CARD GUARD (S2c):
+a card naming a `kit:form.` dep has `form` as its first dim, the count
+printed and floored at 17 (kit-grid 12, kit-kernels 5).

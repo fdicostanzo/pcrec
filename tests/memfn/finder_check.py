@@ -32,7 +32,17 @@ design's text, sharing no code with the kit):
   B. R-MS3: `walk` and `libc` hash, the forms later steps build are refused;
      the text hash ignores a rename, a comment and layout and moves on a
      one-operator edit; the walk form's hash IS its canonical text's.
-  C. R-MS5 and the sets: memfn/data/sets/generate.py --check; every row of
+     span_cards.md §3.2 (S2c): every id and class instance of formhash.c's
+     ENTRY TABLE (FORM_IDS, written here from the design) resolves, reaches
+     the design's kit row, is the design's class by its own site text's
+     measure (settest's compares, rc-words' words) and the canonical one is
+     mf_form_hash(id); all instances hash pairwise distinct (sabotage (m),
+     S2930); per id a rename of its site text keeps the hash and a
+     one-instruction edit moves it.
+  C. R-MS5 and the sets: memfn/data/sets/generate.py --check; THE CARD
+     GUARD (span_cards.md §2.4, S2c; S2931): over every card table and every
+     ver, a card whose deps name `kit:form.` has `form` as its FIRST dim, the
+     count printed and floored (CARD_FORMDEP_FLOOR); every row of
      every set on its method's card (quantity present, arity = dims), the
      set's `cards` section equal to its card table, `rows` and
      `values_digest` (measure_sets §1.6, recomputed here) as its header
@@ -130,6 +140,25 @@ B1_DENIES = ["fd-d1"]
 B3B_DENIES = ["fd-pres-g1", "fd-pres-pick", "pres-set-lead"]
 PENDING_DENIES = {}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
+# span_cards.md §3.2 (unit S2c): the form-hash ENTRY TABLE's ids, their
+# instances (class -> the class's measure) with the canonical one starred in
+# the design (`*`), and the kit row each instance's facts must reach (the
+# composer's arm, T-FIND's row on a window's stop, T-CMP's row; settest none).
+# `walk-set` folded into `walk` (its site text is the walk's byte for byte).
+# The class measure, read here from the SITE TEXT: settest's compare count
+# (`==`, `<=`, `>=`), rc-words' word count (`&&` + 1).
+FORM_IDS = {
+    "walk":      ("pf_walk",   {"-": None}, "-"),
+    "libc":      ("pf_memchr", {"-": None}, "-"),
+    "pair":      ("PAIR",      {"-": None}, "-"),
+    "settest":   ("-",         {"c1": 1, "c2": 2, "cn": 3}, "c2"),
+    "rc-words":  ("words",     {"w1": 1, "w2": 2, "w3": 3}, "w2"),
+    "rc-memcmp": ("memcmp",    {"l1": None}, "l1"),
+}
+FORM_INSTANCE_FLOOR = 10
+# span_cards.md §2.4 [rev1.2 READY-2]: the card guard's population, floored
+# (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3 3)
+CARD_FORMDEP_FLOOR = 17
 FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
 # M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
@@ -247,15 +276,74 @@ def check_table(fx):
 
 # ---- B ----------------------------------------------------------------------
 
+def class_measure(fid, txt):
+    if fid == "settest":
+        return len(re.findall(r"==|<=|>=", txt))
+    if fid == "rc-words":
+        return txt.count("&&") + 1
+    return None
+
+
 def check_hash(fx):
     r = run([fx, "--hash"]).stdout.decode().splitlines()
     form = {c[1]: (c[2], c[3]) for c in (ln.split("\t") for ln in r) if c[0] == "FORM"}
     text = {c[1]: c[2] for c in (ln.split("\t") for ln in r) if c[0] == "TEXT"}
-    for f in ("walk", "libc"):
+    inst = [c[1:] for c in (ln.split("\t") for ln in r) if c[0] == "FORMCLS"]
+    for f in FORM_IDS:
         if form.get(f, ("-1",))[0] != "0" or not re.fullmatch(r"[0-9a-f]{16}", form[f][1]):
             bad("mf_form_hash(%s) does not resolve: %s" % (f, form.get(f)))
         else:
             ok()
+    # S2c: every instance of the entry table resolves, reaches its row, is
+    # the design's class, and the canonical one is mf_form_hash(id)
+    seen = {}
+    for c in inst:
+        if len(c) != 6:
+            bad("FORMCLS line %r is not id cls rc hash row canon" % (c,))
+            continue
+        fid, cls, rc, h, row, canon = c
+        want = FORM_IDS.get(fid)
+        if not want or cls not in want[1]:
+            bad("the entry table holds %s %s, which the design does not name" % (fid, cls))
+            continue
+        if rc != "0" or not re.fullmatch(r"[0-9a-f]{16}", h):
+            bad("instance %s %s does not resolve (rc %s): its facts reach no row, or another" % (fid, cls, rc))
+            continue
+        seen[(fid, cls)] = h
+        (ok() if row == want[0] else
+         bad("instance %s %s reached row %s, the design's %s" % (fid, cls, row, want[0])))
+        (ok() if (canon == "1") == (cls == want[2]) else
+         bad("instance %s %s: canon %s, the design's canonical class is %s" % (fid, cls, canon, want[2])))
+        if canon == "1":
+            (ok() if form.get(fid, ("", ""))[1] == h else
+             bad("mf_form_hash(%s) %s is not its canonical instance's %s" % (fid, form.get(fid), h)))
+        m = want[1][cls]
+        if m is not None:
+            t = run([fx, "--site-text", fid, cls]).stdout.decode()
+            got = class_measure(fid, t)
+            (ok() if (got == m if m < 3 else got >= m) else
+             bad("instance %s %s: its text's class measure is %d, the class's %s%d"
+                 % (fid, cls, got, "" if m < 3 else ">= ", m)))
+    want_all = {(f, c) for f, v in FORM_IDS.items() for c in v[1]}
+    for k in sorted(want_all - set(seen)):
+        bad("the design's instance %s %s has no resolving FORMCLS line" % k)
+    (ok() if len(seen) >= FORM_INSTANCE_FLOOR else
+     bad("%d form instances resolve, under the floor %d" % (len(seen), FORM_INSTANCE_FLOOR)))
+    # pairwise distinct: two ids (or two classes) hashing one text is one
+    # form under two names (sabotage (m))
+    byh = {}
+    for k, h in seen.items():
+        byh.setdefault(h, []).append(k)
+    dup = [v for v in byh.values() if len(v) > 1]
+    (ok() if not dup else
+     bad("form instances hash one text: %s" % "; ".join(" = ".join("%s %s" % k for k in v) for v in dup)))
+    # R-MS3's two fixtures per id, on its canonical site text
+    for f in FORM_IDS:
+        rn, ed = text.get(f + ".rename"), text.get(f + ".edit")
+        (ok() if rn and rn == form.get(f, ("", ""))[1] else
+         bad("the rename of %s's site text moved its hash (%s vs %s)" % (f, rn, form.get(f))))
+        (ok() if ed and ed != "-" and ed != form.get(f, ("", ""))[1] else
+         bad("the one-instruction edit of %s's site text left its hash (or found no edit site): %s" % (f, ed)))
     for f, step in LATER_FORMS.items():
         if form.get(f, ("0",))[0] != "-1":
             bad("mf_form_hash(%s) resolves before its step %s" % (f, step))
@@ -334,6 +422,7 @@ def check_sets(root, form):
     cdir = os.path.join(root, "memfn/data/cards")
     names = sorted(f[:-4] for f in os.listdir(cdir) if f.endswith(".tsv"))
     (ok() if len(names) >= 3 else bad("memfn/data/cards holds %d card tables, under 3" % len(names)))
+    formdep = 0
     for name in names:
         cl = read_cards(os.path.join(cdir, name + ".tsv"))
         cards[name] = cl
@@ -341,6 +430,17 @@ def check_sets(root, form):
             f = c.split("\t")
             (ok() if len(f) == 13 and f[0] == "kit" and f[4] in UNIT_CODE else
              bad("%s.tsv: card row is not 13 kit columns with a §3.1 unit: %r" % (name, c)))
+            # span_cards.md §2.4 (S2c): a card whose deps name a form hash
+            # keys its rows by the form, FIRST (the key's `form` token IS
+            # the dep's id), over every table and every ver
+            if len(f) == 13 and "kit:form." in f[12]:
+                formdep += 1
+                (ok() if f[3].split(";")[0] == "form" else
+                 bad("%s.tsv: card %s@%s names a kit:form. dep but its first dim is %r, not form"
+                     % (name, f[1], f[2], f[3].split(";")[0])))
+    print("check C: %d cards with a kit:form. dep" % formdep)
+    (ok() if formdep >= CARD_FORMDEP_FLOOR else
+     bad("%d cards with a kit:form. dep, under the floor %d" % (formdep, CARD_FORMDEP_FLOOR)))
     sdir = os.path.join(root, "memfn/data/sets")
     later = set()
     nsets = 0

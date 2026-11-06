@@ -489,6 +489,13 @@ int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t 
     return 0;
 }
 
+const char *run_cmp_row(mf_art *art, const mf_term *t)
+{
+    rc_run r = rc_of(t);
+    const rc_row *row = rc_row_of(art, t, &r);
+    return row ? row->row.name : NULL;    /* rc_row_of recorded a refusal */
+}
+
 int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np)
 {
     for (uint32_t i = 0; i < t->run_len; i++)

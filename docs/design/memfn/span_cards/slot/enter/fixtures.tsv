@@ -1,1 +1,21 @@
-# kind	entry	pattern	note
+# span_cards/slot/enter/fixtures.tsv — J5's `enter` fixtures (span_cards.md §2.3; art.py reads it, plan.py keys it).
+# THE FIXTURE RULE (art.py's header states it in full): for (kind, entry), a census0 corpus unit (sweep.jsonl, RTE, rc 0)
+# of that site_kind whose CHOSEN alternative (wr.alt, the entry the consumer is entered with) has that entry and at least
+# two non-FULL verify-YES positions (so a FAIL candidate exists: its last verify position, the highest window offset that
+# is not the stop, fails); row-1-class units first (census0's population); the window starts at the match start and the
+# pattern needs at least one byte past it (die1 is a consumer death; kind 6 REPORT excepted: the window IS the match);
+# python re's semantics the same; the shortest such pattern. A pair no unit reaches has pattern `-` and the reason.
+# Fields: window = per-position byte choices `|`-separated (copied from the unit's sets; the FIRST byte of each is the
+# plants' canonical text); stop = the unit's stop offset; pre = bytes before every candidate and plant; die = the byte
+# one past the window (pass); fail = the byte put at the last verify position (fail); live = the suffix that makes
+# pre+window+live a real match (the plants); filler = the alphabet between them. Escapes: \n \t \\ \xHH.
+#kind	entry	pattern	source	window	stop	pre	die	fail	live	filler	note
+1	NONE	(?i:select)\d+x	c02130	sS|eE|lL|eE|cC|tT	4		 	-	42x	0123456789 ,-:	row-1-class PRE:part; DFA scan; dies on \d+ at the byte past SELECT
+1	PARKED	-	-	-	-	-	-	-	-	-	every kind-1 unit choosing PARKED (612) verifies ONE position (the stop; its second is FULL): no FAIL candidate exists
+1	RESEED	-	-	-	-	-	-	-	-	-	no kind-1 unit CHOOSES a RESEED alternative (RESEED is only stated beside the chosen PARKED one)
+3	NONE	(?i)(hello|help)	pr04	hH|eE|lL	2		.	-	lo	0123456789 ,-:	row-1-class PRE:part; hybrid prefilter; the last verify position is offset 1 (offset 2 is the stop)
+3	PARKED	-	-	-	-	-	-	-	-	-	every kind-3 unit choosing PARKED (756) verifies ONE position (the stop; its second is FULL): no FAIL candidate exists
+3	RESEED	-	-	-	-	-	-	-	-	-	no kind-3 unit CHOOSES a RESEED alternative (RESEED is only stated beside the chosen PARKED one)
+4	NONE	(?i)(ca)t\1	c04396	cC|aA|tT	0		.	-	ca	0123456789 ,-:	row-1-class PRE:part (its PF site states the same kind on `c`); VM attempt dies on \1 past CAT
+5	NONE	(?m)^\bfoo\b$	c00088	f|o|o	0	\n	x	-	\n	0123456789 ,-:	NOT row-1-class: census0's one kind-5 unit, (?m)^x{2,5}(?i:cat), ends at its window (no die1); its MLINE site (kind 5) finds every LF, so the filler has none
+6	NONE	(?i)abc	smp15	aA|bB|cC	1		-	-		0123456789 ,-:	row-1-class COVER; REPORT: a pass candidate IS a match (no consumer to die in), the fail candidate is not

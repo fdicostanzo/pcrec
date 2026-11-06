@@ -1,0 +1,7 @@
+# span_cards/slot/j1/patterns.tsv — J1's two patterns (span_cards.md §3.6, plan.md [PAIR-LOOKAHEAD-TIME]): READ from the sibling
+# pcrec-bench checkout at run time (never copied), pinned by sha-256 (art.py refuses a moved file). The
+# "query-string pair" is username-password-pair: O-117's look-ahead row, whose largest move was on the two
+# query-string texts.
+#id	bench_path	sha256
+union-select	bench/capability/patterns/wild-waf-crs-942270-union-select.rx	dca1ba125a3aa86f6f50d1713245a7ea3cfc3cb80b8d3d33cad67ce647460291
+username-password-pair	bench/capability/patterns/wild-secrets-username-password-pair.rx	b3b41a00a29bcb5df5ca3838be6e8ed35d689b7ecfa9ebd1ffc8f8435e729ca9

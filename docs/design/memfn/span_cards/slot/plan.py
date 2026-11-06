@@ -44,6 +44,15 @@ def vcls_pairs():
             pairs.add((f[2], f[3]))
     return sorted(pairs)
 
+ENTER_GAP = 256                        # an `enter` candidate every 256 bytes (§2.3)
+J1_WIDTHS = (32, 64, 128, 256, 512)    # §3.6; 128 carries the twin 128#b
+J1_SUBJECTS = ("mixed", "qs")          # j1/subjects.py: the bench capability subjects' two shapes
+J1_REGIMES = (("throughput", 1048576), ("short", 524288))   # j1/subjects.py LEN_TPUT, LEN_SHORT
+
+def j1_pattern_ids():
+    return [ln.split("\t")[0] for ln in open(os.path.join(HERE, "j1", "patterns.tsv"))
+            if ln.strip() and not ln.startswith("#")]
+
 def enter_fixtures():
     fx = {}
     for ln in open(ENTER_FIX):
@@ -108,17 +117,31 @@ def build():
         for p in PASSES:
             row("J4", Arm("kit.verify_cmp.%s.%s.%s" % (f, c, p), "J4.verify.%s" % f, "verify", f, cls=c, pas=p,
                           base="base.null.%s" % c, events=LEN // CAND_STRIDE), "delta %d" % LEN, "base.null.%s" % c)
-    # J5: enter per (kind, entry) with a fixture; the fail subject is the base
+    # J5 (art.py): enter per (kind, entry) with a fixture; the fail subject is the base. events: the pass
+    # subject's candidates (one per ENTER_GAP bytes), 0 on the fail base (§3.4 step 1)
     fx = enter_fixtures()
     for k in census_enter_kinds():
         for e in ("NONE", "PARKED", "RESEED"):
-            if (k, e) not in fx:
-                unreached.append("enter.%d.%s: no fixture pattern states kind %d with a %s alternative" % (k, e, k, e))
+            if (k, e) not in fx or fx[(k, e)][2] == "-":
+                why = fx[(k, e)][-1] if (k, e) in fx else "no fixture pattern states kind %d with a %s alternative" % (k, e)
+                unreached.append("enter.%d.%s: %s" % (k, e, why))
                 continue
             b = "base.fail.%d.%s" % (k, e)
-            add("J5", Arm(b, "J5.base", "enter", "artifact", fixture=fx[(k, e)], events=None))
-            row("J5", Arm("kit.enter.%d.%s" % (k, e), "J5.enter", "enter", "artifact", fixture=fx[(k, e)], base=b),
-                "delta %d" % LEN, b)
+            add("J5", Arm(b, "J5.base", "enter", "artifact", fixture=fx[(k, e)], events=0))
+            row("J5", Arm("kit.enter.%d.%s" % (k, e), "J5.enter", "enter", "artifact", fixture=fx[(k, e)], base=b,
+                          events=LEN // ENTER_GAP), "delta %d" % LEN, b)
+    # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width
+    # and the twin 128#b; no rows (J1's cells go to the run record, never the set)
+    for pid in j1_pattern_ids():
+        for subj in J1_SUBJECTS:
+            for regime, n in J1_REGIMES:
+                g = "J1.%s.%s.%s" % (pid, subj, regime)
+                for w in J1_WIDTHS:
+                    a = Arm("j1.%s.%s.%s.%d" % (pid, subj, regime, w), g, "j1", "artifact", lengths=(n,),
+                            fixture=(pid, subj, regime, w))
+                    add("J1", a)
+                    if w == 128:
+                        add("J1", a.twin())
     # every job's control (§3.2): three find_byte lengths, one fixed executable
     for j in jobs:
         jobs[j].insert(0, Arm("ctl", "%s.ctl" % j, "ctl", "walk", lengths=LENGTHS))

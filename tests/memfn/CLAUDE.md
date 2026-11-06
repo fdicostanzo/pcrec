@@ -39,10 +39,11 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **reach_equal.py** — REACH EQUALITY between two MF_TRACE builds, per pattern and arm; gone rows DERIVED, equal to `--gone`; failing sets compared; `--map` compares through row_map.tsv; `--limit`/`--no-corpus` are smoke runs (trailer LIMITED, exit 3) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
+- `arm_fixtures.c --site-text ID [CLS]` / `--facts ID [CLS]` (span_cards S2c, includes kit.h): an entry-table instance's hashed text and the slot harness's `key<TAB>value` facts; `--hash` adds `FORMCLS` lines.
 - `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; replies on a fresh art vs between interleaved defines; the sticky-err fence). run_finder.sh floors it EXACTLY, plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each Table A/M/T-VERIFY row dropped must move a reply or be declared unreached (population = window.c's rows).
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
-- **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3) and holds each card row's shape.
+- **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3), holds each card row's shape and the `kit:form.`-dep guard (floor 17).
 - **proven_check.c** — R-25 (lane memfn-r25): the form class's proven sets honour the row's declared `tests`.
 - **mass_check.c** — span_pick 1b/1c: goldens of `kit_mass` (NONE, multiset, cap), `kit_run_set`, `kit_run_member`; the presence run normal-form refusal; part `mass` of test-memfn-finder (floor 41).
 ### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)

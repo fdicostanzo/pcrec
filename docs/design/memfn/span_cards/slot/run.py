@@ -115,6 +115,8 @@ def run(job, rundir, run_id):
     tp.close()
     jobs, _r, _f, _u = plan.build()
     grp = {a.name: a for a in jobs[job]}
+    if job == "J1":
+        return run_j1(rundir, run_id, pts, grp)
     rows = []
     for (arm, length, l), v in sorted(pts.items()):
         a = grp[arm]
@@ -125,6 +127,33 @@ def run(job, rundir, run_id):
     open(os.path.join(rundir, "cells.%s.tsv" % job), "w").write(
         "#" + "\t".join(est.CELL_COLS) + "\n" + "\n".join(rows) + "\n")
     for g in groups(job):
+        print("== s2 GROUP done %s" % g)
+    return 0
+
+J1_COLS = ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"]
+
+def run_j1(rundir, run_id, pts, grp):
+    """J1's END (§3.5 "The run record" step 1, §3.6): its cells (each the median over rounds, §3.4 step 1) into
+    RUNDIR/j1_cells.tsv in j1_rule.py's columns (width `128#b` the twin; the control's points stay in the
+    transcript), then record.py j1, the run record's one writer, with the frozen code commit (CODE_COMMIT, else
+    the tree's HEAD)."""
+    rows = []
+    for (arm, length, l), v in sorted(pts.items()):
+        a = grp[arm]
+        if a.kind != "j1":
+            continue
+        pid, subj, regime, w = a.fixture
+        wt = "%d#b" % w if arm.endswith("#b") else str(w)
+        rows.append("\t".join(["J1/%s/%s/%s/%s/%d" % (pid, subj, regime, wt, l), pid, subj, regime, wt, str(l),
+                               str(est.med(v))]))
+    open(os.path.join(rundir, "j1_cells.tsv"), "w").write("#" + "\t".join(J1_COLS) + "\n" + "\n".join(rows) + "\n")
+    commit = os.environ.get("CODE_COMMIT") or sh(["git", "-C", TREE, "rev-parse", "HEAD"])[1].strip()
+    rc, out, err = sh([sys.executable, "-I", os.path.join(HERE, "record.py"), "j1", rundir, run_id, commit])
+    sys.stdout.write(out)
+    if rc:
+        print("== s2 JOB J1 FAILED: record.py j1 rc %d %s" % (rc, err[-300:]))
+        return 1
+    for g in groups("J1"):
         print("== s2 GROUP done %s" % g)
     return 0
 

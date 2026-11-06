@@ -170,9 +170,9 @@ def render(fx, a):
     """(source text, (form, cls) or None, facts)"""
     if a.kind == "verify" and a.form == "null":
         return WRAP_NULL, None, {}
-    if a.kind == "enter":
+    if a.kind in ("enter", "j1"):              # whole artifacts (art.py): rundir is fx's directory
         import art
-        return art.render(a), None, {}
+        return art.render(a, os.path.dirname(fx)), None, {}
     cls = a.cls if a.kind == "verify" else None
     form = "walk" if a.kind == "ctl" else a.form
     f = facts(fx, form, cls)
@@ -190,7 +190,7 @@ def span(src, what):
     return m.group(1) if m else ""
 
 def arm_entry(a, sym, f, rundir):
-    kind = {"find": "K_FIND", "ctl": "K_FIND", "verify": "K_CMP", "enter": "K_ART"}[a.kind]
+    kind = {"find": "K_FIND", "ctl": "K_FIND", "verify": "K_CMP", "enter": "K_ART", "j1": "K_ART"}[a.kind]
     if a.kind == "verify" and a.form == "null":
         kind = "K_NULL"
     lens = ", ".join(str(x) for x in a.lengths)
@@ -216,7 +216,7 @@ def arm_entry(a, sym, f, rundir):
     if a.kind == "verify":
         ev = plan.LEN // 64
     subj = expect = "NULL"
-    if a.kind == "enter":
+    if a.kind in ("enter", "j1"):
         import art
         subj, expect = art.subject(a, rundir)
     return ("    { \"%s\", %s, %s_time, %s_gate, %d, { %s }, %s, %d, %d, %d, { %s }, { %s }, %d, { %s }, { %s }, %d, %dLL, %s, %s },"
@@ -286,6 +286,9 @@ def build_objs(job, rundir, arms):
         src, fc, f = render(fx, a)
         sym = "a%d" % k
         o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)
+        if a.kind in ("enter", "j1"):             # whole artifacts share one prefix: keep only SYM's two globals
+            import art
+            art.localize(o, sym)
         objs.append((a, sym, o, f, src))
         if fc:
             got = sh([fx, "--hash-text", "-"], input=span(src, "FILE") + span(src, "BODY")).strip()
@@ -352,6 +355,9 @@ def link_job(job, rundir, run_id):
     order = [a.name for a, _s, _o, _f, _src in objs]
     draws = {l: {} for l in range(1, 8)}
     exes, addrs = {}, {}
+    # phases a function can take mod 64: 64 / A; an object aligned to 64 (gcc aligns some loops so) has ONE,
+    # its phase is the code's own, and neither constraint can apply to it (recorded, never re-drawn)
+    need = {s: min(3, 64 // max(16, text_align(o))) for _a, s, o, _f, _src in objs}
     def bump(l, name, why):
         draws[l][name] = draws[l].get(name, 0) + 1
         if draws[l][name] >= MAXDRAW:
@@ -361,14 +367,13 @@ def link_job(job, rundir, run_id):
         while True:
             exes[l] = link_launch(job, rundir, run_id, l, common, objs, draws[l])
             addrs[l] = nm_addrs(exes[l])
-            bad = next((n for n in order if n.endswith("#b")
+            bad = next((n for n in order if n.endswith("#b") and need[names[n]] > 1
                         and addrs[l][names[n]] % 64 == addrs[l][names[n[:-2]]] % 64), None)
             if not bad:
                 return
             bump(l, bad, "the per-launch constraint (arm and twin differ mod 64)")
     for l in range(1, 8):
         fix_launch(l)
-    need = {s: min(3, 64 // max(16, text_align(o))) for _a, s, o, _f, _src in objs}
     while True:
         bad = next((n for n in order if len({addrs[l][names[n]] % 64 for l in range(1, 8)}) < need[names[n]]), None)
         if not bad:
@@ -391,7 +396,7 @@ def link_job(job, rundir, run_id):
                                                          draws[l].get(n, 0)))
     open(os.path.join(rundir, job, "placement.tsv"), "w").write(
         "#job\tlaunch\tarm\taddr\tmod64\thot_loop\tdraws\n" + "\n".join(rec) + "\n")
-    print("placement: %s: 7 launches linked (draws %s), arm/twin differ mod 64 in every launch, every arm takes "
+    print("placement: %s: 7 launches linked (draws %s), arm/twin differ mod 64 in every launch where A < 64, every arm takes "
           "min(3, 64/A) values mod 64 (phases %s); linked .text equal arm vs twin"
           % (job, ",".join(str(sum(draws[l].values())) for l in range(1, 8)),
              ",".join(sorted({str(v) for v in need.values()}))))
