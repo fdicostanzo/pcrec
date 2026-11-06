@@ -17,6 +17,13 @@ SAB_REACH_EXPECT='RX_VM_ALT_ISLANDS 1'
 SAB_REACH_POP='tests/codegen/run_wclass_census.sh|\[N3\]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }'
-SAB_AFTER='        while (t->k == A_CAT) { el[--i] = t->r; t = pcrec_ast_seethru(t->l); }   /* SABOTAGE S1885 */
-        t = pcrec_ast_seethru(t);'
+SAB_BEFORE='        for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
+        const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
+        int i = nsp;
+        const Ast *t = a;
+        while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }'
+SAB_AFTER='        for (const Ast *t = a; t->k == A_CAT; t = pcrec_ast_seethru(t->l)) nsp++;   /* SABOTAGE S1885: the pre-stage seethru step */
+        const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
+        int i = nsp;
+        const Ast *t = a;
+        while (t->k == A_CAT) { el[--i] = t->r; t = pcrec_ast_seethru(t->l); }'
