@@ -94,7 +94,7 @@ the intended end state, or `—` when there is no plan.
 | `REJECTED` | Not supported. Exits 1 with `requires module 'X'`, writes no output, never miscompiles. Pinned construct-by-construct by `tests/reject/` |
 | `AGREES-REJECT` | PCRE2 rejects it too, and pcrec rejects it the same way. Refusing the pattern IS compliance here — not a gap |
 | `OUT-OF-SCOPE` | Deliberately excluded, with the reason |
-| `DIVERGENCE` | An OPEN measured difference from libpcre2. Currently none: the two ever found were fixed on 2026-08-09 and their rows say so |
+| `DIVERGENCE` | An OPEN measured difference from libpcre2. No survey row carries it today: the two ever found were fixed on 2026-08-09 and their rows say so. Divergences still open are recorded in the keyed annotations and the K-list instead (K74 under Anchors, K34 under Subroutine references and recursion) |
 
 | becomes | meaning |
 |---|---|
@@ -328,11 +328,11 @@ model.
 | `\a` `\e` `\f` `\n` `\r` `\t` | `OK` | — |
 | `\xhh` | `OK` | — |
 | `\x{hh..}` | `OK` | — |
-| `\cx` | `REJECTED` | — |
+| `\cx` | `REJECTED` | `PLANNED` |
 | `\0dd`, `\ddd` as an ATOM | `OK-GATED` | — |
 | `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — |
-| `\o{ddd..}` | `REJECTED` | — |
-| `\N{U+hh..}` | `REJECTED` | — |
+| `\o{ddd..}` | `REJECTED` | `PLANNED` |
+| `\N{U+hh..}` | `REJECTED` | `PLANNED` |
 | `\U`, `\uhhhh` (ALT_BSUX) | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: escaped-characters -->
@@ -395,6 +395,12 @@ The registry's answer is authoritative here (this row said `classes` until
 DOC-1, 2026-08-11, contradicting the generated index below; the pointer it
 gave to a "note under Character types" pointed at a note that did not
 exist — it does now).
+2026-11-06 re-measure (compliance refresh): refused in byte mode by BOTH
+sides (pcrec: "requires module 'unicode-props'" by default, "module
+'unicode-props' is enabled but \N is not implemented yet" under
+`--features all`; libpcre2 10.46 rejects `\N{U+41}` without UTF), and
+libpcre2 accepts it under UTF. The page's `becomes` is `PLANNED`, matching
+the registry's `planned` (it read `—` until this refresh).
 
 **`base:alt-bsux-U-uhhhh`**
 
@@ -408,9 +414,9 @@ Option-gated compatibility spellings.
 |---|---|---|
 | `.` | `OK` | — |
 | `\d \D \s \S \w \W \h \H \V \N` | `OK` | — |
-| `\v` | `REJECTED` | `PLANNED` |
+| `\v` | `OK` | — |
 | `\C` | `REJECTED` | `PLANNED` |
-| `\p{..}` `\P{..}` | `REJECTED` | — |
+| `\p{..}` `\P{..}` | `OK-GATED` | — |
 | `\R` | `REJECTED` | `PLANNED` |
 | `\X` | `REJECTED` | `PLANNED-HARD` |
 
@@ -452,7 +458,7 @@ bundled prose row `\d \D \s \S \w \W \h \H \V \N`; all nine share it.
 **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as
 vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2
 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as
-well as outside. Now `REJECTED` to module `classes` like its negation `\V`.
+well as outside. Now `OK` under module `classes` (default-on since [STD1b]), like its negation `\V`.
 It survived because python `re` also reads `\v` as `0x0B`, so the
 base-tier oracle agreed with the bug — see "How this survey earned its
 keep".
@@ -851,6 +857,13 @@ unification (D8).
 end of subject or before a final newline — PCRE2's default. Mid-pattern
 `$` is fully general via EOL-variant states.
 
+**Known divergence, K74 ([UTF-END-ASSERT], filed 2026-11-06, unscheduled):**
+under `-e utf8`, `$` and `\B` (and, widened 2026-10-22, `\z`, `\Z`, `(?m)$`
+and `(?<!.)`) at an ILL-FORMED subject end answer differently from
+libpcre2 10.46. Well-formed subjects are unaffected. Not fixed; no row owns
+the ill-formed-position family yet. Witness and widening:
+docs/dev/known_issues.md K74.
+
 **`\A`** (2026-08-19)
 
 Module `assertions` SHIPPED THESE 2026-08-19 ([M6.2] wave A), behind the
@@ -942,6 +955,7 @@ a lookbehind is not a translation of it (U11d).
 | `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `OK-GATED` | — |
 | `(?>...)` | `OK-GATED` | — |
 | `(*atomic:...)` | `REJECTED` | `PLANNED` |
+| `(?\|...)` | `REJECTED` | `PLANNED` |
 
 <!-- BEGIN GENERATED ANNOTATIONS: alternation-capturing -->
 
@@ -959,6 +973,16 @@ incl. empty branches; leftmost-first preference via priority pruning (D3).
 limit kind: CAPABILITY not yet built. Parses and groups correctly, but
 capture SPANS are not reported — only the overall match. Captures arrive
 with the M4 VM engine.
+
+**`(?|...)`** (2026-11-06)
+
+Branch reset group: alternatives reuse the same capture numbers. Registry
+row module `branch-reset`, `planned`, unbuilt. Measured 2026-11-06:
+`(?|(a)|(b))` is refused "requires module 'branch-reset'" by default and
+"module 'branch-reset' is enabled but (?|...) is not implemented yet"
+under `--features all`; libpcre2 10.46 accepts it (byte and UTF). The page
+had no survey row for it until this refresh (the scoreboard lane found the
+omission); the construct was in PCRE2's own syntax summary all along.
 
 **`(?<name>a)`** (2026-08-18)
 
@@ -1425,6 +1449,11 @@ lookarounds and stops at the assertion's own `)`.
 
 **`(?<=...)`** (2026-08-24)
 
+2026-11-06: the VARIABLE-width case (`(?<=a{1,3})b`, `(?<=(a|bc))b`) is
+plan row [VLOOKBEHIND] (PCRE2 gap rank 1): DESIGNED (rev 2 and a pieces
+study merged, critic rounds in docs/dev/reviews/2026-11-05-r3-vlookbehind.md),
+NOT BUILT, awaiting the owner's build go. The refusal below is today's
+behaviour.
 **SHIPS since [M6.6.2], FIXED-WIDTH PER BRANCH** — which is a WIDER rule
 than "fixed-length lookbehind" and the difference is measurable, not
 cosmetic. Every TOP-LEVEL BRANCH of the body must have a fixed width;
@@ -1565,7 +1594,7 @@ behaviour.
 | syntax | status | becomes |
 |---|---|---|
 | `(*scan_substring:...)` `(*scs:...)` | `OUT-OF-SCOPE` | — |
-| `(*script_run:...)` `(*sr:...)` `(*atomic_script_run:...)` `(*asr:...)` | `REJECTED` | — |
+| `(*script_run:...)` `(*sr:...)` `(*atomic_script_run:...)` `(*asr:...)` | `REJECTED` | `PLANNED` |
 
 <!-- BEGIN GENERATED ANNOTATIONS: substring-scan -->
 
@@ -1804,9 +1833,9 @@ is folded into its primary's family line above.
 | syntax | status | becomes |
 |---|---|---|
 | `(?(n)...)` `(?(<name>)...)` `(?(name)...)` | `REJECTED` | `PLANNED-HARD` |
-| `(?(R)` `(?(Rn)` `(?(R&name)` | `REJECTED` | — |
+| `(?(R)` `(?(Rn)` `(?(R&name)` | `REJECTED` | `PLANNED` |
 | `(?(DEFINE)...)` — module `recursion`, NOT `conditionals` (D71 item 4); filed in this section because that is where PCRE2's own syntax summary puts it | `OK-GATED` | — |
-| `(?(assert)...)` | `REJECTED` | — |
+| `(?(assert)...)` | `REJECTED` | `PLANNED` |
 | `(?(VERSION>=n.m)...)` | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: conditional-patterns -->
@@ -1820,6 +1849,15 @@ is folded into its primary's family line above.
 
 The condition is "did group N participate", i.e. capture state —
 explicitly unsupported by `pcre2_dfa_match` for the same reason.
+2026-11-06: the whole family (`(?(n)`, `(?(<name>)`, `(?(R)`, `(?(Rn)`,
+`(?(R&name)`, `(?(assert)`) is ONE registry row, module `conditionals`,
+`planned`, unbuilt: refused "requires module 'conditionals'" by default
+and "module 'conditionals' is enabled but (?(...) is not implemented yet"
+under `--features all`; libpcre2 10.46 accepts all of them. Plan row
+[CONDITIONALS] is PARKED as a separate effort (Frank 2026-11-05; design
+not started, one general condition node when designed). The registry
+does not grade difficulty, so the `PLANNED` vs `PLANNED-HARD` split among
+this section's rows is the page's own judgment, not a derived fact.
 
 **`base:conditional-recursion-test`**
 
