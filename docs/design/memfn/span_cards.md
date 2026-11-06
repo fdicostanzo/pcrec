@@ -134,7 +134,7 @@ the executable estimator §3.4, §3.5; MF_SITE_ABI at landing §4.1, §9; sabota
 | 6 | the step-0 gate | CONFIRMED: D176 Q3's "step-0 census" = SRS §7 step 0. Its trigger is met in advance; it runs FIRST anyway, compile-only, because its population SCOPES the card grid (D77); `[rev1 SLOT-8]` census0 REPLACES smp20; `[rev1.1 FAM-D]` census0 is the priced-forecast tool for every later row | §7 |
 | 7 | what stage 2 moves | NO emitted byte, NO pcrec abi, NO stamp value. Moves: MF_SITE_ABI (next free); set format 2 + digest domain 2 (+ the `events` cell column); a new built-in set zen4-grid3@1, embedded cell-less; `kit-grid@3` card rows; form-hash entries; `[rev1 PREMISE-4]` DEFAULTS `idk` -> zen4-grid3@1 at S2e (R-35 (c)), zero movers; `[rev1.1 EMBED]` the `--list-measurements` listing's new column at S2e | §8 |
 | 8 | build plan | SIX scalar units S2a-S2f; one timing window (S2d, 35 min, six jobs); `[rev1 D188]` J6 (SIMD, vrun only) is unit S2g, SEPARABLE and `[rev1.1 D188A1]` HELD until [XARCH-DEV]'s go; `[rev1 SLOT-11]` sabotage ids the kit's, each row with why it can go red | §9 |
-| 9 | questions | none for Frank from this note (the SIMD model is ruled, D188 add. 1); `[rev1.1 XREF]` ten items for main, items 8-10 the R-35 narrowings to acknowledge | §10 |
+| 9 | questions | none for Frank from this note (the SIMD model is ruled, D188 add. 1); `[rev1.1 XREF]` eleven items for main, items 8-10 the R-35 narrowings to acknowledge | §10 |
 
 ## 1. Goals
 
@@ -852,8 +852,22 @@ typedef enum { MF_NOISE_UNSTATED = 0, MF_NOISE_MEASURED, MF_NOISE_UNMEASURED } m
   `[rev1 CONTRACT-5]` That refusal is unreachable from a LOADED set: pcrec's loader refuses a noise past
   10^15 first (§4.4), so a bad file is a load error naming the file, never a kit "internal error" on every
   compile. The VALUE half of the same shape (a `value_e6` past MF_MEASURE_MAX loads, then every compile is
-  an internal error) is pcrec's **K138** (`docs/dev/known_issues.md`, main's); this note does not fix it,
-  and its noise row reads the same bound so the two refusals agree when K138 lands.
+  an internal error) is pcrec's **K138** (`docs/dev/known_issues.md`, main's); this note does not fix it.
+  `[rev1.1 BOUND]` **The bound's homes.** `ks_measures.c` may include only libc, `core/ksrc.h` and
+  `core/ks_measures.h` (its DEPENDENCY RULE, enforced by `tests/core/ksrc_deps_check.sh`, S1242), and the kit
+  links nothing of pcrec's, so neither side can READ the other's literal: there are TWO homes, `memfn.h`'s
+  `MF_MEASURE_MAX` and a new `ks_measures.h` constant `KS_MEAS_MAX` (10^15, S2a), and ONE check: a test
+  translation unit that includes both headers and `_Static_assert`s them equal (built by `make test`'s
+  measures section, so a drifted copy fails the build of the check). The loader's noise refusal and, when it
+  lands, K138's value refusal both read `KS_MEAS_MAX`. K138's prescribed form "read from the seam, not
+  copied" cannot be met under the dependency rule; its amended form ("one equality check over the two
+  homes") is for main (§10 item 11). **The square.** `MF_MEASURE_MAX` is a SHAPE bound for SUMS ("the
+  finder's comparisons add at most four values", memfn.h); noise is used SQUARED in the band's quadrature
+  (span_pick's "quadrature sum ... `(coef_a - coef_b) x noise`"), and (10^15)^2 is past int64 and the
+  products `coef x noise` past int128 at the bound. No noise bound is derived here for the square: stage 2
+  has no reader (D77). Row 1's band arithmetic is its design item (§10.3): every intermediate bounded from
+  the stated bounds, never an int64 square of a raw noise (for scale: with coefficients <= 10^6 and <= 100
+  cards per comparison, int128 sums of squares hold iff `noise_e6 <= 10^12`).
 - `[rev1 COST-4]` MF_SITE_ABI takes **the next free number at landing** (23 at rev 0's base; another lane may
   take 24 first, `alt_normal_form.md` names a future crossing): a layout move, no MF_VOCAB, no MF_CLASS_V;
   the history comment at memfn.h:39ff gains its entry. MF_SITE_ABI reaches no text (its only src use is
@@ -878,12 +892,18 @@ its noise is not identity-bearing.
 hands noise: both state `MF_NOISE_UNMEASURED` on every row. The MEASURED path's witness is `--measures=FILE`
 (§9 S2a), which goes through the loader. The harness reader's own comment retires it "until [MEASURE-SET]
 M0's loader", and M0 is on main: retiring it is NOT done here (its readers are tests outside this unit),
-noted for main (§10.6).
+noted for main (§10 item 6).
 
 `[rev1 CONTRACT-8]` **The MFMEAS trace record** (`meas_record`, :123; built only with `PCREC_CAND_TRACE`)
 gains (i) the count of MEASURED rows and (ii) a TEXT digest of the handed triples: FNV-1a-64 over the lines
-`key TAB state TAB noise_e6 LF` in canonical key order, 16 lowercase hex. `tests/knowledge/ks_ref.py` gains
-the same digest computed from the FILE by the format rule, and S2a's witness compares the two. Unlike the
+`key TAB state TAB noise_e6 LF` in canonical key order, 16 lowercase hex. `[rev1.1 MFMEAS]` **The handed
+population** is the fill's, stated: `memfn_measures` hands only rows whose key starts `kit.` AND whose value is
+not empty (`memfn_sites.c:86-87` skips non-`kit.` keys and `null` rows), so the digest covers exactly those
+rows, and `tests/knowledge/ks_ref.py` computes the same digest from the FILE with the same filter written
+from this sentence (and the spec's §4 hand rule, which gains it, §4.4); S2a's witness compares the two. The
+two new fields are APPENDED after the record's existing `%p` columns, so `tests/compound/run_part_measures.sh`
+(:64-90, which reads MFMEAS positionally: `$2` role, `$3` stamp, `$4`/`$5` the addresses) keeps its columns;
+it is listed as a reader (§5, §8.2) and re-run at S2a. Unlike the
 record's two `%p` addresses, the digest survives a write/read across processes. It is what sees a wrong
 column, scale or sign that a state count cannot (the S983 column-swap class, `measure_sets.md:1551`).
 
@@ -908,21 +928,32 @@ cannot hand a noise the format does not define. The general form this points at 
   `derived` or `fitted` row `[rev1 MEAS-13]`); §3.3¶1a (the format-2 digest, §5); §6¶3a (the decoded view,
   §4.5); §7 table rows (a misspelled or negative noise; a noise past 10^15; a numeric noise on a null,
   derived or fitted row; `format` outside {1, 2}). `[rev1 SLOT-1]` NO `raw.tsv` paragraph: §8¶1 unchanged.
-- `[rev1 MEAS-5, SLOT-1]` at **S2c**: `measures.md` new §3.4 (the estimator, §3.4 here: the `lengths`
-  grammar `slope X1,X2,X3` / `delta B LEN per-EVENT`, the cell arm naming, steps 1-8) and §3.5 (§3.5 here:
-  gates, NULL rule, FRG, bimodal, drift, outcomes); new paragraph 2.2¶5: a set may carry in `cells` the per-launch
-  cells its measured rows' estimators read; a measured row names no `inputs` (§2.2¶3 unchanged), its cells
-  are found by `arm` = its key.
-- at **S2e**: `measures.md` §5¶6 and §8¶3 (the default and sets today, §8.3).
+- `[rev1.1 CELLS-1, TARGET, MFMEAS]` also at S2a (the format's own text): §2.2¶1a (format 2's `cells` adds
+  the column `events` after `round`: an integer or `-`; `round` may be the literal `med`); §3.3¶1a also
+  folds `class` (§5); §4's hand rule gains "only `kit.` rows with a value are handed" (the filter the MFMEAS
+  digest states).
+- `[rev1 MEAS-5, SLOT-1; rev1.1 CELLS-1, CELLS-3]` at **S2c**: `measures.md` new §3.4 (the estimator, §3.4
+  here: the `lengths` grammar `slope X1,X2,X3` / `delta LEN`, parsed on format-2 sets' cards only; the cell
+  columns' meanings, group and arm naming, launch identity, steps 1-8) and §3.5 (§3.5 here: gates, the paired
+  NULL rule, bimodal, drift, what the recompute covers, outcomes); new paragraph 2.2¶5: a format-2 set
+  carries in `cells` the cells its rows and its verdict read (refused groups' included); §2.2¶3 amended: on a
+  format-2 `measured` row whose card's estimator is `delta`, `inputs` names its ONE base arm (a cell arm of
+  this set), and only there; §2.3¶2 unchanged and still true (no placeholder, §2.4).
+- at **S2e**: `measures.md` §5¶6 and §8¶3 (the default and sets today, §8.3); `[rev1.1 EMBED]` §8¶2 (the
+  embed omits `cells`), §3.3 (the identity covers rows, so the cell-less embed and the file share it),
+  §6¶1 (the `file_cells` column), §6¶2 (a NAME's canonical view from the embed has an empty `cells`).
 - `docs/design/measure_sets.md` (each with a `[s2]` revision line): §4.1 "No provenance columns" amended:
   `noise_e6` is handed from format-2 sets (R-35), `n` and the rest are not (S2a); `[rev1 CONTRACT-9]`
   :490-494 "What the digest excludes ... `noise_e6`" made format-1-only (S2a); §1.4's "the checker's
   recompute" and §1.5's "Cells no row reads are not committed": a method whose estimator normalizes per
-  launch recomputes `value_e6` from its cells, not from `abs_ns_e6` (S2c); §7.3/§7.4: the M3 driver
-  implements `measures.md`'s new sections 3.4-3.5 (S2c); §3.6 (S2e, §8.3).
+  launch recomputes `value_e6` from its cells, not from `abs_ns_e6`, and its read cells include those its
+  VERDICT reads (S2c); §7.2 `lengths`/`aa_rule` (S2c, §2.4); §7.3/§7.4: the M3 driver implements
+  `measures.md`'s new sections 3.4-3.5, and §7.4 notes format 2's paired floor (S2c, §3.5); §3.6 (S2e, §8.3);
+  the sizing sentence (S2e, §3.8).
 - `match_api.md`: **NO hunk.** Its measures sentences (§6¶14a, §6.3.10¶12-¶13) state the stamp's grammar
   `id@rev:digest` and that no kit row reads a set: both stay true through stage 2, and the digest's
-  definition is `measures.md`'s (§3.3), which carries the change. R-35 names a match_api hunk: For main (§10.4).
+  definition is `measures.md`'s (§3.3), which carries the change. R-35 names a match_api hunk: For main
+(`[rev1.1 XREF]` §10 item 3).
 
 ### 4.5 The pcrec-side code (main reviews; the same commit)
 
@@ -934,7 +965,13 @@ column stays free provenance text, never parsed), and the decoded view gains NO 
 decoded view is byte-identical; format 2's decoded view gains one field per row, the parsed noise.
 `[rev1 CONTRACT-3]` `scripts/ksgen.c` writes the new field POSITIONALLY into the committed pre-parse
 `src/core/measures_table.inc` (`:347-358`), so it is in the package: without it the pre-parse holds 0 where a
-fresh parse holds KS_MEAS_EMPTY and `tests/knowledge/meas_store_check.c` (pre vs fresh, :72-80) goes red.
+fresh parse holds KS_MEAS_EMPTY. `[rev1.1 KSGEN]` `tests/knowledge/meas_store_check.c` compares DECODED
+views (pre vs fresh, :72-80), and format 1's decoded view has no noise field (CONTRACT-7), so at S2a, with
+grid1 the only committed set, a ksgen that leaves the field out was INVISIBLE. S2a adds to it a RAW-ROW
+compare: for every embedded set, every `KsMeasRow` field of the pre-parse (the noise included, as an
+integer) against a fresh parse of the same text, so KS_MEAS_EMPTY vs 0 on grid1's rows is a red (sabotage
+(r)); and one format-2 fixture store (`tests/knowledge/`, a two-row set) run through ksgen, so the
+format-2 path is exercised before S2e.
 The `.inc` regenerates for grid1 too (its `-` noise as KS_MEAS_EMPTY): a committed derived file that moves
 (§8.2), its source `set.tsv` untouched. The measures KsKind row names ONE digest role
 (`ks_measures.c:724-725`, the role's domain hashed first by `ksrc.c:533`); format 2's role is chosen by the
@@ -953,17 +990,20 @@ no noise; the bundle format has no field), a blind compile's P is an authored pr
 row 1's witness compiles with data use the scratch `prose` bundle only. A seam field nobody writes and
 nobody reads is built ahead of need (D77). Trigger: [BENCH-WITHDATA]'s held-out bundles (plan.md:1717) or
 row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcrec producer. For main
-(§10.3): it amends span_pick.md:237-238's "stage 2's".
+(`[rev1.1 XREF]` §10 item 2): it amends span_pick.md:237-238's "stage 2's".
 
 ## 5. Noise in `values_digest`: set FORMAT 2
 
 - **The event.** `measures.md` §3.3¶1 hashes no provenance column, so noise is outside today's digest;
   span_pick.md:265 offers two exits: noise in the digest, or "a FILE set may not share a committed id".
   CHOSEN: noise in the digest, as a FORMAT version, not a domain swap for every set: **format 2** sets hash
-  under domain `pcrec-meas-2` (13 bytes with its NUL, the same length) and per row the key, a NUL, the unit
-  byte, the status byte, `value_e6` LE int64 and `noise_e6` LE int64 (`INT64_MIN` for `-`, as for an empty
-  value). Format 1 keeps `pcrec-meas-1` and its rule, byte for byte. The `cells` section stays outside the
-  digest in both formats (§3.3¶1); the file sha-256 covers it.
+  under domain `pcrec-meas-2` (13 bytes with its NUL, the same length), `[rev1.1 D188A1, TARGET]` then the
+  header's `class` value and a NUL (the priced target, D188's fact (b), §2.7: so `id@rev:digest` names it,
+  and no-shadowing, which compares digests, refuses a same-id file of another class), then per row the key, a
+  NUL, the unit byte, the status byte, `value_e6` LE int64 and `noise_e6` LE int64 (`INT64_MIN` for `-`, as
+  for an empty value). Format 1 keeps `pcrec-meas-1` and its rule, byte for byte. The `cells` section stays
+  outside the digest in both formats (§3.3¶1); the file sha-256 covers it, and the cell-less embed shares the
+  file's identity by that rule (§3.8).
 - **Why a format, not a re-digest.** A committed revision never changes (`measures.md` §8¶1). Re-digesting
   zen4-grid1@1 would rewrite its header, its file sha (`index.tsv`), DEFAULTS.log row 1 (`zen4-grid1@1:
   13a6536315af1520`) and its movers file's identity, all for noise it does not carry (68 rows, all `-`).
@@ -979,39 +1019,75 @@ row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcr
   there, §3.8, sabotage (o)); `S1244`, `S1227` (format-1 plants: still valid; format-2 plants, §9);
   `cli/main.c:78,143` and `measures_dump.c:29` (the header key only: unchanged); `memfn_sites.c:95,128`,
   `memfn_stamps.c:290` (the hex: unchanged); `tests/compound/run_part_measures.sh` (a synthetic header's
-  text: unchanged); `docs/spec/measures.md` §3.3, `docs/design/measure_sets.md:476,:490-494,:1594,:1923`
+  text: unchanged; `[rev1.1 MFMEAS]` and the positional reader of the MFMEAS record, whose new fields are
+  appended after its columns, §4.2); `docs/spec/measures.md` §3.3, `docs/design/measure_sets.md:476,:490-494,:1594,:1923`
   (text). Every committed digest: one, grid1's, unchanged.
 - **No emitted byte or stamp moves, and how that is PROVEN.** The stamp is `id@rev:digest` of the loaded
   set iff a reader consulted it (`measures.md` §4¶2) and no kit row reads a set at stage 2 (§4¶4): every
-  artifact's `<PREFIX>_MEASURES` is `""` before and after. Proof, per unit: `emit_sweep.py` byte-identical
-  on every arm (stamps included) against the unit's named base, plus the DATA-MOVER census (`emit_sweep.py`'s
-  data mode, `measure_sets.md` §9.3) compiling the corpus under `--measures=zen4-grid1` and
-  `--measures=zen4-grid3`: zero movers. A non-empty stamp anywhere is a red, not a finding to explain.
+  artifact's `<PREFIX>_MEASURES` is `""` before and after. `[rev1.1 CENSUS]` Proof: **S2a-S2d**:
+  `emit_sweep.py`'s ordinary two-build sweep, byte-identical on every arm (stamps included) against the
+  unit's named base; no set changes there, so there is no data-mover census to run. **S2e** (the set and the
+  DEFAULTS flip): the DATA-MOVER census. `emit_sweep.py` has no `measures` data kind (`DATA_KINDS =
+  ("analysis", "limits")`, its `measures` row "joins at [MEASURE-SET] M1") and `movers/0001.tsv` was written
+  by `docs/dev/lanes/m0build/census.py`, not by emit_sweep (`measure_store/CLAUDE.md` and
+  `measure_sets.md` say otherwise; both corrected, §10.2). Building emit_sweep's `measures` kind is not
+  stage 2's (D77: its first use is M1's). **The tool: `span_cards/slot/movers.py`**, a copy of m0build's
+  census method (the base unit's `build/pcrec` against S2e's head, over emit_sweep's own corpus enumeration
+  read through `--list-source`, the five arms c-default, c-utf8, c-vm, ir, facts; rc and stderr compared)
+  with its normalization list EMPTY: S2e declares no scaffolding, so EVERY difference, an `RX_MEASURES`
+  line included, is a mover. With DEFAULTS flipped in the head, the base compiles under zen4-grid1 and the
+  head under zen4-grid3 by default; the census also runs the head with `--measures=zen4-grid1` against
+  itself with `--measures=zen4-grid3`. **`movers/0002.tsv` takes 0001's shape**: a `#section header` (`seq
+  2`, `class idk`, `old zen4-grid1@1:13a6536315af1520`, `new zen4-grid3@1:<digest>`, `code_commit`,
+  `population` with the corpus row and pattern counts and the arms, `movers 0`) and a `#section movers`
+  (`artifact moved first_difference`, empty), its header comment naming `span_cards/slot/movers.py`. A
+  non-empty stamp anywhere is a red, not a finding to explain.
 
 ## 6. The coverage factor
 
 - **What it is.** The band of a comparison (span_pick.md:231) is z x sqrt(sum over cards of ((coef_a -
   coef_b) x noise)^2) [+ the bundle's term, §4.6]; z is the coverage factor.
-- `[rev1 MEAS-9]` **Which error the band covers.** The stored value is the median of 7 launches; the artifact
-  later runs in ONE launch-like condition. The error a departure risks is therefore a NEW RUN's draw against
-  the stored median, with the noise itself estimated from 7 launches (§3.4: trimmed, scaled). Rev 0 quoted
-  Phi(-z) (a known sigma), which is neither.
-- **Value: z = 3.0, `COVER_Z_E3 3000`, UNMEASURED DEFAULT (D149).** Derivation, from the stated tolerance
-  rev 0 chose (a 2.3 % one-sided false departure on an equal-price comparison, one card): by simulation
-  of §3.4's estimator on normal launches (`span_cards/coverage_drill.py`, 200,000 draws), the one-card
-  equal-price departure rate is 6.7 % at z = 2, 3.9 % at 2.5, 2.5 % at 2.9 and **2.3 % at 3.0** (for the
-  t-reading: the new draw's variance is 1 + pi/(2 x 7) of one launch's, and the trimmed spread has about
-  five degrees of freedom; t_5 at the 2.3 % tail, times 1.107, is 2.9-3.0). A departure to a plan truly
-  dearer by d happens less often, so the equal-price case bounds the harm. A comparison over several cards
-  sums more estimated variances, so its effective degrees of freedom rise and 3.0 errs WIDE there (wins
-  forgone, the safe direction). 2.58 (family-wise over smp20's ~10 candidates) was weighed in rev 0 and not
+- `[rev1 MEAS-9; rev1.1 Z]` **Which error the band covers: ONE event.** The stored value is the median of 7
+  launches over 7 drawn placements (§3.2); the artifact later runs at ONE placement nobody chose, in one
+  launch-like condition. The error a departure risks is therefore a **NEW draw** (one launch at a new
+  placement) of a card against its stored value, with the noise estimated as §3.4 writes it. span_pick rev
+  5.2's sentence ("1 sigma departs ~16 % of equal-price comparisons per side") describes a different event,
+  a departure decided on STORED values against true ones (that is ~0 % at z 3: `coverage_drill.py`, 0.005 %
+  at f 0); it is amended to this one (§10.2, S2c). Rev 0 quoted Phi(-z) (a known sigma), which is neither.
+- **Value: z = 3.0, `COVER_Z_E3 3000`, UNMEASURED DEFAULT (D149).** The tolerance rev 0 chose: at most 2.3 %
+  one-sided false departure of a new draw on an equal-price one-card comparison. Drilled on the estimator AS
+  WRITTEN (`coverage_drill.py` (2), noise = sqrt(aa^2 + sp2), 100,000 draws per row), for the share f of a
+  launch's variance the arm's twin does NOT share (within-launch, arm-specific):
+
+  | f | mean noise (sigmas) | z 2.0 | z 2.5 | **z 3.0** | z 3.5 |
+  |---|---|---|---|---|---|
+  | 0 | 0.95 | 6.69 % | 3.85 % | **2.25 %** | 1.35 % |
+  | 0.5 | 1.21 | 2.70 % | 1.14 % | **0.47 %** | 0.20 % |
+  | 1 | 1.40 | 1.68 % | 0.65 % | **0.26 %** | 0.10 % |
+
+  The rate falls as f rises (aa grows with the arm-specific part), so **z 3.0 holds the tolerance at every
+  f**, with f = 0 the bound. f is not known before the window and is not assumed: per-launch placement and
+  normalization by the launch's control make the residual mostly arm-specific (f near 1, where z 3.0 errs
+  wide: wins forgone, the safe direction). rev 1's drill omitted the aa term and so drilled only f = 0. A
+  comparison over several cards sums more estimated variances, so its effective degrees of freedom rise and
+  3.0 errs WIDE there too. 2.58 (family-wise over smp20's ~10 candidates) was weighed in rev 0 and not
   taken: candidates share cards, so the comparisons are positively correlated and Bonferroni over-corrects.
-- `[rev1 SLOT-7]` **Where it lives: [KIT-POLICY-TABLE]** (plan.md, filed by main from this review; trigger
-  row 1): one kit policy-constant table (z, the gate default, MATERIAL, MAX_SET, HORS_MIN). Not a set row (a
-  set holds measurements of a box, D166; a stamped per-set z would let a re-measure move a policy), and not
-  `plan_cost.def`: D176 Q3 says "`plan_cost.def` rows migrate into the sets", with no cost/policy split,
-  and rev 0's "its policy rows stay" narrowed that ruling silently; rev 1 withdraws the narrowing.
-  **Written WITH its reader, row 1** (D77: stage 2 adds no reader); stage 2 fixes its value and derivation
+- `[rev1 SLOT-7; rev1.1 POLICY]` **Where it lives: ONE kit policy table, outside the sets** (R-35 (e), main
+  2026-11-06; [KIT-POLICY-TABLE], trigger row 1). Main reads D176 Q3's "`plan_cost.def` rows migrate into the
+  sets" as covering MEASURED COSTS only; policy constants are not measurements of a box (D166), and a stamped
+  per-set policy value would let a re-measure move a policy. The table's members, each labelled as POLICY with
+  its reason (pcrec-suspect-tuning-constants):
+  - **z** (`COVER_Z_E3 3000`): the false-departure tolerance of a pick, a risk choice; derived from a chosen
+    tolerance above, UNMEASURED DEFAULT.
+  - **the gate default** (`gate_e6` 30000 for a card that states none): the noise a cost row may carry and
+    still be priced, a quality choice; UNMEASURED DEFAULT carried from grid1 (§2.4).
+  - **MATERIAL** (`MATERIAL_NUM`/`MATERIAL_DEN`, `plan_cost.def` today): the margin a departure must clear to
+    be worth a plan change, a choice about churn, not a cost.
+  - **Not members**: **HORS_MIN** (D176 Q2 deletes it when Horspool is priced) and **MAX_SET** (pcrec's
+    `PCREC_OFSK_MAX_SET`, a pcrec FACT transcribed into `plan_cost.def`, D157 direction). Rev 1's member list
+    named both; rev 1's "withdraws the narrowing" sentence is replaced by main's reading, which this note
+    adopts (R-35 (e)); whether that reading of Frank's Q3 needs Frank is main's call (§10 item 7).
+  **Written WITH its reader, row 1** (D77: stage 2 adds no reader); stage 2 fixes z's value and derivation
   here. Visible in row 1's trace (the band per comparison, span_pick.md:60-61); the pcrec-side re-pricer
   pins the literal and diffs it against the trace's.
 - **Trigger to re-derive:** row 1's predicted-vs-measured spread (R5.3), which adds model error to the band.
@@ -1035,7 +1111,10 @@ row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcr
   pricing pass, `docs/design/memfn/span_pick/census0.py`. `[rev1 SLOT-8]` **census0 REPLACES smp20.py**:
   smp20 is census0 on one site, so `smp20.py` is deleted in S2b and `smp20.out` becomes census0's golden on
   that site (one kit-side pricer of the formula, so a formula fix lands once; row 1's C pricer and
-  span_pick's pcrec-side re-pricer stay deliberately independent). Per site, each candidate (alternative x
+  span_pick's pcrec-side re-pricer stay deliberately independent). `[rev1.1 SMP20]` **Its readers move in
+  S2b's package** (`git grep smp20.py` at the r5 build tree): `span_pick.md` :286 and :289 (":289 ... BAND-0
+  ARGMINS (smp20.py :98)", a line cite) re-cite census0 and `smp20.out`; `span_pick/CLAUDE.md` (:12, :21,
+  :34) and `span_pick/witness.sh` (:4, :6) re-point to census0 (§10.2). Per site, each candidate (alternative x
   core position x the methods T-FIND admits on its facts) is priced under P (the default prior) with
   smp20's STAND-INS at the corners of its grid (k 1.00 and 12.00; h1 5 and 40; hit(PAIR) 1x and 8x h1); the
   BAND-0 argmin vs the incumbent read from the trace. Outputs: (1) movers by class (row 1's class: a NONE
@@ -1051,13 +1130,17 @@ row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcr
   Frank's ruling names it. **Control** `[rev1 COST-5 (8), PREMISE-10]`: on smp20's site census0 reproduces
   `smp20.out`'s lines byte for byte, INCLUDING the `incumbent @...` lines (the band-0 argmin is computed
   without the incumbent, so a control on the argmin alone cannot see a wrong incumbent field), and it
-  commits its own P-blind grid count as a NEW golden line, cross-checked once against span_pick's 3,381 of
+  commits its own P-blind grid count as ONE NEW golden line (`[rev1.1 SMP20]` the golden is `smp20.out`
+  byte for byte PLUS that line, appended), cross-checked once against span_pick's 3,381 of
   3,536 (a mismatch is a finding about span_pick's figure or census0, resolved before S2b lands).
 - **Does stage 2's landing wait on it?** Its TIMING waits (J4/J5's arms come from it); it is unit S2b,
   before the window. Row 1 waits on stage 2, so on it too. It is **re-run after the cards** (S2f) with the
   measured values in place of the stand-ins: still compile-only and readerless, it becomes row 1's
   forecast mover list and the watched witness's stage-2 reading ("is the measured card point above or
   below k*?", span_pick.md:336).
+- `[rev1.1 FAM-D]` **A decision of this note, not an unlock** (rev 1's §12.3): census0 is THE priced-forecast
+  tool, for row 1 and every later priced row's mover forecast; a later row extends census0 (its pricing
+  pass, its classes), never writes a second pricer of the formula.
 
 ## 8. What stage 2 moves
 
@@ -1073,18 +1156,21 @@ base.
 | number / artifact | change | package (same commit) |
 |---|---|---|
 | MF_SITE_ABI | `[rev1 COST-4]` +1, the next free number at landing (S2a) | memfn.h history entry; `[rev1 PREMISE-9]` the THREE constructors (§4.1); compose.c check; memfn/include/CLAUDE.md; `memfn/docs/journal.md` + responses ledger; `grep -rn 'MF_SITE_ABI'` re-run at landing (no test pins the number today: g2_gen.c uses `MF_SITE_ABI + 1` symbolically) |
-| set `format` | `1` -> `1` or `2` (S2a) | `measures.md` hunks §4.4; `ks_measures.c` refusal text; ks_ref.py; mfixtures.py (the `format 2` refusal row -> `3`; a format-2 fixture pair differing only in noise must digest apart; a `-` noise row; a noise-past-10^15 row; a numeric noise on a derived row; a format-1 file with numeric noise text) |
-| digest domain | + `pcrec-meas-2` (S2a) | the readers of §5; grid1 untouched |
-| `KsMeasRow` layout | + `noise_e6` (S2a) | `[rev1 CONTRACT-3]` `scripts/ksgen.c`; the regenerated `src/core/measures_table.inc` (grid1's rows included, noise KS_MEAS_EMPTY); `meas_store_check.c` green pre vs fresh |
-| form-hash entries | `[rev1 PREMISE-3]` formhash.c's declared entry table: + pair, walk-set, settest, rc-* (S2c) | `formhash.c`; `finder_check.py` check C's deps-column guard (§2.4); R-MS3's two fixtures per new id; memfn/data/cards/CLAUDE.md |
-| card table | + `kit-grid@3` rows (S2c) | `kit-grid.tsv` (`[rev1 SLOT-12]` its header's unit sentence becomes per-version: ver 1 `u = beta_walk(DFA_SCAN, r1e0c0)`, ver 3 `u = find_byte.walk`); its CLAUDE.md |
-| spec estimator text | + `measures.md`'s new sections 3.4-3.5, new paragraph 2.2¶5 (S2c) | the recompute check's source text (written in S2e); measure_sets §1.4/§1.5/§7.3 lines |
-| built-in sets | + `zen4-grid3@1` (S2e) | `measure_store/` files + `index.tsv`; `make gen-measures` (`measures_store.inc`, `measures_table.inc`); `measures.md` §8¶3; measure_store/CLAUDE.md ("Sets today") |
+| set `format` | `1` -> `1` or `2` (S2a) | `measures.md` hunks §4.4; `ks_measures.c` refusal text; ks_ref.py; mfixtures.py (the `format 2` refusal row -> `3`; a format-2 fixture pair differing only in noise must digest apart; `[rev1.1 TARGET]` a pair differing only in `class` must digest apart; a `-` noise row; a noise-past-10^15 row; a numeric noise on a derived row; a format-1 file with numeric noise text; `[rev1.1 CELLS-1]` a format-2 `cells` row with `events` and `round med`) |
+| digest domain | + `pcrec-meas-2`, folding `class` (S2a) | the readers of §5; grid1 untouched |
+| `KsMeasRow` layout | + `noise_e6` (S2a); `[rev1.1 CELLS-1]` + the `events` cell column (format 2) | `[rev1 CONTRACT-3]` `scripts/ksgen.c`; the regenerated `src/core/measures_table.inc` (grid1's rows included, noise KS_MEAS_EMPTY); `[rev1.1 KSGEN]` `meas_store_check.c`'s raw-row compare + a format-2 fixture store; `[rev1.1 ANCHORS]` the S-rows anchored in `ks_measures.c`: **S1234** (the noise/abs column swap, anchored on the row-column resolve loop and `put_row`, the exact column S2a starts parsing; its detector re-verified on a format-2 fixture) and S1230, S1231, S1232 (`put_tab(... "cells" ...)`), S1233, S1235, S1239 (anchors re-read; each re-aimed only if its anchor text moves, intent re-verified), with S1244 and S1227 (§5) |
+| `KS_MEAS_MAX` | new `ks_measures.h` constant, 10^15 (S2a) | `[rev1.1 BOUND]` the test TU asserting it equal to `MF_MEASURE_MAX` (§4.1) |
+| MFMEAS record | + MEASURED count, triple digest, appended (S2a) | `[rev1.1 MFMEAS]` `tests/compound/run_part_measures.sh` (positional reader, re-run); tests/compound/CLAUDE.md's description of the record |
+| form-hash entries | `[rev1 PREMISE-3]` formhash.c's declared entry table: + pair, walk-set, settest, rc-* (S2c); `[rev1.1 HASH]` its renderer is the cell renderer (a `kit.h` test entry) | `formhash.c`; `[rev1.1 CHECKC]` `finder_check.py` check C's deps guard on CARD rows (§2.4); R-MS3's two fixtures per new id; memfn/data/cards/CLAUDE.md |
+| card table | + `kit-grid@3` rows (S2c) | `kit-grid.tsv` (`[rev1 SLOT-12]` its header's unit sentence becomes per-version: ver 1 `u = beta_walk(DFA_SCAN, r1e0c0)`, ver 3 `u = find_byte.walk`; `[rev1.1 CELLS-3]` its column comment for `lengths` and `aa_rule`); its CLAUDE.md |
+| spec estimator text | + `measures.md`'s new sections 3.4-3.5, new paragraph 2.2¶5, the §2.2¶3 `inputs` hunk (S2c) | the recompute check's source text (written in S2e); measure_sets §1.4/§1.5/§7.2/§7.3/§7.4 lines |
+| built-in sets | + `zen4-grid3@1` (S2e), embedded cell-less | `measure_store/` files + `index.tsv`; `make gen-measures` (`measures_store.inc`, `measures_table.inc`, `[rev1.1 EMBED]` `scripts/ksgen.c` omitting `cells`); `measures.md` §8¶2, §8¶3, §3.3, §6¶1-¶2; measure_store/CLAUDE.md ("Sets today", and its line saying emit_sweep writes the movers file, §5); `[rev1.1 CHECKC]` check C's measure_store pass and its floor; the recompute check's format-2 population floor |
+| `--list-measurements` listing | `[rev1.1 EMBED]` + column `file_cells` (S2e) | every reader of the listing's columns by grep at S2e (the S-rows below, `run_measures_tests.sh`, `run_code_tests.sh`) |
 | `DEFAULTS` | `idk` zen4-grid1@1 -> zen4-grid3@1 (S2e, §8.3) | DEFAULTS, DEFAULTS.log row 2, `movers/0002.tsv` (EMPTY by §5's proof); `measures.md` §5¶6; `measure_sets.md` §3.6 hunk; `[rev1 CONTRACT-4, COST-6]` the `--list-measurements` readers BY NAME: `S1229` (its `SAB_BEFORE` `{ "idk", "zen4-grid1", 1u },` re-aimed to `zen4-grid3`, intent re-verified: the plant still breaks the class's default row), `S1228`, `S1237`, `S1241`, `S1245`, `S1246` (anchors re-read; each re-aimed only if its anchor text moves), `tests/knowledge/run_measures_tests.sh`'s DEFAULTS vs `default_for` vs DEFAULTS.log check (:77-94, a reader of the flip), `run_code_tests.sh`, `c4_allowlist.tsv`, `arch_blind_check.py` (grep hits to re-read). There is NO count pin (`run_measures_tests.sh:75` is a floor `>= 1`) |
 | `ofsskip.c` PAIR_LOOKAHEAD comment | UNMEASURED -> MEASURED, iff §3.6 (a) or (c) | none (a source comment; no artifact text) |
 | new directories | `docs/design/memfn/span_cards/` (drills now; `slot/` at S2c) | its CLAUDE.md (`[rev1 COST-6]` under the 12 KB gate); docs/design/memfn/CLAUDE.md |
 
-### 8.3 `[rev1 PREMISE-4, SLOT-3, CONTRACT-4]` DEFAULTS: main RULED (B), and what it amends
+### 8.3 `[rev1 PREMISE-4, SLOT-3, CONTRACT-4]` DEFAULTS: main RULED (B) (R-35 (c)), and what it amends
 
 Rev 0 found a real conflict and mis-framed it ("No ruling is amended"). R-35 item 1 says stage 2 "leaves
 DEFAULTS unchanged" and item 3 that row 1 "flips DEFAULTS to zen4-grid3 ... Its flip needs its own landing
@@ -1093,19 +1179,25 @@ verdict from main"; span_pick says the same (Stage 2: "stamps and `DEFAULTS` unc
 compile reads the LATEST committed set. Either reading amends something; both give byte-identical artifacts
 (nothing consults: every stamp `""`).
 
-**Ruled (main, 2026-11-06): (B). S2e flips `DEFAULTS` `idk` to zen4-grid3@1, with zero movers.** S2e's commit
+**Ruled (main, 2026-11-06): (B). S2e flips `DEFAULTS` `idk` to zen4-grid3@1, with zero movers.**
+`[rev1.1 FREEZE NOTE]` The record is R-35 (c) (`memfn/docs/requests.md`, R-35 "Ruled later", main
+78e7da573): "DEFAULTS at stage 2 is (B): it flips to zen4-grid3 when the set lands (unit S2e) ... It amends
+item 1's 'DEFAULTS unchanged'; the kit's C6 and the measure_sets §3.6 hunk travel with S2e. D166 add. 2 ...
+stands." So the R-35 row of the table below is already done by main's record. S2e's commit
 writes DEFAULTS, DEFAULTS.log row 2 (`2 idk zen4-grid1@1:13a6536315af1520 zen4-grid3@1:<digest>
-movers/0002.tsv`) and `movers/0002.tsv` from the data-mover census, EMPTY by §5's proof. It amends three
+movers/0002.tsv`) and `movers/0002.tsv` from the data-mover census (`span_cards/slot/movers.py`, 0001's
+shape, §5), EMPTY by §5's proof. It amends three
 texts, each in the same commit:
 
 | amended text | owner | amendment |
 |---|---|---|
-| R-35 item 1 ("leaves DEFAULTS unchanged") and item 3 (row 1 flips, its own landing verdict) | main's request text | the flip moves to stage 2's S2e, judged in S2e's landing verdict; row 1 becomes the first READER of an already-default set (its consulting compiles' stamps move then, an abi event that is row 1's) |
+| R-35 item 1 ("leaves DEFAULTS unchanged") and item 3 (row 1 flips, its own landing verdict) | main's request text | DONE by main: R-35 (c). The flip is stage 2's S2e, judged in S2e's landing verdict; row 1 becomes the first READER of an already-default set (its consulting compiles' stamps move then, an abi event that is row 1's) |
 | span_pick rev 5.2: Stage 2 "stamps and `DEFAULTS` unchanged"; Row 1 `[rev3 C6]` "It flips `DEFAULTS`"; §Defaults "until row 1 flips it" | the kit's design | `[s2]` lines: stage 2 flips DEFAULTS at zero movers; row 1 reads the default set |
 | `measure_sets.md` §3.6 "Every default-set change is therefore an abi event" | the [MEASURE-SET] design | the "therefore" rests on consulting artifacts: a default-set change MOVES the stamp of every consulting artifact, so it is an abi event exactly when a consulting reader exists; a change with no consulting reader (every stamp `""`, the data-mover census empty) is a DEFAULTS.log transition with its census and no abi bump. A `[s2]` revision line (S2e) |
 
 `measures.md` §5¶6 then reads "its default is the latest committed set: `zen4-grid3@1`" (S2e). Goal 1's
-measure is restated for it (§1): two `--list-measurements` rows move at S2e, no other unit moves any.
+measure is restated for it (§1): the `--list-measurements` rows move at S2e (zen4-grid3's new row, grid1's
+`default_for`, and `[rev1.1 EMBED]` the `file_cells` column), no other unit moves any.
 
 ## 9. Build plan
 
@@ -1127,37 +1219,69 @@ each states the check that turns it red and why that check can see it.
 
 | unit | content | witness | heavy runs | sabotage rows (why each goes red) |
 |---|---|---|---|---|
-| **S2a** noise channel + format 2 | §4.1-§4.5, §5: the seam field and check (kit); format 2, the digest role, parse/write, bound and status refusals, fill (format rule; test levers UNMEASURED), ksgen, dump, the MFMEAS triple digest, spec and design hunks (pcrec) | emit_sweep byte-identical every arm vs base; grid1's canonical and decoded views and digest byte-identical; a format-2 synthetic set round-trips canonically; ks_ref.py's digest equals C's on format-2 fixtures; in the `PCREC_CAND_TRACE` build, a compile under a format-2 `--measures=FILE` shows the MEASURED count and a triple digest equal to ks_ref.py's, a format-1 file with numeric noise text shows 0 and the all-UNMEASURED digest; a kit test hands a zero-initialized row and is refused | `make test` (normal, boxqueue), emit_sweep | (a) format-2 digest skips noise: ks_ref.py (written from the spec) digests the noise-only fixture pair apart, C does not -> mfixtures golden red. (b) format-2 domain spelled `pcrec-meas-1`: ks_ref.py's digest differs from C's on every format-2 fixture. (c) the fill hands format-1 noise as MEASURED: the format-1 fixture carries numeric noise text on every row, so the MFMEAS count is non-zero (expected 0). (d) the kit accepts UNSTATED: the named kit test builds a zero-initialized `mf_measure` and expects the refusal. (e) the fill drops a format-2 noise (UNMEASURED): the handed-triple digest differs from ks_ref.py's. (f) the fill hands `abs_ns_e6` as noise (S983's column swap): the triple digest differs (the fixture's abs and noise columns differ on every row). (g) the canonical writer writes `-` noise as `0`: the fixture holds a `-` row, so the round trip's bytes and digest (INT64_MIN vs 0) differ. (h) the loader admits noise past 10^15: mfixtures' bound row expects a refusal |
-| **S2b** step-0 census | `census0.py` (smp20.py deleted), its run (J0) and `census0.out` | reproduces `smp20.out` byte for byte incl. the incumbent lines; the P-blind count committed and cross-checked (§7); counts non-zero | J0 (compile-only boxqueue job, ~1 min; not timing) | (i) incumbent read from the wrong trace field: the control diffs `smp20.out`'s `incumbent @` lines, which carry that field |
-| **S2c** producer | the G2 `--cards` mode (§3.2), formhash's entry table, `kit-grid@3` cards, check C's deps guard, `measures.md`'s new sections 3.4-3.5 + new paragraph 2.2¶5, the measure_sets lines, the slot harness `span_cards/slot/` with dry runs of every job | every job's `--dry-run` green (builds, perturbed twins, answer gate); check C resolves every new dep; R-MS3's two fixtures per new id (rename: hash kept; one-instruction edit: hash moves); ids pairwise distinct; every cell text's hash equals its key's form hash | dry runs only (each job's `--dry-run`, light) | (j) a twin built without the pad: the driver's check requires the two built objects to DIFFER while the texts are equal, so identical objects refuse. (k) an arm rendered from another form than its key: the cell-text hash differs from `mf_form_hash(<form token>)`. (l) a planted wrong find in one arm: G2's reference check and the expected-count gate. (m) two form ids hashing one text: the pairwise-distinct check. (n) a kit-grid@3 card with a `kit:form.` dep and no `form` dim: check C's deps guard (it no longer skips). (o) a format-2 draft placed in `memfn/data/sets/`: finder_check's format-1 digest of it mismatches |
-| **S2d** the window | J1 sweep, then J2-J5 chained `after`, one window | each job's declared population met (POPULATION-SHORT otherwise); the outcome FULL or an accepted PARTIAL; J1's reading (a)/(b)/(c) | J1-J5: quiet-gated `idle-ok` timing jobs, **the window main clears with Frank: 35 minutes** | — (a measurement; its control is S2e's recompute and the per-job drift check) |
-| **S2e** the set | §3.8: draft, canonical writer, store files, `index.tsv`, gen-measures; DEFAULTS (B) and its three amendments (§8.3); the recompute check; S1229 re-aim | the recompute check exact on every row, FRG and `partial`; the drift gate; `tests/knowledge/` green; the data-mover census under both sets: zero movers; emit_sweep byte-identical; `--list-measurements` moves by the two rows | `make test` (normal), the data-mover census (boxqueue) | (p) the producer's noise off by one unit on one row: the recompute (an implementation of the spec text sharing no source with the slot harness) differs by one, and one unit is a failure (§1.7). (q) a cell edited after the set was written: the recompute no longer reproduces the row AND the file sha in PROVENANCE.md/`index.tsv` mismatches |
+| **S2a** noise channel + format 2 | §4.1-§4.5, §5: the seam field and check (kit); format 2 (noise, `class` in the digest, the `events` cell column, `round med`), the digest role, parse/write, bound and status refusals, `KS_MEAS_MAX` and its equality check, fill (format rule; the handed filter; test levers UNMEASURED), ksgen and the raw-row compare, dump, the MFMEAS fields appended, spec and design hunks (pcrec) | emit_sweep byte-identical every arm vs base; grid1's canonical and decoded views and digest byte-identical; a format-2 synthetic set round-trips canonically; ks_ref.py's digest equals C's on format-2 fixtures; in the `PCREC_CAND_TRACE` build, a compile under a format-2 `--measures=FILE` shows the MEASURED count and a triple digest equal to ks_ref.py's (same filter), a format-1 file with numeric noise text shows 0 and the all-UNMEASURED digest; `run_part_measures.sh` green on the extended record; a kit test hands a zero-initialized row and is refused; `[rev1.1 ANCHORS]` S1234 red on a format-2 fixture, S1230-S1233/S1235/S1239 anchors re-read | `make test` (normal, boxqueue), emit_sweep | (a) format-2 digest skips noise: ks_ref.py (written from the spec) digests the noise-only fixture pair apart, C does not -> mfixtures golden red. (b) format-2 domain spelled `pcrec-meas-1`: ks_ref.py's digest differs from C's on every format-2 fixture. (c) the fill hands format-1 noise as MEASURED: the format-1 fixture carries numeric noise text on every row, so the MFMEAS count is non-zero (expected 0). (d) the kit accepts UNSTATED: the named kit test builds a zero-initialized `mf_measure` and expects the refusal. (e) the fill drops a format-2 noise (UNMEASURED): the handed-triple digest differs from ks_ref.py's. (f) the fill hands `abs_ns_e6` as noise (S983's column swap): the triple digest differs (the fixture's abs and noise columns differ on every row). (g) the canonical writer writes `-` noise as `0`: the fixture holds a `-` row, so the round trip's bytes and digest (INT64_MIN vs 0) differ. (h) the loader admits noise past 10^15: mfixtures' bound row expects a refusal. `[rev1.1 KSGEN]` (r) ksgen omits the appended noise field (C zero in the pre-parse): the raw-row compare reads 0 against a fresh parse's KS_MEAS_EMPTY on grid1's 68 rows. `[rev1.1 TARGET]` (s) the format-2 digest skips `class`: the class-only fixture pair digests apart in ks_ref.py, not in C. `[rev1.1 BOUND]` (t) `KS_MEAS_MAX` edited to 10^16: the equality TU fails to build |
+| **S2b** step-0 census | `census0.py` (smp20.py deleted, its readers re-pointed, §7), its run (J0) and `census0.out` | reproduces `smp20.out` byte for byte incl. the incumbent lines, plus the one appended P-blind line; the P-blind count cross-checked (§7); counts non-zero | J0 (compile-only boxqueue job, ~1 min; not timing) | (i) incumbent read from the wrong trace field: the control diffs `smp20.out`'s `incumbent @` lines, which carry that field |
+| **S2c** producer | formhash's entry table and its renderer entry (§3.2), `kit-grid@3` cards, check C's deps guard on card rows, `measures.md`'s new sections 3.4-3.5 + 2.2¶5 + the §2.2¶3 hunk, the measure_sets lines, the slot harness `span_cards/slot/` (driver, subject generator, per-launch linking and placement, `ctl`, the slot's estimator, `j1/` and `j1_rule.py`, `movers.py`) with dry runs of every job and the placement screen | every job's `--dry-run` green (builds, links, placement constraints, `ctl` sha, answer gate); check C's card guard over every card (12 with a `kit:form.` dep after kit-grid@3); R-MS3's two fixtures per new id (rename: hash kept; one-instruction edit: hash moves); ids pairwise distinct; every cell's site-text hash equals its key's form hash; the placement screen's unit noise printed, under the half gate | dry runs only (each job's `--dry-run`, light) | `[rev1.1 TWIN, PLACE]` (j) the placement draw ignores the launch (every launch links the same pads): the "3 of 4 phases per arm" assertion on `nm` of the seven linked executables refuses; (j2) a twin linked at its arm's phase: the per-launch "arm and twin differ mod 64" assertion refuses. (k) an arm rendered from another entry row than its key's token: its site-text hash differs from `mf_form_hash(<form token>)`. (l) a planted wrong find in one arm: the expected-count gate against the generator's planted positions. (m) two form ids hashing one text: the pairwise-distinct check. `[rev1.1 CHECKC]` (n) a kit-grid@3 card with a `kit:form.` dep and no `form` first dim: check C's guard, now in the CARD walk, which reads every card row. (o) a format-2 draft placed in `memfn/data/sets/`: finder_check's format-1 digest of it mismatches |
+| **S2d** the window | J1 sweep, then J2, J2p (J1-gated), J3-J5 chained `after`, one window | each job's declared population met (POPULATION-SHORT otherwise; J2p's never under (b) recorded as never-ran); the outcome FULL or an accepted PARTIAL (§3.5); J1's reading (a)/(b)/(c) | J1-J5 + J2p: quiet-gated `idle-ok` timing jobs, **the window main clears with Frank: 35 minutes** | — (a measurement; its control is S2e's recompute and the per-job drift check) |
+| **S2e** the set | §3.8: draft, canonical writer, store files, `index.tsv`, gen-measures with the cell-less embed and the listing's `file_cells` column (R-35 (d)); DEFAULTS (B) and its amendments (§8.3); the recompute check (format-2 population, floored); check C's measure_store pass (floored); `span_cards/slot/movers.py` and `movers/0002.tsv`; S1229 re-aim | the recompute check exact on every row, every group verdict, Goal 2's floor and `partial`; the drift gate; `tests/knowledge/` green; the data-mover census: zero movers; emit_sweep byte-identical; `--list-measurements` moves by exactly §1's rows and column; libpcrec's growth reported (`docs/dev/artifact_size_log.tsv`'s neighbour figure) against `tree_drill.py` D's ~16 KB | `make test` (normal), the data-mover census (boxqueue) | (p) the producer's noise off by one unit on one row: the recompute (an implementation of the spec text sharing no source with the slot harness) differs by one, and one unit is a failure (§1.7). (q) a cell edited after the set was written: the recompute no longer reproduces the row AND the file sha in PROVENANCE.md/`index.tsv` mismatches. `[rev1.1 CHECKC]` (u) a zen4-grid3 row's form token renamed to an id with no hash: the measure_store pass refuses it (red, never "later"). `[rev1.1 EMBED]` (v) ksgen embeds the `cells` section: `file_cells` (the file's count) and the embedded view's empty `cells` disagree, and the pre-parse's cell table is non-empty where the rule says none |
 | **S2f** the forecast | census0.py re-run with the measured cards; the watched-witness reading; the report | the smp20 reading stated (above/below k*); row 1's mover forecast listed | J0 again (compile-only) | — |
-| **S2g** SIMD (J6) **HELD** | vrun-w16/w32 cards under D188 (§2.7), once the SIMD model is ruled; its own window and the NEXT set id | designed then | — | designed then |
+| **S2g** SIMD (J6) **HELD** | vrun-w16/w32 cards under D188 (§2.7), `[rev1.1 D188A1]` once [XARCH-DEV]'s go is given; its own window and the NEXT set id | designed then | — | designed then |
 
-`[rev1 COST-7]` **Separability.** S2a lands and reverts alone until S2e lands (S2e's set is format 2); S2b is
-separable; S2c reverts alone; S2d-S2e are order-locked to S2c. S2g depends on nothing here and nothing here
-depends on it.
+`[rev1 COST-7; rev1.1 LOCK]` **Separability.** **S2b -> S2c -> S2d -> S2e are order-locked**: S2c's slot
+harness reads `census0.out` when it lists the cells, formhash's new rows are the census's set, and
+`verify_cmp`'s deps are the census's pairs (§2.4, §3.2, §7), so S2c cannot land before S2b and S2b cannot
+revert alone once S2c lands; S2d times S2c's harness; S2e writes S2d's set. **S2a is independent until S2e**
+(S2e's set is format 2); reverting S2a after S2c leaves S2c's spec §3.4-3.5 text describing a format that is
+absent, so it is reverted with S2c's spec hunks or not at all. **S2f after S2e.** S2g depends on nothing here
+and nothing here depends on it.
 
 ## 10. Questions and amendments
 
-**For Frank: none from this note.** The SIMD model is ruled (D188 add. 1, §2.7); its build waits for [XARCH-DEV]; the window request goes through
-main (35 minutes, §3.7).
+**For Frank: none from this note.** The SIMD model is ruled (D188 add. 1, §2.7); its build waits for
+[XARCH-DEV]'s go; the window request goes through main (35 minutes, §3.7).
 
-**For main** (each with the kit's recommendation):
+**For main** (each with the kit's recommendation; `[rev1.1 XREF]` numbered so §4 and §8 cite them):
 
 1. **memchr-back DEFERRED** (§2.5): R-35 and [MEASURE-SET]'s `next:` list it; no priced row reads it (D77).
    Recommend: defer with its trigger; ~1 minute of window if main wants it anyway.
 2. **The bundle's sampling-noise field** (§4.6): deferred to its producer; it amends span_pick.md:237-238.
 3. **No match_api hunk** (§4.4): R-35 names one; nothing there moves.
-4. **Row 1 is a scalar-layer row** (§2.5): recommended under the hold, with its stated cost; it amends
-   nothing ruled (span_pick §The pick 6 already allows it) but R-35 item 1's "scalar and SIMD" cards become
-   scalar now, SIMD at S2g.
-5. **D188 fact (b) and the stamp** (§2.7): `MEMFN_FORMS` names the levels the TEXT carries, so under `#if`
-   arms a stamp can name a level a fixture's compile excluded; the read-back of (b) is J6's design item once
-   the model is ruled. Relay to Frank with the model question if useful.
+4. **Row 1 is a scalar-layer row, as the INTERIM** (§2.5, `[rev1.1 SIMD-READ]` the kit manager's ruling): until
+   [XARCH-DEV]'s build `-fmemfn-simd` keeps today's `#if` arms; row 1 departs on the generic target only, its
+   SIMD-on arm judged as today's arms (no slower beyond noise). Amendment candidates it draws, for main to
+   carry to their owners: span_pick §The pick 6 (its two readings collapse to the per-target pick at
+   [XARCH-DEV]) and D186 add. 2 C9 (its "SIMD T-PICK row" becomes the SIMD variant's ordinary pick); and
+   SIMD-off-by-default becomes a per-target question at [XARCH-DEV].
+5. **D188 fact (b) and today's stamp** (§2.7): `MEMFN_FORMS` names the levels the TEXT carries, so under
+   today's `#if` arms a stamp can name a level a fixture's compile excluded. An observation for TODAY's tree
+   only; `[rev1.1 D188A1]` there is no model question to relay (D188 add. 1 ruled it), and (b)'s read-back
+   under variants is J6's design item at [XARCH-DEV].
 6. **The harness set reader's retirement** (§4.2, SLOT-6): its own "until M0" condition is met; noted, not
-   done here.
+   done here. `[rev1.1 EMBED]` And **the embed's spelling for S2e's review** (§3.8, R-35 (d)): the general
+   cell-less rule, the identity sentence, the `file_cells` listing column and the NAME view's empty `cells`
+   are rev 1.1's reading of "must state"; main owns the spelling (the listing is pcrec's contract).
+7. `[rev1.1 POLICY]` **The policy table** (§6, R-35 (e)): adopted as ruled (z, the gate default, MATERIAL;
+   HORS_MIN and MAX_SET out). [KIT-POLICY-TABLE]'s plan row says "COVER_Z_E3 in plan_cost.def" as TODAY's
+   state; `git grep COVER_Z` finds it in no code (it was rev 0's proposal): main's row text to fix. Whether
+   main's cost-only reading of D176 Q3 needs Frank is main's call.
+
+**R-35 narrowings, for main to ACKNOWLEDGE** (`[rev1.1 R35]`; each changes main's request text, so each is an
+amendment, not a silent drop):
+
+8. **Derived noise by quadrature: DROPPED** until a format-2 derived row has a producer and a reader (§4.3,
+   the kit manager's MEAS-13 ruling, strong form). R-35 item 1 asked for it.
+9. **`verify_cmp` scoped by the census**: R-35 item 1's "each form the kit offers" becomes the (form, cls)
+   pairs the step-0 census finds on row-1 sites (§2.4, §2.5; D77), and vany2/vany3 are dropped (no reader,
+   unrouted; already relayed as NOTED).
+10. **S2g HELD behind [XARCH-DEV]**: R-35 item 1's "scalar and SIMD" cards become scalar now and SIMD at S2g,
+    which waits for [XARCH-DEV]'s go. This MOVES D186 add. 2 C9's ruled sentence "SIMD-form cards join stage
+    2" (rev 1's "amends nothing ruled" was wrong): it is an amendment of C9, a consequence of D188 add. 1.
+
+**Also for main:**
+
+11. `[rev1.1 BOUND]` **K138's form**: "read from the seam, not copied" cannot be met under `ks_measures.c`'s
+    dependency rule; S2a lands `KS_MEAS_MAX` with a compile-time equality check against `MF_MEASURE_MAX`
+    (§4.1), which K138's value refusal can then read. Recommend: amend K138's text to that form.
 
 ### 10.2 Amendments this design makes to other documents (each lands with the named unit)
 
@@ -1166,33 +1290,46 @@ main (35 minutes, §3.7).
 | span_pick.md | :267-268 `[rev1.1 CITE]` "(`kit-grid@2`)" | `[s2]` `kit-grid@3` (`@2` is grid2's, TAKEN) `[rev1 PREMISE-6]` | S2c |
 | span_pick.md | Stage 2 "`DEFAULTS` unchanged"; Row 1 `[rev3 C6]`; §Defaults | §8.3 | S2e |
 | span_pick.md | :237-238 "stage 2's MF_SITE_ABI event" (bundle noise) | deferred to its producer (§4.6) | S2a |
-| R-35 (requests.md) | items 1 and 3 (DEFAULTS) | §8.3; main's text, main amends | S2e |
-| measure_sets.md | §1.4, §1.5, :490-494, §3.6, §4.1, §7.3 | §4.4, §8.3 | S2a/S2c/S2e |
-| kit-grid.tsv header | the unit sentence | per-version (§8.2) | S2c |
+| span_pick.md | `[rev1.1 Z]` §Cost cards "(1 sigma departs ~16 % of equal-price comparisons per side)" | the coverage factor covers a NEW draw of each card against its stored value; z 3.0 at most 2.25 % one-sided on an equal-price one-card comparison (span_cards §6) | S2c |
+| span_pick.md | `[rev1.1 SMP20]` :286 and :289 ("smp20.py :98", a line cite) | re-cite census0 (`span_pick/census0.py`) and `smp20.out` | S2b |
+| span_pick/CLAUDE.md, span_pick/witness.sh | `[rev1.1 SMP20]` CLAUDE.md :12, :21, :34; witness.sh :4, :6 (smp20.py) | census0.py; the golden is smp20.out plus one line | S2b |
+| R-35 (requests.md) | items 1 and 3 (DEFAULTS) | DONE by main: R-35 (c) | — |
+| measure_sets.md | §1.4, §1.5 (read cells include the verdict's), :490-494, §3.6, §4.1, §7.2 (`lengths`, `aa_rule`), §7.3, §7.4 (format 2's paired floor) | §4.4, §8.3, §2.4, §3.5 | S2a/S2c/S2e |
+| measure_sets.md | `[rev1.1 EMBED]` the sizing sentence ("47 rows is about 6 KB ... Ten committed sets stay below one `fold_tables.inc`") | "Every embed omits its set's `cells` (R-35 (d)); a set embeds as its text plus a pre-parse, about 305 B of libpcrec per row or card (grid1: 23,788 B, `size -A` of `measures.o`). Ten such sets are a few hundred KB, about a tenth of libpcrec.a today; embedding cells would cost about 0.26 KB per cell (`span_cards/tree_drill.py` D)." | S2e |
+| measure_sets.md, measure_store/CLAUDE.md | `[rev1.1 CENSUS]` "emit_sweep's data mode writes the movers file" | the movers files are written by a census tool named in their own header (0001: `docs/dev/lanes/m0build/census.py`; 0002: `span_cards/slot/movers.py`); emit_sweep's `measures` data kind is M1's | S2e |
+| kit-grid.tsv header | the unit sentence; `[rev1.1 CELLS-3]` the `lengths` and `aa_rule` column comment | per-version (§8.2); the estimator grammar for ver 3 | S2c |
+| docs/dev/known_issues.md K138 | `[rev1.1 BOUND]` "read from the seam, not copied" | main's text (§10 item 11) | (main) |
 
 ### 10.3 Row 1's design items this note hands on (not decided here)
 
-Which `find_hit` landing and density the price reads (or both, as regimes); verify priced over T-VERIFY's
-step list (span_pick R21) using `verify_cmp`'s (form, cls) keys; the `COVER_Z_E3` row in [KIT-POLICY-TABLE]
-and its trace line; the E2 family unification reading the three `enter` cards; the band's bundle term
-(§4.6); its SIMD-on acceptance reading (§2.5).
+Which `find_hit` landing and density the price reads (or both, as regimes; §2.3's resolution table bears on
+it); verify priced over T-VERIFY's step list (span_pick R21) using `verify_cmp`'s (form, cls) keys; the
+`COVER_Z_E3` row in the kit policy table and its trace line; the E2 family unification reading the three
+`enter` cards; the band's bundle term (§4.6); its SIMD-on acceptance reading (§2.5, the interim);
+`[rev1.1 BOUND]` the band's arithmetic: every intermediate bounded from the stated bounds (value and noise
+<= 10^15, its coefficients' bound), never an int64 square of a raw noise (§4.1); `[rev1.1 FAM-C]` its one
+qualifier test over three provenance vocabularies (§12 row 6).
 
 ## 11. The three standing questions (docs/design/CLAUDE.md)
 
 1. **The measurement regime: RELEVANT.** Every card names it (§2.3): Linux dev box (Zen 4 7700X), gcc 15.2
-   `-O2`, glibc's memchr, CPU 7 pinned, sibling idle; `[rev1 MEAS-12]` a 16 MiB pool of fresh streamed
+   `-O2 -march=x86-64 -mtune=generic` `[rev1.1 TARGET]` (the declared target, class `x86_64/zen4`, §2.7),
+   glibc's memchr, CPU 7 pinned, sibling idle; each arm at seven drawn placements `[rev1.1 PLACE]`; `[rev1 MEAS-12]` a 16 MiB pool of fresh streamed
    buffers (in L3, beyond L2); throughput on long subjects (byte, hit at g 256 and 1024), a candidate array
    (verify), whole-artifact find-all (enter); hits periodic AND random (a regime flip between them is
    exactly what the robustness rule wants seen); the SCALAR layer only (§2.5); per-call (short-subject)
    regimes are NOT carded ([SPAN-PICK-PERCALL]'s, span_pick.md:198-199), so a priced row's per-call cells
    fall outside the cards' claim. A different box flips picks; that is a new set id, never this one.
 2. **The independent control: RELEVANT.** Answers: G2's reference check and the expected-count gate on every
-   arm before any clock. Values, noise, NULLs, FRG and `partial`: the pcrec-side recompute from the set's
+   arm before any clock. Values, noise, NULLs, group verdicts, Goal 2's floor and `partial`: the pcrec-side recompute from the set's
    `cells` (an implementation of `measures.md`'s new sections 3.4-3.5, not importing the slot harness); the digest
-   by ks_ref.py (python, from the spec's table, not the C), verified again by the C loader. Placement: the
-   perturbed twin (§3.2), whose distinctness the driver asserts. Drift: one control per job against the
-   unit, with a between-launch threshold. "Stage 2 moves nothing": emit_sweep and the data-mover census,
-   counted pcrec-side from artifact diffs (K35), never the kit's `moved`. The seam's noise values: the
+   by ks_ref.py (python, from the spec's table, not the C), verified again by the C loader. Placement: drawn
+   per launch for every arm and twin, the constraints asserted on the LINKED executables (`nm`), never on
+   object bytes (§3.2). Drift: the fixed control executable per job against the unit's job, with a
+   between-launch threshold. The cell text: its site-text hash against `mf_form_hash` of the key's token
+   (one renderer; FAM-A is the router's independent control, §12 row 4). Check C: its card guard reads
+   every card row and its measure_store pass every format-2 set's form tokens, each counted and floored. "Stage 2 moves nothing": emit_sweep and the data-mover census,
+   counted pcrec-side from artifact diffs (K35) by `slot/movers.py` (§5), never the kit's `moved`. The seam's noise values: the
    MFMEAS triple digest against ks_ref.py's. The census (§7) shares the price formula with row 1, so it
    LOCALIZES only (SRS §8 item 2), never accepts. Populations: every job declares its group count and the
    queue counts it (POPULATION-SHORT); the recompute check counts the sets it skips.
@@ -1201,7 +1338,8 @@ and its trace line; the E2 family unification reading the three `enter` cards; t
    (§5's proof), and the DEFAULTS flip moves no stamp (§8.3). From row 1, a new default set moves the picks
    of consulting artifacts and their `<PREFIX>_MEASURES` stamps: then a default-set change is an abi event
    with its census (`measure_sets.md` §3.6 as amended, D162). A PAIR width retune (§3.6 (b)) stales the
-   PAIR cards through their form hash; a consumer entry-text change stales `enter` (§2.6).
+   PAIR cards through their form hash; a consumer entry-text change stales `enter` (§2.6). The embed is
+   cell-less (§3.8): a re-measure moves the embed by its rows only, about 305 B each.
 
 ## 12. Unlocks (filed, not built)
 
@@ -1211,13 +1349,27 @@ and its trace line; the E2 family unification reading the three `enter` cards; t
    that registry, and derived-row noise follows from it. Unlocks: Goal 3 without a special-purpose check;
    M3's install tool implementing ONE registry; derived noise with a reader. Trigger: the first format-2
    derived row with a producer and a reader, or M3's driver build, whichever first.
-2. **One kit noise-policy table** ([KIT-POLICY-TABLE], filed by main). Unlocks row 1's E2 unification.
-   Trigger: row 1.
-3. **The census as THE priced-forecast tool** (census0 subsumes smp20, §7, and every later row's mover
-   forecast). Trigger: S2b (taken).
+2. **One kit policy table** ([KIT-POLICY-TABLE], filed by main; `[rev1.1 POLICY]` members per R-35 (e),
+   §6). Unlocks row 1's E2 unification. Trigger: row 1.
+3. `[rev1.1 FAM-D]` (rev 1's "census as THE priced-forecast tool" is now a decision, §7.)
+4. `[rev1.1 FAM-A]` **A router control for the form hash.** The cell-text check proves key-to-row; that the
+   stated facts reach the row THROUGH the kit's router (T-FIND / T-VERIFY's first match) is a separate
+   fact. General form: every formhash entry row carries its expected router answer and a check routes the
+   row's facts and compares. Unlocks: a form-hash row that can never drift from what the router picks.
+   Trigger: the first formhash row whose facts route to another row in a router change (a red the cell
+   check cannot see), or row 1's build, whichever first.
+5. `[rev1.1 FAM-B]` **Placement as a declared fixture property.** Every kit timing fixture (G2's probes,
+   the bake-off, stage 2) draws placement per launch by one shared helper (the pad objects and the `nm`
+   assertions of §3.2). Unlocks: every timing in the tree carries placement in its noise the same way.
+   Trigger: a second timing harness that needs it (today only stage 2's slot).
+6. `[rev1.1 FAM-C]` **One qualifier test over the three provenance vocabularies** (the set's `status`, the
+   seam's noise state, the card's `aa_rule`): one table that says whether a value may price. Unlocks: row
+   1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
 
-Rev 1, lane s2rev1. OWED: nothing of the design; every unit of §9 is unbuilt; S2g HELD on the owner's SIMD
-model. The drill scripts behind §3.5's table, §3.6 and §6 are committed under `docs/design/memfn/span_cards/`
-(evidence, python only, no timing). No make, no timing, no box job. Not a build go.
+Rev 1.1, lane s2rev11 (over rev 1, lane s2rev1), from review 2026-11-06-r5 as ruled and R-35 (c)-(e). OWED:
+nothing of the design; every unit of §9 is unbuilt; S2g HELD until [XARCH-DEV]'s go. Main's acknowledgements
+owed: §10 items 8-10 (R-35 narrowings), 7 (policy), 6 (embed spelling), 11 (K138). The drills behind §2.3,
+§3.2, §3.5, §3.6, §3.7, §3.8 and §6 are committed under `docs/design/memfn/span_cards/` (python only, no
+timing; each prints its inputs). No make, no timing, no box job. Not a build go.
