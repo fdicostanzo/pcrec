@@ -849,9 +849,9 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   `split_conj[]` (CompConj), `cover_conj[]` (CoverConj) and `revend_forms[]` (RevendFormRow) are three private structs and walkers for one shape: a declared list walked first-match whose first failing row is the decline reason (or whose first holding row is the form). One `RowConj { id; desc; phase PRE/POST; deny; holds; form }`, one walker returning {why, form}, one listing projection (`<row>-admit`), the three migrated as no-mover commits; the deleted structs are the benefit.
 - [GIVEUP-DIFF] STATE:not-started — GIVEUP1 made direction-checked, before the first VM-finisher LOCATE row
   filed: 2026-10-29 lane p1dsg2 (the step is locate_finish.md's; it had no plan row, review r1 C4)
-  status (2026-10-29): not started; specified in locate_finish.md as three additions to make test-axes' GIVEUP1 relation, no src/ change
-  trigger: before locate_finish L3, L4 or L5 or [LANDWALK-VM] claims a give-up posture for a VM-finisher LOCATE row
-  refs: docs/design/locate_finish.md; tests/axes/run_axes.sh; known_issues K82
+  status (2026-11-06): not started; widened to cover the variable-lookbehind hand-off row (arev.md rev 2 §3.1: --harness= arm, ONE_WAY declared on the arm's job, witness HO-V); no src/ change
+  trigger: before locate_finish L3, L4 or L5 or [LANDWALK-VM] claims a give-up posture for a VM-finisher LOCATE row, OR before the variable-lookbehind hand-off row (arev S3) ships: its lever is a --harness= arm compared by GIVEUP1 beside INTERNAL_ARMS
+  refs: docs/design/locate_finish.md; tests/axes/run_axes.sh; known_issues K82; docs/design/stream/arev.md §3.1 (HO-V), §4.1 (S3)
   The direction rule read from the derived classification, a budget-ladder arm, and the witnesses (K82h's 35 blocks, T6a's 13, W1's constructed `(\w|\w\w)x$`, one per further ONE_WAY row), plus the corpus instrument that derives the classification column and a spec sentence per ONE_WAY row with a deny flag.
 - [TRAIL-CKPT-PRUNE] STATE:not-started — NO TRAIL CHECKPOINT ON A LOOP THAT CAN NEVER COMPACT (K134 cost outside cscan)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 F3/F4 (lane trailgc3)

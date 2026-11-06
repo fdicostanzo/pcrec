@@ -244,7 +244,7 @@ proof step is designed for build.
 - **Parallel mechanisms.** R28' (walk spellings outside the kind's one entry: 5 at fd1a32021), R03'
   (loops over a walk's result outside the kind's one host loop: 3), R10' (raw loop text in the
   landmark walk's emitter: 1). Restated by what they count in `arev.md` §4.3 (review r5 F23); §5
-  below is the manager's to restate, and the restatement raises the baseline by re-definition.
+  below carries the restatement (DONE 2026-11-06), which raised the baseline 29 → 36 by re-definition.
 - **End state.** One direction-neutral automaton-run record per walk instance: a machine-table entry
   id, the rendering (`table` / `structural`) and the form's selected rows as plan outputs, `from`
   and `bound` as typed position references, a hand map in `CT_*` terms, a tag kind, an instance id,
@@ -271,7 +271,7 @@ proof step is designed for build.
   records (P-d): R10' 1 → 0. S5 the moving-seed loops as instances of the kind's host loop: R03'
   3 → 0.
 - **Prerequisites.** S1: p1build (merged) and the manager's §5 restatement of R28'/R03'/R10'
-  (below). S1M: S1. S2: S1. S3: vlookbehind stage 1 (`range`) shipped; vlookbehind's ADOPTING
+  (DONE 2026-11-06, in §5 below). S1M: S1. S2: S1. S3: vlookbehind stage 1 (`range`) shipped; vlookbehind's ADOPTING
   REVISION of `arev.md` §3.1's proposals (ruling 1); [ROWCONJ] built (ruling 3); S1, S1M;
   [GIVEUP-DIFF] with its trigger and scope widened to this row (a PLAN item for its row); a D27
   spec-first author with an extract. NOT [VMREC]: under ruling 2 the call is members, and only the
@@ -703,14 +703,15 @@ declared extension shape (§2), then 0. The ratchet number is the sum.
 |---|---|---|---|---|---|---|
 | R01 | X1 the hybrid window's own protocol | census M0 | 1 | 1 | A-HYB | `pcrec_vm_prefilter_window` defined in `emit_vm.c` and the window protocol beside the start table: 1, else 0 |
 | R02 | X2 + X7 two shape analyses for one SKIP fact | M0 (two halves) | 2 | 2 | A-SKIP | 1 for `vm_det_seq`/`vm_cursor_fits` + 1 for `scanedge.c`'s analysis while both exist; 0 when one analysis serves both |
-| R03 | X3 revdet's own reverse walk | M0 | 1 | 1 | A-REV | `src/opt/revdet.c` present: 1 |
+| R03' (was R03) | X3 loops over a walk's result outside the kind's one host loop | M0, restated per `arev.md` §4.3 | 1 (as R03, `src/opt/revdet.c` present) | 3 | A-REV | functions whose OWN body emits a loop (`for`, `while`, or a backward `goto`/`vm_goto`) that re-runs a reverse walk: `emit_rev_end` (two-seed `for`), `emit_landmark_walk` (hit `for (;;)`), `vm_revdet_rep` (walk loop): 3 at 60b130fb4, no host loop exists yet so each counts. Counted by what the function does, not its file or name (R03's file test could never fall and a rename zeroed the rev-0 restatement) |
 | R04 | X4 the ENG-ISL trie | M0 | 1 | 1 | A-ISL | `vm_isl_build` present: 1 |
 | R05 | X13 whole artifact composed over whole artifact | M0 | 1 | 1 | A-ENTRY | `part_engine[]` in `compound.c`: 1 |
 | R06 | X14 engine-named consumer kinds in the kit ABI | M0 | 1 | 1 | A-KIND | `MF_SK_DFA_SCAN` in `memfn.h`: 1 |
 | R07 | X15 find-all retry keyed by the engine | M0 | 1 | 1 | A-ENTRY | `fit.chosen` in `emit_iter.c`: 1 |
 | R08 | X16 the offset-0 rule's modes | M0 (it counted 3 spellings; the recipe reads 4 modes at this HEAD) | 3 | 3 | A-POSDOM | `PCREC_START0_*` values in `internal.h`, minus 1 |
 | R09 | X16 the next-start loops | M0 | 2 | 2 | A-POSDOM | the members of K50 site 2's "THREE 'TRY THE NEXT START' MECHANISMS" comment still present, minus 1 |
-| R10 | X12 the landmark walk's hand-written loop | M0 (p1build) | 0 | 1 | A-REV | `emit_landmark_walk` present: 1 |
+| R10' (was R10) | X12 raw loop text in the landmark walk's emitter | M0 (p1build), restated per `arev.md` §4.3 | 0 | 1 | A-REV | the function registered as the `landmark-walk` LOCATE row's DFA emitter (`.u.locate.emit`), whatever its name: the LOOP CONSTRUCTS it prints in its own body and the helpers only it calls (`for (`, a `while (` not closing a `do` block, a backward `goto`) present: 1, else 0. The shared walk renderers `emit_scan_loop` and `emit_reverse_block` are the kind's own and are not counted. 1 at 60b130fb4 |
+| R28' | walk spellings outside the kind's one entry | `arev.md` §4.3 (review r5 F23, r1-1106 R8) | n/a (new row) | 5 | A-REV | (i) DEFINITIONS of `DfaDir` (initialized objects, plus run-time copies with fields overwritten), minus the rows of the record's DIRECTION table (before S1 builds it: today's 3 directions); a forward declaration is not a definition: 5 `static const` + `pcrec_emit_dfa_retry`'s copy − 3 = 3; plus (ii) reverse walk renderings whose SEED code lies outside the record's renderer, wherever called from (`emit_rev_end_one_seed`, `emit_rev_end_tagged`): 2. 5 at 60b130fb4; `dfa_dir_lmverify` counts |
 | R11 | counterfactual world spellings | r3-E1 | 2 | 3 | A-READS, H-LADDER | spellings among `CandNode.under/by`, `FitSets` + `*_dropped`, `pcrec_cand_drop_anchored_shrinks`, `pcrec_cand_lmwalk_next_cf`, minus 1 |
 | R12 | hand vocabularies | r3-E4 | 0 | 1 | A-SEAM | vocabularies among the `CT_*` masks and the asker enum, minus 1 |
 | R13 | H-LADDER undeclared | r3 rulings | 1 | 1 | H-LADDER | 0 once its owner and shape are written (§2), else 1 |
@@ -731,6 +732,12 @@ declared extension shape (§2), then 0. The ratchet number is the sum.
 
 **Baseline at main 3f777330e: 24** (census M0 13, round 3's corrections 7, earlier rounds and plan
 rows 4). **At p1build's merge as it stands: 29** (+R10, +R11, +R12, +R18, +R19).
+
+**Restated by re-definition (2026-11-06, manager; restated by re-definition per `arev.md` §4.3).**
+R03 → R03' and R10 → R10' are counted by what the code does, and R28' is a new row (its members
+were uncounted). No code moved: the count rises from 29 to **36** (R03' 1 → 3, R28' +5, R10' stays 1)
+by definition, not by a step, and that is the baseline every later step must lower. The old ids stay
+traceable (R03 → R03', R10 → R10'); the first column keeps the old count for them.
 
 **p1build and the ratchet.** p1build's go predates the ratchet, and its landing is already ruled.
 The roadmap's reading (for the manager to confirm): p1build lands as ruled; the inventory is
