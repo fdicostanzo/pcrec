@@ -64,6 +64,12 @@ the row.
   fidelity gap it discloses against `requirements.md`'s own C4 `iso-ts`
   finding). `generate.py` writes the shipped `src/findings/log.rxt`, its
   provenance labelled `fidelity synthesized` (lane `findb5`).
+- `owasp-crs-v4.30.0/` — [UTF-RW] source 1 (lane `crsharv`, 2026-11-05): a
+  pattern harvest, test/measurement data. `patterns.tsv` (329 regex rows, 306
+  unique) from the CRS rule files, `extract.py` (the recipe; takes the CRS
+  checkout path; deliberately NOT `generate.py` so `make gen-tables` never
+  runs it without the download), `count_gaps.py`, `PROVENANCE.md`, `LICENSE`
+  (Apache-2.0). Nothing derives from it in `src/`.
 
 ## Adding a source
 
