@@ -22,12 +22,14 @@ step that changes code needs the owner's go. Plan row: [STREAM].
   extension shapes, round 3's declared-vs-undeclared re-read of the three
   replayed changes, the PROVISIONAL admission table, the RATCHET inventory
   (baseline, recipes, log), the proof order, how a lane uses it.
-- `arev.md` — area A-REV's design note (PROPOSED rev 1, lane arevrev1,
-  2026-11-06, after review r5): one direction-neutral automaton-run record
-  (`DfaForm` made into it, no C text), one walk behaviour, `CT_*` hands, one
-  machine table, a VM-body host (a part plus a call record); its first client
-  is the lookbehind hand-off, built as a stream PROOF step; the steps with
-  costs and their ratchet recipes. `roadmap.md`'s A-REV section is the area
+- `arev.md` — area A-REV's design note (PROPOSED rev 2, lane arevrev2,
+  2026-11-06, after re-check r1-1106): one direction-neutral automaton-run
+  record (`DfaForm` made into it, no C text), one walk behaviour, `CT_*` hands,
+  one machine table (swap as roles), a VM-body host (a part in the code-segment
+  slot, the call as members of existing lists); its first client is the
+  lookbehind hand-off, a stream PROOF step whose admission rows are PROPOSALS
+  for vlookbehind.md (which owns them); the steps with costs and their ratchet
+  recipes. `roadmap.md`'s A-REV section is the area
   plan and points here.
 - `approach.md` — REVISION 3, superseded by the two above; kept as the design
   record of rounds 1-3 (the long arguments, the full conjunct text, the
