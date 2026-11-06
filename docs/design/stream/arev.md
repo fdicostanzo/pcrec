@@ -1024,7 +1024,7 @@ review's manager action; counts read at fd1a32021 by this lane:
 - **R10'** counted `while (`, which also matches the `do { … } while (0)` scaffold (:14504) that is
   not a loop, and "lines of its body" falls to 0 if the loop-printing lines move into a helper (a
   rename, not P-d). Restated: the LOOP CONSTRUCTS the registered emitter prints, in its own body AND
-  its static callees: `for (`, a `while (` not closing a `do` block, and a backward `goto`. 1 at
+  its static callees: `for (`, a `while (` not closing a `do` block, and a backward `goto`. Shared renderers the kind already owns (`emit_scan_loop`, `emit_reverse_block`) are NOT counted (manager 2026-11-06, lane ratchet3: counting them over-reads by at least 3). 1 at
   6e01c810b.
 - **R28' (i)** said "objects", but the tree also carries a forward declaration
   (`static const DfaDir dfa_dir_forward;`, :7106), so a line grep reads 6. Restated: DEFINITIONS
