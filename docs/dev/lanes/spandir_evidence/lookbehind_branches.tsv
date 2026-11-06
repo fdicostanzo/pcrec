@@ -1,0 +1,151 @@
+pop	src	status	edge_fwd_b	edge_fwd_u	edge_rev_b	edge_rev_u	stay_fwd	stay_rev	branch
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/assertions/d27/syntax_errors.rxt:170	refused:pcrec: \K requires the VM engine, which --engine=dfa excludes (pattern offset 1)							a\Kb
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/compound/split.rxt:3622	ok	0	0	0	0	0	0	\n
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/compound/split.rxt:11343	ok	0	0	0	0	0	0	^a
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/compound/split.rxt:12593	ok	0	0	0	0	0	0	\x{e9}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/findall/global.rxt:860	ok	0	0	0	0	0	0	a
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/handoff.rxt:1618	ok	0	0	0	0	0	0	[a-z]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/handoff.rxt:1673	ok	1	0	0	0	0	0	[a-z]{2}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/handoff_vm.rxt:287	ok	0	0	0	0	0	0	q.
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/presence_deny.rxt:261	ok	0	0	0	0	0	0	qz
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/presence_deny.rxt:315	ok	0	0	0	0	0	0	q
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/litscan/reqcube.rxt:415	ok	0	0	0	0	0	0	ab
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/alpha_spellings.rxt:267	ok	0	0	0	0	0	0	(a)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/alpha_spellings.rxt:267	ok	0	0	0	0	0	0	(ba)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/alpha_spellings.rxt:369	ok	0	0	0	0	0	0	(a|bc)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:45	ok	0	0	0	0	0	0	abc
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:55	ok	0	0	0	0	0	0	[ab][cd]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:67	ok	1	0	0	0	0	0	a{3}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:76	ok	0	0	0	0	0	0	(?:ab){2}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:85	ok	0	0	0	0	0	0	cd
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:96	ok	0	0	0	0	0	0	ef
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:128	ok	0	0	0	0	0	0	
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:153	ok	0	0	0	0	0	0	(a)(b)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:164	ok	1	0	0	0	0	0	(aa)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:164	ok	0	0	0	0	0	0	(ab)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:189	ok	0	0	0	0	0	0	a(?=b)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:197	ok	0	0	0	0	0	0	(?<=a)b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:204	ok	0	0	0	0	0	0	a(?!b)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:212	ok	0	0	0	0	0	0	bc
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:249	refused:pcrec: (?>...) requires the VM engine, which --engine=dfa excludes (pattern offset 0)							(?>ab)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:264	ok	0	0	0	0	0	0	b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:273	ok	0	0	0	0	0	0	\w
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:295	ok	0	0	0	0	0	0	[^a]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:303	ok	1	0	0	0	0	0	a{2}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind.rxt:334	ok	0	0	0	0	0	0	\Ga
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:23	ok	0	0	0	0	0	0	(?:ab|cd)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:31	ok	0	0	0	0	0	0	(?:ab|cd|ef)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:39	ok	0	0	0	0	0	0	e
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:53	ok	0	0	0	0	0	0	(?:(a)|(b))
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:64	ok	0	0	0	0	0	0	(?i:ab|cd)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:84	ok	0	0	0	0	0	0	(?:a{2}|bc)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:91	ok	0	0	0	0	0	0	(?:a(?:b|c)|d(?:e|f))
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:99	ok	0	0	0	0	0	0	(?:a|bc)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:104	ok	0	0	0	0	0	0	(?i:a|bc)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_group_alt.rxt:110	ok	0	0	0	0	0	0	d
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_widths.rxt:58	ok	0	0	0	0	0	0	def
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_widths.rxt:121	ok	1	0	0	0	0	0	(aaa)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_widths.rxt:154	ok	0	0	0	0	0	0	x
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_widths.rxt:168	ok	0	0	0	0	0	0	c
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/lookbehind_widths.rxt:193	ok	0	0	0	0	0	0	xbc
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/nonatomic_behind.rxt:146	ok	0	0	0	0	0	0	(?<*a)b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:115	ok	2	0	1	0	0	0	a{2,3}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:124	ok	0	0	0	0	0	0	a?
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:132	ok	3	0	1	0	0	0	a{0,3}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:143	ok	0	3	0	1	0	0	a*
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:149	ok	0	2	0	1	0	0	a+
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:155	ok	2	2	1	1	0	0	a{2,}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:161	ok	0	0	0	1	0	0	a*?
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:169	ok	0	3	0	1	0	0	a*+
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:177	ok	0	3	0	1	0	0	(?>a*)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:189	ok	0	0	0	0	0	0	(?:a|bc)d
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:197	ok	0	0	0	0	0	0	((a|bc)d)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:247	refused:pcrec: \1 refers to capture group 1, but this pattern has 0 (pattern offset 0)							\1
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:284	ok	0	0	0	0	0	0	\n?\z
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/refused.rxt:294	ok	0	0	0	0	0	0	\w?
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/startpos.rxt:127	ok	0	0	0	0	0	0	(bc)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/workbudget.rxt:42	ok	0	0	0	0	0	0	gh
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/adversarial.rxt:59	ok	1	0	0	0	0	0	bb
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/adversarial.rxt:69	ok	1	0	0	0	0	0	(?:a{2})
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/adversarial.rxt:69	ok	1	0	0	0	0	0	(?:a{3})
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/longsubject.rxt:8	ok	1	0	0	0	0	0	ccc
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/longsubject.rxt:8	ok	1	0	0	0	0	0	dddd
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/matrix.rxt:1100	ok	0	0	0	0	0	0	[ab]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/refusals.rxt:68	ok	2	0	1	0	0	0	a{1,255}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/refusals.rxt:88	ok	2	0	0	0	0	0	a{2}b{0,1}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/refusals.rxt:113	refused:pcrec: quantifier does not follow a repeatable item (pattern offset 0)							*a
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/refusals.rxt:138	refused:pcrec: \K requires the VM engine, which --engine=dfa excludes (pattern offset 0)							\Ka
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/lookaround/d27/spellings.rxt:139	ok	0	0	0	0	0	0	(a|ba)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:2003	ok	0	0	0	0	0	0	\W
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:2633	ok	0	0	0	0	0	0	\b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:2708	ok	0	0	0	0	0	0	\B
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:3949	ok	0	0	0	0	0	0	\w
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:6008	ok	0	0	0	0	0	0	a
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:7397	ok	0	0	0	0	0	0	(\w)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:7421	ok	0	0	0	0	0	0	(a)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:9995	ok	0	0	0	0	0	0	A
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10520	ok	0	0	0	0	0	0	\G
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10550	ok	0	0	0	0	0	0	\G\w
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10731	ok	0	0	0	0	0	0	[a-z]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10746	ok	0	0	0	0	0	0	^
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10746	ok	0	0	0	0	0	0	\W
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10762	ok	0	0	0	0	0	0	^
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:10762	ok	0	0	0	0	0	0	-
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:11543	ok	0	0	0	0	0	0	b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:11559	ok	1	0	0	0	0	0	aa
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:11604	ok	1	0	0	0	0	0	\w\w
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/possessify/composition_d27.rxt:11649	ok	0	0	0	0	0	0	\w\W
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:44	refused:pcrec: (?&g) refers to a capture group named 'g', which this pattern does not declare (pattern offse							(?&g)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:51	refused:pcrec: (?&g) refers to a capture group named 'g', which this pattern does not declare (pattern offse							z(?&g)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:63	refused:pcrec: (?&h) refers to a capture group named 'h', which this pattern does not declare (pattern offse							(?&h)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:96	refused:pcrec: (?&g) refers to a capture group named 'g', which this pattern does not declare (pattern offse							((?&g))
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:96	refused:pcrec: (?&h) refers to a capture group named 'h', which this pattern does not declare (pattern offse							((?&h))
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround.rxt:114	refused:pcrec: (?&g) refers to a capture group named 'g', which this pattern does not declare (pattern offse							a(?=(?&g))b
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:20	refused:pcrec: (?R) requires the VM engine, which --engine=dfa excludes (pattern offset 0)							(?R)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:29	refused:pcrec: (?1) refers to capture group 1, but this pattern has 0 (pattern offset 0)							(?1)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:39	refused:pcrec: (?2) refers to capture group 2, but this pattern has 0 (pattern offset 0)							(?2)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:49	refused:pcrec: (?1) refers to capture group 1, but this pattern has 0 (pattern offset 0)							(?1){0}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:54	refused:pcrec: (?1) refers to capture group 1, but this pattern has 0 (pattern offset 3)							(?>(?1))
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:80	refused:pcrec: (?1) refers to capture group 1, but this pattern has 0 (pattern offset 1)							b(?1)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/inlookaround_self.rxt:87	refused:pcrec: (?3) refers to capture group 3, but this pattern has 0 (pattern offset 0)							(?3)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/d27/sr_wrapped.rxt:100	ok	0	0	0	0	0	0	(xy)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/recursion/d27/sr_wrapped.rxt:122	refused:pcrec: (?1) requires the VM engine, which --engine=dfa excludes (pattern offset 2)							(a(?1)?b)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/revend/stage2_captures.rxt:1281	ok	0	0	0	0	0	0	,
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/revend/stage2_captures.rxt:1311	ok	0	0	0	0	0	0	\s
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/startset/dfahat.rxt:522	refused:pcrec: (?<=...) requires the VM engine, which --engine=dfa excludes (pattern offset 1)							b(?<=ab)c
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/startset/dfahat.rxt:1357	ok	0	0	0	0	0	0	\r
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/startset/dfahat.rxt:1416	ok	0	0	0	0	0	0	é
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/startset/dfahat.rxt:1449	ok	0	0	0	0	0	0	a
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/startset/dfahat_f1.rxt:256	ok	0	0	0	0	0	0	[a-]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:27	ok	0	0	0	0	0	0	\$
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:41	ok	0	0	0	0	0	0	[aeiou]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:57	ok	0	0	0	0	0	0	[0-9a-f]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:82	ok	0	0	0	0	0	0	\$
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:96	ok	0	0	0	0	0	0	[aeiou]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:112	ok	0	0	0	0	0	0	[0-9a-f]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:162	ok	0	0	0	0	0	0	[a-c]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:178	ok	0	0	0	0	0	0	\d
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/ucp/ctxnode.rxt:232	ok	0	0	0	0	0	0	(?:a)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:35	ok	0	0	0	0	0	0	[a\x{3b1}]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:63	refused:pcrec: (?&g) refers to a capture group named 'g', which this pattern does not declare (pattern offse							(?&g)
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:75	ok	0	0	0	0	0	0	.
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:108	ok	0	0	0	0	0	0	[^a]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:142	ok	0	0	0	0	0	0	\w
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:181	ok	0	0	0	0	0	0	\p{L}
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:206	ok	0	0	0	0	0	0	[\x{0}-\x{10FFFF}]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:233	ok	0	0	0	0	0	0	(?i)s
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis08_lookbehind_varwidth.rxt:262	ok	0	0	0	0	0	0	(?i)[a-z]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis13_ctx_illformed.rxt:51	ok	0	0	0	0	0	0	[a]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/utf8/axis13_ctx_illformed.rxt:87	ok	0	0	0	0	0	0	[a-z]
+corpus	/home/pcrec/projects/pcrec/worktrees/spandir/tests/vars/basic.rxt:79	refused:pcrec: ${name} requires the VM engine, which --engine=dfa excludes (pattern offset 0)							${v}
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:901	ok	0	0	0	0	0	0	[0-9.+-]
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:925	ok	0	0	0	0	0	0	\\
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:949	ok	0	0	0	0	0	0	[0-9]
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:1239	ok	0	0	0	0	0	0	\$
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:1261	ok	0	0	0	0	0	0	[\d.]
+bench	/home/pcrec/projects/pcrec-bench/bench/capability/patterns.rxt:1272	ok	2	0	0	0	0	0	\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3}
+bench	/home/pcrec/projects/pcrec-bench/bench/syntax/export/syntax.rxt:273	ok	0	0	0	0	0	0	item 
+bench	/home/pcrec/projects/pcrec-bench/bench/utf8/patterns.rxt:723	ok	0	0	0	0	0	0	é
+bench	/home/pcrec/projects/pcrec-bench/bench/utf8/patterns.rxt:734	ok	0	0	0	0	0	0	a
+bench	/home/pcrec/projects/pcrec-bench/bench/utf8/patterns.rxt:745	ok	0	0	0	0	0	0	日
+bench	/home/pcrec/projects/pcrec-bench/bench/utf8/patterns.rxt:756	refused:pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (patter							[\x{400}-\x{4FF}]

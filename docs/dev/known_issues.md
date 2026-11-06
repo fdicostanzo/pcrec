@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K139 — OPEN (found by lane altbuild, 2026-11-06) — with prefix factoring denied, the VM island refuses wide alternations the chain accepts (the cap guard's own failure)
+
+**Witness:** at main 80341284e with `-fno-altcls-factor`, the cap-guard ladder's rungs N=300 and N=340 are REFUSED with the island and ACCEPTED under `-fno-alt-island`. That is exactly the acceptance regression the island's cap guard exists to prevent. Pre-existing and latent: the old prefix factoring always ran, so the unfactored ladder never reached the guard. Reported in docs/dev/lanes/altbuild_report.md (STATE AT HANDOFF). Refusal, not a wrong answer. Fix: the guard falls back to the chain whenever the island would exceed the cap (owner: the [RUN-POS-SET] follow-up lane, its own commit, witness these rungs under the deny pair).
+
+---
+
 ## K138 — OPEN (found by the kit's span_cards review, 2026-11-06, CONTRACT-5) — a measurement set with value_e6 > MF_MEASURE_MAX loads, then every compile against it is an "internal error"
 
 **Witness:** a committed-shape set row with `value_e6` = 2e15 (digest fixed up) passes the set loader; compiling 3 patterns against that set gives rc 1 `internal error: the memfn kit refused ...`; control (in-range value) rc 0. Re-run by the review's verifier (docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md on lane/memfn-k1102 @ 568ce6721, row CONTRACT-5). The bound exists only kit-side; pcrec's loader (docs/spec/measures.md, measure_sets §7 refusal rows) has no refusal row for an out-of-range value, so a bad set surfaces as an internal error at compile instead of a clean load-time refusal. Fix (pcrec side): a §7 refusal row for value_e6 above MF_MEASURE_MAX (read from the seam, not copied), spec hunk in the same change. The kit adds the same for the new noise field in its S2a.
