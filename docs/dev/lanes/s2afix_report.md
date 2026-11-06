@@ -68,3 +68,8 @@ and strict jobs keep their populations: no emitted byte moved and no new test sc
 | HOUSE-1 | yes: meas_formats[], named fold widths, kind row NULL |
 | HOUSE-2 | yes: shared FNV, sort comment |
 | HOUSE-5 | yes: check_cells |
+
+## STATE AT HANDOFF
+
+Complete. Owed, for the manager: gate jobs 460-468 (queue them; `mech.sh` already carries S2911). No ruling pending, no
+rulings file. A fresh agent resumes from the Fixes table above; nothing else is open.
