@@ -807,7 +807,10 @@ position (a REACH line per position).
   the set alone) is a single string**; its words are then the members'
   encodings in ascending code point, one per box exactly as today, under the
   same budget charges. The word list is then today's for every class, merged or
-  not, so U4's island census is an EQUALITY. The predicate's only purpose is to
+  not, so U4's island census is an EQUALITY (run on both axes and both engine
+  routes, it is what proves the set predicate equals today's child reading
+  wherever the child is spelled differently; the splitter is the lowering's
+  own, `u8_ranges`/`u8_box` exposed from `lower_enc.c`, not a copy). The predicate's only purpose is to
   keep today's admission, and it is named so: widening it (range boxes, caseless
   sets) is [ENG-ISL-S2]'s CLASS-MEMBER shape, untriggered (D77), which deletes
   the predicate when it fires. Options not taken: admitting every set within
