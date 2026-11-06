@@ -177,3 +177,5 @@ Round 2026-11-05 r2, alt-normal-form design (`docs/dev/reviews/2026-11-05-r2-alt
 1. **A proposed sabotage witness must be able to fail.** Compute whether its fact clears every floor and domain test in both the correct and the sabotaged build (S-c out of domain, S-f under the 16-bit floor, S-d named none).
 2. **A fixpoint rewrite called a "normal form" gets a confluence drill** over every merge order (SIM-2: 23% of small grids ended in different forms; `\p{Lu}` 76 vs 66 boxes).
 3. **"Not an abi event" is checked against match_api.md §6¶19 and the abi log's precedents** (two lenses reversed this round's claim independently).
+
+- **2026-11-05 r3 vlookbehind.** (1) A simulate lens that implements a rule's INTENT validates its semantics, not its sketch: hand-execute shipped pseudo-code literally (now in the soundness row). (2) A byte-identity claim by "constant fold" is checked statement by statement against the emitted prologue: order, saved operands, charge amounts, slot allocation ("evaluates the test at compile time" hid four other differences).
