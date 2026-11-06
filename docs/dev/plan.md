@@ -256,7 +256,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
 - [FEAT-FAMILIES] STATE:started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
   filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
-  status (2026-11-06): design merged fe70e06e8. Frank RULED: \K split into its own module; a frozen member lists only BUILT modules; moving names move only at announced boundaries. Open: what counts as the graduation panel
+  status (2026-11-06): design merged. Frank RULED: \K own module; frozen = BUILT modules; names move at boundaries; D37 graduation rule RETIRED for a release checklist per move (D37 addendum); K74 documented; quoting/named-groups diffs + wider fuzz before move 1
   next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
   refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
   vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
