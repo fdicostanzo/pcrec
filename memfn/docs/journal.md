@@ -3285,3 +3285,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main fixes: CELLS-1..3, CHECKC (check C over zero grid3 keys), HASH, TWIN (STT_FILE makes the objects-differ check vacuous), PLACE, DRIFT, Z, FLOOR, CENSUS (emit_sweep has no measures kind), GOAL2, TARGET, J1-WIN; S2a's KSGEN/BOUND/MFMEAS; the SIMD interim stated.
   - Asked main to record DEFAULTS (B) (no record existed) and to rule EMBED (kit: omit cells from the embed) and POLICY.
   - Rev 1.1 is briefed only after main answers (no addenda to running lanes). Lessons went to the skill and critics.md.
+- 11-06: main ruled at 78e7da573: DEFAULTS (B) recorded as R-35 (c); EMBED omits cells (set.tsv keeps them; the embed is declared cell-less); POLICY accepted (Q3 covers measured costs only; z, the gate default and MATERIAL go to one policy table; HORS_MIN and MAX_SET leave [KIT-POLICY-TABLE]).
+  - Lane s2rev11 (opus) on lane/memfn-s2rev11 (rev 1 + k1102, with one append-only index conflict resolved keeping both lines) writes rev 1.1.
+  - Next: S2a/S2b build lanes once rev 1.1's text for them is in; the 2-critic re-check of S2c-S2e runs in parallel.
