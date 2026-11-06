@@ -1518,8 +1518,9 @@ const mf_run_row *mf_run_rows(size_t i);
 
 /* ---- form hashes (R-MS3; measure_sets.md §2.4) ----------------------------
  *
- * A form's hash over its CANONICAL INSTANCE: the text the kit renders for
- * one fixed canonical site of the form (fixed set, span and prefix), with
+ * A form's hash over its INSTANCES: the text the kit renders for each fixed
+ * site of the form (fixed set, span and prefix; a form priced per class has
+ * one per class, folded into ONE text in a fixed order), with
  * the scaffolding normalized out (comments, blank lines and line-edge white
  * space dropped, every identifier the kit or pcrec generated for the site
  * replaced by a placeholder in order of first appearance), FNV-1a-64, 16

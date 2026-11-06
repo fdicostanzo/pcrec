@@ -29,7 +29,11 @@
 #            in the same launch) and, on the unit's card, `bimodal-test`
 #            (measure_sets.md §1.4), `;`-joined
 #   gate_e6  the group's refusal gate: UNMEASURED DEFAULT (D149) until derived
-#            from committed sets (§7.3); `-` where the row is derived
+#            from committed sets (§7.3); `-` where the row is derived. ver 3
+#            states `-`: its gate is the kit policy table's gate_default_e6
+#            (../policy.tsv, R-35 (e), review r9 SLOT-17), one home; the
+#            producer writes the value it gated by on the card it publishes
+#            in a set
 #   env      the method's declared safe direction (`-` until M2, R-MS4)
 #   deps     the dependency ids the producer hashes (§2.4): kit:form.<id>
 #            (mf_form_hash; `walk`, `libc` render at B1, V1 at B4, S1/A1
@@ -57,7 +61,7 @@ kit	delta	1	form;vs;kind;lenclass	walkbytes	fresh	n in {8,32,48,63}	5	5	pair-per
 kit	ccold	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
 kit	wuse	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
 kit	gstar	1	form;kind	bytes	streamed	g in {2,4,8,16,32,64,256,4096,absent}	5	5	pair-per-group	-	-	kit:form.<form>
-kit	find_byte	3	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	30000	-	kit:form.walk;kit:form.libc;kit:form.pair
-kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	30000	-	kit:form.walk;kit:form.libc;kit:form.pair
-kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	30000	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
-kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	30000	-	-
+kit	find_byte	3	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	-	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
+kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-

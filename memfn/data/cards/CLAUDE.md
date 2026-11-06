@@ -28,5 +28,8 @@ A new search method adds its card here in the same change (D176,
 `docs/dev/guide/addenda/kit.md`). `tests/memfn/finder_check.py` (check C)
 reads EVERY table here (by listing), holds each row's shape, every set's keys
 to a card and every card's `deps` to the form hashes; its CARD GUARD (S2c):
-a card naming a `kit:form.` dep has `form` as its first dim, the count
-printed and floored at 17 (kit-grid 12, kit-kernels 5).
+a card naming a `kit:form.` dep has `form` as its first dim and every
+named (non-template) `kit:form.<id>` resolves to a form hash, the count
+printed and pinned EXACTLY at 17 (kit-grid 12, kit-kernels 5; a card adding
+one bumps `CARD_FORMDEP_COUNT`). `ver 3` cards state `gate_e6` `-`:
+their gate is `../policy.tsv`'s `gate_default_e6` (R-35 (e), r9 SLOT-17).

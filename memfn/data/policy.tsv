@@ -1,0 +1,11 @@
+# memfn/data/policy.tsv — THE KIT POLICY TABLE (R-35 (e); [KIT-POLICY-TABLE]; span_cards.md §6 "Where it
+# lives", review 2026-11-06 r9 SLOT-17). POLICY constants, not measured costs of a box: they live in this ONE
+# table outside the sets, so a re-measure never moves a policy (D166). Each row is labelled POLICY with its
+# reason (memory pcrec-suspect-tuning-constants). z and MATERIAL join WITH their reader, row 1 (D77); the gate
+# default is here first because the stage-2 slot reads it now.
+# Columns: name value reason. One row per name.
+#   gate_default_e6   the gate_e6 of a card that states `-` (kit-grid@3's four cards): read by
+#                     docs/design/memfn/span_cards/slot/plan.py, which publishes the value it gated by on the
+#                     card it writes into a set (the set stays self-contained, measures.md §3.5¶2)
+#name	value	reason
+gate_default_e6	30000	POLICY: the noise a cost row may carry and still be priced, a quality choice; UNMEASURED DEFAULT (D149) carried from grid1 (span_cards.md §2.4)

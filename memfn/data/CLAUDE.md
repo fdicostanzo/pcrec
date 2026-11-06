@@ -10,6 +10,10 @@ through the harness lever `build/pcrec-harness --harness=measures=FILE`.
   version), append-only. Own CLAUDE.md.
 - `sets/` — the MEASUREMENT SETS in `measure_sets.md` §1.2's section shape,
   and `generate.py`, their one writer. Own CLAUDE.md.
+- `policy.tsv` — THE KIT POLICY TABLE (R-35 (e), [KIT-POLICY-TABLE]): policy
+  constants, never measured, outside the sets; today `gate_default_e6` (the
+  gate of a card stating `-`, read by span_cards' slot `plan.py`); z and
+  MATERIAL join with row 1.
 
 When [MEASURE-SET] lands, its store (`measure_store/`) owns the official
 sets; the interim set here stays a labelled test input (Q-REVAL-10).

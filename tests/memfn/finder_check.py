@@ -35,14 +35,18 @@ design's text, sharing no code with the kit):
      span_cards.md §3.2 (S2c): every id and class instance of formhash.c's
      ENTRY TABLE (FORM_IDS, written here from the design) resolves, reaches
      the design's kit row, is the design's class by its own site text's
-     measure (settest's compares, rc-words' words) and the canonical one is
-     mf_form_hash(id); all instances hash pairwise distinct (sabotage (m),
-     S2930); per id a rename of its site text keeps the hash and a
-     one-instruction edit moves it.
+     measure (settest's compares, rc-words' words); mf_form_hash(id) is the
+     FOLD of its instances (every instance's site text in table order, a
+     newline between two: review r9 G4; S2933); all instances hash pairwise
+     distinct (sabotage (m), S2930); per INSTANCE (CHECKS-6) a rename of its
+     site text renames something (CHECKS-4) and keeps the hash, and a
+     one-instruction edit moves the instance's hash AND the id's fold.
   C. R-MS5 and the sets: memfn/data/sets/generate.py --check; THE CARD
      GUARD (span_cards.md §2.4, S2c; S2931): over every card table and every
-     ver, a card whose deps name `kit:form.` has `form` as its FIRST dim, the
-     count printed and floored (CARD_FORMDEP_FLOOR); every row of
+     ver, a card whose deps name `kit:form.` has `form` as its FIRST dim, and
+     every non-template `kit:form.<id>` dep resolves to a form hash (review
+     r9 CHECKS-3), the count printed and pinned EXACTLY (CARD_FORMDEP_COUNT,
+     bumped with each card that adds one); every row of
      every set on its method's card (quantity present, arity = dims), the
      set's `cards` section equal to its card table, `rows` and
      `values_digest` (measure_sets §1.6, recomputed here) as its header
@@ -156,9 +160,10 @@ FORM_IDS = {
     "rc-memcmp": ("memcmp",    {"l1": None}, "l1"),
 }
 FORM_INSTANCE_FLOOR = 10
-# span_cards.md §2.4 [rev1.2 READY-2]: the card guard's population, floored
-# (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3 3)
-CARD_FORMDEP_FLOOR = 17
+# span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
+# population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
+# 3): a card added with a kit:form. dep bumps it in the same change
+CARD_FORMDEP_COUNT = 17
 FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
 # M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
@@ -295,8 +300,9 @@ def check_hash(fx):
         else:
             ok()
     # S2c: every instance of the entry table resolves, reaches its row, is
-    # the design's class, and the canonical one is mf_form_hash(id)
+    # the design's class; mf_form_hash(id) is the fold of its instances (G4)
     seen = {}
+    texts = {}
     for c in inst:
         if len(c) != 6:
             bad("FORMCLS line %r is not id cls rc hash row canon" % (c,))
@@ -314,12 +320,10 @@ def check_hash(fx):
          bad("instance %s %s reached row %s, the design's %s" % (fid, cls, row, want[0])))
         (ok() if (canon == "1") == (cls == want[2]) else
          bad("instance %s %s: canon %s, the design's canonical class is %s" % (fid, cls, canon, want[2])))
-        if canon == "1":
-            (ok() if form.get(fid, ("", ""))[1] == h else
-             bad("mf_form_hash(%s) %s is not its canonical instance's %s" % (fid, form.get(fid), h)))
+        t = run([fx, "--site-text", fid, cls]).stdout.decode()
+        texts.setdefault(fid, []).append(t)
         m = want[1][cls]
         if m is not None:
-            t = run([fx, "--site-text", fid, cls]).stdout.decode()
             got = class_measure(fid, t)
             (ok() if (got == m if m < 3 else got >= m) else
              bad("instance %s %s: its text's class measure is %d, the class's %s%d"
@@ -337,13 +341,28 @@ def check_hash(fx):
     dup = [v for v in byh.values() if len(v) > 1]
     (ok() if not dup else
      bad("form instances hash one text: %s" % "; ".join(" = ".join("%s %s" % k for k in v) for v in dup)))
-    # R-MS3's two fixtures per id, on its canonical site text
+    # G4 FOLD: mf_form_hash(id) is ONE hash over every instance's site text,
+    # in table order (FORMCLS order), a newline between two; folded here from
+    # the texts, never by formhash.c's loop (sabotage S2933)
     for f in FORM_IDS:
-        rn, ed = text.get(f + ".rename"), text.get(f + ".edit")
-        (ok() if rn and rn == form.get(f, ("", ""))[1] else
-         bad("the rename of %s's site text moved its hash (%s vs %s)" % (f, rn, form.get(f))))
-        (ok() if ed and ed != "-" and ed != form.get(f, ("", ""))[1] else
-         bad("the one-instruction edit of %s's site text left its hash (or found no edit site): %s" % (f, ed)))
+        fold = run([fx, "--hash-text", "-"], input="\n".join(texts.get(f, [])).encode()).stdout.decode().strip()
+        (ok() if texts.get(f) and form.get(f, ("", ""))[1] == fold else
+         bad("mf_form_hash(%s) %s is not the fold of its %d instances' site texts %s"
+             % (f, form.get(f), len(texts.get(f, [])), fold)))
+    # R-MS3's fixtures per INSTANCE (CHECKS-4, CHECKS-6, G4)
+    for (f, c), h in sorted(seen.items()):
+        k = "%s/%s" % (f, c)
+        rn, nr = text.get(k + ".rename"), text.get(k + ".renamed", "0")
+        ed, fe = text.get(k + ".edit"), text.get(k + ".foldedit")
+        (ok() if nr.isdigit() and int(nr) > 0 else
+         bad("the rename of %s's site text renamed nothing (%s): 'rename keeps the hash' would hold vacuously" % (k, nr)))
+        (ok() if rn and rn == h else
+         bad("the rename of %s's site text moved its hash (%s vs %s)" % (k, rn, h)))
+        (ok() if ed and ed != "-" and ed != h else
+         bad("the one-instruction edit of %s's site text left its hash (or found no edit site): %s" % (k, ed)))
+        (ok() if fe and fe != "-" and fe != form.get(f, ("", ""))[1] else
+         bad("an edit of instance %s alone left mf_form_hash(%s) %s (the fold must cover it): %s"
+             % (k, f, form.get(f), fe)))
     for f, step in LATER_FORMS.items():
         if form.get(f, ("0",))[0] != "-1":
             bad("mf_form_hash(%s) resolves before its step %s" % (f, step))
@@ -423,6 +442,7 @@ def check_sets(root, form):
     names = sorted(f[:-4] for f in os.listdir(cdir) if f.endswith(".tsv"))
     (ok() if len(names) >= 3 else bad("memfn/data/cards holds %d card tables, under 3" % len(names)))
     formdep = 0
+    resolves = {f for f, (rc, _h) in form.items() if rc == "0"}
     for name in names:
         cl = read_cards(os.path.join(cdir, name + ".tsv"))
         cards[name] = cl
@@ -438,9 +458,16 @@ def check_sets(root, form):
                 (ok() if f[3].split(";")[0] == "form" else
                  bad("%s.tsv: card %s@%s names a kit:form. dep but its first dim is %r, not form"
                      % (name, f[1], f[2], f[3].split(";")[0])))
+                # every named (non-template) form id resolves to a hash
+                for d in f[12].split(";"):
+                    if d.startswith("kit:form.") and not d.startswith("kit:form.<"):
+                        (ok() if d[len("kit:form."):] in resolves else
+                         bad("%s.tsv: card %s@%s names dep %s, which resolves to no form hash"
+                             % (name, f[1], f[2], d)))
     print("check C: %d cards with a kit:form. dep" % formdep)
-    (ok() if formdep >= CARD_FORMDEP_FLOOR else
-     bad("%d cards with a kit:form. dep, under the floor %d" % (formdep, CARD_FORMDEP_FLOOR)))
+    (ok() if formdep == CARD_FORMDEP_COUNT else
+     bad("%d cards with a kit:form. dep, the pinned count is %d (a card added or removed: re-pin)"
+         % (formdep, CARD_FORMDEP_COUNT)))
     sdir = os.path.join(root, "memfn/data/sets")
     later = set()
     nsets = 0

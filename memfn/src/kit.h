@@ -1090,13 +1090,14 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
  * One row per INSTANCE of a form id (the id's canonical instance, `canon` 1,
  * and for a verify form one per class): its site shape, stated facts, policy
  * word and deny string, rendered by ONE path whose text is what
- * mf_form_hash folds AND what a span_cards cell times. TEST entries (no
+ * mf_form_hash folds (every instance of the id, one text) AND what a
+ * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
 typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST } mf_form_shape_id;
 typedef struct {
     const char *id;
     const char *cls;        /* the class token; "-" for an id with one instance */
-    uint8_t     canon;      /* the id's canonical instance (mf_form_hash's)      */
+    uint8_t     canon;      /* the id's canonical instance (the default one)     */
     uint8_t     shape;      /* mf_form_shape_id                                  */
     const char *row;        /* the kit row the facts must reach (NULL: none)     */
     const char *bytes;      /* the set's members, or the run's bytes (RUNCMP)    */
@@ -1139,7 +1140,9 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
 /* The kit row the instance's facts reached ("-": its shape has none), NULL
  * on a -1 of mf_form_site_text. */
 const char *mf_form_row(const char *id, const char *cls);
-/* mf_form_hash of the instance; mf_form_hash(id) == mf_form_hash_cls(id, NULL). */
+/* The hash of ONE instance's site text (the slot's cell-text check); for an
+ * id with one instance it equals mf_form_hash(id), which folds every
+ * instance (formhash.c). */
 int mf_form_hash_cls(const char *id, const char *cls, char out[17]);
 
 /* 1 in a trace build: the walks then also ask a DECLINED row's predicate

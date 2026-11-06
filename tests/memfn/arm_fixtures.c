@@ -1281,13 +1281,20 @@ static void gate_cases(void)
  *       loops of tests/memfn/finder_check.py
  *   arm_fixtures --finder-rows     mf_finder_rows as TSV (R-MS4's listing)
  *   arm_fixtures --hash            R-MS3's fixtures (mf_form_hash): a `FORM`
- *       line per id, a `FORMCLS` line per instance of the entry table
+ *       line per id (the fold of its instances), a `FORMCLS` line per
+ *       instance of the entry table
  *       (`FORMCLS<TAB>id<TAB>cls<TAB>rc<TAB>hash<TAB>row<TAB>canon`), the
- *       `TEXT` variants, and per entry-table id its rename/edit pair
- *       (`TEXT<TAB><id>.rename|<id>.edit<TAB>hash`)
+ *       `TEXT` variants, and per entry-table instance its fixtures
+ *       (`TEXT<TAB><id>/<cls>.rename|.edit|.foldedit<TAB>hash`,
+ *       `TEXT<TAB><id>/<cls>.renamed<TAB>count`)
  *   arm_fixtures --site-text ID [CLS]   the instance's SITE TEXT on stdout,
  *       exactly the text mf_form_hash folds (span_cards.md §3.2; the slot
  *       harness's cell text)
+ *   arm_fixtures --site-parts ID [CLS]  the same text in two parts: the
+ *       FILE part, a form-feed line, the BODY part (the slot's wrapper
+ *       places them)
+ *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
+ *       cell-text check folds a cell TU's site span with it)
  *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
  *       wraps and drives the site text with (the declared `facts[]` table)
  *
@@ -1660,26 +1667,34 @@ static int finder_rows_mode(void)
 /* R-MS3's fixtures: the forms that render resolve, others are refused; the
  * text hash ignores a rename, a comment and layout, and moves on a one-
  * operator edit. */
-/* R-MS3's two fixtures per entry-table id (span_cards.md §8.2, unit S2c),
- * made from the id's canonical SITE TEXT: `rename` renames every identifier
- * the text spells (the hooks' names and the `mf` prefix's) and must keep the
- * hash; `edit` makes ONE instruction edit (the first `from`, which must
- * occur) and must move it. */
-static const struct { const char *id, *from, *to; } hash_edits[] = {
-    { "walk",      "pos++",     "pos += 2" },
-    { "libc",      "120",       "121" },
-    { "pair",      "mf_mf1_c++", "mf_mf1_c += 2" },
-    { "settest",   "== 120",    "!= 120" },
-    { "rc-words",  " && ",      " || " },
-    { "rc-memcmp", ", 4)",      ", 3)" },
+/* R-MS3's two fixtures per entry-table INSTANCE (span_cards.md §8.2, unit
+ * S2c; review r9 CHECKS-6: every instance a cell times, not only the
+ * canonical one), made from the instance's SITE TEXT: `rename` renames every
+ * identifier the text spells (the hooks' names and the `mf` prefix's) and
+ * must keep the hash, having renamed at least one (`renamed`, CHECKS-4);
+ * `edit` makes ONE instruction edit (the first `from`, which must occur) and
+ * must move the instance's hash, and `foldedit` is the id's fold (every
+ * instance's site text in table order, a newline between two: G4) with this
+ * one instance edited, which must move mf_form_hash(id). */
+static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
+    { "walk",      "-",  "pos++",      "pos += 2" },
+    { "libc",      "-",  "120",        "121" },
+    { "pair",      "-",  "mf_mf1_c++", "mf_mf1_c += 2" },
+    { "settest",   "c1", "== 47",      "!= 47" },
+    { "settest",   "c2", "== 120",     "!= 120" },
+    { "settest",   "cn", "== 95",      "!= 95" },
+    { "rc-words",  "w1", ") == ",      ") != " },
+    { "rc-words",  "w2", " && ",       " || " },
+    { "rc-words",  "w3", "pos + 10",   "pos + 9" },
+    { "rc-memcmp", "l1", ", 4)",       ", 3)" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
 };
 
 /* `t` with every whole identifier `from` (or, for `mf`, every identifier
- * beginning `mf_`) spelled `to`; malloc'd. */
-static char *rename_idents(const char *t)
+ * beginning `mf_`) spelled `to`; malloc'd; *nr counts the renamed. */
+static char *rename_idents(const char *t, unsigned *nr)
 {
     Text o = { 0 };
     text_put(&o, "", 0);
@@ -1697,14 +1712,28 @@ static char *rename_idents(const char *t)
         for (unsigned i = 0; i < sizeof hash_renames / sizeof hash_renames[0]; i++)
             if (strlen(hash_renames[i].from) == n && !strncmp(p, hash_renames[i].from, n))
                 to = hash_renames[i].to;
-        if (to) text_put(&o, to, strlen(to));
-        else if (n > 3 && !strncmp(p, "mf_", 3)) { text_put(&o, "zz_", 3); text_put(&o, p + 3, n - 3); }
+        if (to) { text_put(&o, to, strlen(to)); (*nr)++; }
+        else if (n > 3 && !strncmp(p, "mf_", 3)) { text_put(&o, "zz_", 3); text_put(&o, p + 3, n - 3); (*nr)++; }
         else text_put(&o, p, n);
         p = e;
     }
     return o.p;
 }
 
+/* `t` with its first `from` spelled `to`, malloc'd; NULL when `from` does
+ * not occur. */
+static char *edit_once(const char *t, const char *from, const char *to)
+{
+    const char *at = strstr(t, from);
+    if (!at) return NULL;
+    Text o = { 0 };
+    text_put(&o, t, (size_t)(at - t));
+    text_put(&o, to, strlen(to));
+    text_put(&o, at + strlen(from), strlen(at + strlen(from)));
+    return o.p;
+}
+
+/* --hash: R-MS3's fixtures (the header block above lists the lines). */
 static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
@@ -1723,24 +1752,39 @@ static int hash_mode(void)
                row ? row : "-", e->canon);
     }
     for (unsigned i = 0; i < sizeof hash_edits / sizeof hash_edits[0]; i++) {
-        char *t, h[17] = "-", g[17] = "-";
-        if (mf_form_site_text(hash_edits[i].id, NULL, &t) == 0) {
-            char *r = rename_idents(t);
+        char *t, h[17] = "-", g[17] = "-", f[17] = "-";
+        unsigned nr = 0;
+        if (mf_form_site_text(hash_edits[i].id, hash_edits[i].cls, &t) == 0) {
+            char *r = rename_idents(t, &nr);
             mf_form_hash_text(r, h);
             free(r);
-            const char *at = strstr(t, hash_edits[i].from);
-            if (at) {
+            char *ed = edit_once(t, hash_edits[i].from, hash_edits[i].to);
+            if (ed) {
+                mf_form_hash_text(ed, g);
+                /* the id's fold, this instance's text edited (written here
+                   from the design, never formhash.c's loop) */
                 Text o = { 0 };
-                text_put(&o, t, (size_t)(at - t));
-                text_put(&o, hash_edits[i].to, strlen(hash_edits[i].to));
-                text_put(&o, at + strlen(hash_edits[i].from), strlen(at + strlen(hash_edits[i].from)));
-                mf_form_hash_text(o.p, g);
+                int k = 0, bad = 0;
+                for (size_t j = 0; mf_form_entry_at(j); j++) {
+                    const mf_form_entry *e = mf_form_entry_at(j);
+                    char *u;
+                    if (strcmp(e->id, hash_edits[i].id)) continue;
+                    if (k++) text_put(&o, "\n", 1);
+                    if (!strcmp(e->cls, hash_edits[i].cls)) { text_put(&o, ed, strlen(ed)); continue; }
+                    if (mf_form_site_text(e->id, e->cls, &u)) { bad = 1; continue; }
+                    text_put(&o, u, strlen(u));
+                    free(u);
+                }
+                if (!bad && o.p) mf_form_hash_text(o.p, f);
                 free(o.p);
+                free(ed);
             }
             free(t);
         }
-        printf("TEXT\t%s.rename\t%s\n", hash_edits[i].id, h);
-        printf("TEXT\t%s.edit\t%s\n", hash_edits[i].id, g);
+        printf("TEXT\t%s/%s.rename\t%s\n", hash_edits[i].id, hash_edits[i].cls, h);
+        printf("TEXT\t%s/%s.renamed\t%u\n", hash_edits[i].id, hash_edits[i].cls, nr);
+        printf("TEXT\t%s/%s.edit\t%s\n", hash_edits[i].id, hash_edits[i].cls, g);
+        printf("TEXT\t%s/%s.foldedit\t%s\n", hash_edits[i].id, hash_edits[i].cls, f);
     }
     static const struct { const char *name, *text; } tx[] = {
         { "base",    "    while (pos < n && !mf_tbl[subject[pos]]) pos++;\n" },
@@ -2288,7 +2332,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
-                          "--site-text ID [CLS] | --facts ID [CLS] | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;

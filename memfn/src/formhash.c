@@ -4,9 +4,13 @@
  *
  * memfn/src/formhash.c — FORM HASHES (R-MS3, R17-b' B1; measure_sets.md §2.4,
  * r17b_prime.md §4.7): `mf_form_hash(form_id)`, the hash of a form's
- * CANONICAL INSTANCE with its scaffolding normalized out, which a measurement
- * set's `deps` column records and staleness compares (pcrec compares the
- * strings and nothing else).
+ * INSTANCES with their scaffolding normalized out, which a measurement set's
+ * `deps` column records and staleness compares (pcrec compares the strings
+ * and nothing else). An id with one instance hashes that instance's text; an
+ * id with several (a verify form's classes) hashes ONE text, every instance's
+ * site text in table order joined by a newline (span_cards.md §2.4, review
+ * r9 G4 FOLD): a change to any instance moves the id's hash, so it stales
+ * every row the id's instances price.
  *
  * THE CANONICAL INSTANCE. A form's text for ONE fixed site of the form,
  * rendered through the kit's own entries in a scratch art over a scratch
@@ -15,7 +19,8 @@
  * deny string, and ONE renderer path builds every instance, so the text
  * hashed here is the text a span_cards cell times (the TEST entries
  * mf_form_site_text / mf_form_hash_cls, kit.h). A verify form has one
- * instance per class, the canonical one marked. A form id this kit does not
+ * instance per class, the canonical one marked (the instance --site-text and
+ * --facts name by default). A form id this kit does not
  * render (V1 until B4, the W64 forms until B6, NONE until B5, the dispatch
  * twin) is refused (-1), never hashed as something else.
  *
@@ -247,6 +252,7 @@ static void fh_cstr(void *u, const uint8_t *b, size_t n)
     }
 }
 
+/* The site's function name (a WINDOW site's handle prefix asks for one). */
 static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf_fn"; }
 
 /* ---- THE ENTRY TABLE (span_cards.md §3.2, unit S2c) -------------------------
@@ -312,16 +318,19 @@ static const mf_form_shape shapes[] = {
                         "subject", NULL, NULL, NULL, "pos" },
 };
 
+/* kit.h: the i-th instance, NULL past the last. */
 const mf_form_entry *mf_form_entry_at(size_t i)
 {
     return i < NENTRIES ? &entries[i] : NULL;
 }
 
+/* kit.h: an instance's site shape, NULL for none. */
 const mf_form_shape *mf_form_shape_of(const mf_form_entry *e)
 {
     return e && e->shape < sizeof shapes / sizeof shapes[0] ? &shapes[e->shape] : NULL;
 }
 
+/* kit.h: the instance of `id` in class `cls` (NULL: the canonical one). */
 const mf_form_entry *mf_form_entry_of(const char *id, const char *cls)
 {
     for (size_t i = 0; id && i < NENTRIES; i++)
@@ -478,10 +487,15 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         if (mf_emit(art, s, h, &sb, &sf, res) || mf_flush_helpers(art, &sf) ||
             mf_art_end(art, NULL))
             goto out;
+        /* the arm that rendered must be the run compare's (an earlier arm of
+           the composer's table claiming the site would render another text
+           under this row's name); then T-CMP's row, re-read off the term */
+        if (art->sites[res->handle - 1].arm != &runcmp_arm) goto out;
         *row = run_cmp_row(art, &s->pred.term[0]);
         break;
     case MF_FH_SETTEST: {
-        /* the kit's own membership test of the candidate's byte */
+        /* the kit's own membership test of the candidate's byte: a LEAF
+           render, no site and no selection (row NULL: no row to reach) */
         uint8_t set[32];
         kb b;
         fh_set(e, set);
@@ -510,6 +524,7 @@ out:
     return rc ? -1 : 0;
 }
 
+/* kit.h: the instance's site text and the length of its FILE part. */
 int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file_len)
 {
     const mf_form_entry *e = mf_form_entry_of(id, cls);
@@ -527,12 +542,15 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
     return 0;
 }
 
+/* kit.h: the instance's site text. */
 int mf_form_site_text(const char *id, const char *cls, char **out)
 {
     size_t flen;
     return mf_form_site_split(id, cls, out, &flen);
 }
 
+/* kit.h: the kit row the instance's facts reached ("-": none); renders the
+ * whole site to read it (a test entry, never on a production path). */
 const char *mf_form_row(const char *id, const char *cls)
 {
     const mf_form_entry *e = mf_form_entry_of(id, cls);
@@ -543,6 +561,7 @@ const char *mf_form_row(const char *id, const char *cls)
     return rc ? NULL : row ? row : "-";
 }
 
+/* kit.h: the hash of ONE instance's site text (the cell-text check's). */
 int mf_form_hash_cls(const char *id, const char *cls, char out[17])
 {
     char *text;
@@ -552,7 +571,29 @@ int mf_form_hash_cls(const char *id, const char *cls, char out[17])
     return 0;
 }
 
+/* memfn.h: the hash of the id's instances, one text: every instance's site
+ * text in table order, a newline between two (one instance: its own text, so
+ * walk's and libc's hashes are their single instance's). */
 int mf_form_hash(const char *form_id, char out[17])
 {
-    return mf_form_hash_cls(form_id, NULL, out);
+    nbuf all = { 0 };
+    int n = 0;
+    for (size_t i = 0; form_id && i < NENTRIES; i++) {
+        char *t;
+        if (strcmp(entries[i].id, form_id)) continue;
+        if (mf_form_site_text(entries[i].id, entries[i].cls, &t)) {
+            free(all.p);
+            return -1;
+        }
+        if (n++) nb_put(&all, "\n", 1);
+        nb_put(&all, t, strlen(t));
+        free(t);
+    }
+    if (!n || all.oom) {
+        free(all.p);
+        return -1;
+    }
+    mf_form_hash_text(all.p ? all.p : "", out);
+    free(all.p);
+    return 0;
 }
