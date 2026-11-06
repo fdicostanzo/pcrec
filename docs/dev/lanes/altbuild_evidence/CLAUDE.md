@@ -46,3 +46,9 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
 - `p2b_fuzz_gen.py` — stage 2b's random differential generator (seed 2026,
   400 patterns x 90 subjects, run by `../altrev2_evidence/probe.py`): 36,000
   of 36,000 OK on the stage and under both denies; outputs kept in scratch.
+- `k139_fam.py` / `k139_probe.sh` / `k139_probe.tsv` — lane altbuild2's K139
+  probe: three word families (the cap ladder, dense 5-letter words over a-h,
+  random 8-letter words) x {default, deny pair}, island vs `-fno-alt-island`,
+  on the stage build and on the ruled local fix (the chain-side conjunct
+  dropped; reverted). `k139_nswk.py` — K concatenated alternations of words
+  no M/P/S rule rewrites (distinct first and last bytes).

@@ -1,0 +1,57 @@
+# family	N	flags	stage_island	stage_chain	drop_conjunct_island	drop_conjunct_chain  (A=accepted, R=refused; code bytes)
+ladder	200	default	A27773	A27773	A27773	A27773
+ladder	200	-fno-altcls-factor -fno-altcls-merge	A349748	A278154	A278154	A278154
+ladder	240	default	A28955	A28955	A28955	A28955
+ladder	240	-fno-altcls-factor -fno-altcls-merge	A415628	A329764	A329764	A329764
+ladder	260	default	A29395	A29395	A29395	A29395
+ladder	260	-fno-altcls-factor -fno-altcls-merge	A448557	A355669	A355669	A355669
+ladder	280	default	A29181	A29181	A29181	A29181
+ladder	280	-fno-altcls-factor -fno-altcls-merge	A481487	A381569	A381569	A381569
+ladder	300	default	A30275	A30275	A30275	A30275
+ladder	300	-fno-altcls-factor -fno-altcls-merge	R514607	A407469	A407469	A407469
+ladder	320	default	A30716	A30716	A30716	A30716
+ladder	320	-fno-altcls-factor -fno-altcls-merge	R547537	A433369	A433369	A433369
+ladder	340	default	A31155	A31155	A31155	A31155
+ladder	340	-fno-altcls-factor -fno-altcls-merge	R580657	A459270	A459270	A459270
+ladder	360	default	A31596	A31596	A31596	A31596
+ladder	360	-fno-altcls-factor -fno-altcls-merge	R613587	A485170	A485170	A485170
+ladder	400	default	A32000	A32000	A32000	A32000
+ladder	400	-fno-altcls-factor -fno-altcls-merge	R679808	R536970	R536970	R536970
+dense	600	default	A26734	A26734	A26734	A26734
+dense	600	-fno-altcls-factor -fno-altcls-merge	A147697	A223059	A147697	A223059
+dense	800	default	A27952	A27952	A27952	A27952
+dense	800	-fno-altcls-factor -fno-altcls-merge	A190416	A291059	A190416	A291059
+dense	1000	default	A29152	A29152	A29152	A29152
+dense	1000	-fno-altcls-factor -fno-altcls-merge	A233136	A359065	A233136	A359065
+dense	1200	default	A30368	A30368	A30368	A30368
+dense	1200	-fno-altcls-factor -fno-altcls-merge	A276045	A427065	A427065	A427065
+dense	1400	default	A31569	A31569	A31569	A31569
+dense	1400	-fno-altcls-factor -fno-altcls-merge	A318765	A495065	A495065	A495065
+dense	1600	default	A32104	A32104	A32104	A32104
+dense	1600	-fno-altcls-factor -fno-altcls-merge	A361656	R563065	R563065	R563065
+dense	1800	default	A33954	A33954	A33954	A33954
+dense	1800	-fno-altcls-factor -fno-altcls-merge	A404567	R631066	R631066	R631066
+dense	2000	default	A35171	A35171	A35171	A35171
+dense	2000	-fno-altcls-factor -fno-altcls-merge	A447307	R699066	R699066	R699066
+dense	2400	default	A37571	A37571	A37571	A37571
+dense	2400	-fno-altcls-factor -fno-altcls-merge	R532936	R835066	R835066	R835066
+dense	2800	default	A39971	A39971	A39971	A39971
+dense	2800	-fno-altcls-factor -fno-altcls-merge	R618566	R971067	R971067	R971067
+rand	400	default	A214786	A182170	A182170	A182170
+rand	400	-fno-altcls-factor -fno-altcls-merge	A214784	A134381	A134381	A134381
+rand	600	default	A315216	A267944	A267944	A267944
+rand	600	-fno-altcls-factor -fno-altcls-merge	A315214	A191585	A191585	A191585
+rand	800	default	A416708	A352830	A352830	A352830
+rand	800	-fno-altcls-factor -fno-altcls-merge	A416706	A249185	A249185	A249185
+rand	1000	default	R518578	A444706	A444706	A444706
+rand	1000	-fno-altcls-factor -fno-altcls-merge	R518576	A306790	A306790	A306790
+rand	1200	default	R623047	R530811	R530811	R530811
+rand	1200	-fno-altcls-factor -fno-altcls-merge	R623045	A364391	A364391	A364391
+rand	1400	default	R718799	R612869	R612869	R612869
+rand	1400	-fno-altcls-factor -fno-altcls-merge	R718797	A421991	A421991	A421991
+rand	1600	default	R810913	R691405	R691405	R691405
+rand	1600	-fno-altcls-factor -fno-altcls-merge	R810911	A479591	A479591	A479591
+rand	2000	default	R1004649	R857038	R857038	R857038
+rand	2000	-fno-altcls-factor -fno-altcls-merge	R1004647	R594791	R594791	R594791
+rand	2400	default	R1197284	R1022893	R1022893	R1022893
+rand	2400	-fno-altcls-factor -fno-altcls-merge	R1197282	R709991	R709991	R709991
