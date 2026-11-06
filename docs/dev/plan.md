@@ -678,7 +678,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
 - [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-05): design PROPOSED rev 1 (lane vlbrev1, text only, after review r3): cursor-saving retry frame; one-length bytes a declared selection by lo==hi (Q1 re-asked); 65535 ceiling; stage-2 reference rules; unbounded filed [LB-EXIST]
+  status (2026-11-05): design rev 2 READY (reviews r3, r6). Frank RULED (A): fixed-width keeps today's code via the declared width row. Open: does the step-back loop join the VM rung ladder ([DEC-RUNG]) as a quantifier over a back-step; 65535 ceiling in stage 1
   next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
   refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
