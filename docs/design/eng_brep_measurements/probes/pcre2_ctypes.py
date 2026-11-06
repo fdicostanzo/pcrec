@@ -33,8 +33,11 @@ PCRE2_ERROR_NOMEMORY = -48
 
 # Compile-time option bits actually used here (pcre2.h, 8-bit build).
 PCRE2_MULTILINE = 0x00000400
-PCRE2_UTF = 0x00080000  # [VLOOKBEHIND] gate 1's `utf8` modes: a str pattern
-                        # or subject is then encoded UTF-8, not latin-1
+# A str pattern or subject is ALWAYS latin-1 (one character per byte), under
+# PCRE2_UTF too: a caller wanting UTF-8 hands bytes. (lane mttri: vlbbuild U6
+# switched str to UTF-8 under PCRE2_UTF, which double-encoded verify_vars.py's
+# latin-1 subjects and turned test-vars red; every UTF caller passes bytes.)
+PCRE2_UTF = 0x00080000
 # [VLOOKBEHIND] gate 1's `utf8-invalid` mode (pcre2.h 10.46, compile option):
 # an ill-formed subject is read as pcrec reads one (utf8_design.md §2.6).
 PCRE2_MATCH_INVALID_UTF = 0x04000000
@@ -151,14 +154,11 @@ def _errmsg(code):
 class Compiled:
     """A compiled PCRE2 8-bit pattern. Byte-oriented like pcrec (no UTF)."""
 
-    __slots__ = ("_code", "_enc")
+    __slots__ = ("_code",)
 
     def __init__(self, pattern, options=0, max_varlookbehind=None):
-        # [VLOOKBEHIND] under PCRE2_UTF a str is UTF-8 (utfcheck_arm.py's
-        # precedent); latin-1 would hand PCRE2 an ill-formed pattern.
-        self._enc = "utf-8" if options & PCRE2_UTF else "latin-1"
         if isinstance(pattern, str):
-            pattern = pattern.encode(self._enc)
+            pattern = pattern.encode("latin-1")
         errcode = ctypes.c_int(0)
         erroff = ctypes.c_size_t(0)
         ccx = None
@@ -194,7 +194,7 @@ class Compiled:
         capture group, 1-based order (group 0 excluded, matching
         `re.Match.groups()`)."""
         if isinstance(subject, str):
-            subject = subject.encode(self._enc)
+            subject = subject.encode("latin-1")
         md = _lib.pcre2_match_data_create_from_pattern_8(self._code, None)
         if not md:
             raise MemoryError("pcre2_match_data_create_from_pattern failed")
