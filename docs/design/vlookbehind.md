@@ -1,6 +1,6 @@
 # Variable-width (bounded) lookbehind — design
 
-**Status: PROPOSED rev 4** (lane vlbrev4, opus, 2026-11-06; plan row [VLOOKBEHIND]). Rev 4 applies
+**Status: PROPOSED rev 4 + erratum r3-1106** (the stage-1 build lane vlbbuild applies review r3's text fixes; block below) (lane vlbrev4, opus, 2026-11-06; plan row [VLOOKBEHIND]). Rev 4 applies
 the RULED re-check `docs/dev/reviews/2026-11-06-r2-vlookbehind-recheck.md` (READY WITH LISTED TEXT
 FIXES); read the REVISION 4 block first, then REVISION 3. Rev 4's evidence is
 `docs/dev/lanes/vlbrev4_evidence/`. Rev 3 (lane vlbrev3, opus, 2026-11-06) re-spelled
@@ -16,6 +16,66 @@ Starts from the investigation `docs/dev/lanes/vlbinv_report.md`
 libpcre2 10.46 library probe; `cells.out`, every cell rev 1 adds). PCRE2 facts come from the
 installed libpcre2-8 10.46 used as a library and from public docs. The pinned source copy was not
 opened (D181). One question for a pcre2-reader is in §12.
+
+## ERRATUM r3-1106 (review 2026-11-06 r3, ruled) — read first
+
+A text pass applied by the stage-1 BUILD lane (vlbbuild) as its first commit, per the r3 RULING
+(`docs/dev/reviews/2026-11-06-r3-vlookbehind-ready.md`: every disposition accepted). Changes are
+marked inline as `[r3-1106 ID]`. No mechanism changes. Each item, and where it now lives:
+
+- **FIXIND-1 (rule (b) keyed by what a row stands for).** DD12a(i)'s rule (b) cannot key presence
+  by entry: byte's `SPAN_CASELESS_UCP` is a SUBSTITUTE entry (in the mask instead of
+  `SPAN_CASELESS`, enc.h) and defines the same symbols. The reader prints a `stands-for` column
+  (`SPAN_CASELESS_UCP` → `SPAN_CASELESS`); the counter key is the entry a row stands for, so a
+  substitute and its original count as one key, and rule (b) admits one-sided presence only for a
+  key that one backend alone carries. The head matcher accepts ANY return tokens, `unsigned char`
+  included (the pre-existing excision hole the critic found) (§5.6 item 3).
+- **FIXIND-2 (UCP witness).** `(*UCP)(?i)(a)\1x` joins DD12a(i)'s explicit witness list, so the
+  derived floor reaches the byte-only UCP row on a default (250-block) run (§5.6 item 4).
+- **FIXIND-3 / READY-2 (more hand lists, exact guards).** U6 gains: the [M5-SEAM] `resid_backdecl`
+  exact guard 7 → 9 (`run_codegen_tests.sh`, the `-ne 7` line) with its header ("one per
+  top-level branch" becomes "one per back-step SITE"); an exact `fwd_step` guard of its own (= 2:
+  `residlbrange` and its `-e utf8` twin, the existing per-entry guard's precedent);
+  `tests/partlayout/writers.tsv`'s A4 class map gains `fwd_step`; `run_partlayout.py`'s `sec_seam`
+  name regex gains `fwd_step`; the [LOSS-REVIEW c1] `-fPIC` nm arm gains the `residlbrange`
+  fixture (§6 U6).
+- **FIXIND-4.** `size_t <p>_lb_count = 0;` (the `span_cursor`/`rv` precedent), not uninitialised
+  (§5.6).
+- **FIXIND-5 (W-low's plant).** W-low's sabotage row uses the 1-edit equivalent: `vm_set_line`
+  renders an UNTRAILED write (`slot_values[x] = v;`) for `SLOT_LB_LO*` slots. Same semantics
+  (untrailed `LO_i`); the answer cell and the codegen detector see it (§7 W-low).
+- **FIXIND-6 (stated, not derived).** `pcrec_enc_entry_symbols` and the emitter share ONE predicate
+  for the UCP side emission, so the condition has one spelling. The general per-row side-emission
+  hook is FILED as a plan row, trigger: a second side emission (§5.6 item 1).
+- **READY-1 (S133/S134 re-cut).** S133's `SAB_BEFORE` is a 6-line block (seek, note, sentinel branch
+  to `pcrec_vm_tgt_fail()`); the `range` row's `lo_i` sentinel goes to `L_n_i` with its own note.
+  So "one shared line, `SAB_COUNT=1` unchanged" is false: U8 re-cuts S133 and S134's
+  `SAB_BEFORE`/`SAB_AFTER` and `SAB_DOC_FIGURE`s on the shared builder line (§5.6, §7).
+- **READY-3 (oracle).** U6 owes in `pcre2_ctypes.py`: UTF-8 encoding of `str` patterns under
+  `PCRE2_UTF` (the `utfcheck_arm.py` precedent), a `PCRE2_MATCH_INVALID_UTF` constant, and a
+  compile context with `pcre2_set_max_varlookbehind` so gate 3's `max_varlookbehind = 0` control
+  is askable; `tests/backrefs/CLAUDE.md` is a reader (§6 gate 1, U6).
+- **READY-4 (owed items assigned).** W-low's asan confirmation + `--work-budget` compile → U8;
+  gate 3's accept-set/classification harness and gate 4's budget cell → U6; DD12a(i)
+  re-validation plants (§5.6 item 5) → U6; W-low's codegen detector and K49's member floor → U6.
+- **READY-5.** Gate 6 runs under `make test-encoding-checks` (not `make test-codegen`).
+- **READY-6 (function names).** The totals step is in `vm_plan`; `VmFrame` is built in
+  `vm_emit_search_body`; the `$_back_step` mask OR is in `vm_look_behind` (§5.1b, §5.6, U3-U5).
+- **READY-7 (U1 readers).** U1 changes the stored widths representation (`const int *widths`,
+  internal.h, and its comment) to a pair per branch, and its readers move: `la_lb_raise`, the
+  hook and `pcrec_lookaround_fix_widths`, `vm_look_behind`, `vm_count_slots_look`,
+  `vm_cost_look`; `LA_MSG_MAX`'s comment is re-read (§6 U1).
+- **READY-8 (U7 readers).** Flipped `refused.rxt` cells move `run_lookaround_diff.sh`'s exact
+  `NPO` guard; S136's `SAB_DOC_FIGURE` moves (§6 U7).
+- **READY-9 (U4/U6 readers).** `docs/design/stream/arev.md`'s "today's four" `VmSeek` members (five
+  after); K49's header in `run_encoding_checks.sh` ("spelled TWICE", "linked next_pos").
+- **READY-10 (K49 independence).** The utf8 `fwd_step` row is its OWN literal text, never built from
+  `next_pos`'s text or a shared macro and never calling it, so K49's tie compares two sources
+  (§5.6).
+- **READY-11 (lblow, answer-neutral).** A `vm_slot_lblow` off-by-one or a collision with a span low
+  has no answer witness. It is caught by the slot legend (`SLOT_LB_LO<j>` names) and by the
+  emitter's check that the count pass's two sub-totals equal the emitter's own. Stated, not
+  witnessed (§5.1b).
 
 ## REVISION 4 (review 2026-11-06 r2, ruled) — read first
 
@@ -824,10 +884,13 @@ The table's properties:
       + j)` with `j = v->nlblow++`.
   - The count pass keeps two counters: `vm_count_slots_rep` adds to `v->nlow` (span loops, today)
     and `vm_count_slots_look` adds to a new `v->nlblow` per `range` branch (the table's one
-    predicate). The totals step (`pcrec_emit_vm`, where `nlow_total` is saved today) sets
+    predicate). The totals step (`vm_plan` `[r3-1106 READY-6]`, where `nlow_total` is saved today) sets
     `nlow_total = nlow + nlblow` and `nlblow_total = nlblow`, and resets both running counters.
     `nlow_total` keeps its meaning (the WHOLE family), so every base above `low` keeps its formula.
     The two SUB-totals must each agree between the count pass and the emitter.
+  - `[r3-1106 READY-11]` A `vm_slot_lblow` off-by-one or collision has no answer witness: it is
+    caught by the slot legend (`SLOT_LB_LO<j>` names in the artifact) and the emitter's check that
+    the count pass's two sub-totals equal the emitter's. Stated, not witnessed.
   - An artifact with no varying branch has `nlblow_total = 0`: its slot legend and numbering are
     unchanged (ruling A).
 - **The `low` family's readers, by grep (src/gen/emit_vm.c), and what each needs:**
@@ -1382,10 +1445,10 @@ Notes on the three:
   `L_b_i` and the branch's first push, which is straight-line code with no choice point and no
   call, so no two `K` values are ever live at once, in any nesting, recursion or splice. So there
   is no `<n>` and no per-branch numbering (rev 3's `<p>_lb<n>_count` is withdrawn).
-- Its sizing pass: `VmFrame` gains `bool lb_count` (the `span_cursor` precedent). `pcrec_emit_vm`
-  sets it from the count pass's `nlblow_total > 0`, the SAME count that sizes the `LO_i`
+- Its sizing pass: `VmFrame` gains `bool lb_count` (the `span_cursor` precedent). `vm_emit_search_body`
+  `[r3-1106 READY-6]` sets it from the count pass's `nlblow_total > 0`, the SAME count that sizes the `LO_i`
   sub-block (§5.1b), so the local exists exactly when a `LO_i` slot does. `pcrec_vm_stmt_frame`
-  declares `size_t <p>_lb_count;` from it. Every `range` branch reads the local, so no `(void)`
+  declares `size_t <p>_lb_count = 0;` `[r3-1106 FIXIND-4]` from it. Every `range` branch reads the local, so no `(void)`
   suppression row is needed.
 - Its name has ONE source: `vm_local_name` gains the arm `VL_LB_COUNT` → `<p>_lb_count`
   (`VmLocal`'s `loop`/`j`/`half` unused, 0). The frame's declaration row and the two TEXT reads (the
@@ -1410,15 +1473,15 @@ text carries a K49 comment that is false at a lookbehind and survives `-fno-comm
   caller guarantees `pos < n <= subject_length`; it reads `s` only in `[pos + 1, n)`. It is
   `next_pos` over the prefix `[0, n)`, which is what K49's tie checks. Bodies:
   - byte: `(void)s; (void)n; return pos + 1;`
-  - utf8: `size_t i = pos + 1; while (i < n && (s[i] & 0xC0) == 0x80) i++; return i;` (`next_pos`'s
-    body; §5.1a shows it equals rev 3's bounded `advance` on every input).
+  - utf8: `size_t i = pos + 1; while (i < n && (s[i] & 0xC0) == 0x80) i++; return i;` (`[r3-1106 READY-10]` its own
+    literal, never `next_pos`'s text or a call of it; `next_pos`'s body; §5.1a shows it equals rev 3's bounded `advance` on every input).
 - **Why it may be engine-callable when `next_pos` is not.** `next_pos`'s `false` rests on
   unanchoredness being the automaton's own self-loop, so an engine has no external advance to route
   through (enc.h). A lookbehind's candidate step has no automaton representation, which is exactly
   `$_back_step`'s and the span compare's case. The entry's id comment says so.
 - **The mask, and the STOP RULE.** `vm_look_behind_branch` consults
   `pcrec_enc_entry_engine_callable(..., PCREC_ENCE_FWD_STEP)` and ORs the bit only when it emits a
-  `range` branch (the `$_back_step` precedent in `vm_look`). Inline definitions are emitted only
+  `range` branch (the `$_back_step` precedent in `vm_look_behind` `[r3-1106 READY-6]`). Inline definitions are emitted only
   for entries in the mask (`enc_emit_inline_defs` tests `mask & t->id`), and a lookbehind-free
   artifact carries no `rx_back_step` today (measured, `premise.out`): the same gate keeps
   `$_fwd_step` out of every artifact without a `range` branch. Every such artifact is a pattern
@@ -1450,7 +1513,7 @@ ten entry and helper NAMES and of nine RETURN TYPES, plus the hand lists `TWINNE
 `span_ci_helper` mapping, and the residual keys of `agg` and of the floor tuple. Its own comments
 record three drifts of those lists ([VAR]'s `int` return type, the `span_ci_` rename's KeyError,
 [CLS-TREE]'s `decode`). Stage 1 replaces them with the seam's own answer:
-1. **A seam function** (enc.h/enc.c): `void pcrec_enc_entry_symbols(const PcrecEnc *e, unsigned id,
+1. **A seam function** (enc.h/enc.c) `[r3-1106 FIXIND-6: the side-emission condition is one predicate both the emitter and this function call]`: `void pcrec_enc_entry_symbols(const PcrecEnc *e, unsigned id,
    void (*each)(const char *sym, void *u), void *u)`. It names every file-scope symbol entry `id`'s
    emission DEFINES: each `$_<ident>` that opens a column-0 declarator (a function head or a table)
    in the row's `defs` text, plus what enc.c itself emits beside a row (today only
@@ -1466,7 +1529,9 @@ record three drifts of those lists ([VAR]'s `int` return type, the `span_ci_` re
    - `TWINNED` = the `outline` entries' symbols;
    - the counter KEY = the entry, so a helper symbol counts under the entry whose text defines it
      (the `span_ci_helper` mapping goes);
-   - rule (b)'s per-pair symmetry compares, per entry, PRESENCE on each side, and admits presence on
+   - `[r3-1106 FIXIND-1]` rule (b) is keyed by the entry a row STANDS FOR (the reader's `stands-for`
+     column: `SPAN_CASELESS_UCP` → `SPAN_CASELESS`), so a substitute row and its original count as
+     one key. As first written: rule (b)'s per-pair symmetry compares, per entry, PRESENCE on each side, and admits presence on
      one side only where the reader lists the entry in that backend alone (today `var_valid` and
      `decode`, utf8 only, and the UCP caseless compare, byte only);
    - rule (a)'s floor: every entry the reader lists is reached at least once across the run, on the
@@ -1474,7 +1539,7 @@ record three drifts of those lists ([VAR]'s `int` return type, the `span_ci_` re
    Regions (2)-(5) are fields, stamps and selections, not entries, and are unchanged.
    The legacy `span_ci_decode` alias goes too: DD12a(i) re-emits every pair from the current
    compiler, so no artifact from before [CLS-TREE] S4 reaches it.
-4. **One witness joins the explicit list:** `(?<=a{1,2})x`. It reaches `back_step` and `fwd_step`
+4. **One witness joins the explicit list:** `(?<=a{1,2})x` (and `[r3-1106 FIXIND-2]` `(*UCP)(?i)(a)\1x`, for the byte-only UCP row). It reaches `back_step` and `fwd_step`
    under both encodings. Without it the derived floor is red, which is the point: a new entry
    cannot pass DD12a(i) without a witness.
 5. **Re-validation (the section's own (d))**, in a throwaway tree: the existing plant before
@@ -1658,7 +1723,7 @@ Gates:
    S136 is re-aimed as §7 spells it (F9). S133, S134 and S-U4 move as §7 lists `[r6 V8]`.
    `[r2-1106 F5]` S123 keeps its one anchored site (§5.6), and the new `fwd_step` rows of §7 are
    in the set.
-6. **`[r2-1106 F1]` The encoding checks.** `make test-codegen`'s `run_encoding_checks.sh` is green
+6. **`[r2-1106 F1]` The encoding checks.** `make test-encoding-checks`'s `run_encoding_checks.sh` `[r3-1106 READY-5]` is green
    with the derivations of §5.6: DD12a(i) (region (1) from the seam reader, the derived floor met
    by `(?<=a{1,2})x`, the re-validation plants red), DD12a(ii) (`fwd_step`'s signature identical),
    and K49 (both boundary members agree with `next_pos`, member count 2 per encoding).
@@ -1669,14 +1734,14 @@ hunks ride it).
 
 | unit | changes | readers that move with it |
 |---|---|---|
-| U1 width rule and limits | `pcrec_cwmin`/`pcrec_cwmax` as an exact range per branch; the 255 cap and 65535 ceiling (§5.2); two `limits.def` rows (§5.2a) | `src/parse/mod_lookaround.c`'s refusal arm (deleted for bounded bodies) and the refusal TEXT readers of §10; `--list-limits`/`pcrec_limits_tsv`, `limits_check.sh`'s name manifest and its count 78 → 80; the mrl.c header sentences of §5.2 |
+| U1 width rule and limits | `pcrec_cwmin`/`pcrec_cwmax` as an exact range per branch; the 255 cap and 65535 ceiling (§5.2); two `limits.def` rows (§5.2a) | `src/parse/mod_lookaround.c`'s refusal arm (deleted for bounded bodies) and the refusal TEXT readers of §10; `--list-limits`/`pcrec_limits_tsv`, `limits_check.sh`'s name manifest and its count 78 → 80; the mrl.c header sentences of §5.2; `[r3-1106 READY-7]` the stored widths representation (`const int *widths` → a pair per branch, internal.h and its comment) and its readers `la_lb_raise`, the hook, `pcrec_lookaround_fix_widths`, `vm_look_behind`, `vm_count_slots_look`, `vm_cost_look`; `LA_MSG_MAX`'s comment |
 | U2 the loop and the emission table | `vm_look_behind_branch` (the `range` row: guard, `lo_i` back-step through the one existing builder line, `LO_i`, `K`, far step and retry, `L_try`/`L_body`/`L_end`/`L_adv`/`L_n`), `vm_look_behind`'s label allocation (`range` branches only), the end-check split (§5.3) | the count pass (`vm_count_slots_look`: push count, `nlblow`), `vm_cost_look` (trail `2 + range branches`, header paragraph), the role and note texts (§5.1b) and the stale 160-byte comment, gate 3's label phrasing, `match_api.md` §4¶6's INTERNAL comments (§10) |
 | U3 slot sub-block | `nlblow`/`nlblow_total`, `vm_slot_lblow`, the totals step (§5.1b) | `vm_slot_name`'s `low` arm, the listing's second `low` call, `VmSnap.lblow` and `vm_build_region_saves`' range, the layout comment's `nlow` paragraph, `VmStamp.nlow` (counts both, listing only) |
-| U4 record vocabulary | `VSK_STEP_CHAR`, `VL_LB_COUNT`, the `seek` operand `byloc`/`x` and `pcrec_vm_b_seek_local`, `VmFrame.lb_count`, `pcrec_vm_local_name` exported (§5.6) | `vm_r_seek` (two arms), `vm_local_name`, `pcrec_vm_stmt_frame`'s declarations, `pcrec_emit_vm` (the frame's producer), `vm_stmt.h`'s enum comments; NEW `docs/design/plan_row_bodies/VMREC.md` + the [VMREC] refs line + that directory's CLAUDE.md |
+| U4 record vocabulary | `VSK_STEP_CHAR`, `VL_LB_COUNT`, the `seek` operand `byloc`/`x` and `pcrec_vm_b_seek_local`, `VmFrame.lb_count`, `pcrec_vm_local_name` exported (§5.6) | `vm_r_seek` (two arms), `vm_local_name`, `pcrec_vm_stmt_frame`'s declarations, `vm_emit_search_body` (the frame's producer) `[r3-1106 READY-6]`, `docs/design/stream/arev.md`'s VmSeek member count `[r3-1106 READY-9]`, `vm_stmt.h`'s enum comments; NEW `docs/design/plan_row_bodies/VMREC.md` + the [VMREC] refs line + that directory's CLAUDE.md |
 | U5 the seam entry | `PCREC_ENCE_FWD_STEP`, a row in each backend, `PCREC_ENC_BOUNDARY_ENTRIES`, `pcrec_enc_entry_symbols` (§5.6) | the mask OR in `vm_look_behind_branch`; src/enc/CLAUDE.md; `match_api.md` §3¶2 (§10); the landing's decision entry |
-| U6 checks | DD12a(i) derivation, DD12a(ii) list and witness, K49 boundary sites (§5.6); NEW `tests/codegen/enc_entry_list.c`; [M5-SEAM]'s `INLINE_RESID` and the `residlbrange` fixtures (§7); gate 1's oracle modes (`bref_oracle.py`, `run_lookaround_diff.sh`) and its new cell section | tests/codegen/CLAUDE.md (the new reader), tests/lookaround/CLAUDE.md, `docs/testing.md` where it describes DD12a(i), K49 or gate-1's harness |
-| U7 corpus and pins | 32 rows (24 distinct) flipped from refusal to match cells; gate 2's re-pin of `$FILEPIN`/`$ABASEPIN` (§6 gate 2) | the start-set mover manifests, axes allowances and size tripwires a corpus change moves (found by `make test`, BOILERPLATE's delivery bar); the D27 extracts and corpora (§6 stage 1, owned as stated there) |
-| U8 sabotage rows | §7's new rows (W1-W16, W-low, the `fwd_step` rows), S133/S134 twins, S136 re-aimed, S-U4 re-aimed, W12's mechanism confirmed | `tests/mech/` row headers and their `SAB_DOC_FIGURE`s; `REACH_ONLY=1` run for moved witnesses |
+| U6 checks | DD12a(i) derivation, DD12a(ii) list and witness, K49 boundary sites (§5.6); NEW `tests/codegen/enc_entry_list.c`; [M5-SEAM]'s `INLINE_RESID` and the `residlbrange` fixtures (§7); gate 1's oracle modes (`bref_oracle.py`, `run_lookaround_diff.sh`) and its new cell section | tests/codegen/CLAUDE.md (the new reader), tests/lookaround/CLAUDE.md, `docs/testing.md` where it describes DD12a(i), K49 or gate-1's harness; `[r3-1106 FIXIND-3, READY-2..4, READY-9]` the `resid_backdecl` guard 7 → 9 and its header, an exact `fwd_step` guard (= 2), `writers.tsv` A4, `run_partlayout.py`'s `sec_seam`, the c1 nm arm's fixture list, K49's header; `pcre2_ctypes.py` (UTF-8 pattern encoding, `PCRE2_MATCH_INVALID_UTF`, a compile context for `max_varlookbehind`) and `tests/backrefs/CLAUDE.md`; gate 3's accept-set/classification harness, gate 4's budget cell, DD12a(i)'s re-validation plants, W-low's codegen detector, K49's member floor |
+| U7 corpus and pins | 32 rows (24 distinct) flipped from refusal to match cells; gate 2's re-pin of `$FILEPIN`/`$ABASEPIN` (§6 gate 2) | the start-set mover manifests, axes allowances and size tripwires a corpus change moves (found by `make test`, BOILERPLATE's delivery bar); the D27 extracts and corpora (§6 stage 1, owned as stated there); `[r3-1106 READY-8]` `run_lookaround_diff.sh`'s exact `NPO` guard, S136's `SAB_DOC_FIGURE` |
+| U8 sabotage rows | §7's new rows (W1-W16, W-low, the `fwd_step` rows), S133/S134 twins, S136 re-aimed, S-U4 re-aimed, W12's mechanism confirmed | `tests/mech/` row headers and their `SAB_DOC_FIGURE`s; `REACH_ONLY=1` run for moved witnesses; `[r3-1106 READY-1]` S133/S134's `SAB_BEFORE`/`SAB_AFTER` re-cut; `[r3-1106 READY-4]` W-low's asan confirmation and `--work-budget` compile |
 | U9 spec hunks | §10's list | `make test-spec-history`, the spec's own anchors |
 
 **Stage 2: backreferences in a lookbehind (B+) `[r3 F2, F3, F5]`.** Rev 0 said: "`pcrec_cwmax(A_BREF)`
@@ -1774,7 +1839,7 @@ fail.
 | W14 `[r-cursor]` | the step skips a candidate (two characters, or two bytes under UTF-8 where it should be one character) | `(?<=\Ga{1,2})b` on `aab` from 1: [2-3] (from 0: [2-3]; from 2: nomatch); `-e utf8` `(?<=\Gé{1,2})b` on `ééb` from 2: [4-5]; `-e utf8` `(?i)(?<=(k{1,2})\|(b))x` on `b` U+212A `x`: [4-5, g1 1-4] | `\G` pins the ONE candidate that can succeed to the second one tried, so a skipped candidate is nomatch. The Kelvin cell needs one step over a 3-byte character from `b` to the Kelvin sign. A BYTE step under UTF-8 only adds mid-character candidates, which fail (no body starts inside a character): answer-neutral, so no cell sees it. `[r2-1106 F1]` Rev 3 named the advance-agreement check as its detector; that check never read the lookbehind site. The byte-step arm now has two plants, each with a named detector: (i) the emitter writes `scan_position += 1` (`VSK_ADVANCE 1`) instead of calling `$_fwd_step`, and drops the mask bit: [M5-SEAM]'s per-site count on `residlbrange` and its `-e utf8` twin (`fwd_step:1` → 0, and the declared inline-entry set), S133's shape; (ii) the utf8 backend's `$_fwd_step` body returns `pos + 1`: K49's boundary tie (§5.6) disagrees with `next_pos`, and its utf8 non-vacuity fails. |
 | W15 `[r-cursor]` | the back-step's own clamp lost: a far-step sentinel taken as "start at `LO_i`" | `(?<=(a{0,2}))b` on `FF 61 62`: [2-3, g1 1-2]; `(?<=(é{0,2}))b` on `A9 C3 A9 62`: [3-4, g1 1-3] (both under `PCRE2_MATCH_INVALID_UTF`) | An ill-formed run lies within `hi` characters before the cursor. The retry finds the farthest VALID start (§5.1c cell 8). Sabotaged: g1 = (2,2), (3,3). The other naive reading, "start at the subject start", is answer-neutral here (no body consumes an ill-formed byte). It is excluded by work (§5.1a), not by a witness. |
 | W16 `[r-cursor]` | the nearest candidate never tried (exhaustion tested after the step, or `LO_i` one character too far) | `(?<=a{1,2})x` on `bax`: [2-3]; non-atomic re-entry into the next branch: `(?<*(a{1,2})\|(aa))\2` on `aaaa`: [2-4, -, 0-2] | Only the nearest candidate (`a` at 1) matches in the first cell. In the second, the follow `\2` fails for both of branch 0's candidates (g2 unset), the exhaustion restores the cursor, and branch 1 sets g2. |
-| W-low `[r-cursor]` `[r2-1106 F2, F5]` | `LO_i` held in an untrailed LOCAL (a second `VmLocalKind` member beside `VL_LB_COUNT`, written by `VK_LSET` and read by the exhaustion test), the natural mistake, since `K_i` is held that way. (Rev 3 spelled the plant "`LO_i` written by `VK_LSET`", which the vocabulary cannot build: an LSET targets only a `VmLocal`, never a slot.) | ANSWER LEVEL: `(?:(?*.*(?<*a?))b)*$` on `bc`: [2-2] (libpcre2 10.46, byte and UTF, every start; `vlbrev4_evidence/premise.out`). Second detector: a codegen check on `residlbrange` that `LO_i`'s write is an `RX_SET` of an `SLOT_LB_LO<j>` slot | Iteration 1 evaluates the non-atomic lookbehind at cursor 2 (`LO = 2`) and leaves its `L_adv` frame live. Iteration 2's `b` fails, so its lookahead's `.*` backtracks and re-evaluates the lookbehind at cursor 1, writing `LO = 1`. When iteration 2 and then `$` fail, the pop returns to iteration 1's frame at candidate 2. Trailed, `LO` is rewound to 2 and the branch is exhausted. Untrailed, `LO` stays 1: the exhaustion test never fires and the step runs past the cursor and the subject. Rev 3's argument ("a stale bound only comes from a later evaluation on a forward path") was false: a non-atomic lookahead moves the cursor BACKWARD. The review's literal interpreter: 652 of 2,904 such cells move. What a real artifact does on the overrun: each step charges 1 work unit and each retry is one backtrack resumption, and the body's character tests guard `scan_position < subject_length`, so the EXPECTED outcome is a give-up (`PCREC_ERR_STEPS` or `PCREC_ERR_WORK`, whichever budget ends first), never an out-of-bounds read. The build confirms that under `make asan`'s compilee axis, and compiles the witness with a small `--work-budget=N` (limits.md §3.1¶2) so the sabotaged run ends fast. |
+| W-low `[r-cursor]` `[r2-1106 F2, F5]` `[r3-1106 FIXIND-5: the plant is `vm_set_line` rendering an untrailed write for `SLOT_LB_LO*`]` | `LO_i` held in an untrailed LOCAL (a second `VmLocalKind` member beside `VL_LB_COUNT`, written by `VK_LSET` and read by the exhaustion test), the natural mistake, since `K_i` is held that way. (Rev 3 spelled the plant "`LO_i` written by `VK_LSET`", which the vocabulary cannot build: an LSET targets only a `VmLocal`, never a slot.) | ANSWER LEVEL: `(?:(?*.*(?<*a?))b)*$` on `bc`: [2-2] (libpcre2 10.46, byte and UTF, every start; `vlbrev4_evidence/premise.out`). Second detector: a codegen check on `residlbrange` that `LO_i`'s write is an `RX_SET` of an `SLOT_LB_LO<j>` slot | Iteration 1 evaluates the non-atomic lookbehind at cursor 2 (`LO = 2`) and leaves its `L_adv` frame live. Iteration 2's `b` fails, so its lookahead's `.*` backtracks and re-evaluates the lookbehind at cursor 1, writing `LO = 1`. When iteration 2 and then `$` fail, the pop returns to iteration 1's frame at candidate 2. Trailed, `LO` is rewound to 2 and the branch is exhausted. Untrailed, `LO` stays 1: the exhaustion test never fires and the step runs past the cursor and the subject. Rev 3's argument ("a stale bound only comes from a later evaluation on a forward path") was false: a non-atomic lookahead moves the cursor BACKWARD. The review's literal interpreter: 652 of 2,904 such cells move. What a real artifact does on the overrun: each step charges 1 work unit and each retry is one backtrack resumption, and the body's character tests guard `scan_position < subject_length`, so the EXPECTED outcome is a give-up (`PCREC_ERR_STEPS` or `PCREC_ERR_WORK`, whichever budget ends first), never an out-of-bounds read. The build confirms that under `make asan`'s compilee axis, and compiles the witness with a small `--work-budget=N` (limits.md §3.1¶2) so the sabotaged run ends fast. |
 
 **Stage 3's witnesses** (row `reverse-dfa`). Admission floor: each body below varies and its machine
 is a few states, far under any cap, so the row reaches in both builds.
