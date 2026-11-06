@@ -256,7 +256,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
 - [FEAT-FAMILIES] STATE:started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
   filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
-  status (2026-11-06): STARTED (Frank "yes"): design note + D37 addendum + graduation table via lane featfam; the default move waits for [IFACE-PUSH] and a version tag. Frank: "the pcrec family is 'all'" (pcrec-only modules live in all)
+  status (2026-11-06): STARTED (Frank "yes"); lane featfam DELIVERED docs/design/feature_families.md rev 0 + graduation table + bench effect (extended 333/392 vs std1 229); the default move waits for [IFACE-PUSH] and a version tag. Frank: "the pcrec family is 'all'" (pcrec-only modules live in all)
   next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
   refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
   vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
