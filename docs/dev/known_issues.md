@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K137 — OPEN (found by lane vlbrev4, 2026-11-06) — the retry advance's [K49] comment is emitted under `-e utf8 -fno-comments`
+
+**Witness:** any pattern whose VM retry advance takes the utf8 path, compiled with `-e utf8 -fno-comments`: the emitted C still carries the advance's [K49] comment text, contradicting enc.h's D112 note (comments are a doc pair dropped by -fno-comments). Measured by lane vlbrev4 (docs/dev/lanes/vlbrev4_report.md, observations). Pre-existing; no answer effect. Fixing it changes emitted bytes under that flag pair, so it is an abi event (D76/D94): ride the variable-lookbehind stage-1 build, whose new step's prose is a D112 doc pair at the same site.
+
+---
+
 ## K136 — OPEN (filed 2026-11-02, lane kdoc136, from bench outbox O-117 and O-119; no fix lane yet) — THE DEFAULT (VM) ARTIFACT FOR `\b(\w+)=[^&]*&(?:[^&]*&)*\1=` GIVES UP WITH `PCREC_ERR_FRAMES` WHERE THE LIBPCRE2 INTERPRETER ANSWERS
 
 The bench pattern dup-param-detect, compiled by default (VM route), gives up with `PCREC_ERR_FRAMES` (2,048 resume frames) on the bench's I-172 query-string subjects `t-qs-1m` and `t-qs-nearmiss-256k`, on every trial, at both pins and both configs (bench outbox O-117; the exact cells are there). A capability gap relative to the PCRE2 interpreter: an honest give-up, never a wrong answer.
