@@ -41,9 +41,9 @@ M0's S1227-S1246 (bar S1242/S1243) and span_pick S2a's format-2 rows on it.
   UTF-8 length of code point, a two-encoding `serves` list, comments and
   blank lines around the bundle.
 - `run_measures_tests.sh` — the measures kind ([MEASURE-SET] M0; set
-  format 2 since span_pick S2a; 91 checks): R1-R5 over the committed store
+  format 2 since span_pick S2a; 95 checks): R1-R5 over the committed store
   set and `mfixtures.py`'s `ok/` sets; format 2's `pair/` digesting apart
-  (one noise, `class` alone); every refusal class of `docs/spec/measures.md` §7 (`bad/`, each
+  (one noise, `class` alone, a noise of exactly 10^15); every refusal class of `docs/spec/measures.md` §7 (`bad/`, each
   held to a substring of its refusal); the embedded store against its files
   (`meas_store_check.c`); loading (`--measures`, the `measures` config
   line, fill-only both ways, `-I` exact-entry probing and the S2 mismatch,
