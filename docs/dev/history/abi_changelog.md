@@ -23,7 +23,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `95` on every artifact today ([LANDWALK] stage 1, 94 -> 95,
+- **`rx_info.abi` is `96` on every artifact today ([RUN-POS-SET] stage 1, 95 -> 96,
+  provisional, the next number at landing; lane altbuild, 2026-11-06;
+  `docs/design/alt_normal_form.md` rev 3 §5 stage 1; closes [LOWERENC-SEAL]).**
+  The UTF-8 lowering hands a wide class's boxes to the alternation owner
+  (`src/opt/altnf.c`, rule M, sibling merge: two boxes equal at every position
+  but one become one box with the union there, `(?i)β`'s `ce 92|ce b2|cf 90`
+  is `ce [92 b2]|cf 90`), and the `A_CAT(A_EMPTY, alt)` seal around a
+  multi-box class's alternation is gone. A utf8 artifact holding a multi-box
+  wide class moves: smaller DFA tables, longer required runs (`(?i)abcdÀefgh`
+  6 -> 10 positions), a smaller VM program (the seal's `empty` label gone
+  under `-fno-cls-kit`), cursor rungs where a quantified class becomes one
+  box, and a bare wide class's own VM island gone where its boxes merge
+  (`-fno-altcls-merge`, which now denies the merge at both callers, restores
+  each). The VM island reads a wide class as its code-point set, admitted
+  exactly as before. Every other artifact, every `byte` artifact included,
+  moves only the number. No answer moves.
+- **`rx_info.abi` was `95` ([LANDWALK] stage 1, 94 -> 95,
   numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
   built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;
   D184; docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md
