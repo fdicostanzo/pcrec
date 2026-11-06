@@ -10,11 +10,18 @@
 #           sha256sum, digest by ks_ref), DEFAULTS read by awk against the
 #           listing's `default_for` and against DEFAULTS.log's last row per
 #           class, and the EMBEDDED store (meas_store_check.c: the embedded
-#           text = the file, the pre-parse = a fresh parse of that text).
+#           text = the file, the pre-parse = a fresh parse of that text, by
+#           decoded view AND field by field, noise included); the same check
+#           over mfixtures.py's FORMAT-2 store run through scripts/ksgen.c.
+#           meas_store_check.c's build also asserts KS_MEAS_MAX ==
+#           MF_MEASURE_MAX (span_cards.md §4.1).
 #   ROUND   every mfixtures.py `ok/` set: R1 (the item digest of its
 #           canonical view, re-loaded), R2 (the canonical view is a fixed
 #           point), R3 (ks_ref.py reads the file and its canonical view as one
 #           document) and R5; the canonical view compiles as `--measures=FILE`.
+#           FORMAT 2 (measures.md §3.3¶1a): fx-f2 and its `pair/` sets,
+#           apart by one noise and by `class` alone, digest apart in pcrec,
+#           each equal to ks_ref.py's.
 #   REFUSE  every `bad/` set refuses with its class's text (§7); a decoded
 #           view fed back refuses as a FILE and through `-I`.
 #   LOAD    the default compile stamps `""` with `rx_info.measures` equal to
@@ -24,7 +31,8 @@
 #   CONTROLS R5 on a decode with two rows swapped, R3 on a canonical view with
 #           its `cells` dropped (R1's digest unmoved by that edit).
 #
-# Population floors (K35): store sets >= 1, ok fixtures = 4, bad fixtures >= 20.
+# Population floors (K35): store sets >= 1, ok fixtures = 6, bad fixtures >= 26
+# (6 of them format 2), format-2 pairs = 2.
 set -u
 export LC_ALL=C
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,6 +103,7 @@ fi
 # the embedded store
 if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/msc" \
        "$SCRIPT_DIR/meas_store_check.c" "$LIBA" 2> "$WORKDIR/cc.err"; then
+    ok "meas_store_check.c builds: KS_MEAS_MAX == MF_MEASURE_MAX holds"
     mkdir -p "$WORKDIR/emb"
     if "$WORKDIR/msc" "$WORKDIR/emb" > "$WORKDIR/emb.lst"; then
         ebad=0; nemb=0
@@ -105,12 +114,12 @@ if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/msc" \
             cmp -s "$WORKDIR/emb/$name.pre" "$WORKDIR/emb/$name.fresh" || { ebad=1; echo "  $name: pre-parse != a fresh parse of the embedded text" >&2; }
         done < "$WORKDIR/emb.lst"
         if [ "$ebad" -eq 0 ] && [ "$nemb" -eq "$nstore" ]; then
-            ok "embedded store: $nemb set(s), text = file and pre-parse = fresh parse"
+            ok "embedded store: $nemb set(s), text = file and pre-parse = fresh parse (decoded and raw rows)"
         else
             bad "embedded store: $nemb embedded against $nstore committed, or a text/pre-parse mismatch (make gen-measures)"
         fi
     else
-        bad "embedded store: meas_store_check refused"
+        bad "embedded store: meas_store_check refused: $(head -3 "$WORKDIR/emb.lst" | tr '\n' ' ')"
     fi
 else
     bad "embedded store: meas_store_check.c does not compile: $(head -3 "$WORKDIR/cc.err" | tr '\n' ' ')"
@@ -119,6 +128,26 @@ fi
 # ---- ROUND ----------------------------------------------------------------
 STORE_SET="$(ls "$ROOT_DIR"/measure_store/*/*/set.tsv | head -1)"
 python3 -I "$SCRIPT_DIR/mfixtures.py" "$STORE_SET" "$WORKDIR/fx"
+
+# the format-2 fixture store through ksgen, then the raw-row compare on it
+FXS="$WORKDIR/fx/store"
+if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/ksgen" \
+       "$ROOT_DIR/scripts/ksgen.c" "$LIBA" 2> "$WORKDIR/kg.err" &&
+   "$WORKDIR/ksgen" measures "$WORKDIR/fx2table.inc" "$FXS/DEFAULTS" "$FXS/fx-f2/1/set.tsv" 2>> "$WORKDIR/kg.err" &&
+   "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -DMSC_TABLE="\"$WORKDIR/fx2table.inc\"" \
+       -o "$WORKDIR/msc2" "$SCRIPT_DIR/meas_store_check.c" "$LIBA" 2>> "$WORKDIR/kg.err"; then
+    mkdir -p "$WORKDIR/emb2"
+    if "$WORKDIR/msc2" "$WORKDIR/emb2" "$FXS/fx-f2/1/set.tsv" > "$WORKDIR/emb2.lst" 2> "$WORKDIR/emb2.err" &&
+       [ "$(wc -l < "$WORKDIR/emb2.lst" | tr -d ' ')" = 1 ] &&
+       cmp -s "$WORKDIR/emb2/fx-f2@1.pre" "$WORKDIR/emb2/fx-f2@1.fresh" &&
+       grep -q 'noise_parsed	1730$' "$WORKDIR/emb2/fx-f2@1.pre"; then
+        ok "format-2 fixture store: ksgen's pre-parse = a fresh parse (decoded and raw rows, noise included)"
+    else
+        bad "format-2 fixture store: the pre-parse differs from a fresh parse: $(head -3 "$WORKDIR/emb2.err" | tr '\n' ' ')"
+    fi
+else
+    bad "format-2 fixture store: ksgen or the fixture check did not build/run: $(head -3 "$WORKDIR/kg.err" | tr '\n' ' ')"
+fi
 nok=0
 for f in "$WORKDIR"/fx/ok/*.tsv; do
     n="$(basename "$f" .tsv)"; nok=$((nok + 1))
@@ -145,7 +174,20 @@ for f in "$WORKDIR"/fx/ok/*.tsv; do
         bad "$n: its canonical view does not load as --measures=FILE: $(head -c 300 "$WORKDIR/$n.cerr")"
     fi
 done
-[ "$nok" -eq 4 ] && ok "round trip: 4 fixtures" || bad "round trip: $nok fixtures, expected 4 (K35)"
+[ "$nok" -eq 6 ] && ok "round trip: 6 fixtures" || bad "round trip: $nok fixtures, expected 6 (K35)"
+# format 2: one noise, or the class alone, moves the digest; pcrec's = ks_ref's
+f2d="$(item_digest "$WORKDIR/fx-f2.d0")"; npair=0
+for f in "$WORKDIR"/fx/pair/*.tsv; do
+    n="$(basename "$f" .tsv)"; npair=$((npair + 1))
+    LM --list-measurements="$f" --view=decoded > "$WORKDIR/$n.pd0" 2> "$WORKDIR/$n.perr"
+    pd="$(item_digest "$WORKDIR/$n.pd0")"; rd="$($REF digest "$f")"
+    if [ -n "$pd" ] && [ "$pd" = "$rd" ] && [ -n "$f2d" ] && [ "$pd" != "$f2d" ]; then
+        ok "$n: digests apart from fx-f2 ($pd vs $f2d), pcrec's = the independent reader's"
+    else
+        bad "$n: pcrec digest '$pd', ks_ref '$rd', fx-f2 '$f2d' ($(head -c 200 "$WORKDIR/$n.perr"))"
+    fi
+done
+[ "$npair" -eq 2 ] && ok "format-2 pairs: 2" || bad "format-2 pairs: $npair, expected 2 (K35)"
 # fx-messy normalizes to fx-store: one document, one canonical view but the id
 sed 's/^id\tfx-messy$/id\tfx-store/' "$WORKDIR/fx-messy.c1" > "$WORKDIR/messy.as.store"
 cmp -s "$WORKDIR/messy.as.store" "$WORKDIR/fx-store.c1" && ok "fx-messy's canonical view is fx-store's (order, comments, unknown column, absent key normalized)" \
@@ -164,7 +206,7 @@ while IFS="$(printf '\t')" read -r n sub; do
         bad "refuse $n: refused without '$sub': $(head -c 300 "$WORKDIR/b.err")"
     fi
 done < "$WORKDIR/fx/bad/EXPECT.tsv"
-[ "$nbad" -ge 20 ] && ok "refusals: $nbad classes (floor 20)" || bad "refusals: $nbad classes, under the floor 20 (K35)"
+[ "$nbad" -ge 26 ] && ok "refusals: $nbad classes (floor 26)" || bad "refusals: $nbad classes, under the floor 26 (K35)"
 if LM --measures="$WORKDIR/fx/bad/digest.tsv" -o "$WORKDIR/x.c" --pattern a 2> "$WORKDIR/b.err"; then
     bad "a bad set as --measures= compiled"
 else
