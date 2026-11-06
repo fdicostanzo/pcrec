@@ -3266,3 +3266,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - s2scope delivered: the report was inline because a hook refused the subagent's write, so I transcribed it to scratch/memfn/s2scope/report.md.
   - Key facts: no stage-2 card exists. zen4-grid1 was produced by a lane slot outside boxqueue and kept no raw cells. mf_measure has no noise field. measures.md §3.2 has no quadrature derivation. The step-0 gate is undefined in span_pick.md; I read it as D176 Q3's step-0 census (stop-ranking study §7 step 0).
   - The opus design lane s2design is on lane/memfn-s2design from c03c2d711. It delivers docs/design/memfn/span_cards.md rev 0; a D6 panel follows before any build.
+- 11-06: s2design delivered lane/memfn-s2design @ 2948ac356: span_cards.md rev 0 and the report. Lane stopped.
+  - New method kit-grid@3, four quantities. memchr-back is deferred (no reader). Producer memfn/measure/, with raw medians committed as raw.tsv.
+  - mf_measure gains noise_state + noise_e6 (MF_SITE_ABI 24). Set FORMAT 2 with digest pcrec-meas-2, so zen4-grid1 is untouched. Coverage z=2 UNMEASURED DEFAULT. Step-0 reading confirmed.
+  - Units S2a-S2f. One timing window, about 45 min.
+  - For main: the DEFAULTS conflict. D166 add. 2's latest-set default contradicts R-35's "DEFAULTS unchanged"; the lane recommends a zero-mover flip at S2e. Also memchr-back deferred, and the bundle sampling-noise field deferred.
+  - Critic round crit-memfn-span-cards (opus coordinator) launched, blind.
