@@ -64,6 +64,7 @@ void gen_subject(const arm *a, uint32_t len, uint32_t idx, unsigned char *buf, u
             buf[i] = (unsigned char)b;
         }
         if (a->landing == LD_MISS && !sentinel) return;
+        if (a->landing != LD_MISS && a->gap == 0) { fprintf(stderr, "gen: %s: a landing with gap 0\n", a->name); exit(2); }
         uint32_t E = a->landing == LD_MISS ? 0 : len / a->gap;
         uint64_t sh = 0x417e0000ull ^ ((uint64_t)a->gap << 32) ^ ((uint64_t)a->landing << 40) ^ idx;
         unsigned char *mark = calloc(len, 1);
@@ -94,6 +95,7 @@ void gen_subject(const arm *a, uint32_t len, uint32_t idx, unsigned char *buf, u
     uint64_t st = 0xc0de0000ull ^ ((uint64_t)len << 20) ^ ((uint64_t)a->pass << 48) ^ idx;
     for (uint32_t i = 0; i < len; i++) buf[i] = (unsigned char)(sm(&st) & 0xff);
     int L = a->L ? a->L : 1;
+    if ((uint32_t)L >= CAND_STRIDE) { fprintf(stderr, "gen: %s: run length %d >= the stride %u\n", a->name, L, CAND_STRIDE); exit(2); }
     uint32_t E = len / CAND_STRIDE;
     for (uint32_t i = 0; i < E; i++) {
         uint32_t pos = i * CAND_STRIDE + (uint32_t)(sm(&st) % (CAND_STRIDE - (uint32_t)L));

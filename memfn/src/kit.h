@@ -840,9 +840,10 @@ int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned le
 int run_cmp_sat(const mf_term *t);
 int run_pos_sat(const mf_term *t, unsigned j);
 /* The name of the row the walk picks for RUN term `t` under the art's
- * denies (rc_row_of, the compare's own selection), or NULL after recording
- * the refusal. A reading for formhash.c's entry table (which row its facts
- * reached), never a second selection. */
+ * denies (rc_row_of, the compare's own selection), or NULL. A reading for
+ * formhash.c's entry table (which row its facts reached), never a second
+ * selection; but not side-effect free: a refusal is RECORDED in the art's
+ * err, as rc_row_of always does. */
 #define run_cmp_row MF_NS(run_cmp_row)
 const char *run_cmp_row(mf_art *art, const mf_term *t);
 

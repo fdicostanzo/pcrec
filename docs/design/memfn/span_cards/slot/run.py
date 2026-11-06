@@ -19,6 +19,8 @@
 #                                   placements (J2's dry-run executables, by its manifest), one round each, and the
 #                                   unit's §3.4 noise against its half gate
 # Every command it runs is printed to RUNDIR/transcript.tsv (the per-round evidence, its sha in the record).
+# Exit codes: dry 0 (green) or a refusal's 1/3; run 0, 1 (a round or record step failed), 5 (wait-timeout);
+# screen 0 (under the half gate), 3 (over).
 # Environment: BQ_JOB (boxqueue's job name: the quiet check ignores this job's own queue entry and lock),
 # CODE_COMMIT (the window's frozen commit, else the tree's HEAD), SLOT_TREE (plan.py).
 import hashlib, os, re, subprocess, sys, time

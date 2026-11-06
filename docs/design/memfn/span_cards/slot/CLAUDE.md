@@ -34,7 +34,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   the job's manifest; no clock), `run JOB RUNDIR RUN_ID` (manifest first, the window facts, quiet-gated with
   the total wait bounded, 7 launches x 7 rounds on the plan's CPU; cells.JOB.tsv under `#run_id`, or J1's
   j1_cells.tsv), `screen RUNDIR RUN_ID` (J2's unit noise vs the half gate, on J2's manifest). Env: `BQ_JOB`,
-  `CODE_COMMIT`, `SLOT_TREE`.
+  `CODE_COMMIT`, `SLOT_TREE`; art.py also reads `PCREC_BENCH` (the bench checkout, else the sibling).
 - `est.py` — the slot's estimator and gates (§3.4-§3.5) over the FINALIZED record and its cells, the format-2
   draft writer (no draft on REFUSED), `selftest SCRATCH` (the input cross-checks); the primitives' one home.
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.

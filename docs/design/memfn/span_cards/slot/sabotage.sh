@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # span_cards/slot/sabotage.sh — the SLOT-LOCAL sabotage rows of unit S2c (span_cards.md §9 S2c, rev 1.2
-# READY-5): their detectors run only in the slot harness's `--dry-run`, which no make suite runs, so this
+# READY-5): their detectors run only in the slot harness's dry run (`run.py dry`), which no make suite runs, so this
 # runner plants each in a SCRATCH COPY of slot/, runs the named job's dry run there under run id s2c-dry, and
 # expects the named refusal (precedent: docs/design/r17b_prime/b3a/sabotage/run_skb3a.sh). A control run of
 # the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected

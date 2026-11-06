@@ -142,6 +142,8 @@ int main(int argc, char **argv)
         int have = 0;
         if (f) { for (int i = 0; i < np && fscanf(f, "%llu", (unsigned long long *)&nn[i]) == 1; i++) have++; fclose(f); }
         int calibrate = have != np;
+        if (have && calibrate)
+            fprintf(stderr, "drv: %s holds %d of %d call counts: recalibrating every point\n", argv[3], have, np);
         uint64_t acc = 0;
         for (int q = 0; q < np; q++) {
             int pt = (q + r - 1) % np, ai = 0, k = pt;

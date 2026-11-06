@@ -489,6 +489,8 @@ int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t 
     return 0;
 }
 
+/* kit.h: the row rc_row_of picks for `t` (its name), or NULL with the
+ * refusal recorded in art's err by rc_row_of itself. */
 const char *run_cmp_row(mf_art *art, const mf_term *t)
 {
     rc_run r = rc_of(t);

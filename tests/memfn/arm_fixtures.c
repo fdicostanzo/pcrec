@@ -1820,8 +1820,7 @@ static int site_text_mode(const char *id, const char *cls)
 
 /* --site-parts: the site text's FILE part, a form-feed line, its BODY part
  * (the slot harness's wrapper places them; their concatenation is
- * --site-text's). --hash-text FILE|-: mf_form_hash_text of a text (the slot
- * harness's cell-text check folds a cell TU's site span with it). */
+ * --site-text's). */
 static int site_parts_mode(const char *id, const char *cls)
 {
     char *t;
@@ -1837,6 +1836,9 @@ static int site_parts_mode(const char *id, const char *cls)
     return 0;
 }
 
+/* --hash-text FILE|-: mf_form_hash_text of a whole text (the slot harness's
+ * cell-text check folds a cell TU's site span with it; check B folds the
+ * instances' texts with it). */
 static int hash_text_mode(const char *path)
 {
     FILE *f = strcmp(path, "-") ? fopen(path, "rb") : stdin;
@@ -1845,7 +1847,11 @@ static int hash_text_mode(const char *path)
     char *b = malloc(cap);
     for (size_t k; b && (k = fread(b + n, 1, cap - n - 1, f)) > 0; ) {
         n += k;
-        if (n + 1 == cap) b = realloc(b, cap *= 2);
+        if (n + 1 == cap) {
+            char *nb = realloc(b, cap *= 2);
+            if (!nb) free(b);
+            b = nb;
+        }
     }
     if (f != stdin) fclose(f);
     if (!b) return 1;
@@ -1863,6 +1869,9 @@ static int hash_text_mode(const char *path)
 typedef struct { const mf_form_entry *e; const mf_form_shape *sh; const char *row; } FactIn;
 typedef void (*fact_fn)(const FactIn *x, Text *o);
 
+/* The fact writers. f_str/f_hex write one value (NULL: `-`); f_set_shape
+ * and f_find_shape test the instance's shape; every f_<key> below writes the
+ * facts[] row <key> for the instance, read off its entry and shape. */
 static void f_str(Text *o, const char *v) { text_put(o, v ? v : "-", strlen(v ? v : "-")); }
 static void f_hex(Text *o, const uint8_t *b, size_t n)
 {
