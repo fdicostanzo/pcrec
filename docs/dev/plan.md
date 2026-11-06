@@ -1732,6 +1732,19 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a user report, or the next change touching ill-formed-position semantics under -e utf8
   refs: docs/dev/known_issues.md K74 (and K73, K75 fixed); D132; D133; D37; [FEAT-FAMILIES]; docs/dev/lanes/k73utf_report.md
   First step when picked up: ONE pcre2-reader question (D181) — is PCRE2's answer for `$`, `\B`, `\z`, `\Z`, `(?m)$`, `(?<!.)` at an ill-formed subject end under PCRE2_MATCH_INVALID_UTF a defined rule or a quirk? Defined: fix pcrec to match (likely an abi event). Quirk: follow the standard and file upstream (D26 addendum). Witnesses from k73utf_evidence/ and iterdoc_report.md.
+- [ISL-PRICE] STATE:not-started — the VM island-vs-chain pick row prices by SIZE, not by work
+  filed: 2026-11-06 manager (lane altbuild R2)
+  status (2026-11-06): not started; witness x(?:[éà]|q2|r3)y forced-VM: after the alternation merge shrinks the chain, the row picks the chain at 2.0x the island's instructions (325.5M vs 161.5M); no corpus/bench cell yet
+  trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
+  refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
+  Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants).
+- [XARCH-DEV] STATE:not-started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
+  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
+  status (2026-11-06): not started; the Mac is the aarch64 box we have; aarch64 SIMD levels are born with their first kit row (levels.def); multi-arch BUILDS to be worked out with Frank (D188)
+  trigger: Frank's go, or the first aarch64 kit row
+  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
+  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
+  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
