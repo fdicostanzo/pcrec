@@ -1,0 +1,39 @@
+# input cells (pattern<TAB>subject<TAB>startpos; no startpos = 0), in the order of premise.out's cell lines; the (?m) cell is omitted
+(?<=\Ga{1,2})b	aab	0
+(?<=\Ga{1,2})b	aab	1
+(?<=\Ga{1,2})b	aab	2
+(?<!\Ga{1,2})b	aab	0
+(?<!\Ga{1,2})b	aab	1
+(?<!\Ga{1,2})b	aab	2
+(?<=\Ga{1,3})b	caab	0
+(?<!\Ga{1,3})b	caab	0
+(?<=^a{1,2})b	aab
+(?<!^a{1,2})b	aab
+(?<=\Aa{1,2})b	aab
+(?<!a{1,2}|b)x	bx
+(?<=a{1,2}|b)x	bx
+(?<!a{1,2}|b)x	cx
+(?<=(?>a|ab)b)x	abbx
+(?<!(?>a|ab)b)x	abbx
+(?<=(?>a|ab)b{1,2})x	abbx
+(?<!(?>a|ab)b{1,2})x	abbx
+(?<=a{1,2}\b)x	aax
+(?<=a{1,2}\b)-	aa-
+(?<=\ba{1,2})x	baax
+(?<=\ba{1,2})x	 aax
+(?<=a{1,2})b	aab	2
+(?<=(a{1,2})|(aa{1,2}))c	aaac
+(?<*(a{1,2}))b\1c	aabac
+(?<=(a{1,2}))b	aab
+(?<=a{1,2}|b{1,2})x	abx
+(?<=(?>ab|a)b{1,2})x	abx
+(?<!(?>ab|a)b{1,2})x	abx
+(?<=(?:ab|a)b{1,2})x	abx
+(?<=a{1,2}$)	aa
+(?<=a{1,2}|b)x	bx	1
+(?<=\Ga{1,2})b	caab	1
+(?<!\Ga{1,2})b	caab	1
+(?<=(?>ab|a)b{1,2}|ab)x	abx
+(?<=(a{1,2})|(aa{1,2}))c	aaac
+(?<=(?:a{1,2})|(?:aa{1,2}))c	aaac
+(?<=(é{1,2}))x	aééx	(UTF)
