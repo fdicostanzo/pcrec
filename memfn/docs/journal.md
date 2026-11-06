@@ -3277,3 +3277,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main ruled DEFAULTS (B), the flip at S2e (74f453e9a). CONTRACT-5 became K138 (pcrec) and SLOT-7 became [KIT-POLICY-TABLE].
   - Heads-up, not yet ruled: Frank is reconsidering the SIMD model, from #if fall-through arms to per-target planned variants. Rev 1 keeps the SIMD text model-neutral, and J6 is a separable unit HELD until the SIMD model is ruled.
   - Lane s2rev1 (opus) on lane/memfn-s2rev1 (s2design + k1102 merged).
+- 11-06: Frank RULED the SIMD end state (D188 add. 1, via main): per-target variants, no #if arms, an explicit target list with a stamped default, building waits for [XARCH-DEV]'s go. Sent to s2rev1 as a ruling; the deliverable's checklist must confirm it (no-addenda rule: verify on delivery).
