@@ -1732,6 +1732,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a user report, or the next change touching ill-formed-position semantics under -e utf8
   refs: docs/dev/known_issues.md K74 (and K73, K75 fixed); D132; D133; D37; [FEAT-FAMILIES]; docs/dev/lanes/k73utf_report.md
   First step when picked up: ONE pcre2-reader question (D181) — is PCRE2's answer for `$`, `\B`, `\z`, `\Z`, `(?m)$`, `(?<!.)` at an ill-formed subject end under PCRE2_MATCH_INVALID_UTF a defined rule or a quirk? Defined: fix pcrec to match (likely an abi event). Quirk: follow the standard and file upstream (D26 addendum). Witnesses from k73utf_evidence/ and iterdoc_report.md.
+- [ISL-PRICE] STATE:not-started — the VM island-vs-chain pick row prices by SIZE, not by work
+  filed: 2026-11-06 manager (lane altbuild R2)
+  status (2026-11-06): not started; witness x(?:[éà]|q2|r3)y forced-VM: after the alternation merge shrinks the chain, the row picks the chain at 2.0x the island's instructions (325.5M vs 161.5M); no corpus/bench cell yet
+  trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
+  refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
+  Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants).
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
