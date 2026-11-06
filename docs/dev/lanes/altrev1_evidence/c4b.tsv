@@ -1,0 +1,6 @@
+byte	(?:ab|a|ad)(?:d|ddd)	addd
+byte	(?:ab|a(?=(?:d|ddd))|ad)(?:d|ddd)	addd
+byte	(?:a[bd]|a(?=(?:d|ddd)))(?:d|ddd)	addd
+byte	(?:ab|a|ad)(?:x|b)	abx
+byte	(?:a(?!(?:x|b))[bd]|a)(?:x|b)	abx
+byte	(?:ab|a(?!d)|ad)(?:x|dy)	ady

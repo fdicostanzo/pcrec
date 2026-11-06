@@ -1,0 +1,26 @@
+# C4 local lookahead forms: original first, rewrite after
+byte	(?:ab|a|ad)	ad
+byte	(?:ab|a(?!d)|ad)	ad
+byte	(?:a[bd]|a)(?!d)	ad
+byte	(?:ab|a|ad)(d?)	ad
+byte	(?:ab|a(?!d)|ad)(d?)	ad
+byte	(?:ab|a|ad)((?:c|dc))	adc
+byte	(?:ab|a(?!d)|ad)((?:c|dc))	adc
+byte	(?:a[bd]|a)((?:c|dc))	adc
+byte	(?:ab|a|ad)(?:x|dy)	ady
+byte	(?:ab|a(?!d)|ad)(?:x|dy)	ady
+byte	(?:ab|a(?=d)|ad)(?:x|dy)	ady
+# C4 exact: lookahead holds the whole continuation X
+byte	(?:ab|a(?=(?:x|dy))|ad)(?:x|dy)	ady
+byte	(?:a[bd]|a(?=(?:x|dy)))(?:x|dy)	ady
+byte	(?:ab|a|ad)(?:x|dy)	adx
+byte	(?:a[bd]|a(?=(?:x|dy)))(?:x|dy)	adx
+byte	(?:ab|a(?=(?:x|dy))|ad)(?:x|dy)	adx
+byte	(?:ab|a(?=)|ad)	ad
+# C4 merge guarded by the negated continuation
+byte	(?:a(?!(?:x|dy))[bd]|a)(?:x|dy)	ady
+byte	(?:a(?!(?:x|dy))[bd]|a)(?:x|dy)	adx
+byte	(?:ab|a|ad)(?:x|dy)	abx
+byte	(?:a(?!(?:x|dy))[bd]|a)(?:x|dy)	abx
+byte	(?:ab|a|ad)(?:x|bx)	abx
+byte	(?:a(?!(?:x|bx))[bd]|a)(?:x|bx)	abx
