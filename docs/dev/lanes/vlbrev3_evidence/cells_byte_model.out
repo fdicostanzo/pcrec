@@ -26,3 +26,5 @@
 (?<*(a{1,2})|(aa))\2	aaaa	pcre2=[2-4,-,0-2]	cursor=[2-4,-,0-2]	range=[2-4,-,0-2]
 (?:(?<*(a{0,2}))b){2}\1	aababa	pcre2=nomatch	cursor=nomatch	range=nomatch
 (?:(?<*(a{1,2}))b)+\1	aabab	pcre2=[2-4,1-2]	cursor=[2-4,1-2]	range=[2-4,1-2]
+(?<=a{1,2})x	bax	pcre2=[2-3]	cursor=[2-3]	range=[2-3]
+(?<=a{1,2}|b{1,2})x	abx	pcre2=[2-3]	cursor=[2-3]	range=[2-3]
