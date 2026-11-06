@@ -174,10 +174,22 @@ fi
 # degenerates to unfactored/unfactored. `^` selects ENG_ATTEMPT, which builds no
 # reverse machine, so the forward saving is what the cap sees. Measured
 # forward NFA for the 4-branch shape: 213 states factored vs 812 unfactored.
+#
+# BOTH SIDES DENY THE ALTERNATION OWNER (`-fno-altcls-factor -fno-altcls-merge`,
+# lane altbuild2, 2026-11-06, ruling R4 (b)). The [OPT-ALTCLS] paragraph below
+# ctl_small is the precedent: an AST pass upstream of nfa.c's trie that
+# factors the same shared prefix leaves `-DPCREC_NO_TRIE` nothing to do, and
+# the control reads factored/factored. The two-member-class prefix was that
+# precedent's fix and held while altcls factored only a one-byte first atom;
+# the alternation owner's rule P (src/opt/altnf.c) factors a shared leading
+# run of ANY equal class, `[aA]` included, so the class trick no longer
+# declines it. Denying the owner on both sides restores "the trie alone"
+# without reshaping the patterns; the deny pair changes no NFA construction
+# inside nfa.c, which is all this control reads.
 check_control() { # check_control <label> <pattern>
     local lbl="$1" pat="$2" oa ob sa sb
-    oa="$(pcrec_run "$PCREC" -p rx --no-captures --engine=dfa -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
-    ob="$("$REF"   -p rx --no-captures --engine=dfa -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
+    oa="$(pcrec_run "$PCREC" -p rx --no-captures --engine=dfa -fno-altcls-factor -fno-altcls-merge -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
+    ob="$("$REF"   -p rx --no-captures --engine=dfa -fno-altcls-factor -fno-altcls-merge -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
     case "$oa" in *"DFA engine"*) sa=factored ;; *"NFA exceeds"*) sa=unfactored ;;
                   "") sa=compiled ;; *) sa="other:$oa" ;; esac
     case "$ob" in *"DFA engine"*) sb=factored ;; *"NFA exceeds"*) sb=unfactored ;;
