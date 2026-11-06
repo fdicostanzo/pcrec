@@ -68,7 +68,7 @@ def bench(d):
 def compile_(pcrec, pat, flags, extra):
     inl = "".join(x for x in flags if x in "msx")
     if inl: pat = b"(?" + inl.encode() + b")" + pat
-    argv = [pcrec, "-p", "rx", "-e", "utf8", "--features", "all", "-o", "/dev/stdout"]
+    argv = [pcrec, "-p", "rx", "-e", "utf8", "--features", "all", "-o", "-"]
     if "i" in flags: argv.append("-i")
     argv += extra + ["--pattern", pat]
     try:
@@ -99,7 +99,11 @@ def main():
     bad = 0; movers = []
     for where, pat, ax, b, s, d in res:
         if b == s: continue
-        if "REFUSED" in (b, s) or "TIMEOUT" in (b, s):
+        if b == "REFUSED" and s not in ("REFUSED", "TIMEOUT") and d == b:
+            # U1's refusal row (FIX-3): only FEWER refusals, each one the
+            # merge's (bit 10 brings it back).
+            verdict = "refusal-retired-by-merge"
+        elif "REFUSED" in (b, s) or "TIMEOUT" in (b, s):
             verdict = "REFUSAL-MOVED"; bad += 1
         elif d == b:
             verdict = "restored-by-bit10"
@@ -113,9 +117,16 @@ def main():
     print("population: %d utf8 patterns (%d corpus, %d bench) x %d axes = %d cells"
           % (len(pats), len(pats) - len(bench(bdir)), len(bench(bdir)), len(AXES), len(res)))
     print("refused on both builds: %d cells" % sum(1 for r in res if r[3] == r[4] == "REFUSED"))
-    print("movers: %d (restored by bit 10: %d; findings: %d)"
-          % (len(movers), sum(1 for m in movers if m[7] == "restored-by-bit10"), bad))
+    print("movers: %d (restored by bit 10: %d; refusals retired by the merge: %d; findings: %d)"
+          % (len(movers), sum(1 for m in movers if m[7] == "restored-by-bit10"),
+             sum(1 for m in movers if m[7] == "refusal-retired-by-merge"), bad))
     for m in movers: print("\t".join(m))
+    # K35: a census that compiles nothing passes vacuously (its first run here
+    # refused every cell on an `-o` spelling); the population must compile.
+    both = sum(1 for r in res if r[3] == r[4] == "REFUSED")
+    if both * 5 > len(res):
+        print("FLOOR: %d of %d cells refused on both builds (over a fifth): the census measured nothing" % (both, len(res)))
+        bad += 1
     print("U4 census: %s" % ("FAIL" if bad else "PASS"))
     sys.exit(1 if bad else 0)
 

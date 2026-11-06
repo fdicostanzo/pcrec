@@ -602,32 +602,19 @@ declare -A REFUSAL_PATTERN=(
     # code-bytes ceiling directly ("pattern too large: N bytes of emitted
     # code (limit 500000)").
     ["-fno-size-term"]="bytes of emitted code (limit"
-    # `-fno-cls-kit` ([axtri], 2026-09-30): denying the class-matcher kit
-    # returns every wide class on the VM to the byte alternation this
-    # compiler emitted before abi 48 (tuning.md §2.33), so the K55 refusal
-    # the kit retired comes back BY DESIGN on the same population: a
-    # `\p{Xwd}` at `-e utf8` under `engine vm` is 576,773 bytes (captured
-    # 577,122) of emitted code against the 500,000-byte code cap, and
-    # `\P{Unknown}` 526,899. Measured (Linux final run of main d6cb0bb4 and
-    # a local single-file run agree): 77 cases, five blocks of
-    # tests/utf8/wclass_illformed.rxt (one block, the capturing `\P{Unknown}`,
-    # is default-route: the VM is selected there), all with this diagnostic, the same
-    # substring as `-fno-size-term`'s entry above. With the kit on those
-    # artifacts are ~31 KB. Nothing rescues them: `engine vm` has no
-    # prefilter for lane/pfdrop's D135 drop rung to drop (its compiler
-    # refuses identically). The floor is a measured number rounded down
-    # (K35), so a change that stops the byte alternation being reached is
-    # caught rather than read as "fewer refusals".
-    # NOT documented here, deliberately: the OTHER 32 cases of the 109
-    # (`x(\p{L})y`, `x(\P{L})y` on the default route, "bytes of emitted C
-    # source (limit 1000000": 1,179,060 / 1,153,832) are the size-CAP
-    # ladder's, not the kit axis's. Their bytes are the hybrid prefilter's
-    # byte alternation, and D135's drop-the-prefilter rung (lane/pfdrop)
-    # rescues them (measured: 430,907 / 413,437 bytes, `RX_VM_PREFILTER
-    # "none"`, answers unchanged) — so they clear when that lane merges and
-    # a substring for them would go vacuous the same day. Until then
-    # `-fno-cls-kit` reads red on exactly those 32.
-    ["-fno-cls-kit"]="bytes of emitted code (limit"
+    # `-fno-cls-kit` RETIRED ([RUN-POS-SET] stage 1, lane altbuild,
+    # 2026-11-06): this axis carried "bytes of emitted code (limit" for the
+    # wide classes its byte alternation pushed past the code cap (`\p{Xwd}`,
+    # `\P{Unknown}`, `\p{L}+`, `\P{C}`, ...; 104 refusal lines, 123 failed
+    # cases at the base 80341284e over the eight files that held them). The
+    # UTF-8 lowering now merges a class's boxes through the alternation owner
+    # (`\p{L}` 827 -> 330 boxes), and every one of those artifacts fits:
+    # measured 0 refusals, 3138/3138 cases passing on the same files (the
+    # design's FIX-3 row, "only FEWER refusals"). The entry and its K35 floor
+    # are DELETED rather than kept, the K55 precedent below: a documented-
+    # refusal substring nothing reaches would read green on a regression that
+    # brought the refusal back. `-fno-cls-kit -fno-altcls-merge` restores the
+    # boxes and the refusals (docs/dev/lanes/altbuild_report.md).
     # K55 RETIRED ([CLS-TREE] S4, abi 48): `--engine=vm` carried ONE entry
     # here, "bytes of emitted code (limit", for `\P{Unknown}` under
     # `-e utf8` (tests/utf8/axis12_scripts.rxt), whose VM body was a
@@ -643,7 +630,6 @@ declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
     ["-fprefilter"]=12000
     ["--engine=dfa"]=8000
-    ["-fno-cls-kit"]=60
 )
 
 # ============================================================================

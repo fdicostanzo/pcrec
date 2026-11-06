@@ -1,0 +1,10 @@
+knee	merged	islands=0 rungs=0x0u	matches=57271	instructions:u(10 reps, mean,var%)=299876022,0.00%
+knee	denied	islands=1 rungs=0x0u	matches=57271	instructions:u(10 reps, mean,var%)=161545678,0.00%
+knee-kit	merged	islands=0 rungs=0x0u	matches=57271	instructions:u(10 reps, mean,var%)=325526732,0.00%
+knee-kit	denied	islands=1 rungs=0x0u	matches=57271	instructions:u(10 reps, mean,var%)=161545677,0.00%
+bare-a	merged	islands=0 rungs=0x0u	matches=28607	instructions:u(10 reps, mean,var%)=50195517,0.00%
+bare-a	denied	islands=1 rungs=0x0u	matches=28607	instructions:u(10 reps, mean,var%)=64314688,0.00%
+bare-i	merged	islands=0 rungs=0x0u	matches=28607	instructions:u(10 reps, mean,var%)=89739029,0.00%
+bare-i	denied	islands=1 rungs=0x0u	matches=28607	instructions:u(10 reps, mean,var%)=98452285,0.00%
+bare-rep	merged	islands=0 rungs=0x1u	matches=28444	instructions:u(10 reps, mean,var%)=143328651,0.00%
+bare-rep	denied	islands=2 rungs=0x4u	matches=28444	instructions:u(10 reps, mean,var%)=233723313,0.00%

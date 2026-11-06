@@ -768,7 +768,7 @@ A fact deny over the run: every consumer sees no run — the run pre-check and `
 
 <a id="s2-33-p6"></a>[2.33¶6] **Denied**, every wide class on the VM is the byte alternation, every byte class reads its table, every scan edge reads its table, and the shared atom table of §2.34 (a kit form too) is denied with them: every table-read byte class keeps its own bitmap. The artifact accepts exactly the same subjects.
 
-<a id="s2-33-p7"></a>[2.33¶7] **The denial moves the refusal set, by design.** The byte alternation of a large wide class can exceed the emitted-code cap, so under this flag such a pattern is refused on the VM (`--engine=vm`, or a default-route pattern that selects it, such as a capturing `\P{Unknown}`), with `pattern too large: N bytes of emitted code (limit 500000)`. No size-ladder rung applies. `make test-axes` records the refusal as this axis's documented limit.
+<a id="s2-33-p7"></a>[2.33¶7] **The denial moves the refusal set, by design.** The byte alternation of a large wide class can exceed the emitted-code cap, so under this flag such a pattern is refused on the VM (`--engine=vm`, or a default-route pattern that selects it, such as a capturing `\P{Unknown}`), with `pattern too large: N bytes of emitted code (limit 500000)`. No size-ladder rung applies. The lowering's box merge (§2.6) keeps that alternation small: with it, no wide class of the corpus or the bench reaches the cap; under `-fno-cls-kit -fno-altcls-merge` the unmerged boxes do (`\p{Xwd}`, `\P{Unknown}`, `\p{L}+`). `make test-axes` records the refusal as this axis's documented limit.
 
 <a id="s2-34"></a>
 ### 2.34 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)

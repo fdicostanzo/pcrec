@@ -14,3 +14,9 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
   bench/utf8, four axes, base vs stage; every mover must be restored by
   bit 10). `altnf_lowering_oracle.out` — libpcre2's answers for every cell
   of `tests/utf8/altnf_lowering.rxt` (all OK).
+- `r1_knee_perf.sh` / `r1_knee_perf_drv.c` / `r1_knee_perf.out` — ruling R1's
+  speed check: instructions:u, merged vs bit 10, per flipped island cell
+  (subject generated in the script's scratch with seed 7).
+- `u4_movers_stage1.tsv`, `u4_stage1.log` — the U4 census's first full run
+  (before its refusal-retired classification: its 31 REFUSAL-MOVED are all
+  base refusals the merge retires).
