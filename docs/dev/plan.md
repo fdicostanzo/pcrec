@@ -688,6 +688,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ENC-SIDE-EMIT] STATE:not-started — a per-row side-emission hook on the encoding seam's entry table
+  filed: 2026-11-06 lane vlbbuild ([VLOOKBEHIND] stage 1, design FIXIND-6)
+  status (2026-11-06): one side emission exists (the UCP one); the emitter and `pcrec_enc_entry_symbols` call ONE shared predicate for it, so the condition has one spelling; no general hook built
+  trigger: a SECOND side emission on any seam row (vlookbehind.md §5.6 item 1)
+  refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c (the reader that lists each row's symbols)
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
   status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
