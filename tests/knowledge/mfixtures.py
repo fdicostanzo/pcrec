@@ -15,8 +15,23 @@ From the committed store set it writes, under OUTDIR:
                       a pcrec-owned row, tags, and a source with `"`, `\\`, `?`
                       and a non-ASCII byte
            fx-env     an envelope (composite 1) with its members section
-  bad/     one set per refusal class of docs/spec/measures.md §7, each named
-           for its class; `bad/EXPECT.tsv` lists file and a substring the
+           fx-f2      a FORMAT-2 set (measures.md §2.1¶1a): a measured noise,
+                      a measured noise of 0, a measured value with a `-`
+                      noise, `-` on a derived and a null row, a pcrec row
+                      with a noise (never handed), cells with `events` and
+                      `round med`; its abs_ns_e6 and noise_e6 differ on every
+                      row that carries either
+           fx-f1noise a FORMAT-1 set with numeric noise text on every row: the
+                      text is provenance, so every row is handed unmeasured
+  pair/    format-2 sets that must load and digest APART from fx-f2:
+           fx-f2-noise (one noise changed), fx-f2-class (`class` changed),
+           fx-f2-noisemax (one noise exactly 10^15, the bound's last
+           admitted value)
+  store/   a format-2 fixture store for scripts/ksgen.c: DEFAULTS and
+           fx-f2/1/set.tsv (fx-f2's text)
+  bad/     one set per refusal class of docs/spec/measures.md §7 (the
+           format-2 classes, `f2-*`, edited from fx-f2), each named for its
+           class; `bad/EXPECT.tsv` lists file and a substring the
            refusal must contain
   idir/    `-I` fixtures: mine.measures.tsv (id mine), other.measures.tsv
            (id mine: an S2 mismatch)
@@ -149,6 +164,125 @@ fx-b@2:00000000000000bb\tkit.beta.WALK.SCAN\t201000\tbox b
 """
 
 
+F2 = """# a format-2 fixture
+#section header
+#key\tvalue
+format\t2
+id\tfx-f2
+rev\t1
+class\tcls-a
+tier\tsynthetic
+composite\t0
+members\t
+unit_key\tkit.find_byte.walk
+method\tfx@3
+rows\t0
+values_digest\t0000000000000000
+#section cards
+#owner\tquantity\tver\tdims\tunit\tsubject\tlengths\tlaunches\trounds\taa_rule\tgate_e6\tenv\tdeps
+kit\tfind_byte\t3\tform\tratio\tstreamed\tslope 64,1024,65536\t7\t7\ttwin-per-arm\t30000\t-\t-
+kit\tfind_hit\t3\tform;density\twalkbytes\tstreamed\tdelta 1024\t7\t7\ttwin-per-arm\t30000\t-\t-
+kit\tsaving\t3\tform;vs\tratio\tderived\t-\t-\t-\t-\t-\t-\t-
+kit\tenter\t3\tform\twalkbytes\tfresh\tdelta 1024\t7\t7\ttwin-per-arm\t30000\t-\t-
+pcrec\tc_call\t1\tkind\twalkbytes\tfresh\t-\t5\t5\t-\t-\t-\t-
+#section rows
+#key\tunit\tvalue_e6\tabs_ns_e6\tnoise_e6\tn\tstatus\tderivation\tinputs\tdeps\ttags\tsource
+kit.find_byte.walk\tratio\t1000000\t189200\t1730\t7\tmeasured\t-\t-\t-\t-\tthe unit row
+kit.find_byte.memchr\tratio\t571882\t108200\t0\t7\tmeasured\t-\t-\t-\t-\ta measured noise of 0
+kit.find_hit.walk.random\twalkbytes\t2500000\t473000\t-\t7\tmeasured\t-\t-\t-\t-\ta measured value, an unmeasured noise
+kit.saving.memchr.walk\tratio\t-428118\t1\t-\t-\tderived\tdiff\tkit.find_byte.memchr;kit.find_byte.walk\t-\t-\tderived: noise -
+kit.enter.walk\twalkbytes\t\t2\t-\t-\tnull\t-\t-\t-\t-\tbelow the NULL rule
+pcrec.c_call.DFA\twalkbytes\t-12\t3\t25\t-\tmeasured\t-\t-\t-\t-\ta pcrec row: never handed
+#section cells
+#cell\tgroup\tarm\tlength\tlaunch\tround\tevents\tns_e6
+c1\tJ2.unit\tkit.find_byte.walk\t1024\t1\tmed\t-\t5000
+c2\tJ3.hit.random.1024\tkit.find_hit.walk.random\t1024\t1\tmed\t3\t4100
+c3\tJ3.base\tbase.walk\t1024\t1\tmed\t0\t3900
+#section members
+#member\tunit_key\tunit_abs_ns_e6\tbox
+"""
+
+F1NOISE = """# a format-1 fixture whose noise_e6 column is numeric text on every row
+#section header
+#key\tvalue
+format\t1
+id\tfx-f1noise
+rev\t1
+class\tidk
+tier\tsynthetic
+composite\t0
+members\t
+unit_key\tkit.beta.WALK.SCAN
+method\tfx@1
+rows\t0
+values_digest\t0000000000000000
+#section cards
+#owner\tquantity\tver\tdims\tunit\tsubject\tlengths\tlaunches\trounds\taa_rule\tgate_e6\tenv\tdeps
+kit\tbeta\t1\tform;kind\tratio\tstreamed\t-\t5\t5\t-\t-\t-\t-
+kit\tsaving\t1\tform;vs\tratio\tderived\t-\t-\t-\t-\t-\t-\t-
+#section rows
+#key\tunit\tvalue_e6\tabs_ns_e6\tnoise_e6\tn\tstatus\tderivation\tinputs\tdeps\ttags\tsource
+kit.beta.WALK.SCAN\tratio\t1000000\t189200\t1730\t25\tmeasured\t-\t-\t-\t-\t-
+kit.beta.V1.SCAN\tratio\t571882\t108200\t2210\t25\tmeasured\t-\t-\t-\t-\t-
+kit.saving.V1.WALK\tratio\t-428118\t-\t99\t-\tderived\tdiff\tkit.beta.V1.SCAN;kit.beta.WALK.SCAN\t-\t-\t-
+#section cells
+#cell\tgroup\tarm\tlength\tlaunch\tround\tns_e6
+#section members
+#member\tunit_key\tunit_abs_ns_e6\tbox
+"""
+
+
+def edit_rows(text, key, col, v):
+    """`text` with column `col` of the row keyed `key` set to `v`."""
+    secs = parse(text)
+    for s in secs:
+        if s[0] == "rows":
+            cols = s[1][1:].split("\t")
+            for i, r in enumerate(s[2]):
+                c = r.split("\t")
+                if c[0] == key:
+                    c[cols.index(col)] = v
+                    s[2][i] = "\t".join(c)
+    return render(secs)
+
+
+def f2_bad_sets(f2):
+    """(name, text, substring) for each format-2 refusal class (§7), from
+    fx-f2's text; main() redigests each, so its class's rule is the one
+    refusal the set meets."""
+    def cell(cid, col, v):
+        secs = parse(f2)
+        for s in secs:
+            if s[0] == "cells":
+                cols = s[1][1:].split("\t")
+                for i, r in enumerate(s[2]):
+                    c = r.split("\t")
+                    if c[0] == cid:
+                        c[cols.index(col)] = v
+                        s[2][i] = "\t".join(c)
+        return render(secs)
+    return [
+        ("f2-noise-spelling", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "+5"),
+         "noise_e6 '+5' is neither"),
+        ("f2-noise-negative", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "-3"),
+         "noise_e6 '-3' is neither"),
+        ("f2-noise-bound", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "1000000000000001"),
+         "noise_e6 1000000000000001 is past 10^15"),
+        ("f2-noise-derived", edit_rows(f2, "kit.saving.memchr.walk", "noise_e6", "7"),
+         "a derived row carries noise_e6 7"),
+        ("f2-noise-null", edit_rows(f2, "kit.enter.walk", "noise_e6", "7"),
+         "a null row carries noise_e6 7"),
+        ("f2-noise-fitted",
+         edit_rows(edit_rows(edit_rows(f2, "kit.saving.memchr.walk", "status", "fitted"),
+                             "kit.saving.memchr.walk", "derivation", "interp-log2"),
+                   "kit.saving.memchr.walk", "noise_e6", "7"),
+         "a fitted row carries noise_e6 7"),
+        ("f2-events", cell("c2", "events", "x"), "events 'x' is neither"),
+        ("f2-events-bound", cell("c2", "events", "9223372036854775808"),
+         "events '9223372036854775808' is neither"),
+    ]
+
+
 def bad_sets(base):
     """(name, text, substring) for each refusal class."""
     def edit(f):
@@ -174,7 +308,7 @@ def bad_sets(base):
         ("unknownsec", base + "#section bogus\n#a\n1\n", "unknown section"),
         ("derived", base + "#section stale\n#a\n1\n", "derived view"),
         ("unknownkey", hdr("format", "1") .replace("format\t1\n", "format\t1\nbogus\tx\n", 1), "unknown header key"),
-        ("format", hdr("format", "2"), "format 2"),
+        ("format", hdr("format", "3"), "format 3"),
         ("badid", hdr("id", "Bad_Id"), "is not a set name"),
         ("badrev", hdr("rev", "01"), "is not a positive decimal"),
         ("tier", hdr("tier", "gold"), "tier 'gold'"),
@@ -216,16 +350,31 @@ def main(store_set, outdir):
     t = render(secs, "# a messy file\n\n# with comments\n")
     t = t.replace("#section rows\n", "\n#section rows\n# a comment before the header\n", 1)
     write(os.path.join(ok, "fx-messy.tsv"), t)
-    # fx-rich, fx-env
-    for name, text in (("fx-rich", RICH), ("fx-env", ENV)):
+    # fx-rich, fx-env, fx-f2, fx-f1noise
+    for name, text in (("fx-rich", RICH), ("fx-env", ENV), ("fx-f2", F2),
+                       ("fx-f1noise", F1NOISE)):
         p = os.path.join(ok, name + ".tsv")
         write(p, text)
         redigest(p)
+    f2 = open(os.path.join(ok, "fx-f2.tsv"), encoding="utf-8").read()
+    # pair: fx-f2 apart by one noise, and by class alone
+    for name, text in (("fx-f2-noise", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "1731")),
+                       ("fx-f2-noisemax", edit_rows(f2, "kit.find_byte.walk", "noise_e6", "1000000000000000")),
+                       ("fx-f2-class", f2.replace("\nclass\tcls-a\n", "\nclass\tcls-b\n", 1))):
+        p = os.path.join(outdir, "pair", name + ".tsv")
+        write(p, text)
+        redigest(p)
+    # store: fx-f2 as a committed store for ksgen
+    write(os.path.join(outdir, "store", "DEFAULTS"), "# class\tid@rev\nidk\tfx-f2@1\n")
+    write(os.path.join(outdir, "store", "fx-f2", "1", "set.tsv"), f2)
     # bad
     bad = os.path.join(outdir, "bad")
     exp = []
-    for name, text, sub in bad_sets(base):
+    for name, text, sub in bad_sets(base) + f2_bad_sets(f2):
         write(os.path.join(bad, name + ".tsv"), text)
+        if name.startswith("f2-"):
+            # a correct digest, so the class's own rule is the only refusal
+            redigest(os.path.join(bad, name + ".tsv"))
         exp.append("%s\t%s" % (name, sub))
     write(os.path.join(bad, "EXPECT.tsv"), "\n".join(exp) + "\n")
     # -I

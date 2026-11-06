@@ -234,8 +234,10 @@ data, B's sampling terms. No constant enters but the card gates (`gate_e6` 3 %, 
 D149). `[rev5 A4]` Stage 2 defines a COVERAGE FACTOR, UNMEASURED DEFAULT (1 sigma departs ~16 % of
 equal-price comparisons per side), and B's sampling noise by block bootstrap per bundle byte (Poisson
 `sqrt(n)` is 0 at n = 0, 2-5x low on clustered text). `[rev5.1 R1]` pcrec STATES it with the rates, or
-none (no sampling term); the kit keys nothing on provenance. Its seam field: stage 2's MF_SITE_ABI
-event.
+none (no sampling term); the kit keys nothing on provenance. Its seam field: `[s2]` DEFERRED to its
+producer (`span_cards.md` §4.6; no producer writes a bundle noise today): one MF_SITE_ABI event with its
+pcrec producer when [BENCH-WITHDATA]'s held-out bundles or row 1's with-data band need it. Stage 2's own
+event (MF_SITE_ABI 24, unit S2a) carries the CARDS' noise only.
 
 ## Cost cards
 

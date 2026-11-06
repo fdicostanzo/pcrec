@@ -2564,6 +2564,33 @@ static void refusal_table(void)
         if (!rc) { n_api_pass++; fprintf(g_res, "PASS api empty-artifact ends clean\n"); }
         else { n_api_fail++; fprintf(g_res, "FAIL api empty-artifact: art_end rc=%d %s\n", rc, mf_art_error(art)); }
     }
+    /* a measurement set's noise (MF_SITE_ABI 24, memfn.h mf_measure): every
+     * row STATES its noise, so a zero-initialized row (UNSTATED) is refused
+     * at mf_art_begin, as are a MEASURED noise outside 0..MF_MEASURE_MAX and
+     * an UNMEASURED row with a non-zero noise; MEASURED 0 and UNMEASURED 0
+     * are accepted (a measured noise may round to 0) */
+    {
+        struct { const char *name; mf_measure row; int ok; } nc[] = {
+            { "zero-initialized (UNSTATED)", { "kit.g2.a", 5, "ratio", "-", 0, 0 }, 0 },
+            { "MEASURED -1", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_MEASURED, -1 }, 0 },
+            { "MEASURED past MF_MEASURE_MAX", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_MEASURED,
+                                                MF_MEASURE_MAX + 1 }, 0 },
+            { "UNMEASURED with noise 7", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_UNMEASURED, 7 }, 0 },
+            { "state 3 (no such state)", { "kit.g2.a", 5, "ratio", "-", 3, 0 }, 0 },
+            { "MEASURED 0", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_MEASURED, 0 }, 1 },
+            { "MEASURED MF_MEASURE_MAX", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_MEASURED,
+                                           MF_MEASURE_MAX }, 1 },
+            { "UNMEASURED 0", { "kit.g2.a", 5, "ratio", "-", MF_NOISE_UNMEASURED, 0 }, 1 },
+        };
+        for (size_t i = 0; i < sizeof nc / sizeof nc[0]; i++) {
+            mf_measures ms = { "g2-set", 1, "0000000000000000", "idk", "synthetic", 0, 1, &nc[i].row };
+            mf_art *art = mf_art_begin(&g_arena, "g2m", MF_P_PORTABLE_ONLY, 0, &ms, NULL);
+            const char *e = mf_art_error(art);
+            int refused = e && *e;
+            api_result(refused != nc[i].ok, "measure noise %s: %s (\"%s\")", nc[i].name,
+                       nc[i].ok ? "accepted expected" : "refusal expected", e ? e : "");
+        }
+    }
     /* the option registry: empty at R4a; NULL and "" valid; unknown names refused */
     {
         size_t n = 99;

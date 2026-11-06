@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 23  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 24  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -194,7 +194,14 @@
                            REFUSED (kit_presence_check; positions travel as
                            sets, normal form is a checked fact). No layout
                            move; no MF_VOCAB or MF_CLASS_V move; no pcrec
-                           byte moved. */
+                           byte moved. 24 (span_pick stage 2 unit S2a,
+                           R-35; span_cards.md rev 1.1 §4.1): mf_measure
+                           gains noise_state (mf_noise_state, an UNSTATED
+                           zero, refused) and noise_e6, each appended LAST;
+                           mf_art_begin refuses a row whose noise state or
+                           noise is out of shape. No kit row reads noise. A
+                           LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
+                           pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -1223,11 +1230,20 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
                                              comparisons add at most four
                                              values (r17b_prime.md §2.5),
                                              which stays inside int64      */
+/* A row's NOISE (MF_SITE_ABI 24, R-35; span_cards.md §4.1): a state, never a
+ * sentinel, because a measured noise may round to 0. pcrec states MEASURED
+ * only for a row of a set whose digest covers its noise (set format 2); every
+ * other row is UNMEASURED. The kit refuses, at mf_art_begin, an UNSTATED
+ * row, a MEASURED noise outside 0..MF_MEASURE_MAX, and an UNMEASURED row
+ * whose noise is not 0. No kit row reads noise yet. */
+typedef enum { MF_NOISE_UNSTATED = 0, MF_NOISE_MEASURED, MF_NOISE_UNMEASURED } mf_noise_state;
 typedef struct {
     const char *key;        /* owner.quantity.tokens (measure_sets §1.3)        */
     int64_t     value_e6;   /* the value x 1e6                                  */
     const char *unit;       /* the row's unit token                             */
     const char *source;     /* display only; no selection reads it              */
+    uint8_t     noise_state;/* mf_noise_state; UNSTATED is refused (appended LAST) */
+    int64_t     noise_e6;   /* 1-sigma, the row's unit x 1e6; 0 unless MEASURED */
 } mf_measure;
 typedef struct mf_measures {
     const char       *id;

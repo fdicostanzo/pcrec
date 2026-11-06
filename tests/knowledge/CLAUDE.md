@@ -12,8 +12,8 @@ canonical view).
 
 `make test-knowledge` (in `TEST_SECTIONS`, CI shard 1) runs
 `run_knowledge_tests.sh`, which runs `run_measures_tests.sh` as its last
-section; the mech arm `knowledge` scores sabotage rows S961, S962, S984 and
-M0's S1227-S1246 (bar S1242/S1243) on it.
+section; the mech arm `knowledge` scores sabotage rows S961, S962, S984,
+M0's S1227-S1246 (bar S1242/S1243) and span_pick S2a's format-2 rows on it.
 
 ## Files
 
@@ -40,9 +40,10 @@ M0's S1227-S1246 (bar S1242/S1243) on it.
   prose value that is the single byte `|`, a TAB in a `question`, every
   UTF-8 length of code point, a two-encoding `serves` list, comments and
   blank lines around the bundle.
-- `run_measures_tests.sh` — the measures kind ([MEASURE-SET] M0, 70
-  checks): R1-R5 over the committed store set and `mfixtures.py`'s `ok/`
-  sets; every refusal class of `docs/spec/measures.md` §7 (`bad/`, each
+- `run_measures_tests.sh` — the measures kind ([MEASURE-SET] M0; set
+  format 2 since span_pick S2a; 95 checks): R1-R5 over the committed store
+  set and `mfixtures.py`'s `ok/` sets; format 2's `pair/` digesting apart
+  (one noise, `class` alone, a noise of exactly 10^15); every refusal class of `docs/spec/measures.md` §7 (`bad/`, each
   held to a substring of its refusal); the embedded store against its files
   (`meas_store_check.c`); loading (`--measures`, the `measures` config
   line, fill-only both ways, `-I` exact-entry probing and the S2 mismatch,
@@ -52,15 +53,20 @@ M0's S1227-S1246 (bar S1242/S1243) on it.
   and its views. `checks passed`/`checks failed` trailer.
 - `ks_ref.py` — the INDEPENDENT reader of the measures kind, written from
   `docs/spec/measures.md` alone (python, shares no code with the C):
-  `decode` (R5), `doc` (R3), `digest`. Never "fix" it by reading the C.
+  `decode` (R5), `doc` (R3), `digest`, and `handed` (the noise the kit is
+  handed, the MFMEAS record's spelling). Never "fix" it by reading the C.
 - `mfixtures.py STORE_SET OUTDIR` — the measures fixtures, written per run
-  (never committed): `ok/` (fx-store, fx-messy, fx-rich, fx-env), `bad/`
-  (21 refusal classes + `EXPECT.tsv`), `idir/` and `shadow/`. Digests come
+  (never committed): `ok/` (fx-store, fx-messy, fx-rich, fx-env, format-2
+  fx-f2, format-1 fx-f1noise), `bad/` (27 refusal classes, 6 of them
+  format 2, + `EXPECT.tsv`), `pair/`, `store/` (fx-f2 for ksgen), `idir/`
+  and `shadow/`. Digests come
   from `ks_ref.py`, so a wrong one is a red fixture.
 - `meas_store_check.c OUTDIR` — the embedded store against itself: each
   set's embedded TEXT, the decoded view of its PRE-PARSE and of a fresh
-  parse of that text (a stale or mis-generated `.inc` shows; the reader's
-  own interpretation is R5's).
+  parse of that text, and a RAW-ROW compare of every field (noise included;
+  a stale or mis-generated `.inc` shows; the reader's own interpretation is
+  R5's). `-DMSC_TABLE=` runs it over a ksgen fixture table instead. Its build
+  asserts `KS_MEAS_MAX == MF_MEASURE_MAX`.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

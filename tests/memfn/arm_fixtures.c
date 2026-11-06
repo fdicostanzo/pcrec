@@ -1559,7 +1559,8 @@ static int fd_load_set(const char *path, mf_measures *ms)
         }
         if (ck >= n || cv >= n || !cell[cv][0]) continue;
         snprintf(keys[ms->nrows], sizeof keys[0], "%s", cell[ck]);
-        rows[ms->nrows] = (mf_measure){ keys[ms->nrows], strtoll(cell[cv], NULL, 10), "-", "-" };
+        rows[ms->nrows] = (mf_measure){ keys[ms->nrows], strtoll(cell[cv], NULL, 10), "-", "-",
+                                        MF_NOISE_UNMEASURED, 0 };
         ms->nrows++;
     }
     fclose(f);

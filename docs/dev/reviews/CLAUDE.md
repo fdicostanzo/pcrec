@@ -51,15 +51,6 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 `docs/dev/decisions.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
-- `2026-10-21-r1-findall-i2.md` — light D6 panel on findall_iter_i2.md rev 1.
-- `2026-10-24-r1-subst-code.md` (+ dir) — compiled substitution (lane/substland), coordinator round: 5 lenses, 38 findings, rulings inline.
-- `2026-10-26-r1-inline-c-design.md` (+ dir) — [INLINE-C] pattern-side design note rev 0, coordinator round: 5 lenses (premise, simulate, slot, contract+trust, cost), 37 items, rulings inline.
-- `2026-10-26-r2-ic1b-code.md` (+ dir) — [INLINE-C] stage 1b code (lane/ic1b 1dd510468), coordinator round: answer-level ADV-1/CON-2/CON-3/CON-8, rulings inline.
-- `2026-10-31-r1-pricing-split.md` (+ dir) — design round on the splitstudy report rev 0 (where strategy pricing lives); direction superseded by the bake-off ruling.
-- `2026-10-31-r2-pricing-split2.md` (+ dir) — PARTIAL re-check of splitstudy rev 1, stopped when Frank ruled a bake-off.
-- `2026-10-31-r3-bakeoff.md` (+ dir), `r4-bakeoff2` (rev 1 re-check), `r5-bakeoff3` (rev 2 re-check) — design rounds on docs/design/pricing_bakeoff.md.
-- `2026-11-01-r1-stream1.md` (+ dir) — design round on the "one instruction stream" end-state synthesis (uncommitted scratch; now docs/design/stream/round1/), coordinator round: 5 lenses (premise, soundness, benefit, seam, cost), 61 raised, rulings inline.
-- `2026-11-01-r2-stream2.md` (+ dir) — re-check of the stream design rev 2 (docs/design/stream/approach.md), coordinator round: 4 lenses (fix-induced, soundness, card, owner criteria) + verifier, 39 raised, rulings inline; rev 3 (lane stream3) carries the fixes.
 - `2026-11-01-r3-stream3.md` (+ dir) — re-check of the stream design rev 3, coordinator round: 2 lenses (soundness, fix-induced with the F1 replay folded in) + verifier, 35 raised; rulings appended: answer findings NOTED (the admission table goes PROVISIONAL into docs/design/stream/roadmap.md), F1 findings ACCEPTED as evidence of undeclared crossings (the hubs). Superseded as a design record by manifesto.md + roadmap.md.
 - `2026-11-02-r1-memfn-spanpick.md` (+ dir) — design round on the kit's one find-the-span pick (docs/design/memfn/span_pick.md rev 1), coordinator round: 5 lenses (owner criteria, premise, slot tracing, simulate, measurement) + verifier, 61 raised -> 27 items, no answer-level; rulings appended; owner questions A1/A2/A6.
 - `2026-11-02-r2-memfn-spanpick2.md` (+ dir) — re-check of span_pick rev 2, coordinator round; FREEZE DRIFT (owner amended D186 add. 1 A2 mid-round); no answer-level; 4 stage-1 blockers (text fixes); rulings appended; owner questions C9/O3.
@@ -85,3 +76,5 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-11-06-r4-memfn-span-cards.md` (+ dir) — DESIGN round on docs/design/memfn/span_cards.md rev 0 (span_pick stage 2: cost cards, producer, noise channel, set format 2), coordinator round + verifier; NOT READY, rev 1 + re-check; no answer or byte finding; DEFAULTS reading to main; CONTRACT-5 (loader accepts value past MF_MEASURE_MAX) to main.
 - `2026-11-06-r5-memfn-span-cards-recheck.md` (+ dir) — RE-CHECK of span_cards.md rev 1 (fix-induced + readiness + measurement + ruling), coordinator round + verifier; NOT READY as a whole: S2a/S2b ready with text fixes, S2c-S2e need rev 1.1 + a 2-critic re-check; EMBED/POLICY to main; DEFAULTS (B) had no record.
 - `2026-11-06-r6-memfn-span-cards-recheck2.md` (+ dir) — 2-critic RE-CHECK (readiness + measurement) of span_cards.md rev 1.1, S2c-S2e; NOT READY: S2c/S2d ready with text, S2e after rev 1.2 (READY-1 base leaves `inputs`; a kit run record; deps recorded).
+- `2026-11-06-r7-memfn-span-cards-ready.md` (+ dir) — one readiness critic on span_cards rev 1.2's diff: S2c/S2d/S2e READY with text fixes (READY-1..9, applied as rev 1.3 in S2c's first commit).
+- `2026-11-06-r8-memfn-s2a.md` (+ dir) — CODE round on span_pick stage 2 unit S2a (noise channel, set format 2, MF_SITE_ABI 24); no answer/speed finding, zero movers held; FIX-NOW SEAM-1 (handed value missing from the digest) + checks/spec/house items.
