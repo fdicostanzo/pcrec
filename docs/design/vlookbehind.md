@@ -2386,8 +2386,8 @@ are that file's; this lane did not edit it):
 9. **Line 458, soundness of row 3**: "candidates replace the back-step, so the `$_back_step` sentinel
    and `$_next_pos` are not used": add the bounded `advance` step (rev 3 §5.6 `VSK_STEP_CHAR`),
    which row 3 does not use either. `[r2-1106 F1]` In rev 4 that step is the seam entry
-   `$_fwd_step` (rev 4 §5.6), not the `advance` text; cite it by that name. Under rev 3 the UTF-8 far clamp (the sentinel retry) is range's
-   only, so row 3's "the byte machine accepts only at character boundaries of valid input" is the
+   `$_fwd_step` (rev 4 §5.6), not the `advance` text; cite it by that name. Under rev 3 the UTF-8
+   far clamp (the sentinel retry) is range's only, so row 3's "the byte machine accepts only at character boundaries of valid input" is the
    fact that replaces both.
 10. **Lines 526-528, W-trail "the concrete cell is owed by the build"**: range's own cell is now rev
     3's W12(a) (`(?<=a{1,9})x` on `bbbbbbbbbax`). Row 3's cell is still owed, and it needs a
