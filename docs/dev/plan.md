@@ -1745,6 +1745,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
   Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
   REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
+- [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL, MAX_SET, HORS_MIN)
+  filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
+  status (2026-11-06): not started; today noise policy has two homes (COVER_Z_E3 in plan_cost.def, gate_e6 in kit-grid.tsv); unify when row 1 writes z (row 1's E2 unification)
+  trigger: span_pick row 1
+  refs: docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md; [MEASURE-SET]; decisions D176
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
