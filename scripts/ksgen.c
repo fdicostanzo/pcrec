@@ -342,7 +342,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
         }
         fprintf(out, "\n/* %s@%u */\n", ids[nsets], set->rev);
         put_tab(out, nsets, "cards", &set->cards, KS_MEAS_NCARD);
-        put_tab(out, nsets, "cells", &set->cells, KS_MEAS_NCELL);
+        put_tab(out, nsets, "cells", &set->cells, pcrec_ks_meas_cell_w(set));
         put_tab(out, nsets, "members", &set->members, KS_MEAS_NMEMBER);
         fprintf(out, "static const KsMeasRow pcrec_meas_s%d_rows[] = {\n", nsets);
         for (size_t r = 0; r < set->nrows; r++) {
@@ -355,9 +355,11 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
             }
             if (m->value_e6 == KS_MEAS_EMPTY) fputs(" }, KS_MEAS_EMPTY", out);
             else fprintf(out, " }, %lldLL", (long long)m->value_e6);
-            fprintf(out, ", %u, %u },\n", m->unit_code, m->status_code);
+            fprintf(out, ", %u, %u", m->unit_code, m->status_code);
+            if (m->noise_e6 == KS_MEAS_EMPTY) fputs(", KS_MEAS_EMPTY },\n", out);
+            else fprintf(out, ", %lldLL },\n", (long long)m->noise_e6);
         }
-        if (!set->nrows) fputs("    { { 0 }, 0, 0, 0 }\n", out);
+        if (!set->nrows) fputs("    { { 0 }, 0, 0, 0, 0 }\n", out);
         fputs("};\n", out);
         fprintf(out, "static const KsMeasSet pcrec_meas_s%d = {\n    .hdr = {", nsets);
         for (int h = 0; h < KS_MEAS_NHDR; h++) {
@@ -365,13 +367,13 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
             put_cstr(out, set->hdr[h]);
             fputc(',', out);
         }
-        fprintf(out, "\n    },\n    .rev = %uu, .composite = %u,\n"
+        fprintf(out, "\n    },\n    .rev = %uu, .format = %u, .composite = %u,\n"
                      "    .digest = 0x%016llxull,\n"
                      "    .cards = { %zu, pcrec_meas_s%d_cards },\n"
                      "    .cells = { %zu, pcrec_meas_s%d_cells },\n"
                      "    .members = { %zu, pcrec_meas_s%d_members },\n"
                      "    .nrows = %zu, .rows = pcrec_meas_s%d_rows,\n};\n",
-                set->rev, set->composite, (unsigned long long)set->digest,
+                set->rev, set->format, set->composite, (unsigned long long)set->digest,
                 set->cards.nrows, nsets, set->cells.nrows, nsets,
                 set->members.nrows, nsets, set->nrows, nsets);
         free(text);

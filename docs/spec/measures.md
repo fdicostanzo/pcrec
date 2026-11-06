@@ -51,7 +51,7 @@
 
 | key | R | value |
 |---|---|---|
-| `format` | R | `1` |
+| `format` | R | `1` or `2` |
 | `id` | R | the set's name, `[a-z][a-z0-9_-]*` |
 | `rev` | R | its revision, a positive decimal |
 | `class` | R | the ISA level and tuning class it was measured for |
@@ -65,6 +65,8 @@
 | `partial` | | `1` when only some groups passed their gates, else `0` or empty |
 | `rows` | R | the number of rows in section `rows` |
 | `values_digest` | R | §3.3's digest, 16 lowercase hex |
+
+<a id="s2-1-p1a"></a>[2.1¶1a] Format 2 differs from format 1 in three places and only there: a row's `noise_e6` is a parsed value (§2.2¶3a) that the digest covers, the digest also covers the header's `class` (§3.3¶1a), and section `cells` carries the column `events` (§2.2¶1a). A format-1 set reads and digests as it always has: its `noise_e6` is provenance text, never parsed, and no reader is handed it as a noise (§4¶2a).
 
 <a id="s2-1-p2"></a>[2.1¶2] An unknown header key refuses the file.
 
@@ -80,9 +82,13 @@
 | `cells` | `cell group arm length launch round ns_e6` |
 | `members` | `member unit_key unit_abs_ns_e6 box` |
 
+<a id="s2-2-p1a"></a>[2.2¶1a] In a format-2 set, `cells` has the columns `cell group arm length launch round events ns_e6`: `events` is `-` or a non-negative decimal integer in its one spelling, and `round` may be the literal `med`, a cell that is a median over rounds. A format-1 set's `cells` has no `events` column.
+
 <a id="s2-2-p2"></a>[2.2¶2] A card's `dims` lists the quantity's dimension names, `;`-joined; `-` or empty is none. A card's `owner` is `kit` or `pcrec`. A set holds at most one card per `owner.quantity`.
 
 <a id="s2-2-p3"></a>[2.2¶3] In `rows`, `value_e6` is the value times 10^6 as a decimal integer in its one spelling (no `+`, no leading zero, no `-0`); it is empty exactly on a `null` row. `derivation` is `-` or empty on a `measured` or `null` row and names a §3.2 derivation on a `derived` or `fitted` row. `inputs` is `-`, empty, or `;`-joined row keys and cell ids of this set; only a `derived` or `fitted` row names inputs. The other columns are provenance and display, carried as text.
+
+<a id="s2-2-p3a"></a>[2.2¶3a] In a format-2 set, `noise_e6` is not provenance: it is `-` or a non-negative integer in `value_e6`'s one spelling, at most 10^15, the value's 1-sigma noise in the row's unit times 10^6. Only a `measured` row carries a numeric noise; a `null`, `derived` or `fitted` row carries `-`. A `-` noise is unmeasured, never 0, and a measured noise may be 0. In a format-1 set, `noise_e6` is one of the provenance columns of ¶3.
 
 <a id="s2-2-p4"></a>[2.2¶4] A cell id appears at most once. `composite` is `1` exactly when `members` (the header key) is non-empty and section `members` has rows.
 
@@ -138,7 +144,9 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 <a id="s3-3"></a>
 ### 3.3 The values digest
 
-<a id="s3-3-p1"></a>[3.3¶1] `values_digest` is FNV-1a-64 over the 13 bytes `pcrec-meas-1` and its terminating NUL, then, for each row in canonical order (a bytewise sort of the keys), the key's bytes, a NUL, the unit byte, the status byte and `value_e6` as a little-endian int64 (`INT64_MIN` for an empty value), written as 16 lowercase hex. It covers no provenance column, card, cell or member, so the same values from any provenance give the same digest.
+<a id="s3-3-p1"></a>[3.3¶1] A format-1 set's `values_digest` is FNV-1a-64 over the 13 bytes `pcrec-meas-1` and its terminating NUL, then, for each row in canonical order (a bytewise sort of the keys), the key's bytes, a NUL, the unit byte, the status byte and `value_e6` as a little-endian int64 (`INT64_MIN` for an empty value), written as 16 lowercase hex. It covers no provenance column, card, cell or member, so the same values from any provenance give the same digest.
+
+<a id="s3-3-p1a"></a>[3.3¶1a] A format-2 set's `values_digest` is FNV-1a-64 over the 13 bytes `pcrec-meas-2` and its terminating NUL, then the header's `class` value and a NUL, then, for each row in canonical order, the key's bytes, a NUL, the unit byte, the status byte, `value_e6` as a little-endian int64 (`INT64_MIN` for an empty value) and `noise_e6` as a little-endian int64 (`INT64_MIN` for `-`), written as 16 lowercase hex. It covers no other header key, provenance column, card, cell or member. So two format-2 sets that differ only in a noise, or only in `class`, have different digests.
 
 <a id="s3-3-p2"></a>[3.3¶2] The header's `values_digest` must equal the digest of the rows, and `rows` must equal their count; a file where either differs is refused.
 
@@ -153,6 +161,8 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 ```
 
 <a id="s4-p2"></a>[4¶2] The value is `id@rev:values_digest` of the LOADED set when a reader consulted it, and the empty string otherwise. A reader is pcrec's own (none exists today) or the search-code kit's, which reports whether any of its rows resolved a key against the set, found or absent. A key looked up and not found still consults: the artifact depends on the set's not holding it.
+
+<a id="s4-p2a"></a>[4¶2a] The search-code kit is handed the loaded set's `kit.` rows that carry a value and no others (a `null` row and a `pcrec.` row are not handed), each with its noise stated: measured, with its value, when the set is format 2 and the row's `noise_e6` is a number; unmeasured otherwise, which includes every row of a format-1 set.
 
 <a id="s4-p3"></a>[4¶3] The stamp is written after every reader has run. It lists the set if ANY attempt of the compile consulted it, a discarded retry attempt included, and on a compound if P's compile or any part's compile consulted it. P and its parts read one set (§5¶8), so the value names that set whichever of them consulted.
 
@@ -188,6 +198,8 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s6-p3"></a>[6¶3] `--view=canonical` spells the same view. `--view=decoded` prints the loaded document field by field: section `decoded` (`scope field value`; scope `header`, `row:<key>`, `card:<i>`, `cell:<i>` or `member:<i>`, `i` the 0-based index in canonical order), each row's columns as read plus `value_e6` as the parsed integer and its `unit_code` and `status_code`, then section `item` (`rows values_digest`, the digest recomputed). The decoded view is derived and never an input (§2¶3).
 
+<a id="s6-p3a"></a>[6¶3a] On a format-2 set the decoded view adds one field per row, after its `status_code`: `noise_parsed`, the parsed `noise_e6` as an integer, empty for `-`. Its cell scopes carry the `events` column (§2.2¶1a). A format-1 set's decoded view has neither.
+
 <a id="s6-p4"></a>[6¶4] `--list-measurements` takes no pattern, no `-o`, no `--measures` and no other query.
 
 <a id="s7"></a>
@@ -199,10 +211,12 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 |---|---|
 | a CR or NUL byte; a row's field count differs from its header's; a row before any header | §2¶1 |
 | an unknown section; a derived view's section | §2¶2-¶3 |
-| an unknown or repeated header key; a required key missing or empty; `format` not `1`; a bad `id`, `rev`, `tier`, `composite` or `partial` | §2.1 |
+| an unknown or repeated header key; a required key missing or empty; `format` not `1` or `2`; a bad `id`, `rev`, `tier`, `composite` or `partial` | §2.1 |
 | a key breaking the grammar, repeated, of an unknown owner, with no card, or with the wrong token count | §2.3 |
 | an unknown unit or status; an empty value on a non-`null` row or a value on a `null` row; a misspelled integer | §2.2¶3, §3.1 |
 | a derivation outside §3.2 on a derived or fitted row, or any on a measured or null row; an input that is neither a row nor a cell | §2.2¶3, §3.2 |
+| in a format-2 set: a `noise_e6` misspelled or negative, past 10^15, or a number on a `null`, `derived` or `fitted` row | §2.2¶3a |
+| in a format-2 set: a cell's `events` neither `-` nor a non-negative integer | §2.2¶1a |
 | no unit row, or one that is not a `ratio` of `1000000` | §3.1¶2 |
 | `rows` or `values_digest` not matching the rows | §3.3¶2 |
 | two cards for one quantity; a repeated cell id; `composite` disagreeing with the members | §2.2 |

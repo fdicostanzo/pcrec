@@ -79,6 +79,9 @@ static int cli_err(const char *fmt, ...)
  * rows, and the `rows` section's `key`/`unit`/`value_e6`/`status`/`source`
  * columns. Only `kit.` rows with a value and a status other than `null` are
  * handed over (R-MS1: pcrec hands the kit its own rows, NULL ones not at all).
+ * Every row is UNMEASURED: this reader reads no `format` and copies the digest
+ * verbatim, so it cannot hold a noise to the digest that covers it
+ * (span_cards.md §4.2; the MEASURED path is the loader's `--measures=FILE`).
  * It checks nothing the kit checks (the kit refuses a bad set at
  * mf_art_begin); a file it cannot read is a usage error. */
 static char *hm_dup(const char *p, size_t n)
@@ -159,7 +162,8 @@ static const mf_measures *harness_measures_load(const char *path)
             free(v);
             rows[ms->nrows++] = (mf_measure){ hm_dup(get[0], gl[0]), x,
                                               get[2] ? hm_dup(get[2], gl[2]) : NULL,
-                                              get[5] ? hm_dup(get[5], gl[5]) : NULL };
+                                              get[5] ? hm_dup(get[5], gl[5]) : NULL,
+                                              MF_NOISE_UNMEASURED, 0 };
         }
     }
     fclose(f);

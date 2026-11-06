@@ -71,6 +71,9 @@ static void *pcrec_memfn_arena_alloc(void *u, size_t n)
  * measure_sets.md §4.1): its `kit.` rows that carry a value — a NULL row is
  * not handed over, so NULL and absent read alike, as a skip — and its
  * identity. Facts only (D157): no `pcrec.` row, no status, no provenance.
+ * A row's noise is MEASURED exactly when the loader parsed one, which it does
+ * on a format-2 set only, whose digest covers the noise (span_cards.md §4.2):
+ * a `-` noise and every row of a format-1 set are UNMEASURED.
  * NULL when the attempt loaded no set. */
 static const mf_measures *memfn_measures(Ctx *cx)
 {
@@ -86,8 +89,11 @@ static const mf_measures *memfn_measures(Ctx *cx)
         const KsMeasRow *r = &set->rows[i];
         if (strncmp(r->col[KS_MR_key], "kit.", 4) || r->value_e6 == KS_MEAS_EMPTY)
             continue;
+        bool measured = r->noise_e6 != KS_MEAS_EMPTY;
         rows[ms->nrows++] = (mf_measure){ r->col[KS_MR_key], r->value_e6,
-                                          r->col[KS_MR_unit], r->col[KS_MR_source] };
+                                          r->col[KS_MR_unit], r->col[KS_MR_source],
+                                          measured ? MF_NOISE_MEASURED : MF_NOISE_UNMEASURED,
+                                          measured ? r->noise_e6 : 0 };
     }
     pcrec_ks_meas_hex(set->digest, hex);
     ms->id = set->hdr[KS_MH_ID];
@@ -114,12 +120,33 @@ void pcrec_memfn_measures_build(Ctx *cx)
 
 #ifdef PCREC_CAND_TRACE
 #include <stdlib.h>
+/* FNV-1a-64 of `h` continued over the bytes of `t`. */
+static uint64_t meas_fnv(uint64_t h, const char *t)
+{
+    for (; *t; t++) {
+        h ^= (unsigned char)*t;
+        h *= 0x100000001b3ull;
+    }
+    return h;
+}
+
+/* qsort's comparator for the handed rows' canonical (bytewise key) order. */
+static int meas_key_cmp(const void *a, const void *b)
+{
+    return strcmp((*(const mf_measure *const *)a)->key, (*(const mf_measure *const *)b)->key);
+}
+
 /* [MEASURE-SET] THE MEASURES RECORD: the set an art is handed, read off
  * mf_art_begin's argument, `MFMEAS<TAB>role<TAB>id@rev:digest<TAB>view
- * object<TAB>loaded set object`, the role `-` off a part and a NULL set `-`,
- * one per art, in the trace build with PCREC_MF_MEAS_TRACE set. The two
- * object columns are addresses, compared within one run only: equal on P
- * and its parts is the SAME set, not an equal one. */
+ * object<TAB>loaded set object<TAB>measured<TAB>noise digest`, the role `-`
+ * off a part and a NULL set `-` (its last two columns `-`), one per art, in
+ * the trace build with PCREC_MF_MEAS_TRACE set. The two object columns are
+ * addresses, compared within one run only: equal on P and its parts is the
+ * SAME set, not an equal one. `measured` counts the MEASURED rows; the noise
+ * digest (span_cards.md §4.2) is FNV-1a-64, 16 lowercase hex, over the lines
+ * `key TAB state TAB noise_e6 LF` of every handed row in canonical key order,
+ * state `measured` or `unmeasured` (`unstated` otherwise) and noise_e6 in
+ * decimal: text that survives a write and a read, unlike the addresses. */
 static void meas_record(Ctx *cx, const mf_measures *ms)
 {
     if (!getenv("PCREC_MF_MEAS_TRACE")) return;
@@ -127,7 +154,31 @@ static void meas_record(Ctx *cx, const mf_measures *ms)
                                          ? cx->emit_in->part_role : "-");
     if (ms) fprintf(stderr, "%s@%u:%s", ms->id, ms->rev, ms->values_digest);
     else fprintf(stderr, "-");
-    fprintf(stderr, "\t%p\t%p\n", (const void *)ms, (const void *)cx->job->meas);
+    fprintf(stderr, "\t%p\t%p", (const void *)ms, (const void *)cx->job->meas);
+    if (!ms) {
+        fprintf(stderr, "\t-\t-\n");
+        return;
+    }
+    {
+        const mf_measure **by = pcrec_arena_alloc(&cx->arena, (ms->nrows + 1) * sizeof *by);
+        uint64_t h = 0xcbf29ce484222325ull;
+        uint32_t nm = 0;
+        for (uint32_t i = 0; i < ms->nrows; i++) by[i] = &ms->rows[i];
+        qsort(by, ms->nrows, sizeof *by, meas_key_cmp);
+        for (uint32_t i = 0; i < ms->nrows; i++) {
+            char num[24];
+            const char *st = by[i]->noise_state == MF_NOISE_MEASURED ? "measured"
+                           : by[i]->noise_state == MF_NOISE_UNMEASURED ? "unmeasured"
+                           : "unstated";
+            snprintf(num, sizeof num, "%lld", (long long)by[i]->noise_e6);
+            {
+                const char *part[] = { by[i]->key, "\t", st, "\t", num, "\n" };
+                for (size_t k = 0; k < sizeof part / sizeof *part; k++) h = meas_fnv(h, part[k]);
+            }
+            nm += by[i]->noise_state == MF_NOISE_MEASURED;
+        }
+        fprintf(stderr, "\t%u\t%016llx\n", nm, (unsigned long long)h);
+    }
 }
 #endif
 
