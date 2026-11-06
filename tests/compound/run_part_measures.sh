@@ -24,6 +24,13 @@
 #       shell's RX_MEASURES and rx_info.measures are the arm's set; with no
 #       consult, or a role no part has, both are "". Control: a pattern that
 #       is no compound stays "" under a consult.
+#   (C) THE NOISE (span_cards.md §4.2, MF_SITE_ABI 24). A record's last two
+#       columns are the count of MEASURED rows handed and the noise digest
+#       over the handed `key TAB state TAB noise_e6` lines. Under the shipped
+#       `--measures=FILE`, mfixtures.py's format-2 fx-f2 must show a non-zero
+#       count, and its format-1 fx-f1noise (numeric noise TEXT on every row)
+#       count 0, each with the count and digest `ks_ref.py handed FILE`
+#       computes from the file (measures.md §4¶2a's filter, written apart).
 # The records' and the stamps' expected values are the FILE's header, so the
 # check does not share a source with the code under test. Env: CC, KEEP=1.
 set -u
@@ -121,9 +128,27 @@ for arm in "H --harness=measures=$W/h.tsv $W/h.tsv" "F --measures=$W/f.tsv $W/f.
         bad "$name (B) control: 'a(b|c)+d' under consult=q stamps '$(stamp "$o.plain.c")'"
     fi
 done
+# (C) the noise handed, against the independent reader's count and digest
+python3 -I "$ROOT_DIR/tests/knowledge/mfixtures.py" "$W/f.tsv" "$W/fx" > /dev/null
+for fx in fx-f2 fx-f1noise; do
+    f="$W/fx/ok/$fx.tsv"
+    want_h="$(python3 -I "$ROOT_DIR/tests/knowledge/ks_ref.py" handed "$f")"
+    if ! compile "--measures=$f" 'a(b|c)+d' "" "$W/$fx"; then
+        bad "$fx (C): did not compile: $(head -1 "$W/$fx.err")"; continue
+    fi
+    got_h="$(awk -F'\t' 'NR == 1 {print $6 "\t" $7}' "$W/$fx.rec")"
+    cnt="$(printf '%s' "$got_h" | cut -f1)"
+    case "$fx:$cnt" in fx-f2:0|fx-f2:|fx-f1noise:[1-9]*|fx-f1noise:) cnt_ok=0 ;; *) cnt_ok=1 ;; esac
+    if [ -n "$got_h" ] && [ "$got_h" = "$want_h" ] && [ "$cnt_ok" = 1 ]; then
+        ok "$fx (C): MEASURED count and noise digest '$got_h' = the file's by ks_ref.py"
+    else
+        bad "$fx (C): the record hands '$got_h', ks_ref.py reads '$want_h' from the file (fx-f2 must count > 0, fx-f1noise 0)"
+    fi
+done
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
-[ "$fail" -eq 0 ] && [ "$pass" -ge 14 ] && { echo "run_part_measures: PASS"; exit 0; }
-[ "$pass" -ge 14 ] || echo "FAIL: population: $pass checks passed, under the floor 14, seven per arm (K35)"
+[ "$fail" -eq 0 ] && [ "$pass" -ge 16 ] && { echo "run_part_measures: PASS"; exit 0; }
+[ "$pass" -ge 16 ] || echo "FAIL: population: $pass checks passed, under the floor 16, seven per arm and two noise (K35)"
 echo "run_part_measures: FAIL"
 exit 1
