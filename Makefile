@@ -1272,12 +1272,11 @@ test-revend-twin: all
 # lookbehind body templates × both polarities × 22 subjects — and asks libpcre2
 # about every cell.
 #
-# ITS VERDICT IS A CLASSIFICATION. A pattern libpcre2 compiles and pcrec
-# refuses is EXPECTED (PCRE2 10.43+ ships variable-length lookbehinds;
-# lookaround_design.md §2.5 charters that loop rather than shipping it) and
-# does not fail the run. What fails it is a span DISAGREEMENT, a refusal that
-# is not the §2.5 width limit, pcrec compiling what libpcre2 refuses, a build
-# failure, or a give-up.
+# ITS VERDICT IS A CLASSIFICATION. Since [VLOOKBEHIND] stage 1 (D189) a
+# pattern libpcre2 compiles and pcrec refuses is an OVER-REFUSAL and FAILS the
+# run (review r4 F3: no callee here holds a backreference, the one stage-2
+# refusal). So does a span DISAGREEMENT, pcrec compiling what libpcre2
+# refuses, a build failure, or a give-up.
 #
 #     make test-recursion-lbsweep          # ~4 min, needs libpcre2
 #     SWEEP_TMP=/var/tmp/x make test-recursion-lbsweep

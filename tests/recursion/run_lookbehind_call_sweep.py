@@ -26,21 +26,22 @@ THE CLASSIFICATION IS THE POINT, not the pass count. Four outcomes per pattern:
     AGREE          both compile and every subject agrees on the span
     DISAGREE       both compile and a span differs — the failure this exists
                    for, and a MISCOMPILE if it ever fires
-    PCREC-REFUSES  libpcre2 compiles it, pcrec does not. This is EXPECTED and
-                   is not a failure: PCRE2 10.43+ ships variable-length
-                   lookbehinds and `lookaround_design.md` §2.5 charters that
-                   loop rather than shipping it. What the sweep CHECKS is that
-                   every such refusal is the §2.5 WIDTH refusal — never a
-                   crash, an internal error, a give-up, or a diagnostic naming
-                   the wrong module. `bad_refusal` counts the ones that are
-                   not, and it must be 0. A D26 tier-2 over-rejection is a
-                   ruled limit; anything else wearing its clothes is a bug.
-    BOTH-REFUSE    the recursive-callee family (libpcre2 err 125)
+    PCREC-REFUSES  libpcre2 compiles it, pcrec does not: an OVER-REFUSAL,
+                   and a FAILURE since [VLOOKBEHIND] stage 1 (D189 superseded
+                   [DD-14.LB]'s ruled refusal; review r4 F3). Every callee
+                   below is bounded or recursive and none holds a
+                   backreference (stage 2's one remaining refusal), so pcrec
+                   must compile every pattern libpcre2 does. `bad_refusal`
+                   still names a refusal that is not even a width sentence
+                   (a crash, an internal error, the wrong module).
+    BOTH-REFUSE    the recursive-callee family (libpcre2 err 125) and the
+                   unbounded callee (`a*`)
 
 `pcrec_only` — pcrec compiling something libpcre2 refuses — must also be 0,
 and it is the direction that would mean the width rule had gone SOFT.
 
-MEASURED at [DD-14.LB] (2026-08-24), 908 distinct patterns x 22 subjects:
+MEASURED at [DD-14.LB] (2026-08-24; history: pcrec_refuses was then the
+ruled limit and passed), 908 distinct patterns x 22 subjects:
     cells 9240   agree 9240   disagree 0
     pcrec_refuses 220 (bad_refusal 0 — all 220 carry the one §2.5 sentence;
                        every refused callee is variable-width: `a?`, `a|bc`,
@@ -66,7 +67,8 @@ if O.SELFCHECK:
     sys.stderr.write("lbsweep: oracle self-check failed: %r\n" % (O.SELFCHECK,))
     sys.exit(3)
 
-PCREC = os.path.join(ROOT, "build", "pcrec")
+# PCREC= overrides, for the failing-direction control (a planted compiler).
+PCREC = os.environ.get("PCREC") or os.path.join(ROOT, "build", "pcrec")
 FEAT = "recursion,lookaround,named-groups,atomic-groups,assertions,backrefs"
 TMP = os.environ.get("SWEEP_TMP", os.path.join(os.environ.get("TMPDIR", "/var/tmp"),
                                                "pcrec_lbsweep"))
@@ -100,9 +102,10 @@ SUBJECTS = ["", "a", "b", "q", "z", "ab", "abc", "aa", "bb", "az", "za",
             "zab", "abz", "zabz", "aabb", "qq", "aq", "abcz", "aaa", "bc",
             "abab", "zaz"]
 
-# The one refusal class a PCREC-REFUSES outcome is allowed to carry.
-# [VLOOKBEHIND] stage 1's three width-rule sentences (unbounded, the 65535
-# ceiling, the 255 cap once a branch varies) share this opening.
+# The width rule's sentences (unbounded, the 65535 ceiling, the 255 cap once a
+# branch varies) share this opening. A PCREC-REFUSES outcome FAILS either way
+# (review r4 F3); this only tells an over-refusal from a refusal that is not
+# a width judgement at all.
 WIDTH_REFUSAL = re.compile(
     r"every alternative of a lookbehind must|this lookbehind is too long")
 
@@ -200,6 +203,8 @@ def main():
             if not WIDTH_REFUSAL.search(msg):
                 t["bad_refusal"] += 1
                 findings.append(("REFUSAL-NOT-A-WIDTH-LIMIT", pat, msg))
+            else:
+                findings.append(("OVER-REFUSAL", pat, msg))
             continue
         if orc is None:
             t["pcrec_only"] += 1
@@ -239,10 +244,10 @@ def main():
         print("  %-32s %s\n      %s" % (k, p, m))
     if len(findings) > 40:
         print("  (%d findings total)" % len(findings))
-    # A DISAGREEMENT, a give-up, a bad refusal, a build failure, or pcrec
-    # compiling what libpcre2 refuses each fails this instrument. An ordinary
-    # PCREC-REFUSES does NOT: it is the ruled §2.5 limit.
-    bad = (t["disagree"] + t["bad_refusal"] + t["pcrec_only"] + t["cc_fail"]
+    # A DISAGREEMENT, a give-up, ANY refusal of a pattern libpcre2 compiles
+    # (an over-refusal or a bad one; review r4 F3), a build failure, or pcrec
+    # compiling what libpcre2 refuses each fails this instrument.
+    bad = (t["disagree"] + t["pcrec_refuses"] + t["pcrec_only"] + t["cc_fail"]
            + t["giveup"])
     print("\nlbsweep: %s (%d disqualifying findings)"
           % ("OK" if bad == 0 else "FAILED", bad))
