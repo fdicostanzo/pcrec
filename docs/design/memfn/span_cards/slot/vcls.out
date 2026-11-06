@@ -7,9 +7,7 @@ RTE	verify	rc-words	w3	1
 RTE	verify	settest	c1	48
 RTE	verify	settest	c2	290
 RTE	verify	settest	cn	7
-DEF	shape	settest	c2.case	1
-DEF	shape	settest	c2.pair	1
-RTE	shape	settest	c2.case	155
-RTE	shape	settest	c2.other	4
-RTE	shape	settest	c2.pair	78
-RTE	shape	settest	c2.range	53
+DEF	shape	settest	c2.alu1	1
+DEF	shape	settest	c2.cmp2	1
+RTE	shape	settest	c2.alu1	216
+RTE	shape	settest	c2.cmp2	74

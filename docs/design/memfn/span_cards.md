@@ -624,12 +624,14 @@ site shape and stated facts (the canonical instance), so the timed text IS the h
 | `settest`, `rc-words`, `rc-overlap`, `rc-bytes`, `rc-memcmp` (the census's set) | window verify step (`[rev1.3 r9-EMIT-4]` `rc-*`: the RUNCMP row the window verify step selects, its guard reading the arm that rendered; `settest`: a LEAF render of `kit_set_test`, no site and no selection) | per census (form, cls): the facts that make T-VERIFY pick it (run length and alignment for `rc-*`, a set position for `settest`) | its facts; a pair no fact set reaches is reported by S2c, never forced |
 
 - `[rev1.3 r9-EMIT-3]` **A class is priced by its MAJORITY lowering shape.** A set-test class with one compare
-  count still lowers differently: a two-compare `c2` set is a CASE pair (`{X,x}`: one masked compare, as c1),
-  an unrelated PAIR or an inner RANGE (two compares), or OTHER (the complement of one byte). `slot/vcls.py`
+  count still lowers differently. `[rev1.3 r9fc-FIX-5]` The shape is gcc's LOWERING on the declared target
+  (§2.7), never the set's spelling: a two-compare `c2` set is `alu1` (one ALU op and one compare: any pair of
+  singletons one bit apart, `{X,x}` and `{@,`}` alike, or an inner range, `[0-9]` as `sub; cmp`) or `cmp2`
+  (anything else: two compares). `slot/vcls.py`
   counts each class's sites by shape (`shape` lines in `vcls.out`); the timed instance must be the majority
   shape (more than half the class's sites; `link.py` refuses otherwise), and with no majority shape the row is
-  tagged `lower-bound`. Today c2 is case 156, pair 79, range 53, other 4 of 292 sites: the `{X,x}` instance
-  stays. `[rev1.3 r9-SLOT-9]` vcls.out's header names the sweep's sha-256 and the commit census0 swept it at;
+  tagged `lower-bound`. Today c2 is alu1 217, cmp2 75 of 292 sites (by spelling it was case 156, pair 79,
+  range 53, other 4): the `{X,x}` instance is `alu1`, the majority, and stays. `[rev1.3 r9-SLOT-9]` vcls.out's header names the sweep's sha-256 and the commit census0 swept it at;
   PLAN: fold its classes into census0 (§7 FAM-D, with HOUSE-16's `class_measure`), trigger S2f's census0 re-run.
 - `[rev1.3 r9-EMIT-5]` PLAN: PAIR has a second production text (B-fn's `ofsskip` body, the `[Xx]abc` shape);
   a second `pair` instance, cls `fn`, joins the fold when row 1 prices a B-fn PAIR site or J1's verdict moves

@@ -16,10 +16,12 @@
 # read from the trace's `runcmp` row, L from the reply's stated run (run_len) or the plan's term (a pinned
 # run absent: the plan's consecutive positions of one term); settest from each NONE alternative's span
 # positions. Counts are SITES (census0 counts units; the two differ by repeats of one unit).
-# LOWERING SHAPES (r9 EMIT-3): a two-compare set test is a CASE pair ({X,x}: one masked compare), an unrelated
-# PAIR (two compares), an inner RANGE (two compares) or OTHER (an edge range with one more: the complement of one
-# byte); `shape` lines split class c2 by them, and the timed instance must be the majority shape (link.py), else
-# its row is a lower bound.
+# LOWERING SHAPES (r9 EMIT-3, [rev1.3 r9fc-FIX-5]): a two-compare set test is classed by what gcc 15.2 -O2
+# -march=x86-64 -mtune=generic (the declared target, §2.7) lowers it to, never by its spelling. `alu1`: ONE ALU op
+# and ONE compare, i.e. any pair of singletons one bit apart ({X,x} `andl $-33; cmpb`, and {@,`} the same) or an
+# inner range ([0-9] `subl $48; cmpb $9`); `cmp2`: anything else (a pair differing in more than one bit, an edge
+# range with one more), two compares. `shape` lines split class c2 by them, and the timed instance must be the
+# majority shape (link.py), else its row is a lower bound.
 # STAMPED (r9 SLOT-9): the header names the sweep's sha-256 and the commit census0 states it was swept at, so
 # the plan's verify keys are reproducible from the tree plus that sweep.
 #   python3 -I vcls.py CENSUS0_PY SWEEP_JSONL SOURCE_COMMIT > vcls.out
@@ -48,7 +50,8 @@ def settest_cls(ms):
     return "c1" if n == 1 else "c2" if n == 2 else "cn"
 
 def shape(ms):
-    """the lowering shape of a TWO-compare set test (members ms); None for any other compare count"""
+    """the lowering shape of a TWO-compare set test (members ms): `alu1` (one ALU op + one compare: a single-bit
+    pair or an inner range) or `cmp2` (two compares); None for any other compare count"""
     rg = []
     for x in sorted(ms):
         if rg and x == rg[-1][1] + 1:
@@ -58,9 +61,8 @@ def shape(ms):
     if sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg) != 2:
         return None
     if len(rg) == 2 and all(lo == hi for lo, hi in rg):
-        a, b = rg[0][0], rg[1][0]
-        return "case" if a ^ b == 0x20 and chr(b).isalpha() else "pair"
-    return "range" if len(rg) == 1 else "other"
+        return "alu1" if bin(rg[0][0] ^ rg[1][0]).count("1") == 1 else "cmp2"
+    return "alu1" if len(rg) == 1 else "cmp2"
 
 def words(L):
     w = 8 if L >= 8 else 4 if L >= 4 else 2
