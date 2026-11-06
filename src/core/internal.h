@@ -2098,11 +2098,11 @@ struct Ast {
              * declaration and docs/design/subroutines_design.md §3.4(d)'s
              * 2026-08-24 amendment), and the memo is read where it exists.
              *
-             *   `cwmin`      the callee's least width in CHARACTERS. The
-             *                arena's zero is SOUND (an under-estimate makes
-             *                `cwmin != cwmax` and the rule REFUSES — an
-             *                over-rejection, never a false match), which is
-             *                `minw`'s own argument one unit over.
+             *   `cwmin`      the callee's least width in CHARACTERS, EXACT
+             *                once written ([VLOOKBEHIND]: the pair picks the
+             *                emission row and the 255 cap). The arena's zero
+             *                is never read as an answer: before the fixpoint
+             *                `cwmax_known` is false and the rule defers.
              *   `cwmax`      the callee's greatest width in CHARACTERS,
              *                VALID ONLY when `cwmax_known`.
              *                `PCREC_W_UNBOUNDED` is a legal value and is the

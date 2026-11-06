@@ -240,7 +240,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-29 vmcons3 (manager)
   status (2026-10-31): step (a) DONE, merged 3bc599c92 (byte-identical, no abi bump, D182); steps (b) and (c) not started
   next: (b) the analysis-free R stage on the records; (c) the analysis build, stage 2a first (lexer, helper registry, FL, CEN), after a soundness round on its lexer section and a D27 spec-first author
-  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md
+  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md; docs/design/plan_row_bodies/VMREC.md (members added after (a))
   (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice

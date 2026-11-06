@@ -505,18 +505,16 @@ static long long row_cwmax(const Ast *a)
  * RETIRED with the rename, because §5.6.2's grep found it had no other
  * consumer in the product at all.
  *
- * It is `pcrec_cwmin` MIRRORED IN EVERY SENSE INCLUDING THE ONE THAT
- * MATTERS: the sound direction is REVERSED. `pcrec_cwmin` may under-estimate
- * for free. This function may OVER-estimate for free, and an UNDER-estimate
- * here is the silent miscompile. The reason is its consumer:
- * `lookaround_design.md` §2.5 admits a lookbehind branch only when
- * `cwmin == cwmax`, and the artifact back-steps exactly that many CHARACTERS
- * (the seam's `back_step` entry walks characters — enc_byte.c's is `pos - k`
- * because there one character IS one byte). A cwmax below the truth makes a
- * VARIABLE-width branch look fixed, and the artifact then steps the wrong
- * distance with no diagnostic anywhere. So every arm below that cannot
- * answer exactly rounds UP, and PCREC_W_UNBOUNDED is where rounding up runs
- * out.
+ * It is `pcrec_cwmin`'s partner, and for the lookbehind consumer the pair
+ * must be EXACT ([VLOOKBEHIND] vlookbehind.md §5.2): the stored pair
+ * `[cwmin, cwmax]` per branch picks the emission row (one-length when equal,
+ * the candidate range otherwise) and switches the 255 cap on for every
+ * branch once any varies. A loose answer is the wrong row and a wrong cap: an
+ * over-estimate makes a one-length branch vary (moved bytes, and refusals
+ * libpcre2 does not make); an UNDER-estimate drops the farthest candidates
+ * (the artifact never tries a start the body can reach), the silent
+ * miscompile. Where an arm cannot answer exactly, PCREC_W_UNBOUNDED is its
+ * answer, and the width rule refuses.
  *
  * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM for `pcrec_minw`'s reason, one
  * step stronger: a new kind inheriting a `default: return 0` here would claim
@@ -679,12 +677,15 @@ long long pcrec_cwmax(const Ast *a)
 
 /* [M5.0 stage 2] THE MINIMUM WIDTH IN CHARACTERS — `pcrec_cwmax`'s partner
  * and `pcrec_minw`'s twin one unit over (utf8_design.md §5.6.3). Its one
- * consumer is the same fixed-width rule `pcrec_cwmax` serves: a lookbehind
- * branch is admitted only when `cwmin == cwmax`, so this function's safe
- * direction is DOWN — an under-estimate opens the pair (`cwmin != cwmax`)
- * and the rule REFUSES, an over-rejection and never a false match. That is
- * also what makes `u.call.cwmin`'s arena zero sound with no companion flag,
- * where `cwmax` needs `cwmax_known` (internal.h's own table).
+ * consumer is the lookbehind width rule `pcrec_cwmax` serves, and there the
+ * answer must be EXACT ([VLOOKBEHIND] vlookbehind.md §5.2): an under-estimate
+ * opens the pair (`cwmin != cwmax`), which moves a one-length branch to the
+ * candidate range (moved bytes) and switches the 255 cap on (refusals
+ * libpcre2 does not make); an over-estimate drops the nearest candidates.
+ * `u.call.cwmin`'s arena zero is the value before the call graph's fixpoint
+ * writes it; until then `cwmax_known` is false, the call's width is
+ * unbounded, and the parse hook defers the rule to `pcrec_postresolve`
+ * (internal.h's own table).
  *
  * `A_CLASS` IS EXACTLY 1 IN EVERY ENCODING — a class is one character by
  * definition — which with `cwmax`'s identical arm is what makes every

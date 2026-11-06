@@ -8,6 +8,7 @@ Each file is the row VERBATIM as it stood when it was moved (2026-10-12), indent
 
 - `BOXQUEUE.md` — [BOXQUEUE]'s design as agreed in discussion (2026-10-20, written directly as a body rather than moved from a row), plus requirements observed from the ctxp2d validation chain.
 - `INLINE-C.md` — [INLINE-C]'s dated notes and rulings (2026-10-26, moved when the row outgrew the lint limit; new notes go here).
+- `VMREC.md` — [VMREC]'s list of record-vocabulary members added after step (a) with their declared effects (2026-11-06, written directly as a body by [VLOOKBEHIND] stage 1, ruling 7 of review r2).
 - `CAP-SPAN.md` — [CAP-SPAN]'s general form and first-match table as agreed in discussion (2026-10-26, written directly as a body, like BOXQUEUE.md).
 - `VAR.md`, `UCP.md`, `V-E.md`, `ENG-TACTICS.md`, `K50-DD12AI-MANIFEST.md`, `OPT-SIMD.md`, `OPT-A.md`, `ENG-PGO.md`, `OPT-VMLIT.md` — the nine plan.md rows that were over 5 KB after the cleanup; each plan.md row points at its file.
 
