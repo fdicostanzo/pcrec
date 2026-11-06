@@ -11554,6 +11554,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * no consumer reads the fact at RUN time today, so a mirror would be built
      * ahead of a measured need (D77). */
     pcrec_sb_stampf(c, v->up, "VM_ALT_ISLANDS", "%lld", v->nislands);
+    if (v->nislands > 0) v->cx->job->vm_islands = true;   /* `drop-islands`' input (K139) */
     /* [FORM-CHAR] STEP 1 — THE FOLD-FORM STAMP, §6.3 family (b), VM route
      * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
      * spelled as readily as any other value (the `_FAST_FRAMES`/[DD-13]

@@ -331,6 +331,15 @@ W_LWSIZE='(?:ab|cd|ef|gh|ij|kl|mn|op|qr|st|uv|wx|yz)+(?:AB|CD|EF|GH)+@x'
 fseq seq-lwdrop   trlowsize ok 'drop-landmark-walk@size'                        "$W_LWSIZE"
 fseq seq-lwref    trlowsize refused 'refuse@size'                               "$W_LWSIZE" --size-cap=refuse
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
+# [RUN-POS-SET] K139 `drop-islands` (altbuild2, 2026-11-06): 24 random eight-letter words
+# under --engine=vm take one alternation island and are over trlowsize's 31,815 B code
+# cap with it; without it the chain is 29,750 B code (31,218 B total), so the one rung
+# fits it. The retry IS the caller's own -fno-alt-island artifact (run_island_tests.sh
+# section 11 asserts that byte identity at the shipped caps).
+W_ISLSIZE='(?:bckwnzmr|bgkkxcjd|daqfpxov|euekpgvt|hvtzepji|jpcvyitf|jxyaooxu|ljekxczs|mcplkiyf|nmumjiom|owkoozyc|pozcfzhe|psqnmhjj|qusgoefb|rxigcspz|rzhcueik|uruhmgzj|uzairawu|vkjcrulv|vvcwyezw|vylkxama|wmsfgfgf|xsnkhlbb|zepqiqyh)Z'
+fseq seq-isldrop  trlowsize ok 'drop-islands@size'                              "$W_ISLSIZE" --engine=vm
+fseq seq-islref   trlowsize refused 'refuse@size'                               "$W_ISLSIZE" --engine=vm --size-cap=refuse
+fseq seq-islnone  trlowsize ok '(none)'                                         "$W_ISLSIZE" --engine=vm -fno-alt-island
 # T1 row 2 (the size term's trial catch), label `other`
 fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
                   "$W_TOWER" --engine=vm
@@ -589,6 +598,16 @@ $N_PF"                                  '(\p{Xwd})x' -e utf8
 fnotes note-pfc   ""                   '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fnotes note-sel1  ""                   "$W_SEL1"
 fnotes note-none  ""                   '(a)b'
+# [RUN-POS-SET] K139: `drop-islands`' note, read off the low-cap build (the shipped
+# caps need a 1,000-word set; run_island_tests.sh section 11 reads the same note there).
+N_ISL="$NOTE_HEAD the VM's alternation islands -- each alternation tries its branches through the serial chain again instead of one trie dispatch (docs/spec/tuning.md section 2.20)$NOTE_TAIL"
+if compile note-isl trlowsize "$W_ISLSIZE" --engine=vm; then
+    got="$(grep -F -- "$NOTE_HEAD" "$WORK/note-isl.err")"
+    [ "$got" = "$N_ISL" ] && ok "notes note-isl [trlowsize --engine=vm]: 1 drop note(s), as hand-written" \
+                          || bad "notes note-isl [trlowsize --engine=vm]: drop notes differ from the hand-written line: '$got'"
+else
+    bad "notes note-isl [trlowsize --engine=vm]: refused: $(head -1 "$WORK/note-isl.err")"
+fi
 
 echo
 echo "== Summary =="

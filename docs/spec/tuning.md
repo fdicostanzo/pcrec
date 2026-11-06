@@ -508,7 +508,7 @@ return 1;
 | a literal set over the enumeration budgets | the cross product of concatenated alternations is exponential |
 | fewer than `VM_ISL_MIN_BRANCHES` literal alternatives | there is no dispatch to make |
 | fewer than `VM_ISL_MIN_BRANCHES_PREFIXED` alternatives, for an island that pushes | an island whose alternatives are not prefix-free keeps a resume frame, and below that width it is more work than the chain |
-| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's | bounded against the chain, so the axis never makes a pattern exceed a cap the chain fits |
+| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's, or one that would carry the artifact over `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain stays under it | bounded against the chain. Both are estimates; an artifact the island still carries over a cap is retried without islands (`limits.md` §8.4, rung 2b), so the axis never refuses a pattern its chain fits |
 
 <a id="s2-20-p3"></a>[2.20¶3] The width knees and the size factor are `selection knee` rows of `pcrec --list-limits`; they promise a caller nothing and have no `limits.md` section.
 
@@ -516,7 +516,7 @@ return 1;
 
 <a id="s2-20-p5"></a>[2.20¶5] **Identity is modulo which budget binds.** The island charges its trie walk to the WORK counter where the chain spends a STEP per branch resume, so where the chain's step budget binds and the island's does not, the island answers where the chain returns `PCREC_ERR_STEPS`. The island does strictly less stepping, so the direction is one-way: it can answer where the chain gives up, never the reverse.
 
-<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
+<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count, `0` after rung 2b fired. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
 
 <a id="s2-20-p7"></a>[2.20¶7] **Dial:** no cell, PURE WIN (§5.4).
 

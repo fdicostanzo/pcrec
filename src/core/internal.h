@@ -3464,6 +3464,10 @@ typedef struct {
      * Written by the emitter at the text it writes; the size-cap ladder's
      * `drop-handoff` row applies only where it is true. */
     bool   req_handoff_vm;
+    /* [RUN-POS-SET] K139: did this attempt EMIT an alternation island? Written
+     * by the VM emitter beside the `VM_ALT_ISLANDS` stamp; the size-cap
+     * ladder's `drop-islands` row applies only where it is true. */
+    bool   vm_islands;
     /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1), asked
      * once per compile by the driver after the three machines are built
      * (`pcrec_revend_form`). The four bools are the rows' inputs, written by

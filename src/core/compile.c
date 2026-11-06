@@ -699,8 +699,11 @@ enum { COMP_LEVER_ATTEMPTS = 1 };
 /* [LANDWALK] and a further `+ 1` for `drop-landmark-walk`, one retry with the
  * walk's deny OR'd in (it restarts nothing: the walk is a DFA artifact's
  * body, whose size the term never measures). */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 4 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 + 1 +
-                              COMP_LEVER_ATTEMPTS + 1 };
+/* [RUN-POS-SET] K139 `drop-islands`: one more retry, and a FIFTH ladder run,
+ * since dropping a VM program's islands changes the figures the size term
+ * chose `K` for. */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 5 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 + 1 +
+                              COMP_LEVER_ATTEMPTS + 1 + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -896,7 +899,7 @@ typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
     FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK, FIT_DROP_HANDOFF,
-    FIT_DROP_LANDMARK_WALK
+    FIT_DROP_LANDMARK_WALK, FIT_DROP_ISLANDS
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -1125,6 +1128,17 @@ static bool fit_lmwalk_applies(const FitSel *s)
 {
     return s->size_drop_rung == SDR_NONE && s->cx->job && s->cx->job->lm_built &&
            pcrec_cand_lmwalk_member(s->cx);
+}
+
+/* [RUN-POS-SET] K139 `drop-islands`: the attempt's VM program carries an
+ * alternation island. The island's size rule decides from ESTIMATES that can
+ * read several times over or under the real program on either side, so the
+ * one exact statement of "the island axis never refuses what the chain
+ * accepts" is this retry: the artifact the caller's own `-fno-alt-island`
+ * produces. The retry ORs that deny in, so the row never re-applies. */
+static bool fit_islands_applies(const FitSel *s)
+{
+    return s->cx->job && s->cx->job->vm_islands;
 }
 
 /* [K53-SELRETRY] the optional anchored machine: `anchored_ok` is exactly
@@ -1395,7 +1409,7 @@ static const FitRung fit_rungs[] = {
        * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
        * DFA-overflow range at the C level). */
       .axlist = { { "engine-route", 7, "size-cap-retry", 0, 0, "",
-                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the landmark walk, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
+                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the landmark walk, the VM's alternation islands, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
     /* [LANDWALK] ahead of `drop-anchored`: the walk's own machine ML is the
      * cheaper loss (the composite's per-byte scan comes back, the anchored
      * fast path stays); then A, then the table. */
@@ -1409,6 +1423,21 @@ static const FitRung fit_rungs[] = {
                 "the search runs the forward scan over every byte again "
                 "instead of walking back from each landmark "
                 "(docs/spec/tuning.md section 2.54)" } },
+    /* [RUN-POS-SET] K139: the VM's alternation islands, the first VM rung
+     * after the collapse: the artifact it ships is the caller's own
+     * `-fno-alt-island` one, the baseline the island axis promises never to
+     * refuse below (docs/spec/tuning.md §2.20); later VM rungs then act on
+     * that artifact as they would on the chain's. */
+    { .name = "drop-islands",       .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_islands_applies, .act = FIT_DROP_ISLANDS, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, PCREC_NO_ALT_ISLAND, 0,
+                false, true, FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the VM's alternation islands",
+                "each alternation tries its branches through the serial "
+                "chain again instead of one trie dispatch "
+                "(docs/spec/tuning.md section 2.20)" } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false,
@@ -1716,6 +1745,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
     case FIT_DROP_HANDOFF:   return "retry without the VM's required-run handoff rows";
     case FIT_DROP_LANDMARK_WALK: return "retry without the landmark walk's reverse machine";
+    case FIT_DROP_ISLANDS:   return "retry without the VM's alternation islands";
     }
     return "?";
 }
@@ -1869,6 +1899,14 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_DROP_PREFILTER, FIT_DROP_HANDOFF },
     { FIT_SEL1_COLLAPSE, FIT_DROP_HANDOFF },
     { FIT_SEL1_DROP,     FIT_DROP_HANDOFF },
+    /* [RUN-POS-SET] K139 the islands dropped: after a cheaper VM rung or a
+     * [SEL-1] retry, and before the handoff and prefilter drops */
+    { FIT_DROP_END_MARK, FIT_DROP_ISLANDS },
+    { FIT_COLLAPSE,      FIT_DROP_ISLANDS },
+    { FIT_SEL1_COLLAPSE, FIT_DROP_ISLANDS },
+    { FIT_SEL1_DROP,     FIT_DROP_ISLANDS },
+    { FIT_DROP_ISLANDS,  FIT_DROP_HANDOFF },
+    { FIT_DROP_ISLANDS,  FIT_DROP_PREFILTER },
 };
 #endif
 
@@ -2611,6 +2649,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
             case FIT_DROP_COMPOUND:
             case FIT_DROP_END_MARK: case FIT_DROP_HANDOFF: case FIT_DROP_LANDMARK_WALK:
+            case FIT_DROP_ISLANDS:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt
