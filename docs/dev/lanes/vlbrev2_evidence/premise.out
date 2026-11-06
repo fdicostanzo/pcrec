@@ -24,3 +24,12 @@
 (?<=(?:)*a)x	COMPILES
 (?<=(?:\b)*a)x	COMPILES
 (?<=a{1,2})x	REFUSED: pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 ch
+# 7. W12 cells (libpcre2 10.46, mode m):
+(?<=a{1,2}|b{1,2})x	abx	[2-3]
+(?<=a{1,2}|b{1,2})x	bax	[2-3]
+(?:(?<=a{1,2})b)+	babbb	[2-3]
+# 8. [DD-14.LB] deferred-path rows (libpcre2 10.46, modes c and m):
+^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$		ACCEPT lb=2
+^(?:(?<g>a|ab)){0}ab(?<=(?&g))$		ACCEPT lb=2
+^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$	ab	[0-2]
+^(?:(?<g>a|ab)){0}ab(?<=(?&g))$	ab	[0-2]
