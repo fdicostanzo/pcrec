@@ -130,7 +130,7 @@ short per-lens prompt: title `CRITIC <lens> (<model>): <topic>`, "read COMMON
 first", the one question, the output file path.
 
 Output format (in COMMON): the critic CREATES its file (say it does not exist
-yet: critics took a named file for an input) and writes it INCREMENTALLY;
+yet: critics took a named file for an input), with its headings, as its FIRST action (2026-11-05 r7: a critic that wrote last wrote nothing) and writes it INCREMENTALLY;
 each finding has an id `<LENS>-n`, CONFIRMED (with a repro: input, command,
 observed vs expected) or SUSPECTED (what would confirm it), severity (answer /
 speed / size / maintenance / doc / design), effort, blast radius, file:line or
