@@ -1,0 +1,6 @@
+population 1454 fold classes
+kept 24 ascii
+kept 489 exact/allcube<=2/contig
+kept 253 exact/allcube<=2/noncontig
+U2 keep count 766
+U2 PASS (0 mismatches)
