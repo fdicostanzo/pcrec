@@ -1,7 +1,10 @@
 # Variable-width (bounded) lookbehind — design
 
-**Status: PROPOSED rev 3** (lane vlbrev3, opus, 2026-11-06; plan row [VLOOKBEHIND]). Rev 3 re-spells
-§5.1's loop in the cursor-rung shape (Frank's ruling, 2026-11-06); read the REVISION 3 block first.
+**Status: PROPOSED rev 4** (lane vlbrev4, opus, 2026-11-06; plan row [VLOOKBEHIND]). Rev 4 applies
+the RULED re-check `docs/dev/reviews/2026-11-06-r2-vlookbehind-recheck.md` (READY WITH LISTED TEXT
+FIXES); read the REVISION 4 block first, then REVISION 3. Rev 4's evidence is
+`docs/dev/lanes/vlbrev4_evidence/`. Rev 3 (lane vlbrev3, opus, 2026-11-06) re-spelled
+§5.1's loop in the cursor-rung shape (Frank's ruling, 2026-11-06).
 Rev 3's evidence is `docs/dev/lanes/vlbrev3_evidence/`. Rev 2 was lane vlbrev2's (opus,
 2026-11-05). Rev 0 was lane vlbdesign's, rev 1 lane vlbrev1's. Rev 2 applies the RULED re-check
 `docs/dev/reviews/2026-11-05-r6-vlookbehind-recheck.md` (READY WITH LISTED TEXT FIXES). It is text
@@ -14,7 +17,46 @@ libpcre2 10.46 library probe; `cells.out`, every cell rev 1 adds). PCRE2 facts c
 installed libpcre2-8 10.46 used as a library and from public docs. The pinned source copy was not
 opened (D181). One question for a pcre2-reader is in §12.
 
-## REVISION 3 (owner ruling 2026-11-06: the cursor-rung shape) — read first
+## REVISION 4 (review 2026-11-06 r2, ruled) — read first
+
+Changes are marked inline as `[r2-1106 Fn]`. The review found no answer bug in rev 3's loop. Every
+fix is text, plus harness work the build owes. In summary:
+
+- **F1: the forward step is a seam ENTRY, `$_fwd_step` (the manager's ruling).** Rev 3 spliced the
+  encoding's `advance` TEXT into the VM body. That was a second encoding splice inside the matcher,
+  so DD12a(i) went red on every correct `range` build, the body's length (and so the entry shape)
+  could differ by encoding, and the utf8 text carried a K49 comment that is false here and survives
+  `-fno-comments`. Rev 4 makes the step a residual entry like `$_back_step`: one row per backend,
+  `engine_callable`, `inline_def`, in the mask only when an artifact has a `range` branch. The body
+  then holds one CALL line, the same text under both encodings. Its contract is `next_pos` over the
+  prefix `[0, bound)`. No existing artifact moves a byte (the STOP RULE is not triggered, §5.6).
+  - DD12a(i) reads its region (1) entry list FROM THE SEAM (a seam function names the symbols each
+    entry defines; a test reader prints them), instead of the hand-written `SIG_RE` alternation.
+    K49 reads its agreement sites from a seam-declared mask of the entries that spell the boundary
+    rule. §5.6 states both concretely. The derivation is proportionate to stage 1, so the named-region
+    fallback is not taken (§5.6 says why, and what the fallback would cost).
+  - W14's byte-step arm gets two named detectors: the [M5-SEAM] per-site count and K49's tie (§7).
+- **F2: W-low has an answer-level cell.** `(?:(?*.*(?<*a?))b)*$` on `bc` is [2-2] in libpcre2 (byte
+  and UTF, every start; `vlbrev4_evidence/premise.out`). With `LO_i` untrailed, the loop runs away.
+  Rev 3's "only a later evaluation on a forward path" argument was false: a non-atomic lookahead
+  re-evaluates the lookbehind at an EARLIER cursor while an older evaluation's frame is live.
+  Trailing `LO_i` is what keeps the loop sound (§5.1, §7).
+- **F3:** `K_i` is ONE artifact-wide local, `<p>_lb_count`, declared from a `VmFrame` bool that the
+  count pass's `range` count sets; its name has one source (§5.6).
+- **F4:** `LO_i` slots are an ARITHMETIC SUB-BLOCK at the top of the `low` family, with no owner list
+  (§5.1b).
+- **F5:** sabotage anchors (S133, S123), the builder shapes, the W-low plant, S-U4's re-aim cell
+  `(?<=ab)x` and W12(a)'s mechanism are spelled (§5.6, §7).
+- **F6:** gate 1's harness gains three named modes, `byte`, `utf8` and `utf8-invalid`, each with its
+  own counted population (§6).
+- **F7:** [VMREC]'s member list lives in `docs/design/plan_row_bodies/VMREC.md`, written by the
+  stage-1 build commit (§5.6). §13 Q5 and Q6 are ANSWERED (rulings 7 and 8).
+- **F8, F9 (doc):** §5.1a's model claim is restated as "the candidate SEQUENCE"; the stale 160-byte
+  note and the rev-1 sentence are corrected.
+- **§6 gains the complete stage-1 build-unit list**, with every reader of what each unit changes.
+- **§16d** maps every finding to its section.
+
+## REVISION 3 (owner ruling 2026-11-06: the cursor-rung shape)
 
 Changes are marked inline as `[r-cursor]`. The owner's ruling: "if it's able to always be true then
 do it. if it's occasionally true then it should use a decision table". "It" is the CURSOR-RUNG
@@ -65,6 +107,7 @@ What rev 3 changes, in summary:
 - **The seam:** no new entry. It uses `$_back_step` twice per `range` branch (`lo` literal, and the
   far count from a local) and the encoding's existing `advance` text, bounded by the cursor. That
   is a new caller of an existing field, and `advance`'s `@N` operand comment widens (§5.1a, §5.6).
+  `[r2-1106 F1]` SUPERSEDED: the step is a new entry, `$_fwd_step`, and `advance` is untouched.
 - **Record vocabulary** (§5.6): one new `VmLocalKind` member, one new `VmSeek` member and a local
   count operand on `VSK_BACKSTEP`. No new `VmKind`. Whether D153's remodel-first ruling covers
   sub-kind members is the manager's call (§13 Q5). The slot's family is the manager's answer-free
@@ -188,7 +231,7 @@ Ranked: the higher goal wins a conflict.
    - Measurable: the identity gate over every corpus artifact containing a lookbehind shows 0 bytes
      differ.
    - This holds only if owner question 1 is answered "keep the bytes" (§13). That question must be
-     closed before the build go `[r3 F14]`.
+     closed before the build go `[r3 F14]`. `[r2-1106 F9]` CLOSED: answered (A), 2026-11-06.
 3. **G3 One mechanism (maintainers, Frank's general-mechanisms rule).**
    - The promise: one candidate loop, and fixed width is its one-length case. The one-length bytes
      are a declared emission row selected by the width fact (§5.1b) `[r3 F12]`, not a second
@@ -209,7 +252,10 @@ Ranked: the higher goal wins a conflict.
      constant number of records.
    - Measurable: the work charge in the emitted text. `[r-cursor]` A varying branch's emission is
      within **one slot, one local and about 20 emitted C lines** of the same branch made
-     one-length. Under UTF-8, the encoding's step adds two more lines. Rev 1's "8 lines" bound
+     one-length. `[r2-1106 F1]` The forward step is one call line under both encodings; the
+     `$_fwd_step` definition (about five code lines, its doc halves only under `-fcomments`) comes
+     once per artifact, ahead of the program, as `$_back_step`'s does. Rev 3 said "under UTF-8, the
+     encoding's step adds two more lines"; the spliced text was about eight. Rev 1's "8 lines" bound
      `[r3 F14]` was the counter shape's. A trail checkpoint appears on the loop's back edge only
      where the body itself writes the trail. Where one does, K134's helpers come once per artifact:
      38 lines measured on an existing checkpoint artifact (`vlbrev2_evidence/premise.out`). The
@@ -492,9 +538,10 @@ L_end_i:  if (scan_position != (size_t)slot_values[POS]) goto rx_fail
 L_adv_i:  // reached ONLY by popping L_try_i's frame: scan_position = that candidate's start
           if (scan_position == (size_t)slot_values[LO_i]) goto L_n_i
                                                           // the nearest start was tried: exhausted
-          <the encoding's advance, @P = scan_position, @N = (size_t)slot_values[POS]>
-                                                          // VSK_STEP_CHAR: one character nearer,
-                                                          //   never past the cursor (byte: `++`)
+          scan_position = $_fwd_step(subject, (size_t)slot_values[POS], scan_position)
+                                                          // VSK_STEP_CHAR [r2-1106 F1]: the seam
+                                                          //   entry, one character nearer, never
+                                                          //   past the cursor (byte: `pos + 1`)
           RX_CHARGE_WORK(1)
           goto L_try_i
 L_n_i:    scan_position = (size_t)slot_values[POS]        // VSK_RESTORE: back to the cursor
@@ -516,7 +563,13 @@ L_n_i:    scan_position = (size_t)slot_values[POS]        // VSK_RESTORE: back t
 - **Trail.** `LO_i` is written once, BEFORE the first push. So every frame of the loop has its trail
   mark above `LO_i`'s entry. A pop inside the evaluation never rewinds `LO_i`, and a pop below the
   assertion (an outer backtrack) restores the older evaluation's value. That is the cursor rung's
-  reason for trailing its low-water mark. The body's own writes sit above the frame's mark and are
+  reason for trailing its low-water mark. `[r2-1106 F2]` The trail is NECESSARY, not a discipline
+  kept for its own sake. An older evaluation's `L_adv_i` frame can stay live (a non-atomic form)
+  while a NEWER evaluation of the same site runs at an EARLIER cursor: backtracking into a
+  non-atomic lookahead's `.*` re-evaluates the lookbehind nearer the subject start. Untrailed, that
+  evaluation's `LO_i` survives the pops back to the older frame, whose candidates are then past
+  the stale bound: the exhaustion test never fires and the step runs past the cursor. W-low's cell
+  (§7) is exactly this. The body's own writes sit above the frame's mark and are
   rewound at each pop. So the loop adds ONE live entry per `range` branch tried, whatever
   `hi_i − lo_i` is. An exhausted branch's entry stays live while the next branch runs. §5.5 sizes
   this.
@@ -539,21 +592,26 @@ L_n_i:    scan_position = (size_t)slot_values[POS]        // VSK_RESTORE: back t
   candidates. It terminates: `$_back_step(·, 0)` never returns the sentinel.
 - The back-steps go through the EXISTING seam entry. Its C signature already takes `size_t k` in
   both encodings. So:
-  - no new seam entry is introduced, and no third-encoding recipe entry is owed;
+  - no new BACK-step entry is introduced;
   - the [M5-SEAM] per-site count is TWO back-step calls per `range` branch (the `lo_i` step and the
     far step), one per `one-length` branch as today (§7 S133/S134);
-  - the one-character step is the encoding's existing `advance` text (enc.h, K49), not an entry
-    (§5.1a, §5.6).
+  - `[r2-1106 F1]` the one-character FORWARD step is a new entry, `$_fwd_step` (§5.6), one call
+    per `range` branch. Rev 3 spliced the existing `advance` text (enc.h, K49) instead; that
+    splice is withdrawn. Like `$_back_step` in [M6.6.2] wave D, the new entry is one enumerator
+    and one row per backend: no field of `PcrecEncEntry`, no signature of the seam's functions and
+    no line of the third-encoding recipe changes.
 - Rev 0 left two spellings open: a loop of one-character steps, or a new `back_step_upto` entry.
   Rev 1 retired both. Rev 3 keeps them retired. `back_step_upto` would replace the far retry with one
   call, and it is filed as a measured-trigger candidate in §5.5. A new entry would need a measured
-  reason (D77), plus the D58 contract change in the same commit.
+  reason (D77), plus the D58 contract change in the same commit. (`$_fwd_step` is not that entry: it
+  replaces no loop and changes no contract; it is the step's home, ruled for the reasons of §5.6.)
 
 **What rev 3 removed from rev 2's sketch** (it is in git at main `7feb7d641`, §5.1): the `D_i` slot
 and its two write sites, the per-candidate back-step with its count rendered from a slot (V3), the
 per-candidate `RX_CHARGE_WORK(D_i)`, and the sentinel's per-candidate pop. What it added: `LO_i`,
 `K_i`, the far retry, `L_adv_i`'s exhaustion test against `LO_i`, the one-character step and
-`L_n_i`'s restore.
+`L_n_i`'s restore. Rev 4 changes the step's SPELLING only (a call of `$_fwd_step` for the spliced
+`advance` text); its result is the same position on every input (§5.1a).
 
 ### 5.1a Totality: is the cursor shape sound for every body? `[r-cursor]` (new)
 
@@ -590,10 +648,21 @@ Why it holds:
   `lo` 0..2 and `hi` up to 4. The control: the three wrong spellings each differ (unbounded
   advance 288,168 cells; sentinel mapped to the subject start 3,398,699; sentinel mapped to the
   nearest start 591,194). So the check can fail. The NONE-monotone premise: 0 violations.
+- `[r2-1106 F1]` The check still covers rev 4's spelling. The utf8 `$_fwd_step` body is
+  `next_pos`'s body with the bound as its length (`i = pos + 1; while (i < bound && (s[i] & 0xC0)
+  == 0x80) i++; return i;`), and the ported `advance_utf8` with `@N` = `POS` computes the same
+  position statement for statement (`@P++`, then the same bounded skip). The byte body is
+  `pos + 1`, as the byte `advance` was.
 - Under the byte encoding, `back_step(p, k) = p − k` and the advance is `p + 1`, so the claim is
-  arithmetic. The byte-mode model's `cursor` evaluator, which runs the sketch's statements in
-  order, differs from libpcre2 on 0 of 54,579 cells of vlbpieces' two sweeps
-  (`sweep_cursor_summary.txt`; the `range` control also 0).
+  arithmetic. The byte-mode model's `cursor` evaluator differs from libpcre2 on 0 of 54,579 cells
+  of vlbpieces' two sweeps (`sweep_cursor_summary.txt`; the `range` control also 0).
+  `[r2-1106 F8]` Rev 3 said the evaluator "runs the sketch's statements in order". It runs the
+  CANDIDATE SEQUENCE only: no frames, trail, `POS`/`LO` slots, `L_n_i` restore or charges, byte mode
+  only (`model.py` `cursor_branch`). So it validates which candidates are tried, in which order, and
+  cannot move under W11-W15 or W-low. The stronger evidence for the statements themselves is the
+  review's literal interpreter of §5.1 (frames, trail, `POS`, the ported `$_back_step`, the bounded
+  step): equal to libpcre2 on rev 3's 52 cells, 33,000 byte and 15,000 UTF-8 fuzz cells, and about
+  12,800 ill-formed ones (review r2 `sound.md`).
 
 **2. The state at each candidate is the same.** At `L_try_i`, before candidate `p`, both loops have
 `scan_position = p` and the same groups, marks and slots below the frame's trail mark. A body run
@@ -611,7 +680,10 @@ the body contains. Checked against each body class the design admits:
 - **`\b`, `^`, `\A`, `(?m)^`, `\G`**: they read the subject or `startpos` at a candidate start, which
   is the same position in both loops. `\G` (review r5 F1) and `^`/`\A` (r5 F2) are reverse-MACHINE
   hazards. They do not arise here, since no machine runs (cells: `(?<=\Ga{1,2})b` from 0/1/2,
-  `(?<=^a{0,2})x`, `(?<=\Aa{0,2})x`, all equal to libpcre2);
+  `(?<=^a{0,2})x`, `(?<=\Aa{0,2})x`, measured against libpcre2 directly). `[r2-1106 F8]` Rev 3 said
+  "all equal to libpcre2" of the model too; it is not: the model cannot express `\G` (n/a) and
+  answers `(?<=\Aa{0,2})x` on `aax` nomatch where libpcre2 answers [2-3]
+  (`cells_byte_model.out`). The review's literal interpreter equals libpcre2 on all of them;
 - **`\K`**: refused in a lookaround by both libraries (err 199). Unchanged;
 - **stage-2 backreferences**: a reference inside the body is a forward compare from the candidate
   start, exactly as in rev 2. Its group's width only feeds `lo_i`/`hi_i` (§6 stage 2). If a later
@@ -663,8 +735,10 @@ It also showed that "fixed width %d" is an `--emit-ir` LISTING label. `[r6 V5]` 
 same role string is ALSO emitted as a C comment under `-fcomments` (`vm_lbl` writes both in one
 call), so it is emitted C in a commented artifact and a listing label always.
 
-The rev 1 sketch closes the order and position differences: at `lo == hi` it has today's order and
-pushes at the cursor. Even so, today's bytes follow from the loop only after four rewrites that the
+The rev 1 sketch closed the order and position differences: at `lo == hi` it had today's order and
+pushed at the cursor. (`[r2-1106 F9]` HISTORY: that was rev 1's sketch. Rev 3's cursor shape pushes
+at the CANDIDATE, after the back-step; rewrite 3 of the `[r-cursor]` list below is what reconciles
+it with today's order.) Even so, today's bytes follow from the loop only after four rewrites that the
 emitter does NOT perform in general:
 1. `D_i` becomes the constant `k`. The guard makes `min(k, scan_position) = k`.
 2. `L_adv_i`, whose test is then always true, is threaded to its target `L_b_(i+1)`.
@@ -710,7 +784,7 @@ that reads it:
 | row | loop slot (count pass, layout) | matcher locals | push sites (count pass `npush`) | trail entries per evaluation (`vm_cost_look`) | labels (`vm_look_behind`) | trail checkpoint (`vm_goto`, K134) | seam sites ([M5-SEAM] per-site count) | role and note texts (`vm_lbl`/`vm_ev`: `-fcomments` C and the listing) |
 |---|---|---|---|---|---|---|---|---|
 | `one-length` | none | none | 1 if not last, else 0 | 0 (beyond the assertion's own 2, charged once per lookbehind) | `bl`, `bodl`, `endl` (today's) | none | 1 back-step | today's seven texts, unchanged |
-| `range` `[r-cursor]` | one `LO_i` slot (the `low` family, recommended; below) | one `K_i` (`VL_LB_COUNT`, §5.6) | 1 (the `L_try_i` push, last branch included) | 1 (`LO_i`), whatever `hi_i − lo_i` is | today's three plus `L_far_i`, `L_try_i`, `L_adv_i`, `L_n_i` (`L_n_i` not on the last branch) | NOT declared by the row: `vm_goto`'s rule places one on `L_adv_i`'s `goto L_try_i` iff the body writes the trail (below) | 2 back-steps; plus the `advance` text, which is not an entry | the `range` texts listed below |
+| `range` `[r-cursor]` | one `LO_i` slot (the `low` family, RULED (ruling 8), in its lookbehind sub-block `[r2-1106 F4]`; below) | the ONE artifact-wide `<p>_lb_count` (`VL_LB_COUNT`), declared iff the count pass found a `range` branch (`VmFrame.lb_count`, §5.6) `[r2-1106 F3]` | 1 (the `L_try_i` push, last branch included) | 1 (`LO_i`), whatever `hi_i − lo_i` is | today's three plus `L_far_i`, `L_try_i`, `L_adv_i`, `L_n_i` (`L_n_i` not on the last branch) | NOT declared by the row: `vm_goto`'s rule places one on `L_adv_i`'s `goto L_try_i` iff the body writes the trail (below) | 2 back-steps and 1 `fwd_step` `[r2-1106 F1]` | the `range` texts listed below |
 
 The table's properties:
 - **Answer-free.** Substituting `lo = hi = k` into the `range` row and applying rewrites 1-4 (the
@@ -737,26 +811,47 @@ The table's properties:
   loop's retry tests against and an outer backtrack must restore. That is word for word the `low`
   family's contract (emit_vm.c's layout comment: "what a span loop cannot recover from its own
   resume frame ... written once per loop ENTRY ... O(1) trail per entry"). The choice is
-  answer-free, so it is the manager's (§13 Q5). Recommended: the `low` family.
-  - The emitter takes `vm_slot_low(v, v->nlow++)`, and `vm_count_slots_look` adds one to `v->nlow`
-    per `range` branch. Only the TOTAL has to agree, because every base is a sum of family totals.
-  - An artifact with no varying branch allocates none, so its slot legend and numbering are
+  answer-free, so it was the manager's (§13 Q6). RULED (ruling 8, 2026-11-06): the `low` family.
+  - `[r2-1106 F4]` **An arithmetic sub-block, no owner list.** Rev 3 proposed "one owner record per
+    `low` index" so the legend could name a lookbehind's slot. That is the parallel list
+    `vm_slot_name`'s header forbids ("deliberately not a second table ... a parallel list would be a
+    second source of truth"). Instead the family is two sub-blocks, read off the index:
+    - indices `0 .. nlow_total − nlblow_total − 1` are span-loop lows, allocated as today
+      (`vm_slot_low(v, v->nlow++)`);
+    - indices `nlow_total − nlblow_total .. nlow_total − 1` are lookbehind lows, one per `range`
+      branch, through a new `vm_slot_lblow(v, j) = vm_slot_low(v, v->nlow_total − v->nlblow_total
+      + j)` with `j = v->nlblow++`.
+  - The count pass keeps two counters: `vm_count_slots_rep` adds to `v->nlow` (span loops, today)
+    and `vm_count_slots_look` adds to a new `v->nlblow` per `range` branch (the table's one
+    predicate). The totals step (`pcrec_emit_vm`, where `nlow_total` is saved today) sets
+    `nlow_total = nlow + nlblow` and `nlblow_total = nlblow`, and resets both running counters.
+    `nlow_total` keeps its meaning (the WHOLE family), so every base above `low` keeps its formula.
+    The two SUB-totals must each agree between the count pass and the emitter.
+  - An artifact with no varying branch has `nlblow_total = 0`: its slot legend and numbering are
     unchanged (ruling A).
 - **The `low` family's readers, by grep (src/gen/emit_vm.c), and what each needs:**
   - the base chain: `low` sits just above `guard`, so in an artifact WITH a `range` branch every
     family above it shifts by the number of `range` branches (`mark`, `revdet`, the counter, look
     and splice families). New artifacts only;
-  - `vm_slot_name`: names every `low` slot `SLOT_SPAN_LOW<i>`, which is false for `LO_i`. One
-    owner record per `low` index (span loop or lookbehind branch) lets the legend say
-    `SLOT_LB_LO<i>` for a lookbehind's. It is emitted C, in new artifacts only;
-  - the `--emit-ir` `slots` section (`vm_listing_slots`, family `low`): one `holds` text for the
-    whole family ("span-loop low-water / the loop's entry position"). The same owner record gives a
-    lookbehind row its own `holds` text. The family name stays `low`, so `ir_listing.md` §3.2¶2's
-    vocabulary does not grow (no hunk). The family's "none" note ("no cursor rung in this program")
-    stays true, because it prints only when there are no `low` slots at all;
-  - the totals block and `RX_NSLOTS`: `nlow_total` is already summed;
-  - `VmSnap`/`vm_w_range` (`.low`): `LO_i` rides in a callee's save set, which is harmless and keeps
-    S153's "every family" rule;
+  - `vm_slot_name` `[r2-1106 F4]`: today names every `low` slot `SLOT_SPAN_LOW<i>`. Its `low` arm
+    splits on the sub-block boundary, by the same arithmetic read backwards: below
+    `base_low + nlow_total − nlblow_total`, `SLOT_SPAN_LOW<i>` as today; at or above it,
+    `SLOT_LB_LO<j>`. It is emitted C, in new artifacts only;
+  - the `--emit-ir` `slots` section (`vm_listing_slots`, family `low`): today one call for the whole
+    family with one `holds` text ("span-loop low-water / the loop's entry position"). It becomes two
+    calls, the span sub-block as today and a second over `nlblow_total` through `vm_slot_lblow`,
+    label "lookbehind nearest start", holds "a `range` lookbehind branch's nearest candidate start
+    (vlookbehind §5.1)", no "none" note. The family name stays `low`, so `ir_listing.md` §3.2¶2's
+    vocabulary does not grow (no hunk). The first call's "none" note ("no cursor rung in this
+    program") stays true, since it now counts span lows only;
+  - the totals block and `RX_NSLOTS`: `nlow_total` is the whole family, summed as today;
+  - `VmSnap`/`vm_w_range` `[r2-1106 F4]`: a region's per-copy ranges are read from the RUNNING
+    counters, so the lookbehind sub-block needs its own: `VmSnap` gains `lblow` (`vm_snap` reads
+    `v->nlblow`), and `vm_build_region_saves` gains one `vm_w_range` over
+    `vm_slot_lblow(before.lblow) .. vm_slot_lblow(after.lblow)`. Without it a callee's `LO_i` would
+    fall outside its save set; with it `LO_i` rides there, which is harmless and keeps S153's
+    "every family" rule. The call arm's `2·|W|` term reads `W`, so it counts `LO_i` with no further
+    change;
   - the listing stamp (`VmStamp.nlow`): counts `LO_i` too. Listing only;
   - one comment widens: the layout comment's `nlow` paragraph, from "cursor low-water marks" to
     "loop bound positions: a span loop's entry, or a `range` lookbehind branch's nearest start".
@@ -811,8 +906,11 @@ The table's properties:
 
   New `range` texts `[r-cursor]`: the `LO_i` set, the `K_i` set and decrement, the `L_far_i`,
   `L_try_i`, `L_adv_i` and `L_n_i` labels, the exhaustion test, the one-character step ("one
-  CHARACTER nearer, never past the cursor") and the restore. The 160-byte `vm_rolef` limit and its
-  truncation note apply to each.
+  CHARACTER nearer, never past the cursor") and the restore. `[r2-1106 F9]` Rev 3 said "the
+  160-byte `vm_rolef` limit and its truncation note apply to each": there is no such limit
+  (`vm_rolef` is arena-owned, over `pcrec_sb_fragfv`, which measures then allocates). The stale
+  comment saying so in `vm_look_behind_branch` (src/gen/emit_vm.c, above its label text) is one of
+  the texts the `range` row's text-1 rewrite touches, so it is corrected in the same change.
   - **Gate 3's classification control reads the per-branch judgment through text 1** (the listing
     label, present without `-fcomments`): "fixed width %d" against "width %d..%d". `ir_listing.md`
     §3.4¶1 specifies role text only as "the role text the walk recorded", so this needs no spec

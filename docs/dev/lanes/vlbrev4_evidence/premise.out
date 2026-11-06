@@ -1,0 +1,25 @@
+# vlbrev4 premise and probes, 2026-11-06, worktree HEAD a8f5d4721, libpcre2-8 10.46 via tests/lib/p2probe.c
+## F2 premise: (?:(?*.*(?<*a?))b)*$ on 'bc', every startpos (p2probe: '' = byte, 'u' = UTF+MATCH_INVALID_UTF)
+flags=byte start=0: M 2 2
+flags=byte start=1: M 2 2
+flags=byte start=2: M 2 2
+flags=u start=0: M 2 2
+flags=u start=1: M 2 2
+flags=u start=2: M 2 2
+## pcrec at this HEAD (stage 1 not built): the same pattern
+pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 0..1 characters) (pattern offset 8)
+## S-U4 re-aim: --emit-ir lookbehind labels
+-- (?<=a)x
+0
+-- (?<=ab)x
+1
+lookbehind branch 1 of 1, fixed width 2
+## the retry advance's K49 comment under -fno-comments (a*, --engine=vm -e utf8): count of '[K49]' lines
+1
+## the back_step entry: definition outside the matcher body, program-bytes stamp per encoding, (?<=a|bc)x
+byte: RX_VM_PROGRAM_BYTES 2628ULL
+   back_step def line 155, matcher head line 247
+utf8: RX_VM_PROGRAM_BYTES 2628ULL
+   back_step def line 155, matcher head line 313
+## mask-gated: a lookbehind-free pattern carries no back_step definition
+0
