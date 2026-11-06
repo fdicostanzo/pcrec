@@ -3316,3 +3316,6 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06: s2rev12 delivered rev 1.2 (040309e7b); lanecheck DONE. "Needs S2a: none" VERIFIED by me: the header `run` key is existing free provenance (measures.md §2.1 table), and the cell id's base field is checked only for uniqueness.
   - Decisions: run_record.tsv; deps recorded with a STALE count, 0 asserted at S2e; drift threshold max(G/2, 3 s.e.); J1 m 0.5/k 5 at 95.1% power and ~0% false; seed (run, job, l, arm); one first-match outcome table.
   - One readiness critic (crit-s2rev12-ready, opus) on the rev 1.2 diff only.
+- 11-06 11:20: J0 retry (440) GREEN in 17 s: 5,492 compiles, census0 control GREEN, 116 lines, no witness-moved note. census0.out committed on s2b. Counts are identical to the provisional run: 207 row-1-class units, 166 moving at one or more corners, 3,430 window units, 750 moving. The only label change is hors -> D-hors (unit 1e's name).
+  - S2b is complete. No separate code round: python instruments only, held by a byte-for-byte control and a red sabotage. It is delivered to main together with S2a after S2a's round and gates.
+  - S2c waits on S2a's code round; its base needs S2a's format-2 spec text.
