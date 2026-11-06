@@ -1764,6 +1764,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-06): not started; held [OPTLOOP] candidate. `^[a-z]{2,12}(?:\s|;)` gets 0 edges in every machine because precondition (1) requires one exit target; the emitter's argument seems to need only agreement outside the class. Direction-neutral
   trigger: a hot bench/corpus cell with a counted run followed by a multi-way continuation; first step a compile-only census on a scratch probe build
   refs: docs/dev/lanes/spandir_report.md; src/opt/scanedge.c; [OPT-5]; roadmap A-REV
+- [PCRE2-EXCEED] STATE:not-started — lift refusals that exist only because PCRE2 refuses (numeric limits); list where pcrec exceeds PCRE2
+  filed: 2026-11-06 Frank (D26 addendum: the accept set is a floor, not a ceiling)
+  status (2026-11-06): not started, unscheduled; first candidates: the lookbehind branch ceiling LA_LOOKBEHIND_BRANCH_MAX 65535 (vlookbehind stage 1) and PCREC_MAX_REPEAT 65535 ({65536}); a grep of limits.def rows whose only reason is PCRE2 finds the rest
+  trigger: after lookbehind stage 1 lands; or a user hitting one of these limits
+  refs: decisions D26 (+ 2026-11-06 addendum) D38; src/core/limits.def; docs/pcre2_compliance.md; [VLOOKBEHIND]; [IFACE-PUSH]
+  Scope (Frank): (1) per limit, lift it where pcrec matches correctly, each with an ORACLE PLAN (libpcre2 cannot check it: python re, a brute-force checker, or a reduction to a checkable case). (2) A DOCUMENTS NOTE in the compliance file: a table of every place pcrec exceeds PCRE2 in numbers (limit, PCRE2's value, pcrec's, why safe). (3) A PCRE2 COMPATIBILITY MODE: an opt-in that refuses exactly what PCRE2 refuses, for callers who need the same accept set (shape TBD: a feature family member, an option, or a limits profile; rides [IFACE-PUSH]). (4) Tangent, same pass: a caller-declared MAX-SETTINGS PROMISE (e.g. max subject length, max budget), stamped in the artifact and checked at entry, letting generated code use NARROWER types for positions and budget/step counters (e.g. 32-bit). Manager could not find the earlier discussion of (4) in the committed record; this row is now its home. Each narrowing is measured (size, speed) before it ships.
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind

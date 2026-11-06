@@ -1586,6 +1586,10 @@ remains the project's expected verdict even where a newer PCRE2 differs.
 
 - **Addendum (Frank, 2026-10-24): compatible with PCRE2 unless PCRE2 has a bug.** Frank, verbatim: "we are compatible with pcre2 unless it is a bug. This is weaker matching (not 'the same as pcre2' because we're going beyond) as well as acknowledging pcre2 isn't perfect." PCRE2 stays the source of truth for syntax and semantics, but where PCRE2 disagrees with the standard it claims to implement (first case: Bidi_Mirrored, 428 vs Unicode's 554 code points, D178 addendum, U22) pcrec follows the standard, records the difference in docs/dev/upstream_issues.md, and admits exactly those cases in the differential. The claim pcrec makes is "compatible with PCRE2", never "the same as PCRE2": pcrec also goes beyond it (extensions, D178). A difference is a PCRE2 bug only with evidence against the standard's own data or text; a PCRE2 choice the standard leaves open is not a bug and pcrec follows PCRE2.
 
+### D26 addendum (owner, 2026-11-06): the accept set is a FLOOR, not a ceiling
+
+Frank: "We changed pcre2 compatibility to be to accept all patterns pcre2 accepts but we dropped the inverse." pcrec MUST accept every pattern PCRE2 accepts (tier 2 above: rejecting real PCRE2 syntax is a defect). It is NOT required to refuse what PCRE2 refuses: it MAY accept more where it matches correctly (e.g. numeric limits PCRE2 imposes for its own implementation). Each place pcrec exceeds PCRE2 is listed on the compliance page and carries its own oracle plan, since libpcre2 cannot check it. Consequence: a design goal "the accept set stays inside PCRE2's" (vlookbehind §0 G1) is stronger than this rule. Stage 1 ships its 65535 ceiling as validated; lifting it and the other PCRE2-only refusals is [PCRE2-EXCEED].
+
 ## D27 — some tests are written from the GOAL, by someone denied the code
 
 **Decision.** At least some of pcrec's tests are written by an author who has
