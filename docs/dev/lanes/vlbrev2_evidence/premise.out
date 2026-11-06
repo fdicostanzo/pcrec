@@ -1,0 +1,26 @@
+# vlbrev2 premise + probes, main 814fc1cb2 (lane/vlbrev2), 2026-11-05
+# 1. vm_cost_look (src/gen/emit_vm.c) as read: c.frames += 1 + a->u.look.nbranch; c.trail += 2;  (constant 2: CONFIRMED)
+#    vm_plan_capacities: bounded pattern -> trail_frames = cost.trail + 1; clamp VM_MAX_AUTO_TRAIL_FRAMES 3072
+# 2. emitted capacities today (build/pcrec --features all -p rx -o o.c --pattern P; o.h):
+(?<=aa)x	#define RX_RESUME_FRAMES 3 #define RX_TRAIL_FRAMES 3 	subject_ceiling = 0
+(?<!aa)x	#define RX_RESUME_FRAMES 3 #define RX_TRAIL_FRAMES 3 	subject_ceiling = 0
+(?<=a|bc)x	#define RX_RESUME_FRAMES 5 #define RX_TRAIL_FRAMES 3 	subject_ceiling = 0
+(?<*aa)x	#define RX_RESUME_FRAMES 3 #define RX_TRAIL_FRAMES 3 	subject_ceiling = 0
+(?:(?<=aa)x)*y	#define RX_RESUME_FRAMES 2048 #define RX_TRAIL_FRAMES 3072 	subject_ceiling = 682
+# 3. K134 checkpoint helpers: (?>(a)|b)+c emits RX_TRAIL_CHECK() sites=2; helper span rx_trail_gc_floor..RX_TRAIL_CHECK = 38 lines (-fno-comments)
+# 4. libpcre2 10.46 (vlbrev1_evidence/probe.c, mode m):
+(?<=a{1,2})x	bax	[2-3]
+(?<=a{1,2})x	abx	nomatch
+(?<=x|[ab]{1,3})y	caay	[3-4]
+(?<=a{1,2}|bc)x	abcx	[3-4]
+(?<=a{1,2}|bc)x	aax	[2-3]
+(?<=a{1,2}|bc)x	bcx	[2-3]
+(?<=a{1,3})x	baaax	[4-5]
+# 5. libpcre2 10.46 (mode c):
+(?<=(?:)*a)x		REJECT 125
+(?<=(?:\b)*a)x		REJECT 125
+(?<=a{1,2}|bc)x		ACCEPT lb=2
+# 6. pcrec today on the zero-width repeat class (compiles, one-length):
+(?<=(?:)*a)x	COMPILES
+(?<=(?:\b)*a)x	COMPILES
+(?<=a{1,2})x	REFUSED: pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 ch
