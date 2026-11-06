@@ -3324,3 +3324,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - The review is committed ON lane/memfn-s2a (merge 1f14b70bd), because its spec cites (§2.2¶1a, §4¶2a) exist only there and the spec hook refused them on k1102.
   - The reviews index went over 12 KB; the 9 oldest entries moved to the history file.
   - Fix lane s2afix (sonnet) is in worktree s2a, with its deliver file written by me before launch. Gates 460-468 follow.
+- 11-06: s2afix delivered lane/memfn-s2a @ 4b0686f19: all r8 FIX-NOW items. SEAM-1 adds value_e6 to the handed digest (S2911 red). HOUSE-1 adds meas_formats[]. 95 measures checks; S2900 re-anchored; MF_SITE_ABI stays 24; 0 movers on spots.
+  - lanecheck rc=1 only because my deliver file's `owed:` held prose; it must hold queue keys or "none" (my error, again in the deliver step).
+  - GATES 460-468 QUEUED (mech now 72 rows). New guard scratch/memfn/s2a/jobs/hold.sh: no gate starts 19:00-01:00 (Frank's hold, plus ~1 h of run). Watcher armed.
+  - S2c started: lane s2c (opus) on lane/memfn-s2c = rev 1.2 + S2b + S2a@4b0686f19 (one index conflict resolved keeping both lines). Rev 1.3 text first, then the producer; sabotage S2930-S2949; dry runs only; the S2d window jobs are prepared, not queued.
