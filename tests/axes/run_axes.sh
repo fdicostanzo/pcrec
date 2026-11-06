@@ -590,7 +590,9 @@ declare -A REFUSAL_PATTERN=(
     # live, 2026-09-03, against this file alone (population 2 each; no
     # floor — K35, not a corpus-wide count):
     # `-fno-altcls-merge` denies the alternation-to-class merge that keeps
-    # this tower's VM node count under the emitted-node cap, so denying it
+    # this tower's VM node count under the emitted-node cap (since
+    # [RUN-POS-SET] stage 1 it also denies the UTF-8 lowering's box merge,
+    # the same owner's rule M; this tower is byte-level), so denying it
     # reaches src/gen/emit_vm.c's own cap message directly ("pattern too
     # large (VM exceeds 131072 emitted nodes)").
     ["-fno-altcls-merge"]="pattern too large (VM exceeds"

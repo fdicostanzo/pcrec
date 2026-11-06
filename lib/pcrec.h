@@ -205,6 +205,13 @@ enum {
      * there is nothing to force — a run that cannot merge/factor always
      * DECLINES, safely, the same as an A_REP that cannot possessify.
      *
+     * [RUN-POS-SET] stage 1 re-specified bit 10: it denies the alternation
+     * owner's SIBLING MERGE at both of its callers, altcls's stage 1 and the
+     * UTF-8 lowering's box merge (src/opt/altnf.c; docs/spec/tuning.md §2.6).
+     * One rule with two callers, so one lever; the lowering's merges are not
+     * counted in `<PREFIX>_ALTCLS_MERGES` (the program bytes and tables
+     * record them).
+     *
      * TWO BITS, not one, because the two stages are independently useful
      * to pin: stage 1 (single-char runs -> one class) and stage 2 (prefix
      * factoring, emitting no new capturing groups) are different rewrites

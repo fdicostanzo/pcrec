@@ -71,6 +71,8 @@ that live here because an error in them is silent (wrong answers, no warning).
   (deny-only), stamps `<PREFIX>_ALTCLS_MERGES`/`_FACTORED` (common to both
   emitters). Wider multi-char class merge is UNSOUND. Tests tests/altcls/;
   sabotage S66/S67.
+- altnf.c — [RUN-POS-SET] the alternation owner `pcrec_altnf` (alt_normal_form.md
+  §3.3); rule M today, caller the UTF-8 lowering; denied by `-fno-altcls-merge`.
 - callgraph.c — [DD-14] THE CALL GRAPH: which groups are called, what they reach;
   sole writer of `.body`; Kleene fixpoints for `minw`, `maxw` ([DD-14.LB], no cycle
   test: saturation absorbs), `cwmin`; publishes `nonnullable` off `minw` ([K69],

@@ -229,9 +229,9 @@
 <a id="s2-6"></a>
 ### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
 
-<a id="s2-6-p1"></a>[2.6¶1] **Denies** stage 1 of the alternation-to-class pass (`src/opt/altcls.c`): merging a maximal run of single-character alternation branches into one class. Default: stage 1 runs where a run qualifies. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Each mergeable run is its own selection point, so the axis is deny-only. The pass runs before either engine is built, so it is not VM-only: a DFA artifact carries its stamp too. **The stamp** is `<PREFIX>_ALTCLS_MERGES`, a count.
+<a id="s2-6-p1"></a>[2.6¶1] **Denies** the alternation owner's SIBLING MERGE (two branches of one width, equal at every position but one, become one branch with the union there; `src/opt/altnf.c`) at both of its callers: stage 1 of the alternation-to-class pass (`src/opt/altcls.c`), merging a maximal run of single-character alternation branches into one class, and the UTF-8 encoding lowering, merging the byte-range boxes a wide class lowers to (`(?i)β`'s three boxes `ce 92`, `ce b2`, `cf 90` become two, `ce [92 b2]` and `cf 90`). One rule with two callers, so one lever. Default: the merge runs where it qualifies. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Each mergeable run is its own selection point, so the axis is deny-only. Both callers run before either engine is built, so it is not VM-only: a DFA artifact carries its stamp too. **The stamp** is `<PREFIX>_ALTCLS_MERGES`, a count of altcls's runs only: the lowering's merges are NOT counted, since the program bytes and tables already record them (a `utf8` artifact whose wide class merges carries smaller tables and a smaller VM program, and the denial restores them; that is this axis's observable at the lowering).
 
-<a id="s2-6-p2"></a>[2.6¶2] **Its denial moves the refusal set.** A nested repeat whose replicated size fits only after the merge (`tests/size/size_term.rxt`'s nested-repeat tower) is refused under the denial (K45).
+<a id="s2-6-p2"></a>[2.6¶2] **Its denial moves the refusal set.** A nested repeat whose replicated size fits only after the merge (`tests/size/size_term.rxt`'s nested-repeat tower) is refused under the denial (K45). Under `utf8` the denial can also cost a pattern holding a wide class its required-run length, a cursor rung on a quantified wide class, and it can restore a bare wide class's own VM island (§2.20¶2), which its merged spelling does not have.
 
 <a id="s2-6-p3"></a>[2.6¶3] **Differential:** `tests/altcls/run_altdiff.sh`, which denies both stages together (§2.7).
 
@@ -502,7 +502,7 @@ return 1;
 
 | declined | why |
 |---|---|
-| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on |
+| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on. A `utf8` wide class is read as its code-point SET: admitted when every box of the set's canonical UTF-8 split (before §2.6's merge) is a single string, its words then the members' encodings in ascending code point |
 | a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
 | a caseless alternation | D23 folds a caseless letter to a two-member class at parse time |
 | a literal set over the enumeration budgets | the cross product of concatenated alternations is exponential |

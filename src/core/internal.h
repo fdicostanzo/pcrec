@@ -3516,7 +3516,9 @@ typedef struct {
      * checks sit at the top of the functions that would otherwise increment
      * these, so a denied build's stamp is indistinguishable from "nothing to
      * merge/factor here" — the same "no trace" rule possessify's denial
-     * follows. */
+     * follows. The UTF-8 lowering's box merges (the same owner, the same
+     * `-fno-altcls-merge`) are NOT counted here ([RUN-POS-SET] stage 1):
+     * the program bytes and the tables already record them. */
     int    altcls_merges;    /* stage 1: alternation runs folded into one class */
     int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
     /* [M6.5.2] WHICH ENCODING RESIDUAL ENTRIES THIS ARTIFACT NEEDS — an OR of

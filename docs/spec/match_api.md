@@ -2896,7 +2896,8 @@ build with no `--tune` flag; at no position does an answer move
 <a id="s6-3-11-p3"></a>[6.3.11¶3] **`<PREFIX>_ALTCLS_MERGES`** and **`<PREFIX>_ALTCLS_FACTORED`** — counts of
 alternation runs merged into one class and prefix-factored
 (`tuning.md` §2.6, §2.7). Emitted before either engine is built, so they are
-on every artifact, a DFA-only one included.
+on every artifact, a DFA-only one included. The UTF-8 lowering's merge of a
+wide class's boxes (the same rule, `tuning.md` §2.6¶1) is not counted.
 
 ```c
 #define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */

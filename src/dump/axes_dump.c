@@ -628,7 +628,7 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "altcls-merge", NULL, "RX_ALTCLS_MERGES", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "merged", "",
                      PCREC_NO_ALTCLS_MERGE, 0, "",
-                     "a maximal run of single-character alternation branches qualifies (runs before either engine is built)");
+                     "the alternation owner's sibling merge, at both callers: altcls's maximal runs of single-character branches (before either engine is built) and the UTF-8 lowering's boxes");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback)");
     }
