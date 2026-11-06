@@ -283,10 +283,10 @@ none, and a regime it loses beyond noise narrows the row or is an owner exceptio
 NOT in the band: `[rev3 C3]` row 1 runs with it UNMEASURED, guarded by its predicted-vs-measured print
 per mover (R5.3), whose spread the NEXT row adds.
 
-**What the formula says for smp20** `[rev5]` (`span_pick/smp20.py`, `smp20.out`; bundles and
+**What the formula says for smp20** `[rev5]` (`span_pick/census0.py control`, `smp20.out` `[s2b]`; bundles and
 incumbents from `witness.sh`/`witness.out`; STAND-INS in its docstring: byte(memchr) 0.06 = C_MEMCHR,
 byte(PAIR) 2x, hit 20, cmp 2.5, enter 20). Per 1e6 bytes, hit(PAIR) 20 (40 in brackets where it
-differs). `[rev5.1 R17]` The last column and every grid count below are BAND-0 ARGMINS (smp20.py :98):
+differs). `[rev5.1 R17]` The last column and every grid count below are BAND-0 ARGMINS (`census0.py` `pick`):
 under §The pick 4 the noiseless stand-ins qualify nothing, so every point keeps the incumbent.
 
 | source | @0 {X,x} PAIR | @1 {/} | @4 {3} | @5 {4} | least | today's (incumbent) | band-0 argmin |

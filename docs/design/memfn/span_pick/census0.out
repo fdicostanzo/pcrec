@@ -1,0 +1,116 @@
+== census0 (step 0, span_cards.md §7) over sweep.jsonl (5492 records) [PROVISIONAL: R-33's 2026-11-02 sweep, pre-base; J0 overwrites at the S2b base]; byte rates P digest a322116b1b87f9f6; corners k {1,12} x h1 {5,40} x hit(PAIR) {1x,8x h1}; BAND-0 argmin vs the incumbent read from the trace
+== (1) movers by class; units are window sites (and window-stating FUNC parts), RTE = default compile, DEF = the --memfn=no-window-search,no-window-skip recompile
+RTE incumbent priced                                                 3372
+RTE incumbent unpriced: hors                                           14
+RTE incumbent unpriced: memchr-back                                    39
+RTE incumbent unpriced: unobserved                                      5
+RTE row-1-class incumbent priced                                      206
+RTE row-1-class units                                                 207
+RTE row-1-class units moving at >=1 corner                            166
+RTE units moving at >=1 corner                                        750
+RTE units moving at all 8 corners                                     447
+RTE window units                                                     3430
+RTE mover class ROW-1: k2/pair -> k1/memchr (alt NONE)                                               4
+RTE mover class ROW-1: k2/pair -> k2/walk (alt NONE)                                               102
+RTE mover class ROW-1: k2/walk -> k2/pair (alt NONE)                                                62
+RTE mover class other: k1/memchr -> k1/memchr (alt RESEED)                                         187
+RTE mover class other: k1/memchr -> k2/pair (alt RESEED)                                            17
+RTE mover class other: k1/memchr -> k2/walk (alt RESEED)                                             2
+RTE mover class other: k10/walk -> k10/walk (alt RESEED)                                            35
+RTE mover class other: k128/walk -> k128/walk (alt RESEED)                                           1
+RTE mover class other: k14/walk -> k14/walk (alt RESEED)                                             1
+RTE mover class other: k16/walk -> k12/walk (alt RESEED)                                             2
+RTE mover class other: k16/walk -> k16/walk (alt RESEED)                                             2
+RTE mover class other: k193/walk -> k193/walk (alt RESEED)                                           2
+RTE mover class other: k194/walk -> k2/pair (alt RESEED)                                             1
+RTE mover class other: k194/walk -> k2/walk (alt RESEED)                                             1
+RTE mover class other: k2/pair -> k1/memchr (alt NONE)                                               8
+RTE mover class other: k2/pair -> k2/walk (alt NONE)                                                 4
+RTE mover class other: k2/walk -> k2/pair (alt PARKED)                                             123
+RTE mover class other: k2/walk -> k2/pair (alt RESEED)                                              84
+RTE mover class other: k2/walk -> k2/walk (alt RESEED)                                              79
+RTE mover class other: k2/walk -> k4/walk (alt RESEED)                                               1
+RTE mover class other: k24/walk -> k21/walk (alt RESEED)                                             4
+RTE mover class other: k25/walk -> k11/walk (alt RESEED)                                             1
+RTE mover class other: k25/walk -> k25/walk (alt RESEED)                                             3
+RTE mover class other: k250/walk -> k250/walk (alt RESEED)                                           2
+RTE mover class other: k26/walk -> k26/walk (alt RESEED)                                            41
+RTE mover class other: k28/walk -> k28/walk (alt RESEED)                                             1
+RTE mover class other: k3/walk -> k2/pair (alt RESEED)                                              10
+RTE mover class other: k3/walk -> k2/walk (alt RESEED)                                              10
+RTE mover class other: k3/walk -> k3/walk (alt RESEED)                                              11
+RTE mover class other: k3/walk -> k9/walk (alt RESEED)                                               1
+RTE mover class other: k31/walk -> k32/walk (alt RESEED)                                             1
+RTE mover class other: k32/walk -> k1/memchr (alt NONE)                                              1
+RTE mover class other: k32/walk -> k32/walk (alt RESEED)                                             1
+RTE mover class other: k4/walk -> k2/pair (alt RESEED)                                               1
+RTE mover class other: k4/walk -> k2/walk (alt RESEED)                                               1
+RTE mover class other: k4/walk -> k4/walk (alt RESEED)                                               7
+RTE mover class other: k41/walk -> k41/walk (alt RESEED)                                             1
+RTE mover class other: k5/walk -> k5/walk (alt RESEED)                                               3
+RTE mover class other: k52/walk -> k52/walk (alt RESEED)                                             4
+RTE mover class other: k53/walk -> k11/walk (alt RESEED)                                             1
+RTE mover class other: k53/walk -> k53/walk (alt RESEED)                                             1
+RTE mover class other: k6/walk -> k2/pair (alt RESEED)                                               1
+RTE mover class other: k6/walk -> k2/walk (alt RESEED)                                               1
+RTE mover class other: k6/walk -> k6/walk (alt RESEED)                                               4
+RTE mover class other: k6/walk -> k7/walk (alt RESEED)                                               1
+RTE mover class other: k62/walk -> k2/pair (alt RESEED)                                              5
+RTE mover class other: k62/walk -> k2/walk (alt RESEED)                                              5
+RTE mover class other: k63/walk -> k1/memchr (alt RESEED)                                            1
+RTE mover class other: k63/walk -> k193/walk (alt RESEED)                                            1
+RTE mover class other: k63/walk -> k194/walk (alt RESEED)                                            1
+RTE mover class other: k63/walk -> k2/pair (alt RESEED)                                              4
+RTE mover class other: k63/walk -> k2/walk (alt RESEED)                                              4
+RTE mover class other: k63/walk -> k3/walk (alt RESEED)                                              1
+RTE mover class other: k63/walk -> k63/walk (alt RESEED)                                             6
+RTE mover class other: k63/walk -> k7/walk (alt RESEED)                                              1
+RTE mover class other: k67/walk -> k67/walk (alt RESEED)                                             1
+RTE mover class other: k73/walk -> k18/walk (alt RESEED)                                             3
+RTE mover class other: k8/walk -> k2/pair (alt RESEED)                                               1
+RTE mover class other: k8/walk -> k2/walk (alt RESEED)                                               1
+DEF incumbent priced                                                   51
+DEF row-1-class incumbent priced                                       12
+DEF row-1-class units                                                  12
+DEF row-1-class units moving at >=1 corner                             12
+DEF units moving at >=1 corner                                         31
+DEF units moving at all 8 corners                                      16
+DEF window units                                                       51
+DEF mover class ROW-1: k2/pair -> k2/walk (alt NONE)                                                10
+DEF mover class ROW-1: k2/walk -> k2/pair (alt NONE)                                                 2
+DEF mover class other: k1/memchr -> k1/memchr (alt RESEED)                                           5
+DEF mover class other: k1/memchr -> k2/pair (alt RESEED)                                             2
+DEF mover class other: k10/walk -> k10/walk (alt RESEED)                                             1
+DEF mover class other: k16/walk -> k16/walk (alt RESEED)                                             1
+DEF mover class other: k2/walk -> k2/pair (alt PARKED)                                               4
+DEF mover class other: k2/walk -> k2/pair (alt RESEED)                                               4
+DEF mover class other: k2/walk -> k2/walk (alt RESEED)                                               3
+DEF mover class other: k63/walk -> k63/walk (alt RESEED)                                             3
+== (2) the card population: row-1-class units (a NONE alternative whose core position 0 is a two-member set); counts are units
+RTE enter kind=1 deleg=LMHIT entry=NONE                                           3
+RTE enter kind=1 deleg=PRE:part entry=NONE                                       11
+RTE enter kind=3 deleg=PRE:part entry=NONE                                       11
+RTE enter kind=4 deleg=PF entry=NONE                                             59
+RTE enter kind=4 deleg=PRE:part entry=NONE                                        4
+RTE enter kind=5 deleg=PRE:part entry=NONE                                        1
+RTE enter kind=6 deleg=COVER entry=NONE                                         117
+RTE method (incumbent) memchr                                                    29
+RTE method (incumbent) pair                                                     115
+RTE method (incumbent) walk                                                      62
+RTE method memchr                                                                33
+RTE method pair                                                                 206
+RTE method walk                                                                 206
+RTE verify rc-memcmp cls=short                                                    2
+RTE verify rc-words cls=long                                                      2
+RTE verify rc-words cls=short                                                    58
+RTE verify settest cls=set1                                                      60
+RTE verify settest cls=set2                                                     395
+RTE verify settest cls=setN                                                      11
+DEF enter kind=1 deleg=LMHIT entry=NONE                                           2
+DEF enter kind=1 deleg=PRE:part entry=NONE                                        9
+DEF enter kind=3 deleg=PRE:part entry=NONE                                        1
+DEF method (incumbent) pair                                                      10
+DEF method (incumbent) walk                                                       2
+DEF method pair                                                                  12
+DEF method walk                                                                  12
+DEF verify settest cls=set2                                                      47
