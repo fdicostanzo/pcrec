@@ -317,3 +317,132 @@ Two gaps remain:
 - Check D189's number.
 - Run the compliance refresh.
 - The tree's `docs/dev/artifact_size_log.tsv` is written by `make test`, as always.
+
+## 2026-11-06 lane vlbfix: code review r4 fixes
+
+The fixes ruled in `docs/dev/reviews/2026-11-06-r4-vlookbehind-code.md`, on this
+branch, base 48606e036. Rulings file re-read at every finding boundary (last
+entry R3). Sabotage ids S1981-S1989 (the unused top of S1960-S1989).
+No answer moved and no artifact byte moved: abi stays 96, nothing in emitted
+scaffolding changed (F15's guard is compile-time only: 138 compiles, the 69
+corpus lookbehind patterns x byte/utf8, byte-identical to the base).
+
+### Per finding
+
+- **F1** (5bdc95759, 937bed801). `pcrec_cwmax_static` (mrl.c) counts each
+  match-time length as one character. A branch unbounded under
+  `pcrec_cwmax` but bounded under it is `LBW_NOTBUILT`, the shape-5 refusal
+  "a lookbehind containing a backreference, a variable or a consuming
+  callout is not implemented (its length is known only when matching)". It
+  is reported after the 255 cap, so `(a)(?<=\1|a{300}|b?)x` still gets
+  libpcre2's err 200 sentence. Reject rows (gated 112 -> 117):
+  `(a)(?<=\1)x` at offset 3, `(?<=${x})a` at offset 0, and
+  `(?<=a(?C"c,consume"))x` at offset 0 (libpcre2 accepts the first and the
+  third). The controls `(a)(?<=a+|\1)x` and `(?<=(a)\1{2,})x` keep err 125's
+  "(this one is unbounded)", as libpcre2 does. test-reject: 667 pass / 0 fail.
+  Spec: pattern_language.md §7.4¶5 and §9¶2, and the refusal table in
+  vars.md §6. Premise reproduced first: "unbounded" for `(a)(?<=\1)x`.
+  Sabotage S1981 plants the old rule (the not-built test always true).
+- **F3** (5ba90d36a). `run_lookbehind_call_sweep.py` counts PCREC-REFUSES (an
+  over-refusal) as a failure; `PCREC=` overrides the compiler. Queue job
+  210-vlbfix-lbsweep was GREEN. At HEAD: "lbsweep: OK (0 disqualifying
+  findings)". The control used a copy of main's pre-stage-1 compiler: "FAILED
+  (220 disqualifying findings)", 40 of them over-refusal lines. The
+  compliance page was refreshed per the compliance-refresh skill: the
+  `(?<=...)` annotation record, the survey row and the intro prose, and every
+  compliance check passes. The "compliance refresh OWED after landing" item
+  above is now DONE on this branch.
+- **F6-F9** (98be8bb01). Each row now fails for the right reason, measured
+  with tools/review/plant.sh plus the harness:
+  - S1963 (two sites: the atomic flag and the cut emission): 47 pass / 7 fail.
+  - S1964 re-aimed to the far retry's `- 1`: 51 pass / 3 fail. The old
+    sentinel plant is visible only under a sanitizer, a stated residual.
+  - S133: site 1 widened to the whole one-length back-step, site 2 keyed on
+    `vm_lb_nvaries`. 0 gcc failures (it had 40, scored ANOMALY); 5 utf8
+    witness cells move.
+  - S1980: 36 pass / 18 fail, every one GAVE UP (frames).
+- **F10** (b7d71b08c, c7eaaa779). All three plants sit at the parse hook,
+  where the count pass and the emitter read one AST, so there is no slot
+  drift. vlbbuild had found no one-edit emitter plant.
+  - S1985 makes a one-branch body atomic: 49 pass / 5 fail (W3, W3b, W1).
+  - S1986 possessifies a branch's tail quantifier: 53 pass / 1 fail (W3b
+    alone, [1-2] -> [2-3], the design's predicted sabotage).
+  - S1987 swaps a two-branch body so the longer branch runs first: 52 pass /
+    2 fail (W10).
+  - S1975's figure claimed W3b. The r4 checks lens measured that cell green,
+    so the figure is corrected and points to S1986.
+- **F11** (e8cc59b33). run_lookaround_diff.sh §5 floors moved from
+  30000/9000/2000/150/1 to 48374/14993/2043/249/48. That is vlbbuild's
+  measured 48,863/15,145/2,064/252/49 less 1%; the comment says why. Confirmed
+  by the owed make test (test-lookaround).
+- **F15** (481b0d73b). `vm_take_lblow` refuses at compile when the low
+  sub-block would overflow, by branch index or slot range. After emission
+  `nlblow == nlblow_total` is checked, the nsplice sibling's shape. Premise
+  reproduced with the review's plant PA: it compiled silently and
+  `(?<=a{1,2})x` on "abxa" SIGSEGVed. Sabotage S1982 (slot formula +1),
+  S1983 (count pass short) and S1984 (count pass long): under each, the
+  varying cells refuse at compile with the internal error. No plant hangs.
+- **F16** (72d39992c). DD12a(i)'s SYM2KEY, SIG_RE and TWINNED are keyed by
+  backend, so a symbol is excised only from an artifact whose own backend
+  lists it. S1989 unlists byte's side-table symbol (enc.c's
+  `enc_row_side_table` arm). At the default slice it gives 13 pass / 2 fail:
+  "4 of 241 strict-identity pairs differ OUTSIDE the named encoding-owned
+  regions" and the K50 exception-list mismatch. The review measured the
+  same plant (PB) GREEN before the fix.
+- **F17** (72d39992c). `(?<=a{1,2}|b)x` and `(?<!a{1,2}|b)x` join the
+  explicit witnesses. S1988 splices a utf8-only work charge into `L_n_i`.
+  It gives 13 pass / 1 fail: "2 pair(s) entered the gate-refinement class
+  WITHOUT a manifest row". The review measured the same plant (PC) GREEN
+  before. The red comes through the K50 no-unlisted-members guard, not the
+  strict bar, because the splice moves RX_VM_PROGRAM_BYTES, a FORM stamp.
+  That is the review's pre-existing VM_PROGRAM_BYTES note; it is not fixed
+  here and not filed (manager's call). The clean run at the default slice:
+  14 pass / 0 fail, all 15 seam rows reached.
+- **plant.sh** (f5fc48880). The r4 round's plant helper is committed as
+  `tools/review/plant.sh ROW OUTDIR [REV]`, with a line in
+  tools/review/CLAUDE.md. It derives the tree from its own location, applies
+  the row with the matrix's replace.py, rebuilds only the planted object and
+  refuses /tmp.
+
+### PLAN, for the manager (nothing filed)
+
+- SEAM-5 (F19): the boundary rule is spelled four times per backend
+  (next_pos, advance, start_guard, fwd_step). General form: one boundary
+  datum per backend, rendered by the seam. Trigger: a third encoding or a
+  fifth spelling.
+- SEAM-6 (F20): stands-for and the side table are code in enc.c, not row
+  fields; fold into [ENC-SIDE-EMIT].
+- SEAM-7 (F21): symbol facts are parsed from C text, with silent 63-char
+  truncation and no #define symbols.
+- Also unfiled: F4a and F18 stay PLAN per the ruling. The VM_PROGRAM_BYTES
+  form stamp lets a hot-path splice read as a declared form move (see F17).
+
+### Residuals
+
+- A backreference reached through a CALL
+  (`^(?:(?<g>(b)\2)){0}(?<=(?&g))x`, which libpcre2 accepts) still reads
+  "unbounded": the static walk does not follow calls. Rule 0's comment in
+  mod_lookaround.c says so.
+- `(a+)(?<=\1)x` gets not-built; libpcre2 gives err 125. A capability
+  refusal for a construct libpcre2 refuses anyway is the right tier under D26.
+- S1964's original mechanism (the sentinel taken as a candidate) shows only
+  under a sanitizer.
+
+### OWED runs (box queue, detached, owner `vlbfix`)
+
+Scripts are in `$PCREC_TMPDIR/scratch/vlbfix/jobs/`; S below is
+`/var/tmp/pcrec-pcrec/scratch/vlbfix`. Each job's own log is
+`worktrees/.boxqueue/{done,failed}/*-KEY/job.log`.
+
+| job | log | completion line / predicted |
+|---|---|---|
+| 210-vlbfix-lbsweep | S/lbsweep_{head,base}.log | DONE GREEN: `lbsweep: VERDICT GREEN` |
+| 200-vlbbuild-id1 (vlbbuild's, kept) | /var/tmp/pcrec-pcrec/scratch/vlbbuild/id1_judge.out | `id1: VERDICT GREEN` |
+| 211-vlbfix-abisweep (waits for 200's old3b build) | S/abisweep.tsv + job.log | rc 0: movers only under utf8 -fno-comments (K137) |
+| 212-vlbfix-maketest (make, make strict, make test via perfrun) | S/strict.log, S/maketest.log (+ .perfrun) | no `*** [...test-X] Error` line; `scripts/verdict S/maketest.log` |
+| 213-216-vlbfix-mech1..4 (S1960-S1989; S133 S134 S135 S136 S169 S170 S693 S-U4 S-U6) | S/mech/{1,2,3,4}/mech.log | `== mech run COMPLETE: N rows (unexpected: 0, ... anomalies: 0` |
+| 217-vlbfix-reach | S/mech/reach/reach.log | `mech-reach-only: DONE` |
+| 218-vlbfix-axes | S/axes.log | no `*** [...test-X] Error` line |
+
+At queue time 212 had started at 10:51 on the tree as of 937bed801. That is
+the code HEAD; only this report followed it.
