@@ -479,13 +479,14 @@ bool pcrec_nullable(const Ast *a)
 }
 
 /* The widest character count of a node whose kind row answers for its
- * text: none for ZERO, unbounded for ANY. An OWN kind has its own arm and
- * never asks; it would get the safe top. */
-static long long row_cwmax(const Ast *a)
+ * text: none for ZERO, `any` for ANY (a match-time length: unbounded for
+ * `pcrec_cwmax`, 1 for `pcrec_cwmax_static`). An OWN kind has its own arm
+ * and never asks; it would get the safe top. */
+static long long row_cwmax(const Ast *a, long long any)
 {
     switch (pcrec_ast_row(a).text) {
     case KTEXT_ZERO: return 0;
-    case KTEXT_ANY:  return PCREC_W_UNBOUNDED;
+    case KTEXT_ANY:  return any;
     case KTEXT_OWN:  break;
     }
     return PCREC_W_UNBOUNDED;
@@ -534,10 +535,14 @@ static long long row_cwmax(const Ast *a)
  *     because the referenced group's own width is not reachable from this
  *     node (it holds candidate NUMBERS, not the group's AST) and a quantified
  *     group's published capture is whatever its LAST iteration consumed. So:
- *     unbounded, deliberately, and a lookbehind branch containing a
- *     backreference is therefore never fixed-width — which is the answer
- *     libpcre2 gives too. */
-long long pcrec_cwmax(const Ast *a)
+ *     unbounded, deliberately. libpcre2 bounds a backreference by its
+ *     group's width and accepts `(a)(?<=\1)x`; pcrec does not build that
+ *     yet ([VLOOKBEHIND] stage 2), and `pcrec_cwmax_static` below is how the
+ *     lookbehind rule tells "not built" from "unbounded" (review r4 F1).
+ *
+ * `any` is what a node whose kind row says ANY counts (`row_cwmax`); the two
+ * public entries below are this one walk with its two values. */
+static long long cwmax_walk(const Ast *a, long long any)
 {
     long long acc = 0;
 
@@ -586,7 +591,7 @@ long long pcrec_cwmax(const Ast *a)
             /* [INLINE-C] 1a: the kind's ROW answers (`row_cwmax`): its text
              * column is ZERO for every kind above the backreference and ANY
              * for the two below it. */
-            return pcrec_sat_add(acc, row_cwmax(a), MRL_MINW_MAX);
+            return pcrec_sat_add(acc, row_cwmax(a, any), MRL_MINW_MAX);
         /* [DD-14] UNBOUNDED UNLESS THE FIXPOINT HAS SAID OTHERWISE, and the
          * asymmetry with `pcrec_minw`'s arm is the whole point of this file
          * having two headers.
@@ -624,7 +629,7 @@ long long pcrec_cwmax(const Ast *a)
             return pcrec_sat_add(acc, a->u.call.cwmax_known ? a->u.call.cwmax
                                                           : PCREC_W_UNBOUNDED, MRL_MINW_MAX);
         case A_CAT:
-            acc = pcrec_sat_add(acc, pcrec_cwmax(a->r), MRL_MINW_MAX);
+            acc = pcrec_sat_add(acc, cwmax_walk(a->r, any), MRL_MINW_MAX);
             a = a->l;
             continue;
         case A_CAP:
@@ -645,7 +650,7 @@ long long pcrec_cwmax(const Ast *a)
             /* The left-nested spine, iteratively: `pcrec_minw`'s arm. */
             long long m = LLONG_MIN;
             PCREC_SPINE_EACH(b, a, A_ALT) {
-                long long r = pcrec_cwmax(b);
+                long long r = cwmax_walk(b, any);
                 if (r > m) m = r;
             }
             return pcrec_sat_add(acc, m, MRL_MINW_MAX);
@@ -664,7 +669,7 @@ long long pcrec_cwmax(const Ast *a)
              * fixed-width. */
             long long reps = a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED
                                                : (long long)a->u.rep.rmax;
-            return pcrec_sat_add(acc, pcrec_sat_mul(reps, pcrec_cwmax(a->l), MRL_MINW_MAX), MRL_MINW_MAX);
+            return pcrec_sat_add(acc, pcrec_sat_mul(reps, cwmax_walk(a->l, any), MRL_MINW_MAX), MRL_MINW_MAX);
         }
         }
         /* No default arm: see `pcrec_minw`'s trap and the header. Returning
@@ -673,6 +678,26 @@ long long pcrec_cwmax(const Ast *a)
          * THIS function, which is the opposite of minw's 0. */
         return PCREC_W_UNBOUNDED;
     }
+}
+
+/* The greatest width in CHARACTERS, a match-time length (a backreference,
+ * a variable, a consuming callout) unbounded: the header above. */
+long long pcrec_cwmax(const Ast *a)
+{
+    return cwmax_walk(a, PCREC_W_UNBOUNDED);
+}
+
+/* The greatest width in CHARACTERS with every match-time length counted as
+ * one character: what the pattern's own text bounds. Finite where
+ * `pcrec_cwmax` is unbounded exactly when the match-time lengths' own sizes
+ * are the only unbounded part, which is the lookbehind rule's "not built"
+ * case rather than its "unbounded" one (`mod_lookaround.c` `la_widths`). One
+ * rather than 0 so an unbounded repeat of one (`\1{2,}`, `(?:${v})*`) stays
+ * unbounded, as libpcre2 judges it (err 125). Never a width to emit from:
+ * it is not a bound on anything. */
+long long pcrec_cwmax_static(const Ast *a)
+{
+    return cwmax_walk(a, 1);
 }
 
 /* [M5.0 stage 2] THE MINIMUM WIDTH IN CHARACTERS — `pcrec_cwmax`'s partner

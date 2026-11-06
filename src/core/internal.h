@@ -8079,6 +8079,12 @@ long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
 
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
 
+/* `pcrec_cwmax` with every match-time length (a backreference, a variable,
+ * a consuming callout) counted as one character, so finite where only their
+ * sizes are unbounded: the lookbehind rule's "not built" test (review r4
+ * F1). Not a bound on anything; never a width to emit from. */
+long long pcrec_cwmax_static(const Ast *a);          /* src/opt/mrl.c */
+
 /* [OPT-ANCHOR-VM] `PCREC_SANCH_*` and its renderer `pcrec_start_anchor_name`
  * are the start-anchor FACT's value vocabulary: src/facts/facts.h. */
 

@@ -279,7 +279,18 @@ static bool la_has_kreset(const Ast *a)
  * it rather than re-deriving it (D24).
  *
  * THE RULE IS PCRE2's, MEASURED AGAINST libpcre2 10.46, IN CHARACTERS (bytes
- * under `byte`), and every refusal it makes PCRE2 makes too:
+ * under `byte`), and every refusal it makes PCRE2 makes too but one:
+ *   0. a branch unbounded ONLY through a match-time length (a backreference,
+ *      a variable, a consuming callout: `pcrec_cwmax_static` is finite) is
+ *      NOT BUILT (shape 5, review r4 F1). libpcre2 bounds a backreference by
+ *      its group and accepts `(a)(?<=\1)x`; [VLOOKBEHIND] stage 2 builds it.
+ *      Reported only after every branch has passed rules 1-3, so a branch
+ *      that is unbounded on its own still gets err 125's sentence
+ *      (`(a)(?<=a+|\1)`). Such a branch's table entry stays the arena's
+ *      [0, 0], which rule 3 never refuses. Through a CALL the callee's
+ *      published `cwmax` is unbounded and this rule cannot see why, so
+ *      `(?<=(?&g))` with a backreference in `g` still reads "unbounded"
+ *      (review r4 F1's residual, stage 2's);
  *   1. every branch must be BOUNDED (err 125);
  *   2. every branch's maximum is at most LA_LOOKBEHIND_BRANCH_MAX, fixed or
  *      varying (err 187);
@@ -298,18 +309,23 @@ static bool la_has_kreset(const Ast *a)
  * A NESTED LOOKAROUND INSIDE A BRANCH CONTRIBUTES 0 AT BOTH ENDS (§3.1(d),
  * wave A's arms), so `(?<=a(?=b))x` stays one-length 1 — it is what both
  * analyses already answer for A_LOOK. */
-typedef enum { LBW_OK, LBW_UNBOUNDED, LBW_CEILING, LBW_CAP } LbVerdict;
+typedef enum { LBW_OK, LBW_UNBOUNDED, LBW_CEILING, LBW_CAP, LBW_NOTBUILT } LbVerdict;
 static LbVerdict la_widths(Ctx *cx, const Ast *body, int nbr, LookWidth *out,
                            long long *bad)
 {
     const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *br);
     pcrec_lookbehind_branches(cx, body, nbr, br);
 
-    bool varies = false;
+    bool varies = false, notbuilt = false;
     for (int i = nbr - 1; i >= 0; i--) {
         long long lo = pcrec_cwmin(br[i]), hi = pcrec_cwmax(br[i]);
         *bad = hi;
-        if (hi >= PCREC_W_UNBOUNDED) return LBW_UNBOUNDED;
+        if (hi >= PCREC_W_UNBOUNDED) {
+            if (pcrec_cwmax_static(br[i]) >= PCREC_W_UNBOUNDED)
+                return LBW_UNBOUNDED;
+            notbuilt = true;    /* rule 0, after rules 1-3 */
+            continue;
+        }
         if (hi > LA_LOOKBEHIND_BRANCH_MAX) return LBW_CEILING;
         out[i].lo = (int)lo;
         out[i].hi = (int)hi;
@@ -321,7 +337,7 @@ static LbVerdict la_widths(Ctx *cx, const Ast *body, int nbr, LookWidth *out,
                 *bad = out[i].hi;
                 return LBW_CAP;
             }
-    return LBW_OK;
+    return notbuilt ? LBW_NOTBUILT : LBW_OK;
 }
 
 /* K123: the top-level branch split, `internal.h`'s declaration states the
@@ -366,10 +382,12 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
  * and under 140 with its figure at the ceiling's 5 digits (a larger figure is
  * refused by the ceiling first, and the unbounded arm prints none).
  *
- * EVERY ARM IS A REFUSAL PCRE2 MAKES TOO ([VLOOKBEHIND] stage 1,
+ * EVERY ARM BUT ONE IS A REFUSAL PCRE2 MAKES TOO ([VLOOKBEHIND] stage 1,
  * pattern_language.md §2.4's shape 7), worded by what is refused (D26's
  * functional tier), and none names a raise flag. The unbounded arm also
- * serves K127's `recurses` refusal (libpcre2's err 125 there too).
+ * serves K127's `recurses` refusal (libpcre2's err 125 there too). The one
+ * that is not, LBW_NOTBUILT, is shape 5: pcrec's capability, stated as one
+ * (review r4 F1; `la_widths`' rule 0).
  *
  * [LIM-1] (D90): generated from src/core/limits.def, the single derivation
  * `pcrec --list-limits` dumps. */
@@ -390,6 +408,11 @@ static void la_width_refusal(char *buf, size_t n, LbVerdict why, long long bad)
                          "most %d characters once any alternative's length "
                          "varies (this one can match up to %lld)",
                  LA_LOOKBEHIND_VAR_MAX, bad);
+        return;
+    case LBW_NOTBUILT:
+        snprintf(buf, n, "a lookbehind containing a backreference or a "
+                         "variable is not implemented (its length is known "
+                         "only when matching)");
         return;
     case LBW_OK:
         break;
@@ -585,9 +608,11 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * this port can honestly name is the construct it is refusing. D26 puts
      * the OFFSET convention in tier 2 and the WORDING in tier 3.
      *
-     * [VLOOKBEHIND] stage 1: EVERY REFUSAL HERE IS ONE PCRE2 MAKES TOO
-     * (unbounded, the 65535 ceiling, the 255 cap once a branch varies), so it
-     * is worded by what is refused, never as "requires module 'lookaround'":
+     * [VLOOKBEHIND] stage 1: EVERY REFUSAL HERE BUT ONE IS ONE PCRE2 MAKES TOO
+     * (unbounded, the 65535 ceiling, the 255 cap once a branch varies); the
+     * one, a backreference or variable inside, is pcrec's capability (shape
+     * 5, `la_widths`' rule 0). All are worded by what is refused, never as
+     * "requires module 'lookaround'":
      * the module is enabled, and saying "enable the module" to a caller who
      * already has would be an actionable-sounding lie (D33's distinction). */
     /* [DD-14.LB] AND THE OFFSET, for EVERY A_LOOK — see `u.look.at`. It is
