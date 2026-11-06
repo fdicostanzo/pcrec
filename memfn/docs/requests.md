@@ -801,3 +801,37 @@ run, with the cause named. Not a unit-1f gate.
 **Not asked:** the fix's shape (D157).
 
 **Sabotage ids:** none.
+
+## R-35 (2026-11-06, pcrec manager) — span_pick stages 2-3: Frank's GO, the noise channel, unit 3.0, row 1
+
+**Customer:** the span_pick plan ([MEASURE-SET]; docs/design/memfn/span_pick.md §Staging and §Cost cards). Frank gave the
+GO for stages 2-3 on 2026-11-06 (plan 80341284e). span_pick.md §Cost cards says stage 2 owes "a kit request (main's)"
+for the noise channel (rev3 C4); this is that request.
+
+**What pcrec needs.**
+1. **Stage 2:**
+   - the zen4-grid3 cost cards for the find/scan units span_pick prices (memchr, memchr-back, PAIR, walk, verify,
+     enter; each form the kit offers, scalar and SIMD; further methods later);
+   - each measured value carries its noise, readable by pcrec through `mf_measure` (an MF abi event, with the
+     measure_sets §4.1 and match_api spec hunks in the same change), derived noise by quadrature, noise inside
+     `values_digest` (a digest-version event), the coverage factor, and the step-0 gate.
+   - Stage 2 adds no reader, moves no emitted byte, and leaves DEFAULTS unchanged.
+2. **Unit 3.0:** byte-identical; the plan takes the frame.
+3. **Row 1:** the first priced departure. It flips DEFAULTS to zen4-grid3 and is judged against the 0.981 pilot baseline
+   (memory pcrec-pilot-is-pricing-baseline). Its flip needs its own landing verdict from main.
+
+**Ruled (main, 2026-11-06):**
+- (a) The pcrec-side facts unit 3.0 needs (form, handoff and site_kind stated per frame at phase 1) travel in the kit's
+  same-commit package. They state FACTS only, never the kit's method (D157). Main reviews those pcrec hunks, and the
+  unit's code round covers both sides.
+- (b) The card timing runs are quiet-gated: each needs a box window main clears with Frank, never in 20:00-01:00 and
+  never beside another timing run. Ask main for a window when the cards are ready to run.
+
+**Concurrency:** two pcrec build lanes run alongside on main: variable lookbehind stage 1, then the alternation normal
+form, stages 1/2p/2b. Both move emitted bytes, so whoever lands later re-baselines identity against the new main.
+Heavy runs go through boxqueue.
+
+**Not asked:** the method or shape of any card, gate or noise derivation (D157).
+
+**Sabotage ids:** the kit takes its own from the top of the free range and records them in its first commit (three lanes
+are allocating).
