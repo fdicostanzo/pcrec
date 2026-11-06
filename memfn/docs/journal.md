@@ -3338,3 +3338,12 @@ Main ruled on the four kit findings (D186 add. 2):
   - RULED: (1) placement = min(3, 64/A) phases per arm from each object's .text alignment, no alignment flag; (2) walk-set folds into walk (same site text, same form hash, one key). Neither was in the design text: small lane s2cdoc writes both as [rev1.3 S2c-n] and merges S2a's d9afba62b (limits allowlist) into s2c.
   - Placement screen on a loaded box read 8.56 % (no reading); it runs quiet at S2d's start.
   - Next: S2c code round on s2cdoc's tip, then gates 470-474.
+- 11-06: S2c code round r9 RULED: NOT READY for S2d until FIX-NOW lands. Emission byte-identical over 60 pairs; the estimator matches its spec. Four harness-fidelity holes reached a set with every check green:
+  - G1: the answer gate never runs the timed entry;
+  - G2: the cell-text check reads the arm, not the key;
+  - G3: the verdict ignores the run record;
+  - G4: deps hash the canonical instance while 8 of 14 verify rows time another.
+- Choices: G4 FOLD; EMIT-3 majority lowering shape (else lower bound); SLOT-17 gate_e6 to the kit policy table per R-35 (e), no question to main.
+- The review is committed on lane/memfn-s2c (79c5e91e5), with the new lens row "harness fidelity" in the skill and critics.md.
+- Fix lane s2cfix (opus) is running; sabotage ids from S2933.
+- Frank, on code size: stage 1's kit C fell 434 lines (13,101 -> 12,667), all from deleting dead code; the unification units were net +275. "Interesting but not actionable": no audit, no size line.
