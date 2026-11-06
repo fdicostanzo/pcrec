@@ -1,0 +1,30 @@
+(?<=a{1,2}|b)x	bx	pcre2=[1-2]	cursor=[1-2]	range=[1-2]
+(?<=a{2,3}|b)x	bx	pcre2=[1-2]	cursor=[1-2]	range=[1-2]
+(?<=a{1,2}|bc)x	bcx	pcre2=[2-3]	cursor=[2-3]	range=[2-3]
+(?<*(a|aaa))c\1	aaaca	pcre2=[3-5,2-3]	cursor=[3-5,2-3]	range=[3-5,2-3]
+(?<=a{1,9})x	bbbbbbbbbax	pcre2=[10-11]	cursor=[10-11]	range=[10-11]
+(?<=(a{0,2}))x	ax	pcre2=[1-2,0-1]	cursor=[1-2,0-1]	range=[1-2,0-1]
+(?<=(a{1,2})\1)x	aaaax	pcre2=[4-5,0-2]	cursor=n/a (no width for bref)	range=n/a (no width for bref)
+(?<=(a{1,2})\1)x	aaax	pcre2=[3-4,1-2]	cursor=n/a (no width for bref)	range=n/a (no width for bref)
+(?<=(a{1,2})\1)x	baaax	pcre2=[4-5,2-3]	cursor=n/a (no width for bref)	range=n/a (no width for bref)
+(?<=\Ga{1,2})b	aab	pcre2=[2-3]	cursor=n/a (startpos)	range=
+(?<=\Ga{1,2})b	aab	pcre2=[2-3]	cursor=n/a (startpos)	range=
+(?<=\Ga{1,2})b	aab	pcre2=nomatch	cursor=n/a (startpos)	range=
+(?<!\Ga{1,2})b	aab	pcre2=nomatch	cursor=n/a (startpos)	range=
+(?<=\Ga{1,2})b	caab	pcre2=[3-4]	cursor=n/a (startpos)	range=
+(?<=\Ga{1,2})b	caab	pcre2=[3-4]	cursor=n/a (startpos)	range=
+(?<=^a{0,2})x	aax	pcre2=[2-3]	cursor=[2-3]	range=[2-3]
+(?<=^a{0,2})x	aaax	pcre2=nomatch	cursor=nomatch	range=nomatch
+(?<=\Aa{0,2})x	aax	pcre2=[2-3]	cursor=nomatch	range=nomatch
+(?<!(?>a|ab)b)x	abbx	pcre2=[3-4]	cursor=[3-4]	range=[3-4]
+(?<=(?>a|ab)b)x	abbx	pcre2=nomatch	cursor=nomatch	range=nomatch
+(?<=(?:a|ab)b)x	abbx	pcre2=[3-4]	cursor=[3-4]	range=[3-4]
+(?<=(?<=a{1,2})b{1,2})x	abbx	pcre2=[3-4]	cursor=[3-4]	range=[3-4]
+(?<=(?<=a{1,2})b{1,2})x	cbbx	pcre2=nomatch	cursor=nomatch	range=nomatch
+(?<=(?<!a{1,2})b{1,2})x	abbx	pcre2=[3-4]	cursor=[3-4]	range=[3-4]
+(?<=(?<!a{1,2})b{1,2})x	cbbx	pcre2=[3-4]	cursor=[3-4]	range=[3-4]
+(?<*(a{1,2})|(aa))\2	aaaa	pcre2=[2-4,-,0-2]	cursor=[2-4,-,0-2]	range=[2-4,-,0-2]
+(?:(?<*(a{0,2}))b){2}\1	aababa	pcre2=nomatch	cursor=nomatch	range=nomatch
+(?:(?<*(a{1,2}))b)+\1	aabab	pcre2=[2-4,1-2]	cursor=[2-4,1-2]	range=[2-4,1-2]
+(?<=a{1,2})x	bax	pcre2=[2-3]	cursor=[2-3]	range=[2-3]
+(?<=a{1,2}|b{1,2})x	abx	pcre2=[2-3]	cursor=[2-3]	range=[2-3]

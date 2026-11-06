@@ -1,0 +1,2 @@
+main sweep: 30099 cells; cursor differs from libpcre2 on 0; range (control) on 0
+retry sweep: 24480 cells; cursor differs from libpcre2 on 0; range (control) on 0

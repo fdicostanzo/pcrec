@@ -1,0 +1,11 @@
+subjects: 131199; cells (subject x cursor x [lo,hi] in [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4)]): 8583480
+back_step NONE monotone in k: violations 0
+cursor candidate sequence differs from counter: 0
+cursor work above counter work: 852406
+variant unbounded differs: 288168
+variant none0     differs: 3398699
+variant noretry   differs: 591194
+first none0     cell: subject=c3 POS=1 lo=0 hi=1 counter/ref=[1] got=[0, 1]
+first noretry   cell: subject=c361 POS=2 lo=0 hi=2 counter/ref=[1, 2] got=[2]
+first unbounded cell: subject=61a9 POS=1 lo=0 hi=1 counter/ref=[0, 1] got=[0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 'RUNAWAY']
+first work      cell: subject=61 POS=1 lo=0 hi=1 counter/ref=1 got=2

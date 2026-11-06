@@ -1,0 +1,30 @@
+(?<=a{1,2}|b)x	bx
+(?<=a{2,3}|b)x	bx
+(?<=a{1,2}|bc)x	bcx
+(?<*(a|aaa))c\1	aaaca
+(?<=a{1,9})x	bbbbbbbbbax
+(?<=(a{0,2}))x	ax
+(?<=(a{1,2})\1)x	aaaax
+(?<=(a{1,2})\1)x	aaax
+(?<=(a{1,2})\1)x	baaax
+(?<=\Ga{1,2})b	aab	0
+(?<=\Ga{1,2})b	aab	1
+(?<=\Ga{1,2})b	aab	2
+(?<!\Ga{1,2})b	aab	1
+(?<=\Ga{1,2})b	caab	1
+(?<=\Ga{1,2})b	caab	2
+(?<=^a{0,2})x	aax
+(?<=^a{0,2})x	aaax
+(?<=\Aa{0,2})x	aax
+(?<!(?>a|ab)b)x	abbx
+(?<=(?>a|ab)b)x	abbx
+(?<=(?:a|ab)b)x	abbx
+(?<=(?<=a{1,2})b{1,2})x	abbx
+(?<=(?<=a{1,2})b{1,2})x	cbbx
+(?<=(?<!a{1,2})b{1,2})x	abbx
+(?<=(?<!a{1,2})b{1,2})x	cbbx
+(?<*(a{1,2})|(aa))\2	aaaa
+(?:(?<*(a{0,2}))b){2}\1	aababa
+(?:(?<*(a{1,2}))b)+\1	aabab
+(?<=a{1,2})x	bax
+(?<=a{1,2}|b{1,2})x	abx
