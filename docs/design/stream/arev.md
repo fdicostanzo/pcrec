@@ -1,16 +1,51 @@
 # A-REV: one automaton-run record, one walk behaviour, hostable in a VM body
 
-**Status: PROPOSED rev 1** (lane arevrev1, opus, 2026-11-06; plan row [STREAM], roadmap area
-A-REV). Rev 0 was lane arevdesign's (2026-11-05). Rev 1 applies the RULED review
-`docs/dev/reviews/2026-11-05-r5-arev.md` (every disposition ACCEPTED; its OWNER ADDENDUM of
-2026-11-06). Design only: no build go, no step built. Anchors are at **main fd1a32021**, re-grepped
-by this lane (`docs/dev/lanes/arevrev1_evidence/premise.out`); they did not move from the review's
-freeze. Anchors move with code: re-grep the symbol. The manifesto is not edited by this note;
-`roadmap.md`'s A-REV section is the area plan and points here. Client documents in force:
-`docs/design/vlookbehind.md` **rev 2** and `docs/design/vlookbehind_pieces.md` **rev 0** (both
-merged on main fd1a32021) `[r5 F5]`.
+**Status: PROPOSED rev 2** (lane arevrev2, opus, 2026-11-06; plan row [STREAM], roadmap area
+A-REV). Rev 0 was lane arevdesign's (2026-11-05), rev 1 lane arevrev1's (applying review
+`docs/dev/reviews/2026-11-05-r5-arev.md` and its OWNER ADDENDUM). Rev 2 applies the RULED re-check
+`docs/dev/reviews/2026-11-06-r1-arev-recheck.md` (every disposition ACCEPTED, four manager rulings
+of 2026-11-06). Design only: no build go, no step built. Anchors are at **main 6e01c810b**; no code
+moved since rev 1's fd1a32021 (the review's three critics checked the empty `git diff --stat` up to
+e20dee230, and nothing under src/ has landed since). Anchors move with code: re-grep the symbol.
+The manifesto is not edited by this note; `roadmap.md`'s A-REV section is the area plan and points
+here. Client documents in force: `docs/design/vlookbehind.md` **rev 3** (the cursor-rung loop) and
+`docs/design/vlookbehind_pieces.md` **rev 0** `[r5 F5]` `[r1-1106 D6]`.
 
-## REVISION 1 (review 2026-11-05 r5) — read first
+## REVISION 2 (re-check 2026-11-06 r1) — read first
+
+Corrections are marked inline as `[r1-1106 <id>]` (the review's consolidated ids A1-A3, D1-D6,
+R1-R8, N1-N7). Rev 1's refuted text is recorded where it stood. Evidence:
+`docs/dev/lanes/arevrev2_evidence/` (the probe, its outputs, the sweep model with A1's rule). In
+summary:
+
+- **A1, answer level.** On the non-atomic form `(?<*`, the existence row now pushes the next
+  branch's frame before it reports success, exactly as the `one-length` row does; without it a later
+  capturing branch was never tried (`(?<*a{1,2}|(a))b\1` on `aaba` is [2-4,1-2] in libpcre2). The
+  review's 552,900-cell sweep, re-run through this rule: **0 differences** (§3.1).
+- **A2, answer level.** A new first conjunct (c0) bounds the branch's NFA size on the AST before any
+  NFA is built, so the NFA-state cap can never refuse a compile that `range` alone accepts
+  (`(?<=\p{L}{1,255})b` under UTF-8; D158). No build on the admission path is mandatory (§2.5).
+- **A3.** The part's read set is clipped at both edges and includes `subject_length`; `from`
+  selects the machine's base, end-of-line or end view by position; WD8 gains the two cells that
+  separate the byte at `from` from its position (§2.3, §2.5).
+- **Ownership (ruling 1).** `vlookbehind.md` owns lookbehind's admission rows, the `reverse-dfa`
+  candidate source included; this note owns the automaton kind, its exits, the record and the host.
+  §3.1's rows are now a LIST OF PROPOSALS for vlookbehind's revision when the proof step is designed
+  for build, with their own witness ids (`HO-*`), so they no longer clash with vlookbehind's WD ids
+  `[r1-1106 D1]`.
+- **The host as members, not a kind (ruling 2).** The in-body call is spelled with new MEMBERS of
+  existing closed lists (a local, a seek form, a piece) and the code-segment declaration slot is the
+  part's slot. Only the part's declared EFFECT SET waits for [VMREC] stage (c), shared with kit
+  windows and code segments (§2.3) `[r1-1106 D5]`.
+- **[ROWCONJ] first (ruling 3)** and **a `--harness=` lever (ruling 4)**: both in S3's
+  prerequisites and gate (§4.1) `[r1-1106 R2, R3]`.
+- **The record closed (D2), S1M's swap as a role (D3), stems per instance (D4)**, rev 3's eleven
+  pick-ups applied (D6), the oracle per `lang` (R1), unit ownership of the round trip and oracle
+  (R4), stage 1's witnesses pinned to the deny build (R5), the recorded per-branch row (R6), the
+  rung's readers (R7), ratchet recipe words (R8), and the doc items N1-N7.
+- **§12** maps every id of the re-check to its section.
+
+## REVISION 1 (review 2026-11-05 r5)
 
 Corrections are marked inline as `[r5 Fn]`. Rev 0's refuted claims are recorded where they stood.
 In summary:
@@ -58,8 +93,10 @@ stream proof step, is the lookbehind hand-off: the reverse DFA of each varying b
 candidate starts, existence when `lang = same` and the branch has no group, otherwise the
 candidates farthest first, each confirmed by the forward body run that fills the captures. The
 hand-off is sound on every admitted body because the machine's language fact is read after the
-build and every construct that NARROWS a reverse machine is declined before it (§2.5); the STOP
-RULE does not fire (§3.1).
+build, every construct that NARROWS a reverse machine is declined before it (§2.5), no build on the
+admission path can refuse the compile (§2.5's (c0)), and on the non-atomic form the existence row
+keeps the frame that reaches the later branches (§3.1); the STOP RULE does not fire (§3.1)
+`[r1-1106 A1, A2]`. The rows themselves are vlookbehind's to adopt (ruling 1, §3.1).
 
 ## 0. Goals `[r5 F24: rewritten against the owner's criteria]`
 
@@ -80,17 +117,21 @@ shows movers = 0 under `scripts/emit_sweep.py`.
 2. **G2 = F2 Flexibility (a future target).** The record carries no target text. Checkable: the
    record's fields are row names, typed position references, hand names and ids (§2.1); a grep of
    the record type for `const char *` fields that hold C finds none after S1 (rev 0's `seed`,
-   `floor`, `dead` and `names` were C text, which is the manifesto's F2 falsifier `[r5 F14]`).
+   `floor`, `dead` and `names` were C text, which is the manifesto's F2 falsifier `[r5 F14]`). The
+   grep is a cell of S1's and S3's gates `[r1-1106 R4]`.
 3. **G3 = F3 Division of labour (the manager dividing lanes).** The walk part can be validated
    alone. Checkable: a record-in / text-out golden check for the part renderer, and an oracle for
-   the part's answer that runs without the VM: for a branch `B`, a `from` and a `bound`, the
-   smallest `s ≥ bound` such that libpcre2 matches `B` anchored at `s` with its end at `from`
-   (§3.1 "Per-part oracle"). Neither exists today: every witness is an end-to-end matcher cell.
+   the part's answer that runs without the VM, stated per `lang` (§3.1 "Per-part oracle"): on
+   `lang = same` the part's answer EQUALS the smallest `s ≥ bound` at which libpcre2 has a match of
+   `B` from `s` ending at `from` (any end, found by forcing backtracking, not only the priority
+   end); on `lang = superset` the true starts are a SUBSET of the part's accepts `[r1-1106 R1]`.
+   Neither exists today: every witness is an end-to-end matcher cell. S1 owns the record's text
+   writer and reader; S3 owns the golden-check hook and the part oracle (§4.1) `[r1-1106 R4]`.
 4. **F4 constraint, no blindness.** The language fact that admits a row, the hand a walk returns
    and the facts that flow back (the tag encoding and tie bit, the empty-at-n probe, the landmark
    walk's reach) are declared fields, not conventions (§2.1, §2.2). Checkable by the seam
    round trip (manifesto principle 9): the record written as text and read back renders the same
-   bytes. A caller-visible listing of the record (rev 0's "every instance prints its operands in
+   bytes; the round trip is a cell of S1's and S3's gates `[r1-1106 R4]`. A caller-visible listing of the record (rev 0's "every instance prints its operands in
    `--emit-ir` / the trace") is NOT claimed: `--emit-ir` and `--trace` are VM-only, so it would be
    an interface change (D80) and waits for [IFACE-PUSH] `[r5 F24]`.
 
@@ -99,7 +140,7 @@ groups (§5). Unbounded lookbehind ([LB-EXIST], HELD). A speed CASE for any step
 (manifesto). Choosing between the open "VM base" frame and today's two-engine reading (§6 uses it
 as a lens only).
 
-## 1. Today, at main fd1a32021 `[r5 F6-F13: restated]`
+## 1. Today, at main fd1a32021 `[r5 F6-F13: restated]` (unchanged at 6e01c810b)
 
 **Premise test (this lane).** Every symbol below was re-grepped at fd1a32021 (premise.out). F1's
 cell reproduces with libpcre2 10.46 as a library: `(?<=\Ga{1,2})b` on `aab` gives (2,3) from offsets
@@ -132,7 +173,12 @@ its own size-cap rung in `fit_rungs[]` (`drop-end-mark` :1360, `drop-landmark-wa
   function members that print literals rather than the object's strings: `dir_rev_bound_accept`
   (:9297) prints `search_from`, which is S74's anchor, and `dir_rev_skip` (:9249) prints
   `rewind_position` `[r5 F13]`. `dfa_dir_landmark` also differs from `dfa_dir_reverse` in `ind`,
-  `bind`, `tbl_hdr` and `acc_meaning` `[r5 F12]`.
+  `bind`, `tbl_hdr` and `acc_meaning` `[r5 F12]`. `[r1-1106 D2]` The floor is spelled in FIVE
+  strings, not two: besides the two printers, each reverse object's `seed_cond`
+  (`match_end_position < subject_length`), `at_bound` (`rewind_position <= search_from`) and
+  `scan_more` (`rewind_position > search_from`). And `dfa_dir_lmverify` differs from
+  `dfa_dir_anchored` in `ind`, `bind`, `range_guard` (NULL vs a guard), `dead_entry` (`break;` vs
+  `return -1;`) and `tbl_hdr`; the retry copy overwrites `tbl_hdr` and `acc_meaning`.
 - **The form is chosen where the walk is rendered.** `dfa_form_derive` (:12962) makes four
   `DFA_SELECT` choices (repr, view, seed, acc) from the deny flags, the route and the start-set
   fact, and callers override fields afterwards (`if (formw) rev.seed = &dfa_seeds[1];`). A process
@@ -159,18 +205,19 @@ own part header (a name for the build lane, e.g. `src/gen/autorun.h`), not in `i
 **The form is a plan output** (the review's leaning, adopted): `dfa_form_derive`'s four selections,
 the skip and scan-edge state lists, the two folds and the entry facts are computed BEFORE
 rendering and recorded; callers' overrides become writes to the record before it is frozen. Emit is
-then a pure function of the record (roadmap §0a) `[r5 F15]`.
+then a pure function of the record (roadmap §0a) `[r5 F15]`, EXCEPT for the two kit replies named
+below, which keep rendering impure until the kit seam returns them at plan time `[r1-1106 D2]`.
 
 | field | type (no C text) | W1 | W2 | W3 | W4 | L (lookbehind branch) |
 |---|---|---|---|---|---|---|
 | `machine` | id of a machine-table entry (§2.4); the entry owns direction, tables and accessors | R | R (the lowered set after the swap is R; §2.4) | ML | the reversed body (structural entry) | one per varying branch |
 | `rendering` | a row name of the rendering table: `table` or `structural` (renamed from rev 0's `repr`, which collided with `DfaForm.repr`, the layout axis) `[r5 F18]` | table | table | table | structural | table |
 | `form` | the selected row names (`dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`), skip and scan-edge state lists, folds, entry facts | derived | derived per `revend_forms[]` row | derived | — | derived |
-| `from` | a position REFERENCE: `FWD_ACCEPT`, `SUBJECT_END`, `HIT(stream)`, `SLOT(n)`, `CURSOR`, or a compile-time seed STATE id | `FWD_ACCEPT` | per form: a seed list {`SUBJECT_END`, `SUBJECT_END − 1` if the last byte is `\n`} combined MIN-with-tie, or STATE chosen by the last byte | `HIT(lmhit) + 1` | the cursor local | `SLOT(POS)` (the lookbehind's cursor) |
+| `from` | a position REFERENCE: `FWD_ACCEPT`, `SUBJECT_END`, `HIT(stream)`, `SLOT(n)`, `CURSOR`, or a compile-time seed STATE id; for the forward walks S1 also moves, `SEARCH_FROM`, `REQ_HANDOFF` (the position the req-byte pre-check hands on, today the C name `pcrec_emit_req_byte_check` returns after printing) and `LMWALK_START` `[r1-1106 D2]` | `FWD_ACCEPT` | per form: a seed list {`SUBJECT_END`, `SUBJECT_END − 1` if the last byte is `\n`} combined MIN-with-tie, or STATE chosen by the last byte | `HIT(lmhit) + 1` | the cursor local | `SLOT(POS)` (the lookbehind's cursor); the reference also selects the machine's base, end-of-line or end view by POSITION (§2.5) `[r1-1106 A3]` |
 | `bound` | a position REFERENCE: `SEARCH_FROM`, `ZERO`, `SLOT(n)`, `CANDIDATE + 1` | `SEARCH_FROM` | `SEARCH_FROM` | `SEARCH_FROM` | `SLOT(entry)` | `ZERO`, then `CANDIDATE + 1` |
 | `hands` | a map from the walk's three outcomes {`DEAD_ENTRY`, `NO_ACCEPT`, `ACCEPT(pos[, tag])`} to host hands (§2.2) | NO_ACCEPT → `return 0;`'s hand (rev 0 wrote NULL: wrong `[r5 F14]`), ACCEPT → SPAN | per form | DEAD/NO → next hit; ACCEPT → verify or LOWER | → the fail label / the step's landing | §3.1 |
-| `tag` | `none`, or `distance` = a ≤ 7-bit set, end = lowest set bit, tie = popcount > 1 | none `[r5 F8]` | tagged form: `distance` | none | `groups` (writes the artifact-scope sinks) | none |
-| `instance` | an id; the renderer derives label stems per target from (entry, instance) | 0 | 0 | 0 | the loop's index | (site, branch) |
+| `tag` | `none`, or `distance` = a ≤ 7-bit set, end = lowest set bit, tie = popcount > 1; the forward and anchored walks of the tagged form carry `distance` too (today `forward_dist`, `anchored_dist`) `[r1-1106 D2]` | none `[r5 F8]` | tagged form: `distance` | none | `groups` (writes the artifact-scope sinks) | none |
+| `instance` | an id, DISTINCT per walk within one host function; a declared instance → stem row gives today's stems `[r1-1106 D4]` | `reverse` | `revend` (and, on its relocate arm, a second walk: W1's `reverse` in the same function) | `landmark` | the loop's index | (site, branch) |
 | `placement` | `inline` or `part` (§2.3) | inline | inline | inline | inline (records) | part |
 | `container` | `search function` or `VM body` `[r5 F21]` | search fn | search fn | search fn | VM body | VM body |
 
@@ -183,8 +230,39 @@ declared once, shared by every structural walk) `[r5 F10]`.
 and are emitted once per (machine, direction): today `emit_rev_end`'s relocate arm walks one set of
 tables twice (`DfaForm rel = *rev;`). Label stems belong to the walk `instance`.
 
+`[r1-1106 D4]` Rev 1 gave W1 and W2 the same (machine R, instance 0) and derived stems from
+(entry, instance). That yields ONE stem, but `emit_rev_end` renders two walks over R in one
+function: the two-seed walk with stem `revend` (`emit_reverse_block(c, &rev, "revend", …)`), then,
+on its relocate arm, RECOVER's pass through `unanch_scan` with stem `reverse`; the tagged form does
+the same. One stem would print duplicate C labels (a gcc error) or move one walk's labels (bytes
+move against S1's 0 movers). So an instance is distinct per walk within one host function, and the
+stem is read from a declared row, instance → stem, whose rows reproduce today's `revend`,
+`reverse` and `landmark` (and the forward walks' stems).
+
+**Fields rev 1 did not state** `[r1-1106 D2]`. `DfaForm` (emit_dfa.c:5861) and `DfaDir` (:5787)
+carry more than §2.1's table, and the seam round trip is reachable only once each has a named
+field and an owner:
+
+| today's field or override | in the record as | owner |
+|---|---|---|
+| `cx`, `p` (artifact prefix) | not fields: the renderer's context | the renderer |
+| the host function name (`pf_stem = "%s_pf"` of it, :13690, :14280, :14449) | `host`: the host function's id | the walk |
+| `ind`, `bind` (indent) | the CONTAINER's nesting depth, not a direction fact | the container |
+| `us` (UnanchStart, borrowed by pointer through render), `views`/`viewsel`/`src`, the start-analysis override `rus.eol = rus.endv = rus.viewsel = rus.views = false` (:14265) | the start-analysis facts as a RECORDED plan output (the form's input, frozen with it) | the plan |
+| `pf` (NEXT row, chosen only where `d == &cx->job->dfa`), `cand`, `ofs` | form rows (already `form`); the identity test becomes a ROLE test (§2.4) | the plan |
+| `pf_find` (written at render, `f->pf_find = find_define(…)` :7178) and `ofs_site` (`ofs_site_define`, :7650), each read later by the table emitters | a declared BACK-FLOWING field: the kit's define reply (F4). Until the kit seam returns it at plan time these two keep render impure; the record names them so the impurity is visible, not hidden (D157: the reply is facts, never the kit's method) | the kit seam |
+| `tbl_hdr`, `acc_meaning` (comment prose) | the machine-table ENTRY's prose | the entry |
+| `range_guard`, `dead_entry` | hands in the hand set (`DEAD_ENTRY`'s host hand; the guard as the walk's entry check) | the walk |
+| `landing`, `accv` | `tag` (above) and the hand map | the walk |
+| `fwd.from = pcrec_emit_req_byte_check(…)` (:13723), `av.from = "lmwalk_start"` (:14439) | `from` references `REQ_HANDOFF`, `LMWALK_START` (above); the pre-check is its own preceding record | the walk |
+
+The floor is in the five strings §1 names; S1 moves all five into the record's `bound` (and
+`from`), not only the two printers `[r1-1106 D2]`.
+
 **The seam round trip.** Written as text, the record is: an entry id, row names, two position
-references, a hand map, a tag kind, an instance id and two placement words. Every field is either a
+references, a hand map, a tag kind, an instance id, two placement words, and (rev 2) the host id,
+the container depth, the recorded start-analysis facts and the kit's back-flowing replies
+`[r1-1106 D2]`. S1 owns the text writer and reader and the round trip (§4.1). Every field is either a
 name in a declared table or an id; nothing names a method of the kit (D157). Scan edges inside a
 table machine stay the kit's (D161 add. 17: the reverse DFA is the scaffolding, scan edges the
 optimization inside it).
@@ -232,22 +310,55 @@ write a file-scope function as a side output; that is a second output channel be
 one-writer tiling, and rev 0's "precedent" (`pcrec_emit_dfa_engine`) is called by the COMBINATOR
 level (src/gen/emit_comb.c:576, :580), not from the body `[r5 F19]`. Rev 1:
 
-- **The walk is a PART.** A stream-level record with its own stem, emitted by the plan in its own
-  slot BEFORE the matcher function, the way the combinator emits the hybrid's DFA part. Its
-  declared signature: `ptrdiff_t <part>(subject, subject_length, from, bound)`, returning the
-  accept nearest `bound` or −1 for NO_ACCEPT (DEAD_ENTRY is folded into −1: the call has no other
-  caller-visible outcome). Its declared EFFECTS: reads `subject[bound − 1 .. from]` (the context
-  byte below the bound, S74's rule, and the byte at `from`, the seed's right context); writes
-  nothing but its result; transfers no control; never touches frames, slots or the trail.
-- **`VK_AUTO` is an in-body CALL record**: operands = the part's id, `from` and `bound` as
-  REFERENCES rendered as values (`(size_t)slot_values[<n>]`, never the index: vlookbehind rev 2
-  §5.6 V3's rule, pickup 4), the result's destination (`scan_position` or an untrailed local), and
-  the hand map ({ACCEPT, NO_ACCEPT} → labels). One renderer, one output: the body buffer. The
-  effect set above is a field of the record, which is [VMREC] (c)'s r9 rule for kit windows
-  ("opaque with DECLARED EFFECTS") applied to a second opaque kind.
+- **The walk is a PART.** A file-scope function with its own stem. Its declared signature:
+  `ptrdiff_t <part>(subject, subject_length, from, bound)`, returning the accept nearest `bound`
+  or −1 for NO_ACCEPT (DEAD_ENTRY is folded into −1: the call has no other caller-visible
+  outcome). Its declared EFFECTS `[r1-1106 A3]`: reads `subject[max(bound, 1) − 1 ..
+  min(from + 1, n) − 1]` (the context byte below the bound only when `bound > 0`, S74's rule, the
+  absent context otherwise; the walked bytes; the byte AT `from` only when `from < n`, the right
+  context) and `subject_length` (`from` is compared with it to select the view, §2.5); writes
+  nothing but its result; transfers no control; never touches frames, slots or the trail. Rev 1's
+  `subject[bound − 1 .. from]` named `subject[-1]` at `bound = 0` and `subject[n]` at `from = n`,
+  reads today's code GUARDS rather than makes (`dir_rev_bound_accept`'s `search_from ? … : …`, the
+  reverse `seed_cond`), and omitted the length.
+- **The part's SLOT is the code-segment declaration slot** `[r1-1106 D5(b)]`. Rev 1 put the part
+  "in its own slot BEFORE the matcher function, the way the combinator emits the hybrid's DFA
+  part". The closer precedent is called FROM the body: [INLINE-C]'s code segments, whose prototype
+  and binding `pcrec_emit_code_protos` (emit_code.c:142) prints "before the function whose call
+  sites name them" (emit_vm.c:14187), with the definitions in the segment block at the end of the
+  `.c`, and the site calling `<binding>.fn(&ctx)` ("gcc sees the definition, so the call is direct
+  and inlinable"). The part uses that slot, widened from "code segments" to "units called from the
+  body" (a member list), not a new stream-level slot. Artifacts with no called unit print nothing
+  there today and still print nothing.
+- **The call is MEMBERS of existing closed lists, not a new kind** `[r1-1106 D5(a); manager ruling
+  2, 2026-11-06]`. The call has no control of its own (vm_stmt.h:7-11: the only free text is a
+  VALUE fragment), so it composes from existing kinds:
+
+  | statement | kind | new member |
+  |---|---|---|
+  | `t = <part>(subject, subject_length, from, bound)` | `VK_LSET` `VLO_ASSIGN` | a `VmLocalKind` member for the result local (untrailed, as rev 3's `VL_LB_COUNT`); the call itself a `VmPieceKind` member `VP_AUTO` beside `VP_KIT`, printing the part's name and the operands as VALUES (`(size_t)slot_values[<n>]`, never the index: vlookbehind rev 3 §5.6's rule) |
+  | `if (t < 0) goto …` | `VK_BRANCH` | none |
+  | `scan_position = t` | `VK_SEEK` | a `VmSeekKind` member, cursor ← local (today's four are slot-restore, advance, back-step, span commit); so the cursor write stays `VK_SEEK`'s, which rev 1's `VK_AUTO` writing `scan_position` would have overlapped |
+  | row 3's charge, one per non-empty candidate | `VK_WORK` | a typed operand member (1 iff the cursor is below a slot) in place of the C text `scan_position < POS`, which (c) would otherwise have to analyse as free text `[r1-1106 N5]` |
+
+  Under the members ruling none of these waits for [VMREC]. Rev 1's `VK_AUTO` was a new KIND, and
+  r5's ruling ("the step adding a VM record kind waits for the remodel's analysis stage") bound S3
+  to it; with no new kind, that ruling has no object here. `VK_AUTO` survives only as the name of
+  this four-record composition in the text.
+- **What genuinely waits for [VMREC] stage (c): the part's DECLARED EFFECT SET, and only that**
+  `[r1-1106 D5; manager ruling 2]`. vm_stmt.h:24-26 reserves read sets for stage (c) ("Records carry
+  no verdicts, no read sets and no statement ids; stage (c) adds those"). The effect set above (the
+  bytes and the length it reads, nothing written but the result) is such a read set. It is ONE
+  declaration shape shared by the three members of "an in-body call to a separately emitted unit":
+  kit windows (`VP_KIT`, opaque with declared effects, [VMREC] (c)'s r9 rule), code segments and
+  callouts (`VK_CALLOUT`, vm_stmt.c:710), and the part (`VP_AUTO`). This is the third member, so
+  the family unifies at (c): one effect-set declaration for the three, not a field of a part-only
+  record. S3 does not wait for it: the call ships as members, exactly as `VP_KIT` shipped before
+  its effect set; (c)'s scope gains `VP_AUTO` (and `VK_CALLOUT`) beside `VP_KIT`.
 - **The work charge is not a field** `[r5 F21, F9]`. Where a charge is owed it is a `VK_WORK`
-  record beside the call (vlookbehind rev 2 §5.5's own spelling). There is no precedent for a
-  per-walk run-time charge (revdet's walk has none), so §3.1 argues the lookbehind's from scratch.
+  record beside the call (vlookbehind rev 3 §5.6's spelling, unchanged from rev 2) `[r1-1106 D6:
+  pickup 7]`. There is no precedent for a per-walk run-time charge (revdet's walk has none), so
+  §3.1 argues the lookbehind's from scratch.
 
 gcc inlines a one-caller `static` function, so no speed claim rests on the call; placement is a
 fact of the host (a VM body cannot hold a table walk inline without a new tiling rule), not a
@@ -256,8 +367,10 @@ priced choice.
 **The finisher contract.** The kind hands a typed position; the finisher is the host's, chosen by a
 FINISH row (D156), never by the kind: report (W1), `verify-at` with the anchored machine (W3, W2 on
 a tie), `search-from` relocate (W2, W3), the VM body continuing (W4), and the new one: a forward
-body run from the candidate with its end required at the cursor (L; vlookbehind rev 2 §5.1's body
-and end-check). That last finisher is the "VM forward run for captures" of the owner's example. A
+body run from the candidate with its end required at the cursor (L). `[r1-1106 D6: pickup 3]` The
+finisher's operand is a POSITION carried by the retry frame (`L_try_i`'s push), not a count, and
+row 3 SHARES vlookbehind rev 3 §5.1's `L_try_i`, `L_body_i` and `L_end_i` (not only their shape),
+once its charge sits before the jumps into `L_try_i` (§3.1). That last finisher is the "VM forward run for captures" of the owner's example. A
 fact that flows BACK from a finisher to the next walk is a declared field of the host loop's state,
 never a convention: today the landmark walk's `lmwalk_reach` (the verify's farthest read byte) is
 such a fact, and S1 declares it `[r5 F14]`.
@@ -269,8 +382,9 @@ building ("one builder") and its interim shape ("a new machine is requested by a
 the one builder"). A table holding only the optional reverse machines would leave the forward and
 mandatory ones as `Job` fields, two identity mechanisms that W3 alone reads both of `[r5 F20]`. So:
 the lookbehind's per-branch need is argued here as H-FLAGS's TRIGGER (its machine half), and the
-step that builds the table (S1M, §4) moves EVERY machine (`dfa`, `rdfa`, `adfa`, the lowered set,
-`lmdfa`, and the lookbehind's) into one per-artifact table, with `dfa_member_machines` reading it.
+step that builds the table (S1M, §4) moves EVERY walked machine (`dfa`, `rdfa`, `adfa`, the lowered
+set, `lmdfa`, `nedfa` `[r1-1106 D3]`, and later the lookbehind's) into one per-artifact table, with
+`dfa_member_machines` and every other reader reading it through roles (below).
 
 - **An entry** = (site, role, direction), its build REQUEST and its realized FACTS, immutable once
   built. The request names every input that sets the language: direction, root, `collapse`
@@ -282,14 +396,55 @@ step that builds the table (S1M, §4) moves EVERY machine (`dfa`, `rdfa`, `adfa`
   the lowering is one fact of the table and a form decision ADDS entries, never swaps; a walk
   references the entry it reads. That removes rev 0's "R or XR" column, which described a slot no
   emitter reads `[r5 F7]`.
+- **"Adds, never swaps" holds only through a ROLE** `[r1-1106 D3]`. `revend_choose_form`
+  (compile.c:568-592) swaps FIVE pairs by value, NFAs included (`nfa`/`xnfa`, `rnfa`/`xrnfa`,
+  `dfa`/`xdfa`, `rdfa`/`xrdfa`, and `adfa`/`xadfa` under `anchored_ok`), and readers depend on what
+  sits in the plain slot: two ADDRESS tests, `if (d == &cx->job->dfa)` (emit_dfa.c:12996, the NEXT
+  prefilter row versus the fallback) and `.forward = d == &cx->job->dfa` (:9179), and two memos keyed
+  on the slots' contents (`lm_key_holds`, lmwalk.c:318-324; `cover_key_holds`, known.c:395-399). A
+  lowered machine held as a separate entry fails both address tests on every tagged artifact (the
+  NEXT row is lost, bytes move) and the memos key on the wrong machine. So S1M re-expresses the swap,
+  it does not remove it: "the live forward / reverse / anchored machine" is a ROLE of the table,
+  resolved once from the lowering fact, and EVERY reader goes through the role. The two address
+  tests become role tests; the two memos re-key on the role's entry. The reader set is a grep
+  recipe, not a list: `grep -rP 'job->(nfa|dfa|rdfa|rnfa|adfa|lmdfa|lmnfa|xnfa|xdfa|xrdfa|xrnfa|xadfa|nedfa|xprio)\b' src`
+  (160 sites at 6e01c810b: `dfa` 45, `nfa` 25, `adfa` 24, `rdfa` 19, `xnfa` 11, `nedfa` 9, `lmdfa`
+  8, `xrdfa` 7, `xprio` 7, `lmnfa` 6, `xrnfa` 6, `rnfa` 5, `xdfa` 4, `xadfa` 4).
+- **Two machines rev 1 missed** `[r1-1106 D3]`. `Job.nedfa`, the MANDATORY [FINDALL-NEXT] retry
+  machine (built compile.c:438-446, walked by `pcrec_emit_dfa_retry`, whose run-time `DfaDir` copy
+  S1 folds): IN, an entry with the role "find-all retry". `Job.xprio`, `mark_prio`'s probe
+  (compile.c:514-526): OUT. It is built only to read `prio_seen` and is never walked or emitted; its
+  one output is a FACT of the lowered entry (recorded there), and the probe stays a driver-local
+  build.
 - **Tables are the entry's**, emitted once per (machine, direction) (§2.1).
-- **Size.** Each optional machine has its own build cap (`revend_build_one`'s shape: overflow
-  record and subset budget restored; an overflow is the row's DECLINE). The lookbehind's machines
-  also get a size-cap RUNG in `fit_rungs[]`, in H-LADDER's declared append shape, as every shipped
-  optional reverse machine has (`drop-end-mark`, `drop-landmark-walk`): without one, an artifact
-  that `range` alone would fit is refused because of an optimization (D158) `[r5 F22]`. The rung's
-  drop flag uses the existing `FitSets` + `*_dropped` spelling, so R11 does not rise; H-LADDER's
-  R13 counts the hub, not its rows.
+- **Size.** Each optional machine has its own build cap (an overflow is the row's DECLINE).
+  `[r1-1106 N1]` The shape is the CALLERS', not `revend_build_one`'s: that function saves and
+  restores only `dfa_overflowed`/`dfa_overflow_why`, while the subset budget is saved and restored
+  by its callers (`lmwalk_build`'s `subset_before`, `revend_build_marked`'s). A lookbehind build that
+  copied `revend_build_one` alone would charge every per-branch build to K7's per-compile budget
+  (dfa.c:1316-1321, a comment itself stale against those two callers), and a MANDATORY machine built
+  after it (the VM hybrid's prefilter DFA) could then refuse a pattern that compiles today. So the
+  lookbehind's machines are built AFTER the mandatory ones, with `lmwalk_build`'s caller-side
+  restore. The lookbehind's machines also get a size-cap RUNG in `fit_rungs[]`, in H-LADDER's
+  declared append shape, as every shipped optional reverse machine has (`drop-end-mark`,
+  `drop-landmark-walk`): without one, an artifact that `range` alone would fit under the emitted-size
+  caps is refused because of an optimization (D158) `[r5 F22]`. The rung's drop flag uses the
+  existing `FitSets` + `*_dropped` spelling, so R11 does not rise; H-LADDER's R13 counts the hub,
+  not its rows.
+- **The rung, completed** `[r1-1106 R7]`. One `fit_fired` bit makes it all-or-nothing per artifact:
+  when it fires, every lookbehind branch of the artifact falls to `range` (acceptable: `range` is
+  total, and the answers are the same). It is built in ONE unit, S3 (the machines exist only there;
+  S1M declares nothing for it). Its readers outside H-LADDER's own shape (`fit_rungs[]`, `FitAct`,
+  `fit_seq_legal[]`, `COMPILE_MAX_ATTEMPTS`, the driver case, the note), each owed a hunk or a row
+  in S3: `docs/spec/limits.md` §8.4's rung table (its last column names each rung's public flag;
+  this rung's entry is "none: the test-only `--harness=` arm", ruling 4); `docs/spec/tuning.md`'s
+  two rung-order sentences (§2.15¶4, §2.54¶5); `tests/codegen/run_fallback_table.sh` (its
+  `fseq`/`frec` rows under the `trlowsize` build); `tests/mech/sabotages/S238_size_drop_unstamped.sh`
+  (it enumerates the rungs that stamp `size-cap-retry`) plus a twin of
+  `S1826_lmwalk_rung_unattributed.sh`; `src/dump/axes_dump.c` (it lists `fit_rungs`). Its witness:
+  a `trlowsize` cell where the lookbehind's tables push the artifact over the cap and the rung
+  drops them to `range` (answer = libpcre2's; plant: the rung removed, giving a size refusal). The
+  concrete pattern is the build's (INFERRED: a wide UTF-8 class body is the likely shape).
 
 ### 2.5 The language fact, and what is declined before the build `[r5 F1, F2, F4]`
 
@@ -320,11 +475,74 @@ reverse machine of a branch wrong in the other direction, and neither sets an `e
 Both are exactly what the existing predicate `pcrec_nfa_has_bot` (nfa.c:1342) reports, and the
 landmark walk screens the first explicitly (lmwalk.c:181, `lc_g1`'s "gstart"). So the admission
 gains `!pcrec_nfa_has_bot(branch reverse NFA)`, TESTED ON THE NFA, BEFORE the subset construction:
-the order is the fix for F2, not only the conjunct. `\K` would be a third (a report shift), but it
-is refused inside every lookaround by both libraries (err 199); `(?m)$`, `$`, `\Z`, `\z` and `\b`
-at the cursor are RIGHT-context rows, read from the byte at `from` as RECOVER's pass reads the byte
-at the match end (nfa.c's header to `pcrec_nfa_has_bot`: "`(?m)$` does NOT join"), and they get a
-witness (WD8).
+the order is the fix for F2, not only the conjunct, and no NFA or DFA build on the admission path is
+mandatory (below) `[r1-1106 A2]`. `\K` would be a third (a report shift), but it is refused inside
+every lookaround by both libraries (err 199).
+
+**The right context at `from`: position, then byte** `[r1-1106 A3]`. `(?m)$`, `$`, `\Z`, `\z` and
+`\b` at the cursor are RIGHT-context rows (nfa.c's header to `pcrec_nfa_has_bot`: "`(?m)$` does NOT
+join"), and they hold or fail at the walk's START, `from`. Rev 1 said they are "read from the byte
+at `from`". That decides only two of the five:
+- `(?m)$` holds iff `from == n` or `subject[from] == '\n'`; `\b` reads the word class of
+  `subject[from]` (absent at `from == n`). These are byte-keyed.
+- `$` and `\Z` hold iff `from == n`, or `from == n − 1` and `subject[from] == '\n'`; `\z` holds iff
+  `from == n` and reads no byte. These are POSITION-keyed: they need `from` compared with
+  `subject_length`.
+
+The DFA already has the realization: the base, end-of-line and end position views (dfa.c:1430-1432)
+and the emitter's view selection. So the record states the rule: the `from` reference selects the
+view by POSITION (end at `from == n`; end-of-line at `from == n − 1` with a final newline; base
+otherwise), and the base view then reads the byte. This is why §2.3's read set includes
+`subject_length`. Cells (libpcre2 10.46, `arevrev2_evidence/premise.out`): `(?<=a{1,2}$)\nb` on
+`aa\nb` nomatch (a byte-only reading says `$` holds at 2: [2-4]); `(?<=a{1,2}\z)\n` on `aa\n`
+nomatch; controls `(?<=a{1,2}$)\n` and `(?<=a{1,2}\Z)\n` on `aa\n` [2-3], and the byte-keyed
+`(?<=(?m)a{1,2}$)\nb` on `aa\nb` [2-4]. They join WD8 (§3.1, `HO-8`). An end-assertion cell on an
+ILL-FORMED UTF-8 subject end meets K74 ([UTF-END-ASSERT], filed 2026-11-06: `$`, `\Z`, `\z`,
+`(?m)$` and `\B` at an ill-formed end diverge from libpcre2 today, whatever the row), so the gate
+states K74 as a named class beside D142's for such cells.
+
+**No build on the admission path can refuse: conjunct (c0)** `[r1-1106 A2]`. Conjunct (c) needs the
+branch's reverse NFA BUILT, and `pcrec_build_nfa` has no optional mode: its state allocator `nst`
+(src/ir/nfa.c:146-156) calls `pcrec_ctx_fail` at the per-compile NFA-state cap
+(`PCREC_MAX_NFA_STATES`, 131072, raise-only through `--max-nfa-states`), which longjmps to the
+compile's one `setjmp`: a refusal. Only the DFA builder has `d->optional`. Today's whole-pattern NFA
+erases a lookbehind body to one row (nfa.c:759), so no NFA ever sized a body until this row. Cell:
+`\p{L}{255}b` under `-e utf8` refuses today ("NFA exceeds 131072 states", at 6e01c810b, premise.out)
+while `(?<=\p{L}{255})b` compiles, and libpcre2 accepts the varying `(?<=\p{L}{1,255})b` (255 is its
+variable-lookbehind ceiling; `{1,256}` is err 200). Once `range` ships, a row that built that
+branch's NFA would turn the pattern into a refusal: an optimization-added refusal (D158), which the
+gate's "no answer moves" forbids, and which no retry rung catches (`dfa_overflowed` is not set on
+this path).
+
+So the admission gains a conjunct BEFORE (c), on the AST, before any NFA is built:
+- **(c0): the branch's NFA-state BOUND is within the effective cap.** The bound is an upper bound on
+  the states `pcrec_build_nfa` would allocate for the branch, computed structurally from the branch
+  AST with the builder's own per-arm costs: a class node counted by the SAME UTF-8 range splitter the
+  builder calls (the one arm that expands: under `-e utf8` one `\p{L}` character costs about 3,500 states, so `\p{L}{k}b` passes the cap at k = 36 and fails it at k = 37, premise.out), a
+  counted repeat as `hi` copies of its body plus the builder's per-copy states, alternation and
+  concatenation as sums, an erased lookaround as its one row. Above the cap (the same effective cap
+  `nst` reads, the caller's raise included) the branch DECLINES to `range`. A bound that over-counts
+  declines more bodies, never a wrong answer (`range` is total).
+- **Its control** is the builder's real count: the build lane adds a check that on every branch
+  (c0) admits, the built reverse NFA's `n` is at most the bound (a codegen-section assertion over the
+  lookbehind corpus, the population counted, K35). A bound that ever under-counts is then a red
+  check, not a refusal in the field. The build lane may instead realize the bound as a counting
+  pass OF the builder (one source of the per-arm costs) if the builder's arms allow it; the
+  conjunct and its control are the same either way.
+- **Why not an optional NFA build or a retry rung** (the review's other two options). An optional
+  mode needs a failure return threaded through every recursive arm of the builder (its cap's only
+  exit today is the longjmp), or a second `setjmp`, which the compiler avoids by design
+  (select_engine.c: "exactly one `setjmp` … feeding the result back means running the pass again
+  with one more input bit"). A retry rung on the NFA cap costs a whole extra attempt and needs an
+  arrival label telling this branch's cap from the pattern's own. The bound is cheaper than both
+  and leaves the builder unchanged.
+- **The DFA half** stays (d): the per-branch DFA is built `optional`, so its cap overflow is
+  recorded and declines, with the caller-side subset restore of §2.4. The rung of §2.4 covers the
+  emitted-size caps. With (c0), (d) and the rung, every cap on the row's path declines.
+
+Witness `HO-N` (§3.1): `(?<=\p{L}{1,255})b` under `-e utf8` compiles and matches as `range` does;
+plant: (c0) dropped (the compile refuses with the NFA-state diagnostic). The `HO-N` id and its
+twin at a raised cap are the build's to pin.
 
 ### 2.6 The generalizations, against vlookbehind rev 2 §4's checklist
 

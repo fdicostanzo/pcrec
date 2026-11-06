@@ -1,0 +1,17 @@
+--- /var/tmp/pcrec-pcrec/scratch/crit-arev2/sound/model.py	2026-11-06 00:40:22.666957190 -0500
++++ /var/tmp/pcrec-pcrec/scratch/arevrev2/sweep/model.py	2026-11-06 01:09:25.501351873 -0500
+@@ -286,7 +286,13 @@
+                 t = next((s for s in range(0, i + 1) if self.machine_accepts(b, s, i)), -1)
+                 if t < 0: continue
+                 r = fin(c)
+-                if not neg and not atomic: return r   # no frame: no way back in
++                # arevrev2 rule (r1-1106 A1): on the non-atomic positive form row 2
++                # pushes RX_PUSH(&&L_b_(i+1), cursor) before goto L_ok, except on the
++                # LAST branch (whose continuation is rx_fail, as one-length's).
++                if not neg and not atomic:
++                    if r is not None: return r
++                    if b is brs[-1]: return None      # no frame on the last branch
++                    continue                          # the popped frame: branch i+1 at the cursor
+             else:
+                 lo, hi = width(b)
+                 if i < lo: continue
