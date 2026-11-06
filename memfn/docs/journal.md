@@ -3319,3 +3319,8 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06 11:20: J0 retry (440) GREEN in 17 s: 5,492 compiles, census0 control GREEN, 116 lines, no witness-moved note. census0.out committed on s2b. Counts are identical to the provisional run: 207 row-1-class units, 166 moving at one or more corners, 3,430 window units, 750 moving. The only label change is hors -> D-hors (unit 1e's name).
   - S2b is complete. No separate code round: python instruments only, held by a byte-for-byte control and a red sabotage. It is delivered to main together with S2a after S2a's round and gates.
   - S2c waits on S2a's code round; its base needs S2a's format-2 spec text.
+- 11-06: S2a code round r8 RULED: no answer or speed finding; zero movers held (288 pairs, 9 arms); all 12 sabotage rows red.
+  - FIX-NOW: SEAM-1 (value_e6 missing from the handed digest, so a value+1 fill passed), CHECKS-1/2, CONTRACT-1..4, HOUSE-1/2/5. PLAN: SEAM-2 (the kit's unchecked UNSTATED mf_akind.present, a kit defect, goes in the done notice).
+  - The review is committed ON lane/memfn-s2a (merge 1f14b70bd), because its spec cites (§2.2¶1a, §4¶2a) exist only there and the spec hook refused them on k1102.
+  - The reviews index went over 12 KB; the 9 oldest entries moved to the history file.
+  - Fix lane s2afix (sonnet) is in worktree s2a, with its deliver file written by me before launch. Gates 460-468 follow.
