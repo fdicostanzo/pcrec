@@ -459,7 +459,8 @@ fi
 #
 # AND A PER-SUBTREE GUARD IS NOT ENOUGH EITHER, which is what this ladder
 # actually caught. On these patterns the TOP-LEVEL island declines on size and
-# `src/opt/altcls.c`'s factoring then leaves fifteen nested sub-alternations,
+# the prefix factoring (then `src/opt/altcls.c`'s, now the owner's rule P in
+# `src/opt/altnf.c`) then left fifteen nested sub-alternations,
 # each individually reasonable, whose SUM crossed the cap: 514,258 bytes
 # against the chain's 430,442. The artifact-wide budget (`Vm.isl_over_cap`,
 # accumulated in the slot pre-pass so all three readers of `vm_isl_build` see

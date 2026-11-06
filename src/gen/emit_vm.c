@@ -578,7 +578,8 @@ typedef struct {
     /* [ENG-ISL] THE PER-ARTIFACT ISLAND BUDGET, and it exists because the
      * PER-SUBTREE size rule does not bound ACCEPTANCE on its own. Measured:
      * on a 1,200-word alternation the top-level island declines on size, and
-     * `src/opt/altcls.c`'s factoring then leaves FIFTEEN nested sub-alternations
+     * the prefix factoring (then `src/opt/altcls.c`'s, now the owner's rule P,
+     * `src/opt/altnf.c`) then left FIFTEEN nested sub-alternations
      * that each pass their own (small) size test — together 514,258 bytes of
      * emitted code against the chain's 430,442 and a 500,000 cap, so the
      * artifact is REFUSED where the chain compiles. Each island was individually
