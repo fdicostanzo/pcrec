@@ -101,8 +101,10 @@ SUBJECTS = ["", "a", "b", "q", "z", "ab", "abc", "aa", "bb", "az", "za",
             "abab", "zaz"]
 
 # The one refusal class a PCREC-REFUSES outcome is allowed to carry.
+# [VLOOKBEHIND] stage 1's three width-rule sentences (unbounded, the 65535
+# ceiling, the 255 cap once a branch varies) share this opening.
 WIDTH_REFUSAL = re.compile(
-    r"variable-length lookbehind is not implemented|this lookbehind is too long")
+    r"every alternative of a lookbehind must|this lookbehind is too long")
 
 
 def population():

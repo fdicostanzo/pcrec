@@ -1935,19 +1935,16 @@ reject_gated "$LBF" '^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))$' "
 # AT OFFSET 26, which is the offset pcrec now names from a pass that runs long
 # after the parse hook that used to name it.
 reject_gated "$LBF" '^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$' "(this one is unbounded) (pattern offset 26)"
-# AND THE ROW WHOSE SENTENCE IS THE EVIDENCE. This cell was PARKED in
-# tests/known_fail/ by [DD-14] wave B+C as a tier-2 over-rejection caused by
-# TIMING. It is not: its lookbehind body is ONE top-level branch of width 1..2,
-# because the alternation lives inside the CALLEE — `(?<=(a|bc))x` reached
-# through a call, which `lookaround_design.md` §2.5 charters the longest-first
-# step-back loop for and does not ship. Closing the timing gap left the refusal
-# standing and changed the SENTENCE from "this one is unbounded" (a claim about
-# the call graph, and false) to "this one can match 1..2 characters" (a claim
-# about the shipped subset, and true), at the same offset. **The wording is
-# pinned here precisely because it is what told the two questions apart** — a
-# regression to "unbounded" would be a true refusal for a false reason, which
-# no exit code and no `perr` block can see.
-reject_gated "$LBF" '^(?:(?<g>a|ab)){0}ab(?<=(?&g))$' "(this one can match 1..2 characters) (pattern offset 20)"
+# AND THE ROW WHOSE SENTENCE IS THE EVIDENCE. Its first occupant,
+# `^(?:(?<g>a|ab)){0}ab(?<=(?&g))$` (ONE varying branch reached through a
+# call, refused "1..2" by [DD-14.LB]), COMPILES since [VLOOKBEHIND] stage 1
+# (tests/recursion/inlookaround.rxt answers it). The question the row pinned
+# survives one rule over: a call's width must be read from the CALLEE, not
+# from the call graph's shape. A callee of width 1..300 is refused by the 255
+# cap that applies once a branch varies (libpcre2 err 200, at the SAME offset,
+# 23) -- a regression to "unbounded" would be a true refusal for a false
+# reason, which no exit code and no `perr` block can see.
+reject_gated "$LBF" '^(?:(?<g>a{1,300})){0}b(?<=(?&g))$' "(this one can match up to 300) (pattern offset 23)"
 
 echo
 echo "== base-grammar MISCOMPILES, fixed 2026-08-10 (K5, K6) =="

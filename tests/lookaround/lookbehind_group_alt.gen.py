@@ -10,14 +10,13 @@ HEAD='''# tests/lookaround/lookbehind_group_alt.rxt -- K123 (lane langfix2): a
 # Two halves. ACCEPTED: the group's alternatives share one length, so the
 # top-level branch is fixed-width and compiles (first branch, later branch,
 # scoped `(?i:...)`, the `(*plb:` spelling, negative, captures inside). And
-# VARIABLE: the group's alternatives differ in length, libpcre2 10.46 accepts
-# (variable-length lookbehind) and pcrec refuses by capability (§7.4, shape
-# 5) -- a clean `perr`, the same answer `(?<=(a|bc))x` has always had, never
-# the internal error.
+# VARIABLE: the group's alternatives differ in length, so the top-level
+# branch varies. pcrec refused these by capability until [VLOOKBEHIND] stage
+# 1 built the candidate loop (pattern_language.md §7.4); they answer now, and
+# a refusal was never the internal error.
 #
 # EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
-# p2probe); the `perr` blocks are pcrec's documented capability refusal and
-# libpcre2 ACCEPTS them, which each block's comment says.
+# p2probe).
 '''
 F='lookaround'
 BLOCKS=[
@@ -31,8 +30,8 @@ BLOCKS=[
  dict(c='Negative polarity.', p='(?<!(?:ab|cd))x', f=F, s=['abx','acx','x']),
  dict(c='A counted repeat inside the group, same length.', p='(?<=(?:a{2}|bc))x', f=F, s=['aax','bcx','ax']),
  dict(c='Nested groups of alternatives.', p='(?<=(?:a(?:b|c)|d(?:e|f)))x', f=F, s=['acx','dfx','adx']),
- dict(c="VARIABLE: libpcre2 10.46 ACCEPTS (variable-length lookbehind); pcrec refuses by\ncapability (§7.4), not by internal error.", p='(?<=(?:a|bc))x', f=F, s='perr', ok=1),
- dict(c="VARIABLE, scoped: libpcre2 10.46 ACCEPTS; pcrec refuses by capability.", p='(?<=(?i:a|bc))x', f=F+',modifiers', s='perr', ok=1),
- dict(c="VARIABLE, the group first of two branches: libpcre2 10.46 ACCEPTS; pcrec\nrefuses by capability.", p='(?<=(?:a|bc)|d)x', f=F, s='perr', ok=1),
- dict(c="VARIABLE, negative `(*plb:`-free spelling: libpcre2 10.46 ACCEPTS; pcrec\nrefuses by capability.", p='(?<!(?:a|bc))x', f=F, s='perr', ok=1),
+ dict(c="VARIABLE: one top-level branch of width 1..2 (a varying branch since\n[VLOOKBEHIND] stage 1).", p='(?<=(?:a|bc))x', f=F, s=['ax','bcx','cx','x'], po=1),
+ dict(c="VARIABLE, scoped.", p='(?<=(?i:a|bc))x', f=F+',modifiers', s=['Ax','bCx','cx'], po=1),
+ dict(c="VARIABLE, the group first of two branches (a varying branch, then a fixed\none).", p='(?<=(?:a|bc)|d)x', f=F, s=['ax','bcx','dx','cx'], po=1),
+ dict(c="VARIABLE, negative polarity.", p='(?<!(?:a|bc))x', f=F, s=['ax','bcx','cx','x'], po=1),
 ]

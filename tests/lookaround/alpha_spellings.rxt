@@ -358,17 +358,20 @@ features lookaround
 m "ab" 0 1
 m "ba" 0 1
 
-# THE WIDTH RULE THROUGH AN ALIAS (§2.5): ONE branch of width 1..2, refused
-# with a capability message and a pattern offset, exactly as `(?<=(a|bc))x`
-# is. libpcre2 COMPILES it -- the refusal is pcrec's capability limit, not a
-# syntax verdict.
-# MEASURED: libpcre2 10.46 ACCEPTS this pattern -- pcrec's refusal is a
-# CAPABILITY limit, stated as one (D26 tier 2: which constructs are real is
-# exact, what pcrec builds is a separate statement); python3 `re` refuses:
-# nothing to repeat at position 1
+# THE VARYING BRANCH THROUGH AN ALIAS: ONE branch of width 1..2 answers
+# exactly as `(?<=(a|bc))x` does ([VLOOKBEHIND] stage 1), so an alias that
+# reached some other path than the shared port shows here.
+# python DIVERGES here, measured rather than assumed: 'ax' @0 pcre2=('m', 1,
+# 2, (0, 1)) python=('ERR', 'nothing to repeat at position 1') (3 cells in
+# this block)
+# pcre2-only
 pattern (*plb:(a|bc))x
 features lookaround
-perr
+m "ax" 1 2
+g 1 0 1
+m "bcx" 2 3
+g 1 0 2
+n "cx"
 
 # §2.7's `\K` REFUSAL THROUGH AN ALIAS, and through the LONG spelling: the
 # check is `la_has_kreset` inside the shared port, so an alias that did not

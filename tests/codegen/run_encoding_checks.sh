@@ -426,7 +426,7 @@ fi
 # emission defines. DD12a(i)'s head matcher, its twin list, its counter keys,
 # rule (b)'s one-sided keys and rule (a)'s floor are derived from that table
 # below; the hand lists whose drift this file records three times are gone.
-LIBA="${LIBA:-$(dirname "$PCREC")/libpcrec.a}"
+LIBA="${LIBA:-${PCREC%/*}/libpcrec.a}"
 eel="$WORKDIR/enc_entry_list"
 if [ ! -f "$LIBA" ]; then
     bad "DD12a(i) $LIBA not found — the seam reader cannot link (run make first)"

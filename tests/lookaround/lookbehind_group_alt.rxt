@@ -10,14 +10,13 @@
 # Two halves. ACCEPTED: the group's alternatives share one length, so the
 # top-level branch is fixed-width and compiles (first branch, later branch,
 # scoped `(?i:...)`, the `(*plb:` spelling, negative, captures inside). And
-# VARIABLE: the group's alternatives differ in length, libpcre2 10.46 accepts
-# (variable-length lookbehind) and pcrec refuses by capability (§7.4, shape
-# 5) -- a clean `perr`, the same answer `(?<=(a|bc))x` has always had, never
-# the internal error.
+# VARIABLE: the group's alternatives differ in length, so the top-level
+# branch varies. pcrec refused these by capability until [VLOOKBEHIND] stage
+# 1 built the candidate loop (pattern_language.md §7.4); they answer now, and
+# a refusal was never the internal error.
 #
 # EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
-# p2probe); the `perr` blocks are pcrec's documented capability refusal and
-# libpcre2 ACCEPTS them, which each block's comment says.
+# p2probe).
 
 # THE ADVERSARY'S CELL: a non-capturing group of two same-length alternatives.
 pattern (?<=(?:ab|cd))x
@@ -94,26 +93,40 @@ m "acx" 2 3
 m "dfx" 2 3
 n "adx"
 
-# VARIABLE: libpcre2 10.46 ACCEPTS (variable-length lookbehind); pcrec refuses by
-# capability (§7.4), not by internal error.
+# VARIABLE: one top-level branch of width 1..2 (a varying branch since
+# [VLOOKBEHIND] stage 1).
+# pcre2-only
 pattern (?<=(?:a|bc))x
 features lookaround
-perr
+m "ax" 1 2
+m "bcx" 2 3
+n "cx"
+n "x"
 
-# VARIABLE, scoped: libpcre2 10.46 ACCEPTS; pcrec refuses by capability.
+# VARIABLE, scoped.
+# pcre2-only
 pattern (?<=(?i:a|bc))x
 features lookaround,modifiers
-perr
+m "Ax" 1 2
+m "bCx" 2 3
+n "cx"
 
-# VARIABLE, the group first of two branches: libpcre2 10.46 ACCEPTS; pcrec
-# refuses by capability.
+# VARIABLE, the group first of two branches (a varying branch, then a fixed
+# one).
+# pcre2-only
 pattern (?<=(?:a|bc)|d)x
 features lookaround
-perr
+m "ax" 1 2
+m "bcx" 2 3
+m "dx" 1 2
+n "cx"
 
-# VARIABLE, negative `(*plb:`-free spelling: libpcre2 10.46 ACCEPTS; pcrec
-# refuses by capability.
+# VARIABLE, negative polarity.
+# pcre2-only
 pattern (?<!(?:a|bc))x
 features lookaround
-perr
+n "ax"
+n "bcx"
+m "cx" 1 2
+m "x" 0 1
 

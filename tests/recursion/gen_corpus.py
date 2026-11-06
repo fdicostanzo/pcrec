@@ -1839,17 +1839,13 @@ QUANTIFIED = [
 # RECORDS a lookbehind whose body carries a call, and a pass after
 # `pcrec_callgraph_build` re-asks module `lookaround`'s own rule at the
 # recorded offset). Cell 1 then COMPILES AND MATCHES and is a live `B` below.
-# Cell 2 is still refused -- and its diagnostic changed from "this one is
-# unbounded" to "this one can match 1..2 characters", at the same offset,
-# which is the whole story in one sentence: **the refusal was never about the
-# call graph. Its lookbehind body is ONE top-level branch of width 1..2** --
-# the alternation lives inside the CALLEE -- so it is `(?<=(a|bc))x` reached
-# through a call, `lookaround_design.md` SS2.5's chartered-not-shipped
-# longest-first step-back loop, already a RULED `perr` in
-# tests/lookaround/refused.rxt. subroutines_design.md SS3.4(d)'s own
-# measurement table says as much about 10.46's side of it ("the
-# variable-length lookbehind 10.43+ allows"). It is a kind='capability' cell
-# now, which is a RULING with a citation rather than an open disagreement.
+# Cell 2 stayed refused, and its diagnostic changed from "this one is
+# unbounded" to "this one can match 1..2 characters", at the same offset:
+# **the refusal was never about the call graph. Its lookbehind body is ONE
+# top-level branch of width 1..2** -- the alternation lives inside the CALLEE
+# -- so it is `(?<=(a|bc))x` reached through a call. [DD-14.LB] ruled it a
+# capability refusal; [VLOOKBEHIND] stage 1 built the varying-branch loop and
+# reversed that ruling, so cell 2 is a live `B` below as well.
 #
 # tests/known_fail/dd14_bc_open.rxt is EMPTY of cells as of this wave.
 
@@ -1946,26 +1942,18 @@ INLOOKAROUND = [
                "returns the identical table -- the cell pins that the "
                "over-deferral is harmless, which is the claim "
                "src/parse/mod_lookaround.c makes at the deferral site."),
-        PERR(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", 'capability', oracle="ab",
-             features=RCLA + ",named-groups",
-             note="WAVE B+C's PARKED CELL 2, RULED. ONE top-level branch -- "
-                  "an `A_CALL` -- of width 1..2, because the alternation is "
-                  "inside the CALLEE. That is `(?<=(a|bc))x` reached through "
-                  "a call: lookaround_design.md SS2.5 CHARTERS the "
-                  "longest-first step-back loop it needs and does not ship "
-                  "it, and tests/lookaround/refused.rxt pins the call-free "
-                  "twin with this same citation. Note the DIAGNOSTIC below, "
-                  "which is how the two questions were told apart: before "
-                  "[DD-14.LB] pcrec said \"unbounded\" here, a claim about "
-                  "the call graph that was FALSE; it now says \"1..2\", "
-                  "which is a claim about the shipped subset and is true. "
-                  "Letting a body that is exactly one `A_CALL` borrow the "
-                  "callee's top-level branch split was considered and "
-                  "rejected -- it does not generalise (`(?<=x(?&g))` is one "
-                  "branch again) and it would invert SS2.4's MEASURED "
-                  "ordering, since PCRE2 tries a single variable branch "
-                  "step-back LONGEST-FIRST while branches are tried in "
-                  "written order."),
+        B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab"), ('n', "b"),
+          ('n', "a")], RCLA + ",named-groups", groups=0,
+          note="WAVE B+C's PARKED CELL 2, ANSWERED. ONE top-level branch -- "
+               "an `A_CALL` -- of width 1..2, because the alternation is "
+               "inside the CALLEE: `(?<=(a|bc))x` reached through a call. "
+               "The [DD-14.LB] amendment refused it (a RULED capability "
+               "refusal) for want of the candidate loop; [VLOOKBEHIND] "
+               "stage 1 built that loop and REVERSED the refusal "
+               "deliberately (vlookbehind.md §6), so it now answers as "
+               "libpcre2 does. Borrowing the callee's top-level branch split "
+               "is still rejected: the call is ONE varying branch, tried "
+               "farthest candidate first."),
         PERR(r"^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$", 'pcre2',
              features=RCLA + ",named-groups",
              note="a RECURSIVE callee inside a lookbehind has no bounded "

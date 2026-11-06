@@ -429,7 +429,7 @@ fi
 # where libpcre2 at max_varlookbehind = 0 refuses. Its population and every
 # bucket are pinned EXACTLY (K35): a bucket that moved is a decision.
 VLB_ACC_EXPECT="vlb_accept: total=234 both=154 divergent=32 pcre2only=2 bad=0"
-python3 "$SCRIPT_DIR/vlb_accept.py" "$PCREC" > "$WORKDIR/vlb_acc" 2>&1
+"$TIMEOUT_BIN" 1800 python3 "$SCRIPT_DIR/vlb_accept.py" "$PCREC" > "$WORKDIR/vlb_acc" 2>&1
 vlb_acc_last="$(tail -1 "$WORKDIR/vlb_acc")"
 if [ "$vlb_acc_last" = "$VLB_ACC_EXPECT" ]; then
     ok "§6 the accept set: 234 cells, pcrec's accepts inside libpcre2's (32 zero-width-repeat cells the stated divergence, 2 backreference rows libpcre2 alone accepts until stage 2), and on all 154 shared accepts pcrec's 'width LO..HI' judgment equals libpcre2's refusal at max_varlookbehind = 0"
