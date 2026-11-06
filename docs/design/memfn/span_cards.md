@@ -789,7 +789,7 @@ green); `--ready` is 650's quiet gate (no running queue job, no box-lock holder,
 >= 55 s apart); the work is the slot harness's `run`. Pinned `taskset` to CPU 7, sibling CPU 15 idle (650's
 pair; grid1 used 14, which only names a different core: the set's `box` records it). Jobs chain with `after`
 and declare `not-before`/the window's times; `[rev1.3 r9-W1, r9-W2]` the job scripts are COMMITTED under
-`span_cards/slot/jobs/` (prep 480, `[rev1.3 r9fc-FIX-7]` the placement screen 480 after it, J1-J5 and J2p 481-486, J9 489; a `window.env` beside the queued copies
+`span_cards/slot/jobs/` (prep 480, `[rev1.3 r9fc-FIX-7]` the placement screen 480 after it, J1-J5 and J2p 481-486, J9 489; a `window.vars` beside the queued copies
 carries the run id, the frozen commit and the tree; every `--dry-run` compares its copy with the tree's). The
 prep job runs every job's dry run; a timing job's `--dry-run` checks its inputs only and prints `expect
 groups=N` from `plan.py groups`. "Chain" is END, not green: a job is ready once its upstream ENDED (green,

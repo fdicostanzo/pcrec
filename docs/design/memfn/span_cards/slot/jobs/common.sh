@@ -1,8 +1,8 @@
 # span_cards/slot/jobs/common.sh — the S2d WINDOW's queue jobs, common part (span_cards.md §3.3, §3.5, §9 S2d;
 # [rev1.3 r9-W1], [rev1.3 r9-W2]). The job scripts are COMMITTED here; main copies this directory to a scratch
-# job dir, writes `window.env` beside the copies when it clears the window with Frank, and queues the copies
+# job dir, writes `window.vars` beside the copies when it clears the window with Frank, and queues the copies
 # with scripts/boxqueue. Every --dry-run compares its copy (and this file's) with the tree's: a stale copy
-# refuses. window.env sets RUN_ID (seeds every placement, §3.2), FROZEN (the commit the window times, a hex object
+# refuses. window.vars sets RUN_ID (seeds every placement, §3.2), FROZEN (the commit the window times, a hex object
 # name; TREE's HEAD must equal it), TREE (the checkout) and optionally HOLD (a script whose non-zero exit holds every
 # job). FROZEN is RESOLVED to its full sha here ([rev1.3 r9fc-FIX-3]): CODE_COMMIT, the value every job writes into
 # the run record, is that sha, and a FROZEN that is not hex (a branch name) refuses at the dry run.
@@ -15,7 +15,7 @@ set -u
 export LC_ALL=C
 JOBDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 RUN_ID="" FROZEN="" TREE="" HOLD=""
-[ -f "$JOBDIR/window.env" ] && . "$JOBDIR/window.env"
+[ -f "$JOBDIR/window.vars" ] && . "$JOBDIR/window.vars"
 export TMPDIR=${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}
 SLOT=$TREE/docs/design/memfn/span_cards/slot
 RUNDIR=$TMPDIR/scratch/memfn/s2d/${RUN_ID:-unset}
@@ -31,8 +31,8 @@ main_tree() { dirname "$(git -C "$TREE" rev-parse --path-format=absolute --git-c
 bq() { bash "$(main_tree)/scripts/boxqueue" "$@"; }
 
 check_inputs() {   # SELF: the window's inputs, and the queued copy is the tree's
-    [ -n "$RUN_ID" ] || { echo "RUN_ID is empty in $JOBDIR/window.env (main sets it when the window is cleared)" >&2; return 1; }
-    [ -n "$FROZEN" ] || { echo "FROZEN is empty in $JOBDIR/window.env" >&2; return 1; }
+    [ -n "$RUN_ID" ] || { echo "RUN_ID is empty in $JOBDIR/window.vars (main sets it when the window is cleared)" >&2; return 1; }
+    [ -n "$FROZEN" ] || { echo "FROZEN is empty in $JOBDIR/window.vars" >&2; return 1; }
     [ -d "$TREE" ] || { echo "TREE ($TREE) is not a directory" >&2; return 1; }
     case $FROZEN in *[!0-9a-f]*) echo "FROZEN ($FROZEN) is not a hex object name (a commit sha, never a ref name)" >&2; return 1 ;; esac
     [ ${#CODE_COMMIT} -eq 40 ] || { echo "FROZEN ($FROZEN) resolves to no commit in $TREE" >&2; return 1; }

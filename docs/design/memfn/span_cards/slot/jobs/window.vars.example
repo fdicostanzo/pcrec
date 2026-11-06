@@ -1,4 +1,4 @@
-# window.env for the S2d jobs (copy beside the queued job copies as window.env; main fills it when the window is
+# window.vars for the S2d jobs (copy beside the queued job copies as window.vars; main fills it when the window is
 # cleared with Frank). Shell assignments only.
 RUN_ID=""                                            # the window's run id
 FROZEN=""                                            # the commit the window times: its sha (hex; resolved to the full sha)
