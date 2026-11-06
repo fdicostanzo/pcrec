@@ -488,7 +488,7 @@ inside `(?<=[aé])` stays fixed-width (K123).
 | site | relation |
 |---|---|
 | `lower_class_utf8` | caller, byte level, over `u8_box`'s boxes; sibling merge only (stage 1); the adjacency test is true by construction |
-| `altcls` | caller, code-point level, over every alternation spine it walks today, lookaround bodies excluded (stage 2b); its two stages become the owner's merge and factoring rules (r4: FIX-6: its key is already the longest literal prefix; the owner adds remainder re-merge, set-valued keys, suffix factoring) |
+| `altcls` | caller, code-point level, over every alternation spine it walks today, lookaround bodies excluded (stage 2b); its two stages become the owner's merge and factoring rules (r4: FIX-6: its key is already the longest literal prefix; the owner adds set-valued keys, suffix factoring and M's reach over the heads and rests P and S create; r7: SND-2) |
 | `req.c` | NOT a reader of the owner. Facts come from the description (§3.5); the owner's output is a tree like any other |
 | the description (§3.5) | (r4: FIX-7) the owner READS it at code-point level (merge candidacy, the adjacency test's head and WRITES); the run walk reads it at byte level |
 | VM island | NOT a reader of the owner (r2: SLOT-3). The island's priority-tagged trie stays `vm_isl_build`'s until A-ISL (roadmap R04, HELD) replaces it; (r4: SND-2) stage 1 moves its `A_WCLASS` arm onto the class's code-point set, admission unchanged (§5) |
@@ -511,7 +511,11 @@ withdrawn). Decision: the owner is called **a reproducible reduction, not a
 canonical form**, with ONE declared order, *position-major, last position
 first*, which is step M of THE PROCEDURE above (the critic's 13M pair compares
 for `\p{L}` are the pair scan's, which hashing replaces). Fold classes are
-confluent under every order, so nothing but a gate on the wide classes holds
+confluent under every order **in their box COUNT** (**r7: SIM-6** 0 of 1454 differ; the
+FORM differs for one class, {U+0395, U+03B5, U+03F5}: `CE[95 B5]|CF B5` declared
+vs `CE 95|[CE CF] B5` first-position-first, same count, different emitted
+bytes; and `\p{Nd}`'s 39 is not the best order, 38 under 5 of the 24), so
+nothing but a gate on the wide classes holds
 the declared order in place: stage 1's Gate U1b pins it. In lowering the input is itself a function of the class's
 code-point SET (normalized intervals → ordered boxes), so the output is a
 function of the set: canonical PER SET, which is all G5 and Gate U3 need.
@@ -987,9 +991,25 @@ position (a REACH line per position).
   (its condition gains the regime fact), never to the lowering. **(r4:
   RDY-3)** The VM's quantifier RUNG also flips on a quantified multi-box class
   (frames → cursor, `vm_det_seq` accepting the merged stride): a choice cell
-  per D186, listed by Gate U4's rung census. Deny lever: **(r4: FIX-3)**
-  `-fno-altcls-merge` (bit 10) RE-SPECIFIED to deny the owner's sibling merge
-  at both callers (§11); no new bit.
+  per D186, listed by Gate U4's rung census. **(r7: RDY-1) A third family of choice
+  cells: the merge DELETES the island on a BARE wide class.** A wide class that
+  is not a branch of an enclosing alternation (`a[éÉ]b`, `(?i)aéb`,
+  `(?i)xé+y`) is, on the byte-lowered axis, an alternation of its boxes, and
+  that alternation is itself an island when every box is a single string
+  (`RX_VM_ALT_ISLANDS`, utf8, `--engine=vm -fno-cls-kit`, measured at
+  `783a45ec0`: `a[éÉ]b` 1, `(?i)aéb` 1, `(?i)xé+y` 2). Once the boxes merge
+  the child is ONE box holding a multi-member class: no alternation is left to
+  hand `vm_isl_build`, and `vm_isl_single` declines the class, so the island is
+  gone (byte controls of the merged tree: `a\xc3[\x89\xa9]b` 0,
+  `x\xc3[\x89\xa9]+y` 0). The set reading cannot restore it: it governs an
+  ENCLOSING alternation's branch, and here there is none. Each is a D186
+  CHOICE cell (the island was a choice, not a fact): listed by U4's census
+  with its per-regime VM number, restored by `-fno-altcls-merge` (bit 10,
+  which denies the merge at both callers), and if a loss is beyond noise the
+  narrowing is on the merge's admission (a bare class whose unmerged child is
+  an island keeps its boxes), a row to add then and not now (D77). Deny
+  lever: **(r4: FIX-3)** `-fno-altcls-merge` (bit 10) RE-SPECIFIED to deny the
+  owner's sibling merge at both callers (§11); no new bit.
 - **Change.** `lower_class_utf8` hands `u8_box`'s boxes to the owner (rule set
   {M}, §3.3) and returns the merged form; the seal is deleted; `req.c` is
   untouched. **(r4: SND-2/FIX-2, G-2; replaces r2's PREM-1 fix)** Rev 1's
@@ -1020,7 +1040,58 @@ position (a REACH line per position).
   cannot move (no `A_WCLASS` under `-e byte`). Spec: `tuning.md` §2.20¶2's
   first decline row gains "an `A_WCLASS` is read as its set; admitted when its
   canonical split is all single strings" (D80), wording only, no artifact
-  moves. Closes [LOWERENC-SEAL] with the bump.
+  moves.
+  **(r7: SND-1) WHERE the set reading must sit.** Moving the `A_WCLASS` arm is
+  not enough: it is reached only for a class the walk hands it RAW. The
+  island's two spine walks (`vm_isl_words`' `A_ALT` walk `emit_vm.c:4115-4120`
+  and its `A_CAT` walk `:4139-4144`) step the LEFT child with
+  `pcrec_ast_seethru` (`internal.h:2322-2326`, `while (a->k == A_WCLASS) a =
+  a->l`), so a class at a spine head (`[éà]1`: the CAT head of a branch;
+  `[éà]|q2|r3`: the first ALT branch) is replaced by its BYTE CHILD before the
+  switch sees it, and only a class in a right slot (`t->r`: the later ALT
+  branches, the later CAT elements) reaches the arm. After the merge that child
+  is `CAT(c3, [a0 a9])`, which the CAT walk unrolls into the spine and
+  `vm_isl_single` declines: `x(?:[éà]1|q2|r3)y` is `RX_VM_ALT_ISLANDS 1` today
+  and the merged byte spelling `x(?:\xc3[\xa0\xa9]1|q2|r3)y` is 0 (verifier's
+  controls; the stage is not built). So the stage gives those two walks an
+  ISLAND-LOCAL spine step that STOPS at `A_WCLASS` (the model is the VM's own
+  `vm_seethru`, `emit_vm.c:1587`, which is `pcrec_ast_seethru` narrowed per
+  class); a class at a spine head then reaches the set arm exactly as one in a
+  right slot does. `pcrec_ast_seethru` ITSELF stays: other readers of a spine
+  need it, among them the island's chain-size walk (`:4211-4222`, which counts
+  THROUGH a wide class on purpose: the chain emits the child, and a count that
+  saw the wrapper as a leaf would move the island-versus-chain ratio).
+  **(r7: FIX-7) The set arm's budget charges** are the child path's: one unit
+  per materialised word, the cross-product `len` charge in the CAT walk, and
+  the `VM_ISL_MAX_WORDS` cap; a class whose canonical split already exceeds
+  the cap (`\p{L}`, 827 boxes unmerged) declines on the SET's box count before
+  the words are materialised. Stated as the requirement; U4's equality is its
+  check (the counter equivalence was not read in the tree).
+  **(r7: RDY-2) The stamp unit.** `<PREFIX>_ALTCLS_MERGES` counts alternation
+  RUNS altcls folded today (`match_api.md` §6.3.11¶3; measured at `783a45ec0`:
+  `x(?:a|b|c)y` 1, `x(?:a|b|cd|e|f)y` 2). Stage 1 leaves the stamp exactly as it
+  is: **the lowering's merges are NOT counted** (counting them would move the
+  stamp of every multi-box utf8 artifact for a fact the program bytes and the
+  tables already record). Two sentences say so, in `tuning.md` §2.6¶1 and
+  `match_api.md` §6.3.11¶3 (D80). D46's do-or-die for bit 10 on the lowering is
+  met by those bytes and tables moving under `-fno-altcls-merge` (the
+  unmerged-lowering `make test-axes` differential reads them), not by the
+  stamp; the pass's own header already accepts that shape (`internal.h:3510-3520`:
+  a denied build's stamp is indistinguishable from "nothing to merge here").
+  The unit at stage 2b is stated there.
+  **(r7: RDY-8/FIX-5) Bit 10's readers at stage 1**, re-read in the same
+  change (D80), because the stage re-specifies it and rev 2 listed none:
+  `src/dump/axes_dump.c:625-631` (the `altcls-merge` row's text, "a maximal run
+  of single-character alternation branches qualifies"), `lib/pcrec.h:194-229`
+  (the bit's comment, "stage 1 (single-char runs → one class)"),
+  `src/core/internal.h:3506-3521` (the stamp-source comment and the
+  `altcls_merges` field note), `lib/CLAUDE.md:12` (the deny family and its
+  do-or-die sentence), `src/opt/CLAUDE.md:70` (the altcls entry), `cli/CLAUDE.md:17`
+  (the deny axes), `tests/axes/run_axes.sh:592-596` (the `-fno-altcls-merge`
+  refusal expectation on the size tower), `docs/spec/match_api.md` §6.3.11¶3
+  (`:2896-2902`) and its table row (`:1961`), and `tuning.md` §2.6 (`:117`,
+  `:229`).
+  Closes [LOWERENC-SEAL] with the bump.
 - **Gate B0 (zero byte movers, REQUIRED).** (r2: OWN-6, K35; **r4: FIX-4/RDY-2,
   spelled runnable**: rev 1's `--bases byte` is read only in `--variant` and
   `--data` modes, the facts stream is hard-wired `--emit-facts=byte,utf8`, and
@@ -1031,7 +1102,15 @@ position (a REACH line per position).
      c-default,c-vm,emit-ir,emit-ir-auto,stderr,dumps` (no `--extra-base`: the
      argv streams run at the byte base, `--features all`; the stderr stream
      compares every refusal verbatim, so a pattern refused under byte, e.g.
-     `(*UTF)`, is refused identically and counted). Identity required, the
+     `(*UTF)`, is refused identically and counted). **(r7: RDY-3)** The dumps
+     stream is whole-file identity-required, and stage 1 re-specifies bit 10
+     and so MUST move its `--list-axes` text (`axes_dump.c:625-631`, §11): a
+     correct build is red unless the delta is declared. Part 1 therefore adds
+     `--dumps-declared-rows=--list-axes:altcls-merge`, judged both ways (that
+     surface's `altcls-merge` row 1 must differ, every other line byte-identical,
+     no other dump moves). The key names two rows (`merged`, `denied`) and only the
+     first moves; if the judge cannot take a two-row key the stage-1 lane says so
+     and adds the narrowest option. Identity required, the
      script's own floors the population.
   2. The same at `--no-corpus --patterns-file BENCH.txt`, BENCH.txt holding
      every `pcrec-bench/bench/*/patterns/*.rx` pattern (one per line; one
@@ -1061,7 +1140,7 @@ position (a REACH line per position).
   | DFA next-state entries | per machine (Gate U3's counter) | a merge fires in some class (the merged box count is below the unmerged) |
   | VM program bytes | `RX_VM_PROGRAM_BYTES` on the VM route | the class is lowered to its byte tree on that axis (not kit-routed) AND it has more than one box (the seal's `empty` label goes) or a merge fires |
   | VM rungs | `RX_VM_RUNGS` | a quantified class whose merged split is ONE box while its unmerged split has several (RDY-3) |
-  | VM islands | `RX_VM_ALT_ISLANDS` | never (the set reading keeps today's admission) |
+  | VM islands | `RX_VM_ALT_ISLANDS` | **(r7: RDY-1)** a class inside an enclosing alternation: never (the set reading keeps today's admission, wherever the class sits in the spine); a BARE wide class (no enclosing alternation island) lowered to bytes on that axis, whose unmerged child is an island the VM admits and in which a fold fires (every fold leaves a multi-member class that `vm_isl_single` declines, or fewer than `VM_ISL_MIN_BRANCHES` boxes): `RX_VM_ALT_ISLANDS` falls, 1 → 0 only |
   | the utf8 refusal set (FIX-3) | rc + stderr of the utf8 compiles | a size-cap refusal (K45's kind) whose class merges; only FEWER refusals are expected |
 
   An unpredicted mover is a failure; a predicted mover that does not move is
@@ -1079,7 +1158,8 @@ position (a REACH line per position).
   `--features all`. The corpus beyond these populations: movers listed with
   the class predicate, gated one-sided through B0.
 - **Gate U1b (the declared order, pinned).** (r4: SIM-4) Fold classes are
-  confluent under every order, so nothing above holds step M's order in
+  confluent under every order in their box COUNT (r7: SIM-6: not in their FORM,
+  §3.3 Order), so nothing above holds step M's order in
   place. Pinned box counts after the merge, from the independent model and
   read from the stage build (the stage-1 lane names the instrument: the VM
   `--emit-ir` alternation entry count of the bare class under
@@ -1092,7 +1172,7 @@ position (a REACH line per position).
   fold classes in (from CaseFolding.txt), each compiled `(?i)abcd<X>efgh -e
   utf8 --emit-facts`, the keep rule stated in the script (`req_whole_run`'s
   position count `== 8 + len(utf8(X))`), the count out. On the stage build the
-  count is 766 EXACTLY, pinned against `shapes2.py`'s category sum (24 + 489 +
+  count is 766 EXACTLY, pinned against `shapes2.py`'s (`docs/dev/lanes/altthink_evidence/shapes2.py`) category sum (24 + 489 +
   253) by shape, the one decomposition (rpsurvey's by-length split is not
   reused).
 - **Gate U3 (no table growth, per machine).** (r2: PREM-5, SIM-8) Every utf8
@@ -1106,7 +1186,15 @@ position (a REACH line per position).
   (r2: PREM-1) Plus a VM island census: `RX_VM_ALT_ISLANDS` equal base vs stage
   on every utf8 corpus and bench compile, default and `-fno-cls-kit` axes,
   `--engine=vm` and auto (r4: SND-2: an equality again, by the set reading's
-  admission predicate). **(r4: RDY-3)** Beside it, an `RX_VM_RUNGS` census on
+  admission predicate). **(r7: SND-1/RDY-1) Re-derived, two-sided against U1's
+  island row:** with the set reading at every walk position, head and raw slot
+  alike (stage 1 Change), the census is an EQUALITY for every class inside an
+  enclosing alternation (`x(?:[éà]1|q2|r3)y` 1 → 1, `x(?:1[éè]|q2|r3)y` 0 → 0),
+  and its ONLY movers are U1's bare-class islands, each listed as a choice cell
+  (stage 1 Kind). Without the island-local step the same census would read
+  1 → 0 on every head-position class whose merge leaves a multi-member box, red
+  on a correct build of rev 2's text, which is why the head cases are census
+  cases below. **(r4: RDY-3)** Beside it, an `RX_VM_RUNGS` census on
   the same compiles and axes: every flip is on a U1-predicted rung mover and is
   a choice cell with its per-regime VM number (the cursor rung's "strict
   improvement", `emit_vm.c:1870-1873`, is a claim this census measures).
@@ -1122,7 +1210,11 @@ position (a REACH line per position).
   "20 of 76" list withdrawn: it held three non-movers and missed `cls-d-ucp`,
   `cls-s-ucp`, `ci-class-range`). **(r4: RDY-3)** VM rung flips on quantified
   multi-box classes (`(?i)xé+y` utf8 VM `RX_VM_RUNGS 0x4u`, 3319 B program
-  under `-fno-cls-kit`; the merged tree spelled as bytes `0x1u`, 1078 B).
+  under `-fno-cls-kit`; the merged tree spelled as bytes `0x1u`, 1078 B;
+  **r7: RDY-1** the same compile's `RX_VM_ALT_ISLANDS` falls 2 → 0, the bare
+  class's island going with the merge). Bare-class island losses on the
+  `-fno-cls-kit` VM axis: `a[éÉ]b`, `(?i)aéb` 1 → 0 (a D186 choice cell with its
+  VM number each, bit 10 restoring them).
   **(r4: FIX-3)** Possibly fewer utf8 size-cap refusals (U1's last row).
   Bench/utf8 cells:
   `ci-greek-run` (run and pick), `ci-moskva`, `ci-strasse`, `ci-e-acute`,
@@ -1139,22 +1231,34 @@ position (a REACH line per position).
     (0,3), measured; a truncating `[4b 6b e2]` sabotage gives (0,1)) and the
     truncated `e2 84` (NOMATCH, measured).
   - S-i (r2: new, PREM-1; r4: the set reading enumerates only the lowest
-    member): `x(?:[éà]1|q2|r3)y` under `--engine=vm -e utf8` against
-    `xé1y`: (0,5) expected (measured today, island count 1 today); the
-    sabotaged island has no `é` word. REACH: `RX_VM_ALT_ISLANDS 1` in both
-    builds.
-  - S-i2 (r4: new, SND-2; the admission predicate dropped): a COUNT witness,
-    no answer can move (enumerating a range box's members is sound):
-    `x(?:[éè]1|q2|r3)y` under the same axes stamps `RX_VM_ALT_ISLANDS 0` in the
-    correct build and 1 in the sabotaged one, so U4's equality goes red. Stated
-    as a census witness (lesson 1: it cannot fail an answer test).
+    member; **r7: SND-1, re-picked: the class sits in a RIGHT slot**):
+    `x(?:1[éà]|q2|r3)y` under `--engine=vm -e utf8 -fno-cls-kit` against
+    `x1éy`: (0,5) expected; the sabotaged island has no `é` word. REACH:
+    `RX_VM_ALT_ISLANDS 1` in both builds (measured `1` today). Rev 2's
+    `x(?:[éà]1|q2|r3)y` put the class at a CAT HEAD, which the island's walks
+    unwrapped before the arm: the sabotaged arm was never entered and the
+    witness could not fail in the correct build.
+  - S-i2 (r4: new, SND-2; the admission predicate dropped; **r7: SND-1,
+    re-picked to the same right slot**): a COUNT witness, no answer can move
+    (enumerating a range box's members is sound): `x(?:1[éè]|q2|r3)y` under the
+    same axes stamps `RX_VM_ALT_ISLANDS 0` in the correct build (measured `0`
+    today) and 1 in the sabotaged one, so U4's equality goes red. Stated as a
+    census witness (lesson 1: it cannot fail an answer test).
+  - **S-i, head variant (r7: SND-1; the walks keep `pcrec_ast_seethru`)**: a
+    COUNT witness at the census cases that rev 2 used as S-i: `x(?:[éà]1|q2|r3)y`
+    and `x(?:[éà]|q2|r3)y` stamp `RX_VM_ALT_ISLANDS 1` in the correct build
+    (measured `1` each today) and 0 in a build whose walks still unwrap the class
+    (the byte spelling of the merged child is `CAT(c3, [a0 a9])`, declined); the
+    answer cannot move. It is the witness that the new step is reached at a CAT
+    head and at the first ALT branch.
   - K123: `(?<=[a\x{3b1}])x` keeps compiling and matching `αx` with the seal
     gone (the `A_WCLASS` wrapper is load-bearing, keep it).
   S-ids from the range the build brief names.
 - **Existing mech rows the stage re-anchors or retires** (r4: RDY-8; REACH
   re-run on each, beside the new rows): `S366_wclass_island_default.sh`
   (anchor `case A_WCLASS: return vm_isl_words(v, a->l, …)`, the arm this stage
-  moves onto the set), `S302_e1_kind_mask_moves_under_lowering.sh` and
+  moves onto the set; **r7: SND-1** the two spine walks' `pcrec_ast_seethru`
+  steps are the second anchor family: re-check whether any row plants them), `S302_e1_kind_mask_moves_under_lowering.sh` and
   `S303_e1_nullability_moves_under_lowering.sh` (`lower_enc.c`: `if (repl)
   *slot = repl;`, `res = seal;`, the latter deleted with the seal),
   `S-U7_surrogates_encodable.sh`, `S-U8_mrl_bound_loosened_utf8.sh`
@@ -1189,7 +1293,14 @@ position (a REACH line per position).
   deny and is where D186 narrows a loss: so ONE harness-only lever (a
   `build/pcrec-harness` option under `cli/CLAUDE.md`'s lever rules, run by
   `tests/axes/run_axes.sh` as an internal arm) that restores today's ALT
-  outcome and today's EMPTY cut, and no public bit.
+  outcome and today's EMPTY cut, and no public bit. **(r7: FIX-6, PLAN)** The
+  lever would be the first harness lever on a CORE FACT, and `--emit-facts` never
+  carries harness options (`cli/main.c:3108-3111` builds `pin` without
+  `.harness`; the facts walk reads no harness field, `facts.c:203` reads only the
+  public bit), so the lever's effect is INVISIBLE where facts are listed: S-c and
+  S-g are stated on emitted artifacts, not on the facts listing, and the
+  stage-2a census-first brief decides whether the fact listing carries a
+  harness source (FIX-8's general form). §11's count is unaffected.
 - **Existing mech rows** (r4: RDY-8): `S268_req_run_alt_overclaim.sh` (anchor
   `o.head = rn_common_head(w, l.head, r.head);` in `rr_alt`, which the row
   table replaces: re-anchored on the row-2 arm with its intent re-verified);
@@ -1257,6 +1368,13 @@ position (a REACH line per position).
   `--list-limits` dump moves (emit_sweep's dumps stream, a declared row via
   `--dumps-declared-rows`) and every listing gains one row (the facts stream,
   a declared delta). No seam field (G-4, §3.4).
+- **Identity gate (r7: RDY-7).** 2p claims zero emitted movers and needs an
+  instrument that SEES a run, pick or table move that keeps answers: B0's
+  `scripts/emit_sweep.py` identity (every stream, both encodings, the corpus and
+  the bench list; the utf8 half is not exempt here, because 2p predicts no utf8
+  mover at all) except two DECLARED rows: the facts stream's one new row per
+  encoding (`--facts-declared-moves`) and the `--list-limits` row
+  (`--dumps-declared-rows`). Anything else moved is red.
 - **Gate.** The piece lists over the 37 mixed-width fold classes in
   `abcd<X>efgh` and over `bench/utf8` equal an independent model's (from
   CaseFolding.txt, no compiler code); `ci-moskva`: 4 pieces, widths 12 to 15,
@@ -1265,9 +1383,15 @@ position (a REACH line per position).
   `(?i)москва`'s piece list loses widths 13 to 15 and differs from the model.
   It is a FACT witness and cannot move an answer while the fact is inert
   (lesson 1, stated); the answer witness ships with the consumer.
-- **Existing mech rows** (r4: RDY-8): `S268_req_run_alt_overclaim.sh`'s anchor
-  sits in `rr_alt`; where 2p's group list edits that function the row is
-  re-anchored with its intent re-verified, REACH re-run.
+- **Existing mech rows** (r4: RDY-8; **r7: RDY-8, as a grep rule**):
+  `S268_req_run_alt_overclaim.sh`'s anchor sits in `rr_alt`; where 2p's group
+  list edits that function the row is re-anchored with its intent re-verified,
+  REACH re-run. The list is not hand-enumerated: for EVERY `req.c` function the
+  stage edits (`rr_alt`, `rr_cat`, `rb_walk_at`, `rb_class_into`, `rn_*`, ...)
+  the lane greps `tests/mech/sabotages/*.sh` for that function's anchors and
+  re-anchors or retires each hit with REACH re-run (known hits: S268, S466
+  `S466_alt_width_left`, S451, S456, S1339; the grep, not this list, is the
+  rule), and reports the grep line and its hits.
 
 ### Stage 2b — altcls calls the owner (CHOICE, byte and utf8)
 
@@ -1276,7 +1400,8 @@ position (a REACH line per position).
   r4: SND-5): THE PROCEDURE of §3.3 with rule set {M, P, S}: sibling merge
   under the rev 2 adjacency test (r4: SND-1), prefix factoring on a key of
   equal class positions over consecutive branches with the rests re-run
-  through the procedure (r4: FIX-6, the remainder re-merge; a branch equal to
+  through the procedure (r4: FIX-6; r7: SND-2, the re-run serves P/S recursion
+  and M over the lists they create, not a re-merge of what M saw; a branch equal to
   the key stays as EMPTY in its slot, today's behaviour), suffix factoring over
   adjacent branches on a node-identical tail (r4: SND-4). The owner reads the
   description at code-point level (r4: FIX-7); if 2b lands before 2p it builds
@@ -1292,29 +1417,53 @@ position (a REACH line per position).
   refusal set, K45) re-measured; the axes table rows (`tuning.md` §2¶4) and
   the bit names in `lib/pcrec.h` (`PCREC_NO_ALTCLS_MERGE`,
   `PCREC_NO_ALTCLS_FACTOR`, comments only) and `src/core/axes.def` rows
-  re-read. Stamps: `<PREFIX>_ALTCLS_MERGES` counts rule-M folds,
+  re-read. Stamps: **(r7: RDY-2) `<PREFIX>_ALTCLS_MERGES` counts the BRANCH LISTS in which
+  rule M folded at least one branch** (the top alternation and each rest or head
+  list the procedure recurses into, once each; the lowering's merges are not
+  counted, stage 1), not folds and not today's runs: `x(?:a|b|cd|e|f)y` is 2
+  today (measured) and 1 here (M folds `a|b|e|f` across `cd`, row 1), a stamp
+  mover the spec hunk lists, with `(?:ab\b|ad\b)` → `a[bd]\b` at 1 (the nested
+  heads list; today 0) and `(?:abx|aby|abz)q` at 1;
+  rev 2 said "counts rule-M folds",
   `<PREFIX>_ALTCLS_FACTORED` counts rule-P AND rule-S factorings (r4: FIX-6:
   today it is defined as prefix factoring only, `match_api.md` §6.3.11¶3, so
   suffix factoring had no instrument; the spec hunk redefines it), their
-  emitters (`emit_dfa.c:471`, `:3214`, `stamp_kinds.c:47`) and the island
+  emitters (`emit_dfa.c:468-471` `emit_altcls_macros`, called at `:15699`;
+  `stamp_kinds.c:46-47`) and the island
   activity count tied to them (`emit_vm.c:572`) re-read; abi ritual (§4.7).
 - **Readers of what 2b changes (r4: RDY-5)**, re-read in the same change:
   `tests/altcls/run_altcls_tests.sh`, `tests/altcls/run_altdiff.sh`,
   `tests/island/run_island_tests.sh`, `tests/axes/run_axes.sh`,
   `tests/codegen/run_form_census.sh`, `tests/recursion/run_specimen_identity.sh`.
+  **(r7: RDY-8/FIX-5) Also:** `axes_dump.c:636-640`'s bit-11 `altcls-factor` text
+  ("a maximal run sharing a literal first byte qualifies, on stage 1's own
+  output") and the `altcls-merge` text again for the rule-M reading;
+  `tests/registry/run_registry_tests.sh:447-456` (the activity-count stamp
+  shape of `RX_ALTCLS_MERGES`/`_FACTORED`, whose pair-count guard stays right
+  only if the stamps stay value-pair-free); the [DD-14] codegen fixture
+  `tests/codegen/run_codegen_tests.sh:2915-2918` (`((?:a|b))(?1)` must still
+  stamp `RX_ALTCLS_MERGES` above zero, the fixture "measures nothing" otherwise);
+  `scripts/alt_census.py` (`:36-39`, its stage-1 qualifier); `tests/altcls/altcls.rxt`
+  and the stamp pins in `tests/altcls/run_altcls_tests.sh`; `limits.def:173`,
+  `limits.h:315-322` and `src/opt/CLAUDE.md:70` for the depth row (§3.3).
 - **Predicted movers** (r2: SIM-6/SLOT-7): TREE-level, not runs: VM program
   bytes, DFA table entries, the VM island census (altcls collided with the
-  island once: `w-256` got 11 islands, 3.0% larger); remainder re-merge
+  island once: `w-256` got 11 islands, 3.0% larger); M's reach over what P and S
+  create and the whole-list fold
   (`(?:abx|aby|abz)q`: today `ab(?:x|y|z)q`, `MERGES 0`/`FACTORED 1`; 2b
-  `ab[xyz]q`, `MERGES 1`/`FACTORED 1`; r4: FIX-6, rev 1 called this a "key
-  widened"), set-valued keys, sibling merge across non-adjacent branches
+  `ab[xyz]q`, `MERGES 1`/`FACTORED 0` (r7: SND-2, hand-executed: step M folds the
+  whole list before P runs, so no rule-P/S factoring is counted; rev 2's
+  `FACTORED 1` was today's value; r4: FIX-6, rev 1 called this a "key
+  widened"), and `(?:ab\b|ad\b)`: today `a(?:b\b|d\b)`, `MERGES 0`/`FACTORED 1`; 2b
+  `a[bd]\b`, `MERGES 1`, `FACTORED` per the stage's own definition, 2 by hand
+  (P once, S once) and measured by the build lane), set-valued keys, sibling merge across non-adjacent branches
   (`(?:xing|ying)` → `[xy]ing`, today `FACTORED 0`), suffix factoring
   (`(?:xyr|zr)` → `(?:xy|z)r`, `FACTORED` 0 → 1), and **(r4: RDY-3)** VM rung
   flips where a merged branch becomes a deterministic stride under a
   quantifier. The census is the stage's first deliverable.
 - **Overlap** (r2: slots): A-ISL (roadmap R04, HELD) — 2b changes the tree
   `vm_isl_words` enumerates; listed in the D153 remodel-overlap column.
-  **(r4: SND-5)** [VLOOKBEHIND] (design rev 1 in flight): the owner stays out of
+  **(r4: SND-5)** [VLOOKBEHIND] (design rev 2, `docs/design/vlookbehind.md`, `4a0fcc859`; r7: RDY-9, the stale "rev 1" label): the owner stays out of
   lookbehind bodies until it lands, then a row of its own (§3.3).
 - **Gates.** Answer identity; `tests/altcls/` and its stamps; the census;
   per-regime VM evidence. **(r4: SIM-5)** The build lane states the measured
@@ -1342,12 +1491,23 @@ position (a REACH line per position).
     against `ad`: (0,1) expected (`a(?:x)?` matches `a`, a proper prefix of
     `ad`, so row 1 must not pass on its optional `x`: `h` = 1); a sabotaged
     head that counts the optional position passes row 1 and merges to (0,2)
-    (`sh.out`; the control `(?:ab|ax+|ad)`, head `a x` of length 2, passes row
-    1 and holds at (0,2)).
-  - **S-m (r4: new, FIX-6; the rests not re-run)**: a COUNT witness:
-    `(?:abx|aby|abz)q` stamps `ALTCLS_MERGES 1` in the correct build, 0 in the
-    sabotaged one (no answer can move). And S-s (suffix rule's reach):
-    `(?:xyr|zr)` stamps `ALTCLS_FACTORED 1`, 0 if the S rule is dropped.
+    (`sh.out`; **r7: FIX-1/RDY-5** the control `(?:ab|ax+|ad)` is REFUSED, not
+    passed: with today's arms a repeat at `rmin >= 1` contributes no head (§3.5),
+    so its head is `a` (h = 1), row 1 cannot pass, row 3 refuses, and the answer
+    is (0,2) either way. Rev 2's "head `a x`, passes row 1" described a REP head
+    arm that waits for [REPEAT-RUN]).
+  - **S-m (r4: new, FIX-6; r7: SND-2, REPLACED — rev 2's witness was dead)**:
+    rev 2's `(?:abx|aby|abz)q` folds whole in step M, before P exists, so a
+    build whose P does not re-run its rests stamps the same (`MERGES 1`,
+    `FACTORED 0`) and S-m could not fail. The witness is now a COUNT witness on
+    a shape only the re-run reaches: `(?:ab\b|ad\b)` stamps `ALTCLS_MERGES 1` in
+    the correct build (P → `a(?:b\b|d\b)`, S on the rests → `a(?:b|d)\b`, M on the
+    heads → `a[bd]\b`) and 0 in a build whose rests are not re-run (hand-executed,
+    verifier; today's stamps for it `MERGES 0`/`FACTORED 1`, measured). No answer
+    can move. A nested-trie shape (`ab(?:x\b|y\b)`-style rests) is an alternative
+    the build lane may pick.
+    And S-s (suffix rule's reach): `(?:xyr|zr)` stamps `ALTCLS_FACTORED 1`, 0 if
+    the S rule is dropped.
 - **Deletes/merges.** altcls stage 1 and stage 2 as their own mechanisms; the
   first-byte grouping (the key becomes equal class positions).
 
@@ -1500,7 +1660,7 @@ pcrec against libpcre2-8 10.46; capture vectors from libpcre2.
 |---|---|---|---|---|
 | C1 | facts are order-free: a run/set fact describes the string SET, not which branch wins, so stages 1, 2, 3 cannot meet SND-1 | **SOUND** | a fact is a necessary condition on every match; which branch wins changes the match, never the set of strings a match is drawn from (each match's matched text belongs to the alternation's language). The critic round's stage-2 and hull probes found no pattern whose real match the run rejects; SND-1/SND-2 reproduce only on tree rewrites | §3.1 (rewrite vs fact), O1; SND-1 confined to stage 2b |
 | C2 | tree rewrites exact-only: prefix factoring on a FIXED-WIDTH key keeps a shorter branch as EMPTY in its slot (`(?:ab|a|ad)` → `a(?:b||d)`); merge only adjacent branches with no sibling between them matching a prefix or extension of either | **SOUND-UNDER-CONDITION**: the key capture-free as well as fixed-width; factoring over CONSECUTIVE branches; the "between" test decided on fixed-position set sequences and FAILED for any branch it cannot decide | `a(?:b||d)` = original on `ad` (0,1), `ab` (0,2), with continuation `adc` (0,3), with a following capture `(d?)` (0,2) both; `fo(?:r||x)x`/`foxx` (0,3) both; equal-width intervening sibling `(?:ab|xy|ad)z` → `(?:a[bd]|xy)z` equal. The prefix/extension test is complete FOR STRINGS: two matches at one start differ only by one being a prefix of the other. **(r4: SND-1)** It is not complete for side effects: a same-span intervening branch that WRITES (a capture, `\K`) moves the answer; rev 2's test (§3.2 rows 1-3) adds that condition, tests only the moved branch, and decides by the head through any `m` the description covers. altcls stage 2 is already C2 with a longest-literal-prefix key (r4: FIX-6) | §3.2 (adjacency test), §3.3 (the procedure), stage 2b |
-| C3 | priority-sensitive tries stay in the matcher: the VM island's sorted trie with priority-tagged accepts answers the lowest original branch index | **SOUND, already built** for singleton edges (`emit_vm.c` `vm_isl_build`: each end node's accepts tried in ascending ORIGINAL index, the continuation backtracking into the next; `alt_dispatch_study.md` §3.2). **SOUND-UNDER-CONDITION for set edges**: sibling edges must stay disjoint so the walk is one path (the emitted candidate list is a compile-time constant per node); overlapping set edges need a refinement into disjoint member sets first | (r4: SND-2) stage 1 reads a wide class as its code-point SET, admitted by today's rule stated on the set (every box of its canonical split a single string), so today's island is unchanged, merged or not; set edges beyond that are [ENG-ISL-S2]; caseless set edges for user words are U4, riding A-ISL | §3.3 (island not an owner reader), stage 1 S-i/S-i2, U4 |
+| C3 | priority-sensitive tries stay in the matcher: the VM island's sorted trie with priority-tagged accepts answers the lowest original branch index | **SOUND, already built** for singleton edges (`emit_vm.c` `vm_isl_build`: each end node's accepts tried in ascending ORIGINAL index, the continuation backtracking into the next; `alt_dispatch_study.md` §3.2). **SOUND-UNDER-CONDITION for set edges**: sibling edges must stay disjoint so the walk is one path (the emitted candidate list is a compile-time constant per node); overlapping set edges need a refinement into disjoint member sets first | (r4: SND-2) stage 1 reads a wide class as its code-point SET, admitted by today's rule stated on the set (every box of its canonical split a single string), so today's island is unchanged, merged or not, for a class inside an enclosing alternation (r7: RDY-1: a BARE class's own island goes with its merge, a choice cell; r7: SND-1: the set reading sits at the island's walks, head slots included); set edges beyond that are [ENG-ISL-S2]; caseless set edges for user words are U4, riding A-ISL | §3.3 (island not an owner reader), stage 1 S-i/S-i2, U4 |
 | C4 | a zero-width lookahead after the shorter branch | **UNSOUND** in its local form; the exact form is sound but buys no rewrite | local `a(?!d)`: `(?:ab|a(?!d)|ad)` on `ad` = (0,2) vs the original's (0,1); with a continuation `(?:x|dy)` on `ady` it loses the match entirely (NOMATCH vs (0,3)); with a capture `(d?)` the group moves (1,2) → (2,2). Exact form `a(?=X)`, X the WHOLE continuation: `(?:ab|a(?=X)|ad)X` equals the original on every probe, but it does not license the merge: `(?:a[bd]|a(?=X))X` with `X = (?:d|ddd)` on `addd` = (0,3) vs (0,2), because `ad·X` still runs before `a·X`. Guarding the merged branch with the negated continuation `(?:a(?!X)[bd]|a)X` is wrong for the `b` member: `X = (?:x|b)` on `abx` gives (0,2) vs (0,3). A correct guard needs a per-member guard holding the continuation, i.e. the continuation spelled again per branch: no reduction | not adopted; recorded here |
 
 ## 9. Unlocks and the general form's siblings (each with its trigger; r2: O5)
@@ -1544,7 +1704,9 @@ rule** (2026-10-29, "flag follows caller effect"): a PUBLIC deny only for a
 change that can be SLOWER; a change whose risk is a WRONG answer gets a
 TEST-ONLY lever; a refactor or a bug fix gets none. Where an existing public
 bit already names the mechanism a stage changes, the stage re-specifies that
-bit rather than adding one (one mechanism, one lever).
+bit rather than adding one (one mechanism, one lever). **(r7: RDY-9)** The rule
+has no decision row; its home is review 2026-10-29 r3 vmtrail F11 and the
+owner's ruling of that date.
 
 **The bit budget.** `lib/pcrec.h` defines `PCREC_BIT(0..54)`, 56 and 57, and
 bit 55 is the kit's (`-fno-kit-size-drop`, R17-b): 58 of 64 used, 6 free
@@ -1555,8 +1717,9 @@ at ≤ 4 free. Rev 1's four new public bits would have tripped it at the second.
 | change | can it be slower? | wrongness risk? | lever | public bits added |
 |---|---|---|---|---|
 | stage 1: the seal's deletion | no (two nodes go; an abi event) | no | none (a refactor) | 0 |
-| stage 1: the island's set reading | no (today's admission, U4 an equality) | no | none (a reader moved, a refactor) | 0 |
-| stage 1: sibling merge in lowering (tables, runs, program bytes, VM rung flips, pick flips) | yes, in choice cells (pick flips, rung flips) | yes (S-a, S-b) | `-fno-altcls-merge` (bit 10) RE-SPECIFIED: "denies the alternation owner's sibling merge, at both callers" (`tuning.md` §2.6¶1 and ¶2 hunks at stage 1); the merge is ONE rule with two callers, so one lever; `make test-axes` then also runs the unmerged lowering, the stage's stock-form differential | 0 |
+| stage 1: the island's set reading | no (today's admission, U4 an equality for a class inside an alternation) | no | none (a reader moved, a refactor) | 0 |
+| stage 1: bare-class island loss (r7: RDY-1) | yes (a choice cell: `a[éÉ]b`, `(?i)xé+y`) | no | `-fno-altcls-merge` (bit 10) restores the unmerged boxes and so the island | 0 |
+| stage 1: sibling merge in lowering (tables, runs, program bytes, VM rung flips, pick flips) | yes, in choice cells (pick flips, rung flips) | yes (S-a, S-b) | `-fno-altcls-merge` (bit 10) RE-SPECIFIED: "denies the alternation owner's sibling merge, at both callers" (`tuning.md` §2.6¶1 and ¶2 hunks at stage 1, `match_api.md` §6.3.11¶3, its `--list-axes` row declared in B0, and the readers listed in stage 1 (r7: RDY-8)); the stamp does not count the lowering's merges (r7: RDY-2); the merge is ONE rule with two callers, so one lever; `make test-axes` then also runs the unmerged lowering, the stage's stock-form differential | 0 |
 | stage 2a: cube positions from the ALT hull | yes (picks) | yes | already `-fno-req-run-fold` (bit 44: its text names "an alternation's one-bit hull"), unchanged | 0 |
 | stage 2a: the exact `all` across an ALT, the EMPTY unit | only through pick rows, each with its own deny, where D186 narrows a loss | yes (S-c, S-g) | ONE harness-only lever (`build/pcrec-harness`, `cli/CLAUDE.md`'s lever rules, an internal arm of `tests/axes/run_axes.sh`) | 0 |
 | stage 2p: the piece set | no (an inert fact) | no answer can read it | none (its gate is the independent model) | 0 |
@@ -1714,7 +1877,9 @@ stage with its D186 kind per regime.
 | [LOWERENC-SEAL] / [REQ-EMPTYCAT] / [REPEAT-RUN] / [REQ-LOOKAROUND] | siblings: stage, decision points, witness | §9 S1-S4 |
 | C1-C4 | vetted | §8a |
 
-## 15. Disposition table (r4; every finding of review 2026-11-05-r4, as ruled)
+## 15. Disposition tables (r4, then r7; every finding of the two reviews, as ruled)
+
+### r4 (review 2026-11-05-r4)
 
 | id | ruled | what rev 2 did | where |
 |---|---|---|---|
@@ -1745,6 +1910,47 @@ stage with its D186 kind per regime.
 | SIM-5 | PLAN | the build lane's bound stated: O(n·w) hashing per sweep, O(1) per fold over same-width writer-free spans by a prefix count, O(span·w) otherwise, worst case measured | §3.3, stage 2b Gates |
 | G-1..G-4 | PLAN | named in the general-form section with triggers; no new plan row (each trigger sits in an existing row or stage); G-2 adopted for stage 1's reading, G-3 adopted for stage 3 | §3.5, §9 |
 | Owner questions (a), (b) | QUESTION | (a) answered by the standing rule, reported as §13 q4; (b) OPEN as §13 q5 | §13 |
+
+### r7 (review 2026-11-05 r7, readiness of stages 1, 2p, 2b; every FIX-NOW ruled, all text)
+
+| id | ruled | what rev 3 did | where |
+|---|---|---|---|
+| SND-1 | FIX-NOW | the island's two spine walks unwrap `A_WCLASS` at a spine head before the set arm sees it (premise test: read `emit_vm.c:4115-4120` and `:4139-4144` against `internal.h:2322-2326`; `x(?:[éà]1|q2|r3)y` 1 and `x(?:1[éè]|q2|r3)y` 0 re-measured at `783a45ec0`); stage 1 states the island-local step that stops at `A_WCLASS` (`pcrec_ast_seethru` stays; the chain-size walk keeps it); S-i and S-i2 re-picked to a right slot, the head cases kept as a census witness; U4's prediction re-derived | §2.1, §2.3, stage 1 Change/U4/S-i/S-i2/S-i head, §8a C3 |
+| RDY-1 | FIX-NOW | the merge deletes islands on BARE wide classes (`a[éÉ]b` 1 → 0, `(?i)aéb`, `(?i)xé+y` 2 → 0): a third family of D186 choice cells with bit 10 restoring them; U1's island row predicts them (1 → 0 only), U4 two-sided against it; §11 row | stage 1 Kind/U1/U4/movers, §11 |
+| RDY-3 | FIX-NOW | B0 part 1 declares the `--list-axes` `altcls-merge` row with `--dumps-declared-rows=--list-axes:altcls-merge` (judged both ways; the two-row key caveat stated) | stage 1 B0 |
+| SND-2 | FIX-NOW | S-m was dead (step M folds `(?:abx|aby|abz)q` whole before P runs; the "remainder re-merge" is a no-op for fold shapes): the witness is now `(?:ab\b|ad\b)` (MERGES 1 vs 0); the FIX-6 sentences in §2.2 (5), §3.3 step 2, the ledger and 2b movers re-worded; `(?:abx|aby|abz)q` predicted `MERGES 1`/`FACTORED 0` | §2.2, §3.3, stage 2b movers/S-m |
+| RDY-2 | FIX-NOW (PARTLY; one choice) | the lowering's merges are NOT counted (stage 1 leaves the stamp as is; two spec sentences; D46's do-or-die met by program bytes and tables); at 2b the unit is stated: branch lists in which M folded at least one branch (`x(?:a|b|cd|e|f)y` 2 → 1, a listed stamp mover) | stage 1 Change, stage 2b Stamps |
+| RDY-4 | FIX-NOW | span_pick 1e had not landed (last 1d `39e7b20c5`); 1e is a kit unit with no `emit_dfa.c` window-walk rewrite; §4.7's fence re-stated as "no stage that moves `req_run` or emitted bytes lands inside 1e's window"; each stage brief re-greps at its own base; 2p bound only through stage 1 | §4.7, §2.3, stage 2p |
+| RDY-5 = FIX-1 | FIX-NOW (choice (a)) | the adjacency head uses today's arms: a REP at `rmin >= 1` contributes no head; S-h's control `(?:ab|ax+|ad)` is "refused, (0,2) either way"; a REP head waits for [REPEAT-RUN] | §3.5, stage 2b S-h |
+| FIX-2 | FIX-NOW | two head columns (run head cuts at `A_LOOK`/`A_KRESET`/assertions/check callouts; adjacency head reads through), WRITES a third column with an UNKNOWN state; a new leak witness S-L (`(?<=foo)bar` from offset 3) | §3.5 |
+| FIX-3 | FIX-NOW | the width unit is the alphabet parameter's symbol; the module computes its own widths (no `mrl.c` reuse: it would close an opt -> facts -> opt cycle on the known back-edge); `A_CALL` is a wall at code-point level | §3.5 |
+| FIX-4 | FIX-NOW | home stated (`src/facts/` with a node-grain carve-out; layer direction opt -> facts); the interface is arm combinators, not a whole-subtree call (O(n²) on a 20,000-branch spine, a second walk) | §3.5 |
+| RDY-6 | FIX-NOW (PARTLY) | a piece position is the exact union SET (D187 form, inert, no member bound), rendered as a set list not val/mask (ι's `{85,99,b9}` and `{cd,ce}` cube hulls differ from the sets); bit 44 does not touch pieces; EMPTY in a piece is a cut until 2a | §3.4 |
+| RDY-7 | FIX-NOW | 2p's identity gate: B0's `emit_sweep.py` identity, both encodings, corpus and bench, except the two declared rows (a facts row, a `--list-limits` row) | stage 2p |
+| RDY-8 + FIX-5 | FIX-NOW (FIX-5 part verified) | bit 10's readers listed at stage 1 (`axes_dump.c:625-631`, `lib/pcrec.h:194-229`, `internal.h:3506-3521`, `lib/CLAUDE.md:12`, `src/opt/CLAUDE.md:70`, `cli/CLAUDE.md:17`, `run_axes.sh:592-596`, `match_api.md` §6.3.11¶3, `tuning.md` §2.6); 2b's missing readers added (bit-11 text, `run_registry_tests.sh:447-456`, the DD-14 fixture, `alt_census.py`, `altcls.rxt`); the factoring depth limit `PCREC_MAX_ALTCLS_FACTOR_DEPTH` kept and re-worded for the procedure's recursion; 2p's mech list is a grep rule | stage 1 Change, stage 2b, stage 2p, §3.3 |
+| SIM-3 (= FIX-7 part) | FIX-NOW | the O(1) bound's scope stated (same-width writer-free spans); mixed-width lists are quadratic (verifier: 994 / 5,327 / 35,719 calls at n = 200 / 400 / 800); an incremental structure and a declared work bound (a `limits.def` row, its value the 2b census's, over which the list is left as is) | §3.3 |
+| SND-3 | DOC (PARTLY) | M/P/S positions are class nodes on the CAT spine; only row 1 reads through zero-width nodes | §3.3 |
+| SND-4 | DOC (PARTLY, latent) | row 2 reads CONSUMED width; row 1 non-consuming positions only at their offsets | §3.2 |
+| SND-5 | DOC | §3.2 states the give-up case (libpcre2 rc -50 vs (0,2), re-read from `verify.md`; pcrec's half not re-run); the `match_api.md` §11.6¶1 clarification is 2b's spec hunk | §3.2 |
+| SIM-1 | DOC | step M drops a duplicate of an EARLIER mergeable branch with no reach test | §3.3 step 1 |
+| SIM-2 | DOC + PLAN | the P/S-consecutive vs M-reach asymmetry stated with the drill numbers; a move-then-factor rule is a later row, trigger a keyword list losing its trie (no row filed here) | §3.3 |
+| RDY-10 | DOC | P and S act on runs of at least two branches; the termination sentence is now true | §3.3 steps 2-3 |
+| RDY-9 | DOC | `vm_det_seq` `:1883`; `emit_altcls_macros` `emit_dfa.c:468` (called `:15699`), `stamp_kinds.c:46-47`; `src/core/kindrow.def`; `pcrec_cube_of` takes an interval list; the "flag follows caller effect" rule's home is review 2026-10-29 r3 vmtrail F11; `shapes2.py`'s path; [VLOOKBEHIND] is rev 2 | §2.1, §2.3, §3.5, §11, stage 1 U2, stage 2b |
+| SIM-4..7 | DOC | arrows name their rule set; width-0 duplicates are dropped by the duplicate rule; S's `C` is the longest common suffix, runs cut by an equal last position; non-class heads/rests are only P/S's. SIM-6: the confluence sentence is now "of COUNTS" (one fold class differs in FORM; `\p{Nd}`'s 39 is not the best order, 38 under 5 of the 24; the declared order stays pinned by U1b) | §3.3 |
+| FIX-6 | PLAN (2a, out of scope) | the 2a harness lever is invisible to `--emit-facts` (`cli/main.c:3108-3111`, `facts.c:203`): carried to 2a's census-first brief; §11's count unaffected | stage 2a |
+| FIX-7 rest | DOC (PARTLY) | the set arm's budget charges stated as a requirement (U4's equality its check; the counter not read in the tree); WRITES' UNKNOWN state for `A_CALL` | stage 1 Change, §3.5 |
+| FIX-8 | NOTED | the "alphabet is a parameter" family and the first test-only fact lever named; no row | §3.5 |
+
+Owner question §13 q5 (stage 3's covering cube, A lossy shape vs B readers skip)
+stays OPEN; no r7 finding depends on its answer.
+
+Readiness after rev 3: **stage 1**, **stage 2p** and **stage 2b** carry every
+listed text fix; the review's verdict (READY WITH LISTED TEXT FIXES, no
+answer-level hole) now applies to this text. The build go is the owner's after
+span_pick 1e lands; the build's CODE critic round re-checks the gates against
+real output. No `[RUN-POS-SET]` staging change.
+
+### Readiness after rev 2 (history)
 
 Readiness after rev 2 (for the re-read): **stage 1** and **stage 2p** carry
 every listed text fix. **Stage 2b**: SND-1 is closed by a derived, probed
