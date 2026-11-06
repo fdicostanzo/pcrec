@@ -964,18 +964,18 @@ evaluation after an ill-formed byte. So it is excluded by the work, not the answ
 
 What the rows mean:
 - **Both are POLICY, not mechanism (owner's answer, review r3).** Correctness needs no cap, not even
-  boundedness. §5.1's `D_i` strictly decreases and is clamped by the subject start, and the
-  emission is one body copy per branch whatever `hi_i` is.
+  boundedness. `[r-cursor]` §5.1's candidate start strictly moves toward `LO_i`, which is clamped
+  by the subject start (and by the back-step's own validation), and the emission is one body copy
+  per branch whatever `hi_i` is.
 - So nothing in §5.1's CONTROL depends on `hi_i`'s magnitude:
-  - `D_i` is a slot as wide as the width table (`int`);
+  - `K_i` is a local as wide as a subject position (`size_t`);
   - nothing is unrolled per length;
-  - the back-step count is a run-time operand.
-- **Its STORAGE does `[r6 V1]`.** The trail grows linearly in `hi_i − lo_i` (one entry per
-  candidate, §5.1), and the cost pass charges it (§5.5).
-  - At the 255 policy that is at most 256 entries per `range` branch.
-  - At a raised cap one branch can need up to 65,536, above `VM_MAX_AUTO_TRAIL_FRAMES` (3072).
-    Raising the cap at [IFACE-PUSH] is therefore a one-row change for ACCEPTANCE only. The trail
-    arithmetic of §5.5 travels with it.
+  - both back-step counts are operands (`lo_i` literal, `K_i` run-time).
+- **Nor does its STORAGE `[r-cursor]`.** The loop writes one trailed entry per `range` branch per
+  evaluation, whatever `hi_i − lo_i` is (§5.1, §5.5). So raising the cap at [IFACE-PUSH] is a
+  one-row change in ACCEPTANCE and in storage alike. Only the work grows with the cap (§5.5).
+  Rev 2's `[r6 V1]` storage paragraph is retired: it sized a counter written once per candidate,
+  up to 65,536 entries per branch at a raised cap, above `VM_MAX_AUTO_TRAIL_FRAMES` (3072).
 - The 255 cap exists for accept-set EQUALITY with PCRE2's default (G1, gate 3). Under D26's addendum,
   accepting more than PCRE2 would not be a defect, so 255 is a choice. The setting (PCRE2's
   `max_varlookbehind`) waits for [IFACE-PUSH], where raising it is a one-row change.
@@ -1137,26 +1137,37 @@ effect).
 evaluation instead of up to m. It would ride [LANDWALK-ALLACC]'s multi-branch form and the
 priority-tagged accepts of `alt_dispatch_study.md`. Not designed here.
 
-### 5.5 Budgets and frames `[r3 F12, F14]`
+### 5.5 Budgets and frames `[r3 F12, F14]` `[r-cursor: work and trail re-derived]`
 
-**Work.** `RX_CHARGE_WORK` runs once per candidate tried, charging the candidate's back-step count:
-`k` for a `one-length` branch (today's charge, unchanged) and `D_i` for a `range` candidate.
-- Per evaluation and per branch, the charge is at most Σ d for d from lo to hi, which is
-  (hi + lo)(hi − lo + 1) / 2.
-- `{1,255}`: 32,640. The bench pattern (4..51): 1,320. Rev 0 implied 1 per candidate, which was
-  never stated.
-- At the default work budget of 1,000,000,000 (`limits.md` §3.1¶2), that allows at least 30,600
-  worst-case `{1,255}` evaluations per match call before `PCREC_ERR_WORK`.
-- The order matches the inherent cost: each candidate's body run is up to `hi` characters, and
-  PCRE2's own measured cost is O(hi²) per evaluation.
-- Under UTF-8, a candidate whose back-step returns the sentinel is still charged its `D_i`. This
-  happens only where fewer than `hi` characters precede the cursor.
+**Work `[r-cursor]`.** Each back-step is charged its count, and each one-character step 1. For a
+`one-length` branch that is today's `k` per evaluation, unchanged. For a `range` branch, per
+evaluation:
+- `lo_i` for the nearest step, then `K_i` per far try, then 1 per step to the next candidate.
+- On the common path (at least `hi_i` characters, all well-formed, precede the cursor) there is
+  one far try, so the charge is at most `lo + (hi − lo) + (hi − lo) = 2·hi − lo`. `{1,255}`: 509.
+  The bench pattern (4..51): 98. Rev 2 charged `(hi + lo)(hi − lo + 1)/2` here: 32,640 and 1,320.
+- In the far-retry corner (§5.1a: near the subject start, or just after an ill-formed run, UTF-8
+  only), the far tries add at most `(hi − lo)(hi − lo + 1)/2`. That is rev 2's own bound, paid in
+  the same place.
+- On SMALL ranges the new charge can exceed rev 2's by one unit (`(?<=a{0,1})` charges 2 where
+  rev 2 charged 1). MEASURED over the candidate check's cells (`workdiff.out`): 852,406 of
+  8,583,480 cells charge more, every one by exactly 1; 3,138,528 charge less, by up to 9 at these
+  small widths. The work budget is a give-up bound, not an
+  answer. The give-up it sets is the cursor shape's own, and gate 4 measures it.
+- The BODY runs are charged by the body, as today. Up to `hi − lo + 1` runs of up to `hi`
+  characters each remain the inherent O(hi²) per evaluation, which PCRE2 also pays (measured
+  O(n·hi²) per scan, §5.2).
+- At the default work budget of 1,000,000,000 (`limits.md` §3.1¶2), the loop's own charge allows
+  about 1,960,000 worst-case `{1,255}` evaluations per match call on the common path. The bodies'
+  charge, not the loop's, is what gate 4's cell gives up on.
 - Gate 4 states the subject size at which a worst-case leading `{1,255}` gives up.
-- The alternative, if gate 4 shows a give-up where libpcre2 answers at a subject size the spec
-  should not cap: a second trailed slot holding the candidate, plus a one-character forward step
-  per retry (charge 1). That costs at most 2·hi per evaluation, for one more slot. It is not chosen,
-  because the ruled F1 form re-steps from the cursor. It is named so the trigger has somewhere to
-  go.
+- **Filed as a measured-trigger candidate (D77), not proposed:** a seam entry `back_step_upto`
+  ("the farthest position at most `k` characters back"). It would replace the far retry with one
+  call of at most `hi − lo` steps. It is a D58 contract change (two backends, the third-encoding
+  recipe, the [M5-SEAM] fixture). Trigger: the 255 cap is raised at [IFACE-PUSH] (the corner's
+  `(hi − lo)²/2` grows with it), or a measured cell gives up in the corner where libpcre2 answers.
+- Rev 2's "alternative" paragraph (a second trailed slot plus a forward step) is retired. The cursor
+  shape IS that alternative, minus the slot: the candidate lives in the frame.
 
 **Trail `[r6 V1]`: the term, derived from the code.**
 - Today, `vm_cost_look` (src/gen/emit_vm.c) returns the body's cost plus `frames += 1 + nbranch`
@@ -1169,23 +1180,26 @@ priority-tagged accepts of `alt_dispatch_study.md`. Not designed here.
 - The emitted `RX_TRAIL` returns `RX_R_FRAMES` when `trail_depth >= trail_cap`, BEFORE the write.
   No tier grows a bounded pattern's trail.
 
-**The new term:** `trail += 2 + Σ_{i : lo_i < hi_i} (hi_i − lo_i + 1)`, read off the stored width
-pairs through the table's one predicate (§5.1b). The derivation:
-1. A `range` branch writes `D_i` once at `L_b_i`, and once more at each `L_adv_i` decrement.
-2. `D_i` starts at `min(hi_i, cursor) ≤ hi_i`, and a decrement happens only while `D_i > lo_i`. So
-   one evaluation makes at most `hi_i − lo_i + 1` writes of `D_i`.
-3. No pop inside the evaluation removes any of them (§5.1's trail bullet).
-4. Branches run in order, and an exhausted branch's entries stay live. So the lookbehind-owned
-   peak, `2 + Σ_range (hi_i − lo_i + 1)`, is reached in the last `range` branch tried, with every
-   earlier `range` branch's entries below it.
+**The new term `[r-cursor]`:** `trail += 2 + (the number of range branches)`, read off the stored
+width pairs through the table's one predicate (§5.1b). Rev 2's `2 + Σ_range (hi_i − lo_i + 1)`
+`[r6 V1]` is retired. The derivation, from every write the loop makes (the r6 lesson: size the
+storage from the writes, not from the slot's readers):
+1. `LO_i` (`VK_SET`, trailed): written once per evaluation per `range` branch tried, at `L_b_i`,
+   before the first push.
+2. `K_i` (`VK_LSET`): a local, not the trail. `scan_position`: the cursor, not the trail.
+3. The retry frame: one push per candidate, a frame and not a trail entry. Each push takes its trail
+   mark ABOVE `LO_i`, and each pop rewinds to it, so the body's writes never accumulate across
+   candidates.
+4. Branches run in order, and an exhausted branch's `LO_i` stays live. So the lookbehind-owned
+   peak, `2 + (range branches tried)`, is bounded by `2 + (number of range branches)`.
 5. The body's own entries sit on top. They are charged as the max over branches, which is a safe
    bound, since the branch running at the peak need not be the widest.
 
 How tight the term is:
-- **Exact** where it can be. `(?<=a{1,2})x` on `bax` peaks at 4 entries (MARK, POS, `D = 2`,
-  `D = 1`), and the term charges 2 + 2.
-- A safe OVER-charge elsewhere. A cursor nearer than `hi_i` to the subject start makes fewer
-  candidates, and the negative and non-atomic forms over-charge the 2 by one, as today.
+- **Exact** where it can be. `(?<=a{1,2})x` on `bax` peaks at 3 lookbehind-owned entries (mark,
+  `POS`, `LO`), and the term charges 2 + 1. Cell 5 of §5.1c (W12) peaks at 4 with its body's one.
+- A safe OVER-charge elsewhere: a branch that exits at its guard writes no `LO_i`, and the
+  negative and non-atomic forms over-charge the 2 by one, as today.
 
 **The frames term `1 + nbranch` stays a safe bound** (say so in its header). At most one
 lookbehind-owned retry frame is live at once, `L_adv_i` or today's next-branch frame, plus
@@ -1195,23 +1209,20 @@ must agree with the emitter, and its header gains the `range` paragraph.
 
 Further consequences:
 - **A lookbehind inside a loop.** `vm_cost_rep`'s arms read `body.trail` per iteration, so the
-  same term corrects the per-iteration charge. Without it, the stamped `subject_ceiling` of a
-  pattern like `(?:(?<=a{1,9})b)+` over-promises.
-- **Beyond the clamp** (fix-induced, for the re-check's diff check). A pattern whose term exceeds
-  the 3072 clamp would be sized short. At the 255 policy that takes about twelve full-width `range`
-  branches, summed over the lookbehinds of one path. D44.1's honest-stamp rule then owes a
-  ceiling, not a silent cap. So when the lookbehind has a `range` branch, `vm_cost_look` also sets
-  `growable` and adds `pt += (number of range branches)`: one entry per `range` branch per subject
-  character, until `hi_i`. This is the safe direction, and it moves nothing where the requirement
-  fits, because the ceiling is stamped only when it does not fit. No population row comes near the
-  clamp.
-- **The alternative below** (a second trailed slot plus forward steps) grows the trail by one entry
-  per retry as well. It would carry the same term.
+  same term corrects the per-iteration charge (one more entry per `range` branch than today's
+  constant). Without it, the stamped `subject_ceiling` of a pattern like `(?:(?<=a{1,9})b)+`
+  over-promises.
+- **Beyond the clamp `[r-cursor]`: no longer a lookbehind question.** Rev 2 proposed `growable` and
+  `pt += (number of range branches)` because its term could pass the 3072 clamp with about twelve
+  full-width branches. The new term grows with the number of BRANCHES on a path, as today's
+  constant 2 grows with the number of lookbehinds. So the existing sizing and its honest-stamp rule
+  cover it, and the proposal is withdrawn.
 
 **Frames.**
 - The retry frames are ordinary frames, counted by D42's frame bound.
-- Live LOOP frames: at most one per branch per active lookbehind. `L_adv_i` replaces itself, and
-  branch exhaustion moves on without a frame.
+- Live LOOP frames: at most one per branch per active lookbehind. `[r-cursor]` Each candidate's
+  frame is popped before the next candidate's is pushed, and branch exhaustion moves on without a
+  frame.
 - A non-atomic `(?<*` also keeps the body's own choice points live past `L_ok`, as today's fixed
   `(?<*` does.
 - Steps: every retry is one backtrack resumption, counted by the step budget.
@@ -1220,43 +1231,52 @@ Further consequences:
 `n·Σ(hi_i − lo_i + 1)·hi_i` in the worst case. The long-subject leading-lookbehind cell it asked
 for gains a variable twin (stage 1, gate 4).
 
-### 5.6 Overlap with the VM record remodel (D153, [VMREC]) `[r3 F13]`
+### 5.6 Overlap with the VM record remodel (D153, [VMREC]) `[r3 F13]` `[r-cursor: re-mapped]`
 
 Stage 1 is a capability row, so D153's sequencing rule does not bind it formally. It does add a VM
-body shape that [VMREC] steps (b) and (c) must model:
-- a trailed loop slot `D_i`;
-- a retry frame whose target re-enters the branch.
+body shape that [VMREC] steps (b) and (c) must model `[r-cursor]`:
+- a trailed bound slot `LO_i`, written once per evaluation;
+- an untrailed local `K_i`, dead before the first push;
+- a retry frame that saves a CANDIDATE position, whose target steps it one character.
 
-Every statement maps to an existing kind:
+Every statement maps to an existing KIND. Three need a new member or operand inside one:
 
-| statement | kind |
-|---|---|
-| guard, exhaustion test | `VK_BRANCH` |
-| `D_i` writes | `VK_SET`, trailed |
-| the frame | `VK_PUSH` |
-| the charge | `VK_WORK`, with a slot expression as its amount |
-| the back-step | `VK_SEEK` `VSK_BACKSTEP` |
+| statement | kind | new? |
+|---|---|---|
+| guard, both sentinel tests, exhaustion test | `VK_BRANCH` | no |
+| `LO_i`'s write | `VK_SET`, trailed | no |
+| `K_i`'s writes | `VK_LSET` (`VLO_ASSIGN`) on a new `VmLocalKind` member, `VL_LB_COUNT` (`<p>_lb<n>_count`, declared by the frame as the `rv` locals are) | a sub-kind MEMBER |
+| the frame | `VK_PUSH` at `VPOS_CURSOR` | no |
+| the charges | `VK_WORK`: the literal `lo_i`, the local's name, the literal 1 | no |
+| the `lo_i` back-step | `VK_SEEK` `VSK_BACKSTEP`, literal `k` (today's record) | no |
+| the far back-step | `VK_SEEK` `VSK_BACKSTEP` with a LOCAL count operand: the seek record gains an optional typed `VmLocal`, rendered through `vm_local_name` | an OPERAND |
+| the two restores | `VK_SEEK` `VSK_RESTORE` from `LO_i` and from `POS` (today's record) | no |
+| the one-character step | `VK_SEEK` with a new `VmSeek` member, `VSK_STEP_CHAR`: the encoding's `advance` text with `@P` = `scan_position`, `@S` = `subject`, `@N` = `(size_t)slot_values[<slotx>]` (`slotx` = `POS`) | a sub-kind MEMBER |
 
-`D_i` IS a record field, not only text. `VK_SEEK` already carries a `slotx` operand (used by
-`VSK_RESTORE`). The `range` row's back-step sets it to `D_i`'s slot expression and `k` to 0.
-`vm_r_seek`'s `VSK_BACKSTEP` arm renders the slot's VALUE when `slotx` is present, and the
-literal otherwise. So (c)'s analysis reads the count as an operand, which is D182's (c) ruling.
-This is a renderer arm change, not a new kind. The `one-length` row's record is unchanged.
-
-**`slotx` is an INDEX, so the arm renders its value `[r6 V3]`.**
-- `slotx` holds the slot's index text. `VSK_RESTORE` renders
-  `scan_position = (size_t)slot_values[<slotx>];` (src/gen/vm_stmt.c), and its producer passes a
-  bare slot number.
-- So the `VSK_BACKSTEP` arm renders
-  `scan_position = $_back_step(subject, subject_length, scan_position, (size_t)slot_values[<slotx>]);`.
-  `slotx` keeps one meaning across arms, which is what [VMREC] (c)'s reader of it needs.
-- Rendered verbatim instead, `slotx` passes the slot's NUMBER as the count. That compiles without
-  a warning and steps back by the wrong amount. Every W-row catches it at build.
-- The same holds for `VK_WORK`. Its amount is a string rendered verbatim (`vm_r_work`), so the
-  `range` row passes the value expression `slot_values[<D_i>]`, never the slot expression.
-  `vm_cut` already passes an expression of this shape
-  (`(ptrdiff_t)run->resume_depth - slot_values[%d]`). `RX_CHARGE_WORK` converts to `ptrdiff_t` and
-  charges only a positive amount.
+Notes on the three:
+- **No new `VmKind`.** The review r5 ruling ("the step adding a VM record kind waits for the
+  remodel's analysis stage") is about a new KIND (`VK_AUTO`). Whether it also covers members of
+  `VmSeek` and `VmLocalKind` is the manager's call (§13 Q5). The leaning is no: both enums are
+  closed vocabularies that grow by a member, and (c)'s declared-effects rule takes one row each
+  (`VSK_STEP_CHAR`: writes the cursor, reads the subject and one slot; `VL_LB_COUNT`: an untrailed
+  local).
+- **Rev 2's `slotx`-as-value arm on `VSK_BACKSTEP` `[r6 V3]` is not needed.** The far count lives in
+  a local, so the operand is typed as a local, and `slotx` keeps its one meaning (an index, as
+  `VSK_RESTORE` reads it). V3's warning still applies to the new operand: render the local's VALUE
+  (its name), never an index.
+- **`VSK_STEP_CHAR` is a new CALLER of an existing seam field, not a new entry.** `advance` is
+  inline text designed for engine-side use (enc.h: "an engine body calling the entry" is what DD-12
+  (7) forbids; `advance` exists so the VM's retry loop need not). Two things widen:
+  - `advance`'s `@N` comment, from "the subject-length variable" to "the bound the step never
+    passes: the subject length at the retry loop, the cursor in a lookbehind loop". The utf8 text
+    reads `@S[@P]` only while `@P < @N`, so a bound below the subject length is in range by
+    construction;
+  - `tests/codegen/run_encoding_checks.sh`'s advance-agreement check reads the text out of an
+    emitted artifact. It is unaffected, because the text is the same and only a token's
+    substitution differs. A `range` fixture under `-e utf8` gives it a second site to read (§7).
+  - The byte backend's text is `@P++;`. It never reads `@N`, so under bytes the bound is not even
+    spelled, and nothing can get it wrong.
+- **The `one-length` row's records are unchanged** (ruling A).
 
 ## 6. Staging and acceptance gates
 
@@ -1267,7 +1287,8 @@ oracle is libpcre2 10.46.
 **Stage 1: `range` (B), capability.** Scope:
 - the width rule (§5.2), with both lookbehind ceilings;
 - the loop (§5.1) and the emission table (§5.1b);
-- the end-check split (§5.3) and budgets (§5.5), the trail term included `[r6 V1]`;
+- the end-check split (§5.3) and budgets (§5.5), the trail term included `[r6 V1]` (`[r-cursor]`:
+  `2 + range branches`);
 - the two `limits.def` rows (§5.2a);
 - spec hunks (§10);
 - 32 corpus rows (24 distinct) flipped from refusal to match cells (vlbinv §4; population.tsv's
@@ -1307,7 +1328,11 @@ Gates:
      - the non-atomic retry;
      - a varying branch followed by another branch (W11);
      - `startpos > 0`;
-     - byte and UTF-8.
+     - byte and UTF-8;
+     - `[r-cursor]` ill-formed UTF-8 subjects: a stray continuation byte AT the cursor, and an
+       ill-formed run within `hi` characters before it. These are compared against libpcre2 under
+       `PCRE2_MATCH_INVALID_UTF`, which is pcrec's own reading of an ill-formed subject
+       (utf8_design.md §2.6). The cells are W13 and W15's (§7).
    - 0 differences, outside one named class `[r3 F7]`: `PCRE2_UTF` × `startpos > 0` × a body whose
      backward reach exceeds LB (`\b`/`\B` or a nested lookbehind at a candidate's far edge). That is
      D142 item 3's STATED DIVERGENCE (`match_api.md` §9.4¶8; `CLIP` in `tests/utfcheck`).
@@ -1443,14 +1468,19 @@ fail.
 | W3b `[r3 F10]` | the body's trailing greedy quantifier gives nothing back (tail possessified: no frame inside it) | `(?<=a{1,2})a` on `aaa`: [1-2][2-3] | At cursor 1, `a{1,2}` from 0 takes two characters and ends at 2. Only giving one back ends at 1. Sabotaged: [2-3] only. W3's alternation does not reach this site. |
 | W4 | negative arm keeps the hard return on a varying branch | `(?<!ab?)x` on `acx`: (2,3) | Length 2's body ends at 1. Sabotaged: returns `PCREC_ERR_INTERNAL`. |
 | W5 | non-atomic retry frames cut | `(?<*(a{1,3}))c\1` on `aaaca`: (3,5) g1=(2,3); `(?<*(a\|aaa))c\1` on `aaaca`: (3,5) g1=(2,3) | The follow `\1` fails at length 3; only a retry reaches length 1. The second row has a gap at length 2, which distinguishes "every length" from "next accept" (§5.1c cell 4). |
-| W6 `[r3 F8]` | the UTF-8 clamp taken as exact: a back-step that returns the sentinel ends the branch instead of trying the next shorter candidate | `(?<=(é{1,2}))x` on `éx`, `-e utf8`: [2-3, g1 0-2] | Two bytes but one character precede the cursor. The clamp gives `D = 2`, and the 2-character back-step returns the sentinel. Only the retry at `D = 1` matches; sabotaged: nomatch. Rev 0's cell (`aééx`) has 3 characters before the cursor, so it could not fail. `aéx` does not reach this site either. |
+| W6 `[r3 F8]` `[r-cursor: re-aimed]` | the UTF-8 far retry broken: (a) a far step that returns the sentinel ends the branch; (b) it is taken as "start at `LO_i`" (no retry) | `(?<=(é{0,2}))x` on `éx`, `-e utf8`: [2-3, g1 0-2] | Two bytes but one character precede the cursor, so `K = min(2, 2) = 2` and the far step returns the sentinel; only the retry at `K = 1` reaches 0. (a) nomatch; (b) [2-3, g1 2-2] (§5.1c cell 6). Rev 2's cell (`(?<=(é{1,2}))x` on `éx`) no longer reaches: `LO = 0` makes `K = 0`. UTF-8 only: under bytes the count is exact and the retry dead (S134's status). |
 | W7 | clamp relative to `startpos` (S135 carried) | `(?<=a{1,2})b` on `aab` from 2: (2,3) | The body's bytes lie before `startpos`. |
 | W8 | cap applied only to varying branches | `(?<=a{300}\|b{1,2})x`: refused (err 200) | Sabotaged compiles a pattern libpcre2 refuses (gate 3). |
 | W9 | cap off by one | `(?<=a{1,255})x` compiles, `(?<=a{1,256})x` refused | The boundary cell pair. |
 | W9b `[r3 F4]` | ceiling missing or off by one | `(?<=a{65535})x` compiles, `(?<=a{65535}b)x` refused (err 187); `(?<=(?:a{1000}){65})x` compiles, `{66}` refused | The ceiling boundary pairs: fixed, and through a product. |
 | W10 | branch order lost (longest over all branches) | `(?<=(a)\|(aa))c` on `aac`: g1=(1,2) | Branch 2 is longer. Sabotaged: sets g2. |
-| W11 `[r3 F1]` | (a) the retry frame saves the candidate, not the cursor (rev 0's push position); (b) the back-step runs before the clamp test (rev 0's order) | (a) `(?<=a{1,2}\|b)x` on `bx`: [1-2], and `(?<=a{1,2}\|bc)x` on `bcx`: [2-3]. (b) `(?<=a{2,3}\|b)x` on `bx`: [1-2]. | A varying branch followed by another branch. Under either sabotage the next branch starts from a candidate position, and its guard fails: nomatch (§5.1c cells 1-3, and the review's hand-runs of rev 0). |
-| W12 `[r6 V1]` | (a) `vm_cost_look`'s trail term dropped (today's constant 2); (b) the term charged one short per `range` branch | (a) `(?<=a{1,2})x` on `bax`: [2-3]; also `(?<=x\|[ab]{1,3})y` on `caay`: [3-4]. (b) `(?<=a{1,2}\|b{1,2})x` on `abx`: [2-3]. | At default options (no `frame_capacity`), a bounded pattern's trail is `cost.trail + 1`. (a) Capacity 3: MARK, POS and `D_0 = 2` fill it, and the first decrement returns `PCREC_ERR_FRAMES`. (b) Both branches are exhausted down to `D = 1`, so the peak is 2 + 2 + 2 = 6 entries. One short per branch sizes 5, and the sixth write gives up. A single `range` branch one short is MASKED by the capacity's `+ 1`, so (b) needs two `range` branches. The answers are `vlbrev2_evidence/premise.out`'s. |
+| W11 `[r3 F1]` `[r-cursor: re-aimed]` | (a) exhaustion does not restore the cursor (`L_n_i`'s `VSK_RESTORE` dropped on the exhaustion path); (b) the same restore dropped on `LO_i`'s sentinel path | (a) `(?<=a{1,2}\|b)x` on `bx`: [1-2], and `(?<=a{1,2}\|bc)x` on `bcx`: [2-3]; `(?<=a{2,3}\|b)x` on `bx`: [1-2] stays as the guard's control. (b) `(?<=é{2,3}\|é)x` on `éx`, `-e utf8`: [2-3] | (a) The next branch starts from the nearest candidate, and its guard fails: nomatch (§5.1c cells 1 and 3). (b) Two bytes, one character: the guard passes, `LO`'s back-step returns the sentinel, and without the restore branch 1 back-steps from `(size_t)-1`. UTF-8 only (under bytes the guard is exact). Rev 2's (a) "the frame saves the candidate" is now the DESIGN: the restore at `L_n_i` is what replaces the frame's cursor. |
+| W12 `[r6 V1]` `[r-cursor: re-aimed]` | (a) a trailed write per candidate under the O(1) term (rev 2's `D_i` kept, or `LO_i` written at `L_try_i` instead of before it); (b) the term charged one short per `range` branch (today's constant 2) | (a) `(?<=a{1,9})x` on `bbbbbbbbbax`: [10-11]; UTF-8 twin `(?<=a{1,9})x` on `éééééééééax`: [19-20]. (b) `(?<=a{1,2}\|b{1,2})x` on `abx`: [2-3] | At default options, a bounded pattern's trail is `cost.trail + 1`. (a) Nine candidates: 2 + 9 live entries against a capacity of 5 (§5.1c cell 5): `PCREC_ERR_FRAMES`. Rev 2's `bax` cell has two candidates and no longer overflows under a per-candidate write (2 + 2 against 4 + 1). (b) Both branches write `LO`: peak 2 + 2 plus the body's; one short per branch sizes it two short, past the `+ 1`. A single `range` branch one short is MASKED by the `+ 1`, so (b) keeps two `range` branches. The exact body share is INFERRED (the ladder picks the body's rung), so (b)'s margin is confirmed at build. |
+| W13 `[r-cursor]` | the one-character step bounded by the subject length instead of the cursor | `é(?<=(a?))` on `C3 A9 A9`, `-e utf8`: [0-2, g1 2-2]; `é(?<=a{0,1})` on the same: [0-2] (libpcre2 under `PCRE2_MATCH_INVALID_UTF`) | A stray continuation byte sits AT the cursor. The unbounded step jumps from 0 past the cursor to 3, never meets `LO = 2`, and runs until a budget gives up (§5.1c cell 7). UTF-8 only: the byte step `@P++` reads no bound. |
+| W14 `[r-cursor]` | the step skips a candidate (two characters, or two bytes under UTF-8 where it should be one character) | `(?<=\Ga{1,2})b` on `aab` from 1: [2-3] (from 0: [2-3]; from 2: nomatch); `-e utf8` `(?<=\Gé{1,2})b` on `ééb` from 2: [4-5]; `-e utf8` `(?i)(?<=(k{1,2})\|(b))x` on `b` U+212A `x`: [4-5, g1 1-4] | `\G` pins the ONE candidate that can succeed to the second one tried, so a skipped candidate is nomatch. The Kelvin cell needs one step over a 3-byte character from `b` to the Kelvin sign. A BYTE step under UTF-8 (`VSK_ADVANCE 1`) only adds mid-character candidates, which fail (no body starts inside a character): answer-neutral, so that sabotage is caught by the `range` codegen fixture under `-e utf8` (the step's text is the backend's), not by a cell. |
+| W15 `[r-cursor]` | the back-step's own clamp lost: a far-step sentinel taken as "start at `LO_i`" | `(?<=(a{0,2}))b` on `FF 61 62`: [2-3, g1 1-2]; `(?<=(é{0,2}))b` on `A9 C3 A9 62`: [3-4, g1 1-3] (both under `PCRE2_MATCH_INVALID_UTF`) | An ill-formed run lies within `hi` characters before the cursor. The retry finds the farthest VALID start (§5.1c cell 8). Sabotaged: g1 = (2,2), (3,3). The other naive reading, "start at the subject start", is answer-neutral here (no body consumes an ill-formed byte). It is excluded by work (§5.1a), not by a witness. |
+| W16 `[r-cursor]` | the nearest candidate never tried (exhaustion tested after the step, or `LO_i` one character too far) | `(?<=a{1,2})x` on `bax`: [2-3]; non-atomic re-entry into the next branch: `(?<*(a{1,2})\|(aa))\2` on `aaaa`: [2-4, -, 0-2] | Only the nearest candidate (`a` at 1) matches in the first cell. In the second, the follow `\2` fails for both of branch 0's candidates (g2 unset), the exhaustion restores the cursor, and branch 1 sets g2. |
+| W-low `[r-cursor]` | `LO_i` written untrailed (`VK_LSET`) | none at answer level: a codegen check that `LO_i`'s write is a `VK_SET` | A stale `LO_i` can only come from a LATER evaluation of the same site while an older one's frame is live. On a forward path that evaluation's cursor is at or after the older one's, so the stale bound is farther along, and the older loop only tries extra candidates. Each of those fails: it is either nearer than `lo` characters or past the cursor. The slot is trailed anyway, which is the cursor rung's own discipline. No cell found; vlbpieces' W-low stays INFERRED and becomes this codegen row. |
 
 **Stage 3's witnesses** (row `reverse-dfa`). Admission floor: each body below varies and its machine
 is a few states, far under any cap, so the row reaches in both builds.
@@ -1492,13 +1522,17 @@ is a few states, far under any cap, so the row reaches in both builds.
   (`pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k)`) and its sentinel branch, each with
   `SAB_COUNT=1`. Their detector is `tests/codegen/run_codegen_tests.sh`'s fixture-declared per-site
   count, and every `residlb*` fixture is fixed-width.
-  - Under (A), the `range` row adds a SECOND back-step site and a second sentinel site, which no
-    anchor names. Inlining it (`scan_position - D_i`) or dropping its sentinel would be caught by
-    nothing but W6, a UTF-8 cell. So each row gains a `range` twin (`SAB_COUNT` on the `range`
-    site's own anchor).
+  - `[r-cursor]` Under (A), the `range` row adds TWO back-step sites (the `lo_i` step, a literal
+    count, and the far step, a local count) and two sentinel sites, which no anchor names.
+    Inlining either step (`scan_position - lo_i`, `- K_i`) changes no byte-mode answer, and
+    dropping the far sentinel is caught only by W6, a UTF-8 cell. So each row gains a `range` twin
+    per site (`SAB_COUNT` on each site's own anchor).
   - Codegen gains a `range` fixture: `residlbrange (?<=a{1,2}|bc)x --features lookaround`, with
-    `back_step:2` (two branches, one site each; libpcre2 ACCEPT, lb 2). That makes §5.1's
-    "per-site count unchanged" a checked statement.
+    `back_step:3` (the `range` branch's two sites and the `one-length` branch's one; libpcre2
+    ACCEPT, lb 2). That makes §5.1's per-site count a checked statement. `[r-cursor]` A UTF-8 twin
+    (`-e utf8`) also gives the advance-agreement check (`run_encoding_checks.sh`) the bounded step
+    to read, and it is W14's byte-step detector. W-low's check (`LO_i` written by a `SET`) reads the
+    same fixture.
   - Under (B), both anchors sit in rewritten code and are re-cut.
 - **S-U4** `[r6 V8]` (`pcrec_cwmax(A_CLASS)` × 4) loses its STATED detector. Its
   `SAB_DOC_FIGURE` predicts that every class-bearing lookbehind refuses. After stage 1,
@@ -1510,7 +1544,10 @@ is a few states, far under any cap, so the row reaches in both builds.
     crosses 255 or 65535. So the figure is wrong rather than the detection gone. The row is run at
     build to confirm.
 - **W12** is new (the trail term). Its sabotage edits `vm_cost_look`, a site no existing row
-  reaches.
+  reaches. `[r-cursor]` W13-W16 are new with the cursor shape. W13 and W15 are UTF-8 cells over
+  ill-formed subjects, and their oracle mode is `PCRE2_MATCH_INVALID_UTF`, so the harness that runs
+  them needs that option. W14 and W16 have byte and UTF-8 cells. Every row of W1-W16 was measured
+  against libpcre2 10.46 (`vlbrev3_evidence/cells_*.out`; rev 0-2's cells as cited before).
 - Ids are the build lane's, from the range its brief names.
 
 ## 8. The population
@@ -1617,9 +1654,18 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
   - the D27 material `[r6 V10]`: the two extracts (`la_d27_extract.md`, `sr_d27_extract.md`
     §3.4(d)) are re-cut from their sources, and the D27-owned corpora (`tests/lookaround/d27/`,
     `tests/recursion/d27/`) are flipped by their owner (§6 stage 1).
-- **No `ir_listing.md` hunk** `[r6 V4]`. `D_i` joins the counter family, which the `slots` section
-  does not list, so §3.2¶2's family vocabulary is not extended. The label role's new text is
-  "the role text the walk recorded" (§3.4¶1).
+- **No `ir_listing.md` hunk** `[r6 V4]` `[r-cursor: same conclusion, new reason]`. `LO_i` joins the
+  `low` family (recommended, §5.1b), which the `slots` section lists, so the listing gains rows in
+  new artifacts. The family NAME stays `low`, so §3.2¶2's vocabulary is not extended, and `holds`
+  is "the role text" class of cell, not specified per family. Under the counter-family alternative
+  there would be no listing row at all, as rev 2 said.
+- **`limits.md` §3.1 `[r-cursor]`.** §3.1 states per-construct work charges (§3.1¶4's literal runs).
+  The lookbehind's charge becomes caller-visible in the give-up point, so the build adds one
+  sentence: "a lookbehind alternative is charged each back-step's character count and, when its
+  length varies, one unit per further candidate start". Rev 2 changed the charge too and owed the
+  same sentence.
+- **Not spec: enc.h's `advance` contract** `[r-cursor]` widens `@N` to "the bound the step never
+  passes" (§5.6). enc.h is internal, so this is a comment change in the same commit.
 - **The decision entry the build owes** `[r6 V10]` (the next D-number at landing; text to adapt):
   "[VLOOKBEHIND] stage 1 SUPERSEDES the [DD-14.LB] amendment's ruled refusal (2026-08-24,
   `sr_d27_extract.md` §3.4(d)). That ruling refused a call that is a lookbehind's one top-level
@@ -1627,7 +1673,8 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
   missing candidate loop. With the loop, `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` compiles and answers
   as libpcre2 10.46 does (ACCEPT, lb 2). The extracts are re-cut and the D27 cells flipped in the
   same landing. The same entry records the zero-width-repeat accept-set divergence (V6, D26
-  addendum) and the trail term (V1)." The manager acknowledges the supersession when ruling.
+  addendum) and the loop's cursor-rung shape (rev 3: one trailed bound per alternative, the trail
+  term `2 + range alternatives`)." The manager acknowledges the supersession when ruling.
 - **Stage 3 only:** a `tuning.md` §2 section for the row and its stamp, and the abi event.
 - **`docs/pcre2_compliance.md`**, via the compliance-refresh skill after landing (not spec). It
   records that pcrec answers at libpcre2's DEFAULT `max_varlookbehind` only.
