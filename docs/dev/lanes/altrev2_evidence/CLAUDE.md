@@ -6,3 +6,6 @@ Evidence only; nothing builds or reads it. pcrec at main 82d95943c (worktree bui
 - `snd1.tsv` / `snd1.out` — SND-1: which side effects in an intervening branch move an answer when a later branch is merged past it (P0-P10).
 - `altnf_proc.py` / `.out` — the rev 2 §3.3 merge procedure re-implemented from the text on literal lists, checked against a brute-force leftmost-first oracle.
 - `p7_altcls.out` — P7 row 1's one DIFF explained: altcls's merge of `a|a` (fire count, allowed by match_api.md §11.6¶1).
+- `sh.tsv` / `sh.out` — witness S-h: an optional position in an intervening branch is not part of its head (`a(?:x)?` moves the answer, `ax+` holds).
+- `stamps.out` — today's `RX_ALTCLS_MERGES`/`_FACTORED` on the S-m/S-s witnesses.
+- `se2.tsv` / `se2.out` — witness S-e2 (SND-3): `(?i)xyzłw` subjects and today's `req_whole_run`.

@@ -1,0 +1,5 @@
+# S-h: a variable-width intervening branch whose optional position must not count in its head
+byte	(?:ab|a(?:x)?|ad)             	b'ad'     	pcre2=(0,1) co=0	pcrec=(0,1) co=0	OK
+byte	(?:a[bd]|a(?:x)?)             	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|ax+|ad)                 	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|ax+)                 	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK

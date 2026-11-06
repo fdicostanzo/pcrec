@@ -1,0 +1,5 @@
+# S-h: a variable-width intervening branch whose optional position must not count in its head
+byte	(?:ab|a(?:x)?|ad)	ad
+byte	(?:a[bd]|a(?:x)?)	ad
+byte	(?:ab|ax+|ad)	ad
+byte	(?:a[bd]|ax+)	ad
