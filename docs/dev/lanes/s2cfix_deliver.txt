@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2cfix_report.md
+sections: Summary; Fixes by finding id; Sabotage; Validation; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
