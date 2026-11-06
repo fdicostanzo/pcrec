@@ -466,7 +466,9 @@ not provisional.
 across the residual seam. `<prefix>_span_match` /
 `<prefix>_span_match_caseless` (a backreference- or variable-bearing
 artifact; `docs/spec/vars.md` §7) and `<prefix>_back_step` (a
-lookbehind-bearing artifact) are `static inline`, defined ahead of the engine
+lookbehind-bearing artifact), and `<prefix>_fwd_step` (a lookbehind-bearing
+artifact whose lookbehind has an alternative of varying length), are
+`static inline`, defined ahead of the engine
 body and declared nowhere, so they are not exported. `<prefix>_var_valid` (a
 variable-bearing artifact under a multi-byte encoding) is exported and
 declared. None of them is a caller entry; their signatures are not part of
@@ -1297,13 +1299,16 @@ are emitted regardless so that a caller's `switch` survives a later compile
 under a different encoding or engine. None renumbers the give-up partition.
 
 - <a id="s4-p6"></a>[4¶6] **`PCREC_ERR_INTERNAL`** — the artifact caught its own inconsistency: a
-  compile-time width analysis (`pcrec_maxw`) disagreeing with what the
-  emitter walked, never a run-time resource give-up. Its one producer is
-  module `lookaround`'s negative-polarity lookbehind end-check (`(?<!X)`),
-  where a declined branch is the assertion SUCCEEDING, so a width
-  disagreement would be a false match; the check is redundant for the width
-  class the module ships and is emitted as a self-consistency guard. A
-  top-level entry propagates it to its caller like any negative return.
+  compile-time width analysis (the stored width pair, `pcrec_cwmin`/`pcrec_cwmax`)
+  disagreeing with what the emitter walked, never a run-time resource give-up.
+  It has two producers. One is module `lookaround`'s negative-polarity
+  lookbehind end-check (`(?<!X)`) on a one-length alternative, where a declined
+  alternative is the assertion SUCCEEDING, so a width disagreement would be a
+  false match; the check is redundant for one-length alternatives and is
+  emitted as a self-consistency guard, and a varying alternative's end-check
+  declines instead. The other is module `recursion`'s subroutine region-exit
+  guard (D72). A top-level entry propagates it to its caller like any negative
+  return.
 - <a id="s4-p7"></a>[4¶7] **`PCREC_ERR_STARTPOS`** — a refusal of the CALL: the caller named a
   `startpos` (or `ctx->pos`) that is not a character boundary, so nothing was
   attempted and no budget was touched (§9.2). Unreachable under `byte`, where

@@ -12316,7 +12316,8 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
      * the identical private-sentinel/public-code seam, because the seam's
      * reason (§4.4's three layers) is about WHERE a typed negative value
      * has room to travel, not about which side of the floor it lands on.
-     * `vm_look_behind`'s negative-arm end-check is its one producer today. */
+     * Two producers: `vm_look_behind`'s negative-arm end-check on a one-length
+ * alternative, and D72's subroutine region-exit guard (vm_stmt.c). */
     pcrec_sb_stampwf(c, v->up, "R_INTERNAL", sentw, "%s", "((ptrdiff_t)PCREC_ERR_INTERNAL)");
     pcrec_sb_putc(c, '\n');
     /* [DD-14 wave B+C] "no subroutine call is active". Out of range for the

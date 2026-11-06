@@ -95,6 +95,8 @@ DATA="$(printf '%s\n' "$DUMP" | grep -v '^#')"
 n="$(printf '%s\n' "$DATA" | grep -vc '^$' || true)"
 NAMES="$(printf '%s\n' "$DATA" | cut -f1 | sort)"
 EXPECT_NAMES="$(cat <<'EOF' | sort
+LA_LOOKBEHIND_BRANCH_MAX
+LA_LOOKBEHIND_VAR_MAX
 PCREC_MAX_PREFIX_LEN
 PCREC_MAX_EMIT_NAME_LEN
 PCREC_DFA_OVERFLOW_WHY_LEN
@@ -176,8 +178,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 78 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 78 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 80 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 80 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true

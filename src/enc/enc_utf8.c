@@ -261,16 +261,18 @@ static const char u8_defs_decode[] =
  * on `C2 80 80` (a two-byte lead followed by TWO continuations), the forward
  * body then consumes the well-formed `C2 80` and ends one byte past where it
  * started, and the lookbehind end-check fires — which on a NEGATIVE
- * lookbehind is RX_R_INTERNAL, below PCREC_ERR_FLOOR, and a composed call
+ * lookbehind's one-length alternative is RX_R_INTERNAL, below PCREC_ERR_FLOOR, and a composed call
  * site TRAPS on a subject §2.6 promises will merely not match. Reachable on
  * a WELL-FORMED subject too, through a caller-supplied mid-character
  * `startpos` (§2.6.1.1).
  *
  * THE INVARIANT THE LENGTH TEST BUYS (§5.2.1): if back_step returns q, then
  * s[q..pos) decomposes into exactly k length-consistent UTF-8 runs, so a
- * k-character body started at q ends at pos ON EVERY INPUT — the end-check's
- * redundancy argument becomes unconditional and RX_R_INTERNAL unreachable
- * from this construct. It is deliberately a LENGTH test and not a validity
+ * k-character body started at q ends at pos ON EVERY INPUT — the one-length
+ * end-check's redundancy argument becomes unconditional and RX_R_INTERNAL
+ * unreachable from this construct (a VARYING alternative's end-check never
+ * returns it: a candidate that does not end at pos declines, vlookbehind.md
+ * §5.3). It is deliberately a LENGTH test and not a validity
  * test: a full validator here would be a second UTF-8 decoder beside the
  * automaton, two definitions of well-formedness that could drift, and the
  * invariant does not need one (an overlong run is length-consistent, and the
