@@ -205,21 +205,20 @@ enum {
      * there is nothing to force — a run that cannot merge/factor always
      * DECLINES, safely, the same as an A_REP that cannot possessify.
      *
-     * [RUN-POS-SET] stage 1 re-specified bit 10: it denies the alternation
-     * owner's SIBLING MERGE at both of its callers, altcls's stage 1 and the
-     * UTF-8 lowering's box merge (src/opt/altnf.c; docs/spec/tuning.md §2.6).
-     * One rule with two callers, so one lever; the lowering's merges are not
-     * counted in `<PREFIX>_ALTCLS_MERGES` (the program bytes and tables
-     * record them).
+     * [RUN-POS-SET] stages 1 and 2b re-specified both bits over the
+     * ALTERNATION OWNER (src/opt/altnf.c; docs/spec/tuning.md §2.6-§2.7):
+     * bit 10 denies its SIBLING MERGE (rule M) at both of its callers, the
+     * altcls pass and the UTF-8 lowering's box merge; bit 11 denies its two
+     * FACTORING rules (P, prefix; S, suffix) at the altcls caller. The
+     * lowering's merges are not counted in `<PREFIX>_ALTCLS_MERGES` (the
+     * program bytes and tables record them).
      *
-     * TWO BITS, not one, because the two stages are independently useful
-     * to pin: stage 1 (single-char runs -> one class) and stage 2 (prefix
-     * factoring, emitting no new capturing groups) are different rewrites
-     * with different soundness arguments, and stage 2 runs on stage 1's
-     * OUTPUT (docs/dev/plan.md's interaction note), so denying stage 1
-     * alone still lets stage 2 factor an all-single-char run's literal
-     * spelling, while denying stage 2 alone leaves single-char merging
-     * live. A differential that wants ONLY one stage held constant needs
+     * TWO BITS, not one, because the merge and the factoring are
+     * independently useful to pin: they are different rewrites with
+     * different soundness arguments (the merge MOVES a branch past others
+     * under the adjacency test; the factoring reorders nothing), and each
+     * rewrites the lists the other creates, so denying one alone leaves the
+     * other live. A differential that wants ONLY one held constant needs
      * both knobs separately reachable.
      *
      * Same masked-out-of-`rx_info.flags` treatment as the deny family

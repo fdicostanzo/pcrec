@@ -64,15 +64,15 @@ that live here because an error in them is silent (wrong answers, no warning).
 
 ## Files
 
-- altcls.c — [OPT-ALTCLS] FIRST pass: stage 1 merges adjacent bare-class alt
-  branches (`b|c` -> `[bc]`); stage 2 prefix-factors adjacent literal-first-byte
-  branches (`frank|fred` -> `fr(?:ank|ed)`), iterative loop + depth cap
-  `PCREC_MAX_ALTCLS_FACTOR_DEPTH`. Gates `PCREC_NO_ALTCLS_MERGE`/`_FACTOR`
-  (deny-only), stamps `<PREFIX>_ALTCLS_MERGES`/`_FACTORED` (common to both
-  emitters). Wider multi-char class merge is UNSOUND. Tests tests/altcls/;
-  sabotage S66/S67.
-- altnf.c — [RUN-POS-SET] the alternation owner `pcrec_altnf` (alt_normal_form.md
-  §3.3); rule M today, caller the UTF-8 lowering; denied by `-fno-altcls-merge`.
+- altcls.c — [OPT-ALTCLS] FIRST pass: walks every alternation spine (not
+  lookaround/atomic bodies or call targets) and hands each branch list to the
+  owner with {M, P, S} less the denied rules (`PCREC_NO_ALTCLS_MERGE` removes
+  M, `_FACTOR` removes P and S; deny-only); stamps `<PREFIX>_ALTCLS_MERGES`
+  (lists M folded) / `_FACTORED` (P and S factorings), common to both
+  emitters. Tests tests/altcls/; sabotage S66/S67, S1888-S1893.
+- altnf.c — [RUN-POS-SET] the alternation owner `pcrec_altnf` (design §3.2-3):
+  M (merge, adjacency test via desc.h `PdHead`), P, S, to a fixpoint, created
+  lists re-run; bound `PCREC_MAX_ALTNF_WORK`. Callers altcls, UTF-8 lowering.
 - callgraph.c — [DD-14] THE CALL GRAPH: which groups are called, what they reach;
   sole writer of `.body`; Kleene fixpoints for `minw`, `maxw` ([DD-14.LB], no cycle
   test: saturation absorbs), `cwmin`; publishes `nonnullable` off `minw` ([K69],

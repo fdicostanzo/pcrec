@@ -1,0 +1,23 @@
+population: 6720 patterns x 2 routes (+ the denied pair)
+patterns with any mover: 544
+  auto ALTCLS_FACTORED    down    13  up    83  other 0
+  auto ALTCLS_MERGES      down     2  up    59  other 0
+  auto VM_ALT_ISLANDS     down     3  up     0  other 0
+  auto VM_PROGRAM_BYTES   down     0  up     0  other 24
+  auto VM_RUNGS           down     0  up     0  other 4
+  auto size               down   460  up    17  other 0
+  vm   ALTCLS_FACTORED    down    13  up    82  other 0
+  vm   ALTCLS_MERGES      down     2  up    58  other 0
+  vm   VM_ALT_ISLANDS     down    13  up    23  other 0
+  vm   VM_PROGRAM_BYTES   down     0  up     0  other 102
+  vm   VM_RUNGS           down     0  up     0  other 5
+  vm   size               down    83  up    24  other 0
+DENIED-DIFFERS tests/utf8/altnf_lowering.rxt:106 b'(?i)\xce\x95\xce\xbb\xce\xbb\xce\xb7\xce\xbd\xce\xb9\xce\xba\xce\xac'
+DENIED-DIFFERS tests/backrefs/caseless_ucp.rxt:322 b'(?i)(\\xe9\\xe0)\\1'
+REFUSAL-MOVED vm bench/altwide/clsa-1024.rx REFUSED ok
+REFUSAL-MOVED vm bench/altwide/clsd-1024.rx REFUSED ok
+REFUSAL-MOVED auto bench/capability/wild-datetime-datefinder-alternation.rx REFUSED ok
+REFUSAL-MOVED vm bench/capability/wild-datetime-datefinder-alternation.rx REFUSED ok
+DENIED-DIFFERS bench/utf8/ci-greek-run.rx b'(?i)\xce\xb1\xce\xb2\xce\xb3'
+refusal or denied-identity findings: 7
+p2b movers: FAIL

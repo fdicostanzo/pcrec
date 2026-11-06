@@ -18,27 +18,18 @@
 # `-fno-altcls-merge` builds and sweeps subjects, including every single
 # pattern character per D47.6's rule) both exercise exactly that subject.
 SAB_ID="S66-altcls-merge-drops-union"
-SAB_FILE="src/opt/altcls.c"
+SAB_FILE="src/opt/altnf.c"
 SAB_SUITES="altdiff harness"
-SAB_DESC="stage 1's OR loop that unions every branch's class bitmap into the merged node is removed, so a merged run keeps only its FIRST branch's byte set -- 'b|c' silently compiles to '[b]' and the 'c' alternative is deleted from the language entirely"
+SAB_DESC="the union in the owner rule M fold is removed (stage 1 of altcls before RUN-POS-SET 2b), so a merged run keeps only its FIRST branch set -- 'b|c' silently compiles to '[b]' and the 'c' alternative is deleted from the language entirely"
 SAB_DOC_FIGURE="src/opt/altcls.c's file header (STAGE 1 soundness paragraph: 'the bitmap is the union'); docs/dev/plan.md's [OPT-ALTCLS] row"
 SAB_COUNT=1
-# [M5.0 stage 1] RE-AIMED at the interval payload. The nested bitmap OR became
-# a merge of interval lists (docs/design/utf8_design.md §2.5.1's WIDEN row 3),
-# so the union is now the loop bound rather than an inner loop — and the
-# sabotage is correspondingly a change to the bound rather than a deleted loop.
-# What it plants is identical: only the FIRST branch of the run survives the
-# merge, and every other branch's members are silently dropped.
-SAB_BEFORE='                    PcrecCpSet u;
-                    pcrec_cpset_init(&u, &cx->arena);
-                    for (size_t x = k; x < j; x++)
-                        pcrec_cpset_add_set(&u, br[x]->u.cls.iv, br[x]->u.cls.n);
-                    out[m++] = altcls_class_from_set(cx, &u);
+# [RUN-POS-SET] stage 2b (lane altbuild) RE-ANCHORED: altcls's stage 1 is
+# deleted; its merge is the alternation owner's rule M (src/opt/altnf.c), and
+# the union is the fold's one line. What it plants is the same: the head
+# keeps its own set, so the folded branch's members are dropped (`b|c`
+# keeps `b` alone). The lowering's caller folds through the same line, so
+# the utf8 corpus goes red too; S66's own witnesses are unchanged.
+SAB_BEFORE='            b[into].pos[p] = anf_cls_union(cx, b[into].pos[p], b[j].pos[p]);
 '
-SAB_AFTER='                    /* SABOTAGE S66: the merge stops at the FIRST
-                     * branch -- only its members survive the union. */
-                    PcrecCpSet u;
-                    pcrec_cpset_init(&u, &cx->arena);
-                    pcrec_cpset_add_set(&u, br[k]->u.cls.iv, br[k]->u.cls.n);
-                    out[m++] = altcls_class_from_set(cx, &u);
+SAB_AFTER='            (void)0;   /* SABOTAGE S66: the fold keeps the head set only */
 '

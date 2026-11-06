@@ -23,7 +23,11 @@
  * sound, a reader then has today's single run. Each group stores at most
  * `max_pos` positions, its LAST ones: the walk builds right to left, so a
  * full group is reused whole by every step to its left (no copy), and a
- * suffix of a piece is a piece. */
+ * suffix of a piece is a piece.
+ *
+ * THE ADJACENCY HEAD (`PdHead`, desc.h) is the second column: FIRST
+ * positions, read through zero-width nodes, with the consumed width range and
+ * WRITES. Its combinators sit after the description's. */
 #include <string.h>
 
 #include "core/internal.h"
@@ -133,4 +137,61 @@ PdDesc pcrec_pd_alt(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r)
     memcpy(g, l.g, (size_t)l.ng * sizeof *g);
     memcpy(g + l.ng, r.g, (size_t)r.ng * sizeof *g);
     return pd_norm(cx, c, g, l.ng + r.ng);
+}
+
+/* ---- the adjacency head ---------------------------------------------- */
+
+PdHead pcrec_ph_unit(void)
+{
+    return (PdHead){ 0, true, true, false, 0, 0, NULL };
+}
+
+PdHead pcrec_ph_pos(Ctx *cx, const void *pos)
+{
+    const void **p = pcrec_arena_alloc(&cx->arena, sizeof *p);
+    p[0] = pos;
+    return (PdHead){ 1, true, true, false, 1, 1, p };
+}
+
+PdHead pcrec_ph_wall(long long minw, bool bounded, long long maxw, bool writes)
+{
+    return (PdHead){ 0, false, bounded, writes, minw, bounded ? maxw : 0, NULL };
+}
+
+/* `l` followed by `r`: `l`'s head, continued by `r`'s where `l` is closed. */
+PdHead pcrec_ph_cat(Ctx *cx, const PdCfg *c, PdHead l, PdHead r)
+{
+    PdHead o = l;
+    o.writes = l.writes || r.writes;
+    o.minw = l.minw + r.minw;
+    o.bounded = l.bounded && r.bounded;
+    o.maxw = o.bounded ? l.maxw + r.maxw : 0;
+    if (!l.closed) return o;
+    int k = r.h < c->max_pos - l.h ? r.h : c->max_pos - l.h;
+    if (k > 0 && l.h == 0) {
+        o.pos = r.pos;
+    } else if (k > 0) {
+        const void **p = pcrec_arena_alloc(&cx->arena, (size_t)(l.h + k) * sizeof *p);
+        memcpy(p, l.pos, (size_t)l.h * sizeof *p);
+        memcpy(p + l.h, r.pos, (size_t)k * sizeof *p);
+        o.pos = p;
+    }
+    o.h = l.h + k;
+    o.closed = r.closed && k == r.h;
+    return o;
+}
+
+/* `l` or `r`: the position-wise union over the heads both have. */
+PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r)
+{
+    int h = l.h < r.h ? l.h : r.h;
+    const void **p = NULL;
+    if (h > 0) {
+        p = pcrec_arena_alloc(&cx->arena, (size_t)h * sizeof *p);
+        for (int i = 0; i < h; i++) p[i] = c->alpha->join(cx, l.pos[i], r.pos[i]);
+    }
+    bool bounded = l.bounded && r.bounded;
+    return (PdHead){ h, l.closed && r.closed && l.minw == r.minw, bounded,
+                     l.writes || r.writes, l.minw < r.minw ? l.minw : r.minw,
+                     bounded ? (l.maxw > r.maxw ? l.maxw : r.maxw) : 0, p };
 }

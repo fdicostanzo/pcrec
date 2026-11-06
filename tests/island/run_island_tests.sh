@@ -96,7 +96,10 @@ n="$(islands "$WORKDIR/two.c")"
 # island only on the residues altcls just created. A pattern altcls factors
 # must stamp exactly ONE island, never one per factored run.
 # ---------------------------------------------------------------------------
-gen factored 'aaa|aab|aac|aba|abb|abc|baa|bab|bac|bba|bbb|bbc'
+# [RUN-POS-SET] stage 2b: the owner's sibling merge folds a full grid
+# (`aaa|aab|...|bbc`) into classes, which has no island; these words do not
+# merge and still factor (FACTORED 2).
+gen factored 'frank|fred|frost|brad|bobby|bill'
 n="$(islands "$WORKDIR/factored.c")"
 f="$(sed -n 's/^#define RX_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$WORKDIR/factored.c")"
 # THE PRECONDITION IS ASSERTED, NOT PRINTED. This cell's whole claim is that
@@ -107,7 +110,7 @@ f="$(sed -n 's/^#define RX_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$WORKDIR/factored.
 # green while testing nothing: [MECH-REACH]'s shape, a witness that stopped
 # reaching its site.
 if [ -z "${f:-}" ] || [ "${f:-0}" -lt 1 ]; then
-    bad "the factoring precondition FAILED: 'aaa|aab|...' has RX_ALTCLS_FACTORED=${f:-<none>}, so altcls did not factor it and the 'one island, not one per factored run' claim below has no population. Find a pattern altcls still factors; do not delete this cell"
+    bad "the factoring precondition FAILED: 'frank|fred|...' has RX_ALTCLS_FACTORED=${f:-<none>}, so altcls did not factor it and the 'one island, not one per factored run' claim below has no population. Find a pattern altcls still factors; do not delete this cell"
 elif [ "${n:-}" = "1" ]; then
     ok "a heavily factored alternation (RX_ALTCLS_FACTORED=$f, precondition asserted) stamps ONE island, not one per factored run"
 else
@@ -395,7 +398,12 @@ BDRV_EOF
 
 bud_ok=1
 for arm in on off; do
-    fl="-fno-req-byte"; [ "$arm" = off ] && fl="-fno-alt-island -fno-req-byte"
+    # -fno-altcls-merge -fno-altcls-factor ([RUN-POS-SET] stage 2b): the
+    # alternation owner merges and factors these words into classes and a
+    # shared tail, which has no island; the cell is about the island's budget,
+    # so both arms compile the words as written.
+    fl="-fno-req-byte -fno-altcls-merge -fno-altcls-factor"
+    [ "$arm" = off ] && fl="-fno-alt-island $fl"
     d="$WORKDIR/bud_$arm"; mkdir -p "$d"
     # -fno-req-byte: [OPT-REQBYTE] stamps a whole-window memchr for this
     # pattern's one required byte ('q'), absent from every BUDGET_SUBJECTS

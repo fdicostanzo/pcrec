@@ -85,3 +85,39 @@ fra(n|m)k|frost
 # top-level pattern once wrapped) ----
 (a(b|c)+d)
 (frank|fred|brad)
+
+# ---- [RUN-POS-SET] stage 2b: the alternation owner's rules M, P, S ----
+# (docs/design/alt_normal_form.md §3.2-§3.3, §5 2b; every cell's answer was
+# also read from libpcre2 10.46, lane altbuild)
+# M across branches the adjacency test passes; refused where it must not
+x(?:a|b|cd|e|f)y
+b|ab|c
+b|cd|c
+(?:ab|xy|ad)z
+(?:xing|ying)
+(?:ab|a|ad)
+(?:for|fo|fox)
+(?:ac|x|xc)
+(?:ab|a\Kd|ad)
+(?:ab|(a)d|ad)\1?
+(?:ab|a(?:x)?|ad)
+(?:ab|ax+|ad)
+(?:ab|(?=ad)a|ad)
+(?:ab|(?=(a))ad|ad)
+(?:x\Kac|xab)
+aaa|aab|aba|bba
+aab|bbb|bab
+ab|abc|ad
+aaa|ab|aab
+bba|bb|bba|bb
+# P: set-valued keys, rests re-run; a variable-width key is never one
+(?:a|ab)c|(?:a|ab)b
+[ab]x|[ab]y|[ab]
+frank|fr(?:x*)ed
+(?:abx|aby|abz)q
+# S: identical tails, heads re-run
+(?:xyr|zr)
+(?:ab\b|ad\b)
+(?:a\Kc|bc)
+(?:x(?:y)*z|w(?:y)*z)
+(?:a(x)|b(x))

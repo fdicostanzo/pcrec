@@ -34,3 +34,15 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
 - `altnf_rules_gen.py` — writes `tests/altcls/altnf_rules.rxt` from
   libpcre2 10.46 (stage 2b's answer witnesses).
 - `p2b_work.py` — stage 2b's work census (sets `PCREC_MAX_ALTNF_WORK`).
+- `p2b_work.out` — the work census's run (census-only unbounded build):
+  owner peak 831,549 (bench altwide s-4096); lowering peak 750.
+- `p2b_movers.py` — stage 2b's mover census (stamps, engine, VM bytes,
+  islands, rungs, artifact size; default and VM routes; plus a denied pair
+  that must be identical). `p2b_movers.out`/`.tsv` against the stage 1+2p
+  build `24095dfc5` (the stage's own REF: 117 patterns move, 0 denied
+  differences, 4 refusals retired); `p2b_movers_vs_base96.out` the first run
+  against the plain base (its 3 denied differences are stage 2p's req walk,
+  identical at `24095dfc5`).
+- `p2b_fuzz_gen.py` — stage 2b's random differential generator (seed 2026,
+  400 patterns x 90 subjects, run by `../altrev2_evidence/probe.py`): 36,000
+  of 36,000 OK on the stage and under both denies; outputs kept in scratch.

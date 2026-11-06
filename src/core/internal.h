@@ -7798,14 +7798,20 @@ Ast *pcrec_altcls(Ctx *cx, Ast *root);               /* src/opt/altcls.c */
  * in preference order, by the rules `rules` names and returns the new count, the
  * list rewritten in place. Exact and preference-keeping (§3.2's adjacency
  * test gates every branch it moves); allocates only new nodes; reads no
- * option (a denied rule is the caller's to leave out). `*folds`, when
- * non-NULL, gets the number of sibling-merge folds made. */
+ * option (a denied rule is the caller's to leave out). `*st`, when non-NULL,
+ * is ADDED to: the lists (the given one and every rest or head list the
+ * procedure recursed into) in which rule M folded at least once, and the
+ * rule-P and rule-S factorings made (the altcls stamps' units, §5 2b). */
 typedef struct {
     bool merge;    /* rule M, sibling merge */
-    bool prefix;   /* rule P, prefix factoring (stage 2b) */
-    bool suffix;   /* rule S, suffix factoring (stage 2b) */
+    bool prefix;   /* rule P, prefix factoring */
+    bool suffix;   /* rule S, suffix factoring */
 } PcrecAnfRules;
-int pcrec_altnf(Ctx *cx, Ast **br, int n, PcrecAnfRules rules, int *folds);
+typedef struct {
+    int merge_lists;
+    int factored;
+} PcrecAnfStats;
+int pcrec_altnf(Ctx *cx, Ast **br, int n, PcrecAnfRules rules, PcrecAnfStats *st);
 
 /* ---- [M4.5b] the VM engine (docs/design/engine_m4.md) ---- */
 
