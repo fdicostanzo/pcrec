@@ -1,0 +1,8 @@
+utf8	x(?:[éà]1|q2|r3)y           	b'x\xc3\xa91y'	pcre2=(0,5)	pcrec=(0,5)	OK
+byte	(ab)x\1y                    	b'abxaby'   	pcre2=(0,6)[(0,2)]	pcrec=(0,6)	OK
+byte	xy(?:ab|abc)zw              	b'xyabczw'  	pcre2=(0,7)	pcrec=(0,7)	OK
+byte	xy(?:ab|abc)zw              	b'xyabzw'   	pcre2=(0,6)	pcrec=(0,6)	OK
+utf8	(?i)k                       	b'\xe2\x84\xaa'	pcre2=(0,3)	pcrec=(0,3)	OK
+utf8	(?i)k                       	b'\xe2\x84' 	pcre2=nomatch	pcrec=nomatch	OK
+utf8	(?i)xyzk                    	b'xyz\xe2\x84\xaa'	pcre2=(0,6)	pcrec=(0,6)	OK
+utf8	(?i)xyzβw                   	b'xyz\xcf\x90w'	pcre2=(0,6)	pcrec=(0,6)	OK

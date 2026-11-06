@@ -1,0 +1,36 @@
+# SND-1 premise
+byte	(?:ab|a|ad)	ad
+byte	(?:a[bd]|a)	ad
+byte	(?:a|a[bd])	ab
+byte	(?:ab|a|ad)	ab
+byte	(?:for|fo|fox)	fox
+byte	(?:ac|x|xc)	xc
+utf8	(?i)(?:αb|α|αd)	αd
+# C2 factoring keeps the empty in its slot
+byte	a(?:b||d)	ad
+byte	a(?:b||d)	ab
+byte	(?:ab|a|ad)c	adc
+byte	a(?:b||d)c	adc
+byte	(?:ab|a|ad)(d?)	ad
+byte	a(?:b||d)(d?)	ad
+byte	(?:for|fo|fox)x	foxx
+byte	fo(?:r||x)x	foxx
+byte	(?:a|ab)c|(?:a|ab)b	abc
+byte	(?:a|ab)(?:c|b)	abc
+# C2 adjacency: legal merge (intervening equal width)
+byte	(?:ab|ad|a)	ad
+byte	(?:a[bd]|a)	ad
+byte	(?:ab|xy|ad)z	adz
+byte	(?:a[bd]|xy)z	adz
+# C4 local lookahead forms
+byte	(?:ab|a(?!d)|ad)	ad
+byte	(?:ab|a|ad)	ad
+byte	(?:a[bd]|a)(?!d)	ad
+byte	(?:ab|a(?=c)|ad)c	adc
+byte	(?:ab|a|ad)(?:c|dc)	adc
+byte	(?:ab|a(?!d)|ad)(?:c|dc)	adc
+byte	(?:a[bd]|a)(?:c|dc)	adc
+# C4 exact continuation lookahead
+byte	(?:ab|a(?=(?:c|dc))|ad)(?:c|dc)	adc
+byte	(?:a[bd]|a(?=(?:c|dc)))(?:c|dc)	adc
+byte	(?:a[bd](?<!a(?=(?:c|dc))d)|a(?=(?:c|dc)))(?:c|dc)	adc

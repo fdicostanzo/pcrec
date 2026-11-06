@@ -1,0 +1,8 @@
+utf8	x(?:[éà]1|q2|r3)y	xé1y
+byte	(ab)x\1y	abxaby
+byte	xy(?:ab|abc)zw	xyabczw
+byte	xy(?:ab|abc)zw	xyabzw
+utf8	(?i)k	hex:e284aa
+utf8	(?i)k	hex:e284
+utf8	(?i)xyzk	hex:78797ae284aa
+utf8	(?i)xyzβw	hex:78797acf9077

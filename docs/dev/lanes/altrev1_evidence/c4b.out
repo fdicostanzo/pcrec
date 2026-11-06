@@ -1,0 +1,6 @@
+byte	(?:ab|a|ad)(?:d|ddd)        	b'addd'     	pcre2=(0,2)	pcrec=(0,2)	OK
+byte	(?:ab|a(?=(?:d|ddd))|ad)(?:d|ddd)	b'addd'     	pcre2=(0,2)	pcrec=(0,2)	OK
+byte	(?:a[bd]|a(?=(?:d|ddd)))(?:d|ddd)	b'addd'     	pcre2=(0,3)	pcrec=(0,3)	OK
+byte	(?:ab|a|ad)(?:x|b)          	b'abx'      	pcre2=(0,3)	pcrec=(0,3)	OK
+byte	(?:a(?!(?:x|b))[bd]|a)(?:x|b)	b'abx'      	pcre2=(0,2)	pcrec=(0,2)	OK
+byte	(?:ab|a(?!d)|ad)(?:x|dy)    	b'ady'      	pcre2=nomatch	pcrec=nomatch	OK

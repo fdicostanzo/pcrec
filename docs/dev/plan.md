@@ -333,7 +333,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Reentrant and longjmp-safe, lets `under` propagate as the static walk assumes, and unifies the ladder's shrink test, the memo and the facts hook (forest-for-trees: the family's third member, so proposed, not built).
 - [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
   filed: 2026-10-22 lane landlang
-  status (2026-10-22): not started; the K127 fix made the seal redundant (langfix3_report.md)
+  status (2026-11-05): absorbed by alt_normal_form.md rev 1 stage 1 (seal deleted there; an abi event with the D94 grep and re-pins); the row closes when stage 1 lands
   next: rides the next abi event (retirement is an abi bump plus identity re-pin, D76/D94)
   refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
   The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
@@ -671,7 +671,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Backlog
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-05): filed and SCHEDULED: designed inside the alternation normal-form rev 1 general form (every fixed-width piece one description); build after span_pick 1e (moved run facts move kit arms)
+  status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
   next: alt_normal_form.md rev 1 states it (or stages it); then a critic round and Frank's build go
   refs: docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
@@ -1019,7 +1019,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   note (2026-10-26, lane rwsurvey, docs/dev/lanes/rwsurvey_report.md): no pass CREATES absorb-optional / `X+$` shapes on the 5,735 corpus + 351 bench dumps; constructed witnesses do (altcls: `\s+(?:\n|\r)?` -> `\s+[\n\r]?`, then A then B chain, so the table must iterate). Passes DO leave: altcls empty-branch alternations (`f(|rank)`, 107 corpus), possessify ATOMIC(REP possessive) (57). Only 29 outside-written patterns exist (6 carry a shape). More candidates: CTX-IMPLIED-AFTER-RUN (`\w+\b`), ALT-EMPTY normal form, MERGE-RUN (`[0-9][0-9]?`), REP-OF-REP, TRIVIAL-REP (`{1}`), DUP-ZERO-WIDTH/DEAD-PIN, REDUNDANT-CUT. Placement hypothesis: after atomic discharge, before the call graph, bounded fixpoint; must see through lower_enc A_WCLASS.
 - [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
   filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
-  status (2026-10-26): filed; nothing built. A stray A_EMPTY mid-CAT (`a(?:)bc`) hides the required run `abc` from the fact pass (src/facts/req.c, not traced): prefilter handoff instead of memchr, per docs/dev/flag_spell_findings_2026-10-23.md.
+  status (2026-11-05): direct half (an empty node in a CAT/ALT) is alt_normal_form.md rev 1 stage 2a, the unit owned by the kind row; quantified half (REP of empty, anchor wrapper) staged later, decision points in its §9 S2; the a(?i)bc symptom is already gone
   next: Frank's word; then trace req.c's A_EMPTY handling in a CAT and make the run continue across it (or drop the empty earlier, the general form).
   refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
   note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
@@ -1125,7 +1125,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Members: pcrec_memfn_wpos_cube, findings.c's scan_index/pick/cube_mass, run_scan_index, run_window_start. End state: one detector (pcrec_cube_of) and its inverse, one membership answer asked of the kit.
 - [RUN-POS-SET] STATE:not-started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
-  status (2026-11-05): design note written (docs/design/alt_normal_form.md, PROPOSED rev 0, critic round next); build waits for span_pick 1e and Frank's go
+  status (2026-11-05): design rev 1 (alt_normal_form.md, lane altrev1) applies review r2 + Frank's 5 rulings: one rewrite owner with an adjacency test, per-length pieces as a fact, every byte-moving stage an abi event; stages 1, 2a, 2p, 2b, 3; re-check round next; build after span_pick 1e + go
   trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the build waits for span_pick unit 1e's landing and Frank's build go
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
@@ -1628,7 +1628,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [REPEAT-RUN] STATE:not-started — required-run and span analysis should see through exact repeats (`A{4}` reads like `AAAA`)
   filed: 2026-10-13 Frank (session 111), "file it for later review"
-  status (2026-10-13): not started; probe only (abi 76): `AAAA` and `A{4}` give identical DFA tables, but only `AAAA` gets REQ_RUN "41414141@3" (memchr+memcmp start, DFA handoff) and the VM literal compare; `A{4}` gets REQ_RUN "none", a plain memchr start and a counter-rung span loop (VM program 257 -> 662 bytes)
+  status (2026-11-05): named as the REP (power) arm of alt_normal_form.md rev 1's one fixed-width description (§3.5, §9 S3); a later follow-up note decides its six points; 2026-10-13 probe: A{4} REQ_RUN none vs AAAA 41414141@3
   next: Frank's review; no measurement lane until then
   refs: memfn/docs/ideas.md (2026-10-13 entry); [SPAN-ISEL]
   The general form: an exact repeat `X{n}` of a fixed-width atom IS a width-n*w member, so the run extractor (and the VM's literal-run selection) should read it as such (`ab{3}c` has required run `abbbc`; `[0-9]{4}` is a width-4 span member). Fix the reading in the analysis, never a parser rewrite to a sequence. Likely cost: the VM half (counter loop vs one memcmp) more than the search-start half. Population unmeasured.
