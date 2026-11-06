@@ -254,6 +254,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-01): built with [QORDER] on lane/qorder, not deployed: the runner's watcher enforces the cap (safekill group+tree, then any other box-lock holder); planted test. Origin: 745-vmrecm-test, 64 min over cap, 2026-10-31
   next: deploys with [QORDER]; close both rows after one real cap fire shows a clean CAP-KILL line
   refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
+- [FEAT-FAMILIES] STATE:started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
+  filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
+  status (2026-11-06): STARTED (Frank "yes"): design note + D37 addendum + graduation table via lane featfam; the default move waits for [IFACE-PUSH] and a version tag. Frank: "the pcrec family is 'all'" (pcrec-only modules live in all)
+  next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
+  refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
+  vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
@@ -933,12 +939,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: (a) measure a fixed 60-row slice at PROCS 6/8/10/12/16 on a quiet box, set the default from the knee, record it beside the constant; (b) Frank's idea: the mech runner starts low and raises concurrency step by step while CPU use stays under ~90% and per-row time does not degrade.
   refs: scripts/battery.sh (MECH_PROCS); tests/mech/run_sabotage_matrix.sh (PROCS/JOBS/INNER_PROCS); memory pcrec-suspect-tuning-constants; build/full_suite/20261027_7d3be7ec7/mech.log
   For (b): the target is CPU busy (user+sys) AND rows/hour, since sys time can rise without throughput; step every N completed rows; never above nproc; one log line per change so the run explains itself. (a) may make (b) unnecessary: decide after (a)'s curve.
-- [FEAT-FAMILIES] STATE:not-started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
-  filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
-  status (2026-10-27): agreed, not started. basic = modules whose constructs never force the backtracking engine (registry engine column, DERIVED); extended = basic + backrefs, lookaround, atomic-groups, conditionals, branch-reset; pcre2 = + recursion, verbs (callouts stay opt-in everywhere).
-  next: design note + D37 addendum: versioned frozen members (basic1, extended1, pcre2-1) under a moving family name; std1 kept, unadvertised; default moves to `extended` at an announced boundary after the graduation criterion (panel + PC-3) holds for its modules.
-  refs: decisions D37; src/parse/enabled.c (g_named_sets); docs/spec/cli.md §1.17; docs/spec/pattern_language.md §2.3; tags v0.1.0-beta, v0.2.0-beta
-  vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
 - [GROUP-BYNAME] STATE:not-started — CALLER-SIDE CAPTURE ACCESS BY NAME: PER-NAME CONSTANTS IN THE .H AND A BY-NAME LOOKUP
   filed: 2026-10-27 Frank ("file it")
   status (2026-10-27): filed, not scheduled. Today a caller bsearches rx_info.groups and walks a (?J) run itself (match_api.md §5.4¶6); embedded C has RX_G_<name>; templates resolve $name at compile time.
