@@ -1,6 +1,7 @@
-# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.2)
+# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.3)
 
-**Status: PROPOSED, rev 1.2 (lane s2rev12, 2026-11-06), over rev 1.1 (lane s2rev11), rev 1 (lane s2rev1) and
+**Status: PROPOSED, rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3), over rev 1.2 (lane
+s2rev12, 2026-11-06), rev 1.1 (lane s2rev11), rev 1 (lane s2rev1) and
 rev 0 (lane s2design). DESIGN ONLY: no code, no make, no timing, no box job. The design of record for span_pick
 stage 2** (`span_pick.md` rev 5.2 §Staging "Stage 2", §Cost cards, §The pick; kit request R-35,
 `memfn/docs/requests.md` "R-35"; Frank's GO 2026-11-06, plan 80341284e). **Rev 1.2** applies the second
@@ -19,6 +20,25 @@ stand unless a later mark replaces them. Cites are to the kit branch at the r6 r
 6f1b40f75 + the kit branch; the r6 review found every code/data cite of S2c-S2e identical to the r5 tree's)
 unless a commit is named; spec files by section number. Every figure the note quotes comes from a committed
 drill under `span_cards/` that prints its inputs (§R1.2, last paragraph).
+
+## R1.3 What revision 1.3 changed, by readiness finding (review 2026-11-06 r7)
+
+Review `docs/dev/reviews/2026-11-06-r7-memfn-span-cards-ready.md` (one readiness critic on the rev 1.2 diff)
+found S2c, S2d and S2e READY WITH TEXT FIXES; the kit manager's ruling ("## Rulings") ACCEPTED every finding
+as a text fix, applied here by the S2c build lane in its first commit, and NOTED READY-7 (stated, not
+removed). Text changed is marked `[rev1.3 <id>]`. No design decision moves; nothing S2a builds changes.
+
+| id | ruled | answered in |
+|---|---|---|
+| READY-1 the strip's output layout and Makefile hook unstated | text fix | §3.8 "Who strips" (stripped copies at `$(BUILD_DIR)/gen/meas/<id>/<rev>/set.tsv`, a `KS_TEXTSRCS_measures` row, the three wording readers); §8.2 built-in sets row |
+| READY-2 the run record is written twice; J2p's file and the finalizer unnamed | text fix + an S2c dry-run line | §3.5 "The run record" (J1's write at its end into the window's working copy; J2p's `--ready` reads it; a `finalize` step, job J9, writes `jobs`, `plan`, `floor`, the transcript sha); §3.6 (b); §9 S2c witness |
+| READY-3 the S2c row lists the withdrawn §2.2¶3 hunk | text fix | §9 S2c content |
+| READY-4 contradictory separability sentences | text fix | §9 Separability |
+| READY-5 three copies without a compare | text fix | §3.4 step 1 ((a) id fields vs columns, (c) base vs §2.4's family rule); §3.5 run record ((b) the header `run` sha and run id vs PROVENANCE.md vs the record); §9 S2e plants (x2)-(x4) |
+| READY-6 the 0-cells assertion has no mechanism | text fix | §3.8 (the runner counts the `.pre` decoded view's `cell` lines) |
+| READY-7 the cost-row PARTIAL path is unreachable | NOTED | §3.5 Outcomes (stated as unreachable today; kept) |
+| READY-8 the dry-run run id and the cross-launch re-draw order | text fix | §3.2 (`s2c-dry`; launches drawn in order, the cross-launch constraint re-drawing from launch 7 down, each bounded) |
+| READY-9 arm_fixtures/check_hash missing from S2c's package | text fix | §9 S2c content; §8.2 form-hash entries row |
 
 ## R1.2 What revision 1.2 changed, by r6 finding and by ruling
 
@@ -595,14 +615,24 @@ carries (span_pick's band). Rev 1.1 samples it L = 7 times per arm:
   run record, PROVENANCE.md and the set header's `run` key. A re-run in a later window has another id, so it
   re-links fresh placements: §3.5's HELD figures assume exactly that independence (rev 1.1's seed (job, l,
   arm) re-linked the SAME executables on a re-run; `place_drill.py` A2 at s 0.5 %, tau 0.5 %, 20,000 run
-  pairs: re-refusal given a refusal 10.8 % with the same layout vs 6.8 % with a fresh one).
+  pairs: re-refusal given a refusal 10.8 % with the same layout vs 6.8 % with a fresh one). `[rev1.3 READY-8]`
+  **S2c's dry runs and its placement screen use the run id `s2c-dry`**, a fixed id that is never a window's
+  (every window id starts `s2d-`): their placements are NOT the window's, and the window's own `--dry-run`
+  (run at its enqueue, with its `s2d-` id) re-links and re-asserts every launch under the real id.
 - **The constraints, asserted on the LINKED executables** (`nm`): in every launch each arm's timed
   function's address mod 64 differs from its twin's, and over the 7 launches each arm's function takes at
   least 3 of the 4 values mod 64 a 16-aligned function can take; a draw failing either is re-drawn (seeded,
   deterministic). `[rev1.2 READY-5]` The re-draw is BOUNDED: at most 64 draws per launch executable, and
   exhausting them REFUSES the dry run naming the launch and the failed constraint (a plant that makes every
   draw fail, sabotage (j)/(j2), refuses, never hangs); 64 is an UNMEASURED DEFAULT (D149), trigger: a dry run
-  that needs more than 8 draws for any launch. Never asserted on object bytes: STT_FILE makes two differently named objects differ with no
+  that needs more than 8 draws for any launch. `[rev1.3 READY-8]` **Re-draw order.** Launches are drawn in
+  order l = 1..7, draw index d = 0.. per launch (the seed is (run id, job, l, arm, d); d = 0 is the plain
+  (run id, job, l, arm) draw). The per-launch constraint (arm and twin differ mod 64) is checked on launch l's
+  link and re-draws launch l. The CROSS-launch constraint (3 of 4 values over the 7 launches) is checked once
+  all 7 are linked; on its failure the LAST launch whose re-draw can still repair it is re-drawn: launch 7
+  first, then 6, ..., each with its own bound of 64 draws, an arm's cross-launch failure re-drawing that
+  launch's whole executable (every arm and twin, so the per-launch check is re-run on it). Exhausting launch
+  1's draws refuses, naming the arm and the constraint. Never asserted on object bytes: STT_FILE makes two differently named objects differ with no
   pad at all (review r5 TWIN). Text equality is asserted on the sources (`cmp`) and on the linked `.text` of
   the two functions (objdump ranges, relocations masked). The hot loop's address (objdump: the function's
   first backward-branch target) is RECORDED per arm per launch in the transcript, not asserted: a loop
@@ -675,7 +705,13 @@ PROVENANCE.md). A cell row's columns (format 2, `[rev1.1 CELLS-1]`):
   `J3.hit.random.1024/kit.find_hit.walk.random.one.1024/1048576/4/base.walk`. **A measured row's derivation
   lives in its cells**: the estimator is the card's `lengths`, the base is on the cells, the row's `inputs`
   stays `-`. The format reads the id only for uniqueness (§2.2¶4); this section gives it its meaning, and the
-  recompute refuses a set whose ids do not parse this way. `group`: `J<j>.<name>`, the job being the text before the
+  recompute refuses a set whose ids do not parse this way. `[rev1.3 READY-5 (a), (c)]` The recompute also
+  COMPARES the copies: (a) the id's first four fields equal the cell's own `group`, `arm`, `length` and
+  `launch` columns (a mismatch refuses the set; the estimator reads the COLUMNS, the id only for its fifth
+  field), and (c) the fifth field equals the base the row's quantity declares by the family rule of §2.4:
+  `find_hit.<form>...` -> `base.<form>`, `verify_cmp.<form>.<cls>...` -> `base.null.<cls>`,
+  `enter.<kind>.<entry>` -> `base.fail.<kind>.<entry>` (a producer that computes AND names a wrong base is
+  refused). Each gets a plant beside (w)/(x) at S2e (§9). `group`: `J<j>.<name>`, the job being the text before the
   first `.` (groups: `J<j>.ctl` the control, `J<j>.base` the job's delta bases, and one group per row
   family, e.g. `J2.unit`, `J3.hit.random.1024`);
 - `arm`: a row's KEY as written in `rows` (`kit.find_byte.walk`), its twin `KEY#b`, a base `base.<name>`
@@ -798,7 +834,20 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   in each row's spread. Trigger to revisit the floor or the 3: a drift refusal in the window, or row 1's
   predicted-vs-measured spread (R5.3) correlating with the job a row was timed in.
 - `[rev1.2 READY-6, MEAS-7]` **The run record** (`docs/design/memfn/span_cards/slot/run_record.tsv`, the kit's,
-  written by the slot harness at the window's end and committed by S2d, §9). Everything the verdict reads
+  written by the slot harness at the window's end and committed by S2d, §9). `[rev1.3 READY-2]` **It is written
+  in two steps, by one writer** (`slot/record.py`): (1) at J1's END, J1 writes the record's `run` section's
+  `run_id`, `set`, `code_commit`, `j1_verdict` and `j1_widths` lines and its `j1_cells` section into the
+  window's working copy of the record (the run directory's `run_record.tsv`, the window's scratch), and J2p's
+  `--ready` reads `j1_verdict` FROM THAT FILE (absent or without a `j1_verdict` line: 75, not yet; `b`: 77,
+  never; `a`/`c`: 0); (2) a FINALIZE step (`slot/record.py finalize`, run by the window's last queue job
+  `J9` (not a timing job, no clock): its `--ready` reads every other window job's state by `scripts/boxqueue
+  state` and answers 0 once none is pending or running, whatever each ended as: green, failed, wait-timeout or
+  cancelled by its own 77) writes the `jobs` section (each
+  job's end state read from the queue's records, a job with no green end being `never-ran` with its cause),
+  `plan`, `floor` and `transcript_sha256`, then the file's final bytes, which S2d commits. So the record has
+  exactly one writer, J2p's gate reads a defined file, and a failed or declined job still gets its `jobs` row.
+  S2c's witness dry-runs both steps (J1's write on a dry-run record, J2p's `--ready` on each of the four
+  states, `finalize` on a dry-run window). Everything the verdict reads
   that is not in the set, in ONE machine-readable file in `table_contract.md`'s section shape (TAB fields,
   `#section NAME`, a header line per section):
 
@@ -812,7 +861,9 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
 
   Its sha-256 is cited in the set's PROVENANCE.md and in the set header's `run` value (`<run id>
   record:<sha256>`, a provenance key the digest does not cover), and the recompute checks the file against
-  that sha before reading it. The record names its set by `id@rev`, never by digest (the set is written after
+  that sha before reading it. `[rev1.3 READY-5 (b)]` The three copies are compared: the header `run` value's
+  sha equals PROVENANCE.md's equals sha-256 of the record file, and the header's run id equals PROVENANCE.md's
+  equals the record's `run_id`; any mismatch refuses (a plant at S2e, §9). The record names its set by `id@rev`, never by digest (the set is written after
   it, at S2e). It replaces rev 1.1's "never-ran groups in PROVENANCE.md prose" and the `slot/j1/` files
   (`verdict`, `j1_cells.tsv`): `slot/j1_rule.py` stays the slot's own derivation of J1's verdict. The floor's
   clauses are written from census0's population (§7) and §1 Goal 2's rules: `byte.<form>` (each `find_byte`
@@ -846,7 +897,12 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   not a set row 1 can price from. Row 3 is therefore reached only when the absent keys meet every active
   clause another way; with today's jobs every job holds a clause, so PARTIAL is in practice J1 (b) holding
   J2p out (`outcome_drill.py`: of 14 constructed runs, row 1 by S4/S4g, row 2 by S3, S5-S8, S10-S12, row 3 by
-  S2 only, row 4 by S1, S9, S13; the r5 GOAL2 scenario S6 is REFUSED). Rev 1.1's "or nothing but the unit
+  S2 only, row 4 by S1, S9, S13; the r5 GOAL2 scenario S6 is REFUSED). `[rev1.3 READY-7]` NOTED: row 3's
+  branch "or its cost row failed its gate" is UNREACHABLE today, because every `find_byte` key is its own
+  floor clause (`byte.<form>`), so a cost row over its gate always reaches row 2 (`outcome_drill.py` S7:
+  REFUSED on `floor:byte.walk-set`). The branch stays: MEAS-3 keeps the cause list exact for HELD and for a
+  later card set with a cost row outside the floor; no PARTIAL set with a failed byte row is expected from
+  this run. Rev 1.1's "or nothing but the unit
   passes" is absorbed by row 2 and dropped. A REFUSED run is re-run whole in a later window.
   `[rev1.1 PLACE; rev1.2 MEAS-1, MEAS-2]` **HELD**: a second REFUSED run sharing a TEXT-class cause with the
   first: `unit` (the gate and the bimodal test are ONE class: a two-phase walk trips either, `place_drill.py`
@@ -932,7 +988,8 @@ R-30's abi 94 (DONE). It is the trigger's "measurement-set revision for the pair
   its log and into the run record's `run` section (`j1_verdict`, `j1_widths`), its cells into the record's
   `j1_cells` (§3.5; rev 1.1's `slot/j1/verdict` and `j1_cells.tsv` fold into the record), the rule derived from
   them by `slot/j1_rule.py` and RE-DERIVED independently by the recompute (MEAS-7). The PAIR arms are NOT in J2 or J3: they are job **J2p**
-  (`after` J1), whose `--ready` reads that verdict and answers 77 (never) under (b). The set is then PARTIAL
+  (`after` J1), whose `--ready` reads that verdict and answers 77 (never) under (b) (`[rev1.3 READY-2]` from
+the window's working copy of the run record, written at J1's end; the finalize step writes the rest, §3.5). The set is then PARTIAL
   (§3.5: J2p never ran) naming `find_byte.pair` and every `find_hit.pair.*` key, which join the NEXT set id
   after the unit change lands (their form hash moves with the literal). Goal 2's floor then reads "pair
   unless J1 (b)" (the record's `unless-j1-b` clauses). Nobody reads J1's verdict by hand between jobs.
@@ -1018,7 +1075,17 @@ for main's S2e review (§10 item 6):
   embedded TEXT is written by `scripts/embed_text.sh` (`Makefile` `gen-%`, the text step), whose contract
   "embeds each FILE's bytes, unmodified" is shared with the findings store and STAYS: `gen-measures` gains a
   STRIP step before it (an awk over each set file, dropping the `cells` section's data rows, into the build's
-  generated-text directory), and `embed_text.sh` embeds the stripped files unmodified. The PRE-PARSE is
+  generated-text directory), and `embed_text.sh` embeds the stripped files unmodified. `[rev1.3 READY-1]`
+  **Layout and hook.** `embed_text.sh` takes each set's NAME from its PATH (`<id>/<rev>/set.tsv`), so the
+  stripped copies keep that shape: `$(BUILD_DIR)/gen/meas/<id>/<rev>/set.tsv`, and the names (`zen4-grid1@1`)
+  do not move. `gen-%` is ONE static-pattern rule shared by `findings` and `measures` (K2), so the strip is a
+  per-store row: `KS_TEXTSRCS_measures` names the stripped copies, produced by their own rule from
+  `measure_store/*/*/set.tsv`, while `findings` keeps its committed files. Three texts say the embed is the
+  committed file's bytes and are amended at S2e (D80 where caller-facing, else wording): the `Makefile`'s
+  K2/B1 comment block, `scripts/embed_text.sh`'s header ("a mechanical ENCODING of committed text ... compares
+  it with its source byte for byte": now the stripped copy for `measures`), and
+  `tests/knowledge/meas_store_check.c`'s header ("the runner compares it with the committed file, byte for
+  byte": now with the runner's stripped copy). The PRE-PARSE is
   `scripts/ksgen.c`'s: it reads the committed file, records its cell count as the set's `file_cells`, and
   pre-parses it without its `cells` rows, so the pre-parse equals a fresh parse of the stripped text.
 - **Identity.** `values_digest` never covered the cells (`measures.md` §3.3¶1), so the embedded copy and the
@@ -1045,7 +1112,10 @@ for main's S2e review (§10 item 6):
   (iii) the embedded-text compare (:104, `meas_store_check.c`'s `<name>.text` `cmp` the file): against the
   runner's stripped copy (its own awk, sharing no source with the strip step);
   and two new named assertions: every embedded set's pre-parse holds 0 cells, and the listing's `file_cells`
-  equals the file's cell count counted by awk. **Detectors that move**: S1241 (the embedded text one byte
+  equals the file's cell count counted by awk. `[rev1.3 READY-6]` **The 0-cells assertion's mechanism:** the
+  runner counts the `cell` lines of the `.pre` DECODED view `meas_store_check.c` already writes per embedded
+  set (`ks_measures.c`'s decoded writer emits one `cell` line per cell) and asserts 0; `meas_store_check.c`'s
+  three-field output and its runner's reader do not change. **Detectors that move**: S1241 (the embedded text one byte
   short; detected by (iii)) and S1232 (the canonical writer drops cells; detected by R4) keep their plants;
   their DETECTORS change, so each is re-verified for intent at S2e (S1232 is now caught by R4 on the FILE
   path, where a dropped cell section differs from the committed file), not only its anchor re-read.
@@ -1412,10 +1482,10 @@ base.
 | `KsMeasRow` layout | + `noise_e6` (S2a); `[rev1.1 CELLS-1]` + the `events` cell column (format 2) | `[rev1 CONTRACT-3]` `scripts/ksgen.c`; the regenerated `src/core/measures_table.inc` (grid1's rows included, noise KS_MEAS_EMPTY); `[rev1.1 KSGEN]` `meas_store_check.c`'s raw-row compare + a format-2 fixture store; `[rev1.1 ANCHORS]` the S-rows anchored in `ks_measures.c`: **S1234** (the noise/abs column swap, anchored on the row-column resolve loop and `put_row`, the exact column S2a starts parsing; its detector re-verified on a format-2 fixture) and S1230, S1231, S1232 (`put_tab(... "cells" ...)`), S1233, S1235, S1239 (anchors re-read; each re-aimed only if its anchor text moves, intent re-verified), with S1244 and S1227 (§5) |
 | `KS_MEAS_MAX` | new `ks_measures.h` constant, 10^15 (S2a) | `[rev1.1 BOUND]` the test TU asserting it equal to `MF_MEASURE_MAX` (§4.1) |
 | MFMEAS record | + MEASURED count, triple digest, appended (S2a) | `[rev1.1 MFMEAS]` `tests/compound/run_part_measures.sh` (positional reader, re-run); tests/compound/CLAUDE.md's description of the record |
-| form-hash entries | `[rev1 PREMISE-3]` formhash.c's declared entry table: + pair, walk-set, settest, rc-* (S2c); `[rev1.1 HASH]` its renderer is the cell renderer (a `kit.h` test entry) | `formhash.c`; `[rev1.1 CHECKC]` `finder_check.py` check C's deps guard on CARD rows (§2.4; `[rev1.2 READY-2]` its count printed, floored at 17 over every card table); R-MS3's two fixtures per new id; memfn/data/cards/CLAUDE.md |
+| form-hash entries | `[rev1 PREMISE-3]` formhash.c's declared entry table: + pair, walk-set, settest, rc-* (S2c); `[rev1.1 HASH]` its renderer is the cell renderer (a `kit.h` test entry) | `formhash.c`; `[rev1.3 READY-9]` `tests/memfn/arm_fixtures.c` (`hash_mode`'s `ids[]` gains every new id; `--hash` rc 0 for each) and `finder_check.py` `check_hash` (resolves every new id; LATER_FORMS keep asserting the not-yet ids do not); `[rev1.1 CHECKC]` `finder_check.py` check C's deps guard on CARD rows (§2.4; `[rev1.2 READY-2]` its count printed, floored at 17 over every card table); R-MS3's two fixtures per new id; memfn/data/cards/CLAUDE.md |
 | card table | + `kit-grid@3` rows (S2c) | `kit-grid.tsv` (`[rev1 SLOT-12]` its header's unit sentence becomes per-version: ver 1 `u = beta_walk(DFA_SCAN, r1e0c0)`, ver 3 `u = find_byte.walk`; `[rev1.1 CELLS-3]` its column comment for `lengths` and `aa_rule`); its CLAUDE.md |
 | spec estimator text | + `measures.md`'s new sections 3.4-3.5 (`[rev1.2 READY-1]` with the cell id grammar), new paragraph 2.2¶5 (S2c); `[rev1.2 READY-1]` NO §2.2¶3 hunk | the recompute check's source text (written in S2e); measure_sets §1.4/§1.5/§7.2/§7.3/§7.4 lines |
-| built-in sets | + `zen4-grid3@1` (S2e), embedded cell-less | `measure_store/` files + `index.tsv`; `make gen-measures` (`measures_store.inc`, `measures_table.inc`, `[rev1.1 EMBED]` `scripts/ksgen.c` omitting `cells` and recording `file_cells`; `[rev1.2 READY-4]` the strip step before `scripts/embed_text.sh`, which stays unmodified; `[rev1.2 READY-3]` `run_measures_tests.sh`'s STORE R4, R5 and embedded-text compares re-aimed and the two new assertions, S1241's and S1232's detectors re-verified for intent, `tests/knowledge/CLAUDE.md`; `[rev1.2 READY-8]` rows' recorded deps and check C's stale count 0 at landing); `measures.md` §8¶2, §8¶3, §3.3, §6¶1-¶2; measure_store/CLAUDE.md ("Sets today", and its line saying emit_sweep writes the movers file, §5); `[rev1.1 CHECKC]` check C's measure_store pass and its floor; the recompute check's format-2 population floor |
+| built-in sets | + `zen4-grid3@1` (S2e), embedded cell-less | `measure_store/` files + `index.tsv`; `make gen-measures` (`measures_store.inc`, `measures_table.inc`, `[rev1.1 EMBED]` `scripts/ksgen.c` omitting `cells` and recording `file_cells`; `[rev1.2 READY-4]` the strip step before `scripts/embed_text.sh`, which stays unmodified; `[rev1.3 READY-1]` its layout `$(BUILD_DIR)/gen/meas/<id>/<rev>/set.tsv`, the `KS_TEXTSRCS_measures` row, and the three wording readers (the Makefile K2/B1 comment block, `embed_text.sh`'s header, `meas_store_check.c`'s header); `[rev1.2 READY-3]` `run_measures_tests.sh`'s STORE R4, R5 and embedded-text compares re-aimed and the two new assertions, S1241's and S1232's detectors re-verified for intent, `tests/knowledge/CLAUDE.md`; `[rev1.2 READY-8]` rows' recorded deps and check C's stale count 0 at landing); `measures.md` §8¶2, §8¶3, §3.3, §6¶1-¶2; measure_store/CLAUDE.md ("Sets today", and its line saying emit_sweep writes the movers file, §5); `[rev1.1 CHECKC]` check C's measure_store pass and its floor; the recompute check's format-2 population floor |
 | `--list-measurements` listing | `[rev1.1 EMBED]` + column `file_cells` (S2e) | every reader of the listing's columns by grep at S2e (the S-rows below, `run_measures_tests.sh`, `run_code_tests.sh`) |
 | `DEFAULTS` | `idk` zen4-grid1@1 -> zen4-grid3@1 (S2e, §8.3) | DEFAULTS, DEFAULTS.log row 2, `movers/0002.tsv` (EMPTY by §5's proof); `measures.md` §5¶6; `measure_sets.md` §3.6 hunk; `[rev1 CONTRACT-4, COST-6]` the `--list-measurements` readers BY NAME: `S1229` (its `SAB_BEFORE` `{ "idk", "zen4-grid1", 1u },` re-aimed to `zen4-grid3`, intent re-verified: the plant still breaks the class's default row), `S1228`, `S1237`, `S1241`, `S1245`, `S1246` (anchors re-read; each re-aimed only if its anchor text moves), `tests/knowledge/run_measures_tests.sh`'s DEFAULTS vs `default_for` vs DEFAULTS.log check (:77-94, a reader of the flip), `run_code_tests.sh`, `c4_allowlist.tsv`, `arch_blind_check.py` (grep hits to re-read). There is NO count pin (`run_measures_tests.sh:75` is a floor `>= 1`) |
 | `ofsskip.c` PAIR_LOOKAHEAD comment | UNMEASURED -> MEASURED, iff §3.6 (a) or (c) | none (a source comment; no artifact text); `[rev1.2 READY-7]` committed by S2d |
@@ -1473,9 +1543,9 @@ each states the check that turns it red and why that check can see it.
 |---|---|---|---|---|
 | **S2a** noise channel + format 2 | §4.1-§4.5, §5: the seam field and check (kit); format 2 (noise, `class` in the digest, the `events` cell column, `round med`), the digest role, parse/write, bound and status refusals, `KS_MEAS_MAX` and its equality check, fill (format rule; the handed filter; test levers UNMEASURED), ksgen and the raw-row compare, dump, the MFMEAS fields appended, spec and design hunks (pcrec) | emit_sweep byte-identical every arm vs base; grid1's canonical and decoded views and digest byte-identical; a format-2 synthetic set round-trips canonically; ks_ref.py's digest equals C's on format-2 fixtures; in the `PCREC_CAND_TRACE` build, a compile under a format-2 `--measures=FILE` shows the MEASURED count and a triple digest equal to ks_ref.py's (same filter), a format-1 file with numeric noise text shows 0 and the all-UNMEASURED digest; `run_part_measures.sh` green on the extended record; a kit test hands a zero-initialized row and is refused; `[rev1.1 ANCHORS]` S1234 red on a format-2 fixture, S1230-S1233/S1235/S1239 anchors re-read | `make test` (normal, boxqueue), emit_sweep | (a) format-2 digest skips noise: ks_ref.py (written from the spec) digests the noise-only fixture pair apart, C does not -> mfixtures golden red. (b) format-2 domain spelled `pcrec-meas-1`: ks_ref.py's digest differs from C's on every format-2 fixture. (c) the fill hands format-1 noise as MEASURED: the format-1 fixture carries numeric noise text on every row, so the MFMEAS count is non-zero (expected 0). (d) the kit accepts UNSTATED: the named kit test builds a zero-initialized `mf_measure` and expects the refusal. (e) the fill drops a format-2 noise (UNMEASURED): the handed-triple digest differs from ks_ref.py's. (f) the fill hands `abs_ns_e6` as noise (S983's column swap): the triple digest differs (the fixture's abs and noise columns differ on every row). (g) the canonical writer writes `-` noise as `0`: the fixture holds a `-` row, so the round trip's bytes and digest (INT64_MIN vs 0) differ. (h) the loader admits noise past 10^15: mfixtures' bound row expects a refusal. `[rev1.1 KSGEN]` (r) ksgen omits the appended noise field (C zero in the pre-parse): the raw-row compare reads 0 against a fresh parse's KS_MEAS_EMPTY on grid1's 68 rows. `[rev1.1 TARGET]` (s) the format-2 digest skips `class`: the class-only fixture pair digests apart in ks_ref.py, not in C. `[rev1.1 BOUND]` (t) `KS_MEAS_MAX` edited to 10^16: the equality TU fails to build |
 | **S2b** step-0 census | `census0.py` (smp20.py deleted, its readers re-pointed, §7), its run (J0) and `census0.out` | reproduces `smp20.out` byte for byte incl. the incumbent lines, plus the one appended P-blind line; the P-blind count cross-checked (§7); counts non-zero | J0 (compile-only boxqueue job, ~1 min; not timing) | (i) incumbent read from the wrong trace field: the control diffs `smp20.out`'s `incumbent @` lines, which carry that field |
-| **S2c** producer | formhash's entry table and its renderer entry (§3.2), `kit-grid@3` cards, check C's deps guard on card rows, `measures.md`'s new sections 3.4-3.5 + 2.2¶5 + the §2.2¶3 hunk, the measure_sets lines, the slot harness `span_cards/slot/` (driver, subject generator, per-launch linking and placement with the run id in the seed and the bounded re-draw, `ctl`, the slot's estimator, `j1_rule.py`, the run record's writer, `[rev1.2 READY-5]` `sabotage.sh`, `movers.py`) with dry runs of every job and the placement screen | every job's `--dry-run` green (builds, links, placement constraints, `ctl` sha, answer gate on counts AND positions); check C's card guard over every card table (`[rev1.2 READY-2]` 17 with a `kit:form.` dep after kit-grid@3: kit-grid 12, kit-kernels 5; count floored at 17); `slot/sabotage.sh` scores every slot-local row below DETECTED; R-MS3's two fixtures per new id (rename: hash kept; one-instruction edit: hash moves); ids pairwise distinct; every cell's site-text hash equals its key's form hash; the placement screen's unit noise printed, under the half gate | dry runs only (each job's `--dry-run`, light) | `[rev1.2 READY-5]` **(j), (j2), (k), (l) are SLOT-LOCAL rows, not S-rows**: their detectors run only in the slot harness's `--dry-run`, which no make suite runs (`run_sabotage_matrix.sh`'s SAB_SUITES is closed), so `span_cards/slot/sabotage.sh` plants each (a patch to the slot's own source in a scratch copy), runs the job's `--dry-run` and expects the named refusal (precedent `r17b_prime/b3a/sabotage/run_skb3a.sh`); (m), (n), (o) are S-rows (ids the kit's, at build time). `[rev1.1 TWIN, PLACE]` (j) the placement draw ignores the launch (every launch links the same pads): the "3 of 4 phases per arm" assertion on `nm` of the seven linked executables refuses, `[rev1.2 READY-5]` after the bounded re-draw (64) is exhausted, never a hang; (j2) a twin linked at its arm's phase: the per-launch "arm and twin differ mod 64" assertion refuses, likewise bounded. (k) an arm rendered from another entry row than its key's token: its site-text hash differs from `mf_form_hash(<form token>)`. (l) `[rev1.2 READY-5]` two plants: `libc` searching another byte (count 0 vs E: the count gate) and the walk returning each hit one byte late (count kept: the POSITION sum and FNV-1a-64 against the generator's). (m) two form ids hashing one text: the pairwise-distinct check. `[rev1.1 CHECKC]` (n) a kit-grid@3 card with a `kit:form.` dep and no `form` first dim: check C's guard, now in the CARD walk, which reads every card row. (o) a format-2 draft placed in `memfn/data/sets/`: finder_check's format-1 digest of it mismatches (`[rev1.2 READY-5]` NOTED: on a draft with a `null` row it is red earlier, by a ValueError at `int(r["value_e6"])`, `finder_check.py:313-324`: red, not by the stated reason; acceptable, the row's point is red) |
+| **S2c** producer | formhash's entry table and its renderer entry (§3.2), `kit-grid@3` cards, check C's deps guard on card rows, `measures.md`'s new sections 3.4-3.5 + 2.2¶5 (`[rev1.3 READY-3]` NO §2.2¶3 hunk: withdrawn by rev 1.2, §4.4), the measure_sets lines, `[rev1.3 READY-9]` `tests/memfn/arm_fixtures.c` hash_mode's `ids[]` and `finder_check.py` `check_hash`'s resolve list gaining every new id (the measure_store pass of S2e resolves tokens through them), the slot harness `span_cards/slot/` (driver, subject generator, per-launch linking and placement with the run id in the seed and the bounded re-draw, `ctl`, the slot's estimator, `j1_rule.py`, the run record's writer, `[rev1.2 READY-5]` `sabotage.sh`, `movers.py`) with dry runs of every job and the placement screen | every job's `--dry-run` green (builds, links, placement constraints, `ctl` sha, answer gate on counts AND positions); check C's card guard over every card table (`[rev1.2 READY-2]` 17 with a `kit:form.` dep after kit-grid@3: kit-grid 12, kit-kernels 5; count floored at 17); `slot/sabotage.sh` scores every slot-local row below DETECTED; R-MS3's two fixtures per new id (rename: hash kept; one-instruction edit: hash moves); ids pairwise distinct; every cell's site-text hash equals its key's form hash; the placement screen's unit noise printed, under the half gate; `[rev1.3 READY-2]` the run record's two writes dry-run (J1's on a dry-run record, J2p's `--ready` on absent / `a` / `b` / `c`, `finalize` on a dry-run window); `[rev1.3 READY-8]` all under the run id `s2c-dry` | dry runs only (each job's `--dry-run`, light) | `[rev1.2 READY-5]` **(j), (j2), (k), (l) are SLOT-LOCAL rows, not S-rows**: their detectors run only in the slot harness's `--dry-run`, which no make suite runs (`run_sabotage_matrix.sh`'s SAB_SUITES is closed), so `span_cards/slot/sabotage.sh` plants each (a patch to the slot's own source in a scratch copy), runs the job's `--dry-run` and expects the named refusal (precedent `r17b_prime/b3a/sabotage/run_skb3a.sh`); (m), (n), (o) are S-rows (ids the kit's, at build time). `[rev1.1 TWIN, PLACE]` (j) the placement draw ignores the launch (every launch links the same pads): the "3 of 4 phases per arm" assertion on `nm` of the seven linked executables refuses, `[rev1.2 READY-5]` after the bounded re-draw (64) is exhausted, never a hang; (j2) a twin linked at its arm's phase: the per-launch "arm and twin differ mod 64" assertion refuses, likewise bounded. (k) an arm rendered from another entry row than its key's token: its site-text hash differs from `mf_form_hash(<form token>)`. (l) `[rev1.2 READY-5]` two plants: `libc` searching another byte (count 0 vs E: the count gate) and the walk returning each hit one byte late (count kept: the POSITION sum and FNV-1a-64 against the generator's). (m) two form ids hashing one text: the pairwise-distinct check. `[rev1.1 CHECKC]` (n) a kit-grid@3 card with a `kit:form.` dep and no `form` first dim: check C's guard, now in the CARD walk, which reads every card row. (o) a format-2 draft placed in `memfn/data/sets/`: finder_check's format-1 digest of it mismatches (`[rev1.2 READY-5]` NOTED: on a draft with a `null` row it is red earlier, by a ValueError at `int(r["value_e6"])`, `finder_check.py:313-324`: red, not by the stated reason; acceptable, the row's point is red) |
 | **S2d** the window | J1 sweep, then J2, J2p (J1-gated), J3-J5 chained `after`, one window, one run id. `[rev1.2 READY-7]` **Its commit** (on the kit branch, after the window): `span_cards/slot/run_record.tsv` (the never-ran jobs, J1's verdict, widths and cells, the plan and floor, the run id, the transcript's sha-256); the `ofsskip.c` comment UNMEASURED -> MEASURED iff (a) or (c) (no byte moves); its report naming the draft set's scratch path and sha-256 and the transcript's location, and under (b) the request that main file the D186 unit-change row | each job's declared population met (POPULATION-SHORT otherwise; J2p's never under (b) recorded as never-ran); the outcome FULL or an accepted PARTIAL (§3.5's table, run by the slot); J1's reading (a)/(b)/(c) | J1-J5 + J2p: quiet-gated `idle-ok` timing jobs, **the window main clears with Frank: 35 minutes** | — (a measurement; its control is S2e's recompute and the per-job drift check) |
-| **S2e** the set | §3.8: draft (its sha checked against S2d's report), canonical writer, store files, `index.tsv`, gen-measures with the cell-less embed (`[rev1.2 READY-4]` the strip step, ksgen's `file_cells`) and the listing's `file_cells` column (R-35 (d)); `[rev1.2 READY-3]` the STORE compares re-aimed, S1241/S1232 re-verified; DEFAULTS (B) and its amendments (§8.3); the recompute check (format-2 population, floored; `[rev1.2 READY-6, MEAS-7]` reading the run record and re-deriving J1's verdict); check C's measure_store pass (floored; `[rev1.2 READY-8]` recorded deps, stale count 0); `span_cards/slot/movers.py` and `movers/0002.tsv`; S1229 re-aim | the recompute check exact on every row, every group verdict, Goal 2's floor and `partial`; the drift gate; `tests/knowledge/` green; the data-mover census: zero movers; emit_sweep byte-identical; `--list-measurements` moves by exactly §1's rows and column; `[rev1.2 READY-10]` libpcrec's growth reported in S2e's report as `size -t build/libpcrec.a` and `size -A build/obj/core/measures.o`, base vs head (`tree_drill.py` D's own method; `artifact_size_log.tsv` is a per-pattern log and holds no libpcrec figure), against D's ~16 KB | `make test` (normal), the data-mover census (boxqueue) | (p) the producer's noise off by one unit on one row: the recompute (an implementation of the spec text sharing no source with the slot harness) differs by one, and one unit is a failure (§1.7). (q) a cell edited after the set was written, `[rev1.2]` named: the unit's median-launch 1 Mi `kit.find_byte.walk` cell, which moves W and so every row: the recompute no longer reproduces the rows AND the file sha in PROVENANCE.md/`index.tsv` mismatches (an edit to a cell no median or trim reads is caught by the sha only). `[rev1.1 CHECKC]` (u) a zen4-grid3 row's form token renamed to an id with no hash: the measure_store pass refuses it (red, never "later"); `[rev1.2]` the pass resolves tokens through `arm_fixtures --hash`, so S2c adds the new ids to `arm_fixtures.c` hash_mode's `ids[]` and to `check_hash`'s resolve list (R-MS3's fixtures imply it; stated). `[rev1.2 READY-8]` (u2) a row's recorded dep naming another form's id: the pass compares the recorded id with the row's form token and refuses. `[rev1.2 READY-4]` (v1) the strip step keeps the `cells` rows: the re-aimed embedded-text compare (against the runner's own stripped copy) is red. (v2) ksgen's pre-parse keeps the cells: `meas_store_check.c`'s pre vs fresh parse of the (stripped) text differs, and the named "every pre-parse holds 0 cells" assertion is red. `[rev1.2 READY-6]` (w) the run record edited after the set (a `never-ran` flipped): its sha no longer matches PROVENANCE.md's, refused before it is read. `[rev1.2 MEAS-7]` (x) the slot writes `j1_verdict b` over cells that give (c): the recompute's own re-derivation from `j1_cells` disagrees |
+| **S2e** the set | §3.8: draft (its sha checked against S2d's report), canonical writer, store files, `index.tsv`, gen-measures with the cell-less embed (`[rev1.2 READY-4]` the strip step, ksgen's `file_cells`) and the listing's `file_cells` column (R-35 (d)); `[rev1.2 READY-3]` the STORE compares re-aimed, S1241/S1232 re-verified; DEFAULTS (B) and its amendments (§8.3); the recompute check (format-2 population, floored; `[rev1.2 READY-6, MEAS-7]` reading the run record and re-deriving J1's verdict); check C's measure_store pass (floored; `[rev1.2 READY-8]` recorded deps, stale count 0); `span_cards/slot/movers.py` and `movers/0002.tsv`; S1229 re-aim | the recompute check exact on every row, every group verdict, Goal 2's floor and `partial`; the drift gate; `tests/knowledge/` green; the data-mover census: zero movers; emit_sweep byte-identical; `--list-measurements` moves by exactly §1's rows and column; `[rev1.2 READY-10]` libpcrec's growth reported in S2e's report as `size -t build/libpcrec.a` and `size -A build/obj/core/measures.o`, base vs head (`tree_drill.py` D's own method; `artifact_size_log.tsv` is a per-pattern log and holds no libpcrec figure), against D's ~16 KB | `make test` (normal), the data-mover census (boxqueue) | (p) the producer's noise off by one unit on one row: the recompute (an implementation of the spec text sharing no source with the slot harness) differs by one, and one unit is a failure (§1.7). (q) a cell edited after the set was written, `[rev1.2]` named: the unit's median-launch 1 Mi `kit.find_byte.walk` cell, which moves W and so every row: the recompute no longer reproduces the rows AND the file sha in PROVENANCE.md/`index.tsv` mismatches (an edit to a cell no median or trim reads is caught by the sha only). `[rev1.1 CHECKC]` (u) a zen4-grid3 row's form token renamed to an id with no hash: the measure_store pass refuses it (red, never "later"); `[rev1.2]` the pass resolves tokens through `arm_fixtures --hash`, so S2c adds the new ids to `arm_fixtures.c` hash_mode's `ids[]` and to `check_hash`'s resolve list (R-MS3's fixtures imply it; stated). `[rev1.2 READY-8]` (u2) a row's recorded dep naming another form's id: the pass compares the recorded id with the row's form token and refuses. `[rev1.2 READY-4]` (v1) the strip step keeps the `cells` rows: the re-aimed embedded-text compare (against the runner's own stripped copy) is red. (v2) ksgen's pre-parse keeps the cells: `meas_store_check.c`'s pre vs fresh parse of the (stripped) text differs, and the named "every pre-parse holds 0 cells" assertion is red. `[rev1.2 READY-6]` (w) the run record edited after the set (a `never-ran` flipped): its sha no longer matches PROVENANCE.md's, refused before it is read. `[rev1.2 MEAS-7]` (x) the slot writes `j1_verdict b` over cells that give (c): the recompute's own re-derivation from `j1_cells` disagrees. `[rev1.3 READY-5]` (x2) a cell's id names launch 4 on launch 5's row: the id-vs-columns compare refuses. (x3) a `find_hit` row's cells name `base.walk` for a `libc` row (computed AND named wrong): the family-rule compare refuses. (x4) the header `run` value's sha edited (PROVENANCE.md and the record untouched): the three-copy compare refuses |
 | **S2f** the forecast | census0.py re-run with the measured cards; the watched-witness reading; the report | the smp20 reading stated (above/below k*); row 1's mover forecast listed | J0 again (compile-only) | — |
 | **S2g** SIMD (J6) **HELD** | vrun-w16/w32 cards under D188 (§2.7), `[rev1.1 D188A1]` once [XARCH-DEV]'s go is given; its own window and the NEXT set id | designed then | — | designed then |
 
@@ -1486,8 +1556,8 @@ define, and S2c's plant (o) needs a format-2 file; so S2c lands after S2a, and r
 S2c's spec hunks with it. **S2b -> S2c -> S2d -> S2e are order-locked**: S2c's slot
 harness reads `census0.out` when it lists the cells, formhash's new rows are the census's set, and
 `verify_cmp`'s deps are the census's pairs (§2.4, §3.2, §7), so S2c cannot land before S2b and S2b cannot
-revert alone once S2c lands; S2d times S2c's harness; S2e writes S2d's set. **S2a is independent until S2e**
-(S2e's set is format 2); reverting S2a after S2c leaves S2c's spec §3.4-3.5 text describing a format that is
+revert alone once S2c lands; S2d times S2c's harness; S2e writes S2d's set. `[rev1.3 READY-4]` (Rev 1.1's
+sentence "S2a is independent until S2e" is deleted: it contradicted the first sentence.) Reverting S2a after S2c leaves S2c's spec §3.4-3.5 text describing a format that is
 absent, so it is reverted with S2c's spec hunks or not at all (`[rev1.2 READY-9]` the edge above). **S2f after S2e.** S2g depends on nothing here
 and nothing here depends on it.
 
@@ -1644,6 +1714,9 @@ qualifier test over three provenance vocabularies (§12 row 6).
    1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
+
+`[rev1.3]` Rev 1.3, lane s2c (the S2c build lane's first commit): review 2026-11-06-r7's READY-1..9 applied as
+text fixes (§R1.3); the S2c build follows this text. Below, rev 1.2's handoff, kept.
 
 Rev 1.2, lane s2rev12 (over rev 1.1, lane s2rev11), from review 2026-11-06-r6 as ruled (every FIX-NOW and DOC
 disposition, the decisions READY-1, READY-6 + MEAS-7, READY-8, MEAS-4, MEAS-6, MEAS-1; the movers.py PLAN).
