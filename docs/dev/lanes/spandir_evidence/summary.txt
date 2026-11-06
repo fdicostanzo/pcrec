@@ -1,0 +1,26 @@
+[corpus] patterns 5242: compiled 4804 (dfa 2597, vm 2207), refused 438
+[corpus] edge_fwd_bounded     artifacts-with   253   total   376   e.g. frank|fred|brad|bobby|janet | a{1,3}?\z | a{0,4}\A
+[corpus] edge_fwd_unbounded   artifacts-with   439   total   899   e.g. a*\z | \Aa*\z | .*\z
+[corpus] edge_rev_bounded     artifacts-with   212   total   278   e.g. frank|fred|brad|bobby|janet | [^c]{1,3}\z | a{0,4}$
+[corpus] edge_rev_unbounded   artifacts-with   490   total   579   e.g. a+$ | (?:a\K)*ab | (?:a\K)*b
+[corpus] stay_fwd             artifacts-with    64   total   117   e.g. .*\z | .*\Z | [^\n]*\n?$
+[corpus] stay_rev             artifacts-with    35   total    38   e.g. .*\z | .*\Z | (?m)[^c]*$
+[corpus] revdet_walks         artifacts-with    61   total    62   e.g. (a|b)*+c | (?U)(a|b)*+ | ^((a)|(b))+\2$
+[corpus] revdet_run>=2        artifacts-with     4   e.g. (?:(a|bb)x)+\1 | (?:(a|bb)x)+\1y | (a|bb)+
+[corpus] edges by machine: anchored=479, forward=600, landmark=57, lmverify=6, retry=190, reverse=800
+[corpus] stays by machine: _q_reverse=1, anchored=56, forward=48, lmverify=4, retry=9, reverse=37
+[corpus] lookbehind branches 139: dfa-compiled 117, refused 22; with fwd bounded edge 17, fwd unbounded 5, REV bounded edge 4, REV unbounded 6, fwd stay 0, REV stay 0
+[bench] patterns 356: compiled 330 (dfa 244, vm 86), refused 26
+[bench] edge_fwd_bounded     artifacts-with    74   total   203   e.g. (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl) | (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h | (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h
+[bench] edge_fwd_unbounded   artifacts-with    29   total    50   e.g. .{80,} | [a-z]{4096,} | \s+$
+[bench] edge_rev_bounded     artifacts-with    51   total   154   e.g. (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl) | (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h | (?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivjg|qpcwyu|h
+[bench] edge_rev_unbounded   artifacts-with    14   total    17   e.g. .{80,} | [a-z]{4096,} | \d+$
+[bench] stay_fwd             artifacts-with    20   total    46   e.g. \b(?:fail|abort|panic)\b.{0,64}?\b(?:disk|memory|socket|quota)\b | \b(?:fail|abort|panic)\b.{0,256}?\b(?:disk|memory|socket|quota)\b | \b(?:fail|abort|panic)\b.{0,1024}?\b(?:disk|memory|socket|quota)\b
+[bench] stay_rev             artifacts-with    20   total    26   e.g. \b(?:fail|abort|panic)\b.{0,64}?\b(?:disk|memory|socket|quota)\b | \b(?:fail|abort|panic)\b.{0,256}?\b(?:disk|memory|socket|quota)\b | \b(?:fail|abort|panic)\b.{0,1024}?\b(?:disk|memory|socket|quota)\b
+[bench] revdet_walks         artifacts-with     1   total     1   e.g. (?<timestamp>(?:\b(?:[Jj]an(?:uary|uar)?|[Ff]eb(?:ruary|ruar)?|[Mm](?:a|ä)?r(?:c
+[bench] revdet_run>=2        artifacts-with     0   e.g. 
+[bench] edges by machine: anchored=154, forward=85, landmark=2, retry=14, reverse=169
+[bench] stays by machine: anchored=14, forward=32, reverse=26
+[bench] lookbehind branches 11: dfa-compiled 10, refused 1; with fwd bounded edge 1, fwd unbounded 0, REV bounded edge 0, REV unbounded 0, fwd stay 0, REV stay 0
+plants 8, red 0
+spandir-census: COMPLETE plants=8 corpus=5242 bench=356 lb_branches=150
