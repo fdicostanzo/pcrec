@@ -3370,3 +3370,13 @@ Main ruled on the four kit findings (D186 add. 2):
   - FIX-7: the placement screen is not a job.
   - FIX-8: the draft gate breaks check C.
 - S2c gates 470-474 CANCELLED before they started (the tree changes); requeue after s2cfix2. Lane s2cfix2 (opus) is running; sabotage S2937+.
+- 11-06 ~15:10: s2cfix2 delivered lane/memfn-s2c @ 6a400dab8, applying FIX-1..8:
+  - FIX-1: the record pins cards+policy with their shas; est reads only those (repro FULL under 30000 and 300).
+  - FIX-2: plan.DIM_FIELD, per-dim KEY-ARM MISMATCH.
+  - FIX-3: FROZEN resolves to a full sha. FIX-4: S2934 is caught at a launch gate. FIX-6: ROUND MISS.
+  - FIX-5: lowering classes alu1 217 / cmp2 75 of 292; the instance alu1 stays the majority.
+  - FIX-7: job 480-kit-s2d-screen; timing jobs wait on its verdict. FIX-8: the draft writes `-`; check C EQUAL.
+  - Slot sabotage 11/11 (S2937-2939 added); finder 3272/0; 0 movers.
+- RULED residual FIX-5: 4 `[^x]` sites lower to ONE cmpb, so the class follows the lowering: count them alu1/one-compare. The majority holds either way. OWED: a two-line vcls fix before S2e's set commit.
+- S2c gates 470-474 REQUEUED (watcher armed).
+- Asked main for the S2d 35-min timing window (cleared with Frank; likely tomorrow given the 19:00 guard).
