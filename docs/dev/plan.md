@@ -1706,6 +1706,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the scalar pilot verdict (job 806) is read, and the kit's vrun SIMD family has its official verdict run (R-31)
   refs: docs/design/pricing_rulepilot.md §9 item 1; [PRICE-BAKEOFF]; [COVER-PRICE-WITNESS]; memfn R-31
   Charter: rebuild every pilot arm with SIMD on; count sites where any arm's bytes move (identical bytes reuse the scalar timings); time only those. Report whether the scalar rule list still holds on the SIMD layer: the first measured test of absorbing a new method (rules re-search, pricing adds rows).
+- [UTF-END-ASSERT] STATE:not-started — K74: end-of-subject assertions at an ill-formed UTF-8 end diverge from libpcre2
+  filed: 2026-11-06 Frank ("file utf issue unscheduled if it doesn't have a home"); manager wrote the row
+  status (2026-11-06): UNSCHEDULED, no home row owns the ill-formed-position family; documented as a known divergence at the first default move (D37 addendum)
+  trigger: a user report, or the next change touching ill-formed-position semantics under -e utf8
+  refs: docs/dev/known_issues.md K74 (and K73, K75 fixed); D132; D133; D37; [FEAT-FAMILIES]; docs/dev/lanes/k73utf_report.md
+  First step when picked up: ONE pcre2-reader question (D181) — is PCRE2's answer for `$`, `\B`, `\z`, `\Z`, `(?m)$`, `(?<!.)` at an ill-formed subject end under PCRE2_MATCH_INVALID_UTF a defined rule or a quirk? Defined: fix pcrec to match (likely an abi event). Quirk: follow the standard and file upstream (D26 addendum). Witnesses from k73utf_evidence/ and iterdoc_report.md.
+
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
   filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)

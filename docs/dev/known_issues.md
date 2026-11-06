@@ -541,7 +541,7 @@ The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. 
 
 ## K74 — OPEN, deferred (found by lane k73utf, 2026-09-29) — `$` and `\B` at an ill-formed subject END diverge from libpcre2 10.46 under `-e utf8`
 
-**Witness:** transcripts in docs/dev/lanes/k73utf_evidence/ (lane/k73utf). Pre-existing, independent of K73. Status: deferred; the ill-formed-position semantics family (with K75) should own it.
+**Witness:** transcripts in docs/dev/lanes/k73utf_evidence/ (lane/k73utf). Pre-existing, independent of K73. Status: deferred; the ill-formed-position semantics family (with K75) should own it. Plan row [UTF-END-ASSERT] (2026-11-06, unscheduled); documented as a known divergence at the first default move (D37 addendum).
 
 **Widened 2026-10-22 (D27 lane iterd27 + lane iterdoc):** the same divergence reproduces for `\z`, `\Z`, `(?m)$` and `(?<!.)` at an ill-formed end, not only `$` and `\B`. Repros: worktrees/.mgr/iterd27/ (manager scratch, uncommitted) and docs/dev/lanes/iterdoc_report.md on lane/iterdoc.
 
