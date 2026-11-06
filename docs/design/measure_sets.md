@@ -9,6 +9,10 @@ Revision 2 was lane msetrev (2026-10-14, from `58338a09f`); revision 1 was lane 
 Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166 and its addenda 1/1.1 and 2,
 and by D167 (Q-R17P-14)
 (read D161 addenda 11-13, D162 and its addenda, D149 and D157 with it).
+`[s2]` revision lines: span_pick stage 2 (`docs/design/memfn/span_cards.md` rev 1.1, kit request
+R-35) amends §1.6 (the digest's exclusions are FORMAT 1's) and §4.1 (noise is handed from
+format-2 sets) at unit S2a; its later units amend §1.4, §1.5, §3.6, §7.2-§7.4 and the sizing
+sentence (span_cards.md §4.4).
 
 **Revision 3 answers the light re-check r2
 (`../dev/reviews/2026-10-16-r2-measure-sets-recheck.md`: 0 BLOCKER, 8 MAJOR, 11 MINOR,
@@ -488,8 +492,10 @@ the registry is refused at load.
 
   `0x00` is never assigned. A new unit or status is a spec row with a new code, never a
   reuse. The python checker's digest (§8.2(d)) is written from this table.
-- **What the digest excludes.** It leaves out every provenance column (`abs_ns_e6`,
-  `noise_e6`, `n`, `source`, `deps`, `tags`) and the cards and cells sections. So the same
+- **What the digest excludes.** `[s2]` For a FORMAT-1 set: it leaves out every provenance
+  column (`abs_ns_e6`, `noise_e6`, `n`, `source`, `deps`, `tags`) and the cards and cells
+  sections. A FORMAT-2 set's digest (`measures.md` §3.3¶1a, span_cards.md §5) also folds the
+  header's `class` and each row's parsed `noise_e6`, and still excludes the rest. So the same
   values from any provenance give the same digest, the property of the `<PREFIX>_FINDINGS`
   digest (findings.md 5¶6). The FILE sha-256 in `PROVENANCE.md` and `index.tsv` covers
   everything else, `noise_e6` included [r1 msc3-6], and has a checker (§8.3) [r1 msc1-14].
@@ -945,9 +951,11 @@ What it leaves out:
 - **No `status`.** A NULL row is simply not handed over, so the kit sees NULL and absent
   identically, as a skip. Telling them apart is pcrec's listing's job. A kit reader that
   needs the distinction asks by request.
-- **No provenance columns.** `abs_ns_e6`, `noise_e6`, `n`, `deps`, `tags` and the cells are
-  pcrec's listing's. A kit row that wants noise asks by REQUEST (`memfn/docs/requests.md`,
-  single writer: main). No selection reads noise today.
+- **No provenance columns.** `abs_ns_e6`, `n`, `deps`, `tags` and the cells are pcrec's
+  listing's. `[s2]` `noise_e6` is handed from FORMAT-2 sets (R-35; span_cards.md §4.2, MF_SITE_ABI
+  24): each handed row states MEASURED with its noise when the set is format 2 and the row's
+  noise is a number, else UNMEASURED (every row of a format-1 set, whose noise text no digest
+  covers). No selection reads noise today.
 
 pcrec computes no threshold. The kit ignores unknown keys (totality).
 
