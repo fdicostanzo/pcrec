@@ -13,7 +13,7 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **run_sabotage_matrix.sh** — the driver.
 - **lib/replace.py** — the ONLY thing that edits a sabotaged file.
 - **reach_only_selftest.sh** ([MECH-REACHONLY], 2026-10-21) — self-test of `REACH_ONLY=1` (see its section below): a live probe, a failing probe, a declared-UNREACHED one.
-- **nocompile_selftest.sh** (review 2026-10-24 r1 subst, CHK-1) — self-test of the compile gate (`NOCOMPILE_ERE`: a failing arm whose log shows compiled code failing is ANOMALY, never DETECTED): S1354's original non-compiling plant must read ANOMALY, its warning-clean plant DETECTED.
+- **nocompile_selftest.sh** (review 2026-10-24 r1 subst, CHK-1) — self-test of the compile gate (`NOCOMPILE_ERE`: a failing arm whose log shows compiled code failing is ANOMALY, never DETECTED): S1354's original non-compiling plant must read ANOMALY, its warning-clean plant DETECTED; [MECH-NOCOMPILE] also covers `SAB_EXPECT=COMPILE-CATCH` (declared + compiles-fail = DETECTED-BUILD, declared + builds = UNEXPECTED) and the anomaly ceiling (exit 1 above `MECH_ANOMALY_CEILING`).
 - **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given paths, at a path-component ...
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver.
 - `run_recursion_identity.sh` — section "[recidfix/varland] S273, and the FIRST ARM `run_recursion_identity.sh` has ever had (2026-09-25)" (history file)
@@ -22,6 +22,7 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 
 - THE RUNNER ARCHIVES HEAD PER ROW (`git archive HEAD` is re-read for EVERY sabotage): COMMIT BEFORE YOU START AND COMMIT NOTHING DURING THE RUN, or the matrix measures N trees.
 - A MISSING OR UNSCRAPEABLE SUITE LOG SCORES ANOMALY, NEVER A SYNTHESIZED COUNT: all arms route through `score_arm`; never default a missing failure count to a detection.
+- A DESIGNED COMPILE-TIME CATCH IS DECLARED, NEVER INFERRED ([MECH-NOCOMPILE]): `SAB_EXPECT=COMPILE-CATCH` on a row whose plant must make an arm's artifact fail to compile (S07 S1112 S1242 S184 S272 S403 S989); an arm log with a compiler error = `DETECTED-BUILD`, none = UNDETECTED `***UNEXPECTED***`. An undeclared compile failure stays ANOMALY, and `run_sabotage_matrix.sh` exits 1 when anomalies exceed `ANOMALY_CEILING_PIN` (override `MECH_ANOMALY_CEILING`; pinned 0).
 - Mech ids are passed without a suffix (`S222`, never `S222_...`); read a row verdict from its own `== mech run COMPLETE` trailer; take S-ids from the range your brief names.
 
 

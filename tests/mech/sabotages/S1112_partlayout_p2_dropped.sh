@@ -10,7 +10,7 @@ SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='row P2 never holds, so an inline control writes always_inline on a label-table body (split'"'"'s F part, the attempt-route prefilter) and the artifact does not compile'
 SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:7fail/41pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1112."
-SAB_EXPECT=DETECTED
+SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] designed: the header says the artifact or check compile fails
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --part-layout=prefilter:inline --emit-facts --pattern "^(a)b" | tr "\t" " "'
 SAB_REACH_EXPECT='byte prefilter prefilter 4 R2 no P2 not-copyable as-emitted 0'

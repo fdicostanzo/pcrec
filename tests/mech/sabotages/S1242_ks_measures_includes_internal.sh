@@ -8,7 +8,7 @@ SAB_FILE="src/core/ks_measures.c"
 SAB_SUITES="core"
 SAB_DESC='the measures row includes core/internal.h, so a tool linking the parts and this row would link the compiler (S989'"'"'s rule, for the row)'
 SAB_DOC_FIGURE='MEASURED at the M0 head by the lane'"'"'s solo runs: see docs/dev/lanes/m0build_report.md §5 (the owed mech rows). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1242.'
-SAB_EXPECT=DETECTED
+SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] designed: the header says the artifact or check compile fails
 SAB_COUNT=1
 SAB_BEFORE='#include "core/ks_measures.h"
 #include "core/ksrc.h"'

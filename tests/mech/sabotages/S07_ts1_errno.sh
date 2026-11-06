@@ -7,6 +7,7 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
 SAB_DESC="emit_unanchored: append '(void)errno;' to the emitted prologue with no errno.h include"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 6 TS-1 checks (+ OS-0b compile check incidentally)"
+SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] designed: the emitted errno use does not compile (header: OS-0b compile check)
 SAB_COUNT=1
 # RE-ANCHORED 2026-08-29 ([ENG-ABS]): the one-line anchor matched TWICE once a
 # THIRD machine's scan body was emitted (`<prefix>_match`'s anchored scan opens

@@ -15,7 +15,7 @@ SAB_DESC="vm_cls_tables chooses the atom table (or, at --tune -2/-1, a kit match
 SAB_DOC_FIGURE="RE-MEASURED solo 2026-09-30 at the land4 tip (run_clspack.sh gained [deny-kit], 24 -> 25 checks): clspack:10fail/15pass, corpus:46fail/33pass -- every atom artifact reads a bitmap it lacks and fails to build DETECTED."
 SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]"'
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
-SAB_EXPECT=DETECTED
+SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] designed: the header says the artifact or check compile fails
 SAB_COUNT=1
 SAB_BEFORE='    if (respell) vm_cls_respell(v);'
 SAB_AFTER='    if (respell) (void)vm_cls_respell;'
