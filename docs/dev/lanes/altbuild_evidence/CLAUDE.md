@@ -10,3 +10,7 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
 - `u1_folds.py` — Gates U1 (fold population, per observable) and U3 (no
   table growth per machine). `u1_folds_stage.out` (PASS),
   `u1_folds_base_control.out` (base as stage: FAIL, 2324 findings).
+- `u4_census.py` — Gate U4's island and rung census (corpus utf8 blocks +
+  bench/utf8, four axes, base vs stage; every mover must be restored by
+  bit 10). `altnf_lowering_oracle.out` — libpcre2's answers for every cell
+  of `tests/utf8/altnf_lowering.rxt` (all OK).

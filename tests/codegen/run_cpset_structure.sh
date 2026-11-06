@@ -421,6 +421,18 @@ fi
 #                    `u.cls`, which the check reached on its first run over
 #                    the ic1b tree)
 #
+#   opt/altnf.c      [RUN-POS-SET] stage 1's alternation owner: `anf_cls_hash`,
+#                    `anf_cls_eq`, `anf_cls_disjoint` and `anf_cls_union` ask
+#                    interval-list questions of a branch POSITION (equal?
+#                    disjoint? the union?) for rule M's merge, at both
+#                    callers: altcls ABOVE the lowering, where a byte bitmap
+#                    is wrong for a class past the byte range, and the UTF-8
+#                    lowering's byte boxes, whose positions are A_CLASS nodes
+#                    the lowering itself just built. FUNCTION-scoped (ALLOW_FN
+#                    below), so the rest of altnf.c stays policed. Added by
+#                    lane altbuild (the owner's own population: its first
+#                    run over the tree reached the check)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -437,7 +449,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line src/opt/altnf.c:anf_cls_hash src/opt/altnf.c:anf_cls_eq src/opt/altnf.c:anf_cls_disjoint src/opt/altnf.c:anf_cls_union'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {
