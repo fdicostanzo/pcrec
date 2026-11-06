@@ -1,0 +1,114 @@
+# arevrev1 premise evidence (lane arevrev1, 2026-11-05/06; worktree at main fd1a32021)
+# libpcre2 10.46 as a library: docs/dev/lanes/vlbrev1_evidence/probe.c built as $S/probe (gcc -O1 -lpcre2-8); stdin pattern<TAB>subject[<TAB>startpos]; mode m (UTF cells: m u)
+
+## cells (pattern, subject, every non-overlapping match from startpos)
+# (the (?m)^ cell needs a newline in the subject, which this line-based probe cannot carry: NOT RUN)
+(?<=\Ga{1,2})b	aab	[2-3]
+(?<=\Ga{1,2})b	aab	[2-3]
+(?<=\Ga{1,2})b	aab	nomatch
+(?<!\Ga{1,2})b	aab	nomatch
+(?<!\Ga{1,2})b	aab	nomatch
+(?<!\Ga{1,2})b	aab	[2-3]
+(?<=\Ga{1,3})b	caab	nomatch
+(?<!\Ga{1,3})b	caab	[3-4]
+(?<=^a{1,2})b	aab	[2-3]
+(?<!^a{1,2})b	aab	nomatch
+(?<=\Aa{1,2})b	aab	[2-3]
+(?<!a{1,2}|b)x	bx	nomatch
+(?<=a{1,2}|b)x	bx	[1-2]
+(?<!a{1,2}|b)x	cx	[1-2]
+(?<=(?>a|ab)b)x	abbx	nomatch
+(?<!(?>a|ab)b)x	abbx	[3-4]
+(?<=(?>a|ab)b{1,2})x	abbx	[3-4]
+(?<!(?>a|ab)b{1,2})x	abbx	nomatch
+(?<=a{1,2}\b)x	aax	nomatch
+(?<=a{1,2}\b)-	aa-	[2-3]
+(?<=\ba{1,2})x	baax	nomatch
+(?<=\ba{1,2})x	 aax	[3-4]
+(?<=a{1,2})b	aab	[2-3]
+(?<=(a{1,2})|(aa{1,2}))c	aaac	[3-4,1-3]
+(?<*(a{1,2}))b\1c	aabac	[2-5,1-2]
+(?<=(a{1,2}))b	aab	[2-3,0-2]
+(?<=a{1,2}|b{1,2})x	abx	[2-3]
+(?<=(?>ab|a)b{1,2})x	abx	nomatch
+(?<!(?>ab|a)b{1,2})x	abx	[2-3]
+(?<=(?:ab|a)b{1,2})x	abx	[2-3]
+(?<=a{1,2}$)	aa	[2-2]
+(?<=a{1,2}|b)x	bx	[1-2]
+(?<=\Ga{1,2})b	caab	[3-4]
+(?<!\Ga{1,2})b	caab	nomatch
+(?<=(?>ab|a)b{1,2}|ab)x	abx	[2-3]
+(?<=(a{1,2})|(aa{1,2}))c	aaac	[3-4,1-3]
+(?<=(?:a{1,2})|(?:aa{1,2}))c	aaac	[3-4]
+(?<=(é{1,2}))x	aééx	[5-6,1-5]
+
+## anchors re-grepped at fd1a32021 (command grep -n)
+4916:static int dfa_member_machines(Ctx *cx, const Dfa *out[4])
+9249:static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
+9297:static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
+10244:static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent);
+10246:static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent);
+10248:static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
+12841:static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
+12962:static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
+13244:static void emit_scan_loop(StrBuf *c, const DfaForm *f)
+13409:static void emit_reverse_block(StrBuf *c, const DfaForm *rev, const char *label,
+13457:static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
+13495:static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
+13637:static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
+14022:static void emit_rev_end_one_seed(Ctx *cx, DfaForm *rev, bool entry)
+14081:static void emit_rev_end_tagged(Ctx *cx, DfaForm *rev, DfaForm *fwd, bool entry,
+14229:static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
+14398:static void emit_landmark_walk(Ctx *cx, const char *fn, PcrecEntry ent)
+5787:struct DfaDir {
+5861:struct DfaForm {
+9340:static const DfaDir dfa_dir_forward = {
+9360:static const DfaDir dfa_dir_reverse = {
+9412:static const DfaDir dfa_dir_anchored = {
+9442:static const DfaDir dfa_dir_landmark = {
+9460:static const DfaDir dfa_dir_lmverify = {
+9882:    CT_LOWER   = 1u << 0,   /* no match starts below x */
+9907:#define CAND_HAND_EXISTS  (CT_LOWER | CT_UPPER | CT_START)
+14700:    DfaDir dir = dfa_dir_anchored;
+13415:    emit_scan_loop(c, &f);
+13532:    emit_scan_loop(c, fwd);
+13625:    emit_reverse_block(c, rev, dfa_dir_reverse.c.name, NULL);
+14054:    emit_scan_loop(c, rev);
+14116:    emit_scan_loop(c, rev);
+14317:    emit_reverse_block(c, &rev, "revend", "continue;");
+14489:    emit_reverse_block(c, &ml, dfa_dir_landmark.c.name,
+14503:    emit_scan_loop(c, &av);
+14581:    emit_scan_loop(c, f);
+14660:    emit_scan_loop(c, &tf);
+454:static bool revend_build_one(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
+547:static void lmwalk_build(Ctx *cx, Ast *root)
+568:static void revend_choose_form(Ctx *cx, Ast *root)
+1309:static const FitRung fit_rungs[] = {
+1360:    { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+1402:    { .name = "drop-landmark-walk", .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+704:    case A_GSTART: return frag_single(b, N_GSTART);
+1342:bool pcrec_nfa_has_bot(const Nfa *nfa)
+64:KIND_ROW(A_GSTART,  ZERO, TRANSPARENT, NONE,   0)
+181:    if (lm_has_kind(st->cx->job->lm_root, A_GSTART)) { st->detail = "gstart"; return false; }
+276:static const LmConj lmwalk_conj[] = {
+987:                if (cl->prune) { cl->ks->n = 0; return; }
+1028:                if (!cl->gst_ok) break;
+1583:            DFA_INVARIANT(cx, !reverse || !ctxfn_reads_absent_prev(nfa->st[i].ctxfn),
+932:static void vm_charge(Vm *v)
+2858:static Cost vm_cost_look(Vm *v, const Ast *a)
+3038:static void vm_count_slots_look(Vm *v, const Ast *a, long long repl)
+4890:static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
+5500:} Rev;
+5521:static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
+5705:static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
+6369:static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
+7117:static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
+7363:static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
+11311:                     (job->nfa.erased & NFA_ERASED_COUNT) ? "count-collapsed" : "exact");
+482:    case VL_GROUP_SEEN:     return pcrec_sb_fragf(a, "%s_revdet_group_seen[%d]", sb->p, x->j);
+483:    case VL_GROUP_SPAN:     return pcrec_sb_fragf(a, "%s_revdet_group_span[%d][%d]",
+57:    VK_WORK,         /* `<P>_CHARGE_WORK(N);` */
+59:    VK_CONSUME_BACK, /* `if (C) { <p>_rv<i>_cursor--; goto <p>_L<n>; }` */
+62:    VK_SEEK,         /* a cursor write: span commit, slot restore, advance, back-step */
+576:            pcrec_emit_dfa_engine(cx, find_name(cx), PCREC_ENTRY_FIND);
+580:        pcrec_emit_dfa_engine(cx, t->body, e);
