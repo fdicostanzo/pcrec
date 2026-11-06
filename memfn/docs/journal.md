@@ -3308,3 +3308,8 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06: J0 (440) went RED in 3 s. Triage lane trij0, class (c): the r33_sim probe still read mf_akind.prov, which left the seam at unit 1g. census0 itself was not reached.
   - Fixed on s2b by printing the digest in its place (71cad723e); collect.py parses only the rate list. The probe compile is verified, and J0 is retried with a watcher.
   - Lesson: a job's --dry-run that never builds what the run builds cannot catch a stale build; J0's dry run only counted compiles.
+- 11-06: S2a DELIVERED on lane/memfn-s2a @ f8c513ec8 (base 8f43f4f27). MF_SITE_ABI 23->24 (noise_state with UNSTATED refused, noise_e6). Format 2 uses digest pcrec-meas-2 over noise+class; KS_MEAS_MAX has a static-assert TU. Zero movers by bounded spots; grid1 byte-identical.
+  - Sabotage S2900-S2910 all red then reverted. Light suites green; G2 70.36M/0. Gates 460-468 prepared, not queued.
+  - Deviation: sabotage (r)'s detector is the format-2 fixture store, not grid1.
+  - Code round crit-memfn-s2a launched before the gates (the per-unit process).
+  - Lesson (MINE): s2a and s2b both lacked a deliver file. My briefs said "a deliver file per BOILERPLATE", and both lanes read it as the manager's to write. From now on the manager writes NAME_deliver.txt into the worktree BEFORE launch.
