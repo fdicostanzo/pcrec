@@ -3187,3 +3187,13 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Stage 2 starts with read-only scoping (lane s2scope: how the current measurement set was produced, and the readers of the seam's noise field), then an opus build lane for the noise channel and the card fixtures.
   - The card timing runs wait for a window main clears.
   - Ruling (a) is noted: unit 3.0's pcrec facts travel in the kit's same-commit package as facts only.
+
+- notice: 2026-11-06 — **Frank, directly to the kit: three items** (after a discussion of letting the measurement tool detect SIMD).
+  1. **RULED, for span_cards.md rev 1 (stage 2 SIMD job): the SIMD facts.** Per SIMD level (levels.def) the producer records three facts:
+     - (a) the CPU has it (cpuid), or "absent (CPU)" and never run;
+     - (b) the build compiled it (read off the artifact's MEMFN_FORMS stamp). Levels fall through under `#if __AVX2__`/`__SSE2__`, so a "w32" fixture built without AVX2 times w16 code. A level missing from the stamp is recorded absent and never timed;
+     - (c) its measured cost, only when (a) and (b) hold.
+     - Availability on a target stays with gcc's predefined macros. A measured set never grants a level; it prices what the target's macros allow. Letting measured cards switch SIMD on per level remains the C9 row plus the separately ruled SIMD-default event (D147, D144 add. 4).
+     - Proposed D-entry text: "Measured SIMD facts (Frank 2026-11-06): a measurement set records per SIMD level cpu-has / build-compiled / cost; availability is the target's compile-time macros, the set only prices."
+  2. **FOR MAIN to file: a plan item to TEST CROSS-ARCH DEVELOPMENT.** Frank: "add an item to test cross arch dev". Kit-side content: aarch64 levels are born with their first row (levels.def); measuring and validating on a non-x86 box; the Mac as the available aarch64 box. Main owns the row and its scope.
+  3. **WITH MAIN: work out MULTI-ARCH BUILDS.** Frank: "this is with main, we need to work out the multi arch builds as well". Kit facts for that discussion: SIMD levels are compile-time `#if` arms in one emitted C file, with fall-through to scalar and no runtime dispatch. Each artifact stamps MEMFN_FORMS. A set is chosen per compile (`--measures`/config). An artifact built for several targets therefore carries every level's text but one set's prices.

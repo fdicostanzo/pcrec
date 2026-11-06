@@ -3272,3 +3272,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Units S2a-S2f. One timing window, about 45 min.
   - For main: the DEFAULTS conflict. D166 add. 2's latest-set default contradicts R-35's "DEFAULTS unchanged"; the lane recommends a zero-mover flip at S2e. Also memchr-back deferred, and the bundle sampling-noise field deferred.
   - Critic round crit-memfn-span-cards (opus coordinator) launched, blind.
+- 11-06: Frank ruled directly to the kit. First, the SIMD three facts per level (cpu-has, build-compiled from the MEMFN_FORMS stamp, cost only when both hold), applied in span_cards rev 1 after the critic round. Second, a plan item to test cross-arch dev (for main to file). Third, multi-arch builds to be worked out with main. Posted as a responses notice; main told.
