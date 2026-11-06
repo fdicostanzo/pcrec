@@ -466,11 +466,18 @@ for k, sets in _bykey.items():
     # reports the row as never reached, by name.
     KEYNAME[k] = sorted(common or set.union(*sets) or {k})[0]
 ENTRY_KEYS = sorted(set(KEYNAME.values()))
+# KEYED BY (backend, symbol) (review r4 F16): a symbol is excised from a
+# backend's artifact only when THAT backend's rows define it. One map across
+# both backends let a byte artifact's region pass under a symbol only the
+# utf8 rows still listed: deleting byte's side-table symbol from the seam
+# (enc.c's `enc_row_side_table` arm) stayed green, the check reading the
+# table it polices through the other backend's half.
 SYM2KEY = {}
 for r in ROWS:
     for sym in r['syms']:
-        if SYM2KEY.setdefault(sym, KEYNAME[r['stands']]) != KEYNAME[r['stands']]:
-            print("EXTRACT-FAIL symbol %s is defined under two keys" % sym)
+        if SYM2KEY.setdefault((r['backend'], sym), KEYNAME[r['stands']]) != KEYNAME[r['stands']]:
+            print("EXTRACT-FAIL symbol %s is defined under two keys in backend %s"
+                  % (sym, r['backend']))
             sys.exit(2)
 # Rule (b)'s one-sided presence: a key only ONE backend's rows carry.
 _backends_of = {}
@@ -514,14 +521,21 @@ for k in ('next_pos', 'valid_upto'):
 # gone. [VLOOKBEHIND] DERIVED (§5.6 item 3): a column-0 line whose declarator is
 # `rx_<sym>` or `rx__<sym>` followed by `(` or `[`, after ANY return-type
 # tokens (`unsigned char` included: the old alternation's excision hole).
-SIG_RE = re.compile(r'^(?:[A-Za-z_]\w*[ \t*]+)+rx_(_?)(%s)\s*[\(\[]'
-                    % '|'.join(sorted(map(re.escape, SYM2KEY), key=len, reverse=True)))
+SIG_RE = {b: re.compile(r'^(?:[A-Za-z_]\w*[ \t*]+)+rx_(_?)(%s)\s*[\(\[]'
+                         % '|'.join(sorted((re.escape(sym) for bb, sym in SYM2KEY if bb == b),
+                                           key=len, reverse=True)))
+          for b in sorted({r['backend'] for r in ROWS})}
+for _b in ('byte', 'utf8'):
+    if _b not in SIG_RE:
+        print("EXTRACT-FAIL the seam reader lists no %s rows" % _b)
+        sys.exit(2)
 # [FINDALL-NEXT] I1's residual TWINS: an out-of-line entry's body is the
 # static `rx__<name>` (counted under the entry's key, with the guarded
 # attribute and `static` lines above it), and the exported `rx_<name>` is a
 # one-line forwarder, encoding-free text present where the entry is, counted
 # under `forwarder`.
-TWINNED = tuple(sorted(sym for r in ROWS if not r['inline'] for sym in r['syms']))
+TWINNED = {b: frozenset(sym for r in ROWS if r['backend'] == b and not r['inline']
+                        for sym in r['syms']) for b in SIG_RE}
 TWIN_PREAMBLE = ('static', '#endif', '__attribute__((noclone))',
                  '#if __has_attribute(noclone)', '# define __has_attribute(x) 0',
                  '#ifndef __has_attribute')
@@ -1207,7 +1221,7 @@ def cover_pick_stamped(text):
     return None, ({int(mb.group(1))} if mb and mb.group(1).isdigit() else set())
 
 
-def excise(text, label, drop_run=False):
+def excise(text, backend, label, drop_run=False):
     counts = dict.fromkeys(ENTRY_KEYS, 0)
     syms_seen = set()
     counts['_syms'] = syms_seen
@@ -1319,12 +1333,12 @@ def excise(text, label, drop_run=False):
                 out.append("int rx__BODY(" + line[SEARCH_HEAD_RE.match(line).end():])
                 i += 1
                 continue
-        m = SIG_RE.match(line)
+        m = SIG_RE[backend].match(line)
         if m:
             name = m.group(2)
-            if name in TWINNED and not m.group(1):
+            if name in TWINNED[backend] and not m.group(1):
                 name = 'forwarder'
-            elif name in TWINNED:
+            elif name in TWINNED[backend]:
                 while out and out[-1].strip() in TWIN_PREAMBLE:
                     out.pop()
             # [VLOOKBEHIND] every symbol counts under the entry whose text
@@ -1332,7 +1346,7 @@ def excise(text, label, drop_run=False):
             # its entry's region; the `span_ci_helper` mapping went with it.
             if name != 'forwarder':
                 syms_seen.add(name)
-                name = SYM2KEY[name]
+                name = SYM2KEY[(backend, name)]
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
                 while k >= 0 and not out[k].lstrip().startswith('/*'):
@@ -1587,8 +1601,13 @@ def main():
     # both encodings, and `(*UCP)(?i)(a)\1x` the byte-only UCP caseless row
     # ([r3-1106 FIXIND-2]): rule (a)'s floor is DERIVED from the seam's rows,
     # so a new entry cannot pass without a witness that reaches it.
+    # [VLOOKBEHIND] (review r4 F17) `(?<=a{1,2}|b)x` and `(?<!a{1,2}|b)x`: the
+    # one-branch positive witness never emits a NON-LAST branch's exhaustion
+    # block (`L_n_i`, its cursor restore) nor the negative polarity's, and
+    # the default slice holds no lookbehind block at all, so an
+    # encoding-keyed splice there was green (S1988 is the plant).
     patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
-                 '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x']
+                 '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x', '(?<=a{1,2}|b)x', '(?<!a{1,2}|b)x']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
     agg = dict.fromkeys(ENTRY_KEYS, 0)
@@ -1674,8 +1693,8 @@ def main():
                     else:
                         tu = nt
                     ncov_pick += len(picks)
-            nb, cb = excise(tb, "byte#%d" % idx, drop_run)
-            nu, cu = excise(tu, "utf8#%d" % idx, drop_run)
+            nb, cb = excise(tb, 'byte', "byte#%d" % idx, drop_run)
+            nu, cu = excise(tu, 'utf8', "utf8#%d" % idx, drop_run)
             cb['cover_pick'] = ncov_pick
             npairs += 1
             for k in agg:
