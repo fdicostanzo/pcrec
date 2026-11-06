@@ -113,8 +113,10 @@ unreached = []
 # fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop;
 # span_pick.md rev 5.2 unit 1a (lane sp1a): the iterator rows R3a, R3b, R4
 # DELETED (zero reach by code), ids reserved; unit 1f (lane sp1f): R8, R1, R2
-# DELETED with their denies, the pay rule and mf_finder_pay, ids reserved
-FIND_ROWS = ["D1", "D1c", "D1w", "PAIR", "R7w"]
+# DELETED with their denies, the pay rule and mf_finder_pay, ids reserved;
+# unit 1e (lane sp1e): D-hors, Table D's row, joined T-FIND FIRST (the one
+# walk), its deny `window-skip` unchanged
+FIND_ROWS = ["D-hors", "D1", "D1c", "D1w", "PAIR", "R7w"]
 # the ids B4' withdrew and 1a/1f deleted (reserved, never reused), and the
 # denies that went with them (retired: unknown options)
 WITHDRAWN_ROWS = ["R0", "R5", "R7", "R3a", "R3b", "R4", "R8", "R1", "R2"]

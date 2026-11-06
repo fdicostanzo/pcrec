@@ -13,6 +13,16 @@
 
 #include "../include/memfn.h"
 
+/* ---- THE COST TABLE (plan_cost.def; window_site.md §3.3) ------------------ *
+ * One enum, KIT_COST_<name>, for every reader (window.c's plan model,
+ * finder.c's D-hors facts): a value is read by name, never by a second
+ * expansion of the table. */
+enum {
+#define MF_COST(name, value, unit, provenance, box, basis) KIT_COST_##name = (value),
+#include "plan_cost.def"
+#undef MF_COST
+};
+
 /* ---- kb: growable text over the caller's mf_arena ------------------------ */
 
 /* Text the kit builds before handing it to a sink. Storage comes from the
@@ -519,35 +529,45 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
 
 /* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */
 
-/* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
- * that renders the table's pick for FIND site `s` (handle `handle`, the next
- * handle at a define) where the decision's rows decide (every row since
- * LOCKDOWN, B4'), and *row its terminal row's id; NULL where the site renders
- * its pre-table form (*row NULL), or where a routed pick has no arm (*row
- * set: a kit build error the caller refuses). `quiet` 1 for the query (no
- * record, no reach). */
-#define fd_route MF_NS(fd_route)
-const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
-                           const mf_hooks *def, int quiet, const char **row);
 /* Slot FIND's picks: a form, the kit's names (D157). 0 is UNSTATED (refused
- * by the finder's self-check). The window family's E-find renders the pick
- * of the row that decides its stop (window.c's Table B renderers). */
+ * by the finder's self-check). Each asker renders the pick of the row that
+ * decides its find by its own renderer rows: the composer's (compose.c
+ * `fd_renderers`), the window family's E-find (window.c's Table B). HORS,
+ * the window family's skip (D-hors, span_pick 1e), is the one pick whose text
+ * finds no stop: it probes the window's end and resumes by a shift table. */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
-               FF_W64, FF_A3, FF_PAIR } fd_form;
-/* A window site's STOP as Table B is asked about it (window_site.md §2.2):
- * its set and its offset d* from the candidate (negative: below it). */
+               FF_W64, FF_A3, FF_PAIR, FF_HORS } fd_form;
+/* T-FIND's QUESTION about a window site's STOP (window_site.md §2.2, §2.5):
+ * its set and its offset d* from the candidate (negative: below it), the
+ * window D-hors would skip by (the core of the chosen alternative's
+ * verify-YES span holding the stop: `hw` 1 with its least and largest
+ * offsets, else 0), the handed rates the stop set's mass reads (NULL: the
+ * NONE row), the window family's gate facts for the walk, and THE ASKER FACT
+ * `renders_pair`: the asker renders PAIR (span_pick 1e; SF_WINDOW_STOP's
+ * successor), which the composer's renderers do not. */
 typedef struct {
-    const uint8_t *set;
-    int32_t        off;
+    const uint8_t  *set;
+    int32_t         off;
+    uint8_t         hw;
+    int32_t         wlo, whi;
+    const uint32_t *rate;
+    const wf_facts *wf;
+    uint8_t         renders_pair;
 } fd_stop;
-/* THE FAMILY'S FIND ASK (finder.c, D172 S3, code review r1 C1/C3): slot
- * FIND's decision for the stop `st` of window site `ws` under its define
- * hooks `def` (its kind, body, policy and options; the OFF variant, §1.5
- * rule 1, as fd_route): 1 with the deciding row's pick and id, or 0 where no
- * row decides (or a dispatch would, none before B4/B8). `quiet` 1: no record,
- * no reach; 0: a SELECTION (traced, counted). */
+/* T-FIND, THE ONE WALK (finder.c; span_pick.md rev 5.2 unit 1e): slot
+ * FIND's decision, first match (D-hors, D1, D1c, D1w, PAIR, R7w), for one of
+ * two askers. `st` NULL: the composer asks about FIND site `s`'s own span 0
+ * (its one term; a site outside slot FIND's scope gets no decision, and an
+ * UNSTATED need is refused: *row "?need"). `st` non-NULL: the window family
+ * asks about window site `s`'s stop `st` (need REQUIRED). The decision is the
+ * OFF variant's (§1.5 rule 1: decided once, every layer inherits it), under
+ * `def` (the site's kind, body, policy and options). 1 with the deciding
+ * row's pick and id, or 0 where no row decides; `*row` is NULL on a 0, but
+ * the "?need" refusal, which names a row and returns 0: a caller that must
+ * tell the refusal from "no row" reads `*row`, not the return. `quiet` 1: no
+ * record, no reach; 0: a SELECTION (traced, counted). */
 #define fd_find MF_NS(fd_find)
-int fd_find(const mf_art *art, const mf_site *ws, const mf_hooks *def, const fd_stop *st,
+int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
             int quiet, fd_form *pick, const char **row);
 /* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
  * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
@@ -836,6 +856,7 @@ struct wf_plan;
 #define wf_find_arm     MF_NS(wf_find_arm)
 #define wf_plan_reads_table MF_NS(wf_plan_reads_table)
 #define wf_plan_brow    MF_NS(wf_plan_brow)
+#define wf_plan_bren    MF_NS(wf_plan_bren)
 
 /* 1 iff `x` (an mf_site, or an mf_pred: a pre-check part) states window
  * facts: alternatives, or a window floor (which wf_check refuses without
@@ -890,9 +911,13 @@ int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
  * (mf_defined's `reads_table`). */
 void wf_plan_class(const struct wf_plan *plan, mf_class *out);
 const struct arm *wf_plan_row(const struct wf_plan *plan);
-/* The FIND slot's row deciding E-find's stop (Table B: fd_find), or NULL
- * (the floor; E-find under D-hors, which finds no stop). */
+/* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
+ * included since span_pick 1e), or NULL (the floor). */
 const char *wf_plan_brow(const struct wf_plan *plan);
+/* Table B's renderer row rendering E-find's find (B-fn .. B-hors), or NULL
+ * (the floor): the third member of the key (frame row, method row, renderer
+ * row) the text is keyed by; MF_TRACE's FDROUTE prints it. */
+const char *wf_plan_bren(const struct wf_plan *plan);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic")
  * and E-find's row (D172 S3: the family's own find-then-verify text). */

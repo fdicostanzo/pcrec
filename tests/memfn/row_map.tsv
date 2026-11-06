@@ -1,0 +1,23 @@
+# tests/memfn/row_map.tsv — THE DECLARED ROW MAP (span_pick.md rev 5.2
+# §Staging, unit 1e's witness): a row that MOVED between selection tables,
+# from its old table and name to its new ones. Hand-maintained; a unit that
+# moves a row across tables adds its line in the same commit.
+#
+# Readers: tests/memfn/rows_check.py (section M: every target is a row of
+# the kit's derived row set and of rows.tsv; no from_table record is traced
+# anywhere; no from row keeps a rows.tsv line) and tests/memfn/reach_equal.py
+# --map (REACH EQUALITY through the map: a BASE row's selections counted
+# under its target's key).
+#
+# Columns (TAB-separated):
+#   from_table from_row   the row at the unit's base (the MFTRACE table name)
+#   to_table to_row       the row at HEAD, or `-` `-`: DISSOLVED, its
+#                         selections now the new table's other rows'
+#   unit                  the unit that moved it
+#
+# 1e: window.c's Table D (trace table `wfD`, which printed no REACH lines)
+# joined T-FIND: D-hors is fd's first row, unchanged; D-one, `c + 1`, is
+# every other T-FIND row's resume (window.c's renderer rows), no row of its own.
+# from_table	from_row	to_table	to_row	unit
+wfD	D-hors	fd	D-hors	1e
+wfD	D-one	-	-	1e

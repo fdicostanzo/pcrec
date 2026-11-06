@@ -1070,7 +1070,7 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 7   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
+#define MF_CLASS_V 8   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
                           3 (MF_SITE_ABI 16, B3a): npres uint16_t over
                           MF_MAX_PRES 257. 4 (inside MF_SITE_ABI 17, B3b,
                           unreleased; b3brev U5): pres_row and pres_led,
@@ -1084,7 +1084,12 @@ extern const char mf_miss_n[];
                           pres_row/pres_led's indices moved; no layout
                           move, no pcrec byte moved. 7 (MF_SITE_ABI 21,
                           span_pick 1f): R8, R1 and R2 left the listing
-                          ahead of the PRES rows, the same index move */
+                          ahead of the PRES rows, the same index move. 8
+                          (span_pick.md rev 5.2 unit 1e, no MF_SITE_ABI
+                          move): Table D's D-hors joined the listing as
+                          the FIND slot's FIRST row, ahead of the PRES
+                          rows, so pres_row/pres_led's indices moved up
+                          one; no layout move, no pcrec byte moved */
 /* Presence spans one site states (npspan) and one class answers (npres). A
  * SHAPE BOUND, not a tuning constant, DERIVED at B3a (PR-5's unpicked
  * spans): a necessary set has at most 256 members, each its own span, and a

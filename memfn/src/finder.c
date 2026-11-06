@@ -27,13 +27,15 @@
  * reserved (finder_history.md). The rows are listed through
  * `mf_finder_rows` (R-MS4: needs, keys, basis, refutation).
  *
- * THE ROWS (§1.3, §1.4). Slot FIND: D1 D1c D1w PAIR R7w
- * (R0, R5 and R7 are WITHDRAWN, R3a, R3b, R4, R8, R1 and R2 DELETED
+ * THE ROWS (§1.3, §1.4). Slot FIND: D-hors D1 D1c D1w PAIR R7w (T-FIND,
+ * span_pick 1e: D-hors, the window family's skip, joined from Table D, first;
+ * R0, R5 and R7 are WITHDRAWN, R3a, R3b, R4, R8, R1 and R2 DELETED
  * (span_pick 1a, 1f), D2
  * RETIRED (D172 S2 commit 6) and RPT, the
  * REPORT row, RETIRED (D172 S3: a REPORT site is the window family's, its
  * E-find row; window_site.md §4), ids reserved; PAIR, the two-stream find of
- * a window site's two-byte stop, is asked through `fd_find` alone; F0, F1,
+ * a window site's two-byte stop, holds only for the asker that renders it
+ * (the asker fact SF_ASKER_PAIR); F0, F1,
  * F2 are designed and
  * BUILT at B5, after lockdown, as formal row additions). Slot PRES: P0 P2 P3
  * P4 P9 (P1 at B5). Each row's `basis` is mandatory; the self-check (`mf_finder_rows`'
@@ -64,13 +66,13 @@ enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
  * too). One name per fd_form, in its order (D2's RUN and RPT's PROOF left
  * the enum with their rows: memfn/docs/finder_history.md). */
 static const char *const ff_name[] = {
-    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "A3", "PAIR",
+    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "A3", "PAIR", "HORS",
 };
-_Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_PAIR + 1, "ff_name names every fd_form");
+_Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_HORS + 1, "ff_name names every fd_form");
 /* The forms this kit renders a site with, by layer: at B1 LIBC (pf_memchr),
  * LIBC_BACK (pf_memchr_back) and WALK (pf_walk); since D172 S3 the window
  * family's E-find renders the pick of the row deciding its stop (fd_find;
- * window.c's Table B renderers), PAIR included. V1 (R17-b's
+ * window.c's Table B renderers), PAIR and (1e) HORS included. V1 (R17-b's
  * `pf_terms_mask`) is NOT built (R7 is withdrawn, [MEMFN-REGIME]), W64
  * lands at B6, NONE at B5, A3 with its first row. A row whose pick is W64 does not hold
  * while it is unbuilt (fd_w64_built). */
@@ -100,8 +102,13 @@ enum {
     SF_REQUIRED     = 1u << 11, /* the span's need is REQUIRED (slot PRES)     */
     /* bits 12, 13: retired, never reused (memfn/docs/finder_history.md) */
     SF_TWO_MEMBER   = 1u << 14, /* the stop is two bytes, any two              */
-    SF_WINDOW_STOP  = 1u << 15, /* the stop is a window site's (fd_find): the
-                                   window family renders the pick             */
+    SF_ASKER_PAIR   = 1u << 15, /* THE ASKER FACT: the asker renders PAIR (the
+                                   window family; SF_WINDOW_STOP until 1e)    */
+    SF_HORS_WINDOW  = 1u << 16, /* the stop states D-hors's window: two
+                                   positions or more, the last at an offset
+                                   >= 0 (span_pick 1e: Table D's predicate)   */
+    SF_HORS_DENSE   = 1u << 17, /* the stop set's mass under the handed rates
+                                   is at least HORS_MIN (plan_cost.def)       */
 };
 
 /* ONE comparator (§1.2 [rev3 D2]): lhs OP key, every threshold a set key. */
@@ -119,10 +126,10 @@ typedef struct {
 #define LY_SIMD (CM(L_W16) | CM(L_W32))
 #define LY_ALL  (LY_OFF | LY_SIMD)
 /* Kind masks (the contract's `site_kind` serves; no ANY kind, [rev3 A22]).
- * KD_ALL: the kinds of the sites the native routes decide (fd_route,
- * fd_pres). KD_STOP: KD_ALL and REPORT, served only by the rows whose pick
- * renders a window site's stop (fd_find: D1, D1w, PAIR, R7w; D1c serves
- * REPORT beside its own kind): since D172 S3 a REPORT site is the window
+ * KD_ALL: the kinds of the sites the composer's asks and fd_pres decide.
+ * KD_STOP: KD_ALL and REPORT, served only by the rows whose pick renders a
+ * window site's stop (D1, D1w, PAIR, R7w; D1c serves REPORT beside its own
+ * kind; D-hors serves every kind): since D172 S3 a REPORT site is the window
  * family's (its E-find row asks fd_find), RPT having retired, and
  * select_arm refuses an old-field REPORT site before any walk. The PRES
  * rows (an ALL_PRESENT site's kinds) keep KD_ALL: no REPORT site asks them
@@ -156,7 +163,10 @@ typedef struct {
  * field is irrelevant to a finder row (the shadow's scope picks the sites:
  * fd_shadow), so it serves MF_ANY; the four constrained fields are each
  * row's own. A field missing here would DECLINE every finder row wherever it
- * is stated, visible at once in the shadow's records and the fixtures. */
+ * is stated, visible at once in the shadow's records and the fixtures. The
+ * window family's fields (`alts` .. `wfloor`) are stated only when the window
+ * family asks (fd_stop.wf, span_pick 1e): every row serves them all but
+ * D-hors, whose window is a stated core (`core` CORED, Table D's contract). */
 #define FD_SERVES_COMMON \
     [FLD_form] = MF_ANY, [FLD_op] = MF_ANY, [FLD_handoff] = MF_ANY, \
     [FLD_reverse] = MF_ANY, [FLD_empty] = MF_ANY, [FLD_end_back] = MF_ANY, \
@@ -169,10 +179,12 @@ typedef struct {
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
     [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
-    [FLD_moved] = MF_ANY,
-#define FD_SERVES_REST(table) \
+    [FLD_moved] = MF_ANY, \
+    [FLD_alts] = MF_ANY, [FLD_entry] = MF_ANY, [FLD_span_start] = MF_ANY, \
+    [FLD_verify] = MF_ANY, [FLD_toffer] = MF_ANY, [FLD_wfloor] = MF_ANY,
+#define FD_SERVES_REST(table, cores) \
     FD_SERVES_COMMON \
-    [FLD_table_ref] = (table),
+    [FLD_table_ref] = (table), [FLD_core] = (cores),
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -182,15 +194,20 @@ static const gate_use use_kind[] = {
 
 /* One contract per row: its uses, then its four constrained serves. `body`
  * MF_ANY on a row that reads no M (its text is the same for any mode). */
-#define FD_CT_T(name, row, uses, kinds, needs, body, layers, table) \
+#define FD_CT_T(name, row, uses, kinds, needs, body, layers, table, cores) \
     static const gate_contract name = { "fd", row, NU(uses), { \
-        FD_SERVES_REST(table) \
+        FD_SERVES_REST(table, cores) \
         [FLD_site_kind] = (kinds), [FLD_need] = (needs), \
         [FLD_body] = (body), [FLD_layer] = (layers), \
     } };
 #define FD_CT(name, row, uses, kinds, needs, body, layers) \
-    FD_CT_T(name, row, uses, kinds, needs, body, layers, MF_ANY)
+    FD_CT_T(name, row, uses, kinds, needs, body, layers, MF_ANY, MF_ANY)
 
+/* D-hors (span_pick 1e: Table D's row, moved here unchanged): reads nothing;
+   its window is a stated core (`core` CORED); every other field it serves
+   whole, as its Table D contract did (WF_SERVES_LEGACY, WF_SERVES_WINDOW) */
+FD_CT_T(ct_d_hors, "D-hors", use_none, MF_ANY,     MF_ANY,          MF_ANY,      MF_ANY,
+        MF_ANY, CM(CORED))
 FD_CT(ct_d1,  "D1",  use_kind,    KD_STOP,           NEED_ALL,        MF_ANY,      LY_ALL)
 /* D1c: MLINE's back search, and a window site's stop below the candidate
    (window_site.md §2.2: re-keyed to "the stop lies below the candidate",
@@ -200,9 +217,9 @@ FD_CT(ct_d1w, "D1w", use_kind,    KD_STOP & ~CM(DFA_ATTEMPT), NEED_ALL, MF_ANY, 
 /* PAIR: two memchr streams, one per member of the stop's two bytes. Its
    renderers are the window family's alone (window.c: the offset-skip
    function's fn-pair body where the plan is that function's predicate, else
-   the loop's two streams, the same text), so it reads SF_WINDOW_STOP and no
-   native route meets it; they serve every scalar layer and every field
-   below */
+   the loop's two streams, the same text), so it reads the asker fact
+   SF_ASKER_PAIR and the composer never meets it; they serve every scalar
+   layer and every field below */
 FD_CT(ct_pair, "PAIR", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,      LY_ALL)
 /* R7w's pick is the walk (pf_walk), which reads pcrec's offered table
    (walk_applies serves table_ref REF): a routed pick its arm does not serve is
@@ -213,7 +230,8 @@ FD_CT(ct_pair, "PAIR", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,   
    `toffer`, which E-find's walk reads (C-table) or does without (C-own). It
    uses the consumer kind: a site that states none is decided by no default
    (no presumed value). */
-FD_CT_T(ct_r7w, "R7w", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,      LY_OFF, CM(REF))
+FD_CT_T(ct_r7w, "R7w", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,      LY_OFF, CM(REF),
+        MF_ANY)
 FD_CT(ct_p0,  "P0",  use_none,    KD_ALL,            CM(N_REQUIRED),  MF_ANY,      LY_ALL)
 FD_CT(ct_p2,  "P2",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
 FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
@@ -228,6 +246,22 @@ FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,   
  * and its preview step retired, with no exception). An edit to a row is logged in
  * memfn/docs/finder_history.md in the commit that makes it (§1.8). */
 static const fd_row fd_rows[] = {
+    /* D-HORS (span_pick 1e: Table D's row, moved here FIRST, then today's
+       order, R9): the window family's skip, `window-skip` its deny, as at
+       S3. Its facts are the STOP's own (a stated window, a common set), so
+       the composer, which states no stop, never meets it, and every window
+       stop it does not take walks on to the rows below. Its pick finds no
+       stop: E-find's renderer (window.c's B-hors) probes the window's last
+       position and resumes by the shift table; every other row's resume is
+       c + 1 */
+    { "D-hors", FD_FIND, KN_P | KN_E, SF_HORS_WINDOW | SF_HORS_DENSE, 0,
+      { { FL_NONE, NULL, 0, NULL, NULL } },
+      FF_HORS, FF_UNSTATED, { 0, 0, 0, 0 }, "window-skip", FB_UNMEASURED_DEFAULT, "S3",
+      "a window site's stop whose set is common (mass >= HORS_MIN) over a window of two "
+      "positions or more: probe its last position, skip by the shift table (job 581, "
+      "r27b_report.md RESULT: wins hex8 2-6x on real and no-hit text)",
+      "HORS_MIN is PROVISIONAL (plan_cost.def): a measured cell where c + 1 and the stop's "
+      "find beat the skip at or above it", &ct_d_hors },
     { "D1", FD_FIND, KN_P, SF_SPAN0 | SF_ONE_MEMBER, SF_SEEK_ROLE,
       { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_LIBC, FF_UNSTATED, { 0, 0, 0, 0 }, "fd-d1", FB_UNMEASURED_DEFAULT, "B2",
@@ -252,7 +286,7 @@ static const fd_row fd_rows[] = {
        not one), so its place among them decides nothing; above R7w, which
        it narrows. No deny: within E-find it moves bytes under E-find's own
        (`window-search`), and fn-pair has none */
-    { "PAIR", FD_FIND, KN_P, SF_SPAN0 | SF_TWO_MEMBER | SF_WINDOW_STOP, 0,
+    { "PAIR", FD_FIND, KN_P, SF_SPAN0 | SF_TWO_MEMBER | SF_ASKER_PAIR, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_PAIR, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "S3",
       "a window site's stop of two bytes, any two, at or past the candidate: two memchr "
@@ -491,11 +525,10 @@ typedef struct {
 /* Slot `slot`'s decision for the walk input `q`: kit_walk over the table,
  * first match. (The residual N step and the §2.5 pay rule went with the
  * dispatch rows R1 and R2: span_pick 1f.) */
-static void fd_decide(fd_x *q, int slot, const gate_tctx *tc, fd_decision *d)
+static void fd_decide(fd_x *q, int slot, const gate_in *in, const gate_tctx *tc, fd_decision *d)
 {
-    gate_in in = { q->site, NULL, NULL, &q->ff, NULL };
     gate_verdict why = { 0, 0 };
-    d->terminal = kit_walk(&fd_table, slot, &in, MF_PH_DEFINE, 0, q, tc, &why);
+    d->terminal = kit_walk(&fd_table, slot, in, MF_PH_DEFINE, 0, q, tc, &why);
     d->pick = d->terminal < FD_NROWS ? fd_pick_of(&fd_rows[d->terminal], q) : FF_UNSTATED;
 }
 
@@ -558,102 +591,86 @@ static int fd_scope(const mf_site *s)
     return 0;
 }
 
-/* ---- THE ROUTED DECISION (§1.6 [rev3 D6]; R17-b' B2) ------------------------- *
+/* ---- T-FIND, THE ONE WALK (span_pick.md rev 5.2 unit 1e) -------------------- *
  *
- * A site in slot FIND's scope renders the TABLE's pick iff the decision's
- * first matching row is routed; otherwise it renders its pre-table form (the composer's arms,
- * fd_route answering NULL). The decision is the OFF variant's (§1.5 rule 1:
- * a proven fact is decided once, and every layer inherits it), over the
- * consumer kind pcrec STATES. The pick names the arm that renders it: LIBC
- * the memchr rows (bounded by end_back), LIBC_BACK the memchr below the
- * candidate, WALK the walks. D2's RUN pick retired with D2 (D172 S2 commit
- * 6): a RUN span 0 takes the composer's walk with no routed row, the same
- * text. A routed row whose pick has no arm here is a kit build
- * error, refused loudly by the caller (no B2 or B3b row has one).
+ * Slot FIND's decision, ONE first-match walk (D-hors, then today's order: D1,
+ * D1c, D1w, PAIR, R7w) for both of its askers; until 1e two entries walked
+ * it (the composer's fd_route, the window family's fd_find, after Table D's
+ * own walk), and their difference is now a stated fact of the walk's input:
+ *
+ *   the composer (`st` NULL; compose.c select_arm): a FIND site in slot
+ *     FIND's scope, its stop span 0 of its own one term (find_facts), its
+ *     need the span's; it renders the pick through its own renderer rows
+ *     (compose.c `fd_renderers`: the prefilter finds), and renders no PAIR;
+ *   the window family (`st` the stop; window.c's E-find setup): the window
+ *     site under its define hooks (its consumer kind, body, policy and
+ *     options, so `fd-d1` and the VM seek's role keep their effect; a window
+ *     site states no terms, so no row reads a `table_ref` of it, gate.c),
+ *     the stop's set and offset d* (below the candidate: a CONTEXT stop,
+ *     D1c's re-keyed scope), D-hors's window and the stop set's mass
+ *     (hors_facts), its need REQUIRED (B's find is the stop's test at every
+ *     candidate it yields) and THE ASKER FACT: it renders PAIR (window.c's
+ *     B-fn and B-pair; the SIMD forms over PAIR are the offset-skip
+ *     function's PREFIX rows, which read the site's actual policy).
+ *
+ * The decision is the OFF variant's (§1.5 rule 1: a proven fact is decided
+ * once, and every layer inherits it), over the consumer kind pcrec STATES.
+ * The pick and the deciding row are the asker's to render (no arm here).
  *
  * `quiet`: the query's walk (mf_ask) records nothing and counts no reach; a
- * define's is a SELECTION (phase define), traced and counted. The routed
- * rows read no set key (§3.2), so a routed decision never sets
- * `consulted` here; the first one that does is B4's. */
-const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
-                    const mf_hooks *def, int quiet, const char **row)
+ * define's is a SELECTION (phase define), traced and counted. No FIND row
+ * reads a set key (§3.2), so a decision never sets `consulted` here. */
+
+/* D-hors's facts (window_site.md §2.5; Table D's predicate until 1e): the
+ * stop states a window of two positions or more whose last offset is >= 0
+ * (the probe reads inside the hoisted bound: the window's core is the
+ * plan's, so its last offset is at most the bound's), and the stop set's
+ * mass under the handed rates is at least HORS_MIN. */
+static void hors_facts(fd_x *q, const fd_stop *st)
 {
-    *row = NULL;
-    if (!(fd_scope(s) & (1 << FD_FIND))) return NULL;
-    fd_x q;
-    memset(&q, 0, sizeof q);
-    q.art = art;
-    q.handle = handle;
-    q.site = s;
-    q.pred_ix = -1;
-    q.ff.kind = kind_cl(s->site_kind);
-    q.ff.layer = CL_L_OFF;
-    find_facts(&q);
-    /* An UNSTATED span need never reaches a routed decision: pred_kinds
-       refuses the site before any selection (PR-4). Were one to arrive, the
-       mapping below would decide REQUIRED for a fact nobody stated (a silent
-       default), so it is REFUSED here instead: a row named with no arm is the
-       caller's refusal. */
-    if (q.span && q.span->need == MF_NEED_UNSTATED) {
-        *row = "?need";
-        return NULL;
-    }
-    q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
-    gate_in in = { s, def, NULL, &q.ff, NULL };
-    gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
-    fd_decision d;
-    fd_decide(&q, FD_FIND, &tc, &d);
-    if (d.terminal >= FD_NROWS) return NULL;
-    const arm *a = NULL;
-    switch (d.pick) {
-    case FF_LIBC:      a = s->end_back ? &pf_memchr_bounded_arm : &pf_memchr_arm; break;
-    case FF_LIBC_BACK: a = &pf_memchr_back_arm; break;
-    case FF_WALK:      a = s->end_back ? &pf_walk_bounded_arm : &pf_walk_arm; break;
-    case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_A3: case FF_PAIR:
-        break;
-    }
-    *row = fd_rows[d.terminal].id;
-    return a;
+    if (!st->hw || st->whi - st->wlo < 1 || st->whi < 0) return;
+    q->facts |= SF_HORS_WINDOW;
+    if (kit_mass(st->rate, st->set, 1, KIT_MASS_CAP) >= (unsigned long long)KIT_COST_HORS_MIN)
+        q->facts |= SF_HORS_DENSE;
 }
 
-/* ---- THE FAMILY'S FIND ASK (D172 S3; window.c's E-find row) ---------------- *
- *
- * Table B of the window family IS this table's FIND slot (window_site.md
- * §2.2), asked the design's question: "the next p in [max(c + d*, F, 0), n)
- * with s[p] in set(d*)", over the window site's own statement (code review
- * r1 C1/C3). The site is the window site itself, under its define hooks: its
- * consumer kind, body, policy and options, so `fd-d1` and the VM seek's role
- * keep their effect; a window site states no terms, so no row reads a
- * `table_ref` of it (gate.c). The stop's facts are its own: its set, its
- * offset d* (below the candidate: a CONTEXT stop, D1c's re-keyed scope), and
- * that it is a window site's stop (SF_WINDOW_STOP: PAIR's renderers are the
- * family's); its need is REQUIRED, B's find being the
- * stop's test at every candidate it yields. The decision is the OFF
- * variant's, as fd_route's (§1.5 rule 1: decided once, every layer inherits
- * it); the SIMD forms over PAIR are the offset-skip function's PREFIX rows,
- * which read the site's actual policy (window.c's B-fn renderer). The pick
- * and the deciding row are the caller's to render (no arm here). */
-int fd_find(const mf_art *art, const mf_site *ws, const mf_hooks *def, const fd_stop *st,
+int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
             int quiet, fd_form *pick, const char **row)
 {
     *pick = FF_UNSTATED;
     *row = NULL;
+    if (!st && !(fd_scope(s) & (1 << FD_FIND))) return 0;
     fd_x q;
     memset(&q, 0, sizeof q);
     q.art = art;
     q.handle = art->nsites + 1;
-    q.site = ws;
+    q.site = s;
     q.pred_ix = -1;
-    q.ff.kind = kind_cl(ws->site_kind);
+    q.ff.kind = kind_cl(s->site_kind);
     q.ff.layer = CL_L_OFF;
-    q.ff.need = CL_N_REQUIRED;
-    set_facts(&q, st->set, st->off);
-    seek_facts(&q);
-    q.facts |= SF_WINDOW_STOP;
-    gate_in in = { ws, def, NULL, &q.ff, NULL };
+    if (st) {
+        q.ff.need = CL_N_REQUIRED;
+        set_facts(&q, st->set, st->off);
+        seek_facts(&q);
+        hors_facts(&q, st);
+        if (st->renders_pair) q.facts |= SF_ASKER_PAIR;
+    } else {
+        find_facts(&q);
+        /* An UNSTATED span need never reaches a decision: pred_kinds refuses
+           the site before any selection (PR-4). Were one to arrive, the
+           mapping below would decide REQUIRED for a fact nobody stated (a
+           silent default), so it is REFUSED here instead: a row named with
+           no pick is the composer's refusal. */
+        if (q.span && q.span->need == MF_NEED_UNSTATED) {
+            *row = "?need";
+            return 0;
+        }
+        q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
+    }
+    gate_in in = { s, def, NULL, &q.ff, st ? st->wf : NULL };
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
-    fd_decide(&q, FD_FIND, &tc, &d);
+    fd_decide(&q, FD_FIND, &in, &tc, &d);
     if (d.terminal >= FD_NROWS) return 0;
     *pick = d.pick;
     *row = fd_rows[d.terminal].id;
@@ -745,7 +762,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;
-        fd_decide(&q, FD_PRES, &tc, &d);
+        fd_decide(&q, FD_PRES, &in, &tc, &d);
         if (d.terminal >= FD_NROWS) {
             *why = "a presence span no routed PRES row decides";
             return -1;

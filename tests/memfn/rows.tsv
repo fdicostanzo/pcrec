@@ -17,6 +17,13 @@
 #   reach      WHY the row exists, from a CLOSED set:
 #                pcrec                    pcrec's corpus reaches it (the census
 #                                         floor in row_floors.tsv holds it)
+#                pcrec:trace-only         as pcrec, for a row whose text equals its
+#                                         fallback's: dropping it moves no artifact
+#                                         byte on the drill population (span_pick 1e
+#                                         review F12: D1c, D1w, R7w, 0 of 18), so only
+#                                         the kit's REACH record observes it. A later
+#                                         unit making it a mover, or leaving it
+#                                         unreached, edits this cell
 #                total-fallback           the table's last row: chosen only when
 #                                         no other row serves a site
 #                pending-site:<trigger>   built ahead of the pcrec site that
@@ -71,7 +78,12 @@
 # the same pattern under E-find's deny (the composite path, no window stop).
 # Its witness is `x[Q%]y` (the S3 final review's CHECK-5): a stop of two
 # unrelated bytes, the widened scope, which no one-bit cube row could decide;
-# the cube is fn-pair's witness `(?i)cat` below. A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
+# the cube is fn-pair's witness `(?i)cat` below. D-hors (span_pick 1e, lane
+# sp1e: window.c's Table D row `wfD`/D-hors joined T-FIND as its FIRST row,
+# tests/memfn/row_map.tsv) decides a dense stop's skip on a window of two
+# positions or more; its FDROUTE record names `arm=E-find`, its witness the
+# hex run `[0-9a-f]{8}` (window.c's own `mass+hors` path), its control the same
+# pattern under its deny `window-skip`. A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
 # says so in its SIGNATURE: the `MFTRACE FD` record's ` phase=ask` is part of
 # it (P2 today, whose pre-check is asked and never defined). n2_report.py
 # --floors holds such a row to its floor on the REACH line's `asked=N`
@@ -118,11 +130,12 @@ fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0, wa	-fno-req-run-fold -
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
+fd	D-hors	pcrec	pattern	-	[0-9a-f]{8}	 row=D-hors arm=E-find	--memfn=no-window-skip	=
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
-fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
-fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
+fd	D1c	pcrec:trace-only	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
+fd	D1w	pcrec:trace-only	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
 fd	PAIR	pcrec	pattern	-	x[Q%]y	 row=PAIR arm=E-find	--memfn=no-window-search	=
-fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
+fd	R7w	pcrec:trace-only	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=

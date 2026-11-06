@@ -20,7 +20,8 @@
  *
  * RE-MEASURING ANY ROW IS A BYTE-MOVING KIT EVENT (integration.md §21.3): its
  * own deny, a pcrec abi event, G1 at both layers. HORS_MIN (§3.3's last row)
- * is D-hors's (window.c Table D), landed at S3 with its own deny `window-skip`. */
+ * is D-hors's (finder.c's D-hors row, hors_facts), landed at S3 with its own
+ * deny `window-skip`. Every reader takes a value from kit.h's KIT_COST_ enum. */
 #ifndef MF_COST
 #define MF_COST(name, value, unit, provenance, box, basis)
 #define MF_PLAN_COST_UNDEF

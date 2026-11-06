@@ -85,8 +85,8 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
 # Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8; S1540
-# (code review r2, lane s3pair) and S1541-S1543 (the S3 final review, lane s3fix) are
-# the kit's S1540-S1559.
+# (code review r2, lane s3pair), S1541-S1543 (the S3 final review, lane s3fix) and S1549
+# (the span_pick 1e review, lane sp1efix) are the kit's S1540-S1559.
 plant_spec() {
     case "$1" in
     S1400) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
@@ -103,7 +103,8 @@ plant_spec() {
         # tested by the bound, so a per-position plant there is equivalent)
         echo 'window.c@@        w->core[i] = (uint8_t)rd_core(d, p);@@        w->core[i] = (uint8_t)(rd_core(d, p) \&\& i + 1 < n);' ;;
     S1405) # an empty meet inside a core not sent to the floor row
-        echo 'window.c@@        if (m->p[k].present \&\& m->p[k].core \&\& !count(m->p[k].set)) return 1;@@        if (0) return 1;' ;;
+        # (re-anchored at span_pick 1d's cands, the one candidate builder: A-empty's fact is set there)
+        echo 'window.c@@        m->any_empty |= p->core \&\& !count(p->set);@@        m->any_empty |= 0;' ;;
     S1406) # C-pin splitting the stretch: the pinned positions not one compare
         echo 'window.c@@                join = in_pinned(d, o) \&\& in_pinned(d, o - 1);@@                join = 0;' ;;
     S1407) # an untested offset claimed: the class proves one past each tested position
@@ -149,19 +150,27 @@ plant_spec() {
         echo 'ofsskip.c@@} else { %s = %s; %s += %s; }%s"@@} else { %s = %s + 1; %s += %s; }%s"' ;;
     S1542) # the S3 final review's CHECK-2: D-hors's `whi >= 0` scope dropped, so D-hors
         # renders a window wholly below the candidate (the below-window sites; the
-        # generator's D-hors scope census goes red)
-        echo 'window.c@@    if (!dx->hw || dx->whi - dx->wlo < 1 || dx->whi < 0) return 0;@@    if (!dx->hw || dx->whi - dx->wlo < 1) return 0;' ;;
+        # generator's D-hors scope census goes red). Re-aimed at span_pick 1e (lane
+        # sp1e): D-hors's predicate left window.c's Table D for finder.c's hors_facts
+        echo 'finder.c@@    if (!st->hw || st->whi - st->wlo < 1 || st->whi < 0) return;@@    if (!st->hw || st->whi - st->wlo < 1) return;' ;;
     S1543) # the S3 final review's EMIT-3: E-find's RAISE dropped (no expression floor):
         # with the test's lower half hoisted into it, a core position below the
         # candidate is read below the subject (layout L's guard page)
         echo 'window.c@@    } else {\n        kb_printf(b, "if (%s < %d) %s = %d; ", rc->C, -w->clo, rc->C, -w->clo);\n    }@@    } else {\n    }' ;;
-    S1410) # a full-set position tested: C-yes takes a verify-YES position whose meet is every byte
+    S1410) # a full-set position tested: C-bound-yes keeps a verify-YES position whose meet is every byte
         # (the kit manager's wsc3 ruling 1: such a position is the bound alone)
-        echo 'window.c@@        if (m->p[k].present \&\& m->p[k].yes \&\& !full(m->p[k].yset))@@        if (m->p[k].present \&\& m->p[k].yes)' ;;
+        # (re-anchored at span_pick 1d, which made C-bound an applied step: bound_by; the
+        # plant drops the verify-YES case, C-bound-floor still drops its own)
+        echo 'window.c@@        if (full(yes ? p->yset : rd_set(d, p))) plan_drop(d, d->poff[i]);@@        if (!yes \&\& full(rd_set(d, p))) plan_drop(d, d->poff[i]);' ;;
+    S1549) # the sp1e review's F1: D-hors's `core` contract the opposite (CM(NOCORE)), the
+        # contract fd_find's gate_in now reaches (it states the window family's facts): D-hors
+        # refuses every E-find stop, whose core the alternative states, so no site resumes by
+        # the shift table (the generator's hors census goes red)
+        echo 'finder.c@@        MF_ANY, CM(CORED))@@        MF_ANY, CM(NOCORE))' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

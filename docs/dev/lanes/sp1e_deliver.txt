@@ -1,0 +1,8 @@
+# written by lane sp1e: the brief named docs/dev/lanes/sp1e_deliver.txt, which existed in neither the worktree nor
+# the main tree; this mirrors sp1dfix's own deliver file, with the brief's report sections (noted in the report)
+report=docs/dev/lanes/sp1e_report.md
+sections: What changed, by file; Grep reader table; Ratchet counter; Validation; Gate jobs; Seam notes; Design deviations; Charter vs committed; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/sp1e_deliver.txt
+owed: none

@@ -52,8 +52,8 @@ except where marked.
 | | V1 / W64 / A3 | **none**: finder.c rows R8/R2/R3b pick them, `fd_route` maps them to no arm (:898) | — | no renderer [F]; whether any compile reaches those rows [U] |
 | | SIMD: vrun w32 / w16 | vrun.c (`vrun_w16_decl` :437, `vrun_w32_decl` :444), guarded rungs over fn-pair's scalar text | the scanned cube KA plus KB = `rank_pos[1]` (w32); KA only (w16) | **hides a choice** (KB position, §3 N10) |
 | | SIMD: find any of 2-3 bytes | vany.c (stand-alone `mf_kernel_find_any`) | K = 2..3 bytes | pure; **no row reaches it** (§3 N12) |
-| **SKIP** after a miss (resume) | `c + 1` | window.c `wf_d_text` :2602, D-one | always | pure |
-| | Horspool shift | window.c `wf_d_text` D-hors (`d_hors_head`/`_next`/`_define`) | dense stop over the window's tested sets | pure (its admission is §2 Q7) |
+| **SKIP** after a miss (resume) | `c + 1` | window.c `resume_next` (formerly `wf_d_text`'s D-one; no row of its own since span_pick 1e) | always | pure |
+| | Horspool shift | window.c `wf_b_render` B-hors (`d_hors_head`/`_next`/`_define`), T-FIND's D-hors row (finder.c; formerly `wf_d_text`) | dense stop over the window's tested sets | pure (its admission is §2 Q7) |
 | **SET-MEMBERSHIP** test of one byte | range chain | generic.c `kit_set_test` :106 (ranges OR-ed, `==`, `<=`, `>=`) | any set; shared with window.c `wf_member_of` :2060 | pure |
 | | offered table `T[b]` | generic.c `member_test` :133 (pcrec's hook if offered, else `kit_set_test`); window.c C-table/C-own | a set pcrec offers a table for | **hides a choice** (hook first) |
 | | ofsskip's verify chain | ofsskip.c `verify_chain` :184 | the offset-skip function's verify | pure [I] |

@@ -22,7 +22,9 @@ subject):
      docs/spec/tuning.md §2.38's row table.
   B. THE REASONS. Every row's reach is from the closed set (pcrec,
      total-fallback, pending-site:<trigger>, contract-reach:<G2 family>,
-     the family read from memfn/tests/run_g2.sh's FAM_FLOORS); a `pcrec`
+     the family read from memfn/tests/run_g2.sh's FAM_FLOORS; `pcrec:trace-only`
+     is `pcrec` for a row whose text equals its fallback's, so only the trace
+     observes it, span_pick 1e review F12); a `pcrec`
      row's witness is a pcrec compile and every other row's a fixture.
      Whether a `pcrec` row IS reached, and a closed-reason row is NOT, over
      the whole corpus is the census's (n2_report.py --floors): this check
@@ -84,19 +86,44 @@ subject):
      `asked` no ask record stands behind must read ASK MISMATCH, and the
      consistent aggregate must read neither.
 
+  THE ROW MAP (M; span_pick 1e, lane sp1e): tests/memfn/row_map.tsv
+     declares each row that MOVED between tables (window.c's `wfD`/D-hors to
+     `fd`/D-hors; `wfD`/D-one dissolved), parsed by row_map.py, which
+     reach_equal.py shares. Its old (table, row) must be no row of the derived
+     set nor of rows.tsv, its target a row of both, and no traced compile of
+     this run may name a mapped-away table in any record (at least one traced
+     compile read). The map's lines are held to a literal pin (run_rows.sh
+     ROW_MAP_PIN), so a deleted and an invented line are both red here;
+     reach_equal.py --map is the map's other reader (REACH equality through
+     it, and the map held to BASE's own trace).
+
+  THE RENDERER ROWS (R; span_pick 1e review F4): the text of a FIND site is
+     keyed by (frame row, method row, renderer row), and `MFTRACE FDROUTE`
+     prints all three (`row=`, and `ren=` the renderer row: Table B's row for
+     E-find, the composer's arm otherwise). tests/memfn/renderer_rows.tsv
+     declares the pairs: every pair any traced compile of the run prints is a
+     declared one (a one-line plant that changes which renderer renders a pick
+     prints an undeclared pair), and a declared pair with a witness is
+     printed by it (without one: UNREACHED).
+
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
 rows); a row whose witness stops being chosen in the corpus but stays chosen
 for its own witness pattern (the census's floor is that control).
 """
 import argparse
+import collections
 import os
 import re
 import shutil
 import subprocess
 import sys
 
-REASONS = ("pcrec", "total-fallback", "pending-site:", "contract-reach:")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import row_map   # the ONE parser of row_map.tsv (reach_equal.py reads it too)
+
+REASONS = ("pcrec", "pcrec:trace-only", "total-fallback", "pending-site:", "contract-reach:")
+PCREC_REASONS = ("pcrec", "pcrec:trace-only")    # a pcrec compile is the witness and a census floor holds the row
 ASK_MARK = " phase=ask"     # a signature carrying it: the row is decided at the ask
 passed = failed = 0
 unreached = []
@@ -246,6 +273,15 @@ class Art:
     def __init__(self, label, text, chosen, fdtext="", err=b""):
         self.label, self.text, self.chosen, self.fdtext = label, text, chosen, fdtext
         self.asked, self.askrec = reach_asked(err), ask_records(err)
+        # every table a trace record names (section M: a mapped-away table)
+        self.tables = set(re.findall(r"^MFTRACE \S+ table=(\S+)", err.decode("utf-8", "replace"), re.M))
+        # every (method row, renderer row) a FDROUTE record prints (section R); a
+        # record without `ren=` is (row, None)
+        self.routes = []
+        for ln in err.decode("utf-8", "replace").splitlines():
+            if ln.startswith("MFTRACE FDROUTE "):
+                d = dict(t.partition("=")[::2] for t in ln.split()[2:])
+                self.routes.append((d.get("row"), d.get("ren")))
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -382,7 +418,7 @@ def judge_plants(root):
         bad("rows.tsv names no row decided at the ask (no ` phase=ask` signature): "
             "the ask judge has no population")
         return
-    pc = [(c[0], c[1]) for c in mrows if c[2] == "pcrec"]
+    pc = [(c[0], c[1]) for c in mrows if c[2] in PCREC_REASONS]
     meta = {"limit": 0, "explicit patterns": 0, "arms run": 1, "arms in table": 1}
 
     def agg(asked_of, rec_of, chosen_ask=0):
@@ -536,7 +572,7 @@ def main():
         fams = []
     for c in rows:
         t, rw, why, wk = c[0], c[1], c[2], c[3]
-        if why == "pcrec" or why == "total-fallback":
+        if why in PCREC_REASONS or why == "total-fallback":
             good = True
         elif why.startswith("pending-site:"):
             good = len(why) > len("pending-site:")
@@ -545,10 +581,10 @@ def main():
         else:
             good = False
         if not good:
-            bad("%s/%s: reach %r is not in the closed set (pcrec, total-fallback, "
+            bad("%s/%s: reach %r is not in the closed set (pcrec, pcrec:trace-only, total-fallback, "
                 "pending-site:<trigger>, contract-reach:<G2 family %s>)" % (t, rw, why, ",".join(fams)))
             continue
-        want = "pattern" if why == "pcrec" else "fixture"
+        want = "pattern" if why in PCREC_REASONS else "fixture"
         if t == "fd" and wk == "-" and why.startswith("pending-site:"):
             unreached.append("fd/%s: no B1 site can reach it (its witness arrives with %s)"
                              % (rw, why[len("pending-site:"):]))
@@ -661,6 +697,101 @@ def main():
     print("ask count vs ask records: %d (row, process) comparisons, %d nonzero" % (ncmp, nask))
     judge_plants(root)
 
+    # ---- M. the declared row map (span_pick 1e: tests/memfn/row_map.tsv) ----
+    # A row that moved between tables: its old (table, row) is no row of the
+    # kit's derived set nor of rows.tsv; its target is in both; and no traced
+    # compile of this run names the old table in any record. The map is held to
+    # a PIN written in run_rows.sh (ROW_MAP_PIN: the `table:row` of every line,
+    # a literal sharing no source with the file), so a deleted line and an
+    # invented one are both red; reach_equal.py --map holds the map to BASE's
+    # own trace, which this check never sees.
+    try:
+        rmap = row_map.read_map(os.path.join(root, os.environ.get("ROW_MAP_TSV", "tests/memfn/row_map.tsv")))
+    except row_map.MapError as e:
+        bad(str(e))
+        rmap = []
+    if not rmap:
+        bad("row_map.tsv declares no line (the map's reader is blind)")
+    pin = sorted(os.environ.get("ROW_MAP_PIN", "").split())
+    got = sorted("%s:%s" % (c[0], c[1]) for c in rmap)
+    if not pin:
+        bad("ROW_MAP_PIN is empty (the map's pin is absent)")
+    elif pin != got:
+        bad("row_map.tsv declares %s, the pin (run_rows.sh ROW_MAP_PIN) %s: lost %s, new %s"
+            % (got, pin, sorted(set(pin) - set(got)), sorted(set(got) - set(pin))))
+    else:
+        ok()
+    for ft, fr, tt, tr, unit in rmap:
+        if (ft, fr) in kit or (ft, fr) in man:
+            bad("row map (%s): %s/%s moved away but is still a row (kit %s, rows.tsv %s)"
+                % (unit, ft, fr, (ft, fr) in kit, (ft, fr) in man))
+        else:
+            ok()
+        if tt != "-" and ((tt, tr) not in kit or (tt, tr) not in man):
+            bad("row map (%s): target %s/%s missing (kit %s, rows.tsv %s)"
+                % (unit, tt, tr, (tt, tr) in kit, (tt, tr) in man))
+        elif tt != "-":
+            ok()
+    gone_tables = {c[0] for c in rmap} - {k[0] for k in kit}
+    ntr = 0
+    for art in arts:
+        if not art.tables:
+            continue
+        ntr += 1
+        hit = gone_tables & art.tables
+        if hit:
+            bad("%s: a trace record names the mapped-away table(s) %s" % (art.label, sorted(hit)))
+    if ntr == 0:
+        bad("no traced compile named any table (section M's trace control is vacuous)")
+    else:
+        ok()
+    print("row map: %d lines, mapped-away tables %s, %d traced compiles read"
+          % (len(rmap), sorted(gone_tables), ntr))
+
+    # ---- R. the renderer rows (span_pick 1e review F4: tests/memfn/renderer_rows.tsv) ----
+    # The text of a FIND site is keyed by (frame row, method row, renderer row);
+    # the trace's FDROUTE prints the third. Every (row, ren) pair any traced
+    # compile of this run prints is a declared renderer pair; every declared
+    # pair with a witness is printed by it (a pair with none is UNREACHED).
+    rr = read_tsv(os.path.join(root, os.environ.get("RENDERER_ROWS_TSV", "tests/memfn/renderer_rows.tsv")), 5)
+    if not rr:
+        bad("renderer_rows.tsv declares no line (the reader is blind)")
+    declared = {(c[0], c[1]) for c in rr}
+    if len(declared) != len(rr):
+        bad("renderer_rows.tsv declares a (row, ren) pair twice")
+    wit_arts = []
+    for rw, ren, frame, wf, wit in rr:
+        if frame not in ("E-find", "composer"):
+            bad("renderer_rows.tsv %s/%s: frame %r is neither E-find nor composer" % (rw, ren, frame))
+        if wit == "-":
+            unreached.append("renderer pair %s/%s (%s): no witness pattern is declared for it" % (rw, ren, frame))
+            continue
+        art = compile_pattern(root, tp, [] if wf == "-" else wf.split(), wit, "renderer %s/%s witness" % (rw, ren))
+        if art is None:
+            continue
+        wit_arts.append(art)
+        if (rw, ren) in art.routes:
+            ok()
+        else:
+            bad("renderer %s/%s: its witness %r printed FDROUTE pairs %s, not the declared one"
+                % (rw, ren, wit, sorted(set(art.routes), key=str)))
+    seen = collections.Counter()
+    for art in arts + wit_arts:
+        for rt in art.routes:
+            seen[rt] += 1
+            if rt[1] is None:
+                bad("%s: a FDROUTE record for row %s carries no `ren=` (the renderer row is absent)"
+                    % (art.label, rt[0]))
+            elif rt not in declared:
+                bad("%s: FDROUTE pair (%s, %s) is no declared renderer row (renderer_rows.tsv)"
+                    % ((art.label,) + rt))
+    if not seen:
+        bad("no traced compile printed a FDROUTE record (section R's trace control is vacuous)")
+    else:
+        ok()
+    print("renderer rows: %d declared pairs, %d witnessed, %d FDROUTE records over %d distinct pairs"
+          % (len(declared), len(wit_arts), sum(seen.values()), len(seen)))
+
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}
     fk = [(c[0], c[1]) for c in floors]
@@ -676,7 +807,7 @@ def main():
         key, pf, gf = (c[0], c[1]), c[2], c[3]
         if key not in why:
             continue
-        good_p = (pf == "-") if why[key] != "pcrec" else (pf == "PLACEHOLDER" or (pf.isdigit() and int(pf) > 0))
+        good_p = (pf == "-") if why[key] not in PCREC_REASONS else (pf == "PLACEHOLDER" or (pf.isdigit() and int(pf) > 0))
         good_g = gf == "PLACEHOLDER" or (gf.isdigit() and int(gf) > 0)
         if not (good_p and good_g):
             bad("row_floors.tsv %s/%s: pcrec %r, g2 %r (pcrec: a positive integer or PLACEHOLDER, "

@@ -389,7 +389,7 @@ def floors_verdict(agg, meta, floors_path, propose):
         elif why is None or f is None:
             v = "NOT IN %s" % ("rows.tsv" if why is None else "row_floors.tsv")
             fail += 1
-        elif why != "pcrec":
+        elif why not in ("pcrec", "pcrec:trace-only"):
             v = "ok (0, %s)" % why if n == 0 else "STALE REASON: %s, chosen %d" % (why, n)
             stale += n != 0
         elif n == 0:
@@ -404,7 +404,7 @@ def floors_verdict(agg, meta, floors_path, propose):
         else:
             v = "ok" if n >= int(f) else "BELOW FLOOR"
             fail += n < int(f)
-        prop = max(1, n * 9 // 10) if why == "pcrec" and n else "-"
+        prop = max(1, n * 9 // 10) if why in ("pcrec", "pcrec:trace-only") and n else "-"
         out.append([k[0], k[1], why or "-", on, n, f or "-", prop, v])
         if propose:
             print("propose\t%s\t%s\t%s" % (k[0], k[1], prop))

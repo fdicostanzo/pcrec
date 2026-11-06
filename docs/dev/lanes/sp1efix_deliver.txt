@@ -1,0 +1,8 @@
+# written by lane sp1efix: the brief named docs/dev/lanes/sp1efix_deliver.txt as a committed deliverable, and it
+# existed in neither the worktree nor the main tree; this mirrors sp1e_deliver.txt, with the brief's report sections
+report=docs/dev/lanes/sp1efix_report.md
+sections: What changed, by id; Validation; Gate jobs; Charter vs committed; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv
+owed: none
