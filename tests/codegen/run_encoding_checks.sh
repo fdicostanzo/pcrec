@@ -420,10 +420,64 @@ fi
 #     every VM-selected witness while leaving CHK3, DD12a(ii) and the K49
 #     check untouched; see docs/dev/lanes/encchk_report.md for the transcript.
 # ---------------------------------------------------------------------------
-python3 - "$PCREC" "$ROOT_DIR" "$WORKDIR/blocks.tsv" "$ENC_MAX_BLOCKS" > "$WORKDIR/dd12ai.out" 2>"$WORKDIR/dd12ai.err" <<'PY'
+# [VLOOKBEHIND] (vlookbehind.md §5.6) REGION (1) COMES FROM THE SEAM: the
+# reader tests/codegen/enc_entry_list.c, linked against the compiler's own
+# libpcrec.a, prints every backend's entry rows and the symbols each row's
+# emission defines. DD12a(i)'s head matcher, its twin list, its counter keys,
+# rule (b)'s one-sided keys and rule (a)'s floor are derived from that table
+# below; the hand lists whose drift this file records three times are gone.
+LIBA="${LIBA:-$(dirname "$PCREC")/libpcrec.a}"
+eel="$WORKDIR/enc_entry_list"
+if [ ! -f "$LIBA" ]; then
+    bad "DD12a(i) $LIBA not found — the seam reader cannot link (run make first)"
+elif ! gen_cc "encchk:entrylist" "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror \
+        ${GENCFLAGS:-} -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$eel" \
+        "$ROOT_DIR/tests/codegen/enc_entry_list.c" "$LIBA" > "$WORKDIR/eel.log" 2>&1; then
+    bad "DD12a(i) the seam reader did not compile: $(tail -3 "$WORKDIR/eel.log" | tr '\n' ' ')"
+elif ! "$eel" > "$WORKDIR/entries.tsv"; then
+    bad "DD12a(i) the seam reader listed no entry rows"
+fi
+python3 - "$PCREC" "$ROOT_DIR" "$WORKDIR/blocks.tsv" "$ENC_MAX_BLOCKS" "$WORKDIR/entries.tsv" > "$WORKDIR/dd12ai.out" 2>"$WORKDIR/dd12ai.err" <<'PY'
 import sys, os, re, subprocess, base64, tempfile, shutil, difflib
 
 pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+
+# [VLOOKBEHIND] THE SEAM'S ENTRY TABLE (enc_entry_list.c): one row per
+# (backend, entry), `backend id inline|outline stands-for boundary syms...`.
+ROWS = []
+for ln in open(sys.argv[5]):
+    f = ln.rstrip('\n').split('\t')
+    ROWS.append({'backend': f[0], 'id': f[1], 'inline': f[2] == 'inline',
+                 'stands': f[3], 'syms': f[5].split()})
+if not ROWS:
+    print("EXTRACT-FAIL the seam reader's table is empty")
+    sys.exit(2)
+# The counter KEY is the entry a row STANDS FOR ([r3-1106 FIXIND-1]: byte's
+# UCP caseless compare is a substitute for SPAN_CASELESS, so the two count as
+# one key), NAMED by the symbol every row of the key defines.
+_bykey = {}
+for r in ROWS:
+    _bykey.setdefault(r['stands'], []).append(set(r['syms']))
+KEYNAME = {}
+for k, sets in _bykey.items():
+    common = set.intersection(*sets)
+    KEYNAME[k] = sorted(common or set.union(*sets))[0]
+ENTRY_KEYS = sorted(set(KEYNAME.values()))
+SYM2KEY = {}
+for r in ROWS:
+    for sym in r['syms']:
+        if SYM2KEY.setdefault(sym, KEYNAME[r['stands']]) != KEYNAME[r['stands']]:
+            print("EXTRACT-FAIL symbol %s is defined under two keys" % sym)
+            sys.exit(2)
+# Rule (b)'s one-sided presence: a key only ONE backend's rows carry.
+_backends_of = {}
+for r in ROWS:
+    _backends_of.setdefault(KEYNAME[r['stands']], set()).add(r['backend'])
+ONE_SIDED = {k for k, b in _backends_of.items() if len(b) == 1}
+for k in ('next_pos', 'valid_upto'):
+    if k not in ENTRY_KEYS:
+        print("EXTRACT-FAIL the seam reader lists no %s entry" % k)
+        sys.exit(2)
 
 # [M5.0 stage 4] `span_match_caseless`'s UTF-8 body needs two private
 # helpers and a table beside it (decode a character, fold it through the
@@ -447,18 +501,24 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # compare's private decoder became the utf8 backend's own `$_decode` entry
 # (`static inline`, emitted ahead of the program, required by the caseless
 # compare), and `entries_byte[]` carries no row for it -- encoding-owned in
-# the same sharpest sense as `var_valid`. `span_ci_decode` stays in the
-# alternation so an artifact from before S4 is still read.
+# the same sharpest sense as `var_valid`. (`span_ci_decode`, the pre-S4
+# alias, went with the derivation below: every pair is re-emitted by the
+# current compiler, so no pre-S4 artifact reaches this walk.)
 # [LOSS-REVIEW] candidate 1 (abi 76): the span compares and the back-step are
 # `static inline` definitions ahead of the VM body now, hence the
 # `static inline ptrdiff_t` head; their regions are excised as before.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(_?)(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+# THE THREE NOTES ABOVE ARE THE HAND LIST'S HISTORY, and the reason it is
+# gone. [VLOOKBEHIND] DERIVED (§5.6 item 3): a column-0 line whose declarator is
+# `rx_<sym>` or `rx__<sym>` followed by `(` or `[`, after ANY return-type
+# tokens (`unsigned char` included: the old alternation's excision hole).
+SIG_RE = re.compile(r'^(?:[A-Za-z_]\w*[ \t*]+)+rx_(_?)(%s)\s*[\(\[]'
+                    % '|'.join(sorted(map(re.escape, SYM2KEY), key=len, reverse=True)))
 # [FINDALL-NEXT] I1's residual TWINS: an out-of-line entry's body is the
 # static `rx__<name>` (counted under the entry's key, with the guarded
 # attribute and `static` lines above it), and the exported `rx_<name>` is a
 # one-line forwarder, encoding-free text present where the entry is, counted
 # under `forwarder`.
-TWINNED = ('next_pos', 'valid_upto', 'var_valid')
+TWINNED = tuple(sorted(sym for r in ROWS if not r['inline'] for sym in r['syms']))
 TWIN_PREAMBLE = ('static', '#endif', '__attribute__((noclone))',
                  '#if __has_attribute(noclone)', '# define __has_attribute(x) 0',
                  '#ifndef __has_attribute')
@@ -1145,16 +1205,18 @@ def cover_pick_stamped(text):
 
 
 def excise(text, label, drop_run=False):
-    counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
-              'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
+    counts = dict.fromkeys(ENTRY_KEYS, 0)
+    syms_seen = set()
+    counts['_syms'] = syms_seen
+    counts.update({'utf_check_stamp': 0, 'advance': 0,
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
               'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-              'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
+              'var_valid_call': 0, 'req_pick': 0,
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
               'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-              'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
+              'bind_checks': 0, 'search_split': 0, 'cover_pick': 0})
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1262,22 +1324,12 @@ def excise(text, label, drop_run=False):
             elif name in TWINNED:
                 while out and out[-1].strip() in TWIN_PREAMBLE:
                     out.pop()
-            # [VAR lane, 2026-09-23] `span_ci_`, not `bref_ci_`. The seam's
-            # compare pair was renamed when it was generalised to serve a
-            # backreference AND a `${name}` variable, and its three private
-            # helpers followed; this NORMALISATION string did not, so a
-            # helper matched SIG_RE, fell through with its own name, and
-            # `counts[name]` raised KeyError. The mechanical rename over this
-            # file reached the regex and the tables and missed the one place
-            # a NAME is mapped to a DIFFERENT name.
-            # [enctriage] ...and the helpers count under their OWN key, which
-            # no floor reads and (b)'s per-pair symmetry rule does not compare:
-            # counted under `span_match_caseless` they made every caseless
-            # pair "asymmetric (byte=1 utf8=4)" by design.
-            # [CLS-TREE] S4 the caseless compare's decoder is now the
-            # `$_decode` entry; it is still that compare's helper here.
-            if name.startswith('span_ci_') or name == 'decode':
-                name = 'span_ci_helper'
+            # [VLOOKBEHIND] every symbol counts under the entry whose text
+            # defines it (the reader's table), so a helper or a side table is
+            # its entry's region; the `span_ci_helper` mapping went with it.
+            if name != 'forwarder':
+                syms_seen.add(name)
+                name = SYM2KEY[name]
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
                 while k >= 0 and not out[k].lstrip().startswith('/*'):
@@ -1528,19 +1580,26 @@ def main():
     # [UCP] U2 a ONE-CHARACTER lookbehind is a context node and emits no
     # `back_step` at all, so those two no longer reach the residual entry the
     # region floor and DD12a(ii) exist to see; a two-character body still does.
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x']
+    # [VLOOKBEHIND] `(?<=a{1,2})x` reaches `fwd_step` (and `back_step`) under
+    # both encodings, and `(*UCP)(?i)(a)\1x` the byte-only UCP caseless row
+    # ([r3-1106 FIXIND-2]): rule (a)'s floor is DERIVED from the seam's rows,
+    # so a new entry cannot pass without a witness that reaches it.
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
+                 '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
-    agg = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
-           'span_match_caseless': 0, 'var_valid': 0, 'advance': 0, 'encoding': 0,
+    agg = dict.fromkeys(ENTRY_KEYS, 0)
+    seen_by = {'byte': set(), 'utf8': set()}
+    nasym = 0
+    agg.update({'utf_check_stamp': 0, 'advance': 0, 'encoding': 0,
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
            'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-           'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
+           'var_valid_call': 0, 'req_pick': 0,
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
            'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
-           'bind_checks': 0, 'search_split': 0, 'cover_pick': 0}
+           'bind_checks': 0, 'search_split': 0, 'cover_pick': 0})
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1618,16 +1677,28 @@ def main():
             npairs += 1
             for k in agg:
                 agg[k] += cb[k] + cu[k]
+            seen_by['byte'] |= cb['_syms']
+            seen_by['utf8'] |= cu['_syms']
             if cb['next_pos'] != 1 or cu['next_pos'] != 1 or \
                cb['valid_upto'] != 1 or cu['valid_upto'] != 1:
                 nnextpos_bad += 1
                 if len(findings) < 20:
                     findings.append("pat=[%s]: next_pos/valid_upto not exactly 1 per side (byte=%d/%d utf8=%d/%d)"
                                      % (pat, cb['next_pos'], cb['valid_upto'], cu['next_pos'], cu['valid_upto']))
-            for k in ('back_step', 'span_match', 'span_match_caseless', 'advance'):
-                if cb[k] != cu[k] and len(findings) < 20:
-                    findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
-                                     % (pat, k, cb[k], cu[k]))
+            # (b) [VLOOKBEHIND] per entry KEY, PRESENCE on each side (a key's
+            # helper count legitimately differs: byte's plain caseless compare
+            # is one function, utf8's three); one-sided presence is admitted
+            # only for a key the reader lists in one backend alone. The retry
+            # advance keeps its count comparison.
+            for k in ENTRY_KEYS:
+                if (cb[k] > 0) != (cu[k] > 0) and k not in ONE_SIDED:
+                    nasym += 1
+                    if len(findings) < 20:
+                        findings.append("pat=[%s]: asymmetric entry %s (byte=%d utf8=%d) -- (b) presence, keyed by what a row stands for"
+                                         % (pat, k, cb[k], cu[k]))
+            if cb['advance'] != cu['advance'] and len(findings) < 20:
+                findings.append("pat=[%s]: asymmetric advance (byte=%d utf8=%d) -- (b) the normalization count"
+                                 % (pat, cb['advance'], cu['advance']))
             # [enctriage] the two encoding-keyed SELECTIONS, held to their
             # own stamps (see ENDWIN_IF_RE / REQRUN0_MEMCHR_RE above).
             bad_sel = []
@@ -1811,11 +1882,27 @@ def main():
     print("PRIORFORM=%d" % nprior)
     for p in prior_pats:
         print("PRIORPAT %s" % p)
-    for k in ('next_pos', 'valid_upto', 'utf_check_stamp', 'back_step', 'span_match', 'span_match_caseless',
-              'var_valid', 'advance', 'encoding',
+    print("ASYM_BAD=%d" % nasym)
+    # (a) [VLOOKBEHIND] the DERIVED floor: every (backend, row) the reader
+    # lists is reached at least once on its own side. A row is recognised by
+    # a symbol no other row of its backend defines (byte's UCP row by its
+    # fold table); a row with none of its own by any of its symbols.
+    nrows_reached = 0
+    for r in ROWS:
+        others = set()
+        for o in ROWS:
+            if o is not r and o['backend'] == r['backend']:
+                others |= set(o['syms'])
+        own = set(r['syms']) - others or set(r['syms'])
+        if own & seen_by.get(r['backend'], set()):
+            nrows_reached += 1
+        else:
+            print("ROWMISS %s %s %s" % (r['backend'], r['id'], ' '.join(r['syms'])))
+    print("ENTRYROWS=%d REACHED=%d" % (len(ROWS), nrows_reached))
+    for k in tuple(ENTRY_KEYS) + ('utf_check_stamp', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
-              'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
+              'req_check', 'req_why_stamp', 'var_valid_call',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
               'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong',
               'forwarder', 'bind_checks', 'search_split', 'cover_pick'):
@@ -1871,9 +1958,23 @@ else
         if [ "${PRIORFORM:-0}" -lt 1 ]; then
             bad "DD12a(i) the prior-keyed prefilter-form bucket is EMPTY — [FINDINGS] B1's byte-keyed prior no longer moves any DFA prefilter form under utf8, or the bucket's stamps read stopped matching; every pair it existed for is now classified elsewhere"
         fi
+        # (a) non-vacuity, the ENTRY half [VLOOKBEHIND]: every row the seam
+        # reader lists reached on its own side (derived, not a hand list),
+        # and (b) presence symmetry per entry key.
+        erows="$(sed -n 's/^ENTRYROWS=\([0-9]*\) .*/\1/p' "$WORKDIR/dd12ai.out")"
+        ereached="$(sed -n 's/^ENTRYROWS=[0-9]* REACHED=\([0-9]*\)$/\1/p' "$WORKDIR/dd12ai.out")"
+        if [ -z "$erows" ] || [ "${erows:-0}" -lt 15 ] || [ "$erows" != "$ereached" ]; then
+            bad "DD12a(i) the derived entry floor: ${ereached:-?} of ${erows:-?} seam rows reached (floor 15 rows: 7 byte + 8 utf8 at stage 1) — unreached: $(grep '^ROWMISS' "$WORKDIR/dd12ai.out" | head -3 | tr '\n' ';')"
+        else
+            echo "  DD12a(i) derived entry floor: all $erows seam rows (every backend's) excised at least once on their own side"
+        fi
+        asym="$(sed -n 's/^ASYM_BAD=//p' "$WORKDIR/dd12ai.out")"
+        if [ "${asym:-x}" != 0 ]; then
+            bad "DD12a(i) (b) ${asym:-an unknown number of} pair(s) carry an entry on one side only, for an entry both backends have: $(grep '^FINDING .*asymmetric entry' "$WORKDIR/dd12ai.out" | head -1)"
+        fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split cover_pick; do
+        for k in utf_check_stamp advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp search_split cover_pick; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
@@ -2068,23 +2169,46 @@ fi
 # the entries-table interface is backend-neutral (D58 P-1).
 # [silentred] `(?<=ab)`, not `(?<=a)`: [UCP] U2 made the one-character lookbehind a
 # context node, which emits no `back_step` (the witness read 2 entries, not 3).
-sigpat='(?i)(?<=ab)(b)\1x'
-db="$WORKDIR/sigb"; du="$WORKDIR/sigu"; mkdir -p "$db" "$du"
-sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|span_match|span_match_caseless)\(' "$1" \
+# [VLOOKBEHIND] (vlookbehind.md §5.6) THE NAMES COME FROM THE SEAM READER:
+# every symbol a row of the SAME entry defines in EVERY backend (an entry
+# one backend alone carries has no second signature to compare), and a
+# second witness, `(?<=a{1,2})x`, carries `fwd_step` beside `back_step`.
+sig_names="$(python3 -c '
+import sys
+rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1])]
+backends = {r[0] for r in rows}
+by = {}
+for r in rows:
+    for sym in r[5].split():
+        by.setdefault((r[1], sym), set()).add(r[0])
+print("|".join(sorted({sym for (i, sym), b in by.items() if b == backends})))
+' "$WORKDIR/entries.tsv" 2>/dev/null)"
+sigs_of() { grep -oE "(size_t|ptrdiff_t) [A-Za-z]+_($sig_names)\(" "$1" \
             | sed -E 's/ [bu]_/ PFX_/' | LC_ALL=C sort -u; }
-if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" --pattern "$sigpat" >/dev/null 2>&1 \
-   && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" --pattern "$sigpat" >/dev/null 2>&1; then
-    nsig="$(sigs_of "$db/a.c" | grep -c .)"
-    if diff -q <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") >/dev/null 2>&1 && [ "$nsig" -ge 3 ]; then
-        ok "DD12a(ii) the seam's residual entries appear under identical signatures across both backends ($nsig entries; D58 P-1)"
-    elif [ "$nsig" -lt 3 ]; then
-        bad "DD12a(ii) only $nsig residual entries found in the witness — it did not force back_step + a bref compare"
-    else
-        bad "DD12a(ii) a residual entry's signature DIFFERS between backends — the entries-table interface is not backend-neutral (D58 revisit event)"
-        diff <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") | head >&2
-    fi
+if [ -z "$sig_names" ]; then
+    bad "DD12a(ii) the seam reader's table gave no entry both backends carry — the signature list is empty"
 else
-    bad "DD12a(ii) the signature-witness pattern did not compile under both encodings"
+    for sigspec in '3|(?i)(?<=ab)(b)\1x' '3|(?<=a{1,2})x'; do
+        sigfloor="${sigspec%%|*}"; sigpat="${sigspec#*|}"
+        db="$WORKDIR/sigb$sigfloor$RANDOM"; du="$WORKDIR/sigu$RANDOM"; mkdir -p "$db" "$du"
+        if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" --pattern "$sigpat" >/dev/null 2>&1 \
+           && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" --pattern "$sigpat" >/dev/null 2>&1; then
+            nsig="$(sigs_of "$db/a.c" | grep -c .)"
+            if diff -q <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") >/dev/null 2>&1 && [ "$nsig" -ge "$sigfloor" ]; then
+                ok "DD12a(ii) $sigpat: the seam's residual entries appear under identical signatures across both backends ($nsig entries: $(sigs_of "$db/a.c" | sed -E 's/.*PFX_//; s/\(//' | paste -sd' ' -); D58 P-1)"
+            elif [ "$nsig" -lt "$sigfloor" ]; then
+                bad "DD12a(ii) only $nsig residual entries found in the witness $sigpat (floor $sigfloor) — it did not force the entries it exists for"
+            else
+                bad "DD12a(ii) a residual entry's signature DIFFERS between backends on $sigpat — the entries-table interface is not backend-neutral (D58 revisit event)"
+                diff <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") | head >&2
+            fi
+        else
+            bad "DD12a(ii) the signature witness $sigpat did not compile under both encodings"
+        fi
+    done
+    if ! grep -q 'fwd_step' <<< "$sig_names"; then
+        bad "DD12a(ii) fwd_step is not among the compared names ($sig_names)"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -2098,6 +2222,9 @@ fi
 # boundary rule is now spelled TWICE per backend: once as the caller-facing
 # `next_pos` entry, and once as inline text spliced into the engine body,
 # because DD-12 (7) and sabotage row S68 forbid an engine calling the entry.
+# [VLOOKBEHIND] stage 1 adds a THIRD spelling, the engine-callable
+# `$_fwd_step` entry; it is tied to `next_pos` by K49 (b) below, read from the
+# seam rather than from an anchor. This arm ties the retry advance only.
 #
 # TWO SPELLINGS OF ONE RULE NEED A TIE, and this project already has the shape:
 # `tests/backrefs/fold_agreement_check.c` ties `enc_byte.c`'s caseless compare
@@ -2221,6 +2348,101 @@ AGREE
             bad "K49 the -e utf8 advance is pos + 1 EVERYWHERE — either the fix is not in this artifact or the alphabet never produced a continuation byte, and the agreement above certifies nothing"
         fi
     fi
+done
+
+# ---------------------------------------------------------------------------
+# K49 (b) [VLOOKBEHIND] THE BOUNDARY ENTRIES, read FROM THE SEAM
+#
+# The boundary rule has a THIRD spelling since [VLOOKBEHIND] stage 1: the
+# lookbehind candidate step `$_fwd_step`. enc.h's PCREC_ENC_BOUNDARY_ENTRIES
+# names every entry that spells it, with the contract each member meets,
+# `member(s, n, pos) == next_pos(s, n, pos)` for every `pos < n`; the seam
+# reader (enc_entry_list.c) prints the members per backend, so this arm needs
+# no hand list. One witness per encoding carries every member
+# (`(?<=a{1,2})x`, --engine=vm); the driver #includes the artifact rather
+# than linking it, so the `static inline` members are callable. For every
+# cell of the alphabet sweep above and every bound `b` in (pos, n] it
+# compares each member against next_pos over the prefix [0, b).
+# NON-VACUITY per member, as above per encoding (byte: every answer pos + 1;
+# utf8: at least one not), and the MEMBER COUNT is floored at 2 per encoding
+# (next_pos + fwd_step), so a member that leaves the witness's mask is red.
+# The retry advance (above) keeps its own extraction: it is a FIELD, not an
+# entry, and the one splice DD-12 (7) admits.
+# ---------------------------------------------------------------------------
+bnd_witness='(?<=a{1,2})x'
+for aenc in byte utf8; do
+    d="$WORKDIR/bnd_$aenc"; mkdir -p "$d"
+    members="$(awk -F'\t' -v e="$aenc" '$1 == e && $5 == 1 { print $6 }' "$WORKDIR/entries.tsv" 2>/dev/null | tr ' ' '\n' | grep . | LC_ALL=C sort -u)"
+    nmem="$(printf '%s\n' "$members" | grep -c .)"
+    if [ "$nmem" -lt 2 ] || ! printf '%s\n' "$members" | grep -qx next_pos; then
+        bad "K49 (b) the seam lists $nmem boundary member(s) under $aenc (floor 2, next_pos among them): $(printf '%s' "$members" | tr '\n' ' ')"
+        continue
+    fi
+    if ! pcrec_run "$PCREC" --features all --engine=vm -e "$aenc" -p m -o "$d/m.c" \
+            --pattern "$bnd_witness" >/dev/null 2>&1; then
+        bad "K49 (b) the boundary witness '$bnd_witness' did not compile under -e $aenc"
+        continue
+    fi
+    {
+        printf '#include <stdio.h>\n#include "m.c"\n'
+        printf 'typedef size_t (*bnd_fn)(const unsigned char *, size_t, size_t);\n'
+        printf 'static const struct { const char *name; bnd_fn f; } MEM[] = {\n'
+        printf '%s\n' "$members" | grep -vx next_pos | sed 's/.*/    { "&", m_& },/'
+        printf '};\n'
+        cat <<'BND'
+static const unsigned char ALPHA[] = { 0x41, 0xC2, 0xE0, 0xF0, 0x80, 0xBF, 0xFF };
+#define NA ((int)(sizeof ALPHA / sizeof ALPHA[0]))
+int main(void)
+{
+    unsigned char s[4];
+    int bad = 0;
+    for (size_t m = 0; m < sizeof MEM / sizeof MEM[0]; m++) {
+        long cells = 0, disagree = 0, nontrivial = 0;
+        for (int len = 1; len <= 4; len++) {
+            long total = 1;
+            for (int i = 0; i < len; i++) total *= NA;
+            for (long k = 0; k < total; k++) {
+                long q = k;
+                for (int i = 0; i < len; i++) { s[i] = ALPHA[q % NA]; q /= NA; }
+                for (size_t pos = 0; pos < (size_t)len; pos++)
+                    for (size_t b = pos + 1; b <= (size_t)len; b++) {
+                        size_t a = MEM[m].f(s, b, pos), w = m_next_pos(s, b, pos);
+                        cells++;
+                        if (a != w && disagree++ < 3)
+                            printf("DISAGREE %s len=%d pos=%zu n=%zu member=%zu next_pos=%zu\n",
+                                   MEM[m].name, len, pos, b, a, w);
+                        if (a != pos + 1) nontrivial++;
+                    }
+            }
+        }
+        printf("MEMBER %s CELLS=%ld DISAGREE=%ld NONTRIVIAL=%ld\n",
+               MEM[m].name, cells, disagree, nontrivial);
+        bad |= disagree != 0;
+    }
+    return bad;
+}
+BND
+    } > "$d/bnd.c"
+    if ! gen_cc "encbnd $aenc" "$CC" -O1 -w -I "$d" -o "$d/bnd" "$d/bnd.c" >"$d/cc.log" 2>&1; then
+        bad "K49 (b) the -e $aenc boundary-member driver did not compile: $(head -3 "$d/cc.log" | tr '\n' ' ')"
+        continue
+    fi
+    bout="$("$d/bnd" 2>&1)"; brc=$?
+    if [ "$brc" != 0 ]; then
+        bad "K49 (b) a -e $aenc boundary entry DISAGREES with next_pos over a prefix — the boundary rule's spellings have drifted"
+        printf '%s\n' "$bout" | head -6 >&2
+        continue
+    fi
+    while read -r _ mname mcells _ mntriv; do
+        mcells="${mcells#CELLS=}"; mntriv="${mntriv#NONTRIVIAL=}"
+        if [ "$aenc" = byte ] && [ "$mntriv" -ne 0 ]; then
+            bad "K49 (b) -e byte $mname answered something other than pos + 1 on $mntriv cell(s)"
+        elif [ "$aenc" = utf8 ] && [ "$mntriv" -lt 1 ]; then
+            bad "K49 (b) -e utf8 $mname is pos + 1 EVERYWHERE — the sweep never reached a continuation byte, and its agreement certifies nothing"
+        else
+            ok "K49 (b) -e $aenc $mname agrees with next_pos over every prefix bound on all $mcells cells ($nmem boundary members in the seam, floor 2; $mntriv cells not pos + 1)"
+        fi
+    done < <(printf '%s\n' "$bout" | grep '^MEMBER ')
 done
 
 # ---------------------------------------------------------------------------
