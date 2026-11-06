@@ -1,0 +1,20 @@
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+[ORACLE-LINK] libpcre2 resolved: 10.46 (via pkg-config; tests/lib/resolve_pcre2.sh)
+== pcrec sabotage detection matrix (MECH-1) ==
+tree SHA measured: 4e6e0a4fea161a399abfe9dbb1d57f3f753b4a5d (working tree has UNCOMMITTED changes not reflected below — this matrix measures committed HEAD only, per MECH-2: sabotage trees are 'git archive HEAD', never a copy of a dirty working tree)
+scratch root: /tmp/pcrec-mech-sabotage.EJSnXH
+
+reach reference: clean tree built at 4e6e0a4fea161a399abfe9dbb1d57f3f753b4a5d (/tmp/pcrec-mech-sabotage.EJSnXH/_clean/tree)
+
+-- running S1886_pieces_cat_shortest_group.sh --
+S1886-pieces-cat-shortest-group	src/facts/desc.c	the piece description's concatenation keeps only its shortest width group, so (?i)москва lists one piece where the model has four	facts	pop:tests/codegen/run_facts_checks.sh:/\(\?i\)москва/=1(want>=1),reach:ok(1/1),facts:1fail/9pass	DETECTED
+-- running S1887_run_head_reads_through_lookbehind.sh --
+S1887-run-head-reads-through-lookbehind	src/facts/req.c	the necessary-run walk reads through a positive lookbehind as if its body were consumed, so (?<=abc)x carries the run abcx and a search from offset 3 rejects a subject libpcre2 matches	harness	pop:tests/lookaround/startpos.rxt:/^pattern \(\?<=abc\)x/=1(want>=1),reach:ok(1/1),corpus:7fail/34pass	DETECTED
+
+== detection matrix ==
+id                                       file              edit                                                                                                                                                                                      suites run  results                                                                                                 verdict
+S1886-pieces-cat-shortest-group          src/facts/desc.c  the piece description's concatenation keeps only its shortest width group, so (?i)москва lists one piece where the model has four                                                         facts       pop:tests/codegen/run_facts_checks.sh:/\(\?i\)москва/=1(want>=1),reach:ok(1/1),facts:1fail/9pass        DETECTED
+S1887-run-head-reads-through-lookbehind  src/facts/req.c   the necessary-run walk reads through a positive lookbehind as if its body were consumed, so (?<=abc)x carries the run abcx and a search from offset 3 rejects a subject libpcre2 matches  harness     pop:tests/lookaround/startpos.rxt:/^pattern \(\?<=abc\)x/=1(want>=1),reach:ok(1/1),corpus:7fail/34pass  DETECTED
+
+
+== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at 4e6e0a4fea161a399abfe9dbb1d57f3f753b4a5d ==

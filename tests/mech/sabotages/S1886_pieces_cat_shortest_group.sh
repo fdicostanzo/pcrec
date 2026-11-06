@@ -21,6 +21,6 @@ SAB_REACH_POP='tests/codegen/run_facts_checks.sh|\(\?i\)москва|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    return pd_norm(cx, c, g, k);'
-SAB_AFTER='    PdDesc o = pd_norm(cx, c, g, k);
+SAB_AFTER='    o = pd_norm(cx, c, g, k);
     if (o.ng > 1) o.ng = 1;   /* SABOTAGE S1886: the shortest group alone */
     return o;'

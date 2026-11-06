@@ -18,8 +18,8 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/lookaround/startpos.rxt"
 SAB_DESC="the necessary-run walk reads through a positive lookbehind as if its body were consumed, so (?<=abc)x carries the run abcx and a search from offset 3 rejects a subject libpcre2 matches"
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/startpos.rxt red on ms 3 \"abcx\" 3 4 (NOMATCH), and on the other ms cells whose lookbehind body joins a run over the floor."
-SAB_REACH='"$PCREC" --features all -e byte --emit-facts=byte --pattern "(?<=abc)x" | grep -P "\treq_whole_run\t" | grep -c "\tnone\t"'
-SAB_REACH_EXPECT='1'
+SAB_REACH='"$PCREC" --features all -e byte --emit-facts=byte --pattern "(?<=abc)x" | grep -P "\treq_whole_run\t" | cut -f7 | sed "s/^/run=/"'
+SAB_REACH_EXPECT='run=none'
 SAB_REACH_POP='tests/lookaround/startpos.rxt|^pattern \(\?<=abc\)x|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

@@ -1192,6 +1192,11 @@ def parse_fact_moves(spec):
     for item in spec.split(","):
         fact, col, ft = item.split(":", 2)
         frm, to = ft.split(">", 1)
+        # [RUN-POS-SET] stage 2p (lane altbuild): `FACT:row:>new` declares
+        # a NEW fact, one listing row per encoding the REF listing lacks.
+        if col == "row":
+            moves.append((fact, None, frm, to))
+            continue
         moves.append((fact, FACTS_COLUMNS.index(col), frm, to))
     return moves
 
@@ -1207,12 +1212,33 @@ def facts_declared_delta(c_a, c_b, moves):
     lines must be identical."""
     al = c_a.decode("utf-8", "replace").splitlines()
     bl = c_b.decode("utf-8", "replace").splitlines()
+    problems, n = [], 0
+    # A declared NEW fact (`FACT:row:>new`): REF has no row of it, NEW has
+    # exactly one per encoding REF lists; those rows leave NEW and the rest
+    # is judged as before.
+    new_facts = {m[0] for m in moves if m[1] is None}
+    moves = [m for m in moves if m[1] is not None]
+    if new_facts:
+        def fact_of(line):
+            f = line.split("\t")
+            return f[1] if not line.startswith("#") and len(f) > 1 else None
+        encs = {line.split("\t")[0] for line in al
+                if not line.startswith("#") and line.strip() and len(line.split("\t")) > 1}
+        for nf in sorted(new_facts):
+            if any(fact_of(x) == nf for x in al):
+                problems.append("declared-new fact %s already in REF" % nf)
+            got = [y.split("\t")[0] for y in bl if fact_of(y) == nf]
+            if sorted(got) != sorted(encs & {"byte", "utf8"}):
+                problems.append("declared-new fact %s: rows for %s, want one per %s"
+                                % (nf, ",".join(got) or "none", ",".join(sorted(encs & {"byte", "utf8"}))))
+            elif got:
+                n += 1
+        bl = [y for y in bl if fact_of(y) not in new_facts]
     if len(al) != len(bl):
-        return ["line count %d -> %d" % (len(al), len(bl))], 0
+        return problems + ["line count %d -> %d" % (len(al), len(bl))], 0
     by_fact = {}
     for m in moves:
         by_fact.setdefault(m[0], []).append(m)
-    problems, n = [], 0
     for x, y in zip(al, bl):
         if x.startswith("#") or not x.strip():
             if x != y:
@@ -3129,7 +3155,9 @@ def main():
                          "pattern: the listing's only movers are these cells (e.g. "
                          "span_facts:used:yes>no), every REF row holding FROM has "
                          "moved to TO, nothing else moved; the stream is then "
-                         "required at movers=0 and reports the declared count")
+                         "required at movers=0 and reports the declared count. "
+                         "FACT:row:>new declares a NEW fact (one row per encoding "
+                         "REF lists, none in REF)")
     ap.add_argument("--dumps-declared-rows", metavar="FLAG:KEY[,...]",
                     help="the dumps stream's DECLARED delta, judged both ways: on "
                          "each named surface (e.g. --list-limits) the row whose "
