@@ -1,40 +1,40 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-05 ~00:40. 1d is fixed, and its gates wait for main's job-300 verdict. Committed docs win on any conflict.
+Rewritten 2026-11-05 ~23:55 by a fresh kit session (pcrec-memfn [174c0c]). Committed docs win on any conflict.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Main is the pcrec manager session `pcrec-main`. Frank rules, sometimes directly to the kit.
-Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main daf6f002b + kit commits: journal, review 2026-11-05 r1, skill/guide lessons).
+Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main 20fb73159 merged + kit journal/review commits).
 
 ## Read in order
 1. This file.
-2. The memfn/docs/journal.md tail (2026-11-04 night / 11-05).
+2. The memfn/docs/journal.md tail (11-05 15:20 onward: 1d landed, 1e built, reviewed, fixed).
 3. docs/design/memfn/span_pick.md REV 5.2, the design of record.
-4. The review docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (Rulings at the end), and r2-memfn-sp1c.md before it.
-5. D186 + addenda, D187 (positions travel as sets), and manifesto principle 9 (seams as text).
+4. Review docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (rulings), and r1 (1d) before it.
+5. D186 + addenda, D187, manifesto principle 9.
 
-## CURRENT STATE: span_pick STAGE 1, unit 1d FIXED, GATES HELD
-Landed on main: 1a, 1f, 1g, 1b, 1c (daf6f002b). Next: 1d, then 1e. Then stage 2/3 need main's GO.
-The per-unit process: an opus build lane, then a pcrec-critic code round, then a sonnet fix lane, then box-queue gates, then the done line, then main merges.
+## CURRENT STATE: span_pick STAGE 1, unit 1e (the LAST stage-1 unit) FIXED, GATES RUNNING
+Landed on main: 1a, 1f, 1g, 1b, 1c, 1d (20fb73159).
+- **1e:** lane/memfn-sp1e @ 9cf199ed3 (sp1e accc55eeb + fix lane sp1efix, fast-forwarded). Reports: docs/dev/lanes/sp1e_report.md and sp1efix_report.md.
+  - Zero movers. MF_SITE_ABI 23. MF_CLASS_V 7 -> 8 (D-hors joins ahead of PRES rows). Ratchet R20 3 -> 2; stage-1 kit-row total 4 -> 3.
+- **Gates 430-439** (keys kit-sp1e2-*, TREE=worktrees/sp1efix; job files in /var/tmp/pcrec-pcrec/scratch/memfn/sp1efix/). Frank lifted tonight's 20:00-01:00 hold via main ("Box is free for you to schedule tonight"), so they run now.
+  - 430-434 GREEN. 435 ident3 started 23:24, then 436 make test, then 437-439 mech.
+  - Watcher: scratch/memfn/kitmgr/watch_sp1e2.sh (polls queue.log END lines after its baseline; exits on the first non-green or on 439's END).
+  - Open: S1079's hand figure 6/3155 vs the review's 3/3160. Job 437's mech is the figure of record; read it there.
+  - Three renderer pairs have no witness (UNREACHED in rows_check); say so in the done line.
+- On all green: post `done:` for 1e in responses.md (branch lane/memfn-sp1e @ 9cf199ed3, reports, job logs + verdicts) and message main. On a red: launch a triage lane before reading the log.
+- Do not touch worktrees/sp1e or sp1efix until the gates are read.
 
-- **1d:** lane/memfn-sp1d @ c1c6ce26c (lane sp1d e9e5f035e + fix lane sp1dfix, fast-forwarded). Reports: docs/dev/lanes/sp1d_report.md and sp1dfix_report.md.
-  - No mover. MF_SITE_ABI stays 23, MF_CLASS_V stays 7, no pcrec abi change.
-  - Ratchet: R21 needs restating, which main does at its 1d review; the proposed recipe is in sp1d_report "Ratchet".
-- **Gates 410-419** (keys kit-sp1d2-*, TREE=worktrees/sp1dfix) are in /var/tmp/pcrec-pcrec/scratch/memfn/sp1dfix/jobs/: strict, memfn, reach, ident x3, make test, mech x3 (73 rows, including S1095, S1096 re-measure, and the ofsskip rows; S917/S919 declared unreached).
-  - NOT QUEUED. Main's ruling (11-05 ~00:35): hold until main POSTS job 300's verdict, not merely until 300 ends. 300 is main's full suite @ daf6f002b, ending ~10:30-11:00; main resumes 09:00 and will message. If 300 is RED, the box goes to main's triage first.
-  - Queue them with `scripts/boxqueue add` (not --no-start) once main posts its go. Watch the queue.log END lines after a baseline count. Then write the done line in responses.md and message main.
-  - The frozen base builds the jobs read are in scratch/memfn/sp1d/ (ref/, ref-mftrace/). Keep them until the gates are read.
-- Do not touch worktrees/sp1d or sp1dfix until the gates are read.
-
-## After 1d merges
-Cut 1e (the phase-2 tables; it reads T-VERIFY's step list) from main. PLAN items from the 1d review ride later units: F4's M inputs go with row 1; F9 U-1/U-2/P4; F10 and r2 F13 (the position primitives' home) at the kit split; F12's seam snapshot items at the kit split.
+## After 1e merges
+Stage 1 is complete. Stages 2-3 need Frank's GO via main; do not cut them without it. PLAN items for later units: 1d review's F4/F9/F10/F12 (filed by main as [SP1D-*]); 1e review's F5+F6+F9 renderer table (unit 3.0), F10 D-hors floor measurement, F11 anchor check over run_g2_win.sh.
 
 ## Box rules
-- Frank holds 20:00-01:00 daily unless he says otherwise. Main's ruled holds win.
+- Frank holds 20:00-01:00 daily unless he says otherwise (lifted for 11-05 only). Main's ruled holds win.
 - Jobs only through scripts/boxqueue. Kill only with scripts/safekill. Never use /tmp.
 - Never commit a header or ABI change while a run is in flight.
 
 ## Lessons (recent)
 - A watcher must read queue.log END lines for the current run only; cancelled jobs in done/ false-fire.
 - A scratch-queue `boxqueue add` needs `--no-start`, or it arms a runner.
-- A lane waiting on its own background run may miss the notification: check the log and wake it.
+- A new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (san_scripts or san_excluded); run `make test-codegen` before delivering one.
+- The queue monitor relays to the job owner's session; after a session change, tell main the new session name.
