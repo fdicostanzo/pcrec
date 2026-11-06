@@ -411,15 +411,22 @@ else
         bad "§5 $vlb_fail of $vlb_n patterns disagree with libpcre2 (or did not report)"
         grep '^FAIL' "$WORKDIR/vlb_out" | head -10 >&2
     else
-        # Per-mode cells and the clip class's divergent subset, each floored
-        # at its measured figure (2026-11-06, the landing's first run).
+        # Per-mode cells and the clip class's divergent subset (K35). MEASURED
+        # 2026-11-06 (lane vlbbuild's run): byte 48,863, utf8 15,145,
+        # utf8-clip 2,064, utf8-invalid 252, divergent 49. Each floor is the
+        # measured figure less ONE PERCENT, rounded down (review r4 F11: the
+        # first floors sat ~60% of it, so ~40% of a mode's subjects could
+        # vanish green). The cells are deterministic for a pinned pattern set,
+        # so the margin only absorbs a deliberate small subject edit; losing
+        # one subject family moves a mode by several percent and goes red.
+        # A corpus change that moves the pattern pins re-measures these too.
         vlb_sum=$(awk -F'\t' '{ c[$2] += $3; d[$2] += $4 }
             END { printf "%d %d %d %d %d", c["byte"], c["utf8"], c["utf8-clip"], c["utf8-invalid"], d["utf8-clip"] }' \
             "$WORKDIR/vlb_out")
         read -r vb vu vc vi vdiv <<< "$vlb_sum"
-        if [ "$vb" -lt 30000 ] || [ "$vu" -lt 9000 ] || [ "$vc" -lt 2000 ] \
-           || [ "$vi" -lt 150 ] || [ "$vdiv" -lt 1 ]; then
-            bad "§5 a mode swept too few cells: byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi, D142-divergent=$vdiv (floors 30000/9000/2000/150/1)"
+        if [ "$vb" -lt 48374 ] || [ "$vu" -lt 14993 ] || [ "$vc" -lt 2043 ] \
+           || [ "$vi" -lt 249 ] || [ "$vdiv" -lt 48 ]; then
+            bad "§5 a mode swept too few cells: byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi, D142-divergent=$vdiv (floors 48374/14993/2043/249/48, the 2026-11-06 measure less 1%)"
         else
             ok "§5 bounded variable lookbehind: $vlb_n patterns, byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi cells, every startpos and every group span, 0 disagreements with libpcre2 10.46; $vdiv utf8-clip cells are D142's stated divergence (libpcre2 UTF clips, pcrec answers as byte mode does)"
         fi
