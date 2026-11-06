@@ -14,7 +14,8 @@
 import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TREE = os.path.normpath(os.path.join(HERE, "..", "..", "..", "..", ".."))
+# SLOT_TREE: the tree when slot/ runs from a copy (sabotage.sh plants in scratch copies)
+TREE = os.environ.get("SLOT_TREE") or os.path.normpath(os.path.join(HERE, "..", "..", "..", "..", ".."))
 CENSUS0 = os.path.join(TREE, "docs", "design", "memfn", "span_pick", "census0.out")
 VCLS = os.path.join(HERE, "vcls.out")
 ENTER_FIX = os.path.join(HERE, "enter", "fixtures.tsv")

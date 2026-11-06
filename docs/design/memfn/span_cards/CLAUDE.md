@@ -24,11 +24,10 @@ Each drill prints its inputs; `python3 -I <drill>`.
 - `tree_drill.py REPO` — counts read off the tree: the key population, the jobs' points and box time,
   check C's population over every card table, the embed's bytes (§2.4, §3.7, §3.8).
 
-## Later (S2c-S2e)
+## Subdirectories
 
-- `slot/` — the stage-2 slot harness (driver, subject generator, per-launch linking and placement, the
-  control, the slot's estimator, `j1_rule.py`, job scripts, `sabotage.sh` for the slot-local sabotage rows):
-  evidence for one run, retired when M3's driver implements `docs/spec/measures.md`'s new sections 3.4-3.5.
-  `slot/run_record.tsv` (S2d) is the RUN RECORD: never-ran jobs, J1's verdict and cells, the plan and the
-  floor's clauses, the run id; zen4-grid3's PROVENANCE.md cites its sha-256. `slot/movers.py` writes
-  `measure_store/movers/0002.tsv` (S2e).
+- `slot/` — the stage-2 slot harness (S2c; own CLAUDE.md): driver, subject generator, per-launch linking and
+  placement, the control, the slot's estimator, `j1_rule.py`, the run record's writer, `sabotage.sh` for the
+  slot-local sabotage rows, `movers.py` (run by S2e): evidence for one run, retired when M3's driver
+  implements `docs/spec/measures.md` §3.4-§3.5. `slot/run_record.tsv` (S2d) is the RUN RECORD;
+  zen4-grid3's PROVENANCE.md cites its sha-256.

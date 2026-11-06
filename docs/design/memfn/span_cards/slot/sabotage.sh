@@ -14,6 +14,8 @@
 #        mf_form_hash(walk): the cell-text check refuses
 #   (l1) the generator plants libc's hits as another byte: the count gate (count 0 vs E)
 #   (l2) the find wrapper returns each hit one byte late (count kept): the POSITION sum and FNV-1a-64 gate
+#        (the wrapper is every find arm's, so the miss is matched by its shape: found = planted, sum differs)
+# `want` is an extended regex (grep -E).
 set -u
 export LC_ALL=C
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -68,7 +70,9 @@ for row in $ROWS; do
     l1) job=J3 want="GATE MISS kit.find_hit.libc"
         patch "$SCR/$row/gen.c" '            buf[p] = a->hit[a->split ? (k & 1) : 0];' \
 '            buf[p] = (unsigned char)(a->hit[a->split ? (k & 1) : 0] + (a->hit[0] == 120));' ;;
-    l2) job=J3 want="GATE MISS kit.find_hit.walk"
+    l2) job=J3 want='GATE MISS kit\.find_hit\.[^ ]+ len [0-9]+ subject [0-9]+: found ([0-9]+) sum [0-9]+ fnv [0-9a-f]+, planted \1 '
+        # the count is KEPT (found = planted) and the miss is the position sum / FNV (the find wrapper is
+        # shared, so every find arm misses, libc's first)
         patch "$SCR/$row/link.py" '    *io = pos;
     return pos < n;' '    *io = pos < n ? pos + 1 : pos;
     return pos < n;' ;;
@@ -77,8 +81,8 @@ for row in $ROWS; do
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }
     dry "$row" "$job"
     rc=$?
-    if [ $rc -ne 0 ] && grep -q -- "$want" "$SCR/$row.out"; then
-        echo "$row  DETECTED ($job dry run rc $rc: $(grep -m1 -- "$want" "$SCR/$row.out" | cut -c1-140))"
+    if [ $rc -ne 0 ] && grep -Eq -- "$want" "$SCR/$row.out"; then
+        echo "$row  DETECTED ($job dry run rc $rc: $(grep -E -m1 -- "$want" "$SCR/$row.out" | cut -c1-140))"
         pass=$((pass + 1))
     else
         echo "$row  MISSED ($job dry run rc $rc; wanted '$want'):"; tail -3 "$SCR/$row.out"
