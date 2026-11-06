@@ -34,7 +34,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
 - `run.py` — `dry JOB RUNDIR RUN_ID` (frozen plan, ctl, links, placement, the gate on ctl and every launch,
   the job's manifest; no clock), `run JOB RUNDIR RUN_ID` (manifest first, the window facts, quiet-gated with
   the total wait bounded, 7 launches x 7 rounds on the plan's CPU; cells.JOB.tsv under `#run_id`, or J1's
-  j1_cells.tsv), `screen RUNDIR RUN_ID` (J2's unit noise vs the half gate, on J2's manifest). Env: `BQ_JOB`,
+  j1_cells.tsv), `screen RUNDIR RUN_ID` (quiet-gated; J2's unit noise vs the half gate, on J2's manifest; queue
+  job `480-kit-s2d-screen`). Env: `BQ_JOB`,
   `CODE_COMMIT`, `SLOT_TREE`; art.py also reads `PCREC_BENCH` (the bench checkout, else the sibling).
 - `est.py` — the slot's estimator and gates (§3.4-§3.5) over the FINALIZED record and its cells, the format-2
   draft writer (no draft on REFUSED), `selftest SCRATCH` (the input cross-checks); the primitives' one home.

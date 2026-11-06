@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# 480-kit-s2d-screen: THE PLACEMENT SCREEN (span_cards §3.2, §9 S2d's first timing step; [rev1.3 r9fc-FIX-7]):
+# quiet-gated, J2's unit group at its seven dry-run placements (J2's manifest), one round each, and the unit's
+# noise against its half gate. Ready: kit-s2d-prep green. Non-green (rc 3 OVER, 5 wait-timeout) holds the window:
+# every timing job's --ready answers 77 (common.sh ready_after), and the kit manager rules (§3.5 HELD).
+. "$(dirname "$0")/common.sh"
+case "${1:-}" in
+    --dry-run)
+        check_inputs "$(basename "$0")" || exit 1
+        echo "would run: python3 -I $SLOT/run.py screen $RUNDIR $RUN_ID (J2's manifest, then 7 placements x 1 round, quiet-gated)"
+        echo "boxqueue: cap 900"; echo "boxqueue: patience none"; echo "boxqueue: est 120"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect screens=1 lines=^== s2 SCREEN unit noise_e6 "
+        exit 0 ;;
+    --ready) ready_prep; exit 0 ;;
+esac
+python3 -I "$SLOT/run.py" screen "$RUNDIR" "$RUN_ID"; rc=$?
+echo "s2d-screen: DONE rc=$rc"
+exit $rc

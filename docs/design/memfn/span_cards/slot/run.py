@@ -15,12 +15,13 @@
 #                                   plan's CPU; then the cells (the median over rounds per point, §3.4 step 1)
 #                                   into RUNDIR/cells.<JOB>.tsv under a `#run_id` line and `== s2 GROUP done
 #                                   <group>` per group
-#   run.py screen RUNDIR RUN_ID     THE PLACEMENT SCREEN (§3.2): J2's unit group (walk and twin) at its seven
-#                                   placements (J2's dry-run executables, by its manifest), one round each, and the
-#                                   unit's §3.4 noise against its half gate
+#   run.py screen RUNDIR RUN_ID     THE PLACEMENT SCREEN (§3.2; job 480-kit-s2d-screen, S2d's first timing step,
+#                                   [rev1.3 r9fc-FIX-7]): quiet-gated as a launch is, then J2's unit group (walk and
+#                                   twin) at its seven placements (J2's dry-run executables, by its manifest), one
+#                                   round each, and the unit's §3.4 noise against its half gate
 # Every command it runs is printed to RUNDIR/transcript.tsv (the per-round evidence, its sha in the record).
 # Exit codes: dry 0 (green) or a refusal's 1/3; run 0, 1 (a round or record step failed), 5 (wait-timeout);
-# screen 0 (under the half gate), 3 (over).
+# screen 0 (under the half gate), 3 (over), 5 (wait-timeout).
 # Environment: BQ_JOB (boxqueue's job name: the quiet check ignores this job's own queue entry and lock),
 # CODE_COMMIT (the window's frozen commit, else the tree's HEAD), SLOT_TREE (plan.py).
 import hashlib, os, re, subprocess, sys, time
@@ -277,6 +278,13 @@ def screen(rundir, run_id):
     executables (its manifest)"""
     verify_manifest("J2", rundir, run_id)
     exe_ctl, _sha = ctl_check(rundir)
+    with open(os.path.join(rundir, "transcript.tsv"), "a") as tp:
+        def log(s):
+            tp.write("screen\t%s\n" % s)
+            tp.flush()
+        if not Waiter(main_tree(), log).quiet():
+            print("== s2 SCREEN FAILED wait-timeout")
+            return 5
     x, xb = [], []
     for l in range(1, plan.L_LAUNCHES + 1):
         u = None

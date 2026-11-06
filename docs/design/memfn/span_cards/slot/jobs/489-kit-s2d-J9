@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
 # 489-kit-s2d-J9: the S2d window's LAST step (span_cards §3.5 READY-2, [rev1.3 r9-G6]): record.py finalize, the
 # window facts, `jobs` from the queue's end states by record.py's CAUSE table (green, failed, wait-timeout,
-# cancelled, none), `plan` and `floor` from the dry run's frozen plan, the transcript's sha. Ready when the prep
-# ENDED and every window job ended or was never queued (a failed, cancelled or never-queued job is recorded,
+# cancelled, none), `plan` and `floor` from the dry run's frozen plan, the transcript's sha. Ready when the prep and
+# the screen ENDED and every window job ended or was never queued (a failed, cancelled or never-queued job is recorded,
 # never waited for).
 . "$(dirname "$0")/common.sh"
 case "${1:-}" in
     --dry-run)
         check_inputs "$(basename "$0")" || exit 1
-        echo "would run: python3 -I $SLOT/record.py finalize $RUNDIR $RUN_ID $FROZEN $RUNDIR/states"
+        echo "would run: python3 -I $SLOT/record.py finalize $RUNDIR $RUN_ID $CODE_COMMIT $RUNDIR/states"
         echo "boxqueue: cap 300"; echo "boxqueue: patience none"; echo "boxqueue: est 10"
         echo "boxqueue: expect none reason=one record write; its line == s2 FINALIZE"
         exit 0 ;;
     --ready)
         hold
-        ended kit-s2d-prep || { echo "waits: kit-s2d-prep $(bq state kit-s2d-prep)"; exit 75; }
+        for k in kit-s2d-prep kit-s2d-screen; do
+            ended $k || { echo "waits: $k $(bq state $k)"; exit 75; }
+        done
         for j in $JOBS; do      # `none`: never queued, recorded as such, never waited for
             s=$(bq state kit-s2d-$j)
             case $s in green|failed|cancelled|none) ;; *) echo "waits: kit-s2d-$j $s"; exit 75 ;; esac
@@ -29,4 +31,4 @@ for j in $JOBS; do
     esac
     printf '%s\t%s\n' "$j" "$s" >> "$RUNDIR/states"
 done
-python3 -I "$SLOT/record.py" finalize "$RUNDIR" "$RUN_ID" "$FROZEN" "$RUNDIR/states"
+python3 -I "$SLOT/record.py" finalize "$RUNDIR" "$RUN_ID" "$CODE_COMMIT" "$RUNDIR/states"
