@@ -13572,15 +13572,17 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * must never be one (DD-12 (7)); under `byte` it is `attempt_position++;`
      * and this artifact is byte-identical to every one that came before.
      *
-     * The buffer is 1 KB where its `retry_win` sibling uses 512: an advance
-     * carries its own explanatory comment into the artifact, and the utf8
-     * backend's text measures 535 bytes once indented. Overflow is a loud
+     * The buffer is 1 KB where its `retry_win` sibling uses 512: the utf8
+     * advance measured 535 bytes once indented with its comment, which is
+     * now its own `advance_doc` half ([K137]) in a buffer of its own. Overflow is a loud
      * internal error rather than a truncation, and it FIRED during this fix's
      * own bring-up at 512 — the guard is measured, not assumed. */
-    char retry_adv[1024];
+    char retry_adv[1024], retry_adv_doc[1024];
     if (!pcrec_enc_advance(pcrec_enc_by_id(v->cx->opt->encoding),
                            retry_adv, sizeof retry_adv, "        ",
-                           "attempt_position", "subject", "subject_length"))
+                           "attempt_position", "subject", "subject_length")
+        || !pcrec_enc_advance_doc(pcrec_enc_by_id(v->cx->opt->encoding),
+                                  retry_adv_doc, sizeof retry_adv_doc, "        "))
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: this encoding's unanchored retry advance is "
                  "missing or does not fit the emitter's buffer");
@@ -13829,9 +13831,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "%s"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
-        "        if (attempt_position >= %s) return 0;\n"
-        "%s"
-        "%s",
+        "        if (attempt_position >= %s) return 0;\n",
         v->p,
         reseed_decl,
         v->p, v->nclamp > 0 ? ", window_end" : "",
@@ -13845,7 +13845,14 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->ngst > 0 ? ", search_from" : "",
         v->up, v->up, v->up, v->up, v->up,
         v->cx->ncallouts > 0 ? "        if (result < -1) return (int)result;\n" : "",
-        v->p, att_max, retry_adv, retry_seed);
+        v->p, att_max);
+    /* [K137] the advance's prose through the comment gate, then its code. */
+    if (retry_adv_doc[0]) {
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c, retry_adv_doc);
+        pcrec_sb_cmt_close(c);
+    }
+    pcrec_sb_printf(c, "%s%s", retry_adv, retry_seed);
     /* [REQRUN-VM] the re-entered handoff, after the encoding's own advance
      * and before the seek below: two lower bounds, each sound alone. */
     pcrec_emit_req_attempt_reentry(v->cx, c, "    ");

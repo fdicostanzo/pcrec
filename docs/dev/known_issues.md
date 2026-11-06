@@ -11,9 +11,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K137 — OPEN (found by lane vlbrev4, 2026-11-06) — the retry advance's [K49] comment is emitted under `-e utf8 -fno-comments`
+## K137 — FIXED (lane vlbbuild, 2026-11-06, abi 95 -> 96; found by lane vlbrev4, 2026-11-06) — the retry advance's [K49] comment is emitted under `-e utf8 -fno-comments`
 
 **Witness:** any pattern whose VM retry advance takes the utf8 path, compiled with `-e utf8 -fno-comments`: the emitted C still carries the advance's [K49] comment text, contradicting enc.h's D112 note (comments are a doc pair dropped by -fno-comments). Measured by lane vlbrev4 (docs/dev/lanes/vlbrev4_report.md, observations). Pre-existing; no answer effect. Fixing it changes emitted bytes under that flag pair, so it is an abi event (D76/D94): ride the variable-lookbehind stage-1 build, whose new step's prose is a D112 doc pair at the same site.
+
+**Fix**: the advance's prose is now the backend's own D112 doc half (`advance_doc` in `PcrecEnc`, src/enc/enc.h; `advance_utf8_doc` in src/enc/enc_utf8.c), rendered by `pcrec_enc_advance_doc` and emitted through `PCREC_CMT_NONESSENTIAL` (src/gen/emit_vm.c). Comments are off by default, so the movers are every default `-e utf8` VM artifact with a retry loop (five comment lines gone); byte artifacts and `-fcomments` artifacts are byte-identical (measured on `a*`, both encodings, all three comment settings). Commit: the vlbbuild landing (see docs/dev/lanes/vlbbuild_report.md).
 
 ---
 

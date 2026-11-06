@@ -494,18 +494,16 @@ static void adv_put(char *buf, size_t cap, size_t *len, const char *s)
  * every line, tracking overflow (adv_put) rather than truncating; a bare `@`
  * not followed by one of those three is a defect in the backend's own text,
  * answered as an internal-error false rather than passed through. Returns
- * false on cap==0, no `advance` template, an unknown token, or overflow. */
-bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
-                       const char *indent, const char *posvar,
-                       const char *subjvar, const char *lenvar)
+ * false on an unknown token or overflow; the two callers below add cap==0
+ * and a missing template. */
+static bool enc_render_advance(const char *text, char *buf, size_t cap,
+                               const char *indent, const char *posvar,
+                               const char *subjvar, const char *lenvar)
 {
     size_t len = 0;
     bool at_line_start = true;
 
-    if (cap == 0) return false;
-    if (!e || !e->advance) return false;
-
-    for (const char *q = e->advance; *q; q++) {
+    for (const char *q = text; *q; q++) {
         if (at_line_start) { adv_put(buf, cap, &len, indent); at_line_start = false; }
         if (*q == '@') {
             /* The three tokens enc.h documents. An `@` before anything else —
@@ -528,6 +526,24 @@ bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
     if (len >= cap) return false;
     buf[len] = '\0';
     return true;
+}
+
+bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
+                       const char *indent, const char *posvar,
+                       const char *subjvar, const char *lenvar)
+{
+    if (cap == 0) return false;
+    if (!e || !e->advance) return false;
+    return enc_render_advance(e->advance, buf, cap, indent, posvar, subjvar, lenvar);
+}
+
+bool pcrec_enc_advance_doc(const PcrecEnc *e, char *buf, size_t cap,
+                           const char *indent)
+{
+    if (cap == 0) return false;
+    buf[0] = '\0';
+    if (!e || !e->advance_doc) return true;
+    return enc_render_advance(e->advance_doc, buf, cap, indent, "", "", "");
 }
 
 /* [K50] The start guard. Shares `adv_put`'s overflow discipline and the same

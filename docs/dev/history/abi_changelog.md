@@ -23,7 +23,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `95` on every artifact today ([LANDWALK] stage 1, 94 -> 95,
+- **`rx_info.abi` is `96` on every artifact today ([VLOOKBEHIND] stage 1 and
+  K137, 95 -> 96, lane vlbbuild, 2026-11-06; docs/design/vlookbehind.md rev 4,
+  docs/dev/lanes/vlbbuild_report.md).** Two scaffolding changes. (1) K137: the
+  utf8 unanchored retry advance's [K49] comment is the backend's own doc half
+  (enc.h `advance_doc`, D112), emitted through the comment gate, so a default
+  (`-fno-comments`) `-e utf8` VM artifact with a retry loop no longer carries
+  those five comment lines; byte artifacts and every `-fcomments` artifact are
+  unchanged. (2) Bounded variable-width lookbehind compiles (patterns refused
+  before): a varying branch's `RX_SLOT_LB_LO<j>` slots (the top sub-block of
+  `low`), the artifact-wide `size_t <p>_lb_count = 0;` local, and the seam
+  entry `<p>_fwd_step` (`static inline`, emitted only where a varying branch
+  calls it). No artifact that compiled before stage 1 moves under (2).
+- **`rx_info.abi` was `95` on every artifact ([LANDWALK] stage 1, 94 -> 95,
   numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
   built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;
   D184; docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md

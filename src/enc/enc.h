@@ -423,6 +423,13 @@ typedef struct {
      * changes one and not the other fails there rather than in a corpus cell
      * nobody wrote. */
     const char *advance;
+    /* [K137] `advance`'s DOC-COMMENT, the D112 pair split in the DATA as the
+     * entries' `decls_doc`/`defs_doc` are: the emitter renders it through the
+     * comment gate (PCREC_CMT_NONESSENTIAL), so a `-fno-comments` artifact
+     * carries none of it. NULL when the advance has no prose (`byte`). Same
+     * tokens and indentation rule as `advance`. A D58 seam field, recorded
+     * as `max_cp` and `fold` were. */
+    const char *advance_doc;
     /* [K50] WHERE A MATCH MAY BEGIN — the same boundary rule as `advance` and
      * `next_pos`, asked as a PREDICATE instead of as a step, because the two
      * consumers that need it cannot use a step.
@@ -655,6 +662,10 @@ void pcrec_enc_emit_site_text(StrBuf *sb, const char *text, const char *prefix);
 bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
                        const char *indent, const char *posvar,
                        const char *subjvar, const char *lenvar);
+/* [K137] The same rendering of `advance_doc`: "" when the backend has none.
+ * The caller emits it through the comment gate. */
+bool pcrec_enc_advance_doc(const PcrecEnc *e, char *buf, size_t cap,
+                           const char *indent);
 
 /* [K50] Render this backend's `start_guard` EXPRESSION into a caller-owned
  * buffer, with `@P`/`@S`/`@N` replaced. Returns false when the backend has no

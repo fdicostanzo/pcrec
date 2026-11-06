@@ -576,12 +576,15 @@ static const PcrecEncEntry entries_utf8[] = {
  * to a position inside the garbage, and, per utf8_design.md §2.6(c), an
  * ill-formed byte must remain something a search can advance PAST — matches
  * after a bad byte are found, matches through it are not. */
-static const char advance_utf8[] =
+/* [K137] the advance's prose is its own D112 doc half (enc.h's
+ * `advance_doc`), so `-fno-comments` drops it. */
+static const char advance_utf8_doc[] =
 "/* [K49] The retry advance is this ENCODING's step, not `+ 1`: an\n"
 " * unanchored search may only ever try LATER CHARACTER BOUNDARIES as\n"
 " * match starts, or it can report a position inside a character. A\n"
 " * boundary here is any position whose byte is not a continuation\n"
-" * byte, so the step is one forward and then over the continuations. */\n"
+" * byte, so the step is one forward and then over the continuations. */\n";
+static const char advance_utf8[] =
 "@P++;\n"
 "while (@P < @N\n"
 "       && (@S[@P] & 0xC0) == 0x80) @P++;\n";
@@ -650,7 +653,7 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
      * `PCRE2_UTF` (0 of 11 one-to-many cells match). The residual caseless
      * compare below folds through the SAME data, generated in the same run. */
     PCREC_ENC_UTF8, "utf8", 0x10FFFFu, &pcrec_fold_ucd_simple,
-    entries_utf8, advance_utf8,
+    entries_utf8, advance_utf8, advance_utf8_doc,
     start_cls_utf8, start_guard_utf8,
     /* [K70] `false`: `pcrec_fold_ucd_simple` DOES cross the ASCII boundary
      * (`k`/`K`/U+212A is one fold class) and pcrec's fold machinery folds

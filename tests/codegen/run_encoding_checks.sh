@@ -461,7 +461,10 @@ for r in ROWS:
 KEYNAME = {}
 for k, sets in _bykey.items():
     common = set.intersection(*sets)
-    KEYNAME[k] = sorted(common or set.union(*sets))[0]
+    # A key none of whose rows names a symbol is a seam reader that lost
+    # one: it keeps a key of its own (its hex id), and rule (a)'s floor below
+    # reports the row as never reached, by name.
+    KEYNAME[k] = sorted(common or set.union(*sets) or {k})[0]
 ENTRY_KEYS = sorted(set(KEYNAME.values()))
 SYM2KEY = {}
 for r in ROWS:
