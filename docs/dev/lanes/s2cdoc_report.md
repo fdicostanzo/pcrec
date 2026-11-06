@@ -20,3 +20,6 @@
 - [x] S2c-3 in §9 S2d.
 - [x] spec_history --staged and check_claudemd_size.sh --all (run before commit).
 - [ ] The §3.3 J2/J3 gate counts (21, 30) are not recomputed; they are rev 1.2's shape, flagged in the table.
+
+## STATE AT HANDOFF
+Nothing owed. Tip is the commit after 979eeae83 on lane/memfn-s2c; the working tree is clean apart from the manager's untracked s2cdoc_deliver.txt.
