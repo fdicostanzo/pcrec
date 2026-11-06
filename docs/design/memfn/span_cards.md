@@ -9,7 +9,7 @@ Rulings" section: every FIX-NOW and DOC disposition, with the decisions READY-1,
 MEAS-4, MEAS-6, MEAS-1 and the movers.py PLAN). Text changed in rev 1.2 is marked `[rev1.2 <id>]`; it
 replaces any `[rev1.1]`, `[rev1]` or unmarked text it contradicts. **Rev 1.2 changes nothing S2a builds**
 (the format-2 grammar, the digest, the seam fields, the loader's refusals stay rev 1.1's §4/§5, which S2a is
-building now); §R1.2's last paragraph says how each decision avoids it. **Read §R1.2 first**, then §R1.1, §R1,
+building now); §R1.2's "How rev 1.2 stays clear of S2a" says how each decision avoids it. **Read §R1.2 first**, then §R1.1, §R1,
 §0. Rev 1.1 applied the RE-CHECK
 `docs/dev/reviews/2026-11-06-r5-memfn-span-cards-recheck.md` as ruled by the kit manager (its "## Rulings"
 section) and main's R-35 rulings (c) DEFAULTS, (d) EMBED, (e) POLICY (`memfn/docs/requests.md` R-35, "Ruled
