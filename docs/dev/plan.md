@@ -1737,7 +1737,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-06): not started; witness x(?:[éà]|q2|r3)y forced-VM: after the alternation merge shrinks the chain, the row picks the chain at 2.0x the island's instructions (325.5M vs 161.5M); no corpus/bench cell yet
   trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
   refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
-  Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants).
+  Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants). Lane altbuild2 measured both estimates wrong in both directions (island 6x over on long words; chain 2-3x over): once the [ART-SIZE] retry row (K139) makes acceptance exact, the in-emitter size guard is a speed-only shortcut and a candidate for deletion (a simplification), measured here.
 - [XARCH-DEV] STATE:not-started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
   status (2026-11-06): not started; end state RULED (per-target variants, explicit target list, see below); first job: an M1-made set + count of disagreeing picks; the Mac is the aarch64 box
