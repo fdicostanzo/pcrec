@@ -30,7 +30,8 @@ Usage: bref_oracle.py <patterns.tsv> <subjects-dir> <out.tsv>
                  its RX_NCAPS; 0 for a --no-captures artifact).
                  [VLOOKBEHIND] (vlookbehind.md §6 gate 1) an optional MODE
                  column, `<key>\t<ngroups>\t<mode>\t<pattern>`, one of:
-                   byte          libpcre2 options 0 (the default, absent column)
+                   byte          libpcre2 options 0 (the default, absent column);
+                                 the pattern's UTF-8 bytes, as in every mode
                    utf8          PCRE2_UTF; every subject must be valid UTF-8
                                  (an invalid one is a harness failure, exit 2)
                    utf8-invalid  PCRE2_UTF | PCRE2_MATCH_INVALID_UTF, pcrec's
@@ -113,8 +114,13 @@ def main():
                 mode = "byte"
             ng = int(ng)
             try:
-                rx = P.Compiled(pat if mode == "byte" else pat.encode("utf-8"),
-                                MODES[mode])
+                # Every mode hands libpcre2 the pattern's UTF-8 BYTES, which
+                # are the bytes pcrec reads from the same line. A `str` would
+                # reach the byte mode as latin-1 (pcre2_ctypes' non-UTF
+                # encoding), so `é{0,2}` quantified the whole character there
+                # and the last byte in pcrec (found by lane vlbbuild, the first
+                # non-ASCII `# pcre2-only` blocks in tests/lookaround).
+                rx = P.Compiled(pat.encode("utf-8"), MODES[mode])
             except Exception as e:                          # noqa: BLE001
                 sys.stderr.write("bref_oracle: libpcre2 refuses %r: %s\n"
                                  % (pat, e))
