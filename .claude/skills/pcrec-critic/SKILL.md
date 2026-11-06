@@ -135,7 +135,7 @@ each finding has an id `<LENS>-n`, CONFIRMED (with a repro: input, command,
 observed vs expected) or SUSPECTED (what would confirm it), severity (answer /
 speed / size / maintenance / doc / design), effort, blast radius, file:line or
 §; a finding against a ruled D-row cites it and argues, or drops; the file
-ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words. If a harness rule REFUSES the critic's findings-file Write, it does not route around the refusal: it returns the findings as its final text (that reaches the launcher, who relays it to the coordinator) and the draft marks that critic 'relayed' (2026-11-05 r4 altnf2).
+ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words. A critic whose findings-file Write is REFUSED SendMessages its findings to the coordinator AT ONCE, marked relayed (2026-11-06 r2 vlb3: 38 minutes of results were invisible). If a harness rule REFUSES the critic's findings-file Write, it does not route around the refusal: it returns the findings as its final text (that reaches the launcher, who relays it to the coordinator) and the draft marks that critic 'relayed' (2026-11-05 r4 altnf2).
 
 Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
 findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --dir $PCREC_TMPDIR/scratch/crit-<topic> --deliver FILE NAME` (without `--dir` its pass record lands in the repo root, 2026-11-03 sp1a)
