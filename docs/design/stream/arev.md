@@ -308,7 +308,7 @@ enclosing search function; byte identity requires it) and records in the body (W
 The new combination is a TABLE machine run from inside a VM body. Rev 0 had a `VK_AUTO` renderer
 write a file-scope function as a side output; that is a second output channel beside vm_stmt.h's
 one-writer tiling, and rev 0's "precedent" (`pcrec_emit_dfa_engine`) is called by the COMBINATOR
-level (src/gen/emit_comb.c:576, :580), not from the body `[r5 F19]`. Rev 1:
+level (src/gen/emit_comb.c:576, :580), not from the body `[r5 F19]`. Rev 1, as corrected by rev 2:
 
 - **The walk is a PART.** A file-scope function with its own stem. Its declared signature:
   `ptrdiff_t <part>(subject, subject_length, from, bound)`, returning the accept nearest `bound`
@@ -489,8 +489,11 @@ at `from`". That decides only two of the five:
   `from == n` and reads no byte. These are POSITION-keyed: they need `from` compared with
   `subject_length`.
 
-The DFA already has the realization: the base, end-of-line and end position views (dfa.c:1430-1432)
-and the emitter's view selection. So the record states the rule: the `from` reference selects the
+The DFA already realizes this choice twice: the forward machine's base, end-of-line and end
+position views (dfa.c:1430-1432) with the emitter's view selection, and, for a REVERSE machine,
+`rev-end`'s seeds (the two-seed form's seed list {n, n − 1 before a final newline}; the one-seed
+form's start state chosen by the last byte), which is where a right-context row at a reverse walk's
+start is decided. So the record states the rule, as the part's START STATE choice: the `from` reference selects the
 view by POSITION (end at `from == n`; end-of-line at `from == n − 1` with a final newline; base
 otherwise), and the base view then reads the byte. This is why §2.3's read set includes
 `subject_length`. Cells (libpcre2 10.46, `arevrev2_evidence/premise.out`): `(?<=a{1,2}$)\nb` on
