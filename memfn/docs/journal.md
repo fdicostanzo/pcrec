@@ -3387,3 +3387,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - 472 retried; 473 mech chains after it; watcher armed.
   - S2d FROZEN = the tip that passes the gates (now 10ae71974, unless another fix lands).
 - 11-06 evening: Frank, via main: "Do not hold the box for me tonight". The hold is lifted for tonight only. hold.sh allows gate starts from 2026-11-06 19:00 to 2026-11-07 01:00; the date-bounded clause expires on its own. The S2d timing window is unchanged (07:00). No overnight timing window asked: 07:00 is soon enough.
+- 11-06 evening: Frank (via main) OPENED the S2d window tonight: queue it on S2c's 470-474 green, no not-before; 07:00 stands as the fallback.
+  - My shell read of window.env hit Frank's global deny `Bash(cat *.env)`, which stays. Frank's ruling: RENAME. Done at 236ba2807 on s2c: window.vars in common.sh, the example, CLAUDE.md and span_cards.md (reports and reviews keep the old name, as history).
+  - Scratch copies synced; window.vars = RUN_ID s2d-20261106, FROZEN 236ba2807 (full sha), HOLD = s2a/jobs/hold.sh.
+  - All 9 S2d jobs dry-run rc 0. The commit landed BEFORE 472 started, so gated tip = FROZEN.
+  - Next: on 472 + 473 green, queue 480 prep, 480 screen, 481-486, 489; tell main the window's end and verdict.
