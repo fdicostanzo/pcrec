@@ -1545,8 +1545,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
 - [DEC-RUNG] STATE:not-started — THE VM RUNG LADDER AS ONE SELECTOR
   filed: 2026-10-06 filer not recorded
-  status (2026-10-06): not started; FILED 2026-10-06, decsurvey §3.5; UNSCHEDULED
-  trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms.
+  status (2026-11-05): UNSCHEDULED; widened by review 2026-11-05 r6 V17: one of FOUR "fact-selected emission + total fallback" members (rung ladder, alt island/chain, clskit ROWS, DFA cand_rows; lookbehind's 2-row table is the 5th, first declared)
+  trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms; OR the next count-pass/emit disagreement found in the ladder (r6 V17)
   refs: decisions D77
   Evaluate a `vm_rung_of()` first-match row table replacing the three walkers' re-derivations of the per-quantifier rung, with the stamp bits read from the row. D77 trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms.
 - [DEC-KINDATTR] STATE:not-started — THE PER-`AKind` ATTRIBUTE TABLE FOR FACT WALKS
