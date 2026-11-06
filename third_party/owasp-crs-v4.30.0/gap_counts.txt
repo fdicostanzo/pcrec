@@ -1,0 +1,19 @@
+unique patterns 306  compiled-ok 285  refused 21
+refusal histogram:
+    13  too large: emitted C source over limit 1000000
+     8  too large: emitted code over limit 500000
+construct counts (unique patterns using it) and their pcrec outcome:
+  lookbehind-any      0  {}
+  conditional         0  {}
+  \X                  0  {}
+  set-ops (?[         0  {}
+  \R                  0  {}
+  (*ACCEPT)           0  {}
+  (*FAIL)             0  {}
+  \C                  0  {}
+  \cX                 0  {}
+  \o{}                0  {}
+  \N{U+}              0  {}
+  (?#..)              0  {}
+  (?|..)              0  {}
+  [[:<:]]             0  {}

@@ -1,0 +1,6 @@
+libpcre2 10.46 2025-08-27
+rows 329  unique-pattern-text 306  libpcre2-rejected 0
+operators (every SecRule): @beginsWith=1, @contains=4, @detectSQLi=2, @detectXSS=2, @endsWith=6, @eq=54, @ge=42, @gt=16, @ipMatch=2, @lt=190, @pm=6, @pmFromFile=20, @rx=320, @streq=9, @unconditionalMatch=2, @validateByteRange=6, @validateUrlEncoding=1, @validateUtf8Encoding=1, @within=9
+var-selector rows 9
+skipped SecRuleUpdate*/Remove* lines 55
+data files 20 (non-comment lines 5796); regex-assembly .ra files 179
