@@ -9,20 +9,61 @@
 # build/pcrec at authoring time (never used to derive a match
 # expectation); checker.py reconfirms independently.
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. single branch, variable width 1..2 (sec 2.5 headline REFUSED cell -- looks like the diffwidth SHIP cell but is a different shape). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). single branch, variable width 1..2 (sec 2.5 headline REFUSED cell -- looks like the diffwidth SHIP cell but is a different shape). Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=(a|bc))x
 features lookaround
-perr
+n "x"
+m "ax" 1 2
+g 1 0 1
+m "aax" 2 3
+g 1 1 2
+m "aaax" 3 4
+g 1 2 3
+m "bcx" 2 3
+g 1 0 2
+m "abcx" 3 4
+g 1 1 3
+n "adx"
+n "bcdx"
+n "cdx"
+n "aabx"
+n "abx"
+n "zx"
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable, one branch. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). bounded variable, one branch. Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=a{2,3})x
 features lookaround
-perr
+n "x"
+n "ax"
+m "aax" 2 3
+m "aaax" 3 4
+n "bcx"
+n "abcx"
+n "adx"
+n "bcdx"
+n "cdx"
+n "aabx"
+n "abx"
+n "zx"
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable (0..1). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). bounded variable (0..1). Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=a?)x
 features lookaround
-perr
+m "x" 0 1
+m "ax" 1 2
+m "aax" 2 3
+m "aaax" 3 4
+m "bcx" 2 3
+m "abcx" 3 4
+m "adx" 2 3
+m "bcdx" 3 4
+m "cdx" 2 3
+m "aabx" 3 4
+m "abx" 2 3
+m "zx" 1 2
 
 # sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
 pattern (?<=a*)x
@@ -54,20 +95,60 @@ pattern (?<=(?>a*))x
 features lookaround
 perr
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. one branch, variable width 2..3. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). one branch, variable width 2..3. Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=(?:a|bc)d)x
 features lookaround
-perr
+n "x"
+n "ax"
+n "aax"
+n "aaax"
+n "bcx"
+n "abcx"
+m "adx" 2 3
+m "bcdx" 3 4
+n "cdx"
+n "aabx"
+n "abx"
+n "zx"
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. same shape, captured. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). same shape, captured. Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=((a|bc)d))x
 features lookaround
-perr
+n "x"
+n "ax"
+n "aax"
+n "aaax"
+n "bcx"
+n "abcx"
+m "adx" 2 3
+g 1 0 2
+g 2 0 1
+m "bcdx" 3 4
+g 1 0 3
+g 2 0 2
+n "cdx"
+n "aabx"
+n "abx"
+n "zx"
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable at PCRE2's own DEFAULT cap -- pcre2 ACCEPTS this one (ok under max_varlookbehind=255); pcrec refuses regardless of PCRE2's context-dependent cap, because pcrec never implements the variable form at all (sec 2.5 reason 1-3). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). bounded variable at PCRE2's own DEFAULT cap -- pcre2 ACCEPTS this one (ok under max_varlookbehind=255); pcrec refuses regardless of PCRE2's context-dependent cap, because pcrec never implements the variable form at all (sec 2.5 reason 1-3). Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=a{1,255})x
 features lookaround
-perr
+n "x"
+m "ax" 1 2
+m "aax" 2 3
+m "aaax" 3 4
+n "bcx"
+n "abcx"
+n "adx"
+n "bcdx"
+n "cdx"
+n "aabx"
+n "abx"
+n "zx"
 
 # sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. the inner unbounded rule applies THROUGH the outer lookahead -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
 pattern (?=(?<=a*)b)x
@@ -84,10 +165,22 @@ pattern (?<*a*)x
 features lookaround
 perr
 
-# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. adversarial: ONE branch (no alternation) with width 2..3 -- a mis-measurement that summed widths across the whole body without checking bounded-ness would wrongly call this fixed. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# sec 2.3/2.5 variable-width lookbehind, ANSWERED since [VLOOKBEHIND] stage 1 (refused until then; flipped under manager ruling R1, expectations from libpcre2 10.46 only). adversarial: ONE branch (no alternation) with width 2..3 -- a mis-measurement that summed widths across the whole body without checking bounded-ness would wrongly call this fixed. Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+# pcre2-only
 pattern (?<=a{2}b{0,1})x
 features lookaround
-perr
+n "x"
+n "ax"
+m "aax" 2 3
+m "aaax" 3 4
+n "bcx"
+n "abcx"
+n "adx"
+n "bcdx"
+n "cdx"
+m "aabx" 3 4
+n "abx"
+n "zx"
 
 # sec 2.5 backreference-width refusal. backref to a FIXED-width group -- still refused (conservative, sec 2.5). Oracle facts: pcre2: ok / python: ok
 pattern (a)(?<=\1)x

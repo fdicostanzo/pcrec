@@ -69,6 +69,10 @@ VARLB_REFUSALS = [
     ("(?<=a{2}b{0,1})x",   "adversarial: ONE branch (no alternation) with width 2..3 -- a mis-measurement that summed widths across the whole body without checking bounded-ness would wrongly call this fixed"),
 ]
 
+# The subjects every ANSWERED (bounded, libpcre2-accepted) row above runs on.
+VARLB_SUBJECTS = ["x", "ax", "aax", "aaax", "bcx", "abcx", "adx", "bcdx",
+                  "cdx", "aabx", "abx", "zx"]
+
 # Backreference-to-group-inside-lookbehind: REFUSED even for a FIXED-width
 # referenced group (sec 2.5's own conservative-refusal note).
 BACKREF_REFUSALS = [
@@ -113,6 +117,28 @@ def main():
 
     for pat, why in VARLB_REFUSALS:
         fact = pcre2_fact(pat) + " / " + py_fact(pat)
+        if pcre2_ok(pat):
+            # [VLOOKBEHIND] stage 1 (manager ruling R1, lane vlbbuild): the
+            # BOUNDED rows libpcre2 accepts are answered since the stage
+            # built the variable-width loop. Expectations from libpcre2 10.46
+            # ONLY; python refuses every one, so each is pcre2-only.
+            b = Block(pat, "lookaround")
+            for s in VARLB_SUBJECTS:
+                r = pcre2_search(pat, s, 0)
+                if r is None:
+                    b.n(s)
+                else:
+                    span, groups = r
+                    b.m(s, span[0], span[1])
+                    for i, g in enumerate(groups, start=1):
+                        b.g(i, g[0], g[1]) if g else b.gunset(i)
+            rf.add(b, comment="sec 2.3/2.5 variable-width lookbehind, ANSWERED "
+                   "since [VLOOKBEHIND] stage 1 (refused until then; flipped "
+                   "under manager ruling R1, expectations from libpcre2 10.46 "
+                   "only). " + why + ". Oracle facts: " + fact,
+                   pcre2_only=True)
+            n_ok += 1
+            continue
         emit_perr(rf, pat, "lookaround",
                   "sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. "
                   + why + ". Oracle facts (NOT a match expectation, G2): " + fact)
