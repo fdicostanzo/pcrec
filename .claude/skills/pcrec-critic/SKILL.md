@@ -52,6 +52,9 @@ message when the draft is ready.
      BUILD would land on (normally main HEAD), build the review tree THERE and tell critics both;
      any cited code that moved between them is a finding (2026-10-29 r4 p48).
    The subject stays frozen until the round compiles (learnings §6, R30).
+   When the subject has CLIENT design docs (designs it serves or is served by), check each client's ancestry
+   against the subject commit and brief critics on the client version IN FORCE at the freeze (2026-11-05 r5 arev:
+   the subject predated its client's rev 1).
    Freeze the RULINGS too: record main's decisions.md/plan.md commit at the freeze, diff them against main at
    hand-back, and report any change as FREEZE DRIFT in the draft (2026-11-02 r2 spanpick2: the owner amended
    D186 add. 1 mid-round; caught by chance).

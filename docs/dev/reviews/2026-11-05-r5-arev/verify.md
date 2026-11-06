@@ -1,0 +1,123 @@
+# crit-arev verify (opus)
+
+Review tree /home/pcrec/projects/pcrec/worktrees/crit-arev (f15f30f25); design R/subject_arev.md.
+
+## Verdicts
+
+### 1. SOUND-1 (= SLOT-5): HOLDS
+
+- `src/core/kindrow.def:64` `KIND_ROW(A_GSTART,  ZERO, TRANSPARENT, NONE,   0)`: erase column 0. `src/ir/nfa.c:704` `case A_GSTART: return frag_single(b, N_GSTART);` (not via `frag_row`, and sets no `erased` bit). So a branch `\Ga{1,2}` builds with `Nfa.erased == 0` and no capture: arev §3.1 row 1 `exist` ("machine built `exact` and `erased == 0`; the branch has no capturing group") admits it; nothing in §3.1's admission ("the branch varies; its reverse machine builds under its own cap; no backreference or variable in the body; the host can run it") screens `\G`.
+- `src/ir/dfa.c:1027-1030` the closure passes N_GSTART only if `cl->gst_ok`; `:1750-1756` "`gst_ok` is FALSE at every successor ... the branch simply dies in the closure"; `gst_ok` true exists only in the start family `d->s1g` (`:1708-1712`). In a REVERSE machine of `\Ga{1,2}` the `\G` is met only after a byte is consumed, so the `\G` path always dies: the machine accepts NOTHING through `\G` = a SUBSET of the branch's language (never a superset).
+- Today no reverse machine meets `\G`: `pcrec_nfa_has_bot` (`src/ir/nfa.c:1342-1351`) routes any `N_GSTART` to ENG_ATTEMPT ("That the reverse machine then never evaluates N_GSTART is the same free consequence"), and the landmark walk screens it explicitly (`src/gen/lmwalk.c:181` `if (lm_has_kind(..., A_GSTART)) { st->detail = "gstart"; return false; }`). A per-branch lookbehind machine bypasses both screens; arev names neither.
+- Oracle (libpcre2 10.46, run here): `(?<=\Ga{1,2})b` on `aab` -> `[2-3]`; `(?<!\Ga{1,2})b` on `aab` -> nomatch; `(?<=\Ga{1,3})b` on `caab` -> nomatch; `(?<!\Ga{1,3})b` on `caab` -> `[3-4]`. Compile: ACCEPT maxlookbehind=2.
+- Consequence: the subset machine has no accept on `aab` at cursor 2. Row `exist` answers "no": positive gives nomatch (oracle (2,3)), negative gives (2,3) (oracle nomatch) -- both polarities wrong. Row `gate` treats "no accept" as decided (sound only for a SUPERSET, as §3.1 itself argues: "no accept in the superset, none in the truth"): the same two wrong answers. The `caab` cells happen to be right (\G at 0 is outside the window), so they are controls, not witnesses. Both rows are unsound for `\G`; the fix is an admission conjunct (no `\G`, lmwalk g1's precedent) or recording `\G` as a non-exact/non-superset fact.
+
+### 2. SOUND-2: HOLDS (as a design hazard; not reachable on main)
+
+- `src/ir/dfa.c:1583-1586` `DFA_INVARIANT(cx, !reverse || !ctxfn_reads_absent_prev(nfa->st[i].ctxfn), "a reverse DFA met a context row that reads an absent previous character (the ENG_ATTEMPT routing of pcrec_nfa_has_bot was bypassed)");`; `:424-425` the macro is `pcrec_ctx_fail((cx), 0, "internal error: %s", (msg))`; `src/core/compile.c:20-40` `pcrec_ctx_fail` ends in `longjmp(cx->jb, 1)` = the compile's one refusal exit.
+- `src/core/compile.c:454-466` `revend_build_one` saves/restores only the overflow record and tests `d->overflowed`; it cannot intercept a longjmp. So a reverse build of a lookbehind branch containing `^`, `\A` or `(?m)^` (all N_CTX rows reading absent-prev, `nfa.c:1343-1350`) is a compile REFUSAL "internal error: ...", not the row's decline that arev §2.4 promises ("an overflow is the row's decline, never a refusal").
+- Today unreachable: a lookaround body lowers to epsilon (`kindrow.def` A_LOOK, `NFA_ERASED_LOOK`), and whole patterns with absent-prev rows go to ENG_ATTEMPT. Oracle: `(?<=^a{1,2})b` on `aab` -> `[2-3]` (a real, valid pattern the row would meet). arev §3.1's admission has no anchor screen. Holds as stated.
+### 3. SOUND-3: HOLDS (doc severity; answer only if built literally)
+
+- arev §3.1 row 1 reads exactly: "| 1 | `exist` | machine built `exact` and `erased == 0`; the branch has no capturing group | `first` | yes / no, the answer for either polarity | none |". Row 2 qualifies by branch ("positive branch fails, negative branch cannot match"); row 1 does not. The "Order inside one lookbehind" paragraph says "Per-branch machines, branches in written order" but never says that a branch's "no" continues to the next branch.
+- Oracle (run here): `(?<!a{1,2}|b)x` on `bx` -> nomatch; `(?<=a{1,2}|b)x` on `bx` -> `[1-2]`; controls `(?<!a{1,2}|b)x` on `ax` -> nomatch, on `cx` -> `[1-2]`. Branch 1 `a{1,2}` (varying, exact, capture-free) walked from cursor 1 meets `b`: no accept. Read as "the answer", the negative form gives (1,2) and the positive gives nomatch: both wrong. Only "yes" is the lookbehind's answer; "no" means "next branch". Fix is wording, as the critic says.
+
+### 4. SOUND-4 + SEAM-9 (build-request part): HOLDS (design/doc; no live answer bug)
+
+- No per-machine "built exact" field exists. The recorded fact is `Nfa.erased` (`src/core/internal.h:2418-2427`, "Exactness is then a RECORDED fact of the machine, `erased == 0`"), whose COUNT bit already records a collapse (`NFA_ERASED_COUNT`, `:2436`); the only "collapsed" record is the VM prefilter's `job->fit.prefilter_collapsed` (`internal.h:2867`). So arev §3.1's two conjuncts "built `exact` and `erased == 0`" name one recorded fact plus one request that is not recorded anywhere per machine.
+- `prune`: `src/ir/dfa.c:979-987` "With prune on, lower-priority threads are cut ... `if (cl->prune) { cl->ks->n = 0; return; }`" -- a pruned machine drops lower-priority continuations past an accept, so its accepted language differs. `revend_build_one(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse, ...)` (`src/core/compile.c:454`) takes it as a parameter; arev §2.4's build request names only "`exact` or `collapsed`". Every reverse build today passes `prune=false` (`compile.c:495` xrdfa, `:555` lmdfa, `:3132` rdfa), so nothing is wrong today; the operand list is incomplete.
+- `src/gen/emit_vm.c:11307-11311`: "(atomic and lookaround erasures stamp \"exact\" here: F-13, a vocabulary mover filed for a later abi)" and `(job->nfa.erased & NFA_ERASED_COUNT) ? "count-collapsed" : "exact"`. The caller-visible word "exact" already means "not count-collapsed", narrower than arev's `erased == 0`. Holds.
+
+### 5. SEAM-2 (and PREMISE-1): HOLDS on the structure; the answer worry is REFUTED (arm not admitted); the two critics' statements are both true
+
+- Callers of `emit_reverse_block` in `src/gen/emit_dfa.c`: `:13625` (RECOVER, `dfa_dir_reverse.c.name`), `:14317` (`emit_rev_end`'s two-seed walk, `"revend", "continue;"`), `:14489` (landmark, `dfa_dir_landmark.c.name`) -- exactly three. But `emit_rev_end_one_seed` (`:14022`) and `emit_rev_end_tagged` (`:14081`) call `emit_scan_loop(c, rev)` DIRECTLY (`:14054`, `:14116`), with their own hand-written seed preambles (`match_end_position`/`reverse_state` set from the last byte; `rev->accv = "revend_dist"`) and set `rev->lbl`/`rev->dead` themselves, i.e. they re-do `emit_reverse_block`'s whole body inline.
+- So: crit-slots' "emit_reverse_block has exactly three callers ... W1-W3 share one renderer body" is TRUE at the `emit_scan_loop` level and for one arm per walk; SEAM-2/PREMISE-1's "two of emit_rev_end's three arms bypass emit_reverse_block" is ALSO TRUE. arev §1's "W1-W3: one renderer body (`emit_reverse_block`, which only sets the form's `lbl` and `dead` and calls `emit_scan_loop`)" is inaccurate for W2: the shared body is `emit_scan_loop`, and S1's `emit_reverse_block(RevWalk *)` would have to absorb two more callers (one of them tagged) and their seed code.
+- Answers (run here, review-tree `build/pcrec --features all`): `a\n?$` is stamped `RX_DFA_SCAN "rev-end"` with NO one-seed preamble (no `subject[subject_length - 1] ==` test in the C), i.e. the one-seed arm is not admitted (its axis row: "nl_last is false"). Matcher: "a\n" -> (0,2), "a" -> (0,1), "aa\n\n" -> (1,3); libpcre2 (own small probe `verify/nlprobe.c`, real newlines): [0-2], [0-1], [1-3]. Agree, so the "(0,1)" outcome cannot arise. `a+b$` default (one-seed preamble present) vs `-fno-rev-end-onewalk` (absent): "aab" (0,3)|(0,3); "aab\n" (0,3)|(0,3); "xab" (1,3)|(1,3); "ab\n\n" nomatch|nomatch; oracle `aab` [0-3], `aab\n` [0-3], `ab\n\n` nomatch. Identical.
+### 6. PREMISE-2 (= SLOT-3 = SEAM-9 swap part): HOLDS
+
+- `src/core/compile.c:568-590` `revend_choose_form`: on `RF_TAGGED` it swaps `job->nfa<->xnfa`, `rnfa<->xrnfa`, `dfa<->xdfa`, `rdfa<->xrdfa` (`:589` `td = job->rdfa; job->rdfa = job->xrdfa; job->xrdfa = td;`) and `adfa<->xadfa` where `anchored_ok`; its comment: "On `tagged` the lowered set replaces today's in the Job".
+- Readers of `xrdfa` in the tree: only `src/core/compile.c` (`:300-301` free, `:495` the build, `:502-504` the tie scan, `:589` the swap); `grep -rn xrdfa src --include=*.c` outside compile.c finds nothing. The emitter therefore always reads `Job.rdfa`. arev §1 W2 row "`Job.rdfa`, or the lowered `Job.xrdfa`" and §2.1 `machine` W2 "R or XR" describe a slot no emitter reads; after the swap XR lives in the R slot, and the per-site table of §2.4 must model the swap (or replace it), not the field name.
+
+### 7. PREMISE-3 (= SLOT-13): HOLDS
+
+- W1 (`emit_unanchored`, `CRA_REVERSE`) calls `emit_reverse_block(c, rev, dfa_dir_reverse.c.name, NULL)` (`src/gen/emit_dfa.c:13625`) and then `if (fwd->accv) ... "match_end_position -= (size_t)__builtin_ctz(%s);", fwd->accv` (`:13629-13630`): the distance set is the FORWARD form's `accv` (`:13526` declares it; `:14158` `fwd->accv = "forward_dist";`). The only reverse form given an `accv` is rev-end's tagged walk (`:14090` `rev->accv = "revend_dist";`), and its relocate copy is taken BEFORE that line (`:14087` `DfaForm rel = *rev;   /* the composite's reverse pass reads truth only */`). So W1's reverse walk carries no tag; arev §1 W1 "D164 B3 adds a TAGGED accept (`DfaForm.accv`, a distance set)" and §2.1 `tags` W1 "none / distance" misattribute the forward form's tag to the reverse walk (W1's `tags` is `none`).
+
+### 8. PREMISE-4 (= SEAM-5): HOLDS
+
+- `src/gen/emit_vm.c:928-937`: "Charges one emitted node against `PCREC_MAX_VM_NODES`, failing the compile with a \"pattern too large\" diagnostic ..." `static void vm_charge(Vm *v) { if (++v->nodes > PCREC_MAX_VM_NODES) pcrec_ctx_fail(...) }` -- a COMPILE-time program-size cap. `vm_rev_emit` calls it (`:5526`) once per rendered node.
+- The revdet emitters' run-time charges (`vm_work`, `:3675`) are exactly two, both for discarded FRAMES at cuts: `:5866` "work charge: frames discarded by the revdet scan cut" and `:6013` "... extra-iteration cut". The backward walk loop (`:5925-5947`) and `vm_rev_emit` emit no STEP/WORK record. arev §2.1 `charge` W4 "per step, as today (`vm_charge`)" is wrong on both counts: the walk has no run-time charge today, and `vm_charge` is not one. This matters for §3.1's "the charge is one unit per walk, declared" -- there is no precedent to inherit.
+
+### 9. PREMISE-5: HOLDS
+
+- `src/gen/emit_vm.c:5749-5752` (in `vm_revdet_rep`, `:5705`) allocates `walkl`, `revl`, `wstepl`, `wendl`; `:5925-5947` is the loop: floor test `"%s <= %s", cur, flr` -> `wendl`; `vm_rev_emit(v, revl, a->u.rep.revbody, wstepl, &R)` ONE step; at `wstepl` the first-step side result (`if (rv_prev_position < 0) rv_prev_position = cur`, `:5933-5936`, read later by the greedy retreat's `VPOS_REVDET_PREV` push `:5957-5963`); the stop `"%s_groups_seen >= %d"` -> `wendl`, else `vm_goto(v, walkl)`. `vm_rev_emit` (`:5521`) renders one pass over the reversed body (its own floor tests go to `R->faill`). So the walk's exit, its iteration and its side result are in `vm_revdet_rep`; arev §3.2's "`Rev` becomes the shared `RevWalk` ... `vm_rev_emit` becomes the kind's structural renderer, unchanged" leaves the loop (the thing the kind's `exit`/`seed` operands describe) outside the kind.
+
+### 10. PREMISE-6 (= SEAM-7 part): HOLDS
+
+- `emit_scan_loop` (`src/gen/emit_dfa.c:13244`) leaves its `for (;;)` only on the dead test (`"if (%s_%s_is_dead(%s)) break;   // dead: no match can continue"`) and the direction's bound; an accept is a RECORD, never an exit: `acc_record` (`:6526-6534`) prints `if (expr) rec = pos;`, `acc_record_const` (`:6540-6544`) `rec = pos;`. No `first`/stop-at-accept arm exists, so arev §2.2's `first` behaviour is new renderer code, not a parameter of today's body.
+- Scan edges (`emit_scan_edge`, `:12841`): the unbounded run advances first and then records `acc_record_const(..., f->dir->posv, accval, "   // every position the run passed accepts")` (`:12907-12908`) -- the LAST position of the run (for a reverse walk, the smallest = farthest); the bounded form records after the run too (`:12919-12934`, "the run stopped inside the edge"). A `first` exit over a machine with an accepting stay/edge state would therefore report the run's far end, not the first accept met, unless edges are disabled or given a first-variant. arev §2.2 does not mention it.
+### 11. SEAM-6: HOLDS
+
+- `src/gen/emit_vm.c:5913` `R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;`. Every read of a `Rev` field in the tree: `R->cur`, `R->floor`, `R->gs`, `R->grp`, `R->ngrp`, `R->faill`, `R->loop`; `R->ga` and `R->ns` appear only in a comment (`:5504` "seen-flag locals occupy in `R->ga`/`R->gs`"). The span and the seen counter are written through `VmLocal` records (`VL_GROUP_SPAN`, `VL_RV_GROUPS_SEEN`), whose names `vm_stmt.c` derives itself.
+- `src/gen/vm_stmt.c:482-484`: `VL_GROUP_SEEN` -> `"%s_revdet_group_seen[%d]", sb->p, x->j`; `VL_GROUP_SPAN` -> `"%s_revdet_group_span[%d][%d]", sb->p, x->j, x->half` -- the prefix and group index only, no loop number (contrast `VL_RV_*`, `"%s_rv%d_..."`, x->loop). Declared ONCE per artifact (`:1225-1226`, `ptrdiff_t %s_revdet_group_span[%d][2]`, sized `f->nrevcaps`). So every revdet walk in one artifact shares one pair of sink arrays; arev §1 W4's `*_revdet_group_span/seen` and §2.1 `tags`/`names` (`rv<i>`) treat the sinks as per-instance, which they are not.
+
+### 12. SEAM-10: PARTLY (the precedent claim HOLDS; "against the one-writer rule" is a design extension, not a breach)
+
+- `pcrec_emit_dfa_engine` callers: `src/gen/emit_comb.c:576` and `:580` only (the combinator's `PCREC_COMB_LOCATE_FINISH` arm). `emit_vm.c` mentions it only in comments (`:11403` "`pcrec_emit_dfa_engine` at the prefilter site further down", `:14189`) -- so even emit_vm.c's own comment overstates where the call is. The hybrid's DFA text is emitted at the artifact/combinator level as a separate function, not from inside the VM body or a record. arev §2.3 reason 2's "this moves the call site from the loop into the body" therefore has no in-body precedent.
+- `src/gen/vm_stmt.h:4-21`: "each kind has ONE renderer, which prints it at once into the body ... ONE WRITER, BY TILING. The body buffer is reachable only through this module ... The matcher's span in the artifact is written by ONE call, `pcrec_vm_stmt_frame`". A `VK_AUTO` renderer that also writes a file-scope `static` function needs a second output (outside the body buffer) that no renderer has today. The tiling check guards the BODY buffer, so writing elsewhere is not literally forbidden; it is a new channel the rule's module must grow (or the function must be emitted by the plan at the combinator level, which is the actual precedent). Holds as a design gap; "against the rule" is too strong.
+
+### 13. SLOT-2: HOLDS
+
+- `dir_rev_bound_accept` (`src/gen/emit_dfa.c:9297`): both arms print the literal `search_from` (`"search_from ? %s_%s_accepts_class(... %s_%s_byte_class[subject[search_from - 1]]) : ..."` and the untagged `"%s    if (search_from"` ... `"[subject[search_from - 1]]"`), not `f->dir->at_bound`'s string.
+- `dir_rev_skip` (`:9249-9256`): `f->views ? " && rewind_position + 1 < subject_length" : ""` -- literal `rewind_position`, not `f->dir->posv`.
+- Both are the function members of `dfa_dir_reverse` AND `dfa_dir_landmark` (`:9375`, `:9455` `dir_rev_skip, dir_rev_bound_accept`). So arev §1/§2.1's "the floor ... `DfaDir.at_bound` ... strings" understates: a floor or name operand must also reach these two printers.
+
+### 14. SLOT-9: HOLDS
+
+- `src/core/compile.c:1309` `fit_rungs[]`; `:1360` `{ .name = "drop-end-mark", ... .on = FIT_L_SIZE ...}` (rev-end's lowered machines, `fit_end_mark_applies` `:1115-1118`); `:1402` `{ .name = "drop-landmark-walk", ... PCREC_NO_LANDMARK_WALK ...}` ("the landmark walk's reverse machine", `fit_lmwalk_applies` `:1122-1126`). Every optional reverse machine shipped so far has its own size-cap rung. arev §2.4 names "own cap; overflow and subset budget restored" (the BUILD cap) only; `grep -n rung R/subject_arev.md` finds nothing; S3 (§4.1) names no size rung for the per-branch lookbehind machines.
+
+### 15. SLOT-10: HOLDS (with a stated nuance)
+
+- `dfa_dir_lmverify` (`src/gen/emit_dfa.c:9460-9474`) vs `dfa_dir_anchored` (`:9412-9430`): same position/record names (`"scan_position", "last_accept_position"`), same `reverse=false`, same bound/read/advance strings, same `dir_fwd_skip, dir_fwd_bound_accept`, same `"scan_position < subject_length", "scan_position - 1"`. Differences: its name/state-variable strings, indentation, header comment, `range_guard` NULL (anchored: `"if (search_from > subject_length) return -1;"`), `dead_entry` `"break;"` (anchored: `"return -1;"`) -- the comment at `:9436-9440` says so ("the anchored object's strings, its own name ..., no range guard ..., and its dead entry leaving the verify's one-pass block"). So it is the forward twin of the landmark/reverse pair, a second anchored spelling; R28's recipe (`reverse` member `true`) cannot count it.
+
+### 16. SLOT-11: PARTLY
+
+- D161 addendum 17 (decisions.md at f15f30f25), "Structure" bullet: "the REVERSE DFA seeded at the landmark is the SCAFFOLDING, the one general mechanism; SCAN EDGES are the optimization inside it ... Consequences (manager): revwalk's tiers T1-T3 are an ADMISSION table (when a landmark-seeded walk is exact: exclusion, forced boundaries, D151's strong arm), not mechanisms; ... Today's cases where a specialised method REPLACES the reverse DFA are candidates to fold under it." The scope bullet: "its tiers by prefix shape (fixed k; one class run; a chain of runs; general reverse DFA), with the reverse span as one row of that table".
+- arev §5: "D161 add. 17's tiers (fixed k, one class run, a chain of runs, general reverse DFA) are its rows by prefix shape" of a "representation axis of the kind".
+- The quotes are accurate and the conclusion is supported by the "one general mechanism ... fold under it" sentence. But the "ADMISSION table, not mechanisms" sentence names revwalk's T1-T3 by their EXACTNESS conditions (exclusion, forced boundaries, strong arm), which are not literally the four prefix shapes arev lists; the critic equates the two lists. The finding holds on the scaffolding sentence, not on the "admission" sentence alone.
+
+### 17. OWNER-3: HOLDS
+
+- `build/pcrec --help`: `--emit-ir` "print the VM PROGRAM LISTING ... a DEBUG listing, VM-only"; `--trace` "emit an INSTRUMENTED matcher that prints every resume-frame push/pop and capture write" (VM frames).
+- Run here: `build/pcrec -p rx --emit-ir --pattern 'a+b'` -> "pcrec: --emit-ir lists a VM program; this pattern compiles to the DFA engine ... Pass --engine=vm". `--trace --emit-main` on `a+b` (`RX_DFA_SCAN "landmark-walk"`, a W3 artifact) differs from the plain artifact only in the header name and `.flags = 10ULL` vs `2ULL`: no trace text in the walk. So arev §0 G4's measure ("every instance prints its operands in `--emit-ir` / the trace") cannot be read for W1-W3 today; it needs a new listing surface (an interface change, D80 spec hunk).
+
+### 18. OWNER-4 / SLOT-14: HOLDS
+
+- vlookbehind rev 1 §5.4 (f15f30f25:docs/design/vlookbehind.md:584-587): ONE row 1 `reverse-dfa`, applies when "The branch varies (`lo < hi`); its reverse machine builds under its own cap; no backreference or variable in the body; no side-effecting construct (none reaches a lookbehind today, §3); the host can run it (G5)", exit "Exact machine and no capture: EXISTENCE (no VM run). Otherwise candidates farthest first, each confirmed by §5.1's step." No `gate` exit in §5.4 (the FILTER role does appear in rev 1 §3's table, line 211: "Otherwise the DFA is a sound FILTER for both polarities ..., never the answer"). arev §3.1's restatement of the admission drops "no side-effecting construct", and splits the exit into three rows (`exist`/`gate`/`commit` HELD), making rev 1's "candidates farthest first" a HELD row and promoting a `gate` row rev 1 §5.4 does not have.
+- Floor: rev 1 §3 (line 215) "The walk's floor is 0, not `search_from`" and §4 G2 (line 277) "A lookbehind floors at 0"; arev §2.1/§3.1 `max(0, cursor − W)`. A deliberate refinement in arev, but stated as if it were the client's.
+
+### 19. OWNER-5: HOLDS
+
+- rev 1 §4 "Why not now" (lines 306-309): "Building G1-G5 for this one row, ahead of roadmap A-REV's P-d step, would add a third hand-written reverse walk ... P-d is the landmark walk as records, with prerequisites P-b and [VMREC] (b)." rev 1 §5.4 prerequisites (lines 623-626): "roadmap A-REV's reverse `AUTO` kind ... hosted in a VM body (G5, [LANDWALK-VM]); [GIVEUP-DIFF]".
+- arev §4.1 S3 prerequisites: "S1; vlookbehind stage 1 (`range`) shipped ...; [VMREC] (a) DONE ...; [GIVEUP-DIFF] (not started)" -- neither P-d (arev's S4) nor [LANDWALK-VM]. arev §3.1 cites "vlookbehind §4 'why not now'" as the reason the row waits for S1, which rev 1's text ties to P-d. A silent re-sequencing of the client's prerequisites.
+
+### 20. OWNER-7: PARTLY (facts HOLD; D153's literal scope is narrower than the finding reads it)
+
+- plan.md at f15f30f25, `- [VMREC] STATE:started`; "status (2026-10-31): step (a) DONE, merged 3bc599c92 ...; steps (b) and (c) not started"; (c) rulings r9: "kit windows are opaque with DECLARED EFFECTS ...".
+- D153: "**Principle, \"don't live in a house we're remodeling\"** ... The in-flight refactors take priority over round 3 until complete: [START-TABLE] C1-C7 + C5b; then refactor B [DEC-FALLBACK] ...; and memfn's zero-mover migration steps ... A round-3 row that touches a site under remodel sequences AFTER the refactor that owns it". Its text names [OPTLOOP] round 3 and specific refactors; [VMREC] (filed 2026-10-29) is not named. The principle generalizes (memory pcrec-remodel-first states it generally), so the sequencing concern is reasonable, but the critic's SUSPECTED status is right: it rests on the owner's reading of D153's scope.
+
+### 21. OWNER-8: HOLDS
+
+- arev §3.2: "Whether that counts R03 to 0 is owner question 2."; §4.1 S2 "subject to owner question 2"; §6 "(owner question 2)"; §8 "Whether S4 is P-b's smallest instance (open question 3)". arev's headings (§0-§9: Goals, Today, The kind, Clients, Steps, Siblings, VM base lens, standing questions, does not decide, measured vs inferred) contain no questions section; the questions live in the lane report (denylisted here), so the design note is not self-contained.
+
+### 22. OWNER-10: HOLDS
+
+- plan.md at f15f30f25 line 1720: `- [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind`, "filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)", status "HELD ... [ENG-LOOK]'s forward machine (or reverse-dfa's existence exit) as a filter row before range's finisher". arev §5: "**The HELD row is NOT yet filed** (checked on lane/vlbrev1 at 2056360d7 and its working tree: no plan edit)". `git merge-base --is-ancestor 7ddfbfa95 dd89fa9bb` -> false (arev's branch lacks the vlbrev1 merge); 7ddfbfa95 is an ancestor of f15f30f25. True when written, stale at the build commit; the filed row names "reverse-dfa's existence exit", not arev's `exist`/`gate` rows.
+
+### 23. PREMISE-9 / SLOT-15: HOLDS (by reasoning from the recipe text)
+
+- R03 restated (arev §4.3): "`} Rev;` ... in `src/gen/emit_vm.c` present: 1, else 0" -- a rename of the typedef (`} RevRec;`) or a move to a header reads 0 with the parallel record intact.
+- R10 (roadmap §5 line 678): "`emit_landmark_walk` present: 1" -- a function rename reads 0.
+- R28 (arev §4.3): "`static const DfaDir` objects in `src/gen/emit_dfa.c` whose `reverse` member is `true`, minus 1" -- a `DfaDir` built at run time by copying `dfa_dir_reverse` and overwriting names (no `static const` object), or a non-const static, reads 0 with the second spelling intact; it also cannot see `dfa_dir_lmverify` (item 15, `reverse == false`).
+- The roadmap already knows the failure shape: R22's restatement (line 690) "the old recipe grepped only the four names 1b deletes, so it could not see a renamed survivor such as `kit_mass`". The new recipes repeat it.
+
+VERIFY COMPLETE
