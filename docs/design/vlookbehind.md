@@ -73,7 +73,8 @@ conditions, not body classes:
   `$_back_step` reaches within `hi` characters. The loop finds it with rev 2's own retry
   (count − 1 on the sentinel), run once per evaluation instead of once per candidate.
 - **The one-character step must be bounded by the cursor.** The encoding's own forward step (the
-  `advance` text, K49) skips continuation bytes up to a bound. With the subject length as the bound,
+  `advance` text, K49; `[r2-1106 F1]` in rev 4 the seam entry `$_fwd_step`) skips continuation
+  bytes up to a bound. With the subject length as the bound,
   a stray continuation byte AT the cursor makes the step jump past the cursor, and the loop never
   ends. Bounded by the cursor, the step lands exactly on the back-step's own character boundaries,
   on every input, ill-formed ones included.
@@ -375,7 +376,7 @@ frame, then the next branch.
 | **capture-free, negative "DFA only"** | n/a | TRUE only where the machine is EXACT (`erased == 0`) and the body has no observable side effect. Otherwise the DFA is a sound FILTER for both polarities (no accept in the superset means none in the truth), never the answer. pcrec refuses callouts in a lookbehind today (`pattern_language.md` §7.11¶3), so the side-effect conjunct guards a refused construct. It is kept as a fact for the day callouts are admitted there `[r3 F14]`. |
 | **backreference inside** (stage 2) | The group's exact width at both ends; DD-14.LB's deferral for references not yet parsed; refusals (§6 stage 2) `[r3 F2, F5]`. (Rev 0: "needs only a width": refuted.) | No machine: the NFA builder has no lowering for `A_BREF` (src/ir/nfa.c, `compile_ast`'s A_BREF arm, "NO MACHINE"). The row declines and `range` serves. |
 | **`\K` inside** | Refused by both libraries (err 199), unchanged. | Same. |
-| **UTF-8** | `[r-cursor]` The nearest start is `lo` characters back; the far step's count is clamped to `min(hi − lo, LO)`, an upper bound (bytes ≥ characters). A far step that returns the seam's sentinel is retried one shorter, once per evaluation. Each later candidate is one character nearer, by the encoding's own forward step bounded at the cursor. The EXISTING `$_back_step` entry and `advance` text, so no new seam entry (§5.1, §5.1a; `[r3 F13]`). | Byte machine over UTF-8. Accepts fall on character boundaries for valid input. The 255 cap is a compile-time character count, so no run-time count is needed. |
+| **UTF-8** | `[r-cursor]` The nearest start is `lo` characters back; the far step's count is clamped to `min(hi − lo, LO)`, an upper bound (bytes ≥ characters). A far step that returns the seam's sentinel is retried one shorter, once per evaluation. Each later candidate is one character nearer, by the encoding's own forward step bounded at the cursor. The EXISTING `$_back_step` entry; `[r2-1106 F1]` the forward step is a new entry, `$_fwd_step` (rev 3 said "the `advance` text, so no new seam entry") (§5.1, §5.1a, §5.6; `[r3 F13]`). | Byte machine over UTF-8. Accepts fall on character boundaries for valid input. The 255 cap is a compile-time character count, so no run-time count is needed. |
 | **start of subject** | The clamp, absolute. | The walk's floor is 0, not `search_from` (the landmark walk's floor, `dfa_dir_landmark`'s `at_bound`): §4 G3. |
 | **context at the start** (`\b`, `^`) | The forward body reads it. | The reverse machine's views at the floor, as the RECOVER pass reads them (`rx_reverse_accepts_class`, an emitted name). |
 | **budgets / give-ups** | `[r-cursor]` The two back-steps charged once per evaluation, then 1 per candidate step (§5.5). Frames are visible to D42's bound. | Fewer body runs, so fewer give-ups: a ONE-WAY give-up change, which [GIVEUP-DIFF] must cover before the row ships. |
@@ -1595,6 +1596,23 @@ Gates:
      stays honest. The simulate lens measured 7,776 such cells at offset 3 and 5,012 at offset 4.
    - The generator counts its own population and its expected-divergent subset (K35). Both are
      pinned with floors.
+   - `[r2-1106 F6]` **The harness's encoding modes.** `run_lookaround_diff.sh` and its shared oracle
+     `tests/backrefs/bref_oracle.py` have no encoding option today (rev 3 named them anyway). The
+     build extends the shared oracle with a per-cell MODE column and the diff script with the
+     matching pcrec flag. Three modes, named:
+     - `byte`: libpcre2 options 0, pcrec `-e byte`. Today's behaviour, and the default when the
+       column is absent, so the backrefs and atomic-groups callers of the oracle do not move;
+     - `utf8`: libpcre2 `PCRE2_UTF`, pcrec `-e utf8`, well-formed subjects only (the generator
+       asserts each subject is valid UTF-8 in this mode; an oracle UTF error is a harness failure,
+       not a cell);
+     - `utf8-invalid`: libpcre2 `PCRE2_UTF | PCRE2_MATCH_INVALID_UTF`, pcrec `-e utf8`, the
+       ill-formed subjects (W13, W15 and the generated ill-formed cells), pcrec's own reading
+       (utf8_design.md §2.6).
+     The ctypes binding (`pcre2_ctypes.py`) already takes compile `options`; its `PCRE2_UTF`
+     constant is marked "not used" today. In both UTF modes the start-offset sweep covers
+     character boundaries only (a mid-character start is K50's domain, `tests/utf8`), and the
+     skipped offsets are counted. The population is counted and floored PER MODE (K35), with the
+     D142 expected-divergent subset counted per UTF mode.
    - A `PCREC_ERR_FRAMES` is a difference, not a give-up to excuse `[r6 V1]`: no gate-1 cell is
      near the trail clamp, so the trail term makes every cell fit.
 2. **Identity, by `tests/codegen/run_recursion_identity.sh`** `[r6 V7]`. Every corpus artifact
@@ -1638,6 +1656,28 @@ Gates:
    gives `PCREC_ERR_FRAMES` (the trail term, §5.5) `[r6 V1]`.
 5. **Sabotage.** The rows of §7 are each red in their sabotaged build and green in the correct one.
    S136 is re-aimed as §7 spells it (F9). S133, S134 and S-U4 move as §7 lists `[r6 V8]`.
+   `[r2-1106 F5]` S123 keeps its one anchored site (§5.6), and the new `fwd_step` rows of §7 are
+   in the set.
+6. **`[r2-1106 F1]` The encoding checks.** `make test-codegen`'s `run_encoding_checks.sh` is green
+   with the derivations of §5.6: DD12a(i) (region (1) from the seam reader, the derived floor met
+   by `(?<=a{1,2})x`, the re-validation plants red), DD12a(ii) (`fwd_step`'s signature identical),
+   and K49 (both boundary members agree with `next_pos`, member count 2 per encoding).
+
+**The stage-1 build units, complete `[r2-1106]`.** Each unit names what it changes and every
+reader of that change. "New" means a file the unit adds. The landing is one change (D80: the spec
+hunks ride it).
+
+| unit | changes | readers that move with it |
+|---|---|---|
+| U1 width rule and limits | `pcrec_cwmin`/`pcrec_cwmax` as an exact range per branch; the 255 cap and 65535 ceiling (§5.2); two `limits.def` rows (§5.2a) | `src/parse/mod_lookaround.c`'s refusal arm (deleted for bounded bodies) and the refusal TEXT readers of §10; `--list-limits`/`pcrec_limits_tsv`, `limits_check.sh`'s name manifest and its count 78 → 80; the mrl.c header sentences of §5.2 |
+| U2 the loop and the emission table | `vm_look_behind_branch` (the `range` row: guard, `lo_i` back-step through the one existing builder line, `LO_i`, `K`, far step and retry, `L_try`/`L_body`/`L_end`/`L_adv`/`L_n`), `vm_look_behind`'s label allocation (`range` branches only), the end-check split (§5.3) | the count pass (`vm_count_slots_look`: push count, `nlblow`), `vm_cost_look` (trail `2 + range branches`, header paragraph), the role and note texts (§5.1b) and the stale 160-byte comment, gate 3's label phrasing, `match_api.md` §4¶6's INTERNAL comments (§10) |
+| U3 slot sub-block | `nlblow`/`nlblow_total`, `vm_slot_lblow`, the totals step (§5.1b) | `vm_slot_name`'s `low` arm, the listing's second `low` call, `VmSnap.lblow` and `vm_build_region_saves`' range, the layout comment's `nlow` paragraph, `VmStamp.nlow` (counts both, listing only) |
+| U4 record vocabulary | `VSK_STEP_CHAR`, `VL_LB_COUNT`, the `seek` operand `byloc`/`x` and `pcrec_vm_b_seek_local`, `VmFrame.lb_count`, `pcrec_vm_local_name` exported (§5.6) | `vm_r_seek` (two arms), `vm_local_name`, `pcrec_vm_stmt_frame`'s declarations, `pcrec_emit_vm` (the frame's producer), `vm_stmt.h`'s enum comments; NEW `docs/design/plan_row_bodies/VMREC.md` + the [VMREC] refs line + that directory's CLAUDE.md |
+| U5 the seam entry | `PCREC_ENCE_FWD_STEP`, a row in each backend, `PCREC_ENC_BOUNDARY_ENTRIES`, `pcrec_enc_entry_symbols` (§5.6) | the mask OR in `vm_look_behind_branch`; src/enc/CLAUDE.md; `match_api.md` §3¶2 (§10); the landing's decision entry |
+| U6 checks | DD12a(i) derivation, DD12a(ii) list and witness, K49 boundary sites (§5.6); NEW `tests/codegen/enc_entry_list.c`; [M5-SEAM]'s `INLINE_RESID` and the `residlbrange` fixtures (§7); gate 1's oracle modes (`bref_oracle.py`, `run_lookaround_diff.sh`) and its new cell section | tests/codegen/CLAUDE.md (the new reader), tests/lookaround/CLAUDE.md, `docs/testing.md` where it describes DD12a(i), K49 or gate-1's harness |
+| U7 corpus and pins | 32 rows (24 distinct) flipped from refusal to match cells; gate 2's re-pin of `$FILEPIN`/`$ABASEPIN` (§6 gate 2) | the start-set mover manifests, axes allowances and size tripwires a corpus change moves (found by `make test`, BOILERPLATE's delivery bar); the D27 extracts and corpora (§6 stage 1, owned as stated there) |
+| U8 sabotage rows | §7's new rows (W1-W16, W-low, the `fwd_step` rows), S133/S134 twins, S136 re-aimed, S-U4 re-aimed, W12's mechanism confirmed | `tests/mech/` row headers and their `SAB_DOC_FIGURE`s; `REACH_ONLY=1` run for moved witnesses |
+| U9 spec hunks | §10's list | `make test-spec-history`, the spec's own anchors |
 
 **Stage 2: backreferences in a lookbehind (B+) `[r3 F2, F3, F5]`.** Rev 0 said: "`pcrec_cwmax(A_BREF)`
 = the widest group it can name (union over duplicate names)". That is refuted: it sets one end
@@ -1729,12 +1769,12 @@ fail.
 | W9b `[r3 F4]` | ceiling missing or off by one | `(?<=a{65535})x` compiles, `(?<=a{65535}b)x` refused (err 187); `(?<=(?:a{1000}){65})x` compiles, `{66}` refused | The ceiling boundary pairs: fixed, and through a product. |
 | W10 | branch order lost (longest over all branches) | `(?<=(a)\|(aa))c` on `aac`: g1=(1,2) | Branch 2 is longer. Sabotaged: sets g2. |
 | W11 `[r3 F1]` `[r-cursor: re-aimed]` | (a) exhaustion does not restore the cursor (`L_n_i`'s `VSK_RESTORE` dropped on the exhaustion path); (b) the same restore dropped on `LO_i`'s sentinel path | (a) `(?<=a{1,2}\|b)x` on `bx`: [1-2], and `(?<=a{1,2}\|bc)x` on `bcx`: [2-3]; `(?<=a{2,3}\|b)x` on `bx`: [1-2] stays as the guard's control. (b) `(?<=é{2,3}\|é)x` on `éx`, `-e utf8`: [2-3] | (a) The next branch starts from the nearest candidate, and its guard fails: nomatch (§5.1c cells 1 and 3). (b) Two bytes, one character: the guard passes, `LO`'s back-step returns the sentinel, and without the restore branch 1 back-steps from `(size_t)-1`. UTF-8 only (under bytes the guard is exact). Rev 2's (a) "the frame saves the candidate" is now the DESIGN: the restore at `L_n_i` is what replaces the frame's cursor. |
-| W12 `[r6 V1]` `[r-cursor: re-aimed]` | (a) a trailed write per candidate under the O(1) term (rev 2's `D_i` kept, or `LO_i` written at `L_try_i` instead of before it); (b) the term charged one short per `range` branch (today's constant 2) | (a) `(?<=a{1,9})x` on `bbbbbbbbbax`: [10-11]; UTF-8 twin `(?<=a{1,9})x` on `éééééééééax`: [19-20]. (b) `(?<=a{1,2}\|b{1,2})x` on `abx`: [2-3] | At default options, a bounded pattern's trail is `cost.trail + 1`. (a) Nine candidates: 2 + 9 live entries against a capacity of 5 (§5.1c cell 5): `PCREC_ERR_FRAMES`. Rev 2's `bax` cell has two candidates and no longer overflows under a per-candidate write (2 + 2 against 4 + 1). (b) Both branches write `LO`: peak 2 + 2 plus the body's; one short per branch sizes it two short, past the `+ 1`. A single `range` branch one short is MASKED by the `+ 1`, so (b) keeps two `range` branches. The exact body share is INFERRED (the ladder picks the body's rung), so (b)'s margin is confirmed at build. |
-| W13 `[r-cursor]` | the one-character step bounded by the subject length instead of the cursor | `é(?<=(a?))` on `C3 A9 A9`, `-e utf8`: [0-2, g1 2-2]; `é(?<=a{0,1})` on the same: [0-2] (libpcre2 under `PCRE2_MATCH_INVALID_UTF`) | A stray continuation byte sits AT the cursor. The unbounded step jumps from 0 past the cursor to 3, never meets `LO = 2`, and runs until a budget gives up (§5.1c cell 7). UTF-8 only: the byte step `@P++` reads no bound. |
-| W14 `[r-cursor]` | the step skips a candidate (two characters, or two bytes under UTF-8 where it should be one character) | `(?<=\Ga{1,2})b` on `aab` from 1: [2-3] (from 0: [2-3]; from 2: nomatch); `-e utf8` `(?<=\Gé{1,2})b` on `ééb` from 2: [4-5]; `-e utf8` `(?i)(?<=(k{1,2})\|(b))x` on `b` U+212A `x`: [4-5, g1 1-4] | `\G` pins the ONE candidate that can succeed to the second one tried, so a skipped candidate is nomatch. The Kelvin cell needs one step over a 3-byte character from `b` to the Kelvin sign. A BYTE step under UTF-8 (`VSK_ADVANCE 1`) only adds mid-character candidates, which fail (no body starts inside a character): answer-neutral, so that sabotage is caught by the `range` codegen fixture under `-e utf8` (the step's text is the backend's), not by a cell. |
+| W12 `[r6 V1]` `[r-cursor: re-aimed]` | (a) a trailed write per candidate under the O(1) term (rev 2's `D_i` kept, or `LO_i` written at `L_try_i` instead of before it); (b) the term charged one short per `range` branch (today's constant 2) | (a) `(?<=a{1,9})x` on `bbbbbbbbbax`: [10-11]; UTF-8 twin `(?<=a{1,9})x` on `éééééééééax`: [19-20]. (b) `(?<=a{1,2}\|b{1,2})x` on `abx`: [2-3] | At default options, a bounded pattern's trail is `cost.trail + 1`. (a) Nine candidates: 2 + 9 live entries against a capacity of 5 (§5.1c cell 5): `PCREC_ERR_FRAMES`. `[r2-1106 F5]` THE MECHANISM, stated: under the "`LO_i` at `L_try_i`" spelling the write sits inside the cycle, so `goto L_try_i` carries a K134 checkpoint, and `<prefix>_trail_compact` drops later same-slot entries once (depth 4 → 3) and then declines to re-arm (its trigger stops after one round), so the fourth candidate's write hits `RX_R_FRAMES`. Red, but because the trigger stops; a K134 change that re-arms compaction would turn (a) green. The build confirms (a) red, and the row's header names this dependency so a K134 change re-aims it. Rev 2's `bax` cell has two candidates and no longer overflows under a per-candidate write (2 + 2 against 4 + 1). (b) Both branches write `LO`: peak 2 + 2 plus the body's; one short per branch sizes it two short, past the `+ 1`. A single `range` branch one short is MASKED by the `+ 1`, so (b) keeps two `range` branches. The exact body share is INFERRED (the ladder picks the body's rung), so (b)'s margin is confirmed at build. |
+| W13 `[r-cursor]` | the one-character step bounded by the subject length instead of the cursor | `é(?<=(a?))` on `C3 A9 A9`, `-e utf8`: [0-2, g1 2-2]; `é(?<=a{0,1})` on the same: [0-2] (libpcre2 under `PCRE2_MATCH_INVALID_UTF`) | A stray continuation byte sits AT the cursor. The unbounded step jumps from 0 past the cursor to 3, never meets `LO = 2`, and runs until a budget gives up (§5.1c cell 7). UTF-8 only: the byte step `pos + 1` reads no bound. `[r2-1106 F1]` The plant is now "the call passes `subject_length` as `$_fwd_step`'s bound instead of `POS`" (one argument in `vm_r_seek`'s `VSK_STEP_CHAR` arm). |
+| W14 `[r-cursor]` | the step skips a candidate (two characters, or two bytes under UTF-8 where it should be one character) | `(?<=\Ga{1,2})b` on `aab` from 1: [2-3] (from 0: [2-3]; from 2: nomatch); `-e utf8` `(?<=\Gé{1,2})b` on `ééb` from 2: [4-5]; `-e utf8` `(?i)(?<=(k{1,2})\|(b))x` on `b` U+212A `x`: [4-5, g1 1-4] | `\G` pins the ONE candidate that can succeed to the second one tried, so a skipped candidate is nomatch. The Kelvin cell needs one step over a 3-byte character from `b` to the Kelvin sign. A BYTE step under UTF-8 only adds mid-character candidates, which fail (no body starts inside a character): answer-neutral, so no cell sees it. `[r2-1106 F1]` Rev 3 named the advance-agreement check as its detector; that check never read the lookbehind site. The byte-step arm now has two plants, each with a named detector: (i) the emitter writes `scan_position += 1` (`VSK_ADVANCE 1`) instead of calling `$_fwd_step`, and drops the mask bit: [M5-SEAM]'s per-site count on `residlbrange` and its `-e utf8` twin (`fwd_step:1` → 0, and the declared inline-entry set), S133's shape; (ii) the utf8 backend's `$_fwd_step` body returns `pos + 1`: K49's boundary tie (§5.6) disagrees with `next_pos`, and its utf8 non-vacuity fails. |
 | W15 `[r-cursor]` | the back-step's own clamp lost: a far-step sentinel taken as "start at `LO_i`" | `(?<=(a{0,2}))b` on `FF 61 62`: [2-3, g1 1-2]; `(?<=(é{0,2}))b` on `A9 C3 A9 62`: [3-4, g1 1-3] (both under `PCRE2_MATCH_INVALID_UTF`) | An ill-formed run lies within `hi` characters before the cursor. The retry finds the farthest VALID start (§5.1c cell 8). Sabotaged: g1 = (2,2), (3,3). The other naive reading, "start at the subject start", is answer-neutral here (no body consumes an ill-formed byte). It is excluded by work (§5.1a), not by a witness. |
 | W16 `[r-cursor]` | the nearest candidate never tried (exhaustion tested after the step, or `LO_i` one character too far) | `(?<=a{1,2})x` on `bax`: [2-3]; non-atomic re-entry into the next branch: `(?<*(a{1,2})\|(aa))\2` on `aaaa`: [2-4, -, 0-2] | Only the nearest candidate (`a` at 1) matches in the first cell. In the second, the follow `\2` fails for both of branch 0's candidates (g2 unset), the exhaustion restores the cursor, and branch 1 sets g2. |
-| W-low `[r-cursor]` | `LO_i` written untrailed (`VK_LSET`) | none at answer level: a codegen check that `LO_i`'s write is a `VK_SET` | A stale `LO_i` can only come from a LATER evaluation of the same site while an older one's frame is live. On a forward path that evaluation's cursor is at or after the older one's, so the stale bound is farther along, and the older loop only tries extra candidates. Each of those fails: it is either nearer than `lo` characters or past the cursor. The slot is trailed anyway, which is the cursor rung's own discipline. No cell found; vlbpieces' W-low stays INFERRED and becomes this codegen row. |
+| W-low `[r-cursor]` `[r2-1106 F2, F5]` | `LO_i` held in an untrailed LOCAL (a second `VmLocalKind` member beside `VL_LB_COUNT`, written by `VK_LSET` and read by the exhaustion test), the natural mistake, since `K_i` is held that way. (Rev 3 spelled the plant "`LO_i` written by `VK_LSET`", which the vocabulary cannot build: an LSET targets only a `VmLocal`, never a slot.) | ANSWER LEVEL: `(?:(?*.*(?<*a?))b)*$` on `bc`: [2-2] (libpcre2 10.46, byte and UTF, every start; `vlbrev4_evidence/premise.out`). Second detector: a codegen check on `residlbrange` that `LO_i`'s write is an `RX_SET` of an `SLOT_LB_LO<j>` slot | Iteration 1 evaluates the non-atomic lookbehind at cursor 2 (`LO = 2`) and leaves its `L_adv` frame live. Iteration 2's `b` fails, so its lookahead's `.*` backtracks and re-evaluates the lookbehind at cursor 1, writing `LO = 1`. When iteration 2 and then `$` fail, the pop returns to iteration 1's frame at candidate 2. Trailed, `LO` is rewound to 2 and the branch is exhausted. Untrailed, `LO` stays 1: the exhaustion test never fires and the step runs past the cursor and the subject. Rev 3's argument ("a stale bound only comes from a later evaluation on a forward path") was false: a non-atomic lookahead moves the cursor BACKWARD. The review's literal interpreter: 652 of 2,904 such cells move. What a real artifact does on the overrun: each step charges 1 work unit and each retry is one backtrack resumption, and the body's character tests guard `scan_position < subject_length`, so the EXPECTED outcome is a give-up (`PCREC_ERR_STEPS` or `PCREC_ERR_WORK`, whichever budget ends first), never an out-of-bounds read. The build confirms that under `make asan`'s compilee axis, and compiles the witness with a small `--work-budget=N` (limits.md §3.1¶2) so the sabotaged run ends fast. |
 
 **Stage 3's witnesses** (row `reverse-dfa`). Admission floor: each body below varies and its machine
 is a few states, far under any cap, so the row reaches in both builds.
@@ -1780,20 +1820,44 @@ is a few states, far under any cap, so the row reaches in both builds.
     count, and the far step, a local count) and two sentinel sites, which no anchor names.
     Inlining either step (`scan_position - lo_i`, `- K_i`) changes no byte-mode answer, and
     dropping the far sentinel is caught only by W6, a UTF-8 cell. So each row gains a `range` twin
-    per site (`SAB_COUNT` on each site's own anchor).
+    per site (`SAB_COUNT` on each site's own anchor). `[r2-1106 F5]` Exactly: the `lo_i` step shares
+    S133's one builder line (§5.6), so S133 itself now covers it and keeps `SAB_COUNT=1`; the twin
+    S133 owes is the FAR step's, anchored on the new builder's one call
+    (`pcrec_vm_b_seek_local(v->sb, VSK_BACKSTEP, ...)`). S134's sentinel branch is anchored the
+    same way: today's `== $_BACK_STEP_NONE` test carries both rows' `lo_i` sentinel, and its twin is
+    the far step's `!=` test. A fall-through spelling of "drop the far sentinel" underflows `K` and
+    breaks every `range` cell, so the twin's plant is the `goto L_try_i` spelling, which only W6
+    sees (review r2 `sound.md`).
   - Codegen gains a `range` fixture: `residlbrange (?<=a{1,2}|bc)x --features lookaround`, with
     `back_step:3` (the `range` branch's two sites and the `one-length` branch's one; libpcre2
-    ACCEPT, lb 2). That makes §5.1's per-site count a checked statement. `[r-cursor]` A UTF-8 twin
-    (`-e utf8`) also gives the advance-agreement check (`run_encoding_checks.sh`) the bounded step
-    to read, and it is W14's byte-step detector. W-low's check (`LO_i` written by a `SET`) reads the
-    same fixture.
+    ACCEPT, lb 2) and `[r2-1106 F1]` `fwd_step:1`. That makes §5.1's per-site counts checked
+    statements. `[r-cursor]` A UTF-8 twin (`-e utf8`) carries the same counts. `[r2-1106 F1]` Rev 3
+    said the twin "gives the advance-agreement check the bounded step to read, and it is W14's
+    byte-step detector": false, since that check compiles only `a*`. W14's detectors are now the
+    `fwd_step` count here and K49's boundary tie (§5.6, W14 row). W-low's codegen check (`LO_i`
+    written by an `RX_SET` of a `SLOT_LB_LO<j>` slot) reads the same fixture.
+  - `[r2-1106 F1]` **Two new rows for the entry** (ids from the build lane's range): (i)
+    "`$_fwd_step` inlined": the `VSK_STEP_CHAR` arm renders `scan_position += 1;` and the mask
+    bit is dropped (S133's shape; detector: [M5-SEAM]'s `fwd_step` count and declared inline set on
+    `residlbrange`, both encodings; answers green); (ii) "utf8 step by one byte": the utf8 row's
+    body returns `pos + 1` (detector: K49's boundary tie and its utf8 non-vacuity; DD12a(i) stays
+    green, since the region is excised either way).
+  - `[r2-1106 F5]` **S123** (`vm_look`'s `VSK_RESTORE`, `SAB_COUNT=1`) is not moved: the `range` row's
+    two restores are spelled through their own slot variables (§5.6), so its anchor matches once.
+    The build's field validation confirms the count.
   - Under (B), both anchors sit in rewritten code and are re-cut.
 - **S-U4** `[r6 V8]` (`pcrec_cwmax(A_CLASS)` × 4) loses its STATED detector. Its
-  `SAB_DOC_FIGURE` predicts that every class-bearing lookbehind refuses. After stage 1,
-  `(?<=a)x` becomes `range` [1,4] with today's answers. Candidates 4..2 fail the end-check and
-  candidate 1 answers.
-  - It is re-aimed at gate 3's classification control: the judgment "fixed width 1" becomes
-    "width 1..4". Its figure is updated.
+  `SAB_DOC_FIGURE` predicts that every class-bearing lookbehind refuses. After stage 1, a
+  class-bearing lookbehind of two characters or more becomes `range` with today's answers: the
+  extra candidates fail the end-check and the true one answers.
+  - `[r2-1106 F5]` Rev 3 re-aimed it on `(?<=a)x`, which cannot carry it: a ONE-character body is a
+    T3 context node, built before any width rule (src/parse/mod_lookaround.c, "T3 FIRST ... No
+    width rule is asked of it"), and its `--emit-ir` has no lookbehind label at all (measured,
+    `vlbrev4_evidence/premise.out`). Re-aimed on `(?<=ab)x`: its label reads "lookbehind branch 1
+    of 1, fixed width 2" today, and under S-U4 (×4) the judgment becomes "width 2..8".
+  - It is re-aimed at gate 3's classification control on that cell. Its figure is updated, and so
+    is its own `SAB_DESC`/header text ("`(?<=a)x` included"), which is already stale today for the
+    same T3 reason.
   - The verifier notes that it likely still goes red on the cap and ceiling boundary cells, where ×4
     crosses 255 or 65535. So the figure is wrong rather than the detection gone. The row is run at
     build to confirm.
@@ -1909,7 +1973,7 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
     §3.4(d)) are re-cut from their sources, and the D27-owned corpora (`tests/lookaround/d27/`,
     `tests/recursion/d27/`) are flipped by their owner (§6 stage 1).
 - **No `ir_listing.md` hunk** `[r6 V4]` `[r-cursor: same conclusion, new reason]`. `LO_i` joins the
-  `low` family (recommended, §5.1b), which the `slots` section lists, so the listing gains rows in
+  `low` family (RULED, ruling 8; its own sub-block, §5.1b `[r2-1106 F4]`), which the `slots` section lists, so the listing gains rows in
   new artifacts. The family NAME stays `low`, so §3.2¶2's vocabulary is not extended, and `holds`
   is "the role text" class of cell, not specified per family. Under the counter-family alternative
   there would be no listing row at all, as rev 2 said.
@@ -1920,6 +1984,13 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
   same sentence.
 - **Not spec: enc.h's `advance` contract** `[r-cursor]` widens `@N` to "the bound the step never
   passes" (§5.6). enc.h is internal, so this is a comment change in the same commit.
+  `[r2-1106 F1]` WITHDRAWN: `advance` gains no caller, so its contract does not change.
+- **`match_api.md` §3¶2** `[r2-1106 F1]`. The paragraph names the `static inline` encoding-residual
+  helpers an artifact may carry. It gains `<prefix>_fwd_step` ("a lookbehind-bearing artifact
+  whose lookbehind has an alternative of varying length"), beside `<prefix>_back_step`, under the
+  same terms: defined ahead of the engine body, declared nowhere, not exported, not a caller entry.
+  Every artifact that carries it is new output for a newly compiling pattern, so this moves no
+  existing artifact and is no abi event (§14).
 - **The decision entry the build owes** `[r6 V10]` (the next D-number at landing; text to adapt):
   "[VLOOKBEHIND] stage 1 SUPERSEDES the [DD-14.LB] amendment's ruled refusal (2026-08-24,
   `sr_d27_extract.md` §3.4(d)). That ruling refused a call that is a lookbehind's one top-level
@@ -1975,6 +2046,17 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
        `advance` text). Rev 2's sketch was hand-executed and libpcre2-checked in rev 2. The control
        can fail: three one-line variants differ on 288,168, 3,398,699 and 591,194 cells. Its
        population is the generator's own count, printed in its output.
+   - `[r2-1106 F1]` **The encoding checks' own controls.** DD12a(i)'s region (1) and K49's boundary
+     sites now come from the SEAM (§5.6), which is what declares what is encoding-owned. That is
+     not a shared source with what DD12a(i) controls: the subject is the SHARED emitter text, which
+     the seam does not write, and anything outside the seam's declared symbols that differs by
+     encoding is still red. The derivation can fail in both directions, and each has a plant: a
+     symbol dropped from the seam's list turns DD12a(i) red, and an entry with no witness fails the
+     derived floor (K35). K49 ties each boundary member to `next_pos` through a compiler, as it
+     ties `advance` today, and counts its members.
+   - `[r2-1106 F2]` W-low is now an ANSWER witness, found by literal execution (review r2): a
+     model that has no trail could never have moved under a trail sabotage, which is why rev 3
+     found "no cell".
 3. **What moves when data is regenerated.** MOSTLY NOT RELEVANT: stage 1 adds no table, calibration
    or generated file.
    - The new data are the two `limits.def` rows (§5.2a). `--list-limits` and `pcrec_limits_tsv`
@@ -2066,14 +2148,19 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
      inside a lookbehind. That refusal existed only because the loop did not. The decision entry
      at the build says so.
 
-5. **NEW `[r-cursor]`, the manager's call: does the "wait for the remodel" rule cover a new member
+5. **ANSWERED `[r2-1106 F7]` (manager, ruling 7, 2026-11-06): no.** New members of `VmSeek` and
+   `VmLocalKind` are row additions and do not wait for [VMREC]; [VMREC] must list them, in
+   `docs/design/plan_row_bodies/VMREC.md` (§5.6). Kept as asked:
+   **NEW `[r-cursor]`, the manager's call: does the "wait for the remodel" rule cover a new member
    of an existing statement family?** The loop needs no new kind of VM statement. It needs a new
    member in two closed lists that existing kinds carry: one more kind of cursor move (step one
    character, never past the cursor) and one more kind of matcher-local variable (the far count),
    plus one optional operand on the existing back-step (§5.6). The review r5 rule held back a new
    KIND until the remodel's analysis stage. Leaning: it does not cover members, because each is a
    one-row addition to the effects table that stage will read.
-6. **NEW `[r-cursor]`, the manager's call (answer-free): which slot family holds the loop's one
+6. **ANSWERED `[r2-1106 F7]` (manager, ruling 8, 2026-11-06): the span-loop low-water family**, its
+   legend and listing text owed by the build (delivered arithmetically, §5.1b). Kept as asked:
+   **NEW `[r-cursor]`, the manager's call (answer-free): which slot family holds the loop's one
    position?** Every choice gives the same answers and the same cost. Leaning: the span-loop
    low-water family, because its stated contract (a position the frame cannot carry, written once
    per entry, trailed) is exactly this slot's. It costs per-slot legend and listing text, so a
@@ -2149,7 +2236,21 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 - `[r-cursor]` READ from code, not executed: the `low` family's readers (§5.1b), `vm_goto`'s
   checkpoint predicate, `vm_r_seek`'s arms, enc_utf8.c's `back_step` and `advance` texts (ported
   line by line into `candidates.py`).
+- `[r2-1106]` MEASURED, rev 4 (`docs/dev/lanes/vlbrev4_evidence/premise.out`; libpcre2 10.46
+  through `tests/lib/p2probe.c`, pcrec built at this lane's worktree, main `a8f5d4721`):
+  - F2's cell `(?:(?*.*(?<*a?))b)*$` on `bc`: [2-2] at every start, byte and UTF (with
+    `PCRE2_MATCH_INVALID_UTF`); pcrec refuses it today (0..1 characters);
+  - S-U4's re-aim: `(?<=a)x` has no lookbehind label in `--emit-ir`, `(?<=ab)x` has "fixed width
+    2";
+  - the retry advance's `[K49]` comment is emitted under `-e utf8 -fno-comments` (`a*`);
+  - `(?<=a|bc)x` stamps `RX_VM_PROGRAM_BYTES 2628ULL` under both encodings, with `rx_back_step`
+    defined ahead of the matcher; a lookbehind-free pattern carries no `rx_back_step`.
+- `[r2-1106]` READ from code, not executed: the seam's entry table, `enc_emit_inline_defs`' mask
+  test, `next_pos`'s utf8 body, DD12a(i)'s `SIG_RE`/`TWINNED`/`agg` lists and K49's extraction,
+  `VmSnap`/`vm_build_region_saves`, `vm_slot_name`, the S133/S123/S-U4 anchors.
 - INFERRED:
+  - `[r2-1106]` that the new seam function and the derived DD12a(i)/K49 fit in the sizes §5.6 gives
+    (estimates);
   - the speed rows of §3 (no timing was run);
   - the `one-length` row's answer equivalence to the `range` row, argued by four rewrites (§5.1b)
     and checked by gates 1-2 at build;
@@ -2241,7 +2342,7 @@ object, and [DEC-RUNG]'s general table is not grown by this note.
 | §5.5's alternative (second slot + forward step) | RETIRED: it is the design, minus the slot | §5.5 |
 | a `back_step_upto` seam entry | FILED as a measured-trigger candidate, not proposed | §5.5 |
 | record vocabulary | one `VmSeek` member, one `VmLocalKind` member, one local operand; D153 coverage asked | §5.6, §13 Q5 |
-| `advance`'s `@N` | a new caller; enc.h comment widens | §5.6, §10 |
+| `advance`'s `@N` | a new caller; enc.h comment widens (`[r2-1106 F1]` WITHDRAWN in rev 4: the step is `$_fwd_step`) | §5.6, §10 |
 | `limits.md` §3.1 | one sentence on the lookbehind's work charge | §10 |
 | §5.1b rewrites 1-4 | RE-STATED for the cursor shape at `lo = hi` | §5.1b |
 | §5.1c | RE-TRACED: 8 cells with trail depths | §5.1c |
@@ -2284,7 +2385,8 @@ are that file's; this lane did not edit it):
    range's.
 9. **Line 458, soundness of row 3**: "candidates replace the back-step, so the `$_back_step` sentinel
    and `$_next_pos` are not used": add the bounded `advance` step (rev 3 §5.6 `VSK_STEP_CHAR`),
-   which row 3 does not use either. Under rev 3 the UTF-8 far clamp (the sentinel retry) is range's
+   which row 3 does not use either. `[r2-1106 F1]` In rev 4 that step is the seam entry
+   `$_fwd_step` (rev 4 §5.6), not the `advance` text; cite it by that name. Under rev 3 the UTF-8 far clamp (the sentinel retry) is range's
    only, so row 3's "the byte machine accepts only at character boundaries of valid input" is the
    fact that replaces both.
 10. **Lines 526-528, W-trail "the concrete cell is owed by the build"**: range's own cell is now rev
@@ -2296,3 +2398,25 @@ are that file's; this lane did not edit it):
     entry, which is why rev 3 recommends the low-water family for it (§5.1b, §13 Q6). That is a
     different slot from the one line 423 rejected (a per-candidate one), so the sentence stays true;
     only its neighbourhood should not read as "the low family was rejected".
+12. `[r2-1106]` **Any arev text that says the lookbehind adds "no new seam entry"** (rev 3's
+    claim): rev 4 adds one, `$_fwd_step`, in the mask only for `range` branches. A row-3 producer
+    does not use it (its candidates come from the machine).
+
+## 16d. Disposition table (review 2026-11-06 r2) `[r2-1106]`
+
+Every FIX-NOW (F1-F7) was ruled ACCEPTED by the manager (the review's RULING block), with F1's
+design choice made by the manager: a seam entry, and DD12a(i)/K49 derived from the seam.
+
+| finding | disposition | where in rev 4 |
+|---|---|---|
+| F1 (FIXIND-1, READY-1/2, SOUND-1/2) | FIX-NOW, RULED form: the step is the entry `$_fwd_step` (engine-callable, inline, masked per `range` branch; no existing byte moves); DD12a(i) region (1) from `pcrec_enc_entry_symbols` via a test reader; K49 sites from `PCREC_ENC_BOUNDARY_ENTRIES`; the knee reads a call line only; the step's prose obeys `-fno-comments`; W14's byte-step arm has two named detectors; the "one splice" sentences stay true; fallback stated, not taken | REVISION 4, §0 G4, §5.1, §5.1a, §5.1b (seam column), §5.6, §6 gate 6 and the build units, §7 (W13, W14, S133/S134, new rows), §10, §11.2 |
+| F2 (SOUND-4) | FIX-NOW: W-low's answer cell (premise reproduced), trailing stated as necessary, the plant made buildable, the overrun's expected outcome and its build check | §5.1 (trail bullet), §7 W-low, §11.2, §15 |
+| F3 (FIXIND-2, READY-5) | FIX-NOW: one artifact-wide `<p>_lb_count`, `VmFrame.lb_count` from the count pass's `nlblow_total`, one name source (`pcrec_vm_local_name`) | §5.1b (locals column), §5.6 |
+| F4 (READY-6) | FIX-NOW: the arithmetic sub-block (`vm_slot_lblow`, two sub-totals), and its readers (`vm_slot_name`, the listing, `VmSnap.lblow`) | §5.1b |
+| F5 (FIXIND-3/4, READY-3/9) | FIX-NOW: S133 keeps one builder line (the far step has its own builder and twin), S123's anchor kept at one, the operand's absent spelling (`byloc`), W-low's plant, S-U4 on `(?<=ab)x`; DOC: W12(a)'s K134 mechanism stated, confirmed at build | §5.6, §6 gate 5, §7 |
+| F6 (READY-4) | FIX-NOW: gate 1's oracle and diff script gain the `byte`, `utf8` and `utf8-invalid` modes, populations counted per mode | §6 gate 1 |
+| F7 (FIXIND-3, READY-8) | FIX-NOW: `docs/design/plan_row_bodies/VMREC.md`, written by the build commit, with the entries and effects; §13 Q5/Q6 ANSWERED, "recommended" → "ruled" | §5.1b, §5.6, §13 |
+| F8 (SOUND-3) | DOC: the model validates the candidate SEQUENCE; the literal interpreter cited as the stronger evidence | §5.1a |
+| F9 (READY-7, FIXIND P&H) | DOC: the 160-byte claim deleted and the stale comment listed; rev 1's sentence marked history; G2's question closed | §0 G2, §5.1b |
+| F10 (sound P&H) | NOTED (out of delta; the compliance page check is the manager's) | none |
+| completeness ask (brief) | the stage-1 build units with every reader | §6 |
