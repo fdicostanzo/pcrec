@@ -299,3 +299,14 @@ These are in scratch `/var/tmp/pcrec-pcrec/scratch/memfn/s2c/jobs/`. Nothing was
 - [x] Design text marked `[rev1.3 r9fc-<id>]` with §R1.3 rows; spec hunk `measures.md` §3.5¶2 (cited by section)
 - [x] Gate jobs 470-474 and the S2d job dir updated; nothing queued
 - [x] `s2cfix_deliver.txt` committed unchanged
+
+## STATE AT HANDOFF
+
+Owed: none. Every validation the brief names ran and is green, with the numbers above. Rulings file: none named.
+Tip of `lane/memfn-s2c`: the commit that adds this section. Two notes for the manager's ruling:
+
+- FIX-5's residual: four `[^x]` sites lower to one compare and are classed `cmp2` by the ruling's wording. The
+  majority is unaffected.
+- The S2d dir's `window.env` was not read or changed.
+
+`docs/dev/lanes/s2cfix2_deliver.txt` stays untracked, as the manager wrote it.
