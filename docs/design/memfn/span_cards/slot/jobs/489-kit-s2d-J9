@@ -2,7 +2,8 @@
 # 489-kit-s2d-J9: the S2d window's LAST step (span_cards §3.5 READY-2, [rev1.3 r9-G6]): record.py finalize, the
 # window facts, `jobs` from the queue's end states by record.py's CAUSE table (green, failed, wait-timeout,
 # cancelled, none), `plan` and `floor` from the dry run's frozen plan, the transcript's sha. Ready when the prep
-# and every window job ENDED (a failed, cancelled or never-queued job is recorded, never waited for).
+# ENDED and every window job ended or was never queued (a failed, cancelled or never-queued job is recorded,
+# never waited for).
 . "$(dirname "$0")/common.sh"
 case "${1:-}" in
     --dry-run)
@@ -13,7 +14,8 @@ case "${1:-}" in
         exit 0 ;;
     --ready)
         hold
-        for j in prep $JOBS; do
+        ended kit-s2d-prep || { echo "waits: kit-s2d-prep $(bq state kit-s2d-prep)"; exit 75; }
+        for j in $JOBS; do      # `none`: never queued, recorded as such, never waited for
             s=$(bq state kit-s2d-$j)
             case $s in green|failed|cancelled|none) ;; *) echo "waits: kit-s2d-$j $s"; exit 75 ;; esac
         done

@@ -306,8 +306,12 @@ def write_draft(rundir, path, out, drift, outcome):
             raise InputError("the record's run section has no %s (record.py window writes it)" % k)
     texts = cell_texts(rundir, rec)
     rsha = hashlib.sha256(open(os.path.join(rundir, "run_record.tsv"), "rb").read()).hexdigest()
-    cards = [ln.rstrip("\n") for ln in open(plan.CARDS)
-             if not ln.startswith("#") and ln.split("\t")[2:3] == [plan.METHOD_VER]]
+    cards = []
+    for ln in open(plan.CARDS):              # the ver-3 cards, each gate_e6 RESOLVED (a `-` is the policy's, r9 SLOT-17)
+        f = ln.rstrip("\n").split("\t")
+        if not ln.startswith("#") and f[2:3] == [plan.METHOD_VER]:
+            f[10] = str(plan.CARD[f[1]]["gate"])
+            cards.append("\t".join(f))
     rows = []
     for k in sorted(out):
         r = out[k]
