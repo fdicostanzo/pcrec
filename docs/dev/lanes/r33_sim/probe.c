@@ -41,14 +41,15 @@ mf_art *__wrap_pcrec_mf_art_begin(mf_arena *ar, const char *prefix, uint32_t pol
     if (n_art < 64) arts[n_art] = a;
     n_art++;
     const uint32_t *rate = NULL;
-    int present = -1, prov = -1;
+    int present = -1;
+    unsigned long long digest = 0;
     for (uint16_t i = 0; an && an->kinds && i < an->nkinds; i++)
         if (an->kinds[i].tag && !strcmp(an->kinds[i].tag, "byte-rate")) {
             present = an->kinds[i].present;
-            prov = an->kinds[i].prov.source;
+            digest = (unsigned long long)an->kinds[i].digest; /* mf_akind lost prov at unit 1g (MF_SITE_ABI 22) */
             if (present == MF_KIND_PRESENT) rate = an->kinds[i].payload;
         }
-    fprintf(stderr, "R33RATE art=%u present=%d prov=%d rate=", n_art, present, prov);
+    fprintf(stderr, "R33RATE art=%u present=%d digest=%016llx rate=", n_art, present, digest);
     if (rate)
         for (int b = 0; b < 256; b++) fprintf(stderr, "%s%u", b ? "," : "", rate[b]);
     else

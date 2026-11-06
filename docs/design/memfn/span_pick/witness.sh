@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # span_pick rev 5: the watched witness smp20 `(?i)x/1234`, compiled blind and with each bundle
 # (the text-like `prose`, and the shipped `log`, `weblog` when NAMED) on every arm; prints the stop
-# each artifact searches (memchr's byte argument) and the rate source its stamp names. smp20.py
+# each artifact searches (memchr's byte argument) and the rate source its stamp names. census0.py
 # reads the default and DEF-deny lines as TODAY's picks (the incumbents). Also writes the bundle
-# listings smp20.py reads. 16 compiles + 4 listings; light, no make, no timing.
+# listings census0.py reads. 16 compiles + 4 listings; light, no make, no timing.
 #   bash span_pick/witness.sh PCREC_BIN PCREC_ANALYZE_BIN SCRATCHDIR
 # The prose bundle (a STAND-IN for [BENCH-WITHDATA]'s held-out bundle, never committed): GPL-3 +
 # GFDL-1.3 + Apache-2.0 from /usr/share/common-licenses, counted by pcrec-analyze.
