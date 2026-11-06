@@ -678,9 +678,9 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
 - [VLOOKBEHIND] STATE:not-started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-05): design PROPOSED (docs/design/vlookbehind.md, lane vlbdesign): one loop, candidate starts farthest first per branch; source = choice row: range (B, stage 1) ships, reverse-DFA (D) HELD until A-REV + a measured need; fixed width folds byte-identical; 4 questions
-  next: critic round on docs/design/vlookbehind.md, then Frank's answers to its §13 and a build go
-  refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
+  status (2026-11-05): design PROPOSED rev 1 (lane vlbrev1, text only, after review r3): cursor-saving retry frame; one-length bytes a declared selection by lo==hi (Q1 re-asked); 65535 ceiling; stage-2 reference rules; unbounded filed [LB-EXIST]
+  next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
+  refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
@@ -1717,6 +1717,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/pricing_rulepilot.md §9 item 1; [PRICE-BAKEOFF]; [COVER-PRICE-WITNESS]; memfn R-31
   Charter: rebuild every pilot arm with SIMD on; count sites where any arm's bytes move (identical bytes reuse the scalar timings); time only those. Report whether the scalar rule list still holds on the SIMD layer: the first measured test of absorbing a new method (rules re-search, pricing adds rows).
 ## Boonies
+- [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
+  filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)
+  status (2026-11-05): HELD, nothing designed beyond docs/design/vlookbehind.md §5.4: [ENG-LOOK]'s forward machine (or reverse-dfa's existence exit) as a filter row before range's finisher; with it `(?<=a+)` (err 125 in PCRE2 too)
+  trigger: a real pattern needing unbounded or over-255 lookbehind, from the [UTF-RW] harvest or a user
+  refs: docs/design/vlookbehind.md §5.4; docs/dev/reviews/2026-11-05-r3-vlookbehind.md (F16, owner question 1); [VLOOKBEHIND]; [ENG-LOOK]; [UTF-RW]; D156; D77
+  Correctness needs no cap; range alone does unbounded at O(n^3) worst case. The filter makes exact capture-free bodies linear per scan and shares one machine with [ENG-LOOK] (trigger: that row opens). Oracle: libpcre2 at max_varlookbehind=65535 on the bounded twin.
 - [SEAM-READER-CENSUS] STATE:not-started — every mf_* seam member has a kit reader or a listed trigger (a census, Boonies weight)
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)
   status (2026-11-03): filed; nothing built.
