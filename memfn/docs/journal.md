@@ -3360,3 +3360,13 @@ Main ruled on the four kit findings (D186 add. 2):
 - Merged lane/memfn-s2a into s2c (f3522e0f2) for the plan-cite fix; plan-lint clean.
 - GATES 470-474 QUEUED (mech 14 rows, slotsab 8), behind S2a's 465-468, with their own watcher.
 - One fix-induced + harness-fidelity critic (crit-s2cfix, opus) on 79c5e91e5..88a47cff8 before the S2d window.
+- 11-06 ~14:50: fix check on s2cfix (crit-s2cfix): every r9 id closes as ruled, and S2933-2936 hold. Eight leftovers, all RULED FIX-NOW before the window (recorded in r9's "Fix check", 62c7ff1be on s2c):
+  - FIX-1 answer: est reads cards and policy live, so a policy edit flips a byte-identical record. The record pins them.
+  - FIX-2 answer latent: key dims are never compared with the Arm.
+  - FIX-3: a ref-name FROZEN passes the dry runs, then every timing job fails.
+  - FIX-4: S2934 is caught only at ctl.
+  - FIX-5: vcls shapes are not gcc's lowering. EMIT-3's verdict holds: at least 209/292 sites are one-compare.
+  - FIX-6: ACC is unchecked.
+  - FIX-7: the placement screen is not a job.
+  - FIX-8: the draft gate breaks check C.
+- S2c gates 470-474 CANCELLED before they started (the tree changes); requeue after s2cfix2. Lane s2cfix2 (opus) is running; sabotage S2937+.
