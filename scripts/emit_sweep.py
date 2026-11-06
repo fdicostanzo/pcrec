@@ -1070,10 +1070,15 @@ def compile_stream_ir(pcrec_bin, pattern, timeout, extra=()):
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
 
 
+# `--facts-encodings` ([RUN-POS-SET] B0 part 3, lane altbuild): the listing's
+# encoding list; `byte` alone holds a utf8-only change to the byte half.
+FACTS_ENCODINGS = "byte,utf8"
+
+
 def compile_stream_facts(pcrec_bin, pattern, timeout):
     """Stream 6: the facts listing for BOTH encodings in one call -- so no
     `--extra` (an `-e` there would fight the listing's own encoding list)."""
-    argv = [pcrec_bin, "--features", "all", "--emit-facts=byte,utf8"]
+    argv = [pcrec_bin, "--features", "all", "--emit-facts=" + FACTS_ENCODINGS]
     argv += _pattern_argv(pcrec_bin, pattern)
     rc, out, err = run(argv, timeout)
     ok = rc == 0
@@ -3177,6 +3182,9 @@ def main():
                          "required at movers=0 and reports the declared count. "
                          "FACT:row:>new declares a NEW fact (one row per encoding "
                          "REF lists, none in REF)")
+    ap.add_argument("--facts-encodings", metavar="LIST", default="byte,utf8",
+                    help="the facts stream's --emit-facts encoding list (default "
+                         "byte,utf8); `byte` holds a utf8-only change to the byte half")
     ap.add_argument("--dumps-declared-rows", metavar="FLAG:KEY[,...]",
                     help="the dumps stream's DECLARED delta, judged both ways: on "
                          "each named surface (e.g. --list-limits) the row whose "
@@ -3231,6 +3239,8 @@ def main():
                          "DELIVER-witness exemption (and must not run the composition stream)")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    global FACTS_ENCODINGS
+    FACTS_ENCODINGS = args.facts_encodings
     if args.list_ident_arms:
         tb = os.path.abspath(args.bin) if args.bin else os.path.join(os.path.abspath(args.tree), "build", "pcrec")
         for n, a in ident_arms(tb, args.list_ident_arms):

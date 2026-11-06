@@ -65,3 +65,142 @@ Reproduced on `build/pcrec` at the base: utf8 `req_whole_run` lengths
   "add the reader with its reason on first contact" (every ALLOW_FN entry
   arrived that way), not an answer or identity gate. Flagged for the code
   round.
+- `tests/axes/run_axes.sh`: the `-fno-cls-kit` REFUSAL_PATTERN entry and its
+  K35 floor (60) are RETIRED: the merge keeps every wide class of the corpus
+  under the VM cap, so the floor became unreachable on a correct build (the
+  K55 precedent). `docs/spec/tuning.md` §2.33¶7 gains the sentence saying
+  why. A second gate the design did not name.
+- `tests/utf8/altnf_lowering.rxt` (new): the stage's answer witnesses, every
+  cell read from libpcre2 10.46 (`altbuild_evidence/altnf_lowering_oracle.out`,
+  all OK): `(?i)β`, `(?i)k` (default and VM), `x(?:1[éà]|q2|r3)y` (VM), K123's
+  `(?<=[a\x{3b1}])x`, `(?i)abcdÀefgh`, `(?i)Ελληνικά`, `\p{Nd}+` (VM).
+- `tests/codegen/run_wclass_census.sh` PART 4: island counts N1-N3 (the S-i
+  head witness `x(?:[éà]1|q2|r3)y` reads 1), the merge's own N4 (`a[éÉ]b`
+  merged 0, bit 10 1), and box counts N5 (`\p{Lu}` 67, `\p{Nd}` 39,
+  `\p{L}` 330, `.` 8).
+
+### Gates the design did not name (both CONFIRMED by the manager)
+
+1. `run_cpset_structure.sh` [2b]: function-scoped ALLOW_FN entries for the
+   owner's interval readers.
+2. `run_axes.sh`: the `-fno-cls-kit` refusal floor retired.
+
+### R1/R2 — the unpredicted island mover (a STOP, then ruled)
+
+The cell: `x(?:[éà]|q2|r3)y` under `--engine=vm`, `RX_VM_ALT_ISLANDS` 1 -> 0.
+Cause: the island's word list is unchanged (the set reading keeps today's
+admission), but `vm_isl_subtree_nodes` counts the child the CHAIN emits, the
+merged child is smaller, and the size row `isl_bytes > chain_bytes *
+VM_ISL_SIZE_FACTOR` (`emit_vm.c`) then prefers the chain. The design's
+"U4 is an equality" was wrong inside an enclosing alternation: corrected by a
+tagged ERRATUM after §5 stage 1's FIX-7 paragraph. Answers do not move (match
+counts equal across merged/denied and equal python `re` on the subject;
+libpcre2 agrees on the rxt cells).
+
+R1 asked for the speed of each flip. `perf stat -e instructions:u`, taskset -c 7,
+10 reps of a ~1 MB generated subject (seed 7), merged vs bit-10 deny
+(`altbuild_evidence/r1_knee_perf.{sh,out}`, driver `r1_knee_perf_drv.c`):
+
+| cell | merged | denied (bit 10) | ratio |
+|---|---|---|---|
+| knee `x(?:[éà]\|q2\|r3)y`, `-fno-cls-kit` | 299.9M (island 0) | 161.5M (island 1) | 1.86x slower |
+| knee, kit on | 325.5M (island 0) | 161.5M (island 1) | 2.0x slower |
+| `a[éÉ]b` (bare) | 50.2M | 64.3M | 0.78 (win) |
+| `(?i)aéb` (bare) | 89.7M | 98.5M | 0.91 (win) |
+| `(?i)xé+y` (bare, rungs 0x4u -> 0x1u) | 143.3M | 233.7M | 0.61 (win) |
+
+R1's condition ("a clear loss: stop and report") was MET at the knee cell; the
+lane stopped stage 1 and reported. R2 ruled (b): accept it as a listed D186
+cell with no new decision row (no corpus or bench pattern is in the family,
+the default route takes the DFA, bit 10 restores it); the loss is the size
+row's pre-existing weakness (it prices by size, not work), filed by the
+manager as a plan row with this cell as its witness and I-176 as its trigger.
+
+### U4 — island and rung census
+
+`altbuild_evidence/u4_census.py`: 936 utf8 patterns (860 corpus blocks, 76
+bench/utf8) x 4 axes (`--engine=vm`/auto x kit on/off) = 3744 cells, base
+`80341284e` vs stage. First run (`u4_stage1.log`, `u4_movers_stage1.tsv`): 211
+cells refused on both; 91 movers, 60 island/rung movers all bare-class and all
+restored by bit 10 (U1's predicted bare-class family: `(?i)é`, `(?i)αβγ`,
+`(?i)москва`, `(?i)(\xe9+)\1`...), 31 REFUSAL-MOVED, every one a BASE refusal
+the merge retires (`\p{L}+`, `\P{L}+` under `-fno-cls-kit`: refused at the
+base, compiled at the stage, refused again under bit 10). The census now
+classes those `refusal-retired-by-merge` (only FEWER refusals are expected,
+FIX-3), and holds a refusal floor (over a fifth refused fails: its first
+draft wrote `-o /dev/stdout`, which writes a `.h`, and "passed" with every
+cell refused). No knee-family (`alt`) mover is in the corpus or the bench.
+The rerun with the final classification is in the OWED list below.
+
+### Sabotage (stage 1)
+
+| row | plant | verdict |
+|---|---|---|
+| S1880 | `anf_in_key` keys position `p` too (`return i != p;` inverted) | DETECTED |
+| S1881 | box width dropped (`b->w = w;`) | DETECTED |
+| S1882 | the island's set arm reads one box only | DETECTED |
+| S1883 | the set arm splits per member (unmerged per code point) | DETECTED |
+| S1884 | the A_ALT spine walk reverted to `pcrec_ast_seethru(t->l)` | DETECTED |
+| S1885 | the A_CAT spine walk reverted (count and fill loops both) | DETECTED |
+
+`altbuild_evidence/mech_stage1.log` (11 rows incl. the re-anchored S366, S303,
+S-U8: S1885 UNDETECTED there, its plant reverted one of two loops and left
+them mismatched; rewritten as the exact two-loop revert),
+`mech_stage1_s1884_s1885.log` (both DETECTED). S366, S303 and S-U8 re-anchored
+on the new code.
+
+## Stage 2p — the piece set (facts only, inert)
+
+### What was built
+
+- `src/facts/desc.c` / `desc.h` (new): the fixed-width PIECE DESCRIPTION
+  (§3.4-§3.5), FIX-4's combinator interface: `pcrec_pd_unit/none/pos/cat/alt`
+  over width groups of position sets, the alphabet a parameter (`PdAlpha`:
+  join, same). CAT = product with same-total-width hull merge; ALT = union;
+  each group stores its LAST <= 32 positions (`PCREC_MAX_REQ_RUN_SCAN`); over
+  `PCREC_MAX_REQ_PIECES` groups the description drops (`PD_OVER`). The
+  node-grain carve-out: it includes no `facts_derive.h`, reads no fact
+  (`run_facts_checks.sh` CARVE list; `src/facts/CLAUDE.md` rule).
+- `src/facts/req.c`: the req walk builds the description in the SAME walk
+  as the set and the runs (`RbVal.desc`); class positions via
+  `rb_pos_set` (singleton cache); walls (gap, repeat, assertion, A_EMPTY,
+  lookaround, backref, call) set none.
+- Fact `req_pieces` (`facts.def`, epoch 2, core, denied with
+  `req_byte`/`req_run`), INERT: nothing reads it but `--emit-facts`. Declines
+  `decline:one-group`, `decline:not-fixed-width`, `decline:over-bound`.
+- Limit `PCREC_MAX_REQ_PIECES` = 10 (`limits.def`), MEASURED before the row
+  landed (RDY-6a): `p2_census.py` over every corpus block and every bench
+  pattern, census-only bound 4096: 6696 compiles, max 10 groups
+  (bench altwide), ci-moskva 4 (`p2_census.out`; the census read each bench
+  file's FIRST line, so the 8 multi-line bench patterns were counted by their
+  first line only).
+- Spec: `facts_listing.md` §4.1.2¶8c (spelling, the three declines, stored
+  last 32, inert); `tuning.md` §2.27¶5 and §2.28¶8 Facts emptied gain
+  `req_pieces`. `limits_check.sh` manifest 78 -> 79.
+- `run_facts_checks.sh` [facts-pieces]: 7 witnesses at an independent model's
+  value, the three declines among them.
+
+### Gate (model)
+
+`p2_model.py` (CaseFolding.txt + UTF-8, shares no code): 37 mixed-width fold
+classes in `(?i)abcd<X>efgh` + bench/utf8: 95 agree, 0 differ, 16
+UNPREDICTED (groups, properties, POSIX classes the model does not read), 2
+pcrec refusals (`p2_model.out`).
+
+### Sabotage (stage 2p)
+
+| row | plant | verdict |
+|---|---|---|
+| S1886 (S-p) | CAT keeps only the shortest group | DETECTED (facts) |
+| S1887 (S-L) | the run walk reads through a positive lookbehind | DETECTED (harness, `tests/lookaround/startpos.rxt` `ms 3 "abcx"`; the corpus's own `(?<=abc)x` is the design's `(?<=foo)bar` cell) |
+
+`altbuild_evidence/mech_stage2p.log`. Every existing mech anchor in the files
+2p edits still reaches (16 rows checked by SAB_BEFORE count).
+
+### Instrument additions (scripts/emit_sweep.py)
+
+The B0 judge could not take a NEW row: `--facts-declared-moves FACT:row:>new`
+(a new fact, one row per encoding, none in REF), `--dumps-declared-new
+FLAG:KEY` (`--dumps-declared-gone` mirrored), `--facts-encodings LIST` (B0
+part 3's byte half; default unchanged). Each unit-checked both ways (judged
+clean on the true delta, red on a missing row and on an undeclared move).

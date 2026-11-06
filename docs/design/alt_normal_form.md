@@ -1067,6 +1067,16 @@ position (a REACH line per position).
   the cap (`\p{L}`, 827 boxes unmerged) declines on the SET's box count before
   the words are materialised. Stated as the requirement; U4's equality is its
   check (the counter equivalence was not read in the tree).
+  **(ERRATUM, stage-1 build, lane altbuild 2026-11-06; manager rulings R1/R2
+  in `docs/dev/lanes/altbuild_rulings.md`)** U4 is NOT an equality inside an
+  enclosing alternation. The WORD list is unchanged, but the chain-size walk
+  above counts the MERGED child the chain now emits, so an island near the size
+  knee (`isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR`) flips island -> chain
+  when its chain got smaller: `x(?:[éà]|q2|r3)y` under `--engine=vm`
+  `RX_VM_ALT_ISLANDS` 1 -> 0, bit 10 restores it. A D186 choice-cell family,
+  listed two-sided by U4's census; no corpus or bench pattern is in it. The S-i
+  head witness is `x(?:[éà]1|q2|r3)y` (not near the knee). Measured cost and
+  disposition: `docs/dev/lanes/altbuild_report.md` stage 1, "R1/R2".
   **(r7: RDY-2) The stamp unit.** `<PREFIX>_ALTCLS_MERGES` counts alternation
   RUNS altcls folded today (`match_api.md` §6.3.11¶3; measured at `783a45ec0`:
   `x(?:a|b|c)y` 1, `x(?:a|b|cd|e|f)y` 2). Stage 1 leaves the stamp exactly as it
