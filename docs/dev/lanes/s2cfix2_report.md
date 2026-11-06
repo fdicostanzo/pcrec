@@ -257,7 +257,14 @@ All runs were light and done before 19:00. No timing run, no `make test`, no mec
   `== s2 FINALIZE ...: 6 jobs (2 ran), 38 plan keys, 30 floor lines, 4 cards, 1 policy rows`.
 - Job-script `--dry-run`s under run id `s2c-dry`, FROZEN = the lane's HEAD, from a scratch copy of `jobs/`:
 
-JOBDRY_RESULT
+  At commit `974a7dc5c` (the code is the same as the tip's), all rc 0:
+  - `480-kit-s2d-prep`: `expect jobs=6`.
+  - `480-kit-s2d-screen`: `est 120`, `expect screens=1`.
+  - `481`-`486` (J1, J2, J2p, J3, J4, J5): `expect groups=` 9, 3, 7, 6, 5, 3.
+  - `489-kit-s2d-J9`: `finalize ... s2c-dry 974a7dc5c7dcaf161590f441eadfa6b64296147b`, the full sha.
+
+  The copies match the tree (the stale-copy check passed). The gate jobs' `--dry-run`s also pass: 470-474 all
+  rc 0, with 474 at `expect rows=11` and 473 at `rows=14`.
 
 - Synthetic FULL draft through check C: EQUAL (FIX-8 above).
 - emit_sweep spot, `--ref 88a47cff8 --bin build/pcrec --no-corpus --patterns-file` (s2c's 159 patterns), streams
