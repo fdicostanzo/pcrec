@@ -3,30 +3,14 @@
 #   python3 -I j1_rule.py CELLS.tsv   prints `j1_verdict X` and `j1_widths W;W|-`, then one line per (cell, w)
 # CELLS: columns `cell pattern subject regime width launch ns_e6` (the run record's j1_cells section), width
 # `128#b` the twin. A J1 cell c is (pattern, subject, regime).
-import math, sys
+import os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from est import rhafz, isqrt_rn, med, sp2  # noqa: E402  (the estimator's primitives, ONE home: r9 HOUSE-5)
 
 M_NUM, M_DEN, K = 1, 2, 5            # the margin m = 0.5 and k = 5 of 8 cells (§3.6, j1_drill.py Part 2)
 WIDTHS = (32, 64, 256, 512)
 
-def rhafz(n, d):
-    s = -1 if (n < 0) != (d < 0) else 1
-    n, d = abs(n), abs(d)
-    return s * ((n + d // 2) // d)
-
-def isqrt_rn(N):
-    r = math.isqrt(N)
-    return r + 1 if N - r * r > r else r
-
-def med(v):
-    s = sorted(v)
-    return s[(len(s) - 1) // 2]
-
-def sp2(x):
-    m = med(x)
-    k = max(range(len(x)), key=lambda i: (abs(x[i] - m), i))
-    w = [x[i] for i in range(len(x)) if i != k]
-    n = len(w)
-    return rhafz(1723000 * (n * sum(t * t for t in w) - sum(w) ** 2), 10**6 * n * (n - 1))
 
 def verdict(rows):
     t = {}

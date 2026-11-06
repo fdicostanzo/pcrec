@@ -1,4 +1,4 @@
-== vcls over sweep.jsonl: verify (form, cls) by the T-CMP / set-test text's boundaries; counts are sites
+== vcls over sweep.jsonl (sha256 b88599f6d182a150e21b4312b92acb6989eafe17ba6dab0001eb390101bffba4, swept at 71cad723e): verify (form, cls) by the T-CMP / set-test text's boundaries; counts are sites
 DEF	verify	settest	c2	2
 RTE	verify	rc-memcmp	l1	2
 RTE	verify	rc-words	w1	10
@@ -7,3 +7,9 @@ RTE	verify	rc-words	w3	1
 RTE	verify	settest	c1	48
 RTE	verify	settest	c2	290
 RTE	verify	settest	cn	7
+DEF	shape	settest	c2.case	1
+DEF	shape	settest	c2.pair	1
+RTE	shape	settest	c2.case	155
+RTE	shape	settest	c2.other	4
+RTE	shape	settest	c2.pair	78
+RTE	shape	settest	c2.range	53

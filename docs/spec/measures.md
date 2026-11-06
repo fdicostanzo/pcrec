@@ -64,7 +64,7 @@
 | `unit_key` | R | the key of the unit row |
 | `method` | R | the method cards' `owner-name@ver` |
 | `run`, `box`, `compiler`, `libc`, `code_commit`, `counters` | | provenance |
-| `partial` | | `1` when only some groups passed their gates, else `0` or empty |
+| `partial` | | `1` when only some groups passed their gates, else `0` or empty; in a format-2 set, `1` exactly when §3.5¶12's outcome is PARTIAL (its row 3), else `0` |
 | `rows` | R | the number of rows in section `rows` |
 | `values_digest` | R | §3.3's digest, 16 lowercase hex |
 
@@ -157,9 +157,11 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 <a id="s3-4"></a>
 ### 3.4 The estimator
 
-<a id="s3-4-p1"></a>[3.4¶1] This section gives a format-2 set's measured values their meaning: how a row's `value_e6` and `noise_e6` follow from the set's `cells`. A checker that recomputes a set reads the set file (header, cards, rows, cells) and the run record of §3.5¶8, and nothing else. The recompute agrees EXACTLY or fails; the only roundings are those named here. A format-1 set's cards and cells are never parsed by this section.
+<a id="s3-4-p1"></a>[3.4¶1] This section gives a format-2 set's measured values their meaning: how a row's `value_e6` and `noise_e6` follow from the set's `cells`. A checker that recomputes a set reads the set file (header, cards, rows, cells), the run record of §3.5¶8, and the rules of the producer that record names (§3.5¶8a), and nothing else. The recompute agrees EXACTLY or fails; the only roundings are those named here. A format-1 set's cards and cells are never parsed by this section.
 
 <a id="s3-4-p2"></a>[3.4¶2] Arithmetic. `rhafz(n, d)` rounds n/d half away from zero (truncating division with the sign applied afterwards), and every product and sum is held in a 128-bit signed integer in C (an integer `divmod` in a language with unbounded integers). `isqrt_rn(N)` is r + (1 if N − r² > r else 0) with r = floor(sqrt(N)) exact; there are no ties for integer N. `med(v)` is the LOWER median: element (n − 1)/2 (truncating) of v sorted ascending, never an average. L is the card's `launches` and R its `rounds`. Canonical order is §3.3¶1's.
+
+<a id="s3-4-p2a"></a>[3.4¶2a] This section is written for L = 7: the six launches the trim of step 6 leaves, `K_TRIM_E6` and `K_MED_E6` (§3.5¶6) are seven launches' constants. A card stating another `launches` refuses the recompute.
 
 <a id="s3-4-p3"></a>[3.4¶3] **Estimator grammar.** In a format-2 set a card's `lengths` is one of `slope X1,X2,X3` (three distinct integer lengths, ascending) or `delta LEN` (one integer length). Integers only; any other text refuses the recompute. A card's `aa_rule` is a `;`-joined list of tokens: `twin-per-arm` (every timed arm has its own A/A twin, step 5) and `bimodal-test` (the unit's test, §3.5¶4).
 
@@ -184,6 +186,8 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 <a id="s3-4-p13"></a>[3.4¶13] **Step 3: per launch, by the launch's control.** u_l is the `slope` of arm `ctl` in the row's job's group `J<j>.ctl`, launch l. v_l = `rhafz(abs_l × 10^6, u_l)`. A launch-wide shift moves the arm and the control together and cancels in v_l.
 
 <a id="s3-4-p14"></a>[3.4¶14] **Step 4: anchored to the unit.** W = `med(v_l)` of the unit row (the header's `unit_key`). Every row's anchored per-launch value is x_l = `rhafz(v_l × 10^6, W)` (a `ratio` row: × 10^6; a `walkbytes` row: unit bytes × 10^6), its twin's x#b_l likewise. `value_e6` = `med(x_l)`; the unit's is exactly 10^6. `abs_ns_e6` (provenance) = `med(abs_l)`.
+
+<a id="s3-4-p14a"></a>[3.4¶14a] W, every control slope u_l and every `delta` row's E are positive; a set where one is zero or negative is refused.
 
 <a id="s3-4-p15"></a>[3.4¶15] **Step 5: A/A, per arm, on the value.** aa = `med(|x#b_l − x_l|)`.
 
@@ -213,6 +217,8 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s3-5-p8"></a>[3.5¶8] **The run record** is one text file in `table_contract.md`'s section shape. Its sections are `run` (columns `key value`; keys `set`, the `id@rev` it was made for, `run_id`, and whatever the producer adds), `jobs` (`job state cause`: every job of the plan, `ran`, or `never-ran` with a cause), `plan` (`key group job`: every row key the run planned) and `floor` (`clause key when`: `when` is `always` or a condition token the producer defines, a clause whose condition is true being inactive). A section the producer adds for a verdict the recompute re-derives (¶10) is the producer's. The record names its set by `id@rev`, never by digest.
 
+<a id="s3-5-p8a"></a>[3.5¶8a] **The producer's rules.** Three rules a recompute applies are the producer's, not this document's: the base rule of §3.4¶6, the meaning of each condition token of the `floor` section, and the rule of any verdict re-derived under ¶10. The record's `run` section names their owner in the key `rules`, an `owner-name@ver` (the set's `method` when the producer is the method's own harness). A recompute holds the rules of each owner it accepts; a record naming an owner it does not hold, a condition token that owner does not define, or no `rules` key, is refused.
+
 <a id="s3-5-p9"></a>[3.5¶9] **The three copies are compared.** The header `run` value is `<run id> record:<sha-256>`. The sha-256 in that value equals the sha-256 in `PROVENANCE.md` equals the sha-256 of the record file, and the run id in the header equals the run id in `PROVENANCE.md` equals the `run_id` of the record's `run` section. The recompute checks the file against its sha before reading it; any mismatch refuses.
 
 <a id="s3-5-p10"></a>[3.5¶10] **What the recompute covers.** From the committed set and the run record: every row's value, noise and `null` status; every cost row's gate; the unit's gate and bimodal test; each job's drift; the set's row list (exactly the plan's keys minus those the rules of ¶2-¶6 make absent); any verdict the record states that its producer derives from cells the record holds, RE-DERIVED from those cells and not taken as stated; the floor over the record's clauses; and the outcome (¶12) with the header's `partial`. Hence **a refused job's CELLS STAY in the set** (the verdict reads them) while its ROWS are absent, and the control's cells stay (every row reads them). The one input taken as given is the record's `jobs` section, and it is cross-checked: a `never-ran` job has no cell in the set and a `ran` job has every cell its plan keys need. The control is not a row and has no gate of its own.
@@ -223,7 +229,7 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 | # | condition | outcome | causes recorded |
 |---|---|---|---|
-| 1 | the unit row fails (¶5) | REFUSED, exit 3, no set | `unit` |
+| 1 | the unit row is absent (its job never ran) or fails (¶5) | REFUSED, exit 3, no set | `unit` |
 | 2 | some ACTIVE floor clause has no priced key | REFUSED, exit 3, no set | `floor:<clause>` per failed clause, with its keys' reasons |
 | 3 | some planned key is absent (its job never ran or was drift-refused, or its cost row failed its gate) | PARTIAL, exit 4, header `partial` `1` | the absent keys, named in the run summary |
 | 4 | otherwise | FULL, exit 0, header `partial` `0` | none |

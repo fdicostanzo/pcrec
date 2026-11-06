@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# 480-kit-s2d-prep: the S2d window's PREPARATION, no clock: every job's slot dry run under the window's run id
+# (the frozen plan, builds, per-launch linking and placement, the ctl sha, the answer gate on every launch, each
+# job's manifest), so the timing jobs only time what was gated.
+. "$(dirname "$0")/common.sh"
+case "${1:-}" in
+    --dry-run)
+        check_inputs "$(basename "$0")" || exit 1
+        echo "would run: make -C $TREE; for J in $JOBS: python3 -I $SLOT/run.py dry J $RUNDIR $RUN_ID"
+        echo "boxqueue: cap 2400"; echo "boxqueue: patience none"; echo "boxqueue: est 900"
+        echo "boxqueue: expect jobs=$(echo $JOBS | wc -w) lines=^s2d-prep [A-Z0-9p]+ rc=0\$"
+        exit 0 ;;
+    --ready) hold; exit 0 ;;
+esac
+mkdir -p "$RUNDIR"
+make -C "$TREE" -j16 >/dev/null || exit 1
+bad=0
+for j in $JOBS; do
+    python3 -I "$SLOT/run.py" dry "$j" "$RUNDIR" "$RUN_ID"; rc=$?
+    echo "s2d-prep $j rc=$rc"; [ $rc -eq 0 ] || bad=1
+done
+exit $bad

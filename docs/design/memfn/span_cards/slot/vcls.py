@@ -16,8 +16,14 @@
 # read from the trace's `runcmp` row, L from the reply's stated run (run_len) or the plan's term (a pinned
 # run absent: the plan's consecutive positions of one term); settest from each NONE alternative's span
 # positions. Counts are SITES (census0 counts units; the two differ by repeats of one unit).
-#   python3 -I vcls.py CENSUS0_PY SWEEP_JSONL > vcls.out
-import collections, importlib.util, json, sys
+# LOWERING SHAPES (r9 EMIT-3): a two-compare set test is a CASE pair ({X,x}: one masked compare), an unrelated
+# PAIR (two compares), an inner RANGE (two compares) or OTHER (an edge range with one more: the complement of one
+# byte); `shape` lines split class c2 by them, and the timed instance must be the majority shape (link.py), else
+# its row is a lower bound.
+# STAMPED (r9 SLOT-9): the header names the sweep's sha-256 and the commit census0 states it was swept at, so
+# the plan's verify keys are reproducible from the tree plus that sweep.
+#   python3 -I vcls.py CENSUS0_PY SWEEP_JSONL SOURCE_COMMIT > vcls.out
+import collections, hashlib, importlib.util, json, sys
 
 def load(path):
     spec = importlib.util.spec_from_file_location("census0", path)
@@ -40,6 +46,21 @@ def settest_cls(ms):
             rg.append([x, x])
     n = sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg)
     return "c1" if n == 1 else "c2" if n == 2 else "cn"
+
+def shape(ms):
+    """the lowering shape of a TWO-compare set test (members ms); None for any other compare count"""
+    rg = []
+    for x in sorted(ms):
+        if rg and x == rg[-1][1] + 1:
+            rg[-1][1] = x
+        else:
+            rg.append([x, x])
+    if sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg) != 2:
+        return None
+    if len(rg) == 2 and all(lo == hi for lo, hi in rg):
+        a, b = rg[0][0], rg[1][0]
+        return "case" if a ^ b == 0x20 and chr(b).isalpha() else "pair"
+    return "range" if len(rg) == 1 else "other"
 
 def words(L):
     w = 8 if L >= 8 else 4 if L >= 4 else 2
@@ -68,7 +89,7 @@ def plan_run_len(wr):
 
 def main():
     c0 = load(sys.argv[1])
-    pop = collections.Counter()
+    pop, shp = collections.Counter(), collections.Counter()
     for line in open(sys.argv[2]):
         rec = json.loads(line)
         for s in rec.get("sites", []):
@@ -85,12 +106,19 @@ def main():
                     continue
                 for sp in a["spans"]:
                     for h in sp["sets"]:
-                        c = settest_cls(members(h))
+                        ms = members(h)
+                        c = settest_cls(ms)
                         if c:
                             pop[(rec["arm"], "settest", c)] += 1
-    print("== vcls over %s: verify (form, cls) by the T-CMP / set-test text's boundaries; counts are sites"
-          % sys.argv[2].split("/")[-1])
+                        if c == "c2":
+                            shp[(rec["arm"], "settest", "c2." + shape(ms))] += 1
+    sha = hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()
+    print("== vcls over %s (sha256 %s, swept at %s): verify (form, cls) by the T-CMP / set-test text's boundaries;"
+          " counts are sites" % (sys.argv[2].split("/")[-1], sha, sys.argv[3]))
     for (arm, form, cls), n in sorted(pop.items()):
         print("%s\tverify\t%s\t%s\t%d" % (arm, form, cls, n))
+    for (arm, form, cls), n in sorted(shp.items()):
+        print("%s\tshape\t%s\t%s\t%d" % (arm, form, cls, n))
 
-main()
+if __name__ == "__main__":
+    main()

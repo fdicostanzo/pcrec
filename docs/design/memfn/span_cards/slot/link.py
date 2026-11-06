@@ -4,19 +4,24 @@
 #                                 launch executables J<j>.L<l> with a seeded PAD before every arm and twin,
 #                                 asserts the placement constraints on the LINKED executables (nm), the
 #                                 text equality of arm and twin (sources by cmp, linked .text by objdump,
-#                                 relocation targets masked), every cell TU's site-text hash against its key's
-#                                 form hash, and records each timed function's address and its hot loop
+#                                 relocation targets masked), every cell TU's site-text hash against the
+#                                 instance its KEY names, and records each timed function's address, its hot
+#                                 loop (placement.tsv) and each cell's text facts (cell_text.tsv: the instance
+#                                 and fold hashes est.py writes as the row's dep, r9 G5)
 #   link.py ctl RUNDIR            the control executable `ctl` (the canonical walk at the three find_byte
 #                                 lengths, one placement), built once per window, and its sha-256
 # Cell texts come from tests/memfn/arm_fixtures.c's `--site-parts` (formhash's entry table: the ONE renderer,
-# the text mf_form_hash folds); the wrapper is ONE text per site shape (below). gcc 15.2 -O2 -march=x86-64
-# -mtune=generic, the declared target (§2.7). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P
-# is a multiple of 16 in [16, 4096); its draw is seeded by (run id, job, l, arm, d) (MEAS-1, READY-8).
+# the texts mf_form_hash folds); the wrapper is ONE text per site shape (below). THE KEY NAMES THE TEXT (r9 G2):
+# a row key's (form, cls) is read off its tokens (plan.key_form), the render uses it, and an Arm whose own form
+# or class disagrees REFUSES (KEY-ARM MISMATCH). gcc 15.2 -O2 -march=x86-64 -mtune=generic, the declared target
+# (§2.7). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P is a multiple of 16 in [16, 4096); its
+# draw is seeded by (run id, job, l, arm, d) (MEAS-1, READY-8).
 import hashlib, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import plan  # noqa: E402
+import vcls  # noqa: E402
 
 TREE = plan.TREE
 CC = ["gcc", "-std=gnu11", "-O2", "-march=x86-64", "-mtune=generic"]
@@ -26,7 +31,8 @@ CC = ["gcc", "-std=gnu11", "-O2", "-march=x86-64", "-mtune=generic"]
 # object, 32 today). The cells time the declared target's DEFAULT code (no alignment flag), so the
 # constraint is read on the alignment the code has: in every launch arm and twin differ mod 64, and over the
 # 7 launches each arm takes at least min(3, 64 / A) values (both of the two at A = 32).
-MAXDRAW = 64                       # the bounded re-draw (READY-5): UNMEASURED DEFAULT (D149)
+MAXDRAW = 64                       # the bounded re-draw per (launch, arm) (READY-5): UNMEASURED DEFAULT (D149)
+PAD_UNITS, PAD_STEP = 255, 16      # P = PAD_STEP x (1 + draw mod PAD_UNITS): UNMEASURED DEFAULT (D149)
 
 def sh(cmd, **kw):
     r = subprocess.run(cmd, capture_output=True, text=True, **kw)
@@ -34,12 +40,23 @@ def sh(cmd, **kw):
         raise SystemExit("link: %s: rc %d\n%s" % (" ".join(cmd[:4]), r.returncode, (r.stderr or r.stdout)[-1500:]))
     return r.stdout
 
+FX_INPUTS = [os.path.join(TREE, *p) for p in (("tests", "memfn", "arm_fixtures.c"), ("build", "libpcrec.a"),
+                                               ("memfn", "include", "memfn.h"), ("memfn", "src", "kit.h"))]
+
+def sha_files(paths):
+    h = hashlib.sha256()
+    for p in paths:
+        h.update(hashlib.sha256(open(p, "rb").read()).digest())
+    return h.hexdigest()
+
 def fx_path(rundir):
-    fx = os.path.join(rundir, "fx")
+    """the fixture binary, CACHED BY ITS INPUTS (r9 G1/HOUSE-9): RUNDIR/fx.<sha of arm_fixtures.c, libpcrec.a
+    and the two headers>, so a rebuilt libpcrec.a is a new fx, never a reused one"""
+    fx = os.path.join(rundir, "fx." + sha_files(FX_INPUTS)[:16])
     if not os.path.exists(fx):
         sh(["gcc", "-std=gnu11", "-O1", "-I" + os.path.join(TREE, "memfn", "include"),
-            os.path.join(TREE, "tests", "memfn", "arm_fixtures.c"), os.path.join(TREE, "build", "libpcrec.a"),
-            "-o", fx])
+            FX_INPUTS[0], FX_INPUTS[1], "-o", fx + ".tmp"])
+        os.replace(fx + ".tmp", fx)
     return fx
 
 def facts(fx, form, cls):
@@ -52,13 +69,17 @@ def parts(fx, form, cls):
     return f, b
 
 def form_hash(fx, form, cls):
+    """(the instance's hash, the form's FOLD hash mf_form_hash(form)): cls None names the canonical instance"""
+    inst = fold = None
     for ln in sh([fx, "--hash"]).splitlines():
         p = ln.split("\t")
-        if p[0] == "FORMCLS" and p[1] == form and p[2] == (cls or "-") and p[3] == "0":
-            return p[4]
-        if p[0] == "FORMCLS" and p[1] == form and cls is None and p[3] == "0" and p[-1] == "1":
-            return p[4]
-    raise SystemExit("link: no form hash for %s %s" % (form, cls))
+        if p[0] == "FORM" and p[1] == form and p[2] == "0":
+            fold = p[3]
+        if p[0] == "FORMCLS" and p[1] == form and p[3] == "0" and (p[2] == cls or (cls is None and p[-1] == "1")):
+            inst = p[4]
+    if not inst or not fold:
+        raise SystemExit("link: no form hash for %s %s" % (form, cls))
+    return inst, fold
 
 def cbytes(bs):
     return ", ".join(str(b) for b in bs)
@@ -167,14 +188,19 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
 """
 
 def render(fx, a):
-    """(source text, (form, cls) or None, facts)"""
+    """(source text, (form, cls) or None, facts): (form, cls) the KEY's (r9 G2), the Arm's own must agree"""
     if a.kind == "verify" and a.form == "null":
-        return WRAP_NULL, None, {}
+        q = a.name.split(".")
+        if len(q) != 3 or q[:2] != ["base", "null"] or not a.of or a.of[1] != q[2]:
+            raise SystemExit("link: KEY-ARM MISMATCH %s: a null base names its class, the Arm's is %s" % (a.name, a.of))
+        return WRAP_NULL, None, facts(fx, a.of[0], a.of[1])
     if a.kind in ("enter", "j1"):              # whole artifacts (art.py): rundir is fx's directory
         import art
         return art.render(a, os.path.dirname(fx)), None, {}
-    cls = a.cls if a.kind == "verify" else None
-    form = "walk" if a.kind == "ctl" else a.form
+    kf = plan.key_form(a.name)
+    if kf is None or kf != ("walk" if a.kind == "ctl" else a.form, a.cls if a.kind == "verify" else None):
+        raise SystemExit("link: KEY-ARM MISMATCH %s: the key names %s, the Arm %s %s" % (a.name, kf, a.form, a.cls))
+    form, cls = kf
     f = facts(fx, form, cls)
     fi, bo = parts(fx, form, cls)
     if f["shape"] == "cmp-expr":
@@ -189,50 +215,77 @@ def span(src, what):
     m = re.search(r"/\* SITE %s BEGIN \*/\n(.*?)/\* SITE %s END \*/" % (what, what), src, re.S)
     return m.group(1) if m else ""
 
+LANDING = {None: "LD_MISS", "periodic": "LD_PERIODIC", "random": "LD_RANDOM"}
+
+def bitmap(bs):
+    m = [0] * 32
+    for b in bs:
+        m[b >> 3] |= 1 << (b & 7)
+    return m
+
 def arm_entry(a, sym, f, rundir):
+    """the arm's slot.h table entry; a verify arm's (and its null base's) run, mask or members are the facts of
+    the instance it names (the base: its class's, r9 G7), never copied bytes"""
     kind = {"find": "K_FIND", "ctl": "K_FIND", "verify": "K_CMP", "enter": "K_ART", "j1": "K_ART"}[a.kind]
     if a.kind == "verify" and a.form == "null":
         kind = "K_NULL"
+    if a.landing not in LANDING:
+        raise SystemExit("link: %s: unknown landing %r (one of %s)" % (a.name, a.landing, sorted(k for k in LANDING if k)))
+    if a.kind in ("find", "ctl") and (a.landing is None) != (a.gap is None):
+        raise SystemExit("link: %s: a landing without a gap, or a gap without a landing" % a.name)
     lens = ", ".join(str(x) for x in a.lengths)
     hit = hexbytes(f.get("members", "-")) if a.kind in ("find", "ctl") else []
     member = [0] * 32
     run, mask, L = [0] * 32, [0] * 32, 0
-    if a.kind == "verify" and a.form != "null":
+    if a.kind == "verify":
         if f.get("L", "-") != "-":
             L = int(f["L"])
             run[:L] = hexbytes(f["run"])
             mask[:L] = hexbytes(f["mask"])
         else:
-            for b in hexbytes(f["members"]):
-                member[b >> 3] |= 1 << (b & 7)
-    if a.kind == "verify" and a.form == "null":
-        L = {"w1": 4, "w2": 3, "w3": 18, "l1": 4}.get(a.cls, 0)
-        run[:L] = [0x61] * L
-        mask[:L] = [0xff] * L
-        if not L:
-            member[0x61 >> 3] |= 1 << (0x61 & 7)
-    landing = {"periodic": "LD_PERIODIC", "random": "LD_RANDOM"}.get(a.landing, "LD_MISS")
-    ev = -1 if a.events is None else a.events
-    if a.kind == "verify":
-        ev = plan.LEN // 64
+            member = bitmap(hexbytes(f["members"]))
     subj = expect = "NULL"
     if a.kind in ("enter", "j1"):
         import art
         subj, expect = art.subject(a, rundir)
-    return ("    { \"%s\", %s, %s_time, %s_gate, %d, { %s }, %s, %d, %d, %d, { %s }, { %s }, %d, { %s }, { %s }, %d, %dLL, %s, %s },"
-            % (a.name, kind, sym, sym, len(a.lengths), lens, landing, 1 if a.split == "alt" else 0, a.gap or 0,
-               len(hit), cbytes(hit) or "0", cbytes(member), L, cbytes(run), cbytes(mask),
-               50 if a.pas == "p50" else 0, ev, subj, expect))
+    return ("    { \"%s\", %s, %s_time, %s_gate, %d, { %s }, %s, %d, %d, { %s }, { %s }, %d, { %s }, { %s }, %d, %s, %s },"
+            % (a.name, kind, sym, sym, len(a.lengths), lens, LANDING[a.landing], 1 if a.split == "alt" else 0,
+               a.gap or 0, cbytes(hit) or "0", cbytes(member), L, cbytes(run), cbytes(mask),
+               50 if a.pas == "p50" else 0, subj, expect))
 
 def seed_pad(run_id, job, l, arm, d):
     h = hashlib.sha256(("%s|%s|%d|%s|%d" % (run_id, job, l, arm, d)).encode()).digest()
-    return 16 * (1 + int.from_bytes(h[:8], "little") % 255)
+    return PAD_STEP * (1 + int.from_bytes(h[:8], "little") % PAD_UNITS)
 
 def compile_tu(src, path, sym):
     open(path, "w").write(src)
     obj = path[:-2] + ".o"
-    sh(CC + ["-c", "-DSYM=" + sym, "-I" + HERE, path, "-o", obj])
+    sh(CC + ["-c", "-DSYM=" + sym, "-DCAND_STRIDE=%du" % plan.CAND_STRIDE, "-DPOOL_BYTES=%du" % plan.POOL_BYTES,
+             "-I" + HERE, path, "-o", obj])
     return obj
+
+def find_members(fx):
+    """the union of every find form's members, read from the forms' facts (gen.c's miss text avoids them)"""
+    ms = set()
+    for form in sorted({a.form for js in plan.build()[0].values() for a in js if a.kind in ("find", "ctl")} | {"walk"}):
+        ms |= set(hexbytes(facts(fx, form, None)["members"]))
+    return bitmap(ms)
+
+def shape_tag(a, f):
+    """r9 EMIT-3: a verify class split by lowering shape (vcls.out) is priced by its MAJORITY shape: the
+    instance's shape must be it (else REFUSE), and with no majority shape the row is a lower bound"""
+    if a.kind != "verify" or a.form == "null" or f.get("members", "-") == "-":
+        return "-"
+    maj = plan.shape_majority(a.form, a.cls)
+    if maj == "":
+        return "-"
+    if maj is None:
+        return "lower-bound"
+    got = vcls.shape(hexbytes(f["members"]))
+    if got != maj:
+        raise SystemExit("link: EMIT-3: %s's instance %s.%s has lowering shape %s, its class's majority is %s"
+                         % (a.name, a.form, a.cls, got, maj))
+    return "-"
 
 def pad_obj(d, P, k):
     s = os.path.join(d, "pad%d.s" % k)
@@ -281,7 +334,7 @@ def build_objs(job, rundir, arms):
     common = []
     for c in ("drv", "gen"):
         common.append(compile_tu(open(os.path.join(HERE, c + ".c")).read(), os.path.join(d, c + ".c"), "x"))
-    objs, checks, hashes = [], [], {}
+    objs, checks, hashes, ctext = [], [], {}, []
     for k, a in enumerate(arms):
         src, fc, f = render(fx, a)
         sym = "a%d" % k
@@ -292,14 +345,18 @@ def build_objs(job, rundir, arms):
         objs.append((a, sym, o, f, src))
         if fc:
             got = sh([fx, "--hash-text", "-"], input=span(src, "FILE") + span(src, "BODY")).strip()
-            want = hashes.setdefault(fc, form_hash(fx, fc[0], fc[1]))
+            want, fold = hashes.setdefault(fc, form_hash(fx, fc[0], fc[1]))
             checks.append((a.name, fc, got, want))
+            ctext.append([a.name, fc[0], fc[1] or "-", got, fold, shape_tag(a, f)])
     bad = [c for c in checks if c[2] != c[3]]
     for c in bad:
-        print("CELL-TEXT MISMATCH %s: site text %s, form hash of %s %s" % (c[0], c[2], c[1], c[3]))
+        print("CELL-TEXT MISMATCH %s: site text %s, the hash of the instance its key names (%s %s) %s"
+              % (c[0], c[2], c[1][0], c[1][1] or "-", c[3]))
     if bad:
         raise SystemExit(3)
-    print("cell-text: %d cell TUs, every site-text hash equals its key's form hash" % len(checks))
+    print("cell-text: %d cell TUs, every site-text hash equals the hash of the instance its KEY names" % len(checks))
+    open(os.path.join(rundir, job, "cell_text.tsv"), "w").write(
+        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\n" + "".join("\t".join(r) + "\n" for r in ctext))
     # arm vs twin: the sources byte-identical (cmp)
     by = {a.name: src for a, _s, _o, _f, src in objs}
     for n, src in by.items():
@@ -311,7 +368,8 @@ def build_objs(job, rundir, arms):
         "uint64_t %s_gate(const unsigned char *, size_t, const uint32_t *, size_t, uint64_t *, uint64_t *);\n"
         % (s, s) for _a, s, _o, _f, _src in objs)
         + "const arm slot_arms[] = {\n" + "\n".join(arm_entry(a, s, f, rundir) for a, s, _o, f, _src in objs)
-        + "\n};\nconst int slot_narms = %d;\n" % len(objs))
+        + "\n};\nconst int slot_narms = %d;\n" % len(objs)
+        + "const unsigned char slot_find_members[32] = { %s };\n" % cbytes(find_members(fx)))
     common.append(compile_tu(open(tab).read(), tab, "x"))
     return common, objs
 
@@ -332,14 +390,6 @@ def text_align(obj):
         if len(p) > 2 and p[1] == ".text" and p[2] == "PROGBITS":
             return int(p[-1])
     return 16
-
-def placement_ok(addrs, objs):
-    """per launch: each arm's timed function differs mod 64 from its twin's"""
-    names = {a.name: s for a, s, _o, _f, _src in objs}
-    for n, s in names.items():
-        if n.endswith("#b") and addrs[s] % 64 == addrs[names[n[:-2]]] % 64:
-            return n
-    return None
 
 def link_job(job, rundir, run_id):
     """THE DRAW (rev 1.3 READY-8 as built): each arm's and twin's pad is drawn from (run id, job, l, arm, d), d
@@ -383,7 +433,6 @@ def link_job(job, rundir, run_id):
         fix_launch(l)
     # text equality of arm and twin on the linked .text, and the hot loop, recorded
     rec = []
-    names = {a.name: s for a, s, _o, _f, _src in objs}
     for l in range(1, 8):
         for n, s in names.items():
             st, ins = fn_text(exes[l], s)
@@ -402,14 +451,26 @@ def link_job(job, rundir, run_id):
              ",".join(sorted({str(v) for v in need.values()}))))
     return exes
 
+def ctl_inputs(rundir):
+    """the control's inputs: the fixture binary's key (the walk's text) and the driver's and linker's sources"""
+    return sha_files(FX_INPUTS + [os.path.join(HERE, x) for x in ("drv.c", "gen.c", "slot.h", "link.py", "plan.py")])
+
 def link_ctl(rundir):
+    """the window's FIXED control executable, built once per RUNDIR; its inputs' sha is kept beside it and a
+    later call whose inputs differ REFUSES (a window times one control; new inputs need a new RUNDIR)"""
     d = os.path.join(rundir, "ctl")
     exe = os.path.join(d, "ctl")
+    key = ctl_inputs(rundir)
+    kp = os.path.join(d, "inputs.sha256")
     if not os.path.exists(exe):
         os.makedirs(d, exist_ok=True)
         common, objs = build_objs("ctl", rundir, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)])
         shutil.move(link_launch("ctl", rundir, "ctl", 1, common, objs, {}), exe)
         open(os.path.join(rundir, "ctl.sha256"), "w").write(hashlib.sha256(open(exe, "rb").read()).hexdigest() + "\n")
+        open(kp, "w").write(key + "\n")
+    elif not os.path.exists(kp) or open(kp).read().strip() != key:
+        raise SystemExit("link: REFUSED: %s was built from other inputs than today's (the fixture binary, the "
+                         "driver or the linker moved): a window times ONE control; use a new RUNDIR" % exe)
     return exe
 
 if __name__ == "__main__":

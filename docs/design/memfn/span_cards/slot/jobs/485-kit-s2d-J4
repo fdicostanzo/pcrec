@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# 485-kit-s2d-J4: the S2d window's timing job J4 (span_cards §3.7; quiet-gated, idle-ok). Ready: kit-s2d-prep green, then kit-s2d-J3 ended.
+. "$(dirname "$0")/common.sh"
+case "${1:-}" in
+    --dry-run) timing_dry J4 450 ;;
+    --ready) ready_after kit-s2d-J3 ;;
+esac
+timing_job J4

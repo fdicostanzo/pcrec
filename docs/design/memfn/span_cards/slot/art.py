@@ -198,11 +198,18 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
 }
 """ % j1s.NREC
 
+def _key(*parts):
+    h = hashlib.sha256()
+    for x in parts:
+        h.update(hashlib.sha256(x if isinstance(x, bytes) else x.encode("latin-1")).digest())
+    return h.hexdigest()[:16]
+
 def artifact(pattern, rundir):
-    """build/pcrec's artifact for the pattern, cached by the pattern's sha under RUNDIR/art/"""
+    """build/pcrec's artifact for the pattern, CACHED BY ITS INPUTS under RUNDIR/art/ (the pattern, the flags and
+    build/pcrec's own bytes, r9 G1/HOUSE-9: a rebuilt compiler is a new artifact, never a reused one)"""
     d = os.path.join(rundir, "art")
     os.makedirs(d, exist_ok=True)
-    c = os.path.join(d, "a_%s.c" % hashlib.sha256(pattern.encode("latin-1")).hexdigest()[:16])
+    c = os.path.join(d, "a_%s.c" % _key(pattern, " ".join(FLAGS + ["-p", PREFIX]), open(PCREC, "rb").read()))
     if not os.path.exists(c):
         r = subprocess.run([PCREC] + FLAGS + ["-p", PREFIX, "-o", "-", "--pattern", pattern], capture_output=True)
         if r.returncode:
@@ -293,14 +300,21 @@ def _write(path, data):
 def _cstr(p):
     return '"%s"' % p.replace("\\", "\\\\").replace('"', '\\"')
 
+def gen_key():
+    """the subject generators' own key: this file, j1/subjects.py and the plan's LEN"""
+    return _key(open(os.path.abspath(__file__), "rb").read(), open(j1s.__file__, "rb").read(), str(plan.LEN))
+
 def subject(a, rundir):
-    """the arm's (subj, expect) C string literals; files under RUNDIR/art/ (an arm and its twin share them)"""
+    """the arm's (subj, expect) C string literals; files under RUNDIR/art/ (an arm and its twin share them),
+    named by their INPUTS (the generators, the fixture row or the pattern's sha), so a changed input is a new
+    file, never a reused one"""
     d = os.path.join(rundir, "art")
     os.makedirs(d, exist_ok=True)
+    g = gen_key()
     if a.kind == "enter":
         fx = Fixture(a.fixture)
         which = "fail" if a.name.startswith("base.fail.") else "pass"
-        stem = os.path.join(d, "enter.%d.%s.%s" % (fx.kind, fx.entry, which))
+        stem = os.path.join(d, "enter.%d.%s.%s.%s" % (fx.kind, fx.entry, which, _key(g, "\t".join(a.fixture))))
         if not os.path.exists(stem + ".exp"):
             fixture_check(fx)
             ps, fs, _n = enter_subjects(fx)
@@ -309,13 +323,13 @@ def subject(a, rundir):
             _write(stem + ".exp", ("%d %d %016x\n" % expect_of(fx.rx, buf)).encode())
         return _cstr(stem + ".bin"), _cstr(stem + ".exp")
     pid, subj, regime, _w = a.fixture
-    sb = os.path.join(d, "j1.%s.%s.bin" % (subj, regime))
+    sb = os.path.join(d, "j1.%s.%s.%s.bin" % (subj, regime, g))
     if not os.path.exists(sb):
         buf = j1s.generate(subj, regime)
         if regime == "short" and len(j1s.records(buf)) != j1s.NREC:
             raise SystemExit("art: %s short subject holds %d records, not %d" % (subj, len(j1s.records(buf)), j1s.NREC))
         _write(sb, buf)
-    ex = os.path.join(d, "j1.%s.%s.%s.exp" % (pid, subj, regime))
+    ex = os.path.join(d, "j1.%s.%s.%s.%s.exp" % (pid, subj, regime, _key(g, j1_pattern_text(pid))))
     if not os.path.exists(ex):
         rx = re.compile(j1_pattern_text(pid).encode("latin-1"))
         _write(ex, ("%d %d %016x\n" % expect_of(rx, open(sb, "rb").read(), regime == "short")).encode())

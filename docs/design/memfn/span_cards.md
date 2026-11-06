@@ -1,6 +1,7 @@
 # span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.3)
 
-**Status: PROPOSED, rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3), over rev 1.2 (lane
+**Status: PROPOSED, rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
+code review r9's FIX-NOW/DOC text, §R1.3's second table, marked `[rev1.3 r9-<id>]`), over rev 1.2 (lane
 s2rev12, 2026-11-06), rev 1.1 (lane s2rev11), rev 1 (lane s2rev1) and
 rev 0 (lane s2design). DESIGN ONLY: no code, no make, no timing, no box job. The design of record for span_pick
 stage 2** (`span_pick.md` rev 5.2 §Staging "Stage 2", §Cost cards, §The pick; kit request R-35,
@@ -39,6 +40,36 @@ removed). Text changed is marked `[rev1.3 <id>]`. No design decision moves; noth
 | READY-7 the cost-row PARTIAL path is unreachable | NOTED | §3.5 Outcomes (stated as unreachable today; kept) |
 | READY-8 the dry-run run id and the cross-launch re-draw order | text fix | §3.2 (`s2c-dry`; launches drawn in order, the cross-launch constraint re-drawing from launch 7 down, each bounded) |
 | READY-9 arm_fixtures/check_hash missing from S2c's package | text fix | §9 S2c content; §8.2 form-hash entries row |
+
+**Code review r9 (S2c's build, `docs/dev/reviews/2026-11-06-r9-memfn-s2c.md`), applied by fix lane s2cfix.** The
+kit manager's rulings: every disposition ACCEPTED; G4 FOLD; EMIT-3 by majority lowering shape; SLOT-17 ruled
+(the gate default is POLICY, R-35 (e)); G1 the gate of the fix. Text changed is marked `[rev1.3 r9-<id>]`.
+Sabotage ids S2933 (mech row) and S2934-S2936 (slot-local rows) are the fix's.
+
+| id | ruled | answered in |
+|---|---|---|
+| r9-G1 the gate never ran the TIMED entry; population unasserted; launch 1 only; `run` unbound to the dry run; caches by existence | FIX-NOW | §3.2 "The answer gate" (`_time` and `_gate` over every subject and a sentinel subject; arms, pools, subjects, timed calls asserted against the plan; every launch; the job's manifest; caches keyed by their inputs); slot sabotage (l3) S2934 |
+| r9-G2 the cell-text check read the Arm, not the key | FIX-NOW | §3.2 cell-text check (the key's tokens name the instance; KEY-ARM MISMATCH); slot sabotage (g2) S2935 |
+| r9-G3 the estimator took "ran" from cells files and a live plan | FIX-NOW | §3.5 "The run record" (the dry run's frozen plan; est reads the record's jobs, plan and floor; cells under a `#run_id` line; the cross-checks); slot sabotage (g3) S2936 |
+| r9-G4 a verify row's dep named the canonical instance only | FIX-NOW, decision: **FOLD** | §2.4 READY-8 (the dep is `mf_form_hash(id)`, ONE hash over every instance's site text in table order); §3.2 entry table; mech row S2933 |
+| r9-G5 the draft's form hashes from an unbuilt binary; box facts never written; draft on REFUSED | FIX-NOW | §3.5 run record (`box`, `isa`, `libc`, `gcc`, `rules`); §3.8 step 1 (deps from the dry run's `cell_text.tsv`; no draft on REFUSED) |
+| r9-G6 window facts on J1's success path only; `declined-j1b` by default; unknown states fall to `failed` | FIX-NOW | §3.5 run record (window facts at every job's start and at finalize; the cause table) |
+| r9-G7 card facts with a second home; the null base's bytes copied; `G//2` | FIX-NOW | §2.4 (the slot reads the ver-3 cards and the policy table); §3.2 (the null base's run/mask/members are its class instance's facts); §3.5 gates compared doubled |
+| r9-G8 an unknown landing planted nothing; git's rc ignored | FIX-NOW | §3.2 (an unknown landing refuses) |
+| r9-W1 the job scripts were absent | FIX-NOW | §3.3 (committed under `span_cards/slot/jobs/`); §9 S2c content |
+| r9-W2 `after` waits forever on a failed upstream; J3-J5 chained after J2p | FIX-NOW | §3.3 readiness ("ended", not green; J3 after J2 and J2p ended); §3.5 run record (J2p 77 on a non-green J1) |
+| r9-W3 the quiet wait bounded from the job's start | FIX-NOW | §3.3 (the job's total waiting time) |
+| r9-EMIT-3 settest c2's instance is its cheapest shape | FIX-NOW, decision: **majority shape** | §3.2 entry table (vcls's lowering shapes; the instance must be the majority shape, else the row is a lower bound; today case pairs are 156 of 292 c2 sites) |
+| r9-EMIT-4 the RUNCMP guard re-derived; settest's guard a no-op | FIX-NOW | §3.2 entry table (settest a leaf render, no selection) |
+| r9-EMIT-5 PAIR's second production text | PLAN | §3.2 entry table (a `pair` cls `fn` instance; trigger: row 1 prices a B-fn PAIR site, or J1's verdict moves ofsskip) |
+| r9-SLOT-9 vcls.out unstamped, a second census | FIX-NOW (stamp) + PLAN (fold) | §3.2 entry table (vcls.out names the sweep's sha-256 and commit; the fold into census0 with S2f's re-run) |
+| r9-SLOT-10 §2.5 named walk's `alt` rows | DOC | §2.5 (the walk plans `one` only) |
+| r9-SLOT-11 the enter card's `die1` vs kind 6 | DOC | §2.4 enter card note |
+| r9-SLOT-13 the MAXDRAW trigger's unit | DOC + ruling | §3.2 (per (launch, arm)) |
+| r9-SLOT-14 gen.c's subject sentence | DOC | (code comment only) |
+| r9-SLOT-17 `gate_e6`: policy or card | RULED: POLICY | §2.4 (ver-3 cards state `-`; the slot reads `memfn/data/policy.tsv`'s `gate_default_e6`); §6 "Where it lives" |
+| r9-CONTRACT-1/3/4/6 | DOC (spec) | `measures.md` §2.1¶1 `partial`, §3.4¶1, §3.4¶2a, §3.4¶14a, §3.5¶8a, §3.5¶12 row 1; CONTRACT-1's data form (a generic `unless:<run-key>=<value>` token and a base column) PLANNED, trigger: the next producer (S2g) |
+| r9-CHECKS-3/4/6 | FIX-NOW | §2.4 (check C resolves every named dep; the count EXACT 17); R-MS3 fixtures per instance |
 
 ## R1.2 What revision 1.2 changed, by r6 finding and by ruling
 
@@ -333,7 +364,13 @@ here). §2.5 states row 1's position; §2.7 carries D188 and the held SIMD job.
 
 ### 2.4 The card rows (`kit-grid@3`, appended to `memfn/data/cards/kit-grid.tsv`)
 
-`gate_e6` 30000 is grid1's UNMEASURED DEFAULT (D149) carried; the unit group gates at half (§1.4).
+`gate_e6` 30000 is grid1's UNMEASURED DEFAULT (D149) carried; the unit group gates at half (§1.4). `[rev1.3
+r9-SLOT-17, r9-G7]` The ver-3 cards state `gate_e6` `-`: their gate is the POLICY table's `gate_default_e6`
+(`memfn/data/policy.tsv`, R-35 (e), §6), the one home; the producer publishes the resolved value on the set's
+cards. The slot harness reads lengths, launches, rounds, unit and gate from the ver-3 card rows and that table,
+never from its own constants. `[rev1.3 r9-SLOT-11]` The `enter` card's subject `die1` holds for kinds 1-5;
+kind 6 (REPORT) has no die (its window IS the match, `slot/art.py`): its rows' regime is the pass-every-candidate
+one, stated in `slot/enter/fixtures.tsv`.
 `[rev1 SLOT-4]` `deps` are R-MS3 form ids; a card whose `deps` names `kit:form.<form>` has `form` as a dim,
 and the key's `form` token IS the canon id (`libc`, never `memchr`: canon's `libc` id is the libc forward
 one-byte find, memchr; `formhash.c:240`). The ids marked NEW gain `formhash.c` entries in unit S2c (§3.2).
@@ -381,11 +418,16 @@ keys. Rev 1.1 puts the two halves where their populations are:
   Population at the tree, over the three card tables the walk reads (`tree_drill.py` C): **14** cards with a
   `kit:form.` dep (`kit-grid.tsv` 9, `kit-kernels.tsv` 5, `kit-synthetic.tsv` 0), 0 of them without `form`
   first; kit-grid@3 adds 3 (find_byte, find_hit, verify_cmp), so **17**, the guard's count printed and floored
-  at 17 by S2c; `enter` has `-` and is outside it by its deps.
+  at 17 by S2c (`[rev1.3 r9-CHECKS-3]` now pinned EXACTLY at 17, bumped by each new card, and every named
+  `kit:form.<id>` dep resolved through `--hash`); `enter` has `-` and is outside it by its deps.
 - `[rev1.2 READY-8]` **Rows record their deps.** Every form-bearing zen4-grid3 row's `deps` column holds
   `kit:form.<id>=<hash>` (the 16-hex `mf_form_hash` of its form token, measure_sets §2.4: "written by the
-  producer from the card's `deps` declaration"), the hash the cell-text check (§3.2) already computes for the
-  row's cells; `enter` rows carry `-` (the kit side cancels, §2.3; pcrec's dep OWED, §2.6). So measure_sets
+  producer from the card's `deps` declaration"). `[rev1.3 r9-G4]` **FOLD**: `mf_form_hash(id)` is ONE hash over
+  the site texts of EVERY instance the id's entry-table rows hold, in table order, joined by a newline; a change
+  to any instance stales every row of the id (over-staling costs a re-measure, a per-instance dep could miss
+  one). walk, libc, pair and rc-memcmp have one instance, so their hashes are unchanged; settest and rc-words
+  fold three each. The cell-text check (§3.2) compares each cell's site text with its INSTANCE's hash; the row
+  records the fold, read from the dry run's `cell_text.tsv`; `enter` rows carry `-` (the kit side cancels, §2.3; pcrec's dep OWED, §2.6). So measure_sets
   §2.4's staleness (a recorded hash differing from the current one) and §7.2's "a row whose `deps` lacks a
   card dep" both hold for zen4-grid3, and a PAIR retune (§3.6 (b)) stales the PAIR rows through their
   RECORDED hash. grid1's rows carry `-`: a precedent the spec never sanctioned, NOTED, not copied (a
