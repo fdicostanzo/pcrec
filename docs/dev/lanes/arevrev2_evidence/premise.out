@@ -1,0 +1,41 @@
+## A1 (m)
+(?<*a{1,2}|(a))b\1	aaba	[2-4,1-2]
+(?<*a{1,2}|(a{1,2}))b\1	aabaa	[2-5,0-2]
+(?<*a{1,2}|(b))x\1	abxb	[2-4,1-2]
+(?<=a{1,2}|(a))b\1	aaba	nomatch
+## A2 (c u)
+(?<=\p{L}{1,255})b		ACCEPT lb=255
+(?<=\p{L}{1,256})b		REJECT 200
+(?<=[\p{L}\p{N}]{1,255})b		ACCEPT lb=255
+## A3 (m x)
+(?<=a{1,2}$)\nb	aa\x0ab	nomatch
+(?<=a{1,2}$)\n	aa\x0a	[2-3]
+(?<=a{1,2}\z)\n	aa\x0a	nomatch
+(?<=a{1,2}\Z)\n	aa\x0a	[2-3]
+(?<=a{1,2}\Z)\nb	aa\x0ab	nomatch
+(?<=(?m)a{1,2}$)\nb	aa\x0ab	[2-4]
+(?<=a{1,2}$)	aa	[2-2]
+## N7 / W-trail (m x)
+(?<=(?m)^a{1,2})b	c\x0aaab	[4-5]
+(?<!(?m)^a{1,2})b	c\x0aaab	nomatch
+(?<=(?m)^a{1,2})b	caab	nomatch
+(?<*(a{1,5}))bz	aaaaab	nomatch
+## ill-formed UTF-8 gate cells (m ix)
+(?<=é{1,2})x	\xA9\xC3\xA9x	[3-4]
+(?<=(é{1,2}))x	\xFF\xC3\xA9\xC3\xA9x	[5-6,1-5]
+(?<!é{1,2})x	\xC3\xC3\xA9x	nomatch
+## pcrec today (worktree build at 6e01c810b, -p rx -e utf8)
+(?<=\p{L}{255})b ::  rc=0
+\p{L}{255}b :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0)
+ rc=1
+\p{L}{1,255}b :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0)
+ rc=1
+[\p{L}\p{N}]{255}b :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0)
+ rc=1
+## NFA cap threshold (-e utf8, \p{L}{k}b; 'NFA exceeds' = the cap fired, other text = a later emitted-size cap)
+k=35: pcrec: pattern too large: 1138827 bytes of emitted C source (limit 100
+k=36: pcrec: pattern too large: 1139245 bytes of emitted C source (limit 100
+k=37: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-
+k=38: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-
+k=39: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-
+k=40: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-
