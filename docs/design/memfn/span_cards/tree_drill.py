@@ -1,4 +1,4 @@
-# span_cards rev 1.1 drill (lane s2rev11): the COUNTS rev 1.1 quotes, read off the tree where the tree holds
+# span_cards rev 1.2 drill (lane s2rev12; rev 1.1's by s2rev11): the COUNTS the note quotes, read off the tree where the tree holds
 # them (review 2026-11-06 r5 CHECKC, EMBED, J3, CELLS-1 (d)). Read-only; no build, no timing.
 #   A. zen4-grid3's projected key population (§2.5's keys; the census-scoped counts are INPUTS).
 #   B. the jobs' points, cells and box time (§3.7's layout).
@@ -69,11 +69,21 @@ def sections(path):
         elif cur and ln:
             secs[cur]["rows"].append(dict(zip(secs[cur]["head"], ln.split("\t"))))
     return secs
-cards = [l.rstrip("\n").split("\t") for l in open(os.path.join(root, "memfn/data/cards/kit-grid.tsv"))
-         if l.strip() and not l.startswith("#")]
-dep_cards = [c for c in cards if "kit:form." in c[12]]
-print("kit-grid.tsv cards %d; with a kit:form. dep %d; of those without `form` as first dim %d"
-      % (len(cards), len(dep_cards), sum(1 for c in dep_cards if c[3].split(";")[0] != "form")))
+cdir = os.path.join(root, "memfn/data/cards")
+def card_rows(fn):
+    return [l.rstrip("\n").split("\t") for l in open(os.path.join(cdir, fn)) if l.strip() and not l.startswith("#")]
+cards = card_rows("kit-grid.tsv")
+ndep = nbad = 0
+for fn in sorted(f for f in os.listdir(cdir) if f.endswith(".tsv")):   # rev 1.2 (r6 READY-2): EVERY card table
+    rows_ = card_rows(fn)
+    dep = [c for c in rows_ if "kit:form." in c[12]]
+    bad = sum(1 for c in dep if c[3].split(";")[0] != "form")
+    ndep += len(dep)
+    nbad += bad
+    print("  memfn/data/cards/%s: cards %d; with a kit:form. dep %d; of those without `form` first %d"
+          % (fn, len(rows_), len(dep), bad))
+print("card-guard population (every card table, every ver) at the tree %d, %d without `form` first; after "
+      "kit-grid@3 (+3: find_byte, find_hit, verify_cmp) %d" % (ndep, nbad, ndep + 3))
 sdir = os.path.join(root, "memfn/data/sets")
 nform = 0
 for fn in sorted(os.listdir(sdir)):
@@ -104,8 +114,9 @@ print("grid1: set.tsv %d B, %d rows + %d cards; measures_store.inc %d B (%.1fx),
       % (g1_bytes, g1_rows, g1_cards, inc["measures_store.inc"], inc["measures_store.inc"] / g1_bytes,
          inc["measures_table.inc"]))
 print("grid1 embed in libpcrec (measures.o data sections) %d B = %.0f B per row or card" % (alloc, per_row))
-line = "J3.hit.random.1024/kit.find_hit.walk-set.random.alt.1024#b/1048576/7\tJ3.hit.random.1024\t" \
-       "kit.find_hit.walk-set.random.alt.1024#b\t1048576\t7\tmed\t1024\t199229440000\n"
+line = "J3.hit.random.1024/kit.find_hit.walk-set.random.alt.1024#b/1048576/7/base.walk-set\t" \
+       "J3.hit.random.1024\tkit.find_hit.walk-set.random.alt.1024#b\t1048576\t7\tmed\t1024\t199229440000\n"
+# (rev 1.2 READY-1: a delta arm's cell id carries its base arm as a fifth field)
 cell_text = len(line)
 cell_pre = 8 * 8 + 40          # 8 pointers (format 2's cell columns) + its distinct strings (ids, values)
 g3_no_cells = (rows + 4) * per_row
