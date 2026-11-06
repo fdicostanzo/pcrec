@@ -27504,3 +27504,44 @@ Next
 - **Kit** hold lifted at the verdict; sp1d gates 410-419 queued ~10:35 (~4.5 h, cap 9 h). Next: review 1d on the kit's done line, restate R21 (sp1d_report "Ratchet"), then 1e.
 - Lesson: queuewatch replays every past stage event after a session gap; drain with a bounded loop before arming the hour watcher (worked: 6 events, then CAP).
 - 15:20 (same session): **span_pick unit 1d LANDED** (sp1d 39e7b20c5, k1102 2d7f4bd8c; landing lane land1105, pushed 20fb73159). Gates 410-419 GREEN on the branch (416's first red was test-codegen on the new run_purity_reach.sh: LC_ALL=C + san_excluded row). Zero movers, MF_SITE_ABI 23, no pcrec abi/spec. R21 restated in roadmap §5 (9f985c9bf; 1 -> 0), stage-1 kit-row total 5 -> 4. Filed [SP1D-M-INPUTS], [SP1D-ARGMIN], [SP1D-SETLEADS], [SP1D-KITSPLIT-SEAMS], [SP1D-AMODEL-CANDS] (design deviation 1: A-model reads walked spans' own sets; moving it changes G2-visible decisions, needs Frank's ruling when it comes up). Ledger: minor 1. Kit cuts 1e from 20fb73159. Stage 1 left: 1e; stages 2-3 need Frank's GO.
+
+## 2026-11-05/06 session 130 (afternoon to overnight) — designs, harvest, families
+
+**Done:**
+- **Mech fixes:** full mech run GREEN (job 433: 1102 rows, 0 unexpected, 0 anomalies). Lane mechfix2 merged 564b0e804. [MECH-NOCOMPILE] DONE and moved to plan_completed. Ledger: minor 2.
+- **Variable lookbehind:**
+  - design rev 0→3 (docs/design/vlookbehind.md);
+  - reviews r3 and r6, plus the pieces study (docs/design/vlookbehind_pieces.md);
+  - rulings: (A) fixed-width bytes stay; 65535 ceiling in stage 1; the cursor-rung loop is ALWAYS sound, so there is no table;
+  - [LB-EXIST] HELD.
+  - Re-check crit-vlb3 is running.
+- **A-REV** (docs/design/stream/arev.md rev 0→1, review r5):
+  - Frank's first cross-engine piece is the lookbehind HAND-OFF, built as a PROOF step.
+  - Re-check crit-arev2 is running.
+  - The "VM base" frame is recorded as an open question (roadmap A-VERDICT).
+- **Alternation normal form** (rev 1→3; reviews r4 and r7): stages 1, 2p and 2b are ready for a build go after kit 1e. C1-C4 vetted. The cube question is replaced by D187 addendum 1 (a lossy cube is a reader's method, admitted by the verify flags).
+- **Harvest:**
+  - sourcing plan merged;
+  - OWASP CRS v4.30.0 stored in third_party: 306 distinct patterns, 0 gap constructs, 21 refused at SIZE CAPS;
+  - Davis 2019 counts only. Frank: no email; a mined corpus's compiler can't grant rights (memory pcrec-harvest-rights).
+- **Feature families:** design merged (docs/design/feature_families.md). Bench compiles: std1 229/392, extended 333. Rulings:
+  - \K gets its own module;
+  - frozen = BUILT modules;
+  - names move only at boundaries;
+  - D37 graduation rule RETIRED for a per-move release checklist (D37 addendum);
+  - K74 documented and filed unscheduled as [UTF-END-ASSERT].
+- **Critic skill:**
+  - relayed findings when the harness refuses a critic's file Write (it happened in two rounds);
+  - create the findings file first;
+  - client-doc ancestry at the freeze;
+  - hand-execute pseudo-code literally;
+  - trace storage sizing.
+- **Housekeeping:** 21 worktrees and branches pruned (kit worktrees left to the kit). The kit manager is a NEW session (uds 3517137).
+
+**Issues:** a nested critic's Write is refused by a harness rule, and its hand-backs can miss an idle coordinator. Relaying by message works.
+
+**Next:**
+- Kit 1e gates (436 test, 437-439 mech) → review → landing lane → span_pick stage 1 complete.
+- Ask Frank for build goes: alternation stages 1/2p/2b, and lookbehind stage 1 after crit-vlb3, run as parallel opus build lanes with code rounds.
+- Rule crit-vlb3 and crit-arev2.
+- compref lane (compliance-page disagreements) is running.
