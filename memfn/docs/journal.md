@@ -3305,3 +3305,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - URGENT READY-1 (a measured delta row naming its base in `inputs`, which the loader refuses) ruled so it leaves S2a untouched: the base lives on the cells, and measured rows carry `inputs` `-`.
   - READY-6: a kit run record file, its sha in PROVENANCE, no set section. READY-8: deps recorded. MEAS-4: s.e.-scaled drift threshold. MEAS-6: J1 margin re-drilled. MEAS-1: a run id in the seed. movers.py is a PLAN (emit_sweep --data measures).
   - Lane s2rev12 (opus) writes rev 1.2 under a hard rule: nothing S2a builds may change.
+- 11-06: J0 (440) went RED in 3 s. Triage lane trij0, class (c): the r33_sim probe still read mf_akind.prov, which left the seam at unit 1g. census0 itself was not reached.
+  - Fixed on s2b by printing the digest in its place (71cad723e); collect.py parses only the rate list. The probe compile is verified, and J0 is retried with a watcher.
+  - Lesson: a job's --dry-run that never builds what the run builds cannot catch a stale build; J0's dry run only counted compiles.
