@@ -3253,3 +3253,7 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06 01:35: 1e gates 430-439 all GREEN at 9cf199ed3. 436's make test rc is 0 with no `*** [test-` line. Mech: 50 rows, with only the declared S917/S919 unreached.
   - S1079's figure of record is 6/3155 DETECTED (job 437), which matches sp1efix's hand figure.
   - done: posted 5f1f968f5; main told. Stage 1 is complete once main merges. Stages 2-3 wait for Frank's GO via main.
+- 11-06 (morning): 1e LANDED: sp1e 5440c75e1, k1102 6b04768ed, pushed a65debe9d. Main filed [SP1E-RENDERER-TABLE], [SP1E-HORS-FLOOR], [SP1E-ANCHOR-G2WIN] and [SP1E-RENDERER-WITNESS]. SPAN_PICK STAGE 1 COMPLETE.
+  - k1102 is fast-forwarded to main, and worktree sp1e is pruned.
+  - wtprune keeps sp1efix for now: its build/ was touched under 120 min ago by the gates, and its only dirty file is the test-written artifact_size_log.tsv. Prune it and the sp1e/sp1efix branches (branchprune --kit) on a later quiet pass.
+  - Stages 2-3 wait for Frank's GO, which main is asking for.
