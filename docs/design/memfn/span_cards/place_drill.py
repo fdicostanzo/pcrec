@@ -38,8 +38,10 @@ def unit_refused(x, xb):
 
 S_C = 0.001     # INPUT: the control's within-launch s.d. (0.1 %), UNMEASURED; the drill's figures barely move with it
 N = 4000
-def run(s, tau, mode, classes=False):
+def run(s, tau, mode, classes=False, o=None):
     c = [random.gauss(0, S_C) for _ in range(7)]
+    if o is not None:
+        tau = o
     def p():
         if classes:
             return tau if random.random() < 0.5 else 0.0
@@ -62,6 +64,17 @@ for s in (0.0025, 0.005):
         print("%-8s %-10s refused %6.2f%%  held %6.2f%%  refused %6.2f%%  held %6.2f%%" % (
             "%.2f%%" % (100 * s), "%.1f%%" % (100 * t), 100 * r1, 100 * r1, 100 * r2, 100 * r2 * r2))
 print("(rev 1: a fixed offset refuses again on a re-run, so held = refused; rev 1.1: two independent runs)")
+print("like for like: placement s.d. tau per build; rev 1's twin offset o = one draw of N(0, sqrt(2) tau) per run,")
+print("the SAME o on its re-run (identical text, identical layout); rev 1.1 as above")
+for s in (0.005,):
+    for t in (0.005, 0.01, 0.02):
+        ref = held = 0
+        for _ in range(N):
+            o = random.gauss(0, math.sqrt(2) * t)
+            a, b = run(s, 0, "rev1", o=o), run(s, 0, "rev1", o=o)
+            ref += a
+            held += a and b
+        print("s %.2f%% tau %.1f%%: rev 1 refused %.2f%% held %.2f%%" % (100 * s, 100 * t, 100.0 * ref / N, 100.0 * held / N))
 for s, t in ((0.005, 0.01), (0.005, 0.02)):
     r = sum(run(s, t, "rev11", classes=True) for _ in range(N)) / N
     print("two phase classes 0/%.0f%% (p 1/2), s %.1f%%: refused %.2f%%, held %.2f%%" % (100 * t, 100 * s, 100 * r, 100 * r * r))
