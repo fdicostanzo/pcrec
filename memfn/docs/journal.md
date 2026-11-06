@@ -3301,3 +3301,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - The lane skipped writing its deliver file, so lanecheck could not pass. The work is accepted on review.
   - Open for S2c: the verify `cls` vocabulary is the lane's reading (run <=8 or long; set1/2/N); S2c fixes the real boundaries.
   - J0 queued as 440-kit-s2b-j0 (5,492 compiles, cap 1800); watcher armed. On green, commit census0.out by path.
+- 11-06: re-check r6 (2 critics) on rev 1.1 RULED (00076d391). S2c/S2d ready with text; S2e after rev 1.2.
+  - URGENT READY-1 (a measured delta row naming its base in `inputs`, which the loader refuses) ruled so it leaves S2a untouched: the base lives on the cells, and measured rows carry `inputs` `-`.
+  - READY-6: a kit run record file, its sha in PROVENANCE, no set section. READY-8: deps recorded. MEAS-4: s.e.-scaled drift threshold. MEAS-6: J1 margin re-drilled. MEAS-1: a run id in the seed. movers.py is a PLAN (emit_sweep --data measures).
+  - Lane s2rev12 (opus) writes rev 1.2 under a hard rule: nothing S2a builds may change.
