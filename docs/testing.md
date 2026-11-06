@@ -909,6 +909,14 @@ on <holder>" while someone outside the queue holds it); a lane enqueues jobs
 (or a chainrun stages file with `boxqueue batch`) instead of arming its own
 waiter. Contract in the script's header, summary in scripts/CLAUDE.md.
 
+SNAPSHOT BATCHES ([QSPEED-SNAPSHOT], 2026-11-06): `boxqueue batch --snapshot`
+freezes the tree's HEAD commit when the batch is ADDED; each stage then runs in
+one detached worktree of that commit under `$PCREC_TMPDIR/scratch/snap/<batch>`
+(created by the first stage that runs, removed after the last), so a lane that
+keeps committing or editing cannot move the job's tree (job 212 ran on
+`937bed80+dirty`, three cancellations followed). Uncommitted changes are NOT in
+the job (a NOTE says so at add time). Without the flag nothing changes.
+
 BENCH WINDOWS ([BENCH-RESERVE], 2026-10-25): the bench's timing windows are
 ordered by the same queue without either side running the other's code. The
 bench drops `<name>.window` (key=value) in a declared inbox
