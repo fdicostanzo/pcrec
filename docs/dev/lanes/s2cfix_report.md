@@ -38,9 +38,12 @@ The slot harness now reads its facts from one place each:
 The S2d job scripts are committed under `docs/design/memfn/span_cards/slot/jobs/`. Readiness waits for an
 upstream job to END, not to be green. No emitted pcrec byte moves: an emit_sweep spot found 0 movers.
 
-**State at handoff.** The validation is complete (§Validation). Nothing was queued and no timing was run. The
-scratch gate jobs 470-474 and the S2d job dir are updated (§Gate jobs). To resume, read this report and the r9
-table in span_cards §R1.3.
+## STATE AT HANDOFF
+
+OWED: none. The validation is complete (§Validation). Nothing was queued and no timing was run. The scratch gate
+jobs 470-474 and the S2d job dir are updated (§Gate jobs). To resume, read this report and the r9 table in
+span_cards §R1.3. The previous lane's untracked `s2cdoc_deliver.txt` (the manager's file) is committed unchanged
+so that the tree is clean.
 
 ## Fixes by finding id
 

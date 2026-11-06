@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2cdoc_report.md
+sections: Summary; Changes; Checklist
+nonempty: all
+commit: yes
+owed: none
