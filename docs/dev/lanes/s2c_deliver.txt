@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2c_report.md
+sections: Summary; Rev 1.3 text fixes; Built; Sabotage; Validation; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
