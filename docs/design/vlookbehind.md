@@ -1,442 +1,1098 @@
 # Variable-width (bounded) lookbehind — design
 
-**Status: PROPOSED rev 0** (lane vlbdesign, opus, 2026-11-05; plan row [VLOOKBEHIND]). Design only:
-no build go. A critic round follows this note. Starts from the investigation
-`docs/dev/lanes/vlbinv_report.md` (its §1 semantics are not repeated here) and its owner addendum
-(candidate D). Evidence of this lane: `docs/dev/lanes/vlbdesign_evidence/`. PCRE2 facts come from
-the installed libpcre2-8 10.46 used as a library and from public docs; the pinned source copy was
-not opened (D181); one question for a pcre2-reader is in §12.
+**Status: PROPOSED rev 1** (lane vlbrev1, opus, 2026-11-05; plan row [VLOOKBEHIND]). Rev 0 was lane
+vlbdesign's. Rev 1 applies the RULED review `docs/dev/reviews/2026-11-05-r3-vlookbehind.md`
+(NOT READY, text-only rev 1). It is text only: no build go. A short re-check round follows
+(fix-induced on F1/F12, plus readiness). Starts from the investigation `docs/dev/lanes/vlbinv_report.md`
+(its §1 semantics are not repeated here) and its owner addendum (candidate D). Evidence: rev 0's
+`docs/dev/lanes/vlbdesign_evidence/`, rev 1's `docs/dev/lanes/vlbrev1_evidence/` (`probe.c`, a
+libpcre2 10.46 library probe; `cells.out`, every cell rev 1 adds). PCRE2 facts come from the
+installed libpcre2-8 10.46 used as a library and from public docs. The pinned source copy was not
+opened (D181). One question for a pcre2-reader is in §12.
 
-**The decision, in one paragraph.** One mechanism: per top-level branch, in written order, try
-CANDIDATE STARTS FARTHEST FIRST; at each, run the branch's body FORWARD through `vm_emit` and keep
-it only if it ends exactly at the cursor (the end-check, which now backtracks into the body). B and
-D are the same mechanism with two different SOURCES of candidate starts: B takes every position
-whose distance is inside the branch's width range; D takes the accepting positions of a reverse DFA
-of the branch, run back from the cursor. So the source is a declared first-match CHOICE ROW (D186):
-`range` (B) ships in stage 1 and is the total fallback; `reverse-dfa` (D) is a HELD row with a
-written evidence requirement and two prerequisites (§5.4). D is not a second client of the landmark
-walk ROW today, but it is made of the same PARTS (reverse NFA of a subtree, optional machine build,
-`emit_reverse_block` over a `DfaDir`), and its home is the stream's one reverse `AUTO` kind
-(roadmap A-REV) hosted in a VM body (§4). Today's fixed-width lookbehinds are the range row's
-one-point case and keep their exact bytes, as a constant fold of the loop, not a second branch
-(§5.1; owner question 1).
+## REVISION 1 (review 2026-11-05 r3) — read first
+
+Corrections are marked inline as `[r3 Fn]`. Rev 0's refuted claims are recorded where they stood,
+not edited away. In summary:
+
+- **§5.1 re-sketched (F1).** The retry frame is pushed BEFORE the back-step and saves the CURSOR.
+  Each candidate re-steps `d` back from that cursor, and the next branch always starts from it.
+  Rev 0's frame saved the candidate, which sent the next branch the wrong cursor. Three libpcre2
+  cells (`(?<=a{1,2}|b)x` on `bx` = [1-2], and two more) were nomatch under rev 0's sketch. §5.1c
+  hand-executes the new sketch literally on four cells.
+- **The fold is a declared selection, not a constant fold (F12).** The one-length emission (today's
+  bytes) is SELECTED by the width fact `lo == hi`, a row of a declared two-row emission table
+  (§5.1b). The table states the work amount per candidate and the slot allocation. Owner question 1
+  is RE-ASKED with this (§13).
+- **Two lookbehind limits (F4).** PCRE2's absolute 65535-character branch ceiling joins the 255
+  cap. The cap is restated as accept-set POLICY, per the owner's answer: correctness needs no cap
+  (§5.2). Each limit gets a `limits.def` row.
+- **Stage 2 rewritten (F2, F3, F5).** A reference counts its group's exact [min, max] at both
+  ends. Duplicate-name references, any `(?|`, unbounded or recursive groups and self-reference are
+  refused. Forward references need DD-14.LB's deferral and a per-group width memo. The acceptance
+  table is the ruling lens's (§6). The fixed-group half needs none of stage 1's loop.
+- **Gate 1 names D142's stated UTF divergence (F7).** Spec hunks are completed (F6). Witnesses are
+  repaired or added: W6 (F8), S136 (F9), W3b (F10), W11 (F1). WD6 is noted (F11).
+- **Text fixes.** The consequences of D58 and D153/[VMREC] (F13), the goals and population text
+  (F14), R03 as in-body precedent (F15), and the LOCATE × FINISH family with the [ENG-LOOK]
+  existence form plus a HELD plan row [LB-EXIST] (F16).
+- **§16** maps every finding to its section.
+
+**The decision, in one paragraph.** There is one mechanism. For each top-level branch, in written
+order, try CANDIDATE STARTS FARTHEST FIRST. At each candidate, run the branch's body FORWARD through
+`vm_emit` and keep it only if it ends exactly at the cursor. This test is the end-check, and it now
+backtracks into the body.
+
+B and D are the same mechanism with two different SOURCES of candidate starts:
+- B takes every position whose distance from the cursor is inside the branch's width range.
+- D takes the accepting positions of a reverse DFA of the branch, run back from the cursor.
+
+So the source is a declared first-match CHOICE ROW (D186), and this is a LOCATE × FINISH instance
+(D156) `[r3 F16]`. `range` (B) ships in stage 1 and is the total fallback. `reverse-dfa` (D) is a
+HELD row with a written evidence requirement and two prerequisites (§5.4). Its home is the stream's
+one reverse `AUTO` kind (roadmap A-REV), hosted in a VM body. Lookbehind is A-REV's first client
+(Frank, 2026-11-05).
+
+Today's fixed-width lookbehinds keep their exact bytes because the emitter SELECTS the one-length
+emission by the declared width fact `lo == hi`. This is a declared row, not a constant fold
+`[r3 F12]` (§5.1b; owner question 1, re-asked).
 
 ## 0. Goals
 
-Ranked; the higher goal wins a conflict.
+Ranked: the higher goal wins a conflict.
 
-1. **G1 Answers (PCRE2 users porting patterns).** Every lookbehind libpcre2 10.46 accepts at its
-   default `max_varlookbehind` (255) compiles in pcrec with the `lookaround` module and answers
-   identically. Measurable: a libpcre2 differential over the generated cell set of §6 (every
-   spelling × body shape × subject class), 0 differing answers (match, every group, nomatch); and
-   the accept set stays inside PCRE2's: 0 patterns pcrec compiles that libpcre2 refuses, over the
-   same generator plus the cap boundary cells.
-2. **G2 Stability (callers with today's artifacts).** No pattern that compiles today changes bytes.
-   Measurable: the identity gate over every corpus artifact containing a lookbehind, 0 bytes
-   differ (conditional on owner question 1, leaning yes).
-3. **G3 One mechanism (maintainers, Frank's general-mechanisms rule).** Fixed width is the one-point
-   case of the general loop; no parallel path; the stream ratchet does not grow. Measurable: no new
-   row in `docs/design/stream/roadmap.md` §5's inventory from stage 1; the refusal arm for bounded
-   bodies is deleted (the deleted special case is the benefit).
-4. **G4 Bounded cost (every caller).** A lookbehind evaluation runs its branch body at most
-   (hi − lo + 1) times per branch, each charged to the work budget, live retry frames at most one
-   per branch; no compile-time blow-up (per site: one body copy per branch, as today, plus a
-   constant number of records). Measurable: the work charge per evaluation in the emitted text;
-   artifact size of a variable lookbehind within a stated constant of the same pattern made fixed.
-5. **G5 Speed where measured (later, D).** The `reverse-dfa` source ships only where per-regime
-   evidence shows no regime slower than `range` beyond noise (D186 choice bar).
+1. **G1 Answers (PCRE2 users porting patterns).**
+   - The promise: every lookbehind that libpcre2 10.46 accepts at its default `max_varlookbehind`
+     (255), and whose body uses only constructs pcrec implements in a lookbehind, compiles in pcrec
+     with the `lookaround` module and answers identically.
+   - Out of scope `[r3 F14]`: pcrec refuses callouts, `(?|` and verbs inside a lookbehind today,
+     and they stay refused.
+   - Measurable: a libpcre2 differential over the generated cell set of §6 has 0 differing answers
+     (match, every group, nomatch), outside D142's stated class (§6 gate 1). The accept set stays
+     inside PCRE2's: 0 patterns that pcrec compiles and libpcre2 refuses, over the same generator
+     plus the boundary cells of both limits.
+   - **G1's accept-set clause is false TODAY** `[r3 F4, F14]`. pcrec compiles `(?<=a{65535}b)x` and
+     `(?<=(?:a{1000}){66})x`, which libpcre2 refuses (err 187). Stage 1 restores it with the 65535
+     ceiling (§5.2). G1 outranks G2, so this refuses patterns that compile today. There are none in
+     the population.
+2. **G2 Stability (callers with today's artifacts).**
+   - The promise: no pattern that compiles today changes bytes. The one exception is G1's ceiling.
+   - Measurable: the identity gate over every corpus artifact containing a lookbehind shows 0 bytes
+     differ.
+   - This holds only if owner question 1 is answered "keep the bytes" (§13). That question must be
+     closed before the build go `[r3 F14]`.
+3. **G3 One mechanism (maintainers, Frank's general-mechanisms rule).**
+   - The promise: one candidate loop, and fixed width is its one-length case. The one-length bytes
+     are a declared emission row selected by the width fact (§5.1b) `[r3 F12]`, not a second
+     mechanism, and the stream ratchet does not grow. (Rev 0 said "no parallel path" with no
+     qualifier; the review showed the bytes need a selection.)
+   - Measurable: stage 1 adds no new row to `docs/design/stream/roadmap.md` §5's inventory. The
+     refusal arm for bounded bodies is deleted: the deleted special case is the benefit.
+4. **G4 Bounded cost (every caller).**
+   - Body runs: a lookbehind evaluation runs a branch's body at most (hi − lo + 1) times. Each
+     candidate is charged `d` work units, its back-step's character count (§5.5).
+   - Frames: at most ONE LOOP FRAME per branch is live `[r3 F14]`. A non-atomic `(?<*` also
+     leaves the body's own choice points live, as today.
+   - Compile time: no blow-up. Per site there is one body copy per branch, as today, plus a
+     constant number of records.
+   - Measurable: the work charge per candidate in the emitted text. A varying branch's emission is
+     within **one slot and 8 emitted C lines** of the same branch made one-length `[r3 F14]`. This
+     is an UNMEASURED design bound, checked from the emitted text at build.
+5. **G5 Speed where measured (later, D).**
+   - The `reverse-dfa` source ships only where per-regime evidence shows no regime slower than
+     `range` beyond noise (the D186 choice bar).
 
-**Non-goals.** A reverse VM (Frank, 2026-11-05: "I'm certainly not going to try a reverse vm just
-for this"); speed of variable lookbehind beyond the loop in stage 1 (one bench pattern uses it);
-exposing the 255 cap as a setting (owner question 2); backreferences inside lookbehind in stage 1
-(stage 2, owner question 3); lookaround inside the DFA engine ([ENG-LOOK]); `\K` inside a
-lookaround (both libraries refuse it, err 199); unbounded lookbehind (both refuse it, err 125).
+**Non-goals.**
+- A reverse VM (Frank, 2026-11-05: "I'm certainly not going to try a reverse vm just for this").
+- Speed of variable lookbehind beyond the loop in stage 1 (one bench pattern uses it).
+- Exposing the 255 cap as a setting: owner ruling, deferred to [IFACE-PUSH].
+- Lookaround inside the DFA engine ([ENG-LOOK]).
+- `\K` inside a lookaround: both libraries refuse it (err 199).
+- Unbounded lookbehind. Its reason is restated `[r3 F16]`: PCRE2 refusing it (err 125) is the
+  weakest argument after D26's addendum. The real reasons are zero demand and the `range` row's
+  O(n³) worst case without an automaton filter. It is filed HELD as [LB-EXIST] (§5.4), with the
+  trigger "a real pattern needs it".
 
 ## 1. Premise, verified on this branch
 
-`build/pcrec --features all` at `4e35534af` (`vlbdesign_evidence/premise.txt`): `(?<=a|bc)x`
-compiles; `(?<=a{1,3})b` is refused, "variable-length lookbehind is not implemented ... (this one
-can match 1..3 characters)". The investigation's code reading (vlbinv §2) was spot-checked against
-`src/gen/emit_vm.c` (`vm_look`, `vm_look_behind`, `vm_look_behind_branch`) and holds; nothing in the
-code contradicts a point this design rests on (STOP RULE not triggered).
+Rev 0 (`vlbdesign_evidence/premise.txt`, `build/pcrec --features all` at `4e35534af`):
+- `(?<=a|bc)x` compiles.
+- `(?<=a{1,3})b` is refused, with "variable-length lookbehind is not implemented ... (this one can
+  match 1..3 characters)".
+
+Rev 1 premise test (`vlbrev1_evidence/premise.out`, libpcre2 10.46): F1's three cells match in
+libpcre2, so rev 0's sketch was wrong where the review says it was:
+
+| pattern | subject | libpcre2 |
+|---|---|---|
+| `(?<=a{1,2}\|b)x` | `bx` | [1-2] |
+| `(?<=a{2,3}\|b)x` | `bx` | [1-2] |
+| `(?<=a{1,2}\|bc)x` | `bcx` | [2-3] |
+
+The code facts rev 1 adds were READ at main `2056360d7`:
+- `vm_look_behind_branch`'s prologue order in `src/gen/emit_vm.c`: guard, NEXT-BRANCH push at the
+  cursor, `vm_work(k)`, `VSK_BACKSTEP`, sentinel.
+- `VSK_BACKSTEP` renders a literal count (`vm_r_seek`, src/gen/vm_stmt.c), while `VK_SEEK` already
+  carries a `slotx` operand.
+- The seam's `$_back_step` takes a run-time `size_t k` in both encodings (src/enc/enc_byte.c,
+  src/enc/enc_utf8.c).
+
+The STOP RULE was not triggered: every fix is sound in text.
 
 ## 2. Semantics to reproduce (new cells only; vlbinv §1 has the rest)
 
-All MEASURED with libpcre2 10.46 (`vlbdesign_evidence/d_match.out`, `d_utf.out`, `w_match.out`,
-`startpos.out`):
+All MEASURED with libpcre2 10.46. Rev 0's cells are in `vlbdesign_evidence/d_match.out`,
+`d_utf.out`, `w_match.out` and `startpos.out`. Rev 1's are in `vlbrev1_evidence/cells.out`.
 
-- **Atomic and possessive parts SHRINK the body's set of strings**, so a machine built over the
-  body with the atomicity dropped is a SUPERSET: `(?<=(?>a|ab)b)x` on `abbx` is nomatch, the
-  non-atomic `(?<=(?:a|ab)b)x` matches (3,4); `(?<=a{1,2}+a)x` on `aax` is nomatch where
-  `(?<=a{1,2}a)x` matches. The negative forms flip: `(?<!(?>a|ab)b)x` on `abbx` matches.
-- **Context before the start is read**: `(?<=\ba{1,2})x` matches on ` aax`, not on `aaax` or
-  `baax`; `(?<=^a{0,2})x` matches on `aax`, not on `aaax`.
+- **Atomic and possessive parts SHRINK the body's set of strings.** So a machine built over the body
+  with the atomicity dropped is a SUPERSET.
+  - `(?<=(?>a|ab)b)x` on `abbx` is nomatch; the non-atomic `(?<=(?:a|ab)b)x` matches (3,4).
+  - `(?<=a{1,2}+a)x` on `aax` is nomatch where `(?<=a{1,2}a)x` matches.
+  - The negative forms flip: `(?<!(?>a|ab)b)x` on `abbx` matches.
+- **Context before the candidate start is read.**
+  - `(?<=\ba{1,2})x` matches on ` aax`, not on `aaax` or `baax`.
+  - `(?<=^a{0,2})x` matches on `aax`, not on `aaax`.
+  - These are byte-mode facts at startpos 0. Under `PCRE2_UTF` with startpos > 0, see the D142
+    bullet below `[r3 F7]`.
 - **A nested lookahead may look past the cursor**: `(?<=a{1,2}(?=xy))x` matches on `aaxy`, not on
   `aaxz`.
 - **Non-atomic retry walks every viable length, gaps included**: `(?<*(a|aaa))c\1` on `aaaca` is
-  (3,5) g1=(2,3) (length 3 first, then length 1); the atomic `(?<=` form is nomatch.
-- **Branch order beats length**: `(?<=(ab)|(b{1,2}))c` on `abbc` is g2=(1,3) (branch 1 fails, branch
-  2 at its longest); `(?<=(a)|(aa))c` on `aac` is g1=(1,2) (branch 1 though branch 2 is longer).
-- **Before `startpos`**: `(?<=a{1,2})b` on `aab` from offset 2 is (2,3); `(?<!a{1,2})b` is nomatch.
-- **UTF-8 counts characters**: `(?<=(é{1,2}))x` on `aééx` (UTF) is (5,6) g1=(1,5).
-- **The end-check's two witnesses**: `(?<=a{1,2})x` on `abx` is nomatch (at length 2 the body ends
-  at 1, not 2); `(?<!ab?)x` on `acx` matches (2,3) (length 2's body ends early, length 1 fails).
+  (3,5) g1=(2,3), trying length 3 first, then length 1. The atomic `(?<=` form is nomatch.
+- **Branch order beats length.**
+  - `(?<=(ab)|(b{1,2}))c` on `abbc` is g2=(1,3): branch 1 fails, branch 2 matches at its longest.
+  - `(?<=(a)|(aa))c` on `aac` is g1=(1,2): branch 1 wins though branch 2 is longer.
+- **The next branch starts from the cursor, after a varying branch** `[r3 F1]`:
+  - `(?<=a{1,2}|b)x` on `bx` is [1-2]: branch 1 exhausts its candidates.
+  - `(?<=a{2,3}|b)x` on `bx` is [1-2]: too little subject for branch 1's minimum.
+  - `(?<=a{1,2}|bc)x` on `bcx` is [2-3]: branch 1 exhausts at length 1, and branch 2 needs 2.
+- **Before `startpos`**: from offset 2, `(?<=a{1,2})b` on `aab` is (2,3) and `(?<!a{1,2})b` is
+  nomatch.
+- **UTF-8 counts characters.**
+  - `(?<=(é{1,2}))x` on `aééx` (UTF) is (5,6) g1=(1,5).
+  - `(?<=(é{1,2}))x` on `éx` is [2-3,0-2] `[r3 F8]`. Fewer characters than `hi` precede the
+    cursor, but at least `hi` bytes do.
+- **The end-check's witnesses.**
+  - `(?<=a{1,2})x` on `abx` is nomatch: at length 2 the body ends at 1, not 2.
+  - `(?<!ab?)x` on `acx` matches (2,3): length 2's body ends early, and length 1 fails.
+- **The body backtracks into its trailing greedy quantifier** `[r3 F10]`:
+  - `(?<=a{1,2})a` on `aaa` is [1-2][2-3]. At cursor 1, `a{1,2}` from 0 takes two characters and
+    must give one back.
+  - `(?<!a{1,2})a` on `aaa` is [0-1].
+- **D142's stated UTF divergence (not new semantics)** `[r3 F7]`:
+  - `(?<=\ba{1,2})x` on `baax` from offset 3 is nomatch in byte mode and [3-4] under `PCRE2_UTF`.
+    libpcre2 clips backward reads at `startpos − LB`; pcrec deliberately does not (D142 item 3,
+    `match_api.md` §9.4¶8).
+  - The fixed twin `(?<=\baa)x` diverges the same way today.
+  - A varying body widens the exposed set. Any candidate at distance `hi` whose `\b`, `\B` or
+    nested lookbehind reads one character further is exposed.
 
 ## 3. The two candidates, side by side
 
-**B, the step-back loop** (vlbinv §3, `lookaround_design.md` §2.5's sketch). Per branch, candidate
-starts are the positions `lo..hi` characters before the cursor, farthest first, clamped by the
-subject start (absolute, never `startpos`: S135). Each is tried by back-step, forward body, end-check;
-a failure resumes the next candidate through a retry frame, then the next branch.
+**B, the step-back loop** (vlbinv §3; `lookaround_design.md` §2.5's sketch). For each branch, the
+candidate starts are the positions `lo..hi` characters before the cursor, farthest first. They are
+clamped by the subject start: absolute, never `startpos` (S135). Each candidate is tried in three
+steps: back-step, forward body, end-check. A failure resumes the next candidate through a retry
+frame, then the next branch.
 
-**D, reverse DFA then forward VM** (owner addendum). A reverse DFA of the branch, run from the cursor
-back at most the branch's width, gives the positions where the branch can start; the farthest is
-tried first; one forward anchored VM run from it, required to end at the cursor, sets the captures.
-Capture-free and negative lookbehinds were proposed to need the DFA only.
+**D, reverse DFA then forward VM** (owner addendum).
+- A reverse DFA of the branch runs back from the cursor, at most the branch's width. It gives the
+  positions where the branch can start.
+- The farthest is tried first: one forward anchored VM run from it, required to end at the cursor,
+  sets the captures.
+- The addendum proposed that capture-free and negative lookbehinds need the DFA only.
 
 | vetting item | B (range source) | D (reverse-dfa source) |
 |---|---|---|
-| **order** (branch, then longest) | the loop's order by construction | per-branch machines: the farthest accept IS the longest step-back, the output today's reverse block already records (`emit_reverse_block`: the smallest accepting position). One machine for all branches needs priority tags (`alt_dispatch_study.md` (c)); the union without tags is WRONG: `(?<=(a)\|(aa))c` on `aac` |
-| **non-atomic retry** | the retry frame stays live; next candidate = one character nearer | needs EVERY accepting start in order ([LANDWALK-ALLACC]'s output, "every accepting start ascending" = farthest first). Two forms: a re-walk from the cursor to the last tried start (stateless, O(width) per retry) or a 255-bit set per evaluation (frame storage). Re-walk recommended: retries happen only on a non-atomic form whose follow fails |
-| **captures inside** | trail rewind per failed candidate, as today | the forward VM run sets them; the DFA cannot |
-| **atomic / possessive inside** | `vm_emit` as today | the machine is a SUPERSET (`Nfa.erased` & `NFA_ERASED_ATOMIC`, src/ir/nfa.c `compile_ast`'s A_ATOMIC arm), so its accepts are candidates to CONFIRM, never answers. Witness §2 row 1 |
-| **nested lookaround** | `vm_emit` as today | erased (`NFA_ERASED_LOOK`): superset, confirm by the VM; a lookahead can read past the cursor (§2) |
-| **capture-free, negative "DFA only"** | n/a | TRUE only where the machine is EXACT (`erased == 0`) and the body has no observable side effect (no callout: `NFA_ERASED_CALLOUT` already marks it; a callout's firing count would differ). Otherwise the DFA is a sound FILTER for both polarities (no accept in the superset means none in the truth), never the answer |
-| **backreference inside** (stage 2) | needs only a width (B+) | no machine: the NFA builder has no lowering for `A_BREF` (src/ir/nfa.c, `compile_ast`'s A_BREF arm, "NO MACHINE"): the row declines, `range` serves |
-| **`\K` inside** | refused by both libraries (err 199), unchanged | same |
-| **UTF-8** | back-step "up to hi characters" reports how far it got (a new seam entry or a loop of one-character steps: §5.1), then one character forward per retry | byte machine over UTF-8; accepts fall on character boundaries for valid input; the 255 cap is a compile-time character count; no run-time count needed |
-| **start of subject** | the clamp, absolute | the walk's floor is 0, not `search_from` (the landmark walk's floor, `dfa_dir_landmark`'s `at_bound`): §4 G3 |
-| **context at the start** (`\b`, `^`) | the forward body reads it | the reverse machine's views at the floor, as the RECOVER pass reads them (`rx_reverse_accepts_class`) |
-| **budgets / give-ups** | `RX_CHARGE_WORK` per candidate; frames visible to D42's bound | fewer body runs, so fewer give-ups: a ONE-WAY give-up change, which [GIVEUP-DIFF] must cover before the row ships |
-| **machine size per site** (proxy, `revdfa_sizes.tsv`) | none | bench body `\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3}` ~61 states × 6 classes; `(?:a\|bc)` 3 × 4; `a{1,255}` ~257 × 3; `é{1,255}` ~511 × 3 (byte) |
-| **compile cost** | none beyond today | one optional subset construction per variable branch, under its own state cap with the subset budget restored (`revend_build_one`'s shape, src/core/compile.c) |
-| **host in a VM artifact** | VM records that exist today (`VK_BRANCH`, `VK_PUSH`, `VK_SEEK`, `VK_LSET`, `VK_WORK`) | no record kind runs an automaton (`VmKind`, src/gen/vm_stmt.h); see §4 G5 |
-| **speed, short bodies** (widths 1..3, the whole corpus population) | ≤ 3 tiny body runs | a walk of ≤ 3 bytes plus one run, plus tables; no expected win (INFERRED) |
-| **speed, the bench pattern** (negative, 4..51) | up to 48 candidates per evaluation, but each fails at the body's first byte unless it is `n` | one walk of ≤ 51 bytes; INFERRED small difference, since the lookbehind is evaluated only where `\bavailable\b` can follow |
-| **stream ratchet** | adds no parallel mechanism | built now, a reverse walk inside the VM body would be a new hand-written walk beside R03/R10 (roadmap §5): rejected by D185's ratchet unless it IS the reverse `AUTO` kind |
+| **order** (branch, then longest) | The loop's order, by construction. | Per-branch machines work: the farthest accept IS the longest step-back, the output today's reverse block already records (`emit_reverse_block`: the smallest accepting position). One machine for all branches needs priority tags (`alt_dispatch_study.md` (c)). The union without tags is WRONG: `(?<=(a)\|(aa))c` on `aac`. |
+| **non-atomic retry** | The retry frame stays live; the next candidate is one character nearer. | Needs EVERY accepting start in order ([LANDWALK-ALLACC]'s output, "every accepting start ascending" = farthest first). Two forms: a re-walk from the cursor to the last tried start (stateless, O(width) per retry), or a 255-bit set per evaluation (frame storage). Re-walk recommended: retries happen only on a non-atomic form whose follow fails. |
+| **captures inside** | Trail rewind per failed candidate, as today. | The forward VM run sets them; the DFA cannot. |
+| **atomic / possessive inside** | `vm_emit` as today. | The machine is a SUPERSET (`Nfa.erased` & `NFA_ERASED_ATOMIC`, src/ir/nfa.c `compile_ast`'s A_ATOMIC arm), so its accepts are candidates to CONFIRM, never answers. Witness: §2 row 1. |
+| **nested lookaround** | `vm_emit` as today. | Erased (`NFA_ERASED_LOOK`): a superset, confirmed by the VM. A lookahead can read past the cursor (§2). |
+| **capture-free, negative "DFA only"** | n/a | TRUE only where the machine is EXACT (`erased == 0`) and the body has no observable side effect. Otherwise the DFA is a sound FILTER for both polarities (no accept in the superset means none in the truth), never the answer. pcrec refuses callouts in a lookbehind today (`pattern_language.md` §7.11¶3), so the side-effect conjunct guards a refused construct. It is kept as a fact for the day callouts are admitted there `[r3 F14]`. |
+| **backreference inside** (stage 2) | The group's exact width at both ends; DD-14.LB's deferral for references not yet parsed; refusals (§6 stage 2) `[r3 F2, F5]`. (Rev 0: "needs only a width": refuted.) | No machine: the NFA builder has no lowering for `A_BREF` (src/ir/nfa.c, `compile_ast`'s A_BREF arm, "NO MACHINE"). The row declines and `range` serves. |
+| **`\K` inside** | Refused by both libraries (err 199), unchanged. | Same. |
+| **UTF-8** | The first candidate count is clamped to `min(hi, scan_position)`, an upper bound (bytes ≥ characters). A back-step that runs off the start returns the seam's sentinel and pops to the next shorter candidate. Through the EXISTING `$_back_step` entry with a run-time count, so no new seam entry (§5.1, `[r3 F13]`). | Byte machine over UTF-8. Accepts fall on character boundaries for valid input. The 255 cap is a compile-time character count, so no run-time count is needed. |
+| **start of subject** | The clamp, absolute. | The walk's floor is 0, not `search_from` (the landmark walk's floor, `dfa_dir_landmark`'s `at_bound`): §4 G3. |
+| **context at the start** (`\b`, `^`) | The forward body reads it. | The reverse machine's views at the floor, as the RECOVER pass reads them (`rx_reverse_accepts_class`, an emitted name). |
+| **budgets / give-ups** | `RX_CHARGE_WORK(d)` per candidate (§5.5). Frames are visible to D42's bound. | Fewer body runs, so fewer give-ups: a ONE-WAY give-up change, which [GIVEUP-DIFF] must cover before the row ships. |
+| **machine size per site** (proxy, `revdfa_sizes.tsv`) | None. | Bench body `\bnot\s{1,3}(?:\w{1,12}\s{1,3}){0,3}`: ~61 states × 6 classes. `(?:a\|bc)`: 3 × 4. `a{1,255}`: ~257 × 3. `é{1,255}`: ~511 × 3 (byte). |
+| **compile cost** | None beyond today. | One optional subset construction per variable branch, under its own state cap with the subset budget restored (`revend_build_one`'s shape, src/core/compile.c). |
+| **host in a VM artifact** | VM records that exist today: `VK_BRANCH`, `VK_PUSH`, `VK_SEEK`, `VK_SET` (TRAILED: the loop slot must be restored by a pop), `VK_WORK`. `[r3 F13]`: rev 0 said `VK_LSET`, the untrailed kind, which is wrong. | No record kind runs an automaton (`VmKind`, src/gen/vm_stmt.h); see §4 G5. |
+| **speed, short bodies** (every population row but the `1..255` cap pin: widths ≤ 3, four rows with minimum 0) `[r3 F14]` | ≤ 3 tiny body runs. | A walk of ≤ 3 bytes plus one run, plus tables. No expected win (INFERRED). |
+| **speed, the bench pattern** (negative, 4..51) | Up to 48 candidates per evaluation, but each fails at the body's first byte unless it is `n`. | One walk of ≤ 51 bytes. INFERRED small difference, since the lookbehind is evaluated only where `\bavailable\b` can follow. |
+| **stream ratchet** | Adds no parallel mechanism. | If built now, a reverse walk inside the VM body would be a new hand-written walk beside R03/R10 (roadmap §5). D185's ratchet rejects it unless it IS the reverse `AUTO` kind. |
 
-**What the table shows.** D needs B's finisher on every body it cannot answer alone (captures,
-atomic, nested lookaround, callouts, backreferences), and its finisher is exactly B's per-candidate
-step: back-step to a position, run forward, end-check. So B is not a parallel path to D; it is D's
-second half plus the trivial candidate source. D's own contribution is the candidate filter (fewer
-body runs) and, on exact side-effect-free bodies, an existence answer with no VM run.
+**What the table shows.** D needs B's finisher on every body it cannot answer alone: captures,
+atomic parts, nested lookaround and backreferences. Callouts are not on this list, since pcrec
+refuses them here `[r3 F14]`. D's finisher is exactly B's per-candidate step: back-step to a
+position, run forward, end-check. So B is not a parallel path to D. It is D's second half plus the
+trivial candidate source. D's own contribution is the candidate filter (fewer body runs) and, on
+exact side-effect-free bodies, an existence answer with no VM run.
 
 ## 4. Is D a second client of the landmark walk?
 
-**Not of the walk as it stands; yes of its parts; and its true home is the reverse `AUTO` kind.**
+**Not of the walk as it stands. Yes of its parts. And its true home is the reverse `AUTO` kind.**
 
-The walk today (D184): `emit_landmark_walk` (src/gen/emit_dfa.c) is the body of the LOCATE row
-`landmark-walk`, registered for the DFA route only (`.u.locate.emit = { [CAND_ROUTE_DFA] =
-emit_landmark_walk }`), emitted into the DFA artifact's search entry. Its machine is a Job
-singleton (`Job.lmnfa`/`Job.lmdfa`, built once by `lmwalk_build` in src/core/compile.c from the cut
-`PcrecLmwalk.pl` that `lmwalk_conj[]` chose, src/gen/lmwalk.c). Its admission is about landmark
-soundness (`exclusion`: P never consumes a byte of L), which has no meaning for a lookbehind. Its
-finisher is the anchored DFA `Job.adfa` (`dfa_dir_lmverify`), not a VM. So D cannot call it.
+**The family** `[r3 F16]`.
+- The candidate-source row is a LOCATE × FINISH instance (D156, `docs/design/locate_finish.md`):
+  - `range` is the trivial LOCATE: every position in a window of `[lo, hi]` characters before the
+    cursor.
+  - `reverse-dfa` is a reverse LOCATE.
+  - §5.1's back-step + forward body + end-check is an anchored FINISH with a REQUIRED end.
+- The per-branch width range `[lo_i, hi_i]` is the RANGED sibling of the landmark walk's fixed
+  K-back distance. A one-length range IS a K-back: roadmap P-d asks "whether FIND takes the landmark
+  and K-back position as operands".
+- So D's later home is a row in an existing family, with D156's vocabulary (finisher route, give-up
+  posture through [GIVEUP-DIFF]), not a new mechanism.
+- The general EXISTENCE form is [ENG-LOOK]'s forward `Σ*·L` machine. It is a third candidate-source
+  or filter row (§5.4).
 
-What D shares is what the walk is MADE of:
+**The walk today (D184).**
+- `emit_landmark_walk` (src/gen/emit_dfa.c) is the body of the LOCATE row `landmark-walk`. It is
+  registered for the DFA route only (`.u.locate.emit = { [CAND_ROUTE_DFA] = emit_landmark_walk }`)
+  and emitted into the DFA artifact's search entry.
+- Its machine is a Job singleton: `Job.lmnfa`/`Job.lmdfa`, built once by `lmwalk_build` in
+  src/core/compile.c from the cut `PcrecLmwalk.pl` that `lmwalk_conj[]` chose (src/gen/lmwalk.c).
+- Its admission is about landmark soundness (`exclusion`: P never consumes a byte of L), which has
+  no meaning for a lookbehind.
+- Its finisher is the anchored DFA `Job.adfa` (`dfa_dir_lmverify`), not a VM.
+
+So D cannot call the walk. What D shares is what the walk is MADE of:
 
 | part | where | reusable by D as is? |
 |---|---|---|
-| reverse NFA of an AST subtree | `pcrec_build_nfa(cx, ast, nfa, true, ...)` (src/ir/nfa.c), used by `lmwalk_build` on the cut | yes: the lookbehind branch is a subtree |
-| optional machine build with own cap, budget restored | `revend_build_one` (src/core/compile.c) | yes (static today; one call site more) |
-| exactness as a recorded fact | `Nfa.erased` (internal.h, `NFA_ERASED_*`) | yes: it is D's "answer vs filter" fact |
-| the reverse scan renderer | `emit_reverse_block` → `emit_scan_loop` over a `DfaForm` (src/gen/emit_dfa.c); its callers are RECOVER's pass, the rev-end walk and the landmark walk | yes in kind; needs G2-G4 below |
-| the walk's direction strings | `struct DfaDir` (`statev`, `posv`, `recv`, `at_bound`, `seed_cond`, ...), one `static const` per direction (`dfa_dir_landmark`) | needs G3 |
-| the farthest-accept output | `match_start_position` = the smallest accepting position | yes: it is the longest step-back |
+| reverse NFA of an AST subtree | `pcrec_build_nfa(cx, ast, nfa, true, ...)` (src/ir/nfa.c), used by `lmwalk_build` on the cut | Yes: the lookbehind branch is a subtree. |
+| optional machine build with its own cap, budget restored | `revend_build_one` (src/core/compile.c) | Yes. It is static today; this would be one more call site. |
+| exactness as a recorded fact | `Nfa.erased` (internal.h, `NFA_ERASED_*`) | Yes: it is D's "answer vs filter" fact. |
+| the reverse scan renderer | `emit_reverse_block` → `emit_scan_loop` over a `DfaForm` (src/gen/emit_dfa.c). Its callers are RECOVER's pass, the rev-end walk and the landmark walk. | Yes in kind, but needs G2-G4 below. |
+| the walk's direction strings | `struct DfaDir` (`statev`, `posv`, `recv`, `at_bound`, `seed_cond`, ...), one `static const` per direction (`dfa_dir_landmark`) | Needs G3. |
+| the farthest-accept output | `match_start_position` = the smallest accepting position | Yes: it is the longest step-back. |
 
-**What would have to be generalized** (each already named somewhere, none built):
+**What would have to be generalized.** Each item is already named somewhere; none is built.
 
-- **G1 machine per site.** `Job.lmdfa` is one machine per artifact; D needs one (or one tagged)
-  machine per variable lookbehind branch, keyed by the `A_LOOK` node. Roadmap A-REV's "one reverse
-  `AUTO` kind" is the place this becomes an operand rather than a Job field.
+- **G1 machine per site.** `Job.lmdfa` is one machine per artifact. D needs one machine (or one
+  tagged machine) per variable lookbehind branch, keyed by the `A_LOOK` node. Roadmap A-REV's "one
+  reverse `AUTO` kind" is where this becomes an operand rather than a Job field.
 - **G2 floor and seed as operands.** The landmark walk floors at `search_from` and seeds one past a
-  hit; a lookbehind floors at 0 (S135's lesson: never `startpos`) and seeds at the VM cursor.
+  hit. A lookbehind floors at 0 (S135's lesson: never `startpos`) and seeds at the VM cursor.
   `DfaDir.at_bound` and the caller's seed already carry both as strings; they become operands.
-- **G3 names per instance.** `DfaDir`s are file-scope constants and `emit_reverse_block`'s comment
+- **G3 names per instance.** `DfaDir`s are file-scope constants, and `emit_reverse_block`'s comment
   says "the names stay RECOVER's spellings: the one caller that would need others (rev-inner, D151)
   is filed". Two lookbehinds in one artifact need two name sets.
-- **G4 the exits.** Today: farthest accept only. D needs three: farthest (atomic), every accept
-  farthest first ([LANDWALK-ALLACC]), and existence (exact negative or capture-free bodies; may stop
-  at the first accept). These are three of the manifesto's declared automaton exits (manifesto §2:
-  "commit to one end, enumerate ends in preference order, act as a gate, test existence, or report
-  a tagged end").
-- **G5 hosting in a VM body.** The VM body is written only by typed records (D182) and `VmKind` has
-  no automaton kind. The precedent for DFA text in a VM artifact is the hybrid prefilter
-  (`pcrec_emit_dfa_engine` emitted with `static` storage as a separate part, called from the search
-  loop, src/gen/emit_vm.c's entry shape `.hybrid`); it is outside the matcher body. D sits INSIDE
-  the body, between choice points, so it needs either a record kind (the reverse `AUTO` kind) or a
-  per-site static helper part called from an expression record. Either is a new crossing between
-  the VM body and DFA text, which is exactly roadmap A-REV's and [LANDWALK-VM]'s question (the walk
-  with a VM finisher, "the VM hat").
-- **G6 the finisher on the VM route.** The walk's finisher is the anchored DFA; D's is the VM
-  body with the end-check, which is B's per-candidate step. B builds it.
+- **G4 the exits.** Today there is one: the farthest accept. D needs three:
+  - farthest (atomic);
+  - every accept, farthest first ([LANDWALK-ALLACC]);
+  - existence (exact negative or capture-free bodies), which may stop at the first accept.
 
-**Why not now.** Building G1-G5 for this one row, ahead of roadmap A-REV's P-d step (the landmark
-walk as records, prerequisites P-b and [VMREC] (b)), would add a third hand-written reverse walk
-beside R03 (`revdet.c`) and R10 (`emit_landmark_walk`), which D185's ratchet rejects; and there is
-no measured need for it (§3's speed rows, D77). Built after A-REV, D is the reverse `AUTO` kind's
-first VM-hosted client, with [LANDWALK-ALLACC]'s enumerate exit, and it costs one choice row.
+  These are three of the manifesto's declared automaton exits (manifesto §2: "commit to one end,
+  enumerate ends in preference order, act as a gate, test existence, or report a tagged end").
+- **G5 hosting in a VM body.**
+  - The VM body is written only by typed records (D182).
+  - There is an in-body precedent for a REVERSE CURSOR between choice points `[r3 F15]`: R03's
+    backward walk renders through `VK_CONSUME_BACK` (src/gen/vm_stmt.h), emitted by `vm_revdet_rep`
+    over `revdet.c`'s reversed AST. So a backward cursor written by records is not new.
+  - What is new is an AUTOMATON (table-driven) step there, and `VmKind` has no automaton kind.
+  - The precedent for DFA TEXT in a VM artifact is the hybrid prefilter (`pcrec_emit_dfa_engine`
+    emitted with `static` storage as a separate part, called from the search loop; src/gen/emit_vm.c's
+    entry shape `.hybrid`). It is outside the matcher body.
+  - D sits INSIDE the body, between choice points. So it needs either a record kind (the reverse
+    `AUTO` kind generalizing R03's in-body walk) or a per-site static helper part called from an
+    expression record. Either is a new crossing between the VM body and DFA text. That is exactly
+    the question of roadmap A-REV and [LANDWALK-VM] (the walk with a VM finisher, "the VM hat").
+- **G6 the finisher on the VM route.** The walk's finisher is the anchored DFA. D's is the VM body
+  with the end-check, which is B's per-candidate step. B builds it.
+
+**Why not now.**
+- Building G1-G5 for this one row, ahead of roadmap A-REV's P-d step, would add a third hand-written
+  reverse walk beside R03 (`revdet.c`) and R10 (`emit_landmark_walk`). P-d is the landmark walk as
+  records, with prerequisites P-b and [VMREC] (b). D185's ratchet rejects such a walk.
+- There is no measured need (§3's speed rows, D77).
+- Built after A-REV, D is the reverse `AUTO` kind's first VM-hosted client, with
+  [LANDWALK-ALLACC]'s enumerate exit, and it costs one choice row.
+- R03 already shows the record shape for a backward cursor. That is consistent with the owner's
+  "no reverse VM": R03 is a restricted reverse walk over a mirrored AST, not a reverse VM
+  `[r3 F15]`.
 
 ## 5. The mechanism
 
-### 5.1 One branch, candidate starts farthest first
+### 5.1 One branch, candidate starts farthest first `[r3 F1: re-sketched]`
 
-Per top-level branch `i` with character range `[lo_i, hi_i]` (from `pcrec_cwmin`/`pcrec_cwmax`, as
-today), in written order:
+Per top-level branch `i`, with character range `[lo_i, hi_i]` from `pcrec_cwmin`/`pcrec_cwmax` (an
+EXACT range, §5.2), in written order. `POS` is the lookbehind's position slot, which the entry
+records (today's `pslot`). `D_i` is a matcher slot written by `VK_SET`, so it is TRAILED.
+`L_b(m)` for the last branch means `rx_fail`.
 
 ```
-L_bi:     back-step up to hi_i characters from the cursor; d = characters actually stepped
-          if (d < lo_i) goto L_b(i+1)                 // the clamp: not enough subject
-L_try_i:  RX_PUSH(&&L_adv_i, scan_position)            // the retry frame (one live per branch)
-          RX_CHARGE_WORK(...)                          // per candidate tried
+L_b_i:    if (scan_position < lo_i) goto L_b_(i+1)       // guard; not emitted when lo_i == 0
+          D_i = min(hi_i, scan_position)                 // VK_SET; exact (byte), upper bound (UTF-8)
+L_try_i:  RX_PUSH(&&L_adv_i, scan_position)              // the retry frame saves the CURSOR:
+                                                         //   scan_position == POS on every entry here
+          RX_CHARGE_WORK(D_i)                            // the back-step, charged as its count (§5.5)
+          scan_position = $_back_step(subject, subject_length, scan_position, D_i)
+          if (scan_position == $_BACK_STEP_NONE) goto rx_fail
+                                                         // fewer than D_i characters precede:
+                                                         //   pops L_adv_i (UTF-8 only; dead under byte)
+          goto L_body_i
 L_body_i: <B_i forward, vm_emit unchanged>  -> L_end_i
-L_end_i:  if (scan_position != POS) goto rx_fail       // decline: backtracks into B_i, then L_adv_i
+L_end_i:  if (scan_position != (size_t)slot_values[POS]) goto rx_fail
+                                                         // decline: backtracks into B_i, then L_adv_i
           goto L_ok
-L_adv_i:  if (d == lo_i) goto L_b(i+1)                 // candidates exhausted
-          advance one character; d--; goto L_try_i
+L_adv_i:  // reached ONLY by popping L_try_i's frame:
+          //   scan_position = the cursor, D_i = its value at that push
+          if (D_i == lo_i) goto L_b_(i+1)                // candidates exhausted (last branch: rx_fail)
+          D_i = D_i - 1                                  // VK_SET
+          goto L_try_i
 ```
 
-`d` is a matcher slot written by `vm_set` (trailed, so a retry frame restores it). The last branch
-sends its exhaustion to `rx_fail` as today. Atomic forms cut every frame at `L_ok` (`vm_cut`,
-unchanged); non-atomic forms leave `L_adv_i`'s frame live, which IS PCRE2's measured retry-shorter
-behaviour.
+What changed from rev 0, and why each change matters:
+- The push precedes the back-step and saves the cursor. The guard tests `lo_i` before anything
+  moves. Each candidate re-steps `D_i` from the restored cursor, as F1 asked.
+- So every way out of branch `i` leaves `scan_position` at the cursor:
+  - the guard (nothing has moved);
+  - exhaustion (the popped frame restored it);
+  - the sentinel, which pops the same frame.
+- `L_b_(i+1)` therefore needs no re-read of `POS`. This is today's invariant (vm_look_behind's
+  header, note 2), kept rather than replaced.
 
-**The fold for `lo_i == hi_i` is natural, not a special case.** With a one-point range: "back-step
-up to k, d < k → next branch" is today's guard plus back-step (`scan_position < k`, then the seam's
-`$_back_step` of exactly k); `L_adv_i`'s first test `d == lo_i` is true on entry, so the retry frame
-targets `L_b(i+1)` directly, which is today's "NEXT-BRANCH continuation" push. A loop whose
-remaining trip count is statically zero has no back edge; the emitter evaluates that test at compile
-time as it evaluates the `k > 0` guard test today (`vm_look_behind_branch`'s zero-width note). The
-emitted COMMENT is the one place the shape is named: the one-point case keeps "fixed width %d" (it
-describes what was emitted); the range case gets its own role text. Identity on today's corpus is
-the gate that proves the fold (§6 stage 1, gate 2).
+Further properties of the sketch:
+- **Trail.** `D_i` is set before each push and decremented after each pop. So every frame's trail
+  mark sits above `D_i`'s current entry, and a pop restores `D_i` to its value at that push. An
+  outer pop below the assertion rewinds it. The soundness lens held this for three shapes; rev 1
+  keeps the same set/push/pop order.
+- **Atomic forms** cut every frame at `L_ok` (`vm_cut`, unchanged).
+- **Non-atomic forms** leave `L_adv_i`'s frame live, which IS PCRE2's measured retry-shorter
+  behaviour.
+- **The last branch** sends its exhaustion to `rx_fail`, as today.
 
-**The UTF-8 clamp.** Under the byte encoding `d = min(hi_i, scan_position)`. Under UTF-8, "back-step
-up to k characters and report how many" is not today's seam entry (`$_back_step` returns
-`_BACK_STEP_NONE` when fewer than k precede). Two spellings: a loop of one-character back-steps
-through the existing entry, or a new residual entry `back_step_upto`. The seam's [M5-SEAM] per-site
-count moves either way; the build lane picks by the seam's rules (D58), not this note.
+**The UTF-8 clamp `[r3 F13]`.**
+- The first count is `min(hi_i, scan_position)`. That is exact under the byte encoding, and an
+  upper bound under UTF-8, because a character is at least one byte.
+- This is the same fact today's guard already relies on (vm_look_behind's header, note 2: "Under
+  UTF-8, `k` characters is at least `k` bytes, so the guard still soundly rejects but stops being
+  exact").
+- Where fewer characters than the bound precede, the EXISTING seam entry `$_back_step` returns
+  `$_BACK_STEP_NONE`. The sentinel then pops `L_adv_i`, the count drops by one, and the loop
+  continues.
+- The back-step goes through the same entry with a run-time count. Its C signature already takes
+  `size_t k` in both encodings. So:
+  - no new seam entry is introduced;
+  - no D58 addendum or third-encoding recipe entry is owed;
+  - the [M5-SEAM] per-site count is unchanged (one back-step call per branch, as today).
+- Rev 0 left two spellings open: a loop of one-character steps, or a new `back_step_upto` entry.
+  Both are retired. A new entry would now need a measured reason (D77), plus the D58 contract
+  change in the same commit.
 
-### 5.2 The width rule and the cap
+### 5.1b The emission table: one-length or range, selected by the width fact `[r3 F12]`
+
+**Rev 0's claim, refuted.** Rev 0 said: "the fold for `lo_i == hi_i` is natural ... the emitter
+evaluates that test at compile time". The review showed that today's bytes differ from the loop at
+`lo == hi` in several ways (SOUND-2):
+- statement order;
+- the pushed position;
+- the work amount;
+- the sentinel;
+- a new slot family.
+
+It also showed that "fixed width %d" is an `--emit-ir` LISTING label, not emitted C.
+
+The rev 1 sketch closes the order and position differences: at `lo == hi` it has today's order and
+pushes at the cursor. Even so, today's bytes follow from the loop only after four rewrites that the
+emitter does NOT perform in general:
+1. `D_i` becomes the constant `k`. The guard makes `min(k, scan_position) = k`.
+2. `L_adv_i`, whose test is then always true, is threaded to its target `L_b_(i+1)`.
+3. A frame whose continuation is only `rx_fail` (the last branch's) is elided.
+4. The slot is dropped.
+
+So the emitter SELECTS the one-length bytes by the width fact. Stated honestly, this is a DECLARED
+emission row chosen by a fact that is already stored (`u.look.widths`, a pair per branch from
+stage 1). It is not a constant fold, and not a hidden `if`. The table:
+
+| row (first match) | applies when | guard | `D_i` slot | retry frame (target, position) | work per candidate | back-step count | end-check fail, negative arm | `L_adv_i` block |
+|---|---|---|---|---|---|---|---|---|
+| `one-length` | `lo_i == hi_i` (= k) | `scan_position < k` (not emitted when k = 0) | none | `L_b_(i+1)` at the cursor, not pushed on the last branch | `k` (one candidate), today's `RX_CHARGE_WORK(k)` | the literal `k` | `RX_R_INTERNAL` (§5.3) | none |
+| `range` | `lo_i < hi_i` | `scan_position < lo_i` (not emitted when lo_i = 0) | one per varying branch | `L_adv_i` at the cursor, pushed on every branch including the last | `D_i` characters | `D_i` | decline (`rx_fail`) | emitted |
+
+The table's properties:
+- **Answer-free.** Substituting `lo = hi = k` into the `range` row and applying rewrites 1-4 gives
+  the `one-length` row. Every rewrite preserves answers.
+- **Not cost-free.** The elided frame changes the frame and step counts by one per evaluation, and
+  the `one-length` row is the cheaper side. It is also today's row, so nothing moves for today's
+  patterns.
+- **Checked against libpcre2, not by construction.** Both rows run §7's shared witnesses and gate 1's
+  differential. Gate 2's identity check proves the `one-length` row is today's bytes.
+- **Work amount.** Each candidate is charged its back-step's character count: `k` for a one-length
+  branch, `D_i` for a range candidate. This is today's rule ("the back-step, charged as the
+  compile-time width") read per candidate. §5.5 gives the totals.
+- **Slot allocation.** `D_i` comes from a new slot family, allocated in the count pass
+  (`vm_count_slots_look`) only for branches with `lo_i < hi_i`. An artifact with no varying branch
+  allocates none, so its slot legend and numbering are unchanged.
+- **The count pass's push count** becomes: one per non-last `one-length` branch (today's
+  `nbranch − 1`) plus one per `range` branch. A varying LAST branch pushes `L_adv`.
+- **Listing roles.** The `--emit-ir` listing keeps "fixed width %d" for the `one-length` row. The
+  `range` row gets its own role text ("width %d..%d: candidates farthest first"). Neither is
+  emitted C. The 160-byte `vm_rolef` limit and its truncation note apply to the new role.
+
+**The alternative (owner question 1).** One loop shape for every branch: the `range` row
+everywhere, plus an abi event. §13 gives both costs. Under Frank's open "VM base" frame
+(roadmap.md A-VERDICT, used here as a lens, not a rule), the `range` row is the reference matcher
+and `one-length` is an admission row substituting a cheaper section where it is sound. That is
+exactly this table's shape.
+
+### 5.1c Hand-execution of §5.1, literally `[r3 F1]`
+
+Each cell lists what each pushed frame SAVES and what popping it RESTORES. Subject positions are
+byte offsets. The matcher attempt shown is the one that matches; the others fail before the
+lookbehind or at its first guard.
+
+**Cell 1: `(?<=a{1,2}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1, `POS = 1`. Branch 0 is `range`
+[1,2]; branch 1 (`b`) is `one-length` k=1, last.
+1. `L_b_0`: guard `1 < 1` is false. `D_0 = min(2,1) = 1`.
+2. `L_try_0`: push F1 = (`L_adv_0`, saves position 1; trail mark above `D_0 = 1`). Charge 1.
+   Back-step 1 → 0.
+3. Body `a{1,2}` at 0 reads `b` and fails: `rx_fail` pops F1, restoring position 1 and `D_0 = 1`.
+4. `L_adv_0`: `D_0 == lo_0` (1), so goto `L_b_1` with `scan_position = 1`, the cursor.
+5. `L_b_1` (one-length): guard `1 < 1` is false. Last branch, so no push. Charge 1. Back-step 1 → 0.
+6. Body `b` matches → 1. End-check `1 == POS` → `L_ok`. `x` at 1 matches → **[1-2]**, equal to
+   libpcre2.
+
+Under rev 0's sketch, F1 saved position 0, and branch 1's guard `0 < 1` failed: nomatch.
+
+**Cell 2: `(?<=a{2,3}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1. Branch 0 is `range` [2,3].
+1. `L_b_0`: guard `1 < 2` is true, so goto `L_b_1` with `scan_position = 1`. Nothing was pushed and
+   nothing moved.
+2. Branch 1 runs as in cell 1 → **[1-2]**.
+
+Under rev 0, the back-step ran before the clamp test, and branch 1 started at 0: nomatch.
+
+**Cell 3: `(?<=a{1,2}|bc)x` on `bcx`, libpcre2 [2-3].** Cursor 2. Branch 0 is `range` [1,2];
+branch 1 (`bc`) is `one-length` k=2, last.
+1. `L_b_0`: guard false. `D_0 = min(2,2) = 2`.
+2. Push F1 = (`L_adv_0`, saves 2, `D_0 = 2`). Charge 2. Back-step 2 → 0. Body `a` reads `b` and
+   fails. Pop F1: position 2, `D_0 = 2`.
+3. `L_adv_0`: 2 ≠ 1, so `D_0 = 1` and goto `L_try_0`.
+4. Push F2 = (`L_adv_0`, saves 2, `D_0 = 1`). Charge 1. Back-step 1 → 1. Body `a` reads `c` and
+   fails. Pop F2: position 2, `D_0 = 1`.
+5. `L_adv_0`: `D_0 == lo_0`, so goto `L_b_1` at 2.
+6. Guard `2 < 2` is false. No push. Charge 2. Back-step 2 → 0. Body `bc` → 2. End-check `2 == POS`.
+   `x` matches → **[2-3]**.
+
+Under rev 0, F2 saved position 1, and branch 1's guard `1 < 2` sent it to `rx_fail`: nomatch.
+
+**Cell 4 (non-atomic retry from OUTSIDE, with a gap): `(?<*(a|aaa))c\1` on `aaaca`, libpcre2
+[3-5,2-3].** Cursor 3, `POS = 3`. One branch, `range` [1,3], last.
+1. `D = min(3,3) = 3`. Push F1 = (`L_adv`, saves 3, `D = 3`). Charge 3. Back-step 3 → 0.
+2. The body opens g1. Alternative `a` (body frame Fb1 saved at 0 for `aaa`) → 1. End-check
+   `1 ≠ 3`: pop Fb1.
+3. `aaa` → 3, g1=(0,3). End-check passes. `L_ok` (non-atomic: no cut).
+4. The follow: `c` at 3 → 4. `\1` (`aaa`) at 4 runs off the end and fails. Pop F1: position 3,
+   `D = 3`, g1 rewound by the trail.
+5. `L_adv`: 3 ≠ 1, so `D = 2`. Push F2 = (`L_adv`, saves 3, `D = 2`). Charge 2. Back-step 2 → 1.
+6. `a` (Fb2 saved at 1) → 2. End-check `2 ≠ 3`: pop Fb2. `aaa` from 1 reads `c` at 3 and fails.
+   Pop F2: position 3, `D = 2`. This is the gap at length 2.
+7. `L_adv`: `D = 1`. Push F3 = (`L_adv`, saves 3, `D = 1`). Charge 1. Back-step 1 → 2.
+8. `a` → 3, g1=(2,3). End-check passes. `L_ok`. `c` → 4. `\1` = `a` at 4 → 5.
+9. **[3-5, g1 2-3]**, equal to libpcre2.
+
+### 5.2 The width rule and the two limits `[r3 F4, F2]`
 
 `la_widths` (src/parse/mod_lookaround.c) stores a range per branch (`lo`, `hi`) instead of one
-`int`, and refuses only: an unbounded branch (as today, and as PCRE2, err 125), and PCRE2's cap
-measured in vlbinv §1: once ANY branch varies, EVERY branch's maximum must be ≤ 255 characters
-(`(?<=a{300}|b{1,2})x` refused, `(?<=a{300}|b)x` compiles). The cap is a new `limits.def` row
-([LIM-1]), visible in `--list-limits`. `lb_max` takes the widest branch maximum (`la_lb_raise`),
-which is PCRE2's `max_lookbehind`. The refusal sentence for bounded bodies is deleted (the
-special case retired).
+`int`. It refuses exactly what libpcre2 refuses. PCRE2's rule has two tiers, both measured
+(premise lens; `vlbrev1_evidence/cells.out`):
+
+1. **The absolute ceiling: 65535 characters per branch, on EVERY lookbehind, fixed or varying.**
+   - libpcre2 gives err 187 "lookbehind assertion is too long", at every `max_varlookbehind`
+     setting. It is NOT a caller setting in PCRE2.
+   - Boundary cells: `(?<=a{65535})x` and `(?<=(?:a{1000}){65})x` ACCEPT (maxlookbehind 65535 /
+     65000). `(?<=a{65535}b)x` and `(?<=(?:a{1000}){66})x` REJECT 187.
+   - pcrec compiles the refused two today (`la_widths` refuses only unbounded and `> INT_MAX`).
+     Stage 1 refuses them: G1's exception to G2 (§0).
+   - New `limits.def` row: `lookbehind_branch_max`, 65535 characters, override none.
+2. **The variable cap: 255 characters, on every branch's MAXIMUM once ANY branch of that
+   lookbehind varies.**
+   - libpcre2 gives err 200 "branch too long in variable-length lookbehind assertion".
+   - Examples: `(?<=a{300}|b{1,2})x` REJECT, `(?<=a{300}|b)x` ACCEPT (all branches fixed).
+   - How widths count: in characters under UTF and bytes in byte mode; nested quantifiers
+     multiply; sums add; a nested lookbehind is capped on its own and never summed into the outer
+     branch; a nested lookahead contributes 0.
+   - New `limits.def` row: `lookbehind_var_max`, 255 characters, override none until [IFACE-PUSH]
+     (owner ruling).
+
+What the rows mean:
+- **Both are POLICY, not mechanism (owner's answer, review r3).** Correctness needs no cap, not even
+  boundedness. §5.1's `D_i` strictly decreases and is clamped by the subject start, and the
+  emission is one body copy per branch whatever `hi_i` is.
+- So nothing in §5.1 depends on `hi_i`'s magnitude:
+  - `D_i` is a slot as wide as the width table (`int`);
+  - nothing is unrolled per length;
+  - the back-step count is a run-time operand.
+- The 255 cap exists for accept-set EQUALITY with PCRE2's default (G1, gate 3). Under D26's addendum,
+  accepting more than PCRE2 would not be a defect, so 255 is a choice. The setting (PCRE2's
+  `max_varlookbehind`) waits for [IFACE-PUSH], where raising it is a one-row change.
+- In pcrec the run-time work budget, not the cap, bounds the work (§5.5). PCRE2's cost grows with
+  the cap: measured O(n·hi²) per scan, 0.22 s at hi=255 and 22.6 s at hi=4000 on a 4000-byte
+  subject.
+- `lb_max` takes the widest branch maximum (`la_lb_raise`), which is PCRE2's `max_lookbehind`.
+- The refusal sentence for bounded bodies is deleted: the special case is retired.
+
+**The range must be EXACT wherever it decides the cap or the emission row `[r3 F2]`.**
+- `la_widths`' comment says that `pcrec_cwmin` may UNDER-estimate "for free". That premise is RETIRED
+  for this consumer. Under the old fixed-only rule, looseness could only refuse.
+- Now an under-estimated `lo` (or an over-estimated `hi`) makes a fixed branch "varying", which
+  has two effects:
+  - it switches the 255 cap on for EVERY branch of the lookbehind, refusing patterns libpcre2
+    accepts;
+  - it moves the branch from the `one-length` row to `range`, so G2's bytes move.
+- Stage 1's constructs already agree with libpcre2: 57/57 cells (premise lens, pcrec's judgment
+  against libpcre2 at `max_varlookbehind = 0`).
+- Gate 3 adds that comparison as a permanent control (§6). Stage 2 makes `A_BREF` exact at both
+  ends.
+
+**Refusal shapes `[r3 F6]`.** After stage 1, every lookbehind width refusal that remains is one
+libpcre2 also makes:
+- unbounded (err 125);
+- the variable cap (err 200);
+- the ceiling (err 187);
+- a call that re-enters its own lookbehind, §7.4¶5a (err 125).
+
+So all four are shape 7 of `pattern_language.md` §2.4's refusal-shape table ("PCRE2 refuses it
+too"), not shape 5, and none names a raise flag. Their sentences change to say what is refused, per
+D26's functional tier:
+- unbounded: "every alternative of a lookbehind must have a bounded length (this one is unbounded)";
+- the cap: "... at most 255 characters once any alternative's length varies (this one can match
+  up to N)";
+- the ceiling: "... at most 65535 characters (this one has N)".
+
+The unbounded arm's current text, "variable-length lookbehind is not implemented", becomes false at
+stage 1. K127's `recurses` refusal prints the same text and moves with it. The readers of the old
+text are listed in §10.
 
 ### 5.3 The end-check and the negative arm
 
-The end-check is load-bearing for a varying branch: a body may end before the cursor on a correct
-compiler. On the negative arm today a failed end-check returns `RX_R_INTERNAL` (ASK 2: a decline
-would be a false match). For a varying branch a failed end-check is an ordinary decline on both
-polarities; for a one-point branch it stays the hard return (it cannot fail on a correct compiler,
-and it is the byte-identity case). One predicate decides it, "this branch's end-check can fail on a
-correct compiler" iff `lo_i < hi_i`; `PCREC_ERR_INTERNAL`'s spec sentence narrows accordingly.
+The end-check is load-bearing for a varying branch: on a correct compiler, a body may end before
+the cursor.
+- On the negative arm today, a failed end-check returns `RX_R_INTERNAL` (ASK 2: a decline would be
+  a false match).
+- For a `range` branch, a failed end-check is an ordinary decline on both polarities.
+- For a `one-length` branch it stays the hard return. It cannot fail on a correct compiler, and it
+  is part of the byte-identity row.
 
-### 5.4 The candidate source: a declared choice row (D186)
+The predicate is the emission table's own key: "this branch's end-check can fail on a correct
+compiler" iff `lo_i < hi_i`. `PCREC_ERR_INTERNAL`'s spec sentence narrows accordingly (§10).
+
+### 5.4 The candidate source: a declared choice row (D186; LOCATE rows, D156 `[r3 F16]`)
 
 | order | row | applies when | exit | status |
 |---|---|---|---|---|
-| 1 | `reverse-dfa` | the branch varies (`lo < hi`); its reverse machine builds under its own cap; no backreference/variable in the body; no callout (side effects); the host can run it (G5) | exact machine and no capture/callout: EXISTENCE (no VM run); otherwise candidates farthest first, each confirmed by §5.1's step | HELD (not built) |
-| 2 | `range` | always (the total fallback) | §5.1 | stage 1 |
+| 1 | `reverse-dfa` | The branch varies (`lo < hi`); its reverse machine builds under its own cap; no backreference or variable in the body; no side-effecting construct (none reaches a lookbehind today, §3); the host can run it (G5). | Exact machine and no capture: EXISTENCE (no VM run). Otherwise candidates farthest first, each confirmed by §5.1's step. | HELD (not built) |
+| 2 | `range` | Always: the total fallback. | §5.1 | stage 1 |
 
-Fixed branches never take row 1 (one candidate; nothing to filter): its first conjunct is a fact,
-not a special case. Exactness is read from `Nfa.erased == 0`, the existing fact.
+- Fixed branches never take row 1: there is one candidate, so nothing to filter. Row 1's first
+  conjunct is a fact, not a special case.
+- Exactness is read from `Nfa.erased == 0`, the existing fact.
 
-**Evidence requirement for row 1 (D186 choice bar).** Per regime, `reverse-dfa` versus `range`,
-answer-identical and no regime slower beyond noise: (a) short bodies, widths ≤ 3 (the whole corpus
-population), hit and miss; (b) the bench pattern `negation-scope-lookbehind-var` on the bench's own
-subjects; (c) a wide body whose candidates do NOT fail at the first byte (e.g. `(?<=\w{1,64}x)y`);
-(d) a random-like subject regime (D186 addendum 2's condition). A losing regime narrows the row's
-condition (e.g. a minimum width), never a parallel path. If the row can be slower anywhere it also
-gets a public deny flag (flag follows caller effect).
+**The general existence form `[r3 F16]` (HELD, plan row [LB-EXIST]).**
+- [ENG-LOOK]'s forward machine answers `(?<=L)` at `p` iff `subject[..p] ∈ Σ*·L`, unbounded `L`
+  included. As a filter row in front of `range`'s finisher (`forward-existence`) over the superset
+  machine, it is sound for both polarities: no accept means the positive fails and the negative
+  holds, with no candidate run.
+- On exact capture-free bodies it is the answer.
+- Its cost model differs from row 1's. It does not depend on the width, but it pays one forward pass
+  whether or not the lookbehind is reached. So it loses on early-match calls and wins on scans that
+  evaluate the lookbehind at many positions.
+- **Unlocks**, each with its trigger:
+  - (a) unbounded lookbehind, linear per scan for exact bodies and filtered for the rest. Trigger: a
+    real pattern needing `(?<=X+)` or a width over 255, from the [UTF-RW] harvest or a user.
+  - (b) one machine per body shared with [ENG-LOOK]'s DFA-engine product construction. Trigger:
+    that row opens.
+- Unbounded semantics are the bounded semantics continued: `(?<=a+)` on n characters is
+  `(?<=a{1,n})`. So libpcre2 at `max_varlookbehind = 65535` on the bounded twin is its oracle.
+- Not proposed for any stage here (D77).
 
-**Prerequisites and trigger.** Prerequisites: roadmap A-REV's reverse `AUTO` kind with operands
-for machine, seed and floor and the three exits (§4 G1-G4), hosted in a VM body (G5, [LANDWALK-VM]),
-and [GIVEUP-DIFF] (the row removes work, a one-way give-up change). Trigger (D77): a measured cell
-where the lookbehind's candidate tries dominate, e.g. the bench's `negation-scope-lookbehind-var`
-slower than libpcre2 with the lookbehind as the cause, or any regime (c) cell in a real workload.
+**Evidence requirement for row 1 (the D186 choice bar).** Per regime, `reverse-dfa` versus `range`
+must be answer-identical, with no regime slower beyond noise:
+- (a) short bodies: every population row but the `1..255` cap pin `[r3 F14]`, hit and miss;
+- (b) the bench pattern `negation-scope-lookbehind-var` on the bench's own subjects;
+- (c) a wide body whose candidates do NOT fail at the first byte (e.g. `(?<=\w{1,64}x)y`);
+- (d) a random-like subject regime (D186 addendum 2's condition).
 
-**One tagged machine instead of per-branch machines** is a later refinement of row 1 (one walk per
-evaluation instead of up to m), riding [LANDWALK-ALLACC]'s multi-branch form and the priority-tagged
-accepts of `alt_dispatch_study.md`. Not designed here.
+A losing regime narrows the row's condition (e.g. a minimum width), never adds a parallel path. If
+the row can be slower anywhere, it also gets a public deny flag (the flag follows the caller
+effect).
 
-### 5.5 Budgets and frames
+**Prerequisites and trigger.**
+- Prerequisites:
+  - roadmap A-REV's reverse `AUTO` kind, with operands for machine, seed and floor and the three
+    exits (§4 G1-G4), hosted in a VM body (G5, [LANDWALK-VM]);
+  - [GIVEUP-DIFF], since the row removes work: a one-way give-up change.
+- Lookbehind is A-REV's first client (Frank, 2026-11-05).
+- Trigger (D77): a measured cell where the lookbehind's candidate tries dominate. For example, the
+  bench's `negation-scope-lookbehind-var` slower than libpcre2 with the lookbehind as the cause, or
+  any regime (c) cell in a real workload.
 
-`RX_CHARGE_WORK` per candidate tried (not per branch), so a `{1,255}` branch charges up to 255 per
-evaluation per position, the same order as PCRE2's own work (vlbinv §5; PCRE2's cost not measured).
-The retry frames are ordinary frames, counted by D42's frame bound; live frames: at most one per
-branch per active lookbehind. `lookaround_design.md` §3.7's per-position note grows from `n·Σk_i` to
-`n·Σ(hi_i − lo_i + 1)·hi_i` in the worst case; the long-subject leading-lookbehind cell it asked for
-gains a variable twin (stage 1, gate 4).
+**One tagged machine instead of per-branch machines** is a later refinement of row 1: one walk per
+evaluation instead of up to m. It would ride [LANDWALK-ALLACC]'s multi-branch form and the
+priority-tagged accepts of `alt_dispatch_study.md`. Not designed here.
+
+### 5.5 Budgets and frames `[r3 F12, F14]`
+
+**Work.** `RX_CHARGE_WORK` runs once per candidate tried, charging the candidate's back-step count:
+`k` for a `one-length` branch (today's charge, unchanged) and `D_i` for a `range` candidate.
+- Per evaluation and per branch, the charge is at most Σ d for d from lo to hi, which is
+  (hi + lo)(hi − lo + 1) / 2.
+- `{1,255}`: 32,640. The bench pattern (4..51): 1,320. Rev 0 implied 1 per candidate, which was
+  never stated.
+- At the default work budget of 1,000,000,000 (`limits.md` §3.1¶2), that allows at least 30,600
+  worst-case `{1,255}` evaluations per match call before `PCREC_ERR_WORK`.
+- The order matches the inherent cost: each candidate's body run is up to `hi` characters, and
+  PCRE2's own measured cost is O(hi²) per evaluation.
+- Under UTF-8, a candidate whose back-step returns the sentinel is still charged its `D_i`. This
+  happens only where fewer than `hi` characters precede the cursor.
+- Gate 4 states the subject size at which a worst-case leading `{1,255}` gives up.
+- The alternative, if gate 4 shows a give-up where libpcre2 answers at a subject size the spec
+  should not cap: a second trailed slot holding the candidate, plus a one-character forward step
+  per retry (charge 1). That costs at most 2·hi per evaluation, for one more slot. It is not chosen,
+  because the ruled F1 form re-steps from the cursor. It is named so the trigger has somewhere to
+  go.
+
+**Frames.**
+- The retry frames are ordinary frames, counted by D42's frame bound.
+- Live LOOP frames: at most one per branch per active lookbehind. `L_adv_i` replaces itself, and
+  branch exhaustion moves on without a frame.
+- A non-atomic `(?<*` also keeps the body's own choice points live past `L_ok`, as today's fixed
+  `(?<*` does.
+- Steps: every retry is one backtrack resumption, counted by the step budget.
+
+**The per-position note.** `lookaround_design.md` §3.7's per-position note grows from `n·Σk_i` to
+`n·Σ(hi_i − lo_i + 1)·hi_i` in the worst case. The long-subject leading-lookbehind cell it asked
+for gains a variable twin (stage 1, gate 4).
+
+### 5.6 Overlap with the VM record remodel (D153, [VMREC]) `[r3 F13]`
+
+Stage 1 is a capability row, so D153's sequencing rule does not bind it formally. It does add a VM
+body shape that [VMREC] steps (b) and (c) must model:
+- a trailed loop slot `D_i`;
+- a retry frame whose target re-enters the branch.
+
+Every statement maps to an existing kind:
+
+| statement | kind |
+|---|---|
+| guard, exhaustion test | `VK_BRANCH` |
+| `D_i` writes | `VK_SET`, trailed |
+| the frame | `VK_PUSH` |
+| the charge | `VK_WORK`, with a slot expression as its amount |
+| the back-step | `VK_SEEK` `VSK_BACKSTEP` |
+
+`D_i` IS a record field, not only text. `VK_SEEK` already carries a `slotx` operand (used by
+`VSK_RESTORE`). The `range` row's back-step sets it to `D_i`'s slot expression and `k` to 0.
+`vm_r_seek`'s `VSK_BACKSTEP` arm renders `slotx` when it is present and the literal otherwise. So
+(c)'s analysis reads the count as an operand, which is D182's (c) ruling. This is a renderer arm
+change, not a new kind. The `one-length` row's record is unchanged.
 
 ## 6. Staging and acceptance gates
 
 **Stage 0 (no code): D27 extract and tests first.** A spec-first author (D27, recommended: §9)
-writes the cells from §7.4's revised spec text and a `vlb_d27_extract.md` cut from this note; the
+writes the cells from §7.4's revised spec text and a `vlb_d27_extract.md` cut from this note. The
 oracle is libpcre2 10.46.
 
-**Stage 1: `range` (B), capability.** Width rule + cap (§5.2), the loop (§5.1), the end-check
-split (§5.3), budgets (§5.5), spec hunks (§10), the 36 real corpus rows flipped from refusal to
-match cells (vlbinv §4; the `${v}` row stays refused). Gates:
-1. **Oracle differential**, libpcre2 10.46 (PC-3's harness): a generated cell set, every spelling
-   × {capturing, non-capturing} × {group alternation, bounded quantifier, nested quantifier, nested
-   lookaround, atomic/possessive inside, call to a bounded group} × subjects hitting each length,
-   the clamp, the end-check backtrack, the non-atomic retry and `startpos > 0`, byte and UTF-8.
-   0 differences. The generator's population count is pinned with a floor (K35: the generator
-   counts, not the harness), and the cap boundary cells (255/256, fixed+variable) are in it.
-2. **Identity**: every corpus artifact containing a lookbehind, byte-identical (G2).
-3. **Accept set ⊆ PCRE2's**: every cell pcrec compiles, libpcre2 compiles (0 exceptions).
-4. **Budget cell**: the variable twin of §3.7's long-subject leading-lookbehind cell gives the same
-   answer as libpcre2 or a documented `PCREC_ERR_WORK` at a stated subject size.
-5. The sabotage rows of §7, each red in its sabotaged build, green in the correct one; S136 re-aimed.
+**Stage 1: `range` (B), capability.** Scope:
+- the width rule (§5.2), with both lookbehind ceilings;
+- the loop (§5.1) and the emission table (§5.1b);
+- the end-check split (§5.3) and budgets (§5.5);
+- spec hunks (§10);
+- the 36 real corpus rows flipped from refusal to match cells (vlbinv §4). The `${v}` row stays
+  refused.
 
-**Stage 2: backreference width (B+).** `pcrec_cwmax(A_BREF)` = the widest group it can name (union
-over duplicate names; unbounded if any is); gates 1-3 over backreference cells (`(a|bc)(?<=\1)x`,
-`(?<=(a|bc)\1)x` = 4, the sum).
+Gates:
+1. **Oracle differential, libpcre2 10.46** (PC-3's harness).
+   - The cell set: every spelling × {capturing, non-capturing} × {group alternation, bounded
+     quantifier, nested quantifier, nested lookaround, atomic/possessive inside, call to a bounded
+     group}. Subjects hit:
+     - each length, and the clamp;
+     - the end-check backtrack, including a greedy tail quantifier (W3b);
+     - the non-atomic retry;
+     - a varying branch followed by another branch (W11);
+     - `startpos > 0`;
+     - byte and UTF-8.
+   - 0 differences, outside one named class `[r3 F7]`: `PCRE2_UTF` × `startpos > 0` × a body whose
+     backward reach exceeds LB (`\b`/`\B` or a nested lookbehind at a candidate's far edge). That is
+     D142 item 3's STATED DIVERGENCE (`match_api.md` §9.4¶8; `CLIP` in `tests/utfcheck`).
+   - Those cells stay IN the population as expected-divergent. They are compared against D142's
+     rule (pcrec gives the byte-mode answer) and counted on their own line, so the population count
+     stays honest. The simulate lens measured 7,776 such cells at offset 3 and 5,012 at offset 4.
+   - The generator counts its own population and its expected-divergent subset (K35). Both are
+     pinned with floors.
+2. **Identity.** Every corpus artifact containing a lookbehind is byte-identical (G2; owner
+   question 1).
+3. **Accept set ⊆ PCRE2's, and the classification control `[r3 F2, F4]`.**
+   - Every cell pcrec compiles, libpcre2 compiles: 0 exceptions.
+   - The boundary cells are in the set:
+     - cap: `a{1,255}`/`a{1,256}`, `a{255}|b{1,2}`/`a{256}|b{1,2}`, UTF `é{1,255}`/`é{1,256}`;
+     - ceiling: `(?<=a{65535})x`/`(?<=a{65535}b)x` and `(?:a{1000}){65}`/`{66}`.
+   - For every cell, pcrec's per-branch "one length" judgment must equal libpcre2's accept/refuse at
+     `max_varlookbehind = 0`. libpcre2 at 0 accepts exactly the lookbehinds with no varying branch.
+     This is the independent check that §5.2's range is exact.
+4. **Budget cell.** The variable twin of §3.7's long-subject leading-lookbehind cell gives the same
+   answer as libpcre2, or a documented `PCREC_ERR_WORK` at a stated subject size (§5.5).
+5. **Sabotage.** The rows of §7 are each red in their sabotaged build and green in the correct one.
+   S136 is re-aimed as §7 spells it (F9).
 
-**Stage 3 (HELD): `reverse-dfa`** under §5.4's evidence and prerequisites; its own abi event (new
-emitted text in artifacts that took `range`), tuning.md section, deny decision, witnesses WD1-WD6.
+**Stage 2: backreferences in a lookbehind (B+) `[r3 F2, F3, F5]`.** Rev 0 said: "`pcrec_cwmax(A_BREF)`
+= the widest group it can name (union over duplicate names)". That is refuted: it sets one end
+only, and it accepts what libpcre2 refuses. Rev 1:
+
+- **Width: both ends from the named group.** Inside a lookbehind body, an `A_BREF` counts its
+  group's own `[cwmin, cwmax]`. A reference to a FIXED group is a FIXED item, outside the 255 cap.
+  An unset group fails rather than matching empty (absent `PCRE2_MATCH_UNSET_BACKREF`), so it does
+  not pull the minimum to 0. The width is EXACT (§5.2). The mrl.c header sentence that
+  "`pcrec_cwmin` answers 0 EXACTLY" for `A_BREF` is retired for this consumer.
+- **Timing: the deferral and a memo.**
+  - A reference may name a group not yet parsed at the parse hook: a forward reference
+    (`(?<=\1)(a)`) or one written before its group inside the body (`(?<=\1(a))x`).
+  - So DD-14.LB's deferral predicate widens from "the body has a call" (`pcrec_has_call`,
+    src/parse/mod_lookaround.c) to "the body has a call or a backreference". The pending state is
+    `widths == NULL`, filled by `pcrec_lookaround_fix_widths` in `pcrec_postresolve`.
+  - That pass reads a per-group `[cwmin, cwmax]` memo. Callgraph computes callee widths today, but a
+    group named only by a reference has no memo, so stage 2 adds it.
+- **Refusals (libpcre2 err 125, shape 7), each with its cells:**
+  - a BY-NAME reference whose name is duplicated (`(?J)`). A NUMBERED reference to such a group is
+    accepted. Documented in `man pcre2pattern`; not a PCRE2 bug, so D26's addendum does not apply;
+  - ANY reference in a pattern that uses `(?|` anywhere. Latent until [branch-reset] lands, but the
+    rule is written now so it refuses then;
+  - a reference to an unbounded group;
+  - a reference to a recursive group (K127's `recurses` is the existing home);
+  - a reference inside the group it names (self-reference, directly or through a call). Without this
+    rule, a naive "width of group 1" recurses or reads a half-built memo.
+- **The acceptance table** (the ruling lens's, re-run in `vlbrev1_evidence/cells.out` where marked
+  †):
+
+  | shape | cell | libpcre2 10.46 | stage 2 |
+  |---|---|---|---|
+  | back, varying group | `(a\|bc)(?<=\1)x` † | ACCEPT, lb 2 | accept, `range` [1,2] |
+  | back, fixed group | `(a)(?<=\1)x` | ACCEPT, lb 1 | accept, `one-length` 1 |
+  | back, fixed group over the cap | `(a{300})(?<=\1)x` † | ACCEPT, lb 300 | accept, `one-length` 300 |
+  | fixed reference beside a long fixed branch | `(a)(?<=\1\|b{300})x` † | ACCEPT, lb 300 | accept (no branch varies) |
+  | fixed reference beside a varying branch | `(a{300})(?<=\1\|b{1,2})x` † | REJECT 200 | refuse (cap) |
+  | back, cap boundary | `(a{1,255})(?<=\1)x` / `(a{1,256})…` | ACCEPT 255 / REJECT 200 | same |
+  | inside | `(?<=(a\|bc)\1)x` † | ACCEPT, lb 4 | accept, [2,4] |
+  | inside, fixed | `(?<=(a)\1)x` † | ACCEPT, lb 2 | accept, `one-length` 2 |
+  | inside, written before its group | `(?<=\1(a))x` † | ACCEPT, lb 2 | accept (deferral) |
+  | forward | `(?<=\1)(a)` †, `(?<=\g{+1})(a)x` | ACCEPT, lb 1 | accept (deferral) |
+  | forward, fixed over the cap | `(?<=\1)(a{300})x` † | ACCEPT, lb 300 | accept (deferral) |
+  | unset group | `(a)?(?<=\1)x` † | ACCEPT, lb 1 | accept, [1,1] |
+  | numbered reference to a duplicate-named group | `(?J)(?<n>a)\|(?<n>bc)(?<=\1)x` † | ACCEPT, lb 1 | accept |
+  | duplicate name | `(?J)(?:(?<n>a)\|(?<n>b))(?<=\k<n>)x` †, `(?J)(?<n>a)(?<n>b)?(?<=\k<n>)x` †, `(?J)(?<n>a)\|(?<n>bc)(?<=\k<n>)x` † | REJECT 125 | refuse |
+  | branch reset anywhere | `(?\|(a)\|(b))(?<=\1)x` †, `(?\|x)(a)(?<=\1)x` †, `(?\|(a)\|(b))(c)(?<=\2)x` † | REJECT 125 | refuse (latent) |
+  | unbounded group | `(a+)(?<=\1)x` † | REJECT 125 | refuse |
+  | recursive group | `(a(?1)?)(?<=\1)x` † | REJECT 125 | refuse |
+  | self-reference | `(?<=(a\1))x` † | REJECT 125 | refuse |
+
+  The full 40-row table with match answers is `docs/dev/reviews/2026-11-05-r3-vlookbehind/ruling.md`.
+  Every row there matches this rule. Gates 1-3 run over these cells plus generated reference cells.
+- **The fixed-group half needs none of stage 1's loop.** A branch made only of one-length items and
+  references to fixed groups is a `one-length` branch: today's emission. Only the width memo, the
+  deferral and the refusals are new. Stage 2 also closes a gap on FIXED-width lookbehinds: pcrec
+  accepts no backreference lookbehind today, though libpcre2 accepts 23 of the 29 shapes probed.
+  The owner's ordering ruling stands (the range loop first); this records that the order is a
+  choice, not a dependency.
+- **The `pcrec_cwmax` header comment** (src/opt/mrl.c) claims a lookbehind branch containing a
+  backreference "is therefore never fixed-width — which is the answer libpcre2 gives too". That is
+  false at 10.46: `(a)(?<=\1)x` is accepted, lb 1. The fix rides the stage-2 build (PLAN).
+
+**Stage 3 (HELD): `reverse-dfa`**, under §5.4's evidence and prerequisites. It brings its own abi
+event (new emitted text in artifacts that took `range`), a tuning.md section, a deny decision and
+witnesses WD1-WD6.
 
 ## 7. Sabotage witnesses (each can fail; floors and domains stated)
 
-Every witness is a lookbehind, so it routes VM in both builds (all lookaround rows are `VM_ONLY`;
-no admission floor applies to `range`, the total fallback). Each names the fact that makes it fail.
+Every witness is a lookbehind, so it routes VM in both builds (all lookaround rows are `VM_ONLY`).
+No admission floor applies to `range`, the total fallback. Each row names the fact that makes it
+fail.
 
 | id | sabotage | witness (libpcre2 10.46 answer) | why it reaches and fails |
 |---|---|---|---|
-| W1 | candidates shortest first | `(?<=(a\|aa))c` on `aac`: (2,3) g1=(0,2) | range 1..2 varies (not the one-point fold); the capture makes the chosen length observable: sabotaged g1=(1,2). A capture-free order sabotage changes no answer and is NOT a witness |
-| W2 | end-check removed | `(?<=a{1,2})x` on `abx`: nomatch | at length 2 the body succeeds ending at 1; without the check it is a false match (2,3) |
-| W3 | end-check without backtracking into the body | `(?<=(a\|ab)(b\|))x` on `abbx`: (3,4) g1=(0,2) g2=(2,3) | the first path at length 3 ends at 2; only a later path ends at 3 |
-| W4 | negative arm keeps the hard return on a varying branch | `(?<!ab?)x` on `acx`: (2,3) | length 2's body ends at 1: sabotaged returns `PCREC_ERR_INTERNAL` |
-| W5 | non-atomic retry frames cut | `(?<*(a{1,3}))c\1` on `aaaca`: (3,5) g1=(2,3); `(?<*(a\|aaa))c\1` on `aaaca`: (3,5) g1=(2,3) | the follow `\1` fails at length 3; only a retry reaches length 1. The second row has a gap at length 2 (distinguishes "every length" from "next accept") |
-| W6 | clamp counts bytes, not characters | `(?<=(é{1,2}))x` on `aééx`, `-e utf8`: (5,6) g1=(1,5) | multibyte body under the utf8 encoding: a byte back-step lands mid-character and fails |
-| W7 | clamp relative to `startpos` (S135 carried) | `(?<=a{1,2})b` on `aab` from 2: (2,3) | the body's bytes lie before `startpos` |
-| W8 | cap only on varying branches | `(?<=a{300}\|b{1,2})x`: refused (err 200) | sabotaged compiles a pattern libpcre2 refuses (gate 3) |
-| W9 | cap off by one | `(?<=a{1,255})x` compiles, `(?<=a{1,256})x` refused | the boundary cell pair |
-| W10 | branch order lost (longest over all branches) | `(?<=(a)\|(aa))c` on `aac`: g1=(1,2) | branch 2 is longer; sabotaged sets g2 |
+| W1 | candidates shortest first | `(?<=(a\|aa))c` on `aac`: (2,3) g1=(0,2) | Range 1..2 varies (the `range` row). The capture makes the chosen length observable: sabotaged g1=(1,2). A capture-free order sabotage changes no answer and is NOT a witness. |
+| W2 | end-check removed | `(?<=a{1,2})x` on `abx`: nomatch | At length 2 the body succeeds ending at 1. Without the check: a false match (2,3). |
+| W3 | end-check without backtracking into the body | `(?<=(a\|ab)(b\|))x` on `abbx`: (3,4) g1=(0,2) g2=(2,3) | The first path at length 3 ends at 2; only a later path ends at 3. |
+| W3b `[r3 F10]` | the body's trailing greedy quantifier gives nothing back (tail possessified: no frame inside it) | `(?<=a{1,2})a` on `aaa`: [1-2][2-3] | At cursor 1, `a{1,2}` from 0 takes two characters and ends at 2. Only giving one back ends at 1. Sabotaged: [2-3] only. W3's alternation does not reach this site. |
+| W4 | negative arm keeps the hard return on a varying branch | `(?<!ab?)x` on `acx`: (2,3) | Length 2's body ends at 1. Sabotaged: returns `PCREC_ERR_INTERNAL`. |
+| W5 | non-atomic retry frames cut | `(?<*(a{1,3}))c\1` on `aaaca`: (3,5) g1=(2,3); `(?<*(a\|aaa))c\1` on `aaaca`: (3,5) g1=(2,3) | The follow `\1` fails at length 3; only a retry reaches length 1. The second row has a gap at length 2, which distinguishes "every length" from "next accept" (§5.1c cell 4). |
+| W6 `[r3 F8]` | the UTF-8 clamp taken as exact: a back-step that returns the sentinel ends the branch instead of trying the next shorter candidate | `(?<=(é{1,2}))x` on `éx`, `-e utf8`: [2-3, g1 0-2] | Two bytes but one character precede the cursor. The clamp gives `D = 2`, and the 2-character back-step returns the sentinel. Only the retry at `D = 1` matches; sabotaged: nomatch. Rev 0's cell (`aééx`) has 3 characters before the cursor, so it could not fail. `aéx` does not reach this site either. |
+| W7 | clamp relative to `startpos` (S135 carried) | `(?<=a{1,2})b` on `aab` from 2: (2,3) | The body's bytes lie before `startpos`. |
+| W8 | cap applied only to varying branches | `(?<=a{300}\|b{1,2})x`: refused (err 200) | Sabotaged compiles a pattern libpcre2 refuses (gate 3). |
+| W9 | cap off by one | `(?<=a{1,255})x` compiles, `(?<=a{1,256})x` refused | The boundary cell pair. |
+| W9b `[r3 F4]` | ceiling missing or off by one | `(?<=a{65535})x` compiles, `(?<=a{65535}b)x` refused (err 187); `(?<=(?:a{1000}){65})x` compiles, `{66}` refused | The ceiling boundary pairs: fixed, and through a product. |
+| W10 | branch order lost (longest over all branches) | `(?<=(a)\|(aa))c` on `aac`: g1=(1,2) | Branch 2 is longer. Sabotaged: sets g2. |
+| W11 `[r3 F1]` | (a) the retry frame saves the candidate, not the cursor (rev 0's push position); (b) the back-step runs before the clamp test (rev 0's order) | (a) `(?<=a{1,2}\|b)x` on `bx`: [1-2], and `(?<=a{1,2}\|bc)x` on `bcx`: [2-3]. (b) `(?<=a{2,3}\|b)x` on `bx`: [1-2]. | A varying branch followed by another branch. Under either sabotage the next branch starts from a candidate position, and its guard fails: nomatch (§5.1c cells 1-3, and the review's hand-runs of rev 0). |
 
-Stage 3's witnesses (row `reverse-dfa`), admission floor: each body below varies and its machine is a
-few states, far under any cap, so the row reaches in both builds:
-WD1 exactness conjunct dropped: `(?<=(?>a\|ab)b)x` on `abbx` nomatch (sabotaged: false match) and
-`(?<!(?>a\|ab)b)x` on `abbx` (3,4) (sabotaged: missed); WD2 one untagged machine for all branches:
-W10's cell; WD3 nearest accept instead of farthest: W1's cell; WD4 farthest only on the non-atomic
-form: W5's gap cell; WD5 floor at `search_from`: W7's cell; WD6 context at the floor ignored:
-`(?<=\ba{1,2})x` on ` aax` (3,4) and on `baax` nomatch.
+**Stage 3's witnesses** (row `reverse-dfa`). Admission floor: each body below varies and its machine
+is a few states, far under any cap, so the row reaches in both builds.
+- WD1 (exactness conjunct dropped): `(?<=(?>a|ab)b)x` on `abbx` is nomatch (sabotaged: a false
+  match), and `(?<!(?>a|ab)b)x` on `abbx` is (3,4) (sabotaged: missed).
+- WD2 (one untagged machine for all branches): W10's cell.
+- WD3 (nearest accept instead of farthest): W1's cell.
+- WD4 (farthest only on the non-atomic form): W5's gap cell.
+- WD5 (floor at `search_from`): W7's cell.
+- WD6 (context at the floor ignored): `(?<=\ba{1,2})x` on ` aax` is (3,4), and on `baax` is
+  nomatch. `[r3 F11, NOTED]`: only the `baax` cell discriminates (the ` aax` cell is green under
+  the sabotage). Keep the pair together; never split it.
 
-Existing rows that move: S136 (design row S-LA11, "the width rule accepts a branch that is not fixed
-width") tests a premise stage 1 removes: its `perr` cells become match cells. Its header says it is
-the ONLY thing in the tree that exercises the negative arm's `RX_R_INTERNAL` return, which stage 1
-keeps for one-point branches (§5.3). Re-aim it so that it still does: the analysis reports a
-ONE-POINT branch's width one too large. Positive: `(?<=bc|d)x` on `abcx`, libpcre2 (3,4); the
-sabotaged body starts at `a` and fails, so nomatch. Negative: `(?<!bc|d)x` on `bcax`, libpcre2
-(3,4); the sabotaged body matches `bc` from 0 and ends at 2, not 3, so the end-check fires and the
-matcher returns `PCREC_ERR_INTERNAL`. (A negative cell where the body fails outright, such as
-`abcx`, would not reach the end-check: it declines before it, a false match, not the hard return.)
-W1 then catches the variable-branch half (`hi` reported as `lo`). S135 carries unchanged (W7 is its
-variable twin). Ids are the build lane's, from the range its brief names.
+**Existing rows that move.**
+- **S136** (design row S-LA11, "the width rule accepts a branch that is not fixed width") tests a
+  premise that stage 1 removes: its `perr` cells become match cells.
+  - Its header says it is the ONLY thing in the tree that exercises the negative arm's
+    `RX_R_INTERNAL` return, which stage 1 keeps for `one-length` branches (§5.3). It is re-aimed so
+    that it still does.
+  - **The sabotage is spelled exactly `[r3 F9]`: the STORED one-length pair of one branch becomes
+    K+1 at BOTH ends.** This is an edit to `la_widths`' stored pair, not to `pcrec_cwmin` or
+    `pcrec_cwmax` alone. An over-reporting `pcrec_cwmax` alone (the "free" direction S136 chose
+    today) makes the branch `range` [K, K+1]. It then declines instead of returning INTERNAL, and
+    both cells stay green.
+  - Positive cell: `(?<=bc|d)x` on `abcx`, libpcre2 (3,4). The sabotaged body starts at `a` and
+    fails, so nomatch.
+  - Negative cell: `(?<!bc|d)x` on `bcax`, libpcre2 (3,4). The sabotaged body matches `bc` from 0
+    and ends at 2, not 3. The end-check fires and the matcher returns `PCREC_ERR_INTERNAL`.
+  - A negative cell where the body fails outright, such as `abcx`, would not reach the end-check.
+    It declines before it: a false match, not the hard return.
+- **W1** then catches the variable-branch half (`hi` reported as `lo`).
+- **S135** carries unchanged; W7 is its variable twin.
+- Ids are the build lane's, from the range its brief names.
 
 ## 8. The population
 
-vlbinv §4, unchanged: the 37 corpus rows are pcrec's OWN refusal pins (27 distinct patterns; 36
-real, 1 false positive `(?<=${v})x`, pcrec's own variable syntax). Outside demand: ONE bench pattern
-(`negation-scope-lookbehind-var`, widths 4..51). The case is completeness against PCRE2 (the
-scoreboard's rank 1 gap), not measured demand. Stage 1 covers 32 rows (24 distinct) and the bench
-pattern; stage 2 brings 36.
+vlbinv §4, unchanged in its counts:
+- The 37 corpus rows are pcrec's OWN refusal pins: 27 distinct patterns, 36 real, and 1 false
+  positive (`(?<=${v})x`, pcrec's own variable syntax).
+- Widths: one row is the `1..255` cap pin, four rows have a 0 minimum, and the rest are ≤ 3
+  `[r3 F14]`.
+- Outside demand: ONE bench pattern (`negation-scope-lookbehind-var`, widths 4..51).
+- The case is completeness against PCRE2 (the scoreboard's rank 1 gap), not measured demand.
+
+Stage 1 covers 32 rows (24 distinct) and the bench pattern. Stage 2 brings 36. Stage 2 also closes
+the FIXED-width backreference lookbehinds, a population the corpus count does not separate
+(§6 stage 2).
 
 ## 9. A D27 spec-first author: recommended
 
-The level-2 order (longest first, against the emitter's usual preference-first direction) is the
-rule tests derived from code inherit wrong (`lookaround_design.md` §2.5 reason 1: the [M4.6d]
-counter-rung defect a blinded author found). `tests/lookaround/d27/` exists to extend. The author
-gets the revised §7.4 text and a `vlb_d27_extract.md` (re-cut from this note, never edited
-independently, docs/design/CLAUDE.md rule), not this note's §5.
+- **Why.** The level-2 order (longest first) runs against the emitter's usual preference-first
+  direction. It is the rule that tests derived from code inherit wrong (`lookaround_design.md` §2.5
+  reason 1: the [M4.6d] counter-rung defect a blinded author found).
+- **Where.** `tests/lookaround/d27/` exists to extend.
+- **What the author gets.** The revised §7.4 text and a `vlb_d27_extract.md`, re-cut from this note
+  and never edited independently (docs/design/CLAUDE.md rule). The author does not get this note's
+  §5.
+- **What the extract must carry `[r3 review recommendation]`:**
+  - stage 2's refusal list (duplicate names, `(?|`, unbounded or recursive groups,
+    self-reference);
+  - D142's UTF startpos class (§6 gate 1).
 
-## 10. Spec impact (D80; hunks the build owes)
+  Without them, the author writes red cells for ruled divergences.
 
-- `pattern_language.md` §7.4¶5: the rule becomes "each alternative may match a bounded number of
-  characters; at most 255 once any alternative varies"; the preference order (written order, then
-  longest first, the body backtracking until it ends at the position) and the non-atomic retry get
-  a paragraph with an example each; §7.3¶6 and §7.4¶5's backreference sentence change at stage 2.
-- `pattern_language.md`'s refusal-shape table (shape 5's "variable-length lookbehind" example) loses
-  the bounded case; unbounded stays.
-- `limits.md` §3: the new cap row (value 255, unit characters, not overridable; [IFACE-PUSH] owns a
-  setting).
-- `match_api.md` §4¶6: `PCREC_ERR_INTERNAL`'s producer is the end-check of a one-point branch only.
-- `match_api.md` §9.4¶2: LB is the widest branch's maximum (check the wording; the fact already is).
-- Stage 3 only: a `tuning.md` §2 section for the row and its stamp, and the abi event.
-- `docs/pcre2_compliance.md` via the compliance-refresh skill after landing (not spec).
+## 10. Spec impact (D80; hunks the build owes) `[r3 F6: completed]`
+
+- **`pattern_language.md` §7.4¶5.** The rule becomes: "each alternative may match a bounded number
+  of characters, at most 65535; at most 255 once any alternative's length varies". Three sentences
+  move with it:
+  - the shape-5 refusal examples `(?<=(a|bc))x` and `(?<=(?:a|bc))x` become match examples;
+  - `(?<=a+)x` stays as the unbounded refusal (shape 7);
+  - the backreference sentence (`(a)(?<=\1)`) changes at stage 2.
+
+  The preference order (written order, then longest first, the body backtracking until it ends at
+  the position) and the non-atomic retry each get a paragraph with an example.
+- **`pattern_language.md` §9¶2.** Stage 1 deletes the clause "a lookbehind alternative of varying
+  length ... including `(?<=(?:a|bc))x`". Stage 2 deletes the clause "or containing a backreference
+  (§7.4)". Both clauses are refusals of accepted syntax that the stages retire.
+- **`pattern_language.md` §7.11¶3.** The parenthetical "a `consume` site there is refused first, as
+  a lookbehind whose length is not fixed" is re-read against the width the analysis gives a consume
+  site. If that width is unbounded, the parenthetical says "... whose length is unbounded". If it is
+  bounded, the site now passes the width rule and reaches the callout-in-lookbehind refusal itself,
+  and the parenthetical is deleted. Either way the refusal stands. Only the reason it names moves.
+- **`pattern_language.md` §7.3¶5 and §7.3¶6** (stage 2).
+  - §7.3¶6 ("A backreference inside a lookbehind is refused") becomes the stage-2 rule with its
+    refusals.
+  - §7.3¶5 (duplicate names) gains: "inside a lookbehind, a by-name reference to a duplicated name
+    is refused".
+- **`pattern_language.md` §2.4's refusal-shape table.** Shape 5's "variable-length lookbehind"
+  example is removed. The unbounded, cap, ceiling and lookbehind re-entry refusals are shape 7 (PCRE2
+  refuses them too), with the sentences of §5.2. None names a raise flag.
+- **`limits.md` §3.** A new subsection, §3.11 "Lookbehind length", holds the two rows:
+  - `lookbehind_branch_max` 65535 and `lookbehind_var_max` 255;
+  - unit: characters (bytes in byte mode);
+  - kind: a LANGUAGE limit with no override, unlike a §3.3 compile budget;
+  - the cap's setting is [IFACE-PUSH]'s.
+- **`match_api.md` §4¶6** (`PCREC_ERR_INTERNAL`).
+  - Its producer is the end-check of a `one-length` branch on the negative arm only.
+  - The stale `pcrec_maxw` becomes the stored width pair (`pcrec_cwmin`/`pcrec_cwmax`).
+  - "Redundant for the width class the module ships" becomes "redundant for one-length branches,
+    which are the only producer".
+- **`match_api.md` §9.4¶2.** LB is the widest branch's maximum. The wording already covers the
+  variable case; re-read it.
+- **`match_api.md` §9.4¶8** (D142's clip divergence). Re-read: its class grows with varying bodies,
+  and its "three patterns in the pinned set" count is a reader (gate 1).
+- **Readers of the refusal TEXT** that move in the same change, found by grep at build time:
+  - exact text: `tests/recursion/run_lookbehind_call_sweep.py` (a classifier whose population flips
+    when bounded-call cells start compiling) and `tests/recursion/inlookaround.rxt`;
+  - mentions without the exact text: `tests/lookaround/lookbehind_group_alt.{rxt,gen.py}` and
+    `tests/recursion/gen_corpus.py` (a `kind='capability'` cell);
+  - also `tests/reject/run_reject_tests.sh` and `tests/mech/sabotages/S172_postresolve_walk_order.sh`
+    (the ruling lens's grep).
+- **Stage 3 only:** a `tuning.md` §2 section for the row and its stamp, and the abi event.
+- **`docs/pcre2_compliance.md`**, via the compliance-refresh skill after landing (not spec). It
+  records that pcrec answers at libpcre2's DEFAULT `max_varlookbehind` only.
 
 ## 11. The standing questions
 
-1. **Measurement regime.** Stage 1: RELEVANT ONLY AS A BOUND, not a decision input: no number
-   selects anything; G4 is a count of body runs in the emitted text. Stage 3: RELEVANT: the row's
-   evidence is per-position cost of a lookbehind evaluation, hit vs miss, throughput over a
-   subject, on the dev box (7700X, gcc 15.2, glibc) and through both VM entries (the tiered default
-   entry and `_search_in`, architecture rule for VM capacity changes); a regime where candidates
-   fail at the first byte (the bench pattern) versus one where they do not would flip the row,
-   which is why both are required.
-2. **Independent control.** RELEVANT. Answers are checked against libpcre2 10.46, a separate
-   implementation sharing no source with pcrec; the cell generator is written from the spec and
-   §2's cells, and it counts its own population (K35) against a pinned floor. Each sabotage witness
-   in §7 states why it reaches its site in both builds (all VM, no admission floor on `range`); the
-   stage-3 witnesses state the row's admission they clear.
+1. **Measurement regime.**
+   - Stage 1: RELEVANT ONLY AS A BOUND, not a decision input. No number selects anything: the
+     emission row is selected by a width fact, not a measurement. G4 is a count of body runs and
+     work units in the emitted text.
+   - §5.5's give-up arithmetic is a worst case per evaluation, at the default budgets. Gate 4
+     measures the leading-lookbehind subject size on the dev box (7700X, gcc 15.2, glibc), and a
+     different box moves only time, not the count.
+   - Stage 3: RELEVANT. The row's evidence is the per-position cost of a lookbehind evaluation, hit
+     vs miss, throughput over a subject, on the dev box, through both VM entries (the tiered default
+     entry and `_search_in`; the architecture rule for VM capacity changes).
+   - Two regimes would flip the row: candidates that fail at the first byte (the bench pattern)
+     versus candidates that do not. That is why both are required.
+2. **Independent control.** RELEVANT.
+   - Answers are checked against libpcre2 10.46, a separate implementation sharing no source with
+     pcrec.
+   - The new classification control (gate 3) checks pcrec's one-length judgment against libpcre2's
+     accept at `max_varlookbehind = 0`. It is independent of `pcrec_cwmin`/`pcrec_cwmax`, which is
+     what makes §5.2's exactness checkable.
+   - Who counts: the cell generator is written from the spec and §2's cells. It counts its own
+     population and its D142 expected-divergent subset (K35), each against a pinned floor.
+   - Witness reach: each witness in §7 states why it reaches its site in both builds (all VM, no
+     admission floor on `range`). W6, W3b, W11 and S136's spelling were re-derived in rev 1 so that
+     each can fail. The stage-3 witnesses state the row's admission they clear, and WD6 names its
+     one discriminating cell.
+   - The rev 1 sketch was hand-executed literally (§5.1c), per the review's lesson 1: a simulation
+     of the rule's intent does not validate the sketch.
 3. **What moves when data is regenerated.** MOSTLY NOT RELEVANT: stage 1 adds no table, calibration
-   or generated file. The one new datum is the cap row in `limits.def`: `--list-limits` gains a line,
-   so its readers (the limits listing's pins, found by grep at build time) move in the same change.
-   Stage 3's reverse machines are generated per artifact from the pattern; a rebuilt machine moves
-   that artifact's bytes only.
+   or generated file.
+   - The new data are the two `limits.def` rows. `--list-limits` and `pcrec_limits_tsv` gain two
+     lines, so their readers (the limits listing's pins, found by grep at build time) move in the
+     same change.
+   - The refusal text's readers (§10) are text readers, not data, and also move in the same change.
+   - If owner question 1 is answered "one shape", every lookbehind artifact moves: an abi event
+     (§13).
+   - Stage 3's reverse machines are generated per artifact from the pattern, so a rebuilt machine
+     moves only that artifact's bytes.
 
 ## 12. The question for a pcre2-reader (D181)
 
-Kept from vlbinv §7, one question: "In PCRE2 10.46, when a lookbehind has at least one variable-length
+Kept from vlbinv §7. One question: "In PCRE2 10.46, when a lookbehind has at least one variable-length
 branch, which branches does `max_varlookbehind` limit, and how does the matcher run a variable-length
 branch: does it try each step-back length from longest to shortest, re-running the branch forward
-each time and backtracking inside it until it ends at the assertion point?" Its answer confirms the
-cap rule §5.2 copies and the cost model §5.5 assumes; every observable behaviour is already measured.
-No second question is needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
+each time and backtracking inside it until it ends at the assertion point?"
+
+Its answer confirms the cap rule that §5.2 copies and the cost model that §5.5 assumes. Every
+observable behaviour is already measured, including the 65535 ceiling (rev 1). No second question is
+needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 
 ## 13. Questions for Frank (plain words; leanings are not rulings)
 
-1. **Should today's fixed-width lookbehinds keep their exact code?** Leaning: yes. The general loop
-   with one possible length folds to today's code by itself (§5.1: the loop's retry test is decided
-   at compile time), so nothing moves and no abi event is owed. If the reverse-DFA form later proves
-   faster for some fixed shapes, that is its own measured choice with its own abi bump (manager's
-   clarification, rulings file 2026-11-05 19:45).
-2. **The 255 limit**: PCRE2 lets a caller change it. Leaning: the default only, as a listed limit;
-   a setting waits for the interface push ([IFACE-PUSH]).
-3. **Backreferences inside a lookbehind** (`(a|bc)(?<=\1)x`): leaning: a second small step after the
-   loop, since it changes a width answer other passes read.
-4. **Your reverse-DFA idea (D)**, new from this note. Vetted: it works, it is the same mechanism as
-   the loop with a smarter list of places to try, and it still needs the forward run whenever the
-   lookbehind has captures, atomic parts, nested lookarounds or callouts. Leaning: build the loop
-   now; keep D as a held choice ("where to try") that is built when the reverse-walk unification
-   (roadmap A-REV) gives it a home inside the VM, and only if a measurement shows the loop is slow
-   somewhere. Building it now would add a third separate reverse walk, which the stream ratchet
-   forbids, for a pattern population where it is not expected to be faster.
+1. **RE-ASKED `[r3 F12]`: should today's fixed-width lookbehinds keep their exact code?**
+
+   **What changed since you were asked.** The earlier answer assumed the new loop turns into today's
+   code by itself when a branch has only one possible length. The review showed it does not. The
+   compiler has to CHOOSE the old code when it sees "this branch has one length". So it comes down
+   to two honest choices.
+
+   **(A) Keep today's code, and write the choice down as a two-line table.**
+   - The table: "one length → today's code; a range of lengths → the loop" (§5.1b).
+   - Cost: one declared choice in the lookbehind emitter, read off a fact the compiler already
+     stores, with both lines tested by the same witnesses and the libpcre2 comparison.
+   - Nothing that compiles today changes, and no abi event is owed.
+   - The "one mechanism" goal holds for the mechanism (one candidate loop), not for the text.
+
+   **(B) Use the loop for every branch, fixed ones too, and take an abi event.**
+   - Every artifact with a lookbehind changes: about 826 lookbehind lines in 40 `.rxt` files feed
+     the identity gate, and all are re-pinned.
+   - Each changed artifact gains a slot, which renumbers the slots after it.
+   - The last branch keeps one more frame per evaluation, which shifts frame and step counts by one.
+   - Each fixed branch emits about 4-5 more C lines.
+   - The negative-lookbehind hard error stays tied to "one length". Retiring that too would remove
+     `PCREC_ERR_INTERNAL`'s only producer and S136, which is a further contract change.
+   - Speed: unmeasured, expected negligible.
+   - Benefit: one emission path, no table.
+
+   **Leaning: (A).** Stability outranks textual unity in the goals. The choice is declared, keyed on
+   an existing fact and answer-free. Under your open "VM base" frame it is exactly an admission row:
+   the plain loop is the reference, and the one-length code is a cheaper section substituted where
+   sound.
+2. **The 65535 ceiling.** It refuses two patterns pcrec compiles today, which nobody uses: fixed
+   lookbehinds longer than 65535 characters. Does it ride stage 1, or get its own small row?
+   Leaning: stage 1, since nothing in the population comes near it.
+3. **Answered (review r3; recorded, not re-asked).**
+   - The 255 limit is a policy for matching PCRE2's default: correctness needs none. 255 stays the
+     default, and a setting waits for [IFACE-PUSH].
+   - Backreferences inside a lookbehind follow the acceptance table of §6 stage 2: back, inside and
+     forward are accepted; duplicate names, any `(?|`, unbounded or recursive groups and
+     self-reference are refused.
+   - The loop ships first. The reverse-DFA row stays HELD, with its home in the stream roadmap's
+     A-REV area, and lookbehind is its first client.
+   - Unbounded lookbehind, with the automaton filter that makes it cheap, is filed HELD as
+     [LB-EXIST].
 
 ## 14. What this note does not decide
 
-- The UTF-8 clamp's spelling (a loop of one-character steps or a new seam entry; §5.1): the build
-  lane's, under D58.
-- Whether stage 1 owes an abi bump at all: by `match_api.md` §6¶19 no bump is owed when no
-  previously compiling pattern moves; the manager confirms at landing with readers found by grep.
-- The `reverse-dfa` row's design detail (tagged vs per-branch machines, re-walk vs stored set for
-  non-atomic retries, record kind vs helper part): A-REV's and [LANDWALK-VM]'s.
-- [ENG-LOOK] (lookaround inside the DFA engine), [CTX-PREFILTER], and conditional groups
+- Whether stage 1 owes an abi bump at all.
+  - Under question 1 (A), `match_api.md` §6¶19 says no bump is owed when no previously compiling
+    pattern moves. The 65535 ceiling only refuses; it moves no compiled bytes. The manager confirms
+    at landing, with readers found by grep.
+  - Under (B), it is an abi event: the next number at landing.
+- The `reverse-dfa` row's design detail: tagged vs per-branch machines, re-walk vs stored set for
+  non-atomic retries, record kind vs helper part. These are A-REV's and [LANDWALK-VM]'s.
+- [LB-EXIST]'s design (the existence filter and unbounded lookbehind).
+- [ENG-LOOK] (lookaround inside the DFA engine), [CTX-PREFILTER] and conditional groups
   ([CONDITIONALS]) are untouched; vlbinv §5's overlap check stands.
-- S-ids, file layout of tests, the generator's cell count.
+- S-ids, the file layout of tests, the generator's cell count.
+- Rev 1 retires one item from this list: rev 0 left the UTF-8 clamp's spelling open. It is now the
+  existing `$_back_step` entry with a run-time count (§5.1).
 
 ## 15. Measured vs inferred
 
-- MEASURED (this lane, dev box, libpcre2 10.46 as a library): every cell in §2 and §7's witness
-  answers (`vlbdesign_evidence/*.out`); the premise (`premise.txt`).
-- MEASURED PROXY: reverse-machine sizes (`revdfa_sizes.tsv`): the whole-pattern reverse DFA of a
-  pattern equal to the body, from pcrec's own artifact tables; a lookbehind machine is the same
+- MEASURED, libpcre2 10.46 as a library on the dev box:
+  - rev 0: every cell in §2 and §7's witness answers (`vlbdesign_evidence/*.out`) and the premise
+    (`premise.txt`);
+  - rev 1: F1's cells, the ceiling cells, W3b, the new W6 cell, the D142 cell and the stage-2
+    acceptance cells marked † (`vlbrev1_evidence/cells.out`, `premise.out`, probe `probe.c`).
+- MEASURED PROXY: reverse-machine sizes (`revdfa_sizes.tsv`). These are the whole-pattern reverse DFA
+  of a pattern equal to the body, from pcrec's own artifact tables. A lookbehind machine is the same
   language reversed and anchored at the cursor, so the proxy is close but not the object.
-- READ from code (not executed): §4's evidence (file:function), §3's host and erasure rows.
-- INFERRED: the speed rows of §3 (no timing was run), the fold's byte identity (proved only by
-  stage 1's gate 2), the work bound of §5.5.
+- READ from code, not executed:
+  - §4's evidence (file:function), §3's host and erasure rows;
+  - rev 1's prologue order, `VK_SEEK`'s `slotx` operand and the seam's run-time `k` (§1);
+  - the count-pass and slot-family facts (§5.1b).
+- HAND-EXECUTED: §5.1c's four cells.
+- INFERRED:
+  - the speed rows of §3 (no timing was run);
+  - the `one-length` row's answer equivalence to the `range` row, argued by four rewrites (§5.1b)
+    and checked by gates 1-2 at build;
+  - the work totals of §5.5 (arithmetic, not a run);
+  - G4's 8-line and one-slot bound (UNMEASURED);
+  - the "4-5 lines per branch" and "speed negligible" costs of question 1's option (B).
+
+## 16. Disposition table (review 2026-11-05 r3)
+
+| finding | disposition | where in rev 1 |
+|---|---|---|
+| F1 (SOUND-1, PREMISE-3) | FIX-NOW: re-sketched in today's order, frame saves the cursor; three cells added | §5.1, §5.1c, §2 (branch-transition bullet), §7 W11, §6 gate 1 |
+| F2 (PREMISE-4, RULING-2) | FIX-NOW: both ends from the group; exactness stated, "free" premise retired; classification control | §5.2 (exactness), §6 stage 2 (width), §6 gate 3 |
+| F3 (RULING-1) | FIX-NOW: duplicate-name and `(?|` refusals, five cells | §6 stage 2 (refusals, table), §10 (§7.3¶5) |
+| F4 (PREMISE-1) | FIX-NOW: 65535 ceiling, `limits.def` row, gate-3 cells; owner sub-question kept | §5.2 tier 1, §0 G1, §6 gate 3, §7 W9b, §10, §13 Q2 |
+| F5 (RULING-3) | FIX-NOW: deferral, per-group memo, self-reference and recursive refusals; PLAN: the mrl.c comment fix rides stage 2 | §6 stage 2 (timing, refusals, comment), §3 backref row |
+| F6 (RULING-4) | FIX-NOW: hunks completed, shape 7, cap/ceiling sentences, refusal-text readers | §10, §5.2 (refusal shapes), §11.3 |
+| F7 (PREMISE-2, SIM-1) | FIX-NOW: gate 1 names the D142 class, cells kept as expected-divergent, §9.4¶8 cited | §6 gate 1, §2 (D142 bullet), §9, §10, §11.2 |
+| F8 (SOUND-3) | FIX-NOW: W6 cell replaced (`éx`), "why" corrected | §7 W6, §2 (UTF bullet) |
+| F9 (SOUND-4) | FIX-NOW: the S136 re-aim spelled as the stored pair K+1 at both ends | §7 (existing rows that move) |
+| F10 (SIM-2) | FIX-NOW: W3b added | §7 W3b, §2, §6 gate 1 |
+| F11 (SOUND-5) | NOTED: WD6's discriminating cell named, pair kept | §7 (stage 3 witnesses) |
+| F12 (SOUND-2, PREMISE-3(a)) | FIX-NOW: the declared emission table (selection by the width fact), work amount, slot allocation; owner Q1 re-asked | §5.1b, §5.3, §5.5, §0 G3, §13 Q1, §14 |
+| F13 (RULING-5) | DOC: existing seam entry with a run-time count (no new entry, no D58 change); [VMREC] overlap, `D_i` as a record field; `VK_SET` not `VK_LSET` | §5.1 (UTF-8 clamp), §5.6, §3 host row |
+| F14 (PREMISE-6/7/9) | DOC: G1 scoped and stated false today; G2's dependency on Q1; G4's constant and "one loop frame"; the population text; the callout conjunct | §0, §3 (capture-free and short-bodies rows), §5.4, §5.5, §8 |
+| F15 (PREMISE-5) | DOC: R03's `VK_CONSUME_BACK` cited as in-body precedent | §4 G5, §4 "why not now" |
+| F16 (PREMISE-8) | DOC: LOCATE × FINISH and the K-back sibling named; [ENG-LOOK] existence form; PLAN: HELD row [LB-EXIST] filed | §4 (the family), §5.4, §0 non-goals, docs/dev/plan.md [LB-EXIST] |
+| review lesson 1 | applied: the pseudo-code hand-executed literally | §5.1c, §11.2 |
+| review D27 recommendation | applied: the extract carries the stage-2 refusals and the D142 class | §9 |
