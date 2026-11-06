@@ -3237,3 +3237,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Open: S1079's hand figure is 6/3155 vs the review's 3/3160, cause not found. Job 437's mech run is the figure of record.
   - Three renderer pairs have no witness (UNREACHED in rows_check).
   - Gates 430-439 QUEUED with not-before 11-06 01:05 (Frank's hold); python watcher armed.
+- 11-06 ~00:20: a fresh kit session, pcrec-memfn [174c0c], took over; the old one is offline. Gates 430-434 GREEN; 435-439 run under the lifted hold, with watcher scratch/memfn/kitmgr/watch_sp1e2.sh.
+  - Main relayed Frank's D187 addendum 1 (0b7ee8898), for reading only. A covering (lossy) cube is the kit's private method: rebuilt from the set, never on the seam.
+  - It may be the last word only where D172's verify-exactly flag is off (reply "not exact"). Elsewhere it is a first pass before the kit's own exact check, which can earn pcrec a skip. Using it is the kit's priced choice.
+  - Pricing gap noted: pcrec's finish cost becomes a stated fact when pricing opens. Not now.
