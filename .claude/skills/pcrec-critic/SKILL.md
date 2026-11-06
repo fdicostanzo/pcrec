@@ -58,6 +58,8 @@ message when the draft is ready.
    Freeze the RULINGS too: record main's decisions.md/plan.md commit at the freeze, diff them against main at
    hand-back, and report any change as FREEZE DRIFT in the draft (2026-11-02 r2 spanpick2: the owner amended
    D186 add. 1 mid-round; caught by chance).
+   RE-DIFF the rulings at EACH critic return, not only at hand-back; a ruling whose Home is the subject that lands
+   mid-round gets a FRESH critic on its section (2026-11-06 r4 span-cards: D188, homed in rev 1, was seen only at hand-back).
 2. Code mode: make a clean review tree, `git worktree add --detach
    worktrees/crit-<topic> SUBJECT`, and build it ONCE yourself, UNLOCKED:
    `nice make -j2` (critics run `build/pcrec` and `gcc -S` on single
@@ -102,7 +104,7 @@ measured twice). Subject column: D = design document, C = code diff.
 | D | the LAST re-check before a build go | **readiness** | Per build unit: do its cites hold at the build tree, can its witness fail, is it separable, is it complete (every reader of what it changes listed)? A per-unit verdict, and the round's overall verdict "ready / ready with listed text fixes / not ready" (2026-11-03 r2 spanpick5: the most productive lens of the round) | opus |
 | D C | a table / slot / mechanism | **slot tracing** | Trace every slot to the table or mechanism the design names for it: is anything duplicated, narrowed or unreachable ("one table per slot")? Is it the third member of a family? | strong |
 | D C | rulings relied on | **ruling check** | For each ruling, does it agree with the design and the guide, and what are its CONSEQUENCES? Fold into slot tracing when that runs. | strong |
-| D | a measured quantity, check or data file | **measurement** | The docs/design/CLAUDE.md standing questions: the regime, the independent control, what moves when the data is regenerated. | sonnet+ |
+| D | a measured quantity, check or data file | **measurement** | The docs/design/CLAUDE.md standing questions: the regime, the independent control, what moves when the data is regenerated. A named ESTIMATOR or gate is drilled like a selection rule, on constructed outcomes: clean, one outlier launch, bimodal, A/A above spread, an equal-effect sweep (2026-11-06 r4 span-cards: these drills found every gate defect, MEAS-2/4/7/8/10) | sonnet+ |
 | D | a build proposal | **cost and overlap** | What does it cost, what does it buy, what measurement triggers it (D77), and does it overlap an in-flight refactor (D153)? Costlier must prove more. | sonnet+ |
 | C | emitted C | **emitted vs replaced** | Generate C and asm of the new path AND the path it replaces, and diff every PRE-EXISTING entry BASE vs SUBJECT: what does the new code do worse or differently? For a deletion of fields no kit `.c` reads (grep), cap identity probes at a few hundred and spend the budget on the check lens's plants (r5 sp1g). When a row moves between tables, compare the gate INPUT each walk hands gate_check; plant the contract's opposite and require a refusal. For a zero-mover unit, cap this lens's probes at ~800 compiles and spend the rest READING the equivalence argument (2026-11-05 sp1e: F1 was found by reading). | strong |
 | D C | a caller-facing contract | **contract** | Does the code (or the design) do exactly what the spec says for every admitted input class; do names describe behaviour (D174, D80)? Code mode probes edges with the built compiler. | strong |
@@ -138,7 +140,7 @@ speed / size / maintenance / doc / design), effort, blast radius, file:line or
 ends with PROBED-AND-HELD (with case counts). Final reply at most 150 words. A critic whose findings-file Write is REFUSED SendMessages its findings to the coordinator AT ONCE, marked relayed (2026-11-06 r2 vlb3: 38 minutes of results were invisible). If a harness rule REFUSES the critic's findings-file Write, it does not route around the refusal: it returns the findings as its final text (that reaches the launcher, who relays it to the coordinator) and the draft marks that critic 'relayed' (2026-11-05 r4 altnf2).
 
 Each critic gets a DELIVER file beside its output (`report=` its findings file, `sections:` the
-findings + PROBED-AND-HELD, `commit: no`) and ends only after `scripts/lanecheck --dir $PCREC_TMPDIR/scratch/crit-<topic> --deliver FILE NAME` (without `--dir` its pass record lands in the repo root, 2026-11-03 sp1a)
+findings + PROBED-AND-HELD, `nonempty: Findings; PROBED-AND-HELD` (r3 vlb4: lanecheck passed an empty template), `commit: no`) and ends only after `scripts/lanecheck --dir $PCREC_TMPDIR/scratch/crit-<topic> --deliver FILE NAME` (without `--dir` its pass record lands in the repo root, 2026-11-03 sp1a)
 prints DONE; the coordinator runs `scripts/lanewatch --dir $PCREC_TMPDIR/scratch/crit-<topic> NAME...`
 instead of waiting for replies (nested replies are often lost).
 

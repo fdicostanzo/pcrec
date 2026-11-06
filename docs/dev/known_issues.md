@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K138 — OPEN (found by the kit's span_cards review, 2026-11-06, CONTRACT-5) — a measurement set with value_e6 > MF_MEASURE_MAX loads, then every compile against it is an "internal error"
+
+**Witness:** a committed-shape set row with `value_e6` = 2e15 (digest fixed up) passes the set loader; compiling 3 patterns against that set gives rc 1 `internal error: the memfn kit refused ...`; control (in-range value) rc 0. Re-run by the review's verifier (docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md on lane/memfn-k1102 @ 568ce6721, row CONTRACT-5). The bound exists only kit-side; pcrec's loader (docs/spec/measures.md, measure_sets §7 refusal rows) has no refusal row for an out-of-range value, so a bad set surfaces as an internal error at compile instead of a clean load-time refusal. Fix (pcrec side): a §7 refusal row for value_e6 above MF_MEASURE_MAX (read from the seam, not copied), spec hunk in the same change. The kit adds the same for the new noise field in its S2a.
+
+---
+
 ## K137 — OPEN (found by lane vlbrev4, 2026-11-06) — the retry advance's [K49] comment is emitted under `-e utf8 -fno-comments`
 
 **Witness:** any pattern whose VM retry advance takes the utf8 path, compiled with `-e utf8 -fno-comments`: the emitted C still carries the advance's [K49] comment text, contradicting enc.h's D112 note (comments are a doc pair dropped by -fno-comments). Measured by lane vlbrev4 (docs/dev/lanes/vlbrev4_report.md, observations). Pre-existing; no answer effect. Fixing it changes emitted bytes under that flag pair, so it is an abi event (D76/D94): ride the variable-lookbehind stage-1 build, whose new step's prose is a D112 doc pair at the same site.
