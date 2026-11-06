@@ -1,0 +1,4 @@
+# P7 row 1 explained: pcrec's fire count for (?:(?:a|a)(?C1)b|(?:a|a)c) on 'ac' (counting driver, rx_search)
+default:                                rc=1 co=1   (altcls stage 1 merges a|a into one class)
+-fno-altcls-merge:                      rc=1 co=2   (= libpcre2's 2)
+-fno-altcls-merge -fno-altcls-factor:   rc=1 co=2

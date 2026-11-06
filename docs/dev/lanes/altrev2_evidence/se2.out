@@ -1,0 +1,4 @@
+# S-e2 (SND-3): the bound-2 stage-3 witness subjects
+utf8	(?i)xyzłw                     	b'xyz\xc5\x82w'	pcre2=(0,6) co=0	pcrec=(0,6) co=0	OK
+utf8	(?i)xyzłw                     	b'xyz\xc5\x81w'	pcre2=(0,6) co=0	pcrec=(0,6) co=0	OK
+utf8	req_whole_run	pattern	E2	derived	no	58595ac5/dfdfdfff		core; owner src/facts/req.c

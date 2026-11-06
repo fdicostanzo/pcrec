@@ -1,0 +1,84 @@
+# P0 PREMISE (SND-1 as the review states it): original, then the merge rev 1 allows
+byte	(?:ab|a\Kd|ad)                	b'ad'     	pcre2=(1,2) co=0	pcrec=(1,2) co=0	OK
+byte	(?:a[bd]|a\Kd)                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|(a)d|ad)                	b'ad'     	pcre2=(0,2)[(0,1)] co=0	pcrec=(0,2)[(0,1)] co=0	OK
+byte	(?:a[bd]|(a)d)                	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+byte	(?:ab|(a)d|ad)\1?             	b'ada'    	pcre2=(0,3)[(0,1)] co=0	pcrec=(0,3)[(0,1)] co=0	OK
+byte	(?:a[bd]|(a)d)\1?             	b'ada'    	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+# P1 WIN effects in m matter only where m can match the moved branch span: disjoint m holds
+byte	(?:ab|x\Kd|ad)                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|x\Kd)                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|x\Kd|ad)                	b'xd'     	pcre2=(1,2) co=0	pcrec=(1,2) co=0	OK
+byte	(?:a[bd]|x\Kd)                	b'xd'     	pcre2=(1,2) co=0	pcrec=(1,2) co=0	OK
+byte	(?:ab|(x)d|ad)\1?             	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+byte	(?:a[bd]|(x)d)\1?             	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+byte	(?:ab|a(x)|ad)                	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+byte	(?:a[bd]|a(x))                	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+# P2 a lookaround holding a capture is a WIN effect
+byte	(?:ab|(?=(a))ad|ad)           	b'ad'     	pcre2=(0,2)[(0,1)] co=0	pcrec=(0,2)[(0,1)] co=0	OK
+byte	(?:a[bd]|(?=(a))ad)           	b'ad'     	pcre2=(0,2)[-] co=0	pcrec=(0,2)[-] co=0	OK
+# P3 TRIAL effects: a callout fires when m is merely tried, even when m cannot match
+byte	(?:ab|a(?C1)x|ad)             	b'ad'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a[bd]|a(?C1)x)             	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|(?C1)x|ad)              	b'ad'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a[bd]|(?C1)x)              	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|(?C1)ad|ad)             	b'ad'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a[bd]|(?C1)ad)             	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+# P4 TRIAL effects: backtracking verbs (libpcre2 only; pcrec refuses verbs, out of scope)
+byte	(?:ab|a(*COMMIT)x|ad)         	b'ad'     	pcre2=nomatch co=0	pcrec=CERR:(*COMMIT) is outside pcrec's scope and no module will implement it (se	CERR
+byte	(?:a[bd]|a(*COMMIT)x)         	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*COMMIT) is outside pcrec's scope and no module will implement it (se	CERR
+byte	(?:ab|a(*PRUNE)x|ad)z         	b'adz'    	pcre2=nomatch co=0	pcrec=CERR:(*PRUNE) is outside pcrec's scope and no module will implement it (see	CERR
+byte	(?:a[bd]|a(*PRUNE)x)z         	b'adz'    	pcre2=(0,3) co=0	pcrec=CERR:(*PRUNE) is outside pcrec's scope and no module will implement it (see	CERR
+byte	(?:ab|a(*SKIP)x|ad)           	b'ad'     	pcre2=nomatch co=0	pcrec=CERR:(*SKIP) is outside pcrec's scope and no module will implement it (see 	CERR
+byte	(?:a[bd]|a(*SKIP)x)           	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*SKIP) is outside pcrec's scope and no module will implement it (see 	CERR
+byte	(?:ab|a(*ACCEPT)x|ad)         	b'ad'     	pcre2=(0,1) co=0	pcrec=CERR:(*...) requires module 'verbs' (pattern offset 7)	CERR
+byte	(?:a[bd]|a(*ACCEPT)x)         	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*...) requires module 'verbs' (pattern offset 10)	CERR
+byte	(?:ab|(*MARK:M)ad|ad)         	b'ad'     	pcre2=(0,2) co=0 mark=M	pcrec=CERR:(*MARK) is outside pcrec's scope and no module will implement it (see 	CERR
+byte	(?:a[bd]|(*MARK:M)ad)         	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*MARK) is outside pcrec's scope and no module will implement it (see 	CERR
+byte	(?:ab|a(*THEN)x|ad)           	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*THEN) is outside pcrec's scope and no module will implement it (see 	CERR
+byte	(?:a[bd]|a(*THEN)x)           	b'ad'     	pcre2=(0,2) co=0	pcrec=CERR:(*THEN) is outside pcrec's scope and no module will implement it (see 	CERR
+# P5 effect-free m: controls that must HOLD (lookahead, atomic, anchors, equal-width class)
+byte	(?:ab|(?=a)ad|ad)             	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|(?=a)ad)             	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|(?>ad)|ad)              	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|(?>ad))              	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|^ad|ad)                 	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|^ad)                 	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|\bad|ad)                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|\bad)                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|a[dx]|ad)z              	b'adz'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:a[bd]|a[dx])z              	b'adz'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+# P6 only the MOVED branch is tested: m prefix-related to i but not j holds
+byte	(?:ab|abc|ad)                 	b'abc'    	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|abc)                 	b'abc'    	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|abc|ad)c                	b'abcc'   	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:a[bd]|abc)c                	b'abcc'   	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:ab|abc|ad)$                	b'abc'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:a[bd]|abc)$                	b'abc'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:ab|abc|ad)$                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:a[bd]|abc)$                	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+byte	(?:ab|abc|ad)c                	b'adc'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+byte	(?:a[bd]|abc)c                	b'adc'    	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK
+# P6b control: m prefix-related to the MOVED branch j moves the answer (premise shape)
+byte	(?:ab|a|ad)                   	b'ad'     	pcre2=(0,1) co=0	pcrec=(0,1) co=0	OK
+byte	(?:a[bd]|a)                   	b'ad'     	pcre2=(0,2) co=0	pcrec=(0,2) co=0	OK
+# P7 prefix key: a multi-way key with a callout in a rest changes the callout count; a class-sequence key does not
+byte	(?:(?:a|a)(?C1)b|(?:a|a)c)    	b'ac'     	pcre2=(0,2) co=2	pcrec=(0,2) co=1	DIFF
+byte	(?:a|a)(?:(?C1)b|c)           	b'ac'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a(?C1)b|ac)                	b'ac'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	a(?:(?C1)b|c)                 	b'ac'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a(?C1)b|a(?C1)c)           	b'ac'     	pcre2=(0,2) co=2	pcrec=(0,2) co=2	OK
+byte	a(?C1)(?:b|c)                 	b'ac'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+# P8 suffix factoring keeps the trial sequence: callouts in the shared tail
+byte	(?:a(?C1)x|b(?C1)x)           	b'bx'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:a|b)(?C1)x                 	b'bx'     	pcre2=(0,2) co=1	pcrec=(0,2) co=1	OK
+byte	(?:(?:a|ab)(?C1)c|b(?C1)c)y   	b'abcy'   	pcre2=(0,4) co=2	pcrec=(0,4) co=2	OK
+byte	(?:(?:a|ab)|b)(?C1)cy         	b'abcy'   	pcre2=(0,4) co=2	pcrec=(0,4) co=2	OK
+# P9 SND-5: prefix factoring inside a lookbehind body (pcrec refuses the factored form)
+byte	(?<=ab|a)x                    	b'abx'    	pcre2=(2,3) co=0	pcrec=(2,3) co=0	OK
+byte	(?<=a(?:b|))x                 	b'abx'    	pcre2=(2,3) co=0	pcrec=CERR:variable-length lookbehind is not implemented: every alternative of a 	CERR
+byte	(?<=xab|xc)y                  	b'xcy'    	pcre2=(2,3) co=0	pcrec=(2,3) co=0	OK
+byte	(?<=x(?:ab|c))y               	b'xcy'    	pcre2=(2,3) co=0	pcrec=CERR:variable-length lookbehind is not implemented: every alternative of a 	CERR
+# P10 utf8 caseless: the same \K hazard at code-point level
+utf8	(?i)(?:éb|é\Kd|éd)            	b'\xc3\xa9d'	pcre2=(2,3) co=0	pcrec=(2,3) co=0	OK
+utf8	(?i)(?:é[bd]|é\Kd)            	b'\xc3\xa9d'	pcre2=(0,3) co=0	pcrec=(0,3) co=0	OK

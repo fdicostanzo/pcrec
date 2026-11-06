@@ -1,0 +1,84 @@
+# P0 PREMISE (SND-1 as the review states it): original, then the merge rev 1 allows
+byte	(?:ab|a\Kd|ad)	ad
+byte	(?:a[bd]|a\Kd)	ad
+byte	(?:ab|(a)d|ad)	ad
+byte	(?:a[bd]|(a)d)	ad
+byte	(?:ab|(a)d|ad)\1?	ada
+byte	(?:a[bd]|(a)d)\1?	ada
+# P1 WIN effects in m matter only where m can match the moved branch span: disjoint m holds
+byte	(?:ab|x\Kd|ad)	ad
+byte	(?:a[bd]|x\Kd)	ad
+byte	(?:ab|x\Kd|ad)	xd
+byte	(?:a[bd]|x\Kd)	xd
+byte	(?:ab|(x)d|ad)\1?	ad
+byte	(?:a[bd]|(x)d)\1?	ad
+byte	(?:ab|a(x)|ad)	ad
+byte	(?:a[bd]|a(x))	ad
+# P2 a lookaround holding a capture is a WIN effect
+byte	(?:ab|(?=(a))ad|ad)	ad
+byte	(?:a[bd]|(?=(a))ad)	ad
+# P3 TRIAL effects: a callout fires when m is merely tried, even when m cannot match
+byte	(?:ab|a(?C1)x|ad)	ad
+byte	(?:a[bd]|a(?C1)x)	ad
+byte	(?:ab|(?C1)x|ad)	ad
+byte	(?:a[bd]|(?C1)x)	ad
+byte	(?:ab|(?C1)ad|ad)	ad
+byte	(?:a[bd]|(?C1)ad)	ad
+# P4 TRIAL effects: backtracking verbs (libpcre2 only; pcrec refuses verbs, out of scope)
+byte	(?:ab|a(*COMMIT)x|ad)	ad
+byte	(?:a[bd]|a(*COMMIT)x)	ad
+byte	(?:ab|a(*PRUNE)x|ad)z	adz
+byte	(?:a[bd]|a(*PRUNE)x)z	adz
+byte	(?:ab|a(*SKIP)x|ad)	ad
+byte	(?:a[bd]|a(*SKIP)x)	ad
+byte	(?:ab|a(*ACCEPT)x|ad)	ad
+byte	(?:a[bd]|a(*ACCEPT)x)	ad
+byte	(?:ab|(*MARK:M)ad|ad)	ad
+byte	(?:a[bd]|(*MARK:M)ad)	ad
+byte	(?:ab|a(*THEN)x|ad)	ad
+byte	(?:a[bd]|a(*THEN)x)	ad
+# P5 effect-free m: controls that must HOLD (lookahead, atomic, anchors, equal-width class)
+byte	(?:ab|(?=a)ad|ad)	ad
+byte	(?:a[bd]|(?=a)ad)	ad
+byte	(?:ab|(?>ad)|ad)	ad
+byte	(?:a[bd]|(?>ad))	ad
+byte	(?:ab|^ad|ad)	ad
+byte	(?:a[bd]|^ad)	ad
+byte	(?:ab|\bad|ad)	ad
+byte	(?:a[bd]|\bad)	ad
+byte	(?:ab|a[dx]|ad)z	adz
+byte	(?:a[bd]|a[dx])z	adz
+# P6 only the MOVED branch is tested: m prefix-related to i but not j holds
+byte	(?:ab|abc|ad)	abc
+byte	(?:a[bd]|abc)	abc
+byte	(?:ab|abc|ad)c	abcc
+byte	(?:a[bd]|abc)c	abcc
+byte	(?:ab|abc|ad)$	abc
+byte	(?:a[bd]|abc)$	abc
+byte	(?:ab|abc|ad)$	ad
+byte	(?:a[bd]|abc)$	ad
+byte	(?:ab|abc|ad)c	adc
+byte	(?:a[bd]|abc)c	adc
+# P6b control: m prefix-related to the MOVED branch j moves the answer (premise shape)
+byte	(?:ab|a|ad)	ad
+byte	(?:a[bd]|a)	ad
+# P7 prefix key: a multi-way key with a callout in a rest changes the callout count; a class-sequence key does not
+byte	(?:(?:a|a)(?C1)b|(?:a|a)c)	ac
+byte	(?:a|a)(?:(?C1)b|c)	ac
+byte	(?:a(?C1)b|ac)	ac
+byte	a(?:(?C1)b|c)	ac
+byte	(?:a(?C1)b|a(?C1)c)	ac
+byte	a(?C1)(?:b|c)	ac
+# P8 suffix factoring keeps the trial sequence: callouts in the shared tail
+byte	(?:a(?C1)x|b(?C1)x)	bx
+byte	(?:a|b)(?C1)x	bx
+byte	(?:(?:a|ab)(?C1)c|b(?C1)c)y	abcy
+byte	(?:(?:a|ab)|b)(?C1)cy	abcy
+# P9 SND-5: prefix factoring inside a lookbehind body (pcrec refuses the factored form)
+byte	(?<=ab|a)x	abx
+byte	(?<=a(?:b|))x	abx
+byte	(?<=xab|xc)y	xcy
+byte	(?<=x(?:ab|c))y	xcy
+# P10 utf8 caseless: the same \K hazard at code-point level
+utf8	(?i)(?:éb|é\Kd|éd)	hex:c3a964
+utf8	(?i)(?:é[bd]|é\Kd)	hex:c3a964
