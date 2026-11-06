@@ -246,7 +246,8 @@ def edit_rows(text, key, col, v):
 
 def f2_bad_sets(f2):
     """(name, text, substring) for each format-2 refusal class (§7), from
-    fx-f2's redigested text: each refuses before the digest is checked."""
+    fx-f2's text; main() redigests each, so its class's rule is the one
+    refusal the set meets."""
     def cell(cid, col, v):
         secs = parse(f2)
         for s in secs:
@@ -361,6 +362,9 @@ def main(store_set, outdir):
     exp = []
     for name, text, sub in bad_sets(base) + f2_bad_sets(f2):
         write(os.path.join(bad, name + ".tsv"), text)
+        if name.startswith("f2-"):
+            # a correct digest, so the class's own rule is the only refusal
+            redigest(os.path.join(bad, name + ".tsv"))
         exp.append("%s\t%s" % (name, sub))
     write(os.path.join(bad, "EXPECT.tsv"), "\n".join(exp) + "\n")
     # -I
