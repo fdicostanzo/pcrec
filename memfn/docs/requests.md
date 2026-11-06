@@ -831,6 +831,11 @@ for the noise channel (rev3 C4); this is that request.
 form, stages 1/2p/2b. Both move emitted bytes, so whoever lands later re-baselines identity against the new main.
 Heavy runs go through boxqueue.
 
+**Ruled later (main, 2026-11-06):**
+- (c) DEFAULTS at stage 2 is (B): it flips to zen4-grid3 when the set lands (unit S2e). This moves zero bytes, because no row reads a set until row 1. It amends item 1's "DEFAULTS unchanged"; the kit's C6 and the measure_sets §3.6 hunk travel with S2e. D166 add. 2 ("the latest committed set is the default") stands.
+- (d) EMBED: the libpcrec embed OMITS the per-launch `cells` section. The committed set.tsv keeps the cells for the recompute and --measures=FILE. The set's identity (values_digest) and --list-measurements must say the embed is cell-less, and nothing that reads the embed may need them.
+- (e) POLICY: z, the gate default and MATERIAL are POLICY, not measured costs, so they live in one kit policy table outside the sets. Main reads D176 Q3's migration as being about measured COSTS only. HORS_MIN is deleted (Q2) and MAX_SET is pcrec's own fact, so both leave [KIT-POLICY-TABLE]. Each policy constant is labelled as policy with its reason (memory pcrec-suspect-tuning-constants).
+
 **Not asked:** the method or shape of any card, gate or noise derivation (D157).
 
 **Sabotage ids:** the kit takes its own from the top of the free range and records them in its first commit (three lanes
