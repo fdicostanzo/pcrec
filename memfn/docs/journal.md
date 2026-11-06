@@ -3350,3 +3350,13 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06 14:28: S2a gates 461 (retry), 462, 463 and 464 GREEN: sections, plus the three ident shards with no byte moved. Gate 465 make test RED in test-plan-lint only: PL14, two plan.md line-number cites (span_cards.md, s2design_report.md) that came in with the k1102 records merge. Triage tri465.
   - Fixed 7355ea430: cite by [BENCH-WITHDATA] tag; plan-lint 2/0. 465 retried; 466-468 chain after it; watcher re-armed.
   - OWED on s2c after s2cfix delivers: the same span_cards.md cite fix (I did not touch a tree with a running lane). k1102's copies are fixed in this commit if present.
+- 11-06 ~14:40: s2cfix delivered lane/memfn-s2c @ 88a47cff8, closing all r9 FIX-NOW/DOC items:
+  - G4 FOLD: settest and rc-words hashes moved; S2933.
+  - G1: the gate runs the timed entry on all 7 launches + ctl, with a population assert and a manifest; slot (l3) S2934.
+  - G2 KEY-ARM MISMATCH (S2935); G3 frozen plan + finalized record (S2936).
+  - EMIT-3: case is the majority (156/292), so the instance stays. SLOT-17: memfn/data/policy.tsv gate_default_e6.
+  - Job scripts are committed in slot/jobs/.
+  - Validation: finder 3272/0, limits 39/0, 0 movers; all dry runs green; slot sabotage 8/0.
+- Merged lane/memfn-s2a into s2c (f3522e0f2) for the plan-cite fix; plan-lint clean.
+- GATES 470-474 QUEUED (mech 14 rows, slotsab 8), behind S2a's 465-468, with their own watcher.
+- One fix-induced + harness-fidelity critic (crit-s2cfix, opus) on 79c5e91e5..88a47cff8 before the S2d window.
