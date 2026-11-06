@@ -252,6 +252,35 @@ static const char defs_back_step[] =
 "    return k > pos ? $_BACK_STEP_NONE : pos - k;\n"
 "}\n";
 
+/* ---- the LOOKBEHIND FORWARD STEP ([VLOOKBEHIND] stage 1, enc.h's
+ * PCREC_ENCE_FWD_STEP). One byte is one character, so the next position is
+ * `pos + 1` and the subject is never read. Engine-callable and inline for
+ * `$_back_step`'s reasons. */
+static const char decls_fwd_step_doc[] =
+"/* $_fwd_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND FORWARD STEP\n"
+" * (pcrec DD-12/D58).\n"
+" *\n"
+" * Returns the position one CHARACTER after `pos`, never past `n`. The\n"
+" * caller guarantees pos < n <= the subject's length; s is read only at\n"
+" * offsets in [pos + 1, n). A varying lookbehind alternative steps its\n"
+" * candidate start one character nearer the cursor with it, `n` being the\n"
+" * cursor.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
+
+static const char defs_fwd_step_doc[] =
+"/* byte encoding: one byte is one character, so the next position is\n"
+" * pos + 1 and the subject is never read. */\n";
+
+static const char defs_fwd_step[] =
+"static inline size_t $_fwd_step(const unsigned char *s, size_t n, size_t pos)\n"
+"{\n"
+"    (void)s; (void)n;\n"
+"    return pos + 1;\n"
+"}\n";
+
 /* ---- entry 7: the SUBJECT VALIDATOR ([UTF-VALID], utf_valid_design.md
  * §4.3). Every byte string is a valid `byte` string, so the first ill-formed
  * sequence at or after any position is none and the answer is `n` — the
@@ -355,6 +384,9 @@ static const PcrecEncEntry entries_byte[] = {
       0, true },
     { PCREC_ENCE_BACK_STEP,     true,
       decls_back_step_doc, "",              defs_back_step_doc, defs_back_step,
+      0, true },
+    { PCREC_ENCE_FWD_STEP,      true,
+      decls_fwd_step_doc,  "",              defs_fwd_step_doc,  defs_fwd_step,
       0, true },
     /* [VAR] NO `$_var_valid` ROW HERE, and the ABSENCE is the mechanism:
      * every byte string is a valid `byte` string, so this backend has no

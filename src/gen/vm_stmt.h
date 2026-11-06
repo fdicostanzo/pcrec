@@ -132,7 +132,9 @@ typedef enum {
     VSK_SPAN_COMMIT,  /* `scan_position = <p>_span_cursor;` */
     VSK_RESTORE,      /* `scan_position = (size_t)slot_values[<slot>];` */
     VSK_ADVANCE,      /* `scan_position += k;` */
-    VSK_BACKSTEP      /* the encoding seam's back-step by k */
+    VSK_BACKSTEP,     /* the encoding seam's back-step by k, or by a local */
+    VSK_STEP_CHAR     /* [VLOOKBEHIND] the seam's `$_fwd_step`, bounded by the
+                       * position in slot <slotx> */
 } VmSeek;
 
 /* An untrailed matcher LOCAL an LSET may write. The span cursor, the subject
@@ -145,7 +147,11 @@ typedef enum {
     VL_RV_PREV,          /* <p>_rv<loop>_prev_position */
     VL_RV_GROUPS_SEEN,   /* <p>_rv<loop>_groups_seen */
     VL_GROUP_SEEN,       /* <p>_revdet_group_seen[j] */
-    VL_GROUP_SPAN        /* <p>_revdet_group_span[j][half] */
+    VL_GROUP_SPAN,       /* <p>_revdet_group_span[j][half] */
+    VL_LB_COUNT          /* [VLOOKBEHIND] <p>_lb_count, a varying lookbehind
+                          * branch's far back-step count: ONE per artifact,
+                          * live only between the branch's guard and its
+                          * first push (vlookbehind.md §5.6) */
 } VmLocalKind;
 typedef struct {
     VmLocalKind k;
@@ -221,7 +227,8 @@ typedef struct {
         struct { VmFrag c; int loop, lbl; } back;
         struct { bool block; int cap, stride; const char *clamp; VmPiece kit; } span;
         struct { VmSpanMove mv; int k; } span_move;
-        struct { VmSeek sk; const char *slotx; int k; } seek;
+        /* `byloc`: the back-step's count is the local `x`, not `k`. */
+        struct { VmSeek sk; const char *slotx; int k; bool byloc; VmLocal x; } seek;
         struct { VmLocal x; VmLsetOp op; const char *src; int n; bool inl; } lset;
         VmBrefOps    bref;
         VmVarOps     var;
@@ -276,6 +283,7 @@ void pcrec_vm_b_span(VmBody *sb, int cap, const char *clamp, int stride,
 void pcrec_vm_b_span_init(VmBody *sb);
 void pcrec_vm_b_span_move(VmBody *sb, VmSpanMove mv, int k);
 void pcrec_vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k);
+void pcrec_vm_b_seek_local(VmBody *sb, VmSeek sk, VmLocal x);
 void pcrec_vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
                bool inl);
 void pcrec_vm_b_bref(VmBody *sb, const VmBrefOps *o);
@@ -284,6 +292,10 @@ void pcrec_vm_b_callout(VmBody *sb, const VmCalloutOps *o);
 void pcrec_vm_b_witness(VmBody *sb);
 
 /* ---- the body's other readers ----------------------------------------- */
+
+/* The local's name as the frame declares it: the ONE spelling a declaration
+ * and a text read (an LSET source, a work count) both take. */
+const char *pcrec_vm_local_name(VmBody *sb, VmLocal x);
 
 /* The body's length for a DECISION (`pcrec_sb_len_decide`): the entry-shape
  * knee and the `<PREFIX>_VM_PROGRAM_BYTES` stamp. */
@@ -309,6 +321,7 @@ typedef struct {
     const char *gst_param;   /* the `\G` parameter, or "" */
     bool trail_gc;           /* the program has trail checkpoints */
     bool span_cursor;        /* the cursor rung is present */
+    bool lb_count;           /* a varying lookbehind branch is present */
     int  nrev_total;         /* revdet loops */
     int  nrevcaps;           /* the widest revdet body's group count */
     bool tracing;

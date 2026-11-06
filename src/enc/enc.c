@@ -120,6 +120,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
  * the match-time fold and the --ucp class fold are one definition. The brace
  * is on its own line for the DD12a(i) brace-matching excision, as utf8's
  * table's is. */
+static const char enc_latin1_fold_table_sym[] = "span_ci_fold_pairs";
 static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
 {
     int col = 0;
@@ -128,8 +129,8 @@ static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
                       " * the least member of from's fold class within Latin-1; only\n"
                       " * the non-identity entries are here. */\n");
     pcrec_sb_cmt_close(sb);
-    pcrec_sb_printf(sb, "static const unsigned char %s_span_ci_fold_pairs[][2] =\n{\n",
-                    prefix);
+    pcrec_sb_printf(sb, "static const unsigned char %s_%s[][2] =\n{\n",
+                    prefix, enc_latin1_fold_table_sym);
     for (unsigned c = 0; c < 256; c++) {
         unsigned r = pcrec_fold_latin1_rep(c);
         if (r == c) continue;
@@ -137,6 +138,14 @@ static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
         if (++col == 6) { pcrec_sb_putc(sb, '\n'); col = 0; }
     }
     pcrec_sb_puts(sb, col ? "\n};\n\n" : "};\n\n");
+}
+
+/* True iff row `t`'s emission is preceded by the Latin-1 fold table: the ONE
+ * spelling of that side emission's condition, read by the emitter below and
+ * by `pcrec_enc_entry_symbols`. */
+static bool enc_row_side_table(const PcrecEncEntry *t)
+{
+    return t->id == PCREC_ENCE_SPAN_CASELESS_UCP;
 }
 
 /* Emits every `inline_def` entry's `defs` text (and, gated through the
@@ -153,7 +162,7 @@ static void enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && t->inline_def) {
-            if (t->id == PCREC_ENCE_SPAN_CASELESS_UCP)
+            if (enc_row_side_table(t))
                 enc_emit_latin1_fold_table(sb, prefix);
             /* An inline entry has no declaration, so its contract doc
              * (`decls_doc`) rides with its definition. */
@@ -358,6 +367,51 @@ bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id)
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (t->id == id) return true;
     return false;
+}
+
+/* Calls `each` for every symbol `text` defines: a column-0 line that is not a
+ * directive, comment or brace, whose first `$_<ident>` is followed by `(` or
+ * `[`. Bodies are indented and so never read. */
+static void enc_text_symbols(const char *text, void (*each)(const char *, void *),
+                             void *u)
+{
+    for (const char *ln = text; ln && *ln; ) {
+        const char *eol = strchr(ln, '\n');
+        const char *end = eol ? eol : ln + strlen(ln);
+        if (!strchr(" \t#/*{}\n", *ln)) {
+            const char *q = ln;
+            while (q + 1 < end && !(q[0] == '$' && q[1] == '_')) q++;
+            if (q + 1 < end) {
+                char sym[64];
+                size_t k = 0;
+                q += 2;
+                while (q < end && k + 1 < sizeof sym
+                       && (isalnum((unsigned char)*q) || *q == '_'))
+                    sym[k++] = *q++;
+                sym[k] = '\0';
+                while (q < end && *q == ' ') q++;
+                if (k > 0 && q < end && (*q == '(' || *q == '['))
+                    each(sym, u);
+            }
+        }
+        ln = eol ? eol + 1 : NULL;
+    }
+}
+
+void pcrec_enc_entry_symbols(const PcrecEnc *e, unsigned id,
+                             void (*each)(const char *sym, void *u), void *u)
+{
+    if (!e || !e->entries) return;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++) {
+        if (t->id != id) continue;
+        if (enc_row_side_table(t)) each(enc_latin1_fold_table_sym, u);
+        enc_text_symbols(t->defs, each, u);
+    }
+}
+
+unsigned pcrec_enc_entry_stands_for(unsigned id)
+{
+    return id == PCREC_ENCE_SPAN_CASELESS_UCP ? PCREC_ENCE_SPAN_CASELESS : id;
 }
 
 /* [ART-POSS-ARMS] The fold relation `e`'s caseless span compare folds by for

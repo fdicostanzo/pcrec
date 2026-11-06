@@ -339,6 +339,39 @@ static const char u8_defs_back_step[] =
 "    return pos;\n"
 "}\n";
 
+/* ---- the LOOKBEHIND FORWARD STEP ([VLOOKBEHIND] stage 1, enc.h's
+ * PCREC_ENCE_FWD_STEP). One step plus a skip over continuation bytes, bounded
+ * by `n` (the lookbehind's cursor): bounded by the subject length instead, a
+ * stray continuation byte AT the cursor would carry the step past it and the
+ * candidate loop would never meet its nearest start (vlookbehind.md §5.1a,
+ * witness W13). It is `next_pos`'s rule over the prefix [0, n), WRITTEN AS
+ * ITS OWN TEXT on purpose: K49's boundary tie compares the two, and a body
+ * built from `next_pos`'s text would compare a source with itself. */
+static const char u8_decls_fwd_step_doc[] =
+"/* $_fwd_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND FORWARD STEP\n"
+" * (pcrec DD-12/D58).\n"
+" *\n"
+" * Returns the position one CHARACTER after `pos`, never past `n`. The\n"
+" * caller guarantees pos < n <= the subject's length; s is read only at\n"
+" * offsets in [pos + 1, n). A varying lookbehind alternative steps its\n"
+" * candidate start one character nearer the cursor with it, `n` being the\n"
+" * cursor.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
+
+static const char u8_defs_fwd_step_doc[] =
+"/* utf8 encoding: one byte, then every continuation byte, never past n. */\n";
+
+static const char u8_defs_fwd_step[] =
+"static inline size_t $_fwd_step(const unsigned char *s, size_t n, size_t pos)\n"
+"{\n"
+"    size_t i = pos + 1;\n"
+"    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n"
+"    return i;\n"
+"}\n";
+
 /* ---- entry 7: the VALUE VALIDITY PREDICATE ([VAR], variables_common.md §2.1)
  *
  * A caller-supplied value that is not well-formed UTF-8 is a REFUSED CALL
@@ -516,6 +549,10 @@ static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_BACK_STEP,     true,
       u8_decls_back_step_doc, "",
       u8_defs_back_step_doc,  u8_defs_back_step,
+      0, true },
+    { PCREC_ENCE_FWD_STEP,      true,
+      u8_decls_fwd_step_doc,  "",
+      u8_defs_fwd_step_doc,   u8_defs_fwd_step,
       0, true },
     /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
      * resolution calls it, never an engine body -- `next_pos`'s own status,
