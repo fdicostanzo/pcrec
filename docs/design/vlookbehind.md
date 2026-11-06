@@ -670,6 +670,17 @@ emitter does NOT perform in general:
 3. A frame whose continuation is only `rx_fail` (the last branch's) is elided.
 4. The slot is dropped.
 
+`[r-cursor]` Those four rewrites were the counter shape's. The cursor shape at `lo = hi = k` reduces
+to today's bytes by these instead:
+1. `K_i = min(0, LO_i) = 0`, so the far step is the identity and the far retry is unreachable. Both
+   are dropped, and so is `K_i`.
+2. `LO_i` is the only candidate. `L_adv_i`'s test is then always true, so `L_adv_i` is threaded to
+   `L_n_i`, and the `LO_i` slot is dropped.
+3. A frame `(L_n_i, candidate)` whose target first restores `POS` is the same frame as today's
+   `(L_b_(i+1), cursor)` pushed before the back-step. (The order of push and back-step changes, not
+   the state at any pop.)
+4. A frame whose continuation is only `rx_fail` (the last branch's) is elided.
+
 And two differences that are NOT rewrites `[r6 V2]`:
 5. **The negative arm's failed end-check.** `one-length` returns `RX_R_INTERNAL`; `range` declines.
    This preserves answers only on the premise that a one-length end-check cannot fail on a correct
@@ -690,19 +701,19 @@ is what the branch executes:
 | row (first match) | applies when | guard | retry frame (target, position) | work per candidate | back-step count | end-check fail, negative arm | `L_adv_i` block |
 |---|---|---|---|---|---|---|---|
 | `one-length` | `lo_i == hi_i` (= k) | `scan_position < k` (not emitted when k = 0) | `L_b_(i+1)` at the cursor, not pushed on the last branch | `k` (one candidate), today's `RX_CHARGE_WORK(k)` | the literal `k` | `RX_R_INTERNAL` (§5.3) | none |
-| `range` | `lo_i < hi_i` | `scan_position < lo_i` (not emitted when lo_i = 0) | `L_adv_i` at the cursor, pushed on every branch including the last | `D_i`'s value, `(size_t)slot_values[<D_i>]` | the same value | decline (`rx_fail`) | emitted |
+| `range` `[r-cursor]` | `lo_i < hi_i` | `scan_position < lo_i` (not emitted when lo_i = 0) | `L_adv_i` at the CANDIDATE, pushed per candidate on every branch including the last | per evaluation: `lo_i` and `K_i` (each try); then 1 per candidate step | `lo_i` (literal), then `K_i` (the local) | decline (`rx_fail`) | emitted: exhaustion test against `LO_i`, the bounded one-character step |
 
 The second part is what every OTHER reader sees `[r6 V1, V2, V4, V5]`. Each column names the pass
 that reads it:
 
-| row | `D_i` slot (count pass, layout) | push sites (count pass `npush`) | trail entries per evaluation (`vm_cost_look`) | labels (`vm_look_behind`) | trail checkpoint (`vm_goto`, K134) | role and note texts (`vm_lbl`/`vm_ev`: `-fcomments` C and the listing) |
-|---|---|---|---|---|---|---|
-| `one-length` | none | 1 if not last, else 0 | 0 (beyond the assertion's own 2, charged once per lookbehind) | `bl`, `bodl`, `endl` (today's) | none | today's seven texts, unchanged |
-| `range` | one `SLOT_COUNTER` slot | 1 (the `L_try_i` push, last branch included) | `hi_i − lo_i + 1` (a bound: `min(hi_i, cursor) − lo_i + 1` at run time) | today's three plus `L_try_i`, `L_adv_i` | one, on `L_adv_i`'s `goto L_try_i` | the `range` texts listed below |
+| row | loop slot (count pass, layout) | matcher locals | push sites (count pass `npush`) | trail entries per evaluation (`vm_cost_look`) | labels (`vm_look_behind`) | trail checkpoint (`vm_goto`, K134) | seam sites ([M5-SEAM] per-site count) | role and note texts (`vm_lbl`/`vm_ev`: `-fcomments` C and the listing) |
+|---|---|---|---|---|---|---|---|---|
+| `one-length` | none | none | 1 if not last, else 0 | 0 (beyond the assertion's own 2, charged once per lookbehind) | `bl`, `bodl`, `endl` (today's) | none | 1 back-step | today's seven texts, unchanged |
+| `range` `[r-cursor]` | one `LO_i` slot (the `low` family, recommended; below) | one `K_i` (`VL_LB_COUNT`, §5.6) | 1 (the `L_try_i` push, last branch included) | 1 (`LO_i`), whatever `hi_i − lo_i` is | today's three plus `L_far_i`, `L_try_i`, `L_adv_i`, `L_n_i` (`L_n_i` not on the last branch) | NOT declared by the row: `vm_goto`'s rule places one on `L_adv_i`'s `goto L_try_i` iff the body writes the trail (below) | 2 back-steps; plus the `advance` text, which is not an entry | the `range` texts listed below |
 
 The table's properties:
-- **Answer-free.** Substituting `lo = hi = k` into the `range` row and applying rewrites 1-4 gives
-  the `one-length` row's statements. Every rewrite preserves answers. Item 5 is a selection, and
+- **Answer-free.** Substituting `lo = hi = k` into the `range` row and applying rewrites 1-4 (the
+  `[r-cursor]` list above) gives the `one-length` row's statements. Every rewrite preserves answers. Item 5 is a selection, and
   item 6 is the label column.
 - **Not cost-free.** The elided frame changes the frame and step counts by one per evaluation, and
   the `one-length` row is the cheaper side. It is also today's row, so nothing moves for today's
@@ -715,54 +726,71 @@ The table's properties:
   it: `vm_count_slots_look`, `vm_cost_look`, `vm_look_behind_branch` and the role texts. This is the
   hazard the rung ladder's header names ("the SAME rung decision read a second time"). Here the
   decision is made once.
-- **Work amount.** Each candidate is charged its back-step's character count: `k` for a one-length
-  branch, `D_i` for a range candidate. This is today's rule ("the back-step, charged as the
-  compile-time width") read per candidate. §5.5 gives the totals. `RX_CHARGE_WORK` charges only a
-  positive amount, so the `lo = 0` candidate charges nothing.
-- **Slot allocation `[r6 V4, RULED: the existing SLOT_COUNTER family]`.**
-  - `D_i` is a slot of the counter family. That family is already "one TRAILED iteration counter
-    per counter loop" written by `VK_SET`, which is exactly `D_i`'s contract.
-  - The emitter takes `vm_slot_ctr(v, v->nctr++)`, and `vm_count_slots_look` adds one to `v->nctr`
+- **Work amount `[r-cursor]`.** Each back-step is charged its character count, which is today's
+  rule ("the back-step, charged as the compile-time width"): `k` for a one-length branch; `lo_i`
+  and each far try's `K_i` for a range branch, once per evaluation. Each one-character step is
+  charged 1. §5.5 gives the totals. `RX_CHARGE_WORK` charges only a positive amount, so a zero
+  count charges nothing. (Rev 2 charged `D_i` per candidate.)
+- **Slot allocation `[r-cursor]`.** Rev 2's ruling V4 (`D_i` in the `SLOT_COUNTER` family) has no
+  object any more: there is no counter. `LO_i` is a POSITION, written once per evaluation, which the
+  loop's retry tests against and an outer backtrack must restore. That is word for word the `low`
+  family's contract (emit_vm.c's layout comment: "what a span loop cannot recover from its own
+  resume frame ... written once per loop ENTRY ... O(1) trail per entry"). The choice is
+  answer-free, so it is the manager's (§13 Q5). Recommended: the `low` family.
+  - The emitter takes `vm_slot_low(v, v->nlow++)`, and `vm_count_slots_look` adds one to `v->nlow`
     per `range` branch. Only the TOTAL has to agree, because every base is a sum of family totals.
-  - The allocation does not read `PCREC_NO_COUNTER`: that flag denies the counter RUNG, not the slot
-    family.
   - An artifact with no varying branch allocates none, so its slot legend and numbering are
-    unchanged.
-- **The counter family's readers, by grep, and what each needs (src/gen/emit_vm.c):**
-  - the base chain: the counter family sits above `revdet` and below the pending, look and splice
-    families. In an artifact WITH a `range` branch, those bases shift by the number of `range`
-    branches. Under (A) that is new artifacts only; under (B) it is inside the abi event;
-  - `vm_slot_name`: already names `SLOT_COUNTER<n>`, so the legend's `#define` is emitted
-    already;
-  - the totals block and the `RX_NSLOTS` sum: `nctr_total` is already summed (a missed term would
-    be K27's out-of-bounds write);
-  - `VmSnap`/`vm_w_range`: `ctr` is already a member, so `D_i` rides in a callee's save set. That is
-    not needed for correctness (every read follows its own `VK_SET` or a trail-restoring pop), but
-    it is harmless, and it keeps S153's "every family" house rule with no exclusion to argue;
-  - the `--emit-ir` `slots` section: the counter family has no row there today. That is a
-    pre-existing gap it shares with the pending and splice families. So no listing baseline moves,
-    and `ir_listing.md` §3.2¶2's family vocabulary is not extended (no hunk);
-  - `Vm` fields: none new;
-  - one comment widens: `vm_slot_ctr`'s header, "per counter loop", becomes "per counted loop: a
-    counter rung's, or a `range` lookbehind branch's candidate count".
+    unchanged (ruling A).
+- **The `low` family's readers, by grep (src/gen/emit_vm.c), and what each needs:**
+  - the base chain: `low` sits just above `guard`, so in an artifact WITH a `range` branch every
+    family above it shifts by the number of `range` branches (`mark`, `revdet`, the counter, look
+    and splice families). New artifacts only;
+  - `vm_slot_name`: names every `low` slot `SLOT_SPAN_LOW<i>`, which is false for `LO_i`. One
+    owner record per `low` index (span loop or lookbehind branch) lets the legend say
+    `SLOT_LB_LO<i>` for a lookbehind's. It is emitted C, in new artifacts only;
+  - the `--emit-ir` `slots` section (`vm_listing_slots`, family `low`): one `holds` text for the
+    whole family ("span-loop low-water / the loop's entry position"). The same owner record gives a
+    lookbehind row its own `holds` text. The family name stays `low`, so `ir_listing.md` §3.2¶2's
+    vocabulary does not grow (no hunk). The family's "none" note ("no cursor rung in this program")
+    stays true, because it prints only when there are no `low` slots at all;
+  - the totals block and `RX_NSLOTS`: `nlow_total` is already summed;
+  - `VmSnap`/`vm_w_range` (`.low`): `LO_i` rides in a callee's save set, which is harmless and keeps
+    S153's "every family" rule;
+  - the listing stamp (`VmStamp.nlow`): counts `LO_i` too. Listing only;
+  - one comment widens: the layout comment's `nlow` paragraph, from "cursor low-water marks" to
+    "loop bound positions: a span loop's entry, or a `range` lookbehind branch's nearest start".
+  - The alternatives, for the ruling: the counter family needs no new reader, because it has no
+    listing row and a generic legend. But it holds a position under a counter's name and contract.
+    The `lookpos` family (the assertion's own cursor) is a position, but its contract is "the cursor
+    at the assertion's entry", one per lookaround, and its readers count it per lookaround
+    (`vm_look_needs_pos`).
 - **The count pass's push count** becomes: one per non-last `one-length` branch (today's
   `nbranch − 1`) plus one per `range` branch. A varying LAST branch pushes `L_adv`.
-- **The trail checkpoint `[r6 V1]`.** `L_adv_i`'s `goto L_try_i` jumps back over trail writes: the
-  decrement, plus any in the body. So `vm_goto`'s `vm_jump_closes_trail_cycle` test puts a K134
-  checkpoint (`RX_TRAIL_CHECK()`) on it. This is K134's structural rule ("every cycle of the
-  emitted program has an edge that goes back in the text"), so any spelling of the loop carries
-  one. Its consequences:
-  - an artifact with a `range` branch gains `vm_emit_trail_compact`'s helpers, which are emitted
-    only when `ncheck > 0`;
-  - its margin `nset` grows by the two `D_i` write sites per `range` branch;
-  - under (A), new artifacts only.
+- **The trail checkpoint `[r6 V1]` `[r-cursor: now derived, not declared]`.** `vm_goto` places a
+  K134 checkpoint on a backward jump iff a trailed write (`SET`, `SNAPSHOT` or `RESTORE`) was
+  emitted between the target label and the jump (`vm_jump_closes_trail_cycle`, reading
+  `lbl_nset`). The loop's two backward jumps:
+  - `L_far_i`'s retry `goto`: its span holds a `VSK_RESTORE` seek and a `VK_LSET`, neither of which
+    is a trailed write. So it never gets a checkpoint, and none is needed: that cycle writes no
+    trail;
+  - `L_adv_i`'s `goto L_try_i`: `LO_i`'s write precedes `L_try_i`, so the loop itself contributes
+    none. The span holds the BODY, so a checkpoint appears exactly when the body's emission writes
+    the trail. That includes a capture group, a quantifier on the cursor or counter rung (their
+    `low`/counter `SET`), an atomic group's mark, a nested lookaround's mark and `POS`, and a
+    callee's park. It excludes literals, classes, fixed alternations, anchors and possessified
+    span loops.
 
-  Compaction does not replace the sizing:
-  - the write that overflows is the decrement itself, BEFORE the checkpoint;
-  - compaction runs only past its trigger ("a stretch between checkpoints longer than the room
-    left ends the same way", `vm_emit_trail_compact`'s header);
-  - it may drop `D_i`'s dead entries (one segment holds them all), so the cost term is the
-    uncompacted bound.
+  So the brief's "K134 helpers on capture-free bodies" is narrower than it sounds. EXACTLY: an
+  artifact whose `range` bodies write no trail, and which has no other checkpoint, gets no
+  `vm_emit_trail_compact` helpers (`ncheck == 0`). `(?<=(?:ab|c))x` is one: its `range` body is
+  an alternation of literals, which pushes frames and writes no slot. A capture-free body with a backtracking quantifier
+  (`(?<=a{1,9})x`) still writes its rung's `low` slot and keeps the checkpoint. That checkpoint is
+  structurally harmless: the pop before the jump has already rewound the body's writes, so the
+  trail does not grow around this cycle, and compaction finds nothing to do. Rev 2's checkpoint on
+  EVERY `range` loop (it counted the `D_i` decrement) and the two `D_i` sites it added to the
+  margin `nset` are gone. CAVEAT (INFERRED, checked at build): which rung a body quantifier
+  inside a lookbehind takes is the ladder's choice, so "this body writes the trail" is read off
+  the emitted text, not predicted here.
 - **Role and note texts `[r6 V5]`.** These are C comments under `-fcomments` and listing text
   always. Under (B) their moves are inside the abi event. Seven of today's texts in
   `vm_look_behind_branch` are false on a `range` branch, so the `range` row writes its own:
@@ -771,84 +799,144 @@ The table's properties:
   2. the negative END-CHECK role: the positive role's text on both polarities ("... this candidate
      declines"). The "FALSE MATCH ... returns HARD" text stays `one-length`'s;
   3. the end-check note: "end-check FAILED -- this candidate declines";
-  4. the back-step note: "the ENCODING SEAM's back-step, `D_i` characters (a run-time count)", not
-     a `%d` of `k`;
-  5. the sentinel note: "dead under the byte backend, where the clamp `min(hi, cursor)` is exact",
-     not "where the guard above is exact" (the guard tests `lo`);
-  6. the work role: "charged as this candidate's back-step count", not "as the compile-time width";
+  4. the back-step notes `[r-cursor]`: "the ENCODING SEAM's back-step to the NEAREST start, %d
+     characters" (`lo_i`), and "... to the FARTHEST start, `K_i` characters (a run-time count)";
+  5. the sentinel notes `[r-cursor]`: for `lo_i`'s step, "fewer than %d characters precede: try the
+     next branch -- dead under the byte backend, where the guard above is exact"; for the far
+     step, "retry one shorter -- dead under the byte backend, where the count `min(hi - lo, LO)` is
+     exact";
+  6. the work role: "charged as the back-step's count", not "as the compile-time width";
   7. the guard notes: printed with `lo_i`, not `k`.
 
-  New `range` texts: the `D_i` set, the `L_try_i`/`L_adv_i` labels, the exhaustion test, and the
-  decrement. The 160-byte `vm_rolef` limit and its truncation note apply to each.
+  New `range` texts `[r-cursor]`: the `LO_i` set, the `K_i` set and decrement, the `L_far_i`,
+  `L_try_i`, `L_adv_i` and `L_n_i` labels, the exhaustion test, the one-character step ("one
+  CHARACTER nearer, never past the cursor") and the restore. The 160-byte `vm_rolef` limit and its
+  truncation note apply to each.
   - **Gate 3's classification control reads the per-branch judgment through text 1** (the listing
     label, present without `-fcomments`): "fixed width %d" against "width %d..%d". `ir_listing.md`
     §3.4¶1 specifies role text only as "the role text the walk recorded", so this needs no spec
     hunk. The control pins the two phrasings itself, and a rewording is a re-pin of that control.
 
-**The alternative (owner question 1).** One loop shape for every branch: the `range` row
-everywhere, plus an abi event. §13 gives both costs. Under Frank's open "VM base" frame
+**The alternative (owner question 1, ANSWERED (A) 2026-11-06 `[r-cursor]`).** One loop shape for
+every branch: the `range` row everywhere, plus an abi event. §13 gives both costs. Under Frank's open "VM base" frame
 (roadmap.md A-VERDICT, used here as a lens, not a rule), the `range` row is the reference matcher
 and `one-length` is an admission row substituting a cheaper section where it is sound. That is
 exactly this table's shape.
 
-### 5.1c Hand-execution of §5.1, literally `[r3 F1]`
+### 5.1c Hand-execution of §5.1, literally `[r3 F1]` `[r-cursor: re-traced]`
 
 Each cell lists what each pushed frame SAVES and what popping it RESTORES. Subject positions are
 byte offsets. The matcher attempt shown is the one that matches. The other attempts fail
 elsewhere `[r6 V14]`. In cells 1 and 2 they fail before the lookbehind or at its first guard. In
 cell 3, the attempt at 1 runs branch 0, exhausts it, and fails at branch 1's guard. In cell 4, the
 attempts at 1 and 2 pass the lookbehind and fail at the follow's `c`, after the non-atomic retries.
-(Whether a prefilter skips those starts depends on the artifact.) Trail depths are not traced here;
-§5.5 sizes them.
+(Whether a prefilter skips those starts depends on the artifact.) `[r-cursor]` Trail depths ARE
+traced now, because the loop's sizing is one line (§5.5). "Trail n" counts the lookbehind-owned
+entries: the atomic positive form writes the mark and `POS` (2), the non-atomic form `POS` only (1,
+`vm_cost_look`'s header).
 
-**Cell 1: `(?<=a{1,2}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1, `POS = 1`. Branch 0 is `range`
-[1,2]; branch 1 (`b`) is `one-length` k=1, last.
-1. `L_b_0`: guard `1 < 1` is false. `D_0 = min(2,1) = 1`.
-2. `L_try_0`: push F1 = (`L_adv_0`, saves position 1; trail mark above `D_0 = 1`). Charge 1.
-   Back-step 1 → 0.
-3. Body `a{1,2}` at 0 reads `b` and fails: `rx_fail` pops F1, restoring position 1 and `D_0 = 1`.
-4. `L_adv_0`: `D_0 == lo_0` (1), so goto `L_b_1` with `scan_position = 1`, the cursor.
+**Cell 1: `(?<=a{1,2}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1, `POS = 1`, trail 2. Branch 0 is
+`range` [1,2]; branch 1 (`b`) is `one-length` k=1, last.
+1. `L_b_0`: guard `1 < 1` is false. Charge 1. Back-step 1 → 0, not the sentinel. `LO_0 = 0`
+   (trail 3). `K_0 = min(2 − 1, 0) = 0`.
+2. `L_far_0`: charge 0 (nothing). Back-step 0 → 0, not the sentinel: goto `L_try_0`.
+3. `L_try_0`: push F1 = (`L_adv_0`, saves 0; trail mark 3). Body `a{1,2}` at 0 reads `b` and fails:
+   `rx_fail` pops F1, restoring position 0 and trail 3.
+4. `L_adv_0`: `0 == LO_0`, so goto `L_n_0`: `scan_position = POS = 1`, goto `L_b_1`.
 5. `L_b_1` (one-length): guard `1 < 1` is false. Last branch, so no push. Charge 1. Back-step 1 → 0.
 6. Body `b` matches → 1. End-check `1 == POS` → `L_ok`. `x` at 1 matches → **[1-2]**, equal to
    libpcre2.
 
-Under rev 0's sketch, F1 saved position 0, and branch 1's guard `0 < 1` failed: nomatch.
+Under rev 0's sketch, branch 1 started at 0 and its guard `0 < 1` failed: nomatch. Under the
+cursor shape the same failure is W11(a): drop `L_n_0`'s restore, and branch 1 starts at 0.
 
 **Cell 2: `(?<=a{2,3}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1. Branch 0 is `range` [2,3].
-1. `L_b_0`: guard `1 < 2` is true, so goto `L_b_1` with `scan_position = 1`. Nothing was pushed and
-   nothing moved.
+1. `L_b_0`: guard `1 < 2` is true, so goto `L_b_1` with `scan_position = 1`. Nothing was pushed,
+   written or moved.
 2. Branch 1 runs as in cell 1 → **[1-2]**.
 
-Under rev 0, the back-step ran before the clamp test, and branch 1 started at 0: nomatch.
-
-**Cell 3: `(?<=a{1,2}|bc)x` on `bcx`, libpcre2 [2-3].** Cursor 2. Branch 0 is `range` [1,2];
-branch 1 (`bc`) is `one-length` k=2, last.
-1. `L_b_0`: guard false. `D_0 = min(2,2) = 2`.
-2. Push F1 = (`L_adv_0`, saves 2, `D_0 = 2`). Charge 2. Back-step 2 → 0. Body `a` reads `b` and
-   fails. Pop F1: position 2, `D_0 = 2`.
-3. `L_adv_0`: 2 ≠ 1, so `D_0 = 1` and goto `L_try_0`.
-4. Push F2 = (`L_adv_0`, saves 2, `D_0 = 1`). Charge 1. Back-step 1 → 1. Body `a` reads `c` and
-   fails. Pop F2: position 2, `D_0 = 1`.
-5. `L_adv_0`: `D_0 == lo_0`, so goto `L_b_1` at 2.
-6. Guard `2 < 2` is false. No push. Charge 2. Back-step 2 → 0. Body `bc` → 2. End-check `2 == POS`.
+**Cell 3: `(?<=a{1,2}|bc)x` on `bcx`, libpcre2 [2-3].** Cursor 2, trail 2. Branch 0 is `range`
+[1,2]; branch 1 (`bc`) is `one-length` k=2, last.
+1. `L_b_0`: guard false. Charge 1. Back-step 1 → 1. `LO_0 = 1` (trail 3). `K_0 = min(1, 1) = 1`.
+2. `L_far_0`: charge 1. Back-step 1 → 0: goto `L_try_0`.
+3. Push F1 = (`L_adv_0`, saves 0; mark 3). Body `a` reads `b` and fails. Pop F1: position 0.
+4. `L_adv_0`: `0 ≠ 1`. Step one character → 1. Charge 1. Goto `L_try_0`, with no checkpoint: the
+   body `a` writes no trail.
+5. Push F2 = (`L_adv_0`, saves 1; mark 3). Body `a` reads `c` and fails. Pop F2: position 1.
+6. `L_adv_0`: `1 == LO_0`, so `L_n_0`: `scan_position = 2`, goto `L_b_1`.
+7. Guard `2 < 2` is false. No push. Charge 2. Back-step 2 → 0. Body `bc` → 2. End-check `2 == POS`.
    `x` matches → **[2-3]**.
 
-Under rev 0, F2 saved position 1, and branch 1's guard `1 < 2` sent it to `rx_fail`: nomatch.
+The trail never exceeds 3 plus the body's own entries. Rev 2's loop reached 4 here (`D_0` = 2, 1).
 
 **Cell 4 (non-atomic retry from OUTSIDE, with a gap): `(?<*(a|aaa))c\1` on `aaaca`, libpcre2
-[3-5,2-3].** Cursor 3, `POS = 3`. One branch, `range` [1,3], last.
-1. `D = min(3,3) = 3`. Push F1 = (`L_adv`, saves 3, `D = 3`). Charge 3. Back-step 3 → 0.
-2. The body opens g1. Alternative `a` (body frame Fb1 saved at 0 for `aaa`) → 1. End-check
-   `1 ≠ 3`: pop Fb1.
+[3-5,2-3].** Cursor 3, `POS = 3`, trail 1. One branch, `range` [1,3], last.
+1. Guard false. Charge 1. Back-step 1 → 2. `LO = 2` (trail 2). `K = min(2, 2) = 2`. Charge 2.
+   Back-step 2 → 0.
+2. Push F1 = (`L_adv`, saves 0; mark 2). The body opens g1. Alternative `a` (body frame Fb1 saved
+   at 0 for `aaa`) → 1. End-check `1 ≠ 3`: pop Fb1.
 3. `aaa` → 3, g1=(0,3). End-check passes. `L_ok` (non-atomic: no cut).
-4. The follow: `c` at 3 → 4. `\1` (`aaa`) at 4 runs off the end and fails. Pop F1: position 3,
-   `D = 3`, g1 rewound by the trail.
-5. `L_adv`: 3 ≠ 1, so `D = 2`. Push F2 = (`L_adv`, saves 3, `D = 2`). Charge 2. Back-step 2 → 1.
-6. `a` (Fb2 saved at 1) → 2. End-check `2 ≠ 3`: pop Fb2. `aaa` from 1 reads `c` at 3 and fails.
-   Pop F2: position 3, `D = 2`. This is the gap at length 2.
-7. `L_adv`: `D = 1`. Push F3 = (`L_adv`, saves 3, `D = 1`). Charge 1. Back-step 1 → 2.
+4. The follow: `c` at 3 → 4. `\1` (`aaa`) at 4 runs off the end and fails. Pop F1: position 0,
+   trail 2 (g1 rewound; `LO` stays).
+5. `L_adv`: `0 ≠ 2`. Step → 1. Charge 1. Checkpoint, because the body wrote g1 (§5.1b). Goto
+   `L_try`.
+6. Push F2 = (`L_adv`, saves 1). `a` (Fb2 saved at 1) → 2. End-check `2 ≠ 3`: pop Fb2. `aaa` from 1
+   reads `c` at 3 and fails. Pop F2: position 1. This is the gap at length 2.
+7. `L_adv`: `1 ≠ 2`. Step → 2. Charge 1. Checkpoint. Push F3 = (`L_adv`, saves 2).
 8. `a` → 3, g1=(2,3). End-check passes. `L_ok`. `c` → 4. `\1` = `a` at 4 → 5.
-9. **[3-5, g1 2-3]**, equal to libpcre2.
+9. **[3-5, g1 2-3]**, equal to libpcre2. Peak lookbehind-owned trail: 2 (`POS`, `LO`) under g1's
+   pair.
+
+**Cell 5 (W12): `(?<=a{1,9})x` on `bbbbbbbbbax`, libpcre2 [10-11].** The matching attempt is at
+10, trail 2.
+1. Guard `10 < 1` is false. Charge 1. Back-step 1 → 9. `LO = 9` (trail 3). `K = min(8, 9) = 8`.
+   Charge 8. Back-step 8 → 1.
+2. For `p` = 1 .. 8: push (`L_adv`, saves p; mark 3). Body `a{1,9}` at `p` reads `b` and fails. Its
+   rung's low-water write sits at trail 4 and is rewound by the pop. Pop → p. `p ≠ 9`: step → p+1.
+   Charge 1. Checkpoint (the rung's `SET` is in the body). Goto `L_try`.
+3. `p` = 9: push. The body reads `a` → 10. End-check passes. `L_ok` cuts. `x` → **[10-11]**.
+
+The peak is 4 entries (mark, `POS`, `LO`, the body rung's low-water). The cost term charges
+`2 + 1 + body (1) = 4`, and the capacity is 5 (§5.5). A spelling that writes one trailed value per
+candidate (rev 2's `D_i`, or `LO` written at `L_try` instead of before it), sized by the new term,
+reaches 2 + 9 entries and gives up with `PCREC_ERR_FRAMES`. That is W12(a).
+
+**Cell 6 (W6, the UTF-8 far retry): `(?<=(é{0,2}))x` on `éx` (UTF-8), libpcre2 [2-3,0-2].** Bytes
+`C3 A9 78`. Cursor 2. Range [0,2], one branch, last.
+1. No guard and no charge at `lo = 0`. Back-step 0 → 2. `LO = 2`. `K = min(2, 2) = 2`: two bytes,
+   but one character.
+2. `L_far`: charge 2. Back-step 2: the first character → 0, then `pos == 0` → the sentinel. Restore
+   `scan_position = LO = 2`. `K = 1`. Goto `L_far`. Charge 1. Back-step 1 → 0: goto `L_try`.
+3. Push (`L_adv`, saves 0). The body opens g1, `é{0,2}` takes `é` → 2 (a second `é` fails at `x`),
+   and closes g1 = (0,2). End-check `2 == POS`. `x` → **[2-3, g1 0-2]**.
+
+Sabotaged with the sentinel ending the branch: nomatch. Sabotaged with the sentinel taken as "start
+at `LO`": the one candidate is 2, g1 = (2,2), so [2-3,2-2]. Rev 2's W6 cell
+(`(?<=(é{1,2}))x` on `éx`) no longer reaches the retry: there `LO = 0` and `K = min(1, 0) = 0`.
+
+**Cell 7 (W13, the step's bound): `é(?<=(a?))` on `C3 A9 A9` (`é` and a stray continuation byte),
+`PCRE2_MATCH_INVALID_UTF`, libpcre2 [0-2,2-2].** The attempt at 0 takes `é` → 2. Cursor 2, `POS = 2`.
+Range [0,1].
+1. `LO = 2`. `K = min(1, 2) = 1`. Charge 1. Back-step 1: back over `A9` to the lead `C3` at 0, which
+   declares 2 bytes = the run walked, so → 0.
+2. Push (`L_adv`, saves 0). Body `(a?)` at 0: `C3` is not `a`, so zero iterations, g1 = (0,0),
+   ending at 0. End-check `0 ≠ 2`: pop → 0.
+3. `L_adv`: `0 ≠ 2`. The step: `P = 1`; `s[1]` is a continuation byte and `1 < POS`, so `P = 2`;
+   `2 < POS` is false, so stop at 2. Charge 1.
+4. Push (`L_adv`, saves 2). Body `(a?)` at 2: `A9` is not `a`, so g1 = (2,2), ending at 2 = `POS`.
+   **[0-2, g1 2-2]**.
+
+With the step bounded by the subject length (3) instead, step 3 goes on over `s[2] = A9` to 3. 3 is
+never `LO`, every later step adds one, and the loop runs until the work or step budget gives up.
+
+**Cell 8 (W15, the back-step's own clamp): `(?<=(a{0,2}))b` on `FF 61 62`,
+`PCRE2_MATCH_INVALID_UTF`, libpcre2 [2-3,1-2].** Cursor 2. `LO = 2`. `K = min(2, 2) = 2`.
+Back-step 2: `a` → 1, then the lead `FF` → the sentinel. Retry `K = 1` → 1. Push (`L_adv`, saves
+1). `a{0,2}` takes `a` → 2, g1 = (1,2). End-check passes. `b` → **[2-3, g1 1-2]**. Sabotaged with the
+sentinel taken as "start at `LO`": g1 = (2,2). Taken as "start at the subject start" (the naive
+"clamped at the subject start" reading): candidate 0 fails (no body consumes `FF`), the step lands
+on 1, and the answer is the same. That spelling is answer-neutral, but it can cost O(subject) per
+evaluation after an ill-formed byte. So it is excluded by the work, not the answer (§5.1a).
 
 ### 5.2 The width rule and the two limits `[r3 F4, F2]`
 
