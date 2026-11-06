@@ -3296,3 +3296,8 @@ Main ruled on the four kit findings (D186 add. 2):
     - crit-memfn-span-cards-r11 (opus coordinator, 2 critics: readiness + measurement) on S2c-S2e.
   - Sabotage ids: the kit block is S2900-S2949 (max in use anywhere was S1980). S2a gets S2900-2919, S2b S2920-2929, S2c-S2e S2930-2949.
   - Heavy runs (S2a's make test, S2b's J0) are prepared by the lanes, not queued; the slot is to be agreed with main.
+- 11-06: main ACKed rev 1.1's §10 items 8-11 (K138's fix form rides S2a). Main's standing rule: non-timing heavy runs are queued by the kit without asking; only timing needs a window (memory pcrec-kit-nontiming-runs-no-ask).
+  - S2b DELIVERED on lane/memfn-s2b (base 3094c45c0, code 02619feb1). census0.py replaces smp20.py. Control GREEN: smp20.out byte for byte plus the P-blind line, "@1 {/} at 3381" of 3536, matching span_pick. Sabotage S2920 red then reverted. The provisional census0.out shows 207 row-1-class units, 166 movers.
+  - The lane skipped writing its deliver file, so lanecheck could not pass. The work is accepted on review.
+  - Open for S2c: the verify `cls` vocabulary is the lane's reading (run <=8 or long; set1/2/N); S2c fixes the real boundaries.
+  - J0 queued as 440-kit-s2b-j0 (5,492 compiles, cap 1800); watcher armed. On green, commit census0.out by path.
