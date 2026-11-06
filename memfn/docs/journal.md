@@ -3221,3 +3221,35 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-05 (lane sp1efix, sonnet): the review fixes for span_pick unit 1e (review 2026-11-05-r2-memfn-sp1e), on lane/memfn-sp1efix from lane/memfn-sp1e 9de5b5638 (report docs/dev/lanes/sp1efix_report.md).
   - F1: `fd_decide` takes the asker's gate_in (the window family's facts `wf` and `def`), so D-hors's `core CORED` clause can refuse; G2 plant S1549 (the opposite contract) goes RED. F3: the row map is held to BASE's own trace both ways (reach_equal) and to a literal pin (rows_check), one parser (tests/memfn/row_map.py). F4: FDROUTE prints `ren=` (the renderer row); tests/memfn/renderer_rows.tsv declares the pairs; rows_check section R. F8: `KIT_COST_` enum in kit.h read by finder.c and window.c. F11: run_g2_win.sh plants S1405 and S1410 re-anchored, `--plants` complete.
   - Zero movers: MF_SITE_ABI 23, MF_CLASS_V 8 unchanged; ident spot 558/558 SAME. Gates 430-439 prepared in scratch/memfn/sp1efix/jobs (not queued; scratch-queue accepted), not-before 2026-11-06T01:05.
+- 11-05 15:20: 1d LANDED and pushed: main 20fb73159 (sp1d merge 39e7b20c5, k1102 merge 2d7f4bd8c). R21 restated (9f985c9bf); the stage-1 kit-row total is 4.
+  - Plan rows filed by main: [SP1D-M-INPUTS], [SP1D-ARGMIN], [SP1D-SETLEADS], [SP1D-KITSPLIT-SEAMS], [SP1D-AMODEL-CANDS].
+  - Kit branch merged with 20fb73159.
+  - 1e started: lane sp1e (opus) on lane/memfn-sp1e from 20fb73159. Phase-2 tables: T-FRAME, T-FIND as one walk with the Horspool row first, the renderer row, the wfD->fd row map; R20 -1.
+  - It is the last stage-1 unit; light checks only, and none heavy in Frank's 20:00-01:00 hold.
+- 11-05 15:55: sp1e delivered lane/memfn-sp1e @ accc55eeb (+ deliver block 9de5b5638).
+  - T-FIND is one walk: fd_route merged into fd_find, the asker fact SF_ASKER_PAIR. Table D is gone (D-hors is fd's first FIND row). The renderer rows are declared (fd_renderers). Row map tests/memfn/row_map.tsv, with reach_equal --map.
+  - Spot check 1021/1021 SAME. MF_SITE_ABI 23. MF_CLASS_V 7 -> 8: D-hors joins ahead of the PRES rows, as the design allows.
+  - R20 3 -> 2 by the written recipe; the stage-1 total goes 4 -> 3.
+  - G2 70.36M/0 and test-codegen rc 0.
+  - Gates 420-429 prepared, not queued.
+  - Critic round crit-memfn-sp1e launched (light probes; Frank's hold 20:00-01:00).
+- 11-05 16:30: review 2026-11-05 r2 on 1e is ruled (f44f03d7b). No answer, speed or size findings; zero movers; MF_CLASS_V 7->8 warranted, all readers found.
+  - FIX-NOW: F1 (D-hors's `core` clause could not refuse: fd_decide's gate_in lacks wf), F2, F3 (the row map was checked for existence only), F4 (the renderer row is in no trace record), F5-F8, F11 (G2 plants S1405/S1410 rotted at 1d), F12-F14.
+  - PLAN for main: one renderer table keyed by (frame, pick, layer) with the asker fact derived from it (F5+F6+F9, at unit 3.0); the D-hors floor measurement (F10); the anchor check covering run_g2_win.sh (F11).
+  - Fix lane sp1efix (sonnet) launched on lane/memfn-sp1efix. Its gates 430-439 carry not-before 11-06 01:05 (Frank's hold).
+- 11-05 17:25: sp1efix delivered 9cf199ed3, and lane/memfn-sp1e is fast-forwarded to it.
+  - F1: fd_decide walks the asker's gate_in; G2 plant S1549 (CM(NOCORE)) is RED. S1549 is confirmed free; it is the kit G2 range's next id.
+  - F3/F4: one map parser; the map is held to BASE's trace both ways; FDROUTE prints ren=; rows_check section R; plant B is LOUD.
+  - F11: S1405/S1410 re-anchored; run_g2_win --plants 22 RED.
+  - The rest done. tests/memfn/CLAUDE.md is at its limit, so its history moved to NOTES.md.
+  - Light validation all green, including G2 70.36M/0 and test-codegen; 558 identity pairs SAME.
+  - Open: S1079's hand figure is 6/3155 vs the review's 3/3160, cause not found. Job 437's mech run is the figure of record.
+  - Three renderer pairs have no witness (UNREACHED in rows_check).
+  - Gates 430-439 QUEUED with not-before 11-06 01:05 (Frank's hold); python watcher armed.
+- 11-06 ~00:20: a fresh kit session, pcrec-memfn [174c0c], took over; the old one is offline. Gates 430-434 GREEN; 435-439 run under the lifted hold, with watcher scratch/memfn/kitmgr/watch_sp1e2.sh.
+  - Main relayed Frank's D187 addendum 1 (0b7ee8898), for reading only. A covering (lossy) cube is the kit's private method: rebuilt from the set, never on the seam.
+  - It may be the last word only where D172's verify-exactly flag is off (reply "not exact"). Elsewhere it is a first pass before the kit's own exact check, which can earn pcrec a skip. Using it is the kit's priced choice.
+  - Pricing gap noted: pcrec's finish cost becomes a stated fact when pricing opens. Not now.
+- 11-06 01:35: 1e gates 430-439 all GREEN at 9cf199ed3. 436's make test rc is 0 with no `*** [test-` line. Mech: 50 rows, with only the declared S917/S919 unreached.
+  - S1079's figure of record is 6/3155 DETECTED (job 437), which matches sp1efix's hand figure.
+  - done: posted 5f1f968f5; main told. Stage 1 is complete once main merges. Stages 2-3 wait for Frank's GO via main.

@@ -3162,3 +3162,23 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F9 U-1 (kit_member into kit_pick) and U-2 (one kit_argmin), trigger row 1 or a sixth argmin;
     - F9 P4's set-leads pick, trigger the next T-PRES change;
     - F10 + r2 F13 (position primitives' home) and F12 (rates snapshot by tag+version, rules digest, `alt=`), both at the kit split.
+
+- done: 2026-11-06 — **span_pick stage 1, unit 1e (phase-2 tables), the LAST stage-1 unit: READY TO MERGE. Branch `lane/memfn-sp1e` @ 9cf199ed3** (base main 20fb73159; lane sp1e accc55eeb + 9de5b5638 + review-fix lane sp1efix 9cf199ed3).
+  - Reports: `docs/dev/lanes/sp1e_report.md`, `sp1efix_report.md`. Code round: `docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md` (on lane/memfn-k1102). No answer, speed or size findings. Every FIX-NOW is fixed; the F1 plant (S1549) and plant B went RED or LOUD.
+  - Validation, all GREEN at 9cf199ed3 (Frank lifted the 11-05 hold via main):
+    - 430 strict; 431 kit sections; 432 reach equality; 433/434/435 byte identity (zero movers);
+    - 436 make test (1635 s), rc 0, no `*** [test-` error line;
+    - 437/438/439 mech (50 rows, 17/17/16): unexpected 0, undetected 0, anomalies 0. The only UNREACHED rows are the declared S917/S919.
+    - S1079's figure of record (job 437) is `memfnfinder:6fail/3155pass` DETECTED, matching sp1efix's hand figure. The review's 3/3160 is superseded.
+  - Changes:
+    - T-FIND is one walk: fd_route merged into fd_find, the asker fact SF_ASKER_PAIR. Table D is gone (D-hors is fd's first FIND row, and its `core` clause now refuses through the asker's gate_in).
+    - The renderer rows are declared (fd_renderers; `tests/memfn/renderer_rows.tsv`, 14 pairs). `MFTRACE FDROUTE` prints `ren=`, and rows_check section R holds trace and table to each other.
+    - Row map `tests/memfn/row_map.tsv`, held to BASE's trace both ways (`reach_equal --map`).
+  - Stamps: MF_SITE_ABI stays 23. MF_CLASS_V 7 -> 8 (D-hors joins ahead of the PRES rows; every reader found by grep). No pcrec abi, docs/spec or emitted-byte change.
+  - Ratchet: R20 3 -> 2 by its written recipe; the stage-1 kit-row total goes 4 -> 3.
+  - Known gap: 3 of the 14 renderer pairs have no witness pattern (D1c/B-memchr, D1w/B-walk, D1w/pf_walk_bounded). rows_check lists them as UNREACHED.
+  - PLAN rows from the review, for main to file:
+    - F5+F6+F9: one renderer table keyed by (frame, pick, layer), with the asker fact derived from it, at unit 3.0;
+    - F10: the D-hors floor measurement;
+    - F11: the anchor check covering run_g2_win.sh.
+  - Stage 1 is complete with this merge. Stages 2-3 wait for Frank's GO.

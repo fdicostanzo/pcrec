@@ -179,3 +179,8 @@ Round 2026-11-05 r2, alt-normal-form design (`docs/dev/reviews/2026-11-05-r2-alt
 3. **"Not an abi event" is checked against match_api.md §6¶19 and the abi log's precedents** (two lenses reversed this round's claim independently).
 
 - **2026-11-05 r3 vlookbehind.** (1) A simulate lens that implements a rule's INTENT validates its semantics, not its sketch: hand-execute shipped pseudo-code literally (now in the soundness row). (2) A byte-identity claim by "constant fold" is checked statement by statement against the emitted prologue: order, saved operands, charge amounts, slot allocation ("evaluates the test at compile time" hid four other differences).
+Round 2026-11-05 r2, memfn-sp1e code (`docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md`), coordinator round + verifier; lessons ruled 2026-11-05.
+1. **When a row moves between tables, compare the gate INPUT each walk hands `gate_check`, not only the row's predicate and contract.** Plant the contract's opposite and require a refusal. F1: a clause became unable to refuse in a byte-identical move.
+2. **For a declared map or list read by a check, plant a DELETED line and an INVENTED line; both must go red** (F3: both were green).
+3. **For a key the subject declares, every member must be printed in the trace record**: a member missing from the record is where a bypass plant hides (F4).
+4. **For a zero-mover unit, spend part of the emitted lens reading the equivalence argument rather than probing**: F1 came from reading.
