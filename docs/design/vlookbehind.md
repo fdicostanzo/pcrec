@@ -19,6 +19,9 @@ opened (D181). One question for a pcre2-reader is in §12.
 
 ## ERRATUM r3-1106 (review 2026-11-06 r3, ruled) — read first
 
+`[vlbbuild R2 erratum]` (manager ruling R2, 2026-11-06): §5.5 named the WORK budget as the one
+gate 4's worst case gives up on; it is the STEP budget (§5.5's bullet carries the measurement).
+
 A text pass applied by the stage-1 BUILD lane (vlbbuild) as its first commit, per the r3 RULING
 (`docs/dev/reviews/2026-11-06-r3-vlookbehind-ready.md`: every disposition accepted). Changes are
 marked inline as `[r3-1106 ID]`. No mechanism changes. Each item, and where it now lives:
@@ -1322,7 +1325,11 @@ evaluation:
   O(n·hi²) per scan, §5.2).
 - At the default work budget of 1,000,000,000 (`limits.md` §3.1¶2), the loop's own charge allows
   about 1,960,000 worst-case `{1,255}` evaluations per match call on the common path. The bodies'
-  charge, not the loop's, is what gate 4's cell gives up on.
+  charge, not the loop's, is what gate 4's cell gives up on. `[vlbbuild R2 erratum]` That charge
+  is the STEP budget, not the work budget: a body failing on a candidate is a backtrack. Gate 4
+  MEASURED `(?<=a{1,254}b)` on all-`a` subjects answering through 7,889 bytes and giving up with
+  `PCREC_ERR_STEPS` from 7,890 (30,843 at `{1,127}`, 120,236 at `{1,64}`, 473,507 at `{1,32}`:
+  about `K²` steps per position), never `PCREC_ERR_FRAMES`; libpcre2 answers no match.
 - Gate 4 states the subject size at which a worst-case leading `{1,255}` gives up.
 - **Filed as a measured-trigger candidate (D77), not proposed:** a seam entry `back_step_upto`
   ("the farthest position at most `k` characters back"). It would replace the far retry with one
