@@ -5,7 +5,7 @@ make, no timing, no box job. The design of record for span_pick stage 2** (`span
 "Stage 2", §Cost cards, §The pick; kit request R-35, `memfn/docs/requests.md:805`; Frank's GO 2026-11-06,
 plan 80341284e). Rev 1 applies review `docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md` as ruled by the
 kit manager (its "## Rulings" section), main's DEFAULTS ruling (B), D188 (Frank, 2026-11-06, homed here) and
-the PENDING owner ruling on the SIMD model. **Read §R1 (every finding id to its answer) and §0 first.** Changed
+Frank's SIMD end-state ruling D188 add. 1 (per-target variants; applied by the manager after delivery, `[rev1 D188a1]`). **Read §R1 (every finding id to its answer) and §0 first.** Changed
 text is marked `[rev1 <id>]`; unmarked text is rev 0's, still valid. Cites are to the kit branch at the
 review's build tree (main fb22c62a6 + the kit branch) unless a commit is named; spec files by section number.
 
@@ -62,7 +62,7 @@ Every id of the review is answered here, in a section of this note or as PLAN/NO
 | COST-7 | NOTED | §9 (separability) |
 
 Main's and the kit manager's rulings beyond the table, each with its home: DEFAULTS (B) §8.3; D188 §2.7; the
-pending SIMD model §2.5, §2.7, §9 S2g; derived noise dropped §4.3, §12; `cells` and the §7.1 seam §3.1, §3.8;
+SIMD model ruled (D188 add. 1) §2.5, §2.7, §9 S2g; derived noise dropped §4.3, §12; `cells` and the §7.1 seam §3.1, §3.8;
 the executable estimator §3.4, §3.5; MF_SITE_ABI at landing §4.1, §9; sabotage ids and why-red §9; K138 §4.1.
 
 ## 0. The decisions, one line each
@@ -77,7 +77,7 @@ the executable estimator §3.4, §3.5; MF_SITE_ABI at landing §4.1, §9; sabota
 | 6 | the step-0 gate | CONFIRMED: D176 Q3's "step-0 census" = SRS §7 step 0. Its trigger is met in advance; it runs FIRST anyway, compile-only, because its population SCOPES the card grid (D77); `[rev1 SLOT-8]` census0 REPLACES smp20 | §7 |
 | 7 | what stage 2 moves | NO emitted byte, NO pcrec abi, NO stamp value. Moves: MF_SITE_ABI (next free); set format 2 + digest domain 2; a new built-in set zen4-grid3@1; `kit-grid@3` card rows; form-hash entries; `[rev1 PREMISE-4]` DEFAULTS `idk` -> zen4-grid3@1 at S2e (main RULED (B)), zero movers | §8 |
 | 8 | build plan | SIX scalar units S2a-S2f; one timing window (S2d, ~35 min); `[rev1 D188]` J6 (SIMD, vrun only) is unit S2g, SEPARABLE and HELD until the SIMD model is ruled; `[rev1 SLOT-11]` sabotage ids the kit's, each row with why it can go red | §9 |
-| 9 | questions | none for Frank from this note (the SIMD model is his, pending); five items for main | §10 |
+| 9 | questions | none for Frank from this note (the SIMD model is ruled, D188 add. 1); five items for main | §10 |
 
 ## 1. Goals
 
@@ -229,8 +229,8 @@ smp20" speaks of). span_pick §The pick 6 offers two readings, and this note sta
   cards only; under `-fmemfn-simd` its pick is the scalar pick, and the SIMD layer adds its rungs to
   whatever span was picked (§The pick 6's "else SIMD forms are rungs", D147). The C9 row, with SIMD cards
   and SIMD-on evidence, is the only way a SIMD layer picks its own span.
-- (other) vrun keys are row-1 keys (measured by J2/J3, not J6). Refused here: it needs the SIMD cards the
-  pending model governs, and it would make the scalar units depend on the held job.
+- (other) vrun keys are row-1 keys (measured by J2/J3, not J6). Refused here: it needs the SIMD cards whose
+  build waits for [XARCH-DEV] (D188 add. 1), and it would make the scalar units depend on the held job.
 
 **What the choice costs.** On a site whose scalar incumbent carries a SIMD rung (smp20's `{X,x}` ->
 `vrun@w32+w16`), a scalar-priced departure to a span with no rung (memchr '/') can be SLOWER on the SIMD
@@ -270,14 +270,18 @@ A set never grants availability; it only prices. Availability on a target stays 
 (D147, D144 add. 4); letting measured cards enable a level is the C9 row plus the separately ruled
 SIMD-default event.
 
-**Model-neutral wording (PENDING owner ruling).** Frank is reconsidering the SIMD model, possibly toward one
-complete planned-and-priced code path per target ("variants", with a once-per-process CPU dispatch or one
-variant per build) instead of `#if` fall-through arms. This note therefore never says "the macro selected
-level L"; fact (b) is always "the built artifact contains code for level L", whatever mechanism put the code
-there. One observation for main (§10.5): `MEMFN_FORMS` names the levels the emitted TEXT carries
-(`match_api.md` §6.3.10¶4: "`ID@LEVEL+LEVEL`"), so under today's `#if` arms a stamp can name a level the
-fixture's own compile excluded. How fact (b) is read back from a BUILT fixture (the stamp alone, or the
-stamp plus a build-side record) is therefore J6's design item, settled with the model.
+**The SIMD model is RULED (D188 add. 1, Frank 2026-11-06; manager's edit after delivery, `[rev1 D188a1]`).** There are
+no `#if` arms in the end state. A code path is a per-target VARIANT, planned and priced for its DECLARED target.
+One artifact may hold several variants (generic plus 1-2 SIMD) as target-attributed functions behind a
+once-per-process CPU dispatch, each variant's entry exposed. The target set is an explicit caller-given LIST
+with a declared, stamped default, never assumed. D188's three facts are therefore read PER DECLARED TARGET:
+(a) the CPU has the target's features; (b) the built fixture contains that target's variant; (c) the
+variant's cost, only when (a) and (b) hold. A set prices a variant; it never grants a target. The build of
+variants waits for [XARCH-DEV]'s go, and the details are settled there. This note never builds on `#if`
+fall-through. One observation for main (§10.5) stands for TODAY's tree only: `MEMFN_FORMS` names the levels
+the emitted TEXT carries (`match_api.md` §6.3.10¶4: "`ID@LEVEL+LEVEL`"), so under today's `#if` arms a stamp
+can name a level the fixture's own compile excluded. Under variants, fact (b) is read off the artifact's
+declared-target list, and its spelling is J6's design item at [XARCH-DEV].
 
 **What zen4-grid3@1 records under D188.** It is a SCALAR-ONLY set: every cell is `MF_P_PORTABLE_ONLY` text
 (§3.2). (a): the measuring box's cpuid feature list in the header's `isa` key (provenance, existing);
@@ -285,7 +289,7 @@ stamp plus a build-side record) is therefore J6's design item, settled with the 
 text; (c): none. The in-format spelling of (b) and (c) per level (rows, a section, header keys) is a format
 event that J6's design makes, when there is a level to record present.
 
-**J6 = unit S2g, SEPARABLE and HELD.** Content once released: vrun only (`vrun-w16`, `vrun-w32`; the kit
+**J6 = unit S2g, SEPARABLE and HELD until [XARCH-DEV]'s go (D188 add. 1).** Content once released: vrun only (`vrun-w16`, `vrun-w32`; the kit
 manager's ruling drops vany, §2.5). Its cells cannot come from the scalar builders: vrun renders only through
 window row B-fn on ONE RUN term with REACH >= VW + T (`vrun.c:19-25`), and its G2 family is
 `g2_simd_gen.c` (a policy word without `MF_P_PORTABLE_ONLY`), so its `subject` is a RUN-term regime of its
@@ -882,7 +886,7 @@ depends on it.
 
 ## 10. Questions and amendments
 
-**For Frank: none from this note.** The SIMD model is his and pending (§2.7); the window request goes through
+**For Frank: none from this note.** The SIMD model is ruled (D188 add. 1, §2.7); its build waits for [XARCH-DEV]; the window request goes through
 main (35 minutes, §3.7).
 
 **For main** (each with the kit's recommendation):
