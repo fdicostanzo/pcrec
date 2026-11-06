@@ -92,7 +92,7 @@ round; L = a proof-sized lane with several rounds.
 | A-DFATOP | the DFA artifact's top level (cover, reverse pass, scan edge, forward match, report) | FIND / reverse AUTO / AUTO / ACCEPT records, stamps derived | P-b | P-c | R08 share; engine-verdict readers in `emit_dfa.c` | L |
 | A-POSDOM | the position-domain family: offset-0 rule, startpos guard, UTF check, three next-start loops | one seam rule (P6) rendered once (P3); the FIND frame's floor | one declared rule table at today's call sites, no bytes | A-SEAM | R08, R09 | M |
 | A-SKIP | four SKIP sites and two shape analyses | one SKIP record kind, one renderer body, one shape analysis | P-d's SKIP part (P-a folded) | P-b; [VMREC] step (b); [CAND-SPAN]'s fact | R02 | M |
-| A-REV | four reverse walks (RECOVER's pass, `rev-end`'s forms, the landmark walk, revdet's step and loop); W1-W3 share `emit_scan_loop` over a `DfaForm` (main fd1a32021) | one direction-neutral automaton-run record (`DfaForm` made into it), one walk behaviour (`farthest` above a bound), `CT_*` hands, one machine table, a part + in-body call record; plan in `arev.md` rev 1 | S1: the record for every DFA walk, no bytes (rides [REVBLOCK-VIEW] or any DFA-walk change) | p1build MERGED; the proof step S3 (lookbehind hand-off, Frank 2026-11-06) also needs vlookbehind stage 1, [VMREC] (c), S1M, [GIVEUP-DIFF]; S4 needs P-b | R28', R03', R10' (restated by what they count, `arev.md` §4.3) | S/M per step; S3 L; L over all |
+| A-REV | four reverse walks (RECOVER's pass, `rev-end`'s forms, the landmark walk, revdet's step and loop); W1-W3 share `emit_scan_loop` over a `DfaForm` (main fd1a32021) | one direction-neutral automaton-run record (`DfaForm` made into it), one walk behaviour (`farthest` above a bound), `CT_*` hands, one machine table, a part + in-body call as record members; plan in `arev.md` rev 2 | S1: the record for every DFA walk, no bytes (rides [REVBLOCK-VIEW] or any DFA-walk change) | p1build MERGED; the proof step S3 (lookbehind hand-off, Frank 2026-11-06) also needs vlookbehind stage 1 and its adopting revision, [ROWCONJ], S1M, [GIVEUP-DIFF] (widened); S4 needs P-b | R28', R03', R10' (restated by what they count, `arev.md` §4.3) | S/M per step; S3 L; L over all |
 | A-ISL | VM islands: the ENG-ISL trie, the cursor rung's enumerate side | `AUTO ENUM` (rows 8, 9) | HELD (P-g) | A-REC; a new example (r1-C12) | R04 | L |
 | A-KIND | the kit's consumer kinds named by engine | consumer kinds by behaviour, read from the consumer's kind row | the re-key, a kit abi event | the first proof that moves a kit byte | R06 | S |
 | A-ENTRY | composition: the compound controller, the find-all retry rule | P5 reads streams' cards (`offers`) | X15: iterate rule reads a declared fact, not the engine | none | R07, then R05 | S, then M |
@@ -222,9 +222,14 @@ round; L = a proof-sized lane with several rounds.
 
 ### A-REV: the reverse walks (X3, X12)
 
-Area plan revised 2026-11-06 (lane arevrev1, PROPOSED rev 1, after review 2026-11-05 r5 and its
-owner addendum; a re-check round follows); the design note is `arev.md` in this directory. Anchors
-at **main fd1a32021**.
+Area plan revised 2026-11-06 (lane arevrev2, PROPOSED rev 2, after the re-check
+`docs/dev/reviews/2026-11-06-r1-arev-recheck.md` and its four manager rulings; rev 1 was lane
+arevrev1's after review 2026-11-05 r5 and its owner addendum; a readiness re-read follows); the
+design note is `arev.md` in this directory. Anchors at **main 6e01c810b** (no code moved since
+fd1a32021). **Ownership (ruling 1, 2026-11-06):** `vlookbehind.md` owns lookbehind's admission
+rows, the `reverse-dfa` candidate source included; `arev.md` owns the automaton kind, its exits,
+the record and the host, and its §3.1 rows are PROPOSALS (P1-P11) adopted into vlookbehind when the
+proof step is designed for build.
 
 - **Today.** Four reverse walks. W1 RECOVER's pass (`unanch_scan`, four callers, also the relocate
   finisher of W2 and W3). W2 `rev-end` (`emit_rev_end`), whose form is chosen by the declared
@@ -243,28 +248,44 @@ at **main fd1a32021**.
 - **End state.** One direction-neutral automaton-run record per walk instance: a machine-table entry
   id, the rendering (`table` / `structural`) and the form's selected rows as plan outputs, `from`
   and `bound` as typed position references, a hand map in `CT_*` terms, a tag kind, an instance id,
-  placement and container; no C text. One walk behaviour (`farthest` above a bound): the five
-  automaton exits of §4 are hands and host loops. Machines from one per-artifact table (H-FLAGS's
-  machine half; the lowering a table fact, entries immutable). A VM body runs a table walk through
-  a file-scope PART called by an in-body `VK_AUTO` record with declared effects. The finisher is a
-  FINISH row (D156), the forward body run with its end at the cursor among them.
+  placement and container, host and instance (stems distinct per walk in one function); no C text
+  (two kit replies stay back-flowing fields until the kit seam returns them at plan time). One walk
+  behaviour (`farthest` above a bound): the five automaton exits of §4 are hands and host loops.
+  Machines from one per-artifact table (H-FLAGS's machine half; the lowering a table fact, the swap
+  re-expressed as ROLES every reader uses, entries immutable). A VM body runs a table walk through a
+  file-scope PART in the code-segment declaration slot, called by MEMBERS of existing record lists
+  (a result local, a `VP_AUTO` piece, a cursor-from-local seek, a typed work operand; no new
+  `VmKind`); its declared effect set is the one thing that waits for [VMREC] (c), shared with kit
+  windows and code segments. The finisher is a FINISH row (D156), the forward body run with its end
+  at the cursor among them.
 - **Steps** (`arev.md` §4.1, each with its cost). S1 the record for every DFA walk, `DfaDir` copies
   folded, S74 re-aimed: 0 bytes, R28' 5 → 0. S1M the machine table: 0 bytes, rides the proof step.
   S2 revdet's STEP onto the record: 0 bytes, no ratchet row falls (the loop is R03'). **S3, the
   PROOF step** (Frank, 2026-11-06): the lookbehind HAND-OFF, rows `reverse-dfa` existence
-  (`AUTO EXISTS` on `lang = same` and no group) and candidates (`AUTO ENUM`, each confirmed by the
-  forward body run), one D186 choice row against `range`; judged on F1-F3, gate "no answer moves,
-  nothing slower" over vlookbehind §5.4's four regimes; no speed trigger; moves only artifacts with
-  a varying lookbehind branch (abi event); ratchet rows do not rise. S4 the landmark walk's body as
+  (`AUTO EXISTS` on `lang = same` and no group; on `(?<*` it pushes the next branch's frame) and
+  candidates (`AUTO ENUM`, each confirmed by the forward body run), one D186 choice row against
+  `range`, keyed by a recorded per-branch row; its lever a `--harness=` arm (ruling 4); judged on
+  F1-F3, gate "no answer moves, nothing slower" over vlookbehind §5.4's four regimes, stage 1's
+  witnesses kept on `range` by the deny arm; no speed trigger; moves only artifacts with a varying
+  lookbehind branch (abi event); ratchet rows do not rise (R19: [ROWCONJ] lands first, ruling 3). S4 the landmark walk's body as
   records (P-d): R10' 1 → 0. S5 the moving-seed loops as instances of the kind's host loop: R03'
   3 → 0.
-- **Prerequisites.** S1: none (p1build merged). S1M: S1. S2: S1. S3: vlookbehind stage 1 (`range`)
-  shipped; [VMREC]'s analysis stage (c) (D153 remodel-first, manager ruling r5); S1, S1M;
-  [GIVEUP-DIFF]; a D27 spec-first author. S4: P-b, [VMREC] (b). S5: S1-S3.
-- **Answer-level admission (review r5 F1-F4).** `!pcrec_nfa_has_bot` on each branch's reverse NFA,
-  BEFORE the subset construction (`\G` makes a reverse machine a subset; `^`/`\A`/`(?m)^` make the
-  build an internal-error refusal); a branch's "no" sends the next branch from the cursor; the fact
-  read after the build is `lang = same | superset`, not "exact".
+- **Prerequisites.** S1: p1build (merged) and the manager's §5 restatement of R28'/R03'/R10'
+  (below). S1M: S1. S2: S1. S3: vlookbehind stage 1 (`range`) shipped; vlookbehind's ADOPTING
+  REVISION of `arev.md` §3.1's proposals (ruling 1); [ROWCONJ] built (ruling 3); S1, S1M;
+  [GIVEUP-DIFF] with its trigger and scope widened to this row (a PLAN item for its row); a D27
+  spec-first author with an extract. NOT [VMREC]: under ruling 2 the call is members, and only the
+  part's effect set waits for (c), which S3 does not wait for (rev 1's "[VMREC] (c)" is withdrawn).
+  S4: P-b, [VMREC] (b). S5: S1-S3.
+- **Answer-level admission (review r5 F1-F4, re-check r1-1106 A1-A3).** (c0) an NFA-state bound on
+  the branch AST within the cap, BEFORE any NFA is built (the NFA builder has no optional mode: its
+  cap would refuse `(?<=\p{L}{1,255})b` under UTF-8, which `range` compiles; D158); `!pcrec_nfa_has_bot`
+  on each branch's reverse NFA, BEFORE the subset construction (`\G` makes a reverse machine a
+  subset; `^`/`\A`/`(?m)^` make the build an internal-error refusal); a branch's "no" sends the next
+  branch from the cursor; on `(?<*` the existence row pushes the next branch's frame (without it a
+  later capturing branch is lost: 1,702 of 552,900 sweep cells; with it, 0); the fact read after the
+  build is `lang = same | superset`, not "exact"; at `from`, the position selects the
+  base/end-of-line/end view before any byte is read (`$`, `\Z`, `\z`).
 - **Measurement (the gate of S3, not a trigger).** vlookbehind §5.4's regimes (a)-(d) on the dev
   box, both VM entries, both kit layers; the bench's `negation-scope-lookbehind-var` row is BLOCKED
   on pcrec by the bench's `lookbehind-variable` declaration until stage 1 ships (an inbox entry owed
@@ -274,17 +295,21 @@ at **main fd1a32021**.
   [LANDWALK-WINDOW], rev-inner (D151), the proof step's own build. S2: a revdet widening; a ride-along
   [VMREC] (b)/(c) may carry. S4: [LANDWALK-VM], [LANDWALK-FWD], [LANDWALK-ALLACC] after P-b. S5:
   [LANDWALK-WINDOW]. Also [LANDWALK-FOLD], [LANDWALK-CARD], [LANDWALK-CENSUS],
-  [LANDWALK-EDGEPRICE], [OPT-REVEND], [KIND-FACT-GK], [VLOOKBEHIND] stage 3, [LB-EXIST].
+  [LANDWALK-EDGEPRICE], [OPT-REVEND], [KIND-FACT-GK], [LB-EXIST]. ([VLOOKBEHIND] stage 3 IS S3, not
+  a separate trigger.)
 - **Family notes** (`arev.md` §5). Loops over walk results: three moving-seed members plus the proof
   step's moving bound (its first host loop). Moving floors: three members (rev-inner the third),
   unified by `bound` as a typed reference. Renderings: table, structural, the constant walks of
   [LANDWALK-FOLD] and vlookbehind_pieces' backward span count. Tag kinds: two, noted. The lookbehind
   candidate-source family: `range`, `reverse-dfa`, [ENG-LOOK]'s forward existence machine
   ([LB-EXIST]), the backward span count.
-- **Open findings.** review r5's FIX-NOW items are applied in `arev.md` rev 1 (its §11), owed a
-  re-check; r3-B1 (the schema), r3-B2 (the driver-built machine: S1M is H-FLAGS's machine half),
+- **Open findings.** review r5's FIX-NOW items are applied in `arev.md` rev 1 (its §11); the
+  re-check r1-1106's in rev 2 (its §12), owed a readiness re-read. PLAN items for the manager:
+  [GIVEUP-DIFF]'s trigger/scope widened to the lookbehind row; this file's §5 restatement of
+  R28'/R03'/R10' with rev 2's recipe words (`arev.md` §4.3). r3-B1 (the schema), r3-B2 (the driver-built machine: S1M is H-FLAGS's machine half),
   r3-B14, r3-C4 ([LANDWALK-PRES]), r3-D3; fixed in text: r1-C6, r1-C14, r2-B4, r2-C1.
-- **Size.** S1, S1M, S4, S5: M; S2: S; S3: L; L over the area.
+- **Size.** S1, S4, S5: M; S1M: L (restated: 160 machine-reader sites through roles); S2: S; S3: L;
+  L over the area.
 
 ### A-ISL: VM islands and the cursor rung's enumerate side (X4, X2's ENUM)
 
