@@ -3262,3 +3262,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Heavy runs only through boxqueue and never in 20:00-01:00. Sabotage ids from the top, recorded in the first commit.
   - Asked main to file R-35 for stage 2 (noise channel per rev3 C4, cards, zen4-grid3), unit 3.0 and row 1. Also asked who does 3.0's pcrec-side facts, and for timing windows cleared with Frank.
   - Read-only scoping lane s2scope (sonnet) gathers stage 2's producer and seam facts.
+- 11-06: R-35 acked (c03c2d711). Main ruled: unit 3.0's pcrec facts go in the kit's same-commit package, facts only; timing windows are asked of main once the cards are ready.
+  - s2scope delivered: the report was inline because a hook refused the subagent's write, so I transcribed it to scratch/memfn/s2scope/report.md.
+  - Key facts: no stage-2 card exists. zen4-grid1 was produced by a lane slot outside boxqueue and kept no raw cells. mf_measure has no noise field. measures.md §3.2 has no quadrature derivation. The step-0 gate is undefined in span_pick.md; I read it as D176 Q3's step-0 census (stop-ranking study §7 step 0).
+  - The opus design lane s2design is on lane/memfn-s2design from c03c2d711. It delivers docs/design/memfn/span_cards.md rev 0; a D6 panel follows before any build.
