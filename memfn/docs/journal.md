@@ -3332,3 +3332,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fixed d9afba62b: KS_MEAS_MAX joins NONLIMIT_ALLOWLIST with its reason (format grammar, not a policy). limits_check passes alone.
   - 461 retried; 462-468 chain behind it; watcher re-armed. Strict 460 was green.
   - Lesson for S2c's validation: run test-registry when a unit adds a #define.
+- 11-06: S2c DELIVERED lane/memfn-s2c @ 0605e9e99 (report docs/dev/lanes/s2c_report.md; lanecheck DONE).
+  - Contents: rev 1.3 first (4cc755a15); formhash entry table; kit-grid@3 (4 cards); check C card guard 17; the new measures.md estimator and gates sections; the full slot harness.
+  - 0 movers (159 patterns x 4 streams). test-memfn-finder 3235/0. Dry runs J1-J5 + J2p green. Sabotage: slot-local 5/5; S2930-2932 red. Jobs 470-474 and S2d 480-489 prepared, not queued.
+  - RULED: (1) placement = min(3, 64/A) phases per arm from each object's .text alignment, no alignment flag; (2) walk-set folds into walk (same site text, same form hash, one key). Neither was in the design text: small lane s2cdoc writes both as [rev1.3 S2c-n] and merges S2a's d9afba62b (limits allowlist) into s2c.
+  - Placement screen on a loaded box read 8.56 % (no reading); it runs quiet at S2d's start.
+  - Next: S2c code round on s2cdoc's tip, then gates 470-474.
