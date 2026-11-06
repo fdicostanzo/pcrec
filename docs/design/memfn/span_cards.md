@@ -896,7 +896,8 @@ noted for main (§10 item 6).
 
 `[rev1 CONTRACT-8]` **The MFMEAS trace record** (`meas_record`, :123; built only with `PCREC_CAND_TRACE`)
 gains (i) the count of MEASURED rows and (ii) a TEXT digest of the handed triples: FNV-1a-64 over the lines
-`key TAB state TAB noise_e6 LF` in canonical key order, 16 lowercase hex. `[rev1.1 MFMEAS]` **The handed
+`key TAB state TAB value_e6 TAB noise_e6 LF` in canonical key order, 16 lowercase hex (`[r8 SEAM-1]` the handed
+VALUE joins the line: a record scoped to the noise alone left a wrong handed value unwitnessed). `[rev1.1 MFMEAS]` **The handed
 population** is the fill's, stated: `memfn_measures` hands only rows whose key starts `kit.` AND whose value is
 not empty (`memfn_sites.c:86-87` skips non-`kit.` keys and `null` rows), so the digest covers exactly those
 rows, and `tests/knowledge/ks_ref.py` computes the same digest from the FILE with the same filter written

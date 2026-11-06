@@ -26,7 +26,7 @@
 #       is no compound stays "" under a consult.
 #   (C) THE NOISE (span_cards.md §4.2, MF_SITE_ABI 24). A record's last two
 #       columns are the count of MEASURED rows handed and the noise digest
-#       over the handed `key TAB state TAB noise_e6` lines. Under the shipped
+#       over the handed `key TAB state TAB value_e6 TAB noise_e6` lines. Under the shipped
 #       `--measures=FILE`, mfixtures.py's format-2 fx-f2 must show a non-zero
 #       count, and its format-1 fx-f1noise (numeric noise TEXT on every row)
 #       count 0, each with the count and digest `ks_ref.py handed FILE`

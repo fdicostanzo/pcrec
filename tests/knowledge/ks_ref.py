@@ -21,7 +21,7 @@ this one, so this file must never be "fixed" by reading the C.
                             as the trace build's MFMEAS record spells it
                             (docs/design/memfn/span_cards.md §4.2): the count
                             of measured rows, TAB, FNV-1a-64 (16 hex) over
-                            the lines `key TAB state TAB noise_e6 LF` of the
+                            the lines `key TAB state TAB value_e6 TAB noise_e6 LF` of the
                             handed rows in canonical key order, state
                             `measured` or `unmeasured`, an unmeasured noise 0
 
@@ -132,6 +132,7 @@ def handed(doc):
         measured = doc["format"] == "2" and r[4] != b"-"
         n += measured
         line = r[0] + b"\t" + (b"measured" if measured else b"unmeasured") + \
+            b"\t" + str(int(r[2])).encode() + \
             b"\t" + (str(int(r[4])).encode() if measured else b"0") + b"\n"
         for c in line:
             h = ((h ^ c) * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF
