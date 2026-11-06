@@ -369,4 +369,55 @@ else
     bad "§4 the engine arms: $eng_bad of $eng_pat patterns disagree between the default selection and --engine=vm"
 fi
 
+# =========================================================================
+# §5 BOUNDED VARIABLE LOOKBEHIND ([VLOOKBEHIND] stage 1, vlookbehind.md §6
+# gate 1)
+# =========================================================================
+# The cell set is tests/lookaround/vlb_cells.py's (written from the spec's
+# rule and the design's measured cells, never from the emitter), in FOUR
+# NAMED MODES, each compared against libpcre2 10.46 by tests/lookaround/
+# vlb_one.sh: `byte`, `utf8` (PCRE2_UTF, valid subjects), `utf8-invalid`
+# (PCRE2_MATCH_INVALID_UTF, pcrec's reading of an ill-formed subject) and
+# `utf8-clip` (a `-e utf8` artifact whose body reads context before its
+# candidate, on ASCII subjects, against libpcre2's BYTE answer: D142 item
+# 3's stated divergence, match_api.md §9.4¶8). 0 differences in every mode.
+# K35: the generator's population is pinned EXACTLY per mode, and the cells
+# swept and the D142 expected-divergent subset are floored, so a mode that
+# stopped running, or a clip class that stopped reaching, is red.
+VLB_POP_EXPECT="vlb_cells: byte=373 utf8=233 utf8-clip=48 utf8-invalid=7"
+# The call-to-a-bounded-group cells need `recursion` beside the module set.
+FEATS="$FEATS,recursion"
+export PCREC CC GENCFLAGS TIMEOUT_BIN ORACLE BATCH FEATS
+export VLB_SUBJ="$WORKDIR/vlbsubj" VLB_WORK="$WORKDIR/vlbwork"
+mkdir -p "$VLB_WORK"
+if ! python3 "$SCRIPT_DIR/vlb_cells.py" "$WORKDIR/vlb_pats" "$VLB_SUBJ" \
+        2>"$WORKDIR/vlb_pop"; then
+    bad "§5 the cell generator failed: $(head -2 "$WORKDIR/vlb_pop")"
+elif [ "$(cat "$WORKDIR/vlb_pop")" != "$VLB_POP_EXPECT" ]; then
+    bad "§5 the cell population is '$(cat "$WORKDIR/vlb_pop")', not '$VLB_POP_EXPECT' — a cell was added or lost; re-derive the pin DELIBERATELY"
+else
+    tr '\n' '\0' < "$WORKDIR/vlb_pats" \
+        | xargs -0 -n 1 -P "${PROCS:-8}" bash "$SCRIPT_DIR/vlb_one.sh" \
+        > "$WORKDIR/vlb_out"
+    vlb_fail=$(grep -c '^FAIL' "$WORKDIR/vlb_out" || true)
+    vlb_n=$(grep -c . "$WORKDIR/vlb_out" || true)
+    if [ "$vlb_fail" -ne 0 ] || [ "$vlb_n" -ne "$(grep -c . "$WORKDIR/vlb_pats")" ]; then
+        bad "§5 $vlb_fail of $vlb_n patterns disagree with libpcre2 (or did not report)"
+        grep '^FAIL' "$WORKDIR/vlb_out" | head -10 >&2
+    else
+        # Per-mode cells and the clip class's divergent subset, each floored
+        # at its measured figure (2026-11-06, the landing's first run).
+        vlb_sum=$(awk -F'\t' '{ c[$2] += $3; d[$2] += $4 }
+            END { printf "%d %d %d %d %d", c["byte"], c["utf8"], c["utf8-clip"], c["utf8-invalid"], d["utf8-clip"] }' \
+            "$WORKDIR/vlb_out")
+        read -r vb vu vc vi vdiv <<< "$vlb_sum"
+        if [ "$vb" -lt 30000 ] || [ "$vu" -lt 9000 ] || [ "$vc" -lt 2000 ] \
+           || [ "$vi" -lt 150 ] || [ "$vdiv" -lt 1 ]; then
+            bad "§5 a mode swept too few cells: byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi, D142-divergent=$vdiv (floors 30000/9000/2000/150/1)"
+        else
+            ok "§5 bounded variable lookbehind: $vlb_n patterns, byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi cells, every startpos and every group span, 0 disagreements with libpcre2 10.46; $vdiv utf8-clip cells are D142's stated divergence (libpcre2 UTF clips, pcrec answers as byte mode does)"
+        fi
+    fi
+fi
+
 finish
