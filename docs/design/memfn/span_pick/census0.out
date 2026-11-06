@@ -1,7 +1,7 @@
-== census0 (step 0, span_cards.md §7) over sweep.jsonl (5492 records) [PROVISIONAL: R-33's 2026-11-02 sweep, pre-base; J0 overwrites at the S2b base]; byte rates P digest a322116b1b87f9f6; corners k {1,12} x h1 {5,40} x hit(PAIR) {1x,8x h1}; BAND-0 argmin vs the incumbent read from the trace
+== census0 (step 0, span_cards.md §7) over sweep.jsonl (5492 records) [J0 at s2b base 71cad723e]; byte rates P digest a322116b1b87f9f6; corners k {1,12} x h1 {5,40} x hit(PAIR) {1x,8x h1}; BAND-0 argmin vs the incumbent read from the trace
 == (1) movers by class; units are window sites (and window-stating FUNC parts), RTE = default compile, DEF = the --memfn=no-window-search,no-window-skip recompile
 RTE incumbent priced                                                 3372
-RTE incumbent unpriced: hors                                           14
+RTE incumbent unpriced: D-hors                                         14
 RTE incumbent unpriced: memchr-back                                    39
 RTE incumbent unpriced: unobserved                                      5
 RTE row-1-class incumbent priced                                      206
