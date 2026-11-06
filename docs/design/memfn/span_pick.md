@@ -231,8 +231,10 @@ first and a run as one T-CMP stretch: row 1's design prices verify over T-VERIFY
 **The band of a comparison** `[rev3 C3, rev5]`: for prices a and b under one model, the quadrature sum
 over cards of `(coef_a - coef_b) x noise` (a card both read with one coefficient cancels), plus, with
 data, B's sampling terms. No constant enters but the card gates (`gate_e6` 3 %, UNMEASURED DEFAULT,
-D149). `[rev5 A4]` Stage 2 defines a COVERAGE FACTOR, UNMEASURED DEFAULT (1 sigma departs ~16 % of
-equal-price comparisons per side), and B's sampling noise by block bootstrap per bundle byte (Poisson
+D149). `[rev5 A4]` Stage 2 defines a COVERAGE FACTOR, UNMEASURED DEFAULT (`[s2]` it covers a NEW draw of
+each card against its stored value, one launch at a new placement; z 3.0 departs at most 2.25 % of equal-price
+one-card comparisons per side, `span_cards.md` §6; the former "1 sigma departs ~16 %" described a different
+event, a departure decided on stored values against true ones), and B's sampling noise by block bootstrap per bundle byte (Poisson
 `sqrt(n)` is 0 at n = 0, 2-5x low on clustered text). `[rev5.1 R1]` pcrec STATES it with the rates, or
 none (no sampling term); the kit keys nothing on provenance. Its seam field: `[s2]` DEFERRED to its
 producer (`span_cards.md` §4.6; no producer writes a bundle noise today): one MF_SITE_ABI event with its
@@ -267,7 +269,7 @@ hunks); a producer; derived rows by quadrature; noise in `values_digest` (a dige
 `measures.md` §3.3¶1, §5¶4, readers by grep), or a FILE set may not share a committed id.
 
 **Where they live** `[rev3 C5]`. The span cards are quantities of the grid's successor method
-(`kit-grid@2`), the grid keys re-measured under it. `[rev5 D2]` The set is a FRESH id, `zen4-grid3`
+(`[s2]` `kit-grid@3`; `@2` is grid2's, TAKEN), the grid keys re-measured under it. `[rev5 D2]` The set is a FRESH id, `zen4-grid3`
 (D186 add. 2; `zen4-grid2` is D167's slot, never reused; `measures.md` §8¶1). Embedded by `make
 gen-measures`, handed on `mf_art_begin`; chosen by `--measures=NAME`, else `DEFAULTS` (`measures.md`
 §5¶6); measured by quiet-gated `idle-ok` jobs.

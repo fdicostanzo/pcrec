@@ -1,0 +1,9 @@
+== vcls over sweep.jsonl: verify (form, cls) by the T-CMP / set-test text's boundaries; counts are sites
+DEF	verify	settest	c2	2
+RTE	verify	rc-memcmp	l1	2
+RTE	verify	rc-words	w1	10
+RTE	verify	rc-words	w2	49
+RTE	verify	rc-words	w3	1
+RTE	verify	settest	c1	48
+RTE	verify	settest	c2	290
+RTE	verify	settest	cn	7
