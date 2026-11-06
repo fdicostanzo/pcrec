@@ -68,7 +68,7 @@ Lane `s2design`, branch `lane/memfn-s2design` (cut from the kit branch `lane/mem
    `src/dump/measures_dump.c`, `docs/spec/measures.md`, `tests/knowledge/`, `measure_store/`) for main's
    review in the kit's same-commit package, as R-35 (a) rules for unit 3.0.
 6. S2d needs one timing window (~45 min) cleared with Frank; S2b and S2f are compile-only boxqueue jobs.
-7. Stage 2 landing fires [BENCH-WITHDATA]'s trigger (plan.md:1720).
+7. Stage 2 landing fires [BENCH-WITHDATA]'s trigger.
 
 ## Charter vs committed
 
