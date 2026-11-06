@@ -679,7 +679,7 @@ PROVENANCE.md). A cell row's columns (format 2, `[rev1.1 CELLS-1]`):
   first `.` (groups: `J<j>.ctl` the control, `J<j>.base` the job's delta bases, and one group per row
   family, e.g. `J2.unit`, `J3.hit.random.1024`);
 - `arm`: a row's KEY as written in `rows` (`kit.find_byte.walk`), its twin `KEY#b`, a base `base.<name>`
-  (the name a row's `inputs` gives), or `ctl`;
+  (`[rev1.2 READY-1]` the name in its delta rows' cell ids), or `ctl`;
 - `length`: the subject's length in bytes, ALWAYS (for a `delta` row, the card's LEN);
 - `launch`: 1..L, the launch within the job; `round`: the literal `med` (the cell is a median over rounds);
 - `events` (NEW in format 2): the event count E per call of the cell's subject (hits, compares or
@@ -1537,6 +1537,14 @@ amendment, not a silent drop):
 11. `[rev1.1 BOUND]` **K138's form**: "read from the seam, not copied" cannot be met under `ks_measures.c`'s
     dependency rule; S2a lands `KS_MEAS_MAX` with a compile-time equality check against `MF_MEASURE_MAX`
     (§4.1), which K138's value refusal can then read. Recommend: amend K138's text to that form.
+12. `[rev1.2 standing question]` **The mover census, PLAN** (the kit manager's r6 ruling): file a plan row
+    "emit_sweep `--data measures` replaces `span_cards/slot/movers.py` when the next data-mover census is
+    needed (trigger: M1's first set)"; main files it (§5).
+13. `[rev1.2 READY-6]` **The run record's sha, where cited.** The ruling names PROVENANCE.md "and index notes";
+    `measure_store/index.tsv` has no notes column (its columns end `values_digest file_sha256 status`), so
+    rev 1.2 cites the sha in PROVENANCE.md and in the set header's `run` provenance key (in the file, under
+    the file sha, outside the digest). An `index.tsv` column would be an index-format change of its own (its
+    readers by grep at S2e); recommend: not needed.
 
 ### 10.2 Amendments this design makes to other documents (each lands with the named unit)
 
@@ -1550,7 +1558,10 @@ amendment, not a silent drop):
 | span_pick/CLAUDE.md, span_pick/witness.sh | `[rev1.1 SMP20]` CLAUDE.md :12, :21, :34; witness.sh :4, :6 (smp20.py) | census0.py; the golden is smp20.out plus one line | S2b |
 | R-35 (requests.md) | items 1 and 3 (DEFAULTS) | DONE by main: R-35 (c) | — |
 | measure_sets.md | §1.4, §1.5 (read cells include the verdict's), :490-494, §3.6, §4.1, §7.2 (`lengths`, `aa_rule`), §7.3, §7.4 (format 2's paired floor) | §4.4, §8.3, §2.4, §3.5 | S2a/S2c/S2e |
-| measure_sets.md | `[rev1.1 EMBED]` the sizing sentence ("47 rows is about 6 KB ... Ten committed sets stay below one `fold_tables.inc`") | "Every embed omits its set's `cells` (R-35 (d)); a set embeds as its text plus a pre-parse, about 305 B of libpcrec per row or card (grid1: 23,788 B, `size -A` of `measures.o`). Ten such sets are a few hundred KB, about a tenth of libpcrec.a today; embedding cells would cost about 0.26 KB per cell (`span_cards/tree_drill.py` D)." | S2e |
+| measure_sets.md | `[rev1.1 EMBED]` the sizing sentence ("47 rows is about 6 KB ... Ten committed sets stay below one `fold_tables.inc`") | "Every embed omits its set's `cells` (R-35 (d)); a set embeds as its text plus a pre-parse, about 305 B of libpcrec per row or card (grid1: 23,788 B, `size -A` of `measures.o`). Ten such sets are a few hundred KB, about a tenth of libpcrec.a today; embedding cells would cost about 0.27 KB per cell (`span_cards/tree_drill.py` D)." | S2e |
+| measure_sets.md | `[rev1.2 READY-3]` §8.3 "Embedded = committed" ("compares each embedded text with `set.tsv` byte for byte") | embedded = committed minus its `cells` rows; the compare is against the file with those rows dropped (§3.8) | S2e |
+| tests/knowledge/CLAUDE.md | `[rev1.2 READY-3]` the STORE description | R4/R5 on the FILE path, the NAME's view = the file minus `cells` rows, the two new assertions (§3.8) | S2e |
+| span_cards/CLAUDE.md | `[rev1.2 READY-6]` the `slot/j1/` line | the run record replaces `slot/j1/verdict` and `j1_cells.tsv`; `slot/sabotage.sh` added | done in rev 1.2 (§8.2) |
 | measure_sets.md, measure_store/CLAUDE.md | `[rev1.1 CENSUS]` "emit_sweep's data mode writes the movers file" | the movers files are written by a census tool named in their own header (0001: `docs/dev/lanes/m0build/census.py`; 0002: `span_cards/slot/movers.py`); emit_sweep's `measures` data kind is M1's | S2e |
 | kit-grid.tsv header | the unit sentence; `[rev1.1 CELLS-3]` the `lengths` and `aa_rule` column comment | per-version (§8.2); the estimator grammar for ver 3 | S2c |
 | docs/dev/known_issues.md K138 | `[rev1.1 BOUND]` "read from the seam, not copied" | main's text (§10 item 11) | (main) |
@@ -1576,12 +1587,13 @@ qualifier test over three provenance vocabularies (§12 row 6).
    regimes are NOT carded ([SPAN-PICK-PERCALL]'s, span_pick.md:198-199), so a priced row's per-call cells
    fall outside the cards' claim. A different box flips picks; that is a new set id, never this one.
 2. **The independent control: RELEVANT.** Answers: G2's reference check and the expected-count gate on every
-   arm before any clock. Values, noise, NULLs, group verdicts, Goal 2's floor and `partial`: the pcrec-side recompute from the set's
-   `cells` (an implementation of `measures.md`'s new sections 3.4-3.5, not importing the slot harness); the digest
+   arm before any clock (`[rev1.2 READY-5]` on positions, not only counts). Values, noise, NULLs, the gates, Goal 2's floor, `partial` and `[rev1.2 MEAS-7]` J1's verdict: the pcrec-side recompute from the set's
+   `cells` and `[rev1.2 READY-6]` the kit's run record, sha-checked through PROVENANCE.md (an implementation of `measures.md`'s new sections 3.4-3.5 and §3.6's rule, not importing the slot harness; it reads sets through ks_ref.py's parser); the digest
    by ks_ref.py (python, from the spec's table, not the C), verified again by the C loader. Placement: drawn
    per launch for every arm and twin, the constraints asserted on the LINKED executables (`nm`), never on
-   object bytes (§3.2). Drift: the fixed control executable per job against the unit's job, with a
-   between-launch threshold. The cell text: its site-text hash against `mf_form_hash` of the key's token
+   object bytes (§3.2); `[rev1.2 MEAS-1]` the run id in the seed makes a re-run's placements independent of
+   the first run's. Drift: the fixed control executable per job against the unit's job, `[rev1.2 MEAS-4]`
+   with a threshold in standard errors of the statistic, its false rate drilled. The cell text: its site-text hash against `mf_form_hash` of the key's token
    (one renderer; FAM-A is the router's independent control, §12 row 4). Check C: its card guard reads
    every card row and its measure_store pass every format-2 set's form tokens, each counted and floored. "Stage 2 moves nothing": emit_sweep and the data-mover census,
    counted pcrec-side from artifact diffs (K35) by `slot/movers.py` (§5), never the kit's `moved`. The seam's noise values: the
@@ -1593,7 +1605,8 @@ qualifier test over three provenance vocabularies (§12 row 6).
    (§5's proof), and the DEFAULTS flip moves no stamp (§8.3). From row 1, a new default set moves the picks
    of consulting artifacts and their `<PREFIX>_MEASURES` stamps: then a default-set change is an abi event
    with its census (`measure_sets.md` §3.6 as amended, D162). A PAIR width retune (§3.6 (b)) stales the
-   PAIR cards through their form hash; a consumer entry-text change stales `enter` (§2.6). The embed is
+   PAIR rows through `[rev1.2 READY-8]` the form hash RECORDED in each row's `deps` (rev 1.1's rows carried
+   none, so no staleness check could ever have seen it); a consumer entry-text change stales `enter` (§2.6). The embed is
    cell-less (§3.8): a re-measure moves the embed by its rows only, about 305 B each.
 
 ## 12. Unlocks (filed, not built)
@@ -1603,7 +1616,9 @@ qualifier test over three provenance vocabularies (§12 row 6).
    `inputs` are cell ids, recomputed by the existing §3.2 checker path; a noise rule becomes one column of
    that registry, and derived-row noise follows from it. Unlocks: Goal 3 without a special-purpose check;
    M3's install tool implementing ONE registry; derived noise with a reader. Trigger: the first format-2
-   derived row with a producer and a reader, or M3's driver build, whichever first.
+   derived row with a producer and a reader, or M3's driver build, `[rev1.2 r6 general form 5]` or a
+   measured row whose value is a derivation over cells needing its own noise (§4.3's `-` noise on derived
+   rows collides with it), whichever first. It would also absorb rev 1.2's cell-id base (READY-1).
 2. **One kit policy table** ([KIT-POLICY-TABLE], filed by main; `[rev1.1 POLICY]` members per R-35 (e),
    §6). Unlocks row 1's E2 unification. Trigger: row 1.
 3. `[rev1.1 FAM-D]` (rev 1's "census as THE priced-forecast tool" is now a decision, §7.)
@@ -1616,15 +1631,25 @@ qualifier test over three provenance vocabularies (§12 row 6).
 5. `[rev1.1 FAM-B]` **Placement as a declared fixture property.** Every kit timing fixture (G2's probes,
    the bake-off, stage 2) draws placement per launch by one shared helper (the pad objects and the `nm`
    assertions of §3.2). Unlocks: every timing in the tree carries placement in its noise the same way.
-   Trigger: a second timing harness that needs it (today only stage 2's slot).
+   `[rev1.2 standing question, PLAN]` Trigger: the NEXT slot harness written (the family is already past
+   three: 650, grid1, grid2, b3a/e8min, stage 2's), not "a second harness that needs placement".
+7. `[rev1.2 READY-6 general form]` **A `run` section inside the set** (review r6 unlock 2): the run record's
+   content (never-ran jobs with their keys, the declared floor, gate verdicts like J1's) as a format section
+   hashed by the file sha, so "the recompute reads only the set" becomes true and M3 writes the same section.
+   Not taken now: it is a format change S2a would have to build (the ruling chose the kit-side record).
+   Trigger: M3's driver build, or a second producer whose verdict needs a record.
 6. `[rev1.1 FAM-C]` **One qualifier test over the three provenance vocabularies** (the set's `status`, the
    seam's noise state, the card's `aa_rule`): one table that says whether a value may price. Unlocks: row
    1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
 
-Rev 1.1, lane s2rev11 (over rev 1, lane s2rev1), from review 2026-11-06-r5 as ruled and R-35 (c)-(e). OWED:
-nothing of the design; every unit of §9 is unbuilt; S2g HELD until [XARCH-DEV]'s go. Main's acknowledgements
-owed: §10 items 8-10 (R-35 narrowings), 7 (policy), 6 (embed spelling), 11 (K138). The drills behind §2.3,
-§3.2, §3.5, §3.6, §3.7, §3.8 and §6 are committed under `docs/design/memfn/span_cards/` (python only, no
-timing; each prints its inputs). No make, no timing, no box job. Not a build go.
+Rev 1.2, lane s2rev12 (over rev 1.1, lane s2rev11), from review 2026-11-06-r6 as ruled (every FIX-NOW and DOC
+disposition, the decisions READY-1, READY-6 + MEAS-7, READY-8, MEAS-4, MEAS-6, MEAS-1; the movers.py PLAN).
+Nothing S2a builds changed (§R1.2: needs S2a, none). OWED: nothing of the design; every unit of §9 is
+unbuilt; S2g HELD until [XARCH-DEV]'s go. Next: the kit manager's diff-check of every r6 id and ONE readiness
+critic on the rev 1.2 diff (the ruling). Main's acknowledgements owed: §10 items 8-10 (R-35 narrowings), 7
+(policy), 6 (embed spelling), 11 (K138), 12 (the mover-census row to file), 13 (where the run record's sha is
+cited). The drills behind §2.3, §3.2, §3.5, §3.6, §3.7, §3.8 and §6 are committed under
+`docs/design/memfn/span_cards/` (python only, no timing; each prints its inputs; rev 1.2 re-ran all seven).
+No make, no timing, no box job. Not a build go.
