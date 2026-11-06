@@ -1,16 +1,52 @@
 # Variable-width (bounded) lookbehind — design
 
-**Status: PROPOSED rev 1** (lane vlbrev1, opus, 2026-11-05; plan row [VLOOKBEHIND]). Rev 0 was lane
-vlbdesign's. Rev 1 applies the RULED review `docs/dev/reviews/2026-11-05-r3-vlookbehind.md`
-(NOT READY, text-only rev 1). It is text only: no build go. A short re-check round follows
-(fix-induced on F1/F12, plus readiness). Starts from the investigation `docs/dev/lanes/vlbinv_report.md`
+**Status: PROPOSED rev 2** (lane vlbrev2, opus, 2026-11-05; plan row [VLOOKBEHIND]). Rev 0 was lane
+vlbdesign's, rev 1 lane vlbrev1's. Rev 2 applies the RULED re-check
+`docs/dev/reviews/2026-11-05-r6-vlookbehind-recheck.md` (READY WITH LISTED TEXT FIXES). It is text
+only: no build go. Rev 1 applied the RULED review `docs/dev/reviews/2026-11-05-r3-vlookbehind.md`
+(NOT READY, text-only rev 1). Rev 2's evidence is `docs/dev/lanes/vlbrev2_evidence/premise.out`.
+Starts from the investigation `docs/dev/lanes/vlbinv_report.md`
 (its §1 semantics are not repeated here) and its owner addendum (candidate D). Evidence: rev 0's
 `docs/dev/lanes/vlbdesign_evidence/`, rev 1's `docs/dev/lanes/vlbrev1_evidence/` (`probe.c`, a
 libpcre2 10.46 library probe; `cells.out`, every cell rev 1 adds). PCRE2 facts come from the
 installed libpcre2-8 10.46 used as a library and from public docs. The pinned source copy was not
 opened (D181). One question for a pcre2-reader is in §12.
 
-## REVISION 1 (review 2026-11-05 r3) — read first
+## REVISION 2 (review 2026-11-05 r6) — read first
+
+Corrections are marked inline as `[r6 Vn]`. No mechanism changes: §5.1's statements, their order
+and §5.1c's traces stand. In summary:
+
+- **The trail is sized for the loop (V1, answer level).** Each `range` candidate leaves one live
+  trail entry (`D_i`'s write), and today's cost pass charges the lookbehind a constant 2. A literal
+  rev 1 build gives up with `PCREC_ERR_FRAMES` on `(?<=a{1,2})x` / `bax`, where libpcre2 answers
+  [2-3]. `vm_cost_look`'s trail term becomes `2 + Σ_range (hi_i − lo_i + 1)` (§5.5, derived from the
+  code). §5.1b's table gains a trail column, and §7 gains witness W12. The loop is also a trail
+  cycle, so K134's rule puts a trail checkpoint on its back edge (§5.1b).
+- **§5.1b's table declares every reader (V2, V4, V5).** The rewrite claim gains a 5th item, the
+  negative end-check, which is a SELECTION and not a rewrite. The table gains columns for labels
+  (allocated only for `range` branches) and for role texts (which are C comments under
+  `-fcomments`). `D_i` is a `SLOT_COUNTER` slot (RULED, V4): no new slot family.
+- **Operand meanings (V3).** The back-step and the work charge read `D_i`'s VALUE,
+  `(size_t)slot_values[<slot>]`, never the slot index.
+- **Accept set (V6, RULED).** pcrec keeps accepting an unbounded repeat of a zero-width body inside
+  a lookbehind (`(?<=(?:)*a)x`), which libpcre2 refuses. It is a stated divergence: G1, gate 3 and a
+  spec hunk name it.
+- **Gates and rows that move (V7, V8, V12).** Gate 1 names its harness (`run_lookaround_diff.sh`).
+  Gate 2 names its instrument and the re-pin. S133/S134, S-U4 and S136's branch are listed, and a
+  `range` codegen fixture is added.
+- **Limits rows in the table's own schema (V9).**
+- **Rulings and readers (V10).** Stage 1 deliberately reverses [DD-14.LB]'s ruled refusal. The two
+  D27 extracts are re-cut, and the D27-owned corpora get an owner.
+- **Doc items (V11, V13-V16).** INTERNAL's second producer; how §5.1 composes with `vm_look`;
+  §5.1c's framing sentence; G1's dependency on owner Q2, and the `max_varlookbehind` candidate filed
+  at [IFACE-PUSH]; a verbs line in §14.
+- **§16b** maps every r6 finding to its section.
+
+Owner question 1 (keep today's bytes by a declared selection, or the loop everywhere plus an abi
+event) stays OPEN (§13). Rev 2 states each fix under both answers.
+
+## REVISION 1 (review 2026-11-05 r3)
 
 Corrections are marked inline as `[r3 Fn]`. Rev 0's refuted claims are recorded where they stood,
 not edited away. In summary:
@@ -70,11 +106,22 @@ Ranked: the higher goal wins a conflict.
    - Measurable: a libpcre2 differential over the generated cell set of §6 has 0 differing answers
      (match, every group, nomatch), outside D142's stated class (§6 gate 1). The accept set stays
      inside PCRE2's: 0 patterns that pcrec compiles and libpcre2 refuses, over the same generator
-     plus the boundary cells of both limits.
+     plus the boundary cells of both limits, outside the one stated accept-set divergence below.
    - **G1's accept-set clause is false TODAY** `[r3 F4, F14]`. pcrec compiles `(?<=a{65535}b)x` and
      `(?<=(?:a{1000}){66})x`, which libpcre2 refuses (err 187). Stage 1 restores it with the 65535
      ceiling (§5.2). G1 outranks G2, so this refuses patterns that compile today. There are none in
      the population.
+   - **That holds at stage 1 only if the ceiling rides stage 1** `[r6 V15]` (owner question 2). If
+     the ceiling gets its own row, G1's measurable is false when stage 1 lands, and gate 3's
+     ceiling cells move to that row.
+   - **The stated accept-set divergence** `[r6 V6, RULED]`. A lookbehind branch containing an
+     UNBOUNDED repeat of a body that matches no characters (`(?<=(?:)*a)x`, `(?<=(?:\b)*a)x`,
+     `(?<=(?:)+a)x`) is refused by libpcre2 (err 125, at every `max_varlookbehind`). pcrec compiles
+     it today as one-length, by design (the zero-width repeat consumes nothing:
+     `pcrec_cwmax`'s A_REP arm, src/opt/mrl.c), and keeps accepting it. D26's addendum: accepting
+     more than PCRE2 is not a defect. Gate 3 counts the class on its own line, and the spec says so
+     (§10). No pattern in the population uses it. Stage 2 inherits the same choice for references
+     to such groups.
 2. **G2 Stability (callers with today's artifacts).**
    - The promise: no pattern that compiles today changes bytes. The one exception is G1's ceiling.
    - Measurable: the identity gate over every corpus artifact containing a lookbehind shows 0 bytes
@@ -93,11 +140,17 @@ Ranked: the higher goal wins a conflict.
      candidate is charged `d` work units, its back-step's character count (§5.5).
    - Frames: at most ONE LOOP FRAME per branch is live `[r3 F14]`. A non-atomic `(?<*` also
      leaves the body's own choice points live, as today.
+   - Trail `[r6 V1]`: at most `hi_i − lo_i + 1` lookbehind-owned entries per `range` branch per
+     evaluation, beside today's two. The cost pass charges exactly that bound (§5.5), so a bounded
+     pattern's trail is sized for it.
    - Compile time: no blow-up. Per site there is one body copy per branch, as today, plus a
      constant number of records.
    - Measurable: the work charge per candidate in the emitted text. A varying branch's emission is
-     within **one slot and 8 emitted C lines** of the same branch made one-length `[r3 F14]`. This
-     is an UNMEASURED design bound, checked from the emitted text at build.
+     within **one slot and 8 emitted C lines** of the same branch made one-length `[r3 F14]`. The
+     trail checkpoint on the loop's back edge (§5.1b) is one of those lines. Once per artifact that
+     has a `range` branch, K134's trail-compaction helpers are added too: 38 lines measured on an
+     existing checkpoint artifact (`vlbrev2_evidence/premise.out`). The per-branch figure is an
+     UNMEASURED design bound, checked from the emitted text at build.
 5. **G5 Speed where measured (later, D).**
    - The `reverse-dfa` source ships only where per-regime evidence shows no regime slower than
      `range` beyond noise (the D186 choice bar).
@@ -105,7 +158,9 @@ Ranked: the higher goal wins a conflict.
 **Non-goals.**
 - A reverse VM (Frank, 2026-11-05: "I'm certainly not going to try a reverse vm just for this").
 - Speed of variable lookbehind beyond the loop in stage 1 (one bench pattern uses it).
-- Exposing the 255 cap as a setting: owner ruling, deferred to [IFACE-PUSH].
+- Exposing the 255 cap as a setting: owner ruling, deferred to [IFACE-PUSH]. That row now carries
+  it as a dated CANDIDATE line in its long-form body,
+  `docs/design/plan_row_bodies/IFACE-PUSH.md` `[r6 V15]`.
 - Lookaround inside the DFA engine ([ENG-LOOK]).
 - `\K` inside a lookaround: both libraries refuse it (err 199).
 - Unbounded lookbehind. Its reason is restated `[r3 F16]`: PCRE2 refusing it (err 125) is the
@@ -319,8 +374,17 @@ So D cannot call the walk. What D shares is what the walk is MADE of:
 
 Per top-level branch `i`, with character range `[lo_i, hi_i]` from `pcrec_cwmin`/`pcrec_cwmax` (an
 EXACT range, §5.2), in written order. `POS` is the lookbehind's position slot, which the entry
-records (today's `pslot`). `D_i` is a matcher slot written by `VK_SET`, so it is TRAILED.
-`L_b(m)` for the last branch means `rx_fail`.
+records (today's `pslot`). `D_i` is a matcher slot written by `VK_SET`, so it is TRAILED. It is
+a `SLOT_COUNTER` slot `[r6 V4]` (§5.1b). `L_b(m)` for the last branch means `rx_fail`.
+
+**How it composes with `vm_look` `[r6 V13]`.** The branch chain sits inside today's `vm_look`
+wiring, unchanged (src/gen/emit_vm.c):
+- the assertion's mark and `POS` writes come first;
+- the negative form's `L_neg_ok` frame is pushed below every `L_adv_i` frame;
+- `L_ok` is today's success label, where the atomic and negative forms cut to the mark;
+- the last branch's exhaustion is `rx_fail`, which on the negative form pops `L_neg_ok`.
+
+The literal interpreter of review r6 imported exactly this wiring and got 0 differences.
 
 ```
 L_b_i:    if (scan_position < lo_i) goto L_b_(i+1)       // guard; not emitted when lo_i == 0
@@ -359,6 +423,13 @@ Further properties of the sketch:
   mark sits above `D_i`'s current entry, and a pop restores `D_i` to its value at that push. An
   outer pop below the assertion rewinds it. The soundness lens held this for three shapes; rev 1
   keeps the same set/push/pop order.
+- **The trail GROWS by one entry per candidate `[r6 V1]`.** A pop rewinds the trail only to its
+  frame's mark, and that mark was taken AFTER the previous `D_i` write. The decrement that follows
+  writes a new entry above every later mark, so no pop inside the evaluation removes it. One
+  evaluation therefore leaves up to `min(hi_i, cursor) − lo_i + 1` live `D_i` entries per `range`
+  branch it tries. An exhausted branch's entries stay live while the next branch runs. An atomic
+  cut discards frames, not trail entries (`vm_cost_atomic`'s header), so they outlive the
+  assertion until an outer pop or the attempt's reset. §5.5 sizes the trail for this.
 - **Atomic forms** cut every frame at `L_ok` (`vm_cut`, unchanged).
 - **Non-atomic forms** leave `L_adv_i`'s frame live, which IS PCRE2's measured retry-shorter
   behaviour.
@@ -377,7 +448,9 @@ Further properties of the sketch:
   `size_t k` in both encodings. So:
   - no new seam entry is introduced;
   - no D58 addendum or third-encoding recipe entry is owed;
-  - the [M5-SEAM] per-site count is unchanged (one back-step call per branch, as today).
+  - the [M5-SEAM] per-site count is unchanged (one back-step call per branch, as today). Every
+    `residlb*` fixture in `tests/codegen/run_codegen_tests.sh` is fixed-width, so this is checked
+    only once a `range` fixture is added (§7, `[r6 V8]`).
 - Rev 0 left two spellings open: a loop of one-character steps, or a new `back_step_upto` entry.
   Both are retired. A new entry would now need a measured reason (D77), plus the D58 contract
   change in the same commit.
@@ -393,7 +466,9 @@ evaluates that test at compile time". The review showed that today's bytes diffe
 - the sentinel;
 - a new slot family.
 
-It also showed that "fixed width %d" is an `--emit-ir` LISTING label, not emitted C.
+It also showed that "fixed width %d" is an `--emit-ir` LISTING label. `[r6 V5]` corrects that: the
+same role string is ALSO emitted as a C comment under `-fcomments` (`vm_lbl` writes both in one
+call), so it is emitted C in a commented artifact and a listing label always.
 
 The rev 1 sketch closes the order and position differences: at `lo == hi` it has today's order and
 pushes at the cursor. Even so, today's bytes follow from the loop only after four rewrites that the
@@ -403,34 +478,120 @@ emitter does NOT perform in general:
 3. A frame whose continuation is only `rx_fail` (the last branch's) is elided.
 4. The slot is dropped.
 
+And two differences that are NOT rewrites `[r6 V2]`:
+5. **The negative arm's failed end-check.** `one-length` returns `RX_R_INTERNAL`; `range` declines.
+   This preserves answers only on the premise that a one-length end-check cannot fail on a correct
+   compiler. S136's re-aim is exactly where the two spellings give different answers. So it is a
+   SELECTION by the same fact, the table's "end-check fail, negative arm" column (§5.3), not a
+   rewrite.
+6. **Labels.** After rewrite 2, `L_try_i` has no referrer, but the renderer emits every label it is
+   given (`rx_Ln: __attribute__((unused));`). The table's label column covers this: `L_try_i` and
+   `L_adv_i` are allocated ONLY for `range` branches. `vm_look_behind` allocates `bl`/`bodl`/`endl`
+   per branch in one loop. If the two new labels were allocated in that loop for every branch,
+   every later label in an all-fixed artifact would renumber, and G2 would move under answer (A).
+
 So the emitter SELECTS the one-length bytes by the width fact. Stated honestly, this is a DECLARED
 emission row chosen by a fact that is already stored (`u.look.widths`, a pair per branch from
-stage 1). It is not a constant fold, and not a hidden `if`. The table:
+stage 1). It is not a constant fold, and not a hidden `if`. The table, in two parts. The first part
+is what the branch executes:
 
-| row (first match) | applies when | guard | `D_i` slot | retry frame (target, position) | work per candidate | back-step count | end-check fail, negative arm | `L_adv_i` block |
-|---|---|---|---|---|---|---|---|---|
-| `one-length` | `lo_i == hi_i` (= k) | `scan_position < k` (not emitted when k = 0) | none | `L_b_(i+1)` at the cursor, not pushed on the last branch | `k` (one candidate), today's `RX_CHARGE_WORK(k)` | the literal `k` | `RX_R_INTERNAL` (§5.3) | none |
-| `range` | `lo_i < hi_i` | `scan_position < lo_i` (not emitted when lo_i = 0) | one per varying branch | `L_adv_i` at the cursor, pushed on every branch including the last | `D_i` characters | `D_i` | decline (`rx_fail`) | emitted |
+| row (first match) | applies when | guard | retry frame (target, position) | work per candidate | back-step count | end-check fail, negative arm | `L_adv_i` block |
+|---|---|---|---|---|---|---|---|
+| `one-length` | `lo_i == hi_i` (= k) | `scan_position < k` (not emitted when k = 0) | `L_b_(i+1)` at the cursor, not pushed on the last branch | `k` (one candidate), today's `RX_CHARGE_WORK(k)` | the literal `k` | `RX_R_INTERNAL` (§5.3) | none |
+| `range` | `lo_i < hi_i` | `scan_position < lo_i` (not emitted when lo_i = 0) | `L_adv_i` at the cursor, pushed on every branch including the last | `D_i`'s value, `(size_t)slot_values[<D_i>]` | the same value | decline (`rx_fail`) | emitted |
+
+The second part is what every OTHER reader sees `[r6 V1, V2, V4, V5]`. Each column names the pass
+that reads it:
+
+| row | `D_i` slot (count pass, layout) | push sites (count pass `npush`) | trail entries per evaluation (`vm_cost_look`) | labels (`vm_look_behind`) | trail checkpoint (`vm_goto`, K134) | role and note texts (`vm_lbl`/`vm_ev`: `-fcomments` C and the listing) |
+|---|---|---|---|---|---|---|
+| `one-length` | none | 1 if not last, else 0 | 0 (beyond the assertion's own 2, charged once per lookbehind) | `bl`, `bodl`, `endl` (today's) | none | today's seven texts, unchanged |
+| `range` | one `SLOT_COUNTER` slot | 1 (the `L_try_i` push, last branch included) | `hi_i − lo_i + 1` (a bound: `min(hi_i, cursor) − lo_i + 1` at run time) | today's three plus `L_try_i`, `L_adv_i` | one, on `L_adv_i`'s `goto L_try_i` | the `range` texts listed below |
 
 The table's properties:
 - **Answer-free.** Substituting `lo = hi = k` into the `range` row and applying rewrites 1-4 gives
-  the `one-length` row. Every rewrite preserves answers.
+  the `one-length` row's statements. Every rewrite preserves answers. Item 5 is a selection, and
+  item 6 is the label column.
 - **Not cost-free.** The elided frame changes the frame and step counts by one per evaluation, and
   the `one-length` row is the cheaper side. It is also today's row, so nothing moves for today's
   patterns.
 - **Checked against libpcre2, not by construction.** Both rows run §7's shared witnesses and gate 1's
   differential. Gate 2's identity check proves the `one-length` row is today's bytes.
+- **One row choice, read by every column `[r6 V4, V17]`.** The key is one predicate on the stored
+  pair, "branch `i` of this lookbehind varies" (`lo_i < hi_i`). It follows the
+  `vm_look_needs_mark`/`vm_look_needs_pos` precedent, and every pass reads it rather than re-deriving
+  it: `vm_count_slots_look`, `vm_cost_look`, `vm_look_behind_branch` and the role texts. This is the
+  hazard the rung ladder's header names ("the SAME rung decision read a second time"). Here the
+  decision is made once.
 - **Work amount.** Each candidate is charged its back-step's character count: `k` for a one-length
   branch, `D_i` for a range candidate. This is today's rule ("the back-step, charged as the
-  compile-time width") read per candidate. §5.5 gives the totals.
-- **Slot allocation.** `D_i` comes from a new slot family, allocated in the count pass
-  (`vm_count_slots_look`) only for branches with `lo_i < hi_i`. An artifact with no varying branch
-  allocates none, so its slot legend and numbering are unchanged.
+  compile-time width") read per candidate. §5.5 gives the totals. `RX_CHARGE_WORK` charges only a
+  positive amount, so the `lo = 0` candidate charges nothing.
+- **Slot allocation `[r6 V4, RULED: the existing SLOT_COUNTER family]`.**
+  - `D_i` is a slot of the counter family. That family is already "one TRAILED iteration counter
+    per counter loop" written by `VK_SET`, which is exactly `D_i`'s contract.
+  - The emitter takes `vm_slot_ctr(v, v->nctr++)`, and `vm_count_slots_look` adds one to `v->nctr`
+    per `range` branch. Only the TOTAL has to agree, because every base is a sum of family totals.
+  - The allocation does not read `PCREC_NO_COUNTER`: that flag denies the counter RUNG, not the slot
+    family.
+  - An artifact with no varying branch allocates none, so its slot legend and numbering are
+    unchanged.
+- **The counter family's readers, by grep, and what each needs (src/gen/emit_vm.c):**
+  - the base chain: the counter family sits above `revdet` and below the pending, look and splice
+    families. In an artifact WITH a `range` branch, those bases shift by the number of `range`
+    branches. Under (A) that is new artifacts only; under (B) it is inside the abi event;
+  - `vm_slot_name`: already names `SLOT_COUNTER<n>`, so the legend's `#define` is emitted
+    already;
+  - the totals block and the `RX_NSLOTS` sum: `nctr_total` is already summed (a missed term would
+    be K27's out-of-bounds write);
+  - `VmSnap`/`vm_w_range`: `ctr` is already a member, so `D_i` rides in a callee's save set. That is
+    not needed for correctness (every read follows its own `VK_SET` or a trail-restoring pop), but
+    it is harmless, and it keeps S153's "every family" house rule with no exclusion to argue;
+  - the `--emit-ir` `slots` section: the counter family has no row there today. That is a
+    pre-existing gap it shares with the pending and splice families. So no listing baseline moves,
+    and `ir_listing.md` §3.2¶2's family vocabulary is not extended (no hunk);
+  - `Vm` fields: none new;
+  - one comment widens: `vm_slot_ctr`'s header, "per counter loop", becomes "per counted loop: a
+    counter rung's, or a `range` lookbehind branch's candidate count".
 - **The count pass's push count** becomes: one per non-last `one-length` branch (today's
   `nbranch − 1`) plus one per `range` branch. A varying LAST branch pushes `L_adv`.
-- **Listing roles.** The `--emit-ir` listing keeps "fixed width %d" for the `one-length` row. The
-  `range` row gets its own role text ("width %d..%d: candidates farthest first"). Neither is
-  emitted C. The 160-byte `vm_rolef` limit and its truncation note apply to the new role.
+- **The trail checkpoint `[r6 V1]`.** `L_adv_i`'s `goto L_try_i` jumps back over trail writes: the
+  decrement, plus any in the body. So `vm_goto`'s `vm_jump_closes_trail_cycle` test puts a K134
+  checkpoint (`RX_TRAIL_CHECK()`) on it. This is K134's structural rule ("every cycle of the
+  emitted program has an edge that goes back in the text"), so any spelling of the loop carries
+  one. Its consequences:
+  - an artifact with a `range` branch gains `vm_emit_trail_compact`'s helpers, which are emitted
+    only when `ncheck > 0`;
+  - its margin `nset` grows by the two `D_i` write sites per `range` branch;
+  - under (A), new artifacts only.
+
+  Compaction does not replace the sizing:
+  - the write that overflows is the decrement itself, BEFORE the checkpoint;
+  - compaction runs only past its trigger ("a stretch between checkpoints longer than the room
+    left ends the same way", `vm_emit_trail_compact`'s header);
+  - it may drop `D_i`'s dead entries (one segment holds them all), so the cost term is the
+    uncompacted bound.
+- **Role and note texts `[r6 V5]`.** These are C comments under `-fcomments` and listing text
+  always. Under (B) their moves are inside the abi event. Seven of today's texts in
+  `vm_look_behind_branch` are false on a `range` branch, so the `range` row writes its own:
+  1. label: "lookbehind branch %d of %d, width %d..%d: candidates farthest first". It never carries
+     the suffix "(the LAST branch: no retry frame)", because a `range` last branch pushes `L_adv_i`;
+  2. the negative END-CHECK role: the positive role's text on both polarities ("... this candidate
+     declines"). The "FALSE MATCH ... returns HARD" text stays `one-length`'s;
+  3. the end-check note: "end-check FAILED -- this candidate declines";
+  4. the back-step note: "the ENCODING SEAM's back-step, `D_i` characters (a run-time count)", not
+     a `%d` of `k`;
+  5. the sentinel note: "dead under the byte backend, where the clamp `min(hi, cursor)` is exact",
+     not "where the guard above is exact" (the guard tests `lo`);
+  6. the work role: "charged as this candidate's back-step count", not "as the compile-time width";
+  7. the guard notes: printed with `lo_i`, not `k`.
+
+  New `range` texts: the `D_i` set, the `L_try_i`/`L_adv_i` labels, the exhaustion test, and the
+  decrement. The 160-byte `vm_rolef` limit and its truncation note apply to each.
+  - **Gate 3's classification control reads the per-branch judgment through text 1** (the listing
+    label, present without `-fcomments`): "fixed width %d" against "width %d..%d". `ir_listing.md`
+    §3.4¶1 specifies role text only as "the role text the walk recorded", so this needs no spec
+    hunk. The control pins the two phrasings itself, and a rewording is a re-pin of that control.
 
 **The alternative (owner question 1).** One loop shape for every branch: the `range` row
 everywhere, plus an abi event. §13 gives both costs. Under Frank's open "VM base" frame
@@ -441,8 +602,12 @@ exactly this table's shape.
 ### 5.1c Hand-execution of §5.1, literally `[r3 F1]`
 
 Each cell lists what each pushed frame SAVES and what popping it RESTORES. Subject positions are
-byte offsets. The matcher attempt shown is the one that matches; the others fail before the
-lookbehind or at its first guard.
+byte offsets. The matcher attempt shown is the one that matches. The other attempts fail
+elsewhere `[r6 V14]`. In cells 1 and 2 they fail before the lookbehind or at its first guard. In
+cell 3, the attempt at 1 runs branch 0, exhausts it, and fails at branch 1's guard. In cell 4, the
+attempts at 1 and 2 pass the lookbehind and fail at the follow's `c`, after the non-atomic retries.
+(Whether a prefilter skips those starts depends on the artifact.) Trail depths are not traced here;
+§5.5 sizes them.
 
 **Cell 1: `(?<=a{1,2}|b)x` on `bx`, libpcre2 [1-2].** Cursor 1, `POS = 1`. Branch 0 is `range`
 [1,2]; branch 1 (`b`) is `one-length` k=1, last.
@@ -506,7 +671,7 @@ Under rev 0, F2 saved position 1, and branch 1's guard `1 < 2` sent it to `rx_fa
      65000). `(?<=a{65535}b)x` and `(?<=(?:a{1000}){66})x` REJECT 187.
    - pcrec compiles the refused two today (`la_widths` refuses only unbounded and `> INT_MAX`).
      Stage 1 refuses them: G1's exception to G2 (§0).
-   - New `limits.def` row: `lookbehind_branch_max`, 65535 characters, override none.
+   - New `limits.def` row `[r6 V9]`: `LA_LOOKBEHIND_BRANCH_MAX`, 65535 (§5.2a).
 2. **The variable cap: 255 characters, on every branch's MAXIMUM once ANY branch of that
    lookbehind varies.**
    - libpcre2 gives err 200 "branch too long in variable-length lookbehind assertion".
@@ -514,17 +679,23 @@ Under rev 0, F2 saved position 1, and branch 1's guard `1 < 2` sent it to `rx_fa
    - How widths count: in characters under UTF and bytes in byte mode; nested quantifiers
      multiply; sums add; a nested lookbehind is capped on its own and never summed into the outer
      branch; a nested lookahead contributes 0.
-   - New `limits.def` row: `lookbehind_var_max`, 255 characters, override none until [IFACE-PUSH]
-     (owner ruling).
+   - New `limits.def` row `[r6 V9]`: `LA_LOOKBEHIND_VAR_MAX`, 255 (§5.2a). No override until
+     [IFACE-PUSH] (owner ruling).
 
 What the rows mean:
 - **Both are POLICY, not mechanism (owner's answer, review r3).** Correctness needs no cap, not even
   boundedness. §5.1's `D_i` strictly decreases and is clamped by the subject start, and the
   emission is one body copy per branch whatever `hi_i` is.
-- So nothing in §5.1 depends on `hi_i`'s magnitude:
+- So nothing in §5.1's CONTROL depends on `hi_i`'s magnitude:
   - `D_i` is a slot as wide as the width table (`int`);
   - nothing is unrolled per length;
   - the back-step count is a run-time operand.
+- **Its STORAGE does `[r6 V1]`.** The trail grows linearly in `hi_i − lo_i` (one entry per
+  candidate, §5.1), and the cost pass charges it (§5.5).
+  - At the 255 policy that is at most 256 entries per `range` branch.
+  - At a raised cap one branch can need up to 65,536, above `VM_MAX_AUTO_TRAIL_FRAMES` (3072).
+    Raising the cap at [IFACE-PUSH] is therefore a one-row change for ACCEPTANCE only. The trail
+    arithmetic of §5.5 travels with it.
 - The 255 cap exists for accept-set EQUALITY with PCRE2's default (G1, gate 3). Under D26's addendum,
   accepting more than PCRE2 would not be a defect, so 255 is a choice. The setting (PCRE2's
   `max_varlookbehind`) waits for [IFACE-PUSH], where raising it is a one-row change.
@@ -537,6 +708,11 @@ What the rows mean:
 **The range must be EXACT wherever it decides the cap or the emission row `[r3 F2]`.**
 - `la_widths`' comment says that `pcrec_cwmin` may UNDER-estimate "for free". That premise is RETIRED
   for this consumer. Under the old fixed-only rule, looseness could only refuse.
+- The same premise is the stated CONTRACT of both width functions' headers in src/opt/mrl.c
+  `[r6 V12]`: `pcrec_cwmax`'s ("This function may OVER-estimate for free"), which also restates
+  `pcrec_cwmin`'s ("`pcrec_cwmin` may under-estimate for free"). Stage 1 corrects both headers and
+  `la_widths`' comment, not only stage 2's A_BREF sentence. New text: exact for the lookbehind
+  consumer; a loose answer is the wrong emission row and a wrong cap.
 - Now an under-estimated `lo` (or an over-estimated `hi`) makes a fixed branch "varying", which
   has two effects:
   - it switches the 255 cap on for EVERY branch of the lookbehind, refusing patterns libpcre2
@@ -555,8 +731,10 @@ libpcre2 also makes:
 - a call that re-enters its own lookbehind, §7.4¶5a (err 125).
 
 So all four are shape 7 of `pattern_language.md` §2.4's refusal-shape table ("PCRE2 refuses it
-too"), not shape 5, and none names a raise flag. Their sentences change to say what is refused, per
-D26's functional tier:
+too"), not shape 5, and none names a raise flag. Shape 7's "means" cell says "the pattern is not
+well-formed", which the cap and the ceiling are not: they are length LIMITS (§5.2a). So the §2.4
+hunk widens that cell to "not well-formed, or over a PCRE2 length limit; PCRE2 refuses it too"
+`[r6 V12]`. Their sentences change to say what is refused, per D26's functional tier:
 - unbounded: "every alternative of a lookbehind must have a bounded length (this one is unbounded)";
 - the cap: "... at most 255 characters once any alternative's length varies (this one can match
   up to N)";
@@ -565,6 +743,38 @@ D26's functional tier:
 The unbounded arm's current text, "variable-length lookbehind is not implemented", becomes false at
 stage 1. K127's `recurses` refusal prints the same text and moves with it. The readers of the old
 text are listed in §10.
+
+`la_widths`' `hi > INT_MAX` arm ("this lookbehind is too long") becomes unreachable under the 65535
+ceiling, which refuses first. It is DELETED `[r6 V9]`, not kept as a dead arm, and `LA_MSG_MAX`'s
+length comment in mod_lookaround.c is re-read with it.
+
+### 5.2a The two `limits.def` rows, in the table's schema `[r6 V9]`
+
+The row shape is `PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home)`
+(src/core/limits.def's header):
+
+| name | value | unit | kind | override | anchor | home |
+|---|---|---|---|---|---|---|
+| `LA_LOOKBEHIND_BRANCH_MAX` | 65535 | `"chars"` | `"compile budget"` | `NONE` | `"3.11"` | `MOD_LOOKAROUND` |
+| `LA_LOOKBEHIND_VAR_MAX` | 255 | `"chars"` | `"compile budget"` | `NONE` | `"3.11"` | `MOD_LOOKAROUND` |
+
+- **Name and home.** C symbols beside `LA_MSG_MAX`, in the module file that reads them
+  (`la_widths`). The `MOD_LOOKAROUND` home expands each row to a constant there.
+- **Unit.** `"chars"` is in the unit vocabulary (`PCREC_UPROP_NAME_MAX` uses it). "Characters under
+  UTF, bytes in byte mode" goes in `desc`, since one cell cannot carry the reading.
+- **Kind: an existing token, no schema change.** `"compile budget"` reads "crossing it can REFUSE a
+  pattern". The precedent is `PCREC_MAX_GROUP_DEPTH`, PCRE2's own nesting ceiling, which carries
+  that kind with `NONE`. The `desc` says these are PCRE2's language limits (the ceiling) and policy
+  matching PCRE2's default (the cap), not a resource bound. A sixth kind would be a schema change to
+  three texts: limits.def's header, the dump's printed header (`src/dump/limits_dump.c`, the public
+  `--list-limits`/`pcrec_limits_tsv` self-description), and `limits.md`. Rev 1's "a LANGUAGE limit"
+  is withdrawn.
+- **Readers that move in the same change:**
+  - `tests/registry/limits_check.sh`: its `EXPECT_NAMES` manifest gains the two names, and its
+    literal row count 78 becomes 80;
+  - the new `limits.md` subsection (§10 of this note) spells each anchored value the way the check
+    finds it, comma-grouped:
+    "65,535" and "255".
 
 ### 5.3 The end-check and the negative arm
 
@@ -578,6 +788,20 @@ the cursor.
 
 The predicate is the emission table's own key: "this branch's end-check can fail on a correct
 compiler" iff `lo_i < hi_i`. `PCREC_ERR_INTERNAL`'s spec sentence narrows accordingly (§10).
+
+**`PCREC_ERR_INTERNAL` has TWO producers today, not one `[r6 V11]`:**
+- this end-check;
+- D72's region-exit guard (`if (<p>_call_frame >= run->resume_cap) return <P>_R_INTERNAL;`,
+  rendered by src/gen/vm_stmt.c at every subroutine region exit).
+
+`match_api.md` §4¶6's "its one producer" is pre-existing drift, and so is `emit_vm.c`'s comment
+naming the end-check as "its one producer today". The §10 hunk repairs it rather than carrying it
+forward. Two comments read the end-check's redundancy, and both are scoped to `one-length` in the
+same change:
+- `src/enc/enc_utf8.c`, the back-step's header ("the end-check's redundancy argument ...
+  unconditional and RX_R_INTERNAL unreachable");
+- `vm_look_behind`'s header, note 3 ("THE END-CHECK IS PROVABLY REDUNDANT FOR THE SUBSET THIS
+  MODULE SHIPS"). The build rewrites it. S136's anchor is in mod_lookaround.c, not here.
 
 ### 5.4 The candidate source: a declared choice row (D186; LOCATE rows, D156 `[r3 F16]`)
 
@@ -654,6 +878,56 @@ priority-tagged accepts of `alt_dispatch_study.md`. Not designed here.
   because the ruled F1 form re-steps from the cursor. It is named so the trigger has somewhere to
   go.
 
+**Trail `[r6 V1]`: the term, derived from the code.**
+- Today, `vm_cost_look` (src/gen/emit_vm.c) returns the body's cost plus `frames += 1 + nbranch`
+  and `trail += 2`. The 2 is the assertion's own two trailed writes, the cut mark and the `POS`
+  save. That constant is CONFIRMED on this branch: `(?<=aa)x`, `(?<!aa)x`, `(?<*aa)x` and
+  `(?<=a|bc)x` all emit `RX_TRAIL_FRAMES 3` (`vlbrev2_evidence/premise.out`).
+- The body's cost is `vm_cost_alt`'s field-wise MAX over the branches.
+- `vm_plan_capacities` sizes a bounded pattern's trail at `cost.trail + 1`, clamped at
+  `VM_MAX_AUTO_TRAIL_FRAMES` (3072).
+- The emitted `RX_TRAIL` returns `RX_R_FRAMES` when `trail_depth >= trail_cap`, BEFORE the write.
+  No tier grows a bounded pattern's trail.
+
+**The new term:** `trail += 2 + Σ_{i : lo_i < hi_i} (hi_i − lo_i + 1)`, read off the stored width
+pairs through the table's one predicate (§5.1b). The derivation:
+1. A `range` branch writes `D_i` once at `L_b_i`, and once more at each `L_adv_i` decrement.
+2. `D_i` starts at `min(hi_i, cursor) ≤ hi_i`, and a decrement happens only while `D_i > lo_i`. So
+   one evaluation makes at most `hi_i − lo_i + 1` writes of `D_i`.
+3. No pop inside the evaluation removes any of them (§5.1's trail bullet).
+4. Branches run in order, and an exhausted branch's entries stay live. So the lookbehind-owned
+   peak, `2 + Σ_range (hi_i − lo_i + 1)`, is reached in the last `range` branch tried, with every
+   earlier `range` branch's entries below it.
+5. The body's own entries sit on top. They are charged as the max over branches, which is a safe
+   bound, since the branch running at the peak need not be the widest.
+
+How tight the term is:
+- **Exact** where it can be. `(?<=a{1,2})x` on `bax` peaks at 4 entries (MARK, POS, `D = 2`,
+  `D = 1`), and the term charges 2 + 2.
+- A safe OVER-charge elsewhere. A cursor nearer than `hi_i` to the subject start makes fewer
+  candidates, and the negative and non-atomic forms over-charge the 2 by one, as today.
+
+**The frames term `1 + nbranch` stays a safe bound** (say so in its header). At most one
+lookbehind-owned retry frame is live at once, `L_adv_i` or today's next-branch frame, plus
+`L_neg_ok` on the negative form. The last `range` branch now pushes, so the term is still at least
+the exact count. Rev 1 named only `vm_count_slots_look`. `vm_cost_look` is the second pass that
+must agree with the emitter, and its header gains the `range` paragraph.
+
+Further consequences:
+- **A lookbehind inside a loop.** `vm_cost_rep`'s arms read `body.trail` per iteration, so the
+  same term corrects the per-iteration charge. Without it, the stamped `subject_ceiling` of a
+  pattern like `(?:(?<=a{1,9})b)+` over-promises.
+- **Beyond the clamp** (fix-induced, for the re-check's diff check). A pattern whose term exceeds
+  the 3072 clamp would be sized short. At the 255 policy that takes about twelve full-width `range`
+  branches, summed over the lookbehinds of one path. D44.1's honest-stamp rule then owes a
+  ceiling, not a silent cap. So when the lookbehind has a `range` branch, `vm_cost_look` also sets
+  `growable` and adds `pt += (number of range branches)`: one entry per `range` branch per subject
+  character, until `hi_i`. This is the safe direction, and it moves nothing where the requirement
+  fits, because the ceiling is stamped only when it does not fit. No population row comes near the
+  clamp.
+- **The alternative below** (a second trailed slot plus forward steps) grows the trail by one entry
+  per retry as well. It would carry the same term.
+
 **Frames.**
 - The retry frames are ordinary frames, counted by D42's frame bound.
 - Live LOOP frames: at most one per branch per active lookbehind. `L_adv_i` replaces itself, and
@@ -685,9 +959,24 @@ Every statement maps to an existing kind:
 
 `D_i` IS a record field, not only text. `VK_SEEK` already carries a `slotx` operand (used by
 `VSK_RESTORE`). The `range` row's back-step sets it to `D_i`'s slot expression and `k` to 0.
-`vm_r_seek`'s `VSK_BACKSTEP` arm renders `slotx` when it is present and the literal otherwise. So
-(c)'s analysis reads the count as an operand, which is D182's (c) ruling. This is a renderer arm
-change, not a new kind. The `one-length` row's record is unchanged.
+`vm_r_seek`'s `VSK_BACKSTEP` arm renders the slot's VALUE when `slotx` is present, and the
+literal otherwise. So (c)'s analysis reads the count as an operand, which is D182's (c) ruling.
+This is a renderer arm change, not a new kind. The `one-length` row's record is unchanged.
+
+**`slotx` is an INDEX, so the arm renders its value `[r6 V3]`.**
+- `slotx` holds the slot's index text. `VSK_RESTORE` renders
+  `scan_position = (size_t)slot_values[<slotx>];` (src/gen/vm_stmt.c), and its producer passes a
+  bare slot number.
+- So the `VSK_BACKSTEP` arm renders
+  `scan_position = $_back_step(subject, subject_length, scan_position, (size_t)slot_values[<slotx>]);`.
+  `slotx` keeps one meaning across arms, which is what [VMREC] (c)'s reader of it needs.
+- Rendered verbatim instead, `slotx` passes the slot's NUMBER as the count. That compiles without
+  a warning and steps back by the wrong amount. Every W-row catches it at build.
+- The same holds for `VK_WORK`. Its amount is a string rendered verbatim (`vm_r_work`), so the
+  `range` row passes the value expression `slot_values[<D_i>]`, never the slot expression.
+  `vm_cut` already passes an expression of this shape
+  (`(ptrdiff_t)run->resume_depth - slot_values[%d]`). `RX_CHARGE_WORK` converts to `ptrdiff_t` and
+  charges only a positive amount.
 
 ## 6. Staging and acceptance gates
 
@@ -698,13 +987,38 @@ oracle is libpcre2 10.46.
 **Stage 1: `range` (B), capability.** Scope:
 - the width rule (§5.2), with both lookbehind ceilings;
 - the loop (§5.1) and the emission table (§5.1b);
-- the end-check split (§5.3) and budgets (§5.5);
+- the end-check split (§5.3) and budgets (§5.5), the trail term included `[r6 V1]`;
+- the two `limits.def` rows (§5.2a);
 - spec hunks (§10);
-- the 36 real corpus rows flipped from refusal to match cells (vlbinv §4). The `${v}` row stays
-  refused.
+- 32 corpus rows (24 distinct) flipped from refusal to match cells (vlbinv §4; population.tsv's
+  `B_loop` = `yes` and `yes(deferred path)`) `[r6 V12]`. Rev 1 said 36, which counted the 4
+  backreference rows (`(a)(?<=\1)x` ×2, `(a|bc)(?<=\1)x` ×2). Those stay refused until stage 2. The
+  `${v}` row stays refused;
+- **the [DD-14.LB] amendment's ruled refusal is REVERSED, deliberately** `[r6 V10]`. The
+  amendment (2026-08-24, `sr_d27_extract.md` §3.4(d), recorded "as a RULING";
+  plan_completed.md [DD-14.LB]: "a RULED perr (tier 2)") refuses a call that is a lookbehind's one
+  top-level branch when its callee has different fixed widths, though PCRE2 accepts it. That
+  refusal was a consequence of the missing candidate loop. With the loop, the two deferred-path
+  rows compile and answer as libpcre2 does: `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` (ACCEPT, lb 2)
+  and `^(?:(?<g>a|ab)){0}ab(?<=(?&g))$` (ACCEPT, lb 2; both [0-2] on `ab`). The build owes a
+  decision entry that says so (text in §10);
+- **the D27 material that states the refusal moves, through its owners** `[r6 V10]`:
+  - both existing extracts are RE-CUT from their sources (docs/design/CLAUDE.md: never edited
+    independently). They are `docs/design/la_d27_extract.md` (the G2 row, "pcrec REFUSES these
+    too ... the author must not write a match expectation", and its §2.5 refusal lines) and
+    `docs/design/sr_d27_extract.md` §3.4(d) (the amendment). The manager cuts them, as for the
+    existing extracts, beside the new `vlb_d27_extract.md`;
+  - the D27-owned corpora pin the refusal: `tests/lookaround/d27/` (`gen_refusals.py`,
+    `refusals.rxt`, `spellings.rxt`) and `tests/recursion/d27/` (`sr_interactions.rxt`'s
+    [DD-14.LB] cell and its `sr_gen.py`/`sr_check.py` entries, `sr_wrapped.rxt`). They are
+    flipped by stage 0's D27 author from the re-cut extracts, not by the build lane. If no author
+    is chartered, the manager rules each flip in the landing commit and names the cells.
 
 Gates:
-1. **Oracle differential, libpcre2 10.46** (PC-3's harness).
+1. **Oracle differential, libpcre2 10.46**, run by `tests/lookaround/run_lookaround_diff.sh` (every
+   start offset, every group span), extended by a section for these cells `[r6 V12]`. Rev 1 said
+   "PC-3's harness". PC-3 is `tests/registry/pcre2_check.c`, the registry's COMPILE check, not a
+   match differential.
    - The cell set: every spelling × {capturing, non-capturing} × {group alternation, bounded
      quantifier, nested quantifier, nested lookaround, atomic/possessive inside, call to a bounded
      group}. Subjects hit:
@@ -722,20 +1036,49 @@ Gates:
      stays honest. The simulate lens measured 7,776 such cells at offset 3 and 5,012 at offset 4.
    - The generator counts its own population and its expected-divergent subset (K35). Both are
      pinned with floors.
-2. **Identity.** Every corpus artifact containing a lookbehind is byte-identical (G2; owner
-   question 1).
+   - A `PCREC_ERR_FRAMES` is a difference, not a give-up to excuse `[r6 V1]`: no gate-1 cell is
+     near the trail clamp, so the trail term makes every cell fit.
+2. **Identity, by `tests/codegen/run_recursion_identity.sh`** `[r6 V7]`. Every corpus artifact
+   containing a lookbehind is byte-identical (G2; owner question 1). That instrument compares every
+   call-free corpus pattern against `$FILEPIN` (whole file) and `$ABASEPIN` (program region). It
+   HARD-FAILS a call-free pattern that one build accepts and the other refuses. Stage 1 flips 22
+   distinct call-free patterns (30 rows) from refused to compiled, so the gate is red BY
+   CONSTRUCTION on the landing until it is re-pinned. The procedure:
+   - run it against the pre-landing pins;
+   - require `differing = 0`;
+   - require the refusal-mismatch set to equal EXACTLY the flipped manifest. The build counts that
+     manifest from `vlbinv_evidence/population.tsv` (K35), and 22/30 is the expected value at this
+     freeze. The 2 call-bearing deferred rows are compared by the gate's call-bearing arm;
+   - then re-pin `$FILEPIN`/`$ABASEPIN` in the landing's own commit, the gate's documented
+     "moves on purpose" route. Under (A) that is not an abi bump.
+   - Under (B), the same re-pin carries the abi number, and the `differing` population is every
+     lookbehind artifact.
+   - `tests/lookaround/run_lookaround_identity.sh` (default `STRICT_ALL=0`) compares only the
+     lookaround-FREE bucket, so it does not carry G2.
 3. **Accept set ⊆ PCRE2's, and the classification control `[r3 F2, F4]`.**
-   - Every cell pcrec compiles, libpcre2 compiles: 0 exceptions.
+   - Every cell pcrec compiles, libpcre2 compiles: 0 exceptions, outside the one stated
+     divergence `[r6 V6]`. That is an unbounded repeat of a zero-width body in a lookbehind branch
+     (`(?:)*`, `(?:\b)*`, `(?:)+`, `(?:(?=b))*`, `(?:a{0})*`), which pcrec accepts and libpcre2
+     refuses (err 125). The generator crosses "nested lookaround" and "bounded quantifier" with
+     such a repeat, so the class is IN the population. Its cells are counted on their own line, like
+     gate 1's D142 cells. The classification control excludes them by the same rule, since
+     libpcre2 at `max_varlookbehind = 0` refuses them for a reason that is not width.
+   - **G1's accept-set measurable holds at stage 1 only if the 65535 ceiling rides stage 1**
+     `[r6 V15]` (owner question 2). If it does not, the ceiling cells move to the ceiling's own row,
+     and G1 is stated false until that row lands.
    - The boundary cells are in the set:
      - cap: `a{1,255}`/`a{1,256}`, `a{255}|b{1,2}`/`a{256}|b{1,2}`, UTF `é{1,255}`/`é{1,256}`;
      - ceiling: `(?<=a{65535})x`/`(?<=a{65535}b)x` and `(?:a{1000}){65}`/`{66}`.
    - For every cell, pcrec's per-branch "one length" judgment must equal libpcre2's accept/refuse at
      `max_varlookbehind = 0`. libpcre2 at 0 accepts exactly the lookbehinds with no varying branch.
-     This is the independent check that §5.2's range is exact.
+     This is the independent check that §5.2's range is exact. pcrec's judgment is read from the
+     `--emit-ir` label role (§5.1b, role text 1: "fixed width %d" against "width %d..%d")
+     `[r6 V5]`.
 4. **Budget cell.** The variable twin of §3.7's long-subject leading-lookbehind cell gives the same
-   answer as libpcre2, or a documented `PCREC_ERR_WORK` at a stated subject size (§5.5).
+   answer as libpcre2, or a documented `PCREC_ERR_WORK` at a stated subject size (§5.5). It never
+   gives `PCREC_ERR_FRAMES` (the trail term, §5.5) `[r6 V1]`.
 5. **Sabotage.** The rows of §7 are each red in their sabotaged build and green in the correct one.
-   S136 is re-aimed as §7 spells it (F9).
+   S136 is re-aimed as §7 spells it (F9). S133, S134 and S-U4 move as §7 lists `[r6 V8]`.
 
 **Stage 2: backreferences in a lookbehind (B+) `[r3 F2, F3, F5]`.** Rev 0 said: "`pcrec_cwmax(A_BREF)`
 = the widest group it can name (union over duplicate names)". That is refuted: it sets one end
@@ -757,8 +1100,9 @@ only, and it accepts what libpcre2 refuses. Rev 1:
 - **Refusals (libpcre2 err 125, shape 7), each with its cells:**
   - a BY-NAME reference whose name is duplicated (`(?J)`). A NUMBERED reference to such a group is
     accepted. Documented in `man pcre2pattern`; not a PCRE2 bug, so D26's addendum does not apply;
-  - ANY reference in a pattern that uses `(?|` anywhere. Latent until [branch-reset] lands, but the
-    rule is written now so it refuses then;
+  - ANY reference in a pattern that uses `(?|` anywhere. Latent until the `branch-reset` MODULE
+    lands (`pattern_language.md` §8.1's table; it is not a plan row) `[r6 V12]`, but the rule is
+    written now so it refuses then;
   - a reference to an unbounded group;
   - a reference to a recursive group (K127's `recurses` is the existing home);
   - a reference inside the group it names (self-reference, directly or through a call). Without this
@@ -789,6 +1133,8 @@ only, and it accepts what libpcre2 refuses. Rev 1:
 
   The full 40-row table with match answers is `docs/dev/reviews/2026-11-05-r3-vlookbehind/ruling.md`.
   Every row there matches this rule. Gates 1-3 run over these cells plus generated reference cells.
+  A reference to a group made only of an unbounded zero-width repeat inherits stage 1's stated
+  divergence (§0 G1, `[r6 V6]`): accepted, and counted on its own line.
 - **The fixed-group half needs none of stage 1's loop.** A branch made only of one-length items and
   references to fixed groups is a `one-length` branch: today's emission. Only the width memo, the
   deferral and the refusals are new. Stage 2 also closes a gap on FIXED-width lookbehinds: pcrec
@@ -824,6 +1170,7 @@ fail.
 | W9b `[r3 F4]` | ceiling missing or off by one | `(?<=a{65535})x` compiles, `(?<=a{65535}b)x` refused (err 187); `(?<=(?:a{1000}){65})x` compiles, `{66}` refused | The ceiling boundary pairs: fixed, and through a product. |
 | W10 | branch order lost (longest over all branches) | `(?<=(a)\|(aa))c` on `aac`: g1=(1,2) | Branch 2 is longer. Sabotaged: sets g2. |
 | W11 `[r3 F1]` | (a) the retry frame saves the candidate, not the cursor (rev 0's push position); (b) the back-step runs before the clamp test (rev 0's order) | (a) `(?<=a{1,2}\|b)x` on `bx`: [1-2], and `(?<=a{1,2}\|bc)x` on `bcx`: [2-3]. (b) `(?<=a{2,3}\|b)x` on `bx`: [1-2]. | A varying branch followed by another branch. Under either sabotage the next branch starts from a candidate position, and its guard fails: nomatch (§5.1c cells 1-3, and the review's hand-runs of rev 0). |
+| W12 `[r6 V1]` | (a) `vm_cost_look`'s trail term dropped (today's constant 2); (b) the term charged one short per `range` branch | (a) `(?<=a{1,2})x` on `bax`: [2-3]; also `(?<=x\|[ab]{1,3})y` on `caay`: [3-4]. (b) `(?<=a{1,2}\|b{1,2})x` on `abx`: [2-3]. | At default options (no `frame_capacity`), a bounded pattern's trail is `cost.trail + 1`. (a) Capacity 3: MARK, POS and `D_0 = 2` fill it, and the first decrement returns `PCREC_ERR_FRAMES`. (b) Both branches are exhausted down to `D = 1`, so the peak is 2 + 2 + 2 = 6 entries. One short per branch sizes 5, and the sixth write gives up. A single `range` branch one short is MASKED by the capacity's `+ 1`, so (b) needs two `range` branches. The answers are `vlbrev2_evidence/premise.out`'s. |
 
 **Stage 3's witnesses** (row `reverse-dfa`). Admission floor: each body below varies and its machine
 is a few states, far under any cap, so the row reaches in both builds.
@@ -854,8 +1201,36 @@ is a few states, far under any cap, so the row reaches in both builds.
     and ends at 2, not 3. The end-check fires and the matcher returns `PCREC_ERR_INTERNAL`.
   - A negative cell where the body fails outright, such as `abcx`, would not reach the end-check.
     It declines before it: a false match, not the hard return.
+  - **Which branch `[r6 V8]`: every branch, or branch 0, never only the last.** Sabotaging only `d`
+    (the last branch) leaves both cells green: the positive cell still matches through `bc`, and in
+    the negative cell `d` from 1 reads `c` and `bc` from 1 reads `ca`, so both decline. The natural
+    edit, `la_widths`' loop (today's S136 anchor), hits every branch, which works.
 - **W1** then catches the variable-branch half (`hi` reported as `lo`).
-- **S135** carries unchanged; W7 is its variable twin.
+- **S135** carries unchanged; W7 is its variable twin. Under (B) its anchor (`if (k > 0)`) sits in
+  rewritten code and is re-anchored.
+- **S133 and S134** `[r6 V8]` anchor the one literal-`k` back-step
+  (`pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k)`) and its sentinel branch, each with
+  `SAB_COUNT=1`. Their detector is `tests/codegen/run_codegen_tests.sh`'s fixture-declared per-site
+  count, and every `residlb*` fixture is fixed-width.
+  - Under (A), the `range` row adds a SECOND back-step site and a second sentinel site, which no
+    anchor names. Inlining it (`scan_position - D_i`) or dropping its sentinel would be caught by
+    nothing but W6, a UTF-8 cell. So each row gains a `range` twin (`SAB_COUNT` on the `range`
+    site's own anchor).
+  - Codegen gains a `range` fixture: `residlbrange (?<=a{1,2}|bc)x --features lookaround`, with
+    `back_step:2` (two branches, one site each; libpcre2 ACCEPT, lb 2). That makes §5.1's
+    "per-site count unchanged" a checked statement.
+  - Under (B), both anchors sit in rewritten code and are re-cut.
+- **S-U4** `[r6 V8]` (`pcrec_cwmax(A_CLASS)` × 4) loses its STATED detector. Its
+  `SAB_DOC_FIGURE` predicts that every class-bearing lookbehind refuses. After stage 1,
+  `(?<=a)x` becomes `range` [1,4] with today's answers. Candidates 4..2 fail the end-check and
+  candidate 1 answers.
+  - It is re-aimed at gate 3's classification control: the judgment "fixed width 1" becomes
+    "width 1..4". Its figure is updated.
+  - The verifier notes that it likely still goes red on the cap and ceiling boundary cells, where ×4
+    crosses 255 or 65535. So the figure is wrong rather than the detection gone. The row is run at
+    build to confirm.
+- **W12** is new (the trail term). Its sabotage edits `vm_cost_look`, a site no existing row
+  reaches.
 - Ids are the build lane's, from the range its brief names.
 
 ## 8. The population
@@ -884,7 +1259,9 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
 - **What the extract must carry `[r3 review recommendation]`:**
   - stage 2's refusal list (duplicate names, `(?|`, unbounded or recursive groups,
     self-reference);
-  - D142's UTF startpos class (§6 gate 1).
+  - D142's UTF startpos class (§6 gate 1);
+  - `[r6 V6, V10]` the zero-width-repeat accept-set divergence (§0 G1), and the reversal of
+    [DD-14.LB]'s ruled refusal, which the re-cut `la_`/`sr_` extracts carry too (§6 stage 1).
 
   Without them, the author writes red cells for ruled divergences.
 
@@ -899,6 +1276,12 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
 
   The preference order (written order, then longest first, the body backtracking until it ends at
   the position) and the non-atomic retry each get a paragraph with an example.
+
+  **The stated divergence `[r6 V6, RULED]`** gets a sentence in the same paragraph: "An alternative
+  containing an unbounded repeat of something that matches no characters, such as `(?:)*` or
+  `(?:\b)*`, counts as zero characters, so `(?<=(?:)*a)x` is accepted. PCRE2 refuses such a
+  lookbehind (its error 125); accepting it is a deliberate divergence." This is D26's addendum:
+  accepting more than PCRE2 is not a defect.
 - **`pattern_language.md` §9¶2.** Stage 1 deletes the clause "a lookbehind alternative of varying
   length ... including `(?<=(?:a|bc))x`". Stage 2 deletes the clause "or containing a backreference
   (§7.4)". Both clauses are refusals of accepted syntax that the stages retire.
@@ -914,17 +1297,32 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
     is refused".
 - **`pattern_language.md` §2.4's refusal-shape table.** Shape 5's "variable-length lookbehind"
   example is removed. The unbounded, cap, ceiling and lookbehind re-entry refusals are shape 7 (PCRE2
-  refuses them too), with the sentences of §5.2. None names a raise flag.
-- **`limits.md` §3.** A new subsection, §3.11 "Lookbehind length", holds the two rows:
-  - `lookbehind_branch_max` 65535 and `lookbehind_var_max` 255;
-  - unit: characters (bytes in byte mode);
-  - kind: a LANGUAGE limit with no override, unlike a §3.3 compile budget;
-  - the cap's setting is [IFACE-PUSH]'s.
-- **`match_api.md` §4¶6** (`PCREC_ERR_INTERNAL`).
-  - Its producer is the end-check of a `one-length` branch on the negative arm only.
+  refuses them too), with the sentences of §5.2. None names a raise flag. Shape 7's "means" cell
+  widens to "not well-formed, or over a PCRE2 length limit; PCRE2 refuses it too" `[r6 V12]`.
+  §2.4¶2's courtesy (follow PCRE2's wording where pcrec has some) is available for the three
+  sentences. That is D26 tier 3, so it is optional.
+- **`limits.md` §3.** A new subsection, §3.11 "Lookbehind length", holds the two rows (§5.2a)
+  `[r6 V9]`:
+  - `LA_LOOKBEHIND_BRANCH_MAX` = 65,535 and `LA_LOOKBEHIND_VAR_MAX` = 255, spelled comma-grouped as
+    `limits_check.sh` finds them;
+  - unit `chars`: characters under UTF, bytes in byte mode;
+  - kind `compile budget`, override none (the `PCREC_MAX_GROUP_DEPTH` precedent): crossing either
+    refuses the pattern;
+  - the cap's setting is [IFACE-PUSH]'s (a dated CANDIDATE line in
+    `docs/design/plan_row_bodies/IFACE-PUSH.md`).
+
+  `--list-limits`/`pcrec_limits_tsv` gain the two rows. The table's kind vocabulary is unchanged,
+  so the dump's header is unchanged.
+- **`match_api.md` §4¶6** (`PCREC_ERR_INTERNAL`) `[r6 V11]`.
+  - It has two producers: the end-check of a `one-length` branch on the negative arm, and D72's
+    subroutine region-exit guard. This repairs the pre-existing "its one producer" drift rather
+    than carrying it forward.
   - The stale `pcrec_maxw` becomes the stored width pair (`pcrec_cwmin`/`pcrec_cwmax`).
-  - "Redundant for the width class the module ships" becomes "redundant for one-length branches,
-    which are the only producer".
+  - "Redundant for the width class the module ships" becomes "redundant for one-length branches; a
+    varying branch's end-check declines instead".
+  - The code comments that read it move in the same change (§5.3): `src/enc/enc_utf8.c`'s back-step
+    header, `vm_look_behind`'s note 3, and the `emit_vm.c` comment naming the end-check as INTERNAL's
+    "one producer today".
 - **`match_api.md` §9.4¶2.** LB is the widest branch's maximum. The wording already covers the
   variable case; re-read it.
 - **`match_api.md` §9.4¶8** (D142's clip divergence). Re-read: its class grows with varying bodies,
@@ -935,7 +1333,21 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
   - mentions without the exact text: `tests/lookaround/lookbehind_group_alt.{rxt,gen.py}` and
     `tests/recursion/gen_corpus.py` (a `kind='capability'` cell);
   - also `tests/reject/run_reject_tests.sh` and `tests/mech/sabotages/S172_postresolve_walk_order.sh`
-    (the ruling lens's grep).
+    (the ruling lens's grep);
+  - the D27 material `[r6 V10]`: the two extracts (`la_d27_extract.md`, `sr_d27_extract.md`
+    §3.4(d)) are re-cut from their sources, and the D27-owned corpora (`tests/lookaround/d27/`,
+    `tests/recursion/d27/`) are flipped by their owner (§6 stage 1).
+- **No `ir_listing.md` hunk** `[r6 V4]`. `D_i` joins the counter family, which the `slots` section
+  does not list, so §3.2¶2's family vocabulary is not extended. The label role's new text is
+  "the role text the walk recorded" (§3.4¶1).
+- **The decision entry the build owes** `[r6 V10]` (the next D-number at landing; text to adapt):
+  "[VLOOKBEHIND] stage 1 SUPERSEDES the [DD-14.LB] amendment's ruled refusal (2026-08-24,
+  `sr_d27_extract.md` §3.4(d)). That ruling refused a call that is a lookbehind's one top-level
+  branch to a callee of different fixed widths, which PCRE2 accepts. It was a consequence of the
+  missing candidate loop. With the loop, `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` compiles and answers
+  as libpcre2 10.46 does (ACCEPT, lb 2). The extracts are re-cut and the D27 cells flipped in the
+  same landing. The same entry records the zero-width-repeat accept-set divergence (V6, D26
+  addendum) and the trail term (V1)." The manager acknowledges the supersession when ruling.
 - **Stage 3 only:** a `tuning.md` §2 section for the row and its stamp, and the abi event.
 - **`docs/pcre2_compliance.md`**, via the compliance-refresh skill after landing (not spec). It
   records that pcrec answers at libpcre2's DEFAULT `max_varlookbehind` only.
@@ -968,11 +1380,15 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
      one discriminating cell.
    - The rev 1 sketch was hand-executed literally (§5.1c), per the review's lesson 1: a simulation
      of the rule's intent does not validate the sketch.
+   - `[r6 V1]` review r6's lesson: a model that omits a resource bound validates answers, not the
+     build. The trail term is derived from the passes that SIZE the storage (`vm_cost_look`,
+     `vm_plan_capacities`), not only from the slot's readers (§5.5). W12 is its witness, and it
+     fails on today's constant.
 3. **What moves when data is regenerated.** MOSTLY NOT RELEVANT: stage 1 adds no table, calibration
    or generated file.
-   - The new data are the two `limits.def` rows. `--list-limits` and `pcrec_limits_tsv` gain two
-     lines, so their readers (the limits listing's pins, found by grep at build time) move in the
-     same change.
+   - The new data are the two `limits.def` rows (§5.2a). `--list-limits` and `pcrec_limits_tsv`
+     gain two lines, so their readers move in the same change: `limits_check.sh`'s name manifest
+     and its count 78 → 80, plus any other pin found by grep at build time.
    - The refusal text's readers (§10) are text readers, not data, and also move in the same change.
    - If owner question 1 is answered "one shape", every lookbehind artifact moves: an abi event
      (§13).
@@ -1005,17 +1421,27 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
      stores, with both lines tested by the same witnesses and the libpcre2 comparison.
    - Nothing that compiles today changes, and no abi event is owed.
    - The "one mechanism" goal holds for the mechanism (one candidate loop), not for the text.
+   - `[r6]` The table now lists, for each line, every place the compiler reads it: the counter
+     slot, the frames, the trail size, the labels and the comments. So the two lines cannot drift
+     apart unnoticed. New patterns that use the loop also carry a trail checkpoint and about 38
+     lines of trail-compaction helpers, which today's code already has for other loops.
 
    **(B) Use the loop for every branch, fixed ones too, and take an abi event.**
    - Every artifact with a lookbehind changes: about 826 lookbehind lines in 40 `.rxt` files feed
      the identity gate, and all are re-pinned.
-   - Each changed artifact gains a slot, which renumbers the slots after it.
+   - Each changed artifact gains one counter slot per lookbehind branch, which renumbers the slots
+     after them.
    - The last branch keeps one more frame per evaluation, which shifts frame and step counts by one.
-   - Each fixed branch emits about 4-5 more C lines.
+   - Each fixed branch emits about 4-5 more C lines, plus a trail checkpoint `[r6 V1]`.
+   - Every lookbehind artifact gains K134's trail-compaction helpers (about 38 lines), and its trail
+     grows by at least one entry per branch.
+   - Sabotage rows S133, S134 and S135 are re-anchored, because the code they point at is rewritten.
    - The negative-lookbehind hard error stays tied to "one length". Retiring that too would remove
-     `PCREC_ERR_INTERNAL`'s only producer and S136, which is a further contract change.
+     one of `PCREC_ERR_INTERNAL`'s two producers, and S136, which is a further contract change.
    - Speed: unmeasured, expected negligible.
-   - Benefit: one emission path, no table.
+   - Benefit `[r6 V2]`: one loop for every branch, plus a one-column choice for the negative
+     end-check (hard error at one length, decline otherwise). Rev 1 said "no table", which was
+     wrong unless the hard error is retired too.
 
    **Leaning: (A).** Stability outranks textual unity in the goals. The choice is declared, keyed on
    an existing fact and answer-free. Under your open "VM base" frame it is exactly an admission row:
@@ -1023,7 +1449,9 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
    sound.
 2. **The 65535 ceiling.** It refuses two patterns pcrec compiles today, which nobody uses: fixed
    lookbehinds longer than 65535 characters. Does it ride stage 1, or get its own small row?
-   Leaning: stage 1, since nothing in the population comes near it.
+   Leaning: stage 1, since nothing in the population comes near it. `[r6 V15]` The goal "pcrec
+   accepts nothing PCRE2 refuses" is only true at stage 1 if the ceiling rides stage 1. With its
+   own row, that goal is stated false until the row lands.
 3. **Answered (review r3; recorded, not re-asked).**
    - The 255 limit is a policy for matching PCRE2's default: correctness needs none. 255 stays the
      default, and a setting waits for [IFACE-PUSH].
@@ -1034,13 +1462,23 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
      A-REV area, and lookbehind is its first client.
    - Unbounded lookbehind, with the automaton filter that makes it cheap, is filed HELD as
      [LB-EXIST].
+4. **Answered (review r6, manager rulings; recorded, not re-asked).**
+   - The loop's counter uses the existing counter slots. No new kind of slot is added.
+   - pcrec keeps accepting a lookbehind with an unbounded repeat of something that matches nothing,
+     like `(?<=(?:)*a)x`, which PCRE2 refuses. The spec says so as a deliberate difference.
+   - Stage 1 deliberately undoes the 2026-08-24 ruling that refused a call to a group like `(a|ab)`
+     inside a lookbehind. That refusal existed only because the loop did not. The decision entry
+     at the build says so.
 
 ## 14. What this note does not decide
 
 - Whether stage 1 owes an abi bump at all.
-  - Under question 1 (A), `match_api.md` §6¶19 says no bump is owed when no previously compiling
-    pattern moves. The 65535 ceiling only refuses; it moves no compiled bytes. The manager confirms
-    at landing, with readers found by grep.
+  - Under question 1 (A), `match_api.md` §6¶18 says a bump is owed for "any change to the emitted
+    scaffolding for identical inputs", so none is owed when no previously compiling pattern moves
+    `[r6 V12]`. Rev 1 cited §6¶19, which says what is fixed WITHIN one abi. The 65535 ceiling
+    only refuses; it moves no compiled bytes. A `range` artifact's new text (the loop, the
+    checkpoint, K134's helpers) is new output for a newly compiling pattern, not a change for an
+    identical input. The manager confirms at landing, with readers found by grep.
   - Under (B), it is an abi event: the next number at landing.
 - The `reverse-dfa` row's design detail: tagged vs per-branch machines, re-walk vs stored set for
   non-atomic retries, record kind vs helper part. These are A-REV's and [LANDWALK-VM]'s.
@@ -1050,6 +1488,15 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 - S-ids, the file layout of tests, the generator's cell count.
 - Rev 1 retires one item from this list: rev 0 left the UTF-8 clamp's spelling open. It is now the
   existing `$_back_step` entry with a run-time count (§5.1).
+- **Verbs in a lookbehind body `[r6 V16]`** (latent; owned by the `verbs` module). libpcre2's branch
+  length stops at `(*ACCEPT)`: `(?<=a(*ACCEPT)b{1,2})x` is ACCEPT, lb 1, a fixed length and not
+  [2,3]. pcrec refuses `(*` today ("requires module 'verbs'"). When that module meets a lookbehind,
+  its width rule stops at the verb, and an `(*ACCEPT)` that jumps to `L_ok` must not bypass the
+  end-check. The pcre2-reader question in review r6's `sound.md` rides that module.
+- **The rung ladder's migration to the same declared shape `[r6 V17, the manager's call]`.** The
+  quantifier rung ladder (`vm_rep`) re-derives its choice in `vm_count_slots_rep`, which is the
+  hazard §5.1b's one-row-choice rule avoids. A trigger-gated row (trigger: the next rung, or the
+  next count/emit disagreement found in the ladder) is the manager's to file.
 
 ## 15. Measured vs inferred
 
@@ -1057,15 +1504,26 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
   - rev 0: every cell in §2 and §7's witness answers (`vlbdesign_evidence/*.out`) and the premise
     (`premise.txt`);
   - rev 1: F1's cells, the ceiling cells, W3b, the new W6 cell, the D142 cell and the stage-2
-    acceptance cells marked † (`vlbrev1_evidence/cells.out`, `premise.out`, probe `probe.c`).
+    acceptance cells marked † (`vlbrev1_evidence/cells.out`, `premise.out`, probe `probe.c`);
+  - rev 2 (`vlbrev2_evidence/premise.out`, with rev 1's probe): W12's cells, the codegen fixture's
+    accept, the zero-width-repeat refusals (err 125), and the two [DD-14.LB] rows.
+- MEASURED from pcrec at this branch (`build/pcrec --features all`), rev 2:
+  - today's trail capacity of four fixed lookbehind spellings (`RX_TRAIL_FRAMES 3`), confirming
+    `vm_cost_look`'s constant 2;
+  - pcrec compiling the zero-width-repeat class today;
+  - the 38-line K134 helper span on an existing checkpoint artifact.
 - MEASURED PROXY: reverse-machine sizes (`revdfa_sizes.tsv`). These are the whole-pattern reverse DFA
   of a pattern equal to the body, from pcrec's own artifact tables. A lookbehind machine is the same
   language reversed and anchored at the cursor, so the proxy is close but not the object.
 - READ from code, not executed:
   - §4's evidence (file:function), §3's host and erasure rows;
   - rev 1's prologue order, `VK_SEEK`'s `slotx` operand and the seam's run-time `k` (§1);
-  - the count-pass and slot-family facts (§5.1b).
-- HAND-EXECUTED: §5.1c's four cells.
+  - the count-pass and slot-family facts (§5.1b);
+  - rev 2: the trail term's derivation (`vm_cost_look`, `vm_cost_alt`, `vm_plan_capacities`, the
+    emitted `RX_TRAIL`), the counter family's readers, K134's checkpoint rule (`vm_goto`,
+    `vm_jump_closes_trail_cycle`, `vm_emit_trail_compact`), `VSK_RESTORE`'s rendering of `slotx`,
+    and the `limits.def` schema.
+- HAND-EXECUTED: §5.1c's four cells; rev 2: W12's trail peaks (4 and 6 entries).
 - INFERRED:
   - the speed rows of §3 (no timing was run);
   - the `one-length` row's answer equivalence to the `range` row, argued by four rewrites (§5.1b)
@@ -1096,3 +1554,29 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 | F16 (PREMISE-8) | DOC: LOCATE × FINISH and the K-back sibling named; [ENG-LOOK] existence form; PLAN: HELD row [LB-EXIST] filed | §4 (the family), §5.4, §0 non-goals, docs/dev/plan.md [LB-EXIST] |
 | review lesson 1 | applied: the pseudo-code hand-executed literally | §5.1c, §11.2 |
 | review D27 recommendation | applied: the extract carries the stage-2 refusals and the D142 class | §9 |
+
+## 16b. Disposition table (review 2026-11-05 r6)
+
+Every disposition was ruled ACCEPTED by the manager (the review's RULING block).
+
+| finding | disposition | where in rev 2 |
+|---|---|---|
+| V1 (SOUND-1, FIX-1, READY-1) | FIX-NOW: trail term `2 + Σ_range (hi_i − lo_i + 1)` derived from the code (exact on `bax`), trail column, "Trail" bullet, frames term stated safe, `vm_cost_look` named beside `vm_count_slots_look`; K134 checkpoint and the beyond-clamp `growable` rule (fix-induced, for the diff check); witness W12 | REVISION 2, §0 G4, §5.1 (trail bullet), §5.1b (second table, checkpoint), §5.2 (storage), §5.5 (Trail), §6 gates 1/4, §7 W12, §11.2 |
+| V2 (SOUND-2) | FIX-NOW: item 5 (negative end-check) is a selection; item 6 labels, allocated only for `range`; (B)'s benefit line corrected | §5.1b (items 5-6, label column), §13 Q1 (B) |
+| V3 (FIX-5) | FIX-NOW: the back-step and the work charge render the slot's VALUE, `(size_t)slot_values[<slotx>]` | §5.1b (first table), §5.6 |
+| V4 (FIX-3, READY-4, FIX-8) | FIX-NOW, RULED: `D_i` is a `SLOT_COUNTER` slot; each counter-family reader and its disposition; one shared predicate; no `ir_listing.md` hunk | §5.1, §5.1b (slot allocation, readers, one row choice), §10 |
+| V5 (FIX-6) | FIX-NOW: role and note texts are C comments under `-fcomments`; the seven `range` texts; gate 3 reads the label role | §5.1b (role texts), §6 gate 3 |
+| V6 (READY-2) | FIX-NOW, RULED (i): keep accepting; a stated divergence in G1, gate 3, the spec hunk, the extract; stage 2 inherits it | §0 G1, §6 gate 3, §6 stage 2, §9, §10 (§7.4¶5), §13 Q4 |
+| V7 (READY-3, PARTLY: 22 distinct / 30 rows) | FIX-NOW: gate 2 names `run_recursion_identity.sh`, `differing = 0`, the refusal-mismatch set = the flipped manifest (K35), the re-pin in the landing | §6 gate 2 |
+| V8 (FIX-2, READY-5, PARTLY) | FIX-NOW: S133/S134 `range` twins, the `residlbrange` fixture, S-U4 re-aimed (figure, run at build), S136 "every branch or branch 0", S135 under (B) | §5.1 (UTF-8 clamp), §6 gate 5, §7 (existing rows) |
+| V9 (FIX-4, READY-8) | FIX-NOW: symbols, `"chars"`, existing kind `compile budget` (`PCREC_MAX_GROUP_DEPTH` precedent), manifest +2, 78 → 80, "65,535", dead `INT_MAX` arm deleted | this note's §5.2, §5.2a, §10 (the new limits subsection) and §11.3 |
+| V10 (READY-6) | FIX-NOW, RULED: [DD-14.LB]'s refusal reversed deliberately; decision-entry text; both extracts re-cut; D27 corpora flipped by their owner | §6 stage 1, §9, §10, §13 Q4 |
+| V11 (FIX-7) | DOC: two INTERNAL producers; three comments join the reader list | this note's §5.3, §10 (the INTERNAL hunk) and §13 Q1 (B) |
+| V12 (READY-7/9/10, PARTLY items 2-3) | FIX-NOW: gate 1's harness; §6¶18; both mrl.c headers; `branch-reset` is a module; 32 rows (24 distinct); shape 7 widened | §5.2, §6 stage 1, gate 1, stage 2, §10, §14 |
+| V13 (SIMLIT-2) | DOC: one paragraph on composing with `vm_look` | §5.1 |
+| V14 (SOUND-3) | DOC: §5.1c's framing sentence corrected per cell | §5.1c |
+| V15 (READY-11) | DOC: G1 at stage 1 depends on owner Q2; PLAN: a dated CANDIDATE line in [IFACE-PUSH]'s long-form body (the row's own charter is at plan_lint's 6-line limit) for the `max_varlookbehind` setting | §0 G1 and non-goals, §6 gate 3, §13 Q2, docs/design/plan_row_bodies/IFACE-PUSH.md |
+| V16 (SOUND-4) | DOC/PLAN: latent `(*ACCEPT)` width line, owned by the verbs module | §14 |
+| V17 (standing questions) | NOTED: stage 1 takes the per-row columns and one row choice; PLAN (manager's call): the rung ladder's trigger-gated row | §5.1b (one row choice), §14 |
+| SIMLIT-1, SIMLIT-3 | NOTED | none |
+| review lesson 1 (size the storage) | applied: the trail term is derived from the sizing passes | §5.5, §11.2 |

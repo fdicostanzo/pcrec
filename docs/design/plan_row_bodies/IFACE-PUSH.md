@@ -14,3 +14,5 @@ The public 256-byte `pcrec_error.msg` cuts a refusal's TAIL, and two independent
 - Related earlier evidence in this file: the 2026-10-26 `once` advice compaction (lane ic1badvice).
 
 - 2026-11-03 CANDIDATE (span_pick rev 5, "For main"; review 2026-11-02 r1, D2): a class-declaring compile input (target class: zen4, Zen 1, Apple), a new CLI/lib option. No compile can declare a class today (only `idk`; `--measures=NAME` is the sole route), so stage 3 pricing otherwise uses the DEFAULTS set; spelling at the push.
+
+- 2026-11-05 CANDIDATE ([VLOOKBEHIND]; owner ruling at review 2026-11-05 r3, filed by review r6 V15): a caller-settable variable-lookbehind cap, PCRE2's `max_varlookbehind` (`pcre2_set_max_varlookbehind`). pcrec's is fixed at 255, the `limits.def` row `LA_LOOKBEHIND_VAR_MAX` that vlookbehind stage 1 adds (docs/design/vlookbehind.md §5.2, §5.2a). Raising it moves acceptance only; the trail arithmetic of vlookbehind §5.5 travels with it (one trail entry per candidate, so a cap above about 3,000 meets the 3072-entry auto-trail clamp).
