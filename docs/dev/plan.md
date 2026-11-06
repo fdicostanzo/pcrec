@@ -1703,6 +1703,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/stream/manifesto.md; docs/design/stream/roadmap.md; docs/design/stream/approach.md; docs/dev/reviews/2026-11-01-r3-stream3.md; decisions D182 D185
   THE AGREED END STATE (manifesto.md): every artifact is one program of typed instruction records (VM control, automaton components, kit sites) chosen per point in the pattern; parts with contracts; seams with a run-time hand and a plan-time card carrying facts both ways; crossings deliberate and negotiated through declared seams; "dfa"/"vm" become derived stamps; hubs get owners and declared extension shapes. Frank: "This project is more than simply its stated goal. It's an effort to produce a viable long term project that can grow."
   HOW (roadmap.md, LIVING): incremental, never big bang; byte-identical where possible (one comparator); a RATCHET: the inventory of parallel mechanisms and undeclared crossings (baseline 24 at main 3f777330e) must fall with every step, and a step that adds one without deleting one is rejected. THE RIDE-ALONG RULE: each code AREA is a migration unit; when an optimization, kit request or fix opens an area, its next migration step rides in that change or lands just before it. HELD until measured: the per-stretch planner with new rows, backtracking across seams, the held kinds. NOTHING IS BUILT WITHOUT FRANK'S GO PER STEP.
+  2026-11-06 (lane spandir; manager): forward and reverse spans are ALREADY one mechanism in the table DFA (one scan-edge pass, one emitter, one kit ADVANCE site with `reverse` as a fact). The reverse loop span for `(?<=a{1,254}b)` comes for free on the proof step's reverse machine. A-REV S1 also folds dir_fwd_skip/dir_rev_skip into one renderer (0 bytes). vlookbehind's adopting revision words the pieces study's backward span count as a rendering row of the A-REV record, never a second analysis.
 - [COVER-PRICE-WITNESS] STATE:not-started — cover vs byte-class-bounded: the bench's utf8-lead-no-cont x1.95 as a named pricing witness
   filed: 2026-11-02 manager (from bench O-117, window b149w2)
   status (2026-11-02): filed; nothing built. Bench: `[\xc2-\xdf](?![\x80-\xbf])` x1.95 slower on 19/19 large subjects (0.192 -> 0.375 ns/B), x1.20 short; hex8-bounded x1.5 slower on 60-B subjects (+35 ns) while x0.42 on large.
@@ -1752,6 +1753,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-06): not started; today noise policy has two homes (COVER_Z_E3 in plan_cost.def, gate_e6 in kit-grid.tsv); unify when row 1 writes z (row 1's E2 unification)
   trigger: span_pick row 1
   refs: docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md; [MEASURE-SET]; decisions D176
+- [SCAN-MULTIEXIT] STATE:not-started — scan-edge spans for runs whose rows agree outside the class, not only ONE exit target
+  filed: 2026-11-06 manager, from lane spandir (U1, SUSPECTED)
+  status (2026-11-06): not started; held [OPTLOOP] candidate. `^[a-z]{2,12}(?:\s|;)` gets 0 edges in every machine because precondition (1) requires one exit target; the emitter's argument seems to need only agreement outside the class. Direction-neutral
+  trigger: a hot bench/corpus cell with a counted run followed by a multi-way continuation; first step a compile-only census on a scratch probe build
+  refs: docs/dev/lanes/spandir_report.md; src/opt/scanedge.c; [OPT-5]; roadmap A-REV
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
