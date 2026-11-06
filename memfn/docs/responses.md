@@ -3182,3 +3182,8 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F10: the D-hors floor measurement;
     - F11: the anchor check covering run_g2_win.sh.
   - Stage 1 is complete with this merge. Stages 2-3 wait for Frank's GO.
+
+- ack: 2026-11-06 — **R-35** (span_pick stages 2-3). Taken in order: stage 2 first, then unit 3.0, then row 1, one delivered unit each on its own `lane/memfn-*` branch.
+  - Stage 2 starts with read-only scoping (lane s2scope: how the current measurement set was produced, and the readers of the seam's noise field), then an opus build lane for the noise channel and the card fixtures.
+  - The card timing runs wait for a window main clears.
+  - Ruling (a) is noted: unit 3.0's pcrec facts travel in the kit's same-commit package as facts only.
