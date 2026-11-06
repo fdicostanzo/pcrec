@@ -230,6 +230,18 @@ m "aaaa" 2 4
 g 1 -1 -1
 g 2 0 2
 
+# S136 (re-aimed): a one-length pair wrong at both ends -- the positive cell.
+# pcre2-only
+pattern (?<=bc|d)x
+features lookaround
+m "abcx" 3 4
+
+# S136: ...the negative cell, whose end-check would return INTERNAL.
+# pcre2-only
+pattern (?<!bc|d)x
+features lookaround
+m "bcax" 3 4
+
 # W-low: LO_i must be trailed -- a non-atomic lookahead moves the cursor backward.
 # pcre2-only
 pattern (?:(?*.*(?<*a?))b)*$

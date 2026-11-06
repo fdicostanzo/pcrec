@@ -47,5 +47,7 @@ BLOCKS = [
  dict(c='W15: ...a stray continuation before a character.', p='(?<=(\u00e9{0,2}))b', f=F, e=U, s=[b'\xa9\xc3\xa9b'], po=1),
  dict(c='W16: the nearest candidate is tried.', p='(?<=a{1,2})x', f=F, s=['bax'], po=1),
  dict(c="W16: non-atomic re-entry into the next branch.", p='(?<*(a{1,2})|(aa))\\2', f=F + ',backrefs', s=['aaaa'], po=1),
+ dict(c='S136 (re-aimed): a one-length pair wrong at both ends -- the positive cell.', p='(?<=bc|d)x', f=F, s=['abcx'], po=1),
+ dict(c='S136: ...the negative cell, whose end-check would return INTERNAL.', p='(?<!bc|d)x', f=F, s=['bcax'], po=1),
  dict(c='W-low: LO_i must be trailed -- a non-atomic lookahead moves the cursor backward.', p='(?:(?*.*(?<*a?))b)*$', f=F, s=['bc'], po=1),
 ]

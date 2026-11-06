@@ -12,6 +12,9 @@
 # boundaries (4 "matches" on the 2-character `αβ` instead of 3). No single
 # rx_search call can reach it, which is why the row's detector must be a
 # find-all cell.
+# RE-ANCHORED 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1): the utf8
+# fwd_step row has the same three body lines as next_pos (READY-10: its own
+# literal, never built from this one), so the anchor carries the signature.
 SAB_ID="S-U6-next-pos-byte-advance"
 SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
@@ -40,8 +43,12 @@ SAB_REACH_POP='tests/utf8/axis09_nextpos_findall.rxt|^pattern|14'  # measured 20
 # DETECTED and the expectation is re-measured and changed.
 SAB_EXPECT=UNDETECTED
 SAB_COUNT=1
-SAB_BEFORE='"    size_t i = pos + 1;\n"
+SAB_BEFORE='"size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"
+"{\n"
+"    size_t i = pos + 1;\n"
 "    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n"
 "    return i;\n"'
-SAB_AFTER='"    (void)s; (void)n;\n"
+SAB_AFTER='"size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"
+"{\n"
+"    (void)s; (void)n;\n"
 "    return pos + 1;  /* SABOTAGE S-U6: the byte body */\n"'

@@ -25,6 +25,10 @@
 # without resolving (S169) and resolving without refusing (S170) are different
 # failures with different signals, and a single row on either alone would leave
 # the other undefended.
+# RE-ANCHORED 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1): la_widths returns
+# a verdict (LbVerdict) and a figure, and the refusal is la_width_refusal(why,
+# bad); same site, same plant (the verdict ignored). The (a|ab) callee is no
+# longer refused, so the detector is the three unbounded perr blocks.
 SAB_ID="S170-deferred-recheck-never-refuses"
 SAB_FILE="src/parse/mod_lookaround.c"
 SAB_SUITES="harness"
@@ -32,9 +36,11 @@ SAB_HARNESS_TARGET="tests/recursion/inlookaround.rxt"
 SAB_DESC="the deferred width re-check computes each branch width through the call graph and then accepts the lookbehind whatever it measured, so a recursive callee inside a lookbehind COMPILES instead of being refused"
 SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the four perr blocks in tests/recursion/inlookaround.rxt fail -- three of them (recursive callee, mutual recursion, acyclic callee that reaches a cycle) now COMPILE where libpcre2 answers err 125, and the fourth (the ruled 1..2 capability limit) compiles too. The seven match blocks still pass, since their widths were resolvable anyway. MEASURED at [DD-14.LB], FINAL corpus: harness corpus:4fail/46pass, DETECTED -- exactly the four perr blocks, and NO match cell moved, which is the half that makes this row S169's complement rather than its duplicate."
 SAB_COUNT=1
-SAB_BEFORE='    if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
+SAB_BEFORE='    const LbVerdict why = la_widths(cx, a->l, nbr, w, &bad);
+    if (why != LBW_OK) {
         char buf[LA_MSG_MAX];
-        la_width_refusal(buf, sizeof buf, lo, hi);
+        la_width_refusal(buf, sizeof buf, why, bad);
         pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }'
-SAB_AFTER='    (void)la_widths(cx, a->l, nbr, w, &lo, &hi);   /* SABOTAGE S170 */'
+SAB_AFTER='    const LbVerdict why = la_widths(cx, a->l, nbr, w, &bad);
+    (void)why;   /* SABOTAGE S170 */'
