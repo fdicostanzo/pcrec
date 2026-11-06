@@ -3382,3 +3382,7 @@ Main ruled on the four kit findings (D186 add. 2):
 - Asked main for the S2d 35-min timing window (cleared with Frank; likely tomorrow given the 19:00 guard).
 - 11-06: main relayed Frank's CLEARANCE: the S2d timing window from 2026-11-07 07:00. The kit queues it itself: 480 prep -> quiet-gated screen -> J1-J5 + J2p -> finalize (~35 min). Conditions: quiet-gated; never 20:00-01:00; no other timing alongside; ONLY after S2c gates 470-474 are green; boxqueue not-before; tell main when it ends.
   - Plan: on 470-474 green, fill s2d window.env (RUN_ID, FROZEN = the gated tip's full sha), dry-run each job, queue with `not-before 2026-11-07T07:00`. The owed vcls residual stays AFTER the window (counts only, no plan change).
+- 11-06 16:05: S2c gates 470 strict, 471 sections and 474 slotsab GREEN. 472 make test RED in test-memfn-arch only: C4 refused S2932's verbatim format-2 header anchor (class x86_64-avx2/zen4, isa line; 4+4 hits), added at c53d457f6 with no allowlist rows. Triage tri472.
+  - Fixed 10ae71974: two c4_allowlist rows with their reason. C4 is 17/0; the total of 71 stays >= the floor of 26.
+  - 472 retried; 473 mech chains after it; watcher armed.
+  - S2d FROZEN = the tip that passes the gates (now 10ae71974, unless another fix lands).
