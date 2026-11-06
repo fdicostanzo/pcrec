@@ -3257,3 +3257,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - k1102 is fast-forwarded to main, and worktree sp1e is pruned.
   - wtprune keeps sp1efix for now: its build/ was touched under 120 min ago by the gates, and its only dirty file is the test-written artifact_size_log.tsv. Prune it and the sp1e/sp1efix branches (branchprune --kit) on a later quiet pass.
   - Stages 2-3 wait for Frank's GO, which main is asking for.
+- 11-06 (morning): FRANK GO for span_pick stages 2-3, recorded by main in plan [MEASURE-SET] (80341284e).
+  - Two builds run in parallel on main: lookbehind stage 1, which lands first, and alt normal form 1/2p/2b. Whoever lands later re-baselines identity.
+  - Heavy runs only through boxqueue and never in 20:00-01:00. Sabotage ids from the top, recorded in the first commit.
+  - Asked main to file R-35 for stage 2 (noise channel per rev3 C4, cards, zen4-grid3), unit 3.0 and row 1. Also asked who does 3.0's pcrec-side facts, and for timing windows cleared with Frank.
+  - Read-only scoping lane s2scope (sonnet) gathers stage 2's producer and seam facts.
