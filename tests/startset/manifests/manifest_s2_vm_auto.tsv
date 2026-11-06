@@ -440,7 +440,6 @@ tests/possessify/possessify.rxt:4736	-i --features all --encoding=utf8 --engine=
 tests/possessify/possessify.rxt:4768	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
 tests/possessify/possessify.rxt:4800	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
 tests/possessify/possessify.rxt:4831	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31
-tests/recursion/d27/sr_interactions.rxt:361	--features recursion	2861283f31293f6229
 tests/recursion/d27/sr_root.rxt:253	--features recursion	2861283f52293f6229
 tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
 tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
@@ -535,3 +534,7 @@ tests/litscan/handoff_vm.rxt:460	--features all --encoding=byte --engine=vm	6162
 tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	2861295c3178797a
 tests/litscan/handoff_vm.rxt:509	--features all --encoding=byte --engine=vm	612b78797a
 tests/litscan/handoff_vm.rxt:550	--features all --encoding=byte --engine=vm	2868747470733a2f2f7777775c2e283f3a61636d657c676c6f6265787c696e69746563687c756d6272656c6c617c686f6f6c69295c2e28636f6d7c64657c66727c6e6c7c6f7267292f5b5e223f5c735d2a29283f3a285c3f283f3a5b5e225c735d2a26293f746c643d29283f215c325c62295b612d7a5d2b7c283f215c3f283f3a5b5e225c735d2a26293f746c643d29285c3f5b5e225c735d2a293f283f3d222929
+# mttri (2026-11-06, [VLOOKBEHIND] stage 1, lane/vlbbuild): +3 -1, every change a branch .rxt edit, classified row by row: +2 new tests/lookaround/lookbehind_variable_witness.rxt blocks; tests/recursion/d27/sr_interactions.rxt:361 -> :363 (same text and options, the file grew above it). Rows are vmhat_checks.py's own mover rule on lane/vlbbuild (one()/corpus_blocks, the upropb2 precedent); no other row moved; the bench rows are untouched.
+tests/lookaround/lookbehind_variable_witness.rxt:43	--features lookaround,backrefs	283f3c2a28617b312c337d2929635c31
+tests/lookaround/lookbehind_variable_witness.rxt:50	--features lookaround,backrefs	283f3c2a28617c6161612929635c31
+tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6229
