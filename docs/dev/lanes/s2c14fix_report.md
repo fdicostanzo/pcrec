@@ -184,27 +184,27 @@ Not covered by a sabotage row:
 All of it was light: `nice -n 19`, -j2 at most, one step at a time. Nothing was queued and no timing ran.
 `boxqueue status` showed only `171-altfix-...test` running, with no `kit-s2d-*` job. Log: `scratch/memfn/s2c14fix/val.log`.
 
-- \`make\` (nice, -j2): rc 0.
-- \`make strict\`: rc 0 ("whole tree compiles clean with -Werror -Wshadow").
-- \`make test-memfn-finder\`: checks 3272 passed, 0 failed; proof checks 882 passed, 0 failed.
-- \`tests/registry/limits_check.sh\`: 39 passed, 0 failed.
-- \`tests/memfn/run_arch_blind.sh\`: 17 passed, 0 failed.
-- \`make test-plan-lint\`: 2 passed, 0 failed (selftest 32 plants, 17 of 17 rules).
-- \`make test-spec-history\`: 11 passed, 0 failed.
-- \`slot/est.py selftest\`: **22 cases, 0 wrong**. 8 cases are new for r10 and 1 is re-aimed; each new bound has
+- `make` (nice, -j2): rc 0.
+- `make strict`: rc 0 ("whole tree compiles clean with -Werror -Wshadow").
+- `make test-memfn-finder`: checks 3272 passed, 0 failed; proof checks 882 passed, 0 failed.
+- `tests/registry/limits_check.sh`: 39 passed, 0 failed.
+- `tests/memfn/run_arch_blind.sh`: 17 passed, 0 failed.
+- `make test-plan-lint`: 2 passed, 0 failed (selftest 32 plants, 17 of 17 rules).
+- `make test-spec-history`: 11 passed, 0 failed.
+- `slot/est.py selftest`: **22 cases, 0 wrong**. 8 cases are new for r10 and 1 is re-aimed; each new bound has
   its own case.
-- \`slot/sabotage.sh\`, all rows: control green, 21 DETECTED, 0 MISSED (\`sab.log\`). After the final link.py
-  print change, n1, n2 and n3 were re-run: 3 DETECTED, control green (\`sab2.log\`).
+- `slot/sabotage.sh`, all rows: control green, 21 DETECTED, 0 MISSED (`sab.log`). After the final link.py
+  print change, n1, n2 and n3 were re-run: 3 DETECTED, control green (`sab2.log`).
 - **Null-base green control:** the sabotage control dry-runs J2 only, so it never reaches a null base. An
-  UNPLANTED \`run.py dry J4\` at the tip ran separately: rc 0, \`null-base: 7 bases, each its class arm's text
-  outside the compare, its body null_body(the arm's), one load the arm makes\`, round check 0 misses
-  (\`j4dry.log\`). Its quiet sample names co-runners by interval CPU
-  (e.g. \`1367663:bash:10.0,...,8169:claude:4.0\`).
-- **Rendered-TU identity:** link.py's \`render\` at b4e0a8bab (an exported copy) and at the tip, over the same
+  UNPLANTED `run.py dry J4` at the tip ran separately: rc 0, `null-base: 7 bases, each its class arm's text
+  outside the compare, its body null_body(the arm's), one load the arm makes`, round check 0 misses
+  (`j4dry.log`). Its quiet sample names co-runners by interval CPU
+  (e.g. `1367663:bash:10.0,...,8169:claude:4.0`).
+- **Rendered-TU identity:** link.py's `render` at b4e0a8bab (an exported copy) and at the tip, over the same
   fixture, gave 81 TUs (every non-artifact arm, twin, base and ctl of J2-J5) with IDENTICAL sha-256
-  (\`rend_old.txt\` = \`rend_new.txt\`).
-- \`rmax_drill.py RUNDIR\` over the replay copy: its inputs equal the run's; r_max_e6 = 53751.
-- \`drill.py\` runs and prints every ¶3a row the §3.5 table states.
+  (`rend_old.txt` = `rend_new.txt`).
+- `rmax_drill.py RUNDIR` over the replay copy: its inputs equal the run's; r_max_e6 = 53751.
+- `drill.py` runs and prints every ¶3a row the §3.5 table states.
 
 ## Charter-vs-committed checklist
 
