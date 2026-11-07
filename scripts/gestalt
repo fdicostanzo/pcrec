@@ -10,9 +10,11 @@
 #   sessions  ONE line: live Claude sessions (socket under /run/user/UID/cc-socks/ whose owner pid is alive):
 #             pid, `claude -n` name, [role] (pid -> ~/.claude/sessions/PID.json sessionId -> worktrees/.mgr/roles/ID)
 #   disk      use% and free of the repo fs, $PCREC_TMPDIR fs and /tmp ('!' at >= 85%); scratch/snap du if <2 s
-#   context   per registered manager role: tokens in the LAST assistant message's usage of its transcript
-#             (input + cache creation + cache read; numbers only, no content is ever printed); window if known
-#   subscription  5h/7d plan usage from ~/.claude/statusline/usage-latest.json (stale-flagged), else unavailable
+#   context   per registered manager role: tokens from its statusline snapshot
+#             $PCREC_TMPDIR/statusline/session-<id>.json when < 10 min old, else the LAST assistant message's usage
+#             of its transcript (input + cache creation + cache read; numbers only, no content is ever printed)
+#   subscription  5h/7d plan usage from $PCREC_TMPDIR/statusline/usage-latest.json (scripts/statusline.sh), else the
+#             old ~/.claude/statusline/usage-latest.json (stale-flagged), else unavailable
 #   ci        last run on main via gh (`ci: unavailable` when gh fails)
 #   git       main tree: branch, +ahead/-behind, modified/untracked counts (names if <= 3), HEAD sha + age;
 #             pcrec-bench as a compact suffix
@@ -127,7 +129,10 @@ echo "disk: $dl${sc:+; scratch $sc}${sn:+, snap $sn}"
 
 # --- context: last assistant usage line of each registered manager session's transcript (numbers only)
 projects=${GESTALT_PROJECTS:-$claude_home/projects}
-snap=$claude_home/statusline/usage-latest.json
+sdir=${GESTALT_STATUSLINE_DIR:-${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/statusline}
+snap=$sdir/usage-latest.json
+[ -f "$snap" ] || snap=$claude_home/statusline/usage-latest.json
+swin=""
 cl=""
 if [ -d "$roledir" ]; then
     for rf in "$roledir"/*; do
@@ -136,6 +141,17 @@ if [ -d "$roledir" ]; then
         case $sid in *[!A-Za-z0-9_-]*) continue ;; esac
         role=$(head -1 "$rf" 2>/dev/null)
         case $role in main|kit) ;; *) continue ;; esac
+        sf=$sdir/session-$sid.json
+        if [ -f "$sf" ]; then
+            r=$($TO 2 jq -r '[.captured_at // 0, (.context_window.current_usage // null | if . == null then "" else ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) end), (.context_window.context_window_size // "")] | @tsv' "$sf" 2>/dev/null)
+            IFS=$'\t' read -r scap sn sw <<< "$r"
+            case $scap in ''|*[!0-9]*) scap=0 ;; esac
+            if [ "$((now - scap))" -lt 600 ]; then
+                case $sn in ''|*[!0-9]*) ;; *)
+                    cl="$cl${cl:+ / }$role $((sn / 1000))k"; swin=${swin:-$sw}; continue ;;
+                esac
+            fi
+        fi
         tf=$(ls "$projects"/*/"$sid".jsonl 2>/dev/null | head -1)
         [ -n "$tf" ] || { cl="$cl${cl:+ / }$role ?"; continue; }
         n=$($TO 3 tail -c 1500000 "$tf" 2>/dev/null | $TO 3 jq -Rr 'fromjson? | select(type == "object" and .type == "assistant" and (.message.usage? != null))
@@ -143,7 +159,8 @@ if [ -d "$roledir" ]; then
         case $n in ''|*[!0-9]*) cl="$cl${cl:+ / }$role ?" ;; *) cl="$cl${cl:+ / }$role $((n / 1000))k" ;; esac
     done
 fi
-win=$($TO 2 jq -r '.context_window.window_size // empty' "$snap" 2>/dev/null)
+win=$swin
+[ -n "$win" ] || win=$($TO 2 jq -r '.context_window.window_size // empty' "$snap" 2>/dev/null)
 # The effective ceiling is the owner's auto-compact window (~/.claude/settings.json `autoCompactWindow`,
 # Frank 2026-11-07: "the context max is somewhat illusory because I've set the auto compact"); read that one key.
 acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$HOME/.claude/settings.json" 2>/dev/null | head -1)
