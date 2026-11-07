@@ -47,13 +47,18 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   rev 1.4's sub-resolution branches); `[rev1.4]` delta rows printed `ungated`, the sub-resolution branch
   (measures.md §3.5¶3a; `[r10]` the all-negative rule, r capped at the pinned policy's `r_max_e6`
   (`r_max`: the live row, named, for a record planned before it), the A/A in the branch), `notes` (box-state split, bimodal delta rows); the primitives' one home.
+  `[rev1.5 R15-1]` the FUSED-COMPARE fact from every launch executable's timed code (`fused_text` over objdump's
+  mnemonics, checked by `fused_bytes` over the bytes; the stems from `obj/tab.c`) and the bound row; `[R15-2]` the
+  draft's `# note est_commit` (refused from an uncommitted est or when `TIMED_PATHS` moved since `code_commit`);
+  the self-test compiles real timed code for its synthetic J4.
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
   floor, cards and policy pinned from the frozen plan with the tables' sha-256; `[rev1.4 R14-3]` the `quiet`
   section from the transcript and est's two note keys).
 - `sabotage.sh SCRATCH [ROW..]` — the slot-local sabotage rows (j), (j2), (k), (l1), (l2), (l3) S2934, (g2)
   S2935, (g3) S2936, (f1) S2937, (f2) S2938, (f6) S2939, rev 1.4's (n1) S2940, (n2) S2941, (s1) S2942, (s2) S2943,
-  (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, planted in scratch copies; DETECTED/MISSED per row.
+  (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
+  (x3) S2952, planted in scratch copies; DETECTED/MISSED per row.
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.
 - `run_record.tsv` (S2d, later) — the run record zen4-grid3's PROVENANCE.md cites by sha-256.

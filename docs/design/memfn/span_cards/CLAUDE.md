@@ -21,14 +21,14 @@ Each drill prints its inputs; `python3 -I <drill>`.
   the trimmed six), vs rev 1's FRG floor; the spike model.
 - `j1_drill.py` — §3.6's J1 sweep rule: outcome shares with no effect, with a true effect, under placement
   (Part 1, rev 1.1's rule), and the (m, k) sweep with its stated choice rule (Part 2).
-- `rmax_drill.py [RUNDIR]` — §R1.4 r10 REV14-2: the derivation of `memfn/data/policy.tsv`'s `r_max_e6` (the
-  largest A/A resolution over the first window's eight near-zero verify rows; RUNDIR re-takes the inputs).
+- `rmax_drill.py [RUNDIR]` — §R1.4 r10 REV14-2, §R1.5 R15-3: the derivation of `memfn/data/policy.tsv`'s `r_max_e6`
+  (the largest A/A resolution over both windows' eight near-zero verify rows; RUNDIR re-takes a window's inputs).
 - `tree_drill.py REPO` — counts read off the tree: the key population, the jobs' points and box time,
   check C's population over every card table, the embed's bytes (§2.4, §3.7, §3.8).
 
 ## Subdirectories
 
-- `s2d2/` — the second S2d window's evidence (REFUSED on l1/c1; analysis for rev 1.5; own CLAUDE.md).
+- `s2d2/` — the second S2d window's evidence (REFUSED on l1/c1; analysis for rev 1.5; rev 1.5's re-score, FULL; own CLAUDE.md).
 - `s2d1/` — the first S2d window's evidence (REFUSED; analysis for rev 1.4, and rev 1.4's replay; own CLAUDE.md).
 - `slot/` — the stage-2 slot harness (S2c; own CLAUDE.md): driver, subject generator, per-launch linking and
   placement, the control, the slot's estimator, `j1_rule.py`, the run record's writer, `sabotage.sh` for the

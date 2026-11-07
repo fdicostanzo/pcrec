@@ -1,6 +1,7 @@
-# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.4)
+# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.5)
 
-**Status: PROPOSED, rev 1.4 (lane s2rev14, 2026-11-06: the first S2d window's REFUSED outcome, ruled by the kit
+**Status: PROPOSED, rev 1.5 (lane s2rev15, 2026-11-07: the second S2d window's REFUSED outcome on l1/c1, ruled by
+the kit manager, §R1.5, marked `[rev1.5 <id>]`; read §R1.5 first), over rev 1.4 (lane s2rev14, 2026-11-06: the first S2d window's REFUSED outcome, ruled by the kit
 manager, §R1.4, marked `[rev1.4 <id>]`; lane s2c14fix, 2026-11-06: review r10's rulings, §R1.4's r10 table, marked
 `[rev1.4 r10-<id>]`), over rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
 code review r9's FIX-NOW/DOC text, §R1.3's second table, marked `[rev1.3 r9-<id>]`), over rev 1.2 (lane
@@ -23,6 +24,85 @@ stand unless a later mark replaces them. Cites are to the kit branch at the r6 r
 6f1b40f75 + the kit branch; the r6 review found every code/data cite of S2c-S2e identical to the r5 tree's)
 unless a commit is named; spec files by section number. Every figure the note quotes comes from a committed
 drill under `span_cards/` that prints its inputs (§R1.2, last paragraph).
+
+## R1.5 What revision 1.5 changed, by the kit manager's rulings on the second window (run s2d-20261107a)
+
+The second S2d timing window (FROZEN 1e4999d1c, 2026-11-07 01:34-01:59, rev 1.4's null base) ran every job green
+and came out REFUSED on two floors, `verify.rc-memcmp.l1` and `verify.settest.c1` (`span_cards/s2d2/`: the
+record, est's rows and lane s2dana2's `analysis.md`). In l1 and c1 the compiled compare is a load-op FUSED into
+the candidate load (`cmpl $imm,(%rdi,%rcx,1)`, `cmpb $imm,(...)`): removing the compare un-fuses the load, so no
+base made by removing it can be null, and the measured D is the fused/unfused step (~ −0.12 wb per event), not the
+compare (analysis §2-§3). The kit manager ruled three changes; text changed is marked `[rev1.5 <id>]` and replaces
+any earlier text it contradicts. **No set-format, noise-state or seam change**: a bound row is a `measured` row
+with a value and a noise, and its fact rides in the existing `tags` column. Spec hunks: `measures.md` §3.5¶3
+(amended), §3.5¶3b (new), §3.5¶8a (amended), §3.5¶11 (amended). Slot-local sabotage ids S2950-S2952.
+
+| id | ruled | answered in |
+|---|---|---|
+| R15-1 FUSED-COMPARE BOUND (analysis option (b)) | a `verify_cmp` class whose compiled compare is a load-op fused into the candidate load (no separate ALU op on the loaded value) is a MEASURED row: value 0, noise `max(r_max, \|med(x_l)\|)` (~0.12 wb), its source naming the evidence (two windows, two null bases, both negative; the arms-only fused/unfused step). SCOPED BY A CLASS FACT THE HARNESS CHECKS, derived from the timed arm's object code, never declared and never the sign; a consistent negative on a class without the fact stays `null` (REV14-1 holds) | §2.3 `verify_cmp` row; §3.5 delta rows; `measures.md` §3.5¶3, ¶3b, ¶11; `slot/est.py` (`fused_text`, `fused_bytes`, `fused_facts`, the bound branch, the draft's `fused-load-op` tag and source); self-test (six cases); sabotage (x1) S2950, (x2) S2951, (x3) S2952 |
+| R15-2 ESTIMATOR COMMIT | a draft and a set's PROVENANCE name the est commit that scored the record; a recompute uses that commit's rule; scoring frozen cells with an est later than the record's `code_commit` is allowed when the timed code is unchanged | §3.8 steps 1 and 3; `measures.md` §3.5¶8a; `slot/est.py` (`est_commit`, `timed_moved`, the draft's `# note est_commit`, `rows`' `est commit` line) |
+| R15-3 r_max | the D149 trigger fired (window 2's A/A over the near-zero rows is 15597..56070): `r_max_e6` re-derived, a MEASUREMENT citing both windows, no longer a default; a record keeps the r_max it pinned | `memfn/data/policy.tsv` (56070); `rmax_drill.py` (both windows); §R1.4's r_max paragraph |
+
+**R15-1: the fact and its check.** THE FACT, per `verify_cmp` row, from every launch executable of its job
+(`<job>/L<l>/<job>.L<l>`, the code the cells timed; the arm's symbol stem from the job's `obj/tab.c`), for the arm
+AND its twin: every instruction of the timed function `<stem>_time` that reads the SUBJECT (a memory operand with a
+base and an index register: subject + the candidate's position) is a compare of that memory against an immediate
+(`cmp`/`test` `$imm`), and there is at least one. Such a load writes FLAGS only: no register receives the loaded
+value, so no separate ALU op can act on it. THE CHECK is a second reading of the same code: est.py derives the
+fact from objdump's mnemonics (`fused_text`) and checks it against the instruction BYTES with its own
+prefix/REX/opcode/ModRM/SIB decode (`fused_bytes`: an indexed SIB operand, LEA and the NOP family aside, must be
+`80/81/83 /7` or `F6/F7 /0`); the two share only objdump's instruction boundaries. A disagreement on any function
+refuses the input (`FUSED-FACT MISMATCH`, exit 2), and so does a fact that differs between launches or between arm
+and twin (`FUSED-FACT UNSTABLE`). Over window 2 the fact holds for exactly l1 and c1 (p0 and p50); w1, w2, w3, c2
+and cn load into a register first (`mov`/`movzbl`/`movzwl`), and so do the null bases. It also holds for l1/c1 in
+window 1's code (s2d-20261106, an older loop): the classes' lowering, not one link.
+THE BOUND, for a row with the fact and only for it, whatever its sign or its NULL-rule verdict: `measured`, value
+0, noise `max(r_max, |med(x_l)|)` with the record's r_max (pinned, or the live row named), `abs_ns_e6` the
+unclamped `med(abs_l)`; the draft row's `tags` carry `fused-load-op` (joined to an EMIT-3 tag by `;`) and its
+`source` reads `slot J4 fused-compare bound r_max <r>; evidence: windows s2d-20261106 and s2d-20261107a, two null
+bases, both negative; the arms-only fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)`. Bound rows are
+left out of the bimodal note (their value is 0). WHY 0 IS HONEST: at the instruction level the compare adds no
+macro-op to its load; measured against two different un-fused bases it is ≤ 0; row 1 needs an l1/c1 price with
+honest noise, not precision (any price in [−0.3, +0.3] wb moves no pick, analysis §3). WHAT THE RECOMPUTE DOES:
+it cannot re-read object code (neither the set nor the record carries it), so it applies the bound to a row whose
+`tags` carry `fused-load-op` and takes the fact as the producer's statement; the evidence is the set's
+PROVENANCE.md and this section (`measures.md` §3.5¶3b). The fact is read by est at scoring time from the run
+directory, so link.py, the driver and every timed binary are unchanged.
+
+**R15-1 sabotage** (slot-local, `slot/sabotage.sh`; each goes red planted and green reverted, the reverted copy
+being the control): (x1) S2950 the derivation hands the fact to every class that reads the subject (a non-fused
+class wearing it): the bytes' reading refuses (`FUSED-FACT MISMATCH`, the self-test's `complete` case); (x2) S2951
+the check removed: the self-test case "a non-fused class wearing the fact" (a planted derivation, expected
+refused) goes WRONG; (x3) S2952 the bound applied without the fact (every verify row): the self-test case "a class
+NOT fused negative on all six: null (REV14-1 holds)" goes WRONG. The self-test builds REAL timed code for its
+synthetic J4 (one `aK_time` per arm in link.py's pointer-bump loop, gcc -O2, l1 and c1 comparing the byte against
+an immediate, the other classes masking it first, the bases loading it into a register), so the fact is read off
+compiled code there too; its cases: the bound on a fused class at a negative and at a positive median; a non-fused
+class consistently negative stays `null`; the fused class compiled un-fused stays `null` (the fact follows the
+code); a fact differing between launches is refused; a planted derivation is refused.
+
+**R15-2: the estimator commit.** est.py's draft writes `# note est_commit: <sha>, the estimator that scored the
+record (code_commit <sha>; the timed code unchanged between them)`, and S2e's PROVENANCE.md copies it (the
+canonical writer of §3.8 step 2 keeps no comment line). The draft is REFUSED from an estimator with uncommitted
+changes under `slot/` (no commit would reproduce it) and when any of `TIMED_PATHS` (est.py: `src`, `lib`,
+`memfn/src`, `memfn/include`, `memfn/data/cards`, `Makefile`, `tests/memfn/arm_fixtures.c`, census0.out, and the
+slot's `drv.c`, `gen.c`, `slot.h`, `link.py`, `art.py`, `plan.py`, `vcls.out`, `enter/`, `j1/`) differs between the
+record's `code_commit` and the est commit, naming the paths. The list is the slot's own statement of what reaches
+a timed binary or its subjects (a hand list; a path it misses is a gap of this check, not of the cells, which are
+frozen in the run directory). `est.py rows` prints the commit (or why there is none) on an `est` line. A recompute
+applies the named commit's rules (`measures.md` §3.5¶8a).
+
+**R15-3: r_max_e6 = 56070 (0.056 wb), measured.** `rmax_drill.py` now holds both windows' sixteen rows (each
+re-taken from its run directory by run id): window 1's r_AA 6447..53751 (c2.p50), window 2's 15597..56070
+(w1.p50); r_max_e6 is the largest over both, 56070, a MEASUREMENT (D149) with a re-derive trigger: a window timed
+with another base or candidate loop. `memfn/data/policy.tsv` carries it, its label dropped. **A record keeps the
+r_max it pinned**: window 2's record pins 53751 (its `policy` section) and is scored at 53751; 56070 applies from
+the next window planned (the dry run freezes the live row into its plan, the record pins it).
+
+**Window 2 scored under rev 1.5** (est.py at this revision over a COPY of `s2d-20261107a`'s run directory;
+`s2d2/rev15_rows.txt`): outcome **FULL**. l1.p0, l1.p50, c1.p0, c1.p50 bound (value 0, noise 116015, 105615,
+119301, 107405); every other row as `s2d2/est_rows.txt` (w1.p0, c2.p0, c2.p50 sub-resolution; w1.p50 priced;
+w2, w3, cn priced; every cost row through its gate; drift kept on every job).
 
 ## R1.4 What revision 1.4 changed, by the kit manager's rulings on the first window (run s2d-20261106)
 
@@ -64,7 +144,8 @@ resolution the method reaches on a row at zero is then `r_AA = 3 × isqrt_rn(rha
 `r_max_e6` is the LARGEST r_AA over the first window's eight near-zero verify rows (the rows the branch serves:
 6447..53751, the largest c2.p50's), printed by `rmax_drill.py` with its inputs. The population and the max are
 choices over one window: an UNMEASURED DEFAULT (D149); trigger: re-derive on the first window timed with rev 1.4's
-base. A record planned before the row (windows 1 and 2, frozen at rev 1.4) pins none: the slot's est.py then
+base. `[rev1.5 R15-3]` The trigger fired with the second window: r_max_e6 is now 56070, measured over both windows
+(§R1.5); window 2 keeps its pinned 53751. A record planned before the row (windows 1 and 2, frozen at rev 1.4) pins none: the slot's est.py then
 reads the live row and names that in its output (`policy` line, the draft's `# note r_max_e6`), never silently.
 
 **The replay (rev 1.4 + r10, over s2d-20261106's cells; R14-1 cannot be replayed: those cells used the old
@@ -408,7 +489,7 @@ throughput regime (1 MiB subjects re-scanned, L3-resident), an UNMEASURED choice
 |---|---|---|---|---|---|---|
 | `find_byte` | `form` | ratio | streamed-fresh `pool16Mi`, MISS-ONLY (no member in the subject) | lengths 64 Ki, 256 Ki, 1 Mi | `slope` over the three lengths | subject byte, all the method's streams (span_pick.md:216) |
 | `find_hit` | `form;landing;split;gap` `[rev1 MEAS-6]` | walkbytes | streamed-fresh `pool16Mi` 1 Mi subjects, hits planted `periodic` (every g bytes) or `random` (seeded uniform, mean gap g); `split` `one` (one member occurs) or `alt` (both members, alternating) | `[rev1 MEAS-6]` g in {256, 1024}, each its OWN row and group | `delta` against the same form on the miss-only 1 Mi subject, per hit | candidate returned and restarted |
-| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (`[rev1.4 R14-1]` the class arm's own loop, its first load kept, `[rev1.4 r10-REV14-8]` the compare replaced by a register compare of a constant), per compare | one compare: cmp0, cmp½ (span_pick.md:220) |
+| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (`[rev1.4 R14-1]` the class arm's own loop, its first load kept, `[rev1.4 r10-REV14-8]` the compare replaced by a register compare of a constant), per compare; `[rev1.5 R15-1]` a class whose compiled compare is FUSED into the candidate load (the fact read off the timed code, §R1.5) is the bound row 0 ± max(r_max, \|med\|) instead | one compare: cmp0, cmp½ (span_pick.md:220) |
 | `enter` | `kind;entry` | walkbytes | a WHOLE ARTIFACT (`build/pcrec`) of a fixture pattern whose site states `kind` and an alternative of `entry`; candidates every 256 bytes that pass every verify position and die in the consumer one byte past the window (`die1`) | one point (g = 256) | `delta` of the pass subject against the fail subject (candidates fail the last verify position), per candidate | candidate passed on (span_pick.md:222) |
 
 `[rev1 MEAS-6]` **Why per density.** Rev 0's one `find_hit` slope over g in {4096, 256, 32} plus the
@@ -1018,7 +1099,10 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   failing this test with `|med(x_l)| ≤ r`, r three standard errors of its median `[rev1.4 r10-REV14-2]` capped at
   `r_max_e6`, and its paired A/A within r, is a `measured` row with value `max(0, med(x_l))` and noise
   `max(r, noise)`; `[rev1.4 r10-REV14-1]` a row negative on all six trimmed launches is `null` whatever r is, as
-  is every other failing row. Delta
+  is every other failing row. `[rev1.5 R15-1]` **A FUSED-COMPARE row is BOUND** (`measures.md` §3.5¶3b, §R1.5): a
+  `verify_cmp` row whose timed code has the fact (every subject read a `cmp`/`test $imm` on memory, read by two
+  readings that must agree) is `measured` with value 0 and noise `max(r_max, |med(x_l)|)` whatever its sign, its
+  `tags` carrying `fused-load-op`; a row without the fact is never bound, so REV14-1 holds for every other class. Delta
   rows have no gate: est prints them `ungated` (`[rev1.4 R14-4]`). **A delta row never refuses anything by itself**: a `null` row is unpriced, and an
   unpriced candidate cannot qualify (span_pick §The pick 4: safe); Goal 2's floor (below) is what a run of
   unpriced keys fails.
@@ -1296,7 +1380,9 @@ gate, about 6; slack). The set's cells: (195 − 51) x 7 = 1,008 (J1's are not i
    `-` on every row, each `delta` row's base named in its cells' ids, §3.4 step 1); its **`cells` section**
    holds every cell §3.4 step 1 defines for J2-J5, refused jobs' and gate-failed rows' included (§3.5); its
    header's `run` key is `<run id> record:<sha-256 of the run record>` (`[rev1.2 READY-6, MEAS-1]`); its
-   `values_digest` comes from `tests/knowledge/ks_ref.py digest`. The draft is written at the window's end
+   `values_digest` comes from `tests/knowledge/ks_ref.py digest`; `[rev1.5 R15-2]` a `# note est_commit` line names
+   the estimator commit that scored the record (a clean commit; the draft is refused if the timed code moved since
+   the record's `code_commit`, §R1.5). The draft is written at the window's end
    (S2d), and S2d's report names its scratch path and sha-256, which S2e checks before step 2.
 2. `pcrec --list-measurements=draft.tsv > set.tsv` (`[rev1.2 READY-5]` the `=` form; the bare flag prints the
    index and leaves `draft.tsv` a stray argument, `cli/main.c:1567-1573`): the C loader re-derives the digest (a mismatch refuses)
@@ -1304,7 +1390,8 @@ gate, about 6; slack). The set's cells: (195 − 51) x 7 = 1,008 (J1's are not i
    PROVENANCE.md records. `measure_store/from_interim.py` is NOT used (its one-time grid1 path stays
    unchanged).
 3. `measure_store/zen4-grid3/1/{set.tsv, PROVENANCE.md}` (PROVENANCE: the run, the method card version, the
-   slot harness's commit, D188's facts as §2.7 records them, `[rev1.2 READY-6, MEAS-1]` the run id and the
+   slot harness's commit, `[rev1.5 R15-2]` the est commit the draft's note names (the recompute applies that
+   commit's rules, `measures.md` §3.5¶8a), `[rev1.5 R15-1]` the evidence of every bound row (§R1.5), D188's facts as §2.7 records them, `[rev1.2 READY-6, MEAS-1]` the run id and the
    run record's path and sha-256 (the record holds the never-ran jobs, J1's verdict and cells and the floor,
    §3.5), the per-round transcript's location and sha-256: rounds no row reads are not committed,
    `measure_sets.md` §1.5); `[rev1.1 INDEX]` the `index.tsv` row with `supersedes` EMPTY (zen4-grid1 is another method@ver,
@@ -1925,7 +2012,9 @@ qualifier test over three provenance vocabularies (§12 row 6).
    object bytes (§3.2); `[rev1.2 MEAS-1]` the run id in the seed makes a re-run's placements independent of
    the first run's. Drift: the fixed control executable per job against the unit's job, `[rev1.2 MEAS-4]`
    with a threshold in standard errors of the statistic, its false rate drilled. The cell text: its site-text hash against `mf_form_hash` of the key's token
-   (one renderer; FAM-A is the router's independent control, §12 row 4). Check C: its card guard reads
+   (one renderer; FAM-A is the router's independent control, §12 row 4). `[rev1.5 R15-1]` The fused-compare fact:
+   derived from objdump's mnemonics, checked against the instruction bytes by est's own decode (sharing only the
+   instruction boundaries), on every launch's linked executable, arm and twin; never from the row's sign. Check C: its card guard reads
    every card row and its measure_store pass every format-2 set's form tokens, each counted and floored. "Stage 2 moves nothing": emit_sweep and the data-mover census,
    counted pcrec-side from artifact diffs (K35) by `slot/movers.py` (§5), never the kit's `moved`. The seam's noise values: the
    MFMEAS triple digest against ks_ref.py's. The census (§7) shares the price formula with row 1, so it
@@ -1974,6 +2063,11 @@ qualifier test over three provenance vocabularies (§12 row 6).
    1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
+
+`[rev1.5]` Rev 1.5, lane s2rev15: the kit manager's R15-1..R15-3 on the second window, design text and code
+together (§R1.5; `measures.md` §3.5¶3, ¶3b, ¶8a, ¶11). Window 2 re-scored by est at this revision over a copy of
+its run directory: FULL (`s2d2/rev15_rows.txt`). Nothing timed changed. OWED: S2e (the set into measure_store,
+its PROVENANCE naming the est commit, the recompute's bound rule). Report `docs/dev/lanes/s2rev15_report.md`.
 
 `[rev1.4 r10]` Lane s2c14fix: review r10's rulings (§R1.4's r10 table; `measures.md` §3.5¶3, ¶3a): the sign
 rule, r capped at `r_max_e6` with the A/A in the branch, the null base's equality check, co-runners by interval.
