@@ -3546,3 +3546,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Test: C4 (test-memfn-arch) flags the new set id `zen4-grid3` as arch-noun vocabulary in 4 test files; zen4-grid1 is already allowlisted.
   - Neither red is a result problem. Fix lane `s2efix` (sonnet) is in the s2e worktree. On delivery: requeue 480-486.
   - MISS: my custom queue.log watchers (kitmgr/watch_gates.sh plus an inline copy) stayed silent through both reds. Main saw them and Frank relayed. Now using the standard scripts/monread kit --wait. Memory pcrec-use-standard-queue-watcher.
+- 11-07 ~11:30: s2efix delivered, tip 1b6f88b34; lane closed.
+  - C4 allowlist: zen4-grid3 rows added, allowed hits 71->77 (33->36 rows), floor 26 untouched.
+  - movers/0002.tsv code_commit re-stamped to d3da774b0; the guard is unchanged.
+  - strict and the light sections are green.
+  - All seven gates 480-486 requeued on this tip; watched by monread kit --wait.
