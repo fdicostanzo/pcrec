@@ -3514,3 +3514,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - est selftest 52/0; slot sabotage 35/35 (S2953-S2963); no timed-code change. The diff is docs/span_cards only.
 - The gates had not started (main's 495 running): cancelled, s2c fast-forwarded to fd75d4119, 470-474 requeued (474 expects 35), watcher armed.
 - Next: S2e brief (set commit + DEFAULTS flip + main's standing-rule condition + S2a tip merge + the vcls residual + the abs_ns_e6 note), launched on gates green.
+- 11-07 09:17: S2c gates 470-474 on fd75d4119 ALL GREEN (strict 16s, slotsab 160s, sections 888s, test 1443s, mech 1625s). S2e lane `s2e` LAUNCHED (opus, worktree s2e, branch lane/memfn-s2e off fd75d4119; deliver file 6fe971761). Scope: S2a tip merge (252e0a1cb), §9 S2e set + plants, DEFAULTS (B), the standing rule paragraph (S2950 + r11 rows, a non-fused fail), vcls `[^x]` residual, abs_ns_e6 note, libpcrec size. Its gate jobs are 480-48x; the lane writes them and I queue them.
