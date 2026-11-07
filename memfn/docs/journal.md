@@ -3435,3 +3435,14 @@ Main ruled on the four kit findings (D186 add. 2):
   - R14-3: rerun with a co-runner log at each quiet check; no gate/z change;
   - R14-4: est prints "ungated"; a note line names the bimodal rows.
 - Then one critic, gates, and window 2 from main.
+- 11-06 23:00: s2rev14 delivered lane/memfn-s2c @ b4e0a8bab (report docs/dev/lanes/s2rev14_report.md):
+  - R14-1: base.null.<cls> is rendered from the class arm's text; null_check.
+  - R14-2: |med| <= r (3 s.e. of the median) means measured max(0,med) with noise max(r,noise), else NULL. A new measures.md paragraph; no format change.
+  - R14-3: quiet-check co-runner log + record `quiet` section. R14-4: ungated labels + bimodal note.
+  - Replay over window 1: all verify floors pass; byte.libc alone fails. Closest call: c1.p50, 0.093 vs r 0.097.
+  - Slot sabotage 17/17 (S2940-2945); est selftest 15/0; 0 movers.
+  - lanecheck rc=1 only on artifact_size_log.tsv, the make-test side effect; restored by me, lanecheck DONE.
+  - Flag for S2e: a raw negative abs_ns_e6 kept beside a clamped value_e6.
+- Critic crit-s2rev14 (opus) launched: fix-induced + fidelity + simulate R14-2's false-pass rate.
+- Window 2 asked of main (tonight after ~01:30 if covered).
+- K138 revalidation: 491/492 GREEN; 493 mech red only on S2910, which needs BUILD-REFUSED now (memfn_sites.c's assert stops make). Edited on s2a; single-row rerun running.
