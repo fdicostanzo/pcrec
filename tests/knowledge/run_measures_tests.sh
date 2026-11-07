@@ -207,7 +207,7 @@ while IFS="$(printf '\t')" read -r n sub; do
     fi
 done < "$WORKDIR/fx/bad/EXPECT.tsv"
 nbad2="$(grep -c '^f2-' "$WORKDIR/fx/bad/EXPECT.tsv")"
-[ "$nbad" -eq 29 ] && ok "refusals: 29 classes" || bad "refusals: $nbad classes, expected 29 (K35)"
+[ "$nbad" -eq 31 ] && ok "refusals: 31 classes" || bad "refusals: $nbad classes, expected 31 (K35)"
 [ "$nbad2" -eq 8 ] && ok "refusals: 8 format-2 classes" || bad "refusals: $nbad2 format-2 classes, expected 8 (K35)"
 if LM --measures="$WORKDIR/fx/bad/digest.tsv" -o "$WORKDIR/x.c" --pattern a 2> "$WORKDIR/b.err"; then
     bad "a bad set as --measures= compiled"

@@ -17,9 +17,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K138 — OPEN (found by the kit's span_cards review, 2026-11-06, CONTRACT-5) — a measurement set with value_e6 > MF_MEASURE_MAX loads, then every compile against it is an "internal error"
+## K138 — FIXED on lane/memfn-s2a (2026-11-06, lane s2ak138, commit 535a2e78d, pending merge; found by the kit's span_cards review, 2026-11-06, CONTRACT-5) — a measurement set with value_e6 > MF_MEASURE_MAX loads, then every compile against it is an "internal error"
 
 **Witness:** a committed-shape set row with `value_e6` = 2e15 (digest fixed up) passes the set loader; compiling 3 patterns against that set gives rc 1 `internal error: the memfn kit refused ...`; control (in-range value) rc 0. Re-run by the review's verifier (docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md on lane/memfn-k1102 @ 568ce6721, row CONTRACT-5). The bound exists only kit-side; pcrec's loader (docs/spec/measures.md, measure_sets §7 refusal rows) has no refusal row for an out-of-range value, so a bad set surfaces as an internal error at compile instead of a clean load-time refusal. Fix (pcrec side): a §7 refusal row for value_e6 above MF_MEASURE_MAX (read from the seam, not copied), spec hunk in the same change. The kit adds the same for the new noise field in its S2a.
+
+**Fix:** the row loader (src/core/ks_measures.c) refuses |`value_e6`| past `KS_MEAS_MAX` (10^15, both signs: the kit's accept range, memfn/src/compose.c) at load, with measures.md §2.2¶3's sentence and a §7 row; `_Static_assert(KS_MEAS_MAX == MF_MEASURE_MAX)` in src/gen/memfn_sites.c (the product TU that sees both headers); bad fixtures `value-bound` and `value-bound-neg`; sabotage S2912.
 
 ---
 

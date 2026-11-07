@@ -88,7 +88,7 @@
 
 <a id="s2-2-p2"></a>[2.2¶2] A card's `dims` lists the quantity's dimension names, `;`-joined; `-` or empty is none. A card's `owner` is `kit` or `pcrec`. A set holds at most one card per `owner.quantity`.
 
-<a id="s2-2-p3"></a>[2.2¶3] In `rows`, `value_e6` is the value times 10^6 as a decimal integer in its one spelling (no `+`, no leading zero, no `-0`); it is empty exactly on a `null` row. `derivation` is `-` or empty on a `measured` or `null` row and names a §3.2 derivation on a `derived` or `fitted` row. `inputs` is `-`, empty, or `;`-joined row keys and cell ids of this set; only a `derived` or `fitted` row names inputs. The other columns are provenance and display, carried as text.
+<a id="s2-2-p3"></a>[2.2¶3] In `rows`, `value_e6` is the value times 10^6 as a decimal integer in its one spelling (no `+`, no leading zero, no `-0`); it is empty exactly on a `null` row, and otherwise at most 10^15 in magnitude (negative values are legal: a `derived` saving may be below zero). `derivation` is `-` or empty on a `measured` or `null` row and names a §3.2 derivation on a `derived` or `fitted` row. `inputs` is `-`, empty, or `;`-joined row keys and cell ids of this set; only a `derived` or `fitted` row names inputs. The other columns are provenance and display, carried as text.
 
 <a id="s2-2-p3a"></a>[2.2¶3a] In a format-2 set, `noise_e6` is not provenance: it is `-` or a non-negative integer in `value_e6`'s one spelling, at most 10^15, the value's 1-sigma noise in the row's unit times 10^6. Only a `measured` row carries a numeric noise; a `null`, `derived` or `fitted` row carries `-`. A `-` noise is unmeasured, never 0, and a measured noise may be 0. In a format-1 set, `noise_e6` is one of the provenance columns of ¶3.
 
@@ -308,6 +308,7 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 | an unknown or repeated header key; a required key missing or empty; `format` not `1` or `2`; a bad `id`, `rev`, `tier`, `composite` or `partial` | §2.1 |
 | a key breaking the grammar, repeated, of an unknown owner, with no card, or with the wrong token count | §2.3 |
 | an unknown unit or status; an empty value on a non-`null` row or a value on a `null` row; a misspelled integer | §2.2¶3, §3.1 |
+| a `value_e6` of magnitude past 10^15 | §2.2¶3 |
 | a derivation outside §3.2 on a derived or fitted row, or any on a measured or null row; an input that is neither a row nor a cell | §2.2¶3, §3.2 |
 | in a format-2 set: a `noise_e6` misspelled or negative, past 10^15, or a number on a `null`, `derived` or `fitted` row | §2.2¶3a |
 | in a format-2 set: a cell's `events` neither `-` nor a non-negative integer of at most 9223372036854775807 | §2.2¶1a |

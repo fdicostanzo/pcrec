@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2ak138_report.md
+sections: Summary; Changes; Sabotage; Validation; Gate jobs; Checklist
+nonempty: all
+commit: yes
+owed: none
