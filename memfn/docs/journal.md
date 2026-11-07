@@ -3491,3 +3491,17 @@ Main ruled on the four kit findings (D186 add. 2):
   - Slot sabotage 24/0 (S2950-S2952); est selftest 28/0; no timed-code change.
 - Queued S2c gates 470-474 on d57f99ee4 (474 expects 24); watcher armed. Critic crit-s2rev15 (opus, read-only): fidelity of the fused fact, the positive-median case, TIMED_PATHS completeness, fix-induced readers, the sabotage rows.
 - FULL is accepted once the critic and the gates clear; then S2e.
+- 11-07 ~04:30: critic crit-s2rev15 (relayed). VERDICT: window 2's FULL can be accepted.
+  - 10 findings, transcribed + ruled as review r11 (lane/memfn-s2c15fix a74b122de).
+  - Harness fidelity:
+    - REV15-1: no manifest sha check on the executables or tab.c;
+    - REV15-2: multi-compare chains pass as fused;
+    - REV15-3: the fact is too narrow (reg-operand and base-only compares);
+    - REV15-4: dead code (residual accepted).
+  - REV15-5: value = max(0, med) for fused rows; 0 is known wrong for a positive median.
+  - REV15-6: est-commit bypass via an ignored copy, and policy.tsv untracked.
+  - REV15-7: TIMED_PATHS misses cli/ and shared/; now an exclusion list.
+  - REV15-8: the R15-2 refusals have no sabotage rows.
+  - REV15-9: drill.py has no ¶3b.
+  - REV15-10: the tags grammar, and a check that the base is not fused.
+- RULED: window 2's FULL is ACCEPTED as the stage 2 measurement, re-scored by the fixed est before S2e. All fixes go to lane s2c15fix (opus, worktree off d57f99ee4) while S2c's gates run; no timed binary changes.
