@@ -249,6 +249,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: keep the member list current; add the kit planning/emitting member as a row when the kit split is proposed
   refs: [STREAM] (the end state this serves); docs/design/stream/manifesto.md; docs/design/stream/roadmap.md (areas A-REC, A-DFATOP, A-REV); decisions D182; memory pcrec-plan-as-text-seam
   MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
+- [ORACLE-CACHE] STATE:started — the libpcre2 oracle answers from a committed cache behind the same driver interface
+  filed: 2026-11-07 Frank ("Why use oracle in ci at all? ... run them once to a file"; "treat it like a saved cache from the oracle driver so the interface is the same"); manager wrote the row
+  status (2026-11-07): census lane running (which tests call libpcre2 live, how, deterministic or not, answer-set size, conversion cost); no build
+  next: census report, then a conversion plan to Frank; build on his go
+  refs: oracle_store/ (CLAUDE.md); tests/oracle/; docs/design/oracle_interface.md; upstream_issues.md U25 (the CI red that prompted it)
+  Shape (Frank): tests keep calling the oracle DRIVER exactly as today; the driver answers from a committed cache keyed by (oracle build id, question); a miss is a loud failure in make test/CI and a live query only in an explicit regenerate mode on a box with the pinned build. CI stops building libpcre2. Exploratory random-seed fuzzing stays live and opt-in. Retires the U25 tolerance.
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
