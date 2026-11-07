@@ -1,0 +1,76 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md). The rows were checked first on rev 0's withdrawn
+ *   pcrec-side table (commit 171bdb343, lane xarch1), the same rows.
+ *
+ * memfn/src/targets.def — THE KIT'S CPU TARGET TABLE (unit K0, request R-36;
+ * docs/design/memfn/target_seam_units.md §2, target_seam.md §2, §6.1).
+ * Kit-private: pcrec holds a target only as an opaque token, which it asks
+ * the kit to parse (target_seam_units.md R3/R4); everything a token means is
+ * a row here, and pcrec reads it through memfn.h's target entries.
+ *
+ * An X-macro in options.def's idiom: an includer defines MF_FAMILY and
+ * MF_TARGET (one of them empty when it wants the other), and MF_REGION,
+ * MF_NO_REGION, MF_FAMILY_OF and MF_NO_FAMILY for the rows' wrapped columns.
+ * memfn/tests/check_targets.sh reads these rows through the preprocessor too.
+ *
+ * MF_FAMILY(id, name, guard, defaults)
+ *   name      the family's token: the largest scope of one artifact (D188
+ *             addendum 2)
+ *   guard     the preprocessor condition the family guard's `#error` refuses
+ *             compilation without. It names the architecture and excludes the
+ *             ILP32 ABIs (x32 also defines __x86_64__)
+ *   defaults  the family's default target list (canonical tokens, comma-
+ *             separated): what `-fmemfn-simd` resolves to for this family.
+ *             x86-64's grows to "x86-64,x86-64-v3" only at the dispatch step
+ *             (unit U5), which waits for a bench speed verdict (D144 add. 4)
+ *
+ * MF_TARGET(id, name, family, region, features)
+ *   name      the target's token; also its stem tag and probe string (U4)
+ *   family    MF_FAMILY_OF(<family id>), or MF_NO_FAMILY for the one
+ *             PORTABLE target (no guard, no region, no SIMD)
+ *   region    MF_REGION("<attr>"): a part compiled for this target sits in a
+ *             region whose ADDITIVE attribute list is <attr> (target_seam.md
+ *             §6.1: never `arch=`, which replaces the TU's ISA set and breaks
+ *             always_inline callees above the target); MF_NO_REGION: none
+ *   features  the sorted feature tokens the target supplies, comma-separated;
+ *             equal to <attr> wherever a region is (the table check asserts it)
+ *
+ * THE TABLE CHECK (memfn/tests/check_targets.sh, at `make`; `make strict` and
+ * `make test-memfn-targets` fail on it): for every target of the building
+ * host's family, gcc at the family floor plus each attribute defines exactly
+ * the macros gcc defines at `-march=<name>` (the control is the compiler, not
+ * this file); the structural rules in its header. Its first finding put
+ * `sahf` in x86-64-v3's list (`__LAHF_SAHF__`; R2).
+ *
+ * A row is born with the first kit level that needs it (D77): no x86-64-v2
+ * or x86-64-v4 row, because the kit's two x86 levels (16 and 32 bytes) cannot
+ * plan differently there; aarch64's row has no kit level yet (NEON is that
+ * family's baseline, so it needs no region).
+ */
+
+MF_FAMILY(MF_FAM_X86_64,  "x86-64",  "defined(__x86_64__) && !defined(__ILP32__)", "x86-64")
+MF_FAMILY(MF_FAM_AARCH64, "aarch64", "defined(__aarch64__)",                       "aarch64")
+
+MF_TARGET(MF_TGT_GENERIC,   "generic",   MF_NO_FAMILY,                 MF_NO_REGION, "")
+MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_REGION("sse2"), "sse2")
+MF_TARGET(MF_TGT_X86_64_V3, "x86-64-v3", MF_FAMILY_OF(MF_FAM_X86_64),
+          MF_REGION("avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave"),
+          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave")
+MF_TARGET(MF_TGT_AARCH64,   "aarch64",   MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_REGION, "neon")
+
+/* The family the kit itself is compiled for: the HOST default, since the kit
+ * is compiled into libpcrec and its build host is pcrec's. Read on the kit's
+ * OWN build, never emitted. The same predicates as the guard column, which the
+ * table check holds this chain to under several preprocessor targets; a host
+ * with no family row leaves MF_NFAMILY (its default list is the portable
+ * target's). */
+#ifdef MF_TARGET_HOST
+#if defined(__x86_64__) && !defined(__ILP32__)
+#define MF_HOST_FAMILY MF_FAM_X86_64
+#elif defined(__aarch64__)
+#define MF_HOST_FAMILY MF_FAM_AARCH64
+#else
+#define MF_HOST_FAMILY MF_NFAMILY
+#endif
+#endif
