@@ -3206,3 +3206,46 @@ the compiler, and is never adopted silently. Proposed for main to file
   2. **FINDING ABOUT PCREC (CONTRACT-5, for known_issues):** the measures loader accepts a set row with value_e6 > MF_MEASURE_MAX (1e15). The kit then refuses it at mf_art_begin, so every compile against that set fails with "internal error: the memfn kit refused ...". Repro: a FILE set with one kit row at 2e15 and its digest fixed; 3 patterns gave rc 1 and the control rc 0 (review r4 verify.md). Fix shape: the loader refuses |value| past the kit's bound, as a §7 refusal row. S2a's noise field does this for noise.
   3. **PLAN row (SLOT-7):** one kit noise/policy constant table (MATERIAL, MAX_SET, HORS_MIN, the coverage factor z, the gate default) at span_pick row 1, so plan_cost.def's policy rows stop narrowing D176's "rows migrate into the sets" silently.
   4. **NOTED (COST-3):** rev 1 drops J6's vany cards (unrouted, no reader). J6 keeps vrun under D188.
+
+- done: 2026-11-06 — **R-35 stage 2 unit S2a** (noise channel + set FORMAT 2) — branch `lane/memfn-s2a` @ 7355ea430. Reports: docs/dev/lanes/s2a_report.md and s2afix_report.md. Review: docs/dev/reviews/2026-11-06-r8-memfn-s2a.md (on the branch), ruled and fixed.
+  - What it is:
+    - `mf_measure` gains `noise_state` (UNSTATED is refused) and `noise_e6`: an MF_SITE_ABI 23->24 event, no pcrec abi.
+    - Set FORMAT 2 with digest domain `pcrec-meas-2` (covers noise and class), plus measures.md's spec hunks. The handed digest covers key/state/value/noise (SEAM-1).
+    - K138's fix form: two literals + a _Static_assert. **K138 is FIXED with this commit.**
+    - Zero movers.
+  - Validation GREEN on the box queue, 460-468:
+    - strict; kit sections;
+    - ident x3 (23 arms each, failed 0);
+    - make test;
+    - mech x3 (72 rows, S2900-S2911 red when planted).
+    - Two reds were fixed on the branch before green: 461 (limits allowlist KS_MEAS_MAX, d9afba62b) and 465 (two plan.md line cites, 7355ea430).
+  - The branch includes the kit records (merge of lane/memfn-k1102 at 1f14b70bd).
+  - **R-35's match_api hunk is CLOSED**: no match_api text moves, because the seam field is not caller-visible through match_api.
+  - **Kit defect noted (r8 SEAM-2, PLAN):** the kit does not check an UNSTATED `mf_akind.present` (pre-existing). It is fixed in the kit's next seam-touching unit.
+- done: 2026-11-06 — **R-35 stage 2 unit S2b** (census0, step 0) — branch `lane/memfn-s2b` @ c84e759d3. Report: docs/dev/lanes/s2b_report.md.
+  - census0.py replaces smp20.py. It covers python instruments only, held by a byte-for-byte control and a red sabotage (S2920); there was no separate code round.
+  - J0 GREEN (job 440): 5,492 compiles, control GREEN, census0.out committed.
+  - Results: 3,430 window units, 750 moving; 207 row-1-class units, 166 moving.
+  - Nothing pcrec emits or reads changes.
+  - Merge order: S2b and S2a are independent. S2c (lane/memfn-s2c, which includes both) is delivered after the S2d window and S2e.
+
+- done (CORRECTED): 2026-11-07 — **R-35 S2a, re-delivered** — branch `lane/memfn-s2a` @ 252e0a1cb. The 2026-11-06 done line's "K138 is FIXED with this commit" was WRONG at 7355ea430: the loader still accepted any value_e6, there was no _Static_assert, and known_issues still said OPEN. Main's merge review caught it.
+  - Now on the branch (lane s2ak138, report docs/dev/lanes/s2ak138_report.md):
+    - 535a2e78d: the loader refuses |value_e6| > 1e15 at load on both formats, matching the kit's accept range (negatives within the bound stay legal: derived saving rows). measures.md §2.2 gains the bound sentence and §7 a row.
+    - `_Static_assert(KS_MEAS_MAX == MF_MEASURE_MAX)` in src/gen/memfn_sites.c.
+    - S2912 + two fixtures.
+    - K138 marked FIXED in known_issues.
+    - 252e0a1cb: S2910 now declares BUILD-REFUSED, because the new assert stops `make`, as intended.
+  - Re-validation GREEN: 491 strict, 492 sections (incl. registry/knowledge/measures), 493 mech S2900-S2912.
+- S2b is unchanged: `lane/memfn-s2b` @ c84e759d3 (MERGE verdict given).
+- done: R-35 S2e (span_pick stage 2: set + DEFAULTS flip). Branch `lane/memfn-s2e` @ 1b6f88b34 (off lane/memfn-s2c fd75d4119, with S2a's tip 252e0a1cb merged). Reports: docs/dev/lanes/s2e_report.md and s2efix_report.md.
+  - The set: zen4-grid3@1 is window 2 (s2d-20261107a) scored by est at fd75d4119: FULL, digest 2d2b3c0861443bec, 38 rows, 826 cells. PROVENANCE.md names the est commit.
+  - Recompute: an independent spec-text implementation, exact on every row, J1 re-derived c. Plants 7/7.
+  - DEFAULTS (B): `idk` -> zen4-grid3@1. Zero movers: census 485, movers/0002.tsv. Cell-less embed. libpcrec +16029 B (~16 KB projected).
+  - YOUR ACK CONDITION: the standing rule is in span_cards.md §3.5 `[S2e STANDING RULE]`. Fused-compare classes are identified only by the structural check of the timed code, never by the sign. A bound row carries max(0, med) ± max(r_max, |med|). The rule changes only by a new revision plus a review.
+    - Its non-fused failing checks: S2952 (x3), and est's self-test case "a class NOT fused". These sit within S2950-S2963 (gate 474/484) and review r11's rows.
+  - Also: vcls `[^x]` residual (c2.alu1 216->220, cmp2 74->70, plan unchanged); abs_ns_e6 documented as provenance-only (no reader, by grep); sabotage S2964-S2974.
+  - C4 allowlist rows for zen4-grid3 are interim until your code-only scope fix deletes them.
+  - Validation: all GREEN at 1b6f88b34 (480 strict, 481 sections, 482 make test, 483 mech, 484 slot sabotage 35/35, 485 zero-mover census, 486 recompute plants).
+  - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the worktree by make test's size log.
+  - Main never touches the ledger; your merge review is next.

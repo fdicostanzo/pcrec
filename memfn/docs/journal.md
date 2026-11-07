@@ -3320,3 +3320,240 @@ Main ruled on the four kit findings (D186 add. 2):
   - S2b is complete. No separate code round: python instruments only, held by a byte-for-byte control and a red sabotage. It is delivered to main together with S2a after S2a's round and gates.
   - S2c waits on S2a's code round; its base needs S2a's format-2 spec text.
 - 11-06: lane s2a (opus, lane/memfn-s2a, base 8f43f4f27 = main 6f1b40f75 merged into the rev 1.1 design branch) built span_pick stage 2 unit S2a: `mf_measure` gains `noise_state` (`mf_noise_state`, UNSTATED refused at `mf_art_begin`) and `noise_e6`, appended last, MF_SITE_ABI 23 -> 24 (no MF_VOCAB/MF_CLASS_V move, no pcrec byte moved); pcrec-side set FORMAT 2 (noise and `class` in the digest `pcrec-meas-2`, the `events` cell column, the noise refusals, `KS_MEAS_MAX` with its equality TU), the fill's format rule, ksgen + the raw-row compare, the MFMEAS noise columns. Sabotage S2900-S2910. Report docs/dev/lanes/s2a_report.md. The responses-ledger entry is the kit session's (single writer).
+- 11-06: S2a code round r8 RULED: no answer or speed finding; zero movers held (288 pairs, 9 arms); all 12 sabotage rows red.
+  - FIX-NOW: SEAM-1 (value_e6 missing from the handed digest, so a value+1 fill passed), CHECKS-1/2, CONTRACT-1..4, HOUSE-1/2/5. PLAN: SEAM-2 (the kit's unchecked UNSTATED mf_akind.present, a kit defect, goes in the done notice).
+  - The review is committed ON lane/memfn-s2a (merge 1f14b70bd), because its spec cites (§2.2¶1a, §4¶2a) exist only there and the spec hook refused them on k1102.
+  - The reviews index went over 12 KB; the 9 oldest entries moved to the history file.
+  - Fix lane s2afix (sonnet) is in worktree s2a, with its deliver file written by me before launch. Gates 460-468 follow.
+- 11-06: s2afix delivered lane/memfn-s2a @ 4b0686f19: all r8 FIX-NOW items. SEAM-1 adds value_e6 to the handed digest (S2911 red). HOUSE-1 adds meas_formats[]. 95 measures checks; S2900 re-anchored; MF_SITE_ABI stays 24; 0 movers on spots.
+  - lanecheck rc=1 only because my deliver file's `owed:` held prose; it must hold queue keys or "none" (my error, again in the deliver step).
+  - GATES 460-468 QUEUED (mech now 72 rows). New guard scratch/memfn/s2a/jobs/hold.sh: no gate starts 19:00-01:00 (Frank's hold, plus ~1 h of run). Watcher armed.
+  - S2c started: lane s2c (opus) on lane/memfn-s2c = rev 1.2 + S2b + S2a@4b0686f19 (one index conflict resolved keeping both lines). Rev 1.3 text first, then the producer; sabotage S2930-S2949; dry runs only; the S2d window jobs are prepared, not queued.
+- 11-06 12:30: gate 461 (S2a kit sections) RED in test-registry: limits_check 3a refused S2a's new `KS_MEAS_MAX` define (5c8722ea1). That is the set format's field bound, on neither allowlist. Triage tri461 found it; the review round and s2afix both missed it (no lane ran test-registry).
+  - Fixed d9afba62b: KS_MEAS_MAX joins NONLIMIT_ALLOWLIST with its reason (format grammar, not a policy). limits_check passes alone.
+  - 461 retried; 462-468 chain behind it; watcher re-armed. Strict 460 was green.
+  - Lesson for S2c's validation: run test-registry when a unit adds a #define.
+- 11-06: S2c DELIVERED lane/memfn-s2c @ 0605e9e99 (report docs/dev/lanes/s2c_report.md; lanecheck DONE).
+  - Contents: rev 1.3 first (4cc755a15); formhash entry table; kit-grid@3 (4 cards); check C card guard 17; the new measures.md estimator and gates sections; the full slot harness.
+  - 0 movers (159 patterns x 4 streams). test-memfn-finder 3235/0. Dry runs J1-J5 + J2p green. Sabotage: slot-local 5/5; S2930-2932 red. Jobs 470-474 and S2d 480-489 prepared, not queued.
+  - RULED: (1) placement = min(3, 64/A) phases per arm from each object's .text alignment, no alignment flag; (2) walk-set folds into walk (same site text, same form hash, one key). Neither was in the design text: small lane s2cdoc writes both as [rev1.3 S2c-n] and merges S2a's d9afba62b (limits allowlist) into s2c.
+  - Placement screen on a loaded box read 8.56 % (no reading); it runs quiet at S2d's start.
+  - Next: S2c code round on s2cdoc's tip, then gates 470-474.
+- 11-06: S2c code round r9 RULED: NOT READY for S2d until FIX-NOW lands. Emission byte-identical over 60 pairs; the estimator matches its spec. Four harness-fidelity holes reached a set with every check green:
+  - G1: the answer gate never runs the timed entry;
+  - G2: the cell-text check reads the arm, not the key;
+  - G3: the verdict ignores the run record;
+  - G4: deps hash the canonical instance while 8 of 14 verify rows time another.
+- Choices: G4 FOLD; EMIT-3 majority lowering shape (else lower bound); SLOT-17 gate_e6 to the kit policy table per R-35 (e), no question to main.
+- The review is committed on lane/memfn-s2c (79c5e91e5), with the new lens row "harness fidelity" in the skill and critics.md.
+- Fix lane s2cfix (opus) is running; sabotage ids from S2933.
+- Frank, on code size: stage 1's kit C fell 434 lines (13,101 -> 12,667), all from deleting dead code; the unification units were net +275. "Interesting but not actionable": no audit, no size line.
+- 11-06 14:28: S2a gates 461 (retry), 462, 463 and 464 GREEN: sections, plus the three ident shards with no byte moved. Gate 465 make test RED in test-plan-lint only: PL14, two plan.md line-number cites (span_cards.md, s2design_report.md) that came in with the k1102 records merge. Triage tri465.
+  - Fixed 7355ea430: cite by [BENCH-WITHDATA] tag; plan-lint 2/0. 465 retried; 466-468 chain after it; watcher re-armed.
+  - OWED on s2c after s2cfix delivers: the same span_cards.md cite fix (I did not touch a tree with a running lane). k1102's copies are fixed in this commit if present.
+- 11-06 ~14:40: s2cfix delivered lane/memfn-s2c @ 88a47cff8, closing all r9 FIX-NOW/DOC items:
+  - G4 FOLD: settest and rc-words hashes moved; S2933.
+  - G1: the gate runs the timed entry on all 7 launches + ctl, with a population assert and a manifest; slot (l3) S2934.
+  - G2 KEY-ARM MISMATCH (S2935); G3 frozen plan + finalized record (S2936).
+  - EMIT-3: case is the majority (156/292), so the instance stays. SLOT-17: memfn/data/policy.tsv gate_default_e6.
+  - Job scripts are committed in slot/jobs/.
+  - Validation: finder 3272/0, limits 39/0, 0 movers; all dry runs green; slot sabotage 8/0.
+- Merged lane/memfn-s2a into s2c (f3522e0f2) for the plan-cite fix; plan-lint clean.
+- GATES 470-474 QUEUED (mech 14 rows, slotsab 8), behind S2a's 465-468, with their own watcher.
+- One fix-induced + harness-fidelity critic (crit-s2cfix, opus) on 79c5e91e5..88a47cff8 before the S2d window.
+- 11-06 ~14:50: fix check on s2cfix (crit-s2cfix): every r9 id closes as ruled, and S2933-2936 hold. Eight leftovers, all RULED FIX-NOW before the window (recorded in r9's "Fix check", 62c7ff1be on s2c):
+  - FIX-1 answer: est reads cards and policy live, so a policy edit flips a byte-identical record. The record pins them.
+  - FIX-2 answer latent: key dims are never compared with the Arm.
+  - FIX-3: a ref-name FROZEN passes the dry runs, then every timing job fails.
+  - FIX-4: S2934 is caught only at ctl.
+  - FIX-5: vcls shapes are not gcc's lowering. EMIT-3's verdict holds: at least 209/292 sites are one-compare.
+  - FIX-6: ACC is unchecked.
+  - FIX-7: the placement screen is not a job.
+  - FIX-8: the draft gate breaks check C.
+- S2c gates 470-474 CANCELLED before they started (the tree changes); requeue after s2cfix2. Lane s2cfix2 (opus) is running; sabotage S2937+.
+- 11-06 ~15:10: s2cfix2 delivered lane/memfn-s2c @ 6a400dab8, applying FIX-1..8:
+  - FIX-1: the record pins cards+policy with their shas; est reads only those (repro FULL under 30000 and 300).
+  - FIX-2: plan.DIM_FIELD, per-dim KEY-ARM MISMATCH.
+  - FIX-3: FROZEN resolves to a full sha. FIX-4: S2934 is caught at a launch gate. FIX-6: ROUND MISS.
+  - FIX-5: lowering classes alu1 217 / cmp2 75 of 292; the instance alu1 stays the majority.
+  - FIX-7: job 480-kit-s2d-screen; timing jobs wait on its verdict. FIX-8: the draft writes `-`; check C EQUAL.
+  - Slot sabotage 11/11 (S2937-2939 added); finder 3272/0; 0 movers.
+- RULED residual FIX-5: 4 `[^x]` sites lower to ONE cmpb, so the class follows the lowering: count them alu1/one-compare. The majority holds either way. OWED: a two-line vcls fix before S2e's set commit.
+- S2c gates 470-474 REQUEUED (watcher armed).
+- Asked main for the S2d 35-min timing window (cleared with Frank; likely tomorrow given the 19:00 guard).
+- 11-06: main relayed Frank's CLEARANCE: the S2d timing window from 2026-11-07 07:00. The kit queues it itself: 480 prep -> quiet-gated screen -> J1-J5 + J2p -> finalize (~35 min). Conditions: quiet-gated; never 20:00-01:00; no other timing alongside; ONLY after S2c gates 470-474 are green; boxqueue not-before; tell main when it ends.
+  - Plan: on 470-474 green, fill s2d window.env (RUN_ID, FROZEN = the gated tip's full sha), dry-run each job, queue with `not-before 2026-11-07T07:00`. The owed vcls residual stays AFTER the window (counts only, no plan change).
+- 11-06 16:05: S2c gates 470 strict, 471 sections and 474 slotsab GREEN. 472 make test RED in test-memfn-arch only: C4 refused S2932's verbatim format-2 header anchor (class x86_64-avx2/zen4, isa line; 4+4 hits), added at c53d457f6 with no allowlist rows. Triage tri472.
+  - Fixed 10ae71974: two c4_allowlist rows with their reason. C4 is 17/0; the total of 71 stays >= the floor of 26.
+  - 472 retried; 473 mech chains after it; watcher armed.
+  - S2d FROZEN = the tip that passes the gates (now 10ae71974, unless another fix lands).
+- 11-06 evening: Frank, via main: "Do not hold the box for me tonight". The hold is lifted for tonight only. hold.sh allows gate starts from 2026-11-06 19:00 to 2026-11-07 01:00; the date-bounded clause expires on its own. The S2d timing window is unchanged (07:00). No overnight timing window asked: 07:00 is soon enough.
+- 11-06 evening: Frank (via main) OPENED the S2d window tonight: queue it on S2c's 470-474 green, no not-before; 07:00 stands as the fallback.
+  - My shell read of window.env hit Frank's global deny `Bash(cat *.env)`, which stays. Frank's ruling: RENAME. Done at 236ba2807 on s2c: window.vars in common.sh, the example, CLAUDE.md and span_cards.md (reports and reviews keep the old name, as history).
+  - Scratch copies synced; window.vars = RUN_ID s2d-20261106, FROZEN 236ba2807 (full sha), HOLD = s2a/jobs/hold.sh.
+  - All 9 S2d jobs dry-run rc 0. The commit landed BEFORE 472 started, so gated tip = FROZEN.
+  - Next: on 472 + 473 green, queue 480 prep, 480 screen, 481-486, 489; tell main the window's end and verdict.
+- 11-06: main, the SIMD seam plan: a short seam note fixing the per-target code-path contract:
+  - the target is a fact per request;
+  - the kit returns C valid inside a function compiled for that target (no #if, no CPU checks, per-target helper names);
+  - pcrec owns attributes, naming and dispatch;
+  - one target = today's bytes.
+  It comes AFTER the alternation thread lands and needs Frank's go. No kit action now; the kit tells main what it needs and when if SIMD work hits the blocker sooner. Today that is S2g only, held as planned.
+- 11-06 21:25: S2c gates 472 + 473 GREEN, so all of 470-474 are green on 236ba2807.
+  - The first queue attempt for the S2d window was REFUSED on every job: boxqueue dry-runs and runs a COPY of the job file from its own dir. (1) `. $(dirname $0)/common.sh` failed (rc 127); (2) the stale-copy check used basename $0 (a temp name).
+  - The S2c lanes had only dry-run the scripts in place, so the queue path was never exercised. Lesson for kit job sets: dry-run via `boxqueue add`, or from a copy in another dir.
+  - Fixed, slot/jobs/ only: 7a72512e0 (absolute common.sh path) and 508178bd2 (JOB= per job; the copy check compares the running $0). FROZEN = 508178bd2; its diff from the gated tip is slot/jobs/ only.
+  - WINDOW QUEUED (480 prep, 480 screen, 481-486, 489), with watcher bxsz9x4l6.
+  - main's 229-mttri-axes2 (8 h) is ahead in the queue; asked main whether to hold it.
+- 11-06 ~22:00: S2a gates 465-468 GREEN (all 460-468 green on 7355ea430). S2a and S2b delivered (59de9d683).
+  - main: S2b MERGE. S2a NOT yet: **my done line claimed K138 FIXED, and it was not.** The loader still accepts any value_e6; there is no _Static_assert in the pcrec hunks; known_issues says OPEN. I took the summary's "K138 fix form ACKed" as "built" without checking the branch.
+  - Lesson: a done line names only what a grep of the branch shows.
+  - Lane s2ak138 (sonnet) is adding the value bound, the assert, S2912 + fixture and K138 FIXED. Re-validation jobs 491-493 wait on kit-s2d-J9's end. Then both tips go to main again.
+- 11-06 22:00: s2ak138 delivered lane/memfn-s2a @ 0a0268ff3 (fix 535a2e78d). Verified on the branch by grep:
+  - the loader refuses |value_e6| > 1e15 on both formats (ks_measures.c:453);
+  - _Static_assert in src/gen/memfn_sites.c;
+  - K138 FIXED in known_issues;
+  - S2912 + two fixtures; measures 97/0, limits 39/0, knowledge 309/0, 0 movers.
+  - 491-493 QUEUED, waiting on kit-s2d-J9's end; watcher armed.
+- S2d window IN PROGRESS: prep, screen and J1 are done (J2 running at 22:01), so the screen passed its gate.
+- OWED at S2e: merge S2a's new tip into s2c (s2c has the older S2a).
+- 11-06 21:50-22:20: S2d WINDOW RAN on FROZEN 508178bd2.
+  - All 9 jobs green: prep 172 s, screen 82 s (unit noise 0.277 % vs 1.5 % gate), J1 291 s (verdict c), J2 152, J2p 219, J3 117, J4 473, J5 140, J9 finalize. Drift kept on all.
+  - Record: 6 jobs ran, 38 plan keys, 30 floor lines.
+  - `est.py rows` OUTCOME **REFUSED** (exit 3), on five floors:
+    - byte.libc: noise 1295 on 39024 = 3.3 % > the 3 % gate;
+    - verify settest c1 and rc-memcmp l1: "negative per-event cost (a fixture artifact)";
+    - verify settest c2 and rc-words w1: "below paired A/A or signs mixed".
+  - Nothing is written or set.
+  - Analysis lane s2dana (opus, read-only) is classifying each floor (resolution / fixture defect / noise) with options. main is told; the box is released to its axes2.
+- 11-06 22:30: s2dana analysed the REFUSED window (kept on s2c at ce88f1766, span_cards/s2d1/):
+  - byte.libc: box state. The fast/slow switch is between rounds; ctl 2 % slower, memchr 6-10 % slower; load1 1.1-2.2, a co-runner.
+  - l1/c1: true cost about 0 (3 ALU ops under a load-bound loop), and the null base is a DIFFERENT loop (indexed, byte load, 16-B align), so the arm runs 0.1 wb faster (25/28 negative).
+  - w1/c2: sub-resolution. Delta rows are ungated by spec; walk.random rows are 37-44 % noise and bimodal (box state).
+- RULED rev 1.4 (lane s2rev14, opus; design + code in one lane):
+  - R14-1: null base = the arm's own loop, from one source text, with a check + sabotage;
+  - R14-2: sub-resolution delta rows are carried MEASURED "consistent with 0 within r" (value clamped >= 0, noise = r), NOT NULL; no format/seam change allowed;
+  - R14-3: rerun with a co-runner log at each quiet check; no gate/z change;
+  - R14-4: est prints "ungated"; a note line names the bimodal rows.
+- Then one critic, gates, and window 2 from main.
+- 11-06 23:00: s2rev14 delivered lane/memfn-s2c @ b4e0a8bab (report docs/dev/lanes/s2rev14_report.md):
+  - R14-1: base.null.<cls> is rendered from the class arm's text; null_check.
+  - R14-2: |med| <= r (3 s.e. of the median) means measured max(0,med) with noise max(r,noise), else NULL. A new measures.md paragraph; no format change.
+  - R14-3: quiet-check co-runner log + record `quiet` section. R14-4: ungated labels + bimodal note.
+  - Replay over window 1: all verify floors pass; byte.libc alone fails. Closest call: c1.p50, 0.093 vs r 0.097.
+  - Slot sabotage 17/17 (S2940-2945); est selftest 15/0; 0 movers.
+  - lanecheck rc=1 only on artifact_size_log.tsv, the make-test side effect; restored by me, lanecheck DONE.
+  - Flag for S2e: a raw negative abs_ns_e6 kept beside a clamped value_e6.
+- Critic crit-s2rev14 (opus) launched: fix-induced + fidelity + simulate R14-2's false-pass rate.
+- Window 2 asked of main (tonight after ~01:30 if covered).
+- K138 revalidation: 491/492 GREEN; 493 mech red only on S2910, which needs BUILD-REFUSED now (memfn_sites.c's assert stops make). Edited on s2a; single-row rerun running.
+- 11-06 23:30: critic crit-s2rev14 (relayed; its findings Write was refused) on rev 1.4. Verdict: ready for window 2 with fixes; the timed code is faithful by objdump.
+  - REV14-1: a 7/7-negative sign defect passes as "zero within r" (66-84 % in simulation); the replay's PASS shows the defect.
+  - REV14-2: r is uncapped and self-derived.
+  - REV14-3: null_check is a substring test (passes a compare-keeping base).
+  - Also REV14-4 (doc), REV14-6 (ps pcpu is lifetime), REV14-7 (doc); REV14-5 and REV14-8 accepted.
+  - Transcribed + ruled as review r10 on the NEW branch lane/memfn-s2c14fix (4a1b3ee5a).
+- PLAN: window 2 runs FROZEN on b4e0a8bab (timed code faithful); the fixes go to lane s2c14fix (opus, LIGHT load, waits while a kit-s2d job runs; must state no timed-binary change); the verdict is computed with the FIXED est over window 2's record.
+  - S2c gates 470-474 requeued on b4e0a8bab. window.vars: RUN_ID s2d-20261107a, FROZEN b4e0a8bab; dry runs from a copy green. The window is queued when the gates are green.
+- S2a: S2910 declared BUILD-REFUSED (252e0a1cb); 493 retried.
+- 11-07 ~00:05: s2c14fix delivered (1e4999d1c):
+  - REV14-1 all-negative rows stay NULL; REV14-2 r capped at R_MAX r_max_e6 53751 (0.054 wb, UNMEASURED DEFAULT, from window 1's A/A rows; re-derive on the first rev 1.4 window), and ¶3a needs aa <= r; REV14-3 null_check requires equality; REV14-6 /proc delta.
+  - Replay of window 1: l1 and c1 NULL, w1/c2 sub-resolution; REFUSED on byte.libc, l1 and c1, as expected on the biased base.
+  - Timed-code impact NONE: all 81 rendered TUs have identical sha-256. Slot sabotage 21/0 (S2946-2949); est selftest 22/0.
+- Lane's OPEN point: a window frozen on b4e0a8bab pins no r_max in its record. RULED: freeze window 2 on the FIXED tip instead. The gates had not started: cancelled, s2c fast-forwarded to 1e4999d1c, 474 expects 21 rows, FROZEN 1e4999d1c, dry runs from a copy green, 470-474 requeued, watcher armed.
+- The window is queued on gates green; main's 495 waits for kit-s2d-J9.
+- 11-06 23:42: 493 K138 mech GREEN (S2910 BUILD-REFUSED). S2a re-delivered @ 252e0a1cb, with a corrected done line (5cace44bd); every claim was grepped on the branch first. Both tips sent to main to land together.
+- 11-07 01:04: S2c gates 470-474 GREEN on 1e4999d1c (strict 16 s, slotsab 21/21 77 s, sections 868 s, test 2426 s, mech 1610 s). artifact_size_log restored.
+- WINDOW 2 QUEUED (RUN_ID s2d-20261107a, FROZEN 1e4999d1c); watcher armed. main's 495 waits for this J9.
+- 11-07 01:34-01:59: WINDOW 2 RAN (s2d-20261107a, FROZEN 1e4999d1c).
+  - All 9 jobs green; screen 0.201 %; J1 c; drift kept; the record pins r_max 53751.
+  - Fixed est: OUTCOME REFUSED on 2 floors only. byte.libc now passes, and so do w1/c2.
+    - l1: all 7 launches negative ("a fixture defect, whatever r").
+    - c1: mixed signs above r.
+  - The negatives are LARGER than window 1. Reading: the rev 1.4 null base (a register compare, REV14-8) costs more than the arm's one-instruction compare, so it is no null.
+  - Note lines: a box-state split (control 0.65-1.78 %) and bimodal walk.random rows.
+- Analysis lane s2dana2 (opus, read-only): units, objdump base vs arm, and options (a) a same-shape never-matching base, (b) an evidence-bound zero, (c) another regime, (d) floor change + row 1's need.
+- main told; box released to its 495. No third window tonight.
+- 11-07 ~02:30: s2dana2 analysis (kept at ca4ca26b1, span_cards/s2d2/).
+  - l1/c1 compile to a load-op compare FUSED into the candidate load (`cmpl/cmpb $imm,(mem)`). Both null bases do an unfused load, so no removed-compare null can be null. The arms-only fused/unfused step is +0.14 wb.
+  - Window 2's values: l1 -0.116/-0.106, c1 -0.119/-0.107 wb.
+  - Row 1 needs only value+noise; anything in +-0.3 wb changes no pick. The other 34 rows match window 1 within noise (<= 0.69 sigma).
+- RULED rev 1.5 (lane s2rev15, opus):
+  - R15-1: a fused-compare class is measured 0 with noise max(r_max,|med|) (~0.12 wb), scoped by a class fact CHECKED from the arm's object code, never by the sign; a negative without the fact stays NULL; sabotage from S2950.
+  - R15-2: the draft and PROVENANCE name the est commit; scoring frozen cells with a later est is allowed when the timed code is unchanged.
+  - R15-3: r_max re-derived from window 2 (A/A 15597..56070) as a measurement; window 2 is scored at its pinned 53751.
+  - Window 2's cells are reused; NO third window. Expected outcome FULL.
+- This is my call (answer-free: it changes no pick); Frank is told in the summary.
+- 11-07 ~03:30: s2rev15 delivered (d57f99ee4 on lane/memfn-s2c).
+  - R15-1: the fused fact is read from every launch executable, arm and twin. objdump mnemonics and est's own byte decode must agree, and the fact must be stable across launches; it holds for exactly l1/c1.
+  - R15-2: the draft writes `# note est_commit`; it is refused when est has uncommitted changes or TIMED_PATHS moved.
+  - R15-3: r_max 56070 (measured over both windows; window 2 scored at its pinned 53751).
+  - Window 2 re-scored FULL (est 1e862ff9a). l1/c1 are 0 +- 0.106-0.119 wb; every other row is identical. Draft: 38 rows, 826 cells, digest 2d2b3c0861443bec; loads in pcrec's C loader.
+  - Slot sabotage 24/0 (S2950-S2952); est selftest 28/0; no timed-code change.
+- Queued S2c gates 470-474 on d57f99ee4 (474 expects 24); watcher armed. Critic crit-s2rev15 (opus, read-only): fidelity of the fused fact, the positive-median case, TIMED_PATHS completeness, fix-induced readers, the sabotage rows.
+- FULL is accepted once the critic and the gates clear; then S2e.
+- 11-07 ~04:30: critic crit-s2rev15 (relayed). VERDICT: window 2's FULL can be accepted.
+  - 10 findings, transcribed + ruled as review r11 (lane/memfn-s2c15fix a74b122de).
+  - Harness fidelity:
+    - REV15-1: no manifest sha check on the executables or tab.c;
+    - REV15-2: multi-compare chains pass as fused;
+    - REV15-3: the fact is too narrow (reg-operand and base-only compares);
+    - REV15-4: dead code (residual accepted).
+  - REV15-5: value = max(0, med) for fused rows; 0 is known wrong for a positive median.
+  - REV15-6: est-commit bypass via an ignored copy, and policy.tsv untracked.
+  - REV15-7: TIMED_PATHS misses cli/ and shared/; now an exclusion list.
+  - REV15-8: the R15-2 refusals have no sabotage rows.
+  - REV15-9: drill.py has no ¶3b.
+  - REV15-10: the tags grammar, and a check that the base is not fused.
+- RULED: window 2's FULL is ACCEPTED as the stage 2 measurement, re-scored by the fixed est before S2e. All fixes go to lane s2c15fix (opus, worktree off d57f99ee4) while S2c's gates run; no timed binary changes.
+- 11-07: main ACKs S2d on one condition. Rev 1.5's rule becomes a STANDING RULE in span_cards.md for every future window: fused classes by the structural check of the timed code only, never by the sign; change only by a new revision + review before a window. One sabotage row or self-test fails on a non-fused class (S2950, plus r11's rows), named in the S2e delivery. Told main: the value is max(0, med) per REV15-5 (the scope is still structural only). OWED in S2e's brief.
+- 11-07: s2c15fix delivered (fd75d4119); all of REV15-1..10 fixed.
+  - Manifest-checked executables; stems from the pinned plan.tsv; exactly one subject read, and it is a compare; decoding stays inside the symbol range; a fused base is refused; value max(0, med).
+  - Draft inputs must equal their blobs at HEAD; "timed" is now the NON_TIMED exclusion list.
+  - Critic repros P1-P6 refused; P4 is the accepted residual, which the manifest check refuses.
+  - Window 2 re-scored IDENTICAL (FULL, digest 2d2b3c0861443bec; s2d2/r11_rows.txt).
+  - est selftest 52/0; slot sabotage 35/35 (S2953-S2963); no timed-code change. The diff is docs/span_cards only.
+- The gates had not started (main's 495 running): cancelled, s2c fast-forwarded to fd75d4119, 470-474 requeued (474 expects 35), watcher armed.
+- Next: S2e brief (set commit + DEFAULTS flip + main's standing-rule condition + S2a tip merge + the vcls residual + the abs_ns_e6 note), launched on gates green.
+- 11-07 09:17: S2c gates 470-474 on fd75d4119 ALL GREEN (strict 16s, slotsab 160s, sections 888s, test 1443s, mech 1625s). S2e lane `s2e` LAUNCHED (opus, worktree s2e, branch lane/memfn-s2e off fd75d4119; deliver file 6fe971761). Scope: S2a tip merge (252e0a1cb), §9 S2e set + plants, DEFAULTS (B), the standing rule paragraph (S2950 + r11 rows, a non-fused fail), vcls `[^x]` residual, abs_ns_e6 note, libpcrec size. Its gate jobs are 480-48x; the lane writes them and I queue them.
+- 11-07: main: the target seam note (our XARCH-DEV ask, "format of single-arch code paths") is on main as PROPOSED rev 0, docs/design/memfn/target_seam.md (merge 5b43f8e9a), with a critic round running. Its shape:
+  - the target is a feature-token list plus a family per request;
+  - the kit returns text valid inside a target-compiled region: no ISA #if, no CPU check, no #include, and headers come back as a fact;
+  - levels.def `guard` becomes `needs`;
+  - pcrec owns the names, pragmas, list, stamps and dispatch, at the entries only.
+  Not ruled; nothing to build (D188 add. 1 still waits on Frank's XARCH-DEV go). Main will send the ruled rev. New SIMD forms may be shaped emitter-style from it.
+- 11-07 ~10:05: S2e DELIVERED (lane tip 2e1ce3fb4, then my deliver-file fix 5278014bf). The owed line I wrote was free text, and lanecheck reads owed words as box-queue keys, so it now lists the seven kit-s2e-* keys.
+  - Window 2 at est fd75d4119 reproduces FULL, digest 2d2b3c0861443bec (38 rows, 826 cells). DEFAULTS (B) flipped; cell-less embed; recompute 13/0, its plants 7/7.
+  - Plants S2964-S2974 DETECTED by hand. libpcrec +16029 B against ~16 KB projected.
+  - vcls: c2.alu1 216->220, cmp2 74->70, plan unchanged.
+  - The STANDING RULE is in span_cards §3.5, citing S2951/S2952.
+  - Gates 480-486 queued behind main's 205/210/213; the watcher counts 7 green ends.
+  - Next: review the diff, then deliver to main on green.
+- 11-07: main: the target-seam critic round is done; rev 1 is in a lane (review to be filed as 2026-11-07-r?-xarch).
+  - The kit-facing core HOLDS: no #if in kit text, names built from pcrec's prefix, a single top-rung call, a length-only rung chain.
+  - F3: no `target("arch=...")`. Instead an additive ISA list plus a clang pragma pair; rev 1 settles the form.
+  - F9: retiring MF_P_PORTABLE_ONLY becomes a `target` column of mf_form_entry, so the timed text and the shipped text are compiled for the same target. S2e's diff does not touch PORTABLE_ONLY (grep: 0 hits).
+  - D188 add. 2 (Frank): one CPU family is an artifact's largest scope; the kit never emits other families.
+  - Main: a CPU variant is a compound PART with a CPU predicate, chosen by the existing controller (D155 add. 5), with an elision fact (no target-dependent text = no variant).
+  - Still no build before Frank's XARCH-DEV go.
+- 11-07: main: target seam note rev 1 is on main (0bae50cbc; review 2026-11-07-r1-xarch.md).
+  - §4: mf_form_entry gains a `target` column (the timed text and the shipped text compiled for the same target).
+  - The attribute form is an additive ISA list plus a clang pragma pair; probed with gcc 15.2 and clang 21.1.8 under default/native/v4, 0 bad.
+  - Checked: S2e does not touch formhash.c or the mf_form_entry struct (empty diff vs 5b6cf41aa), so the column is a purely additive later change. NO CONFLICT, no reply sent (main asked for a reply on conflict only).
+  - Owed at the column's unit: whether `target` enters the form hash (it would move set keys); decide it in that unit's design.
+  - Still no build before Frank's XARCH-DEV go.
+- 11-07 ~11:35: S2e gates: 480 strict, 481 sections, 484 slotsab and 486 plants are GREEN. 485 census RED (10:25) and 482 make test RED (11:12); 483 mech was cancelled because it waited on 482.
+  - Census: movers 0 on every arm, but the job refuses because a CLAUDE.md changed after 0002.tsv's code_commit (6608a3104 -> d3da774b0).
+  - Test: C4 (test-memfn-arch) flags the new set id `zen4-grid3` as arch-noun vocabulary in 4 test files; zen4-grid1 is already allowlisted.
+  - Neither red is a result problem. Fix lane `s2efix` (sonnet) is in the s2e worktree. On delivery: requeue 480-486.
+  - MISS: my custom queue.log watchers (kitmgr/watch_gates.sh plus an inline copy) stayed silent through both reds. Main saw them and Frank relayed. Now using the standard scripts/monread kit --wait. Memory pcrec-use-standard-queue-watcher.
+- 11-07 ~11:30: s2efix delivered, tip 1b6f88b34; lane closed.
+  - C4 allowlist: zen4-grid3 rows added, allowed hits 71->77 (33->36 rows), floor 26 untouched.
+  - movers/0002.tsv code_commit re-stamped to d3da774b0; the guard is unchanged.
+  - strict and the light sections are green.
+  - All seven gates 480-486 requeued on this tip; watched by monread kit --wait.
+- 11-07: main: C4 scanning DATA (set ids such as zen4-grid3, corpus subjects such as `adx`) is a scope flaw. Main will narrow C4 to code only after alternation lands, which deletes the zen4-grid* allowlist rows. Our rows are interim. No reply needed.
+- 11-07 13:13: S2e gates 480-486 ALL GREEN at 1b6f88b34 (make test 1313s, mech 874s, census 0 movers). DELIVERED to main: [responses] done 44a67ddd9, plus a SendMessage. Waiting on main's merge review (waiting_on.kit).
+  - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the s2e worktree by make test.
+  - Also 11-07: main merged the skill review (10e4f7a67) and the hookrole fix (fd7137d4d). Heartbeat recreated as e517b1ae from monitoring.md's OWNER=kit prompt. Session registered as kit (scripts/session_role).
+  - Next after main's merge: S2f (forecast), then stage 3 unit 3.0. S2g/SIMD stays held on XARCH-DEV.
