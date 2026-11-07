@@ -71,7 +71,19 @@ check "empty section" 1 "the 'Limits' section is empty" "${A[@]}"
 good_report; sed -i 's/^- F-2 b/- F-2 b\n- F-3 c/' "$R/docs/dev/lanes/x_report.md"; deliver "${D_OK[@]}"; commit
 check "uncited finding id" 1 "F-3 is in the 'Findings' section but not cited in 'Evidence'" "${A[@]}"
 good_report; sed -i 's/^OWED: none/nothing to say/' "$R/docs/dev/lanes/x_report.md"; commit
-check "owed: none not said in STATE AT HANDOFF" 1 "does not say 'OWED: none'" "${A[@]}"
+check "owed: none not said in STATE AT HANDOFF" 1 "no line declaring 'OWED: none'" "${A[@]}"
+good_report; sed -i 's/^OWED: none/I would say that OWED: none applies./' "$R/docs/dev/lanes/x_report.md"; commit
+check "owed: none only quoted inside a sentence" 1 "no line declaring 'OWED: none'" "${A[@]}"
+good_report; sed -i 's/^OWED: none/- OWED none/' "$R/docs/dev/lanes/x_report.md"; commit
+check "owed: none as a bullet line" 0 'all checks pass' "${A[@]}"
+# rulings file: entries need the last id named; an empty file needs nothing
+good_report; printf '# x rulings\n- (none yet)\n' > "$R/docs/dev/lanes/x_rulings.md"; commit
+check "rulings file empty" 0 'all checks pass' "${A[@]}"
+printf '# x rulings\n- R1 do a\n- R2 do b\n' > "$R/docs/dev/lanes/x_rulings.md"; commit
+check "rulings entries, last id not named" 1 "must name the last one, R2" "${A[@]}"
+sed -i 's/^OWED: none/OWED: none\nLast ruling applied: R2/' "$R/docs/dev/lanes/x_report.md"; commit
+check "rulings entries, last id named" 0 'all checks pass' "${A[@]}"
+rm "$R/docs/dev/lanes/x_rulings.md"; commit
 good_report; commit
 echo x >> "$R/docs/dev/lanes/x_report.md"
 check "uncommitted report change" 1 "x_report.md has uncommitted changes" "${A[@]}"

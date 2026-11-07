@@ -1,0 +1,6 @@
+report=docs/dev/lanes/hookrole_report.md
+sections: For the owner, in plain words; Proof; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/
+owed: none

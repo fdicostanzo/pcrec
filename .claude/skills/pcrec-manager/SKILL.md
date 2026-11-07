@@ -41,6 +41,7 @@ Always on, whatever the situation:
 
 ## 1. Wake up (do this first, in order)
 
+0a. **Register this session**: `scripts/session_role main` (the monitor-unread and post-compact hooks serve each manager its own owner/wake by session id; unregistered, they inject nothing).
 0. **Heartbeat cron**: create it now with the prompt in monitoring.md §1
    (`13,43 * * * *`; it reads the queue and owner.md "Waiting on" every
    tick). Delete it only by the `/idle` procedure or at close.

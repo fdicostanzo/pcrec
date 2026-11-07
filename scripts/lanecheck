@@ -31,9 +31,14 @@
 #                       file itself); no = skip (an agent outside a git tree)
 #   files: P; Q         extra paths that must be committed
 #   dirty-ok: P; Q      paths (prefix match) the tree may leave dirty
-#   owed: none|KEY ..   report section STATE AT HANDOFF says OWED none, or
+#   owed: none|KEY ..   report section STATE AT HANDOFF has a LINE declaring owed none
+#                       (starting `OWED: none` / `- OWED none`; a sentence merely
+#                       quoting the words does not count), or
 #                       names each boxqueue KEY, and each KEY exists in the
 #                       queue (`boxqueue state KEY` is not `none`)
+# RULINGS: if docs/dev/lanes/NAME_rulings.md in the tree has entries (lines
+# starting R1, R2, .. or `- R2`), STATE AT HANDOFF must name the LAST entry's id;
+# an empty file (or `(none yet)`) needs nothing. Always checked, owed or not.
 # A report that says `STATE: stopped` (an early stop) is the honest
 # alternative to a pass: it must exist and be committed, then NAME.stopped is
 # written instead of NAME.done, for lanewatch to show (not count) as stopped.
@@ -279,8 +284,8 @@ def main(argv):
         elif state is not None:
             txt = "\n".join(state)
             if owed.lower() == "none":
-                if not re.search(r"owed\W[^.\n]*\bnone\b|nothing (is )?owed|no runs? (are )?owed", txt, re.I):
-                    issues.append("STATE AT HANDOFF does not say 'OWED: none'")
+                if not re.search(r"^\W*owed\b\W*\bnone\b", txt, re.I | re.M):
+                    issues.append("STATE AT HANDOFF has no line declaring 'OWED: none' (a line starting OWED:)")
             else:
                 keys = owed.split()
                 bq = os.path.join(HERE, "boxqueue")
@@ -293,6 +298,16 @@ def main(argv):
                             issues.append("owed job %s is not in the box queue" % k)
                     except (OSError, subprocess.TimeoutExpired):
                         issues.append("could not ask the box queue about owed job %s" % k)
+
+    # the lane's rulings file: when it has entries, STATE AT HANDOFF names the LAST entry's id
+    rf = os.path.join(base, "docs/dev/lanes/%s_rulings.md" % name)
+    if secs is not None and not stopped and os.path.isfile(rf):
+        with open(rf, encoding="utf-8") as f:
+            ids = re.findall(r"^\W*(R\d+)\b", f.read(), re.M)
+        if ids:
+            state = find_section(secs, "STATE AT HANDOFF")
+            if state is None or ids[-1] not in "\n".join(state):
+                issues.append("the rulings file has entries: STATE AT HANDOFF must name the last one, %s" % ids[-1])
 
     if stopped:
         gone = [i for i in issues if "does not exist" in i or "not committed" in i or "uncommitted" in i]
