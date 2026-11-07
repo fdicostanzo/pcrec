@@ -9,7 +9,8 @@ Each drill prints its inputs; `python3 -I <drill>`.
 - `drill.py` — §3.4-§3.5's estimator and gates implemented literally from the note's text (cells with the
   cell id grammar and a delta row's base read from its cells' ids, control normalization, the anchor, A/A,
   trimmed spread, cost gate, bimodal test, the paired NULL rule over the trimmed six, drift in standard
-  errors), run on §3.5's constructed outcomes and on one end-to-end example from cells.
+  errors), run on §3.5's constructed outcomes and on one end-to-end example from cells; `[rev1.5 r11-REV15-9]` §3.5¶3b's
+  bound (value max(0, med), noise max(r_max, |med|)) over window 2's four bound rows, agreeing with est.
 - `outcome_drill.py` — §3.5's first-match outcome table (UNIT, FLOOR, PARTIAL, FULL) and HELD over constructed
   runs on §3.7's jobs and §2.5's keys.
 - `place_drill.py` — §3.2/§3.5: the unit gate's refusal and HELD rates under placement (rev 1's fixed
@@ -28,7 +29,7 @@ Each drill prints its inputs; `python3 -I <drill>`.
 
 ## Subdirectories
 
-- `s2d2/` — the second S2d window's evidence (REFUSED on l1/c1; analysis for rev 1.5; rev 1.5's re-score, FULL; own CLAUDE.md).
+- `s2d2/` — the second S2d window's evidence (REFUSED on l1/c1; analysis for rev 1.5; rev 1.5's and r11's re-scores, FULL; own CLAUDE.md).
 - `s2d1/` — the first S2d window's evidence (REFUSED; analysis for rev 1.4, and rev 1.4's replay; own CLAUDE.md).
 - `slot/` — the stage-2 slot harness (S2c; own CLAUDE.md): driver, subject generator, per-launch linking and
   placement, the control, the slot's estimator, `j1_rule.py`, the run record's writer, `sabotage.sh` for the

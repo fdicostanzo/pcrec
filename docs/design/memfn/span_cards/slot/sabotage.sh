@@ -6,7 +6,7 @@
 # the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected
 # text) or MISSED; exit 0 iff the control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3
-#                                         (default all)
+#                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
 #   (j2) a twin linked at its arm's phase (its pad sized to land it there): the per-launch constraint
@@ -63,8 +63,30 @@
 #        non-fused class wearing the fact" (refused) goes WRONG
 #   (x3) S2952 [rev1.5 R15-1] the fused branch applied WITHOUT the fact (every verify row): the self-test case "a
 #        class NOT fused negative on all six: null (REV14-1 holds)" goes WRONG
+#   review r11 (span_cards §R1.5's r11 table; each a self-test case, red planted, green reverted):
+#   (y1) S2953 [r11-REV15-8, R15-2] the moved-timed-code refusal removed (`if moved:` never taken): the gate case "timed
+#        code (src/) moved since code_commit" goes WRONG
+#   (y2) S2954 [r11-REV15-8, R15-2] the uncommitted-estimator refusal removed (the blob comparison never refuses): the
+#        gate case "est.py edited, uncommitted" goes WRONG
+#   (y3) S2955 [r11-REV15-8, REV15-1] the launch executables' sha-256 check against the manifest removed: the case "a
+#        launch executable not the manifest's (P3)" goes WRONG (it is refused later, UNSTABLE, not by the manifest)
+#   (y4) S2956 [r11-REV15-8, REV15-6] a file not tracked at HEAD accepted (the ignored-copy bypass): the gate case "an
+#        est.py copy under an ignored path" goes WRONG
+#   (y5) S2957 [r11-REV15-2] the fact over ANY number of subject reads, all fused: the case "c1 compiled as two fused
+#        compares: not fused, null" goes WRONG
+#   (y6) S2958 [r11-REV15-10] the fused-base refusal removed: the case "a null base compiled fused" goes WRONG
+#   (y7) S2959 [r11-REV15-5] a bound row's value 0 whatever its sign: the case "a fused class priced positive" goes WRONG
+#   (y8) S2960 [r11-REV15-1] the stems taken from obj/tab.c (unpinned) instead of the pinned plan: the case "obj/tab.c's
+#        stems swapped (P6)" goes WRONG
+#   (y9) S2961 [r11-REV15-4] the symbol's range ignored (objdump's listing to the next symbol): the reading case "a load
+#        past the symbol's size (padding) beside a fused compare: fused" goes WRONG
+#   (y10) S2962 [r11-REV15-4] the bytes' reading does not recognise VEX/EVEX: the reading case "a fused compare beside a
+#        VEX load of the subject" goes WRONG (a mismatch)
+#   (y11) S2963 [r11-REV15-7] a path no NON_TIMED row names read as NOT timed (an inclusion list again): the gate case
+#        "timed code (src/) moved since code_commit" goes WRONG
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
-# rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5); they
+# rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
+# r11's (§R1.5's r11 table); they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -72,7 +94,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=$(cd "$here/../../../../.." && pwd)
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -189,12 +211,48 @@ for row in $ROWS; do
         patch "$SCR/$row/est.py" 'and not r.get("fused") and split_gap(r["x"]) * 10**6 > NOTE_BIMODAL_E6 * r["value"])' \
 'and not r.get("fused") and False)   # SABOTAGE S2945' ;;
     x1) job=est want='selftest	complete	WRONG	refused \(FUSED-FACT MISMATCH'
-        patch "$SCR/$row/est.py" '    return bool(subj) and all(FUSED_INSN.fullmatch(t) for t in subj)' '    return bool(subj)   # SABOTAGE S2950' ;;
+        # [r11] re-anchored: the derivation (fused_text) returns "reads the subject" in place of fact_of()
+        patch "$SCR/$row/est.py" '                                             or bool(re.fullmatch(r"test[bwlq]?", m)) and first.startswith("$")))
+    return fact_of(reads)' '                                             or bool(re.fullmatch(r"test[bwlq]?", m)) and first.startswith("$")))
+    return bool(reads)   # SABOTAGE S2950' ;;
     x2) job=est want='selftest	\[R15-1\] a non-fused class wearing the fact	WRONG'
         patch "$SCR/$row/est.py" '                    if fused_bytes(ins) != f:' '                    if False:   # SABOTAGE S2951' ;;
     x3) job=est want='selftest	\[R15-1\] a class NOT fused negative on all six: null \(REV14-1 holds\)	WRONG'
         patch "$SCR/$row/est.py" '        if r["D"] is not None and fused.get(key):' \
 '        if r["D"] is not None and key.startswith("kit.verify_cmp."):   # SABOTAGE S2952' ;;
+    y1) job=est want='selftest	\[r11 gate\] timed code \(src/\) moved since code_commit	WRONG'
+        patch "$SCR/$row/est.py" '    if moved:
+        raise InputError("the timed code moved' '    if False:   # SABOTAGE S2953
+        raise InputError("the timed code moved' ;;
+    y2) job=est want='selftest	\[r11 gate\] est\.py edited, uncommitted	WRONG'
+        patch "$SCR/$row/est.py" '        if git("-C", top, "hash-object", "--", os.path.realpath(p)).stdout.strip() != m.group(1):' \
+'        if False:   # SABOTAGE S2954' ;;
+    y3) job=est want='selftest	\[r11-REV15-1\] a launch executable not the manifest.s \(P3\)	WRONG'
+        patch "$SCR/$row/est.py" '        if plan.sha256(exe) != m.get("L%d" % l):' '        if False:   # SABOTAGE S2955' ;;
+    y4) job=est want='selftest	\[r11 gate\] an est\.py copy under an ignored path	WRONG'
+        patch "$SCR/$row/est.py" '        if not m:
+            return None, "%s is not tracked' '        if not m:
+            continue   # SABOTAGE S2956
+            return None, "%s is not tracked' ;;
+    y5) job=est want='selftest	\[r11-REV15-2\] c1 compiled as two fused compares: not fused, null	WRONG'
+        patch "$SCR/$row/est.py" '    return len(reads) == 1 and reads[0]' '    return bool(reads) and all(reads)   # SABOTAGE S2957' ;;
+    y6) job=est want='selftest	\[r11-REV15-10\] a null base compiled fused	WRONG'
+        patch "$SCR/$row/est.py" '            if fact((b,), b):' '            if False:   # SABOTAGE S2958' ;;
+    y7) job=est want='selftest	\[R15-1, r11-REV15-5\] a fused class priced positive[^	]*	WRONG'
+        patch "$SCR/$row/est.py" 'value=max(r["value"], 0), noise=max(R_MAX' 'value=0, noise=max(R_MAX' ;;
+    y8) job=est want='selftest	\[r11-REV15-1\] obj/tab\.c.s stems swapped \(P6\)	WRONG'
+        patch "$SCR/$row/est.py" '        if tab != stems:' '        stems = tab   # SABOTAGE S2960
+        if tab != stems:' ;;
+    y9) job=est want='selftest	\[r11 reading\] a load past the symbol.s size \(padding\) beside a fused compare: fused	WRONG'
+        patch "$SCR/$row/est.py" '        if m and cur is not None and lim[0] <= int(m.group(1), 16) < lim[1]:' \
+'        if m and cur is not None:   # SABOTAGE S2961' ;;
+    y10) job=est want='selftest	\[r11 reading\] a fused compare beside a VEX load of the subject: not fused \(both read the VEX operand\)	WRONG'
+        patch "$SCR/$row/est.py" '    vex = b[i] in (0xC4, 0xC5, 0x62)          # 64-bit mode: always VEX (C4/C5) or EVEX (62)' \
+'    vex = False   # SABOTAGE S2962' ;;
+    y11) job=est want='selftest	\[r11 gate\] timed code \(src/\) moved since code_commit	WRONG'
+        patch "$SCR/$row/est.py" '            return t
+    return True' '            return t
+    return False   # SABOTAGE S2963' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }

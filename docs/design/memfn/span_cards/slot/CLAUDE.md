@@ -50,15 +50,20 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   `[rev1.5 R15-1]` the FUSED-COMPARE fact from every launch executable's timed code (`fused_text` over objdump's
   mnemonics, checked by `fused_bytes` over the bytes; the stems from `obj/tab.c`) and the bound row; `[R15-2]` the
   draft's `# note est_commit` (refused from an uncommitted est or when `TIMED_PATHS` moved since `code_commit`);
-  the self-test compiles real timed code for its synthetic J4.
+  the self-test compiles real timed code for its synthetic J4. `[rev1.5 r11]` (review r11): the executables checked against
+  the job's manifest and the record's pin of it (`manifest_check`), the stems from the pinned plan (`plan_stems`, tab.c
+  cross-checked), the symbol's range only, EXACTLY ONE subject read and it the compare (`fact_of`; a subject read is
+  any operand through a register derived from `%rdi`), VEX/EVEX decoded, a fused null base refused, the bound's value
+  max(0, med); the draft's inputs blob-identical at HEAD (`est_inputs`, `est_commit`, `draft_gate`), timed paths by the
+  exclusion table `NON_TIMED`; self-test READING_CASES (assembled functions) and GATE_CASES (a scratch git tree).
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
   floor, cards and policy pinned from the frozen plan with the tables' sha-256; `[rev1.4 R14-3]` the `quiet`
-  section from the transcript and est's two note keys).
+  section from the transcript and est's two note keys; `[rev1.5 r11-REV15-1]` `manifest_sha256_<job>` per ran job).
 - `sabotage.sh SCRATCH [ROW..]` — the slot-local sabotage rows (j), (j2), (k), (l1), (l2), (l3) S2934, (g2)
   S2935, (g3) S2936, (f1) S2937, (f2) S2938, (f6) S2939, rev 1.4's (n1) S2940, (n2) S2941, (s1) S2942, (s2) S2943,
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
-  (x3) S2952, planted in scratch copies; DETECTED/MISSED per row.
+  (x3) S2952, review r11's (y1)-(y11) S2953-S2963, planted in scratch copies; DETECTED/MISSED per row.
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.
 - `run_record.tsv` (S2d, later) — the run record zen4-grid3's PROVENANCE.md cites by sha-256.
