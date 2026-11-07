@@ -186,8 +186,8 @@ for row in $ROWS; do
     q1) job=J2 want='QUIET-LOG'
         patch "$SCR/$row/run.py" '        a = cpu_ticks()' '        return "-"   # SABOTAGE S2944' ;;
     b1) job=est want='selftest	\[R14-4\] a delta row in two clusters is named by the bimodal note	WRONG'
-        patch "$SCR/$row/est.py" 'and not r.get("sub") and split_gap(r["x"]) * 10**6 > NOTE_BIMODAL_E6 * r["value"])' \
-'and not r.get("sub") and False)   # SABOTAGE S2945' ;;
+        patch "$SCR/$row/est.py" 'and not r.get("fused") and split_gap(r["x"]) * 10**6 > NOTE_BIMODAL_E6 * r["value"])' \
+'and not r.get("fused") and False)   # SABOTAGE S2945' ;;
     x1) job=est want='selftest	complete	WRONG	refused \(FUSED-FACT MISMATCH'
         patch "$SCR/$row/est.py" '    return bool(subj) and all(FUSED_INSN.fullmatch(t) for t in subj)' '    return bool(subj)   # SABOTAGE S2950' ;;
     x2) job=est want='selftest	\[R15-1\] a non-fused class wearing the fact	WRONG'
