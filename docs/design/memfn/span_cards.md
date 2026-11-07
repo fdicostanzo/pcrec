@@ -1,6 +1,7 @@
-# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.3)
+# span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.4)
 
-**Status: PROPOSED, rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
+**Status: PROPOSED, rev 1.4 (lane s2rev14, 2026-11-06: the first S2d window's REFUSED outcome, ruled by the kit
+manager, §R1.4, marked `[rev1.4 <id>]`), over rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
 code review r9's FIX-NOW/DOC text, §R1.3's second table, marked `[rev1.3 r9-<id>]`), over rev 1.2 (lane
 s2rev12, 2026-11-06), rev 1.1 (lane s2rev11), rev 1 (lane s2rev1) and
 rev 0 (lane s2design). DESIGN ONLY: no code, no make, no timing, no box job. The design of record for span_pick
@@ -21,6 +22,45 @@ stand unless a later mark replaces them. Cites are to the kit branch at the r6 r
 6f1b40f75 + the kit branch; the r6 review found every code/data cite of S2c-S2e identical to the r5 tree's)
 unless a commit is named; spec files by section number. Every figure the note quotes comes from a committed
 drill under `span_cards/` that prints its inputs (§R1.2, last paragraph).
+
+## R1.4 What revision 1.4 changed, by the kit manager's rulings on the first window (run s2d-20261106)
+
+The first S2d timing window (FROZEN 508178bd2, 2026-11-06 21:50-22:20) ran every job green and came out
+REFUSED on five floors (`span_cards/s2d1/`: the record, est's rows and lane s2dana's `analysis.md`). The kit
+manager ruled four changes; text changed is marked `[rev1.4 <id>]`, and it replaces any earlier text it
+contradicts. **No set-format, noise-state or seam change**: format 2 is used as built (the sub-resolution row is
+a `measured` row with a value and a noise, both legal format-2 fields); the spec hunks are `measures.md`
+§3.5¶3 (amended), §3.5¶3a (new) and §3.5¶11 (amended). Slot-local sabotage ids S2940-S2945.
+
+| id | ruled | answered in |
+|---|---|---|
+| R14-1 the null base was a different loop (indexed + counter, a byte load, 16-aligned) from the arm's (pointer bump, the compare's own load width, 32-aligned): a ~ −0.1 wb bias under every verify row | the base is the ARM'S OWN LOOP with the compare removed, from one source text; a check that they differ only in the compare; a sabotage row planting another loop | §2.3 `verify_cmp` row; §3.2 "The `null` verify base"; `slot/link.py` (`null_body`, `null_check`, the WRAP_CMP loop a pointer bump), `slot/gen.c` (a null base's gate counts every candidate); sabotage (n1) S2940, (n2) S2941 |
+| R14-2 a delta row whose cost the method cannot resolve was `null`, failing four verify floors (l1, c1, w1, c2) | SUB-RESOLUTION: a `measured` row "consistent with zero within r", value the clamped estimate, noise r or the measured noise if larger; NULL stays for real defects | §3.5 delta rows; `measures.md` §3.5¶3a; Goal 2; `slot/est.py` (`resolution`, the branch, self-test cases); sabotage (s1) S2942, (s2) S2943 |
+| R14-3 byte.libc's 3.3 % was box state (a two-state box, no process list recorded) | the gate and z stay; every quiet check logs load1 and the top co-runners into the transcript and the record; est's draft notes a launch-level fast/slow split | §3.3; §3.5 run record (`quiet` section, `note_box_state`); `slot/run.py` (`corunners`, the dry run's quiet sample), `slot/record.py`, `slot/est.py` (`notes`); sabotage (q1) S2944 |
+| R14-4 est printed "gate pass" on delta rows (never gated); the bimodal walk.random rows unremarked | est prints `ungated` for delta rows; the record and the draft carry one note line naming the bimodal delta rows | `slot/est.py`; §3.5 run record (`note_bimodal`); sabotage (b1) S2945 |
+
+**R14-2: r and its branch.** A delta row's resolution is the size its own seven launches cannot tell from zero:
+`r = 3 × isqrt_rn(rhafz(K_MED_E6 × sp2, 10^6))`, three standard errors of the row's MEDIAN (sp2 is §3.4 step 6's
+trimmed, K_TRIM-scaled launch variance of the row's anchored values x_l; K_MED_E6 = 210300 is §3.5's variance
+factor of a seven-launch lower median, so `sqrt(K_MED × sp2)` is the median's standard error, and 3 is drift's
+own factor, §3.5). It is stated by the method, the same for every delta card, and recomputable from the set's
+cells alone: no table, no new field. A delta row that FAILS the NULL rule (§3.5) takes the branch iff
+`|med(x_l)| ≤ r`: it is `measured`, `value_e6 = max(0, med(x_l))` (a cost is never negative), `noise_e6 =
+max(r, the §3.4 step 7 noise)`, its `source` naming `sub-resolution r <r>`; it is PRICED and meets a floor
+clause. It stays `null` iff `|med(x_l)| > r`: a consistent negative beyond r (a fixture defect, as `null`
+always named it), or signs mixed / below its A/A at a size above r. A row that PASSES the NULL rule is priced as
+before (no clamp, no r). On the first window's cells r is 0.097-0.165 wb on the eight verify rows that failed
+(the analysis's "about 0.1 wb per event" is the trimmed launch spread itself; r is three standard errors of the
+median over that spread), and their `|med|` are 0.019-0.099 wb.
+
+**The replay (R14-2, R14-4 over s2d-20261106's cells; R14-1 cannot be replayed: those cells used the old
+base).** est.py at this revision over a COPY of the run directory (the record re-finalized there for its new
+`quiet` section and notes, otherwise byte-equal): `floor:verify.rc-memcmp.l1`, `rc-words.w1`, `settest.c1` and
+`settest.c2` PASS (all eight rows sub-resolution: l1 and c1 at value 0, w1 at 0.024/0.026 wb, c2 at 0.035/0.019
+wb, noise 0.097-0.165 wb); `floor:byte.libc` stays a gate FAIL (3.3 % over 3 %, expected), so the outcome is
+still REFUSED on that one floor. c1.p50 is the closest call (|med| 0.093 wb, r 0.097 wb). The notes name a
+launch-level split in every job's control (J2 0.94 %, J2p 0.83 %, J3 1.48 %, J4 0.75 %, J5 1.72 %) and three
+bimodal delta rows (`walk.periodic.one.1024`, `walk.random.one.1024`, `walk.random.one.256`).
 
 ## R1.3 What revision 1.3 changed, by readiness finding (review 2026-11-06 r7)
 
@@ -270,7 +310,7 @@ Ranked; a higher goal wins a conflict (`docs/dev/guide/architecture.md`).
 | # | goal (who benefits) | measurable form |
 |---|---|---|
 | 1 | **Stage 2 moves nothing a caller sees** (every user; span_pick Goal 2's stage-2 cell; R-35 "adds no reader, moves no emitted byte") | `scripts/emit_sweep.py` byte-identical on EVERY arm (default, each deny, `--engine=vm`, both SIMD layers) at each unit's HEAD against `[rev1 COST-4]` its NAMED base commit, stamps included; every `<PREFIX>_MEASURES` is `""`; zen4-grid1@1's file sha and digest unchanged; `[rev1 PREMISE-4, rev1.1 EMBED]` `--list-measurements` (no value) changes ONLY at S2e: zen4-grid3's new row (`default_for` `idk`), zen4-grid1's `default_for` `idk` -> empty, and the new `file_cells` column on both rows (R-35 (d), §3.8); `[rev1.1 EMBED]` libpcrec grows by the cell-less embed only (`tree_drill.py` D: ~16 KB projected, S2e reports the measured figure) |
-| 2 | **Every card row row 1 prices is measured with its noise** (row 1's lane; span_pick §The pick 4: a card without noise cannot qualify) | `[rev1.1 GOAL2]` a FLOOR on PRICED keys (value and noise set, not `null`) in zen4-grid3@1: every `find_byte` key; for each find form (libc, walk, and pair unless J1 (b) holds pair out), at least one `random`-landing `find_hit` row; for each census (form, cls), at least one `verify_cmp` row; every `enter.<kind>.NONE` row. A run that passes its gates but misses the floor is REFUSED, not PARTIAL (§3.5); the unit group passes its half gate and bimodal test. `floor_drill.py` gives the per-hit cost each key resolves (§2.3). `[rev1.2 MEAS-2, READY-6]` The floor is a list of CLAUSES (each met by one priced key of its list), written in the run record from census0's population and these rules, and checked over EVERY clause the run's J1 verdict leaves active, by §3.5's first-match table (`outcome_drill.py`) |
+| 2 | **Every card row row 1 prices is measured with its noise** (row 1's lane; span_pick §The pick 4: a card without noise cannot qualify) | `[rev1.1 GOAL2]` a FLOOR on PRICED keys (value and noise set, not `null`; `[rev1.4 R14-2]` a sub-resolution delta row is priced) in zen4-grid3@1: every `find_byte` key; for each find form (libc, walk, and pair unless J1 (b) holds pair out), at least one `random`-landing `find_hit` row; for each census (form, cls), at least one `verify_cmp` row; every `enter.<kind>.NONE` row. A run that passes its gates but misses the floor is REFUSED, not PARTIAL (§3.5); the unit group passes its half gate and bimodal test. `floor_drill.py` gives the per-hit cost each key resolves (§2.3). `[rev1.2 MEAS-2, READY-6]` The floor is a list of CLAUSES (each met by one priced key of its list), written in the run record from census0's population and these rules, and checked over EVERY clause the run's J1 verdict leaves active, by §3.5's first-match table (`outcome_drill.py`) |
 | 3 | **The set is self-checking from kept data** (the next editor; K35) | `[rev1 SLOT-1, MEAS-5]` a pcrec-side check recomputes every measured row's `value_e6`, `noise_e6` and NULL status, every group's verdict, Goal 2's floor and the `partial` verdict, from the set's own `cells` section EXACTLY by the spec's integer recipe (`measures.md`'s new sections 3.4-3.5), and the format-2 digest from the rows, each by code that shares no source with the producer. `[rev1.1 CELLS-1 (b), CELLS-2]` The recompute STARTS at the cells (each a median over rounds, the producer's); the per-round transcript is evidence (its sha-256 in PROVENANCE.md). `[rev1.2 READY-6, MEAS-7]` It reads the set file AND the kit's run record (its sha cited by PROVENANCE.md, checked first), and re-derives J1's verdict from the record's J1 cells; the record's never-ran list is the one input it takes as given (§3.5) |
 | 4 | **The least producer that gives a trustworthy set** (Frank 2026-10-21, pcrec-test-harness-minimal) | `[rev1 SLOT-1, SLOT-2]` no second home for raw data (the `cells` section), no second set writer (the canonical writer), `[rev1.1 HASH]` formhash's entry table as the only cell renderer (the hashed text IS the timed text); no card without a named reader (D77) |
 
@@ -337,7 +377,7 @@ throughput regime (1 MiB subjects re-scanned, L3-resident), an UNMEASURED choice
 |---|---|---|---|---|---|---|
 | `find_byte` | `form` | ratio | streamed-fresh `pool16Mi`, MISS-ONLY (no member in the subject) | lengths 64 Ki, 256 Ki, 1 Mi | `slope` over the three lengths | subject byte, all the method's streams (span_pick.md:216) |
 | `find_hit` | `form;landing;split;gap` `[rev1 MEAS-6]` | walkbytes | streamed-fresh `pool16Mi` 1 Mi subjects, hits planted `periodic` (every g bytes) or `random` (seeded uniform, mean gap g); `split` `one` (one member occurs) or `alt` (both members, alternating) | `[rev1 MEAS-6]` g in {256, 1024}, each its OWN row and group | `delta` against the same form on the miss-only 1 Mi subject, per hit | candidate returned and restarted |
-| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (same loop, compare replaced by a constant), per compare | one compare: cmp0, cmp½ (span_pick.md:220) |
+| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (`[rev1.4 R14-1]` the class arm's own loop, its first load kept, the compare removed), per compare | one compare: cmp0, cmp½ (span_pick.md:220) |
 | `enter` | `kind;entry` | walkbytes | a WHOLE ARTIFACT (`build/pcrec`) of a fixture pattern whose site states `kind` and an alternative of `entry`; candidates every 256 bytes that pass every verify position and die in the consumer one byte past the window (`die1`) | one point (g = 256) | `delta` of the pass subject against the fail subject (candidates fail the last verify position), per candidate | candidate passed on (span_pick.md:222) |
 
 `[rev1 MEAS-6]` **Why per density.** Rev 0's one `find_hit` slope over g in {4096, 256, 32} plus the
@@ -665,9 +705,19 @@ site shape and stated facts (the canonical instance), so the timed text IS the h
 - **The renderer entry** is a `kit.h` TEST entry beside `mf_form_hash` returning the site text of a table
   row (no `memfn.h` change; `mf_form_hash`'s signature stays). G2's generators are not the cell renderer; G2
   keeps checking these forms over its generated predicate space, as today.
-- **The `null` verify base** is the driver's (the candidate loop with the compare replaced by a constant;
-  `[rev1.3 r9-G7]` its subjects are its class instance's, the run, mask or members read from the instance's
-  facts, never copied bytes);
+- **The `null` verify base** `[rev1.4 R14-1]` is its CLASS ARM'S OWN LOOP with the compare removed, rendered
+  from the same source text: the class instance's compare wrapper, byte-identical outside the site body (the
+  same candidate loop, a pointer bump in both, the same helpers, so gcc gives it the arm's addressing and
+  alignment), its body `slot_null(<the body's first load>)`: the candidate's bytes at `subject + pos` at the
+  width the body reads them (a word load, a byte, or a memcmp's run as one load of its length), kept through an
+  empty asm, and a 1 the compiler cannot fold in place of the compare (so the loop still accumulates a run-time
+  count). Later loads of a multi-word body are the compare's (gcc lowers them behind the first compare's
+  branch). The link step's NULL-BASE check refuses a base whose text differs from its class arm's anywhere but
+  the body, or whose kept load is none the arm's body makes (sabotage S2940, S2941). Its gate counts every
+  candidate. (Rev 1.3's base was a separate loop: indexed with a counter, a byte load, 16-aligned; the first
+  window measured the arms ~0.1 wb per event faster than it, `s2d1/analysis.md` §2.) `[rev1.3 r9-G7]` Its
+  subjects are its class instance's, the run, mask or members read from the instance's facts, never copied
+  bytes;
   `enter` arms and J1's widths are whole artifacts (`build/pcrec`, `--emit-main`-free, linked by the driver),
   reached by the fixture patterns' own sites.
 
@@ -801,7 +851,9 @@ follows J2 and answers 77 when J1 ended non-green (no verdict will come) or unde
 2026-10-30). The quiet gate checks only the START (BOILERPLATE:236). `[rev1.2 MEAS-13]` Groups are interleaved
 within a launch, so a "group boundary" has no single place; the re-check is per LAUNCH instead (replacing rev
 1.1's per-group wording): before each of a job's 7 launches the harness takes ONE load sample and reads the
-queue and the box lock (instant), records them in the transcript, and only if they are not quiet WAITS for the
+queue and the box lock (instant), records them in the transcript (`[rev1.4 R14-3]` with the top co-runners by
+ps's %cpu, `pid:comm:%cpu`, so a slow box state names its cause; the run record copies every check, §3.5; the
+dry run takes one ungated sample and refuses a line without co-runners), and only if they are not quiet WAITS for the
 start gate's two-sample quiet (bounded at 5 minutes per job, an UNMEASURED DEFAULT, D149, trigger: a wait
 timing out in the window; `[rev1.3 r9-W3]` the bound is the job's TOTAL WAITING time, never wall time from the
 job's start, which a job's own timing would exhaust); a job whose wait times out FAILS, its launches so far discarded, so it has no cells
@@ -926,7 +978,10 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   computed (D77), which also closes review r5's FRG-population question (CELLS-2). A §7.4 line records the
   format-2 exception (§10.2). The per-hit costs this resolves are §2.3's (`floor_drill.py`). A consistently
   negative per-event cost (an arm faster than its base) is a fixture artifact, `null`, named in the row's
-  `source`, never priced. **A delta row never refuses anything by itself**: a `null` row is unpriced, and an
+  `source`, never priced. `[rev1.4 R14-2]` **Unless it is SUB-RESOLUTION** (`measures.md` §3.5¶3a, §R1.4): a row
+  failing this test with `|med(x_l)| ≤ r`, r three standard errors of its median, is a `measured` row with
+  value `max(0, med(x_l))` and noise `max(r, noise)`; only a failing row with `|med(x_l)| > r` is `null`. Delta
+  rows have no gate: est prints them `ungated` (`[rev1.4 R14-4]`). **A delta row never refuses anything by itself**: a `null` row is unpriced, and an
   unpriced candidate cannot qualify (span_pick §The pick 4: safe); Goal 2's floor (below) is what a run of
   unpriced keys fails.
 - **The unit's bimodal test**: with the unit's `x_l` sorted ascending (s_0..s_6), bimodal iff for some k in
@@ -1003,6 +1058,13 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   | `cards` | the card table's columns | `[rev1.3 r9fc-FIX-1]` the ver-3 card rows the run was planned under, verbatim (`run`'s `cards_sha256` is the table's sha-256) |
   | `policy` | `name value reason` | `[rev1.3 r9fc-FIX-1]` the kit policy rows the run was planned under, verbatim (`run`'s `policy_sha256`): the value a card's `-` gate took |
   | `j1_cells` | `cell pattern subject regime width launch ns_e6` | J1's cells, each a median over rounds as §3.4 step 1 (widths 32-512 and `128#b`) |
+  | `quiet` | `job check load1 corunners` | `[rev1.4 R14-3]` every quiet check of the window, copied from the transcript at finalize: the check's state, load1, the top co-runners (`-` on a pre-rev-1.4 transcript line) |
+
+  `[rev1.4 R14-3, R14-4]` finalize also writes two NOTE keys in `run` from est.py's `notes` (they gate nothing):
+  `note_box_state` (a job whose control's sorted per-launch values hold a gap over 0.5 % between two clusters of
+  at least two launches, an UNMEASURED DEFAULT, D149: the box changed state inside that job) and `note_bimodal`
+  (the priced delta rows whose launches split likewise by over 10 % of the value, UNMEASURED DEFAULT); the draft
+  carries the same two lines as `# note` comments after its first line (no header key, no digest change).
 
   Its sha-256 is cited in the set's PROVENANCE.md and in the set header's `run` value (`<run id>
   record:<sha256>`, a provenance key the digest does not cover), and the recompute checks the file against
@@ -1079,7 +1141,10 @@ anchored values with the unit at 10^6; the last rows are `outcome_drill.py`'s):
 | A/A above spread | clean; twin x + 600 (1 %) | cost gate | noise 604 (1.01 %): PASS |
 | A/A above the gate | clean; twin x + 2000 (3.3 %) | cost gate | noise 2001 (3.34 %): the row fails |
 | delta, signs mixed | D_l = 1500, −2000, 3000, 500, −500, 2500, 1000 | NULL rule | `null` (−500 survives the trim) |
-| delta negative | D_l about −30000, all seven | NULL rule | `null` (a negative cost), named |
+| delta negative | D_l about −30000, all seven | NULL rule | `null` (a negative cost), named; `[rev1.4 R14-2]` beyond r, so still `null` |
+| `[rev1.4 R14-2]` delta at zero, signs mixed | per-event 40, −30, 10, −50, 20, −10, 30 | NULL rule, ¶3a | sub-resolution: measured, value its median (positive), noise max(r, noise) (est.py self-test) |
+| `[rev1.4 R14-2]` delta slightly negative, within r | per-event −20 .. −90, all seven | NULL rule, ¶3a | sub-resolution: measured, value 0 (clamped) |
+| `[rev1.4 R14-2]` delta signs mixed above r | per-event 1000 x5, −50, −600 | NULL rule, ¶3a | `null` (|med| 1000 > r) |
 | delta clean | D_l about 40 us per call; twin's D about ±4 us apart | NULL rule | med 40.0 us > aa_D 4.0 us: priced |
 | `[rev1.2 MEAS-5]` delta, one spike | the clean series with launch 3 at −2 us | NULL rule | priced (the spike is the trimmed launch; rev 1.1: `null`) |
 | no drift | control = reference + 50 | drift | 0.03 % vs threshold 1.5 %: kept |
@@ -1868,6 +1933,11 @@ qualifier test over three provenance vocabularies (§12 row 6).
    1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
+
+`[rev1.4]` Rev 1.4, lane s2rev14: the kit manager's R14-1..R14-4 on the first window, design text and code
+together (§R1.4; `measures.md` §3.5¶3, ¶3a, ¶11); the replay of R14-2/R14-4 over s2d-20261106's cells leaves
+only `floor:byte.libc` failing. OWED: a fresh S2d window (byte.libc, and the verify rows under the new base);
+no timing in this revision. Report `docs/dev/lanes/s2rev14_report.md`.
 
 `[rev1.3]` Rev 1.3, lane s2c (the S2c build lane's first commit): review 2026-11-06-r7's READY-1..9 applied as
 text fixes (§R1.3); the S2c build follows this text. Below, rev 1.2's handoff, kept.

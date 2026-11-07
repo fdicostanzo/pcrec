@@ -26,7 +26,7 @@ Each drill prints its inputs; `python3 -I <drill>`.
 
 ## Subdirectories
 
-- `s2d1/` — the first S2d window's evidence (REFUSED; analysis for rev 1.4; own CLAUDE.md).
+- `s2d1/` — the first S2d window's evidence (REFUSED; analysis for rev 1.4, and rev 1.4's replay; own CLAUDE.md).
 - `slot/` — the stage-2 slot harness (S2c; own CLAUDE.md): driver, subject generator, per-launch linking and
   placement, the control, the slot's estimator, `j1_rule.py`, the run record's writer, `sabotage.sh` for the
   slot-local sabotage rows, `movers.py` (run by S2e): evidence for one run, retired when M3's driver
