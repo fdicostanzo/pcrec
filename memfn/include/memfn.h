@@ -1709,6 +1709,13 @@ const mf_level *mf_levels(size_t *n);
  * target, family or feature (C4). No pcrec caller yet (P1 is the first);
  * nothing here reaches an artifact before U3 places the texts.
  *
+ * FACTS apart from SPELLINGS (the owner's ruling 2026-11-07: code may be
+ * emitted as C or Rust): mf_target and mf_family carry facts only, tokens
+ * any emitter reads alike, and every parse/listing/default entry answers
+ * from them. The C emitter's text for a row is a SEPARATE struct reached
+ * from it (mf_target_c_of, mf_family_c_of); another emitter's would sit
+ * beside it.
+ *
  * A token is matched ASCII-case-blind, `_` and `-` alike (`X86_64` parses
  * as the target or family named `x86-64`); the canonical form is the row's
  * own name. Every pointer below is to static storage, valid for the
@@ -1719,24 +1726,36 @@ const mf_level *mf_levels(size_t *n);
 #define mf_family_parse    MF_NS(family_parse)
 #define mf_portable_target MF_NS(portable_target)
 #define mf_host_defaults   MF_NS(host_defaults)
+#define mf_target_c_of     MF_NS(target_c_of)
+#define mf_family_c_of     MF_NS(family_c_of)
 
 typedef struct {
     const char *name;      /* canonical token: the largest scope of an artifact */
     const char *defaults;  /* its default target list (`-fmemfn-simd`): canonical
                               target tokens, comma-separated, each of this family */
-    const char *guard;     /* file-scope text that refuses, by `#error`, any
-                              compile for another family; one per artifact */
 } mf_family;
 
 typedef struct {
-    const char      *name;          /* canonical token                         */
-    const mf_family *family;        /* its family; NULL for the portable target */
-    const char      *features;      /* the feature tokens it supplies, sorted,
-                                       comma-separated; "" for none            */
-    const char      *region_open;   /* text before the functions of a part
-                                       compiled for it; "" when it needs none  */
-    const char      *region_close;  /* text after them; "" exactly when open is */
+    const char      *name;      /* canonical token                             */
+    const mf_family *family;    /* its family; NULL for the portable target     */
+    const char      *needs;     /* the feature tokens a part compiled for it must
+                                   enable above its family's portable compile,
+                                   sorted, comma-separated; "" for none        */
+    const char      *features;  /* the feature tokens it supplies (needs is a
+                                   subset), sorted, comma-separated; "" for none */
 } mf_target;
+
+/* The C emitter's spellings of a target's and a family's facts. */
+typedef struct {
+    const char *region_open;   /* C text before the functions of a part compiled
+                                  for the target; "" exactly when needs is ""  */
+    const char *region_close;  /* C text after them; "" exactly when open is   */
+} mf_target_c;
+
+typedef struct {
+    const char *guard;  /* file-scope C text that refuses, by `#error`, any
+                           compile for another family; one per artifact       */
+} mf_family_c;
 
 /* The rows, in targets.def's order; `*n` gets the count. */
 const mf_target *mf_targets(size_t *n);
@@ -1748,14 +1767,18 @@ const mf_family *mf_families(size_t *n);
 const mf_target *mf_target_parse(const char *tok, size_t len, char *err, size_t n);
 const mf_family *mf_family_parse(const char *tok, size_t len, char *err, size_t n);
 
-/* The one target with no family: no guard, no region, no features. pcrec's
- * default target set is this token alone (target_seam_units.md §5). */
+/* The one target with no family: no needs, no features. pcrec's default
+ * target set is this token alone (target_seam_units.md §5). */
 const mf_target *mf_portable_target(void);
 
 /* The HOST's default target list: the defaults of the family the kit (and so
  * libpcrec) was compiled for, or the portable target's name when the table
  * has no row for that family. */
 const char *mf_host_defaults(void);
+
+/* The C spellings of a row returned above; NULL for any other pointer. */
+const mf_target_c *mf_target_c_of(const mf_target *t);
+const mf_family_c *mf_family_c_of(const mf_family *f);
 
 /* ---- K1: the primitives' REFERENCE functions (requirements.md §1.3) ------
  *

@@ -155,7 +155,7 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUI
 # `make`, against gcc's own `-march`. A mismatch WARNS and does not stop the
 # build (R5-Q1: a newer gcc's -march definition must not break a stranger's
 # `make`); `make strict` and `make test-memfn-targets` fail on it.
-$(BUILD_DIR)/targets.check: memfn/src/targets.def memfn/tests/check_targets.sh
+$(BUILD_DIR)/targets.check: memfn/src/targets.def memfn/src/targets_c.def memfn/tests/check_targets.sh
 	@mkdir -p $(dir $@)
 	@bash memfn/tests/check_targets.sh $@ >/dev/null; rc=$$?; \
 	 if [ $$rc -ne 0 ]; then echo "WARNING: the kit's target table check did not pass (rc=$$rc):" >&2; cat $@ >&2; fi
@@ -235,7 +235,7 @@ $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(KITFLAGS) -c -o $@ $<
 # [XARCH-DEV] K0: the target table's rows, read by its one translation unit.
-$(BUILD_DIR)/obj/memfn/targets.o: memfn/src/targets.def
+$(BUILD_DIR)/obj/memfn/targets.o: memfn/src/targets.def memfn/src/targets_c.def
 
 $(BUILD_DIR)/obj/shared/%.o: shared/%.c shared/%.h
 	@mkdir -p $(dir $@)

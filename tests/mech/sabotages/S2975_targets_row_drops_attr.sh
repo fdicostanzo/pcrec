@@ -2,7 +2,7 @@
 # S2975 -- [XARCH-DEV] unit K0 (request R-36; lane k0), the table check's COMPILER CONTROL
 # (docs/design/memfn/target_seam_units.md §5, R2). THE 32-BYTE TARGET LOSES ONE ATTRIBUTE.
 #
-# Plant: memfn/src/targets.def's 32-byte target row drops R2's attribute from both its region attributes and its
+# Plant: memfn/src/targets.def's 32-byte target row drops R2's attribute from both its needs and its
 # features (the row as target_seam.md §2 first wrote it), so the columns still agree with each other.
 # Detector: memfn/tests/check_targets.sh (part 1 of tests/memfn/run_targets.sh, arm memfntargets): gcc
 # at the family floor plus the row's attributes no longer defines what gcc's own -march for that row

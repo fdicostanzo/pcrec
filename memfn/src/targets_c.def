@@ -1,0 +1,40 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md). The guard predicates are rev 0's (commit 171bdb343).
+ *
+ * memfn/src/targets_c.def — the C EMITTER'S SPELLINGS of the target table's
+ * family facts (unit K0, R-36; target_seam.md §6.1), apart from the facts
+ * themselves (targets.def; the owner's ruling 2026-11-07). Another emitter
+ * would spell the same facts in its own file (Rust: `cfg(target_arch)`).
+ *
+ * MF_FAMILY_C(id, guard)
+ *   id     a family id of targets.def; one row per family, every family
+ *          (the table check holds the two id sets equal)
+ *   guard  the preprocessor condition true exactly when a C compile is for
+ *          that family: the family guard's `#error` refuses a compile
+ *          without it (targets.c). It excludes the ILP32 ABIs (x32 also
+ *          defines __x86_64__)
+ *
+ * The region pair is spelled from each target's needs in targets.c (one
+ * macro, no row of its own); the run-time CPU predicate's spelling lands
+ * here with unit U4.
+ */
+
+MF_FAMILY_C(MF_FAM_X86_64,  "defined(__x86_64__) && !defined(__ILP32__)")
+MF_FAMILY_C(MF_FAM_AARCH64, "defined(__aarch64__)")
+
+/* The family the kit itself is compiled for: the HOST default, since the kit
+ * is compiled into libpcrec and its build host is pcrec's. Read on the kit's
+ * OWN build, never emitted; it is C because the kit is. The same predicates
+ * as the guard column, which the table check holds this chain to under
+ * several preprocessor targets; a host with no family row leaves MF_NFAMILY
+ * (its default list is the portable target's). */
+#ifdef MF_TARGET_HOST
+#if defined(__x86_64__) && !defined(__ILP32__)
+#define MF_HOST_FAMILY MF_FAM_X86_64
+#elif defined(__aarch64__)
+#define MF_HOST_FAMILY MF_FAM_AARCH64
+#else
+#define MF_HOST_FAMILY MF_NFAMILY
+#endif
+#endif

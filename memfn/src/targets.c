@@ -2,12 +2,14 @@
  * Provenance: original pcrec-memory-functions text; no third-party source
  *   (memfn/PROVENANCE.md).
  *
- * memfn/src/targets.c — the CPU target table's entries over targets.def
- * (unit K0, request R-36; docs/design/memfn/target_seam_units.md §2-§3):
- * the listings, the token parsers pcrec calls at option parse, the portable
- * target and the host's default list. Every name, list and text comes from
- * targets.def; the region and guard texts are assembled at compile time from
- * its columns (target_seam.md §6.1's pair), so no entry builds text.
+ * memfn/src/targets.c — the CPU target table's entries (unit K0, request
+ * R-36; docs/design/memfn/target_seam_units.md §2-§3), in two sections. The
+ * FACTS over targets.def: the listings, the token parsers pcrec calls at
+ * option parse, the portable target and the host's default list, none of
+ * which touches emitter text. The C SPELLINGS over targets_c.def and the
+ * targets' needs: the region pair and the family guard, reached from a
+ * fact row by mf_target_c_of / mf_family_c_of (the owner's ruling
+ * 2026-11-07: facts apart from any one emitter's spelling).
  */
 #include <stdio.h>
 #include <string.h>
@@ -15,35 +17,81 @@
 #include "kit.h"
 
 enum {
-#define MF_FAMILY(id, name, guard, defaults) id,
-#define MF_TARGET(id, name, family, region, features)
+#define MF_FAMILY(id, name, defaults) id,
+#define MF_TARGET(id, name, family, needs, features)
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
     MF_NFAMILY
 };
 
-/* The family guard: the artifact's one file-scope refusal of another family. */
-#define FAMILY_GUARD(guard, name)                                              \
-    "#if !(" guard ")\n"                                                       \
-    "#error \"this file was generated for the " name " CPU family; "           \
-    "regenerate it for this compiler's target\"\n"                             \
-    "#endif\n"
+/* ---- the FACTS (targets.def): no emitter's text below this line until the
+ * C section; every entry pcrec calls at option parse answers from here. */
 
 static const mf_family family_table[MF_NFAMILY] = {
-#define MF_FAMILY(id, name, guard, defaults) [id] = { name, defaults, FAMILY_GUARD(guard, name) },
-#define MF_TARGET(id, name, family, region, features)
+#define MF_FAMILY(id, name, defaults) [id] = { name, defaults },
+#define MF_TARGET(id, name, family, needs, features)
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
 };
 
-/* targets.def's wrapped columns. MF_REGION expands to the region's two texts:
- * the additive attribute list as a clang push and a GCC push, each under a
- * compiler-capability test, and the matching pops. */
 #define MF_FAMILY_OF(id) &family_table[id]
 #define MF_NO_FAMILY     NULL
-#define MF_REGION(attr)                                                        \
+#define MF_NEEDS(list)   list
+#define MF_NO_NEEDS      ""
+
+static const mf_target target_table[] = {
+#define MF_FAMILY(id, name, defaults)
+#define MF_TARGET(id, name, family, needs, features) { name, family, needs, features },
+#include "targets.def"
+#undef MF_FAMILY
+#undef MF_TARGET
+};
+
+#undef MF_NEEDS
+#undef MF_NO_NEEDS
+
+#define NTARGET (sizeof target_table / sizeof target_table[0])
+
+/* Every row's name in table order, for a refusal's list of what is known. */
+static const char target_names[] =
+#define MF_FAMILY(id, name, defaults)
+#define MF_TARGET(id, name, family, needs, features) " " name
+#include "targets.def"
+#undef MF_FAMILY
+#undef MF_TARGET
+    ;
+static const char family_names[] =
+#define MF_FAMILY(id, name, defaults) " " name
+#define MF_TARGET(id, name, family, needs, features)
+#include "targets.def"
+#undef MF_FAMILY
+#undef MF_TARGET
+    ;
+
+/* ---- the C SPELLINGS: the C emitter's text for each fact, in tables
+ * parallel to the facts' (targets_c.def; target_seam.md §6.1). Assembled at
+ * compile time, so no entry builds text. */
+
+/* The family guard: the artifact's one file-scope refusal of a compile for
+ * another family. Its message quotes the condition it tests. */
+#define FAMILY_GUARD(guard)                                                    \
+    "#if !(" guard ")\n"                                                       \
+    "#error \"this file was generated for another CPU family (it needs "       \
+    guard "); regenerate it for this compiler's target\"\n"                    \
+    "#endif\n"
+
+static const mf_family_c family_c_table[MF_NFAMILY] = {
+#define MF_FAMILY_C(id, guard) [id] = { FAMILY_GUARD(guard) },
+#include "targets_c.def"
+#undef MF_FAMILY_C
+};
+
+/* A target's region, spelled from its needs: the additive list as a clang
+ * push and a GCC push, each under a compiler-capability test, and the
+ * matching pops. */
+#define MF_NEEDS(attr)                                                         \
     "#if defined(__clang__)\n"                                                 \
     "#pragma clang attribute push (__attribute__((target(\"" attr "\"))), "    \
     "apply_to = function)\n"                                                   \
@@ -56,40 +104,20 @@ static const mf_family family_table[MF_NFAMILY] = {
     "#else\n"                                                                  \
     "#pragma GCC pop_options\n"                                                \
     "#endif\n"
-#define MF_NO_REGION "", ""
+#define MF_NO_NEEDS "", ""
 
-static const mf_target target_table[] = {
-#define MF_FAMILY(id, name, guard, defaults)
-#define MF_TARGET(id, name, family, region, features) { name, family, features, region },
+static const mf_target_c target_c_table[NTARGET] = {
+#define MF_FAMILY(id, name, defaults)
+#define MF_TARGET(id, name, family, needs, features) { needs },
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
 };
 
-#define NTARGET (sizeof target_table / sizeof target_table[0])
-
-/* Every row's name in table order, for a refusal's list of what is known. */
-static const char target_names[] =
-#define MF_FAMILY(id, name, guard, defaults)
-#define MF_TARGET(id, name, family, region, features) " " name
-#include "targets.def"
-#undef MF_FAMILY
-#undef MF_TARGET
-    ;
-static const char family_names[] =
-#define MF_FAMILY(id, name, guard, defaults) " " name
-#define MF_TARGET(id, name, family, region, features)
-#include "targets.def"
-#undef MF_FAMILY
-#undef MF_TARGET
-    ;
-
 #define MF_TARGET_HOST
-#define MF_FAMILY(id, name, guard, defaults)
-#define MF_TARGET(id, name, family, region, features)
-#include "targets.def"
-#undef MF_FAMILY
-#undef MF_TARGET
+#define MF_FAMILY_C(id, guard)
+#include "targets_c.def"
+#undef MF_FAMILY_C
 #undef MF_TARGET_HOST
 
 const mf_target *mf_targets(size_t *n)
@@ -159,4 +187,18 @@ const char *mf_host_defaults(void)
 {
     return MF_HOST_FAMILY < MF_NFAMILY ? family_table[MF_HOST_FAMILY].defaults
                                        : mf_portable_target()->name;
+}
+
+const mf_target_c *mf_target_c_of(const mf_target *t)
+{
+    for (size_t i = 0; t && i < NTARGET; i++)
+        if (t == &target_table[i]) return &target_c_table[i];
+    return NULL;
+}
+
+const mf_family_c *mf_family_c_of(const mf_family *f)
+{
+    for (size_t i = 0; f && i < MF_NFAMILY; i++)
+        if (f == &family_table[i]) return &family_c_table[i];
+    return NULL;
 }

@@ -44,7 +44,7 @@
 - docs/ — ledger pair (requests/responses), journal, session wake template (own CLAUDE.md).
 - PROVENANCE.md — file -> source -> licence -> derivations, one row per file under include/ and src/.
 - include/memfn.h — the one header pcrec includes.
-- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), the standalone find-any kernel (`vany.c`, not routed), mismatch renderer, the CPU TARGET TABLE (`targets.def`/`targets.c`, unit K0, R-36: pcrec holds targets as opaque tokens the kit parses; families, default lists, the host default, features, region and family-guard texts; no pcrec caller before P1, no artifact text before U3).
+- src/ — composer, generic scalar row, K1 reference functions, `options.def` and accessor/parser, finder table (`finder.c`), presence ports (`presence.c`), terms/mask rows, vrun SIMD rows (`vrun.c`, `levels.def`), the standalone find-any kernel (`vany.c`, not routed), mismatch renderer, the CPU TARGET TABLE (unit K0, R-36: pcrec holds targets as opaque tokens the kit parses): its FACTS in `targets.def` (families, default lists, needs, features; tokens only, read alike by a C or a Rust emitter, owner 2026-11-07) apart from the C SPELLINGS in `targets_c.def` and `targets.c`'s C section (region pair, family guard, host chain); no pcrec caller before P1, no artifact text before U3.
 - tests/ — G2, the kit's own tests.
 - data/ — measured data: method cards (`data/cards/`), measurement sets (`data/sets/generate.py`). Own CLAUDE.md.
 

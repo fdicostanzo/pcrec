@@ -34,34 +34,37 @@ static const mf_target *tgt(const char *tok)
     return mf_target_parse(tok, strlen(tok), NULL, 0);
 }
 
-/* One target row: its canonical name, family, features and whether it has a
- * region, read through the parser from the token as given. */
+/* One target row: its canonical name, family, needs and features (facts),
+ * and its region's C spelling (present exactly when it has needs), read
+ * through the parser from the token as given. */
 static void target_row(const char *tok, const char *name, const char *family,
-                       const char *features, int region)
+                       const char *needs, const char *features)
 {
     char line[512], err[256];
     const mf_target *t = mf_target_parse(tok, strlen(tok), err, sizeof err);
     snprintf(line, sizeof line, "target '%s' parses (%s)", tok, t ? t->name : err);
     check(t != NULL, line);
     if (!t) return;
-    snprintf(line, sizeof line, "target '%s': canonical '%s', family %s, features '%s', %s",
-             tok, name, family ? family : "none", features, region ? "a region" : "no region");
+    const mf_target_c *c = mf_target_c_of(t);
+    int region = *needs != 0;
+    snprintf(line, sizeof line, "target '%s': canonical '%s', family %s, needs '%s', features '%s', %s",
+             tok, name, family ? family : "none", needs, features, region ? "a region" : "no region");
     check(!strcmp(t->name, name) &&
           (family ? t->family && !strcmp(t->family->name, family) : !t->family) &&
-          !strcmp(t->features, features) && (*t->region_open != 0) == region &&
-          (*t->region_close != 0) == region && !*err, line);
-    if (region) {
-        /* target_seam.md §6.1: the additive list (= the features) under both
+          !strcmp(t->needs, needs) && !strcmp(t->features, features) && c &&
+          (*c->region_open != 0) == region && (*c->region_close != 0) == region && !*err, line);
+    if (c && region) {
+        /* target_seam.md §6.1: the additive list (the needs) under both
          * spellings, never `arch=` */
         char gcc[512], clang[512];
-        snprintf(gcc, sizeof gcc, "#pragma GCC target(\"%s\")", features);
-        snprintf(clang, sizeof clang, "__attribute__((target(\"%s\")))", features);
-        snprintf(line, sizeof line, "target %s: its region pushes its features for gcc and clang, no arch=", name);
-        check(strstr(t->region_open, gcc) && strstr(t->region_open, clang) &&
-              strstr(t->region_open, "#pragma GCC push_options") &&
-              strstr(t->region_close, "#pragma GCC pop_options") &&
-              strstr(t->region_close, "#pragma clang attribute pop") &&
-              !strstr(t->region_open, "arch="), line);
+        snprintf(gcc, sizeof gcc, "#pragma GCC target(\"%s\")", needs);
+        snprintf(clang, sizeof clang, "__attribute__((target(\"%s\")))", needs);
+        snprintf(line, sizeof line, "target %s: its region pushes its needs for gcc and clang, no arch=", name);
+        check(strstr(c->region_open, gcc) && strstr(c->region_open, clang) &&
+              strstr(c->region_open, "#pragma GCC push_options") &&
+              strstr(c->region_close, "#pragma GCC pop_options") &&
+              strstr(c->region_close, "#pragma clang attribute pop") &&
+              !strstr(c->region_open, "arch="), line);
     }
 }
 
@@ -86,16 +89,15 @@ static void rows(const char *uname_m)
     check(nt == 4 && nf == 2, line);
 
     /* every token, canonical and as a caller may spell it */
-    target_row("generic", "generic", NULL, "", 0);
-    target_row("x86-64", "x86-64", "x86-64", "sse2", 1);
-    target_row("x86-64-v3", "x86-64-v3", "x86-64",
-               "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave", 1);
-    target_row("aarch64", "aarch64", "aarch64", "neon", 0);
-    target_row("X86_64", "x86-64", "x86-64", "sse2", 1);
-    target_row("x86_64_V3", "x86-64-v3", "x86-64",
-               "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave", 1);
-    target_row("AArch64", "aarch64", "aarch64", "neon", 0);
-    target_row("GENERIC", "generic", NULL, "", 0);
+    static const char v3[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave";
+    target_row("generic", "generic", NULL, "", "");
+    target_row("x86-64", "x86-64", "x86-64", "sse2", "sse2");
+    target_row("x86-64-v3", "x86-64-v3", "x86-64", v3, v3);
+    target_row("aarch64", "aarch64", "aarch64", "", "neon");
+    target_row("X86_64", "x86-64", "x86-64", "sse2", "sse2");
+    target_row("x86_64_V3", "x86-64-v3", "x86-64", v3, v3);
+    target_row("AArch64", "aarch64", "aarch64", "", "neon");
+    target_row("GENERIC", "generic", NULL, "", "");
 
     /* the listing is the parser's table: every listed row parses to itself */
     int self = 1;
@@ -103,6 +105,16 @@ static void rows(const char *uname_m)
     for (size_t i = 0; i < nf; i++)
         self &= mf_family_parse(fs[i].name, strlen(fs[i].name), NULL, 0) == &fs[i];
     check(self, "every listed target and family parses to its own row");
+
+    /* the C spellings: one per listed row, none for a pointer not a row */
+    int spelt = 1;
+    for (size_t i = 0; i < nt; i++) spelt &= mf_target_c_of(&ts[i]) != NULL;
+    for (size_t i = 0; i < nf; i++)
+        spelt &= mf_family_c_of(&fs[i]) && strstr(mf_family_c_of(&fs[i])->guard, "#error");
+    mf_target fake = ts[0];
+    mf_family ffake = fs[0];
+    check(spelt && !mf_target_c_of(&fake) && !mf_family_c_of(&ffake) && !mf_target_c_of(NULL),
+          "every listed row has its C spelling; a copy of a row and NULL have none");
 
     /* refusals: the token's bytes are all of it */
     refused("x86-64-v4", 9, 0, "target x86-64-v4 (no kit level needs it, D77)");
@@ -132,15 +144,18 @@ static void rows(const char *uname_m)
     check(x && !strcmp(x->defaults, "x86-64"), "family x86-64: default list 'x86-64'");
     check(a && !strcmp(a->defaults, "aarch64"), "family aarch64: default list 'aarch64'");
     check(xu == x, "family 'X86_64' parses as x86-64");
-    check(x && strstr(x->guard, "#error") && strstr(x->guard, "x86-64") && !strncmp(x->guard, "#if", 3),
-          "family x86-64: its guard is an #if ... #error naming the family");
+    const mf_family_c *xc = mf_family_c_of(x);
+    check(xc && !strncmp(xc->guard, "#if !(", 6) && strstr(xc->guard, "#error") &&
+              strstr(xc->guard, "__x86_64__") && strstr(xc->guard, "__ILP32__"),
+          "family x86-64: its C guard is an #if ... #error on the architecture, excluding ILP32");
     check(tgt("x86-64-v3") && tgt("x86-64-v3")->family == x && tgt("aarch64")->family == a,
           "each family's targets point at its row");
 
     /* the portable target and the host's default list */
     const mf_target *p = mf_portable_target();
-    check(p && !strcmp(p->name, "generic") && !p->family && !*p->features && !*p->region_open,
-          "the portable target is generic: no family, features or region");
+    check(p && !strcmp(p->name, "generic") && !p->family && !*p->needs && !*p->features &&
+              !*mf_target_c_of(p)->region_open,
+          "the portable target is generic: no family, needs, features or region");
     const char *want = !strcmp(uname_m, "x86_64")                                   ? "x86-64"
                        : !strcmp(uname_m, "aarch64") || !strcmp(uname_m, "arm64") ? "aarch64"
                                                                                    : "generic";
@@ -156,11 +171,11 @@ static void fixture(void)
 {
     const mf_target *t16 = tgt("x86-64"), *t32 = tgt("x86-64-v3");
     if (!t16 || !t32) return;
-    fputs(t16->family->guard, stdout);
+    fputs(mf_family_c_of(t16->family)->guard, stdout);
     fputs("#include <stddef.h>\n#include <string.h>\n"
           "size_t fx_generic(const unsigned char *s, size_t n, unsigned char b)\n"
           "{ for (size_t i = 0; i < n; i++) if (s[i] == b) return i; return n; }\n\n", stdout);
-    fputs(t16->region_open, stdout);
+    fputs(mf_target_c_of(t16)->region_open, stdout);
     fputs("#include <emmintrin.h>\n"
           "size_t fx_w16(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m128i v = _mm_set1_epi8((char)b);\n"
@@ -168,9 +183,9 @@ static void fixture(void)
           "        unsigned m = (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(w, v));\n"
           "        if (m) return i + (size_t)__builtin_ctz(m);\n    }\n"
           "    return i + fx_generic(s + i, n - i, b);\n}\n", stdout);
-    fputs(t16->region_close, stdout);
+    fputs(mf_target_c_of(t16)->region_close, stdout);
     fputs("\n", stdout);
-    fputs(t32->region_open, stdout);
+    fputs(mf_target_c_of(t32)->region_open, stdout);
     fputs("#include <immintrin.h>\n"
           "size_t fx_w32(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m256i v = _mm256_set1_epi8((char)b);\n"
@@ -178,7 +193,7 @@ static void fixture(void)
           "        unsigned m = (unsigned)_mm256_movemask_epi8(_mm256_cmpeq_epi8(w, v));\n"
           "        if (m) return i + (size_t)__builtin_ctz(m);\n    }\n"
           "    return i + fx_w16(s + i, n - i, b);\n}\n", stdout);
-    fputs(t32->region_close, stdout);
+    fputs(mf_target_c_of(t32)->region_close, stdout);
 }
 
 int main(int argc, char **argv)

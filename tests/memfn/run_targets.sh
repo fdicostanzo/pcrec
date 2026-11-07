@@ -39,7 +39,7 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1"; fail=$((fail + 1)); }
 skip() { echo "SKIP: $1"; skipped=$((skipped + 1)); }
 GCC_CELLS=6
-ROW_FLOOR=41   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host)
+ROW_FLOOR=42   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host)
 
 echo "== 1. the kit's target table check =="
 if out="$(bash "$ROOT_DIR/memfn/tests/check_targets.sh")"; then ok "$out"; else bad "$out"; fi
@@ -125,7 +125,7 @@ if [ "$host" = x86_64 ]; then
     else skip "census: no objdump"; fi
 
     echo "== 3c. the family guard refuses another family =="
-    msg='generated for the x86-64 CPU family'
+    msg='generated for another CPU family'
     guard() {
         local name="$1"; shift
         if "$TIMEOUT_BIN" 60 "$@" -fsyntax-only "$WORKDIR/fixture.c" 2> "$WORKDIR/g_$name.err"; then

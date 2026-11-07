@@ -8,10 +8,11 @@
 # Run by `make` (the build/targets.check stamp: a failure WARNS, R5-Q1) and
 # failed on by `make strict` and `make test-memfn-targets`.
 #
-# The subject is memfn/src/targets.def, read through the C preprocessor (the
-# same X-macro rows the kit compiles). THE CONTROL IS THE COMPILER (the lane's
-# adopted choice, units.md §5): for every target of the building host's
-# family that has a region, `gcc <family floor> -m<each attribute>` must
+# The subject is memfn/src/targets.def (the FACTS) and targets_c.def (the C
+# emitter's family spellings and the host chain), read through the C
+# preprocessor (the same X-macro rows the kit compiles). THE CONTROL IS THE
+# COMPILER (the lane's adopted choice, units.md §5): for every target of the
+# building host's family that has needs, `gcc <family floor> -m<each need>` must
 # define exactly the macros `gcc -march=<name>` defines -- the whole `-dM`
 # output, never a chosen ISA list (a list would be a name-keyed filter that
 # cannot see a macro nobody listed: how `sahf` was found, R2). The floor is
@@ -26,11 +27,17 @@
 # floors of family and target rows; target and family names distinct under
 # the parser's matching rule (case-blind, `_` as `-`), so no row shadows
 # another; every target's family exists; exactly ONE familyless (portable)
-# target, with no region and no features; features sorted, unrepeated; a
-# region's attribute list equals the features; every family's default list
+# target, with no needs and no features; needs and features sorted,
+# unrepeated, needs a subset of features; every family's default list
 # non-empty, unrepeated, each member a target of that family.
 #
-# THE HOST CHAIN (targets.def's MF_TARGET_HOST block, the kit's own #if) is
+# FACTS CARRY NO SPELLING (the owner's ruling 2026-11-07, emitters for C or
+# Rust): every field of a facts row is a list of tokens (`[a-z0-9][a-z0-9.-]*`,
+# comma-separated, or empty), which no C (or Rust) text is -- a `(`, `#`,
+# `_`, quote, `=` or blank fails it; targets.def holds no preprocessor
+# directive; and targets_c.def has exactly one spelling row per family.
+#
+# THE HOST CHAIN (targets_c.def's MF_TARGET_HOST block, the kit's own #if) is
 # held to the guard column under several preprocessor targets (gcc as is,
 # -m32, -mx32; clang --target=aarch64-linux-gnu where clang exists): in each,
 # the chain names the family whose guard holds, or none where none does, and
@@ -45,6 +52,7 @@ set -u
 GCC="${TARGETS_GCC:-gcc}"
 here="$(cd "$(dirname "$0")" && pwd)"
 def="${TARGETS_DEF:-$here/../src/targets.def}"
+cdef="${TARGETS_C_DEF:-$here/../src/targets_c.def}"
 out="${1:-}"
 FLOOR_FAMILIES=2   # the design's two family rows (target_seam.md §2)
 FLOOR_TARGETS=4    # generic, x86-64, x86-64-v3, aarch64 (units.md §2, K0)
@@ -60,16 +68,20 @@ finish() {
 }
 
 command -v "$GCC" >/dev/null 2>&1 || { say "no $GCC: the check could not run"; finish 2; }
-[ -r "$def" ] || { say "cannot read $def"; finish 2; }
+[ -r "$def" ] && [ -r "$cdef" ] || { say "cannot read $def or $cdef"; finish 2; }
 
-# The rows, one per line:  F id|name|guard|defaults   T id|name|family|attr|features
+# The rows, one per line:  F id|name|defaults   T id|name|family|needs|features
+#                          C id|guard (targets_c.def)
 rows="$(printf '%s\n' \
-    '#define MF_FAMILY(id, name, guard, defaults) F id|name|guard|defaults' \
-    '#define MF_TARGET(id, name, family, region, features) T id|name|family|region|features' \
+    '#define MF_FAMILY(id, name, defaults) F id|name|defaults' \
+    '#define MF_TARGET(id, name, family, needs, features) T id|name|family|needs|features' \
     '#define MF_FAMILY_OF(id) id' '#define MF_NO_FAMILY NONE' \
-    '#define MF_REGION(attr) attr' '#define MF_NO_REGION ""' \
-    "#include \"$def\"" | "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FT] ')" || {
-    say "could not read $def through $GCC -E"; finish 2; }
+    '#define MF_NEEDS(list) list' '#define MF_NO_NEEDS ""' \
+    '#define MF_FAMILY_C(id, guard) C id|guard' \
+    "#include \"$def\"" "#include \"$cdef\"" | "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTC] ')" || {
+    say "could not read $def and $cdef through $GCC -E"; finish 2; }
+directives="$(grep -nE '^[[:space:]]*#' "$def" | head -3 | tr '\n' ' ')"
+[ -z "$directives" ] || mismatch "targets.def (the facts) holds a preprocessor directive: $directives"
 
 # Strip one level of C string quoting and the surrounding blanks.
 unq() { local s; s="$(printf '%s' "$1" | sed 's/^ *//; s/ *$//')"; s="${s#\"}"; s="${s%\"}"; printf '%s' "${s//\\\"/\"}"; }
@@ -78,15 +90,23 @@ fold() { printf '%s' "$1" | tr 'A-Z_' 'a-z-'; }
 sorted_list() { printf '%s' "$1" | tr ',' '\n' | LC_ALL=C sort | paste -sd, -; }
 repeats() { printf '%s\n' "$1" | tr ',' '\n' | LC_ALL=C sort | uniq -d | paste -sd, -; }
 
+# A facts field: tokens, comma-separated, or empty -- never emitter text.
+tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-z0-9][a-z0-9.-]*)*' ||
+    mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
+
 declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_t seen_f
 fams=() tgts=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
     IFS='|' read -r a b c d e <<<"$body"
     a="$(echo "$a" | tr -d ' ')"
-    if [ "$kind" = F ]; then
+    if [ "$kind" = C ]; then
+        [ -z "${fam_guard[$a]+x}" ] || mismatch "family $a: more than one C spelling row"
+        fam_guard[$a]="$(unq "$b")"
+    elif [ "$kind" = F ]; then
         fams+=("$a")
-        fam_name[$a]="$(unq "$b")"; fam_guard[$a]="$(unq "$c")"; fam_defs[$a]="$(unq "$d")"
+        fam_name[$a]="$(unq "$b")"; fam_defs[$a]="$(unq "$c")"
+        tokens "family $a name" "${fam_name[$a]}"; tokens "family $a defaults" "${fam_defs[$a]}"
         k="$(fold "${fam_name[$a]}")"
         [ -z "${seen_f[$k]+x}" ] || mismatch "family $a: name '${fam_name[$a]}' matches ${seen_f[$k]}'s under the parser's rule"
         seen_f[$k]="$a"
@@ -94,6 +114,8 @@ while IFS= read -r line; do
         tgts+=("$a")
         tgt_name[$a]="$(unq "$b")"; tgt_fam[$a]="$(echo "$c" | tr -d ' ')"
         tgt_attr[$a]="$(unq "$d")"; tgt_feat[$a]="$(unq "$e")"
+        tokens "target $a name" "${tgt_name[$a]}"; tokens "target $a needs" "${tgt_attr[$a]}"
+        tokens "target $a features" "${tgt_feat[$a]}"
         k="$(fold "${tgt_name[$a]}")"
         [ -z "${seen_t[$k]+x}" ] || mismatch "target $a: name '${tgt_name[$a]}' matches ${seen_t[$k]}'s under the parser's rule"
         seen_t[$k]="$a"
@@ -102,8 +124,12 @@ while IFS= read -r line; do
             [ "$(sorted_list "$f")" = "$f" ] || mismatch "target $a: features not sorted ('$(sorted_list "$f")')"
             [ -z "$(repeats "$f")" ] || mismatch "target $a: feature $(repeats "$f") repeats in '$f'"
         fi
-        if [ -n "${tgt_attr[$a]}" ] && [ "${tgt_attr[$a]}" != "$f" ]; then
-            mismatch "target $a: region attributes '${tgt_attr[$a]}' differ from features '$f'"
+        n="${tgt_attr[$a]}"
+        if [ -n "$n" ]; then
+            [ "$(sorted_list "$n")" = "$n" ] || mismatch "target $a: needs not sorted ('$(sorted_list "$n")')"
+            for m in $(printf '%s' "$n" | tr ',' ' '); do
+                case ",$f," in *",$m,"*) ;; *) mismatch "target $a: need '$m' is not among its features '$f'" ;; esac
+            done
         fi
     fi
 done <<<"$rows"
@@ -117,14 +143,18 @@ for t in "${tgts[@]}"; do
     if [ "$f" = NONE ]; then
         portable=$((portable + 1))
         [ -z "${tgt_attr[$t]}" ] && [ -z "${tgt_feat[$t]}" ] ||
-            mismatch "target $t: the portable target has a region or features"
+            mismatch "target $t: the portable target has needs or features"
     elif [ -z "${fam_name[$f]+x}" ]; then
         mismatch "target $t: family $f has no family row"
     fi
 done
 [ "$portable" = 1 ] || mismatch "$portable targets have no family (want exactly 1, the portable target)"
 
+for f in "${!fam_guard[@]}"; do
+    [ -n "${fam_name[$f]+x}" ] || mismatch "targets_c.def spells family $f, which has no facts row"
+done
 for f in "${fams[@]}"; do
+    [ -n "${fam_guard[$f]+x}" ] || mismatch "family $f: no C spelling row in targets_c.def"
     l="${fam_defs[$f]}"
     [ -n "$l" ] || { mismatch "family $f: an empty default list"; continue; }
     [ -z "$(repeats "$l")" ] || mismatch "family $f: default $(repeats "$l") repeats in '$l'"
@@ -137,10 +167,9 @@ for f in "${fams[@]}"; do
 done
 
 # THE HOST CHAIN against the guards, per preprocessor cell.
-probe="$(printf '%s\n' '#define MF_FAMILY(id, name, guard, defaults)' \
-    '#define MF_TARGET(id, name, family, region, features)' '#define MF_TARGET_HOST' \
-    "#include \"$def\"" 'H MF_HOST_FAMILY'
-    for f in "${fams[@]}"; do printf '#if %s\nG %s\n#endif\n' "${fam_guard[$f]}" "$f"; done)"
+probe="$(printf '%s\n' '#define MF_FAMILY_C(id, guard)' '#define MF_TARGET_HOST' \
+    "#include \"$cdef\"" 'H MF_HOST_FAMILY'
+    for f in "${fams[@]}"; do [ -n "${fam_guard[$f]:-}" ] && printf '#if %s\nG %s\n#endif\n' "${fam_guard[$f]}" "$f"; done)"
 cells=0 cskip=0 host=""
 cell() {   # cell LABEL COMPILER FLAGS...
     local label="$1" cc="$2"; shift 2
@@ -190,5 +219,5 @@ case "$host" in
     *) [ "$ran" -ge 1 ] || mismatch "the host family $host compared no target against $GCC -march" ;;
 esac
 
-[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no region), host ${host:-none}, $cells host cells ($cskip skipped)"
+[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped)"
 finish "$bad"

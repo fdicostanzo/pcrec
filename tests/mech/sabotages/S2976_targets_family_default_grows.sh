@@ -13,5 +13,5 @@ SAB_DESC='a family default list grows by a member before its ruled step: only th
 SAB_DOC_FIGURE='MEASURED by lane k0, planted and reverted by hand in a scratch copy (k0_report.md, Sabotage); exact re-run: bash tests/mech/run_sabotage_matrix.sh S2976.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='!defined(__ILP32__)", "x86-64")'
-SAB_AFTER='!defined(__ILP32__)", "x86-64,x86-64-v3")'
+SAB_BEFORE='MF_FAM_X86_64,  "x86-64",  "x86-64")'
+SAB_AFTER='MF_FAM_X86_64,  "x86-64",  "x86-64,x86-64-v3")'
