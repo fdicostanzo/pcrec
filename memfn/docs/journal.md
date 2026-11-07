@@ -3464,3 +3464,12 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-06 23:42: 493 K138 mech GREEN (S2910 BUILD-REFUSED). S2a re-delivered @ 252e0a1cb, with a corrected done line (5cace44bd); every claim was grepped on the branch first. Both tips sent to main to land together.
 - 11-07 01:04: S2c gates 470-474 GREEN on 1e4999d1c (strict 16 s, slotsab 21/21 77 s, sections 868 s, test 2426 s, mech 1610 s). artifact_size_log restored.
 - WINDOW 2 QUEUED (RUN_ID s2d-20261107a, FROZEN 1e4999d1c); watcher armed. main's 495 waits for this J9.
+- 11-07 01:34-01:59: WINDOW 2 RAN (s2d-20261107a, FROZEN 1e4999d1c).
+  - All 9 jobs green; screen 0.201 %; J1 c; drift kept; the record pins r_max 53751.
+  - Fixed est: OUTCOME REFUSED on 2 floors only. byte.libc now passes, and so do w1/c2.
+    - l1: all 7 launches negative ("a fixture defect, whatever r").
+    - c1: mixed signs above r.
+  - The negatives are LARGER than window 1. Reading: the rev 1.4 null base (a register compare, REV14-8) costs more than the arm's one-instruction compare, so it is no null.
+  - Note lines: a box-state split (control 0.65-1.78 %) and bimodal walk.random rows.
+- Analysis lane s2dana2 (opus, read-only): units, objdump base vs arm, and options (a) a same-shape never-matching base, (b) an evidence-bound zero, (c) another regime, (d) floor change + row 1's need.
+- main told; box released to its 495. No third window tonight.
