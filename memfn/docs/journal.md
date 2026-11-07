@@ -3404,3 +3404,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fixed, slot/jobs/ only: 7a72512e0 (absolute common.sh path) and 508178bd2 (JOB= per job; the copy check compares the running $0). FROZEN = 508178bd2; its diff from the gated tip is slot/jobs/ only.
   - WINDOW QUEUED (480 prep, 480 screen, 481-486, 489), with watcher bxsz9x4l6.
   - main's 229-mttri-axes2 (8 h) is ahead in the queue; asked main whether to hold it.
+- 11-06 ~22:00: S2a gates 465-468 GREEN (all 460-468 green on 7355ea430). S2a and S2b delivered (59de9d683).
+  - main: S2b MERGE. S2a NOT yet: **my done line claimed K138 FIXED, and it was not.** The loader still accepts any value_e6; there is no _Static_assert in the pcrec hunks; known_issues says OPEN. I took the summary's "K138 fix form ACKed" as "built" without checking the branch.
+  - Lesson: a done line names only what a grep of the branch shows.
+  - Lane s2ak138 (sonnet) is adding the value bound, the assert, S2912 + fixture and K138 FIXED. Re-validation jobs 491-493 wait on kit-s2d-J9's end. Then both tips go to main again.
