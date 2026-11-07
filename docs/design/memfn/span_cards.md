@@ -875,7 +875,7 @@ site shape and stated facts (the canonical instance), so the timed text IS the h
   shape (more than half the class's sites; `link.py` refuses otherwise), and with no majority shape the row is
   tagged `lower-bound`. Today c2 is alu1 217, cmp2 75 of 292 sites (by spelling it was case 156, pair 79,
   range 53, other 4): the `{X,x}` instance is `alu1`, the majority, and stays. `[rev1.3 r9-SLOT-9]` vcls.out's header names the sweep's sha-256 and the commit census0 swept it at;
-  PLAN: fold its classes into census0 (§7 FAM-D, with HOUSE-16's `class_measure`), trigger S2f's census0 re-run.
+  PLAN: fold its classes into census0 (§7 FAM-D, with HOUSE-16's `class_measure`), trigger S2f's census0 re-run. `[S2f]` DONE as a section of `census0.py forecast` (`class_measure`; output `span_pick/census0_cards.out`, data lines equal to `vcls.out`'s, checked by the S2f census job); `slot/vcls.py` and `vcls.out` stay while `slot/link.py` and `slot/plan.py` read them.
 - `[rev1.3 r9-EMIT-5]` PLAN: PAIR has a second production text (B-fn's `ofsskip` body, the `[Xx]abc` shape);
   a second `pair` instance, cls `fn`, joins the fold when row 1 prices a B-fn PAIR site or J1's verdict moves
   ofsskip.

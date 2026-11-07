@@ -5,6 +5,7 @@ site of R-33's sweep.
 
     python3 -I census0.py control WITNESS.out PRIOR.list -- NAME=BUNDLE.list ...   > smp20.out
     python3 -I census0.py sweep SWEEP.jsonl [-o census0.out] [--note TEXT]
+    python3 -I census0.py forecast SWEEP.jsonl --measures SET.tsv [--swept-at COMMIT] [-o census0_cards.out]
 
 CONTROL: smp20 `(?i)x/1234` priced with the note's formula (§The pick: no `streams` factor, byte(m) = the
 method's cost per subject byte over all its streams) under ONE rate model per compile (D186 add. 2): a BLIND
@@ -424,11 +425,341 @@ def sweep(path, outpath, note=""):
         sys.stdout.write(text)
 
 
+# ---------------------------------------------------------------- forecast: the measured cards (S2f)
+# `forecast SWEEP.jsonl --measures SET.tsv [--swept-at COMMIT] [-o census0_cards.out]` prices the same window sites
+# with a measurement set's CARDS in place of the stand-ins, and folds in vcls's verify classes (r9-SLOT-9).
+# The cards are read from the set's `#section rows` (the file `measure_store/<id>/<rev>/set.tsv`, the form
+# `pcrec --measures=FILE` reads; DEFAULTS `idk` names it), unit `walkbytes` (the scalar walk's per-byte cost = 1):
+#   byte(m)   kit.find_byte.{libc,pair,walk}        value / 1e6 per subject byte (memchr = libc)
+#   hit(m)    kit.find_hit.<form>.random.<one|alt>.<gap>   per candidate returned; RANDOM landing (the floor's
+#             rows), the gap (hit density) 256 and 1024 each a POINT; PAIR reads `alt` (x and X alternate), the
+#             others `one`
+#   cmp       kit.verify_cmp.settest.<c1|c2|cn>.{p0,p50}  cmp(p) = p0 + (p50 - p0) x min(p, 1-p) / 0.5
+#   enter     kit.enter.<site_kind>.NONE                 per pass; only NONE-entry alternatives are priced
+# The price is linear in the cards, so the band of a comparison is the quadrature sum of (coef_a - coef_b) x noise
+# (span_pick.md "The band of a comparison"); a mover BEYOND BAND departs by more than Z_BAND x that band
+# (Z_BAND 3.0, UNMEASURED DEFAULT, span_cards §6). Not priced (counted as such): a unit whose incumbent or a
+# candidate is not a NONE alternative, a method with no card (walk-back), a site kind with no enter card, a unit
+# whose incumbent is not memchr/pair/walk. Run-compare rows (rc-*) are not priced: verify is per position, as
+# in the stand-in sweep. A fused-compare bound row (value 0) is a LOWER BOUND on its cost.
+Z_BAND = Q(3)
+CARD_GAPS = (256, 1024)
+BYTE_CARD = {"memchr": "kit.find_byte.libc", "pair": "kit.find_byte.pair", "walk": "kit.find_byte.walk"}
+HIT_CARD = {"memchr": "kit.find_hit.libc.random.one.%d", "pair": "kit.find_hit.pair.random.alt.%d",
+            "walk": "kit.find_hit.walk.random.one.%d"}
+
+
+def load_cards(path):
+    """(header dict, {key: (value, noise)}) in walkbytes (value_e6 / 1e6) from a set file's header and rows sections"""
+    hdr, cards, sec = {}, {}, None
+    for line in open(path):
+        line = line.rstrip("\n")
+        if line.startswith("#section"):
+            sec = line.split()[1]
+        elif not line or line.startswith("#"):
+            continue
+        elif sec == "header":
+            k, _, v = line.partition("\t")
+            hdr[k] = v
+        elif sec == "rows":
+            f = line.split("\t")
+            cards[f[0]] = (Q(int(f[2]), 10**6), Q(int(f[4]), 10**6))
+    return hdr, cards
+
+
+def class_measure(form, arg):
+    """HOUSE-16's class measure of a verify form's class, read off the text's boundaries (vcls.py's, folded here):
+    settest -> the COMPARE count of the member set `arg` (a list of byte values): one per singleton or edge-touching
+    range, two per inner range; None for the full set. rc-words -> the word count of a run of length `arg`."""
+    if form == "rc-words":
+        w = 8 if arg >= 8 else 4 if arg >= 4 else 2
+        return -(-arg // w)
+    if len(arg) == 256:
+        return None
+    rg = []
+    for x in sorted(arg):
+        if rg and x == rg[-1][1] + 1:
+            rg[-1][1] = x
+        else:
+            rg.append([x, x])
+    return sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg), rg
+
+
+def settest_cls(ms):
+    r = class_measure("settest", ms)
+    if r is None:
+        return None
+    return "c1" if r[0] == 1 else "c2" if r[0] == 2 else "cn"
+
+
+def settest_shape(ms):
+    """the lowering shape of a TWO-compare set test: `alu1` (a single-bit pair, an inner range, or [^x]) or `cmp2`"""
+    r = class_measure("settest", ms)
+    if r is None or r[0] != 2:
+        return None
+    rg = r[1]
+    if len(rg) == 2 and rg[0][0] == 0 and rg[1][1] == 255 and rg[1][0] == rg[0][1] + 2:
+        return "alu1"
+    if len(rg) == 2 and all(lo == hi for lo, hi in rg):
+        return "alu1" if bin(rg[0][0] ^ rg[1][0]).count("1") == 1 else "cmp2"
+    return "alu1" if len(rg) == 1 else "cmp2"
+
+
+def rc_cls(row, L):
+    if row == "words":
+        return "w%d" % class_measure("rc-words", L)
+    if row == "memcmp":
+        return "l1" if L in (1, 2, 4, 8) else "lv" if L >= 16 else "lc"
+    return "o2" if row == "overlap" else "b%d" % L
+
+
+def plan_run_len(wr):
+    best, cur, prev = 0, 0, None
+    for off, term in wr.get("plan", []):
+        cur = cur + 1 if prev and term == prev[1] and off == prev[0] + 1 else 1
+        prev = (off, term)
+        best = max(best, cur)
+    return best
+
+
+def vcls_lines(path, swept_at):
+    """vcls.py's census folded in: verify (form, cls) counts per arm over every row-1-class window SITE, the
+    c2 lowering shapes, stamped with the sweep's sha-256 and commit (r9-SLOT-9). The data lines are vcls.out's,
+    byte for byte (the job compares)."""
+    import hashlib
+    pop, shp = collections.Counter(), collections.Counter()
+    for line in open(path):
+        rec = json.loads(line)
+        for s in rec.get("sites", []):
+            alts = s.get("alts")
+            if not alts or not any(row1_class(a) for a in alts):
+                continue
+            wr = s.get("wr", {})
+            L = wr.get("run_len", 0) if wr.get("run_stated") else plan_run_len(wr)
+            for tb, row in s.get("trace", {}).get("ends", []):
+                if tb == "runcmp" and row not in (None, "none", "-"):
+                    pop[(rec["arm"], "rc-" + row, rc_cls(row, L))] += 1
+            for a in alts:
+                if a["entry"] != 1:
+                    continue
+                for sp in a["spans"]:
+                    for h in sp["sets"]:
+                        ms = sorted(setbits(h))
+                        c = settest_cls(ms)
+                        if c:
+                            pop[(rec["arm"], "settest", c)] += 1
+                        if c == "c2":
+                            shp[(rec["arm"], "settest", "c2." + settest_shape(ms))] += 1
+    sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
+    out = ["== (3) vcls fold over %s (sha256 %s, swept at %s): verify (form, cls) by the T-CMP / set-test text's "
+           "boundaries; counts are SITES (lines below are vcls.out's data lines)" % (path.split("/")[-1], sha, swept_at)]
+    for tab in (pop, shp):
+        for (arm, form, cls), n in sorted(tab.items()):
+            out.append("%s\t%s\t%s\t%s\t%d" % (arm, "verify" if tab is pop else "shape", form, cls, n))
+    return out
+
+
+def mcoefs(cards, model, sets, stop, method, kind, gap, others):
+    """(coefficients {card key: coef}, missing key or None): the plan's price as a linear form in the cards, per
+    1e6 subject bytes; the verify term as in `price` with cmp(p) interpolated between the card's two pass rates"""
+    co = collections.defaultdict(Q)
+    bkey, hkey = BYTE_CARD[method], HIT_CARD[method] % gap
+    m = mass(model, sets[stop])
+    co[bkey] += PPM
+    co[hkey] += m
+    pr = Q(1)
+    for mo, j in sorted((mass(model, sets[j]), j) for j in others):
+        cl = settest_cls(sorted(sets[j]))
+        p = mo / PPM
+        w = min(p, 1 - p) / Q(1, 2)
+        co["kit.verify_cmp.settest.%s.p0" % cl] += m * pr * (1 - w)
+        co["kit.verify_cmp.settest.%s.p50" % cl] += m * pr * w
+        pr *= p
+    co["kit.enter.%d.NONE" % kind] += m * pr
+    miss = next((k for k in co if k not in cards), None)
+    return co, miss
+
+
+def mprice(co, cards):
+    return sum(c * cards[k][0] for k, c in co.items())
+
+
+def mgap(ca, cb, cards):
+    """(price a - price b, band^2): the band of the comparison, quadrature over the cards (exact squares)"""
+    keys = set(ca) | set(cb)
+    return (sum((ca.get(k, 0) - cb.get(k, 0)) * cards[k][0] for k in keys),
+            sum(((ca.get(k, 0) - cb.get(k, 0)) * cards[k][1]) ** 2 for k in keys))
+
+
+def forecast(path, setpath, outpath, swept_at):
+    hdr, cards = load_cards(setpath)
+    rates_all = json.load(open(path + ".rates.json"))
+    models = {}
+    C = collections.defaultdict(collections.Counter)         # (arm, gap) -> counter
+    classes = collections.defaultdict(collections.Counter)   # (arm, gap, r1) -> class -> units [BAND-0]
+    beyond = collections.defaultdict(collections.Counter)    # (arm, gap, r1) -> class -> units beyond band
+    smp20 = None
+    nrec = 0
+    for line in open(path):
+        rec = json.loads(line)
+        nrec += 1
+        if rec.get("rc") != 0:
+            continue
+        arm = "DEF" if rec.get("arm") == "DEF" else "RTE"
+        for u in units(rec):
+            rid = u["site"].get("rate")
+            if rid not in models:
+                models[rid] = dict(enumerate(rates_all[rid]["rate"]))
+            model = models[rid]
+            kind = u["site"].get("site_kind", 0)
+            r1 = any(row1_class(a) for a in u["alts"])
+            wr, im = u["wr"], u["method"]
+            why = None
+            if wr.get("rc") != 0 or not wr.get("has_stop"):
+                why = "no stop"
+            elif im not in ("memchr", "pair", "walk"):
+                why = "incumbent method " + im
+            elif ("kit.enter.%d.NONE" % kind) not in cards:
+                why = "no enter card for site kind %d" % kind
+            if why is None:
+                ia, io = wr["alt"], wr["stop"]
+                alt = u["alts"][ia]
+                cand, read = alt_domain(alt)
+                if alt["entry"] != 1:
+                    why = "incumbent alternative entry %s (no enter card)" % ENTRY[alt["entry"]]
+                elif io not in cand or cand[io] != setbits(wr["stop_set"]) or \
+                        (im == "memchr" and len(cand[io]) != 1) or (im == "pair" and len(cand[io]) != 2):
+                    why = "incumbent not a consistent candidate"
+            for gap in CARD_GAPS:
+                c = C[(arm, gap)]
+                c["window units"] += 1
+                c["row-1-class units"] += r1
+                if why:
+                    c["unpriced: " + why] += 1
+                    continue
+                cands = []
+                for ai, a in enumerate(u["alts"]):
+                    if a["entry"] != 1:
+                        continue
+                    cd, rd = alt_domain(a)
+                    for off, s in sorted(cd.items()):
+                        for m_ in METHODS_BY_K.get(len(s), ("walk",)):
+                            cands.append((ai, off, m_, rd))
+                ico, miss = mcoefs(cards, model, read, io, im, kind, gap, [o for o in read if o != io])
+                if miss:
+                    c["unpriced: no card " + miss] += 1
+                    continue
+                ip = mprice(ico, cards)
+                best = None
+                for ai, off, m_, rd in cands:
+                    if (ai, off, m_) == (ia, io, im):
+                        continue
+                    co, miss = mcoefs(cards, model, rd, off, m_, kind, gap, [o for o in rd if o != off])
+                    if miss:
+                        c["candidate unpriced: no card " + miss] += 1
+                        continue
+                    p = mprice(co, cards)
+                    if p < ip and (best is None or (p, ai, off, m_) < best[0]):
+                        best = ((p, ai, off, m_), co, rd)
+                c["priced"] += 1
+                c["row-1-class priced"] += r1
+                if not best:
+                    continue
+                (p, ai, off, m_), co, rd = best
+                cl = "%s -> %s" % (desc(len(cand[io]), im), desc(len(alt_domain(u["alts"][ai])[0][off]), m_))
+                d, b2 = mgap(ico, co, cards)
+                c["movers (BAND-0)"] += 1
+                c["row-1-class movers (BAND-0)"] += r1
+                classes[(arm, gap, r1)][cl] += 1
+                if d * d > Z_BAND ** 2 * b2:
+                    c["movers beyond band (z 3)"] += 1
+                    c["row-1-class movers beyond band (z 3)"] += r1
+                    beyond[(arm, gap, r1)][cl] += 1
+            if smp20 is None and rec.get("src") == "s588" and rec.get("id") == "smp20" and arm == "RTE" and u["alts"]:
+                smp20 = (u, model, kind)
+    out = []
+    w = out.append
+    w("== census0 forecast (S2f, span_cards.md §7, §9) over %s (%d records), the cards of %s@%s (values_digest %s, "
+      "method %s, tier %s, box %s)" % (path.split("/")[-1], nrec, hdr.get("id"), hdr.get("rev"), hdr.get("values_digest"),
+                                       hdr.get("method"), hdr.get("tier"), hdr.get("box")))
+    w("== cards read from the set's rows (unit walkbytes): " + "; ".join(
+        "%s %s" % (k, "%.6f" % float(cards[k][0])) for k in sorted(BYTE_CARD.values())))
+    w("== k measured = byte(pair)/byte(memchr) = %.4f; points: hit gap %s, random landing (PAIR: alt split)"
+      % (float(cards[BYTE_CARD["pair"]][0] / cards[BYTE_CARD["memchr"]][0]), ",".join(map(str, CARD_GAPS))))
+    w("== a mover is the BAND-0 argmin cheaper than the incumbent at the point; BEYOND BAND = cheaper by more than "
+      "z 3.0 (UNMEASURED DEFAULT) x the quadrature band of the card noises; units are window sites as in census0.out")
+    for line in vcls_lines(path, swept_at):
+        w(line)
+    w("== (4) movers at the measured card point; RTE = default compile, DEF = the no-window-search,no-window-skip "
+      "recompile")
+    for arm in ("RTE", "DEF"):
+        for gap in CARD_GAPS:
+            for k, v in sorted(C[(arm, gap)].items()):
+                w("%-3s gap %-4d %-72s %6d" % (arm, gap, k, v))
+    w("== (5) row 1's forecast mover list: ROW-1 class units (a NONE alternative whose core position 0 is a "
+      "two-member set), by class and arm; 'other' = every other unit")
+    for arm in ("RTE", "DEF"):
+        for gap in CARD_GAPS:
+            for r1 in (True, False):
+                for cl, v in sorted(classes[(arm, gap, r1)].items()):
+                    w("%-3s gap %-4d mover class %s: %-44s BAND-0 %6d  beyond band %6d" % (
+                        arm, gap, "ROW-1" if r1 else "other", cl, v, beyond[(arm, gap, r1)][cl]))
+    w("== (6) the watched witness: smp20 `(?i)x/1234`, blind (P), default arm; is the measured card point above or "
+      "below k*?")
+    u, model, kind = smp20
+    alt = u["alts"][0]
+    cand, read = alt_domain(alt)
+    sets = [read[o] for o in sorted(read)]
+    stops = sorted(read)
+    pos = {o: i for i, o in enumerate(stops)}
+    BP, BL = cards[BYTE_CARD["pair"]][0], cards[BYTE_CARD["memchr"]][0]
+    # control of the reading: the stand-in k* at h1 20, hit(PAIR) 1x h1 from THIS sweep's P model (span_pick: 2.146)
+    one = min(range(1, 6), key=lambda c: (price(model, PAT, c, hit_one=Q(20)), c))
+    ks = (price(model, PAT, one, hit_one=Q(20)) - price(model, PAT, 0, k=Q(0), hit_pair=Q(20))) / (BM * PPM)
+    w("   stand-in k* at h1 20, hit(PAIR) 1x h1 (this sweep's P model, %s; span_pick.md: 2.146): %.4f"
+      % (u["site"].get("rate"), float(ks)))
+    for gap in CARD_GAPS:
+        pr_ = {}
+        for o in stops:
+            m_ = "pair" if len(read[o]) == 2 else "memchr" if len(read[o]) == 1 else "walk"
+            co, miss = mcoefs(cards, model, [read[x] for x in stops], pos[o], m_, kind, gap,
+                              [pos[x] for x in stops if x != o])
+            pr_[o] = (co, miss, m_)
+        if any(v[1] for v in pr_.values()):
+            w("   gap %d: a card is missing: %s" % (gap, sorted({v[1] for v in pr_.values() if v[1]})))
+            continue
+        pp = {o: mprice(v[0], cards) for o, v in pr_.items()}
+        names = {o: name(o) if o < 6 else "@%d" % o for o in stops}
+        w("   gap %d: prices (walkbytes per 1e6 bytes, enter kind %d): %s" % (gap, kind, "  ".join(
+            "%s %s %.0f" % (names[o], pr_[o][2], float(pp[o])) for o in stops)))
+        ones = [o for o in stops if len(read[o]) == 1]
+        o1 = min(ones, key=lambda o: (pp[o], o))
+        co0 = pr_[stops[0]][0]
+        rest = pp[stops[0]] - co0[BYTE_CARD["pair"]] * BP
+        kstar = (pp[o1] - rest) / (co0[BYTE_CARD["pair"]] * BL)    # byte coef is PPM for both
+        kmeas = BP / BL
+        d, b2 = mgap(co0, pr_[o1][0], cards)
+        w("   gap %d: cheapest one-member stop %s %.0f; {X,x} PAIR %.0f; k* %.4f; k measured %.4f; "
+          "the measured card point is %s k*; {X,x} minus %s = %+.0f, band (1 sigma) %.0f, %s"
+          % (gap, names[o1], float(pp[o1]), float(pp[stops[0]]), float(kstar), float(kmeas),
+             "ABOVE" if kmeas > kstar else "BELOW", names[o1], float(d), float(b2) ** 0.5,
+             "beyond band (z 3)" if d * d > Z_BAND ** 2 * b2 else "within band (z 3)"))
+    text = "\n".join(out) + "\n"
+    if outpath:
+        open(outpath, "w").write(text)
+    else:
+        sys.stdout.write(text)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "control":
         control(sys.argv[2:])
     elif len(sys.argv) > 2 and sys.argv[1] == "sweep":
         a = sys.argv[2:]
         sweep(a[0], a[a.index("-o") + 1] if "-o" in a else None, a[a.index("--note") + 1] if "--note" in a else "")
+    elif len(sys.argv) > 2 and sys.argv[1] == "forecast":
+        a = sys.argv[2:]
+        forecast(a[0], a[a.index("--measures") + 1], a[a.index("-o") + 1] if "-o" in a else None,
+                 a[a.index("--swept-at") + 1] if "--swept-at" in a else "?")
     else:
         sys.exit(__doc__)
