@@ -3238,3 +3238,14 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 252e0a1cb: S2910 now declares BUILD-REFUSED, because the new assert stops `make`, as intended.
   - Re-validation GREEN: 491 strict, 492 sections (incl. registry/knowledge/measures), 493 mech S2900-S2912.
 - S2b is unchanged: `lane/memfn-s2b` @ c84e759d3 (MERGE verdict given).
+- done: R-35 S2e (span_pick stage 2: set + DEFAULTS flip). Branch `lane/memfn-s2e` @ 1b6f88b34 (off lane/memfn-s2c fd75d4119, with S2a's tip 252e0a1cb merged). Reports: docs/dev/lanes/s2e_report.md and s2efix_report.md.
+  - The set: zen4-grid3@1 is window 2 (s2d-20261107a) scored by est at fd75d4119: FULL, digest 2d2b3c0861443bec, 38 rows, 826 cells. PROVENANCE.md names the est commit.
+  - Recompute: an independent spec-text implementation, exact on every row, J1 re-derived c. Plants 7/7.
+  - DEFAULTS (B): `idk` -> zen4-grid3@1. Zero movers: census 485, movers/0002.tsv. Cell-less embed. libpcrec +16029 B (~16 KB projected).
+  - YOUR ACK CONDITION: the standing rule is in span_cards.md §3.5 `[S2e STANDING RULE]`. Fused-compare classes are identified only by the structural check of the timed code, never by the sign. A bound row carries max(0, med) ± max(r_max, |med|). The rule changes only by a new revision plus a review.
+    - Its non-fused failing checks: S2952 (x3), and est's self-test case "a class NOT fused". These sit within S2950-S2963 (gate 474/484) and review r11's rows.
+  - Also: vcls `[^x]` residual (c2.alu1 216->220, cmp2 74->70, plan unchanged); abs_ns_e6 documented as provenance-only (no reader, by grep); sabotage S2964-S2974.
+  - C4 allowlist rows for zen4-grid3 are interim until your code-only scope fix deletes them.
+  - Validation: all GREEN at 1b6f88b34 (480 strict, 481 sections, 482 make test, 483 mech, 484 slot sabotage 35/35, 485 zero-mover census, 486 recompute plants).
+  - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the worktree by make test's size log.
+  - Main never touches the ledger; your merge review is next.
