@@ -3483,3 +3483,11 @@ Main ruled on the four kit findings (D186 add. 2):
   - R15-3: r_max re-derived from window 2 (A/A 15597..56070) as a measurement; window 2 is scored at its pinned 53751.
   - Window 2's cells are reused; NO third window. Expected outcome FULL.
 - This is my call (answer-free: it changes no pick); Frank is told in the summary.
+- 11-07 ~03:30: s2rev15 delivered (d57f99ee4 on lane/memfn-s2c).
+  - R15-1: the fused fact is read from every launch executable, arm and twin. objdump mnemonics and est's own byte decode must agree, and the fact must be stable across launches; it holds for exactly l1/c1.
+  - R15-2: the draft writes `# note est_commit`; it is refused when est has uncommitted changes or TIMED_PATHS moved.
+  - R15-3: r_max 56070 (measured over both windows; window 2 scored at its pinned 53751).
+  - Window 2 re-scored FULL (est 1e862ff9a). l1/c1 are 0 +- 0.106-0.119 wb; every other row is identical. Draft: 38 rows, 826 cells, digest 2d2b3c0861443bec; loads in pcrec's C loader.
+  - Slot sabotage 24/0 (S2950-S2952); est selftest 28/0; no timed-code change.
+- Queued S2c gates 470-474 on d57f99ee4 (474 expects 24); watcher armed. Critic crit-s2rev15 (opus, read-only): fidelity of the fused fact, the positive-median case, TIMED_PATHS completeness, fix-induced readers, the sabotage rows.
+- FULL is accepted once the critic and the gates clear; then S2e.
