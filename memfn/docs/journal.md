@@ -3461,3 +3461,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Timed-code impact NONE: all 81 rendered TUs have identical sha-256. Slot sabotage 21/0 (S2946-2949); est selftest 22/0.
 - Lane's OPEN point: a window frozen on b4e0a8bab pins no r_max in its record. RULED: freeze window 2 on the FIXED tip instead. The gates had not started: cancelled, s2c fast-forwarded to 1e4999d1c, 474 expects 21 rows, FROZEN 1e4999d1c, dry runs from a copy green, 470-474 requeued, watcher armed.
 - The window is queued on gates green; main's 495 waits for kit-s2d-J9.
+- 11-06 23:42: 493 K138 mech GREEN (S2910 BUILD-REFUSED). S2a re-delivered @ 252e0a1cb, with a corrected done line (5cace44bd); every claim was grepped on the branch first. Both tips sent to main to land together.
