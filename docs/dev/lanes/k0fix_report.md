@@ -74,3 +74,9 @@ OWED (unchanged keys): kit-k0-strict kit-k0-sections kit-k0-test kit-k0-mech (45
 | spec hunk: two token spaces, family token in a list | memfn.h + units §6 |
 | light checks | all green |
 | report, history index line, lanecheck | yes |
+
+## STATE AT HANDOFF
+
+Committed on `lane/memfn-k0`; nothing uncommitted from this lane. OWED (queue keys unchanged, none queued by this lane):
+`kit-k0-strict` (450), `kit-k0-sections` (451), `kit-k0-test` (452), `kit-k0-mech` (453, now 7 rows incl. S2981). A fresh
+agent reads their verdicts. No rulings file applies.
