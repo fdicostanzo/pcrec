@@ -173,9 +173,9 @@ scripts and in the kit's reserved ranges.
 
 | row | plant | detector | result |
 |---|---|---|---|
-| x1 S2950 | `fused_text` returns `bool(subj)`: every class that reads the subject wears the fact | the bytes' reading refuses: self-test `complete` is `refused (FUSED-FACT MISMATCH ...)` | VAL_X1 |
-| x2 S2951 | the check's comparison is `if False:` (removed) | self-test "a non-fused class wearing the fact" (expects refused) goes WRONG | VAL_X2 |
-| x3 S2952 | the bound branch is keyed on `key.startswith("kit.verify_cmp.")` (no fact) | self-test "a class NOT fused negative on all six: null (REV14-1 holds)" goes WRONG | VAL_X3 |
+| x1 S2950 | `fused_text` returns `bool(subj)`: every class that reads the subject wears the fact | the bytes' reading refuses: self-test `complete` is `refused (FUSED-FACT MISMATCH ...)` | DETECTED (`selftest complete WRONG refused (FUSED-FACT MISMATCH kit.verify_cmp.rc-words.w1.p0 launch 1 ...`) |
+| x2 S2951 | the check's comparison is `if False:` (removed) | self-test "a non-fused class wearing the fact" (expects refused) goes WRONG | DETECTED (`... a non-fused class wearing the fact WRONG ok (FULL exit 0)`) |
+| x3 S2952 | the bound branch is keyed on `key.startswith("kit.verify_cmp.")` (no fact) | self-test "a class NOT fused negative on all six: null (REV14-1 holds)" goes WRONG | DETECTED (`... a class NOT fused negative on all six: null (REV14-1 holds) WRONG`) |
 
 Each row goes red when planted. Reverted, it is the control copy: the J2 dry run and the est self-test are
 green.
@@ -185,7 +185,20 @@ green.
 All light: nice -n 19, -j4. The box queue held another lane's make test / mech / reach the whole time, and
 there was no timing job. The chain is `scratch/memfn/s2rev15/val.sh`; its logs are `val.log` and `val.<step>.log`.
 
-VAL_BLOCK
+- `make` (nice, -j4): rc 0.
+- `make strict`: rc 0 ("whole tree compiles clean with -Werror -Wshadow").
+- `make test-memfn-finder`: checks 3272 passed, 0 failed; proof checks 0 failed.
+- `tests/registry/limits_check.sh`: 39 passed, 0 failed.
+- `tests/memfn/run_arch_blind.sh`: 17 passed, 0 failed.
+- `make test-plan-lint`: 2 passed, 0 failed.
+- `make test-spec-history`: 11 passed, 0 failed. A first commit of measures.md was refused by the pre-commit
+  spec-history hook, because "corrected" is a walkback marker. The phrase was reworded.
+- `slot/est.py selftest`: **28 cases, 0 wrong** (6 new for R15-1; the r10 cases now target c2, a non-fused class).
+- `slot/sabotage.sh`, all 24 rows from a fresh scratch dir (`sabfinal`, `val.sabotage.log`): control green (J2
+  dry run and est self-test), **24 DETECTED, 0 MISSED**. The first full run (`sab.log`) had b1 at PLANT FAILED (its
+  anchor moved). It was re-anchored and then DETECTED alone (`sab2.log`) and in the full run.
+- `rmax_drill.py` over copies of both windows: the inputs equal each run's; r_max_e6 = 56070.
+- `docs/dev/artifact_size_log.tsv` was not touched in this worktree.
 
 ## Gate jobs
 
