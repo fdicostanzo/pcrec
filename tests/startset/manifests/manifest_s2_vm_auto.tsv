@@ -544,3 +544,5 @@ tests/utf8/altnf_lowering.rxt:90	--features all --encoding=utf8 --engine=vm	283f
 tests/lookaround/lookbehind_variable_witness.rxt:43	--features lookaround,backrefs	283f3c2a28617b312c337d2929635c31
 tests/lookaround/lookbehind_variable_witness.rxt:50	--features lookaround,backrefs	283f3c2a28617c6161612929635c31
 tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6229
+# alttri2 (2026-11-07, lane/altbuild, 210 altcatch-test triage): +1, the new tests/altcls/altnf_lookbehind.rxt (merged in from main's variable-lookbehind stage 1 at the altcatch catch-up) block 124, a correct VM-hat mover never pinned; vmhat_checks.py's own mover rule on lane/altbuild (the mttri precedent), no existing row moved, bench rows untouched.
+tests/altcls/altnf_lookbehind.rxt:124	--features all	283f3c2a28283f3a61627c616329633f7c612929645c31

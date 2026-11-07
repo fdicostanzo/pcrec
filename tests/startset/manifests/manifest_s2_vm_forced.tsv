@@ -4161,3 +4161,22 @@ tests/recursion/d27/sr_interactions.rxt:339	--features recursion,named-groups,as
 tests/recursion/d27/sr_interactions.rxt:355	--features recursion	28617c6229283f3129
 tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6229
 tests/recursion/d27/sr_interactions.rxt:388	--features recursion,lookaround	283f3c3d782928617c6229283f3129
+# alttri2 (2026-11-07, lane/altbuild, 210 altcatch-test triage): +18, every one a block of the new tests/altcls/altnf_lookbehind.rxt (merged in from main's variable-lookbehind stage 1 at the altcatch catch-up), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule on lane/altbuild (the mttri precedent), 0 existing rows gone or changed, bench rows untouched.
+tests/altcls/altnf_lookbehind.rxt:113	--features all	283f3c21283f3a61627c616329633f2978
+tests/altcls/altnf_lookbehind.rxt:124	--features all	283f3c2a28283f3a61627c616329633f7c612929645c31
+tests/altcls/altnf_lookbehind.rxt:137	--features all --encoding=utf8	283f6929283f3c3dceb27c627b312c327d2978
+tests/altcls/altnf_lookbehind.rxt:150	--features all --encoding=utf8	283f3c3dc3a9617cc3a9627cc3a77b312c327d2978
+tests/altcls/altnf_lookbehind.rxt:162	--features all	283f3c3d617b312c327d29283f3a666f6f7c666f627c666f7829
+tests/altcls/altnf_lookbehind.rxt:17	--features all	283f3c3d283f3a61627c61637c617b312c327d292978
+tests/altcls/altnf_lookbehind.rxt:173	--features all	283f3a6361747c62617429283f3c3d5b63625d61747c617b312c337d742973
+tests/altcls/altnf_lookbehind.rxt:183	--features all	283f3a61627c616329283f3c3d627c637b312c327d2964
+tests/altcls/altnf_lookbehind.rxt:193	--features all	283f3c3d787b312c327d29283f3a61627c615c4b647c616429
+tests/altcls/altnf_lookbehind.rxt:203	--features all	283f3a6162283f3c3d627b312c327d29637c6162283f3c3d61627c61296429
+tests/altcls/altnf_lookbehind.rxt:213	--features all --encoding=utf8	283f6929283f3c3dc3a97b312c327d29283f3aceb2617cceb26229
+tests/altcls/altnf_lookbehind.rxt:29	--features all	283f3c3d61627c61637c617b312c327d2978
+tests/altcls/altnf_lookbehind.rxt:39	--features all	283f3c3d666f6f7c666f627c666f7b322c337d782979
+tests/altcls/altnf_lookbehind.rxt:50	--features all	283f3c3d78283f3a6162637c6162647c616564297c797b312c327d297a
+tests/altcls/altnf_lookbehind.rxt:63	--features all	283f3c3d283f3a6162637c616264657c616229297a
+tests/altcls/altnf_lookbehind.rxt:73	--features all	283f3c3d283f3a6361747c6261747c6174297b312c327d2973
+tests/altcls/altnf_lookbehind.rxt:85	--features all	283f3c3d28617b312c327d29283f3a62637c62647c627b312c327d65292978
+tests/altcls/altnf_lookbehind.rxt:99	--features all	283f3c3d28283f3a61627c616329633f7c61292964
