@@ -7611,33 +7611,40 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
         v->enc_mask |= PCREC_ENCE_FWD_STEP;
     }
 
+    /* The label table lives in the ARENA, not in this frame: this function
+     * is inlined into `vm_emit_node`, which recurses once per nesting level
+     * whatever the pattern holds, so a table on the stack here is paid at
+     * every level of a pattern with no lookbehind at all ([DD-10],
+     * limits.md §3.10; `PCREC_OWN_FRAME`'s rule, by the other route — an
+     * out-of-line frame would sit on the recursion of a nested lookbehind). */
     Arena *ar = &v->cx->arena;
     const Ast **br = pcrec_arena_alloc(ar, (size_t)m * sizeof *br);
-    VmLbLabels L;
-    int **cols[] = { &L.b, &L.body, &L.end, &L.far, &L.try_, &L.adv, &L.n };
-    for (size_t c = 0; c < sizeof cols / sizeof *cols; c++)
-        *cols[c] = pcrec_arena_alloc(ar, (size_t)m * sizeof **cols[c]);
+    VmLbLabels *L = pcrec_arena_alloc(ar, sizeof *L);
+    int *col = pcrec_arena_alloc(ar, 7 * (size_t)m * sizeof *col);
+    L->b = col;  L->body = col + m;  L->end = col + 2 * m;
+    L->far = col + 3 * m;  L->try_ = col + 4 * m;  L->adv = col + 5 * m;
+    L->n = col + 6 * m;
     pcrec_lookbehind_branches(v->cx, a->l, m, br);
     /* Today's three labels for every branch; the candidate loop's four only
      * for a VARYING branch (`n` not on the last), so an artifact with no
      * varying branch numbers every later label as it always did. */
     for (int i = 0; i < m; i++) {
-        L.b[i]    = vm_label(v);
-        L.body[i] = vm_label(v);
-        L.end[i]  = vm_label(v);
-        L.far[i] = L.try_[i] = L.adv[i] = L.n[i] = -1;
+        L->b[i]    = vm_label(v);
+        L->body[i] = vm_label(v);
+        L->end[i]  = vm_label(v);
+        L->far[i] = L->try_[i] = L->adv[i] = L->n[i] = -1;
         if (vm_lb_varies(a, i)) {
-            L.far[i]  = vm_label(v);
-            L.try_[i] = vm_label(v);
-            L.adv[i]  = vm_label(v);
-            if (i + 1 < m) L.n[i] = vm_label(v);
+            L->far[i]  = vm_label(v);
+            L->try_[i] = vm_label(v);
+            L->adv[i]  = vm_label(v);
+            if (i + 1 < m) L->n[i] = vm_label(v);
         }
     }
 
-    vm_goto(v, L.b[0]);
+    vm_goto(v, L->b[0]);
 
     for (int i = 0; i < m; i++)
-        vm_look_behind_branch(v, a, i, m, okl, pslot, br, &L);
+        vm_look_behind_branch(v, a, i, m, okl, pslot, br, L);
     (void)mslot;
 }
 
