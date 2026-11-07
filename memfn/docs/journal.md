@@ -3609,3 +3609,8 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-07 ~22:10: k0fix tip 6bcb248da NOT accepted. Both addenda were missed: families are still x86_64/aarch64, and there is no mf_host_family or doc column. It also edited main's target_seam_units.md.
   - Sent back as one review message: amd64/arm64 + the fold-aware distinctness check, mf_host_family, the doc column, and revert units.md.
   - Lesson (memory updated): mid-flight addenda went 0 for 3 today; send changes with the review instead.
+- 11-07 ~22:30: K0 accepted at tip ae1ba4b1e (k0fix closed).
+  - Families amd64/arm64; targets generic/x86-64/x86-64-v3/armv8-a. Fold-aware distinctness check, S2981 (x86_64 as a family).
+  - New: mf_host_family; a doc column on every facts row (refuses C characters; S2980 still red).
+  - main's units.md hunk reverted (ae1ba4b1e). The token statement for main is in k0fix_report.md "For main".
+  - Jobs 450-453 queued.
