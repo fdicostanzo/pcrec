@@ -37,3 +37,9 @@ dangle. Matching PCRE2's behaviour is D26 and needs no citation. The key
 
 Code, quotes, internal identifiers, copied tables. A note that fails the checker is
 reworded, not allowlisted. Notes are behaviour facts; D26 still decides what pcrec does.
+
+## Notes index
+
+- `backref-referent-choice.md` — which referent a backreference picks.
+- `empty-iteration-captures.md` — empty iterations of unbounded repeated groups and their captures.
+- `lookbehind-invalid-utf.md` — variable-length lookbehind over an invalid UTF byte (10.46 interpreter vs documentation; upstream_issues.md U25).

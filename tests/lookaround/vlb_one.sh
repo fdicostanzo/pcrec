@@ -5,7 +5,7 @@
 # libpcre2 (tests/backrefs/bref_oracle.py) cell for cell, match span AND
 # every group span. Run by xargs, one argument: `<mode>\t<pattern>`.
 #
-# Prints ONE line: `PASS<TAB>mode<TAB>cells<TAB>divergent` or
+# Prints ONE line: `PASS<TAB>mode<TAB>cells<TAB>divergent<TAB>u25` or
 # `FAIL<TAB>mode<TAB>pattern<TAB>why`. `divergent` counts, for a utf8-clip
 # cell, the answers where libpcre2 under PCRE2_UTF differs from its byte
 # answer: D142 item 3's expected-divergent subset (0 for the other modes).
@@ -37,6 +37,34 @@ cut -f4 "$d/o" > "$d/theirs"
 n=$(wc -l < "$d/theirs")
 [ "$(wc -l < "$d/mine")" -eq "$n" ] || fail "answer counts differ"
 ndiff=$(paste "$d/mine" "$d/theirs" | awk -F'\t' '$1 != $2' | wc -l)
+# U25 (docs/dev/upstream_issues.md): libpcre2 10.46's INTERPRETER lets a
+# variable-length lookbehind step back across an invalid-UTF unit to the
+# subject start, contrary to pcre2unicode's barrier promise (MATCH_INVALID_UTF);
+# pcrec honours the promise, and so does the Ubuntu-patched 10.46. The oracle
+# is therefore tolerated, on exactly these cells, for a group-1 START that lies
+# EARLIER than pcrec's with the match span and every other group unchanged:
+# pattern `(?<*(.{1,3}))b`, mode utf8-invalid, pcrec's answer pinned below.
+u25=0
+if [ "$mode" = utf8-invalid ] && [ "$pat" = '(?<*(.{1,3}))b' ] && [ "$ndiff" -ne 0 ]; then
+    # <subject hex> <startpos> <pcrec's answer> (the promise-honouring one)
+    u25cells=$'ff6162 0 match 2 3 1 2\nff6162 1 match 2 3 1 2\nff6162 2 match 2 3 1 2\na9c3a962 1 match 3 4 1 3\na9c3a962 3 match 3 4 1 3'
+    paste "$d/cells" "$d/mine" "$d/theirs" > "$d/trio"
+    : > "$d/mine2"
+    while IFS=$'\t' read -r sub sp mi th; do
+        hex="$(od -An -tx1 -v "$sub" | tr -d ' \n')"
+        if [ "$mi" != "$th" ] && printf '%s\n' "$u25cells" | grep -qxF "$hex $sp $mi"; then
+            # `match S E g1S g1E`: same span and group-1 end, group-1 START earlier
+            read -r -a mi_a <<< "$mi"; read -r -a th_a <<< "$th"
+            if [ "${#mi_a[@]}" -eq 5 ] && [ "${#th_a[@]}" -eq 5 ] \
+               && [ "${mi_a[1]}" = "${th_a[1]}" ] && [ "${mi_a[2]}" = "${th_a[2]}" ] \
+               && [ "${mi_a[4]}" = "${th_a[4]}" ] && [ "${th_a[3]}" -lt "${mi_a[3]}" ]; then
+                u25=$((u25 + 1)); th="$mi"
+            fi
+        fi
+        printf '%s\t%s\n' "$mi" "$th" >> "$d/mine2"
+    done < "$d/trio"
+    ndiff=$(awk -F'\t' '$1 != $2' "$d/mine2" | wc -l)
+fi
 [ "$ndiff" -eq 0 ] || fail "$ndiff of $n cells differ, first: $(paste "$d/cells" "$d/mine" "$d/theirs" | awk -F'\t' '$3 != $4' | head -1 | tr '\t' ' ')"
 div=0
 if [ "$mode" = utf8-clip ]; then
@@ -45,4 +73,4 @@ if [ "$mode" = utf8-clip ]; then
         || fail "oracle (utf8 side of the clip count): $(tail -1 "$d/oerr")"
     div=$(cut -f4 "$d/ou" | paste - "$d/theirs" | awk -F'\t' '$1 != $2' | wc -l)
 fi
-printf 'PASS\t%s\t%d\t%d\n' "$mode" "$n" "$div"
+printf 'PASS\t%s\t%d\t%d\t%d\n' "$mode" "$n" "$div" "$u25"

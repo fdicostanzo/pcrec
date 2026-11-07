@@ -428,7 +428,7 @@ else
            || [ "$vi" -lt 249 ] || [ "$vdiv" -lt 48 ]; then
             bad "§5 a mode swept too few cells: byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi, D142-divergent=$vdiv (floors 48374/14993/2043/249/48, the 2026-11-06 measure less 1%)"
         else
-            ok "§5 bounded variable lookbehind: $vlb_n patterns, byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi cells, every startpos and every group span, 0 disagreements with libpcre2 10.46; $vdiv utf8-clip cells are D142's stated divergence (libpcre2 UTF clips, pcrec answers as byte mode does)"
+            ok "§5 bounded variable lookbehind: $vlb_n patterns, byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi cells, every startpos and every group span, 0 disagreements with libpcre2 10.46 (up to 5 utf8-invalid cells of \`(?<*(.{1,3}))b\` tolerated where the vanilla interpreter is the oracle: U25); $vdiv utf8-clip cells are D142's stated divergence (libpcre2 UTF clips, pcrec answers as byte mode does)"
         fi
     fi
 fi

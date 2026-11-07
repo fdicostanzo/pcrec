@@ -1104,3 +1104,41 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   cells over them are pcrec-only (`tests/subst-extended/cells.tsv`); the pinned
   list is `tests/oracle/case_map_pcre2_diff.tsv`. A PCRE2-compatible mapping is
   a later data set ([CASE-COMPAT]).
+
+## U25 — libpcre2 10.46 (vanilla) interpreter: a variable-length lookbehind crosses an invalid-UTF barrier under `MATCH_INVALID_UTF`; FIXED upstream in 10.48 (CI run 42377116304, lanes u25 + p2iso, 2026-11-07)
+
+- **Status**: fixed-upstream (10.48, ChangeLog item 37, GHSA-9qww-pwc4-77qq;
+  CVE-2026-89160 "bound backwards scans at check_subject"). Ubuntu's
+  10.46-1ubuntu0.1 carries the backport. No upstream report needed.
+- **Found**: 2026-11-07, CI run 42377116304 shard 3/3: `make test-lookaround`
+  §5 red on 5 of the 36 `utf8-invalid` cells of `(?<*(.{1,3}))b`. Mechanism:
+  the pcre2-reader note `docs/dev/pcre2_notes/lookbehind-invalid-utf.md`.
+- **Repro** (`PCRE2_UTF | PCRE2_MATCH_INVALID_UTF`, interpreter, no JIT):
+  pattern `(?<*(.{1,3}))b`, subject bytes `FF 61 62`, any startpos 0..2:
+  match 2..3 in every build; group 1 differs:
+  - vanilla libpcre2 10.46 (CI's, built from the release tarball, JIT off):
+    group 1 = **0..2** (steps back over `FF`; the dot consumes it);
+  - Ubuntu 10.46-1ubuntu0.1 (this box, interpreter) and pcrec: **1..2**, the
+    documented answer (`pcre2unicode`: an invalid sequence is a barrier a
+    lookbehind cannot cross and never matches dot).
+  - The other four tolerated cells are `A9 C3 A9 62` at startpos 1 and 3
+    (pcrec `match 3 4`, group 1 = 1..3); their vanilla answer is inferred
+    from the mechanism; only the `FF 61 62` cell is observed on CI.
+- **Isolation** (lane p2iso, prose only): pcrec's ctypes oracle never calls
+  `pcre2_jit_compile`, so it is interpreter-only on every build; CI's
+  `./configure` has JIT off. The Ubuntu changelog's CVE-2026-89160 backport
+  is what makes this box answer 1..2; the CVE-2026-89156 JIT-gating patch is
+  not involved.
+- **Open, separate (not part of the fix)**: forcing the JIT on this box's
+  10.46-1ubuntu0.1 gives NO MATCH for the same case, a third behaviour the
+  oracle never exercises (the reader's "JIT honours it" was an inference and
+  is wrong as stated). Retest on 10.48+ (the Mac) before any report; nearest
+  upstream issue #944 (closed, JIT vs interpreter lookbehind over invalid UTF).
+- **Impact on pcrec**: none on correctness; pcrec follows the documented
+  promise (D26 addendum). `tests/lookaround/vlb_one.sh` tolerates exactly
+  those 5 cells for oracle builds older than the fix, and only when pcrec's
+  answer is the pinned one and the oracle differs by an EARLIER group-1
+  start with span and other groups equal; anything else on that pattern,
+  and every other pattern, still compares exactly. Retire the tolerance
+  when the CI and local oracles move to 10.48+.
+
