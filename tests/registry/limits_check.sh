@@ -180,8 +180,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 80 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 80 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 82 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once
+    ok "[count] --list-limits reports all 82 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
