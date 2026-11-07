@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# session_role -- which manager session is this? The two manager sessions (MAIN = pcrec manager, KIT = memfn
+# manager) share one repo and its hooks; scripts/hooks/monitor_unread.sh and post_compact.sh serve each its OWN
+# owner (monread OWNER, wake file) by looking the session up here. A session registers itself ONCE, at wake.
+#   scripts/session_role main|kit [SESSION_ID]   register (SESSION_ID defaults to $CLAUDE_CODE_SESSION_ID, which
+#                                                 equals the `session_id` every hook receives on stdin)
+#   scripts/session_role --get SESSION_ID         print the role (main|kit); exit 1 and print nothing if none
+# The registry is one file per session id, <main tree>/worktrees/.mgr/roles/<id> (gitignored, containing the role
+# word); env HOOK_ROLES_DIR overrides the directory (the self-test). Registering also drops role files older than
+# 30 days. A resumed session may get a new id: the hooks then say so, and the session registers again.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+main=$(dirname "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
+D=${HOOK_ROLES_DIR:-$main/worktrees/.mgr/roles}
+usage() { sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 64; }
+valid() { case $1 in ''|*[!A-Za-z0-9_-]*) return 1 ;; esac; }
+case ${1:-} in
+--get)
+    valid "${2:-}" || exit 1
+    r=$(cat "$D/$2" 2>/dev/null) || exit 1
+    case $r in main|kit) printf '%s\n' "$r" ;; *) exit 1 ;; esac ;;
+main|kit)
+    sid=${2:-${CLAUDE_CODE_SESSION_ID:-}}
+    valid "$sid" || { echo "session_role: no usable session id (pass it as the 2nd argument)" >&2; exit 64; }
+    mkdir -p "$D" && printf '%s\n' "$1" > "$D/$sid" || exit 1
+    find "$D" -maxdepth 1 -type f -mtime +30 -delete 2>/dev/null
+    echo "session_role: session $sid registered as $1" ;;
+*) usage ;;
+esac

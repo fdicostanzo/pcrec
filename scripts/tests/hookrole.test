@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# hookrole.test -- self-test of per-session roles: scripts/session_role, hooks/monitor_unread.sh (which monread owner
+# it reads) and hooks/post_compact.sh (which wake/owner file it injects). Scratch dirs only; the roles registry,
+# the queuemon dir and the project tree are all redirected (HOOK_ROLES_DIR, QUEUEMON_DIR, CLAUDE_PROJECT_DIR).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+T=$(mktemp -d "${TMPDIR:-/tmp}/hookrole.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+chk() { if [ "$2" = 0 ]; then ok "$1"; else bad "$1"; fi; }
+export HOOK_ROLES_DIR=$T/roles QUEUEMON_DIR=$T/mgr PCREC_BOXQUEUE_DIR=$T/q QUEUEMON_Q=$T/q
+mkdir -p "$T/mgr" "$T/q/pending" "$T/q/running"
+SR=$here/session_role MU=$here/hooks/monitor_unread.sh PC=$here/hooks/post_compact.sh
+
+# --- session_role
+bash "$SR" main sid-main >/dev/null; bash "$SR" kit sid-kit >/dev/null
+[ "$(bash "$SR" --get sid-main)" = main ] && [ "$(bash "$SR" --get sid-kit)" = kit ]; chk "register + --get, both roles" $?
+bash "$SR" --get nosuch >/dev/null 2>&1; [ $? = 1 ]; chk "--get of an unregistered id exits 1" $?
+bash "$SR" --get '../x' >/dev/null 2>&1; [ $? = 1 ]; chk "--get rejects a path-shaped id" $?
+CLAUDE_CODE_SESSION_ID=sid-env bash "$SR" kit >/dev/null; [ "$(bash "$SR" --get sid-env)" = kit ]; chk "id defaults to \$CLAUDE_CODE_SESSION_ID" $?
+bash "$SR" bogus >/dev/null 2>&1; [ $? = 64 ]; chk "unknown role -> usage 64" $?
+
+# --- monitor_unread: each role consumes only its own owner's lines
+LOG=$T/mgr/monitor.log
+printf '%s\n' '2026-11-07T10:00:00 RED main MAINLINE' '2026-11-07T10:00:01 RED kit KITLINE' > "$LOG"
+mu() { printf '%s' "$1" | bash "$MU"; }
+out=$(mu '{"session_id":"sid-kit","hook_event_name":"UserPromptSubmit","prompt":"x"}')
+printf '%s' "$out" | grep -q KITLINE && ! printf '%s' "$out" | grep -q MAINLINE; chk "role kit: sees KITLINE only" $?
+[ ! -e "$T/mgr/monitor.cursor.main" ]; chk "role kit: main's cursor untouched" $?
+out=$(mu '{"session_id":"sid-main","hook_event_name":"UserPromptSubmit","prompt":"x"}')
+printf '%s' "$out" | grep -q MAINLINE && ! printf '%s' "$out" | grep -q KITLINE; chk "role main: sees MAINLINE only" $?
+out=$(mu '{"session_id":"sid-none","hook_event_name":"UserPromptSubmit","prompt":"x"}')
+printf '%s' "$out" | grep -q 'no session role registered; ' && ! printf '%s' "$out" | grep -q -e LINE; chk "no role: one-line notice, no monitor lines" $?
+[ "$(cat "$T/mgr/monitor.cursor.main")" = 2 ] && [ "$(cat "$T/mgr/monitor.cursor.kit")" = 2 ]; chk "no role: consumed nothing (cursors unchanged)" $?
+printf '%s\n' '2026-11-07T10:00:09 INFO main LATE' >> "$LOG"
+out=$(mu '{"session_id":"sid-main","agent_id":"a1","hook_event_name":"UserPromptSubmit","prompt":"x"}')
+[ -z "$out" ] && [ "$(cat "$T/mgr/monitor.cursor.main")" = 2 ]; chk "subagent input: silent, cursor untouched" $?
+out=$(mu 'not json at all'); printf '%s' "$out" | grep -q 'no session role'; chk "garbage input: fails open to the notice, exit 0" $?
+
+# --- post_compact: which file each role gets
+P=$T/proj; mkdir -p "$P/docs/dev" "$P/memfn/docs"
+echo OWNERVIEW > "$P/docs/dev/owner.md"; echo MAINWAKE > "$P/docs/dev/wake.md"; echo KITWAKE > "$P/memfn/docs/wake.md"
+pc() { printf '%s' "$1" | CLAUDE_PROJECT_DIR=$P bash "$PC"; }
+out=$(pc '{"session_id":"sid-main","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q OWNERVIEW && printf '%s' "$out" | grep -q MAINWAKE && ! printf '%s' "$out" | grep -q KITWAKE; chk "compact, role main: owner view + main wake, not the kit's" $?
+out=$(pc '{"session_id":"sid-kit","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q KITWAKE && ! printf '%s' "$out" | grep -q -e OWNERVIEW -e MAINWAKE; chk "compact, role kit: kit wake only" $?
+mkdir -p "$P/worktrees/memfn/memfn/docs"; echo KITBRANCHWAKE > "$P/worktrees/memfn/memfn/docs/wake.md"
+out=$(pc '{"session_id":"sid-kit","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q KITBRANCHWAKE && ! printf '%s' "$out" | grep -q 'KITWAKE$'; chk "compact, role kit: the kit branch's copy is preferred when present" $?
+out=$(pc '{"session_id":"sid-none","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q 'scripts/session_role main' && printf '%s' "$out" | grep -q 'scripts/session_role kit' && ! printf '%s' "$out" | grep -q -e OWNERVIEW -e MAINWAKE -e KITWAKE; chk "compact, no role: both candidates named, nothing injected" $?
+out=$(pc '{"session_id":"sid-main","agent_id":"a1","hook_event_name":"SessionStart","source":"compact"}')
+[ -z "$out" ]; chk "compact, subagent input: silent" $?
+
+echo "hookrole.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

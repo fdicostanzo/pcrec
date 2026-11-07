@@ -113,16 +113,16 @@ bash "$here/monread" main --peek | grep -q 'PROBLEM main monitor dead/stale: mon
 kill $sp; rm -f "$T/emptyq/pending/100-main-x"
 [ -z "$(bash "$here/monread" main --peek)" ]; chk "no job queued -> no liveness problem" $?
 # hook: main only
-H=$here/hooks/monitor_unread.sh; : > "$LOG"; rm -f "$T"/mgr/monitor.cursor.*
+H=$here/hooks/monitor_unread.sh; : > "$LOG"; export HOOK_ROLES_DIR=$T/roles; mkdir -p "$T/roles"; echo main > "$T/roles/sm"; rm -f "$T"/mgr/monitor.cursor.*
 echo '2026-10-25T10:00:00 RED main hookline' > "$LOG"
 out=$(printf '{"hook_event_name":"UserPromptSubmit","agent_id":"a1","prompt":"x"}' | bash "$H")
 [ -z "$out" ] && [ -z "$(cat "$T/mgr/monitor.cursor.main" 2>/dev/null)" ]; chk "hook: subagent (agent_id) gets nothing, cursor untouched" $?
-out=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"agent_id x"}' | bash "$H")
+out=$(printf '{"session_id":"sm","hook_event_name":"UserPromptSubmit","prompt":"agent_id x"}' | bash "$H")
 printf '%s' "$out" | python3 -I -c 'import sys,json
 d=json.load(sys.stdin)["hookSpecificOutput"]; assert d["hookEventName"]=="UserPromptSubmit" and "hookline" in d["additionalContext"]'; chk "hook: main gets hookSpecificOutput.additionalContext JSON" $?
-[ -z "$(printf '{"hook_event_name":"UserPromptSubmit"}' | bash "$H")" ]; chk "hook: shown once (cursor advanced)" $?
+[ -z "$(printf '{"session_id":"sm","hook_event_name":"UserPromptSubmit"}' | bash "$H")" ]; chk "hook: shown once (cursor advanced)" $?
 echo '2026-10-25T10:00:05 INFO main n' >> "$LOG"
-printf '{"hook_event_name":"SessionStart","source":"startup"}' | bash "$H" | grep -q '"hookEventName": "SessionStart"'; chk "hook: SessionStart event name echoed" $?
+printf '{"session_id":"sm","hook_event_name":"SessionStart","source":"startup"}' | bash "$H" | grep -q '"hookEventName": "SessionStart"'; chk "hook: SessionStart event name echoed" $?
 # boxqueue autostart is inert on a scratch queue
 PCREC_BOXQUEUE_DIR=$T/bqq QUEUEMON_DIR=$T/inert bash "$here/boxqueue" start >/dev/null 2>&1
 [ ! -e "$T/inert" ]; chk "boxqueue start on a scratch queue does not start queuemon" $?

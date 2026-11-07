@@ -107,6 +107,7 @@ Always on:
 
 ## 1. Wake up (do this first, in order)
 
+0a. **Register this session**: `scripts/session_role kit` (the monitor-unread and post-compact hooks serve each manager its own owner/wake by session id; unregistered, they inject nothing).
 0. **Create the session heartbeat cron** with the prompt in
    `pcrec-manager/monitoring.md` §1, with OWNER=kit, cron `17,47 * * * *`
    (different from main's `13,43`), and "Waiting on" read from
