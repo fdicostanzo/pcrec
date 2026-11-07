@@ -3398,3 +3398,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - pcrec owns attributes, naming and dispatch;
   - one target = today's bytes.
   It comes AFTER the alternation thread lands and needs Frank's go. No kit action now; the kit tells main what it needs and when if SIMD work hits the blocker sooner. Today that is S2g only, held as planned.
+- 11-06 21:25: S2c gates 472 + 473 GREEN, so all of 470-474 are green on 236ba2807.
+  - The first queue attempt for the S2d window was REFUSED on every job: boxqueue dry-runs and runs a COPY of the job file from its own dir. (1) `. $(dirname $0)/common.sh` failed (rc 127); (2) the stale-copy check used basename $0 (a temp name).
+  - The S2c lanes had only dry-run the scripts in place, so the queue path was never exercised. Lesson for kit job sets: dry-run via `boxqueue add`, or from a copy in another dir.
+  - Fixed, slot/jobs/ only: 7a72512e0 (absolute common.sh path) and 508178bd2 (JOB= per job; the copy check compares the running $0). FROZEN = 508178bd2; its diff from the gated tip is slot/jobs/ only.
+  - WINDOW QUEUED (480 prep, 480 screen, 481-486, 489), with watcher bxsz9x4l6.
+  - main's 229-mttri-axes2 (8 h) is ahead in the queue; asked main whether to hold it.
