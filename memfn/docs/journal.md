@@ -3455,3 +3455,9 @@ Main ruled on the four kit findings (D186 add. 2):
 - PLAN: window 2 runs FROZEN on b4e0a8bab (timed code faithful); the fixes go to lane s2c14fix (opus, LIGHT load, waits while a kit-s2d job runs; must state no timed-binary change); the verdict is computed with the FIXED est over window 2's record.
   - S2c gates 470-474 requeued on b4e0a8bab. window.vars: RUN_ID s2d-20261107a, FROZEN b4e0a8bab; dry runs from a copy green. The window is queued when the gates are green.
 - S2a: S2910 declared BUILD-REFUSED (252e0a1cb); 493 retried.
+- 11-07 ~00:05: s2c14fix delivered (1e4999d1c):
+  - REV14-1 all-negative rows stay NULL; REV14-2 r capped at R_MAX r_max_e6 53751 (0.054 wb, UNMEASURED DEFAULT, from window 1's A/A rows; re-derive on the first rev 1.4 window), and ¶3a needs aa <= r; REV14-3 null_check requires equality; REV14-6 /proc delta.
+  - Replay of window 1: l1 and c1 NULL, w1/c2 sub-resolution; REFUSED on byte.libc, l1 and c1, as expected on the biased base.
+  - Timed-code impact NONE: all 81 rendered TUs have identical sha-256. Slot sabotage 21/0 (S2946-2949); est selftest 22/0.
+- Lane's OPEN point: a window frozen on b4e0a8bab pins no r_max in its record. RULED: freeze window 2 on the FIXED tip instead. The gates had not started: cancelled, s2c fast-forwarded to 1e4999d1c, 474 expects 21 rows, FROZEN 1e4999d1c, dry runs from a copy green, 470-474 requeued, watcher armed.
+- The window is queued on gates green; main's 495 waits for kit-s2d-J9.
