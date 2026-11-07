@@ -3557,3 +3557,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the s2e worktree by make test.
   - Also 11-07: main merged the skill review (10e4f7a67) and the hookrole fix (fd7137d4d). Heartbeat recreated as e517b1ae from monitoring.md's OWNER=kit prompt. Session registered as kit (scripts/session_role).
   - Next after main's merge: S2f (forecast), then stage 3 unit 3.0. S2g/SIMD stays held on XARCH-DEV.
+- 11-07 ~14:00: S2c+S2e LANDED on main (merge 692ec83b7, done line 03ddf925d; no emitted-byte change, no abi bump). Main pushes after its CI run.
+  - New kit branch lane/memfn-k1107 cut from main a345c5ffe; k1102 is retired.
+  - Pruned: worktrees s2c, s2c14fix, s2c15fix, s2rev12 (wtprune, --force for the disposable dirt: the size log and untracked deliver files). branchprune --kit removed 79 merged kit branches. s2e is kept by the quiet gate (build <120 min); prune it later.
+  - S2f lane `s2f` LAUNCHED (sonnet, worktree s2f off k1107; deliver 6cfb70912): the vcls fold into census0 (r9-SLOT-9), census0 re-run with the measured cards, the smp20 k* reading, row 1's mover forecast. Jobs 487-489 (strict, census, sections); the lane writes them and I queue them.
