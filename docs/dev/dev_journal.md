@@ -27552,3 +27552,8 @@ Next
 - Lane qspeed merged (c24f6e70a, boxqueue batch --snapshot); D26 addendum (accept set is a floor) + [PCRE2-EXCEED] filed (ae7b58d8c); rewrite-free algebra families linked (eeff89640).
 - Frank: box hold lifted tonight; long/timing runs preferred at night (kit S2d timing may run tonight); order: alternation thread to landing first, then XARCH seam note + span-arms note (his go), then [REWRITE-ADJ]; full battery after alternation lands (option b). Kit renamed window.env -> window.vars (Frank's global .env deny rule stays).
 - Next: axes green -> lookbehind landing lane -> alternation catch-up lane -> alternation code critic round.
+
+## 2026-11-07 morning (session 130, in flight)
+
+- Lookbehind stage 1 LANDED: lane vlbland merged lane/vlbbuild at c44649a69 (abi 96), re-pinned identity, filed the R4 items, pushed d9908dfc3; vlbbuild worktree/branch pruned (the only dirt was a regenerated artifact_size_log). Owed: compliance refresh (deferred until alternation lands, which moves the page again).
+- Alternation catch-up: lane altcatch (opus) merged main into lane/altbuild (c9dca3c84, abi 96 -> 97; a merge trap: both sides moved the limits manifest count 78 -> 80 with different rows, git merged "80" clean over 82 names, test-registry caught it), added tests/altcls/altnf_lookbehind.rxt (114 cases vs libpcre2 10.46), and found S420's "unreached" was a refused witness: the probe needed --features assertions and hid stderr. Check lesson: a reach probe that discards stderr cannot tell a refused witness from an unfired rung. Tip f15a5d4e6; owed jobs altcatch-test/mech/reach/axes queued. Next: verdicts, then the alternation landing lane, then the full battery at night.
