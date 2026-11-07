@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k0_report.md
+sections: Summary; The table; The entries; Table check (vs gcc -march) and its control; Compile cells; Spec and contract hunks; Sabotage; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-k0-strict kit-k0-sections kit-k0-test kit-k0-mech
