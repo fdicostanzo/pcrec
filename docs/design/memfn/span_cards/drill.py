@@ -5,7 +5,10 @@
 # over its own cells' lengths, and the anchor). Rev 1.2: the NULL rule's sign test over the trimmed six
 # (MEAS-5); drift's threshold in standard errors of the statistic (MEAS-4, K_MED from place_drill.py B).
 # The outcome table (FULL/PARTIAL/REFUSED/HELD) is outcome_drill.py's. Every input is printed beside its
-# result. python3 -I drill.py
+# result. [rev1.4 r10-REV14-4] Rev 1.4's §3.5¶3a (sub-resolution delta rows) under review r10's rule: a row negative
+# on all six trimmed launches stays `null` whatever r is; r is capped at policy.tsv's r_max_e6 (R_MAX below); the
+# branch also needs the row's paired A/A within r. The table's delta rows are read as anchored values x_l (E = 1,
+# the unit at 10^6), their twins' as xb_l. python3 -I drill.py
 import random
 
 def rhafz(n, d):                      # measure_sets §1.7: round half away from zero, exact integers
@@ -54,6 +57,18 @@ def null(D, Db):                      # delta rows: priced iff every D_l > 0 ove
     aaD = med([abs(Db[i] - D[i]) for i in range(len(D))])        # med(D_l) > aa_D (paired floor), med over 7
     return not (all(d > 0 for d in trim(D)) and med(D) > aaD), med(D), aaD
 
+R_MAX = 53751                        # memfn/data/policy.tsv r_max_e6 (rmax_drill.py; UNMEASURED DEFAULT, D149)
+
+def subres(x, xb):                    # [rev1.4 r10] §3.5¶3a over a row that FAILS the NULL rule: its status
+    if all(d < 0 for d in trim(x)):
+        return "null (negative on all six trimmed launches: a defect, whatever r)"
+    own = 3 * isqrt_rn(rhafz(K_MED_E6 * sp2(x), 10**6))
+    r = min(own, R_MAX)
+    m, aa = med(x), med([abs(xb[i] - x[i]) for i in range(len(x))])
+    if abs(m) <= r and aa <= r:
+        return "sub-resolution: measured, value %d, noise max(r %d, noise %d)" % (max(0, m), r, row(x, xb)[2])
+    return "null (|med| %d, aa %d, r %d = min(own %d, R_MAX): %s above r)" % (abs(m), aa, r, own, "|med|" if abs(m) > r else "A/A")
+
 def drift(Cref, Cj, gate=GATE):       # per job: the control medians, relative; rev 1.2's threshold: the unit
     def rel(v):                       # card's half gate, or 3 standard errors of the statistic if larger
         M = med(v)
@@ -87,7 +102,18 @@ for name, D, Db in (
         ("delta clean 40 us/call", [40000000, 41000000, 39000000, 40000000, 40500000, 39500000, 40200000],
          [33000000, 46000000, 35000000, 44000000, 41000000, 37000000, 45000000])):
     n, m, aaD = null(D, Db)
-    print("%-26s D=%s -> med %d aa_D %d: %s" % (name, D, m, aaD, "null" if n else "priced"))
+    print("%-26s D=%s -> med %d aa_D %d: %s" % (name, D, m, aaD, subres(D, Db) if n else "priced"))
+print("[rev1.4 r10] §3.5¶3a, R_MAX %d; per-event values x, the twin x + 3 unless named" % R_MAX)
+for name, x, xb in (
+        ("at zero, signs mixed", [40, -30, 10, -50, 20, -10, 30], None),
+        ("all six trimmed negative", [-20, -60, -10, -40, -30, -90, -25], None),
+        ("signs mixed, negative med", [-20, 30, -10, -40, 25, -90, -25], None),
+        ("signs mixed above r", [1000, 1000, 1000, 1000, -50, -600, 1000], None),
+        ("above R_MAX within own r", [80626, -161253, 215004, 80626, -107502, 268755, 75251], None),
+        ("A/A above r", [40, -30, 10, -50, 20, -10, 30], [40, 170, -190, 150, -180, 190, -170])):
+    xb = xb or [t + 3 for t in x]
+    n, m, aaD = null(x, xb)
+    print("%-26s x=%s -> %s" % (name, x, subres(x, xb) if n else "priced"))
 Cref = [189200, 189150, 189300, 189250, 189180, 189220, 189400]
 print("drift none        ", drift(Cref, [t + 50 for t in Cref]))
 print("drift 3% tight     ", drift(Cref, [int(t * 1.03) for t in Cref]))

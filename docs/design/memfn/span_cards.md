@@ -1,7 +1,8 @@
 # span_cards — span_pick STAGE 2: the cards, their producer, the noise channel (design, rev 1.4)
 
 **Status: PROPOSED, rev 1.4 (lane s2rev14, 2026-11-06: the first S2d window's REFUSED outcome, ruled by the kit
-manager, §R1.4, marked `[rev1.4 <id>]`), over rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
+manager, §R1.4, marked `[rev1.4 <id>]`; lane s2c14fix, 2026-11-06: review r10's rulings, §R1.4's r10 table, marked
+`[rev1.4 r10-<id>]`), over rev 1.3 (lane s2c, 2026-11-06: the readiness review's text fixes, §R1.3; lane s2cfix, 2026-11-06: the
 code review r9's FIX-NOW/DOC text, §R1.3's second table, marked `[rev1.3 r9-<id>]`), over rev 1.2 (lane
 s2rev12, 2026-11-06), rev 1.1 (lane s2rev11), rev 1 (lane s2rev1) and
 rev 0 (lane s2design). DESIGN ONLY: no code, no make, no timing, no box job. The design of record for span_pick
@@ -44,23 +45,53 @@ a `measured` row with a value and a noise, both legal format-2 fields); the spec
 trimmed, K_TRIM-scaled launch variance of the row's anchored values x_l; K_MED_E6 = 210300 is §3.5's variance
 factor of a seven-launch lower median, so `sqrt(K_MED × sp2)` is the median's standard error, and 3 is drift's
 own factor, §3.5). It is stated by the method, the same for every delta card, and recomputable from the set's
-cells alone: no table, no new field. A delta row that FAILS the NULL rule (§3.5) takes the branch iff
-`|med(x_l)| ≤ r`: it is `measured`, `value_e6 = max(0, med(x_l))` (a cost is never negative), `noise_e6 =
-max(r, the §3.4 step 7 noise)`, its `source` naming `sub-resolution r <r>`; it is PRICED and meets a floor
-clause. It stays `null` iff `|med(x_l)| > r`: a consistent negative beyond r (a fixture defect, as `null`
-always named it), or signs mixed / below its A/A at a size above r. A row that PASSES the NULL rule is priced as
-before (no clamp, no r). On the first window's cells r is 0.097-0.165 wb on the eight verify rows that failed
-(the analysis's "about 0.1 wb per event" is the trimmed launch spread itself; r is three standard errors of the
-median over that spread), and their `|med|` are 0.019-0.099 wb.
+cells alone. `[rev1.4 r10-REV14-2]` It is CAPPED: r = min(that, `r_max_e6`), the kit policy row
+(`memfn/data/policy.tsv`) the run record pins, derived by `span_cards/rmax_drill.py` (below). A delta row that
+FAILS the NULL rule (§3.5) takes the branch iff (a) `[rev1.4 r10-REV14-1]` its trimmed six D_l are NOT all
+negative (all six negative is a defect, `null` whatever r is), (b) `|med(x_l)| ≤ r`, and (c) `[rev1.4
+r10-REV14-2]` its paired A/A is within r too (`aa ≤ r`, aa = §3.4 step 5's `med(|xb_l − x_l|)`). It is then
+`measured`, `value_e6 = max(0, med(x_l))` (a cost is never negative; `[rev1.4 r10-REV14-5]` the clamp lifts a
+truly-zero row's value by at most r, which its noise covers), `noise_e6 = max(r, the §3.4 step 7 noise)`, its
+`source` naming `sub-resolution r <r>`; it is PRICED and meets a floor clause. Otherwise it stays `null`: all six
+negative; signs mixed or below its A/A at a size above r; or within r with its twin disagreeing by more than r.
+A row that PASSES the NULL rule is priced as before (no clamp, no r). `[rev1.4 r10-REV14-7]` `abs_ns_e6` stays
+the UNCLAMPED `med(abs_l)`, provenance only (no reader parses it), so a sub-resolution row can carry value 0
+beside a negative abs.
 
-**The replay (R14-2, R14-4 over s2d-20261106's cells; R14-1 cannot be replayed: those cells used the old
-base).** est.py at this revision over a COPY of the run directory (the record re-finalized there for its new
-`quiet` section and notes, otherwise byte-equal): `floor:verify.rc-memcmp.l1`, `rc-words.w1`, `settest.c1` and
-`settest.c2` PASS (all eight rows sub-resolution: l1 and c1 at value 0, w1 at 0.024/0.026 wb, c2 at 0.035/0.019
-wb, noise 0.097-0.165 wb); `floor:byte.libc` stays a gate FAIL (3.3 % over 3 %, expected), so the outcome is
-still REFUSED on that one floor. c1.p50 is the closest call (|med| 0.093 wb, r 0.097 wb). The notes name a
-launch-level split in every job's control (J2 0.94 %, J2p 0.83 %, J3 1.48 %, J4 0.75 %, J5 1.72 %) and three
-bimodal delta rows (`walk.periodic.one.1024`, `walk.random.one.1024`, `walk.random.one.256`).
+**`[rev1.4 r10-REV14-2]` r_max_e6 = 53751 (0.054 wb).** The twin is the same binary timed beside the arm in
+every launch, so `d_l = x_l − xb_l` carries the launch noise twice and none of the arm-vs-base difference; the
+resolution the method reaches on a row at zero is then `r_AA = 3 × isqrt_rn(rhafz(K_MED_E6 × sp2(d), 2 × 10^6))`.
+`r_max_e6` is the LARGEST r_AA over the first window's eight near-zero verify rows (the rows the branch serves:
+6447..53751, the largest c2.p50's), printed by `rmax_drill.py` with its inputs. The population and the max are
+choices over one window: an UNMEASURED DEFAULT (D149); trigger: re-derive on the first window timed with rev 1.4's
+base. A record planned before the row (windows 1 and 2, frozen at rev 1.4) pins none: the slot's est.py then
+reads the live row and names that in its output (`policy` line, the draft's `# note r_max_e6`), never silently.
+
+**The replay (rev 1.4 + r10, over s2d-20261106's cells; R14-1 cannot be replayed: those cells used the old
+base).** `[rev1.4 r10-REV14-1]` Rev 1.4's replay text said the l1/c1/w1/c2 floors PASS; that demonstrated the
+defect, not the fix: l1 (7/7 launches negative) and c1 (11/14) are the old base's −0.1 wb bias, and the
+unclamped r (0.097-0.165 wb) passed them at value 0. With the r10 rule, est.py over a fresh COPY of the run
+directory (re-finalized by record.py for the `quiet` section and notes; otherwise byte-equal): `l1.p0`,
+`l1.p50` `null` (all six trimmed negative); `c1.p0` (|med| 0.098 wb), `c1.p50` (0.093 wb) `null` (above r =
+r_max 0.054 wb); `w1.p0`, `w1.p50` (0.024, 0.026 wb) and `c2.p0`, `c2.p50` (0.035, 0.019 wb) sub-resolution at
+r 0.054 wb, noise 0.088-0.099 wb (the measured noise, above r); every other row unchanged. The outcome is
+REFUSED on `floor:byte.libc`, `floor:verify.rc-memcmp.l1` and `floor:verify.settest.c1`
+(`s2d1/r10_replay_rows.txt`). The notes are unchanged (a split in every job's control; three bimodal delta
+rows).
+
+**`[rev1.4 r10]` Review r10 (`docs/dev/reviews/2026-11-06-r10-memfn-s2rev14.md`), as ruled.** Slot-local
+sabotage ids S2946-S2949; S2941 and S2942 re-aimed.
+
+| id | ruled | answered in |
+|---|---|---|
+| REV14-1 the ¶3a branch priced a consistent negative (l1 7/7) at 0 | FIX-NOW: all six trimmed D_l negative stays `null` whatever r is; the replay text corrected | §3.5 delta rows; `measures.md` §3.5¶3, ¶3a; est.py; self-test; sabotage S2942 re-aimed (a mixed-sign row with a negative median), (s3) S2947 |
+| REV14-2 r uncapped (a noisier row passes wider) and the branch skipped the A/A | FIX-NOW: r ≤ `r_max_e6` (policy.tsv, `rmax_drill.py`, D149); the branch needs `aa ≤ r` | above; `measures.md` §3.5¶3a; est.py (`r_max`); self-test (a case per bound: the cap, the A/A, the pin); sabotage (s4) S2948, (s5) S2949 |
+| REV14-3 null_check's kept-load test was a substring test | FIX-NOW: the base body EQUALS `null_body(arm body)`; the load test, kept as the check's independent half, needs ONE whole load spelling | §3.2 "The `null` verify base"; `slot/link.py`; sabotage S2941 re-aimed (null_body keeps the compare), (n3) S2946 (the render keeps a later load) |
+| REV14-4 the "delta, signs mixed" table row stale; drill.py had no ¶3a | FIX-NOW | §3.5 table; `drill.py` (¶3a under the r10 rule, every ¶3a row) |
+| REV14-5 max(0, med) lifts a truly-zero row | ACCEPTED: one sentence | ¶3a (above), `measures.md` §3.5¶3a |
+| REV14-6 ps's %cpu is a lifetime share | FIX-NOW: CPU over a 0.5 s span from two `/proc/<pid>/stat` reads | §3.3; `slot/run.py` (`cpu_ticks`, `corunners`) |
+| REV14-7 value 0 beside a negative abs | FIX-NOW (doc) | above; `measures.md` §3.5¶3a |
+| REV14-8 the base keeps a register compare (mov $1/cmp/sbb) | ACCEPTED; DOC | §2.3 `verify_cmp` row; §3.2 |
 
 ## R1.3 What revision 1.3 changed, by readiness finding (review 2026-11-06 r7)
 
@@ -377,7 +408,7 @@ throughput regime (1 MiB subjects re-scanned, L3-resident), an UNMEASURED choice
 |---|---|---|---|---|---|---|
 | `find_byte` | `form` | ratio | streamed-fresh `pool16Mi`, MISS-ONLY (no member in the subject) | lengths 64 Ki, 256 Ki, 1 Mi | `slope` over the three lengths | subject byte, all the method's streams (span_pick.md:216) |
 | `find_hit` | `form;landing;split;gap` `[rev1 MEAS-6]` | walkbytes | streamed-fresh `pool16Mi` 1 Mi subjects, hits planted `periodic` (every g bytes) or `random` (seeded uniform, mean gap g); `split` `one` (one member occurs) or `alt` (both members, alternating) | `[rev1 MEAS-6]` g in {256, 1024}, each its OWN row and group | `delta` against the same form on the miss-only 1 Mi subject, per hit | candidate returned and restarted |
-| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (`[rev1.4 R14-1]` the class arm's own loop, its first load kept, the compare removed), per compare | one compare: cmp0, cmp½ (span_pick.md:220) |
+| `verify_cmp` | `form;cls;pass` | walkbytes | a fixed candidate array (positions spread over a 1 Mi fresh buffer), compared bytes seeded so the test passes with probability 0 (`p0`) or 1/2 (`p50`); a failing run differs at a uniformly seeded position | one point | `delta` against the `null` arm (`[rev1.4 R14-1]` the class arm's own loop, its first load kept, `[rev1.4 r10-REV14-8]` the compare replaced by a register compare of a constant), per compare | one compare: cmp0, cmp½ (span_pick.md:220) |
 | `enter` | `kind;entry` | walkbytes | a WHOLE ARTIFACT (`build/pcrec`) of a fixture pattern whose site states `kind` and an alternative of `entry`; candidates every 256 bytes that pass every verify position and die in the consumer one byte past the window (`die1`) | one point (g = 256) | `delta` of the pass subject against the fail subject (candidates fail the last verify position), per candidate | candidate passed on (span_pick.md:222) |
 
 `[rev1 MEAS-6]` **Why per density.** Rev 0's one `find_hit` slope over g in {4096, 256, 32} plus the
@@ -705,7 +736,9 @@ site shape and stated facts (the canonical instance), so the timed text IS the h
 - **The renderer entry** is a `kit.h` TEST entry beside `mf_form_hash` returning the site text of a table
   row (no `memfn.h` change; `mf_form_hash`'s signature stays). G2's generators are not the cell renderer; G2
   keeps checking these forms over its generated predicate space, as today.
-- **The `null` verify base** `[rev1.4 R14-1]` is its CLASS ARM'S OWN LOOP with the compare removed, rendered
+- **The `null` verify base** `[rev1.4 R14-1]` is its CLASS ARM'S OWN LOOP with the compare replaced
+  (`[rev1.4 r10-REV14-8]` by a register compare: objdump shows the base's `mov $1`/`cmp`/`sbb` where the arm has
+  `sete`/`movzbl`/`add`, the same uop count, so a single-load class's D is about 0 by construction), rendered
   from the same source text: the class instance's compare wrapper, byte-identical outside the site body (the
   same candidate loop, a pointer bump in both, the same helpers, so gcc gives it the arm's addressing and
   alignment), its body `slot_null(<the body's first load>)`: the candidate's bytes at `subject + pos` at the
@@ -713,7 +746,9 @@ site shape and stated facts (the canonical instance), so the timed text IS the h
   empty asm, and a 1 the compiler cannot fold in place of the compare (so the loop still accumulates a run-time
   count). Later loads of a multi-word body are the compare's (gcc lowers them behind the first compare's
   branch). The link step's NULL-BASE check refuses a base whose text differs from its class arm's anywhere but
-  the body, or whose kept load is none the arm's body makes (sabotage S2940, S2941). Its gate counts every
+  the body, or whose kept load is none the arm's body makes (sabotage S2940, S2941); `[rev1.4 r10-REV14-3]` its body
+  must EQUAL `null_body(the arm's body)` (the arm's FIRST load), and the load test, the check's half that does not
+  call `null_body`, needs one whole load spelling (S2941 re-aimed, S2946). Its gate counts every
   candidate. (Rev 1.3's base was a separate loop: indexed with a counter, a byte load, 16-aligned; the first
   window measured the arms ~0.1 wb per event faster than it, `s2d1/analysis.md` §2.) `[rev1.3 r9-G7]` Its
   subjects are its class instance's, the run, mask or members read from the instance's facts, never copied
@@ -852,7 +887,8 @@ follows J2 and answers 77 when J1 ended non-green (no verdict will come) or unde
 within a launch, so a "group boundary" has no single place; the re-check is per LAUNCH instead (replacing rev
 1.1's per-group wording): before each of a job's 7 launches the harness takes ONE load sample and reads the
 queue and the box lock (instant), records them in the transcript (`[rev1.4 R14-3]` with the top co-runners by
-ps's %cpu, `pid:comm:%cpu`, so a slow box state names its cause; the run record copies every check, §3.5; the
+`[rev1.4 r10-REV14-6]` the CPU each used over the last 0.5 s, from two `/proc/<pid>/stat` reads (ps's %cpu is a
+lifetime share; 0.5 s an UNMEASURED DEFAULT, D149), `pid:comm:%cpu`, so a slow box state names its cause; the run record copies every check, §3.5; the
 dry run takes one ungated sample and refuses a line without co-runners), and only if they are not quiet WAITS for the
 start gate's two-sample quiet (bounded at 5 minutes per job, an UNMEASURED DEFAULT, D149, trigger: a wait
 timing out in the window; `[rev1.3 r9-W3]` the bound is the job's TOTAL WAITING time, never wall time from the
@@ -979,8 +1015,10 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   format-2 exception (§10.2). The per-hit costs this resolves are §2.3's (`floor_drill.py`). A consistently
   negative per-event cost (an arm faster than its base) is a fixture artifact, `null`, named in the row's
   `source`, never priced. `[rev1.4 R14-2]` **Unless it is SUB-RESOLUTION** (`measures.md` §3.5¶3a, §R1.4): a row
-  failing this test with `|med(x_l)| ≤ r`, r three standard errors of its median, is a `measured` row with
-  value `max(0, med(x_l))` and noise `max(r, noise)`; only a failing row with `|med(x_l)| > r` is `null`. Delta
+  failing this test with `|med(x_l)| ≤ r`, r three standard errors of its median `[rev1.4 r10-REV14-2]` capped at
+  `r_max_e6`, and its paired A/A within r, is a `measured` row with value `max(0, med(x_l))` and noise
+  `max(r, noise)`; `[rev1.4 r10-REV14-1]` a row negative on all six trimmed launches is `null` whatever r is, as
+  is every other failing row. Delta
   rows have no gate: est prints them `ungated` (`[rev1.4 R14-4]`). **A delta row never refuses anything by itself**: a `null` row is unpriced, and an
   unpriced candidate cannot qualify (span_pick §The pick 4: safe); Goal 2's floor (below) is what a run of
   unpriced keys fails.
@@ -1140,11 +1178,14 @@ anchored values with the unit at 10^6; the last rows are `outcome_drill.py`'s):
 | unit, one outlier | clean x6, one at 1.08 x 10^6 | bimodal test | PASS (a cluster of 1) |
 | A/A above spread | clean; twin x + 600 (1 %) | cost gate | noise 604 (1.01 %): PASS |
 | A/A above the gate | clean; twin x + 2000 (3.3 %) | cost gate | noise 2001 (3.34 %): the row fails |
-| delta, signs mixed | D_l = 1500, −2000, 3000, 500, −500, 2500, 1000 | NULL rule | `null` (−500 survives the trim) |
-| delta negative | D_l about −30000, all seven | NULL rule | `null` (a negative cost), named; `[rev1.4 R14-2]` beyond r, so still `null` |
-| `[rev1.4 R14-2]` delta at zero, signs mixed | per-event 40, −30, 10, −50, 20, −10, 30 | NULL rule, ¶3a | sub-resolution: measured, value its median (positive), noise max(r, noise) (est.py self-test) |
-| `[rev1.4 R14-2]` delta slightly negative, within r | per-event −20 .. −90, all seven | NULL rule, ¶3a | sub-resolution: measured, value 0 (clamped) |
-| `[rev1.4 R14-2]` delta signs mixed above r | per-event 1000 x5, −50, −600 | NULL rule, ¶3a | `null` (|med| 1000 > r) |
+| delta, signs mixed | D_l = 1500, −2000, 3000, 500, −500, 2500, 1000 | NULL rule, ¶3a | fails the NULL rule (−500 survives the trim); `[rev1.4 r10-REV14-4]` sub-resolution: med 1000 ≤ r 2331, aa 400 ≤ r: measured, value 1000, noise 2331 |
+| delta negative | D_l about −30000, all seven | NULL rule | `null` (a negative cost), named; `[rev1.4 r10-REV14-1]` all six trimmed negative, so `null` whatever r |
+| `[rev1.4 R14-2]` delta at zero, signs mixed | per-event 40, −30, 10, −50, 20, −10, 30 | NULL rule, ¶3a | sub-resolution: measured, value 10, noise max(r 48, noise 34) |
+| `[rev1.4 r10-REV14-1]` delta slightly negative, all seven | per-event −20 .. −90, all seven | NULL rule | `null` (all six trimmed negative; rev 1.4 priced it at 0) |
+| `[rev1.4 r10-REV14-1]` delta signs mixed, negative median | per-event −20, 30, −10, −40, 25, −90, −25 | NULL rule, ¶3a | sub-resolution: measured, value 0 (clamped), noise max(r 51, noise 37) |
+| `[rev1.4 R14-2]` delta signs mixed above r | per-event 1000 x5, −50, −600 | NULL rule, ¶3a | `null` (|med| 1000 > r 774) |
+| `[rev1.4 r10-REV14-2]` within its own r, above r_max | per-event 80626, −161253, 215004, 80626, −107502, 268755, 75251 | NULL rule, ¶3a | `null` (|med| 80626 > r = min(236970, 53751)) |
+| `[rev1.4 r10-REV14-2]` A/A above r | the at-zero row, its twin 170..200 apart | NULL rule, ¶3a | `null` (aa 200 > r 48) |
 | delta clean | D_l about 40 us per call; twin's D about ±4 us apart | NULL rule | med 40.0 us > aa_D 4.0 us: priced |
 | `[rev1.2 MEAS-5]` delta, one spike | the clean series with launch 3 at −2 us | NULL rule | priced (the spike is the trimmed launch; rev 1.1: `null`) |
 | no drift | control = reference + 50 | drift | 0.03 % vs threshold 1.5 %: kept |
@@ -1933,6 +1974,11 @@ qualifier test over three provenance vocabularies (§12 row 6).
    1's qualifier written once. Trigger: row 1's build (§10.3).
 
 ## STATE AT HANDOFF
+
+`[rev1.4 r10]` Lane s2c14fix: review r10's rulings (§R1.4's r10 table; `measures.md` §3.5¶3, ¶3a): the sign
+rule, r capped at `r_max_e6` with the A/A in the branch, the null base's equality check, co-runners by interval.
+The replay over s2d-20261106 (`s2d1/r10_replay_rows.txt`) leaves l1 and c1 `null` (the old base's defect) beside
+byte.libc. Nothing timed changed (report `docs/dev/lanes/s2c14fix_report.md`, "Timed-code impact").
 
 `[rev1.4]` Rev 1.4, lane s2rev14: the kit manager's R14-1..R14-4 on the first window, design text and code
 together (§R1.4; `measures.md` §3.5¶3, ¶3a, ¶11); the replay of R14-2/R14-4 over s2d-20261106's cells leaves
