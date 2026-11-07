@@ -71,3 +71,7 @@ OWED keys: kit-s2f-strict kit-s2f-census kit-s2f-sections. Nothing queued or run
 - [x] Job files 487/488/489, dry-run each, boxqueue cap/est/expect lines.
 - [x] CLAUDE.md of span_pick updated; span_cards §3.2 status sentence.
 - [ ] Gate jobs run: OWED (kit-s2f-strict, kit-s2f-census, kit-s2f-sections).
+
+## STATE AT HANDOFF
+
+Committed: census0.py forecast, census0_cards.out (numbers final), CLAUDE.md and span_cards sentence, this report. OWED jobs (queue in this order, 488 and 489 after 487): kit-s2f-strict (`487-kit-s2f-strict`, trailer `s2f-strict: DONE rc=0`), kit-s2f-census (`488-kit-s2f-census`, `== s2f census COMPLETE: rc=0`; a DIFFERS line means the re-made sweep or the committed file moved), kit-s2f-sections (`489-kit-s2f-sections`, `s2f-sections: DONE rc=0`). Rulings for the manager: retire `slot/vcls.py` (a slot change) or keep both under the diff check.
