@@ -3587,3 +3587,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Kit branch k1107 merged main (f58b31d1f); ack de178e0dd.
   - Lane `k0` (opus) LAUNCHED, worktree k0 off k1107, deliver 53e7730b8. Jobs 450-453; sabotage ids from S2975.
   - Runs in parallel with S2f's gates.
+- 11-07: Frank (manifesto log, via main): "we will eventually output code as either C or Rust. Whether we actually do is immaterial."
+  - For K0: the table's FACTS (token, family, features, needs, default lists) stay apart from its C SPELLINGS (region pragma, #error guard, __builtin_cpu_supports predicate).
+  - Sent to the running lane k0 as a structural addendum (it launched minutes before).
+  - VERIFY at K0's review: a facts table readable without C text, plus a check or sabotage row that catches C text in a facts row.
