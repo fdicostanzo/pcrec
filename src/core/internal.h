@@ -1455,6 +1455,11 @@ static inline bool ctxfn_reads_membership(uint16_t fn)
             ctxfn_cell(fn, k, 1) != ctxfn_cell(fn, k, 0)) return true;
     return false;
 }
+/* [VLOOKBEHIND] One lookbehind branch's width in CHARACTERS, an EXACT range
+ * (`pcrec_cwmin`, `pcrec_cwmax`): `lo == hi` is a one-length branch, `lo <
+ * hi` a varying one (vlookbehind.md §5.2). */
+typedef struct { int lo, hi; } LookWidth;
+
 typedef struct Ast Ast;
 struct Ast {
     /* ---- COMMON FIELDS ----------------------------------------------------
@@ -1832,9 +1837,11 @@ struct Ast {
              * emits the shape MINUS the cut when it is false (§3.6).
              * Sabotage row S-LA16 ignores it and always emits the cut. */
             bool        atomic;
-            /* THE WIDTH TABLE — the fixed width of each TOP-LEVEL branch of
-             * the body, in branch order, for a LOOKBEHIND; NULL for a
-             * lookahead. Arena-allocated (see the D70 note above).
+            /* THE WIDTH TABLE — the [lo, hi] character range of each
+             * TOP-LEVEL branch of the body, in branch order, for a
+             * LOOKBEHIND; NULL for a lookahead. Arena-allocated (see the D70
+             * note above). [VLOOKBEHIND] stage 1: a pair, not one `int`; a
+             * branch with `lo < hi` VARIES and takes the candidate loop.
              *
              * COMPUTED AT PARSE TIME AND STORED, design §3.1(c), for the
              * reason `Ast.u.bref.caseless` is: the REFUSAL in §2.5 has to
@@ -1844,11 +1851,12 @@ struct Ast {
              * recomputing them downstream is a second derivation that can
              * disagree with the first. `pcrec_cwmin`/`pcrec_cwmax` (src/opt/mrl.c;
              * CHARACTERS since [M5.0] stage 2, the unit 10.46 measures
-             * lookbehind length in) are what the hook computes them WITH: a
-             * branch qualifies exactly when `cwmin == cwmax`, which is also
-             * why an under-estimating `pcrec_cwmax` is a silent miscompile
-             * rather than a lost optimisation. WRITTEN by the parse hook (wave D), READ by §3.4's
-             * emitted back-step. Sabotage row S-LA11.
+             * lookbehind length in) are what the hook computes them WITH, and
+             * both must be EXACT: a loose end turns a one-length branch into
+             * a varying one (other bytes, and the 255 cap applied where
+             * libpcre2 applies none). WRITTEN by the parse hook (wave D),
+             * READ by `vm_look_behind`, the count and cost passes and
+             * `la_lb_raise`. Sabotage row S-LA11.
              *
              * [DD-14.LB] `NULL` ON A LOOKBEHIND MEANS **PENDING**, and that is
              * this field's one extra state rather than a second field. The
@@ -1864,7 +1872,7 @@ struct Ast {
              * ctx_fails on the pending shape, which is what makes a DELETED
              * post-resolution pass a loud internal error rather than a NULL
              * dereference (sabotage row S-LB1). */
-            const int  *widths;
+            const LookWidth *widths;
             /* how many entries `widths` holds — the body's top-level branch
              * count, which is `AltInfo.nbr` (PARSE-1) for the body parse.
              * WRITTEN and READ with `widths`; the two are one fact — EXCEPT
@@ -2099,11 +2107,11 @@ struct Ast {
              * declaration and docs/design/subroutines_design.md §3.4(d)'s
              * 2026-08-24 amendment), and the memo is read where it exists.
              *
-             *   `cwmin`      the callee's least width in CHARACTERS. The
-             *                arena's zero is SOUND (an under-estimate makes
-             *                `cwmin != cwmax` and the rule REFUSES — an
-             *                over-rejection, never a false match), which is
-             *                `minw`'s own argument one unit over.
+             *   `cwmin`      the callee's least width in CHARACTERS, EXACT
+             *                once written ([VLOOKBEHIND]: the pair picks the
+             *                emission row and the 255 cap). The arena's zero
+             *                is never read as an answer: before the fixpoint
+             *                `cwmax_known` is false and the rule defers.
              *   `cwmax`      the callee's greatest width in CHARACTERS,
              *                VALID ONLY when `cwmax_known`.
              *                `PCREC_W_UNBOUNDED` is a legal value and is the
@@ -8124,6 +8132,12 @@ long long pcrec_sat_mul(long long a, long long b, long long cap);  /* src/opt/mr
 long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
 
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
+
+/* `pcrec_cwmax` with every match-time length (a backreference, a variable,
+ * a consuming callout) counted as one character, so finite where only their
+ * sizes are unbounded: the lookbehind rule's "not built" test (review r4
+ * F1). Not a bound on anything; never a width to emit from. */
+long long pcrec_cwmax_static(const Ast *a);          /* src/opt/mrl.c */
 
 /* [OPT-ANCHOR-VM] `PCREC_SANCH_*` and its renderer `pcrec_start_anchor_name`
  * are the start-anchor FACT's value vocabulary: src/facts/facts.h. */

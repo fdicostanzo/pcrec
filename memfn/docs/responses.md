@@ -3182,3 +3182,27 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F10: the D-hors floor measurement;
     - F11: the anchor check covering run_g2_win.sh.
   - Stage 1 is complete with this merge. Stages 2-3 wait for Frank's GO.
+
+- ack: 2026-11-06 — **R-35** (span_pick stages 2-3). Taken in order: stage 2 first, then unit 3.0, then row 1, one delivered unit each on its own `lane/memfn-*` branch.
+  - Stage 2 starts with read-only scoping (lane s2scope: how the current measurement set was produced, and the readers of the seam's noise field), then an opus build lane for the noise channel and the card fixtures.
+  - The card timing runs wait for a window main clears.
+  - Ruling (a) is noted: unit 3.0's pcrec facts travel in the kit's same-commit package as facts only.
+
+- notice: 2026-11-06 — **Frank, directly to the kit: three items** (after a discussion of letting the measurement tool detect SIMD).
+  1. **RULED, for span_cards.md rev 1 (stage 2 SIMD job): the SIMD facts.** Per SIMD level (levels.def) the producer records three facts:
+     - (a) the CPU has it (cpuid), or "absent (CPU)" and never run;
+     - (b) the build compiled it (read off the artifact's MEMFN_FORMS stamp). Levels fall through under `#if __AVX2__`/`__SSE2__`, so a "w32" fixture built without AVX2 times w16 code. A level missing from the stamp is recorded absent and never timed;
+     - (c) its measured cost, only when (a) and (b) hold.
+     - Availability on a target stays with gcc's predefined macros. A measured set never grants a level; it prices what the target's macros allow. Letting measured cards switch SIMD on per level remains the C9 row plus the separately ruled SIMD-default event (D147, D144 add. 4).
+     - Proposed D-entry text: "Measured SIMD facts (Frank 2026-11-06): a measurement set records per SIMD level cpu-has / build-compiled / cost; availability is the target's compile-time macros, the set only prices."
+  2. **FOR MAIN to file: a plan item to TEST CROSS-ARCH DEVELOPMENT.** Frank: "add an item to test cross arch dev". Kit-side content: aarch64 levels are born with their first row (levels.def); measuring and validating on a non-x86 box; the Mac as the available aarch64 box. Main owns the row and its scope.
+  3. **WITH MAIN: work out MULTI-ARCH BUILDS.** Frank: "this is with main, we need to work out the multi arch builds as well". Kit facts for that discussion: SIMD levels are compile-time `#if` arms in one emitted C file, with fall-through to scalar and no runtime dispatch. Each artifact stamps MEMFN_FORMS. A set is chosen per compile (`--measures`/config). An artifact built for several targets therefore carries every level's text but one set's prices.
+
+- notice: 2026-11-06 — **review 2026-11-06 r4 (span_cards rev 0, R-35 stage 2) RULED NOT READY**: a rev 1, then a short re-check. On lane/memfn-k1102 @ 568ce6721. No answer or emitted-byte finding. For main:
+  1. **RULING ASKED (answer-free): DEFAULTS at stage 2.**
+     - (A) keep `idk zen4-grid1@1` until row 1. This amends D166 add. 2's "latest committed set is the default" literal and measures.md §5¶6, so it is Frank's.
+     - (B) flip to zen4-grid3 at S2e, zero movers (no row consults a set). This amends R-35 item 1's "DEFAULTS unchanged" (main's text), span_pick rev3 C6 (the kit's) and measure_sets §3.6 (a spec hunk); Goal 1's measure is restated.
+     - Kit recommends (B).
+  2. **FINDING ABOUT PCREC (CONTRACT-5, for known_issues):** the measures loader accepts a set row with value_e6 > MF_MEASURE_MAX (1e15). The kit then refuses it at mf_art_begin, so every compile against that set fails with "internal error: the memfn kit refused ...". Repro: a FILE set with one kit row at 2e15 and its digest fixed; 3 patterns gave rc 1 and the control rc 0 (review r4 verify.md). Fix shape: the loader refuses |value| past the kit's bound, as a §7 refusal row. S2a's noise field does this for noise.
+  3. **PLAN row (SLOT-7):** one kit noise/policy constant table (MATERIAL, MAX_SET, HORS_MIN, the coverage factor z, the gate default) at span_pick row 1, so plan_cost.def's policy rows stop narrowing D176's "rows migrate into the sets" silently.
+  4. **NOTED (COST-3):** rev 1 drops J6's vany cards (unrouted, no reader). J6 keeps vrun under D188.

@@ -240,7 +240,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-29 vmcons3 (manager)
   status (2026-10-31): step (a) DONE, merged 3bc599c92 (byte-identical, no abi bump, D182); steps (b) and (c) not started
   next: (b) the analysis-free R stage on the records; (c) the analysis build, stage 2a first (lexer, helper registry, FL, CEN), after a soundness round on its lexer section and a D27 spec-first author
-  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md
+  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md; docs/design/plan_row_bodies/VMREC.md (members added after (a))
   (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
@@ -262,9 +262,10 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
 - [VLOOKBEHIND] STATE:started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-06): Frank GO 2026-11-06 for STAGE 1 (rev 4 merged; short re-check of the F1 seam wiring first, then an opus build lane); land BEFORE [RUN-POS-SET]'s build, the second lander adds lookbehind x alternation witnesses
+  status (2026-11-07): stage 1 LANDED at c44649a69 (lane vlbland; bounded variable-width lookbehind, abi 96, D189); row stays started for stage 2
   next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
   refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
+  Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
   status (2026-11-06): Frank GO 2026-11-06 for stages 1, 2p, 2b (alt_normal_form.md rev 3; opus build lane, code round before landing); lands AFTER [VLOOKBEHIND] stage 1, adding lookbehind x alternation witnesses; 2a census-first, 3 waits
@@ -273,6 +274,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
   Superseded framing (filed 2026-11-04; Frank 2026-11-05 replaced the byte-set framing with folds-as-alternations): "REQUIRED-RUN POSITIONS AS BYTE SETS: caseless UTF-8 letters stop cutting runs"; filed status: req.c's run carries one byte CUBE per position, so in UTF-8 (?i)k (k|K|E2 84 AA) and (?i)s (with U+017F) cut the run; filed trigger: the survey finds runs cut on real bench cells, or [SEQ-FOLD]'s first child lands.
   Facts kept from the filing: a class that is not one cube, or has a member above 0xFF, is a gap; UTF-8 alternatives keep only their common cube-hull head/tail (rr_alt); single-byte encodings are unaffected for ASCII letters; the k-set path (src/facts/kset.c) already hands the kit full sets. The filed plan (a survey, then a D186 choice change) ran: survey rpsurvey, thought lane altthink, design altdesign.
+- [ANCH-AT] STATE:blocked — one anchored DFA run where the start is known (F-11: 328 _match bodies)
+  filed: 2026-11-06 Frank ("File it scheduled"), after asking why the DFA may drift to other starts when the start is known
+  status (2026-11-06): SCHEDULED: next after lookbehind stage 1 + alternation land, beside A-REV's chain; a D186 CHOICE change on take[CR_ATTEMPT] adding AT (locate_finish §8 Q7's row), measured on the 328 bodies
+  trigger: scheduled (Frank 2026-11-06); starts when the two current builds have landed
+  refs: docs/design/locate_finish.md (FIN3 verify-at, the F-11 cell, §8 Q7); decisions D156 D186
+  The unanchored machine keeps its restart (start unknown); where the start is known (_match, a pinned candidate) the anchored machine fails at the first byte no prefix allows instead of scanning on. Gate: answers identical; instructions:u per moved body vs search-filter; losses listed by name.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
@@ -559,6 +566,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   MECHANISM: the PRODUCT of the main automaton with each assertion body's recognizer (Σ*·L forward; reverse(L)·Σ* in the reverse machine), folded in during determinization so an assertion is a predicate on the product state; bounded lookahead in the forward pass as a k-byte delayed acceptance; unbounded lookahead in the forward pass DROPPED (superset — sound for end-finding) and resolved in the reverse pass or by the VM; the context seeded from the bytes before startpos by running the component over the prefix (mechanism 4 generalized).
   TODAY'S assertions machinery (assertions_ design.md waves B/C: the previous-byte context bit in the state identity, the class-indexed accept table, mechanism 4) IS this construction for one-class bodies — it becomes an INSTANCE, then gets DELETED once DD-11 rebinds \b/(?m)^/(?m)$/\Z to their lookaround definitions and the identity gate proves the product's artifact byte- identical (or measured-equivalent) to the hand-built one; where it is not, that is the optimizer's next target, never a reason to keep the special code. REACH: every bounded-length regular-body lookaround becomes DFA-eligible — `(?<=foo)bar`, `(?<!\d)\d{4}(?!\d)` — not the four assertion spellings only. MEASUREMENT FIRST: state growth — wave B measured the one-bit context's composed worst case at 38,009 states against the 32,000 cap; the product with larger components is not free.
   Size the component automata on (a) the expanded assertion corpus ([M6.6.1]'s substitution driver) and (b) the real lookaround population from the PCRE2 testdata and the D27 corpus; the construction ESTIMATES BEFORE COMMITTING and DECLINES to the VM past the caps ([ENG-CUT]'s shape). SEQUENCE: after [M6.6] ships the VM semantics (the VM stays as the exact verifier and the engine for captures/backrefs inside bodies); design gate with a D6 panel; the expanded-corpus three-way self-oracle is this row's acceptance test as well as M6.6's. The hybrid's prefilter soundness argument (dropping lookarounds = superset) is M6.6's to state and this row's to exploit. NO one-character fold ships anywhere — Frank's ruling: it is the duplicate path.
+  2026-11-06 (Frank "Yes"; manager): shares ONE product construction with [POSTFACT]'s `~`/`!~` (family C, algebra over sets of strings); whichever builds first builds it for both.
 - [ENG-CUT] STATE:not-started — the full cut construction: replace A_ATOMIC with a cut-free sub-automaton
   filed: 2026-08-22 (first appearance in plan.md, git; author unrecorded)
   status (2026-08-22): not started
@@ -688,6 +696,17 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ENC-SIDE-EMIT] STATE:not-started — a per-row side-emission hook on the encoding seam's entry table
+  filed: 2026-11-06 lane vlbbuild ([VLOOKBEHIND] stage 1, design FIXIND-6)
+  status (2026-11-06): one side emission exists (the UCP one); the emitter and `pcrec_enc_entry_symbols` call ONE shared predicate for it, so the condition has one spelling; no general hook built
+  trigger: a SECOND side emission on any seam row (vlookbehind.md §5.6 item 1)
+  refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c (the reader that lists each row's symbols)
+  Note (2026-11-07, landing vlbland, review SEAM-6 and the VM_PROGRAM_BYTES note): SEAM-6 rides this row; a splice that moves RX_VM_PROGRAM_BYTES without a manifest row is not seen by the strict DD12a bar (S1988 is DETECTED only by K50's undeclared-form-move guard); fix with the hook, not before.
+- [ENC-ONE-RULE] STATE:not-started — one boundary rule per encoding as row data, symbols not parsed from C text
+  filed: 2026-11-07 landing vlbland (vlbbuild_rulings.md R4: review SEAM-5 + SEAM-7 as one row)
+  status (2026-11-07): not started; UNSCHEDULED
+  trigger: a THIRD encoding
+  refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
   status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
@@ -695,6 +714,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
+  Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
@@ -1035,6 +1055,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Members known (2026-10-26): (1) ABSORB-OPTIONAL: `X+Y?` / `X+Y*` with Y a subset of X -> `X+` (greedy/possessive only; no capture boundary between; e.g. `\s+\n?`). (2) ABSORB-EOL: `X+$` non-multiline -> `X+\z` when the configured newline is inside X (`\s+$`; lazy excluded: `\s+?$` on "a \n" differs; CRLF/ANY newline need the whole sequence covered). (3) Frank's earlier conditional anchor-rewrite table (option-dependent `$` etc.): mostly covered by A_CTX (D168), remainder belongs here. Possible future member: possessify (the disjoint-follower case; panel-repaired rule, leave in place until the table proves itself).
   Notes: (add dated notes as related issues surface)
   note (2026-10-26, lane rwsurvey, docs/dev/lanes/rwsurvey_report.md): no pass CREATES absorb-optional / `X+$` shapes on the 5,735 corpus + 351 bench dumps; constructed witnesses do (altcls: `\s+(?:\n|\r)?` -> `\s+[\n\r]?`, then A then B chain, so the table must iterate). Passes DO leave: altcls empty-branch alternations (`f(|rank)`, 107 corpus), possessify ATOMIC(REP possessive) (57). Only 29 outside-written patterns exist (6 carry a shape). More candidates: CTX-IMPLIED-AFTER-RUN (`\w+\b`), ALT-EMPTY normal form, MERGE-RUN (`[0-9][0-9]?`), REP-OF-REP, TRIVIAL-REP (`{1}`), DUP-ZERO-WIDTH/DEAD-PIN, REDUNDANT-CUT. Placement hypothesis: after atomic discharge, before the call graph, bounded fixpoint; must see through lower_enc A_WCLASS.
+  2026-11-06 (Frank "Yes"; manager): this row is the home of family (A), SIMPLIFICATIONS (node in, equivalent node out): the parser's empty-node drop, `xx*`->`x+`, the absorbs and merges, possessify. One declared first-match table to a fixpoint, each row named in --explain and deny-able; first build after [RUN-POS-SET]'s alternation owner lands (its output feeds the table). Families (B) [CLASS-SETOPS] and (C) [POSTFACT]/[ENG-LOOK] are linked, not members.
 - [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
   filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
   status (2026-11-05): direct half (an empty node in a CAT/ALT) is alt_normal_form.md rev 1 stage 2a, the unit owned by the kind row; quantified half (REP of empty, anchor wrapper) staged later, decision points in its §9 S2; the a(?i)bc symptom is already gone
@@ -1185,6 +1206,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-05): PCRE2 gap rank 3 (completeness scoreboard; utf_wants rank 3); TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md
+  2026-11-06 (Frank "Yes"; manager): family (B) of the rewrite-free algebra: sets of CHARACTERS, closed, evaluated in the parser into one class node. Shares its OPERATOR VOCABULARY and semantics (intersect, subtract, nest) with [POSTFACT]'s string-level `~`/`!~`, so a user learns one model; the implementations stay separate.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
@@ -1559,6 +1581,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms; OR the next count-pass/emit disagreement found in the ladder (r6 V17)
   refs: decisions D77
   Evaluate a `vm_rung_of()` first-match row table replacing the three walkers' re-derivations of the per-quantifier rung, with the stamp bits read from the row. D77 trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms.
+  Family note (2026-11-07, vlbbuild review F18 = SEAM-4): the lookbehind emission row of vlookbehind.md §5.1b is 13 `range` conditionals, a sixth family member.
 - [DEC-KINDATTR] STATE:not-started — THE PER-`AKind` ATTRIBUTE TABLE FOR FACT WALKS
   filed: 2026-10-06 filer not recorded
   status (2026-10-06): not started; FILED 2026-10-06, decsurvey §3.8; UNSCHEDULED
@@ -1665,6 +1688,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
+  2026-11-06 (Frank "Yes"; manager): family (C), algebra over sets of STRINGS. Its result is an automaton (size-laddered product), not a node. It shares ONE product construction with [ENG-LOOK] (build it once for both) and its operator vocabulary with [CLASS-SETOPS].
 
 - [COUNT-FROM-GROUP] STATE:not-started — a repeat count read from an earlier capture's value (length-prefixed data: `5:hello`)
   filed: 2026-10-28 Frank (session 127), witness `(\d{1,2}):.{\1}` (netstrings; the bench's unusual set does it with a callout)
@@ -1697,11 +1721,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 - [STREAM] STATE:not-started — ONE INSTRUCTION STREAM: the agreed end state, reached by ride-along migration steps
   filed: 2026-11-01 Frank (manager wrote the row; lane stream4 drafted it)
-  status (2026-11-06): no step built. Frank RULED A-REV's first cross-engine piece = lookbehind HAND-OFF (reverse DFA finds start, VM confirms+captures) as a PROOF step (review r5 addendum). OPEN for consideration: "VM base" frame (roadmap.md A-VERDICT)
+  status (2026-11-06): no step built. Frank GO (2026-11-06): A-REV's chain runs NEXT after lookbehind stage 1 + alternation land: S1 record, S1M, [ROWCONJ], vlookbehind's adopting revision, then the reverse-DFA proof step. VM-base frame OPEN
   next: the manager confirms the roadmap; then each step is proposed when its ride-along trigger fires, and built only on Frank's go for that step
   refs: docs/design/stream/manifesto.md; docs/design/stream/roadmap.md; docs/design/stream/approach.md; docs/dev/reviews/2026-11-01-r3-stream3.md; decisions D182 D185
   THE AGREED END STATE (manifesto.md): every artifact is one program of typed instruction records (VM control, automaton components, kit sites) chosen per point in the pattern; parts with contracts; seams with a run-time hand and a plan-time card carrying facts both ways; crossings deliberate and negotiated through declared seams; "dfa"/"vm" become derived stamps; hubs get owners and declared extension shapes. Frank: "This project is more than simply its stated goal. It's an effort to produce a viable long term project that can grow."
   HOW (roadmap.md, LIVING): incremental, never big bang; byte-identical where possible (one comparator); a RATCHET: the inventory of parallel mechanisms and undeclared crossings (baseline 24 at main 3f777330e) must fall with every step, and a step that adds one without deleting one is rejected. THE RIDE-ALONG RULE: each code AREA is a migration unit; when an optimization, kit request or fix opens an area, its next migration step rides in that change or lands just before it. HELD until measured: the per-stretch planner with new rows, backtracking across seams, the held kinds. NOTHING IS BUILT WITHOUT FRANK'S GO PER STEP.
+  2026-11-06 (lane spandir; manager): forward and reverse spans are ALREADY one mechanism in the table DFA (one scan-edge pass, one emitter, one kit ADVANCE site with `reverse` as a fact). The reverse loop span for `(?<=a{1,254}b)` comes for free on the proof step's reverse machine. A-REV S1 also folds dir_fwd_skip/dir_rev_skip into one renderer (0 bytes). vlookbehind's adopting revision words the pieces study's backward span count as a rendering row of the A-REV record, never a second analysis.
 - [COVER-PRICE-WITNESS] STATE:not-started — cover vs byte-class-bounded: the bench's utf8-lead-no-cont x1.95 as a named pricing witness
   filed: 2026-11-02 manager (from bench O-117, window b149w2)
   status (2026-11-02): filed; nothing built. Bench: `[\xc2-\xdf](?![\x80-\xbf])` x1.95 slower on 19/19 large subjects (0.192 -> 0.375 ns/B), x1.20 short; hex8-bounded x1.5 slower on 60-B subjects (+35 ns) while x0.42 on large.
@@ -1732,6 +1757,36 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a user report, or the next change touching ill-formed-position semantics under -e utf8
   refs: docs/dev/known_issues.md K74 (and K73, K75 fixed); D132; D133; D37; [FEAT-FAMILIES]; docs/dev/lanes/k73utf_report.md
   First step when picked up: ONE pcre2-reader question (D181) — is PCRE2's answer for `$`, `\B`, `\z`, `\Z`, `(?m)$`, `(?<!.)` at an ill-formed subject end under PCRE2_MATCH_INVALID_UTF a defined rule or a quirk? Defined: fix pcrec to match (likely an abi event). Quirk: follow the standard and file upstream (D26 addendum). Witnesses from k73utf_evidence/ and iterdoc_report.md.
+- [ISL-PRICE] STATE:not-started — the VM island-vs-chain pick row prices by SIZE, not by work
+  filed: 2026-11-06 manager (lane altbuild R2)
+  status (2026-11-06): not started; witness x(?:[éà]|q2|r3)y forced-VM: after the alternation merge shrinks the chain, the row picks the chain at 2.0x the island's instructions (325.5M vs 161.5M); no corpus/bench cell yet
+  trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
+  refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
+  Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants). Lane altbuild2 measured both estimates wrong in both directions (island 6x over on long words; chain 2-3x over): once the [ART-SIZE] retry row (K139) makes acceptance exact, the in-emitter size guard is a speed-only shortcut and a candidate for deletion (a simplification), measured here.
+- [XARCH-DEV] STATE:not-started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
+  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
+  status (2026-11-06): not started; end state RULED (per-target variants, explicit target list, see below); first job: an M1-made set + count of disagreeing picks; the Mac is the aarch64 box
+  trigger: Frank's go, or the first aarch64 kit row
+  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
+  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
+  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
+  RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
+- [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL), outside the sets
+  filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
+  status (2026-11-06): not started; today noise policy has no single home (gate_e6 in kit-grid.tsv; z not yet a constant anywhere); unify when row 1 writes z (row 1's E2 unification)
+  trigger: span_pick row 1
+  refs: docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md; [MEASURE-SET]; decisions D176
+- [SCAN-MULTIEXIT] STATE:not-started — scan-edge spans for runs whose rows agree outside the class, not only ONE exit target
+  filed: 2026-11-06 manager, from lane spandir (U1, SUSPECTED)
+  status (2026-11-06): not started; held [OPTLOOP] candidate. `^[a-z]{2,12}(?:\s|;)` gets 0 edges in every machine because precondition (1) requires one exit target; the emitter's argument seems to need only agreement outside the class. Direction-neutral
+  trigger: a hot bench/corpus cell with a counted run followed by a multi-way continuation; first step a compile-only census on a scratch probe build
+  refs: docs/dev/lanes/spandir_report.md; src/opt/scanedge.c; [OPT-5]; roadmap A-REV
+- [PCRE2-EXCEED] STATE:not-started — lift refusals that exist only because PCRE2 refuses (numeric limits); list where pcrec exceeds PCRE2
+  filed: 2026-11-06 Frank (D26 addendum: the accept set is a floor, not a ceiling)
+  status (2026-11-06): not started, unscheduled; first candidates: the lookbehind branch ceiling LA_LOOKBEHIND_BRANCH_MAX 65535 (vlookbehind stage 1) and PCREC_MAX_REPEAT 65535 ({65536}); a grep of limits.def rows whose only reason is PCRE2 finds the rest
+  trigger: after lookbehind stage 1 lands; or a user hitting one of these limits
+  refs: decisions D26 (+ 2026-11-06 addendum) D38; src/core/limits.def; docs/pcre2_compliance.md; [VLOOKBEHIND]; [IFACE-PUSH]
+  Scope (Frank): (1) per limit, lift it where pcrec matches correctly, each with an ORACLE PLAN (libpcre2 cannot check it: python re, a brute-force checker, or a reduction to a checkable case). (2) A DOCUMENTS NOTE in the compliance file: a table of every place pcrec exceeds PCRE2 in numbers (limit, PCRE2's value, pcrec's, why safe). (3) A PCRE2 COMPATIBILITY MODE: an opt-in that refuses exactly what PCRE2 refuses, for callers who need the same accept set (shape TBD: a feature family member, an option, or a limits profile; rides [IFACE-PUSH]). (4) Tangent, same pass: a caller-declared MAX-SETTINGS PROMISE (e.g. max subject length, max budget), stamped in the artifact and checked at entry, letting generated code use NARROWER types for positions and budget/step counters (e.g. 32-bit). Manager could not find the earlier discussion of (4) in the committed record; this row is now its home. Each narrowing is measured (size, speed) before it ships.
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind

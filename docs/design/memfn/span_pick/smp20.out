@@ -40,3 +40,4 @@ h1 40  cheapest one-member @1 {/} 236556; {X,x} kept for k < k*, departs above: 
    @0 {X,x} at 1502 points; @1 {/} at 2034 points
 == with data weblog: B's cheapest stop over the grid (h1 5..40, hit(PAIR) 1-8 x h1, k 1.00-12.00 by 0.05)
    @0 {X,x} at 98 points; @5 {4} at 3438 points
+== blind P: argmin over the grid (h1 5..40, hit(PAIR) 1-8 x h1, k 1.00-12.00 by 0.05), 3536 points: @0 {X,x} at 155 points; @1 {/} at 3381 points

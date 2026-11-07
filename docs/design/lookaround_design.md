@@ -444,6 +444,14 @@ reason rather than for effort.
 
 ### 2.5 THE RULE THIS MODULE SHIPS
 
+> **SUPERSEDED IN PART (2026-11-06, [VLOOKBEHIND] stage 1, D189;
+> `docs/design/vlookbehind.md`, `pattern_language.md` §7.4¶5).** A branch may
+> now vary within a BOUNDED range (at most 255 characters once any branch
+> varies, 65,535 in any case), tried farthest candidate first. The bounded
+> rows below that say **REFUSED** (`(?<=(a|bc))x`, `(?<=a{2,3})x`,
+> `(?<=a?)x`) now compile and answer as libpcre2 10.46 does. The unbounded
+> family (err 125 on both sides) and the backreference row stay refused.
+
 > **A lookbehind body's every TOP-LEVEL BRANCH must have a fixed width:**
 > `minw(branch) == maxw(branch)`, both finite. Widths may DIFFER between
 > branches. A body with any variable-width branch is REFUSED with pcrec's own

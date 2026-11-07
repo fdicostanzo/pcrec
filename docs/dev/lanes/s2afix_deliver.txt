@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2afix_report.md
+sections: Summary; Fixes by finding id; Sabotage; Validation; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: gates 460-468 (the manager queues them)

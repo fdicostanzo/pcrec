@@ -980,11 +980,13 @@ F_INTER.append(B(
     "extract 3.4(d) row 2 / the amendment's SECOND bullet: a single call "
     "that is itself the lookbehind's ONE top-level branch, whose callee "
     "has an alternation of DIFFERENT fixed widths (1..2). PCRE2 ACCEPTS "
-    "this and matches (0,2); pcrec REFUSES it by ruling, because from the "
+    "this and matches (0,2); pcrec refused it by ruling, because from the "
     "lookbehind body's own point of view this is one branch of variable "
-    "width -- the (?<=(a|bc))x shape module lookaround already refuses. "
-    "Being reached through a call does not change that. Existence only.",
-    perr="pcrec"))
+    "width -- the (?<=(a|bc))x shape. FLIPPED (lane vlbbuild, manager "
+    "ruling R1): pcrec refused it by the [DD-14.LB] amendment until "
+    "[VLOOKBEHIND] stage 1 built the varying-branch loop; it now answers, "
+    "and the expectations are libpcre2 10.46's.",
+    [m("ab"), n("b"), n("aab")]))
 
 F_INTER.append(B(
     "^(?(DEFINE)(?<g>a(?&g)?b))aabb(?<=(?&g))$", [R, NG, LA],

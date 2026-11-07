@@ -163,9 +163,10 @@ Of PCRE2's syntax surface:
   in EIGHTEEN spellings — `(?=` `(?!` `(?<=` `(?<!` `(?*` `(?<*` and the
   twelve `(*` alpha spellings — [M6.6.2], 2026-08-24). **`lookaround` is the
   first module to move a survey row from `REJECTED` to `OK-LIMITED`**: the
-  lookbehind pair ships fixed-width-PER-BRANCH, which is wider than
+  lookbehind pair shipped fixed-width-PER-BRANCH, which is wider than
   "fixed-length lookbehind" and narrower than PCRE2, and the row names the
-  limit's kind. It also moved the twelve alpha spellings from module `verbs`
+  limit's kind (since [VLOOKBEHIND] stage 1, 2026-11-06, bounded variable
+  width; the limit left is a backreference or variable inside). It also moved the twelve alpha spellings from module `verbs`
   — the wrong module, promised for a year of sessions by a `(*` doorway whose
   ONE row answered for every name in both of PCRE2's verb tables — and gave
   each of them an index row of its own, folded into its primary's family line
@@ -1406,7 +1407,7 @@ same, scoped to `\R`.
 | syntax | status | becomes |
 |---|---|---|
 | `(?=...)` `(?!...)` | `OK-GATED` | — |
-| `(?<=...)` `(?<!...)` — CAPABILITY limit: every TOP-LEVEL BRANCH of the body must be fixed-width; widths may DIFFER between branches (`(?<=a\|bc)x` compiles, `(?<=(a\|bc))x` is refused with a capability message and a pattern offset) | `OK-LIMITED` | `PLANNED` |
+| `(?<=...)` `(?<!...)` — BOUNDED variable width per top-level branch since [VLOOKBEHIND] stage 1, at PCRE2's own limits (65535 characters; 255 once a branch varies): `(?<=a\|bc)x` and `(?<=(a\|bc))x` compile. CAPABILITY limit: a backreference or variable inside is refused with a capability message and a pattern offset (stage 2) | `OK-LIMITED` | `PLANNED` |
 | `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` `(*positive_lookahead:)` `(*negative_lookahead:)` `(*positive_lookbehind:)` `(*negative_lookbehind:)` verbose spellings — module `lookaround`, NOT `verbs` | `OK-GATED` | — |
 | `[[:<:]]` `[[:>:]]` — a word-boundary assertion, module `assertions`, filed in this section by the original survey | `REJECTED` | `PLANNED` |
 | `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` `(*non_atomic_positive_lookahead:)` `(*non_atomic_positive_lookbehind:)` non-atomic lookaround | `OK-GATED` | — |
@@ -1447,34 +1448,36 @@ any `EXTRA_*` bit is a D38 ruling event, and Frank closed the reopening
 on 2026-08-23. The refusal is recursive through nested groups and nested
 lookarounds and stops at the assertion's own `)`.
 
-**`(?<=...)`** (2026-08-24)
+**`(?<=...)`** (2026-11-06)
 
-2026-11-06: the VARIABLE-width case (`(?<=a{1,3})b`, `(?<=(a|bc))b`) is
-plan row [VLOOKBEHIND] (PCRE2 gap rank 1): DESIGNED (rev 2 and a pieces
-study merged, critic rounds in docs/dev/reviews/2026-11-05-r3-vlookbehind.md),
-NOT BUILT, awaiting the owner's build go. The refusal below is today's
-behaviour.
-**SHIPS since [M6.6.2], FIXED-WIDTH PER BRANCH** — which is a WIDER rule
-than "fixed-length lookbehind" and the difference is measurable, not
-cosmetic. Every TOP-LEVEL BRANCH of the body must have a fixed width;
-widths may DIFFER between branches. So `(?<=a|bc)x` COMPILES (two
-branches, widths 1 and 2 — a pattern python `re` refuses outright), while
-`(?<=(a|bc))x` is REFUSED: one branch of width 1..2. The two differ by a
-pair of parentheses and by whether the longest-first step-back loop
-PCRE2 runs within a branch is needed, which this module does not build.
+**SHIPS BOUNDED VARIABLE-WIDTH since [VLOOKBEHIND] stage 1** (D189,
+2026-11-06; it superseded [M6.6.2]'s fixed-width-per-branch rule and
+[DD-14.LB]'s ruled refusal). Each top-level branch may match a BOUNDED
+number of characters: `(?<=(a|bc))x`, `(?<=a{1,3})b` and `(?<=a|bc)x`
+compile and answer as libpcre2 10.46 does (0 differences over the stage-1
+gates). The limits are PCRE2's own, at its defaults: at most 65535
+characters per branch, and at most 255 once any branch's length varies
+(`(?<=a{1,256})x` is refused at offset 0, libpcre2 error 200;
+`(?<=a{1,255}|b)x` compiles). Counts are characters, so `utf8` counts code
+points. MEASURED 2026-11-06 on lane/vlbbuild.
 
-The refusal is a CAPABILITY limit and is worded as one, at the
-assertion's own pattern offset — "variable-length lookbehind is not
-implemented: every alternative of a lookbehind must have a fixed length
-(this one can match 1..2 characters)" — never as "requires module
-'lookaround'", which would be an actionable-sounding lie to a caller who
-has already enabled it. An unbounded body (`(?<=a*)x`) gets the same
-refusal naming unboundedness; libpcre2's own answer there is error 125.
+Three refusals remain, each worded by what is refused, at the assertion's
+own pattern offset, never as "requires module 'lookaround'":
 
-The pre-landing note ("tractable via the reverse machine D7 already
-builds") named a mechanism the module did NOT use: the lowering is a
-back-step to a known offset followed by a FORWARD body match and an
-end-check, not a reverse machine — see the design's §3.5 for why.
+    (?<=a*)x                "... must have a bounded length (this one is
+                            unbounded)"; libpcre2 error 125, same offset.
+    (a)(?<=\1)x             "a lookbehind containing a backreference or a
+                            variable is not implemented"; libpcre2 ACCEPTS
+                            it. A capability limit (shape 5), until stage 2.
+                            A branch unbounded for its own reason keeps the
+                            unbounded sentence: `(a)(?<=a+|\1)x`.
+    (?<=(?:)*a)x            ACCEPTED here, refused by libpcre2 (error 125):
+                            an unbounded repeat of something that matches no
+                            characters counts as zero, a stated divergence.
+
+The lowering steps back to the farthest candidate start and matches the
+body FORWARD, nearest-last, with an end-check; not a reverse machine.
+Its give-up class is STEPS on long subjects for wide ranges (`limits.md`).
 
 **A BODY CARRYING A SUBROUTINE CALL IS MEASURED AFTER THE CALL GRAPH
 EXISTS** ([DD-14.LB], `src/opt/postresolve.c`). A call's width is not
@@ -1482,10 +1485,11 @@ knowable at the parse hook — "how wide is `(?1)`" is a question about a
 group that may not have been seen yet, and about a graph that does not
 exist until every call is resolved — so the parse hook RECORDS the
 lookbehind's offset and the width rule is re-asked at that offset once
-`pcrec_callgraph_build` has run. The fixed-per-branch subset itself is
+`pcrec_callgraph_build` has run. The width rule itself is
 UNCHANGED by this; what changes is when it can be evaluated.
 
-The two outcomes, MEASURED on 10.46 and on this tree (2026-08-24):
+The outcomes, MEASURED on 10.46 and on this tree (2026-08-24; re-measured
+2026-11-06 for stage 1):
 
     (a)(?<=(?1))b           COMPILES both sides — an ACYCLIC callee of
                             fixed width composes, and so does calling it
@@ -1499,13 +1503,11 @@ The two outcomes, MEASURED on 10.46 and on this tree (2026-08-24):
                             pcrec answers its own capability wording
                             naming unboundedness.
 
-    (a|bc)(?<=(?1))d        REFUSED HERE and accepted there — the
-                            PRE-EXISTING fixed-per-branch limit above,
-                            reached through a call rather than by
-                            writing the alternation out. Nothing about
-                            it is new; it is listed so the reader can
-                            see the call does not change which rule
-                            applies, only when it is asked.
+    (a|bc)(?<=(?1))d        COMPILES both sides since [VLOOKBEHIND]
+                            stage 1 (it was refused under the
+                            fixed-per-branch rule): the call does not
+                            change which rule applies, only when it is
+                            asked.
 
 **`base:lookaround-verb-spellings`** (2026-08-24)
 

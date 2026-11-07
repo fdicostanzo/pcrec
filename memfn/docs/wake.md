@@ -13,8 +13,9 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main 20fb73159 merged 
 4. Review docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (rulings), and r1 (1d) before it.
 5. D186 + addenda, D187, manifesto principle 9.
 
-## CURRENT STATE: span_pick STAGE 1, unit 1e DELIVERED (done: 5f1f968f5, 11-06 01:35); WAITING ON MAIN'S MERGE
-Gates 430-439 all GREEN; S1079's record figure is 6/3155 DETECTED. Once main merges: stage 1 is complete, so merge main into k1102, prune sp1e/sp1efix via main, and wait for Frank's stage 2-3 GO.
+## CURRENT STATE: SPAN_PICK STAGE 1 COMPLETE (1e landed 11-06, main a65debe9d)
+There is no open kit work. Stages 2-3 wait for Frank's GO via main; do not cut them without it.
+Todo on a quiet pass: `scripts/wtprune --apply --force sp1efix` (it was kept only for build/ age plus the test-written artifact_size_log.tsv), then `scripts/branchprune --kit` for lane/memfn-sp1e and sp1efix.
 The history below is kept for context.
 Landed on main: 1a, 1f, 1g, 1b, 1c, 1d (20fb73159).
 - **1e:** lane/memfn-sp1e @ 9cf199ed3 (sp1e accc55eeb + fix lane sp1efix, fast-forwarded). Reports: docs/dev/lanes/sp1e_report.md and sp1efix_report.md.

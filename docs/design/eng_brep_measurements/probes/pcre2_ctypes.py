@@ -33,7 +33,14 @@ PCRE2_ERROR_NOMEMORY = -48
 
 # Compile-time option bits actually used here (pcre2.h, 8-bit build).
 PCRE2_MULTILINE = 0x00000400
-PCRE2_UTF = 0x00080000  # not used: this module stays byte-oriented like pcrec
+# A str pattern or subject is ALWAYS latin-1 (one character per byte), under
+# PCRE2_UTF too: a caller wanting UTF-8 hands bytes. (lane mttri: vlbbuild U6
+# switched str to UTF-8 under PCRE2_UTF, which double-encoded verify_vars.py's
+# latin-1 subjects and turned test-vars red; every UTF caller passes bytes.)
+PCRE2_UTF = 0x00080000
+# [VLOOKBEHIND] gate 1's `utf8-invalid` mode (pcre2.h 10.46, compile option):
+# an ill-formed subject is read as pcrec reads one (utf8_design.md §2.6).
+PCRE2_MATCH_INVALID_UTF = 0x04000000
 
 _CANDIDATES = ["libpcre2-8.so.0", "libpcre2-8.so"]
 
@@ -82,6 +89,14 @@ _lib.pcre2_compile_8.argtypes = [
     ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_size_t),
     ctypes.c_void_p]
 
+# [VLOOKBEHIND] a compile context, so gate 3 can ask max_varlookbehind = 0.
+_lib.pcre2_compile_context_create_8.restype = ctypes.c_void_p
+_lib.pcre2_compile_context_create_8.argtypes = [ctypes.c_void_p]
+_lib.pcre2_compile_context_free_8.restype = None
+_lib.pcre2_compile_context_free_8.argtypes = [ctypes.c_void_p]
+_lib.pcre2_set_max_varlookbehind_8.restype = ctypes.c_int
+_lib.pcre2_set_max_varlookbehind_8.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+
 _lib.pcre2_match_data_create_from_pattern_8.restype = ctypes.c_void_p
 _lib.pcre2_match_data_create_from_pattern_8.argtypes = [
     ctypes.c_void_p, ctypes.c_void_p]
@@ -123,7 +138,11 @@ def version():
 
 
 class Pcre2Error(Exception):
-    pass
+    """`code` is PCRE2's error number for a compile failure (positive,
+    e.g. 125/187/200 for the lookbehind length rules), else None."""
+    def __init__(self, msg, code=None):
+        super().__init__(msg)
+        self.code = code
 
 
 def _errmsg(code):
@@ -137,17 +156,26 @@ class Compiled:
 
     __slots__ = ("_code",)
 
-    def __init__(self, pattern, options=0):
+    def __init__(self, pattern, options=0, max_varlookbehind=None):
         if isinstance(pattern, str):
             pattern = pattern.encode("latin-1")
         errcode = ctypes.c_int(0)
         erroff = ctypes.c_size_t(0)
-        code = _lib.pcre2_compile_8(
-            pattern, len(pattern), options,
-            ctypes.byref(errcode), ctypes.byref(erroff), None)
+        ccx = None
+        if max_varlookbehind is not None:
+            ccx = _lib.pcre2_compile_context_create_8(None)
+            _lib.pcre2_set_max_varlookbehind_8(ccx, max_varlookbehind)
+        try:
+            code = _lib.pcre2_compile_8(
+                pattern, len(pattern), options,
+                ctypes.byref(errcode), ctypes.byref(erroff), ccx)
+        finally:
+            if ccx:
+                _lib.pcre2_compile_context_free_8(ccx)
         if not code:
             raise Pcre2Error("pcre2_compile failed at offset %d: %s"
-                              % (erroff.value, _errmsg(errcode.value)))
+                              % (erroff.value, _errmsg(errcode.value)),
+                             errcode.value)
         self._code = code
 
     def __del__(self):
@@ -194,8 +222,8 @@ class Compiled:
             _lib.pcre2_match_data_free_8(md)
 
 
-def compile(pattern, options=0):                    # noqa: A001 - mirrors re.compile
-    return Compiled(pattern, options)
+def compile(pattern, options=0, max_varlookbehind=None):  # noqa: A001 - mirrors re.compile
+    return Compiled(pattern, options, max_varlookbehind)
 
 
 if __name__ == "__main__":

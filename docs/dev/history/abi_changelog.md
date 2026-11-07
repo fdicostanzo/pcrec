@@ -23,8 +23,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `96` on every artifact today ([RUN-POS-SET] stage 1, 95 -> 96,
-  provisional, the next number at landing; lane altbuild, 2026-11-06;
+- **`rx_info.abi` is `97` on every artifact today ([RUN-POS-SET] stage 1, 96 -> 97,
+  built as 95 -> 96 by lane altbuild 2026-11-06, renumbered at its catch-up merge
+  over main's [VLOOKBEHIND] 96 in landing order (lane altcatch, 2026-11-07);
   `docs/design/alt_normal_form.md` rev 3 §5 stage 1; closes [LOWERENC-SEAL]).**
   The UTF-8 lowering hands a wide class's boxes to the alternation owner
   (`src/opt/altnf.c`, rule M, sibling merge: two boxes equal at every position
@@ -47,11 +48,23 @@ the bump's own commit.**
   retry is the caller's `-fno-alt-island` artifact with the earlier rungs'
   drops applied); and the island reads a byte class as its member words, its
   size row counting the chain before rule M's folds, so an alternation the
-  owner folds keeps the island it had at 95 (bench altwide w-256: 20
+  owner folds keeps the island it had at 96 (bench altwide w-256: 20
   islands back to 1) and a finite alternation with a written class can now
   take one where the size row admits it (`x(?:[éà]|foo|bar|baz)y` under
   `--engine=vm`). No answer moves.
-- **`rx_info.abi` was `95` ([LANDWALK] stage 1, 94 -> 95,
+- **`rx_info.abi` was `96` on every artifact ([VLOOKBEHIND] stage 1 and
+  K137, 95 -> 96, lane vlbbuild, 2026-11-06; docs/design/vlookbehind.md rev 4,
+  docs/dev/lanes/vlbbuild_report.md).** Two scaffolding changes. (1) K137: the
+  utf8 unanchored retry advance's [K49] comment is the backend's own doc half
+  (enc.h `advance_doc`, D112), emitted through the comment gate, so a default
+  (`-fno-comments`) `-e utf8` VM artifact with a retry loop no longer carries
+  those five comment lines; byte artifacts and every `-fcomments` artifact are
+  unchanged. (2) Bounded variable-width lookbehind compiles (patterns refused
+  before): a varying branch's `RX_SLOT_LB_LO<j>` slots (the top sub-block of
+  `low`), the artifact-wide `size_t <p>_lb_count = 0;` local, and the seam
+  entry `<p>_fwd_step` (`static inline`, emitted only where a varying branch
+  calls it). No artifact that compiled before stage 1 moves under (2).
+- **`rx_info.abi` was `95` on every artifact ([LANDWALK] stage 1, 94 -> 95,
   numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
   built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;
   D184; docs/dev/lanes/p1dsg3_report.md rev 2, docs/dev/lanes/p1build_report.md

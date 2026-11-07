@@ -30,7 +30,7 @@ header and calls nothing above `core`.
   `extern` in `enc.h`, a row in `enc.c`'s table (the Makefile globs
   `src/enc/*.c`). The row carries: residual ENTRIES, `max_cp`, `onebyte_max`,
   `fold` (NEVER NULL: an empty relation, so no encoding opts out of case
-  questions), `restrict_ok`, `advance` text, `start_cls` + `start_guard`
+  questions), `restrict_ok`, `advance` text (+ `advance_doc`, its prose, NULL if none; K137), `start_cls` + `start_guard`
   (NULL both if no position is restricted), and a `sites` table if its span
   compare is byte-wise. NOTHING in `src/core`, `parse`, `ir`, `opt`, `gen`,
   `cli/`, `lib/` is touched; if a shared file outside this directory must
@@ -63,6 +63,11 @@ header and calls nothing above `core`.
 - `back_step` returns the sentinel `<prefix>_BACK_STEP_NONE` (`(size_t)-1`),
   not a signed length; `s`/`n` parameters stay (adding one later is an ABI
   break). Engine-callable.
+- `fwd_step` ([VLOOKBEHIND] stage 1): one CHARACTER forward, bounded by the
+  lookbehind's cursor; inline, engine-callable, its own literal text (never
+  `next_pos`'s, READY-10). A boundary entry with `next_pos`
+  (`PCREC_ENC_BOUNDARY_ENTRIES`, K49's agreement set). The symbols a row
+  defines come from `pcrec_enc_entry_symbols`, the checks' one source.
 - `engine_callable` is a fact about the ENTRY, consumed on the compile path
   (`emit_vm.c` `A_BREF` via `pcrec_enc_entry_engine_callable`). `next_pos` is
   `false` (the engine advances via the inline `advance` text); compares and

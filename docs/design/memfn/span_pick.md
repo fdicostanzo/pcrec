@@ -234,8 +234,10 @@ data, B's sampling terms. No constant enters but the card gates (`gate_e6` 3 %, 
 D149). `[rev5 A4]` Stage 2 defines a COVERAGE FACTOR, UNMEASURED DEFAULT (1 sigma departs ~16 % of
 equal-price comparisons per side), and B's sampling noise by block bootstrap per bundle byte (Poisson
 `sqrt(n)` is 0 at n = 0, 2-5x low on clustered text). `[rev5.1 R1]` pcrec STATES it with the rates, or
-none (no sampling term); the kit keys nothing on provenance. Its seam field: stage 2's MF_SITE_ABI
-event.
+none (no sampling term); the kit keys nothing on provenance. Its seam field: `[s2]` DEFERRED to its
+producer (`span_cards.md` §4.6; no producer writes a bundle noise today): one MF_SITE_ABI event with its
+pcrec producer when [BENCH-WITHDATA]'s held-out bundles or row 1's with-data band need it. Stage 2's own
+event (MF_SITE_ABI 24, unit S2a) carries the CARDS' noise only.
 
 ## Cost cards
 
@@ -283,10 +285,10 @@ none, and a regime it loses beyond noise narrows the row or is an owner exceptio
 NOT in the band: `[rev3 C3]` row 1 runs with it UNMEASURED, guarded by its predicted-vs-measured print
 per mover (R5.3), whose spread the NEXT row adds.
 
-**What the formula says for smp20** `[rev5]` (`span_pick/smp20.py`, `smp20.out`; bundles and
+**What the formula says for smp20** `[rev5]` (`span_pick/census0.py control`, `smp20.out` `[s2b]`; bundles and
 incumbents from `witness.sh`/`witness.out`; STAND-INS in its docstring: byte(memchr) 0.06 = C_MEMCHR,
 byte(PAIR) 2x, hit 20, cmp 2.5, enter 20). Per 1e6 bytes, hit(PAIR) 20 (40 in brackets where it
-differs). `[rev5.1 R17]` The last column and every grid count below are BAND-0 ARGMINS (smp20.py :98):
+differs). `[rev5.1 R17]` The last column and every grid count below are BAND-0 ARGMINS (`census0.py` `pick`):
 under §The pick 4 the noiseless stand-ins qualify nothing, so every point keeps the incumbent.
 
 | source | @0 {X,x} PAIR | @1 {/} | @4 {3} | @5 {4} | least | today's (incumbent) | band-0 argmin |

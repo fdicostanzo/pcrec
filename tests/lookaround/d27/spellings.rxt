@@ -131,32 +131,38 @@ features lookaround,backrefs
 m "ab" 0 2
 g 1 0 2
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # NAPLB spelling '(?<*)'
+# pcre2-only
 pattern (?<*(a|ba))c
 features lookaround
-perr
+n "ba"
+n "xa"
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # NAPLB spelling '(*naplb:)' [alpha]
+# pcre2-only
 pattern (*naplb:(a|ba))c
 features lookaround
-perr
+n "ba"
+n "xa"
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # NAPLB spelling '(*non_atomic_positive_lookbehind:)' [alpha]
+# pcre2-only
 pattern (*non_atomic_positive_lookbehind:(a|ba))c
 features lookaround
-perr
+n "ba"
+n "xa"
 
 # sec 2.2 atomicity discriminator: atomic lookahead (?= keeps FIRST alt
 pattern (?=(a|ab))\1$
@@ -203,41 +209,65 @@ n "ab"
 m "a" 0 1
 g 1 0 1
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # sec 2.1/2.4 lookbehind atomicity: atomic lookbehind keeps a SPECIFIC branch (sec 2.4 order)
+# pcre2-only
 pattern (?<=(a|ba))c
 features lookaround
-perr
+m "bac" 2 3
+g 1 0 2
+m "xac" 2 3
+g 1 1 2
+m "aac" 2 3
+g 1 1 2
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # sec 2.1/2.4 lookbehind atomicity: non-atomic lookbehind, same body
+# pcre2-only
 pattern (?<*(a|ba))c
 features lookaround
-perr
+m "bac" 2 3
+g 1 0 2
+m "xac" 2 3
+g 1 1 2
+m "aac" 2 3
+g 1 1 2
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # sec 2.1/2.4 lookbehind atomicity: naplb == (?<* -- alpha spelling
+# pcre2-only
 pattern (*naplb:(a|ba))c
 features lookaround
-perr
+m "bac" 2 3
+g 1 0 2
+m "xac" 2 3
+g 1 1 2
+m "aac" 2 3
+g 1 1 2
 
-# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
-# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
-# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
-# pcre2-only
+# FLIPPED (lane vlbbuild, manager ruling R1): [VLOOKBEHIND] stage 1 answers
+# this ONE-branch width 1..2 body, so the TRIAGE refusal above it is
+# retired. The expectations are the author's own, re-derived from
+# libpcre2 10.46 by gen_spellings.py (never from pcrec).
 # sec 2.1/2.4 lookbehind atomicity: plb == (?<= -- alpha spelling
+# pcre2-only
 pattern (*plb:(a|ba))c
 features lookaround
-perr
+m "bac" 2 3
+g 1 0 2
+m "xac" 2 3
+g 1 1 2
+m "aac" 2 3
+g 1 1 2
 
 # sec 2.6 degenerate empty body
 pattern a(?=)b

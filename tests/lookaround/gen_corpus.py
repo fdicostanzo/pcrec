@@ -668,33 +668,11 @@ REFUSED = [
  cell(r"(?=a(?:\K))x", "assertions," + LA, None, None, perr=True),
  cell(r"(?=(?:(?=\K)))x", "assertions," + LA, None, None, perr=True),
  cell(r"(?=\Ka)x", "assertions," + LA, None, None, perr=True),
- # ---- [WAVE D] §2.5's VARIABLE-WIDTH REFUSALS ----------------------------
- # A CAPABILITY LIMIT, and worded as one. The construct is REAL and the module
- # is ENABLED, so this is not "requires module 'lookaround'" -- what is missing
- # is the longest-first step-back loop §2.5 charters and this module does not
- # build. Every cell below is a `perr` for pcrec; libpcre2's own verdict is
- # recorded per block by the generator and it DIFFERS across the family, which
- # is the point: on the unbounded bodies pcrec AGREES with PCRE2 (err 125), and
- # on the bounded ones PCRE2 COMPILES what pcrec refuses.
- cell("(?<=(a|bc))x", LA, None,
-      "THE CELL §2.5 EXISTS TO DISTINGUISH, and its near-twin `(?<=a|bc)x` "
-      "SHIPS (lookbehind_widths.rxt). This is ONE top-level branch of width "
-      "1..2; that is TWO branches of fixed widths 1 and 2. The difference is "
-      "exactly §2.4's level-1/level-2 split: within ONE branch PCRE2 tries "
-      "the step-back LENGTH longest-first, over a range whose ends come from "
-      "the new `pcrec_maxw` analysis, and that loop runs in the OPPOSITE "
-      "direction to every other ordered choice the emitter makes. §2.5 gives "
-      "three reasons to charter it rather than ship it in the same wave as "
-      "the analysis. THIS ASYMMETRY IS THE MOST LIKELY THING IN THIS MODULE "
-      "TO BE CALLED A DEFECT and §12 P-3 says how to refute it.",
-      perr=True),
- cell("(?<=a{2,3})x", LA, None,
-      "A BOUNDED VARIABLE body: PCRE2 compiles it (capped by the compile "
-      "context's `max_varlookbehind`, whose default bisects to 255), python "
-      "refuses it, pcrec refuses it. G2's cell.", perr=True),
- cell("(?<=a?)x", LA, None, "Width 0..1 -- the smallest variable body there "
-      "is, and still variable.", perr=True),
- cell("(?<=a{0,3})x", LA, None, None, perr=True),
+ # ---- [WAVE D] §2.5's UNBOUNDED REFUSALS ----------------------------------
+ # [VLOOKBEHIND] stage 1 built the bounded variable-width loop, so the BOUNDED
+ # bodies this family held moved to lookbehind_variable.rxt as answer cells.
+ # What stays is the half PCRE2 refuses too: an unbounded body (err 125), and
+ # the backreference rows stage 2 owns.
  cell("(?<=a*)x", LA, None,
       "AND HERE pcrec AGREES WITH PCRE2, which is err 125 \"length of "
       "lookbehind assertion is not limited\". The refusals in this family are "
@@ -710,20 +688,11 @@ REFUSED = [
  cell("(?<=(?>a*))x", LA + ",atomic-groups", None,
       "...and the ATOMIC-GROUP spelling. The cut removes MATCHES, never "
       "BYTES, so the width is unchanged and still unbounded.", perr=True),
- cell("(?<=(?:a|bc)d)x", LA, None,
-      "ONE branch whose own INTERIOR alternation makes it variable (2..3). "
-      "A `|`-counting scanner would read this as two branches and accept it, "
-      "which is why the branch split comes from `AltInfo.nbr` -- the count "
-      "the LOOP THAT DROVE THE PARSE produced -- and never from the text.",
-      perr=True),
- cell("(?<=((a|bc)d))x", LA, None, None, perr=True),
  cell("(?<!a*)x", LA, None,
       "THE RULE IS POLARITY-BLIND (§2.3's own row): the same body behind a "
       "negative assertion is refused for the same reason.", perr=True),
  cell("(?<*a*)x", LA, None,
       "...and ATOMICITY-BLIND.", perr=True),
- cell("(?<!(a|bc))x", LA, None, None, perr=True),
- cell("(?<*(a|bc))x", LA, None, None, perr=True),
  cell(r"(a)(?<=\1)x", LA + ",backrefs", None,
       "A BACKREFERENCE INSIDE A LOOKBEHIND, and pcrec's refusal here is "
       "CONSERVATIVE rather than forced: PCRE2 accepts it (maxlb 1) because "
@@ -743,17 +712,6 @@ REFUSED = [
       "why the assertion family's `\\Z` expansion `(?=\\n?\\z)` ships -- so "
       "this cell fixes that the refusal belongs to the LOOKBEHIND and is not "
       "a property of the enclosing construct.", perr=True),
- cell(r"(?<=\n?\z)x", "assertions," + LA, None,
-      "§2.5's DISCRIMINATING ROW, and it is the one that stops \"the rule is "
-      "exactly big enough for the assertion family\" from being a "
-      "coincidence. `\\Z` IS `(?=\\n?\\z)` -- a lookAHEAD, where there is no "
-      "width rule at all -- and every one of the nine [DD-11]/D66 expansions "
-      "compiles under §2.5. THE SAME BODY ONE DIRECTION OVER is width 0..1 "
-      "and is refused, which is this cell. §12 P-12 is how to refute the "
-      "coincidence.", perr=True),
- cell(r"(?<=\w?)x", LA + ",classes", None,
-      "...and the same shape with a class, so the refusal is about the "
-      "OPTIONALITY and not about `\\n` or `\\z`.", perr=True),
  cell("(?=a", LA, None,
       "THE UNTERMINATED FORMS. The port owns its own closing-`)` "
       "diagnostic, exactly as mod_atomic_groups.c\'s does -- "
@@ -768,6 +726,45 @@ REFUSED = [
       "never reached the body parse that owns this diagnostic.", perr=True),
  cell("(?<!a", LA, None, None, perr=True),
  cell("(?<*a", LA, None, None, perr=True),
+]
+
+# ===========================================================================
+#  lookbehind_variable.rxt — [VLOOKBEHIND] stage 1: BOUNDED VARIABLE bodies
+# ===========================================================================
+# Refused until stage 1 (refused.rxt's wave-D family), compiled since: the
+# candidate starts farthest first, the body run forward until it ends at the
+# cursor (pattern_language.md §7.4). Every expectation is libpcre2's; python
+# refuses every one of these, so every block is `# pcre2-only` by detection.
+LOOKBEHIND_VARIABLE = [
+ cell("(?<=(a|bc))x", LA, [("ax", 0), ("bcx", 0), ("cx", 0), ("x", 0),
+                          ("abcx", 0), ("zbcx", 1)],
+      "§2.5's DISTINGUISHING CELL, now an answer: ONE top-level branch of "
+      "width 1..2 beside its near-twin `(?<=a|bc)x`, TWO fixed branches "
+      "(lookbehind_widths.rxt). The answers agree; the capture shows which "
+      "length the farthest-first rule picked."),
+ cell("(?<=a{2,3})x", LA, [("aax", 0), ("aaax", 0), ("ax", 0), ("baax", 0),
+                          ("aaaax", 0)],
+      "A bounded variable body, two lengths: G2's cell."),
+ cell("(?<=a?)x", LA, [("x", 0), ("ax", 0), ("bx", 0), ("aax", 1)],
+      "Width 0..1, the smallest variable body: the empty candidate makes "
+      "every `x` match."),
+ cell("(?<=a{0,3})x", LA, [("x", 0), ("aaax", 0), ("aaaax", 2), ("bx", 0)]),
+ cell("(?<=(?:a|bc)d)x", LA, [("adx", 0), ("bcdx", 0), ("cdx", 0), ("dx", 0)],
+      "ONE branch whose own INTERIOR alternation makes it variable (2..3); "
+      "the branch split comes from the parse, never from counting `|`."),
+ cell("(?<=((a|bc)d))x", LA, [("adx", 0), ("bcdx", 0), ("cdx", 0)]),
+ cell("(?<!(a|bc))x", LA, [("ax", 0), ("bcx", 0), ("cx", 0), ("x", 0),
+                          ("zzx", 0)],
+      "The negative polarity: the assertion holds when no candidate of "
+      "either length ends at the cursor."),
+ cell("(?<*(a|bc))x", LA, [("ax", 0), ("bcx", 0), ("cx", 0)],
+      "...and the non-atomic spelling."),
+ cell(r"(?<=\n?\z)x", "assertions," + LA, [("x", 0), ("\nx", 0), ("a", 0)],
+      "§2.5's DISCRIMINATING ROW, answered: `\\Z`'s body one direction over "
+      "(width 0..1). `\\z` inside a lookbehind holds only at the subject end, "
+      "and an `x` follows, so the pattern never matches; libpcre2 agrees."),
+ cell(r"(?<=\w?)x", LA + ",classes", [("x", 0), ("ax", 0), ("-x", 0), ("aax", 1)],
+      "...and the same optional shape with a class."),
 ]
 
 # ===========================================================================
@@ -810,15 +807,18 @@ GATED = [
       "to split out of the named-group path -- the tail most likely to be "
       "lost, since `*` is the one that is not a comparison operator.",
       perr=True),
- cell("(?<=(a|bc))x", LA, None,
-      "AND THE ONE ENABLED-AND-BUILT REFUSAL THIS MODULE STILL OWES A GATE "
-      "CELL: §2.5's variable-width limit is NOT the gate and NOT the "
-      "`unbuilt` column -- module `lookaround` is enabled, the row is "
-      "`built`, and the construct is real. It is the CAPABILITY tier, and "
-      "the wording says so instead of telling a caller to enable something "
-      "they already have. refused.rxt carries the family; this block is here "
-      "so the three tiers sit in one file where a reader can see they are "
-      "three different sentences.", perr=True),
+ cell("(?<=(a|bc))x", LA, [("ax", 0), ("bcx", 0), ("cx", 0)],
+      "§2.5's variable-width body, the cell that sat here as the CAPABILITY "
+      "tier's refusal until [VLOOKBEHIND] stage 1 built the loop: it answers "
+      "now. The capability tier is still a third sentence, held by the next "
+      "cell."),
+ cell(r"(a)(?<=\1)x", LA + ",backrefs", None,
+      "THE CAPABILITY TIER, after stage 1: a backreference inside a "
+      "lookbehind. Module `lookaround` is enabled, the row is `built`, the "
+      "construct is real and libpcre2 compiles it; pcrec refuses it until "
+      "[VLOOKBEHIND] stage 2, with a capability message rather than a gate "
+      "or `unbuilt` wording. So the three tiers still sit in one file.",
+      perr=True),
  cell(r"(?=a\K)x", LA, None,
       "R33 C2-5's MASKING SHAPE, PINNED. Without `assertions` this cell is "
       "refused by the ASSERTIONS gate and never reaches §2.7's check at "
@@ -1067,17 +1067,14 @@ for _name in ("nlb", "negative_lookbehind"):
              "...the LOOKBEHIND half of the same separation: (0,1) on "
              "\"ab\"."))
 
-# THE CAPABILITY LIMIT REACHES THE ALIAS TOO, and it is a `perr` cell rather
-# than a comment because the alias resolves its width rule through the SAME
-# port: §2.5 refuses a lookbehind branch that is not fixed-width, and an
-# alias that reached some other path would COMPILE this and quietly emit a
-# matcher for a body pcrec has no back-step loop for.
+# THE VARYING BRANCH REACHES THE ALIAS TOO: the alias resolves its width rule
+# through the SAME port, so since [VLOOKBEHIND] stage 1 it answers as the
+# `(?<=` spelling does; an alias on another path would answer differently.
 ALPHA_SPELLINGS.append(
- cell("(*plb:(a|bc))x", LA, [], "THE WIDTH RULE THROUGH AN ALIAS (§2.5): ONE "
-      "branch of width 1..2, refused with a capability message and a pattern "
-      "offset, exactly as `(?<=(a|bc))x` is. libpcre2 COMPILES it -- the "
-      "refusal is pcrec's capability limit, not a syntax verdict.",
-      perr=True))
+ cell("(*plb:(a|bc))x", LA, [("ax", 0), ("bcx", 0), ("cx", 0)],
+      "THE VARYING BRANCH THROUGH AN ALIAS: ONE branch of width 1..2 answers "
+      "exactly as `(?<=(a|bc))x` does ([VLOOKBEHIND] stage 1), so an alias "
+      "that reached some other path than the shared port shows here."))
 ALPHA_SPELLINGS.append(
  cell(r"(*positive_lookahead:a\K)b", LA + ",assertions", [],
       "§2.7's `\\K` REFUSAL THROUGH AN ALIAS, and through the LONG spelling: "
@@ -1105,6 +1102,8 @@ FILES = [
   "`(?<*`, carrying §3.6's measured witness `(?<*(a)|(ba))c\\2` by name"),
  ("workbudget.rxt", WORKBUDGET,
   "§3.7's long-subject LEADING multi-branch lookbehind (R33 C1-6)"),
+ ("lookbehind_variable.rxt", LOOKBEHIND_VARIABLE,
+  "[VLOOKBEHIND] stage 1: bounded VARIABLE-width bodies, refused until it"),
  ("refused.rxt", REFUSED,
   "the `perr` cells this wave owns -- §2.7's `\\K` refusal and the "
   "unterminated forms"),

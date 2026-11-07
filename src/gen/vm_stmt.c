@@ -462,26 +462,38 @@ static void vm_r_seek(VmBody *sb, const VmStmt *s)
         pcrec_sb_printf(sb->b, "    scan_position += %d;\n", s->u.seek.k);
         return;
     case VSK_BACKSTEP:
-        pcrec_sb_printf(sb->b, "    scan_position = %s_back_step(subject, "
-                               "subject_length, scan_position, %d);\n",
-                        sb->p, s->u.seek.k);
+        if (s->u.seek.byloc)
+            pcrec_sb_printf(sb->b, "    scan_position = %s_back_step(subject, "
+                                   "subject_length, scan_position, %s);\n",
+                            sb->p, pcrec_vm_local_name(sb, s->u.seek.x));
+        else
+            pcrec_sb_printf(sb->b, "    scan_position = %s_back_step(subject, "
+                                   "subject_length, scan_position, %d);\n",
+                            sb->p, s->u.seek.k);
+        return;
+    case VSK_STEP_CHAR:
+        pcrec_sb_printf(sb->b, "    scan_position = %s_fwd_step(subject, "
+                               "(size_t)slot_values[%s], scan_position);\n",
+                        sb->p, s->u.seek.slotx);
         return;
     }
 }
 
-/* The local's name as the frame declares it. */
-static const char *vm_local_name(VmBody *sb, const VmLocal *x)
+/* The local's name as the frame declares it, for declarations and text reads
+ * alike (vm_stmt.h). */
+const char *pcrec_vm_local_name(VmBody *sb, VmLocal x)
 {
     Arena *a = &sb->cx->arena;
-    switch (x->k) {
-    case VL_RV_ITERATION:   return pcrec_sb_fragf(a, "%s_rv%d_iteration", sb->p, x->loop);
-    case VL_RV_FRAME_MARK:  return pcrec_sb_fragf(a, "%s_rv%d_frame_mark", sb->p, x->loop);
-    case VL_RV_CURSOR:      return pcrec_sb_fragf(a, "%s_rv%d_cursor", sb->p, x->loop);
-    case VL_RV_PREV:        return pcrec_sb_fragf(a, "%s_rv%d_prev_position", sb->p, x->loop);
-    case VL_RV_GROUPS_SEEN: return pcrec_sb_fragf(a, "%s_rv%d_groups_seen", sb->p, x->loop);
-    case VL_GROUP_SEEN:     return pcrec_sb_fragf(a, "%s_revdet_group_seen[%d]", sb->p, x->j);
+    switch (x.k) {
+    case VL_RV_ITERATION:   return pcrec_sb_fragf(a, "%s_rv%d_iteration", sb->p, x.loop);
+    case VL_RV_FRAME_MARK:  return pcrec_sb_fragf(a, "%s_rv%d_frame_mark", sb->p, x.loop);
+    case VL_RV_CURSOR:      return pcrec_sb_fragf(a, "%s_rv%d_cursor", sb->p, x.loop);
+    case VL_RV_PREV:        return pcrec_sb_fragf(a, "%s_rv%d_prev_position", sb->p, x.loop);
+    case VL_RV_GROUPS_SEEN: return pcrec_sb_fragf(a, "%s_rv%d_groups_seen", sb->p, x.loop);
+    case VL_GROUP_SEEN:     return pcrec_sb_fragf(a, "%s_revdet_group_seen[%d]", sb->p, x.j);
     case VL_GROUP_SPAN:     return pcrec_sb_fragf(a, "%s_revdet_group_span[%d][%d]",
-                                                  sb->p, x->j, x->half);
+                                                  sb->p, x.j, x.half);
+    case VL_LB_COUNT:       return pcrec_sb_fragf(a, "%s_lb_count", sb->p);
     }
     return "";
 }
@@ -496,10 +508,10 @@ static void vm_r_lset(VmBody *sb, const VmStmt *s)
     switch (s->u.lset.op) {
     case VLO_ASSIGN:
         pcrec_sb_printf(sb->b, "%s%s = %s;%s", lead,
-                        vm_local_name(sb, &s->u.lset.x), s->u.lset.src, tail);
+                        pcrec_vm_local_name(sb, s->u.lset.x), s->u.lset.src, tail);
         return;
     case VLO_INC:
-        pcrec_sb_printf(sb->b, "%s%s++;%s", lead, vm_local_name(sb, &s->u.lset.x), tail);
+        pcrec_sb_printf(sb->b, "%s%s++;%s", lead, pcrec_vm_local_name(sb, s->u.lset.x), tail);
         return;
     case VLO_ZERO:
         pcrec_sb_printf(sb->b, "%s{ int i_; for (i_ = 0; i_ < %d; i_++)"
@@ -1003,6 +1015,17 @@ void pcrec_vm_b_seek(VmBody *sb, VmSeek sk, const char *slotx, int k)
     vm_build(sb, &s);
 }
 
+/* SEEK whose count is a local's run-time value (the varying lookbehind's far
+ * back-step); renders the local's NAME, never an index. */
+void pcrec_vm_b_seek_local(VmBody *sb, VmSeek sk, VmLocal x)
+{
+    VmStmt s = vm_rec(VK_SEEK);
+    s.u.seek.sk = sk;
+    s.u.seek.byloc = true;
+    s.u.seek.x = x;
+    vm_build(sb, &s);
+}
+
 void pcrec_vm_b_lset(VmBody *sb, VmLocal x, VmLsetOp op, const char *src, int n,
                bool inl)
 {
@@ -1189,6 +1212,12 @@ void pcrec_vm_stmt_frame(VmBody *sb, StrBuf *c, const VmFrame *f)
                      "                             a plain local, UNTRAILED, whose save\n"
                      "                             point is a resume frame */\n",
                   p));
+    /* [VLOOKBEHIND] the varying lookbehind's far back-step count
+     * (vlookbehind.md §5.6): one per artifact, UNTRAILED, written and read
+     * only between a branch's guard and its first push. */
+    if (f->lb_count)
+        FR_ROW(&fw, pcrec_sb_printf(c, "    size_t %s = 0;\n",
+                     pcrec_vm_local_name(sb, (VmLocal){ VL_LB_COUNT, 0, 0, 0 })));
     /* [ENG-BREP] the reverse-deterministic rung's working locals. All UNTRAILED
      * and all read only where they are provably live: `it`/`mk` inside the
      * forward scan, `c`/`prev`/`ns` inside one commit's own backward walk. What

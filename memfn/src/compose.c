@@ -887,7 +887,8 @@ static const char *site_check(const mf_site *s)
 
 /* The set's rows as R-MS1 hands them (memfn.h mf_measures), NULL iff they
  * are, else why not: a `kit.`-owned key, no key twice, every value inside
- * MF_MEASURE_MAX (refused, never clamped: r17b_prime.md §2.5 [D9]). */
+ * MF_MEASURE_MAX (refused, never clamped: r17b_prime.md §2.5 [D9]), every
+ * noise STATED and in shape (MF_SITE_ABI 24, span_cards.md §4.1). */
 static const char *measures_check(const mf_measures *ms)
 {
     if (ms->nrows && !ms->rows) return "rows missing (nrows > 0, rows NULL)";
@@ -898,6 +899,15 @@ static const char *measures_check(const mf_measures *ms)
                    "its own rows only (R-MS1)";
         if (r->value_e6 > MF_MEASURE_MAX || r->value_e6 < -MF_MEASURE_MAX)
             return "a value past MF_MEASURE_MAX (refused, never clamped)";
+        if (r->noise_state == MF_NOISE_MEASURED) {
+            if (r->noise_e6 < 0 || r->noise_e6 > MF_MEASURE_MAX)
+                return "a MEASURED noise outside 0..MF_MEASURE_MAX (refused, never clamped)";
+        } else if (r->noise_state == MF_NOISE_UNMEASURED) {
+            if (r->noise_e6 != 0) return "an UNMEASURED row whose noise_e6 is not 0";
+        } else {
+            return "a row whose noise state is UNSTATED or unknown (MF_SITE_ABI 24: "
+                   "every row states MEASURED or UNMEASURED)";
+        }
         for (uint32_t j = 0; j < i; j++)
             if (!strcmp(ms->rows[j].key, r->key)) return "a key twice";
     }

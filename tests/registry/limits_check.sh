@@ -95,6 +95,8 @@ DATA="$(printf '%s\n' "$DUMP" | grep -v '^#')"
 n="$(printf '%s\n' "$DATA" | grep -vc '^$' || true)"
 NAMES="$(printf '%s\n' "$DATA" | cut -f1 | sort)"
 EXPECT_NAMES="$(cat <<'EOF' | sort
+LA_LOOKBEHIND_BRANCH_MAX
+LA_LOOKBEHIND_VAR_MAX
 PCREC_MAX_PREFIX_LEN
 PCREC_MAX_EMIT_NAME_LEN
 PCREC_DFA_OVERFLOW_WHY_LEN
@@ -443,6 +445,12 @@ done <<< "$anchored"
 #     its own deny); it prices a selection, so it is a number to MEASURE, not
 #     a bound a caller raises, and its name carries the UNMEASURED label until
 #     a measurement replaces it (docs/dev/lanes/p1build_report.md).
+#     KS_MEAS_MAX (src/core/ks_measures.h, span_pick stage 2 unit S2a): the
+#     measurement-set FORMAT's own field bound (docs/spec/measures.md §2.2¶1a,
+#     a value and its noise are at most 10^15), the loader's mirror of the
+#     kit's MF_MEASURE_MAX with equality asserted at build time. It is part of
+#     a data format's grammar, like a schema version, not a policy a caller
+#     raises; changing it is a format revision.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -605,7 +613,8 @@ PCREC_PART_NEED_VALID_UPTO
 PCREC_PART_ROLE_MAX
 PCREC_COMP_MAXPARTS
 COMP_LEVER_ATTEMPTS
-LMWALK_K_HIT_UNMEASURED"
+LMWALK_K_HIT_UNMEASURED
+KS_MEAS_MAX"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

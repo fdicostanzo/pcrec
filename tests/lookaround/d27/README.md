@@ -36,3 +36,15 @@ These files ride `make test` via the harness's recursive walk of
 tests/. run_lookaround_diff.sh and run_expansion_diff.sh do NOT
 enumerate this subdirectory (checked at landing); their population
 guards are unaffected.
+
+FLIPPED ([VLOOKBEHIND] stage 1, lane vlbbuild, manager ruling R1,
+2026-11-06): the bounded variable-width rows pcrec refused and libpcre2
+accepts now ANSWER — refusals.rxt's seven (`gen_refusals.py` emits them as
+answer blocks over `VARLB_SUBJECTS`) and triage class 3's seven `(a|ba)`
+blocks in spellings.rxt (the author's own `gen_spellings.py` answers,
+restored). Every expectation is libpcre2 10.46's, spliced into the hand-
+fixed files block by block (a whole-file regeneration would undo triage
+class 1). The unbounded rows and the backreference rows stay refusals. The
+checker's two `no 'features' line` reports on each file's FIRST block
+predate the flip (it reads triage class 1's moved `features` lines one
+block late).

@@ -338,7 +338,7 @@ level (src/gen/emit_comb.c:576, :580), not from the body `[r5 F19]`. Rev 1, as c
   |---|---|---|
   | `t = <part>(subject, subject_length, from, bound)` | `VK_LSET` `VLO_ASSIGN` | a `VmLocalKind` member for the result local (untrailed, as rev 3's `VL_LB_COUNT`); the call itself a `VmPieceKind` member `VP_AUTO` beside `VP_KIT`, printing the part's name and the operands as VALUES (`(size_t)slot_values[<n>]`, never the index: vlookbehind rev 3 §5.6's rule) |
   | `if (t < 0) goto …` | `VK_BRANCH` | none |
-  | `scan_position = t` | `VK_SEEK` | a `VmSeekKind` member, cursor ← local (today's four are slot-restore, advance, back-step, span commit); so the cursor write stays `VK_SEEK`'s, which rev 1's `VK_AUTO` writing `scan_position` would have overlapped |
+  | `scan_position = t` | `VK_SEEK` | a `VmSeekKind` member, cursor ← local (today's five are slot-restore, advance, back-step, span commit, and [VLOOKBEHIND]'s one-character step); so the cursor write stays `VK_SEEK`'s, which rev 1's `VK_AUTO` writing `scan_position` would have overlapped |
   | row 3's charge, one per non-empty candidate | `VK_WORK` | a typed operand member (1 iff the cursor is below a slot) in place of the C text `scan_position < POS`, which (c) would otherwise have to analyse as free text `[r1-1106 N5]` |
 
   Under the members ruling none of these waits for [VMREC]. Rev 1's `VK_AUTO` was a new KIND, and

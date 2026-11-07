@@ -2033,15 +2033,7 @@ tests/lookaround/d27/matrix.rxt:990	--features lookaround	7a283f3c3d29
 tests/lookaround/d27/matrix.rxt:998	--features lookaround	79283f3c3d297a
 tests/lookaround/d27/prefilter.rxt:33	--features lookaround	28283f3a61283f2162297c616229283f3a6364297b302c337d6229
 tests/lookaround/d27/prefilter.rxt:8	--features lookaround	28283f3a61283f2171297c617129283f3a7879297b302c347d7129
-tests/lookaround/d27/refusals.rxt:174	--features lookaround,assertions	283f3d61295c4b62
-tests/lookaround/d27/refusals.rxt:184	--features lookaround,assertions	61283f3d62295c4b63
-tests/lookaround/d27/refusals.rxt:194	--features lookaround,assertions	283f3c3d61295c4b62
-tests/lookaround/d27/refusals.rxt:204	--features lookaround,assertions	615c4b62
 tests/lookaround/d27/spellings.rxt:106	--features lookaround	282a6e656761746976655f6c6f6f6b626568696e643a612963
-tests/lookaround/d27/spellings.rxt:243	--features lookaround	61283f3d2962
-tests/lookaround/d27/spellings.rxt:250	--features lookaround	61283f212962
-tests/lookaround/d27/spellings.rxt:256	--features lookaround	61283f3c3d2962
-tests/lookaround/d27/spellings.rxt:262	--features lookaround	61283f3c212962
 tests/lookaround/d27/spellings.rxt:36	--features lookaround	61283f216129
 tests/lookaround/d27/spellings.rxt:45	--features lookaround	61282a6e6c613a6129
 tests/lookaround/d27/spellings.rxt:54	--features lookaround	61282a6e656761746976655f6c6f6f6b61686561643a6129
@@ -2050,7 +2042,6 @@ tests/lookaround/d27/spellings.rxt:71	--features lookaround	282a706c623a612963
 tests/lookaround/d27/spellings.rxt:80	--features lookaround	282a706f7369746976655f6c6f6f6b626568696e643a612963
 tests/lookaround/d27/spellings.rxt:88	--features lookaround	283f3c21612963
 tests/lookaround/d27/spellings.rxt:97	--features lookaround	282a6e6c623a612963
-tests/lookaround/gated.rxt:133	--features named-groups	283f3c6e616d653e612962
 tests/lookaround/gated.rxt:35	--features lookaround	283f3d61296162
 tests/lookaround/lookahead.rxt:101	--features lookaround	283f3d283f21782961296162
 tests/lookaround/lookahead.rxt:107	--features lookaround	283f3d612b6229616162
@@ -2116,7 +2107,6 @@ tests/lookaround/lookbehind_widths.rxt:236	--features lookaround	283f3c21617c297
 tests/lookaround/lookbehind_widths.rxt:42	--features lookaround	283f3c3d617c62632978
 tests/lookaround/lookbehind_widths.rxt:58	--features lookaround	283f3c3d617c62637c6465662978
 tests/lookaround/lookbehind_widths.rxt:74	--features lookaround	283f3c21617c62632978
-tests/lookaround/lookbehind_widths.rxt:91	--features lookaround	283f3c3d2861297c286161292963
 tests/lookaround/nonatomic_ahead.rxt:109	--features lookaround	283f2a61292a61
 tests/lookaround/nonatomic_ahead.rxt:120	--features lookaround	283f3d283f2a612961296162
 tests/lookaround/nonatomic_ahead.rxt:129	--features lookaround	283f2a283f3d612961296162
@@ -2903,11 +2893,6 @@ tests/quoting/k62_class_range_e.rxt:25	--features quoting	5b612d5c455d
 tests/quoting/k62_class_range_e.rxt:34	--features quoting	5b302d5c45395d
 tests/quoting/k62_class_range_e.rxt:45	--features quoting	5b302d5c515c455d
 tests/recursion/d27/sr_email.rxt:20	--features recursion	283f3a5b612d7a302d392123242526272a2b2f3d3f5e5f607b7c7d7e2d5d2b283f3a5c2e5b612d7a302d392123242526272a2b2f3d3f5e5f607b7c7d7e2d5d2b292a7c22283f3a5b5c7830312d5c7830385c7830625c7830635c7830652d5c7831665c7832315c7832332d5c7835625c7835642d5c7837665d7c5c5c5b5c7830312d5c7830395c7830625c7830635c7830652d5c7837665d292a222940283f3a283f3a5b612d7a302d395d283f3a5b612d7a302d392d5d2a5b612d7a302d395d293f5c2e292b5b612d7a302d395d283f3a5b612d7a302d392d5d2a5b612d7a302d395d293f7c5c5b283f3a283f3a32355b302d355d7c325b302d345d5b302d395d7c5b30315d3f5b302d395d5b302d395d3f295c2e297b337d283f3a32355b302d355d7c325b302d345d5b302d395d7c5b30315d3f5b302d395d5b302d395d3f7c5b612d7a302d392d5d2a5b612d7a302d395d3a283f3a5b5c7830312d5c7830385c7830625c7830635c7830652d5c7831665c7832312d5c7835615c7835332d5c7837665d7c5c5c5b5c7830312d5c7830395c7830625c7830635c7830652d5c7837665d292b295c5d29
-tests/recursion/d27/sr_interactions.rxt:328	--features recursion,named-groups,assertions	283f28444546494e4529283f3c673e615c7a292978283f266729
-tests/recursion/d27/sr_interactions.rxt:337	--features recursion,named-groups,assertions	283f28444546494e4529283f3c673e615c7a292978283f26672962
-tests/recursion/d27/sr_interactions.rxt:353	--features recursion	28617c6229283f3129
-tests/recursion/d27/sr_interactions.rxt:361	--features recursion	2861283f31293f6229
-tests/recursion/d27/sr_interactions.rxt:386	--features recursion,lookaround	283f3c3d782928617c6229283f3129
 tests/recursion/d27/sr_root.rxt:253	--features recursion	2861283f52293f6229
 tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
 tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
@@ -3850,16 +3835,6 @@ tests/base/xbrace_space.rxt:27		5c787b20203461207d2b
 tests/base/xbrace_space.rxt:31		5b5c787b2034317d2d5c787b203433207d5d2b
 tests/base/xbrace_space.rxt:37	--encoding=utf8	5c787b203362317d
 tests/base/xbrace_space.rxt:42	--encoding=utf8	5c787b20313046464646207d
-tests/lookaround/lookbehind_group_alt.rxt:23	--features lookaround	283f3c3d283f3a61627c6364292978
-tests/lookaround/lookbehind_group_alt.rxt:31	--features lookaround	283f3c3d283f3a61627c63647c6566292978
-tests/lookaround/lookbehind_group_alt.rxt:39	--features lookaround	283f3c3d283f3a61627c6364297c652978
-tests/lookaround/lookbehind_group_alt.rxt:46	--features lookaround	283f3c3d657c283f3a61627c6364292978
-tests/lookaround/lookbehind_group_alt.rxt:53	--features lookaround	283f3c3d283f3a2861297c286229292978
-tests/lookaround/lookbehind_group_alt.rxt:64	--features lookaround,modifiers	283f3c3d283f693a61627c6364292978
-tests/lookaround/lookbehind_group_alt.rxt:71	--features lookaround	282a706c623a283f3a61627c6364292978
-tests/lookaround/lookbehind_group_alt.rxt:77	--features lookaround	283f3c21283f3a61627c6364292978
-tests/lookaround/lookbehind_group_alt.rxt:84	--features lookaround	283f3c3d283f3a617b327d7c6263292978
-tests/lookaround/lookbehind_group_alt.rxt:91	--features lookaround	283f3c3d283f3a61283f3a627c63297c64283f3a657c6629292978
 tests/modifiers/optrun_group.rxt:17	--features modifiers	283f3a283f6929292a61
 tests/modifiers/optrun_group.rxt:23	--features modifiers	28283f7329293f61
 tests/modifiers/optrun_group.rxt:30	--features modifiers,lookaround,assertions	283f3d283f6d29292b61
@@ -4111,3 +4086,78 @@ tests/utf8/altnf_lowering.rxt:71	--encoding=utf8 --engine=vm	78283f3a315bc3a9c3a
 tests/utf8/altnf_lowering.rxt:81	--features all --encoding=utf8	283f3c3d5b615c787b3362317d5d2978
 tests/utf8/altnf_lowering.rxt:90	--features all --encoding=utf8 --engine=vm	283f3c3d5b615c787b3362317d5d2978
 tests/utf8/altnf_lowering.rxt:99	--encoding=utf8	283f692961626364c38065666768
+# mttri (2026-11-06, [VLOOKBEHIND] stage 1, lane/vlbbuild): +74 -25, every change a branch .rxt edit, classified row by row: 24 line shifts (same text and options, the file grew or shrank above: d27/refusals 4, d27/spellings 4, gated 1, lookbehind_group_alt 10, recursion/d27/sr_interactions 5); +33 blocks of the two new files lookbehind_variable.rxt (5) and lookbehind_variable_witness.rxt (28); +17 blocks that were perr at the base and stage 1 now ACCEPTS (the R1 flips: alpha_spellings 1, d27/refusals 7, d27/spellings 5, lookbehind_group_alt 4); -1 tests/lookaround/lookbehind_widths.rxt:91 `(?<=(a)|(aa))c`, whose (text, options) twin lookbehind_variable_witness.rxt:114 now sorts first and takes its id. Rows are vmhat_checks.py's own mover rule on lane/vlbbuild (the upropb2 precedent); the bench rows are untouched.
+tests/lookaround/alpha_spellings.rxt:368	--features lookaround	282a706c623a28617c6263292978
+tests/lookaround/d27/refusals.rxt:100	--features lookaround	283f3c3d283f3a617c626329642978
+tests/lookaround/d27/refusals.rxt:117	--features lookaround	283f3c3d2828617c62632964292978
+tests/lookaround/d27/refusals.rxt:138	--features lookaround	283f3c3d617b312c3235357d2978
+tests/lookaround/d27/refusals.rxt:14	--features lookaround	283f3c3d28617c6263292978
+tests/lookaround/d27/refusals.rxt:170	--features lookaround	283f3c3d617b327d627b302c317d2978
+tests/lookaround/d27/refusals.rxt:267	--features lookaround,assertions	283f3d61295c4b62
+tests/lookaround/d27/refusals.rxt:277	--features lookaround,assertions	61283f3d62295c4b63
+tests/lookaround/d27/refusals.rxt:287	--features lookaround,assertions	283f3c3d61295c4b62
+tests/lookaround/d27/refusals.rxt:297	--features lookaround,assertions	615c4b62
+tests/lookaround/d27/refusals.rxt:36	--features lookaround	283f3c3d617b322c337d2978
+tests/lookaround/d27/refusals.rxt:53	--features lookaround	283f3c3d613f2978
+tests/lookaround/d27/spellings.rxt:140	--features lookaround	283f3c2a28617c6261292963
+tests/lookaround/d27/spellings.rxt:151	--features lookaround	282a6e61706c623a28617c6261292963
+tests/lookaround/d27/spellings.rxt:162	--features lookaround	282a6e6f6e5f61746f6d69635f706f7369746976655f6c6f6f6b626568696e643a28617c6261292963
+tests/lookaround/d27/spellings.rxt:218	--features lookaround	283f3c3d28617c6261292963
+tests/lookaround/d27/spellings.rxt:263	--features lookaround	282a706c623a28617c6261292963
+tests/lookaround/d27/spellings.rxt:273	--features lookaround	61283f3d2962
+tests/lookaround/d27/spellings.rxt:280	--features lookaround	61283f212962
+tests/lookaround/d27/spellings.rxt:286	--features lookaround	61283f3c3d2962
+tests/lookaround/d27/spellings.rxt:292	--features lookaround	61283f3c212962
+tests/lookaround/gated.rxt:151	--features named-groups	283f3c6e616d653e612962
+tests/lookaround/lookbehind_group_alt.rxt:108	--features lookaround,modifiers	283f3c3d283f693a617c6263292978
+tests/lookaround/lookbehind_group_alt.rxt:117	--features lookaround	283f3c3d283f3a617c6263297c642978
+tests/lookaround/lookbehind_group_alt.rxt:126	--features lookaround	283f3c21283f3a617c6263292978
+tests/lookaround/lookbehind_group_alt.rxt:22	--features lookaround	283f3c3d283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:30	--features lookaround	283f3c3d283f3a61627c63647c6566292978
+tests/lookaround/lookbehind_group_alt.rxt:38	--features lookaround	283f3c3d283f3a61627c6364297c652978
+tests/lookaround/lookbehind_group_alt.rxt:45	--features lookaround	283f3c3d657c283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:52	--features lookaround	283f3c3d283f3a2861297c286229292978
+tests/lookaround/lookbehind_group_alt.rxt:63	--features lookaround,modifiers	283f3c3d283f693a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:70	--features lookaround	282a706c623a283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:76	--features lookaround	283f3c21283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:83	--features lookaround	283f3c3d283f3a617b327d7c6263292978
+tests/lookaround/lookbehind_group_alt.rxt:90	--features lookaround	283f3c3d283f3a61283f3a627c63297c64283f3a657c6629292978
+tests/lookaround/lookbehind_group_alt.rxt:99	--features lookaround	283f3c3d283f3a617c6263292978
+tests/lookaround/lookbehind_variable.rxt:121	--features lookaround	283f3c2128617c6263292978
+tests/lookaround/lookbehind_variable.rxt:137	--features lookaround	283f3c2a28617c6263292978
+tests/lookaround/lookbehind_variable.rxt:152	--features assertions,lookaround	283f3c3d5c6e3f5c7a2978
+tests/lookaround/lookbehind_variable.rxt:163	--features lookaround,classes	283f3c3d5c773f2978
+tests/lookaround/lookbehind_variable.rxt:81	--features lookaround	283f3c3d617b302c337d2978
+tests/lookaround/lookbehind_variable_witness.rxt:10	--features lookaround	283f3c3d28617c6161292963
+tests/lookaround/lookbehind_variable_witness.rxt:102	--features lookaround	283f3c3d283f3a617b313030307d297b36357d2978
+tests/lookaround/lookbehind_variable_witness.rxt:114	--features lookaround	283f3c3d2861297c286161292963
+tests/lookaround/lookbehind_variable_witness.rxt:122	--features lookaround	283f3c3d617b312c327d7c622978
+tests/lookaround/lookbehind_variable_witness.rxt:128	--features lookaround	283f3c3d617b312c327d7c62632978
+tests/lookaround/lookbehind_variable_witness.rxt:134	--features lookaround	283f3c3d617b322c337d7c622978
+tests/lookaround/lookbehind_variable_witness.rxt:140	--features lookaround --encoding=utf8	283f3c3dc3a97b322c337d7cc3a92978
+tests/lookaround/lookbehind_variable_witness.rxt:147	--features lookaround	283f3c3d617b312c397d2978
+tests/lookaround/lookbehind_variable_witness.rxt:153	--features lookaround --encoding=utf8	283f3c3d617b312c397d2978
+tests/lookaround/lookbehind_variable_witness.rxt:160	--features lookaround	283f3c3d617b312c327d7c627b312c327d2978
+tests/lookaround/lookbehind_variable_witness.rxt:166	--features lookaround --encoding=utf8	c3a9283f3c3d28613f2929
+tests/lookaround/lookbehind_variable_witness.rxt:17	--features lookaround	283f3c3d617b312c327d2978
+tests/lookaround/lookbehind_variable_witness.rxt:174	--features lookaround --encoding=utf8	c3a9283f3c3d617b302c317d29
+tests/lookaround/lookbehind_variable_witness.rxt:181	--features lookaround,assertions	283f3c3d5c47617b312c327d2962
+tests/lookaround/lookbehind_variable_witness.rxt:189	--features lookaround,assertions --encoding=utf8	283f3c3d5c47c3a97b312c327d2962
+tests/lookaround/lookbehind_variable_witness.rxt:196	--features lookaround,modifiers --encoding=utf8	283f6929283f3c3d286b7b312c327d297c2862292978
+tests/lookaround/lookbehind_variable_witness.rxt:205	--features lookaround --encoding=utf8	283f3c3d28617b302c327d292962
+tests/lookaround/lookbehind_variable_witness.rxt:213	--features lookaround --encoding=utf8	283f3c3d28c3a97b302c327d292962
+tests/lookaround/lookbehind_variable_witness.rxt:23	--features lookaround	283f3c3d28617c61622928627c292978
+tests/lookaround/lookbehind_variable_witness.rxt:235	--features lookaround	283f3c3d62637c642978
+tests/lookaround/lookbehind_variable_witness.rxt:241	--features lookaround	283f3c2162637c642978
+tests/lookaround/lookbehind_variable_witness.rxt:31	--features lookaround	283f3c3d617b312c327d2961
+tests/lookaround/lookbehind_variable_witness.rxt:37	--features lookaround	283f3c2161623f2978
+tests/lookaround/lookbehind_variable_witness.rxt:43	--features lookaround,backrefs	283f3c2a28617b312c337d2929635c31
+tests/lookaround/lookbehind_variable_witness.rxt:50	--features lookaround,backrefs	283f3c2a28617c6161612929635c31
+tests/lookaround/lookbehind_variable_witness.rxt:57	--features lookaround --encoding=utf8	283f3c3d28c3a97b302c327d292978
+tests/lookaround/lookbehind_variable_witness.rxt:65	--features lookaround	283f3c3d617b312c327d2962
+tests/lookaround/lookbehind_variable_witness.rxt:90	--features lookaround	283f3c3d617b36353533357d2978
+tests/recursion/d27/sr_interactions.rxt:330	--features recursion,named-groups,assertions	283f28444546494e4529283f3c673e615c7a292978283f266729
+tests/recursion/d27/sr_interactions.rxt:339	--features recursion,named-groups,assertions	283f28444546494e4529283f3c673e615c7a292978283f26672962
+tests/recursion/d27/sr_interactions.rxt:355	--features recursion	28617c6229283f3129
+tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6229
+tests/recursion/d27/sr_interactions.rxt:388	--features recursion,lookaround	283f3c3d782928617c6229283f3129

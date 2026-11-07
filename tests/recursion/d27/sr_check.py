@@ -40,12 +40,11 @@ _s = importlib.util.spec_from_file_location(
 sr = importlib.util.module_from_spec(_s)
 _s.loader.exec_module(sr)
 
-# The ONLY blocks allowed to say `perr` while libpcre2 accepts the pattern:
-# the [DD-14.LB] amendment's pcrec-only refusal. Listed by exact pattern so
-# a new one cannot appear by accident.
-PCREC_ONLY_PERR = {
-    "^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$",
-}
+# The ONLY blocks allowed to say `perr` while libpcre2 accepts the pattern,
+# listed by exact pattern so a new one cannot appear by accident. EMPTY since
+# [VLOOKBEHIND] stage 1: the [DD-14.LB] amendment's one pcrec-only refusal,
+# `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$`, now answers (lane vlbbuild, R1).
+PCREC_ONLY_PERR = set()
 
 ESCAPES = {'"': '"', '\\': '\\', 'n': '\n', 't': '\t', 'r': '\r',
            'f': '\f', 'v': '\v'}
