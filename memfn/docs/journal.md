@@ -3416,3 +3416,12 @@ Main ruled on the four kit findings (D186 add. 2):
   - 491-493 QUEUED, waiting on kit-s2d-J9's end; watcher armed.
 - S2d window IN PROGRESS: prep, screen and J1 are done (J2 running at 22:01), so the screen passed its gate.
 - OWED at S2e: merge S2a's new tip into s2c (s2c has the older S2a).
+- 11-06 21:50-22:20: S2d WINDOW RAN on FROZEN 508178bd2.
+  - All 9 jobs green: prep 172 s, screen 82 s (unit noise 0.277 % vs 1.5 % gate), J1 291 s (verdict c), J2 152, J2p 219, J3 117, J4 473, J5 140, J9 finalize. Drift kept on all.
+  - Record: 6 jobs ran, 38 plan keys, 30 floor lines.
+  - `est.py rows` OUTCOME **REFUSED** (exit 3), on five floors:
+    - byte.libc: noise 1295 on 39024 = 3.3 % > the 3 % gate;
+    - verify settest c1 and rc-memcmp l1: "negative per-event cost (a fixture artifact)";
+    - verify settest c2 and rc-words w1: "below paired A/A or signs mixed".
+  - Nothing is written or set.
+  - Analysis lane s2dana (opus, read-only) is classifying each floor (resolution / fixture defect / noise) with options. main is told; the box is released to its axes2.
