@@ -4,7 +4,7 @@
 # cancelled, none), `plan` and `floor` from the dry run's frozen plan, the transcript's sha. Ready when the prep and
 # the screen ENDED and every window job ended or was never queued (a failed, cancelled or never-queued job is recorded,
 # never waited for).
-. "$(dirname "$0")/common.sh"
+. "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
 case "${1:-}" in
     --dry-run)
         check_inputs "$(basename "$0")" || exit 1

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 484-kit-s2d-J3: the S2d window's timing job J3 (span_cards §3.7; quiet-gated, idle-ok). Ready: kit-s2d-prep green, then kit-s2d-J2 kit-s2d-J2p ended.
-. "$(dirname "$0")/common.sh"
+. "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
 case "${1:-}" in
     --dry-run) timing_dry J3 300 ;;
     --ready) ready_after kit-s2d-J2 kit-s2d-J2p ;;

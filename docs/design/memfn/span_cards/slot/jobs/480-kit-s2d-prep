@@ -2,7 +2,7 @@
 # 480-kit-s2d-prep: the S2d window's PREPARATION, no clock: every job's slot dry run under the window's run id
 # (the frozen plan, builds, per-launch linking and placement, the ctl sha, the answer gate on every launch, each
 # job's manifest), so the timing jobs only time what was gated.
-. "$(dirname "$0")/common.sh"
+. "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
 case "${1:-}" in
     --dry-run)
         check_inputs "$(basename "$0")" || exit 1

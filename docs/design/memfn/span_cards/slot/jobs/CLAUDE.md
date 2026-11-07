@@ -2,7 +2,7 @@
 
 COMMITTED canonical copies (review r9 W1); never queued from here. Main copies this directory to a scratch job
 dir, writes `window.vars` there (from `window.vars.example`: RUN_ID, FROZEN, TREE, optional HOLD) when Frank
-clears the window, and queues the copies. Every `--dry-run` refuses a copy that differs from this directory.
+clears the window, and queues the copies. Every `--dry-run` refuses a copy that differs from this directory. The scratch job dir is FIXED: `$PCREC_TMPDIR/scratch/memfn/s2c/jobs/s2d/` (each job sources its common.sh by that absolute path, because boxqueue dry-runs and runs a copy of the job file from its own directory).
 
 ## Files
 
