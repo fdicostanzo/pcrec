@@ -3591,3 +3591,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - For K0: the table's FACTS (token, family, features, needs, default lists) stay apart from its C SPELLINGS (region pragma, #error guard, __builtin_cpu_supports predicate).
   - Sent to the running lane k0 as a structural addendum (it launched minutes before).
   - VERIFY at K0's review: a facts table readable without C text, plus a check or sabotage row that catches C text in a facts row.
+- 11-07 ~21:40: K0 DELIVERED, tip ad3e25e47 (lane closed).
+  - The first tip, 144111b36, fused facts and C text: a guard column and a region column in the facts rows. The facts/spellings addendum had been MISSED; I sent it back.
+  - Now: targets.def holds only the facts (tokens, families, needs, features); the C spellings are targets_c.def plus mf_target_c_of / mf_family_c_of.
+  - Entries: mf_target_parse, mf_family_parse, mf_targets, mf_families, mf_portable_target, mf_host_defaults. The U4 predicate is deferred.
+  - Table check vs gcc -march ADOPTED, plus the host chain vs the guards. Sabotage S2975-S2980 (S2980: C text in a facts row). No emitted byte (test-codegen green).
+  - Jobs 450-453 queued.
+  - Lesson re-confirmed: an addendum to a running lane was missed; verify it in the deliverable.
