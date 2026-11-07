@@ -32,7 +32,7 @@ Changed (grep over the whole worktree for every old token used as a family or ta
 | `tests/mech/sabotages/S2976`, `S2980` | anchors follow the rows' new shape (family `amd64`; `"neon",`) |
 | `tests/mech/sabotages/S2981_*.sh`, `tests/memfn/c4_allowlist.tsv` | the new row and its C4 anchor lines (class 6, 4 hits) |
 | `tests/mech/run_sabotage_matrix.sh`, `tests/memfn/NOTES.md` | S2975-S2981 |
-| `docs/dev/lanes/k0_report.md`, `docs/design/memfn/target_seam_units.md` (§6) | the tokens |
+| `docs/dev/lanes/k0_report.md` | the tokens |
 
 Not changed on purpose: `levels.def` (the LEVELS' family column, a different table U2 replaces), `-march=`/`--target=`
 strings in `run_targets.sh` and the check (compiler names), `__x86_64__` guards, `uname -m` comparisons (the test's host
@@ -65,9 +65,19 @@ once _ reads as -`, red (and the entries' literal is red: `amd64` no longer pars
   token in a list means that family's default list (the caller's reading; the kit only parses); matching ASCII-case-blind
   and exact. The enumeration entries `mf_targets`, `mf_families`, `mf_host_family` are the listing's SOURCE: every field
   pcrec prints (name, doc, defaults, needs, features) is the kit's text.
-- `target_seam_units.md` §6 records the ruling. The flag text (`-fmemfn-simd`, `-fno-memfn-simd`, last wins) and
+- `target_seam_units.md` is main's and is NOT edited (an interim hunk was reverted); see "For main". The flag text (`-fmemfn-simd`, `-fno-memfn-simd`, last wins) and
   `--list-cpu-targets` are P1's.
 - `docs/spec/` states none of this today (no caller yet), so no spec hunk.
+
+## For main
+
+Relay for `target_seam_units.md` §6 and P1 (the kit's token statement; the flag text is P1's): FAMILY tokens are `amd64`
+and `arm64` (Go/Debian names; not `x86_64`, one character from the target `x86-64`). TARGET tokens are `generic`,
+`x86-64`, `x86-64-v3`, `armv8-a`. The spaces are disjoint and the kit refuses a family token equal to a target token
+after lowercasing and `_` -> `-`. Matching is ASCII-case-blind and otherwise exact. A family token in a list means that
+family's default list (`amd64` -> `x86-64`, `arm64` -> `armv8-a`), the caller's reading. Text in units.md and the K0
+report that spells the family `x86-64` or the target `aarch64` predates this. The listing's source is `mf_targets`,
+`mf_families`, `mf_host_family`; each row's `doc` is the kit's text. The same statement is in memfn.h's comment.
 
 ## Light checks
 
