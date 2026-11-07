@@ -31,7 +31,9 @@ A field with nothing to say is written "none", never dropped.
     by message (a busy lane reads no message until it idles). The lane
     re-reads it at every CHECKPOINT: before each commit, before launching
     any run over ~2 min, and before writing its report; the report's
-    STATE AT HANDOFF names the last entry it applied. A change bigger than
+    STATE AT HANDOFF names the last entry it applied (R-n), and the
+    manager checks that against the file at acceptance (u25, 2026-11-07,
+    reported "empty" over R1 and R2). A change bigger than
     a clarification (new scope, a reversed design) still goes to a FRESH
     lane.
 
@@ -51,10 +53,11 @@ A field with nothing to say is written "none", never dropped.
     PREMISE TEST: <the first check the lane makes that the brief's
     premises hold, with the expected result.>
 
-    OWED RUNS: commit the report with a STATE AT HANDOFF section (logs,
-    completion lines, owed stages), launch the remaining chain DETACHED
-    (chain script runs every owed stage including make test), then END. A
-    fresh agent reads the verdicts.
+    OWED RUNS: queue every owed stage as a box-queue job (RUNS.md), name
+    their keys in STATE AT HANDOFF, run lanecheck, SendMessage, then END.
+    Do NOT wait for the jobs or for any notification: a fresh agent reads
+    the verdicts. (Lanes idled "waiting for a notification" with owed jobs
+    on 2026-11-07.)
     (Never write "LAST act: make test, record its verdict, triage, then
     END": it tells the lane to idle through the run. Wording: memory
     pcrec-subagent-cache-warmth 6a, Frank 2026-09-27.)
@@ -72,4 +75,6 @@ A field with nothing to say is written "none", never dropped.
     DELIVERABLE: <files; docs/dev/lanes/<name>_report.md with a STATE AT
     HANDOFF section>.
     REPLY: <size cap, e.g. under 2k chars>: a SendMessage to the manager,
-    complete on its own, then END.
+    complete on its own, then END. Any question the manager asks the lane
+    (and any the lane asks back) wants a reply EITHER WAY; never phrase a
+    request as "reply only if ..." (Frank 2026-11-07).
