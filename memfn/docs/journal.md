@@ -3528,3 +3528,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - The STANDING RULE is in span_cards §3.5, citing S2951/S2952.
   - Gates 480-486 queued behind main's 205/210/213; the watcher counts 7 green ends.
   - Next: review the diff, then deliver to main on green.
+- 11-07: main: the target-seam critic round is done; rev 1 is in a lane (review to be filed as 2026-11-07-r?-xarch).
+  - The kit-facing core HOLDS: no #if in kit text, names built from pcrec's prefix, a single top-rung call, a length-only rung chain.
+  - F3: no `target("arch=...")`. Instead an additive ISA list plus a clang pragma pair; rev 1 settles the form.
+  - F9: retiring MF_P_PORTABLE_ONLY becomes a `target` column of mf_form_entry, so the timed text and the shipped text are compiled for the same target. S2e's diff does not touch PORTABLE_ONLY (grep: 0 hits).
+  - D188 add. 2 (Frank): one CPU family is an artifact's largest scope; the kit never emits other families.
+  - Main: a CPU variant is a compound PART with a CPU predicate, chosen by the existing controller (D155 add. 5), with an elision fact (no target-dependent text = no variant).
+  - Still no build before Frank's XARCH-DEV go.
