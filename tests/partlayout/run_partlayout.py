@@ -526,7 +526,8 @@ def sec_census(pop):
 
 
 def sec_seam():
-    pats_ = ["(a)\\1", "(?i)(ab)\\1", "(?<=ab)c", "(a)\\1x", "(\\w+) \\1"]
+    pats_ = ["(a)\\1", "(?i)(ab)\\1", "(?<=ab)c", "(a)\\1x", "(\\w+) \\1",
+             "(?<=a{1,2})x"]   # [VLOOKBEHIND] reaches fwd_step
     bad, seen = [], 0
     for enc in ([], ["-e", "utf8"]):
         for p in pats_:
@@ -535,7 +536,7 @@ def sec_seam():
             if r.returncode:
                 continue
             t = open(c).read()
-            for m in re.finditer(r"^static inline [^\n]*\b(rx_(?:span_match\w*|back_step|decode|"
+            for m in re.finditer(r"^static inline [^\n]*\b(rx_(?:span_match\w*|back_step|fwd_step|decode|"
                                  r"bref_match\w*))\(([^\n]*\n)(.*?)^}", t, re.M | re.S):
                 seen += 1
                 if re.search(r"&&\w", m.group(3)) or "goto *" in m.group(3):

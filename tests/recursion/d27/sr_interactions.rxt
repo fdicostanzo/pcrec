@@ -235,16 +235,18 @@ g 2 -1 -1
 # extract 3.4(d) row 2 / the amendment's SECOND bullet: a single call
 # that is itself the lookbehind's ONE top-level branch, whose callee
 # has an alternation of DIFFERENT fixed widths (1..2). PCRE2 ACCEPTS
-# this and matches (0,2); pcrec REFUSES it by ruling, because from the
+# this and matches (0,2); pcrec refused it by ruling, because from the
 # lookbehind body's own point of view this is one branch of variable
-# width -- the (?<=(a|bc))x shape module lookaround already refuses.
-# Being reached through a call does not change that. Existence only.
-# libpcre2 10.46 ACCEPTS this pattern; the refusal expected here is
-# pcrec's own, by the [DD-14.LB] amendment. Recorded so a reader does
-# not mistake it for a PCRE2 fact.
+# width -- the (?<=(a|bc))x shape. FLIPPED (lane vlbbuild, manager
+# ruling R1): pcrec refused it by the [DD-14.LB] amendment until
+# [VLOOKBEHIND] stage 1 built the varying-branch loop; it now answers,
+# and the expectations are libpcre2 10.46's.
 pattern ^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$
 features recursion,named-groups,lookaround
-perr
+m "ab" 0 2
+g 1 -1 -1
+n "b"
+n "aab"
 
 # extract 3.4(d) row 5 / the amendment's THIRD bullet: a RECURSIVE
 # callee inside a lookbehind is REFUSED ON BOTH SIDES -- PCRE2's own

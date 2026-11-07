@@ -28,6 +28,21 @@ Usage: bref_oracle.py <patterns.tsv> <subjects-dir> <out.tsv>
   patterns.tsv : `<key>\t<ngroups>\t<pattern>` per line, where <ngroups> is
                  how many capture pairs the artifact will report (1 fewer than
                  its RX_NCAPS; 0 for a --no-captures artifact).
+                 [VLOOKBEHIND] (vlookbehind.md §6 gate 1) an optional MODE
+                 column, `<key>\t<ngroups>\t<mode>\t<pattern>`, one of:
+                   byte          libpcre2 options 0 (the default, absent column);
+                                 the pattern's UTF-8 bytes, as in every mode
+                   utf8          PCRE2_UTF; every subject must be valid UTF-8
+                                 (an invalid one is a harness failure, exit 2)
+                   utf8-invalid  PCRE2_UTF | PCRE2_MATCH_INVALID_UTF, pcrec's
+                                 own reading of an ill-formed subject
+                   utf8-clip     options 0 for a pcrec `-e utf8` artifact on
+                                 ASCII subjects: D142 item 3's stated rule
+                                 (match_api.md §9.4¶8, pcrec gives the byte
+                                 answer where libpcre2 UTF clips)
+                 In the three utf8 modes the startpos sweep covers character
+                 boundaries only (no continuation byte), the rule the pcrec
+                 side's cell list uses; a mid-character start is K50's domain.
   out.tsv      : `<key>\t<subject-name>\t<startpos>\t<answer>`, the answer
                  spelled exactly as tests/backrefs/bref_batch.c spells it.
 """
@@ -61,13 +76,29 @@ def answer(rx, subj, sp, ng):
     return " ".join(out)
 
 
+MODES = {
+    "byte": 0,
+    "utf8": P.PCRE2_UTF,
+    "utf8-invalid": P.PCRE2_UTF | P.PCRE2_MATCH_INVALID_UTF,
+    "utf8-clip": 0,
+}
+
+
+def starts(subj, mode):
+    """The startpos sweep: every offset, or character boundaries only."""
+    if mode == "byte":
+        return range(len(subj) + 1)
+    return [i for i in range(len(subj) + 1)
+            if i == len(subj) or (subj[i] & 0xC0) != 0x80]
+
+
 def main():
     patfile, subjdir, out = sys.argv[1], sys.argv[2], sys.argv[3]
 
     subjects = []
     for name in sorted(os.listdir(subjdir)):
         with open(os.path.join(subjdir, name), "rb") as f:
-            subjects.append((name, f.read().decode("latin-1")))
+            subjects.append((name, f.read()))
 
     n = 0
     with open(out, "w") as o:
@@ -75,16 +106,38 @@ def main():
             line = line.rstrip("\n")
             if not line:
                 continue
-            key, ng, pat = line.split("\t", 2)
+            f = line.split("\t", 3)
+            if len(f) == 4 and f[2] in MODES:
+                key, ng, mode, pat = f
+            else:
+                key, ng, pat = line.split("\t", 2)
+                mode = "byte"
             ng = int(ng)
             try:
-                rx = P.Compiled(pat)
+                # Every mode hands libpcre2 the pattern's UTF-8 BYTES, which
+                # are the bytes pcrec reads from the same line. A `str` would
+                # reach the byte mode as latin-1 (pcre2_ctypes' non-UTF
+                # encoding), so `é{0,2}` quantified the whole character there
+                # and the last byte in pcrec (found by lane vlbbuild, the first
+                # non-ASCII `# pcre2-only` blocks in tests/lookaround).
+                rx = P.Compiled(pat.encode("utf-8"), MODES[mode])
             except Exception as e:                          # noqa: BLE001
                 sys.stderr.write("bref_oracle: libpcre2 refuses %r: %s\n"
                                  % (pat, e))
                 sys.exit(2)
             for sname, subj in subjects:
-                for sp in range(len(subj) + 1):
+                if mode == "utf8":
+                    try:
+                        subj.decode("utf-8")
+                    except UnicodeDecodeError:
+                        sys.stderr.write("bref_oracle: subject %s is not "
+                                         "valid UTF-8 in mode utf8\n" % sname)
+                        sys.exit(2)
+                if mode == "utf8-clip" and any(b >= 0x80 for b in subj):
+                    sys.stderr.write("bref_oracle: subject %s is not ASCII "
+                                     "in mode utf8-clip\n" % sname)
+                    sys.exit(2)
+                for sp in starts(subj, mode):
                     o.write("%s\t%s\t%d\t%s\n"
                             % (key, sname, sp, answer(rx, subj, sp, ng)))
                     n += 1

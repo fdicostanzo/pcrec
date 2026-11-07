@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 95
-#error "pcrec: this artifact (abi 95) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 96
+#error "pcrec: this artifact (abi 96) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 95
+#define PCREC_RX_ABI_H 96
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -466,7 +466,9 @@ not provisional.
 across the residual seam. `<prefix>_span_match` /
 `<prefix>_span_match_caseless` (a backreference- or variable-bearing
 artifact; `docs/spec/vars.md` §7) and `<prefix>_back_step` (a
-lookbehind-bearing artifact) are `static inline`, defined ahead of the engine
+lookbehind-bearing artifact), and `<prefix>_fwd_step` (a lookbehind-bearing
+artifact whose lookbehind has an alternative of varying length), are
+`static inline`, defined ahead of the engine
 body and declared nowhere, so they are not exported. `<prefix>_var_valid` (a
 variable-bearing artifact under a multi-byte encoding) is exported and
 declared. None of them is a caller entry; their signatures are not part of
@@ -1297,13 +1299,16 @@ are emitted regardless so that a caller's `switch` survives a later compile
 under a different encoding or engine. None renumbers the give-up partition.
 
 - <a id="s4-p6"></a>[4¶6] **`PCREC_ERR_INTERNAL`** — the artifact caught its own inconsistency: a
-  compile-time width analysis (`pcrec_maxw`) disagreeing with what the
-  emitter walked, never a run-time resource give-up. Its one producer is
-  module `lookaround`'s negative-polarity lookbehind end-check (`(?<!X)`),
-  where a declined branch is the assertion SUCCEEDING, so a width
-  disagreement would be a false match; the check is redundant for the width
-  class the module ships and is emitted as a self-consistency guard. A
-  top-level entry propagates it to its caller like any negative return.
+  compile-time width analysis (the stored width pair, `pcrec_cwmin`/`pcrec_cwmax`)
+  disagreeing with what the emitter walked, never a run-time resource give-up.
+  It has two producers. One is module `lookaround`'s negative-polarity
+  lookbehind end-check (`(?<!X)`) on a one-length alternative, where a declined
+  alternative is the assertion SUCCEEDING, so a width disagreement would be a
+  false match; the check is redundant for one-length alternatives and is
+  emitted as a self-consistency guard, and a varying alternative's end-check
+  declines instead. The other is module `recursion`'s subroutine region-exit
+  guard (D72). A top-level entry propagates it to its caller like any negative
+  return.
 - <a id="s4-p7"></a>[4¶7] **`PCREC_ERR_STARTPOS`** — a refusal of the CALL: the caller named a
   `startpos` (or `ctx->pos`) that is not a character boundary, so nothing was
   attempted and no budget was touched (§9.2). Unreachable under `byte`, where
@@ -1643,7 +1648,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `95` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `96` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1801,7 +1806,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `95` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `96` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 

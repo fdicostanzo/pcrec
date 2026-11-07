@@ -254,59 +254,90 @@ static bool la_has_kreset(const Ast *a)
     }
 }
 
-/* §2.5's WIDTH RULE, as a table. Fills `out[0..nbr-1]` with each TOP-LEVEL
- * branch's fixed width IN WRITTEN ORDER and returns true; on the first branch
- * that is NOT fixed-width, writes that branch's `cwmin`/`cwmax` through `bad_lo`
- * / `bad_hi` and returns false.
+/* [LIM-1] (D90): this module's limits, generated from src/core/limits.def,
+ * the single derivation `pcrec --list-limits` dumps. */
+#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc, default_name) \
+    enum { name = (value) };
+#include "core/limits.def"
+#undef PCREC_LIMIT_MOD_LOOKAROUND
+
+/* §2.5's WIDTH RULE, as a table ([VLOOKBEHIND] stage 1, vlookbehind.md
+ * §5.2). Fills `out[0..nbr-1]` with each TOP-LEVEL branch's [lo, hi] range IN
+ * WRITTEN ORDER and returns LBW_OK, or returns the first rule a branch
+ * breaks with that branch's offending figure in `*bad`.
  *
  * WRITTEN ORDER IS THE WHOLE POINT AND IT IS THE REVERSE OF THE WALK (§2.4
  * level 1). `p_alt_info` builds a flat alternation LEFT-NESTED — `a|b|c` is
  * `A_ALT(A_ALT(a, b), c)` — so descending the `->l` spine yields the branches
  * BACKWARDS through `->r`, with the FIRST branch left over as the innermost
- * `->l`. This function therefore fills `out` from the END, which is what makes
- * `out[0]` the branch PCRE2 tries first. Get this backwards and `(?<=(a)|(aa))c`
- * on "aac" reports the wrong group — the exact cell §2.4 measured.
+ * `->l`. `pcrec_lookbehind_branches` undoes that, which is what makes
+ * `out[0]` the branch PCRE2 tries first. Get this backwards and
+ * `(?<=(a)|(aa))c` on "aac" reports the wrong group — the cell §2.4 measured.
  *
  * IT IS NOT A SECOND BRANCH-SPLITTING RULE. `nbr` comes from `AltInfo`
- * (PARSE-1), computed by the LOOP THAT DROVE THE PARSE, and this walk asserts
- * it rather than re-deriving it: an A_ALT spine of `nbr` branches has exactly
- * `nbr - 1` A_ALT nodes, so a disagreement is an internal error and not a
- * pattern error. That is D24's rule — a `|`-counting scanner here would be a
- * second implementation of a rule the parser already applied, and it would get
- * `(?<=(a|bc))x` and `(?<=a|bc)x` exactly backwards, which are the two cells
- * §2.5 exists to distinguish.
+ * (PARSE-1), computed by the LOOP THAT DROVE THE PARSE, and the split asserts
+ * it rather than re-deriving it (D24).
  *
- * FIXED MEANS `cwmin == cwmax`, BOTH FINITE, IN CHARACTERS — the unit 10.46
- * measures lookbehind length in ([M5.0] stage 2, utf8_design.md §5.6; under
- * `byte` one character is one byte and every verdict is what the byte pair
- * gave). `pcrec_cwmin` may UNDER-estimate
- * for free and `pcrec_cwmax` may OVER-estimate for free; the direction that is
- * NOT free is an under-estimating `cwmax`, which would let a variable-width
- * branch through as fixed. That is a silent miscompile rather than a lost
- * optimisation — and on a NEGATIVE lookbehind it is a FALSE MATCH — which is
- * why §3.4's end-check is emitted on both polarities and why sabotage row
- * S136 accepts a `cwmin != cwmax` branch on purpose.
+ * THE RULE IS PCRE2's, MEASURED AGAINST libpcre2 10.46, IN CHARACTERS (bytes
+ * under `byte`), and every refusal it makes PCRE2 makes too but one:
+ *   0. a branch unbounded ONLY through a match-time length (a backreference,
+ *      a variable, a consuming callout: `pcrec_cwmax_static` is finite) is
+ *      NOT BUILT (shape 5, review r4 F1). libpcre2 bounds a backreference by
+ *      its group and accepts `(a)(?<=\1)x`; [VLOOKBEHIND] stage 2 builds it.
+ *      Reported only after every branch has passed rules 1-3, so a branch
+ *      that is unbounded on its own still gets err 125's sentence
+ *      (`(a)(?<=a+|\1)`). Such a branch's table entry stays the arena's
+ *      [0, 0], which rule 3 never refuses. Through a CALL the callee's
+ *      published `cwmax` is unbounded and this rule cannot see why, so
+ *      `(?<=(?&g))` with a backreference in `g` still reads "unbounded"
+ *      (review r4 F1's residual, stage 2's);
+ *   1. every branch must be BOUNDED (err 125);
+ *   2. every branch's maximum is at most LA_LOOKBEHIND_BRANCH_MAX, fixed or
+ *      varying (err 187);
+ *   3. once ANY branch varies, every branch's maximum is at most
+ *      LA_LOOKBEHIND_VAR_MAX (err 200, PCRE2's default max_varlookbehind).
+ * Rules 1-2 are checked per branch LAST-WRITTEN FIRST (the walk's historical
+ * order, so a refusal reports the branch it always reported), then rule 3.
+ *
+ * BOTH ENDS MUST BE EXACT, and that is a change from the fixed-only rule,
+ * where a loose `pcrec_cwmin` could only refuse. Now an under-estimated `lo`
+ * (or an over-estimated `hi`) makes a one-length branch VARY: it switches the
+ * cap on for every branch and moves the branch to the candidate loop. The
+ * end-check stays emitted on both polarities as the run-time evidence; S136
+ * plants a stored pair that is wrong at both ends.
  *
  * A NESTED LOOKAROUND INSIDE A BRANCH CONTRIBUTES 0 AT BOTH ENDS (§3.1(d),
- * wave A's arms), so `(?<=a(?=b))x` stays fixed width 1 — it is not a special
- * case here, it is what both analyses already answer for A_LOOK. */
-static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
-                      long long *bad_lo, long long *bad_hi)
+ * wave A's arms), so `(?<=a(?=b))x` stays one-length 1 — it is what both
+ * analyses already answer for A_LOOK. */
+typedef enum { LBW_OK, LBW_UNBOUNDED, LBW_CEILING, LBW_CAP, LBW_NOTBUILT } LbVerdict;
+static LbVerdict la_widths(Ctx *cx, const Ast *body, int nbr, LookWidth *out,
+                           long long *bad)
 {
     const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *br);
     pcrec_lookbehind_branches(cx, body, nbr, br);
 
-    /* Checked LAST-WRITTEN FIRST, the walk's historical order, so the branch
-     * whose range a refusal reports is the one it always reported. */
+    bool varies = false, notbuilt = false;
     for (int i = nbr - 1; i >= 0; i--) {
         long long lo = pcrec_cwmin(br[i]), hi = pcrec_cwmax(br[i]);
-        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
-            *bad_lo = lo; *bad_hi = hi;
-            return false;
+        *bad = hi;
+        if (hi >= PCREC_W_UNBOUNDED) {
+            if (pcrec_cwmax_static(br[i]) >= PCREC_W_UNBOUNDED)
+                return LBW_UNBOUNDED;
+            notbuilt = true;    /* rule 0, after rules 1-3 */
+            continue;
         }
-        out[i] = (int)hi;
+        if (hi > LA_LOOKBEHIND_BRANCH_MAX) return LBW_CEILING;
+        out[i].lo = (int)lo;
+        out[i].hi = (int)hi;
+        varies |= lo < hi;
     }
-    return true;
+    if (varies)
+        for (int i = nbr - 1; i >= 0; i--)
+            if (out[i].hi > LA_LOOKBEHIND_VAR_MAX) {
+                *bad = out[i].hi;
+                return LBW_CAP;
+            }
+    return notbuilt ? LBW_NOTBUILT : LBW_OK;
 }
 
 /* K123: the top-level branch split, `internal.h`'s declaration states the
@@ -334,7 +365,7 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
 
 /* [DD-14.LB] §2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS.
  *
- * The width rule is asked twice now (see this file's `pcrec_lookaround_
+ * The width rule is asked twice (see this file's `pcrec_lookaround_
  * fix_widths` below and `pcrec_postresolve`'s declaration in internal.h), and
  * the two asks must produce the SAME BYTES: they are one rule, and a caller
  * who writes a call into a lookbehind body must not get a differently-worded
@@ -344,47 +375,49 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
  *
  * IT IS BYTE-IDENTICAL BY CONSTRUCTION AND NOT BY TRANSCRIPTION: the doorway
  * epilogue is `pcrec_ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
- * `REFUSE(at, "%s", buf)` here and `pcrec_ctx_fail(cx, at, "%s", buf)` there render
- * the same string at the same offset through the same formatter. `buf` is 256
- * bytes because `ExtResult.msg` was once a 256-byte array the hook's text was
- * formatted straight into, and `pcrec_ext_msgf` still cuts there. It cannot truncate: the longest arm is 148
- * bytes of template and 166 with both widths at their widest
- * (`PCREC_W_UNBOUNDED` is `1 << 40`, 13 digits) — and a width that large is
- * refused by the arm ABOVE it anyway, so 166 is a ceiling no live path
- * reaches.
+ * `REFUSE(at, "%s", buf)` here and `pcrec_ctx_fail(cx, at, "%s", buf)` there
+ * render the same string at the same offset through the same formatter.
+ * `buf` is LA_MSG_MAX (256) bytes because `pcrec_ext_msgf` still cuts there.
+ * It cannot truncate: the longest arm is the cap's, 126 bytes of template
+ * and under 140 with its figure at the ceiling's 5 digits (a larger figure is
+ * refused by the ceiling first, and the unbounded arm prints none).
  *
- * THE ORDER OF THE THREE ARMS IS PART OF THE RULE, not of either caller.
- * UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is itself above
- * `INT_MAX`, so the other order reports every `a*` body as "too long" — a
- * different and wrong claim. Here pcrec AGREES WITH PCRE2, whose own answer
- * is err 125 "length of lookbehind assertion is not limited" (§2.5).
+ * EVERY ARM BUT ONE IS A REFUSAL PCRE2 MAKES TOO ([VLOOKBEHIND] stage 1,
+ * pattern_language.md §2.4's shape 7), worded by what is refused (D26's
+ * functional tier), and none names a raise flag. The unbounded arm also
+ * serves K127's `recurses` refusal (libpcre2's err 125 there too). The one
+ * that is not, LBW_NOTBUILT, is shape 5: pcrec's capability, stated as one
+ * (review r4 F1; `la_widths`' rule 0).
  *
  * [LIM-1] (D90): generated from src/core/limits.def, the single derivation
- * `pcrec --list-limits` dumps — value unchanged, 256. */
-#define PCREC_LIMIT_MOD_LOOKAROUND(name, value, unit, kind, override, anchor, desc, default_name) \
-    enum { name = (value) };
-#include "core/limits.def"
-#undef PCREC_LIMIT_MOD_LOOKAROUND
-/* Formats the lookbehind width-refusal message for [lo,hi]: unbounded first
- * (since PCREC_W_UNBOUNDED sits above INT_MAX and the other test order would
- * misreport it), then a too-long fixed width, then the ordinary
- * variable-length message with its measured range. */
-static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
+ * `pcrec --list-limits` dumps. */
+static void la_width_refusal(char *buf, size_t n, LbVerdict why, long long bad)
 {
-    if (hi >= PCREC_W_UNBOUNDED)
-        snprintf(buf, n, "variable-length lookbehind is not implemented: "
-                         "every alternative of a lookbehind must have a "
-                         "fixed length (this one is unbounded)");
-    /* A FIXED width too large to store. Only reachable through a nested
-     * exact-count tower; the emitter's own node cap would refuse it a step
-     * later, and refusing here keeps `widths` an `int` table rather than
-     * making the whole analysis 64-bit for a pattern nothing can compile. */
-    else if (hi > INT_MAX)
-        snprintf(buf, n, "this lookbehind is too long");
-    else
-        snprintf(buf, n, "variable-length lookbehind is not implemented: every "
-                         "alternative of a lookbehind must have a fixed length "
-                         "(this one can match %lld..%lld characters)", lo, hi);
+    switch (why) {
+    case LBW_UNBOUNDED:
+        snprintf(buf, n, "every alternative of a lookbehind must have a "
+                         "bounded length (this one is unbounded)");
+        return;
+    case LBW_CEILING:
+        snprintf(buf, n, "every alternative of a lookbehind must match at "
+                         "most %d characters (this one has %lld)",
+                 LA_LOOKBEHIND_BRANCH_MAX, bad);
+        return;
+    case LBW_CAP:
+        snprintf(buf, n, "every alternative of a lookbehind must match at "
+                         "most %d characters once any alternative's length "
+                         "varies (this one can match up to %lld)",
+                 LA_LOOKBEHIND_VAR_MAX, bad);
+        return;
+    case LBW_NOTBUILT:
+        snprintf(buf, n, "a lookbehind containing a backreference, a "
+                         "variable or a consuming callout is not implemented "
+                         "(its length is known only when matching)");
+        return;
+    case LBW_OK:
+        break;
+    }
+    snprintf(buf, n, "internal error: no lookbehind width refusal to report");
 }
 
 /* [UTF-VALID] Raises LB (`Ctx.lb_max`) to this lookbehind's widest branch
@@ -392,9 +425,9 @@ static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
  * summed through nesting (utf_valid_design.md §1.4). Called wherever a
  * width table is settled, at parse time or deferred, so both timings
  * contribute exactly once. */
-static void la_lb_raise(Ctx *cx, const int *w, int nbr)
+static void la_lb_raise(Ctx *cx, const LookWidth *w, int nbr)
 {
-    for (int i = 0; i < nbr; i++) pcrec_lb_raise(cx, w[i]);
+    for (int i = 0; i < nbr; i++) pcrec_lb_raise(cx, w[i].hi);
 }
 
 /* [DD-14.LB] THE TWO HALVES OF THE DEFERRED RE-CHECK — internal.h's
@@ -432,7 +465,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses)
      * length (libpcre2's err 125), whatever its branches would measure. */
     if (recurses) {
         char buf[LA_MSG_MAX];
-        la_width_refusal(buf, sizeof buf, 0, PCREC_W_UNBOUNDED);
+        la_width_refusal(buf, sizeof buf, LBW_UNBOUNDED, PCREC_W_UNBOUNDED);
         pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }
 
@@ -441,11 +474,12 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses)
         pcrec_ctx_fail(cx, 0, "internal error: a deferred lookbehind carries no "
                         "branch count");
 
-    long long lo = 0, hi = 0;
-    int *w = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
-    if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
+    long long bad = 0;
+    LookWidth *w = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
+    const LbVerdict why = la_widths(cx, a->l, nbr, w, &bad);
+    if (why != LBW_OK) {
         char buf[LA_MSG_MAX];
-        la_width_refusal(buf, sizeof buf, lo, hi);
+        la_width_refusal(buf, sizeof buf, why, bad);
         pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }
     a->u.look.widths = w;
@@ -574,12 +608,13 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * this port can honestly name is the construct it is refusing. D26 puts
      * the OFFSET convention in tier 2 and the WORDING in tier 3.
      *
-     * IT IS A CAPABILITY LIMIT AND IS WORDED AS ONE, NOT AS "requires module
-     * 'lookaround'": the module is enabled and the construct is real — PCRE2
-     * compiles every body refused here — so what is missing is the
-     * longest-first step-back loop §2.5 charters and this module does not
-     * build. Saying "enable the module" to a caller who already has would be
-     * an actionable-sounding lie, which is D33's own distinction. */
+     * [VLOOKBEHIND] stage 1: EVERY REFUSAL HERE BUT ONE IS ONE PCRE2 MAKES TOO
+     * (unbounded, the 65535 ceiling, the 255 cap once a branch varies); the
+     * one, a backreference or variable inside, is pcrec's capability (shape
+     * 5, `la_widths`' rule 0). All are worded by what is refused, never as
+     * "requires module 'lookaround'":
+     * the module is enabled, and saying "enable the module" to a caller who
+     * already has would be an actionable-sounding lie (D33's distinction). */
     /* [DD-14.LB] AND THE OFFSET, for EVERY A_LOOK — see `u.look.at`. It is
      * written before the branch below because the deferred arm needs it and
      * "the offset this construct was parsed at" is true of the other two. */
@@ -619,13 +654,14 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         a->u.look.widths  = NULL;
         a->u.look.nbranch = info.nbr;
     } else {
-        long long lo = 0, hi = 0;
-        int *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
-        if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
+        long long bad = 0;
+        LookWidth *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
+        const LbVerdict why = la_widths(cx, body, info.nbr, w, &bad);
+        if (why != LBW_OK) {
             /* In the arena, not this frame: this port is a level of the
              * parser's group recursion (limits.md §3.10, dd10b). */
             char *buf = pcrec_arena_alloc(&cx->arena, LA_MSG_MAX);
-            la_width_refusal(buf, LA_MSG_MAX, lo, hi);
+            la_width_refusal(buf, LA_MSG_MAX, why, bad);
             REFUSE(at, "%s", buf);
         }
         a->u.look.widths  = w;

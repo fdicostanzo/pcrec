@@ -22,6 +22,7 @@
   - [§3.8](#s3-8) Module `ucp`: which UCP sets compile
   - [§3.9](#s3-9) The DFA's context sets and atoms
   - [§3.10](#s3-10) The compiler's C stack
+  - [§3.11](#s3-11) Lookbehind length
 - [§4](#s4) Worked example: `^(a(?1)?b)$`
 - [§5](#s5) The default entries and the C stack
 - [§6](#s6) Left recursion: a documented divergence
@@ -75,6 +76,8 @@
 <a id="s3-1-p3"></a>[3.1¶3] `--fno-step-budget` emits neither counter; one gate covers both. `rx_info.step_budget` and `rx_info.work_budget` carry the enforced values, `-1` when disabled.
 
 <a id="s3-1-p4"></a>[3.1¶4] A run of three or more consecutive literal bytes is compared as one constant-length `memcmp` (`tuning.md` §2.31) and charged as ONE compare; a two-byte run stays a byte chain. A run that mismatches at any byte enters the fail label once, so the step count of every match attempt equals what the per-byte chain charged. In a concatenation the work budget is unchanged. In an alternation island a walk that dies charges the trie bytes proved before the failing compare, never the bytes the one compare examined, so a `PCREC_ERR_WORK` give-up can only move later. The compile-time node budget `PCREC_MAX_VM_NODES` still pays one node per literal byte.
+
+<a id="s3-1-p5"></a>[3.1¶5] A lookbehind alternative is charged each back-step's character count in work units and, when its length varies, one work unit per further candidate start; each candidate its body fails on is a backtrack, charged to the step budget like any other. A varying lookbehind that fails at most positions of a long subject is therefore bounded by the step budget, at about `K`² steps per position for an alternative of up to `K` characters: `(?<=a{1,254}b)` on a subject of `a`s answers no match up to 7,889 bytes at the default budget and gives up with `PCREC_ERR_STEPS` from 7,890 bytes (from 30,843 at `a{1,127}`, 473,507 at `a{1,32}`), where libpcre2 answers no match. It is never `PCREC_ERR_FRAMES`: the trail term the alternative adds is sized at compile time (§3.2).
 
 <a id="s3-2"></a>
 ### 3.2 Frame and trail capacities
@@ -212,6 +215,14 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 <a id="s3-10-p4"></a>[3.10¶4] A thread smaller than the budget compiles shallower patterns. At musl's default thread stack of 128 KB (131,072 bytes) that is nesting up to 81 levels of optional groups `(a(a…)?)?`, 148 to 161 levels of lookarounds, atomic groups, named groups or scoped inline options, and the full 250 levels of plain groups, measured the same way. pcrec does not detect a stack too small for the pattern: past those depths an undersized thread overflows rather than refusing, and the remedy is a larger thread. There is no caller-settable nesting limit.
 
 <a id="s3-10-p5"></a>[3.10¶5] The figures are measurements on one platform, not portable constants; another architecture or compiler moves them, which is why the budget carries about 20% headroom over the measured worst.
+
+<a id="s3-11"></a>
+### 3.11 Lookbehind length
+
+<a id="s3-11-p1"></a>[3.11¶1] Two `limits.def` rows bound how many characters one alternative of a lookbehind may match (`pattern_language.md` §7.4¶5). Both count characters under `utf8` and bytes in byte mode, are of kind `compile budget` with no override, and refuse the pattern when crossed, as libpcre2 refuses it:
+
+- <a id="s3-11-p2"></a>[3.11¶2] `LA_LOOKBEHIND_BRANCH_MAX` = 65,535: any alternative, fixed or varying (libpcre2's error 187).
+- <a id="s3-11-p3"></a>[3.11¶3] `LA_LOOKBEHIND_VAR_MAX` = 255: every alternative, once any alternative's length varies. It is libpcre2's default `max_varlookbehind` (its error 200), and pcrec answers at that default only; no option sets it.
 
 <a id="s4"></a>
 ## 4. Worked example: `^(a(?1)?b)$`

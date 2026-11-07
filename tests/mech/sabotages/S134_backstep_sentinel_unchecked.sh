@@ -26,6 +26,10 @@
 # exclusion the call count uses. Nothing behavioural can see this.
 # RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
 # the sentinel test is now a BRANCH record; the same record not built. Same detector, same arm.
+# RE-CUT 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1, READY-1): the sentinel
+# branch targets `k_none` (the next branch's L_n for a varying non-last
+# branch, rx_fail otherwise); one test still carries both rows' first
+# back-step sentinel. The far step's twin is S1964.
 SAB_ID="S134-backstep-sentinel-unchecked"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
@@ -34,5 +38,5 @@ SAB_DESC="vm_look_behind_branch (vm_look_behind's per-branch loop) calls the bac
 SAB_DOC_FIGURE="PREDICTED: codegen RED on the sentinel count for all seven residlb* fixtures; tests/lookaround and the lookaround differential GREEN — this row cannot be detected behaviourally under the byte backend and says so. Canonical figure owed from run_sabotage_matrix.sh S134."
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
-                pcrec_vm_tgt_fail());'
+                k_none);'
 SAB_AFTER='    /* SABOTAGE S134: the sentinel comparison deleted */'

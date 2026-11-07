@@ -115,12 +115,12 @@ pattern ^(?:(?<g>b)){0}ab(?<=a(?=(?&g))b)$
 features recursion,lookaround,atomic-groups,named-groups
 m "ab" 0 2
 
-# WAVE B+C's PARKED CELL 2, RULED. ONE top-level branch -- an `A_CALL` -- of width 1..2, because the alternation is inside the CALLEE. That is `(?<=(a|bc))x` reached through a call: lookaround_design.md SS2.5 CHARTERS the longest-first step-back loop it needs and does not ship it, and tests/lookaround/refused.rxt pins the call-free twin with this same citation. Note the DIAGNOSTIC below, which is how the two questions were told apart: before [DD-14.LB] pcrec said "unbounded" here, a claim about the call graph that was FALSE; it now says "1..2", which is a claim about the shipped subset and is true. Letting a body that is exactly one `A_CALL` borrow the callee's top-level branch split was considered and rejected -- it does not generalise (`(?<=x(?&g))` is one branch again) and it would invert SS2.4's MEASURED ordering, since PCRE2 tries a single variable branch step-back LONGEST-FIRST while branches are tried in written order.
-# MEASURED: libpcre2 10.46 ACCEPTS this pattern and answers (0,2) on 'ab' -- pcrec's refusal is a CAPABILITY limit, stated as one (D26 tier 2: which constructs are real is exact, what pcrec builds is a separate statement)
-# MEASURED, build/pcrec under --features recursion,lookaround,atomic-groups,named-groups: pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 characters) (pattern offset 20)
+# WAVE B+C's PARKED CELL 2, ANSWERED. ONE top-level branch -- an `A_CALL` -- of width 1..2, because the alternation is inside the CALLEE: `(?<=(a|bc))x` reached through a call. The [DD-14.LB] amendment refused it (a RULED capability refusal) for want of the candidate loop; [VLOOKBEHIND] stage 1 built that loop and REVERSED the refusal deliberately (vlookbehind.md §6), so it now answers as libpcre2 does. Borrowing the callee's top-level branch split is still rejected: the call is ONE varying branch, tried farthest candidate first.
 pattern ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
 features recursion,lookaround,atomic-groups,named-groups
-perr
+m "ab" 0 2
+n "b"
+n "a"
 
 # a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), and pcrec now refuses it from `pcrec_postresolve` AT THE SAME OFFSET (26) with "this one is unbounded". The `maxw` fixpoint reaches UNBOUNDED here as a FIXED POINT: the published value saturates `pcrec_mrl_sat_add` and never leaves the top (design SS3.4d: infinity for any callee in a cycle).
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 26: length of lookbehind assertion is not limited

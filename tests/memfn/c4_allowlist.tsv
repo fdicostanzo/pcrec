@@ -44,3 +44,7 @@ tests	tests/mech/sabotages/S1245_meas_flag_reaches_query.sh	6	1	a [MEASURE-SET] 
 tests	tests/mech/sabotages/S1246_meas_pcrec_line_carries_flag.sh	6	1	a [MEASURE-SET] M0 check or sabotage row naming the shipped set id `zen4-grid1` (its fixtures and anchors read the store's own text verbatim); a data label, not a branch on an architecture
 tests	tests/lookaround/lookbehind_group_alt.gen.py	1	2	a test SUBJECT string "adx" (a, d, x: the lookbehind alternatives ab|cd then x), not the ADX extension
 tests	tests/lookaround/lookbehind_group_alt.rxt	1	2	the generated corpus carrying the subject "adx" (two rows), not the ADX extension
+tests	tests/lookaround/d27/gen_refusals.py	1	1	a test SUBJECT string "adx" (a, d, x: a variable-length lookbehind subject), not the ADX extension
+tests	tests/lookaround/d27/refusals.rxt	1	7	the generated refusals corpus carrying the subject "adx", not the ADX extension
+tests	tests/lookaround/gen_corpus.py	1	2	a test SUBJECT string "adx" (lookbehind alternatives ad|bcd then x), not the ADX extension
+tests	tests/lookaround/lookbehind_variable.rxt	1	4	the subject "adx" and a comment naming it, in a variable-length lookbehind corpus, not the ADX extension

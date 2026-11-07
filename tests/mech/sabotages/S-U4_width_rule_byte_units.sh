@@ -18,12 +18,19 @@
 # well-meaning reader of that (uncorrected) row text would make. Applied,
 # every class branch reads cwmin 1 != cwmax 4 and REFUSES: `(?<=a)x`, a
 # pure-ASCII lookbehind that ships today, stops compiling.
+# RE-AIMED 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1): the stated
+# detector (class-bearing lookbehinds refuse) is gone -- a varying branch now
+# compiles, and its extra candidates fail the end-check, so short answers stay
+# green. Re-aimed on (?<=ab)x (`--emit-ir`: "fixed width 2", under the plant
+# "width 2..8") at gate 3's classification control. `(?<=a)x` never carried
+# it: a one-character body is a T3 context node built before any width rule.
+# The paragraphs above are the original record.
 SAB_ID="S-U4-width-rule-byte-units"
 SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
-SAB_DESC="pcrec_cwmax's A_CLASS arm answers the encoding's maximum code-unit length (the [M5.0] cross-note's refuted cure) instead of the definitional 1 character; every lookbehind whose branch contains any class reads cwmin != cwmax and refuses, (?<=a)x included"
-SAB_DOC_FIGURE="PREDICTED: every lookbehind block in tests/lookaround/ that has a class (or literal, which parses to a class) in a branch goes red as a pattern-compile failure; lookahead blocks are unmoved (no width rule). MEASURED at stage 2: lookbehind.rxt and lookbehind_widths.rxt red wholesale, refused.rxt's perr blocks still red-for-the-right-reason where the refusal text changed."
+SAB_DESC='pcrec_cwmax'\''s A_CLASS arm answers the encoding'\''s maximum code-unit length (the [M5.0] cross-note'\''s refuted cure) instead of the definitional 1 character; since [VLOOKBEHIND] stage 1 a class-bearing lookbehind branch of two characters or more becomes a VARYING branch (2..8 for (?<=ab)x) instead of refusing, a one-character body is a T3 context node the width rule never sees'
+SAB_DOC_FIGURE='PREDICTED (re-aimed, vlookbehind.md §7 S-U4, r2-1106 F5): run_lookaround_diff.sh §6 (gate 3, vlb_accept.py) red on its classification control -- (?<=ab)x and every multi-character fixed body judged `width K..4K` where libpcre2 at max_varlookbehind 0 accepts; probably also the cap/ceiling boundary cells where x4 crosses 255 or 65535 (W9/W9b in lookbehind_variable_witness.rxt). Answers on short bodies stay green (the extra candidates fail the end-check). Run at build: owed (report).'
 # RE-ANCHORED at [PATFACTS] step 3.6 (R3, 2026-09-28, lane pf36):
 # `pcrec_mrl_sat_add` retired into the shared `pcrec_sat_add(a, b, cap)`
 # (src/opt/mrl.c); the disambiguating comment line above the call is

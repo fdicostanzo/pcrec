@@ -95,19 +95,37 @@ perr
 pattern (?<*a)b
 perr
 
-# AND THE ONE ENABLED-AND-BUILT REFUSAL THIS MODULE STILL OWES A GATE CELL:
-# §2.5's variable-width limit is NOT the gate and NOT the `unbuilt` column --
-# module `lookaround` is enabled, the row is `built`, and the construct is
-# real. It is the CAPABILITY tier, and the wording says so instead of telling
-# a caller to enable something they already have. refused.rxt carries the
-# family; this block is here so the three tiers sit in one file where a
-# reader can see they are three different sentences.
-# MEASURED: libpcre2 10.46 ACCEPTS this pattern -- pcrec's refusal is a
-# CAPABILITY limit, stated as one (D26 tier 2: which constructs are real is
-# exact, what pcrec builds is a separate statement); python3 `re` refuses:
-# look-behind requires fixed-width pattern
+# §2.5's variable-width body, the cell that sat here as the CAPABILITY tier's
+# refusal until [VLOOKBEHIND] stage 1 built the loop: it answers now. The
+# capability tier is still a third sentence, held by the next cell.
+# python DIVERGES here, measured rather than assumed: 'ax' @0 pcre2=('m', 1,
+# 2, (0, 1)) python=('ERR', 'look-behind requires fixed-width pattern') (3
+# cells in this block)
+# pcre2-only
 pattern (?<=(a|bc))x
 features lookaround
+m "ax" 1 2
+g 1 0 1
+m "bcx" 2 3
+g 1 0 2
+n "cx"
+
+# THE CAPABILITY TIER, after stage 1: a backreference inside a lookbehind.
+# Module `lookaround` is enabled, the row is `built`, the construct is real
+# and libpcre2 compiles it; pcrec refuses it until [VLOOKBEHIND] stage 2,
+# with a capability message rather than a gate or `unbuilt` wording. So the
+# three tiers still sit in one file.
+# MEASURED: libpcre2 10.46 ACCEPTS this pattern -- pcrec's refusal is a
+# CAPABILITY limit, stated as one (D26 tier 2: which constructs are real is
+# exact, what pcrec builds is a separate statement); python3 `re` ACCEPTS it
+# python COMPILES this pattern, so it cannot verify a `perr` block for it:
+# the refusal is pcrec's own GATE or CAPABILITY answer, not a syntax verdict
+# either oracle shares. tests/harness/CLAUDE.md's rule -- gate-only
+# constructs are `# pcre2-only` blocks like any other python-inexpressible
+# pattern.
+# pcre2-only
+pattern (a)(?<=\1)x
+features lookaround,backrefs
 perr
 
 # R33 C2-5's MASKING SHAPE, PINNED. Without `assertions` this cell is refused

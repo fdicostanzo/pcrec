@@ -266,9 +266,15 @@ PY
 # group span, so an alias resolved to the wrong primary disagrees here on
 # subjects the corpus's own three cases never reach. 69 re-derived from a run,
 # not summed on faith.
+# [VLOOKBEHIND] stage 1 69 -> 85: the bounded variable-width rows that were
+# `perr` now answer, and python refuses every one, so each is `# pcre2-only`:
+# lookbehind_variable.rxt +10 (refused.rxt's family, moved), gated.rxt +1,
+# alpha_spellings.rxt +1 (`(*plb:(a|bc))x`), lookbehind_group_alt.rxt +4;
+# then 85 -> 117: lookbehind_variable_witness.rxt's 32 answer-bearing
+# sabotage witnesses (W1-W16). Re-derived from the extractor over the tree.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 69 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 69 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 117 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 117 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do
@@ -367,6 +373,122 @@ elif [ "$eng_bad" -eq 0 ]; then
     ok "§4 the engine arms: $eng_pat patterns × $NSUBJ subjects × every startpos, DEFAULT and --engine=vm identical cell for cell. The default is the arm that carries the erased-lookaround prefilter, and an erased lookaround is loudly wrong — \`(?=a)b\` erased is \`b\`, which MATCHES \"b\" where the truth is NOMATCH"
 else
     bad "§4 the engine arms: $eng_bad of $eng_pat patterns disagree between the default selection and --engine=vm"
+fi
+
+# =========================================================================
+# §5 BOUNDED VARIABLE LOOKBEHIND ([VLOOKBEHIND] stage 1, vlookbehind.md §6
+# gate 1)
+# =========================================================================
+# The cell set is tests/lookaround/vlb_cells.py's (written from the spec's
+# rule and the design's measured cells, never from the emitter), in FOUR
+# NAMED MODES, each compared against libpcre2 10.46 by tests/lookaround/
+# vlb_one.sh: `byte`, `utf8` (PCRE2_UTF, valid subjects), `utf8-invalid`
+# (PCRE2_MATCH_INVALID_UTF, pcrec's reading of an ill-formed subject) and
+# `utf8-clip` (a `-e utf8` artifact whose body reads context before its
+# candidate, on ASCII subjects, against libpcre2's BYTE answer: D142 item
+# 3's stated divergence, match_api.md §9.4¶8). 0 differences in every mode.
+# K35: the generator's population is pinned EXACTLY per mode, and the cells
+# swept and the D142 expected-divergent subset are floored, so a mode that
+# stopped running, or a clip class that stopped reaching, is red.
+VLB_POP_EXPECT="vlb_cells: byte=373 utf8=233 utf8-clip=48 utf8-invalid=7"
+# The call-to-a-bounded-group cells need `recursion` beside the module set.
+FEATS="$FEATS,recursion"
+export PCREC CC GENCFLAGS TIMEOUT_BIN ORACLE BATCH FEATS
+export VLB_SUBJ="$WORKDIR/vlbsubj" VLB_WORK="$WORKDIR/vlbwork"
+mkdir -p "$VLB_WORK"
+if ! python3 "$SCRIPT_DIR/vlb_cells.py" "$WORKDIR/vlb_pats" "$VLB_SUBJ" \
+        2>"$WORKDIR/vlb_pop"; then
+    bad "§5 the cell generator failed: $(head -2 "$WORKDIR/vlb_pop")"
+elif [ "$(cat "$WORKDIR/vlb_pop")" != "$VLB_POP_EXPECT" ]; then
+    bad "§5 the cell population is '$(cat "$WORKDIR/vlb_pop")', not '$VLB_POP_EXPECT' — a cell was added or lost; re-derive the pin DELIBERATELY"
+else
+    tr '\n' '\0' < "$WORKDIR/vlb_pats" \
+        | xargs -0 -n 1 -P "${PROCS:-8}" bash "$SCRIPT_DIR/vlb_one.sh" \
+        > "$WORKDIR/vlb_out"
+    vlb_fail=$(grep -c '^FAIL' "$WORKDIR/vlb_out" || true)
+    vlb_n=$(grep -c . "$WORKDIR/vlb_out" || true)
+    if [ "$vlb_fail" -ne 0 ] || [ "$vlb_n" -ne "$(grep -c . "$WORKDIR/vlb_pats")" ]; then
+        bad "§5 $vlb_fail of $vlb_n patterns disagree with libpcre2 (or did not report)"
+        grep '^FAIL' "$WORKDIR/vlb_out" | head -10 >&2
+    else
+        # Per-mode cells and the clip class's divergent subset (K35). MEASURED
+        # 2026-11-06 (lane vlbbuild's run): byte 48,863, utf8 15,145,
+        # utf8-clip 2,064, utf8-invalid 252, divergent 49. Each floor is the
+        # measured figure less ONE PERCENT, rounded down (review r4 F11: the
+        # first floors sat ~60% of it, so ~40% of a mode's subjects could
+        # vanish green). The cells are deterministic for a pinned pattern set,
+        # so the margin only absorbs a deliberate small subject edit; losing
+        # one subject family moves a mode by several percent and goes red.
+        # A corpus change that moves the pattern pins re-measures these too.
+        vlb_sum=$(awk -F'\t' '{ c[$2] += $3; d[$2] += $4 }
+            END { printf "%d %d %d %d %d", c["byte"], c["utf8"], c["utf8-clip"], c["utf8-invalid"], d["utf8-clip"] }' \
+            "$WORKDIR/vlb_out")
+        read -r vb vu vc vi vdiv <<< "$vlb_sum"
+        if [ "$vb" -lt 48374 ] || [ "$vu" -lt 14993 ] || [ "$vc" -lt 2043 ] \
+           || [ "$vi" -lt 249 ] || [ "$vdiv" -lt 48 ]; then
+            bad "§5 a mode swept too few cells: byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi, D142-divergent=$vdiv (floors 48374/14993/2043/249/48, the 2026-11-06 measure less 1%)"
+        else
+            ok "§5 bounded variable lookbehind: $vlb_n patterns, byte=$vb utf8=$vu utf8-clip=$vc utf8-invalid=$vi cells, every startpos and every group span, 0 disagreements with libpcre2 10.46; $vdiv utf8-clip cells are D142's stated divergence (libpcre2 UTF clips, pcrec answers as byte mode does)"
+        fi
+    fi
+fi
+
+# =========================================================================
+# §6 THE ACCEPT SET AND THE CLASSIFICATION CONTROL ([VLOOKBEHIND] gate 3)
+# =========================================================================
+# tests/lookaround/vlb_accept.py: every lookbehind pcrec compiles, libpcre2
+# compiles (one stated divergence, the zero-width unbounded repeat, counted
+# on its own), and pcrec's per-branch `width LO..HI` judgment holds exactly
+# where libpcre2 at max_varlookbehind = 0 refuses. Its population and every
+# bucket are pinned EXACTLY (K35): a bucket that moved is a decision.
+VLB_ACC_EXPECT="vlb_accept: total=234 both=154 divergent=32 pcre2only=2 bad=0"
+"$TIMEOUT_BIN" 1800 python3 "$SCRIPT_DIR/vlb_accept.py" "$PCREC" > "$WORKDIR/vlb_acc" 2>&1
+vlb_acc_last="$(tail -1 "$WORKDIR/vlb_acc")"
+if [ "$vlb_acc_last" = "$VLB_ACC_EXPECT" ]; then
+    ok "§6 the accept set: 234 cells, pcrec's accepts inside libpcre2's (32 zero-width-repeat cells the stated divergence, 2 backreference rows libpcre2 alone accepts until stage 2), and on all 154 shared accepts pcrec's 'width LO..HI' judgment equals libpcre2's refusal at max_varlookbehind = 0"
+else
+    bad "§6 the accept set: '$vlb_acc_last', not '$VLB_ACC_EXPECT'"
+    head -10 "$WORKDIR/vlb_acc" >&2
+fi
+
+# =========================================================================
+# §7 THE BUDGET CELL ([VLOOKBEHIND] gate 4; vlookbehind.md §5.5)
+# =========================================================================
+# The variable twin of workbudget.rxt's long-subject leading lookbehind. Two
+# shapes over all-`a` subjects (no match anywhere, so every start is tried):
+#   common path  `(?<=a{1,255})b` — one far try per evaluation (§5.5): it
+#                answers as libpcre2 does at the largest size the batch
+#                driver carries (60,000 bytes);
+#   worst case   `(?<=a{1,254}b)` — no literal to skip on, and the body
+#                backtracks through every candidate: O(hi²) per position,
+#                which libpcre2 also pays in time. MEASURED 2026-11-06 at the
+#                default budgets: it answers through 7,889 bytes and gives
+#                up from 7,890 with PCREC_ERR_STEPS (-2, the body's backtrack
+#                resumptions; §5.5 named the work budget). The cell asserts
+#                the answer at 4,000 and a STEPS-or-WORK give-up at 20,000 —
+#                margins either side, so the cell pins the CLASS of outcome,
+#                not one byte — and NEVER PCREC_ERR_FRAMES (-3): the trail
+#                term must make every evaluation fit.
+g4_bad=0
+for spec in "(?<=a{1,255})b 60000 answer" "(?<=a{1,254}b) 4000 answer" \
+            "(?<=a{1,254}b) 20000 giveup"; do
+    read -r g4pat g4n g4want <<< "$spec"
+    head -c "$g4n" /dev/zero | tr '\0' a > "$WORKDIR/g4subj"
+    g4d="$WORKDIR/g4$RANDOM"; mkdir -p "$g4d"
+    if ! pcrec_run "$PCREC" --features "$FEATS" -p rx -o "$g4d/gen.c" --pattern "$g4pat" 2>/dev/null \
+       || ! $CC $GENCFLAGS -I"$g4d" -o "$g4d/t" "$BATCH" "$g4d/gen.c" 2>/dev/null; then
+        bad "§7 could not build $g4pat"; g4_bad=$((g4_bad + 1)); continue
+    fi
+    g4mine="$(printf '%s\t0\n' "$WORKDIR/g4subj" | "$TIMEOUT_BIN" 60 "$g4d/t")"
+    case "$g4want:$g4mine" in
+        answer:nomatch) ;;
+        giveup:"giveup -2"|giveup:"giveup -4") ;;
+        *) bad "§7 $g4pat on $g4n bytes of 'a': '$g4mine', wanted the $g4want class (libpcre2: nomatch; never 'giveup -3', PCREC_ERR_FRAMES)"
+           g4_bad=$((g4_bad + 1)) ;;
+    esac
+done
+if [ "$g4_bad" -eq 0 ]; then
+    ok "§7 the budget cell: the common path answers nomatch (= libpcre2) at 60,000 bytes; the worst case answers at 4,000 and gives up with PCREC_ERR_STEPS/WORK at 20,000 (measured boundary 7,890), never PCREC_ERR_FRAMES"
 fi
 
 finish

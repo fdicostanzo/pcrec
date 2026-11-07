@@ -23,3 +23,7 @@
 - `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY` ([OPT-PRECHECK-ADMIT], 2026-09-23, abi 30 -> 31): the ADMISSION of §3's and §4's pre-checks, ruled by Frank as G1 + G2 (G3 dropped on x86_64 measurement); neither decline is answer-detectable, so this file is where they are defended.
 
 - run_residual_twins.sh (moved from CLAUDE.md, 2026-10-30): the premul table also has an iterator arm.
+
+## `run_scan_edge_census.sh` sections (7)-(8) (moved from CLAUDE.md for size, 2026-11-06)
+
+Since [SCANEDGE-SET] also section (7) (every edge's run-test bytes vs the head's transition row, via **scan_set_check.py**, a coprocess on the corpus sweep) and section (8) (set witnesses per machine, the one-class control's text pin, two negative controls).

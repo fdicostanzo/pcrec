@@ -422,6 +422,8 @@ PCREC_LIMIT(PCREC_MAX_CTX_ATOMS, 16, "count", "compile budget", NONE, "3.9", "[U
 PCREC_LIMIT(RC_NUMBER_MAX, 1000000L, "", "compile budget", NONE, "", "src/parse/mod_recursion.c: saturation ceiling for a (?N)/(?+N)/(?-N) recursion-call number", MOD_RECURSION)
 PCREC_LIMIT(BR_NUMBER_MAX, 1000000L, "", "compile budget", NONE, "", "src/parse/mod_backrefs.c: saturation ceiling for a \\N/\\g{N} backreference number", MOD_BACKREFS)
 PCREC_LIMIT(LA_MSG_MAX, 256, "bytes", "identifier cap", NONE, "", "src/parse/mod_lookaround.c: fixed buffer size for the §2.5/§2.7 lookaround diagnostic text", MOD_LOOKAROUND)
+PCREC_LIMIT(LA_LOOKBEHIND_BRANCH_MAX, 65535, "chars", "compile budget", NONE, "3.11", "[VLOOKBEHIND] the most characters (bytes in byte mode) one lookbehind alternative may match, fixed or varying: PCRE2's own language ceiling (its error 187, at every max_varlookbehind), measured against libpcre2 10.46; crossing it refuses the pattern", MOD_LOOKAROUND)
+PCREC_LIMIT(LA_LOOKBEHIND_VAR_MAX, 255, "chars", "compile budget", NONE, "3.11", "[VLOOKBEHIND] the most characters (bytes in byte mode) any alternative of a lookbehind may match once ANY alternative's length varies: policy matching PCRE2's default max_varlookbehind (its error 200), not a resource bound; correctness needs none (vlookbehind.md §5.2). Its setting waits for [IFACE-PUSH]", MOD_LOOKAROUND)
 
 /* ---- home: RXT_SOURCE (4) — the .rxt SOURCE head parser's own caps ----- *
  * [DD-13b.W1.1]/r46sem finding 8, docs/spec/limits.md §3.5. These four were

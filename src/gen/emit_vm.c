@@ -443,7 +443,12 @@ typedef struct {
                              * the running assignment counter */
     int       nlow;       /* cursor low-water slots assigned so far */
     int       nlow_total; /* the count vm_count_slots found — vm_slot_mark's
-                           * base, for vm_slot_low's own reason */
+                           * base, for vm_slot_low's own reason. The WHOLE
+                           * `low` family: span lows plus lookbehind lows */
+    int       nlblow;     /* [VLOOKBEHIND] lookbehind lows (one per varying
+                           * branch) assigned so far: the family's top
+                           * sub-block, vm_slot_lblow */
+    int       nlblow_total;
     int       nmark;      /* [ENG-BREP] possessive cut-mark slots so far */
     int       nmark_total;
     int       nrev;       /* [ENG-BREP] revdet LOOPS so far (3 slots each) */
@@ -944,18 +949,51 @@ static void vm_charge(Vm *v)
  *                       not by the VM — §3.4)
  *   next nguard         empty-iteration guards (§3.3), one per rmax==-1
  *                       nullable quantifier on the frames rung
- *   next nlow           cursor low-water marks (§2.5's RULED re-push
- *                       discipline). NOT the cursor itself, which is a plain
- *                       untrailed local: what a span loop cannot recover from
- *                       its own resume frame is where the loop STARTED, and
- *                       that is what lives here. It is written once per loop
- *                       ENTRY (not per iteration, and not per retreat), so it
- *                       costs O(1) trail per entry, which is the whole point.
+ *   next nlow           loop bound positions: a span loop's entry or a
+ *                       varying lookbehind branch's nearest candidate start
+ *                       (§2.5's RULED re-push discipline). NOT the cursor
+ *                       itself, which is a plain untrailed local (or, for a
+ *                       lookbehind, the retry frame's own position): what a
+ *                       loop cannot recover from its own resume frame is its
+ *                       BOUND, and that is what lives here. It is written
+ *                       once per loop ENTRY (not per iteration, and not per
+ *                       retreat), so it costs O(1) trail per entry, which is
+ *                       the whole point. [VLOOKBEHIND] Two sub-blocks read
+ *                       off the index, no owner list: span lows first, then
+ *                       `nlblow_total` lookbehind lows (vm_slot_lblow).
  */
 static int vm_slot_guard(Vm *v, int i) { return 2 * (v->ngroups + 1) + i; }
 /* The cursor low-water slot for span loop `i` — the layout's third block
  * above, `SLOT_SPAN_LOW<i>` in the artifact. */
 static int vm_slot_low(Vm *v, int i)   { return 2 * (v->ngroups + 1) + v->nguard_total + i; }
+/* [VLOOKBEHIND] The nearest-start slot of varying lookbehind branch `j` (in
+ * emission order): the `low` family's top sub-block, `SLOT_LB_LO<j>` in the
+ * artifact (vlookbehind.md §5.1b). */
+static int vm_slot_lblow(Vm *v, int j)
+{
+    return vm_slot_low(v, v->nlow_total - v->nlblow_total + j);
+}
+/* [VLOOKBEHIND] Takes the next varying branch's nearest-start slot, in
+ * emission order, and refuses the compile when it falls outside the
+ * sub-block the count pass sized. K27's class, as `vm_splice`'s overflow
+ * guard is: the count pass (`vm_count_slots_look`) and this walk disagreeing
+ * about how many varying branches there are, or the slot formula drifting,
+ * would otherwise write another family's slot in EMITTED code and the
+ * artifact would hang or crash (review r4 F15). The bounds come from
+ * `vm_slot_low`, not `vm_slot_lblow`, so a drift in the formula is seen. Its
+ * sibling is the equality check after the body's emission. */
+static int vm_take_lblow(Vm *v)
+{
+    const int j = v->nlblow++;
+    const int slot = vm_slot_lblow(v, j);
+    if (j >= v->nlblow_total
+        || slot < vm_slot_low(v, v->nlow_total - v->nlblow_total)
+        || slot >= vm_slot_low(v, v->nlow_total))
+        pcrec_ctx_fail(v->cx, 0, "internal error: the lookbehind low sub-block "
+                           "overflowed (branch %d of %d, slot %d)", j + 1,
+                           v->nlblow_total, slot);
+    return slot;
+}
 /* Returns the slot index for slot class four: a possessified frames-rung
  * loop's CUT MARK, the resume-stack depth to truncate back to [ENG-BREP].
  * It sits above the low-water marks, so like them its base is computed
@@ -1038,8 +1076,11 @@ static const char *vm_slot_name(Vm *v, int slot)
     if (slot < base_low) {
         return vm_rolef(v, "SLOT_EMPTY_GUARD%d", slot - base_guard);
     }
-    if (slot < base_mark) {
+    if (slot < base_mark - v->nlblow_total) {
         return vm_rolef(v, "SLOT_SPAN_LOW%d", slot - base_low);
+    }
+    if (slot < base_mark) {
+        return vm_rolef(v, "SLOT_LB_LO%d", slot - (base_mark - v->nlblow_total));
     }
     if (slot < base_rev) {
         return vm_rolef(v, "SLOT_CUT_MARK%d", slot - base_mark);
@@ -1258,6 +1299,24 @@ static bool vm_look_needs_pos(const Ast *a)
      * slot even though the restore is free, because §3.4's END-CHECK compares
      * the body's finishing position against the ENTRY position (wave D). */
     return !a->u.look.neg || a->u.look.behind;
+}
+
+/* [VLOOKBEHIND] Does branch `i` of lookbehind `a` VARY (`lo < hi`), taking
+ * the candidate loop (the `range` row) rather than today's one-length
+ * emission? THE emission table's one key (vlookbehind.md §5.1b), read by the
+ * count pass, the cost pass and the emitter, never re-derived. */
+static bool vm_lb_varies(const Ast *a, int i)
+{
+    return a->u.look.widths[i].lo < a->u.look.widths[i].hi;
+}
+/* How many branches of lookbehind `a` vary (0 for a lookahead, or a
+ * lookbehind whose table is still pending). */
+static int vm_lb_nvaries(const Ast *a)
+{
+    int n = 0;
+    if (!a->u.look.behind || !a->u.look.widths) return 0;
+    for (int i = 0; i < a->u.look.nbranch; i++) n += vm_lb_varies(a, i);
+    return n;
 }
 
 /* Is group `g` MARKED — does some backreference in this pattern name it? ONE
@@ -2854,12 +2913,23 @@ static Cost vm_cost_atomic(Vm *v, const Ast *a)
  * unchanged to the line. For a lookbehind the exact figure is `m - 1` — one
  * retry frame per NON-final branch, all of which the cut discards on
  * success (§3.7) — so `+ m` deliberately over-charges by one, in the
- * direction this whole analysis is documented to err in. */
+ * direction this whole analysis is documented to err in.
+ *
+ * [VLOOKBEHIND] A VARYING BRANCH (vlookbehind.md §5.5). Its candidate loop
+ * keeps at most one frame of its own live (each candidate's is popped
+ * before the next is pushed), and its last branch pushes too, so `1 + m`
+ * stays a safe bound. Its trail is ONE entry per varying branch per
+ * evaluation, the nearest-start slot `LO_i` written once before the first
+ * push (every candidate's frame marks above it, so the body's writes never
+ * accumulate across candidates; an exhausted branch's entry stays live
+ * while the next runs), hence `2 + (varying branches)`, whatever `hi - lo`
+ * is. Witness W12: a per-candidate write, or the term one short per branch,
+ * gives PCREC_ERR_FRAMES where libpcre2 answers. */
 static Cost vm_cost_look(Vm *v, const Ast *a)
 {
     Cost c = vm_cost(v, a->l, false);
     c.frames += 1 + a->u.look.nbranch;
-    c.trail  += 2;
+    c.trail  += 2 + vm_lb_nvaries(a);
     return c;
 }
 
@@ -3050,6 +3120,14 @@ static void vm_count_slots_look(Vm *v, const Ast *a, long long repl)
      * this walk's under-count is the one that lets an artifact past the
      * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
      * what keeps `-1` from being charged to one. */
+    /* [VLOOKBEHIND] A VARYING branch pushes its candidate frame whether or
+     * not it is last, and owns one `low` slot (its nearest start); the
+     * one-length rows keep the count above (vlookbehind.md §5.1b). */
+    for (int i = 0; a->u.look.behind && a->u.look.widths && i < a->u.look.nbranch; i++)
+        if (vm_lb_varies(a, i)) {
+            v->nlblow++;
+            if (i + 1 == a->u.look.nbranch) v->npush++;
+        }
     if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
     vm_count_slots(v, a->l, repl, false);
 }
@@ -7101,36 +7179,141 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * §2.2 verdict. A lookahead's cut discards frames that are NOT dead, exactly
  * as an atomic group's does — which is the semantics, and is what §2.2's
  * atomicity discriminator measures. */
-/* ONE BRANCH of the lookbehind chain above: step back `widths[i]` characters
+/* [VLOOKBEHIND] One lookbehind's per-branch labels, allocated by
+ * `vm_look_behind`: today's three for every branch, and the candidate loop's
+ * four (`far`, `try`, `adv`, `n`) for a VARYING branch only, so an artifact
+ * with no varying branch numbers its labels as it always did. `n` is -1 on
+ * the last branch, whose exhaustion is `rx_fail`. */
+typedef struct { int *b, *body, *end, *far, *try_, *adv, *n; } VmLbLabels;
+
+/* [VLOOKBEHIND] A varying branch's candidate set-up, emitted after its
+ * nearest back-step (vlookbehind.md §5.1): records the nearest start in the
+ * trailed slot `lox` ONCE per evaluation, steps back to the farthest start
+ * the seam reaches within `hi - lo` more characters (retried one shorter on
+ * the sentinel: UTF-8 only, dead under the byte backend where the count is
+ * exact), and pushes the first candidate's frame. `<p>_lb_count` is written
+ * and read only here, before the first push, so it needs no trail. */
+static void vm_look_behind_far(Vm *v, int i, int lox, int lo, int hi,
+                               const VmLbLabels *L)
+{
+    const VmLocal kx = { VL_LB_COUNT, 0, 0, 0 };
+    const char *kn = pcrec_vm_local_name(v->sb, kx);
+    const int d = hi - lo;
+
+    vm_set(v, lox, "(ptrdiff_t)scan_position",
+           "lookbehind: the NEAREST candidate start, trailed, written once "
+           "per evaluation");
+    pcrec_vm_b_lset(v->sb, kx, VLO_ASSIGN,
+                    vm_rolef(v, "scan_position < %d ? scan_position : %d", d, d),
+                    0, false);
+    vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
+          "lookbehind: the far step's count, min(%d, the nearest start) -- "
+          "exact under the byte backend, an upper bound under UTF-8", d));
+    vm_lbl(v, L->far[i], "lookbehind: step back to the FARTHEST candidate start");
+    vm_work(v, kn, "work charge: the far back-step, charged as its count");
+    pcrec_vm_b_seek_local(v->sb, VSK_BACKSTEP, kx);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the ENCODING SEAM's back-step to the FARTHEST start, "
+          "a run-time count");
+    pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position != %s_BACK_STEP_NONE", v->p),
+                      pcrec_vm_tgt_label(L->try_[i], false));
+    vm_ev(v, VE_ASSERT, L->try_[i], 0,
+          "lookbehind: the farthest start exists: try it first");
+    pcrec_vm_b_seek(v->sb, VSK_RESTORE, vm_slot_expr(v, lox), 0);
+    pcrec_vm_b_lset(v->sb, kx, VLO_ASSIGN, vm_rolef(v, "%s - 1", kn), 0, false);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the far step ran off the subject or into an ill-formed "
+          "run: retry one shorter -- dead under the byte backend, where the "
+          "count min(hi - lo, LO) is exact");
+    vm_goto(v, L->far[i]);
+    vm_lbl(v, L->try_[i], "lookbehind: try this candidate start");
+    vm_push(v, L->adv[i],
+            "lookbehind: the candidate's retry -- the next candidate is one "
+            "character nearer");
+    vm_goto(v, L->body[i]);
+}
+
+/* [VLOOKBEHIND] A varying branch's retry and exhaustion blocks (§5.1):
+ * `L_adv_i`, reached only by popping the candidate frame, tests whether the
+ * nearest start `lox` was the candidate just tried and otherwise steps one
+ * CHARACTER nearer through the seam's `$_fwd_step`, bounded by the cursor in
+ * `POS`; `L_n_i` restores the cursor from `POS` for the next branch. The last
+ * branch has no `L_n_i`: its exhaustion is `rx_fail`, whose pop restores its
+ * own position. */
+static void vm_look_behind_retry(Vm *v, int i, bool last, int pslot, int lox,
+                                 const VmLbLabels *L)
+{
+    const char *posx = vm_slot_expr(v, pslot);
+    vm_lbl(v, L->adv[i],
+           "lookbehind: the next candidate, one character nearer (reached "
+           "only by popping this branch's candidate frame)");
+    pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == (size_t)slot_values[%s]",
+                                      vm_slot_expr(v, lox)),
+                      last ? pcrec_vm_tgt_fail() : pcrec_vm_tgt_label(L->n[i], false));
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the nearest start was tried -- this branch is exhausted");
+    pcrec_vm_b_seek(v->sb, VSK_STEP_CHAR, posx, 0);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: one CHARACTER nearer, never past the cursor");
+    vm_work(v, "1", "work charge: one candidate step");
+    vm_goto(v, L->try_[i]);
+    if (last) return;
+    vm_lbl(v, L->n[i], "lookbehind: this branch is exhausted -- back to the cursor");
+    pcrec_vm_b_seek(v->sb, VSK_RESTORE, posx, 0);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the cursor restored from the assertion's position slot");
+    vm_goto(v, L->b[i + 1]);
+}
+
+/* ONE BRANCH of the lookbehind chain above: step back to a candidate start
  * through the encoding seam, run the branch FORWARD through `vm_emit`, and
  * re-check at the END-CHECK that it finished exactly where the assertion
- * started. `last` (derived from `i` and `m`) is the whole difference between
- * a branch that pushes a retry frame for its successor and the final one that
- * leaves by `rx_fail`; the four label arrays and `br` are the caller's, indexed
- * here and never written.
+ * started. Two emission rows, selected by the stored width pair through
+ * `vm_lb_varies` (vlookbehind.md §5.1b's declared table, not a constant
+ * fold):
  *
- * [REVW.2 step 14] Extracted verbatim from `vm_look_behind`'s per-branch loop
- * (lens 11's F14): the loop body WAS the function, 126 of its 196 lines. The
- * caller's `b` and `neg` moved down with it — neither had a reader outside the
- * loop. Read `vm_look_behind`'s own header for notes 1 and 3, which this
- * function's emitted text is governed by. */
+ *   ONE-LENGTH (`lo == hi`, today's bytes): one candidate `k` back; a
+ *   non-last branch pushes the NEXT-BRANCH frame at the cursor; a failed
+ *   end-check on the negative arm returns RX_R_INTERNAL.
+ *
+ *   RANGE (`lo < hi`, §5.1's cursor-rung loop): the NEAREST start `lo` back
+ *   is written once to the trailed slot `LO_i`; the far count `<p>_lb_count
+ *   = min(hi - lo, LO_i)` steps back to the FARTHEST start (retried one
+ *   shorter on the seam's sentinel, UTF-8 only); each candidate pushes a
+ *   frame at itself and its retry `L_adv_i` steps one CHARACTER nearer
+ *   (`$_fwd_step`, bounded by the cursor) until `LO_i` was tried; a failed
+ *   end-check declines on both polarities; every exit restores the cursor
+ *   from `POS` (`L_n_i`) or leaves by `rx_fail`.
+ *
+ * `last` (derived from `i` and `m`) sends the final branch's failures to
+ * `rx_fail`. The label arrays and `br` are the caller's, indexed here and
+ * never written. Read `vm_look_behind`'s own header for notes 1 and 3, which
+ * this function's emitted text is governed by. */
 static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
                                   int pslot, const Ast **br,
-                                  int *bl, int *bodl, int *endl)
+                                  const VmLbLabels *L)
 {
     const bool neg = a->u.look.neg;
-    const int k = a->u.look.widths[i];
+    const bool range = vm_lb_varies(a, i);
+    const int hi = a->u.look.widths[i].hi;
+    /* The FIRST back-step's count, which is also the guard's: the width of a
+     * one-length branch, the nearest start of a varying one. */
+    const int k = a->u.look.widths[i].lo;
     const bool last = (i + 1 == m);
+    const int *bl = L->b, *bodl = L->body, *endl = L->end;
+    /* The nearest-start slot, in emission order: the count pass sized the
+     * sub-block by the same `vm_lb_varies` test, one per varying branch. */
+    const int lox = range ? vm_take_lblow(v) : -1;
 
-    /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
-     * failing, so this role is kept short enough to survive a 2-digit
-     * branch index and width — a truncated comment in the emitted C is a
-     * sentence that stops mid-word, which is what the first version of
-     * this line shipped. */
-    vm_lbl(v, bl[i], vm_rolef(v,
-           "lookbehind branch %d of %d, fixed width %d: step back and run "
-           "the branch FORWARD%s", i + 1, m, k,
-           last ? " (the LAST branch: no retry frame)" : ""));
+    if (range)
+        vm_lbl(v, bl[i], vm_rolef(v,
+               "lookbehind branch %d of %d, width %d..%d: candidates farthest "
+               "first", i + 1, m, k, hi));
+    else
+        vm_lbl(v, bl[i], vm_rolef(v,
+               "lookbehind branch %d of %d, fixed width %d: step back and run "
+               "the branch FORWARD%s", i + 1, m, k,
+               last ? " (the LAST branch: no retry frame)" : ""));
 
     /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
      * see this function's header, note 1, and sabotage row S135.
@@ -7175,18 +7358,22 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
                   "guard is emitted -- the condition it would test is "
                   "false for every cursor");
         }
-        vm_push(v, bl[i + 1],
-                "lookbehind: the NEXT-BRANCH continuation -- this branch's "
-                "body failing retreats into the branch written after it");
+        if (!range)
+            vm_push(v, bl[i + 1],
+                    "lookbehind: the NEXT-BRANCH continuation -- this branch's "
+                    "body failing retreats into the branch written after it");
     }
 
-    {
+    if (!range)
         vm_work(v, vm_rolef(v, "%d", k),
                 "work charge: the back-step, charged as the "
                 "compile-time width rather than the runtime cost "
                 "so the accounting does not depend on the "
                 "encoding backend");
-    }
+    else if (k > 0)
+        vm_work(v, vm_rolef(v, "%d", k),
+                "work charge: the back-step, charged as the back-step's "
+                "count");
 
     /* THE SEAM CALL. Never `scan_position - k` here: that is byte
      * arithmetic which is correct today and silently wrong under a UTF-8
@@ -7194,26 +7381,39 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
      * [M6.6] plan row forbids it in its own text. Sabotage row S133
      * inlines it and the [M5-SEAM] fixture-declared per-site count is its
      * only possible detector, because inlining changes NO ANSWER under
-     * this backend. */
+     * this backend. ONE builder line for both rows' first back-step. */
+    const VmTgt k_none = range && !last ? pcrec_vm_tgt_label(L->n[i], false)
+                                        : pcrec_vm_tgt_fail();
     pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);
-    vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
-          "lookbehind: the ENCODING SEAM's back-step, %d character%s",
-          k, k == 1 ? "" : "s"));
+    vm_ev(v, VE_NOTE, 0, 0, range
+          ? vm_rolef(v, "lookbehind: the ENCODING SEAM's back-step to the "
+                        "NEAREST start, %d character%s", k, k == 1 ? "" : "s")
+          : vm_rolef(v, "lookbehind: the ENCODING SEAM's back-step, %d "
+                        "character%s", k, k == 1 ? "" : "s"));
     pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
-                pcrec_vm_tgt_fail());
-    vm_ev(v, VE_NOTE, 0, 0,
-          "lookbehind: the back-step ran off the start of the subject -- "
-          "dead under the byte backend, where the guard above is exact");
-    vm_goto(v, bodl[i]);
+                k_none);
+    vm_ev(v, VE_NOTE, 0, 0, range
+          ? vm_rolef(v, "lookbehind: fewer than %d characters precede: try "
+                        "the next branch -- dead under the byte backend, "
+                        "where the guard above is exact", k)
+          : "lookbehind: the back-step ran off the start of the subject -- "
+            "dead under the byte backend, where the guard above is exact");
+    if (range)
+        vm_look_behind_far(v, i, lox, k, hi, L);
+    else
+        vm_goto(v, bodl[i]);
 
     /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
     vm_emit(v, bodl[i], br[i], endl[i]);
 
-    vm_lbl(v, endl[i], neg
+    vm_lbl(v, endl[i], neg && !range
            ? "lookbehind END-CHECK (negative): the branch must finish "
              "exactly where the assertion started. On THIS polarity a "
              "declined branch would be the assertion SUCCEEDING, i.e. a "
              "FALSE MATCH, so a disagreement returns HARD"
+           : range
+           ? "lookbehind END-CHECK: the candidate must finish exactly where "
+             "the assertion started, or this candidate declines"
            : "lookbehind END-CHECK: the branch must finish exactly where "
              "the assertion started -- the only runtime evidence that the "
              "width analysis and this emission agree");
@@ -7223,11 +7423,13 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
          * 64, which silently truncated -- its content reaches prefix +
          * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
         const char *sl = vm_slot_expr(v, pslot);
-        if (neg) {
+        if (neg && !range) {
             /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
              * see this function's header comment, note 3, "WHICH
              * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
-             * artifact's own inconsistency check firing. */
+             * artifact's own inconsistency check firing. A VARYING
+             * branch's end-check can fail on a correct compiler, so it
+             * declines instead (§5.3). */
             pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position != (size_t)slot_values[%s]", sl),
                         pcrec_vm_tgt_return("INTERNAL"));
             vm_ev(v, VE_NOTE, 0, 0,
@@ -7238,11 +7440,14 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
         } else {
             pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position != (size_t)slot_values[%s]", sl),
                         pcrec_vm_tgt_fail());
-            vm_ev(v, VE_NOTE, 0, 0,
-                  "lookbehind end-check FAILED -- this branch declines");
+            vm_ev(v, VE_NOTE, 0, 0, range
+                  ? "lookbehind end-check FAILED -- this candidate declines"
+                  : "lookbehind end-check FAILED -- this branch declines");
         }
     }
     vm_goto(v, okl);
+    if (range)
+        vm_look_behind_retry(v, i, last, pslot, lox, L);
 }
 
 /* Emits a lookbehind's branch chain: each fixed-width branch tried in written order, in a forward scan starting `k_i` bytes back.
@@ -7395,22 +7600,44 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                  "engine-callable, so a lookbehind cannot be routed through "
                  "the seam from an engine body");
     v->enc_mask |= PCREC_ENCE_BACK_STEP;
-
-    const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *br);
-    int *bl   = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
-    int *bodl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
-    int *endl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
-    pcrec_lookbehind_branches(v->cx, a->l, m, br);
-    for (int i = 0; i < m; i++) {
-        bl[i]   = vm_label(v);
-        bodl[i] = vm_label(v);
-        endl[i] = vm_label(v);
+    /* [VLOOKBEHIND] the candidate loop's forward step, the same consult. */
+    if (vm_lb_nvaries(a) > 0) {
+        if (!pcrec_enc_entry_engine_callable(
+                pcrec_enc_by_id(v->cx->opt->encoding), PCREC_ENCE_FWD_STEP))
+            pcrec_ctx_fail(v->cx, 0,
+                     "internal error: this encoding's forward step is not "
+                     "declared engine-callable, so a varying lookbehind cannot "
+                     "be routed through the seam from an engine body");
+        v->enc_mask |= PCREC_ENCE_FWD_STEP;
     }
 
-    vm_goto(v, bl[0]);
+    Arena *ar = &v->cx->arena;
+    const Ast **br = pcrec_arena_alloc(ar, (size_t)m * sizeof *br);
+    VmLbLabels L;
+    int **cols[] = { &L.b, &L.body, &L.end, &L.far, &L.try_, &L.adv, &L.n };
+    for (size_t c = 0; c < sizeof cols / sizeof *cols; c++)
+        *cols[c] = pcrec_arena_alloc(ar, (size_t)m * sizeof **cols[c]);
+    pcrec_lookbehind_branches(v->cx, a->l, m, br);
+    /* Today's three labels for every branch; the candidate loop's four only
+     * for a VARYING branch (`n` not on the last), so an artifact with no
+     * varying branch numbers every later label as it always did. */
+    for (int i = 0; i < m; i++) {
+        L.b[i]    = vm_label(v);
+        L.body[i] = vm_label(v);
+        L.end[i]  = vm_label(v);
+        L.far[i] = L.try_[i] = L.adv[i] = L.n[i] = -1;
+        if (vm_lb_varies(a, i)) {
+            L.far[i]  = vm_label(v);
+            L.try_[i] = vm_label(v);
+            L.adv[i]  = vm_label(v);
+            if (i + 1 < m) L.n[i] = vm_label(v);
+        }
+    }
+
+    vm_goto(v, L.b[0]);
 
     for (int i = 0; i < m; i++)
-        vm_look_behind_branch(v, a, i, m, okl, pslot, br, bl, bodl, endl);
+        vm_look_behind_branch(v, a, i, m, okl, pslot, br, &L);
     (void)mslot;
 }
 
@@ -7563,7 +7790,7 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
  * put 0 back. Without them the matcher reports g1 = (1,4) — a wrong span on a
  * correct match, which no `m`/`n` expectation catches and only a `g` line
  * does. */
-typedef struct { int guard, low, mark, rev, ctr, lookmark, lookpos; } VmSnap;
+typedef struct { int guard, low, lblow, mark, rev, ctr, lookmark, lookpos; } VmSnap;
 
 /* The per-family slot counters as they stand RIGHT NOW — `nguard`, `nlow`,
  * `nmark`, `nrev`, `nctr`, `nlookmark`, `nlookpos`. Taken either side of a
@@ -7573,7 +7800,7 @@ typedef struct { int guard, low, mark, rev, ctr, lookmark, lookpos; } VmSnap;
 static VmSnap vm_snap(const Vm *v)
 {
     VmSnap s;
-    s.guard = v->nguard; s.low = v->nlow; s.mark = v->nmark;
+    s.guard = v->nguard; s.low = v->nlow; s.lblow = v->nlblow; s.mark = v->nmark;
     s.rev = v->nrev; s.ctr = v->nctr;
     s.lookmark = v->nlookmark; s.lookpos = v->nlookpos;
     return s;
@@ -7802,6 +8029,9 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
         vm_w_range(base[i], nstate,
                    vm_slot_low(v, before[i].low),
                    vm_slot_low(v, after[i].low));
+        vm_w_range(base[i], nstate,
+                   vm_slot_lblow(v, before[i].lblow),
+                   vm_slot_lblow(v, after[i].lblow));
         vm_w_range(base[i], nstate,
                    vm_slot_mark(v, before[i].mark),
                    vm_slot_mark(v, after[i].mark));
@@ -9829,6 +10059,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                      "span-loop low-water", "the loop's entry position (S2.5)",
                      "no span-loop low-water slots: no cursor rung in this"
                      " program");
+    if (v->nlblow_total > 0)
+        vm_listing_slots(o, v, "low", v->nlblow_total, vm_slot_lblow,
+                         "lookbehind nearest start",
+                         "a varying lookbehind branch's nearest candidate"
+                         " start (vlookbehind S5.1)", NULL);
     vm_listing_slots(o, v, "mark", v->nmark, vm_slot_mark, "cut mark",
                      "resume-stack depth at entry -- a possessified loop's "
                      "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])",
@@ -10597,7 +10832,10 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
                  "copied once per repetition -- lower the count, or remove the "
                  "alternation so the body compiles to a span loop instead",
                  v->maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
-    const int nguard_total = v->nguard, nlow_total = v->nlow;
+    /* [VLOOKBEHIND] `nlow_total` is the WHOLE `low` family: span lows, then
+     * the lookbehind lows' sub-block (vm_slot_lblow). */
+    const int nguard_total = v->nguard, nlow_total = v->nlow + v->nlblow;
+    const int nlblow_total = v->nlblow;
     /* [ENG-BREP] possessive cut marks, and since [M6.4.2] atomic-group cut
      * marks too — one family, because they are the same operation with two
      * different licences (a proof, or the user writing the cut). */
@@ -10613,6 +10851,7 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
     const int nsplice_total   = v->nsplice;
     v->nguard_total = nguard_total;
     v->nlow_total   = nlow_total;
+    v->nlblow_total = nlblow_total;
     v->nmark_total  = nmark_total;
     v->nrev_total   = nrev_total;
     v->nctr_total   = nctr_total;
@@ -10620,6 +10859,7 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
     v->nlookpos_total  = nlookpos_total;
     v->nsplice_total   = nsplice_total;
     v->nguard = v->nlow = v->nmark = v->nrev = v->nctr = 0;
+    v->nlblow = 0;
     v->nlookmark = v->nlookpos = 0;
     v->nsplice = 0;
     /* [M6.5.2] `2 * (ngroups + 1)`, not `2 * v->ncaps`: the capture-pair region
@@ -10716,6 +10956,14 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
          * totals agreeing site for site. */
         for (int i = 0; i < v->nregion; i++)
             if (v->rgn_emit[i]) vm_region(v, i);
+        /* `vm_take_lblow`'s sibling: the count pass sized the lookbehind low
+         * sub-block for exactly the varying branches emitted (review r4 F15;
+         * an over-count is a slot nothing writes, an under-count the overflow
+         * the take refuses). */
+        if (v->nlblow != v->nlblow_total)
+            pcrec_ctx_fail(v->cx, 0, "internal error: the lookbehind low "
+                               "sub-block was sized for %d branches and %d "
+                               "were emitted", v->nlblow_total, v->nlblow);
     }
 
     /* [DD-14.FB] The caller-buffer sizing surface, computed HERE — after the
@@ -12097,7 +12345,8 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
      * the identical private-sentinel/public-code seam, because the seam's
      * reason (§4.4's three layers) is about WHERE a typed negative value
      * has room to travel, not about which side of the floor it lands on.
-     * `vm_look_behind`'s negative-arm end-check is its one producer today. */
+     * Two producers: `vm_look_behind`'s negative-arm end-check on a one-length
+ * alternative, and D72's subroutine region-exit guard (vm_stmt.c). */
     pcrec_sb_stampwf(c, v->up, "R_INTERNAL", sentw, "%s", "((ptrdiff_t)PCREC_ERR_INTERNAL)");
     pcrec_sb_putc(c, '\n');
     /* [DD-14 wave B+C] "no subroutine call is active". Out of range for the
@@ -13059,6 +13308,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         .gst_param = v->ngst > 0 ? pl->gst_param : "",
         .trail_gc = v->ncheck > 0,
         .span_cursor = (v->rungs & vm_rung_bit[VM_RUNG_CURSOR]) != 0,
+        .lb_count    = v->nlblow_total > 0,
         .nrev_total = v->nrev_total,
         .nrevcaps = v->nrevcaps,
         .tracing = v->tracing,
@@ -13352,15 +13602,17 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * must never be one (DD-12 (7)); under `byte` it is `attempt_position++;`
      * and this artifact is byte-identical to every one that came before.
      *
-     * The buffer is 1 KB where its `retry_win` sibling uses 512: an advance
-     * carries its own explanatory comment into the artifact, and the utf8
-     * backend's text measures 535 bytes once indented. Overflow is a loud
+     * The buffer is 1 KB where its `retry_win` sibling uses 512: the utf8
+     * advance measured 535 bytes once indented with its comment, which is
+     * now its own `advance_doc` half ([K137]) in a buffer of its own. Overflow is a loud
      * internal error rather than a truncation, and it FIRED during this fix's
      * own bring-up at 512 — the guard is measured, not assumed. */
-    char retry_adv[1024];
+    char retry_adv[1024], retry_adv_doc[1024];
     if (!pcrec_enc_advance(pcrec_enc_by_id(v->cx->opt->encoding),
                            retry_adv, sizeof retry_adv, "        ",
-                           "attempt_position", "subject", "subject_length"))
+                           "attempt_position", "subject", "subject_length")
+        || !pcrec_enc_advance_doc(pcrec_enc_by_id(v->cx->opt->encoding),
+                                  retry_adv_doc, sizeof retry_adv_doc, "        "))
         pcrec_ctx_fail(v->cx, 0,
                  "internal error: this encoding's unanchored retry advance is "
                  "missing or does not fit the emitter's buffer");
@@ -13609,9 +13861,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "%s"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
-        "        if (attempt_position >= %s) return 0;\n"
-        "%s"
-        "%s",
+        "        if (attempt_position >= %s) return 0;\n",
         v->p,
         reseed_decl,
         v->p, v->nclamp > 0 ? ", window_end" : "",
@@ -13625,7 +13875,14 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->ngst > 0 ? ", search_from" : "",
         v->up, v->up, v->up, v->up, v->up,
         v->cx->ncallouts > 0 ? "        if (result < -1) return (int)result;\n" : "",
-        v->p, att_max, retry_adv, retry_seed);
+        v->p, att_max);
+    /* [K137] the advance's prose through the comment gate, then its code. */
+    if (retry_adv_doc[0]) {
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c, retry_adv_doc);
+        pcrec_sb_cmt_close(c);
+    }
+    pcrec_sb_printf(c, "%s%s", retry_adv, retry_seed);
     /* [REQRUN-VM] the re-entered handoff, after the encoding's own advance
      * and before the seek below: two lower bounds, each sound alone. */
     pcrec_emit_req_attempt_reentry(v->cx, c, "    ");

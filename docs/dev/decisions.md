@@ -10079,3 +10079,16 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 
 **Revisit-when:** the multi-arch builds discussion ([XARCH-DEV]) settles how one artifact meets several targets' prices.
 - **Addendum 1 (owner, 2026-11-06, same day; [XARCH-DEV] end state):** availability no longer comes from `#if` arms over the target's compiler macros. The kit's ALGORITHM choice depends on SIMD, so an `#if` fall-through would run a plan chosen for another target. A code path is a per-target VARIANT, planned and priced for its declared target. One artifact may hold several variants (generic plus SIMD) as target-attributed functions behind a once-per-process CPU dispatch. The artifact's target set is an explicit caller-given LIST, with a declared, stamped default when none is given, never assumed. The pricing half of D188 (cpu-has / build-compiled / cost; timed only when both hold) stands, read per variant's target. The build of this end state waits for [XARCH-DEV]'s go.
+
+## D189 — [VLOOKBEHIND] stage 1: bounded variable-width lookbehind, superseding [DD-14.LB]'s ruled refusal (lane vlbbuild, 2026-11-06; the manager acknowledges at landing)
+
+**Decision (design `docs/design/vlookbehind.md` rev 4 + erratum r3-1106, build go by Frank 2026-11-06; renumber at landing if D189 is taken):**
+- A lookbehind alternative may match a bounded number of characters: at most 65,535, and at most 255 once any alternative varies (`LA_LOOKBEHIND_BRANCH_MAX`, `LA_LOOKBEHIND_VAR_MAX`; `limits.md` §3.11). An unbounded alternative stays refused, as libpcre2 refuses it. A backreference inside a lookbehind stays refused until stage 2.
+- The loop is the CURSOR RUNG (rev 3): one trailed bound slot `LO_i` per varying alternative, one artifact-wide untrailed local `<p>_lb_count`, the trail term `2 + range alternatives`; candidates are tried farthest first (`pattern_language.md` §7.4¶5b).
+- **Supersession.** [DD-14.LB]'s amendment (2026-08-24, `sr_d27_extract.md` §3.4(d)) refused a call that is a lookbehind's one top-level branch to a callee of different fixed widths, which PCRE2 accepts. That refusal was a consequence of the missing candidate loop. With the loop, `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` compiles and answers as libpcre2 10.46 does (ACCEPT, lb 2). The D27 cells are flipped in the same landing under manager ruling R1 (expectations from libpcre2 only).
+- **Accept-set divergence (D26 addendum).** An alternative containing an unbounded repeat of something that matches no characters (`(?:)*`, `(?:\b)*`) counts as zero characters, so `(?<=(?:)*a)x` is accepted where PCRE2 refuses it (its error 125). Accepting more than PCRE2 is not a defect (`pattern_language.md` §9).
+- **Seam additions.** A fifth residual entry, `fwd_step` (`PCREC_ENCE_FWD_STEP`), one character forward bounded by the cursor, in each backend, a member of `PCREC_ENC_BOUNDARY_ENTRIES` with `next_pos`; and `PcrecEnc.advance_doc`, the advance text's prose half emitted through the comment gate (K137's fix, abi 95 → 96).
+
+**Why:** PCRE2 10.43+ accepts bounded variable-width lookbehind; pcrec refused it as a capability limit for want of the loop, which was the last capability refusal of accepted lookbehind syntax short of backreferences.
+
+**Revisit-when:** stage 2 (backreferences in a lookbehind) or the 255 cap's setting at [IFACE-PUSH].

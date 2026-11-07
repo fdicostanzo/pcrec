@@ -41,22 +41,26 @@
 # direction, so taking `cwmax` is the edit a reader would actually make ("use
 # the bigger one, it can only be conservative") — and it is wrong here because
 # a lookbehind's width is not a bound, it is a POSITION.
+# RE-AIMED 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1, design §7 S136):
+# the premise above (a branch that is not fixed width is accepted) is what
+# stage 1 BUILT, so the refusal cells it read are answers now. The row keeps
+# what it uniquely exercised -- the negative arm's RX_R_INTERNAL return on a
+# ONE-LENGTH branch -- by storing every one-length pair one too wide at both
+# ends (an over-reporting cwmax alone makes the branch `range`, which declines
+# and stays green). Every branch, never only the last (r6 V8). The paragraphs
+# above are the original design record.
 SAB_ID="S136-width-rule-accepts-variable"
 SAB_FILE="src/parse/mod_lookaround.c"
 SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
-SAB_DESC="la_widths accepts a top-level branch whose pcrec_cwmin and pcrec_cwmax disagree, storing cwmax as if it were the branch's fixed width. §2.5's refusal disappears and (?<=(a|bc))x compiles, stepping back two characters for a branch that may match one"
-SAB_DOC_FIGURE="PREDICTED: tests/lookaround/refused.rxt RED on the variable-width perr blocks (they now compile); gated.rxt RED on its capability cell; and on the (?<! spelling the emitted end-check returns HARD, which the harness scores as an error rather than a span. The same-width cells in lookbehind.rxt stay GREEN. Canonical figure owed from run_sabotage_matrix.sh S136."
+SAB_DESC='la_widths stores every ONE-LENGTH branch'\''s pair one character too wide at BOTH ends ([K+1, K+1]), so the branch stays one-length but steps back the wrong distance; on the negative arm the end-check returns PCREC_ERR_INTERNAL'
+SAB_DOC_FIGURE='PREDICTED (re-aimed, vlookbehind.md §7 S136, r3 F9 / r6 V8): tests/lookaround/lookbehind_variable_witness.rxt'\''s S136 cells red -- (?<=bc|d)x on abcx nomatch for (3,4), (?<!bc|d)x on bcax PCREC_ERR_INTERNAL for (3,4); every one-length lookbehind cell in tests/lookaround moves too. Canonical figure owed from run_sabotage_matrix.sh S136.'
 # RE-ANCHORED 2026-10-22 (lane langfix2, K123): la_widths now reads its
 # branches through `pcrec_lookbehind_branches` and tests every branch in ONE
 # loop, so the refusal test that used to appear twice (the spine arm and the
 # first-branch arm) appears once: SAB_COUNT 2 -> 1, same text, same column.
 SAB_COUNT=1
-SAB_BEFORE='        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
-            *bad_lo = lo; *bad_hi = hi;
-            return false;
-        }'
-SAB_AFTER='        if (hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
-            *bad_lo = lo; *bad_hi = hi;
-            return false;
-        }   /* SABOTAGE S136: minw != maxw is accepted */'
+SAB_BEFORE='        out[i].lo = (int)lo;
+        out[i].hi = (int)hi;'
+SAB_AFTER='        out[i].lo = (int)lo + (lo == hi);
+        out[i].hi = (int)hi + (lo == hi);   /* SABOTAGE S136: a one-length pair one too wide at both ends */'

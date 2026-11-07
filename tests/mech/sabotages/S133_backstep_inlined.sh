@@ -31,22 +31,42 @@
 # Nothing behavioural can.
 # RE-AIMED 2026-10-30 (lane vmrec, [VMREC] (a): the VM body as typed records):
 # the back-step is now a SEEK(BACKSTEP) record; the same inline byte arithmetic (a SEEK(ADVANCE) by -k) in its place, the sentinel test and the mask OR dropped with it. Same detector, same arm.
+# RE-CUT 2026-11-06 (lane vlbbuild, [VLOOKBEHIND] stage 1, READY-1): the anchor is
+# the ONE literal-k builder line, shared by the one-length back-step and a
+# varying branch's nearest-start step; the note and sentinel lines after it
+# changed text. The far step's twin is S1979.
+# RE-CUT 2026-11-06 (lane vlbfix, review r4 F8): the row scored ANOMALY.
+# Dropping the mask OR outright left (a) a varying branch's FAR step (still
+# the seam's call, S1979's site) calling an undeclared `rx_back_step`, and
+# (b) the sentinel test after the inlined step -- a separate builder line
+# since vlbbuild's re-cut -- naming an undeclared `rx_BACK_STEP_NONE`: gcc
+# failed on 40 harness cells (measured). Site 1 now spans the step AND its
+# sentinel test (the note between them kept verbatim); site 2 keeps the OR
+# exactly when a branch varies. Every artifact compiles, and what moves is
+# the per-site count (the row's named detector).
 SAB_ID="S133-backstep-inlined"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/lookaround/lookbehind.rxt"
 SAB_DESC="vm_look_behind_branch (vm_look_behind's per-branch loop) emits 'scan_position - k' inline instead of calling the encoding residual back-step, and drops the PCREC_ENCE_BACK_STEP mask bit with it. Under the byte backend the ANSWERS ARE IDENTICAL, so every corpus and every differential stays green; what moves is that the back-step stopped being replaceable by another encoding's backend"
-SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residlb1/residlb2/residlb3/residlbneg/residlbna/residlbtwo/residlbbref fixtures AND on the declared-entry-set half; tests/lookaround and the lookaround differential GREEN. Canonical figure owed from run_sabotage_matrix.sh S133."
+SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residlb1/residlb2/residlb3/residlbneg/residlbna/residlbtwo/residlbbref fixtures (and residlbrange: the far call is all that is left); tests/lookaround (byte) and the lookaround differential GREEN, every artifact compiles. MEASURED (lane vlbfix, tools/review/plant.sh): harness over lookbehind.rxt + lookbehind_widths.rxt + lookbehind_variable_witness.rxt 226 pass / 5 fail with 0 gcc failures (was 40), the 5 all UTF-8 witness cells outside this row's byte target (lines 143, 192, 199: inlined byte arithmetic is the wrong step there, which is the row's argument). Canonical figure owed from run_sabotage_matrix.sh S133."
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_vm_b_seek(v->sb, VSK_BACKSTEP, NULL, k);
-    vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
-          "lookbehind: the ENCODING SEAM'\''s back-step, %d character%s",
-          k, k == 1 ? "" : "s"));
+    vm_ev(v, VE_NOTE, 0, 0, range
+          ? vm_rolef(v, "lookbehind: the ENCODING SEAM'\''s back-step to the "
+                        "NEAREST start, %d character%s", k, k == 1 ? "" : "s")
+          : vm_rolef(v, "lookbehind: the ENCODING SEAM'\''s back-step, %d "
+                        "character%s", k, k == 1 ? "" : "s"));
     pcrec_vm_b_branch(v->sb, vm_condf(v, "scan_position == %s_BACK_STEP_NONE", v->p),
-                pcrec_vm_tgt_fail());'
+                k_none);'
 SAB_AFTER='    pcrec_vm_b_seek(v->sb, VSK_ADVANCE, NULL, -k);   /* SABOTAGE S133: inlined, not routed */
-    vm_ev(v, VE_NOTE, 0, 0, "SABOTAGE S133: inlined back-step");'
+    vm_ev(v, VE_NOTE, 0, 0, range
+          ? vm_rolef(v, "lookbehind: the ENCODING SEAM'\''s back-step to the "
+                        "NEAREST start, %d character%s", k, k == 1 ? "" : "s")
+          : vm_rolef(v, "lookbehind: the ENCODING SEAM'\''s back-step, %d "
+                        "character%s", k, k == 1 ? "" : "s"));
+    (void)k_none;   /* SABOTAGE S133: the sentinel test goes with the call */'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    v->enc_mask |= PCREC_ENCE_BACK_STEP;'
-SAB_AFTER2='    /* SABOTAGE S133: the mask OR dropped with the call */'
+SAB_AFTER2='    if (vm_lb_nvaries(a) > 0) v->enc_mask |= PCREC_ENCE_BACK_STEP;   /* SABOTAGE S133: the mask OR dropped with the call, kept for a far step */'

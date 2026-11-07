@@ -261,16 +261,18 @@ static const char u8_defs_decode[] =
  * on `C2 80 80` (a two-byte lead followed by TWO continuations), the forward
  * body then consumes the well-formed `C2 80` and ends one byte past where it
  * started, and the lookbehind end-check fires — which on a NEGATIVE
- * lookbehind is RX_R_INTERNAL, below PCREC_ERR_FLOOR, and a composed call
+ * lookbehind's one-length alternative is RX_R_INTERNAL, below PCREC_ERR_FLOOR, and a composed call
  * site TRAPS on a subject §2.6 promises will merely not match. Reachable on
  * a WELL-FORMED subject too, through a caller-supplied mid-character
  * `startpos` (§2.6.1.1).
  *
  * THE INVARIANT THE LENGTH TEST BUYS (§5.2.1): if back_step returns q, then
  * s[q..pos) decomposes into exactly k length-consistent UTF-8 runs, so a
- * k-character body started at q ends at pos ON EVERY INPUT — the end-check's
- * redundancy argument becomes unconditional and RX_R_INTERNAL unreachable
- * from this construct. It is deliberately a LENGTH test and not a validity
+ * k-character body started at q ends at pos ON EVERY INPUT — the one-length
+ * end-check's redundancy argument becomes unconditional and RX_R_INTERNAL
+ * unreachable from this construct (a VARYING alternative's end-check never
+ * returns it: a candidate that does not end at pos declines, vlookbehind.md
+ * §5.3). It is deliberately a LENGTH test and not a validity
  * test: a full validator here would be a second UTF-8 decoder beside the
  * automaton, two definitions of well-formedness that could drift, and the
  * invariant does not need one (an overlong run is length-consistent, and the
@@ -337,6 +339,39 @@ static const char u8_defs_back_step[] =
 "        if (want != end - pos) return $_BACK_STEP_NONE;\n"
 "    }\n"
 "    return pos;\n"
+"}\n";
+
+/* ---- the LOOKBEHIND FORWARD STEP ([VLOOKBEHIND] stage 1, enc.h's
+ * PCREC_ENCE_FWD_STEP). One step plus a skip over continuation bytes, bounded
+ * by `n` (the lookbehind's cursor): bounded by the subject length instead, a
+ * stray continuation byte AT the cursor would carry the step past it and the
+ * candidate loop would never meet its nearest start (vlookbehind.md §5.1a,
+ * witness W13). It is `next_pos`'s rule over the prefix [0, n), WRITTEN AS
+ * ITS OWN TEXT on purpose: K49's boundary tie compares the two, and a body
+ * built from `next_pos`'s text would compare a source with itself. */
+static const char u8_decls_fwd_step_doc[] =
+"/* $_fwd_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND FORWARD STEP\n"
+" * (pcrec DD-12/D58).\n"
+" *\n"
+" * Returns the position one CHARACTER after `pos`, never past `n`. The\n"
+" * caller guarantees pos < n <= the subject's length; s is read only at\n"
+" * offsets in [pos + 1, n). A varying lookbehind alternative steps its\n"
+" * candidate start one character nearer the cursor with it, `n` being the\n"
+" * cursor.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
+
+static const char u8_defs_fwd_step_doc[] =
+"/* utf8 encoding: one byte, then every continuation byte, never past n. */\n";
+
+static const char u8_defs_fwd_step[] =
+"static inline size_t $_fwd_step(const unsigned char *s, size_t n, size_t pos)\n"
+"{\n"
+"    size_t i = pos + 1;\n"
+"    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n"
+"    return i;\n"
 "}\n";
 
 /* ---- entry 7: the VALUE VALIDITY PREDICATE ([VAR], variables_common.md §2.1)
@@ -517,6 +552,10 @@ static const PcrecEncEntry entries_utf8[] = {
       u8_decls_back_step_doc, "",
       u8_defs_back_step_doc,  u8_defs_back_step,
       0, true },
+    { PCREC_ENCE_FWD_STEP,      true,
+      u8_decls_fwd_step_doc,  "",
+      u8_defs_fwd_step_doc,   u8_defs_fwd_step,
+      0, true },
     /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
      * resolution calls it, never an engine body -- `next_pos`'s own status,
      * and the [M5-SEAM] check's rule applies to it on the same terms. */
@@ -539,12 +578,15 @@ static const PcrecEncEntry entries_utf8[] = {
  * to a position inside the garbage, and, per utf8_design.md §2.6(c), an
  * ill-formed byte must remain something a search can advance PAST — matches
  * after a bad byte are found, matches through it are not. */
-static const char advance_utf8[] =
+/* [K137] the advance's prose is its own D112 doc half (enc.h's
+ * `advance_doc`), so `-fno-comments` drops it. */
+static const char advance_utf8_doc[] =
 "/* [K49] The retry advance is this ENCODING's step, not `+ 1`: an\n"
 " * unanchored search may only ever try LATER CHARACTER BOUNDARIES as\n"
 " * match starts, or it can report a position inside a character. A\n"
 " * boundary here is any position whose byte is not a continuation\n"
-" * byte, so the step is one forward and then over the continuations. */\n"
+" * byte, so the step is one forward and then over the continuations. */\n";
+static const char advance_utf8[] =
 "@P++;\n"
 "while (@P < @N\n"
 "       && (@S[@P] & 0xC0) == 0x80) @P++;\n";
@@ -613,7 +655,7 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
      * `PCRE2_UTF` (0 of 11 one-to-many cells match). The residual caseless
      * compare below folds through the SAME data, generated in the same run. */
     PCREC_ENC_UTF8, "utf8", 0x10FFFFu, &pcrec_fold_ucd_simple,
-    entries_utf8, advance_utf8,
+    entries_utf8, advance_utf8, advance_utf8_doc,
     start_cls_utf8, start_guard_utf8,
     /* [K70] `false`: `pcrec_fold_ucd_simple` DOES cross the ASCII boundary
      * (`k`/`K`/U+212A is one fold class) and pcrec's fold machinery folds

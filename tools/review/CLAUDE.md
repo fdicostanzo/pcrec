@@ -76,6 +76,12 @@ report: `docs/dev/lanes/revtools_report.md`.
   as (a) integer literal, (b) bare `PCREC_MAX_EMIT_NAME_LEN` (K38 family), (c)
   anything else. Usage: `python3 tools/review/fragment_census.py FILE [FILE...]
   [--out PATH]`.
+- `plant.sh ROW OUTDIR [REV]` (bash, the one non-python tool; adopted from code
+  round `2026-11-06-r4-vlookbehind-code`) -- builds a PLANTED compiler for one
+  sabotage row (an id or a row-shaped file) into `OUTDIR/tree/build/pcrec`
+  with the matrix's own `replace.py`, no make, the tree untouched; for a critic
+  re-deriving a row's plant against what it claims to break. OUTDIR under the
+  temp root; `build/obj` must be built from REV. Header has the contract.
 - `out/` -- the evidence TSVs (regenerated 2026-09-19 by lane `w4` after
   [REVW.3] wave 3's file moves; row counts live in each header).
 

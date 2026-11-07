@@ -238,8 +238,32 @@ enum {
      * already being Unicode's, and the emitter asks the table, never the
      * encoding. Its definitions are preceded by a fold table the seam
      * generates from fold.c, so there is one Latin-1 fold definition. */
-    PCREC_ENCE_SPAN_CASELESS_UCP = 1u << 7
+    PCREC_ENCE_SPAN_CASELESS_UCP = 1u << 7,
+    /* [VLOOKBEHIND] stage 1 (vlookbehind.md §5.6) ONE CHARACTER FORWARD,
+     * NEVER PAST A BOUND: `$_fwd_step(s, n, pos)`, the position one character
+     * after `pos`, at most `n`; the caller guarantees `pos < n <=
+     * subject_length`, and `s` is read only in `[pos + 1, n)`. It is
+     * `next_pos` over the prefix `[0, n)`, which K49's boundary tie checks
+     * (PCREC_ENC_BOUNDARY_ENTRIES below). In the mask only when an artifact
+     * has a VARYING lookbehind branch, whose candidate loop steps one
+     * character nearer the cursor with the cursor as the bound.
+     *
+     * ENGINE-CALLABLE WHERE `next_pos` IS NOT: `next_pos`'s `false` rests on
+     * unanchoredness being an automaton's own self-loop, so an engine has no
+     * external advance to route. A lookbehind candidate step has no automaton
+     * representation, `$_back_step`'s case. `inline_def`, `$_back_step`'s
+     * [LOSS-REVIEW] reason. Like `$_back_step` it is one enumerator and one
+     * row per backend: no field, signature or recipe line changes. */
+    PCREC_ENCE_FWD_STEP       = 1u << 8
 };
+
+/* [VLOOKBEHIND] THE ENTRIES THAT SPELL THE BOUNDARY RULE as a function, each
+ * meeting `entry(s, n, pos) == next_pos(s, n, pos)` for every `pos < n`.
+ * K49's tie (tests/codegen/run_encoding_checks.sh) reads its agreement sites
+ * from this mask through tests/codegen/enc_entry_list.c; a new
+ * boundary-spelling entry joins here where its contract is written. The
+ * retry `advance` is a FIELD, not an entry, and keeps its own extraction. */
+#define PCREC_ENC_BOUNDARY_ENTRIES (PCREC_ENCE_NEXT_POS | PCREC_ENCE_FWD_STEP)
 
 /* [MEMFN] M7 (D58 ADDENDUM 2) THE SPAN COMPARE'S SITE DATA. A backend whose
  * span-compare entry is a BYTE-WISE compare does not spell its compare loop:
@@ -399,6 +423,13 @@ typedef struct {
      * changes one and not the other fails there rather than in a corpus cell
      * nobody wrote. */
     const char *advance;
+    /* [K137] `advance`'s DOC-COMMENT, the D112 pair split in the DATA as the
+     * entries' `decls_doc`/`defs_doc` are: the emitter renders it through the
+     * comment gate (PCREC_CMT_NONESSENTIAL), so a `-fno-comments` artifact
+     * carries none of it. NULL when the advance has no prose (`byte`). Same
+     * tokens and indentation rule as `advance`. A D58 seam field, recorded
+     * as `max_cp` and `fold` were. */
+    const char *advance_doc;
     /* [K50] WHERE A MATCH MAY BEGIN — the same boundary rule as `advance` and
      * `next_pos`, asked as a PREDICATE instead of as a step, because the two
      * consumers that need it cannot use a step.
@@ -591,6 +622,19 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
  * string is valid has no row, and "no row" is the answer. */
 bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
 
+/* [VLOOKBEHIND] (vlookbehind.md §5.6) Calls `each(sym, u)` once per
+ * file-scope symbol entry `id`'s emission DEFINES in `e`: each `$_<ident>`
+ * opening a column-0 declarator (a function head or a table) in the row's
+ * `defs`, plus what enc.c emits beside the row. Names are unprefixed. The
+ * test reader tests/codegen/enc_entry_list.c prints them, so DD12a(i)'s
+ * encoding-owned region comes from the seam rather than from a hand list. */
+void pcrec_enc_entry_symbols(const PcrecEnc *e, unsigned id,
+                             void (*each)(const char *sym, void *u), void *u);
+/* The entry `id` STANDS FOR: itself, except for a substitute entry that is
+ * in the mask INSTEAD of another and defines its symbols (SPAN_CASELESS_UCP
+ * stands for SPAN_CASELESS). DD12a(i) keys its per-entry symmetry by this. */
+unsigned pcrec_enc_entry_stands_for(unsigned id);
+
 
 /* [MEMFN] M7 The site-data row of entry `id` in `e` (PcrecEncSite), or NULL
  * when the backend spells that entry's whole body itself. */
@@ -618,6 +662,10 @@ void pcrec_enc_emit_site_text(StrBuf *sb, const char *text, const char *prefix);
 bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
                        const char *indent, const char *posvar,
                        const char *subjvar, const char *lenvar);
+/* [K137] The same rendering of `advance_doc`: "" when the backend has none.
+ * The caller emits it through the comment gate. */
+bool pcrec_enc_advance_doc(const PcrecEnc *e, char *buf, size_t cap,
+                           const char *indent);
 
 /* [K50] Render this backend's `start_guard` EXPRESSION into a caller-owned
  * buffer, with `@P`/`@S`/`@N` replaced. Returns false when the backend has no
