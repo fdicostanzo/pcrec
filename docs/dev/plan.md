@@ -243,6 +243,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md; docs/design/plan_row_bodies/VMREC.md (members added after (a))
   (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
+- [IR-FORM] STATE:started — MASTER TRACKER: every pcrec and kit emitter plans into a record form, then renders C
+  filed: 2026-11-07 Frank ("create a master tracking item for all pcrec/kit planning to intermediary and add dfa to that"); manager wrote the row
+  status (2026-11-07): VM body record-first step (a) DONE ([VMREC]); DFA walks planned as A-REV S1; DFA rest filed as [DFAREC]; kit planner/emitter split has no row yet. Tracker only: each member builds on its own go
+  next: keep the member list current; add the kit planning/emitting member as a row when the kit split is proposed
+  refs: [STREAM] (the end state this serves); docs/design/stream/manifesto.md; docs/design/stream/roadmap.md (areas A-REC, A-DFATOP, A-REV); decisions D182; memory pcrec-plan-as-text-seam
+  MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
@@ -791,6 +797,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-05): filed; nothing built
   trigger: the next T-PRES change
   refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F9, P4)
+- [DFAREC] STATE:not-started — DFA emitter record-first: plan the DFA artifact into typed records, then render
+  filed: 2026-11-07 Frank ("don't do it now but do create an item for dfa using the intermediary form"); member (3) of [IR-FORM]
+  status (2026-11-07): filed, not now. Today the DFA emitter prints C directly (src/gen/emit_dfa.c); only the reverse walks get a record, at A-REV S1
+  trigger: an optimization or fix that opens the DFA top level, start table or forward match (the ride-along rule), or Frank's go; A-REV S1 lands first and its record is the vocabulary this extends
+  refs: [IR-FORM]; [VMREC]; docs/design/stream/roadmap.md areas A-REC, A-DFATOP, A-SEAM; docs/design/stream/arev.md
+  Shape: byte-identical first step (records become the only writers, as [VMREC] (a)); one record vocabulary with the VM's where the kinds agree (A-REC); stamps derived from the records, not the engine verdict (A-DFATOP).
 - [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: position primitives' home and the seam facts (rates snapshot, rules digest, alt=)
   filed: 2026-11-05 land1105 (review 2026-11-05-r1, F10 + r2 F13, F12)
   status (2026-11-05): filed; noted at 1d. Primitives (kit_pick_takes, kit_tie_*) sit in window.c while kit_mass and kit_run_set sit in presence.c; the rates are host-mutable and the trace names no rules version
