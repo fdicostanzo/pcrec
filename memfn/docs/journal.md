@@ -3473,3 +3473,13 @@ Main ruled on the four kit findings (D186 add. 2):
   - Note lines: a box-state split (control 0.65-1.78 %) and bimodal walk.random rows.
 - Analysis lane s2dana2 (opus, read-only): units, objdump base vs arm, and options (a) a same-shape never-matching base, (b) an evidence-bound zero, (c) another regime, (d) floor change + row 1's need.
 - main told; box released to its 495. No third window tonight.
+- 11-07 ~02:30: s2dana2 analysis (kept at ca4ca26b1, span_cards/s2d2/).
+  - l1/c1 compile to a load-op compare FUSED into the candidate load (`cmpl/cmpb $imm,(mem)`). Both null bases do an unfused load, so no removed-compare null can be null. The arms-only fused/unfused step is +0.14 wb.
+  - Window 2's values: l1 -0.116/-0.106, c1 -0.119/-0.107 wb.
+  - Row 1 needs only value+noise; anything in +-0.3 wb changes no pick. The other 34 rows match window 1 within noise (<= 0.69 sigma).
+- RULED rev 1.5 (lane s2rev15, opus):
+  - R15-1: a fused-compare class is measured 0 with noise max(r_max,|med|) (~0.12 wb), scoped by a class fact CHECKED from the arm's object code, never by the sign; a negative without the fact stays NULL; sabotage from S2950.
+  - R15-2: the draft and PROVENANCE name the est commit; scoring frozen cells with a later est is allowed when the timed code is unchanged.
+  - R15-3: r_max re-derived from window 2 (A/A 15597..56070) as a measurement; window 2 is scored at its pinned 53751.
+  - Window 2's cells are reused; NO third window. Expected outcome FULL.
+- This is my call (answer-free: it changes no pick); Frank is told in the summary.
