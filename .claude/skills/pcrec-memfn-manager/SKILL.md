@@ -21,6 +21,33 @@ event land in ONE commit (Q36). That single fact shapes most of the rules
 below: you share pcrec's repo, boxes, lanes rules and gates; you do not
 share its main.
 
+## Trigger table: about to X, read Y FIRST
+
+This file is the kit's ALWAYS-ON core; situational rule sets are shared
+with main and live beside the pcrec-manager skill
+(`.claude/skills/pcrec-manager/`). Read the file when its row fires.
+
+| about to… | read |
+|---|---|
+| create or delete the heartbeat, go idle, queue a job, wait on a run or a lane; a RED or PROBLEM line arrives | `pcrec-manager/monitoring.md` (OWNER=kit, cron `17,47`) |
+| message main, the bench or a running lane; relay a ruling; wait on a peer | `pcrec-manager/peers.md` |
+| brief a lane | §4 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
+| merge a lane into your branch | §4 "Merges" + `pcrec-manager/landing.md`'s merge bullets |
+| plan a TIMING run | §3 below |
+| anything in root CLAUDE.md's situation index | that row |
+
+Always on:
+- **Queue verdicts reach you by ONE path: `scripts/monread kit`**
+  (monitoring.md §2). Never a private watcher (four of yours failed,
+  2026-11-04..07, the last one silent through REDs 485 and 482 while
+  monread held both lines); never `queuewatch` by hand.
+- **Ask for replies unconditionally**; answer every peer question in one
+  line even when told no reply is needed (peers.md §1). The 2026-11-07
+  "no reply sent (main asked for a reply on conflict only)" left main
+  unable to tell "no conflict" from "not read".
+- **Purpose over wording** (Frank 2026-11-07): when a rule's wording and
+  its evident purpose diverge, follow the purpose and say so in one line.
+
 ## 0. Scope, ownership and the two channels (binding)
 
 - **Mandate** (root CLAUDE.md): touch ONLY the two mandated repositories
@@ -80,20 +107,17 @@ share its main.
 
 ## 1. Wake up (do this first, in order)
 
-0. **Create the session heartbeat cron**: one recurring 30-minute
-   CronCreate at two off-minute marks DIFFERENT from main's `13,43`
-   (e.g. `17,47 * * * *`), prompt: act only on a delivered lane result /
-   task notification / in-flight completion / a message from main,
-   otherwise reply ONE line; no new work, no re-reads. Main session
-   only — lanes never self-keepalive. Delete it at close (§6).
-   **The same cron is the DEADLOCK CHECK** (Frank, 2026-10-09; memory
-   `pcrec-hourly-peer-checkin`): ONLY while you are waiting on a specific
-   peer session for a specific thing (a merge, an abi number, a slot GO,
-   a ruling), a tick sends that ONE session one short message naming what
-   you wait for and asking whether it waits on you. There is no separate
-   check-in cron. NEVER message a session you are not waiting on: it may
-   be idle, and a ping costs it a full turn. Never chase your own lanes
-   this way; scripts watch them.
+0. **Create the session heartbeat cron** with the prompt in
+   `pcrec-manager/monitoring.md` §1, with OWNER=kit, cron `17,47 * * * *`
+   (different from main's `13,43`), and "Waiting on" read from
+   `worktrees/.mgr/waiting_on.kit` (gitignored, one line per wait,
+   `<since HH:MM> <session> <thing>`; you keep it current as main keeps
+   owner.md's). Every tick runs `scripts/monread kit` and checks
+   that list: the deadlock check (Frank, 2026-10-09) is a lookup, not a
+   recollection. Never chase your own lanes this way; scripts watch them.
+   Delete the cron at close (§7).
+0b. **Check the queue**: `scripts/monread kit` (a RED → a triage lane
+   before other work) and `scripts/boxqueue status`.
 1. **Read `memfn/docs/wake.md`** — your previous session's hand-off (on
    main it may still be the TEMPLATE; your branch's copy is newer if one
    exists — check `git -C worktrees/memfn log -1 -- memfn/docs/wake.md`).
@@ -147,19 +171,19 @@ Frank (integration.md §23) gate what they gate — check before briefing.
 
 ## 3. Boxes and heavy runs (shared with main — binding)
 
-- **One heavy suite at a time per box, across BOTH sessions.** Before
-  any heavy run (make test, test-axes, mech, san, a battery, a timed
-  sweep) agree the slot with main by SendMessage; a run main did not
-  agree to is a collision, and on the Mac the suite lock
-  `worktrees/.mac-suite.lock` must be free (take it with an `owner`
-  line, release it after).
+- **Every heavy run is a box-queue job named `PRIO-kit-REST`**, one stage
+  per job (docs/dev/lanes/RUNS.md). NON-TIMING jobs (make test, mech,
+  compile-only census) you queue yourself with no slot ask to main
+  (main's ruling 2026-11-06, memory pcrec-kit-nontiming-runs-no-ask); the
+  queue orders the box. Their verdicts reach you through `scripts/monread
+  kit` (monitoring.md §2), never through a watcher you wrote.
+- **TIMING runs** (quiet-gated, `idle-ok`) need a window main clears with
+  Frank; never 20:00-01:00 (memory pcrec-box-evening-hold), never beside
+  another timing run. Ask main for it by SendMessage, REPLY either way.
 - **Verdicts are Linux** (D144 addendum 1): `taskset`-pinned, calibrated
   loops ≥ ~50 ms, absolute deltas against a floor, regime named (K-1).
-  The Mac is directional only. **Linux runs go through MAIN's executor
-  channel** (main runs or relays them; the box is the bench's at night —
-  memory `pcrec-day-dev-night-bench`), never your own ad-hoc ssh suite
-  runs. Light read-only probes (a compile, a short transcript) are fine
-  if main has agreed the box is free.
+  The dev box (Zen 4) is local; the Mac is directional only (its suite
+  lock `worktrees/.mac-suite.lock` applies there, with an `owner` line).
 - **Every acceptance reading reports BOTH layers**: SIMD-off and
   SIMD-on (D147). A SIMD form is measured against the CURRENT best
   scalar layer; a scalar improvement re-opens that comparison.
@@ -184,13 +208,16 @@ pcrec-manager/SKILL.md` §3 is the long form; memory
 - **EVERY LANE BRIEF STARTS: "Read docs/dev/lanes/BOILERPLATE.md FIRST
   and follow it"**, then adds the kit facts BOILERPLATE does not carry:
   read `memfn/CLAUDE.md`; the worktree is cut from YOUR branch
-  (`git -C /Users/fdicostanzo/pcrec worktree add worktrees/<lane> -b
+  (`git -C /home/pcrec/projects/pcrec worktree add worktrees/<lane> -b
   lane/<lane> lane/memfn-<topic>`), not from main; the request id it
   serves; the same-commit abi rule if it may move bytes; both layers in
-  every reading; heavy runs only in a slot you name. Then only task,
-  tier, charter pointers, deliverable.
-- **Up to 3 concurrent lanes, disjoint**; the box rule in §3 counts
-  main's runs too, so a heavy lane of yours waits for main's slot.
+  every reading; heavy runs only as queue jobs (timing ones in a window
+  main cleared). Then the BRIEF_TEMPLATE fields. Write `NAME_deliver.txt`
+  (its `owed:` holds queue KEYS or `none`, never prose; lanecheck reads
+  them as keys, 2026-11-06 and 11-07) and an empty `NAME_rulings.md` into
+  the worktree BEFORE launch (memory pcrec-manager-writes-deliver-file).
+- **Up to 3 concurrent lanes, disjoint**; their heavy runs are queue
+  jobs (§3), which the queue orders against main's.
 - **Model tier:** sonnet wherever it fits (measurement runs, sweeps,
   transcription, doc maintenance, G2 table generation); opus for the
   genuinely hard lanes (a new kernel's correctness argument, a
@@ -205,9 +232,10 @@ pcrec-manager/SKILL.md` §3 is the long form; memory
   in flight on that branch's tip.
 - **Long runs ASYNC and DETACHED**; DO-THEN-FINISH (a lane's long run is
   its LAST act, then it reports OWED with the log path and ENDS).
-- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN**: a background
-  watcher script on WIP-commit age / mtimes / completion lines that
-  exits only on actionable state.
+- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN**: the STANDARD
+  scripts only (monitoring.md §2-3: `scripts/monread kit --wait` for
+  queue jobs, `scripts/lanewatch --follow NAME` for lanes); never one you
+  wrote.
 - **Close agents aggressively**: after accepting a delivery,
   `TaskStop(task_id: "<lane-name>")`; follow-ups go to FRESH lanes from
   the committed report.
@@ -269,5 +297,12 @@ with a recommendation (plain text — never the question UI).
    without saying so in wake.md. Release the Mac suite lock if held.
 4. Tell main you are pausing (branch tip, anything still running on a
    box).
-5. `CronDelete` the heartbeat; `TaskStop` every delivered lane; kill
-   watcher scripts with nothing left to watch.
+5. `CronDelete` the heartbeat; `TaskStop` every delivered lane; stop your
+   `monread kit --wait` if nothing of yours is queued.
+6. A lesson that is a RULE goes into this skill (or the shared files it
+   loads), not only into wake.md: the kit's wake.md carried a private
+   watcher recipe forward from 11-04 to 11-07.
+
+Offer Frank, in one closing line, when the state holds: a question of
+yours waits on him ("it is relayed to main: /q kit there"); context above
+~35% at a natural point ("a clean point for /close").

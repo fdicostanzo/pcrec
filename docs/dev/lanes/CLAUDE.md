@@ -5,7 +5,7 @@ lane that chose to keep them, plus lane-owned evidence files.
 
 ## Standing rules
 
-- `BOILERPLATE.md` is the standing rules every lane reads FIRST; briefs name only task, tier and deliverable. Change a rule there; do not grow briefs back.
+- `BOILERPLATE.md` is the standing rules every lane reads FIRST; briefs name only task, tier and deliverable. Change a rule there; do not grow briefs back. `RUNS.md` holds the rules for building, running, queueing and timing on the box, read by BOILERPLATE's trigger table (split 2026-11-07 so doc-only lanes skip it).
 - `BRIEF_TEMPLATE.md` is the manager's brief field list. Point at these two; never restate them here.
 - A lane's report MUST be added to the history index (per-lane entry list, in the history file) in the SAME change (N-1 / D149; pcrec and kit lanes).
 - `_log.md` and `_report.md` are optional. `<lane>_brief.md` is the manager's, kept only for a parked lane; delete when its row merges.
@@ -14,14 +14,14 @@ lane that chose to keep them, plus lane-owned evidence files.
 
 ## Files / subdirectories
 
-- `BOILERPLATE.md`, `BRIEF_TEMPLATE.md`.
+- `BOILERPLATE.md`, `RUNS.md`, `BRIEF_TEMPLATE.md`.
 - `<lane>_report.md` (about 480), `<lane>_log.md`, `<lane>_brief.md` (a `NAME_rulings.md` is polled by a running lane).
 - `<name>_evidence/` and other per-lane instrument directories (`grid1/`, `costmodel/`, `rwquest/`, ...): data, drivers, logs cited by the matching report.
 - Loose lane artifacts (`*.py`, `*.sh`, `*.c`, `*.patch`, `*.tsv`, `*.out`, `*.log`, `*.txt`) and lane notes/drafts.
 
 ## Pointers
 
-`BOILERPLATE.md`, `BRIEF_TEMPLATE.md`; `.claude/skills/pcrec-manager` section 3; `docs/dev/plan.md`, `dev_journal.md`, `decisions.md`, `reviews/`.
+`BOILERPLATE.md`, `RUNS.md`, `BRIEF_TEMPLATE.md`; `.claude/skills/pcrec-manager` section 3; `docs/dev/plan.md`, `dev_journal.md`, `decisions.md`, `reviews/`.
 
 Full text and the complete directory list (verbatim): NOTES.md here.
 

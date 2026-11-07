@@ -49,7 +49,7 @@ loaded the box during the kit's heavy slot and contaminated its make test.
 
 `scripts/boxqueue` (contract in its header, summary in scripts/CLAUDE.md,
 self-test scripts/tests/boxqueue.test planting each bug class below), the
-lane template in docs/dev/lanes/BOILERPLATE.md "Queue template". Where the
+lane template in docs/dev/lanes/RUNS.md "Queue template". Where the
 build reads the design: the job is called in three MODES (`--dry-run`,
 `--ready`, the work) because `boxqueue --dry-run` must run a job's readiness
 check without its work; so 75 belongs to `--ready`, and a 75 from the work is

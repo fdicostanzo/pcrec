@@ -11,54 +11,48 @@ review; subagents do most of the hands-on work. Frank (the user) sets
 milestone-level direction and answers rulings; you answer his questions,
 discuss design points, and run everything in between.
 
+This file is the ALWAYS-ON core. Rule sets that apply only in some
+situations live in files beside it and are read when the trigger table
+below fires, not before.
+
+## 0. Trigger table: about to X, read Y FIRST
+
+| about to… | read |
+|---|---|
+| create or delete the heartbeat, go idle, wait on a run, a lane or a peer; queue a job; a RED or PROBLEM line arrives | `monitoring.md` (this dir) |
+| merge a lane branch, launch a landing lane, prune a worktree or branch | `landing.md` |
+| message the kit, the bench or a running lane; relay a ruling; wait on a peer | `peers.md` |
+| brief a lane | §3 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
+| run a test suite or the full battery | the `pcrec-test` skill |
+| send a design to build, or land major code | the `pcrec-critic` skill (§5) |
+| plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS" |
+| end or pause the session; Frank types /close or /idle | §6; the `close` / `idle` skills |
+| anything in root CLAUDE.md's situation index | that row |
+
+Always on, whatever the situation:
+- **Queue verdicts reach you by ONE path**: `scripts/monread main`
+  (monitoring.md §2). Never a private watcher, never `queuewatch` by hand.
+- **Ask for replies unconditionally** (Frank 2026-11-07): a message that
+  needs anything back ends "REPLY: one line, either way"; never "reply only
+  if" (peers.md §1).
+- **Purpose over wording** (Frank 2026-11-07: "too literal with exact
+  wording compliance"): when a rule's wording and its evident purpose
+  diverge, follow the purpose and say so in one line.
+
 ## 1. Wake up (do this first, in order)
 
-0. **Create the session heartbeat cron** (Frank's standing rule, tested
-   and CONFIRMED over a full day 2026-09-08/09): one recurring 30-minute
-   CronCreate at two off-minute marks (e.g. `13,43 * * * *`) whose prompt
-   says: act only on a delivered lane result / task notification /
-   in-flight completion, otherwise reply ONE line; no new work, no
-   re-reads. The manager session's prompt cache is 1-hour TTL, so each
-   tick is a cheap cache hit that keeps the whole context warm across
-   idle gaps — measured at one-line cost per tick over ~24h. MAIN
-   SESSION ONLY (lanes are 5-min TTL and never self-keepalive). Crons
-   are session-only: create at every session start, delete at close.
-   **ONLY WHILE MONITORING** (Frank, 2026-10-20: the CLI autocompacts
-   during prolonged idle): keep the heartbeat while lanes, watcher
-   scripts or a peer mid-handoff are in flight. With nothing in flight,
-   a fixed-time wait (one-shot alarm), or a wait on another session's
-   message, DELETE it and let the session go idle — after writing a
-   short durable in-flight note (what you wait for, who messages you,
-   peer addresses, next action per trigger) so compaction loses nothing.
-   **The heartbeat also carries the DEADLOCK CHECK** (Frank, 2026-10-08;
-   revised 2026-10-09: no separate check-in cron). Add to its prompt: ONLY
-   if you are currently waiting on a specific peer session (pcrecdev3 kit,
-   pcrecdev2 bench) for a specific thing, send ONE short SendMessage to
-   exactly that session, naming what you wait for and asking whether it
-   waits on you. Never message a session you are not waiting on: a ping
-   wakes an idle peer for a full turn. It exists because main and the kit
-   each waited for the other on R-8; requests.md is yours to file.
-   **Idle compaction + the re-entry hook** (Frank, 2026-10-21): an
-   interactive session idle ~54 min with context >= 200k compacts itself;
-   `.claude/settings.json`'s SessionStart(compact) hook
-   (`scripts/hooks/post_compact.sh`) then re-injects owner.md and wake.md's
-   head. The heartbeat defeats idle compaction (each tick resets the clock),
-   so drop it only when actually idle or waiting on a VERY RELIABLE monitor
-   (`/idle` defines it; a live lane never is), and only after `/idle`'s
-   mandatory owner/wake/journal update.
-   Skills: `/idle` carries out the rule above; `/q` presents the owner's
-   next question from `docs/dev/owner.md` (§2).
+0. **Heartbeat cron**: create it now with the prompt in monitoring.md §1
+   (`13,43 * * * *`; it reads the queue and owner.md "Waiting on" every
+   tick). Delete it only by the `/idle` procedure or at close.
 0b. **Check CI** (Frank, 2026-10-13): `timeout 60 gh run list --limit 10`.
-   Any `failure` on main → a triage lane before other work (rule 2 below).
-   A cancelled run is NOT green (a push cancels the running job). CI sat
-   red on every push for 24+ h unnoticed until Frank saw it (2026-10-13).
-   After each push, note its sha and on the NEXT wake/heartbeat read
-   `timeout 60 gh run list --commit <sha>` (the local pre-push-light gate
-   catches plan/spec/strict reds; CI is the rest).
+   Any `failure` on main → a triage lane before other work (§3 rule 2). A
+   cancelled run is NOT green. CI sat red 24+ h unnoticed until Frank saw
+   it (2026-10-13).
+0c. **Check the queue**: `scripts/monread main` (a RED → a triage lane
+   before other work) and `scripts/boxqueue status`.
 1. **Read `docs/dev/wake.md`** — the hand-off brief from the previous session.
    It is deliberately gitignored; on any disagreement, the committed docs win.
-2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom) —
-   the restart/status-recovery record.
+2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom).
 3. Check `docs/dev/plan.md` state:
    `grep -n "STATE:started" docs/dev/plan.md` (in-flight work) and
    `grep -n "STATE:not-started" docs/dev/plan.md` (queue). Format is documented
@@ -78,11 +72,11 @@ Do not start a new milestone unprompted — milestones start with Frank
 
 - **Keep `docs/dev/owner.md` current** (Frank, 2026-10-20): the owner's
   at-a-glance view (questions for him with one-line summaries, now, next,
+  WAITING ON (peer waits the heartbeat checks, peers.md §2),
   blockers/issues, done today; gitignored). Refresh it at EVERY state
   change — lane start or delivery, merge, ruling, box hand-off — so you
   never need a "still waiting on you" line in chat. Read it at wake
   after wake.md.
-
 - `docs/dev/plan.md` is the project status. Update the `STATE:` tag in place
   when a step starts/finishes/blocks; expand a milestone into substeps only
   when work on it begins.
@@ -99,6 +93,21 @@ Do not start a new milestone unprompted — milestones start with Frank
   history, lessons, rationale and session notes go in the directory's
   NOTES.md (created on first need), with one pointer line from CLAUDE.md.
 
+### Offer the owner (interface skills)
+
+Frank drives a few things by typed commands. When the state below holds,
+end your message with ONE line offering the command, in plain words; at
+most one offer per message, and not the same offer again until the state
+changes.
+
+| state (read it, do not recall it) | the line |
+|---|---|
+| owner.md "Questions for you" holds a question that blocks a lane or a build, or 3 or more open questions | "N questions are waiting (the oldest blocks X): /q when you have a minute." |
+| a D177 trigger fired at a landing (landing.md) | "A full suite is due (why). Tell me a window, or /pcrec-test full." |
+| context above ~35% at a natural point (memory pcrec-keep-lanes-full) | "Context is at N%; this is a clean point for /close." |
+| nothing of ours in flight but you keep the heartbeat for a reason Frank may not share | "Only X is in flight (watched by Y); /idle if you want the session to idle." |
+| the kit or the bench has relayed a question for Frank | "The kit has a question for you: /q kit." |
+
 ## 3. Delegate — prefer subagents over doing it yourself
 
 Writing code yourself burns your context; delegating preserves it so the
@@ -111,142 +120,91 @@ subagents and judge the results).
 **EVERY LANE BRIEF STARTS with a one-line title ("LANE <name> (<tier>):
 <task>", matching the Agent call's name/description; Frank 2026-10-20),
 THEN "Read docs/dev/lanes/BOILERPLATE.md FIRST and follow it"** (Frank,
-2026-09-06) — the standing rules (scope, worktree
-ritual, box facts, process, lifecycle) live THERE; the brief carries only
-the task, tier, charter pointers and deliverable. Do not restate boilerplate
-content in briefs. Fill in the fields of docs/dev/lanes/BRIEF_TEMPLATE.md
-for every brief. LIFECYCLE (same ruling): lanes get NO self-keepalive
-crons (subagent caches are 5-min TTL — ticks are pure cost); close agents
-AGGRESSIVELY — an agent not needed within a few minutes summarizes (iff a
-follow-up is expected) and ENDS; follow-ups go to FRESH agents resuming
-from the committed report. **Closure is the MANAGER'S ACT, not the
-agent's**: an "idle" agent is still alive and billable — after accepting
-its delivery, `TaskStop(task_id: "<lane-name>")` it explicitly. The first
-day of this policy the manager preached it while two delivered lanes sat
-alive (Frank caught it); check for live agents at every delivery
-acceptance and at session pause. And DELEGATE OPERATIONS HARD: the manager's
+2026-09-06) — the standing rules (scope, worktree ritual, box facts,
+process, lifecycle) live THERE; the brief carries only the task, tier,
+charter pointers and deliverable. Do not restate boilerplate content in
+briefs. Fill in every field of docs/dev/lanes/BRIEF_TEMPLATE.md, and write
+the lane's `NAME_deliver.txt` and empty `NAME_rulings.md` into its worktree
+BEFORE launch (memory pcrec-manager-writes-deliver-file). LIFECYCLE (same
+ruling): lanes get NO self-keepalive crons (subagent caches are 5-min TTL);
+close agents AGGRESSIVELY — an agent not needed within a few minutes
+summarizes (iff a follow-up is expected) and ENDS; follow-ups go to FRESH
+agents resuming from the committed report. **Closure is the MANAGER'S ACT**:
+an "idle" agent is still alive and billable — after accepting its
+delivery, `TaskStop(task_id: "<lane-name>")` it (monitoring.md §3 lists
+the two checks before TaskStop). DELEGATE OPERATIONS HARD: the manager's
 model is the most expensive in the ledger — mechanical runs, sweeps,
-re-pins, triage, doc maintenance all go to lanes; the manager keeps
-judgment, briefs, review, merges.
+re-pins, triage, doc maintenance all go to lanes.
 
-**STANDING DELEGATION RULES (delegaudit, 2026-09-06 — measured on sessions
-55/56; ranked by savings):**
-1. **Liveness polling never spends a manager turn.** No prompt-firing
-   watchdog crons: run a plain background WATCHER SCRIPT (zero model calls)
-   that exits — producing ONE notification — only on actionable state
-   (lane quiet >20-25 min, completion marker, worktree gone). Each old
-   10-min tick re-read the manager's entire context (~650-800K cache
-   tokens) to say "no change" (~73M tokens across two sessions).
-2. **A red battery/suite stage launches a TRIAGE LANE before the manager
-   reads the log** (diagnose each failure, real-regression vs stale pin,
-   fix in a worktree, re-validate, report fix-by-fix). Done inline this
-   was 35% of session 55's entire cost, twice over.
-3. **A stale-doc finding goes to `compliance-refresh` or a lane, never
-   re-diagnosed by hand** (17.9% of session 56, two incidents).
+**STANDING DELEGATION RULES (delegaudit, 2026-09-06; ranked by savings):**
+1. **Liveness polling never spends a manager turn**: scripts that exit on an
+   actionable state (monitoring.md §2-3), never prompt-firing crons.
+2. **A red suite stage launches a TRIAGE LANE before the manager reads the
+   log** (diagnose, real regression vs stale pin, fix in a worktree,
+   re-validate, report fix-by-fix). Done inline this was 35% of session
+   55's cost, twice over.
+3. **A stale-doc finding goes to `compliance-refresh` or a lane**, never
+   re-diagnosed by hand.
 4. **A lane's delivery bar includes re-pinning its own manifests/pins** —
    never post-merge manager cleanup (in BOILERPLATE.md).
 5. **Unexplained repo/workspace state gets ONE read-only fact-finding
-   agent before any recovery command** — one round trip, not 19 serial
-   shell probes.
+   agent before any recovery command.**
 6. **Long-document fact-gathering for a downstream artifact goes to a lane
    that returns only extracted facts.**
+7. **The third patch to the same check is a scope question, not a patch**
+   (2026-11-06/07: four C4 allowlist rows in two days, for corpus data the
+   arch-vocabulary check should never have scanned — `adx` twice,
+   `zen4-grid3`, S2932's anchor). Triage briefs say: before adding an
+   allowlist/exception row, `git log --since=14.days -- <the allowlist>`;
+   with two or more rows already added for the same cause, STOP and report
+   the scope defect instead of adding the third.
 Correctly inline (the audit's counter-cases): orientation, briefs,
 review verdicts on delivered reports, merges, rulings, design
 conversation with Frank.
 
 Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
 
-- **Limit subagents doing significant work to 3 concurrent lanes** — more
-  than that is unmanageable. Lanes must be disjoint (non-interdependent
-  sections); create multiple workers only when the work genuinely partitions.
-- **Use lower models** (e.g. `model: "sonnet"` or `"haiku"` on the Agent
-  call) wherever the task fits one — mechanical sweeps, corpus transcription,
-  doc fixes, measurement. Keep the strong model for design-heavy lanes.
+- **Limit subagents doing significant work to 3 concurrent lanes**; lanes
+  must be disjoint. Create multiple workers only when the work partitions.
+- **Use lower models** (`model: "sonnet"` or `"haiku"`) wherever the task
+  fits one; opus for design-heavy and engine lanes.
 - **Every brief restates the repository scope mandate** from CLAUDE.md
   (touch only the two mandated repos at this box's paths; scratch files to
   `$PCREC_TMPDIR/scratch/<lane>/`, never committed).
-- **A writer's FIRST command in its worktree is `git rev-parse --show-toplevel`**, and its first edit waits for that to print the worktree path (2026-09-02: a lane edited two test scripts in the MAIN tree while the battery's san stage was executing one of them; bash reads scripts incrementally, so that can corrupt a running stage — it did not this time, by luck of timing). Put the line in every writer's brief.
-- **Writers get a git worktree under `worktrees/`** (gitignored, inside the
-  repo so the scope mandate holds by construction). They commit in the
-  worktree and deliver a diff/branch; the main session reviews and merges.
+- **A writer's FIRST command in its worktree is `git rev-parse
+  --show-toplevel`**, and its first edit waits for that to print the
+  worktree path (2026-09-02: a lane edited two test scripts in the MAIN
+  tree while the battery's san stage was executing one of them).
+- **Writers get a git worktree under `worktrees/`**; they commit there and
+  deliver a branch; the main session reviews and merges (landing.md).
   Read-only critics work in the main tree and **never run `make`**.
-- **D27 blinded test writers get a CELL**: run
-  `scripts/mk_d27_cell.sh NAME` — it creates the worktree plus a parallel
-  non-git, allowlist-filtered copy (`worktrees/NAME-cell/`) with a prebuilt
-  `build/` so the author never sees `src/` or `tests/` and cannot query
-  git. The author works in the cell; you diff the cell back into the
-  worktree for review-then-merge. Keep the allowlist an allowlist (the
-  script header explains why), and keep the brief's disclosure requirement
+- **D27 blinded test writers get a CELL**: `scripts/mk_d27_cell.sh NAME`
+  creates the worktree plus a non-git, allowlist-filtered copy
+  (`worktrees/NAME-cell/`) with a prebuilt `build/`. The author works in
+  the cell; you diff it back into the worktree for review-then-merge. Keep
+  the allowlist an allowlist, and keep the brief's disclosure requirement
   for residual spawn-time injections.
-- **Main-tree writers need the escape file** ([HOOK-GUARDS], 2026-10-25): a hook refuses any subagent Write/Edit to the main tree outside worktrees/. Before launching a landing lane (or any lane chartered to edit the main tree; critic coordinators draft under /tmp and need none), `echo '*' > worktrees/.mgr/main_write_ok`; remove it when that lane ends (while it exists, NO subagent is guarded).
-- **Remove delivered worktrees with `scripts/wtprune`** (dry run, then `--apply NAME`; then their branches with `scripts/branchprune`, same shape), which enforces the straggler check below plus merged/clean/quiet/lock gates. **Before any removal, check for straggling processes** whose cwd is under the worktree (read `/proc/*/cwd` by PID; never pkill) — a harness worker outlived tt12b's delivery by a minute and wrote into the deleted path (2026-09-03).
-- **NEVER MERGE TO MAIN WHILE A BATTERY IS IN FLIGHT** (2026-09-10:
-  mech re-archives HEAD per row, so oralink's mid-battery merge made the
-  run's tail measure a half-converted tree — 1 unexpected + 6 anomalies,
-  a full triage lane to disposition). Late-evening deliveries PARK on
-  their lane branch until the trailer; the battery's pinned commit and
-  main must stay identical for its whole run.
-- **Merges serialize through you, with the test battery between** (see
-  wake.md §3 for the current battery shape and expected counts). Commit
-  before battery runs that archive HEAD. A worker going idle uncommitted is
-  recoverable — the landing bar travels with the brief, so you can finish
-  the landing yourself.
-- **A long validation run is the lane's LAST act (DO-THEN-FINISH, Frank
-  2026-09-08)**: anything over ~4 minutes (`make test`, mech, battery-length
-  runs) is armed DETACHED (`nohup ... > log 2>&1 & disown`) with output to a
-  log, recorded OWED in the report (log path, exact completion line, PID
-  file), and the lane commits, hands back and ENDS. It does not idle
-  waiting, and it does not hold a foreground call (a lane blocked in one is
-  unreachable and indistinguishable from dead, the 2026-08-12 finding that
-  still stands). The manager, or a fresh follow-up agent, reads the log.
-  Before finishing an "idle" lane's landing, check the worktree for fresh
-  mtimes AND send a status message first; only take over on silence or an
-  explicit handback.
-- **A lane's background-run completion notice is NOT a reliable wake-up**
-  (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after
-  their run had ended). Lanes have NO keepalive tick (Frank, 2026-09-06),
-  so the lane never polls: the run's LOG is read by the MANAGER'S watcher
-  script (`scripts/watchrun`, below) or by a fresh follow-up agent — the monitoring ladder
-  (script, fresh follow-up agent, concise watcher agent, manager; Frank
-  2026-09-06/08) — looking for the completion line (`checks failed:`,
-  `== mech run COMPLETE`, `run_group:`). Never arm a Monitor on a progress
-  log (opt5i's per-minute flood).
-- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN** (Frank, 2026-09-06; a
-  10-minute CronCreate watchdog re-read the manager's whole context per tick
-  to say "no change"). Do not hand-write a watcher or a chain.sh: arm
-  `scripts/watchrun TREE|LOGDIR` as a plain background command (zero model
-  calls; it prints ONE line on an actionable state -- CHAIN-END, QUIET, DIED,
-  LOCK-ORPHAN, CAP -- and exits; cap ~4h, relaunch on cap, kill when nothing
-  is in flight). Lane chains run under `scripts/chainrun` (heavy stages take
-  `scripts/boxlock`); read any log with `scripts/verdict LOG`. Ladder:
-  quiet >20-25 min -> SendMessage ping; quiet AND silent after it -> dead,
-  take over the landing (RE-RUNNING the lane's own full stated validation
-  list -- the K50 premature-merge lesson). ListAgents does NOT show spawned
-  lanes -- never declare death from it. Trust order: completion trailers,
-  WIP-commit age (`git -C WT log -1 --format=%ct`), uncommitted-delta
-  mtimes (ISO timestamps with `find -newermt`), never a process grep. Brief
-  every lane to COMMIT INCREMENTALLY.
-- **`timeout` on every command of uncertain run length** — yours AND
-  your subagents' (put it in every brief). Anything you cannot bound
-  from experience gets a timeout sized generously from what the work
-  should take; a timeout firing is a FINDING to investigate, never a
-  reason to simply re-run longer. (Generated-code compiles have their
-  own ruled bound — decisions.md D45 — enforced in the harness; this
-  bullet is the general rule for everything else: builds, sweeps,
-  probes, oracle runs.)
+- **A lane that owes long runs queues them and ENDS** (monitoring.md §3);
+  its brief's OWED RUNS field says so in the template's words.
+- **A PCRE2 fact** comes only from a `pcre2-reader` agent (D181; root
+  CLAUDE.md row). Spawn it with `subagent_type: "pcre2-reader"` and NO
+  `name` until a named spawn is shown to carry the agent type to the guard
+  hook (a named reader was blocked 2026-11-07).
+- **`timeout` on every command of uncertain run length** — yours AND your
+  subagents' (in every brief). A timeout firing is a FINDING, never a
+  reason to simply re-run longer. (Generated-code compiles have their own
+  ruled bound, D45, enforced in the harness.)
 
 ## 4. Review their work
 
 Review every delivered diff before merging: correctness against the brief,
 oracle-verified test expectations (python3 `re` base tier, libpcre2
 differential — docs/testing.md), check/floor movements travelling in the
-same change, CLAUDE.md updates, and D26 tiering (don't let a lane
-gold-plate diagnostic wording — `docs/dev/decisions.md` D26). Send change
-requests back to the lane (SendMessage to a still-running agent, or a fresh
-agent with the review notes) rather than silently fixing large problems
-yourself; small landing-bar items you may finish directly.
-
-At each landing, add a line to docs/dev/full_suite_ledger.md (major/minor/none) and check D177's triggers; queue `scripts/fullsuite_job.sh` for the next window when one fires (a run covers every pending trigger).
+same change, CLAUDE.md updates, D26 tiering (don't let a lane gold-plate
+diagnostic wording), and the rulings check (peers.md §3: STATE AT HANDOFF
+names the last R-n). Send change requests back to the lane (a fresh agent
+with the review notes) rather than silently fixing large problems
+yourself; small landing-bar items you may finish directly. Then landing.md.
 
 ## 5. Adversarial critic rounds on designs and code
 
@@ -263,10 +221,12 @@ discretion, no go-ahead ask (Frank 2026-10-05).
 
 Before ending the session or any significant pause:
 
-0. When a ruling this session reversed earlier doctrine, grep this skill,
-   docs/dev/lanes/BOILERPLATE.md and docs/dev/learnings.md for the old
-   doctrine and fix it in the same change (the stale-keepalive and ASYNC
-   bullets survived five weeks; apply_here.md section 7, 2026-10-20).
+0. When a ruling this session reversed earlier doctrine, grep this skill
+   AND its sub-files (monitoring.md, landing.md, peers.md),
+   docs/dev/lanes/BOILERPLATE.md (and RUNS.md) and docs/dev/learnings.md
+   for the old doctrine and fix it in the same change (the stale-keepalive
+   and ASYNC bullets survived five weeks; apply_here.md section 7,
+   2026-10-20).
 1. Append the dev_journal.md entry (if not already done).
 2. Update plan.md STATE tags to reality.
 3. **Rewrite `docs/dev/wake.md` from scratch** as the next session's wake-up
@@ -275,7 +235,9 @@ Before ending the session or any significant pause:
    counts, gates, invariants); how to verify the baseline; lessons. It is a
    hand-off to a future manager with zero conversational context — precise,
    citable (commits, probes, file paths), and honest about what is unruled
-   or owed. It stays uncommitted (.gitignore); committed docs win on
-   conflict.
+   or owed. A lesson that is a RULE goes into this skill or its sub-files,
+   not only into wake.md (the kit's wake.md carried a private-watcher
+   recipe forward for days, 11-04..11-07). It stays uncommitted
+   (.gitignore); committed docs win on conflict.
 4. Commit completed work; don't leave the tree dirty across a pause without
    saying so in wake.md.
