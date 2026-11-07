@@ -760,3 +760,32 @@ unpredicted mover are still findings (not weakened). Re-run by hand over the
 same population (seconds): 0 findings, 2 `denied-kit-growth` listed
 (scratch/u1tri/out/u1_bench.tsv). Job 161's rc stays red in the queue record;
 a re-queue of the same job script now exits 0.
+
+## Lane alttri (2026-11-07, sonnet): triage of 171 make test (rc 2) and 180 mech1 (rc 1)
+
+PREMISE: both jobs ran in a snapshot of `0a8d252f6` (171 END 1794025900 rc 2, 7 red sections, perfrun `contaminated=YES` but class RED-REAL; 180 END 1794023323 rc 1: 14 rows, unexpected 4, undetected 0, unreached 4, anomalies 0). Red sections: test-memfn-arch, test-resource, test-tune-dial, test-cpset-structure, test-findings, test-encoding-checks, test-startset. No answer moved against libpcre2 or python re anywhere; no check weakened (every change re-aims a witness, re-pins a manifest or widens an allowlist with its cause). Commit `52f7dad47` on `lane/altbuild`.
+
+| red | verdict | cause | fix (solo green on the tip) |
+|---|---|---|---|
+| test-memfn-arch | stale pin (instrument) | `tests/altcls/altnf_rules.rxt:153` subject `adx` reads as an ISA name (class 1) | subject `adq` in the rxt and in `altnf_rules_gen.py` (same non-match under `\b`) |
+| test-cpset-structure [1a] | stale expectation | the A_CLASS payload gained `int branches` (EMIT-3); the needle named the old struct | needle admits the optional member |
+| test-cpset-structure [2b] | allowlist | stage 2b's work-budget charge reads `u.cls.n` (a count) in `anf_passes`, `anf_node_same`, `anf_prefix` | three FUNCTION-scoped allowances, cause in the comment |
+| test-resource [PF-DROP/ff], test-tune-dial §6 | witness no longer reaches its rung | stage 1 shrank the class tables: `[^\p{C}\p{M}\p{P}]xy` fits after rung 1 alone | re-aimed to `[^\p{C}\p{M}\p{P}]\p{Lo}xy` (measured: fits at -2 on the caller's flag; both rungs and both notes at -1..2; default path, reverse-pass); S252/S253 SAB_REACH follow |
+| test-findings C-PERT F-5 | witness lost its retry | `(\p{Xwd})x` and `x(\p{Xwd})y` fit and ship "selected" | F5_WITNESSES re-aimed to the two corpus patterns that still ship from a retry under `-fno-req-byte -e utf8`: `x\p{Xwd}y`, `x\p{L}y` (wclass_illformed.rxt) |
+| test-startset [vm-movers] | stale manifest | new corpus files (altnf_rules, altnf_lowering), counterk ids shifted by the edit, and the re-aimed `size_ladder_prefilter_drop.rxt:50` stopped being a mover | manifests: auto +6/-1, forced +41/-6, rows from vmhat_checks's own mover list |
+| test-encoding-checks DD12a K50 | instrument gap, NOT a branch effect | `ab|abc|ad` and `(?:ab\b|ad\b)` (new altnf_rules blocks) are cover artifacts whose byte-prior pick differs by encoding; cover_pick normalizes the pick but the verify clause follows the pick. Main's compiler emits the same two forms for `ab|ad` (byte two-needle, utf8 memchr; checked 2026-11-07) | two exact `#UNDECLARED` rows with the cause; OWED to the instrument's owner: normalize the pick-dependent verify |
+
+mech1 (180): S1990/S1991 UNREACHED because the pop regex `\[MEMB\] m_twin` counted source cells, but the script spells them `memb m_twin ...` (output text only): pop now `^memb m_twin[[:space:]]` (m_cat likewise). S1880/S1881 UNREACHED because EMIT-1 makes `(?i)β`/`(?i)k` take an island, so the IR no longer prints `alternation entry (2 branches)`: SAB_REACH adds `-fno-alt-island` (prints it, checked). The report's "hand-checked green" for island section 12 was true: the defect was the reach probe, not the suite.
+
+Solo greens on the tip (niced, direct `make`): test-tune-dial + test-resource rc 0; test-startset, test-findings, test-encoding-checks, test-memfn-arch, test-cpset-structure green. The mech rows could not be run solo: the runner's box lock was held by queue jobs (altfix 191 r303, kit); their reach and detect are in the queue batch below. The still-pending altfix jobs 181 mech2 / 182 reach are on the OLD snapshot `0a8d252f6` (182 will read S1880/S1881/S1990/S1991 UNREACHED again); the alttri batch supersedes them.
+
+### OWED (detached, owner alttri; `scripts/boxqueue state KEY`)
+
+Snapshot commit `52f7dad47`. Every job waits on `200-alttri-gate` (ready once no `*kit-s2d-*` is pending or running), which touches `scratch/alttri/lift`.
+
+| key | runs | completion line |
+|---|---|---|
+| `200-alttri-gate` | the lift | outcome=green |
+| `alttri-b202611070125512685420.strict`, `.test` | make strict; make test via perfrun | no `*** [(Makefile:N: )test-X] Error` line |
+| `alttri-b202611070125512685420.mech1` | S1880-S1882, S1886-S1894, S1990, S1991, S252, S253 | `== mech run COMPLETE` with unexpected 0, unreached 0 |
+| `alttri-b202611070125512685420.reach` | REACH_ONLY over those 28 rows plus S252/S253 | `mech-reach-only: DONE rc=0` |
