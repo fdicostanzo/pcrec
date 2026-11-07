@@ -8,7 +8,10 @@
 # result. [rev1.4 r10-REV14-4] Rev 1.4's §3.5¶3a (sub-resolution delta rows) under review r10's rule: a row negative
 # on all six trimmed launches stays `null` whatever r is; r is capped at policy.tsv's r_max_e6 (R_MAX below); the
 # branch also needs the row's paired A/A within r. The table's delta rows are read as anchored values x_l (E = 1,
-# the unit at 10^6), their twins' as xb_l. python3 -I drill.py
+# the unit at 10^6), their twins' as xb_l. [rev1.5 r11-REV15-9] §3.5¶3b's BOUND rows (a row whose `tags` carry its
+# rules' bound token, the fact taken as stated): measured, value max(0, med(x_l)) (r11-REV15-5), noise
+# max(r_max, |med(x_l)|), whatever the NULL rule says; computed here for window 2's four bound rows from their x_l.
+# python3 -I drill.py
 import random
 
 def rhafz(n, d):                      # measure_sets §1.7: round half away from zero, exact integers
@@ -57,7 +60,8 @@ def null(D, Db):                      # delta rows: priced iff every D_l > 0 ove
     aaD = med([abs(Db[i] - D[i]) for i in range(len(D))])        # med(D_l) > aa_D (paired floor), med over 7
     return not (all(d > 0 for d in trim(D)) and med(D) > aaD), med(D), aaD
 
-R_MAX = 53751                        # memfn/data/policy.tsv r_max_e6 (rmax_drill.py; UNMEASURED DEFAULT, D149)
+R_MAX = 53751                        # the r_max_e6 window 2's record pins (memfn/data/policy.tsv's was 53751 when it was
+                                     # planned; 56070 since rev 1.5, measured by rmax_drill.py, from the next window)
 
 def subres(x, xb):                    # [rev1.4 r10] §3.5¶3a over a row that FAILS the NULL rule: its status
     if all(d < 0 for d in trim(x)):
@@ -68,6 +72,10 @@ def subres(x, xb):                    # [rev1.4 r10] §3.5¶3a over a row that F
     if abs(m) <= r and aa <= r:
         return "sub-resolution: measured, value %d, noise max(r %d, noise %d)" % (max(0, m), r, row(x, xb)[2])
     return "null (|med| %d, aa %d, r %d = min(own %d, R_MAX): %s above r)" % (abs(m), aa, r, own, "|med|" if abs(m) > r else "A/A")
+
+def bound(x, r_max=R_MAX):             # [rev1.5 r11-REV15-9] §3.5¶3b: a bound row's value and noise from its x_l
+    m = med(x)
+    return max(0, m), max(r_max, abs(m))
 
 def drift(Cref, Cj, gate=GATE):       # per job: the control medians, relative; rev 1.2's threshold: the unit
     def rel(v):                       # card's half gate, or 3 standard errors of the statistic if larger
@@ -114,6 +122,17 @@ for name, x, xb in (
     xb = xb or [t + 3 for t in x]
     n, m, aaD = null(x, xb)
     print("%-26s x=%s -> %s" % (name, x, subres(x, xb) if n else "priced"))
+print("[rev1.5 r11-REV15-9] §3.5¶3b bound rows, r_max %d (window 2's pin): x_l of s2d-20261107a (rmax_drill.py W2, which "
+      "re-takes them from the run directory), and the value/noise est.py's rows state (s2d2/r11_rows.txt)" % R_MAX)
+for key, x, stated in (
+        ("kit.verify_cmp.rc-memcmp.l1.p0", [-66568, -116063, -116015, -292400, -19235, -108264, -170978], (0, 116015)),
+        ("kit.verify_cmp.rc-memcmp.l1.p50", [-67441, -98296, -105615, -157461, -64228, -112021, -198619], (0, 105615)),
+        ("kit.verify_cmp.settest.c1.p0", [-195626, -56384, -77441, -325510, -119301, 67081, -157330], (0, 119301)),
+        ("kit.verify_cmp.settest.c1.p50", [-155181, -56253, -68241, -308986, -107405, 86300, -114474], (0, 107405)),
+        ("(constructed) a bound row priced positive", [1000, 1010, 990, 1005, 995, 1020, 1000], None)):
+    got = bound(x)
+    print("%-36s x=%s -> value %d noise %d%s" % (key, x, got[0], got[1], "" if stated is None else
+          "  (est.py: value %d noise %d: %s)" % (stated + ("AGREE" if got == stated else "DISAGREE",))))
 Cref = [189200, 189150, 189300, 189250, 189180, 189220, 189400]
 print("drift none        ", drift(Cref, [t + 50 for t in Cref]))
 print("drift 3% tight     ", drift(Cref, [int(t * 1.03) for t in Cref]))

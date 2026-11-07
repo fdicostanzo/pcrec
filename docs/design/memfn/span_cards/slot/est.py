@@ -16,10 +16,13 @@
 # Refused inputs exit 2: a cells file of a never-ran job, a ran job missing a planned cell, a cells file of
 # another run, an id whose fields disagree with its columns, a delta cell naming another base than the family
 # rule's (plan.base_of), a ran job with no cell texts; [rev1.5 R15-1] a verify row's timed code whose two readings
-# of the FUSED-COMPARE fact disagree, or whose fact differs between its launches, arm and twin.
+# of the FUSED-COMPARE fact disagree, or whose fact differs between its launches, arm and twin; [rev1.5 r11-REV15-1]
+# a launch executable that is not its job's manifest's, a manifest the record's pin disagrees with, a slot table
+# whose stems are not the pinned plan's; [r11-REV15-10] a null base whose own code is fused.
 # [rev1.5 R15-2] The draft names THIS estimator's commit (`# note est_commit`): a recompute applies that commit's
-# rules. It is written only from a clean commit, and only when the timed code is unchanged between the record's
-# code_commit and it (TIMED_PATHS), so scoring frozen cells with a later est never re-reads them under other code.
+# rules. It is written only when every input of those rules is the commit's blob ([r11-REV15-6] est_inputs), and
+# only when no TIMED path moved between the record's code_commit and it ([r11-REV15-7] NON_TIMED, an exclusion
+# list), so scoring frozen cells with a later est never re-reads them under other code.
 import hashlib, math, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,11 +38,41 @@ NOTE_BIMODAL_E6 = 100000   # a priced delta row: a gap over 10 % of its value, l
 FUSED_TAG = "fused-load-op"
 FUSED_EVIDENCE = ("evidence: windows s2d-20261106 and s2d-20261107a, two null bases, both negative; the arms-only "
                   "fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)")
-# [rev1.5 R15-2] the paths whose text reaches a timed binary or its subjects (the code the cells measured)
-TIMED_PATHS = ("src", "lib", "memfn/src", "memfn/include", "memfn/data/cards", "Makefile", "tests/memfn/arm_fixtures.c",
-               "docs/design/memfn/span_pick/census0.out",
-               *("docs/design/memfn/span_cards/slot/" + f for f in ("drv.c", "gen.c", "slot.h", "link.py", "art.py",
-                                                                  "plan.py", "vcls.out", "enter", "j1")))
+# [rev1.5 R15-2, r11-REV15-7] WHICH TRACKED PATHS ARE TIMED, first match (a path ending `/` names a directory, one
+# starting `*` a suffix): every tracked path is TIMED (its text may reach a timed binary or its subjects: libpcrec,
+# the kit, build/pcrec's text pasted into the arm TUs, shared/, the vendored tables, the Makefile) unless a row
+# below declares it not, with the reason
+SLOT = "docs/design/memfn/span_cards/slot/"
+NON_TIMED = (
+    ("*.md",                       False, "prose: no build step reads a .md file"),
+    (SLOT + "est.py",              False, "this estimator: it reads the run directory after the timing"),
+    (SLOT + "record.py",           False, "the run record's writer: after each job, never inside one"),
+    (SLOT + "sabotage.sh",         False, "plants into scratch copies of slot/ only"),
+    (SLOT + "movers.py",           False, "S2e's census over the sets"),
+    (SLOT + "j1_rule.py",          False, "J1's verdict from its cells (the record pins the verdict)"),
+    (SLOT + "vcls.py",             False, "regenerates vcls.out, which is timed (the next row)"),
+    (SLOT,                         True,  "the harness that renders, links, gates and times the cells (drv.c, gen.c, "
+                                          "slot.h, link.py, art.py, plan.py, run.py, vcls.out, enter/, j1/, jobs/)"),
+    ("docs/design/memfn/span_pick/census0.out", True, "plan.py's census: the keys and their sites"),
+    ("docs/",                      False, "design, spec and process text"),
+    ("tests/memfn/arm_fixtures.c", True,  "the fixture binary that renders every arm's site parts (link.py)"),
+    ("tests/",                     False, "the suites: arm_fixtures.c (the row above) is the one tests/ file the slot builds"),
+    ("memfn/data/policy.tsv",      False, "est's r_max_e6 and a `-` card's gate: the record pins both, no TU reads it"),
+    ("memfn/docs/",                False, "the kit's ledger and journal"),
+    ("scripts/",                   False, "box tooling (queue, lock, watchers): runs the jobs, reaches no binary"),
+    ("tools/",                     False, "review tooling over the tree"),
+    ("studies/",                   False, "adopted studies, never built by make"),
+    ("examples/",                  False, "examples, built only by their own test"),
+    ("analyze/",                   False, "pcrec-analyze, a separate binary linking nothing from libpcrec"),
+    (".github/",                   False, "CI configuration"),
+)
+
+def timed(path):
+    """[r11-REV15-7] is a tracked path TIMED (NON_TIMED's first matching row; no row: timed)"""
+    for pat, t, _why in NON_TIMED:
+        if pat.startswith("*") and path.endswith(pat[1:]) or pat.endswith("/") and path.startswith(pat) or path == pat:
+            return t
+    return True
 
 
 class InputError(Exception):
@@ -86,112 +119,298 @@ def r_max(rec):
     return live["r_max_e6"], "NOT pinned by the run record (planned before the row): the live %s's, sha256 %s" % (
         os.path.relpath(plan.POLICY, TREE), plan.sha256(plan.POLICY))
 
-# ---- [rev1.5 R15-1] the FUSED-COMPARE fact, read off the TIMED code -------------------------------------------
-# A verify class's compiled compare is FUSED when every instruction of its timed function (`<sym>_time` in each
-# launch executable) that reads the subject (a memory operand with a base AND an index register: subject + the
-# candidate's position) is a compare of that memory against an immediate: the load IS the compare, it writes FLAGS
-# only, no register receives the loaded value and so no separate ALU op can act on it. Two readings, which must
-# agree: fused_text() over objdump's mnemonics (the derivation), fused_bytes() over the instruction BYTES with its
-# own opcode/ModRM/SIB decode (the check; it shares only objdump's instruction boundaries with the derivation).
-SUBJ_OPERAND = re.compile(r"\(%\w+,%\w+(?:,\d)?\)")
-FUSED_INSN = re.compile(r"(?:cmp|test)[bwlq]?\s+\$-?0x[0-9a-f]+,(?:-?0x[0-9a-f]+)?\(%\w+,%\w+(?:,\d)?\)")
+# ---- [rev1.5 R15-1; r11] the FUSED-COMPARE fact, read off the TIMED code ------------------------------------------
+# A verify class's compiled compare is FUSED when its timed function (`<stem>_time` in each launch executable,
+# decoded over the symbol's own range, [r11-REV15-4]) holds EXACTLY ONE instruction that reads the subject
+# ([r11-REV15-2]) and that instruction is a compare of the subject's memory (against an immediate or a register,
+# [r11-REV15-3]): the load IS the compare, it writes FLAGS only, no register receives the loaded value and so no
+# separate ALU op can act on it. READING THE SUBJECT ([r11-REV15-3]): a memory operand whose base or index register
+# holds the subject pointer or a value made from it, register to register (the pointer arrives in %rdi, SysV's first
+# argument; a register loaded FROM memory holds data, never the pointer); a call reads it too (the callee may), and
+# so does a string instruction through %rsi/%rdi. Two readings, which must agree: fused_text() over objdump's
+# mnemonics and operands (the derivation), fused_bytes() over the instruction BYTES with its own
+# prefix/REX/VEX/EVEX/opcode/ModRM/SIB decode (the check); they share only objdump's instruction boundaries and the
+# rule fact_of(). RESIDUAL ([r11-REV15-4], ACCEPTED): both read every instruction inside the symbol, dead code
+# included (gcc emits none in these loops, and the manifest's sha closes the planting path).
+SUBJ_REG = 7                        # %rdi: the subject pointer, the timed function's first argument
+
+def fact_of(reads):
+    """the rule, over one reading's subject reads (one bool per read: is it a fused compare form): fused iff exactly
+    one read and it is the compare"""
+    return len(reads) == 1 and reads[0]
+
+GPR = {}
+for _n, _names in enumerate((("rax", "eax", "ax", "al", "ah"), ("rcx", "ecx", "cx", "cl", "ch"), ("rdx", "edx", "dx", "dl", "dh"),
+                             ("rbx", "ebx", "bx", "bl", "bh"), ("rsp", "esp", "sp", "spl"), ("rbp", "ebp", "bp", "bpl"),
+                             ("rsi", "esi", "si", "sil"), ("rdi", "edi", "di", "dil"))):
+    GPR.update((x, _n) for x in _names)
+GPR.update(("r%d%s" % (_n, s), _n) for _n in range(8, 16) for s in ("", "d", "w", "b"))
+TEXT_PREFIX = {"data16", "data32", "addr32", "cs", "ds", "es", "ss", "fs", "gs", "lock", "rep", "repz", "repe", "repnz",
+               "repne", "notrack", "bnd"}
+
+def _text_insn(t):
+    """(mnemonic, register operands, memory operands' registers [one set per memory operand], first operand)"""
+    w = t.split(None, 1)
+    while w and (w[0] in TEXT_PREFIX or w[0].startswith("rex")):
+        w = w[1].split(None, 1) if len(w) > 1 else []
+    if not w:
+        return "", set(), [], ""
+    ops, depth, cur = [], 0, ""
+    for ch in (w[1] if len(w) > 1 else ""):
+        if ch == "," and depth == 0:
+            ops.append(cur.strip()); cur = ""
+            continue
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        cur += ch
+    if cur.strip():
+        ops.append(cur.strip())
+    regs, mems = set(), []
+    for o in ops:
+        if "(" in o:
+            mems.append({GPR[r] for r in re.findall(r"%(\w+)", o[o.index("("):]) if r in GPR})
+        elif ":" not in o and o.lstrip("*").startswith("%") and o.lstrip("*")[1:] in GPR:
+            regs.add(GPR[o.lstrip("*")[1:]])
+    if re.fullmatch(r"(sh[lr]|sa[lr]|ro[lr]|rc[lr])[bwlq]?", w[0]) and ops and ops[0] == "%cl":
+        regs.discard(1)             # a shift's count register is a source of the count only (the bytes' encoding)
+    return w[0], regs, mems, (ops[0] if ops else "")
 
 def fused_text(ins):
-    """the derivation: True iff the function reads the subject and every subject read is `cmp/test $imm,(b,i)`"""
-    subj = [t for _b, t in ins if SUBJ_OPERAND.search(t) and not re.match(r"lea\b", t) and "nop" not in t]
-    return bool(subj) and all(FUSED_INSN.fullmatch(t) for t in subj)
+    """the derivation, over objdump's text: fact_of() of the function's subject reads"""
+    dec = [_text_insn(t) for _b, t in ins]
+    if any(m == "(bad)" for m, _r, _s, _f in dec):
+        raise InputError("FUSED-FACT UNDECODED: objdump read (bad) inside a timed function")
+    der = {SUBJ_REG}
+    while True:                     # the subject-derived registers, to a fixed point (flow-insensitive)
+        n = len(der)
+        for m, regs, mems, _f in dec:
+            if m.startswith(("nop", "prefetch")):
+                continue
+            if m.startswith("lea"):
+                if mems and mems[0] & der:
+                    der |= regs
+            elif m.startswith("pop"):
+                der |= regs
+            elif not mems and not re.fullmatch(r"(cmp|test|bt)[bwlq]?", m) and regs & der:
+                der |= regs
+        if len(der) == n:
+            break
+    reads = []
+    for m, regs, mems, first in dec:
+        if m.startswith(("nop", "prefetch", "lea")):
+            continue
+        if m.startswith("call") or any(s & der for s in mems):
+            reads.append(len(mems) == 1 and (bool(re.fullmatch(r"cmp[bwlq]?", m))
+                                             or bool(re.fullmatch(r"test[bwlq]?", m)) and first.startswith("$")))
+    return fact_of(reads)
 
 PREFIXES = {0x26, 0x2E, 0x36, 0x3E, 0x64, 0x65, 0x66, 0x67, 0xF0, 0xF2, 0xF3}
-NO_MODRM = (set(range(0x50, 0x60)) | set(range(0x70, 0x80)) | set(range(0x90, 0x9A)) | set(range(0xB0, 0xC0))
-            | {0x04, 0x05, 0x0C, 0x0D, 0x14, 0x15, 0x1C, 0x1D, 0x24, 0x25, 0x2C, 0x2D, 0x34, 0x35, 0x3C, 0x3D,
-               0x68, 0x6A, 0xA8, 0xA9, 0xC2, 0xC3, 0xC9, 0xCC, 0xE8, 0xE9, 0xEB})
-NO_MODRM_0F = set(range(0x80, 0x90)) | {0x05, 0x0B, 0x31, 0xA2}
+NO_MODRM = (set(range(0x50, 0x60)) | set(range(0x70, 0x80)) | set(range(0x90, 0x9A)) | set(range(0xA0, 0xB0))
+            | set(range(0xB0, 0xC0)) | {0x04, 0x05, 0x0C, 0x0D, 0x14, 0x15, 0x1C, 0x1D, 0x24, 0x25, 0x2C, 0x2D, 0x34,
+                                        0x35, 0x3C, 0x3D, 0x68, 0x6A, 0xC2, 0xC3, 0xC9, 0xCC, 0xE8, 0xE9, 0xEB, 0x98, 0x99})
+NO_MODRM_0F = set(range(0x80, 0x90)) | {0x05, 0x0B, 0x31, 0x77, 0xA2}
+GROUP = {0x80, 0x81, 0x83, 0x8F, 0xC0, 0xC1, 0xC6, 0xC7, 0xD0, 0xD1, 0xD2, 0xD3, 0xF6, 0xF7, 0xFE, 0xFF}  # reg = opcode ext.
+GROUP_0F = {0x00, 0x01, 0xAE, 0xBA, 0xC7} | set(range(0x18, 0x20)) | set(range(0x90, 0xA0))
+BYTE_OPS = {0x00, 0x02, 0x08, 0x0A, 0x10, 0x12, 0x18, 0x1A, 0x20, 0x22, 0x28, 0x2A, 0x30, 0x32, 0x38, 0x3A, 0x84, 0x86,
+            0x88, 0x8A, 0x80, 0xC0, 0xC6, 0xD0, 0xD2, 0xF6, 0xFE}       # 8-bit reg and r/m: ah..bh without a REX
+STRING_REGS = {0xA4: {6, 7}, 0xA5: {6, 7}, 0xA6: {6, 7}, 0xA7: {6, 7}, 0xAA: {7}, 0xAB: {7}, 0xAC: {6}, 0xAD: {6},
+               0xAE: {7}, 0xAF: {7}}
+
+def _byte_insn(b, t):
+    """one instruction's decode: (op, vex, reg field, r/m register or None, memory registers or None, call?)"""
+    def need(k):
+        if k >= len(b):
+            raise InputError("FUSED-FACT UNDECODED: %r (%s)" % (t, " ".join("%02x" % x for x in b)))
+    i = 0
+    while i < len(b) and b[i] in PREFIXES:
+        i += 1
+    need(i)
+    rex = b[i] if 0x40 <= b[i] <= 0x4F else 0
+    i += 1 if rex else 0
+    need(i)
+    vex = b[i] in (0xC4, 0xC5, 0x62)          # 64-bit mode: always VEX (C4/C5) or EVEX (62)
+    if vex:
+        need(i + 1)
+        p = b[i + 1]
+        R, X, B = (~p >> 7) & 1, (~p >> 6) & 1 if b[i] != 0xC5 else 0, (~p >> 5) & 1 if b[i] != 0xC5 else 0
+        mm, i = (1, i + 2) if b[i] == 0xC5 else ((p & 0x1F), i + 3) if b[i] == 0xC4 else ((p & 7), i + 4)
+        if mm not in (1, 2, 3):
+            raise InputError("FUSED-FACT UNDECODED: %r (VEX/EVEX map %d)" % (t, mm))
+        rex = 0x40 | R << 2 | X << 1 | B
+        need(i)
+        op = ((0x0F,), (0x0F, 0x38), (0x0F, 0x3A))[mm - 1] + (b[i],)
+        j, has = i + 1, not (mm == 1 and b[i] in NO_MODRM_0F)
+    elif b[i] == 0x0F:
+        need(i + 1)
+        if b[i + 1] in (0x38, 0x3A):
+            need(i + 2)
+            op, j, has = (0x0F, b[i + 1], b[i + 2]), i + 3, True
+        else:
+            op, j, has = (0x0F, b[i + 1]), i + 2, b[i + 1] not in NO_MODRM_0F
+    else:
+        op, j, has = (b[i],), i + 1, b[i] not in NO_MODRM
+    call = op == (0xE8,)
+    if not has:
+        if len(op) == 1 and op[0] in STRING_REGS:
+            return op, vex, None, None, STRING_REGS[op[0]], call
+        r = ((op[0] & 7) | (8 if rex & 1 else 0) if len(op) == 1 and (0x50 <= op[0] <= 0x5F or 0x90 <= op[0] <= 0x97
+                                                                       or 0xB0 <= op[0] <= 0xBF) else None)
+        return op, vex, r, None, None, call
+    need(j)
+    mod, reg, rm = b[j] >> 6, (b[j] >> 3) & 7, b[j] & 7
+    byte_op = not rex and not vex and (len(op) == 1 and op[0] in BYTE_OPS)
+    byte_rm = byte_op or (not rex and not vex and len(op) == 2 and (op[1] in (0xB6, 0xBE) or 0x90 <= op[1] <= 0x9F))
+    regn = (reg & 3 if byte_op and reg >= 4 else reg) | (8 if rex & 4 else 0)
+    if len(op) == 1 and op[0] in GROUP or len(op) == 2 and op[1] in GROUP_0F and not vex:
+        regn = None
+    call = call or (op == (0xFF,) and reg in (2, 3))
+    if mod == 3:
+        return op, vex, (reg, regn), (rm & 3 if byte_rm and rm >= 4 else rm) | (8 if rex & 1 else 0), None, call
+    if rm == 4:
+        need(j + 1)
+        sib = b[j + 1]
+        idx = ((sib >> 3) & 7) | (8 if rex & 2 else 0)
+        base = None if (sib & 7) == 5 and mod == 0 else (sib & 7) | (8 if rex & 1 else 0)
+        mem = {x for x in (base, None if idx == 4 else idx) if x is not None}
+    elif rm == 5 and mod == 0:
+        mem = set()                           # RIP-relative
+    else:
+        mem = {rm | (8 if rex & 1 else 0)}
+    return op, vex, (reg, regn), None, mem, call
 
 def fused_bytes(ins):
-    """the check, from the bytes: True iff some instruction has a SIB memory operand with an index register and
-    every such one (LEA 8D and the NOP family 0F 18-1F aside) is CMP r/m,imm (80/81/83 /7) or TEST r/m,imm (F6/F7 /0)"""
-    seen = False
-    for b, t in ins:
-        i = 0
-        while i < len(b) and b[i] in PREFIXES:
-            i += 1
-        rex = b[i] if i < len(b) and 0x40 <= b[i] <= 0x4F else 0
-        i += 1 if rex else 0
-        if i >= len(b):
-            raise InputError("FUSED-FACT UNDECODED: %r (%s)" % (t, " ".join("%02x" % x for x in b)))
-        if b[i] == 0x0F:
-            if i + 1 >= len(b):
-                raise InputError("FUSED-FACT UNDECODED: %r" % t)
-            op, j, has = (0x0F, b[i + 1]), i + 2, b[i + 1] not in NO_MODRM_0F
-            if b[i + 1] in (0x38, 0x3A):
-                op, j, has = (0x0F, b[i + 1], b[i + 2]), i + 3, True
-        else:
-            op, j, has = (b[i],), i + 1, b[i] not in NO_MODRM
-        if not has:
+    """the check, from the bytes: fact_of() of the function's subject reads, each a fused compare form iff it is
+    CMP r/m,r or r,r/m (38-3B), CMP r/m,imm (80/81/83 /7) or TEST r/m,imm (F6/F7 /0) and not VEX/EVEX"""
+    dec = [_byte_insn(b, t) for b, t in ins]
+    nop = lambda op: len(op) == 2 and op[0] == 0x0F and 0x18 <= op[1] <= 0x1F
+    def nowrite(op, reg):
+        return (op in ((0x38,), (0x39,), (0x3A,), (0x3B,), (0x84,), (0x85,), (0x0F, 0xA3))
+                or op in ((0x80,), (0x81,), (0x83,)) and reg == 7 or op in ((0xF6,), (0xF7,)) and reg in (0, 1)
+                or op == (0x0F, 0xBA) and reg == 4)
+    der = {SUBJ_REG}
+    while True:                     # the subject-derived registers, to a fixed point (flow-insensitive)
+        n = len(der)
+        for op, vex, rg, rmr, mem, _call in dec:
+            if vex or nop(op):
+                continue
+            if mem is None and rmr is None:          # no ModRM: push/pop/xchg/mov imm by the opcode's register
+                if rg is not None and 0x58 <= op[0] <= 0x5F:
+                    der.add(rg)
+                elif rg is not None and (0x90 <= op[0] <= 0x97) and ({0, rg} & der):
+                    der |= {0, rg}
+                continue
+            if op == (0x8D,):
+                if mem & der:
+                    der.add(rg[1])
+            elif mem is None and not nowrite(op, rg[0]):
+                regs = {x for x in (rg[1], rmr) if x is not None}
+                if regs & der:
+                    der |= regs
+        if len(der) == n:
+            break
+    reads = []
+    for op, vex, rg, _rmr, mem, call in dec:
+        if nop(op) or op == (0x8D,):
             continue
-        if j >= len(b):
-            raise InputError("FUSED-FACT UNDECODED: %r" % t)
-        mod, reg, rm = b[j] >> 6, (b[j] >> 3) & 7, b[j] & 7
-        if mod == 3 or rm != 4:
-            continue
-        if j + 1 >= len(b):
-            raise InputError("FUSED-FACT UNDECODED: %r" % t)
-        if ((b[j + 1] >> 3) & 7 | (8 if rex & 2 else 0)) == 4:
-            continue                      # a SIB without an index: not subject + position
-        if op == (0x8D,) or (op[0] == 0x0F and len(op) == 2 and 0x18 <= op[1] <= 0x1F):
-            continue
-        seen = True
-        if not ((op[0] in (0x80, 0x81, 0x83) and len(op) == 1 and reg == 7) or (op in ((0xF6,), (0xF7,)) and reg == 0)):
-            return False
-    return seen
+        if call or (mem is not None and mem & der):
+            reads.append(not vex and rg is not None and (op in ((0x38,), (0x39,), (0x3A,), (0x3B,))
+                                                       or op in ((0x80,), (0x81,), (0x83,)) and rg[0] == 7
+                                                       or op in ((0xF6,), (0xF7,)) and rg[0] == 0))
+    return fact_of(reads)
 
 FUSED_DERIVE = fused_text           # the derivation the fact is taken from (est's self-test swaps it to plant one)
 
 def disasm(exe):
     """{symbol stem: [(bytes, mnemonic text)]} for every `<stem>_time` function of exe (objdump -d, one line per
-    instruction at --insn-width=16)"""
+    instruction at --insn-width=16), [r11-REV15-4] the instructions inside the symbol's own range only (nm -S: its
+    address and size; the alignment padding after it is never read)"""
+    r = subprocess.run(["nm", "-S", "--defined-only", exe], capture_output=True, text=True)
+    if r.returncode:
+        raise InputError("nm %s: rc %d %s" % (exe, r.returncode, r.stderr[-300:]))
+    rng = {}
+    for ln in r.stdout.splitlines():
+        f = ln.split()
+        if len(f) == 4 and f[3].endswith("_time"):
+            rng[f[3][:-5]] = (int(f[0], 16), int(f[0], 16) + int(f[1], 16))
     r = subprocess.run(["objdump", "-d", "--insn-width=16", exe], capture_output=True, text=True)
     if r.returncode:
         raise InputError("objdump %s: rc %d %s" % (exe, r.returncode, r.stderr[-300:]))
-    out, cur = {}, None
+    out, cur, lim = {}, None, None
     for ln in r.stdout.splitlines():
         m = re.match(r"[0-9a-f]+ <(\w+)_time>:$", ln)
         if m:
-            cur = out.setdefault(m.group(1), [])
+            if m.group(1) not in rng:
+                raise InputError("%s: %s_time has no symbol size (nm -S): its range is unknown" % (exe, m.group(1)))
+            cur, lim = out.setdefault(m.group(1), []), rng[m.group(1)]
             continue
         if re.match(r"[0-9a-f]+ <", ln):
             cur = None
             continue
-        m = re.match(r"\s*[0-9a-f]+:\t([0-9a-f ]+?)\s*\t(.*)$", ln)
-        if m and cur is not None:
-            cur.append(([int(x, 16) for x in m.group(1).split()], re.sub(r"\s*#.*$", "", m.group(2)).strip()))
+        m = re.match(r"\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)$", ln)
+        if m and cur is not None and lim[0] <= int(m.group(1), 16) < lim[1]:
+            cur.append(([int(x, 16) for x in m.group(2).split()], re.sub(r"\s*#.*$", "", m.group(3)).strip()))
     return out
 
-def arm_syms(rundir, job):
-    """{arm name: its symbol stem} from the job's slot table (link.py's obj/tab.c: `{ "NAME", K_..., aK_time`)"""
-    p = os.path.join(rundir, job, "obj", "tab.c")
+def manifest_check(rundir, rec, j, L):
+    """[r11-REV15-1] job j's MANIFEST (run.py dry's: the run id and the sha-256 of the frozen plan and of every launch
+    executable) against the run directory, and against the record's pin of it (`manifest_sha256_<job>`, from the
+    window after the second) when the record has one: (the manifest's sha-256, pinned?)"""
+    p = os.path.join(rundir, j, "manifest.tsv")
     if not os.path.exists(p):
-        raise InputError("job %s ran but %s is absent (the fused-compare fact is read from the timed code)" % (job, p))
-    return dict(re.findall(r'\{ "([^"]+)", K_\w+, (a\d+)_time', open(p).read()))
+        raise InputError("job %s ran but %s is absent (the fused-compare fact is read from the code it pins)" % (j, p))
+    m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(p) if ln.strip() and not ln.startswith("#"))
+    msha, pin = plan.sha256(p), rec["run"].get("manifest_sha256_" + j)
+    if pin is not None and pin != msha:
+        raise InputError("MANIFEST MISMATCH job %s: %s's sha-256 is %s, the record pins %s" % (j, p, msha, pin))
+    if m.get("run_id") != rec["run"]["run_id"]:
+        raise InputError("MANIFEST MISMATCH job %s: the manifest's run id %s, the record's %s" % (j, m.get("run_id"), rec["run"]["run_id"]))
+    if m.get("plan") != plan.sha256(os.path.join(rundir, "plan.tsv")):
+        raise InputError("MANIFEST MISMATCH job %s: plan.tsv is not the plan the manifest pins" % j)
+    for l in range(1, L + 1):
+        exe = os.path.join(rundir, j, "L%d" % l, "%s.L%d" % (j, l))
+        if not os.path.exists(exe):
+            raise InputError("job %s ran but its launch executable %s is absent (the fused-compare fact is read "
+                             "from the timed code)" % (j, exe))
+        if plan.sha256(exe) != m.get("L%d" % l):
+            raise InputError("MANIFEST MISMATCH job %s: launch %d's executable is not the one the manifest pins (the "
+                             "code the cells timed)" % (j, l))
+    return msha, pin is not None
 
-def fused_facts(rundir, keys, L):
-    """[rev1.5 R15-1] {verify row key: the FUSED-COMPARE fact}, read from every launch executable of the row's job
-    for the arm and its twin; the two readings must agree on every function, and the fact must be one per row"""
-    out = {}
+def plan_stems(rundir, j):
+    """[r11-REV15-1] {arm name: its symbol stem} for verify job j from the PINNED plan (RUNDIR/plan.tsv, the manifest
+    pins its sha): link.py numbers a job's arms a0, a1, .. in plan.build's order with the control left out, and a
+    verify job's order is its null bases by class, then each row and its twin in row order. The slot table
+    obj/tab.c, which no manifest pins, must agree when it is present (STEM MISMATCH)"""
+    fr = plan.read_frozen(os.path.join(rundir, "plan.tsv"))
+    rows = [f for f in fr.get("rows", []) if f[2] == j]
+    if not rows or not all(f[0].startswith("kit.verify_cmp.") and f[4].startswith("base.null.") for f in rows):
+        raise InputError("job %s's pinned plan rows are not all verify rows on a null base: no stem order for it" % j)
+    arms = sorted({f[4] for f in rows}) + [a for f in rows for a in (f[0], f[0] + "#b")]
+    n = {f[0]: f[1] for f in fr.get("jobs", [])}.get(j)
+    if n != str(len(arms) + 1):
+        raise InputError("job %s: the pinned plan states %s arms, its verify order %d and the control" % (j, n, len(arms)))
+    stems = {a: "a%d" % k for k, a in enumerate(arms)}
+    p = os.path.join(rundir, j, "obj", "tab.c")
+    if os.path.exists(p):
+        tab = dict(re.findall(r'\{ "([^"]+)", K_\w+, (a\d+)_time', open(p).read()))
+        if tab != stems:
+            bad = sorted(a for a in set(tab) | set(stems) if tab.get(a) != stems.get(a))
+            raise InputError("STEM MISMATCH job %s: obj/tab.c's stems differ from the pinned plan's arm order (%s)"
+                             % (j, ", ".join(bad[:4])))
+    return stems
+
+def fused_facts(rundir, rec, keys, L):
+    """[rev1.5 R15-1] ({verify row key: the FUSED-COMPARE fact}, {job: manifest_check's answer}), read from every
+    launch executable of the row's job (each the one its manifest pins, r11-REV15-1) for the arm and its twin; the
+    two readings must agree on every function, the fact must be one per row, and [r11-REV15-10] each row's null
+    base must NOT be fused (§3.5¶3b's bound assumes an un-fused base)"""
+    out, pins = {}, {}
     for j in sorted({j for _k, j in keys}):
-        syms = arm_syms(rundir, j)
-        code = []
-        for l in range(1, L + 1):
-            exe = os.path.join(rundir, j, "L%d" % l, "%s.L%d" % (j, l))
-            if not os.path.exists(exe):
-                raise InputError("job %s ran but its launch executable %s is absent (the fused-compare fact is read "
-                                 "from the timed code)" % (j, exe))
-            code.append(disasm(exe))
-        for key in sorted(k for k, jj in keys if jj == j):
+        pins[j] = manifest_check(rundir, rec, j, L)
+        syms = plan_stems(rundir, j)
+        code = [disasm(os.path.join(rundir, j, "L%d" % l, "%s.L%d" % (j, l))) for l in range(1, L + 1)]
+        def fact(arms, name):
             got = set()
-            for arm in (key, key + "#b"):
-                if arm not in syms:
-                    raise InputError("%s is not in job %s's slot table" % (arm, j))
+            for arm in arms:
                 for l, d in enumerate(code, 1):
                     ins = d.get(syms[arm])
                     if not ins:
@@ -203,29 +422,70 @@ def fused_facts(rundir, keys, L):
                                                            "not fused" if f else "fused"))
                     got.add(f)
             if len(got) != 1:
-                raise InputError("FUSED-FACT UNSTABLE %s: fused in some launches or arm/twin, not in others" % key)
-            out[key] = got.pop()
-    return out
+                raise InputError("FUSED-FACT UNSTABLE %s: fused in some launches or arm/twin, not in others" % name)
+            return got.pop()
+        mine = sorted(k for k, jj in keys if jj == j)
+        for key in mine:
+            out[key] = fact((key, key + "#b"), key)
+        for b in sorted({plan.base_of(k) for k in mine}):
+            if fact((b,), b):
+                raise InputError("FUSED-FACT BASE %s: the null base's own compiled code is fused (one subject read, a "
+                                 "compare): the bound of measures.md §3.5¶3b assumes an un-fused base" % b)
+    return out, pins
 
-def est_commit():
-    """[rev1.5 R15-2] (the commit of this estimator, None) or (None, why): HEAD of the tree est.py is in, refused
-    when slot/ has uncommitted changes there (a draft must name a commit whose rules reproduce it)"""
+def est_inputs():
+    """[r11-REV15-6] the files whose text is the estimator's rules: est.py, every module it imported from outside the
+    standard library, the digest's ks_ref.py, and the live policy table"""
+    std = os.path.realpath(os.path.dirname(os.__file__)) + os.sep
+    mods = {os.path.realpath(m.__file__) for m in list(sys.modules.values()) if getattr(m, "__file__", None)}
+    return ([os.path.realpath(__file__)] + sorted(p for p in mods if not p.startswith(std) and p != os.path.realpath(__file__))
+            + [os.path.join(TREE, "tests", "knowledge", "ks_ref.py"), plan.POLICY])
+
+def est_commit(paths=None):
+    """[rev1.5 R15-2, r11-REV15-6] (the commit of this estimator, None) or (None, why): HEAD of the tree est.py is
+    in, refused unless EVERY input of its rules (est_inputs; paths[0] the estimator) is tracked at HEAD with a blob
+    identical to the file (git hash-object vs ls-tree): an uncommitted edit, an untracked or ignored copy, or a file
+    outside the tree has no commit that reproduces the draft"""
+    paths = paths or est_inputs()
     def git(*a):
-        return subprocess.run(["git", "-C", HERE] + list(a), capture_output=True, text=True)
-    h = git("rev-parse", "HEAD")
-    if h.returncode or not re.fullmatch(r"[0-9a-f]{40}", h.stdout.strip()):
+        return subprocess.run(["git", "-C", os.path.dirname(os.path.realpath(paths[0]))] + list(a), capture_output=True, text=True)
+    h, top = git("rev-parse", "HEAD"), git("rev-parse", "--show-toplevel")
+    if h.returncode or top.returncode or not re.fullmatch(r"[0-9a-f]{40}", h.stdout.strip()):
         return None, "est.py is not in a git tree"
-    if git("status", "--porcelain", "--", ".").stdout.strip():
-        return None, "slot/ has uncommitted changes at %s" % h.stdout.strip()[:12]
-    return h.stdout.strip(), None
+    head, top = h.stdout.strip(), os.path.realpath(top.stdout.strip())
+    for p in paths:
+        rel = os.path.relpath(os.path.realpath(p), top)
+        if rel.startswith(".."):
+            return None, "%s is outside the tree %s" % (p, top)
+        t = git("-C", top, "ls-tree", "HEAD", "--", rel)
+        m = re.match(r"\d+ blob ([0-9a-f]{40})\t", t.stdout)
+        if not m:
+            return None, "%s is not tracked at HEAD %s (an untracked or ignored copy)" % (rel, head[:12])
+        if git("-C", top, "hash-object", "--", os.path.realpath(p)).stdout.strip() != m.group(1):
+            return None, "%s differs from its blob at HEAD %s (uncommitted)" % (rel, head[:12])
+    return head, None
 
-def timed_moved(code_commit, commit):
-    """[rev1.5 R15-2] the TIMED_PATHS whose text differs between the record's code_commit and the est commit"""
-    r = subprocess.run(["git", "-C", HERE, "diff", "--name-only", code_commit, commit, "--"]
-                       + [":(top)" + p for p in TIMED_PATHS], capture_output=True, text=True)
+def timed_moved(code_commit, commit, where=HERE):
+    """[rev1.5 R15-2, r11-REV15-7] the TIMED paths (timed()) whose text differs between the record's code_commit and
+    the est commit, in the tree `where` is in"""
+    r = subprocess.run(["git", "-C", where, "diff", "--name-only", code_commit, commit], capture_output=True, text=True)
     if r.returncode:
         raise InputError("git diff %s %s: %s" % (code_commit[:12], commit[:12], r.stderr.strip()[-200:]))
-    return r.stdout.split()
+    return [p for p in r.stdout.split() if timed(p)]
+
+def draft_gate(code_commit, paths=None):
+    """[rev1.5 R15-2] the est commit a draft may name, or a refusal: no commit reproduces this estimator, or the
+    timed code moved between the record's code_commit and it"""
+    paths = paths or est_inputs()
+    commit, why = est_commit(paths)
+    if not commit:
+        raise InputError("no draft from an uncommitted estimator (%s): a draft names the est commit that scored it" % why)
+    moved = timed_moved(code_commit, commit, os.path.dirname(os.path.realpath(paths[0])))
+    if moved:
+        raise InputError("the timed code moved between the record's code_commit %s and the est commit %s (%s): a "
+                         "later est scores frozen cells only over unchanged timed code" % (
+                             code_commit[:12], commit[:12], ", ".join(moved[:8])))
+    return commit
 
 def split_gap(v):
     """the largest gap between two clusters of >= 2 launches in v sorted (k in 2 .. L-2, §3.5¶4's clusters)"""
@@ -356,7 +616,7 @@ def compute(rundir):
     out = {}
     W = None
     # [rev1.5 R15-1] every ran verify row's FUSED-COMPARE fact, from its timed code
-    fused = fused_facts(rundir, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
+    fused, pins = fused_facts(rundir, rec, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
     for key, group, j, est, base in rows:
         if j not in ran:
             out[key] = {"absent": "never-ran:%s" % j}
@@ -389,10 +649,13 @@ def compute(rundir):
         r.update(x=x, value=med(x), aa=aa, noise=isqrt_rn(aa * aa + sp2(x)))
         if r["D"] is not None and fused.get(key):
             # [rev1.5 R15-1] THE FUSED-COMPARE BOUND, scoped by the class fact (never by the sign): the compare is the
-            # candidate load itself, so no base made by removing it can be null; a MEASURED row at 0 bounded by
-            # max(r_max, |med(x_l)|)
-            r.update(null=False, fused=True, value=0, noise=max(R_MAX, abs(r["value"])),
-                     why="fused-compare bound: value 0, noise max(r_max %d, |med| %d)" % (R_MAX, abs(r["value"])))
+            # candidate load itself, so no base made by removing it can be null; a MEASURED row bounded by
+            # max(r_max, |med(x_l)|). [r11-REV15-5] Its value is max(0, med(x_l)): the fused D is biased negative (the
+            # base pays the un-fused load), so a positive median is a lower bound and 0 is known wrong there; the
+            # fact decides the scope, the sign picks the value inside it
+            r.update(null=False, fused=True, value=max(r["value"], 0), noise=max(R_MAX, abs(r["value"])),
+                     why="fused-compare bound: value %d, noise max(r_max %d, |med| %d)" % (
+                         max(r["value"], 0), R_MAX, abs(r["value"])))
         elif r["D"] is not None:
             aaD = med([abs(r["Db"][i] - r["D"][i]) for i in range(L)])
             r["null"] = not (all(d > 0 for d in trim(r["D"])) and med(r["D"]) > aaD)
@@ -464,7 +727,7 @@ def compute(rundir):
         outcome = ("PARTIAL", 4, sorted(absent))
     else:
         outcome = ("FULL", 0, [])
-    return out, drift, unit_bad, outcome, W
+    return out, drift, unit_bad, outcome, W, pins
 
 def notes(rundir, out=None):
     """[rev1.4 R14-3, R14-4] the run's NOTE lines (the record's `run` keys note_box_state and note_bimodal, the
@@ -516,7 +779,7 @@ def main():
     if cmd == "selftest":
         return selftest(rundir)
     try:
-        out, drift, unit_bad, outcome, W = compute(rundir)
+        out, drift, unit_bad, outcome, W, pins = compute(rundir)
     except InputError as e:
         print("est: REFUSED input: %s" % e)
         return 2
@@ -524,6 +787,9 @@ def main():
         print("policy\tr_max_e6\t%d\t%s" % r_max(read_record(rundir)))
         c, why = est_commit()
         print("est\tcommit\t%s" % (c or "none: " + why))
+        for j, (msha, pinned) in sorted(pins.items()):     # [r11-REV15-1]
+            print("manifest\t%s\t%s\t%s" % (j, msha, "pinned by the run record" if pinned else
+                                             "NOT pinned by the run record (finalized before the pin): checked as it stands"))
         for k in sorted(out):
             r = out[k]
             if "absent" in r:
@@ -556,14 +822,7 @@ def write_draft(rundir, path, out, drift, outcome):
         if not rec["run"].get(k):
             raise InputError("the record's run section has no %s (record.py window writes it)" % k)
     texts = cell_texts(rundir, rec)
-    commit, why = est_commit()             # [rev1.5 R15-2]
-    if not commit:
-        raise InputError("no draft from an uncommitted estimator (%s): a draft names the est commit that scored it" % why)
-    moved = timed_moved(rec["run"]["code_commit"], commit)
-    if moved:
-        raise InputError("the timed code moved between the record's code_commit %s and the est commit %s (%s): a "
-                         "later est scores frozen cells only over unchanged timed code" % (
-                             rec["run"]["code_commit"][:12], commit[:12], ", ".join(moved[:8])))
+    commit = draft_gate(rec["run"]["code_commit"])       # [rev1.5 R15-2, r11-REV15-6, r11-REV15-7]
     rsha = hashlib.sha256(open(os.path.join(rundir, "run_record.tsv"), "rb").read()).hexdigest()
     # the ver-3 cards as the record pins them, VERBATIM: each states its declared gate_e6 (`-`), so check C's
     # set-vs-card-table equality holds; the value a `-` took is the record's pinned policy ([rev1.3 r9fc-FIX-8])
@@ -588,8 +847,8 @@ def write_draft(rundir, path, out, drift, outcome):
         if r.get("null"):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
-        elif r.get("fused"):              # [rev1.5 R15-1]
-            rows.append([k, unit, "0", str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
+        elif r.get("fused"):              # [rev1.5 R15-1, r11-REV15-5]
+            rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
                          FUSED_TAG if tags == "-" else tags + ";" + FUSED_TAG,
                          "slot %s fused-compare bound r_max %d; %s" % (r["job"], rec_rmax, FUSED_EVIDENCE)])
         else:
@@ -629,20 +888,31 @@ def write_draft(rundir, path, out, drift, outcome):
 
 # ---- the self-test (r9 G3): the cross-checks above, each case a refusal or an outcome ---------------------------
 SYNTH_FUSED = ("l1", "c1")      # [rev1.5 R15-1] the classes the synthetic timed code compiles fused, as gcc does today
+# [r11] the bodies a synthetic class or base may be compiled with (`variant` below): gcc -O2's lowering of each
+SYNTH_BODY = {
+    "fused":  "s[*p] == 0x2f",                                     # cmpb $imm,(s,i): ONE subject read, the compare
+    "masked": "(s[*p] & 0xdf) == 0x58",                            # a load, then an ALU op
+    "load":   "({ int one = 1; __asm__ volatile(\"\" : \"+r\"(one) : \"r\"(s[*p])); one; })",   # a null base's load
+    "two":    "s[*p] == 0x2f && s[*p + 1] == 0x75",                # [r11-REV15-2] two fused compares
+    "l8":     "memcmp(s + *p, \"/usr/bin\", 8) == 0",              # [r11-REV15-3] cmp %reg,(s,i) (opcode 39)
+    "ptr":    "({ const unsigned char *q = s + *p; __asm__(\"\" : \"+r\"(q)); q[0] == 0x2f; })",  # [r11-REV15-3] cmpb $imm,(q)
+}
 
-def _synth_code(scratch, arms, fused):
+def _synth_code(scratch, arms, fused, variant=None):
     """[rev1.5 R15-1] REAL timed code for a synthetic job: one `aK_time` per arm (link.py's symbol stems, its
     pointer-bump candidate loop), a class in `fused` comparing the candidate byte against an immediate (gcc fuses
     the load into the compare), any other class masking it first (a separate load and ALU op), a null base loading it
-    into a register; compiled once per (arms, fused) by gcc -O2 (identical-code folding off, so every stem stays)"""
-    src = ["#include <stddef.h>", "#include <stdint.h>"]
+    into a register; [r11] `variant` {class or base name: SYNTH_BODY kind} overrides one; compiled once per text by
+    gcc -O2 (identical-code folding off, so every stem stays)"""
+    variant = variant or {}
+    src = ["#include <stddef.h>", "#include <stdint.h>", "#include <string.h>"]
     for k, a in enumerate(arms):
         cls = a.name.split(".")[3] if a.name.startswith("kit.verify_cmp.") else None
-        body = ("({ int one = 1; __asm__ volatile(\"\" : \"+r\"(one) : \"r\"(s[*p])); one; })" if a.name.startswith("base.")
-                else "s[*p] == 0x2f" if cls in fused else "(s[*p] & 0xdf) == 0x58")
+        kind = (variant.get(a.name, "load") if a.name.startswith("base.")
+                else variant.get(cls, "fused" if cls in fused else "masked"))
         src.append("__attribute__((noinline)) uint64_t a%d_time(const unsigned char *s, size_t n, const uint32_t *c, "
                    "size_t nc)\n{\n    (void)n;\n    uint64_t k = 0;\n    for (const uint32_t *p = c, *e = c + nc; p < e; "
-                   "p++) k += (%s) != 0;\n    return k;\n}" % (k, body))
+                   "p++) k += (%s) != 0;\n    return k;\n}" % (k, SYNTH_BODY[kind]))
     text = "\n".join(src) + "\n"
     o = os.path.join(scratch, "synth_code.%s.o" % hashlib.sha256(text.encode()).hexdigest()[:16])
     if not os.path.exists(o):
@@ -651,22 +921,44 @@ def _synth_code(scratch, arms, fused):
                         o[:-2] + ".c", "-o", o], check=True)
     return o
 
-def _synth_launches(d, j, arms, fused, launches=None):
+def _synth_manifest(d, j):
+    """[r11-REV15-1] job j's manifest as run.py dry writes it (the run id, the plan's and every launch's sha-256)"""
+    run_id = read_record(d)["run"]["run_id"] if os.path.exists(os.path.join(d, "run_record.tsv")) else "selftest"
+    m = {"run_id": run_id, "plan": plan.sha256(os.path.join(d, "plan.tsv"))}
+    for l in range(1, plan.L_LAUNCHES + 1):
+        m["L%d" % l] = plan.sha256(os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l)))
+    open(os.path.join(d, j, "manifest.tsv"), "w").write("#name\tvalue\n" + "".join("%s\t%s\n" % kv for kv in sorted(m.items())))
+
+def _synth_pin(d, j="J4", drop=False):
+    """[r11-REV15-1] the record's pin of job j's manifest (record.py finalize's `manifest_sha256_<job>`), or none"""
+    import record
+    p = os.path.join(d, "run_record.tsv")
+    rec = record.read(p)
+    rec["run"] = [r for r in rec["run"] if r[0] != "manifest_sha256_" + j]
+    if not drop:
+        record.setrun(rec, "manifest_sha256_" + j, plan.sha256(os.path.join(d, j, "manifest.tsv")))
+    record.write(p, rec)
+
+def _synth_launches(d, j, arms, fused, launches=None, variant=None, manifest=True):
     """job j's slot table and launch executables (the synthetic code object, copied per launch; `launches`: only
-    those launches rewritten)"""
+    those launches rewritten), [r11-REV15-1] and its manifest unless `manifest` is False (the record's pin is the
+    caller's, _synth_pin)"""
     os.makedirs(os.path.join(d, j, "obj"), exist_ok=True)
     open(os.path.join(d, j, "obj", "tab.c"), "w").write("".join(
         '    { "%s", K_%s, a%d_time, a%d_gate, ... },\n' % (a.name, "NULL" if a.name.startswith("base.") else "CMP", k, k)
         for k, a in enumerate(arms)))
-    o = _synth_code(os.path.dirname(d), arms, fused)
+    o = _synth_code(os.path.dirname(d), arms, fused, variant)
     for l in launches or range(1, plan.L_LAUNCHES + 1):
         os.makedirs(os.path.join(d, j, "L%d" % l), exist_ok=True)
         shutil.copyfile(o, os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l)))
+    if manifest:
+        _synth_manifest(d, j)
 
 def _synth(d, run_id="selftest"):
     """a synthetic finalized run directory: the live plan frozen, every timing job ran, linear cells (a slope
     arm's per-byte cost and a delta arm's per-event cost by its key's hash, so rows differ), no clock;
-    [rev1.5 R15-1] each verify job's timed code compiled (_synth_code)"""
+    [rev1.5 R15-1] each verify job's timed code compiled (_synth_code), [r11-REV15-1] its manifest written and
+    pinned by the record"""
     import record
     if os.path.exists(d):
         shutil.rmtree(d)
@@ -697,7 +989,93 @@ def _synth(d, run_id="selftest"):
         open(os.path.join(d, "cells.%s.tsv" % j), "w").write(cells_text(run_id, lines))
         if any(a.name.startswith("kit.verify_cmp.") for a in arms):
             _synth_launches(d, j, [a for a in arms if a.kind != "ctl"], SYNTH_FUSED)
+            _synth_pin(d, j)
     return d
+
+# [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
+# readings must give; a disagreement or another answer is WRONG
+READING_CASES = (
+    ("a fused compare beside a VEX load of the subject: not fused (both read the VEX operand)",
+     "cmpb $0x2f,(%rdi,%rcx,1)\n vmovdqu (%rdi,%rcx,1),%ymm0\n ret", False),
+    ("an EVEX load of the subject alone: not fused", "vmovdqu64 (%rdi,%rcx,1),%zmm0\n ret", False),
+    ("the subject as a base-less SIB index beside a fused compare: two reads, not fused",
+     "cmpb $0x2f,(%rdi,%rcx,1)\n movzbl 0x40(,%rdi,1),%eax\n ret", False),
+    ("a table read through a base-less SIB beside a fused compare: one subject read, fused",
+     "cmpb $0x2f,(%rdi,%rcx,1)\n movzbl 0x40(,%rcx,1),%eax\n ret", True),
+    ("cmp %reg,mem (39): fused", "mov (%rdx),%ecx\n cmp %r8,(%rdi,%rcx,1)\n ret", True),
+    ("cmp mem,%reg (3B): fused", "mov (%rdx),%ecx\n cmp (%rdi,%rcx,1),%r8d\n ret", True),
+    ("cmp through a computed pointer, no index: fused",
+     "mov (%rdx),%eax\n add %rdi,%rax\n cmpl $0x7273752f,(%rax)\n ret", True),
+    ("two fused compares: not fused", "cmpb $0x2f,(%rdi,%rcx,1)\n cmpb $0x75,1(%rdi,%rcx,1)\n ret", False),
+    ("a call beside a fused compare: not fused", "cmpb $0x2f,(%rdi,%rcx,1)\n call a0_time\n ret", False),
+    ("a load past the symbol's size (padding) beside a fused compare: fused",
+     "cmpb $0x2f,(%rdi,%rcx,1)\n ret\n .size {f}, .-{f}\n movzbl (%rdi,%rcx,1),%eax\n ret", True),
+)
+
+def _reading_cases(scratch):
+    """[r11] READING_CASES: (name, got, want) per case, over one assembled object"""
+    src = [" .text"]
+    for k, (_n, body, _w) in enumerate(READING_CASES):
+        f = "a%d_time" % k
+        src += [" .globl %s" % f, " .type %s,@function" % f, "%s:" % f, " " + body.replace("{f}", f)]
+        if ".size" not in body:
+            src.append(" .size %s, .-%s" % (f, f))
+        src.append(" .p2align 4")
+    p = os.path.join(scratch, "reading_cases.s")
+    open(p, "w").write("\n".join(src) + "\n")
+    subprocess.run(["gcc", "-c", p, "-o", p[:-2] + ".o"], check=True)
+    d = disasm(p[:-2] + ".o")
+    out = []
+    for k, (name, _b, want) in enumerate(READING_CASES):
+        ins = d.get("a%d" % k, [])
+        out.append((name, (bool(FUSED_DERIVE(ins)), fused_bytes(ins)), (want, want)))
+    return out
+
+def _gate_repo(scratch, case):
+    """[rev1.5 R15-2, r11-REV15-6/7] a scratch git tree for one draft-gate case: slot/est.py, slot/plan.py and
+    memfn/data/policy.tsv committed (code_commit), worktrees/ ignored; `case` then edits it. (code_commit, paths)"""
+    g = os.path.join(scratch, "gate_repo")
+    if os.path.exists(g):
+        shutil.rmtree(g)
+    def git(*a):
+        return subprocess.run(["git", "-C", g, "-c", "user.name=selftest", "-c", "user.email=selftest@invalid", "-c",
+                               "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"] + list(a),
+                              capture_output=True, text=True, check=True).stdout.strip()
+    files = {"slot/est.py": "rules\n", "slot/plan.py": "plan\n", "memfn/data/policy.tsv": "r_max_e6\t1\n",
+             "src/x.c": "int x;\n", "docs/n.md": "text\n", ".gitignore": "worktrees/\n"}
+    for f, s in files.items():
+        os.makedirs(os.path.dirname(os.path.join(g, f)), exist_ok=True)
+        open(os.path.join(g, f), "w").write(s)
+    git("init", "-q")
+    git("add", "-A")
+    git("commit", "-q", "-m", "code")
+    c0 = git("rev-parse", "HEAD")
+    paths = [os.path.join(g, f) for f in ("slot/est.py", "slot/plan.py", "memfn/data/policy.tsv")]
+    def commit(f, s):
+        open(os.path.join(g, f), "a").write(s)
+        git("commit", "-q", "-am", "edit " + f)
+    if case == "prose":
+        commit("docs/n.md", "more\n")
+    elif case == "timed":
+        commit("src/x.c", "int y;\n")
+    elif case == "dirty":
+        open(paths[0], "a").write("edited\n")
+    elif case == "policy":
+        open(paths[2], "a").write("edited\n")
+    elif case == "ignored":
+        os.makedirs(os.path.join(g, "worktrees", "evil", "slot"))
+        paths[0] = os.path.join(g, "worktrees", "evil", "slot", "est.py")
+        open(paths[0], "w").write("other rules\n")
+    return c0, paths
+
+GATE_CASES = (
+    ("clean, the timed code unchanged", "clean", "ok"),
+    ("only prose (docs/) moved since code_commit", "prose", "ok"),
+    ("timed code (src/) moved since code_commit", "timed", "refused:the timed code moved"),
+    ("est.py edited, uncommitted", "dirty", "refused:uncommitted"),
+    ("policy.tsv edited, uncommitted", "policy", "refused:uncommitted"),
+    ("an est.py copy under an ignored path", "ignored", "refused:not tracked"),
+)
 
 def selftest(scratch):
     """each case: (name, the plant on a fresh synthetic directory, the expected result: 'ok' or 'refused')"""
@@ -768,15 +1146,40 @@ def selftest(scratch):
         set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30])
     j4 = [a for a in plan.build()[0]["J4"] if a.kind != "ctl"]
     ALLNEG = [-20, -60, -10, -40, -30, -90, -25]
-    def fused_bound(out):
-        r = out[FK]
-        return (r.get("fused") and not r["null"] and r["value"] == 0 and r["noise"] == max(RM, abs(med(r["x"])))
-                and FK not in dict(notes(d_now[0], out))["note_bimodal"])
+    CK = "kit.verify_cmp.settest.c1.p0"     # [r11] the other class compiled fused
+    def bound_at(key, positive=False):
+        """[rev1.5 R15-1, r11-REV15-5] KEY bound: measured, value max(0, med(x)), noise max(r_max, |med|), no bimodal note"""
+        def pred(out):
+            r, m = out[key], med(out[key]["x"])
+            return (r.get("fused") and not r["null"] and r["value"] == max(0, m) and (m > 0) == positive
+                    and r["noise"] == max(RM, abs(m)) and key not in dict(notes(d_now[0], out))["note_bimodal"])
+        return pred
+    fused_bound = bound_at(FK)
     def unfused_code(d):       # the l1/c1 code compiled un-fused: the fact follows the timed code, nothing declared
         _synth_launches(d, "J4", j4, ())
+        _synth_pin(d)
         set_delta(d, FK, ALLNEG)
-    def unstable(d):           # launch 3 alone compiled un-fused
+    def unstable(d):           # launch 3 alone compiled un-fused (its manifest and the record's pin follow it)
         _synth_launches(d, "J4", j4, (), launches=[3])
+        _synth_pin(d)
+    def recompiled(variant, key=None):   # [r11] J4 recompiled with `variant`, manifest and pin following; KEY all-negative
+        def plant(d):
+            _synth_launches(d, "J4", j4, SYNTH_FUSED, variant=variant)
+            _synth_pin(d)
+            if key:
+                set_delta(d, key, ALLNEG)
+        return plant
+    def exe_swapped(d):        # [r11-REV15-1] P3: launch 3's executable un-fused, its manifest NOT rewritten
+        _synth_launches(d, "J4", j4, (), launches=[3], manifest=False)
+    def manifest_rewritten(d): # [r11-REV15-1] the manifest rewritten to match, the record's pin not
+        _synth_launches(d, "J4", j4, (), launches=[3])
+    def unpinned(d):           # [r11-REV15-1] a record finalized before the pin (windows 1 and 2): checked as it stands
+        _synth_pin(d, drop=True)
+    def stems_swapped(d):      # [r11-REV15-1] P6: obj/tab.c's stems of l1.p0 and w1.p0 swapped
+        p = os.path.join(d, "J4", "obj", "tab.c")
+        t = open(p).read()
+        a, b = (re.search(r'"%s", K_CMP, (a\d+)_time' % re.escape(k), t).group(1) for k in (FK, "kit.verify_cmp.rc-words.w1.p0"))
+        open(p, "w").write(t.replace(" %s_time" % a, " TMP_time").replace(" %s_time" % b, " %s_time" % a).replace(" TMP_time", " %s_time" % b))
     def wear(d):               # the derivation hands every class the fact: the bytes' reading must refuse it
         global FUSED_DERIVE
         FUSED_DERIVE = lambda ins: True
@@ -784,15 +1187,25 @@ def selftest(scratch):
         ("complete", lambda d: None, "ok"),
         ("[R15-1] a fused class negative on all six: measured 0, noise max(r_max, |med|), no bimodal note",
          lambda d: set_delta(d, FK, ALLNEG), fused_bound),
-        ("[R15-1] a fused class priced positive: the same bound (scoped by the fact, never the sign)",
-         lambda d: set_delta(d, FK, [1000, 1010, 990, 1005, 995, 1020, 1000]), fused_bound),
+        ("[R15-1, r11-REV15-5] a fused class priced positive: bound, value its median (a lower bound), noise max(r_max, |med|)",
+         lambda d: set_delta(d, FK, [1000, 1010, 990, 1005, 995, 1020, 1000]), bound_at(FK, positive=True)),
         ("[R15-1] a class NOT fused negative on all six: null (REV14-1 holds)",
          lambda d: set_delta(d, VK, ALLNEG),
          row(lambda r: r["null"] and not r.get("fused") and "all six trimmed" in r["why"])),
         ("[R15-1] the fused class compiled un-fused: null (the fact is read from the code)", unfused_code,
          row(lambda r: r["null"] and not r.get("fused") and "all six trimmed" in r["why"], FK)),
-        ("[R15-1] the fact differing between launches", unstable, "refused"),
-        ("[R15-1] a non-fused class wearing the fact", wear, "refused"),
+        ("[R15-1] the fact differing between launches", unstable, "refused:FUSED-FACT UNSTABLE"),
+        ("[R15-1] a non-fused class wearing the fact", wear, "refused:FUSED-FACT MISMATCH"),
+        ("[r11-REV15-1] a launch executable not the manifest's (P3)", exe_swapped, "refused:MANIFEST MISMATCH job J4: launch 3"),
+        ("[r11-REV15-1] the manifest rewritten to match, the record's pin not", manifest_rewritten, "refused:the record pins"),
+        ("[r11-REV15-1] a record pinning no manifest: checked as it stands, named",
+         unpinned, lambda out: compute(d_now[0])[5]["J4"][1] is False),
+        ("[r11-REV15-1] obj/tab.c's stems swapped (P6)", stems_swapped, "refused:STEM MISMATCH"),
+        ("[r11-REV15-2] c1 compiled as two fused compares: not fused, null",
+         recompiled({"c1": "two"}, CK), row(lambda r: r["null"] and not r.get("fused") and "all six trimmed" in r["why"], CK)),
+        ("[r11-REV15-3] l1 compiled as cmp %reg,(s,i) (L 8): bound", recompiled({"l1": "l8"}, FK), fused_bound),
+        ("[r11-REV15-3] c1 compiled through a computed pointer, no index: bound", recompiled({"c1": "ptr"}, CK), bound_at(CK)),
+        ("[r11-REV15-10] a null base compiled fused", recompiled({"base.null.l1": "fused"}), "refused:FUSED-FACT BASE"),
         ("[R14-2] a verify row at zero, signs mixed: sub-resolution, measured",
          lambda d: set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30]), sub),
         ("[r10-REV14-1] negative on all six trimmed launches within r: null (a defect, whatever r)",
@@ -849,11 +1262,12 @@ def selftest(scratch):
             return open(os.path.join(d, "run_record.tsv")).read() + "".join(
                 open(os.path.join(d, f)).read() for f in sorted(os.listdir(d)) if f.startswith("cells.")) + "".join(
                 hashlib.sha256(open(os.path.join(d, "J4", "L%d" % l, "J4.L%d" % l), "rb").read()).hexdigest()
-                for l in range(1, plan.L_LAUNCHES + 1))
+                for l in range(1, plan.L_LAUNCHES + 1)) + "".join(
+                open(os.path.join(d, "J4", f)).read() for f in ("manifest.tsv", os.path.join("obj", "tab.c")))
         before = state()
         plant(d)
         after = state()
-        if want not in ("ok", "same", "refused"):       # a row predicate over compute()'s rows (rev 1.4)
+        if not isinstance(want, str):       # a row predicate over compute()'s rows (rev 1.4)
             try:
                 ok = bool(want(compute(d)[0]))
             except (InputError, KeyError) as e:
@@ -883,10 +1297,26 @@ def selftest(scratch):
             got = "same" if outcome is not None and prev is not None and outcome[:2] == prev[:2] and after == prev_after else "moved"
             why += " (the previous case's: %s)" % ("%s exit %d" % prev[:2] if prev else "none")
         prev, prev_after = outcome, after
-        ok = got == want
+        # `refused:TEXT`: refused, and its refusal names TEXT (the check that was meant, not an earlier one)
+        ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t%s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
-    print("== est SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", len(cases), bad))
+    for name, got, want in _reading_cases(scratch):          # [r11-REV15-2..4]
+        ok = got == want
+        bad += not ok
+        print("selftest\t[r11 reading] %s\t%s\t(text, bytes) %s" % (name, "ok" if ok else "WRONG", got))
+    for name, case, want in GATE_CASES:                     # [rev1.5 R15-2, r11-REV15-6/7]
+        c0, paths = _gate_repo(scratch, case)
+        try:
+            draft_gate(c0, paths)
+            got, why = "ok", "a draft"
+        except InputError as e:
+            got, why = "refused", str(e)
+        ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
+        bad += not ok
+        print("selftest\t[r11 gate] %s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
+    n = len(cases) + len(READING_CASES) + len(GATE_CASES)
+    print("== est SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", n, bad))
     return 1 if bad else 0
 
 if __name__ == "__main__":

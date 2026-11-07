@@ -17,7 +17,9 @@
 #                                                `policy`, verbatim from the frozen plan, with the two tables'
 #                                                sha-256 in `run`: `cards_sha256`, `policy_sha256`; est.py reads
 #                                                only these, [rev1.3 r9fc-FIX-1]) and `transcript_sha256`
-#                                                (RUNDIR/transcript.tsv)
+#                                                (RUNDIR/transcript.tsv); [rev1.5 r11-REV15-1] `manifest_sha256_<job>`
+#                                                for every ran job's manifest (RUNDIR/JOB/manifest.tsv), which est.py
+#                                                checks the launch executables it reads against
 # table_contract.md's section shape: `#section NAME`, a `#`-header line, TAB fields. Sections in this order:
 # run, jobs, plan, floor, cards, policy, j1_cells, quiet. [rev1.4 R14-3] `quiet`: every quiet check of the window
 # (the transcript's `quiet` lines: job, check, load1 and the top co-runners `pid:comm:%cpu`), copied at finalize;
@@ -207,6 +209,10 @@ def main():
             refuse("%s is absent: finalize writes the DRY RUN's frozen plan, never a live one" % fp)
         rec["jobs"] = jobs
         pin(rec, plan.read_frozen(fp))
+        for j, state, _cause in jobs:     # [rev1.5 r11-REV15-1] the manifests est.py reads the timed code by
+            mp = os.path.join(rundir, j, "manifest.tsv")
+            if state == "ran" and os.path.exists(mp):
+                setrun(rec, "manifest_sha256_" + j, hashlib.sha256(open(mp, "rb").read()).hexdigest())
         tp = os.path.join(rundir, "transcript.tsv")
         setrun(rec, "transcript_sha256", hashlib.sha256(open(tp, "rb").read()).hexdigest() if os.path.exists(tp) else "-")
         rec["quiet"] = quiet_rows(tp)
