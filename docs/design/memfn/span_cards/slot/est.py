@@ -24,6 +24,9 @@ import plan  # noqa: E402
 
 TREE = plan.TREE
 K_TRIM_E6, K_MED_E6 = 1723000, 210300      # measures.md §3.4¶16, §3.5¶6
+# [rev1.4 R14-3, R14-4] the NOTE thresholds: they gate nothing (a note line in the record and the draft only)
+NOTE_SPLIT_E6 = 5000       # a job's control: a gap over 0.5 % between two clusters of >= 2 launches: UNMEASURED DEFAULT (D149)
+NOTE_BIMODAL_E6 = 100000   # a priced delta row: a gap over 10 % of its value, likewise: UNMEASURED DEFAULT (D149)
 
 
 class InputError(Exception):
@@ -51,6 +54,16 @@ def sp2(x):
     w = trim(x)
     n = len(w)
     return rhafz(K_TRIM_E6 * (n * sum(t * t for t in w) - sum(w) ** 2), 10**6 * n * (n - 1))
+
+def resolution(x):
+    """[rev1.4 R14-2] a delta row's RESOLUTION r (measures.md §3.5¶3a): three standard errors of the median of its
+    L anchored launch values, 3 x isqrt_rn(K_MED x sp2(x)) (§3.5¶6's scale for one median), in the row's unit"""
+    return 3 * isqrt_rn(rhafz(K_MED_E6 * sp2(x), 10**6))
+
+def split_gap(v):
+    """the largest gap between two clusters of >= 2 launches in v sorted (k in 2 .. L-2, §3.5¶4's clusters)"""
+    s = sorted(v)
+    return max(s[k] - s[k - 1] for k in range(2, len(s) - 1))
 
 def slope(pts):
     n = len(pts)
@@ -207,10 +220,16 @@ def compute(rundir):
         if r["D"] is not None:
             aaD = med([abs(r["Db"][i] - r["D"][i]) for i in range(L)])
             r["null"] = not (all(d > 0 for d in trim(r["D"])) and med(r["D"]) > aaD)
-            if r["null"] and med(r["D"]) < 0:
-                r["why"] = "null: negative per-event cost (a fixture artifact)"
+            res = resolution(x)
+            if r["null"] and abs(r["value"]) <= res:
+                # [rev1.4 R14-2] SUB-RESOLUTION: consistent with zero within r, a MEASURED row: the clamped
+                # estimate, its noise r or the measured noise if larger (measures.md §3.5¶3a)
+                r.update(null=False, sub=res, value=max(0, r["value"]), noise=max(res, r["noise"]),
+                         why="sub-resolution: consistent with zero within r %d" % res)
+            elif r["null"] and med(r["D"]) < 0:
+                r["why"] = "null: negative per-event cost above its resolution r %d (a fixture artifact)" % res
             elif r["null"]:
-                r["why"] = "null: below its paired A/A or signs mixed over the trimmed six"
+                r["why"] = "null: below its paired A/A or signs mixed, at a size above its resolution r %d" % res
         else:
             # §3.5¶2: the card's gate; the unit's is HALF, compared doubled (exact for an odd gate, r9 G7)
             G = card[key.split(".")[1]]["gate"]
@@ -266,6 +285,31 @@ def compute(rundir):
         outcome = ("FULL", 0, [])
     return out, drift, unit_bad, outcome, W
 
+def notes(rundir, out=None):
+    """[rev1.4 R14-3, R14-4] the run's NOTE lines (the record's `run` keys note_box_state and note_bimodal, the
+    draft's `# note` lines): a launch-level fast/slow split in a job's control (NOTE_SPLIT_E6), and the priced
+    delta rows whose launches fall in two clusters (NOTE_BIMODAL_E6). They gate nothing."""
+    if out is None:
+        out = compute(rundir)[0]
+    rec = read_record(rundir)
+    LENGTHS, L = rec["facts"][0], rec["facts"][2]
+    c = {(x["job"], x["arm"], x["length"], x["launch"]): x["ns_e6"] for x in read_cells(rundir, rec)}
+    split = []
+    for j in sorted({j for j, _a, _x, _l in c}):
+        if (j, "ctl", LENGTHS[0], 1) not in c:
+            continue
+        u = [slope([(x, c[(j, "ctl", x, l)]) for x in LENGTHS]) for l in range(1, L + 1)]
+        g = split_gap([rhafz(t * 10**6, med(u)) for t in u])
+        if g > NOTE_SPLIT_E6:
+            split.append("%s %d.%02d %%" % (j, g // 10000, g % 10000 // 100))
+    bim = sorted(k for k, r in out.items() if "absent" not in r and r.get("D") is not None and not r.get("null")
+                 and not r.get("sub") and split_gap(r["x"]) * 10**6 > NOTE_BIMODAL_E6 * r["value"])
+    return [("note_box_state", "a launch-level fast/slow split in the control of %s (a gap over %d ppm between two "
+             "clusters of >= 2 launches): the box changed state within those jobs" % (", ".join(split), NOTE_SPLIT_E6)
+             if split else "no launch-level fast/slow split in any job's control"),
+            ("note_bimodal", "bimodal delta rows (a gap over %d ppm of the value between two clusters of >= 2 "
+             "launches; priced with their spread as noise): %s" % (NOTE_BIMODAL_E6, ", ".join(bim) or "none"))]
+
 def cell_texts(rundir, rec):
     """{row key: (form, fold hash, tags)} from every ran job's cell_text.tsv (link.py's, the texts it TIMED and
     checked, r9 G5); a form whose fold differs between jobs REFUSES (the kit moved inside the window)"""
@@ -301,11 +345,15 @@ def main():
             if "absent" in r:
                 print("row\t%s\tABSENT\t%s" % (k, r["absent"]))
             else:
+                # [rev1.4 R14-4] a delta row has no gate (measures.md §3.5¶3): `ungated`, never a gate verdict
                 print("row\t%s\tvalue %s\tnoise %s\t%s" % (k, "-" if r.get("null") else r["value"],
                       "-" if r.get("null") else r["noise"],
-                      r.get("why") or ("gate %s" % ("pass" if r.get("gate", True) else "FAIL"))))
+                      r.get("why") or ("ungated" if r["D"] is not None else
+                                       "gate %s" % ("pass" if r.get("gate", True) else "FAIL"))))
         for j, (d, T, bad) in sorted(drift.items()):
             print("drift\t%s\t%d\t%d\t%s" % (j, d, T, "REFUSED" if bad else "kept"))
+        for k, v in notes(rundir, out):
+            print("note\t%s\t%s" % (k, v))
         print("== s2 OUTCOME %s exit %d %s" % (outcome[0], outcome[1], "; ".join(outcome[2])))
         return outcome[1]
     if cmd == "draft":
@@ -348,8 +396,8 @@ def write_draft(rundir, path, out, drift, outcome):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
         else:
-            rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]),
-                         n, "measured", "-", "-", deps, tags, "slot " + r["job"]])
+            rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
+                         tags, "slot %s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "")])
     hdr = [("format", "2"), ("id", "zen4-grid3"), ("rev", "1"), ("class", "x86_64/zen4"),
            ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
            ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % plan.METHOD_VER),
@@ -360,7 +408,9 @@ def write_draft(rundir, path, out, drift, outcome):
            ("rows", str(len(rows))), ("values_digest", "0000000000000000")]
     cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS]) for c in read_cells(rundir, rec)]
     def text(h):
-        t = ["# pcrec measurement set (spec: docs/spec/measures.md)", "#section header", "#key\tvalue"]
+        t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
+        t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
+        t += ["#section header", "#key\tvalue"]
         t += ["%s\t%s" % kv for kv in h]
         t += ["#section cards", "#" + "\t".join(["owner", "quantity", "ver", "dims", "unit", "subject", "lengths",
               "launches", "rounds", "aa_rule", "gate_e6", "env", "deps"])] + cards
@@ -441,8 +491,46 @@ def selftest(scratch):
         for c in plan.CARD.values():
             c["gate"] = 300
         plan.CARD["find_byte"]["est"] = "slope 1,2,3"
+    def set_delta(d, key, ds, twin=3):
+        """[rev1.4 R14-2] KEY's (and its twin's) cells in J4 = its base's cell + ds[l-1] x E per launch l (the twin
+        `twin` x E above): a per-event cost of ds[l-1] in the cells' own units"""
+        p = os.path.join(d, "cells.J4.tsv")
+        ls = open(p).read().split("\n")
+        base = {}
+        for ln in ls:
+            c = ln.split("\t")
+            if len(c) == 8 and c[2].startswith("base.null."):
+                base[(c[2], c[3], c[4])] = int(c[7])
+        out = []
+        for ln in ls:
+            c = ln.split("\t")
+            if len(c) == 8 and c[2] in (key, key + "#b"):
+                E, l = int(c[6]), int(c[4])
+                c[7] = str(base[(c[0].split("/")[4], c[3], c[4])] + (ds[l - 1] + (twin if c[2] != key else 0)) * E)
+            out.append("\t".join(c))
+        open(p, "w").write("\n".join(out))
+    VK = "kit.verify_cmp.settest.c1.p0"
+    def row(pred):
+        return lambda out: pred(out[VK])
+    sub = row(lambda r: bool(r.get("sub")) and not r["null"] and r["value"] >= 0 and r["noise"] >= r["sub"])
     cases = [
         ("complete", lambda d: None, "ok"),
+        ("[R14-2] a verify row at zero, signs mixed: sub-resolution, measured",
+         lambda d: set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30]), sub),
+        ("[R14-2] consistently negative within r: measured, its value clamped to 0",
+         lambda d: set_delta(d, VK, [-20, -60, -10, -40, -30, -90, -25]), row(lambda r: bool(r.get("sub")) and r["value"] == 0)),
+        ("[R14-2] consistently negative above r: null (a fixture artifact)",
+         lambda d: set_delta(d, VK, [-1000, -1010, -990, -1005, -995, -1020, -1000]),
+         row(lambda r: r["null"] and not r.get("sub") and "negative" in r["why"])),
+        ("[R14-2] signs mixed at a size above r: null",
+         lambda d: set_delta(d, VK, [1000, 1000, 1000, 1000, -50, -600, 1000]),
+         row(lambda r: r["null"] and not r.get("sub") and "signs mixed" in r["why"])),
+        ("[R14-2] a priced verify row keeps the NULL rule's value (no clamp, no r)",
+         lambda d: set_delta(d, VK, [1000, 1010, 990, 1005, 995, 1020, 1000]),
+         row(lambda r: not r["null"] and not r.get("sub") and r["value"] > 0)),
+        ("[R14-4] a delta row in two clusters is named by the bimodal note",
+         lambda d: set_delta(d, VK, [1000, 1000, 1000, 1500, 1500, 1500, 1000]),
+         lambda out: VK in dict(notes(d_now[0], out))["note_bimodal"]),
         ("leftover cells of a never-ran job", set_never, "refused"),
         ("a planned cell missing", lambda d: edit(os.path.join(d, "cells.J3.tsv"), drop_line), "refused"),
         ("a cells file of another run", lambda d: edit(os.path.join(d, "cells.J4.tsv"),
@@ -458,13 +546,23 @@ def selftest(scratch):
     # plant edits plan.CARD in memory, restored after), and the outcome must be the previous case's
     bad, prev = 0, None
     live = {q: dict(c) for q, c in plan.CARD.items()}
+    d_now = [None]
     for name, plant, want in cases:
-        d = _synth(os.path.join(scratch, "est_selftest"))
+        d = d_now[0] = _synth(os.path.join(scratch, "est_selftest"))
         before = open(os.path.join(d, "run_record.tsv")).read() + "".join(
             open(os.path.join(d, f)).read() for f in sorted(os.listdir(d)) if f.startswith("cells."))
         plant(d)
         after = open(os.path.join(d, "run_record.tsv")).read() + "".join(
             open(os.path.join(d, f)).read() for f in sorted(os.listdir(d)) if f.startswith("cells."))
+        if want not in ("ok", "same", "refused"):       # a row predicate over compute()'s rows (rev 1.4)
+            try:
+                ok = bool(want(compute(d)[0]))
+            except (InputError, KeyError) as e:
+                ok = False
+                print("selftest\t%s\t(%s)" % (name, e))
+            bad += not ok
+            print("selftest\t%s\t%s" % (name, "ok" if ok else "WRONG"))
+            continue
         if want != "ok" and before == after and plan.CARD == live:
             print("selftest\t%s\tPLANT DID NOT APPLY" % name)
             bad += 1

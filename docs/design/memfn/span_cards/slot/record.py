@@ -19,7 +19,10 @@
 #                                                only these, [rev1.3 r9fc-FIX-1]) and `transcript_sha256`
 #                                                (RUNDIR/transcript.tsv)
 # table_contract.md's section shape: `#section NAME`, a `#`-header line, TAB fields. Sections in this order:
-# run, jobs, plan, floor, cards, policy, j1_cells. Exit 2 on a refused input.
+# run, jobs, plan, floor, cards, policy, j1_cells, quiet. [rev1.4 R14-3] `quiet`: every quiet check of the window
+# (the transcript's `quiet` lines: job, check, load1 and the top co-runners `pid:comm:%cpu`), copied at finalize;
+# [rev1.4 R14-3, R14-4] finalize also writes est.py's two NOTE lines (`run` keys note_box_state, note_bimodal).
+# Exit 2 on a refused input.
 import hashlib, os, platform, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +31,8 @@ import plan  # noqa: E402
 
 SECTIONS = [("run", ["key", "value"]), ("jobs", ["job", "state", "cause"]), ("plan", ["key", "group", "job"]),
             ("floor", ["clause", "key", "when"]), ("cards", plan.CARD_COLS), ("policy", plan.POLICY_COLS),
-            ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"])]
+            ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"]),
+            ("quiet", ["job", "check", "load1", "corunners"])]
 JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
 SET = "zen4-grid3@1"
 RULES = "kit-grid@" + plan.METHOD_VER     # the owner of the producer's rules (measures.md §3.5¶8a): span_cards
@@ -81,6 +85,19 @@ def getrun(rec, k):
 
 def setrun(rec, k, v):
     rec["run"] = [r for r in rec["run"] if r[0] != k] + [[k, v]]
+
+
+def quiet_rows(tp):
+    """[rev1.4 R14-3] the transcript's quiet checks: job, check (yes, no, yes-after-wait, wait-timeout), load1, the
+    top co-runners (`-` on a line written before rev 1.4)"""
+    rows = []
+    for ln in open(tp) if os.path.exists(tp) else ():
+        f = ln.rstrip("\n").split("\t")
+        if len(f) >= 4 and f[1] == "quiet":
+            ld = re.search(r"load1 ([0-9.]+)", f[3])
+            top = re.search(r" top (\S+)", f[3])
+            rows.append([f[0], f[2], ld.group(1) if ld else "-", top.group(1) if top else "-"])
+    return rows
 
 
 def box_facts():
@@ -192,6 +209,15 @@ def main():
         pin(rec, plan.read_frozen(fp))
         tp = os.path.join(rundir, "transcript.tsv")
         setrun(rec, "transcript_sha256", hashlib.sha256(open(tp, "rb").read()).hexdigest() if os.path.exists(tp) else "-")
+        rec["quiet"] = quiet_rows(tp)
+        write(path, rec)
+        import est       # the notes read the record just written and the cells (they gate nothing)
+        try:
+            for k, v in est.notes(rundir):
+                setrun(rec, k, v)
+        except (est.InputError, KeyError, ValueError, ZeroDivisionError) as e:
+            for k in ("note_box_state", "note_bimodal"):
+                setrun(rec, k, "unavailable: %s" % str(e)[:200])
         write(path, rec)
         print("== s2 FINALIZE %s: %d jobs (%d ran), %d plan keys, %d floor lines, %d cards, %d policy rows"
               % (path, len(jobs), sum(1 for r in jobs if r[1] == "ran"), len(rec["plan"]), len(rec["floor"]),

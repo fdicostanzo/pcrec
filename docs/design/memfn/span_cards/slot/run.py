@@ -38,6 +38,7 @@ WAIT_BOUND = 300                    # the job's total quiet wait (§3.3): UNMEAS
 QUIET_LOAD = 2.0                    # load1 below which the box is quiet (§3.3): UNMEASURED DEFAULT (D149)
 QUIET_HOLD = 55                     # seconds of continuous quiet that end a wait (§3.3): UNMEASURED DEFAULT (D149)
 QUIET_POLL = 5                      # the wait's sample period, seconds: UNMEASURED DEFAULT (D149)
+CORUNNERS = 5                       # the top co-runners each quiet check logs (R14-3): UNMEASURED DEFAULT (D149)
 
 
 def sh(cmd, **kw):
@@ -172,6 +173,11 @@ def dry(job, rundir, run_id):
     ctl_arm = [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)]
     print("ctl gate: " + gate(exe_ctl, ctl_arm))
     print("ctl round check: " + round_check(exe_ctl, ctl_arm))
+    # [rev1.4 R14-3] one quiet sample, NOT gated (no clock here): the quiet check's log line, its co-runners parsed
+    _ok, why = quiet_now(main_tree())
+    if not QUIET_TOP.search(why):
+        raise SystemExit("run: QUIET-LOG: the quiet check's line %r names no co-runners (pid:comm:%%cpu)" % why)
+    print("quiet sample (not gated): " + why)
     exes = link.link_job(job, rundir, run_id)
     for l in range(1, plan.L_LAUNCHES + 1):
         print("%s launch %d gate: %s" % (job, l, gate(exes[l], arms)))
@@ -185,6 +191,26 @@ def dry(job, rundir, run_id):
     return len(g)
 
 
+def corunners():
+    """[rev1.4 R14-3] the top CORUNNERS processes by ps's %cpu (its lifetime share, the figure ps has), this job's
+    own python and ps itself left out: `pid:comm:%cpu`, `,`-joined"""
+    rc, out, _e = sh(["ps", "-eo", "pid=,comm=,pcpu=", "--sort=-pcpu"])
+    if rc:
+        return "-"
+    me, top = {os.getpid(), os.getppid()}, []
+    for ln in out.splitlines():
+        p = ln.split()
+        if len(p) < 3 or not p[0].isdigit() or int(p[0]) in me or p[1] == "ps":
+            continue
+        top.append("%s:%s:%s" % (p[0], re.sub(r"[\s:,]", "_", " ".join(p[1:-1])), p[-1]))
+        if len(top) == CORUNNERS:
+            break
+    return ",".join(top) or "-"
+
+
+QUIET_TOP = re.compile(r" top (\d+:[^:,\s]+:[0-9.]+(?:,\d+:[^:,\s]+:[0-9.]+)*)$")
+
+
 def quiet_now(main):
     rq = os.path.join(main, "worktrees", ".boxqueue", "running")
     mine = os.environ.get("BQ_JOB", "")
@@ -194,8 +220,8 @@ def quiet_now(main):
         raise SystemExit("run: boxlock status rc %d" % rc)
     held = out.startswith("HELD") and not (mine and ("queue:" + mine) in out)
     load = float(open("/proc/loadavg").read().split()[0])
-    return load < QUIET_LOAD and not held and not others, "load1 %.2f lock %s queue %s" % (
-        load, "held" if held else "free", ",".join(others) or "-")
+    return load < QUIET_LOAD and not held and not others, "load1 %.2f lock %s queue %s top %s" % (
+        load, "held" if held else "free", ",".join(others) or "-", corunners())
 
 
 class Waiter:
