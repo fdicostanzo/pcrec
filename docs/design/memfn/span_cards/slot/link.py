@@ -417,7 +417,7 @@ def build_objs(job, rundir, arms):
             null_check(src, by[arm], a.name)
             nb += 1
     if nb:
-        print("null-base: %d bases, each its class arm's text outside the compare, keeping a load the arm makes" % nb)
+        print("null-base: %d bases, each its class arm's text outside the compare, its body null_body(the arm's), one load the arm makes" % nb)
     for n, src in by.items():
         if n.endswith("#b") and by.get(n[:-2]) != src:
             raise SystemExit("link: %s's source differs from its arm's" % n)
