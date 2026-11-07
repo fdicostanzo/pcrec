@@ -3598,3 +3598,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Table check vs gcc -march ADOPTED, plus the host chain vs the guards. Sabotage S2975-S2980 (S2980: C text in a facts row). No emitted byte (test-codegen green).
   - Jobs 450-453 queued.
   - Lesson re-confirmed: an addendum to a running lane was missed; verify it in the deliverable.
+- 11-07 ~21:50: Frank ruled ONE CPU flag (target_seam_units.md §6): -fmemfn-simd = host family default; =TOKEN[,..] = exactly those, a family token = its default list; -fno-memfn-simd = generic; last wins. Family and target tokens must therefore be distinct.
+  - K0's queued jobs 450-453 were CANCELLED before starting.
+  - Kit spelling: FAMILIES amd64, arm64 (Go/Debian). TARGETS generic, x86-64, x86-64-v3, armv8-a (aarch64's target renamed). Main flagged that x86_64 vs x86-64 is a one-character typo hazard, hence amd64/arm64. A distinctness check folds _ to - and case.
+  - Fix lane `k0fix` (sonnet) on lane/memfn-k0 (deliver dedd3591d). The family respelling was sent right after launch: VERIFY in the tip. Then requeue 450-453.
