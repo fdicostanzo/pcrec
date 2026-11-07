@@ -575,3 +575,132 @@ manager's "LOOKBEHIND LANDED" line.
 
 (`a2/` = `$PCREC_TMPDIR/scratch/altbuild/a2/`; `logs/` =
 `$PCREC_TMPDIR/scratch/altbuild/logs/`.)
+
+## Lane altfix (2026-11-06, opus): the three red owed jobs, then review r5 altcode's ruled fixes
+
+Brief: triage 301-303, apply every FIX-NOW and DOC id of
+`docs/dev/reviews/2026-11-06-r5-altcode.md` (RULING block; rulings R5/R6),
+validate through the queue. Commits on `lane/altbuild` over `4cc816446`:
+`d8119f007` (EMIT-1/2/3, SLOT-2/3/4, CHK-5/8, spec), `ce68bcf5d` (the
+triage fixes, the remaining ids, the island arm), `8cbf0db6c` (recursion
+identity self-pin). Not merged with main (the brief: a later lane does).
+Scratch: `$PCREC_TMPDIR/scratch/altfix/` (`t/` witnesses, `tip/` the
+frozen tip binary, `jobs/`, `out/`).
+
+### Triage of the three red jobs
+
+| job | verdict | cause | fix |
+|---|---|---|---|
+| 301-altbuild2-u1bench (rc 1, 2 s) | NOT an invocation error: the gate ran (76 patterns) and reported 8 findings, every one the INSTRUMENT's | `u1_bench.py`'s predicate missed two multi-box constructs: caseless ASCII `k`/`s` (fold orbits leave ASCII: KELVIN SIGN, LONG S; `ci-kelvin`, `ci-long-s`, `ci-class-range` through `[a-z]`) and an alternation of single non-ASCII characters (`alt-mixed-width`, folded by altcls into a wide class); its direction rule allowed islands only `1 -> 0` (`ci-greek-run` 3 -> 0, `ci-moskva` 6 -> 1 are legitimate falls); a route whose refusal RETIRED (`prp-l`, `prp-notl` on the VM) read every other observable `- -> value` as a finding | predicate widened (both constructs), any fall allowed, a refusal-moved route's other observables skipped, and EMIT-1's island RISES listed in their own class (not findings); STAGE is now the branch tip. Re-run: job `altfix-u1bench` |
+| 302-altbuild2-regrx (rc 2) | REAL red, a missing re-pin (registry green) | test-rxtsource's census: the branch added `tests/altcls/altnf_rules.rxt`, `tests/utf8/altnf_lowering.rxt` and edited `counterk.rxt` (+2 files, +35 blocks, +121 case lines; pcre2-only +111, PASS +10) and never re-pinned | CENSUS_* 314/6339/75851, RUNSH_* 290/6339/75851, C3_PASS 22660, C3_SKIP 53098, C3_SKIP_PCRE2ONLY 20245, C3_VERIFIABLE 25056 (the entry-file and W23-S7 counts derive from CENSUS_FILES). Re-run: batch C `r302` |
+| 303-altbuild2-k139 (rc 1, 1539 s) | REAL red, four causes | (a) test-fallback-table: stage 1 shrank `(\p{Xwd})`'s tables to 933,498 B, so every hybrid-drop witness built on `(\p{Xwd})`/`(\p{Xwd})x` fits with NO rung (11 cells, the ENGINE_SEL floor, both PFWHY shapes, two notes); note-premul's `[^\p{C}\p{M}\p{P}]` now fits after the anchored drop. (b) test-codegen SABANCHOR: CHK-8 (S238). (c) recursion identity (A) and (B): the branch moves call-free regions on purpose. (d) mech S1894 was DETECTED (green) | (a) re-aimed to `(\p{Xwd}|\p{Nd}x|\p{Sc}y)` (hybrid 1,058,204 B, prefilter drop) and its `x` form (handoff then prefilter, 1,060,847 B), each ~6% over the cap; note-premul to `[^\p{C}\p{M}\p{P}]\p{L}` (anchored then premul). The same shrink had silently emptied OTHER suites' witnesses, re-aimed in the same commit: `tests/prefilter` T2 size-dropped pair, `tests/uprops` §5 (the new witness has the same member set over that sweep's subject; argued in the script), S420 (now detected through tests/resource's `(\p{Xwd})\b`, 1,087,026 B; its harness target dropped), S1708-S1714's REACH. (b) SAB_COUNT 6. (c) FILEPIN and ABASEPIN self-pinned to `ce68bcf5d`; the landing re-pins both to the merge (TRD-7). Re-run: batch C `r303` |
+
+The u1 instrument fix is a check change: its predicate now covers the two
+constructs, and nothing it reported as a finding was a pcrec defect (each
+was checked against the construct it names).
+
+### Review ids
+
+| id | ruling | disposition (commit) |
+|---|---|---|
+| EMIT-1 | FIX-NOW (a) | `d8119f007`: the island's `A_CLASS` arm reads a byte class as its member words (ascending byte order), charged to the word budget; `vm_isl_single` and the multi-member decline gone; a wide class is read through `vm_isl_set_split` (its canonical split's boxes, each a byte class read member by member). Witnesses: island section 12 `[MEMB] m_w256` (bench altwide w-256 fixture `tests/island/altwide_w256.pattern`, 1 island where the fix's absence gives 20) and `m_twin` (`x(?:ea|fb|ga)y`); sabotage **S1990** (a one-member-only arm). |
+| EMIT-2 | FIX-NOW | `d8119f007`: `drop-islands` is the last VM rung before `refuse` (`fit_rungs[]`, `fit_seq_legal[]` mirrored: handoff/prefilter may precede it, nothing but refuse follows). limits.md §8.4 row 6 (was 2b), ¶2c, ¶5/¶6 rung lists; K139; dec_fallback.md; tuning.md's rung references. Witness: fallback cells `seq-isl400` (400 words, `drop-prefilter@size` only, the island kept) and `seq-isl1000` (`drop-prefilter@size > drop-islands@size`, code 524,805 B over 500,000). |
+| EMIT-3/TRD-1 | FIX-NOW | `d8119f007`, NOT impossible, no STOP. The size row's factor compares the island with the chain counted BEFORE rule M's folds: rule M records on the fold's union node the branches it stands for (`cls.branches`, `pcrec_cls_branches`, set in `anf_cls_fold` at both callers), and `vm_isl_subtree_nodes(.., unfold)` counts a folded class's concatenation as those branches. The cap guard and `est_chain` keep the emitted count. Witness: the verified family list, every member back at base96's island count and program bytes (table below); island section 12 `m_cat`, `m_utf8`, `m_utf8b`; sabotage **S1991** (the factor reading the folded chain). |
+| CON-1 | FIX-NOW | `ce68bcf5d`: match_api.md §1¶7's guard block reads 96 in all three places. |
+| TRD-2 | FIX-NOW (doc) | `ce68bcf5d`: the abi 96 changelog entry lists the 2b, K139 and fix movers. |
+| CON-2, TRD-4 | DOC | `d8119f007`: limits.md ¶1b (the retry artifact is `-fno-alt-island` with the earlier rungs' drops applied, apart from ¶5's stamp and the figure ¶4's stamp quotes) and ¶2c + K139 (the refused-anyway compile cost, 3,000 words: 2.30x / 1.84x). |
+| TRD-3 | FIX-NOW (spec) | `ce68bcf5d`: tuning.md §2.33¶7 says the refusal is the PAIR's limit, which single-axis test-axes does not see (re-verified: `\P{Unknown}` under `-fno-cls-kit` compiles, under the pair refuses at 556,358 B). |
+| TRD-5 | DOC | `ce68bcf5d`: design §3.4 states the code's weaker reading (the description is DROPPED over `PCREC_MAX_REQ_PIECES`, not collapsed; inert today). |
+| CHK-2 | FIX-NOW | `ce68bcf5d`: `dumps_declared_delta` reports a declared row the dump never listed (checked: an invented key beside a real one is now a problem). |
+| CHK-5 | FIX-NOW (doc) | `d8119f007`: S66 header/DESC/FIGURE rewritten for rule M; S366 re-anchored with its figure dated; S693's DESC names no fixed number (and its AFTER is 95, the parent's). |
+| CHK-8 | FIX-NOW | `d8119f007`: S238 SAB_COUNT 6. |
+| SLOT-2 | FIX-NOW | `d8119f007`: `pcrec_spine_flatten`/`pcrec_spine_build` beside `pcrec_ast_node` (parse.c, internal.h); altcls's and altnf's private flatteners/builders deleted; lower_enc.c and the island's set split use the builder. |
+| SLOT-3 | FIX-NOW | `d8119f007`: altcls.c's arm comments state today's invariant (altcls walks; the owner decides); cpset.c, emit_vm.c and `run_cpset_structure.sh` stop naming deleted callers. |
+| SLOT-4 | FIX-NOW | `d8119f007`: `lower_class_utf8` calls the one `split_utf8`; `split_byte` deleted, the byte cell's split NULL and `pcrec_lower_boxes` fails on a NULL split. |
+| SLOT-6 | FIX-NOW | `ce68bcf5d`: limits.def's `PCREC_MAX_REQ_RUN_SCAN` row names its second reader (altnf's head `max_pos`) and that reader's unit (character positions); a comment at the reader. |
+| SLOT-7 | DOC | `ce68bcf5d`: design §2.3 and src/facts/CLAUDE.md say "co-location" (pd read by req.c, ph by altnf.c). |
+| CHK-1, CHK-3, CHK-4, SLOT-5, CON-2 test entry, TRD-3 test entry, TRD-5 bound re-derivation | PLAN | for the landing to file; not built. |
+| SLOT-8 | PLAN | member list onto [ISL-PRICE]; not built. |
+| TRD-4 hopeless-case skip | PLAN, D77-held | not built. |
+| CHK-6, CHK-7, TRD-6 | NOTED | none. |
+| TRD-7 | NOTED (landing) | the landing re-pins FILEPIN and ABASEPIN (now self-pinned to `ce68bcf5d`) to its merge. |
+| TRD-8 | REJECTED | none. |
+
+Sabotage rows: new **S1990**, **S1991** (from the brief's S1990-S1999,
+re-grepped on main, every worktree and every branch: free), detected by
+a new mech arm `island` (`tests/island/run_island_tests.sh`; an island
+moves no answer, so `harness` is green on it by construction). RETIRED:
+S1883 (its admission predicate, single-string boxes, is gone: the widening
+reads range boxes member by member; wclass census `[N1]` flipped to assert
+the island), S1884 and S1885 (the island-local `t->l` step no longer
+decides an island: the byte child enumerates the same words; SLOT-5 owns
+unifying the step). RE-AIMED: S66, S238, S366, S693, S1882, S-U8, S303,
+S420, S1708-S1714. `m6read_check_sab_anchors.py`: all anchors resolve.
+
+### EMIT-3: the shape chosen, and the one judgment in it (for the manager)
+
+"The chain at the island's set reading" was first built literally: every
+class counted as its members. That restored the family, and also
+OVER-ADMITTED classes the user WROTE, which no merge touched: base96 ->
+literal reading, `(?i)` days of the week 0 -> 1 island (VM program 9,355 ->
+80,373 B for 274K -> 273K instructions), `a.|bc` 0 -> 1 (~691 -> 78,549 B),
+`(?i)x(?:cat|dog|cow)y` 0 -> 1 (2,257 -> 10,797 B, 720K -> 553K),
+`x(?:[a-f]oo|[g-m]ar|zz)y` 0 -> 1 (2,033 -> 7,296 B, 597K -> 516K).
+The ruling's purpose clause is "so a merge the island reads through cannot
+flip the comparison", and EMIT-1's "(over budget: the size row decides as
+today)"; so the built shape undoes ONLY rule M's folds (provenance on the
+fold's node) and counts a written class as the one test the chain emits
+for it. Under it every written-class decline of island section 4 stays a
+decline (reasons restated as size-row declines), and the day/caseless
+shapes keep the chain (`(?i)` days: 0 islands at both; its program is
+smaller, 9,355 -> 5,897 B, from rule M itself). This sits
+against R1, which REJECTED counting the unmerged split; R5 now orders the
+set reading, and provenance is the narrowest form of it. If the manager
+wants the literal reading instead, it is one line (`unfold` multiplies by
+the member count) and the four over-admits above are its price.
+
+### New mover class (EMIT-1 on a WRITTEN class), measured
+
+A finite alternation holding a multi-member written class used to decline
+the island outright; now the size row decides it like any other. Measured
+(instructions:u, taskset -c 7, 3 runs each, identical):
+
+| pattern | flags | base96 islands / program B / instructions | tip |
+|---|---|---|---|
+| `x(?:[éà]\|foo\|bar\|baz)y` | byte `--engine=vm` | 0 / 2,024 / 365,359 | 1 / 2,907 / 204,715 |
+| `x(?:1[éè]\|q2\|r3)y` | `-e utf8 --engine=vm` | 0 / 1,826 / 364,364 | 1 / 2,468 / 213,355 |
+| `x(?:[я]\|cat\|dog)y` | byte `--engine=vm` | 0 / 1,411 / 297,923 | 1 / 2,137 / 184,112 |
+
+(1.6x-1.8x fewer instructions, ~45-55% more program bytes.) No answer
+moves: the island is exact by construction and the denied-pair census
+(job `altfix-movers`) re-reads the population.
+
+### Acceptance table (re-measured)
+
+instructions:u, `taskset -c 7`, 3 runs (all three equal to the digit
+shown), single-process probes, not niced; base96 = the base with only its
+abi digit bumped; "before" = the branch at `4cc816446`; "after" = this
+lane's EMIT-1 build (the island stamps and program bytes of every row are
+unchanged by the later EMIT-3 provenance step, checked per row: the stamp
+and `RX_VM_PROGRAM_BYTES` equal base96's).
+
+| cell | flags | base96 | before | after |
+|---|---|---|---|---|
+| bench altwide w-256 | `--engine=vm` | 205K, 143,470 B, 1 island | 12.19M, 20 islands | 205K, 143,470 B, 1 island |
+| w-256 with captures (w256br) | `--features all` | 272.7K | 13.07M | 272.7K |
+| months | `--features all` | 1.064M | 3.248M | 1.064M |
+| `x(?:[éà]\|q2\|r3)y`, u1 subject | `-e utf8 --engine=vm` | 170K | 236.9K | 170K |
+| same, u2 subject | `-e utf8 --engine=vm` | 237K | 456.6K | 237K |
+| `(?:ab\|ba\|aa\|bb){24}c` (rule M wins) | `--engine=vm` | n/a | 1.737M | 1.737M (unchanged) |
+| EMIT-3 family (`fam.txt` + both twins + `x(?:cat\|cot\|dog)y`, byte and utf8) | VM | islands / program bytes | the review's cells lost their islands | every cell with a base96 island has it, at base96's program bytes; three cells GAIN one (the written-class class above) |
+| k400 (400 words + `\d+`) | default | one rung | `drop-islands` first | `drop-prefilter` only, 1 island, 239,386 B, 259K = base |
+
+The full re-measure with the final tip binary is job `altfix-acc`
+(OWED below): the EMIT-2/3 numbers above were taken during the lane, and
+the kit's S2d timing window (rulings R6) began before the last build.
+
+### OWED (detached box-queue jobs, owner altfix; read with `scripts/boxqueue state KEY`)
+
+Every job waits on `altfix-gate` (ready once the kit's job 489 has ended,
+R6), which touches `scratch/altfix/lift`. The batches run in `--snapshot`
+worktrees of the commit named in the OWED list below.
