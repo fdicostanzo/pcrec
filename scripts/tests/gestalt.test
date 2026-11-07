@@ -37,7 +37,7 @@ CAN=CANARY_SECRET_TEXT_9137
   printf '{"type":"assistant","message":{"content":"%s","usage":{"input_tokens":5,"cache_creation_input_tokens":2000,"cache_read_input_tokens":123000}}}\n' "$CAN"
   printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"; } > "$T/proj/p/$sid.jsonl"
 out2=$(GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/none" GESTALT_STATUSLINE_DIR="$T/nosl" PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" 2>&1)
-printf '%s\n' "$out2" | grep -qE '^context: main 125k( \(.*\))?$' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
+printf '%s\n' "$out2" | grep -qE '^context: main 125k( \(.*\))?(; logs main [0-9]+M( LARGE)?)?$' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
 printf '%s\n' "$out2" | grep -q "$CAN" && bad "canary leaked" || ok "no transcript content in output"
 printf '%s\n' "$out2" | grep -qx 'subscription: unavailable (check /usage)' && ok "subscription unavailable without snapshot" || bad "subscription line"
 # statusline snapshots: fresh session file wins over the transcript; usage-latest feeds the subscription line
@@ -46,7 +46,7 @@ printf '{"captured_at":%s,"context_window":{"context_window_size":1000000,"curre
 printf '{"five_hour":{"used_percentage":12,"resets_at":%s},"seven_day":{"used_percentage":34,"resets_at":%s},"session_id":"x","captured_at":%s}\n' "$((nowt+3600))" "$((nowt+86400))" "$nowt" > "$T/sl/usage-latest.json"
 G="env GESTALT_ROLES_DIR=$T/roles GESTALT_PROJECTS=$T/proj GESTALT_CLAUDE_HOME=$T/none GESTALT_STATUSLINE_DIR=$T/sl PATH=$T/bin:$PATH"
 out3=$($G "$TO" 10 bash "$here/gestalt" 2>&1)
-printf '%s\n' "$out3" | grep -qE '^context: main 300k( \(.*\))?$' && ok "context from fresh session snapshot" || bad "snapshot context: $(printf '%s\n' "$out3" | grep '^context:')"
+printf '%s\n' "$out3" | grep -qE '^context: main 300k( \(.*\))?(; logs main [0-9]+M( LARGE)?)?$' && ok "context from fresh session snapshot" || bad "snapshot context: $(printf '%s\n' "$out3" | grep '^context:')"
 printf '%s\n' "$out3" | grep -q '^subscription: 5h 12% .* 7d 34%' && ok "subscription from usage-latest.json" || bad "subscription: $(printf '%s\n' "$out3" | grep '^subscription:')"
 printf '{"captured_at":%s,"context_window":{"current_usage":{"input_tokens":1}}}\n' "$((nowt-3000))" > "$T/sl/session-$sid.json"
 out4=$($G "$TO" 10 bash "$here/gestalt" 2>&1)

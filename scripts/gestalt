@@ -168,7 +168,22 @@ case $acw in ''|*[!0-9]*) acw="" ;; esac
 wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
 if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
 elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi
-echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
+
+# --- logs (on the context line, the 12-line cap): each registered session's transcript size (Frank 2026-11-07: long sessions once froze when the
+# transcript reached some size; /clear starts a new file, compaction keeps appending to the same one).
+# The 50 MB mark is UNMEASURED (the freeze size was never recorded); it only flags, it decides nothing.
+ll=""
+if [ -d "$roledir" ]; then
+    for rf in "$roledir"/*; do
+        [ -f "$rf" ] || continue
+        sid=$(basename "$rf"); case $sid in *[!A-Za-z0-9_-]*) continue ;; esac
+        role=$(head -1 "$rf" 2>/dev/null); case $role in main|kit) ;; *) continue ;; esac
+        tf=$(ls "$projects"/*/"$sid".jsonl 2>/dev/null | head -1); [ -n "$tf" ] || continue
+        mb=$(( $(stat -c %s "$tf" 2>/dev/null || echo 0) / 1048576 ))
+        ll="$ll${ll:+ / }$role ${mb}M$([ "$mb" -ge 50 ] && echo ' LARGE')"
+    done
+fi
+echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")${ll:+; logs $ll}"
 
 # --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
 # statusline.sh from Claude Code's own rate_limits input); stale once a window has reset or it is >30 min old
