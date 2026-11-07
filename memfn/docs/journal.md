@@ -3425,3 +3425,13 @@ Main ruled on the four kit findings (D186 add. 2):
     - verify settest c2 and rc-words w1: "below paired A/A or signs mixed".
   - Nothing is written or set.
   - Analysis lane s2dana (opus, read-only) is classifying each floor (resolution / fixture defect / noise) with options. main is told; the box is released to its axes2.
+- 11-06 22:30: s2dana analysed the REFUSED window (kept on s2c at ce88f1766, span_cards/s2d1/):
+  - byte.libc: box state. The fast/slow switch is between rounds; ctl 2 % slower, memchr 6-10 % slower; load1 1.1-2.2, a co-runner.
+  - l1/c1: true cost about 0 (3 ALU ops under a load-bound loop), and the null base is a DIFFERENT loop (indexed, byte load, 16-B align), so the arm runs 0.1 wb faster (25/28 negative).
+  - w1/c2: sub-resolution. Delta rows are ungated by spec; walk.random rows are 37-44 % noise and bimodal (box state).
+- RULED rev 1.4 (lane s2rev14, opus; design + code in one lane):
+  - R14-1: null base = the arm's own loop, from one source text, with a check + sabotage;
+  - R14-2: sub-resolution delta rows are carried MEASURED "consistent with 0 within r" (value clamped >= 0, noise = r), NOT NULL; no format/seam change allowed;
+  - R14-3: rerun with a co-runner log at each quiet check; no gate/z change;
+  - R14-4: est prints "ungated"; a note line names the bimodal rows.
+- Then one critic, gates, and window 2 from main.
