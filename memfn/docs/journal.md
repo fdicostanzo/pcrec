@@ -3541,3 +3541,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Checked: S2e does not touch formhash.c or the mf_form_entry struct (empty diff vs 5b6cf41aa), so the column is a purely additive later change. NO CONFLICT, no reply sent (main asked for a reply on conflict only).
   - Owed at the column's unit: whether `target` enters the form hash (it would move set keys); decide it in that unit's design.
   - Still no build before Frank's XARCH-DEV go.
+- 11-07 ~11:35: S2e gates: 480 strict, 481 sections, 484 slotsab and 486 plants are GREEN. 485 census RED (10:25) and 482 make test RED (11:12); 483 mech was cancelled because it waited on 482.
+  - Census: movers 0 on every arm, but the job refuses because a CLAUDE.md changed after 0002.tsv's code_commit (6608a3104 -> d3da774b0).
+  - Test: C4 (test-memfn-arch) flags the new set id `zen4-grid3` as arch-noun vocabulary in 4 test files; zen4-grid1 is already allowlisted.
+  - Neither red is a result problem. Fix lane `s2efix` (sonnet) is in the s2e worktree. On delivery: requeue 480-486.
+  - MISS: my custom queue.log watchers (kitmgr/watch_gates.sh plus an inline copy) stayed silent through both reds. Main saw them and Frank relayed. Now using the standard scripts/monread kit --wait. Memory pcrec-use-standard-queue-watcher.
