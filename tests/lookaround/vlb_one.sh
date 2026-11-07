@@ -44,6 +44,10 @@ ndiff=$(paste "$d/mine" "$d/theirs" | awk -F'\t' '$1 != $2' | wc -l)
 # is therefore tolerated, on exactly these cells, for a group-1 START that lies
 # EARLIER than pcrec's with the match span and every other group unchanged:
 # pattern `(?<*(.{1,3}))b`, mode utf8-invalid, pcrec's answer pinned below.
+# The vanilla group-1 START may also be an UNDERFLOWED offset (CI run
+# 42393813165: 18446744073709551614 = -2 as an unsigned 64-bit value, the
+# backwards scan stepping before the subject start, same mechanism); a
+# 20-digit start counts as "earlier" (bash's -lt cannot compare it).
 u25=0
 if [ "$mode" = utf8-invalid ] && [ "$pat" = '(?<*(.{1,3}))b' ] && [ "$ndiff" -ne 0 ]; then
     # <subject hex> <startpos> <pcrec's answer> (the promise-honouring one)
@@ -57,7 +61,8 @@ if [ "$mode" = utf8-invalid ] && [ "$pat" = '(?<*(.{1,3}))b' ] && [ "$ndiff" -ne
             read -r -a mi_a <<< "$mi"; read -r -a th_a <<< "$th"
             if [ "${#mi_a[@]}" -eq 5 ] && [ "${#th_a[@]}" -eq 5 ] \
                && [ "${mi_a[1]}" = "${th_a[1]}" ] && [ "${mi_a[2]}" = "${th_a[2]}" ] \
-               && [ "${mi_a[4]}" = "${th_a[4]}" ] && [ "${th_a[3]}" -lt "${mi_a[3]}" ]; then
+               && [ "${mi_a[4]}" = "${th_a[4]}" ] \
+               && { [[ "${th_a[3]}" =~ ^[0-9]{20}$ ]] || [ "${th_a[3]}" -lt "${mi_a[3]}" ]; }; then
                 u25=$((u25 + 1)); th="$mi"
             fi
         fi

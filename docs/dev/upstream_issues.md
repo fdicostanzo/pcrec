@@ -1141,4 +1141,11 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   start with span and other groups equal; anything else on that pattern,
   and every other pattern, still compares exactly. Retire the tolerance
   when the CI and local oracles move to 10.48+.
+- **Addendum (2026-11-07, lane citri2, CI run 42393813165)**: after the 5-cell
+  tolerance, 2 of the 36 cells still differed on vanilla: the oracle's group-1
+  START was 18446744073709551614 (-2 as unsigned 64-bit; the backwards scan
+  underflows past the subject start), which bash `-lt` rejected ("integer
+  expected"). Same mechanism; the tolerance now also accepts a 20-digit
+  (wrapped) start as "earlier", every other condition unchanged. Not
+  reproducible on this box (patched 10.46); verify on the next CI run.
 
