@@ -43,7 +43,7 @@ as targets; `x86-64` and `armv8-a` as families).
 SABOTAGE S2981 (next free id; grep of the tree and all worktrees found no S2981+): plants the family `x86_64` respelled
 `x86-64`, equal to the target. Only the distinctness rule sees it (the default list names targets). Hand-planted
 through `TARGETS_DEF` on a scratch copy: `MISMATCH target MF_TGT_X86_64: token 'x86-64' is also family MF_FAM_X86_64's`,
-red. The real mech run is job 453 (rows=7), OWED. Jobs 450-453 re-dry-run: see Light checks.
+red. The real mech run is job 453 (rows=7), OWED. Jobs 450-453 re-dry-run: clean, see Light checks.
 
 ## Spec and contract hunks
 
@@ -59,8 +59,8 @@ niced, `scripts/boxlock status` showed only a queue job (213-altcatch-axes), no 
 `make` rc 0 (table check `ok: 2 families, 4 targets, 2 compared against gcc -march, 1 skipped, host MF_FAM_X86_64, 4 host cells`);
 `make strict` rc 0; `make test-memfn-targets test-codegen test-memfn-arch test-memfn-link test-claudemd-size
 test-spec-history test-ci-shards` rc 0 (no `*** [test-` line). The first run's one red, C4 on the new row's anchor lines
-(class 6, 2 hits), is the allowlist rows above. No make test, no mech, no box job queued. Jobs 450-453 dry-run: see the
-commit message. Logs: `/var/tmp/pcrec-pcrec/scratch/memfn/k0fix/`.
+(class 6, 2 hits), is the allowlist rows above. No make test, no mech, no box job queued. Jobs 450-453 re-dry-run clean (453: `expect rows=7`, field validation of 7 definitions; 450-452 unchanged).
+Logs: `/var/tmp/pcrec-pcrec/scratch/memfn/k0fix/`.
 
 OWED (unchanged keys): kit-k0-strict kit-k0-sections kit-k0-test kit-k0-mech (453 now runs 7 rows).
 
@@ -70,7 +70,7 @@ OWED (unchanged keys): kit-k0-strict kit-k0-sections kit-k0-test kit-k0-mech (45
 |---|---|
 | respell tokens everywhere, list changes | yes, Token spellings |
 | distinctness rule in the table check | yes, one token space |
-| one sabotage row, red, in 453, rows count raised, jobs 450-453 re-dry-run | S2981; 453 IDS +1 (N derived); dry-runs below |
+| one sabotage row, red, in 453, rows count raised, jobs 450-453 re-dry-run | S2981; 453 IDS +1 (N derived); dry-runs clean (Light checks) |
 | spec hunk: two token spaces, family token in a list | memfn.h + units §6 |
 | light checks | all green |
 | report, history index line, lanecheck | yes |
