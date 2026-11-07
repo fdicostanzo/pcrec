@@ -128,12 +128,18 @@ decline() {   # decline <name> <pattern> <why> [flags...]
     [ "${got:-}" = "0" ] && ok "declines '$pat' ($why)" \
                          || bad "'$pat' should decline ($why) but stamps ${got:-<none>} islands"
 }
-decline d_class  '[ab]p|[bc]x|[ab]xy' 'overlapping non-identical classes, nfa.c rule 2'
+# d_class, d_dot and d_ci are SIZE-ROW declines since review r5 altcode
+# EMIT-1 (lane altfix): the island reads a multi-member class as its member
+# words, so these enumerate (6, 256 and 24 words) and the island's estimate is
+# over VM_ISL_SIZE_FACTOR times the chain's. Their classes are written, not
+# folded by rule M, so the chain counts as the one test it emits per class
+# (tuning.md §2.20¶2, the size row) and the chain keeps them.
+decline d_class  '[ab]p|[bc]x|[ab]xy' 'written classes enumerate to 6 words; the size row keeps the chain'
 decline d_quant  'a+|b'               'a quantifier: the language is not finite'
 decline d_cap    '(a)|(b)'            'a capture inside a branch'
-decline d_dot    'a.|bc'              'the dot is not a one-byte class'
+decline d_dot    'a.|bc'              'the dot enumerates 255 words; the size row keeps the chain'
 decline d_anch   '^a|b'               'an assertion in a branch'
-decline d_ci     'cat|dog'            'caseless folds to two-member classes at parse time, D23' -i
+decline d_ci     'cat|dog'            'caseless letters are written two-member classes (D23); the size row keeps the chain' -i
 decline d_flag   'cat|dog|cow'        'the axis denied' -fno-alt-island
 
 # The NARROW PREFIX-BEARING decline, and it needs BOTH directions asserted
@@ -572,6 +578,32 @@ print("(?:" + "|".join(ws) + ")Z")' "$N")"
     fi
 done
 [ "$dense_bad" -eq 0 ] && ok "the dense sets (1,600/1,800/2,000 words, owner denied) keep the island that fits where the chain is refused"
+
+# ---------------------------------------------------------------------------
+# 12. [RUN-POS-SET] THE CLASS IS READ AS ITS MEMBER WORDS, AND THE SIZE ROW
+# COUNTS THE CHAIN BEFORE RULE M's FOLDS (review r5 altcode EMIT-1 / EMIT-3,
+# lane altfix). Rule M folds branches differing at one position into a
+# class (`ea|ga` -> `[eg]a`), and the island reads that class as its members,
+# so the fold changes neither the island's words nor its size. Before the
+# fix the class declined the island (bench altwide w-256: 20 islands where 1,
+# 12.19M instructions against 205K), and after the first repair the size row
+# still compared the island with the FOLDED chain, so small alternations lost
+# it (`x(?:cat|cot|dog)y`). Each witness is a fold the island must read
+# through. `altwide_w256.pattern` is pcrec-bench's altwide w-256 pattern
+# (bench commit 161e5cf8), byte for byte.
+# ---------------------------------------------------------------------------
+memb() {   # memb <name> <want> <pattern> <why> [flags...]
+    local nm="$1" want="$2" pat="$3" why="$4"; shift 4
+    gen "$nm" "$pat" "$@"
+    local got; got="$(islands "$WORKDIR/$nm.c")"
+    [ "${got:-}" = "$want" ] && ok "[MEMB] $nm: $want island(s) ($why)" \
+                             || bad "[MEMB] $nm: RX_VM_ALT_ISLANDS ${got:-<none>} where $want ($why)"
+}
+memb m_w256  1 "$(cat "$SCRIPT_DIR/altwide_w256.pattern")" 'w-256: one island over every word, not one per unfolded remnant'
+memb m_twin  1 'x(?:ea|fb|ga)y'      'rule M folds ea|ga to [eg]a; the island reads its two words'
+memb m_cat   1 'x(?:cat|cot|dog)y'   'the fold [ao] must not shrink the chain the size row compares with'
+memb m_utf8  1 'x(?:[éà]|q2|r3)y'    'a wide class merged by the lowering, read through' -e utf8
+memb m_utf8b 1 'x(?:éa|èb|ça)y'      'the utf8 twin' -e utf8
 
 echo
 echo "island structural checks: $pass passed, $fail failed"

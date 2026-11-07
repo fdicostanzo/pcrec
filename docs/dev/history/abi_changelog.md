@@ -36,9 +36,21 @@ the bump's own commit.**
   under `-fno-cls-kit`), cursor rungs where a quantified class becomes one
   box, and a bare wide class's own VM island gone where its boxes merge
   (`-fno-altcls-merge`, which now denies the merge at both callers, restores
-  each). The VM island reads a wide class as its code-point set, admitted
-  exactly as before. Every other artifact, every `byte` artifact included,
-  moves only the number. No answer moves.
+  each). The VM island reads a wide class as its code-point set.
+  The same number also carries the branch's later stages (review r5 altcode
+  TRD-2/CON-2, lane altfix): stage 2b moves altcls's merge and factoring into
+  the owner (byte artifacts too: `RX_ALTCLS_MERGES`/`FACTORED`, VM program
+  bytes, DFA tables, the island census and rungs on 117 of 6,720 corpus and
+  bench patterns, `docs/dev/lanes/altbuild_report.md` "Movers"; four
+  refusals retired); the size-cap ladder's `drop-islands` row (K139), the LAST
+  VM rung, retires refusals of artifacts an island carried over a cap (the
+  retry is the caller's `-fno-alt-island` artifact with the earlier rungs'
+  drops applied); and the island reads a byte class as its member words, its
+  size row counting the chain before rule M's folds, so an alternation the
+  owner folds keeps the island it had at 95 (bench altwide w-256: 20
+  islands back to 1) and a finite alternation with a written class can now
+  take one where the size row admits it (`x(?:[éà]|foo|bar|baz)y` under
+  `--engine=vm`). No answer moves.
 - **`rx_info.abi` was `95` ([LANDWALK] stage 1, 94 -> 95,
   numbered at landing by lane p1land, 2026-11-02, over main's R-30 94 in landing order;
   built by lane p1build 2026-10-29 as 92 -> 95 PROVISIONAL, re-based by lane p1tri 2026-10-30;

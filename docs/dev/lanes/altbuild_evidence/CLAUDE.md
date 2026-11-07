@@ -56,5 +56,8 @@ pcrec; outputs are the runs the report cites. Not built or run by `make`.
   vs stage, the deny pair as the restore control, single-bit attribution).
 - `ofs_reprobe.py` — the `ofs_test_of` PREM-6 re-probe (a probe-binary sweep
   over the corpus and bench, default vs ofs flags; 0 masked positions).
-- `u1_bench.py` — U1 for bench/utf8 (base96 vs s12p, construct predicate
-  with a bracket scanner); its run is box-queue job 301.
+- `u1_bench.py` — U1 for bench/utf8 (base96 vs the branch tip, construct
+  predicate with a bracket scanner); its first run, box-queue job 301, was red
+  on 8 instrument defects, fixed by lane altfix (caseless k/s orbits, single-
+  character alternations, any island fall, refusal-moved routes skipped,
+  EMIT-1 rises listed apart); the re-run is lane altfix's.

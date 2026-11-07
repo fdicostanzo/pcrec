@@ -645,6 +645,9 @@ static int anf_list(AnfRun *r, Ast **br, int n)
 
 int pcrec_altnf(Ctx *cx, Ast **br, int n, PcrecAnfRules rules, PcrecAnfStats *st)
 {
+    /* `max_pos` reuses the req walk's run bound in CHARACTER POSITIONS, not
+     * bytes: limits.def states this second reader and its unit (review r5
+     * altcode SLOT-6). */
     AnfRun r = { cx, rules, { &anf_pd_cls, 0, PCREC_MAX_REQ_RUN_SCAN }, 0, 0, st };
     return anf_list(&r, br, n);
 }

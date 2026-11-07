@@ -387,7 +387,13 @@ echo "== §5 the size-cap ladder's last rung ([PF-DROP], D135) =="
 # start by default and then fits with its prefilter (a FIT mover), so the
 # compile denies that row to keep reaching the rung whose artifact this
 # section sweeps; `-fno-start-landing` is masked and moves no answer.
-wit='(\p{Xwd})'
+# RE-AIMED 2026-11-06 (lane altfix): [RUN-POS-SET] stage 1 shrank
+# `(\p{Xwd})`'s tables (933,498 B), so it fits with its prefilter and no
+# longer reaches the rung. `(\p{Xwd}|\p{Nd}x|\p{Sc}y)` does (hybrid
+# 1,058,204 B) and has the same member set over this sweep's subject: `\p{Nd}`
+# is inside `\p{Xwd}`, and no `\p{Sc}` code point is followed by `y` in the
+# ascending code-point string, so every match is one `\p{Xwd}` member.
+wit='(\p{Xwd}|\p{Nd}x|\p{Sc}y)'
 mkdir -p "$WORKDIR/pd"
 case " ${ENC:-byte utf8} " in
   *" utf8 "*) ;;

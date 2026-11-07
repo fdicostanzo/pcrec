@@ -43,7 +43,12 @@ g 1 0 2
 n ""
 n " \t-.,;"
 
-# The rung's witness since [START-LANDING]: `(\p{Xwd})x` is a VM hybrid
+# [RUN-POS-SET] stage 1 (2026-11-06, lane altfix): the tables shrank and
+# `(\p{Xwd})x` fits with its prefilter; the rung's witnesses moved to
+# tests/resource (`(\p{Xwd})\b`) and tests/codegen/run_fallback_table.sh
+# (`(\p{Xwd}|\p{Nd}x|\p{Sc}y)`), and S420 detects through the former. The
+# block stays for its spans. Its history:
+# the rung's witness since [START-LANDING]: `(\p{Xwd})x` is a VM hybrid
 # whose prefilter alone is over the cap and which takes the reverse pass, so
 # the rung drops the prefilter at default settings. Every expectation is
 # libpcre2 10.46's (PCRE2_UTF, this Linux box, 2026-10-10).

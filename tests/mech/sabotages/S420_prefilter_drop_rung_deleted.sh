@@ -12,10 +12,14 @@
 # `tests/uprops/size_ladder_prefilter_drop.rxt`, whose one block becomes a
 # pattern-compile failure (every case in it fails), and the resource
 # section's [PF-DROP] cells.
+# RE-AIMED 2026-11-06 (lane altfix): [RUN-POS-SET] stage 1 shrank
+# `(\p{Xwd})`'s tables, so `(\p{Xwd})x` (the harness target's second block)
+# fits with its prefilter and the plant no longer moves it. The detector is
+# now the resource suite's [PF-DROP] witness `(\p{Xwd})\b` (hybrid 1,087,026 B
+# at this tree), which the REACH reads; the harness target is dropped.
 SAB_ID="S420-prefilter-drop-rung-deleted"
 SAB_FILE="src/core/compile.c"
-SAB_SUITES="harness resource"
-SAB_HARNESS_TARGET="tests/uprops/size_ladder_prefilter_drop.rxt"
+SAB_SUITES="resource"
 SAB_DESC="the size-cap ladder's prefilter-drop row never applies, so a VM hybrid whose prefilter alone is over an emitted-size cap is refused again — (\\p{Xwd}) under -e utf8, D135's witness"
 SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): harness corpus:19fail/0pass on the target file (its one block no longer compiles); resource [PF-DROP] cells red. docs/spec/limits.md §8's size-cap ladder; docs/dev/decisions.md D135"
 SAB_COUNT=1
@@ -25,7 +29,7 @@ SAB_COUNT=1
 # `landing` start and fits with its prefilter, so the reach probe and the
 # harness target's witness are `(\p{Xwd})x` (no landing; the rung still
 # fires at the default). The resource cells deny the landing row instead.
-SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})x" 2>/dev/null | grep -o "size cap retry, hybrid" | head -1'
+SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})\b" 2>/dev/null | grep -o "size cap retry, hybrid" | head -1'
 SAB_REACH_EXPECT='size cap retry, hybrid'
 SAB_BEFORE='    return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&'
 SAB_AFTER='    return false && s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&   /* SABOTAGE S420 */'

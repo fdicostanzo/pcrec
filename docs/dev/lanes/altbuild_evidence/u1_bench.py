@@ -21,7 +21,21 @@ routed class); the per-observable direction is checked where the design
 states one: `tables` and `vmbytes` never grow, `islands` only fall 1 -> 0,
 refusals only retire. This is a coarser model than u1_folds.py's (no
 box arithmetic for properties: that would need the UCD tables pcrec
-itself reads), stated as such in the report."""
+itself reads), stated as such in the report.
+
+REVISED by lane altfix (2026-11-06, the job-301 triage: 8 findings, every
+one the instrument's): (1) the predicate missed two constructs that make a
+multi-box class: an ASCII letter under caseless matching whose fold orbit
+leaves ASCII (`k`/`K` -> U+212A KELVIN SIGN, `s`/`S` -> U+017F LONG S,
+also through a bracket range covering them), and an alternation holding a
+non-ASCII single character (altcls folds the branches into a wide class);
+(2) `islands` may fall by any count (a merge can remove several islands,
+`ci-moskva` 6 -> 1), and a RISE is reported in its own class, the EMIT-1
+widening (review r5 altcode: a class is read as its member words), not a
+finding; (3) a route whose refusal moved (refused at BASE, compiles now)
+has no BASE value to compare, so that route's other observables are not
+read as movers (`prp-l`, `prp-notl` on the VM route). STAGE is now the
+branch tip, so the stages 1/2p/2b and the altfix fixes are read together."""
 import os, re, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 
@@ -45,6 +59,20 @@ def brackets(pat):
         i += 1
     return out
 
+ORBIT = re.compile(rb"(?<!\\)[kKsS]")
+RANGE = re.compile(rb"([A-Za-z])-([A-Za-z])")
+
+def caseless_orbit(pat):
+    """An ASCII letter whose caseless orbit leaves ASCII: k/K (KELVIN SIGN),
+    s/S (LONG S), written or inside a bracket range that covers it."""
+    if not re.search(rb"\(\?[a-zA-Z]*i", pat): return False
+    if ORBIT.search(pat): return True
+    for b in brackets(pat):
+        for m in RANGE.finditer(b):
+            lo, hi = m.group(1).lower(), m.group(2).lower()
+            if lo <= b"k" <= hi or lo <= b"s" <= hi: return True
+    return False
+
 def predicted(pat):
     """A class with a multi-box UTF-8 split: a wide construct, a bracket class
     reaching above 0x7F, or a non-ASCII letter under caseless matching (its
@@ -52,6 +80,8 @@ def predicted(pat):
     if WIDE.search(pat): return True
     if any(HIGH.search(b) for b in brackets(pat)): return True
     if re.search(rb"\(\?[a-zA-Z]*i", pat) and HIGH.search(pat): return True
+    if caseless_orbit(pat): return True
+    if b"|" in pat and HIGH.search(pat): return True
     return bool(UCP.search(pat) and re.search(rb"\\[wds]", pat))
 
 def run(pcrec, pat, extra):
@@ -87,16 +117,24 @@ def obs(pcrec, pat):
 def one(args):
     base, stage, name, pat = args
     b, s = obs(base, pat), obs(stage, pat)
-    moved = [k for k in ("run", "tables", "vmbytes", "islands", "rungs", "refused") if b[k] != s[k]]
+    # a route whose refusal moved has no comparable value on that route
+    skip = set()
+    if b["refused"][0] != s["refused"][0]: skip |= {"run", "tables"}
+    if b["refused"][1] != s["refused"][1]: skip |= {"vmbytes", "islands", "rungs"}
+    moved = [k for k in ("run", "tables", "vmbytes", "islands", "rungs", "refused")
+             if b[k] != s[k] and k not in skip]
     bad = []
     for k, x in s["tables"].items():
         if k in b["tables"] and x > b["tables"][k]: bad.append("U3 growth %s %d->%d" % (k, b["tables"][k], x))
     if "vmbytes" in moved and "-" not in (b["vmbytes"], s["vmbytes"]) and int(s["vmbytes"].rstrip("ULL")) > int(b["vmbytes"].rstrip("ULL")):
         bad.append("vmbytes grew")
-    if "islands" in moved and not (b["islands"] == "1" and s["islands"] == "0"): bad.append("islands %s->%s" % (b["islands"], s["islands"]))
+    rise = False
+    if "islands" in moved:
+        if "-" in (b["islands"], s["islands"]): bad.append("islands %s->%s" % (b["islands"], s["islands"]))
+        elif int(s["islands"]) > int(b["islands"]): rise = True
     if "refused" in moved and (s["refused"][0] and not b["refused"][0] or s["refused"][1] and not b["refused"][1]):
         bad.append("NEW refusal")
-    return name, pat, predicted(pat), moved, bad, b, s
+    return name, pat, predicted(pat), moved, bad, b, s, rise
 
 def main():
     a = sys.argv[1:]
@@ -114,8 +152,9 @@ def main():
     findings = 0
     with open(os.path.join(out, "u1_bench.tsv"), "w") as f:
         f.write("pattern\tpredicted\tmoved\tverdict\tdetail\n")
-        for name, pat, pred, moved, bad, b, s in res:
+        for name, pat, pred, moved, bad, b, s, rise in res:
             if bad: v = "FINDING"
+            elif rise: v = "island-rise-EMIT1"
             elif moved and not pred: v = "UNPREDICTED-MOVER"
             elif moved: v = "predicted-mover"
             elif pred: v = "predicted-not-moved"
@@ -125,12 +164,13 @@ def main():
             f.write("%s\t%s\t%s\t%s\t%s\n" % (name, pred, ",".join(moved) or "-", v, det))
     import collections
     c = collections.Counter()
-    for name, pat, pred, moved, bad, b, s in res:
+    for name, pat, pred, moved, bad, b, s, rise in res:
         for k in moved: c[k] += 1
     print("population: %d bench/utf8 patterns; predicted (wide construct): %d; moved: %d; per observable: %s"
           % (len(res), sum(r[2] for r in res), sum(1 for r in res if r[3]), dict(c)))
     print("refused on both builds (either route): %d" % sum(1 for r in res if r[5]["refused"] == r[6]["refused"] and any(r[5]["refused"])))
-    print("findings (unpredicted mover, growth, island rise, new refusal): %d" % findings)
+    print("island rises (the EMIT-1 widening, listed, not findings): %d" % sum(1 for r in res if r[7]))
+    print("findings (unpredicted mover, growth, new refusal): %d" % findings)
     if not res: print("FLOOR: empty population"); sys.exit(1)
     sys.exit(1 if findings else 0)
 

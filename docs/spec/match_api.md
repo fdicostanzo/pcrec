@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 95
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 96
 #error "pcrec: this artifact (abi 96) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 95
+#define PCREC_RX_ABI_H 96
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another

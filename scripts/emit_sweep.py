@@ -1545,6 +1545,11 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset(),
                 problems.append("%s: declared row %s lost its key" % key)
         elif x != y:
             problems.append("%s: undeclared row moved: %r" % (flag, x[:60]))
+    # A declared row this surface never listed is a problem too (review r5
+    # altcode CHK-2): an INVENTED declaration beside a real one used to pass
+    # and count as a declared move.
+    for k in sorted(k for k in declared if k[0] == flag and not declared[k]):
+        problems.append("%s: declared row %s is not in the dump" % k)
     return problems
 
 
