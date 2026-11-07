@@ -46,14 +46,14 @@ Main vs fix differ in exactly ONE frame (`vm_emit_node`). Tool: `/var/tmp/pcrec-
 
 ## Validation
 
-- (a) Byte identity: `scripts/emit_sweep.py --ref-bin <main 7474b3e59 scratch build> --bin <worktree build>`, all default streams, then the same again with `--extra-base='-e utf8'`. Queue job `210-stackfix-sweep`. RESULT: SWEEP_RESULT_PENDING
+- (a) Byte identity: `scripts/emit_sweep.py --ref-bin <main 7474b3e59 scratch build> --bin <worktree build>`, all default streams, then the same again with `--extra-base='-e utf8'`. Queue job `210-stackfix-sweep`. OWED (expected: byte-identical on every stream, VERDICT GREEN; log /var/tmp/pcrec-pcrec/scratch/stackfix/sweep-{byte,utf8}.log, job line `stackfix-sweep: VERDICT GREEN`).
 - (b) Stack: `bash tests/thread/run_compile_stack.sh` on the worktree build, rc=0, numbers in the table above.
-- (c) `make -k test-stackdepth test-lookaround` on the worktree, solo, niced. Queue job `211-stackfix-sections`. RESULT: SECTIONS_RESULT_PENDING
+- (c) `make -k test-stackdepth test-lookaround` on the worktree, solo, niced. Queue job `211-stackfix-sections`. OWED (expected: test-stackdepth and test-lookaround green, no `*** [...test-` line in the job log).
 
 ## STATE AT HANDOFF
 
 - Branch lane/stackfix: fix commit d9bce0f25 (src/gen/emit_vm.c only), plus this report and its history-index line.
 - No abi bump, no spec hunk: no caller can observe the change, and the budget is unchanged.
 - Rulings file stackfix_rulings.md: empty at the last read, so no entry applied.
-- OWED: none. Both queue jobs have finished and their verdicts are above. `make test` is the manager's to queue after review.
+- OWED: stackfix-sweep (queue job 210-stackfix-sweep: expected byte-identical, `stackfix-sweep: VERDICT GREEN`) and stackfix-sections (queue job 211-stackfix-sections, which runs after the sweep: expected test-stackdepth and test-lookaround green). The manager reads their verdicts from worktrees/.boxqueue/done/. `make test` is the manager's to queue after review.
 - Scratch: /var/tmp/pcrec-pcrec/scratch/stackfix/ (scratch builds of 65722f996, 7474b3e59 and altbuild, the stack logs, the su tables, the sweep outputs under sweep-byte/ and sweep-utf8/, the queue job scripts under jobs/).
