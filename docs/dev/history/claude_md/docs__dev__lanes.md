@@ -4166,3 +4166,4 @@ never edited afterwards.
 - `id1tri_report.md` (+ `id1tri_judge_v2.py`) — triage of the RED identity gate id1 (2026-11-06, lane id1tri): (B)/(A) differing=0 on all four axes; the judge's manifest-vs-mismatch comparison re-judged GREEN by judge v2.
 - `vlbland_report.md` — landing (2026-11-07, lane vlbland, sonnet): [VLOOKBEHIND] stage 1 merged at c44649a69 (abi 96), identity pins re-pinned, plan filings, ledger major line.
 - `xarchseam_report.md` — design lane (2026-11-07, lane xarchseam, opus): the per-target seam note `docs/design/memfn/target_seam.md` PROPOSED rev 0 for [XARCH-DEV]; premise grep counts, the one stamp conflict and its resolution, questions with leanings.
+- `citri_report.md` — CI triage (2026-11-07, lane citri, sonnet): run 42377116304 red; test-stackdepth optnest@250 = real compiler stack growth from c44649a69 (+33 KB, not fixed); lookaround s5 utf8-invalid cell = suspected vanilla-vs-Ubuntu libpcre2 10.46 oracle difference (unproven).
