@@ -157,3 +157,9 @@ implements them):
   `-fmemfn-simd` pins must read the same on the Mac (§8, F2(c)), and the
   one-member list option too, or U2 leaves the w32 forms no route through
   pcrec. Both as working spellings (Q4 stays [EMIT-ENTRIES]'s).
+
+## 6. Manager rulings at the merge (2026-11-07)
+
+- R1 (C4 exemption for a pcrec target table) SUPERSEDED by R3 (Frank: opaque tokens; the kit owns the table) and R4 (Frank: the kit parses each token at option parse, early fail with the kit's text). Full text: docs/dev/reviews/2026-11-07-xarch1-rulings.md.
+- WORKING SPELLINGS for P1 (D174 binds; final names at [IFACE-PUSH]/[STAMP-REVIEW]): `--cpu-family=NAME` and `--cpu-targets=LIST` (a one-member list is the build-time single variant). NOT `--family`/`--targets`: "family" already names the feature families ([FEAT-FAMILIES], basic/extended/pcre2), so the bare word would read as that.
+- Order adopted: K0 (kit) first, then P1 (pcrec). The REPLACEMENT D146 addendum is filed with K0's landing.
