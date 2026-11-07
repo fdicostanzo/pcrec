@@ -1104,3 +1104,48 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   cells over them are pcrec-only (`tests/subst-extended/cells.tsv`); the pinned
   list is `tests/oracle/case_map_pcre2_diff.tsv`. A PCRE2-compatible mapping is
   a later data set ([CASE-COMPAT]).
+
+## U25 — libpcre2 10.46 interpreter: a variable-length lookbehind crosses an invalid-UTF barrier under `MATCH_INVALID_UTF` (CI run 42377116304, lane u25, 2026-11-07)
+
+- **Status**: suspected-bug (candidate upstream report to the PCRE2 project;
+  NOT filed or sent anywhere — the owner decides)
+- **Found**: 2026-11-07, CI run 42377116304 shard 3/3: `make test-lookaround`
+  §5 red on 5 of the 36 `utf8-invalid` cells of `(?<*(.{1,3}))b`. Settled by
+  the pcre2-reader note `docs/dev/pcre2_notes/lookbehind-invalid-utf.md`.
+- **Repro** (`PCRE2_UTF | PCRE2_MATCH_INVALID_UTF`, interpreter, no JIT):
+  pattern `(?<*(.{1,3}))b`, subject bytes `FF 61 62`, any startpos 0..2:
+  - match 2..3 in every build; group 1 differs:
+  - vanilla libpcre2 10.46 (CI's, built from source): group 1 = **0..2**
+    (steps back over the `FF` and the dot consumes it as a character);
+  - this box's Ubuntu-patched 10.46, and pcrec: group 1 = **1..2**.
+  - The other four cells are `A9 C3 A9 62` at startpos 1 and 3 (pcrec
+    `match 3 4`, group 1 = 1..3; the vanilla group-1 start is earlier).
+    Only the `FF 61 62` answer is observed from CI; the rest is inferred
+    from the note's mechanism.
+- **Isolation**: the documentation (`pcre2unicode`, `MATCH_INVALID_UTF`)
+  promises that an invalid sequence is a barrier no match can cross, that a
+  lookbehind fails if it meets one stepping backwards, and that it does not
+  match dot. The interpreter's FIXED-length backward step honours this; its
+  VARIABLE-length backward step (the `(?<*`, `(?<=` with differing branch
+  widths path) tests against the start of the whole subject instead of the
+  start of the validated fragment, and counts `FF` as a one-byte character.
+  The JIT is expected to honour the barrier (INFERRED from reading, not
+  run). The 10.46 ChangeLog/NEWS mention no fix; whether the Ubuntu patch
+  addresses this is unknown (the answers say it does).
+- **Impact on pcrec**: none on correctness; pcrec follows the documented
+  promise (D26 addendum: compatible unless PCRE2 bug, then the standard).
+  `tests/lookaround/vlb_one.sh` tolerates exactly those 5 cells, and only
+  when pcrec's answer is the pinned one and the oracle differs by an
+  EARLIER group-1 start with span and other groups equal; anything else on
+  that pattern, and every other pattern, still compares exactly.
+- **Draft upstream issue text** (not filed):
+  > Title: pcre2_match (interpreter): variable-length lookbehind ignores the
+  > invalid-UTF barrier under PCRE2_MATCH_INVALID_UTF.
+  > With PCRE2_UTF|PCRE2_MATCH_INVALID_UTF, pattern `(?<*(.{1,3}))b` on the
+  > bytes FF 61 62 returns match 2..3 with group 1 = 0..2, i.e. the lookbehind
+  > stepped back over the invalid byte and `.` matched it. pcre2unicode says
+  > an invalid sequence is a barrier a lookbehind cannot cross and never
+  > matches dot; the fixed-length lookbehind `(?<=..)b` does fail here. The
+  > variable-length backward step appears to stop at the subject start rather
+  > than the start of the validated fragment. Expected group 1 = 1..2 (the
+  > JIT appears to behave so). Seen with 10.46 built from the release tarball.

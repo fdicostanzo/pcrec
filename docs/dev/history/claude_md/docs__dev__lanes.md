@@ -4166,3 +4166,4 @@ never edited afterwards.
 - `id1tri_report.md` (+ `id1tri_judge_v2.py`) — triage of the RED identity gate id1 (2026-11-06, lane id1tri): (B)/(A) differing=0 on all four axes; the judge's manifest-vs-mismatch comparison re-judged GREEN by judge v2.
 - `vlbland_report.md` — landing (2026-11-07, lane vlbland, sonnet): [VLOOKBEHIND] stage 1 merged at c44649a69 (abi 96), identity pins re-pinned, plan filings, ledger major line.
 - `xarchseam_report.md` — design lane (2026-11-07, lane xarchseam, opus): the per-target seam note `docs/design/memfn/target_seam.md` PROPOSED rev 0 for [XARCH-DEV]; premise grep counts, the one stamp conflict and its resolution, questions with leanings.
+- `u25_report.md` — upstream-issue lane (2026-11-07, lane u25, sonnet): U25 (10.46 interpreter variable-length lookbehind crosses the invalid-UTF barrier), the pcre2 note landed, a narrow 5-cell oracle tolerance in `tests/lookaround/vlb_one.sh`.
