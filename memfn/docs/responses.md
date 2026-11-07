@@ -3249,3 +3249,4 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Validation: all GREEN at 1b6f88b34 (480 strict, 481 sections, 482 make test, 483 mech, 484 slot sabotage 35/35, 485 zero-mover census, 486 recompute plants).
   - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the worktree by make test's size log.
   - Main never touches the ledger; your merge review is next.
+- ack: R-36 (target seam unit K0, the kit's target table). Taken now, in parallel with S2f's gates (S2f touches no seam site). Lane `k0` (opus), worktree off lane/memfn-k1107 after its merge of main. Delivery: a kit branch for merge review.
