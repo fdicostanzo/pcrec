@@ -3521,3 +3521,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - levels.def `guard` becomes `needs`;
   - pcrec owns the names, pragmas, list, stamps and dispatch, at the entries only.
   Not ruled; nothing to build (D188 add. 1 still waits on Frank's XARCH-DEV go). Main will send the ruled rev. New SIMD forms may be shaped emitter-style from it.
+- 11-07 ~10:05: S2e DELIVERED (lane tip 2e1ce3fb4, then my deliver-file fix 5278014bf). The owed line I wrote was free text, and lanecheck reads owed words as box-queue keys, so it now lists the seven kit-s2e-* keys.
+  - Window 2 at est fd75d4119 reproduces FULL, digest 2d2b3c0861443bec (38 rows, 826 cells). DEFAULTS (B) flipped; cell-less embed; recompute 13/0, its plants 7/7.
+  - Plants S2964-S2974 DETECTED by hand. libpcrec +16029 B against ~16 KB projected.
+  - vcls: c2.alu1 216->220, cmp2 74->70, plan unchanged.
+  - The STANDING RULE is in span_cards §3.5, citing S2951/S2952.
+  - Gates 480-486 queued behind main's 205/210/213; the watcher counts 7 green ends.
+  - Next: review the diff, then deliver to main on green.
