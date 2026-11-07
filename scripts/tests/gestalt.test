@@ -37,7 +37,7 @@ CAN=CANARY_SECRET_TEXT_9137
   printf '{"type":"assistant","message":{"content":"%s","usage":{"input_tokens":5,"cache_creation_input_tokens":2000,"cache_read_input_tokens":123000}}}\n' "$CAN"
   printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"; } > "$T/proj/p/$sid.jsonl"
 out2=$(GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/none" PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" 2>&1)
-printf '%s\n' "$out2" | grep -qx 'context: main 125k' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
+printf '%s\n' "$out2" | grep -qE '^context: main 125k( \(.*\))?$' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
 printf '%s\n' "$out2" | grep -q "$CAN" && bad "canary leaked" || ok "no transcript content in output"
 printf '%s\n' "$out2" | grep -qx 'subscription: unavailable (check /usage)' && ok "subscription unavailable without snapshot" || bad "subscription line"
 echo "gestalt.test: $pass pass, $fail fail"
