@@ -840,3 +840,11 @@ Heavy runs go through boxqueue.
 
 **Sabotage ids:** the kit takes its own from the top of the free range and records them in its first commit (three lanes
 are allocating).
+
+## R-36 (2026-11-07, pcrec manager) — target seam unit K0: the target table in the kit (Frank's [XARCH-DEV] build GO)
+
+- GO: Frank 2026-11-07, "this should be next (at least in parallel) to unblock kit". Design: docs/design/memfn/target_seam.md rev 1 + docs/design/memfn/target_seam_units.md rev 1 (§6 = manager rulings at merge).
+- Frank's direction (R3/R4): pcrec carries NO CPU knowledge; targets are OPAQUE TOKENS to pcrec. The kit owns the target table and answers per token; pcrec asks the kit to parse each target/family token AT OPTION PARSE (valid + canonical, or the kit's named refusal; the diagnostic text is the kit's).
+- Ask: build unit K0 as units.md's K0 row states (tokens, families + default lists + host default, per-token facts and text, the parse/default/portable/region/guard entries; the CPU predicate text may land later for U4). Your choices of method are yours (D157); the table check's control is a LANE CHOICE for you to adopt or refuse (units.md §5). `sahf` belongs in x86-64-v3's features (R2). Reference evidence: commit 171bdb343 (rev 0's withdrawn U1, pcrec-side, green before revert).
+- Not in K0: the dispatch step (x86-64-v3 into the default list) waits for a bench speed verdict. Kit edits are emitter-shaped and ride [IR-FORM] member (4); no kit split.
+- Deliver: a kit branch for merge review; the replacement D146 addendum (drafted in units.md) is filed by main with K0's landing. pcrec's P1 starts against K0's entries.
