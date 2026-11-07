@@ -206,18 +206,26 @@ def null_body(body):
 
 def null_check(base_src, arm_src, name):
     """[rev1.4 R14-1] the base and its class arm differ only in the compare: equal outside the SITE BODY span, and
-    the base body is slot_null(L) with L a load the arm's body makes (verbatim, or its memcmp's slot_ld)"""
+    the base body is slot_null(L) with L ONE LOAD the arm's body makes (a load spelling, whole: verbatim from the
+    arm's body, or its memcmp's slot_ld); [rev1.4 r10-REV14-3] and the base body EQUALS null_body(the arm's body),
+    so the kept load is the arm's FIRST. The load test is the independent half: it does not call null_body, so a
+    null_body that keeps the compare (or a constant) is refused by it"""
     cut = lambda s: re.sub(r"/\* SITE BODY BEGIN \*/\n.*?/\* SITE BODY END \*/", "BODY", s, flags=re.S)
     if cut(base_src) != cut(arm_src):
         raise SystemExit("link: NULL-BASE MISMATCH %s: its text differs from its class arm's outside the compare "
                          "(another loop, addressing or wrapper)" % name)
-    m = re.fullmatch(r"slot_null\((.*)\)\n", span(base_src, "BODY"), re.S)
-    ab = span(arm_src, "BODY")
-    mm = re.fullmatch(r"slot_ld\((subject \+ pos(?: \+ \d+)?), (\d+)\)", m.group(1)) if m else None
-    if not m or not (m.group(1) in ab or (mm and re.search(r'memcmp\(%s, "(?:[^"\\]|\\.)*", %s\)'
-                                                          % (re.escape(mm.group(1)), mm.group(2)), ab))):
-        raise SystemExit("link: NULL-BASE MISMATCH %s: its body %r keeps no load its class arm's body makes"
-                         % (name, span(base_src, "BODY").strip()[:120]))
+    bb, ab = span(base_src, "BODY"), span(arm_src, "BODY")
+    m = re.fullmatch(r"slot_null\((.*)\)\n", bb, re.S)
+    L = m.group(1) if m else ""
+    mm = re.fullmatch(r"slot_ld\((subject \+ pos(?: \+ \d+)?), (\d+)\)", L)
+    one = re.fullmatch(r"mf_w\d+\(subject \+ pos(?: \+ \d+)?\)|subject\[pos(?: \+ \d+)?\]", L)
+    if not ((one and L in ab) or (mm and re.search(r'memcmp\(%s, "(?:[^"\\]|\\.)*", %s\)'
+                                                  % (re.escape(mm.group(1)), mm.group(2)), ab))):
+        raise SystemExit("link: NULL-BASE MISMATCH %s: its body %r is not slot_null(one load its class arm's body makes)"
+                         % (name, bb.strip()[:120]))
+    if bb != null_body(ab):
+        raise SystemExit("link: NULL-BASE MISMATCH %s: its body %r is not null_body(its class arm's body), %r"
+                         % (name, bb.strip()[:120], null_body(ab).strip()[:120]))
 
 def render(fx, a):
     """(source text, (form, cls) or None, facts): (form, cls) the KEY's (r9 G2), the Arm's own must agree, and

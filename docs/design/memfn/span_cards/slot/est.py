@@ -514,7 +514,7 @@ def selftest(scratch):
         plan.CARD["find_byte"]["est"] = "slope 1,2,3"
     def set_delta(d, key, ds, twin=3):
         """[rev1.4 R14-2] KEY's (and its twin's) cells in J4 = its base's cell + ds[l-1] x E per launch l (the twin
-        `twin` x E above): a per-event cost of ds[l-1] in the cells' own units"""
+        `twin` x E above, or twin[l-1] x E for a list): a per-event cost of ds[l-1] in the cells' own units"""
         p = os.path.join(d, "cells.J4.tsv")
         ls = open(p).read().split("\n")
         base = {}
@@ -527,22 +527,54 @@ def selftest(scratch):
             c = ln.split("\t")
             if len(c) == 8 and c[2] in (key, key + "#b"):
                 E, l = int(c[6]), int(c[4])
-                c[7] = str(base[(c[0].split("/")[4], c[3], c[4])] + (ds[l - 1] + (twin if c[2] != key else 0)) * E)
+                tw = twin[l - 1] if isinstance(twin, list) else twin
+                c[7] = str(base[(c[0].split("/")[4], c[3], c[4])] + (ds[l - 1] + (tw if c[2] != key else 0)) * E)
             out.append("\t".join(c))
         open(p, "w").write("\n".join(out))
     VK = "kit.verify_cmp.settest.c1.p0"
     def row(pred):
         return lambda out: pred(out[VK])
     sub = row(lambda r: bool(r.get("sub")) and not r["null"] and r["value"] >= 0 and r["noise"] >= r["sub"])
+    # [rev1.4 r10-REV14-2] the cap's cases are scaled by the live r_max_e6, the value _synth's record pins (a
+    # per-event ds of 1 is about 1 in x here, the synthetic unit)
+    RM = plan.parse_policy(plan.table_rows(plan.POLICY))["r_max_e6"]
+    live_policy = plan.POLICY
+    def policy_moved(d):       # the live policy's r_max moves to 1 after the run: the pinned copy must still rule
+        p = os.path.join(scratch, "policy_moved.tsv")
+        open(p, "w").write("".join("%s\n" % "\t".join(f if f[0] != "r_max_e6" else [f[0], "1", f[2]])
+                                   for f in plan.table_rows(live_policy)))
+        set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30])
+        plan.POLICY = p
+    def unpin_rmax(d):         # a record planned before the row (windows 1 and 2): the live row, named
+        edit(os.path.join(d, "run_record.tsv"), lambda t: re.sub(r"\nr_max_e6\t[^\n]*", "", t, count=1))
+        set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30])
     cases = [
         ("complete", lambda d: None, "ok"),
         ("[R14-2] a verify row at zero, signs mixed: sub-resolution, measured",
          lambda d: set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30]), sub),
-        ("[R14-2] consistently negative within r: measured, its value clamped to 0",
-         lambda d: set_delta(d, VK, [-20, -60, -10, -40, -30, -90, -25]), row(lambda r: bool(r.get("sub")) and r["value"] == 0)),
+        ("[r10-REV14-1] negative on all six trimmed launches within r: null (a defect, whatever r)",
+         lambda d: set_delta(d, VK, [-20, -60, -10, -40, -30, -90, -25]),
+         row(lambda r: r["null"] and not r.get("sub") and "all six trimmed" in r["why"])),
+        ("[r10-REV14-1] signs mixed, a negative median within r: measured, its value clamped to 0",
+         lambda d: set_delta(d, VK, [-20, 30, -10, -40, 25, -90, -25]), row(lambda r: bool(r.get("sub")) and r["value"] == 0)),
         ("[R14-2] consistently negative above r: null (a fixture artifact)",
          lambda d: set_delta(d, VK, [-1000, -1010, -990, -1005, -995, -1020, -1000]),
          row(lambda r: r["null"] and not r.get("sub") and "negative" in r["why"])),
+        ("[r10-REV14-2] signs mixed, |med| within its own r but above r_max: null",
+         lambda d: set_delta(d, VK, [3 * RM // 2, -3 * RM, 4 * RM, 3 * RM // 2, -2 * RM, 5 * RM, 7 * RM // 5]),
+         row(lambda r: r["null"] and not r.get("sub") and abs(r["value"]) <= resolution(r["x"]) and abs(r["value"]) > RM)),
+        ("[r10-REV14-2] signs mixed, |med| within r_max below its own r: sub-resolution, r capped",
+         lambda d: set_delta(d, VK, [RM // 2, -3 * RM, 4 * RM, RM // 2, -2 * RM, 5 * RM, 2 * RM // 5]),
+         row(lambda r: bool(r.get("sub")) and r["sub"] == RM and resolution(r["x"]) > RM)),
+        ("[r10-REV14-2] within r, its paired A/A above r: null",
+         lambda d: set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30], twin=[0, 200, -200, 200, -200, 200, -200]),
+         row(lambda r: r["null"] and not r.get("sub") and "paired A/A" in r["why"] and r["aa"] > resolution(r["x"]))),
+        ("[r10-REV14-2] within r, its paired A/A at r: sub-resolution",
+         lambda d: set_delta(d, VK, [40, -30, 10, -50, 20, -10, 30], twin=[0, 30, -30, 30, -30, 30, -30]),
+         row(lambda r: bool(r.get("sub")) and 0 < r["aa"] <= r["sub"])),
+        ("[r10-REV14-2] the live r_max moved after the run: the pinned r_max rules", policy_moved, sub),
+        ("[r10-REV14-2] a record pinning no r_max: the live row, named",
+         unpin_rmax, lambda out: sub(out) and r_max(read_record(d_now[0]))[1].startswith("NOT pinned")),
         ("[R14-2] signs mixed at a size above r: null",
          lambda d: set_delta(d, VK, [1000, 1000, 1000, 1000, -50, -600, 1000]),
          row(lambda r: r["null"] and not r.get("sub") and "signs mixed" in r["why"])),
@@ -581,6 +613,8 @@ def selftest(scratch):
             except (InputError, KeyError) as e:
                 ok = False
                 print("selftest\t%s\t(%s)" % (name, e))
+            finally:
+                plan.POLICY = live_policy
             bad += not ok
             print("selftest\t%s\t%s" % (name, "ok" if ok else "WRONG"))
             continue

@@ -39,6 +39,7 @@ QUIET_LOAD = 2.0                    # load1 below which the box is quiet (§3.3)
 QUIET_HOLD = 55                     # seconds of continuous quiet that end a wait (§3.3): UNMEASURED DEFAULT (D149)
 QUIET_POLL = 5                      # the wait's sample period, seconds: UNMEASURED DEFAULT (D149)
 CORUNNERS = 5                       # the top co-runners each quiet check logs (R14-3): UNMEASURED DEFAULT (D149)
+CORUNNER_SPAN = 0.5                 # seconds between the co-runners' two CPU reads (r10-REV14-6): UNMEASURED DEFAULT (D149)
 
 
 def sh(cmd, **kw):
@@ -191,21 +192,37 @@ def dry(job, rundir, run_id):
     return len(g)
 
 
-def corunners():
-    """[rev1.4 R14-3] the top CORUNNERS processes by ps's %cpu (its lifetime share, the figure ps has), this job's
-    own python and ps itself left out: `pid:comm:%cpu`, `,`-joined"""
-    rc, out, _e = sh(["ps", "-eo", "pid=,comm=,pcpu=", "--sort=-pcpu"])
-    if rc:
-        return "-"
-    me, top = {os.getpid(), os.getppid()}, []
-    for ln in out.splitlines():
-        p = ln.split()
-        if len(p) < 3 or not p[0].isdigit() or int(p[0]) in me or p[1] == "ps":
+def cpu_ticks():
+    """{pid: (comm, utime + stime in clock ticks)} from /proc/<pid>/stat (proc(5): the fields after the `)` that
+    closes comm, utime and stime the 12th and 13th); a process gone between the listing and the read is skipped"""
+    out = {}
+    for e in os.scandir("/proc"):
+        if not e.name.isdigit():
             continue
-        top.append("%s:%s:%s" % (p[0], re.sub(r"[\s:,]", "_", " ".join(p[1:-1])), p[-1]))
-        if len(top) == CORUNNERS:
-            break
-    return ",".join(top) or "-"
+        try:
+            s = open("/proc/%s/stat" % e.name).read()
+        except OSError:
+            continue
+        i, j = s.index("("), s.rindex(")")
+        f = s[j + 2:].split()
+        out[int(e.name)] = (s[i + 1:j], int(f[11]) + int(f[12]))
+    return out
+
+
+def corunners():
+    """[rev1.4 R14-3] the top CORUNNERS processes by the CPU they used over the last CORUNNER_SPAN seconds
+    ([rev1.4 r10-REV14-6]: two /proc/<pid>/stat reads, never ps's %cpu, which is a process's LIFETIME share and
+    ranks a long-lived process that turned busy low), this job's own python left out: `pid:comm:%cpu`, `,`-joined"""
+    try:
+        a = cpu_ticks()
+        time.sleep(CORUNNER_SPAN)
+        b = cpu_ticks()
+    except OSError:
+        return "-"
+    hz, me = os.sysconf("SC_CLK_TCK"), {os.getpid(), os.getppid()}
+    use = sorted(((b[p][1] - a[p][1], p) for p in b if p in a and p not in me), reverse=True)[:CORUNNERS]
+    return ",".join("%d:%s:%.1f" % (p, re.sub(r"[\s:,]", "_", b[p][0]) or "_", 100.0 * d / hz / CORUNNER_SPAN)
+                    for d, p in use) or "-"
 
 
 QUIET_TOP = re.compile(r" top (\d+:[^:,\s]+:[0-9.]+(?:,\d+:[^:,\s]+:[0-9.]+)*)$")
