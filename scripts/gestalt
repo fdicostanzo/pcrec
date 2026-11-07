@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# gestalt -- one-shot, read-only status of the box and its sessions, for the manager heartbeats.
+#   scripts/gestalt [--owner main|kit]
+# At most ~12 plain-text lines, each external call under `timeout`, whole run well under 5 s:
+#   load      1/5/15-min load, nproc; when load1 > nproc/2 the top 3 CPU users (command name + %CPU, no args)
+#   box       scripts/boxlock status, first line
+#   queue     scripts/boxqueue status condensed: running job + age, pending count, last 3 ends + verdict
+#   lanes     live lanewatch/watchrun/queuemon/queuewatch processes (count + labels); worktrees with
+#             uncommitted changes newer than 30 min ("active")
+#   sessions  one line per live Claude session (socket under /run/user/UID/cc-socks/ whose owner pid is
+#             alive): pid, `claude -n` name, role (worktrees/.mgr/roles/, tolerated when absent)
+#   ci        last run on main via gh (`ci: unavailable` when gh fails)
+#   unread    monitor lines waiting for main and kit (scripts/monread OWNER --peek: the cursor is NOT moved)
+# --owner puts that owner's unread count first, marked `*`. Never kills, never takes the box lock, writes
+# nothing. Exit 0 always; the last line is `gestalt: DONE rc=0`.
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+main=$(dirname "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
+[ -d "$main/worktrees" ] || main=$(cd "$here/.." && pwd)
+owner=main
+while [ $# -gt 0 ]; do
+    case $1 in
+        --owner) owner=${2:-main}; shift ;;
+        --owner=*) owner=${1#--owner=} ;;
+    esac
+    shift
+done
+case $owner in main|kit) ;; *) owner=main ;; esac
+trap 'echo "gestalt: DONE rc=0"; exit 0' EXIT
+TO=timeout
+now=$(date +%s)
+
+fmt_age() { # seconds -> 45s / 12m / 3h
+    local s=$1
+    if [ "$s" -lt 120 ]; then echo "${s}s"; elif [ "$s" -lt 7200 ]; then echo "$((s / 60))m"; else echo "$((s / 3600))h"; fi
+}
+
+# --- load
+read -r l1 l5 l15 _ < /proc/loadavg
+np=$(nproc 2>/dev/null || echo 1)
+echo "load: $l1 $l5 $l15 (nproc $np)"
+if awk -v l="$l1" -v n="$np" 'BEGIN { exit !(l > n / 2) }'; then
+    top3=$($TO 5 top -b -n2 -d0.5 -o %CPU 2>/dev/null | awk '
+        /^ *PID /{ k++; n = 0; next }
+        k == 2 && n < 3 && NF >= 12 { printf "%s%s %s%%", (n ? ", " : ""), $12, $9; n++ }')
+    echo "load: busiest: ${top3:-unavailable}"
+fi
+
+# --- box
+echo "box: $($TO 10 bash "$here/boxlock" status 2>&1 | head -1 | sed 's/ cwd=.*//' | cut -c1-160)"
+
+# --- queue
+qs=$($TO 15 bash "$here/boxqueue" status 2>&1)
+run=$(printf '%s\n' "$qs" | sed -n 's/^running: \([^ ]*\) .*/\1/p' | head -1)
+if [ -n "$run" ]; then
+    mt=$(stat -c %Y "$run" 2>/dev/null || echo "$now")
+    runs="$(basename "$run") $(fmt_age $((now - mt)))"
+else runs="none"; fi
+pend=$(printf '%s\n' "$qs" | grep -c '^pending:')
+ends=$(printf '%s\n' "$qs" | sed -n 's/^ended: .*\/[0-9T.]*-[0-9]*-\([^ ]*\) :: .*verdict=\([A-Z]*\).*/\1:\2/p' | tail -3 | tr '\n' ' ')
+echo "queue: running $runs; pending $pend; last: ${ends:-none}"
+
+# --- lanes / watchers
+w=$(ps -eo pid=,args= 2>/dev/null | awk -v me="$$" '
+    $1 != me && match($0, /^ *[0-9]+ +(bash +|sh +)?[^ ]*scripts\/(lanewatch|watchrun|queuemon|queuewatch)( |$)/) {
+        t = $0; sub(/^.*scripts\//, "", t); split(t, a, " ")
+        lab = a[1]; if (a[2] != "") lab = lab ":" a[length(a)]
+        n++; l = l (n > 1 ? ", " : "") lab }
+    END { printf "%d%s", n, (n ? " (" substr(l, 1, 150) ")" : "") }')
+act=$(for d in "$main"/worktrees/*/; do
+        [ -e "$d/.git" ] && echo "$d"
+    done | xargs -r -P8 -I{} bash -c '
+        d=${1%/}; now=$2
+        f=$(timeout 8 git -C "$d" status --porcelain 2>/dev/null | cut -c4- | sed "s/.* -> //; s/\"//g" | head -200)
+        [ -n "$f" ] || exit 0
+        best=0
+        while IFS= read -r p; do
+            m=$(stat -c %Y "$d/$p" 2>/dev/null) && [ "$m" -gt "$best" ] && best=$m
+        done <<< "$f"
+        [ $((now - best)) -lt 1800 ] && basename "$d"
+        exit 0' _ {} "$now" | sort | tr '\n' ' ')
+nact=$(printf '%s\n' "$act" | wc -w)
+echo "lanes: watchers $w; active worktrees $nact${act:+ ($(printf '%s' "$act" | cut -c1-150))}"
+
+# --- sessions
+sd=/run/user/$(id -u)/cc-socks
+roledir=$main/worktrees/.mgr/roles
+ns=0
+if [ -d "$sd" ]; then
+    for s in "$sd"/*.sock; do
+        [ -S "$s" ] || continue
+        pid=$(basename "$s" .sock)
+        [ -d "/proc/$pid" ] || continue
+        ns=$((ns + 1))
+        [ "$ns" -le 4 ] || continue
+        name=$(tr '\0' '\n' < "/proc/$pid/cmdline" 2>/dev/null | awk '$0 == "-n" || $0 == "--name" { getline; print; exit }')
+        cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
+        role=""
+        if [ -d "$roledir" ]; then
+            for rf in "$roledir"/*; do
+                [ -f "$rf" ] || continue
+                b=$(basename "$rf")
+                if [ "$b" = "$pid" ]; then role=$(head -1 "$rf")
+                elif grep -qx "$pid" "$rf" 2>/dev/null; then role=$b; fi
+            done
+        fi
+        echo "session: pid $pid ${name:-?}${role:+ role=$role} cwd=${cwd:-?}" | sed "s|$main|.|"
+    done
+    [ "$ns" -gt 4 ] && echo "session: +$((ns - 4)) more"
+fi
+[ "$ns" -gt 0 ] || echo "session: none live under $sd"
+
+# --- CI
+ci=$($TO 20 gh run list --branch main --limit 1 --json status,conclusion,headSha,createdAt \
+    --jq '.[0] | "\(.status)/\(.conclusion) \(.headSha[0:9]) \(.createdAt)"' 2>/dev/null)
+if [ -n "$ci" ]; then
+    set -- $ci
+    ts=$(date -d "$3" +%s 2>/dev/null || echo "$now")
+    echo "ci: ${1%/} $(fmt_age $((now - ts))) ago"
+else echo "ci: unavailable"; fi
+
+# --- unread monitor lines (peek: cursor untouched)
+um=$($TO 10 bash "$here/monread" main --peek 2>/dev/null | wc -l)
+uk=$($TO 10 bash "$here/monread" kit --peek 2>/dev/null | wc -l)
+if [ "$owner" = kit ]; then echo "unread: *kit=$uk main=$um"; else echo "unread: *main=$um kit=$uk"; fi
