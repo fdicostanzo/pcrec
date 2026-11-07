@@ -3446,3 +3446,12 @@ Main ruled on the four kit findings (D186 add. 2):
 - Critic crit-s2rev14 (opus) launched: fix-induced + fidelity + simulate R14-2's false-pass rate.
 - Window 2 asked of main (tonight after ~01:30 if covered).
 - K138 revalidation: 491/492 GREEN; 493 mech red only on S2910, which needs BUILD-REFUSED now (memfn_sites.c's assert stops make). Edited on s2a; single-row rerun running.
+- 11-06 23:30: critic crit-s2rev14 (relayed; its findings Write was refused) on rev 1.4. Verdict: ready for window 2 with fixes; the timed code is faithful by objdump.
+  - REV14-1: a 7/7-negative sign defect passes as "zero within r" (66-84 % in simulation); the replay's PASS shows the defect.
+  - REV14-2: r is uncapped and self-derived.
+  - REV14-3: null_check is a substring test (passes a compare-keeping base).
+  - Also REV14-4 (doc), REV14-6 (ps pcpu is lifetime), REV14-7 (doc); REV14-5 and REV14-8 accepted.
+  - Transcribed + ruled as review r10 on the NEW branch lane/memfn-s2c14fix (4a1b3ee5a).
+- PLAN: window 2 runs FROZEN on b4e0a8bab (timed code faithful); the fixes go to lane s2c14fix (opus, LIGHT load, waits while a kit-s2d job runs; must state no timed-binary change); the verdict is computed with the FIXED est over window 2's record.
+  - S2c gates 470-474 requeued on b4e0a8bab. window.vars: RUN_ID s2d-20261107a, FROZEN b4e0a8bab; dry runs from a copy green. The window is queued when the gates are green.
+- S2a: S2910 declared BUILD-REFUSED (252e0a1cb); 493 retried.
