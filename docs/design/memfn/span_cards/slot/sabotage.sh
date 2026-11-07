@@ -5,7 +5,8 @@
 # expects the named refusal (precedent: docs/design/r17b_prime/b3a/sabotage/run_skb3a.sh). A control run of
 # the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected
 # text) or MISSED; exit 0 iff the control is green and every row is DETECTED.
-#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 (default all)
+#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3
+#                                         (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
 #   (j2) a twin linked at its arm's phase (its pad sized to land it there): the per-launch constraint
@@ -55,8 +56,15 @@
 #   (q1) S2944 [rev1.4 R14-3] the quiet check logs no co-runners: the dry run's quiet sample refuses QUIET-LOG
 #   (b1) S2945 [rev1.4 R14-4] est.py's bimodal note names no row: the self-test case "a delta row in two
 #        clusters is named by the bimodal note" goes WRONG
+#   (x1) S2950 [rev1.5 R15-1] the fused-compare DERIVATION hands the fact to every class that reads the subject (a
+#        non-fused class wearing the fact): the bytes' reading refuses FUSED-FACT MISMATCH, so the self-test's
+#        "complete" case is refused
+#   (x2) S2951 [rev1.5 R15-1] the fact CHECK removed (the bytes' reading never compared): the self-test case "a
+#        non-fused class wearing the fact" (refused) goes WRONG
+#   (x3) S2952 [rev1.5 R15-1] the fused branch applied WITHOUT the fact (every verify row): the self-test case "a
+#        class NOT fused negative on all six: null (REV14-1 holds)" goes WRONG
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
-# rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table); they
+# rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5); they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -64,7 +72,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=$(cd "$here/../../../../.." && pwd)
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -180,6 +188,13 @@ for row in $ROWS; do
     b1) job=est want='selftest	\[R14-4\] a delta row in two clusters is named by the bimodal note	WRONG'
         patch "$SCR/$row/est.py" 'and not r.get("sub") and split_gap(r["x"]) * 10**6 > NOTE_BIMODAL_E6 * r["value"])' \
 'and not r.get("sub") and False)   # SABOTAGE S2945' ;;
+    x1) job=est want='selftest	complete	WRONG	refused \(FUSED-FACT MISMATCH'
+        patch "$SCR/$row/est.py" '    return bool(subj) and all(FUSED_INSN.fullmatch(t) for t in subj)' '    return bool(subj)   # SABOTAGE S2950' ;;
+    x2) job=est want='selftest	\[R15-1\] a non-fused class wearing the fact	WRONG'
+        patch "$SCR/$row/est.py" '                    if fused_bytes(ins) != f:' '                    if False:   # SABOTAGE S2951' ;;
+    x3) job=est want='selftest	\[R15-1\] a class NOT fused negative on all six: null \(REV14-1 holds\)	WRONG'
+        patch "$SCR/$row/est.py" '        if r["D"] is not None and fused.get(key):' \
+'        if r["D"] is not None and key.startswith("kit.verify_cmp."):   # SABOTAGE S2952' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }
