@@ -17,13 +17,13 @@ studies; listed, not counted).
 Baseline: run 2026-11-05 daf6f002b, the first fully green full suite on record (log `build/full_suite/20261104_daf6f002b/`).
 Every earlier landing is listed under "Covered by run 2026-11-05 daf6f002b" in the Runs section.
 
-**major: 0, minor: 4** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing.
+**major: 1, minor: 4** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing.
 
-Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it; 0 majors; rows 1-4 un-fired). Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
+Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 major since the baseline (row 4 needs 2-3: un-fired; row 3 is a refactor of a shared mechanism, not claimed for a new capability); rows 1-2 un-fired. No full suite queued by the landing lane; the manager schedules one after the alternation landing. Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
 
 ### major
 
-none yet
+- 2026-11-07 c44649a69 major — [VLOOKBEHIND] stage 1 merge (lane vlbbuild, landed by vlbland): bounded variable-width lookbehind, a new construct class (supersedes [DD-14.LB]'s refusal), abi 95 -> 96, new seam entry fwd_step; recursion-identity (B) pins re-pinned to the merge; post-merge test-registry, test-codegen, test-plan-lint green; branch validation: make test, mech 1-4, reach, abisweep, axes 495 green
 
 ### minor
 

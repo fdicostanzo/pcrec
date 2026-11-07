@@ -262,9 +262,10 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   vars (pcrec-only) is in no NAMED family but IS in `all` (Frank 2026-10-27); `all` and `none` stay as the unfrozen ends. Spec note: basic is roughly RE2's feature set (linear time). Interface work: rides [IFACE-PUSH] if it needs a new stamp or option field.
 - [VLOOKBEHIND] STATE:started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
-  status (2026-11-06): Frank GO 2026-11-06 for STAGE 1 (rev 4 merged; short re-check of the F1 seam wiring first, then an opus build lane); land BEFORE [RUN-POS-SET]'s build, the second lander adds lookbehind x alternation witnesses
+  status (2026-11-07): stage 1 LANDED at c44649a69 (lane vlbland; bounded variable-width lookbehind, abi 96, D189); row stays started for stage 2
   next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
   refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
+  Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
   status (2026-11-06): Frank GO 2026-11-06 for stages 1, 2p, 2b (alt_normal_form.md rev 3; opus build lane, code round before landing); lands AFTER [VLOOKBEHIND] stage 1, adding lookbehind x alternation witnesses; 2a census-first, 3 waits
@@ -700,6 +701,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-06): one side emission exists (the UCP one); the emitter and `pcrec_enc_entry_symbols` call ONE shared predicate for it, so the condition has one spelling; no general hook built
   trigger: a SECOND side emission on any seam row (vlookbehind.md §5.6 item 1)
   refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c (the reader that lists each row's symbols)
+  Note (2026-11-07, landing vlbland, review SEAM-6 and the VM_PROGRAM_BYTES note): SEAM-6 rides this row; a splice that moves RX_VM_PROGRAM_BYTES without a manifest row is not seen by the strict DD12a bar (S1988 is DETECTED only by K50's undeclared-form-move guard); fix with the hook, not before.
+- [ENC-ONE-RULE] STATE:not-started — one boundary rule per encoding as row data, symbols not parsed from C text
+  filed: 2026-11-07 landing vlbland (vlbbuild_rulings.md R4: review SEAM-5 + SEAM-7 as one row)
+  status (2026-11-07): not started; UNSCHEDULED
+  trigger: a THIRD encoding
+  refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
   status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
@@ -1574,6 +1581,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms; OR the next count-pass/emit disagreement found in the ladder (r6 V17)
   refs: decisions D77
   Evaluate a `vm_rung_of()` first-match row table replacing the three walkers' re-derivations of the per-quantifier rung, with the stamp bits read from the row. D77 trigger: the next rung proposal ([ENG-BREP] lineage), when adding it otherwise costs three arms.
+  Family note (2026-11-07, vlbbuild review F18 = SEAM-4): the lookbehind emission row of vlookbehind.md §5.1b is 13 `range` conditionals, a sixth family member.
 - [DEC-KINDATTR] STATE:not-started — THE PER-`AKind` ATTRIBUTE TABLE FOR FACT WALKS
   filed: 2026-10-06 filer not recorded
   status (2026-10-06): not started; FILED 2026-10-06, decsurvey §3.8; UNSCHEDULED
