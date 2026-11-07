@@ -71,7 +71,7 @@ echo "== CHECK 1: the interval payload exists and every producer reaches it =="
 # NEGATIVE needle is the one that matters, because a branch that ADDED an
 # interval list beside the bitmap — two representations, which §2.2's second
 # bullet forbids by name — would satisfy the positive half alone.
-if grep -q 'const PcrecCpRange \*iv; int n; } cls;' "$SRC/core/internal.h"; then
+if grep -q 'const PcrecCpRange \*iv; int n; \(int branches; \)\{0,1\}} cls;' "$SRC/core/internal.h"; then
     ok "[1a] Ast's A_CLASS payload is the interval form"
 else
     bad "[1a] src/core/internal.h does not declare the interval A_CLASS payload"
@@ -258,7 +258,7 @@ else
             red=$((red + 1)); echo "  red (as required): $1"
         fi
     }
-    grep -q 'const PcrecCpRange \*iv; int n; } cls;' "$R/core/internal.h" 2>/dev/null
+    grep -q 'const PcrecCpRange \*iv; int n; \(int branches; \)\{0,1\}} cls;' "$R/core/internal.h" 2>/dev/null
     red_or_note "1a payload is the interval form" $?
     ! grep -rq --include='*.c' --include='*.h' 'u\.cls\.bits' "$R" 2>/dev/null
     red_or_note "1a no u.cls.bits survives" $?
@@ -432,6 +432,11 @@ fi
 #                    below), so the rest of altnf.c stays policed. Added by
 #                    lane altbuild (the owner's own population: its first
 #                    run over the tree reached the check)
+#                    `anf_passes`, `anf_node_same` and `anf_prefix` read
+#                    `u.cls.n` (the interval COUNT) only, to charge the
+#                    owner's work budget; no set is rendered. Added by lane
+#                    alttri 2026-11-07 (the 171 triage: the budget charge
+#                    arrived in stage 2b and the allowlist was never widened)
 #
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
@@ -449,7 +454,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line src/opt/altnf.c:anf_cls_hash src/opt/altnf.c:anf_cls_eq src/opt/altnf.c:anf_cls_disjoint src/opt/altnf.c:anf_cls_union'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line src/opt/altnf.c:anf_cls_hash src/opt/altnf.c:anf_cls_eq src/opt/altnf.c:anf_cls_disjoint src/opt/altnf.c:anf_cls_union src/opt/altnf.c:anf_passes src/opt/altnf.c:anf_node_same src/opt/altnf.c:anf_prefix'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {

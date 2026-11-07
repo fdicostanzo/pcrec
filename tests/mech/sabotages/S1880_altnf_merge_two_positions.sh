@@ -16,7 +16,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8/altnf_lowering.rxt"
 SAB_DESC="the alternation owner's sibling merge groups branches that differ in two positions, so (?i)beta's UTF-8 boxes fold into a superset at one byte and lose a member at the other"
 SAB_DOC_FIGURE="PREDICTED: tests/utf8/altnf_lowering.rxt red on block 1 (n \\xce\\x90 matches, m \\xcf\\x90 fails) and the merged-run blocks; every other file unaffected."
-SAB_REACH='"$PCREC" -e utf8 --features all -p rx --engine=vm -fno-cls-kit --emit-ir --pattern "(?i)β" | grep -o "alternation entry (2 branches)"'
+SAB_REACH='"$PCREC" -e utf8 --features all -p rx --engine=vm -fno-cls-kit -fno-alt-island --emit-ir --pattern "(?i)β" | grep -o "alternation entry (2 branches)"'
 SAB_REACH_EXPECT='alternation entry (2 branches)'
 SAB_REACH_POP='tests/utf8/altnf_lowering.rxt|^pattern \(\?i\)β|2'
 SAB_EXPECT=DETECTED

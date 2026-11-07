@@ -150,7 +150,7 @@ pattern (?:ab\b|ad\b)
 features all
 m "ad" 0 2
 m "ab" 0 2
-n "adx"
+n "adq"
 
 # S keeps the tried order with \K in a head
 # pcre2-only

@@ -115,8 +115,12 @@ PERTURBERS = {"byte-rate": perturb_byte_rate}
 # F-5's two corpus witnesses (file, pattern, arm), whose discarded attempt
 # asked (window_contract.md §3.7.6 F-5): the bucket they formed before the
 # union-over-attempts fix (abi 79) is gone, and each must now read CONSULTED.
-F5_WITNESSES = {("tests/uprops/size_ladder_prefilter_drop.rxt", r"(\p{Xwd})x", "noreqbyte/utf8"),
-          ("tests/utf8/wclass_illformed.rxt", r"x(\p{Xwd})y", "noreqbyte/utf8")}
+# RE-AIMED 2026-11-07 (lane alttri, the 171 triage): [RUN-POS-SET] stage 1
+# shrank the tables, so `(\p{Xwd})x` and `x(\p{Xwd})y` fit and ship "selected".
+# The two witnesses are the corpus patterns that still ship from a retry
+# under -fno-req-byte -e utf8 (measured on the branch tip).
+F5_WITNESSES = {("tests/utf8/wclass_illformed.rxt", r"x\p{Xwd}y", "noreqbyte/utf8"),
+          ("tests/utf8/wclass_illformed.rxt", r"x\p{L}y", "noreqbyte/utf8")}
 # Power floors per arm at --every 16 (measured at landing, ~80%); the full
 # population (--every 1) is held to the prototype's own counts' ~80%.
 FLOORS = {

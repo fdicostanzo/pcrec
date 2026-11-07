@@ -13,7 +13,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8/altnf_lowering.rxt"
 SAB_DESC="the alternation owner describes every mergeable branch as one position wide, so boxes of different byte lengths merge and (?i)k matches the Kelvin sign's first byte alone"
 SAB_DOC_FIGURE="PREDICTED: tests/utf8/altnf_lowering.rxt red on block 2 (m \\xe2\\x84\\xaa 0 3 answers 0 1; n \\xe2\\x84 matches) and on every multi-byte merged block."
-SAB_REACH='"$PCREC" -e utf8 --features all -p rx --engine=vm -fno-cls-kit --emit-ir --pattern "(?i)k" | grep -o "alternation entry (2 branches)"'
+SAB_REACH='"$PCREC" -e utf8 --features all -p rx --engine=vm -fno-cls-kit -fno-alt-island --emit-ir --pattern "(?i)k" | grep -o "alternation entry (2 branches)"'
 SAB_REACH_EXPECT='alternation entry (2 branches)'
 SAB_REACH_POP='tests/utf8/altnf_lowering.rxt|^pattern \(\?i\)k|2'
 SAB_EXPECT=DETECTED

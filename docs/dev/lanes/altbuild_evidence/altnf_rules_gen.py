@@ -65,7 +65,7 @@ CELLS = [
  ("", "byte", "ab|abc|ad", [b"abc", b"ad"]),
  ("", "byte", "aaa|ab|aab", [b"aab", b"aaa", b"ab"]),
  ("duplicates dropped", "byte", "bba|bb|bba|bb", [b"bba", b"bb", b"b"]),
- ("S then M over the heads P created", "byte", "(?:ab\\b|ad\\b)", [b"ad", b"ab", b"adx"]),
+ ("S then M over the heads P created", "byte", "(?:ab\\b|ad\\b)", [b"ad", b"ab", b"adq"]),
  ("S keeps the tried order with \\K in a head", "byte", "(?:a\\Kc|bc)", [b"ac", b"bc"]),
  ("S over a repeat tail", "byte", "(?:x(?:y)*z|w(?:y)*z)", [b"wyyz", b"xz", b"wz"]),
  ("S never factors a capture", "byte", "(?:a(x)|b(x))", [b"bx", b"ax"]),

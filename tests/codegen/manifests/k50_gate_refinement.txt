@@ -368,3 +368,19 @@ a{0,4}\Z
 a{0,5}b{0,5}$
 b*$
 x*$
+
+# ---------------------------------------------------------------------
+# [alttri, 2026-11-07] (the 171 triage of the alternation branch). Two
+# alttri-new corpus patterns (tests/altcls/altnf_rules.rxt blocks) reached by
+# the slice: `ab|abc|ad` and `(?:ab\b|ad\b)` are COVER artifacts whose pick
+# is byte-prior-keyed (byte: the two-needle pair on b/d at K=1, verify
+# `s[c] == 'a'`; utf8, prior NONE: memchr 'a' at K=0, verify the class at
+# offset 1). cover_pick normalizes the pick but the VERIFY clause follows
+# the pick, so the pair diverges as text. NOT a branch effect: main's
+# compiler picks the same two forms for `ab|ad` (byte two-needle, utf8
+# memchr), measured 2026-11-07; main's corpus has no such block in this
+# slice. Answers are the corpus's and equal in both encodings. Owed to the
+# instrument's owner: normalize the pick-dependent verify (a FINDING, as the
+# axis-E rows above).
+#UNDECLARED (?:ab\b|ad\b)
+#UNDECLARED ab|abc|ad

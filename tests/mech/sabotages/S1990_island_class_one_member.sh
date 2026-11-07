@@ -15,7 +15,7 @@ SAB_DESC="the VM island's class arm admits only a one-member class, so an altern
 SAB_DOC_FIGURE="PREDICTED: island:[MEMB] m_w256/m_twin/m_cat red (RX_VM_ALT_ISLANDS 20/0/0 where 1)."
 SAB_REACH='"$PCREC" -p rx --engine=vm -o - --pattern "x(?:ea|fb|ga)y" | grep -o "RX_VM_ALT_ISLANDS 1"'
 SAB_REACH_EXPECT='RX_VM_ALT_ISLANDS 1'
-SAB_REACH_POP='tests/island/run_island_tests.sh|\[MEMB\] m_twin|1'
+SAB_REACH_POP='tests/island/run_island_tests.sh|^memb m_twin[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        if (nm == 0 || nm > VM_ISL_MAX_WORDS) return false;'

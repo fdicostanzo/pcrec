@@ -706,7 +706,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "== §6 — K59: the refusal-set move, CLOSED, asserted as fixed =="
 
-K59_PATTERN='[^\p{C}\p{M}\p{P}]xy'
+K59_PATTERN='[^\p{C}\p{M}\p{P}]\p{Lo}xy'
 # [START-LANDING] SL2 (abi 74) made the one-class witness `[^\p{C}\p{M}\p{P}]` a
 # FIT mover: by default it takes RECOVER's `landing` row, drops the reverse
 # machine, and fits at every position with no rung (708,814 B at --tune=0).
@@ -719,6 +719,11 @@ K59_PATTERN='[^\p{C}\p{M}\p{P}]xy'
 # with the anchored machine, 1,046,700 B after rung 1 (4.7% over the cap, so
 # rung 2 is needed), 458,919 B after rung 2 -- and the same five-position
 # stamp/note table as the one-class witness had before landing.
+# RE-AIMED 2026-11-07 (lane alttri, the 171 triage): [RUN-POS-SET] stage 1
+# shrank the class tables, so `[^\p{C}\p{M}\p{P}]xy` now fits after rung 1
+# alone and `...\p{L}` needs rung 2 even at -2. `...\p{Lo}xy` is the
+# measured middle: it fits at -2 on the caller's flag alone and needs both
+# rungs at -1..2.
 K59_DENY=''
 k59_bad_compile=0; k59_bad_stamp=0; k59_bad_note=0
 
