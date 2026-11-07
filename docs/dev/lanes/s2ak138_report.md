@@ -30,3 +30,7 @@ Prepared, NOT queued, in /var/tmp/pcrec-pcrec/scratch/memfn/s2ak138/jobs/: 491-k
 2. Static assert where both are visible (src/gen/memfn_sites.c), naming K138: done.
 3. S2912 + fixtures with exact floors, red/green observed: done.
 4. K138 marked FIXED naming 535a2e78d: done.
+
+## STATE AT HANDOFF
+
+Nothing owed. The three gate jobs (491-493) are prepared and unqueued; the manager queues them.
