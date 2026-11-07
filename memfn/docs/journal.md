@@ -3606,3 +3606,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - K0 already enumerates (mf_targets, mf_families). k0fix addendum 2 adds mf_host_family() and a kit-written `doc` column per facts row (plain text; the check exempts only `doc` and refuses C tokens in it).
   - Told main: K0, no K1.
   - VERIFY in k0fix's tip: amd64/arm64 + distinctness, mf_host_family, doc.
+- 11-07 ~22:10: k0fix tip 6bcb248da NOT accepted. Both addenda were missed: families are still x86_64/aarch64, and there is no mf_host_family or doc column. It also edited main's target_seam_units.md.
+  - Sent back as one review message: amd64/arm64 + the fold-aware distinctness check, mf_host_family, the doc column, and revert units.md.
+  - Lesson (memory updated): mid-flight addenda went 0 for 3 today; send changes with the review instead.
