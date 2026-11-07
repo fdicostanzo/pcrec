@@ -24,17 +24,19 @@
 # paper over. A target of another family is SKIPPED and counted.
 #
 # Structural rules (control: the rule, stated here): at least the literal
-# floors of family and target rows; target and family names distinct under
-# the parser's matching rule (case-blind, `_` as `-`), so no row shadows
-# another; every target's family exists; exactly ONE familyless (portable)
+# floors of family and target rows; ONE token space for the whole table (the
+# owner's ruling 2026-11-07: a `-fmemfn-simd` list mixes family and target
+# tokens): every family and target name distinct from every other under the
+# parser's matching rule (ASCII-case-blind, otherwise exact), so no token is
+# both a family and a target and no row shadows another; every target's family exists; exactly ONE familyless (portable)
 # target, with no needs and no features; needs and features sorted,
 # unrepeated, needs a subset of features; every family's default list
 # non-empty, unrepeated, each member a target of that family.
 #
 # FACTS CARRY NO SPELLING (the owner's ruling 2026-11-07, emitters for C or
-# Rust): every field of a facts row is a list of tokens (`[a-z0-9][a-z0-9.-]*`,
+# Rust): every field of a facts row is a list of tokens (`[a-z0-9][a-z0-9._-]*`,
 # comma-separated, or empty), which no C (or Rust) text is -- a `(`, `#`,
-# `_`, quote, `=` or blank fails it; targets.def holds no preprocessor
+# quote, `=`, blank or a leading `_` fails it; targets.def holds no preprocessor
 # directive; and targets_c.def has exactly one spelling row per family.
 #
 # THE HOST CHAIN (targets_c.def's MF_TARGET_HOST block, the kit's own #if) is
@@ -55,7 +57,7 @@ def="${TARGETS_DEF:-$here/../src/targets.def}"
 cdef="${TARGETS_C_DEF:-$here/../src/targets_c.def}"
 out="${1:-}"
 FLOOR_FAMILIES=2   # the design's two family rows (target_seam.md §2)
-FLOOR_TARGETS=4    # generic, x86-64, x86-64-v3, aarch64 (units.md §2, K0)
+FLOOR_TARGETS=4    # generic, x86-64, x86-64-v3, armv8-a (units.md §2, K0)
 
 msgs=()
 bad=0
@@ -85,16 +87,16 @@ directives="$(grep -nE '^[[:space:]]*#' "$def" | head -3 | tr '\n' ' ')"
 
 # Strip one level of C string quoting and the surrounding blanks.
 unq() { local s; s="$(printf '%s' "$1" | sed 's/^ *//; s/ *$//')"; s="${s#\"}"; s="${s%\"}"; printf '%s' "${s//\\\"/\"}"; }
-# The parser's matching rule (memfn.h): case-blind, `_` read as `-`.
-fold() { printf '%s' "$1" | tr 'A-Z_' 'a-z-'; }
+# The parser's matching rule (memfn.h): ASCII-case-blind, otherwise exact.
+fold() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
 sorted_list() { printf '%s' "$1" | tr ',' '\n' | LC_ALL=C sort | paste -sd, -; }
 repeats() { printf '%s\n' "$1" | tr ',' '\n' | LC_ALL=C sort | uniq -d | paste -sd, -; }
 
 # A facts field: tokens, comma-separated, or empty -- never emitter text.
-tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-z0-9][a-z0-9.-]*)*' ||
+tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9._-]*(,[a-z0-9][a-z0-9._-]*)*' ||
     mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
 
-declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_t seen_f
+declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_tok
 fams=() tgts=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
@@ -108,8 +110,8 @@ while IFS= read -r line; do
         fam_name[$a]="$(unq "$b")"; fam_defs[$a]="$(unq "$c")"
         tokens "family $a name" "${fam_name[$a]}"; tokens "family $a defaults" "${fam_defs[$a]}"
         k="$(fold "${fam_name[$a]}")"
-        [ -z "${seen_f[$k]+x}" ] || mismatch "family $a: name '${fam_name[$a]}' matches ${seen_f[$k]}'s under the parser's rule"
-        seen_f[$k]="$a"
+        [ -z "${seen_tok[$k]+x}" ] || mismatch "family $a: token '${fam_name[$a]}' is also ${seen_tok[$k]}'s (one token space for families and targets)"
+        seen_tok[$k]="family $a"
     else
         tgts+=("$a")
         tgt_name[$a]="$(unq "$b")"; tgt_fam[$a]="$(echo "$c" | tr -d ' ')"
@@ -117,8 +119,8 @@ while IFS= read -r line; do
         tokens "target $a name" "${tgt_name[$a]}"; tokens "target $a needs" "${tgt_attr[$a]}"
         tokens "target $a features" "${tgt_feat[$a]}"
         k="$(fold "${tgt_name[$a]}")"
-        [ -z "${seen_t[$k]+x}" ] || mismatch "target $a: name '${tgt_name[$a]}' matches ${seen_t[$k]}'s under the parser's rule"
-        seen_t[$k]="$a"
+        [ -z "${seen_tok[$k]+x}" ] || mismatch "target $a: token '${tgt_name[$a]}' is also ${seen_tok[$k]}'s (one token space for families and targets)"
+        seen_tok[$k]="target $a"
         f="${tgt_feat[$a]}"
         if [ -n "$f" ]; then
             [ "$(sorted_list "$f")" = "$f" ] || mismatch "target $a: features not sorted ('$(sorted_list "$f")')"

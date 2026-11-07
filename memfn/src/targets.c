@@ -132,14 +132,14 @@ const mf_family *mf_families(size_t *n)
     return family_table;
 }
 
-/* 1 iff the `len` bytes at `tok` spell `name`, ASCII-case-blind, `_` read
- * as `-` (the header's matching rule). */
+/* 1 iff the `len` bytes at `tok` spell `name`, ASCII-case-blind and no
+ * further (the header's matching rule: `_` is not `-`, since `x86_64` the
+ * family and `x86-64` the target are different tokens). */
 static int tok_names(const char *name, const char *tok, size_t len)
 {
     size_t i = 0;
     for (; i < len && name[i]; i++) {
         unsigned char a = (unsigned char)tok[i], b = (unsigned char)name[i];
-        if (a == '_') a = '-';
         if (a >= 'A' && a <= 'Z') a = (unsigned char)(a - 'A' + 'a');
         if (a != b) return 0;
     }

@@ -14,11 +14,11 @@ C or Rust): `memfn/src/targets.def` (the facts: tokens only), `memfn/src/targets
 emitter's family guard conditions and the kit's host chain), `memfn/src/targets.c` (the entries, in a
 facts section and a C section), and a new section of `memfn/include/memfn.h` (the view pcrec will call
 at option parse, naming no target, family or feature). Tokens `generic`, `x86-64`, `x86-64-v3`,
-`aarch64`; families `x86-64` and `aarch64` with their default lists and the host default. Per token:
+`armv8-a`; families `x86_64` and `aarch64` (respelled by k0fix, 2026-11-07: k0fix_report.md) with their default lists and the host default. Per token:
 its family, its NEEDS (what a part for it must enable) and sorted features (`sahf` in x86-64-v3's, R2);
 then, separately, its C spellings: the region text (open, close: the needs as a clang push and a GCC
 push, never `arch=`) and the family guard text. The run-time CPU predicate text is NOT in K0: it lands
-with U4 in the C spellings (see The entries). How the split is held: The facts/spellings split.
+with U4 in the C spellings (see The entries). How the split is held: Facts vs C spellings.
 
 The table check is rev 0's shape, now over the kit's file (`memfn/tests/check_targets.sh`), run at
 `make` (warns), `make strict` (fails) and in the new section `make test-memfn-targets` (fails), with one
@@ -41,21 +41,21 @@ U1 checked, commit 171bdb343):
 
 | family | default list |
 |---|---|
-| `x86-64` | `x86-64` (grows at U5 only, on a bench verdict) |
-| `aarch64` | `aarch64` |
+| `x86_64` | `x86-64` (grows at U5 only, on a bench verdict) |
+| `aarch64` | `armv8-a` |
 
 | target | family | needs | features |
 |---|---|---|---|
 | `generic` | none (the portable target) | none | none |
-| `x86-64` | x86-64 | `sse2` | `sse2` |
-| `x86-64-v3` | x86-64 | `avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave` | the same |
-| `aarch64` | aarch64 | none (NEON is the baseline) | `neon` |
+| `x86-64` | x86_64 | `sse2` | `sse2` |
+| `x86-64-v3` | x86_64 | `avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave` | the same |
+| `armv8-a` | aarch64 | none (NEON is the baseline) | `neon` |
 
 THE C SPELLINGS, `memfn/src/targets_c.def` (one row per family) and targets.c's C section:
 
 | family | C guard condition (the guard's `#error` refuses a compile without it) |
 |---|---|
-| `x86-64` | `defined(__x86_64__) && !defined(__ILP32__)` |
+| `x86_64` | `defined(__x86_64__) && !defined(__ILP32__)` |
 | `aarch64` | `defined(__aarch64__)` |
 
 The region pair is spelled from each target's needs column (`MF_NEEDS`, defined in targets.c's C
@@ -68,7 +68,7 @@ is compiled into libpcrec, so its host is pcrec's; it is C because the kit is, a
 function contains an `#if` (D155). A host with no family row gets the portable target's name as its
 default list.
 
-## The facts/spellings split, and how it is held
+## Facts vs C spellings
 
 - The structs: `mf_target` {name, family, needs, features} and `mf_family` {name, defaults} carry
   facts only. The C spellings are separate structs, `mf_target_c` {region_open, region_close} and
@@ -79,14 +79,14 @@ default list.
 - `needs` is the one new fact the split surfaced: the region's attribute list had been a C-shaped column;
   as a fact it is "what a part for this target must enable above its family's portable compile", and
   the region is its C spelling. The rule tying it to features loosened from "equal" to "a subset"
-  (aarch64: needs none, features `neon`).
+  (armv8-a: needs none, features `neon`).
 - THE CHECK (memfn/tests/check_targets.sh, part 1 of the section): every field of every facts row must
-  be a token list, `[a-z0-9][a-z0-9.-]*` comma-separated or empty, which C (or Rust) text never is (a
-  `(`, `#`, `_`, quote, `=` or blank fails it); targets.def must hold no preprocessor directive; and
+  be a token list, `[a-z0-9][a-z0-9._-]*` comma-separated or empty (as respelled by k0fix), which C (or Rust) text
+  never is (a `(`, `#`, quote, a leading `_`, `=` or blank fails it); targets.def must hold no preprocessor directive; and
   targets_c.def must spell every family exactly once and no other. Failing directions, hand-checked
-  through `TARGETS_DEF`/`TARGETS_C_DEF`: `__ARM_NEON` as aarch64's feature, `arch=x86-64` as x86-64's
+  through `TARGETS_DEF`/`TARGETS_C_DEF`: `__ARM_NEON` as armv8-a's feature, `arch=x86-64` as x86-64's
   need, aarch64's spelling row removed; each red.
-- THE SABOTAGE ROW: S2980 plants that first direction (a facts row carries a C macro name; aarch64 is
+- THE SABOTAGE ROW: S2980 plants that first direction (a facts row carries a C macro name; armv8-a is
   not the host family, so the compiler control skips it and only the token-list rule and the entries'
   literal see it): red, 2 FAIL.
 
@@ -104,7 +104,7 @@ D77; the default list's members are checked to be of their family instead); the 
 | `const mf_family *mf_family_parse(const char *tok, size_t len, char *err, size_t n)` | the same for a family token |
 | `const mf_target *mf_targets(size_t *n)`, `const mf_family *mf_families(size_t *n)` | the listings, in table order (the population the checks count) |
 | `const mf_target *mf_portable_target(void)` | the one familyless target (`generic`) |
-| `const char *mf_host_defaults(void)` | the host family's default list (`x86-64` on this box) |
+| `const char *mf_host_defaults(void)` | the host family's default list (`x86-64` on this box, the default of the `x86_64` family) |
 
 A row's fields: `mf_target` {name (canonical), family (pointer, NULL for the portable target), needs,
 features}; `mf_family` {name, defaults (comma-separated canonical tokens)}. So "the default list for a
@@ -136,12 +136,12 @@ rows the kit compiles) and asserts:
    gcc whatever CC is, because clang's whole set differs by CPU-name macros alone (`__k8`, rev 0's
    measurement); the floor is the check's own column so `sse2` is a real comparison. At `make` a
    mismatch WARNS (R5-Q1), `make strict` and the section FAIL. A target of another family is SKIPPED and
-   counted (today: aarch64).
+   counted (today: armv8-a).
 2. Structure: floors of 2 families and 4 targets (literals from the design); names distinct under the
    parser's matching rule; every target's family exists; exactly one familyless target, with no needs
    and no features; needs and features sorted, unrepeated, needs a subset of features; each default
    list non-empty, unrepeated, every member a target of that family. And the split's rule: every facts
-   field a token list, no directive in targets.def, one C spelling row per family (The facts/spellings
+   field a token list, no directive in targets.def, one C spelling row per family (Facts vs C
    split).
 3. NEW, THE HOST CHAIN vs THE GUARDS: in each of four preprocessor cells (gcc as is, `-m32`, `-mx32`,
    clang `--target=aarch64-linux-gnu`) the chain names the family whose guard holds, or none where none
@@ -151,7 +151,7 @@ rows the kit compiles) and asserts:
 Today: `ok: 2 families, 4 targets, 2 compared against gcc -march, 1 skipped (another family or no
 needs), host MF_FAM_X86_64, 4 host cells (0 skipped)`. Failing directions, hand-checked through
 `TARGETS_DEF` on scratch copies: `sahf` dropped from both columns (`> #define __LAHF_SAHF__ 1`), the
-guard without `!defined(__ILP32__)` (host cell gcc-mx32 red), an aarch64 row moved into x86-64 (its
+guard without `!defined(__ILP32__)` (host cell gcc-mx32 red), an armv8-a row moved into x86_64 (its
 family's default list then names a target of another family). Exit 0 ok, 1 mismatch, 2 could not run.
 
 ## Compile cells
@@ -207,7 +207,7 @@ targets_c.def):
 | S2977 | the region drops `#pragma GCC target` | the entries' region row; the compile cells (the v3 part no longer compiles at gcc's default) | red, 7 FAIL |
 | S2978 | the x86-64 C guard (targets_c.def) admits ILP32 | the host cell gcc-mx32 (part 1); the entries' guard row | red, 2 FAIL |
 | S2979 | `tok_names` accepts a prefix | the prefix refusal (part 2) | red, 1 FAIL |
-| S2980 | a facts row carries C text: aarch64's feature becomes `__ARM_NEON` | the token-list rule (part 1); the entries' literal | red, 2 FAIL |
+| S2980 | a facts row carries C text: armv8-a's feature becomes `__ARM_NEON` | the token-list rule (part 1); the entries' literal | red, 2 FAIL |
 
 C4: the rows' anchors carry the table's own text, so `tests/memfn/c4_allowlist.tsv` gains seven counted
 rows (S2975 class 1: 2; S2976 classes 1/6: 1/2; S2978 classes 2/6: 2/2; S2980 classes 1/2: 2/1), with

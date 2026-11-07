@@ -1716,8 +1716,13 @@ const mf_level *mf_levels(size_t *n);
  * from it (mf_target_c_of, mf_family_c_of); another emitter's would sit
  * beside it.
  *
- * A token is matched ASCII-case-blind, `_` and `-` alike (`X86_64` parses
- * as the target or family named `x86-64`); the canonical form is the row's
+ * Two token spaces, one list (the owner's ruling 2026-11-07: `-fmemfn-simd`
+ * takes family and target tokens mixed, so no token is both): FAMILY tokens
+ * are the `uname -m` names, TARGET tokens gcc's -march names; a family token
+ * in a list means that family's default list (the caller's reading; the
+ * kit parses each token as one or the other). A token is matched
+ * ASCII-case-blind and otherwise exactly (`X86_64` is the family `x86_64`;
+ * `x86-64` is a target, and `_` is not `-`); the canonical form is the row's
  * own name. Every pointer below is to static storage, valid for the
  * process's life. */
 #define mf_targets         MF_NS(targets)

@@ -6,7 +6,7 @@
  * §6.1, §8).
  *
  * THE CONTROL for the entries is the design's table as written there
- * (units.md's K0 row: the four tokens, the two families, x86-64's default
+ * (units.md's K0 row: the four tokens, the two families, x86_64's default
  * list `x86-64` until the dispatch step, `sahf` in x86-64-v3's features, R2),
  * spelled out case by case below and never read back from
  * memfn/src/targets.def: a row edited in the .def disagrees with a literal
@@ -18,6 +18,7 @@
  *        targets_check --fixture    -> the fixture C text on stdout */
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include "memfn.h"
 
@@ -91,12 +92,12 @@ static void rows(const char *uname_m)
     /* every token, canonical and as a caller may spell it */
     static const char v3[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave";
     target_row("generic", "generic", NULL, "", "");
-    target_row("x86-64", "x86-64", "x86-64", "sse2", "sse2");
-    target_row("x86-64-v3", "x86-64-v3", "x86-64", v3, v3);
-    target_row("aarch64", "aarch64", "aarch64", "", "neon");
-    target_row("X86_64", "x86-64", "x86-64", "sse2", "sse2");
-    target_row("x86_64_V3", "x86-64-v3", "x86-64", v3, v3);
-    target_row("AArch64", "aarch64", "aarch64", "", "neon");
+    target_row("x86-64", "x86-64", "x86_64", "sse2", "sse2");
+    target_row("x86-64-v3", "x86-64-v3", "x86_64", v3, v3);
+    target_row("armv8-a", "armv8-a", "aarch64", "", "neon");
+    target_row("X86-64", "x86-64", "x86_64", "sse2", "sse2");
+    target_row("X86-64-V3", "x86-64-v3", "x86_64", v3, v3);
+    target_row("ARMv8-A", "armv8-a", "aarch64", "", "neon");
     target_row("GENERIC", "generic", NULL, "", "");
 
     /* the listing is the parser's table: every listed row parses to itself */
@@ -124,6 +125,12 @@ static void rows(const char *uname_m)
     refused("", 0, 0, "an empty target");
     refused("riscv", 5, 1, "family riscv");
     refused("generic", 7, 1, "family generic (the portable target has no family)");
+    /* ONE token space: a token of one kind is refused as the other, `_` is not `-` */
+    refused("x86_64", 6, 0, "target x86_64 (a family, not a target)");
+    refused("aarch64", 7, 0, "target aarch64 (a family, not a target)");
+    refused("x86-64", 6, 1, "family x86-64 (a target, not a family)");
+    refused("armv8-a", 7, 1, "family armv8-a (a target, not a family)");
+    refused("x86_64_v3", 9, 0, "target x86_64_v3 (`_` is not `-`)");
     refused("x86-64-v3", 9, 1, "family x86-64-v3 (a target, not a family)");
     refused("", 0, 1, "an empty family");
     {
@@ -136,19 +143,25 @@ static void rows(const char *uname_m)
               "target: n 0 and a NULL token are safe");
     }
 
+    /* no token is both a family and a target (compared case-blind) */
+    int distinct = 1;
+    for (size_t i = 0; i < nt; i++)
+        for (size_t j = 0; j < nf; j++) distinct &= strcasecmp(ts[i].name, fs[j].name) != 0;
+    check(distinct, "no token names both a family and a target");
+
     /* families: the default lists (x86-64 alone until the dispatch step, U5)
      * and the guard */
-    const mf_family *x = mf_family_parse("x86-64", 6, NULL, 0);
+    const mf_family *x = mf_family_parse("x86_64", 6, NULL, 0);
     const mf_family *a = mf_family_parse("aarch64", 7, NULL, 0);
     const mf_family *xu = mf_family_parse("X86_64", 6, NULL, 0);
-    check(x && !strcmp(x->defaults, "x86-64"), "family x86-64: default list 'x86-64'");
-    check(a && !strcmp(a->defaults, "aarch64"), "family aarch64: default list 'aarch64'");
-    check(xu == x, "family 'X86_64' parses as x86-64");
+    check(x && !strcmp(x->defaults, "x86-64"), "family x86_64: default list 'x86-64'");
+    check(a && !strcmp(a->defaults, "armv8-a"), "family aarch64: default list 'armv8-a'");
+    check(xu == x, "family 'X86_64' parses as x86_64 (case-blind)");
     const mf_family_c *xc = mf_family_c_of(x);
     check(xc && !strncmp(xc->guard, "#if !(", 6) && strstr(xc->guard, "#error") &&
               strstr(xc->guard, "__x86_64__") && strstr(xc->guard, "__ILP32__"),
-          "family x86-64: its C guard is an #if ... #error on the architecture, excluding ILP32");
-    check(tgt("x86-64-v3") && tgt("x86-64-v3")->family == x && tgt("aarch64")->family == a,
+          "family x86_64: its C guard is an #if ... #error on the architecture, excluding ILP32");
+    check(tgt("x86-64-v3") && tgt("x86-64-v3")->family == x && tgt("armv8-a")->family == a,
           "each family's targets point at its row");
 
     /* the portable target and the host's default list */
@@ -157,7 +170,7 @@ static void rows(const char *uname_m)
               !*mf_target_c_of(p)->region_open,
           "the portable target is generic: no family, needs, features or region");
     const char *want = !strcmp(uname_m, "x86_64")                                   ? "x86-64"
-                       : !strcmp(uname_m, "aarch64") || !strcmp(uname_m, "arm64") ? "aarch64"
+                       : !strcmp(uname_m, "aarch64") || !strcmp(uname_m, "arm64") ? "armv8-a"
                                                                                    : "generic";
     snprintf(line, sizeof line, "the host default list on a %s host is '%s' (got '%s')", uname_m, want,
              mf_host_defaults());

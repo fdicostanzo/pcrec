@@ -587,7 +587,7 @@
 #     family-guard compile cells (seconds). Its own arm because no pcrec
 #     caller reads the table before P1 and no artifact carries its text
 #     before U3: a broken row moves no answer and no artifact byte. Links the
-#     sabotaged tree's build/libpcrec.a. Registered before S2975-S2979.
+#     sabotaged tree's build/libpcrec.a. Registered before S2975-S2981.
 #   emitsweep — added 2026-10-06 ([START-TABLE] C0, lane stc0); runs
 #     scripts/tests/emit_sweep.py.test (the arms family over its own manifest
 #     population, the sabotaged tree's build/pcrec) and
