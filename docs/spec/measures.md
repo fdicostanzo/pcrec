@@ -12,6 +12,8 @@
   - [§3.1](#s3-1) The codes
   - [§3.2](#s3-2) The derivations
   - [§3.3](#s3-3) The values digest
+  - [§3.4](#s3-4) The estimator
+  - [§3.5](#s3-5) Gates, the NULL rule, drift, outcomes
 - [§4](#s4) The stamp: `<PREFIX>_MEASURES` and `rx_info.measures`
 - [§5](#s5) Loading: which set a compile reads
 - [§6](#s6) The listing: `--list-measurements`
@@ -62,7 +64,7 @@
 | `unit_key` | R | the key of the unit row |
 | `method` | R | the method cards' `owner-name@ver` |
 | `run`, `box`, `compiler`, `libc`, `code_commit`, `counters` | | provenance |
-| `partial` | | `1` when only some groups passed their gates, else `0` or empty |
+| `partial` | | `1` when only some groups passed their gates, else `0` or empty; in a format-2 set, `1` exactly when §3.5¶12's outcome is PARTIAL (its row 3), else `0` |
 | `rows` | R | the number of rows in section `rows` |
 | `values_digest` | R | §3.3's digest, 16 lowercase hex |
 
@@ -91,6 +93,8 @@
 <a id="s2-2-p3a"></a>[2.2¶3a] In a format-2 set, `noise_e6` is not provenance: it is `-` or a non-negative integer in `value_e6`'s one spelling, at most 10^15, the value's 1-sigma noise in the row's unit times 10^6. Only a `measured` row carries a numeric noise; a `null`, `derived` or `fitted` row carries `-`. A `-` noise is unmeasured, never 0, and a measured noise may be 0. In a format-1 set, `noise_e6` is one of the provenance columns of ¶3.
 
 <a id="s2-2-p4"></a>[2.2¶4] A cell id appears at most once. `composite` is `1` exactly when `members` (the header key) is non-empty and section `members` has rows.
+
+<a id="s2-2-p5"></a>[2.2¶5] A format-2 set carries in `cells` the cells its rows and its verdict read, the cells of a refused group included, and a measured row's derivation lives in those cells: the estimator is its card's `lengths`, its base is named on its cells, and its event count is the cells' `events` column (§2.2¶1a). The grammar of a cell id, and what a recompute does with it, are §3.4's; the loader reads an id only for uniqueness (¶4).
 
 <a id="s2-3"></a>
 ### 2.3 The key
@@ -150,6 +154,97 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s3-3-p2"></a>[3.3¶2] The header's `values_digest` must equal the digest of the rows, and `rows` must equal their count; a file where either differs is refused.
 
+<a id="s3-3-p3"></a>[3.3¶3] Neither digest covers a cell, so a set file and the same file without the data rows of section `cells` (the copy built into the binary, §8¶2) share one identity `id@rev:values_digest`. The cells are covered by the store's file sha-256 (§8¶1).
+
+<a id="s3-4"></a>
+### 3.4 The estimator
+
+<a id="s3-4-p1"></a>[3.4¶1] This section gives a format-2 set's measured values their meaning: how a row's `value_e6` and `noise_e6` follow from the set's `cells`. A checker that recomputes a set reads the set file (header, cards, rows, cells), the run record of §3.5¶8, and the rules of the producer that record names (§3.5¶8a), and nothing else. The recompute agrees EXACTLY or fails; the only roundings are those named here. A format-1 set's cards and cells are never parsed by this section.
+
+<a id="s3-4-p2"></a>[3.4¶2] Arithmetic. `rhafz(n, d)` rounds n/d half away from zero (truncating division with the sign applied afterwards), and every product and sum is held in a 128-bit signed integer in C (an integer `divmod` in a language with unbounded integers). `isqrt_rn(N)` is r + (1 if N − r² > r else 0) with r = floor(sqrt(N)) exact; there are no ties for integer N. `med(v)` is the LOWER median: element (n − 1)/2 (truncating) of v sorted ascending, never an average. L is the card's `launches` and R its `rounds`. Canonical order is §3.3¶1's.
+
+<a id="s3-4-p2a"></a>[3.4¶2a] This section is written for L = 7: the six launches the trim of step 6 leaves, `K_TRIM_E6` and `K_MED_E6` (§3.5¶6) are seven launches' constants. A card stating another `launches` refuses the recompute.
+
+<a id="s3-4-p3"></a>[3.4¶3] **Estimator grammar.** In a format-2 set a card's `lengths` is one of `slope X1,X2,X3` (three distinct integer lengths, ascending) or `delta LEN` (one integer length). Integers only; any other text refuses the recompute. A card's `aa_rule` is a `;`-joined list of tokens: `twin-per-arm` (every timed arm has its own A/A twin, step 5) and `bimodal-test` (the unit's test, §3.5¶4).
+
+<a id="s3-4-p4"></a>[3.4¶4] **Step 1: the cells.** For an arm a, a length x and a launch l, a round times N calls of the arm over its subject pool and gives T nanoseconds; its per-call figure is `rhafz(T × 10^6, N)` (ns × 10^6 per call). The cell c(a, x, l) is `med` over the R rounds. That median is the producer's step, recorded in the cell and not recomputed. A cell row's columns (§2.2¶1a) mean what the next paragraphs say.
+
+<a id="s3-4-p5"></a>[3.4¶5] `cell`: the unique id, `/`-joined: `<group>/<arm>/<length>/<launch>`, and on the cells of a `delta` row's arm and of its twin a FIFTH field, the row's BASE arm, as in `J3.hit.random.1024/kit.find_hit.walk.random.one.1024/1048576/4/base.walk`. The format reads an id only for uniqueness (§2.2¶4); this section gives it its meaning, and the recompute refuses a set whose ids do not parse this way.
+
+<a id="s3-4-p6"></a>[3.4¶6] The recompute also COMPARES the id with the cell's own columns, and the base with the row's quantity. The id's first four fields equal the cell's `group`, `arm`, `length` and `launch` columns; a mismatch refuses the set, and the estimator reads the columns, the id only for its fifth field. Further, the fifth field equals the base the row's quantity declares by the base rule of the set's `method`; a producer that computes a base AND names the wrong one is refused. A set whose `method` the recompute holds no base rule for is refused.
+
+<a id="s3-4-p7"></a>[3.4¶7] `group`: `J<j>.<name>`, the job being the text before the first `.`. A job is the set of groups timed together under one launch sequence. Three kinds of group exist: `J<j>.ctl` the job's control, `J<j>.base` the job's delta bases, and one group per row family (for example `J2.unit`, `J3.hit.random.1024`). `arm`: a row's KEY as written in `rows`; its twin, the same key with `#b` appended; a base, `base.<name>`; or `ctl`.
+
+<a id="s3-4-p8"></a>[3.4¶8] `length`: the subject's length in bytes, always (for a `delta` row, the card's LEN). `launch`: 1 to L, the launch within the job. `round`: the literal `med`. `events`: the event count E per call of the cell's subject (hits, compares or candidates), an integer, one value for every subject of a pool; `0` on a miss-only or fail base; `-` on a `slope` arm and on `ctl`. `ns_e6`: the cell.
+
+<a id="s3-4-p9"></a>[3.4¶9] **A measured row's derivation lives in its cells.** The estimator is the card's `lengths`, the base is on the cells, the row's `inputs` stays `-` (§2.2¶3), and the event count is the cells' `events` column.
+
+<a id="s3-4-p10"></a>[3.4¶10] **Step 2: per-launch absolute, by the card's estimator.** For `slope X1,X2,X3`, with x_i the lengths and y_i = c(a, x_i, l): S = n·Σx_i·y_i − Σx_i·Σy_i and D = n·Σx_i² − (Σx_i)² (n = 3, exact integers), and abs_l = `rhafz(S, D)` (ns × 10^6 per byte). The control `ctl`, which has no card, is a `slope` over its own cells' `length` values, which must be exactly three distinct lengths in `J<j>.ctl`.
+
+<a id="s3-4-p11"></a>[3.4¶11] For `delta LEN`, the base B is the ONE arm named in the fifth id field of the row's cells (the same B on every cell of a and of its twin a#b, else the set is refused); D_l = c(a, LEN, l) − c(B, LEN, l); E is the `events` of a's cells (one value over all of a's AND a#b's cells together, else the set is refused); abs_l = `rhafz(D_l, E)` (ns × 10^6 per event). The twin uses the same base: D#b_l = c(a#b, LEN, l) − c(B, LEN, l).
+
+<a id="s3-4-p12"></a>[3.4¶12] **One base rule.** B's cells are in the row's JOB's base group `J<j>.base` (the recompute checks the group, not only the job prefix), in the same launch. A base may serve several rows of its job, never a row of another job.
+
+<a id="s3-4-p13"></a>[3.4¶13] **Step 3: per launch, by the launch's control.** u_l is the `slope` of arm `ctl` in the row's job's group `J<j>.ctl`, launch l. v_l = `rhafz(abs_l × 10^6, u_l)`. A launch-wide shift moves the arm and the control together and cancels in v_l.
+
+<a id="s3-4-p14"></a>[3.4¶14] **Step 4: anchored to the unit.** W = `med(v_l)` of the unit row (the header's `unit_key`). Every row's anchored per-launch value is x_l = `rhafz(v_l × 10^6, W)` (a `ratio` row: × 10^6; a `walkbytes` row: unit bytes × 10^6), its twin's x#b_l likewise. `value_e6` = `med(x_l)`; the unit's is exactly 10^6. `abs_ns_e6` (provenance) = `med(abs_l)`.
+
+<a id="s3-4-p14a"></a>[3.4¶14a] W, every control slope u_l and every `delta` row's E are positive; a set where one is zero or negative is refused.
+
+<a id="s3-4-p15"></a>[3.4¶15] **Step 5: A/A, per arm, on the value.** aa = `med(|x#b_l − x_l|)`.
+
+<a id="s3-4-p16"></a>[3.4¶16] **Step 6: spread, trimmed and scaled.** Drop the ONE launch farthest from `med(x_l)` (ties: the later launch). With the remaining n = L − 1 values w, Q = n·Σw² − (Σw)² (exact) and `sp2` = `rhafz(K_TRIM_E6 × Q, 10^6 × n × (n − 1))`, with `K_TRIM_E6` = 1723000, the factor that restores the variance a seven-launch trim removes from a normal launch distribution.
+
+<a id="s3-4-p17"></a>[3.4¶17] **Step 7: noise.** `noise_e6` = `isqrt_rn(aa² + sp2)`, in the row's unit × 10^6. It is a conservative one-sigma: the A/A and the spread both carry the arm-specific variance. On a `delta` row it is mostly the estimator's own error, and rows that share a base, W and a job's control share part of it, so a sum of such rows' noises taken as independent errs wide.
+
+<a id="s3-4-p18"></a>[3.4¶18] **Step 8: n.** `n` (provenance) = L × R.
+
+
+<a id="s3-5"></a>
+### 3.5 Gates, the NULL rule, drift, outcomes
+
+<a id="s3-5-p1"></a>[3.5¶1] This section gives the generic rules by which a recomputed set is gated, refused or published. The floor those rules read, and the vocabulary of any one producer's jobs and rows, belong to the producer and live outside the set (¶7, ¶8); this section names no producer's clause, key or job.
+
+<a id="s3-5-p2"></a>[3.5¶2] **Cost rows** (the `slope` rows, the unit included) pass iff `value_e6` > 0 and `noise_e6 × 10^6 ≤ gate_e6 × value_e6`, `gate_e6` the row's card's (a card stating `-` takes the value the run record of ¶8 pins for it, a section its producer adds; so does every other reading of a card's `gate_e6` in this section); the unit row's gate is HALF (`2 × noise_e6 × 10^6 ≤ gate_e6 × value_e6`). A non-positive cost is a failed measurement. **A cost row passes or fails ALONE:** a failing row is absent from the set (its cells stay) and its key is named in the run summary; its group's other rows are unaffected. A verdict over a whole group exists only for the unit group (the unit row's gate and bimodal test, ¶4-¶5) and for a job's drift (¶6).
+
+<a id="s3-5-p3"></a>[3.5¶3] **Delta rows** (the rows of a `delta` card) are `null` (empty value, `-` noise) UNLESS D_l > 0 on each of the SIX launches left after dropping the one farthest from `med(D_l)` (ties: the later launch; §3.4 step 6's trim), AND `med(D_l) > aa_D` over all L launches, with aa_D = `med(|D#b_l − D_l|)` = `med(|c(KEY#b, LEN, l) − c(KEY, LEN, l)|)`: the row's own paired A/A; a row failing that test is SUB-RESOLUTION instead of `null` when ¶3a says so. A row its producer's rules BOUND (¶3b) is priced by ¶3b whatever this test says. A per-event cost negative on all six trimmed launches (an arm consistently faster than its base) is a fixture artifact whatever its resolution: the row is `null` and its `source` names that, unless it is bound. **A delta row never refuses anything by itself:** a `null` row is unpriced, a reader skips an absent value (§0¶2), and the floor of ¶7 is what a run of unpriced keys fails.
+
+<a id="s3-5-p3a"></a>[3.5¶3a] **Sub-resolution delta rows.** A delta row's RESOLUTION is r = `min(3 × isqrt_rn(rhafz(K_MED_E6 × sp2, 10^6)), r_max_e6)`, with sp2 taken by §3.4 step 6 on the row's own x_l, `K_MED_E6` that of ¶6, and `r_max_e6` the cap the run record of ¶8 pins (a policy of the rules owner): three standard errors of the median `value_e6` estimates, at most r_max_e6, in the row's unit × 10^6. A delta row that fails ¶3's test is SUB-RESOLUTION iff its trimmed six D_l are not all negative, `|med(x_l)| ≤ r`, and its paired A/A is within r (`aa ≤ r`, aa of §3.4 step 5): it is consistent with zero within r, a `measured` row (not `null`) with `value_e6` = `max(0, med(x_l))` (never negative; the clamp lifts a truly-zero row by at most r, which its noise covers) and `noise_e6` = `max(r, the noise of §3.4 step 7)`; its `abs_ns_e6` stays the unclamped `med(abs_l)`, provenance only and read by no reader, so a set may hold a `value_e6` of 0 beside a negative `abs_ns_e6` (so may a bound row, ¶3b). Every other row failing ¶3's test is `null`: negative on all six trimmed launches; signs mixed, or below its A/A, at a size above r; or within r with its A/A above r. A sub-resolution row is priced for ¶11 and meets a floor clause as any priced key does.
+
+<a id="s3-5-p3b"></a>[3.5¶3b] **Bound delta rows.** A producer's rules (¶8a) may define a BOUND: a fact about a delta row's TIMED CODE under which no base can isolate the row's cost, because the cost is part of an instruction any base must also contain (a compare fused into the load it rides on, which a base without the compare can only make as a separate load). The producer derives the fact from the timed object code, never from the row's values or their sign, checks it by a second reading of that code, and states it in the row's `tags` by the token its rules name. The code it reads is the code the run timed: each executable the one its job's manifest pins by sha-256, the manifest the one the run record pins (a record finalized before it pinned manifests is checked against its manifest as it stands, and says so). The bound assumes an un-fused base: a producer whose fact also holds for the row's base refuses the run. A bound row is a `measured` row with `value_e6` = `max(0, med(x_l))` and `noise_e6` = `max(r_max_e6, |med(x_l)|)` (`r_max_e6` the one of ¶3a): the fact decides that the row is bound, its sign picks the value inside the bound (the bound's measured difference is biased negative, so a positive median is a lower bound of the cost and 0 is known wrong there); its `abs_ns_e6` stays the unclamped `med(abs_l)`, provenance only, and its `source` names the evidence the producer's rules cite for the bound. A row's `tags` field is `-` or a list of tokens separated by `;`, and a row carries a token when one of those tokens equals it exactly (no prefix or substring match). A recompute applies this to a delta row whose `tags` carry its rules owner's bound token and takes the fact as stated: it cannot re-read object code, the set does not carry it, and the set's `PROVENANCE.md` names the evidence. A row without the fact is never bound: a consistent negative there stays `null` (¶3). A bound row is priced for ¶11 and meets a floor clause as any priced key does.
+
+<a id="s3-5-p4"></a>[3.5¶4] **The unit's bimodal test.** With the unit's x_l sorted ascending (s_0 .. s_(L−1)), the unit is bimodal iff for some k in 2 .. L−2 (both clusters at least two launches) `2 × (s_k − s_(k−1)) > gate_e6`: a split larger than half the unit card's gate. It applies where the unit card's `aa_rule` holds `bimodal-test`.
+
+<a id="s3-5-p5"></a>[3.5¶5] The unit row FAILS iff it fails its half gate (¶2) or is bimodal (¶4).
+
+<a id="s3-5-p6"></a>[3.5¶6] **Drift, per job.** Let C_j be `med` of job j's control slopes u_l, and C_u the same for the unit's job (the job named by the unit row's group). drift_j = `rhafz(|C_j − C_u| × 10^6, C_u)`. Job j's groups are REFUSED iff `2 × drift_j > G` AND `drift_j > 3 × isqrt_rn(rhafz(K_MED_E6 × (sp2_u + sp2_j), 10^6))`, with G the UNIT card's `gate_e6`, `K_MED_E6` = 210300 (the variance factor of the lower median of seven normal launches, so the second term is three standard errors of a difference of two medians), and each sp2 taken by §3.4 step 6 on that job's relative control values `rhafz(u_l × 10^6, med(u))`. A drift must clear BOTH the size floor G/2 and the three-standard-error term. A refusal is a box-state verdict between jobs, not a correction: the job's rows are absent and its cells stay.
+
+<a id="s3-5-p7"></a>[3.5¶7] **The producer's declared floor.** Ahead of any timing a producer declares the keys it plans and the floor the set must meet: a list of clauses, each a (clause, key, when) line, a clause being met by ONE priced key among its lines. The floor and the plan are kept in a run record outside the set, cited by sha-256 from the set's `PROVENANCE.md` and the header's `run` value.
+
+<a id="s3-5-p8"></a>[3.5¶8] **The run record** is one text file in `table_contract.md`'s section shape. Its sections are `run` (columns `key value`; keys `set`, the `id@rev` it was made for, `run_id`, and whatever the producer adds), `jobs` (`job state cause`: every job of the plan, `ran`, or `never-ran` with a cause), `plan` (`key group job`: every row key the run planned) and `floor` (`clause key when`: `when` is `always` or a condition token the producer defines, a clause whose condition is true being inactive). A section the producer adds for a verdict the recompute re-derives (¶10) is the producer's. The record names its set by `id@rev`, never by digest.
+
+<a id="s3-5-p8a"></a>[3.5¶8a] **The producer's rules.** Three rules a recompute applies are the producer's, not this document's: the base rule of §3.4¶6, the meaning of each condition token of the `floor` section, and the rule of any verdict re-derived under ¶10. The record's `run` section names their owner in the key `rules`, an `owner-name@ver` (the set's `method` when the producer is the method's own harness). A recompute holds the rules of each owner it accepts; a record naming an owner it does not hold, a condition token that owner does not define, or no `rules` key, is refused. The rules are those of ONE estimator commit, the commit that scored the record into the set: the set's `PROVENANCE.md` (and the producer's draft) names it, and a recompute applies that commit's rules. An estimator commit names its rules only when every file those rules are read from (the estimator, each module it loads from outside the language's standard library, and each table it reads live) is tracked at that commit with identical contents; an edited, untracked or ignored copy has no commit and writes no draft. A record may be scored by an estimator commit later than its `code_commit` (frozen cells re-read under another estimator commit's rules) only when the timed code is unchanged between the two commits; the cells are never re-timed by it. The timed code is every tracked path except those the producer's rules declare non-timed, each with its reason (an exclusion list: a path no rule names is timed).
+
+<a id="s3-5-p9"></a>[3.5¶9] **The three copies are compared.** The header `run` value is `<run id> record:<sha-256>`. The sha-256 in that value equals the sha-256 in `PROVENANCE.md` equals the sha-256 of the record file, and the run id in the header equals the run id in `PROVENANCE.md` equals the `run_id` of the record's `run` section. The recompute checks the file against its sha before reading it; any mismatch refuses.
+
+<a id="s3-5-p10"></a>[3.5¶10] **What the recompute covers.** From the committed set and the run record: every row's value, noise and `null` status; every cost row's gate; the unit's gate and bimodal test; each job's drift; the set's row list (exactly the plan's keys minus those the rules of ¶2-¶6 make absent); any verdict the record states that its producer derives from cells the record holds, RE-DERIVED from those cells and not taken as stated; the floor over the record's clauses; and the outcome (¶12) with the header's `partial`. Hence **a refused job's CELLS STAY in the set** (the verdict reads them) while its ROWS are absent, and the control's cells stay (every row reads them). The one input taken as given is the record's `jobs` section, and it is cross-checked: a `never-ran` job has no cell in the set and a `ran` job has every cell its plan keys need. The control is not a row and has no gate of its own.
+
+<a id="s3-5-p11"></a>[3.5¶11] **Outcomes: one first-match table.** A floor clause is ACTIVE unless its condition is true. A key is UNPRICED by `text` (its cost row over its gate, or its delta row `null`; a sub-resolution row of ¶3a and a bound row of ¶3b are priced), by `drift:J<j>` (its job drift-refused) or by `never-ran:J<j>` (its job did not run).
+
+<a id="s3-5-p12"></a>[3.5¶12] The table, first match wins:
+
+| # | condition | outcome | causes recorded |
+|---|---|---|---|
+| 1 | the unit row is absent (its job never ran) or fails (¶5) | REFUSED, exit 3, no set | `unit` |
+| 2 | some ACTIVE floor clause has no priced key | REFUSED, exit 3, no set | `floor:<clause>` per failed clause, with its keys' reasons |
+| 3 | some planned key is absent (its job never ran or was drift-refused, or its cost row failed its gate) | PARTIAL, exit 4, header `partial` `1` | the absent keys, named in the run summary |
+| 4 | otherwise | FULL, exit 0, header `partial` `0` | none |
+
+<a id="s3-5-p13"></a>[3.5¶13] The floor is read over EVERY active clause, so row 3 is reached only when the absent keys meet every active clause another way. A REFUSED run writes no set; a PARTIAL set holds only the rows that passed, and a reader skips each key it does not hold (§0¶2).
+
+<a id="s3-5-p14"></a>[3.5¶14] **HELD** is not a state of the format. Whether a producer stops re-running a REFUSED plan after a repeated cause is the producer's rule; the recompute neither reads nor writes it.
+
+
 <a id="s4"></a>
 ## 4. The stamp: `<PREFIX>_MEASURES` and `rx_info.measures`
 
@@ -183,7 +278,7 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s5-p5"></a>[5¶5] **Precedence.** Fill-only, as `--analysis`: a target whose config names `measures` gets that set, and `--measures` names the set for targets whose configs name none. Where both are given and differ, the file's value wins and a note names both. A `pcrec` config line carrying `--measures` is refused.
 
-<a id="s5-p6"></a>[5¶6] **The default.** A compile that names no set reads the build's default for its class. Today there is one class, `idk` (a compile that declares none), and its default is the latest committed set: `zen4-grid1@1`, measured on one box.
+<a id="s5-p6"></a>[5¶6] **The default.** A compile that names no set reads the build's default for its class. Today there is one class, `idk` (a compile that declares none), and its default is the latest committed set: `zen4-grid3@1`, measured on one box.
 
 <a id="s5-p7"></a>[5¶7] Loading moves no artifact byte: only a CONSULTED set is stamped (§4).
 
@@ -192,9 +287,9 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 <a id="s6"></a>
 ## 6. The listing: `--list-measurements`
 
-<a id="s6-p1"></a>[6¶1] `--list-measurements` (no value) prints section `sets`, one row per committed set: `id rev class box tier composite method default_for rows null_rows values_digest source`. `default_for` is the class it is the default of, or empty.
+<a id="s6-p1"></a>[6¶1] `--list-measurements` (no value) prints section `sets`, one row per committed set: `id rev class box tier composite method default_for rows null_rows values_digest source file_cells`. `default_for` is the class it is the default of, or empty. `file_cells` is the committed file's cell count, which the copy built into the binary does not hold (§8¶2): read the cells from the file (`--list-measurements=FILE`).
 
-<a id="s6-p2"></a>[6¶2] `--list-measurements=X` (X a NAME, NAME@REV or FILE, resolved by §5¶1-¶4 with `-I`) prints the set's CANONICAL view: its five sections in §2's order, the header keys in §2.1's order (an absent key as an empty value), the rows in canonical key order, the cards, cells and members in bytewise order of their fields, one fixed first comment line and no other comment. The canonical view of a set IS a loadable set with the same digest, and the canonical view of a canonical view is itself, byte for byte. Every committed set file equals its own canonical view.
+<a id="s6-p2"></a>[6¶2] `--list-measurements=X` (X a NAME, NAME@REV or FILE, resolved by §5¶1-¶4 with `-I`) prints the set's CANONICAL view: its five sections in §2's order, the header keys in §2.1's order (an absent key as an empty value), the rows in canonical key order, the cards, cells and members in bytewise order of their fields, one fixed first comment line and no other comment. The canonical view of a set IS a loadable set with the same digest, and the canonical view of a canonical view is itself, byte for byte. Every committed set file, loaded as a FILE, equals its own canonical view; a NAME resolved from the sets built into the binary prints it without its `cells` rows (§8¶2), a loadable set with the same digest (§3.3¶3).
 
 <a id="s6-p3"></a>[6¶3] `--view=canonical` spells the same view. `--view=decoded` prints the loaded document field by field: section `decoded` (`scope field value`; scope `header`, `row:<key>`, `card:<i>`, `cell:<i>` or `member:<i>`, `i` the 0-based index in canonical order), each row's columns as read plus `value_e6` as the parsed integer and its `unit_code` and `status_code`, then section `item` (`rows values_digest`, the digest recomputed). The decoded view is derived and never an input (§2¶3).
 
@@ -229,6 +324,6 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s8-p1"></a>[8¶1] The committed sets live in `measure_store/<id>/<rev>/set.tsv`, each with its `PROVENANCE.md`; `measure_store/DEFAULTS` maps each class to its default `id@rev`, and `DEFAULTS.log` records each change of it. A committed revision never changes: a second reading of the same cells is published as a new `rev`, and a new run as a new `id`.
 
-<a id="s8-p2"></a>[8¶2] Every committed set is built into `libpcrec` twice from its one file, as its text and as a pre-parse by the same reader a FILE goes through (`make gen-measures`), so a binary resolves a NAME with no file access and every revision stays selectable from an installed binary.
+<a id="s8-p2"></a>[8¶2] Every committed set is built into `libpcrec` twice from its one file, as its text WITHOUT the data rows of section `cells` (its `#section cells` line and column header kept, so the text is a loadable set) and as a pre-parse of that text by the same reader a FILE goes through (`make gen-measures`), so a binary resolves a NAME with no file access and every revision stays selectable from an installed binary. The cells are read from the committed file (`--measures=FILE`, a recompute, §3.4); the listing names their count (§6¶1).
 
-<a id="s8-p3"></a>[8¶3] Sets today: `zen4-grid1@1` (tier `scratch`, class `x86_64-avx2/zen4`; the `idk` default).
+<a id="s8-p3"></a>[8¶3] Sets today: `zen4-grid1@1` (format 1, tier `scratch`, class `x86_64-avx2/zen4`) and `zen4-grid3@1` (format 2, tier `scratch`, class `x86_64/zen4`; the `idk` default).

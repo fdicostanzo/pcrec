@@ -55,6 +55,9 @@
 #include <string.h>
 
 #include "memfn.h"
+/* the form-hash entry table's TEST entries (span_cards.md §3.2, unit S2c):
+   kit.h, the kit's internal header, as tests/memfn/proven_check.c reads it */
+#include "../../memfn/src/kit.h"
 
 /* MF_SITE_ABI 18 (R-26.1/R-26.2): a forward FIND's predicate STATES its class
  * (the renderer interface since MF_SITE_ABI 20, as the window family's
@@ -1277,7 +1280,23 @@ static void gate_cases(void)
  *       no pcrec code), printing `CONSULTED<TAB>0|1` (R-MS2): the R-MS1/R-MS4
  *       loops of tests/memfn/finder_check.py
  *   arm_fixtures --finder-rows     mf_finder_rows as TSV (R-MS4's listing)
- *   arm_fixtures --hash            R-MS3's fixtures (mf_form_hash)
+ *   arm_fixtures --hash            R-MS3's fixtures (mf_form_hash): a `FORM`
+ *       line per id (the fold of its instances), a `FORMCLS` line per
+ *       instance of the entry table
+ *       (`FORMCLS<TAB>id<TAB>cls<TAB>rc<TAB>hash<TAB>row<TAB>canon`), the
+ *       `TEXT` variants, and per entry-table instance its fixtures
+ *       (`TEXT<TAB><id>/<cls>.rename|.edit|.foldedit<TAB>hash`,
+ *       `TEXT<TAB><id>/<cls>.renamed<TAB>count`)
+ *   arm_fixtures --site-text ID [CLS]   the instance's SITE TEXT on stdout,
+ *       exactly the text mf_form_hash folds (span_cards.md §3.2; the slot
+ *       harness's cell text)
+ *   arm_fixtures --site-parts ID [CLS]  the same text in two parts: the
+ *       FILE part, a form-feed line, the BODY part (the slot's wrapper
+ *       places them)
+ *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
+ *       cell-text check folds a cell TU's site span with it)
+ *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
+ *       wraps and drives the site text with (the declared `facts[]` table)
  *
  * Every expectation is finder_check.py's, never this file's. */
 
@@ -1648,13 +1667,124 @@ static int finder_rows_mode(void)
 /* R-MS3's fixtures: the forms that render resolve, others are refused; the
  * text hash ignores a rename, a comment and layout, and moves on a one-
  * operator edit. */
+/* R-MS3's two fixtures per entry-table INSTANCE (span_cards.md §8.2, unit
+ * S2c; review r9 CHECKS-6: every instance a cell times, not only the
+ * canonical one), made from the instance's SITE TEXT: `rename` renames every
+ * identifier the text spells (the hooks' names and the `mf` prefix's) and
+ * must keep the hash, having renamed at least one (`renamed`, CHECKS-4);
+ * `edit` makes ONE instruction edit (the first `from`, which must occur) and
+ * must move the instance's hash, and `foldedit` is the id's fold (every
+ * instance's site text in table order, a newline between two: G4) with this
+ * one instance edited, which must move mf_form_hash(id). */
+static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
+    { "walk",      "-",  "pos++",      "pos += 2" },
+    { "libc",      "-",  "120",        "121" },
+    { "pair",      "-",  "mf_mf1_c++", "mf_mf1_c += 2" },
+    { "settest",   "c1", "== 47",      "!= 47" },
+    { "settest",   "c2", "== 120",     "!= 120" },
+    { "settest",   "cn", "== 95",      "!= 95" },
+    { "rc-words",  "w1", ") == ",      ") != " },
+    { "rc-words",  "w2", " && ",       " || " },
+    { "rc-words",  "w3", "pos + 10",   "pos + 9" },
+    { "rc-memcmp", "l1", ", 4)",       ", 3)" },
+};
+static const struct { const char *from, *to; } hash_renames[] = {
+    { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
+};
+
+/* `t` with every whole identifier `from` (or, for `mf`, every identifier
+ * beginning `mf_`) spelled `to`; malloc'd; *nr counts the renamed. */
+static char *rename_idents(const char *t, unsigned *nr)
+{
+    Text o = { 0 };
+    text_put(&o, "", 0);
+    for (const char *p = t; *p; ) {
+        int st = (*p == '_' || (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) &&
+                 (p == t || !(p[-1] == '_' || (p[-1] >= '0' && p[-1] <= '9') ||
+                              (p[-1] >= 'a' && p[-1] <= 'z') || (p[-1] >= 'A' && p[-1] <= 'Z')));
+        if (!st) { text_put(&o, p++, 1); continue; }
+        const char *e = p;
+        while (*e == '_' || (*e >= '0' && *e <= '9') || (*e >= 'a' && *e <= 'z') ||
+               (*e >= 'A' && *e <= 'Z'))
+            e++;
+        size_t n = (size_t)(e - p);
+        const char *to = NULL;
+        for (unsigned i = 0; i < sizeof hash_renames / sizeof hash_renames[0]; i++)
+            if (strlen(hash_renames[i].from) == n && !strncmp(p, hash_renames[i].from, n))
+                to = hash_renames[i].to;
+        if (to) { text_put(&o, to, strlen(to)); (*nr)++; }
+        else if (n > 3 && !strncmp(p, "mf_", 3)) { text_put(&o, "zz_", 3); text_put(&o, p + 3, n - 3); (*nr)++; }
+        else text_put(&o, p, n);
+        p = e;
+    }
+    return o.p;
+}
+
+/* `t` with its first `from` spelled `to`, malloc'd; NULL when `from` does
+ * not occur. */
+static char *edit_once(const char *t, const char *from, const char *to)
+{
+    const char *at = strstr(t, from);
+    if (!at) return NULL;
+    Text o = { 0 };
+    text_put(&o, t, (size_t)(at - t));
+    text_put(&o, to, strlen(to));
+    text_put(&o, at + strlen(from), strlen(at + strlen(from)));
+    return o.p;
+}
+
+/* --hash: R-MS3's fixtures (the header block above lists the lines). */
 static int hash_mode(void)
 {
-    static const char *const ids[] = { "walk", "libc", "V1", "W64", "NONE", "dispatch-twin", NULL };
+    static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
+                                       "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);
         printf("FORM\t%s\t%d\t%s\n", ids[i], rc, rc ? "-" : h);
+    }
+    for (size_t i = 0; mf_form_entry_at(i); i++) {
+        const mf_form_entry *e = mf_form_entry_at(i);
+        char h[17] = "-";
+        int rc = mf_form_hash_cls(e->id, e->cls, h);
+        const char *row = mf_form_row(e->id, e->cls);
+        printf("FORMCLS\t%s\t%s\t%d\t%s\t%s\t%d\n", e->id, e->cls, rc, rc ? "-" : h,
+               row ? row : "-", e->canon);
+    }
+    for (unsigned i = 0; i < sizeof hash_edits / sizeof hash_edits[0]; i++) {
+        char *t, h[17] = "-", g[17] = "-", f[17] = "-";
+        unsigned nr = 0;
+        if (mf_form_site_text(hash_edits[i].id, hash_edits[i].cls, &t) == 0) {
+            char *r = rename_idents(t, &nr);
+            mf_form_hash_text(r, h);
+            free(r);
+            char *ed = edit_once(t, hash_edits[i].from, hash_edits[i].to);
+            if (ed) {
+                mf_form_hash_text(ed, g);
+                /* the id's fold, this instance's text edited (written here
+                   from the design, never formhash.c's loop) */
+                Text o = { 0 };
+                int k = 0, bad = 0;
+                for (size_t j = 0; mf_form_entry_at(j); j++) {
+                    const mf_form_entry *e = mf_form_entry_at(j);
+                    char *u;
+                    if (strcmp(e->id, hash_edits[i].id)) continue;
+                    if (k++) text_put(&o, "\n", 1);
+                    if (!strcmp(e->cls, hash_edits[i].cls)) { text_put(&o, ed, strlen(ed)); continue; }
+                    if (mf_form_site_text(e->id, e->cls, &u)) { bad = 1; continue; }
+                    text_put(&o, u, strlen(u));
+                    free(u);
+                }
+                if (!bad && o.p) mf_form_hash_text(o.p, f);
+                free(o.p);
+                free(ed);
+            }
+            free(t);
+        }
+        printf("TEXT\t%s/%s.rename\t%s\n", hash_edits[i].id, hash_edits[i].cls, h);
+        printf("TEXT\t%s/%s.renamed\t%u\n", hash_edits[i].id, hash_edits[i].cls, nr);
+        printf("TEXT\t%s/%s.edit\t%s\n", hash_edits[i].id, hash_edits[i].cls, g);
+        printf("TEXT\t%s/%s.foldedit\t%s\n", hash_edits[i].id, hash_edits[i].cls, f);
     }
     static const struct { const char *name, *text; } tx[] = {
         { "base",    "    while (pos < n && !mf_tbl[subject[pos]]) pos++;\n" },
@@ -1668,6 +1798,238 @@ static int hash_mode(void)
         char h[17];
         mf_form_hash_text(tx[i].text, h);
         printf("TEXT\t%s\t%s\n", tx[i].name, h);
+    }
+    return 0;
+}
+
+/* ---- the slot harness's two reads of the entry table (span_cards.md §3.2,
+ * unit S2c) ------------------------------------------------------------------ */
+
+/* --site-text: exactly the hashed text, nothing added. */
+static int site_text_mode(const char *id, const char *cls)
+{
+    char *t;
+    if (mf_form_site_text(id, cls, &t)) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    fputs(t, stdout);
+    free(t);
+    return 0;
+}
+
+/* --site-parts: the site text's FILE part, a form-feed line, its BODY part
+ * (the slot harness's wrapper places them; their concatenation is
+ * --site-text's). */
+static int site_parts_mode(const char *id, const char *cls)
+{
+    char *t;
+    size_t fl;
+    if (mf_form_site_split(id, cls, &t, &fl)) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    fwrite(t, 1, fl, stdout);
+    fputs("\f\n", stdout);
+    fputs(t + fl, stdout);
+    free(t);
+    return 0;
+}
+
+/* --hash-text FILE|-: mf_form_hash_text of a whole text (the slot harness's
+ * cell-text check folds a cell TU's site span with it; check B folds the
+ * instances' texts with it). */
+static int hash_text_mode(const char *path)
+{
+    FILE *f = strcmp(path, "-") ? fopen(path, "rb") : stdin;
+    if (!f) { perror(path); return 1; }
+    size_t cap = 4096, n = 0;
+    char *b = malloc(cap);
+    for (size_t k; b && (k = fread(b + n, 1, cap - n - 1, f)) > 0; ) {
+        n += k;
+        if (n + 1 == cap) {
+            char *nb = realloc(b, cap *= 2);
+            if (!nb) free(b);
+            b = nb;
+        }
+    }
+    if (f != stdin) fclose(f);
+    if (!b) return 1;
+    b[n] = 0;
+    char h[17];
+    mf_form_hash_text(b, h);
+    printf("%s\n", h);
+    free(b);
+    return 0;
+}
+
+/* --facts: one line per row of `facts[]`, its value `-` where the key does
+ * not apply to the instance's shape. Every value is read off the entry
+ * table's row and its shape (kit.h), never restated here. */
+typedef struct { const mf_form_entry *e; const mf_form_shape *sh; const char *row; } FactIn;
+typedef void (*fact_fn)(const FactIn *x, Text *o);
+
+/* The fact writers. f_str/f_hex write one value (NULL: `-`); f_set_shape
+ * and f_find_shape test the instance's shape; every f_<key> below writes the
+ * facts[] row <key> for the instance, read off its entry and shape. */
+static void f_str(Text *o, const char *v) { text_put(o, v ? v : "-", strlen(v ? v : "-")); }
+static void f_hex(Text *o, const uint8_t *b, size_t n)
+{
+    char buf[8];
+    for (size_t i = 0; i < n; i++) {
+        snprintf(buf, sizeof buf, "%s%02x", i ? " " : "", b[i]);
+        text_put(o, buf, strlen(buf));
+    }
+    if (!n) f_str(o, NULL);
+}
+static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
+static int f_find_shape(const FactIn *x)
+{
+    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW;
+}
+/* the run's mask byte at i: 0xDF at a caseless letter, else 0xFF (fh_run's) */
+static uint8_t f_mask(const mf_form_entry *e, size_t i)
+{
+    unsigned c = (unsigned char)e->bytes[i] | 0x20;
+    return e->caseless && c >= 'a' && c <= 'z' ? 0xDF : 0xFF;
+}
+static void f_id(const FactIn *x, Text *o) { f_str(o, x->e->id); }
+static void f_cls(const FactIn *x, Text *o) { f_str(o, x->e->cls); }
+static void f_canon(const FactIn *x, Text *o) { f_str(o, x->e->canon ? "1" : "0"); }
+static void f_shape(const FactIn *x, Text *o) { f_str(o, x->sh->word); }
+static void f_entry(const FactIn *x, Text *o) { f_str(o, x->sh->entry); }
+static void f_row(const FactIn *x, Text *o) { f_str(o, x->row); }
+static void f_policy(const FactIn *x, Text *o)
+{
+    f_str(o, x->e->policy == MF_P_PORTABLE_ONLY ? "MF_P_PORTABLE_ONLY" : "OTHER");
+}
+static void f_deny(const FactIn *x, Text *o) { f_str(o, x->e->deny); }
+static void f_prefix(const FactIn *x, Text *o) { (void)x; f_str(o, "mf"); }
+static void f_s(const FactIn *x, Text *o) { f_str(o, x->sh->s); }
+static void f_s_type(const FactIn *x, Text *o) { f_str(o, x->sh->s ? "const unsigned char *" : NULL); }
+static void f_n(const FactIn *x, Text *o) { f_str(o, x->sh->n); }
+static void f_n_type(const FactIn *x, Text *o) { f_str(o, x->sh->n ? "size_t" : NULL); }
+static void f_lo(const FactIn *x, Text *o) { f_str(o, f_find_shape(x) ? x->sh->lo : NULL); }
+static void f_lo_type(const FactIn *x, Text *o) { f_str(o, f_find_shape(x) && x->sh->lo ? "size_t" : NULL); }
+static void f_result(const FactIn *x, Text *o) { f_str(o, x->sh->result); }
+static void f_result_type(const FactIn *x, Text *o) { f_str(o, x->sh->result ? "size_t" : NULL); }
+static void f_cand(const FactIn *x, Text *o) { f_str(o, x->sh->cand); }
+static void f_cand_type(const FactIn *x, Text *o) { f_str(o, x->sh->cand ? "size_t" : NULL); }
+static void f_value(const FactIn *x, Text *o)
+{
+    f_str(o, f_find_shape(x) ? "the result: the found position, else the miss value"
+                             : "a C boolean expression: 1 iff the candidate passes");
+}
+static void f_miss(const FactIn *x, Text *o)
+{
+    f_str(o, !f_find_shape(x) ? NULL : x->e->on_miss ? "on_miss runs (the result is not written)"
+                                                       : x->sh->n);
+}
+static void f_on_miss(const FactIn *x, Text *o) { f_str(o, x->e->on_miss); }
+/* the empty range's statement (mf_site.empty), the find shapes' */
+static void f_empty(const FactIn *x, Text *o)
+{
+    static const struct { uint8_t v; const char *says; } em[] = {
+        { MF_EMPTY_NOP,      "nop: at lo >= n the text writes nothing" },
+        { MF_EMPTY_EXCLUDED, "excluded: the caller guarantees lo < n" },
+        { MF_EMPTY_MISS,     "miss: at lo >= n the result is the miss value" },
+    };
+    const char *v = NULL;
+    for (unsigned i = 0; f_find_shape(x) && i < sizeof em / sizeof em[0]; i++)
+        if (em[i].v == x->e->empty) v = em[i].says;
+    f_str(o, v);
+}
+static void f_table(const FactIn *x, Text *o) { f_str(o, x->e->table ? "mf_tbl" : NULL); }
+static void f_table_members(const FactIn *x, Text *o)
+{
+    if (x->e->table) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+    else f_str(o, NULL);
+}
+static void f_table_value(const FactIn *x, Text *o)
+{
+    f_str(o, x->e->table ? "unsigned char[256]: nonzero at a member, 0 elsewhere" : NULL);
+}
+static void f_members(const FactIn *x, Text *o)
+{
+    if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+    else f_str(o, NULL);
+}
+/* the first byte from 'a' up (mod 256) outside the set, or one failing the
+   run's first position under its mask */
+static void f_miss_byte(const FactIn *x, Text *o)
+{
+    const mf_form_entry *e = x->e;
+    for (unsigned k = 0; k < 256; k++) {
+        uint8_t b = (uint8_t)('a' + k);
+        int hit = f_set_shape(x) ? strchr(e->bytes, b) != NULL
+                                 : (b & f_mask(e, 0)) == (uint8_t)e->bytes[0];
+        if (b && !hit) { f_hex(o, &b, 1); return; }
+    }
+    f_str(o, NULL);
+}
+static void f_L(const FactIn *x, Text *o)
+{
+    char buf[24];
+    snprintf(buf, sizeof buf, "%zu", strlen(x->e->bytes));
+    f_str(o, f_set_shape(x) ? NULL : buf);
+}
+static void f_run(const FactIn *x, Text *o)
+{
+    if (f_set_shape(x)) f_str(o, NULL);
+    else f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+}
+static void f_runmask(const FactIn *x, Text *o)
+{
+    uint8_t m[64];
+    size_t L = strlen(x->e->bytes);
+    if (f_set_shape(x) || L > sizeof m) { f_str(o, NULL); return; }
+    for (size_t i = 0; i < L; i++) m[i] = f_mask(x->e, i);
+    f_hex(o, m, L);
+}
+static void f_hit(const FactIn *x, Text *o)
+{
+    f_str(o, f_set_shape(x) ? "a byte of `members`"
+                            : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
+}
+static void f_reads(const FactIn *x, Text *o)
+{
+    char buf[24];
+    snprintf(buf, sizeof buf, "%zu", x->e->shape == MF_FH_SETTEST ? (size_t)1 : strlen(x->e->bytes));
+    f_str(o, f_find_shape(x) ? NULL : buf);
+}
+
+static const struct { const char *key; fact_fn f; } facts[] = {
+    { "id", f_id },                 { "cls", f_cls },             { "canon", f_canon },
+    { "shape", f_shape },           { "entry", f_entry },         { "row", f_row },
+    { "policy", f_policy },         { "deny", f_deny },           { "prefix", f_prefix },
+    { "subject", f_s },             { "subject_type", f_s_type },
+    { "n", f_n },                   { "n_type", f_n_type },
+    { "lo", f_lo },                 { "lo_type", f_lo_type },
+    { "result", f_result },         { "result_type", f_result_type },
+    { "cand", f_cand },             { "cand_type", f_cand_type },
+    { "value", f_value },           { "miss_value", f_miss },     { "on_miss", f_on_miss },
+    { "empty", f_empty },
+    { "table", f_table },           { "table_type", f_table_value },
+    { "table_members", f_table_members },
+    { "members", f_members },       { "L", f_L },                 { "run", f_run },
+    { "mask", f_runmask },          { "hit", f_hit },             { "miss_byte", f_miss_byte },
+    { "reads_past_cand", f_reads },
+};
+
+static int facts_mode(const char *id, const char *cls)
+{
+    FactIn x = { mf_form_entry_of(id, cls), NULL, NULL };
+    x.sh = mf_form_shape_of(x.e);
+    x.row = x.e ? mf_form_row(x.e->id, x.e->cls) : NULL;
+    if (!x.e || !x.sh || !x.row) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    for (unsigned i = 0; i < sizeof facts / sizeof facts[0]; i++) {
+        Text o = { 0 };
+        facts[i].f(&x, &o);
+        printf("%s\t%s\n", facts[i].key, o.p ? o.p : "-");
+        free(o.p);
     }
     return 0;
 }
@@ -1979,6 +2341,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
@@ -1991,6 +2354,10 @@ int main(int argc, char **argv)
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();
+    if (!strcmp(argv[1], "--site-text") && argc > 2) return site_text_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--hash-text") && argc > 2) return hash_text_mode(argv[2]);
+    if (!strcmp(argv[1], "--facts") && argc > 2) return facts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--purity")) return purity_mode();
     if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();
     for (int i = 2; i < argc; i++)

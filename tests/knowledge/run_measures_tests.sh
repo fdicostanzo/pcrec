@@ -4,17 +4,29 @@
 # §3, §8.3, §9.6; docs/spec/measures.md is the contract). Called by
 # run_knowledge_tests.sh (`make test-knowledge`), whose trailer adds its counts.
 #
-#   STORE   every measure_store/<id>/<rev>/set.tsv: R4 (the committed file IS
-#           its canonical view), R5 (pcrec's decoded view of the stored set =
-#           ks_ref.py's decode of the FILE), its index.tsv row (sha-256 by
-#           sha256sum, digest by ks_ref), DEFAULTS read by awk against the
-#           listing's `default_for` and against DEFAULTS.log's last row per
-#           class, and the EMBEDDED store (meas_store_check.c: the embedded
-#           text = the file, the pre-parse = a fresh parse of that text, by
-#           decoded view AND field by field, noise included); the same check
-#           over mfixtures.py's FORMAT-2 store run through scripts/ksgen.c.
-#           meas_store_check.c's build also asserts KS_MEAS_MAX ==
-#           MF_MEASURE_MAX (span_cards.md §4.1).
+#   STORE   every measure_store/<id>/<rev>/set.tsv: R4 (the committed file,
+#           loaded as a FILE, IS its canonical view; the NAME's view, from the
+#           CELL-LESS embed, is the file with its `cells` rows dropped by this
+#           runner's OWN awk, which shares no source with the Makefile's strip
+#           step), R5 (pcrec's decoded view = ks_ref.py's decode, the FILE's
+#           of the file and the NAME's of the stripped copy), the listing's
+#           `file_cells` = the file's cell count by awk, its index.tsv row
+#           (sha-256 by sha256sum, digest by ks_ref), DEFAULTS read by awk
+#           against the listing's `default_for` and against DEFAULTS.log's
+#           last row per class, and the EMBEDDED store (meas_store_check.c:
+#           the embedded text = the runner's stripped copy, every pre-parse
+#           holds 0 cells, the pre-parse = a fresh parse of that text, by
+#           decoded view AND field by field, noise included). The GENERATION
+#           is re-run fresh (span_cards.md §3.8): the Makefile's strip step
+#           (`make meas-strip`) into a scratch dir = the runner's stripped
+#           copies, and scripts/ksgen.c over the committed store = the
+#           committed measures_table.inc, its output checked by the same
+#           meas_store_check.c compares; the same check over mfixtures.py's
+#           FORMAT-2 store run through scripts/ksgen.c. meas_store_check.c's
+#           build also asserts KS_MEAS_MAX == MF_MEASURE_MAX (span_cards.md
+#           §4.1).
+#   RECOMPUTE meas_recompute.py: every committed FORMAT-2 set re-derived from
+#           its cells and its run record (measures.md §3.4-§3.5), exact.
 #   ROUND   every mfixtures.py `ok/` set: R1 (the item digest of its
 #           canonical view, re-loaded), R2 (the canonical view is a fixed
 #           point), R3 (ks_ref.py reads the file and its canonical view as one
@@ -50,25 +62,55 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 REF="python3 -I $SCRIPT_DIR/ks_ref.py"
 LM() { pcrec_run "$PCREC" "$@"; }
 item_digest() { awk -F'\t' '/^#section /{s = ($0 == "#section item")} s && $1 ~ /^[0-9]+$/ {print $2}' "$1"; }
+# The runner's OWN strip (measures.md §8¶2): a set file without the data rows
+# of section `cells`; written apart from the Makefile's awk on purpose.
+strip_cells() { awk 'index($0, "#section ") == 1 { incell = ($0 == "#section cells"); print; next }
+                     incell && substr($0, 1, 1) != "#" && length($0) > 0 { next } { print }' "$1"; }
+ncells() { awk 'index($0, "#section ") == 1 { incell = ($0 == "#section cells"); next }
+                incell && substr($0, 1, 1) != "#" && length($0) > 0 { n++ } END { print n + 0 }' "$1"; }
 
 # ---- STORE ----------------------------------------------------------------
 nstore=0
+mkdir -p "$WORKDIR/strip"
+LM --list-measurements > "$WORKDIR/index" 2>/dev/null
 for f in "$ROOT_DIR"/measure_store/*/*/set.tsv; do
     [ -f "$f" ] || continue
     nstore=$((nstore + 1))
     rev="$(basename "$(dirname "$f")")"; id="$(basename "$(dirname "$(dirname "$f")")")"
-    if LM --list-measurements="$id@$rev" > "$WORKDIR/canon" 2> "$WORKDIR/err" &&
+    sf="$WORKDIR/strip/$id@$rev"
+    strip_cells "$f" > "$sf"
+    if LM --list-measurements="$f" > "$WORKDIR/canon" 2> "$WORKDIR/err" &&
        cmp -s "$WORKDIR/canon" "$f"; then
-        ok "store $id@$rev: R4, the committed file is its canonical view"
+        ok "store $id@$rev: R4, the committed file loaded as a FILE is its canonical view"
     else
-        bad "store $id@$rev: R4 — the canonical view differs from the committed file ($(head -c 200 "$WORKDIR/err"))"
+        bad "store $id@$rev: R4 — the FILE's canonical view differs from the committed file ($(head -c 200 "$WORKDIR/err"))"
     fi
-    LM --list-measurements="$id@$rev" --view=decoded > "$WORKDIR/cdec" 2>/dev/null
+    if LM --list-measurements="$id@$rev" > "$WORKDIR/canon" 2> "$WORKDIR/err" &&
+       cmp -s "$WORKDIR/canon" "$sf"; then
+        ok "store $id@$rev: R4, the NAME's view (the cell-less embed) is the file without its cells rows"
+    else
+        bad "store $id@$rev: R4 — the NAME's canonical view differs from the file stripped of its cells ($(head -c 200 "$WORKDIR/err"))"
+    fi
+    LM --list-measurements="$f" --view=decoded > "$WORKDIR/cdec" 2>/dev/null
     $REF decode "$f" > "$WORKDIR/pdec"
     if cmp -s "$WORKDIR/cdec" "$WORKDIR/pdec"; then
-        ok "store $id@$rev: R5, pcrec's decode = the independent reader's ($(wc -l < "$WORKDIR/cdec") lines)"
+        ok "store $id@$rev: R5, the FILE's decode = the independent reader's ($(wc -l < "$WORKDIR/cdec") lines)"
     else
-        bad "store $id@$rev: R5 — decoded views differ: $(diff "$WORKDIR/pdec" "$WORKDIR/cdec" | head -4 | tr '\n' ' ' | cut -c1-300)"
+        bad "store $id@$rev: R5 — the FILE's decoded views differ: $(diff "$WORKDIR/pdec" "$WORKDIR/cdec" | head -4 | tr '\n' ' ' | cut -c1-300)"
+    fi
+    LM --list-measurements="$id@$rev" --view=decoded > "$WORKDIR/cdec" 2>/dev/null
+    $REF decode "$sf" > "$WORKDIR/pdec"
+    if cmp -s "$WORKDIR/cdec" "$WORKDIR/pdec"; then
+        ok "store $id@$rev: R5, the NAME's decode = the independent reader's of the stripped copy ($(wc -l < "$WORKDIR/cdec") lines)"
+    else
+        bad "store $id@$rev: R5 — the NAME's decoded views differ: $(diff "$WORKDIR/pdec" "$WORKDIR/cdec" | head -4 | tr '\n' ' ' | cut -c1-300)"
+    fi
+    fc="$(awk -F'\t' -v i="$id" -v r="$rev" '/^#section /{s = ($0 == "#section sets")} s && $1 == i && $2 == r {print $13}' "$WORKDIR/index")"
+    nc="$(ncells "$f")"
+    if [ -n "$fc" ] && [ "$fc" = "$nc" ]; then
+        ok "store $id@$rev: the listing's file_cells $fc = the file's cell count by awk"
+    else
+        bad "store $id@$rev: the listing's file_cells '$fc', the file holds $nc cells (make gen-measures)"
     fi
     sha="$(sha256sum "$f" | cut -d' ' -f1)"; dig="$($REF digest "$f")"
     row="$(awk -F'\t' -v i="$id" -v r="$rev" '$1 == i && $2 == r' "$ROOT_DIR/measure_store/index.tsv")"
@@ -83,7 +125,6 @@ done
 [ "$nstore" -ge 1 ] && ok "store: $nstore set(s) (floor 1)" || bad "store: no set under measure_store/ (K35)"
 
 # DEFAULTS by awk, against the listing and the log
-LM --list-measurements > "$WORKDIR/index" 2>/dev/null
 dbad=0; ndef=0
 while IFS="$(printf '\t')" read -r cls ir; do
     case "$cls" in ''|\#*) continue ;; esac
@@ -109,20 +150,74 @@ if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/msc" \
         ebad=0; nemb=0
         while IFS="$(printf '\t')" read -r name dig rows; do
             nemb=$((nemb + 1))
-            f="$ROOT_DIR/measure_store/${name%@*}/${name#*@}/set.tsv"
-            cmp -s "$WORKDIR/emb/$name.text" "$f" || { ebad=1; echo "  $name: embedded text != $f" >&2; }
+            sf="$WORKDIR/strip/$name"
+            cmp -s "$WORKDIR/emb/$name.text" "$sf" || { ebad=1; echo "  $name: embedded text != the committed file without its cells rows" >&2; }
             cmp -s "$WORKDIR/emb/$name.pre" "$WORKDIR/emb/$name.fresh" || { ebad=1; echo "  $name: pre-parse != a fresh parse of the embedded text" >&2; }
+            [ "$(cut -f1 "$WORKDIR/emb/$name.pre" | grep -c '^cell:')" = 0 ] || { ebad=1; echo "  $name: the pre-parse holds cells (the embed is cell-less)" >&2; }
         done < "$WORKDIR/emb.lst"
         if [ "$ebad" -eq 0 ] && [ "$nemb" -eq "$nstore" ]; then
-            ok "embedded store: $nemb set(s), text = file and pre-parse = fresh parse (decoded and raw rows)"
+            ok "embedded store: $nemb set(s), text = file without its cells rows, every pre-parse holds 0 cells, pre-parse = fresh parse (decoded and raw rows)"
         else
-            bad "embedded store: $nemb embedded against $nstore committed, or a text/pre-parse mismatch (make gen-measures)"
+            bad "embedded store: $nemb embedded against $nstore committed, or a text/cells/pre-parse mismatch (make gen-measures)"
         fi
     else
         bad "embedded store: meas_store_check refused: $(head -3 "$WORKDIR/emb.lst" | tr '\n' ' ')"
     fi
 else
     bad "embedded store: meas_store_check.c does not compile: $(head -3 "$WORKDIR/cc.err" | tr '\n' ' ')"
+fi
+
+# the generation, re-run fresh (span_cards.md §3.8): the committed .inc files
+# are only as good as the step that wrote them, so the step runs here too
+make -s -C "$ROOT_DIR" --no-print-directory meas-strip MEAS_STRIP_DIR="$WORKDIR/bstrip" \
+    > "$WORKDIR/bstrip.log" 2>&1
+sbad=0; nsb=0
+for f in "$ROOT_DIR"/measure_store/*/*/set.tsv; do
+    [ -f "$f" ] || continue
+    rev="$(basename "$(dirname "$f")")"; id="$(basename "$(dirname "$(dirname "$f")")")"
+    nsb=$((nsb + 1))
+    cmp -s "$WORKDIR/bstrip/$id/$rev/set.tsv" "$WORKDIR/strip/$id@$rev" ||
+        { sbad=1; echo "  $id@$rev: the Makefile's strip step's copy != the runner's" >&2; }
+done
+if [ "$sbad" -eq 0 ] && [ "$nsb" -eq "$nstore" ]; then
+    ok "the Makefile's strip step (make meas-strip): $nsb copies = the runner's own strip"
+else
+    bad "the Makefile's strip step disagrees with the runner's strip ($nsb copies; $(head -c 200 "$WORKDIR/bstrip.log"))"
+fi
+if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/ksgen0" \
+       "$ROOT_DIR/scripts/ksgen.c" "$LIBA" 2> "$WORKDIR/kg0.err" &&
+   "$WORKDIR/ksgen0" measures "$WORKDIR/table.inc" "$ROOT_DIR/measure_store/DEFAULTS" \
+       "$ROOT_DIR"/measure_store/*/*/set.tsv 2>> "$WORKDIR/kg0.err" &&
+   "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -DMSC_TABLE="\"$WORKDIR/table.inc\"" \
+       -o "$WORKDIR/msc3" "$SCRIPT_DIR/meas_store_check.c" "$LIBA" 2>> "$WORKDIR/kg0.err"; then
+    cmp -s "$WORKDIR/table.inc" "$ROOT_DIR/src/core/measures_table.inc" &&
+        ok "scripts/ksgen.c over the committed store = the committed measures_table.inc" ||
+        bad "scripts/ksgen.c over the committed store differs from src/core/measures_table.inc (make gen-measures)"
+    mkdir -p "$WORKDIR/emb3"; gbad=0
+    if "$WORKDIR/msc3" "$WORKDIR/emb3" "$WORKDIR"/strip/* > "$WORKDIR/emb3.lst" 2> "$WORKDIR/emb3.err"; then
+        while IFS="$(printf '\t')" read -r name dig rows; do
+            cmp -s "$WORKDIR/emb3/$name.pre" "$WORKDIR/emb3/$name.fresh" ||
+                { gbad=1; echo "  $name: the fresh pre-parse != a fresh parse of the stripped text" >&2; }
+            [ "$(cut -f1 "$WORKDIR/emb3/$name.pre" | grep -c '^cell:')" = 0 ] ||
+                { gbad=1; echo "  $name: the fresh pre-parse holds cells" >&2; }
+        done < "$WORKDIR/emb3.lst"
+    else
+        gbad=1
+    fi
+    if [ "$gbad" -eq 0 ] && [ "$(wc -l < "$WORKDIR/emb3.lst" | tr -d ' ')" = "$nstore" ]; then
+        ok "the fresh pre-parse: $nstore set(s), each = a fresh parse of its stripped text, 0 cells"
+    else
+        bad "the fresh pre-parse: a set's pre-parse differs from its stripped text's parse, or holds cells: $(head -3 "$WORKDIR/emb3.err" | tr '\n' ' ')"
+    fi
+else
+    bad "the fresh generation: ksgen or the check did not build/run: $(head -3 "$WORKDIR/kg0.err" | tr '\n' ' ')"
+fi
+
+# ---- RECOMPUTE -------------------------------------------------------------
+if python3 -I "$SCRIPT_DIR/meas_recompute.py" "$ROOT_DIR" > "$WORKDIR/recompute.out" 2>&1; then
+    ok "recompute: $(grep -c '^PASS' "$WORKDIR/recompute.out") item(s) exact; $(sed -n 's/^PASS: recompute: //p' "$WORKDIR/recompute.out" | head -1)"
+else
+    bad "recompute: $(grep -E '^(FAIL|REFUSED)' "$WORKDIR/recompute.out" | head -4 | tr '\n' ' ' | cut -c1-400)"
 fi
 
 # ---- ROUND ----------------------------------------------------------------
@@ -137,7 +232,8 @@ if "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -o "$WORKDIR/ksgen" 
    "$CC" -std=gnu11 -O1 -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" -DMSC_TABLE="\"$WORKDIR/fx2table.inc\"" \
        -o "$WORKDIR/msc2" "$SCRIPT_DIR/meas_store_check.c" "$LIBA" 2>> "$WORKDIR/kg.err"; then
     mkdir -p "$WORKDIR/emb2"
-    if "$WORKDIR/msc2" "$WORKDIR/emb2" "$FXS/fx-f2/1/set.tsv" > "$WORKDIR/emb2.lst" 2> "$WORKDIR/emb2.err" &&
+    strip_cells "$FXS/fx-f2/1/set.tsv" > "$WORKDIR/fx-f2.stripped"
+    if "$WORKDIR/msc2" "$WORKDIR/emb2" "$WORKDIR/fx-f2.stripped" > "$WORKDIR/emb2.lst" 2> "$WORKDIR/emb2.err" &&
        [ "$(wc -l < "$WORKDIR/emb2.lst" | tr -d ' ')" = 1 ] &&
        cmp -s "$WORKDIR/emb2/fx-f2@1.pre" "$WORKDIR/emb2/fx-f2@1.fresh" &&
        grep -q 'noise_parsed	1730$' "$WORKDIR/emb2/fx-f2@1.pre"; then

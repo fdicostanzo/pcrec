@@ -12,7 +12,8 @@ and by D167 (Q-R17P-14)
 `[s2]` revision lines: span_pick stage 2 (`docs/design/memfn/span_cards.md` rev 1.1, kit request
 R-35) amends §1.6 (the digest's exclusions are FORMAT 1's) and §4.1 (noise is handed from
 format-2 sets) at unit S2a; its later units amend §1.4, §1.5, §3.6, §7.2-§7.4 and the sizing
-sentence (span_cards.md §4.4).
+sentence (span_cards.md §4.4). Unit S2e (span_cards.md §8.3, §10.2) lands §3.6's default-change
+line, §8.3's cell-less compare, the sizing sentence and the movers-writer lines of §2.1.
 
 **Revision 3 answers the light re-check r2
 (`../dev/reviews/2026-10-16-r2-measure-sets-recheck.md`: 0 BLOCKER, 8 MAJOR, 11 MINOR,
@@ -394,6 +395,11 @@ first set's unit: u = β_walk(PF, 1 term), 0.1892 ns/B on grid1.
   from its `abs_ns_e6` and the unit row's `abs_ns_e6`, EXACTLY, under §1.7's integer rule.
   Revision 1 said "within rounding". This is not circular: the producer writes both
   columns from the raw cells, and the checker re-derives one from the other.
+  `[s2]` That is a FORMAT-1 set's recompute. A method whose estimator normalizes per launch
+  (a format-2 set under `kit-grid@3`) recomputes `value_e6` and `noise_e6` from the set's
+  CELLS (and the run record), not from `abs_ns_e6`, by `measures.md` §3.4 and §3.5
+  (`span_cards.md` §3.4, §3.5); `abs_ns_e6` is then provenance, the median of the
+  per-launch absolutes.
 
 A relative value is only as good as the unit's own regime: the unit cost is a different
 number in a different subject condition. So the unit row's regime is PINNED, by its card,
@@ -433,6 +439,10 @@ are (cells, not rows).
 
 The cells are few: the g\* ladder is tens of cells per form, not grid1's 6,725 launches.
 Cells no row reads are not committed. Their transcript hash goes in `PROVENANCE.md`.
+`[s2]` A cell is READ when a row's recompute reads it OR the set's VERDICT does: a
+refused job's cells (the drift verdict reads its control), the control's, and a base's
+stay in the set while the refused rows are absent (`measures.md` §3.5¶10; `span_cards.md`
+§3.5). A format-2 set's cell ids carry the estimator's grammar (`measures.md` §3.4¶5).
 
 A selection reads the crossover and never recomputes it. The reason is
 `memfn/r17b_prime.md` §2.6's: a literal in the emitted dispatch must equal a set value, so
@@ -578,7 +588,9 @@ transition, not to a set:
   census ran on: the landing commit's parent tree plus the change) and the emit_sweep
   population's pin (§9.3). It is written once, by the census mode of
   `scripts/emit_sweep.py` (§9.3), in the commit that changes `DEFAULTS`. It is immutable
-  from then on.
+  from then on. `[s2]` Until emit_sweep's `measures` data kind lands (M1), each movers file is
+  written by the census tool its own header names: 0001 by `docs/dev/lanes/m0build/census.py`,
+  0002 by `docs/design/memfn/span_cards/slot/movers.py` (span_cards.md §5).
 - **What it describes.** It states what moved AT that transition. A later code change
   that moves selections under the same default is that change's own movers (`emit_sweep`,
   the identity gate), not this file's.
@@ -629,9 +641,11 @@ Why keep the pre-parse for 47 rows: the library's no-filesystem path must be one
 for every knowledge kind (§9.2 part 4), and findings already measured the parse-per-compile cost
 as worth removing (findgen.c's header: ~47 µs, ~20% of a minimal compile, for `default.rxt`).
 
-**Embedding every rev, not only the default.** 47 rows is about 6 KB of text per set and
-15 KB with the pre-parse; the cells and cards add about 4 KB. Ten committed sets stay below
-one `fold_tables.inc`. Rollback must work from a release build (Q-MS-7, settled §10.5).
+**Embedding every rev, not only the default.** `[s2]` Every embed omits its set's `cells`
+(R-35 (d)); a set embeds as its text plus a pre-parse, about 305 B of libpcrec per row or card
+(grid1: 23,788 B, `size -A` of `measures.o`). Ten such sets are a few hundred KB, about a tenth
+of libpcrec.a today; embedding cells would cost about 0.27 KB per cell (`span_cards/tree_drill.py`
+D). Rollback must work from a release build (Q-MS-7, settled §10.5).
 
 ### 2.4 Staleness: transitive, defined, and the policy RULED [r1 msc1-7, msc1-8, msc2-6]
 
@@ -912,6 +926,11 @@ re-pins in the same change (D76/D94).
 that moves an emitted byte is an abi event. The stamp names the set, so a default change
 moves the stamp of every consulting artifact. Every default-set change is therefore an abi
 event, pre-1.0, under the ritual (`pcrec-abi-changes-pre-release`), in one commit:
+`[s2]` (S2e, span_cards.md §8.3) the "therefore" rests on a consulting artifact: a default-set
+change is an abi event exactly when a consulting reader exists. A change with no consulting
+reader (every stamp `""`, its data-mover census EMPTY) is a `DEFAULTS.log` transition with its
+census and no abi bump; zen4-grid1@1 -> zen4-grid3@1 (transition 2) is one. With a reader, the
+list below applies:
 
 - the abi bump;
 - the readers by grep;
@@ -1226,9 +1245,9 @@ tree (R-MS5), pcrec's in `measure/cards.tsv`. Its columns:
 | `dims` | the key's dimension names in order (§1.3) |
 | `unit` | the row's unit |
 | `subject` | the subject regime: `streamed-fresh` / `fit-repeated` / `landed:<g-ladder>` … (an owner token; the driver knows only how to build each token's buffer from the card's own parameters) |
-| `lengths` | the call lengths measured |
+| `lengths` | the call lengths measured. `[s2]` In a FORMAT-2 set the estimator, in `measures.md` §3.4's grammar: `slope X1,X2,X3` (three distinct integer lengths) or `delta LEN` (one); parsed on format-2 sets' cards only, so a format-1 card's free text (`slope 64Ki-1Mi member-free single calls`) is never read. No placeholder or key-token substitution: a delta row's base arm is named on its cells, never in `inputs` |
 | `launches`, `rounds` | the minimum per cell |
-| `aa_rule` | the A/A design (`pair-per-group`, `pair-per-launch`, `bimodal-test` for the unit, §1.4) |
+| `aa_rule` | the A/A design (`pair-per-group`, `pair-per-launch`, `bimodal-test` for the unit, §1.4). `[s2]` A `;`-joined token list; two more tokens: `twin-per-arm` (every timed arm has its own twin, `KEY#b`, `measures.md` §3.4 step 5) and `bimodal-test` (this table's token, now the unit card's second token in `kit-grid@3`) |
 | `gate_e6` | the group's refusal gate (§7.3): a LABELLED UNMEASURED DEFAULT (D149) until derived from committed sets |
 | `env` | the method's declared safe direction (cross-checked, §6.2) |
 | `deps` | the dependency ids the producer hashes into `deps` (§2.4) |
@@ -1256,7 +1275,13 @@ The closed table is what makes "the regime the number was measured in" (standing
 spread of a fitted row, or the launch spread of a measured mean. Revision 1 used the A/A
 floor alone, which understates a fitted crossover's uncertainty.
 
-**Gates are PER GROUP.** A group passes iff its noise ≤ its card's `gate_e6` and the quiet
+**Gates are PER GROUP.** `[s2]` For a format-2 set the rule is `measures.md` §3.5's: a COST
+row passes or fails alone (its group's other rows stand), a delta row follows §7.4's
+format-2 form, only the unit group and a job's drift are group verdicts, and the outcome
+is its first-match table (REFUSED exit 3, PARTIAL exit 4, FULL exit 0) over the producer's
+declared floor, kept in a run record outside the set and cited by sha-256. The M3 driver
+implements `measures.md` §3.4-§3.5 for these sets (`span_cards.md` §3.4-§3.5); the table
+below is the format-1 reading. A group passes iff its noise ≤ its card's `gate_e6` and the quiet
 gate held during it. The unit group's gate is half its card's, and the unit group also
 passes its bimodal test (§1.4). Three outcomes:
 
@@ -1292,6 +1317,17 @@ regret) is NULL when EITHER:
 2. **The launch-paired deltas disagree in sign.** These are the per-launch values of
    (arm − base) in the same round, one per launch. The row is NULL if they do not all
    share a sign, whatever their mean.
+
+`[s2]` **Format 2's paired floor (the exception).** A format-2 `delta` row (the rows of a
+`delta LEN` card, `measures.md` §3.5¶3) is NULL unless the per-event delta D_l is positive
+on each of the six launches left after the one-launch trim AND `med(D_l)` exceeds the
+row's OWN paired A/A, `med(|D#b_l − D_l|)`. That is item 2's sign rule (one-sided, because
+these deltas are COSTS, and over the trimmed six) and item 1's group floor WITHOUT the
+`FRG × base` term: FRG is a run-wide p90 of A/A FRACTIONS of the whole call, so
+`FRG × base / E` would charge a per-event row with the base call's worst-decile A/A
+whatever this run's noise (31.6 wb per hit at grid1's FRG 3.09 %). With the term gone FRG
+has no reader in a format-2 set and is not computed (D77). A format-1 set keeps items 1
+and 2 as written.
 
 A NULL row is written `status null` with an EMPTY `value_e6`, never a rounded number.
 Through §1.6 it makes every row derived from it NULL. A crossover is NULL when its
@@ -1470,7 +1506,10 @@ text, and any difference fails.
 
 The secondary checks are:
 
-- `tests/measures/` compares each embedded text with `set.tsv` byte for byte;
+- `tests/measures/` compares each embedded text with `set.tsv` byte for byte; `[s2]` embedded =
+  committed MINUS its `cells` rows (R-35 (d), span_cards.md §3.8): the compare is against the
+  file with those rows dropped by the checker's own strip, and the checker also re-runs the
+  strip step and ksgen and compares their output (`tests/knowledge/run_measures_tests.sh`);
 - the pre-parse is compared with a fresh library parse (findings tests §2/§3's shape).
   Both sides of that compare run the one C reader, so it catches a stale `.inc` and
   nothing about the reader itself. The reader's INTERPRETATION is checked by §9.6's R5

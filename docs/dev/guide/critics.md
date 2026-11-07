@@ -203,3 +203,5 @@ Round 2026-11-06 r8, memfn-s2a code (`docs/dev/reviews/2026-11-06-r8-memfn-s2a.m
 Round 2026-11-07 r1, xarch target seam design (`docs/dev/reviews/2026-11-07-r1-xarch.md`); lessons ruled 2026-11-07.
 1. **A critic brief is ONE question with at most two sub-parts and requires a per-finding append; a critic still silent 20 min after its one resend is replaced by a narrower fresh critic** (two wide briefs wrote nothing in 45 min; their narrow replacements delivered in 7-9 min).
 2. **Soundness compiles every emitted-shape claim at default flags, at `-march=native` and under the second supported compiler** (PROBE-1/PROBE-2: the only build failures of the round appeared under `-march=native` and clang).
+Round 2026-11-06 r9, memfn-s2c code (`docs/dev/reviews/2026-11-06-r9-memfn-s2c.md`); lesson ruled 2026-11-06.
+1. **A harness is reviewed for fidelity**: the answer gate ran the gate entry, not the timed one; a cell-text check read the arm, not the key; the verdict ignored the run record; a dep hashed a different instance from the one timed. Every check was green. New lens row "harness fidelity".

@@ -1,0 +1,44 @@
+row	kit.enter.1.NONE	value 1098768187	noise 8545693	gate pass
+row	kit.enter.3.NONE	value 41765488	noise 1687112	gate pass
+row	kit.enter.4.NONE	value 43434065	noise 1711816	gate pass
+row	kit.enter.5.NONE	value 5101122	noise 129232	gate pass
+row	kit.enter.6.NONE	value 38628124	noise 1210175	gate pass
+row	kit.find_byte.libc	value 39024	noise 1295	gate FAIL
+row	kit.find_byte.pair	value 73639	noise 1375	gate pass
+row	kit.find_byte.walk	value 1000000	noise 1985	gate pass
+row	kit.find_hit.libc.periodic.one.1024	value 16266755	noise 837117	gate pass
+row	kit.find_hit.libc.periodic.one.256	value 19116062	noise 315968	gate pass
+row	kit.find_hit.libc.random.one.1024	value 56112819	noise 915989	gate pass
+row	kit.find_hit.libc.random.one.256	value 54889371	noise 430914	gate pass
+row	kit.find_hit.pair.periodic.alt.1024	value 87018336	noise 1042643	gate pass
+row	kit.find_hit.pair.periodic.alt.256	value 39604378	noise 715625	gate pass
+row	kit.find_hit.pair.periodic.one.1024	value 84768923	noise 5129675	gate pass
+row	kit.find_hit.pair.periodic.one.256	value 38073332	noise 458051	gate pass
+row	kit.find_hit.pair.random.alt.1024	value 142070682	noise 3120639	gate pass
+row	kit.find_hit.pair.random.alt.256	value 95633348	noise 1533056	gate pass
+row	kit.find_hit.pair.random.one.1024	value 130792281	noise 2461235	gate pass
+row	kit.find_hit.pair.random.one.256	value 88469624	noise 1456608	gate pass
+row	kit.find_hit.walk.periodic.one.1024	value 30476485	noise 6008137	gate pass
+row	kit.find_hit.walk.periodic.one.256	value 28881170	noise 1676936	gate pass
+row	kit.find_hit.walk.random.one.1024	value 51959001	noise 23027371	gate pass
+row	kit.find_hit.walk.random.one.256	value 45968888	noise 17186103	gate pass
+row	kit.verify_cmp.rc-memcmp.l1.p0	value -	noise -	null: negative per-event cost (a fixture artifact)
+row	kit.verify_cmp.rc-memcmp.l1.p50	value -	noise -	null: negative per-event cost (a fixture artifact)
+row	kit.verify_cmp.rc-words.w1.p0	value -	noise -	null: below its paired A/A or signs mixed over the trimmed six
+row	kit.verify_cmp.rc-words.w1.p50	value -	noise -	null: below its paired A/A or signs mixed over the trimmed six
+row	kit.verify_cmp.rc-words.w2.p0	value 7905906	noise 86013	gate pass
+row	kit.verify_cmp.rc-words.w2.p50	value 8304745	noise 108576	gate pass
+row	kit.verify_cmp.rc-words.w3.p0	value 13724385	noise 189184	gate pass
+row	kit.verify_cmp.rc-words.w3.p50	value 11958329	noise 767280	gate pass
+row	kit.verify_cmp.settest.c1.p0	value -	noise -	null: negative per-event cost (a fixture artifact)
+row	kit.verify_cmp.settest.c1.p50	value -	noise -	null: negative per-event cost (a fixture artifact)
+row	kit.verify_cmp.settest.c2.p0	value -	noise -	null: below its paired A/A or signs mixed over the trimmed six
+row	kit.verify_cmp.settest.c2.p50	value -	noise -	null: below its paired A/A or signs mixed over the trimmed six
+row	kit.verify_cmp.settest.cn.p0	value 6999281	noise 687251	gate pass
+row	kit.verify_cmp.settest.cn.p50	value 15876576	noise 127868	gate pass
+drift	J2	0	20493	kept
+drift	J2p	5110	18705	kept
+drift	J3	506	21552	kept
+drift	J4	5555	19971	kept
+drift	J5	1630	22758	kept
+== s2 OUTCOME REFUSED exit 3 floor:byte.libc (text); floor:verify.rc-memcmp.l1 (text); floor:verify.rc-words.w1 (text); floor:verify.settest.c1 (text); floor:verify.settest.c2 (text)

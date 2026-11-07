@@ -1,0 +1,49 @@
+# est.py rows at span_cards rev 1.4 (lane s2rev14) over a COPY of run s2d-20261106's run directory: R14-2 (sub-resolution
+# delta rows) and R14-4 (ungated, notes) replayed; R14-1 is not replayable (the cells used rev 1.3's null base). The copy's
+# record was re-finalized by rev 1.4's record.py (its new quiet section and note keys; otherwise byte-equal). Exit 3.
+row	kit.enter.1.NONE	value 1098768187	noise 8545693	ungated
+row	kit.enter.3.NONE	value 41765488	noise 1687112	ungated
+row	kit.enter.4.NONE	value 43434065	noise 1711816	ungated
+row	kit.enter.5.NONE	value 5101122	noise 129232	ungated
+row	kit.enter.6.NONE	value 38628124	noise 1210175	ungated
+row	kit.find_byte.libc	value 39024	noise 1295	gate FAIL
+row	kit.find_byte.pair	value 73639	noise 1375	gate pass
+row	kit.find_byte.walk	value 1000000	noise 1985	gate pass
+row	kit.find_hit.libc.periodic.one.1024	value 16266755	noise 837117	ungated
+row	kit.find_hit.libc.periodic.one.256	value 19116062	noise 315968	ungated
+row	kit.find_hit.libc.random.one.1024	value 56112819	noise 915989	ungated
+row	kit.find_hit.libc.random.one.256	value 54889371	noise 430914	ungated
+row	kit.find_hit.pair.periodic.alt.1024	value 87018336	noise 1042643	ungated
+row	kit.find_hit.pair.periodic.alt.256	value 39604378	noise 715625	ungated
+row	kit.find_hit.pair.periodic.one.1024	value 84768923	noise 5129675	ungated
+row	kit.find_hit.pair.periodic.one.256	value 38073332	noise 458051	ungated
+row	kit.find_hit.pair.random.alt.1024	value 142070682	noise 3120639	ungated
+row	kit.find_hit.pair.random.alt.256	value 95633348	noise 1533056	ungated
+row	kit.find_hit.pair.random.one.1024	value 130792281	noise 2461235	ungated
+row	kit.find_hit.pair.random.one.256	value 88469624	noise 1456608	ungated
+row	kit.find_hit.walk.periodic.one.1024	value 30476485	noise 6008137	ungated
+row	kit.find_hit.walk.periodic.one.256	value 28881170	noise 1676936	ungated
+row	kit.find_hit.walk.random.one.1024	value 51959001	noise 23027371	ungated
+row	kit.find_hit.walk.random.one.256	value 45968888	noise 17186103	ungated
+row	kit.verify_cmp.rc-memcmp.l1.p0	value 0	noise 152319	sub-resolution: consistent with zero within r 152319
+row	kit.verify_cmp.rc-memcmp.l1.p50	value 0	noise 117750	sub-resolution: consistent with zero within r 117750
+row	kit.verify_cmp.rc-words.w1.p0	value 23935	noise 129852	sub-resolution: consistent with zero within r 129852
+row	kit.verify_cmp.rc-words.w1.p50	value 26065	noise 133926	sub-resolution: consistent with zero within r 133926
+row	kit.verify_cmp.rc-words.w2.p0	value 7905906	noise 86013	ungated
+row	kit.verify_cmp.rc-words.w2.p50	value 8304745	noise 108576	ungated
+row	kit.verify_cmp.rc-words.w3.p0	value 13724385	noise 189184	ungated
+row	kit.verify_cmp.rc-words.w3.p50	value 11958329	noise 767280	ungated
+row	kit.verify_cmp.settest.c1.p0	value 0	noise 165483	sub-resolution: consistent with zero within r 165483
+row	kit.verify_cmp.settest.c1.p50	value 0	noise 97107	sub-resolution: consistent with zero within r 97107
+row	kit.verify_cmp.settest.c2.p0	value 34998	noise 112146	sub-resolution: consistent with zero within r 112146
+row	kit.verify_cmp.settest.c2.p50	value 19088	noise 114207	sub-resolution: consistent with zero within r 114207
+row	kit.verify_cmp.settest.cn.p0	value 6999281	noise 687251	ungated
+row	kit.verify_cmp.settest.cn.p50	value 15876576	noise 127868	ungated
+drift	J2	0	20493	kept
+drift	J2p	5110	18705	kept
+drift	J3	506	21552	kept
+drift	J4	5555	19971	kept
+drift	J5	1630	22758	kept
+note	note_box_state	a launch-level fast/slow split in the control of J2 0.94 %, J2p 0.83 %, J3 1.48 %, J4 0.75 %, J5 1.72 % (a gap over 5000 ppm between two clusters of >= 2 launches): the box changed state within those jobs
+note	note_bimodal	bimodal delta rows (a gap over 100000 ppm of the value between two clusters of >= 2 launches; priced with their spread as noise): kit.find_hit.walk.periodic.one.1024, kit.find_hit.walk.random.one.1024, kit.find_hit.walk.random.one.256
+== s2 OUTCOME REFUSED exit 3 floor:byte.libc (text)

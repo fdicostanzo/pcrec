@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2e_report.md
+sections: Summary; S2a tip merge; The set (window 2, fixed est); DEFAULTS flip; Standing rule (fused-compare classes); vcls residual; abs_ns_e6 note; Recompute and checks; Sabotage; libpcrec size; Data-mover census; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-s2e-strict kit-s2e-sections kit-s2e-test kit-s2e-mech kit-s2e-slotsab kit-s2e-census kit-s2e-plants

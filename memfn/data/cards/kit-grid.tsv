@@ -6,20 +6,45 @@
 # every row of the interim set kit-interim-grid1 was measured under. `ver 2`
 # (grid2's: the dispatch charges, the one-byte libc rows, NONE, the pre-scan
 # gate, the mode branch, M16-M24) is grid2's prep lane's, NOT written here.
+# `ver 3` is span_pick stage 2's (docs/design/memfn/span_cards.md §2.4, unit
+# S2c): the four cards zen4-grid3 is measured under (find_byte, find_hit,
+# verify_cmp, enter), each timed arm the form's canonical instance rendered
+# by formhash.c's entry table (§3.2).
 #
 # Columns (measure_sets.md §7.2): owner quantity ver dims unit subject
 # lengths launches rounds aa_rule gate_e6 env deps.
 #   dims     the key's dimension names in order (§1.3): a key
 #            `kit.<quantity>.<t1>...` has exactly this many tokens
-#   unit     ratio (to u = beta_walk(DFA_SCAN, r1e0c0) = 0.1892 ns/B, or a
-#            dimensionless ratio), walkbytes (cost in u.B), bytes
+#   unit     ratio (to the version's u, or a dimensionless ratio), walkbytes
+#            (cost in u.B), bytes. u per version: ver 1 u = beta_walk(DFA_SCAN,
+#            r1e0c0) = 0.1892 ns/B; ver 3 u = find_byte.walk (span_cards.md
+#            §2.3)
+#   lengths  ver 1: the lengths measured, in prose. ver 3: the row's
+#            ESTIMATOR in the spec's grammar (measures.md §3.4), integers
+#            only: `slope X1,X2,X3` (the per-byte slope over those call
+#            lengths) or `delta LEN` (the arm minus its base arm at length
+#            LEN, the base named on the row's own cells, never here)
+#   aa_rule  the A/A design: ver 1 `pair-per-group`; ver 3 `twin-per-arm`
+#            (every timed arm has its own A/A twin, an independent placement
+#            in the same launch) and, on the unit's card, `bimodal-test`
+#            (measure_sets.md §1.4), `;`-joined
 #   gate_e6  the group's refusal gate: UNMEASURED DEFAULT (D149) until derived
-#            from committed sets (§7.3); `-` where the row is derived
+#            from committed sets (§7.3); `-` where the row is derived. ver 3
+#            states `-`: its gate is the kit policy table's gate_default_e6
+#            (../policy.tsv, R-35 (e), review r9 SLOT-17), one home; a set
+#            carries the card as declared (`-`, check C) and the producer's
+#            run record pins the value it took (span_cards.md §2.4, r9fc
+#            FIX-8)
 #   env      the method's declared safe direction (`-` until M2, R-MS4)
 #   deps     the dependency ids the producer hashes (§2.4): kit:form.<id>
 #            (mf_form_hash; `walk`, `libc` render at B1, V1 at B4, S1/A1
 #            (the W64 rows) at B6: tests/memfn/run_finder.sh lists the
-#            unresolved as OWED, never as a pass)
+#            unresolved as OWED, never as a pass). ver 3 lists its form ids
+#            (formhash.c's entry table; `walk-set` folded into `walk`, its
+#            site text being the walk's): a row records
+#            `kit:form.<its form token>=<hash>` (span_cards.md §2.4). A card
+#            naming a kit:form. dep has `form` as its FIRST dim
+#            (finder_check.py check C)
 #
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
@@ -37,3 +62,7 @@ kit	delta	1	form;vs;kind;lenclass	walkbytes	fresh	n in {8,32,48,63}	5	5	pair-per
 kit	ccold	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
 kit	wuse	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
 kit	gstar	1	form;kind	bytes	streamed	g in {2,4,8,16,32,64,256,4096,absent}	5	5	pair-per-group	-	-	kit:form.<form>
+kit	find_byte	3	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	-	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
+kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-

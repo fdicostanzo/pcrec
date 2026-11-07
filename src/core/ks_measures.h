@@ -159,12 +159,16 @@ extern const KsDigest pcrec_ks_meas_values2_role;
 extern const KsKind pcrec_ks_measures;
 
 /* One committed set in the embedded store (src/core/measures_table.inc,
- * written by `scripts/ksgen.c measures`): its name `<id>@<rev>` and its
- * pre-parse. Entry i pairs with entry i of the TEXT table
- * (src/core/measures_store.inc), both written from one sorted file list. */
+ * written by `scripts/ksgen.c measures`): its name `<id>@<rev>`, its
+ * pre-parse and `file_cells`, the committed FILE's cell count. The embed is
+ * cell-less (measures.md §8¶2, span_cards.md §3.8): the pre-parse holds no
+ * cell, so the count the file carries is recorded here for the listing.
+ * Entry i pairs with entry i of the TEXT table (src/core/measures_store.inc),
+ * both written from one sorted file list. */
 typedef struct {
     const char      *name;
     const KsMeasSet *set;
+    size_t           file_cells;
 } KsMeasStoreEntry;
 
 /* One `DEFAULTS` row: the set a bare compile of class `cls` reads. */

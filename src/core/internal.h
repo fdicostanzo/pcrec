@@ -7633,8 +7633,9 @@ void pcrec_find_resolve(Ctx *cx, bool notes);
  * refuses through `pcrec_ctx_fail`. A compound part resolves nothing: it
  * takes its walk's (`PcrecEmitIn.meas`). The store accessors serve the listing
  * and the checks: entry `i` of `pcrec_meas_store_count()`, its `<id>@<rev>`
- * name, its pre-parse and its embedded TEXT; `pcrec_meas_default_for` is the
- * class a set is the default of, or "". */
+ * name, its pre-parse and its embedded TEXT (both cell-less), and the
+ * committed file's cell count; `pcrec_meas_default_for` is the class a set
+ * is the default of, or "". */
 typedef struct {
     const KsMeasSet *set;
     const char      *stop;
@@ -7645,6 +7646,7 @@ void pcrec_meas_resolve(Ctx *cx);
 size_t pcrec_meas_store_count(void);
 const char *pcrec_meas_store_name(size_t i);
 const KsMeasSet *pcrec_meas_store_set(size_t i, const char **text, size_t *len);
+size_t pcrec_meas_store_file_cells(size_t i);
 const char *pcrec_meas_default_for(const KsMeasSet *set);
 
 /* ---- [KNOW-SRC] the knowledge kinds' ROWS (src/parse/ks_analysis.c,

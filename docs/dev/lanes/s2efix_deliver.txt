@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2efix_report.md
+sections: Summary; C4 allowlist; Census code_commit; Light checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

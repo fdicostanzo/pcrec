@@ -1,0 +1,443 @@
+# span_cards stage-2 run record (span_cards.md §3.5; the kit's, outside the set)
+#section run
+#key	value
+j1_verdict	c
+j1_widths	-
+set	zen4-grid3@1
+rules	kit-grid@3
+run_id	s2d-20261106
+code_commit	508178bd26e9dbd9f1eb9d2e2446b9bc10739e1b
+box	AMD Ryzen 7 7700X 8-Core Processor, CPU 7
+isa	x86-64-v4 avx512f avx2 sse4.2 popcnt bmi2
+libc	glibc 2.43
+gcc	15.2.0
+cards_sha256	5bd523c00bcb4e9544f0f446107dd8471fb06b96e50d030da5933a2820a6b545
+policy_sha256	08a81e4b5ed761eb19d1fdbac1b0781540aee019916d66fc49055bc237ae7862
+transcript_sha256	85fe3e6980760842bcef0b495f02dba159a2bb4b879808ef4a28d60a512d213a
+#section jobs
+#job	state	cause
+J1	ran	-
+J2	ran	-
+J2p	ran	-
+J3	ran	-
+J4	ran	-
+J5	ran	-
+#section plan
+#key	group	job
+kit.find_byte.walk	J2.unit	J2
+kit.find_byte.libc	J2.byte	J2
+kit.find_byte.pair	J2p.byte	J2p
+kit.find_hit.pair.periodic.one.256	J2p.hit.periodic.256	J2p
+kit.find_hit.pair.periodic.alt.256	J2p.hit.periodic.256	J2p
+kit.find_hit.pair.random.one.256	J2p.hit.random.256	J2p
+kit.find_hit.pair.random.alt.256	J2p.hit.random.256	J2p
+kit.find_hit.pair.periodic.one.1024	J2p.hit.periodic.1024	J2p
+kit.find_hit.pair.periodic.alt.1024	J2p.hit.periodic.1024	J2p
+kit.find_hit.pair.random.one.1024	J2p.hit.random.1024	J2p
+kit.find_hit.pair.random.alt.1024	J2p.hit.random.1024	J2p
+kit.find_hit.libc.periodic.one.256	J3.hit.periodic.256	J3
+kit.find_hit.walk.periodic.one.256	J3.hit.periodic.256	J3
+kit.find_hit.libc.random.one.256	J3.hit.random.256	J3
+kit.find_hit.walk.random.one.256	J3.hit.random.256	J3
+kit.find_hit.libc.periodic.one.1024	J3.hit.periodic.1024	J3
+kit.find_hit.walk.periodic.one.1024	J3.hit.periodic.1024	J3
+kit.find_hit.libc.random.one.1024	J3.hit.random.1024	J3
+kit.find_hit.walk.random.one.1024	J3.hit.random.1024	J3
+kit.verify_cmp.rc-memcmp.l1.p0	J4.verify.rc-memcmp	J4
+kit.verify_cmp.rc-memcmp.l1.p50	J4.verify.rc-memcmp	J4
+kit.verify_cmp.rc-words.w1.p0	J4.verify.rc-words	J4
+kit.verify_cmp.rc-words.w1.p50	J4.verify.rc-words	J4
+kit.verify_cmp.rc-words.w2.p0	J4.verify.rc-words	J4
+kit.verify_cmp.rc-words.w2.p50	J4.verify.rc-words	J4
+kit.verify_cmp.rc-words.w3.p0	J4.verify.rc-words	J4
+kit.verify_cmp.rc-words.w3.p50	J4.verify.rc-words	J4
+kit.verify_cmp.settest.c1.p0	J4.verify.settest	J4
+kit.verify_cmp.settest.c1.p50	J4.verify.settest	J4
+kit.verify_cmp.settest.c2.p0	J4.verify.settest	J4
+kit.verify_cmp.settest.c2.p50	J4.verify.settest	J4
+kit.verify_cmp.settest.cn.p0	J4.verify.settest	J4
+kit.verify_cmp.settest.cn.p50	J4.verify.settest	J4
+kit.enter.1.NONE	J5.enter	J5
+kit.enter.3.NONE	J5.enter	J5
+kit.enter.4.NONE	J5.enter	J5
+kit.enter.5.NONE	J5.enter	J5
+kit.enter.6.NONE	J5.enter	J5
+#section floor
+#clause	key	when
+byte.walk	kit.find_byte.walk	always
+byte.libc	kit.find_byte.libc	always
+byte.pair	kit.find_byte.pair	unless-j1-b
+hit.pair	kit.find_hit.pair.random.one.256	unless-j1-b
+hit.pair	kit.find_hit.pair.random.alt.256	unless-j1-b
+hit.pair	kit.find_hit.pair.random.one.1024	unless-j1-b
+hit.pair	kit.find_hit.pair.random.alt.1024	unless-j1-b
+hit.libc	kit.find_hit.libc.random.one.256	always
+hit.walk	kit.find_hit.walk.random.one.256	always
+hit.libc	kit.find_hit.libc.random.one.1024	always
+hit.walk	kit.find_hit.walk.random.one.1024	always
+verify.rc-memcmp.l1	kit.verify_cmp.rc-memcmp.l1.p0	always
+verify.rc-memcmp.l1	kit.verify_cmp.rc-memcmp.l1.p50	always
+verify.rc-words.w1	kit.verify_cmp.rc-words.w1.p0	always
+verify.rc-words.w1	kit.verify_cmp.rc-words.w1.p50	always
+verify.rc-words.w2	kit.verify_cmp.rc-words.w2.p0	always
+verify.rc-words.w2	kit.verify_cmp.rc-words.w2.p50	always
+verify.rc-words.w3	kit.verify_cmp.rc-words.w3.p0	always
+verify.rc-words.w3	kit.verify_cmp.rc-words.w3.p50	always
+verify.settest.c1	kit.verify_cmp.settest.c1.p0	always
+verify.settest.c1	kit.verify_cmp.settest.c1.p50	always
+verify.settest.c2	kit.verify_cmp.settest.c2.p0	always
+verify.settest.c2	kit.verify_cmp.settest.c2.p50	always
+verify.settest.cn	kit.verify_cmp.settest.cn.p0	always
+verify.settest.cn	kit.verify_cmp.settest.cn.p50	always
+enter.1	kit.enter.1.NONE	always
+enter.3	kit.enter.3.NONE	always
+enter.4	kit.enter.4.NONE	always
+enter.5	kit.enter.5.NONE	always
+enter.6	kit.enter.6.NONE	always
+#section cards
+#owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
+kit	find_byte	3	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	-	-	kit:form.walk;kit:form.libc;kit:form.pair
+kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	-	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
+kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-
+#section policy
+#name	value	reason
+gate_default_e6	30000	POLICY: the noise a cost row may carry and still be priced, a quality choice; UNMEASURED DEFAULT (D149) carried from grid1 (span_cards.md §2.4)
+#section j1_cells
+#cell	pattern	subject	regime	width	launch	ns_e6
+J1/union-select/mixed/short/128/1	union-select	mixed	short	128	1	8718411499
+J1/union-select/mixed/short/128/2	union-select	mixed	short	128	2	8720837891
+J1/union-select/mixed/short/128/3	union-select	mixed	short	128	3	8745096313
+J1/union-select/mixed/short/128/4	union-select	mixed	short	128	4	8931107300
+J1/union-select/mixed/short/128/5	union-select	mixed	short	128	5	8966178345
+J1/union-select/mixed/short/128/6	union-select	mixed	short	128	6	8932445435
+J1/union-select/mixed/short/128/7	union-select	mixed	short	128	7	8697236328
+J1/union-select/mixed/short/128#b/1	union-select	mixed	short	128#b	1	8976943359
+J1/union-select/mixed/short/128#b/2	union-select	mixed	short	128#b	2	9023744141
+J1/union-select/mixed/short/128#b/3	union-select	mixed	short	128#b	3	8932764648
+J1/union-select/mixed/short/128#b/4	union-select	mixed	short	128#b	4	9246226685
+J1/union-select/mixed/short/128#b/5	union-select	mixed	short	128#b	5	8717370728
+J1/union-select/mixed/short/128#b/6	union-select	mixed	short	128#b	6	8824790039
+J1/union-select/mixed/short/128#b/7	union-select	mixed	short	128#b	7	8900253296
+J1/union-select/mixed/short/256/1	union-select	mixed	short	256	1	8767701172
+J1/union-select/mixed/short/256/2	union-select	mixed	short	256	2	8716350708
+J1/union-select/mixed/short/256/3	union-select	mixed	short	256	3	8969298218
+J1/union-select/mixed/short/256/4	union-select	mixed	short	256	4	9226685425
+J1/union-select/mixed/short/256/5	union-select	mixed	short	256	5	8661430298
+J1/union-select/mixed/short/256/6	union-select	mixed	short	256	6	8892295166
+J1/union-select/mixed/short/256/7	union-select	mixed	short	256	7	8923263062
+J1/union-select/mixed/short/32/1	union-select	mixed	short	32	1	11068626221
+J1/union-select/mixed/short/32/2	union-select	mixed	short	32	2	11018153809
+J1/union-select/mixed/short/32/3	union-select	mixed	short	32	3	10908184570
+J1/union-select/mixed/short/32/4	union-select	mixed	short	32	4	11471046387
+J1/union-select/mixed/short/32/5	union-select	mixed	short	32	5	11473573120
+J1/union-select/mixed/short/32/6	union-select	mixed	short	32	6	11536451660
+J1/union-select/mixed/short/32/7	union-select	mixed	short	32	7	11125668579
+J1/union-select/mixed/short/512/1	union-select	mixed	short	512	1	8965522827
+J1/union-select/mixed/short/512/2	union-select	mixed	short	512	2	8977979248
+J1/union-select/mixed/short/512/3	union-select	mixed	short	512	3	8924295166
+J1/union-select/mixed/short/512/4	union-select	mixed	short	512	4	9197517944
+J1/union-select/mixed/short/512/5	union-select	mixed	short	512	5	8670438965
+J1/union-select/mixed/short/512/6	union-select	mixed	short	512	6	8627100342
+J1/union-select/mixed/short/512/7	union-select	mixed	short	512	7	8984003784
+J1/union-select/mixed/short/64/1	union-select	mixed	short	64	1	9181363159
+J1/union-select/mixed/short/64/2	union-select	mixed	short	64	2	9633186768
+J1/union-select/mixed/short/64/3	union-select	mixed	short	64	3	9735985474
+J1/union-select/mixed/short/64/4	union-select	mixed	short	64	4	9300546509
+J1/union-select/mixed/short/64/5	union-select	mixed	short	64	5	9192822754
+J1/union-select/mixed/short/64/6	union-select	mixed	short	64	6	9176096924
+J1/union-select/mixed/short/64/7	union-select	mixed	short	64	7	9098116577
+J1/union-select/mixed/throughput/128/1	union-select	mixed	throughput	128	1	503667265625
+J1/union-select/mixed/throughput/128/2	union-select	mixed	throughput	128	2	490497984375
+J1/union-select/mixed/throughput/128/3	union-select	mixed	throughput	128	3	497235843750
+J1/union-select/mixed/throughput/128/4	union-select	mixed	throughput	128	4	498982179688
+J1/union-select/mixed/throughput/128/5	union-select	mixed	throughput	128	5	492886312500
+J1/union-select/mixed/throughput/128/6	union-select	mixed	throughput	128	6	494006554688
+J1/union-select/mixed/throughput/128/7	union-select	mixed	throughput	128	7	492782132813
+J1/union-select/mixed/throughput/128#b/1	union-select	mixed	throughput	128#b	1	506633953125
+J1/union-select/mixed/throughput/128#b/2	union-select	mixed	throughput	128#b	2	490048148438
+J1/union-select/mixed/throughput/128#b/3	union-select	mixed	throughput	128#b	3	489861390625
+J1/union-select/mixed/throughput/128#b/4	union-select	mixed	throughput	128#b	4	494162312500
+J1/union-select/mixed/throughput/128#b/5	union-select	mixed	throughput	128#b	5	495369039063
+J1/union-select/mixed/throughput/128#b/6	union-select	mixed	throughput	128#b	6	501203164063
+J1/union-select/mixed/throughput/128#b/7	union-select	mixed	throughput	128#b	7	493869960938
+J1/union-select/mixed/throughput/256/1	union-select	mixed	throughput	256	1	497912585938
+J1/union-select/mixed/throughput/256/2	union-select	mixed	throughput	256	2	495217039063
+J1/union-select/mixed/throughput/256/3	union-select	mixed	throughput	256	3	493144921875
+J1/union-select/mixed/throughput/256/4	union-select	mixed	throughput	256	4	490248609375
+J1/union-select/mixed/throughput/256/5	union-select	mixed	throughput	256	5	491847953125
+J1/union-select/mixed/throughput/256/6	union-select	mixed	throughput	256	6	497850125000
+J1/union-select/mixed/throughput/256/7	union-select	mixed	throughput	256	7	493496054688
+J1/union-select/mixed/throughput/32/1	union-select	mixed	throughput	32	1	503344937500
+J1/union-select/mixed/throughput/32/2	union-select	mixed	throughput	32	2	492806164063
+J1/union-select/mixed/throughput/32/3	union-select	mixed	throughput	32	3	490702898438
+J1/union-select/mixed/throughput/32/4	union-select	mixed	throughput	32	4	499754648438
+J1/union-select/mixed/throughput/32/5	union-select	mixed	throughput	32	5	493109468750
+J1/union-select/mixed/throughput/32/6	union-select	mixed	throughput	32	6	496030835938
+J1/union-select/mixed/throughput/32/7	union-select	mixed	throughput	32	7	493992539063
+J1/union-select/mixed/throughput/512/1	union-select	mixed	throughput	512	1	493878492188
+J1/union-select/mixed/throughput/512/2	union-select	mixed	throughput	512	2	492018734375
+J1/union-select/mixed/throughput/512/3	union-select	mixed	throughput	512	3	492936562500
+J1/union-select/mixed/throughput/512/4	union-select	mixed	throughput	512	4	486324953125
+J1/union-select/mixed/throughput/512/5	union-select	mixed	throughput	512	5	493294578125
+J1/union-select/mixed/throughput/512/6	union-select	mixed	throughput	512	6	496213054688
+J1/union-select/mixed/throughput/512/7	union-select	mixed	throughput	512	7	494634601563
+J1/union-select/mixed/throughput/64/1	union-select	mixed	throughput	64	1	495258757813
+J1/union-select/mixed/throughput/64/2	union-select	mixed	throughput	64	2	493320257813
+J1/union-select/mixed/throughput/64/3	union-select	mixed	throughput	64	3	490818664063
+J1/union-select/mixed/throughput/64/4	union-select	mixed	throughput	64	4	492649695313
+J1/union-select/mixed/throughput/64/5	union-select	mixed	throughput	64	5	492334570313
+J1/union-select/mixed/throughput/64/6	union-select	mixed	throughput	64	6	499066632813
+J1/union-select/mixed/throughput/64/7	union-select	mixed	throughput	64	7	491914867188
+J1/union-select/qs/short/128/1	union-select	qs	short	128	1	23588570313
+J1/union-select/qs/short/128/2	union-select	qs	short	128	2	23337227295
+J1/union-select/qs/short/128/3	union-select	qs	short	128	3	23286565430
+J1/union-select/qs/short/128/4	union-select	qs	short	128	4	23369047607
+J1/union-select/qs/short/128/5	union-select	qs	short	128	5	23573730225
+J1/union-select/qs/short/128/6	union-select	qs	short	128	6	23682002930
+J1/union-select/qs/short/128/7	union-select	qs	short	128	7	24529005371
+J1/union-select/qs/short/128#b/1	union-select	qs	short	128#b	1	23369402344
+J1/union-select/qs/short/128#b/2	union-select	qs	short	128#b	2	23146838867
+J1/union-select/qs/short/128#b/3	union-select	qs	short	128#b	3	23631324219
+J1/union-select/qs/short/128#b/4	union-select	qs	short	128#b	4	23705609863
+J1/union-select/qs/short/128#b/5	union-select	qs	short	128#b	5	23957307617
+J1/union-select/qs/short/128#b/6	union-select	qs	short	128#b	6	23978323730
+J1/union-select/qs/short/128#b/7	union-select	qs	short	128#b	7	23430616211
+J1/union-select/qs/short/256/1	union-select	qs	short	256	1	22730218506
+J1/union-select/qs/short/256/2	union-select	qs	short	256	2	22556008301
+J1/union-select/qs/short/256/3	union-select	qs	short	256	3	22834944824
+J1/union-select/qs/short/256/4	union-select	qs	short	256	4	22729920166
+J1/union-select/qs/short/256/5	union-select	qs	short	256	5	22613213135
+J1/union-select/qs/short/256/6	union-select	qs	short	256	6	22909971436
+J1/union-select/qs/short/256/7	union-select	qs	short	256	7	22684697998
+J1/union-select/qs/short/32/1	union-select	qs	short	32	1	27189167480
+J1/union-select/qs/short/32/2	union-select	qs	short	32	2	27888224609
+J1/union-select/qs/short/32/3	union-select	qs	short	32	3	27564131836
+J1/union-select/qs/short/32/4	union-select	qs	short	32	4	27202918945
+J1/union-select/qs/short/32/5	union-select	qs	short	32	5	27089883789
+J1/union-select/qs/short/32/6	union-select	qs	short	32	6	27873666016
+J1/union-select/qs/short/32/7	union-select	qs	short	32	7	27318498047
+J1/union-select/qs/short/512/1	union-select	qs	short	512	1	22961758545
+J1/union-select/qs/short/512/2	union-select	qs	short	512	2	22813456543
+J1/union-select/qs/short/512/3	union-select	qs	short	512	3	22599376221
+J1/union-select/qs/short/512/4	union-select	qs	short	512	4	22884342041
+J1/union-select/qs/short/512/5	union-select	qs	short	512	5	22606247070
+J1/union-select/qs/short/512/6	union-select	qs	short	512	6	22685035889
+J1/union-select/qs/short/512/7	union-select	qs	short	512	7	22991005615
+J1/union-select/qs/short/64/1	union-select	qs	short	64	1	24330777832
+J1/union-select/qs/short/64/2	union-select	qs	short	64	2	24351206787
+J1/union-select/qs/short/64/3	union-select	qs	short	64	3	24459396729
+J1/union-select/qs/short/64/4	union-select	qs	short	64	4	24748594238
+J1/union-select/qs/short/64/5	union-select	qs	short	64	5	24449094238
+J1/union-select/qs/short/64/6	union-select	qs	short	64	6	25563259766
+J1/union-select/qs/short/64/7	union-select	qs	short	64	7	24663279785
+J1/union-select/qs/throughput/128/1	union-select	qs	throughput	128	1	638539671875
+J1/union-select/qs/throughput/128/2	union-select	qs	throughput	128	2	631859109375
+J1/union-select/qs/throughput/128/3	union-select	qs	throughput	128	3	630195898438
+J1/union-select/qs/throughput/128/4	union-select	qs	throughput	128	4	634825250000
+J1/union-select/qs/throughput/128/5	union-select	qs	throughput	128	5	637254906250
+J1/union-select/qs/throughput/128/6	union-select	qs	throughput	128	6	641305906250
+J1/union-select/qs/throughput/128/7	union-select	qs	throughput	128	7	630001468750
+J1/union-select/qs/throughput/128#b/1	union-select	qs	throughput	128#b	1	644527687500
+J1/union-select/qs/throughput/128#b/2	union-select	qs	throughput	128#b	2	631611921875
+J1/union-select/qs/throughput/128#b/3	union-select	qs	throughput	128#b	3	629240890625
+J1/union-select/qs/throughput/128#b/4	union-select	qs	throughput	128#b	4	638095093750
+J1/union-select/qs/throughput/128#b/5	union-select	qs	throughput	128#b	5	634917921875
+J1/union-select/qs/throughput/128#b/6	union-select	qs	throughput	128#b	6	644944562500
+J1/union-select/qs/throughput/128#b/7	union-select	qs	throughput	128#b	7	634531335938
+J1/union-select/qs/throughput/256/1	union-select	qs	throughput	256	1	640407023438
+J1/union-select/qs/throughput/256/2	union-select	qs	throughput	256	2	632154046875
+J1/union-select/qs/throughput/256/3	union-select	qs	throughput	256	3	633962843750
+J1/union-select/qs/throughput/256/4	union-select	qs	throughput	256	4	640837289063
+J1/union-select/qs/throughput/256/5	union-select	qs	throughput	256	5	638700367188
+J1/union-select/qs/throughput/256/6	union-select	qs	throughput	256	6	644943468750
+J1/union-select/qs/throughput/256/7	union-select	qs	throughput	256	7	639789843750
+J1/union-select/qs/throughput/32/1	union-select	qs	throughput	32	1	641295656250
+J1/union-select/qs/throughput/32/2	union-select	qs	throughput	32	2	632657570313
+J1/union-select/qs/throughput/32/3	union-select	qs	throughput	32	3	636173500000
+J1/union-select/qs/throughput/32/4	union-select	qs	throughput	32	4	634711679688
+J1/union-select/qs/throughput/32/5	union-select	qs	throughput	32	5	636248328125
+J1/union-select/qs/throughput/32/6	union-select	qs	throughput	32	6	640199289063
+J1/union-select/qs/throughput/32/7	union-select	qs	throughput	32	7	632099093750
+J1/union-select/qs/throughput/512/1	union-select	qs	throughput	512	1	640824296875
+J1/union-select/qs/throughput/512/2	union-select	qs	throughput	512	2	631649578125
+J1/union-select/qs/throughput/512/3	union-select	qs	throughput	512	3	630771281250
+J1/union-select/qs/throughput/512/4	union-select	qs	throughput	512	4	629659500000
+J1/union-select/qs/throughput/512/5	union-select	qs	throughput	512	5	639159437500
+J1/union-select/qs/throughput/512/6	union-select	qs	throughput	512	6	646459375000
+J1/union-select/qs/throughput/512/7	union-select	qs	throughput	512	7	642888890625
+J1/union-select/qs/throughput/64/1	union-select	qs	throughput	64	1	640912820313
+J1/union-select/qs/throughput/64/2	union-select	qs	throughput	64	2	631825843750
+J1/union-select/qs/throughput/64/3	union-select	qs	throughput	64	3	639244835938
+J1/union-select/qs/throughput/64/4	union-select	qs	throughput	64	4	635924507813
+J1/union-select/qs/throughput/64/5	union-select	qs	throughput	64	5	636397585938
+J1/union-select/qs/throughput/64/6	union-select	qs	throughput	64	6	643144210938
+J1/union-select/qs/throughput/64/7	union-select	qs	throughput	64	7	632069273438
+J1/username-password-pair/mixed/short/128/1	username-password-pair	mixed	short	128	1	6525681152
+J1/username-password-pair/mixed/short/128/2	username-password-pair	mixed	short	128	2	6472806763
+J1/username-password-pair/mixed/short/128/3	username-password-pair	mixed	short	128	3	6442010254
+J1/username-password-pair/mixed/short/128/4	username-password-pair	mixed	short	128	4	6490814331
+J1/username-password-pair/mixed/short/128/5	username-password-pair	mixed	short	128	5	6459595825
+J1/username-password-pair/mixed/short/128/6	username-password-pair	mixed	short	128	6	6854116577
+J1/username-password-pair/mixed/short/128/7	username-password-pair	mixed	short	128	7	6580842529
+J1/username-password-pair/mixed/short/128#b/1	username-password-pair	mixed	short	128#b	1	6504984131
+J1/username-password-pair/mixed/short/128#b/2	username-password-pair	mixed	short	128#b	2	6470414673
+J1/username-password-pair/mixed/short/128#b/3	username-password-pair	mixed	short	128#b	3	6436257080
+J1/username-password-pair/mixed/short/128#b/4	username-password-pair	mixed	short	128#b	4	6469306519
+J1/username-password-pair/mixed/short/128#b/5	username-password-pair	mixed	short	128#b	5	6473329102
+J1/username-password-pair/mixed/short/128#b/6	username-password-pair	mixed	short	128#b	6	6549630127
+J1/username-password-pair/mixed/short/128#b/7	username-password-pair	mixed	short	128#b	7	6568777466
+J1/username-password-pair/mixed/short/256/1	username-password-pair	mixed	short	256	1	6534842651
+J1/username-password-pair/mixed/short/256/2	username-password-pair	mixed	short	256	2	6494447876
+J1/username-password-pair/mixed/short/256/3	username-password-pair	mixed	short	256	3	6454876221
+J1/username-password-pair/mixed/short/256/4	username-password-pair	mixed	short	256	4	6561197266
+J1/username-password-pair/mixed/short/256/5	username-password-pair	mixed	short	256	5	6443479004
+J1/username-password-pair/mixed/short/256/6	username-password-pair	mixed	short	256	6	6832424072
+J1/username-password-pair/mixed/short/256/7	username-password-pair	mixed	short	256	7	6557462280
+J1/username-password-pair/mixed/short/32/1	username-password-pair	mixed	short	32	1	6525902588
+J1/username-password-pair/mixed/short/32/2	username-password-pair	mixed	short	32	2	6472236816
+J1/username-password-pair/mixed/short/32/3	username-password-pair	mixed	short	32	3	6449767700
+J1/username-password-pair/mixed/short/32/4	username-password-pair	mixed	short	32	4	6544449463
+J1/username-password-pair/mixed/short/32/5	username-password-pair	mixed	short	32	5	6426311646
+J1/username-password-pair/mixed/short/32/6	username-password-pair	mixed	short	32	6	6440606201
+J1/username-password-pair/mixed/short/32/7	username-password-pair	mixed	short	32	7	6580341064
+J1/username-password-pair/mixed/short/512/1	username-password-pair	mixed	short	512	1	6529345337
+J1/username-password-pair/mixed/short/512/2	username-password-pair	mixed	short	512	2	6520280273
+J1/username-password-pair/mixed/short/512/3	username-password-pair	mixed	short	512	3	6468669312
+J1/username-password-pair/mixed/short/512/4	username-password-pair	mixed	short	512	4	6516086548
+J1/username-password-pair/mixed/short/512/5	username-password-pair	mixed	short	512	5	6492914307
+J1/username-password-pair/mixed/short/512/6	username-password-pair	mixed	short	512	6	6550899536
+J1/username-password-pair/mixed/short/512/7	username-password-pair	mixed	short	512	7	6615720215
+J1/username-password-pair/mixed/short/64/1	username-password-pair	mixed	short	64	1	6525826660
+J1/username-password-pair/mixed/short/64/2	username-password-pair	mixed	short	64	2	6535874878
+J1/username-password-pair/mixed/short/64/3	username-password-pair	mixed	short	64	3	6470046509
+J1/username-password-pair/mixed/short/64/4	username-password-pair	mixed	short	64	4	6526950562
+J1/username-password-pair/mixed/short/64/5	username-password-pair	mixed	short	64	5	6460746704
+J1/username-password-pair/mixed/short/64/6	username-password-pair	mixed	short	64	6	6499442627
+J1/username-password-pair/mixed/short/64/7	username-password-pair	mixed	short	64	7	6628306274
+J1/username-password-pair/mixed/throughput/128/1	username-password-pair	mixed	throughput	128	1	829680515625
+J1/username-password-pair/mixed/throughput/128/2	username-password-pair	mixed	throughput	128	2	820471281250
+J1/username-password-pair/mixed/throughput/128/3	username-password-pair	mixed	throughput	128	3	824640546875
+J1/username-password-pair/mixed/throughput/128/4	username-password-pair	mixed	throughput	128	4	820995234375
+J1/username-password-pair/mixed/throughput/128/5	username-password-pair	mixed	throughput	128	5	824489640625
+J1/username-password-pair/mixed/throughput/128/6	username-password-pair	mixed	throughput	128	6	826361921875
+J1/username-password-pair/mixed/throughput/128/7	username-password-pair	mixed	throughput	128	7	822040328125
+J1/username-password-pair/mixed/throughput/128#b/1	username-password-pair	mixed	throughput	128#b	1	827390578125
+J1/username-password-pair/mixed/throughput/128#b/2	username-password-pair	mixed	throughput	128#b	2	819347765625
+J1/username-password-pair/mixed/throughput/128#b/3	username-password-pair	mixed	throughput	128#b	3	821245859375
+J1/username-password-pair/mixed/throughput/128#b/4	username-password-pair	mixed	throughput	128#b	4	822637859375
+J1/username-password-pair/mixed/throughput/128#b/5	username-password-pair	mixed	throughput	128#b	5	824348578125
+J1/username-password-pair/mixed/throughput/128#b/6	username-password-pair	mixed	throughput	128#b	6	834516984375
+J1/username-password-pair/mixed/throughput/128#b/7	username-password-pair	mixed	throughput	128#b	7	826119437500
+J1/username-password-pair/mixed/throughput/256/1	username-password-pair	mixed	throughput	256	1	816882015625
+J1/username-password-pair/mixed/throughput/256/2	username-password-pair	mixed	throughput	256	2	809613781250
+J1/username-password-pair/mixed/throughput/256/3	username-password-pair	mixed	throughput	256	3	814281484375
+J1/username-password-pair/mixed/throughput/256/4	username-password-pair	mixed	throughput	256	4	808930625000
+J1/username-password-pair/mixed/throughput/256/5	username-password-pair	mixed	throughput	256	5	815227968750
+J1/username-password-pair/mixed/throughput/256/6	username-password-pair	mixed	throughput	256	6	818901765625
+J1/username-password-pair/mixed/throughput/256/7	username-password-pair	mixed	throughput	256	7	810742625000
+J1/username-password-pair/mixed/throughput/32/1	username-password-pair	mixed	throughput	32	1	852338562500
+J1/username-password-pair/mixed/throughput/32/2	username-password-pair	mixed	throughput	32	2	844538062500
+J1/username-password-pair/mixed/throughput/32/3	username-password-pair	mixed	throughput	32	3	846958250000
+J1/username-password-pair/mixed/throughput/32/4	username-password-pair	mixed	throughput	32	4	843737953125
+J1/username-password-pair/mixed/throughput/32/5	username-password-pair	mixed	throughput	32	5	851045656250
+J1/username-password-pair/mixed/throughput/32/6	username-password-pair	mixed	throughput	32	6	851411171875
+J1/username-password-pair/mixed/throughput/32/7	username-password-pair	mixed	throughput	32	7	850056906250
+J1/username-password-pair/mixed/throughput/512/1	username-password-pair	mixed	throughput	512	1	823617218750
+J1/username-password-pair/mixed/throughput/512/2	username-password-pair	mixed	throughput	512	2	815391234375
+J1/username-password-pair/mixed/throughput/512/3	username-password-pair	mixed	throughput	512	3	815756609375
+J1/username-password-pair/mixed/throughput/512/4	username-password-pair	mixed	throughput	512	4	815274140625
+J1/username-password-pair/mixed/throughput/512/5	username-password-pair	mixed	throughput	512	5	820499140625
+J1/username-password-pair/mixed/throughput/512/6	username-password-pair	mixed	throughput	512	6	821152578125
+J1/username-password-pair/mixed/throughput/512/7	username-password-pair	mixed	throughput	512	7	820769656250
+J1/username-password-pair/mixed/throughput/64/1	username-password-pair	mixed	throughput	64	1	839777687500
+J1/username-password-pair/mixed/throughput/64/2	username-password-pair	mixed	throughput	64	2	833477359375
+J1/username-password-pair/mixed/throughput/64/3	username-password-pair	mixed	throughput	64	3	834119984375
+J1/username-password-pair/mixed/throughput/64/4	username-password-pair	mixed	throughput	64	4	831161109375
+J1/username-password-pair/mixed/throughput/64/5	username-password-pair	mixed	throughput	64	5	837699703125
+J1/username-password-pair/mixed/throughput/64/6	username-password-pair	mixed	throughput	64	6	840026593750
+J1/username-password-pair/mixed/throughput/64/7	username-password-pair	mixed	throughput	64	7	835225656250
+J1/username-password-pair/qs/short/128/1	username-password-pair	qs	short	128	1	21504841797
+J1/username-password-pair/qs/short/128/2	username-password-pair	qs	short	128	2	21592242920
+J1/username-password-pair/qs/short/128/3	username-password-pair	qs	short	128	3	21392645264
+J1/username-password-pair/qs/short/128/4	username-password-pair	qs	short	128	4	21532895264
+J1/username-password-pair/qs/short/128/5	username-password-pair	qs	short	128	5	21855446533
+J1/username-password-pair/qs/short/128/6	username-password-pair	qs	short	128	6	21980494629
+J1/username-password-pair/qs/short/128/7	username-password-pair	qs	short	128	7	21764097656
+J1/username-password-pair/qs/short/128#b/1	username-password-pair	qs	short	128#b	1	21714130371
+J1/username-password-pair/qs/short/128#b/2	username-password-pair	qs	short	128#b	2	21504550781
+J1/username-password-pair/qs/short/128#b/3	username-password-pair	qs	short	128#b	3	21465749756
+J1/username-password-pair/qs/short/128#b/4	username-password-pair	qs	short	128#b	4	21495921387
+J1/username-password-pair/qs/short/128#b/5	username-password-pair	qs	short	128#b	5	22223398926
+J1/username-password-pair/qs/short/128#b/6	username-password-pair	qs	short	128#b	6	21991154297
+J1/username-password-pair/qs/short/128#b/7	username-password-pair	qs	short	128#b	7	21639360596
+J1/username-password-pair/qs/short/256/1	username-password-pair	qs	short	256	1	20313073242
+J1/username-password-pair/qs/short/256/2	username-password-pair	qs	short	256	2	20271505859
+J1/username-password-pair/qs/short/256/3	username-password-pair	qs	short	256	3	20087907471
+J1/username-password-pair/qs/short/256/4	username-password-pair	qs	short	256	4	20247877197
+J1/username-password-pair/qs/short/256/5	username-password-pair	qs	short	256	5	20521867920
+J1/username-password-pair/qs/short/256/6	username-password-pair	qs	short	256	6	20690124512
+J1/username-password-pair/qs/short/256/7	username-password-pair	qs	short	256	7	20494616699
+J1/username-password-pair/qs/short/32/1	username-password-pair	qs	short	32	1	26084276855
+J1/username-password-pair/qs/short/32/2	username-password-pair	qs	short	32	2	25985183594
+J1/username-password-pair/qs/short/32/3	username-password-pair	qs	short	32	3	25793406250
+J1/username-password-pair/qs/short/32/4	username-password-pair	qs	short	32	4	26192419922
+J1/username-password-pair/qs/short/32/5	username-password-pair	qs	short	32	5	26371067383
+J1/username-password-pair/qs/short/32/6	username-password-pair	qs	short	32	6	26501812012
+J1/username-password-pair/qs/short/32/7	username-password-pair	qs	short	32	7	26112072754
+J1/username-password-pair/qs/short/512/1	username-password-pair	qs	short	512	1	20292683350
+J1/username-password-pair/qs/short/512/2	username-password-pair	qs	short	512	2	20354589600
+J1/username-password-pair/qs/short/512/3	username-password-pair	qs	short	512	3	20080033936
+J1/username-password-pair/qs/short/512/4	username-password-pair	qs	short	512	4	20267061279
+J1/username-password-pair/qs/short/512/5	username-password-pair	qs	short	512	5	20503302734
+J1/username-password-pair/qs/short/512/6	username-password-pair	qs	short	512	6	20726778076
+J1/username-password-pair/qs/short/512/7	username-password-pair	qs	short	512	7	20427028320
+J1/username-password-pair/qs/short/64/1	username-password-pair	qs	short	64	1	23410646973
+J1/username-password-pair/qs/short/64/2	username-password-pair	qs	short	64	2	23241284668
+J1/username-password-pair/qs/short/64/3	username-password-pair	qs	short	64	3	23319845703
+J1/username-password-pair/qs/short/64/4	username-password-pair	qs	short	64	4	23439086670
+J1/username-password-pair/qs/short/64/5	username-password-pair	qs	short	64	5	23765307129
+J1/username-password-pair/qs/short/64/6	username-password-pair	qs	short	64	6	23829977539
+J1/username-password-pair/qs/short/64/7	username-password-pair	qs	short	64	7	23513010254
+J1/username-password-pair/qs/throughput/128/1	username-password-pair	qs	throughput	128	1	156160830078
+J1/username-password-pair/qs/throughput/128/2	username-password-pair	qs	throughput	128	2	152770121094
+J1/username-password-pair/qs/throughput/128/3	username-password-pair	qs	throughput	128	3	154881562500
+J1/username-password-pair/qs/throughput/128/4	username-password-pair	qs	throughput	128	4	149481910156
+J1/username-password-pair/qs/throughput/128/5	username-password-pair	qs	throughput	128	5	150288078125
+J1/username-password-pair/qs/throughput/128/6	username-password-pair	qs	throughput	128	6	154208828125
+J1/username-password-pair/qs/throughput/128/7	username-password-pair	qs	throughput	128	7	156128619141
+J1/username-password-pair/qs/throughput/128#b/1	username-password-pair	qs	throughput	128#b	1	151141699219
+J1/username-password-pair/qs/throughput/128#b/2	username-password-pair	qs	throughput	128#b	2	151202105469
+J1/username-password-pair/qs/throughput/128#b/3	username-password-pair	qs	throughput	128#b	3	152792896484
+J1/username-password-pair/qs/throughput/128#b/4	username-password-pair	qs	throughput	128#b	4	152616628906
+J1/username-password-pair/qs/throughput/128#b/5	username-password-pair	qs	throughput	128#b	5	154613537109
+J1/username-password-pair/qs/throughput/128#b/6	username-password-pair	qs	throughput	128#b	6	155418804688
+J1/username-password-pair/qs/throughput/128#b/7	username-password-pair	qs	throughput	128#b	7	156535619141
+J1/username-password-pair/qs/throughput/256/1	username-password-pair	qs	throughput	256	1	154511880859
+J1/username-password-pair/qs/throughput/256/2	username-password-pair	qs	throughput	256	2	147580806641
+J1/username-password-pair/qs/throughput/256/3	username-password-pair	qs	throughput	256	3	157580244141
+J1/username-password-pair/qs/throughput/256/4	username-password-pair	qs	throughput	256	4	157340320313
+J1/username-password-pair/qs/throughput/256/5	username-password-pair	qs	throughput	256	5	149554937500
+J1/username-password-pair/qs/throughput/256/6	username-password-pair	qs	throughput	256	6	156153648438
+J1/username-password-pair/qs/throughput/256/7	username-password-pair	qs	throughput	256	7	159798685547
+J1/username-password-pair/qs/throughput/32/1	username-password-pair	qs	throughput	32	1	156804623047
+J1/username-password-pair/qs/throughput/32/2	username-password-pair	qs	throughput	32	2	156663281250
+J1/username-password-pair/qs/throughput/32/3	username-password-pair	qs	throughput	32	3	155866642578
+J1/username-password-pair/qs/throughput/32/4	username-password-pair	qs	throughput	32	4	157579773438
+J1/username-password-pair/qs/throughput/32/5	username-password-pair	qs	throughput	32	5	155590222656
+J1/username-password-pair/qs/throughput/32/6	username-password-pair	qs	throughput	32	6	155411898438
+J1/username-password-pair/qs/throughput/32/7	username-password-pair	qs	throughput	32	7	155951568359
+J1/username-password-pair/qs/throughput/512/1	username-password-pair	qs	throughput	512	1	156140166016
+J1/username-password-pair/qs/throughput/512/2	username-password-pair	qs	throughput	512	2	159217275391
+J1/username-password-pair/qs/throughput/512/3	username-password-pair	qs	throughput	512	3	152631734375
+J1/username-password-pair/qs/throughput/512/4	username-password-pair	qs	throughput	512	4	151868636719
+J1/username-password-pair/qs/throughput/512/5	username-password-pair	qs	throughput	512	5	147540337891
+J1/username-password-pair/qs/throughput/512/6	username-password-pair	qs	throughput	512	6	155223378906
+J1/username-password-pair/qs/throughput/512/7	username-password-pair	qs	throughput	512	7	155168705078
+J1/username-password-pair/qs/throughput/64/1	username-password-pair	qs	throughput	64	1	156360210938
+J1/username-password-pair/qs/throughput/64/2	username-password-pair	qs	throughput	64	2	153267953125
+J1/username-password-pair/qs/throughput/64/3	username-password-pair	qs	throughput	64	3	159884843750
+J1/username-password-pair/qs/throughput/64/4	username-password-pair	qs	throughput	64	4	151512691406
+J1/username-password-pair/qs/throughput/64/5	username-password-pair	qs	throughput	64	5	150640519531
+J1/username-password-pair/qs/throughput/64/6	username-password-pair	qs	throughput	64	6	155178019531
+J1/username-password-pair/qs/throughput/64/7	username-password-pair	qs	throughput	64	7	150864888672

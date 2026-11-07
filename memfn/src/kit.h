@@ -839,6 +839,13 @@ int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned le
  * (position `j` holds its byte inside its mask; NULL mask: 1). */
 int run_cmp_sat(const mf_term *t);
 int run_pos_sat(const mf_term *t, unsigned j);
+/* The name of the row the walk picks for RUN term `t` under the art's
+ * denies (rc_row_of, the compare's own selection), or NULL. A reading for
+ * formhash.c's entry table (which row its facts reached), never a second
+ * selection; but not side-effect free: a refusal is RECORDED in the art's
+ * err, as rc_row_of always does. */
+#define run_cmp_row MF_NS(run_cmp_row)
+const char *run_cmp_row(mf_art *art, const mf_term *t);
 
 /* ---- THE WINDOW FAMILY (window.c; D172 S2 commit 1) ----------------------
  *
@@ -1078,6 +1085,66 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
     (void)t; (void)c;
 }
 #endif
+
+/* ---- THE FORM-HASH ENTRY TABLE (formhash.c; span_cards.md §3.2) ----------
+ *
+ * One row per INSTANCE of a form id (the id's canonical instance, `canon` 1,
+ * and for a verify form one per class): its site shape, stated facts, policy
+ * word and deny string, rendered by ONE path whose text is what
+ * mf_form_hash folds (every instance of the id, one text) AND what a
+ * span_cards cell times. TEST entries (no
+ * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
+typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST } mf_form_shape_id;
+typedef struct {
+    const char *id;
+    const char *cls;        /* the class token; "-" for an id with one instance */
+    uint8_t     canon;      /* the id's canonical instance (the default one)     */
+    uint8_t     shape;      /* mf_form_shape_id                                  */
+    const char *row;        /* the kit row the facts must reach (NULL: none)     */
+    const char *bytes;      /* the set's members, or the run's bytes (RUNCMP)    */
+    uint8_t     caseless;   /* RUNCMP: each letter compared under mask 0xDF      */
+    uint8_t     table;      /* FIND: the set is named by pcrec's table           */
+    uint8_t     empty;      /* mf_site.empty (FIND, WINDOW)                      */
+    uint8_t     leaves;     /* mf_site.on_miss_leaves (FIND)                     */
+    const char *on_miss;    /* mf_hooks.on_miss, NULL none                       */
+    uint32_t    policy;     /* the policy word                                   */
+    const char *deny;       /* mf_site.opts, NULL none                           */
+} mf_form_entry;
+/* A shape's word (the slot harness's wrapper key), the kit entry that
+ * reaches its form, and the C names its text reads and writes (NULL: not
+ * read): `s` the subject, `n` its length, `lo` the find's start, `result`
+ * the found position, `cand` a compare's candidate position. */
+typedef struct {
+    const char *word, *entry;
+    const char *s, *n, *lo, *result, *cand;
+} mf_form_shape;
+#define mf_form_entry_at  MF_NS(form_entry_at)
+#define mf_form_entry_of  MF_NS(form_entry_of)
+#define mf_form_shape_of  MF_NS(form_shape_of)
+#define mf_form_site_text MF_NS(form_site_text)
+#define mf_form_site_split MF_NS(form_site_split)
+#define mf_form_row       MF_NS(form_row)
+#define mf_form_hash_cls  MF_NS(form_hash_cls)
+/* The i-th instance (NULL past the last); the instance of `id` in class
+ * `cls` (NULL: the canonical one), NULL for none; an instance's shape. */
+const mf_form_entry *mf_form_entry_at(size_t i);
+const mf_form_entry *mf_form_entry_of(const char *id, const char *cls);
+const mf_form_shape *mf_form_shape_of(const mf_form_entry *e);
+/* The instance's SITE TEXT, exactly what mf_form_hash folds (the file sink's
+ * text, then the body's), malloc'd into *out: 0, or -1 (no such instance, a
+ * kit refusal, its facts reaching another row, out of memory). */
+int mf_form_site_text(const char *id, const char *cls, char **out);
+/* The same text, with the length of its FILE part (the file sink's text, at
+ * file scope in a cell TU; the body follows it): the slot harness's wrapper
+ * places the two parts (span_cards.md §3.2). */
+int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file_len);
+/* The kit row the instance's facts reached ("-": its shape has none), NULL
+ * on a -1 of mf_form_site_text. */
+const char *mf_form_row(const char *id, const char *cls);
+/* The hash of ONE instance's site text (the slot's cell-text check); for an
+ * id with one instance it equals mf_form_hash(id), which folds every
+ * instance (formhash.c). */
+int mf_form_hash_cls(const char *id, const char *cls, char out[17]);
 
 /* 1 in a trace build: the walks then also ask a DECLINED row's predicate
  * (every predicate is a pure function of the site and the hooks), so the

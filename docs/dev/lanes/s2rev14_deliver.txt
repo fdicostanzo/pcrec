@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2rev14_report.md
+sections: Summary; Rev 1.4 text; Code; Replay over the first window; Sabotage; Validation; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

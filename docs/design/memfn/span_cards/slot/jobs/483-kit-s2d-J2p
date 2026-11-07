@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+JOB=483-kit-s2d-J2p   # the canonical name: boxqueue runs a copy whose file name is not this
+# 483-kit-s2d-J2p: the S2d window's timing job J2p (span_cards §3.7; quiet-gated, idle-ok). Ready: kit-s2d-prep
+# green and kit-s2d-J2 ended, then J1's end: green -> record.py ready-j2p (J1's verdict in the run record: 0
+# under (a)/(c), 77 under (b), 75 not yet); failed or cancelled -> 77 (no verdict ever comes, r9 W2).
+. "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
+case "${1:-}" in
+    --dry-run) timing_dry J2p 350 ;;
+    --ready)
+        ( ready_after kit-s2d-J2 ) || exit $?
+        case $(bq state kit-s2d-J1) in
+            green) exec python3 -I "$SLOT/record.py" ready-j2p "$RUNDIR" ;;
+            failed|cancelled) echo "kit-s2d-J1 ended non-green: no J1 verdict, J2p never runs"; exit 77 ;;
+            *) echo "waits: kit-s2d-J1"; exit 75 ;;
+        esac ;;
+esac
+timing_job J2p

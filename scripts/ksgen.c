@@ -35,7 +35,13 @@
  *             the kind's one reader (`pcrec_ks_meas_parse`,
  *             src/core/ks_measures.c), written as a static `KsMeasSet` that
  *             `src/core/measures.c` compiles in, plus the `DEFAULTS` table.
- *             The set's id and rev must be its path's `<id>/<rev>`.
+ *             The set's id and rev must be its path's `<id>/<rev>`. The
+ *             pre-parse is CELL-LESS (measures.md §8¶2; span_cards.md §3.8):
+ *             its `cells` table is written empty and the committed file's
+ *             cell count is recorded as the entry's `file_cells`, so the
+ *             pre-parse equals a fresh parse of the stripped text the
+ *             Makefile's strip step hands scripts/embed_text.sh
+ *             (tests/knowledge/ compares the two).
  *
  * Each analysis FILE must define exactly one item, named for the file's
  * basename: the store looks an item up by that name. */
@@ -305,9 +311,11 @@ static int path_id_rev(const char *path, char *id, size_t idcap, unsigned long *
 static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
 {
     KsAlloc al = { gen_alloc, NULL };
+    const KsMeasTab no_cells = { 0, NULL };
     int nsets = 0, ndef = 0;
     char ids[64][128];
     unsigned long revs[64];
+    size_t fcells[64];
     char *defs = NULL;
     size_t deflen = 0;
     (void)kind;
@@ -321,6 +329,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
         KsErr err;
         size_t len;
         char *text;
+        const KsMeasTab *cells = &no_cells;     /* the embed is cell-less */
         base = base ? base + 1 : path;
         if (!strcmp(base, "DEFAULTS")) {
             defs = slurp(path, &deflen);
@@ -341,8 +350,9 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
             return 1;
         }
         fprintf(out, "\n/* %s@%u */\n", ids[nsets], set->rev);
+        fcells[nsets] = set->cells.nrows;
         put_tab(out, nsets, "cards", &set->cards, KS_MEAS_NCARD);
-        put_tab(out, nsets, "cells", &set->cells, pcrec_ks_meas_cell_w(set));
+        put_tab(out, nsets, "cells", cells, pcrec_ks_meas_cell_w(set));
         put_tab(out, nsets, "members", &set->members, KS_MEAS_NMEMBER);
         fprintf(out, "static const KsMeasRow pcrec_meas_s%d_rows[] = {\n", nsets);
         for (size_t r = 0; r < set->nrows; r++) {
@@ -374,7 +384,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
                      "    .members = { %zu, pcrec_meas_s%d_members },\n"
                      "    .nrows = %zu, .rows = pcrec_meas_s%d_rows,\n};\n",
                 set->rev, set->format, set->composite, (unsigned long long)set->digest,
-                set->cards.nrows, nsets, set->cells.nrows, nsets,
+                set->cards.nrows, nsets, cells->nrows, nsets,
                 set->members.nrows, nsets, set->nrows, nsets);
         free(text);
         nsets++;
@@ -385,7 +395,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
     }
     fputs("\nstatic const KsMeasStoreEntry pcrec_meas_store_tbl[] = {\n", out);
     for (int i = 0; i < nsets; i++)
-        fprintf(out, "    { \"%s@%lu\", &pcrec_meas_s%d },\n", ids[i], revs[i], i);
+        fprintf(out, "    { \"%s@%lu\", &pcrec_meas_s%d, %zu },\n", ids[i], revs[i], i, fcells[i]);
     fputs("};\n\nstatic const KsMeasDefault pcrec_meas_defaults[] = {\n", out);
     for (char *line = defs, *nl; line < defs + deflen; line = nl + 1) {
         char *tab, *at;

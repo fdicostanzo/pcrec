@@ -1,0 +1,47 @@
+policy	r_max_e6	53751	pinned by the run record
+row	kit.enter.1.NONE	value 1097315234	noise 6657931	ungated
+row	kit.enter.3.NONE	value 41460754	noise 1356342	ungated
+row	kit.enter.4.NONE	value 43675666	noise 1957837	ungated
+row	kit.enter.5.NONE	value 5057971	noise 187677	ungated
+row	kit.enter.6.NONE	value 38926996	noise 1263116	ungated
+row	kit.find_byte.libc	value 38049	noise 609	gate pass
+row	kit.find_byte.pair	value 73843	noise 1277	gate pass
+row	kit.find_byte.walk	value 1000000	noise 1076	gate pass
+row	kit.find_hit.libc.periodic.one.1024	value 16247767	noise 556954	ungated
+row	kit.find_hit.libc.periodic.one.256	value 19207980	noise 345413	ungated
+row	kit.find_hit.libc.random.one.1024	value 55815981	noise 658297	ungated
+row	kit.find_hit.libc.random.one.256	value 54632973	noise 501385	ungated
+row	kit.find_hit.pair.periodic.alt.1024	value 83154198	noise 5514347	ungated
+row	kit.find_hit.pair.periodic.alt.256	value 39437556	noise 841618	ungated
+row	kit.find_hit.pair.periodic.one.1024	value 83985086	noise 5239119	ungated
+row	kit.find_hit.pair.periodic.one.256	value 38333593	noise 827446	ungated
+row	kit.find_hit.pair.random.alt.1024	value 141147653	noise 2546493	ungated
+row	kit.find_hit.pair.random.alt.256	value 95657352	noise 1001560	ungated
+row	kit.find_hit.pair.random.one.1024	value 130362238	noise 2483595	ungated
+row	kit.find_hit.pair.random.one.256	value 88893809	noise 1329406	ungated
+row	kit.find_hit.walk.periodic.one.1024	value 30591248	noise 1230854	ungated
+row	kit.find_hit.walk.periodic.one.256	value 29134980	noise 1772381	ungated
+row	kit.find_hit.walk.random.one.1024	value 50541639	noise 26273532	ungated
+row	kit.find_hit.walk.random.one.256	value 43531860	noise 18149325	ungated
+row	kit.verify_cmp.rc-memcmp.l1.p0	value -	noise -	null: negative per-event cost on all six trimmed launches (a fixture defect, whatever r)
+row	kit.verify_cmp.rc-memcmp.l1.p50	value -	noise -	null: negative per-event cost on all six trimmed launches (a fixture defect, whatever r)
+row	kit.verify_cmp.rc-words.w1.p0	value 20652	noise 54465	sub-resolution: consistent with zero within r 53751
+row	kit.verify_cmp.rc-words.w1.p50	value 38837	noise 41753	ungated
+row	kit.verify_cmp.rc-words.w2.p0	value 7865977	noise 73121	ungated
+row	kit.verify_cmp.rc-words.w2.p50	value 8229814	noise 87189	ungated
+row	kit.verify_cmp.rc-words.w3.p0	value 13654226	noise 245430	ungated
+row	kit.verify_cmp.rc-words.w3.p50	value 11695981	noise 693187	ungated
+row	kit.verify_cmp.settest.c1.p0	value -	noise -	null: below its paired A/A or signs mixed, at a size above its resolution r 53751
+row	kit.verify_cmp.settest.c1.p50	value -	noise -	null: below its paired A/A or signs mixed, at a size above its resolution r 53751
+row	kit.verify_cmp.settest.c2.p0	value 25519	noise 86477	sub-resolution: consistent with zero within r 53751
+row	kit.verify_cmp.settest.c2.p50	value 0	noise 47541	sub-resolution: consistent with zero within r 47541
+row	kit.verify_cmp.settest.cn.p0	value 6610053	noise 572429	ungated
+row	kit.verify_cmp.settest.cn.p50	value 15963793	noise 179674	ungated
+drift	J2	0	22257	kept
+drift	J2p	8357	18798	kept
+drift	J3	14111	22551	kept
+drift	J4	280	18381	kept
+drift	J5	17637	20787	kept
+note	note_box_state	a launch-level fast/slow split in the control of J2 1.51 %, J2p 0.65 %, J3 1.47 %, J4 0.93 %, J5 1.78 % (a gap over 5000 ppm between two clusters of >= 2 launches): the box changed state within those jobs
+note	note_bimodal	bimodal delta rows (a gap over 100000 ppm of the value between two clusters of >= 2 launches; priced with their spread as noise): kit.find_hit.walk.random.one.1024, kit.find_hit.walk.random.one.256, kit.verify_cmp.rc-words.w1.p50
+== s2 OUTCOME REFUSED exit 3 floor:verify.rc-memcmp.l1 (text); floor:verify.settest.c1 (text)

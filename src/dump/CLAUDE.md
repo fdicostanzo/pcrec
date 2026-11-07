@@ -96,7 +96,8 @@ somebody else OWNS; none is on a compile path.
   §2.15): one row per callout site, a REVIEW compile (refusals recorded,
   not raised); the grant comes from the CLI's mode-class column (F27).
 - measures_dump.c -- `--list-measurements[=REF]` ([MEASURE-SET] M0;
-  `docs/spec/measures.md` §6, `docs/spec/cli.md` §2.9a).
+  `docs/spec/measures.md` §6, `docs/spec/cli.md` §2.9a); `file_cells` reports a
+  stored set's file cell count (the embed is cell-less, span_pick S2e).
 
 ## Pointers
 

@@ -327,7 +327,19 @@ FIND_STAGE0     := $(BUILD_DIR)/gen/stage0
 # the DEFAULTS file the pre-parse's default table is written from (the text
 # step skips it: only the sets are embedded as text). KS_ENV_<store> is the
 # text step's environment (scripts/embed_text.sh's per-kind spelling).
+# THE MEASURES EMBED IS CELL-LESS (span_cards.md §3.8, R-35 (d); measures.md
+# §8¶2): its TEXT is not the committed file's bytes but the committed file
+# with the data rows of section `cells` dropped (its `#section cells` line and
+# column header kept, so the text is a loadable set with the same digest).
+# The STRIP step writes those copies to $(MEAS_STRIP_DIR)/<id>/<rev>/set.tsv
+# (the path shape embed_text.sh names a set by), and embed_text.sh embeds
+# them unmodified; ksgen reads the committed files, writes the pre-parse with
+# an empty cells table and records each file's cell count (`file_cells`).
+# tests/knowledge/ compares the embedded text, and this rule's own output
+# (`make meas-strip MEAS_STRIP_DIR=...`), with its own strip of each file.
 MEAS_STORE_SRCS := $(sort $(wildcard measure_store/*/*/set.tsv))
+MEAS_STRIP_DIR  := $(BUILD_DIR)/gen/meas
+MEAS_STRIPPED   := $(MEAS_STORE_SRCS:measure_store/%=$(MEAS_STRIP_DIR)/%)
 MEAS_INCS       := src/core/measures_store.inc src/core/measures_table.inc
 KS_STORES             := findings measures
 KS_KIND_findings      := analysis
@@ -338,7 +350,7 @@ KS_TABLE_findings     := src/core/findings_table.inc
 KS_ENV_findings       :=
 KS_KIND_measures      := measures
 KS_SRCS_measures      := measure_store/DEFAULTS $(MEAS_STORE_SRCS)
-KS_TEXTSRCS_measures  := $(MEAS_STORE_SRCS)
+KS_TEXTSRCS_measures  := $(MEAS_STRIPPED)
 KS_TEXT_measures      := src/core/measures_store.inc
 KS_TABLE_measures     := src/core/measures_table.inc
 KS_ENV_measures       := EMBED_KIND=measures
@@ -355,6 +367,13 @@ $(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o $(BUILD
 	ar rcs $@ $^
 $(FIND_STAGE0)/ksgen: scripts/ksgen.c $(FIND_STAGE0)/libpcrec.a
 	$(CC) $(ALLFLAGS) -o $@ $< $(FIND_STAGE0)/libpcrec.a
+$(MEAS_STRIP_DIR)/%/set.tsv: measure_store/%/set.tsv
+	@mkdir -p $(dir $@)
+	awk '/^#section /{ s = $$2 } s == "cells" && !/^#/ && $$0 != "" { next } { print }' $< > $@.tmp
+	@mv $@.tmp $@
+.PHONY: meas-strip
+meas-strip: $(MEAS_STRIPPED)
+gen-measures: $(MEAS_STRIPPED)
 .PHONY: $(KS_STORES:%=gen-%)
 $(KS_STORES:%=gen-%): gen-%: $(FIND_STAGE0)/ksgen
 	$(KS_ENV_$*) sh scripts/embed_text.sh $(KS_TEXT_$*) $(KS_TEXTSRCS_$*)
