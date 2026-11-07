@@ -249,13 +249,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: keep the member list current; add the kit planning/emitting member as a row when the kit split is proposed
   refs: [STREAM] (the end state this serves); docs/design/stream/manifesto.md; docs/design/stream/roadmap.md (areas A-REC, A-DFATOP, A-REV); decisions D182; memory pcrec-plan-as-text-seam
   MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
-- [ORACLE-CACHE] STATE:started — the libpcre2 oracle answers from a committed cache behind the same driver interface
-  filed: 2026-11-07 Frank ("Why use oracle in ci at all? ... run them once to a file"; "treat it like a saved cache from the oracle driver so the interface is the same"); manager wrote the row
-  status (2026-11-07): census lane running (which tests call libpcre2 live, how, deterministic or not, answer-set size, conversion cost); no build
-  next: census report, then a conversion plan to Frank; build on his go
-  refs: oracle_store/ (CLAUDE.md); tests/oracle/; docs/design/oracle_interface.md; upstream_issues.md U25 (the CI red that prompted it)
-  Shape (Frank): tests keep calling the oracle DRIVER exactly as today; the driver answers from a committed cache keyed by (oracle build id, question); a miss is a loud failure in make test/CI and a live query only in an explicit regenerate mode on a box with the pinned build. CI stops building libpcre2. Exploratory random-seed fuzzing stays live and opt-in. Retires the U25 tolerance.
-  Step 2 (Frank 2026-11-07: "We might have it build pcre2 lazy. Then turn off callouts and obscure stuff unless we're working on them."; 90% rule, memory pcrec-ninety-percent): default make test is REPLAY-ONLY; the live-only callers (callouts, substitute, PC-3's library-string pool, pcrec-derived question sets) move to an opt-in target run when working on them AND in the full battery (D177); CI builds libpcre2 lazily, only when a target needs the live library. Step 1 = the memoizing stand-in (lane orcache1). ONE COPY (Frank 2026-11-07: "it should save only one copy of the results. We don't need multiple versions of pcre2 cached"): a single store with the producing build as header provenance (not a directory per build); a version move = regenerate in place + review the answer diff; modes (utf, ucp) are part of the question key, so the -utf/-ucp dirs fold in; the 10.48 dir retires after its readers move; one shared question-keyed table dedupes across caller families.
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
@@ -709,6 +702,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ORACLE-UPGRADE] STATE:not-started — moving the libpcre2 oracle version (CI pin, D98) is tested LOCALLY first
+  filed: 2026-11-07 Frank ("If we want to upgrade the oracle we should test that locally first"); manager wrote the row
+  status (2026-11-07): not started; CI builds vanilla 10.46 (U25 tolerance carries its lookbehind bug), this box runs Ubuntu 10.46-1ubuntu0.1 (CVE-2026-89160 backport), upstream 10.48 fixed it
+  next: when an upgrade is wanted: build the candidate (e.g. 10.48) under $PCREC_TMPDIR from the official tarball (source and checksum shown to Frank first), run make test against it locally, disposition every difference, THEN move the CI pin + amend D98 + retire U25's tolerance in one change
+  refs: .github/workflows/ci.yml (D98 pin); decisions D98; upstream_issues.md U25; tests/lookaround/vlb_one.sh; tests/lib/resolve_pcre2.sh
 - [ENC-SIDE-EMIT] STATE:not-started — a per-row side-emission hook on the encoding seam's entry table
   filed: 2026-11-06 lane vlbbuild ([VLOOKBEHIND] stage 1, design FIXIND-6)
   status (2026-11-06): one side emission exists (the UCP one); the emitter and `pcrec_enc_entry_symbols` call ONE shared predicate for it, so the condition has one spelling; no general hook built
