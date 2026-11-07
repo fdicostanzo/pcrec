@@ -12,13 +12,7 @@ WHAT IT SCANS, per scope (the design's three):
   tests  everything under tests/ EXCEPT tests/memfn/ (the checks of the kit
          define the vocabulary and so spell it; their exemption is stated
          here, and memfn/ itself is EXEMPT by design: it is where the
-         architecture knowledge lives). ONE src/ file is exempt by exact
-         path, src/gen/targets.def, the target table: the D146 addendum
-         ([XARCH-DEV], docs/design/memfn/target_seam.md §2/§6.4, ruled R1 of
-         lane xarch1) makes it pcrec's one home for what an artifact is
-         compiled FOR (families, targets, region attributes, the family
-         guard). Every other pcrec file reads its rows and spells no ISA
-         word, so the premise below holds everywhere else.
+         architecture knowledge lives).
 Matching is CASE-INSENSITIVE and the boundary is any non-alphanumeric
 character (so `MF_VEC_SSE2` is seen: `\\b` fails between `_` and a letter,
 rev 2's slip). A match preceded by a backslash is a hex escape (`\\x86` in a
@@ -176,15 +170,6 @@ DATA_EXEMPT = {
                                     'generated data: the pre-parsed store tables, a set id and class labels as strings'),
 }
 
-# THE TARGET TABLE EXEMPTION (see the header): exact path -> reason. A
-# hand-written design table, not generated data, so it is its own map; the
-# scratch control plants the same ISA words in it (no hit) and in a
-# neighbouring src/gen file (a hit), so the exemption cannot widen.
-TABLE_EXEMPT = {
-    'src/gen/targets.def': 'the target table (D146 addendum, target_seam.md §2): families, targets, '
-                           'region attributes and the family guard, the one home of that vocabulary',
-}
-
 
 def read_text(path):
     try:
@@ -245,7 +230,7 @@ def scan_tree(root):
     hits = []
     code_files = files_of(root, CODE_DIRS)
     for rel in code_files:
-        if rel in DATA_EXEMPT or rel in TABLE_EXEMPT:
+        if rel in DATA_EXEMPT:
             continue
         scope = 'doc' if rel.endswith('.md') else 'code'
         text = read_text(os.path.join(root, rel))
@@ -482,27 +467,6 @@ def scratch_controls(cc, tmpbase):
         else:
             bad('file-scope control: a box name in a non-generated source file was NOT a hit: '
                 'the exemption is wider than its exact paths')
-        # file-scope control for TABLE_EXEMPT: the table's own words planted
-        # in the exempt path (no hit) and in a neighbouring hand-written
-        # source (classes 1, 2 and 6 hit)
-        for rel in list(TABLE_EXEMPT) + ['src/gen/not_the_table.c']:
-            os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
-            with open(os.path.join(root, rel), 'w') as fh:
-                fh.write('/* x86-64-v3 avx2 __AVX2__ aarch64 */\n')
-        hits = scan_tree(root)
-        exempt_hit = [h for h in hits if h[1] in TABLE_EXEMPT]
-        if exempt_hit:
-            bad('target-table control: an ISA word inside the exempt target table was a hit: %r'
-                % (exempt_hit[:2],))
-        else:
-            ok('target-table control: ISA words inside the %d exempt target table file(s) are not a hit'
-               % len(TABLE_EXEMPT))
-        got = sorted({h[3] for h in hits if h[1] == 'src/gen/not_the_table.c'})
-        if all(c in got for c in (1, 2, 6)):
-            ok('target-table control: the same words in another src/gen file ARE hits (classes %s)' % got)
-        else:
-            bad('target-table control: the same words in another src/gen file hit classes %s, want 1, 2 '
-                'and 6: the exemption is wider than its exact path' % got)
         for cls, rel, ps, synthetic in expect:
             got = {n for (_s, r, n, c, _e) in hits if r == rel and c == cls}
             lines_of = []

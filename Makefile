@@ -147,18 +147,7 @@ KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 SHAREDSRCS := $(wildcard shared/*.c)
 SHAREDOBJS := $(patsubst shared/%.c,$(BUILD_DIR)/obj/shared/%.o,$(SHAREDSRCS))
 
-all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness \
-     $(BUILD_DIR)/targets.check
-
-# [XARCH-DEV] U1: THE TARGET TABLE CHECK (scripts/check_targets.sh, its header;
-# docs/design/memfn/target_seam.md §2) runs at `make`, against gcc's own
-# `-march`. A mismatch WARNS and does not stop the build (R5-Q1: a newer gcc's
-# -march definition must not break a stranger's `make`); `make strict` and
-# `make test-memfn-targets` fail on the status this rule writes.
-$(BUILD_DIR)/targets.check: src/gen/targets.def scripts/check_targets.sh
-	@mkdir -p $(dir $@)
-	@bash scripts/check_targets.sh $@ >/dev/null; rc=$$?; \
-	 if [ $$rc -ne 0 ]; then echo "WARNING: the target table check did not pass (rc=$$rc):" >&2; cat $@ >&2; fi
+all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
 # hard way: a PC-4 bitmap sabotage produced ZERO disagreements because the
@@ -256,10 +245,6 @@ $(BUILD_DIR)/obj/gen/vm_stmt.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
-# [XARCH-DEV] U1 the target table and its header, read by the table's own
-# translation unit and by the policy word's (memfn_stamps.c).
-$(BUILD_DIR)/obj/gen/targets.o $(BUILD_DIR)/obj/gen/memfn_stamps.o: \
-    src/gen/targets.h src/gen/targets.def
 # [INLINE-C] 1b the call-site code table's header, read by both of its
 # producers (the compound's controller and the VM's callout site).
 $(BUILD_DIR)/obj/gen/callsite_rows.o $(BUILD_DIR)/obj/gen/emit_compound.o \
@@ -457,7 +442,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-uprops test-core test-vars test-callouts test-code test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
-      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets \
+      test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
@@ -1518,13 +1503,6 @@ test-memfn-guarded: all
 # [MEMFN] R4e' batch 1 (R-13): C18, the floor rule's four legs and the
 # guard lint, plus C9-x86, over every corpus pattern at -fmemfn-simd against
 # -fno-memfn-simd (tests/memfn/run_simd_floor.sh; integration.md §R4.9.8).
-# [XARCH-DEV] U1: the target table check's verdict (scripts/check_targets.sh),
-# the list table's rows, and the region/family-guard compile cells
-# (target_seam.md §6.1, §8) on a kit-shaped fixture, gcc and clang.
-test-memfn-targets: all
-	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-targets.ran"; fi
-	CC="$(CC)" bash tests/memfn/run_targets.sh
-
 test-memfn-simdfloor: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-simdfloor.ran"; fi
 	CC="$(CC)" bash tests/memfn/run_simd_floor.sh
@@ -1936,8 +1914,7 @@ strict:
 	for f in $(KITSRCS) $(SHAREDSRCS); do \
 	    $(CC) $(KITFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
-	@bash scripts/check_targets.sh >/dev/null || { echo "strict: the target table check did not pass:"; bash scripts/check_targets.sh; exit 1; }
-	@echo "strict: whole tree compiles clean with -Werror -Wshadow; the target table check passes"
+	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
 
 # Self-tests for scripts/ (watchdog today), run ON CHANGE via make dependency
 # rather than per suite run — opt-in like strict, never part of `make test`
@@ -2280,7 +2257,7 @@ clean:
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
-        test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows test-memfn-targets \
+        test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \

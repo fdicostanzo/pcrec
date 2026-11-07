@@ -125,12 +125,3 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 ## Deleted files
 
 - `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
-
-
-## targets
-
-- `targets.def` / `targets.c` / `targets.h` — [XARCH-DEV] U1: THE TARGET TABLE (D146 addendum 1; `docs/design/memfn/target_seam.md` §2): families and targets, the first-match list table (`pcrec_target_set`; the `-f[no-]memfn-simd` pair is its alias and the policy bit reads it), the region and family-guard text. `targets.def` is the ONE src file C4 exempts by path; the other two spell no ISA word. Checked at `make` by `scripts/check_targets.sh`; tests `tests/memfn/run_targets.sh`.
-
-## clskit
-
-- `clskit.c` / `clskit.h` — [CLS-TREE] class-matcher kit: leaf forms, sectioning DP, `ROWS`/`TAB_ROWS` first-match tables, byte test spellings (VM and scan edge callers); reference `studies/cls_tree_study/`, tests `tests/clskit/`.
