@@ -3505,3 +3505,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - REV15-9: drill.py has no ¶3b.
   - REV15-10: the tags grammar, and a check that the base is not fused.
 - RULED: window 2's FULL is ACCEPTED as the stage 2 measurement, re-scored by the fixed est before S2e. All fixes go to lane s2c15fix (opus, worktree off d57f99ee4) while S2c's gates run; no timed binary changes.
+- 11-07: main ACKs S2d on one condition. Rev 1.5's rule becomes a STANDING RULE in span_cards.md for every future window: fused classes by the structural check of the timed code only, never by the sign; change only by a new revision + review before a window. One sabotage row or self-test fails on a non-fused class (S2950, plus r11's rows), named in the S2e delivery. Told main: the value is max(0, med) per REV15-5 (the scope is still structural only). OWED in S2e's brief.
