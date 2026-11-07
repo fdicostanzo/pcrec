@@ -3602,3 +3602,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - K0's queued jobs 450-453 were CANCELLED before starting.
   - Kit spelling: FAMILIES amd64, arm64 (Go/Debian). TARGETS generic, x86-64, x86-64-v3, armv8-a (aarch64's target renamed). Main flagged that x86_64 vs x86-64 is a one-character typo hazard, hence amd64/arm64. A distinctness check folds _ to - and case.
   - Fix lane `k0fix` (sonnet) on lane/memfn-k0 (deliver dedd3591d). The family respelling was sent right after launch: VERIFY in the tip. Then requeue 450-453.
+- 11-07: Frank: "We'll need a --list for these kit arch options". pcrec's P1 adds `--list-cpu-targets` (working name).
+  - K0 already enumerates (mf_targets, mf_families). k0fix addendum 2 adds mf_host_family() and a kit-written `doc` column per facts row (plain text; the check exempts only `doc` and refuses C tokens in it).
+  - Told main: K0, no K1.
+  - VERIFY in k0fix's tip: amd64/arm64 + distinctness, mf_host_family, doc.
