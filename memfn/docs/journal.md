@@ -3515,3 +3515,9 @@ Main ruled on the four kit findings (D186 add. 2):
 - The gates had not started (main's 495 running): cancelled, s2c fast-forwarded to fd75d4119, 470-474 requeued (474 expects 35), watcher armed.
 - Next: S2e brief (set commit + DEFAULTS flip + main's standing-rule condition + S2a tip merge + the vcls residual + the abs_ns_e6 note), launched on gates green.
 - 11-07 09:17: S2c gates 470-474 on fd75d4119 ALL GREEN (strict 16s, slotsab 160s, sections 888s, test 1443s, mech 1625s). S2e lane `s2e` LAUNCHED (opus, worktree s2e, branch lane/memfn-s2e off fd75d4119; deliver file 6fe971761). Scope: S2a tip merge (252e0a1cb), §9 S2e set + plants, DEFAULTS (B), the standing rule paragraph (S2950 + r11 rows, a non-fused fail), vcls `[^x]` residual, abs_ns_e6 note, libpcrec size. Its gate jobs are 480-48x; the lane writes them and I queue them.
+- 11-07: main: the target seam note (our XARCH-DEV ask, "format of single-arch code paths") is on main as PROPOSED rev 0, docs/design/memfn/target_seam.md (merge 5b43f8e9a), with a critic round running. Its shape:
+  - the target is a feature-token list plus a family per request;
+  - the kit returns text valid inside a target-compiled region: no ISA #if, no CPU check, no #include, and headers come back as a fact;
+  - levels.def `guard` becomes `needs`;
+  - pcrec owns the names, pragmas, list, stamps and dispatch, at the entries only.
+  Not ruled; nothing to build (D188 add. 1 still waits on Frank's XARCH-DEV go). Main will send the ruled rev. New SIMD forms may be shaped emitter-style from it.
