@@ -1225,7 +1225,7 @@ static bool fit_handoff_applies(const FitSel *s)
     return s->cx->job && s->cx->job->req_handoff_vm;
 }
 
-/* [PF-DROP] (D135) THE LAST RUNG: drop the VM hybrid's
+/* [PF-DROP] (D135) the last rung but `drop-islands`: drop the VM hybrid's
  * prefilter. Spelled as the caller's own `-fno-prefilter`
  * OR'd in, the way the premul rung spells its flag, so the
  * prefilter decision (`src/opt/select_engine.c`) needs no
@@ -1381,7 +1381,7 @@ static const FitRung fit_rungs[] = {
                 "the rev-end walk keeps its two-seed form: a final-newline "
                 "tie is decided by one more walk and an anchored run "
                 "(docs/design/endmark.md §R.5)" } },
-    /* 7-12 [PF-DROP] (D135) the size-cap rungs, cheapest first; 13 refuses */
+    /* 7-14 [PF-DROP] (D135) the size-cap rungs, cheapest first; 15 refuses */
     { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
       .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = "cap-rescue",
@@ -1423,21 +1423,6 @@ static const FitRung fit_rungs[] = {
                 "the search runs the forward scan over every byte again "
                 "instead of walking back from each landmark "
                 "(docs/spec/tuning.md section 2.54)" } },
-    /* [RUN-POS-SET] K139: the VM's alternation islands, the first VM rung
-     * after the collapse: the artifact it ships is the caller's own
-     * `-fno-alt-island` one, the baseline the island axis promises never to
-     * refuse below (docs/spec/tuning.md §2.20); later VM rungs then act on
-     * that artifact as they would on the chain's. */
-    { .name = "drop-islands",       .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
-      .applies = fit_islands_applies, .act = FIT_DROP_ISLANDS, .on = FIT_L_SIZE,
-      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, PCREC_NO_ALT_ISLAND, 0,
-                false, true, FIT_COMP_KEEP },
-      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
-      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
-      .note = { "the VM's alternation islands",
-                "each alternation tries its branches through the serial "
-                "chain again instead of one trie dispatch "
-                "(docs/spec/tuning.md section 2.20)" } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false,
@@ -1480,6 +1465,26 @@ static const FitRung fit_rungs[] = {
                 "the VM tries every start position itself, "
                 "measured up to ~4x slower where matches are "
                 "sparse (docs/dev/lanes/pfdrop_report.md)" } },
+    /* [RUN-POS-SET] K139: the VM's alternation islands, the LAST VM rung
+     * before `refuse`, placed by measured cost as the ladder orders its rows:
+     * the chain an island replaces measured up to ~140x the instructions
+     * (bench altwide w-256 under the VM; `(` 400 words `)\d+` at default
+     * flags, docs/dev/reviews/2026-11-06-r5-altcode.md EMIT-2), against the
+     * handoff drop's x2.53 and the prefilter drop's ~4x, so an artifact the
+     * cheaper drops fit keeps its islands. The artifact it ships is the
+     * caller's own `-fno-alt-island` one with those drops applied, the
+     * baseline the island axis promises never to refuse below
+     * (docs/spec/tuning.md §2.20). */
+    { .name = "drop-islands",       .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_islands_applies, .act = FIT_DROP_ISLANDS, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, PCREC_NO_ALT_ISLAND, 0,
+                false, true, FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the VM's alternation islands",
+                "each alternation tries its branches through the serial "
+                "chain again instead of one trie dispatch "
+                "(docs/spec/tuning.md section 2.20)" } },
     { .name = "refuse",             .deny = 0, .degrading = false, .fof = FIT_FOF_OUT,
       .applies = fit_always, .act = FIT_REFUSE, .on = FIT_L_ALL,
       .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = NULL,
@@ -1899,14 +1904,15 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_DROP_PREFILTER, FIT_DROP_HANDOFF },
     { FIT_SEL1_COLLAPSE, FIT_DROP_HANDOFF },
     { FIT_SEL1_DROP,     FIT_DROP_HANDOFF },
-    /* [RUN-POS-SET] K139 the islands dropped: after a cheaper VM rung or a
-     * [SEL-1] retry, and before the handoff and prefilter drops */
+    /* [RUN-POS-SET] K139 the islands dropped, the last VM rung: after any
+     * cheaper VM rung or a [SEL-1] retry, the handoff and prefilter drops
+     * included, and followed by nothing but `refuse` */
     { FIT_DROP_END_MARK, FIT_DROP_ISLANDS },
     { FIT_COLLAPSE,      FIT_DROP_ISLANDS },
     { FIT_SEL1_COLLAPSE, FIT_DROP_ISLANDS },
     { FIT_SEL1_DROP,     FIT_DROP_ISLANDS },
-    { FIT_DROP_ISLANDS,  FIT_DROP_HANDOFF },
-    { FIT_DROP_ISLANDS,  FIT_DROP_PREFILTER },
+    { FIT_DROP_HANDOFF,  FIT_DROP_ISLANDS },
+    { FIT_DROP_PREFILTER, FIT_DROP_ISLANDS },
 };
 #endif
 

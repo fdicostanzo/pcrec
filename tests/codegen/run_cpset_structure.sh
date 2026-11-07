@@ -322,13 +322,13 @@ echo "== CHECK 2: pcrec_cls_bits is the sole path from a class node to a bitmap 
 # 2a. THE FLOOR, AND IT COUNTS THE ACCESSOR FAMILY RATHER THAN ONE FUNCTION.
 #
 # §8.1.1 words the floor as "every site in §2.5.1's AFTER rows calls it (count
-# >= 6)", counting `pcrec_cls_bits` alone. **FIVE of the six sites want a
-# bitmap and the sixth does not**, which the census could not have known: row
-# 9's `emit_vm.c:3287` is `vm_isl_single`, whose question is "is this class
-# exactly one literal byte" — it scanned 256 values through `cls_has` to ask
-# it, and the interval form answers it in one comparison through
-# `pcrec_cls_single`. Rendering a bitmap there so the grep would find the word
-# would be writing code for the check.
+# >= 6)", counting `pcrec_cls_bits` alone. **FIVE of the six sites wanted a
+# bitmap and the sixth did not**, which the census could not have known: row
+# 9's island literal asked "is this class exactly one literal byte" through
+# `pcrec_cls_single`. (Since review r5 altcode EMIT-1 the island reads every
+# class as its member bytes, so it renders through `pcrec_cls_bits` too.)
+# Rendering a bitmap only so the grep would find the word would be writing
+# code for the check.
 #
 # So the floor counts the FAMILY — the four functions `src/core/cpset.c`
 # exports for reading a published payload — and a second, tighter assertion

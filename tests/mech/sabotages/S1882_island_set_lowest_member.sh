@@ -7,6 +7,9 @@
 # alone. `x(?:1[éà]|q2|r3)y` on the VM (island 1 in both builds) then fails
 # `x1éy`, which libpcre2 matches (0,5). Answer witness:
 # tests/utf8/altnf_lowering.rxt block 3 (`engine vm`).
+# RE-ANCHORED 2026-11-06 (lane altfix, review r5 altcode SLOT-2): the box
+# alternation is built by the shared `pcrec_spine_build` inside
+# `vm_isl_set_split`; the plant still keeps the lowest box only.
 SAB_ID="S1882-island-set-lowest-member"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness"
@@ -18,7 +21,5 @@ SAB_REACH_EXPECT='RX_VM_ALT_ISLANDS 1'
 SAB_REACH_POP='tests/utf8/altnf_lowering.rxt|^pattern x\(\?:1\[éà\]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        for (int i = 1; i < nb; i++) {
-            Ast *alt = pcrec_ast_node(v->cx, A_ALT);'
-SAB_AFTER='        for (int i = 1; i < 1; i++) {   /* SABOTAGE S1882: the lowest box only */
-            Ast *alt = pcrec_ast_node(v->cx, A_ALT);'
+SAB_BEFORE='    return pcrec_spine_build(v->cx, A_ALT, box, nb);'
+SAB_AFTER='    return pcrec_spine_build(v->cx, A_ALT, box, 1);   /* SABOTAGE S1882: the lowest box only */'

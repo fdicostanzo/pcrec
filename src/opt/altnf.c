@@ -144,6 +144,19 @@ static const Ast *anf_cls_union(Ctx *cx, const Ast *a, const Ast *b)
     return u;
 }
 
+/* The class rule M leaves at a folded position: the union of `a` and `b`,
+ * recording the branches it stands for (`pcrec_cls_branches`), so a reader
+ * can count the chain the fold replaced. Equal sets are a duplicate, kept
+ * as `a`. */
+static const Ast *anf_cls_fold(Ctx *cx, const Ast *a, const Ast *b)
+{
+    const Ast *u = anf_cls_union(cx, a, b);
+    if (u != a)
+        pcrec_cls_set_branches(cx, (Ast *)u, pcrec_cls_branches(cx, a) +
+                                             pcrec_cls_branches(cx, b));
+    return u;
+}
+
 /* The code-point alphabet of the head column: a position is a class node. */
 static const void *anf_pd_join(Ctx *cx, const void *a, const void *b)
 {
@@ -395,7 +408,7 @@ static int anf_merge_pass(AnfRun *r, AnfBr *b, int n, int w, int p, int *other)
             into = h;
         }
         if (into >= 0) {
-            b[into].pos[p] = anf_cls_union(cx, b[into].pos[p], b[j].pos[p]);
+            b[into].pos[p] = anf_cls_fold(cx, b[into].pos[p], b[j].pos[p]);
             b[into].dirty = true;
             b[j].dead = true;
             folds++;
@@ -439,20 +452,6 @@ static int anf_merge(AnfRun *r, AnfBr *b, int n)
     return folds;
 }
 
-/* Branch `b` rebuilt from its positions: the class itself at width 1, else a
- * left-nested `A_CAT` spine, p_cat's own shape. */
-static Ast *anf_rebuild(Ctx *cx, const AnfBr *b)
-{
-    Ast *res = (Ast *)b->pos[0];
-    for (int i = 1; i < b->w; i++) {
-        Ast *cat = pcrec_ast_node(cx, A_CAT);
-        cat->l = res;
-        cat->r = (Ast *)b->pos[i];
-        res = cat;
-    }
-    return res;
-}
-
 /* Step M over the list `br[0..*n)`, compacted in place; returns the folds
  * (a dropped duplicate counts as one). */
 static int anf_merge_list(AnfRun *r, Ast **br, int *n)
@@ -463,51 +462,14 @@ static int anf_merge_list(AnfRun *r, Ast **br, int *n)
     int out = 0;
     for (int i = 0; i < *n; i++)
         if (!b[i].dead)
-            br[out++] = b[i].dirty ? anf_rebuild(r->cx, &b[i]) : b[i].node;
+            br[out++] = b[i].dirty
+                ? pcrec_spine_build(r->cx, A_CAT, (Ast *const *)b[i].pos, b[i].w)
+                : b[i].node;
     *n = out;
     return nf;
 }
 
 /* ---- rules P and S: spines as element arrays -------------------------- */
-
-/* Branch `a`'s CAT spine, left to right (a non-CAT node is a spine of one). */
-static int anf_flatten(Ctx *cx, const Ast *a, Ast ***out)
-{
-    int n = 0;
-    PCREC_SPINE_EACH(e, a, A_CAT) { (void)e; n++; }
-    Ast **arr = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof *arr);
-    int i = n;
-    PCREC_SPINE_EACH(e, a, A_CAT) arr[--i] = (Ast *)e;
-    *out = arr;
-    return n;
-}
-
-/* A left-nested `A_CAT` spine of `arr[0..n)`, p_cat's shape; EMPTY at 0. */
-static Ast *anf_cat(Ctx *cx, Ast *const *arr, int n)
-{
-    if (n == 0) return pcrec_ast_node(cx, A_EMPTY);
-    Ast *res = arr[0];
-    for (int i = 1; i < n; i++) {
-        Ast *cat = pcrec_ast_node(cx, A_CAT);
-        cat->l = res;
-        cat->r = arr[i];
-        res = cat;
-    }
-    return res;
-}
-
-/* A left-nested `A_ALT` spine of `arr[0..n)`, n >= 1. */
-static Ast *anf_alt(Ctx *cx, Ast *const *arr, int n)
-{
-    Ast *res = arr[0];
-    for (int i = 1; i < n; i++) {
-        Ast *alt = pcrec_ast_node(cx, A_ALT);
-        alt->l = res;
-        alt->r = arr[i];
-        res = alt;
-    }
-    return res;
-}
 
 /* Are nodes `a` and `b` IDENTICAL for suffix factoring (§3.2: the same node,
  * every capture index included)? Only kinds whose whole payload is compared
@@ -577,9 +539,9 @@ static int anf_sublist(AnfRun *r, Ast **sub, int m, Ast ***elems)
         r->depth--;
     }
     if (m == 1 && sub[0]->k == A_EMPTY) { *elems = NULL; return 0; }
-    if (m == 1) return anf_flatten(r->cx, sub[0], elems);
+    if (m == 1) return pcrec_spine_flatten(r->cx, sub[0], A_CAT, elems);
     Ast **one = pcrec_arena_alloc(&r->cx->arena, sizeof *one);
-    one[0] = anf_alt(r->cx, sub, m);
+    one[0] = pcrec_spine_build(r->cx, A_ALT, sub, m);
     *elems = one;
     return 1;
 }
@@ -590,7 +552,7 @@ static bool anf_prefix(AnfRun *r, Ast **br, int *n)
     Ctx *cx = r->cx;
     Ast ***el = pcrec_arena_alloc(&cx->arena, (size_t)*n * sizeof *el);
     int *len = pcrec_arena_alloc(&cx->arena, (size_t)*n * sizeof *len);
-    for (int i = 0; i < *n; i++) len[i] = anf_flatten(cx, br[i], &el[i]);
+    for (int i = 0; i < *n; i++) len[i] = pcrec_spine_flatten(cx, br[i], A_CAT, &el[i]);
     int out = 0, i = 0;
     bool changed = false;
     while (i < *n) {
@@ -610,13 +572,13 @@ static bool anf_prefix(AnfRun *r, Ast **br, int *n)
             k++;
         }
         Ast **rest = pcrec_arena_alloc(&cx->arena, (size_t)(j - i) * sizeof *rest);
-        for (int x = i; x < j; x++) rest[x - i] = anf_cat(cx, el[x] + k, len[x] - k);
+        for (int x = i; x < j; x++) rest[x - i] = pcrec_spine_build(cx, A_CAT, el[x] + k, len[x] - k);
         Ast **tail;
         int nt = anf_sublist(r, rest, j - i, &tail);
         Ast **nb = pcrec_arena_alloc(&cx->arena, (size_t)(k + nt) * sizeof *nb);
         memcpy(nb, el[i], (size_t)k * sizeof *nb);
         if (nt) memcpy(nb + k, tail, (size_t)nt * sizeof *nb);
-        br[out++] = anf_cat(cx, nb, k + nt);
+        br[out++] = pcrec_spine_build(cx, A_CAT, nb, k + nt);
         if (r->st) r->st->factored++;
         changed = true;
         i = j;
@@ -631,7 +593,7 @@ static bool anf_suffix(AnfRun *r, Ast **br, int *n)
     Ctx *cx = r->cx;
     Ast ***el = pcrec_arena_alloc(&cx->arena, (size_t)*n * sizeof *el);
     int *len = pcrec_arena_alloc(&cx->arena, (size_t)*n * sizeof *len);
-    for (int i = 0; i < *n; i++) len[i] = anf_flatten(cx, br[i], &el[i]);
+    for (int i = 0; i < *n; i++) len[i] = pcrec_spine_flatten(cx, br[i], A_CAT, &el[i]);
     int out = 0, i = 0;
     bool changed = false;
     while (i < *n) {
@@ -649,13 +611,13 @@ static bool anf_suffix(AnfRun *r, Ast **br, int *n)
             s++;
         }
         Ast **head = pcrec_arena_alloc(&cx->arena, (size_t)(j - i) * sizeof *head);
-        for (int x = i; x < j; x++) head[x - i] = anf_cat(cx, el[x], len[x] - s);
+        for (int x = i; x < j; x++) head[x - i] = pcrec_spine_build(cx, A_CAT, el[x], len[x] - s);
         Ast **lead;
         int nl = anf_sublist(r, head, j - i, &lead);
         Ast **nb = pcrec_arena_alloc(&cx->arena, (size_t)(nl + s) * sizeof *nb);
         if (nl) memcpy(nb, lead, (size_t)nl * sizeof *nb);
         memcpy(nb + nl, el[i] + len[i] - s, (size_t)s * sizeof *nb);
-        br[out++] = anf_cat(cx, nb, nl + s);
+        br[out++] = pcrec_spine_build(cx, A_CAT, nb, nl + s);
         if (r->st) r->st->factored++;
         changed = true;
         i = j;

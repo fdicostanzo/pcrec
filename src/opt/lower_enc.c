@@ -140,7 +140,7 @@ typedef struct {
     unsigned  identity_max;  /* lower_class is the identity at or below this */
     Ast     *(*lower_class)(LowerCtx *lc, Ast *a);
     unsigned (*pat_char)(Ctx *cx, size_t at, int *len);
-    void     (*split)(Ctx *cx, const PcrecCpRange *iv, int n, void *bl);
+    void     (*split)(Ctx *cx, const PcrecCpRange *iv, int n, void *bl);   /* NULL: no wide class */
 } LowerOps;
 
 struct LowerCtx {
@@ -318,6 +318,21 @@ static Ast *wclass_of(LowerCtx *lc, const Ast *cls, Ast *child)
     return w;
 }
 
+/* ---- the canonical SPLIT, the boxes a class's set lowers to -------------- */
+
+/* The UTF-8 instance's split: `u8_ranges` per interval, the boxes
+ * `lower_class_utf8` starts from, before any merge, and the boxes
+ * `pcrec_lower_boxes` hands the VM island. The one splitter: both readers
+ * call it (review r5 altcode SLOT-4). The byte instance has none, because no
+ * `A_WCLASS` exists under `byte`: `lower_class_byte` never builds one, so
+ * nothing asks for a byte set's boxes, and `pcrec_lower_boxes` refuses by
+ * name if something does. */
+static void split_utf8(Ctx *cx, const PcrecCpRange *iv, int n, void *bl)
+{
+    (void)cx;
+    for (int i = 0; i < n; i++) u8_ranges(bl, iv[i].lo, iv[i].hi);
+}
+
 /* The UTF8 rewrite of one class node: NULL for a class the byte tier already
  * expresses (every interval at or below 0x7F — the identity fast path that
  * keeps an ASCII pattern's tree untouched, and with it §8.5's expectation
@@ -341,8 +356,7 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 
     {
         U8Branches bl = { lc->cx, NULL, 0, 0 };
-        for (int i = 0; i < a->u.cls.n; i++)
-            u8_ranges(&bl, a->u.cls.iv[i].lo, a->u.cls.iv[i].hi);
+        split_utf8(lc->cx, a->u.cls.iv, a->u.cls.n, &bl);
 
         if (bl.n == 0) {
             /* Everything fell in the surrogate gap: the set has no encodable
@@ -376,16 +390,8 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
          * split peels exactly `u.look.nbranch - 1` spine nodes, so a bare
          * alternation in a first-branch slot is read whole (the `A_WCLASS`
          * wrapper is what stays load-bearing there). */
-        {
-            Ast *res = bl.br[0];
-            for (int i = 1; i < bl.n; i++) {
-                Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
-                alt->l = res;
-                alt->r = bl.br[i];
-                res = alt;
-            }
-            return wclass_of(lc, a, res);
-        }
+        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        return wclass_of(lc, a, res);
     }
 }
 
@@ -424,30 +430,10 @@ static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
     return cp;
 }
 
-/* ---- the canonical SPLIT, the boxes a class's set lowers to -------------- */
-
-/* The byte instance's split: one box per interval (a byte range is one
- * class). Unreached today: no `A_WCLASS` exists under `byte`. */
-static void split_byte(Ctx *cx, const PcrecCpRange *iv, int n, void *bl)
-{
-    for (int i = 0; i < n; i++) {
-        unsigned char lo = (unsigned char)iv[i].lo, hi = (unsigned char)iv[i].hi;
-        u8_push_branch(bl, u8_seq(cx, &lo, &hi, 1));
-    }
-}
-
-/* The UTF-8 instance's split: `u8_ranges` per interval, the boxes
- * `lower_class_utf8` starts from, before any merge. */
-static void split_utf8(Ctx *cx, const PcrecCpRange *iv, int n, void *bl)
-{
-    (void)cx;
-    for (int i = 0; i < n; i++) u8_ranges(bl, iv[i].lo, iv[i].hi);
-}
-
 /* ---- the instance table and its one dispatch ----------------------------- */
 
 static const LowerOps lower_ops[] = {
-    { PCREC_ENC_BYTE, 0xFFu, lower_class_byte, pat_char_byte, split_byte },
+    { PCREC_ENC_BYTE, 0xFFu, lower_class_byte, pat_char_byte, NULL },
     { PCREC_ENC_UTF8, 0x7Fu, lower_class_utf8, pat_char_utf8, split_utf8 },
 };
 
@@ -486,7 +472,11 @@ unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len)
 Ast **pcrec_lower_boxes(Ctx *cx, const PcrecCpRange *iv, int n, int *nb)
 {
     U8Branches bl = { cx, NULL, 0, 0 };
-    ops_for(cx)->split(cx, iv, n, &bl);
+    const LowerOps *ops = ops_for(cx);
+    if (!ops->split)
+        pcrec_ctx_fail(cx, 0, "internal error: the canonical split was asked "
+                       "for under an encoding that builds no wide class");
+    ops->split(cx, iv, n, &bl);
     *nb = bl.n;
     return bl.br;
 }

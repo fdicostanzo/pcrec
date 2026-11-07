@@ -219,13 +219,16 @@ echo "== PART 4: the alternation owner at the lowering =="
 isl() { grep -oE '^#define RX_VM_ALT_ISLANDS [0-9]+' "$1" | awk '{print $3}'; }
 VMNK=(-e utf8 --engine=vm -fno-cls-kit)
 
-# [N1] today's admission, stated on the set: a class whose canonical split
-# holds a byte RANGE (`[éè]` = one box `c3 [a8-a9]`) has no island.
+# [N1] a class whose canonical split holds a byte RANGE (`[éè]` = one box
+# `c3 [a8-a9]`) is read member by member, one word per code point (the
+# CLASS-MEMBER widening, review r5 altcode EMIT-1; it retired stage 1's
+# single-string box admission and its sabotage row S1883), so the island is
+# built.
 if compile 'x(?:1[éè]|q2|r3)y' "$TMP/n1.c" "${VMNK[@]}"; then
-    if [ "$(isl "$TMP/n1.c")" = 0 ]; then
-        ok "[N1] x(?:1[éè]|q2|r3)y: a range box declines the island (RX_VM_ALT_ISLANDS 0)"
+    if [ "$(isl "$TMP/n1.c")" = 1 ]; then
+        ok "[N1] x(?:1[éè]|q2|r3)y: a range box is read as its member words (RX_VM_ALT_ISLANDS 1)"
     else
-        bad "[N1] x(?:1[éè]|q2|r3)y: RX_VM_ALT_ISLANDS $(isl "$TMP/n1.c") where 0 — the island's set reading admits a class whose canonical split holds a range box"
+        bad "[N1] x(?:1[éè]|q2|r3)y: RX_VM_ALT_ISLANDS $(isl "$TMP/n1.c") where 1 — the island's set reading declined a class whose canonical split holds a range box"
     fi
 else
     bad "[N1] x(?:1[éè]|q2|r3)y refused: $(head -c 300 "$TMP/n1.c.err")"

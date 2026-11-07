@@ -331,7 +331,8 @@ void  pcrec_arena_free(Arena *a);
  * right to left in pattern text. A spine is as long as the pattern, not as
  * deep as its nesting, so a walk iterates it here and recurses only into the
  * elements ([DD-10]; coding_guide.md §2.4). A `root` of another kind is one
- * element. `break` and `return` leave the loop as usual. */
+ * element. `break` and `return` leave the loop as usual. Its array form is
+ * `pcrec_spine_flatten`/`pcrec_spine_build` (declared with `pcrec_ast_node`). */
 #define PCREC_SPINE_EACH(e, root, kind)                                        \
     for (const Ast *e##_at_ = (root), *e;                                       \
          e##_at_ && (e = e##_at_->k == (kind) ? e##_at_->r : e##_at_, 1);       \
@@ -1600,8 +1601,16 @@ struct Ast {
          * THE ARENA'S ZERO IS `{NULL, 0}`, THE EMPTY CLASS, which is what the
          * all-zero 32-byte bitmap also meant, so every "the arena zeroes, so
          * ..." argument in this header survives the re-layout unchanged
-         * (§2.2.3). */
-        struct { const PcrecCpRange *iv; int n; } cls;
+         * (§2.2.3).
+         *
+         * `branches` is the number of alternation branches rule M folded
+         * into this class at its position (src/opt/altnf.c), 0 for a class
+         * as written; read it through `pcrec_cls_branches`. It is a fact for
+         * the VM island's size comparison, which counts the chain the fold
+         * replaced (src/gen/emit_vm.c, review r5 altcode EMIT-3); no answer
+         * reads it, so a pass that copies a node and changes its set leaves at
+         * worst a stale speed estimate. */
+        struct { const PcrecCpRange *iv; int n; int branches; } cls;
 
         /* [CLS-TREE] S3 A_WCLASS: the code-point set, `cls`'s own
          * representation, published by the lowering from the `A_CLASS` it
@@ -2293,6 +2302,10 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
 int  pcrec_cls_single(Ctx *cx, const Ast *a);
+/* The alternation branches rule M folded into class `a` (1 for a class as
+ * written), and its setter for the fold's union node. */
+int  pcrec_cls_branches(Ctx *cx, const Ast *a);
+void pcrec_cls_set_branches(Ctx *cx, Ast *a, int branches);
 /* [OPT-LITSCAN] S4 P2 (litscan_s4.md §1.2): is `iv[i..j]` exactly ONE
  * AND-mask cube over the domain [base, base+w)? On success
  * `((x - base) & *care) == *val` is membership for every `x` in that domain.
@@ -5056,6 +5069,16 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
+/* src/parse/parse.c — a left-nested `kind` spine (`A_CAT` or `A_ALT`) as an
+ * array, and back: the one flattener and builder for the shape
+ * `PCREC_SPINE_EACH` walks (review r5 altcode SLOT-2). `pcrec_spine_flatten`
+ * stores the elements left to right in pattern text and returns their count
+ * (a root of another kind is one element). `pcrec_spine_build` rebuilds the
+ * spine parse.c itself builds, so nothing downstream can tell a rebuilt spine
+ * from a parsed one; `n == 0` is `A_EMPTY` for `A_CAT` and a caller error for
+ * `A_ALT`. */
+int  pcrec_spine_flatten(Ctx *cx, const Ast *root, AKind kind, Ast ***out);
+Ast *pcrec_spine_build(Ctx *cx, AKind kind, Ast *const *arr, int n);
 /* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
 Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn);
 /* [DD-11.5] P2e a subject PIN (`^`/`\A`: CTXFN_SUBJECT_START, `\z`:

@@ -333,13 +333,15 @@ void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32])
 }
 
 /* "Is this class exactly one code point, and is that code point a BYTE?" —
- * the interval form of the `altcls_single_bit` popcount the two callers used
- * to write out (`src/opt/altcls.c`'s peelable-branch test, `src/gen/
- * emit_vm.c`'s island literal). Returns the code point, or -1.
+ * the interval form of a one-member test, answered in one comparison. Returns
+ * the code point, or -1. Its reader today is the required-run walk
+ * (`src/facts/req.c`), whose singleton is one `memchr` argument; the VM
+ * island reads every class as its members (`pcrec_cls_bits`), a literal
+ * being the one-member case.
  *
- * The `> 0xFF` arm is a DECLINE and not an error: `altcls` runs above the
- * lowering, and "this branch does not start with a single literal byte" is an
- * answer both callers already handle. */
+ * The `> 0xFF` arm is a DECLINE and not an error: a reader above the
+ * lowering sees code points, and "not a single byte" is an answer it
+ * already handles. */
 int pcrec_cls_single(Ctx *cx, const Ast *a)
 {
     cls_kind_guard(cx, a, "pcrec_cls_single");
@@ -347,6 +349,21 @@ int pcrec_cls_single(Ctx *cx, const Ast *a)
     if (a->u.cls.iv[0].lo != a->u.cls.iv[0].hi) return -1;
     if (a->u.cls.iv[0].lo > 0xFF) return -1;
     return (int)a->u.cls.iv[0].lo;
+}
+
+/* The number of alternation branches rule M folded into class `a`: the
+ * recorded count, or 1 for a class as written (the arena's zero). */
+int pcrec_cls_branches(Ctx *cx, const Ast *a)
+{
+    cls_kind_guard(cx, a, "pcrec_cls_branches");
+    return a->u.cls.branches > 0 ? a->u.cls.branches : 1;
+}
+
+/* Records on the fold's union node `a` the branches it stands for. */
+void pcrec_cls_set_branches(Ctx *cx, Ast *a, int branches)
+{
+    cls_kind_guard(cx, a, "pcrec_cls_set_branches");
+    a->u.cls.branches = branches;
 }
 
 /* ---- THE BYTE CUBE ([OPT-LITSCAN] S4 P2, litscan_s4.md §1.2) ------------ */

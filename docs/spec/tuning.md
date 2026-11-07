@@ -498,17 +498,15 @@ return 1;
 
 <a id="s2-20-p1"></a>[2.20¶1] **Denies** the ALTERNATION ISLAND, axis `alt-island` in `--list-axes`. Without it, `src/gen/emit_vm.c` lowers an N-way alternation as a chain: one resume frame per untried branch, each branch its own run of byte tests, so matching the last of N branches costs N − 1 push/fail/pop round trips. The island replaces that with a TRIE over the alternatives' literal bytes: a byte compare at a node with one child, a `switch` on the subject byte at a node with several, and one try site per node where an alternative ends. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only. VM route only: the DFA determinizes the same trie on its own, so no DFA artifact carries the stamp.
 
-<a id="s2-20-p2"></a>[2.20¶2] **What it applies to.** The island is built when the alternation's whole subtree matches a FINITE set of literal byte strings — every element a one-byte class, every combination enumerable within the island's budgets (`VM_ISL_MAX_WORDS`, `VM_ISL_MAX_BYTES`, `VM_ISL_MAX_DEPTH`). The predicate is over the language, not the branch list, so it does not depend on how far §2.7's factoring got. Each of these declines, and the alternation keeps the chain:
+<a id="s2-20-p2"></a>[2.20¶2] **What it applies to.** The island is built when the alternation's whole subtree matches a FINITE set of literal byte strings — every element a byte class, read as its member bytes (a class of `k` members is `k` one-byte words, a literal the one-member case), every combination enumerable within the island's budgets (`VM_ISL_MAX_WORDS`, `VM_ISL_MAX_BYTES`, `VM_ISL_MAX_DEPTH`). A `utf8` wide class is read as its code-point SET: the boxes of its canonical UTF-8 split (before §2.6's merge), each read member by member, so its words are the members' encodings in ascending code point. The predicate is over the language, not the branch list, so it does not depend on how far §2.7's factoring got. Each of these declines, and the alternation keeps the chain:
 
 | declined | why |
 |---|---|
-| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on. A `utf8` wide class is read as its code-point SET: admitted when every box of the set's canonical UTF-8 split (before §2.6's merge) is a single string, its words then the members' encodings in ascending code point |
 | a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
-| a caseless alternation | D23 folds a caseless letter to a two-member class at parse time |
 | a literal set over the enumeration budgets | the cross product of concatenated alternations is exponential |
 | fewer than `VM_ISL_MIN_BRANCHES` literal alternatives | there is no dispatch to make |
 | fewer than `VM_ISL_MIN_BRANCHES_PREFIXED` alternatives, for an island that pushes | an island whose alternatives are not prefix-free keeps a resume frame, and below that width it is more work than the chain |
-| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's, or one that would carry the artifact over `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain stays under it | bounded against the chain. Both are estimates; an artifact the island still carries over a cap is retried without islands (`limits.md` §8.4, rung 2b), so the axis never refuses a pattern its chain fits |
+| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's (for this comparison only, a class that §2.6's sibling merge folded out of `k` branches (at either caller) counts as the `k` branches it replaced, the reading the island's words come from, so the merge cannot flip it; a class as written counts as the one test the chain emits for it, which is why a caseless alternation or `a.\|bc` keeps the chain), or one that would carry the artifact over `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain stays under it | bounded against the chain. Both are estimates; an artifact the island still carries over a cap is retried without islands (`limits.md` §8.4, rung 6, the last), so the axis never refuses a pattern its chain fits |
 
 <a id="s2-20-p3"></a>[2.20¶3] The width knees and the size factor are `selection knee` rows of `pcrec --list-limits`; they promise a caller nothing and have no `limits.md` section.
 
@@ -516,7 +514,7 @@ return 1;
 
 <a id="s2-20-p5"></a>[2.20¶5] **Identity is modulo which budget binds.** The island charges its trie walk to the WORK counter where the chain spends a STEP per branch resume, so where the chain's step budget binds and the island's does not, the island answers where the chain returns `PCREC_ERR_STEPS`. The island does strictly less stepping, so the direction is one-way: it can answer where the chain gives up, never the reverse.
 
-<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count, `0` after rung 2b fired. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
+<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count, `0` after rung 6 (`limits.md` §8.4) fired. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
 
 <a id="s2-20-p7"></a>[2.20¶7] **Dial:** no cell, PURE WIN (§5.4).
 

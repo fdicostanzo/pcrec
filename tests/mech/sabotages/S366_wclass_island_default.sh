@@ -13,25 +13,19 @@
 # Detected two ways that do not share a source: the census reads the SOURCE
 # (a switch with a default: and no A_WCLASS label), W3 reads the ARTIFACT
 # (the island stamp is gone). Answer checks see nothing.
+# RE-ANCHORED 2026-11-06 (lane altfix, review r5 altcode EMIT-3/CHK-5): the
+# arm reads the set through `vm_isl_set_split` (stage 1's set reading, the
+# box builder now the shared `pcrec_spine_build`); the plant is unchanged.
 SAB_ID="S366-wclass-island-default"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="wclass"
 SAB_DESC="vm_isl_words' A_WCLASS arm is replaced by a default: return false, so a wide-literal alternation silently loses its island"
-SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip: wclass:3fail/7pass DETECTED -- [5a] (no A_WCLASS label), [5c] (a default:) and [W3] (RX_VM_ALT_ISLANDS gone on café|naïve|résumé)."
+SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip (the arm then walked the byte child; since [RUN-POS-SET] stage 1 it reads the set): wclass:3fail/7pass DETECTED -- [5a] (no A_WCLASS label), [5c] (a default:) and [W3] (RX_VM_ALT_ISLANDS gone on café|naïve|résumé). Re-read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S366."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    case A_WCLASS: {
-        int n, nb;
-        const PcrecCpRange *iv = pcrec_wcls_set(v->cx, a, &n);
-        Ast **box = pcrec_lower_boxes(v->cx, iv, n, &nb);
-        if (nb == 0 || nb > VM_ISL_MAX_WORDS) return false;
-        Ast *split = box[0];
-        for (int i = 1; i < nb; i++) {
-            Ast *alt = pcrec_ast_node(v->cx, A_ALT);
-            alt->l = split;
-            alt->r = box[i];
-            split = alt;
-        }
+        const Ast *split = vm_isl_set_split(v, a);
+        if (!split) return false;
         return vm_isl_words(v, split, out, depth, budget);
     }'
 SAB_AFTER='    default:

@@ -494,7 +494,7 @@ not firing order; at most one firing per `once` row:
 | `prefilter-collapse` (then optionally `drop-prefilter`) | 4, 5 or 6 | row 6 kept, row 9, or PASS → `selected` | yes |
 | `drop-anchored` (then optionally `drop-premul`), `drop-premul` alone | 5 | row 7/8 | yes |
 | `drop-landmark-walk` (then optionally `drop-anchored`, `drop-premul`) ([LANDWALK], 2026-10-29: a row between 6 and 7, SDR kept, its own `size-cap-retry` cells; no arm of the 9-arm table predates it) | — | its own cell, or row 7/8's when they follow | yes (`run_fallback_table.sh` seq-lwdrop) |
-| `drop-islands` (then optionally `drop-handoff`, `drop-prefilter`) ([RUN-POS-SET] K139, 2026-11-06: a VM row after `drop-landmark-walk`, SDR kept, restarts the size term, its own `size-cap-retry` cells) | — | its own cell, or row 9's when `drop-prefilter` follows | yes (`run_fallback_table.sh` seq-isldrop) |
+| `drop-islands`, alone or after `drop-handoff`/`drop-prefilter` ([RUN-POS-SET] K139, 2026-11-06; moved to the LAST VM row before `refuse` by lane altfix, review r5 altcode EMIT-2: SDR kept, restarts the size term, its own `size-cap-retry` cells) | — | its own cell (the latest row) | yes (`run_fallback_table.sh` seq-isldrop) |
 | `prefilter-collapse` → `sel1-collapse` (→ `sel1-drop`): the collapsed prefilter overflows a DFA cap | 7 or 8/9 | row 3 or 4 (latest) | no (§4.3a) |
 | `sel1-collapse` → `prefilter-collapse` (critB1 m2): an F-B3 state, then the size cap | 4 if the prefilter survived, else 8/9 | row 6 kept; else PASS → row 3's ROLE | no: it needs F-B3's state (§10) |
 

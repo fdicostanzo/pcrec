@@ -3990,13 +3990,13 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  *
  * WHAT IT DECLINES, and every one of these is a SCOPE BOUNDARY rather than a
  * refusal: the alternation is emitted by `vm_alt` unchanged.
- *   - any branch that is not a chain of SINGLETON byte classes: a class
- *     (including a caseless literal, which D23 folded to a two-member class at
- *     parse time long before the emitter sees it), a quantifier, a group, a
- *     capture, a backreference, a lookaround, an assertion, or an EMPTY
- *     branch. The trie's edges are bytes; a class edge would break the
- *     disjoint-siblings property the whole argument above rests on, and is
- *     `src/ir/nfa.c`'s rule 2 in the emitter's own vocabulary.
+ *   - any branch whose language is not a finite set of literal byte words
+ *     within the enumeration budgets: a quantifier, a capture, a
+ *     backreference, a lookaround or an assertion. A multi-member class is
+ *     NOT a decline: it is read as its member bytes, one word each (see
+ *     `vm_isl_words`), so a trie edge is still one byte and siblings stay
+ *     disjoint, the property the whole argument above rests on
+ *     (`src/ir/nfa.c`'s rule 2 in the emitter's own vocabulary).
  *   - fewer than `VM_ISL_MIN_BRANCHES` branches.
  *   - `PCREC_NO_ALT_ISLAND`.
  *
@@ -4004,24 +4004,6 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * and by `vm_count_slots` to count the resume points it will emit — the "site
  * for site" discipline that function's header states, and the reason the push
  * count is not re-derived from an argument about branch counts. */
-
-/* The byte an A_CLASS admits when it admits EXACTLY ONE, else -1. This is the
- * emitter's whole literal test: `src/parse/` normalizes a literal to a
- * singleton class (internal.h's A_CLASS comment), so "is a literal byte" and
- * "is a one-member class" are the same question asked once. */
-static int vm_isl_single(Vm *v, const Ast *a)
-{
-    if (a->k != A_CLASS) return -1;
-    /* [M5.0 stage 1] §2.5.1's AFTER row 9, second site. The 256-value scan
-     * this replaced asked "does exactly one bit stand", which is the interval
-     * list's `n == 1 && lo == hi` — one comparison instead of 256, and the
-     * SAME question rather than an approximation of it. It shares
-     * `pcrec_cls_single` with `src/opt/altcls.c`'s peelable-branch test on the
-     * one-mechanism rule: an island literal and a factored prefix byte are the
-     * same fact ("this class is one literal character") asked twice, and the
-     * two spellings had already drifted into a popcount and a scan. */
-    return pcrec_cls_single(v->cx, a);
-}
 
 /* ---- the island's INPUT: the subtree's literal words, in PREFERENCE ORDER --
  *
@@ -4070,6 +4052,22 @@ static int vm_isl_single(Vm *v, const Ast *a)
 typedef struct { const uint8_t *b; int len; } VmIslW;
 typedef struct { VmIslW *w; int n; } VmIslWL;
 
+/* The island's SET READING of a wide class: the alternation of its canonical
+ * split's boxes (the lowering's own splitter, before any merge), ascending,
+ * or NULL when the split is empty or wider than the word cap (`\p{L}`), so
+ * no word list is built for it. The enumeration and the chain's size
+ * estimate both read a wide class through this one function, so a merge of
+ * the class's byte child cannot make the two disagree (review r5 altcode
+ * EMIT-3). */
+static const Ast *vm_isl_set_split(Vm *v, const Ast *a)
+{
+    int n, nb;
+    const PcrecCpRange *iv = pcrec_wcls_set(v->cx, a, &n);
+    Ast **box = pcrec_lower_boxes(v->cx, iv, n, &nb);
+    if (nb == 0 || nb > VM_ISL_MAX_WORDS) return NULL;
+    return pcrec_spine_build(v->cx, A_ALT, box, nb);
+}
+
 /* Enumerates AST subtree `a`'s language into `out` as a list of literal
  * byte strings, returning false when it is not such a finite set or the
  * enumeration's byte allowance runs out.
@@ -4085,30 +4083,17 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
 
     switch (a->k) {
     /* [RUN-POS-SET] stage 1 (docs/design/alt_normal_form.md §5 stage 1, G-2):
-     * a wide class is read as its code-point SET, never its byte child, which
-     * the alternation owner may have merged (`[éà]`'s `c3 a0|c3 a9` becomes
-     * `c3 [a0 a9]`, a class the island declines). TODAY'S ADMISSION, stated
-     * on the set: admitted iff every box of the set's canonical split (the
-     * lowering's own splitter, before any merge) is a single string; its
-     * words are then the members' encodings in ascending code point, one per
-     * box, enumerated by the same arms and budget charges the unmerged child
-     * took. The predicate exists only to keep today's admission; widening it
-     * is [ENG-ISL-S2]'s class-member shape, which deletes it. A split already
-     * over the word cap (`\p{L}`) declines before any word is built. The
+     * a wide class is read as its code-point SET (`vm_isl_set_split`), never
+     * its byte child, which the alternation owner may have merged (`[éà]`'s
+     * `c3 a0|c3 a9` becomes `c3 [a0 a9]`). Its words are the members'
+     * encodings in ascending code point, enumerated by the same arms and
+     * budget charges as any other alternation; a box holding a byte range
+     * reaches the `A_CLASS` arm below and is read as its members. The
      * `default: return false` this switch used to carry would have dropped
      * the island SILENTLY (docs/dev/cls_s3_reader_inventory.md §3 row 10). */
     case A_WCLASS: {
-        int n, nb;
-        const PcrecCpRange *iv = pcrec_wcls_set(v->cx, a, &n);
-        Ast **box = pcrec_lower_boxes(v->cx, iv, n, &nb);
-        if (nb == 0 || nb > VM_ISL_MAX_WORDS) return false;
-        Ast *split = box[0];
-        for (int i = 1; i < nb; i++) {
-            Ast *alt = pcrec_ast_node(v->cx, A_ALT);
-            alt->l = split;
-            alt->r = box[i];
-            split = alt;
-        }
+        const Ast *split = vm_isl_set_split(v, a);
+        if (!split) return false;
         return vm_isl_words(v, split, out, depth, budget);
     }
     case A_EMPTY:
@@ -4116,15 +4101,36 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
         out->w[0].b = empty; out->w[0].len = 0;
         out->n = 1;
         return true;
+    /* A class is read as its MEMBER WORDS, one one-byte word per member in
+     * ascending byte order (the CLASS-MEMBER widening of [ENG-ISL-S2]; review
+     * r5 altcode EMIT-1). A literal is the one-member case. The order among
+     * the members cannot matter: they are distinct bytes at one position, so
+     * at most one of them matches, and the class keeps its own place in the
+     * branch order. Without this arm a class that rule M merged out of
+     * single-position-differing branches (`c[ao]t` from `cat|cot`) declined
+     * the whole alternation's island and its VM ran the chain: bench altwide
+     * w-256 measured ~130x the instructions. Members are charged to the
+     * same word cap and byte budget as any other word; over either, the
+     * island declines and the chain emits the alternation, as for any
+     * language too wide to enumerate. */
     case A_CLASS: {
-        int b = vm_isl_single(v, a);
-        if (b < 0) return false;
-        uint8_t *p = pcrec_arena_alloc(&v->cx->arena, 1);
-        p[0] = (uint8_t)b;
-        if (--*budget < 0) return false;
-        out->w = pcrec_arena_alloc(&v->cx->arena, sizeof *out->w);
-        out->w[0].b = p; out->w[0].len = 1;
-        out->n = 1;
+        uint8_t bits[32];
+        pcrec_cls_bits(v->cx, a, bits);
+        int nm = 0;
+        for (unsigned c = 0; c < 256; c++) nm += cls_has(bits, c);
+        if (nm == 0 || nm > VM_ISL_MAX_WORDS) return false;
+        *budget -= nm;
+        if (*budget < 0) return false;
+        uint8_t *p = pcrec_arena_alloc(&v->cx->arena, (size_t)nm);
+        out->w = pcrec_arena_alloc(&v->cx->arena, (size_t)nm * sizeof *out->w);
+        out->n = 0;
+        for (unsigned c = 0; c < 256; c++)
+            if (cls_has(bits, c)) {
+                p[out->n] = (uint8_t)c;
+                out->w[out->n].b = &p[out->n];
+                out->w[out->n].len = 1;
+                out->n++;
+            }
         return true;
     }
     case A_ALT: {
@@ -4134,8 +4140,12 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
          * first. */
         /* [RUN-POS-SET] stage 1: the ISLAND-LOCAL step `t->l` stops at an
          * `A_WCLASS` in a head slot, so the class reaches the set arm above
-         * exactly as one in a right slot does (`pcrec_ast_seethru` would hand
-         * the switch its possibly merged byte child). */
+         * exactly as one in a right slot does. Since the `A_CLASS` arm reads
+         * a class as its members (review r5 altcode EMIT-1), the merged byte
+         * child `pcrec_ast_seethru` would hand the switch enumerates the same
+         * words, so the step no longer decides an island (its sabotage rows
+         * S1884/S1885 retired); unifying it with the other spine readers is
+         * the SLOT-5 plan row. */
         int nbr = 1;
         for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
         const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
@@ -4160,7 +4170,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     case A_CAT: {
         /* [RUN-POS-SET] stage 1: the island-local step `t->l`, as in the
          * `A_ALT` walk: a wide class at the spine head is ONE element, read
-         * as its set, never unrolled into the spine as its byte child. */
+         * as its set (the same words as its byte child since EMIT-1). */
         int nsp = 1;
         for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
         const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
@@ -4209,47 +4219,52 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
  * [ENG-ISL] THE CHAIN'S OWN SIZE, in the only unit both arms can be compared
  * in: AST nodes of the subtree `vm_alt` would otherwise emit. `vm_emit` writes
  * roughly one test, one label and one goto per node, so the chain's emitted
- * bytes are linear in this count — measured at ~98 B/node on the shape below.
- * Walked ITERATIVELY over A_CAT/A_ALT spines for D10/R-2's reason; anything
- * else is counted and not descended, because a subtree the island could not
- * qualify never reaches this function. */
-static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
+ * bytes are linear in this count — measured at ~98 B/node. A wide class is
+ * counted through to its byte child, which is what the chain emits.
+ *
+ * Without `unfold` it counts what the chain EMITS: every `A_CAT`/`A_ALT` node
+ * and every leaf. With it, the chain is counted as it stood before rule M's
+ * folds (review r5 altcode EMIT-3): a class that M folded out of `k`
+ * single-position-differing branches (`pcrec_cls_branches`) makes its
+ * concatenation count as the `k` branches it replaced, joined by `k - 1`
+ * alternation nodes, the classes of one concatenation multiplying. The
+ * island's words are the same before and after a fold, so this is the chain
+ * read at the island's own reading, and a fold cannot flip the comparison
+ * (it did: `x(?:cat|cot|dog)y`, `x(?:[éà]|q2|r3)y` under the VM lost their
+ * islands at 1.4x-2.7x the matching work). A class as written counts as the
+ * one test the chain emits for it, so a wide class the island reads as many
+ * words (`a.|bc`) is still compared against the chain it really replaces.
+ *
+ * Spines are walked iteratively ([DD-10]); it recurses only on nesting, which
+ * `vm_isl_words` bounded at `VM_ISL_MAX_DEPTH` before this function is asked
+ * (it is called only on a subtree whose words were enumerated). A fixed-size
+ * explicit stack here once truncated at `w-256` and understated the chain. */
+static long long vm_isl_subtree_nodes(Vm *v, const Ast *a, bool unfold)
 {
-    /* THE STACK GROWS, and a FIXED one was a live defect rather than a
-     * theoretical one. This walk pushes the right child of every `A_CAT`/
-     * `A_ALT` it descends, so the stack depth is the SPINE LENGTH — which is
-     * the branch count of a flat alternation plus one branch's own length.
-     * A fixed 256 entries truncated at `w-256` (255 `A_ALT` nodes plus a
-     * 12-element branch), and the truncated count UNDERSTATES the chain, which
-     * INFLATES the island-versus-chain ratio and declines islands that should
-     * be taken. It was caught by a witness search whose chain estimate
-     * collapsed from 93,982 to 25,186 as the literals grew past the bound —
-     * the shape of a silent early return. Arena-allocated and doubled, so the
-     * bound is the pattern's own size and there is nothing left to truncate. */
-    long long n = 0;
-    int cap = 64, sp = 0;
-    const Ast **stk = pcrec_arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
-    stk[sp++] = a;
-    while (sp) {
-        /* [CLS-TREE] S3: counted through a wide class, never as one node —
-         * its child is what the chain emits, and a node count that saw the
-         * wrapper as a leaf would move the island-versus-chain ratio. */
-        const Ast *t = pcrec_ast_seethru(stk[--sp]);
-        while (t->k == A_CAT || t->k == A_ALT) {
-            n++;
-            if (sp == cap) {
-                const Ast **nv = pcrec_arena_alloc(&v->cx->arena,
-                                             (size_t)cap * 2 * sizeof *nv);
-                memcpy(nv, stk, (size_t)cap * sizeof *nv);
-                stk = nv;
-                cap *= 2;
-            }
-            stk[sp++] = t->r;
-            t = pcrec_ast_seethru(t->l);
-        }
-        n++;
+    const Ast *t = pcrec_ast_seethru(a);
+    if (t->k == A_ALT) {
+        long long n = -1;
+        PCREC_SPINE_EACH(e, t, A_ALT) n += 1 + vm_isl_subtree_nodes(v, e, unfold);
+        return n;
     }
-    return n;
+    if (t->k == A_CAT) {
+        long long n = -1, copies = 1;
+        PCREC_SPINE_EACH(e, t, A_CAT) {
+            const Ast *x = pcrec_ast_seethru(e);
+            if (unfold && x->k == A_CLASS) {
+                copies *= pcrec_cls_branches(v->cx, x);
+                n += 2;
+            } else {
+                n += 1 + vm_isl_subtree_nodes(v, x, unfold);
+            }
+        }
+        return copies * n + (copies - 1);
+    }
+    if (unfold && t->k == A_CLASS) {
+        long long k = pcrec_cls_branches(v->cx, t);
+        return k + (k - 1);
+    }
+    return 1;
 }
 
 /* Appends one node to the island trie and returns its INDEX: `parent`, the
@@ -4456,11 +4471,19 @@ static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
          * factor below absorbs. */
         const long long isl_bytes   = ((long long)t->nnd + t->trysites)
                                       * VM_ISL_BYTES_PER_NODE;
-        const long long chain_nodes = vm_isl_subtree_nodes(v, a);
+        const long long chain_nodes = vm_isl_subtree_nodes(v, a, false);
         const long long chain_bytes = chain_nodes * VM_ISL_BYTES_PER_CHAIN_NODE;
         t->est_isl = isl_bytes;
         t->est_chain = chain_bytes;
-        if (isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR) return false;
+        /* THE FACTOR READS THE CHAIN BEFORE RULE M'S FOLDS (review r5
+         * altcode EMIT-3; `vm_isl_subtree_nodes`), the reading the island's
+         * words come from, so a fold the island reads through cannot flip
+         * it. The cap guard below and `est_chain` (the artifact-wide
+         * verdict's sum, the listing) keep the emitted count: their question
+         * is what the chain would really emit against an absolute cap. */
+        const long long chain_unfolded_bytes =
+            vm_isl_subtree_nodes(v, a, true) * VM_ISL_BYTES_PER_CHAIN_NODE;
+        if (isl_bytes > chain_unfolded_bytes * VM_ISL_SIZE_FACTOR) return false;
 
         /* THE CAP GUARD, and the factor alone does NOT imply it. The factor
          * bounds the island RELATIVE to the chain; acceptance is bounded by an

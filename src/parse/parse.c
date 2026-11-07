@@ -59,6 +59,40 @@ static Ast *node(Ctx *cx, AKind k)
  * body). Kind only — payload fields are the caller's. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 
+/* Stores the elements of `root`'s left-nested `kind` spine into an arena
+ * array, left to right, and returns their count. Iterative: a spine is as
+ * long as the pattern ([DD-10]). */
+int pcrec_spine_flatten(Ctx *cx, const Ast *root, AKind kind, Ast ***out)
+{
+    int n = 0;
+    PCREC_SPINE_EACH(e, root, kind) { (void)e; n++; }
+    Ast **arr = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof *arr);
+    int i = n;
+    PCREC_SPINE_EACH(e, root, kind) arr[--i] = (Ast *)e;
+    *out = arr;
+    return n;
+}
+
+/* Builds the left-nested `kind` spine of `arr[0..n)`, the shape p_cat and
+ * p_alt build; an empty `A_CAT` list is `A_EMPTY`. */
+Ast *pcrec_spine_build(Ctx *cx, AKind kind, Ast *const *arr, int n)
+{
+    if (n == 0) {
+        if (kind != A_CAT)
+            pcrec_ctx_fail(cx, 0, "internal error: pcrec_spine_build asked for "
+                           "an empty spine of kind %d", (int)kind);
+        return node(cx, A_EMPTY);
+    }
+    Ast *res = arr[0];
+    for (int i = 1; i < n; i++) {
+        Ast *t = node(cx, kind);
+        t->l = res;
+        t->r = arr[i];
+        res = t;
+    }
+    return res;
+}
+
 /* [UCP] U2 A new A_CTX node over the published code-point set `iv[0..n)`
  * with truth function `fn` (CTXFN_*). The set is shared, never copied: a
  * published payload is read-only (cpset.c's rule). */

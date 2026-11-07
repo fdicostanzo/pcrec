@@ -82,12 +82,16 @@
 # RE-AIMED 2026-11-02 (lane p1land, P1 landed in landing order over main's R-30
 # abi 94: 94 -> 95): AFTER is 94, the parent's number at landing; same
 # detector, same arm.
+# RE-AIMED 2026-11-06 (lane altfix, [RUN-POS-SET] abi 95 -> 96, review r5
+# altcode CHK-5): AFTER is 95, the parent's number (lane altbuild's bump left
+# it at 94, still a different number, so still detected); SAB_DESC no longer
+# names a fixed parent number.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
-SAB_DESC="PCREC_ARTIFACT_ABI stays 71 (the parent's) while the VMLAZY normalization moves the lazy cursor prefix, so rx_info.abi misnames the artifact"
+SAB_DESC="PCREC_ARTIFACT_ABI stays at the parent's number while the emitted bytes move (the row's founding case: the VMLAZY normalization at 71), so rx_info.abi misnames the artifact"
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='#define PCREC_ARTIFACT_ABI 96'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 94   /* SABOTAGE S693 */'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 95   /* SABOTAGE S693 */'
