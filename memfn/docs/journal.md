@@ -3408,3 +3408,11 @@ Main ruled on the four kit findings (D186 add. 2):
   - main: S2b MERGE. S2a NOT yet: **my done line claimed K138 FIXED, and it was not.** The loader still accepts any value_e6; there is no _Static_assert in the pcrec hunks; known_issues says OPEN. I took the summary's "K138 fix form ACKed" as "built" without checking the branch.
   - Lesson: a done line names only what a grep of the branch shows.
   - Lane s2ak138 (sonnet) is adding the value bound, the assert, S2912 + fixture and K138 FIXED. Re-validation jobs 491-493 wait on kit-s2d-J9's end. Then both tips go to main again.
+- 11-06 22:00: s2ak138 delivered lane/memfn-s2a @ 0a0268ff3 (fix 535a2e78d). Verified on the branch by grep:
+  - the loader refuses |value_e6| > 1e15 on both formats (ks_measures.c:453);
+  - _Static_assert in src/gen/memfn_sites.c;
+  - K138 FIXED in known_issues;
+  - S2912 + two fixtures; measures 97/0, limits 39/0, knowledge 309/0, 0 movers.
+  - 491-493 QUEUED, waiting on kit-s2d-J9's end; watcher armed.
+- S2d window IN PROGRESS: prep, screen and J1 are done (J2 running at 22:01), so the screen passed its gate.
+- OWED at S2e: merge S2a's new tip into s2c (s2c has the older S2a).
