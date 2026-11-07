@@ -7,9 +7,15 @@
 #   queue     scripts/boxqueue status condensed: running job + age, pending count, last 3 ends + verdict
 #   lanes     live lanewatch/watchrun/queuemon/queuewatch processes (count + labels); worktrees with
 #             uncommitted changes newer than 30 min ("active")
-#   sessions  one line per live Claude session (socket under /run/user/UID/cc-socks/ whose owner pid is
-#             alive): pid, `claude -n` name, role (worktrees/.mgr/roles/, tolerated when absent)
+#   sessions  ONE line: live Claude sessions (socket under /run/user/UID/cc-socks/ whose owner pid is alive):
+#             pid, `claude -n` name, [role] (pid -> ~/.claude/sessions/PID.json sessionId -> worktrees/.mgr/roles/ID)
+#   disk      use% and free of the repo fs, $PCREC_TMPDIR fs and /tmp ('!' at >= 85%); scratch/snap du if <2 s
+#   context   per registered manager role: tokens in the LAST assistant message's usage of its transcript
+#             (input + cache creation + cache read; numbers only, no content is ever printed); window if known
+#   subscription  5h/7d plan usage from ~/.claude/statusline/usage-latest.json (stale-flagged), else unavailable
 #   ci        last run on main via gh (`ci: unavailable` when gh fails)
+#   git       main tree: branch, +ahead/-behind, modified/untracked counts (names if <= 3), HEAD sha + age;
+#             pcrec-bench as a compact suffix
 #   unread    monitor lines waiting for main and kit (scripts/monread OWNER --peek: the cursor is NOT moved)
 # --owner puts that owner's unread count first, marked `*`. Never kills, never takes the box lock, writes
 # nothing. Exit 0 always; the last line is `gestalt: DONE rc=0`.
@@ -37,13 +43,14 @@ fmt_age() { # seconds -> 45s / 12m / 3h
 # --- load
 read -r l1 l5 l15 _ < /proc/loadavg
 np=$(nproc 2>/dev/null || echo 1)
-echo "load: $l1 $l5 $l15 (nproc $np)"
+busy=""
 if awk -v l="$l1" -v n="$np" 'BEGIN { exit !(l > n / 2) }'; then
     top3=$($TO 5 top -b -n2 -d0.5 -o %CPU 2>/dev/null | awk '
         /^ *PID /{ k++; n = 0; next }
         k == 2 && n < 3 && NF >= 12 { printf "%s%s %s%%", (n ? ", " : ""), $12, $9; n++ }')
-    echo "load: busiest: ${top3:-unavailable}"
+    busy="; busiest: ${top3:-unavailable}"
 fi
+echo "load: $l1 $l5 $l15 (nproc $np)$busy"
 
 # --- box
 echo "box: $($TO 10 bash "$here/boxlock" status 2>&1 | head -1 | sed 's/ cwd=.*//' | cut -c1-160)"
@@ -81,9 +88,11 @@ act=$(for d in "$main"/worktrees/*/; do
 nact=$(printf '%s\n' "$act" | wc -w)
 echo "lanes: watchers $w; active worktrees $nact${act:+ ($(printf '%s' "$act" | cut -c1-150))}"
 
-# --- sessions
+# --- sessions (one line: pid, claude -n name, role from the role files keyed by session id)
 sd=/run/user/$(id -u)/cc-socks
-roledir=$main/worktrees/.mgr/roles
+roledir=${GESTALT_ROLES_DIR:-$main/worktrees/.mgr/roles}
+claude_home=${GESTALT_CLAUDE_HOME:-$HOME/.claude}
+sl=""
 ns=0
 if [ -d "$sd" ]; then
     for s in "$sd"/*.sock; do
@@ -91,23 +100,91 @@ if [ -d "$sd" ]; then
         pid=$(basename "$s" .sock)
         [ -d "/proc/$pid" ] || continue
         ns=$((ns + 1))
-        [ "$ns" -le 4 ] || continue
         name=$(tr '\0' '\n' < "/proc/$pid/cmdline" 2>/dev/null | awk '$0 == "-n" || $0 == "--name" { getline; print; exit }')
-        cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
+        sid=$($TO 2 jq -r '.sessionId // empty' "$claude_home/sessions/$pid.json" 2>/dev/null)
         role=""
-        if [ -d "$roledir" ]; then
-            for rf in "$roledir"/*; do
-                [ -f "$rf" ] || continue
-                b=$(basename "$rf")
-                if [ "$b" = "$pid" ]; then role=$(head -1 "$rf")
-                elif grep -qx "$pid" "$rf" 2>/dev/null; then role=$b; fi
-            done
-        fi
-        echo "session: pid $pid ${name:-?}${role:+ role=$role} cwd=${cwd:-?}" | sed "s|$main|.|"
+        case $sid in ''|*[!A-Za-z0-9_-]*) ;; *) role=$(head -1 "$roledir/$sid" 2>/dev/null) ;; esac
+        sl="$sl${sl:+, }$pid ${name:-?}${role:+ [$role]}"
     done
-    [ "$ns" -gt 4 ] && echo "session: +$((ns - 4)) more"
 fi
-[ "$ns" -gt 0 ] || echo "session: none live under $sd"
+echo "session: ${ns} live${sl:+ ($(printf '%s' "$sl" | cut -c1-150))}"
+
+# --- disk (use% and free for repo fs, $PCREC_TMPDIR fs, /tmp; ! at >= 85%; scratch size only when quick)
+. "$here/tmpdir.sh" 2>/dev/null
+dl=""
+for pair in "repo:$main" "tmp:${PCREC_TMPDIR:-/var/tmp}" "/tmp:/tmp"; do
+    lab=${pair%%:*}; path=${pair#*:}
+    [ "$lab" = "/tmp" ] && path=/tmp
+    row=$($TO 3 df -P -h "$path" 2>/dev/null | awk 'NR == 2 { print $5, $4 }')
+    [ -n "$row" ] || { dl="$dl${dl:+, }$lab ?"; continue; }
+    u=${row%% *}; fr=${row#* }
+    flag=""; [ "${u%\%}" -ge 85 ] 2>/dev/null && flag="!"
+    dl="$dl${dl:+, }$lab $u$flag ${fr} free"
+done
+sc=$($TO 1 du -sh "${PCREC_TMPDIR:-/var/tmp}/scratch" 2>/dev/null | cut -f1)
+sn=$($TO 1 du -sh "${PCREC_TMPDIR:-/var/tmp}/snap" 2>/dev/null | cut -f1)
+echo "disk: $dl${sc:+; scratch $sc}${sn:+, snap $sn}"
+
+# --- context: last assistant usage line of each registered manager session's transcript (numbers only)
+projects=${GESTALT_PROJECTS:-$claude_home/projects}
+snap=$claude_home/statusline/usage-latest.json
+cl=""
+if [ -d "$roledir" ]; then
+    for rf in "$roledir"/*; do
+        [ -f "$rf" ] || continue
+        sid=$(basename "$rf")
+        case $sid in *[!A-Za-z0-9_-]*) continue ;; esac
+        role=$(head -1 "$rf" 2>/dev/null)
+        case $role in main|kit) ;; *) continue ;; esac
+        tf=$(ls "$projects"/*/"$sid".jsonl 2>/dev/null | head -1)
+        [ -n "$tf" ] || { cl="$cl${cl:+ / }$role ?"; continue; }
+        n=$($TO 3 tail -c 1500000 "$tf" 2>/dev/null | $TO 3 jq -Rr 'fromjson? | select(type == "object" and .type == "assistant" and (.message.usage? != null))
+            | .message.usage | (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)' 2>/dev/null | tail -1)
+        case $n in ''|*[!0-9]*) cl="$cl${cl:+ / }$role ?" ;; *) cl="$cl${cl:+ / }$role $((n / 1000))k" ;; esac
+    done
+fi
+win=$($TO 2 jq -r '.context_window.window_size // empty' "$snap" 2>/dev/null)
+case $win in ''|*[!0-9]*) win="" ;; *) win=" (window $((win / 1000))k)" ;; esac
+echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
+
+# --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
+# statusline.sh from Claude Code's own rate_limits input); stale once a window has reset or it is >30 min old
+sub="unavailable (check /usage)"
+if [ -f "$snap" ]; then
+    r=$($TO 2 jq -r '[.captured_at // 0, .five_hour.used_percentage // "", .five_hour.resets_at // 0, .seven_day.used_percentage // "", .seven_day.resets_at // 0] | @tsv' "$snap" 2>/dev/null)
+    if [ -n "$r" ]; then
+        IFS=$'\t' read -r cap p5 r5 p7 r7 <<< "$r"
+        case $cap in ''|*[!0-9]*) cap=0 ;; esac
+        if [ -n "$p5" ] && [ -n "$p7" ] && [ "$cap" -gt 0 ]; then
+            age=$((now - cap))
+            if [ "$age" -gt 1800 ] || [ "$r5" -lt "$now" ]; then
+                sub="stale: 5h ${p5}% · 7d ${p7}% · captured $(fmt_age $age) ago (check /usage)"
+            else
+                sub="5h ${p5}% (resets in $(fmt_age $((r5 - now)))) · 7d ${p7}% · captured $(fmt_age $age) ago"
+            fi
+        fi
+    fi
+fi
+echo "subscription: $sub"
+
+# --- git (main tree, then pcrec-bench as a compact suffix)
+git_one() { # DIR LABEL
+    local o br=? ab="" m u names sha age
+    o=$($TO 2 git -C "$1" status --porcelain=v1 -b --untracked-files=normal 2>/dev/null) || return 0
+    br=$(printf '%s\n' "$o" | sed -n '1s/^## //; 1s/\.\.\..*//; 1s/ \[.*//; 1p')
+    ab=$(printf '%s\n' "$o" | sed -n '1s/.*\[\(.*\)\]$/\1/p; 1s/.*\[.*//p' | sed 's/ahead /+/; s/behind /-/; s/, //')
+    m=$(printf '%s\n' "$o" | tail -n +2 | grep -vc '^??')
+    u=$(printf '%s\n' "$o" | tail -n +2 | grep -c '^??')
+    names=""
+    [ "$u" -gt 0 ] && [ "$u" -le 3 ] && names=" ($(printf '%s\n' "$o" | grep '^??' | cut -c4- | tr '\n' ' ' | sed 's/ $//'))"
+    sha=$($TO 2 git -C "$1" log -1 --format='%h %ct' 2>/dev/null)
+    age=$(fmt_age $((now - ${sha#* })))
+    printf '%s %s%s, %s mod, %s untracked%s, %s %s ago' "$2" "$br" "${ab:+ $ab}" "$m" "$u" "$names" "${sha% *}" "$age"
+}
+gl=$(git_one "$main" "")
+bd=$(dirname "$main")/pcrec-bench
+[ -d "$bd/.git" ] && gb=$(git_one "$bd" "bench") || gb=""
+echo "git: ${gl# }${gb:+ | $gb}"
 
 # --- CI
 ci=$($TO 20 gh run list --branch main --limit 1 --json status,conclusion,headSha,createdAt \

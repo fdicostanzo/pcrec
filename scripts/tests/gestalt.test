@@ -22,10 +22,23 @@ printf '%s\n' "$out" | grep -qx 'ci: unavailable' && ok "ci: unavailable" || bad
 [ "$(printf '%s\n' "$out" | tail -1)" = "gestalt: DONE rc=0" ] && ok "DONE line last" || bad "last line: $(printf '%s\n' "$out" | tail -1)"
 n=$(printf '%s\n' "$out" | wc -l)
 [ "$n" -le 12 ] && ok "$n lines (<= 12)" || bad "$n lines"
-for k in load box queue lanes unread; do
+for k in load box queue lanes disk context subscription git unread; do
     printf '%s\n' "$out" | grep -q "^$k:" && ok "has $k line" || bad "missing $k line"
 done
 printf '%s\n' "$out" | grep -q '^unread: \*kit=' && ok "--owner kit marks kit" || bad "owner mark"
 [ "$cm" = "$(cur main)" ] && [ "$ck" = "$(cur kit)" ] && ok "monread cursors unchanged" || bad "cursor moved"
+# context: fake roles dir + fake transcript carrying a canary string that must never be printed
+mkdir -p "$T/roles" "$T/proj/p"
+sid=aaaa1111-2222-3333-4444-555566667777
+echo main > "$T/roles/$sid"
+CAN=CANARY_SECRET_TEXT_9137
+{ printf '{"type":"assistant","message":{"content":"%s","usage":{"input_tokens":1,"cache_creation_input_tokens":1000,"cache_read_input_tokens":9000}}}\n' "$CAN"
+  printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"
+  printf '{"type":"assistant","message":{"content":"%s","usage":{"input_tokens":5,"cache_creation_input_tokens":2000,"cache_read_input_tokens":123000}}}\n' "$CAN"
+  printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"; } > "$T/proj/p/$sid.jsonl"
+out2=$(GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/none" PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" 2>&1)
+printf '%s\n' "$out2" | grep -qx 'context: main 125k' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
+printf '%s\n' "$out2" | grep -q "$CAN" && bad "canary leaked" || ok "no transcript content in output"
+printf '%s\n' "$out2" | grep -qx 'subscription: unavailable (check /usage)' && ok "subscription unavailable without snapshot" || bad "subscription line"
 echo "gestalt.test: $pass pass, $fail fail"
 [ "$fail" = 0 ]

@@ -22,7 +22,7 @@ what you remember):
     0. Run `scripts/gestalt --owner main`; include its 'load' and 'sessions'
        lines in the one-line reply only when something is unusual (load >
        nproc, a session gone, CI red).
-    1. `scripts/monread main``scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
+    1. `scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
        triage lane, monitoring.md §2); GREEN/INFO lines -> refresh owner.md.
     2. Read docs/dev/owner.md "Waiting on": for every entry older than 60
        min, send that ONE session one line naming the thing and asking its

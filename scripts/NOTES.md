@@ -163,3 +163,8 @@ Frank's idea: the prompt names the sections the deliverable must have, and the a
 
 ## Per-session hook roles (hookrole, 2026-11-07)
 `session_role main|kit` registers the manager session (`$CLAUDE_CODE_SESSION_ID` == the hook input's `session_id`) in worktrees/.mgr/roles/<id>. `hooks/monitor_unread.sh` reads `monread <role>`; `hooks/post_compact.sh` injects main = owner.md + wake.md, kit = memfn wake (worktrees/memfn copy preferred); no role = a notice, nothing consumed or injected; agent_id = silent. Test: tests/hookrole.test. lanecheck: `owed: none` needs a line starting OWED; a rulings file with entries needs its last id in STATE AT HANDOFF.
+
+## gestalt disk/context/subscription/git lines (gestalt2, 2026-11-07)
+- context: roles dir (`worktrees/.mgr/roles/<session_id>` = main|kit) -> `~/.claude/projects/*/<session_id>.jsonl`; `tail -c 1.5M | jq -R 'fromjson?'` last assistant `message.usage`, input + cache_creation + cache_read; only numbers are extracted. Window comes from the statusline snapshot's `context_window.window_size` (whichever session wrote it last).
+- sessions: pid -> `~/.claude/sessions/<pid>.json` `.sessionId` -> role file. Env overrides for the test: GESTALT_ROLES_DIR, GESTALT_PROJECTS, GESTALT_CLAUDE_HOME.
+- subscription: `~/.claude/statusline/usage-latest.json` (written by the user's statusline.sh); stale when captured_at > 30 min or the 5h window has reset. `du` of scratch/ is capped at 1 s and usually omitted (48G).
