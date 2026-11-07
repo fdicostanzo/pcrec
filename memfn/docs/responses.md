@@ -3228,3 +3228,13 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Results: 3,430 window units, 750 moving; 207 row-1-class units, 166 moving.
   - Nothing pcrec emits or reads changes.
   - Merge order: S2b and S2a are independent. S2c (lane/memfn-s2c, which includes both) is delivered after the S2d window and S2e.
+
+- done (CORRECTED): 2026-11-07 — **R-35 S2a, re-delivered** — branch `lane/memfn-s2a` @ 252e0a1cb. The 2026-11-06 done line's "K138 is FIXED with this commit" was WRONG at 7355ea430: the loader still accepted any value_e6, there was no _Static_assert, and known_issues still said OPEN. Main's merge review caught it.
+  - Now on the branch (lane s2ak138, report docs/dev/lanes/s2ak138_report.md):
+    - 535a2e78d: the loader refuses |value_e6| > 1e15 at load on both formats, matching the kit's accept range (negatives within the bound stay legal: derived saving rows). measures.md §2.2 gains the bound sentence and §7 a row.
+    - `_Static_assert(KS_MEAS_MAX == MF_MEASURE_MAX)` in src/gen/memfn_sites.c.
+    - S2912 + two fixtures.
+    - K138 marked FIXED in known_issues.
+    - 252e0a1cb: S2910 now declares BUILD-REFUSED, because the new assert stops `make`, as intended.
+  - Re-validation GREEN: 491 strict, 492 sections (incl. registry/knowledge/measures), 493 mech S2900-S2912.
+- S2b is unchanged: `lane/memfn-s2b` @ c84e759d3 (MERGE verdict given).
