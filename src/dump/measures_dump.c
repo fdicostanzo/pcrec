@@ -21,12 +21,14 @@ static int meas_sb_write(void *ctx, const char *p, size_t n)
 }
 
 /* The index: one row per committed set, in the store's order (§5.1's
- * columns that exist at M0). */
+ * columns that exist at M0, then `file_cells`: the committed file's cell
+ * count, which the cell-less embed does not hold; measures.md §6¶1). */
 static void list_index(StrBuf *sb)
 {
     static const char *const cols[] = {
         "id", "rev", "class", "box", "tier", "composite", "method",
         "default_for", "rows", "null_rows", "values_digest", "source",
+        "file_cells",
     };
     pcrec_sb_puts(sb, "# pcrec measurement sets (spec: docs/spec/measures.md)\n"
                       "#section sets\n#");
@@ -35,18 +37,19 @@ static void list_index(StrBuf *sb)
     pcrec_sb_putc(sb, '\n');
     for (size_t i = 0; i < pcrec_meas_store_count(); i++) {
         const KsMeasSet *s = pcrec_meas_store_set(i, NULL, NULL);
-        char rev[16], rows[24], nulls[24], hex[17];
+        char rev[16], rows[24], nulls[24], hex[17], fcells[24];
         size_t nn = 0;
         for (size_t r = 0; r < s->nrows; r++) nn += s->rows[r].value_e6 == KS_MEAS_EMPTY;
         snprintf(rev, sizeof rev, "%u", s->rev);
         snprintf(rows, sizeof rows, "%zu", s->nrows);
         snprintf(nulls, sizeof nulls, "%zu", nn);
+        snprintf(fcells, sizeof fcells, "%zu", pcrec_meas_store_file_cells(i));
         pcrec_ks_meas_hex(s->digest, hex);
         {
             const char *cells[] = {
                 s->hdr[KS_MH_ID], rev, s->hdr[KS_MH_CLASS], s->hdr[KS_MH_BOX],
                 s->hdr[KS_MH_TIER], s->hdr[KS_MH_COMPOSITE], s->hdr[KS_MH_METHOD],
-                pcrec_meas_default_for(s), rows, nulls, hex, "store",
+                pcrec_meas_default_for(s), rows, nulls, hex, "store", fcells,
             };
             pcrec_sb_row(sb, cells, sizeof cells / sizeof *cells);
         }

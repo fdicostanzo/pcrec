@@ -122,10 +122,94 @@ static const KsMeasSet pcrec_meas_s0 = {
     .nrows = 68, .rows = pcrec_meas_s0_rows,
 };
 
+/* zen4-grid3@1 */
+static const char *const pcrec_meas_s1_cards[] = {
+    "kit", "enter", "3", "kind;entry", "walkbytes", "artifact die1 g256", "delta 1048576", "7", "7", "twin-per-arm", "-", "-", "-",
+    "kit", "find_byte", "3", "form", "ratio", "streamed-fresh pool16Mi miss-only", "slope 65536,262144,1048576", "7", "7", "twin-per-arm;bimodal-test", "-", "-", "kit:form.walk;kit:form.libc;kit:form.pair",
+    "kit", "find_hit", "3", "form;landing;split;gap", "walkbytes", "streamed-fresh pool16Mi landed:periodic|random", "delta 1048576", "7", "7", "twin-per-arm", "-", "-", "kit:form.walk;kit:form.libc;kit:form.pair",
+    "kit", "verify_cmp", "3", "form;cls;pass", "walkbytes", "candidate-array pass:0|1/2", "delta 1048576", "7", "7", "twin-per-arm", "-", "-", "kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp",
+};
+static const char *const pcrec_meas_s1_cells[] = {
+    0
+};
+static const char *const pcrec_meas_s1_members[] = {
+    0
+};
+static const KsMeasRow pcrec_meas_s1_rows[] = {
+    { { "kit.enter.1.NONE", "walkbytes", "1097315234", "215243394", "6657931", "49", "measured", "-", "-", "-", "-", "slot J5", }, 1097315234LL, 2, 1, 6657931LL },
+    { { "kit.enter.3.NONE", "walkbytes", "41460754", "8099627", "1356342", "49", "measured", "-", "-", "-", "-", "slot J5", }, 41460754LL, 2, 1, 1356342LL },
+    { { "kit.enter.4.NONE", "walkbytes", "43675666", "8552496", "1957837", "49", "measured", "-", "-", "-", "-", "slot J5", }, 43675666LL, 2, 1, 1957837LL },
+    { { "kit.enter.5.NONE", "walkbytes", "5057971", "978394", "187677", "49", "measured", "-", "-", "-", "-", "slot J5", }, 5057971LL, 2, 1, 187677LL },
+    { { "kit.enter.6.NONE", "walkbytes", "38926996", "7572145", "1263116", "49", "measured", "-", "-", "-", "-", "slot J5", }, 38926996LL, 2, 1, 1263116LL },
+    { { "kit.find_byte.libc", "ratio", "38049", "7331", "609", "49", "measured", "-", "-", "kit:form.libc=d7672e87c1dd6d97", "-", "slot J2", }, 38049LL, 1, 1, 609LL },
+    { { "kit.find_byte.pair", "ratio", "73843", "14297", "1277", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 73843LL, 1, 1, 1277LL },
+    { { "kit.find_byte.walk", "ratio", "1000000", "192821", "1076", "49", "measured", "-", "-", "kit:form.walk=bc7b2e02f06fe955", "-", "slot J2", }, 1000000LL, 1, 1, 1076LL },
+    { { "kit.find_hit.libc.periodic.one.1024", "walkbytes", "16247767", "3176391", "556954", "49", "measured", "-", "-", "kit:form.libc=d7672e87c1dd6d97", "-", "slot J3", }, 16247767LL, 2, 1, 556954LL },
+    { { "kit.find_hit.libc.periodic.one.256", "walkbytes", "19207980", "3746646", "345413", "49", "measured", "-", "-", "kit:form.libc=d7672e87c1dd6d97", "-", "slot J3", }, 19207980LL, 2, 1, 345413LL },
+    { { "kit.find_hit.libc.random.one.1024", "walkbytes", "55815981", "10881107", "658297", "49", "measured", "-", "-", "kit:form.libc=d7672e87c1dd6d97", "-", "slot J3", }, 55815981LL, 2, 1, 658297LL },
+    { { "kit.find_hit.libc.random.one.256", "walkbytes", "54632973", "10680587", "501385", "49", "measured", "-", "-", "kit:form.libc=d7672e87c1dd6d97", "-", "slot J3", }, 54632973LL, 2, 1, 501385LL },
+    { { "kit.find_hit.pair.periodic.alt.1024", "walkbytes", "83154198", "16058119", "5514347", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 83154198LL, 2, 1, 5514347LL },
+    { { "kit.find_hit.pair.periodic.alt.256", "walkbytes", "39437556", "7658784", "841618", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 39437556LL, 2, 1, 841618LL },
+    { { "kit.find_hit.pair.periodic.one.1024", "walkbytes", "83985086", "16405929", "5239119", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 83985086LL, 2, 1, 5239119LL },
+    { { "kit.find_hit.pair.periodic.one.256", "walkbytes", "38333593", "7402698", "827446", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 38333593LL, 2, 1, 827446LL },
+    { { "kit.find_hit.pair.random.alt.1024", "walkbytes", "141147653", "27597838", "2546493", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 141147653LL, 2, 1, 2546493LL },
+    { { "kit.find_hit.pair.random.alt.256", "walkbytes", "95657352", "18623873", "1001560", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 95657352LL, 2, 1, 1001560LL },
+    { { "kit.find_hit.pair.random.one.1024", "walkbytes", "130362238", "25562718", "2483595", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 130362238LL, 2, 1, 2483595LL },
+    { { "kit.find_hit.pair.random.one.256", "walkbytes", "88893809", "17151908", "1329406", "49", "measured", "-", "-", "kit:form.pair=b866902a13e46ba1", "-", "slot J2p", }, 88893809LL, 2, 1, 1329406LL },
+    { { "kit.find_hit.walk.periodic.one.1024", "walkbytes", "30591248", "5990414", "1230854", "49", "measured", "-", "-", "kit:form.walk=bc7b2e02f06fe955", "-", "slot J3", }, 30591248LL, 2, 1, 1230854LL },
+    { { "kit.find_hit.walk.periodic.one.256", "walkbytes", "29134980", "5644721", "1772381", "49", "measured", "-", "-", "kit:form.walk=bc7b2e02f06fe955", "-", "slot J3", }, 29134980LL, 2, 1, 1772381LL },
+    { { "kit.find_hit.walk.random.one.1024", "walkbytes", "50541639", "9733353", "26273532", "49", "measured", "-", "-", "kit:form.walk=bc7b2e02f06fe955", "-", "slot J3", }, 50541639LL, 2, 1, 26273532LL },
+    { { "kit.find_hit.walk.random.one.256", "walkbytes", "43531860", "8536803", "18149325", "49", "measured", "-", "-", "kit:form.walk=bc7b2e02f06fe955", "-", "slot J3", }, 43531860LL, 2, 1, 18149325LL },
+    { { "kit.verify_cmp.rc-memcmp.l1.p0", "walkbytes", "0", "-22355", "116015", "49", "measured", "-", "-", "kit:form.rc-memcmp=8821e9cc925d59c2", "fused-load-op", "slot J4 fused-compare bound r_max 53751; evidence: windows s2d-20261106 and s2d-20261107a, two null bases, both negative; the arms-only fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)", }, 0LL, 2, 1, 116015LL },
+    { { "kit.verify_cmp.rc-memcmp.l1.p50", "walkbytes", "0", "-20352", "105615", "49", "measured", "-", "-", "kit:form.rc-memcmp=8821e9cc925d59c2", "fused-load-op", "slot J4 fused-compare bound r_max 53751; evidence: windows s2d-20261106 and s2d-20261107a, two null bases, both negative; the arms-only fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)", }, 0LL, 2, 1, 105615LL },
+    { { "kit.verify_cmp.rc-words.w1.p0", "walkbytes", "20652", "4043", "54465", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4 sub-resolution r 53751", }, 20652LL, 2, 1, 54465LL },
+    { { "kit.verify_cmp.rc-words.w1.p50", "walkbytes", "38837", "7555", "41753", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4", }, 38837LL, 2, 1, 41753LL },
+    { { "kit.verify_cmp.rc-words.w2.p0", "walkbytes", "7865977", "1521091", "73121", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4", }, 7865977LL, 2, 1, 73121LL },
+    { { "kit.verify_cmp.rc-words.w2.p50", "walkbytes", "8229814", "1596326", "87189", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4", }, 8229814LL, 2, 1, 87189LL },
+    { { "kit.verify_cmp.rc-words.w3.p0", "walkbytes", "13654226", "2635876", "245430", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4", }, 13654226LL, 2, 1, 245430LL },
+    { { "kit.verify_cmp.rc-words.w3.p50", "walkbytes", "11695981", "2254082", "693187", "49", "measured", "-", "-", "kit:form.rc-words=3e58ff9dd5712452", "-", "slot J4", }, 11695981LL, 2, 1, 693187LL },
+    { { "kit.verify_cmp.settest.c1.p0", "walkbytes", "0", "-22986", "119301", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "fused-load-op", "slot J4 fused-compare bound r_max 53751; evidence: windows s2d-20261106 and s2d-20261107a, two null bases, both negative; the arms-only fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)", }, 0LL, 2, 1, 119301LL },
+    { { "kit.verify_cmp.settest.c1.p50", "walkbytes", "0", "-20694", "107405", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "fused-load-op", "slot J4 fused-compare bound r_max 53751; evidence: windows s2d-20261106 and s2d-20261107a, two null bases, both negative; the arms-only fused/unfused step +0.14 wb (span_cards s2d2/analysis.md)", }, 0LL, 2, 1, 107405LL },
+    { { "kit.verify_cmp.settest.c2.p0", "walkbytes", "25519", "4996", "86477", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "-", "slot J4 sub-resolution r 53751", }, 25519LL, 2, 1, 86477LL },
+    { { "kit.verify_cmp.settest.c2.p50", "walkbytes", "0", "-1942", "47541", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "-", "slot J4 sub-resolution r 47541", }, 0LL, 2, 1, 47541LL },
+    { { "kit.verify_cmp.settest.cn.p0", "walkbytes", "6610053", "1274811", "572429", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "-", "slot J4", }, 6610053LL, 2, 1, 572429LL },
+    { { "kit.verify_cmp.settest.cn.p50", "walkbytes", "15963793", "3076323", "179674", "49", "measured", "-", "-", "kit:form.settest=68dc869d44ec0026", "-", "slot J4", }, 15963793LL, 2, 1, 179674LL },
+};
+static const KsMeasSet pcrec_meas_s1 = {
+    .hdr = {
+        "2",
+        "zen4-grid3",
+        "1",
+        "x86_64/zen4",
+        "x86-64-v4 avx512f avx2 sse4.2 popcnt bmi2",
+        "scratch",
+        "0",
+        "",
+        "kit.find_byte.walk",
+        "kit-grid@3",
+        "s2d-20261107a record:d2c9fb97fb433d50b892731b8f28d315a6dccf70ff3b978ea78345721f15263b",
+        "AMD Ryzen 7 7700X 8-Core Processor, CPU 7",
+        "gcc 15.2.0 -O2 -march=x86-64 -mtune=generic",
+        "glibc 2.43",
+        "1e4999d1c3e88b98bff91d4a973c4a18ec3b4fdf",
+        "skipped:not-taken",
+        "0",
+        "38",
+        "2d2b3c0861443bec",
+    },
+    .rev = 1u, .format = 2, .composite = 0,
+    .digest = 0x2d2b3c0861443becull,
+    .cards = { 4, pcrec_meas_s1_cards },
+    .cells = { 0, pcrec_meas_s1_cells },
+    .members = { 0, pcrec_meas_s1_members },
+    .nrows = 38, .rows = pcrec_meas_s1_rows,
+};
+
 static const KsMeasStoreEntry pcrec_meas_store_tbl[] = {
-    { "zen4-grid1@1", &pcrec_meas_s0 },
+    { "zen4-grid1@1", &pcrec_meas_s0, 0 },
+    { "zen4-grid3@1", &pcrec_meas_s1, 826 },
 };
 
 static const KsMeasDefault pcrec_meas_defaults[] = {
-    { "idk", "zen4-grid1", 1u },
+    { "idk", "zen4-grid3", 1u },
 };

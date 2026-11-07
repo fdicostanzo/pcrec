@@ -80,6 +80,11 @@ const char *pcrec_meas_store_name(size_t i)
     return i < PCREC_MEAS_NSTORE ? pcrec_meas_store_tbl[i].name : NULL;
 }
 
+size_t pcrec_meas_store_file_cells(size_t i)
+{
+    return i < PCREC_MEAS_NSTORE ? pcrec_meas_store_tbl[i].file_cells : 0;
+}
+
 /* The store's set `id` at `rev` (0: its latest rev), or NULL. */
 static const KsMeasSet *store_find(const char *id, size_t idlen, uint32_t rev)
 {
