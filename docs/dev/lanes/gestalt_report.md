@@ -2,7 +2,7 @@
 
 ## STATE AT HANDOFF
 
-Rulings file docs/dev/lanes/gestalt_rulings.md: empty (no entries applied). Complete, no owed runs.
+Rulings file docs/dev/lanes/gestalt_rulings.md: empty (no entries applied). Complete. OWED: none
 
 Delivered: `scripts/gestalt` (read-only, ~1.4 s, 9-10 lines, exit 0 always, ends `gestalt: DONE rc=0`),
 `scripts/tests/gestalt.test` (11 checks, <1 s: line bound, exit 0 with a failing gh stub, DONE last, monread
