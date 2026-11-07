@@ -3206,3 +3206,25 @@ the compiler, and is never adopted silently. Proposed for main to file
   2. **FINDING ABOUT PCREC (CONTRACT-5, for known_issues):** the measures loader accepts a set row with value_e6 > MF_MEASURE_MAX (1e15). The kit then refuses it at mf_art_begin, so every compile against that set fails with "internal error: the memfn kit refused ...". Repro: a FILE set with one kit row at 2e15 and its digest fixed; 3 patterns gave rc 1 and the control rc 0 (review r4 verify.md). Fix shape: the loader refuses |value| past the kit's bound, as a §7 refusal row. S2a's noise field does this for noise.
   3. **PLAN row (SLOT-7):** one kit noise/policy constant table (MATERIAL, MAX_SET, HORS_MIN, the coverage factor z, the gate default) at span_pick row 1, so plan_cost.def's policy rows stop narrowing D176's "rows migrate into the sets" silently.
   4. **NOTED (COST-3):** rev 1 drops J6's vany cards (unrouted, no reader). J6 keeps vrun under D188.
+
+- done: 2026-11-06 — **R-35 stage 2 unit S2a** (noise channel + set FORMAT 2) — branch `lane/memfn-s2a` @ 7355ea430. Reports: docs/dev/lanes/s2a_report.md and s2afix_report.md. Review: docs/dev/reviews/2026-11-06-r8-memfn-s2a.md (on the branch), ruled and fixed.
+  - What it is:
+    - `mf_measure` gains `noise_state` (UNSTATED is refused) and `noise_e6`: an MF_SITE_ABI 23->24 event, no pcrec abi.
+    - Set FORMAT 2 with digest domain `pcrec-meas-2` (covers noise and class), plus measures.md's spec hunks. The handed digest covers key/state/value/noise (SEAM-1).
+    - K138's fix form: two literals + a _Static_assert. **K138 is FIXED with this commit.**
+    - Zero movers.
+  - Validation GREEN on the box queue, 460-468:
+    - strict; kit sections;
+    - ident x3 (23 arms each, failed 0);
+    - make test;
+    - mech x3 (72 rows, S2900-S2911 red when planted).
+    - Two reds were fixed on the branch before green: 461 (limits allowlist KS_MEAS_MAX, d9afba62b) and 465 (two plan.md line cites, 7355ea430).
+  - The branch includes the kit records (merge of lane/memfn-k1102 at 1f14b70bd).
+  - **R-35's match_api hunk is CLOSED**: no match_api text moves, because the seam field is not caller-visible through match_api.
+  - **Kit defect noted (r8 SEAM-2, PLAN):** the kit does not check an UNSTATED `mf_akind.present` (pre-existing). It is fixed in the kit's next seam-touching unit.
+- done: 2026-11-06 — **R-35 stage 2 unit S2b** (census0, step 0) — branch `lane/memfn-s2b` @ c84e759d3. Report: docs/dev/lanes/s2b_report.md.
+  - census0.py replaces smp20.py. It covers python instruments only, held by a byte-for-byte control and a red sabotage (S2920); there was no separate code round.
+  - J0 GREEN (job 440): 5,492 compiles, control GREEN, census0.out committed.
+  - Results: 3,430 window units, 750 moving; 207 row-1-class units, 166 moving.
+  - Nothing pcrec emits or reads changes.
+  - Merge order: S2b and S2a are independent. S2c (lane/memfn-s2c, which includes both) is delivered after the S2d window and S2e.
