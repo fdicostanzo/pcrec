@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# statusline.sh self-test: exit 0, one display line, session snapshot = full input + captured_at,
+# usage-latest written even without rate_limits, ctx against autoCompactWindow, speed. Scratch only.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+T=$(mktemp -d "${TMPDIR:-/var/tmp}/statusline.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_TMPDIR="$T/tmp" PCREC_STATUSLINE_USER_SETTINGS="$T/settings.json"
+printf '{"autoCompactWindow":400000}\n' > "$T/settings.json"
+S="$PCREC_TMPDIR/statusline"
+now=$(date +%s)
+cat > "$T/in.json" <<J
+{"session_id":"sess-1","transcript_path":"/x/t.jsonl","cwd":"/x","model":{"id":"m","display_name":"Fable"},
+ "workspace":{"current_dir":"/x"},"version":"2.1","effort":{"level":"high"},
+ "cost":{"total_cost_usd":1.2,"total_duration_ms":5},
+ "context_window":{"context_window_size":1000000,"used_percentage":33,
+   "current_usage":{"input_tokens":5,"cache_creation_input_tokens":1000,"cache_read_input_tokens":329000}},
+ "rate_limits":{"five_hour":{"used_percentage":23.4,"resets_at":$((now+9000))},"seven_day":{"used_percentage":41.2,"resets_at":$((now+90000))}}}
+J
+t0=$(date +%s%N)
+out=$(timeout 10 bash "$here/statusline.sh" < "$T/in.json"); rc=$?
+ms=$(( ($(date +%s%N) - t0) / 1000000 ))
+[ "$rc" = 0 ] && ok "exit 0" || bad "rc=$rc"
+[ "$(printf '%s\n' "$out" | wc -l)" = 1 ] && ok "one display line" || bad "lines: $out"
+printf '%s' "$out" | grep -q 'ctx .*330k/400k' && ok "ctx tokens against autoCompactWindow" || bad "ctx: $out"
+printf '%s' "$out" | grep -q '5h .*23' && printf '%s' "$out" | grep -q '7d .*41' && ok "5h and 7d shown" || bad "usage: $out"
+[ "$ms" -lt 1000 ] && ok "ran in ${ms} ms" || bad "slow: ${ms} ms"
+f="$S/session-sess-1.json"
+if [ -f "$f" ] && jq -e --slurpfile i "$T/in.json" '(. | del(.captured_at)) == $i[0] and (.captured_at | type == "number")' "$f" >/dev/null; then
+    ok "session file = full input + captured_at"; else bad "session file"; fi
+jq -e '.five_hour.used_percentage == 23.4 and .session_id == "sess-1" and .captured_at > 0' "$S/usage-latest.json" >/dev/null \
+    && ok "usage-latest with rate_limits" || bad "usage-latest"
+# no rate_limits, no session id, no settings key -> still prints, still writes usage-latest (nulls)
+rm -f "$S/usage-latest.json"; printf '{}\n' > "$T/settings.json"
+out2=$(printf '{"model":{"display_name":"X"}}' | timeout 10 bash "$here/statusline.sh"); rc=$?
+[ "$rc" = 0 ] && [ -n "$out2" ] && ok "minimal input prints, exit 0" || bad "minimal: rc=$rc"
+jq -e '.five_hour == null and .seven_day == null and .session_id == null and .captured_at > 0' "$S/usage-latest.json" >/dev/null \
+    && ok "usage-latest written without rate_limits (nulls)" || bad "usage-latest nulls"
+out3=$(printf 'not json' | timeout 10 bash "$here/statusline.sh"); rc=$?
+[ "$rc" = 0 ] && [ -n "$out3" ] && ok "garbage input prints, exit 0" || bad "garbage: rc=$rc"
+# prune: an 8-day-old session file goes, a fresh one stays
+touch -d '8 days ago' "$S/session-old.json"
+printf '{}' | timeout 10 bash "$here/statusline.sh" >/dev/null
+[ ! -e "$S/session-old.json" ] && [ -f "$f" ] && ok "prune >7d only" || bad "prune"
+[ -z "$(find "$HOME/.claude/statusline" -newer "$T/in.json" 2>/dev/null)" ] && ok "nothing written under ~/.claude/statusline" || bad "wrote under ~/.claude"
+echo "statusline.test: $pass pass, $fail fail"
+[ "$fail" = 0 ]
