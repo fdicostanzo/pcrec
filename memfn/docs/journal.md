@@ -3506,3 +3506,11 @@ Main ruled on the four kit findings (D186 add. 2):
   - REV15-10: the tags grammar, and a check that the base is not fused.
 - RULED: window 2's FULL is ACCEPTED as the stage 2 measurement, re-scored by the fixed est before S2e. All fixes go to lane s2c15fix (opus, worktree off d57f99ee4) while S2c's gates run; no timed binary changes.
 - 11-07: main ACKs S2d on one condition. Rev 1.5's rule becomes a STANDING RULE in span_cards.md for every future window: fused classes by the structural check of the timed code only, never by the sign; change only by a new revision + review before a window. One sabotage row or self-test fails on a non-fused class (S2950, plus r11's rows), named in the S2e delivery. Told main: the value is max(0, med) per REV15-5 (the scope is still structural only). OWED in S2e's brief.
+- 11-07: s2c15fix delivered (fd75d4119); all of REV15-1..10 fixed.
+  - Manifest-checked executables; stems from the pinned plan.tsv; exactly one subject read, and it is a compare; decoding stays inside the symbol range; a fused base is refused; value max(0, med).
+  - Draft inputs must equal their blobs at HEAD; "timed" is now the NON_TIMED exclusion list.
+  - Critic repros P1-P6 refused; P4 is the accepted residual, which the manifest check refuses.
+  - Window 2 re-scored IDENTICAL (FULL, digest 2d2b3c0861443bec; s2d2/r11_rows.txt).
+  - est selftest 52/0; slot sabotage 35/35 (S2953-S2963); no timed-code change. The diff is docs/span_cards only.
+- The gates had not started (main's 495 running): cancelled, s2c fast-forwarded to fd75d4119, 470-474 requeued (474 expects 35), watcher armed.
+- Next: S2e brief (set commit + DEFAULTS flip + main's standing-rule condition + S2a tip merge + the vcls residual + the abs_ns_e6 note), launched on gates green.
