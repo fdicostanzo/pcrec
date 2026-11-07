@@ -42,6 +42,12 @@
   (`docs/design/memfn/span_cards/s2d2/analysis.md`). All four medians are negative, so each value is 0 and
   each noise is `|med|` (116015, 105615, 119301, 107405 against `r_max` 53751). The STANDING RULE for these
   classes is span_cards §3.5 "Fused-compare classes".
+- **`abs_ns_e6` beside a 0 value.** Five rows hold `value_e6` 0 beside a raw NEGATIVE `abs_ns_e6`: the
+  four bound rows above (-22355, -20352, -22986, -20694) and the sub-resolution
+  `kit.verify_cmp.settest.c2.p50` (-1942). `abs_ns_e6` is the UNCLAMPED `med(abs_l)` (ns x 10^6 per event),
+  provenance only, read by no reader (`measures.md` §3.5¶3a, ¶3b): no digest, stamp, kit row or selection
+  reads it (by grep at S2e: only the column-name table of `src/core/ks_measures.c`, the views that print
+  it, `tests/knowledge/ks_ref.py`'s decode and the recompute's provenance compare).
 - **D188's facts** (span_cards §2.7): one declared target, the generic one. (a) the box's cpuid list (the
   header's `isa`) holds the baseline's features; (b) every fixture was built for the declared target
   (`class x86_64/zen4`, inside the digest); (c) the rows price that target's scalar variant only. No SIMD
