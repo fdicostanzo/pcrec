@@ -3577,3 +3577,8 @@ Main ruled on the four kit findings (D186 add. 2):
     (2) slot/vcls.py and vcls.out stay, because link/plan/est read them. Retiring them is a slot change, filed as a later cleanup (trigger: the next slot revision).
   - Fixed the lane's 488 expect matcher: it read the job's own rc line, not a number; it now reads collect.py's "== r33 collect COMPLETE: N compiles".
   - Jobs 487-489 queued.
+- 11-07: main: Frank gave the [XARCH-DEV] BUILD GO ("this should be next (at least in parallel) to unblock kit").
+  - Design: target_seam.md rev 1. The §11 PROPOSED items are adopted, EXCEPT the dispatch step (x86-64-v3 into the default list), which waits for a bench speed verdict.
+  - Kit edits are written emitter-shaped and ride [IR-FORM] (4); no kit split now.
+  - Main's lane xarch1 is writing target_seam_units.md (ordered units, owner per unit, which kit unit is first). HOLD all seam edits until that split arrives.
+  - Answered: S2f touches no seam site (docs/design/memfn/span_pick only).
