@@ -133,8 +133,13 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   synthetic consult, trace build only, since no kit row reads a set key
   before the kit's B4) makes the shell stamp the set, macro and
   `rx_info.measures`; no consult, an unknown role and a non-compound
-  control stamp `""`. Floor 14 checks. MEASURED on the unfixed tree: (A) red
-  on both arms. Mech rows S1291-S1295.
+  control stamp `""`; (C, span_pick S2a) a record's last two columns, the
+  MEASURED count and the noise digest of the handed rows, equal
+  `tests/knowledge/ks_ref.py handed` on mfixtures' format-2 `fx-f2` (count
+  > 0) and format-1 `fx-f1noise` (count 0). The record's columns: role, set,
+  two addresses, count, digest (positional). Floor 16 checks. MEASURED on
+  the unfixed tree: (A) red on both arms. Mech rows S1291-S1295, S2902,
+  S2904, S2905.
 - **run_part_analysis.sh** — [K113] (lane k113): a compound's parts read P's
   resolved analysis chain and analysis object (`PcrecEmitIn.meas`, the
   measure set's channel). Builds this tree with `-DPCREC_KS_TRACE` and counts

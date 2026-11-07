@@ -896,7 +896,8 @@ noted for main (§10 item 6).
 
 `[rev1 CONTRACT-8]` **The MFMEAS trace record** (`meas_record`, :123; built only with `PCREC_CAND_TRACE`)
 gains (i) the count of MEASURED rows and (ii) a TEXT digest of the handed triples: FNV-1a-64 over the lines
-`key TAB state TAB noise_e6 LF` in canonical key order, 16 lowercase hex. `[rev1.1 MFMEAS]` **The handed
+`key TAB state TAB value_e6 TAB noise_e6 LF` in canonical key order, 16 lowercase hex (`[r8 SEAM-1]` the handed
+VALUE joins the line: a record scoped to the noise alone left a wrong handed value unwitnessed). `[rev1.1 MFMEAS]` **The handed
 population** is the fill's, stated: `memfn_measures` hands only rows whose key starts `kit.` AND whose value is
 not empty (`memfn_sites.c:86-87` skips non-`kit.` keys and `null` rows), so the digest covers exactly those
 rows, and `tests/knowledge/ks_ref.py` computes the same digest from the FILE with the same filter written
@@ -988,7 +989,7 @@ span_pick.md:234-238 puts B's sampling noise (block bootstrap, "pcrec STATES it 
 2's MF_SITE_ABI event". **Decision: deferred to its producer.** No producer exists (`pcrec-analyze` writes
 no noise; the bundle format has no field), a blind compile's P is an authored prior with no sample, and
 row 1's witness compiles with data use the scratch `prose` bundle only. A seam field nobody writes and
-nobody reads is built ahead of need (D77). Trigger: [BENCH-WITHDATA]'s held-out bundles (plan.md:1717) or
+nobody reads is built ahead of need (D77). Trigger: [BENCH-WITHDATA]'s held-out bundles or
 row 1's with-data band, whichever first; then one MF_SITE_ABI event with its pcrec producer. For main
 (`[rev1.1 XREF]` §10 item 2): it amends span_pick.md:237-238's "stage 2's".
 

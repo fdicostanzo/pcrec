@@ -49,17 +49,22 @@ typedef enum { KS_MEAS_HEADER(KS_MEAS_H_ENUM) KS_MEAS_NHDR } KsMeasHdr;
 
 /* The four table sections the spec names besides `header`, each with its
  * fixed columns in the spec's order. `rows` is held typed (KsMeasRow); the
- * other three are held as cells. */
+ * other three are held as cells. `cells` has a column per format: format 2
+ * adds `events` after `round` (measures.md §2.2¶1a), so a cells table's width
+ * is its set's (`pcrec_ks_meas_cell_w`), KS_MEAS_NCELL1 or KS_MEAS_NCELL. */
 #define KS_MEAS_CARD_COLS(X) X(owner) X(quantity) X(ver) X(dims) X(unit) \
     X(subject) X(lengths) X(launches) X(rounds) X(aa_rule) X(gate_e6) X(env) X(deps)
 #define KS_MEAS_ROW_COLS(X) X(key) X(unit) X(value_e6) X(abs_ns_e6) X(noise_e6) \
     X(n) X(status) X(derivation) X(inputs) X(deps) X(tags) X(source)
-#define KS_MEAS_CELL_COLS(X) X(cell) X(group) X(arm) X(length) X(launch) X(round) X(ns_e6)
+#define KS_MEAS_CELL_HEAD(X) X(cell) X(group) X(arm) X(length) X(launch) X(round)
+#define KS_MEAS_CELL_COLS1(X) KS_MEAS_CELL_HEAD(X) X(ns_e6)
+#define KS_MEAS_CELL_COLS(X) KS_MEAS_CELL_HEAD(X) X(events) X(ns_e6)
 #define KS_MEAS_MEMBER_COLS(X) X(member) X(unit_key) X(unit_abs_ns_e6) X(box)
 #define KS_MEAS_COUNT(c) +1
 enum {
     KS_MEAS_NCARD   = 0 KS_MEAS_CARD_COLS(KS_MEAS_COUNT),
     KS_MEAS_NROWCOL = 0 KS_MEAS_ROW_COLS(KS_MEAS_COUNT),
+    KS_MEAS_NCELL1  = 0 KS_MEAS_CELL_COLS1(KS_MEAS_COUNT),
     KS_MEAS_NCELL   = 0 KS_MEAS_CELL_COLS(KS_MEAS_COUNT),
     KS_MEAS_NMEMBER = 0 KS_MEAS_MEMBER_COLS(KS_MEAS_COUNT)
 };
@@ -67,17 +72,33 @@ enum {
 #define KS_MEAS_COL_ENUM(c) KS_MR_##c,
 enum { KS_MEAS_ROW_COLS(KS_MEAS_COL_ENUM) };
 #undef KS_MEAS_COL_ENUM
+#define KS_MEAS_CELL_ENUM(c) KS_MC_##c,
+enum { KS_MEAS_CELL_COLS(KS_MEAS_CELL_ENUM) };   /* format 2's cell indices */
+#undef KS_MEAS_CELL_ENUM
 
-/* The empty `value_e6` (a NULL row's): the value the digest hashes for it. */
+/* The empty `value_e6` (a NULL row's): the value the digest hashes for it.
+ * Also the empty `noise_e6`: a `-` noise, and every row of a format-1 set. */
 #define KS_MEAS_EMPTY INT64_MIN
+
+/* The bound on a row's |`value_e6`| and on a format-2 `noise_e6`
+ * (measures.md §2.2¶3, ¶3a): 10^15, the kit's MF_MEASURE_MAX (memfn.h). The
+ * dependency rule above forbids reading the kit's header, so this is the
+ * second home of the one number; src/gen/memfn_sites.c and
+ * tests/knowledge/meas_store_check.c assert the two equal at build time
+ * (span_cards.md §4.1, K138). */
+#define KS_MEAS_MAX 1000000000000000LL
 
 /* One row of the `rows` section. Every column is kept as its text (`col`,
  * KS_MR_* indices); `value_e6` is also parsed, and `unit`/`status` coded by
- * the spec's table (§1.6: never 0). */
+ * the spec's table (§1.6: never 0). `noise_e6` is parsed on a format-2 set
+ * only (KS_MEAS_EMPTY for `-`); on format 1 the column is provenance text and
+ * the field is KS_MEAS_EMPTY on every row. Appended last: ksgen writes the
+ * pre-parse positionally. */
 typedef struct {
     const char *col[KS_MEAS_NROWCOL];
     int64_t     value_e6;
     uint8_t     unit_code, status_code;
+    int64_t     noise_e6;
 } KsMeasRow;
 
 /* A cells-held section: `nrows` rows of the section's fixed column count. */
@@ -93,6 +114,7 @@ typedef struct {
 typedef struct {
     const char *hdr[KS_MEAS_NHDR];
     uint32_t    rev;
+    uint8_t     format;         /* the header's `format`, 1 or 2 */
     uint8_t     composite;
     uint64_t    digest;         /* values_digest, as read (= recomputed) */
     KsMeasTab   cards, cells, members;
@@ -110,10 +132,16 @@ int pcrec_ks_meas_parse(const KsAlloc *a, const char *text, size_t len,
 int pcrec_ks_meas_read_file(const KsAlloc *a, const char *path,
                             const KsMeasSet **out, KsErr *err);
 
-/* The values digest of `set`'s rows (§1.6): FNV-1a-64 over the 13 domain
- * bytes `pcrec-meas-1\0`, then per row in canonical order the key, a NUL,
- * the unit byte, the status byte and `value_e6` as int64 LE. */
+/* The values digest of `set`'s rows (measures.md §3.3), by its format's
+ * role: format 1 is FNV-1a-64 over the 13 domain bytes `pcrec-meas-1\0`,
+ * then per row in canonical order the key, a NUL, the unit byte, the status
+ * byte and `value_e6` as int64 LE; format 2 hashes `pcrec-meas-2\0`, the
+ * header's `class` and a NUL, then each row as format 1 does followed by
+ * `noise_e6` as int64 LE. */
 uint64_t pcrec_ks_meas_digest(const KsMeasSet *set);
+
+/* The width of `set`'s cells table: its format's column count. */
+size_t pcrec_ks_meas_cell_w(const KsMeasSet *set);
 
 /* The digest as the stamp spells it: 16 lowercase hex and a NUL. */
 void pcrec_ks_meas_hex(uint64_t d, char out[17]);
@@ -121,8 +149,11 @@ void pcrec_ks_meas_hex(uint64_t d, char out[17]);
 /* The stamp text `id@rev:digest16` (§3.5) in the caller's allocator. */
 const char *pcrec_ks_meas_stamp(const KsAlloc *a, const KsMeasSet *set);
 
-/* The row's two digest roles (ITEM = STAMP, §9.5). */
+/* The row's two digest roles (ITEM = STAMP, §9.5), and format 2's values
+ * role. The kind row names the format-1 role; pcrec_ks_meas_digest picks the
+ * role by the set's `format` (span_cards.md §4.5). */
 extern const KsDigest pcrec_ks_meas_values_role;
+extern const KsDigest pcrec_ks_meas_values2_role;
 
 /* The kind's row. */
 extern const KsKind pcrec_ks_measures;

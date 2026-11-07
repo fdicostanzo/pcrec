@@ -3285,3 +3285,38 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main fixes: CELLS-1..3, CHECKC (check C over zero grid3 keys), HASH, TWIN (STT_FILE makes the objects-differ check vacuous), PLACE, DRIFT, Z, FLOOR, CENSUS (emit_sweep has no measures kind), GOAL2, TARGET, J1-WIN; S2a's KSGEN/BOUND/MFMEAS; the SIMD interim stated.
   - Asked main to record DEFAULTS (B) (no record existed) and to rule EMBED (kit: omit cells from the embed) and POLICY.
   - Rev 1.1 is briefed only after main answers (no addenda to running lanes). Lessons went to the skill and critics.md.
+- 11-06: main ruled at 78e7da573: DEFAULTS (B) recorded as R-35 (c); EMBED omits cells (set.tsv keeps them; the embed is declared cell-less); POLICY accepted (Q3 covers measured costs only; z, the gate default and MATERIAL go to one policy table; HORS_MIN and MAX_SET leave [KIT-POLICY-TABLE]).
+  - Lane s2rev11 (opus) on lane/memfn-s2rev11 (rev 1 + k1102, with one append-only index conflict resolved keeping both lines) writes rev 1.1.
+  - Next: S2a/S2b build lanes once rev 1.1's text for them is in; the 2-critic re-check of S2c-S2e runs in parallel.
+- 11-06: s2rev11 delivered rev 1.1 (e52cd716a). Placement is now noise (a fresh placement per launch, checked by nm); delta rows priced on their paired A/A; FRG dropped; class in the format-2 digest (fact b); embed cell-less (~16 KB); z=3.0 re-drilled; census tool movers.py; check C guard on card rows.
+  - Main to ack the §10 amendments 8-10 (and 11: K138's form = two literals + _Static_assert).
+  - Launched three lanes:
+    - s2a (opus): build S2a, the noise channel + format 2, on lane/memfn-s2a.
+    - s2b (sonnet): build S2b, census0, on lane/memfn-s2b.
+    - crit-memfn-span-cards-r11 (opus coordinator, 2 critics: readiness + measurement) on S2c-S2e.
+  - Sabotage ids: the kit block is S2900-S2949 (max in use anywhere was S1980). S2a gets S2900-2919, S2b S2920-2929, S2c-S2e S2930-2949.
+  - Heavy runs (S2a's make test, S2b's J0) are prepared by the lanes, not queued; the slot is to be agreed with main.
+- 11-06: main ACKed rev 1.1's §10 items 8-11 (K138's fix form rides S2a). Main's standing rule: non-timing heavy runs are queued by the kit without asking; only timing needs a window (memory pcrec-kit-nontiming-runs-no-ask).
+  - S2b DELIVERED on lane/memfn-s2b (base 3094c45c0, code 02619feb1). census0.py replaces smp20.py. Control GREEN: smp20.out byte for byte plus the P-blind line, "@1 {/} at 3381" of 3536, matching span_pick. Sabotage S2920 red then reverted. The provisional census0.out shows 207 row-1-class units, 166 movers.
+  - The lane skipped writing its deliver file, so lanecheck could not pass. The work is accepted on review.
+  - Open for S2c: the verify `cls` vocabulary is the lane's reading (run <=8 or long; set1/2/N); S2c fixes the real boundaries.
+  - J0 queued as 440-kit-s2b-j0 (5,492 compiles, cap 1800); watcher armed. On green, commit census0.out by path.
+- 11-06: re-check r6 (2 critics) on rev 1.1 RULED (00076d391). S2c/S2d ready with text; S2e after rev 1.2.
+  - URGENT READY-1 (a measured delta row naming its base in `inputs`, which the loader refuses) ruled so it leaves S2a untouched: the base lives on the cells, and measured rows carry `inputs` `-`.
+  - READY-6: a kit run record file, its sha in PROVENANCE, no set section. READY-8: deps recorded. MEAS-4: s.e.-scaled drift threshold. MEAS-6: J1 margin re-drilled. MEAS-1: a run id in the seed. movers.py is a PLAN (emit_sweep --data measures).
+  - Lane s2rev12 (opus) writes rev 1.2 under a hard rule: nothing S2a builds may change.
+- 11-06: J0 (440) went RED in 3 s. Triage lane trij0, class (c): the r33_sim probe still read mf_akind.prov, which left the seam at unit 1g. census0 itself was not reached.
+  - Fixed on s2b by printing the digest in its place (71cad723e); collect.py parses only the rate list. The probe compile is verified, and J0 is retried with a watcher.
+  - Lesson: a job's --dry-run that never builds what the run builds cannot catch a stale build; J0's dry run only counted compiles.
+- 11-06: S2a DELIVERED on lane/memfn-s2a @ f8c513ec8 (base 8f43f4f27). MF_SITE_ABI 23->24 (noise_state with UNSTATED refused, noise_e6). Format 2 uses digest pcrec-meas-2 over noise+class; KS_MEAS_MAX has a static-assert TU. Zero movers by bounded spots; grid1 byte-identical.
+  - Sabotage S2900-S2910 all red then reverted. Light suites green; G2 70.36M/0. Gates 460-468 prepared, not queued.
+  - Deviation: sabotage (r)'s detector is the format-2 fixture store, not grid1.
+  - Code round crit-memfn-s2a launched before the gates (the per-unit process).
+  - Lesson (MINE): s2a and s2b both lacked a deliver file. My briefs said "a deliver file per BOILERPLATE", and both lanes read it as the manager's to write. From now on the manager writes NAME_deliver.txt into the worktree BEFORE launch.
+- 11-06: s2rev12 delivered rev 1.2 (040309e7b); lanecheck DONE. "Needs S2a: none" VERIFIED by me: the header `run` key is existing free provenance (measures.md §2.1 table), and the cell id's base field is checked only for uniqueness.
+  - Decisions: run_record.tsv; deps recorded with a STALE count, 0 asserted at S2e; drift threshold max(G/2, 3 s.e.); J1 m 0.5/k 5 at 95.1% power and ~0% false; seed (run, job, l, arm); one first-match outcome table.
+  - One readiness critic (crit-s2rev12-ready, opus) on the rev 1.2 diff only.
+- 11-06 11:20: J0 retry (440) GREEN in 17 s: 5,492 compiles, census0 control GREEN, 116 lines, no witness-moved note. census0.out committed on s2b. Counts are identical to the provisional run: 207 row-1-class units, 166 moving at one or more corners, 3,430 window units, 750 moving. The only label change is hors -> D-hors (unit 1e's name).
+  - S2b is complete. No separate code round: python instruments only, held by a byte-for-byte control and a red sabotage. It is delivered to main together with S2a after S2a's round and gates.
+  - S2c waits on S2a's code round; its base needs S2a's format-2 spec text.
+- 11-06: lane s2a (opus, lane/memfn-s2a, base 8f43f4f27 = main 6f1b40f75 merged into the rev 1.1 design branch) built span_pick stage 2 unit S2a: `mf_measure` gains `noise_state` (`mf_noise_state`, UNSTATED refused at `mf_art_begin`) and `noise_e6`, appended last, MF_SITE_ABI 23 -> 24 (no MF_VOCAB/MF_CLASS_V move, no pcrec byte moved); pcrec-side set FORMAT 2 (noise and `class` in the digest `pcrec-meas-2`, the `events` cell column, the noise refusals, `KS_MEAS_MAX` with its equality TU), the fill's format rule, ksgen + the raw-row compare, the MFMEAS noise columns. Sabotage S2900-S2910. Report docs/dev/lanes/s2a_report.md. The responses-ledger entry is the kit session's (single writer).

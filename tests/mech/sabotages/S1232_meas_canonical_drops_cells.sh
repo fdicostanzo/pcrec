@@ -10,5 +10,7 @@ SAB_DESC='the canonical writer omits the cells section: R1 (values only) and R2 
 SAB_DOC_FIGURE='MEASURED at the M0 head by the lane'"'"'s solo runs: see docs/dev/lanes/m0build_report.md §5 (the owed mech rows). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1232.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    rc = rc || put_tab(o, "cells", cell_cols, KS_MEAS_NCELL, &set->cells) ||'
+# Re-aimed at span_pick S2a (lane s2a): the cells table's columns and width are its set's format's
+# (cell_cols_of / pcrec_ks_meas_cell_w); the plant still drops the whole section from the canonical view.
+SAB_BEFORE='    rc = rc || put_tab(o, "cells", cell_cols_of(set), pcrec_ks_meas_cell_w(set), &set->cells) ||'
 SAB_AFTER='    rc = rc || /* SABOTAGE S1232 */'
