@@ -26,3 +26,6 @@ make strict clean; test-memfn-arch 17 passed 0 failed; test-claudemd-size, test-
 ## Charter-vs-committed checklist
 Charter: fix both reds, weaken neither. Committed: allowlist rows with exact counts and reasons; code_commit
 re-stamp only. No box jobs queued, no make test or mech run.
+
+## STATE AT HANDOFF
+Done; nothing owed. Fixes committed on lane/memfn-s2e; kit manager requeues the census and gates.
