@@ -3392,3 +3392,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - Scratch copies synced; window.vars = RUN_ID s2d-20261106, FROZEN 236ba2807 (full sha), HOLD = s2a/jobs/hold.sh.
   - All 9 S2d jobs dry-run rc 0. The commit landed BEFORE 472 started, so gated tip = FROZEN.
   - Next: on 472 + 473 green, queue 480 prep, 480 screen, 481-486, 489; tell main the window's end and verdict.
+- 11-06: main, the SIMD seam plan: a short seam note fixing the per-target code-path contract:
+  - the target is a fact per request;
+  - the kit returns C valid inside a function compiled for that target (no #if, no CPU checks, per-target helper names);
+  - pcrec owns attributes, naming and dispatch;
+  - one target = today's bytes.
+  It comes AFTER the alternation thread lands and needs Frank's go. No kit action now; the kit tells main what it needs and when if SIMD work hits the blocker sooner. Today that is S2g only, held as planned.
