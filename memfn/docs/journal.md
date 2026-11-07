@@ -3462,3 +3462,5 @@ Main ruled on the four kit findings (D186 add. 2):
 - Lane's OPEN point: a window frozen on b4e0a8bab pins no r_max in its record. RULED: freeze window 2 on the FIXED tip instead. The gates had not started: cancelled, s2c fast-forwarded to 1e4999d1c, 474 expects 21 rows, FROZEN 1e4999d1c, dry runs from a copy green, 470-474 requeued, watcher armed.
 - The window is queued on gates green; main's 495 waits for kit-s2d-J9.
 - 11-06 23:42: 493 K138 mech GREEN (S2910 BUILD-REFUSED). S2a re-delivered @ 252e0a1cb, with a corrected done line (5cace44bd); every claim was grepped on the branch first. Both tips sent to main to land together.
+- 11-07 01:04: S2c gates 470-474 GREEN on 1e4999d1c (strict 16 s, slotsab 21/21 77 s, sections 868 s, test 2426 s, mech 1610 s). artifact_size_log restored.
+- WINDOW 2 QUEUED (RUN_ID s2d-20261107a, FROZEN 1e4999d1c); watcher armed. main's 495 waits for this J9.
