@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+JOB=480-kit-s2d-screen   # the canonical name: boxqueue runs a copy whose file name is not this
 # 480-kit-s2d-screen: THE PLACEMENT SCREEN (span_cards §3.2, §9 S2d's first timing step; [rev1.3 r9fc-FIX-7]):
 # quiet-gated, J2's unit group at its seven dry-run placements (J2's manifest), one round each, and the unit's
 # noise against its half gate. Ready: kit-s2d-prep green. Non-green (rc 3 OVER, 5 wait-timeout) holds the window:
@@ -6,7 +7,7 @@
 . "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
 case "${1:-}" in
     --dry-run)
-        check_inputs "$(basename "$0")" || exit 1
+        check_inputs "$JOB" || exit 1
         echo "would run: python3 -I $SLOT/run.py screen $RUNDIR $RUN_ID (J2's manifest, then 7 placements x 1 round, quiet-gated)"
         echo "boxqueue: cap 900"; echo "boxqueue: patience none"; echo "boxqueue: est 120"
         echo "boxqueue: idle-ok"

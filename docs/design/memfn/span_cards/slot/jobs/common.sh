@@ -37,9 +37,9 @@ check_inputs() {   # SELF: the window's inputs, and the queued copy is the tree'
     case $FROZEN in *[!0-9a-f]*) echo "FROZEN ($FROZEN) is not a hex object name (a commit sha, never a ref name)" >&2; return 1 ;; esac
     [ ${#CODE_COMMIT} -eq 40 ] || { echo "FROZEN ($FROZEN) resolves to no commit in $TREE" >&2; return 1; }
     [ "$(git -C "$TREE" rev-parse HEAD)" = "$CODE_COMMIT" ] || { echo "$TREE HEAD is not $FROZEN" >&2; return 1; }
-    for f in "$1" common.sh; do
-        cmp -s "$JOBDIR/$f" "$SLOT/jobs/$f" || { echo "$JOBDIR/$f is not the tree's $SLOT/jobs/$f (a stale copy)" >&2; return 1; }
-    done
+    # the RUNNING copy ($0, boxqueue's own copy) against the tree's file of the job's canonical name ($1), and this file
+    cmp -s "$0" "$SLOT/jobs/$1" || { echo "$0 (job $1) is not the tree's $SLOT/jobs/$1 (a stale copy)" >&2; return 1; }
+    cmp -s "$JOBDIR/common.sh" "$SLOT/jobs/common.sh" || { echo "$JOBDIR/common.sh is not the tree's $SLOT/jobs/common.sh (a stale copy)" >&2; return 1; }
     [ -f "$SLOT/run.py" ] || { echo "no $SLOT/run.py" >&2; return 1; }
 }
 
@@ -72,7 +72,7 @@ ready_after() {    # UPSTREAM-KEY..: ready_prep, then 77 if the screen ended non
 
 timing_dry() {     # JOB EST: inputs only (the work checks the dry run's manifest); `expect groups` from the plan
     local job=$1 est=$2 n
-    check_inputs "$(basename "$0")" || exit 1
+    check_inputs "$JOB" || exit 1
     n=$(python3 -I "$SLOT/plan.py" groups "$job") || exit 1
     echo "would run: python3 -I $SLOT/run.py run $job $RUNDIR $RUN_ID (the manifest of kit-s2d-prep's dry run, then 7 launches x 7 rounds, quiet-gated)"
     echo "boxqueue: cap 1500"; echo "boxqueue: patience none"; echo "boxqueue: est $est"

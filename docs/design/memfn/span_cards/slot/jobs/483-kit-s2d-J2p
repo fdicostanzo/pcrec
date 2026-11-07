@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+JOB=483-kit-s2d-J2p   # the canonical name: boxqueue runs a copy whose file name is not this
 # 483-kit-s2d-J2p: the S2d window's timing job J2p (span_cards §3.7; quiet-gated, idle-ok). Ready: kit-s2d-prep
 # green and kit-s2d-J2 ended, then J1's end: green -> record.py ready-j2p (J1's verdict in the run record: 0
 # under (a)/(c), 77 under (b), 75 not yet); failed or cancelled -> 77 (no verdict ever comes, r9 W2).

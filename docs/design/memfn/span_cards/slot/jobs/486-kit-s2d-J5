@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+JOB=486-kit-s2d-J5   # the canonical name: boxqueue runs a copy whose file name is not this
 # 486-kit-s2d-J5: the S2d window's timing job J5 (span_cards §3.7; quiet-gated, idle-ok). Ready: kit-s2d-prep green, then kit-s2d-J4 ended.
 . "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/scratch/memfn/s2c/jobs/s2d/common.sh"   # absolute: boxqueue runs a COPY of this file from its own dir
 case "${1:-}" in
