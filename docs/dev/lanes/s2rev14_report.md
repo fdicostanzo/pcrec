@@ -172,13 +172,13 @@ Every step ran alone; the box carried other sessions' non-timing queue jobs (no 
 - `make test-plan-lint`: 0 failed.
 - `make test-spec-history`: 11 passed, 0 failed.
 - `est.py selftest`: 15 cases, 0 wrong (six of them new for R14-2/R14-4).
-- `slot/sabotage.sh`: control green (J2 dry run, est self-test); SAB_RESULT.
+- `slot/sabotage.sh`: control green (J2 dry run, est self-test); **17 DETECTED, 0 MISSED of 17 rows** (the 11 earlier rows plus n1 n2 s1 s2 q1 b1). Log: `scratch/s2rev14/sab_all.log`.
 - Job scripts: every S2d job script (prep, screen, J1-J5, J2p, J9) `--dry-run` from a COPY in another directory
   (`scratch/s2rev14/jobcopies/`). This used a sandbox `PCREC_TMPDIR` whose `s2d/window.vars` names
   RUN_ID=s2c-dry and FROZEN=HEAD; main's window.vars was not touched. All of them print their declarations.
   The expected groups are J1 9, J2 3, J2p 7, J3 6, J4 5 and J5 3.
 - Slot dry runs (J1, J2, J2p, J3, J4, J5) under run id s2c-dry: run as job 480-kit-s2d-prep's WORK from its copy, in the sandbox. `s2d-prep J rc=0` for all six, `PREP EXIT 0`. J4 printed `null-base: 7 bases, each its class arm's text outside the compare, keeping a load the arm makes`. Every job printed one ungated quiet sample with its co-runners. Log: `scratch/s2rev14/prep_work.log`.
-- emit_sweep spot: EMIT_RESULT
+- emit_sweep spot: `--ref ce88f1766 --bin build/pcrec --no-corpus --patterns-file` with the first 20 of s2cfix2's pattern list. Every stream gave **movers=0, asymmetric=0**, ending `emit_sweep: DONE rc=0` (`scratch/s2rev14/emit/sweep.log`). This rev touches no `src/`, `cli/`, `lib/` or `memfn/` file, so zero movers is what was expected.
 
 ## Gate jobs
 
