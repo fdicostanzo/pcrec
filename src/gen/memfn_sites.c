@@ -16,6 +16,11 @@
 
 #include "gen/memfn_sites.h"
 
+/* The loader's bound and the kit's are one number: this file sees both
+ * headers, ks_measures.h may not read the kit's (K138). */
+_Static_assert(KS_MEAS_MAX == MF_MEASURE_MAX,
+               "KS_MEAS_MAX (ks_measures.h) and MF_MEASURE_MAX (memfn.h) are one bound");
+
 /* ---- DELEG_SITES (gen/memfn_sites.def) ------------------------------------ */
 
 const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {

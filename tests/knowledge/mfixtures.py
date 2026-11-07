@@ -324,6 +324,8 @@ def bad_sets(base):
         ("emptyval", rowfix(0, "value_e6", ""), "empty value_e6"),
         ("spelling", rowfix(0, "value_e6", "+5"), "one decimal spelling"),
         ("derivation", rowfix(0, "derivation", "ratio"), "names derivation"),
+        ("value-bound", rowfix(0, "value_e6", "1000000000000001"), "value_e6 1000000000000001 is past 10^15"),
+        ("value-bound-neg", rowfix(0, "value_e6", "-1000000000000001"), "value_e6 -1000000000000001 is past 10^15"),
     ]
     return out
 

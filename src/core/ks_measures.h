@@ -80,11 +80,12 @@ enum { KS_MEAS_CELL_COLS(KS_MEAS_CELL_ENUM) };   /* format 2's cell indices */
  * Also the empty `noise_e6`: a `-` noise, and every row of a format-1 set. */
 #define KS_MEAS_EMPTY INT64_MIN
 
-/* The bound on a format-2 `noise_e6` (measures.md §2.2¶3a): 10^15, the kit's
- * MF_MEASURE_MAX (memfn.h). The dependency rule above forbids reading the
- * kit's header, so this is the second home of the one number, and
- * tests/knowledge/meas_store_check.c asserts the two equal at build time
- * (span_cards.md §4.1). */
+/* The bound on a row's |`value_e6`| and on a format-2 `noise_e6`
+ * (measures.md §2.2¶3, ¶3a): 10^15, the kit's MF_MEASURE_MAX (memfn.h). The
+ * dependency rule above forbids reading the kit's header, so this is the
+ * second home of the one number; src/gen/memfn_sites.c and
+ * tests/knowledge/meas_store_check.c assert the two equal at build time
+ * (span_cards.md §4.1, K138). */
 #define KS_MEAS_MAX 1000000000000000LL
 
 /* One row of the `rows` section. Every column is kept as its text (`col`,

@@ -450,6 +450,11 @@ static int load_rows(const KsAlloc *a, const KsTsvSection *s, KsMeasSet *set,
                    m->value_e6 == KS_MEAS_EMPTY) {
             return mfail(err, where, "line %zu: value_e6 '%s' is not an integer in "
                          "its one decimal spelling", ln, m->col[KS_MR_value_e6]);
+        } else if (m->value_e6 > KS_MEAS_MAX || m->value_e6 < -KS_MEAS_MAX) {
+            /* the kit refuses it at mf_art_begin, an internal error per
+             * compile; refused here at load instead (K138) */
+            return mfail(err, where, "line %zu: value_e6 %s is past 10^15 in "
+                         "magnitude (refused, never clamped)", ln, m->col[KS_MR_value_e6]);
         }
         m->noise_e6 = KS_MEAS_EMPTY;
         if (fmt_of(set)->noise && noise_load(m, ln, where, err)) return -1;
