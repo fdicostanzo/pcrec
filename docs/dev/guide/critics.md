@@ -184,3 +184,12 @@ Round 2026-11-05 r2, memfn-sp1e code (`docs/dev/reviews/2026-11-05-r2-memfn-sp1e
 2. **For a declared map or list read by a check, plant a DELETED line and an INVENTED line; both must go red** (F3: both were green).
 3. **For a key the subject declares, every member must be printed in the trace record**: a member missing from the record is where a bypass plant hides (F4).
 4. **For a zero-mover unit, spend part of the emitted lens reading the equivalence argument rather than probing**: F1 came from reading.
+
+Round 2026-11-06 r4, memfn-span-cards design (`docs/dev/reviews/2026-11-06-r4-memfn-span-cards.md`), coordinator round + verifier; lessons ruled 2026-11-06.
+1. **Re-diff the frozen rulings at each critic return.** A ruling homed in the subject that lands mid-round gets a fresh critic on its section (D188 was seen only at hand-back).
+2. **Drill a named measurement estimator like a selection rule**, on constructed outcomes (clean, outlier, bimodal, A/A above spread, equal-effect sweep): these drills found every gate defect of the round.
+
+Round 2026-11-06 r5, memfn-span-cards re-check (`docs/dev/reviews/2026-11-06-r5-memfn-span-cards-recheck.md`); lessons ruled 2026-11-06.
+1. **Locate each in-force ruling's record at the freeze**; a ruling with no record is a freeze note (DEFAULTS (B) existed only as a message).
+2. **Two fixes touching one check or directory: recompute the check's population** (CHECKC: each fix held alone, together they left zero keys).
+3. **"Built objects differ" is vacuous across differently named sources** (STT_FILE carries the file name); assert on linked addresses or `.text`.
