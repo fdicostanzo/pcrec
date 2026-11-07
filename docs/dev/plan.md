@@ -31,6 +31,14 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
+- [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
+  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
+  status (2026-11-07): BUILD GO (Frank: "this should be next (at least in parallel) to unblock kit"); pcrec half = main lane, kit half = kit; kit edits emitter-shaped, ride [IR-FORM] (4)
+  trigger: Frank's go, or the first aarch64 kit row
+  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
+  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
+  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
+  RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -248,7 +256,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-07): VM body record-first step (a) DONE ([VMREC]); DFA walks planned as A-REV S1; DFA rest filed as [DFAREC]; kit planner/emitter split has no row yet. Tracker only: each member builds on its own go
   next: keep the member list current; add the kit planning/emitting member as a row when the kit split is proposed
   refs: [STREAM] (the end state this serves); docs/design/stream/manifesto.md; docs/design/stream/roadmap.md (areas A-REC, A-DFATOP, A-REV); decisions D182; memory pcrec-plan-as-text-seam
-  MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
+  MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. Frank 2026-11-07: YES, pull A-REV's whole chain forward (record, machine table, row-conjunct cleanup, then the reverse-DFA proof step); the trailing-byte pre-check is skipped (the reverse DFA supersedes it). (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
 - [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
   filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
   status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
@@ -702,6 +710,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
+  filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
+  status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
+  next: a pcre2-reader (D181, unnamed) extracts testinput/testoutput patterns, subjects, results into a data document (no code); census our corpus gaps; a section built on it is opt-in, outside make test; gaps may become oracle-verified main-corpus .rxt cases
+  refs: decisions D181; docs/dev/pcre2_notes/; scripts/check_pcre2_note.sh; docs/pcre2_compliance.md (scoreboard)
 - [ORACLE-UPGRADE] STATE:not-started — moving the libpcre2 oracle version (CI pin, D98) is tested LOCALLY first
   filed: 2026-11-07 Frank ("If we want to upgrade the oracle we should test that locally first"); manager wrote the row
   status (2026-11-07): not started; CI builds vanilla 10.46 (U25 tolerance carries its lookbehind bug), this box runs Ubuntu 10.46-1ubuntu0.1 (CVE-2026-89160 backport), upstream 10.48 fixed it
@@ -1780,14 +1793,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
   refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
   Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants). Lane altbuild2 measured both estimates wrong in both directions (island 6x over on long words; chain 2-3x over): once the [ART-SIZE] retry row (K139) makes acceptance exact, the in-emitter size guard is a speed-only shortcut and a candidate for deletion (a simplification), measured here.
-- [XARCH-DEV] STATE:not-started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
-  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
-  status (2026-11-06): not started; end state RULED (per-target variants, explicit target list, see below); first job: an M1-made set + count of disagreeing picks; the Mac is the aarch64 box; 2026-11-07: seam note PROPOSED (docs/design/memfn/target_seam.md, lane xarchseam)
-  trigger: Frank's go, or the first aarch64 kit row
-  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
-  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
-  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
-  RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
 - [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL), outside the sets
   filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
   status (2026-11-06): not started; today noise policy has no single home (gate_e6 in kit-grid.tsv; z not yet a constant anywhere); unify when row 1 writes z (row 1's E2 unification)
