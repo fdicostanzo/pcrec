@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "gen/memfn_sites.h"
+#include "gen/targets.h"
 
 /* The mark: a placeholder-lead byte that is not the prefix placeholder. */
 #define MEMFN_MARK "\x01M\n"
@@ -317,10 +318,14 @@ static void ks_stamps_render(Ctx *cx)
     }
 }
 
+/* The one bit reads the artifact's target set ([XARCH-DEV] U1): portable
+ * text iff the set is `{generic}`. No list or family reaches it before U3,
+ * so it cannot refuse. */
 uint32_t pcrec_memfn_policy(uint64_t flags)
 {
-    return pcrec_axis_on(flags, PCREC_NO_MEMFN_SIMD, PCREC_FORCE_MEMFN_SIMD)
-               ? 0u : MF_P_PORTABLE_ONLY;
+    PcrecTargetSet ts;
+    (void)pcrec_target_set(flags, NULL, NULL, &ts);
+    return pcrec_target_set_generic(&ts) ? MF_P_PORTABLE_ONLY : 0u;
 }
 
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the

@@ -7452,8 +7452,10 @@ void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *val
  * right after the findings pair at the same two marks (measure_sets.md §3.5). */
 void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
 /* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
- * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
- * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
+ * `MF_P_PORTABLE_ONLY`, set iff the artifact's target set is `{generic}`
+ * (src/gen/targets.h: the `-f[no-]memfn-simd` pair resolved through the
+ * target list table, deny, force, then `axes.def`'s default; on a host with
+ * no target family, `-fmemfn-simd` is `{generic}` too). The ONE derivation; every
  * `mf_art_begin` caller passes this and never a literal. */
 uint32_t pcrec_memfn_policy(uint64_t flags);
 /* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the

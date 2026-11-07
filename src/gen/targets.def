@@ -1,0 +1,98 @@
+/* src/gen/targets.def — THE TARGET TABLE ([XARCH-DEV] unit U1;
+ * docs/design/memfn/target_seam.md §2, docs/design/memfn/target_seam_units.md).
+ *
+ * pcrec's ONE home for what an artifact may be compiled FOR (the D146
+ * addendum, target_seam.md §6.4): the target families (the largest scope of
+ * one artifact, D188 addendum 2) and the targets inside them. It is the one
+ * file under src/ whose ISA words the arch-blindness detector C4 exempts, by
+ * exact path (tests/memfn/arch_blind_check.py); every other pcrec source reads
+ * these rows and spells no ISA word of its own. The kit's ISA knowledge (its
+ * levels, what each needs, its forms) stays the kit's: pcrec hands the kit a
+ * target's family and features as facts and reads no kit level.
+ *
+ * An X-macro table in axes.def's idiom: an includer defines PCREC_FAMILY and
+ * PCREC_TARGET (one of them empty when it wants the other), and may define
+ * PCREC_TARGET_TEXT for the region and guard spellings at the end.
+ *
+ * PCREC_FAMILY(id, name, guard, baseline, simd_list)
+ *   name       the family's word, also what `--family` will name (U3)
+ *   guard      the preprocessor condition the artifact's file-scope `#error`
+ *              refuses compilation without (the family guard's ONE owner,
+ *              F2(d)); it names the architecture and excludes the ILP32 ABIs
+ *   baseline   the family's baseline TARGET (every family names exactly one)
+ *   simd_list  the declared default list `-fmemfn-simd` resolves to
+ *              (target_seam.md §2 rule 3). x86-64's grows to
+ *              "x86-64,x86-64-v3" only at the dispatch step (U5), which waits
+ *              for a bench speed verdict (D144 addendum 4)
+ *
+ * PCREC_TARGET(id, name, family, attr, features)
+ *   name       the PRIMARY column: the target's name, its stem tag (U4) and
+ *              the controller's probe string (U4), all one spelling
+ *   family     its family, or PCREC_FAM_NONE for `generic` (no guard, no
+ *              region, no SIMD)
+ *   attr       the region's ADDITIVE attribute list (target_seam.md §6.1),
+ *              never `arch=`; sorted; empty = no region
+ *   features   the sorted feature tokens handed to the kit; equal to attr
+ *              wherever attr is non-empty (the table check asserts it)
+ *
+ * THE TABLE CHECK (scripts/check_targets.sh, at `make`): for every target of
+ * the building host's family, the compiler at the family floor plus attr
+ * defines exactly the macros it defines at `-march=<name>` (the control is
+ * the compiler, not this file); every family's baseline is a target of that
+ * family; every target's family exists; features equal attr. Its first
+ * finding put `sahf` in x86-64-v3's list (`__LAHF_SAHF__`).
+ *
+ * A row is born with the first kit level that needs it (D77): there is no
+ * x86-64-v2 or x86-64-v4 row, because the kit's two x86 levels (16 and 32
+ * bytes) cannot plan differently there. */
+
+PCREC_FAMILY(PCREC_FAM_X86_64,  "x86-64",
+             "defined(__x86_64__) && !defined(__ILP32__)",
+             PCREC_TGT_X86_64,  "x86-64")
+PCREC_FAMILY(PCREC_FAM_AARCH64, "aarch64",
+             "defined(__aarch64__)",
+             PCREC_TGT_AARCH64, "aarch64")
+
+PCREC_TARGET(PCREC_TGT_GENERIC,   "generic",   PCREC_FAM_NONE,    "", "")
+PCREC_TARGET(PCREC_TGT_X86_64,    "x86-64",    PCREC_FAM_X86_64,  "sse2", "sse2")
+PCREC_TARGET(PCREC_TGT_X86_64_V3, "x86-64-v3", PCREC_FAM_X86_64,
+             "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave",
+             "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave")
+PCREC_TARGET(PCREC_TGT_AARCH64,   "aarch64",   PCREC_FAM_AARCH64, "", "neon")
+
+/* The family pcrec itself was built for: rule 3's host default. Tested on
+ * pcrec's OWN build, never emitted; the same predicates as the guard column
+ * (scripts/check_targets.sh asserts the host row's guard holds on the host).
+ * No family row for the host leaves it PCREC_FAM_NONE. */
+#ifdef PCREC_TARGET_HOST
+#if defined(__x86_64__) && !defined(__ILP32__)
+#define PCREC_HOST_FAMILY PCREC_FAM_X86_64
+#elif defined(__aarch64__)
+#define PCREC_HOST_FAMILY PCREC_FAM_AARCH64
+#else
+#define PCREC_HOST_FAMILY PCREC_FAM_NONE
+#endif
+#endif
+
+/* The region pair (target_seam.md §6.1) and the family guard, as emitted
+ * text: `%s` is the target's attr, the family's guard and name. The
+ * `__clang__` test is a compiler-capability test, not a CPU one. */
+#ifdef PCREC_TARGET_TEXT
+#define PCREC_REGION_OPEN_FMT \
+    "#if defined(__clang__)\n" \
+    "#pragma clang attribute push (__attribute__((target(\"%s\"))), apply_to = function)\n" \
+    "#else\n" \
+    "#pragma GCC push_options\n" \
+    "#pragma GCC target(\"%s\")\n" \
+    "#endif\n"
+#define PCREC_REGION_CLOSE_TEXT \
+    "#if defined(__clang__)\n" \
+    "#pragma clang attribute pop\n" \
+    "#else\n" \
+    "#pragma GCC pop_options\n" \
+    "#endif\n"
+#define PCREC_FAMILY_GUARD_FMT \
+    "#if !(%s)\n" \
+    "#error \"pcrec: this artifact was generated for the %s target family; regenerate it for this compiler's target\"\n" \
+    "#endif\n"
+#endif

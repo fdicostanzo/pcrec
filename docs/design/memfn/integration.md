@@ -6462,6 +6462,14 @@ batch gate.
 > **`[rev4]`** The plant's "held out" claim is narrowed to what it can
 > support, and matching is case-insensitive (§17.5, r3 G-F7).
 
+> **`[xarch1 R1]`** The premise moved at [XARCH-DEV] U1 (lane xarch1,
+> 2026-11-07; D146 addendum 1, `target_seam.md` §2/§6.4): the TARGET
+> TABLE, `src/gen/targets.def`, is pcrec's and spells ISA words (families,
+> targets, region attributes, the family guard). C4 exempts that one file
+> by exact path, beside memfn/'s exemption, with a scratch control that
+> plants the same words in another src/gen file (a hit). Everywhere else
+> the sentence below holds, and the allowlist still only descends.
+
 pcrec carries no architecture knowledge (Q12's refinement, D146). C4
 makes that a red test, with the r2 panel's rebuild:
 

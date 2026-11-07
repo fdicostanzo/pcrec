@@ -9004,6 +9004,11 @@ The FIRST instance is the pre-round-2 bench outlier read Frank asked for (D144 i
 **Guard:** pcrec's own bench/alpha timings with the kit on vs off. That control does not share a source with the kit.
 **Revisit-when:** a delegated site's kit code is measured worse than pcrec's pre-migration form and the kit cannot fix it.
 
+### D146 addendum 1 — the target table is pcrec's ([XARCH-DEV] build go, Frank 2026-11-07; `docs/design/memfn/target_seam.md` §6.4, filed at unit U1 by lane xarch1)
+
+The target table (names, families, additive attributes, probe strings) is pcrec's: it names the artifact's code regions and the controller's predicate. The kit's ISA knowledge (levels, `needs`, forms) stays the kit's. pcrec hands the kit feature tokens as facts and reads no kit level.
+**Where:** `src/gen/targets.def`, checked at `make` against gcc's own `-march` (`scripts/check_targets.sh`); the arch-blindness detector C4 exempts that one file by exact path (lane xarch1 ruling R1; `integration.md` §10.4). The feature tokens first cross the seam at unit U3 (`target_seam_units.md`).
+
 ## D147 — Layers: the scalar algorithm stays live and improvable forever; SIMD is a layer; each layer must be the best it can be on its own (Frank, 2026-10-05, ninetieth session)
 
 **Decision:** pcrec continues scalar ALGORITHMIC improvement indefinitely. SIMD is a LAYER on top of the scalar algorithm and never a substitute for it. Each layer is measured, accepted and improved on its own:
