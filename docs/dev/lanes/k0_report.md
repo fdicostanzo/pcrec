@@ -194,7 +194,18 @@ a timing job), on the lane tip: `make` (the stamp: `targets-check: ok ...`), `ma
 kit's target table check passes"), `make test-memfn-targets` 14 passed 0 failed, `make
 test-memfn-arch` 17/0, `make test-memfn-link` 11/0 (C15: the six new `pcrec_mf_*` symbols; C16: the two
 new PROVENANCE rows), `make test-claudemd-size`, `make test-spec-history`, `make test-ci-shards` green,
-`make test-codegen` VERDICT_CODEGEN. Logs: `/var/tmp/pcrec-pcrec/scratch/memfn/k0/light_*.log`.
+`make test-codegen` green (`light_test-codegen2.log`; its first run was red on ONE reader the lane had
+missed: [TT-9] requires every `run_*.sh` in `tests/lib/san_scripts.txt` or `san_excluded.txt`, so
+`tests/memfn/run_targets.sh` gained an OWN-TIER exclusion row beside its memfn siblings). Logs:
+`/var/tmp/pcrec-pcrec/scratch/memfn/k0/light_*.log`.
+
+## STATE AT HANDOFF
+
+Delivered at the branch tip (`lane/memfn-k0`); no rulings file was named. OWED, not queued by the lane:
+kit-k0-strict, kit-k0-sections, kit-k0-test, kit-k0-mech (job files
+`/var/tmp/pcrec-pcrec/scratch/memfn/k0/jobs/450-kit-k0-strict`, `451-kit-k0-sections`, `452-kit-k0-test`,
+`453-kit-k0-mech`, each dry-run clean). A fresh agent reads their verdicts; nothing else is open in the
+lane.
 
 ## Charter-vs-committed checklist
 
