@@ -9,5 +9,5 @@ RTE	verify	settest	c2	290
 RTE	verify	settest	cn	7
 DEF	shape	settest	c2.alu1	1
 DEF	shape	settest	c2.cmp2	1
-RTE	shape	settest	c2.alu1	216
-RTE	shape	settest	c2.cmp2	74
+RTE	shape	settest	c2.alu1	220
+RTE	shape	settest	c2.cmp2	70

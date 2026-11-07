@@ -311,7 +311,7 @@ static int path_id_rev(const char *path, char *id, size_t idcap, unsigned long *
 static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
 {
     KsAlloc al = { gen_alloc, NULL };
-    const KsMeasTab no_cells = { 0, NULL };     /* the embed is cell-less */
+    const KsMeasTab no_cells = { 0, NULL };
     int nsets = 0, ndef = 0;
     char ids[64][128];
     unsigned long revs[64];
@@ -329,6 +329,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
         KsErr err;
         size_t len;
         char *text;
+        const KsMeasTab *cells = &no_cells;     /* the embed is cell-less */
         base = base ? base + 1 : path;
         if (!strcmp(base, "DEFAULTS")) {
             defs = slurp(path, &deflen);
@@ -351,7 +352,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
         fprintf(out, "\n/* %s@%u */\n", ids[nsets], set->rev);
         fcells[nsets] = set->cells.nrows;
         put_tab(out, nsets, "cards", &set->cards, KS_MEAS_NCARD);
-        put_tab(out, nsets, "cells", &no_cells, pcrec_ks_meas_cell_w(set));
+        put_tab(out, nsets, "cells", cells, pcrec_ks_meas_cell_w(set));
         put_tab(out, nsets, "members", &set->members, KS_MEAS_NMEMBER);
         fprintf(out, "static const KsMeasRow pcrec_meas_s%d_rows[] = {\n", nsets);
         for (size_t r = 0; r < set->nrows; r++) {
@@ -383,7 +384,7 @@ static int gen_measures(const KsKind *kind, FILE *out, char **files, int nfiles)
                      "    .members = { %zu, pcrec_meas_s%d_members },\n"
                      "    .nrows = %zu, .rows = pcrec_meas_s%d_rows,\n};\n",
                 set->rev, set->format, set->composite, (unsigned long long)set->digest,
-                set->cards.nrows, nsets, no_cells.nrows, nsets,
+                set->cards.nrows, nsets, cells->nrows, nsets,
                 set->members.nrows, nsets, set->nrows, nsets);
         free(text);
         nsets++;

@@ -1,8 +1,9 @@
 /* tests/knowledge/meas_store_check.c OUTDIR — [MEASURE-SET] M0 the embedded
  * store against itself (docs/design/measure_sets.md §8.3's secondary checks):
  * for every set built into libpcrec, writes its embedded TEXT to
- * OUTDIR/<id>@<rev>.text (the runner compares it with the committed file,
- * byte for byte), the DECODED view of its PRE-PARSE to OUTDIR/<name>.pre and
+ * OUTDIR/<id>@<rev>.text (the runner compares it with the committed file
+ * stripped of its `cells` rows by the runner's own awk, byte for byte: the
+ * embed is cell-less, measures.md §8¶2), the DECODED view of its PRE-PARSE to OUTDIR/<name>.pre and
  * the decoded view of a FRESH parse of the embedded text to OUTDIR/<name>.fresh
  * (equal iff the pre-parse is what the one reader reads from that text), and
  * prints one line per set: `<name> TAB <digest> TAB <rows>`.

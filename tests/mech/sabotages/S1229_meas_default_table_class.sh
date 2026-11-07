@@ -3,6 +3,8 @@
 #
 # Plant: the generated default-pointer table names another class than measure_store/DEFAULTS (design S947, renumbered).
 # Detector: DEFAULTS read by awk against --list-measurements' default_for column.
+# Re-aimed at S2e (span_cards.md §8.2): DEFAULTS names zen4-grid3@1 since DEFAULTS.log row 2; the plant still
+# breaks the class of the default row, the one the awk read checks.
 SAB_ID="S1229-meas-default-table-class"
 SAB_FILE="src/core/measures_table.inc"
 SAB_SUITES="knowledge"
@@ -10,5 +12,5 @@ SAB_DESC='the generated default-pointer table names another class than measure_s
 SAB_DOC_FIGURE='MEASURED at the M0 head by the lane'"'"'s solo runs: see docs/dev/lanes/m0build_report.md §5 (the owed mech rows). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1229.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { "idk", "zen4-grid1", 1u },'
-SAB_AFTER='    { "jdk", "zen4-grid1", 1u },   /* SABOTAGE S1229 */'
+SAB_BEFORE='    { "idk", "zen4-grid3", 1u },'
+SAB_AFTER='    { "jdk", "zen4-grid3", 1u },   /* SABOTAGE S1229 */'

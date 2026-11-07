@@ -50,7 +50,17 @@ design's text, sharing no code with the kit):
      every set on its method's card (quantity present, arity = dims), the
      set's `cards` section equal to its card table, `rows` and
      `values_digest` (measure_sets §1.6, recomputed here) as its header
-     says; each card dep form resolves or is OWED with its step.
+     says; each card dep form resolves or is OWED with its step. THE
+     measure_store PASS (span_cards.md §2.4, S2e): every committed
+     measure_store set of a `kit-grid` method has its cards section equal
+     to its card table's ver; every row on its card; each form-first row's
+     form token resolves to a form hash (red, never "later", in a FORMAT-2
+     set; a format-1 set's rows keep the "later" treatment and its `-` deps
+     are NOTED) and, in a format-2 set, its recorded `kit:form.<id>=<hash>`
+     names that same id with a 16-hex hash (sabotage (u) S2966, (u2) S2967);
+     a recorded hash differing from today's is STALE, counted and printed,
+     never red (measure_sets §2.4). Form-bearing rows counted and floored
+     (STORE_FORMROW_FLOOR); non-form rows must carry `-` (explicit).
   D. R-MS1: every finder site under NO set and the FULL synthetic set decides
      the same rows; a `pcrec.` row and an out-of-bound value are refused (no
      clamp). (The key-removal loop, S917's detector, went with the rows that
@@ -112,6 +122,7 @@ design's text, sharing no code with the kit):
      composer's walk.
 """
 import argparse
+import glob
 import os
 import re
 import struct
@@ -164,6 +175,9 @@ FORM_INSTANCE_FLOOR = 10
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
 CARD_FORMDEP_COUNT = 17
+# span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
+# at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
+STORE_FORMROW_FLOOR = 33
 FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
 # M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
@@ -531,6 +545,64 @@ def check_sets(root, form):
                          "kit:form.%s)" % (f, {"V1": "B4", "S1": "B6", "A1": "B6", "W64": "B6"}.get(f, "?"), f))
 
 
+def check_store(root, form):
+    cdir = os.path.join(root, "memfn/data/cards")
+    resolves = {f: h for f, (rc, h) in form.items() if rc == "0"}
+    nform = nstale = nsets = 0
+    later = set()
+    for path in sorted(glob.glob(os.path.join(root, "measure_store", "*", "*", "set.tsv"))):
+        name = "%s@%s" % tuple(path.split(os.sep)[-3:-1])
+        s = read_sections(path)
+        hdr = {r["key"]: r.get("value", "") for r in s["header"]["rows"]}
+        method = hdr.get("method", "")
+        table, _, ver = method.partition("@")
+        if table != "kit-grid":
+            continue
+        nsets += 1
+        f2 = hdr.get("format") == "2"
+        mine = [c for c in read_cards(os.path.join(cdir, table + ".tsv")) if c.split("\t")[2] == ver]
+        secc = ["\t".join(r[h] for h in s["cards"]["head"]) for r in s["cards"]["rows"]]
+        # the canonical writer orders cards bytewise (measures.md §6¶2): compared as sets of rows
+        (ok() if sorted(secc) == sorted(mine) else
+         bad("store %s: its cards section is not %s.tsv's ver %s" % (name, table, ver)))
+        on = {c.split("\t")[1]: c.split("\t") for c in mine}
+        for r in s["rows"]["rows"]:
+            parts = r["key"].split(".")
+            c = on.get(parts[1] if len(parts) > 1 else "")
+            if parts[0] != "kit" or not c:
+                bad("store %s: row %s is off its card (no such card at %s)" % (name, r["key"], method))
+                continue
+            dims = c[3].split(";")
+            if dims[0] != "form":
+                (ok() if r.get("deps") in ("-", None) or not f2 else
+                 bad("store %s: row %s has no form dim but records deps %r" % (name, r["key"], r.get("deps"))))
+                continue
+            fid = "walk" if parts[2] == "WALK" else parts[2]
+            if not f2:
+                if fid not in resolves:
+                    later.add((name, fid))
+                continue
+            if fid not in resolves:
+                bad("store %s: row %s's form %s resolves to no form hash (red, never later)" % (name, r["key"], fid))
+                continue
+            dep = [d for d in r.get("deps", "-").split(";") if d.startswith("kit:form.")]
+            m = re.fullmatch(r"kit:form\.([A-Za-z0-9_-]+)=([0-9a-f]{16})", dep[0]) if len(dep) == 1 else None
+            if not m or m.group(1) != fid:
+                bad("store %s: row %s records deps %r, not one kit:form.%s=<16 hex>" % (name, r["key"], r.get("deps"), fid))
+                continue
+            ok()
+            nform += 1
+            if m.group(2) != resolves[fid]:
+                nstale += 1
+                print("check C: STALE %s %s recorded %s, today %s" % (name, r["key"], m.group(2), resolves[fid]))
+    for name, fid in sorted(later):
+        unreached.append("measure_store %s: form %s resolves later (a format-1 set; its `-` deps NOTED)" % (name, fid))
+    print("check C: measure_store pass: %d kit-grid set(s), %d format-2 form-bearing rows checked, %d stale"
+          % (nsets, nform, nstale))
+    (ok() if nform >= STORE_FORMROW_FLOOR else
+     bad("measure_store pass: %d form-bearing rows, under the floor %d (K35)" % (nform, STORE_FORMROW_FLOOR)))
+
+
 # ---- D, E, F, I, J ----------------------------------------------------------
 
 def fd_run(fx, site, setpath=None, opts=None):
@@ -854,6 +926,7 @@ def main():
     rows = check_table(a.fx)
     form = check_hash(a.fx)
     check_sets(a.root, form)
+    check_store(a.root, form)
     check_sites(a.root, a.fx, a.fxt, a.tmp, rows)
     check_query(a.fx, a.fxt, a.tmp)
     check_routing(a.fx, a.fxt)

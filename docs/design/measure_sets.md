@@ -12,7 +12,8 @@ and by D167 (Q-R17P-14)
 `[s2]` revision lines: span_pick stage 2 (`docs/design/memfn/span_cards.md` rev 1.1, kit request
 R-35) amends §1.6 (the digest's exclusions are FORMAT 1's) and §4.1 (noise is handed from
 format-2 sets) at unit S2a; its later units amend §1.4, §1.5, §3.6, §7.2-§7.4 and the sizing
-sentence (span_cards.md §4.4).
+sentence (span_cards.md §4.4). Unit S2e (span_cards.md §8.3, §10.2) lands §3.6's default-change
+line, §8.3's cell-less compare, the sizing sentence and the movers-writer lines of §2.1.
 
 **Revision 3 answers the light re-check r2
 (`../dev/reviews/2026-10-16-r2-measure-sets-recheck.md`: 0 BLOCKER, 8 MAJOR, 11 MINOR,
@@ -587,7 +588,9 @@ transition, not to a set:
   census ran on: the landing commit's parent tree plus the change) and the emit_sweep
   population's pin (§9.3). It is written once, by the census mode of
   `scripts/emit_sweep.py` (§9.3), in the commit that changes `DEFAULTS`. It is immutable
-  from then on.
+  from then on. `[s2]` Until emit_sweep's `measures` data kind lands (M1), each movers file is
+  written by the census tool its own header names: 0001 by `docs/dev/lanes/m0build/census.py`,
+  0002 by `docs/design/memfn/span_cards/slot/movers.py` (span_cards.md §5).
 - **What it describes.** It states what moved AT that transition. A later code change
   that moves selections under the same default is that change's own movers (`emit_sweep`,
   the identity gate), not this file's.
@@ -638,9 +641,11 @@ Why keep the pre-parse for 47 rows: the library's no-filesystem path must be one
 for every knowledge kind (§9.2 part 4), and findings already measured the parse-per-compile cost
 as worth removing (findgen.c's header: ~47 µs, ~20% of a minimal compile, for `default.rxt`).
 
-**Embedding every rev, not only the default.** 47 rows is about 6 KB of text per set and
-15 KB with the pre-parse; the cells and cards add about 4 KB. Ten committed sets stay below
-one `fold_tables.inc`. Rollback must work from a release build (Q-MS-7, settled §10.5).
+**Embedding every rev, not only the default.** `[s2]` Every embed omits its set's `cells`
+(R-35 (d)); a set embeds as its text plus a pre-parse, about 305 B of libpcrec per row or card
+(grid1: 23,788 B, `size -A` of `measures.o`). Ten such sets are a few hundred KB, about a tenth
+of libpcrec.a today; embedding cells would cost about 0.27 KB per cell (`span_cards/tree_drill.py`
+D). Rollback must work from a release build (Q-MS-7, settled §10.5).
 
 ### 2.4 Staleness: transitive, defined, and the policy RULED [r1 msc1-7, msc1-8, msc2-6]
 
@@ -921,6 +926,11 @@ re-pins in the same change (D76/D94).
 that moves an emitted byte is an abi event. The stamp names the set, so a default change
 moves the stamp of every consulting artifact. Every default-set change is therefore an abi
 event, pre-1.0, under the ritual (`pcrec-abi-changes-pre-release`), in one commit:
+`[s2]` (S2e, span_cards.md §8.3) the "therefore" rests on a consulting artifact: a default-set
+change is an abi event exactly when a consulting reader exists. A change with no consulting
+reader (every stamp `""`, its data-mover census EMPTY) is a `DEFAULTS.log` transition with its
+census and no abi bump; zen4-grid1@1 -> zen4-grid3@1 (transition 2) is one. With a reader, the
+list below applies:
 
 - the abi bump;
 - the readers by grep;
@@ -1496,7 +1506,10 @@ text, and any difference fails.
 
 The secondary checks are:
 
-- `tests/measures/` compares each embedded text with `set.tsv` byte for byte;
+- `tests/measures/` compares each embedded text with `set.tsv` byte for byte; `[s2]` embedded =
+  committed MINUS its `cells` rows (R-35 (d), span_cards.md §3.8): the compare is against the
+  file with those rows dropped by the checker's own strip, and the checker also re-runs the
+  strip step and ksgen and compares their output (`tests/knowledge/run_measures_tests.sh`);
 - the pre-parse is compared with a fresh library parse (findings tests §2/§3's shape).
   Both sides of that compare run the one C reader, so it catches a stale `.inc` and
   nothing about the reader itself. The reader's INTERPRETATION is checked by §9.6's R5

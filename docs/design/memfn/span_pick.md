@@ -398,7 +398,8 @@ finder.c, ofsskip.c, compose.c or presence.c wait ("remodel overlap"); O3 = WAIT
 **Stage 2: measure the cards** `[rev3 O1, A2]`, directly after stage 1 (D186 add. 1 A2): §Cost cards
 (scalar and SIMD forms; Horspool's later), the noise channel (coverage factor, the noise pcrec
 states), the id `zen4-grid3`, the step-0 gate; `[rev5 D5]` [PAIR-LOOKAHEAD-TIME]'s width sweep (its
-trigger fires here). No reader, zero movers, stamps and `DEFAULTS` unchanged.
+trigger fires here). No reader, zero movers, stamps unchanged; `[s2]` `DEFAULTS` flips to
+`zen4-grid3@1` at zero movers (unit S2e; main's ruling (B), R-35 (c); span_cards.md §8.3).
 
 **Stage 3: priced choice rows, one per change.**
 
@@ -406,7 +407,7 @@ trigger fires here). No reader, zero movers, stamps and `DEFAULTS` unchanged.
 |---|---|
 | Unit 3.0, the plan takes the frame `[rev3 P1]` | pcrec states form, handoff and site_kind per NEXT row's frame at phase 1; the call takes hooks and phase set; the reply grows method, resume, frame row; the asker fact retires. Byte-identical; one MF_SITE_ABI (+ MF_CLASS_V) |
 | Each row | one T-PICK row naming its levels; a deny with a D174 name (`registry.md` §6¶8a, `cli.md` §2.4¶1); `[rev3 R1]` a 588-style run, RTE vs the row denied, on EVERY arm (scalar the bar), `[rev5]` a random-like regime among them; its movers census per arm from artifact diffs (`[rev5.1 R15]` sites it does not win included); `[rev3 C7]` `consulted`, set on the define path (breaker (d)); `[rev3 C8]` its drop-F witness or the plant UNREACHED; `[rev3 R5]` its pre-check-part statement; its pcrec abi event and spec hunk |
-| Row 1 `[rev3 A2]` | the first priced departure, admitting smp20's class on `[rev5.1 R18]` STATED facts: a NONE alternative whose core position 0 is a two-member set (not "whose default is", which reads the rate-dependent incumbent); job 588 its evidence, §The watched witness its reading. `[rev3 O2]` Acceptance also against the rule-list pilot (0.981 of ideal, [PRICE-BAKEOFF]), re-run after each priced row. `[rev3 C6]` It flips `DEFAULTS` to the new set. `[rev5 A5]` R7 RESTATED: A-model's one-member preference (`scan_ok`) and A-mass meet in T-PICK, not in KEY; KEY's rows stay the incumbent. `[rev5.1]` Its design items: the method-level tie row (R19); verify priced over T-VERIFY's step list (R21); finder_check L(4) holding the rates fixed and varying only the digest (R22: today it compares no analysis against `fd_an_make`'s, so a priced fd row would read red). `[sp1g review F5]` finder_check L's digest loop (now `check_seam`) compares the traced kit's stderr across digests, so once row 1's trace names the digest it must MASK that token (or compare decision lines only), else the sanctioned line reads red |
+| Row 1 `[rev3 A2]` | the first priced departure, admitting smp20's class on `[rev5.1 R18]` STATED facts: a NONE alternative whose core position 0 is a two-member set (not "whose default is", which reads the rate-dependent incumbent); job 588 its evidence, §The watched witness its reading. `[rev3 O2]` Acceptance also against the rule-list pilot (0.981 of ideal, [PRICE-BAKEOFF]), re-run after each priced row. `[rev3 C6]` It flips `DEFAULTS` to the new set. `[s2]` Stage 2 flips it (S2e, at zero movers); row 1 is the first READER of the already-default set, and its consulting compiles' stamps move then (row 1's abi event). `[rev5 A5]` R7 RESTATED: A-model's one-member preference (`scan_ok`) and A-mass meet in T-PICK, not in KEY; KEY's rows stay the incumbent. `[rev5.1]` Its design items: the method-level tie row (R19); verify priced over T-VERIFY's step list (R21); finder_check L(4) holding the rates fixed and varying only the digest (R22: today it compares no analysis against `fd_an_make`'s, so a priced fd row would read red). `[sp1g review F5]` finder_check L's digest loop (now `check_seam`) compares the traced kit's stderr across digests, so once row 1's trace names the digest it must MASK that token (or compare decision lines only), else the sanctioned line reads red |
 | `[rev3 O7]` Ratchet delta; `[rev3 R9, rev4]` batch gate | T-PICK with its `keep` row falling to KEY is one table (delta 0 at row 1); each later row names the member it deletes or is rejected at review (roadmap §0). Choice-row losses as above; SIMD rows (C9): §The pick 6 |
 | Later rows (none scheduled) | Horspool priced (D176 Q2; deletes HORS_MIN; `hors.probe`, `hit(walk)`, `hit(hors)`; hex8-bounded and the five other D-hors sites). RESEED at any set size (PF E-stmt: [MEMFN-PAIRSTOP] or walk-only, both `enter` cards). Dense pairs (after [MEMFN-PAIRSTOP] and the C5 fix). smp04 `[a[:b]`: a UNIT change. `[rev5 D5]` [COVER-PRICE-WITNESS] (x1.95 on the SCALAR layer too): its SIMD half the C9 row's, its scalar half a scalar priced row |
 
@@ -488,7 +489,9 @@ moves NO blind compile (`findings.md` §6¶3), only compiles naming it. A DEFAUL
 `default` bundle, per encoding) moves blind compiles: a deliberate data event with its census,
 `[rev5.1 R14b]` its log filed with the first such change (D186 add. 2; `DEFAULTS.log` logs set
 defaults only). `[rev3 C6]` **Defaults.** `DEFAULTS` (`idk zen4-grid1@1`) holds no span card, so bare
-compiles keep the incumbent until row 1 flips it, with its census (`measures.md` §5¶6, §8¶3).
+compiles keep the incumbent until row 1 flips it, with its census (`measures.md` §5¶6, §8¶3). `[s2]`
+Stage 2 flips it to `idk zen4-grid3@1` (S2e, `DEFAULTS.log` row 2, an EMPTY census: no reader yet),
+so row 1 reads the default set; bare compiles keep the incumbent until row 1's rows read it.
 `[rev5.1 R14a]` **M2** (RULED, [MEASURE-SET], fa736a260): not ordered against row 1; at M2 the idk
 default has no per-byte cost rows, so priced rows go DARK on bare compiles (rules; stamps move; M2's
 census owns them), INTENDED; named-set compiles keep their priced picks. Stage 1 moves no emitted byte

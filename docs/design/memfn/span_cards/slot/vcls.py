@@ -19,8 +19,9 @@
 # LOWERING SHAPES (r9 EMIT-3, [rev1.3 r9fc-FIX-5]): a two-compare set test is classed by what gcc 15.2 -O2
 # -march=x86-64 -mtune=generic (the declared target, §2.7) lowers it to, never by its spelling. `alu1`: ONE ALU op
 # and ONE compare, i.e. any pair of singletons one bit apart ({X,x} `andl $-33; cmpb`, and {@,`} the same) or an
-# inner range ([0-9] `subl $48; cmpb $9`); `cmp2`: anything else (a pair differing in more than one bit, an edge
-# range with one more), two compares. `shape` lines split class c2 by them, and the timed instance must be the
+# inner range ([0-9] `subl $48; cmpb $9`), and the complement of one byte ([^x], one `cmpb`: at most one ALU op and
+# one compare, S2e); `cmp2`: anything else (a pair differing in more than one bit, an edge range with one more),
+# two compares. `shape` lines split class c2 by them, and the timed instance must be the
 # majority shape (link.py), else its row is a lower bound.
 # STAMPED (r9 SLOT-9): the header names the sweep's sha-256 and the commit census0 states it was swept at, so
 # the plan's verify keys are reproducible from the tree plus that sweep.
@@ -60,6 +61,8 @@ def shape(ms):
             rg.append([x, x])
     if sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg) != 2:
         return None
+    if len(rg) == 2 and rg[0][0] == 0 and rg[1][1] == 255 and rg[1][0] == rg[0][1] + 2:
+        return "alu1"       # [^x], every byte but one: gcc lowers it to ONE cmpb (S2e, ruled FIX-5)
     if len(rg) == 2 and all(lo == hi for lo, hi in rg):
         return "alu1" if bin(rg[0][0] ^ rg[1][0]).count("1") == 1 else "cmp2"
     return "alu1" if len(rg) == 1 else "cmp2"

@@ -22,8 +22,12 @@
 # [MEASURE-SET] M0: the same encoding serves every knowledge kind with a
 # store (the Makefile's `gen-<store>` rule). The findings store is the
 # default and its output is unchanged; a kind names its own spelling with
-# EMBED_KIND=measures, whose files are measure_store/<id>/<rev>/set.tsv and
-# whose names are `<id>@<rev>`.
+# EMBED_KIND=measures, whose files are <dir>/<id>/<rev>/set.tsv and whose
+# names are `<id>@<rev>`. For `measures` the FILEs are not the committed sets
+# but the Makefile's STRIPPED copies, `$(BUILD_DIR)/gen/meas/<id>/<rev>/set.tsv`
+# (each committed file without the data rows of section `cells`: the embed is
+# cell-less, measures.md §8¶2), so the .inc encodes those bytes, unmodified,
+# and tests/knowledge/ compares it with its own strip of the committed file.
 set -eu
 out=$1
 shift

@@ -1180,6 +1180,27 @@ measures.md's text (its format "reads no owner's vocabulary", §2.3¶2).
   rows have no gate: est prints them `ungated` (`[rev1.4 R14-4]`). **A delta row never refuses anything by itself**: a `null` row is unpriced, and an
   unpriced candidate cannot qualify (span_pick §The pick 4: safe); Goal 2's floor (below) is what a run of
   unpriced keys fails.
+- `[S2e STANDING RULE]` **Fused-compare classes: a standing rule for EVERY future window** (the kit manager's
+  condition for ACKing S2d, 2026-11-07; it binds every window, every set id and every revision of this note
+  until changed as its last sentence says). (1) A fused-compare class is identified ONLY by the structural
+  check of the TIMED code (§R1.5 "The fact, as ruled by r11": the executables the manifest pins, two readings of
+  their object code that must agree), NEVER by the sign, the size or the consistency of the measurement: a
+  class consistently negative without the fact stays `null` (REV14-1), and a class with the fact is bound
+  whatever its sign. (2) A bound row carries value `max(0, med(x_l))` and noise `max(r_max, |med(x_l)|)`
+  (REV15-5; `measures.md` §3.5¶3b), with the record's pinned `r_max`. (3) The rule changes only by a NEW
+  REVISION of this note plus a review before a window: never by a ruling inside a window, never by a lane, never
+  for one class. **The check that enforces it**: est.py's fact (`fused_text` against `fused_bytes`, the manifest
+  check, exactly one subject read) and its self-test, planted by the slot-local rows S2950-S2963
+  (`slot/sabotage.sh`, gate job 474), whose verdicts over window 2 are review r11's
+  (`docs/dev/reviews/2026-11-07-r11-memfn-s2rev15.md`) and `s2d2/r11_rows.txt` (the fact holds for exactly l1
+  and c1, for no other class and no null base). Among them, the rows that FAIL on a NON-FUSED class: **S2952
+  (x3)** plants the bound branch without the fact (every verify row bound), and the self-test case "a class NOT
+  fused negative on all six: null (REV14-1 holds)" goes WRONG; **S2951 (x2)** removes the check, and the case "a
+  non-fused class wearing the fact" (a planted derivation, expected refused) goes WRONG. Both read DETECTED in
+  gate job 474's run of 2026-11-07 (`.boxqueue/done/*-474-kit-s2c-slotsab`). The recompute
+  (`tests/knowledge/meas_recompute.py`) applies the bound to a row tagged `fused-load-op` and takes the fact as
+  stated (`measures.md` §3.5¶3b): object code is not in the set, so the fact's enforcement is the producer's
+  check above, and its evidence the set's `PROVENANCE.md`.
 - **The unit's bimodal test**: with the unit's `x_l` sorted ascending (s_0..s_6), bimodal iff for some k in
   2..5 (both clusters >= 2 launches) `s_k − s_(k−1) > gate_e6/2`: a split as large as the unit's own gate.
   `[rev1.2 MEAS-9]` Under per-launch placement a two-phase-class walk is caught by the half gate and this test

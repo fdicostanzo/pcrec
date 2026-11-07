@@ -41,11 +41,16 @@ M0's S1227-S1246 (bar S1242/S1243) and span_pick S2a's format-2 rows on it.
   UTF-8 length of code point, a two-encoding `serves` list, comments and
   blank lines around the bundle.
 - `run_measures_tests.sh` — the measures kind ([MEASURE-SET] M0; set
-  format 2 since span_pick S2a; 95 checks): R1-R5 over the committed store
-  set and `mfixtures.py`'s `ok/` sets; format 2's `pair/` digesting apart
+  format 2 since span_pick S2a; 110 checks): R1-R5 over the committed store
+  sets (R4/R5 on the FILE path; the NAME's view is the cell-less embed, held
+  to the file minus its `cells` rows by the runner's own awk; the listing's
+  `file_cells` against an awk count) and `mfixtures.py`'s `ok/` sets; format 2's `pair/` digesting apart
   (one noise, `class` alone, a noise of exactly 10^15); every refusal class of `docs/spec/measures.md` §7 (`bad/`, each
   held to a substring of its refusal); the embedded store against its files
-  (`meas_store_check.c`); loading (`--measures`, the `measures` config
+  (`meas_store_check.c`: text = the stripped file, 0 cells in every
+  pre-parse) and the GENERATION re-run fresh (`make meas-strip` into scratch,
+  `scripts/ksgen.c` over the committed store against the committed table);
+  the recompute (`meas_recompute.py`); loading (`--measures`, the `measures` config
   line, fill-only both ways, `-I` exact-entry probing and the S2 mismatch,
   the shadow rule on (id, rev) in both directions, the `idk` default and
   `measure_store/DEFAULTS`); the stamp and `rx_info.measures` ("" while no
@@ -61,6 +66,17 @@ M0's S1227-S1246 (bar S1242/S1243) and span_pick S2a's format-2 rows on it.
   format 2, + `EXPECT.tsv`), `pair/`, `store/` (fx-f2 for ksgen), `idir/`
   and `shadow/`. Digests come
   from `ks_ref.py`, so a wrong one is a red fixture.
+- `meas_recompute.py ROOT` — the RECOMPUTE check (span_cards.md §3.8 step
+  4, Goal 3): every committed FORMAT-2 set (floor 1; format 1 counted as
+  skipped) re-derived from its cells and its run record (located and
+  sha-checked through PROVENANCE.md), written from `docs/spec/measures.md`
+  §3.4-§3.5 and the `kit-grid@3` producer rules in span_cards.md, importing
+  nothing from the slot harness (ks_ref.py is its parser): every row exact,
+  gates, drift, J1's verdict, the floor, the outcome and `partial`.
+  `--set/--provenance/--root` checks one set.
+- `recompute_plants.sh` — the recompute's sabotage plants (S2964 (p),
+  S2965 (q), S2970 (w), S2971 (x), S2972 (x2), S2973 (x3), S2974 (x4)) in
+  scratch copies, control first; NOT run by make (gate job 48x).
 - `meas_store_check.c OUTDIR` — the embedded store against itself: each
   set's embedded TEXT, the decoded view of its PRE-PARSE and of a fresh
   parse of that text, and a RAW-ROW compare of every field (noise included;
