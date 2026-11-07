@@ -3561,3 +3561,19 @@ Main ruled on the four kit findings (D186 add. 2):
   - New kit branch lane/memfn-k1107 cut from main a345c5ffe; k1102 is retired.
   - Pruned: worktrees s2c, s2c14fix, s2c15fix, s2rev12 (wtprune, --force for the disposable dirt: the size log and untracked deliver files). branchprune --kit removed 79 merged kit branches. s2e is kept by the quiet gate (build <120 min); prune it later.
   - S2f lane `s2f` LAUNCHED (sonnet, worktree s2f off k1107; deliver 6cfb70912): the vcls fold into census0 (r9-SLOT-9), census0 re-run with the measured cards, the smp20 k* reading, row 1's mover forecast. Jobs 487-489 (strict, census, sections); the lane writes them and I queue them.
+- 11-07 ~14:40: S2f DELIVERED, tip 9911ff380 (lane closed).
+  - Watched witness: k = 1.9407 (pair 0.073843 / libc 0.038049, zen4-grid3@1) is BELOW k* (4.2094 at gap 256, 3.0270 at gap 1024).
+    - {X,x} beats '/' beyond band (z 3) at both gaps.
+    - Control: the stand-in k* reproduces 2.1464.
+  - Row 1 forecast: 207 units, 206 priced. Band-0 / beyond-band movers:
+    - gap 256: pair->walk 59/0, walk->pair 11/7;
+    - gap 1024: pair->walk 91/5, walk->pair 7/6;
+    - DEF arm: small;
+    - no unit moves to a one-member stop.
+    - Unpriced: PARKED incumbents (1,368 of 3,430), site kinds 0/2, D-hors, memchr-back.
+  - Output: span_pick/census0_cards.out (new `forecast` mode; the vcls fold is its §3 and equals vcls.out byte for byte).
+  RULED (kit manager):
+    (1) census0.out stays as is; the forecast is a separate file, because census0.out is a timed-path input (est NON_TIMED, plan.py).
+    (2) slot/vcls.py and vcls.out stay, because link/plan/est read them. Retiring them is a slot change, filed as a later cleanup (trigger: the next slot revision).
+  - Fixed the lane's 488 expect matcher: it read the job's own rc line, not a number; it now reads collect.py's "== r33 collect COMPLETE: N compiles".
+  - Jobs 487-489 queued.
