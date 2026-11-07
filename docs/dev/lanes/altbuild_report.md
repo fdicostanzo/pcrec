@@ -1,6 +1,6 @@
 # Lane altbuild — alternation normal form stages 1, 2p, 2b (BUILD)
 
-STATE: STOPPED in stage 2b (STOP RULE; see STATE AT HANDOFF). Design: `docs/design/alt_normal_form.md` rev 3.
+STATE: stages 1, 2p, 2b built (lane altbuild stopped in 2b under its STOP RULE, ruled R4; lane altbuild2 finished it); review r5 altcode's ruled fixes applied by lane altfix, validation OWED ("Lane altfix", OWED). Design: `docs/design/alt_normal_form.md` rev 3.
 Build go: Frank, 2026-11-06, stages 1, 2p, 2b only.
 
 ## Ids taken
