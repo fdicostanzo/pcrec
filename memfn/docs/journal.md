@@ -3551,3 +3551,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - movers/0002.tsv code_commit re-stamped to d3da774b0; the guard is unchanged.
   - strict and the light sections are green.
   - All seven gates 480-486 requeued on this tip; watched by monread kit --wait.
+- 11-07: main: C4 scanning DATA (set ids such as zen4-grid3, corpus subjects such as `adx`) is a scope flaw. Main will narrow C4 to code only after alternation lands, which deletes the zen4-grid* allowlist rows. Our rows are interim. No reply needed.
