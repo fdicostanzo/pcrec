@@ -100,8 +100,17 @@ selection reads it.
   copies, cards, 826 cell ids, base rule (35 delta rows), jobs, drift, row list 38, rows exact (W 999387;
   bound 4, gate pass 3, priced 28, sub-resolution 3), gates, J1 (verdict c re-derived), floor and outcome FULL,
   `partial` 0, every cell read. Population: "1 format-2 set(s) (floor 1), 1 format-1 skipped" (keyed on the
-  header's `format`). The sub-lane's own report never arrived (two re-requests); I verified its files by
-  reading the header and running both scripts.
+  header's `format`). Its report arrived late (via the kit manager and directly); I had already verified the
+  files by reading the header and running both scripts (committed 6608a3104). It found no spec/producer
+  disagreement. Its READINGS of open spec sentences: (1) §3.5¶3: a null row's abs_ns_e6 is compared only when
+  the set states one (no null rows today); (2) §3.5¶11: `unless-j1-b` is decided by the RE-DERIVED J1 verdict,
+  not the stated one; (3) §2.2¶5: a cell no row, control or verdict reads fails as UNREAD-CELL; (4) §3.5¶2: a
+  card's `-` gate takes the policy's `gate_default_e6`; the set's cards must equal the record's (CARDS, from
+  design §2.4, not the spec); (5) §3.4¶6: ids are checked against their columns BEFORE uniqueness, so (x2)
+  reports ID-COLUMNS; (6) plant (x3) edits only the fifth id field, values untouched, BASE-RULE fires before
+  any row is computed; (7) §3.4¶8: base-cell events must be an integer, 0 not required. NOT covered by the
+  recompute: §3.5¶8a's est-commit and timed-code checks (they need git; est's draft_gate holds them) and the
+  `source` column (display text).
 - `tests/knowledge/run_measures_tests.sh`: STORE checks re-aimed (R4 on the FILE; R4/R5 of the NAME vs the
   runner's OWN stripped copy; `file_cells` vs the file's count; embedded text vs the stripped copy, 0 `cell:`
   scopes in the pre-parse); the Makefile's strip step re-run into scratch and compared with the runner's
@@ -113,8 +122,8 @@ selection reads it.
   "later"), deps fullmatch `kit:form.<same id>=<16 hex>`, stale counted; floor 33. `run_finder`-equivalent
   run: 1108 passed, 0 failed, "2 kit-grid set(s), 33 format-2 form-bearing rows checked, 0 stale".
 - Drift gate: `make gen-measures` after the last ksgen edit leaves `src/core/` clean.
-- Light sections run directly (niced): `make test-codegen`, `test-spec-history`, `test-claudemd-size` (see
-  Gate jobs for their results). `make strict` rc 0 at the merge; the full gate is job 480-482.
+- Light sections run directly (niced) at the code tip: `make test-codegen` rc 0, `test-spec-history` rc 0,
+  `test-claudemd-size` rc 0; no `*** [test-` line in any log. `make strict` rc 0 at the merge; the full gate is job 480-482.
 - READING (ksgen pre-parse): "the pre-parse has no cell" is implemented by writing an EMPTY cells table from
   the parsed file, not by parsing the stripped text; equal by meas_store_check's compare. A future derived row
   reading a cell would fail on the stripped NAME view, which that compare would show.
@@ -184,7 +193,17 @@ Each dry-run through `scripts/boxqueue add --no-start` against a SCRATCH queue d
 (`PCREC_BOXQUEUE_DIR=.../s2e/bqtest`; boxqueue has no `add --dry-run`, `add` dry-runs before enqueueing):
 all 7 accepted with their declarations; the real queue holds no s2e job. NOT queued. OWED: the gate jobs.
 
-Light sections run directly: see the result line appended below.
+Light sections run directly (test-codegen, test-spec-history, test-claudemd-size): all rc 0 (Recompute
+and checks).
+
+## STATE AT HANDOFF
+
+OWED: the gate jobs (queued by the kit manager): 480-kit-s2e-strict, 481-kit-s2e-sections, 482-kit-s2e-test,
+483-kit-s2e-mech, 484-kit-s2e-slotsab, 485-kit-s2e-census, 486-kit-s2e-plants, under
+`/var/tmp/pcrec-pcrec/scratch/memfn/s2e/jobs/`, each dry-run clean, none queued by the lane (brief). No
+rulings file was written for this lane. Branch tip clean; to resume, read this report and span_cards §9's
+S2e row. Two items stand on those jobs: the census's zero movers (485, which also re-derives
+`movers/0002.tsv`) and make test (482).
 
 ## Charter-vs-committed checklist
 
