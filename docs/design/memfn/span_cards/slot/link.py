@@ -134,7 +134,7 @@ WRAP_CMP = """#include <stddef.h>
 #include <string.h>
 #define CAT_(a, b) a##b
 #define CAT(a, b) CAT_(a, b)
-/* SITE FILE BEGIN */
+%(helpers)s/* SITE FILE BEGIN */
 %(file)s
 /* SITE FILE END */
 static inline __attribute__((always_inline)) int test(const unsigned char *subject, size_t pos)
@@ -149,7 +149,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_
 {
     (void)n;
     uint64_t k = 0;
-    for (size_t i = 0; i < nc; i++) k += test(s, c[i]) != 0;
+    for (const uint32_t *p = c, *e = c + nc; p < e; p++) k += test(s, *p) != 0;   /* a pointer bump: R14-1 */
     return k;
 }
 __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
@@ -167,26 +167,57 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
 }
 """
 
-# the null verify base (the driver's: the candidate loop with the compare replaced by a constant; the
-# candidate's first byte is still loaded, so the loop reads what the compare's loop reads first)
-WRAP_NULL = """#include <stddef.h>
-#include <stdint.h>
-#define CAT_(a, b) a##b
-#define CAT(a, b) CAT_(a, b)
-__attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
+# [rev1.4 R14-1] THE NULL VERIFY BASE IS ITS CLASS ARM'S OWN LOOP WITH THE COMPARE REMOVED: the base's TU is the
+# class instance's WRAP_CMP text, byte-identical outside the SITE BODY span (the same candidate loop, addressing,
+# helpers and so alignment), and its body is null_body(the arm's body): the body's FIRST LOAD (the candidate's
+# bytes at subject + pos, at the width the body reads them) kept through an empty asm, and in place of the compare
+# a 1 the compiler cannot see through (so the loop still accumulates a run-time value, as the arm's does: gcc keeps
+# the arm's pointer-bump loop and its alignment instead of folding the count to nc). One source text renders both; null_check() refuses a base that differs from its class arm
+# anywhere but the body, or whose kept load is not one the arm's body makes. Later loads of a multi-word body
+# (w2, w3) are the compare's (gcc lowers them behind the first compare's branch), so the base keeps the first.
+SLOT_HELPERS = """static inline __attribute__((always_inline)) uint64_t slot_ld(const unsigned char *p, size_t n)
 {
-    (void)n;
-    uint64_t k = 0;
-    for (size_t i = 0; i < nc; i++) { unsigned char b = s[c[i]]; __asm__ volatile("" : : "r"(b)); k++; }
-    return k;
+    uint64_t w = 0;
+    memcpy(&w, p, n);
+    return w;
 }
-__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
-                                                   uint64_t *sum, uint64_t *h)
+static inline __attribute__((always_inline)) int slot_null(uint64_t v)
 {
-    (void)sum; (void)h;
-    return CAT(SYM, _time)(s, n, c, nc);
+    int one = 1;
+    __asm__ volatile("" : "+r"(one) : "r"(v));
+    return one;
 }
 """
+
+# the body's load spellings (the kit's three: a word load, a byte index, a memcmp of the run): first match by
+# position in the body; a memcmp keeps its pointer and length as slot_ld's (the load gcc makes for it)
+NULL_LOADS = (
+    (r"mf_w\d+\(subject \+ pos(?: \+ \d+)?\)", lambda m: m.group(0)),
+    (r"subject\[pos(?: \+ \d+)?\]", lambda m: m.group(0)),
+    (r'memcmp\((subject \+ pos(?: \+ \d+)?), "(?:[^"\\]|\\.)*", (\d+)\)', lambda m: "slot_ld(%s, %s)" % (m.group(1), m.group(2))),
+)
+
+def null_body(body):
+    """the arm body with its compare removed: slot_null(its first load)"""
+    hits = [(m.start(), f(m)) for rx, f in NULL_LOADS for m in [re.search(rx, body)] if m]
+    if not hits:
+        raise SystemExit("link: NULL-BASE: no load of the candidate in the body %r" % body.strip()[:120])
+    return "slot_null(%s)\n" % min(hits)[1]
+
+def null_check(base_src, arm_src, name):
+    """[rev1.4 R14-1] the base and its class arm differ only in the compare: equal outside the SITE BODY span, and
+    the base body is slot_null(L) with L a load the arm's body makes (verbatim, or its memcmp's slot_ld)"""
+    cut = lambda s: re.sub(r"/\* SITE BODY BEGIN \*/\n.*?/\* SITE BODY END \*/", "BODY", s, flags=re.S)
+    if cut(base_src) != cut(arm_src):
+        raise SystemExit("link: NULL-BASE MISMATCH %s: its text differs from its class arm's outside the compare "
+                         "(another loop, addressing or wrapper)" % name)
+    m = re.fullmatch(r"slot_null\((.*)\)\n", span(base_src, "BODY"), re.S)
+    ab = span(arm_src, "BODY")
+    mm = re.fullmatch(r"slot_ld\((subject \+ pos(?: \+ \d+)?), (\d+)\)", m.group(1)) if m else None
+    if not m or not (m.group(1) in ab or (mm and re.search(r'memcmp\(%s, "(?:[^"\\]|\\.)*", %s\)'
+                                                          % (re.escape(mm.group(1)), mm.group(2)), ab))):
+        raise SystemExit("link: NULL-BASE MISMATCH %s: its body %r keeps no load its class arm's body makes"
+                         % (name, span(base_src, "BODY").strip()[:120]))
 
 def render(fx, a):
     """(source text, (form, cls) or None, facts): (form, cls) the KEY's (r9 G2), the Arm's own must agree, and
@@ -199,7 +230,10 @@ def render(fx, a):
         q = a.name.split(".")
         if len(q) != 3 or q[:2] != ["base", "null"] or not a.of or a.of[1] != q[2]:
             raise SystemExit("link: KEY-ARM MISMATCH %s: a null base names its class, the Arm's is %s" % (a.name, a.of))
-        return WRAP_NULL, None, facts(fx, a.of[0], a.of[1])
+        src, _fc, f = render(fx, plan.Arm("kit.verify_cmp.%s.%s.p0" % a.of, a.group, "verify", a.of[0], cls=a.of[1],
+                                          pas="p0", events=a.events))
+        i, j = src.index("/* SITE BODY BEGIN */\n") + len("/* SITE BODY BEGIN */\n"), src.index("/* SITE BODY END */")
+        return src[:i] + null_body(src[i:j]) + src[j:], None, f
     if a.kind in ("enter", "j1"):              # whole artifacts (art.py): rundir is fx's directory
         import art
         return art.render(a, os.path.dirname(fx)), None, {}
@@ -210,7 +244,7 @@ def render(fx, a):
     f = facts(fx, form, cls)
     fi, bo = parts(fx, form, cls)
     if f["shape"] == "cmp-expr":
-        return WRAP_CMP % {"file": fi, "body": bo}, (form, cls), f
+        return WRAP_CMP % {"helpers": SLOT_HELPERS, "file": fi, "body": bo}, (form, cls), f
     table = ""
     if f.get("table", "-") != "-":
         m = set(hexbytes(f["table_members"]))
@@ -365,6 +399,17 @@ def build_objs(job, rundir, arms):
         "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\n" + "".join("\t".join(r) + "\n" for r in ctext))
     # arm vs twin: the sources byte-identical (cmp)
     by = {a.name: src for a, _s, _o, _f, src in objs}
+    # [rev1.4 R14-1] every null base against its class arm: they differ only in the compare
+    nb = 0
+    for a, _s, _o, _f, src in objs:
+        if a.kind == "verify" and a.form == "null":
+            arm = next((n for n in sorted(by) if n.startswith("kit.verify_cmp.%s.%s." % a.of) and not n.endswith("#b")), None)
+            if arm is None:
+                raise SystemExit("link: NULL-BASE MISMATCH %s: no arm of its class %s.%s in job %s" % ((a.name,) + a.of + (job,)))
+            null_check(src, by[arm], a.name)
+            nb += 1
+    if nb:
+        print("null-base: %d bases, each its class arm's text outside the compare, keeping a load the arm makes" % nb)
     for n, src in by.items():
         if n.endswith("#b") and by.get(n[:-2]) != src:
             raise SystemExit("link: %s's source differs from its arm's" % n)

@@ -11,8 +11,10 @@
  * Seeds: (arm's subject family, length, subject index). A twin draws its arm's subjects. A find base
  * (landing miss) draws the shared miss text without hits. A verify base (null) draws the p0 subjects of its
  * class's instance (its run, mask or members), not its p50 arm's: the base is a different subject from the
- * p50 row it is subtracted from (the null loop reads the candidate's first byte only, so its cost does not
- * depend on the pass rate; r9 SLOT-14). */
+ * p50 row it is subtracted from (the null loop keeps the body's first load and no compare, so its cost does
+ * not depend on the pass rate; r9 SLOT-14). [rev1.4 R14-1] The null base is its class arm's own loop with the
+ * compare replaced by the constant 1, so its gate counts EVERY candidate: count E, the position sum and
+ * FNV-1a-64 over every candidate index. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,12 +116,11 @@ void gen_subject(const arm *a, uint32_t len, uint32_t idx, unsigned char *buf, u
             }
             buf[pos + (uint32_t)j] = (unsigned char)b;
         }
-        if (passes && a->kind == K_CMP) {
+        if ((passes && a->kind == K_CMP) || a->kind == K_NULL) {
             (*count)++;
             *sum += i;
             *h = fnv_pos(*h, i);
         }
     }
     *nc = E;
-    if (a->kind == K_NULL) { *count = E; *sum = 0; *h = FNV0; }
 }
