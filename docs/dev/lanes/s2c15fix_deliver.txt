@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2c15fix_report.md
+sections: Summary; Fixes by id; Timed-code impact; Window 2 re-score; Sabotage; Validation; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
