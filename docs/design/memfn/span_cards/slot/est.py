@@ -434,11 +434,12 @@ def fused_facts(rundir, rec, keys, L):
     return out, pins
 
 def est_inputs():
-    """[r11-REV15-6] the files whose text is the estimator's rules: est.py, every module it imported from outside the
-    standard library, the digest's ks_ref.py, and the live policy table"""
-    std = os.path.realpath(os.path.dirname(os.__file__)) + os.sep
+    """[r11-REV15-6] the files whose text is the estimator's rules: est.py, every module it imported from its own
+    directory (sys.path[0]; under -I every other path entry is the Python installation's, sitecustomize included),
+    the digest's ks_ref.py, and the live policy table"""
+    me, here = os.path.realpath(__file__), os.path.realpath(HERE) + os.sep
     mods = {os.path.realpath(m.__file__) for m in list(sys.modules.values()) if getattr(m, "__file__", None)}
-    return ([os.path.realpath(__file__)] + sorted(p for p in mods if not p.startswith(std) and p != os.path.realpath(__file__))
+    return ([me] + sorted(p for p in mods if p.startswith(here) and p != me)
             + [os.path.join(TREE, "tests", "knowledge", "ks_ref.py"), plan.POLICY])
 
 def est_commit(paths=None):
