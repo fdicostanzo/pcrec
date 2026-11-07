@@ -27545,3 +27545,10 @@ Next
 - Ask Frank for build goes: alternation stages 1/2p/2b, and lookbehind stage 1 after crit-vlb3, run as parallel opus build lanes with code rounds.
 - Rule crit-vlb3 and crit-arev2.
 - compref lane (compliance-page disagreements) is running.
+
+## 2026-11-06 evening (session 130, in flight) — lookbehind validation, alternation next
+
+- Lookbehind stage 1 (lane/vlbbuild @482f15d87): make test GREEN after lane mttri fixed 5 real branch-owned reds (pcre2_ctypes str-encoding regression from U6; registry/rxtsource/startset pins with causes); abisweep green (only the K137 pair); mech 1-4 green (mech4's one undetected = S-U6-next-pos-byte-advance, EXPECTED-UNDETECTED on main since 2026-09-05; undettri staged a 5-cell find-all fix in scratch, applied on main after landing); reach + reach6 green; id1 red was the judge's (id1tri re-judged GREEN). Axes (job 228) still running at the time of writing.
+- Lane qspeed merged (c24f6e70a, boxqueue batch --snapshot); D26 addendum (accept set is a floor) + [PCRE2-EXCEED] filed (ae7b58d8c); rewrite-free algebra families linked (eeff89640).
+- Frank: box hold lifted tonight; long/timing runs preferred at night (kit S2d timing may run tonight); order: alternation thread to landing first, then XARCH seam note + span-arms note (his go), then [REWRITE-ADJ]; full battery after alternation lands (option b). Kit renamed window.env -> window.vars (Frank's global .env deny rule stays).
+- Next: axes green -> lookbehind landing lane -> alternation catch-up lane -> alternation code critic round.
