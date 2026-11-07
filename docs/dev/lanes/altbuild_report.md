@@ -727,3 +727,36 @@ included), `run_wclass_census.sh` (0 failed), `run_fallback_table.sh` (0
 failed; the EMIT-2 cells and the re-aims included);
 `m6read_check_sab_anchors.py` (all anchors resolve); mech VALIDATE_ONLY over
 the 28 rows (all valid).
+
+## Lane u1tri (2026-11-06, sonnet): triage of job 161-altfix-u1bench
+
+Job 161 (U1 on bench/utf8, base96 vs the altfix tip 8cbf0db6c) ended rc 1:
+76 patterns, 2 findings, `refused: 2` among the movers. Verdict: no real
+regression; both findings are the instrument's (class i), the refusals are
+accepted movers (class ii).
+
+| pattern | observable | base -> tip | class |
+|---|---|---|---|
+| `alt-nearmiss` (`日本語\|日本国`) | `vmbytes`, `-fno-cls-kit` route | 1500 -> 1730 | (i) instrument |
+| `alt-shared-char` (`日本\|日曜\|日付`) | `vmbytes`, `-fno-cls-kit` route | 2118 -> 2119 | (i) instrument |
+| `prp-l`, `prp-notl` | `refused` (VM route) | refused -> compiles | (ii) accepted: a refusal RETIRED (already classed `predicted-mover`, not findings) |
+
+Why the two growths are not regressions: the auto-route output of both
+patterns is byte-identical base vs tip except the `RX_ALTCLS_MERGES` counter
+(diffed); on the REAL VM route (`--engine=vm`, kit on) the program SHRINKS
+and the island falls 1 -> 0 (`alt-nearmiss` 1500 -> 875 B, `alt-shared-char`
+2118 -> 630 B). The growth exists only under `-fno-cls-kit`, the
+instrument's proxy for observing islands: with the kit denied, altcls's
+folded wide class (`語|国`, `曜|付`) is lowered to a byte branch tree, larger
+than the unmerged shared-prefix literal runs. Nobody ships that route
+(a deny flag). No perf stat taken: the default and kit-on emissions are
+either identical or smaller, so there is nothing to time.
+
+Instrument fix (`altbuild_evidence/u1_bench.py`, REVISED note in its
+docstring): `vmbytes` growth is a finding only on the kit-on VM route (new
+observable `vmkit`); growth on the `-fno-cls-kit` route alone is its own
+listed class `denied-kit-growth`. A NEW refusal, a kit-on growth and an
+unpredicted mover are still findings (not weakened). Re-run by hand over the
+same population (seconds): 0 findings, 2 `denied-kit-growth` listed
+(scratch/u1tri/out/u1_bench.tsv). Job 161's rc stays red in the queue record;
+a re-queue of the same job script now exits 0.

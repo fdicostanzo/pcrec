@@ -35,7 +35,18 @@ widening (review r5 altcode: a class is read as its member words), not a
 finding; (3) a route whose refusal moved (refused at BASE, compiles now)
 has no BASE value to compare, so that route's other observables are not
 read as movers (`prp-l`, `prp-notl` on the VM route). STAGE is now the
-branch tip, so the stages 1/2p/2b and the altfix fixes are read together."""
+branch tip, so the stages 1/2p/2b and the altfix fixes are read together.
+
+REVISED by lane u1tri (2026-11-06, job 161: 2 findings, both `vmbytes grew`,
+`alt-nearmiss` 1500 -> 1730 and `alt-shared-char` 2118 -> 2119, both the
+instrument's): `vmbytes` is read on the REAL VM route (`--engine=vm`, the
+class kit on: 1500 -> 875 and 2118 -> 630, both shrink) and only a growth
+THERE is a finding. The `-fno-cls-kit` route stays the island/rung
+observation, but its byte count is a deny-flag proxy: with the kit denied the
+folded wide class (altcls: two CJK branches -> one class) is lowered to a byte
+branch tree, which is larger than the unmerged shared-prefix literal runs. A
+growth on that route alone is listed in its own class (`denied-kit-growth`),
+not a finding. A growth on the kit-on route, or any NEW refusal, still is."""
 import os, re, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 
@@ -106,7 +117,9 @@ def facts(pcrec, pat):
 def obs(pcrec, pat):
     a = run(pcrec, pat, [])
     v = run(pcrec, pat, ["--engine=vm", "-fno-cls-kit"])
-    o = {"run": facts(pcrec, pat), "refused": (a is None, v is None)}
+    k = run(pcrec, pat, ["--engine=vm"])
+    m = re.search(r"#define RX_VM_PROGRAM_BYTES\s+(\S+)", k or "")
+    o = {"run": facts(pcrec, pat), "refused": (a is None, v is None), "vmkit": m.group(1) if m else "-"}
     o["tables"] = dict((m.group(1), int(m.group(2))) for m in
                        re.finditer(r"rx_(\w+?)_next_state\[(\d+)\]", a or ""))
     for k, n in (("vmbytes", "VM_PROGRAM_BYTES"), ("islands", "VM_ALT_ISLANDS"), ("rungs", "VM_RUNGS")):
@@ -126,15 +139,17 @@ def one(args):
     bad = []
     for k, x in s["tables"].items():
         if k in b["tables"] and x > b["tables"][k]: bad.append("U3 growth %s %d->%d" % (k, b["tables"][k], x))
-    if "vmbytes" in moved and "-" not in (b["vmbytes"], s["vmbytes"]) and int(s["vmbytes"].rstrip("ULL")) > int(b["vmbytes"].rstrip("ULL")):
-        bad.append("vmbytes grew")
+    def grew(k):
+        return "-" not in (b[k], s[k]) and int(s[k].rstrip("ULL")) > int(b[k].rstrip("ULL"))
+    denied = "vmbytes" in moved and grew("vmbytes") and not grew("vmkit")
+    if grew("vmkit"): bad.append("vmbytes grew (kit on)")
     rise = False
     if "islands" in moved:
         if "-" in (b["islands"], s["islands"]): bad.append("islands %s->%s" % (b["islands"], s["islands"]))
         elif int(s["islands"]) > int(b["islands"]): rise = True
     if "refused" in moved and (s["refused"][0] and not b["refused"][0] or s["refused"][1] and not b["refused"][1]):
         bad.append("NEW refusal")
-    return name, pat, predicted(pat), moved, bad, b, s, rise
+    return name, pat, predicted(pat), moved, bad, b, s, rise, denied
 
 def main():
     a = sys.argv[1:]
@@ -152,9 +167,10 @@ def main():
     findings = 0
     with open(os.path.join(out, "u1_bench.tsv"), "w") as f:
         f.write("pattern\tpredicted\tmoved\tverdict\tdetail\n")
-        for name, pat, pred, moved, bad, b, s, rise in res:
+        for name, pat, pred, moved, bad, b, s, rise, denied in res:
             if bad: v = "FINDING"
             elif rise: v = "island-rise-EMIT1"
+            elif denied: v = "denied-kit-growth"
             elif moved and not pred: v = "UNPREDICTED-MOVER"
             elif moved: v = "predicted-mover"
             elif pred: v = "predicted-not-moved"
@@ -164,12 +180,13 @@ def main():
             f.write("%s\t%s\t%s\t%s\t%s\n" % (name, pred, ",".join(moved) or "-", v, det))
     import collections
     c = collections.Counter()
-    for name, pat, pred, moved, bad, b, s, rise in res:
+    for name, pat, pred, moved, bad, b, s, rise, denied in res:
         for k in moved: c[k] += 1
     print("population: %d bench/utf8 patterns; predicted (wide construct): %d; moved: %d; per observable: %s"
           % (len(res), sum(r[2] for r in res), sum(1 for r in res if r[3]), dict(c)))
     print("refused on both builds (either route): %d" % sum(1 for r in res if r[5]["refused"] == r[6]["refused"] and any(r[5]["refused"])))
     print("island rises (the EMIT-1 widening, listed, not findings): %d" % sum(1 for r in res if r[7]))
+    print("kit-denied route byte growth (deny-flag proxy, listed, not findings): %d" % sum(1 for r in res if r[8]))
     print("findings (unpredicted mover, growth, new refusal): %d" % findings)
     if not res: print("FLOOR: empty population"); sys.exit(1)
     sys.exit(1 if findings else 0)
