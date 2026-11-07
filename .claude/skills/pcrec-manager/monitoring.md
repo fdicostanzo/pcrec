@@ -19,7 +19,10 @@ The PROMPT (verbatim; every step runs every tick, none is conditional on
 what you remember):
 
     HEARTBEAT (OWNER=main). Run these steps in order, then stop:
-    1. `scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
+    0. Run `scripts/gestalt --owner main`; include its 'load' and 'sessions'
+       lines in the one-line reply only when something is unusual (load >
+       nproc, a session gone, CI red).
+    1. `scripts/monread main``scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
        triage lane, monitoring.md §2); GREEN/INFO lines -> refresh owner.md.
     2. Read docs/dev/owner.md "Waiting on": for every entry older than 60
        min, send that ONE session one line naming the thing and asking its
@@ -27,7 +30,7 @@ what you remember):
     3. Act on any delivered lane result or task notification.
     4. Otherwise reply ONE line. No new work, no re-reads.
 
-The kit's prompt is the same with OWNER=kit, `scripts/monread kit`, and its
+The kit's prompt is the same with OWNER=kit, `scripts/gestalt --owner kit`, `scripts/monread kit`, and its
 list in `worktrees/.mgr/waiting_on.kit`.
 
 Why step 2 reads a file: the old wording ("ONLY if you are currently waiting
