@@ -704,3 +704,26 @@ the kit's S2d timing window (rulings R6) began before the last build.
 Every job waits on `altfix-gate` (ready once the kit's job 489 has ended,
 R6), which touches `scratch/altfix/lift`. The batches run in `--snapshot`
 worktrees of the commit named in the OWED list below.
+Snapshot commit for every batch: `0a8d252f6`. Frozen tip binary for the
+binary jobs: `scratch/altfix/tip/pcrec`, built from `8cbf0db6c` (src identical
+to `0a8d252f6`). Each job's log is `job.log` in its run dir under
+`/home/pcrec/projects/pcrec/worktrees/.boxqueue/{done,failed}/<ts>-<name>/` (perfrun's make log beside it as `job.log.make`).
+
+| key (owner altfix) | runs | completion line to read |
+|---|---|---|
+| `altfix-gate` | the R6 lift (touches `scratch/altfix/lift`) | outcome=green |
+| `altfix-acc` | the acceptance re-measure, base96 vs tip, 12 cells (`scratch/altfix/jobs/acc.sh`; artifacts `scratch/altfix/m/`) | `== acc DONE 12 cells` |
+| `altfix-u1bench` | 301's re-run, fixed instrument, base96 vs tip (`scratch/altfix/out/u1_bench.tsv`) | `findings (unpredicted mover, growth, new refusal): 0` |
+| `altfix-movers` | the 2b movers table re-measured, REF s12p vs tip (`scratch/altfix/out/p2b_movers_altfix.tsv`); rc 1 = denied-pair differences, PREDICTED from EMIT-1's written-class islands | `movers rc=0` or `movers rc=1` and its summary |
+| `altfix-b202611062200122965726.strict`, `.test` | make strict; make test via perfrun | no `*** [(Makefile:N: )test-X] Error` line |
+| `altfix-b202611062200122966738.mech1`, `.mech2`, `.reach` | mech S1880-S1882, S1886-S1894, S1990, S1991; S238, S66, S366, S693, S303, S-U8, S420, S1708-S1714; then REACH_ONLY over all 28 | `== mech run COMPLETE` trailer, every row DETECTED / reach ok |
+| `altfix-b202611062200122968116.r302`, `.r303` | 302 re-run (test-registry, test-rxtsource); 303 re-run (test-fallback-table, test-island, test-codegen, test-recursion-identity-locked, plus test-prefilter, test-uprops-utf8 for the re-aimed witnesses) | no `*** [... test-X] Error` line |
+| `altfix-b202611062200122969007.axes` | make test-axes, cap 28800 | no `*** [... test-X] Error` line |
+
+The batches chain inside themselves (a stage waits for the one before to go
+green), not across batches. Hand-checked green before queueing, on this
+tree under the box lock: `run_island_tests.sh` (45 passed, section 12
+included), `run_wclass_census.sh` (0 failed), `run_fallback_table.sh` (0
+failed; the EMIT-2 cells and the re-aims included);
+`m6read_check_sab_anchors.py` (all anchors resolve); mech VALIDATE_ONLY over
+the 28 rows (all valid).
