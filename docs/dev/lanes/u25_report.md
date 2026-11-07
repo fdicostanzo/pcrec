@@ -11,3 +11,5 @@ Rulings file u25_rulings.md was empty (no entries applied). Premise held (U24 wa
 - `make test-lookaround` locally green (Ubuntu-patched oracle: 0 tolerated used). Not run against vanilla 10.46 here.
 - docs/pcre2_compliance.md lists no lookbehind/invalid-UTF disagreement; skipped.
 - Added to lanes history index.
+
+OWED: none
