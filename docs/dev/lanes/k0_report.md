@@ -14,7 +14,7 @@ C or Rust): `memfn/src/targets.def` (the facts: tokens only), `memfn/src/targets
 emitter's family guard conditions and the kit's host chain), `memfn/src/targets.c` (the entries, in a
 facts section and a C section), and a new section of `memfn/include/memfn.h` (the view pcrec will call
 at option parse, naming no target, family or feature). Tokens `generic`, `x86-64`, `x86-64-v3`,
-`armv8-a`; families `x86_64` and `aarch64` (respelled by k0fix, 2026-11-07: k0fix_report.md) with their default lists and the host default. Per token:
+`armv8-a`; families `amd64` and `arm64` (respelled by k0fix, 2026-11-07: k0fix_report.md) with their default lists and the host default. Per token:
 its family, its NEEDS (what a part for it must enable) and sorted features (`sahf` in x86-64-v3's, R2);
 then, separately, its C spellings: the region text (open, close: the needs as a clang push and a GCC
 push, never `arch=`) and the family guard text. The run-time CPU predicate text is NOT in K0: it lands
@@ -41,22 +41,22 @@ U1 checked, commit 171bdb343):
 
 | family | default list |
 |---|---|
-| `x86_64` | `x86-64` (grows at U5 only, on a bench verdict) |
-| `aarch64` | `armv8-a` |
+| `amd64` | `x86-64` (grows at U5 only, on a bench verdict) |
+| `arm64` | `armv8-a` |
 
 | target | family | needs | features |
 |---|---|---|---|
 | `generic` | none (the portable target) | none | none |
-| `x86-64` | x86_64 | `sse2` | `sse2` |
-| `x86-64-v3` | x86_64 | `avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave` | the same |
-| `armv8-a` | aarch64 | none (NEON is the baseline) | `neon` |
+| `x86-64` | amd64 | `sse2` | `sse2` |
+| `x86-64-v3` | amd64 | `avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave` | the same |
+| `armv8-a` | arm64 | none (NEON is the baseline) | `neon` |
 
 THE C SPELLINGS, `memfn/src/targets_c.def` (one row per family) and targets.c's C section:
 
 | family | C guard condition (the guard's `#error` refuses a compile without it) |
 |---|---|
-| `x86_64` | `defined(__x86_64__) && !defined(__ILP32__)` |
-| `aarch64` | `defined(__aarch64__)` |
+| `amd64` | `defined(__x86_64__) && !defined(__ILP32__)` |
+| `arm64` | `defined(__aarch64__)` |
 
 The region pair is spelled from each target's needs column (`MF_NEEDS`, defined in targets.c's C
 section to the pragma pair, in the facts section to the bare list). Both texts are string literals
@@ -104,7 +104,7 @@ D77; the default list's members are checked to be of their family instead); the 
 | `const mf_family *mf_family_parse(const char *tok, size_t len, char *err, size_t n)` | the same for a family token |
 | `const mf_target *mf_targets(size_t *n)`, `const mf_family *mf_families(size_t *n)` | the listings, in table order (the population the checks count) |
 | `const mf_target *mf_portable_target(void)` | the one familyless target (`generic`) |
-| `const char *mf_host_defaults(void)` | the host family's default list (`x86-64` on this box, the default of the `x86_64` family) |
+| `const char *mf_host_defaults(void)` | the host family's default list (`x86-64` on this box, the default of the `amd64` family) |
 
 A row's fields: `mf_target` {name (canonical), family (pointer, NULL for the portable target), needs,
 features}; `mf_family` {name, defaults (comma-separated canonical tokens)}. So "the default list for a
@@ -112,10 +112,9 @@ family" and "the portable token" are fields of the parsed row, and "the region a
 token" is `mf_target_c_of(t)->region_open` and `mf_family_c_of(t->family)->guard`.
 
 Lane choices, answer-free unless noted:
-- CANONICAL FORM: a token matches ASCII-case-blind with `_` read as `-` (`X86_64`, `x86_64_V3`,
-  `AArch64` parse; the canonical form is the row's name). This is the one place a caller sees a choice:
-  `x86_64` is what `uname -m` and the GNU triplets print. `arm64` (the Mac's `uname -m`) is NOT an alias;
-  an alias column waits for a need. The table check asserts no two rows collide under this rule.
+- CANONICAL FORM (as respelled by k0fix): a token matches ASCII-case-blind and otherwise exactly (`AMD64`,
+  `X86-64`, `ARMv8-A` parse; `_` is not `-`, so `x86_64` is refused everywhere). Aliases wait for a need.
+  The table check asserts no two tokens collide, and no family token equals a target token once `_` reads as `-`.
 - LENGTH-BOUNDED tokens, so P1 can parse list members in place.
 - The refusal text lists the known tokens and names no pcrec option (pcrec prints it after its own lead).
 - The run-time CPU PREDICATE text is deferred to U4: its shape (an expression with
@@ -151,7 +150,7 @@ rows the kit compiles) and asserts:
 Today: `ok: 2 families, 4 targets, 2 compared against gcc -march, 1 skipped (another family or no
 needs), host MF_FAM_X86_64, 4 host cells (0 skipped)`. Failing directions, hand-checked through
 `TARGETS_DEF` on scratch copies: `sahf` dropped from both columns (`> #define __LAHF_SAHF__ 1`), the
-guard without `!defined(__ILP32__)` (host cell gcc-mx32 red), an armv8-a row moved into x86_64 (its
+guard without `!defined(__ILP32__)` (host cell gcc-mx32 red), an armv8-a row moved into amd64 (its
 family's default list then names a target of another family). Exit 0 ok, 1 mismatch, 2 could not run.
 
 ## Compile cells

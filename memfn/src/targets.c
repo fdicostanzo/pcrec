@@ -17,8 +17,8 @@
 #include "kit.h"
 
 enum {
-#define MF_FAMILY(id, name, defaults) id,
-#define MF_TARGET(id, name, family, needs, features)
+#define MF_FAMILY(id, name, defaults, doc) id,
+#define MF_TARGET(id, name, family, needs, features, doc)
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
@@ -29,8 +29,8 @@ enum {
  * C section; every entry pcrec calls at option parse answers from here. */
 
 static const mf_family family_table[MF_NFAMILY] = {
-#define MF_FAMILY(id, name, defaults) [id] = { name, defaults },
-#define MF_TARGET(id, name, family, needs, features)
+#define MF_FAMILY(id, name, defaults, doc) [id] = { name, defaults, doc },
+#define MF_TARGET(id, name, family, needs, features, doc)
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
@@ -42,8 +42,8 @@ static const mf_family family_table[MF_NFAMILY] = {
 #define MF_NO_NEEDS      ""
 
 static const mf_target target_table[] = {
-#define MF_FAMILY(id, name, defaults)
-#define MF_TARGET(id, name, family, needs, features) { name, family, needs, features },
+#define MF_FAMILY(id, name, defaults, doc)
+#define MF_TARGET(id, name, family, needs, features, doc) { name, family, needs, features, doc },
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
@@ -56,15 +56,15 @@ static const mf_target target_table[] = {
 
 /* Every row's name in table order, for a refusal's list of what is known. */
 static const char target_names[] =
-#define MF_FAMILY(id, name, defaults)
-#define MF_TARGET(id, name, family, needs, features) " " name
+#define MF_FAMILY(id, name, defaults, doc)
+#define MF_TARGET(id, name, family, needs, features, doc) " " name
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
     ;
 static const char family_names[] =
-#define MF_FAMILY(id, name, defaults) " " name
-#define MF_TARGET(id, name, family, needs, features)
+#define MF_FAMILY(id, name, defaults, doc) " " name
+#define MF_TARGET(id, name, family, needs, features, doc)
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
@@ -107,8 +107,8 @@ static const mf_family_c family_c_table[MF_NFAMILY] = {
 #define MF_NO_NEEDS "", ""
 
 static const mf_target_c target_c_table[NTARGET] = {
-#define MF_FAMILY(id, name, defaults)
-#define MF_TARGET(id, name, family, needs, features) { needs },
+#define MF_FAMILY(id, name, defaults, doc)
+#define MF_TARGET(id, name, family, needs, features, doc) { needs },
 #include "targets.def"
 #undef MF_FAMILY
 #undef MF_TARGET
@@ -181,6 +181,11 @@ const mf_target *mf_portable_target(void)
     size_t t = 0;
     while (target_table[t].family) t++;
     return &target_table[t];
+}
+
+const mf_family *mf_host_family(void)
+{
+    return MF_HOST_FAMILY < MF_NFAMILY ? &family_table[MF_HOST_FAMILY] : NULL;
 }
 
 const char *mf_host_defaults(void)

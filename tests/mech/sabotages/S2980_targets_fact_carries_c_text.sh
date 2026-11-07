@@ -14,5 +14,5 @@ SAB_DESC='a facts row carries C text (a preprocessor macro name) in place of a f
 SAB_DOC_FIGURE='MEASURED by lane k0, planted and reverted by hand in a scratch copy (k0_report.md, Sabotage); exact re-run: bash tests/mech/run_sabotage_matrix.sh S2980.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='MF_NO_NEEDS, "neon")'
-SAB_AFTER='MF_NO_NEEDS, "__ARM_NEON")'
+SAB_BEFORE='MF_NO_NEEDS, "neon",'
+SAB_AFTER='MF_NO_NEEDS, "__ARM_NEON",'

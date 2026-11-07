@@ -92,12 +92,12 @@ static void rows(const char *uname_m)
     /* every token, canonical and as a caller may spell it */
     static const char v3[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave";
     target_row("generic", "generic", NULL, "", "");
-    target_row("x86-64", "x86-64", "x86_64", "sse2", "sse2");
-    target_row("x86-64-v3", "x86-64-v3", "x86_64", v3, v3);
-    target_row("armv8-a", "armv8-a", "aarch64", "", "neon");
-    target_row("X86-64", "x86-64", "x86_64", "sse2", "sse2");
-    target_row("X86-64-V3", "x86-64-v3", "x86_64", v3, v3);
-    target_row("ARMv8-A", "armv8-a", "aarch64", "", "neon");
+    target_row("x86-64", "x86-64", "amd64", "sse2", "sse2");
+    target_row("x86-64-v3", "x86-64-v3", "amd64", v3, v3);
+    target_row("armv8-a", "armv8-a", "arm64", "", "neon");
+    target_row("X86-64", "x86-64", "amd64", "sse2", "sse2");
+    target_row("X86-64-V3", "x86-64-v3", "amd64", v3, v3);
+    target_row("ARMv8-A", "armv8-a", "arm64", "", "neon");
     target_row("GENERIC", "generic", NULL, "", "");
 
     /* the listing is the parser's table: every listed row parses to itself */
@@ -126,8 +126,11 @@ static void rows(const char *uname_m)
     refused("riscv", 5, 1, "family riscv");
     refused("generic", 7, 1, "family generic (the portable target has no family)");
     /* ONE token space: a token of one kind is refused as the other, `_` is not `-` */
-    refused("x86_64", 6, 0, "target x86_64 (a family, not a target)");
-    refused("aarch64", 7, 0, "target aarch64 (a family, not a target)");
+    refused("amd64", 5, 0, "target amd64 (a family, not a target)");
+    refused("arm64", 5, 0, "target arm64 (a family, not a target)");
+    refused("x86_64", 6, 0, "target x86_64 (`_` is not `-`)");
+    refused("x86_64", 6, 1, "family x86_64 (the Go name is amd64)");
+    refused("aarch64", 7, 1, "family aarch64 (the Go name is arm64)");
     refused("x86-64", 6, 1, "family x86-64 (a target, not a family)");
     refused("armv8-a", 7, 1, "family armv8-a (a target, not a family)");
     refused("x86_64_v3", 9, 0, "target x86_64_v3 (`_` is not `-`)");
@@ -151,16 +154,16 @@ static void rows(const char *uname_m)
 
     /* families: the default lists (x86-64 alone until the dispatch step, U5)
      * and the guard */
-    const mf_family *x = mf_family_parse("x86_64", 6, NULL, 0);
-    const mf_family *a = mf_family_parse("aarch64", 7, NULL, 0);
-    const mf_family *xu = mf_family_parse("X86_64", 6, NULL, 0);
-    check(x && !strcmp(x->defaults, "x86-64"), "family x86_64: default list 'x86-64'");
-    check(a && !strcmp(a->defaults, "armv8-a"), "family aarch64: default list 'armv8-a'");
-    check(xu == x, "family 'X86_64' parses as x86_64 (case-blind)");
+    const mf_family *x = mf_family_parse("amd64", 5, NULL, 0);
+    const mf_family *a = mf_family_parse("arm64", 5, NULL, 0);
+    const mf_family *xu = mf_family_parse("AMD64", 5, NULL, 0);
+    check(x && !strcmp(x->defaults, "x86-64"), "family amd64: default list 'x86-64'");
+    check(a && !strcmp(a->defaults, "armv8-a"), "family arm64: default list 'armv8-a'");
+    check(xu == x, "family 'AMD64' parses as amd64 (case-blind)");
     const mf_family_c *xc = mf_family_c_of(x);
     check(xc && !strncmp(xc->guard, "#if !(", 6) && strstr(xc->guard, "#error") &&
               strstr(xc->guard, "__x86_64__") && strstr(xc->guard, "__ILP32__"),
-          "family x86_64: its C guard is an #if ... #error on the architecture, excluding ILP32");
+          "family amd64: its C guard is an #if ... #error on the architecture, excluding ILP32");
     check(tgt("x86-64-v3") && tgt("x86-64-v3")->family == x && tgt("armv8-a")->family == a,
           "each family's targets point at its row");
 
@@ -169,6 +172,15 @@ static void rows(const char *uname_m)
     check(p && !strcmp(p->name, "generic") && !p->family && !*p->needs && !*p->features &&
               !*mf_target_c_of(p)->region_open,
           "the portable target is generic: no family, needs, features or region");
+    /* every row has its doc line, and the host family entry is the family the
+     * host's default list belongs to */
+    int docs = 1;
+    for (size_t i = 0; i < nt; i++) docs &= ts[i].doc && *ts[i].doc;
+    for (size_t i = 0; i < nf; i++) docs &= fs[i].doc && *fs[i].doc;
+    check(docs, "every target and family has a doc line");
+    const mf_family *hf = mf_host_family();
+    check(hf ? !strcmp(hf->defaults, mf_host_defaults()) : !strcmp(mf_host_defaults(), "generic"),
+          "the host family's default list is the host default (no family: the portable token)");
     const char *want = !strcmp(uname_m, "x86_64")                                   ? "x86-64"
                        : !strcmp(uname_m, "aarch64") || !strcmp(uname_m, "arm64") ? "armv8-a"
                                                                                    : "generic";

@@ -5,58 +5,74 @@ Lane k0fix (sonnet), worktree `worktrees/k0`, branch `lane/memfn-k0`. Frank's 20
 
 ## Summary
 
-- Family tokens are the `uname -m` names: `x86_64`, `aarch64`. Target tokens are gcc's -march names: `generic`, `x86-64`,
-  `x86-64-v3`, and aarch64's target renamed `armv8-a`. Default lists: `x86_64` -> `x86-64`, `aarch64` -> `armv8-a`.
-- THE PARSER FOLD HAD TO CHANGE. The matching rule read `_` as `-`, which makes the new family `x86_64` and the target
-  `x86-64` one token. `_` is no longer folded: ASCII-case-blind and otherwise exact. `x86_64_v3` is now refused as a target.
-- The table check holds ONE token space (below); one new sabotage row, S2981.
+SPELLING BUILT (the manager's second brief overrides the first): FAMILY tokens `amd64` and `arm64` (Go GOARCH /
+Debian names), NOT `x86_64`/`aarch64`; TARGET tokens `generic`, `x86-64`, `x86-64-v3`, `armv8-a` (aarch64's target
+renamed). Default lists: `amd64` -> `x86-64`, `arm64` -> `armv8-a`. An interim build with `x86_64`/`aarch64` families
+(commit 9c96d2231) is superseded.
+
+- The parser matches ASCII-case-blind and otherwise exactly: the old `_` -> `-` fold is gone (`x86_64` is refused as a
+  target and as a family).
+- The table check holds one token space, and refuses a family token that EQUALS a target token once `_` reads as `-`
+  and case is dropped (`x86_64` vs `x86-64`: one typo from a different valid meaning). Sabotage S2981 plants `x86_64`
+  as the family.
+- Addendum 2: `mf_host_family()`, and a `doc` line on every facts row.
 
 ## Token spellings
 
-Changed (every old token used as a family or target name, found by grep over the whole worktree):
+Changed (grep over the whole worktree for every old token used as a family or target name):
 
 | file | change |
 |---|---|
-| `memfn/src/targets.def` | family `x86-64` -> `x86_64`; family `aarch64` default `aarch64` -> `armv8-a`; target `aarch64` -> `armv8-a` (id `MF_TGT_AARCH64` -> `MF_TGT_ARMV8_A`); header gains the two-token-spaces paragraph |
-| `memfn/src/targets.c` | `tok_names`: the `_` -> `-` fold removed |
-| `memfn/include/memfn.h` | the matching-rule paragraph: two token spaces, family token in a list = the family's default list, `_` is not `-` |
-| `memfn/tests/check_targets.sh` | one token space; the fold is case only; token regex admits `_` after the first char; floor comment |
-| `tests/memfn/targets_check.c` | rows, defaults, host default (`armv8-a`), refusals across the spaces, a no-token-in-both loop |
-| `tests/mech/sabotages/S2976_*.sh` | SAB_BEFORE/AFTER carry the family `x86_64` |
-| `tests/mech/sabotages/S2981_*.sh`, `tests/memfn/c4_allowlist.tsv` | the new row and its two C4 anchor lines (class 6, count 2, as S2976's) |
+| `memfn/src/targets.def` | families `x86-64` -> `amd64`, `aarch64` -> `arm64` (defaults `x86-64`, `armv8-a`); target `aarch64` -> `armv8-a` (id `MF_TGT_AARCH64` -> `MF_TGT_ARMV8_A`); header: the token-spaces paragraph, the `doc` column; a `doc` argument on every row |
+| `memfn/src/targets.c` | `tok_names`: the `_` -> `-` fold removed; macros take `doc`; `mf_host_family` |
+| `memfn/include/memfn.h` | the matching-rule paragraph; `doc` fields; `mf_host_family` |
+| `memfn/include/CLAUDE.md` | the K0 paragraph |
+| `memfn/tests/check_targets.sh` | one token space, the cross-space `_`-folded rule, the `doc` column |
+| `tests/memfn/targets_check.c` | rows, defaults, host default (`armv8-a`), cross-space refusals, doc lines, `mf_host_family` |
+| `tests/mech/sabotages/S2976`, `S2980` | anchors follow the rows' new shape (family `amd64`; `"neon",`) |
+| `tests/mech/sabotages/S2981_*.sh`, `tests/memfn/c4_allowlist.tsv` | the new row and its C4 anchor lines (class 6, 4 hits) |
 | `tests/mech/run_sabotage_matrix.sh`, `tests/memfn/NOTES.md` | S2975-S2981 |
-| `docs/dev/lanes/k0_report.md` | the tables and sentences naming the old tokens (the uncommitted heading renames in the tree are committed with it) |
-| `docs/design/memfn/target_seam_units.md` | §6: the token-spelling ruling bullet |
+| `docs/dev/lanes/k0_report.md`, `docs/design/memfn/target_seam_units.md` (§6) | the tokens |
 
-Not changed on purpose: `levels.def` (`MF_LEVEL(..., "x86-64", ...)`: the LEVELS' family column, a different table the
-kit's U2 replaces), `-march=`/`--target=` strings in `run_targets.sh` and the check (compiler names), `__x86_64__`
-guards, `uname -m` comparisons, design notes that predate the ruling.
+Not changed on purpose: `levels.def` (the LEVELS' family column, a different table U2 replaces), `-march=`/`--target=`
+strings in `run_targets.sh` and the check (compiler names), `__x86_64__` guards, `uname -m` comparisons (the test's host
+default maps `x86_64` -> `x86-64` and `aarch64`/`arm64` -> `armv8-a`), design notes that predate the ruling.
 
 ## Distinctness check
 
-`check_targets.sh` keeps one `seen_tok` map over family and target names under the parser's fold (case only): a name equal
-to any earlier row's, in either space, is a MISMATCH ("token 'X' is also family F's (one token space ...)"). The old rule
-(distinct within each space) could not see a family and a target share a token. `targets_check.c` adds the same fact at
-the entries (no listed family and target are `strcasecmp`-equal) and four cross-space refusals (`x86_64` and `aarch64`
-as targets; `x86-64` and `armv8-a` as families).
+`check_targets.sh`: (1) `seen_tok`, one map over family and target names under a case-only fold (any repeat, in either
+space, is a MISMATCH); (2) NEW, every (family, target) pair compared after lowercasing and `_` -> `-`. `x86_64` as a
+family also fails the token-list regex (it holds a `_`), so two rules fire on the plant; (2) is the one that states
+the reason. `targets_check.c` holds the same at the entries (`strcasecmp`), plus cross-space refusals.
 
-SABOTAGE S2981 (next free id; grep of the tree and all worktrees found no S2981+): plants the family `x86_64` respelled
-`x86-64`, equal to the target. Only the distinctness rule sees it (the default list names targets). Hand-planted
-through `TARGETS_DEF` on a scratch copy: `MISMATCH target MF_TGT_X86_64: token 'x86-64' is also family MF_FAM_X86_64's`,
-red. The real mech run is job 453 (rows=7), OWED. Jobs 450-453 re-dry-run: clean, see Light checks.
+SABOTAGE S2981 (next free id; no S2981+ anywhere): the first family row is respelled `x86_64`. Hand-planted through
+`TARGETS_DEF` on a scratch copy: `MISMATCH family MF_FAM_X86_64: token 'x86_64' equals target MF_TGT_X86_64's 'x86-64'
+once _ reads as -`, red (and the entries' literal is red: `amd64` no longer parses). The real mech run is job 453
+(rows=7), OWED. Jobs 450-453 re-dry-run clean (453: `expect rows=7`).
+
+## Addendum 2: host family and doc column
+
+- `const mf_family *mf_host_family(void)`: the family the kit was compiled for, NULL when the table has no row for the
+  host. `mf_host_defaults` stays. Tested: its defaults equal `mf_host_defaults()` (no family: the portable token).
+- `doc` on every FACTS row (`mf_family.doc`, `mf_target.doc`; macros' last argument): one plain-English line in the kit's
+  words. The token-list rule exempts exactly `doc`; a doc line is refused when empty, over 100 bytes, or holding any of
+  `# _ { } ; \ " |` (so no preprocessor or C token). Hand-planted: `#if defined(__ARM_NEON)` as a doc is red; S2980's
+  plant (`__ARM_NEON` as a feature) still red (it sits in a token column). Docs avoid `;`.
 
 ## Spec and contract hunks
 
-- `memfn.h` (the contract pcrec reads): FAMILY tokens are the `uname -m` names, TARGET tokens gcc's -march names, the two
-  spaces disjoint; a family token in a list means that family's default list (the caller's reading; the kit only parses each
-  token as one or the other); matching is ASCII-case-blind and exact otherwise.
-- `target_seam_units.md` §6 records the ruling. The flag text (`-fmemfn-simd`, `-fno-memfn-simd`, last wins) is P1's.
+- `memfn.h`: FAMILY tokens are the Go/Debian names, TARGET tokens gcc's -march names, the spaces disjoint; a family
+  token in a list means that family's default list (the caller's reading; the kit only parses); matching ASCII-case-blind
+  and exact. The enumeration entries `mf_targets`, `mf_families`, `mf_host_family` are the listing's SOURCE: every field
+  pcrec prints (name, doc, defaults, needs, features) is the kit's text.
+- `target_seam_units.md` §6 records the ruling. The flag text (`-fmemfn-simd`, `-fno-memfn-simd`, last wins) and
+  `--list-cpu-targets` are P1's.
 - `docs/spec/` states none of this today (no caller yet), so no spec hunk.
 
 ## Light checks
 
 niced, `scripts/boxlock status` showed only a queue job (213-altcatch-axes), no timing window:
-`make` rc 0 (table check `ok: 2 families, 4 targets, 2 compared against gcc -march, 1 skipped, host MF_FAM_X86_64, 4 host cells`);
+`make` rc 0 (rerun after the second brief; table check `ok: 2 families, 4 targets, 2 compared against gcc -march, 1 skipped, host MF_FAM_X86_64, 4 host cells`);
 `make strict` rc 0; `make test-memfn-targets test-codegen test-memfn-arch test-memfn-link test-claudemd-size
 test-spec-history test-ci-shards` rc 0 (no `*** [test-` line). The first run's one red, C4 on the new row's anchor lines
 (class 6, 2 hits), is the allowlist rows above. No make test, no mech, no box job queued. Jobs 450-453 re-dry-run clean (453: `expect rows=7`, field validation of 7 definitions; 450-452 unchanged).

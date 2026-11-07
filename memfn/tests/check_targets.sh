@@ -34,9 +34,9 @@
 # non-empty, unrepeated, each member a target of that family.
 #
 # FACTS CARRY NO SPELLING (the owner's ruling 2026-11-07, emitters for C or
-# Rust): every field of a facts row is a list of tokens (`[a-z0-9][a-z0-9._-]*`,
+# Rust): every field of a facts row is a list of tokens (`[a-z0-9][a-z0-9.-]*`,
 # comma-separated, or empty), which no C (or Rust) text is -- a `(`, `#`,
-# quote, `=`, blank or a leading `_` fails it; targets.def holds no preprocessor
+# `_`, quote, `=` or blank fails it -- except the one `doc` column; targets.def holds no preprocessor
 # directive; and targets_c.def has exactly one spelling row per family.
 #
 # THE HOST CHAIN (targets_c.def's MF_TARGET_HOST block, the kit's own #if) is
@@ -75,8 +75,8 @@ command -v "$GCC" >/dev/null 2>&1 || { say "no $GCC: the check could not run"; f
 # The rows, one per line:  F id|name|defaults   T id|name|family|needs|features
 #                          C id|guard (targets_c.def)
 rows="$(printf '%s\n' \
-    '#define MF_FAMILY(id, name, defaults) F id|name|defaults' \
-    '#define MF_TARGET(id, name, family, needs, features) T id|name|family|needs|features' \
+    '#define MF_FAMILY(id, name, defaults, doc) F id|name|defaults|doc' \
+    '#define MF_TARGET(id, name, family, needs, features, doc) T id|name|family|needs|features|doc' \
     '#define MF_FAMILY_OF(id) id' '#define MF_NO_FAMILY NONE' \
     '#define MF_NEEDS(list) list' '#define MF_NO_NEEDS ""' \
     '#define MF_FAMILY_C(id, guard) C id|guard' \
@@ -89,18 +89,22 @@ directives="$(grep -nE '^[[:space:]]*#' "$def" | head -3 | tr '\n' ' ')"
 unq() { local s; s="$(printf '%s' "$1" | sed 's/^ *//; s/ *$//')"; s="${s#\"}"; s="${s%\"}"; printf '%s' "${s//\\\"/\"}"; }
 # The parser's matching rule (memfn.h): ASCII-case-blind, otherwise exact.
 fold() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
+# The one prose column: a plain-English line, never C (no `#`, `_`, brace,
+# semicolon, backslash, quote or `|`), non-empty, at most 100 bytes.
+docline() { [ -n "$2" ] && [ "${#2}" -le 100 ] && ! printf '%s' "$2" | grep -q '[#_{};\\"|]' ||
+    mismatch "$1: '$2' is not a plain-English line (empty, over 100 bytes, or C text)"; }
 sorted_list() { printf '%s' "$1" | tr ',' '\n' | LC_ALL=C sort | paste -sd, -; }
 repeats() { printf '%s\n' "$1" | tr ',' '\n' | LC_ALL=C sort | uniq -d | paste -sd, -; }
 
 # A facts field: tokens, comma-separated, or empty -- never emitter text.
-tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9._-]*(,[a-z0-9][a-z0-9._-]*)*' ||
+tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-z0-9][a-z0-9.-]*)*' ||
     mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
 
 declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_tok
 fams=() tgts=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
-    IFS='|' read -r a b c d e <<<"$body"
+    IFS='|' read -r a b c d e f <<<"$body"
     a="$(echo "$a" | tr -d ' ')"
     if [ "$kind" = C ]; then
         [ -z "${fam_guard[$a]+x}" ] || mismatch "family $a: more than one C spelling row"
@@ -108,6 +112,7 @@ while IFS= read -r line; do
     elif [ "$kind" = F ]; then
         fams+=("$a")
         fam_name[$a]="$(unq "$b")"; fam_defs[$a]="$(unq "$c")"
+        docline "family $a doc" "$(unq "$d")"
         tokens "family $a name" "${fam_name[$a]}"; tokens "family $a defaults" "${fam_defs[$a]}"
         k="$(fold "${fam_name[$a]}")"
         [ -z "${seen_tok[$k]+x}" ] || mismatch "family $a: token '${fam_name[$a]}' is also ${seen_tok[$k]}'s (one token space for families and targets)"
@@ -116,6 +121,7 @@ while IFS= read -r line; do
         tgts+=("$a")
         tgt_name[$a]="$(unq "$b")"; tgt_fam[$a]="$(echo "$c" | tr -d ' ')"
         tgt_attr[$a]="$(unq "$d")"; tgt_feat[$a]="$(unq "$e")"
+        docline "target $a doc" "$(unq "$f")"
         tokens "target $a name" "${tgt_name[$a]}"; tokens "target $a needs" "${tgt_attr[$a]}"
         tokens "target $a features" "${tgt_feat[$a]}"
         k="$(fold "${tgt_name[$a]}")"
@@ -135,6 +141,13 @@ while IFS= read -r line; do
         fi
     fi
 done <<<"$rows"
+
+# A FAMILY token equal to a TARGET token once `_` reads as `-` (x86_64 vs
+# x86-64) is one typo from a different valid meaning: refused.
+for f in "${fams[@]}"; do for t in "${tgts[@]}"; do
+    [ "$(printf '%s' "${fam_name[$f]}" | tr 'A-Z_' 'a-z-')" != "$(printf '%s' "${tgt_name[$t]}" | tr 'A-Z_' 'a-z-')" ] ||
+        mismatch "family $f: token '${fam_name[$f]}' equals target $t's '${tgt_name[$t]}' once _ reads as - (a typo would change its meaning)"
+done; done
 
 [ "${#fams[@]}" -ge "$FLOOR_FAMILIES" ] || mismatch "read ${#fams[@]} family rows (floor $FLOOR_FAMILIES)"
 [ "${#tgts[@]}" -ge "$FLOOR_TARGETS" ] || mismatch "read ${#tgts[@]} target rows (floor $FLOOR_TARGETS)"

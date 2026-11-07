@@ -24,22 +24,24 @@
  *
  * TWO TOKEN SPACES, ONE LIST (the owner's ruling 2026-11-07, one flag
  *   `-fmemfn-simd[=TOKEN,..]`): a list may mix family and target tokens, so
- *   no token is both. FAMILY tokens are the `uname -m` names (x86_64,
- *   aarch64); TARGET tokens are gcc's -march names (generic, x86-64,
+ *   no token is both. FAMILY tokens are the Go GOARCH / Debian names (amd64,
+ *   arm64: the Go/Debian names, NOT x86_64/aarch64, because `x86_64` and the
+ *   target `x86-64` differ by one character and a typo would silently pick a
+ *   different valid meaning); TARGET tokens are gcc's -march names (generic, x86-64,
  *   x86-64-v3, armv8-a). A family token in a list means that family's
  *   default list. A token is matched ASCII-case-blind and otherwise
- *   exactly: `x86_64` (a family) and `x86-64` (a target) differ, so `_`
- *   and `-` are NOT alike. The table check holds the rule.
+ *   exactly (`_` is not `-`). The table check holds the rule, and also refuses a
+ *   family token that EQUALS a target token after folding `_` to `-`.
  *
- * MF_FAMILY(id, name, defaults)
+ * MF_FAMILY(id, name, defaults, doc)
  *   name      the family's token: the largest scope of one artifact (D188
  *             addendum 2)
  *   defaults  the family's default target list (canonical tokens): what
- *             `-fmemfn-simd` resolves to for this family. x86_64's grows to
+ *             `-fmemfn-simd` resolves to for this family. amd64's grows to
  *             "x86-64,x86-64-v3" only at the dispatch step (unit U5), which
  *             waits for a bench speed verdict (D144 add. 4)
  *
- * MF_TARGET(id, name, family, needs, features)
+ * MF_TARGET(id, name, family, needs, features, doc)
  *   name      the target's token; also its stem tag and probe string (U4)
  *   family    MF_FAMILY_OF(<family id>), or MF_NO_FAMILY for the one
  *             PORTABLE target (no family, needs or features)
@@ -49,6 +51,12 @@
  *             set); MF_NO_NEEDS: nothing (armv8-a: NEON is the baseline)
  *   features  the sorted feature tokens the target supplies; needs is a
  *             subset (the table check asserts it)
+ *
+ * doc (both macros): one short plain-English line in the kit's own words,
+ * what pcrec's listing prints for the row. Plain text, never C: the check
+ * exempts exactly this column from the token-list rule and refuses a `#`,
+ * `_`, brace, semicolon, backslash, quote or `|` in it, and a line over 100
+ * bytes or empty.
  *
  * THE TABLE CHECK (memfn/tests/check_targets.sh, at `make`; `make strict` and
  * `make test-memfn-targets` fail on it): for every target of the building
@@ -62,12 +70,18 @@
  * plan differently there; armv8-a's row has no kit level yet.
  */
 
-MF_FAMILY(MF_FAM_X86_64,  "x86_64",  "x86-64")
-MF_FAMILY(MF_FAM_AARCH64, "aarch64", "armv8-a")
+MF_FAMILY(MF_FAM_X86_64,  "amd64", "x86-64",
+          "AMD64/Intel 64 (x86-64) machines, whose default list is x86-64")
+MF_FAMILY(MF_FAM_AARCH64, "arm64", "armv8-a",
+          "64-bit Arm (AArch64) machines, whose default list is armv8-a")
 
-MF_TARGET(MF_TGT_GENERIC,   "generic",   MF_NO_FAMILY,                 MF_NO_NEEDS, "")
-MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS("sse2"), "sse2")
+MF_TARGET(MF_TGT_GENERIC,   "generic",   MF_NO_FAMILY,                 MF_NO_NEEDS, "",
+          "portable: no CPU-specific code, builds for any machine")
+MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS("sse2"), "sse2",
+          "the x86-64 baseline, SSE2 (gcc -march=x86-64)")
 MF_TARGET(MF_TGT_X86_64_V3, "x86-64-v3", MF_FAMILY_OF(MF_FAM_X86_64),
           MF_NEEDS("avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave"),
-          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave")
-MF_TARGET(MF_TGT_ARMV8_A,    "armv8-a",    MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_NEEDS, "neon")
+          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave",
+          "x86-64 plus AVX2, BMI1/2, FMA, LZCNT, MOVBE and more (gcc -march=x86-64-v3)")
+MF_TARGET(MF_TGT_ARMV8_A,   "armv8-a",   MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_NEEDS, "neon",
+          "the Armv8-A baseline with NEON (gcc -march=armv8-a)")

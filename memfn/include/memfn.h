@@ -1718,10 +1718,11 @@ const mf_level *mf_levels(size_t *n);
  *
  * Two token spaces, one list (the owner's ruling 2026-11-07: `-fmemfn-simd`
  * takes family and target tokens mixed, so no token is both): FAMILY tokens
- * are the `uname -m` names, TARGET tokens gcc's -march names; a family token
+ * are the Go GOARCH / Debian names (`amd64`, `arm64`: not `x86_64`, which a
+ * typo for the target `x86-64` would reach), TARGET tokens gcc's -march names; a family token
  * in a list means that family's default list (the caller's reading; the
  * kit parses each token as one or the other). A token is matched
- * ASCII-case-blind and otherwise exactly (`X86_64` is the family `x86_64`;
+ * ASCII-case-blind and otherwise exactly (`AMD64` is the family `amd64`;
  * `x86-64` is a target, and `_` is not `-`); the canonical form is the row's
  * own name. Every pointer below is to static storage, valid for the
  * process's life. */
@@ -1730,6 +1731,7 @@ const mf_level *mf_levels(size_t *n);
 #define mf_target_parse    MF_NS(target_parse)
 #define mf_family_parse    MF_NS(family_parse)
 #define mf_portable_target MF_NS(portable_target)
+#define mf_host_family    MF_NS(host_family)
 #define mf_host_defaults   MF_NS(host_defaults)
 #define mf_target_c_of     MF_NS(target_c_of)
 #define mf_family_c_of     MF_NS(family_c_of)
@@ -1738,6 +1740,7 @@ typedef struct {
     const char *name;      /* canonical token: the largest scope of an artifact */
     const char *defaults;  /* its default target list (`-fmemfn-simd`): canonical
                               target tokens, comma-separated, each of this family */
+    const char *doc;       /* one plain-English line, the kit's words (the listing) */
 } mf_family;
 
 typedef struct {
@@ -1748,6 +1751,7 @@ typedef struct {
                                    sorted, comma-separated; "" for none        */
     const char      *features;  /* the feature tokens it supplies (needs is a
                                    subset), sorted, comma-separated; "" for none */
+    const char      *doc;       /* one plain-English line, the kit's words (the listing) */
 } mf_target;
 
 /* The C emitter's spellings of a target's and a family's facts. */
@@ -1775,6 +1779,12 @@ const mf_family *mf_family_parse(const char *tok, size_t len, char *err, size_t 
 /* The one target with no family: no needs, no features. pcrec's default
  * target set is this token alone (target_seam_units.md §5). */
 const mf_target *mf_portable_target(void);
+
+/* The family the kit (and so libpcrec) was compiled for, or NULL when the
+ * table has no row for the host. With mf_targets and mf_families this is
+ * the SOURCE of pcrec's listing: every field it prints (name, doc, defaults,
+ * needs, features) is the kit's text. */
+const mf_family *mf_host_family(void);
 
 /* The HOST's default target list: the defaults of the family the kit (and so
  * libpcrec) was compiled for, or the portable target's name when the table
