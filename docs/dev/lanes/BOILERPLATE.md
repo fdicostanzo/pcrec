@@ -41,7 +41,7 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
 2026-10-07, main 23111928); re-measure before citing them elsewhere.
 - Ryzen 7 7700X, 16 threads, ~29 GB; Ubuntu x86_64; gcc 15.2.0 as plain
   `gcc` (no `CC=` override, no `gcc-16`); GNU make 4.4.1; bash 5.3;
-  python 3.14.4. No clang, no `pcre2test` binary.
+  python 3.14.4. clang 21.1.8 (/usr/bin/clang; checked 2026-11-07), no `pcre2test` binary.
 - Build and suite: `make -j16` ~2 s; the full `make -k -j16 -Otarget test`
   ~11 min (678.6 s measured, 59 sections). Read its verdict from
   `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (empty = green).
