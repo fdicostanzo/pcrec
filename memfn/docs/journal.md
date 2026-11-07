@@ -3582,3 +3582,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Kit edits are written emitter-shaped and ride [IR-FORM] (4); no kit split now.
   - Main's lane xarch1 is writing target_seam_units.md (ordered units, owner per unit, which kit unit is first). HOLD all seam edits until that split arrives.
   - Answered: S2f touches no seam site (docs/design/memfn/span_pick only).
+- 11-07 ~16:30: Frank's lesson, "speed compare should remove variables. Apples to apples": the smp20 witness compared an inline pair loop against libc memchr (three axes at once). Memory pcrec-speed-compare-apples-to-apples; ideas.md 7a779d3bc (the inline one-member finder).
+- 11-07: R-36 filed (target seam unit K0, the kit's target table, FIRST; Frank: targets are opaque tokens to pcrec, the kit owns the table and parses tokens at option parse).
+  - Kit branch k1107 merged main (f58b31d1f); ack de178e0dd.
+  - Lane `k0` (opus) LAUNCHED, worktree k0 off k1107, deliver 53e7730b8. Jobs 450-453; sabotage ids from S2975.
+  - Runs in parallel with S2f's gates.
