@@ -1765,7 +1765,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants). Lane altbuild2 measured both estimates wrong in both directions (island 6x over on long words; chain 2-3x over): once the [ART-SIZE] retry row (K139) makes acceptance exact, the in-emitter size guard is a speed-only shortcut and a candidate for deletion (a simplification), measured here.
 - [XARCH-DEV] STATE:not-started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
-  status (2026-11-06): not started; end state RULED (per-target variants, explicit target list, see below); first job: an M1-made set + count of disagreeing picks; the Mac is the aarch64 box
+  status (2026-11-06): not started; end state RULED (per-target variants, explicit target list, see below); first job: an M1-made set + count of disagreeing picks; the Mac is the aarch64 box; 2026-11-07: seam note PROPOSED (docs/design/memfn/target_seam.md, lane xarchseam)
   trigger: Frank's go, or the first aarch64 kit row
   refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
   Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
