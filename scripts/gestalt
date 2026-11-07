@@ -169,7 +169,7 @@ wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
 if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
 elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi
 
-# --- logs (on the context line, the 12-line cap): each registered session's transcript size (Frank 2026-11-07: long sessions once froze when the
+# --- logs (recorded to gestalt/log.tsv, not printed): each registered session's transcript size (Frank 2026-11-07: long sessions once froze when the
 # transcript reached some size; /clear starts a new file, compaction keeps appending to the same one).
 # The 50 MB mark is UNMEASURED (the freeze size was never recorded); it only flags, it decides nothing.
 ll=""
@@ -183,7 +183,11 @@ if [ -d "$roledir" ]; then
         ll="$ll${ll:+ / }$role ${mb}M$([ "$mb" -ge 50 ] && echo ' LARGE')"
     done
 fi
-echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")${ll:+; logs $ll}"
+echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
+# Not printed (Frank 2026-11-07: "not actionable"); appended with a timestamp so the trend can be watched:
+# $PCREC_TMPDIR/gestalt/log.tsv = time, load1, context per role, transcript MB per role.
+gl="${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/gestalt"
+mkdir -p "$gl" 2>/dev/null && printf '%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$l1" "${cl:-}" "${ll:-}" >> "$gl/log.tsv" 2>/dev/null
 
 # --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
 # statusline.sh from Claude Code's own rate_limits input); stale once a window has reset or it is >30 min old

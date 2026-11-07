@@ -7,6 +7,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 TO=${TIMEOUT_BIN:-timeout}
 T=$(mktemp -d "${TMPDIR:-/var/tmp}/gestalt.test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
+export PCREC_TMPDIR="$T/tmproot"   # gestalt appends gestalt/log.tsv; keep fake rows out of the real log
 pass=0 fail=0
 ok()  { echo "PASS: $*"; pass=$((pass+1)); }
 bad() { echo "FAIL: $*"; fail=$((fail+1)); }
