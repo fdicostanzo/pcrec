@@ -3535,3 +3535,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - D188 add. 2 (Frank): one CPU family is an artifact's largest scope; the kit never emits other families.
   - Main: a CPU variant is a compound PART with a CPU predicate, chosen by the existing controller (D155 add. 5), with an elision fact (no target-dependent text = no variant).
   - Still no build before Frank's XARCH-DEV go.
+- 11-07: main: target seam note rev 1 is on main (0bae50cbc; review 2026-11-07-r1-xarch.md).
+  - §4: mf_form_entry gains a `target` column (the timed text and the shipped text compiled for the same target).
+  - The attribute form is an additive ISA list plus a clang pragma pair; probed with gcc 15.2 and clang 21.1.8 under default/native/v4, 0 bad.
+  - Checked: S2e does not touch formhash.c or the mf_form_entry struct (empty diff vs 5b6cf41aa), so the column is a purely additive later change. NO CONFLICT, no reply sent (main asked for a reply on conflict only).
+  - Owed at the column's unit: whether `target` enters the form hash (it would move set keys); decide it in that unit's design.
+  - Still no build before Frank's XARCH-DEV go.
