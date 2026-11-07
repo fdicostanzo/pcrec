@@ -216,3 +216,16 @@ Every step ran alone; the box carried other sessions' non-timing queue jobs (no 
 | s2cfix2_deliver.txt committed as-is | yes: f4cc04c2a |
 | sabotage ids S2940-S2949 | S2940-S2945 used |
 | no timing run; nothing queued; artifact_size_log.tsv untouched | yes |
+
+## STATE AT HANDOFF
+
+OWED: none. Tip: the commit that carries this section, on `lane/memfn-s2c`.
+
+Next step (main's and the kit manager's): a fresh S2d window. It times byte.libc again and prices the verify rows
+under the new null base. main writes a new `window.vars` (RUN_ID, and FROZEN at this tip or its merge). The
+S2d job copies need no edit.
+
+A conflict between the deliver file and the brief: `docs/dev/artifact_size_log.tsv` was already modified in the
+worktree when this lane started (a gate side effect). The brief says not to touch it, and the deliver file names
+no `dirty-ok`. So `scripts/lanecheck s2rev14` reports "the tree is not clean" for that one path, and nothing
+else. This lane did not commit it, revert it, or hide it from git.
