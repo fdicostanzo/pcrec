@@ -10,5 +10,11 @@
 #                     est.py reads only that pinned copy; (2) the cards a set carries keep `-` (check C,
 #                     tests/memfn/finder_check.py, requires a set's cards equal to its card table), so a
 #                     set's recompute takes the value from the run record (span_cards.md §2.4, r9fc FIX-8)
+#   r_max_e6          the cap on a delta row's resolution r (docs/spec/measures.md §3.5¶3a; review 2026-11-06 r10
+#                     REV14-2): a sub-resolution row's r is min(its own r, this). Derived by
+#                     docs/design/memfn/span_cards/rmax_drill.py from the first window's A/A rows. Readers: the
+#                     slot's est.py, from the run record's pinned copy (a record planned before this row: the live
+#                     row, named in est's output)
 #name	value	reason
 gate_default_e6	30000	POLICY: the noise a cost row may carry and still be priced, a quality choice; UNMEASURED DEFAULT (D149) carried from grid1 (span_cards.md §2.4)
+r_max_e6	53751	POLICY: the widest resolution a delta row may call zero; the largest A/A resolution (3 SE of a median at the twin's launch noise) over the first window's eight near-zero verify rows, span_cards/rmax_drill.py; the population and the max are choices: UNMEASURED DEFAULT (D149), trigger: re-derive on the first window timed with rev 1.4's base

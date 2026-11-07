@@ -60,6 +60,19 @@ def resolution(x):
     L anchored launch values, 3 x isqrt_rn(K_MED x sp2(x)) (§3.5¶6's scale for one median), in the row's unit"""
     return 3 * isqrt_rn(rhafz(K_MED_E6 * sp2(x), 10**6))
 
+def r_max(rec):
+    """[rev1.4 r10-REV14-2] (the cap on r, its source): the record's pinned policy row r_max_e6; a record planned
+    before the row existed (windows s2d-20261106 and the second, both frozen at rev 1.4) pins none, and est then
+    reads the LIVE table's row and says so in a `policy` line (rows) and a `# note` line (draft), never silently"""
+    pol = plan.parse_policy(rec["policy"])
+    if "r_max_e6" in pol:
+        return pol["r_max_e6"], "pinned by the run record"
+    live = plan.parse_policy(plan.table_rows(plan.POLICY))
+    if "r_max_e6" not in live:
+        raise InputError("neither the record's pinned policy nor the live %s holds r_max_e6" % plan.POLICY)
+    return live["r_max_e6"], "NOT pinned by the run record (planned before the row): the live %s's, sha256 %s" % (
+        os.path.relpath(plan.POLICY, TREE), plan.sha256(plan.POLICY))
+
 def split_gap(v):
     """the largest gap between two clusters of >= 2 launches in v sorted (k in 2 .. L-2, §3.5¶4's clusters)"""
     s = sorted(v)
@@ -163,6 +176,7 @@ def compute(rundir):
     rec = read_record(rundir)
     cells = read_cells(rundir, rec)
     floor = rec["floor"]
+    R_MAX = r_max(rec)[0]
     card = rec["card"]                         # the PINNED cards (r9fc FIX-1), never plan.CARD
     LENGTHS, _LEN, L, _R, GU = rec["facts"]
     if any(k.split(".")[1] not in card for k, _g, _j in rec["plan"]):
@@ -220,14 +234,19 @@ def compute(rundir):
         if r["D"] is not None:
             aaD = med([abs(r["Db"][i] - r["D"][i]) for i in range(L)])
             r["null"] = not (all(d > 0 for d in trim(r["D"])) and med(r["D"]) > aaD)
-            res = resolution(x)
-            if r["null"] and abs(r["value"]) <= res:
-                # [rev1.4 R14-2] SUB-RESOLUTION: consistent with zero within r, a MEASURED row: the clamped
-                # estimate, its noise r or the measured noise if larger (measures.md §3.5¶3a)
+            # [rev1.4 r10-REV14-2] r is the row's resolution capped at the policy's r_max_e6
+            res = min(resolution(x), R_MAX)
+            if r["null"] and all(d < 0 for d in trim(r["D"])):
+                # [rev1.4 r10-REV14-1] negative on all six trimmed launches: a DEFECT, whatever r is
+                r["why"] = "null: negative per-event cost on all six trimmed launches (a fixture defect, whatever r)"
+            elif r["null"] and abs(r["value"]) <= res and r["aa"] <= res:
+                # [rev1.4 R14-2] SUB-RESOLUTION: signs mixed, consistent with zero within r, its paired A/A within
+                # r too: a MEASURED row, the clamped estimate, its noise r or the measured noise if larger
+                # (measures.md §3.5¶3a)
                 r.update(null=False, sub=res, value=max(0, r["value"]), noise=max(res, r["noise"]),
                          why="sub-resolution: consistent with zero within r %d" % res)
-            elif r["null"] and med(r["D"]) < 0:
-                r["why"] = "null: negative per-event cost above its resolution r %d (a fixture artifact)" % res
+            elif r["null"] and abs(r["value"]) <= res:
+                r["why"] = "null: within its resolution r %d but its paired A/A %d is above r" % (res, r["aa"])
             elif r["null"]:
                 r["why"] = "null: below its paired A/A or signs mixed, at a size above its resolution r %d" % res
         else:
@@ -340,6 +359,7 @@ def main():
         print("est: REFUSED input: %s" % e)
         return 2
     if cmd == "rows":
+        print("policy\tr_max_e6\t%d\t%s" % r_max(read_record(rundir)))
         for k in sorted(out):
             r = out[k]
             if "absent" in r:
@@ -410,6 +430,7 @@ def write_draft(rundir, path, out, drift, outcome):
     def text(h):
         t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
         t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
+        t += ["# note r_max_e6: %d, %s" % r_max(rec)]                   # [rev1.4 r10-REV14-2]
         t += ["#section header", "#key\tvalue"]
         t += ["%s\t%s" % kv for kv in h]
         t += ["#section cards", "#" + "\t".join(["owner", "quantity", "ver", "dims", "unit", "subject", "lengths",
