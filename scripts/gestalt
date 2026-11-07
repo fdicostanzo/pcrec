@@ -144,7 +144,13 @@ if [ -d "$roledir" ]; then
     done
 fi
 win=$($TO 2 jq -r '.context_window.window_size // empty' "$snap" 2>/dev/null)
-case $win in ''|*[!0-9]*) win="" ;; *) win=" (window $((win / 1000))k)" ;; esac
+# The effective ceiling is the owner's auto-compact window (~/.claude/settings.json `autoCompactWindow`,
+# Frank 2026-11-07: "the context max is somewhat illusory because I've set the auto compact"); read that one key.
+acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$HOME/.claude/settings.json" 2>/dev/null | head -1)
+case $acw in ''|*[!0-9]*) acw="" ;; esac
+wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
+if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
+elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi
 echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
 
 # --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
