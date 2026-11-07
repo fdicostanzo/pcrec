@@ -17,9 +17,9 @@ studies; listed, not counted).
 Baseline: run 2026-11-05 daf6f002b, the first fully green full suite on record (log `build/full_suite/20261104_daf6f002b/`).
 Every earlier landing is listed under "Covered by run 2026-11-05 daf6f002b" in the Runs section.
 
-**major: 0, minor: 3** (plus 2 no-code landings, not counted). Class is set by the manager at each landing.
+**major: 0, minor: 4** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing.
 
-Trigger state (D177): all un-fired (3 minor of the 4-6 that fire row 5; 0 majors). Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
+Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it; 0 majors; rows 1-4 un-fired). Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
 
 ### major
 
@@ -27,12 +27,14 @@ none yet
 
 ### minor
 
+- 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
 - 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
 - 2026-11-05 39e7b20c5 minor — span_pick stage 1 unit 1d merge (memfn/src/window.c planning core; byte-identical kit refactor, zero movers, MF_SITE_ABI 23, no pcrec abi; like 1a/1c)
 - 2026-11-05 564b0e804 minor — lane/mechfix2 merge ([MECH-NOCOMPILE]: sabotage plants fixed/declared, test-only; its own full mech GREEN, job 433: 1102 rows, 0 unexpected, 0 anomalies)
 
 ### none (not counted)
 
+- 2026-11-06 3686da9be none — span_pick stage 2 unit S2b merge (instruments only; strict and build clean)
 - 2026-11-05 f8ba7021c none — ledger: full suite green (docs)
 - 2026-11-05 442686b7b none — journal: session 129 evening close (docs)
 
