@@ -3623,3 +3623,51 @@ Main ruled on the four kit findings (D186 add. 2):
   - Re-run over S2b's pinned sweep (sha b88599f6): census0.out and census0_cards.out byte-identical, so GREEN. Job fixed to sha-check and read the pinned sweep.
   - 452 re-added without its dependency on the cancelled 451 (the queue runs a COPY, so a file edit alone does nothing).
   - S2f DELIVERED: done line 094ae4e20, waiting on main's review (landing after the 500 battery).
+- 11-07 ~21:00: S2f MERGED to main (4e497d99b; done line 5c3b65fb3) before the battery freeze. Stage 2 is COMPLETE (S2a-S2f); S2g (SIMD) waits on K0->P1 and a timing window.
+  - k1107 fast-forwarded to main.
+  - Stage 3 unit 3.0 ("the plan takes the frame", span_pick.md :408): design lane `u30d` (opus, worktree u30d, deliver a22b4fb00) writes docs/design/memfn/plan_frame.md in span_cards' shape.
+  - Its content: goals; the frame facts pcrec states; the reply growth; the asker-fact retirement; the MF_SITE_ABI readers; pcrec-side asks for main; units; what row 1 needs, including Frank's controlled candidate set.
+  - Next: a critic re-check before any build.
+- 11-07 ~22:50: u30d DELIVERED: docs/design/memfn/plan_frame.md rev 0 (tip e23c42408; lane closed).
+  - Two units: 3.0a kit-only; 3.0b the seam plus pcrec's asks, in one commit.
+  - The reply gains framed, frame_row, method, renderer, resume (row ids/enums, no C). The asker fact retires into one renderer table keyed by (frame row, pick). One MF_SITE_ABI event.
+  - 5 pcrec-side asks; 6 questions (Q6 for Frank: row 1 waits for an inline one-member finder; recommended yes).
+  - HELD before its critic round: Frank's proposal (11-07) that candidate SEARCH and candidate VALIDATION are separate primitives, composed. The kit manager's reading is a triple: search, candidate stream (stream vs one-shot), check. It may reshape 3.0's reply, which already has method + renderer + a two-valued resume. Awaiting his adopt/not.
+- 11-07 ~23:00: RULED by Frank (to the kit, directly), "Yes":
+  (1) Candidate SEARCH and candidate VALIDATION are separate primitive pieces, COMPOSED. The kit's reading is a triple: search (block mask or position), candidate stream (one-shot restart vs a stream that continues through the mask; the skip-table SHIFT is a third), and check (T-VERIFY's plan). vrun becomes one composition; vany plus the caller's verify is the one-shot composition; libc memchr is one-shot only.
+  (2) Q6: row 1 waits for the inline one-member finder, so its first priced comparison is like-for-like.
+  - Next: plan_frame.md rev 1 expresses 3.0's reply as (search, stream, check) before its critic round. Proposed D-entry posted in responses.md.
+- 11-07 ~23:30: u30d1 DELIVERED plan_frame.md rev 1 (tip 35ad9c443; lane closed).
+  - The plan is the triple: search = T-FIND; stream = a support table plus Table S (ONESHOT/MASK/SHIFT); check = T-VERIFY's existing reply group.
+  - Reply fields: framed, frame_row, method, stream, fused (replaces rev 0's renderer).
+  - Table B splits into a search renderer table (rev 0's, kept), a stream renderer table and check rows; B-fn is a fused row. Zero bytes move: D-hors's probe-miss resume respells with identical bytes (window.c:2653 vs :2673).
+  - vrun/vany go to later units. Units 3.0a (kit-only, M) and 3.0b (seam + ASK-1..5).
+  - New questions: Q7 (fused replaces renderer), Q8 (declare MASK now), Q9 (vrun after target seam U2+U3), Q10 for main (a D186 addendum).
+  - Critic round crit-memfn-planframe1 (opus coordinator) LAUNCHED on rev 1.
+- 11-07 ~24:00: critic round r12 (plan_frame rev 1): 5 opus lenses plus a verifier, 42 raw -> F1-F34. 19 of the 20 checked HOLD, 1 PARTLY. NOT READY; rev 2 with text fixes.
+  - Answer-level: F1 (formhash pair refused in the correct build), F2 (B-pair frontier decl uncolumned), F3 (floor skeleton differs), F4 (fd_holds gate would decline PRES), F5 (libc/include union wrong).
+  - RULED: all FIX-NOW accepted. F8: the stream is a separate piece, MASK declared only (D77). F13: the triple per rung. F14: the fused row crosses facts (PAIR/LIBC). D27 author for 3.0b.
+  - Committed: review docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md (+ dir) bcd235f4b; skill/guide lessons 5fd23b2bd (on lane/memfn-u30d).
+  - Lane u30d2 (opus) writes rev 2.
+- 11-08 ~00:20: u30d2 DELIVERED plan_frame rev 2 (45f3a337f; lane closed).
+  - All 34 r12 ids applied. 3.0a M, 3.0b L. F1-F5, F10 and F11 are in the text.
+  - Q13 RULED by the kit manager: F13 is a LABEL, not a rung list. My "triple per rung" overreached the critic's doc fix. The rung list needs a new pcrec fact (fs) ahead of need (D77), so it becomes a PLAN row with the trigger "row 1 compares a SIMD-on cell, or the first MASK producer lands". Recorded in r12 (9d690a58b).
+  - Lane u30d3 (sonnet) trims it -> rev 2.1. Next: the narrow readiness re-check, then 3.0a's build (under R-35's GO).
+  - For main: Q11 [SEAM-READER-CENSUS] and Q12 (site_kind stays UNSTATED, F22), relayed at delivery.
+- 11-07 ~21:45: u30d3 DELIVERED plan_frame rev 2.1 (f53d50de4; lane closed).
+  - The rung list is removed; the grep is clean outside the removal notes.
+  - It also removed fn_rows' PREFIX fact columns, which existed only to feed rung[]. Accepted: they are named in the RUNG-LIST plan row (§7).
+  - Readiness re-check crit-memfn-planframe2 (opus coordinator; readiness + fix-induced lenses) LAUNCHED.
+- 11-07 ~22:30: re-check r13 (plan_frame rev 2.1): one readiness critic per unit plus fix-induced (opus), a sonnet verifier; R1-R28.
+  - 3.0a: READY WITH TEXT FIXES (R3: the ST-many gate can only decline; R4, R5, R7-R11, R15).
+  - 3.0b: needed two shape rulings. R1 RULED narrow: the frame part vs the stored record; the decision group re-derived, controlled by purity + ASK-3. R2 RULED: a stop_test member; TABLE = hook stated AND span offers it; matched by offset.
+  - R28: the trigger is restated as "the first MASK stream RENDERER ROW lands".
+  - Committed r13 + skill change 8f15e664b; older review index lines moved to the history file (12 KB limit).
+  - Lane u30d4 (opus) -> rev 2.2. Then the kit manager checks the by-id table, and 3.0a builds.
+  - Freeze notes for main: the composition ruling still has no D-entry; the RUNG-LIST plan row is unfiled.
+- 11-07 ~23:10: u30d4 DELIVERED plan_frame rev 2.2 (11b522809; lane closed); all 27 accepted r13 ids applied.
+  - Q14 accepted (sabotage row AF; 3.0b 19 rows).
+  - Q15 accepted except probe.c "left to break", REJECTED: census jobs build r33_sim/probe.c, so 3.0b adds a kit-owned successor probe under span_pick/. Recorded 15ab95a02.
+  - 3.0a GO: build lane s30a (opus) in worktrees/s30a, branch lane/memfn-s30a cut from lane/memfn-u30d.
+    - Kit-only, zero movers. Light niced builds only during the hold.
+    - It WRITES its validation jobs (scratch/memfn/s30a/jobs/) and does not queue them; the kit manager queues them after K0's 01:00 gates, in agreement with main's 500 battery.

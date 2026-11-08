@@ -3259,3 +3259,12 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 488 was RED on its first run: the job re-swept on a newer tree (5524 records vs the pinned 5492).
     - Re-run over S2b's PINNED sweep (sha b88599f6...): census0.out and census0_cards.out are both byte-identical to the committed copies; the census0 control holds.
   - Noted for stage 3 (ideas.md 7a779d3bc, Frank): the smp20 comparison is not apples to apples (inline pair vs libc call); an inline one-member finder at pair speed is the missing candidate.
+- notice (proposed decision entry, Frank to the kit 2026-11-07): "Candidate search and candidate validation are two different primitive pieces that are composed."
+  - Kit reading: a site's find-then-verify plan is a triple, (search, candidate stream, check):
+    - search: T-FIND's method;
+    - stream: how the code moves past a rejected candidate: one-shot restart at c + 1, continue through the current mask, or the skip-table shift;
+    - check: T-VERIFY's plan.
+  - Each piece is a table; the renderer composes them inline (no call boundary).
+  - libc memchr supplies only one-shot. A comparison between two plans names which pieces differ (Frank's apples-to-apples lesson, same day).
+  - Also ruled: span_pick row 1 waits for an inline one-member finder and its card, so row 1's first priced comparison is controlled.
+  - Effect: plan_frame.md (unit 3.0) rev 1 shapes the reply as the triple. Please file this as a D-entry (or an addendum to D186/D187, your call).
