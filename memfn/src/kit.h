@@ -537,6 +537,27 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
  * finds no stop: it probes the window's end and resumes by a shift table. */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
                FF_W64, FF_A3, FF_PAIR, FF_HORS } fd_form;
+/* THE TRIPLE's candidate STREAMS (window.c; plan_frame.md §2.5.1), a set:
+ * how the text moves past a candidate the check rejects. RESTART: the next
+ * search starts at c + 1; MASK: a block's lane mask's next set lane, the
+ * block reloaded only when the mask is empty (declared: no search feeds it
+ * in 3.0); SHIFT: by the skip table's shift of a probed byte. */
+enum { WF_ST_RESTART = 1u << 0, WF_ST_MASK = 1u << 1, WF_ST_SHIFT = 1u << 2 };
+/* The floor's search key in the support table: E-generic's skeleton has no
+ * search piece (the floor tests every position). */
+#define WF_NO_SEARCH FF_UNSTATED
+/* A row of THE SUPPORT TABLE (window.c, plan_frame.md §2.5.2): the streams
+ * a BUILT search feeds (`search` its name, a T-FIND pick's or `floor`), and
+ * the basis of its cells (the owner's ruling's text, or a derived basis).
+ * Read by Table S; printed by tests/memfn/arm_fixtures.c --streams. */
+typedef struct {
+    const char *search;
+    fd_form     pick;
+    uint8_t     streams;        /* WF_ST_*                                   */
+    const char *basis;
+} wf_support_row;
+#define wf_support_rows MF_NS(wf_support_rows)
+const wf_support_row *wf_support_rows(size_t *n);
 /* T-FIND's QUESTION about a window site's STOP (window_site.md §2.2, §2.5):
  * its set and its offset d* from the candidate (negative: below it), the
  * window D-hors would skip by (the core of the chosen alternative's
@@ -921,7 +942,8 @@ const struct arm *wf_plan_row(const struct wf_plan *plan);
 /* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
  * included since span_pick 1e), or NULL (the floor). */
 const char *wf_plan_brow(const struct wf_plan *plan);
-/* Table B's renderer row rendering E-find's find (B-fn .. B-hors), or NULL
+/* The renderer row rendering E-find's find (the fused row B-fn, or the
+ * search renderer row B-pair .. B-hors), or NULL
  * (the floor): the third member of the key (frame row, method row, renderer
  * row) the text is keyed by; MF_TRACE's FDROUTE prints it. */
 const char *wf_plan_bren(const struct wf_plan *plan);

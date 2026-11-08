@@ -167,10 +167,20 @@ plant_spec() {
         # refuses every E-find stop, whose core the alternative states, so no site resumes by
         # the shift table (the generator's hors census goes red)
         echo 'finder.c@@        MF_ANY, CM(CORED))@@        MF_ANY, CM(NOCORE))' ;;
+    S2987) # plan_frame.md 3.0a (L): S-restart's text resumes C += 2, so E-find (every non-HORS,
+        # non-B-fn site: B-fn is fused, its function's own loop) and the floor (it reads its
+        # stream row) skip candidates; the plant is the shared text, so both S-restart rows carry it
+        echo 'window.c@@    kb_printf(b, "%s++", rc->C);@@    kb_printf(b, "%s += 2", rc->C);' ;;
+    S2989) # plan_frame.md 3.0a (N): E-generic's S-restart stream renderer row deleted (keys
+        # none; E-find's row stays): the floor has no stream and every floor site is refused
+        echo 'window.c@@{ { E_GENERIC, WF_ST_RESTART, "S-restart", NULL }@@{ { E_GENERIC, 0, "S-restart", NULL }' ;;
+    S2991) # plan_frame.md 3.0a (P): B-pair's loop-state slot emptied: the frontiers are
+        # undeclared, so every B-pair site's text fails to compile (the pair census)
+        echo 'window.c@@    ofs_pair_decl(b, \&t);@@    (void)t;' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2987 S2989 S2991"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

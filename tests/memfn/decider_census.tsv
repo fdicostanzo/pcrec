@@ -63,8 +63,16 @@ window.c	wf_tie_to	data	-	TIE	-
 window.c	find_groups	fn	-	T-VERIFY	-
 window.c	run_group_ok	fn	-	T-VERIFY	-
 window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:translate's pterm grouping (T-VERIFY C-run)	a census shows its groups equal find_groups' on every B-fn site
-window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once, then B's renderer row)
-window.c	wf_prepare	fn	-	T-FRAME	- (unit 1e: Table E, legacy first, at text time)
+window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once; 3.0a: then the fused row, else the search renderer row)
+window.c	wf_plan_site	fn	-	T-FRAME,T-STREAM	- (plan_frame.md 3.0a: THE plan function, wf_prepare's selection moved in: Table E, then the pieces' rows and Table S)
+window.c	ren_find	fn	-	T-FRAME	- (3.0a: the renderer tables' ONE accessor)
+window.c	ren_search	data	-	T-FRAME	- (3.0a: THE search renderer table, Table B's E-find rows; the composer's E-stmt rows join at commit 2)
+window.c	ren_stream	data	-	T-FRAME	- (3.0a: THE stream renderer table)
+window.c	ren_check	data	-	T-FRAME	- (3.0a: the check renderer rows)
+window.c	ren_skel	data	-	T-FRAME	- (3.0a: the skeleton rows)
+window.c	ren_fused	data	-	EXC:the fused rows (arms[] and fn_rows BODY render a whole triple)	a fused row's triple is rendered by its pieces' rows
+window.c	wf_support	data	-	T-STREAM	- (3.0a: THE support table, which streams each built search feeds)
+window.c	table_s	fn	-	T-STREAM	- (3.0a: TABLE S, the stream pick over the support table and the frame's streams)
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate

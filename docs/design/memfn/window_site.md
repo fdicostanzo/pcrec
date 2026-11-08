@@ -269,7 +269,7 @@ offset 0, a `table_ref` nobody stated, its decision read as LIBC or WALK only, t
 
 `[code]` rev 2 marked D1 MEASURED; finder.c says `FB_UNMEASURED_DEFAULT`. D2 and RPT retire.
 
-**B's renderers on E-find's text `[rev3.3 C1]`** (`wf_brows`, window.c), first match over the pick and
+**B's renderers on E-find's text `[rev3.3 C1]`** (since plan_frame.md 3.0a the search renderer table `ren_search` and the fused row `ren_fused`, window.c; formerly `wf_brows`), first match over the pick and
 the plan; they decide nothing about the find, and a pick none names (an unbuilt form) leaves E-find with no
 text for the plan:
 
@@ -337,9 +337,9 @@ asked on E-find's text only. It is now ONE ROW of the finder table's FIND slot, 
 `core` CORED, checked against the window family's facts the walk is handed), the deny `window-skip`, trace and
 reach counters (`REACH table=fd row=D-hors`), and its predicate `hors_facts` (the rule below, exactly as S3 built
 it). The composer states no stop, so D-hors's facts never hold for it. D-hors's pick, `HORS`, finds no stop; the
-renderer that takes it is E-find's Table B row B-hors (window.c `wf_brows`), which CARRIES ITS ACTIONS `[rev3.3
+renderer that takes it is E-find's search renderer row B-hors (window.c `ren_search`; since plan_frame.md 3.0a its stream is S-shift, `ren_stream`), which CARRIES ITS ACTIONS `[rev3.3
 R2-7]`: its plan's preparation (D-hors's probe and shift table), and its text (the loop head, the resume, the
-file-scope table: `wf_b_render`); the path id gains `+hors` where it fires. D-one is no row: every other
+file-scope table: since 3.0a split between B-hors's head and S-shift's resume and table); the path id gains `+hors` where it fires. D-one is no row: every other
 renderer's resume is `c + 1`, and a stop D-hors does not take walks on to the rows below it.
 
 | row | holds when | resume | basis |

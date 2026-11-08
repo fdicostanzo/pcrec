@@ -56,13 +56,19 @@ import tempfile
 # relation has to say `<= b.v` or `< b.v` (S1095's SABOTAGE line does). They
 # match only inside the relation itself (a member) and hold no live hit of
 # their own; each is shown by a PLANT whose text holds no `pick_takes(`.
-LIVE = ["kit_walk(", "< best", "tie_takes", "TIE_", "pick_takes("]
+# plan_frame.md 3.0a [rev2 F28, rev2.2 R4]: the renderer tables' ONE accessor
+# `ren_find(` and, per renderer table, its name followed by `[` (the `ren_`
+# family); the row-walk idioms `.pick ==` / `].holds(` are not shapes.
+LIVE = ["kit_walk(", "< best", "tie_takes", "TIE_", "pick_takes(", "ren_find(",
+        "ren_search[", "ren_stream[", "ren_check[", "ren_skel[", "ren_fused["]
 BYPASS = ["< b.v", "<= b.v", "< b->v", "<= b->v", ".v <", "->v <"]
 BACKSTOP = LIVE + BYPASS
 # EXACT hit count (K35, like MEMBER_COUNT): lines holding any BACKSTOP shape.
 # 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact;
 # 36 at 1e (Table D's `kit_walk(&wf_dtable` gone: D-hors is T-FIND's row).
-HITS = 36
+# 48 at plan_frame.md 3.0a commit 1 (the `ren_find(` calls and the renderer
+# tables' definitions, each inside a member).
+HITS = 48
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -71,8 +77,12 @@ HITS = 36
 # (mass_domain gone into the candidate builder cands, which is in, and
 # kit_pick_takes in with its kit.h prototype); 52 at 1e (fd_route gone into
 # fd_find, the one walk; window.c's d_hors_holds out, finder.c's hors_facts
-# in; compose.c's fd_renderer, the composer's renderer rows, in).
-MEMBER_COUNT = 52
+# in; compose.c's fd_renderer, the composer's renderer rows, in); 60 at
+# plan_frame.md 3.0a commit 1 (wf_prepare's row now the plan function
+# wf_plan_site's; ren_find, the search/stream/check/skeleton/fused renderer
+# tables, the support table and Table S in; fd_renderer stays until commit 2
+# moves its rows into the search renderer table).
+MEMBER_COUNT = 60
 
 passed = failed = 0
 SHAPE_HITS = {}     # the last census()'s lines per BACKSTOP shape

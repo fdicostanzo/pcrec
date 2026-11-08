@@ -35,9 +35,11 @@
  *        the FIND slot is asked about the stop itself (fd_find, the one
  *        walk: its set, its offset, D-hors's window, the site's kind and
  *        options, and the asker fact: this family renders PAIR) and the
- *        deciding row's PICK is rendered by THE RENDERER ROW (Table B's
- *        renderers, `wf_brows`: B-fn, B-pair, B-memchr, B-walk, B-hors; the
- *        text a (frame row, method row, renderer row) triple)
+ *        deciding row's PICK is rendered by THE RENDERER TABLES (Table B
+ *        split, plan_frame.md 3.0a: the fused row B-fn, else the search row
+ *        B-pair, B-memchr, B-walk or B-hors, with Table S's stream row and
+ *        the check row; the text a (frame row, method row, renderer row)
+ *        triple)
  *   floor: a byte loop over the plan under the core rule (window_site.md §2
  *   "floor: generic"), with ONE hoisted core bound per candidate and the
  *   THREE-WAY guard outside it.
@@ -1261,8 +1263,15 @@ struct wf_plan {
     uint8_t  stop_alone;                /* C-stop dropped it: B finds it, the
                                            test does not repeat it             */
     fd_form  pick;                      /* B: the FIND slot's pick, its row,  */
-    const char *brow;                   /* and its renderer (wf_brows)        */
-    uint8_t  bren;
+    const char *brow;
+    /* what the define renders (the plan function, wf_plan_site): the
+       frame's skeleton row, and its search (or the fused row rendering the
+       triple whole), stream and check renderer rows (plan_frame.md §2.6) */
+    const struct ren_skel_row   *skel;
+    const struct ren_search_row *srch;
+    const struct ren_fused_row  *fused;
+    const struct ren_stream_row *strm;
+    const struct ren_check_row  *chk;
     const mf_site *fsite;               /* B-fn: the plan as the offset-skip
                                            function's site and predicate       */
     int8_t   grp[WF_NPOS];              /* C-run's compare: a run term of
@@ -1529,9 +1538,10 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
 typedef struct {
     int         holds;      /* E-find renders this plan                      */
     int32_t     wlo, whi;   /* D-hors's window                               */
-    fd_form     pick;       /* T-FIND's pick, its deciding row and           */
-    const char *brow;       /* its renderer (wf_brows)                       */
-    size_t      bren;
+    fd_form     pick;       /* T-FIND's pick and its deciding row            */
+    const char *brow;
+    const struct ren_search_row *srch;  /* its search renderer row, or       */
+    const struct ren_fused_row  *fused; /* the fused row rendering it whole  */
     wf_legacy  *fn;         /* B-fn: the plan as the function's predicate    */
 } wf_fx;
 
@@ -1604,7 +1614,7 @@ WF_CT_E(ct_e_stmt, "E-stmt", CM(STMT), CM(ASSIGN) | CM(ON_MISS), MF_ANY)
 /* E-find's and the floor's contracts are their arms' (below). */
 static const gate_contract wf_find_ct, wf_floor_ct;
 
-enum { E_FUNC, E_STMT, E_FIND, E_GENERIC };
+typedef enum { E_FUNC, E_STMT, E_FIND, E_GENERIC } wf_frame_row;
 /* THE ORDER (the kit manager's R1 ruling): the legacy rows first, so every
  * site the legacy translation serves keeps today's bytes; E-find before the
  * floor, so S3's movers are exactly the sites the legacy rows decline that
@@ -1735,24 +1745,88 @@ static void hors_table(const struct wf_plan *w, int32_t wlo, int32_t whi, uint8_
     }
 }
 
-/* D-hors's plan (B-hors's prepare; Table D's row until span_pick 1e): the
- * probe at the window's last offset and the shift table over the window. */
-static void d_hors_prepare(struct wf_plan *w, const wf_fx *fx)
+typedef struct wf_rc wf_rc;      /* the renderer's context (E-FIND's TEXT, below) */
+
+/* D-hors's plan, its two pieces' halves: the SEARCH's probe at the window's
+ * last offset (B-hors's prepare) and the STREAM's shift table over the
+ * window (S-shift's prepare). One prepare until plan_frame.md 3.0a (Table
+ * D's row until span_pick 1e). */
+static void b_hors_prepare(struct wf_plan *w, const wf_fx *fx)
 {
     w->hl = fx->whi;
+}
+static void s_shift_prepare(struct wf_plan *w, const wf_fx *fx)
+{
     hors_table(w, fx->wlo, fx->whi, w->sh);
 }
 
-/* ---- TABLE B's RENDERERS: the FIND slot's pick in E-find's text -----------
+/* ---- THE TRIPLE: search, candidate stream, check (plan_frame.md §2.5) -----
  *
- * Table B is the finder's FIND slot (fd_find, T-FIND's one walk): it DECIDES
- * the stop's find and the loop's resume (D-hors, D1, D1c, D1w, PAIR, R7w).
- * These rows, THE RENDERER ROW (span_pick 1e), decide nothing about it:
- * first match over the pick and the plan, each renders the pick it names
- * (the find, the resume, the file-scope text and the plan's preparation,
- * E-FIND's TEXT below), and a pick no row names (an unbuilt form: V1, W64,
- * A3, NONE) leaves E-find with no text for the plan. B-fn's reconciliation
- * with fn_rows' BODY is KEPT (span_pick §The tables, T-FRAME). */
+ * A site's find-then-verify plan is three pieces, each answered by its own
+ * FACT table, and composed:
+ *   SEARCH  where the next candidate is: T-FIND's pick (fd_find, the one
+ *           walk, finder.c), or a fused row's declared search;
+ *   STREAM  how the text moves past a candidate the check rejects (kit.h's
+ *           WF_ST_*): THE SUPPORT TABLE (which streams each built search
+ *           feeds) and TABLE S (ONE rule over them and the frame's streams);
+ *   CHECK   whether a candidate matches: T-VERIFY's plan (Table C).
+ * Their C spellings are THE RENDERER TABLES, Table B split (§2.6): the
+ * frame's SKELETON row writes the loop, its SEARCH, STREAM and CHECK rows
+ * the pieces, inline, and a FUSED row renders a whole triple as one piece
+ * (B-fn, the offset-skip function). Every renderer table is a plain
+ * first-match array read through ONE accessor, ren_find (no REACH record:
+ * byte identity and the sabotage rows show their reach). No pair of pieces
+ * is special-cased. */
+
+/* A renderer row's KEY, first in every renderer row: the T-FRAME row it
+ * renders on, the keys it serves (a set: REN_PICK(pick) on a search or a
+ * fused row, WF_ST_* on a stream row, REN_FRAME on a row keyed by frame
+ * alone), its id (FDROUTE's `ren=`) and its predicate over the selection's
+ * context (NULL: the key alone). */
+typedef struct {
+    wf_frame_row frame;
+    uint32_t     keys;
+    const char  *id;
+    int        (*holds)(const void *x);
+} ren_key;
+#define REN_FRAME   1u                  /* a row keyed by its frame alone      */
+#define REN_PICK(f) (1u << (f))         /* a search's key: its T-FIND pick     */
+#define REN_ROWS(t) (t), sizeof (t) / sizeof *(t), sizeof *(t)
+
+/* THE ONE ACCESSOR of every renderer table (§2.4 [rev2 F28]): the first of
+ * the `n` rows at `rows` (each `size` bytes, opening with its ren_key) on
+ * frame `f` that serves `key` and whose predicate holds over `x`; NULL where
+ * none does (the frame has no row for the piece: its caller refuses). */
+static const void *ren_find(const void *rows, size_t n, size_t size, wf_frame_row f, uint32_t key,
+                            const void *x)
+{
+    for (size_t i = 0; i < n; i++) {
+        const ren_key *k = (const void *)((const char *)rows + i * size);
+        if (k->frame == f && (k->keys & key) && (!k->holds || k->holds(x))) return k;
+    }
+    return NULL;
+}
+
+/* The pieces' C spellings (below, E-FIND's TEXT and the floor's). */
+static int  find_head(wf_rc *rc, kb *b, const char *bound, int *skip);
+static int  d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip);
+static int  wf_b_pair(wf_rc *rc, kb *b, const char *p, int32_t d);
+static int  wf_b_memchr(wf_rc *rc, kb *b, const char *p, int32_t d);
+static int  wf_b_walk(wf_rc *rc, kb *b, const char *p, int32_t d);
+static void b_pair_state(wf_rc *rc, kb *b);
+static void resume_next(const wf_rc *rc, kb *b);
+static void d_hors_next(const wf_rc *rc, kb *b);
+static int  d_hors_define(mf_art *art, const wf_rc *rc, mf_sink *out);
+static int  c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);
+static int  c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);
+static int  wf_find_fn(wf_rc *rc, mf_sink *o);
+static int  b_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h, const wf_rc *rc,
+                        mf_sink *out);
+static int  wf_find_expr(wf_rc *rc, mf_sink *o, int want_value);
+static int  wf_floor_expr(wf_rc *rc, mf_sink *o, int want_value);
+
+/* The selection's context a renderer row's predicate reads: the decision,
+ * the plan, the define's hooks, T-FIND's pick, and B-fn's translation. */
 typedef struct {
     const wf_dec         *d;
     const struct wf_plan *w;
@@ -1782,47 +1856,216 @@ static int b_fn_holds(const void *x)
     ofs_fn_scan(p, &k, &lo, &hi);
     return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p, &two) && two;
 }
-static int b_pair_holds(const void *x)   { return ((const wf_bx *)x)->pick == FF_PAIR; }
-static int b_memchr_holds(const void *x)
-{
-    const wf_bx *b = x;
-    return b->pick == FF_LIBC || b->pick == FF_LIBC_BACK;
-}
-static int b_walk_holds(const void *x)   { return ((const wf_bx *)x)->pick == FF_WALK; }
-static int b_hors_holds(const void *x)   { return ((const wf_bx *)x)->pick == FF_HORS; }
 
-enum { B_FN, B_PAIR, B_MEMCHR, B_WALK, B_HORS };
-static const struct {
-    const char *row;
-    int (*holds)(const void *x);
+/* THE SKELETON ROWS (§2.6.0 [rev2 F3]): the loop's SHAPE is the frame's, one
+ * row per composing frame, each stating its text order and, where it
+ * differs, its render order ([rev2.2 R15]). E-stmt has none: its PF arm's
+ * text is a search, and the loop is the caller's. A fused row keeps its own
+ * text whole inside E-find's expression. */
+typedef struct ren_skel_row {
+    ren_key     k;
+    int       (*expr)(wf_rc *rc, mf_sink *o, int want_value);  /* the statement expression */
+    const char *order;
+} ren_skel_row;
+enum { RK_FIND, RK_GENERIC, RK_N };
+static const ren_skel_row ren_skel[] = {
+    [RK_FIND]    = { { E_FIND, REN_FRAME, "E-find", NULL }, wf_find_expr,
+                     "text and render: open; cand; the search's, then the stream's loop state; RAISE; "
+                     "for (;;) { HEAD if TEST { F = 1; break; } NEXT; } close" },
+    [RK_GENERIC] = { { E_GENERIC, REN_FRAME, "E-generic", NULL }, wf_floor_expr,
+                     "text: open; cand; for (; BOUND; NEXT) if TEST { F = 1; break; } close; render: "
+                     "the CHECK first (its test writes the bound and sets the hooks open reads), then "
+                     "open, cand, the for header, NEXT" },
+};
+_Static_assert(sizeof ren_skel / sizeof *ren_skel == RK_N, "every skeleton row is declared");
+
+/* THE SEARCH RENDERER TABLE (§2.4, §2.6.1 [rev2 F2, F11]), keyed (T-FRAME
+ * row, pick): each row renders the pick it names. A pick no row names (an
+ * unbuilt form: V1, W64, A3, NONE) has no search text on that frame. Its
+ * LOOP STATE is written before the frame's RAISE; its HEAD is the loop's
+ * head (the find and the bound, or D-hors's bound and probe). */
+typedef struct ren_search_row {
+    ren_key     k;
     uint8_t     libc;           /* its text calls memchr                     */
     const char *path;           /* the path id's suffix                      */
-    void (*prepare)(struct wf_plan *w, const wf_fx *fx);    /* or NULL       */
+    void      (*prepare)(struct wf_plan *w, const wf_fx *fx);           /* or NULL */
+    void      (*state)(wf_rc *rc, kb *b);                               /* or NULL */
+    int       (*find)(wf_rc *rc, kb *b, const char *p, int32_t d);      /* or NULL */
+    int       (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
     const char *basis;
-} wf_brows[] = {
-    [B_FN]     = { "B-fn",     b_fn_holds,     1, "", NULL,
-                   "PAIR, the plan the offset-skip function's predicate: fn_rows[] BODY "
-                   "fn-pair and its PREFIX SIMD rows (vrun) under -fmemfn-simd" },
-    [B_PAIR]   = { "B-pair",   b_pair_holds,   1, "", NULL,
-                   "PAIR elsewhere (any two bytes, a cube outside a run term included): "
-                   "fn-pair's two memchr streams (ofs_pair_text) at the stop's offset" },
-    [B_MEMCHR] = { "B-memchr", b_memchr_holds, 1, "", NULL,
-                   "LIBC (D1) or LIBC_BACK (D1c): memchr for the stop's byte, a stop below "
-                   "the candidate raising C first" },
-    [B_WALK]   = { "B-walk",   b_walk_holds,   0, "", NULL,
-                   "WALK (R7w, D1w): C advanced while the stop's byte is outside its set "
-                   "(C-table or C-own)" },
-    [B_HORS]   = { "B-hors",   b_hors_holds,   0, "+hors", d_hors_prepare,
-                   "HORS (D-hors): no find; the probe of the window's last position and "
-                   "the shift table (Table D's D-hors text until span_pick 1e)" },
+} ren_search_row;
+enum { RB_PAIR, RB_MEMCHR, RB_WALK, RB_HORS, RB_N };
+static const ren_search_row ren_search[] = {
+    [RB_PAIR]   = { { E_FIND, REN_PICK(FF_PAIR), "B-pair", NULL }, 1, "", NULL, b_pair_state,
+                    wf_b_pair, find_head,
+                    "PAIR elsewhere (any two bytes, a cube outside a run term included): "
+                    "fn-pair's two memchr streams (ofs_pair_text) at the stop's offset" },
+    [RB_MEMCHR] = { { E_FIND, REN_PICK(FF_LIBC) | REN_PICK(FF_LIBC_BACK), "B-memchr", NULL }, 1, "",
+                    NULL, NULL, wf_b_memchr, find_head,
+                    "LIBC (D1) or LIBC_BACK (D1c): memchr for the stop's byte, a stop below "
+                    "the candidate raising C first" },
+    [RB_WALK]   = { { E_FIND, REN_PICK(FF_WALK), "B-walk", NULL }, 0, "", NULL, NULL,
+                    wf_b_walk, find_head,
+                    "WALK (R7w, D1w): C advanced while the stop's byte is outside its set "
+                    "(C-table or C-own)" },
+    [RB_HORS]   = { { E_FIND, REN_PICK(FF_HORS), "B-hors", NULL }, 0, "+hors", b_hors_prepare, NULL,
+                    NULL, d_hors_head,
+                    "HORS (D-hors): no find; the bound, then the probe of the window's last "
+                    "position (its miss resumes by the stream's text)" },
 };
-#define WF_NBROWS (sizeof wf_brows / sizeof wf_brows[0])
+_Static_assert(sizeof ren_search / sizeof *ren_search == RB_N, "every search renderer row is declared");
+
+/* THE STREAM RENDERER TABLE (§2.6.2 [rev2 F2, F11, F24]), keyed (T-FRAME
+ * row, stream), ONE row per (frame, stream) ([rev2.2 R13]: E-find's and
+ * E-generic's S-restart are two rows sharing one text). NEXT is the resume
+ * after a rejection; S-caller has none (the caller's loop restarts). The
+ * loop-state slot is empty on every row today (a MASK row's `m` will use
+ * it, plan_frame.md §2.5.5). */
+typedef struct ren_stream_row {
+    ren_key     k;
+    uint8_t     libc;
+    void      (*prepare)(struct wf_plan *w, const wf_fx *fx);           /* or NULL */
+    void      (*state)(wf_rc *rc, kb *b);                               /* or NULL */
+    void      (*next)(const wf_rc *rc, kb *b);                          /* or NULL */
+    int       (*define)(mf_art *art, const wf_rc *rc, mf_sink *out);    /* or NULL */
+    const char *basis;
+} ren_stream_row;
+enum { RS_FIND_RESTART, RS_GENERIC_RESTART, RS_SHIFT, RS_CALLER, RS_N };
+static const ren_stream_row ren_stream[] = {
+    [RS_FIND_RESTART]    = { { E_FIND, WF_ST_RESTART, "S-restart", NULL }, 0, NULL, NULL, resume_next, NULL, "C + 1" },
+    [RS_GENERIC_RESTART] = { { E_GENERIC, WF_ST_RESTART, "S-restart", NULL }, 0, NULL, NULL, resume_next, NULL, "C + 1, in the for header" },
+    [RS_SHIFT]           = { { E_FIND, WF_ST_SHIFT, "S-shift", NULL }, 0, s_shift_prepare, NULL, d_hors_next,
+                             d_hors_define,
+                             "C += SH[B], at the rejection and inside the search head's probe miss; "
+                             "the 256-byte table at file scope" },
+    [RS_CALLER]          = { { E_STMT, WF_ST_RESTART, "S-caller", NULL }, 0, NULL, NULL, NULL, NULL,
+                             "no text: the caller's NEXT loop restarts at c + 1" },
+};
+_Static_assert(sizeof ren_stream / sizeof *ren_stream == RS_N, "every stream renderer row is declared");
+
+/* THE CHECK RENDERER ROWS (§2.6.2 [rev2 F11]): one per composing frame,
+ * keyed by frame alone (a second check spelling, vrun's mask-trimmed
+ * compare, is its second row when it is re-expressed). C-caller has no text:
+ * pcrec checks. */
+typedef struct ren_check_row {
+    ren_key     k;
+    uint8_t     libc_runs;      /* its text calls libc iff the plan has a run
+                                   compare (runcmp.c: the memcmp row, the
+                                   words' memcpy loads)                     */
+    int       (*test)(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);  /* or NULL */
+    const char *basis;
+} ren_check_row;
+enum { RC_FIND, RC_FLOOR, RC_CALLER, RC_N };
+static const ren_check_row ren_check[] = {
+    [RC_FIND]   = { { E_FIND, REN_FRAME, "C-find", NULL }, 1, c_find_test,
+                    "wf_test_to less the position the search proved (C-stop's, or the probe's)" },
+    [RC_FLOOR]  = { { E_GENERIC, REN_FRAME, "C-floor", NULL }, 0, c_floor_test,
+                    "wf_test, which also writes the bound into the for header" },
+    [RC_CALLER] = { { E_STMT, REN_FRAME, "C-caller", NULL }, 0, NULL, "no text: pcrec checks" },
+};
+_Static_assert(sizeof ren_check / sizeof *ren_check == RC_N, "every check renderer row is declared");
+
+/* THE FUSED ROWS (§2.6.3 [rev2 F1, F10, F14]): a renderer of the WHOLE
+ * triple as one piece, matched FIRST, with its declared search and stream
+ * (the facts it implements; Table S holds the stream to the search's
+ * support). B-fn's reconciliation with fn_rows' BODY is KEPT (span_pick
+ * §The tables, T-FRAME). B-fn is reachable only because B-pair's (E-find,
+ * PAIR) search row makes PAIR renderable on E-find ([rev2 F1]). */
+typedef struct ren_fused_row {
+    ren_key     k;
+    fd_form     search;         /* its declared search                       */
+    uint8_t     stream;         /* its declared stream                       */
+    uint8_t     libc;
+    int       (*expr)(wf_rc *rc, mf_sink *o);
+    int       (*define)(mf_art *art, uint32_t handle, const mf_hooks *h, const wf_rc *rc,
+                        mf_sink *out);
+    const char *basis;
+} ren_fused_row;
+enum { RF_FN, RF_N };
+static const ren_fused_row ren_fused[] = {
+    [RF_FN] = { { E_FIND, REN_PICK(FF_PAIR), "B-fn", b_fn_holds }, FF_PAIR, WF_ST_RESTART, 1,
+                wf_find_fn, b_fn_define,
+                "PAIR, the plan the offset-skip function's predicate: fn_rows[] BODY "
+                "fn-pair and its PREFIX SIMD rows (vrun) under -fmemfn-simd" },
+};
+_Static_assert(sizeof ren_fused / sizeof *ren_fused == RF_N, "every fused row is declared");
+
+/* THE SUPPORT TABLE (§2.5.2 [rev2 F8, F21]): which streams each BUILT
+ * search feeds, each row's basis naming the SOURCE of its cell. Its pin is
+ * tests/memfn/stream_support.tsv (rows_check.py §S, against `arm_fixtures
+ * --streams`' print of this table); the LIBC rows' pin cells are the
+ * owner's ruling's text, never this table read twice. The unbuilt picks
+ * (V1, W64, A3, NONE) have no row: they feed no stream, so no frame renders
+ * them. */
+static const wf_support_row wf_support[] = {
+    { "LIBC",      FF_LIBC,      WF_ST_RESTART,
+      "RULING TEXT: \"libc memchr supplies only one-shot\" (memfn/docs/responses.md, "
+      "lane/memfn-k1107 067aca4df)" },
+    { "LIBC_BACK", FF_LIBC_BACK, WF_ST_RESTART,
+      "RULING TEXT, the same (memchr below the candidate, pf_memchr_back)" },
+    { "WALK",      FF_WALK,      WF_ST_RESTART,
+      "DERIVED: a byte loop stops at one position (B-walk's and the PF walks' text resumes "
+      "C++ and declares no mask)" },
+    { "PAIR",      FF_PAIR,      WF_ST_RESTART,
+      "DERIVED: the frontiers are the search's own state, declared before the loop and "
+      "kept across restarts; the restart is still c + 1" },
+    { "HORS",      FF_HORS,      WF_ST_SHIFT,
+      "DERIVED: the shift table over the window is its stream (_sh[256] iff HORS)" },
+    { "floor",     WF_NO_SEARCH, WF_ST_RESTART,
+      "DERIVED: the floor tests each position in turn (wf_floor_expr's C++)" },
+};
+
+/* The support table (kit.h). */
+const wf_support_row *wf_support_rows(size_t *n)
+{
+    *n = sizeof wf_support / sizeof *wf_support;
+    return wf_support;
+}
+
+/* TABLE S, the stream pick (§2.5.3 [rev2 F8, F9]): ONE rule over S =
+ * support(search) INTERSECT streams(frame), first match on S's size. It
+ * reads no measurement and no price. Every built search feeds one stream,
+ * so ST-one answers every built (search, frame), today's selection
+ * reproduced (HORS -> SHIFT on E-find; every other pick, and the floor ->
+ * RESTART). ST-none: the pick is not renderable on the frame. ST-many is
+ * REFUSED until a row with evidence exists (D186: which stream is a choice
+ * change; trigger: the first search with two streams on one frame). */
+static int st_one_holds(unsigned n)  { return n == 1; }
+static int st_none_holds(unsigned n) { return n == 0; }
+static int st_many_holds(unsigned n) { return n >= 2; }
+enum { ST_ONE, ST_NONE, ST_MANY, ST_N };
+static const struct {
+    const char *row;
+    int (*holds)(unsigned n);
+} wf_srows[] = {
+    [ST_ONE]  = { "ST-one",  st_one_holds },
+    [ST_NONE] = { "ST-none", st_none_holds },
+    [ST_MANY] = { "ST-many", st_many_holds },
+};
+_Static_assert(sizeof wf_srows / sizeof *wf_srows == ST_N, "every Table S row is declared");
+
+/* Table S's row for `search` on frame `f`, and in *stream S, the streams
+ * both admit: the frame's are its stream renderer rows' (fused row `fu`'s
+ * declared stream where one renders the triple whole). */
+static size_t table_s(fd_form search, wf_frame_row f, const ren_fused_row *fu, uint8_t *stream)
+{
+    uint8_t sup = 0, fs = fu ? fu->stream : 0;
+    for (size_t i = 0; i < sizeof wf_support / sizeof *wf_support; i++)
+        if (wf_support[i].pick == search) { sup = wf_support[i].streams; break; }
+    for (unsigned b = WF_ST_RESTART; !fu && b <= WF_ST_SHIFT; b <<= 1)
+        if (ren_find(REN_ROWS(ren_stream), f, b, NULL)) fs |= (uint8_t)b;
+    *stream = sup & fs;
+    size_t r = 0;
+    while (r < ST_N && !wf_srows[r].holds((unsigned)__builtin_popcount(*stream))) r++;
+    return r;
+}
 
 /* E-FIND's SETUP: T-FIND (fd_find, the one walk, with the stop's facts and
- * D-hors's window), then B's renderer row, into `fx`. `quiet` 0 is the
- * define's record of the selection E-find made (the walk traced and
- * counted); the setup itself runs quietly, before Table E walks. 0, or -1
- * out of memory. */
+ * D-hors's window), then the renderer row that renders its pick on E-find:
+ * a fused row first (B-fn), else the search renderer table's row, into
+ * `fx`. `quiet` 0 is the define's record of the selection E-find made (the
+ * walk traced and counted); the setup itself runs quietly, before Table E
+ * walks. 0, or -1 out of memory. */
 static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_plan *w,
                           const mf_hooks *def, int quiet, wf_fx *fx)
 {
@@ -1830,7 +2073,6 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
     wf_legacy *fn = fx->fn;
     memset(fx, 0, sizeof *fx);
     fx->fn = fn;
-    fx->bren = WF_NBROWS;
     /* a full-set stop (A-parked's k0 of every byte) is no find: C-bound's
        case, the floor's */
     if (!m->has_stop || w->stop_ix < 0 || full(w->set[w->stop_ix])) return 0;
@@ -1847,36 +2089,39 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
         if (!fx->fn) return -1;
     }
     wf_bx bx = { d, w, def, fx->pick, fx->fn };
-    for (fx->bren = 0; fx->bren < WF_NBROWS; fx->bren++)
-        if (wf_brows[fx->bren].holds(&bx)) break;
-    fx->holds = fx->bren < WF_NBROWS;
+    fx->fused = ren_find(REN_ROWS(ren_fused), E_FIND, REN_PICK(fx->pick), &bx);
+    if (!fx->fused) fx->srch = ren_find(REN_ROWS(ren_search), E_FIND, REN_PICK(fx->pick), &bx);
+    fx->holds = fx->fused || fx->srch;
     return 0;
 }
 
-/* E-find's plan from its setup: B (the pick, its row and renderer; B-fn's
- * translated site), the stop's role, C-run's compares (the terms at the
- * define), D-hors's probe and shift table, and the text's libc and include
- * bounds. 0, or -1 out of memory. */
+/* E-find's plan from its setup and its pieces' rows: B (the pick, its row
+ * and renderer; B-fn's translated site), the stop's role, C-run's compares
+ * (the terms at the define), the search's and the stream's preparation
+ * (D-hors's probe and shift table), and the text's libc and include bounds:
+ * the OR over the three pieces ([rev2 F5]). 0, or -1 out of memory. */
 static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w,
                            const wf_fx *fx, int build)
 {
     w->row = &wf_find_arm;
     w->pick = fx->pick;
     w->brow = fx->brow;
-    w->bren = (uint8_t)fx->bren;
+    w->srch = fx->srch;
+    w->fused = fx->fused;
     w->stop_alone = !in_plan(d, d->a[d->ch].stop);
-    if (fx->bren == B_FN) {
+    if (w->fused) {
         w->fsite = &fx->fn->site;
-        w->libc = 1;
-        w->includes = MF_INC_STRING_H;
+        w->libc = w->fused->libc;
+        w->includes = w->libc ? MF_INC_STRING_H : 0;
         return 0;
     }
     find_groups(d, w);
     if (build && build_runs(art, w)) return -1;
-    if (wf_brows[fx->bren].prepare) wf_brows[fx->bren].prepare(w, fx);
-    /* memchr where B calls it (not B-hors: D-hors's probe); a run compare's
-       memcmp row and its words' memcpy loads (runcmp.c) */
-    w->libc = (uint8_t)((fx->bren < WF_NBROWS && wf_brows[fx->bren].libc) || w->nrun);
+    if (w->srch->prepare) w->srch->prepare(w, fx);
+    if (w->strm->prepare) w->strm->prepare(w, fx);
+    /* memchr where the search calls it (not B-hors: D-hors's probe); a run
+       compare's memcmp row and its words' memcpy loads (runcmp.c) */
+    w->libc = (uint8_t)(w->srch->libc || w->strm->libc || (w->chk->libc_runs && w->nrun));
     w->includes = w->libc ? MF_INC_STRING_H : 0;
     return 0;
 }
@@ -1887,24 +2132,20 @@ static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w
  * shared bound exists; compose.c's own buffers are 200). */
 enum { WF_WHY_MAX = 320 };
 
-/* PHASE 2's selection for a window site: the decision, E-find's setup, then
- * Table E (kit.h). */
-int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
-               unsigned gphases, int quiet, const mf_site **legacy,
-               const struct wf_plan **plan, const char **path, const char **why)
+/* THE PLAN FUNCTION (plan_frame.md §4.1): a window site's decision (its
+ * first half, `decide`, which mf_wdecide reads alone) and, under the
+ * define's hooks, WHAT THE DEFINE RENDERS: T-FRAME's row (Table E, into
+ * *erow), on E-find T-FIND's row and pick with the fused or search
+ * renderer row (wf_find_decide), and on a composing frame (E-find,
+ * E-generic) the skeleton row, Table S's stream with its stream renderer
+ * row and the check renderer row, each stored in `w`, where the define
+ * renders from it. 0; -1 with *why where no Table E row serves the frame,
+ * a piece has no row on it (Table S's ST-none or ST-many included), or out
+ * of memory. */
+static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                        unsigned gphases, int quiet, wf_dec *d, struct wf_plan *w,
+                        wf_legacy *L, wf_fx *fx, size_t *erow, const char **why)
 {
-    *legacy = NULL;
-    *plan = NULL;
-    *path = NULL;
-    *why = NULL;
-    wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
-    struct wf_plan *w = art->a->alloc(art->a->u, sizeof *w);
-    char *pid = art->a->alloc(art->a->u, sizeof d->path);
-    /* the legacy translation (~5 KB) is the art's too, not a stack local of
-       e_legacy_holds (R-28); every translate() rewrites it whole */
-    wf_legacy *L = art->a->alloc(art->a->u, sizeof *L);
-    wf_fx *fx = art->a->alloc(art->a->u, sizeof *fx);
-    if (!d || !w || !pid || !L || !fx) { *why = "out of memory"; return -1; }
     decide(art, s, quiet, d);
     plan_of(d, def, w);
     fx->fn = NULL;
@@ -1915,6 +2156,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     gate_verdict v = { 0, 0 };
     wf_ex e = { d, w, def, gphases, L, fx };
     size_t r = kit_walk(&wf_etable, 0, &in, gphases, 0, &e, &tc, &v);
+    *erow = r;
     if (r >= WF_NEROWS) {
         /* no row: a REPORT site E-find does not render (E-generic declines
            REPORT), or a frame only a contract leaves with none (a stated
@@ -1937,12 +2179,66 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
         *why = "out of memory";
         return -1;
     }
+    if (r != E_FIND && r != E_GENERIC) return 0;
+    /* the composing frame's pieces (§2.5.4): its skeleton; the stream Table
+       S answers for the search (the floor has none) and its stream row; the
+       check row. A fused row renders its triple whole: Table S holds its
+       declared stream to its search, and it has no stream or check row */
+    const ren_fused_row *fu = r == E_FIND ? fx->fused : NULL;
+    fd_form search = r != E_FIND ? WF_NO_SEARCH : fu ? fu->search : fx->pick;
+    uint8_t st;
+    size_t sr = table_s(search, (wf_frame_row)r, fu, &st);
+    w->skel = ren_find(REN_ROWS(ren_skel), (wf_frame_row)r, REN_FRAME, NULL);
+    if (sr == ST_ONE && !fu) {
+        w->strm = ren_find(REN_ROWS(ren_stream), (wf_frame_row)r, st, NULL);
+        w->chk = ren_find(REN_ROWS(ren_check), (wf_frame_row)r, REN_FRAME, NULL);
+    }
+    if (sr != ST_ONE || !w->skel || (!fu && (!w->strm || !w->chk))) {
+        char *buf = art->a->alloc(art->a->u, WF_WHY_MAX);
+        if (!buf) { *why = "out of memory"; return -1; }
+        const char *frame = r == E_FIND ? "E-find" : "E-generic";
+        if (sr != ST_ONE)
+            snprintf(buf, WF_WHY_MAX, "%s: Table S answers %s for its search: %s", frame,
+                     sr < ST_N ? wf_srows[sr].row : "no row",
+                     sr == ST_MANY ? "two streams or more, REFUSED until a row with evidence "
+                                     "exists (D186)"
+                                   : "the frame renders no stream the search feeds");
+        else
+            snprintf(buf, WF_WHY_MAX, "%s has no %s renderer row", frame,
+                     !w->skel ? "skeleton" : !w->strm ? "stream" : "check");
+        *why = buf;
+        return -1;
+    }
     if (r == E_FIND && wf_find_prepare(art, d, w, fx, !quiet)) {
         *why = "out of memory";
         return -1;
     }
+    return 0;
+}
+
+/* PHASE 2's selection for a window site: the plan function, then the
+ * define's inputs from it (kit.h): the path id, and the plan (E-find,
+ * E-generic) or the legacy translation (E-func, E-stmt). */
+int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
+               unsigned gphases, int quiet, const mf_site **legacy,
+               const struct wf_plan **plan, const char **path, const char **why)
+{
+    *legacy = NULL;
+    *plan = NULL;
+    *path = NULL;
+    *why = NULL;
+    wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
+    struct wf_plan *w = art->a->alloc(art->a->u, sizeof *w);
+    char *pid = art->a->alloc(art->a->u, sizeof d->path);
+    /* the legacy translation (~5 KB) is the art's too, not a stack local of
+       e_legacy_holds (R-28); every translate() rewrites it whole */
+    wf_legacy *L = art->a->alloc(art->a->u, sizeof *L);
+    wf_fx *fx = art->a->alloc(art->a->u, sizeof *fx);
+    if (!d || !w || !pid || !L || !fx) { *why = "out of memory"; return -1; }
+    size_t r;
+    if (wf_plan_site(art, s, def, gphases, quiet, d, w, L, fx, &r, why)) return -1;
     snprintf(pid, sizeof d->path, "%s%s", d->path,
-             r == E_FIND && fx->bren < WF_NBROWS ? wf_brows[fx->bren].path : "");
+             r == E_FIND && fx->srch ? fx->srch->path : "");
     *path = pid;
     if (r == E_FIND || r == E_GENERIC) {
         *plan = w;
@@ -2090,7 +2386,7 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
  * wf_cand, wf_close) and the same candidate test (wf_test_to: the bound's
  * lower half, then every position, a C-run stretch as one compare). */
 
-typedef struct {
+struct wf_rc {
     mf_art               *art;
     const struct wf_plan *w;
     const mf_hooks       *h;
@@ -2102,7 +2398,7 @@ typedef struct {
                                            look-ahead's end (kit.h ofs_pair) */
     const char           *FN;           /* B-fn's offset-skip function       */
     unsigned              used;     /* PARAM_* the text reads                  */
-} wf_rc;
+};
 
 static const char *wf_nm(mf_art *art, uint32_t handle, const char *suffix)
 {
@@ -2278,6 +2574,23 @@ static int wf_test(wf_rc *rc, kb *t, kb *cond)
     return wf_test_to(rc, t, NULL, -1, 1);
 }
 
+/* C-find, E-find's check renderer row: the test less the position `skip`
+ * the search proved, its run compares through sink `o`. */
+static int c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip)
+{
+    (void)cond;
+    return wf_test_to(rc, t, o, skip, 0);
+}
+
+/* C-floor, E-generic's check renderer row: the floor's test, which also
+ * writes the bound into `cond` (the for header's). */
+static int c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip)
+{
+    (void)o;
+    (void)skip;
+    return wf_test(rc, t, cond);
+}
+
 /* The statement expression's head: `({ ` and the hooks as locals, the
  * subject where `s` is read and the floor's F where `fl` is. */
 static void wf_open(const wf_rc *rc, kb *e, int s, int fl)
@@ -2303,25 +2616,26 @@ static void wf_close(const wf_rc *rc, kb *e, int want_value)
     else            kb_printf(e, "%s; })", rc->F);
 }
 
-/* The resume both loops share: C + 1, the floor's (every T-FIND row's
- * but D-hors's, which resumes by its shift table). */
+/* S-restart's text, the resume both loops share: C + 1, the floor's (every
+ * T-FIND row's but D-hors's, whose stream is S-shift). */
 static void resume_next(const wf_rc *rc, kb *b)
 {
     kb_printf(b, "%s++", rc->C);
 }
 
-/* The floor's search as one statement expression over the hooks. */
+/* The floor's search as one statement expression over the hooks: E-generic's
+ * skeleton, its check rendered first (§2.6.0), its resume its stream row's. */
 static int wf_floor_expr(wf_rc *rc, mf_sink *o, int want_value)
 {
     kb t, cond, e;
     kb_init(&t, rc->art->a);
     kb_init(&cond, rc->art->a);
     kb_init(&e, rc->art->a);
-    if (wf_test(rc, &t, &cond)) return -1;
+    if (rc->w->chk->test(rc, &t, &cond, NULL, -1)) return -1;
     wf_open(rc, &e, rc->used & PARAM_S, rc->used & PARAM_FL);
     wf_cand(rc, &e);
     kb_printf(&e, "for (; %s; ", cond.p);
-    resume_next(rc, &e);
+    rc->w->strm->next(rc, &e);
     kb_printf(&e, ") if %s { %s = 1; break; } ", t.p, rc->F);
     wf_close(rc, &e, want_value);
     return wf_put(rc->art, o, &e);
@@ -2418,7 +2732,7 @@ static int wf_floor_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_s
     kb_init(&t, art->a);
     kb_init(&cond, art->a);
     kb_init(&f, art->a);
-    if (wf_test(&rc, &t, &cond)) return -1;
+    if (rc.w->chk->test(&rc, &t, &cond, NULL, -1)) return -1;
     const char *pname[] = { rc.S, rc.N, rc.LO, rc.FL, rc.MISS };
     kb_printf(&f, "static inline size_t %s(", fn);
     int any = 0;
@@ -2429,7 +2743,7 @@ static int wf_floor_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_s
         any = 1;
     }
     kb_printf(&f, ")\n{\n    for (size_t %s = %s; %s; ", rc.C, rc.LO, cond.p);
-    resume_next(&rc, &f);
+    rc.w->strm->next(&rc, &f);
     kb_printf(&f, ")\n        if %s return %s;\n    return %s;\n}\n\n", t.p, rc.C, rc.MISS);
     r->fn = fn;
     r->params = rc.used;
@@ -2445,7 +2759,7 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
     if (r->site.form != MF_FORM_FUNC) {
         wf_rc rc;
         wf_rc_init(&rc, art, handle, h);
-        return wf_frame(&rc, &r->site, "window floor", wf_floor_expr, out);
+        return wf_frame(&rc, &r->site, "window floor", rc.w->skel->expr, out);
     }
     kb b;
     kb_init(&b, art->a);
@@ -2481,7 +2795,7 @@ static int wf_floor_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink
  *          and a stop below the candidate reads at or past max(F, 0).
  *
  *   B      the FIND of the stop d*: Table B's pick, by its renderer row
- *          (wf_brows). B-memchr (LIBC, D1; LIBC_BACK, D1c): one `memchr`
+ *          (ren_search). B-memchr (LIBC, D1; LIBC_BACK, D1c): one `memchr`
  *          for the stop's byte from C + d*, a miss leaving the loop.
  *          B-walk (WALK, R7w or D1w): C advanced while the byte at C + d*
  *          lies inside the subject and outside the stop's set (C-table or
@@ -2572,13 +2886,16 @@ static int wf_b_pair(wf_rc *rc, kb *b, const char *p, int32_t d)
     return mf_art_note_libc(rc->art, "memchr");
 }
 
-/* The stop's FIND by renderer row `bren` (B-pair, B-memchr, B-walk). */
-static int (*const wf_b_find[])(wf_rc *rc, kb *b, const char *p, int32_t d) = {
-    [B_FN] = NULL, [B_PAIR] = wf_b_pair, [B_MEMCHR] = wf_b_memchr, [B_WALK] = wf_b_walk,
-    [B_HORS] = NULL,
-};
+/* B-pair's LOOP STATE (its search renderer row's, before RAISE): the two
+ * frontiers and their look-ahead widths (ofsskip.c's ofs_pair_decl). */
+static void b_pair_state(wf_rc *rc, kb *b)
+{
+    const ofs_pair t = { .ha = rc->HA, .hb = rc->HB, .wa = rc->WA, .wb = rc->WB };
+    ofs_pair_decl(b, &t);
+    kb_puts(b, " ");
+}
 
-/* B: the stop's FIND by its renderer row. */
+/* B: the stop's FIND by its search renderer row (B-pair, B-memchr, B-walk). */
 static int wf_find_b(wf_rc *rc, kb *b)
 {
     const struct wf_plan *w = rc->w;
@@ -2586,7 +2903,7 @@ static int wf_find_b(wf_rc *rc, kb *b)
     kb at;
     kb_init(&at, rc->art->a);
     wf_at(&at, rc->C, d);
-    return wf_b_find[w->bren](rc, b, at.p ? at.p : rc->C, d);
+    return w->srch->find(rc, b, at.p ? at.p : rc->C, d);
 }
 
 /* RAISE (the header's): C to the bound's lower half, before the loop, where
@@ -2635,10 +2952,11 @@ static int wf_find_fn(wf_rc *rc, mf_sink *o)
     return wf_put(rc->art, o, &b);
 }
 
-/* D-hors's loop head: the bound (chi >= hl >= 0: finder.c's hors_facts), then the
- * probe of the window's last position into B, a byte outside its tested
- * set resuming at once; *skip the probed position where the test may drop
- * it (a lone position the probe proved). */
+/* D-hors's loop head (B-hors, its search renderer row): the bound (chi >=
+ * hl >= 0: finder.c's hors_facts), then the probe of the window's last
+ * position into B, a byte outside its tested set resuming at once by the
+ * stream row's text (S-shift's); *skip the probed position where the test
+ * may drop it (a lone position the probe proved). */
 static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
 {
     const struct wf_plan *w = rc->w;
@@ -2650,7 +2968,9 @@ static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
     if (ih >= 0) {
         kb_puts(b, "if (!(");
         if (wf_member_of(rc, b, (unsigned)ih, rc->B)) return -1;
-        kb_printf(b, ")) { %s += %s[%s]; continue; } ", rc->C, rc->SH, rc->B);
+        kb_puts(b, ")) { ");
+        w->strm->next(rc, b);
+        kb_puts(b, "; continue; } ");
     }
     *skip = ih >= 0 && w->grp[ih] < 0 ? ih : -1;
     return 0;
@@ -2667,13 +2987,13 @@ static int find_head(wf_rc *rc, kb *b, const char *bound, int *skip)
     return 0;
 }
 
-/* D-hors's resume: C by the shift of the probed byte. */
+/* S-shift's text, D-hors's resume: C by the shift of the probed byte. */
 static void d_hors_next(const wf_rc *rc, kb *b)
 {
     kb_printf(b, "%s += %s[%s]", rc->C, rc->SH, rc->B);
 }
 
-/* D-hors's file-scope text: the shift table. */
+/* S-shift's file-scope text: D-hors's shift table. */
 static int d_hors_define(mf_art *art, const wf_rc *rc, mf_sink *out)
 {
     if (out->cmt_open && out->cmt_open(out->u, MF_CMT_NONESSENTIAL)) {
@@ -2689,38 +3009,18 @@ static int d_hors_define(mf_art *art, const wf_rc *rc, mf_sink *out)
     return kit_flush(art, &b, out, "mf_define");
 }
 
-/* THE RENDERER ROWS' TEXT, in wf_brows' order: the loop's head (the find
- * and the bound, or D-hors's probe), its resume (the `c + 1`, or
- * D-hors's shift), and the row's file-scope text (or NULL). B-fn renders
- * the function instead (wf_find_fn, wf_find_define). Until span_pick 1e the
- * head, resume and file-scope text were Table D's rows' own. */
-static const struct {
-    int  (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
-    void (*next)(const wf_rc *rc, kb *b);
-    int  (*define)(mf_art *art, const wf_rc *rc, mf_sink *out);
-} wf_b_render[] = {
-    [B_FN]     = { NULL,        NULL,        NULL },
-    [B_PAIR]   = { find_head,  resume_next,  NULL },
-    [B_MEMCHR] = { find_head,  resume_next,  NULL },
-    [B_WALK]   = { find_head,  resume_next,  NULL },
-    [B_HORS]   = { d_hors_head, d_hors_next, d_hors_define },
-};
-_Static_assert(sizeof wf_b_render / sizeof wf_b_render[0] == WF_NBROWS,
-               "every Table B renderer row has its text (B-fn's is the function)");
-_Static_assert(sizeof wf_b_find / sizeof wf_b_find[0] == WF_NBROWS,
-               "every Table B renderer row has its find slot (NULL: B-fn, B-hors)");
-
-/* E-find's search as one statement expression: the candidate loop with
- * the renderer row's head (B's find and the bound, or D-hors's probe), the
- * test less the position the head proved, and its resume; B-fn's is the
- * function's call instead (wf_find_fn). Its frame is ASSIGN alone (its
+/* E-find's search as one statement expression, its SKELETON row's text: the
+ * candidate loop with the search row's loop state and head (B's find and the
+ * bound, or D-hors's probe), the check row's test less the position the head
+ * proved, and the stream row's resume; a fused row's is its own text (B-fn:
+ * the function's call, wf_find_fn). Its frame is ASSIGN alone (its
  * contract), so the value is always wanted. */
 static int wf_find_expr(wf_rc *rc, mf_sink *o, int want_value)
 {
     const struct wf_plan *w = rc->w;
     mf_art *art = rc->art;
     (void)want_value;
-    if (w->bren == B_FN) return wf_find_fn(rc, o);
+    if (w->fused) return w->fused->expr(rc, o);
     kb b, bound;
     kb_init(&b, art->a);
     kb_init(&bound, art->a);
@@ -2728,28 +3028,35 @@ static int wf_find_expr(wf_rc *rc, mf_sink *o, int want_value)
     if (bound.oom || !bound.p) return kit_fail(art, WF_FIND_ID ": out of memory");
     wf_open(rc, &b, 1, wf_find_reads_fl(w));
     wf_cand(rc, &b);
-    if (w->bren == B_PAIR) {
-        const ofs_pair t = { .ha = rc->HA, .hb = rc->HB, .wa = rc->WA, .wb = rc->WB };
-        ofs_pair_decl(&b, &t);
-        kb_puts(&b, " ");
-    }
+    if (w->srch->state) w->srch->state(rc, &b);
+    if (w->strm->state) w->strm->state(rc, &b);
     wf_raise(rc, &b);
     kb_puts(&b, "for (;;) { ");
     int skip;
-    if (wf_b_render[w->bren].head(rc, &b, bound.p, &skip)) return -1;
+    if (w->srch->head(rc, &b, bound.p, &skip)) return -1;
     kb_puts(&b, "if ");
-    if (wf_test_to(rc, &b, o, skip, 0) || wf_put(art, o, &b)) return -1;
+    if (w->chk->test(rc, &b, NULL, o, skip) || wf_put(art, o, &b)) return -1;
     kb_init(&b, art->a);
     kb_printf(&b, " { %s = 1; break; } ", rc->F);
-    wf_b_render[w->bren].next(rc, &b);
+    w->strm->next(rc, &b);
     kb_puts(&b, "; } ");
     wf_close(rc, &b, 1);
     return wf_put(art, o, &b);
 }
 
-/* E-find's define: at file scope, B-fn's function (its run compare's word
- * loads first, as the offset-skip site's), else the run compares' word loads
- * (runcmp.c) and the renderer row's own text (B-hors: D-hors's shift table). */
+/* B-fn's define (its fused row's file-scope text): the offset-skip function,
+ * its run compare's word loads first, as the offset-skip site's. */
+static int b_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h, const wf_rc *rc,
+                       mf_sink *out)
+{
+    const struct wf_plan *w = rc->w;
+    return run_cmp_prepare(art, &w->fsite->pred, out) ||
+           ofs_fn_define_at(art, handle, w->fsite, h, &w->fsite->pred, rc->FN, out) ? -1 : 0;
+}
+
+/* E-find's define: at file scope, a fused row's text (B-fn's function),
+ * else the run compares' word loads (runcmp.c) and the stream row's own text
+ * (S-shift: D-hors's shift table). */
 static int wf_find_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *out)
 {
     site_rec *r = &art->sites[handle - 1];
@@ -2757,11 +3064,9 @@ static int wf_find_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_si
     if (kit_sink_ok(art, out, WF_FIND_ID)) return -1;
     wf_rc rc;
     wf_rc_init(&rc, art, handle, h);
-    if (w->bren == B_FN)
-        return run_cmp_prepare(art, &w->fsite->pred, out) ||
-               ofs_fn_define_at(art, handle, w->fsite, h, &w->fsite->pred, rc.FN, out) ? -1 : 0;
+    if (w->fused) return w->fused->define(art, handle, h, &rc, out);
     if (w->runs->nterm && run_cmp_prepare(art, w->runs, out)) return -1;
-    return wf_b_render[w->bren].define ? wf_b_render[w->bren].define(art, &rc, out) : 0;
+    return w->strm->define ? w->strm->define(art, &rc, out) : 0;
 }
 
 /* E-find's use: its search in the floor's statement frame (wf_frame). */
@@ -2771,7 +3076,7 @@ static int wf_find_use(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink 
     if (wf_need(art, h, r) || kit_sink_ok(art, out, WF_FIND_ID)) return -1;
     wf_rc rc;
     wf_rc_init(&rc, art, handle, h);
-    return wf_frame(&rc, &r->site, WF_FIND_ID, wf_find_expr, out);
+    return wf_frame(&rc, &r->site, WF_FIND_ID, rc.w->skel->expr, out);
 }
 
 /* The family rows' applicability: every site the family selected them for
@@ -2811,19 +3116,21 @@ int wf_plan_reads_table(const struct wf_plan *w)
     return w->reads_table;
 }
 
-/* The FIND slot's row that decided E-find's stop (kit.h; Table B's renderer
- * row is wf_brows[w->bren]), NULL where none did (the floor). Since span_pick
- * 1e D-hors is that row too (its FDROUTE record is new; no byte moves). */
+/* The FIND slot's row that decided E-find's stop (kit.h; its renderer row is
+ * wf_plan_bren's), NULL where none did (the floor). Since span_pick 1e
+ * D-hors is that row too (its FDROUTE record is new; no byte moves). */
 const char *wf_plan_brow(const struct wf_plan *w)
 {
-    return w->row == &wf_find_arm && w->bren < WF_NBROWS ? w->brow : NULL;
+    return w->row == &wf_find_arm && (w->fused || w->srch) ? w->brow : NULL;
 }
 
-/* Table B's renderer row that renders E-find's find (B-fn, B-pair, B-memchr,
- * B-walk, B-hors), NULL where the plan is not E-find's. */
+/* The renderer row that renders E-find's find: the fused row (B-fn) or the
+ * search renderer row (B-pair, B-memchr, B-walk, B-hors), NULL where the
+ * plan is not E-find's. */
 const char *wf_plan_bren(const struct wf_plan *w)
 {
-    return w->row == &wf_find_arm && w->bren < WF_NBROWS ? wf_brows[w->bren].row : NULL;
+    if (w->row != &wf_find_arm) return NULL;
+    return w->fused ? w->fused->k.id : w->srch ? w->srch->k.id : NULL;
 }
 
 /* The family row that renders the plan: E-find's arm or the floor's. */
