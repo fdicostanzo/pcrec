@@ -3683,3 +3683,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Main filed D190 (the search/stream/check composition, Frank verbatim, Q6 included) plus plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE] and [PIECE-COVERAGE]. Docs citing "067aca4df / proposed D-entry" should cite D190 at the next design touch (3.0b).
 - 11-08 01:26: K0 job 452 make test GREEN (wall 1581 s). 453 mech is next.
 - 11-08 01:27: K0 job 453 mech RED: outcome=failed (never ran), right after 452's green. Read-only triage lane tri453 (sonnet) launched before reading the log.
+- 11-08 01:35: 453 triaged (tri453; lane closed).
+  - Cause: 452's make test rewrote docs/dev/artifact_size_log.tsv in worktrees/k0, and common.sh's clean-tree check failed at the queue's start-time dry run. The queue behaved correctly.
+  - Fix: the check now exempts that test-written path. Restored the file (the only dirt) and re-queued 453.
+  - It now waits behind main's battery 500-main-fullsuite2 (running since 01:27, ~12 h). The s30a jobs' common.sh has no clean-tree check, so they are not exposed.
+  - Lesson (2nd time: sp1efix too): a job's clean-tree check must exempt artifact_size_log.tsv, which make test writes.
