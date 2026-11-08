@@ -577,7 +577,10 @@ def pattern_alphabet(pattern_text):
     chars = set(c.encode("latin-1", "replace") for c in pattern_text if c not in "\\")
     chars.add(b"a")
     chars.add(b"\n")
-    return list(chars)
+    # sorted, not list(set): a set of bytes iterates in per-process hash-seed
+    # order, which made `--seed` runs ask different subjects every run
+    # (lane orctri 2026-11-07, found by the oracle-cache replay).
+    return sorted(chars)
 
 
 # ---------------------------------------------------------------------------
