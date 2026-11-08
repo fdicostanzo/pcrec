@@ -31,3 +31,8 @@ with S2977 `DETECTED-BUILD` and anomalies 0.
 - Run the single row niced under watchdog: launched, OWED.
 - Touch no other row or kit code: held.
 - Report and history-index line: done.
+
+## STATE AT HANDOFF
+
+OWED: the S2977 row verdict. The run was launched in the background (log path above) and waits on the box lock behind
+queue job 501-kit-s30a-ident1. Read `== mech run COMPLETE` from that log; no rulings file applies.
