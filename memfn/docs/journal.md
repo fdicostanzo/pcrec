@@ -3614,3 +3614,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - New: mf_host_family; a doc column on every facts row (refuses C characters; S2980 still red).
   - main's units.md hunk reverted (ae1ba4b1e). The token statement for main is in k0fix_report.md "For main".
   - Jobs 450-453 queued.
+- 11-07 19:50: Frank (via main): light or niced jobs may run during tonight's hold (no make test/mech/suites before 01:00).
+  - Cancelled queue copies 450, 451, 487, 488, 489 and ran them directly under nice -n 19 in sequence. Logs: scratch/memfn/kitmgr/night1107/ (summary file).
+  - 452 make test and 453 mech stay queued for 01:00, ahead of main's 500 fullsuite (~12 h). No merges to main during the battery, so K0's landing waits.
+  - OWED: 452's --ready waits on the cancelled kit-k0-sections. On a green direct run, drop that dependency before 01:00.
