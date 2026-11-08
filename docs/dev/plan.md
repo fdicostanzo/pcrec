@@ -1731,7 +1731,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [POSTFACT] STATE:not-started — user-supplied predicates on captures ("post facts", e.g. `int($1)<=255`), compiled into the matcher
   filed: 2026-10-13 Frank (session 111)
-  status (2026-10-13): not started; idea stage, discuss before any design lane
+  status (2026-11-08): idea stage; Frank proposed the WHERE operator `rx ## predicate` (`$` = the operand's text, one value only, no captures, DFA-lowerable), body file 2026-11-08; discuss before any design lane
   next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
   refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).

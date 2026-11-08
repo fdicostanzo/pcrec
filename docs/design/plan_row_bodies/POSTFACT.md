@@ -26,3 +26,19 @@
   - no `--allow-code`, no `<PREFIX>_CODE_LANGS` entry.
 - This holds ONLY because of the lowered-or-refused rule: an `rx:` predicate never falls back to a call. A fallback to a `c:` callout, or a named function implemented as C at run time, would bring it back under the code gate. Named functions (`luhn`, `valid_date`) are pcrec-built automata, not shipped C.
 - What remains is a pattern's own risk class: compile-time size and time. A predicate whose product automaton is too big is refused by the size ladder, like any pattern. A wrong lowering is a miscompile, tested by the oracle like any module.
+
+## 2026-11-08 — Frank: the "where" operator (idea preserved; details TBD)
+
+Frank's words: "a special kind of inline code expression that can be translated to dfa rx. A restriction is that it can only refer to a single \"capture group\" within a predicate- it can't compare two values. I presume that means two capture groups can't really interact at all eg addition. A second point is that the intent is dfa rx which capture groups disallow. The idea: a new operator called the \"where\" operator. Example syntax \"rx ## predicate expression\"."
+
+Examples (Frank):
+- `\d+ ## $ < 256`
+- `(?:\d+## $ <=255)\.` (scope limited by the group)
+
+As stated: `$` names the text matched by the operand on the left (no capture group, so the DFA keeps its speed); the predicate refers to that ONE value only (no two-value relations, so no arithmetic between groups); the result lowers into the automaton (tier 1 above: one-variable predicates over a digit span are regular). Details TBD.
+
+Manager notes for the design, not ruled:
+- `#` starts a comment in extended mode `(?x)`, so `##` there reads as a comment today; the spelling must survive `(?x)` (or be refused there by name).
+- Operator precedence: what `rx` binds to without the group (the whole alternative, or the last atom).
+- Supersedes the `int($1)<=255` spelling in this row's title, which needs a capture; the where form needs none.
+
