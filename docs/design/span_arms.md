@@ -499,7 +499,7 @@ Noted, not designed (`docs/design/plan_row_bodies/POSTFACT.md`):
 | L1 | T4 INSIDE (guard intersection within the match, reach (0,0)) and the dead fact as a listing value | E2 | choice / choice | the plan row's cheap census, narrowed: compiles with a positive lookaround whose run grows at reach (0,0) | as E1; W-L2, W-L3 |
 | L2 | T4 AHEAD (reach `ahead` > 0) | L1 | choice | a bench cell whose rarest bytes sit in a lookahead past the consumed end (`bar(?=baz)` shape) | §5.4 re-grepped at the unit's base: every reader's AHEAD column still "yes"; the A7 spec hunk (`match_api.md` §6.3.7¶4/¶6: "every match must contain" widened to the reach) and the kit's `memfn.h:679-681` sentence (a kit request); W-L4 on the listing |
 | L3 | T4 BACK (reach `back` > 0, at most `MF_MAX_BACK`) | L1; the kit's acceptance of a negative presence `omin` (a request, the kit's `MF_SITE_ABI` event) | choice | the plan row's census (corpus + bench compiles whose rarest bytes sit inside a positive lookbehind), "likely after A-REV" | §5.4's A1-A4 changed in the same unit (A3's sentinel split before any negative K); W-L1 and S-L red-able; the spec hunk as L2's |
-| R2 | the REP adjacency head (`altnf.c:223-230`'s wall becomes `X^m`'s head, `closed` iff m = n) | R1 | choice (tree movers) | a census of owner refusals (row 3) whose intervening branch's head is a REP | alt_normal_form's S-d/S-k family re-run; a new witness: `(?:ab|a(?:x){2}|ad)` style, the REP head must not admit a move past a writing branch |
+| R2 | the REP adjacency head (`altnf.c:223-230`'s wall becomes `X^m`'s head, `closed` iff m = n, WRITES as today) | R1 | choice (tree movers) | a census of owner refusals (alt_normal_form §3.2 row 3) whose intervening branch's head is a REP: today `(?:ab\|ax{2}\|ad)` has `RX_ALTCLS_MERGES` 0 against 1 for the spelled `(?:ab\|axx\|ad)` (measured, `owner_rep.out`): the REP wall gives head `a` (h = 1); with R2 its head is `axx` and row 1 may pass | the parent's S-d/S-k witness shapes re-run with a REP as the intervening branch; R2's own witness (a REP head claimed `closed` at m < n) is designed at R2's design pass, not here |
 
 Order: E1 → (R1, E2 independent) → L1 → (L2, L3); R2 after R1 when its census fires. No
 unit is an abi event by itself unless its movers include emitted scaffolding: runs and stamps are
@@ -562,4 +562,42 @@ harness lever with an arm set. Staged E1, R1, E2, L1, L2, L3, R2, each on its ce
 
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
-[TO BE WRITTEN]
+1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives
+   the two-byte run `ab`; spelled out, `xyababzw` gives all eight bytes. The rule here reads
+   `X{2}` exactly as `XX`, and `X{2,5}` as two copies followed by "maybe more" (for the start)
+   and "maybe more" followed by two copies (for the end), so nothing is claimed that every match
+   does not hold. Forces: one rule, no per-construct case, and it is already true for the span
+   facts the kit gets (they see `A{4}` as four positions today); the cost is a census and a
+   build lane. Leaning: yes, as unit R1, built when its census shows a bench cell.
+
+2. **Should `\b`, `$`, `\K` and negative lookarounds stop cutting the run?** They consume nothing,
+   so the bytes on either side are next to each other in the subject: `xyz(?<=yz)abc` could
+   report `xyzabc` (6) instead of `abc` (3), and `x(?!ab)ac` `xac` instead of `ac`. It is sound;
+   the alternation note held it back only because nobody had counted how often it matters.
+   Leaning: count it (unit E2's census) rather than decline it, and build it if a bench cell
+   moves.
+
+3. **A run that reaches outside the match: one value for every reader, or two facts?** With a
+   lookbehind, the run of `(?<=foo)bar` is really `foobar`, starting three bytes BEFORE the
+   match. Some readers handle that already; four do not (the pre-check's start offset, its
+   restart argument, the handoff's offset, which today uses -1 to mean "none", and the
+   necessary-byte offsets). Option (a): one run, computed at the reach every reader accepts,
+   raised for all of them together in one unit. Option (b): a second, wider run beside today's,
+   for the readers that can use it. Leaning (a): one fact and one walk; the reach goes up when
+   the readers are ready, and (b) would be the parallel mechanism you asked us not to build.
+
+4. **The `<PREFIX>_REQ_RUN` stamp promises "a run every match must contain".** A lookahead or
+   lookbehind run breaks that sentence (`bar(?=baz)`'s `barbaz` is not inside the match).
+   Leaning: when the reach first rises (unit L2), widen the sentence to "every match, with up to
+   N bytes before it and M after it", show the reach in `--emit-facts`, and leave any new stamp
+   SPELLING (a reach suffix) to the interface push, where stamp changes are collected.
+
+5. **Lookbehinds longer than 8 bytes.** The memory-functions kit accepts window positions at
+   most 8 bytes before the candidate (its own shape bound). A longer lookbehind's run would then
+   stay as today (inside the match). Leaning: accept that, and ask the kit to lift the bound only
+   if the BACK census finds a bench cell with a longer lookbehind.
+
+6. **When does [REWRITE-ADJ] start?** Your order puts it after this note settles. The note
+   builds nothing by itself (every unit waits on its census), and the rewrite table's repeat
+   members (`x{1}`, a repeat of a repeat) would read this note's repeat rows. Leaning: start the
+   [REWRITE-ADJ] design once this note is ruled, not after its units are built.
