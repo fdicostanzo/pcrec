@@ -25,3 +25,6 @@ run_rows.sh (rows_check §R and §S) green as above; nice make strict exit 0.
 - window.c :2023 and plan_frame.md only as far as mechanism: done
 - plants both ways with commands and exit codes: done
 - rows_check and make strict: done
+
+## STATE AT HANDOFF
+Nothing owed. Committed; no running jobs.
