@@ -3682,3 +3682,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - 3.0a gates 500-509 (kit-s30a-*) QUEUED. 500's --ready waits until no *-main-fullsuite2 is pending or running (any verdict; `after KEY` would wait on green forever). The rest chain after it.
   - Main filed D190 (the search/stream/check composition, Frank verbatim, Q6 included) plus plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE] and [PIECE-COVERAGE]. Docs citing "067aca4df / proposed D-entry" should cite D190 at the next design touch (3.0b).
 - 11-08 01:26: K0 job 452 make test GREEN (wall 1581 s). 453 mech is next.
+- 11-08 01:27: K0 job 453 mech RED: outcome=failed (never ran), right after 452's green. Read-only triage lane tri453 (sonnet) launched before reading the log.
