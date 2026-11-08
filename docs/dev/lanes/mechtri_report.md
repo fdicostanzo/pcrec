@@ -28,5 +28,5 @@ Undetected/unreached vs the previous green record (full-suite 20261104_daf6f002b
 ## STATE AT HANDOFF
 
 - Branch lane/mechtri, commit db8c00fef (plus this report commit). Rulings file empty; last entry applied: none.
-- OWED (queued, one chain, each waits for the one before): 460-main-b202611081406162216137.build, 461-...test (make test via perfrun; touches codegen and rungselect scripts), 462-...mech (S50 S806 S-U10: expect DETECTED, rows=3, unexpected 0).
+- OWED (queued, one chain, each waits for the one before): main-b202611081406162216137.build, main-b202611081406162216137.test (make test via perfrun; touches codegen and rungselect scripts), main-b202611081406162216137.mech (S50 S806 S-U10: expect DETECTED, rows=3, unexpected 0).
 - Not done: no real matrix run of the three rows yet (verdicts come from 462).
