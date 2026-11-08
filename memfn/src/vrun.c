@@ -9,12 +9,12 @@
  * memfn/src/vrun.c — THE FIRST SIMD ROWS, `vrun-w16` and `vrun-w32` (R4e'
  * batch 1, request R-13; docs/design/memfn/integration.md §R4.9.2.4,
  * §R4.9.2.5, §R4.9.3, §R4.9.7). PREFIX rows of ofsskip.c's `fn_rows[]`:
- * each renders ONE guarded per-level helper, `<fn>__w16` / `<fn>__w32`,
+ * each renders ONE per-level helper, `<fn>__w16` / `<fn>__w32`,
  * beside the FUNC's scalar helper `<fn>__body` (D155). The seam writes the
- * guard, the `#include`, the helper's head and the selector; a row writes
- * only its helper's body (this file). SIMD layer: rendered only where pcrec
- * has not set MF_P_PORTABLE_ONLY (`-fmemfn-simd`), each row deniable by its
- * own `--memfn=no-vrun-w16` / `no-vrun-w32` (options.def).
+ * `#include`, the helper's head and the selector; a row writes only its
+ * helper's body (this file). SIMD layer: rendered only where the art's
+ * stated target admits the row's level (unit U2; `-fmemfn-simd`), each row
+ * deniable by its own `--memfn=no-vrun-w16` / `no-vrun-w32` (options.def).
  *
  * THE SITE (APPLIES, §R4.9.2.4's row table). The FUNC's predicate is ONE
  * RUN term of length 2..VRUN_MAX_RUN, at offset >= 0, and it is its site's
@@ -451,10 +451,12 @@ const mf_formdecl vrun_w32_decl = {
  * A PREFIX row's text is the BODY's function under a level guard: it reads
  * what the BODY reads, so it serves what the BODY serves (it never widens a
  * site's contract, §R4.9.2.3 "Row contracts"), with two differences:
- * `policy`, where it serves only NONE and SIZE (a SIMD row is DECLINED at
- * -fno-memfn-simd, PORTABLE, and on an in-loop site, INLOOP; SIZE is served
- * until R4d's D103 diff rules the SIMD x tune cell, [r9 F-12]), and
- * `table_ref`, NONE only (its one RUN term names no table). */
+ * `policy`, where it serves only NONE and SIZE (a SIMD row is DECLINED on an
+ * in-loop site, INLOOP; SIZE is served until R4d's D103 diff rules the SIMD
+ * x tune cell, [r9 F-12]); `target`, which it USES and where it serves only a
+ * target admitting its level (unit U2: an art that states no target, and the
+ * portable target, render no SIMD row); and `table_ref`, NONE only (its one
+ * RUN term names no table). */
 #define VRUN_SERVES \
     [FLD_form]            = MF_ANY,                   /* the calling arm's */ \
     [FLD_op]              = MF_ANY,                   /* the calling arm's; vrun_applies */ \
@@ -495,16 +497,25 @@ const mf_formdecl vrun_w32_decl = {
     [FLD_indent]          = MF_ANY,                   /* not read: file scope */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment */ \
     MF_SERVES_WINDOW_TODAY \
-    [FLD_policy]          = CM(NONE) | CM(SIZE),      /* SIMD layer: never PORTABLE, never INLOOP */
+    [FLD_policy]          = CM(NONE) | CM(SIZE),      /* SIMD layer: never INLOOP */
+
+/* Each row USES the art's target (unit U2): an art that states none
+ * declines it (rule 1), and it serves every target but one that does not
+ * admit its level (fields.def's NO_<level>). */
+static const gate_use vrun_uses[] = {
+    { MF_ANY, MF_ANY, MF_PH_DEFINE, FM(target), GATE_ALWAYS },
+};
 
 const gate_contract vrun_w16_ct = {
-    "fn", "vrun-w16", NULL, 0, {
+    "fn", "vrun-w16", vrun_uses, 1, {
     VRUN_SERVES
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting its level */
 }};
 
 const gate_contract vrun_w32_ct = {
-    "fn", "vrun-w32", NULL, 0, {
+    "fn", "vrun-w32", vrun_uses, 1, {
     VRUN_SERVES
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* a target admitting its level */
 }};
 
 #undef VRUN_SERVES

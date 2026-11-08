@@ -846,6 +846,7 @@ static const gate_contract generic_ct = {
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
     MF_SERVES_WINDOW_ONLY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
+    [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
     [FLD_fold_kind]       = MF_ANY,     /* mm_render: NONE exact, else the fold text */
     [FLD_ref]             = MF_ANY,     /* mm_render parenthesizes a non-identifier */
     [FLD_reflen]          = MF_ANY,     /* mm_render parenthesizes a non-identifier */

@@ -22,11 +22,12 @@
  * (docs/dev/lanes/simdset_report.md), not decided by this file.
  *
  * THE TEXT, in the seam's shape (ofsskip.c, D155) so a later routing can
- * reuse it: `<fn>__body`, the scalar byte loop; one guarded helper
- * `<fn>__<stamp>` per requested level, ascending, each falling through to
+ * reuse it: `<fn>__body`, the scalar byte loop; one helper `<fn>__<stamp>`
+ * per level the caller's TARGET admits (unit U2: no CPU `#if`; the text is
+ * right inside that target's region), ascending, each falling through to
  * the next lower rendered helper (else `__body`) on a span too short for
- * one block; then the selector `<fn>`, whose whole body is the `#if` chain,
- * top level first, `#else` the body. Every function is
+ * one block; then the selector `<fn>`, ONE call to the top rendered helper,
+ * else to the body. Every function is
  * `static inline size_t f(const unsigned char *subject, size_t n, size_t pos)`
  * and returns the least i in [pos, n) with subject[i] a member, else n.
  *
@@ -143,9 +144,10 @@ static void vany_mask(mf_sink *o, const vany_ops *v, const char *ind, const char
     o->puts(o->u, ");\n");
 }
 
-/* One level's guarded helper `<fn>__<stamp>`: the guard, the level's
- * header, the entry test (falling to `fall`), the block loop and the final
- * block (the module comment's THE FORM). */
+/* One level's helper `<fn>__<stamp>`: the level's header, the entry test
+ * (falling to `fall`), the block loop and the final block (the module
+ * comment's THE FORM). No guard (unit U2): the level is rendered only where
+ * the target admits it, and the host's region supplies its ISA. */
 static void vany_level(mf_sink *o, const char *fn, unsigned lv, const char *fall,
                        const uint8_t *m, unsigned k)
 {
@@ -154,7 +156,7 @@ static void vany_level(mf_sink *o, const char *fn, unsigned lv, const char *fall
     char suffix[32];
     snprintf(suffix, sizeof suffix, "__%s", l->stamp);
     if (o->simd_open && o->simd_close) o->simd_open(o->u, (int)lv);
-    kit_out(o, "#if %s\n#include <%s>\n", l->guard, l->header);
+    kit_out(o, "#include <%s>\n", l->header);
     vany_head(o, fn, suffix);
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n"
                "    const %s ", l->vw, fall, v->type);
@@ -174,33 +176,33 @@ static void vany_level(mf_sink *o, const char *fn, unsigned lv, const char *fall
     kit_out(o, "        if (m) return n - %u + (size_t)__builtin_ctz(m);\n"
                "    }\n"
                "    return n;\n"
-               "}\n"
-               "#endif\n\n", l->vw);
+               "}\n\n", l->vw);
     if (o->simd_open && o->simd_close) o->simd_close(o->u);
 }
 
-/* The selector `<fn>`: its whole body the `#if` chain over the rendered
- * levels, top level first, the body in the `#else` arm (D155). */
+/* The selector `<fn>`: ONE call (D155; unit U2), to the top rendered level,
+ * else to the body; the call naming a level is bracketed (it depends on the
+ * target). */
 static void vany_selector(mf_sink *o, const char *fn, uint32_t levels)
 {
     vany_head(o, fn, "");
-    int first = 1;
-    for (unsigned lv = MF_NLEVEL; lv-- > 0;) {
-        if (!(levels & 1u << lv)) continue;
-        kit_out(o, "#%s %s\n"
-                   "    return %s__%s(subject, n, pos);\n",
-                first ? "if" : "elif", kit_level(lv)->guard, fn, kit_level(lv)->stamp);
-        first = 0;
+    if (levels) {
+        unsigned lv = 31u - (unsigned)__builtin_clz(levels);
+        if (o->simd_open && o->simd_close) o->simd_open(o->u, (int)lv);
+        kit_out(o, "    return %s__%s(subject, n, pos);\n", fn, kit_level(lv)->stamp);
+        if (o->simd_open && o->simd_close) o->simd_close(o->u);
+    } else {
+        kit_out(o, "    return %s__body(subject, n, pos);\n", fn);
     }
-    if (!first) o->puts(o->u, "#else\n");
-    kit_out(o, "    return %s__body(subject, n, pos);\n", fn);
-    if (!first) o->puts(o->u, "#endif\n");
     o->puts(o->u, "}\n\n");
 }
 
 int mf_kernel_find_any(mf_sink *o, const char *fn, const uint8_t *bytes, unsigned k,
-                       uint32_t levels, char *err, size_t errn)
+                       const mf_target *t, char *err, size_t errn)
 {
+    if (!t || !mf_target_c_of(t))
+        return vany_refuse(err, errn, "find-any: the target is not a row of the kit's table");
+    uint32_t levels = kit_target_levels(t);
     if (!o || !o->puts || !o->vprintf)
         return vany_refuse(err, errn, "find-any: the sink needs `puts` and `vprintf`");
     if (!fn || !kit_is_ident(fn) || strlen(fn) > 200)

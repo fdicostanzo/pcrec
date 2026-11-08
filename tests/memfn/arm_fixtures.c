@@ -1899,10 +1899,7 @@ static void f_canon(const FactIn *x, Text *o) { f_str(o, x->e->canon ? "1" : "0"
 static void f_shape(const FactIn *x, Text *o) { f_str(o, x->sh->word); }
 static void f_entry(const FactIn *x, Text *o) { f_str(o, x->sh->entry); }
 static void f_row(const FactIn *x, Text *o) { f_str(o, x->row); }
-static void f_policy(const FactIn *x, Text *o)
-{
-    f_str(o, x->e->policy == MF_P_PORTABLE_ONLY ? "MF_P_PORTABLE_ONLY" : "OTHER");
-}
+static void f_target(const FactIn *x, Text *o) { f_str(o, x->e->target); }
 static void f_deny(const FactIn *x, Text *o) { f_str(o, x->e->deny); }
 static void f_prefix(const FactIn *x, Text *o) { (void)x; f_str(o, "mf"); }
 static void f_s(const FactIn *x, Text *o) { f_str(o, x->sh->s); }
@@ -2001,7 +1998,7 @@ static void f_reads(const FactIn *x, Text *o)
 static const struct { const char *key; fact_fn f; } facts[] = {
     { "id", f_id },                 { "cls", f_cls },             { "canon", f_canon },
     { "shape", f_shape },           { "entry", f_entry },         { "row", f_row },
-    { "policy", f_policy },         { "deny", f_deny },           { "prefix", f_prefix },
+    { "target", f_target },         { "deny", f_deny },           { "prefix", f_prefix },
     { "subject", f_s },             { "subject_type", f_s_type },
     { "n", f_n },                   { "n_type", f_n_type },
     { "lo", f_lo },                 { "lo_type", f_lo_type },
