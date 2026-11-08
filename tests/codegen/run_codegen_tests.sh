@@ -1542,6 +1542,7 @@ residlbtwo	(?<=ab)(?<=xb)c	--features lookaround	next_pos:0,back_step:2,valid_up
 residlbbref	(a)(?<=aa)\1	--features backrefs,lookaround	next_pos:0,span_match:1,back_step:1,valid_upto:0
 residlbrange	(?<=a{1,2}|bc)x	--features lookaround	next_pos:0,back_step:3,fwd_step:1,valid_upto:0
 residlbrangeu8	(?<=a{1,2}|bc)x	--features lookaround -e utf8	next_pos:0,back_step:3,fwd_step:1,valid_upto:0
+residlbcall	^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$	--features all	next_pos:0,back_step:1,valid_upto:0
 residvar	^\${v}$	--features vars	next_pos:0,span_match:1,valid_upto:0
 residvarci	^(?i)\${v}$	--features vars,modifiers	next_pos:0,span_match_caseless:1,valid_upto:0
 residvarbref	(a)\1\${v}	--features vars,backrefs	next_pos:0,span_match:2,valid_upto:0
@@ -1603,6 +1604,11 @@ fi
 # stage 1 a VARYING branch (vlookbehind.md §5.1) emits two, its nearest step
 # and its far step, so `residlbrange`'s `(?<=a{1,2}|bc)x` declares 3. SEVEN
 # became NINE with that fixture and its `-e utf8` twin.
+# [mechtri, S-U10] `residlbcall` is the TWO-HOP call chain inside a lookbehind
+# (tests/recursion/inlookaround.rxt's cell): since variable lookbehind a wrong
+# `cwmin` no longer REFUSES it, it opens the pair (cwmin != cwmax) and the branch
+# VARIES -- same answers, TWO back-step sites (nearest + far) instead of the
+# one it declares. That count is S-U10's detector. SEVEN/NINE became TEN.
 # [VLOOKBEHIND] the candidate step's own EXACT guard (vlookbehind.md §7, W14
 # plant (i)): `residlbrange` and its `-e utf8` twin are the only fixtures
 # that declare `fwd_step`, and its per-site count there is the plant's one
@@ -1624,8 +1630,8 @@ for f in "$WORKDIR/residlbrange.c" "$WORKDIR/residlbrangeu8.c"; do
         ok "[VLOOKBEHIND W-low] $(basename "$f"): LO_0 is written once, trailed (RX_SET of RX_SLOT_LB_LO0), never by a raw assignment"
     fi
 done
-if [ "$resid_backdecl" -ne 9 ]; then
-    bad "[M5-SEAM/D58]: $resid_backdecl fixtures declare a lookbehind back-step residual entry, expected EXACTLY 9 — the population this check's FOURTH entry is asserted over moved. S133 inlines the back-step as 'scan_position - k' and drops the mask OR, which changes NO ANSWER under the byte backend, so this fixture-declared per-site count is its only possible detector and a shrinking population would take the detector with it"
+if [ "$resid_backdecl" -ne 10 ]; then
+    bad "[M5-SEAM/D58]: $resid_backdecl fixtures declare a lookbehind back-step residual entry, expected EXACTLY 10 — the population this check's FOURTH entry is asserted over moved. S133 inlines the back-step as 'scan_position - k' and drops the mask OR, which changes NO ANSWER under the byte backend, so this fixture-declared per-site count is its only possible detector and a shrinking population would take the detector with it"
 fi
 if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
     bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
