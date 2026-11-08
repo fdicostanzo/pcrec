@@ -27,4 +27,5 @@ run_rows.sh (rows_check §R and §S) green as above; nice make strict exit 0.
 - rows_check and make strict: done
 
 ## STATE AT HANDOFF
-Nothing owed. Committed; no running jobs.
+OWED: none
+Committed; no running jobs.
