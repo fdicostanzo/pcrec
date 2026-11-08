@@ -3665,3 +3665,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - Committed r13 + skill change 8f15e664b; older review index lines moved to the history file (12 KB limit).
   - Lane u30d4 (opus) -> rev 2.2. Then the kit manager checks the by-id table, and 3.0a builds.
   - Freeze notes for main: the composition ruling still has no D-entry; the RUNG-LIST plan row is unfiled.
+- 11-07 ~23:10: u30d4 DELIVERED plan_frame rev 2.2 (11b522809; lane closed); all 27 accepted r13 ids applied.
+  - Q14 accepted (sabotage row AF; 3.0b 19 rows).
+  - Q15 accepted except probe.c "left to break", REJECTED: census jobs build r33_sim/probe.c, so 3.0b adds a kit-owned successor probe under span_pick/. Recorded 15ab95a02.
+  - 3.0a GO: build lane s30a (opus) in worktrees/s30a, branch lane/memfn-s30a cut from lane/memfn-u30d.
+    - Kit-only, zero movers. Light niced builds only during the hold.
+    - It WRITES its validation jobs (scratch/memfn/s30a/jobs/) and does not queue them; the kit manager queues them after K0's 01:00 gates, in agreement with main's 500 battery.
