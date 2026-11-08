@@ -1407,7 +1407,7 @@ same, scoped to `\R`.
 | syntax | status | becomes |
 |---|---|---|
 | `(?=...)` `(?!...)` | `OK-GATED` | — |
-| `(?<=...)` `(?<!...)` — BOUNDED variable width per top-level branch since [VLOOKBEHIND] stage 1, at PCRE2's own limits (65535 characters; 255 once a branch varies): `(?<=a\|bc)x` and `(?<=(a\|bc))x` compile. CAPABILITY limit: a backreference or variable inside is refused with a capability message and a pattern offset (stage 2) | `OK-LIMITED` | `PLANNED` |
+| `(?<=...)` `(?<!...)` — BOUNDED variable width per top-level branch since [VLOOKBEHIND] stage 1, at PCRE2's own limits (65535 characters; 255 once a branch varies): `(?<=a\|bc)x` and `(?<=(a\|bc))x` compile. CAPABILITY limit: a backreference, variable or consuming callout inside is refused with a capability message and a pattern offset (stage 2) | `OK-LIMITED` | `PLANNED` |
 | `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` `(*positive_lookahead:)` `(*negative_lookahead:)` `(*positive_lookbehind:)` `(*negative_lookbehind:)` verbose spellings — module `lookaround`, NOT `verbs` | `OK-GATED` | — |
 | `[[:<:]]` `[[:>:]]` — a word-boundary assertion, module `assertions`, filed in this section by the original survey | `REJECTED` | `PLANNED` |
 | `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` `(*non_atomic_positive_lookahead:)` `(*non_atomic_positive_lookbehind:)` non-atomic lookaround | `OK-GATED` | — |
@@ -1448,7 +1448,7 @@ any `EXTRA_*` bit is a D38 ruling event, and Frank closed the reopening
 on 2026-08-23. The refusal is recursive through nested groups and nested
 lookarounds and stops at the assertion's own `)`.
 
-**`(?<=...)`** (2026-11-06)
+**`(?<=...)`** (2026-11-07)
 
 **SHIPS BOUNDED VARIABLE-WIDTH since [VLOOKBEHIND] stage 1** (D189,
 2026-11-06; it superseded [M6.6.2]'s fixed-width-per-branch rule and
@@ -1466,9 +1466,11 @@ own pattern offset, never as "requires module 'lookaround'":
 
     (?<=a*)x                "... must have a bounded length (this one is
                             unbounded)"; libpcre2 error 125, same offset.
-    (a)(?<=\1)x             "a lookbehind containing a backreference or a
-                            variable is not implemented"; libpcre2 ACCEPTS
-                            it. A capability limit (shape 5), until stage 2.
+    (a)(?<=\1)x             "a lookbehind containing a backreference, a
+                            variable or a consuming callout is not
+                            implemented (its length is known only when
+                            matching)"; libpcre2 ACCEPTS it. A capability
+                            limit (shape 5), until stage 2.
                             A branch unbounded for its own reason keeps the
                             unbounded sentence: `(a)(?<=a+|\1)x`.
     (?<=(?:)*a)x            ACCEPTED here, refused by libpcre2 (error 125):
@@ -1489,7 +1491,7 @@ lookbehind's offset and the width rule is re-asked at that offset once
 UNCHANGED by this; what changes is when it can be evaluated.
 
 The outcomes, MEASURED on 10.46 and on this tree (2026-08-24; re-measured
-2026-11-06 for stage 1):
+2026-11-06 for stage 1, and again 2026-11-07 on both sides):
 
     (a)(?<=(?1))b           COMPILES both sides — an ACYCLIC callee of
                             fixed width composes, and so does calling it
