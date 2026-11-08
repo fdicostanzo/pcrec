@@ -34,7 +34,7 @@ with S2977 `DETECTED-BUILD` and anomalies 0.
 
 ## STATE AT HANDOFF
 
-No queue job is owed (the brief forbade queueing). The S2977 row verdict is UNREAD: the row was launched as a plain niced
+OWED: none (no queue job; the brief forbade queueing). The S2977 row verdict is UNREAD: the row was launched as a plain niced
 background process (pid 3815219, not a queue job), YIELDING on the box lock behind queue jobs 461 (held) and
 501-kit-s30a-ident1. Log: /var/tmp/pcrec-pcrec/scratch/memfn/k0fix2/mech.log; read the `== mech run COMPLETE` trailer
 (expect DETECTED-BUILD, anomalies 0). If the process is gone with no trailer, re-run the Row run command. No rulings file.
