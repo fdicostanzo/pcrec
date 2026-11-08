@@ -81,6 +81,9 @@ message when the draft is ready.
    neighbours (a `sed -n` around the tag line leaked the denied rulings, 2026-10-26 inline-c). State denied files as PATHS EXCLUDED
    from EVERY git diff and grep in COMMON (for PLAIN grep, `--exclude=` per denied file: plain `grep -r` ignores git pathspecs; r2 sp1c) (`':!memfn/docs/journal.md'`), not only in one
    example command (r5 sp1g: a per-directory diff showed a denied journal hunk).
+   When a ruling the critics need has its ONLY record in a denied ledger (a journal, a responses file), COMMON QUOTES it
+   verbatim and gives a ready plain-grep exclude string for that file (2026-11-07 r12 planframe1: a plain grep leaked one
+   denied journal line while a critic looked for the ruling).
 4. Profile: what does the subject touch? Several can apply:
    - design: a new mechanism or table; a measured quantity, check or data file;
      a caller-facing contract; a build proposal (cost, scope); rulings it rests on
