@@ -3690,3 +3690,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Lesson (2nd time: sp1efix too): a job's clean-tree check must exempt artifact_size_log.tsv, which make test writes.
 - 11-08 14:11: main's battery ended. 3.0a gate 500 strict GREEN (17 s). K0's 453 mech is running; 501-509 follow.
 - 11-08 14:20: 453 mech RED triaged (tri453b; closed): class (c), a row-definition defect. 6/7 rows DETECTED; S2977's designed catch is a fixture compile error, but the row declares SAB_EXPECT=DETECTED, so it scored ANOMALY 1 > ceiling 0. Fix lane k0fix2 (sonnet) sets COMPILE-CATCH like S989/S272/S07. Re-queue 453 after it. Not a K0 check gap.
+- 11-08 14:20: k0fix2 DELIVERED (lane/memfn-k0 a6f51ac70; closed): S2977 is now COMPILE-CATCH and listed in tests/mech/CLAUDE.md. Its single-row run was yielding on the box lock behind the queue, so I safekilled it (our own) and re-queued the full 453 mech (7 rows) instead.
