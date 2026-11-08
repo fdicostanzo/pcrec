@@ -1,0 +1,4 @@
+report=docs/dev/lanes/spanarms4_report.md
+sections: Summary; Disposition table; STATE AT HANDOFF
+nonempty: all
+commit: yes
