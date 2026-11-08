@@ -178,7 +178,7 @@ OPTIONS
   --extra-base=ARGS      the arm's base (default nothing; `-e utf8` is the
                         utf8 base), also on every stream.
   --arms start           every DIFFER_PINS arm (the start-family deny arms at
-                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd`,
+                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd=x86-64`,
                         `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
@@ -512,8 +512,15 @@ DIFFER_PINS = {
     # layers), so the cell is pinned back AT the measure. Its members against main are named
     # by s3_evidence/simd_members.py (s3_report.md §8.8): a JUDGED trade, SIMD off by default
     # and a SIMD-on loss the SIMD thread's finding (window_site.md §6).
-    ("byte", "-fmemfn-simd", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
-    ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
+    # [XARCH-DEV] U3 (lane u3tgt, 2026-11-08): the arm names its CPU target, family
+    # explicit, so the cells read the same on every host (bare -fmemfn-simd is the
+    # HOST family's default list: an arm64 host renders no vrun row). x86-64 is what
+    # bare -fmemfn-simd was on this box; it renders vrun@w16 (the w32 level is
+    # x86-64-v3's). The arm sets each target's fixed text aside (target_aside), so
+    # a mover is a pattern a kit SIMD row serves. Floors carried, re-measured by job
+    # u3tgt-sweep-simd (STATE AT HANDOFF in docs/dev/lanes/u3tgt_report.md).
+    ("byte", "-fmemfn-simd=x86-64", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
+    ("byte", "-fmemfn-simd=x86-64", "c-vm"): (19, 0, b"(?i)cat"),
     ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
     ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
     # the same arms, utf8 base
@@ -543,8 +550,8 @@ DIFFER_PINS = {
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
-    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
-    ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd=x86-64", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
+    ("utf8", "-fmemfn-simd=x86-64", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
@@ -1950,7 +1957,7 @@ COMPOSITION_EXTRA_PINS = {
     # binary, 386 composition files). Floors AT the measured value (the
     # counts are deterministic), the --engine=vm entry's stance. Re-pinned
     # 37 / 106 -> 38 / 88 from job 695-kit-simdset-comppin (header above).
-    ("-fmemfn-simd",): {"composition_producing_floor": 38,
+    ("-fmemfn-simd=x86-64",): {"composition_producing_floor": 38,
                         "composition_artifacts_floor": 88},
     ("-fcomments",): {"composition_producing_floor": 38,
                       "composition_artifacts_floor": 88},
