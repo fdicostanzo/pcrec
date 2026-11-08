@@ -302,3 +302,9 @@ TREE before queueing (U2 and U3 land in one merge, which main runs). No job hold
 | U3 interface sheet first, committed, messaged | 6418080b2; rev 1.1 in this file |
 | validation job files, each passing its own --dry-run | Validation jobs |
 | kit tests name targets by kit token; run_arch_blind.sh | test-memfn-arch green, 17/0 |
+
+## STATE AT HANDOFF
+
+OWED: none. No box job is queued by this lane; jobs 560-569 are written under
+`/var/tmp/pcrec-pcrec/scratch/memfn/u2/jobs/` for the kit manager to queue with U3. The emit_sweep
+default sample ran through the box lock and is read (What moves). No process of this lane is running.
