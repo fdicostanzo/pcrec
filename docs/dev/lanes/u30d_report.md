@@ -183,3 +183,9 @@ Each has a recommendation in the note's §7:
 | the three standing questions | §9 |
 | deliverable: note, report, history-index line, design CLAUDE.md line, lanecheck DONE | committed on lane/memfn-u30d |
 | journal nothing | none written |
+
+## STATE AT HANDOFF
+
+Delivered, tip on lane/memfn-u30d. OWED: none (design only: no make, no timing, no queued job). No
+rulings file was named. The next steps are the kit manager's: rule §7, launch a design critic round on
+`plan_frame.md`, then build 3.0a and 3.0b under R-35's stage-3 GO.
