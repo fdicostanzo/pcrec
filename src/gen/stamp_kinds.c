@@ -58,6 +58,7 @@ static const StampRow stamp_rows[] = {
     { "PART_LAYOUT",        false, SK_PATTERN, false },      /* the caller's controls, */
     { "PART_LAYOUT_WHY",    false, SK_PATTERN, false },      /* over the whole artifact */
     { "COMPOUND",           false, SK_PATTERN, false },
+    { "TARGETS",            false, SK_PATTERN, false },      /* [XARCH-DEV] U3 the compile's CPU target */
     { "NCAPS",              false, SK_PATTERN, false },
     { "NVARS",              false, SK_PATTERN, false },
     { "VAR_",               true,  SK_PATTERN, false },

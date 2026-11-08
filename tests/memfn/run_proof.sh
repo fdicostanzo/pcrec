@@ -40,8 +40,9 @@ plant_spec() {
     case "$1" in
     S1221) # a form claiming an untested offset (the class proves one past each run)
         echo 'compose.c@@long d = (long)t->offset + j;@@long d = (long)t->offset + j + (t->kind == MF_T_RUN);' ;;
-    S1224) # a proof bit set only by a SIMD layer (C-PROOF)
-        echo 'compose.c@@    /* proven0 and proven_prev are COPIES@@    if (!(s->policy \& MF_P_PORTABLE_ONLY)) out->proven[0 - MF_PROOF_LO][0] \&= 0xFE;\n    /* proven0 and proven_prev are COPIES' ;;
+    S1224) # a proof bit set only by a SIMD layer (C-PROOF): cleared where the art's
+        # stated target admits a level (unit U3: the target, not a policy bit, is the layer)
+        echo 'compose.c@@    if (!row || kit_class(row, s, out)) return -1;\n    if (fd_pres(@@    if (!row || kit_class(row, s, out)) return -1;\n    if (kit_target_levels(art->target)) out->proven[0 - MF_PROOF_LO][0] \&= 0xFE;\n    if (fd_pres(' ;;
     S1225) # an over-filter on an OPTIONAL position (an OPTIONAL SET term tests one member fewer)
         echo 'generic.c@@            if (tm->kind == MF_T_SET) {\n                if (member_test(rc, b, tm, id, bx)) {@@            if (tm->kind == MF_T_SET) {\n                mf_term nt = *tm;\n                for (int q = 0; tm->need == MF_OPTIONAL \&\& q < 256; q++)\n                    if (nt.set[q >> 3] >> (q \& 7) \& 1) { nt.set[q >> 3] \&= (uint8_t)~(1u << (q \& 7)); break; }\n                if (member_test(rc, b, \&nt, id, bx)) {' ;;
     S1419) # a window site's renderer-interface field accepted (`plan_hint` stated beside

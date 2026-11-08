@@ -140,34 +140,36 @@ const char *pcrec_memfn_targets_stamp(Ctx *cx)
                           t->name);
 }
 
-/* Writes the kit's text that opens the artifact's target code: the family
- * guard (file scope, once) and the target's region open, before the part's
- * first function. Both are target-dependent bytes, so they sit in one
- * CPU-guarded bracket (StrBuf.simd_guarded): no length decision reads them.
- * A part writes nothing (its text lies inside its shell's region); the
- * portable target's texts are empty, so a default artifact gains no byte. */
-void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
+/* Writes `text` as one CPU-guarded bracket (StrBuf.simd_guarded), so no
+ * length decision reads it; nothing for "" or on a compound's part (its text
+ * lies inside its shell's guard and region). */
+static void put_target_text(Ctx *cx, StrBuf *c, const char *text)
 {
-    if (pcrec_is_part(cx)) return;
-    const mf_target *t = pcrec_memfn_target(cx);
-    const char *guard = t->family ? mf_family_c_of(t->family)->guard : "";
-    const char *open = mf_target_c_of(t)->region_open;
-    if (!*guard && !*open) return;
+    if (pcrec_is_part(cx) || !*text) return;
     pcrec_sb_simd_open(c);
-    pcrec_sb_puts(c, guard);
-    pcrec_sb_puts(c, open);
+    pcrec_sb_puts(c, text);
     pcrec_sb_simd_close(c);
 }
 
-/* The region's close, after the part's last function (before `main`, which
- * is shared file text and stays outside it); as the open, guarded, nothing
- * on a part or for the portable target. */
+/* The kit's family guard: once per artifact, at file scope ahead of every
+ * `#include`, so a compile for another family stops at its `#error` rather
+ * than in a header. None for the portable target (it has no family). */
+void pcrec_emit_target_guard(Ctx *cx, StrBuf *c)
+{
+    const mf_target *t = pcrec_memfn_target(cx);
+    put_target_text(cx, c, t->family ? mf_family_c_of(t->family)->guard : "");
+}
+
+/* The target's region open, before the part's first function (the kit's
+ * helpers and their `#include` lines inside it); "" for the portable target. */
+void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
+{
+    put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_open);
+}
+
+/* The region's close, after the part's last function and before `main`
+ * (shared file text, outside every region). */
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c)
 {
-    if (pcrec_is_part(cx)) return;
-    const char *close = mf_target_c_of(pcrec_memfn_target(cx))->region_close;
-    if (!*close) return;
-    pcrec_sb_simd_open(c);
-    pcrec_sb_puts(c, close);
-    pcrec_sb_simd_close(c);
+    put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_close);
 }

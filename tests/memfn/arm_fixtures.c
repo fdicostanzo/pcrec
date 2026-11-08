@@ -160,6 +160,15 @@ static mf_sink sink_of(Text *t)
 
 static void *a_alloc(void *u, size_t n) { (void)u; return calloc(1, n); }
 
+/* An art begun as pcrec begins one (unit U3): no art-level policy word, the
+ * CPU target stated at once; the fixtures render the portable target's text. */
+static mf_art *art_begin(mf_arena *a, const char *pfx, uint64_t denies,
+                         const mf_measures *ms, const mf_analysis *an)
+{
+    mf_art *art = mf_art_begin(a, pfx, 0, denies, ms, an);
+    return art && !mf_art_target(art, mf_portable_target()) ? art : NULL;
+}
+
 /* ---- the hooks ------------------------------------------------------------ */
 
 typedef struct { const mf_site *site; const char *fn1; const char *indent; } Fx;
@@ -240,7 +249,6 @@ static mf_site base_site(void)
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
     s.empty = MF_EMPTY_MISS;
-    s.policy = MF_P_PORTABLE_ONLY;
     s.pred.need = MF_REQUIRED;  /* MF_SITE_ABI 13: stated (0 is refused where read) */
     s.body = MF_BODY_ONESHOT;   /* MF_SITE_ABI 14: stated (0 is refused where read) */
     return s;
@@ -405,7 +413,7 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
 {
     if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fd = { s, fn1, NULL }, fu = { s, fn1, "    " };
@@ -500,7 +508,7 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
                        const mf_hooks *hp)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_hooks h = *hp;
@@ -686,7 +694,7 @@ static int render_adv_x(const char *dir, const char *name, const mf_site *s, Adv
 {
     if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     AdvFx ax = { { s, NULL, "    " }, x ? x->member : NULL };
@@ -797,7 +805,7 @@ static int render_stride(const char *dir, const StrideFx *x)
         su.member[i] = mtext[i];
     }
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s.denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s.denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), sk = sink_of(&use);
     mf_hooks h = { .more = more, .peek = "subject[rx_span_cursor + 0]", .step = step,
@@ -860,7 +868,7 @@ static void gate_case(const char *name, const mf_site *s, const mf_hooks *hd,
 {
     if (skip_fixture(name)) return;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
@@ -882,7 +890,7 @@ static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
 {
     if (skip_fixture(name)) return;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
@@ -1325,7 +1333,7 @@ static int fd_render(const char *dir, const char *name, const mf_site *s,
                      const mf_measures *ms, const mf_analysis *an)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, ms, an);
+    mf_art *art = art_begin(&a, "rx", s->denies, ms, an);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fx = { s, "rx_pf", "    " };
@@ -1391,7 +1399,7 @@ static int fd_render(const char *dir, const char *name, const mf_site *s,
 static int fd_ask_links(const char *name, const mf_site *s)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, NULL, NULL);
+    mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     mf_hooks h = { .start = "search_from" };
     mf_class c;
     if (mf_ask(art, FXW(s), &h, &c)) {
@@ -2262,13 +2270,13 @@ static int purity_mode(void)
         const mf_analysis *an = rated ? pur_rated() : NULL;
         mf_wreply fresh[PUR_N];
         for (unsigned i = 0; i < PUR_N; i++) {
-            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, an);
+            mf_art *art = art_begin(&ar, "pur", 0, NULL, an);
             snprintf(m, sizeof m, "%s: site %u: the fresh art's plan call refused",
                      rated ? "rated" : "none", i);
             pur_ok(mf_wdecide(art, &site[i], &fresh[i]) == 0, m);
         }
         for (size_t o = 0; o < sizeof orders / sizeof orders[0]; o++) {
-            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, an);
+            mf_art *art = art_begin(&ar, "pur", 0, NULL, an);
             for (unsigned k = 0; k <= orders[o].n; k++) {
                 for (unsigned i = 0; i < PUR_N; i++) {
                     mf_wreply r;
@@ -2291,7 +2299,7 @@ static int purity_mode(void)
     /* THE STICKY-ERR CASE: breaker (a), FENCED (no reply after a refusal
        reaches an artifact); equal replies are asserted only once a later
        unit makes the refusal non-sticky */
-    mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = art_begin(&ar, "pur", 0, NULL, NULL);
     pur_ok(pur_define(art, &site[0]) == 0, "sticky-err: the first define refused");
     mf_site bad = pur_refused();
     pur_ok(pur_define(art, &bad) != 0, "sticky-err: the two-NONE site's define was accepted");
@@ -2314,7 +2322,7 @@ static int purity_control_mode(void)
     for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
     for (int rated = 0; rated < 2; rated++)
         for (unsigned i = 0; i < PUR_N; i++) {
-            mf_art *art = mf_art_begin(&ar, "pur", MF_P_PORTABLE_ONLY, 0, NULL,
+            mf_art *art = art_begin(&ar, "pur", 0, NULL,
                                        rated ? pur_rated() : NULL);
             mf_wreply r;
             if (pur_define(art, &site[(i + 1) % PUR_N]) || mf_wdecide(art, &site[i], &r)) {
