@@ -282,7 +282,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
-  status (2026-11-06): Frank GO 2026-11-06 for stages 1, 2p, 2b (alt_normal_form.md rev 3; opus build lane, code round before landing); lands AFTER [VLOOKBEHIND] stage 1, adding lookbehind x alternation witnesses; 2a census-first, 3 waits
+  status (2026-11-07): stages 1, 2p, 2b LANDED on main (merge f77ed1130, abi 97, lane altland); 2a census-first, 3 and 3m wait; r5 PLAN items filed as [ALT-NF-CHK] [ALT-NF-SPINE] [ALT-ISL-HOPELESS] [ALT-REQ-PIECES]
   trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the build waits for span_pick unit 1e's landing and Frank's build go
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
@@ -1792,7 +1792,31 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-06): not started; witness x(?:[éà]|q2|r3)y forced-VM: after the alternation merge shrinks the chain, the row picks the chain at 2.0x the island's instructions (325.5M vs 161.5M); no corpus/bench cell yet
   trigger: the bench's VM-forced wide-alternation ladder (inbox I-176) or any corpus/bench cell showing a chain pick slower than the island
   refs: docs/dev/lanes/altbuild_report.md; [RUN-POS-SET]; [ENG-ISL-S2]; [OPT-ALTHASH]; decisions D186 D137
+  Member list (r5 SLOT-8, filed 2026-11-07): island acceptance has THREE size answers (the per-subtree VM_ISL_SIZE_FACTOR test, the per-artifact guard, the [ART-SIZE] retry row); this row prices all three. NOTED: the `vm_islands` publish site (emit_vm.c) moves to the job-publish block when touched.
   Price the row by work (try count or a measured card), not bytes; VM_ISL_SIZE_FACTOR is an unmeasured constant (memory pcrec-suspect-tuning-constants). Lane altbuild2 measured both estimates wrong in both directions (island 6x over on long words; chain 2-3x over): once the [ART-SIZE] retry row (K139) makes acceptance exact, the in-emitter size guard is a speed-only shortcut and a candidate for deletion (a simplification), measured here.
+- [ALT-NF-CHK] STATE:not-started — alternation-normal-form check follow-ups (r5 altcode CHK-1/3/4, TRD-3 pair test)
+  filed: 2026-11-07 altland (landing of lane/altbuild; review 2026-11-06-r5-altcode PLAN items)
+  status (2026-11-07): not started; four small check items, none blocks the landing
+  trigger: the next change to the trie-identity sweep, island section 11 or [facts-pieces], or a red that one of them would have caught
+  refs: docs/dev/reviews/2026-11-06-r5-altcode.md (CHK-1, CHK-3, CHK-4, TRD-3); tests/codegen/run_trie_identity.sh; tests/island/run_island_tests.sh
+  CHK-1: the trie-identity sweep now runs behind the owner (416 of 500 patterns rewritten); add a second pass with the owner denied on both sides or a non-trivial-trie count floor, and re-measure the 64/500 and 94/500 table rows. CHK-3: island section 11 lost its "ladder straddles the cap" non-vacuity cell; add a reach count (2 of 3 rungs reach the retry today). CHK-4: `[facts-pieces]`'s "3 of 3 declines" compares the witness table's labels to a literal 3; read the count from the enum. TRD-3: a test entry for the `-fno-cls-kit` deny pair restoring the refusals.
+- [ALT-NF-SPINE] STATE:not-started — one spine flattener/builder and one A_WCLASS see-through policy (r5 SLOT-2 wider family, SLOT-5)
+  filed: 2026-11-07 altland (r5 altcode PLAN items)
+  status (2026-11-07): not started; owner/altcls pair already shares a builder (FIX-NOW landed); the wider family and the three A_WCLASS policies remain
+  trigger: [ENG-ISL-S2], a fourth reader of the spine, or the EMIT-3 fix if it lands there
+  refs: docs/dev/reviews/2026-11-06-r5-altcode.md (SLOT-2, SLOT-5); src/opt/altnf.c; src/opt/altcls.c; [ENG-ISL-S2]
+  SLOT-2 wider family: rxt_compose and lmwalk re-implement the flatten/cat/alt helpers. SLOT-5: three spine-step policies over `A_WCLASS` (`pcrec_ast_seethru`, `vm_seethru`, the island's raw `t->l`); the EMIT-3 flip is two of them disagreeing. Shape: one flattener plus a declared policy table.
+- [ALT-ISL-HOPELESS] STATE:not-started — skip the size-refused island retry when it cannot fit (r5 TRD-4)
+  filed: 2026-11-07 altland (r5 altcode TRD-4, D77-held)
+  status (2026-11-07): not started (D77-held); the retry row roughly doubles compile work on a size-refused island-bearing VM compile (3,000 words: 2.30x the direct deny); bounded by FIT_REP_ONCE
+  trigger: a caller measures the refused-anyway compile cost as a problem (D77)
+  refs: docs/dev/reviews/2026-11-06-r5-altcode.md (TRD-4); K139; docs/spec/limits.md section 8.4
+  A cheap hopeless-case skip before the retry row; EMIT-2's re-ordering does not remove this cost.
+- [ALT-REQ-PIECES] STATE:not-started — re-derive PCREC_MAX_REQ_PIECES with headroom (r5 TRD-5)
+  filed: 2026-11-07 altland (r5 altcode TRD-5)
+  status (2026-11-07): not started; the bound (10) equals the bench peak with zero headroom (21 altwide files at exactly 10); inert today (the code drops the description over it)
+  trigger: the first consumer of the pieces description lands
+  refs: docs/dev/reviews/2026-11-06-r5-altcode.md (TRD-5); src/core/limits.def; docs/design/alt_normal_form.md section 3.4
 - [KIT-POLICY-TABLE] STATE:not-started — one kit policy-constant table (noise z, gate default, MATERIAL), outside the sets
   filed: 2026-11-06 manager, from the kit's span_cards review (SLOT-7)
   status (2026-11-06): not started; today noise policy has no single home (gate_e6 in kit-grid.tsv; z not yet a constant anywhere); unify when row 1 writes z (row 1's E2 unification)
