@@ -27,6 +27,7 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 
 ### minor
 
+- 2026-11-08 25d80f2c0 minor — merge lane/mechtri (battery mech triage: 3 witness re-aims/new cells, test-only; its 3-row mech GREEN)
 - 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
 - 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
 - 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
@@ -50,6 +51,9 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
 | 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
 | 2026-11-05 | daf6f002b | green | green | green | green | green | green | green | green | build/full_suite/20261104_daf6f002b/ | 44139 s |
+| 2026-11-08 | a0a829246 | green | green | green | green | green | green | RED (rc=2) | green | build/full_suite/20261108_a0a829246/ | 45761 s |
+
+RED run (2026-11-08 a0a829246): counters do not reset. mech = 3 UNEXPECTED rows of 1167 (S50, S806, S-U10; 0 anomalies; undetected/unreached otherwise identical to daf6f002b), all stale witnesses moved by the [ALT-NF] folds and variable lookbehind, no src gap and no miscompile. FIXED by lane/mechtri (merge 25d80f2c0; its build/test/3-row mech 460-462 GREEN, 3 DETECTED). Every other stage green, including recidentity. Next: a mech-only re-run on main (the san-only re-run precedent), counters reset if green.
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
 
