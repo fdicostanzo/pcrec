@@ -3644,3 +3644,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - vrun/vany go to later units. Units 3.0a (kit-only, M) and 3.0b (seam + ASK-1..5).
   - New questions: Q7 (fused replaces renderer), Q8 (declare MASK now), Q9 (vrun after target seam U2+U3), Q10 for main (a D186 addendum).
   - Critic round crit-memfn-planframe1 (opus coordinator) LAUNCHED on rev 1.
+- 11-07 ~24:00: critic round r12 (plan_frame rev 1): 5 opus lenses plus a verifier, 42 raw -> F1-F34. 19 of the 20 checked HOLD, 1 PARTLY. NOT READY; rev 2 with text fixes.
+  - Answer-level: F1 (formhash pair refused in the correct build), F2 (B-pair frontier decl uncolumned), F3 (floor skeleton differs), F4 (fd_holds gate would decline PRES), F5 (libc/include union wrong).
+  - RULED: all FIX-NOW accepted. F8: the stream is a separate piece, MASK declared only (D77). F13: the triple per rung. F14: the fused row crosses facts (PAIR/LIBC). D27 author for 3.0b.
+  - Committed: review docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md (+ dir) bcd235f4b; skill/guide lessons 5fd23b2bd (on lane/memfn-u30d).
+  - Lane u30d2 (opus) writes rev 2.
