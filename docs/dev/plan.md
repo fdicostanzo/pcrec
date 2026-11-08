@@ -728,6 +728,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the first reader that must tell "absent" from "unreported" (row 1's first record or [RUNG-LIST])
   refs: docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (Standing questions (3)); docs/design/memfn/plan_frame.md Goal 5; decisions D190
   Cheapest at 3.0b's one MF_SITE_ABI event if ever wanted.
+- [TEST-REVIEW] STATE:not-started — testing review: where function-level tests would add to the path tests
+  filed: 2026-11-08 Frank ("Start an unscheduled testing review item with these notes"), from his question on unit tests vs integration tests
+  status (2026-11-08): UNSCHEDULED; notes only, nothing designed or built
+  next: when scheduled, a review lane weighs the body's three candidates (fact-function driver, seam record tests, deny-upstream witnesses) against the test-harness-minimal rule
+  refs: docs/design/plan_row_bodies/TEST-REVIEW.md; [IR-FORM]; D153; docs/dev/lanes/mechtri_report.md (lane/mechtri)
 - [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
   filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
   status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
