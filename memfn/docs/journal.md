@@ -3688,3 +3688,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Fix: the check now exempts that test-written path. Restored the file (the only dirt) and re-queued 453.
   - It now waits behind main's battery 500-main-fullsuite2 (running since 01:27, ~12 h). The s30a jobs' common.sh has no clean-tree check, so they are not exposed.
   - Lesson (2nd time: sp1efix too): a job's clean-tree check must exempt artifact_size_log.tsv, which make test writes.
+- 11-08 14:11: main's battery ended. 3.0a gate 500 strict GREEN (17 s). K0's 453 mech is running; 501-509 follow.
