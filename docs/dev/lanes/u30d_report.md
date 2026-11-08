@@ -126,7 +126,7 @@ Checked by grep/sed at worktree u30d (main 5c3b65fb3 + the deliver-file commit a
 | trace format | `memfn/docs/trace_format.md:102-113` |
 | memfn/src CLAUDE.md asker lines | `memfn/src/CLAUDE.md:9`, `:15`, `:41` |
 | include CLAUDE.md number | `memfn/include/CLAUDE.md:4` |
-| [SP1E-RENDERER-TABLE] | `docs/dev/plan.md:835-839` |
+| [SP1E-RENDERER-TABLE] | `docs/dev/plan.md` row [SP1E-RENDERER-TABLE] |
 | review F5, F6, F9 | `docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md:96-102`, `:105-111`, `:124-130` |
 | ideas, apples and oranges | `memfn/docs/ideas.md:780-785` |
 | k0 sabotage ids S2975-S2981 | `memfn/docs/journal.md:3598`, `:3613` |
