@@ -278,7 +278,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
   status (2026-11-07): stage 1 LANDED at c44649a69 (lane vlbland; bounded variable-width lookbehind, abi 96, D189); row stays started for stage 2
   next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
-  refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (lookbehind removal by \K with an earlier scan + floor; exact for fixed-length A); docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
   Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
@@ -1857,7 +1857,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)
   status (2026-11-05): HELD, nothing designed beyond docs/design/vlookbehind.md §5.4: [ENG-LOOK]'s forward machine (or reverse-dfa's existence exit) as a filter row before range's finisher; with it `(?<=a+)` (err 125 in PCRE2 too)
   trigger: a real pattern needing unbounded or over-255 lookbehind, from the [UTF-RW] harvest or a user
-  refs: docs/design/vlookbehind.md §5.4; docs/dev/reviews/2026-11-05-r3-vlookbehind.md (F16, owner question 1); [VLOOKBEHIND]; [ENG-LOOK]; [UTF-RW]; D156; D77
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (lookbehind removal by \K with an earlier scan + floor; exact for fixed-length A); docs/design/vlookbehind.md §5.4; docs/dev/reviews/2026-11-05-r3-vlookbehind.md (F16, owner question 1); [VLOOKBEHIND]; [ENG-LOOK]; [UTF-RW]; D156; D77
   Correctness needs no cap; range alone does unbounded at O(n^3) worst case. The filter makes exact capture-free bodies linear per scan and shares one machine with [ENG-LOOK] (trigger: that row opens). Oracle: libpcre2 at max_varlookbehind=65535 on the bounded twin.
 - [SEAM-READER-CENSUS] STATE:not-started — every mf_* seam member has a kit reader or a listed trigger (a census, Boonies weight)
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)

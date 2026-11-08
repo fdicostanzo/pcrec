@@ -59,3 +59,16 @@ Manager notes, not ruled:
 - **Static wins without any DFA (VM too):** subsumption (`B ⊆ A Σ*` drops the lookahead: `(?=\d)\d+` → `\d+`), disjointness (never matches), and folding neighbouring predicates on one span.
 - **Fit:** one general mechanism with three clients: the where predicate, lookahead removal, and lookahead lowered to DFA. It is the forward twin of the reverse DFA in lookbehind (A-REV, `docs/design/stream/arev.md`). It touches [REQ-LOOKAROUND] (runs see through positive lookarounds) and stream unification.
 - **Prior art to check before citing:** lookaheads without captures preserve regularity; RE# (Varatalu et al., POPL 2025; manager's memory, unverified) does intersection, complement and restricted lookarounds in a derivative DFA.
+
+## 2026-11-08 — Frank: lookbehind removal by `\K`, the lookahead mirror, and an end-of-match `\K` (recorded, not scheduled)
+
+Frank asked whether `(?<=frank)fred` is `frank\Kfred`, "thinking about lookaround removal". They agree for a single search from offset 0. They differ when a search starts mid-subject, as each find-all step does: the lookbehind reads before the start position, while `A\KB` must consume A from it. Frank: that is the blocker.
+
+Manager notes, not ruled:
+- **The start-offset fix: scan earlier and set a floor.** To search `(?<=A)B` from `s`, scan `A\KB` from `max(0, s − maxlen(A))` and accept only matches whose `\K` point is ≥ `s`. A lookbehind may already read before `s`, so nothing new is read. A previous match's text can serve as A, so find-all overlap comes out right (`(?<=a)a` on `aaa` gives 2 matches). `maxlen(A)` exists because lookbehind is bounded.
+- **The real condition is A's length.** `A\KB` finds matches in order of A's START; the lookbehind ranks by B's start. With FIXED-length A the two orders agree and the rewrite is exact. With VARIABLE-length A they can disagree (`(?<=a|bcd)x`: a later B with a long A can have an earlier A start), so: split A by length (one fixed-length case each), or keep the lookbehind.
+- **Payoff:** with fixed-length A the lookbehind is gone. What remains is a plain forward automaton plus a constant offset for the reported start, which is DFA-buildable with no step-back loop.
+- **Negative lookbehind** has no `\K` form. It stays the complement-intersection case of the span-intersection entry above.
+- **To confirm:** [REQ-LOOKAROUND]'s refs say D172 spans carry negative start offsets. If so, "read before the start" is already a span fact.
+- **The lookahead mirror: an END reset.** `B(?=A)` = match `B A` and report the end at B's end; the next find-all search starts at that reported end. The bound to honour is the subject END, which a forward scan already respects, so the mirror is simpler than the lookbehind case. In the IR this is an end-of-match mark: the `\K` equivalent for the end that Frank noted. It is the same node for both: a lookaround becomes consumed text plus a mark on what is reported.
+- **A surface end-`\K`** (Frank: "it also suggests a `\K` equivalent for end of matches") would be a pcrec extension; PCRE2 has none. A user spelling needs Frank's go and a placeholder that cannot collide with PCRE2 syntax. Its find-all rule (resume at the reported end, so the trailing text can be rescanned) must be stated in the spec. The IR mark is useful even with no surface spelling.
