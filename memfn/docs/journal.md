@@ -3697,3 +3697,4 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-08 ~17:00: main LANDED P1 (bfecd6143: -fmemfn-simd[=TOKEN,..], the kit's parse entries, --list-cpu-targets; 0 bytes) and filed R-37 (U2, landing with pcrec's U3 in one merge and one abi event).
   - The kit worktree moved to lane/memfn-k1108 (from main 7b4e3cc7a, with the k1107 tail merged). ack R-37 b9bd391fd.
   - Lane u2 (opus) in worktrees/u2, branch lane/memfn-u2 from main. Its STEP 1 is the U3 interface sheet (committed + messaged before code), relayed to main at once. Kit-only; gate jobs are written, not queued.
+- 11-08 ~17:20: U2 interface sheet committed (lane/memfn-u2 6418080b2) and relayed to main: one new entry mf_art_target(art, t); guard/region via K0's C-spelling entries; bit 0 retired. For the joint merge, the kit adds follow-ups so an unstated target and a leftover bit 0 are REFUSED, not silent (no presumed values). Waiting on main's confirmation.
