@@ -50,3 +50,7 @@ producer lands". Q13 in §7 is ANSWERED in one line pointing at the ruling.
 3. PLAN row proposal: done (new subsection). 4. Q13 ANSWERED, R2 F13 and F34 rows, size: done.
 5. other F-ids re-read: done (above). R2.1 table at top: done. Marker `[rev2.1 Q13]`: done. History line,
 design/memfn CLAUDE.md line: done.
+
+## STATE AT HANDOFF
+
+Rev 2.1 committed on lane/memfn-u30d. OWED: none. No rulings file was named. Not a build go.
