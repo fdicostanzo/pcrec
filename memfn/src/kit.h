@@ -531,12 +531,31 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
 
 /* Slot FIND's picks: a form, the kit's names (D157). 0 is UNSTATED (refused
  * by the finder's self-check). Each asker renders the pick of the row that
- * decides its find by its own renderer rows: the composer's (compose.c
- * `fd_renderers`), the window family's E-find (window.c's Table B). HORS,
+ * decides its find by the search renderer table's rows on its frame
+ * (window.c `ren_search`, plan_frame.md 3.0a): the composer's PF arms on
+ * E-stmt, the window family's on E-find. HORS,
  * the window family's skip (D-hors, span_pick 1e), is the one pick whose text
  * finds no stop: it probes the window's end and resumes by a shift table. */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
                FF_W64, FF_A3, FF_PAIR, FF_HORS } fd_form;
+/* T-FRAME's rows, the frames a window or composer site's text is written
+ * in (window.c's Table E; plan_frame.md 3.0a): E-func, E-stmt (the
+ * composer's PF block), E-find, E-generic (the floor). The renderer tables
+ * are keyed by it, and T-FIND's asker states its own (fd_find). */
+typedef enum { E_FUNC, E_STMT, E_FIND, E_GENERIC } wf_frame_row;
+/* THE RENDERABLE SET (window.c; plan_frame.md §2.4): 0 where frame `f` does
+ * not render T-FIND pick `pick` for site `s` (no search renderer row names
+ * it there, or Table S answers ST-none), 1 where it does (ST-one), 2 where
+ * Table S answers ST-many: T-FIND's gate holds, and fd_find refuses the
+ * decision after it, *row WF_STREAM_REFUSAL (D186: which stream is a choice
+ * change, refused until a row with evidence exists). */
+#define wf_renders MF_NS(wf_renders)
+int wf_renders(wf_frame_row f, fd_form pick, const mf_site *s);
+#define WF_STREAM_REFUSAL "?stream"
+/* The composer's arm for T-FIND pick `pick` on site `s`: the search renderer
+ * table's E-stmt row's (window.c), or NULL where none names it. */
+#define wf_stmt_arm MF_NS(wf_stmt_arm)
+const struct arm *wf_stmt_arm(const mf_site *s, fd_form pick);
 /* THE TRIPLE's candidate STREAMS (window.c; plan_frame.md §2.5.1), a set:
  * how the text moves past a candidate the check rejects. RESTART: the next
  * search starts at c + 1; MASK: a block's lane mask's next set lane, the
@@ -563,9 +582,9 @@ const wf_support_row *wf_support_rows(size_t *n);
  * window D-hors would skip by (the core of the chosen alternative's
  * verify-YES span holding the stop: `hw` 1 with its least and largest
  * offsets, else 0), the handed rates the stop set's mass reads (NULL: the
- * NONE row), the window family's gate facts for the walk, and THE ASKER FACT
- * `renders_pair`: the asker renders PAIR (span_pick 1e; SF_WINDOW_STOP's
- * successor), which the composer's renderers do not. */
+ * NONE row) and the window family's gate facts for the walk. (Until
+ * plan_frame.md 3.0a it also carried THE ASKER FACT; the frame's
+ * renderable set, wf_renders, replaced it.) */
 typedef struct {
     const uint8_t  *set;
     int32_t         off;
@@ -573,11 +592,11 @@ typedef struct {
     int32_t         wlo, whi;
     const uint32_t *rate;
     const wf_facts *wf;
-    uint8_t         renders_pair;
 } fd_stop;
 /* T-FIND, THE ONE WALK (finder.c; span_pick.md rev 5.2 unit 1e): slot
- * FIND's decision, first match (D-hors, D1, D1c, D1w, PAIR, R7w), for one of
- * two askers. `st` NULL: the composer asks about FIND site `s`'s own span 0
+ * FIND's decision, first match (D-hors, D1, D1c, D1w, PAIR, R7w), gated by
+ * the asker's frame `frame`'s renderable set (wf_renders; plan_frame.md
+ * 3.0a). `st` NULL: the composer asks about FIND site `s`'s own span 0
  * (its one term; a site outside slot FIND's scope gets no decision, and an
  * UNSTATED need is refused: *row "?need"). `st` non-NULL: the window family
  * asks about window site `s`'s stop `st` (need REQUIRED). The decision is the
@@ -585,11 +604,12 @@ typedef struct {
  * `def` (the site's kind, body, policy and options). 1 with the deciding
  * row's pick and id, or 0 where no row decides; `*row` is NULL on a 0, but
  * the "?need" refusal, which names a row and returns 0: a caller that must
- * tell the refusal from "no row" reads `*row`, not the return. `quiet` 1: no
- * record, no reach; 0: a SELECTION (traced, counted). */
+ * tell the refusal from "no row" reads `*row`, not the return; so is the
+ * ST-many refusal, *row WF_STREAM_REFUSAL. `quiet` 1: no record, no reach;
+ * 0: a SELECTION (traced, counted). */
 #define fd_find MF_NS(fd_find)
 int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
-            int quiet, fd_form *pick, const char **row);
+            wf_frame_row frame, int quiet, fd_form *pick, const char **row);
 /* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
  * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
  * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
@@ -947,6 +967,10 @@ const char *wf_plan_brow(const struct wf_plan *plan);
  * (the floor): the third member of the key (frame row, method row, renderer
  * row) the text is keyed by; MF_TRACE's FDROUTE prints it. */
 const char *wf_plan_bren(const struct wf_plan *plan);
+/* The T-FRAME row whose skeleton renders the plan (E-find, E-generic):
+ * MF_TRACE's FDROUTE `frame=`. */
+#define wf_plan_frame   MF_NS(wf_plan_frame)
+const char *wf_plan_frame(const struct wf_plan *plan);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic")
  * and E-find's row (D172 S3: the family's own find-then-verify text). */

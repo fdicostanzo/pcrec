@@ -32,6 +32,9 @@ question table or named exception, against the kit's sources:
      `< b.v`, as S1095's SABOTAGE line does): the backstop must see a twin that
      does not ask the relation. A plant that held the call's text would show
      only that a conforming twin is flagged (sp1dfix, review 2026-11-05 F2).
+     Since plan_frame.md 3.0a (S2985, its row (D)): a second renderer list,
+     the one accessor's loop spelled over `ren_search[` in an unlisted
+     function, must turn B red too.
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -67,8 +70,10 @@ BACKSTOP = LIVE + BYPASS
 # 36 at unit 1a's base; 1d changed the shapes, sp1dfix made the count exact;
 # 36 at 1e (Table D's `kit_walk(&wf_dtable` gone: D-hors is T-FIND's row).
 # 48 at plan_frame.md 3.0a commit 1 (the `ren_find(` calls and the renderer
-# tables' definitions, each inside a member).
-HITS = 48
+# tables' definitions, each inside a member); 50 at 3.0a commit 2 (the
+# renderable set's and the composer arm's ren_find( calls; fd_renderer's loop
+# held none of the shapes).
+HITS = 50
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -81,8 +86,12 @@ HITS = 48
 # plan_frame.md 3.0a commit 1 (wf_prepare's row now the plan function
 # wf_plan_site's; ren_find, the search/stream/check/skeleton/fused renderer
 # tables, the support table and Table S in; fd_renderer stays until commit 2
-# moves its rows into the search renderer table).
-MEMBER_COUNT = 60
+# moves its rows into the search renderer table); 61 at 3.0a commit 2
+# (fd_renderer out, its rows the search table's E-stmt rows; the renderable
+# set wf_renders and the composer's accessor wf_stmt_arm in: the design's
+# expected 59 counted no function for either, plan_frame.md §2.4 "re-derives
+# both numbers from its map").
+MEMBER_COUNT = 61
 
 passed = failed = 0
 SHAPE_HITS = {}     # the last census()'s lines per BACKSTOP shape
@@ -323,6 +332,23 @@ def main():
                 planted = [x for x in pst if x.startswith("window.c:")]
                 (ok() if planted else bad("bypass plant `%s` (no pick_takes( text) did not turn the backstop red" % label))
                 print("bypass plant `%s`: %d stray hit(s)" % (label, len(planted)))
+        # C2r (plan_frame.md 3.0a §5 row (D), S2985 [rev2 F28, rev2.2 R4]): a SECOND
+        # renderer list in an unlisted function, the one accessor's loop spelled
+        # over the search renderer table's name (ren_find's own loop is generic:
+        # it names no table, so a copy of it would hold no shape)
+        text = ("\nstatic const void *census_twin(wf_frame_row f, fd_form pick)\n{\n"
+                "    for (size_t i = 0; i < RB_N; i++)\n"
+                "        if (ren_search[i].k.frame == f && (ren_search[i].k.keys & REN_PICK(pick)))\n"
+                "            return &ren_search[i];\n"
+                "    return NULL;\n}\n")
+        with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
+            shutil.copytree(src, os.path.join(t, "src"))
+            with open(os.path.join(t, "src", "window.c"), "a") as fh:
+                fh.write(text)
+            _, pst, _ = census(os.path.join(t, "src"), rows, count=False)
+            planted = [x for x in pst if x.startswith("window.c:")]
+            (ok() if planted else bad("renderer-list plant (S2985) did not turn the backstop red"))
+            print("renderer-list plant (S2985): %d stray hit(s)" % len(planted))
         # C3: a decider reduced to a bare prototype must turn A red.
         fn_row = next(r for r in rows if r["kind"] == "fn")
         with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:

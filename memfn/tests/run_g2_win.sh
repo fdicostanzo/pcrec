@@ -177,10 +177,14 @@ plant_spec() {
     S2991) # plan_frame.md 3.0a (P): B-pair's loop-state slot emptied: the frontiers are
         # undeclared, so every B-pair site's text fails to compile (the pair census)
         echo 'window.c@@    ofs_pair_decl(b, \&t);@@    (void)t;' ;;
+    S2986) # plan_frame.md 3.0a (K): the support table's SHIFT cell for HORS removed: Table S
+        # answers ST-none for HORS on E-find, the renderable set drops it and T-FIND never
+        # picks it (the hors census falls below its floor; no dense window gets a D-hors table)
+        echo 'window.c@@    { "HORS",      FF_HORS,      WF_ST_SHIFT,@@    { "HORS",      FF_HORS,      0,' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2987 S2989 S2991"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

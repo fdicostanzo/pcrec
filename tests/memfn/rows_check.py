@@ -97,14 +97,22 @@ subject):
      reach_equal.py --map is the map's other reader (REACH equality through
      it, and the map held to BASE's own trace).
 
-  THE RENDERER ROWS (R; span_pick 1e review F4): the text of a FIND site is
-     keyed by (frame row, method row, renderer row), and `MFTRACE FDROUTE`
-     prints all three (`row=`, and `ren=` the renderer row: Table B's row for
-     E-find, the composer's arm otherwise). tests/memfn/renderer_rows.tsv
-     declares the pairs: every pair any traced compile of the run prints is a
-     declared one (a one-line plant that changes which renderer renders a pick
-     prints an undeclared pair), and a declared pair with a witness is
-     printed by it (without one: UNREACHED).
+  THE RENDERER ROWS (R; span_pick 1e review F4, re-keyed at plan_frame.md
+     3.0a): the text of a FIND site is keyed by (frame row, method row,
+     renderer row), and `MFTRACE FDROUTE` prints all three (`frame=`, `row=`,
+     and `ren=` the renderer row: E-find's search or fused row, the E-stmt
+     row's arm for the composer). tests/memfn/renderer_rows.tsv declares the
+     triples: every triple any traced compile of the run prints is a declared
+     one (a one-line plant that changes which renderer renders a pick prints
+     an undeclared triple), and a declared triple with a witness is printed
+     by it (without one: UNREACHED). A witness compile REFUSED with a T-FIND
+     row's routed pick or Table S's refusal named is red with its own message
+     (the refusal invariant, plan_frame.md §5 rows B, C, R).
+
+  THE SUPPORT PIN (S; plan_frame.md 3.0a §2.5.2): tests/memfn/stream_support.tsv
+     against `arm_fixtures --streams` (window.c's support table): every row and
+     cell equal, and a RULING row's quoted sentence present in its cited ledger
+     at the cited sha (`git show`), so its expectation is the owner's text.
 
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
@@ -281,7 +289,7 @@ class Art:
         for ln in err.decode("utf-8", "replace").splitlines():
             if ln.startswith("MFTRACE FDROUTE "):
                 d = dict(t.partition("=")[::2] for t in ln.split()[2:])
-                self.routes.append((d.get("row"), d.get("ren")))
+                self.routes.append((d.get("frame"), d.get("row"), d.get("ren")))
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -291,8 +299,17 @@ def compile_pattern(root, tp, flags, pat, label):
     rt = run([tp] + argv_tail)
     rp = run([os.path.join(root, "build/pcrec")] + argv_tail)
     if rt.returncode or rp.returncode or not rp.stdout:
+        # THE REFUSAL INVARIANT (plan_frame.md §5 rows B, C, R): a refusal that
+        # names T-FIND's routed pick, or Table S's ST-many, is its own failure
+        msg = rp.stderr.decode("utf-8", "replace")
+        m = re.search(r"the finder row (\S+)'s routed pick|Table S'?s? (?:answers )?ST-many", msg)
+        if m:
+            bad("%s: REFUSED naming %s: a T-FIND pick its frame does not render (the "
+                "renderable set or Table S): %s" % (label, m.group(1) or "Table S's ST-many refusal",
+                                                    msg[:200]))
+            return None
         bad("%s: does not compile (traced rc %d, plain rc %d): %s"
-            % (label, rt.returncode, rp.returncode, rp.stderr.decode()[:200]))
+            % (label, rt.returncode, rp.returncode, msg[:200]))
         return None
     if rt.stdout != rp.stdout:
         bad("%s: the MF_TRACE pcrec's artifact differs from build/pcrec's" % label)
@@ -753,16 +770,18 @@ def main():
     # the trace's FDROUTE prints the third. Every (row, ren) pair any traced
     # compile of this run prints is a declared renderer pair; every declared
     # pair with a witness is printed by it (a pair with none is UNREACHED).
-    rr = read_tsv(os.path.join(root, os.environ.get("RENDERER_ROWS_TSV", "tests/memfn/renderer_rows.tsv")), 5)
+    rr = read_tsv(os.path.join(root, os.environ.get("RENDERER_ROWS_TSV", "tests/memfn/renderer_rows.tsv")), 6)
     if not rr:
         bad("renderer_rows.tsv declares no line (the reader is blind)")
-    declared = {(c[0], c[1]) for c in rr}
+    declared = {(c[2], c[0], c[1]) for c in rr}
     if len(declared) != len(rr):
-        bad("renderer_rows.tsv declares a (row, ren) pair twice")
+        bad("renderer_rows.tsv declares a (frame, row, ren) triple twice")
     wit_arts = []
-    for rw, ren, frame, wf, wit in rr:
-        if frame not in ("E-find", "composer"):
-            bad("renderer_rows.tsv %s/%s: frame %r is neither E-find nor composer" % (rw, ren, frame))
+    for rw, ren, frame, wf, wit, fused in rr:
+        if frame not in ("E-find", "E-stmt"):
+            bad("renderer_rows.tsv %s/%s: frame %r is neither E-find nor E-stmt" % (rw, ren, frame))
+        if fused not in ("YES", "NO") or (fused == "YES") != (frame == "E-find" and ren == "B-fn"):
+            bad("renderer_rows.tsv %s/%s: fused %r (B-fn on E-find is the one fused row)" % (rw, ren, fused))
         if wit == "-":
             unreached.append("renderer pair %s/%s (%s): no witness pattern is declared for it" % (rw, ren, frame))
             continue
@@ -770,27 +789,71 @@ def main():
         if art is None:
             continue
         wit_arts.append(art)
-        if (rw, ren) in art.routes:
+        if (frame, rw, ren) in art.routes:
             ok()
         else:
-            bad("renderer %s/%s: its witness %r printed FDROUTE pairs %s, not the declared one"
-                % (rw, ren, wit, sorted(set(art.routes), key=str)))
+            bad("renderer %s/%s/%s: its witness %r printed FDROUTE triples %s, not the declared one"
+                % (frame, rw, ren, wit, sorted(set(art.routes), key=str)))
     seen = collections.Counter()
     for art in arts + wit_arts:
         for rt in art.routes:
             seen[rt] += 1
-            if rt[1] is None:
-                bad("%s: a FDROUTE record for row %s carries no `ren=` (the renderer row is absent)"
-                    % (art.label, rt[0]))
+            if rt[2] is None or rt[0] is None:
+                bad("%s: a FDROUTE record for row %s carries no `ren=` or no `frame=`"
+                    % (art.label, rt[1]))
             elif rt not in declared:
-                bad("%s: FDROUTE pair (%s, %s) is no declared renderer row (renderer_rows.tsv)"
+                bad("%s: FDROUTE triple (%s, %s, %s) is no declared renderer row (renderer_rows.tsv)"
                     % ((art.label,) + rt))
     if not seen:
         bad("no traced compile printed a FDROUTE record (section R's trace control is vacuous)")
     else:
         ok()
-    print("renderer rows: %d declared pairs, %d witnessed, %d FDROUTE records over %d distinct pairs"
+    print("renderer rows: %d declared triples, %d witnessed, %d FDROUTE records over %d distinct triples"
           % (len(declared), len(wit_arts), sum(seen.values()), len(seen)))
+
+    # ---- S. the support pin (plan_frame.md 3.0a §2.5.2: tests/memfn/stream_support.tsv) ----
+    # Each pin row's cells against the kit's table as arm_fixtures prints it;
+    # a RULING row's quoted sentence must be in its cited ledger at its sha.
+    pin = read_tsv(os.path.join(root, os.environ.get("STREAM_SUPPORT_TSV", "tests/memfn/stream_support.tsv")), 6)
+    r = run([fx, "--streams"])
+    kit = [ln.split("\t") for ln in r.stdout.decode().splitlines() if ln and not ln.startswith("#")]
+    if r.returncode or not kit:
+        bad("arm_fixtures --streams printed no support row (rc %d): the reader is blind" % r.returncode)
+    if not pin:
+        bad("stream_support.tsv declares no row (the reader is blind)")
+    kmap = {c[0]: c[1:4] for c in kit if len(c) == 4}
+    pmap = {c[0]: c for c in pin}
+    for k in sorted(set(pmap) - set(kmap)):
+        bad("stream_support.tsv row %s: the kit's support table has no such search" % k)
+    for k in sorted(set(kmap) - set(pmap)):
+        bad("the kit's support table row %s is no stream_support.tsv row" % k)
+    ledgers = {}
+    for k in sorted(set(pmap) & set(kmap)):
+        c = pmap[k]
+        if c[1:4] != kmap[k]:
+            bad("support row %s: the pin says RESTART/MASK/SHIFT %s, the kit's table %s"
+                % (k, "/".join(c[1:4]), "/".join(kmap[k])))
+        else:
+            ok()
+        if c[4] == "RULING":
+            m = re.match(r'^"([^"]+)" @ (\S+) ([0-9a-f]{7,40})$', c[5])
+            if not m:
+                bad("support row %s: a RULING basis is `\"SENTENCE\" @ PATH SHA`, not %r" % (k, c[5]))
+                continue
+            key = (m.group(2), m.group(3))
+            if key not in ledgers:
+                g = run(["git", "-C", root, "show", "%s:%s" % (key[1], key[0])])
+                ledgers[key] = g.stdout.decode("utf-8", "replace") if not g.returncode else None
+            if ledgers[key] is None:
+                bad("support row %s: its ledger %s at %s is not readable (git show)" % ((k,) + key))
+            elif m.group(1) not in ledgers[key]:
+                bad("support row %s: the ruling's sentence %r is absent from %s at %s" % ((k, m.group(1)) + key))
+            else:
+                ok()
+        elif c[4] != "DERIVED":
+            bad("support row %s: source %r is neither RULING nor DERIVED" % (k, c[4]))
+    print("support pin: %d rows, %d in the kit's table, %d ruling ledger(s) read"
+          % (len(pmap), len(kmap), len(ledgers)))
 
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}

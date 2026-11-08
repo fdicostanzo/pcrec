@@ -1614,7 +1614,7 @@ WF_CT_E(ct_e_stmt, "E-stmt", CM(STMT), CM(ASSIGN) | CM(ON_MISS), MF_ANY)
 /* E-find's and the floor's contracts are their arms' (below). */
 static const gate_contract wf_find_ct, wf_floor_ct;
 
-typedef enum { E_FUNC, E_STMT, E_FIND, E_GENERIC } wf_frame_row;
+/* (the rows' ids: kit.h's wf_frame_row) */
 /* THE ORDER (the kit manager's R1 ruling): the legacy rows first, so every
  * site the legacy translation serves keeps today's bytes; E-find before the
  * floor, so S3's movers are exactly the sites the legacy rows decline that
@@ -1881,9 +1881,17 @@ _Static_assert(sizeof ren_skel / sizeof *ren_skel == RK_N, "every skeleton row i
 
 /* THE SEARCH RENDERER TABLE (§2.4, §2.6.1 [rev2 F2, F11]), keyed (T-FRAME
  * row, pick): each row renders the pick it names. A pick no row names (an
- * unbuilt form: V1, W64, A3, NONE) has no search text on that frame. Its
- * LOOP STATE is written before the frame's RAISE; its HEAD is the loop's
- * head (the find and the bound, or D-hors's bound and probe). */
+ * unbuilt form: V1, W64, A3, NONE; on E-stmt PAIR and HORS) has no search
+ * text on that frame, and the frame's RENDERABLE SET (wf_renders, T-FIND's
+ * gate) lacks it. An E-find row's LOOP STATE is written before the frame's
+ * RAISE; its HEAD is the loop's head (the find and the bound, or D-hors's
+ * bound and probe). An E-stmt row is the composer's (compose.c select_arm,
+ * since 3.0a's commit 2; `fd_renderers` until then): its ARM renders the
+ * pick, keyed also by the site's `end_back` (its predicate, over the site).
+ * (D2's RUN pick retired with D2: a RUN span 0 takes the composer's walk
+ * with no deciding row, the same text.) */
+static int stmt_end0_holds(const void *x) { return !((const mf_site *)x)->end_back; }
+static int stmt_end1_holds(const void *x) { return !!((const mf_site *)x)->end_back; }
 typedef struct ren_search_row {
     ren_key     k;
     uint8_t     libc;           /* its text calls memchr                     */
@@ -1892,26 +1900,38 @@ typedef struct ren_search_row {
     void      (*state)(wf_rc *rc, kb *b);                               /* or NULL */
     int       (*find)(wf_rc *rc, kb *b, const char *p, int32_t d);      /* or NULL */
     int       (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
+    const arm  *arm;            /* E-stmt: the composer's arm                */
     const char *basis;
 } ren_search_row;
-enum { RB_PAIR, RB_MEMCHR, RB_WALK, RB_HORS, RB_N };
+enum { RB_PAIR, RB_MEMCHR, RB_WALK, RB_HORS, RB_ST_MEMCHR, RB_ST_MEMCHR_B, RB_ST_BACK, RB_ST_WALK,
+       RB_ST_WALK_B, RB_N };
 static const ren_search_row ren_search[] = {
     [RB_PAIR]   = { { E_FIND, REN_PICK(FF_PAIR), "B-pair", NULL }, 1, "", NULL, b_pair_state,
-                    wf_b_pair, find_head,
+                    wf_b_pair, find_head, NULL,
                     "PAIR elsewhere (any two bytes, a cube outside a run term included): "
                     "fn-pair's two memchr streams (ofs_pair_text) at the stop's offset" },
     [RB_MEMCHR] = { { E_FIND, REN_PICK(FF_LIBC) | REN_PICK(FF_LIBC_BACK), "B-memchr", NULL }, 1, "",
-                    NULL, NULL, wf_b_memchr, find_head,
+                    NULL, NULL, wf_b_memchr, find_head, NULL,
                     "LIBC (D1) or LIBC_BACK (D1c): memchr for the stop's byte, a stop below "
                     "the candidate raising C first" },
     [RB_WALK]   = { { E_FIND, REN_PICK(FF_WALK), "B-walk", NULL }, 0, "", NULL, NULL,
-                    wf_b_walk, find_head,
+                    wf_b_walk, find_head, NULL,
                     "WALK (R7w, D1w): C advanced while the stop's byte is outside its set "
                     "(C-table or C-own)" },
     [RB_HORS]   = { { E_FIND, REN_PICK(FF_HORS), "B-hors", NULL }, 0, "+hors", b_hors_prepare, NULL,
-                    NULL, d_hors_head,
+                    NULL, d_hors_head, NULL,
                     "HORS (D-hors): no find; the bound, then the probe of the window's last "
                     "position (its miss resumes by the stream's text)" },
+    [RB_ST_MEMCHR]   = { { E_STMT, REN_PICK(FF_LIBC), "pf_memchr", stmt_end0_holds }, 0, "", NULL, NULL,
+                         NULL, NULL, &pf_memchr_arm, "LIBC: the memchr row" },
+    [RB_ST_MEMCHR_B] = { { E_STMT, REN_PICK(FF_LIBC), "pf_memchr_bounded", stmt_end1_holds }, 0, "", NULL,
+                         NULL, NULL, NULL, &pf_memchr_bounded_arm, "LIBC, end_back 1: the bounded memchr row" },
+    [RB_ST_BACK]     = { { E_STMT, REN_PICK(FF_LIBC_BACK), "pf_memchr_back", NULL }, 0, "", NULL, NULL,
+                         NULL, NULL, &pf_memchr_back_arm, "LIBC_BACK: the memchr below the candidate" },
+    [RB_ST_WALK]     = { { E_STMT, REN_PICK(FF_WALK), "pf_walk", stmt_end0_holds }, 0, "", NULL, NULL,
+                         NULL, NULL, &pf_walk_arm, "WALK: the walk" },
+    [RB_ST_WALK_B]   = { { E_STMT, REN_PICK(FF_WALK), "pf_walk_bounded", stmt_end1_holds }, 0, "", NULL,
+                         NULL, NULL, NULL, &pf_walk_bounded_arm, "WALK, end_back 1: the bounded walk" },
 };
 _Static_assert(sizeof ren_search / sizeof *ren_search == RB_N, "every search renderer row is declared");
 
@@ -2060,6 +2080,25 @@ static size_t table_s(fd_form search, wf_frame_row f, const ren_fused_row *fu, u
     return r;
 }
 
+/* THE RENDERABLE SET (kit.h; §2.4): frame `f` renders `pick` for site `s`
+ * iff a search renderer row there names it (the predicate of an E-stmt row
+ * reads the site; an E-find row has none) and Table S does not answer
+ * ST-none; 2 where it answers ST-many. */
+int wf_renders(wf_frame_row f, fd_form pick, const mf_site *s)
+{
+    uint8_t st;
+    if (!ren_find(REN_ROWS(ren_search), f, REN_PICK(pick), s)) return 0;
+    size_t r = table_s(pick, f, NULL, &st);
+    return r == ST_ONE ? 1 : r == ST_MANY ? 2 : 0;
+}
+
+/* The composer's arm for `pick` (kit.h): its E-stmt search renderer row's. */
+const arm *wf_stmt_arm(const mf_site *s, fd_form pick)
+{
+    const ren_search_row *r = ren_find(REN_ROWS(ren_search), E_STMT, REN_PICK(pick), s);
+    return r ? r->arm : NULL;
+}
+
 /* E-FIND's SETUP: T-FIND (fd_find, the one walk, with the stop's facts and
  * D-hors's window), then the renderer row that renders its pick on E-find:
  * a fused row first (B-fn), else the search renderer table's row, into
@@ -2079,9 +2118,11 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
     const mf_site *s = d->s;
     wf_facts f = { s, m->alt };
     fd_stop st = { .set = w->set[w->stop_ix], .off = w->off[w->stop_ix], .rate = d->rate,
-                   .wf = &f, .renders_pair = 1 };
+                   .wf = &f };
     st.hw = (uint8_t)hors_window(d, &st.wlo, &st.whi);
-    if (!fd_find(art, s, def, &st, quiet, &fx->pick, &fx->brow)) return 0;
+    /* fx->brow WF_STREAM_REFUSAL with no pick: Table S's ST-many refusal,
+       which wf_plan_site raises (never a move to the floor) */
+    if (!fd_find(art, s, def, &st, E_FIND, quiet, &fx->pick, &fx->brow)) return 0;
     fx->wlo = st.wlo;
     fx->whi = st.whi;
     if (fx->pick == FF_PAIR && !fx->fn) {
@@ -2150,6 +2191,12 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
     plan_of(d, def, w);
     fx->fn = NULL;
     if (wf_find_decide(art, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
+    if (fx->brow && !strcmp(fx->brow, WF_STREAM_REFUSAL)) {
+        /* Table S's ST-many, raised after T-FIND's gate held (§2.4 [rev2.2 R3]) */
+        *why = "E-find: Table S answers ST-many for T-FIND's pick (two streams or more on the "
+               "frame), REFUSED until a row with evidence exists (D186)";
+        return -1;
+    }
     wf_facts f = { s, d->a[d->ch].alt };
     gate_in in = { s, def, NULL, NULL, &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -3131,6 +3178,12 @@ const char *wf_plan_bren(const struct wf_plan *w)
 {
     if (w->row != &wf_find_arm) return NULL;
     return w->fused ? w->fused->k.id : w->srch ? w->srch->k.id : NULL;
+}
+
+/* The T-FRAME row whose skeleton renders the plan (kit.h). */
+const char *wf_plan_frame(const struct wf_plan *w)
+{
+    return w->skel ? w->skel->k.id : NULL;
 }
 
 /* The family row that renders the plan: E-find's arm or the floor's. */

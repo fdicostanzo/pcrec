@@ -1664,6 +1664,21 @@ static int finder_rows_mode(void)
     return 0;
 }
 
+/* plan_frame.md 3.0a §2.5.2: THE SUPPORT TABLE as the kit holds it (window.c
+ * wf_support, kit.h wf_support_rows), one line per row: the search, then
+ * yes/no for RESTART, MASK and SHIFT. rows_check.py §S holds it to
+ * tests/memfn/stream_support.tsv, whose RULING rows are the owner's text. */
+static int streams_mode(void)
+{
+    size_t n;
+    const wf_support_row *r = wf_support_rows(&n);
+    printf("#search\tRESTART\tMASK\tSHIFT\n");
+    for (size_t i = 0; i < n; i++)
+        printf("%s\t%s\t%s\t%s\n", r[i].search, r[i].streams & WF_ST_RESTART ? "yes" : "no",
+               r[i].streams & WF_ST_MASK ? "yes" : "no", r[i].streams & WF_ST_SHIFT ? "yes" : "no");
+    return 0;
+}
+
 /* R-MS3's fixtures: the forms that render resolve, others are refused; the
  * text hash ignores a rename, a comment and layout, and moves on a one-
  * operator edit. */
@@ -2353,6 +2368,7 @@ int main(int argc, char **argv)
         return fd_site_mode(argv[2], set, opts, digest);
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
+    if (!strcmp(argv[1], "--streams")) return streams_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();
     if (!strcmp(argv[1], "--site-text") && argc > 2) return site_text_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);

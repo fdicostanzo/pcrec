@@ -260,37 +260,6 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const char *site_check(const mf_site *s);
 
-/* THE COMPOSER'S RENDERER ROWS for a T-FIND pick (span_pick 1e; U3 less
- * OFS): first match over (the method row's pick, the site's `end_back`, or
- * END_EITHER), the arm that renders it, keyed so the text is the frame's (the
- * composer's arms), the method row's (finder.c's fd_rows) and this row's.
- * LIBC is the memchr rows (bounded by end_back), LIBC_BACK the memchr below
- * the candidate, WALK the walks. A pick no row names (NONE, V1, W64, A3:
- * unbuilt; PAIR and HORS: the window family's alone) has no renderer here,
- * and the composer refuses it. (D2's RUN pick retired with D2: a RUN span 0
- * takes the walk below with no deciding row, the same text.) */
-#define END_EITHER (-1)             /* a renderer row's `end_back` wildcard */
-static const struct {
-    fd_form    pick;
-    int        end_back;        /* 0, 1 or END_EITHER */
-    const arm *a;
-} fd_renderers[] = {
-    { FF_LIBC,      0,  &pf_memchr_arm },
-    { FF_LIBC,      1,  &pf_memchr_bounded_arm },
-    { FF_LIBC_BACK, END_EITHER, &pf_memchr_back_arm },
-    { FF_WALK,      0,  &pf_walk_arm },
-    { FF_WALK,      1,  &pf_walk_bounded_arm },
-};
-
-static const arm *fd_renderer(const mf_site *s, fd_form pick)
-{
-    for (size_t i = 0; i < sizeof fd_renderers / sizeof fd_renderers[0]; i++)
-        if (fd_renderers[i].pick == pick &&
-            (fd_renderers[i].end_back == END_EITHER || fd_renderers[i].end_back == !!s->end_back))
-            return fd_renderers[i].a;
-    return NULL;
-}
-
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
@@ -313,8 +282,11 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     fd_form pick;
     /* the return is 1 iff a row decides; `rid` alone is the signal here (kit.h):
        the "?need" refusal names a row (rid set) with no pick, and renders nothing */
-    fd_find(art, s, def, NULL, quiet, &pick, &rid);
-    const arm *ra = rid ? fd_renderer(s, pick) : NULL;
+    fd_find(art, s, def, NULL, E_STMT, quiet, &pick, &rid);
+    /* the arm the search renderer table's E-stmt row names (window.c; until
+       plan_frame.md 3.0a this file's fd_renderers): none for a pick the
+       frame does not render, or for a refusal (`?need`, `?stream`) */
+    const arm *ra = rid ? wf_stmt_arm(s, pick) : NULL;
     *row = rid;
     if (rid) {
         for (size_t i = 0; ra && i < NARMS; i++)
@@ -1101,7 +1073,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         gate_in in = { s, def, NULL, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
-        if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
+        if (rid && !strcmp(rid, WF_STREAM_REFUSAL))
+            snprintf(r, sizeof r, " (Table S's ST-many refusal of the finder's pick)");
+        else if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
         return kit_fail(art, "mf_define: no row serves this site%s: %s", r,
                         f[0] ? f : rid ? "(its arm is denied or does not apply)"
                                        : "(no row applies; the generic row must)");
@@ -1147,13 +1121,15 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
 #ifdef MF_TRACE
     /* the finder row deciding the site's find: the routed row, or (D172 S3)
        the FIND slot's row deciding E-find's stop (fd_find), whose pick
-       E-find renders; `ren` is the renderer row that did (the composer's
-       fd_renderers arm, or Table B's row), the third member of the key the
-       text is keyed by */
+       E-find renders; `ren` is the renderer row that did (the search
+       renderer table's E-stmt arm, or E-find's search or fused row), and
+       `frame` the T-FRAME row it rendered on (plan_frame.md 3.0a): the key
+       the text is keyed by */
     const char *frow = rid ? rid : wplan ? wf_plan_brow(wplan) : NULL;
     if (frow)
-        fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s ren=%s\n",
-                art->trace_id, h, frow, row->ct->row, rid ? row->ct->row : wf_plan_bren(wplan));
+        fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s ren=%s frame=%s\n",
+                art->trace_id, h, frow, row->ct->row, rid ? row->ct->row : wf_plan_bren(wplan),
+                rid ? "E-stmt" : wf_plan_frame(wplan));
     /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
        rendering it, the finder row deciding its find where one does) */
     if (wpath)

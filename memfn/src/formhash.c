@@ -269,8 +269,8 @@ static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf
  *
  *   walk, libc   canon()'s two sites before S2c, byte for byte: their hashes
  *                did not move (grid1's and the interim sets' readers)
- *   pair         a window site's stop `{X,x}` at offset 0 (the window asker
- *                renders PAIR: T-FIND's PAIR row, E-find's two streams)
+ *   pair         a window site's stop `{X,x}` at offset 0 (E-find renders
+ *                PAIR: T-FIND's PAIR row, E-find's two streams)
  *   settest      kit_set_test on the candidate's byte, by COMPARE count: c1 a
  *                singleton, c2 two singletons, cn three or more (\w: 7)
  *   rc-words     T-CMP `words` (a masked run), by WORD count: w1 one word (L 4),
@@ -443,7 +443,7 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         break;
     case MF_FH_WINDOW:
         /* a window site whose one span is the stop at offset 0, verify YES,
-           its core the stop: the window asker (renders_pair) */
+           its core the stop: E-find, which renders PAIR */
         fh_site(e, s);
         s->form = MF_FORM_STMT;
         s->op = MF_OP_FIND;
