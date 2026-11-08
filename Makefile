@@ -134,8 +134,11 @@ LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 # directories as LIBSRCS and KITSRCS.
 KITSRCS  := $(wildcard memfn/src/*.c)
 KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
+# levels.def/targets.def/targets_c.def joined at unit U2 (lane u2): fields.def
+# includes levels.def, so a levels or target row edit rebuilt NOTHING before
+# (a hand plant of levels.def read a stale build)
 KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def \
-            memfn/src/plan_cost.def
+            memfn/src/plan_cost.def memfn/src/levels.def memfn/src/targets.def memfn/src/targets_c.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
 # [INLINE-C] stage 3: shared/, the dependency-free LEAF sources compiled

@@ -4,8 +4,8 @@
 #
 # Plant: memfn/src/targets.def's 32-byte target row drops R2's attribute from both its needs and its
 # features (the row as target_seam.md §2 first wrote it), so the columns still agree with each other.
-# (Re-aimed at unit U2, lane u2: the features column gained `sse2` after `sahf`, so the edit is
-# spelled `sahf,sse` to hit both columns.)
+# (Re-aimed at unit U2, lane u2: the features column gained the 16-byte level's feature right after
+# R2's attribute, so the anchor is cut short to match both columns.)
 # Detector: memfn/tests/check_targets.sh (part 1 of tests/memfn/run_targets.sh, arm memfntargets): gcc
 # at the family floor plus the row's attributes no longer defines what gcc's own -march for that row
 # defines (one macro short); the entries' literal features row (part 2) is red too.

@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 24  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 25  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -201,7 +201,16 @@
                            mf_art_begin refuses a row whose noise state or
                            noise is out of shape. No kit row reads noise. A
                            LAYOUT move; no MF_VOCAB or MF_CLASS_V move; no
-                           pcrec byte moved. */
+                           pcrec byte moved. 25 ([XARCH-DEV] unit U2, R-37;
+                           target_seam_units.md §2): THE ART'S TARGET: new
+                           entry mf_art_target; mf_level.guard becomes
+                           `needs` (feature tokens; admission is the kit's,
+                           against the target's features); policy bit 0
+                           (MF_P_PORTABLE_ONLY) is read by no kit code (an
+                           unnamed bit, class OTHER); mf_kernel_find_any
+                           takes a target for its level mask. No mf_site
+                           layout move; no MF_VOCAB or MF_CLASS_V move; no
+                           pcrec byte moved at default flags. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
