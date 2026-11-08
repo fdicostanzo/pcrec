@@ -3628,3 +3628,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Stage 3 unit 3.0 ("the plan takes the frame", span_pick.md :408): design lane `u30d` (opus, worktree u30d, deliver a22b4fb00) writes docs/design/memfn/plan_frame.md in span_cards' shape.
   - Its content: goals; the frame facts pcrec states; the reply growth; the asker-fact retirement; the MF_SITE_ABI readers; pcrec-side asks for main; units; what row 1 needs, including Frank's controlled candidate set.
   - Next: a critic re-check before any build.
+- 11-07 ~22:50: u30d DELIVERED: docs/design/memfn/plan_frame.md rev 0 (tip e23c42408; lane closed).
+  - Two units: 3.0a kit-only; 3.0b the seam plus pcrec's asks, in one commit.
+  - The reply gains framed, frame_row, method, renderer, resume (row ids/enums, no C). The asker fact retires into one renderer table keyed by (frame row, pick). One MF_SITE_ABI event.
+  - 5 pcrec-side asks; 6 questions (Q6 for Frank: row 1 waits for an inline one-member finder; recommended yes).
+  - HELD before its critic round: Frank's proposal (11-07) that candidate SEARCH and candidate VALIDATION are separate primitives, composed. The kit manager's reading is a triple: search, candidate stream (stream vs one-shot), check. It may reshape 3.0's reply, which already has method + renderer + a two-valued resume. Awaiting his adopt/not.
