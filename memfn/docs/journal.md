@@ -3694,3 +3694,6 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-08 14:45: K0 COMPLETE: 453 mech GREEN at a6f51ac70. done: R-36 posted; main messaged.
 - 11-08 15:05: main MERGED K0 (d9df92c0d, with lane/memfn-k1107 4accfde4a; pushed a47aa97ce) and filed D146 add. 1 (target tokens). Main's P1 lane p1cpu started 15:00. Prune worktrees/k0 and s2e at the next quiet pass.
 - 11-08 15:10: main's C4 arch-blind check went red at the K0 merge: k0fix2's S2977 comment named an ISA. Main reworded it (b56c27d60). No kit branch carries S2977. Lesson: sabotage-row and test comments are in C4's scope; name targets by their kit token, never by an ISA name.
+- 11-08 ~17:00: main LANDED P1 (bfecd6143: -fmemfn-simd[=TOKEN,..], the kit's parse entries, --list-cpu-targets; 0 bytes) and filed R-37 (U2, landing with pcrec's U3 in one merge and one abi event).
+  - The kit worktree moved to lane/memfn-k1108 (from main 7b4e3cc7a, with the k1107 tail merged). ack R-37 b9bd391fd.
+  - Lane u2 (opus) in worktrees/u2, branch lane/memfn-u2 from main. Its STEP 1 is the U3 interface sheet (committed + messaged before code), relayed to main at once. Kit-only; gate jobs are written, not queued.
