@@ -282,7 +282,7 @@ site; "the result" is `mf_defined`'s `mf_result`.
 | `method` | a row id | it resolves in `mf_finder_rows`, and on a composed E-find row that row's pick is `search`; the kit trace's FDROUTE `row=` prints it (`trace_format.md`) |
 | `plan_test[i]`, `stop_test` | TABLE / OWN | the text reads the offered table through the hook's own spelling (`table_name`'s text for that offset's ref, then `[`) / tests that offset against the kit's own set; except a position the search proved (§2.3's residue) and Q14's byte-tested stops |
 
-**Who decides each value in 3.0** `[rev2 F10, F14]` `[rev2.1 Q13]` (the define stores the same, §5 3.0b):
+**Who decides each value in 3.0** `[rev2 F10, F14]` `[rev2.1 Q13]` (the define stores the same: `[rev2.2 R1]` §4.1's field map):
 
 | frame | rendered by | `method` | `search` | `stream` | `fused`  |
 |---|---|---|---|---|--- |
@@ -513,7 +513,8 @@ resume is `wf_floor_expr` :2324. The stream pick moves no byte.
 A triple holds on a frame iff:
 
 1. T-FIND (or a fused row) gives a search the frame can render (the renderable set, §2.4);
-2. Table S answers exactly one stream for it on that frame, and the frame has that stream's renderer row
+2. Table S answers exactly one stream for it on that frame (`[rev2.2 R3]` two or more is the named ST-many
+   refusal, never a fall-through), and the frame has that stream's renderer row
    (by construction: streams(frame) is read from those rows);
 3. T-VERIFY's plan is rendered by the frame's check renderer row.
 
@@ -1112,7 +1113,7 @@ layer and the target included, and names whatever else necessarily moves with th
 are forced by test-only levers (`mf_lever`, R-30; no public deny for a lever, memory
 `pcrec-flag-follows-caller-effect`), so each effect is measured, not inferred. `[rev2.1 Q13]` A SIMD-on cell is NOT
 compared before plan row RUNG-LIST: the reply names the OFF triple only (the gap, §2.3), and that row's
-trigger is "row 1 compares a SIMD-on cell".
+trigger is `[rev2.2 R28]` "row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands".
 
 | comparison | varied | fixed | example cells | what else moves (stated in the record) |
 |---|---|---|---|---|
@@ -1121,17 +1122,18 @@ trigger is "row 1 compares a SIMD-on cell".
 | RENDERER: fused function vs inline composition `[rev2 F15]` | the renderer: the check's spelling AND the call boundary (two variables, named as such) | the triple (PAIR, RESTART, plan), the stop, ONE site, layer OFF (at the SIMD layer only B-fn gets vrun rungs), target generic | ONE B-fn site, B-fn vs B-pair forced by a test-only lever (not rev 1's smp05 vs pr09, which are two patterns) | the search text is shared (`ofs_pair_text`), so nothing else |
 | STOP (Table A's question, not the triple's) | the stop position and set | the search and the stream, the frame, layer, target | `{X,x}`@0 vs `'/'`@1, each under walk (the one search both stops admit) | the CHECK follows the stop (C-pin and C-stop, `window.c` :1078, :1082) and so does the run member (C-member, :1062): the record names the stop and the check as the two differing pieces |
 
-**What 3.0's reply must carry for them**: the triple, `fused`, and `plan_test`. `search`, `stream`
+**What 3.0's reply must carry for them**: the triple, `fused`, and `plan_test` `[rev2.2 R2]` with `stop_test`. `search`, `stream`
 and the check let a record name each piece; `fused` tells a fused renderer from a composed one with the same
 three pieces (the RENDERER row); `[rev2.1 Q13]` a SIMD-on cell's pieces are NOT told from the OFF cell's (the gap, §2.3; r12 F13: under
 `-fmemfn-simd`, `foo[Xx]bar`'s artifact runs VECTOR/MASK/TRIM while the OFF triple says PAIR/RESTART);
-`plan_test` tells two checks over one plan apart (r12 F12). The candidates' prices and the grid belong to the
+`plan_test` and `stop_test` tell two checks over one plan apart (r12 F12, r13 R2: the stop too). The candidates' prices and the grid belong to the
 kit's trace, not the reply: the reply carries no price until whole-artifact pricing (`span_pick.md` :84, rev5
 C1).
 
 ## 7. Open questions (plain words, each with a recommendation)
 
-`[rev2]` Rev 1's Q6, Q7 and Q8 are answered and dropped. Q4 is answered in part. Q11-Q13 are new.
+`[rev2]` Rev 1's Q6, Q7 and Q8 are answered and dropped. Q4 is answered in part. Q11-Q13 are new. `[rev2.2]` Q14
+and Q15 are new: choices r13's fixes force that its rulings did not make.
 
 | # | for | question | recommendation |
 |---|---|---|---|
@@ -1148,12 +1150,14 @@ C1).
 | Q11 | main | `[rev2 F25]` 3.0b is an MF_SITE_ABI layout event, which is [SEAM-READER-CENSUS]'s trigger ("every mf_* seam member has a kit reader or a listed trigger"). Does 3.0b fire that row? | **Fire it narrowly**: 3.0b's own new members each name their reader in the same commit (§2.3), which the row asks of them. The census of every OTHER seam member stays the row's own Boonies-weight work, not 3.0b's. Main edits the row's trigger to "the next layout event after 3.0b" |
 | Q12 | main | `[rev2 F22]` R-35 ruling (a) names "form, handoff and site_kind stated per frame at phase 1". ASK-1 states `site_kind` UNSTATED for the DFA prefilter's ask. Is that the intended reading? | **Yes, confirm it.** OFS sites state no kind today (`span_pick.md` :131's named exception). Stating one would let T-FIND decide those sites, which moves bytes, so it belongs with row 1 or later, under the exception's own trigger ("pcrec states a kind on OFS sites") |
 | ~~Q13~~ | kit manager | `[rev2.1 Q13]` Is F13 a rung LIST in 3.0b (needing the `fs` fact) or a LABEL? | **ANSWERED** (r12, "Ruling on rev 2's Q13"): a LABEL. The list is plan row RUNG-LIST, below |
+| Q14 | kit manager | `[rev2.2 R2]` `stop_test` (ruled: TABLE = hook stated AND the covering span offers this set, matched by offset) reports the define's OFFER at the stop. Only B-walk's find tests the stop through a member test that reads the table (`window.c` :2553); B-pair and B-memchr test the stop by its bytes (`shape` over `w->set[stop_ix]`, :2536; `two`, :2566), and B-hors probes `hl`, which may not be the stop (:2642-2656). There a TABLE `stop_test` names a table the text never reads. Should `stop_test` stay the offer fact everywhere, or be NONE where the search does not member-test the stop? And should it get its own sabotage row? | **Keep the offer fact, as ruled**: it is what the define stores (`w->table[stop_ix]`), it matches `plan_test`'s definition (which has the same exception at a position the search proved), and it needs no per-renderer rule. G2's class asserts the marker only where the rendered text member-tests the position (B-walk's stop, C-find's positions less the proven one) and asserts no marker for an OWN position. **Add row (AF)**, "`stop_test` always OWN while `plan_test` is right": red on G2's B-walk sites whose stop alone is offered. It makes 3.0b 19 rows (S2994-S3012); ids are taken at build time anyway |
+| Q15 | kit manager | `[rev2.2 R10, R19, R23]` Three fixes offered two forms and r13 named no preference. The text follows the first form of each. (1) `renderer_rows.tsv`'s frame column: FDROUTE prints `frame=` (a trace-format move, `trace_format.md`), or the column is stated as documentation only. (2) The SIMD-layer agreement: carried by `reach_equal.py` with `-fmemfn-simd` (a boxqueue job), or stated unchecked until RUNG-LIST. (3) `r33_sim/probe.c`: left to break (a lane study, named in the report), or edited in the seam commit | **(1) print `frame=`**: a column held against nothing is a check that cannot fail (learnings §3); the trace line is not an emitted byte. **(2) name the carrier**: the agreement at the SIMD layer is cheap to run, and that is where the gap lives. **(3) leave it to break**: lane files are historical after merge, and `span_pick.md` :378 already calls it lane evidence |
 
-**Plan rows proposed** `[rev2.1 Q13]` (for main to file in `docs/dev/plan.md`; the note had no plan-rows section, so this is it). Q2 and Q9 also name rows; this one is new.
+**Plan rows proposed** `[rev2.1 Q13]` (for main to file in `docs/dev/plan.md`; the note had no plan-rows section, so this is it). Q2 and Q9 also name rows; this one is new. `[rev2.2 R25, R28]` Its content gains VECTOR (the value and its support row, carried from 3.0), and its trigger is the kit manager's restatement, verbatim.
 
 | row | content | trigger |
 |---|---|---|
-| RUNG-LIST | the reply lists the SIMD rungs the define will render: `nrung`/`rung[]` (row id, search VECTOR, stream MASK, check TRIM, widest first), the three fact columns on `fn_rows` PREFIX, and the one pcrec fact it needs, whether the define's file-scope sink states `simd_open`/`simd_close` (`fs`), unless U2+U3 has moved vrun's admission into per-target arts by then (then each target art's reply is one rung and no sink fact is asked). Rev 2 designed it in full (u30d2, `45f3a337f`); D77 defers it | row 1 compares a SIMD-on cell, or the first MASK producer lands |
+| RUNG-LIST | the reply lists the SIMD rungs the define will render: `nrung`/`rung[]` (row id, search VECTOR, stream MASK, check TRIM, widest first), the three fact columns on `fn_rows` PREFIX, and the one pcrec fact it needs, whether the define's file-scope sink states `simd_open`/`simd_close` (`fs`), unless U2+U3 has moved vrun's admission into per-target arts by then (then each target art's reply is one rung and no sink fact is asked). `[rev2.2 R25]` It declares `mf_wsearch`'s VECTOR and the support table's VECTOR row (MASK; basis witness: vrun's text holds `m &= m - 1`), both removed from 3.0. Rev 2 designed it in full (u30d2, `45f3a337f`); D77 defers it | `[rev2.2 R28]` row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands |
 
 ## 8. Amendments this design makes to other documents (each lands with its unit)
 
@@ -1162,9 +1166,10 @@ C1).
 | `span_pick.md` :109, :114, :135, :420, :423, `[rev2 F25]` :45, :51, :369, :408 | T-FIND and T-FRAME are asked at PLAN time on framed asks; the asker fact's named exception retires (the staging diagram's "with the asker fact" and :51's `SF_WINDOW_STOP` sentence restated); N11's "plan-time at 3.0" is done; the find-then-verify plan is the triple (search, stream, check), and T-FIND is its search piece | 3.0b (the note's own revision, by the kit) |
 | `span_pick.md` §The tables `[rev2 F20]` | a new question table, **T-STREAM** ("how the text moves past a rejected candidate": the support table and Table S), the `answers` value the census needs; the check renderer and skeleton rows filed under T-FRAME; the fused rows under the named exceptions (`arms[]`, `fn_rows` BODY) | 3.0a |
 | `span_pick.md` :86 | the per-call frame is T-FRAME's; target/layer stay art facts (Q5) | 3.0b |
-| `window_site.md` §0 and §2.4 ("the decision reads no frame fact"; its "resume" row), `[rev2 F25]` :336 | a framed ask states the NEXT rows' frame; the decision itself is still frame-free in 3.0; the resume is the candidate stream, a piece chosen by Table S; :336's "both T-FIND askers" becomes "the one walk, gated by the frame's renderable set" | 3.0b |
+| `window_site.md` §0 and §2.4 ("the decision reads no frame fact"; its "resume" row), `[rev2 F25]` :336, `[rev2.2 R14]` :272, :340, :342 (`wf_brows`, `wf_b_render`: restated with the split's table names, 3.0a's part) | a framed ask states the NEXT rows' frame; the decision itself is still frame-free in 3.0; the resume is the candidate stream, a piece chosen by Table S; :336's "both T-FIND askers" becomes "the one walk, gated by the frame's renderable set" | 3.0b |
 | `[rev2 F25]` `span_cards.md` :865 | the `pair` card's fact: "E-find's search renderer table has (E-find, PAIR)" in place of `fd_stop.renders_pair` | 3.0a |
-| `[rev2 F6]` `tests/memfn/renderer_rows.tsv` header, `memfn/docs/trace_format.md` :168-183 | the pin re-keyed by T-FRAME ids, B-fn marked fused; FDROUTE's key restated; the composer's D-hors record names F18's residue | 3.0a |
+| `[rev2 F6]` `tests/memfn/renderer_rows.tsv` header, `memfn/docs/trace_format.md` :168-183 | the pin re-keyed by T-FRAME ids, B-fn marked fused `[rev2.2 R10]` (a 6th column); FDROUTE's key restated, with its new `frame=` key; the composer's D-hors record names F18's residue | 3.0a |
+| `[rev2.2 R14]` `docs/design/memfn/units_inventory.md` :56, :111; `tests/memfn/CLAUDE.md` :37, :43; `memfn/src/CLAUDE.md` :26 | the retired names restated (§2.4's reader table); :43 with the purity population (§3, 3.0b) | 3.0a (:43: 3.0b) |
 | `docs/dev/plan.md` [SP1E-RENDERER-TABLE] | closed (main) | 3.0a |
 | `docs/dev/plan.md` [SEAM-READER-CENSUS] | its trigger restated per Q11 (main) | 3.0b |
 | `docs/dev/decisions.md` D186 | an addendum recording the ruling and ruling (2) (main; Q10) | main's, any time |
@@ -1180,28 +1185,42 @@ would read one is row 1's (§6).
 **Q2, the independent control: RELEVANT.**
 - Byte identity is checked against the NAMED BASE's artifacts, diffed pcrec-side (emit_sweep), never
   against the kit's `moved` (K35). This includes Table B's split (§2.6.4).
-- `[rev2 F29]` The kit's agreement check compares the plan call with what the define STORED (site_rec,
-  `wf_plan`, `mf_defined`), never with a recomputation through `reply_of` or the plan function. The two still
-  share code upstream by design, so it is a TRIPWIRE against a later divergence (a quiet-only branch, a
-  cache), not the identity control; row E2 shows a frame-part fault that moves no text is red there.
+- `[rev2 F29]` `[rev2.2 R1]` The kit's agreement check compares the plan call's FRAME part with what the define
+  STORED (`site_rec`, `wf_plan`, by §4.1's per-frame field map), never with a recomputation through `reply_of` or
+  the plan function; row E2 shows a frame-part fault that moves no text is red there. Its DECISION group is
+  re-derived through `decide`, so for it the check shares the subject's source and is a TRIPWIRE against the two
+  calls diverging (a quiet-only branch, a cache, the allocator), not the identity control. The decision group's
+  independent controls are the purity harness (fresh art vs interleaved defines) and ASK-3 below, and a decision
+  fault common to both calls moves the define's text (emit_sweep, against the named base). No stored decision copy
+  is built: it would be a record only the check reads (ruled).
 - pcrec's check (ASK-3) compares two pcrec statements of one frame through the kit. Its subject is pcrec's
-  statement, which the kit cannot make equal on pcrec's behalf.
+  statement, which the kit cannot make equal on pcrec's behalf. `[rev2.2 R17]` Both its sides go through the plan
+  function, so it holds pcrec's INPUT, not the stored record; with the kit's check it forms a chain (kit: re-ask ==
+  stored; ASK-3: phase-1 == re-ask). Row F asserts ASK-3's own message, so its red shows ASK-3 reached the site.
+- `[rev2.2 R11]` The refusal-naming rows (B), (C), (R) are detected by a standing `rows_check.py` §R invariant's
+  message over named witness lines, not by any red.
 - `[rev2 F21]` The support pin's LIBC and LIBC_BACK rows are written from the RULING's text ("libc memchr
   supplies only one-shot"), so for them the pin and the table do not share a source (§5 row M). Its WALK,
-  PAIR, HORS, no-search and VECTOR rows share the table's reading; their independent control is base's
-  emitted TEXT (the resume spelling `C++`, `_sh[256]`, the absence of a mask variable), read by the basis
-  witnesses and G2's text classes (§2.5.2, §5 row R).
+  PAIR, HORS and no-search rows `[rev2.2 R25]` (VECTOR's is removed, §2.5.2) share the table's reading; their
+  independent control is base's emitted TEXT (the resume spelling `C++`, `_sh[256]`, the absence of a mask
+  variable), read by `[rev2.2 R7]` the landing-time basis witnesses (3.0a, over base's artifacts joined to FDROUTE)
+  and, standing, by 3.0b's G2 text classes (§2.5.2, §5 row R). The pin's reader is `rows_check.py` §S, comparing
+  each cell to the kit table's print (`arm_fixtures --streams`), never the table to itself.
 - `[rev2 F31]` On E-find, `fused`, `method`, `search` and `frame_row` are held to each site's TEXT by G2's
-  classes, which do not read the plan (as `ef_hors` already reads `_sh[256]`, `g2_win_gen.c` :998).
+  classes, which do not read the plan (as `ef_hors` already reads `_sh[256]`, `g2_win_gen.c` :998); `[rev2.2 R2]`
+  `plan_test` and `stop_test` by the hook's own marker `g2w_t<id>_<ref>[`, matched by offset through G2's own
+  offers. `[rev2.2 R19]` All of G2's classes are OFF-layer only; the SIMD layer's agreement rides `reach_equal.py`.
 - Populations are counted by their owners: the corpus's DFA prefilter sites by ASK-4's suite; `[rev2 F30]`
   the (frame_row, stream) cells by G2's own tally, each floored at its measured count less ~10% with the
   impossible cells at 0 (the corpus alone frames only E-func); `[rev2 F12]` the `table_name`
   population by G2 at its own floor.
 - Every sabotage row names the check that sees it and why that check can see it (§5). Reach is shown by a
-  control (H, N) or by a corpus or G2 site the plant moves (A, B, C, F, K, L, O, P, R, Y-AA).
+  control (H, N) or by a corpus or G2 site the plant moves (A, B, C, F, K, L, O, P, R, Y-AA). `[rev2.2 R9]`
+  Existing sabotage anchors on lines 3.0 edits (S686; G2's S1423, S1427, S1428, S1543) are kept verbatim or
+  re-aimed in the same commit, so a setup failure is never read as DETECTED.
 
 **Q3, what moves when data is regenerated: RELEVANT, narrowly.** 3.0 adds no stamp or generated file,
-and re-measuring a set moves nothing (no reader). The support table, Table S and the `fn_rows` fact columns
+and re-measuring a set moves nothing (no reader). The support table, Table S and the `fn_rows` fact column `[rev2.2 R24]` (BODY rows' pick)
 are hand-declared rule tables, not regenerated data; `renderer_rows.tsv` and `stream_support.tsv` are
 hand-written pins. One existing reader of the TEXT does move with 3.0's code: the cards' recorded form hashes
 (zen4-grid3@1 rows' `kit:form.<id>=<hash>`). A hash that moved would make cards stale. Goal 1 therefore
@@ -1217,6 +1236,12 @@ be an abi event (D76/D94), and 3.0 has none.
 
 ## STATE AT HANDOFF
 
+`[rev2.2]` Rev 2.2, lane u30d4: review r13's accepted ids R1-R19, R21-R28 applied as the kit manager ruled them
+(R20 NOTED, kept as an optional control); every cite rev 2.2 adds or touches re-read at main **a678d0a4e** (main's
+HEAD at this lane's start, unchanged since r13). Readiness per r13's rulings: 3.0a may build without another round
+once the kit manager checks the by-id table (§R2.2); 3.0b gets its D27 author at its build, and r13 recommends a
+one-critic readiness look at R1/R2's text before it. Open for the kit manager: Q14 (`stop_test` on byte-tested stops;
+row AF) and Q15 (three either/or forms, text follows the recommended one); for main: Q10-Q12 as before.
 Rev 2.1, lane u30d3 (one ruling, Q13; no cite was re-derived: the rung list's removal adds none). Rev 2, lane u30d2. Cites re-checked by grep at main a678d0a4e (main's HEAD at this lane's start; the
 worktree's code is identical to it under `memfn/`, `src/`, `tests/memfn/`). No make, no timing, no code. Not
 a build go: 3.0a may start on the kit manager's word once rev 2 is accepted (r12's readiness note; the
