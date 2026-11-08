@@ -1,0 +1,14 @@
+ab(?<=b)[bc]d\w*e	0:abcde 0:abbde	OK 0 M 0 5 M 0 5 
+(?<=ab)ab[a-z]*q	3:abababq 2:abababq	OK 0 M 4 7 M 2 7 
+[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	0:caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd	OK 0 M 0 35 
+(?i:a){40}(?<=(?<=A{20})a{20})y	0:xAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaay	OK 0 M 1 42 
+a{20}(?=b{20})	0:aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb 1:aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb	OK 0 M 0 20 N 
+(?<=a{20})b{20}	0:aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb 20:aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb 21:aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb	OK 0 M 20 40 M 20 40 N 
+x(?:foo(?=bar)baz)?y	0:xy	OK 0 M 0 2 
+x(?!foo(?=bar)baz)y	0:xy	OK 0 M 0 2 
+(?:foo(?=bar)baz|q)	0:q	OK 0 M 0 1 
+(?:foo(?=bar)baz){0}x	0:x	OK 0 M 0 1 
+foo(?=bar)baz	0:foobarbaz 0:foobaz	OK 0 N N 
+(?<=ab)(?<=cb)c	0:abc 0:cbc	OK 0 N N 
+(?<=c(?<=bc)d)e	3:bcde	OK 0 M 3 4 
+(?<=c(?<=bc)d)e	3:bcde 2:bcde	OK 0 N M 3 4 

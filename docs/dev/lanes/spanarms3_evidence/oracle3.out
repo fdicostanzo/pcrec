@@ -1,0 +1,4 @@
+[a-z]?[a-z]a(?=bc)	0:zzabc	OK 0 M 0 3 
+(?<=ab|b)c	0:xbc	OK 0 M 2 3 
+(?<=foo)bar	3:foobar 2:foobar 4:foobar	OK 0 M 3 6 M 3 6 N 
+x(?=ab)?a[bc]	0:xac	OK 0 M 0 3 

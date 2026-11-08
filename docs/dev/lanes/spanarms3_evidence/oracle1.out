@@ -1,0 +1,16 @@
+xy(?=bc)[bc]c	0:xybc 0:xybb	OK 0 M 0 4 N 
+(?:abc(?=ab)){2}	0:abcabcab 0:abcabcac	OK 0 M 0 6 N 
+xy[ac]b(?:(?<=ab)b|c)	0:xycbc 0:xyabb 0:xycbb	OK 0 M 0 5 M 0 5 N 
+[ac][ac]cc(?<=acc)(?<=cc)d	0:caccd 0:ccccd	OK 0 M 0 5 N 
+ab[xy][xy](?=(?<=xx)y)[xy]	0:abxxy 0:abxyy	OK 0 M 0 5 N 
+[ac][ac](?<=ac(?=cc))cc	0:accc 0:cccc	OK 0 M 0 4 N 
+ab(?<=b)[bc]d	0:abcd 0:abbd	OK 0 M 0 4 M 0 4 
+(?:(?=abcd)ab)cd	0:abcd	OK 0 M 0 4 
+(?:(?=abc)a.?)[bc]c	0:abc	OK 0 M 0 3 
+y(?:x(?<=yx))z	0:yxz	OK 0 M 0 3 
+y*(?:ab(?<=xab)c)	1:xabc 0:xabc	OK 0 M 1 4 M 1 4 
+x(?=ab)?a[bc]	0:xac 0:xab	OK 0 M 0 3 M 0 3 
+[ac]b(?<=ab|b)c	0:cbc	OK 0 M 0 3 
+x(?!ab)a[bc]	0:xac 0:xab	OK 0 M 0 3 N 
+bar(?=baz)	0:barbaz 0:barbax	OK 0 M 0 3 N 
+xy(?<!ab)cd	0:xycd 0:xyabcd 2:abcd	OK 0 M 0 4 N N 

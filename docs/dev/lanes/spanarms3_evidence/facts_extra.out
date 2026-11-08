@@ -1,0 +1,32 @@
+# sabotage spellings (floor: a listed run = clears 16 bits)
+cc	kinds=none set=99 whole=6363 run=6363@1 maxoff=0 rb=99 kset=99,99 span=2:99,99 | "dfa" "cover" WHY="dominated" RUN="6363@1" H="none"
+[bc]c	kinds=none set=99 whole=none run=none maxoff=none rb=99 kset=[2],99 span=2:[2],99 | "dfa" "cover" WHY="dominated" RUN="none" H="none"
+xybc[bc]c	kinds=none set=98,99,120,121 whole=787962636263/fffffffffeff run=787962636263@0/fffffffffeff maxoff=0 rb=120 kset=120,121,98,99,[2],99 span=6:120,121,98,99,[2],99 | "dfa" "cover" WHY="dominated" RUN="787962636263@0/fffffffffeff" H="none"
+abcababc	kinds=none set=97,98,99 whole=6162636162616263 run=6162636162616263@6 maxoff=0 rb=98 kset=97,98,99,97,98,97,98,99 span=8:97,98,99,97,98,97,98,99 | "dfa" "cover" WHY="dominated" RUN="6162636162616263@6" H="none"
+xyab[bc]	kinds=none set=97,98,120,121 whole=7879616262/fffffffffe run=7879616262@0/fffffffffe maxoff=0 rb=120 kset=120,121,97,98,[2] span=5:120,121,97,98,[2] | "dfa" "cover" WHY="dominated" RUN="7879616262@0/fffffffffe" H="none"
+ccccd	kinds=none set=99,100 whole=6363636364 run=6363636364@3 maxoff=0 rb=99 kset=99,99,99,99,100 span=5:99,99,99,99,100 | "dfa" "cover" WHY="dominated" RUN="6363636364@3" H="none"
+ab[xy][xy]x	kinds=none set=97,98,120 whole=6162787878/fffffefeff run=6162787878@4/fffffefeff maxoff=0 rb=120 kset=97,98,[2],[2],120 span=5:97,98,[2],[2],120 | "dfa" "cover" WHY="dominated" RUN="6162787878@4/fffffefeff" H="none"
+cccc	kinds=none set=99 whole=63636363 run=63636363@3 maxoff=0 rb=99 kset=99,99,99,99 span=4:99,99,99,99 | "dfa" "cover" WHY="dominated" RUN="63636363@3" H="none"
+abbd	kinds=none set=97,98,100 whole=61626264 run=61626264@2 maxoff=0 rb=98 kset=97,98,98,100 span=4:97,98,98,100 | "dfa" "cover" WHY="dominated" RUN="61626264@2" H="none"
+abcdcd	kinds=none set=97,98,99,100 whole=616263646364 run=616263646364@1 maxoff=0 rb=98 kset=97,98,99,100,99,100 span=6:97,98,99,100,99,100 | "dfa" "cover" WHY="dominated" RUN="616263646364@1" H="none"
+yyxz	kinds=none set=120,121,122 whole=7979787a run=7979787a@3 maxoff=0 rb=122 kset=121,121,120,122 span=4:121,121,120,122 | "dfa" "cover" WHY="dominated" RUN="7979787a@3" H="none"
+abc	kinds=none set=97,98,99 whole=616263 run=616263@1 maxoff=0 rb=98 kset=97,98,99 span=3:97,98,99 | "dfa" "cover" WHY="dominated" RUN="616263@1" H="none"
+xab	kinds=none set=97,98,120 whole=786162 run=786162@0 maxoff=0 rb=120 kset=120,97,98 span=3:120,97,98 | "dfa" "cover" WHY="dominated" RUN="786162@0" H="none"
+xqr	kinds=none set=113,114,120 whole=787172 run=787172@1 maxoff=0 rb=113 kset=120,113,114 span=3:120,113,114 | "dfa" "cover" WHY="dominated" RUN="787172@1" H="none"
+barbaz	kinds=none set=97,98,114,122 whole=62617262617a run=62617262617a@5 maxoff=0 rb=122 kset=98,97,114,98,97,122 span=6:98,97,114,98,97,122 | "dfa" "cover" WHY="dominated" RUN="62617262617a@5" H="none"
+x(?=qr)[pq]r	kinds=lookaround set=114,120 whole=none run=none maxoff=none rb=120 kset=120,[2],114 span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
+# premise: A_CTX lowering
+a(?=b)c	kinds=none set=97,99 whole=none run=none maxoff=none rb=99 kset=97,99 span=0 | "dfa" "empty" WHY="dominated" RUN="none" H="none"
+a(?=b)[bc]	kinds=none set=97 whole=none run=none maxoff=none rb=97 kset=97,[2] span=2:97,98 | "dfa" "cover" WHY="dominated" RUN="none" H="none"
+(?:ab(?=a)){2}	kinds=collapsible_rep set=97,98 whole=6162 run=6162@1 maxoff=0 rb=98 kset=97,98,97,98 span=4:97,98,97,98 | "dfa" "cover" WHY="dominated" RUN="6162@1" H="none"
+a(?=b)c	kinds=lookaround set=97,99 whole=none run=none maxoff=none rb=99 kset=97,99 span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
+ab(?<=b)[bc]d\w*e	kinds=lookaround set=97,98,100,101 whole=6162 run=6162@1 maxoff=0 rb=98 kset=97,98,[2],100,[63] span=none | "vm" "unanchored" WHY="dominated" RUN="6162@1" H="none"
+# handoff twins
+(?<=ab)ab[a-z]*q	kinds=lookaround set=97,98,113 whole=6162 run=6162@1 maxoff=0 rb=98 kset=97,98,[26] span=none | "vm" "unanchored" WHY="dominated" RUN="6162@1" H="none"
+abab[a-z]*q	kinds=none set=97,98,113 whole=61626162 run=61626162@3 maxoff=0 rb=98 kset=97,98,97,98,[26] span=5:97,98,97,98,[26] | "dfa" "unanchored" WHY="emitted" RUN="61626162@3" H="0"
+x(?<=ab)ab[a-z]*q	kinds=lookaround set=97,98,113,120 whole=6162 run=6162@1 maxoff=1 rb=98 kset=120,97,98,[26] span=none | "vm" "unanchored" WHY="emitted" RUN="6162@1" H="1"
+# description vs bit 44
+flags=
+req_pieces 3:[97,98][100][101]|4:[97,98][98][99][101]
+flags=-fno-req-run-fold
+req_pieces 3:[97,98][100][101]|4:[97,98][98][99][101]
