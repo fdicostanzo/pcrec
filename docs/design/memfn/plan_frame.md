@@ -1,24 +1,65 @@
-# plan_frame — span_pick unit 3.0, "the plan takes the frame" (design, rev 2.1)
+# plan_frame — span_pick unit 3.0, "the plan takes the frame" (design, rev 2.2)
 
-**Status: PROPOSED, rev 2.1 (lane u30d3, 2026-11-07) over rev 2 (lane u30d2), over rev 1 (lane u30d1) and rev 0 (lane u30d), both
-2026-11-07. Design only: no build go, no code, no make, no timing.** Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
+**Status: PROPOSED, rev 2.2 (lane u30d4, 2026-11-07) over rev 2.1 (lane u30d3), rev 2 (lane u30d2), rev 1 (lane u30d1)
+and rev 0 (lane u30d), all 2026-11-07. Design only: no build go, no code, no make, no timing.** Rev 2.2 applies
+re-check review `docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md` (r13) as the kit manager ruled it (its
+"## Rulings" section); its text is marked `[rev2.2 Rn]` and replaces any older text it contradicts. **Read §R2.2
+first.** Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
 `docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md` (r12) as the kit manager ruled it (its "## Rulings"
 section). Text changed in rev 2 is marked `[rev2 Fn]` and replaces any `[rev1]` or unmarked text it
-contradicts. Rev 1's changes are marked `[rev1]` (§R1). **Read §R2 first**, then §0, §2.3 (the reply), §2.5
+contradicts. Rev 1's changes are marked `[rev1]` (§R1). After §R2.2, read §R2, then §0, §2.3 (the reply), §2.5
 (the triple) and §5 (the units).
 It serves kit request R-35 item 2 (`memfn/docs/requests.md` :805, ruling (a)). It is the design of the
 first stage-3 step in `span_pick.md` §Staging (:408). Its shape follows `span_cards.md`. `[rev2]` **Build
 tree: main a678d0a4e** (main's HEAD at this lane's start; the same tree review r12 cited). The worktree's
 code is byte-identical to it under `memfn/`, `src/` and `tests/memfn/` (`git diff a678d0a4e 2d189b302`
 touches only docs and `tests/fuzz/fuzz.py`). Every cite in this note was re-checked there; none moved after
-r12, and the corrections below are r12's own (F27, PREM-3) plus the new cites rev 2 adds.
+r12, and the corrections below are r12's own (F27, PREM-3) plus the new cites rev 2 adds. `[rev2.2]` Main's HEAD
+at rev 2.2's start is still **a678d0a4e**; every cite rev 2.2 adds or touches was re-read there (`git show
+a678d0a4e:<file>`), and r13's critics checked about 85 more at the same tree.
 `span_pick.md`'s own cites are older (2636dee99); where they have drifted, §10 gives the current line.
+
+## R2.2. What revision 2.2 changed (review r13, as the kit manager ruled it)
+
+Every FIX-NOW of r13 is accepted (R1-R11, R15-R19, R21, R25-R27), every DOC item as proposed (R12-R14, R22-R24,
+R28); R20 is NOTED (no text owed; §5 3.0b keeps it as an optional control). The unit split is unchanged. Choices r13
+left open are §7 Q14-Q15, each with a recommendation; the text follows the recommendation until the kit manager rules.
+
+| id | section | one line |
+|---|---|---|
+| R1 | Goal 2, §4.1 (the field map), §5 3.0b (agreement, E2), §9 Q2 | NARROW, as ruled: the FRAME part is compared against the stored record through a per-frame field map; the decision group is re-derived through `decide`, its independent controls the purity harness and ASK-3. No stored decision copy |
+| R2 | §0 row 3, §2.3 (`plan_test`, new `stop_test`), §3, §5 3.0b (G2 class, AB), §6, §7 Q14 | a separate `stop_test` member beside `plan_test[]`; TABLE = hook stated AND the covering span offers this set; the define side matched by OFFSET; the G2 marker is the hook's own spelling `g2w_t<id>_<ref>[`; AB's population as ruled |
+| R3 | §0 row 4, §2.4 (the renderable set), §2.5.3 (ST-many), §5 (R) | the gate holds on ST-one or ST-many; ST-many then REFUSES by a named refusal row (the `?need` shape); (R) asserts that refusal |
+| R4 | §2.4 (one accessor), §5 (D) | the backstop shapes are narrowed to the renderer tables' names plus `ren_find(`; `.pick ==`, `->pick ==`, `].holds(` are not shapes; expected HITS and MEMBER_COUNT stated |
+| R5 | §2.6.4 (witnesses), §5 3.0a | the new tables print no REACH in 3.0a (plain first-match arrays, like Table B); REACH equality covers what `reach_print` prints |
+| R6 | §3 (package), Goal 3 | `run_purity_reach.sh`'s population gains one pattern per new table; the tables live in `window.c`, which its plant path rebuilds; the script and two harness descriptions listed |
+| R7 | §2.5.2, §5 3.0a (content, witnesses) | the support pin's reader (`rows_check.py` §S), columns, kit print (`arm_fixtures --streams`), verbatim RULING cells, basis witnesses at landing time |
+| R8 | §4.1, §5 3.0a/3.0b (content, separability), §2.4, §2.3 | `fused`, `plan_test`/`stop_test`, the reply ids, E-func's `search` (the `fn_rows` pick column), the composer arm walk and the allocator move to 3.0b beside their readers |
+| R9 | §5 3.0a and 3.0b (content) | the sabotage re-aims named: S686 (moves to 3.0b with the pick column); G2's S1423, S1427, S1428, S1543 kept verbatim or re-aimed |
+| R10 | §2.4 (reader table), §8, §7 Q15 | `renderer_rows.tsv` gains a 6th column `fused`; FDROUTE prints `frame=` so §R holds (frame, row, ren) triples (recommended, Q15) |
+| R11 | §5 (B), (C), (R) | the host: a `rows_check.py` §R invariant "no witness compile's refusal names a T-FIND row or Table S's refusal", over `renderer_rows.tsv`'s witness lines |
+| R12 | §5 (separability) | 3.0a's two commits: commit 1 = §2.5.2-§2.5.3 + §2.6; commit 2 = §2.4; each commit's sabotage rows listed |
+| R13 | §2.6.2, §5 (L), (N) | (L)'s reach excludes B-fn sites; §2.6.2 declares two S-restart rows with one text |
+| R14 | §2.4 (reader table), §8 | the retired names' other readers listed; Table B's two `_Static_assert`s get successors |
+| R15 | §2.6.0 | the skeleton row states its RENDER order apart from its text order (the floor renders the check first) |
+| R16 | §2.2, §5 (I) | the deny mechanism is the site's `opts` string; (I) plants Table E's walk with the site's `opts` cleared, plus a T-FIND-deny fixture |
+| R17 | Goal 2, §5 (F) | (F) asserts the failure names ASK-3's invariant; Goal 2 states the two checks as a chain |
+| R18 | §2.2, §2.3 (contract lines, observable meanings) | `call` out of range, `def` per call, `*out` on -1, the frame fields NONE ignores and the refusals DEFINE/EMIT add; each value's observable meaning moved from §5 into §2.3 |
+| R19 | Goal 2, §5 3.0b (witnesses), §7 Q15 | "G2 (OFF layer only)"; the corpus carrier of the kit agreement is `reach_equal.py` with `-fmemfn-simd` among its arms, a boxqueue job (recommended, Q15) |
+| R21 | §2.2 (projection), §5 (AD) | the `miss`/`n` relation named; AD's population is STMT/ASSIGN and STMT/ON_MISS sites under EMIT, renamed relation-preservingly, plus one relation-breaking case |
+| R22 | §5 (header, size), §R2.1 note | 3.0b has 18 sabotage rows (S2994-S3011), the note 30 |
+| R23 | §3 | `docs/dev/lanes/r33_sim/probe.c` :94 named (a study left to break; recommended, Q15) |
+| R24 | §2.3, §2.6.3, §5, Goal 5, §9 | "fact column" singular; "top-level" wording gone; the offset-skip arm's RESTART lives in the fused-rows table's stream column |
+| R25 | §2.3 (`search`), §2.5.2, §2.5.5, §7 (RUNG-LIST) | VECTOR and its support row carried to §2.5.5's NOTE and RUNG-LIST; not declared in 3.0 |
+| R26 | §5 3.0b (G2 impossible cells) | E-stmt (and E-func) allow RESTART or NONE; NONE iff `fused` ARM |
+| R27 | §2.3, §5 3.0b (purity) | the decision-equality comparator is `memcmp(a, b, offsetof(mf_wreply, framed))` |
+| R28 | §7 (RUNG-LIST), §6, §R2 F13 note | RUNG-LIST's trigger restated: "row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands" |
 
 ## R2.1. What revision 2.1 changed
 
 | ruling | section changed | what changed |
 |---|---|---|
-| Q13: F13 is a LABEL, not a rung list (r12, "Ruling on rev 2's Q13") | R2 (F13, F34), §0, §1, §2.1-§2.3, §2.7, §3, §4, §5 (rows W and AE retired), §6, §7 (Q13 ANSWERED, plan row RUNG-LIST), §9 | `nrung`/`rung[]`, `mf_wrung`, `mf_wcheck`, `MF_WRUNG_MAX`, the `fs` argument and the sink counter are gone; F13 keeps its doc text; §2.3 states the gap (under `-fmemfn-simd` the artifact may run vrun's VECTOR/MASK/TRIM while the reply names the OFF triple); the rung list is a PLAN row with its trigger. 3.0b stays L; its sabotage rows are 17 (was 19), the note's rows 29 (was 31) |
+| Q13: F13 is a LABEL, not a rung list (r12, "Ruling on rev 2's Q13") | R2 (F13, F34), §0, §1, §2.1-§2.3, §2.7, §3, §4, §5 (rows W and AE retired), §6, §7 (Q13 ANSWERED, plan row RUNG-LIST), §9 | `nrung`/`rung[]`, `mf_wrung`, `mf_wcheck`, `MF_WRUNG_MAX`, the `fs` argument and the sink counter are gone; F13 keeps its doc text; §2.3 states the gap (under `-fmemfn-simd` the artifact may run vrun's VECTOR/MASK/TRIM while the reply names the OFF triple); the rung list is a PLAN row with its trigger. 3.0b stays L; its sabotage rows are 17 (was 19), the note's rows 29 (was 31) `[rev2.2 R22]` (miscounted: rev 2 never counted E2, so they were 18 and 30) |
 
 ## R2. What revision 2 changed, by finding (review r12)
 
@@ -39,8 +80,8 @@ F14 as "the fused row's reply crosses its facts", and a D27 spec-first author fo
 | F9 | FIX-NOW | §2.5.3, §2.4 | ONE rule: Table S's input is support(search) INTERSECT the frame's streams; one -> it, none -> not renderable, two or more -> refused until an evidence row. The renderable set is defined by Table S |
 | F10 | FIX-NOW | §2.3, §2.6.1, §2.6.3 | the composer's PF arms are COMPOSED (`fused` NO); the fused rows are B-fn and the offset-skip arm only; the other composer arms are arms[]'s exception (`fused` ARM) |
 | F11 | FIX-NOW | §2.4, §2.6.1, §2.6.2 | the renderer tables are keyed by T-FRAME's ids (E-find, E-stmt, E-generic); the non-window FIND sites read E-stmt's rows as arms[]'s named exception |
-| F12 | FIX-NOW | §2.3 (`plan_test`), §5 (AB), Goal 2 | the check group gains a per-plan-position test kind (`plan_test`: OWN or TABLE, T-VERIFY step 6), in the frame part; a G2 population varies `table_name` stated-ness |
-| F13 | FIX-NOW, ruled "the reply names the triple per rung"; `[rev2.1 Q13]` ruled a LABEL | §2.3 (the OFF-variant statement and the stated gap), §6 | `search`/`stream`/`fused`/the check describe the OFF (scalar) variant; §6's FIXED columns name layer and target; the gap is stated: under `-fmemfn-simd` the artifact may run vrun's (VECTOR, MASK, TRIM) while the reply names the OFF triple. The rung list (`rung[]`, `fs`, rows W and AE) is plan row RUNG-LIST, trigger "row 1 compares a SIMD-on cell, or the first MASK producer lands" |
+| F12 | FIX-NOW | §2.3 (`plan_test`), §5 (AB), Goal 2 | the check group gains a per-plan-position test kind (`plan_test`: OWN or TABLE, T-VERIFY step 6), in the frame part; a G2 population varies `table_name` stated-ness. `[rev2.2 R2]` Plus `stop_test` for the stop, which C-stop removes from `plan[]` |
+| F13 | FIX-NOW, ruled "the reply names the triple per rung"; `[rev2.1 Q13]` ruled a LABEL | §2.3 (the OFF-variant statement and the stated gap), §6 | `search`/`stream`/`fused`/the check describe the OFF (scalar) variant; §6's FIXED columns name layer and target; the gap is stated: under `-fmemfn-simd` the artifact may run vrun's (VECTOR, MASK, TRIM) while the reply names the OFF triple. The rung list (`rung[]`, `fs`, rows W and AE) is plan row RUNG-LIST, trigger "row 1 compares a SIMD-on cell, or the first MASK producer lands" (`[rev2.2 R28]` restated: "... or the first MASK stream RENDERER ROW lands", §7) |
 | F14 | FIX-NOW, ruled "cross the facts" | §2.3 (`search`, `fused`), §2.6.3 | `fused` is an enum about the piece boundary, never a C arm name; a fused row crosses its pick through `search` (fn-pair PAIR, fn-memchr LIBC, read through `fn_rows` BODY); `method` stays T-FIND's row |
 | F15 | FIX-NOW (doc) | §6 | each comparison's FIXED columns restated; CHECK renamed "RENDERER: fused function vs inline composition", one site under a lever; SEARCH and STOP state what else moves; HORS's limit stated |
 | F16 | DOC + PLAN | §2.2 (round-trip projection), §2.8, §5 (AD) | the ask's round-trip projection named; a same-class-different-text fixture; the C classifiers move to the spellings layer; build trigger [IR-FORM] |
@@ -56,7 +97,7 @@ F14 as "the fused row's reply crosses its facts", and a D27 spec-first author fo
 | F26 | FIX-NOW | §2.2 (Purity), §4.1, §5 (AC) | the plan function takes an allocator; the purity harness asserts 0 arena growth across a framed ask |
 | F27 | DOC | §1, §2.5.1, §2.5.3, §2.7, §3, §10 | layer at `finder.c` :650; `PURITY_FLOOR` at :132; B-fn has no `next` column and the floor's resume is `wf_floor_expr` :2324; vrun's trim-empty case `if (m) return` |
 | F28 | FIX-NOW | §2.4, §5 (D) | one named lookup accessor per renderer table; backstop shapes for the row-walk idiom; (D) planted as a copy of `fd_renderer`'s loop |
-| F29 | FIX-NOW | §5 3.0b (agreement), (E2) | the agreement's define-side operand is read from what the define STORED, never via `reply_of` or the plan function; a plant inside the plan function's frame part |
+| F29 | FIX-NOW | §5 3.0b (agreement), (E2) | the agreement's define-side operand is read from what the define STORED, never via `reply_of` or the plan function; a plant inside the plan function's frame part. `[rev2.2 R1]` Narrowed: the FRAME part only (field map, §4.1); the decision group is re-derived through `decide` |
 | F30 | FIX-NOW | Goal 2, §5 3.0b, (X) | G2 tallies (frame_row, stream) cells, floored at measured less ~10%, impossible cells 0, `stream == SHIFT` iff `_sh[256]`; a live MASK plant |
 | F31 | FIX-NOW | Goal 2, Goal 5, §5 (Y), (Z), (AA) | G2 classifies each E-find site's text and asserts `fused`, `method`, `search`, `frame_row`; the id check asserts exact emptiness |
 | F32 | FIX-NOW | Goal 3, §3, §5 (H) | `pur_diff` is a `memcmp` of the whole `mf_wreply`; the control print a hex dump |
@@ -94,12 +135,13 @@ The rulings are recorded in the kit's journal, entry "11-07 ~23:00: RULED by Fra
 |---|---|---|---|
 | 1 | what pcrec states at phase 1 | the FRAME of the site the reply's NEXT rows define, stated on the ask's site itself (form, op, handoff, empty, use, body, decl_point, site_kind, `pred.fn_ref`), plus that define's hooks and its call kind. Today only the DFA prefilter's ask has NEXT readers; for it the frame is the offset-skip block's (FUNC/RETURN, kind UNSTATED, `[rev2 F22]` a narrowing of R-35 (a), §4.2). The run window's ask states NO frame | §2.1 |
 | 2 | what the call takes `[rev2.1 Q13]` | `mf_wdecide(art, site, def, call, out)`. `def` is the define hooks, read for stated-ness only. `call` is `mf_wcall`: UNSTATED (refused), NONE (decision only), DEFINE (as `mf_define`) or EMIT (as `mf_emit`: DEFINE and USE) | §2.2 |
-| 3 | what the reply grows `[rev2 F12-F14, F24]` | appended LAST: `framed`, `frame_row` (T-FRAME's row), `method` (T-FIND's deciding row), `search` (`mf_wsearch`: the SEARCH piece), `stream` (`mf_wstream`: RESTART, MASK or SHIFT), `fused` (`mf_wfused`: NO, FN or ARM) and `plan_test[]` (the check's per-position test kind). Each new member is an enum or a kit row id, never C text. The decision fields are unchanged and stay frame-independent | §2.3 |
-| 4 | the asker fact | RETIRED, replaced by ONE declared SEARCH renderer table keyed by (T-FRAME row, pick) `[rev2 F11]`. A T-FIND row holds only where the asking frame can render its pick, `[rev2 F9]` that is, where Table S answers exactly one stream for it, `[rev2 F4]` checked for slot FIND only. `SF_ASKER_PAIR` (bit 15) and `fd_stop.renders_pair` are deleted | §2.4 |
+| 3 | what the reply grows `[rev2 F12-F14, F24]` | appended LAST: `framed`, `frame_row` (T-FRAME's row), `method` (T-FIND's deciding row), `search` (`mf_wsearch`: the SEARCH piece), `stream` (`mf_wstream`: RESTART, MASK or SHIFT), `fused` (`mf_wfused`: NO, FN or ARM), `plan_test[]` (the check's per-position test kind) and `[rev2.2 R2]`
+`stop_test` (the stop's test kind). Each new member is an enum or a kit row id, never C text. The decision fields are unchanged and stay frame-independent | §2.3 |
+| 4 | the asker fact | RETIRED, replaced by ONE declared SEARCH renderer table keyed by (T-FRAME row, pick) `[rev2 F11]`. A T-FIND row holds only where the asking frame can render its pick, `[rev2 F9]` that is, where Table S answers at least one stream for it, `[rev2 F4]` checked for slot FIND only; `[rev2.2 R3]` where it answers two or more (ST-many), the decision is REFUSED by name, never passed to the next row. `SF_ASKER_PAIR` (bit 15) and `fd_stop.renders_pair` are deleted | §2.4 |
 | 4a | the triple | three fact tables: T-FIND (search), the SUPPORT table plus Table S (stream; `[rev2 F9]` one rule: the intersection of the search's support and the frame's streams), and T-VERIFY (check). The renderer tables (search, stream, check, `[rev2 F3]` under per-frame skeletons) are Table B split, and the split moves zero bytes | §2.5, §2.6 |
 | 5 | the numbers | one MF_SITE_ABI event (the next number at landing; 25 at this tree). MF_CLASS_V does NOT move | §3 |
 | 6 | the split | the kit owns the fact tables, the renderer tables, the plan function and the seam. pcrec owns five asks (§4.2), all facts and checks | §4 |
-| 7 | units | TWO, `[rev2]` kept. **3.0a** is kit-only, with no seam move. **3.0b** is the seam plus pcrec's asks, in ONE commit: the MF_SITE_ABI event. A D27 spec-first author writes 3.0b's seam-contract tests at its build `[rev2]` | §5 |
+| 7 | units | TWO, `[rev2]` kept. **3.0a** is kit-only, with no seam move, `[rev2.2 R8]` and builds only what the define renders. **3.0b** is the seam plus pcrec's asks, in ONE commit: the MF_SITE_ABI event, with the frame-part outputs only the reply reads. A D27 spec-first author writes 3.0b's seam-contract tests at its build `[rev2]` | §5 |
 | 8 | left to row 1 | every priced row and every frame-DEPENDENT decision. RULED (Frank 2026-11-07): row 1 WAITS for the inline one-member finder and its card. `[rev2 F15]` Row 1's comparisons state every fixed piece, layer and target included | §6 |
 
 ## 1. Goals
@@ -109,10 +151,10 @@ Ranked; a higher goal wins a conflict (`docs/dev/guide/architecture.md`).
 | # | goal (who benefits) | measurable form |
 |---|---|---|
 | 1 | **No emitted byte moves** (every user; `span_pick.md` Goal 2's stage-3 cell for a unit change, D186) | `scripts/emit_sweep.py` byte-identical against each unit's NAMED base commit on EVERY arm: default, each `--memfn=no-X` deny, `--engine=vm`, both SIMD layers. Stamps are included. The input is the corpus plus `span_pick.md` §Staging's three `--patterns-file` inputs. `*_movers.txt` unchanged. No pcrec abi number moves. **No card's form hash moves**: `arm_fixtures --hash` prints the same hash for every form id at base and HEAD, and `finder_check.py` check C's stale count over zen4-grid3@1's recorded `kit:form.<id>=<hash>` deps stays 0 (§9 Q3). This covers Table B's split (§2.6). `[rev2 F4]` REACH equality covers slot PRES's rows too |
-| 2 | **The reply is the define's** (row 1's lane; pcrec's NEXT readers) | for every FRAMED ask, every reply field equals what the define of the same site, hooks and call selected `[rev2 F29]` AS THE DEFINE STORED IT (never recomputed through the plan function). Two trace-build checks hold it: the kit's at every window-site define (§5, 3.0b) and pcrec's at the offset-skip define (ASK-3). Each check runs on the corpus and on G2's framed asks in EVERY frame G2 renders. `[rev2 F30, F31]` G2 tallies (frame_row, stream) CELLS, each produced cell floored at its measured count less ~10%, impossible cells asserted 0; it classifies each E-find site's TEXT and holds `fused`, `method`, `search` and `stream` to it (`_sh[256]` iff SHIFT, an `_ofsskip` call iff FN); `[rev2 F12]` a population varying `table_name` stated-ness holds `plan_test` to the text (`tbl[` iff TABLE) |
-| 3 | **The plan face stays pure and writes nothing** (the next editor; D186 add. 2; memory `pcrec-plan-as-text-seam`) | 1d's purity harness, extended to framed asks interleaved with defines, `[rev2 F32]` compares the WHOLE reply (`memcmp`; `reply_of` zeroes it). Table E, B and S rows join `purity_rows.tsv`'s reach table. A COUNTING HOOK `[rev2 F34]` whose fixture STATES all six callbacks (`fn_name`, `table_name`, `member`, `note`, `note_tag`, `on_cand`), each a counter, asserts a framed ask makes **0** calls. `[rev2 F26]` The fixture's arena counts its allocations and a framed ask adds 0. `[rev2 F16]` A same-class-different-text fixture: each hook text replaced by another of the same class (`gate.c`'s classes) leaves the reply unchanged |
-| 4 | **One mechanism for "this frame renders this piece"** (the next editor; memory `pcrec-general-mechanisms-not-special-cases`) | `decider_census.tsv` names ONE search renderer table, ONE stream renderer table, ONE support table and Table S, and `[rev2 F6]` no other list answers those questions except their NAMED PIN, `tests/memfn/renderer_rows.tsv`. `[rev2 F28]` Every renderer lookup goes through its table's one named accessor, and the census backstop knows the row-walk idiom. A backstop grep finds no `renders_pair` or `SF_ASKER_PAIR` in `memfn/`, `src/` or `tests/`, outside history. The renderability check has a WITNESS (§5 row C). `[rev2 F21]` The support table's LIBC and LIBC_BACK rows equal the ruling's text; its other rows equal their stated basis, held by base's text (§5 rows M, R) |
-| 5 | **What 3.0 adds is facts, not C** (Frank 2026-11-07: "we will eventually output code as either C or Rust") | every member 3.0 adds to `memfn.h` is an enum or a row-id string drawn from a kit table, never text an emitter pastes, `[rev2 F14]` and never a C arm or renderer id. A check asserts each id resolves: `method` in `mf_finder_rows`, `frame_row` in Table E's ids, and every enum in its range. `[rev2 F31]` It asserts emptiness EXACTLY: `method == ""` iff no T-FIND row decided; `search == NONE` iff the frame has no search or is ARM; MASK appears at no level of the reply in 3.0 `[rev2.1 Q13]` (vrun's rungs are unreported): G2 asserts a top-level MASK count of 0 |
+| 2 | **The reply is the define's** (row 1's lane; pcrec's NEXT readers) | for every FRAMED ask, every reply field equals what the define of the same site, hooks and call selected. `[rev2.2 R1]` The FRAME part is held to what the define STORED (never recomputed through the plan function), by §4.1's per-frame field map; the decision group is held by re-deriving it through `decide` at the define, and its independent controls are the purity harness and ASK-3. `[rev2.2 R17]` Two trace-build checks form a CHAIN: the kit's at every window-site define (§5, 3.0b: re-ask == stored record and re-derived decision) and pcrec's at the offset-skip define (ASK-3: pcrec's phase-1 ask == the define's re-ask, both through the plan function, so ASK-3 holds pcrec's INPUT, not the record). `[rev2.2 R19]` The kit's check runs on the corpus (its carrier is `reach_equal.py`, both layers, §5 3.0b) and on G2's framed asks in every frame G2 renders, at the OFF layer only (G2 has no SIMD window population). `[rev2 F30, F31]` G2 tallies (frame_row, stream) CELLS, each produced cell floored at its measured count less ~10%, impossible cells asserted 0; it classifies each E-find site's TEXT and holds `fused`, `method`, `search` and `stream` to it (`_sh[256]` iff SHIFT, an `_ofsskip` call iff FN); `[rev2 F12]` `[rev2.2 R2]` a population varying `table_name` stated-ness holds `plan_test` and `stop_test` to the text by the hook's own spelling (`g2w_t<id>_<ref>[`, matched by offset, §2.3) |
+| 3 | **The plan face stays pure and writes nothing** (the next editor; D186 add. 2; memory `pcrec-plan-as-text-seam`) | 1d's purity harness, extended to framed asks interleaved with defines, `[rev2 F32]` compares the WHOLE reply (`memcmp`; `reply_of` zeroes it). Table E, B and S rows join `purity_rows.tsv`'s reach table `[rev2.2 R6]` (its population grows by one pattern per table, §3). A COUNTING HOOK `[rev2 F34]` whose fixture STATES all six callbacks (`fn_name`, `table_name`, `member`, `note`, `note_tag`, `on_cand`), each a counter, asserts a framed ask makes **0** calls. `[rev2 F26]` The fixture's arena counts its allocations and a framed ask adds 0. `[rev2 F16]` A same-class-different-text fixture: each hook text replaced by another of the same class (`gate.c`'s classes) leaves the reply unchanged |
+| 4 | **One mechanism for "this frame renders this piece"** (the next editor; memory `pcrec-general-mechanisms-not-special-cases`) | `decider_census.tsv` names ONE search renderer table, ONE stream renderer table, ONE support table and Table S, and `[rev2 F6]` no other list answers those questions except their NAMED PIN, `tests/memfn/renderer_rows.tsv`. `[rev2 F28]` Every renderer lookup goes through its table's one named accessor, and the census backstop knows `[rev2.2 R4]` the renderer tables' names and the accessor's spelling (§2.4). A backstop grep finds no `renders_pair` or `SF_ASKER_PAIR` in `memfn/`, `src/` or `tests/`, outside history. The renderability check has a WITNESS (§5 row C). `[rev2 F21]` The support table's LIBC and LIBC_BACK rows equal the ruling's text; its other rows equal their stated basis, held by base's text (§5 rows M, R) |
+| 5 | **What 3.0 adds is facts, not C** (Frank 2026-11-07: "we will eventually output code as either C or Rust") | every member 3.0 adds to `memfn.h` is an enum or a row-id string drawn from a kit table, never text an emitter pastes, `[rev2 F14]` and never a C arm or renderer id. A check asserts each id resolves: `method` in `mf_finder_rows`, `frame_row` in Table E's ids, and every enum in its range. `[rev2 F31]` It asserts emptiness EXACTLY: `method == ""` iff no T-FIND row decided; `search == NONE` iff the frame has no search or is ARM; `[rev2.2 R24]` MASK appears in no reply in 3.0 `[rev2.1 Q13]` (vrun's rungs are unreported): G2 asserts a MASK count of 0. `[rev2.2 R25]` `mf_wsearch` declares no VECTOR in 3.0 (§2.5.5) |
 
 **Non-goals.** Any priced row, and any decision change: KEY, M and TIE stay frame-independent. A consumer
 kind on OFS sites (its own trigger). Presence joining the call. A frame for pre-check parts (§7 Q1).
@@ -164,9 +206,28 @@ int mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t
   under the gate phases the define would read: DEFINE, or DEFINE|USE for EMIT, as `mf_emit` does
   (`compose.c` :255-258, :1320-1325). `def` is the define hooks, or for EMIT the one-call hooks. The call returns -1
   exactly where that define would refuse: `mf_ask`'s rule 1 (`compose.c` :1002-1042). The art's denies and
-  `--memfn=` options apply, as at the define.
+  `--memfn=` options apply, as at the define. `[rev2.2 R16]` The mechanism is the SITE's `opts` string: Table E's walk
+  passes denies 0 (`kit_walk(&wf_etable, 0, ...)`, `window.c` :1917; `wf_etable`'s deny is NULL), and `walk_row`
+  reads a row's option through `kit_opt_denied(in->s->opts, t->opt(i))` (`compose.c` :170-171), so `no-window-search`
+  (E-find's option) and T-FIND's `fd-*` options reach the walks only through the site's `opts`.
 - The phase set crosses as a fact about the CALL, not as the kit's internal `MF_PH_*` bits (`grep MF_PH_
   memfn/include/memfn.h`: none).
+- **Contract lines** `[rev2.2 R18]` (what a D27 author tests from this section alone):
+  1. `call` above `MF_WCALL_EMIT` (4..255; the parameter is a bare `uint8_t`) is refused (-1), as UNSTATED is.
+  2. `def` under DEFINE/EMIT is read exactly as the define reads its hooks: NULL is the define's NULL (every hook
+     unstated), and the call answers -1 exactly where `mf_define`/`mf_emit` with that `def` would refuse. Under
+     NONE `def` is not read and may hold any value (pcrec's ASK-2 passes NULL).
+  3. `*out` is zeroed WHOLE (padding included) before anything else, on every return, -1 included (today's first
+     statement of `mf_wdecide`, `window.c` :1224). A reply is therefore comparable by `memcmp`, which ASK-3 and
+     the agreement rely on.
+  4. The FRAME FIELDS are the site's `op`, `reverse`, `form`, `handoff`, `empty`, `use`, `body`, `site_kind`,
+     `decl_point`, `on_miss_leaves`, `pred.fn_ref` and `opts` (§2.1's values plus the two the frame half of
+     `wf_check` and the walks read). NONE reads none of them: two NONE asks differing only in frame fields (and
+     `def`) answer byte-equal replies. DEFINE/EMIT add these refusals (the frame half of `wf_check`): a site that is
+     not a forward FIND (`op`, `reverse`); a frame other than FUNC/RETURN, STMT/ASSIGN or STMT/ON_MISS (the three
+     Table E renders); `empty`, `use`, `body` (ONESHOT only), `site_kind`, `decl_point` or `on_miss_leaves` out of
+     its range, or `on_miss_leaves` on a non-STMT site; and every refusal of the define's own walk (`mf_ask`'s rule
+     1). The observable meaning of each reply value is §2.3's last column.
 - **Purity** (D186 add. 2): the reply is a function of the site's facts (window and frame), the hooks'
   stated-ness and text classes, the call, the art's denies/options and layer, the
   measure set and the handed rates. It sets no art state, defines no handle and writes no text or trace
@@ -176,12 +237,16 @@ int mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t
   from the art's arena (`wf_prepare` :1900-1906, `wf_find_decide` :1846, `build_runs` :1673-1683). So the
   shared plan function (§4.1) TAKES ITS ALLOCATOR: the define passes the art's arena, and `mf_wdecide` a heap
   allocator whose blocks it frees before it returns. The purity harness checks it (Goal 3: 0 arena growth).
+  `[rev2.2 R8]` The parameter lands in 3.0b with its reader (`mf_wdecide`'s frame part) and row (AC); 3.0a's plan
+  function keeps the arena the define already uses.
 - **The round-trip projection** `[rev2 F16]` (memory `pcrec-plan-as-text-seam`). What the plan reads of the
   ask, and so what a text form of it must carry, is: the site's facts; the art's facts (denies, `--memfn=`
   options, layer, measure set, rates); per hook, whether it is stated and the CLASS of its text (`gate.c`'s
   classifiers: identifier, the literal `0`, the miss token, the `&&`/postfix/statement shapes, :86-297 and
   :618-653), with `miss` as a TOKEN (today `MF_MISS_N` is compared by address, `gate.c` :648-653, which no
-  text form keeps); and the call. Goal 3's counting hook proves no
+  text form keeps); `[rev2.2 R21]` and one CROSS-HOOK relation: `miss`'s class is MISS_N when `miss` is the N
+  token OR its text equals `n`'s (`cl_miss`, `gate.c` :651-656), so a text form carries "miss is the N token, or
+  equals `n`" as a fact, not two independent classes; and the call. Goal 3's counting hook proves no
   callback is called; the same-class-different-text fixture (§5 row AD) proves no gate reads text beyond its
   class. No serializer is built (D77); its trigger is [IR-FORM]'s kit planner/emitter member.
 
@@ -194,10 +259,28 @@ Appended LAST to `mf_wreply` (`memfn.h` :1467-1482), because initializers are po
 | `framed` | `uint8_t` | 1 (0 on NONE) |
 | `frame_row` | `char[12]` | T-FRAME's row: `E-func`, `E-stmt`, `E-find` or `E-generic` (`window.c` :1616-1621) |
 | `method` | `char[8]` (= `mf_result.row`'s width) | T-FIND's DECIDING row id (`D-hors`, `D1`, `D1c`, `D1w`, `PAIR`, `R7w`): on E-find the window walk's row (`wf_find_decide`'s `brow`, the value `wf_plan_brow` returns), on E-stmt the composer's routed row (`mf_result.row`, `compose.c` :1316). `""` where no T-FIND row decides: E-generic; E-func, where `fn_rows` BODY decides (OFS is FUNC, outside `fd_scope`'s STMT-only scope, `finder.c` :586-592); a composer walk that reaches a PF arm with no deciding row; an ARM frame |
-| `search` `[rev2 F14]` | `uint8_t`, `mf_wsearch` {`NONE` = 0, `LIBC`, `LIBC_BACK`, `WALK`, `PAIR`, `HORS`, `VECTOR`} | **the SEARCH piece**: the pick that renders the find. Where T-FIND decides, its pick. On a FUSED row, the pick the row declares it implements: B-fn PAIR; E-func's offset-skip function PAIR for `fn-pair` and LIBC for `fn-memchr`, read through `fn_rows` BODY's quiet walk (`ofs_fn_serves`, `ofsskip.c` :482-493). On a PF arm the composer's walk reached with no deciding row, the pick of the search renderer row naming that arm. NONE on E-generic (no search) and on ARM. VECTOR is declared and occurs in no reply in 3.0 (it is vrun's, unreported: the gap below) |
-| `stream` | `uint8_t`, `mf_wstream` {`MF_WSTREAM_NONE` = 0, `MF_WSTREAM_RESTART` `[rev2 F24]`, `MF_WSTREAM_MASK`, `MF_WSTREAM_SHIFT`} | **the CANDIDATE STREAM**: Table S's answer for (search, frame) (§2.5.3), or a fused row's declared stream. In 3.0 the top level is SHIFT iff `search` is HORS, RESTART where a search or the floor renders, NONE on an unframed ask and on ARM. MASK is declared and occurs in no reply in 3.0 |
+| `search` `[rev2 F14]` | `uint8_t`, `mf_wsearch` {`NONE` = 0, `LIBC`, `LIBC_BACK`, `WALK`, `PAIR`, `HORS`} `[rev2.2 R25]` (no VECTOR: §2.5.5) | **the SEARCH piece**: the pick that renders the find. Where T-FIND decides, its pick. On a FUSED row, the pick the row declares it implements: B-fn PAIR; E-func's offset-skip function PAIR for `fn-pair` and LIBC for `fn-memchr`, read through `fn_rows` BODY's quiet walk (`ofs_fn_serves`, `ofsskip.c` :482-493). On a PF arm the composer's walk reached with no deciding row, the pick of the search renderer row naming that arm. NONE on E-generic (no search) and on ARM. `[rev2.2 R25]` vrun's vector block search has no value in 3.0 (it is unreported: the gap below; RUNG-LIST declares it) |
+| `stream` | `uint8_t`, `mf_wstream` {`MF_WSTREAM_NONE` = 0, `MF_WSTREAM_RESTART` `[rev2 F24]`, `MF_WSTREAM_MASK`, `MF_WSTREAM_SHIFT`} | **the CANDIDATE STREAM**: Table S's answer for (search, frame) (§2.5.3), or a fused row's declared stream. In 3.0 it is `[rev2.2 R24]` SHIFT iff `search` is HORS, RESTART where a search or the floor renders, NONE on an unframed ask and on ARM. MASK is declared and occurs in no reply in 3.0 |
 | `fused` `[rev2 F14]` | `uint8_t`, `mf_wfused` {`NONE` = 0, `NO`, `FN`, `ARM`} | **how the pieces are joined**, a fact about the piece boundary, never a C id: NO where the frame composes the triple (E-find's composed rows, E-generic, `[rev2 F10]` E-stmt's PF arms); FN where one function renders search, stream and check (B-fn, and E-func's offset-skip arm); ARM where a composer arm the triple does not yet describe renders the site (the pre-check composites, `runcmp`, `mismatch-inplace`, `generic`: arms[]'s named exception, with `search` and `stream` NONE). The C arm and renderer ids stay in MFTRACE (FDROUTE `ren=`, `mf_result.form_id`), which belong to the emitter |
-| `plan_test` `[rev2 F12]` | `uint8_t[MF_WPLAN_MAX]`, `mf_wtest` {`NONE` = 0, `OWN`, `TABLE`}, aligned with `plan[]` | the CHECK's per-position test kind, T-VERIFY step 6 (`wf_crows` C-table/C-own, `window.c` :1087-1089): TABLE where position `plan[i]` tests pcrec's offered table, as `window.c` :1314 sets `w->table[i]` from `def->table_name`'s stated-ness; OWN where it tests the kit's own set. Answered where the family renders T-VERIFY's plan (E-find's composed rows, E-generic); NONE past `nplan`, on fused, E-stmt and ARM frames (their set test is the fused function's or the caller's: the residue, §2.6.3) |
+| `plan_test` `[rev2 F12]` | `uint8_t[MF_WPLAN_MAX]`, `mf_wtest` {`NONE` = 0, `OWN`, `TABLE`}, aligned with `plan[]` | the CHECK's per-position test kind, T-VERIFY step 6 (`wf_crows` C-table/C-own, `window.c` :1087-1089). `[rev2.2 R2]` **TABLE iff the define hooks state `table_name` AND the alternative's span covering `plan[i]` offers a table whose set is the set tested there** (`offer_at`, `window.c` :1281-1290, read at :1314: `w->table[i] = def && def->table_name ? offer_at(...) : 0`); OWN otherwise (a stated hook with no offer is OWN). The define's own list is indexed over its tested positions (`off[]`: the plan PLUS the stop when C-stop removed it, sorted, `window.c` :1300-1306), not over `plan[]`, so the define side is matched by OFFSET: `plan_test[i]` is the define's entry whose `off` equals `plan[i]`. Answered where the family renders T-VERIFY's plan (E-find's composed rows, E-generic); NONE past `nplan`, on fused, E-stmt and ARM frames (their set test is the fused function's or the caller's: the residue, §2.6.3) |
+| `stop_test` `[rev2.2 R2]` | `uint8_t`, `mf_wtest` | the STOP's test kind. C-stop removes the stop's offset from `plan[]` (`wf_crows` step 4, `window.c` :1082; `c_stop`'s `plan_drop`, :999-1002, except inside a pinned stretch), but the define still decides how the stop is tested: B-walk's find tests it through `wf_member(rc, b, stop_ix)` (:2553 -> `wf_member_of`, :2159-2166, which reads `w->table[stop_ix]`). TABLE iff the hook is stated AND the span covering the stop's offset offers the stop's set (the same rule as `plan_test`, matched by the stop's OFFSET); OWN otherwise. Answered on E-find's composed rows wherever the window has a stop; NONE where it has none (the floor, `stop_ix` -1) and on fused, E-stmt and ARM frames. What it reports on searches that test the stop by its bytes (B-pair, B-memchr) or probe another position (B-hors) is §7 Q14 |
+
+**The observable meaning of each value** `[rev2.2 R18]` (moved here from §5's G2 text classes, so a D27 author
+holds the reply to the define's OUTPUT, never to the kit's code). "The text" is the define's artifact text for that
+site; "the result" is `mf_defined`'s `mf_result`.
+
+| member | value | what the define's output shows |
+|---|---|---|
+| `framed` | 1 / 0 | 1 iff `call` is DEFINE or EMIT and the call returned 0 |
+| `frame_row` | E-find / E-generic | the result's `form_id` is `window-search` / `wf-floor` |
+| `frame_row` | E-func / E-stmt | the site states FUNC/RETURN / STMT (ASSIGN or ON_MISS), and the result's `form_id` is a composer arm's |
+| `fused` | FN | the text calls the site's offset-skip function (`<prefix>_mf<handle>_ofsskip`) |
+| `fused` | ARM | the result's `form_id` is a composer arm other than a PF arm and the offset-skip arm (a pre-check composite, `runcmp`, `mismatch-inplace`, `generic`) |
+| `fused` | NO | otherwise, on a framed ask |
+| `search` | PAIR / HORS / LIBC or LIBC_BACK / WALK / NONE | the find's text holds the two `memchr` frontiers / the 256-byte shift table `_sh[256]` / one `memchr` (LIBC and LIBC_BACK told apart by `method`, D1 vs D1c) / a byte walk / none of them |
+| `stream` | SHIFT / RESTART / NONE | the text advances by `_sh[...]` / by one position (`C++`), or the caller's loop restarts (E-stmt) / no search loop (ARM, unframed) |
+| `method` | a row id | it resolves in `mf_finder_rows`, and on a composed E-find row that row's pick is `search`; the kit trace's FDROUTE `row=` prints it (`trace_format.md`) |
+| `plan_test[i]`, `stop_test` | TABLE / OWN | the text reads the offered table through the hook's own spelling (`table_name`'s text for that offset's ref, then `[`) / tests that offset against the kit's own set; except a position the search proved (§2.3's residue) and Q14's byte-tested stops |
 
 **Who decides each value in 3.0** `[rev2 F10, F14]` `[rev2.1 Q13]` (the define stores the same, §5 3.0b):
 
@@ -214,9 +297,9 @@ Appended LAST to `mf_wreply` (`memfn.h` :1467-1482), because initializers are po
 
 **The check's members.** The CHECK is T-VERIFY's plan (Table C, `window.c` :1051-1092; `c_plan` :1096). The
 reply carries it in its decision group (`nplan`, `plan[]`, `plan_term[]`, `pinned`, `run_stated`,
-`run_member`, `run_lo`, `run_len`) `[rev2 F12]` and, in the frame part, `plan_test[]`. `memfn.h`'s comment
+`run_member`, `run_lo`, `run_len`) `[rev2 F12]` and, in the frame part, `plan_test[]` `[rev2.2 R2]` and `stop_test`. `memfn.h`'s comment
 names those members "the check", so a serialized reply reads as (`search`, `stream`, check). The
-decision group is frame-independent; `plan_test` reads the define hooks, so it is a frame-part member.
+decision group is frame-independent; `plan_test` and `stop_test` read the define hooks, so they are frame-part members.
 `[rev2 F19]` **Known residue**: on a D-hors site the search head drops the probed position from the test at
 TEXT time (`d_hors_head`'s `skip`, `window.c` :2655), while `plan[]` still lists it, so the reply's check is
 the plan before the search's proof. The PROVES column (§7 Q9) is its fix.
@@ -227,10 +310,14 @@ frame, `fused` FN says one function renders the triple, and `search` names its p
 apart (`fused` FN vs NO), as rev 0 required (§6).
 
 `path` is unchanged. The decision fields (`alt` .. `path`) are frame-independent in 3.0, and the purity
-harness asserts it: a NONE ask and a framed ask of one site answer equal decision fields.
+harness asserts it: a NONE ask and a framed ask of one site answer equal decision fields. `[rev2.2 R27]` Its
+comparator is `memcmp(a, b, offsetof(mf_wreply, framed))`, the decision-group prefix: valid because the frame part
+is appended LAST and every reply is zeroed whole first (contract line 3, §2.2). The whole-reply `memcmp` (F32)
+stays for same-call compares; a NONE and a framed reply differ in the frame part by construction.
 
 **Who reads the new fields (D77).** 3.0 has two named readers: the two agreement checks (Goal 2) and G2's
-tallies and text classes. Row 1 and the trace come later. No artifact text or stamp reads them, so no byte
+tallies and text classes, `[rev2.2 R8]` both 3.0b's; so the fields and the plan-function outputs that fill them
+land in 3.0b (§4.1). Row 1 and the trace come later. No artifact text or stamp reads them, so no byte
 moves. pcrec reads none of them in 3.0 (§4.2).
 
 ### 2.4 The asker fact's retirement
@@ -257,8 +344,17 @@ one renderer table where a frame renders a pick iff a row exists. Its trigger is
   PREFIX and vrun's KA/KB, the named exceptions with their census rule (§2.7).
 
 `[rev2 F9]` **The renderable set.** A pick is renderable on a frame iff the search renderer table has a row
-for (frame, pick) AND Table S (§2.5.3) answers exactly one stream for (pick, frame). It is ONE function, read
-by T-FIND's gate and by the composition, so the two cannot disagree. `[rev2 F4]` The gate sits in
+for (frame, pick) AND Table S (§2.5.3) answers `[rev2.2 R3]` ST-one or ST-many for (pick, frame), that is, at
+least one stream. It is ONE function, read by T-FIND's gate and by the composition, so the two cannot disagree.
+`[rev2.2 R3]` **ST-many refuses AFTER the gate.** The gate is a 0/1 predicate inside `kit_walk` (`fd_holds`,
+`finder.c` :499-511): a 0 is a DECLINE and the walk goes on to the next row, so a gate that read "exactly one"
+would turn ST-many into a silent move to the next T-FIND row (PAIR -> R7w, B-walk), the unmeasured choice change
+(D186) ST-many exists to stop. So the gate holds on ST-one or ST-many (ST-none declines, as before), and on
+ST-many `fd_find` then returns 0 with `*row` a NAMED refusal (the `?need` shape, `finder.c` :659-668; kit.h
+:557-568: "a caller that must tell the refusal from 'no row' reads `*row`"; the spelling is the build's, e.g.
+`?stream`). The composer observes it through `select_arm`'s kept refusal (below); the window family gains the
+same read in `wf_find_decide`, which today reads only the return (`window.c` :1842), and refuses the define with
+a message naming Table S's refusal. `[rev2 F4]` The gate sits in
 `fd_holds` (`finder.c` :499-511) and applies to slot FIND only (`r->slot == FD_FIND`): `fd_holds` and
 `fd_decide` also walk slot PRES, whose rows P0-P9 have pick `FF_UNSTATED` (`finder.c` :313-336), and an
 unscoped gate would decline every pre-check decision. This replaces `SF_ASKER_PAIR`, which is deleted; bit
@@ -287,15 +383,27 @@ stays must first enter fused rows' picks into the renderable set. That is its tr
 
 `fn_rows` BODY, the third member F9 names, stays a named exception: it chooses PAIR or LIBC for the
 offset-skip function outside T-FIND. Its trigger is "pcrec states a kind on OFS sites". `[rev2 F14]` Its
-choice now crosses the seam as a fact (`search`). The composer stating an `fd_stop` (F5's second half) is
+choice now crosses the seam as a fact (`search`), `[rev2.2 R8]` from 3.0b, which adds the pick column it is read
+through. The composer stating an `fd_stop` (F5's second half) is
 NOT in 3.0: a RUN span needs a field `fd_stop` lacks.
 
 `[rev2 F28]` **One accessor per table.** Every renderer lookup (search, stream, check, fused) goes through
 its table's one named lookup function (`ren_find(` in the kit, one per table or one over all of them; the
 name is the build's), never an open-coded loop. `decider_census.py`'s backstop (:58-61) gains that spelling
-as a LIVE shape and the row-walk idioms `.pick ==`, `->pick ==` and `].holds(` as shapes, with its HITS
-re-pinned: today's lists are spelled with none of its shapes (`fd_renderer`, `compose.c` :285-291; Table B's
-walk, `window.c` :1850-1851), so a planted twin copied from them is green.
+as a LIVE shape: today's lists are spelled with none of its shapes (`fd_renderer`, `compose.c` :285-291; Table B's
+walk, `window.c` :1850-1851), so a planted twin copied from them is green. `[rev2.2 R4]` **The shapes are
+NARROWED to the renderer tables' names**: the backstop gains `ren_find(` (LIVE) and, per renderer table, its
+array name followed by `[` (LIVE; the names are the build's, one `ren_` family). The row-walk idioms `.pick ==`,
+`->pick ==` and `].holds(` are NOT shapes: `].holds(` is the idiom of EVERY declared table, and at a678d0a4e
+they hit 9 lines in no census member (the `kit_walk` adapters `fn_row_holds`, `ofsskip.c` :440, `a_holds`,
+`window.c` :726, `m_holds` :791, `e_holds` :1625; Table C's walk in `c_plan` :1102; `b_pair_holds` ..
+`b_hors_holds` :1785-1792), each a check-B FAIL whatever HITS says (r13 V-1). **Expected after 3.0a**: MEMBER_COUNT
+52 + 7 = 59 (the support table, Table S, the stream renderer table, the check renderer rows, the skeleton rows,
+the fused rows, and `ren_find`; the search renderer table takes `fd_renderer`'s row, tsv :29, so it adds none),
+moved with the map in the same commit as the script requires; HITS = 36 less the hit lines 3.0a deletes plus
+every line holding `ren_find(` or a renderer table's name, re-pinned to the build's exact count with each new hit
+line inside a member (a build that declares the tables differently re-derives both numbers from its map, never
+leaving slack).
 
 **Every reader of the asker fact, found by grep** (`git grep -n 'asker\|renders_pair\|SF_ASKER_PAIR'`
 outside history, lane reports and reviews; re-run at a678d0a4e, `[rev2 F6, F25]` completed):
@@ -307,9 +415,14 @@ outside history, lane reports and reviews; re-run at a678d0a4e, `[rev2 F6, F25]`
 | `memfn/src/window.c` :37 (header), :1840 (`.renders_pair = 1`) | deleted: E-find's renderable set comes from the tables |
 | `memfn/src/compose.c` :262-292 (`fd_renderers`, `fd_renderer`) | moved into the one search renderer table (its E-stmt rows); `[rev2 F7]` `select_arm`'s refusal :317-325 kept |
 | `memfn/src/formhash.c` :272, :446 (comments), :472 (`*row = wf_plan_brow(...)`), :511 | `[rev2 F1]` comments reworded ("E-find renders PAIR"); the code stays: `wf_plan_brow` keeps returning T-FIND's DECIDING row (`window.c` :2817-2820), which the `pair` entry pins as `"PAIR"` (:296) and :511 compares. The renderer or fused row id is `wf_plan_bren`'s successor (:2824-2827), returning today's strings (`B-fn`, `B-pair`, `B-memchr`, `B-walk`, `B-hors`), so FDROUTE's `row=` and `ren=` (`compose.c` :1153-1156) print the same bytes |
-| `[rev2 F6]` `tests/memfn/renderer_rows.tsv` (header :1-12: "the renderer row is the asker's own"; the pairs `PAIR B-fn E-find`, `PAIR B-pair E-find`, `D-hors B-hors E-find`, ...) and `tests/memfn/rows_check.py` §R (:751-789; :765 requires frame E-find or `composer`) | KEPT as the search renderer table's NAMED PIN (hand-written from the tables, held to every traced FDROUTE pair): re-keyed (frame, method row, renderer row) with frame values `E-find` and `E-stmt` (:765 follows), B-fn's line marked FUSED, header restated. The `ren=` values do not change, so no witness compile moves |
-| `[rev2 F6, F25]` `memfn/docs/trace_format.md` :168-177 (FDROUTE's key "frame row, method row, renderer row") and :178-183 (the composer's D-hors PRED_FALSE record: "it states no stop") | :168-177 restated with the split's names; :178-183 STAYS TRUE (F18's residue) and gains one clause naming it |
-| `memfn/src/CLAUDE.md` :9, :15, :21, :41 | restated: the split's tables, the fused rows, the renderable set |
+| `[rev2 F6]` `tests/memfn/renderer_rows.tsv` (header :1-12: "the renderer row is the asker's own"; the pairs `PAIR B-fn E-find`, `PAIR B-pair E-find`, `D-hors B-hors E-find`, ...) and `tests/memfn/rows_check.py` §R (:751-789; :765 requires frame E-find or `composer`) | KEPT as the search renderer table's NAMED PIN (hand-written from the tables, held to every traced FDROUTE pair): re-keyed (frame, method row, renderer row) with frame values `E-find` and `E-stmt` (:765 follows), B-fn's line marked FUSED, header restated. The `ren=` values do not change, so no witness compile moves. `[rev2.2 R10]` FUSED is a 6th column `fused` (YES/NO), and the loader reads `read_tsv(..., 6)` (:756; :157-158 refuse any other count). FDROUTE prints `frame=<T-FRAME id>` (`compose.c` :1153-1156 print none today), so §R holds (frame, row, ren) TRIPLES and the frame column is checked against an observation, not only for membership (:765); `trace_format.md`'s FDROUTE line moves with it (a trace line, no emitted byte). Recommended over "the frame column is documentation the check does not hold" (§7 Q15) |
+| `[rev2 F6, F25]` `memfn/docs/trace_format.md` :168-177 (FDROUTE's key "frame row, method row, renderer row") and :178-183 (the composer's D-hors PRED_FALSE record: "it states no stop") | :168-177 restated with the split's names `[rev2.2 R10]` and FDROUTE's new `frame=` key; :178-183 STAYS TRUE (F18's residue) and gains one clause naming it |
+| `memfn/src/CLAUDE.md` :9, :15, :21, `[rev2.2 R14]` :26 (`compose.c`'s line naming `fd_renderers`), :41 | restated: the split's tables, the fused rows, the renderable set |
+| `[rev2.2 R14]` `tests/memfn/CLAUDE.md` :37 (renderer_rows.tsv's role: "(method row, renderer row) pairs") | restated: (frame, method row, renderer row, fused) and the traced triple |
+| `[rev2.2 R14]` comments naming the retired arrays: `window.c` :39, :1264, :1533, :2484, :2692, :2815 (`wf_brows`, `wf_b_render`); `compose.c` :1151 (`fd_renderers`); `rows_check.py` :103 (docstring); `decider_census.py` :74 (MEMBER_COUNT's history naming `fd_renderer`, which gains its 3.0a line) | restated with the split's names |
+| `[rev2.2 R14]` Table B's two `_Static_assert`s (`window.c` :2708-2711: every Table B row has its text and its find slot) | retire with `wf_b_render`/`wf_b_find`; each new renderer table gets its successor (its row count equals its id enum's), in the same commit |
+| `[rev2.2 R14]` `docs/design/memfn/units_inventory.md` :56 (`wf_b_render` B-hors), :111 (`wf_brows` :1699, `b_fn_holds` :1672, already-stale cites) | a dated note at 3.0a: the rows now live in the split's tables (the inventory is a TRIAL record; its cites are restated, not its findings) |
+| `[rev2.2 R14]` `docs/design/memfn/window_site.md` :272, :340, :342 (`wf_brows`, `wf_b_render`, "B's renderers on E-find's text") | restated with §8's window_site amendment, beside :336 |
 | `tests/memfn/decider_census.tsv` :24 (`fd_find`'s note), :29 (`fd_renderer` -> the table), :66-67 (`wf_find_decide`, `wf_prepare`) | rows edited by 3.0a; rows added for the support table and Table S (`answers` T-STREAM, `[rev2 F20]` the new question, §8), the stream renderer table, `[rev2 F20]` the check renderer rows and the skeleton rows (T-FRAME), and the fused rows (EXC: naming `arms[]` and `fn_rows` BODY, which they are); `decider_census.py`'s backstop re-pinned (F28) |
 | `memfn/docs/finder_history.md` | a dated row for the PAIR row's facts edit |
 | `docs/design/memfn/span_pick.md` :109, :135, :420, `[rev2 F25]` :45, :51, :369, :408 | the named exception retires: amendment §8 |
